@@ -46,6 +46,7 @@ except ImportError:
 
 
 def has_jax() -> bool:
+    """Return whether the optional JAX dependency is available."""
     return _HAS_JAX
 
 
@@ -408,9 +409,11 @@ if _HAS_JAX:
         a_E, a_W, a_NS, a_C = _precompute_stencil(R_grid, dR, dZ)
 
         def picard_body(_: int, psi: jnp.ndarray) -> jnp.ndarray:
+            """Single Picard step (nonlinear source and JAX-friendly elliptic update)."""
             source = _compute_source_jax(psi, R_grid, mu0, Ip_target, beta_mix, dR, dZ)
 
             def inner_body(__: int, psi_j: jnp.ndarray) -> jnp.ndarray:
+                """Inner Jacobi iteration that updates one relaxation sweep in `lax.fori_loop`."""
                 return _jacobi_gs_step_jax(psi_j, source, a_E, a_W, a_NS, a_C, omega_j)
 
             psi_elliptic: jnp.ndarray = lax.fori_loop(0, n_jacobi, inner_body, psi)
@@ -596,6 +599,7 @@ def jax_gs_grad_Ip(
     psi_init = psi_init.at[:, -1].set(0.0)
 
     def objective(Ip: Any) -> Any:
+        """Objective for Ip matching: sum of computed psi for differentiable constraint solving."""
         psi = _jax_gs_solve_impl(
             RR,
             dR,

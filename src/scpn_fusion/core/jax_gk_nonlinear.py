@@ -45,6 +45,7 @@ except ImportError:
 
 
 def jax_available() -> bool:
+    """Return True when the optional JAX runtime is importable."""
     return _HAS_JAX
 
 
@@ -56,12 +57,14 @@ class JaxNonlinearGKSolver:
     """
 
     def __init__(self, config: NonlinearGKConfig | None = None):
+        """Create the JAX nonlinear GK solver with optional config override."""
         self.cfg = config or NonlinearGKConfig()
         self._np_solver = NonlinearGKSolver(self.cfg)
         if _HAS_JAX:
             self._compile_kernels()
 
     def _compile_kernels(self) -> None:
+        """Materialize cached JAX arrays required by the fast solver kernels."""
         c = self.cfg
         self._kx_j = jnp.array(self._np_solver.kx)
         self._ky_j = jnp.array(self._np_solver.ky)
@@ -82,6 +85,7 @@ class JaxNonlinearGKSolver:
     # ------------------------------------------------------------------
 
     def _jax_field_solve(self, f: jnp.ndarray) -> jnp.ndarray:
+        """Solve quasi-neutrality in spectral form to obtain electrostatic potential."""
         c = self.cfg
         dv = self._np_solver.dvpar * self._np_solver.dmu
         f_ion = f[0]
@@ -113,6 +117,7 @@ class JaxNonlinearGKSolver:
     # ------------------------------------------------------------------
 
     def _jax_exb_bracket(self, phi: jnp.ndarray, f_s: jnp.ndarray) -> jnp.ndarray:
+        """Compute 2-D E×B Poisson bracket in JAX spectral space."""
         shape5 = f_s.shape
         n_batch = shape5[2] * shape5[3] * shape5[4]
 
@@ -222,6 +227,7 @@ class JaxNonlinearGKSolver:
     def _jax_rhs_species(
         self, f_s: jnp.ndarray, phi: jnp.ndarray, species_idx: int = 0
     ) -> jnp.ndarray:
+        """Build the JAX RK RHS for one species at one time step."""
         c = self.cfg
         terms = jnp.zeros_like(f_s)
 
@@ -268,6 +274,7 @@ class JaxNonlinearGKSolver:
         phi0 = self._jax_field_solve(f)
 
         def rhs_full(f_in: jnp.ndarray) -> jnp.ndarray:
+            """Compute full RHS in spectral space for all kinetic species."""
             phi = self._jax_field_solve(f_in)
             dfdt = jnp.zeros_like(f_in)
             for s in range(self.cfg.n_species):
@@ -369,6 +376,7 @@ class JaxNonlinearGKSolver:
     # ------------------------------------------------------------------
 
     def run(self, state: NonlinearGKState | None = None) -> NonlinearGKResult:
+        """Run the JAX nonlinear solver and return diagnostics + final state."""
         if not _HAS_JAX:
             _logger.info("JAX unavailable, falling back to NumPy solver")
             return self._np_solver.run(state)

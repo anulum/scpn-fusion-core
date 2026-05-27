@@ -48,10 +48,12 @@ _logger = logging.getLogger(__name__)
 
 
 def has_jax() -> bool:
+    """Return whether the optional JAX dependency is available."""
     return _HAS_JAX
 
 
 def _require_jax() -> None:
+    """Raise a clear ImportError when JAX is required but missing."""
     if not _HAS_JAX:
         raise ImportError(
             "JAX is required for jax_gk_solver but not installed. pip install jax jaxlib"
@@ -244,6 +246,7 @@ def _make_batched_builder(
     """Return a vmap'd function that builds response matrices for all k_y at once."""
 
     def _build_single(k_y_rho_s: Any) -> tuple[Any, Any, Any]:
+        """Build one response matrix from a scalar k_y rho_s sample."""
         return _build_response_matrix_single_ky(
             k_y_rho_s,
             ion_R_L_n,

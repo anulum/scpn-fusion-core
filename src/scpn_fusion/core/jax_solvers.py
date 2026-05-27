@@ -42,10 +42,12 @@ except ImportError:
 
 
 def has_jax() -> bool:
+    """Return whether the optional JAX dependency is available."""
     return _HAS_JAX
 
 
 def has_jax_gpu() -> bool:
+    """Return whether any JAX-visible accelerator device is a GPU."""
     if not _HAS_JAX:
         return False
     try:
@@ -130,6 +132,7 @@ if _HAS_JAX:
 
         # Forward sweep
         def fwd_step(carry: tuple, i: jnp.ndarray) -> tuple:
+            """Forward Thomas sweep step building running cp/dp coefficients."""
             cp_prev, dp_prev = carry
             # Use where to handle i==0 (no previous cp/dp)
             ai = jnp.where(i > 0, a[i - 1], 0.0)
@@ -147,6 +150,7 @@ if _HAS_JAX:
 
         # Back substitution
         def bwd_step(x_next: jnp.ndarray, i: jnp.ndarray) -> tuple:
+            """Backward Thomas sweep step solving x[i] from previously solved x[i+1]."""
             x_i = dp_all[i] - cp_all[i] * x_next
             return x_i, x_i
 
@@ -388,6 +392,7 @@ def batched_crank_nicolson(
 
     @jax.vmap
     def step(T_single: jnp.ndarray) -> jnp.ndarray:
+        """Single batched profile step forwarding through JAX Crank-Nicolson kernel."""
         result: jnp.ndarray = _cn_step_jax(
             T_single, chi_j, source_j, rho_j, float(drho), float(dt), float(T_edge)
         )

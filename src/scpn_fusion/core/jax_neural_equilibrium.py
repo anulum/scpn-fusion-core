@@ -42,6 +42,7 @@ except ImportError:
 
 
 def has_jax() -> bool:
+    """Return whether the optional JAX dependency is available."""
     return _HAS_JAX
 
 
@@ -268,6 +269,7 @@ def jax_neural_eq_predict_batched(
 
     @jax.vmap
     def predict_single(feat: jnp.ndarray) -> jnp.ndarray:
+        """Predict one equilibrium sample from features through JAX MLP + PCA pipeline."""
         x = (feat - input_mean) / input_std
         coeffs = _mlp_forward_jax(x, ws, bs)
         result: jnp.ndarray = _pca_inverse_jax(coeffs, pca_mean, pca_components)
