@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Turbulence Oracle
+"""Turbulence oracle for reduced-order edge-chaos forecasting."""
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import rand
@@ -193,6 +194,7 @@ class OracleESN:
         print("[Oracle] Mental Model Formed.")
 
     def predict(self, u_current, steps=50):
+        """Generate closed-loop ESN predictions from an initial state."""
         predictions = []
         curr = u_current
 
@@ -209,6 +211,7 @@ class OracleESN:
 
 
 def run_turbulence_oracle():
+    """Run an end-to-end Drift-Wave + ESN prediction and save diagnostic plot."""
     print("--- SCPN TURBULENCE ORACLE: PREDICTING CHAOS ---")
 
     hw = DriftWavePhysics()

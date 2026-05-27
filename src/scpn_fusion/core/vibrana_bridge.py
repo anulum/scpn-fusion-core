@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Vibrana Bridge
+"""Bridge that maps tokamak control dynamics into VIBRANA sonification settings."""
 import sys
 import os
 import numpy as np
@@ -104,6 +105,7 @@ class VibranaFusionBridge:
         return {"Carrier": carrier_freq, "Chaos": chaos_level, "Beat": beat_freq}
 
     def run_sonification_session(self, duration_steps=100):
+        """Execute an autonomous sonification run and collect audio-control telemetry."""
         print("--- VIBRANA FUSION BRIDGE: SONIFICATION INITIATED ---")
         print("Listen to the Plasma...")
 
@@ -159,6 +161,7 @@ class VibranaFusionBridge:
         self.visualize_soundscape(audio_log)
 
     def visualize_soundscape(self, log):
+        """Generate and save a 2-panel summary of sonification dynamics."""
         import matplotlib.pyplot as plt
 
         t = [x["t"] for x in log]
