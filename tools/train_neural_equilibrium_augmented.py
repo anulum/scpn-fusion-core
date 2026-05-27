@@ -42,6 +42,14 @@ def collect_geqdsk_files(ref_dir: Path) -> list[Path]:
 
 
 def main() -> int:
+    """Run augmented neural-equilibrium training and emit a validation summary.
+
+    Returns
+    -------
+    int
+        ``0`` when training and validation complete, ``1`` when source data is
+        missing.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--n-perturbations", type=int, default=25)
     parser.add_argument("--seed", type=int, default=42)
