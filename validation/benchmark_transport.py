@@ -114,6 +114,7 @@ def run_iter_scaling_benchmark() -> dict:
 
 
 def main():
+    """Run transport benchmark set and write transport JSON/markdown summaries."""
     results = {
         "pure_diffusion": run_pure_diffusion_benchmark(),
         "threshold": run_threshold_benchmark(),
