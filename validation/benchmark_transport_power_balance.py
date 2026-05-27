@@ -61,6 +61,7 @@ def run_benchmark(
     powers_mw: list[float] | None = None,
     electron_fraction: float = 0.5,
 ) -> dict[str, Any]:
+    """Run auxiliary-heating source reconstruction at multiple power points."""
     cfg = config_path or str(ROOT / "iter_config.json")
     powers = powers_mw or [10.0, 30.0, 50.0, 100.0]
     threshold = 1e-6
@@ -102,6 +103,7 @@ def run_benchmark(
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render transport power-balance benchmark report as markdown."""
     g = report["transport_power_balance_benchmark"]
     lines = [
         "# Transport Power-Balance Benchmark",
@@ -124,6 +126,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    """Run transport power-balance benchmark and persist output artifacts."""
     parser = argparse.ArgumentParser(description="Run transport power-balance benchmark.")
     parser.add_argument(
         "--config",
