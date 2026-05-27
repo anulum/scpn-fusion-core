@@ -108,6 +108,11 @@ def _load_metadata_overrides(
 
 
 def build_manifest(shot_dir: Path, *, metadata_path: Path | None = None) -> dict[str, Any]:
+    """Build the disruption shot manifest from available shot files.
+
+    Scans ``.npz`` filenames under ``shot_dir`` and emits normalized shot
+    metadata, optional metadata overrides, and integrity hashes.
+    """
     if not shot_dir.exists():
         raise FileNotFoundError(f"Shot directory not found: {shot_dir}")
     if metadata_path is None:
@@ -165,10 +170,16 @@ def build_manifest(shot_dir: Path, *, metadata_path: Path | None = None) -> dict
 
 
 def render_manifest_json(manifest: dict[str, Any]) -> str:
+    """Render manifest as canonical pretty-printed JSON bytes."""
     return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Render or check the disruption shot manifest.
+
+    By default this writes the manifest file; with ``--check`` it validates the
+    existing file is synchronized with current source data and exits non-zero if stale.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--shot-dir",
