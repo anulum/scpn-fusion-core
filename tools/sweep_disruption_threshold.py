@@ -274,6 +274,12 @@ def build_roc_curve(
 
 
 def main() -> int:
+    """Run a full sweep over bias and threshold for disruption classifier tuning.
+
+    Returns:
+        ``0`` on successful completion, ``1`` when required input artifacts are
+        missing or when invocation fails internally.
+    """
     print("=" * 60)
     print("SCPN Fusion Core — Disruption Threshold & Bias Sweep")
     print("=" * 60)
