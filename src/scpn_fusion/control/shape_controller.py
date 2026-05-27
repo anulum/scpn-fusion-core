@@ -5,7 +5,12 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Plasma Shape Controller (Jacobian + Tikhonov)
-"""Plasma shape-control targets, Jacobians, and Tikhonov feedback laws."""
+"""Plasma shape-control targets, Jacobians, and Tikhonov feedback laws.
+
+This module hosts deterministic abstractions for feed-forward shape targets,
+numerical Jacobian construction, and regularized controller synthesis used by
+shape-control smoke tests.
+"""
 
 from __future__ import annotations
 

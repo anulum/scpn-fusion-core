@@ -213,7 +213,29 @@ class RunawayElectronModel:
         dt_s: float = 1e-5,
         seed_re_fraction: float = 1e-8,
     ) -> RunawayElectronResult:
-        """Integrate runaway electron generation through a current quench."""
+        """Integrate runaway electron generation across a thermal quench interval.
+
+        The integration advances a coupled Dreicer + avalanche + fallback-loss
+        model at fixed step size and returns trajectory- and terminal-level
+        observables used by safety and disruption-postprocessing tests.
+
+        Args:
+            plasma_current_ma: Initial plasma current in mega-amps.
+            tau_cq_s: Exponential current-quench time constant in seconds.
+            T_e_quench_keV: Electron temperature during the quench, in keV.
+            neon_z_eff: Effective charge of neon impurity mix.
+            neon_mol: Optional neon molar concentration; when ``None``, uses the
+                model default.
+            duration_s: Total simulated quench duration in seconds.
+            dt_s: Fixed step size in seconds.
+            seed_re_fraction: Initial runaway fraction, constrained to `(0, 1]`.
+
+        Returns:
+            RunawayElectronResult with time-series fields and summary observables.
+
+        Raises:
+            ValueError: If inputs are non-finite or violate the documented domain.
+        """
         plasma_current_ma = _as_positive_float("plasma_current_ma", plasma_current_ma)
         tau_cq_s = _as_positive_float("tau_cq_s", tau_cq_s)
         t_e = _as_positive_float("T_e_quench_keV", T_e_quench_keV)

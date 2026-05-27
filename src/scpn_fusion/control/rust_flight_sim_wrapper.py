@@ -5,7 +5,12 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Rust Flight Sim Wrapper
-"""Command-line wrapper for the Rust-native tokamak flight simulator."""
+"""Command-line wrapper for the Rust-native tokamak flight simulator.
+
+The wrapper is intentionally minimal: it validates that the optional Rust
+extension is importable, parses latency-oriented CLI flags, executes one shot,
+and prints a deterministic summary of timing and disruption outcomes.
+"""
 
 import logging
 import sys
@@ -15,7 +20,18 @@ logger = logging.getLogger(__name__)
 
 
 def run():
-    """Execute a Rust flight-simulation shot and log latency metrics."""
+    """Execute a Rust flight-simulation shot and log latency metrics.
+
+    The helper exits with code 1 when the optional native extension is missing.
+    It writes a machine-readable execution envelope as structured log entries
+    so downstream wrappers can parse reproducible latency fields.
+
+    Returns:
+        None.
+
+    Raises:
+        SystemExit: If ``scpn_fusion_rs`` cannot be imported.
+    """
     try:
         import scpn_fusion_rs
     except ImportError:

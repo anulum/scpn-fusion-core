@@ -5,7 +5,12 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Resistive Wall Mode Feedback
-"""Resistive-wall-mode stability and feedback-control utilities."""
+"""Resistive-wall-mode stability and feedback-control utilities.
+
+The module exposes a compact physics/controls surface for stability-window tests:
+RWM boundary growth estimation, sensor-feedback command generation, and required
+gain calculations for closed-loop stabilization.
+"""
 
 from __future__ import annotations
 
@@ -26,15 +31,21 @@ class RWMPhysics:
         self.tau_wall = tau_wall
 
     def is_unstable(self) -> bool:
-        """True if beta_N > beta_N_nowall (between limits)."""
+        """Return whether the current normalized beta is between nowall and wall limits.
+
+        Returns:
+            True when ``beta_n_nowall < beta_n < beta_n_wall``.
+        """
         return self.beta_n_nowall < self.beta_n < self.beta_n_wall
 
     def growth_rate(self) -> float:
-        """
-        RWM growth rate [s^-1].
-        gamma_wall = 1/tau_wall * (beta_n - beta_n_nowall) / (beta_n_wall - beta_n)
-        If beta_n > beta_n_wall, it's an ideal kink, growth rate is very large.
-        If beta_n < beta_n_nowall, it's stable, gamma = 0.
+        """Return the linear RWM growth-rate estimate in s^-1.
+
+        The model returns a large sentinel value for ideal-kink conditions and
+        zero for already-stable cases.
+
+        Returns:
+            float: Estimated wall-mode growth rate in hertz-equivalent units.
         """
         if self.tau_wall <= 0.0:
             # No wall -> instantly unstable if above no-wall limit
@@ -79,7 +90,14 @@ class RWMFeedbackController:
 
     def step(self, B_r_sensors: np.ndarray, dt: float) -> np.ndarray:
         """
-        Compute coil currents for feedback.
+        Compute coil currents for feedback from radial-field samples.
+
+        Args:
+            B_r_sensors: Radial magnetic perturbation samples at each sensor.
+            dt: Sample interval in seconds.
+
+        Returns:
+            Current commands for each control coil.
         """
         if dt <= 0.0:
             dB_dt = np.zeros_like(B_r_sensors)
@@ -99,9 +117,13 @@ class RWMFeedbackController:
         return I_coil
 
     def effective_growth_rate(self, rwm: RWMPhysics) -> float:
-        """
-        Compute closed-loop growth rate.
-        gamma_eff = gamma_wall - G_p * M_coil * gamma_wall / (1 + gamma_wall * tau_controller)
+        """Compute the closed-loop RWM growth rate with proportional feedback.
+
+        Args:
+            rwm: Physics state object that provides open-loop growth.
+
+        Returns:
+            Effective growth rate after feedback injection.
         """
         gamma_wall = rwm.growth_rate()
         if gamma_wall == 0.0:
@@ -133,10 +155,22 @@ class RWMStabilityAnalysis:
         tau_controller: float,
         M_coil: float = 1.0,
     ) -> float:
-        """
-        Find minimum G_p for stabilization.
-        We need gamma_eff < 0 => G_p * M_coil / (1 + gamma_wall * tau_controller) > 1
-        => G_p > (1 + gamma_wall * tau_controller) / M_coil
+        """Calculate the minimum proportional gain required for stabilization.
+
+        Args:
+            beta_n: Plasma normalized beta.
+            beta_n_nowall: No-wall marginal normalized beta.
+            beta_n_wall: Ideal wall stability limit.
+            tau_wall: Resistive wall time constant in seconds.
+            tau_controller: Controller lag in seconds.
+            M_coil: Effective coil coupling factor.
+
+        Returns:
+            Minimum ``G_p`` that makes ``gamma_eff < 0`` under the simplified model.
+
+        Raises:
+            ValueError: Through the underlying :class:`RWMPhysics` calculations
+                if input parameters are invalid.
         """
         rwm = RWMPhysics(beta_n, beta_n_nowall, beta_n_wall, tau_wall)
         gamma_wall = rwm.growth_rate()

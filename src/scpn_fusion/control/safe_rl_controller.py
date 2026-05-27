@@ -5,7 +5,12 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Constrained Safe Reinforcement Learning
-"""Constrained reinforcement-learning wrappers and tokamak safety costs."""
+"""Constrained reinforcement-learning wrappers and tokamak safety costs.
+
+The module provides a tiny constrained-RL contract used by production smoke
+surfaces and safety gating examples. The API is intentionally simple and
+deterministic to keep auditability and reproducibility in tests.
+"""
 
 from __future__ import annotations
 
@@ -113,25 +118,56 @@ class LagrangianPPO:
 
 
 def q95_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
-    """Return violation cost for q95 dropping below the lower safety bound."""
+    """Compute a lower-bound violation cost on edge safety factor ``q95``.
+
+    Args:
+        obs: Previous observation (unused in this contract).
+        act: Action taken (unused in this contract).
+        next_obs: Post-step observation, where index 2 is assumed to hold ``q95``.
+
+    Returns:
+        Positive violation amount in the same unit as ``q95`` delta.
+    """
     q95 = next_obs[2]
     return float(max(0.0, 2.0 - q95))
 
 
 def beta_n_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
-    """Return violation cost for beta_N exceeding the upper safety bound."""
+    """Compute an upper-bound violation cost on normalized beta ``beta_N``.
+
+    Args:
+        obs: Previous observation (unused in this contract).
+        act: Action taken (unused in this contract).
+        next_obs: Post-step observation, where index 1 is assumed to hold ``beta_N``.
+
+    Returns:
+        Positive cost when ``beta_N`` exceeds ``3.5``.
+    """
     beta_N = next_obs[1]
     return float(max(0.0, beta_N - 3.5))
 
 
 def ip_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
-    """Return violation cost for non-positive plasma current."""
+    """Compute a lower-bound violation cost on plasma current.
+
+    Args:
+        obs: Previous observation (unused in this contract).
+        act: Action taken (unused in this contract).
+        next_obs: Post-step observation, where index 0 is assumed to hold ``Ip``.
+
+    Returns:
+        Positive violation value when ``Ip`` is non-positive.
+    """
     Ip = next_obs[0]
     return float(max(0.0, -Ip))
 
 
 def default_safety_constraints() -> list[SafetyConstraint]:
-    """Return the default q95, beta_N, and plasma-current constraints."""
+    """Return the default ``q95``, ``beta_N``, and plasma-current constraints.
+
+    Returns:
+        A list of default :class:`SafetyConstraint` instances with zero limits.
+    """
     return [
         SafetyConstraint("q95_lower_bound", q95_cost_fn, limit=0.0),
         SafetyConstraint("beta_n_upper_bound", beta_n_cost_fn, limit=0.0),

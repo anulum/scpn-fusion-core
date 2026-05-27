@@ -5,7 +5,11 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — RZIP Rigid Plasma Response Model
-"""Rigid-plasma vertical response model with passive vessel coupling."""
+"""Rigid-plasma vertical response model with passive vessel coupling.
+
+The implementation is intentionally compact and deterministic for contract tests
+that exercise state-space build, stability metrics, and controller gain flows.
+"""
 
 from __future__ import annotations
 
@@ -62,7 +66,16 @@ class RZIPModel:
         return (M_plus - M_minus) / (2.0 * dZ)
 
     def build_state_space(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Build continuous-time state-space matrices for vertical motion."""
+        """Build continuous-time state-space matrices for vertical motion.
+
+        Returns:
+            A, B, C, D matrices with order
+            ``x = [Z, dZ/dt, I_1, ..., I_n]`` and output ``y = Z``.
+
+        Raises:
+            numpy.linalg.LinAlgError: Implicitly handled to fall back to a stable
+                zero inverse matrix when circuit coupling is ill-conditioned.
+        """
         # x = [Z, dZ/dt, I_1, ..., I_n]
         n_states = 2 + self.n_circuits
         n_inputs = self.n_coils
@@ -129,20 +142,35 @@ class RZIPModel:
         return A, B, C, D
 
     def vertical_growth_rate(self) -> float:
-        """Return the maximum real eigenvalue of the open-loop model."""
+        """Return the maximum real eigenvalue of the open-loop model.
+
+        Returns:
+            float: Open-loop vertical growth rate (s^-1).
+        """
         A, _, _, _ = self.build_state_space()
         eigvals = np.linalg.eigvals(A)
         return float(np.max(np.real(eigvals)))
 
     def vertical_growth_time(self) -> float:
-        """Return the open-loop vertical growth time in milliseconds."""
+        """Return the open-loop vertical growth time in milliseconds.
+
+        Returns:
+            float: ``inf`` for non-growing or damped cases.
+        """
         gamma = self.vertical_growth_rate()
         if gamma <= 0.0:
             return float("inf")
         return 1000.0 / gamma  # in ms
 
     def stability_margin(self) -> float:
-        """Return the signed vertical stability margin proxy."""
+        """Return the signed vertical stability margin proxy.
+
+        The proxy is currently aligned to the model ``n_index`` value to keep a
+        transparent interpretation in lightweight sanity checks.
+
+        Returns:
+            float: Stability margin surrogate.
+        """
         # Distance from marginality (n_index = 0 typically)
         return float(self.n_index)
 
@@ -152,10 +180,16 @@ class VerticalStabilityAnalysis:
 
     @staticmethod
     def compute_n_index(psi: np.ndarray, R: np.ndarray, Z: np.ndarray, R0: float) -> float:
-        """
-        Compute the local vertical stability index on the mid-plane:
-            n = -(R0 / Bz) * dBz/dR
-        with Bz = (1 / R) * dpsi/dR in axisymmetric geometry.
+        """Compute the local vertical stability index on the mid-plane.
+
+        Args:
+            psi: Flux function grid sampled over ``(len(Z), len(R))``.
+            R: Strictly increasing major-radius coordinates.
+            Z: Vertical coordinates.
+            R0: Magnetic-axis major radius.
+
+        Returns:
+            Signed vertical stability index based on on-axis ``dBz/dR``.
         """
         psi_arr = np.asarray(psi, dtype=float)
         r_arr = np.asarray(R, dtype=float)
@@ -202,17 +236,34 @@ class VerticalStabilityAnalysis:
 
     @staticmethod
     def passive_stability_margin(n_index: float, tau_wall: float) -> float:
-        """Return the passive stability margin for a wall time constant."""
+        """Return the passive stability margin for a wall time constant.
+
+        Args:
+            n_index: Vertical stability index.
+            tau_wall: Resistive wall time constant.
+
+        Returns:
+            The same ``n_index`` in the current lightweight contract.
+        """
         return n_index
 
     @staticmethod
     def required_feedback_gain(gamma: float, tau_wall: float, tau_controller: float) -> float:
-        """
-        Return a minimum dimensionless loop-gain proxy for vertical stabilization.
+        """Return a minimum loop-gain proxy for vertical stabilization.
 
-        Uses an additive lag model:
-            g_min = gamma * (tau_wall + tau_controller)
-        where `gamma` is the open-loop growth rate (s^-1).
+        Uses an additive lag rule:
+        ``g_min = gamma * (tau_wall + tau_controller)``.
+
+        Args:
+            gamma: Open-loop growth rate in s^-1.
+            tau_wall: Resistive wall time constant in seconds.
+            tau_controller: Controller lag in seconds.
+
+        Returns:
+            Minimum dimensionless gain proxy required by the simplified model.
+
+        Raises:
+            ValueError: If any argument is non-finite or non-positive.
         """
         gamma_f = float(gamma)
         tau_wall_f = float(tau_wall)
@@ -258,7 +309,15 @@ class RZIPController:
             self.K_gain = np.zeros((B.shape[1], A.shape[1]))
 
     def step(self, dZ_measured: float, dt: float) -> np.ndarray:
-        """Compute active-coil voltage commands from a vertical displacement sample."""
+        """Compute active-coil voltage commands from a vertical displacement sample.
+
+        Args:
+            dZ_measured: Latest measured vertical displacement.
+            dt: Sample period in seconds.
+
+        Returns:
+            Estimated coil voltages that damp observed displacement and derivative.
+        """
         if dt > 0:
             dZ_dt = (dZ_measured - self.prev_Z) / dt
         else:
@@ -278,7 +337,11 @@ class RZIPController:
         return np.asarray(V_coils)
 
     def closed_loop_eigenvalues(self) -> np.ndarray:
-        """Return eigenvalues of the controller-closed RZIP state matrix."""
+        """Return eigenvalues of the controller-closed RZIP state matrix.
+
+        Returns:
+            Complex eigenvalues used by stability smoke tests.
+        """
         A, B, C, D = self.rzip.build_state_space()
         A_cl = A - B @ self.K_gain
         return np.linalg.eigvals(A_cl)

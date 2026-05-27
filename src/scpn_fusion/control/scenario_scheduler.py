@@ -5,7 +5,11 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Feedforward Scenario Scheduler
-"""Feedforward scenario schedules and waveform factories for control studies."""
+"""Feedforward scenario schedules and waveform factories for control studies.
+
+The routines in this module produce deterministic reference waveforms for
+feedforward controllers and lightweight offline optimisation sweeps.
+"""
 
 from __future__ import annotations
 
@@ -148,7 +152,12 @@ class ScenarioOptimizer:
 
 
 def iter_15ma_baseline() -> ScenarioSchedule:
-    """Return the ITER-like 15 MA baseline feedforward schedule."""
+    """Return the ITER-like 15 MA baseline feedforward schedule.
+
+    Returns:
+        ScenarioSchedule: Time/actuator profile covering ramp-up, flat-top,
+        and current ramp-down phases.
+    """
     times = np.array([0, 10, 30, 60, 400, 430, 480], dtype=float)
     ip_vals = np.array([0.5, 5.0, 10.0, 15.0, 15.0, 10.0, 2.0])
     p_nbi = np.array([0.0, 0.0, 10.0, 33.0, 33.0, 10.0, 0.0])
@@ -166,7 +175,12 @@ def iter_15ma_baseline() -> ScenarioSchedule:
 
 
 def nstx_u_1ma_standard() -> ScenarioSchedule:
-    """Return the NSTX-U-like 1 MA standard feedforward schedule."""
+    """Return the NSTX-U-like 1 MA standard feedforward schedule.
+
+    Returns:
+        ScenarioSchedule: Compact pulse with actuator commands matched to
+        a short disrpution-free 1 MA operating window.
+    """
     times = np.array([0.0, 0.2, 0.5, 1.5, 1.8, 2.0])
     ip_vals = np.array([0.1, 0.5, 1.0, 1.0, 0.5, 0.1])
     p_aux = np.array([0.0, 2.0, 8.0, 8.0, 2.0, 0.0])
