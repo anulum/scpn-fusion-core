@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Sawtooth Model (Porcelli trigger + Kadomtsev reconnection)
+"""Porcelli-trigger and Kadomtsev-reconnection reduced-order sawtooth contracts."""
 from __future__ import annotations
 
 from dataclasses import dataclass
