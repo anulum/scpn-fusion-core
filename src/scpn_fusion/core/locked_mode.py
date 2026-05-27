@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Error Field Amplification and Locked Mode Chain
+"""Error-field and locked-mode chain models used for disruption-risk workflows."""
 from __future__ import annotations
 
 import math
@@ -14,6 +15,7 @@ import numpy as np
 
 
 class ErrorFieldSpectrum:
+    """Represent resonant error-field harmonics and alignment coupling."""
     def __init__(
         self,
         B0: float,
@@ -47,6 +49,7 @@ class ErrorFieldSpectrum:
         return float(1.0 / (1.0 + 0.35 * self.n_corrections))
 
     def set_coil_misalignment(self, delta_R_mm: float, delta_Z_mm: float) -> None:
+        """Update harmonics from coil radial/vertical offsets."""
         if not np.isfinite(delta_R_mm) or not np.isfinite(delta_Z_mm):
             raise ValueError("coil misalignment values must be finite")
         shift_mag = math.sqrt(delta_R_mm**2 + delta_Z_mm**2) / 1000.0
@@ -63,9 +66,11 @@ class ErrorFieldSpectrum:
         )
 
     def B_mn(self, m: int, n: int) -> float:
+        """Return raw B_mn harmonic amplitude for mode (m, n)."""
         return self.B_mn_components.get((m, n), 0.0)
 
     def corrected_B_mn(self, m: int, n: int, I_correction: float) -> float:
+        """Return corrected harmonic amplitude after applying coil compensation."""
         if not np.isfinite(I_correction) or I_correction < 0.0:
             raise ValueError("I_correction must be finite and non-negative")
         if m < 1 or n < 1:
@@ -80,6 +85,7 @@ class ErrorFieldSpectrum:
 
 
 class ResonantFieldAmplification:
+    """Model error-field amplification between finite-wall and no-wall limits."""
     def __init__(self, beta_N: float, beta_N_nowall: float):
         if not np.isfinite(beta_N) or beta_N < 0.0:
             raise ValueError("beta_N must be finite and non-negative")
@@ -89,22 +95,26 @@ class ResonantFieldAmplification:
         self.beta_N_nowall = beta_N_nowall
 
     def amplification_factor(self) -> float:
+        """Return amplification factor for the configured beta_N regime."""
         if self.beta_N >= self.beta_N_nowall:
             return float("inf")
         return 1.0 / (1.0 - self.beta_N / self.beta_N_nowall)
 
     def resonant_field(self, B_err: float) -> float:
+        """Convert raw error field to resonant amplified field."""
         return B_err * self.amplification_factor()
 
 
 @dataclass
 class RotationEvolution:
+    """Frozen state captured from rotation-evolution solve."""
     omega_trace: np.ndarray
     locked: bool
     lock_time: float
 
 
 class ModeLocking:
+    """Represent a reduced-order rotation damping model with locking threshold."""
     def __init__(
         self,
         R0: float,
@@ -178,6 +188,7 @@ class ModeLocking:
     def evolve_rotation(
         self, B_res: float, r_s: float, tau_visc: float, dt: float, n_steps: int
     ) -> RotationEvolution:
+        """Integrate toroidal rotation and return lock history."""
         if not np.isfinite(tau_visc) or tau_visc <= 0.0:
             raise ValueError("tau_visc must be finite and positive")
         if not np.isfinite(dt) or dt <= 0.0:
@@ -214,12 +225,14 @@ class ModeLocking:
 
 @dataclass
 class IslandGrowth:
+    """Store island-growth history and overlap diagnostics."""
     w_trace: np.ndarray
     overlap_time: float
     stochastic: bool
 
 
 class LockedModeIsland:
+    """Simple Rutherford island growth model."""
     def __init__(self, r_s: float, m: int, n: int, a: float, R0: float, delta_prime: float):
         self.r_s = r_s
         self.m = m
@@ -231,10 +244,9 @@ class LockedModeIsland:
     def grow(
         self, w0: float, eta: float, dt: float, n_steps: int, delta_r_mn: float = 0.3
     ) -> IslandGrowth:
-        """
-        w grows on resistive timescale.
-        dw/dt = (eta / mu0 r_s) * [r_s Delta' + C_lock r_s / w]
-        """
+        """Evolve island width on resistive timescale and detect stochastic overlap."""
+        # w grows on resistive timescale.
+        # dw/dt = (eta / mu0 r_s) * [r_s Delta' + C_lock r_s / w]
         w = max(w0, 1e-4)
         w_trace = np.zeros(n_steps)
         mu_0 = 4.0 * math.pi * 1e-7
@@ -261,6 +273,7 @@ class LockedModeIsland:
 
 @dataclass
 class ChainResult:
+    """Output contract for the error-field to disruption chain."""
     lock_time: float
     island_width_at_tq: float
     tq_trigger_time: float
@@ -269,10 +282,12 @@ class ChainResult:
 
 
 class ErrorFieldToDisruptionChain:
+    """Chain orchestration from error field through locking and disruption risk."""
     def __init__(self, config: dict[str, float]):
         self.config = config
 
     def run(self, B_err_n1: float, omega_phi_0: float) -> ChainResult:
+        """Run the chain and return a summarized disruption-risk result."""
         R0 = self.config.get("R0", 6.2)
         a = self.config.get("a", 2.0)
         B0 = self.config.get("B0", 5.3)
