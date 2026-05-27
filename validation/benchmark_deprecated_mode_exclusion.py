@@ -49,6 +49,13 @@ def _file_has_experimental_marker(path: Path) -> bool:
 
 
 def run_benchmark() -> dict[str, Any]:
+    """Evaluate runtime/runtime-mode guards for deprecated FNO lanes.
+
+    Returns
+    -------
+    dict[str, Any]
+        Benchmark payload with default/public mode checks and pass/fail flags.
+    """
     default_modes = scpn_cli._execution_plan(
         "all",
         include_surrogate=False,
@@ -109,6 +116,18 @@ def run_benchmark() -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the benchmark report as a Markdown table.
+
+    Parameters
+    ----------
+    report:
+        Result dictionary as emitted by :func:`run_benchmark`.
+
+    Returns
+    -------
+    str
+        Markdown document.
+    """
     g = report["deprecated_mode_exclusion_benchmark"]
     lines = [
         "# Deprecated Mode Exclusion Benchmark",
@@ -138,6 +157,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    """CLI entrypoint to write deprecated-mode exclusion benchmark artifacts."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-json",
