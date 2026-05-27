@@ -26,6 +26,18 @@ from validate_real_shots import validate_disruption
 
 
 def run_benchmark(*, disruption_dir: Path) -> dict[str, Any]:
+    """Run disruption replay-pipeline contract comparison.
+
+    Parameters
+    ----------
+    disruption_dir:
+        Directory of disruption shots used by :func:`validate_disruption`.
+
+    Returns
+    -------
+    dict[str, Any]
+        Benchmark contract payload with enabled/disabled pipeline consistency checks.
+    """
     default_a = validate_disruption(disruption_dir)
     default_b = validate_disruption(disruption_dir)
     disabled = validate_disruption(
@@ -93,6 +105,7 @@ def run_benchmark(*, disruption_dir: Path) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render disruption pipeline benchmark results as Markdown."""
     g = report["disruption_replay_pipeline_benchmark"]
     d0 = g["default"]
     d1 = g["disabled"]
@@ -130,6 +143,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for disruption replay pipeline benchmark artifact generation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--disruption-dir",
