@@ -24,6 +24,8 @@ def _controller_module() -> Any:
 
 
 class NeuroSymbolicControllerBackendMixin:
+    """Backend dispatch mixin for controller numeric kernels."""
+
     def _dense_activations(self, marking: np.ndarray) -> np.ndarray:
         controller_mod = _controller_module()
         if self._runtime_backend == "rust" and controller_mod._HAS_RUST_SCPN_RUNTIME:

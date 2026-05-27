@@ -112,7 +112,7 @@ def _encode_weight_matrix_packed(
     return packed
 
 
-# ── CompiledNet ──────────────────────────────────────────────────────────────
+    # ── CompiledNet ──────────────────────────────────────────────────────────────
 
 
 @dataclass
@@ -158,6 +158,7 @@ class CompiledNet:
 
     @property
     def has_stochastic_path(self) -> bool:
+        """Whether stochastic packed-bitstream kernels are available."""
         return self.W_in_packed is not None
 
     # ── Forward passes ───────────────────────────────────────────────────
@@ -257,6 +258,7 @@ class CompiledNet:
     # ── Convenience ──────────────────────────────────────────────────────
 
     def summary(self) -> str:
+        """Return a compact string summary of compilation mode and topology."""
         mode = "stochastic" if self.has_stochastic_path else "float-only"
         return (
             f"CompiledNet  P={self.n_places}  T={self.n_transitions}  "

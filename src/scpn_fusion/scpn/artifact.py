@@ -40,6 +40,8 @@ MAX_COMPRESSED_BYTES = 50_000_000
 
 @dataclass
 class FixedPoint:
+    """Numeric format for fixed-point arithmetic used in token encoding."""
+
     data_width: int
     fraction_bits: int
     signed: bool
@@ -47,6 +49,8 @@ class FixedPoint:
 
 @dataclass
 class SeedPolicy:
+    """Seed-policy metadata used to make replay deterministic."""
+
     id: str
     hash_fn: str
     rng_family: str
@@ -54,6 +58,8 @@ class SeedPolicy:
 
 @dataclass
 class CompilerInfo:
+    """Compiler identity injected during artifact generation."""
+
     name: str
     version: str
     git_sha: str
@@ -61,6 +67,8 @@ class CompilerInfo:
 
 @dataclass
 class ArtifactMeta:
+    """Top-level metadata for an SCPN controller artifact."""
+
     artifact_version: str
     name: str
     dt_control_s: float
@@ -75,12 +83,16 @@ class ArtifactMeta:
 
 @dataclass
 class PlaceSpec:
+    """Single place descriptor in the SPN topology."""
+
     id: int
     name: str
 
 
 @dataclass
 class TransitionSpec:
+    """Single transition descriptor in the SPN topology."""
+
     id: int
     name: str
     threshold: float
@@ -90,24 +102,32 @@ class TransitionSpec:
 
 @dataclass
 class Topology:
+    """Transition graph description for a controller artifact."""
+
     places: List[PlaceSpec]
     transitions: List[TransitionSpec]
 
 
 @dataclass
 class WeightMatrix:
+    """Dense weight matrix payload with row-major flattening."""
+
     shape: List[int]  # [rows, cols]
     data: List[float]  # row-major
 
 
 @dataclass
 class PackedWeights:
+    """Packed integer payload for compressed weight transport."""
+
     shape: List[int]  # [rows, cols, words]
     data_u64: List[int]
 
 
 @dataclass
 class PackedWeightsGroup:
+    """Bundle of packed inbound/outbound weight payloads."""
+
     words_per_stream: int
     w_in_packed: PackedWeights
     w_out_packed: Optional[PackedWeights] = None
@@ -115,6 +135,8 @@ class PackedWeightsGroup:
 
 @dataclass
 class Weights:
+    """Controller weights and optional packed weight transport variant."""
+
     w_in: WeightMatrix
     w_out: WeightMatrix
     packed: Optional[PackedWeightsGroup] = None
@@ -122,6 +144,8 @@ class Weights:
 
 @dataclass
 class ActionReadout:
+    """Single readout action projection configuration."""
+
     id: int
     name: str
     pos_place: int
@@ -130,6 +154,8 @@ class ActionReadout:
 
 @dataclass
 class Readout:
+    """Readout action channels exposed to host telemetry."""
+
     actions: List[ActionReadout]
     gains: List[float]
     abs_max: List[float]
@@ -138,6 +164,8 @@ class Readout:
 
 @dataclass
 class PlaceInjection:
+    """Injection source description for a marking place."""
+
     place_id: int
     source: str
     scale: float
@@ -147,6 +175,8 @@ class PlaceInjection:
 
 @dataclass
 class InitialState:
+    """Initial controller state for deterministic startup."""
+
     marking: List[float]
     place_injections: List[PlaceInjection]
 
@@ -166,10 +196,12 @@ class Artifact:
 
     @property
     def nP(self) -> int:
+        """Number of places in the controller topology."""
         return len(self.topology.places)
 
     @property
     def nT(self) -> int:
+        """Number of transitions in the controller topology."""
         return len(self.topology.transitions)
 
 

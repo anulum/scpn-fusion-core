@@ -18,6 +18,8 @@ FloatArray = NDArray[np.float64]
 
 
 class NeuroSymbolicControllerFeaturesMixin:
+    """Feature engineering and action decode mixin for controllers."""
+
     def _compute_feature_components(
         self, obs_map: Mapping[str, float]
     ) -> Tuple[FloatArray, FloatArray]:
