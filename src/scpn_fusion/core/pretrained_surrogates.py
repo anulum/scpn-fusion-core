@@ -74,6 +74,20 @@ def _default_surrogate_coverage() -> dict[str, Any]:
 
 
 def get_pretrained_surrogate_coverage(manifest: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Return the coverage metadata for pretrained surrogate availability.
+
+    Parameters
+    ----------
+    manifest
+        Optional user-provided manifest payload. If present and valid, its
+        ``coverage`` section is merged into the canonical shipped baseline.
+
+    Returns
+    -------
+    dict[str, Any]
+        Coverage report containing shipped models, user-training-only models,
+        coverage fraction, and explanatory notes.
+    """
     default_cov = _default_surrogate_coverage()
     if not manifest:
         return default_cov
@@ -95,6 +109,12 @@ def _as_repo_relative(path: Path) -> str:
 
 @dataclass(frozen=True)
 class PretrainedMLPSurrogate:
+    """In-memory two-layer MLP surrogate and normalisation metadata.
+
+    The weights are stored in a compact numpy format suitable for
+    :func:`numpy.savez` serialization and later reloading without external ML
+    dependencies.
+    """
     feature_mean: FloatArray
     feature_std: FloatArray
     w1: FloatArray
@@ -105,6 +125,19 @@ class PretrainedMLPSurrogate:
     target_std: float
 
     def predict(self, features: FloatArray) -> FloatArray:
+        """Predict confinement time from feature matrix.
+
+        Parameters
+        ----------
+        features
+            Two-dimensional feature matrix with shape ``(n_samples, n_features)``.
+
+        Returns
+        -------
+        FloatArray
+            Predicted confinement times in seconds, one entry per sample. Inputs
+            with shape ``(n_features,)`` are treated as a single-sample batch.
+        """
         x = np.asarray(features, dtype=np.float64)
         if x.ndim == 1:
             x = x.reshape(1, -1)
@@ -355,6 +388,27 @@ def evaluate_pretrained_fno(
     augment_per_file: int = 8,
     max_samples: int = 16,
 ) -> dict[str, float]:
+    """Evaluate a bundled FNO surrogate on synthetic Eurofusion-style references.
+
+    Parameters
+    ----------
+    fno_path
+        Path to the pretrained FNO weights file.
+    jet_dir
+        Directory containing GEQDSK cases used for evaluation sample generation.
+    seed
+        Random seed for deterministic augmentation in the synthetic dataset stage.
+    augment_per_file
+        Number of augmentations produced per source GEQDSK file.
+    max_samples
+        Maximum number of samples to include in evaluation; must be positive.
+
+    Returns
+    -------
+    dict[str, float]
+        Dictionary containing mean and 95th-percentile relative L2 errors and
+        evaluated sample count.
+    """
     if int(max_samples) <= 0:
         raise ValueError("max_samples must be > 0.")
     x, y = _build_jet_fno_dataset(jet_dir=jet_dir, seed=seed, augment_per_file=augment_per_file)
@@ -372,6 +426,15 @@ def evaluate_pretrained_fno(
 
 
 def save_pretrained_mlp(model: PretrainedMLPSurrogate, path: Path = DEFAULT_MLP_PATH) -> None:
+    """Persist a pretrained MLP surrogate to a compressed NumPy archive.
+
+    Parameters
+    ----------
+    model
+        Trained :class:`PretrainedMLPSurrogate` instance.
+    path
+        Target path where the ``.npz`` artifact will be written.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(
         path,
@@ -387,6 +450,18 @@ def save_pretrained_mlp(model: PretrainedMLPSurrogate, path: Path = DEFAULT_MLP_
 
 
 def load_pretrained_mlp(path: Path = DEFAULT_MLP_PATH) -> PretrainedMLPSurrogate:
+    """Load a persisted pretrained MLP surrogate from disk.
+
+    Parameters
+    ----------
+    path
+        Path to the saved ``.npz`` bundle.
+
+    Returns
+    -------
+    PretrainedMLPSurrogate
+        Reconstructed surrogate ready for deterministic inference.
+    """
     with checked_np_load(path, allow_pickle=False) as data:
         return PretrainedMLPSurrogate(
             feature_mean=np.asarray(data["feature_mean"], dtype=np.float64),
@@ -427,6 +502,22 @@ def evaluate_pretrained_mlp(
     csv_path: Path = DEFAULT_ITPA_CSV,
     max_samples: int = 0,
 ) -> dict[str, float]:
+    """Evaluate a pretrained MLP surrogate on ITPA reference samples.
+
+    Parameters
+    ----------
+    model_path
+        Path to the pretrained MLP archive.
+    csv_path
+        Input CSV dataset used for reference metrics.
+    max_samples
+        If set to a positive integer, only this many rows are used.
+
+    Returns
+    -------
+    dict[str, float]
+        RMSE metrics in seconds and percent plus evaluated sample count.
+    """
     model = load_pretrained_mlp(path=model_path)
     x, y = _load_itpa_training_data(csv_path)
     if max_samples > 0:
@@ -458,6 +549,54 @@ def bundle_pretrained_surrogates(
     mlp_path: Path = DEFAULT_MLP_PATH,
     fno_path: Path = DEFAULT_FNO_PATH,
 ) -> dict[str, Any]:
+    """Train (optionally), serialize, and bundle pretrained surrogates.
+
+    The helper emits an artifact manifest containing file paths, dataset
+    provenance and run-time metrics for traceability and reproducibility.
+
+    Parameters
+    ----------
+    force_retrain
+        When ``True``, rebuild both artifacts regardless of existing cache.
+    seed
+        Global random seed for both training pipelines.
+    itpa_csv_path
+        Source ITPA CSV file for MLP training/evaluation.
+    jet_dir
+        Directory with GEQDSK files for FNO training/evaluation.
+    mlp_hidden
+        Hidden width of the single hidden MLP layer.
+    mlp_epochs
+        Number of optimization epochs for MLP training.
+    mlp_lr
+        MLP learning rate.
+    mlp_l2
+        L2 regularization coefficient applied in MLP updates.
+    fno_modes
+        Number of Fourier modes used by the FNO model.
+    fno_width
+        FNO channel width.
+    fno_epochs
+        Number of FNO training epochs.
+    fno_batch_size
+        Mini-batch size used for FNO optimization.
+    fno_augment_per_file
+        Number of augmented samples drawn from each GEQDSK input.
+    weights_dir
+        Output directory for generated artifact files.
+    manifest_path
+        Path where metadata manifest is persisted.
+    mlp_path
+        Target path for serialized MLP artifact.
+    fno_path
+        Target path for serialized FNO artifact.
+
+    Returns
+    -------
+    dict[str, Any]
+        Manifest payload with generated artefacts, datasets, run-time config,
+        metric values, and coverage map.
+    """
     if int(mlp_hidden) <= 0:
         raise ValueError("mlp_hidden must be > 0.")
     if int(mlp_epochs) <= 0:
