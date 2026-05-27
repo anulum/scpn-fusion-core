@@ -28,6 +28,8 @@ DEFAULT_SUMMARY_JSON = REPO_ROOT / "docs" / "UNDERDEVELOPED_SCOPE_SUMMARY.json"
 
 @dataclass(frozen=True)
 class ScopeSnapshot:
+    """Per-scope snapshot of underdevelopment debt counts."""
+
     scope: str
     total_entries: int
     p0_p1_entries: int
@@ -128,6 +130,19 @@ def _normalize_json_for_check(payload_text: str) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate split scope reports for source code and docs-claims debt.
+
+    Args:
+        argv: Optional CLI args. If omitted, uses process arguments from
+            ``sys.argv`` through ``argparse``.
+
+    Returns:
+        Exit status code: ``0`` for success, ``1`` when check-mode detects drift.
+
+    Raises:
+        ValueError: If ``--top-limit`` or ``--full-limit`` are set below 1.
+        SystemExit: If CLI parsing fails.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-output", default=str(DEFAULT_SOURCE_MD))
     parser.add_argument("--docs-output", default=str(DEFAULT_DOCS_MD))
