@@ -256,7 +256,7 @@ scpn-fusion-core/
 |       +-- fusion-control/       # PID, MPC, disruption
 |       +-- fusion-ml/            # Inference engine
 |       +-- fusion-python/        # PyO3 bindings
-+-- tests/               (334)    # 3,815 test functions (Hypothesis property tests)
++-- tests/               (382)    # 3,817 test functions (Hypothesis property tests)
 +-- validation/           (74)    # Benchmark pipeline + reference data
 +-- examples/             (16)    # 10 Jupyter notebooks + 6 scripts
 ```
