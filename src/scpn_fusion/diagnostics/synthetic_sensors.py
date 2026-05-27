@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Synthetic Sensors
+"""Synthetic diagnostics surface generating magnetics, bolometer and interferometry signals."""
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -272,6 +273,7 @@ class SensorSuite:
         )
 
     def visualize_setup(self):
+        """Plot diagnostic geometry and return a Matplotlib figure."""
         fig, ax = plt.subplots()
         ax.set_title("Diagnostics Geometry")
         # Plasma contour

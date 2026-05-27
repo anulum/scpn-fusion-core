@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Tomography
+"""Tomographic reconstruction tools for synthetic diagnostic post-processing."""
 from __future__ import annotations
 
 from typing import Any
@@ -148,6 +149,7 @@ class PlasmaTomography:
         ground_truth: np.ndarray,
         reconstruction: np.ndarray,
     ):
+        """Plot and return a two-panel ghost ground-truth vs reconstruction figure."""
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
         ax1.set_title("Ground Truth (Phantom)")
