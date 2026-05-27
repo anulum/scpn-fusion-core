@@ -304,6 +304,11 @@ def generate(
 
 
 def main() -> None:
+    """Generate FNO spatial train/validation datasets from synthetic equilibria.
+
+    Accepts CLI options for source weights, output directory, sample count,
+    grid size, and RNG seed.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=Path, default=DEFAULT_WEIGHTS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
