@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Sandpile Fusion Reactor
+"""Toy SOC/turbulence sandpile model and HJB-style control demo contracts."""
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -112,6 +113,20 @@ class HJB_Avalanche_Controller:
         self.alpha = 0.1  # Learning rate / Reaction speed
 
     def act(self, last_avalanche_size, current_core_temp):
+        """Return a bounded suppression action from the latest avalanche size.
+
+        Parameters
+        ----------
+        last_avalanche_size
+            Observed avalanche size from previous step.
+        current_core_temp
+            Current core pseudo-temperature proxy used to bias control action.
+
+        Returns
+        -------
+        float
+            Shear/control signal in the range [0, 1].
+        """
         # Heuristic Policy derived from Optimal Control:
         # If avalanche is big (instability), clamp down (increase shear).
         # If stable but low temp, relax shear (to allow some transport/fueling).
@@ -135,6 +150,7 @@ class HJB_Avalanche_Controller:
 
 
 def run_sandpile_simulation():
+    """Run the sandpile control demonstration and write a PNG diagnostic report."""
     print("--- SCPN FUSION: Self-Organized Criticality (Sandpile) Model ---")
 
     reactor = TokamakSandpile(L)
