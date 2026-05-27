@@ -23,12 +23,14 @@ DEFAULT_OUTPUT = REPO_ROOT / "docs" / "CLAIMS_EVIDENCE_MAP.md"
 
 @dataclass(frozen=True)
 class EvidencePattern:
+    """Single evidence-pattern tuple linking a file and regex pattern."""
     file: str
     pattern: str
 
 
 @dataclass(frozen=True)
 class ClaimSpec:
+    """Parsed claim contract extracted from the claims manifest."""
     claim_id: str
     source_file: str
     source_pattern: str
@@ -70,6 +72,14 @@ def _parse_evidence_patterns(value: Any) -> tuple[EvidencePattern, ...]:
 
 
 def load_manifest(path: Path) -> tuple[ClaimSpec, ...]:
+    """Load and validate ``claims_manifest.json`` into ``ClaimSpec`` objects.
+
+    Args:
+        path: Filesystem path to the claims manifest JSON file.
+
+    Returns:
+        Parsed and deduplicated claim specifications.
+    """
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("Claims manifest must be a JSON object.")
@@ -108,6 +118,15 @@ def _escape_cell(text: str) -> str:
 
 
 def render_markdown(claims: tuple[ClaimSpec, ...], manifest_path: str) -> str:
+    """Render a Markdown evidence map for all declared claims.
+
+    Args:
+        claims: Validated claim specifications to render.
+        manifest_path: Manifest path string shown in the generated header.
+
+    Returns:
+        Rendered Markdown document as a single string.
+    """
     lines: list[str] = [
         "# Claims Evidence Map",
         "",
@@ -169,6 +188,17 @@ def render_markdown(claims: tuple[ClaimSpec, ...], manifest_path: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Render or validate ``docs/CLAIMS_EVIDENCE_MAP.md`` from manifest input.
+
+    Supports a dry-check mode that exits non-zero when the output is missing or
+    stale compared with current manifest rendering.
+
+    Args:
+        argv: Optional CLI args. If omitted, reads from process arguments.
+
+    Returns:
+        0 on success, 1 when validation/check mode detects drift.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--manifest",
