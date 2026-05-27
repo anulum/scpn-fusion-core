@@ -44,6 +44,7 @@ REL_RMSE_THRESHOLD = 0.25
 
 
 class TransportCase(NamedTuple):
+    """Container for a single synthetic TORAX-like transport comparison case."""
     name: str
     R0: float  # major radius [m]
     a: float  # minor radius [m]
@@ -166,6 +167,7 @@ def _rel_rmse(ref: FloatArray, pred: FloatArray) -> float:
 
 
 def run_benchmark(*, require_neural_transport: bool = False) -> dict[str, Any]:
+    """Run TORAX synthetic transport benchmark across all configured cases."""
     t0 = time.time()
     cases: list[dict[str, Any]] = []
     all_pass = True
@@ -215,6 +217,7 @@ def run_benchmark(*, require_neural_transport: bool = False) -> dict[str, Any]:
 
 
 def main() -> int:
+    """Run TORAX cross-validation and return strict pass/fail exit code."""
     parser = argparse.ArgumentParser(description="TORAX synthetic transport cross-validation")
     parser.add_argument(
         "--strict-backend",
