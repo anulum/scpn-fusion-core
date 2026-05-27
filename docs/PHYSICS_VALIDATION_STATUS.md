@@ -277,7 +277,7 @@ For production FNO retraining on real gyrokinetic data:
 2. Service trains on GENE/CGYRO flux-tube runs externally.
 3. Import: `python tools/import_external_fno_weights.py --manifest ... --weights ...`
 4. Validate: re-run full pipeline.
-Runbook: `docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`
+Runbook: local-only retraining operations log and `validation/task2_pretrained_surrogates_benchmark.py`
 
 ### Pretrained Weights Status
 

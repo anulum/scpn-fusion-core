@@ -32,7 +32,7 @@ Advanced lanes were delivered incrementally, but there is no deterministic gate 
   - `validation/reports/gdep_05_release_readiness.md`
   - `tests/test_gdep_05_release_readiness.py`
 - Tracker path:
-  - `docs/internal/PHASE2_ADVANCED_RFC_TRACKER.md`
+  - local coordination note that captures advanced RFC status (`.coordination/`).
 
 ## 4. Data and Dependency Readiness
 

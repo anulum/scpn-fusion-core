@@ -65,7 +65,7 @@ synthetic Solov'ev equilibria and template-generated profiles. The DIII-D
 disruption shots are reference profiles reconstructed from published parameters,
 not raw MDSplus data.
 
-Full claims-to-evidence audit: [`docs/CLAIMS_EVIDENCE_MAP.md`](CLAIMS_EVIDENCE_MAP.md)
+Full claims-to-evidence audit: generated via `python tools/generate_claims_evidence_map.py --check`.
 
 ## Phase 5+6+GK Scope Boundaries
 
@@ -88,6 +88,6 @@ Each carries explicit fidelity limitations.
 
 ## Underdeveloped flags
 
-The auto-generated [`UNDERDEVELOPED_REGISTER.md`](../UNDERDEVELOPED_REGISTER.md)
-tracks the current flag count across the codebase (see Executive Summary for
-live totals). The register is regenerated on each release and CI-gated.
+The auto-generated underdeveloped register (`tools/generate_underdeveloped_register.py`)
+tracks the current flag count across the codebase (see executive summary for live
+totals). The register is regenerated on each release and CI-gated.

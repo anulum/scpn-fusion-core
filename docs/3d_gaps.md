@@ -61,8 +61,8 @@ The following high-impact instruction packs have been normalized to existing rep
 | SCPN compiler enhancement pack | `src/scpn_fusion/scpn/structure.py`, `src/scpn_fusion/scpn/compiler.py`, `src/scpn_fusion/scpn/contracts.py`, `src/scpn_fusion/scpn/controller.py`, `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py`, `tests/test_gneu_01_benchmark.py`, `validation/gneu_01_benchmark.py` |
 
 Notes:
-- Source instruction documents under `03_CODE/SCPN-Fusion-Core/src/scpn_fusion/*/Enhancement Plan*.md` are local coordination inputs and are not mirrored to GitHub.
-- Execution queue authority remains `docs/internal/PHASE3_EXECUTION_REGISTRY.md`.
+- Source instruction documents under `src/scpn_fusion/*/Enhancement Plan*.md` are local coordination inputs and are not mirrored to GitHub.
+- Execution queue authority remains local coordination notes under `.coordination/` and is not mirrored in public-facing docs.
 
 ## Restructured Phase 2 Tracks
 
@@ -101,8 +101,8 @@ Notes:
 
 ## Next Sprint Queue
 
-Execution queue is defined in `docs/internal/NEXT_SPRINT_EXECUTION_QUEUE.md`.
-Advanced-task RFC tracking is maintained in `docs/internal/PHASE2_ADVANCED_RFC_TRACKER.md`.
+Execution queue is defined in local `.coordination/` operational notes.
+Advanced-task RFC tracking is maintained in local coordination notes and is not mirrored in public docs.
 
 Only items in that queue are considered in-sprint active work.
 

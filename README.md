@@ -128,8 +128,9 @@ This is **not** a replacement for TRANSP, JINTRAC, or GENE. It is a
 **control-algorithm development framework** with reduced-order physics models
 fast enough for real-time loop closure. See
 [`docs/HONEST_SCOPE.md`](docs/HONEST_SCOPE.md) for the full limitations
-assessment, and [`docs/CLAIMS_EVIDENCE_MAP.md`](docs/CLAIMS_EVIDENCE_MAP.md)
-for every claim mapped to its evidence artifact.
+assessment, and
+`python tools/generate_claims_evidence_map.py --check` for every claim mapped
+to its evidence artifact.
 
 Top limitations:
 - No GENE/CGYRO-class full nonlinear 5D turbulence campaign in-loop; native nonlinear GK is a bounded NumPy/JAX research solver with explicit invariant benchmarks.
@@ -467,10 +468,10 @@ module returns structured errors.
 | Underdeveloped entries | 115 (tracked, auto-regenerated) |
 
 Audit artifacts:
-- [Underdeveloped register](UNDERDEVELOPED_REGISTER.md)
-- [Claims evidence map](docs/CLAIMS_EVIDENCE_MAP.md)
-- [Validation gate matrix](docs/VALIDATION_GATE_MATRIX.md)
-- [Release acceptance checklist](docs/RELEASE_ACCEPTANCE_CHECKLIST.md)
+- Underdeveloped register: generated via `python tools/generate_underdeveloped_register.py`
+- Claims evidence map: generated via `python tools/generate_claims_evidence_map.py`
+- Validation gate matrix: generated via `python tools/check_release_acceptance.py`
+- Release acceptance checklist: generated via `python tools/check_release_acceptance.py --expected-version <version>`
 - [Honest scope](docs/HONEST_SCOPE.md)
 - [Competitive analysis](docs/competitive_analysis.md)
 

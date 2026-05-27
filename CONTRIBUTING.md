@@ -245,7 +245,7 @@ python tools/run_python_preflight.py --gate all
 ### Local CI-First Rules (Mandatory)
 
 1. Never push without a green local preflight gate (`release` at minimum).
-2. Never use `--no-verify` to bypass hooks except for incident recovery; if used, document reason in `docs/internal/CI_FAILURE_LEDGER.md`.
+2. Never use `--no-verify` to bypass hooks except for incident recovery; if used, document reason in local governance notes (`.coordination/`).
 3. Treat `drift detected` and `manifest is stale` as local process failures; regenerate artifacts and re-run preflight before push.
 4. Treat infrastructure-only errors (e.g., upstream HTTP 500 from GitHub services) as transient and re-run CI before changing code.
 5. Keep `core.hooksPath=.githooks` configured in every local clone.
@@ -275,7 +275,7 @@ cargo bench
 ### Continuous Integration
 
 The CI pipeline runs on every push and pull request. It checks:
-- `black --check` and `ruff check` (Python formatting/linting)
+- `ruff check` (Python formatting/linting; ruff format is configured for style checks)
 - `python tools/run_mypy_strict.py` (strict Python typing)
 - `cargo fmt --check` and `cargo clippy` (Rust formatting/linting)
 - `pytest tests/` (Python test suite)
@@ -454,7 +454,8 @@ on our issue tracker. Some ideas:
 - Add GEQDSK test cases from publicly available tokamak data (MAST-U, W7-X).
 - Add Hypothesis property tests for numerical routines in `core/`.
 - Write a new tutorial notebook demonstrating a specific physics module.
-- Reduce P0/P1 entries in [`UNDERDEVELOPED_REGISTER.md`](UNDERDEVELOPED_REGISTER.md) (see Executive Summary for current counts).
+- Reduce P0/P1 entries by running `python tools/generate_underdeveloped_register.py --check`
+  and fixing current register gaps (see executive summary for live counts).
 - Contribute real experimental validation data (equilibria, confinement profiles).
 
 ---

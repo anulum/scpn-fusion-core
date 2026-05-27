@@ -3,7 +3,7 @@
 > Last updated: 2026-05-27. This roadmap reflects current priorities and may
 > change based on community feedback and validation results.
 
-Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_DAY_EXECUTION_PLAN.md)
+Execution detail: maintained in local-only governance notes (not exposed in public docs).
 
 ## Current Snapshot (2026-05-27)
 
@@ -11,7 +11,7 @@ Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_
 |---|---|---|
 | Source modules | **277 Python files**, 73,552 lines | `src/scpn_fusion/` |
 | Tests | **3,817 tests** (382 test files) | `pytest tests/ -v` |
-| Underdeveloped register | See `UNDERDEVELOPED_REGISTER.md` (auto-generated, CI-gated) | `tools/generate_underdeveloped_register.py --check` |
+| Underdeveloped register | Auto-generated, CI-gated via `tools/generate_underdeveloped_register.py --check` | `tools/generate_underdeveloped_register.py --check` |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
 | QLKNN transport surrogate | **test_rel_L2 = 0.094** (GPU L40S, 500K samples, gated 1024×512×256, 911 epochs) | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence (JAX) | **val_rel_L2 = 0.055** (4-layer, modes=24, width=128, 5-channel input, 5000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |
@@ -75,7 +75,7 @@ Next targets for v4.0:
 
 The legacy NumPy FNO (rel_L2 = 0.79) is DEPRECATED and will be removed in v4.0.
 
-Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md)
+Runbook: execute `validation/task10_free_boundary_state_estimation_disturbance.py` and linked benchmark scripts in `validation/`.
 
 ### Expand real-data validation
 
@@ -88,7 +88,7 @@ Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNB
 
 ### Reduce underdeveloped flag count
 
-Current totals are tracked in `UNDERDEVELOPED_REGISTER.md` (auto-generated each
+Current totals are tracked via `tools/generate_underdeveloped_register.py` (auto-generated each
 hardening wave). As of 2026-05-27: **18 total flags**, 8 P0/P1.
 Target for v4.0: resolve all P0/P1 flags, reduce total below 80.
 
