@@ -109,6 +109,20 @@ def run_benchmark(
     disruption_dir: Path,
     source_scenarios: tuple[str, ...],
 ) -> dict[str, Any]:
+    """Evaluate disruption transfer-generalization from source to held-out scenarios.
+
+    Parameters
+    ----------
+    disruption_dir:
+        Directory containing disruption-shot outputs.
+    source_scenarios:
+        Scenario names treated as source-domain calibration cohorts.
+
+    Returns
+    -------
+    dict[str, Any]
+        Report payload including source/target group metrics and pass flags.
+    """
     disruption = validate_disruption(disruption_dir)
     shots = disruption.get("shots", [])
     if not isinstance(shots, list):
@@ -210,6 +224,7 @@ def _render_md(report: dict[str, Any], *, disruption_dir: Path) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint to run and export transfer-generalization benchmark reports."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--disruption-dir",
