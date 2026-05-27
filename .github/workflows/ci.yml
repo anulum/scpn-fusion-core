@@ -577,6 +577,8 @@ jobs:
           transfer = json.loads(Path("artifacts/disruption_transfer_generalization.json").read_text(encoding="utf-8"))
           vertical = json.loads(Path("artifacts/vertical_control_replay_benchmark.json").read_text(encoding="utf-8"))
           vertical_profiles = json.loads(Path("artifacts/vertical_control_replay_profiles.json").read_text(encoding="utf-8"))
+          vertical_md = Path("artifacts/vertical_control_replay_benchmark.md").read_text(encoding="utf-8")
+          vertical_profiles_md = Path("artifacts/vertical_control_replay_profiles.md").read_text(encoding="utf-8")
 
           torax_cases = torax.get("cases", [])
           sparc_cases = sparc.get("cases", [])
@@ -635,6 +637,14 @@ jobs:
               f"profiles={len(vertical_profiles['vertical_control_replay_profile_suite']['profile_ids'])}, "
               f"all_profiles_pass={vertical_profiles['vertical_control_replay_profile_suite']['all_profiles_pass']}"
           )
+          for marker in (
+              "- Overall pass:",
+              "- Deterministic replay pass:",
+          ):
+              if marker not in vertical_md:
+                  raise SystemExit(f"vertical markdown report missing marker: {marker}")
+          if "## Profile suite" not in vertical_profiles_md:
+              raise SystemExit("vertical profile markdown report missing profile suite section")
           PY
       - name: Fallback budget guard
         run: |
