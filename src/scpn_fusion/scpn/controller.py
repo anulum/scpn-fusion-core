@@ -321,18 +321,22 @@ class NeuroSymbolicController(
 
     @property
     def runtime_backend_name(self) -> str:
+        """Active runtime backend label (``numpy`` or ``rust``)."""
         return self._runtime_backend
 
     @property
     def runtime_profile_name(self) -> str:
+        """Active runtime profile label (``float`` or ``stochastic``)."""
         return self._runtime_profile
 
     @property
     def marking(self) -> List[float]:
+        """Return the current marking as a Python ``list`` of floats."""
         return cast(List[float], self._marking.tolist())
 
     @marking.setter
     def marking(self, values: Sequence[float]) -> None:
+        """Set the current marking from any float-compatible sequence."""
         arr = np.asarray(list(values), dtype=np.float64)
         if arr.shape != (self._nP,):
             raise ValueError(f"marking must have length {self._nP}, got {arr.size}")

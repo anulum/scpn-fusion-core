@@ -351,26 +351,32 @@ class StochasticPetriNet:
 
     @property
     def n_places(self) -> int:
+        """Return the number of places in this net."""
         return len(self._places)
 
     @property
     def n_transitions(self) -> int:
+        """Return the number of transitions in this net."""
         return len(self._transitions)
 
     @property
     def place_names(self) -> List[str]:
+        """Return place names in stable definition order."""
         return list(self._places)
 
     @property
     def transition_names(self) -> List[str]:
+        """Return transition names in stable definition order."""
         return list(self._transitions)
 
     @property
     def is_compiled(self) -> bool:
+        """Return whether the net has been compiled."""
         return self._compiled
 
     @property
     def last_validation_report(self) -> Dict[str, object] | None:
+        """Return the latest validation report, or ``None`` if not validated yet."""
         return self._last_validation_report
 
     def get_initial_marking(self) -> FloatArray:

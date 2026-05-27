@@ -183,6 +183,7 @@ class SafetyInterlockRuntime:
 
     @property
     def marking(self) -> np.ndarray:
+        """Return a copy of the current safety marking state."""
         return self._marking.copy()
 
     def set_safety_tokens(self, tokens: Mapping[str, float]) -> None:
