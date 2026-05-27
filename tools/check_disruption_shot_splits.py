@@ -77,6 +77,7 @@ def _manifest_shot_ids(manifest: dict[str, Any]) -> set[int]:
 
 
 def validate_splits(split_data: dict[str, Any], manifest_data: dict[str, Any]) -> list[str]:
+    """Validate disjoint split coverage and manifest consistency for disruption shots."""
     errors: list[str] = []
     parsed: dict[str, list[int]] = {}
     try:
@@ -113,6 +114,7 @@ def validate_splits(split_data: dict[str, Any], manifest_data: dict[str, Any]) -
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run split-manifest validation as a CLI command and return an exit status."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--splits",
