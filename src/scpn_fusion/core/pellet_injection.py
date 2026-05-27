@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Pellet Injection Physics
+"""Pellet injection and fueling utilities for ELM pacing and edge density control."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ import numpy as np
 
 @dataclass
 class PelletParams:
+    """Input parameters describing a single pellet."""
     r_p_mm: float  # [mm]
     v_p_m_s: float  # [m/s]
     M_p: float = 2.0
@@ -23,6 +25,7 @@ class PelletParams:
 
 @dataclass
 class PelletResult:
+    """Result of a pellet trajectory simulation."""
     penetration_depth: float
     deposition_profile: np.ndarray
     total_particles: float
@@ -31,6 +34,7 @@ class PelletResult:
 
 @dataclass
 class PelletInjectionCommand:
+    """Scheduled pellet command emitted by fueling logic."""
     inject_time: float
     pellet_params: PelletParams
 
@@ -54,6 +58,8 @@ def ngs_ablation_rate(r_p: float, ne: float, Te_eV: float, M_p: float) -> float:
 
 
 class PelletTrajectory:
+    """Toy model for ablation-limited pellet penetration and deposition."""
+
     def __init__(self, params: PelletParams, R0: float, a: float, B0: float):
         self.params = params
         self.R0 = R0
@@ -66,6 +72,7 @@ class PelletTrajectory:
         self.N_initial = volume_m3 * self.n_solid
 
     def simulate(self, rho: np.ndarray, ne: np.ndarray, Te_eV: np.ndarray) -> PelletResult:
+        """Simulate radial penetration and deposition on the given profiles."""
         N_p = self.N_initial
         r_p_m = self.params.r_p_mm * 1e-3
 
@@ -163,6 +170,8 @@ class PelletTrajectory:
 
 
 class PelletFuelingController:
+    """Simple density-setpoint controller for pellet fueling."""
+
     def __init__(self, target_density: float, pellet_params: PelletParams):
         self.target_density = target_density
         self.pellet_params = pellet_params
@@ -173,6 +182,7 @@ class PelletFuelingController:
         self.last_injection = -100.0
 
     def required_frequency(self, ne_current: float, tau_p: float, V_plasma: float) -> float:
+        """Compute nominal injection frequency needed to sustain the density target."""
         # N_target = target * V, N_current = current * V
         # dN/dt = -N/tau_p + S_pellet
         # S_pellet = f * N_pellet
@@ -184,6 +194,20 @@ class PelletFuelingController:
     def step(
         self, ne_profile: np.ndarray, Te_profile: np.ndarray, dt: float, V_plasma: float
     ) -> PelletInjectionCommand | None:
+        """
+        Advance one controller step and return a pellet command when triggered.
+
+        Parameters
+        ----------
+        ne_profile : np.ndarray
+            Density profile [10^19 m^-3].
+        Te_profile : np.ndarray
+            Electron temperature profile (unused but kept for API compatibility).
+        dt : float
+            Step duration in seconds.
+        V_plasma : float
+            Plasma volume [m^3].
+        """
         self.time += dt
 
         current_density = np.mean(ne_profile)
