@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Modified Rutherford Equation & NTM Dynamics
+"""Neoclassical tearing mode search/suppression helpers and island dynamics."""
 from __future__ import annotations
 
 from dataclasses import dataclass
