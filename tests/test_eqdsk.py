@@ -56,6 +56,18 @@ def _make_synthetic(nw: int = 17, nh: int = 17) -> GEqdsk:
     )
 
 
+def _write_scaled_sparc_fixture(path: Path) -> tuple[GEqdsk, GEqdsk]:
+    """Create a synthetic SPARC-named GEQDSK fixture with scaled profiles."""
+    base = _make_synthetic()
+    scaled = _make_synthetic()
+    scale = 1.0 / (2.0 * np.pi)
+    scaled.ffprime = base.ffprime * scale
+    scaled.pprime = base.pprime * scale
+    scaled.description = "sparc style synthetic fixture"
+    write_geqdsk(scaled, path)
+    return base, scaled
+
+
 # ── Round-trip tests ──────────────────────────────────────────────────
 
 
@@ -243,3 +255,45 @@ class TestGEqdskParserHardening:
 
         with pytest.raises(ValueError, match="grid dimensions"):
             read_geqdsk(path)
+
+
+class TestEqdskSourceConvention:
+    """Source-convention controls for known public SPARC cases."""
+
+    def test_default_read_is_strict_raw_canonical(self, tmp_path: Path) -> None:
+        base, _scaled = _write_scaled_sparc_fixture(tmp_path / "sparc_1310.eqdsk")
+        eq = read_geqdsk(tmp_path / "sparc_1310.eqdsk")
+
+        assert eq.source_convention == "raw_canonical"
+        assert eq.source_convention_adapter == "not_applied"
+        assert not eq.source_convention_adapter_pass
+        np.testing.assert_allclose(eq.ffprime, base.ffprime * (1.0 / (2.0 * np.pi)), rtol=0, atol=0)
+        np.testing.assert_allclose(eq.pprime, base.pprime * (1.0 / (2.0 * np.pi)), rtol=0, atol=0)
+
+    def test_named_public_adapter_applies_scale_on_request(self, tmp_path: Path) -> None:
+        base, _scaled = _write_scaled_sparc_fixture(tmp_path / "sparc_1310.eqdsk")
+        eq = read_geqdsk(
+            tmp_path / "sparc_1310.eqdsk",
+            source_convention_mode="public_sparc_named_adapter",
+        )
+
+        assert eq.source_convention == "canonical"
+        assert eq.source_convention_adapter == "scaled_by_2pi"
+        assert eq.source_convention_adapter_pass
+        assert eq.source_convention_metadata["provenance"] == "public_sparc_named_adapter"
+        np.testing.assert_allclose(eq.ffprime, base.ffprime, rtol=0, atol=0)
+        np.testing.assert_allclose(eq.pprime, base.pprime, rtol=0, atol=0)
+
+    def test_named_adapter_only_applies_to_known_cases(self, tmp_path: Path) -> None:
+        _, scaled = _write_scaled_sparc_fixture(tmp_path / "other_sparc_style_case.eqdsk")
+        eq = read_geqdsk(
+            tmp_path / "other_sparc_style_case.eqdsk",
+            source_convention_mode="public_sparc_named_adapter",
+        )
+
+        assert eq.source_convention == "raw_canonical"
+        assert eq.source_convention_adapter == "no_named_adapter"
+        assert not eq.source_convention_adapter_pass
+        assert eq.source_convention_metadata["provenance"] == "public_sparc_named_adapter_no_match"
+        np.testing.assert_allclose(eq.ffprime, scaled.ffprime, rtol=0, atol=0)
+        np.testing.assert_allclose(eq.pprime, scaled.pprime, rtol=0, atol=0)

@@ -35,6 +35,22 @@ MAX_GEQDSK_BYTES = 10 * 1024 * 1024
 MAX_GEQDSK_GRID_POINTS = 1_000_000
 MAX_GEQDSK_CONTOUR_POINTS = 100_000
 
+GEQDSK_SOURCE_CONVENTION_MODES = {
+    "raw_canonical": "raw_canonical",
+    "public_sparc_named_adapter": "public_sparc_named_adapter",
+}
+
+GEQDSK_PUBLIC_SPARC_SOURCE_ADAPTERS = {
+    "sparc_1305.eqdsk": "scaled_by_2pi",
+    "sparc_1310.eqdsk": "scaled_by_2pi",
+    "sparc_1315.eqdsk": "scaled_by_2pi",
+    "sparc_1349.eqdsk": "scaled_by_2pi",
+}
+
+GEQDSK_SOURCE_CONVENTION_ADAPTERS = {
+    "scaled_by_2pi": 2.0 * np.pi,
+}
+
 
 # ── Data container ────────────────────────────────────────────────────
 
@@ -76,6 +92,12 @@ class GEqdsk:
     zbdry: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
     rlim: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
     zlim: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+
+    # Source convention metadata
+    source_convention: str = "raw_canonical"
+    source_convention_adapter: str = "not_applied"
+    source_convention_adapter_pass: bool = False
+    source_convention_metadata: dict[str, object] = field(default_factory=dict)
 
     # ── Derived grids ─────────────────────────────────────────────────
 
@@ -202,7 +224,68 @@ def _validate_contour_count(name: str, value: int) -> None:
         raise ValueError(f"GEQDSK {name} count exceeds safety limit {MAX_GEQDSK_CONTOUR_POINTS}")
 
 
-def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
+def _detect_named_source_adapter(path: Path) -> str | None:
+    """Return the explicit source adapter for known public SPARC filenames."""
+    return GEQDSK_PUBLIC_SPARC_SOURCE_ADAPTERS.get(path.name.lower())
+
+
+def _apply_source_adapter(
+    eq: GEqdsk,
+    *,
+    convention: str,
+    source_file: Path,
+    mode: str,
+) -> GEqdsk:
+    """Apply a documented source-convention adapter and record provenance."""
+    if convention == "canonical":
+        eq.source_convention = "canonical"
+        eq.source_convention_adapter = "not_needed"
+        eq.source_convention_adapter_pass = True
+        eq.source_convention_metadata = {
+            "requested_mode": mode,
+            "source_file": source_file.name,
+            "adapter": "not_applied",
+            "applied_scale": 1.0,
+            "provenance": "none",
+        }
+        return eq
+
+    multiplier = GEQDSK_SOURCE_CONVENTION_ADAPTERS.get(convention)
+    if multiplier is None:
+        eq.source_convention = "unsupported"
+        eq.source_convention_adapter = convention
+        eq.source_convention_adapter_pass = False
+        eq.source_convention_metadata = {
+            "requested_mode": mode,
+            "source_file": source_file.name,
+            "adapter": convention,
+            "applied_scale": float("nan"),
+            "provenance": "unsupported_named_adapter",
+            "error": "unsupported source convention adapter",
+        }
+        return eq
+
+    eq.ffprime = multiplier * eq.ffprime
+    eq.pprime = multiplier * eq.pprime
+    eq.source_convention = "canonical"
+    eq.source_convention_adapter = convention
+    eq.source_convention_adapter_pass = True
+    eq.source_convention_metadata = {
+        "requested_mode": mode,
+        "source_file": source_file.name,
+        "adapter": convention,
+        "applied_scale": float(multiplier),
+        "provenance": "public_sparc_named_adapter",
+        "public_case": source_file.name,
+    }
+    return eq
+
+
+def read_geqdsk(
+    path: Union[str, Path],
+    *,
+    source_convention_mode: str = "raw_canonical",
+) -> GEqdsk:
     """
     Read a G-EQDSK file and return a :class:`GEqdsk` container.
 
@@ -214,6 +297,12 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
     ----------
     path : str or Path
         Path to the G-EQDSK file.
+    source_convention_mode : {"raw_canonical", "public_sparc_named_adapter"}
+        ``raw_canonical`` keeps parsed ``ffprime`` and ``pprime`` in raw file
+        units (default, strict mode).
+
+        ``public_sparc_named_adapter`` applies a documented, source-aware
+        adapter only for explicitly recognized public SPARC files.
 
     Returns
     -------
@@ -221,6 +310,12 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
         Parsed equilibrium data.
     """
     path = Path(path)
+    if source_convention_mode not in GEQDSK_SOURCE_CONVENTION_MODES:
+        raise ValueError(
+            "Unsupported source_convention_mode: "
+            f"{source_convention_mode}. Expected one of: "
+            + ", ".join(sorted(GEQDSK_SOURCE_CONVENTION_MODES.keys()))
+        )
     size = path.stat().st_size
     if size > MAX_GEQDSK_BYTES:
         raise ValueError(f"GEQDSK file too large: {size} bytes exceeds {MAX_GEQDSK_BYTES}")
@@ -312,7 +407,7 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
         rlim[i] = _next()
         zlim[i] = _next()
 
-    return GEqdsk(
+    eq = GEqdsk(
         description=desc,
         nw=nw,
         nh=nh,
@@ -338,6 +433,30 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
         rlim=rlim,
         zlim=zlim,
     )
+
+    if source_convention_mode == "public_sparc_named_adapter":
+        adapter = _detect_named_source_adapter(path)
+        if adapter is None:
+            eq.source_convention_adapter = "no_named_adapter"
+            eq.source_convention_adapter_pass = False
+            eq.source_convention = "raw_canonical"
+            eq.source_convention_metadata = {
+                "requested_mode": source_convention_mode,
+                "source_file": path.name,
+                "adapter": "no_named_adapter",
+                "applied_scale": 1.0,
+                "provenance": "public_sparc_named_adapter_no_match",
+                "error": "no recognized public SPARC convention mapping",
+            }
+        else:
+            eq = _apply_source_adapter(
+                eq,
+                convention=adapter,
+                source_file=path,
+                mode=source_convention_mode,
+            )
+
+    return eq
 
 
 # ── Writer ────────────────────────────────────────────────────────────
