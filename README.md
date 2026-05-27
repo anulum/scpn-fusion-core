@@ -157,7 +157,7 @@ Top limitations:
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |
 | MHD stability (7 criteria) | **Y** | N | N | N | N |
 | Digital twin + HIL testing | **Y** | N | N | N | N |
-| Deterministic replay | **Y** | N | N | N | N |
+| Deterministic replay (RZIP reduced-order scaffold) | **Y** | N | N | N | N |
 | SCPN phase dynamics (Kuramoto/UPDE) | **Y** | N | N | N | N |
 | JAX autodiff transport | **Y** | Y | N | N | N |
 
