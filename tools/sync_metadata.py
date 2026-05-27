@@ -25,6 +25,18 @@ VERSION_FILE = REPO_ROOT / "src" / "scpn_fusion" / "VERSION"
 
 
 def get_version() -> str:
+    """Read and return the current package version from ``VERSION`` file.
+
+    Returns
+    -------
+    str
+        Normalized version string from ``src/scpn_fusion/VERSION``.
+
+    Raises
+    ------
+    OSError
+        If the version file cannot be read.
+    """
     return VERSION_FILE.read_text(encoding="utf-8").strip()
 
 
@@ -36,6 +48,28 @@ def update_file(
     check_only: bool,
     count: int = 0,
 ) -> bool:
+    """Update one file by replacing pattern matches with a replacement string.
+
+    Parameters
+    ----------
+    path:
+        Target file path.
+    pattern:
+        Regular expression pattern accepted by :func:`re.sub`.
+    replacement:
+        Replacement text to apply.
+    check_only:
+        When ``True``, do not write updates; only report whether any change is
+        required.
+    count:
+        Max number of matches to replace. ``0`` means replace all.
+
+    Returns
+    -------
+    bool
+        ``True`` if the replacement changed file contents or would change the
+        content in check-only mode.
+    """
     if not path.exists():
         print(f"Warning: {path} not found, skipping.")
         return False
@@ -60,6 +94,19 @@ def update_file(
 
 
 def sync(*, check_only: bool = False) -> int:
+    """Synchronize or validate version metadata across repository manifests.
+
+    Parameters
+    ----------
+    check_only:
+        Run in dry-run mode and do not write files.
+
+    Returns
+    -------
+    int
+        ``0`` when metadata is fully synchronized, ``1`` when drift is detected
+        in check-only mode.
+    """
     version = get_version()
     mode = "Checking" if check_only else "Synchronizing"
     print(f"--- {mode} Metadata for v{version} ---")
@@ -247,6 +294,18 @@ def sync(*, check_only: bool = False) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for metadata synchronization and drift checks.
+
+    Parameters
+    ----------
+    argv:
+        Optional CLI argument list for testability.
+
+    Returns
+    -------
+    int
+        Exit status from :func:`sync`.
+    """
     parser = argparse.ArgumentParser(description="Synchronize repository metadata.")
     parser.add_argument(
         "--check",
