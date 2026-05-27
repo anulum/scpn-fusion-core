@@ -58,6 +58,7 @@ def check_release_acceptance(
     expected_version: str | None,
     require_ready_state: bool,
 ) -> list[str]:
+    """Parse release checklist state and return structural violations as errors."""
     errors: list[str] = []
     if not checklist_path.exists():
         return [f"Checklist file missing: {checklist_path}"]
@@ -91,6 +92,7 @@ def check_release_acceptance(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Validate checklist consistency and return non-zero on any acceptance failure."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--checklist",

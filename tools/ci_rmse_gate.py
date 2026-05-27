@@ -60,6 +60,7 @@ def _load_json_object(path: Path) -> dict[str, Any]:
 
 
 def main() -> int:
+    """Validate CI RMSE/disruption gates from generated artifact JSON files."""
     artifact = Path("artifacts/rmse_dashboard_ci.json")
     if not artifact.exists():
         print(f"ERROR: {artifact} not found — run rmse_dashboard.py first.")

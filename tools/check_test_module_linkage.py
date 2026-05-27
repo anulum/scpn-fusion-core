@@ -24,6 +24,7 @@ DEFAULT_ALLOWLIST = REPO_ROOT / "tools" / "untested_module_allowlist.json"
 
 @dataclass(frozen=True)
 class TestLinkageIndex:
+    """Cached linkage-derived view across production modules and test imports."""
     imports: set[str]
     test_module_stems: set[str]
     corpus: str
@@ -37,6 +38,7 @@ def _resolve(path_value: str) -> Path:
 
 
 def collect_source_modules(source_root: Path) -> list[Path]:
+    """Collect tracked source modules under ``source_root`` excluding package inits."""
     modules: list[Path] = []
     for path in source_root.rglob("*.py"):
         if path.name == "__init__.py":
@@ -115,6 +117,7 @@ def collect_unlinked_modules(
     source_root: Path,
     test_root: Path,
 ) -> list[str]:
+    """Find modules in source that are not imported by any test corpus."""
     linkage = _build_test_linkage_index(test_root)
     unlinked: list[str] = []
     for module_path in collect_source_modules(source_root):
@@ -135,6 +138,7 @@ def collect_unlinked_modules(
 
 
 def load_allowlist(path: Path) -> set[str]:
+    """Load allow-listed unlinked modules from JSON config."""
     if not path.exists():
         raise FileNotFoundError(f"Allowlist file not found: {path}")
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -155,6 +159,7 @@ def load_allowlist(path: Path) -> set[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the linkage audit and fail CI on unexpected or stale allowlist entries."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--source-root",

@@ -68,6 +68,7 @@ def fetch_pypi_version(package: str, timeout: float) -> str:
 
 
 def normalize_version(version: str, *, strip_v_prefix: bool) -> str:
+    """Normalize a version by optionally removing a leading ``v`` prefix."""
     out = version.strip()
     if strip_v_prefix and out.lower().startswith("v"):
         return out[1:]
@@ -121,6 +122,7 @@ def compare_versions(local: str, remote: str, *, mode: str) -> tuple[bool, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Compare local package version with PyPI and enforce release parity policy."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package", default="scpn-fusion")
     parser.add_argument(
