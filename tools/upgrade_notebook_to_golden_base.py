@@ -21,6 +21,11 @@ def _replace_once(src: str, old: str, new: str) -> str:
 
 
 def main() -> None:
+    """Upgrade the published control notebook to Golden Base v2.
+
+    The function rewrites deterministic notebook cells and normalises import and
+    execution environment assumptions for downstream replay and verification.
+    """
     dst = Path("examples/neuro_symbolic_control_demo_v2.ipynb")
     source_candidates = [Path("examples/neuro_symbolic_control_demo.ipynb")]
     src = None
