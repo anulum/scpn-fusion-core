@@ -56,6 +56,7 @@ def _case_result(
 
 
 def run_benchmark(repeats: int = 25) -> dict[str, object]:
+    """Run DREAM-style scalar runaway density-balance scenarios and contracts."""
     params_subcritical = RunawayParams(
         ne_20=1.0,
         Te_keV=0.04,
@@ -118,6 +119,7 @@ def run_benchmark(repeats: int = 25) -> dict[str, object]:
 
 
 def write_reports(results: dict[str, object]) -> None:
+    """Write JSON and markdown reports for the runaway contract benchmark."""
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_REPORT.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -159,6 +161,7 @@ def write_reports(results: dict[str, object]) -> None:
 
 
 def main() -> int:
+    """Execute benchmark, persist outputs, and return contract pass code."""
     results = run_benchmark()
     write_reports(results)
     print(json.dumps(results, indent=2, sort_keys=True))
