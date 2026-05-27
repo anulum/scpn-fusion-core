@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Plasma Wall Interaction
+"""Plasma-facing-component interaction utilities: sputtering and wall loading."""
 from __future__ import annotations
 
 import math
@@ -137,9 +138,11 @@ class SputteringYield:
         self.Gamma = self.fit.gamma_shape
 
     def threshold_energy(self) -> float:
+        """Return surface binding-based threshold ion energy."""
         return float(self.E_th_val)
 
     def yield_at_energy(self, E_ion_eV: float, theta_deg: float = 0.0) -> float:
+        """Physical sputtering yield as a function of ion energy and incidence angle."""
         if not math.isfinite(E_ion_eV):
             raise ValueError("E_ion_eV must be finite.")
         if not math.isfinite(theta_deg) or theta_deg < 0.0 or theta_deg >= 90.0:
@@ -171,6 +174,8 @@ class SputteringYield:
 
 
 class ErosionModel:
+    """Sputtering erosion model with gross/net conversion and lifetime estimates."""
+
     def __init__(self, material: str = "W", n_atom: float = 6.31e28):
         target = _normalize_target(material)
         self.material = target.symbol
@@ -229,6 +234,7 @@ class WallThermalModel:
         self.alpha = self.kappa / (self.rho * self.cp)
 
     def step(self, dt: float, q_surface_MW_m2: float) -> float:
+        """Advance wall temperature profile by one time step and return surface temperature."""
         # q in W/m^2
         q_W = q_surface_MW_m2 * 1e6
 
@@ -268,10 +274,13 @@ class WallThermalModel:
         return float(self.T_nodes[0])
 
     def is_melted(self) -> bool:
+        """Check if surface node exceeds melting temperature."""
         return bool(self.T_nodes[0] > self.T_melt)
 
 
 class TransientThermalLoad:
+    """Transient thermal load model for ELM and disruption events."""
+
     def __init__(self, wall: WallThermalModel):
         self.wall = wall
 
@@ -290,6 +299,7 @@ class TransientThermalLoad:
         return float(delta_T)
 
     def disruption_load(self, W_th_MJ: float, A_wet_m2: float, tau_TQ_ms: float = 1.0) -> float:
+        """Peak surface delta-T for thermal quench-like pulse."""
         return self.elm_load(W_th_MJ, A_wet_m2, tau_TQ_ms)
 
     def n_elm_cycles_to_fatigue(self, delta_T_K: float, T_base_K: float = 600.0) -> int:
@@ -309,6 +319,8 @@ class TransientThermalLoad:
 
 @dataclass
 class LifetimeReport:
+    """Lifetime breakdown report by erosion and fatigue constraints."""
+
     erosion_mm_per_year: float
     peak_T_steady_K: float
     peak_T_elm_K: float
@@ -318,6 +330,8 @@ class LifetimeReport:
 
 
 class DivertorLifetimeAssessment:
+    """Combines SOL, sputtering, and thermal models into a lifetime assessment."""
+
     def __init__(
         self,
         sol: TwoPointSOL,
@@ -334,6 +348,7 @@ class DivertorLifetimeAssessment:
     def assess(
         self, P_SOL_MW: float, n_u_19: float, f_ELM_Hz: float, delta_W_ELM_MJ: float
     ) -> LifetimeReport:
+        """Compute integrated lifetime report for divertor exposure and transient loads."""
         # Steady state
         sol_res = self.sol.solve(P_SOL_MW, n_u_19)
         T_t = sol_res.T_target_eV
