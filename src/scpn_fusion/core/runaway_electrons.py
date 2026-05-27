@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Relativistic Runaway Electron Dynamics
+"""Runaway electron utility contracts for DREAM-style reduced-order workflows."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -21,6 +22,7 @@ EPS_0 = 8.8541878128e-12  # F/m
 
 @dataclass
 class RunawayParams:
+    """Scalar plasma parameters used by reduced-order runaway balances."""
     ne_20: float  # electron density [10^20 m^-3]
     Te_keV: float  # electron temperature [keV]
     E_par: float  # parallel electric field [V/m]
@@ -214,6 +216,8 @@ def dream_fluid_density_balance(
 
 
 class RunawayEvolution:
+    """Time-domain reduced-order solver for runaway electron density evolution."""
+
     def __init__(self, params: RunawayParams):
         self.params = params
 
@@ -243,6 +247,7 @@ class RunawayEvolution:
         loss_time_s: float = np.inf,
         max_runaway_fraction: float = 1.0,
     ) -> float:
+        """Advance one explicit time step of the reduced-order runaway balance."""
         dt_s = float(dt)
         n_re = float(n_RE)
         e_par = float(E_par)
@@ -270,6 +275,7 @@ class RunawayEvolution:
         t_span: tuple[float, float],
         dt: float,
     ) -> tuple[np.ndarray, np.ndarray]:
+        """Integrate runaway density over a profile-driven E∥(t) history."""
         if not isinstance(t_span, tuple) or len(t_span) != 2:
             raise ValueError("t_span must be a (t_start, t_end) tuple.")
         t_start, t_end = float(t_span[0]), float(t_span[1])
@@ -314,6 +320,8 @@ class RunawayEvolution:
 
 
 class RunawayMitigationAssessment:
+    """Collection of reduced-order mitigation formulas and guard checks."""
+
     @staticmethod
     def required_density_for_suppression(
         E_par: float, Z_eff: float, coulomb_log: float = 15.0
