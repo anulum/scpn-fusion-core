@@ -49,6 +49,7 @@ def _finite_number(value: Any) -> bool:
 
 
 def evaluate(report: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate FreeGS artifact metadata and emit invariant checks plus summary fields."""
     cases_raw = report.get("cases", [])
     cases = [dict(case) for case in cases_raw if isinstance(case, dict)]
     if not cases:
@@ -95,6 +96,7 @@ def evaluate(report: dict[str, Any]) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the FreeGS strict-artifact contract check and write a summary JSON."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", default=str(DEFAULT_REPORT))
     parser.add_argument("--summary-json", default=str(DEFAULT_SUMMARY))
