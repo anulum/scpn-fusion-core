@@ -39,6 +39,7 @@ def _inventory(n_z: np.ndarray, rho: np.ndarray, R0: float, a: float) -> float:
 
 
 def run_benchmark() -> dict[str, Any]:
+    """Run impurity transport contract checks and return invariant summary."""
     rho = np.linspace(0.0, 1.0, 80)
     R0 = 6.2
     a = 2.0
@@ -95,6 +96,7 @@ def run_benchmark() -> dict[str, Any]:
 
 
 def write_reports(results: dict[str, Any]) -> None:
+    """Write JSON and markdown artifacts for impurity transport benchmark."""
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_REPORT.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -131,6 +133,7 @@ def write_reports(results: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    """Execute impurity transport contract benchmark and print JSON report."""
     results = run_benchmark()
     write_reports(results)
     print(json.dumps(results, indent=2, sort_keys=True))
