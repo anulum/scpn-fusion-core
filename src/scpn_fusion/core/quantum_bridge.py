@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Quantum Bridge
+"""Runtime integration wrapper for the optional local Quantum Lab scripts."""
 from __future__ import annotations
 
 import math
@@ -27,12 +28,14 @@ _QUANTUM_SCRIPT_TIMEOUT_SECONDS = 1800.0
 
 
 def _resolve_quantum_lab_path(base_path: str | Path | None = None) -> Path:
+    """Resolve the Quantum Lab root directory for suite execution."""
     if base_path is not None:
         return Path(base_path).expanduser().resolve()
     return Path(__file__).resolve().parents[4] / "QUANTUM_LAB"
 
 
 def _normalize_script_timeout_seconds(timeout_s: float) -> float:
+    """Validate and normalise a finite, positive script timeout in seconds."""
     timeout = float(timeout_s)
     if not math.isfinite(timeout) or timeout <= 0.0:
         raise ValueError("script_timeout_seconds must be finite and > 0.")
@@ -44,6 +47,30 @@ def run_quantum_suite(
     base_path: str | Path | None = None,
     script_timeout_seconds: float = _QUANTUM_SCRIPT_TIMEOUT_SECONDS,
 ) -> dict[str, object]:
+    """Execute the staged Quantum Lab workflow scripts in sequence.
+
+    Parameters
+    ----------
+    base_path
+        Optional explicit path to the Quantum Lab directory. If omitted, the
+        default repository-local path is used.
+    script_timeout_seconds
+        Per-script timeout in seconds. Must be finite and strictly positive.
+
+    Returns
+    -------
+    dict[str, object]
+        Execution report with success flag, resolved base path, and script names.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the Quantum Lab directory or required scripts are missing.
+    RuntimeError
+        If any script fails or times out.
+    ValueError
+        If the timeout value is invalid.
+    """
     print("--- SCPN QUANTUM FUSION BRIDGE ---")
     print("Leveraging Quantum Hardware for Plasma Physics")
 
