@@ -908,6 +908,11 @@ def verify_all(output_dir: Path | str | None = None) -> None:
 
 
 def main() -> None:
+    """Generate and optionally verify DIII-D disruption profile NPZ artifacts.
+
+    Supports full regeneration plus consistency verification of required fields and
+    labels through the same process contract used in release pipelines.
+    """
     parser = argparse.ArgumentParser(
         description="Generate synthetic DIII-D disruption shot NPZ files.",
     )

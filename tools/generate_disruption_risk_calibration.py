@@ -498,6 +498,18 @@ def _check_outputs(calibration_path: Path, report_path: Path, data: dict[str, An
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate or validate disruption-risk calibration artifacts and gates.
+
+    Generates calibration JSON and Markdown report by sweeping threshold/bias
+    grids and evaluating train/val plus holdout constraints; optional check mode
+    compares against existing outputs for drift detection.
+
+    Args:
+        argv: Optional CLI arguments. If omitted, reads process arguments.
+
+    Returns:
+        0 on pass, 1 on gate failure, argument/output mismatch, or stale artifacts.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shot-dir", default=str(DEFAULT_SHOT_DIR))
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
