@@ -486,6 +486,24 @@ sensitive to missing control action.
 | Multi-profile replay | ITER-like, DIII-D-like, and compact-tokamak reduced-order plant profiles must pass | `python validation/vertical_control_replay_benchmark.py --all-profiles --strict` |
 | Uncertainty envelope | Growth, damping, actuator, sensor-bias, and one-step latency perturbations are replayed | same |
 
+### Vertical-Control Replay Release Gate
+
+Before this lane is labeled production-grade, all of the following must pass and be
+recorded in the latest strict run:
+
+- `python validation/vertical_control_replay_benchmark.py --strict`
+- `python validation/vertical_control_replay_benchmark.py --all-profiles --strict`
+- strict JSON schema validation in `tests/test_vertical_control_replay_benchmark.py`
+- deterministic replay checksums (`deterministic_replay_pass == true` and deterministic trajectory checksums in both JSON payloads)
+- uncertainty envelope checks (`passes_thresholds == true`, `all_profiles_pass == true`)
+- explicit saturation/fault semantics (`no_control` remains diagnostic-only and fails acceptance)
+- CI provenance gate in `.github/workflows/ci.yml` `benchmark-provenance-smoke`
+- report review of generated Markdown artifacts under `artifacts/vertical_control_replay_benchmark.md` and `artifacts/vertical_control_replay_profiles.md`
+
+Until all items above are green in CI, the lane remains a deterministic
+reduced-order replay scaffold and is not presented as a full PCS production
+control claim.
+
 ### Equilibrium Solver Convergence
 
 **Current production path (Picard + Red-Black SOR):**
