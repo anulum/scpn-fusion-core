@@ -63,6 +63,8 @@ LAMBDA_GS = 0.05  # GS residual penalty weight
 
 @dataclass
 class AugTrainingResult:
+    """Container for training, validation, and benchmark outcomes."""
+
     n_samples: int
     n_components: int
     explained_variance: float
@@ -82,6 +84,8 @@ class AugTrainingResult:
 
 
 class MinimalPCA:
+    """Compact PCA helper used for psi field dimensionality reduction."""
+
     def __init__(self, n_components: int = 20) -> None:
         self.n_components = n_components
         self.mean_: NDArray | None = None
@@ -89,6 +93,7 @@ class MinimalPCA:
         self.explained_variance_ratio_: NDArray | None = None
 
     def fit(self, X: NDArray) -> "MinimalPCA":
+        """Fit PCA components to feature matrix ``X`` and variance ratios."""
         self.mean_ = X.mean(axis=0)
         X_centered = X - self.mean_
         U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
@@ -100,12 +105,15 @@ class MinimalPCA:
         return self
 
     def transform(self, X: NDArray) -> NDArray:
+        """Project normalized samples into the retained PCA basis."""
         return (X - self.mean_) @ self.components_.T
 
     def inverse_transform(self, Z: NDArray) -> NDArray:
+        """Reconstruct samples from latent PCA coordinates."""
         return Z @ self.components_ + self.mean_
 
     def fit_transform(self, X: NDArray) -> NDArray:
+        """Fit PCA and transform samples in one call."""
         self.fit(X)
         return self.transform(X)
 
@@ -114,6 +122,8 @@ class MinimalPCA:
 
 
 class SimpleMLP:
+    """Minimal fully connected neural network for compact equilibrium surrogates."""
+
     def __init__(self, layer_sizes: list[int], seed: int = 42) -> None:
         self.rng = np.random.default_rng(seed)
         self.weights: list[NDArray] = []
@@ -125,6 +135,7 @@ class SimpleMLP:
             self.biases.append(np.zeros(layer_sizes[i + 1]))
 
     def forward(self, x: NDArray) -> NDArray:
+        """Run a forward evaluation through all layers."""
         h = x
         for i, (W, b) in enumerate(zip(self.weights, self.biases)):
             h = h @ W + b
@@ -133,6 +144,7 @@ class SimpleMLP:
         return h
 
     def predict(self, x: NDArray) -> NDArray:
+        """Alias for inference-only forward evaluation."""
         return self.forward(x)
 
 
@@ -296,6 +308,7 @@ def stratified_split(
 
 
 def gs_residual_loss(psi_flat: NDArray, nh: int, nw: int) -> float:
+    """Compute a mean squared Laplacian residual as a Grad–Shafranov smoothness prior."""
     psi = psi_flat.reshape(nh, nw)
     lap = np.zeros_like(psi)
     lap[1:-1, 1:-1] = (
@@ -317,6 +330,14 @@ def train(
     test_idx: NDArray,
     seed: int,
 ) -> tuple[SimpleMLP, AugTrainingResult, NDArray, NDArray]:
+    """Train the MLP on compressed PCA coefficients and decode test-space metrics.
+
+    Returns
+    -------
+    tuple
+        `(mlp, result, input_mean, input_std)` where ``result`` includes the
+        training/validation/test summary and per-machine metrics are populated later.
+    """
     n_features = X.shape[1]
     layer_sizes = [n_features, *HIDDEN_SIZES, pca.n_components]
     mlp = SimpleMLP(layer_sizes, seed=seed)
@@ -469,7 +490,13 @@ def validate_per_machine(
     input_mean: NDArray,
     input_std: NDArray,
 ) -> dict[str, dict]:
-    """Validate on first file of each machine, returning rel_L2."""
+    """Validate reconstruction quality on each machine from training artifacts.
+
+    Returns
+    -------
+    dict[str, dict]
+        Per-machine aggregate and per-file relative L2 diagnostics.
+    """
     from scpn_fusion.core.eqdsk import read_geqdsk
     from scipy.interpolate import RectBivariateSpline
 
@@ -558,6 +585,10 @@ def save_weights(
     input_std: NDArray,
     result: AugTrainingResult,
 ) -> None:
+    """Persist model artifacts and companion metrics JSON to ``path``.
+
+    Artifacts include PCA tensors, network weights/biases and scalar metadata.
+    """
     payload = {
         "n_components": np.array([pca.n_components]),
         "grid_nh": np.array([TARGET_GRID]),
@@ -632,6 +663,13 @@ def persist_training_artifacts(
 
 
 def main() -> int:
+    """Execute full multi-machine GPU-equivalent equilibrium training workflow.
+
+    Returns
+    -------
+    int
+        ``0`` on acceptance success, non-zero on validation/failure states.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--n-perturbations", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
