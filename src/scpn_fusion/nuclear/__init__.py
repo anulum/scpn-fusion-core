@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Nuclear Package Init
+"""Nuclear package public façade."""
 from .nuclear_wall_interaction import NuclearEngineeringLab
 from .blanket_neutronics import BreedingBlanket, VolumetricBlanketReport
 from .pwi_erosion import SputteringPhysics

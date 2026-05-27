@@ -5,6 +5,12 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — PWI Erosion
+"""Plasma-wall interaction sputtering and erosion surrogates.
+
+This module defines a compact deterministic model for sputtering yields and
+erosion-rate estimates. The routines are designed for fast sweeps and
+workflow-level guardrail checks in the native nuclear analysis stack.
+"""
 from __future__ import annotations
 
 from typing import Any, Optional

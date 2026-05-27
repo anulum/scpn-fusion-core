@@ -5,6 +5,17 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Blanket Neutronics
+"""Reduced-order neutronics surrogate models for blanket studies.
+
+This module provides lightweight, deterministic utilities used by engineering
+workflows and tests:
+
+- :class:`BreedingBlanket` for 1D radial transport and tritium breeding estimates.
+- :class:`VolumetricBlanketReport` for compact aggregate material-balance outputs.
+
+The implementation intentionally omits Monte-Carlo detail and is suitable for
+fast iteration, benchmarking, and regression checks in the native solver pipeline.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass

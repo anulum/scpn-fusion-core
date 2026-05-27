@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — TEMHD Peltier
+"""TEMHD-stabilized divetor flow surrogate for reduced-order thermal studies."""
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -81,6 +82,15 @@ class TEMHD_Stabilizer:
         return res
 
     def step(self, heat_flux_MW_m2: float, dt: float = 0.1) -> tuple[float, float]:
+        """Advance one implicit thermal step.
+
+        Args:
+            heat_flux_MW_m2: Incoming wall heat flux in MW/m².
+            dt: Time step in seconds.
+
+        Returns:
+            A tuple ``(surface_temperature_K, effective_thermal_conductivity)``.
+        """
         dt = float(dt)
         heat_flux_MW_m2 = float(heat_flux_MW_m2)
         if not np.isfinite(dt) or dt <= 0.0:

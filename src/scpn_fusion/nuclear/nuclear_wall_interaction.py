@@ -5,6 +5,14 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Nuclear Wall Interaction
+"""Nuclear-engineering façade for plasma-vacuum vessel interaction diagnostics.
+
+The module assembles reduced-order wall-load, ash-poisoning, sputtering, and
+materials-lifespan analyses on top of equilibrium fields from
+``FusionBurnPhysics``. It is intentionally deterministic and intended for
+high-throughput engineering workflow checks rather than full fidelity safety
+certification.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -332,6 +340,20 @@ def run_nuclear_sim(
     verbose: bool = True,
     lab_factory: Callable[[str], Any] = NuclearEngineeringLab,
 ) -> dict[str, Any]:
+    """Run a full reduced-order nuclear engineering diagnostic bundle.
+
+    Args:
+        config_path: Path to an ITER-format JSON configuration. When ``None``,
+            ``iter_config.json`` is resolved from the repository root.
+        save_plot: Whether to generate and save the plotting summary.
+        output_path: Plot output path if ``save_plot`` is true.
+        verbose: Emit human-readable progress and summary text.
+        lab_factory: Factory used to create the analysis engine, exposed for tests.
+
+    Returns:
+        Mapping with final ash fraction, wall-load metrics, lifespan range, and
+        plot status used by callers and benchmark harnesses.
+    """
     if config_path is None:
         config_path = default_iter_config_path()
     config_path = str(config_path)
