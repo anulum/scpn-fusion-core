@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — 3D MHD Equilibrium (VMEC-lite Fixed-Boundary)
+"""Lightweight VMEC-inspired fixed-boundary equilibrium helpers."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ import numpy as np
 
 @dataclass
 class VMECResult:
+    """Container for a reduced-order VMEC-like equilibrium state."""
     R_mn: np.ndarray
     Z_mn: np.ndarray
     B_mn: np.ndarray
@@ -24,6 +26,7 @@ class VMECResult:
 
 
 class SpectralBasis:
+    """Fourier basis over poloidal/toroidal mode pairs."""
     def __init__(self, m_pol: int, n_tor: int, n_fp: int):
         if not isinstance(m_pol, int) or m_pol < 0:
             raise ValueError("m_pol must be an integer >= 0.")
@@ -46,6 +49,7 @@ class SpectralBasis:
     def evaluate(
         self, coeffs_mn: np.ndarray, theta: np.ndarray, zeta: np.ndarray, is_sin: bool = False
     ) -> np.ndarray:
+        """Evaluate a Fourier series on (theta, zeta)."""
         coeffs_mn = np.asarray(coeffs_mn, dtype=float)
         theta = np.asarray(theta, dtype=float)
         zeta = np.asarray(zeta, dtype=float)
@@ -121,6 +125,7 @@ class VMECLiteSolver:
         self._boundary_configured = True
 
     def set_profiles(self, pressure: np.ndarray, iota: np.ndarray) -> None:
+        """Set pressure and rotational-transform profiles on the solver radial grid."""
         pressure = np.asarray(pressure, dtype=float)
         iota = np.asarray(iota, dtype=float)
         if pressure.ndim != 1 or pressure.size < 2:
@@ -253,10 +258,13 @@ class VMECLiteSolver:
 
 
 class AxisymmetricTokamakBoundary:
+    """Factory for common axisymmetric spectral boundary coefficients."""
+
     @staticmethod
     def from_parameters(
         R0: float, a: float, kappa: float, delta: float
     ) -> tuple[dict[tuple[int, int], float], dict[tuple[int, int], float]]:
+        """Build low-order Fourier boundary modes from geometry parameters."""
         # R = R0 + a * cos(theta + delta * sin(theta))
         # Z = a * kappa * sin(theta)
         # Approximate to low order Fourier
@@ -270,8 +278,11 @@ class AxisymmetricTokamakBoundary:
 
 
 class StellaratorBoundary:
+    """Preset helpers for representative stellarator boundaries."""
+
     @staticmethod
     def w7x_standard() -> tuple[dict, dict]:
+        """Return a compact W7-X-like spectral boundary pair."""
         # N_fp = 5
         b_R = {(0, 0): 5.5, (1, 0): 0.5, (1, 1): 0.1, (0, 1): 0.2}
         b_Z = {(1, 0): 0.6, (1, 1): -0.1}

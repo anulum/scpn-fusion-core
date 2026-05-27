@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — WDM Engine
+"""Whole-device-model driver for coupled transport-equilibrium-wall simulation loops."""
 from __future__ import annotations
 
 import numpy as np
@@ -75,6 +76,7 @@ class WholeDeviceModel:
         return float(np.clip(f_redep, 0.0, 0.99))
 
     def run_discharge(self, duration_sec=10.0) -> list[dict[str, float | str]]:
+        """Run the whole-device discharge timeline and collect time-series state."""
         duration_sec = self._require_finite_positive("duration_sec", duration_sec)
         print(f"--- SCPN WDM: WHOLE DEVICE SIMULATION ({duration_sec}s) ---")
 
@@ -139,6 +141,7 @@ class WholeDeviceModel:
         return history
 
     def plot_results(self, history):
+        """Plot discharge evolution and export WDM summary figure."""
         if len(history) == 0:
             raise ValueError("history must not be empty.")
         df = pd.DataFrame(history)
