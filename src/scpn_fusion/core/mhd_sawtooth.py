@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — MHD Sawtooth
+"""Sawtooth instability toy solver and diagnostic visualizations."""
 from __future__ import annotations
 
 import logging
@@ -28,6 +29,7 @@ class ReducedMHD:
     """
 
     def __init__(self, nr: int = 100) -> None:
+        """Create a reduced-MHD 1D m=1, n=1 model on a radial grid."""
         self.nr = nr
         self.r = np.linspace(0, 1, nr)
         self.dr = self.r[1] - self.r[0]
@@ -155,6 +157,7 @@ class ReducedMHD:
 
 
 def run_sawtooth_sim() -> None:
+    """Run a simple sawtooth simulation and emit diagnostic figures as PNG files."""
     logger.info("--- SCPN 3D MHD: SAWTOOTH INSTABILITY ---")
 
     sim = ReducedMHD()
