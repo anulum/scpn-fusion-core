@@ -43,6 +43,7 @@ def _render_path(path: Path) -> str:
 
 
 def run_benchmark(*, itpa_csv: Path) -> dict[str, Any]:
+    """Run uncertainty-envelope validation against ITPA reference shots."""
     transport = validate_transport(itpa_csv)
     envelope = transport.get("uncertainty_envelope", {})
 
@@ -104,6 +105,7 @@ def run_benchmark(*, itpa_csv: Path) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render transport uncertainty-envelope contract as a markdown report."""
     g = report["transport_uncertainty_envelope_benchmark"]
     tr = g["transport_summary"]
     env = tr["uncertainty_envelope"]
@@ -140,6 +142,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    """Run transport uncertainty benchmark and persist JSON/markdown reports."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--itpa-csv",
