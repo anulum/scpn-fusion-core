@@ -80,6 +80,18 @@ def _validate_manifest(manifest: dict[str, Any], weights_sha: str) -> tuple[bool
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Import external FNO weights after validating manifest integrity.
+
+    The function validates manifest schema and checksum agreement, copies validated
+    weights to the output location, and writes a summary artifact.
+
+    Args:
+        argv: Optional CLI argument list. If omitted, reads command-line arguments.
+
+    Returns:
+        ``0`` when validation/import succeeds, ``1`` when validation fails or I/O
+        errors occur.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     parser.add_argument("--weights", default=str(DEFAULT_WEIGHTS))
