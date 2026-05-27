@@ -94,6 +94,7 @@ def _is_lfs_pointer_blob(blob_head: bytes) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Validate tracked binaries use Git LFS according to policy and report violations."""
     parser = argparse.ArgumentParser(description="Check Git LFS repository hygiene.")
     parser.add_argument(
         "--max-nonlfs-bytes",

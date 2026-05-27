@@ -89,6 +89,7 @@ def _load_pyproject(path: Path) -> dict[str, Any]:
 
 
 def evaluate_contract(pyproject: dict[str, Any]) -> dict[str, Any]:
+    """Validate packaging dependency policy and report required missing contract checks."""
     project = pyproject.get("project", {})
     if not isinstance(project, dict):
         raise ValueError("[project] table missing from pyproject.toml")
@@ -139,6 +140,7 @@ def evaluate_contract(pyproject: dict[str, Any]) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Load pyproject data, write contract summary JSON, and return pass/fail status."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pyproject", default=str(DEFAULT_PYPROJECT))
     parser.add_argument("--summary-json", default=str(DEFAULT_SUMMARY))

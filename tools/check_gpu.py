@@ -20,6 +20,7 @@ import sys
 
 
 def main() -> None:
+    """Print GPU backend availability for JAX, PyTorch, and Rust extension diagnostics."""
     print("=== SCPN Fusion Core — GPU Diagnostic ===\n")
 
     # ── JAX ───────────────────────────────────────────────────────
