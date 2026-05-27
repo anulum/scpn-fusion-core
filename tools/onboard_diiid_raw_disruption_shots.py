@@ -176,6 +176,20 @@ def onboard_shots(
     refresh_manifest: bool,
     manifest_path: Path,
 ) -> dict[str, Any]:
+    """Download and package raw disruption shots from DIII-D spec definitions.
+
+    Args:
+        spec: Onboarding spec payload containing a ``shots`` list.
+        shot_dir: Destination directory for generated ``.npz`` shot files.
+        metadata_path: Metadata path updated with per-shot overrides.
+        cache_dir: Directory passed to the external download helper.
+        force_download: Re-download even when cached data exists.
+        refresh_manifest: Whether to regenerate the disruption-shots manifest.
+        manifest_path: Destination manifest path for generated summary inputs.
+
+    Returns:
+        A summary dict with counts, created files, and failures.
+    """
     shots_raw = spec.get("shots", [])
     if not isinstance(shots_raw, list) or not shots_raw:
         raise ValueError("spec must contain non-empty 'shots' list")
@@ -331,6 +345,19 @@ def onboard_shots(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run raw DIII-D disruption-shot onboarding from an import spec.
+
+    Args:
+        argv: Optional CLI argument list; defaults to ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code: ``0`` for clean completion, ``1`` if no shots were onboarded
+        and failures occurred, ``2`` when partial success with failures.
+
+    Raises:
+        FileNotFoundError: If the onboarding spec path does not exist.
+        ValueError: If the spec payload is malformed.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--spec",
