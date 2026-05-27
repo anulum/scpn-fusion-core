@@ -113,6 +113,7 @@ class ScenarioOptimizer:
         p0 = np.zeros(n_u * len(times))
 
         def objective(p: np.ndarray) -> float:
+            """Evaluate terminal tracking cost for a candidate waveform stack."""
             p = p.reshape(n_u, len(times))
             wfs = {
                 "P_aux": ScenarioWaveform("P_aux", times, p[0]),
