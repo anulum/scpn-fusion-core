@@ -88,6 +88,19 @@ class SimpleMLP:
             self.biases.append(np.zeros(layer_sizes[i + 1]))
 
     def forward(self, x: NDArray) -> NDArray:
+        """
+        Compute a forward pass through all MLP layers.
+
+        Parameters
+        ----------
+        x : NDArray
+            Input feature batch with shape (batch, n_features).
+
+        Returns
+        -------
+        NDArray
+            Predicted latent coefficients.
+        """
         h = x
         for i, (W, b) in enumerate(zip(self.weights, self.biases)):
             h = h @ W + b
@@ -96,6 +109,19 @@ class SimpleMLP:
         return h
 
     def predict(self, x: NDArray) -> NDArray:
+        """
+        Alias for :meth:`forward`.
+
+        Parameters
+        ----------
+        x : NDArray
+            Input feature batch.
+
+        Returns
+        -------
+        NDArray
+            Network output with shape (batch, n_outputs).
+        """
         return self.forward(x)
 
 
@@ -112,6 +138,14 @@ class MinimalPCA:
         self.explained_variance_ratio_: NDArray | None = None
 
     def fit(self, X: NDArray) -> "MinimalPCA":
+        """
+        Fit principal-component basis on centred data.
+
+        Parameters
+        ----------
+        X : NDArray
+            Data matrix where rows are samples and columns are flattened coordinates.
+        """
         self.mean_ = X.mean(axis=0)
         X_centered = X - self.mean_
         U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
@@ -121,16 +155,40 @@ class MinimalPCA:
         return self
 
     def transform(self, X: NDArray) -> NDArray:
+        """
+        Project samples into PCA coefficient space.
+
+        Parameters
+        ----------
+        X : NDArray
+            Input matrix with the same feature dimension as fitted data.
+        """
         if self.mean_ is None or self.components_ is None:
             raise RuntimeError("PCA model not fitted before transform().")
         return (X - self.mean_) @ self.components_.T
 
     def inverse_transform(self, Z: NDArray) -> NDArray:
+        """
+        Reconstruct flattened fields from PCA coefficients.
+
+        Parameters
+        ----------
+        Z : NDArray
+            Coefficient matrix.
+        """
         if self.mean_ is None or self.components_ is None:
             raise RuntimeError("PCA model not fitted before inverse_transform().")
         return Z @ self.components_ + self.mean_
 
     def fit_transform(self, X: NDArray) -> NDArray:
+        """
+        Fit PCA model and immediately transform the training matrix.
+
+        Parameters
+        ----------
+        X : NDArray
+            Data matrix to fit and project.
+        """
         self.fit(X)
         return self.transform(X)
 
