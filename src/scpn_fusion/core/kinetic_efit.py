@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Kinetic Equilibrium Reconstruction (Kinetic EFIT)
+"""Kinetic-equilibrium reconstruction with anisotropic fast-ion pressure coupling."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -36,6 +37,15 @@ class FastIonPressure:
         self.sigma = anisotropy_sigma  # sigma = 1 - p_par / p_perp
 
     def p_perp(self, rho: np.ndarray, ne_19: np.ndarray) -> np.ndarray:
+        """Return perpendicular pressure from fast-ion energy fraction.
+
+        Parameters
+        ----------
+        rho : numpy.ndarray
+            Normalized radius samples.
+        ne_19 : numpy.ndarray
+            Electron density in 1e19 m^-3 units.
+        """
         # p_fast = 2/3 n_fast E_fast for isotropic
         # p_fast = (2 p_perp + p_par)/3 = p_perp(2 + (1-sigma))/3 = p_perp(3-sigma)/3
         # p_perp = p_fast * 3 / (3 - sigma)
@@ -44,9 +54,11 @@ class FastIonPressure:
         return p_fast_Pa * 3.0 / (3.0 - self.sigma)
 
     def p_par(self, rho: np.ndarray, ne_19: np.ndarray) -> np.ndarray:
+        """Return parallel pressure from the anisotropic model."""
         return self.p_perp(rho, ne_19) * (1.0 - self.sigma)
 
     def p_isotropic_equivalent(self, rho: np.ndarray, ne_19: np.ndarray) -> np.ndarray:
+        """Return isotropic-equivalent pressure used for equilibrium coupling."""
         p_perp = self.p_perp(rho, ne_19)
         p_par = self.p_par(rho, ne_19)
         return np.asarray((2.0 * p_perp + p_par) / 3.0)
@@ -54,6 +66,7 @@ class FastIonPressure:
 
 @dataclass
 class KineticConstraints:
+    """Container for kinetic profile constraints used in reconstruction."""
     Te_points: list[tuple[float, float, float]]  # (R, Z, Te_keV)
     ne_points: list[tuple[float, float, float]]  # (R, Z, ne_19)
     Ti_points: list[tuple[float, float, float]]  # (R, Z, Ti_keV)
@@ -62,6 +75,7 @@ class KineticConstraints:
 
 @dataclass
 class KineticReconstructionResult(ReconstructionResult):
+    """Reconstruction result carrying thermal/kinetic pressure consistency metrics."""
     p_kinetic: np.ndarray
     p_equilibrium: np.ndarray
     pressure_consistency: float
@@ -97,6 +111,7 @@ def mse_pitch_angle(B_R: float, B_Z: float, B_phi: float, v_beam: float, R: floa
 
 
 class KineticEFIT(RealtimeEFIT):
+    """Realtime EFIT extension that fuses kinetic constraints and fast-ion pressure."""
     def __init__(
         self,
         diagnostics: MagneticDiagnostics,
@@ -110,6 +125,7 @@ class KineticEFIT(RealtimeEFIT):
         self.fast_ions = fast_ions
 
     def reconstruct(self, measurements: dict[str, Any]) -> KineticReconstructionResult:
+        """Run magnetic reconstruction and append kinetic/anisotropy consistency outputs."""
         # 1. Base magnetic reconstruction
         res_mag = super().reconstruct(measurements)
 
