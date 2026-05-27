@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — RF Heating
+"""RF heating workflows with simplified ICRH/ECRH ray-tracing examples."""
 from __future__ import annotations
 
 import numpy as np
@@ -168,6 +169,20 @@ class RFHeatingSystem:
         return [dR_dt, dZ_dt, dkR_dt, dkZ_dt]
 
     def trace_rays(self, n_rays=10):
+        """Trace ICRH rays from an outboard antenna and return trajectories.
+
+        Parameters
+        ----------
+        n_rays
+            Number of launch rays.
+
+        Returns
+        -------
+        trajectories : list of ndarray
+            Ray coordinates and wave-vectors as ODE solution arrays.
+        B_res
+            Resonant magnetic field value in Tesla for the configured frequency.
+        """
         print("--- RF HEATING RAY TRACING ---")
         print(f"Frequency: {self.freq / 1e6} MHz")
 
@@ -201,6 +216,7 @@ class RFHeatingSystem:
         return trajectories, B_res
 
     def plot_heating(self, trajectories, B_res):
+        """Render and persist a diagnostic plot of ray paths and resonance layer."""
         fig, ax = plt.subplots(figsize=(8, 8))
 
         # 1. Plasma Geometry
