@@ -50,6 +50,16 @@ def _is_raw_source_type(value: str) -> bool:
 
 
 def evaluate_progress(*, report: dict[str, Any], targets: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate observed real-data progress against configured roadmap targets.
+
+    Args:
+        report: Source validation/report payload.
+        targets: Target contract with ``targets`` mapping and optional version.
+
+    Returns:
+        Summary dictionary containing metric rows, readiness flags, and aggregate
+        completion ratio.
+    """
     target_cfg = targets.get("targets", {})
     if not isinstance(target_cfg, dict):
         raise ValueError("targets payload missing 'targets' object")
@@ -168,6 +178,15 @@ def evaluate_progress(*, report: dict[str, Any], targets: dict[str, Any]) -> dic
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
+    """Render roadmap progress summary to markdown.
+
+    Args:
+        summary: Data produced by ``evaluate_progress``.
+
+    Returns:
+        Markdown report text including per-metric table and transport coverage
+        section.
+    """
     lines = [
         "# Real-Data Roadmap Progress",
         "",
@@ -218,6 +237,14 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate roadmap progress JSON and markdown artifacts.
+
+    Args:
+        argv: Optional CLI argument list. If omitted, parse process arguments.
+
+    Returns:
+        ``0`` for success, ``1`` when ``--strict`` and any target fails.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", default=str(DEFAULT_REPORT))
     parser.add_argument("--targets", default=str(DEFAULT_TARGETS))
