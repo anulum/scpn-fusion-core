@@ -112,6 +112,8 @@ FREE_BOUNDARY_RECOVERY_AUDIT_FIELDS = (
 
 @dataclass(frozen=True)
 class MarkerRule:
+    """Rule describing a textual marker and its underdevelopment priority metadata."""
+
     marker: str
     pattern: re.Pattern[str]
     base_score: int
@@ -120,6 +122,8 @@ class MarkerRule:
 
 @dataclass(frozen=True)
 class RegisterEntry:
+    """A single underdeveloped marker hit captured for tracking and remediation."""
+
     path: str
     line: int
     marker: str
@@ -704,6 +708,20 @@ def _iter_candidate_files(repo_root: Path) -> Iterable[Path]:
 
 
 def collect_entries(repo_root: Path) -> list[RegisterEntry]:
+    """Collect marker hits across scanned repository files.
+
+    The scan applies each ``MarkerRule`` across text-like paths while filtering
+    duplicates and low-signal hits. Source heuristics are appended after marker
+    pattern passes to keep explicit debt and structural heuristics in one queue.
+
+    Args:
+        repo_root: Repository root path used for file traversal and relative path
+            rendering in report output.
+
+    Returns:
+        A list of ``RegisterEntry`` values sorted by descending score, domain,
+        path and line number.
+    """
     entries: list[RegisterEntry] = []
     seen: set[tuple[str, int, str]] = set()
 
@@ -793,6 +811,20 @@ def render_markdown(
     full_limit: int,
     scope: str = "full",
 ) -> str:
+    """Render the underdeveloped debt register as markdown content.
+
+    Args:
+        entries: Entry set to include in the report.
+        top_limit: Maximum number of rows in the top-priority section.
+        full_limit: Maximum number of rows in the full-table section.
+        scope: Report scope label for the intro copy.
+
+    Returns:
+        Rendered markdown text.
+
+    Raises:
+        ValueError: If entries are inconsistent with expected ranking fields.
+    """
     now = datetime.now(timezone.utc).isoformat()
     marker_counts: dict[str, int] = {}
     domain_counts: dict[str, int] = {}
@@ -911,6 +943,20 @@ def _normalize_for_check(content: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the debt-register generator and optional consistency check.
+
+    Args:
+        argv: Optional CLI argument list. If omitted, command-line arguments from
+            ``sys.argv`` are used by ``argparse``.
+
+    Returns:
+        Exit status compatible with ``if __name__ == "__main__"`` dispatch:
+        ``0`` for success, ``1`` for check-mode drift.
+
+    Raises:
+        SystemExit: If ``argparse`` parsing fails.
+        ValueError: If ``--top-limit`` or ``--full-limit`` are less than 1.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output",
