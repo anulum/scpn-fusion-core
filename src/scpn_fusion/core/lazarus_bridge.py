@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Lazarus Bridge
+"""Bridge harness between plasma-equilibrium outputs and Opentrons protocol synthesis."""
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -99,6 +100,7 @@ def run(protocol: protocol_api.ProtocolContext):
         return protocol_script
 
     def run_bridge_simulation(self):
+        """Run end-to-end bridge scenario from plasma equilibrium to protocol output."""
         print("--- LAZARUS BRIDGE: PLASMA -> BIO CONVERGENCE ---")
 
         # 1. Establish Stable Plasma
@@ -134,6 +136,7 @@ def run(protocol: protocol_api.ProtocolContext):
         self.visualize_bridge(resonance)
 
     def visualize_bridge(self, score):
+        """Save a symbolic bridge visualization for the current resonance score."""
         fig, ax = plt.subplots(figsize=(6, 6))
 
         # Plot Plasma
