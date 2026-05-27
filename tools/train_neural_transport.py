@@ -32,6 +32,7 @@ OUTPUT_DIM = 3
 
 
 def init_params(key):
+    """Initialise randomly seeded MLP parameters and normalization buffers."""
     k1, k2, k3 = random.split(key, 3)
     # Smaller initial weights to prevent early explosion
     return {
@@ -49,6 +50,20 @@ def init_params(key):
 
 @jit
 def forward(params, x):
+    """Forward pass for the 10→64→32→3 transport MLP.
+
+    Parameters
+    ----------
+    params:
+        Parameter dictionary with network weights, biases, and scaling terms.
+    x:
+        Input feature vector(s).
+
+    Returns
+    -------
+    jax.Array
+        Predicted non-negative transport coefficients.
+    """
     # Normalize with safe std
     x_norm = (x - params["input_mean"]) / jnp.maximum(params["input_std"], 1e-4)
 
@@ -60,12 +75,14 @@ def forward(params, x):
 
 
 def loss_fn(params, x, y):
+    """Mean-squared-error loss over a minibatch."""
     preds = vmap(lambda x_val: forward(params, x_val))(x)
     return jnp.mean((preds - y) ** 2)
 
 
 @jit
 def update(params, x, y, lr=1e-4):
+    """Compute one clipped-gradient update step and return new parameters."""
     grads = grad(loss_fn)(params, x, y)
     # Simple gradient clipping
     grads = jax.tree_util.tree_map(lambda g: jnp.clip(g, -1.0, 1.0), grads)
@@ -76,7 +93,18 @@ def update(params, x, y, lr=1e-4):
 
 
 def generate_synthetic_data(n_samples=5000):
-    """Generates data following the critical gradient model but with added complexity."""
+    """Generate synthetic transport training data from a bounded toy law.
+
+    Parameters
+    ----------
+    n_samples:
+        Number of synthetic samples to generate.
+
+    Returns
+    -------
+    tuple[jnp.ndarray, jnp.ndarray]
+        Input feature matrix and targets.
+    """
     key = random.PRNGKey(42)
     k1, k2 = random.split(key)
 
@@ -116,6 +144,15 @@ def generate_synthetic_data(n_samples=5000):
 
 
 def train_qlknn(output_path="weights/neural_transport_qlknn.npz", n_samples=10000):
+    """Train the QLKNN-10D surrogate and persist a complete weights file.
+
+    Parameters
+    ----------
+    output_path:
+        Destination path for ``np.savez`` checkpoint.
+    n_samples:
+        Number of training samples to synthesize.
+    """
     print(f"--- Training QLKNN-10D Surrogate (Output: {output_path}) ---")
 
     X, Y = generate_synthetic_data(n_samples)
