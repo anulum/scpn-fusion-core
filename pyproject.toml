@@ -237,16 +237,12 @@ ignore = [
 "validation/benchmark_vs_freegs.py" = ["F401"]
 
 [tool.bandit]
-skips = ["B101", "B311", "B404", "B603", "B607"]
+skips = ["B101", "B311"]
 exclude_dirs = ["tests", "notebooks", "validation"]
 
 [tool.coverage.run]
 source = ["scpn_fusion"]
 omit = [
-    "*/ui/app.py",
-    "*/core/vibrana_bridge.py",
-    "*/core/lazarus_bridge.py",
-    "*/hpc/hpc_bridge.py",
 ]
 
 [tool.coverage.report]

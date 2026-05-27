@@ -52,3 +52,22 @@ def test_lif_neuron_emits_spikes_for_sustained_drive() -> None:
     )
     spikes = [neuron.step(1.0) for _ in range(20)]
     assert any(spikes)
+
+
+def test_stochastic_lif_replay_is_deterministic_for_fixed_seed() -> None:
+    neuron_inputs = np.linspace(0.0, 0.8, 32)
+
+    def run_once(seed: int) -> list[bool]:
+        neuron = StochasticLIFNeuron(
+            v_threshold=0.5,
+            tau_mem=5.0,
+            dt=1.0,
+            noise_std=0.15,
+            resistance=1.0,
+            seed=seed,
+        )
+        return [neuron.step(float(v)) for v in neuron_inputs]
+
+    out_a = run_once(42)
+    out_b = run_once(42)
+    np.testing.assert_array_equal(out_a, out_b)

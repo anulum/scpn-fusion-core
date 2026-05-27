@@ -129,6 +129,24 @@ jobs:
       - name: Validate token format assumptions
         run: python tools/github_token_format_guard.py
 
+  lean-safety-proofs:
+    name: Lean Safety Proofs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [ci-chain-guard]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - name: Install Lean toolchain
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Build Lean safety proof surface
+        run: |
+          cd scpn-fusion-lean
+          lake build
+
   smoke-install:
     name: Install Smoke (${{ matrix.os }} / ${{ matrix.profile }})
     runs-on: ${{ matrix.os }}
@@ -211,7 +229,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    needs: [ci-chain-guard]
+    needs: [ci-chain-guard, lean-safety-proofs]
     strategy:
       fail-fast: false
       matrix:
@@ -234,13 +252,6 @@ jobs:
             pip install --require-hashes -r "requirements/ci-py${pytag}.txt"
           fi
           pip install --no-deps -e .
-      - name: Install Lean toolchain
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          "$HOME/.elan/bin/lake" --version
-
       - name: Verify embedded neurocore backend (Python 3.12 lane)
         if: matrix.python-version == '3.12'
         run: |
@@ -366,12 +377,6 @@ jobs:
         run: |
           pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
-      - name: Install Lean toolchain
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          "$HOME/.elan/bin/lake" --version
 
       - name: Verify embedded neurocore backend
         run: |
@@ -929,12 +934,6 @@ jobs:
         run: |
           pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
-      - name: Install Lean toolchain
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          "$HOME/.elan/bin/lake" --version
 
       - name: Verify embedded neurocore backend
         run: |
