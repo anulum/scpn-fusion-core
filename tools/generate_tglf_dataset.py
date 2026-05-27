@@ -22,6 +22,29 @@ logger = logging.getLogger(__name__)
 def generate_tglf_like_dataset(
     output_path="validation/reference_data/tglf_training_data.npz", n_samples=10000
 ):
+    """Generate synthetic turbulence training samples in a TGLF-like style.
+
+    This routine draws randomized samples from physics reference cases, perturbs
+    the local growth rate, builds a spectral field with a power-law spectrum and
+    stores the resulting dataset on disk.
+
+    Args:
+        output_path: Destination ``.npz`` file for generated fields and targets.
+        n_samples: Number of synthetic fields to generate.
+
+    Returns:
+        None. Writes ``X`` (shape ``(n_samples, 64, 64, 1)``) and ``Y`` arrays
+        into ``output_path`` via ``numpy.savez``.
+
+    Raises:
+        KeyError: If a chosen regime is missing required reference fields.
+        ValueError: If ``n_samples`` is not a positive integer or references are empty.
+    """
+    if not isinstance(n_samples, int) or n_samples <= 0:
+        raise ValueError("n_samples must be a positive integer.")
+    if not REFERENCE_CASES:
+        raise ValueError("REFERENCE_CASES must be populated before dataset generation.")
+
     print(f"--- Generating {n_samples} TGLF-like samples ---")
 
     rng = np.random.default_rng(42)
