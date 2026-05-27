@@ -38,6 +38,11 @@ def jackson_psi(Rc: float, Zc: float, R: float, Z: float, I: float = 1.0) -> flo
 
 
 def run_free_boundary_benchmark() -> dict:
+    """Run vacuum-field and free-boundary reconstruction checks for coil contracts.
+
+    The benchmark validates boundary contour reconstruction, limiter and x-point
+    metadata consistency, and JAX free-boundary wall-flux contract behaviour.
+    """
     results = {
         "schema_version": 2,
         "benchmark_id": "free_boundary_coil_vacuum_reconstruction",
@@ -308,6 +313,7 @@ def run_free_boundary_benchmark() -> dict:
 
 
 def main():
+    """Execute the benchmark and persist JSON/markdown artifacts."""
     res = run_free_boundary_benchmark()
 
     report_dir = Path("validation/reports")
