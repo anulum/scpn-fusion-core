@@ -260,6 +260,12 @@ def train_fno(
 
 
 def main() -> None:
+    """Parse CLI arguments and launch the spatial FNO training workflow.
+
+    Arguments control dataset path, output location, and core hyperparameters.
+    The function terminates with ``SystemExit`` only when underlying training
+    utilities raise.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
