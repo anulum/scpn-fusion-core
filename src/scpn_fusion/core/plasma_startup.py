@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Plasma Startup Sequence
+"""Plasma startup primitives: Paschen breakdown, avalanche, burn-through, and ramp control."""
 from __future__ import annotations
 
 import math
@@ -17,6 +18,7 @@ from scpn_fusion.core.impurity_transport import CoolingCurve
 
 
 class PaschenBreakdown:
+    """Evaluate Paschen break-down thresholds for loop-triggered startup."""
     def __init__(self, gas: str = "D2", R0: float = 6.2, a: float = 2.0):
         self.gas = gas
         self.R0 = R0
@@ -41,15 +43,18 @@ class PaschenBreakdown:
         return float(self.B_V * pd / denom)
 
     def is_breakdown(self, V_loop: float, p_Pa: float, connection_length_m: float = 100.0) -> bool:
+        """Return whether breakdown occurs at given loop voltage and fill pressure."""
         V_req = self.breakdown_voltage(p_Pa, connection_length_m)
         return V_loop > V_req
 
     def paschen_curve(self, p_range: np.ndarray, connection_length_m: float = 100.0) -> np.ndarray:
+        """Evaluate a Paschen curve for an array of pressures."""
         return np.array([self.breakdown_voltage(p, connection_length_m) for p in p_range])
 
     def optimal_prefill_pressure(
         self, V_loop_max: float, connection_length_m: float = 100.0
     ) -> float:
+        """Return optimal prefill pressure (toy estimate) for the current gas."""
         # Minimum of V_breakdown occurs at pd = exp(1 + C2/A)
         pd_opt = math.exp(1.0 + self.C2 / self.A)
         return float(pd_opt / connection_length_m)
@@ -63,6 +68,7 @@ class AvalancheResult:
 
 
 class TownsendAvalanche:
+    """Simple Townsend avalanche model."""
     def __init__(self, V_loop: float, p_Pa: float, R0: float, a: float):
         self.V_loop = V_loop
         self.p_Pa = p_Pa
@@ -73,6 +79,7 @@ class TownsendAvalanche:
         self.n_neutral = p_Pa / (1.38e-23 * 300.0)  # roughly ideal gas law at 300K
 
     def ionization_rate(self, Te_eV: float) -> float:
+        """Compute a simple ionization rate estimate from electron temperature."""
         # Simplistic ionization rate coefficient
         # ~ exp(-E_iz / Te)
         E_iz = 13.6
@@ -82,6 +89,7 @@ class TownsendAvalanche:
         return float(self.n_neutral * sig_v)
 
     def evolve(self, dt: float, n_steps: int) -> AvalancheResult:
+        """Evolve avalanche over fixed steps and return density/temperature traces."""
         ne = 1e13  # initial seed density
         Te = 1.0  # 1 eV starting electron temp
 
@@ -131,6 +139,7 @@ class BurnThroughResult:
 
 
 class BurnThrough:
+    """Burn-through evolution that balances ohmic heating against radiation."""
     def __init__(self, R0: float, a: float, B0: float, V_loop: float):
         self.R0 = R0
         self.a = a
@@ -139,6 +148,7 @@ class BurnThrough:
         self.E_par = V_loop / (2.0 * math.pi * R0)
 
     def ohmic_power(self, Te_eV: float, ne_19: float, Ip_kA: float) -> float:
+        """Estimate ohmic power from plasma resistivity and loop geometry."""
         # P_ohmic = I_p^2 * R_p
         # eta ~ 1.65e-9 * Z_eff * 10 / T_keV^1.5
         T_keV = max(Te_eV / 1000.0, 1e-6)
@@ -151,6 +161,7 @@ class BurnThrough:
     def radiation_barrier(
         self, Te_eV: float, ne_19: float, f_imp: float, impurity: str = "C"
     ) -> float:
+        """Estimate radiative loss power due to impurities."""
         curve = CoolingCurve(impurity)
         L_z = curve.L_z(np.array([Te_eV]))[0]
 
@@ -164,6 +175,7 @@ class BurnThrough:
     def burn_through_condition(
         self, Te_eV: float, ne_19: float, Ip_kA: float, f_imp: float, impurity: str = "C"
     ) -> bool:
+        """Return whether burn-through condition is met (P_oh > P_rad)."""
         P_oh = self.ohmic_power(Te_eV, ne_19, Ip_kA)
         P_rad = self.radiation_barrier(Te_eV, ne_19, f_imp, impurity)
         return P_oh > P_rad
@@ -171,6 +183,7 @@ class BurnThrough:
     def critical_impurity_fraction(
         self, Te_eV: float, ne_19: float, Ip_kA: float, impurity: str
     ) -> float:
+        """Compute critical impurity fraction at which burn-through becomes marginal."""
         # Find f_imp such that P_oh = P_rad
         curve = CoolingCurve(impurity)
         L_z = curve.L_z(np.array([Te_eV]))[0]
@@ -189,6 +202,7 @@ class BurnThrough:
     def evolve(
         self, ne_19: float, f_imp: float, dt: float, n_steps: int, impurity: str = "C"
     ) -> BurnThroughResult:
+        """Run burn-through integration and report success and temperature trace."""
         Te = 5.0  # start at 5 eV
         Ip = 100.0  # start at 100 kA
 
@@ -230,6 +244,7 @@ class BurnThrough:
 
 @dataclass
 class StartupResult:
+    """Startup outcome summary."""
     breakdown_time_ms: float
     burn_through_time_ms: float
     Ip_at_100ms_kA: float
@@ -238,6 +253,7 @@ class StartupResult:
 
 
 class StartupSequence:
+    """Coarse startup sequence driver."""
     def __init__(
         self,
         R0: float,
@@ -255,6 +271,7 @@ class StartupSequence:
         self.f_imp = f_imp
 
     def run(self) -> StartupResult:
+        """Run breakdown → avalanche → burn-through and return end-state summary."""
         conn = 100.0
         paschen = PaschenBreakdown("D2", self.R0, self.a)
 
@@ -287,18 +304,25 @@ class StartupPhase(Enum):
 
 @dataclass
 class StartupCommand:
+    """Command output for startup phase controller."""
     V_loop: float
     gas_puff_rate: float
     phase: StartupPhase
 
 
 class StartupController:
+    """Finite-state startup controller for early vacuum/discharge phases."""
     def __init__(self, V_loop_max: float, gas_puff_max: float):
         self.V_loop_max = V_loop_max
         self.gas_puff_max = gas_puff_max
         self.phase = StartupPhase.GAS_PUFF
 
     def step(self, ne: float, Te: float, Ip: float, t: float, dt: float) -> StartupCommand:
+        """
+        Advance one phase transition step and produce phase-specific setpoints.
+
+        dt is accepted for interface completeness and currently retained for API stability.
+        """
         # Check transitions first
         if self.phase == StartupPhase.GAS_PUFF:
             if t > 0.1:
