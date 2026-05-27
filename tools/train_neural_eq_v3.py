@@ -51,13 +51,28 @@ MOM = 0.9
 
 
 class MinimalPCA:
+    """A compact PCA utility for low-rank projection and reconstruction."""
+
     def __init__(self, k: int = 20) -> None:
+        """Initialize PCA helper with target component count ``k``."""
         self.k = k
         self.mean_: NDArray | None = None
         self.V: NDArray | None = None
         self.evr: NDArray | None = None
 
     def fit(self, X: NDArray) -> "MinimalPCA":
+        """Fit principal components from centered data matrix ``X``.
+
+        Parameters
+        ----------
+        X:
+            Training samples with shape ``(n_samples, n_features)``.
+
+        Returns
+        -------
+        MinimalPCA
+            ``self`` for chaining.
+        """
         self.mean_ = X.mean(0)
         Xc = X - self.mean_
         U, S, Vt = np.linalg.svd(Xc, full_matrices=False)
@@ -68,17 +83,25 @@ class MinimalPCA:
         return self
 
     def transform(self, X: NDArray) -> NDArray:
+        """Project centered samples into the learned PCA subspace."""
         return (X - self.mean_) @ self.V.T
 
     def inverse_transform(self, Z: NDArray) -> NDArray:
+        """Reconstruct samples from PCA coefficients in latent space."""
         return Z @ self.V + self.mean_
 
     def fit_transform(self, X: NDArray) -> NDArray:
+        """Fit PCA and immediately project ``X``.
+
+        This is a convenience method equivalent to ``fit(X).transform(X)``.
+        """
         self.fit(X)
         return self.transform(X)
 
 
 class MLP:
+    """Simple fully-connected ReLU MLP used as the equilibrium surrogate model."""
+
     def __init__(self, sizes: list[int], seed: int = 42) -> None:
         rng = np.random.default_rng(seed)
         self.W: list[NDArray] = []
@@ -88,6 +111,18 @@ class MLP:
             self.b.append(np.zeros(sizes[i + 1]))
 
     def forward(self, x: NDArray) -> NDArray:
+        """Run a forward pass through fully connected ReLU layers.
+
+        Parameters
+        ----------
+        x:
+            Input feature matrix.
+
+        Returns
+        -------
+        NDArray
+            Model output with the final linear layer applied.
+        """
         h = x
         for i, (W, b) in enumerate(zip(self.W, self.b)):
             h = h @ W + b
@@ -101,6 +136,24 @@ def load_data(
     n_pert: int,
     rng: np.random.Generator,
 ) -> tuple[NDArray, NDArray, list[str], NDArray]:
+    """Load reference equilibria, interpolate to fixed grids, and augment samples.
+
+    Parameters
+    ----------
+    ref_dir:
+        Base directory containing per-machine equilibrium subfolders.
+    n_pert:
+        Number of synthetic perturbations per reference profile.
+    rng:
+        Random generator used for perturbation sampling.
+
+    Returns
+    -------
+    tuple
+        ``(X, Y, labels, sample_weights)`` where ``X`` are feature vectors,
+        ``Y`` are flattened normalized psi fields, ``labels`` are machine IDs,
+        and ``sample_weights`` are per-sample loss weights.
+    """
     from scpn_fusion.core.eqdsk import read_geqdsk
     from scipy.interpolate import RectBivariateSpline
 
@@ -192,6 +245,20 @@ def stratified_split(
     labels: list[str],
     rng: np.random.Generator,
 ) -> tuple[NDArray, NDArray, NDArray]:
+    """Split sample indices per machine with stratified 70/15/15 proportions.
+
+    Parameters
+    ----------
+    labels:
+        Machine labels aligned with sample rows.
+    rng:
+        RNG used for per-machine shuffle.
+
+    Returns
+    -------
+    tuple[NDArray, NDArray, NDArray]
+        Train, validation, and test index arrays.
+    """
     machines = sorted(set(labels))
     tri, vai, tei = [], [], []
     for m in machines:
@@ -213,6 +280,24 @@ def validate_per_machine(
     imean: NDArray,
     istd: NDArray,
 ) -> dict[str, dict]:
+    """Run per-machine validation for the trained network and PCA reconstructions.
+
+    Parameters
+    ----------
+    ref_dir:
+        Base reference data path.
+    mlp:
+        Trained lightweight feed-forward model producing PCA coefficients.
+    pca:
+        Fitted PCA object used for coefficient decode.
+    imean, istd:
+        Input normalization statistics.
+
+    Returns
+    -------
+    dict[str, dict]
+        Per-machine metrics keyed by machine name.
+    """
     from scpn_fusion.core.eqdsk import read_geqdsk
     from scipy.interpolate import RectBivariateSpline
 
@@ -285,6 +370,13 @@ def validate_per_machine(
 
 
 def main() -> int:
+    """Train the neural equilibrium model and emit artifacts/metrics.
+
+    Returns
+    -------
+    int
+        ``0`` for acceptance success, ``2`` when acceptance criteria fail.
+    """
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
     rng = np.random.default_rng(42)
     ref_dir = REPO_ROOT / "validation" / "reference_data"
