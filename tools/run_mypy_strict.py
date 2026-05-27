@@ -28,6 +28,12 @@ def _normalize_timeout_seconds(timeout_s: float) -> float:
 
 
 def main() -> int:
+    """Run mypy with CI-parity settings and return its exit code.
+
+    Returns:
+        ``0`` when mypy exits cleanly; non-zero values propagate mypy or timeout
+        failures using a stable wrapper contract.
+    """
     repo_root = Path(__file__).resolve().parents[1]
     src_path = str(repo_root / "src")
 
