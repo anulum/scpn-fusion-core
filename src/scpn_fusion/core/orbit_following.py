@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Alpha Particle Guiding-Center Orbit Following
+"""Guiding-center orbit tools for alpha particle confinement assessment."""
 from __future__ import annotations
 
 import math
@@ -16,6 +17,8 @@ import numpy as np
 
 @dataclass
 class EnsembleResult:
+    """Summary metrics from a Monte-Carlo orbit-following ensemble."""
+
     loss_fraction: float
     heating_profile: np.ndarray
     current_drive: float
@@ -93,6 +96,7 @@ class GuidingCenterOrbit:
         return np.array([dR_dt, dZ_dt, dphi_dt, dv_par_dt])
 
     def step(self, B_field: Callable, dt: float) -> tuple[float, float, float, float]:
+        """Advance one RK4 step and return updated phase-space state."""
         state = np.array([self.R, self.Z, self.phi, self.v_par])
 
         # RK4
@@ -108,6 +112,8 @@ class GuidingCenterOrbit:
 
 
 class OrbitClassifier:
+    """Classify orbit geometry from traces."""
+
     @staticmethod
     def classify(
         orbit_R: np.ndarray,
@@ -133,6 +139,8 @@ class OrbitClassifier:
 
 
 class MonteCarloEnsemble:
+    """Monte-Carlo wrapper over many guiding-center particles."""
+
     def __init__(self, n_particles: int, E_birth_keV: float, R0: float, a: float, B0: float):
         self.n_particles = n_particles
         self.E_birth_keV = E_birth_keV
@@ -142,6 +150,7 @@ class MonteCarloEnsemble:
         self.particles: list[GuidingCenterOrbit] = []
 
     def initialize(self, ne_profile: np.ndarray, Te_profile: np.ndarray, rho: np.ndarray) -> None:
+        """Sample initial alpha-particle guiding-centers from coarse profile priors."""
         self.particles = []
         for _ in range(self.n_particles):
             # Peaked centrally
@@ -156,6 +165,18 @@ class MonteCarloEnsemble:
             self.particles.append(p)
 
     def follow(self, B_field: Callable, n_bounces: int = 10, dt: float = 1e-7) -> EnsembleResult:
+        """
+        Run orbit integration for all particles and return aggregate loss statistics.
+
+        Parameters
+        ----------
+        B_field : Callable
+            Magnetic field callback returning (B_R, B_Z, B_phi).
+        n_bounces : int
+            Unused parameter kept for API compatibility.
+        dt : float
+            Integration step in seconds.
+        """
         n_pass = 0
         n_trap = 0
         n_lost = 0
@@ -209,8 +230,11 @@ def first_orbit_loss(
 
 
 class SlowingDown:
+    """Simplified alpha slowing-down analytic helpers."""
+
     @staticmethod
     def critical_velocity(Te_keV: float, ne_20: float) -> float:
+        """Return a heuristic critical velocity threshold in m/s."""
         # v_c ~ Te^0.5
         Te_J = Te_keV * 1e3 * 1.602e-19
         m_e = 9.109e-31
@@ -219,6 +243,7 @@ class SlowingDown:
 
     @staticmethod
     def tau_sd(Te_keV: float, ne_20: float, Z_eff: float) -> float:
+        """Return a slow-down time estimate from local plasma conditions."""
         # tau_sd ~ Te^1.5 / ne
         tau = 0.1 * (Te_keV**1.5) / max(ne_20, 0.01)
         return float(tau)
