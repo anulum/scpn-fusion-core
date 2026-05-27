@@ -5,6 +5,12 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Integrated Transport Solver Contracts
+"""Input and parameter contracts for transport helper kernels.
+
+The helpers in this module validate caller-facing scalar/profile inputs before they
+reach computational kernels. They are intentionally conservative: malformed inputs
+fail fast with explicit diagnostics instead of propagating silent NaNs.
+"""
 from __future__ import annotations
 
 from typing import Any

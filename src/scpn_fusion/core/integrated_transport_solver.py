@@ -5,6 +5,16 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Integrated Transport Solver
+"""Top-level integrated transport solver orchestration and factory helpers.
+
+This module wires together transport-model and runtime mixins into the public
+``IntegratedTransportSolver`` interface. It also exposes conservative fallback
+paths (Python implementations when Rust bindings are unavailable) and preserves
+legacy compatibility symbols required by downstream callers.
+
+Docstring scope in this module is intentionally high-level because most detailed
+numerical contracts are documented in the extracted model/runtime mixins.
+"""
 from __future__ import annotations
 
 import json
@@ -480,6 +490,7 @@ class TransportSolver(
     """
 
     def __init__(self, config_path: str | Path, *, multi_ion: bool = False) -> None:
+        """Build a transport solver with deterministic defaults and requested mode."""
         super().__init__(config_path)
         self._initialize_transport_solver_state(multi_ion=multi_ion)
 

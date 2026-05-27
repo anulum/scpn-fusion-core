@@ -26,6 +26,13 @@ def _physics_error_type() -> type[RuntimeError]:
 
 
 class TransportSolverCouplingMixin:
+    """GS/transports coupling mixin for profile projection and closure loops.
+
+    The mixin projects reduced transport state to 2-D fields, computes basic
+    steady-state and confinement diagnostics, and performs the coupled outer loop
+    used by fixed-point integration of Grad-Shafranov and transport updates.
+    """
+
     def map_profiles_to_2d(self) -> None:
         """Project 1D transport profiles onto the 2D Grad-Shafranov grid."""
         idx_max = np.argmax(self.Psi)

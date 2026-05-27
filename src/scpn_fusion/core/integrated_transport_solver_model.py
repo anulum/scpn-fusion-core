@@ -25,6 +25,13 @@ from scpn_fusion.core._integrated_transport_solver_model_pedestal import (
 
 
 class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPedestalMixin):
+    """Model-assembly mixin for transport closure and source contracts.
+
+    This layer resolves closure inputs, selects transport regimes (e.g. neural
+    surrogate vs. deterministic fallback), and updates auxiliary transport state
+    with bounded numeric recovery counters and explicit validation.
+    """
+
     neoclassical_params: dict[str, Any] | None
     D_n: np.ndarray
     chi_e: np.ndarray

@@ -34,6 +34,13 @@ def _eped_fallback_exceptions() -> tuple[type[BaseException], ...]:
 
 
 class TransportSolverRuntimePhysicsMixin:
+    """Physics-kernel mixin for transport source terms and source diagnostics.
+
+    Implemented kernels include heating source reconstruction, auxiliary-power
+    balances, species evolution terms, radiation estimates, and pedestal boundary
+    adaptation with explicit fallback metadata for downstream observability.
+    """
+
     def _rho_volume_element(self) -> np.ndarray:
         """Toroidal volume element per radial cell [m^3]."""
         cached: np.ndarray | None = getattr(self, "_dV_cache", None)

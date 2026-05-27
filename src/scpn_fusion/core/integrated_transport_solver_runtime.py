@@ -34,6 +34,13 @@ class TransportSolverRuntimeMixin(
     TransportSolverRuntimePhysicsMixin,
     TransportSolverCouplingMixin,
 ):
+    """Runtime mixin for time integration and transport state stepping.
+
+    This mixin owns one full transport time step (sources, diffusion solve,
+    profile sanitisation, conservation checks) and delegates physics-specific
+    kernels to helper implementations in the corresponding runtime utility module.
+    """
+
     D_n: np.ndarray
     chi_e: np.ndarray
     chi_i: np.ndarray

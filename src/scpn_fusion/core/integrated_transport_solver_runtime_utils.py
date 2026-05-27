@@ -5,6 +5,13 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Integrated Transport Runtime Utilities
+"""Numerical utility kernels used by transport time integration.
+
+The routines in this module are intentionally small, deterministic, and unit-test
+friendly. They are separated from solver state to keep numerical contracts
+(tridiagonal solve, diffusion assembly, fallback sanitisation) testable in
+isolation.
+"""
 from __future__ import annotations
 
 import numpy as np
@@ -84,6 +91,7 @@ class _CNGridCache:
     __slots__ = ("geo_ip", "geo_im", "_key")
 
     def __init__(self, rho: np.ndarray, drho: float) -> None:
+        """Cache geometry factors for one radial grid resolution."""
         n = len(rho)
         r = rho[1 : n - 1]
         r_ip = r + 0.5 * drho
@@ -94,6 +102,7 @@ class _CNGridCache:
         self._key = (n, drho)
 
     def matches(self, rho: np.ndarray, drho: float) -> bool:
+        """Report whether the cache is valid for the provided grid."""
         return self._key == (len(rho), drho)
 
 
