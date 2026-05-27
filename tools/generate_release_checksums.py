@@ -52,6 +52,18 @@ def _display_path(path: Path) -> str:
 
 
 def generate_manifest(dist_dir: Path, output_file: Path) -> dict[str, Any]:
+    """Generate a SHA256 manifest over all files in the release directory.
+
+    Produces a ``SHA256SUMS``-style text file and returns a metadata summary
+    including file names, digests, and byte sizes.
+
+    Args:
+        dist_dir: Directory containing release artifacts.
+        output_file: Path where checksum manifest should be written.
+
+    Returns:
+        Summary payload persisted to JSON via ``--summary-json``.
+    """
     files = _iter_release_files(dist_dir, output_file.name)
     if not files:
         raise ValueError(f"No release artifacts found in {dist_dir}")
@@ -75,6 +87,15 @@ def generate_manifest(dist_dir: Path, output_file: Path) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate release checksums and emit a JSON summary payload.
+
+    Writes:
+    - ``SHA256SUMS`` (or custom ``--output-file``) into the distribution directory.
+    - JSON summary to ``--summary-json``.
+
+    Returns:
+        0 on success, raises on invalid paths/syntax.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dist-dir", default=str(DEFAULT_DIST))
     parser.add_argument("--output-file", default=str(DEFAULT_OUTPUT))

@@ -28,6 +28,7 @@ COVERAGE_THRESHOLDS_PATH = REPO_ROOT / "tools" / "coverage_guard_thresholds.json
 
 @dataclass(frozen=True)
 class SourceIssue:
+    """Immutable container for a single source P0/P1 backlog row."""
     file_path: str
     domain: str
     owner: str
@@ -155,6 +156,17 @@ def _load_underdeveloped_module() -> Any:
 
 
 def collect_source_issues(repo_root: Path) -> list[SourceIssue]:
+    """Collect P0/P1-scored source issues from underdeveloped-register entries.
+
+    Loads underdeveloped markers, filters to ``src/scpn_fusion/**`` and priority
+    P0/P1, and normalizes them into issue seed records.
+
+    Args:
+        repo_root: Repository root used to load ``generate_underdeveloped_register``.
+
+    Returns:
+        Sorted list of source issue records.
+    """
     underdev = _load_underdeveloped_module()
     entries = underdev.collect_entries(repo_root)
     if hasattr(underdev, "_filter_entries_by_scope"):
@@ -228,6 +240,7 @@ def _acceptance_items(markers: tuple[str, ...]) -> list[str]:
 
 
 def render_markdown(issues: list[SourceIssue]) -> str:
+    """Render the source backlog in markdown with summary tables and issue sections."""
     now = datetime.now(timezone.utc).isoformat()
     coverage_cfg = _load_coverage_thresholds()
     p0_count = sum(1 for issue in issues if issue.priority == "P0")
@@ -327,6 +340,7 @@ def render_markdown(issues: list[SourceIssue]) -> str:
 
 
 def render_json(issues: list[SourceIssue]) -> str:
+    """Render the source backlog payload as machine-readable JSON."""
     coverage_cfg = _load_coverage_thresholds()
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -398,6 +412,11 @@ def _display_path(path: Path) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate or validate source P0/P1 backlog outputs (Markdown + JSON).
+
+    In check mode, compares generated output against existing files and exits
+    non-zero on drift.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-md",
