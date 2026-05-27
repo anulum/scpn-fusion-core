@@ -306,6 +306,7 @@ def build_manifest(
     policy_path: Path,
     manifest_path: Path,
 ) -> dict[str, Any]:
+    """Build the reference-data provenance manifest from policy and tracked files."""
     policy_payload = _load_json(policy_path, label="provenance policy")
     license_registry = _normalize_license_registry(policy_payload)
     rules = _normalize_rules(policy_payload, license_registry=license_registry)
@@ -441,6 +442,7 @@ def build_manifest(
 
 
 def render_manifest_json(manifest: dict[str, Any]) -> str:
+    """Render manifest as stable, pretty-printed JSON."""
     return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
 
@@ -545,6 +547,11 @@ def _emit_stale_diff_summary(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate or validate the reference-data provenance manifest.
+
+    In generation mode writes the manifest and in ``--check`` mode validates
+    drift against an existing file and emits a concise diff summary.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=str(DEFAULT_ROOT), help="Reference-data root directory.")
     parser.add_argument(
