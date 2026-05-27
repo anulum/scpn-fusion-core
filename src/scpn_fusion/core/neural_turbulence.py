@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Neural Turbulence Surrogate (QLKNN-class)
+"""Neural-turbulence surrogate utilities for QLKNN-style transport prediction."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -173,11 +174,13 @@ class QLKNNSurrogate:
         return np.asarray(out)
 
     def load_weights(self, path: str) -> None:
+        """Load NumPy weight arrays from a saved .npz path."""
         data = checked_np_load(path, allow_pickle=False)
         self.weights = [data[f"w{i}"] for i in range(len(self.weights))]
         self.biases = [data[f"b{i}"] for i in range(len(self.biases))]
 
     def save_weights(self, path: str) -> None:
+        """Save current network weights and biases to a .npz file."""
         arrays: dict[str, Any] = {}
         for i, (w, b) in enumerate(zip(self.weights, self.biases)):
             arrays[f"w{i}"] = w
@@ -186,6 +189,8 @@ class QLKNNSurrogate:
 
 
 class TransportInputNormalizer:
+    """Profile transformer that computes QLKNN features from physical profiles."""
+
     @staticmethod
     def _as_valid_profile(name: str, values: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
         arr = np.asarray(values, dtype=float)
@@ -268,6 +273,8 @@ class TransportInputNormalizer:
 
 
 class TrainingDataGenerator:
+    """Factory for synthetic 10-feature QLKNN training samples and targets."""
+
     @staticmethod
     def generate_parameter_scan(
         n_samples: int, rng: np.random.RandomState | None = None
@@ -354,6 +361,8 @@ class TrainingDataGenerator:
 
 
 class NeuralTransportTrainer:
+    """Trainer for the QLKNN surrogate network using NumPy backpropagation."""
+
     def _activate_deriv(self, x: np.ndarray, activation: str) -> np.ndarray:
         if activation == "elu":
             deriv = np.ones_like(x, dtype=float)
@@ -374,6 +383,22 @@ class NeuralTransportTrainer:
         lr: float = 1e-3,
         val_frac: float = 0.2,
     ) -> dict:
+        """
+        Train a fresh QLKNN surrogate and return training/validation loss history.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Training features.
+        y : np.ndarray
+            Target values of shape (N, 3).
+        epochs : int
+            Number of optimization epochs.
+        lr : float
+            Learning rate.
+        val_frac : float
+            Fraction of samples reserved for validation.
+        """
         n_samples = X.shape[0]
         n_val = max(int(n_samples * val_frac), 1)
 
@@ -433,12 +458,16 @@ class NeuralTransportTrainer:
 
 @dataclass
 class TransportFluxes:
+    """Container for dimensional transport fluxes returned by `compute_fluxes`."""
+
     Q_i_W_m2: np.ndarray
     Q_e_W_m2: np.ndarray
     Gamma_e_inv_m2_s: np.ndarray
 
 
 class QLKNNTransportModel:
+    """Facade that normalizes profiles and converts QLKNN predictions to SI fluxes."""
+
     def __init__(self, surrogate: QLKNNSurrogate):
         self.surrogate = surrogate
         self.normalizer = TransportInputNormalizer()
@@ -454,6 +483,16 @@ class QLKNNTransportModel:
         B0: float,
         r: np.ndarray,
     ) -> TransportFluxes:
+        """
+        Compute ion/electron heat and electron particle flux profiles from profiles.
+
+        Parameters
+        ----------
+        Te, Ti, ne, q, r : np.ndarray
+            1-D physical profiles in keV, keV, 10^19 m^-3, unitless, and radius [m].
+        R0, a, B0 : float
+            Major radius, minor radius, and on-axis toroidal field.
+        """
         inputs = self.normalizer.from_profiles(Te, Ti, ne, q, R0, a, B0, r)
 
         # Predict gyro-Bohm fluxes
