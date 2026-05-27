@@ -92,6 +92,22 @@ def evaluate(
     thresholds: dict[str, Any],
     runtime_telemetry: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """Evaluate fallback-budget gates for Torax, SPARC, freegs and runtime telemetry.
+
+    The evaluator compares observed case metadata in the benchmark artifacts
+    against configurable thresholds and emits pass/fail status for each domain.
+
+    Args:
+        torax: Benchmark artifact payload for TORAX transport checks.
+        sparc: Benchmark artifact payload for SPARC surrogate checks.
+        freegs: Benchmark artifact payload for freegs/solovev checks.
+        thresholds: Threshold dictionary loaded from ``fallback_budget_thresholds.json``.
+        runtime_telemetry: Optional runtime telemetry summary to enforce event budgets.
+
+    Returns:
+        A structured summary containing domain-level metrics plus
+        ``overall_pass`` and per-domain ``passes`` boolean flags.
+    """
     torax_cfg = dict(thresholds.get("torax", {}))
     sparc_cfg = dict(thresholds.get("sparc", {}))
     freegs_cfg = dict(thresholds.get("freegs", {}))
@@ -336,6 +352,17 @@ def evaluate(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the fallback-budget check from command-line inputs.
+
+    Produces a JSON summary file and returns a non-zero exit code when any
+    gate fails.
+
+    Args:
+        argv: Optional list of CLI arguments. If omitted, reads ``sys.argv``.
+
+    Returns:
+        0 if all gates pass, 1 if any gate fails.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--torax", default=str(DEFAULT_TORAX))
     parser.add_argument("--sparc", default=str(DEFAULT_SPARC))

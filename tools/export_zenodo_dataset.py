@@ -34,6 +34,12 @@ DEFAULT_OUTPUT = (
 
 
 def main() -> None:
+    """Export benchmark artifacts and metadata into a Zenodo-ready dataset folder.
+
+    The command collects report JSON/Markdown files, selected figures, summary
+    markdown, and version/metadata inputs into ``output-dir`` and writes a
+    generated ``README.md`` and ``dataset_metadata.json`` in the same location.
+    """
     parser = argparse.ArgumentParser(description="Export Zenodo dataset bundle")
     parser.add_argument(
         "--output-dir",

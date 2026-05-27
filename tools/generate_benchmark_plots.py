@@ -351,6 +351,11 @@ def _plot_snn_data(output: Path, r_history: np.ndarray, target_r: float, dt: flo
 
 
 def main() -> None:
+    """Generate benchmark visualizations into ``docs/assets``.
+
+    Builds three canonical figures:
+    controller latency bars, FNO suppression heatmap/energy, and SNN trajectory.
+    """
     parser = argparse.ArgumentParser(description="Generate benchmark plots")
     parser.add_argument("--quick", action="store_true", help="Use fewer episodes")
     args = parser.parse_args()
