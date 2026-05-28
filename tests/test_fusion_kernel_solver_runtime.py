@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
+from typing import Any, cast
 
 from scpn_fusion.core.fusion_kernel_solver_runtime import (
     apply_gs_operator,
@@ -23,19 +24,19 @@ from scpn_fusion.core.fusion_kernel_solver_runtime import (
 
 class _KernelStub:
     def __init__(self, nz: int = 6, nr: int = 6) -> None:
-        self.Psi = np.zeros((nz, nr), dtype=np.float64)
-        self.RR = np.ones((nz, nr), dtype=np.float64) * 6.2
+        self.Psi: np.ndarray = np.zeros((nz, nr), dtype=np.float64)
+        self.RR: np.ndarray = np.ones((nz, nr), dtype=np.float64) * 6.2
         self.dR = 1.0
         self.dZ = 1.0
         self.dummy_called = False
         self.external_profile_mode = False
-        self.J_phi = np.ones((nz, nr), dtype=np.float64)
-        self.cfg = {
+        self.J_phi: np.ndarray = np.ones((nz, nr), dtype=np.float64)
+        self.cfg: dict[str, dict[str, Any]] = {
             "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
             "solver": {"solver_method": "rust_multigrid"},
         }
 
-    def solve_equilibrium(self, **kwargs):  # pragma: no cover - trivial dispatch
+    def solve_equilibrium(self, **kwargs: Any) -> dict[str, Any]:  # pragma: no cover
         self.dummy_called = True
         return {"solver_method": self.cfg["solver"]["solver_method"], "kwargs": kwargs}
 
@@ -118,9 +119,9 @@ def test_solve_newton_linear_system_identity_operator() -> None:
     assert np.all(np.isfinite(delta))
 
 
-def test_solve_via_rust_multigrid_preserve_state_forces_sor_fallback() -> None:
-    k = _KernelStub()
-    result = solve_via_rust_multigrid(k, preserve_initial_state=True)
-    assert k.dummy_called
-    assert result["solver_method"] == "sor"
-    assert k.cfg["solver"]["solver_method"] == "rust_multigrid"
+    def test_solve_via_rust_multigrid_preserve_state_forces_sor_fallback() -> None:
+        k = _KernelStub()
+        result = cast(dict[str, Any], solve_via_rust_multigrid(k, preserve_initial_state=True))
+        assert k.dummy_called
+        assert result["solver_method"] == "sor"
+        assert k.cfg["solver"]["solver_method"] == "rust_multigrid"
