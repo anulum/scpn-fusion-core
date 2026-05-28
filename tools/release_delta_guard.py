@@ -5,7 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Guard release deltas against pinned underdeveloped/claims baseline."""
+"""Guard release deltas against pinned readiness/claims baseline."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASELINE = REPO_ROOT / "docs" / "release_delta_baseline.json"
-DEFAULT_UNDERDEV_SUMMARY = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_SCOPE_SUMMARY.json"
+DEFAULT_READINESS_SUMMARY = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_SUMMARY.json"
 DEFAULT_CLAIMS_MANIFEST = REPO_ROOT / "validation" / "claims_manifest.json"
 DEFAULT_SUMMARY_JSON = REPO_ROOT / "artifacts" / "release_delta_guard_summary.json"
 
@@ -53,11 +53,11 @@ def _coerce_int(value: Any, *, label: str) -> int:
     return value
 
 
-def _parse_underdeveloped_summary(path: Path) -> dict[str, int]:
-    payload = _load_json(path, label="underdeveloped summary")
+def _parse_readiness_summary(path: Path) -> dict[str, int]:
+    payload = _load_json(path, label="readiness summary")
     snapshots = payload.get("snapshots")
     if not isinstance(snapshots, list):
-        raise ValueError("underdeveloped summary must contain snapshots list.")
+        raise ValueError("readiness summary must contain snapshots list.")
     by_scope: dict[str, dict[str, Any]] = {}
     for item in snapshots:
         if isinstance(item, dict) and isinstance(item.get("scope"), str):
@@ -66,7 +66,7 @@ def _parse_underdeveloped_summary(path: Path) -> dict[str, int]:
     source = by_scope.get("source")
     docs_claims = by_scope.get("docs_claims")
     if source is None or docs_claims is None:
-        raise ValueError("underdeveloped summary must include source and docs_claims snapshots.")
+        raise ValueError("readiness summary must include source and docs_claims snapshots.")
 
     return {
         "source_total": _coerce_int(source.get("total_entries"), label="source_total"),
@@ -101,7 +101,7 @@ def evaluate(
 
     Args:
         baseline: Baseline metrics from release pin.
-        current: Current metrics derived from underdeveloped summary.
+        current: Current metrics derived from readiness summary.
         claims_tracked: Current count of tracked claims.
         require_positive_delta: Require at least one metric to improve.
 
@@ -178,9 +178,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Pinned release-delta baseline JSON.",
     )
     parser.add_argument(
-        "--underdeveloped-summary",
-        default=str(DEFAULT_UNDERDEV_SUMMARY),
-        help="Generated underdeveloped scope summary JSON.",
+        "--readiness-summary",
+        default=str(DEFAULT_READINESS_SUMMARY),
+        help="Generated readiness scope summary JSON.",
     )
     parser.add_argument(
         "--claims-manifest",
@@ -200,12 +200,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     baseline_path = _resolve(args.baseline)
-    underdev_path = _resolve(args.underdeveloped_summary)
+    readiness_path = _resolve(args.readiness_summary)
     claims_manifest = _resolve(args.claims_manifest)
     summary_path = _resolve(args.summary_json)
 
     baseline = _load_json(baseline_path, label="release delta baseline")
-    current = _parse_underdeveloped_summary(underdev_path)
+    current = _parse_readiness_summary(readiness_path)
     claims_tracked = _parse_claims_count(claims_manifest)
     summary = evaluate(
         baseline=baseline,

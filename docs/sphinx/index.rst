@@ -122,7 +122,6 @@ Key Features
    :caption: Reference
 
    workflows
-   gpu_roadmap
 
 .. toctree::
    :maxdepth: 1

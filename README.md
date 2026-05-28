@@ -30,11 +30,11 @@ metric-scoped and are not same-work Rust-versus-Python physics speedups.
 | Public API exports | 2 |
 | Python capability source modules | 262 |
 | Python capability classes | 487 |
-| Capability documentation pages | 42 |
+| Capability documentation pages | 40 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 382 |
-| Public documentation pages | 42 |
+| Python test files | 380 |
+| Public documentation pages | 40 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -127,7 +127,7 @@ those solvers.
 This is **not** a replacement for TRANSP, JINTRAC, or GENE. It is a
 **control-algorithm development framework** with reduced-order physics models
 fast enough for real-time loop closure. See
-[`docs/HONEST_SCOPE.md`](docs/HONEST_SCOPE.md) for the full limitations
+[`docs/internal readiness notes.md`](docs/internal readiness notes.md) for the full limitations
 assessment, and
 `python tools/generate_claims_evidence_map.py --check` for every claim mapped
 to its evidence artifact.
@@ -465,14 +465,13 @@ module returns structured errors.
 | Validation scripts | 74 |
 | Rust crates | 11 |
 | CI jobs | 24 |
-| Underdeveloped entries | 115 (tracked, auto-regenerated) |
+| Internal readiness entries | 115 (local-only governance queue) |
 
 Audit artifacts:
-- Underdeveloped register: generated via `python tools/generate_underdeveloped_register.py`
-- Claims evidence map: generated via `python tools/generate_claims_evidence_map.py`
-- Validation gate matrix: generated via `python tools/check_release_acceptance.py`
-- Release acceptance checklist: generated via `python tools/check_release_acceptance.py --expected-version <version>`
-- [Honest scope](docs/HONEST_SCOPE.md)
+- Internal readiness queue: maintained in local-only governance notes
+- Claims evidence map: maintained in local-only governance notes
+- Validation gate matrix: maintained in local-only governance notes
+- Release readiness: maintained in local-only governance notes
 - [Competitive analysis](docs/competitive_analysis.md)
 
 </details>

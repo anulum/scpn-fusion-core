@@ -10,7 +10,7 @@ License: GNU AGPL v3 | Commercial licensing available
 
 Date of restructuring: 2026-02-13
 
-This document replaces the flat backlog with a gated plan so delivery remains progressive and non-regressive.
+This document replaces the flat queue with a gated plan so delivery remains progressive and non-regressive.
 
 ## Trajectory Assessment
 
@@ -18,7 +18,7 @@ Current trajectory is positive but at risk of scope collision.
 
 - Positive: core Phase 1 3D baseline landed (`G3D-01`, `G3D-02`, `G3D-03`, `G3D-04`, `G3D-06`, `G3D-08`).
 - Positive: CI includes dedicated 3D OBJ smoke and RMSE artifact checks.
-- Risk: backlog mixed executable tasks with research-grade tasks in one lane.
+- Risk: queue mixed executable tasks with research-grade tasks in one lane.
 - Risk: several requested target paths do not exist in the repository, which breaks execution sequencing.
 - Risk: external-data-heavy tasks (TORAX, large gyrokinetic datasets, ADAS tables) were not gated by data/licensing readiness.
 
@@ -91,7 +91,7 @@ Notes:
   - target path mapping to existing modules,
   - explicit contingency path if an external dependency is unavailable.
 
-## Reclassified Backlog State
+## Reclassified Queue State
 
 - Ready now (execution lane): none.
 - Delivered in current sprint: `GDEP-04` baseline via `validation/control_resilience_campaign.py` and control-path hooks in Python/Rust modules.

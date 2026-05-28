@@ -5,7 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Generate source-only P0/P1 issue backlog from underdeveloped markers."""
+"""Generate source-only P0/P1 source readiness from readiness markers."""
 
 from __future__ import annotations
 
@@ -20,15 +20,15 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-UNDERDEV_MODULE_PATH = REPO_ROOT / "tools" / "generate_underdeveloped_register.py"
-DEFAULT_OUTPUT_MD = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_ISSUE_BACKLOG.md"
-DEFAULT_OUTPUT_JSON = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_ISSUE_BACKLOG.json"
+READINESS_MODULE_PATH = REPO_ROOT / "tools" / "generate_readiness_register.py"
+DEFAULT_OUTPUT_MD = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_READINESS.md"
+DEFAULT_OUTPUT_JSON = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_READINESS.json"
 COVERAGE_THRESHOLDS_PATH = REPO_ROOT / "tools" / "coverage_guard_thresholds.json"
 
 
 @dataclass(frozen=True)
 class SourceIssue:
-    """Immutable container for a single source P0/P1 backlog row."""
+    """Immutable container for a single source P0/P1 readiness row."""
 
     file_path: str
     domain: str
@@ -74,7 +74,7 @@ def _coverage_line_target(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> f
 
 def _closure_metrics(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> list[str]:
     metrics: list[str] = [
-        "Module no longer appears in docs/internal/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "Module no longer appears in docs/internal/SOURCE_P0P1_READINESS after register regeneration.",
     ]
     line_target = _coverage_line_target(issue, coverage_cfg)
     if line_target is not None:
@@ -124,7 +124,7 @@ def _render_issue_body(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> str:
             "## Proposed Actions",
             actions,
             "",
-            "## Acceptance Checklist",
+            "## Readiness Criteria",
             acceptance,
             "",
             "## Closure Metrics",
@@ -143,13 +143,13 @@ def _priority(score: int) -> str:
     return "P3"
 
 
-def _load_underdeveloped_module() -> Any:
+def _load_readiness_module() -> Any:
     spec = importlib.util.spec_from_file_location(
-        "generate_underdeveloped_register",
-        UNDERDEV_MODULE_PATH,
+        "generate_readiness_register",
+        READINESS_MODULE_PATH,
     )
     if spec is None or spec.loader is None:
-        raise RuntimeError("Failed to load tools/generate_underdeveloped_register.py")
+        raise RuntimeError("Failed to load tools/generate_readiness_register.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -157,21 +157,21 @@ def _load_underdeveloped_module() -> Any:
 
 
 def collect_source_issues(repo_root: Path) -> list[SourceIssue]:
-    """Collect P0/P1-scored source issues from underdeveloped-register entries.
+    """Collect P0/P1-scored source issues from readiness-register entries.
 
-    Loads underdeveloped markers, filters to ``src/scpn_fusion/**`` and priority
+    Loads readiness markers, filters to ``src/scpn_fusion/**`` and priority
     P0/P1, and normalizes them into issue seed records.
 
     Args:
-        repo_root: Repository root used to load ``generate_underdeveloped_register``.
+        repo_root: Repository root used to load ``generate_readiness_register``.
 
     Returns:
         Sorted list of source issue records.
     """
-    underdev = _load_underdeveloped_module()
-    entries = underdev.collect_entries(repo_root)
-    if hasattr(underdev, "_filter_entries_by_scope"):
-        entries = underdev._filter_entries_by_scope(entries, scope="source")
+    readiness = _load_readiness_module()
+    entries = readiness.collect_entries(repo_root)
+    if hasattr(readiness, "_filter_entries_by_scope"):
+        entries = readiness._filter_entries_by_scope(entries, scope="source")
 
     grouped: dict[str, list[Any]] = {}
     for entry in entries:
@@ -241,7 +241,7 @@ def _acceptance_items(markers: tuple[str, ...]) -> list[str]:
 
 
 def render_markdown(issues: list[SourceIssue]) -> str:
-    """Render the source backlog in markdown with summary tables and issue sections."""
+    """Render the source readiness in markdown with summary tables and issue sections."""
     now = datetime.now(timezone.utc).isoformat()
     coverage_cfg = _load_coverage_thresholds()
     p0_count = sum(1 for issue in issues if issue.priority == "P0")
@@ -254,10 +254,10 @@ def render_markdown(issues: list[SourceIssue]) -> str:
             marker_counts[marker] = marker_counts.get(marker, 0) + 1
 
     lines: list[str] = [
-        "# Source P0/P1 Issue Backlog",
+        "# Source P0/P1 Issue Readiness",
         "",
         f"- Generated at: `{now}`",
-        "- Generator: `tools/generate_source_p0p1_issue_backlog.py`",
+        "- Generator: `tools/generate_source_p0p1_readiness.py`",
         "- Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity",
         "",
         "## Summary",
@@ -309,7 +309,7 @@ def render_markdown(issues: list[SourceIssue]) -> str:
         labels = ", ".join(
             [
                 "`hardening`",
-                "`underdeveloped`",
+                "`readiness`",
                 f"`{issue.priority.lower()}`",
                 f"`{issue.domain}`",
             ]
@@ -328,7 +328,7 @@ def render_markdown(issues: list[SourceIssue]) -> str:
                 "**Proposed Actions**",
                 actions,
                 "",
-                "**Acceptance Checklist**",
+                "**Readiness Criteria**",
                 acceptance,
                 "",
                 "**Closure Metrics**",
@@ -341,11 +341,11 @@ def render_markdown(issues: list[SourceIssue]) -> str:
 
 
 def render_json(issues: list[SourceIssue]) -> str:
-    """Render the source backlog payload as machine-readable JSON."""
+    """Render the source readiness payload as machine-readable JSON."""
     coverage_cfg = _load_coverage_thresholds()
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "generator": "tools/generate_source_p0p1_issue_backlog.py",
+        "generator": "tools/generate_source_p0p1_readiness.py",
         "issue_count": len(issues),
         "issues": [
             {
@@ -359,7 +359,7 @@ def render_json(issues: list[SourceIssue]) -> str:
                 "trigger_lines": list(issue.lines),
                 "labels": [
                     "hardening",
-                    "underdeveloped",
+                    "readiness",
                     issue.priority.lower(),
                     issue.domain,
                 ],
@@ -367,13 +367,13 @@ def render_json(issues: list[SourceIssue]) -> str:
                 "github_title": f"[{issue.priority}] Harden {issue.file_path}",
                 "github_labels": [
                     "hardening",
-                    "underdeveloped",
+                    "readiness",
                     issue.priority.lower(),
                     issue.domain,
                 ],
                 "github_body": _render_issue_body(issue, coverage_cfg),
                 "proposed_actions": list(issue.proposed_actions),
-                "acceptance_checklist": _acceptance_items(issue.markers),
+                "readiness_criteria": _acceptance_items(issue.markers),
                 "closure_metrics": _closure_metrics(issue, coverage_cfg),
             }
             for issue in issues
@@ -413,7 +413,7 @@ def _display_path(path: Path) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Generate or validate source P0/P1 backlog outputs (Markdown + JSON).
+    """Generate or validate source P0/P1 readiness outputs (Markdown + JSON).
 
     In check mode, compares generated output against existing files and exits
     non-zero on drift.
@@ -446,7 +446,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         if not md_path.exists() or not json_path.exists():
             print(
-                f"Backlog outputs missing. Run without --check to generate:\n"
+                f"Readiness outputs missing. Run without --check to generate:\n"
                 f"- {_display_path(md_path)}\n"
                 f"- {_display_path(json_path)}",
             )
@@ -454,7 +454,7 @@ def main(argv: list[str] | None = None) -> int:
         current_md = md_path.read_text(encoding="utf-8")
         current_json = json_path.read_text(encoding="utf-8")
         if _normalize_for_check(current_md) != _normalize_for_check(md_content):
-            print(f"Markdown backlog drift detected: {_display_path(md_path)}")
+            print(f"Markdown readiness drift detected: {_display_path(md_path)}")
             return 1
         current_payload = json.loads(current_json)
         new_payload = json.loads(json_content)
@@ -465,15 +465,15 @@ def main(argv: list[str] | None = None) -> int:
         current_payload["generated_at"] = "<dynamic>"
         new_payload["generated_at"] = "<dynamic>"
         if current_payload != new_payload:
-            print(f"JSON backlog drift detected: {_display_path(json_path)}")
+            print(f"JSON readiness drift detected: {_display_path(json_path)}")
             return 1
-        print(f"Source P0/P1 backlog is up to date ({len(issues)} issue seeds).")
+        print(f"Source P0/P1 readiness is up to date ({len(issues)} issue seeds).")
         return 0
 
     _write(md_path, md_content)
     _write(json_path, json_content)
     print(
-        "Wrote source P0/P1 issue backlog:\n"
+        "Wrote source P0/P1 source readiness:\n"
         f"- {_display_path(md_path)}\n"
         f"- {_display_path(json_path)}\n"
         f"issue seeds: {len(issues)}"

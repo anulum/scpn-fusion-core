@@ -37,7 +37,7 @@ def _baseline() -> dict:
     }
 
 
-def _underdev_summary(*, source_p0p1: int, docs_p0p1: int) -> dict:
+def _readiness_summary(*, source_p0p1: int, docs_p0p1: int) -> dict:
     return {
         "snapshots": [
             {
@@ -67,19 +67,19 @@ def _claims_manifest(n: int) -> dict:
 
 def test_main_passes_on_non_regression(tmp_path: Path) -> None:
     baseline = tmp_path / "baseline.json"
-    underdev = tmp_path / "underdev.json"
+    readiness = tmp_path / "readiness.json"
     claims = tmp_path / "claims.json"
     summary = tmp_path / "summary.json"
     _write_json(baseline, _baseline())
-    _write_json(underdev, _underdev_summary(source_p0p1=4, docs_p0p1=15))
+    _write_json(readiness, _readiness_summary(source_p0p1=4, docs_p0p1=15))
     _write_json(claims, _claims_manifest(2))
 
     rc = mod.main(
         [
             "--baseline",
             str(baseline),
-            "--underdeveloped-summary",
-            str(underdev),
+            "--readiness-summary",
+            str(readiness),
             "--claims-manifest",
             str(claims),
             "--summary-json",
@@ -93,19 +93,19 @@ def test_main_passes_on_non_regression(tmp_path: Path) -> None:
 
 def test_main_requires_positive_delta_when_requested(tmp_path: Path) -> None:
     baseline = tmp_path / "baseline.json"
-    underdev = tmp_path / "underdev.json"
+    readiness = tmp_path / "readiness.json"
     claims = tmp_path / "claims.json"
     summary = tmp_path / "summary.json"
     _write_json(baseline, _baseline())
-    _write_json(underdev, _underdev_summary(source_p0p1=4, docs_p0p1=15))
+    _write_json(readiness, _readiness_summary(source_p0p1=4, docs_p0p1=15))
     _write_json(claims, _claims_manifest(2))
 
     rc = mod.main(
         [
             "--baseline",
             str(baseline),
-            "--underdeveloped-summary",
-            str(underdev),
+            "--readiness-summary",
+            str(readiness),
             "--claims-manifest",
             str(claims),
             "--summary-json",
@@ -120,19 +120,19 @@ def test_main_requires_positive_delta_when_requested(tmp_path: Path) -> None:
 
 def test_main_positive_delta_passes_when_reduction_exists(tmp_path: Path) -> None:
     baseline = tmp_path / "baseline.json"
-    underdev = tmp_path / "underdev.json"
+    readiness = tmp_path / "readiness.json"
     claims = tmp_path / "claims.json"
     summary = tmp_path / "summary.json"
     _write_json(baseline, _baseline())
-    _write_json(underdev, _underdev_summary(source_p0p1=3, docs_p0p1=15))
+    _write_json(readiness, _readiness_summary(source_p0p1=3, docs_p0p1=15))
     _write_json(claims, _claims_manifest(2))
 
     rc = mod.main(
         [
             "--baseline",
             str(baseline),
-            "--underdeveloped-summary",
-            str(underdev),
+            "--readiness-summary",
+            str(readiness),
             "--claims-manifest",
             str(claims),
             "--summary-json",

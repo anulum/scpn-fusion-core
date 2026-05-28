@@ -82,7 +82,7 @@ Current control/disruption paths include ML and SNN-oriented components but do n
 - Milestone 3:
   - Add CI smoke + regression tests and document expected thresholds.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

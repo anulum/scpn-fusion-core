@@ -70,7 +70,7 @@ Current equilibrium source updates are fluid-only. This task introduces a determ
 - Milestone 3:
   - Wire optional particle feedback into kernel Picard loop with tests.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

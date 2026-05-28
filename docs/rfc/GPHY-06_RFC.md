@@ -69,7 +69,7 @@ Fixed generic solver paths cannot represent regime-specific runtime specializati
 - Milestone 3:
   - add deterministic tests for cache reuse, hot-swap behavior, and identity-preserving route resolution.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic deterministic scope)

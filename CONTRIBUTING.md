@@ -454,7 +454,7 @@ on our issue tracker. Some ideas:
 - Add GEQDSK test cases from publicly available tokamak data (MAST-U, W7-X).
 - Add Hypothesis property tests for numerical routines in `core/`.
 - Write a new tutorial notebook demonstrating a specific physics module.
-- Reduce P0/P1 entries by running `python tools/generate_underdeveloped_register.py --check`
+- Reduce P0/P1 entries by running `python tools/generate_readiness_register.py --check`
   and fixing current register gaps (see executive summary for live counts).
 - Contribute real experimental validation data (equilibria, confinement profiles).
 

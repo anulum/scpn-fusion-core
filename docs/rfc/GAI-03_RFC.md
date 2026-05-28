@@ -72,7 +72,7 @@ Current divertor load estimation in the global design scanner uses a static scal
 - Milestone 3:
   - Add strict validation report and unit tests.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

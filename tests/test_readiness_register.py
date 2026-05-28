@@ -5,9 +5,9 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # ----------------------------------------------------------------------
-# SCPN Fusion Core -- Underdeveloped Register Tests
+# SCPN Fusion Core -- Internal readiness Register Tests
 # ----------------------------------------------------------------------
-"""Tests for tools/generate_underdeveloped_register.py."""
+"""Tests for tools/generate_readiness_register.py."""
 
 from __future__ import annotations
 
@@ -17,48 +17,48 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "tools" / "generate_underdeveloped_register.py"
-SPEC = importlib.util.spec_from_file_location("generate_underdeveloped_register", MODULE_PATH)
+MODULE_PATH = ROOT / "tools" / "generate_readiness_register.py"
+SPEC = importlib.util.spec_from_file_location("generate_readiness_register", MODULE_PATH)
 assert SPEC and SPEC.loader
-underdev = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = underdev
-SPEC.loader.exec_module(underdev)
+readiness = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = readiness
+SPEC.loader.exec_module(readiness)
 
 
 def test_collect_entries_returns_actionable_findings() -> None:
-    entries = underdev.collect_entries(ROOT)
-    rule_markers = {rule.marker for rule in underdev.MARKER_RULES}
+    entries = readiness.collect_entries(ROOT)
+    rule_markers = {rule.marker for rule in readiness.MARKER_RULES}
     assert all(entry.marker in rule_markers for entry in entries)
     assert all(entry.path != "docs/internal/CLAIMS_EVIDENCE_MAP.md" for entry in entries)
-    assert all(entry.path != "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.md" for entry in entries)
-    assert all(entry.path != "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.json" for entry in entries)
+    assert all(entry.path != "docs/internal/SOURCE_P0P1_READINESS.md" for entry in entries)
+    assert all(entry.path != "docs/internal/SOURCE_P0P1_READINESS.json" for entry in entries)
 
 
 def test_render_markdown_contains_priority_sections() -> None:
-    entries = underdev.collect_entries(ROOT)
-    rendered = underdev.render_markdown(entries=entries, top_limit=10, full_limit=20)
-    assert "# Underdeveloped Register" in rendered
-    assert "## Source-Centric Priority Backlog" in rendered
-    assert "## Top Priority Backlog" in rendered
+    entries = readiness.collect_entries(ROOT)
+    rendered = readiness.render_markdown(entries=entries, top_limit=10, full_limit=20)
+    assert "# Internal readiness Register" in rendered
+    assert "## Source-Centric Priority Readiness" in rendered
+    assert "## Top Priority Readiness" in rendered
     assert "## Full Register" in rendered
 
 
 def test_source_scope_filters_to_src_paths() -> None:
-    entries = underdev.collect_entries(ROOT)
-    scoped = underdev._filter_entries_by_scope(entries, scope="source")
+    entries = readiness.collect_entries(ROOT)
+    scoped = readiness._filter_entries_by_scope(entries, scope="source")
     assert isinstance(scoped, list)
     assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)
 
 
 def test_docs_claims_scope_filters_to_docs_domain() -> None:
-    entries = underdev.collect_entries(ROOT)
-    scoped = underdev._filter_entries_by_scope(entries, scope="docs_claims")
+    entries = readiness.collect_entries(ROOT)
+    scoped = readiness._filter_entries_by_scope(entries, scope="docs_claims")
     assert isinstance(scoped, list)
     assert all(entry.domain == "docs_claims" for entry in scoped)
 
 
 def test_fallback_metadata_lines_are_suppressed() -> None:
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="src/scpn_fusion/control/disruption_predictor.py",
         marker="FALLBACK",
         line='"fallback": True,',
@@ -67,7 +67,7 @@ def test_fallback_metadata_lines_are_suppressed() -> None:
 
 
 def test_fallback_comment_lines_are_suppressed() -> None:
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="src/scpn_fusion/core/fusion_kernel.py",
         marker="FALLBACK",
         line="# Python fallback path",
@@ -76,7 +76,7 @@ def test_fallback_comment_lines_are_suppressed() -> None:
 
 
 def test_analytic_solver_fallback_line_is_suppressed_when_guarded() -> None:
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="src/scpn_fusion/control/analytic_solver.py",
         marker="FALLBACK",
         line='fallback = repo_root / "validation" / "iter_validated_config.json"',
@@ -89,7 +89,7 @@ def test_analytic_solver_fallback_line_is_suppressed_when_guarded() -> None:
 
 
 def test_fallback_assignment_metadata_line_is_suppressed() -> None:
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="src/scpn_fusion/control/disruption_predictor.py",
         marker="FALLBACK",
         line='info["fallback"] = False',
@@ -106,19 +106,19 @@ def test_audited_free_boundary_recovery_fallback_lines_are_suppressed() -> None:
             '"max_abs_actuator_lag_during_fallback": float(np.max(fallback_lag_arr)),',
         ]
     )
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="src/scpn_fusion/control/_free_boundary_tracking_shot.py",
         marker="FALLBACK",
         line='self.history["fallback_active"].append(bool(fallback_active))',
         file_text=file_text,
     )
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="src/scpn_fusion/control/_free_boundary_tracking_control.py",
         marker="FALLBACK",
         line='raise ValueError("fallback currents are not configured.")',
         file_text=file_text,
     )
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="src/scpn_fusion/control/_free_boundary_supervisory_types.py",
         marker="FALLBACK",
         line='SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback")',
@@ -127,7 +127,7 @@ def test_audited_free_boundary_recovery_fallback_lines_are_suppressed() -> None:
 
 
 def test_deprecated_guard_lines_are_suppressed() -> None:
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="tools/deprecated_default_lane_guard.py",
         marker="DEPRECATED",
         line='print("Deprecated default lane guard failed.")',
@@ -136,8 +136,8 @@ def test_deprecated_guard_lines_are_suppressed() -> None:
 
 
 def test_deprecated_docs_guard_line_is_suppressed() -> None:
-    assert underdev._is_marker_suppressed(
-        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
+    assert readiness._is_marker_suppressed(
+        rel_path="VALIDATION.md",
         marker="DEPRECATED",
         line="| `release` | ... deprecated-default-lane guard ... |",
         file_text="",
@@ -145,7 +145,7 @@ def test_deprecated_docs_guard_line_is_suppressed() -> None:
 
 
 def test_experimental_command_lines_are_suppressed_on_release_surfaces() -> None:
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="docs/BENCHMARKS.md",
         marker="EXPERIMENTAL",
         line="scpn-fusion all --surrogate --experimental",
@@ -154,8 +154,8 @@ def test_experimental_command_lines_are_suppressed_on_release_surfaces() -> None
 
 
 def test_experimental_gate_lines_are_suppressed_on_release_surfaces() -> None:
-    assert underdev._is_marker_suppressed(
-        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
+    assert readiness._is_marker_suppressed(
+        rel_path="VALIDATION.md",
         marker="EXPERIMENTAL",
         line='| `validation-regression` | ... (`pytest -m "not experimental"`) |',
         file_text="",
@@ -164,13 +164,13 @@ def test_experimental_gate_lines_are_suppressed_on_release_surfaces() -> None:
 
 def test_experimental_ack_runbook_commands_are_suppressed() -> None:
     file_text = "--experimental\n--experimental-ack I_UNDERSTAND_EXPERIMENTAL\n--strict"
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="docs/internal/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
         marker="EXPERIMENTAL",
         line="  --experimental \\",
         file_text=file_text,
     )
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="docs/internal/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
         marker="EXPERIMENTAL",
         line="  --experimental-ack I_UNDERSTAND_EXPERIMENTAL \\",
@@ -179,7 +179,7 @@ def test_experimental_ack_runbook_commands_are_suppressed() -> None:
 
 
 def test_bibliographic_experimental_title_is_suppressed() -> None:
-    assert underdev._is_marker_suppressed(
+    assert readiness._is_marker_suppressed(
         rel_path="docs/PHYSICS_METHODS_COMPLETE.md",
         marker="EXPERIMENTAL",
         line=(
@@ -191,14 +191,14 @@ def test_bibliographic_experimental_title_is_suppressed() -> None:
 
 
 def test_no_fallback_gate_contract_lines_are_suppressed() -> None:
-    assert underdev._is_marker_suppressed(
-        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
+    assert readiness._is_marker_suppressed(
+        rel_path="VALIDATION.md",
         marker="FALLBACK",
         line="Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS reference backend.",
         file_text="",
     )
-    assert underdev._is_marker_suppressed(
-        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
+    assert readiness._is_marker_suppressed(
+        rel_path="VALIDATION.md",
         marker="FALLBACK",
         line="enforces a no-fallback contract when invoked.",
         file_text="",
@@ -214,7 +214,7 @@ def test_collect_source_heuristics_detects_monolith_and_test_gap(tmp_path: Path)
 
     huge_module = src_dir / "synthetic_huge_module.py"
     huge_module.write_text(
-        "\n".join("value = 1" for _ in range(underdev.SOURCE_MONOLITH_LOC_WARN + 5)),
+        "\n".join("value = 1" for _ in range(readiness.SOURCE_MONOLITH_LOC_WARN + 5)),
         encoding="utf-8",
     )
     # Include at least one test file so test corpus generation path is exercised.
@@ -222,14 +222,14 @@ def test_collect_source_heuristics_detects_monolith_and_test_gap(tmp_path: Path)
         "def test_dummy():\n    assert True\n", encoding="utf-8"
     )
 
-    entries = underdev._collect_source_heuristic_entries(repo_root)
+    entries = readiness._collect_source_heuristic_entries(repo_root)
     markers = {entry.marker for entry in entries}
     assert "MONOLITH" in markers
     assert "TEST_GAP" in markers
 
 
 def test_fallback_density_signal_count_ignores_metadata_noise() -> None:
-    signal = underdev._fallback_density_signal_count(
+    signal = readiness._fallback_density_signal_count(
         "\n".join(
             [
                 'out_meta["mode"] = "fallback"',
@@ -243,7 +243,7 @@ def test_fallback_density_signal_count_ignores_metadata_noise() -> None:
 
 
 def test_fallback_density_signal_count_counts_runtime_risk_lines() -> None:
-    signal = underdev._fallback_density_signal_count(
+    signal = readiness._fallback_density_signal_count(
         "\n".join(
             [
                 'record_fallback_event("x", "y")',
@@ -256,7 +256,7 @@ def test_fallback_density_signal_count_counts_runtime_risk_lines() -> None:
 
 
 def test_narrative_docs_claims_receive_priority_penalty() -> None:
-    penalty = underdev._score_context_penalty(
+    penalty = readiness._score_context_penalty(
         rel_path="docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
         marker="EXPERIMENTAL",
         line="- Experimental data access remains in-progress.",
@@ -265,8 +265,8 @@ def test_narrative_docs_claims_receive_priority_penalty() -> None:
 
 
 def test_release_claim_surfaces_do_not_receive_narrative_penalty() -> None:
-    penalty = underdev._score_context_penalty(
-        rel_path="docs/HONEST_SCOPE.md",
+    penalty = readiness._score_context_penalty(
+        rel_path="docs/PHYSICS_METHODS_COMPLETE.md",
         marker="EXPERIMENTAL",
         line="| 5D gyrokinetic turbulence | Deliberately reduced-order for real-time control |",
     )
@@ -274,21 +274,21 @@ def test_release_claim_surfaces_do_not_receive_narrative_penalty() -> None:
 
 
 def test_main_check_mode_passes_when_output_is_current(tmp_path: Path) -> None:
-    output_path = tmp_path / "UNDERDEVELOPED_REGISTER.md"
-    rc_generate = underdev.main(["--output", str(output_path)])
+    output_path = tmp_path / "INTERNAL_READINESS_REGISTER.md"
+    rc_generate = readiness.main(["--output", str(output_path)])
     assert rc_generate == 0
-    rc_check = underdev.main(["--output", str(output_path), "--check"])
+    rc_check = readiness.main(["--output", str(output_path), "--check"])
     assert rc_check == 0
 
 
 def test_main_check_mode_fails_when_output_is_missing(tmp_path: Path) -> None:
-    output_path = tmp_path / "missing_underdeveloped_register.md"
-    rc_check = underdev.main(["--output", str(output_path), "--check"])
+    output_path = tmp_path / "missing_readiness_register.md"
+    rc_check = readiness.main(["--output", str(output_path), "--check"])
     assert rc_check == 1
 
 
 def test_main_check_mode_fails_on_drift(tmp_path: Path) -> None:
-    output_path = tmp_path / "UNDERDEVELOPED_REGISTER.md"
+    output_path = tmp_path / "INTERNAL_READINESS_REGISTER.md"
     output_path.write_text("# stale\n", encoding="utf-8")
-    rc_check = underdev.main(["--output", str(output_path), "--check"])
+    rc_check = readiness.main(["--output", str(output_path), "--check"])
     assert rc_check == 1

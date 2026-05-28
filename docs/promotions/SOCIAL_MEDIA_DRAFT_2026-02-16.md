@@ -66,7 +66,7 @@ https://github.com/anulum/scpn-fusion-core
 
 ---
 
-*Review checklist before posting:*
+*Review criteria before posting:*
 - [ ] Verify RESULTS.md numbers match latest run
 - [ ] Confirm GitHub repo is public
 - [ ] Check docs site is live

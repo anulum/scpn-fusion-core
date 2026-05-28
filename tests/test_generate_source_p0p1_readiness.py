@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Tests for tools/generate_source_p0p1_issue_backlog.py."""
+"""Tests for tools/generate_source_p0p1_readiness.py."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "tools" / "generate_source_p0p1_issue_backlog.py"
-SPEC = importlib.util.spec_from_file_location("generate_source_p0p1_issue_backlog", MODULE_PATH)
+MODULE_PATH = ROOT / "tools" / "generate_source_p0p1_readiness.py"
+SPEC = importlib.util.spec_from_file_location("generate_source_p0p1_readiness", MODULE_PATH)
 assert SPEC and SPEC.loader
 mod = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = mod
@@ -33,10 +33,10 @@ def test_collect_source_issues_filters_to_source_p0p1() -> None:
 def test_render_markdown_contains_expected_sections() -> None:
     issues = mod.collect_source_issues(ROOT)
     rendered = mod.render_markdown(issues)
-    assert "# Source P0/P1 Issue Backlog" in rendered
+    assert "# Source P0/P1 Issue Readiness" in rendered
     assert "## Auto-generated Issue Seeds" in rendered
     if issues:
-        assert "Acceptance Checklist" in rendered
+        assert "Readiness Criteria" in rendered
         assert "Closure Metrics" in rendered
 
 

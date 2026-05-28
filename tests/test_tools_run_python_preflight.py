@@ -35,6 +35,7 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(module, "_internal_files_available", lambda *_paths: True)
     monkeypatch.setattr(module.sys, "argv", ["run_python_preflight.py"])
     monkeypatch.setattr(module.sys, "executable", "python-test")
 
@@ -114,7 +115,7 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
-                "tools/generate_underdeveloped_register.py",
+                "tools/generate_readiness_register.py",
                 "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
@@ -122,7 +123,7 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
-                "tools/generate_underdeveloped_scope_reports.py",
+                "tools/generate_readiness_scope_reports.py",
                 "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
@@ -139,7 +140,7 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
-                "tools/generate_source_p0p1_issue_backlog.py",
+                "tools/generate_source_p0p1_readiness.py",
                 "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
@@ -163,7 +164,7 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
-                "tools/check_release_acceptance.py",
+                "tools/check_release_readiness.py",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -296,6 +297,7 @@ def test_main_honors_skip_flags(monkeypatch):
         return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(module, "_internal_files_available", lambda *_paths: True)
     monkeypatch.setattr(
         module.sys,
         "argv",
@@ -305,13 +307,13 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-claims-map",
             "--skip-claim-range-guard",
             "--skip-capability-manifest",
-            "--skip-underdeveloped-register",
-            "--skip-underdeveloped-scope-reports",
+            "--skip-readiness-register",
+            "--skip-readiness-scope-reports",
             "--skip-release-delta-guard",
-            "--skip-source-issue-backlog",
+            "--skip-source-readiness",
             "--skip-untested-module-guard",
             "--skip-deprecated-default-lane-guard",
-            "--skip-release-checklist",
+            "--skip-release-readiness",
             "--skip-shot-manifest",
             "--skip-reference-data-provenance",
             "--skip-shot-splits",
@@ -373,6 +375,7 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
         return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(module, "_internal_files_available", lambda *_paths: True)
     monkeypatch.setattr(module, "_module_available", lambda _name: True)
     monkeypatch.setattr(
         module.sys,
@@ -385,13 +388,13 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             "--skip-claim-range-guard",
             "--skip-claims-map",
             "--skip-capability-manifest",
-            "--skip-underdeveloped-register",
-            "--skip-underdeveloped-scope-reports",
+            "--skip-readiness-register",
+            "--skip-readiness-scope-reports",
             "--skip-release-delta-guard",
-            "--skip-source-issue-backlog",
+            "--skip-source-readiness",
             "--skip-untested-module-guard",
             "--skip-deprecated-default-lane-guard",
-            "--skip-release-checklist",
+            "--skip-release-readiness",
             "--skip-shot-manifest",
             "--skip-reference-data-provenance",
             "--skip-shot-splits",
@@ -459,6 +462,7 @@ def test_main_enables_freegs_strict_backend_check_when_requested(monkeypatch):
         return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(module, "_internal_files_available", lambda *_paths: True)
     monkeypatch.setattr(module, "_module_available", lambda _name: True)
     monkeypatch.setattr(
         module.sys,
@@ -472,13 +476,13 @@ def test_main_enables_freegs_strict_backend_check_when_requested(monkeypatch):
             "--skip-claim-range-guard",
             "--skip-claims-map",
             "--skip-capability-manifest",
-            "--skip-underdeveloped-register",
-            "--skip-underdeveloped-scope-reports",
+            "--skip-readiness-register",
+            "--skip-readiness-scope-reports",
             "--skip-release-delta-guard",
-            "--skip-source-issue-backlog",
+            "--skip-source-readiness",
             "--skip-untested-module-guard",
             "--skip-deprecated-default-lane-guard",
-            "--skip-release-checklist",
+            "--skip-release-readiness",
             "--skip-shot-manifest",
             "--skip-reference-data-provenance",
             "--skip-shot-splits",
@@ -566,13 +570,13 @@ def test_main_skips_freegs_strict_backend_when_unavailable(monkeypatch):
             "--skip-claim-range-guard",
             "--skip-claims-map",
             "--skip-capability-manifest",
-            "--skip-underdeveloped-register",
-            "--skip-underdeveloped-scope-reports",
+            "--skip-readiness-register",
+            "--skip-readiness-scope-reports",
             "--skip-release-delta-guard",
-            "--skip-source-issue-backlog",
+            "--skip-source-readiness",
             "--skip-untested-module-guard",
             "--skip-deprecated-default-lane-guard",
-            "--skip-release-checklist",
+            "--skip-release-readiness",
             "--skip-shot-manifest",
             "--skip-reference-data-provenance",
             "--skip-shot-splits",
@@ -654,13 +658,13 @@ def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
             "--skip-claim-range-guard",
             "--skip-claims-map",
             "--skip-capability-manifest",
-            "--skip-underdeveloped-register",
-            "--skip-underdeveloped-scope-reports",
+            "--skip-readiness-register",
+            "--skip-readiness-scope-reports",
             "--skip-release-delta-guard",
-            "--skip-source-issue-backlog",
+            "--skip-source-readiness",
             "--skip-untested-module-guard",
             "--skip-deprecated-default-lane-guard",
-            "--skip-release-checklist",
+            "--skip-release-readiness",
             "--skip-shot-manifest",
             "--skip-reference-data-provenance",
             "--skip-shot-splits",

@@ -5,7 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Generate split underdeveloped reports for source and docs-claims scopes."""
+"""Generate split readiness reports for source and docs-claims scopes."""
 
 from __future__ import annotations
 
@@ -20,15 +20,15 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-UNDERDEV_MODULE_PATH = REPO_ROOT / "tools" / "generate_underdeveloped_register.py"
-DEFAULT_SOURCE_MD = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_SOURCE_REGISTER.md"
-DEFAULT_DOCS_MD = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md"
-DEFAULT_SUMMARY_JSON = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_SCOPE_SUMMARY.json"
+READINESS_MODULE_PATH = REPO_ROOT / "tools" / "generate_readiness_register.py"
+DEFAULT_SOURCE_MD = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_SOURCE.md"
+DEFAULT_DOCS_MD = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_DOCS_CLAIMS.md"
+DEFAULT_SUMMARY_JSON = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_SUMMARY.json"
 
 
 @dataclass(frozen=True)
 class ScopeSnapshot:
-    """Per-scope snapshot of underdevelopment debt counts."""
+    """Per-scope snapshot of readiness debt counts."""
 
     scope: str
     total_entries: int
@@ -36,12 +36,12 @@ class ScopeSnapshot:
     marker_counts: dict[str, int]
 
 
-def _load_underdev_module() -> Any:
+def _load_readiness_module() -> Any:
     spec = importlib.util.spec_from_file_location(
-        "generate_underdeveloped_register", UNDERDEV_MODULE_PATH
+        "generate_readiness_register", READINESS_MODULE_PATH
     )
     if spec is None or spec.loader is None:
-        raise RuntimeError("Failed to load tools/generate_underdeveloped_register.py")
+        raise RuntimeError("Failed to load tools/generate_readiness_register.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -89,7 +89,7 @@ def _collect_snapshot(entries: list[Any], *, scope: str, module: Any) -> ScopeSn
 
 
 def _build_scope_reports(*, top_limit: int, full_limit: int) -> tuple[str, str, str]:
-    module = _load_underdev_module()
+    module = _load_readiness_module()
     entries = module.collect_entries(REPO_ROOT)
     source_entries = module._filter_entries_by_scope(entries, scope="source")  # noqa: SLF001
     docs_entries = module._filter_entries_by_scope(entries, scope="docs_claims")  # noqa: SLF001
@@ -111,7 +111,7 @@ def _build_scope_reports(*, top_limit: int, full_limit: int) -> tuple[str, str, 
     docs_snapshot = _collect_snapshot(docs_entries, scope="docs_claims", module=module)
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "generator": "tools/generate_underdeveloped_scope_reports.py",
+        "generator": "tools/generate_readiness_scope_reports.py",
         "snapshots": [asdict(source_snapshot), asdict(docs_snapshot)],
     }
     summary_json = json.dumps(summary, indent=2, sort_keys=True) + "\n"
@@ -170,7 +170,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         missing = [p for p in (source_out, docs_out, summary_out) if not p.exists()]
         if missing:
-            print("Underdeveloped scope outputs missing:")
+            print("Internal readiness scope outputs missing:")
             for path in missing:
                 print(f"- {_display_path(path)}")
             return 1
@@ -189,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
         if current_json != new_json:
             print(f"Scope summary drift detected: {_display_path(summary_out)}")
             return 1
-        print("Underdeveloped scope reports are up to date.")
+        print("Internal readiness scope reports are up to date.")
         return 0
 
     for path, content in (
@@ -200,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
     print(
-        "Wrote underdeveloped scope reports:\n"
+        "Wrote readiness scope reports:\n"
         f"- {_display_path(source_out)}\n"
         f"- {_display_path(docs_out)}\n"
         f"- {_display_path(summary_out)}"

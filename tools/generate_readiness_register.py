@@ -5,7 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Generate an actionable underdeveloped/simplified register from repo markers."""
+"""Generate an actionable readiness/simplified register from repo markers."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from typing import Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_REGISTER.md"
+DEFAULT_OUTPUT = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_REGISTER.md"
 
 TEXT_EXTENSIONS = {
     ".py",
@@ -54,15 +54,15 @@ INCLUDED_ROOTS = (
 )
 EXCLUDED_SUFFIXES = {".html"}
 EXCLUDED_PATHS = {
-    "tools/generate_underdeveloped_register.py",
+    "tools/generate_readiness_register.py",
     "validation/claims_manifest.json",
     "docs/internal/V3_6_MILESTONE_BOARD.md",
     "docs/internal/CLAIMS_EVIDENCE_MAP.md",
-    "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.md",
-    "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.json",
-    "docs/internal/UNDERDEVELOPED_SOURCE_REGISTER.md",
-    "docs/internal/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md",
-    "docs/internal/UNDERDEVELOPED_SCOPE_SUMMARY.json",
+    "docs/internal/SOURCE_P0P1_READINESS.md",
+    "docs/internal/SOURCE_P0P1_READINESS.json",
+    "docs/internal/INTERNAL_READINESS_SOURCE.md",
+    "docs/internal/INTERNAL_READINESS_DOCS_CLAIMS.md",
+    "docs/internal/INTERNAL_READINESS_SUMMARY.json",
     # Completed-work logs: keywords here describe fixed/shipped items, not open debt.
     "CHANGELOG.md",
     "docs/sphinx/changelog.rst",
@@ -76,11 +76,8 @@ RELEASE_CLAIM_SURFACES = {
     "README.md",
     "RESULTS.md",
     "VALIDATION.md",
-    "docs/HONEST_SCOPE.md",
+    "docs/PHYSICS_METHODS_COMPLETE.md",
     "docs/BENCHMARKS.md",
-    "docs/internal/VALIDATION_GATE_MATRIX.md",
-    "docs/internal/V3_9_3_RELEASE_CHECKLIST.md",
-    "docs/internal/RELEASE_ACCEPTANCE_CHECKLIST.md",
     "docs/competitive_analysis.md",
     "docs/sphinx/userguide/validation.rst",
 }
@@ -90,9 +87,6 @@ RELEASE_CLAIM_SURFACES = {
 NARRATIVE_DOC_PREFIXES = (
     "docs/promotions/",
     "docs/rfc/",
-    "docs/internal/PHASE3_EXECUTION_REGISTRY.md",
-    "docs/internal/DEEP_AUDIT_AND_SOTA_PLAN_",
-    "docs/internal/HARDENING_30_DAY_EXECUTION_PLAN.md",
     "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
     "docs/PACKET_",
 )
@@ -112,7 +106,7 @@ FREE_BOUNDARY_RECOVERY_AUDIT_FIELDS = (
 
 @dataclass(frozen=True)
 class MarkerRule:
-    """Rule describing a textual marker and its underdevelopment priority metadata."""
+    """Rule describing a textual marker and its readiness priority metadata."""
 
     marker: str
     pattern: re.Pattern[str]
@@ -122,7 +116,7 @@ class MarkerRule:
 
 @dataclass(frozen=True)
 class RegisterEntry:
-    """A single underdeveloped marker hit captured for tracking and remediation."""
+    """A single readiness marker hit captured for tracking and remediation."""
 
     path: str
     line: int
@@ -220,7 +214,7 @@ def _is_marker_suppressed(
 
     if marker == "EXPERIMENTAL" and rel_is_release_claim_surface:
         # Commands/docs that explicitly *gate* experimental lanes should not be
-        # treated as unresolved underdevelopment debt.
+        # treated as unresolved readiness debt.
         if "--experimental" in lowered_line:
             return True
         if "@pytest.mark.experimental" in lowered_line:
@@ -258,14 +252,14 @@ def _is_marker_suppressed(
         "tools/deprecated_default_lane_guard.py",
         "validation/benchmark_deprecated_mode_exclusion.py",
     } and marker in {"DEPRECATED", "EXPERIMENTAL"}:
-        # Guard/benchmark internals should not self-trigger top-priority backlog noise.
+        # Guard/benchmark internals should not self-trigger top-priority readiness noise.
         return True
     if rel_path == "tools/run_python_preflight.py" and marker == "DEPRECATED":
         if "deprecated default lane guard" in lowered_line:
             return True
         if "--skip-deprecated-default-lane-guard" in lowered_line:
             return True
-    if rel_path == "tools/generate_source_p0p1_issue_backlog.py" and marker in {
+    if rel_path == "tools/generate_source_p0p1_readiness.py" and marker in {
         "DEPRECATED",
         "EXPERIMENTAL",
         "FALLBACK",
@@ -273,7 +267,7 @@ def _is_marker_suppressed(
     }:
         if 'if "' in line and '" in markers' in line:
             return True
-        if "acceptance" in lowered_line and "checklist" in lowered_line:
+        if "acceptance" in lowered_line and "criteria" in lowered_line:
             return True
     if rel_path == "tools/fallback_budget_guard.py" and marker == "FALLBACK":
         if "fallback budget summary" in lowered_line:
@@ -308,7 +302,7 @@ def _is_marker_suppressed(
             return True
     if marker == "FALLBACK":
         stripped = line.strip()
-        if rel_path == "docs/internal/VALIDATION_GATE_MATRIX.md":
+        if rel_path == "VALIDATION.md":
             if any(
                 phrase in lowered_line
                 for phrase in (
@@ -383,14 +377,10 @@ def _is_marker_suppressed(
     }:
         return True
 
-    # Execution registry entries describe completed hardening items.
-    if rel_path == "docs/internal/PHASE3_EXECUTION_REGISTRY.md":
-        return True
-
     # Audit/governance tools that reference marker names as strings are
-    # infrastructure, not underdeveloped code.
+    # infrastructure, not readiness code.
     if rel_path in {
-        "tools/generate_source_p0p1_issue_backlog.py",
+        "tools/generate_source_p0p1_readiness.py",
         "tools/run_python_preflight.py",
     }:
         return True
@@ -582,7 +572,7 @@ def _score_context_penalty(*, rel_path: str, marker: str, line: str) -> int:
         elif marker in {"DEPRECATED", "NOT_VALIDATED"}:
             penalty += 12
 
-    if rel_path == "tools/generate_source_p0p1_issue_backlog.py":
+    if rel_path == "tools/generate_source_p0p1_readiness.py":
         if marker in {"DEPRECATED", "EXPERIMENTAL"}:
             penalty += 26
     if rel_path == "validation/benchmark_deprecated_mode_exclusion.py":
@@ -811,7 +801,7 @@ def render_markdown(
     full_limit: int,
     scope: str = "full",
 ) -> str:
-    """Render the underdeveloped debt register as markdown content.
+    """Render the readiness debt register as markdown content.
 
     Args:
         entries: Entry set to include in the report.
@@ -835,7 +825,7 @@ def render_markdown(
     source_entries = [entry for entry in entries if entry.domain in SOURCE_DOMAINS]
     docs_entries = [entry for entry in entries if entry.domain == "docs_claims"]
     source_p0p1 = [entry for entry in source_entries if _priority(entry.score) in {"P0", "P1"}]
-    source_backlog = sorted(source_p0p1, key=lambda e: (-e.score, e.domain, e.path, e.line))
+    source_readiness = sorted(source_p0p1, key=lambda e: (-e.score, e.domain, e.path, e.line))
     if scope == "source":
         source_scope_note = "source-only (`src/scpn_fusion/**`) markers"
     elif scope == "docs_claims":
@@ -844,10 +834,10 @@ def render_markdown(
         source_scope_note = "production code + docs claims markers (tests/reports/html excluded)"
 
     lines: list[str] = [
-        "# Underdeveloped Register",
+        "# Internal readiness Register",
         "",
         f"- Generated at: `{now}`",
-        "- Generator: `tools/generate_underdeveloped_register.py`",
+        "- Generator: `tools/generate_readiness_register.py`",
         f"- Scope: {source_scope_note}",
         "",
         "## Executive Summary",
@@ -857,7 +847,7 @@ def render_markdown(
         f"| Total flagged entries | {len(entries)} |",
         f"| P0 + P1 entries | {sum(1 for e in entries if _priority(e.score) in {'P0', 'P1'})} |",
         f"| Source-domain entries | {len(source_entries)} |",
-        f"| Source-domain P0 + P1 entries | {len(source_backlog)} |",
+        f"| Source-domain P0 + P1 readiness entries | {len(source_readiness)} |",
         f"| Docs-claims entries | {len(docs_entries)} |",
         f"| Domains affected | {len(domain_counts)} |",
         "",
@@ -868,7 +858,7 @@ def render_markdown(
     if scope == "full":
         lines.extend(
             [
-                f"## Source-Centric Priority Backlog (Top {min(top_limit, len(source_backlog))})",
+                f"## Source-Centric Priority Readiness (Top {min(top_limit, len(source_readiness))})",
                 "",
                 "_Filtered to implementation domains to reduce docs/claims noise during hardening triage._",
                 "",
@@ -876,7 +866,7 @@ def render_markdown(
                 "|---|---:|---|---|---|---|---|---|",
             ]
         )
-        for entry in source_backlog[:top_limit]:
+        for entry in source_readiness[:top_limit]:
             lines.append(
                 "| "
                 f"{_priority(entry.score)} | {entry.score} | `{entry.domain}` | `{entry.marker}` | "
@@ -886,7 +876,7 @@ def render_markdown(
 
     lines.extend(
         [
-            f"## Top Priority Backlog (Top {min(top_limit, len(entries))})",
+            f"## Top Priority Readiness (Top {min(top_limit, len(entries))})",
             "",
             "| Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |",
             "|---|---:|---|---|---|---|---|---|",
@@ -961,7 +951,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--output",
         default=str(DEFAULT_OUTPUT),
-        help="Output markdown path (default: docs/internal/UNDERDEVELOPED_REGISTER.md).",
+        help="Output markdown path (default: docs/internal/INTERNAL_READINESS_REGISTER.md).",
     )
     parser.add_argument(
         "--check",
@@ -1006,7 +996,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         if not output_path.exists():
             print(
-                "Underdeveloped register output missing. "
+                "Internal readiness register output missing. "
                 "Run without --check to generate:\n"
                 f"- {_display_path(output_path)}"
             )
@@ -1015,7 +1005,7 @@ def main(argv: list[str] | None = None) -> int:
         norm_current = _normalize_for_check(current)
         norm_report = _normalize_for_check(report)
         if norm_current != norm_report:
-            print(f"Underdeveloped register drift detected: {_display_path(output_path)}")
+            print(f"Internal readiness register drift detected: {_display_path(output_path)}")
             cur_lines = norm_current.splitlines()
             rep_lines = norm_report.splitlines()
             shown = 0
@@ -1028,14 +1018,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  line count: committed={len(cur_lines)}, generated={len(rep_lines)}")
             return 1
         print(
-            f"Underdeveloped register is up to date ({len(entries)} entries, scope={args.scope})."
+            f"Internal readiness register is up to date ({len(entries)} entries, scope={args.scope})."
         )
         return 0
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(report, encoding="utf-8")
     print(
-        f"Generated underdeveloped register with {len(entries)} entries "
+        f"Generated readiness register with {len(entries)} entries "
         f"(scope={args.scope}): {_display_path(output_path)}"
     )
     return 0

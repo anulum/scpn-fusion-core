@@ -36,7 +36,7 @@ Dashboard URL:
    - highlight inhibitor-arc safety interlocks as hard-stop logic for control commands.
 5. End by showing reproducible startup command (`docker compose up --build`).
 
-## Publishing Checklist
+## Publishing Criteria
 
 1. Export MP4 (1080p).
 2. Upload to YouTube (public or unlisted).

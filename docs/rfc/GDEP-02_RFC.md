@@ -70,7 +70,7 @@ The deployment lane needs a reproducible interface for comparing CPU and GPU-lik
 - Milestone 3:
   - Add validation report and tests.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Metrics protocol approved

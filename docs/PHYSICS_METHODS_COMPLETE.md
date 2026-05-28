@@ -179,7 +179,7 @@ A Fourier Neural Operator predicts turbulence suppression from a 2D $(64 \times 
 
 The `SpectralTurbulenceGenerator` drives an ITG-like spectral drift-wave simulation with a predator-prey zonal-flow coupling: $d(\text{ZF})/dt = 5 \langle \phi^2 \rangle - 0.5\,\text{ZF}$.
 
-**Accuracy:** Relative $L_2$ error = 0.055 on synthetic proxy data. This lane is research-grade, not gyrokinetic-validated (see `docs/HONEST_SCOPE.md`).
+**Accuracy:** Relative $L_2$ error = 0.055 on synthetic proxy data. This lane is research-grade, not gyrokinetic-validated.
 
 **Key file:** `core/fno_turbulence_suppressor.py` (`FNO_Controller`).
 

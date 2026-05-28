@@ -36,7 +36,7 @@ body:
     attributes:
       label: Current Evidence Artifacts
       description: Link files in `RESULTS.md`, validation outputs, or claims map entries
-      placeholder: "RESULTS.md row X, validation/report_Y.json, docs/internal/CLAIMS_EVIDENCE_MAP.md section Z"
+      placeholder: "RESULTS.md row X, validation/report_Y.json, evidence map section Z"
     validations:
       required: true
   - type: textarea

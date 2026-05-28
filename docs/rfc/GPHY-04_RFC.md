@@ -70,7 +70,7 @@ Polygonal boundary approximations can introduce artificial geometric artifacts. 
 - Milestone 3:
   - Add NURBS first-wall generator and geometric regression tests in `fusion-nuclear`.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic control-point scope)

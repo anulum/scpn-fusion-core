@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
-HONEST_SCOPE = ROOT / "docs" / "HONEST_SCOPE.md"
+PHYSICS_METHODS = ROOT / "docs" / "PHYSICS_METHODS_COMPLETE.md"
 
 
 def _table_cell_for_capability(readme: str, capability: str) -> str:
@@ -57,18 +57,23 @@ def test_reduced_order_competitive_claims_disclose_actual_fidelity() -> None:
             assert phrase in cell
 
 
-def test_honest_scope_names_first_principles_comparators() -> None:
-    """Scope documentation must identify the external solvers this repo does not replace."""
-    honest_scope = " ".join(HONEST_SCOPE.read_text(encoding="utf-8").replace("**", "").split())
+def test_public_scope_names_first_principles_comparators() -> None:
+    """Public scope documentation must identify external solvers not replaced here."""
+    public_scope = " ".join(
+        (README.read_text(encoding="utf-8") + "\n" + PHYSICS_METHODS.read_text(encoding="utf-8"))
+        .replace("**", "")
+        .split()
+    )
 
     required_phrases = [
-        "not a replacement for TRANSP, JINTRAC, GENE, or any",
-        "full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell)",
-        "Full EFIT/LiUQE-quality profile and boundary reconstruction",
-        "Full Hirshman-Sigmar multi-species collisional operator",
-        "Kinetic runaway distribution (CODE/DREAM-level Fokker-Planck)",
-        "Nonlinear MHD ELM simulation (JOREK, BOUT++)",
+        "not a replacement for TRANSP, JINTRAC, or GENE",
+        "not GENE/CGYRO-class production turbulence",
+        "not yet EFIT-grade",
+        "Hirshman-Sigmar-style",
+        "does not claim STRAHL/JINTRAC collisional-operator parity",
+        "does not claim parity with DREAM's kinetic momentum-space distribution solver",
+        "no nonlinear MHD ELM simulation",
     ]
 
     for phrase in required_phrases:
-        assert phrase in honest_scope
+        assert phrase in public_scope

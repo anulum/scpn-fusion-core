@@ -74,7 +74,7 @@ Current transport stack includes analytic and neural surrogate paths, but there 
 - Milestone 3:
   - Add validation report script, tests, and tracker updates.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

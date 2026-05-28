@@ -67,7 +67,7 @@ Long-horizon plasma/control trajectories can accumulate integration drift when u
 - Milestone 3:
   - Add drift metrics and long-horizon regression tests.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (analytic synthetic scope)

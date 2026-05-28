@@ -11,13 +11,13 @@ Execution detail: maintained in local-only governance notes (not exposed in publ
 |---|---|---|
 | Source modules | **277 Python files**, 73,552 lines | `src/scpn_fusion/` |
 | Tests | **3,817 tests** (382 test files) | `pytest tests/ -v` |
-| Underdeveloped register | Auto-generated, CI-gated via `tools/generate_underdeveloped_register.py --check` | `tools/generate_underdeveloped_register.py --check` |
+| Internal readiness queue | Maintained in local-only governance notes | Local-only governance gate |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
 | QLKNN transport surrogate | **test_rel_L2 = 0.094** (GPU L40S, 500K samples, gated 1024×512×256, 911 epochs) | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence (JAX) | **val_rel_L2 = 0.055** (4-layer, modes=24, width=128, 5-channel input, 5000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |
 | Validation pipeline | **24/24 benchmarks passing** (15 legacy + 9 new) | `python validation/collect_results.py` |
 | Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` |
-| Enterprise hardening | **19/20 sections passing** (branch protection, labels, tool config, Docker healthcheck) | Local-only enterprise hardening checklist |
+| Enterprise hardening | **19/20 sections passing** (branch protection, labels, tool config, Docker healthcheck) | Local-only enterprise hardening criteria |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
 | FreeGS strict parity | Dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` |
 
@@ -86,10 +86,10 @@ Runbook: execute `validation/task10_free_boundary_state_estimation_disturbance.p
 | DIII-D disruption shots | 16 reconstructed profiles | Raw MDSplus data (pending GA access) |
 | JET DT campaign | None | 5+ shots (pending EUROfusion access) |
 
-### Reduce underdeveloped flag count
+### Reduce internal readiness debt
 
-Current totals are tracked via `tools/generate_underdeveloped_register.py` (auto-generated each
-hardening wave). As of 2026-05-27: **18 total flags**, 8 P0/P1.
+Current totals are maintained in local-only governance notes for each hardening
+wave. As of 2026-05-27: **18 total flags**, 8 P0/P1.
 Target for v4.0: resolve all P0/P1 flags, reduce total below 80.
 
 ### FPGA deployment path

@@ -69,7 +69,7 @@ Controller performance degrades when latency and stochastic perturbations are ig
 - Milestone 3:
   - Add deterministic regression tests for new paths.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic deterministic scope)

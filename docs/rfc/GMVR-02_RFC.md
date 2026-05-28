@@ -71,7 +71,7 @@ Divertor modeling currently includes thermal and vapor shielding behavior but la
 - Milestone 3:
   - Add toroidal sweep validation + tests and report generation.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

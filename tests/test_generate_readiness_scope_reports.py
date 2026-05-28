@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Underdeveloped Scope Reports Tests
+# SCPN Fusion Core — Internal readiness Scope Reports Tests
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "tools" / "generate_underdeveloped_scope_reports.py"
-SPEC = importlib.util.spec_from_file_location("generate_underdeveloped_scope_reports", MODULE_PATH)
+MODULE_PATH = ROOT / "tools" / "generate_readiness_scope_reports.py"
+SPEC = importlib.util.spec_from_file_location("generate_readiness_scope_reports", MODULE_PATH)
 assert SPEC and SPEC.loader
 tool = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = tool
@@ -25,10 +25,10 @@ SPEC.loader.exec_module(tool)
 
 def test_build_scope_reports_returns_nonempty_payloads() -> None:
     source_md, docs_md, summary_json = tool._build_scope_reports(top_limit=10, full_limit=20)  # noqa: SLF001
-    assert "# Underdeveloped Register" in source_md
-    assert "# Underdeveloped Register" in docs_md
+    assert "# Internal readiness Register" in source_md
+    assert "# Internal readiness Register" in docs_md
     payload = json.loads(summary_json)
-    assert payload["generator"] == "tools/generate_underdeveloped_scope_reports.py"
+    assert payload["generator"] == "tools/generate_readiness_scope_reports.py"
     scopes = {snap["scope"] for snap in payload["snapshots"]}
     assert scopes == {"source", "docs_claims"}
 

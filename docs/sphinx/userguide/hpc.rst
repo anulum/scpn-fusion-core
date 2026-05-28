@@ -90,11 +90,11 @@ bridge for interfacing with external HPC solvers:
 This bridge is primarily used for prototyping custom solver kernels
 before porting them to Rust.
 
-GPU Acceleration Roadmap
---------------------------
+GPU Acceleration Status
+-----------------------
 
-GPU support is tracked in three phases (see
-``docs/internal/GPU_ACCELERATION_ROADMAP.md``):
+GPU support is tracked through local-only governance notes and implemented
+through the public runtime surfaces below:
 
 **Phase 1: wgpu SOR kernel**
    Red-Black SOR stencil implemented as a ``wgpu`` compute shader,

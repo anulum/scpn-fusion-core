@@ -72,7 +72,7 @@ The geometry stack already supports generic Fourier non-axisymmetry but lacks an
 - Milestone 3:
   - Add VMEC++-proxy parity metric and report/test harness.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

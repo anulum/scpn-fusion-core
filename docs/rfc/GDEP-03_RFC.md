@@ -75,7 +75,7 @@ Current validation reports cover ITER/SPARC and in-sprint deterministic campaign
 - Milestone 3:
   - Add report rendering and regression tests.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

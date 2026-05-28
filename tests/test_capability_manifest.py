@@ -57,7 +57,6 @@ def test_manifest_scans_fusion_core_capability_surfaces() -> None:
     assert "full" in manifest["packaging"]["optional_extras"]
     assert ".github/workflows/ci.yml" in manifest["quality_gates"]["github_workflows"]
     assert "tests/test_hypothesis_properties.py" in manifest["quality_gates"]["test_files"]
-    assert "docs/HONEST_SCOPE.md" in manifest["documentation"]["public_pages"]
     assert "docs/internal/AUDIT_INDEX.md" not in manifest["documentation"]["public_pages"]
 
 

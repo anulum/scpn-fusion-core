@@ -27,8 +27,8 @@
 
 
 ### Changed
-- Validation governance hardening (Wave A): release preflight now enforces source P0/P1 issue-backlog drift checks and untested-module linkage guard checks.
-- Governance hardening: refreshed `UNDERDEVELOPED_REGISTER.md` from the current codebase snapshot and removed stale hard-coded underdeveloped counts from README/ROADMAP/CONTRIBUTING/HONEST_SCOPE (docs now reference live register summary).
+- Validation governance hardening (Wave A): release preflight now enforces source P0/P1 issue-readiness drift checks and untested-module linkage guard checks.
+- Governance hardening: refreshed the internal readiness queue from the current codebase snapshot and removed stale hard-coded readiness counts from README/ROADMAP/CONTRIBUTING/internal readiness notes.
 - Security hardening: disruption predictor checkpoint loading now fails closed when `weights_only=True` is unavailable; insecure legacy torch deserialization is opt-in via `SCPN_ALLOW_INSECURE_TORCH_LOAD=1` for trusted checkpoints only.
 - Security hardening: remaining `.npz` loaders in runtime/validation paths now use `allow_pickle=False` and context-managed reads (`tokamak_archive`, `neural_transport`, `fno_turbulence_suppressor`, `fno_jax_training`, `validate_real_shots`, `validate_fno_tglf`, `validate_transport_qlknn`).
 - Runtime hardening: quantum bridge now validates required script presence and fails fast on non-zero subprocess exits instead of silently continuing.
@@ -63,14 +63,14 @@
 - CI throughput hardening: Python 3.12 lane now avoids duplicate full-suite execution by running a single coverage-enabled release pass, reducing redundant runtime.
 - CI resiliency hardening: Python 3.12 coverage run now has an explicit 50-minute timeout, writes diagnostics metadata/logs, and uploads diagnostics artifacts on failure.
 - Coverage recovery: expanded unified-CLI test surface and re-tightened `cli.py` coverage thresholds to 80% after restoring measured coverage headroom.
-- Governance hardening: `generate_underdeveloped_register.py` now supports deterministic `--check` mode for drift detection (timestamp-normalized comparison).
-- Validation governance hardening: release preflight now includes an `UNDERDEVELOPED_REGISTER.md` drift gate with an explicit skip flag for scoped local runs.
-- Validation governance hardening: release preflight now includes split underdeveloped scope-report drift checks (`source` vs `docs_claims`) to reduce hardening triage noise.
+- Governance hardening: the internal readiness generator now supports deterministic drift detection (timestamp-normalized comparison).
+- Validation governance hardening: release preflight now includes an internal-register drift gate with an explicit skip flag for scoped local runs.
+- Validation governance hardening: release preflight now includes split internal-readiness scope-report drift checks (`source` vs `docs_claims`) to reduce hardening triage noise.
 - CI hardening: Python 3.12 release preflight now enables strict backend checks by default for release mode while explicitly skipping unstable SPARC/FreeGS strict lanes in that step.
 - Benchmark hardening: TORAX and SPARC benchmark scripts now enforce standalone `src/` import-path determinism for CI/local parity.
 - Runtime hardening: `traceable_runtime_parity.py` now enforces standalone `src/` import-path determinism for CI/local parity.
 - Validation hardening: real-shot CI lane now runs `validate_real_shots.py --strict-coverage` and enforces a dedicated artifact guard for coverage minima + machine diversity.
-- Governance hardening: underdeveloped-register scoring now down-weights narrative/planning docs so release-critical claim surfaces dominate P0/P1 triage.
+- Governance hardening: internal-readiness scoring now down-weights narrative/planning docs so release-critical claim surfaces dominate P0/P1 triage.
 - CI hardening: release preflight now enforces a deprecated-default-lane guard and persists guard diagnostics artifacts.
 - Validation hardening: real-shot guard now enforces transport-machine diversity, disruption class-balance minima, calibration gate pass, and dataset-minima alignment checks.
 - Validation hardening: FreeGS benchmark artifacts now include backend-availability metadata, and fallback-budget guard is availability-aware for strict FreeGS parity enforcement.
@@ -81,20 +81,20 @@
 
 ### Added
 - Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.
-- Wave A scaffolding: `tools/generate_source_p0p1_issue_backlog.py` with tracked outputs (`docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.{md,json}`).
+- Wave A scaffolding: source-priority readiness generator with internal outputs.
 - Wave A scaffolding: `tools/check_test_module_linkage.py` + allowlist policy file to block newly unlinked source modules.
 - Validation hardening: added CI `Benchmark Provenance Smoke` lane to enforce TORAX/SPARC benchmark artifact provenance fields (`backend`, `fallback_reason`, seed metadata) and publish artifacts.
 - Community hardening: added dedicated issue templates for real-data validation contributions and manuscript/claim review workflows.
-- Release hardening: added `docs/internal/HARDENING_30_DAY_EXECUTION_PLAN.md` and `docs/internal/V3_9_3_RELEASE_CHECKLIST.md` to enforce scope-focused v3.9.3 execution gates.
+- Release hardening: added local-only execution and release-readiness gates for scope-focused v3.9.3 preparation.
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
 - Regression test for deprecated FNO-controller missing-weight fallback path.
 - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields.
 - Regression tests for SPARC GEQDSK RMSE benchmark backend provenance and strict backend gating.
-- Regression tests for underdeveloped-register `--check` behavior (up-to-date, missing-output, and drift detection paths).
+- Regression tests for internal-readiness drift-check behavior (up-to-date, missing-output, and drift detection paths).
 - Validation hardening: added `tools/fallback_budget_guard.py` + thresholds config and wired CI fallback-budget contract on TORAX/SPARC/FreeGS benchmark artifacts.
 - Runtime hardening: added `tools/runtime_parity_perf_guard.py` + thresholds config and new CI `Runtime Parity + Perf Gate` artifact contract.
 - Validation hardening: added `tools/real_shot_validation_guard.py` + thresholds config and CI guard summary artifact for strict real-shot coverage lanes.
-- Governance hardening: added `tools/generate_underdeveloped_scope_reports.py` and tracked split reports (`docs/internal/UNDERDEVELOPED_SOURCE_REGISTER.md`, `docs/internal/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md`, `docs/internal/UNDERDEVELOPED_SCOPE_SUMMARY.json`).
+- Governance hardening: added internal split-readiness reporting for source and documentation-claim scopes.
 - Session logging: moved detailed H12-H17 execution records to local-only coordination notes.
 - CI/runtime hardening: added `tools/deprecated_default_lane_guard.py` with regression tests and release-preflight integration.
 - Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts.
@@ -136,7 +136,7 @@
 - Release delta baseline rebased (source_total: 15→50, p0p1: 13→43)
 - Underdeveloped register: 115 entries (96→115 after GK port)
 - Promoted hardening-wave governance, coverage, and validation guardrails from the release track to the published 3.9.3 baseline.
-- Aligned packaging and release metadata to v3.9.3 across Python package metadata, citation, benchmark docs, and release checklist.
+- Aligned packaging and release metadata to v3.9.3 across Python package metadata, citation, benchmark docs, and release readiness.
 
 ### Removed
 - Michal Reiprich from all authorship metadata
@@ -207,7 +207,7 @@
 - **Complete Package Exports**: All 7 Python packages (`control/`, `core/`, `diagnostics/`, `engineering/`, `hpc/`, `io/`, `ui/`) now have complete `__init__.py` with lazy `__getattr__` imports (was 2/7)
 - **Circular Import Resolution**: Rewrote `control/__init__.py` and `core/__init__.py` with lazy import pattern to break `io` → `core` → `control` → `core` dependency chain
 - **Maturin PyO3 Build**: `scpn_fusion_rs` wheel built and verified — all `PyRustFlightSim` tests passing
-- **Version Sync**: Aligned all version references: pyproject.toml, setup.py, Rust crates (fusion-python 3.4.0→3.8.3), release checklist (v3.5.0→v3.8.3)
+- **Version Sync**: Aligned all version references: pyproject.toml, setup.py, Rust crates (fusion-python 3.4.0→3.8.3), release readiness (v3.5.0→v3.8.3)
 - **Missing Dependencies**: Added `pydantic>=2.0` and `pandas>=1.5` to pyproject.toml and setup.py
 - **Python Version**: Unified `requires-python` to `>=3.9` across all manifests
 - **Clippy Fix**: Removed unused import in `fusion-control/constraints.rs` (CI `-D warnings`)
@@ -278,26 +278,26 @@
   - `run_disruption_episode()` now reports uncertainty-envelope metrics (`risk_p95_*`, `wall_damage_p95_*`, `tbr_p95_*`, `uncertainty_envelope`)
   - Added disruption-contract tests covering uncertainty-mode bounds and episode-envelope consistency
 - Added autonomous hardening-governance tooling:
-  - `tools/generate_underdeveloped_register.py` + generated `UNDERDEVELOPED_REGISTER.md`
+  - internal readiness queue generation
   - `tools/claims_audit.py` + `validation/claims_manifest.json`
   - `tools/run_python_preflight.py` now includes claims-evidence audit check
-  - `docs/internal/V3_6_MILESTONE_BOARD.md` with prioritized v3.6 top-20 hardening tasks
+  - internal milestone board with prioritised v3.6 top-20 hardening tasks
 - Split release vs research validation gates (A03):
   - Added gate profiles in `tools/run_python_preflight.py` (`--gate release|research|all`)
   - Added research-only pytest marker contract (`@pytest.mark.experimental`)
   - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`)
-- Added gate matrix documentation in `docs/internal/VALIDATION_GATE_MATRIX.md`
+- Added internal gate matrix documentation.
 - Added claims evidence map generation (A19):
-  - Added `tools/generate_claims_evidence_map.py` and generated `docs/internal/CLAIMS_EVIDENCE_MAP.md`
+  - Added internal claims evidence map generation
   - Added preflight drift check to keep map synchronized with `validation/claims_manifest.json`
 - Fixed CI claims-audit stability:
   - Replaced untracked RMSE dashboard artifact dependency in `validation/claims_manifest.json` with tracked evidence sources.
   - Hardened `tools/claims_audit.py` to require evidence files/pattern files be git-tracked.
 - Added release docs version-consistency gate (A18):
   - `tests/test_version_metadata.py` now enforces current-version references in `README.md`, `RESULTS.md`, `VALIDATION.md`, and `CHANGELOG.md`.
-- Added release acceptance checklist gate (A20):
-  - Added `docs/internal/RELEASE_ACCEPTANCE_CHECKLIST.md` and `tools/check_release_acceptance.py`.
-  - Wired release checklist verification into Python preflight and tag publish workflow (`.github/workflows/publish.yml`).
+- Added release readiness gate (A20):
+  - Added internal release readiness validation tooling.
+  - Wired release readiness verification into Python preflight and tag publish workflow (`.github/workflows/publish.yml`).
 - Added disruption shot provenance manifest gate (A04):
   - Added `tools/generate_disruption_shot_manifest.py` and generated `validation/reference_data/diiid/disruption_shots_manifest.json`.
   - Added preflight `--check` gate to enforce hash-locked shot manifest freshness in release lanes.
@@ -617,7 +617,7 @@
 - Shared bibliography (55 BibTeX entries, 643 lines)
 - DOE ARPA-E convergence pitch document (785 lines): GAMOW, BETHE, FES, ASCR program
   alignment matrices with 36-month milestone roadmap
-- GitHub PR template with testing/quality/physics checklists
+- GitHub PR template with testing/quality/physics criteria
 - Issue template config (security contact, blank issues disabled)
 - CONTRIBUTING.md comprehensive upgrade (426 lines: dev setup, style guide, PR process)
 - Security policy (SECURITY.md) expanded with version table, hardening summary, known limitations
@@ -800,7 +800,6 @@ solver-method bridge regression tests.
 
 - Prepared `v2.0-cutting-edge` release contract:
   - Novum elevated - SNN + GyroSwin hybrids for resilient, 1000x fast control; MVR grounded in 2025-2026 liquid metal/HTS.
-- Added deterministic release-readiness validator (`validation/gdep_05_release_readiness.py`) with tracker/changelog gate checks.
 
 ### Stability and CI
 
@@ -893,8 +892,6 @@ solver-method bridge regression tests.
 
 ### Documentation
 
-- Added Sphinx GPU roadmap page (`docs/sphinx/gpu_roadmap.rst`) and linked it in docs navigation.
-
 ## 1.0.2 - 2026-02-12
 
 ### Solvers and Numerics
@@ -932,7 +929,7 @@ solver-method bridge regression tests.
 ### Validation and Documentation
 
 - Added ITER/SPARC regression reference data and validation tests.
-- Added GPU acceleration implementation roadmap (`docs/internal/GPU_ACCELERATION_ROADMAP.md`).
+- Added internal GPU acceleration implementation notes.
 - Added this changelog and CFF citation metadata.
 
 ### Versioning

@@ -68,7 +68,7 @@ Existing wall/impurity handling lacks explicit charge-state radiative differenti
 - Milestone 3:
   - Add radiative power/loss helpers and regression tests.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic reduced table scope)

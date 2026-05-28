@@ -163,10 +163,10 @@ def sync(*, check_only: bool = False) -> int:
         )
     )
 
-    # 3d. docs/internal/RELEASE_ACCEPTANCE_CHECKLIST.md
+    # 3d. docs/internal/RELEASE_READINESS.md
     changed_count += int(
         update_file(
-            REPO_ROOT / "docs" / "internal" / "RELEASE_ACCEPTANCE_CHECKLIST.md",
+            REPO_ROOT / "docs" / "internal" / "RELEASE_READINESS.md",
             r"Release Version: `v\d+\.\d+\.\d+`",
             f"Release Version: `v{version}`",
             check_only=check_only,
@@ -263,7 +263,7 @@ def sync(*, check_only: bool = False) -> int:
     )
     changed_count += int(
         update_file(
-            REPO_ROOT / "docs" / "internal" / "RELEASE_ACCEPTANCE_CHECKLIST.md",
+            REPO_ROOT / "docs" / "internal" / "RELEASE_READINESS.md",
             r"v\d+\.\d+\.\d+ Release Acceptance",
             f"v{version} Release Acceptance",
             check_only=check_only,

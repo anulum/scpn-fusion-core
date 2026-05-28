@@ -1,6 +1,6 @@
 # Performance Metric Taxonomy
 
-This page defines the latency metric IDs used across README, HONEST_SCOPE, and
+This page defines the latency metric IDs used across README, public method notes, and
 competitive analysis to avoid mixing kernel-only and end-to-end timings.
 
 ## Control Latency Metrics

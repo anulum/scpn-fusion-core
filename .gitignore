@@ -72,7 +72,7 @@ artifacts/packaging_contract_summary.json
 artifacts/real_data_roadmap_progress.json
 artifacts/real_data_roadmap_progress.md
 artifacts/real_data_roadmap_non_regression_summary.json
-artifacts/underdeveloped_register_ci*.md
+artifacts/readiness_register_ci*.md
 artifacts/untested_module_guard_summary.json
 artifacts/deprecated_default_lane_guard_summary.json
 artifacts/ci-run-*/

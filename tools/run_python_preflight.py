@@ -22,6 +22,16 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CHECK_TIMEOUT_SECONDS = 1800.0
 _PREFLIGHT_LATENCY_OUTPUT_JSON = "artifacts/_tmp_scpn_end_to_end_latency.json"
 _PREFLIGHT_LATENCY_OUTPUT_MD = "artifacts/_tmp_scpn_end_to_end_latency.md"
+_CLAIMS_EVIDENCE_MAP = REPO_ROOT / "docs" / "internal" / "CLAIMS_EVIDENCE_MAP.md"
+_INTERNAL_READINESS_REGISTER = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_REGISTER.md"
+_INTERNAL_READINESS_SOURCE = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_SOURCE.md"
+_INTERNAL_READINESS_DOCS_CLAIMS = (
+    REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_DOCS_CLAIMS.md"
+)
+_INTERNAL_READINESS_SUMMARY = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_SUMMARY.json"
+_SOURCE_P0P1_READINESS_MD = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_READINESS.md"
+_SOURCE_P0P1_READINESS_JSON = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_READINESS.json"
+_RELEASE_READINESS = REPO_ROOT / "docs" / "internal" / "RELEASE_READINESS.md"
 
 
 def _module_available(module_name: str) -> bool:
@@ -29,6 +39,11 @@ def _module_available(module_name: str) -> bool:
         return importlib.util.find_spec(module_name) is not None
     except (ImportError, ValueError):
         return False
+
+
+def _internal_files_available(*paths: Path) -> bool:
+    """Return true when all private gitignored governance inputs exist locally."""
+    return all(path.exists() for path in paths)
 
 
 def _normalize_check_timeout_seconds(timeout_s: float) -> float:
@@ -47,13 +62,13 @@ def _build_release_checks(
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
     skip_capability_manifest: bool,
-    skip_underdeveloped_register: bool,
-    skip_underdeveloped_scope_reports: bool,
+    skip_readiness_register: bool,
+    skip_readiness_scope_reports: bool,
     skip_release_delta_guard: bool,
-    skip_source_issue_backlog: bool,
+    skip_source_readiness: bool,
     skip_untested_module_guard: bool,
     skip_deprecated_default_lane_guard: bool,
-    skip_release_checklist: bool,
+    skip_release_readiness: bool,
     skip_shot_manifest: bool,
     skip_reference_data_provenance: bool,
     skip_shot_splits: bool,
@@ -144,7 +159,7 @@ def _build_release_checks(
                 ],
             )
         )
-    if not skip_claims_map:
+    if not skip_claims_map and _internal_files_available(_CLAIMS_EVIDENCE_MAP):
         checks.append(
             (
                 "Claims evidence map drift check",
@@ -166,24 +181,28 @@ def _build_release_checks(
                 ],
             )
         )
-    if not skip_underdeveloped_register:
+    if not skip_readiness_register and _internal_files_available(_INTERNAL_READINESS_REGISTER):
         checks.append(
             (
-                "Underdeveloped register drift check",
+                "Internal readiness register drift check",
                 [
                     sys.executable,
-                    "tools/generate_underdeveloped_register.py",
+                    "tools/generate_readiness_register.py",
                     "--check",
                 ],
             )
         )
-    if not skip_underdeveloped_scope_reports:
+    if not skip_readiness_scope_reports and _internal_files_available(
+        _INTERNAL_READINESS_SOURCE,
+        _INTERNAL_READINESS_DOCS_CLAIMS,
+        _INTERNAL_READINESS_SUMMARY,
+    ):
         checks.append(
             (
-                "Underdeveloped scope-report drift check",
+                "Internal readiness scope-report drift check",
                 [
                     sys.executable,
-                    "tools/generate_underdeveloped_scope_reports.py",
+                    "tools/generate_readiness_scope_reports.py",
                     "--check",
                 ],
             )
@@ -200,13 +219,16 @@ def _build_release_checks(
                 ],
             )
         )
-    if not skip_source_issue_backlog:
+    if not skip_source_readiness and _internal_files_available(
+        _SOURCE_P0P1_READINESS_MD,
+        _SOURCE_P0P1_READINESS_JSON,
+    ):
         checks.append(
             (
-                "Source P0/P1 issue backlog drift check",
+                "Source P0/P1 source readiness drift check",
                 [
                     sys.executable,
-                    "tools/generate_source_p0p1_issue_backlog.py",
+                    "tools/generate_source_p0p1_readiness.py",
                     "--check",
                 ],
             )
@@ -233,13 +255,13 @@ def _build_release_checks(
                 ],
             )
         )
-    if not skip_release_checklist:
+    if not skip_release_readiness and _internal_files_available(_RELEASE_READINESS):
         checks.append(
             (
-                "Release acceptance checklist gate",
+                "Release readiness gate",
                 [
                     sys.executable,
-                    "tools/check_release_acceptance.py",
+                    "tools/check_release_readiness.py",
                 ],
             )
         )
@@ -460,13 +482,13 @@ def _build_checks(
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
     skip_capability_manifest: bool,
-    skip_underdeveloped_register: bool,
-    skip_underdeveloped_scope_reports: bool,
+    skip_readiness_register: bool,
+    skip_readiness_scope_reports: bool,
     skip_release_delta_guard: bool,
-    skip_source_issue_backlog: bool,
+    skip_source_readiness: bool,
     skip_untested_module_guard: bool,
     skip_deprecated_default_lane_guard: bool,
-    skip_release_checklist: bool,
+    skip_release_readiness: bool,
     skip_shot_manifest: bool,
     skip_reference_data_provenance: bool,
     skip_shot_splits: bool,
@@ -500,13 +522,13 @@ def _build_checks(
                 skip_claim_range_guard=skip_claim_range_guard,
                 skip_claims_map=skip_claims_map,
                 skip_capability_manifest=skip_capability_manifest,
-                skip_underdeveloped_register=skip_underdeveloped_register,
-                skip_underdeveloped_scope_reports=skip_underdeveloped_scope_reports,
+                skip_readiness_register=skip_readiness_register,
+                skip_readiness_scope_reports=skip_readiness_scope_reports,
                 skip_release_delta_guard=skip_release_delta_guard,
-                skip_source_issue_backlog=skip_source_issue_backlog,
+                skip_source_readiness=skip_source_readiness,
                 skip_untested_module_guard=skip_untested_module_guard,
                 skip_deprecated_default_lane_guard=skip_deprecated_default_lane_guard,
-                skip_release_checklist=skip_release_checklist,
+                skip_release_readiness=skip_release_readiness,
                 skip_shot_manifest=skip_shot_manifest,
                 skip_reference_data_provenance=skip_reference_data_provenance,
                 skip_shot_splits=skip_shot_splits,
@@ -620,14 +642,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/capability_manifest.py --check",
     )
     parser.add_argument(
-        "--skip-underdeveloped-register",
+        "--skip-readiness-register",
         action="store_true",
-        help="Skip tools/generate_underdeveloped_register.py --check",
+        help="Skip tools/generate_readiness_register.py --check",
     )
     parser.add_argument(
-        "--skip-underdeveloped-scope-reports",
+        "--skip-readiness-scope-reports",
         action="store_true",
-        help="Skip tools/generate_underdeveloped_scope_reports.py --check",
+        help="Skip tools/generate_readiness_scope_reports.py --check",
     )
     parser.add_argument(
         "--skip-release-delta-guard",
@@ -635,9 +657,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/release_delta_guard.py non-regression check.",
     )
     parser.add_argument(
-        "--skip-source-issue-backlog",
+        "--skip-source-readiness",
         action="store_true",
-        help="Skip tools/generate_source_p0p1_issue_backlog.py --check",
+        help="Skip tools/generate_source_p0p1_readiness.py --check",
     )
     parser.add_argument(
         "--skip-untested-module-guard",
@@ -650,9 +672,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/deprecated_default_lane_guard.py",
     )
     parser.add_argument(
-        "--skip-release-checklist",
+        "--skip-release-readiness",
         action="store_true",
-        help="Skip tools/check_release_acceptance.py",
+        help="Skip tools/check_release_readiness.py",
     )
     parser.add_argument(
         "--skip-shot-manifest",
@@ -807,13 +829,13 @@ def main(argv: list[str] | None = None) -> int:
         skip_claim_range_guard=args.skip_claim_range_guard,
         skip_claims_map=args.skip_claims_map,
         skip_capability_manifest=args.skip_capability_manifest,
-        skip_underdeveloped_register=args.skip_underdeveloped_register,
-        skip_underdeveloped_scope_reports=args.skip_underdeveloped_scope_reports,
+        skip_readiness_register=args.skip_readiness_register,
+        skip_readiness_scope_reports=args.skip_readiness_scope_reports,
         skip_release_delta_guard=args.skip_release_delta_guard,
-        skip_source_issue_backlog=args.skip_source_issue_backlog,
+        skip_source_readiness=args.skip_source_readiness,
         skip_untested_module_guard=args.skip_untested_module_guard,
         skip_deprecated_default_lane_guard=args.skip_deprecated_default_lane_guard,
-        skip_release_checklist=args.skip_release_checklist,
+        skip_release_readiness=args.skip_release_readiness,
         skip_shot_manifest=args.skip_shot_manifest,
         skip_reference_data_provenance=args.skip_reference_data_provenance,
         skip_shot_splits=args.skip_shot_splits,

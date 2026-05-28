@@ -72,7 +72,7 @@ The codebase has control and simulation lanes but no deterministic integration p
 - Milestone 3:
   - Add validation report and tests for NSTX-U/SPARC smoke profiles.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

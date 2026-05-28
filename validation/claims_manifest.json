@@ -206,16 +206,16 @@
       "source_file": "README.md",
       "source_pattern": "Free-boundary GS solve \\| Public GEQDSK gate passes; FreeGS strict backend opt-in; not EFIT-grade inverse reconstruction",
       "evidence_files": [
-        "docs/HONEST_SCOPE.md"
+        "README.md"
       ],
       "evidence_patterns": [
         {
-          "file": "docs/HONEST_SCOPE.md",
-          "pattern": "Public SPARC GEQDSK validation gates"
+          "file": "README.md",
+          "pattern": "public SPARC GEQDSK gates pass"
         },
         {
-          "file": "docs/HONEST_SCOPE.md",
-          "pattern": "Full EFIT/LiUQE-quality profile and boundary reconstruction"
+          "file": "README.md",
+          "pattern": "not yet EFIT-grade"
         }
       ]
     },
@@ -224,16 +224,16 @@
       "source_file": "README.md",
       "source_pattern": "Native GK solver \\| Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence",
       "evidence_files": [
-        "docs/HONEST_SCOPE.md"
+        "README.md"
       ],
       "evidence_patterns": [
         {
-          "file": "docs/HONEST_SCOPE.md",
-          "pattern": "Linear eigenvalue solver plus bounded nonlinear 5D operator and invariant benchmarks"
+          "file": "README.md",
+          "pattern": "Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks"
         },
         {
-          "file": "docs/HONEST_SCOPE.md",
-          "pattern": "Production nonlinear turbulence replacement for full nonlinear gyrokinetic \\(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\\) engines"
+          "file": "README.md",
+          "pattern": "not GENE/CGYRO-class production turbulence"
         }
       ]
     },
@@ -260,16 +260,17 @@
       "source_file": "README.md",
       "source_pattern": "ELM model \\+ RMP suppression \\| Peeling-ballooning proxy; no nonlinear MHD ELM simulation",
       "evidence_files": [
-        "docs/HONEST_SCOPE.md"
+        "README.md",
+        "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
       "evidence_patterns": [
         {
-          "file": "docs/HONEST_SCOPE.md",
-          "pattern": "Peeling-ballooning stability proxy with crash operator"
+          "file": "README.md",
+          "pattern": "Peeling-ballooning proxy"
         },
         {
-          "file": "docs/HONEST_SCOPE.md",
-          "pattern": "Nonlinear MHD ELM simulation \\(JOREK, BOUT\\+\\+\\)"
+          "file": "README.md",
+          "pattern": "no nonlinear MHD ELM simulation"
         }
       ]
     },

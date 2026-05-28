@@ -75,7 +75,7 @@ The realtime simulation path lacks a deterministic integration lane that combine
 - Milestone 3:
   - Add validation/report/test harness and wire smoke invocation into realtime script.
 
-## 8. Go/No-Go Checklist
+## 8. Go/No-Go Criteria
 
 - [x] Path mapping reviewed
 - [x] Data/license approved (synthetic-only v1 scope)

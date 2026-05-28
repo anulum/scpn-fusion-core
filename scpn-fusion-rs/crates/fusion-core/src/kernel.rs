@@ -1198,7 +1198,7 @@ mod tests {
             "Ψ contains Inf after solve"
         );
         // Record convergence for diagnostics (known: ITER config may not
-        // converge with the current SOR solver — see HONEST_SCOPE.md)
+        // converge with the current SOR solver).
         if !result.converged {
             eprintln!(
                 "ITER config did not converge in {} iterations (residual: {:.2e})",
