@@ -30,11 +30,11 @@ metric-scoped and are not same-work Rust-versus-Python physics speedups.
 | Public API exports | 2 |
 | Python capability source modules | 262 |
 | Python capability classes | 487 |
-| Capability documentation pages | 61 |
+| Capability documentation pages | 42 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
 | Python test files | 382 |
-| Public documentation pages | 61 |
+| Public documentation pages | 42 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
