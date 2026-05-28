@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 import pytest
 
@@ -123,7 +125,12 @@ def test_interferometer_rejects_malformed_chord_geometry(
 ) -> None:
     r, z, ne, _ = _make_fields()
     with pytest.raises(ValueError, match=match):
-        interferometer_phase_shift(ne, r, z, chords)  # type: ignore[arg-type]
+        interferometer_phase_shift(
+            ne,
+            r,
+            z,
+            cast("list[tuple[tuple[float, float], tuple[float, float]]]", chords),
+        )
 
 
 def test_interferometer_enforce_domain_bounds_rejects_out_of_domain_chords() -> None:
@@ -207,7 +214,13 @@ def test_thomson_rejects_invalid_sampling_points(points: object, match: str) -> 
     rr, zz = np.meshgrid(r, z)
     te = 12.0 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 1.1)
     with pytest.raises(ValueError, match=match):
-        thomson_scattering_voltage(ne, te, r, z, points)  # type: ignore[arg-type]
+        thomson_scattering_voltage(
+            ne,
+            te,
+            r,
+            z,
+            cast("list[tuple[float, float]]", points),
+        )
 
 
 def test_thomson_rejects_field_shape_mismatch() -> None:

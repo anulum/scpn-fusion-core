@@ -25,6 +25,7 @@ from scpn_fusion.core.equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3
 
 
 def run_campaign() -> dict[str, Any]:
+    """Run TEMHD divertor flow sweep and evaluate pressure, evaporation, and stability gates."""
     t0 = time.perf_counter()
 
     lab = DivertorLab(P_sol_MW=35.0, R_major=1.4, B_pol=2.3)
@@ -89,6 +90,7 @@ def run_campaign() -> dict[str, Any]:
 
 
 def generate_report() -> dict[str, Any]:
+    """Generate GMVR-02 report payload from one campaign run."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gmvr_02": run_campaign(),
@@ -96,6 +98,7 @@ def generate_report() -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GMVR-02 campaign summary in markdown form."""
     g = report["gmvr_02"]
     th = g["thresholds"]
     lines = [
@@ -121,6 +124,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GMVR-02 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-json",

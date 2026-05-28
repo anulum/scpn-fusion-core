@@ -25,7 +25,7 @@ class _DummyKernel:
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
         radius2 = (self.RR - 2.0) ** 2 + self.ZZ**2
         self.Psi = 1.0 - radius2
-        self.cfg = {"coils": []}
+        self.cfg: dict[str, list[tuple[float, float]]] = {"coils": []}
 
     def solve_equilibrium(self) -> None:
         return None

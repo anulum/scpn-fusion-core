@@ -362,6 +362,18 @@ def run_campaign(
     noise_probability: float = 0.01,
     flux_scenarios: int = 24,
 ) -> dict[str, Any]:
+    """Run Task 3 SOC fault-injection and 3D flux-liveness campaign.
+
+    The routine performs SOC and divergence-fault episodes, tracks fault observability
+    and controller recovery, and validates 3D trace liveness and Petri activity under
+    injected disturbances.
+
+    Returns
+    -------
+    dict[str, Any]
+        SOC summary, flux-liveness summary, threshold checks, and execution
+        timing metadata.
+    """
     t0 = time.perf_counter()
 
     seed_i = _require_int("seed", seed, 0)
@@ -457,6 +469,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build the Task 3 report envelope with UTC generation timestamp."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "task3_error_handling_audit": run_campaign(**kwargs),
@@ -464,6 +477,13 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render Task 3 report payload into markdown.
+
+    Parameters
+    ----------
+    report
+        Output of :func:`generate_report`.
+    """
     g = report["task3_error_handling_audit"]
     soc = g["soc_monte_carlo"]
     flux = g["flux_liveness"]
@@ -496,6 +516,13 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for Task 3 validation run.
+
+    Returns
+    -------
+    int
+        ``0`` for pass / non-strict mode, ``2`` when strict mode fails.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--episodes", type=int, default=12)

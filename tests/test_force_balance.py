@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any, cast
 
 import pytest
 
@@ -15,7 +16,7 @@ from scpn_fusion.core import force_balance
 
 class _DummyKernel:
     def __init__(self) -> None:
-        self.cfg = {
+        self.cfg: dict[str, Any] = {
             "physics": {"plasma_current_target": 8.7},
             "coils": [
                 {"current": 0.0},
@@ -41,7 +42,8 @@ class _DummyAnalyzer:
         self, _target_r: float, _target_z: float, _ip: float
     ) -> tuple[float, float, int]:
         # Linear force model around I=1.0 MA so Newton update converges quickly.
-        i_pf3 = float(self.kernel.cfg["coils"][2]["current"])
+        coils = cast(list[dict[str, Any]], self.kernel.cfg["coils"])
+        i_pf3 = float(coils[2]["current"])
         fr = (i_pf3 - 1.0) * 1.0e6
         return fr, 0.0, 0
 

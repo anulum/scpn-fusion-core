@@ -12,6 +12,7 @@ Tests for the save/resume checkpoint API.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 
@@ -32,11 +33,19 @@ def test_checkpoint_roundtrip(tmp_path: Path):
     save_checkpoint(path, solver_state, episode, metrics)
 
     s_restored, e_restored, m_restored = load_checkpoint(path)
+    state = cast(dict[str, Any], s_restored)
+    stored_metrics = cast(dict[str, Any], m_restored)
 
     assert e_restored == episode
-    assert m_restored["accuracy"] == metrics["accuracy"]
-    np.testing.assert_allclose(s_restored["Psi"], solver_state["Psi"])
-    np.testing.assert_allclose(s_restored["nested"]["arr"], solver_state["nested"]["arr"])
+    assert stored_metrics["accuracy"] == metrics["accuracy"]
+    restored_psi = cast(np.ndarray, state["Psi"])
+    original_psi = cast(np.ndarray, solver_state["Psi"])
+    np.testing.assert_allclose(restored_psi, original_psi)
+    nested_state = cast(dict[str, Any], state["nested"])
+    restored_arr = cast(np.ndarray, nested_state["arr"])
+    original_nested = cast(dict[str, np.ndarray], solver_state["nested"])
+    original_arr = cast(np.ndarray, original_nested["arr"])
+    np.testing.assert_allclose(restored_arr, original_arr)
 
 
 def test_checkpoint_resume_simulation(tmp_path: Path):
@@ -51,6 +60,8 @@ def test_checkpoint_resume_simulation(tmp_path: Path):
 
     # 2. Resume "Phase 2"
     state, ep, metrics = load_checkpoint(path)
+    _state = cast(dict[str, Any], state)
+    metrics = cast(dict[str, float], metrics)
     assert ep == 10
 
     # Simulate further work

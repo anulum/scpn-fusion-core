@@ -27,6 +27,8 @@ except ImportError:
 
 @dataclass(frozen=True)
 class FlightReport:
+    """Container for a Rust/benchmark flight test outcome."""
+
     steps: int
     duration_s: float
     wall_time_ms: float
@@ -40,12 +42,16 @@ class FlightReport:
 
 
 class MockRustFlightSim:
+    """Deterministic mock simulator used when native Rust binding is unavailable."""
+
     def __init__(self, target_r: float = 6.2, target_z: float = 0.0, control_hz: float = 10000.0):
         self.control_hz = control_hz
         self.target_r = target_r
         self.target_z = target_z
 
     def run_shot(self, shot_duration_s: float) -> FlightReport:
+        """Run a synthetic shot with fixed target tracking errors."""
+
         steps = int(shot_duration_s * self.control_hz)
         return FlightReport(
             steps=steps,
@@ -157,6 +163,8 @@ def run_verification(
     shot_seconds: float = 30.0,
     print_fn: Callable[[str], None] = print,
 ) -> dict[str, object]:
+    """Run 10kHz and 30kHz verification scenarios and report structured results."""
+
     print_fn("=== SCPN Fusion Core: 10kHz Rust Migration Verification ===")
 
     hz_10k = 10000.0

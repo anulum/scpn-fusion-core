@@ -10,6 +10,12 @@
 # and mock metrics. It is a smoke test for the validation pipeline, NOT
 # evidence of physics accuracy. Real validation is in validate_real_shots.py
 # and the benchmark suite (validation/benchmark_*.py).
+"""
+Synthetic multi-machine validation smoke campaign.
+
+Builds a small collection of machine profiles and generates lightweight, randomized
+validation metrics for equilibrium, transport, current/energy closure, and control diagnostics.
+"""
 from __future__ import annotations
 
 import dataclasses
@@ -71,9 +77,27 @@ def _vertical_chords(
 
 
 class SyntheticDiagnosticSuite:
+    """Produce synthetic diagnostics used by the synthetic validation campaign."""
+
     def thomson_scattering(
         self, Te: np.ndarray, ne: np.ndarray, n_channels: int = 20
     ) -> dict[str, np.ndarray]:
+        """Generate noisy synthetic Thomson-scattering channels.
+
+        Parameters
+        ----------
+        Te
+            Electron temperature profile on a radial grid.
+        ne
+            Electron density profile on a radial grid.
+        n_channels
+            Number of sampled channels returned.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Dictionary containing synthetic ``Te_keV`` and ``ne_19`` channels.
+        """
         indices = np.linspace(0, len(Te) - 1, n_channels, dtype=int)
 
         # Add 5% noise to Te, 3% to ne
@@ -85,6 +109,22 @@ class SyntheticDiagnosticSuite:
     def ece_radiometer(
         self, Te: np.ndarray, B_profile: np.ndarray, n_channels: int = 32
     ) -> np.ndarray:
+        """Generate noisy synthetic ECE radiometer channel data.
+
+        Parameters
+        ----------
+        Te
+            Electron temperature profile used as signal proxy.
+        B_profile
+            Magnetic-field profile placeholder for channel indexing consistency.
+        n_channels
+            Number of radiometer channels.
+
+        Returns
+        -------
+        np.ndarray
+            Synthetic Te-like temperature measurements.
+        """
         indices = np.linspace(0, len(Te) - 1, n_channels, dtype=int)
         # ECE noise typically ~2%
         Te_meas = Te[indices] * (1.0 + np.random.randn(n_channels) * 0.02)
@@ -93,6 +133,24 @@ class SyntheticDiagnosticSuite:
     def interferometer(
         self, ne: np.ndarray, rho: np.ndarray, a: float, n_chords: int = 8
     ) -> np.ndarray:
+        """Generate a synthetic chord-integrated interferometry signal.
+
+        Parameters
+        ----------
+        ne
+            Electron density profile over rho.
+        rho
+            Normalized minor-radius coordinate profile.
+        a
+            Minor radius used for path-length geometry.
+        n_chords
+            Number of chords.
+
+        Returns
+        -------
+        np.ndarray
+            Line-integrated density synthetic measurements.
+        """
         # Mock line integration
         avg_n = np.mean(ne)
         path_lengths = 2.0 * a * np.sqrt(1.0 - np.linspace(0, 0.9, n_chords) ** 2)
@@ -105,6 +163,24 @@ class SyntheticDiagnosticSuite:
     def bolometer(
         self, P_rad_profile: np.ndarray, rho: np.ndarray, a: float, n_chords: int = 16
     ) -> np.ndarray:
+        """Generate synthetic bolometry integrals with coarse noise.
+
+        Parameters
+        ----------
+        P_rad_profile
+            Radial radiation profile.
+        rho
+            Normalized minor-radius coordinate profile.
+        a
+            Minor radius used for chord geometry.
+        n_chords
+            Number of bolometer channels.
+
+        Returns
+        -------
+        np.ndarray
+            Synthetic bolometer channel measurements.
+        """
         avg_P = np.mean(P_rad_profile)
         path_lengths = 2.0 * a * np.sqrt(1.0 - np.linspace(0, 0.9, n_chords) ** 2)
 
@@ -116,6 +192,24 @@ class SyntheticDiagnosticSuite:
     def soft_xray(
         self, Te: np.ndarray, ne: np.ndarray, rho: np.ndarray, n_chords: int = 40
     ) -> np.ndarray:
+        """Generate synthetic line-integrated soft-X-ray-like measurements.
+
+        Parameters
+        ----------
+        Te
+            Electron temperature profile.
+        ne
+            Electron density profile.
+        rho
+            Normalized minor-radius profile.
+        n_chords
+            Number of vertical chords to sample.
+
+        Returns
+        -------
+        np.ndarray
+            Synthetic soft-X-ray measurements for each sampled chord.
+        """
         minor_radius_m = 1.0
         te_map, ne_map, r_grid, z_grid = _radial_profiles_to_circular_maps(
             Te,
@@ -134,7 +228,21 @@ class SyntheticDiagnosticSuite:
         meas = ideal * (1.0 + np.random.randn(n_chords) * 0.05)
         return meas
 
-    def magnetics(self, R0: float, a: float) -> dict[str, np.ndarray]:
+    def magnetics(self, R0: float, a: float) -> dict[str, np.ndarray | float]:
+        """Generate synthetic magnetic measurements for smoke-control checks.
+
+        Parameters
+        ----------
+        R0
+            Major radius anchor for synthetic scaling.
+        a
+            Minor radius anchor for synthetic scaling.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            Synthetic magnetic flux-loop and magnetic-probe measurements.
+        """
         # Just mock standard sensors
         return {
             "flux_loops": np.ones(20) * 1.0 * (1.0 + np.random.randn(20) * 0.001),
@@ -145,6 +253,8 @@ class SyntheticDiagnosticSuite:
 
 @dataclass
 class MachineConfig:
+    """Container for a synthetic machine configuration."""
+
     name: str
     R0: float
     a: float
@@ -162,6 +272,7 @@ class MachineConfig:
 
 
 def iter_15ma() -> MachineConfig:
+    """Create a synthetic ITER-like machine configuration."""
     return MachineConfig(
         "ITER",
         6.2,
@@ -178,6 +289,7 @@ def iter_15ma() -> MachineConfig:
 
 
 def jet_high_performance() -> MachineConfig:
+    """Create a synthetic JET-like machine configuration."""
     return MachineConfig(
         "JET",
         2.96,
@@ -194,6 +306,7 @@ def jet_high_performance() -> MachineConfig:
 
 
 def diiid_h_mode() -> MachineConfig:
+    """Create a synthetic DIII-D H-mode machine configuration."""
     return MachineConfig(
         "DIII-D",
         1.67,
@@ -210,6 +323,7 @@ def diiid_h_mode() -> MachineConfig:
 
 
 def sparc_baseline() -> MachineConfig:
+    """Create a synthetic SPARC baseline machine configuration."""
     return MachineConfig(
         "SPARC",
         1.85,
@@ -226,6 +340,7 @@ def sparc_baseline() -> MachineConfig:
 
 
 def nstx_u_standard() -> MachineConfig:
+    """Create a synthetic NSTX-U machine configuration."""
     return MachineConfig(
         "NSTX-U",
         0.93,
@@ -243,6 +358,8 @@ def nstx_u_standard() -> MachineConfig:
 
 @dataclass
 class ValidationResult:
+    """Single scalar validation metric recorded by the synthetic campaign."""
+
     test_name: str
     machine_name: str
     metric_name: str
@@ -253,6 +370,8 @@ class ValidationResult:
 
 
 class MultiMachineValidator:
+    """Run a synthetic full-campaign validation across machine configurations."""
+
     def __init__(self, machines: list[MachineConfig]):
         self.machines = machines
         self.results: list[ValidationResult] = []
@@ -367,6 +486,18 @@ class MultiMachineValidator:
         )
 
     def run_all(self, seed: int = 42):
+        """Execute all mock validation tests for each configured machine.
+
+        Parameters
+        ----------
+        seed
+            Random seed used for deterministic reproduction of this smoke test.
+
+        Returns
+        -------
+        Self
+            The validator instance with results populated.
+        """
         np.random.seed(seed)
         for m in self.machines:
             self._test_equilibrium_convergence(m)
@@ -380,11 +511,13 @@ class MultiMachineValidator:
         return self
 
     def save_json(self, path: Path):
+        """Persist the accumulated metric rows to a JSON report."""
         data = [dataclasses.asdict(r) for r in self.results]
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
     def save_markdown(self, path: Path):
+        """Write the metric table to markdown for quick human review."""
         with open(path, "w") as f:
             f.write("| Test | Machine | Metric | Value | Target | Passed | Evidence |\n")
             f.write("|------|---------|--------|-------|--------|--------|----------|\n")

@@ -71,6 +71,18 @@ def run_campaign(
     tbr_thickness_cm: float = 260.0,
     asdex_erosion_ref_mm_year: float = 0.25,
 ) -> dict[str, Any]:
+    """Run Task 4 quasi-3D force-balance and divertor coupling campaign.
+
+    This procedure builds synthetic quasi-3D equilibrium structure, solves force
+    residual proxies, evaluates Hall-MHD + TEMHD coupling and SOLPS proxy heat-flux
+    RMSE, then applies production gate thresholds.
+
+    Returns
+    -------
+    dict[str, Any]
+        Quasi-3D metrics, coupling results, TBR calibration, threshold outcomes and
+        pass status.
+    """
     t0 = time.perf_counter()
     seed_i = _require_int("seed", seed, 0)
     samples = _require_int("quasi_3d_samples", quasi_3d_samples, 64)
@@ -200,6 +212,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build Task 4 report payload with generation timestamp."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "task4_quasi_3d_modeling": run_campaign(**kwargs),
@@ -207,6 +220,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render Task 4 campaign results into a markdown report."""
     g = report["task4_quasi_3d_modeling"]
     q = g["quasi_3d"]
     d = g["divertor_two_fluid"]
@@ -257,6 +271,14 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for Task 4 quasi-3D validation.
+
+    Returns
+    -------
+    int
+        ``0`` when campaign passes or strict-mode disabled; ``2`` if strict-mode
+        fails.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--quasi-3d-samples", type=int, default=720)

@@ -9,6 +9,7 @@ import unittest
 import json
 import tempfile
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 
@@ -18,8 +19,11 @@ from scpn_fusion.engineering.balance_of_plant import PowerPlantModel
 
 
 class TestFusionSystem(unittest.TestCase):
+    _tmp_dir: ClassVar[tempfile.TemporaryDirectory[str]]
+    test_config_path: ClassVar[str]
+
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         # Create a mini config for fast testing
         cls._tmp_dir = tempfile.TemporaryDirectory()
         cls.test_config_path = str(Path(cls._tmp_dir.name) / "test_config_ci.json")
@@ -39,7 +43,7 @@ class TestFusionSystem(unittest.TestCase):
             json.dump(config, f)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         cls._tmp_dir.cleanup()
 
     def test_01_kernel_initialization(self):

@@ -27,6 +27,7 @@ def generate_report(
     episodes: int = 16,
     steps_per_episode: int = 220,
 ) -> dict[str, Any]:
+    """Run TORAX-hybrid campaign and return deterministic performance metrics."""
     t0 = time.perf_counter()
     campaign = run_nstxu_torax_hybrid_campaign(
         seed=seed,
@@ -56,6 +57,7 @@ def generate_report(
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GAI-02 report as markdown for publication and CI artefacts."""
     g = report["gai_02"]
     th = g["thresholds"]
     lines = [
@@ -78,6 +80,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GAI-02 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--episodes", type=int, default=16)

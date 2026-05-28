@@ -101,6 +101,7 @@ def _fmt(val: Any, fmt: str = ".4f") -> str:
 
 
 def run_hil(quick: bool) -> dict[str, Any] | None:
+    """Run the HIL control-loop benchmark and return latency metrics."""
     from scpn_fusion.control.hil_harness import run_hil_benchmark
 
     iters = 200 if quick else 1000
@@ -117,6 +118,7 @@ def run_hil(quick: bool) -> dict[str, Any] | None:
 
 
 def run_disruption(quick: bool) -> dict[str, Any] | None:
+    """Run the disruption ensemble benchmark and return prevention and current metrics."""
     from scpn_fusion.control.halo_re_physics import run_disruption_ensemble
 
     n = 10 if quick else 50
@@ -133,6 +135,7 @@ def run_disruption(quick: bool) -> dict[str, Any] | None:
 
 
 def run_q10() -> dict[str, Any] | None:
+    """Compute a Q=10 operating point and return key ignition-performance metrics."""
     from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
 
     r = DynamicBurnModel.find_q10_operating_point(
@@ -154,6 +157,7 @@ def run_q10() -> dict[str, Any] | None:
 
 
 def run_tbr() -> dict[str, Any] | None:
+    """Run the neutronics blanket solver and return grouped TBR components."""
     from scpn_fusion.nuclear.blanket_neutronics import MultiGroupBlanket
 
     blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
@@ -167,6 +171,7 @@ def run_tbr() -> dict[str, Any] | None:
 
 
 def run_ecrh() -> dict[str, Any] | None:
+    """Evaluate ECRH deposition for a baseline scenario and return absorption metrics."""
     from scpn_fusion.core.rf_heating import ECRHHeatingSystem
 
     ecrh = ECRHHeatingSystem(b0_tesla=5.3, r0_major=6.2, freq_ghz=170.0)
@@ -179,6 +184,7 @@ def run_ecrh() -> dict[str, Any] | None:
 
 
 def run_force_balance_3d() -> dict[str, Any] | None:
+    """Run the 3D force-balance solver and return convergence diagnostics."""
     from scpn_fusion.core.equilibrium_3d import (
         VMECStyleEquilibrium3D,
         ForceBalance3D,
@@ -209,6 +215,7 @@ def run_force_balance_3d() -> dict[str, Any] | None:
 
 
 def run_surrogates() -> dict[str, Any] | None:
+    """Evaluate pretrained neural surrogates and return RMSE/L2 benchmark metrics."""
     from scpn_fusion.core.pretrained_surrogates import (
         evaluate_pretrained_mlp,
         evaluate_pretrained_fno,
@@ -237,6 +244,7 @@ def run_surrogates() -> dict[str, Any] | None:
 
 
 def run_neural_eq() -> dict[str, Any] | None:
+    """Run neural-equilibrium inference and benchmark latency on a canonical feature vector."""
     from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
 
     weights_path = WEIGHTS / "neural_equilibrium_sparc.npz"
@@ -266,6 +274,7 @@ def run_neural_eq() -> dict[str, Any] | None:
 
 
 def load_qlknn_metrics() -> dict[str, Any] | None:
+    """Load primary and optional backup QLKNN transport training/evaluation artifacts."""
     primary = _load_artifact(WEIGHTS / "neural_transport_qlknn.metrics.json")
     if primary is None:
         return None
@@ -277,26 +286,32 @@ def load_qlknn_metrics() -> dict[str, Any] | None:
 
 
 def load_real_shot_validation() -> dict[str, Any] | None:
+    """Load real-shot validation artifacts from the canonical JSON output."""
     return _load_artifact(ARTIFACTS / "real_shot_validation.json")
 
 
 def load_confinement_itpa() -> dict[str, Any] | None:
+    """Load confinement scaling results from the precomputed ITPA dashboard artifact."""
     return _load_artifact(ARTIFACTS / "rmse_dashboard_ci.json")
 
 
 def load_disturbance_rejection() -> dict[str, Any] | None:
+    """Load disturbance rejection benchmark table from stored artifact JSON."""
     return _load_artifact(ARTIFACTS / "disturbance_rejection_benchmark.json")
 
 
 def load_freegs_benchmark() -> dict[str, Any] | None:
+    """Load the FreeGS comparison artifact used for equilibrium benchmark reporting."""
     return _load_artifact(ARTIFACTS / "freegs_benchmark.json")
 
 
 def load_disruption_transfer_generalization() -> dict[str, Any] | None:
+    """Load transfer-generalization disturbance-rejection artifact."""
     return _load_artifact(ARTIFACTS / "disruption_transfer_generalization.json")
 
 
 def load_disruption_threshold() -> dict[str, Any] | None:
+    """Load disruption threshold sweep artifact for controller-lane summary."""
     return _load_artifact(ARTIFACTS / "disruption_threshold_sweep.json")
 
 
@@ -304,6 +319,7 @@ def load_disruption_threshold() -> dict[str, Any] | None:
 
 
 def run_controller_campaign(quick: bool = False) -> dict[str, Any] | None:
+    """Run the stress controller campaign and return a compact results summary."""
     from validation.stress_test_campaign import run_campaign, generate_summary_table
 
     n = 5 if quick else 20
@@ -352,6 +368,7 @@ def generate_results_md(
     results: dict | None = None,
     campaign: dict | None = None,
 ) -> str:
+    """Build the benchmark RESULTS.md document from computed and artifact-backed lanes."""
     if results is not None:
         hil = hil or results.get("hil")
         disruption = disruption or results.get("disruption")
@@ -850,6 +867,7 @@ Re-run with `python validation/collect_results.py` to reproduce.*
 
 
 def main() -> None:
+    """Run all benchmark lanes, assemble RESULTS.md, and print completion status."""
     parser = argparse.ArgumentParser(description="Collect SCPN Fusion Core benchmark results")
     parser.add_argument(
         "--quick", action="store_true", help="Run reduced iterations for faster turnaround"

@@ -22,6 +22,7 @@ from scpn_fusion.core.gpu_runtime import GPURuntimeBridge
 
 
 def run_campaign(*, trials: int = 64, grid_size: int = 64) -> dict[str, Any]:
+    """Benchmark GPU bridge multigrid + SNN paths and evaluate threshold gates."""
     t0 = time.perf_counter()
     bridge = GPURuntimeBridge(seed=42)
     bench = bridge.benchmark_pair(trials=trials, grid_size=grid_size)
@@ -50,6 +51,7 @@ def run_campaign(*, trials: int = 64, grid_size: int = 64) -> dict[str, Any]:
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate the full GDEP-02 report payload from a campaign run."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gdep_02": run_campaign(**kwargs),
@@ -57,6 +59,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GDEP-02 benchmark metrics as markdown."""
     g = report["gdep_02"]
     th = g["thresholds"]
     b = g["benchmarks"]
@@ -82,6 +85,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for executing GDEP-02 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--trials", type=int, default=64)
     parser.add_argument("--grid-size", type=int, default=64)

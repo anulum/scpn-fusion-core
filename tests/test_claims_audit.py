@@ -16,6 +16,8 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,9 +84,11 @@ def test_claims_audit_reports_untracked_evidence_file() -> None:
 def test_git_tracked_files_uses_timeout(monkeypatch) -> None:
     calls: list[dict[str, object]] = []
 
-    def _fake_run(*args, **kwargs):  # type: ignore[no-untyped-def]
-        calls.append(kwargs)
-        return subprocess.CompletedProcess(args[0], 0, stdout="README.md\n", stderr="")
+    def _fake_run(
+        cmd: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append(cast(dict[str, object], kwargs))
+        return subprocess.CompletedProcess(cmd, 0, stdout="README.md\n", stderr="")
 
     monkeypatch.setattr(claims_audit.subprocess, "run", _fake_run)
     tracked = claims_audit._git_tracked_files(ROOT)
@@ -94,8 +98,16 @@ def test_git_tracked_files_uses_timeout(monkeypatch) -> None:
 
 
 def test_git_tracked_files_returns_none_on_timeout(monkeypatch) -> None:
-    def _fake_run(*args, **kwargs):  # type: ignore[no-untyped-def]
-        raise subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs.get("timeout", 0.0))
+    def _fake_run(
+        cmd: list[str], **kwargs: object
+    ) -> None:
+        timeout_value = cast(dict[str, object], kwargs).get("timeout", 0.0)
+        timeout = (
+            float(timeout_value)
+            if isinstance(timeout_value, (int, float))
+            else 0.0
+        )
+        raise subprocess.TimeoutExpired(cmd=cast(list[str], cmd), timeout=timeout)
 
     monkeypatch.setattr(claims_audit.subprocess, "run", _fake_run)
     assert claims_audit._git_tracked_files(ROOT) is None

@@ -8,7 +8,9 @@
 """Phase 5 verification: Newton-Kantorovich equilibrium solver."""
 
 import json
+from copy import deepcopy
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -16,7 +18,7 @@ import pytest
 import scpn_fusion.core.fusion_kernel_newton_solver as newton_mod
 from scpn_fusion.core.fusion_kernel import FusionKernel
 
-MOCK_CONFIG = {
+MOCK_CONFIG: dict[str, Any] = {
     "reactor_name": "Newton-Test",
     "grid_resolution": [20, 20],
     "dimensions": {"R_min": 4.0, "R_max": 8.0, "Z_min": -4.0, "Z_max": 4.0},
@@ -35,17 +37,29 @@ MOCK_CONFIG = {
 }
 
 
+def _mock_config() -> dict[str, Any]:
+    return deepcopy(MOCK_CONFIG)
+
+
+def _solver_cfg(cfg: dict[str, Any]) -> dict[str, Any]:
+    return cast(dict[str, Any], cfg["solver"])
+
+
 @pytest.fixture
 def newton_cfg(tmp_path: Path) -> Path:
     p = tmp_path / "newton_cfg.json"
-    p.write_text(json.dumps(MOCK_CONFIG), encoding="utf-8")
+    p.write_text(json.dumps(_mock_config()), encoding="utf-8")
     return p
 
 
 @pytest.fixture
 def picard_cfg(tmp_path: Path) -> Path:
-    cfg = MOCK_CONFIG.copy()
-    cfg["solver"] = {**cfg["solver"], "solver_method": "sor", "max_iterations": 200}
+    cfg = _mock_config()
+    cfg["solver"] = {
+        **_solver_cfg(cfg),
+        "solver_method": "sor",
+        "max_iterations": 200,
+    }
     p = tmp_path / "picard_cfg.json"
     p.write_text(json.dumps(cfg), encoding="utf-8")
     return p
@@ -80,9 +94,9 @@ def test_newton_fewer_iterations(newton_cfg: Path, picard_cfg: Path):
 
 def test_newton_quadratic_residual_decrease(tmp_path: Path):
     """Residual should decrease with line search enabled."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "newton_line_search": True,
         "newton_line_search_c": 1e-4,
         "newton_line_search_max_backtracks": 8,
@@ -125,9 +139,9 @@ def test_newton_gs_residual_small(newton_cfg: Path):
 
 def test_newton_with_hmode_profiles(tmp_path: Path):
     """Newton should work with H-mode (mtanh pedestal) profiles too."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["physics"] = {
-        **cfg["physics"],
+        **cast(dict[str, Any], cfg["physics"]),
         "profiles": {
             "mode": "h-mode",
             "p_prime": {"ped_top": 0.92, "ped_width": 0.05, "ped_height": 1.0, "core_alpha": 0.3},
@@ -166,9 +180,9 @@ def test_newton_reports_gs_residual_metrics(newton_cfg: Path):
 
 def test_newton_allows_ilu_preconditioner_mode(tmp_path: Path):
     """ILU preconditioner mode should execute without crashing."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "gmres_preconditioner": "ilu",
         "max_iterations": 20,
     }
@@ -183,9 +197,9 @@ def test_newton_allows_ilu_preconditioner_mode(tmp_path: Path):
 
 def test_newton_rejects_invalid_preconditioner_mode(tmp_path: Path):
     """Invalid preconditioner names should fail fast."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "gmres_preconditioner": "not-a-mode",
     }
     p = tmp_path / "newton_bad_precond.json"
@@ -212,9 +226,9 @@ def test_newton_rejects_invalid_ilu_parameters(
     error_pattern: str,
 ) -> None:
     """Invalid ILU tuning parameters should fail fast in Newton setup."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "gmres_preconditioner": "ilu",
         field: value,
     }
@@ -239,9 +253,9 @@ def test_newton_rejects_invalid_gmres_nonconverged_budget(
     error_pattern: str,
 ) -> None:
     """GMRES non-convergence budget must be an integer >= 0."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "gmres_nonconverged_budget": value,
     }
     p = tmp_path / "newton_bad_gmres_budget.json"
@@ -257,9 +271,9 @@ def test_newton_fails_fast_when_gmres_budget_exceeded(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Fail fast when GMRES keeps returning non-converged info and budget is exhausted."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "max_iterations": 8,
         "convergence_threshold": 1e-18,
         "require_gs_residual": True,
@@ -300,9 +314,9 @@ def test_newton_reports_gmres_telemetry_keys(newton_cfg: Path) -> None:
 
 def test_newton_line_search_reports_telemetry(tmp_path: Path) -> None:
     """Line-search mode should expose structured telemetry counters."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "newton_line_search": True,
         "newton_line_search_c": 1e-4,
         "newton_line_search_max_backtracks": 4,
@@ -339,9 +353,9 @@ def test_newton_rejects_invalid_line_search_config(
     error_pattern: str,
 ) -> None:
     """Invalid line-search parameters should fail fast."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "newton_line_search": True,
         field: value,
     }
@@ -359,9 +373,9 @@ def test_newton_mode_strict_determinism_across_fixed_seed(
     line_search_enabled: bool,
 ) -> None:
     """Newton line-search mode should be bit-stable across repeated fixed-seed runs."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "newton_line_search": line_search_enabled,
         "max_iterations": 25,
     }
@@ -391,9 +405,9 @@ def test_newton_line_search_enabled_disabled_fixed_seed_parity(
     tmp_path: Path,
 ) -> None:
     """Enabled/disabled line-search modes should both produce finite, shape-parity outputs."""
-    cfg = MOCK_CONFIG.copy()
+    cfg = _mock_config()
     cfg["solver"] = {
-        **cfg["solver"],
+        **_solver_cfg(cfg),
         "max_iterations": 25,
     }
     p = tmp_path / "newton_line_search_parity.json"

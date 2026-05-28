@@ -127,10 +127,10 @@ class TestFromOmas:
         psi = rng.standard_normal((nz, nr))
         j_tor = rng.standard_normal((nz, nr))
 
-        class _DictLike(dict):
-            """Dict that also supports .get()."""
+            class _DictLike(dict):
+                """Dict that also supports .get()."""
 
-            def get(self, key, default=None):  # type: ignore[no-untyped-def]
+            def get(self, key: str, default: object = None) -> object:
                 return super().get(key, default)
 
         p2d = _DictLike(

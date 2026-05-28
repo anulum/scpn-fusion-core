@@ -9,6 +9,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -47,8 +48,9 @@ def cfg_path(tmp_path: Path) -> Path:
 
 
 def _make_sor_config(tmp_path: Path) -> Path:
-    cfg = MOCK_CONFIG.copy()
-    cfg["solver"] = {**cfg["solver"], "solver_method": "sor"}
+    cfg = cast(dict[str, Any], MOCK_CONFIG.copy())
+    solver_cfg = cast(dict[str, Any], cfg["solver"])
+    cfg["solver"] = {**solver_cfg, "solver_method": "sor"}
     p = tmp_path / "sor_cfg.json"
     p.write_text(json.dumps(cfg), encoding="utf-8")
     return p

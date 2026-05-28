@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import sys
 import types
+from collections.abc import Iterator
 
 import pytest
 
@@ -23,7 +24,7 @@ def _clear_kernel(name: str) -> None:
 
 
 @pytest.fixture
-def kernel_name(request: pytest.FixtureRequest) -> str:
+def kernel_name(request: pytest.FixtureRequest) -> Iterator[str]:
     name = f"test_{request.node.name}"
     _clear_kernel(name)
     yield name
@@ -83,7 +84,7 @@ def test_dispatch_fallback_survives_telemetry_failure(
     def _raise(*_args, **_kwargs):
         raise RuntimeError("telemetry unavailable")
 
-    fake_mod.record_fallback_event = _raise
+    setattr(fake_mod, "record_fallback_event", _raise)
     monkeypatch.setitem(sys.modules, "scpn_fusion.fallback_telemetry", fake_mod)
 
     multi.register_kernel(kernel_name, multi.BackendTier.MOJO, lambda: "mojo")

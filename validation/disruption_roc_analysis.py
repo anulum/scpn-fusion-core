@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from scipy.integrate import trapezoid
@@ -23,9 +24,10 @@ from scpn_fusion.control.disruption_predictor import (
 )
 
 
-def generate_scenario_batch(n_total: int = 100) -> list[dict]:
+def generate_scenario_batch(n_total: int = 100) -> list[dict[str, Any]]:
+    """Create a balanced synthetic batch of safe/disruptive scenario signals."""
     rng = np.random.default_rng(42)
-    shots = []
+    shots: list[dict[str, Any]] = []
     modes = ["ntm", "density_limit", "vde"]
     n_disrupt_target = n_total // 2
     n_disrupt, n_safe = 0, 0
@@ -43,6 +45,7 @@ def generate_scenario_batch(n_total: int = 100) -> list[dict]:
 
 
 def evaluate_batch(shots: list[dict], threshold: float) -> dict:
+    """Evaluate one predictor threshold over a scenario batch and return TPR/FPR."""
     tp, fp, tn, fn = 0, 0, 0, 0
     for shot in shots:
         signal, label, t_dis_true, mode = (
@@ -89,6 +92,7 @@ def evaluate_batch(shots: list[dict], threshold: float) -> dict:
 
 
 def main():
+    """Run a ROC sweep and persist JSON/markdown result artifacts."""
     print("Generating batch...")
     shots = generate_scenario_batch(100)
     thresholds = np.linspace(0.0, 1.0, 51)

@@ -21,9 +21,9 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 UNDERDEV_MODULE_PATH = REPO_ROOT / "tools" / "generate_underdeveloped_register.py"
-DEFAULT_SOURCE_MD = REPO_ROOT / "docs" / "UNDERDEVELOPED_SOURCE_REGISTER.md"
-DEFAULT_DOCS_MD = REPO_ROOT / "docs" / "UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md"
-DEFAULT_SUMMARY_JSON = REPO_ROOT / "docs" / "UNDERDEVELOPED_SCOPE_SUMMARY.json"
+DEFAULT_SOURCE_MD = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_SOURCE_REGISTER.md"
+DEFAULT_DOCS_MD = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md"
+DEFAULT_SUMMARY_JSON = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_SCOPE_SUMMARY.json"
 
 
 @dataclass(frozen=True)

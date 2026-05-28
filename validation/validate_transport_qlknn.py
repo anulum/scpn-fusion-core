@@ -152,6 +152,8 @@ def validate(
 
 
 def main() -> None:
+    """CLI entrypoint for QL-KNN transport surrogate validation."""
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=Path, default=DEFAULT_WEIGHTS)
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)

@@ -22,7 +22,7 @@ def test_fusion_json_formatter_includes_context_fields() -> None:
         args=(),
         exc_info=None,
     )
-    record.physics_context = {"ip_ma": 8.7}  # type: ignore[attr-defined]
+    setattr(record, "physics_context", {"ip_ma": 8.7})
     payload = json.loads(FusionJSONFormatter().format(record))
     assert payload["level"] == "INFO"
     assert payload["message"] == "unit test message"

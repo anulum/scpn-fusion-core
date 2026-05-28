@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import pytest
+from typing import Any, Callable, cast
 
 from scpn_fusion.io import imas_history_payloads
 from scpn_fusion.io.imas_connector import (
@@ -54,6 +55,13 @@ def _sample_state() -> dict[str, object]:
         "electron_density_1e20_m3": [1.4, 1.35, 1.24, 1.11, 0.94],
     }
     return state
+
+
+PayloadJson = dict[str, Any]
+
+
+def _cast_payload(value: dict[str, object]) -> PayloadJson:
+    return cast(PayloadJson, value)
 
 
 def test_validate_ids_payload_accepts_nominal_payload() -> None:
@@ -112,18 +120,18 @@ def test_split_history_module_api_reachable() -> None:
     ],
 )
 def test_validate_ids_payload_rejects_invalid_nested_fields(
-    mutate,
+    mutate: Callable[[PayloadJson], None],
     msg: str,
 ) -> None:
-    payload = _sample_payload()
-    mutate(payload)  # type: ignore[arg-type]
+    payload = _cast_payload(_sample_payload())
+    mutate(payload)
     with pytest.raises(ValueError, match=msg):
         validate_ids_payload(payload)
 
 
 def test_validate_ids_payload_rejects_non_mapping_payload() -> None:
     with pytest.raises(ValueError, match="mapping"):
-        validate_ids_payload([])  # type: ignore[arg-type]
+        validate_ids_payload(cast(dict[str, Any], []))
 
 
 @pytest.mark.parametrize(
@@ -136,16 +144,19 @@ def test_validate_ids_payload_rejects_non_mapping_payload() -> None:
         (lambda p: p["performance"].pop("final_avg_temp_keV"), "performance missing keys"),
     ],
 )
-def test_validate_ids_payload_rejects_missing_nested_keys(mutate, msg: str) -> None:
-    payload = _sample_payload()
-    mutate(payload)  # type: ignore[arg-type]
+def test_validate_ids_payload_rejects_missing_nested_keys(
+    mutate: Callable[[PayloadJson], None],
+    msg: str,
+) -> None:
+    payload = _cast_payload(_sample_payload())
+    mutate(payload)
     with pytest.raises(ValueError, match=msg):
         validate_ids_payload(payload)
 
 
 def test_digital_twin_summary_to_ids_rejects_non_mapping_summary() -> None:
     with pytest.raises(ValueError, match="summary must be a mapping"):
-        digital_twin_summary_to_ids([], machine="ITER", shot=1, run=2)  # type: ignore[arg-type]
+        digital_twin_summary_to_ids(cast(dict[str, Any], []), machine="ITER", shot=1, run=2)
 
 
 def test_digital_twin_summary_to_ids_rejects_missing_required_summary_keys() -> None:
@@ -162,8 +173,9 @@ def test_digital_twin_summary_to_ids_rejects_missing_required_summary_keys() -> 
 
 
 def test_validate_ids_payload_accepts_profiles_1d_block() -> None:
-    payload = _sample_payload()
-    payload["equilibrium"]["profiles_1d"] = {  # type: ignore[index]
+    payload = _cast_payload(_sample_payload())
+    equilibrium = cast(PayloadJson, payload["equilibrium"])
+    equilibrium["profiles_1d"] = {
         "rho_norm": [0.0, 0.5, 1.0],
         "electron_temp_keV": [15.0, 12.0, 8.0],
         "electron_density_1e20_m3": [1.2, 1.0, 0.8],
@@ -210,14 +222,18 @@ def test_validate_ids_payload_accepts_profiles_1d_block() -> None:
         ),
     ],
 )
-def test_validate_ids_payload_rejects_invalid_profiles_1d(mutate, msg: str) -> None:
-    payload = _sample_payload()
-    payload["equilibrium"]["profiles_1d"] = {  # type: ignore[index]
+def test_validate_ids_payload_rejects_invalid_profiles_1d(
+    mutate: Callable[[PayloadJson], None],
+    msg: str,
+) -> None:
+    payload = _cast_payload(_sample_payload())
+    equilibrium = cast(PayloadJson, payload["equilibrium"])
+    equilibrium["profiles_1d"] = {
         "rho_norm": [0.0, 0.5, 1.0],
         "electron_temp_keV": [15.0, 12.0, 8.0],
         "electron_density_1e20_m3": [1.2, 1.0, 0.8],
     }
-    mutate(payload)  # type: ignore[arg-type]
+    mutate(payload)
     with pytest.raises(ValueError, match=msg):
         validate_ids_payload(payload)
 
@@ -277,7 +293,11 @@ def test_validate_ids_payload_sequence_rejects_non_increasing_time() -> None:
         shot=11,
         run=4,
     )
-    payloads[1]["time_slice"]["time_s"] = payloads[0]["time_slice"]["time_s"]  # type: ignore[index]
+    payload0 = _cast_payload(payloads[0])
+    payload1 = _cast_payload(payloads[1])
+    time_slice0 = cast(PayloadJson, payload0["time_slice"])
+    time_slice1 = cast(PayloadJson, payload1["time_slice"])
+    time_slice1["time_s"] = time_slice0["time_s"]
     with pytest.raises(ValueError, match="strictly increasing time_slice.time_s"):
         validate_ids_payload_sequence(payloads)
 
@@ -296,9 +316,9 @@ def test_validate_ids_payload_sequence_rejects_machine_mismatch() -> None:
 
 def test_ids_history_helpers_reject_empty_sequences() -> None:
     with pytest.raises(ValueError, match="at least one"):
-        digital_twin_history_to_ids([], machine="ITER", shot=1, run=1)  # type: ignore[arg-type]
+        digital_twin_history_to_ids(cast(list[PayloadJson], []), machine="ITER", shot=1, run=1)
     with pytest.raises(ValueError, match="at least one"):
-        validate_ids_payload_sequence([])  # type: ignore[arg-type]
+        validate_ids_payload_sequence(cast(list[PayloadJson], []))
 
 
 def test_ids_pulse_roundtrip_mixed_history() -> None:
@@ -351,7 +371,8 @@ def test_validate_ids_pulse_rejects_slice_metadata_mismatch() -> None:
         shot=8,
         run=9,
     )
-    pulse["time_slices"][1]["machine"] = "JET"  # type: ignore[index]
+    time_slices = cast(list[PayloadJson], pulse["time_slices"])
+    time_slices[1]["machine"] = "JET"
     with pytest.raises(ValueError, match="same machine"):
         validate_ids_pulse_payload(pulse)
 

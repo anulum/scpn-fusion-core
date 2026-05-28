@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -16,9 +17,9 @@ def _config_path() -> Path:
     return Path(__file__).resolve().parents[1] / "validation" / "iter_validated_config.json"
 
 
-def _require_rust_extension():
+def _require_rust_extension() -> ModuleType:
     try:
-        import scpn_fusion_rs as rs  # type: ignore
+        import scpn_fusion_rs as rs
     except ImportError:
         pytest.skip("scpn_fusion_rs extension is not available in this environment")
     return rs

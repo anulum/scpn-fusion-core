@@ -14,7 +14,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -53,8 +53,9 @@ class _AcceptanceKernel:
         self.solve_equilibrium()
 
     def solve_equilibrium(self) -> None:
-        i = np.asarray([float(c["current"]) for c in self.cfg["coils"]], dtype=np.float64)
-        ip = float(self.cfg["physics"]["plasma_current_target"])
+        coils = cast(list[dict[str, float]], self.cfg["coils"])
+        i = np.asarray([float(c["current"]) for c in coils], dtype=np.float64)
+        ip = float(cast(dict[str, float], self.cfg["physics"])["plasma_current_target"])
         radial_drive = 0.95 * i[2] - 0.42 * i[1] + 0.16 * i[3]
         vertical_drive = 0.82 * i[3] - 0.68 * i[0] + 0.18 * i[2]
         divertor_drive_r = 0.74 * i[1] - 0.38 * i[0] + 0.12 * i[2]
@@ -165,6 +166,20 @@ def run_campaign(
     control_dt_s: float = 0.05,
     hil_steps: int = 512,
 ) -> dict[str, Any]:
+    """Run Task 9 replay and HIL acceptance campaign.
+
+    Compares nominal replay determinism, faulted-watchdog behavior, and HIL
+    latency compatibility against predefined acceptance criteria.
+
+    Parameters:
+        seed: Deterministic seed for both nominal and faulted traces.
+        shot_length: Control horizon length for supervisory simulation.
+        control_dt_s: Control timestep in seconds.
+        hil_steps: Number of HIL benchmark iterations.
+
+    Returns:
+        Campaign summary with replay, watchdog, HIL, and threshold gate outcomes.
+    """
     seed_i = _require_int("seed", seed, 0)
     steps = _require_int("shot_length", shot_length, 24)
     dt_s = _require_finite("control_dt_s", control_dt_s, 1e-4)
@@ -246,12 +261,16 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build a Task 9 validation report and attach generation timestamp."""
+
     out = run_campaign(**kwargs)
     out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
     return out
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render Task 9 campaign results into Markdown."""
+
     g = report["task9_free_boundary_replay_hil"]
     nominal = g["nominal_replay"]
     faulted = g["faulted_watchdog"]
@@ -294,6 +313,8 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for Task 9 replay/fault watchdog and HIL compatibility checks."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--shot-length", type=int, default=72)

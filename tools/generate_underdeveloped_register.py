@@ -18,7 +18,7 @@ from typing import Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = REPO_ROOT / "UNDERDEVELOPED_REGISTER.md"
+DEFAULT_OUTPUT = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_REGISTER.md"
 
 TEXT_EXTENSIONS = {
     ".py",
@@ -56,13 +56,13 @@ EXCLUDED_SUFFIXES = {".html"}
 EXCLUDED_PATHS = {
     "tools/generate_underdeveloped_register.py",
     "validation/claims_manifest.json",
-    "docs/V3_6_MILESTONE_BOARD.md",
-    "docs/CLAIMS_EVIDENCE_MAP.md",
-    "docs/SOURCE_P0P1_ISSUE_BACKLOG.md",
-    "docs/SOURCE_P0P1_ISSUE_BACKLOG.json",
-    "docs/UNDERDEVELOPED_SOURCE_REGISTER.md",
-    "docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md",
-    "docs/UNDERDEVELOPED_SCOPE_SUMMARY.json",
+    "docs/internal/V3_6_MILESTONE_BOARD.md",
+    "docs/internal/CLAIMS_EVIDENCE_MAP.md",
+    "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.md",
+    "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.json",
+    "docs/internal/UNDERDEVELOPED_SOURCE_REGISTER.md",
+    "docs/internal/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md",
+    "docs/internal/UNDERDEVELOPED_SCOPE_SUMMARY.json",
     # Completed-work logs: keywords here describe fixed/shipped items, not open debt.
     "CHANGELOG.md",
     "docs/sphinx/changelog.rst",
@@ -78,9 +78,9 @@ RELEASE_CLAIM_SURFACES = {
     "VALIDATION.md",
     "docs/HONEST_SCOPE.md",
     "docs/BENCHMARKS.md",
-    "docs/VALIDATION_GATE_MATRIX.md",
-    "docs/V3_9_3_RELEASE_CHECKLIST.md",
-    "docs/RELEASE_ACCEPTANCE_CHECKLIST.md",
+    "docs/internal/VALIDATION_GATE_MATRIX.md",
+    "docs/internal/V3_9_3_RELEASE_CHECKLIST.md",
+    "docs/internal/RELEASE_ACCEPTANCE_CHECKLIST.md",
     "docs/competitive_analysis.md",
     "docs/sphinx/userguide/validation.rst",
 }
@@ -91,8 +91,8 @@ NARRATIVE_DOC_PREFIXES = (
     "docs/promotions/",
     "docs/rfc/",
     "docs/internal/PHASE3_EXECUTION_REGISTRY.md",
-    "docs/DEEP_AUDIT_AND_SOTA_PLAN_",
-    "docs/HARDENING_30_DAY_EXECUTION_PLAN.md",
+    "docs/internal/DEEP_AUDIT_AND_SOTA_PLAN_",
+    "docs/internal/HARDENING_30_DAY_EXECUTION_PLAN.md",
     "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
     "docs/PACKET_",
 )
@@ -240,7 +240,7 @@ def _is_marker_suppressed(
         if "experimental tests" in lowered_line and "exclude" in lowered_line:
             return True
 
-    if marker == "EXPERIMENTAL" and rel_path == "docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md":
+    if marker == "EXPERIMENTAL" and rel_path == "docs/internal/FNO_EXTERNAL_RETRAIN_RUNBOOK.md":
         # The retrain runbook documents an explicitly acknowledged research lane;
         # the flag itself is a gate, not a public release claim.
         if "--experimental" in lowered_line and "--experimental-ack" in file_text:
@@ -308,7 +308,7 @@ def _is_marker_suppressed(
             return True
     if marker == "FALLBACK":
         stripped = line.strip()
-        if rel_path == "docs/VALIDATION_GATE_MATRIX.md":
+        if rel_path == "docs/internal/VALIDATION_GATE_MATRIX.md":
             if any(
                 phrase in lowered_line
                 for phrase in (
@@ -420,7 +420,7 @@ def _is_marker_suppressed(
             return True
 
     # Deep-audit planning docs that *list* marker counts are meta-reports.
-    return bool(rel_path.startswith("docs/DEEP_AUDIT_AND_SOTA_PLAN"))
+    return bool(rel_path.startswith("docs/internal/DEEP_AUDIT_AND_SOTA_PLAN"))
 
 
 def _count_nontrivial_loc(text: str) -> int:
@@ -961,7 +961,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--output",
         default=str(DEFAULT_OUTPUT),
-        help="Output markdown path (default: UNDERDEVELOPED_REGISTER.md at repo root).",
+        help="Output markdown path (default: docs/internal/UNDERDEVELOPED_REGISTER.md).",
     )
     parser.add_argument(
         "--check",

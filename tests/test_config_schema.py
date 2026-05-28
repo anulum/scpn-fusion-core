@@ -57,7 +57,9 @@ def test_reactor_config_coils_default_is_not_shared() -> None:
     cfg.pop("coils")
     cfg1 = validate_config(copy.deepcopy(cfg))
     cfg2 = validate_config(copy.deepcopy(cfg))
-    cfg1.coils.append({"name": "PFX", "r": 2.0, "z": 0.0, "current": 0.1})  # type: ignore[arg-type]
+    from scpn_fusion.core.config_schema import Coil
+
+    cfg1.coils.append(Coil(name="PFX", r=2.0, z=0.0, current=0.1))
     assert len(cfg1.coils) == 1
     assert len(cfg2.coils) == 0
 

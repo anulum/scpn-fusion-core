@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import subprocess
+from typing import Any, cast
 
 from scpn_fusion.scpn import compiler
 
@@ -28,7 +29,7 @@ def test_resolve_git_sha_uses_timeout_for_git_probe(monkeypatch) -> None:
 
     calls: list[dict[str, object]] = []
 
-    def fake_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
         _ = args
         calls.append(dict(kwargs))
         return subprocess.CompletedProcess(
@@ -50,9 +51,9 @@ def test_resolve_git_sha_falls_back_on_timeout(monkeypatch) -> None:
     monkeypatch.delenv("GITHUB_SHA", raising=False)
     monkeypatch.delenv("CI_COMMIT_SHA", raising=False)
 
-    def fake_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def fake_run(*args: object, **kwargs: object) -> Any:
         _ = kwargs
-        raise subprocess.TimeoutExpired(cmd=args[0], timeout=1.0)
+        raise subprocess.TimeoutExpired(cmd=cast(list[str], args[0]), timeout=1.0)
 
     monkeypatch.setattr(compiler.subprocess, "run", fake_run)
     assert compiler._resolve_git_sha() == "0000000"

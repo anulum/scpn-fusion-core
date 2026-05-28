@@ -355,7 +355,7 @@ def _scenario_from_config(
         initial_frame=initial_frame,
         fault_schedule=fault_schedule,
     )
-    diagnostic_settings = {
+    diagnostic_settings: dict[str, float | int | str] = {
         "flux_surface_s": _finite("diagnostics.flux_surface_s", diagnostics["flux_surface_s"]),
         "n_theta": int(diagnostics["n_theta"]),
         "n_phi": int(diagnostics["n_phi"]),
@@ -472,11 +472,13 @@ def _run_replay(
 
 
 def load_config_schema() -> dict[str, Any]:
+    """Load the validation config JSON schema from repository artifacts."""
     schema_path = ROOT / "schemas" / "stellarator_control_replay_config.schema.json"
     return json.loads(schema_path.read_text(encoding="utf-8"))
 
 
 def load_benchmark_config(path: str | Path | None = None) -> dict[str, Any]:
+    """Load and validate a benchmark config payload from disk."""
     config_path = DEFAULT_CONFIG_PATH if path is None else Path(path)
     payload = json.loads(config_path.read_text(encoding="utf-8"))
     resolved_path = config_path.resolve()
@@ -625,6 +627,7 @@ def generate_report(
 
 
 def render_markdown(report: Mapping[str, Any]) -> str:
+    """Render benchmark output into a human-readable markdown report."""
     bench = report["stellarator_control_replay_benchmark"]
     metrics = bench["metrics"]
     uncertainty = bench["uncertainty"]
@@ -666,6 +669,7 @@ def render_markdown(report: Mapping[str, Any]) -> str:
 
 
 def load_report_schema() -> dict[str, Any]:
+    """Load the benchmark report JSON schema from repository artifacts."""
     schema_path = ROOT / "schemas" / "stellarator_control_replay_benchmark.schema.json"
     return json.loads(schema_path.read_text(encoding="utf-8"))
 
@@ -740,6 +744,7 @@ def validate_report_against_schema(report: Mapping[str, Any], schema: Mapping[st
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run benchmark generation and write JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=None)
     parser.add_argument("--steps", type=int, default=None)

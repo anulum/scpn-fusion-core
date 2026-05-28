@@ -34,7 +34,15 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
+
+ModelPredictiveController: Any | None
+NeuralSurrogate: Any | None
+get_nmpc_controller: Any | None
+NonlinearMPC: Any | None
+NengoSNNController: Any | None
+NengoSNNConfig: Any | None
+PyRustFlightSim: Any | None
 
 import numpy as np
 
@@ -55,46 +63,53 @@ _snn_available = False
 
 try:
     from scpn_fusion.control.fusion_sota_mpc import (
-        ModelPredictiveController,
-        NeuralSurrogate,
+        ModelPredictiveController as _ModelPredictiveController,
+        NeuralSurrogate as _NeuralSurrogate,
     )
 
     _mpc_available = True
+    ModelPredictiveController = cast(Any, _ModelPredictiveController)
+    NeuralSurrogate = cast(Any, _NeuralSurrogate)
 except ImportError:
-    ModelPredictiveController = None  # type: ignore[assignment]
-    NeuralSurrogate = None  # type: ignore[assignment]
+    ModelPredictiveController = None
+    NeuralSurrogate = None
 
 try:
     from scpn_fusion.control.fusion_nmpc_jax import (
-        get_nmpc_controller,
-        NonlinearMPC,
+        get_nmpc_controller as _get_nmpc_controller,
+        NonlinearMPC as _NonlinearMPC,
     )
 
     _nmpc_jax_available = True
+    get_nmpc_controller = cast(Any, _get_nmpc_controller)
+    NonlinearMPC = cast(Any, _NonlinearMPC)
 except ImportError:
     _nmpc_jax_available = False
-    get_nmpc_controller = None  # type: ignore[assignment]
-    NonlinearMPC = None  # type: ignore[assignment]
+    get_nmpc_controller = None
+    NonlinearMPC = None
 
 try:
     from scpn_fusion.control.nengo_snn_wrapper import (
-        NengoSNNController,
-        NengoSNNConfig,
+        NengoSNNController as _NengoSNNController,
+        NengoSNNConfig as _NengoSNNConfig,
         nengo_available,
     )
 
     _snn_available = nengo_available()
+    NengoSNNController = cast(Any, _NengoSNNController)
+    NengoSNNConfig = cast(Any, _NengoSNNConfig)
 except ImportError:
-    NengoSNNController = None  # type: ignore[assignment]
-    NengoSNNConfig = None  # type: ignore[assignment]
+    NengoSNNController = None
+    NengoSNNConfig = None
 
 _rust_flight_sim_available = False
 try:
-    from scpn_fusion_rs import PyRustFlightSim
+    from scpn_fusion_rs import PyRustFlightSim as _PyRustFlightSim
 
     _rust_flight_sim_available = True
+    PyRustFlightSim = cast(Any, _PyRustFlightSim)
 except ImportError:
-    PyRustFlightSim = None  # type: ignore[assignment]
+    PyRustFlightSim = None
 
 
 @dataclass

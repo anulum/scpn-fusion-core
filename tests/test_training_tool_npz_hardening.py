@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import importlib.util
+from typing import Any
 from pathlib import Path
 import sys
 
@@ -22,7 +23,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_tool_module(name: str, relative_path: str):
+def _load_tool_module(name: str, relative_path: str) -> Any:
     module_path = ROOT / relative_path
     spec = importlib.util.spec_from_file_location(name, module_path)
     assert spec and spec.loader
@@ -45,9 +46,15 @@ def test_train_neural_loader_uses_allow_pickle_false(
     real_np_load = np.load
     calls: list[object] = []
 
-    def _fake_load(*args, **kwargs):  # type: ignore[no-untyped-def]
-        calls.append(kwargs.get("allow_pickle"))
-        return real_np_load(*args, **kwargs)
+    def _fake_load(
+        path: Any,
+        *,
+        allow_pickle: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        calls.append(allow_pickle)
+        del kwargs
+        return real_np_load(path, allow_pickle=allow_pickle)
 
     monkeypatch.setattr(module.np, "load", _fake_load)
     loaded = module._load_npz_required(npz_path, required_keys=("X", "Y"))
@@ -81,9 +88,15 @@ def test_train_fno_loader_uses_allow_pickle_false(
     real_np_load = np.load
     calls: list[object] = []
 
-    def _fake_load(*args, **kwargs):  # type: ignore[no-untyped-def]
-        calls.append(kwargs.get("allow_pickle"))
-        return real_np_load(*args, **kwargs)
+    def _fake_load(
+        path: Any,
+        *,
+        allow_pickle: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        calls.append(allow_pickle)
+        del kwargs
+        return real_np_load(path, allow_pickle=allow_pickle)
 
     monkeypatch.setattr(module.np, "load", _fake_load)
     x, y = module._load_spatial_split(npz_path)

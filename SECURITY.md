@@ -118,7 +118,7 @@ and `Stop global RNG mutation`.
 
 - **No completed third-party security audit.** The codebase has not yet been
   reviewed by an external security firm. The audit scope and required
-  deliverables are tracked in `docs/security/THIRD_PARTY_AUDIT_SCOPE.md`.
+  deliverables are tracked in `docs/internal/THIRD_PARTY_AUDIT_SCOPE.md`.
 - **No CVE history.** No vulnerabilities have been reported to date.
 
 Contributions to improve security coverage (fuzzing harnesses, static

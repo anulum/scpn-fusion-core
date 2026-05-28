@@ -96,7 +96,7 @@ def record_fallback_event(
     reason_text = str(reason).strip() or "unspecified"
     total_limit = _parse_limit(_TOTAL_BUDGET_ENV)
     domain_limit = _parse_limit(_domain_env_key(normalized_domain))
-    event = {
+    event: dict[str, Any] = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "domain": normalized_domain,
         "reason": reason_text,

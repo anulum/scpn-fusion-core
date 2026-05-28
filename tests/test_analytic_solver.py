@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+from typing import TypedDict
 from pathlib import Path
 import numpy as np
 import pytest
@@ -20,11 +21,22 @@ from scpn_fusion.control.analytic_solver import (
 )
 
 
+class _CoilConfig(TypedDict):
+    name: str
+    r: float
+    z: float
+    current: float
+
+
+class _SolverConfig(TypedDict):
+    coils: list[_CoilConfig]
+
+
 class _DummyKernel:
     """Minimal kernel exposing config/grid/vacuum field for analytic solver tests."""
 
     def __init__(self, _config_path: str) -> None:
-        self.cfg = {
+        self.cfg: _SolverConfig = {
             "coils": [
                 {"name": "PF1", "r": 5.9, "z": -0.2, "current": 0.0},
                 {"name": "PF2", "r": 6.0, "z": 0.2, "current": 0.0},

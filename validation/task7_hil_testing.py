@@ -229,6 +229,20 @@ def run_campaign(
     hil_steps: int = 320,
     control_dt_s: float = 0.0008,
 ) -> dict[str, Any]:
+    """Run Task 7 synthetic HIL campaign and collect deterministic gates.
+
+    Executes two replay lanes plus bitstream serialization checks to validate
+    deterministic behavior of synthesis, controller inference, and latency budgets.
+
+    Parameters:
+        seed: Deterministic seed for campaign randomness.
+        hil_steps: Number of synthetic control loop steps to execute.
+        control_dt_s: Control period in seconds.
+
+    Returns:
+        A dictionary with closed-loop metrics, determinism evidence, and hard
+        acceptance criteria outcomes.
+    """
     t0 = time.perf_counter()
     seed_i = _require_int("seed", seed, 0)
     steps = _require_int("hil_steps", hil_steps, 64)
@@ -253,25 +267,34 @@ def run_campaign(
         "require_replay_determinism": True,
     }
 
+    max_p95_latency_ms = float(thresholds["max_p95_latency_ms"])
+    max_tracking_rmse = float(thresholds["max_tracking_rmse"])
+    min_stabilization_rate = float(thresholds["min_stabilization_rate"])
+    require_bitstream_determinism = bool(thresholds["require_bitstream_determinism"])
+    require_replay_determinism = bool(thresholds["require_replay_determinism"])
+
+    p95_latency_ms = float(lane_a["p95_latency_ms"])
+    tracking_rmse = float(lane_a["tracking_rmse"])
+    stabilization_rate = float(lane_a["stabilization_rate"])
     metrics = {
         "hil_steps": int(steps),
         "control_dt_s": float(dt_s),
-        "p95_latency_ms": float(lane_a["p95_latency_ms"]),
-        "tracking_rmse": float(lane_a["tracking_rmse"]),
-        "stabilization_rate": float(lane_a["stabilization_rate"]),
+        "p95_latency_ms": p95_latency_ms,
+        "tracking_rmse": tracking_rmse,
+        "stabilization_rate": stabilization_rate,
         "snn_backend": str(lane_a["snn_backend"]),
     }
 
     failure_reasons: list[str] = []
-    if metrics["p95_latency_ms"] > thresholds["max_p95_latency_ms"]:
+    if p95_latency_ms > max_p95_latency_ms:
         failure_reasons.append("p95_latency_ms")
-    if metrics["tracking_rmse"] > thresholds["max_tracking_rmse"]:
+    if tracking_rmse > max_tracking_rmse:
         failure_reasons.append("tracking_rmse")
-    if metrics["stabilization_rate"] < thresholds["min_stabilization_rate"]:
+    if stabilization_rate < min_stabilization_rate:
         failure_reasons.append("stabilization_rate")
-    if thresholds["require_bitstream_determinism"] and not bool(bitstream["all_pass"]):
+    if require_bitstream_determinism and not bool(bitstream["all_pass"]):
         failure_reasons.append("bitstream_determinism")
-    if thresholds["require_replay_determinism"] and not replay_deterministic:
+    if require_replay_determinism and not replay_deterministic:
         failure_reasons.append("replay_determinism")
 
     return {
@@ -298,12 +321,16 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build and timestamp a full HIL campaign report."""
+
     out = run_campaign(**kwargs)
     out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
     return out
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render Task 7 campaign output to a Markdown summary."""
+
     g = report["task7_hil_testing"]
     h = g["hardware_profile"]
     m = g["hil_closed_loop"]
@@ -341,6 +368,12 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for Task 7 HIL validation.
+
+    Supports strict mode to enforce deterministic and latency gates as hard
+    acceptance criteria.
+    """
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--hil-steps", type=int, default=320)

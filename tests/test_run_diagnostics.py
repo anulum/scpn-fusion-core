@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from matplotlib.figure import Figure
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -50,7 +51,7 @@ class _DummySensorSuite:
         base = float(np.mean(np.asarray(emission_profile, dtype=np.float64)))
         return np.array([base + 0.01 * i for i in range(len(self.bolo_chords))], dtype=np.float64)
 
-    def visualize_setup(self):  # type: ignore[no-untyped-def]
+    def visualize_setup(self) -> Figure:
         fig, ax = plt.subplots()
         ax.plot([4.0, 8.0], [0.0, 0.0], "k-")
         ax.set_title("Dummy Sensor Setup")
@@ -69,7 +70,9 @@ class _DummyTomography:
             dtype=np.float64,
         )
 
-    def plot_reconstruction(self, ground_truth: np.ndarray, reconstruction: np.ndarray):  # type: ignore[no-untyped-def]
+    def plot_reconstruction(
+        self, ground_truth: np.ndarray, reconstruction: np.ndarray
+    ) -> Figure:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
         ax1.imshow(ground_truth, origin="lower", cmap="hot")
         ax2.imshow(reconstruction, origin="lower", cmap="hot")

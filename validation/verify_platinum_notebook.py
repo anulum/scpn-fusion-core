@@ -26,6 +26,8 @@ from scpn_fusion.control.advanced_soc_fusion_learning import CoupledSandpileReac
 
 
 def test_platinum_logic():
+    """Execute the platinum notebook core logic steps as a scripted smoke test."""
+
     print("--- VERIFYING PLATINUM STANDARD LOGIC (v2) ---")
 
     # 0. Version Check

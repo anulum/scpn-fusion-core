@@ -15,7 +15,7 @@ import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, Callable, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -36,7 +36,7 @@ from scpn_fusion.scpn.contracts import (
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 _SimTearingModeFn = Callable[..., tuple[FloatArray, object, object]]
 _BuildFeatureVectorFn = Callable[[FloatArray, dict[str, float]], FloatArray]
 _ApplyBitFlipFn = Callable[[float, int], float]
@@ -161,6 +161,7 @@ def run_benchmark(
     recovery_window_steps: int = 10,
     dt_ms: float = 0.1,
 ) -> dict[str, Any]:
+    """Run the deterministic GNEU-01 SNN-vs-RL benchmark and return scorecards."""
     rng = np.random.default_rng(int(seed))
     controller = _build_controller()
 
@@ -300,6 +301,7 @@ def run_benchmark(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate the GNEU-01 benchmark report payload."""
     t0 = time.perf_counter()
     bench = run_benchmark(**kwargs)
     elapsed = time.perf_counter() - t0
@@ -311,6 +313,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GNEU-01 benchmark output into a compact markdown report."""
     b = report["gneu_01"]
     lines = [
         "# GNEU-01 Benchmark",
@@ -348,6 +351,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GNEU-01 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--episodes", type=int, default=64)

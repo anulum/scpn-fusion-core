@@ -41,6 +41,7 @@ rmse = _RMSE_DASHBOARD.rmse
 
 
 def load_blind_references(reference_dir: Path) -> list[dict[str, Any]]:
+    """Load all blind reference rows from the configured JSON fixture directory."""
     rows: list[dict[str, Any]] = []
     for filename in BLIND_REFERENCE_FILES:
         path = reference_dir / filename
@@ -58,6 +59,7 @@ def load_blind_references(reference_dir: Path) -> list[dict[str, Any]]:
 
 
 def estimate_beta_n_proxy(row: dict[str, Any], tau_pred_s: float) -> float:
+    """Estimate βN from a deterministic proxy model for blind-validation diagnostics."""
     return (
         10.0
         * 0.18
@@ -71,6 +73,7 @@ def estimate_beta_n_proxy(row: dict[str, Any], tau_pred_s: float) -> float:
 
 
 def estimate_core_edge_match_proxy(tau_pred_s: float, beta_pred: float) -> float:
+    """Compute a stable core-edge match proxy from predicted confinement and βN."""
     raw = (
         0.90
         + 0.04 * math.tanh((tau_pred_s - 3.5) / 2.0)
@@ -170,6 +173,7 @@ def _evaluate_rows(rows: list[dict[str, Any]], thresholds: dict[str, float]) -> 
 
 
 def run_campaign(*, reference_dir: Path | None = None) -> dict[str, Any]:
+    """Run blind-validation aggregation and compute threshold + parity diagnostics."""
     t0 = time.perf_counter()
     ref_dir = reference_dir or BLIND_REFERENCE_DIR
     rows = load_blind_references(ref_dir)
@@ -206,6 +210,7 @@ def run_campaign(*, reference_dir: Path | None = None) -> dict[str, Any]:
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate the full GDEP-03 report payload from a campaign run."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gdep_03": run_campaign(**kwargs),
@@ -213,6 +218,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GDEP-03 blind-validation report to markdown."""
     g = report["gdep_03"]
     th = g["thresholds"]
     agg = g["aggregate"]
@@ -262,6 +268,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for GDEP-03 blind-validation execution."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--reference-dir",
@@ -281,6 +288,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GDEP-03 and exporting JSON/Markdown outputs."""
     args = parse_args(argv)
     report = generate_report(reference_dir=Path(args.reference_dir))
 

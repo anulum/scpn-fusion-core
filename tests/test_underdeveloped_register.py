@@ -29,9 +29,9 @@ def test_collect_entries_returns_actionable_findings() -> None:
     entries = underdev.collect_entries(ROOT)
     rule_markers = {rule.marker for rule in underdev.MARKER_RULES}
     assert all(entry.marker in rule_markers for entry in entries)
-    assert all(entry.path != "docs/CLAIMS_EVIDENCE_MAP.md" for entry in entries)
-    assert all(entry.path != "docs/SOURCE_P0P1_ISSUE_BACKLOG.md" for entry in entries)
-    assert all(entry.path != "docs/SOURCE_P0P1_ISSUE_BACKLOG.json" for entry in entries)
+    assert all(entry.path != "docs/internal/CLAIMS_EVIDENCE_MAP.md" for entry in entries)
+    assert all(entry.path != "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.md" for entry in entries)
+    assert all(entry.path != "docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.json" for entry in entries)
 
 
 def test_render_markdown_contains_priority_sections() -> None:
@@ -137,7 +137,7 @@ def test_deprecated_guard_lines_are_suppressed() -> None:
 
 def test_deprecated_docs_guard_line_is_suppressed() -> None:
     assert underdev._is_marker_suppressed(
-        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
         marker="DEPRECATED",
         line="| `release` | ... deprecated-default-lane guard ... |",
         file_text="",
@@ -155,7 +155,7 @@ def test_experimental_command_lines_are_suppressed_on_release_surfaces() -> None
 
 def test_experimental_gate_lines_are_suppressed_on_release_surfaces() -> None:
     assert underdev._is_marker_suppressed(
-        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
         marker="EXPERIMENTAL",
         line='| `validation-regression` | ... (`pytest -m "not experimental"`) |',
         file_text="",
@@ -165,13 +165,13 @@ def test_experimental_gate_lines_are_suppressed_on_release_surfaces() -> None:
 def test_experimental_ack_runbook_commands_are_suppressed() -> None:
     file_text = "--experimental\n--experimental-ack I_UNDERSTAND_EXPERIMENTAL\n--strict"
     assert underdev._is_marker_suppressed(
-        rel_path="docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
+        rel_path="docs/internal/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
         marker="EXPERIMENTAL",
         line="  --experimental \\",
         file_text=file_text,
     )
     assert underdev._is_marker_suppressed(
-        rel_path="docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
+        rel_path="docs/internal/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
         marker="EXPERIMENTAL",
         line="  --experimental-ack I_UNDERSTAND_EXPERIMENTAL \\",
         file_text=file_text,
@@ -192,13 +192,13 @@ def test_bibliographic_experimental_title_is_suppressed() -> None:
 
 def test_no_fallback_gate_contract_lines_are_suppressed() -> None:
     assert underdev._is_marker_suppressed(
-        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
         marker="FALLBACK",
         line="Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS reference backend.",
         file_text="",
     )
     assert underdev._is_marker_suppressed(
-        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        rel_path="docs/internal/VALIDATION_GATE_MATRIX.md",
         marker="FALLBACK",
         line="enforces a no-fallback contract when invoked.",
         file_text="",

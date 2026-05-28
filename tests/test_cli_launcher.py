@@ -13,21 +13,29 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
+from typing import Any
+
 from click.testing import CliRunner
+import pytest
 
 import scpn_fusion.cli as cli_mod
 
 
-def test_single_mode_invokes_subprocess(monkeypatch) -> None:
+def test_single_mode_invokes_subprocess(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
         {"kernel": cli_mod.ModeSpec("scpn_fusion.core.fusion_kernel", "public", "kernel")},
     )
 
-    calls: list[tuple[list[str], str, bool, float]] = []
+    calls: list[tuple[list[str], str | None, bool, float]] = []
 
-    def fake_run(cmd, cwd, check, timeout):  # type: ignore[no-untyped-def]
+    def fake_run(
+        cmd: list[str],
+        cwd: str | None,
+        check: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -42,7 +50,7 @@ def test_single_mode_invokes_subprocess(monkeypatch) -> None:
     assert calls[0][3] == cli_mod.DEFAULT_MODE_TIMEOUT_SECONDS
 
 
-def test_all_mode_fail_fast_stops_after_first_failure(monkeypatch) -> None:
+def test_all_mode_fail_fast_stops_after_first_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -54,7 +62,12 @@ def test_all_mode_fail_fast_stops_after_first_failure(monkeypatch) -> None:
 
     calls: list[list[str]] = []
 
-    def fake_run(cmd, cwd, check, timeout):  # type: ignore[no-untyped-def]
+    def fake_run(
+        cmd: list[str],
+        cwd: str | None,
+        check: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         _ = (cwd, check, timeout)
         calls.append(cmd)
         code = 1 if len(calls) == 1 else 0
@@ -69,7 +82,7 @@ def test_all_mode_fail_fast_stops_after_first_failure(monkeypatch) -> None:
     assert "One or more modes failed" in result.output
 
 
-def test_all_mode_continue_on_error_runs_full_plan(monkeypatch) -> None:
+def test_all_mode_continue_on_error_runs_full_plan(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -81,7 +94,12 @@ def test_all_mode_continue_on_error_runs_full_plan(monkeypatch) -> None:
 
     calls: list[list[str]] = []
 
-    def fake_run(cmd, cwd, check, timeout):  # type: ignore[no-untyped-def]
+    def fake_run(
+        cmd: list[str],
+        cwd: str | None,
+        check: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         _ = (cwd, check, timeout)
         calls.append(cmd)
         code = 1 if len(calls) == 1 else 0
@@ -95,7 +113,7 @@ def test_all_mode_continue_on_error_runs_full_plan(monkeypatch) -> None:
     assert len(calls) == 2
 
 
-def test_surrogate_mode_locked_without_flag(monkeypatch) -> None:
+def test_surrogate_mode_locked_without_flag(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -110,14 +128,19 @@ def test_surrogate_mode_locked_without_flag(monkeypatch) -> None:
     assert "surrogate mode locked" in result.output
 
 
-def test_run_mode_returns_timeout_code_on_timeout(monkeypatch) -> None:
+def test_run_mode_returns_timeout_code_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
         {"kernel": cli_mod.ModeSpec("scpn_fusion.core.fusion_kernel", "public", "kernel")},
     )
 
-    def fake_run(cmd, cwd, check, timeout):  # type: ignore[no-untyped-def]
+    def fake_run(
+        cmd: list[str],
+        cwd: str | None,
+        check: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         _ = (cmd, cwd, check, timeout)
         raise subprocess.TimeoutExpired(cmd=["python"], timeout=0.01)
 
@@ -132,7 +155,7 @@ def test_run_mode_returns_timeout_code_on_timeout(monkeypatch) -> None:
     assert code == 124
 
 
-def test_experimental_mode_requires_ack(monkeypatch) -> None:
+def test_experimental_mode_requires_ack(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -147,7 +170,7 @@ def test_experimental_mode_requires_ack(monkeypatch) -> None:
     assert "experimental acknowledgement missing" in result.output
 
 
-def test_experimental_mode_runs_with_ack(monkeypatch) -> None:
+def test_experimental_mode_runs_with_ack(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -155,9 +178,14 @@ def test_experimental_mode_runs_with_ack(monkeypatch) -> None:
     )
     monkeypatch.delenv("SCPN_EXPERIMENTAL", raising=False)
 
-    calls: list[tuple[list[str], str, bool, float]] = []
+    calls: list[tuple[list[str], str | None, bool, float]] = []
 
-    def fake_run(cmd, cwd, check, timeout):  # type: ignore[no-untyped-def]
+    def fake_run(
+        cmd: list[str],
+        cwd: str | None,
+        check: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -190,7 +218,7 @@ def test_cli_rejects_non_finite_timeout_nan() -> None:
     assert "--mode-timeout-seconds must be finite and > 0." in result.output
 
 
-def test_all_mode_rejects_positional_args(monkeypatch) -> None:
+def test_all_mode_rejects_positional_args(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -202,7 +230,7 @@ def test_all_mode_rejects_positional_args(monkeypatch) -> None:
     assert "Positional script arguments are not supported with mode 'all'" in result.output
 
 
-def test_list_modes_renders_lock_state(monkeypatch) -> None:
+def test_list_modes_renders_lock_state(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -224,7 +252,7 @@ def test_list_modes_renders_lock_state(monkeypatch) -> None:
     assert "quantum | experimental | no | quantum" in result.output
 
 
-def test_execution_plan_unknown_mode_raises(monkeypatch) -> None:
+def test_execution_plan_unknown_mode_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -243,7 +271,7 @@ def test_execution_plan_unknown_mode_raises(monkeypatch) -> None:
         raise AssertionError("Expected unknown mode to raise ClickException")
 
 
-def test_execution_plan_all_experimental_requires_ack(monkeypatch) -> None:
+def test_execution_plan_all_experimental_requires_ack(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -265,7 +293,7 @@ def test_execution_plan_all_experimental_requires_ack(monkeypatch) -> None:
         raise AssertionError("Expected experimental all-plan to require acknowledgement")
 
 
-def test_run_mode_dry_run_skips_subprocess(monkeypatch) -> None:
+def test_run_mode_dry_run_skips_subprocess(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
         "MODE_SPECS",
@@ -274,7 +302,7 @@ def test_run_mode_dry_run_skips_subprocess(monkeypatch) -> None:
 
     called = False
 
-    def fake_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
         _ = (args, kwargs)
         nonlocal called
         called = True
@@ -292,7 +320,10 @@ def test_run_mode_dry_run_skips_subprocess(monkeypatch) -> None:
     assert called is False
 
 
-def test_system_health_check_logs_low_resources(monkeypatch, caplog) -> None:
+def test_system_health_check_logs_low_resources(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     monkeypatch.setattr(cli_mod.os, "cpu_count", lambda: 1)
     monkeypatch.setitem(
         sys.modules,
@@ -320,10 +351,10 @@ def test_system_health_check_logs_low_resources(monkeypatch, caplog) -> None:
     assert "Low available RAM" in messages
 
 
-def test_main_returns_click_exception_exit_code(monkeypatch) -> None:
+def test_main_returns_click_exception_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:
     class _Boom:
         @staticmethod
-        def main(*args, **kwargs):  # type: ignore[no-untyped-def]
+        def main(*args: object, **kwargs: object) -> int:
             _ = (args, kwargs)
             raise cli_mod.click.ClickException("boom")
 
@@ -331,10 +362,10 @@ def test_main_returns_click_exception_exit_code(monkeypatch) -> None:
     assert cli_mod.main() == 1
 
 
-def test_main_returns_non_integer_system_exit_as_failure(monkeypatch) -> None:
+def test_main_returns_non_integer_system_exit_as_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     class _Boom:
         @staticmethod
-        def main(*args, **kwargs):  # type: ignore[no-untyped-def]
+        def main(*args: object, **kwargs: object) -> int:
             _ = (args, kwargs)
             raise SystemExit("non-int")
 

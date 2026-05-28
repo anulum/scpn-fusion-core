@@ -1476,6 +1476,7 @@ def _run_topology_supervisor_corrected_measurement_sweep(
 
 
 def run_campaign() -> dict[str, Any]:
+    """Run the deterministic free-boundary acceptance campaign across all scenario families."""
     with tempfile.TemporaryDirectory(prefix="scpn_free_boundary_acceptance_") as tmp_dir:
         tmp_path = Path(tmp_dir)
         template_cfg = _build_tracking_template(tmp_path)
@@ -1844,6 +1845,7 @@ def run_campaign() -> dict[str, Any]:
 
 
 def generate_report() -> dict[str, Any]:
+    """Run the full campaign and return a JSON-serialisable benchmark payload."""
     t0 = time.perf_counter()
     campaign = run_campaign()
     return {
@@ -1854,6 +1856,7 @@ def generate_report() -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the free-boundary acceptance report into markdown text."""
     campaign = report["free_boundary_tracking_acceptance"]
     lines = [
         "# Free-Boundary Tracking Acceptance",
@@ -2051,6 +2054,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running, serialising, and emitting acceptance artifacts."""
     parser = argparse.ArgumentParser(description="Run free-boundary tracking acceptance campaign.")
     parser.add_argument(
         "--json-out",

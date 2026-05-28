@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from typing import Any
 
 from scpn_fusion.core.neural_equilibrium import MinimalPCA, SimpleMLP
 
@@ -181,7 +182,7 @@ class TestAutodiff:
         """jax.grad produces finite, nonzero gradients through MLP."""
         ws, bs = jax_params[0]
 
-        def loss_fn(x: jnp.ndarray) -> jnp.ndarray:
+        def loss_fn(x: Any) -> Any:
             out = _mlp_forward_jax(x, ws, bs)
             return jnp.sum(out**2)
 
@@ -196,7 +197,7 @@ class TestAutodiff:
         pca_mean, pca_components = jax_params[1]
         input_mean, input_std = jax_params[2]
 
-        def loss_fn(features: jnp.ndarray) -> jnp.ndarray:
+        def loss_fn(features: Any) -> Any:
             psi = _predict_psi_flat_jax(
                 features[jnp.newaxis, :], ws, bs, pca_mean, pca_components, input_mean, input_std
             )
@@ -214,7 +215,7 @@ class TestAutodiff:
         pca_mean, pca_components = jax_params[1]
         input_mean, input_std = jax_params[2]
 
-        def loss_fn(features: jnp.ndarray) -> jnp.ndarray:
+        def loss_fn(features: Any) -> Any:
             psi = _predict_psi_flat_jax(
                 features[jnp.newaxis, :], ws, bs, pca_mean, pca_components, input_mean, input_std
             )

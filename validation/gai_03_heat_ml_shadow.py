@@ -36,6 +36,7 @@ def run_campaign(
     eval_samples: int = 512,
     scan_samples: int = 600,
 ) -> dict[str, Any]:
+    """Run the HEAT-ML surrogate campaign and return inference/divertor metrics."""
     t0 = time.perf_counter()
 
     train = generate_shadow_dataset(seed=seed, samples=train_samples)
@@ -80,6 +81,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate the full GAI-03 report payload from a campaign run."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gai_03": run_campaign(**kwargs),
@@ -87,6 +89,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GAI-03 validation results as markdown."""
     g = report["gai_03"]
     lines = [
         "# GAI-03 HEAT-ML Shadow Validation",
@@ -107,6 +110,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for executing GAI-03 and writing JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--train-samples", type=int, default=2048)

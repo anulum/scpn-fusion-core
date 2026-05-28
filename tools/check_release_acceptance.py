@@ -5,7 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Validate docs/RELEASE_ACCEPTANCE_CHECKLIST.md readiness."""
+"""Validate docs/internal/RELEASE_ACCEPTANCE_CHECKLIST.md readiness."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CHECKLIST = REPO_ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md"
+DEFAULT_CHECKLIST = REPO_ROOT / "docs" / "internal" / "RELEASE_ACCEPTANCE_CHECKLIST.md"
 
 REQUIRED_ITEMS = (
     "Release preflight (`python tools/run_python_preflight.py --gate release`)",

@@ -28,6 +28,7 @@ def generate_report(
     steps: int = 3000,
     dt_s: float = 1e-3,
 ) -> dict[str, Any]:
+    """Run reduced ITER fueling control simulation and return accuracy pass/fail metrics."""
     t0 = time.perf_counter()
     result = simulate_iter_density_control(
         target_density=target_density,
@@ -56,6 +57,7 @@ def generate_report(
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render GNEU-03 fueling validation report as markdown."""
     g = report["gneu_03"]
     lines = [
         "# GNEU-03 Fueling Validation",
@@ -75,6 +77,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GNEU-03 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--target-density", type=float, default=1.0)
     parser.add_argument("--initial-density", type=float, default=0.82)

@@ -134,12 +134,14 @@ def ipb98_tau_e(
 
 
 def rmse(y_true: list[float], y_pred: list[float]) -> float:
+    """Compute root-mean-square error for equally sized numeric sequences."""
     if not y_true or len(y_true) != len(y_pred):
         raise ValueError("RMSE requires non-empty lists of equal length.")
     return math.sqrt(statistics.mean((float(t) - float(p)) ** 2 for t, p in zip(y_true, y_pred)))
 
 
 def load_json(path: Path) -> dict[str, Any]:
+    """Load a JSON report and return it as a dictionary."""
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
 
@@ -157,6 +159,13 @@ def compare_eq_axis(eq: GEqdsk) -> float:
 
 
 def confinement_rmse_itpa(csv_path: Path) -> dict[str, Any]:
+    """Compute confinement metric RMSE for ITPA rows from a CSV input path.
+
+    Returns
+    -------
+    dict[str, Any]
+        Count and RMSE statistics plus per-row tau/beta comparisons.
+    """
     tau_true: list[float] = []
     tau_pred: list[float] = []
     h98_true: list[float] = []
@@ -206,6 +215,13 @@ def confinement_rmse_itpa(csv_path: Path) -> dict[str, Any]:
 
 
 def confinement_rmse_iter_sparc(reference_dir: Path) -> dict[str, Any]:
+    """Compute ITER/SPARC confinement RMSE against iter/sparc reference files.
+
+    Returns
+    -------
+    dict[str, Any]
+        Count and RMSE statistics with row-wise prediction records.
+    """
     refs = [
         load_json(reference_dir / "iter_reference.json"),
         load_json(reference_dir / "sparc_reference.json"),
@@ -331,6 +347,7 @@ def estimate_beta_n_from_burn(
 
 
 def beta_rmse_iter_sparc(reference_dir: Path, validation_dir: Path) -> dict[str, Any]:
+    """Compute beta_N RMSE for ITER and SPARC references via burn-model estimate."""
     pairs = [
         ("iter_reference.json", "iter_validated_config.json"),
         ("sparc_reference.json", "sparc_config.json"),
@@ -366,6 +383,7 @@ def beta_rmse_iter_sparc(reference_dir: Path, validation_dir: Path) -> dict[str,
 
 
 def sparc_axis_rmse(sparc_dir: Path) -> dict[str, Any]:
+    """Compute axis RMSE across SPARC equilibrium files in a directory."""
     files = sorted(sparc_dir.glob("*.geqdsk")) + sorted(sparc_dir.glob("*.eqdsk"))
     errors: list[float] = []
     rows: list[dict[str, Any]] = []
@@ -439,6 +457,7 @@ def forward_diagnostics_rmse() -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
+    """Render markdown validation report with auto-flagged summary rows."""
     lines: list[str] = []
     lines.append("# SCPN RMSE Dashboard")
     lines.append("")
@@ -635,6 +654,7 @@ def render_plots(report: dict[str, Any], output_dir: Path) -> list[Path]:
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse dashboard output path arguments."""
     parser = argparse.ArgumentParser(description="Generate SCPN RMSE validation dashboard.")
     parser.add_argument(
         "--output-json",
@@ -650,6 +670,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Run the RMSE dashboard pipeline and emit JSON/markdown artifacts."""
     args = parse_args()
     t0 = time.perf_counter()
 
@@ -658,7 +679,7 @@ def main() -> int:
     itpa_csv = reference_dir / "itpa" / "hmode_confinement.csv"
     sparc_eq_dir = reference_dir / "sparc"
 
-    report = {
+    report: dict[str, Any] = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "confinement_itpa": confinement_rmse_itpa(itpa_csv),
         "confinement_iter_sparc": confinement_rmse_iter_sparc(reference_dir),

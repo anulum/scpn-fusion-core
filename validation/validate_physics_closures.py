@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Physics Closure Validation
+"""Validation suite covering selected physics closure contracts."""
+
 import unittest
 import numpy as np
 import sys

@@ -33,6 +33,7 @@ def run_campaign(
     eval_samples: int = 384,
     benchmark_samples: int = 96,
 ) -> dict[str, Any]:
+    """Run the synthetic turbulence surrogate campaign and return RMSE/speedup metrics."""
     t0 = time.perf_counter()
 
     train = generate_synthetic_gyrokinetic_dataset(seed=seed, samples=train_samples)
@@ -68,6 +69,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate the full GAI-01 report payload from a campaign run."""
     campaign = run_campaign(**kwargs)
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -76,6 +78,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GAI-01 campaign results as a compact markdown summary."""
     g = report["gai_01"]
     lines = [
         "# GAI-01 Turbulence Surrogate Validation",
@@ -97,6 +100,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GAI-01 and writing JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--train-samples", type=int, default=2048)

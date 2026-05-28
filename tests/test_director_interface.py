@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional, cast
 
 import numpy as np
 import pytest
@@ -25,7 +25,7 @@ class _DummyBrain:
 
 class _DummyKernel:
     def __init__(self) -> None:
-        self.cfg = {
+        self.cfg: dict[str, Any] = {
             "physics": {"plasma_current_target": 5.0},
             "coils": [{"current": 0.0} for _ in range(5)],
         }
@@ -35,10 +35,9 @@ class _DummyKernel:
         self.solve_equilibrium()
 
     def solve_equilibrium(self) -> None:
-        radial_drive = float(self.cfg["coils"][2]["current"])
-        vertical_drive = float(self.cfg["coils"][4]["current"]) - float(
-            self.cfg["coils"][0]["current"]
-        )
+        coils = cast(list[dict[str, Any]], self.cfg["coils"])
+        radial_drive = float(coils[2]["current"])
+        vertical_drive = float(coils[4]["current"]) - float(coils[0]["current"])
         center_r = 6.2 + 0.03 * np.tanh(radial_drive / 5.0)
         center_z = 0.0 + 0.02 * np.tanh(vertical_drive / 5.0)
         ir = int(np.argmin(np.abs(self.R - center_r)))

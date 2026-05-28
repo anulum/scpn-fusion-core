@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 import types
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -34,8 +35,8 @@ class TestTryQualikizPython:
         assert result is None
 
     def test_returns_output_with_mock_module(self, default_params, monkeypatch):
-        mock_mod = types.ModuleType("qualikiz_tools")
-        mock_mod.run = MagicMock(  # type: ignore[attr-defined]
+        mock_mod = types.SimpleNamespace()
+        mock_mod.run = MagicMock(
             return_value={"chi_i": 2.5, "chi_e": 1.8, "D_e": 0.3}
         )
         monkeypatch.setitem(sys.modules, "qualikiz_tools", mock_mod)
@@ -61,8 +62,8 @@ class TestTryQualikizPython:
             monkeypatch.delitem(sys.modules, "qualikiz_tools", raising=False)
 
     def test_handles_key_error(self, default_params, monkeypatch):
-        mock_mod = types.ModuleType("qualikiz_tools")
-        mock_mod.run = MagicMock(return_value={})  # type: ignore[attr-defined]
+        mock_mod = types.SimpleNamespace()
+        mock_mod.run = MagicMock(return_value={})
         monkeypatch.setitem(sys.modules, "qualikiz_tools", mock_mod)
         try:
             result = _try_qualikiz_python(default_params)
@@ -74,14 +75,14 @@ class TestTryQualikizPython:
 
     def test_small_a_clamped(self, monkeypatch):
         params = GKLocalParams(R_L_Ti=5.0, R_L_Te=5.0, R_L_ne=2.0, q=1.4, s_hat=0.8, a=0.0)
-        mock_mod = types.ModuleType("qualikiz_tools")
-        mock_mod.run = MagicMock(return_value={"chi_i": 1.0, "chi_e": 0.8, "D_e": 0.1})  # type: ignore[attr-defined]
+        mock_mod = types.SimpleNamespace()
+        mock_mod.run = MagicMock(return_value={"chi_i": 1.0, "chi_e": 0.8, "D_e": 0.1})
         monkeypatch.setitem(sys.modules, "qualikiz_tools", mock_mod)
         try:
             result = _try_qualikiz_python(params)
             assert result is not None
             # Verify Rmaj was computed without ZeroDivisionError
-            call_kwargs = mock_mod.run.call_args  # type: ignore[attr-defined]
+            call_kwargs: Any = mock_mod.run.call_args
             assert call_kwargs is not None
         finally:
             monkeypatch.delitem(sys.modules, "qualikiz_tools", raising=False)
@@ -122,8 +123,8 @@ class TestQuaLiKizSolver:
         assert not out.converged
 
     def test_run_with_python_api(self, tmp_path, default_params, monkeypatch):
-        mock_mod = types.ModuleType("qualikiz_tools")
-        mock_mod.run = MagicMock(  # type: ignore[attr-defined]
+        mock_mod = types.SimpleNamespace()
+        mock_mod.run = MagicMock(
             return_value={"chi_i": 3.0, "chi_e": 2.0, "D_e": 0.5}
         )
         monkeypatch.setitem(sys.modules, "qualikiz_tools", mock_mod)

@@ -14,7 +14,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -52,8 +52,9 @@ class _AcceptanceKernel:
         self.solve_equilibrium()
 
     def solve_equilibrium(self) -> None:
-        i = np.asarray([float(c["current"]) for c in self.cfg["coils"]], dtype=np.float64)
-        ip = float(self.cfg["physics"]["plasma_current_target"])
+        coils = cast(list[dict[str, float]], self.cfg["coils"])
+        i = np.asarray([float(c["current"]) for c in coils], dtype=np.float64)
+        ip = float(cast(dict[str, float], self.cfg["physics"])["plasma_current_target"])
         radial_drive = 0.95 * i[2] - 0.42 * i[1] + 0.16 * i[3]
         vertical_drive = 0.82 * i[3] - 0.68 * i[0] + 0.18 * i[2]
         divertor_drive_r = 0.74 * i[1] - 0.38 * i[0] + 0.12 * i[2]
@@ -94,15 +95,17 @@ def _require_finite(name: str, value: Any, minimum: float | None = None) -> floa
 
 
 def _recovery_steps(
-    trace: dict[str, list[float] | list[list[float]]],
+    trace: dict[str, Any],
     *,
     start_index: int,
     axis_threshold_m: float = 0.05,
     xpoint_threshold_m: float = 0.06,
     hold_steps: int = 6,
 ) -> int:
-    axis = [float(v) for v in trace["axis_error_m"]]
-    xpoint = [float(v) for v in trace["xpoint_error_m"]]
+    axis_raw = trace["axis_error_m"]
+    xpoint_raw = trace["xpoint_error_m"]
+    axis = [float(v) for v in axis_raw] if isinstance(axis_raw, list) else [float(axis_raw)]
+    xpoint = [float(v) for v in xpoint_raw] if isinstance(xpoint_raw, list) else [float(xpoint_raw)]
     n = len(axis)
     for i in range(start_index, max(start_index, n - hold_steps + 1)):
         stable = True
@@ -194,6 +197,7 @@ def run_campaign(
     shot_length: int = 84,
     control_dt_s: float = 0.05,
 ) -> dict[str, Any]:
+    """Run nominal and faulted state-estimation scenarios and evaluate recovery metrics."""
     seed_i = _require_int("seed", seed, 0)
     steps = _require_int("shot_length", shot_length, 48)
     dt_s = _require_finite("control_dt_s", control_dt_s, 1e-4)
@@ -277,12 +281,14 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build task 10 report and stamp generation time."""
     out = run_campaign(**kwargs)
     out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
     return out
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render task 10 acceptance results into markdown."""
     g = report["task10_free_boundary_state_estimation_disturbance"]
     nominal = g["nominal"]["summary"]
     faulted = g["faulted"]
@@ -324,6 +330,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run task 10 acceptance and persist JSON/Markdown artifacts."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--shot-length", type=int, default=84)

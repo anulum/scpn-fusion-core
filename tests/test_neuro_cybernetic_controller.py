@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from typing import TypedDict
 
 import scpn_fusion.control.neuro_cybernetic_controller as controller_mod
 from scpn_fusion.control.neuro_cybernetic_controller import (
@@ -19,9 +20,22 @@ from scpn_fusion.control.neuro_cybernetic_controller import (
 )
 
 
+class _CoilConfig(TypedDict):
+    current: float
+
+
+class _DummyPhysics(TypedDict):
+    plasma_current_target: float
+
+
+class _DummyKernelConfig(TypedDict):
+    physics: _DummyPhysics
+    coils: list[_CoilConfig]
+
+
 class _DummyKernel:
     def __init__(self, _config_file: str) -> None:
-        self.cfg = {
+        self.cfg: _DummyKernelConfig = {
             "physics": {"plasma_current_target": 5.0},
             "coils": [{"current": 0.0} for _ in range(5)],
         }

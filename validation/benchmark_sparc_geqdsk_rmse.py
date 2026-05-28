@@ -16,7 +16,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -24,7 +24,7 @@ from numpy.typing import NDArray
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 logger = logging.getLogger(__name__)
 
 # NRMSE threshold — Eq. surrogate must reproduce ψ grid within 5%

@@ -8,6 +8,7 @@
 
 import tempfile
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -116,6 +117,13 @@ class TestCriticalGradient:
 # ── MLP forward pass ─────────────────────────────────────────────────
 
 
+def _save_neural_weights(
+    path: str | Path, weights: dict[str, np.ndarray[Any, np.dtype[Any]]]
+) -> None:
+    np.savez(str(path), **cast(dict[str, Any], weights))
+
+
+
 class TestMLPForward:
     @staticmethod
     def _make_identity_weights():
@@ -213,7 +221,7 @@ class TestNeuralTransportModel:
         }
 
         with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
-            np.savez(f.name, **weights)
+            _save_neural_weights(f.name, weights)
             model = NeuralTransportModel(f.name)
 
         assert model.is_neural
@@ -317,7 +325,7 @@ class TestNeuralTransportModel:
             "output_scale": np.ones(3),
         }
         with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
-            np.savez(f.name, **weights)
+            _save_neural_weights(f.name, weights)
             model = NeuralTransportModel(f.name)
 
         assert model.is_neural
@@ -341,7 +349,7 @@ class TestNeuralTransportModel:
             "output_scale": np.ones(3),
         }
         with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
-            np.savez(f.name, **weights)
+            _save_neural_weights(f.name, weights)
             model = NeuralTransportModel(f.name)
 
         assert not model.is_neural
@@ -363,7 +371,7 @@ class TestNeuralTransportModel:
             "output_scale": np.ones(3),
         }
         with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
-            np.savez(f.name, **weights)
+            _save_neural_weights(f.name, weights)
             model = NeuralTransportModel(f.name)
 
         assert model.is_neural
@@ -401,7 +409,7 @@ class TestNeuralTransportModel:
             "output_scale": np.ones(3),
         }
         with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
-            np.savez(f.name, **weights)
+            _save_neural_weights(f.name, weights)
             model = NeuralTransportModel(f.name)
 
         assert model.is_neural

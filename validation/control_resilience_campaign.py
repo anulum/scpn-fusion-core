@@ -74,6 +74,7 @@ def generate_campaign_report(
     recovery_window: int = 6,
     recovery_epsilon: float = 0.03,
 ) -> dict[str, Any]:
+    """Run the fault/noise campaign and return normalized metrics and timing."""
     (
         seed_i,
         episodes_i,
@@ -110,6 +111,7 @@ def generate_campaign_report(
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render control resilience campaign metrics into markdown for review artifacts."""
     c = report["campaign"]
     lines = [
         "# Control Resilience Campaign",
@@ -143,6 +145,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse CLI options, run campaign, persist JSON/Markdown outputs, and return status."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--episodes", type=int, default=64)

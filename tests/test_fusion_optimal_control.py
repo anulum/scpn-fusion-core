@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from typing import Any, cast
 
 from scpn_fusion.control.fusion_optimal_control import OptimalController, run_optimal_control
 
@@ -19,7 +20,7 @@ class _DummyKernel:
     """Small deterministic kernel stand-in with R/Z/Psi fields."""
 
     def __init__(self, _config_file: str) -> None:
-        self.cfg = {
+        self.cfg: dict[str, Any] = {
             "physics": {"plasma_current_target": 8.0},
             "coils": [
                 {"name": "PF1", "r": 5.7, "z": -0.25, "current": 0.0},
@@ -36,7 +37,8 @@ class _DummyKernel:
         self.solve_equilibrium()
 
     def solve_equilibrium(self) -> None:
-        i = [float(c["current"]) for c in self.cfg["coils"]]
+        coils = cast(list[dict[str, Any]], self.cfg["coils"])
+        i = [float(c["current"]) for c in coils]
         radial_drive = 0.7 * i[2] - 0.5 * i[1] + 0.2 * i[3]
         vertical_drive = 0.6 * i[3] - 0.6 * i[0] + 0.2 * i[2]
         center_r = 6.02 + 0.09 * np.tanh(radial_drive / 8.0)
@@ -45,7 +47,8 @@ class _DummyKernel:
         ir = int(np.argmin(np.abs(self.R - center_r)))
         iz = int(np.argmin(np.abs(self.Z - center_z)))
         self.Psi.fill(-1.0)
-        self.Psi[iz, ir] = 1.0 + 0.001 * float(self.cfg["physics"]["plasma_current_target"])
+        physics = cast(dict[str, Any], self.cfg["physics"])
+        self.Psi[iz, ir] = 1.0 + 0.001 * float(physics["plasma_current_target"])
         self.J_phi = np.exp(-((self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.5) ** 2))
 
 

@@ -57,6 +57,7 @@ def require_experimental_opt_in(
     allow_experimental: bool,
     experimental_ack: str | None,
 ) -> None:
+    """Reject experimental execution unless explicit CLI/env opt-in is present."""
     if not (allow_experimental or _env_enabled("SCPN_EXPERIMENTAL")):
         raise SystemExit(
             "Experimental validation is locked; pass --experimental or set SCPN_EXPERIMENTAL=1."
@@ -73,6 +74,7 @@ def require_experimental_opt_in(
 
 @dataclass(frozen=True)
 class EmpiricalScenario:
+    """Bundle of inputs and annotations for one empirical disruption scenario."""
     machine: str
     shot: int
     time_ms: float
@@ -92,6 +94,7 @@ class EmpiricalScenario:
 
 @dataclass(frozen=True)
 class ScenarioMetric:
+    """Summary metric record for one controller on one validation scenario."""
     controller: str
     machine: str
     shot: int
@@ -543,6 +546,7 @@ def run_campaign(
     fno_external_manifest: str | Path = DEFAULT_EXTERNAL_FNO_MANIFEST,
     fno_external_weights: str | Path = DEFAULT_EXTERNAL_FNO_WEIGHTS,
 ) -> dict[str, Any]:
+    """Execute the full empirical validation campaign and return metric-rich results."""
     seed_i = _coerce_int("seed", seed, minimum=0)
     scenarios_i = _coerce_int("scenario_count", scenario_count, minimum=100)
     high_beta = _coerce_finite("high_beta_threshold", high_beta_threshold, minimum=0.1)
@@ -766,10 +770,12 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Convenience wrapper to execute `run_campaign` and return the full report dict."""
     return run_campaign(**kwargs)
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the full validation report to markdown for human-readable inspection."""
     cfg = report["config"]
     lines = [
         "# Full Empirical Validation Pipeline",
@@ -842,6 +848,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for executing and exporting the empirical validation report."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--experimental", action="store_true")
     parser.add_argument("--experimental-ack", default="")

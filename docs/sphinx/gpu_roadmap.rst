@@ -1,7 +1,7 @@
 SCPN GPU Roadmap
 ================
 
-The GPU acceleration program is tracked in ``docs/GPU_ACCELERATION_ROADMAP.md``.
+The GPU acceleration program is tracked in ``docs/internal/GPU_ACCELERATION_ROADMAP.md``.
 This page summarizes the execution sequence and acceptance criteria for quick
 reference in the Sphinx docs set.
 
@@ -41,4 +41,4 @@ Acceptance Gates
 Reference
 ---------
 
-- Full plan: ``docs/GPU_ACCELERATION_ROADMAP.md``
+- Full plan: ``docs/internal/GPU_ACCELERATION_ROADMAP.md``

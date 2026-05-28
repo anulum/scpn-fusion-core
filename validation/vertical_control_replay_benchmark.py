@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 import platform
@@ -98,7 +98,9 @@ class Controller(Protocol):
 class VerticalPlantContract(Protocol):
     """Plant contract used by replay lanes to advance vertical state."""
 
-    contract_id: str
+    @property
+    def contract_id(self) -> str:
+        """Identifier of the concrete plant contract."""
 
     def step_state(
         self,
@@ -129,6 +131,7 @@ class PIDVerticalController:
     _integral: float = 0.0
 
     def step(self, *, z_m: float, dz_dt_m_per_s: float, dt_s: float) -> float:
+        """Return PID control command from position and velocity error."""
         self._integral += z_m * dt_s
         return -(self.kp * z_m + self.kd * dz_dt_m_per_s + self.ki * self._integral)
 
@@ -144,6 +147,7 @@ class SuperTwistingVerticalController:
     _v: float = 0.0
 
     def step(self, *, z_m: float, dz_dt_m_per_s: float, dt_s: float) -> float:
+        """Return super-twisting action on the sliding manifold."""
         s = z_m + self.surface_velocity_weight * dz_dt_m_per_s
         sign = float(np.sign(s))
         self._v -= self.beta * sign * dt_s
@@ -162,6 +166,7 @@ class SlidingModeVerticalController:
             self._smc = SuperTwistingSMC(alpha=0.95, beta=28.0, c=0.12, u_max=0.45)
 
     def step(self, *, z_m: float, dz_dt_m_per_s: float, dt_s: float) -> float:
+        """Delegate the step command to repository SMC implementation."""
         assert self._smc is not None
         return self._smc.step(z_m, dz_dt_m_per_s, dt_s)
 
@@ -173,6 +178,7 @@ class NoControlController:
     controller_id: str = "no_control"
 
     def step(self, *, z_m: float, dz_dt_m_per_s: float, dt_s: float) -> float:
+        """Return zero control for the diagnostics lane."""
         return 0.0
 
 
@@ -182,6 +188,9 @@ class RZIPVerticalPlantContract:
 
     machine_profile: MachineProfile
     scenario: ReplayScenario
+    _rzip_model: RZIPModel = field(init=False, repr=False)
+    _state_space_checksum: str = field(init=False, repr=False)
+    _open_loop_growth_rate: float = field(init=False, repr=False)
     contract_id: str = "rzip_vertical_state_space_v1"
     source_module: str = "scpn_fusion.control.rzip_model"
 
@@ -267,6 +276,7 @@ class RZIPVerticalPlantContract:
         actuator_scale: float,
         dt_s: float,
     ) -> tuple[float, float]:
+        """Advance one simulation step and return next `(z_m, dz_dt_m_per_s)`."""
         accel = (
             self.scenario.vertical_growth_rate_s_inv * growth_scale * z_m
             - self.scenario.damping_s_inv * damping_scale * dz_dt_m_per_s
@@ -298,6 +308,7 @@ class RZIPVerticalPlantContract:
         return _sha256_json(trajectory)
 
     def report(self) -> dict[str, Any]:
+        """Return reproducible plant report including trajectory checksums."""
         first = self._trajectory_checksum()
         second = self._trajectory_checksum()
         return {
@@ -958,6 +969,9 @@ def render_profile_suite_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the vertical control replay benchmark from CLI arguments."""
+    """CLI entrypoint for vertical control replay benchmark with optional profile suite."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-json",

@@ -7,6 +7,8 @@
 # SCPN Fusion Core — GK Interface Tests
 from __future__ import annotations
 
+from typing import Any, cast
+
 import numpy as np
 import pytest
 
@@ -118,7 +120,7 @@ def test_gk_output_with_spectrum():
 
 def test_gk_solver_base_is_abstract():
     with pytest.raises(TypeError):
-        GKSolverBase()  # type: ignore[abstract]
+        cast(Any, GKSolverBase)()
 
 
 class _MockSolver(GKSolverBase):

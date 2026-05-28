@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import builtins
 import types
+from typing import Any, Iterable
 
 import pytest
 
@@ -17,10 +18,16 @@ from scpn_fusion.control import rust_flight_sim_wrapper
 def test_run_exits_when_rust_extension_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     original_import = builtins.__import__
 
-    def _import(name, globals=None, locals=None, fromlist=(), level=0):  # type: ignore[no-untyped-def]
+    def _import(
+        name: str,
+        globals: dict[str, Any] | None = None,
+        locals: dict[str, Any] | None = None,
+        fromlist: Iterable[str] = (),
+        level: int = 0,
+    ) -> Any:
         if name == "scpn_fusion_rs":
             raise ImportError("forced-missing")
-        return original_import(name, globals, locals, fromlist, level)
+        return original_import(name, globals, locals, tuple(fromlist), level)
 
     monkeypatch.setattr(builtins, "__import__", _import)
     monkeypatch.setattr(rust_flight_sim_wrapper.sys, "argv", ["rust_flight_sim_wrapper.py"])

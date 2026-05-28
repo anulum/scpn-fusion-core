@@ -38,7 +38,7 @@ class TestPhysicsInvariantDataclass:
     def test_frozen(self):
         inv = PhysicsInvariant(name="test", description="d", threshold=1.0, comparator="gt")
         with pytest.raises(AttributeError):
-            inv.threshold = 2.0  # type: ignore[misc]
+            inv.__setattr__("threshold", 2.0)
 
 
 # ── Default invariants ─────────────────────────────────────────────────

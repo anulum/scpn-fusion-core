@@ -17,7 +17,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -34,7 +34,7 @@ from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
 
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 
 _FULL_PHYSICS_MATRIX = np.array(
     [
@@ -227,7 +227,7 @@ def _run_lane(
     dt: float,
     x0: float,
     scpn: NeuroSymbolicController | None,
-) -> dict[str, float]:
+) -> dict[str, float | str]:
     if physics_mode not in {"surrogate", "full"}:
         raise ValueError("physics_mode must be 'surrogate' or 'full'.")
 
@@ -285,6 +285,20 @@ def _run_lane(
 
 
 def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
+    """Run surrogate and full-physics latency lanes for SNN, PID, and MPC-lite.
+
+    Parameters
+    ----------
+    seed
+        Kept for API parity; campaign uses a deterministic path and ignores randomization.
+    steps
+        Number of control iterations in each lane.
+
+    Returns
+    -------
+    dict[str, Any]
+        Structured campaign results and threshold pass flags.
+    """
     seed = int(seed)
     steps = int(steps)
     if steps < 32:
@@ -352,6 +366,7 @@ def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build and return the end-to-end latency report payload."""
     t0 = time.perf_counter()
     campaign = run_campaign(**kwargs)
     return {
@@ -362,6 +377,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render a markdown summary for the end-to-end latency report."""
     g = report["scpn_end_to_end_latency"]
     lines = [
         "# SCPN End-to-End Latency Benchmark",
@@ -396,6 +412,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the benchmark and emit JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--steps", type=int, default=320)

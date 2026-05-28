@@ -21,8 +21,8 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 UNDERDEV_MODULE_PATH = REPO_ROOT / "tools" / "generate_underdeveloped_register.py"
-DEFAULT_OUTPUT_MD = REPO_ROOT / "docs" / "SOURCE_P0P1_ISSUE_BACKLOG.md"
-DEFAULT_OUTPUT_JSON = REPO_ROOT / "docs" / "SOURCE_P0P1_ISSUE_BACKLOG.json"
+DEFAULT_OUTPUT_MD = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_ISSUE_BACKLOG.md"
+DEFAULT_OUTPUT_JSON = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_ISSUE_BACKLOG.json"
 COVERAGE_THRESHOLDS_PATH = REPO_ROOT / "tools" / "coverage_guard_thresholds.json"
 
 
@@ -73,7 +73,7 @@ def _coverage_line_target(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> f
 
 def _closure_metrics(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> list[str]:
     metrics: list[str] = [
-        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "Module no longer appears in docs/internal/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
     ]
     line_target = _coverage_line_target(issue, coverage_cfg)
     if line_target is not None:
@@ -90,7 +90,7 @@ def _closure_metrics(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> list[s
         )
     if "NOT_VALIDATED" in issue.markers:
         metrics.append(
-            "Validation artifact path is added and mapped in docs/CLAIMS_EVIDENCE_MAP.md."
+            "Validation artifact path is added and mapped in docs/internal/CLAIMS_EVIDENCE_MAP.md."
         )
     if "FALLBACK" in issue.markers:
         metrics.append(

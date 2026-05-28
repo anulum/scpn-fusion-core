@@ -28,7 +28,9 @@ import os
 import tempfile
 import base64
 import zlib
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -68,6 +70,38 @@ from scpn_fusion.scpn import artifact as artifact_mod
 # 4 action outputs (a_R_pos, a_R_neg, a_Z_pos, a_Z_neg)
 # 4 pass-through transitions: T_Rp, T_Rn, T_Zp, T_Zn
 # Each transition reads one input place and writes one output place.
+
+
+PathNode = dict[str, Any] | list[Any]
+
+
+def _set_nested_json_value(
+    payload: dict[str, Any],
+    field_path: tuple[str | int, ...],
+    value: Any,
+) -> None:
+    """Set a nested JSON-like key path without unsafe indexing casts."""
+
+    node: PathNode = payload
+    for key in field_path[:-1]:
+        if isinstance(node, list):
+            if not isinstance(key, int):
+                raise AssertionError("Path segment into list must be integer")
+            node = cast(PathNode, node[key])
+            continue
+        if not isinstance(key, str):
+            raise AssertionError("Path segment into mapping must be string")
+        node = cast(PathNode, node[key])
+
+    final_key = field_path[-1]
+    if isinstance(node, list):
+        if not isinstance(final_key, int):
+            raise AssertionError("Final segment into list must be integer")
+        node[final_key] = value
+    else:
+        if not isinstance(final_key, str):
+            raise AssertionError("Final segment into mapping must be string")
+        node[final_key] = value
 
 
 def _build_controller_net(transition_delay_ticks: int = 0) -> StochasticPetriNet:
@@ -148,14 +182,14 @@ def _build_artifact_path(
 
 
 @pytest.fixture
-def artifact_path() -> str:
+def artifact_path() -> Iterator[str]:
     path = _build_artifact_path("binary")
     yield path
     os.unlink(path)
 
 
 @pytest.fixture
-def artifact_path_fractional() -> str:
+def artifact_path_fractional() -> Iterator[str]:
     path = _build_artifact_path("fractional", 0.05)
     yield path
     os.unlink(path)
@@ -405,10 +439,7 @@ class TestLevel0Static:
         self, artifact_path: str, field_path: tuple[str, ...], value: object, match: str
     ) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
-        target: dict[str, object] = obj
-        for key in field_path[:-1]:
-            target = target[key]  # type: ignore[index]
-        target[field_path[-1]] = value
+        _set_nested_json_value(cast(dict[str, Any], obj), tuple(field_path), value)
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
@@ -435,16 +466,7 @@ class TestLevel0Static:
         match: str,
     ) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
-        target: object = obj
-        for key in field_path[:-1]:
-            if isinstance(target, list):
-                target = target[key]  # type: ignore[index]
-            else:
-                target = target[key]  # type: ignore[index]
-        if isinstance(target, list):
-            target[field_path[-1]] = value  # type: ignore[index]
-        else:
-            target[field_path[-1]] = value  # type: ignore[index]
+        _set_nested_json_value(cast(dict[str, Any], obj), field_path, value)
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
@@ -474,16 +496,7 @@ class TestLevel0Static:
         match: str,
     ) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
-        target: object = obj
-        for key in field_path[:-1]:
-            if isinstance(target, list):
-                target = target[key]  # type: ignore[index]
-            else:
-                target = target[key]  # type: ignore[index]
-        if isinstance(target, list):
-            target[field_path[-1]] = value  # type: ignore[index]
-        else:
-            target[field_path[-1]] = value  # type: ignore[index]
+        _set_nested_json_value(cast(dict[str, Any], obj), field_path, value)
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
@@ -510,16 +523,7 @@ class TestLevel0Static:
         match: str,
     ) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
-        target: object = obj
-        for key in field_path[:-1]:
-            if isinstance(target, list):
-                target = target[key]  # type: ignore[index]
-            else:
-                target = target[key]  # type: ignore[index]
-        if isinstance(target, list):
-            target[field_path[-1]] = value  # type: ignore[index]
-        else:
-            target[field_path[-1]] = value  # type: ignore[index]
+        _set_nested_json_value(cast(dict[str, Any], obj), field_path, value)
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
@@ -562,16 +566,7 @@ class TestLevel0Static:
         match: str,
     ) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
-        target: object = obj
-        for key in field_path[:-1]:
-            if isinstance(target, list):
-                target = target[key]  # type: ignore[index]
-            else:
-                target = target[key]  # type: ignore[index]
-        if isinstance(target, list):
-            target[field_path[-1]] = value  # type: ignore[index]
-        else:
-            target[field_path[-1]] = value  # type: ignore[index]
+        _set_nested_json_value(cast(dict[str, Any], obj), field_path, value)
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
@@ -601,7 +596,7 @@ class TestLevel0Static:
             target[mutation[1]] = True
         else:
             for key in mutation[:-1]:
-                target = target[key]  # type: ignore[index]
+                target = cast(dict[str, object], target[key])
             target[mutation[-1]] = True
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)

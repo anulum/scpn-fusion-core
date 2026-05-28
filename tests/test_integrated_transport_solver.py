@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, Callable, cast
 
 import numpy as np
 import pytest
@@ -298,7 +299,7 @@ class TestEvolveProfiles:
         with pytest.raises(ValueError):
             solver.set_numerical_recovery_limit(-1)
         with pytest.raises(ValueError):
-            solver.set_numerical_recovery_limit(True)  # type: ignore[arg-type]
+            solver.set_numerical_recovery_limit(cast(int, True))
 
     def test_aux_heating_source_power_balance_single_ion(self, solver: TransportSolver) -> None:
         """Integrated heating source must reconstruct the requested total MW."""
@@ -396,11 +397,13 @@ class TestMultiIon:
         np.testing.assert_allclose(solver_multi.ne, ne_check, rtol=1e-10)
 
     def test_multi_ion_evolve_species_sanitizes_nonfinite_tau_e(
-        self, solver_multi: TransportSolver
+        self, solver_multi: TransportSolver, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Species evolution should remain finite if confinement-time estimate is non-finite."""
-        solver_multi.compute_confinement_time = (  # type: ignore[assignment]
-            lambda _p_loss_mw: float("nan")
+        monkeypatch.setattr(
+            solver_multi,
+            "compute_confinement_time",
+            cast(Callable[[float], float], lambda _p_loss_mw: float("nan")),
         )
         s_he, p_rad_line = solver_multi._evolve_species(dt=0.01)
 

@@ -51,6 +51,7 @@ def run_campaign(
     chaos_dropout_prob: float = 0.0,
     chaos_noise_std: float = 0.0,
 ) -> dict[str, Any]:
+    """Run digital-twin ingest across representative machines and aggregate threshold checks."""
     samples_per_machine = int(samples_per_machine)
     if samples_per_machine < 32:
         raise ValueError("samples_per_machine must be >= 32.")
@@ -110,6 +111,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate the full GDEP-01 report payload from a campaign run."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gdep_01": run_campaign(**kwargs),
@@ -117,6 +119,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GDEP-01 report into markdown."""
     g = report["gdep_01"]
     th = g["thresholds"]
     lines = [
@@ -162,6 +165,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GDEP-01 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--samples-per-machine", type=int, default=320)

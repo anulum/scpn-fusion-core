@@ -39,6 +39,22 @@ def run_campaign(
     target_optimized_configs: int = 10,
     shortlist_size: int = 20,
 ) -> dict[str, Any]:
+    """Run the Task 6 heating + neutronics realism campaign.
+
+    Executes quick candidate generation, refinement, and filtering against
+    explicit quality thresholds, then returns deterministic summary metrics for
+    reduced-order GENRAY-like and MCNP-lite surrogate pathways.
+
+    Parameters:
+        seed: Seed for synthetic candidate generation.
+        scan_candidates: Number of coarse candidates to evaluate.
+        target_optimized_configs: Minimum number of optimized configs to return.
+        shortlist_size: Number of shortlisted candidates for refinement.
+
+    Returns:
+        A dictionary containing campaign metrics, threshold gates, selected
+        configurations, and pass/fail state.
+    """
     t0 = time.perf_counter()
     seed_i = require_int("seed", seed, 0)
     n_candidates = require_int("scan_candidates", scan_candidates, 20)
@@ -193,12 +209,16 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build a report payload including UTC generation timestamp."""
+
     out = run_campaign(**kwargs)
     out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
     return out
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the campaign report as Markdown for audit-friendly logs."""
+
     g = report["task6_heating_neutronics_realism"]
     m = g["metrics"]
     th = g["thresholds"]
@@ -237,6 +257,11 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for Task 6 heating + neutronics realism validation.
+
+    Returns a non-zero exit code when ``--strict`` is enabled and gates fail.
+    """
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--scan-candidates", type=int, default=96)

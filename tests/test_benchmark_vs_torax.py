@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
 import sys
 import types
 
@@ -28,10 +29,10 @@ def test_stable_seed_is_deterministic_and_bounded() -> None:
 
 
 def test_run_our_transport_fallback_reports_reason_and_seed(monkeypatch) -> None:
-    fake_module = types.ModuleType("scpn_fusion.core.neural_transport")
+    fake_module = cast(Any, types.ModuleType("scpn_fusion.core.neural_transport"))
 
     class _FailingModel:
-        def predict_profile(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        def predict_profile(self, *args: object, **kwargs: object) -> dict[str, object]:
             raise RuntimeError("forced-fallback")
 
     fake_module.NeuralTransportModel = _FailingModel
@@ -49,7 +50,7 @@ def test_run_our_transport_fallback_reports_reason_and_seed(monkeypatch) -> None
 
 
 def test_run_benchmark_includes_transport_backend_fields(monkeypatch) -> None:
-    def _stub_transport(case):  # type: ignore[no-untyped-def]
+    def _stub_transport(case: benchmark_vs_torax.TransportCase) -> dict[str, Any]:
         ref = benchmark_vs_torax._generate_torax_like_profiles(case)
         return {
             "rho": ref["rho"],

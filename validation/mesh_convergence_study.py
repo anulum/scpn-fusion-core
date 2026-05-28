@@ -170,6 +170,13 @@ def _machine_context() -> dict:
 
 
 def main() -> int:
+    """Run mesh convergence runs and write machine-specific summary artifacts.
+
+    Returns
+    -------
+    int
+        Zero on contract pass, non-zero on contract fail.
+    """
     resolutions = list(DEFAULT_RESOLUTIONS)
     results = []
 

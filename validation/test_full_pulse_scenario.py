@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Full Pulse Scenario Integration Test
+"""Integration coverage for a full tokamak pulse profile."""
+
 import unittest
 import sys
 from pathlib import Path
@@ -23,6 +25,8 @@ class TestFullPulseScenario(unittest.TestCase):
     """
 
     def test_full_pulse_dynamics(self):
+        """Run a long-horizon full pulse profile and verify fusion gain exceeds breakeven."""
+
         print("\n[Integration] Full Pulse Discharge Simulation")
 
         # 1. Physics Engine (Burn Model)

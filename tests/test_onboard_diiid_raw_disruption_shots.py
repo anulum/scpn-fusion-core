@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from typing import Any
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -36,7 +37,7 @@ def test_onboard_shots_creates_npz_and_metadata(tmp_path: Path, monkeypatch) -> 
     metadata_path = tmp_path / "disruption_shot_metadata.json"
     manifest_path = tmp_path / "disruption_shots_manifest.json"
 
-    def _fake_download(**kwargs):  # type: ignore[no-untyped-def]
+    def _fake_download(**kwargs: Any) -> SimpleNamespace:
         del kwargs
         t = np.linspace(0.0, 0.159, 160, dtype=np.float64)
         signal = 0.8 + 0.2 * np.sin(2.0 * np.pi * 3.0 * t)
@@ -91,7 +92,7 @@ def test_onboard_shots_reference_source_stays_non_raw(tmp_path: Path, monkeypatc
     metadata_path = tmp_path / "disruption_shot_metadata.json"
     manifest_path = tmp_path / "disruption_shots_manifest.json"
 
-    def _fake_download(**kwargs):  # type: ignore[no-untyped-def]
+    def _fake_download(**kwargs: Any) -> SimpleNamespace:
         del kwargs
         t = np.linspace(0.0, 0.159, 160, dtype=np.float64)
         signal = np.linspace(0.0, 1.0, 160, dtype=np.float64)

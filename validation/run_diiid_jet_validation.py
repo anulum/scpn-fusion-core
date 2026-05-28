@@ -31,6 +31,8 @@ from scpn_fusion.core.eqdsk import read_geqdsk
 
 @dataclass
 class ValidationResult:
+    """Scalar results for a single GEQDSK validation case."""
+
     file: str
     device: str
     grid: str
@@ -159,6 +161,7 @@ def validate_file(path: Path, device: str) -> ValidationResult:
 
 
 def main():
+    """Run DIII-D and JET validation cases and print summary metrics."""
     root = Path(__file__).resolve().parent / "reference_data"
 
     devices = [

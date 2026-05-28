@@ -26,6 +26,7 @@ def run_campaign(
     seed: int = 42,
     scan_samples: int = 2600,
 ) -> dict[str, Any]:
+    """Run compact constraint scan and summarize best feasible design."""
     t0 = time.perf_counter()
 
     explorer = GlobalDesignExplorer(
@@ -75,6 +76,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate GMVR-01 report payload from a fresh campaign."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gmvr_01": run_campaign(**kwargs),
@@ -82,6 +84,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render GMVR-01 scan outcome and best design as markdown."""
     g = report["gmvr_01"]
     lines = [
         "# GMVR-01 Compact Constraint Validation",
@@ -125,6 +128,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GMVR-01 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--scan-samples", type=int, default=2600)

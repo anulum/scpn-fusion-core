@@ -27,10 +27,31 @@ from scpn_fusion.core.runaway_electrons import (  # noqa: E402
     critical_field,
     dream_fluid_density_balance,
 )
+from typing import TypedDict
 
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "runaway_dream_contract_benchmark.json"
 MD_REPORT = REPORT_DIR / "runaway_dream_contract_benchmark.md"
+
+
+class _CaseResult(TypedDict):
+    case: str
+    dreicer_source_m3_s: float
+    avalanche_source_m3_s: float
+    loss_source_m3_s: float
+    total_source_m3_s: float
+    runaway_fraction: float
+    growth_time_s: float | None
+    wall_time_s: float
+
+
+class _RunawayBenchmarkResult(TypedDict):
+    benchmark: str
+    description: str
+    cases: list[_CaseResult]
+    timing: dict[str, float]
+    invariants: dict[str, bool]
+    passed: bool
 
 
 def _json_float(value: float) -> float | None:
@@ -39,7 +60,7 @@ def _json_float(value: float) -> float | None:
 
 def _case_result(
     name: str, params: RunawayParams, n_re: float, loss_time_s: float
-) -> dict[str, object]:
+) -> _CaseResult:
     start = time.perf_counter()
     balance = dream_fluid_density_balance(params, n_re, loss_time_s=loss_time_s)
     wall_time_s = time.perf_counter() - start
@@ -55,7 +76,7 @@ def _case_result(
     }
 
 
-def run_benchmark(repeats: int = 25) -> dict[str, object]:
+def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
     """Run DREAM-style scalar runaway density-balance scenarios and contracts."""
     params_subcritical = RunawayParams(
         ne_20=1.0,
@@ -118,7 +139,7 @@ def run_benchmark(repeats: int = 25) -> dict[str, object]:
     }
 
 
-def write_reports(results: dict[str, object]) -> None:
+def write_reports(results: _RunawayBenchmarkResult) -> None:
     """Write JSON and markdown reports for the runaway contract benchmark."""
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_REPORT.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -36,6 +36,21 @@ def run_campaign(
     ensemble_runs: int = 50,
     mpc_steps_per_episode: int = 220,
 ) -> dict[str, Any]:
+    """Run Task 5 disruption mitigation end-to-end integration campaign.
+
+    The campaign composes:
+
+    * disruption episode rollout across seeded design/physics space
+    * RL multi-objective scoring (Q proxy, TBR proxy, wall safety)
+    * NSTX-U/TORAX hybrid controller lane for latency/parity checks
+
+    and evaluates gate thresholds for prevention, impurity control and control quality.
+
+    Returns
+    -------
+    dict[str, Any]
+        Consolidated physics, MPC, RL, and threshold outcome data.
+    """
     t0 = time.perf_counter()
     seed_i = require_int("seed", seed, 0)
     runs = require_int("ensemble_runs", ensemble_runs, 10)
@@ -172,12 +187,26 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build Task 5 report payload with UTC generation timestamp.
+
+    Parameters
+    ----------
+    **kwargs
+        Forwarded to :func:`run_campaign`.
+    """
     out = run_campaign(**kwargs)
     out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
     return out
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render Task 5 report into markdown.
+
+    Parameters
+    ----------
+    report
+        Output from :func:`generate_report`.
+    """
     g = report["task5_disruption_mitigation"]
     p = g["physics_mitigation"]
     m = g["mpc_elm_lane"]
@@ -226,6 +255,13 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for Task 5 mitigation integration validation.
+
+    Returns
+    -------
+    int
+        ``0`` on success or non-strict mode; ``2`` when strict-mode threshold checks fail.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--ensemble-runs", type=int, default=50)

@@ -13,6 +13,7 @@ import warnings
 
 import numpy as np
 import pytest
+from typing import Any, cast
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
 
@@ -38,15 +39,15 @@ def _write_cfg(path: Path, fail_on_diverge: bool) -> Path:
 def _force_divergence(kernel: FusionKernel) -> None:
     zeros = np.zeros_like(kernel.Psi)
     nans = np.full_like(kernel.Psi, np.nan)
-    kernel.calculate_vacuum_field = lambda: zeros.copy()  # type: ignore[assignment]
-    kernel._seed_plasma = lambda _mu0: None  # type: ignore[assignment]
-    kernel._find_magnetic_axis = lambda: (0.0, 0.0, 1.0)  # type: ignore[assignment]
-    kernel.find_x_point = lambda _psi: ((0.0, 0.0), 0.0)  # type: ignore[assignment]
-    kernel.update_plasma_source_nonlinear = (  # type: ignore[assignment]
-        lambda _axis, _boundary: zeros.copy()
-    )
-    kernel._elliptic_solve = lambda _source, _vac: nans.copy()  # type: ignore[assignment]
-    kernel.compute_b_field = lambda: None  # type: ignore[assignment]
+    kernel_any = cast(Any, kernel)
+
+    kernel_any.calculate_vacuum_field = lambda: zeros.copy()
+    kernel_any._seed_plasma = lambda _mu0: None
+    kernel_any._find_magnetic_axis = lambda: (0.0, 0.0, 1.0)
+    kernel_any.find_x_point = lambda _psi: ((0.0, 0.0), 0.0)
+    kernel_any.update_plasma_source_nonlinear = lambda _axis, _boundary: zeros.copy()
+    kernel_any._elliptic_solve = lambda _source, _vac: nans.copy()
+    kernel_any.compute_b_field = lambda: None
 
 
 def test_solve_equilibrium_divergence_reverts_when_fail_disabled(

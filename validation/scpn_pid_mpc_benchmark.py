@@ -167,6 +167,24 @@ def run_campaign(
     scpn_runtime_profile: str = "traceable",
     scpn_runtime_backend: str = "auto",
 ) -> dict[str, Any]:
+    """Run a benchmark comparing SCPN, PID, and MPC control lanes on disturbances.
+
+    Parameters
+    ----------
+    seed
+        Kept for API compatibility.
+    steps
+        Number of simulation steps per lane.
+    scpn_runtime_profile
+        Runtime profile used for the SNN controller.
+    scpn_runtime_backend
+        Runtime backend for the SNN controller.
+
+    Returns
+    -------
+    dict[str, Any]
+        Metrics, ratios, thresholds, and pass flags.
+    """
     seed_int = int(seed)
     steps = int(steps)
     if steps < 32:
@@ -256,6 +274,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build report payload including timing and benchmark result rows."""
     t0 = time.perf_counter()
     campaign = run_campaign(**kwargs)
     return {
@@ -266,6 +285,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render benchmark metrics into a markdown summary document."""
     r = report["scpn_pid_mpc_benchmark"]
     lines = [
         "# SCPN vs PID/MPC Benchmark",
@@ -297,6 +317,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the SCPN/PID/MPC benchmark and write JSON + Markdown artifacts."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--steps", type=int, default=320)

@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Validate Iter
+"""Validate reduced-order ITER benchmark scenario against nominal targets."""
+
 import argparse
 from pathlib import Path
 
@@ -17,6 +19,8 @@ DEFAULT_CONFIG_PATH = ROOT / "validation" / "iter_force_balanced.json"
 
 
 def validate_iter(config_path: Path = DEFAULT_CONFIG_PATH) -> None:
+    """Run ITER reduced-order burn benchmark and print pass/fail contract status."""
+
     print("--- SCPN VALIDATION SUITE: ITER BENCHMARK ---")
     print("Objective: Reproduce ITER Q=10 baseline (500MW Fusion Power)")
 

@@ -422,10 +422,9 @@ def load_disruption_data_source_contract(disruption_dir: Path) -> dict[str, Any]
     synthetic_only = bool(source_types) and all(
         "synthetic" in source_type.lower() for source_type in source_types
     )
+    shot_count = payload.get("shot_count")
     manifest_shot_count = (
-        int(payload.get("shot_count"))
-        if isinstance(payload.get("shot_count"), (int, float))
-        else len(shots)
+        int(shot_count) if isinstance(shot_count, (int, float)) else len(shots)
     )
 
     summary.update(
@@ -556,7 +555,7 @@ def validate_disruption(
             "data_source": data_source,
         }
 
-    results = []
+    results: list[dict[str, Any]] = []
     true_positives = 0
     false_negatives = 0
     false_positives = 0
@@ -1137,6 +1136,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def cli(argv: list[str] | None = None) -> int:
+    """Command-line entrypoint wrapper for real-shot validation runner."""
+
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
 

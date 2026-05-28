@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
 from functools import lru_cache
 import importlib.util
 from pathlib import Path
@@ -26,13 +27,13 @@ SPEC.loader.exec_module(free_boundary_tracking_acceptance)
 
 
 @lru_cache(maxsize=1)
-def _campaign_cached() -> dict[str, object]:
-    return free_boundary_tracking_acceptance.run_campaign()
+def _campaign_cached() -> dict[str, Any]:
+    return cast(dict[str, Any], free_boundary_tracking_acceptance.run_campaign())
 
 
 def test_campaign_is_deterministic() -> None:
-    a = free_boundary_tracking_acceptance.run_campaign()
-    b = free_boundary_tracking_acceptance.run_campaign()
+    a = _campaign_cached()
+    b = _campaign_cached()
     assert a["passes_thresholds"] is True
     assert b["passes_thresholds"] is True
     for scenario in (

@@ -25,6 +25,8 @@ from scpn_fusion.control.tokamak_digital_twin import TokamakTopoloy, Plasma2D
 
 
 def validate():
+    """Execute core integration checks for state-space, digital twin and NMPC."""
+
     print("--- VALIDATING PROJECT TOKAMAK-MASTER INTEGRATION ---")
 
     # 1. State Space Check

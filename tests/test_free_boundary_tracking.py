@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any, cast
 from pathlib import Path
 
 import numpy as np
@@ -83,7 +84,7 @@ class _DummyFreeBoundaryKernel:
         self._drift_vector = self._response_matrix @ np.array(
             [0.10, -0.06, 0.08, -0.04], dtype=np.float64
         )
-        self.cfg = {
+        self.cfg: dict[str, Any] = {
             "physics": {"drift_scale": 0.0},
             "coils": [
                 {"name": "PF1", "current": 0.0},
@@ -133,13 +134,15 @@ class _DummyFreeBoundaryKernel:
     ) -> dict[str, float | bool | str]:
         active_coils = coils if coils is not None else self.build_coilset_from_config()
         currents = np.asarray(active_coils.currents, dtype=np.float64).reshape(-1)
-        drift = float(self.cfg.get("physics", {}).get("drift_scale", 0.0))
+        physics_cfg = cast(dict[str, Any], self.cfg.get("physics", {}))
+        drift = float(physics_cfg.get("drift_scale", 0.0))
         disturbance = drift * self._drift_vector
         self._state = (
             self._target_vector + self._bias + disturbance + self._response_matrix @ currents
         )
+        coils_cfg = cast(list[dict[str, Any]], self.cfg["coils"])
         for idx, current in enumerate(currents):
-            self.cfg["coils"][idx]["current"] = float(current)
+            coils_cfg[idx]["current"] = float(current)
         self.Psi.fill(0.0)
         return {
             "boundary_variant": (
@@ -216,7 +219,7 @@ class _MeasurementDistortionKernel(_DummyFreeBoundaryKernel):
 class _MeasurementCorrectedKernel(_MeasurementDistortionKernel):
     def __init__(self, config_file: str) -> None:
         super().__init__(config_file)
-        tracking_cfg = self.cfg["free_boundary_tracking"]
+        tracking_cfg = cast(dict[str, Any], self.cfg["free_boundary_tracking"])
         tracking_cfg["measurement_correction_bias"] = {
             "shape_flux": [0.04, -0.02, 0.03],
             "x_point_position": [0.06, -0.05],
@@ -242,7 +245,7 @@ class _MeasurementLatencyKernel(_DummyFreeBoundaryKernel):
 class _MeasurementLatencyCompensatedKernel(_MeasurementLatencyKernel):
     def __init__(self, config_file: str) -> None:
         super().__init__(config_file)
-        tracking_cfg = self.cfg["free_boundary_tracking"]
+        tracking_cfg = cast(dict[str, Any], self.cfg["free_boundary_tracking"])
         tracking_cfg["latency_compensation_gain"] = 1.0
         tracking_cfg["latency_rate_max_abs"] = 0.5
 
@@ -664,7 +667,8 @@ def _write_real_kernel_tracking_config(path: Path) -> Path:
         optimize_shape=False,
     )
     flux_targets = kernel._sample_flux_at_points(coils.target_flux_points)
-    cfg["free_boundary"]["target_flux_values"] = [float(v) for v in flux_targets]
+    free_boundary_cfg = cast(dict[str, Any], cfg["free_boundary"])
+    free_boundary_cfg["target_flux_values"] = [float(v) for v in flux_targets]
     path.write_text(json.dumps(cfg), encoding="utf-8")
     return path
 
@@ -759,7 +763,8 @@ def test_controller_reduces_error_under_disturbance_callback() -> None:
     initial_metrics = controller.evaluate_objectives(controller._observe_objectives())
 
     def disturbance(kernel: _DummyFreeBoundaryKernel, _coils: CoilSet, step: int) -> None:
-        kernel.cfg.setdefault("physics", {})["drift_scale"] = 0.8 if step < 2 else 0.2
+        physics_cfg = cast(dict[str, Any], kernel.cfg.setdefault("physics", {}))
+        physics_cfg["drift_scale"] = 0.8 if step < 2 else 0.2
 
     summary = controller.run_tracking_shot(
         shot_steps=7,
@@ -906,7 +911,8 @@ def test_objective_observer_reduces_persistent_disturbance_error() -> None:
     )
 
     def disturbance(kernel: _DummyFreeBoundaryKernel, _coils: CoilSet, _step: int) -> None:
-        kernel.cfg.setdefault("physics", {})["drift_scale"] = 1.0
+        physics_cfg = cast(dict[str, Any], kernel.cfg.setdefault("physics", {}))
+        physics_cfg["drift_scale"] = 1.0
 
     baseline = run_free_boundary_tracking(
         kernel_factory=_DummyFreeBoundaryKernel,
@@ -1011,9 +1017,8 @@ def test_latency_compensation_reduces_delayed_observation_error() -> None:
 
     def disturbance(kernel: _DummyFreeBoundaryKernel, _coils: CoilSet, step: int) -> None:
         drift_schedule = (0.0, 1.0, 0.45, 0.10)
-        kernel.cfg.setdefault("physics", {})["drift_scale"] = drift_schedule[
-            min(step, len(drift_schedule) - 1)
-        ]
+        physics_cfg = cast(dict[str, Any], kernel.cfg.setdefault("physics", {}))
+        physics_cfg["drift_scale"] = drift_schedule[min(step, len(drift_schedule) - 1)]
 
     delayed = run_free_boundary_tracking(
         kernel_factory=_MeasurementLatencyKernel,

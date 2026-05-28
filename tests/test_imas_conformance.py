@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, Mapping, cast
 
 import numpy as np
 import pytest
@@ -507,8 +507,9 @@ class TestSummaryConformance:
 
     def test_rejects_non_mapping(self) -> None:
         """Non-mapping input must raise ValueError."""
+        bad_state = cast(Dict[str, Any], "not a dict")
         with pytest.raises(ValueError, match="must be a mapping"):
-            state_to_imas_summary("not a dict")  # type: ignore[arg-type]
+            state_to_imas_summary(bad_state)
 
 
 # =====================================================================

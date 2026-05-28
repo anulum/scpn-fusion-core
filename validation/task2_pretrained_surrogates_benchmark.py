@@ -115,6 +115,30 @@ def run_disruption_auc_benchmark(
     window: int = 220,
     label_flip_rate: float = 0.01,
 ) -> dict[str, float]:
+    """Run a synthetic disruption-risk benchmark for one profile family.
+
+    This helper builds deterministic proxy signals, injects controlled label noise
+    through ``label_flip_rate``, evaluates ``predict_disruption_risk`` and returns
+    aggregate score statistics needed by the wider campaign report.
+
+    Parameters
+    ----------
+    profile:
+        Profile family to benchmark, either ``"tm1"`` or ``"tokamaknet"``.
+    seed:
+        Seed for deterministic signal/label generation.
+    samples:
+        Number of synthetic windows evaluated.
+    window:
+        Length of each generated signal window.
+    label_flip_rate:
+        Fraction of labels flipped to model annotation uncertainty.
+
+    Returns
+    -------
+    dict[str, float]
+        AUC and summary statistics of labels/scores for the run.
+    """
     if profile not in {"tm1", "tokamaknet"}:
         raise ValueError("profile must be 'tm1' or 'tokamaknet'.")
     n = _require_int("samples", samples, 20)
@@ -234,6 +258,23 @@ def run_campaign(
     latency_grid_size: int = 64,
     latency_fault_runs: int = 10,
 ) -> dict[str, Any]:
+    """Execute the Task 2 surrogate + latency acceptance campaign.
+
+    The campaign runs:
+
+    1. Surrogate bundle construction (with optional retrain).
+    2. Trained surrogate evaluation snapshots (MLP and FNO).
+    3. Disruption-risk AUC checks on proxy datasets.
+    4. Equilibrium latency benchmarking using ``GPURuntimeBridge``.
+
+    It aggregates thresholds and returns a unified pass/fail status for the task.
+
+    Returns
+    -------
+    dict[str, Any]
+        Campaign payload with surrogate coverage, latency profile data,
+        diagnostic thresholds and runtime metadata.
+    """
     t0 = time.perf_counter()
     seed_i = _require_int("seed", seed, 0)
     trials = _require_int("latency_trials", latency_trials, 8)
@@ -348,6 +389,18 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Build a complete Task 2 report payload.
+
+    Parameters
+    ----------
+    **kwargs
+        Forwarded to :func:`run_campaign` and validated by that function.
+
+    Returns
+    -------
+    dict[str, Any]
+        Report dictionary with UTC timestamp and campaign content.
+    """
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "task2_surrogates": run_campaign(**kwargs),
@@ -355,6 +408,21 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the Task 2 JSON report into markdown.
+
+    The output is used by validation artifacts and CI checks and is intended to be
+    human-readable while preserving the exact task metric keys.
+
+    Parameters
+    ----------
+    report
+        Report object created by :func:`generate_report`.
+
+    Returns
+    -------
+    str
+        Markdown document summarising task outcomes and gate metrics.
+    """
     g = report["task2_surrogates"]
     th = g["thresholds"]
     tm1 = g["disruption_auc"]["tm1_proxy"]
@@ -415,6 +483,19 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for Task 2 benchmark execution.
+
+    Parameters
+    ----------
+    argv
+        Optional list of command-line arguments. ``None`` uses ``sys.argv``.
+
+    Returns
+    -------
+    int
+        ``0`` when checks pass (or non-strict mode), ``2`` when strict validation
+        fails.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--force-retrain", action="store_true")

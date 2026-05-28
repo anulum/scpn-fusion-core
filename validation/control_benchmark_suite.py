@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Integrated Control Benchmark Suite
+"""Benchmark utilities for basic controller scenarios and mock-equilibrium trajectories."""
 from __future__ import annotations
 
 import dataclasses
@@ -19,6 +20,7 @@ import numpy as np
 
 @dataclass
 class BenchmarkScenario:
+    """Container for a single benchmark scenario definition."""
     name: str
     env_config: dict[str, Any]
     reference_trajectory: Callable[[float], np.ndarray]
@@ -28,15 +30,23 @@ class BenchmarkScenario:
 
 
 class ControllerWrapper(Protocol):
-    def reset(self) -> None: ...
+    """Protocol for controllers accepted by the benchmark runner."""
+    def reset(self) -> None:
+        """Reset controller internal state."""
+        ...
 
-    def step(self, obs: np.ndarray, ref: np.ndarray, dt: float) -> np.ndarray: ...
+    def step(self, obs: np.ndarray, ref: np.ndarray, dt: float) -> np.ndarray:
+        """Compute one control update from observation and reference."""
+        ...
 
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """Return a stable controller display name."""
+        ...
 
 
 @dataclass
 class BenchmarkResults:
+    """Flat dataclass with aggregate metrics emitted by a controller-scenario run."""
     controller_name: str
     scenario_name: str
     iae: float
@@ -50,12 +60,15 @@ class BenchmarkResults:
 
 
 class BenchmarkRunner:
+    """Execute a set of controllers against one or more benchmark scenarios."""
     def __init__(self, controllers: list[ControllerWrapper], scenarios: list[BenchmarkScenario]):
+        """Create a runner for controller and scenario lists."""
         self.controllers = controllers
         self.scenarios = scenarios
         self.results: list[BenchmarkResults] = []
 
     def run(self) -> list[BenchmarkResults]:
+        """Run every controller against every scenario and return all metrics."""
         for scenario in self.scenarios:
             for controller in self.controllers:
                 print(f"Running {controller.name()} on {scenario.name}...")
@@ -66,6 +79,7 @@ class BenchmarkRunner:
     def _run_single(
         self, controller: ControllerWrapper, scenario: BenchmarkScenario
     ) -> BenchmarkResults:
+        """Run one controller on one scenario and compute mean performance metrics."""
         # Simple mock of the Gym interface to run the test offline
         dt = scenario.env_config.get("dt", 0.05)
         n_steps = int(scenario.duration_s / dt)
@@ -184,11 +198,13 @@ class BenchmarkRunner:
         )
 
     def save_json(self, path: Path):
+        """Write collected results to a JSON file."""
         data = [dataclasses.asdict(r) for r in self.results]
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
     def save_markdown(self, path: Path):
+        """Write collected results to a compact Markdown summary table."""
         with open(path, "w") as f:
             f.write(
                 "| Controller | Scenario | IAE | Settling [s] | Overshoot [%] | Violations | Time [µs] |\n"
@@ -208,6 +224,7 @@ class BenchmarkRunner:
 
 
 def setpoint_tracking() -> BenchmarkScenario:
+    """Construct the default setpoint-tracking validation scenario."""
     # Step from 2.0 to 2.5 at t=5s
     def ref(t):
         return 2.5 if t >= 5.0 else 2.0
@@ -225,19 +242,23 @@ def setpoint_tracking() -> BenchmarkScenario:
 
 
 class PIDWrapper:
+    """Minimal PID controller wrapper implementing the benchmark protocol."""
     def __init__(self, Kp: float = 1.0, Ki: float = 0.5):
         self.Kp = Kp
         self.Ki = Ki
         self.integral = 0.0
 
     def reset(self):
+        """Reset the PID integral state."""
         self.integral = 0.0
 
     def step(self, obs: np.ndarray, ref: np.ndarray, dt: float) -> np.ndarray:
+        """Compute one control update from observation and reference."""
         err = ref[0] - obs[0]
         self.integral += err * dt
         u = self.Kp * err + self.Ki * self.integral
         return np.array([u])
 
     def name(self) -> str:
+        """Return controller display name."""
         return "PID"

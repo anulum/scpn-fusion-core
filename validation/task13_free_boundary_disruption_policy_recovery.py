@@ -14,7 +14,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -52,8 +52,9 @@ class _AcceptanceKernel:
         self.solve_equilibrium()
 
     def solve_equilibrium(self) -> None:
-        i = np.asarray([float(c["current"]) for c in self.cfg["coils"]], dtype=np.float64)
-        ip = float(self.cfg["physics"]["plasma_current_target"])
+        coils = cast(list[dict[str, float]], self.cfg["coils"])
+        i = np.asarray([float(c["current"]) for c in coils], dtype=np.float64)
+        ip = float(cast(dict[str, float], self.cfg["physics"])["plasma_current_target"])
         radial_drive = 0.95 * i[2] - 0.42 * i[1] + 0.16 * i[3]
         vertical_drive = 0.82 * i[3] - 0.68 * i[0] + 0.18 * i[2]
         divertor_drive_r = 0.74 * i[1] - 0.38 * i[0] + 0.12 * i[2]
@@ -99,6 +100,18 @@ def run_campaign(
     shot_length: int = 104,
     control_dt_s: float = 0.05,
 ) -> dict[str, Any]:
+    """Run the Task 13 free-boundary disruption policy recovery scenario.
+
+    This executes the supervisory simulation with disturbance and recovery phases,
+    captures alert-mode transitions, and evaluates deterministic policy recovery
+    metrics against configured pass thresholds.
+
+    Returns
+    -------
+    dict[str, Any]
+        Scenario metadata, policy closed-loop metrics, recovery-window diagnostics and
+        threshold outcomes.
+    """
     seed_i = _require_int("seed", seed, 0)
     steps = _require_int("shot_length", shot_length, 72)
     dt_s = _require_finite("control_dt_s", control_dt_s, 1e-4)
@@ -252,12 +265,20 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Create a timestamped Task 13 report envelope.
+
+    Parameters
+    ----------
+    **kwargs
+        Passed through to :func:`run_campaign`.
+    """
     out = run_campaign(**kwargs)
     out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
     return out
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render Task 13 report data as markdown."""
     g = report["task13_free_boundary_disruption_policy_recovery"]
     c = g["policy_closed_loop"]
     r = g["recovery_window"]
@@ -305,6 +326,13 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for Task 13 disruption policy recovery validation.
+
+    Returns
+    -------
+    int
+        ``0`` for pass or non-strict mode, ``2`` when strict mode fails.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--shot-length", type=int, default=104)

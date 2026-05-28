@@ -58,7 +58,7 @@ def _sample_geqdsk(nw: int = 33, nh: int = 33) -> GEqdsk:
     )
 
 
-def _sample_state() -> dict[str, object]:
+def _sample_state() -> dict[str, list[float]]:
     rho = list(np.linspace(0.0, 1.0, 20))
     te = list(np.linspace(10.0, 0.5, 20))
     ne = list(np.linspace(1.2, 0.1, 20))
@@ -144,12 +144,12 @@ def test_imas_core_profiles_unit_conversion() -> None:
     p1d = ids["profiles_1d"][0]
 
     # keV -> eV: multiply by 1000
-    te_kev = list(state["electron_temp_keV"])  # type: ignore[arg-type]
+    te_kev = state["electron_temp_keV"]
     te_ev = p1d["electrons"]["temperature"]
     np.testing.assert_allclose(te_ev, [v * 1e3 for v in te_kev], atol=1e-6)
 
     # 1e20 m^-3 -> m^-3: multiply by 1e20
-    ne_1e20 = list(state["electron_density_1e20_m3"])  # type: ignore[arg-type]
+    ne_1e20 = state["electron_density_1e20_m3"]
     ne_m3 = p1d["electrons"]["density"]
     np.testing.assert_allclose(ne_m3, [v * 1e20 for v in ne_1e20], rtol=1e-10)
 

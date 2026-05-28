@@ -25,6 +25,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import importlib
 import inspect
 import json
 import sys
@@ -37,6 +38,7 @@ from typing import Any, NamedTuple
 
 import numpy as np
 from numpy.typing import NDArray
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -53,7 +55,8 @@ try:
             message=r"Implicit None on return values .* raise KeyErrors\.",
             category=DeprecationWarning,
         )
-        import freegs  # type: ignore[import-untyped]
+        importlib.import_module("freegs")
+    freegs = importlib.import_module("freegs")
 
     HAS_FREEGS = True
 except ImportError:
@@ -656,7 +659,7 @@ def run_freegs_case(
 
     Returns dict with: psi, R, Z, R_axis, Z_axis, q_proxy
     """
-    import freegs  # type: ignore[import-untyped]
+    freegs = importlib.import_module("freegs")
 
     _patch_freegs_find_critical_scalar_derivative(freegs)
 
@@ -1240,6 +1243,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the FreeGS / Solov'ev blind benchmark and write the JSON artifact."""
     print("=" * 64)
     print("  SCPN Fusion Core -- FreeGS / Solov'ev Blind Benchmark")
     print("=" * 64)

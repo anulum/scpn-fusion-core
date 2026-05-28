@@ -32,6 +32,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -150,7 +151,7 @@ def _run_torax(scenario: dict) -> dict | None:
 
 def _compare_results(scpn: dict, torax: dict | None) -> dict:
     """Compare scpn-fusion-core and TORAX results."""
-    comparison = {
+    comparison: dict[str, Any] = {
         "scpn_fusion": scpn,
         "torax": torax,
         "comparison": {},
@@ -169,10 +170,9 @@ def _compare_results(scpn: dict, torax: dict | None) -> dict:
             Te_torax_interp = Te_torax
 
         rmse = float(np.sqrt(np.mean((Te_scpn - Te_torax_interp) ** 2)))
-        comparison["comparison"]["Te_rmse_keV"] = rmse
-        comparison["comparison"]["Te_max_diff_keV"] = float(
-            np.max(np.abs(Te_scpn - Te_torax_interp))
-        )
+        metrics: dict[str, float] = comparison["comparison"]
+        metrics["Te_rmse_keV"] = rmse
+        metrics["Te_max_diff_keV"] = float(np.max(np.abs(Te_scpn - Te_torax_interp)))
 
     return comparison
 
@@ -180,7 +180,8 @@ def _compare_results(scpn: dict, torax: dict | None) -> dict:
 # ── Main ──────────────────────────────────────────────────────────────
 
 
-def main():
+def main() -> None:
+    """Run scpn-fusion-core transport solver and optionally compare it against TORAX."""
     with_torax = "--with-torax" in sys.argv
 
     print(f"Running code-to-code benchmark: {ITER_SCENARIO['name']}")

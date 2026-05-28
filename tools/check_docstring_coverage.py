@@ -16,7 +16,7 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, cast, Iterable, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -92,7 +92,9 @@ def iter_python_files(root: Path, included_roots: Sequence[str]) -> list[Path]:
 
 def _has_docstring(node: ast.AST) -> bool:
     """Return ``True`` when an AST node owns a non-empty docstring."""
-    return bool(ast.get_docstring(node))
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
+        return bool(ast.get_docstring(node))
+    return False
 
 
 def _is_public_name(name: str) -> bool:
@@ -200,7 +202,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_baseline(args.baseline, summary)
 
     baseline = _load_baseline(args.baseline)
-    baseline_total = int(baseline["total_issues"])
+    baseline_total = int(cast(int, baseline["total_issues"]))
     status = {
         **asdict(summary),
         "baseline_total_issues": baseline_total,

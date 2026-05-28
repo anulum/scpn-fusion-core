@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FNO-TGLF Validation
+"""Validate FNO surrogate behavior against TGLF reference turbulent-growth cases."""
+
 import json
 import numpy as np
 import jax
@@ -14,6 +16,7 @@ from scpn_fusion.core.fno_jax_training import model_forward
 
 
 def run_tglf_validation():
+    """Run the FNO-TGLF surrogate validation flow and print trend diagnostics."""
     print("=== SCPN Fusion Core: FNO-TGLF Physics Validation ===")
 
     weights_path = Path("weights/fno_turbulence_jax.npz")

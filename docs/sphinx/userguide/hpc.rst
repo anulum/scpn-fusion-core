@@ -94,7 +94,7 @@ GPU Acceleration Roadmap
 --------------------------
 
 GPU support is tracked in three phases (see
-``docs/GPU_ACCELERATION_ROADMAP.md``):
+``docs/internal/GPU_ACCELERATION_ROADMAP.md``):
 
 **Phase 1: wgpu SOR kernel**
    Red-Black SOR stencil implemented as a ``wgpu`` compute shader,

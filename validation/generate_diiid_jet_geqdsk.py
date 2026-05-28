@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any, Mapping
 
 import numpy as np
 
@@ -215,6 +216,28 @@ def solovev_equilibrium(
 
 
 # ── Machine parameter sets ──────────────────────────────────────────
+
+def _shot_float(shot: Mapping[str, Any], key: str, default: float | None = None) -> float:
+    if default is None:
+        value = shot[key]
+    else:
+        value = shot.get(key, default)
+    if isinstance(value, bool):
+        return float(int(value))
+    if isinstance(value, (float, int)):
+        return float(value)
+    return float(str(value))
+
+
+def _shot_text(shot: Mapping[str, Any], key: str, *, default: str | None = None) -> str:
+    if default is None:
+        value = shot[key]
+    else:
+        value = shot.get(key, default)
+    if isinstance(value, str):
+        return value
+    return str(value)
+
 
 DIIID_SHOTS = [
     {
@@ -453,7 +476,7 @@ MACHINE_CONFIGS = {
 
 # ── Fixed-shot lists keyed by machine name ────────────────────────────
 
-FIXED_SHOTS = {
+FIXED_SHOTS: dict[str, list[dict[str, Any]]] = {
     "diiid": DIIID_SHOTS,
     "jet": JET_SHOTS,
     "east": EAST_SHOTS,
@@ -471,7 +494,7 @@ def generate_parameter_sweep(
     base_kappa: float,
     base_delta: float,
     n_per_param: int = 5,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Generate parameter sweep shots for a given machine.
 
     Sweeps: Ip (0.5x-1.5x), kappa (0.9x-1.1x), delta (0.5x-1.5x), beta_p via Ip.
@@ -490,8 +513,8 @@ def generate_parameter_sweep(
                 "kappa": base_kappa,
                 "delta": base_delta,
                 "desc": f"{machine_name} Ip sweep {base_Ip_MA * ip_frac:.2f} MA",
-            }
-        )
+                }
+            )
     # Kappa sweep
     for i, k_frac in enumerate(np.linspace(0.9, 1.1, n_per_param)):
         shots.append(
@@ -504,8 +527,8 @@ def generate_parameter_sweep(
                 "kappa": base_kappa * k_frac,
                 "delta": base_delta,
                 "desc": f"{machine_name} kappa sweep {base_kappa * k_frac:.2f}",
-            }
-        )
+                }
+            )
     # Delta sweep
     for i, d_frac in enumerate(np.linspace(-0.3, 0.7, n_per_param)):
         shots.append(
@@ -518,8 +541,8 @@ def generate_parameter_sweep(
                 "kappa": base_kappa,
                 "delta": d_frac,
                 "desc": f"{machine_name} delta sweep {d_frac:.2f}",
-            }
-        )
+                }
+            )
     return shots
 
 
@@ -558,17 +581,18 @@ def generate_all():
                 R0=R0,
                 a=a,
                 B0=B0,
-                Ip_MA=shot["Ip_MA"],
-                kappa=shot["kappa"],
-                delta=shot["delta"],
+                Ip_MA=_shot_float(shot, "Ip_MA"),
+                kappa=_shot_float(shot, "kappa"),
+                delta=_shot_float(shot, "delta"),
                 nw=65,
                 nh=65,
-                description=shot["desc"],
+                description=_shot_text(shot, "desc"),
             )
             path = out_dir / f"{shot['name']}.geqdsk"
             write_geqdsk(eq, path)
-            results.append((path.name, eq.nw, eq.nh, shot["Ip_MA"]))
-            print(f"  [{label:8s}] {path.name}: {eq.nw}x{eq.nh}, Ip={shot['Ip_MA']:.2f} MA")
+            ip_ma = _shot_float(shot, "Ip_MA")
+            results.append((path.name, eq.nw, eq.nh, ip_ma))
+            print(f"  [{label:8s}] {path.name}: {eq.nw}x{eq.nh}, Ip={ip_ma:.2f} MA")
 
     # ── Parameter sweeps for every machine ────────────────────────────
     for machine_name, cfg in MACHINE_CONFIGS.items():
@@ -589,20 +613,21 @@ def generate_all():
 
         for shot in sweep_shots:
             eq = solovev_equilibrium(
-                R0=shot["R0"],
-                a=shot["a"],
-                B0=shot["B0"],
-                Ip_MA=shot["Ip_MA"],
-                kappa=shot["kappa"],
-                delta=shot["delta"],
+                R0=_shot_float(shot, "R0"),
+                a=_shot_float(shot, "a"),
+                B0=_shot_float(shot, "B0"),
+                Ip_MA=_shot_float(shot, "Ip_MA"),
+                kappa=_shot_float(shot, "kappa"),
+                delta=_shot_float(shot, "delta"),
                 nw=65,
                 nh=65,
-                description=shot["desc"],
+                description=_shot_text(shot, "desc"),
             )
             path = out_dir / f"{shot['name']}.geqdsk"
             write_geqdsk(eq, path)
-            results.append((path.name, eq.nw, eq.nh, shot["Ip_MA"]))
-            print(f"  [{label:8s}] {path.name}: {eq.nw}x{eq.nh}, Ip={shot['Ip_MA']:.2f} MA")
+            ip_ma = _shot_float(shot, "Ip_MA")
+            results.append((path.name, eq.nw, eq.nh, ip_ma))
+            print(f"  [{label:8s}] {path.name}: {eq.nw}x{eq.nh}, Ip={ip_ma:.2f} MA")
 
     print(f"\nGenerated {len(results)} GEQDSK files total (25 fixed + 75 sweep = 100).")
     return results

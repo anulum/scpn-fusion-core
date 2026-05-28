@@ -18,7 +18,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -297,7 +297,7 @@ def _interior_max_abs_error(candidate: np.ndarray, reference: np.ndarray) -> flo
 
 
 def main() -> None:
-    case = _read_case(_CASE_PATH)
+    case: dict[str, int | float | str] = _read_case(_CASE_PATH)
     python_psi, python_seconds = _run_python(case)
     julia_psi, julia_seconds = _run_julia()
     go_psi, go_seconds = _run_go()
@@ -397,7 +397,7 @@ def main() -> None:
         },
     }
 
-    report = {
+    report: dict[str, Any] = {
         "_metadata": {
             "spdx_license": "AGPL-3.0-or-later",
             "commercial_license": "Commercial license available",
@@ -528,6 +528,8 @@ def main() -> None:
         ],
         "parity": {"by_language": parity_by_language, "shape": list(python_psi.shape)},
     }
+    solvers = cast(list[dict[str, Any]], report["solvers"])
+    hardware = cast(dict[str, Any], report["hardware"])
     _REPORT_JSON.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     lines = [
@@ -545,14 +547,14 @@ def main() -> None:
         "",
         "## Hardware",
         "",
-        f"- CPU: {report['hardware']['cpu_model']}",
-        f"- Machine: {report['hardware']['machine']}",
-        f"- OS: {report['hardware']['os']}",
-        f"- Python: {report['hardware']['python']}",
-        f"- Julia: {report['hardware']['julia']}",
-        f"- Go: {report['hardware']['go']}",
-        f"- Rust: {report['hardware']['rust']}",
-        f"- Lean: {report['hardware']['lean']}",
+        f"- CPU: {hardware['cpu_model']}",
+        f"- Machine: {hardware['machine']}",
+        f"- OS: {hardware['os']}",
+        f"- Python: {hardware['python']}",
+        f"- Julia: {hardware['julia']}",
+        f"- Go: {hardware['go']}",
+        f"- Rust: {hardware['rust']}",
+        f"- Lean: {hardware['lean']}",
         "",
         "## Case",
         "",
@@ -566,7 +568,7 @@ def main() -> None:
         "| Language | Implementation | Wall time (s) |",
         "|----------|----------------|---------------|",
     ]
-    for row in report["solvers"]:
+    for row in solvers:
         lines.append(f"| {row['language']} | `{row['implementation']}` | {row['wall_time_s']:.6f} |")
     lines.extend(
         [
@@ -592,7 +594,7 @@ def main() -> None:
             "|----------|-----------------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|------------------------------|------------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|",
         ]
     )
-    for row in report["solvers"]:
+    for row in solvers:
         lines.append(
             f"| {row['language']} | {row['axis_flux_value']:.6e} | "
             f"{row['vertical_symmetry_abs_max']:.6e} | "

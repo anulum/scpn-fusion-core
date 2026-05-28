@@ -24,7 +24,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 
@@ -36,39 +36,52 @@ from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 from scpn_fusion.control.h_infinity_controller import get_radial_robust_controller
 
 # Optional controller imports
+ModelPredictiveController: Any | None
+NeuralSurrogate: Any | None
+get_nmpc_controller: Any | None
+NengoSNNController: Any | None
+NengoSNNConfig: Any | None
+
 _mpc_available = False
 _nmpc_jax_available = False
 _snn_available = False
 
 try:
     from scpn_fusion.control.fusion_sota_mpc import (
-        ModelPredictiveController,
-        NeuralSurrogate,
+        ModelPredictiveController as _ModelPredictiveController,
+        NeuralSurrogate as _NeuralSurrogate,
     )
 
     _mpc_available = True
+    ModelPredictiveController = cast(Any, _ModelPredictiveController)
+    NeuralSurrogate = cast(Any, _NeuralSurrogate)
 except ImportError:
-    ModelPredictiveController = None  # type: ignore[assignment]
-    NeuralSurrogate = None  # type: ignore[assignment]
+    ModelPredictiveController = None
+    NeuralSurrogate = None
 
 try:
-    from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
+    from scpn_fusion.control.fusion_nmpc_jax import (
+        get_nmpc_controller as _get_nmpc_controller,
+    )
 
     _nmpc_jax_available = True
+    get_nmpc_controller = cast(Any, _get_nmpc_controller)
 except ImportError:
-    get_nmpc_controller = None  # type: ignore[assignment]
+    get_nmpc_controller = None
 
 try:
     from scpn_fusion.control.nengo_snn_wrapper import (
-        NengoSNNController,
-        NengoSNNConfig,
+        NengoSNNController as _NengoSNNController,
+        NengoSNNConfig as _NengoSNNConfig,
         nengo_available,
     )
 
     _snn_available = nengo_available()
+    NengoSNNController = cast(Any, _NengoSNNController)
+    NengoSNNConfig = cast(Any, _NengoSNNConfig)
 except ImportError:
-    NengoSNNController = None  # type: ignore[assignment]
-    NengoSNNConfig = None  # type: ignore[assignment]
+    NengoSNNController = None
+    NengoSNNConfig = None
 
 
 @dataclass
@@ -177,6 +190,8 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResul
 def _run_mpc_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
     if not _mpc_available:
         raise RuntimeError("MPC controller is unavailable in this environment.")
+    if ModelPredictiveController is None or NeuralSurrogate is None:
+        raise RuntimeError("MPC controller dependencies are unavailable in this environment.")
     steps = int(shot_duration)
     ctrl = IsoFluxController(config_path, verbose=False)
     n_coils = len(ctrl.kernel.cfg.get("coils", []))
@@ -214,6 +229,8 @@ def _run_mpc_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
 def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
     if not _nmpc_jax_available:
         raise RuntimeError("NMPC-JAX controller is unavailable in this environment.")
+    if get_nmpc_controller is None:
+        raise RuntimeError("NMPC-JAX controller factory is unavailable in this environment.")
     steps = int(shot_duration)
     ctrl = IsoFluxController(config_path, verbose=False)
     n_coils = len(ctrl.kernel.cfg.get("coils", []))
@@ -242,6 +259,8 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeR
 def _run_snn_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
     if not _snn_available:
         raise RuntimeError("Nengo-SNN controller is unavailable in this environment.")
+    if NengoSNNController is None or NengoSNNConfig is None:
+        raise RuntimeError("Nengo-SNN controller dependencies are unavailable in this environment.")
     steps = int(shot_duration)
     ctrl = IsoFluxController(config_path, verbose=False)
     snn = NengoSNNController(NengoSNNConfig(n_neurons=200, n_channels=2))
@@ -412,6 +431,7 @@ def derive_hinf_graduation_status(results: dict[str, ControllerMetrics]) -> dict
 
 
 def save_results_json(results: dict[str, ControllerMetrics], output_path: Path) -> None:
+    """Serialize controller comparison metrics and graduation checks to a JSON artifact."""
     payload: dict[str, Any] = {
         "controllers": {},
         "hinf_graduation": derive_hinf_graduation_status(results),

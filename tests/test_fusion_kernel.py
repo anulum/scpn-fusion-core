@@ -23,8 +23,8 @@ def test_load_config_rejects_oversized_json_before_parsing(
 
     real_stat = Path.stat
 
-    def oversized_stat(path: Path, *args: object, **kwargs: object) -> os.stat_result:
-        stat_result = real_stat(path, *args, **kwargs)
+    def oversized_stat(path: Path, follow_symlinks: bool = True) -> os.stat_result:
+        stat_result = real_stat(path, follow_symlinks=follow_symlinks)
         if path == config_path:
             values = list(stat_result)
             values[6] = MAX_CONFIG_BYTES + 1

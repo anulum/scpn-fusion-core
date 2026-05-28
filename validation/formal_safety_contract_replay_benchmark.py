@@ -159,6 +159,7 @@ def run_benchmark() -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Build a markdown rendering of formal safety contract replay results."""
     bench = report["formal_safety_contract_replay_benchmark"]
     lines = [
         "# Formal Safety Contract Replay Benchmark",
@@ -183,6 +184,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run benchmark, save JSON/Markdown artifacts, and print a concise status."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-json",

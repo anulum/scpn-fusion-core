@@ -138,6 +138,10 @@ files = [
     "src/scpn_fusion/control/fusion_nmpc_jax.py",
     "src/scpn_fusion/core/mhd_sawtooth.py",
     "src/scpn_fusion/core/divertor_thermal_sim.py",
+    # enterprise hardening: include non-core trees in strict pass
+    "tests",
+    "validation",
+    "benchmarks",
 ]
 
 [[tool.mypy.overrides]]

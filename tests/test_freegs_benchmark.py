@@ -20,6 +20,7 @@ import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 import pytest
@@ -58,7 +59,7 @@ class TestSolovevAnalytic:
     """Verify properties of the Solov'ev analytic equilibrium."""
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
-    def test_solovev_psi_vanishes_at_outer_midplane(self, case: TokamakCase) -> None:
+    def test_solovev_psi_vanishes_at_outer_midplane(self, case: Any) -> None:
         """Psi should be ~0 at the outer midplane boundary (R0+a, 0)."""
         cfg = build_config(case)
         dims = cfg["dimensions"]
@@ -80,7 +81,7 @@ class TestSolovevAnalytic:
             )
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
-    def test_solovev_psi_has_maximum_inside_plasma(self, case: TokamakCase) -> None:
+    def test_solovev_psi_has_maximum_inside_plasma(self, case: Any) -> None:
         """Psi maximum should be near (R0, 0), i.e. inside the plasma."""
         cfg = build_config(case)
         dims = cfg["dimensions"]
@@ -103,7 +104,7 @@ class TestSolovevAnalytic:
         )
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
-    def test_solovev_psi_is_finite(self, case: TokamakCase) -> None:
+    def test_solovev_psi_is_finite(self, case: Any) -> None:
         """Psi field should contain no NaN or Inf."""
         cfg = build_config(case)
         dims = cfg["dimensions"]
@@ -156,7 +157,7 @@ class TestBuildConfig:
     """Config builder produces valid FusionKernel configs."""
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
-    def test_config_has_required_keys(self, case: TokamakCase) -> None:
+    def test_config_has_required_keys(self, case: Any) -> None:
         cfg = build_config(case)
         assert "reactor_name" in cfg
         assert "grid_resolution" in cfg
@@ -166,7 +167,7 @@ class TestBuildConfig:
         assert "solver" in cfg
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
-    def test_config_R_range_positive(self, case: TokamakCase) -> None:
+    def test_config_R_range_positive(self, case: Any) -> None:
         cfg = build_config(case)
         assert cfg["dimensions"]["R_min"] > 0
         assert cfg["dimensions"]["R_max"] > cfg["dimensions"]["R_min"]
@@ -176,13 +177,13 @@ class TestSolovevReference:
     """Verify run_solovev_case returns well-formed data."""
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
-    def test_returns_expected_keys(self, case: TokamakCase) -> None:
+    def test_returns_expected_keys(self, case: Any) -> None:
         result = run_solovev_case(case)
         for key in ("psi", "R", "Z", "R_axis", "Z_axis", "q_proxy"):
             assert key in result, f"Missing key: {key}"
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
-    def test_psi_shape_matches_grid(self, case: TokamakCase) -> None:
+    def test_psi_shape_matches_grid(self, case: Any) -> None:
         result = run_solovev_case(case)
         assert result["psi"].shape == (case.NZ, case.NR)
 
@@ -332,10 +333,10 @@ def test_run_freegs_case_retries_legacy_isoflux_shape_on_unpack_error(
         Zmagnetic=0.0,
     )
 
-    def _control_constrain(*, xpoints: object, isoflux: object) -> object:
+    def _control_constrain(*, xpoints: object, isoflux: object) -> SimpleNamespace:
         return SimpleNamespace(xpoints=xpoints, isoflux=isoflux)
 
-    def _solve(_eq: object, _profiles: object, constrain: object, **_kwargs: object) -> None:
+    def _solve(_eq: object, _profiles: object, constrain: SimpleNamespace, **_kwargs: object) -> None:
         nonlocal solve_calls
         solve_calls += 1
         first_tuple = constrain.isoflux[0]

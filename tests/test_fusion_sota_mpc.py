@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from typing import Any, cast
 
 from scpn_fusion.control.fusion_sota_mpc import (
     ModelPredictiveController,
@@ -23,7 +24,7 @@ class _DummyKernel:
     """Deterministic stand-in for FusionKernel used by SOTA MPC tests."""
 
     def __init__(self, _config_file: str) -> None:
-        self.cfg = {
+        self.cfg: dict[str, Any] = {
             "physics": {"plasma_current_target": 7.0},
             "coils": [
                 {"name": "PF1", "current": 0.0},
@@ -40,7 +41,8 @@ class _DummyKernel:
         self.solve_equilibrium()
 
     def solve_equilibrium(self) -> None:
-        i = [float(c["current"]) for c in self.cfg["coils"]]
+        coils = cast(list[dict[str, Any]], self.cfg["coils"])
+        i = [float(c["current"]) for c in coils]
         radial_drive = 0.8 * i[2] - 0.4 * i[1] + 0.1 * i[3]
         vertical_drive = 0.7 * i[3] - 0.6 * i[0] + 0.1 * i[2]
 
@@ -50,7 +52,8 @@ class _DummyKernel:
         ir = int(np.argmin(np.abs(self.R - center_r)))
         iz = int(np.argmin(np.abs(self.Z - center_z)))
         self.Psi.fill(-1.0)
-        self.Psi[iz, ir] = 1.0 + 0.001 * float(self.cfg["physics"]["plasma_current_target"])
+        physics = cast(dict[str, Any], self.cfg["physics"])
+        self.Psi[iz, ir] = 1.0 + 0.001 * float(physics["plasma_current_target"])
 
         xr = 5.0 + 0.03 * np.tanh((i[1] - i[0]) / 6.0)
         xz = -3.5 + 0.03 * np.tanh((i[3] - i[2]) / 6.0)

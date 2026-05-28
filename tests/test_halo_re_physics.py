@@ -6,6 +6,8 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 """Tests for physics-based halo current and runaway electron models."""
 
+from typing import cast
+
 import numpy as np
 import pytest
 
@@ -218,9 +220,9 @@ class TestDisruptionEnsemble:
         with pytest.raises(ValueError):
             run_disruption_ensemble(seed=-1)
         with pytest.raises(ValueError):
-            run_disruption_ensemble(seed=3.14)  # type: ignore[arg-type]
+            run_disruption_ensemble(seed=cast(int, 3.14))
         with pytest.raises(ValueError):
-            run_disruption_ensemble(neon_range=[0.1, 0.2])  # type: ignore[arg-type]
+            run_disruption_ensemble(neon_range=cast(tuple[float, float], [0.1, 0.2]))
         with pytest.raises(ValueError):
             run_disruption_ensemble(plasma_current_range=(16.0, 12.0))
         with pytest.raises(ValueError):

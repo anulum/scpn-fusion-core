@@ -27,7 +27,7 @@ def test_build_hinf_controller_strict_rejects_lqr_fallback(
 ) -> None:
     monkeypatch.setattr(mod, "_hinf_available", True)
 
-    def _raise_are(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+    def _raise_are(*_args: object, **_kwargs: object) -> None:
         raise ValueError("unit-test-infeasible")
 
     class _ShouldNotConstruct:
@@ -46,7 +46,7 @@ def test_build_hinf_controller_reports_fallback_metadata(
 ) -> None:
     monkeypatch.setattr(mod, "_hinf_available", True)
 
-    def _raise_are(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+    def _raise_are(*_args: object, **_kwargs: object) -> None:
         raise ValueError("unit-test-infeasible")
 
     class _DummyLQR:

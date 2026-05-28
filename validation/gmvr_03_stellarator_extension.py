@@ -117,6 +117,7 @@ def _vmec_parity_pct(
 
 
 def run_campaign(iterations: int = 6) -> dict[str, Any]:
+    """Run stellarator extension loop, tracking stability and VMEC parity evolution."""
     t0 = time.perf_counter()
 
     base_eq = VMECStyleEquilibrium3D(
@@ -192,6 +193,7 @@ def run_campaign(iterations: int = 6) -> dict[str, Any]:
 
 
 def generate_report(iterations: int = 6) -> dict[str, Any]:
+    """Generate GMVR-03 report payload from a campaign run."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gmvr_03": run_campaign(iterations=iterations),
@@ -199,6 +201,7 @@ def generate_report(iterations: int = 6) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render GMVR-03 controller and parity metrics as markdown."""
     g = report["gmvr_03"]
     th = g["thresholds"]
     lines = [
@@ -224,6 +227,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GMVR-03 and exporting JSON/Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=int, default=6)
     parser.add_argument(

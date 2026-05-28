@@ -13,6 +13,7 @@ from __future__ import annotations
 import math
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -20,10 +21,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[0].parent / "src"))
 
 try:
-    import scpn_fusion_rs  # type: ignore[import-untyped]
-
+    scpn_fusion_rs = cast(Any, __import__("scpn_fusion_rs"))
     HAS_RUST = True
 except ImportError:
+    scpn_fusion_rs = cast(Any, None)
     HAS_RUST = False
 
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust extension not available")

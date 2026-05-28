@@ -17,7 +17,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASELINE = REPO_ROOT / "docs" / "release_delta_baseline.json"
-DEFAULT_UNDERDEV_SUMMARY = REPO_ROOT / "docs" / "UNDERDEVELOPED_SCOPE_SUMMARY.json"
+DEFAULT_UNDERDEV_SUMMARY = REPO_ROOT / "docs" / "internal" / "UNDERDEVELOPED_SCOPE_SUMMARY.json"
 DEFAULT_CLAIMS_MANIFEST = REPO_ROOT / "validation" / "claims_manifest.json"
 DEFAULT_SUMMARY_JSON = REPO_ROOT / "artifacts" / "release_delta_guard_summary.json"
 

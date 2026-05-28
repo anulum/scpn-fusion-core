@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -19,6 +20,17 @@ from scpn_fusion.hpc import hpc_bridge as hpc_mod
 
 
 class _DummyLib:
+    called: bool
+    called_converged: bool
+    last_size: int | None
+    last_iterations: int | None
+    last_max_iterations: int | None
+    last_omega: float | None
+    last_tolerance: float | None
+    destroyed: int | None
+    boundary_value: float | None
+    last_psi_ref: np.ndarray[Any, np.dtype[np.floating[Any]]] | None
+
     def __init__(self) -> None:
         self.called = False
         self.called_converged = False
@@ -31,7 +43,14 @@ class _DummyLib:
         self.boundary_value = None
         self.last_psi_ref = None
 
-    def run_step(self, solver_ptr, j_array, psi_array, size, iterations) -> None:
+    def run_step(
+        self,
+        solver_ptr: int,
+        j_array: np.ndarray[Any, np.dtype[np.floating[Any]]],
+        psi_array: np.ndarray[Any, np.dtype[np.floating[Any]]],
+        size: int,
+        iterations: int,
+    ) -> None:
         self.called = True
         self.last_size = int(size)
         self.last_iterations = int(iterations)
@@ -40,14 +59,14 @@ class _DummyLib:
 
     def run_step_converged(
         self,
-        solver_ptr,
-        j_array,
-        psi_array,
-        size,
-        max_iterations,
-        omega,
-        tolerance,
-        final_delta_ptr,
+        solver_ptr: int,
+        j_array: np.ndarray[Any, np.dtype[np.floating[Any]]],
+        psi_array: np.ndarray[Any, np.dtype[np.floating[Any]]],
+        size: int,
+        max_iterations: int,
+        omega: float,
+        tolerance: float,
+        final_delta_ptr: Any,
     ) -> int:
         self.called_converged = True
         self.last_size = int(size)
@@ -59,18 +78,20 @@ class _DummyLib:
         final_delta_ptr._obj.value = 2.5e-4
         return 7
 
-    def destroy_solver(self, solver_ptr) -> None:
+    def destroy_solver(self, solver_ptr: int) -> None:
         self.destroyed = solver_ptr
 
-    def set_boundary_dirichlet(self, solver_ptr, value) -> None:
+    def set_boundary_dirichlet(self, solver_ptr: int, value: float) -> None:
         self.boundary_value = float(value)
 
 
 class _DummyDeleteLib:
+    deleted: int | None
+
     def __init__(self) -> None:
         self.deleted = None
 
-    def delete_solver(self, solver_ptr) -> None:
+    def delete_solver(self, solver_ptr: int) -> None:
         self.deleted = solver_ptr
 
 
@@ -171,8 +192,9 @@ def test_solve_into_rejects_wrong_shape_output() -> None:
 def test_solve_into_rejects_non_ndarray_output() -> None:
     bridge = _make_bridge(nr=2, nz=3)
     j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    bad_output: Any = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
     with pytest.raises(ValueError, match="numpy.ndarray"):
-        bridge.solve_into(j_phi, [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], iterations=3)  # type: ignore[arg-type]
+        bridge.solve_into(j_phi, bad_output, iterations=3)
 
 
 def test_solve_until_converged_uses_native_api() -> None:
@@ -331,7 +353,9 @@ def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
+    def _fake_run(
+        cmd: list[str], check: bool, timeout: float
+    ) -> None:
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
@@ -357,7 +381,9 @@ def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.M
 def test_compile_cpp_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
+    def _fake_run(
+        cmd: list[str], check: bool, timeout: float
+    ) -> None:
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
@@ -380,7 +406,7 @@ def test_compile_cpp_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 def test_compile_cpp_handles_build_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     import subprocess
 
-    def _fail_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
+    def _fail_run(cmd: list[str], check: bool, timeout: float) -> None:
         raise subprocess.CalledProcessError(1, cmd)
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")

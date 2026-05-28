@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -46,7 +47,7 @@ def _write_config(tmp_path: Path, cfg: dict[str, object], name: str) -> Path:
 def test_solve_reports_gs_residual_metrics(tmp_path: Path) -> None:
     cfg = copy.deepcopy(BASE_CONFIG)
     fk = FusionKernel(str(_write_config(tmp_path, cfg, "base.json")))
-    result = fk.solve_equilibrium()
+    result = cast(dict[str, Any], fk.solve_equilibrium())
 
     assert "gs_residual" in result
     assert "gs_residual_best" in result
@@ -65,29 +66,32 @@ def test_solve_reports_gs_residual_metrics(tmp_path: Path) -> None:
 def test_gs_residual_gate_blocks_update_only_convergence(tmp_path: Path) -> None:
     # With extremely loose update tolerance, solver can terminate on iter 1.
     cfg_loose = copy.deepcopy(BASE_CONFIG)
-    cfg_loose["solver"]["max_iterations"] = 5
-    cfg_loose["solver"]["convergence_threshold"] = 1e6
+    solver_cfg = cast(dict[str, Any], cfg_loose["solver"])
+    solver_cfg["max_iterations"] = 5
+    solver_cfg["convergence_threshold"] = 1e6
     fk_loose = FusionKernel(str(_write_config(tmp_path, cfg_loose, "loose.json")))
-    result_loose = fk_loose.solve_equilibrium()
+    result_loose = cast(dict[str, Any], fk_loose.solve_equilibrium())
     assert result_loose["converged"]
     assert result_loose["iterations"] == 1
 
     # Enable GS residual gate with an intentionally strict threshold.
     cfg_gate = copy.deepcopy(cfg_loose)
-    cfg_gate["solver"]["require_gs_residual"] = True
-    cfg_gate["solver"]["gs_residual_threshold"] = 1e-12
+    solver_cfg_gate = cast(dict[str, Any], cfg_gate["solver"])
+    solver_cfg_gate["require_gs_residual"] = True
+    solver_cfg_gate["gs_residual_threshold"] = 1e-12
     fk_gate = FusionKernel(str(_write_config(tmp_path, cfg_gate, "gate.json")))
-    result_gate = fk_gate.solve_equilibrium()
+    result_gate = cast(dict[str, Any], fk_gate.solve_equilibrium())
 
     assert not result_gate["converged"]
-    assert result_gate["iterations"] == cfg_gate["solver"]["max_iterations"]
-    assert result_gate["gs_residual"] > cfg_gate["solver"]["gs_residual_threshold"]
+    assert result_gate["iterations"] == solver_cfg_gate["max_iterations"]
+    assert result_gate["gs_residual"] > solver_cfg_gate["gs_residual_threshold"]
 
 
 def test_gs_residual_gate_rejects_non_positive_threshold(tmp_path: Path) -> None:
     cfg = copy.deepcopy(BASE_CONFIG)
-    cfg["solver"]["require_gs_residual"] = True
-    cfg["solver"]["gs_residual_threshold"] = 0.0
+    solver_cfg = cast(dict[str, Any], cfg["solver"])
+    solver_cfg["require_gs_residual"] = True
+    solver_cfg["gs_residual_threshold"] = 0.0
     fk = FusionKernel(str(_write_config(tmp_path, cfg, "invalid.json")))
 
     with pytest.raises(ValueError, match="gs_residual_threshold"):

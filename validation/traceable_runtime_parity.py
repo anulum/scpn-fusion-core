@@ -64,6 +64,22 @@ def run_parity_check(
     command_limit: float,
     backends: list[str] | None = None,
 ) -> dict[str, Any]:
+    """Run parity validation across requested traceable runtime backends.
+
+    Parameters:
+        steps: Number of simulation steps per rollout.
+        batch: Batch size for batched execution path.
+        seed: Deterministic random seed.
+        atol: Absolute tolerance for max-error acceptance.
+        dt_s: Integration timestep.
+        tau_s: Control lag/plant time constant.
+        gain: Controller gain.
+        command_limit: Command saturation limit.
+        backends: Optional list of specific backends to validate.
+
+    Returns:
+        A summary dictionary with per-backend parity records and strict status.
+    """
     spec = TraceableRuntimeSpec(
         dt_s=float(dt_s),
         tau_s=float(tau_s),
@@ -95,6 +111,8 @@ def run_parity_check(
 
 
 def main() -> int:
+    """CLI entrypoint for traceable runtime parity checks."""
+
     parser = argparse.ArgumentParser(description="Traceable runtime backend parity checker.")
     parser.add_argument("--steps", type=int, default=64)
     parser.add_argument("--batch", type=int, default=8)

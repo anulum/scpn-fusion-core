@@ -52,6 +52,7 @@ def require_experimental_opt_in(
     allow_experimental: bool,
     experimental_ack: str | None,
 ) -> None:
+    """Enforce explicit opt-in required for experimental validation paths."""
     if not (allow_experimental or _env_enabled("SCPN_EXPERIMENTAL")):
         raise SystemExit(
             "Experimental validation is locked; pass --experimental or set SCPN_EXPERIMENTAL=1."
@@ -213,7 +214,8 @@ def validate_solver(eq, label: str) -> dict:
         os.unlink(config_path)
 
 
-def main(argv: list[str] | None = None):
+def main(argv: list[str] | None = None) -> None:
+    """Run topology and solver-mode validation over all SPARC reference equilibria."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--experimental",
@@ -313,8 +315,7 @@ def main(argv: list[str] | None = None):
         "topology": topology_results,
         "solver": solver_results,
     }
-    with open(output_path, "w") as f:
-        json.dump(summary, f, indent=2, default=str)
+    output_path.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     print(f"\n  Results saved to: {output_path}")
     print("=" * 80)
 

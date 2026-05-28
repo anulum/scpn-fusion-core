@@ -5,7 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Generate docs/CLAIMS_EVIDENCE_MAP.md from validation/claims_manifest.json."""
+"""Generate docs/internal/CLAIMS_EVIDENCE_MAP.md from validation/claims_manifest.json."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "validation" / "claims_manifest.json"
-DEFAULT_OUTPUT = REPO_ROOT / "docs" / "CLAIMS_EVIDENCE_MAP.md"
+DEFAULT_OUTPUT = REPO_ROOT / "docs" / "internal" / "CLAIMS_EVIDENCE_MAP.md"
 
 
 @dataclass(frozen=True)
@@ -188,7 +188,7 @@ def render_markdown(claims: tuple[ClaimSpec, ...], manifest_path: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Render or validate ``docs/CLAIMS_EVIDENCE_MAP.md`` from manifest input.
+    """Render or validate ``docs/internal/CLAIMS_EVIDENCE_MAP.md`` from manifest input.
 
     Supports a dry-check mode that exits non-zero when the output is missing or
     stale compared with current manifest rendering.

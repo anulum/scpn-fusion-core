@@ -367,8 +367,10 @@ def test_run_digital_twin_ids_pulse_is_deterministic() -> None:
     assert a == b
 
 
-@pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])  # type: ignore[list-item]
-def test_run_digital_twin_ids_history_rejects_invalid_history_steps(history_steps) -> None:
+@pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])
+def test_run_digital_twin_ids_history_rejects_invalid_history_steps(
+    history_steps: list[float | int],
+) -> None:
     with pytest.raises(ValueError, match="history_steps"):
         run_digital_twin_ids_history(
             history_steps,
@@ -380,8 +382,10 @@ def test_run_digital_twin_ids_history_rejects_invalid_history_steps(history_step
         )
 
 
-@pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])  # type: ignore[list-item]
-def test_run_digital_twin_ids_pulse_rejects_invalid_history_steps(history_steps) -> None:
+@pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])
+def test_run_digital_twin_ids_pulse_rejects_invalid_history_steps(
+    history_steps: list[float | int],
+) -> None:
     with pytest.raises(ValueError, match="history_steps"):
         run_digital_twin_ids_pulse(
             history_steps,

@@ -42,6 +42,11 @@ def require_experimental_opt_in(
     allow_experimental: bool,
     experimental_ack: str | None,
 ) -> None:
+    """Enforce explicit opt-in and acknowledgement for experimental validation.
+
+    Raises ``SystemExit`` when execution is gated and no explicit approval is
+    provided via CLI flag/ACK or corresponding environment variables.
+    """
     if not (allow_experimental or _env_enabled("SCPN_EXPERIMENTAL")):
         raise SystemExit(
             "Experimental validation is locked; pass --experimental or set SCPN_EXPERIMENTAL=1."
@@ -213,6 +218,8 @@ def validate_confinement_scaling(csv_path: str) -> list[dict]:
 
 
 def main(argv: list[str] | None = None):
+    """CLI entrypoint for SPARC/ITPA/ITER validation workflow."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--experimental", action="store_true")
     parser.add_argument("--experimental-ack", default="")

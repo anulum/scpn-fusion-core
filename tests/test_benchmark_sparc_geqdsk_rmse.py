@@ -11,6 +11,8 @@ from __future__ import annotations
 import sys
 import types
 from pathlib import Path
+from typing import Any
+from typing import cast
 
 import numpy as np
 import pytest
@@ -29,7 +31,7 @@ def test_reduced_order_proxy_preserves_shape_and_is_finite() -> None:
 
 
 def test_run_neural_surrogate_fallback_reports_backend(monkeypatch) -> None:
-    fake_module = types.ModuleType("scpn_fusion.core.neural_equilibrium")
+    fake_module = cast(Any, types.ModuleType("scpn_fusion.core.neural_equilibrium"))
     fake_module.DEFAULT_WEIGHTS_PATH = Path("synthetic_weights_missing.npz")
 
     class _FailingAccelerator:
@@ -48,7 +50,7 @@ def test_run_neural_surrogate_fallback_reports_backend(monkeypatch) -> None:
 
 
 def test_run_benchmark_strict_backend_enforces_neural_requirement(monkeypatch) -> None:
-    def _proxy_only(eq):  # type: ignore[no-untyped-def]
+    def _proxy_only(eq: dict[str, Any]) -> tuple[np.ndarray, str, str]:
         return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
 
     monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)
@@ -92,7 +94,7 @@ def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypat
         ],
     )
 
-    def _proxy_only(eq):  # type: ignore[no-untyped-def]
+    def _proxy_only(eq: dict[str, Any]) -> tuple[np.ndarray, str, str]:
         return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
 
     monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)
@@ -288,7 +290,7 @@ def test_run_benchmark_strict_source_contract_enforces_geqdsk_pde(monkeypatch) -
         ],
     )
 
-    def _proxy_only(eq):  # type: ignore[no-untyped-def]
+    def _proxy_only(eq: dict[str, Any]) -> tuple[np.ndarray, str, str]:
         return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
 
     monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)

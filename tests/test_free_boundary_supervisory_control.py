@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from typing import Any, cast
 
 import scpn_fusion.control._free_boundary_control_geometry as control_geometry
 import scpn_fusion.control._free_boundary_estimator as estimator_mod
@@ -49,7 +50,7 @@ class _DivertedDummyKernel:
     """Deterministic diverted equilibrium response for controller tests."""
 
     def __init__(self, _config_file: str) -> None:
-        self.cfg = {
+        self.cfg: dict[str, Any] = {
             "physics": {"plasma_current_target": 7.0},
             "coils": [
                 {"name": "PF1", "current": 0.0},
@@ -70,8 +71,10 @@ class _DivertedDummyKernel:
         self.solve_equilibrium()
 
     def solve_equilibrium(self) -> None:
-        i = np.asarray([float(c["current"]) for c in self.cfg["coils"]], dtype=np.float64)
-        ip = float(self.cfg["physics"]["plasma_current_target"])
+        coils = cast(list[dict[str, Any]], self.cfg["coils"])
+        i = np.asarray([float(c["current"]) for c in coils], dtype=np.float64)
+        physics = cast(dict[str, Any], self.cfg["physics"])
+        ip = float(physics["plasma_current_target"])
         radial_drive = 0.95 * i[2] - 0.42 * i[1] + 0.16 * i[3]
         vertical_drive = 0.82 * i[3] - 0.68 * i[0] + 0.18 * i[2]
         divertor_drive_r = 0.74 * i[1] - 0.38 * i[0] + 0.12 * i[2]

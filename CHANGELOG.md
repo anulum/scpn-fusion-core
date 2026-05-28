@@ -81,11 +81,11 @@
 
 ### Added
 - Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.
-- Wave A scaffolding: `tools/generate_source_p0p1_issue_backlog.py` with tracked outputs (`docs/SOURCE_P0P1_ISSUE_BACKLOG.{md,json}`).
+- Wave A scaffolding: `tools/generate_source_p0p1_issue_backlog.py` with tracked outputs (`docs/internal/SOURCE_P0P1_ISSUE_BACKLOG.{md,json}`).
 - Wave A scaffolding: `tools/check_test_module_linkage.py` + allowlist policy file to block newly unlinked source modules.
 - Validation hardening: added CI `Benchmark Provenance Smoke` lane to enforce TORAX/SPARC benchmark artifact provenance fields (`backend`, `fallback_reason`, seed metadata) and publish artifacts.
 - Community hardening: added dedicated issue templates for real-data validation contributions and manuscript/claim review workflows.
-- Release hardening: added `docs/HARDENING_30_DAY_EXECUTION_PLAN.md` and `docs/V3_9_3_RELEASE_CHECKLIST.md` to enforce scope-focused v3.9.3 execution gates.
+- Release hardening: added `docs/internal/HARDENING_30_DAY_EXECUTION_PLAN.md` and `docs/internal/V3_9_3_RELEASE_CHECKLIST.md` to enforce scope-focused v3.9.3 execution gates.
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
 - Regression test for deprecated FNO-controller missing-weight fallback path.
 - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields.
@@ -94,7 +94,7 @@
 - Validation hardening: added `tools/fallback_budget_guard.py` + thresholds config and wired CI fallback-budget contract on TORAX/SPARC/FreeGS benchmark artifacts.
 - Runtime hardening: added `tools/runtime_parity_perf_guard.py` + thresholds config and new CI `Runtime Parity + Perf Gate` artifact contract.
 - Validation hardening: added `tools/real_shot_validation_guard.py` + thresholds config and CI guard summary artifact for strict real-shot coverage lanes.
-- Governance hardening: added `tools/generate_underdeveloped_scope_reports.py` and tracked split reports (`docs/UNDERDEVELOPED_SOURCE_REGISTER.md`, `docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md`, `docs/UNDERDEVELOPED_SCOPE_SUMMARY.json`).
+- Governance hardening: added `tools/generate_underdeveloped_scope_reports.py` and tracked split reports (`docs/internal/UNDERDEVELOPED_SOURCE_REGISTER.md`, `docs/internal/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md`, `docs/internal/UNDERDEVELOPED_SCOPE_SUMMARY.json`).
 - Session logging: moved detailed H12-H17 execution records to local-only coordination notes.
 - CI/runtime hardening: added `tools/deprecated_default_lane_guard.py` with regression tests and release-preflight integration.
 - Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts.
@@ -281,14 +281,14 @@
   - `tools/generate_underdeveloped_register.py` + generated `UNDERDEVELOPED_REGISTER.md`
   - `tools/claims_audit.py` + `validation/claims_manifest.json`
   - `tools/run_python_preflight.py` now includes claims-evidence audit check
-  - `docs/V3_6_MILESTONE_BOARD.md` with prioritized v3.6 top-20 hardening tasks
+  - `docs/internal/V3_6_MILESTONE_BOARD.md` with prioritized v3.6 top-20 hardening tasks
 - Split release vs research validation gates (A03):
   - Added gate profiles in `tools/run_python_preflight.py` (`--gate release|research|all`)
   - Added research-only pytest marker contract (`@pytest.mark.experimental`)
   - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`)
-  - Added gate matrix documentation in `docs/VALIDATION_GATE_MATRIX.md`
+- Added gate matrix documentation in `docs/internal/VALIDATION_GATE_MATRIX.md`
 - Added claims evidence map generation (A19):
-  - Added `tools/generate_claims_evidence_map.py` and generated `docs/CLAIMS_EVIDENCE_MAP.md`
+  - Added `tools/generate_claims_evidence_map.py` and generated `docs/internal/CLAIMS_EVIDENCE_MAP.md`
   - Added preflight drift check to keep map synchronized with `validation/claims_manifest.json`
 - Fixed CI claims-audit stability:
   - Replaced untracked RMSE dashboard artifact dependency in `validation/claims_manifest.json` with tracked evidence sources.
@@ -296,7 +296,7 @@
 - Added release docs version-consistency gate (A18):
   - `tests/test_version_metadata.py` now enforces current-version references in `README.md`, `RESULTS.md`, `VALIDATION.md`, and `CHANGELOG.md`.
 - Added release acceptance checklist gate (A20):
-  - Added `docs/RELEASE_ACCEPTANCE_CHECKLIST.md` and `tools/check_release_acceptance.py`.
+  - Added `docs/internal/RELEASE_ACCEPTANCE_CHECKLIST.md` and `tools/check_release_acceptance.py`.
   - Wired release checklist verification into Python preflight and tag publish workflow (`.github/workflows/publish.yml`).
 - Added disruption shot provenance manifest gate (A04):
   - Added `tools/generate_disruption_shot_manifest.py` and generated `validation/reference_data/diiid/disruption_shots_manifest.json`.
@@ -932,7 +932,7 @@ solver-method bridge regression tests.
 ### Validation and Documentation
 
 - Added ITER/SPARC regression reference data and validation tests.
-- Added GPU acceleration implementation roadmap (`docs/GPU_ACCELERATION_ROADMAP.md`).
+- Added GPU acceleration implementation roadmap (`docs/internal/GPU_ACCELERATION_ROADMAP.md`).
 - Added this changelog and CFF citation metadata.
 
 ### Versioning
