@@ -130,7 +130,8 @@ class TestFromOmas:
         class _DictLike(dict):
             """Dict that also supports .get()."""
 
-            pass
+            def get(self, key, default=None):  # type: ignore[no-untyped-def]
+                return super().get(key, default)
 
         p2d = _DictLike(
             {
@@ -141,7 +142,6 @@ class TestFromOmas:
         )
         gq = _DictLike({"ip": 15e6, "magnetic_axis": {"r": 6.2}})
         ts = _DictLike({"profiles_2d": [p2d], "global_quantities": gq, "time": 1.5})
-        ts.get = lambda k, d=None: ts[k] if k in ts else d  # noqa: SIM401
         ods = {"equilibrium": {"time_slice": [ts]}}
         return ods
 
