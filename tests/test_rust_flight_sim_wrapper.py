@@ -27,6 +27,8 @@ def test_run_exits_when_rust_extension_missing(monkeypatch: pytest.MonkeyPatch) 
     ) -> Any:
         if name == "scpn_fusion_rs":
             raise ImportError("forced-missing")
+        if fromlist is None:
+            return original_import(name, globals, locals, None, level)
         return original_import(name, globals, locals, tuple(fromlist), level)
 
     monkeypatch.setattr(builtins, "__import__", _import)

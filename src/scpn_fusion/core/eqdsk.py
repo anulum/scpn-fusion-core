@@ -267,6 +267,8 @@ def _apply_source_adapter(
 
     eq.ffprime = multiplier * eq.ffprime
     eq.pprime = multiplier * eq.pprime
+    eq.ffprime = np.round(eq.ffprime, decimals=11)
+    eq.pprime = np.round(eq.pprime, decimals=11)
     eq.source_convention = "canonical"
     eq.source_convention_adapter = convention
     eq.source_convention_adapter_pass = True
@@ -476,7 +478,7 @@ def write_geqdsk(eq: GEqdsk, path: Union[str, Path]) -> None:
     path = Path(path)
 
     def _fmt(val: float) -> str:
-        return f"{val:16.9e}"
+        return f"{float(val):24.17e}"
 
     def _write_array(f: "IO[str]", arr: NDArray[np.float64]) -> None:
         for i, v in enumerate(arr.ravel()):
