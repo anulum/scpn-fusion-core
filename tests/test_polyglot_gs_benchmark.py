@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import subprocess
+from typing import Literal
 
 import numpy as np
 
@@ -302,7 +303,7 @@ def test_go_benchmark_executes_compiled_solver_binary(monkeypatch) -> None:
         def __enter__(self) -> str:
             return "/tmp/scpn-fusion-go-benchmark"
 
-        def __exit__(self, exc_type, exc, traceback) -> bool:
+        def __exit__(self, exc_type, exc, traceback) -> Literal[False]:
             return False
 
     def fake_run(command, cwd, check, text, capture_output):
