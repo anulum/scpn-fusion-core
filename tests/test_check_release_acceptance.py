@@ -27,7 +27,7 @@ SPEC.loader.exec_module(release_acceptance)
 
 
 def test_repo_release_checklist_passes() -> None:
-    checklist = ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md"
+    checklist = ROOT / "docs" / "internal" / "RELEASE_ACCEPTANCE_CHECKLIST.md"
     errors = release_acceptance.check_release_acceptance(
         checklist,
         expected_version=None,
@@ -37,7 +37,9 @@ def test_repo_release_checklist_passes() -> None:
 
 
 def test_release_checklist_detects_unchecked_required_item(tmp_path: Path) -> None:
-    src = (ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md").read_text(encoding="utf-8")
+    src = (ROOT / "docs" / "internal" / "RELEASE_ACCEPTANCE_CHECKLIST.md").read_text(
+        encoding="utf-8",
+    )
     modified = re.sub(
         r"- \[x\] Release preflight",
         "- [ ] Release preflight",
@@ -56,7 +58,7 @@ def test_release_checklist_detects_unchecked_required_item(tmp_path: Path) -> No
 
 
 def test_release_checklist_detects_version_mismatch() -> None:
-    checklist = ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md"
+    checklist = ROOT / "docs" / "internal" / "RELEASE_ACCEPTANCE_CHECKLIST.md"
     errors = release_acceptance.check_release_acceptance(
         checklist,
         expected_version="v9.9.9",
