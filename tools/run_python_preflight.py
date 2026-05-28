@@ -207,7 +207,7 @@ def _build_release_checks(
                 ],
             )
         )
-    if not skip_release_delta_guard:
+    if not skip_release_delta_guard and _internal_files_available(_INTERNAL_READINESS_SUMMARY):
         checks.append(
             (
                 "Release delta non-regression guard",
