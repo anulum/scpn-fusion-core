@@ -520,7 +520,7 @@ class TestGsAutodiff:
                 0.667,
                 beta,
             )
-            return jnp.sum(psi)
+            return float(jnp.sum(psi))
 
         grad_val = float(jax.grad(obj)(jnp.float64(0.5)))
         assert np.isfinite(grad_val)
