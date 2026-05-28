@@ -15,6 +15,7 @@ local benchmark tasks can exercise a full discovery-style simulation path:
 * bisection-style tearing threshold search, and
 * automated visual output for inspection.
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft2, ifft2

@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — HPC Bridge
 """Trust-checked Python bridge to optional native HPC Grad-Shafranov solver."""
+
 from __future__ import annotations
 
 import ctypes

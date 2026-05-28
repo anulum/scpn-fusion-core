@@ -27,6 +27,7 @@ PathToken = Union[str, int]
 @dataclass(frozen=True)
 class RatioPath:
     """Path pair defining a numerator/denominator lookup in JSON payloads."""
+
     numerator: Tuple[PathToken, ...]
     denominator: Tuple[PathToken, ...]
 
@@ -34,6 +35,7 @@ class RatioPath:
 @dataclass(frozen=True)
 class RangeCheck:
     """Parsed normalized contract for one claim-range check."""
+
     check_id: str
     file: str
     path: Optional[Tuple[PathToken, ...]]

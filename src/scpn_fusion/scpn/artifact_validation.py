@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Artifact Validation Helpers
 """Strong input validation helpers for ``Artifact`` objects."""
+
 from __future__ import annotations
 
 import math

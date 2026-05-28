@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Sandpile Fusion Reactor
 """Toy SOC/turbulence sandpile model and HJB-style control demo contracts."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm

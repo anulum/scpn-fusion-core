@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Tomography
 """Tomographic reconstruction tools for synthetic diagnostic post-processing."""
+
 from __future__ import annotations
 
 from typing import Any

@@ -12,6 +12,7 @@ friendly. They are separated from solver state to keep numerical contracts
 (tridiagonal solve, diffusion assembly, fallback sanitisation) testable in
 isolation.
 """
+
 from __future__ import annotations
 
 import numpy as np

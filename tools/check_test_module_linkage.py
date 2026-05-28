@@ -25,6 +25,7 @@ DEFAULT_ALLOWLIST = REPO_ROOT / "tools" / "untested_module_allowlist.json"
 @dataclass(frozen=True)
 class TestLinkageIndex:
     """Cached linkage-derived view across production modules and test imports."""
+
     imports: set[str]
     test_module_stems: set[str]
     corpus: str

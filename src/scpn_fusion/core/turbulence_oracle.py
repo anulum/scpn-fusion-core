@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Turbulence Oracle
 """Turbulence oracle for reduced-order edge-chaos forecasting."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import rand

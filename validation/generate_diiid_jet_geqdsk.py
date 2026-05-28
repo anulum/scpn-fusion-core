@@ -217,6 +217,7 @@ def solovev_equilibrium(
 
 # ── Machine parameter sets ──────────────────────────────────────────
 
+
 def _shot_float(shot: Mapping[str, Any], key: str, default: float | None = None) -> float:
     if default is None:
         value = shot[key]
@@ -513,8 +514,8 @@ def generate_parameter_sweep(
                 "kappa": base_kappa,
                 "delta": base_delta,
                 "desc": f"{machine_name} Ip sweep {base_Ip_MA * ip_frac:.2f} MA",
-                }
-            )
+            }
+        )
     # Kappa sweep
     for i, k_frac in enumerate(np.linspace(0.9, 1.1, n_per_param)):
         shots.append(
@@ -527,8 +528,8 @@ def generate_parameter_sweep(
                 "kappa": base_kappa * k_frac,
                 "delta": base_delta,
                 "desc": f"{machine_name} kappa sweep {base_kappa * k_frac:.2f}",
-                }
-            )
+            }
+        )
     # Delta sweep
     for i, d_frac in enumerate(np.linspace(-0.3, 0.7, n_per_param)):
         shots.append(
@@ -541,8 +542,8 @@ def generate_parameter_sweep(
                 "kappa": base_kappa,
                 "delta": d_frac,
                 "desc": f"{machine_name} delta sweep {d_frac:.2f}",
-                }
-            )
+            }
+        )
     return shots
 
 

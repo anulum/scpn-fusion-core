@@ -75,9 +75,7 @@ def test_tungsten_radiation_rate_sanitizes_nonfinite_inputs() -> None:
 
 def test_aux_heating_sources_sanitize_nonfinite_density() -> None:
     dummy = _AuxHeatingDummy()
-    dummy.ne = np.array(
-        [np.nan, -1.0, 0.0, 2.0, 5.0, np.inf, 1.0, 3.0], dtype=np.float64
-    )
+    dummy.ne = np.array([np.nan, -1.0, 0.0, 2.0, 5.0, np.inf, 1.0, 3.0], dtype=np.float64)
     s_i, s_e = dummy._compute_aux_heating_sources(8.0)
 
     assert s_i.shape == (dummy.nr,)

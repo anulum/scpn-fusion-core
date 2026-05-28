@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Plasma Wall Interaction
 """Plasma-facing-component interaction utilities: sputtering and wall loading."""
+
 from __future__ import annotations
 
 import math

@@ -201,7 +201,7 @@ def test_fetch_mdsplus_profiles_with_mock(monkeypatch: pytest.MonkeyPatch) -> No
     import types
 
     mock_module = types.ModuleType("MDSplus")
-    setattr(mock_module, "Connection", _MockConnection)
+    mock_module.Connection = _MockConnection
     monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
 
     rows = archive.fetch_mdsplus_profiles(
@@ -231,7 +231,7 @@ def test_fetch_mdsplus_profiles_partial_failure(monkeypatch: pytest.MonkeyPatch)
             super().openTree(tree, shot)
 
     mock_module = types.ModuleType("MDSplus")
-    setattr(mock_module, "Connection", _FailOnSecondConnection)
+    mock_module.Connection = _FailOnSecondConnection
     monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
 
     rows = archive.fetch_mdsplus_profiles(
@@ -250,7 +250,7 @@ def test_poll_mdsplus_feed_with_mock(monkeypatch: pytest.MonkeyPatch) -> None:
     import types
 
     mock_module = types.ModuleType("MDSplus")
-    setattr(mock_module, "Connection", _MockConnection)
+    mock_module.Connection = _MockConnection
     monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
 
     rows, meta = archive.poll_mdsplus_feed(
@@ -278,7 +278,7 @@ def test_fetch_mdsplus_profiles_custom_node_map(monkeypatch: pytest.MonkeyPatch)
             return super().get(node)
 
     mock_module = types.ModuleType("MDSplus")
-    setattr(mock_module, "Connection", _CustomNodeConnection)
+    mock_module.Connection = _CustomNodeConnection
     monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
 
     rows = archive.fetch_mdsplus_profiles(
@@ -303,7 +303,7 @@ def test_fetch_mdsplus_profiles_disruption_flag(monkeypatch: pytest.MonkeyPatch)
             return super().get(node)
 
     mock_module = types.ModuleType("MDSplus")
-    setattr(mock_module, "Connection", _DisruptionConnection)
+    mock_module.Connection = _DisruptionConnection
     monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
 
     rows = archive.fetch_mdsplus_profiles(
@@ -321,7 +321,7 @@ def test_fetch_mdsplus_profiles_cmod_machine(monkeypatch: pytest.MonkeyPatch) ->
     import types
 
     mock_module = types.ModuleType("MDSplus")
-    setattr(mock_module, "Connection", _MockConnection)
+    mock_module.Connection = _MockConnection
     monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
 
     rows = archive.fetch_mdsplus_profiles(

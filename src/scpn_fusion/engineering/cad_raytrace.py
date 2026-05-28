@@ -23,6 +23,7 @@ IntArray = NDArray[np.int64]
 @dataclass(frozen=True)
 class CADLoadReport:
     """Structured result for reduced CAD heat-load reconstruction."""
+
     face_loading_w_m2: FloatArray
     peak_loading_w_m2: float
     mean_loading_w_m2: float

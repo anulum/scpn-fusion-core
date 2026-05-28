@@ -126,9 +126,7 @@ class DashboardGenerator:
             ax.plot(path_r, path_z, ".", ms=0.8, alpha=0.35)
 
         # High-fidelity contour proxy for axisymmetric topology.
-        ax.contour(
-            self.kernel.RR, self.kernel.ZZ, self.kernel.Psi, levels=50, cmap="nipy_spectral"
-        )
+        ax.contour(self.kernel.RR, self.kernel.ZZ, self.kernel.Psi, levels=50, cmap="nipy_spectral")
         ax.set_title("Magnetic Topology (Flux Surfaces)")
         ax.set_xlabel("R (m)")
         ax.set_ylabel("Z (m)")

@@ -11,6 +11,7 @@ This module defines a compact deterministic model for sputtering yields and
 erosion-rate estimates. The routines are designed for fast sweeps and
 workflow-level guardrail checks in the native nuclear analysis stack.
 """
+
 from __future__ import annotations
 
 from typing import Any, Optional

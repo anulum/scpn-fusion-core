@@ -113,7 +113,10 @@ def test_main_preserves_existing_pythonpath_and_args(
     ]
     assert recorded["check"] is False
     assert recorded["timeout"] == module.DEFAULT_MYPY_TIMEOUT_SECONDS
-    assert cast(dict[str, str], recorded["env"]).get("PYTHONPATH") == f"{expected_src}{os.pathsep}existing_path"
+    assert (
+        cast(dict[str, str], recorded["env"]).get("PYTHONPATH")
+        == f"{expected_src}{os.pathsep}existing_path"
+    )
 
 
 def test_main_returns_timeout_exit_code(monkeypatch):

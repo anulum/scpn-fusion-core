@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — MHD Sawtooth
 """Sawtooth instability toy solver and diagnostic visualizations."""
+
 from __future__ import annotations
 
 import logging

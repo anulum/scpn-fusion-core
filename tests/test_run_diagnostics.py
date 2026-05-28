@@ -70,9 +70,7 @@ class _DummyTomography:
             dtype=np.float64,
         )
 
-    def plot_reconstruction(
-        self, ground_truth: np.ndarray, reconstruction: np.ndarray
-    ) -> Figure:
+    def plot_reconstruction(self, ground_truth: np.ndarray, reconstruction: np.ndarray) -> Figure:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
         ax1.imshow(ground_truth, origin="lower", cmap="hot")
         ax2.imshow(reconstruction, origin="lower", cmap="hot")

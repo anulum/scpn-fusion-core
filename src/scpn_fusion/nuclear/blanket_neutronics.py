@@ -16,6 +16,7 @@ workflows and tests:
 The implementation intentionally omits Monte-Carlo detail and is suitable for
 fast iteration, benchmarking, and regression checks in the native solver pipeline.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

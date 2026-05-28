@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Neural Turbulence Surrogate (QLKNN-class)
 """Neural-turbulence surrogate utilities for QLKNN-style transport prediction."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

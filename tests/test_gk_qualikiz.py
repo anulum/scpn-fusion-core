@@ -36,9 +36,7 @@ class TestTryQualikizPython:
 
     def test_returns_output_with_mock_module(self, default_params, monkeypatch):
         mock_mod = types.SimpleNamespace()
-        mock_mod.run = MagicMock(
-            return_value={"chi_i": 2.5, "chi_e": 1.8, "D_e": 0.3}
-        )
+        mock_mod.run = MagicMock(return_value={"chi_i": 2.5, "chi_e": 1.8, "D_e": 0.3})
         monkeypatch.setitem(sys.modules, "qualikiz_tools", mock_mod)
         try:
             result = _try_qualikiz_python(default_params)
@@ -124,9 +122,7 @@ class TestQuaLiKizSolver:
 
     def test_run_with_python_api(self, tmp_path, default_params, monkeypatch):
         mock_mod = types.SimpleNamespace()
-        mock_mod.run = MagicMock(
-            return_value={"chi_i": 3.0, "chi_e": 2.0, "D_e": 0.5}
-        )
+        mock_mod.run = MagicMock(return_value={"chi_i": 3.0, "chi_e": 2.0, "D_e": 0.5})
         monkeypatch.setitem(sys.modules, "qualikiz_tools", mock_mod)
         try:
             solver = QuaLiKizSolver(work_dir=tmp_path)

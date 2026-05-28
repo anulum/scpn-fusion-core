@@ -423,9 +423,7 @@ def load_disruption_data_source_contract(disruption_dir: Path) -> dict[str, Any]
         "synthetic" in source_type.lower() for source_type in source_types
     )
     shot_count = payload.get("shot_count")
-    manifest_shot_count = (
-        int(shot_count) if isinstance(shot_count, (int, float)) else len(shots)
-    )
+    manifest_shot_count = int(shot_count) if isinstance(shot_count, (int, float)) else len(shots)
 
     summary.update(
         {

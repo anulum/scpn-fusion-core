@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Integrated Control Benchmark Suite
 """Benchmark utilities for basic controller scenarios and mock-equilibrium trajectories."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -21,6 +22,7 @@ import numpy as np
 @dataclass
 class BenchmarkScenario:
     """Container for a single benchmark scenario definition."""
+
     name: str
     env_config: dict[str, Any]
     reference_trajectory: Callable[[float], np.ndarray]
@@ -31,6 +33,7 @@ class BenchmarkScenario:
 
 class ControllerWrapper(Protocol):
     """Protocol for controllers accepted by the benchmark runner."""
+
     def reset(self) -> None:
         """Reset controller internal state."""
         ...
@@ -47,6 +50,7 @@ class ControllerWrapper(Protocol):
 @dataclass
 class BenchmarkResults:
     """Flat dataclass with aggregate metrics emitted by a controller-scenario run."""
+
     controller_name: str
     scenario_name: str
     iae: float
@@ -61,6 +65,7 @@ class BenchmarkResults:
 
 class BenchmarkRunner:
     """Execute a set of controllers against one or more benchmark scenarios."""
+
     def __init__(self, controllers: list[ControllerWrapper], scenarios: list[BenchmarkScenario]):
         """Create a runner for controller and scenario lists."""
         self.controllers = controllers
@@ -225,6 +230,7 @@ class BenchmarkRunner:
 
 def setpoint_tracking() -> BenchmarkScenario:
     """Construct the default setpoint-tracking validation scenario."""
+
     # Step from 2.0 to 2.5 at t=5s
     def ref(t):
         return 2.5 if t >= 5.0 else 2.0
@@ -243,6 +249,7 @@ def setpoint_tracking() -> BenchmarkScenario:
 
 class PIDWrapper:
     """Minimal PID controller wrapper implementing the benchmark protocol."""
+
     def __init__(self, Kp: float = 1.0, Ki: float = 0.5):
         self.Kp = Kp
         self.Ki = Ki

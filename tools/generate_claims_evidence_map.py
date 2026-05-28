@@ -24,6 +24,7 @@ DEFAULT_OUTPUT = REPO_ROOT / "docs" / "internal" / "CLAIMS_EVIDENCE_MAP.md"
 @dataclass(frozen=True)
 class EvidencePattern:
     """Single evidence-pattern tuple linking a file and regex pattern."""
+
     file: str
     pattern: str
 
@@ -31,6 +32,7 @@ class EvidencePattern:
 @dataclass(frozen=True)
 class ClaimSpec:
     """Parsed claim contract extracted from the claims manifest."""
+
     claim_id: str
     source_file: str
     source_pattern: str

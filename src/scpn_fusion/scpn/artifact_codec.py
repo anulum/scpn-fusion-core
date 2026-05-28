@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Artifact Compact Codec Helpers
 """Compact codec helpers for encoding/decoding 64-bit packed payloads."""
+
 from __future__ import annotations
 
 import base64

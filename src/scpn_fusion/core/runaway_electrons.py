@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Relativistic Runaway Electron Dynamics
 """Runaway electron utility contracts for DREAM-style reduced-order workflows."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -23,6 +24,7 @@ EPS_0 = 8.8541878128e-12  # F/m
 @dataclass
 class RunawayParams:
     """Scalar plasma parameters used by reduced-order runaway balances."""
+
     ne_20: float  # electron density [10^20 m^-3]
     Te_keV: float  # electron temperature [keV]
     E_par: float  # parallel electric field [V/m]

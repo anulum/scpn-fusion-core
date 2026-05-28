@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Callable, cast
 
 import numpy as np
 import pytest

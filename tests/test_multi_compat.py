@@ -84,7 +84,7 @@ def test_dispatch_fallback_survives_telemetry_failure(
     def _raise(*_args, **_kwargs):
         raise RuntimeError("telemetry unavailable")
 
-    setattr(fake_mod, "record_fallback_event", _raise)
+    fake_mod.record_fallback_event = _raise
     monkeypatch.setitem(sys.modules, "scpn_fusion.fallback_telemetry", fake_mod)
 
     multi.register_kernel(kernel_name, multi.BackendTier.MOJO, lambda: "mojo")

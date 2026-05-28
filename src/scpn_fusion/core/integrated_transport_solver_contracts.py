@@ -11,6 +11,7 @@ The helpers in this module validate caller-facing scalar/profile inputs before t
 reach computational kernels. They are intentionally conservative: malformed inputs
 fail fast with explicit diagnostics instead of propagating silent NaNs.
 """
+
 from __future__ import annotations
 
 from typing import Any

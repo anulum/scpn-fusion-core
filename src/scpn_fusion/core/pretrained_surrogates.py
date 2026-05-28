@@ -115,6 +115,7 @@ class PretrainedMLPSurrogate:
     :func:`numpy.savez` serialization and later reloading without external ML
     dependencies.
     """
+
     feature_mean: FloatArray
     feature_std: FloatArray
     w1: FloatArray

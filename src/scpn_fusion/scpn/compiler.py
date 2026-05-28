@@ -111,7 +111,6 @@ def _encode_weight_matrix_packed(
     packed[:, :, :] = np.sum(bits << shifts, axis=-1, dtype=np.uint64)
     return packed
 
-
     # ── CompiledNet ──────────────────────────────────────────────────────────────
 
 

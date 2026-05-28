@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Pellet Injection Physics
 """Pellet injection and fueling utilities for ELM pacing and edge density control."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,6 +17,7 @@ import numpy as np
 @dataclass
 class PelletParams:
     """Input parameters describing a single pellet."""
+
     r_p_mm: float  # [mm]
     v_p_m_s: float  # [m/s]
     M_p: float = 2.0
@@ -26,6 +28,7 @@ class PelletParams:
 @dataclass
 class PelletResult:
     """Result of a pellet trajectory simulation."""
+
     penetration_depth: float
     deposition_profile: np.ndarray
     total_particles: float
@@ -35,6 +38,7 @@ class PelletResult:
 @dataclass
 class PelletInjectionCommand:
     """Scheduled pellet command emitted by fueling logic."""
+
     inject_time: float
     pellet_params: PelletParams
 

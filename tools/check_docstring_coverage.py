@@ -16,7 +16,7 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, cast, Iterable, Sequence
+from typing import cast, Iterable, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

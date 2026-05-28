@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Run Diagnostics
 """CLI and API entrypoint for synthetic diagnostics and tomography demo runs."""
+
 from __future__ import annotations
 
 import argparse

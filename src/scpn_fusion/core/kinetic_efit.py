@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Kinetic Equilibrium Reconstruction (Kinetic EFIT)
 """Kinetic-equilibrium reconstruction with anisotropic fast-ion pressure coupling."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -67,6 +68,7 @@ class FastIonPressure:
 @dataclass
 class KineticConstraints:
     """Container for kinetic profile constraints used in reconstruction."""
+
     Te_points: list[tuple[float, float, float]]  # (R, Z, Te_keV)
     ne_points: list[tuple[float, float, float]]  # (R, Z, ne_19)
     Ti_points: list[tuple[float, float, float]]  # (R, Z, Ti_keV)
@@ -76,6 +78,7 @@ class KineticConstraints:
 @dataclass
 class KineticReconstructionResult(ReconstructionResult):
     """Reconstruction result carrying thermal/kinetic pressure consistency metrics."""
+
     p_kinetic: np.ndarray
     p_equilibrium: np.ndarray
     pressure_consistency: float
@@ -112,6 +115,7 @@ def mse_pitch_angle(B_R: float, B_Z: float, B_phi: float, v_beam: float, R: floa
 
 class KineticEFIT(RealtimeEFIT):
     """Realtime EFIT extension that fuses kinetic constraints and fast-ion pressure."""
+
     def __init__(
         self,
         diagnostics: MagneticDiagnostics,

@@ -45,6 +45,7 @@ REL_RMSE_THRESHOLD = 0.25
 
 class TransportCase(NamedTuple):
     """Container for a single synthetic TORAX-like transport comparison case."""
+
     name: str
     R0: float  # major radius [m]
     a: float  # minor radius [m]

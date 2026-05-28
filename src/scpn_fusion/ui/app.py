@@ -199,7 +199,9 @@ def main() -> None:
 
                 with st.spinner("Loading shot data..."):
                     try:
-                        shot_data = load_disruption_shot(selected_shot, disruption_dir=disruption_dir)
+                        shot_data = load_disruption_shot(
+                            selected_shot, disruption_dir=disruption_dir
+                        )
                     except Exception as exc:  # pragma: no cover - defensive UI path
                         st.error(f"Failed to load shot: {exc}")
                         st.stop()
@@ -212,7 +214,10 @@ def main() -> None:
                     st.subheader("Shot Metadata")
                     mc1, mc2, mc3 = st.columns(3)
                     mc1.metric("Shot Name", selected_shot)
-                    mc2.metric("Disruption Type", disruption_type if is_disruption else "Safe (no disruption)")
+                    mc2.metric(
+                        "Disruption Type",
+                        disruption_type if is_disruption else "Safe (no disruption)",
+                    )
                     mc3.metric("Is Disruption", "Yes" if is_disruption else "No")
 
                     disruption_time_s = (

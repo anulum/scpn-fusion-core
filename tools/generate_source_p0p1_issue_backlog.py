@@ -29,6 +29,7 @@ COVERAGE_THRESHOLDS_PATH = REPO_ROOT / "tools" / "coverage_guard_thresholds.json
 @dataclass(frozen=True)
 class SourceIssue:
     """Immutable container for a single source P0/P1 backlog row."""
+
     file_path: str
     domain: str
     owner: str

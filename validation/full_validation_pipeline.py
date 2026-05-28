@@ -75,6 +75,7 @@ def require_experimental_opt_in(
 @dataclass(frozen=True)
 class EmpiricalScenario:
     """Bundle of inputs and annotations for one empirical disruption scenario."""
+
     machine: str
     shot: int
     time_ms: float
@@ -95,6 +96,7 @@ class EmpiricalScenario:
 @dataclass(frozen=True)
 class ScenarioMetric:
     """Summary metric record for one controller on one validation scenario."""
+
     controller: str
     machine: str
     shot: int

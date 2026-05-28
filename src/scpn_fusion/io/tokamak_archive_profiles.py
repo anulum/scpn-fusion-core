@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Tokamak Archive Profile Utilities
 """Helpers for synthetic and reference tokamak profile construction."""
+
 from __future__ import annotations
 
 import math
@@ -58,6 +59,7 @@ def default_synthetic_dir() -> Path:
 @dataclass(frozen=True)
 class TokamakProfile:
     """Immutable profile record carrying tokamak observables and trace fields."""
+
     machine: str
     shot: int
     time_ms: float

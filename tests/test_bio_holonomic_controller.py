@@ -39,7 +39,7 @@ class TestBioTelemetrySnapshot:
             galvanic_skin_response=3.2,
         )
         with pytest.raises(AttributeError):
-            setattr(snap, "heart_rate_bpm", 80.0)
+            snap.heart_rate_bpm = 80.0
 
     def test_equality(self):
         a = BioTelemetrySnapshot(72.0, 0.65, 3.2)

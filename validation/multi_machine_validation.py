@@ -16,6 +16,7 @@ Synthetic multi-machine validation smoke campaign.
 Builds a small collection of machine profiles and generates lightweight, randomized
 validation metrics for equilibrium, transport, current/energy closure, and control diagnostics.
 """
+
 from __future__ import annotations
 
 import dataclasses

@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[0].parent / "src"))
 _RUST_EXTENSION_IMPORT: ModuleType | None = None
 try:
     import scpn_fusion_rs as _rust_extension_module_import
+
     _RUST_EXTENSION_IMPORT = _rust_extension_module_import
     HAS_RUST = True
 except ImportError:

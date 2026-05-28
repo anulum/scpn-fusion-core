@@ -13,7 +13,6 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
-from typing import Any
 
 from click.testing import CliRunner
 import pytest

@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Structured Logging Configuration
 """Structured logging helpers for SCPN Fusion Core."""
+
 from __future__ import annotations
 
 import json

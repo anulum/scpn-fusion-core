@@ -23,6 +23,7 @@ ELECTRON_RADIUS_M = 2.8179403262e-15
 @dataclass(frozen=True)
 class ForwardDiagnosticChannels:
     """Container with forward-model synthetic diagnostic channels."""
+
     interferometer_phase_rad: FloatArray
     neutron_count_rate_hz: float
     thomson_scattering_voltage_v: FloatArray

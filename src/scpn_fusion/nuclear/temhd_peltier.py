@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — TEMHD Peltier
 """TEMHD-stabilized divetor flow surrogate for reduced-order thermal studies."""
+
 from __future__ import annotations
 
 from typing import Any, Optional

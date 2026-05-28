@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Synthetic Sensors
 """Synthetic diagnostics surface generating magnetics, bolometer and interferometry signals."""
+
 from __future__ import annotations
 
 from typing import Any, Optional

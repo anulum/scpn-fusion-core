@@ -336,7 +336,9 @@ def test_run_freegs_case_retries_legacy_isoflux_shape_on_unpack_error(
     def _control_constrain(*, xpoints: object, isoflux: object) -> SimpleNamespace:
         return SimpleNamespace(xpoints=xpoints, isoflux=isoflux)
 
-    def _solve(_eq: object, _profiles: object, constrain: SimpleNamespace, **_kwargs: object) -> None:
+    def _solve(
+        _eq: object, _profiles: object, constrain: SimpleNamespace, **_kwargs: object
+    ) -> None:
         nonlocal solve_calls
         solve_calls += 1
         first_tuple = constrain.isoflux[0]

@@ -26,6 +26,7 @@ DEFAULT_THRESHOLDS = REPO_ROOT / "tools" / "coverage_guard_thresholds.json"
 @dataclass(frozen=True)
 class CoverageSummary:
     """Parsed coverage summary extracted from Cobertura XML for gating decisions."""
+
     line_rate_pct: float
     branch_rate_pct: float | None
     file_line_rate_pct: dict[str, float]

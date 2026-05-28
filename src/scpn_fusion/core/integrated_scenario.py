@@ -11,6 +11,7 @@ This module defines a small, deterministic scenario surface that composes
 transport, current diffusion, sawtooth and NTM dynamics, and a SOL surrogate into
 one public API for time-dependent discharge-like simulations.
 """
+
 from __future__ import annotations
 
 import json

@@ -40,7 +40,6 @@ def test_visualize_bridge_saves_plot(monkeypatch) -> None:
     bridge.kernel = _DummyKernel()
     saved: list[str] = []
 
-
     class _DummyAxes:
         def contour(self, *args: object, **kwargs: object) -> None:
             return None

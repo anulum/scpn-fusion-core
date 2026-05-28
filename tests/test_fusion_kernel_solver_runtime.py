@@ -118,7 +118,6 @@ def test_solve_newton_linear_system_identity_operator() -> None:
     assert delta.shape == (n,)
     assert np.all(np.isfinite(delta))
 
-
     def test_solve_via_rust_multigrid_preserve_state_forces_sor_fallback() -> None:
         k = _KernelStub()
         result = cast(dict[str, Any], solve_via_rust_multigrid(k, preserve_initial_state=True))

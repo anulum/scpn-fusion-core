@@ -15,6 +15,7 @@ legacy compatibility symbols required by downstream callers.
 Docstring scope in this module is intentionally high-level because most detailed
 numerical contracts are documented in the extracted model/runtime mixins.
 """
+
 from __future__ import annotations
 
 import json

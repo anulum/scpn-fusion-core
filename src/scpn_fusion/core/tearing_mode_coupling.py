@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Coupled Tearing Mode Dynamics
 """Coupled tearing-mode and NTM trigger chain contracts for reduced-order stability studies."""
+
 from __future__ import annotations
 
 import math
@@ -19,6 +20,7 @@ from scpn_fusion.core.sawtooth import SawtoothCycler
 @dataclass
 class CoupledResult:
     """Time-series result container from coupled island-width evolution."""
+
     w1_trace: np.ndarray
     w2_trace: np.ndarray
     chirikov_trace: np.ndarray
@@ -52,6 +54,7 @@ class ChirikovOverlap:
 
 class CoupledTearingModes:
     """Coupled-mode reduced MRE engine for two interacting islands."""
+
     def __init__(
         self,
         mode1: tuple[int, int],
@@ -222,6 +225,7 @@ class CoupledTearingModes:
 
 class SawtoothNTMSeeding:
     """Sawtooth-NTM seeding heuristics."""
+
     def __init__(self, sawtooth_cycler: SawtoothCycler | None):
         self.st = sawtooth_cycler
 
@@ -241,12 +245,14 @@ class SawtoothNTMSeeding:
 @dataclass
 class DisruptionPath:
     """Result type for disruption forecast scenario runs."""
+
     warning_time_ms: float
     avoidable: bool
 
 
 class DisruptionTriggerAssessment:
     """Scenario assessment for coupled tearing-mode disruption with/without control."""
+
     def __init__(self, coupled: CoupledTearingModes):
         self.coupled = coupled
 
@@ -293,6 +299,7 @@ class DisruptionTriggerAssessment:
 
 class TearingModeStabilityMap:
     """Parameter scan helper for coupled tearing-mode disruption risk mapping."""
+
     def __init__(
         self,
         *,

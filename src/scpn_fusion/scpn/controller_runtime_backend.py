@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Neuro-Symbolic Runtime Backend Probe
 """Runtime backend probing helpers for optional Rust acceleration."""
+
 from __future__ import annotations
 
 from typing import Callable, Optional

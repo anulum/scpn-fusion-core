@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Alpha Particle Guiding-Center Orbit Following
 """Guiding-center orbit tools for alpha particle confinement assessment."""
+
 from __future__ import annotations
 
 import math

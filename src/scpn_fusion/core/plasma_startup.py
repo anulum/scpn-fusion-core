@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Plasma Startup Sequence
 """Plasma startup primitives: Paschen breakdown, avalanche, burn-through, and ramp control."""
+
 from __future__ import annotations
 
 import math
@@ -19,6 +20,7 @@ from scpn_fusion.core.impurity_transport import CoolingCurve
 
 class PaschenBreakdown:
     """Evaluate Paschen break-down thresholds for loop-triggered startup."""
+
     def __init__(self, gas: str = "D2", R0: float = 6.2, a: float = 2.0):
         self.gas = gas
         self.R0 = R0
@@ -63,6 +65,7 @@ class PaschenBreakdown:
 @dataclass
 class AvalancheResult:
     """Avalanche trajectory outputs."""
+
     ne_trace: np.ndarray
     Te_trace: np.ndarray
     time_to_full_ionization_ms: float
@@ -70,6 +73,7 @@ class AvalancheResult:
 
 class TownsendAvalanche:
     """Simple Townsend avalanche model."""
+
     def __init__(self, V_loop: float, p_Pa: float, R0: float, a: float):
         self.V_loop = V_loop
         self.p_Pa = p_Pa
@@ -135,6 +139,7 @@ class TownsendAvalanche:
 @dataclass
 class BurnThroughResult:
     """Burn-through integration outputs."""
+
     Te_trace: np.ndarray
     success: bool
     time_to_burn_through_ms: float
@@ -142,6 +147,7 @@ class BurnThroughResult:
 
 class BurnThrough:
     """Burn-through evolution that balances ohmic heating against radiation."""
+
     def __init__(self, R0: float, a: float, B0: float, V_loop: float):
         self.R0 = R0
         self.a = a
@@ -247,6 +253,7 @@ class BurnThrough:
 @dataclass
 class StartupResult:
     """Startup outcome summary."""
+
     breakdown_time_ms: float
     burn_through_time_ms: float
     Ip_at_100ms_kA: float
@@ -256,6 +263,7 @@ class StartupResult:
 
 class StartupSequence:
     """Coarse startup sequence driver."""
+
     def __init__(
         self,
         R0: float,
@@ -299,6 +307,7 @@ class StartupSequence:
 
 class StartupPhase(Enum):
     """Phase states for the startup finite-state controller."""
+
     GAS_PUFF = auto()
     BREAKDOWN = auto()
     BURN_THROUGH = auto()
@@ -308,6 +317,7 @@ class StartupPhase(Enum):
 @dataclass
 class StartupCommand:
     """Command output for startup phase controller."""
+
     V_loop: float
     gas_puff_rate: float
     phase: StartupPhase
@@ -315,6 +325,7 @@ class StartupCommand:
 
 class StartupController:
     """Finite-state startup controller for early vacuum/discharge phases."""
+
     def __init__(self, V_loop_max: float, gas_puff_max: float):
         self.V_loop_max = V_loop_max
         self.gas_puff_max = gas_puff_max

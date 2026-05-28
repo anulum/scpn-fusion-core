@@ -19,6 +19,7 @@ The implementation is a surrogate model used for contract testing, workflow
 prototyping, and offline benchmarking where deterministic performance is
 preferred over first-principles fidelity.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

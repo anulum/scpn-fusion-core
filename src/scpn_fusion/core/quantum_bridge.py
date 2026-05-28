@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Quantum Bridge
 """Runtime integration wrapper for the optional local Quantum Lab scripts."""
+
 from __future__ import annotations
 
 import math

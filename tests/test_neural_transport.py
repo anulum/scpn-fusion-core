@@ -123,7 +123,6 @@ def _save_neural_weights(
     np.savez(str(path), **cast(dict[str, Any], weights))
 
 
-
 class TestMLPForward:
     @staticmethod
     def _make_identity_weights():

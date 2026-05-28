@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Error Field Amplification and Locked Mode Chain
 """Error-field and locked-mode chain models used for disruption-risk workflows."""
+
 from __future__ import annotations
 
 import math
@@ -16,6 +17,7 @@ import numpy as np
 
 class ErrorFieldSpectrum:
     """Represent resonant error-field harmonics and alignment coupling."""
+
     def __init__(
         self,
         B0: float,
@@ -86,6 +88,7 @@ class ErrorFieldSpectrum:
 
 class ResonantFieldAmplification:
     """Model error-field amplification between finite-wall and no-wall limits."""
+
     def __init__(self, beta_N: float, beta_N_nowall: float):
         if not np.isfinite(beta_N) or beta_N < 0.0:
             raise ValueError("beta_N must be finite and non-negative")
@@ -108,6 +111,7 @@ class ResonantFieldAmplification:
 @dataclass
 class RotationEvolution:
     """Frozen state captured from rotation-evolution solve."""
+
     omega_trace: np.ndarray
     locked: bool
     lock_time: float
@@ -115,6 +119,7 @@ class RotationEvolution:
 
 class ModeLocking:
     """Represent a reduced-order rotation damping model with locking threshold."""
+
     def __init__(
         self,
         R0: float,
@@ -226,6 +231,7 @@ class ModeLocking:
 @dataclass
 class IslandGrowth:
     """Store island-growth history and overlap diagnostics."""
+
     w_trace: np.ndarray
     overlap_time: float
     stochastic: bool
@@ -233,6 +239,7 @@ class IslandGrowth:
 
 class LockedModeIsland:
     """Simple Rutherford island growth model."""
+
     def __init__(self, r_s: float, m: int, n: int, a: float, R0: float, delta_prime: float):
         self.r_s = r_s
         self.m = m
@@ -274,6 +281,7 @@ class LockedModeIsland:
 @dataclass
 class ChainResult:
     """Output contract for the error-field to disruption chain."""
+
     lock_time: float
     island_width_at_tq: float
     tq_trigger_time: float
@@ -283,6 +291,7 @@ class ChainResult:
 
 class ErrorFieldToDisruptionChain:
     """Chain orchestration from error field through locking and disruption risk."""
+
     def __init__(self, config: dict[str, float]):
         self.config = config
 

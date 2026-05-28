@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — RF Heating
 """RF heating workflows with simplified ICRH/ECRH ray-tracing examples."""
+
 from __future__ import annotations
 
 import numpy as np

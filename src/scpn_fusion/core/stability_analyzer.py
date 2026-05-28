@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Stability Analyzer
 """Reduced-order equilibrium force and MHD stability diagnostics."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os

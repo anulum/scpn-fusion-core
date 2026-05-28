@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — 3D MHD Equilibrium (VMEC-lite Fixed-Boundary)
 """Lightweight VMEC-inspired fixed-boundary equilibrium helpers."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,6 +17,7 @@ import numpy as np
 @dataclass
 class VMECResult:
     """Container for a reduced-order VMEC-like equilibrium state."""
+
     R_mn: np.ndarray
     Z_mn: np.ndarray
     B_mn: np.ndarray
@@ -27,6 +29,7 @@ class VMECResult:
 
 class SpectralBasis:
     """Fourier basis over poloidal/toroidal mode pairs."""
+
     def __init__(self, m_pol: int, n_tor: int, n_fp: int):
         if not isinstance(m_pol, int) or m_pol < 0:
             raise ValueError("m_pol must be an integer >= 0.")

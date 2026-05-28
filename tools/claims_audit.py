@@ -26,6 +26,7 @@ _GIT_LS_FILES_TIMEOUT_SECONDS = 5.0
 @dataclass(frozen=True)
 class EvidencePattern:
     """Evidence filename and pattern pair required by a claim."""
+
     file: str
     pattern: str
 
@@ -33,6 +34,7 @@ class EvidencePattern:
 @dataclass(frozen=True)
 class ClaimSpec:
     """Parsed claim definition and linked evidence spec."""
+
     claim_id: str
     source_file: str
     source_pattern: str

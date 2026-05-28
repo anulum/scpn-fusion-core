@@ -353,9 +353,7 @@ def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(
-        cmd: list[str], check: bool, timeout: float
-    ) -> None:
+    def _fake_run(cmd: list[str], check: bool, timeout: float) -> None:
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
@@ -381,9 +379,7 @@ def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.M
 def test_compile_cpp_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(
-        cmd: list[str], check: bool, timeout: float
-    ) -> None:
+    def _fake_run(cmd: list[str], check: bool, timeout: float) -> None:
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
