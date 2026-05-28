@@ -64,6 +64,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 import numpy as np
+from numpy.typing import NDArray
 
 # ---------------------------------------------------------------------------
 # Path setup -- make ``src/`` importable when running from repo root
@@ -243,7 +244,7 @@ class LQRRobustController:
         Q = np.diag([10000.0, 10.0])
         R = np.array([[0.01]])
         X = solve_continuous_are(self.A, self.B, Q, R)
-        self.K = np.linalg.inv(R) @ self.B.T @ X
+        self.K: NDArray[Any] = np.linalg.inv(R) @ self.B.T @ X
 
         A_cl = self.A - self.B @ self.K
         cl_eigs = np.linalg.eigvals(A_cl)
@@ -264,8 +265,8 @@ class LQRRobustController:
             ]
         )
 
-        self.n = 2
-        self.x_hat = np.zeros(2)
+        self.n: int = 2
+        self.x_hat: NDArray[Any] = np.zeros(2, dtype=float)
         self._is_stable = bool(np.all(np.real(cl_eigs) < 0))
 
     def step(self, error: float, dt: float) -> float:
@@ -277,7 +278,7 @@ class LQRRobustController:
 
         u = float((-self.K @ self.x_hat).flat[0])
 
-        dx_hat = (
+        dx_hat: NDArray[Any] = (
             self.A @ self.x_hat
             + self.B.flatten() * u
             + self.L_obs.flatten() * float(innovation.flat[0])
@@ -336,7 +337,7 @@ class MPCController:
         self.Q = np.diag([float(q_weight), 1.0])
         self.R = np.array([[float(r_weight)]])
 
-        self._K: Optional[np.ndarray] = None
+        self._K: Optional[NDArray[Any]] = None
         self._cached_dt: Optional[float] = None
         self._prev_error = 0.0
         self._first_step = True
@@ -368,6 +369,9 @@ class MPCController:
         if self._cached_dt != dt_f:
             self._recompute_gain(dt_f)
 
+        K = self._K
+        if K is None:
+            raise RuntimeError("MPC gain matrix not initialized")
         if self._first_step:
             de_dt = 0.0
             self._first_step = False
@@ -376,8 +380,8 @@ class MPCController:
         self._prev_error = e
 
         # Map error → plant state: z = -error, dz/dt = -de/dt
-        x_hat = np.array([-e, -de_dt])
-        u_raw = float((-self._K @ x_hat).item())
+        x_hat: NDArray[Any] = np.array([-e, -de_dt], dtype=float)
+        u_raw = float((-K @ x_hat).item())
         return float(np.clip(u_raw, -self.u_max, self.u_max))
 
     def reset(self) -> None:
@@ -463,13 +467,13 @@ class LinearPlant:
                 [gamma_growth**2, -10.0],
             ]
         )
-        self.B = np.array([0.0, 1.0])
-        self.B_d = np.array([0.0, 0.5])
-        self.x = np.zeros(2)
+        self.B: NDArray[Any] = np.array([0.0, 1.0], dtype=float)
+        self.B_d: NDArray[Any] = np.array([0.0, 0.5], dtype=float)
+        self.x: NDArray[Any] = np.zeros(2, dtype=float)
 
     def step(self, u: float, d: float, dt: float) -> float:
         """Advance one timestep. Returns measured position z."""
-        dx = self.A @ self.x + self.B * u + self.B_d * d
+        dx: NDArray[Any] = self.A @ self.x + self.B * u + self.B_d * d
         self.x = self.x + dx * dt
         return float(self.x[0])
 

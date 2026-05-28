@@ -10,6 +10,8 @@
 from __future__ import annotations
 
 import numpy as np
+from typing import Any
+from numpy.typing import NDArray
 
 from scpn_fusion.core.integrated_transport_solver_runtime_physics import (
     TransportSolverRuntimePhysicsMixin,
@@ -25,7 +27,7 @@ class _AuxHeatingDummy(TransportSolverRuntimePhysicsMixin):
         self.aux_heating_profile_width = 0.35
         self.aux_heating_electron_fraction = 0.4
         self.multi_ion = True
-        self.ne = np.full(self.nr, 5.0, dtype=np.float64)
+        self.ne: NDArray[np.floating[Any]] = np.full(self.nr, 5.0, dtype=np.float64)
         self._last_aux_heating_balance: dict[str, float] = {}
 
 
@@ -73,7 +75,9 @@ def test_tungsten_radiation_rate_sanitizes_nonfinite_inputs() -> None:
 
 def test_aux_heating_sources_sanitize_nonfinite_density() -> None:
     dummy = _AuxHeatingDummy()
-    dummy.ne = np.array([np.nan, -1.0, 0.0, 2.0, 5.0, np.inf, 1.0, 3.0], dtype=np.float64)
+    dummy.ne = np.array(
+        [np.nan, -1.0, 0.0, 2.0, 5.0, np.inf, 1.0, 3.0], dtype=np.float64
+    )
     s_i, s_e = dummy._compute_aux_heating_sources(8.0)
 
     assert s_i.shape == (dummy.nr,)
