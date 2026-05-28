@@ -8,6 +8,7 @@
 
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -74,7 +75,7 @@ class TestFreeGSPassContract:
         psi = solovev_psi(RR, ZZ, R0=6.2, a=1.8, kappa=1.7)
         q_proxy = np.linspace(1.0, 3.0, len(R))
 
-        def _our_stub(_case):  # type: ignore[no-untyped-def]
+        def _our_stub(_case: TokamakCase) -> dict[str, object]:
             return {
                 "psi": psi,
                 "R": R,
@@ -88,7 +89,7 @@ class TestFreeGSPassContract:
                 "residual": 0.0,
             }
 
-        def _freegs_stub(_case, **_kwargs):  # type: ignore[no-untyped-def]
+        def _freegs_stub(_case: TokamakCase, **_kwargs: object) -> dict[str, object]:
             return {
                 "psi": psi.copy(),
                 "R": R.copy(),
@@ -116,12 +117,12 @@ class TestFreeGSPassContract:
     def test_freegs_report_includes_mode_specific_thresholds(self, monkeypatch):
         monkeypatch.setattr("benchmark_vs_freegs.HAS_FREEGS", True)
 
-        def _compare_case_stub(  # type: ignore[no-untyped-def]
-            case,
+        def _compare_case_stub(
+            case: TokamakCase,
             *,
-            use_freegs=False,
-            allow_runtime_fallback=True,
-        ):
+            use_freegs: bool = False,
+            allow_runtime_fallback: bool = True,
+        ) -> dict[str, object]:
             assert isinstance(allow_runtime_fallback, bool)
             return {
                 "name": case.name,
@@ -139,12 +140,13 @@ class TestFreeGSPassContract:
 
         monkeypatch.setattr("benchmark_vs_freegs.compare_case", _compare_case_stub)
         report = run_benchmark(force_solovev=False)
+        thresholds = cast(dict[str, Any], report["thresholds"])
 
         assert report["mode"] == "freegs"
         assert report["psi_nrmse_threshold"] == pytest.approx(FREEGS_PSI_NRMSE_THRESHOLD)
-        assert report["thresholds"]["q_profile_nrmse"] == pytest.approx(FREEGS_Q_NRMSE_THRESHOLD)
-        assert report["thresholds"]["axis_error_m"] == pytest.approx(FREEGS_AXIS_ERROR_M)
-        assert report["thresholds"]["separatrix_nrmse"] == pytest.approx(FREEGS_SEPARATRIX_NRMSE)
+        assert thresholds["q_profile_nrmse"] == pytest.approx(FREEGS_Q_NRMSE_THRESHOLD)
+        assert thresholds["axis_error_m"] == pytest.approx(FREEGS_AXIS_ERROR_M)
+        assert thresholds["separatrix_nrmse"] == pytest.approx(FREEGS_SEPARATRIX_NRMSE)
 
     def test_report_fails_when_any_case_is_unconverged(self, monkeypatch):
         results = iter(
@@ -176,7 +178,7 @@ class TestFreeGSPassContract:
             ]
         )
 
-        def _compare_case_stub(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        def _compare_case_stub(*_args: object, **_kwargs: object) -> dict[str, object]:
             return next(results)
 
         monkeypatch.setattr("benchmark_vs_freegs.CASES", CASES[:2])
@@ -233,7 +235,7 @@ class TestCompareSeparatrix:
 
 class TestPerMetricReport:
     def test_generates_markdown(self):
-        report = {
+        report: dict[str, object] = {
             "cases": [
                 {
                     "name": "Test-case",
@@ -253,12 +255,12 @@ class TestPerMetricReport:
         assert "0.0500" in md
 
     def test_empty_cases(self):
-        report = {"cases": []}
+        report: dict[str, list[dict[str, object]]] = {"cases": []}
         md = generate_per_metric_report(report)
         assert "Per-Metric Report" in md
 
     def test_fail_status(self):
-        report = {
+        report: dict[str, object] = {
             "cases": [
                 {
                     "name": "Fail-case",

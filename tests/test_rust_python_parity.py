@@ -23,10 +23,20 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import pytest
+
+if TYPE_CHECKING:
+    from scpn_fusion_rs import (
+        PyTransportSolver,
+        multigrid_vcycle as _RustMultiGridFn,
+        scpn_dense_activations as _RustDenseActivationsFn,
+        scpn_marking_update as _RustMarkingUpdateFn,
+        shafranov_bv as _RustShafranovFn,
+        simulate_tearing_mode as _RustTearingFn,
+    )
 
 # ── Rust availability probe ──────────────────────────────────────────
 
@@ -44,47 +54,68 @@ except ImportError:
 
 # Also probe for individual Rust symbols used in specific tests
 _HAS_RUST_MG = False
+_rust_mg_fn: Any = None
 try:
-    from scpn_fusion_rs import multigrid_vcycle as _rust_mg_fn  # type: ignore[import-not-found]
+    from scpn_fusion_rs import multigrid_vcycle as _rust_mg_import
+
+    _rust_mg_fn = _rust_mg_import
 
     _HAS_RUST_MG = True
 except ImportError:
+    _rust_mg_fn = cast(Any, None)
     _HAS_RUST_MG = False
 
 _HAS_RUST_SHAFRANOV = False
+_rust_shafranov_bv: Any = None
 try:
-    from scpn_fusion_rs import shafranov_bv as _rust_shafranov_bv  # type: ignore[import-not-found]
+    from scpn_fusion_rs import shafranov_bv as _rust_shafranov_bv_import
+
+    _rust_shafranov_bv = _rust_shafranov_bv_import
 
     _HAS_RUST_SHAFRANOV = True
 except ImportError:
+    _rust_shafranov_bv = cast(Any, None)
     _HAS_RUST_SHAFRANOV = False
 
 _HAS_RUST_TEARING = False
+_rust_tearing: Any = None
 try:
-    from scpn_fusion_rs import simulate_tearing_mode as _rust_tearing  # type: ignore[import-not-found]
+    from scpn_fusion_rs import simulate_tearing_mode as _rust_tearing_import
+
+    _rust_tearing = _rust_tearing_import
 
     _HAS_RUST_TEARING = True
 except ImportError:
+    _rust_tearing = cast(Any, None)
     _HAS_RUST_TEARING = False
 
 _HAS_RUST_SCPN_RUNTIME = False
+_rust_dense_act: Any = None
+_rust_marking_upd: Any = None
 try:
-    from scpn_fusion_rs import (  # type: ignore[import-not-found]
-        scpn_dense_activations as _rust_dense_act,
-        scpn_marking_update as _rust_marking_upd,
+    from scpn_fusion_rs import (
+        scpn_dense_activations as _rust_dense_act_import,
+        scpn_marking_update as _rust_marking_upd_import,
     )
 
+    _rust_dense_act = _rust_dense_act_import
+    _rust_marking_upd = _rust_marking_upd_import
     _HAS_RUST_SCPN_RUNTIME = True
 except ImportError:
+    _rust_dense_act = cast(Any, None)
+    _rust_marking_upd = cast(Any, None)
     _HAS_RUST_SCPN_RUNTIME = False
 
 _HAS_RUST_TRANSPORT_SOLVER = False
-_rust_transport_solver_cls = None
+_rust_transport_solver_cls: Any = None
 try:
-    from scpn_fusion_rs import PyTransportSolver as _rust_transport_solver_cls  # type: ignore[import-not-found]
+    from scpn_fusion_rs import PyTransportSolver as _rust_transport_solver_cls_import
+
+    _rust_transport_solver_cls = _rust_transport_solver_cls_import
 
     _HAS_RUST_TRANSPORT_SOLVER = True
 except ImportError:
+    _rust_transport_solver_cls = cast(Any, None)
     _HAS_RUST_TRANSPORT_SOLVER = False
 
 # Module-level skip: if Rust is entirely absent every test is skipped

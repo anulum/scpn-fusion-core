@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -24,7 +26,7 @@ from scpn_fusion.core.pretrained_surrogates import (
 )
 
 
-def test_bundle_pretrained_surrogates_creates_artifacts(tmp_path) -> None:
+def test_bundle_pretrained_surrogates_creates_artifacts(tmp_path: Path) -> None:
     manifest_path = tmp_path / "manifest.json"
     mlp_path = tmp_path / "mlp_itpa.npz"
     fno_path = tmp_path / "fno_jet.npz"
@@ -53,7 +55,7 @@ def test_bundle_pretrained_surrogates_creates_artifacts(tmp_path) -> None:
     assert manifest["coverage"]["coverage_percent"] > 0.0
 
 
-def test_pretrained_mlp_eval_and_load(tmp_path) -> None:
+def test_pretrained_mlp_eval_and_load(tmp_path: Path) -> None:
     mlp_path = tmp_path / "mlp_itpa_eval.npz"
     _ = bundle_pretrained_surrogates(
         force_retrain=True,
@@ -80,7 +82,7 @@ def test_pretrained_mlp_eval_and_load(tmp_path) -> None:
     assert eval_out["samples"] > 0
 
 
-def test_pretrained_fno_eval_returns_finite_metrics(tmp_path) -> None:
+def test_pretrained_fno_eval_returns_finite_metrics(tmp_path: Path) -> None:
     fno_path = tmp_path / "fno_eval.npz"
     _ = bundle_pretrained_surrogates(
         force_retrain=True,
@@ -120,7 +122,7 @@ def test_pretrained_fno_eval_returns_finite_metrics(tmp_path) -> None:
     ],
 )
 def test_bundle_pretrained_surrogates_rejects_invalid_config(
-    tmp_path, kwargs: dict[str, int], match: str
+    tmp_path: Path, kwargs: dict[str, int], match: str
 ) -> None:
     params = {
         "force_retrain": True,
@@ -139,7 +141,7 @@ def test_bundle_pretrained_surrogates_rejects_invalid_config(
 
 
 def test_bundle_pretrained_surrogates_reuses_valid_cached_manifest(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     manifest_path = tmp_path / "manifest.json"
     mlp_path = tmp_path / "mlp.npz"
@@ -156,7 +158,7 @@ def test_bundle_pretrained_surrogates_reuses_valid_cached_manifest(
     }
     manifest_path.write_text(json.dumps(cached_manifest), encoding="utf-8")
 
-    def _unexpected(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def _unexpected(*args: Any, **kwargs: Any) -> None:
         _ = (args, kwargs)
         raise AssertionError("training should not run when cached manifest is valid")
 
@@ -174,7 +176,7 @@ def test_bundle_pretrained_surrogates_reuses_valid_cached_manifest(
 
 
 def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
-    tmp_path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     manifest_path = tmp_path / "manifest.json"
     mlp_path = tmp_path / "mlp.npz"
@@ -185,7 +187,7 @@ def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
 
     calls = {"mlp": 0, "fno": 0}
 
-    def _stub_train_itpa_mlp(**kwargs):  # type: ignore[no-untyped-def]
+    def _stub_train_itpa_mlp(**kwargs: Any) -> tuple[ps.PretrainedMLPSurrogate, dict[str, float]]:
         _ = kwargs
         calls["mlp"] += 1
         model = ps.PretrainedMLPSurrogate(
@@ -200,11 +202,11 @@ def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
         )
         return model, {"train_rmse_s": 0.0, "train_rmse_pct": 0.0}
 
-    def _stub_save_pretrained_mlp(model, path):  # type: ignore[no-untyped-def]
+    def _stub_save_pretrained_mlp(model: ps.PretrainedMLPSurrogate, path: Path) -> None:
         _ = model
         np.savez(path, x=np.array([1.0], dtype=np.float64))
 
-    def _stub_train_fno_on_jet(*, save_path, **kwargs):  # type: ignore[no-untyped-def]
+    def _stub_train_fno_on_jet(*, save_path: Path, **kwargs: Any) -> dict[str, float]:
         _ = kwargs
         calls["fno"] += 1
         save_path.parent.mkdir(parents=True, exist_ok=True)

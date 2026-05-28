@@ -14,17 +14,22 @@ import math
 import sys
 import time
 from pathlib import Path
+from typing import Any, cast
+from types import ModuleType
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[0].parent / "src"))
 
+_RUST_EXTENSION_IMPORT: ModuleType | None = None
 try:
-    import scpn_fusion_rs  # type: ignore[import-untyped]
-
+    import scpn_fusion_rs as _rust_extension_module_import
+    _RUST_EXTENSION_IMPORT = _rust_extension_module_import
     HAS_RUST = True
 except ImportError:
     HAS_RUST = False
+
+scpn_fusion_rs: Any = cast(Any, _RUST_EXTENSION_IMPORT)
 
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust extension not available")
 

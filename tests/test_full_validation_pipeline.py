@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import importlib.util
+from typing import cast
 from pathlib import Path
 import sys
 
@@ -124,16 +125,20 @@ def test_campaign_live_archive_mode_uses_polling_path(
     calls: list[str] = []
 
     def _fake_poll(**kwargs: object) -> tuple[list[object], dict[str, object]]:
-        machine = str(kwargs["machine"])
+        kwargs_map = cast(dict[str, object], kwargs)
+        machine = str(kwargs_map["machine"])
         calls.append(machine)
         rows, _meta = full_validation_pipeline.load_machine_profiles(
             machine=machine,
             prefer_live=False,
         )
+        polls = kwargs_map["polls"]
+        if not isinstance(polls, int):
+            raise TypeError("polls argument must be int")
         return rows[:4], {
             "source": "live_stream",
             "live_total_profiles": 4,
-            "polls": int(kwargs["polls"]),
+            "polls": polls,
         }
 
     monkeypatch.setattr(full_validation_pipeline, "poll_mdsplus_feed", _fake_poll)
