@@ -8,6 +8,7 @@ import json
 import pytest
 
 from validation.benchmark_gs_operator_current_closure import _radial_convergence_order
+from validation.benchmark_gs_operator_current_closure import build_gate_summary
 from validation.benchmark_gs_operator_current_closure import REPORT_JSON
 from validation.benchmark_gs_operator_current_closure import main as run_benchmark
 
@@ -81,3 +82,49 @@ def test_benchmark_report_gates_radial_current_closure_stability() -> None:
         <= report["thresholds"]["radial_total_current_relative_error_max"]
     )
     assert report["radial_current_closure_stability_pass"] is True
+
+
+def test_benchmark_report_exposes_fail_closed_gate_summary() -> None:
+    """Machine-readable benchmark gates must distinguish schema, scope, and failures."""
+    assert run_benchmark() == 0
+    report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+
+    assert report["schema_version"] == "gs-operator-current-closure.v2"
+    assert report["benchmark_scope"] == "native_grad_shafranov_operator_current_closure"
+    assert (
+        report["physics_scope"]
+        == "manufactured_full_order_grad_shafranov_operator_current_relation"
+    )
+    assert report["solver_mode"] == "manufactured_flux_operator_current_closure"
+    assert report["passes"] is True
+    assert report["passed"] is True
+    assert report["gate_summary"]["gates"] == {
+        "case_thresholds": True,
+        "radial_convergence_order": True,
+        "radial_total_current_closure_stability": True,
+    }
+    assert report["gate_summary"]["gate_pass_count"] == 3
+    assert report["gate_summary"]["failed_gates"] == []
+
+
+def test_operator_current_gate_summary_fails_closed_for_missing_rows() -> None:
+    """Missing physics evidence must fail rather than silently pass the benchmark."""
+    summary = build_gate_summary(
+        {
+            "thresholds": {
+                "delta_star_max_abs_error": 1.0e-10,
+                "current_density_max_relative_error": 1.0e-11,
+                "total_current_relative_error": 1.0e-12,
+            },
+            "cases": [],
+            "radial_convergence_order": None,
+            "radial_current_closure_stability_pass": False,
+        }
+    )
+
+    assert summary["passes"] is False
+    assert summary["failed_gates"] == [
+        "case_thresholds",
+        "radial_convergence_order",
+        "radial_total_current_closure_stability",
+    ]

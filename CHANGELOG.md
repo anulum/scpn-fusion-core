@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added schema v2 and fail-closed gate summary semantics to the native Grad-Shafranov operator/current-closure benchmark, preserving compatibility with the existing `passed` field while exposing `passes` and named gate evidence.
+
 ### Changed
 - Documentation/API hardening: Completed the queued control-module docstring cluster
   (`runaway_electron_model`, `rust_flight_sim_wrapper`, `rwm_feedback`,

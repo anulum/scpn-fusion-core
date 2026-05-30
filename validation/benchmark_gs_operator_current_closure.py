@@ -154,9 +154,57 @@ def _radial_total_current_relative_error_max(cases: list[dict[str, Any]]) -> flo
     return max(radial_errors) if radial_errors else float("inf")
 
 
+def build_gate_summary(report: dict[str, Any]) -> dict[str, Any]:
+    """Build fail-closed machine-readable gates for the operator/current contract."""
+    cases = report.get("cases")
+    thresholds = report.get("thresholds")
+    case_thresholds_pass = (
+        isinstance(cases, list)
+        and len(cases) > 0
+        and isinstance(thresholds, dict)
+        and all(
+            isinstance(case, dict)
+            and float(case.get("delta_star_max_abs_error", float("inf")))
+            <= float(thresholds.get("delta_star_max_abs_error", float("-inf")))
+            and float(case.get("current_density_max_relative_error", float("inf")))
+            <= float(thresholds.get("current_density_max_relative_error", float("-inf")))
+            and float(case.get("total_current_relative_error", float("inf")))
+            <= float(thresholds.get("total_current_relative_error", float("-inf")))
+            for case in cases
+        )
+    )
+
+    radial_order = report.get("radial_convergence_order")
+    radial_convergence_pass = (
+        isinstance(radial_order, int | float) and 1.99 <= float(radial_order) <= 2.01
+    )
+    radial_current_closure_pass = bool(report.get("radial_current_closure_stability_pass", False))
+
+    gates = {
+        "case_thresholds": case_thresholds_pass,
+        "radial_convergence_order": radial_convergence_pass,
+        "radial_total_current_closure_stability": radial_current_closure_pass,
+    }
+    failed_gates = [name for name, gate_passed in gates.items() if not gate_passed]
+    return {
+        "gates": gates,
+        "gate_count": len(gates),
+        "gate_pass_count": len(gates) - len(failed_gates),
+        "failed_gates": failed_gates,
+        "passes": not failed_gates,
+    }
+
+
 def _write_markdown(report: dict[str, Any]) -> None:
+    gate_summary = report["gate_summary"]
     lines = [
         "# Grad-Shafranov Operator Current Closure Benchmark",
+        "",
+        f"Benchmark ID: `{report['benchmark_id']}`",
+        f"Schema: `{report['schema_version']}`",
+        f"Scope: `{report['benchmark_scope']}`",
+        f"Solver mode: `{report['solver_mode']}`",
+        f"Gates passed: `{gate_summary['gate_pass_count']}/{gate_summary['gate_count']}`",
         "",
         "Manufactured contracts: `psi(R, Z) = a R^4 + b Z^2 + c R^2 Z^2`, "
         "`Delta*psi = 8aR^2 + 2b + 2cR^2`, and `J_phi = -Delta*psi / (mu0 R)`.",
@@ -219,7 +267,7 @@ def _write_markdown(report: dict[str, Any]) -> None:
         [
             "",
             f"Pass threshold: `{report['thresholds']}`.",
-            f"Overall status: `{'PASS' if report['passed'] else 'FAIL'}`.",
+            f"Overall status: `{'PASS' if report['passes'] else 'FAIL'}`.",
             "",
         ]
     )
@@ -262,7 +310,12 @@ def main() -> int:
         and radial_current_closure_stability_pass
     )
     report = {
+        "schema_version": "gs-operator-current-closure.v2",
+        "benchmark_id": "gs_operator_current_closure",
         "benchmark": "gs_operator_current_closure",
+        "benchmark_scope": "native_grad_shafranov_operator_current_closure",
+        "physics_scope": "manufactured_full_order_grad_shafranov_operator_current_relation",
+        "solver_mode": "manufactured_flux_operator_current_closure",
         "machine": _machine_metadata(),
         "thresholds": thresholds,
         "cases": cases,
@@ -271,11 +324,15 @@ def main() -> int:
         "radial_current_closure_stability_pass": radial_current_closure_stability_pass,
         "passed": passed,
     }
+    gate_summary = build_gate_summary(report)
+    report["gate_summary"] = gate_summary
+    report["passes"] = bool(gate_summary["passes"])
+    report["passed"] = report["passes"]
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_JSON.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     _write_markdown(report)
     print(json.dumps(report, indent=2, sort_keys=True))
-    return 0 if passed else 1
+    return 0 if bool(report["passes"]) else 1
 
 
 if __name__ == "__main__":

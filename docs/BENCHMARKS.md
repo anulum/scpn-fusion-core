@@ -919,3 +919,7 @@ python validation/validate_against_sparc.py
 python validation/rmse_dashboard.py --output-json artifacts/rmse.json
 python validation/benchmark_transport_power_balance.py
 ```
+
+### Native Grad-Shafranov operator/current closure schema
+
+The `gs_operator_current_closure` benchmark is now reported as schema `gs-operator-current-closure.v2` with benchmark scope `native_grad_shafranov_operator_current_closure`. The report distinguishes the manufactured full-order Grad-Shafranov operator/current relation from free-boundary reconstruction and reduced-order surrogate timing. Its machine-readable `gate_summary` fails closed over case thresholds, second-order radial convergence, and total-current closure stability.
