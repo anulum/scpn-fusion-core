@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added integrated `solve_free_boundary(..., optimize_shape=True)` diagnostics and a benchmark gate for shape-current optimization residuals, response rank, current recovery, and vacuum-boundary consistency.
+
 - Added native Rust free-boundary shape-current inversion parity through `fusion-core::vacuum::reconstruct_shape_currents_from_boundary_flux`, matching the Python boundary-flux current-recovery benchmark contract without wrapper delegation.
 
 - Added a free-boundary shape-control current-inversion gate that recovers bounded external coil currents from boundary-flux targets and reports current/flux residuals in the benchmark artifact.

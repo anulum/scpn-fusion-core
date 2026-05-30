@@ -795,7 +795,7 @@ free_boundary_coil_vacuum_reconstruction`, `benchmark_scope =
 free_boundary_reconstruction`, and per-lane `physics_scope`/`solver_mode`
 fields so it cannot be confused with fixed-boundary profile-source or
 operator-source solves. It also emits a top-level `passes` boolean and a
-fail-closed `gate_summary` (`5/5` gates passed locally) so diagnostic rows
+fail-closed `gate_summary` (`6/6` gates passed locally) so diagnostic rows
 cannot be mistaken for the aggregate benchmark decision; the CLI exits
 non-zero when any named gate is missing or failed.
 Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
@@ -827,7 +827,12 @@ currents from boundary-flux targets and reports recovered currents,
 reconstructed flux, residual RMSE, relative flux RMSE, response rank,
 condition number, and active current bounds. This ports the accepted Python
 shape-current inversion contract into Rust rather than leaving the benchmark
-as Python-only evidence.
+as Python-only evidence. The Python `solve_free_boundary(..., optimize_shape=True)`
+path now also reports integrated shape-optimization diagnostics: latest local
+result recovered three bounded coil currents from five target-flux points with
+current relative L2 error `2.96e-15`, flux relative RMSE `8.44e-17`,
+vacuum-boundary absolute error `5.55e-17`, and response rank `3/3`, status
+`PASS`.
 Go, Julia, and Lean are not listed as free-boundary parity surfaces here because
 their current native packages do not expose equivalent coil Green-function,
 limiter, axis, or X-point reconstruction logic.

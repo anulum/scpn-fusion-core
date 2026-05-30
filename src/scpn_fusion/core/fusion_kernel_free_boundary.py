@@ -644,6 +644,7 @@ def solve_free_boundary(
 
     psi_ext = compute_external_flux(kernel, coils)
     diff = float("inf")
+    shape_optimization: dict[str, Any] | None = None
 
     for outer in range(max_outer_iter):
         # Apply external flux as boundary condition
@@ -662,12 +663,43 @@ def solve_free_boundary(
         # Optional: optimise coil currents to match target shape
         if optimize_shape and coils.target_flux_points is not None:
             target_psi = resolve_shape_target_flux(kernel, coils)
+            response = build_mutual_inductance_matrix(kernel, coils, coils.target_flux_points)
             # Route through the kernel method to preserve monkeypatch/test hooks.
             new_currents = kernel.optimize_coil_currents(
                 coils,
                 target_psi,
                 tikhonov_alpha=tikhonov_alpha,
             )
+            new_currents = np.asarray(new_currents, dtype=np.float64).reshape(-1)
+            if new_currents.shape != (len(coils.positions),):
+                raise ValueError("optimised coil current vector length must match coil count.")
+            if not np.all(np.isfinite(new_currents)):
+                raise ValueError("optimised coil currents must contain finite values only.")
+            achieved_flux = response.T @ new_currents
+            residual = achieved_flux - target_psi
+            flux_rmse = float(np.sqrt(np.mean(residual**2)))
+            flux_scale = max(float(np.sqrt(np.mean(target_psi**2))), 1.0)
+            active_bounds = 0
+            if coils.current_limits is not None:
+                limits = _as_finite_vector(
+                    coils.current_limits, name="current_limits", length=len(coils.positions)
+                )
+                active_bounds = int(
+                    np.count_nonzero(np.isclose(np.abs(new_currents), limits, rtol=0.0))
+                )
+            shape_optimization = {
+                "solver_mode": "free_boundary_solver_shape_current_optimization",
+                "target_point_count": int(target_psi.shape[0]),
+                "coil_count": int(len(coils.positions)),
+                "response_rank": int(np.linalg.matrix_rank(response.T)),
+                "response_condition": float(np.linalg.cond(response.T)),
+                "flux_rmse": flux_rmse,
+                "flux_relative_rmse": float(flux_rmse / flux_scale),
+                "max_abs_flux_residual": float(np.max(np.abs(residual))),
+                "active_current_bounds": active_bounds,
+                "target_flux": target_psi.copy(),
+                "achieved_flux": achieved_flux.astype(np.float64, copy=False),
+            }
             coils.currents = new_currents
             psi_ext = compute_external_flux(kernel, coils)
 
@@ -702,6 +734,7 @@ def solve_free_boundary(
         "coil_currents": coils.currents.copy(),
         "vacuum_boundary_abs_error": boundary_reconstruction["max_abs_error"],
         "boundary_reconstruction": boundary_reconstruction,
+        "shape_optimization": shape_optimization,
     }
 
 

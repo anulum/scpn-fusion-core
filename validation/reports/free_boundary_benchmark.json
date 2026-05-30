@@ -46,6 +46,21 @@
     "active_current_bounds": 0,
     "pass": true
   },
+  "solve_free_boundary_shape_optimization": {
+    "physics_scope": "free_boundary_integrated_shape_current_optimization",
+    "solver_mode": "free_boundary_solver_shape_current_optimization",
+    "target_point_count": 5,
+    "coil_count": 3,
+    "response_rank": 3,
+    "response_condition": 26.035194501821664,
+    "current_relative_l2_error": 2.9556226606546694e-15,
+    "flux_rmse": 8.441528768080324e-17,
+    "flux_relative_rmse": 8.441528768080324e-17,
+    "max_abs_flux_residual": 1.6653345369377348e-16,
+    "active_current_bounds": 0,
+    "vacuum_boundary_abs_error": 5.551115123125783e-17,
+    "pass": true
+  },
   "solve_free_boundary_vacuum_reconstruction": {
     "physics_scope": "free_boundary_coil_vacuum_boundary",
     "solver_mode": "free_boundary_solver_with_coil_vacuum_boundary",
@@ -81,7 +96,7 @@
     "grid": "33x33",
     "picard_iterations": 10,
     "sor_sweeps_per_picard": 10,
-    "wall_time_s": 1.267710292013362,
+    "wall_time_s": 0.6392863990040496,
     "vacuum_boundary_abs_error": 7.105427357601002e-15,
     "vacuum_boundary_flux_level": 16.551065542554525,
     "interior_axis_flux": 66.04980778478084,
@@ -95,11 +110,12 @@
       "single_coil",
       "boundary_flux_reconstruction",
       "shape_control_current_reconstruction",
+      "solve_free_boundary_shape_optimization",
       "solve_free_boundary_vacuum_reconstruction",
       "jax_free_boundary_wall_flux"
     ],
-    "gate_count": 5,
-    "gate_pass_count": 5,
+    "gate_count": 6,
+    "gate_pass_count": 6,
     "failed_gates": []
   },
   "passes": true

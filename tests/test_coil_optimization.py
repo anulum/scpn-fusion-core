@@ -439,10 +439,21 @@ def test_solve_free_boundary_with_optimization(kernel: FusionKernel):
         tol=1e-2,
         optimize_shape=True,
     )
-    # Currents should have been updated
+    # Currents should have been updated and the integrated optimisation must
+    # report target residual diagnostics instead of acting as an opaque mutation.
     assert not np.allclose(result["coil_currents"], I_before), (
         "Coil currents were not updated during shape optimisation"
     )
+    shape = result["shape_optimization"]
+    assert shape is not None
+    assert shape["solver_mode"] == "free_boundary_solver_shape_current_optimization"
+    assert shape["target_point_count"] == obs.shape[0]
+    assert shape["coil_count"] == 4
+    assert shape["response_rank"] <= shape["coil_count"]
+    assert np.isfinite(shape["response_condition"])
+    assert np.isfinite(shape["flux_relative_rmse"])
+    assert shape["target_flux"].shape == (obs.shape[0],)
+    assert shape["achieved_flux"].shape == (obs.shape[0],)
 
 
 def test_solve_free_boundary_uses_explicit_target_flux_values(

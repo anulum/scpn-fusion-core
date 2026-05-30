@@ -206,6 +206,52 @@ def run_free_boundary_benchmark() -> dict:
                 and np.all(np.abs(recovered_currents) <= shape_coils.current_limits + 1.0e-9)
             ),
         }
+
+        integrated_shape_coils = CoilSet(
+            positions=shape_coils.positions,
+            currents=np.zeros(3, dtype=np.float64),
+            turns=shape_coils.turns,
+            current_limits=shape_coils.current_limits.copy(),
+            target_flux_points=shape_points,
+            target_flux_values=target_shape_flux,
+        )
+        integrated_shape = kernel.solve_free_boundary(
+            integrated_shape_coils,
+            max_outer_iter=1,
+            tol=0.0,
+            optimize_shape=True,
+            tikhonov_alpha=0.0,
+            limiter_points=limiter_points,
+            axis_point=axis_point,
+            x_points=x_points,
+        )
+        shape_diag = integrated_shape["shape_optimization"]
+        if shape_diag is None:
+            raise RuntimeError("shape optimisation diagnostics were not reported")
+        integrated_current_rel_l2 = float(
+            np.linalg.norm(integrated_shape["coil_currents"] - true_currents)
+            / np.linalg.norm(true_currents)
+        )
+        results["solve_free_boundary_shape_optimization"] = {
+            "physics_scope": "free_boundary_integrated_shape_current_optimization",
+            "solver_mode": shape_diag["solver_mode"],
+            "target_point_count": int(shape_diag["target_point_count"]),
+            "coil_count": int(shape_diag["coil_count"]),
+            "response_rank": int(shape_diag["response_rank"]),
+            "response_condition": float(shape_diag["response_condition"]),
+            "current_relative_l2_error": integrated_current_rel_l2,
+            "flux_rmse": float(shape_diag["flux_rmse"]),
+            "flux_relative_rmse": float(shape_diag["flux_relative_rmse"]),
+            "max_abs_flux_residual": float(shape_diag["max_abs_flux_residual"]),
+            "active_current_bounds": int(shape_diag["active_current_bounds"]),
+            "vacuum_boundary_abs_error": float(integrated_shape["vacuum_boundary_abs_error"]),
+            "pass": bool(
+                shape_diag["response_rank"] == true_currents.shape[0]
+                and integrated_current_rel_l2 < 1.0e-9
+                and shape_diag["flux_relative_rmse"] < 1.0e-12
+                and integrated_shape["vacuum_boundary_abs_error"] < 1.0e-12
+            ),
+        }
         solve_contract = kernel.solve_free_boundary(
             coils,
             max_outer_iter=1,
@@ -381,6 +427,7 @@ def run_free_boundary_benchmark() -> dict:
             "single_coil",
             "boundary_flux_reconstruction",
             "shape_control_current_reconstruction",
+            "solve_free_boundary_shape_optimization",
             "solve_free_boundary_vacuum_reconstruction",
             "jax_free_boundary_wall_flux",
         )
@@ -453,6 +500,22 @@ def main() -> int:
             "| Shape-control current inversion | Response rank | "
             f"{shape['response_rank']}/{shape['coil_count']} coils, "
             f"{shape['point_count']} points | N/A |\n"
+        )
+        integrated_shape = res["solve_free_boundary_shape_optimization"]
+        f.write(
+            "| Solver shape optimisation | Current relative L2 error | "
+            f"{integrated_shape['current_relative_l2_error']:.2e} | "
+            f"{integrated_shape['pass']} |\n"
+        )
+        f.write(
+            "| Solver shape optimisation | Flux relative RMSE | "
+            f"{integrated_shape['flux_relative_rmse']:.2e} | "
+            f"{integrated_shape['pass']} |\n"
+        )
+        f.write(
+            "| Solver shape optimisation | Vacuum boundary abs error | "
+            f"{integrated_shape['vacuum_boundary_abs_error']:.2e} | "
+            f"{integrated_shape['pass']} |\n"
         )
         solver_fb = res["solve_free_boundary_vacuum_reconstruction"]
         f.write(
