@@ -15,8 +15,27 @@ as stochastic Petri nets, compile to spiking neural networks, execute at
 Rust acceleration for reduced-order control kernels; latency claims are
 metric-scoped and are not same-work Rust-versus-Python physics speedups.
 
-> **Minimal control-only package:** [`scpn-control`](https://github.com/anulum/scpn-control) (98 modules, pip-installable).
-> This repo is the full physics + research suite.
+> **Compact control package:** [`scpn-control`](https://github.com/anulum/scpn-control)
+> is the smaller controller-facing package for Petri-net compilation, SNN
+> control, NMPC, runtime contracts, differentiable tuning facades, and
+> hardware-in-the-loop/replay surfaces. This repository remains the broader
+> physics and research suite for solver development, Rust/polyglot kernels,
+> validation campaigns, and full-stack plant modelling.
+
+## Relationship to scpn-control
+
+`scpn-fusion-core` is the canonical SCPN physics and solver laboratory. It
+contains the wider equilibrium, transport, gyrokinetic, 3D, neural-surrogate,
+Rust/polyglot, benchmark, and validation surfaces.
+
+[`scpn-control`](https://github.com/anulum/scpn-control) is the compact
+control-grade package derived from this stack. It focuses on installation,
+controller-loop integration, fail-closed runtime boundaries, replay metadata,
+NMPC, differentiable tuning facades, and hardware/control contracts.
+
+The projects are developed in parallel: broad physics kernels mature here,
+while `scpn-control` exposes the subset needed for control loops through stable
+facades and evidence-bounded validation reports.
 
 <!-- capability-snapshot:start -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->

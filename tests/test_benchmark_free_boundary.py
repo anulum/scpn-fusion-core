@@ -8,7 +8,28 @@
 
 from __future__ import annotations
 
-from validation.benchmark_free_boundary import run_free_boundary_benchmark
+from validation.benchmark_free_boundary import build_gate_summary, run_free_boundary_benchmark
+
+
+def test_free_boundary_gate_summary_fails_closed_for_missing_or_failed_rows() -> None:
+    summary = build_gate_summary(
+        {
+            "single_coil": {"pass": True},
+            "boundary_flux_reconstruction": {"pass": False},
+        },
+        (
+            "single_coil",
+            "boundary_flux_reconstruction",
+            "solve_free_boundary_vacuum_reconstruction",
+        ),
+    )
+
+    assert summary["gate_count"] == 3
+    assert summary["gate_pass_count"] == 1
+    assert summary["failed_gates"] == [
+        "boundary_flux_reconstruction",
+        "solve_free_boundary_vacuum_reconstruction",
+    ]
 
 
 def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:

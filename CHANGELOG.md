@@ -27,6 +27,8 @@
   containment pass condition.
 - Free-boundary benchmark hardening: reports now include an aggregate `passes`
   field and machine-readable gate summary.
+- Free-boundary benchmark hardening: the CLI now exits non-zero when any named
+  benchmark gate is missing or failed.
 
 ## [3.9.5] - 2026-05-24
 

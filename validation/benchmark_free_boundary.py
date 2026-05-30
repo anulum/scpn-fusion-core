@@ -37,6 +37,21 @@ def jackson_psi(Rc: float, Zc: float, R: float, Z: float, I: float = 1.0) -> flo
     return float(I * green_function(Rc, Zc, R, Z))
 
 
+def build_gate_summary(results: dict, gate_names: tuple[str, ...]) -> dict:
+    """Build a fail-closed benchmark gate summary from named result rows."""
+    failed_gates = [
+        name
+        for name in gate_names
+        if name not in results or not bool(results.get(name, {}).get("pass", False))
+    ]
+    return {
+        "gate_names": list(gate_names),
+        "gate_count": len(gate_names),
+        "gate_pass_count": len(gate_names) - len(failed_gates),
+        "failed_gates": failed_gates,
+    }
+
+
 def run_free_boundary_benchmark() -> dict:
     """Run vacuum-field and free-boundary reconstruction checks for coil contracts.
 
@@ -316,14 +331,8 @@ def run_free_boundary_benchmark() -> dict:
             "solve_free_boundary_vacuum_reconstruction",
             "jax_free_boundary_wall_flux",
         )
-        failed_gates = [name for name in gate_names if not bool(results[name]["pass"])]
-        results["gate_summary"] = {
-            "gate_names": list(gate_names),
-            "gate_count": len(gate_names),
-            "gate_pass_count": len(gate_names) - len(failed_gates),
-            "failed_gates": failed_gates,
-        }
-        results["passes"] = len(failed_gates) == 0
+        results["gate_summary"] = build_gate_summary(results, gate_names)
+        results["passes"] = len(results["gate_summary"]["failed_gates"]) == 0
 
         return results
     finally:
@@ -331,7 +340,7 @@ def run_free_boundary_benchmark() -> dict:
             cfg_path.unlink()
 
 
-def main():
+def main() -> int:
     """Execute the benchmark and persist JSON/markdown artifacts."""
     res = run_free_boundary_benchmark()
 
@@ -429,7 +438,8 @@ def main():
         )
 
     print(f"Results saved to {report_dir}")
+    return 0 if bool(res["passes"]) else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

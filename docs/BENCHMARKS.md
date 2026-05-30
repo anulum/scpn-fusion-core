@@ -792,9 +792,10 @@ The tracked JSON report declares `benchmark_id =
 free_boundary_coil_vacuum_reconstruction`, `benchmark_scope =
 free_boundary_reconstruction`, and per-lane `physics_scope`/`solver_mode`
 fields so it cannot be confused with fixed-boundary profile-source or
-operator-source solves. It also emits a top-level `passes` boolean and
-`gate_summary` (`4/4` gates passed locally) so diagnostic rows cannot be
-mistaken for the aggregate benchmark decision.
+operator-source solves. It also emits a top-level `passes` boolean and a
+fail-closed `gate_summary` (`4/4` gates passed locally) so diagnostic rows
+cannot be mistaken for the aggregate benchmark decision; the CLI exits
+non-zero when any named gate is missing or failed.
 Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
 absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
 `4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter
