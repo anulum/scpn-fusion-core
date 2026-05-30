@@ -121,6 +121,8 @@ def run_free_boundary_benchmark() -> dict:
             "boundary_containment_fraction": float(
                 boundary_reconstruction["boundary_containment_fraction"]
             ),
+            "boundary_containment_contract_role": "gate",
+            "limiter_containment_required": True,
             "axis_flux": float(boundary_reconstruction["axis_flux"]),
             "max_abs_limiter_flux": float(np.max(np.abs(boundary_reconstruction["limiter_flux"]))),
             "max_abs_x_point_flux": float(np.max(np.abs(boundary_reconstruction["x_point_flux"]))),
@@ -165,6 +167,8 @@ def run_free_boundary_benchmark() -> dict:
             "boundary_containment_fraction": float(
                 solve_contract["boundary_reconstruction"]["boundary_containment_fraction"]
             ),
+            "boundary_containment_contract_role": ("diagnostic_computational_wall_outside_limiter"),
+            "limiter_containment_required": False,
             "pass": bool(
                 solve_contract["vacuum_boundary_abs_error"] < 1.0e-12
                 and solve_contract["boundary_reconstruction"]["limiter_point_count"] == 4
@@ -370,7 +374,8 @@ def main():
         )
         f.write(
             "| Solver free-boundary contract | Limiter containment | "
-            f"{solver_fb['boundary_containment_fraction']:.3f} | {solver_fb['pass']} |\n"
+            f"{solver_fb['boundary_containment_fraction']:.3f} "
+            f"({solver_fb['boundary_containment_contract_role']}) | N/A |\n"
         )
         f.write(
             "| Solver free-boundary contract | X-point pair flux residual | "

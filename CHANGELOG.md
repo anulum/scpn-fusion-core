@@ -22,6 +22,9 @@
 - Benchmark schema hardening: SPARC GEQDSK RMSE artifacts now emit explicit
   benchmark id, reconstruction scope, reference role/class counts, and solver
   mode counts.
+- Free-boundary benchmark hardening: solver computational-wall containment is
+  now labelled as diagnostic-only instead of being displayed as a limiter
+  containment pass condition.
 
 ## [3.9.5] - 2026-05-24
 

@@ -803,7 +803,10 @@ reconstruction diagnostic on its computational boundary; latest local solver
 contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary
 points in `1` outer iteration, with `4` limiter points, `2` X-points, and
 axis flux `2.589381e-01`, computational-boundary containment fraction `0.000`
-(diagnostic-only because the computational wall is outside the limiter),
+(diagnostic-only because the computational wall is outside the limiter; the
+machine-readable `boundary_containment_contract_role` is
+`diagnostic_computational_wall_outside_limiter` and
+`limiter_containment_required=false`),
 symmetric X-point pair flux residual `0.00e+00`, status `PASS`.
 Rust `fusion-core::vacuum` now exposes the same native boundary-flux
 reconstruction contract through `reconstruct_boundary_flux_from_coils` and

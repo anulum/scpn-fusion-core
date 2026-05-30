@@ -22,6 +22,8 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
         == "coil_green_boundary_reconstruction"
     )
     assert report["boundary_flux_reconstruction"]["boundary_containment_fraction"] == 1.0
+    assert report["boundary_flux_reconstruction"]["boundary_containment_contract_role"] == "gate"
+    assert report["boundary_flux_reconstruction"]["limiter_containment_required"] is True
     assert report["boundary_flux_reconstruction"]["x_point_pair_symmetry_abs_error"] < 1.0e-12
     assert (
         report["solve_free_boundary_vacuum_reconstruction"]["solver_mode"]
@@ -29,6 +31,13 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
     )
     assert (
         report["solve_free_boundary_vacuum_reconstruction"]["boundary_containment_fraction"] == 0.0
+    )
+    assert (
+        report["solve_free_boundary_vacuum_reconstruction"]["boundary_containment_contract_role"]
+        == "diagnostic_computational_wall_outside_limiter"
+    )
+    assert (
+        report["solve_free_boundary_vacuum_reconstruction"]["limiter_containment_required"] is False
     )
     assert (
         report["solve_free_boundary_vacuum_reconstruction"]["x_point_pair_symmetry_abs_error"]
