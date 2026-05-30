@@ -291,6 +291,8 @@ Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-11`,
 
 ### GEQDSK Grad-Shafranov source contract
 
+The DIII-D/JET proxy GEQDSK validation runner now consumes the same shared source construction used by the point-wise RMSE benchmark: second-order flux-normalized profile interpolation, current-conserving weighted integral correction, and explicit zeroing of boundary rows/columns outside the physical plasma source domain. These rows remain diagnostic proxy references, but their source residuals no longer use a separate weaker linear interpolation path.
+
 `validation/benchmark_sparc_geqdsk_rmse.py` now gates bundled GEQDSK/EQDSK
 references on the native Grad-Shafranov PDE relation, not only point-wise
 `psi` RMSE. For every public reference, the benchmark evaluates the centered

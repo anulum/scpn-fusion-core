@@ -10,9 +10,9 @@ Validate the GS solver against synthetic DIII-D and JET equilibria.
 
 For each GEQDSK file:
 1. Read the equilibrium
-2. Compute the GS source from the stored p'/FF' profiles
-3. Solve ψ using Picard+SOR with manufactured source
-4. Measure RMSE between solved and reference ψ
+2. Compute the GS source through the shared current-conserving profile-source contract
+3. Measure the operator/source residual between reference ψ and the physical source
+4. Report diagnostic RMSE-like residual metrics for proxy GEQDSK cases
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from scpn_fusion.core.eqdsk import read_geqdsk
+from validation.psi_pointwise_rmse import compute_source_components
 
 
 @dataclass
@@ -41,6 +42,8 @@ class ValidationResult:
     psi_max_error: float
     psi_relative_l2: float
     gs_residual_l2: float
+    plasma_mask_fraction: float
+    source_total_norm: float
 
 
 def gs_operator(psi, R, Z):
@@ -125,20 +128,14 @@ def validate_file(path: Path, device: str) -> ValidationResult:
 
     gs_l2 = float(np.sqrt(np.mean(interior**2))) / psi_range
 
-    # For Solov'ev equilibria, the RMSE should be 0 for manufactured solve.
-    # Instead, measure self-consistency: how well does Δ*ψ match the source.
-    # Compute source from profiles
-    RR, _ = np.meshgrid(R, Z)
-    psi_n_2d = (psi_ref - eq.simag) / (eq.sibry - eq.simag + 1e-30)
-    psi_n_2d = np.clip(psi_n_2d, 0, 1)
-
-    # Interpolate profiles
-    psi_n_1d = np.linspace(0, 1, eq.nw)
-    pp = np.interp(psi_n_2d.ravel(), psi_n_1d, pprime).reshape(psi_ref.shape)
-    ffp = np.interp(psi_n_2d.ravel(), psi_n_1d, ffprime).reshape(psi_ref.shape)
-
-    mu0 = 4e-7 * np.pi
-    source = -mu0 * RR**2 * pp - ffp
+    # For proxy GEQDSK equilibria, measure self-consistency: how well does
+    # Delta*psi match the physical source. Reuse the shared source contract so
+    # this runner cannot drift back to linear profile interpolation, unmasked
+    # boundary rows, or hidden net-current drift.
+    source_components = compute_source_components(eq)
+    source = np.asarray(source_components["total_source"], dtype=np.float64)
+    if source.shape != psi_ref.shape:
+        raise ValueError(f"computed source shape must match psi grid, got {source.shape}")
 
     # Residual = Δ*ψ - source
     residual = gs_res - source
@@ -157,6 +154,8 @@ def validate_file(path: Path, device: str) -> ValidationResult:
         psi_max_error=max_err,
         psi_relative_l2=rel_l2,
         gs_residual_l2=gs_l2,
+        plasma_mask_fraction=float(source_components["plasma_mask_fraction"]),
+        source_total_norm=float(source_components["total_source_norm"]),
     )
 
 
@@ -184,8 +183,13 @@ def main():
         print(f"\n{'=' * 70}")
         print(f"  {device_label} Equilibrium Validation ({len(files)} files)")
         print(f"{'=' * 70}")
-        print(f"{'File':<30} {'Grid':>7} {'Ip[MA]':>7} {'RMSE':>10} {'MaxErr':>10} {'RelL2':>10}")
-        print(f"{'-' * 30} {'-' * 7} {'-' * 7} {'-' * 10} {'-' * 10} {'-' * 10}")
+        print(
+            f"{'File':<30} {'Grid':>7} {'Ip[MA]':>7} {'RMSE':>10} "
+            f"{'MaxErr':>10} {'RelL2':>10} {'Mask':>7} {'|S|':>10}"
+        )
+        print(
+            f"{'-' * 30} {'-' * 7} {'-' * 7} {'-' * 10} {'-' * 10} {'-' * 10} {'-' * 7} {'-' * 10}"
+        )
 
         for path in files:
             r = validate_file(path, device_label)
@@ -193,7 +197,8 @@ def main():
             print(
                 f"{r.file:<30} {r.grid:>7} {r.ip_ma:>7.1f} "
                 f"{r.psi_rmse_norm:>10.4e} {r.psi_max_error:>10.4e} "
-                f"{r.psi_relative_l2:>10.4e}"
+                f"{r.psi_relative_l2:>10.4e} {r.plasma_mask_fraction:>7.3f} "
+                f"{r.source_total_norm:>10.4e}"
             )
 
     print(f"\n{'=' * 70}")

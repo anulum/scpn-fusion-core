@@ -63,6 +63,9 @@ class TestValidateFile:
         assert np.isfinite(out.psi_rmse_norm)
         assert np.isfinite(out.psi_relative_l2)
         assert np.isfinite(out.gs_residual_l2)
+        assert 0.0 <= out.plasma_mask_fraction <= 1.0
+        assert np.isfinite(out.source_total_norm)
+        assert out.source_total_norm > 0.0
 
     def test_rejects_degenerate_psi_range(self, monkeypatch: pytest.MonkeyPatch) -> None:
         eq = copy.deepcopy(read_geqdsk(SAMPLE_EQ))
@@ -84,3 +87,15 @@ class TestValidateFile:
         monkeypatch.setattr(diiid_jet_mod, "read_geqdsk", lambda _: eq)
         with pytest.raises(ValueError, match="psirz"):
             diiid_jet_mod.validate_file(SAMPLE_EQ, "DIII-D")
+
+
+def test_validate_file_uses_shared_current_conserving_source_contract() -> None:
+    """DIII-D/JET validation must not keep a separate linear GEQDSK source path."""
+    eq = read_geqdsk(SAMPLE_EQ)
+    components = diiid_jet_mod.compute_source_components(eq)
+    out = diiid_jet_mod.validate_file(SAMPLE_EQ, "DIII-D")
+
+    assert out.plasma_mask_fraction == components["plasma_mask_fraction"]
+    assert out.source_total_norm == components["total_source_norm"]
+    assert np.allclose(components["total_source"][[0, -1], :], 0.0)
+    assert np.allclose(components["total_source"][:, [0, -1]], 0.0)
