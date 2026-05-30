@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added a free-boundary shape-control current-inversion gate that recovers bounded external coil currents from boundary-flux targets and reports current/flux residuals in the benchmark artifact.
+
 - Hardened DIII-D/JET proxy GEQDSK validation to reuse the shared current-conserving profile-source contract, exposing plasma-mask fraction and source-norm diagnostics instead of maintaining a weaker linear interpolation path.
 
 - Added schema v2 and fail-closed gate summary semantics to the native Grad-Shafranov operator/current-closure benchmark, preserving compatibility with the existing `passed` field while exposing `passes` and named gate evidence.

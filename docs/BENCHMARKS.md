@@ -795,14 +795,14 @@ free_boundary_coil_vacuum_reconstruction`, `benchmark_scope =
 free_boundary_reconstruction`, and per-lane `physics_scope`/`solver_mode`
 fields so it cannot be confused with fixed-boundary profile-source or
 operator-source solves. It also emits a top-level `passes` boolean and a
-fail-closed `gate_summary` (`4/4` gates passed locally) so diagnostic rows
+fail-closed `gate_summary` (`5/5` gates passed locally) so diagnostic rows
 cannot be mistaken for the aggregate benchmark decision; the CLI exits
 non-zero when any named gate is missing or failed.
 Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
 absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
 `4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter
 clearance `0.380789 m`, limiter containment fraction `1.000`, symmetric
-X-point pair flux residual `0.00e+00`, status `PASS`.
+X-point pair flux residual `0.00e+00`, status `PASS`. The shape-control current-inversion gate recovers three bounded external coil currents from five boundary-flux target points with response rank `3/3`, condition number `26.035`, current relative L2 error `2.96e-15`, and flux relative RMSE `8.44e-17`, status `PASS`.
 The actual `solve_free_boundary` path now returns the same coil/vacuum
 reconstruction diagnostic on its computational boundary; latest local solver
 contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary

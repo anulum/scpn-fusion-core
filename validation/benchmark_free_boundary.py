@@ -24,7 +24,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from scpn_fusion.core.fusion_kernel import FusionKernel
+from scpn_fusion.core.fusion_kernel import CoilSet, FusionKernel
 from scpn_fusion.core.fusion_kernel_free_boundary import (
     build_mutual_inductance_matrix,
     green_function,
@@ -152,6 +152,58 @@ def run_free_boundary_benchmark() -> dict:
                 and boundary_reconstruction["boundary_containment_pass"]
                 and boundary_reconstruction["x_point_pair_symmetry_abs_error"] < 1.0e-12
                 and np.isfinite(boundary_reconstruction["axis_flux"])
+            ),
+        }
+
+        # 1c. Shape-control current reconstruction from boundary flux targets.
+        # This gates the inverse free-boundary step: recover bounded external coil
+        # currents from measured boundary/shape flux instead of only replaying a
+        # known vacuum field.
+        shape_points = np.array(
+            [[0.75, -0.95], [1.25, -1.20], [2.15, -0.25], [2.15, 0.85], [1.20, 1.20]],
+            dtype=np.float64,
+        )
+        true_currents = np.array([0.85e6, -0.45e6, 0.30e6], dtype=np.float64)
+        shape_coils = CoilSet(
+            positions=[(0.80, 0.0), (1.85, 1.15), (1.85, -1.15)],
+            currents=np.zeros(3, dtype=np.float64),
+            turns=[1, 1, 1],
+            current_limits=np.array([1.2e6, 1.2e6, 1.2e6], dtype=np.float64),
+            target_flux_points=shape_points,
+        )
+        shape_response = build_mutual_inductance_matrix(kernel, shape_coils, shape_points)
+        target_shape_flux = shape_response.T @ true_currents
+        recovered_currents = kernel.optimize_coil_currents(
+            shape_coils, target_shape_flux, tikhonov_alpha=0.0
+        )
+        recovered_flux = shape_response.T @ recovered_currents
+        current_rel_l2 = float(
+            np.linalg.norm(recovered_currents - true_currents) / np.linalg.norm(true_currents)
+        )
+        flux_residual = recovered_flux - target_shape_flux
+        flux_rmse = float(np.sqrt(np.mean(flux_residual**2)))
+        flux_scale = max(float(np.sqrt(np.mean(target_shape_flux**2))), 1.0)
+        results["shape_control_current_reconstruction"] = {
+            "physics_scope": "free_boundary_shape_current_inversion",
+            "solver_mode": "bounded_coil_current_least_squares_from_boundary_flux",
+            "point_count": int(shape_points.shape[0]),
+            "coil_count": int(true_currents.shape[0]),
+            "response_rank": int(np.linalg.matrix_rank(shape_response.T)),
+            "response_condition": float(np.linalg.cond(shape_response.T)),
+            "current_relative_l2_error": current_rel_l2,
+            "flux_rmse": flux_rmse,
+            "flux_relative_rmse": float(flux_rmse / flux_scale),
+            "max_abs_flux_residual": float(np.max(np.abs(flux_residual))),
+            "active_current_bounds": int(
+                np.count_nonzero(
+                    np.isclose(np.abs(recovered_currents), shape_coils.current_limits, rtol=0.0)
+                )
+            ),
+            "pass": bool(
+                np.linalg.matrix_rank(shape_response.T) == true_currents.shape[0]
+                and current_rel_l2 < 1.0e-9
+                and flux_rmse / flux_scale < 1.0e-12
+                and np.all(np.abs(recovered_currents) <= shape_coils.current_limits + 1.0e-9)
             ),
         }
         solve_contract = kernel.solve_free_boundary(
@@ -328,6 +380,7 @@ def run_free_boundary_benchmark() -> dict:
         gate_names = (
             "single_coil",
             "boundary_flux_reconstruction",
+            "shape_control_current_reconstruction",
             "solve_free_boundary_vacuum_reconstruction",
             "jax_free_boundary_wall_flux",
         )
@@ -386,6 +439,20 @@ def main() -> int:
         f.write(
             "| Boundary Green reconstruction | X-point pair flux residual | "
             f"{br['x_point_pair_symmetry_abs_error']:.2e} | {br['pass']} |\n"
+        )
+        shape = res["shape_control_current_reconstruction"]
+        f.write(
+            "| Shape-control current inversion | Current relative L2 error | "
+            f"{shape['current_relative_l2_error']:.2e} | {shape['pass']} |\n"
+        )
+        f.write(
+            "| Shape-control current inversion | Flux relative RMSE | "
+            f"{shape['flux_relative_rmse']:.2e} | {shape['pass']} |\n"
+        )
+        f.write(
+            "| Shape-control current inversion | Response rank | "
+            f"{shape['response_rank']}/{shape['coil_count']} coils, "
+            f"{shape['point_count']} points | N/A |\n"
         )
         solver_fb = res["solve_free_boundary_vacuum_reconstruction"]
         f.write(

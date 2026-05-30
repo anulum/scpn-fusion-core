@@ -20,14 +20,16 @@ def test_free_boundary_gate_summary_fails_closed_for_missing_or_failed_rows() ->
         (
             "single_coil",
             "boundary_flux_reconstruction",
+            "shape_control_current_reconstruction",
             "solve_free_boundary_vacuum_reconstruction",
         ),
     )
 
-    assert summary["gate_count"] == 3
+    assert summary["gate_count"] == 4
     assert summary["gate_pass_count"] == 1
     assert summary["failed_gates"] == [
         "boundary_flux_reconstruction",
+        "shape_control_current_reconstruction",
         "solve_free_boundary_vacuum_reconstruction",
     ]
 
@@ -38,12 +40,13 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
     assert report["benchmark_id"] == "free_boundary_coil_vacuum_reconstruction"
     assert report["benchmark_scope"] == "free_boundary_reconstruction"
     assert report["passes"] is True
-    assert report["gate_summary"]["gate_count"] == 4
-    assert report["gate_summary"]["gate_pass_count"] == 4
+    assert report["gate_summary"]["gate_count"] == 5
+    assert report["gate_summary"]["gate_pass_count"] == 5
     assert report["gate_summary"]["failed_gates"] == []
     assert report["gate_summary"]["gate_names"] == [
         "single_coil",
         "boundary_flux_reconstruction",
+        "shape_control_current_reconstruction",
         "solve_free_boundary_vacuum_reconstruction",
         "jax_free_boundary_wall_flux",
     ]
@@ -56,6 +59,13 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
     assert report["boundary_flux_reconstruction"]["boundary_containment_contract_role"] == "gate"
     assert report["boundary_flux_reconstruction"]["limiter_containment_required"] is True
     assert report["boundary_flux_reconstruction"]["x_point_pair_symmetry_abs_error"] < 1.0e-12
+    shape = report["shape_control_current_reconstruction"]
+    assert shape["solver_mode"] == "bounded_coil_current_least_squares_from_boundary_flux"
+    assert shape["response_rank"] == shape["coil_count"]
+    assert shape["current_relative_l2_error"] < 1.0e-9
+    assert shape["flux_relative_rmse"] < 1.0e-12
+    assert shape["active_current_bounds"] == 0
+    assert shape["pass"] is True
     assert (
         report["solve_free_boundary_vacuum_reconstruction"]["solver_mode"]
         == "free_boundary_solver_with_coil_vacuum_boundary"
