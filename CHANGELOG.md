@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added native Rust free-boundary shape-current inversion parity through `fusion-core::vacuum::reconstruct_shape_currents_from_boundary_flux`, matching the Python boundary-flux current-recovery benchmark contract without wrapper delegation.
+
 - Added a free-boundary shape-control current-inversion gate that recovers bounded external coil currents from boundary-flux targets and reports current/flux residuals in the benchmark artifact.
 
 - Hardened DIII-D/JET proxy GEQDSK validation to reuse the shared current-conserving profile-source contract, exposing plasma-mask fraction and source-norm diagnostics instead of maintaining a weaker linear interpolation path.

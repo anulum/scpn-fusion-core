@@ -12,6 +12,7 @@ mpi-domain = []
 [dependencies]
 fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }
+nalgebra = { workspace = true }
 ndarray = { workspace = true }
 rayon = { workspace = true }
 log = { workspace = true }

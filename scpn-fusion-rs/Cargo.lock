@@ -525,6 +525,7 @@ dependencies = [
  "fusion-math",
  "fusion-types",
  "log",
+ "nalgebra",
  "ndarray",
  "rayon",
 ]

@@ -15,6 +15,7 @@ use fusion_math::elliptic::{ellipe, ellipk};
 use fusion_types::config::CoilConfig;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::Grid2D;
+use nalgebra::{DMatrix, DVector};
 use ndarray::Array2;
 
 /// Evaluate the circular-filament poloidal-flux Green's function per ampere.
@@ -268,6 +269,21 @@ pub struct BoundaryFluxReconstruction {
     pub x_point_pair_symmetry_abs_error: Option<f64>,
 }
 
+/// Diagnostics from reconstructing external coil currents from shape flux targets.
+#[derive(Debug, Clone)]
+pub struct ShapeCurrentReconstruction {
+    pub coil_currents: Vec<f64>,
+    pub reconstructed_flux: Vec<f64>,
+    pub residual: Vec<f64>,
+    pub residual_rmse: f64,
+    pub relative_flux_rmse: f64,
+    pub response_rank: usize,
+    pub response_condition: f64,
+    pub active_bounds: usize,
+    pub point_count: usize,
+    pub coil_count: usize,
+}
+
 /// Optional topology metadata for free-boundary contour reconstruction.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BoundaryFluxMetadata<'a> {
@@ -306,6 +322,191 @@ fn boundary_containment_fraction(
         .filter(|point| point_inside_polygon(**point, limiter_points))
         .count();
     Some(contained as f64 / boundary_points.len() as f64)
+}
+
+fn validate_current_limits(current_limits: Option<&[f64]>, coil_count: usize) -> FusionResult<()> {
+    if let Some(limits) = current_limits {
+        if limits.len() != coil_count {
+            return Err(FusionError::ConfigError(format!(
+                "current_limits length must match coil count: got {}, expected {}",
+                limits.len(),
+                coil_count
+            )));
+        }
+        if limits
+            .iter()
+            .any(|value| !value.is_finite() || *value <= 0.0)
+        {
+            return Err(FusionError::ConfigError(
+                "current_limits must contain finite positive values only".to_string(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn boundary_flux_response_matrix(
+    boundary_points: &[(f64, f64)],
+    coils: &[CoilConfig],
+    mu0: f64,
+) -> FusionResult<DMatrix<f64>> {
+    if boundary_points.is_empty() {
+        return Err(FusionError::ConfigError(
+            "shape current reconstruction requires at least one boundary point".to_string(),
+        ));
+    }
+    if coils.is_empty() {
+        return Err(FusionError::ConfigError(
+            "shape current reconstruction requires at least one external coil".to_string(),
+        ));
+    }
+
+    let mut response = DMatrix::zeros(boundary_points.len(), coils.len());
+    for (row, (r_obs, z_obs)) in boundary_points.iter().enumerate() {
+        if !r_obs.is_finite() || *r_obs <= 0.0 || !z_obs.is_finite() {
+            return Err(FusionError::ConfigError(
+                "shape current boundary points must be finite with R > 0".to_string(),
+            ));
+        }
+        for (col, coil) in coils.iter().enumerate() {
+            if !coil.r.is_finite() || coil.r <= 0.0 {
+                return Err(FusionError::ConfigError(format!(
+                    "coil radius must be finite and > 0, got {}",
+                    coil.r
+                )));
+            }
+            if !coil.z.is_finite() || !coil.current.is_finite() {
+                return Err(FusionError::ConfigError(
+                    "coil z/current must be finite".to_string(),
+                ));
+            }
+            response[(row, col)] =
+                circular_filament_green_function_unchecked(coil.r, coil.z, *r_obs, *z_obs, mu0)?;
+        }
+    }
+    if response.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "shape current response matrix contains non-finite entries".to_string(),
+        ));
+    }
+    Ok(response)
+}
+
+fn matrix_rank_and_condition(response: &DMatrix<f64>) -> (usize, f64) {
+    let singular = response.clone().svd(false, false).singular_values;
+    let max_sigma = singular.iter().copied().fold(0.0, f64::max);
+    let tol = (response.nrows().max(response.ncols()) as f64) * f64::EPSILON * max_sigma;
+    let rank = singular.iter().filter(|value| **value > tol).count();
+    let min_nonzero = singular
+        .iter()
+        .copied()
+        .filter(|value| *value > tol)
+        .fold(f64::INFINITY, f64::min);
+    let condition = if rank == 0 || !min_nonzero.is_finite() {
+        f64::INFINITY
+    } else {
+        max_sigma / min_nonzero
+    };
+    (rank, condition)
+}
+
+/// Reconstruct bounded coil currents from boundary/shape flux targets.
+///
+/// This is the Rust counterpart of the Python free-boundary shape inversion
+/// contract. It solves the native Green-function response system directly; no
+/// Python wrapper or fixed Dirichlet replay is involved. Bounds are enforced by
+/// clipping the regularised least-squares solution, which is exact for the
+/// benchmarked full-rank, inactive-bound case and fail-safe for saturated
+/// actuator requests.
+pub fn reconstruct_shape_currents_from_boundary_flux(
+    boundary_points: &[(f64, f64)],
+    coil_templates: &[CoilConfig],
+    target_flux: &[f64],
+    current_limits: Option<&[f64]>,
+    tikhonov_alpha: f64,
+    mu0: f64,
+) -> FusionResult<ShapeCurrentReconstruction> {
+    if target_flux.len() != boundary_points.len() {
+        return Err(FusionError::ConfigError(format!(
+            "target_flux length must match boundary point count: got {}, expected {}",
+            target_flux.len(),
+            boundary_points.len()
+        )));
+    }
+    if target_flux.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "target_flux must contain finite values only".to_string(),
+        ));
+    }
+    if !tikhonov_alpha.is_finite() || tikhonov_alpha < 0.0 {
+        return Err(FusionError::ConfigError(
+            "tikhonov_alpha must be finite and non-negative".to_string(),
+        ));
+    }
+    validate_current_limits(current_limits, coil_templates.len())?;
+
+    let response = boundary_flux_response_matrix(boundary_points, coil_templates, mu0)?;
+    let target = DVector::from_column_slice(target_flux);
+    let mut normal = response.transpose() * &response;
+    for diagonal in 0..normal.nrows() {
+        normal[(diagonal, diagonal)] += tikhonov_alpha;
+    }
+    let rhs = response.transpose() * target;
+    let solved = normal.lu().solve(&rhs).ok_or_else(|| {
+        FusionError::ConfigError(
+            "shape current normal equations are singular; add independent control points or regularization"
+                .to_string(),
+        )
+    })?;
+    let mut currents: Vec<f64> = solved.iter().copied().collect();
+    if currents.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "shape current reconstruction produced non-finite currents".to_string(),
+        ));
+    }
+    if let Some(limits) = current_limits {
+        for (current, limit) in currents.iter_mut().zip(limits.iter()) {
+            *current = current.clamp(-limit.abs(), limit.abs());
+        }
+    }
+
+    let current_vec = DVector::from_column_slice(&currents);
+    let reconstructed = response.clone() * current_vec;
+    let reconstructed_flux: Vec<f64> = reconstructed.iter().copied().collect();
+    let residual: Vec<f64> = reconstructed_flux
+        .iter()
+        .zip(target_flux.iter())
+        .map(|(observed, expected)| observed - expected)
+        .collect();
+    let residual_rmse =
+        (residual.iter().map(|value| value * value).sum::<f64>() / residual.len() as f64).sqrt();
+    let target_rmse = (target_flux.iter().map(|value| value * value).sum::<f64>()
+        / target_flux.len() as f64)
+        .sqrt();
+    let relative_flux_rmse = residual_rmse / target_rmse.abs().max(1.0);
+    let active_bounds = if let Some(limits) = current_limits {
+        currents
+            .iter()
+            .zip(limits.iter())
+            .filter(|(current, limit)| (current.abs() - limit.abs()).abs() <= 1.0e-9)
+            .count()
+    } else {
+        0
+    };
+    let (response_rank, response_condition) = matrix_rank_and_condition(&response);
+
+    Ok(ShapeCurrentReconstruction {
+        coil_currents: currents,
+        reconstructed_flux,
+        residual,
+        residual_rmse,
+        relative_flux_rmse,
+        response_rank,
+        response_condition,
+        active_bounds,
+        point_count: boundary_points.len(),
+        coil_count: coil_templates.len(),
+    })
 }
 
 /// Reconstruct boundary-contour vacuum flux from coil Green functions.
@@ -774,5 +975,99 @@ mod tests {
                 < 1.0e-14,
             "symmetric X-point pair should report a bounded topology residual"
         );
+    }
+
+    #[test]
+    fn test_shape_current_reconstruction_recovers_boundary_flux_currents() {
+        let coil_templates = vec![
+            CoilConfig {
+                name: "inner".to_string(),
+                r: 0.8,
+                z: 0.0,
+                current: 0.0,
+            },
+            CoilConfig {
+                name: "upper".to_string(),
+                r: 1.85,
+                z: 1.15,
+                current: 0.0,
+            },
+            CoilConfig {
+                name: "lower".to_string(),
+                r: 1.85,
+                z: -1.15,
+                current: 0.0,
+            },
+        ];
+        let boundary_points = vec![
+            (0.75, -0.95),
+            (1.25, -1.20),
+            (2.15, -0.25),
+            (2.15, 0.85),
+            (1.20, 1.20),
+        ];
+        let true_currents = [0.85e6, -0.45e6, 0.30e6];
+        let mut driven_coils = coil_templates.clone();
+        for (coil, current) in driven_coils.iter_mut().zip(true_currents.iter()) {
+            coil.current = *current;
+        }
+        let target_flux = calculate_vacuum_flux_at_points(&boundary_points, &driven_coils, 1.0)
+            .expect("valid target flux");
+        let limits = [1.2e6, 1.2e6, 1.2e6];
+
+        let reconstruction = reconstruct_shape_currents_from_boundary_flux(
+            &boundary_points,
+            &coil_templates,
+            &target_flux,
+            Some(&limits),
+            0.0,
+            1.0,
+        )
+        .expect("full-rank shape current reconstruction should solve");
+
+        assert_eq!(reconstruction.point_count, boundary_points.len());
+        assert_eq!(reconstruction.coil_count, coil_templates.len());
+        assert_eq!(reconstruction.response_rank, coil_templates.len());
+        assert!(reconstruction.response_condition.is_finite());
+        assert_eq!(reconstruction.active_bounds, 0);
+        assert!(reconstruction.relative_flux_rmse < 1.0e-12);
+        assert!(reconstruction.residual_rmse < 1.0e-9);
+        for (observed, expected) in reconstruction
+            .coil_currents
+            .iter()
+            .zip(true_currents.iter())
+        {
+            assert!(((observed - expected) / expected).abs() < 1.0e-9);
+        }
+    }
+
+    #[test]
+    fn test_shape_current_reconstruction_enforces_current_limits() {
+        let coil_templates = vec![CoilConfig {
+            name: "limited".to_string(),
+            r: 5.0,
+            z: 0.0,
+            current: 0.0,
+        }];
+        let boundary_points = vec![(5.5, 0.25)];
+        let mut driven_coils = coil_templates.clone();
+        driven_coils[0].current = 10.0;
+        let target_flux = calculate_vacuum_flux_at_points(&boundary_points, &driven_coils, 1.0)
+            .expect("valid target flux");
+        let limits = [0.5];
+
+        let reconstruction = reconstruct_shape_currents_from_boundary_flux(
+            &boundary_points,
+            &coil_templates,
+            &target_flux,
+            Some(&limits),
+            0.0,
+            1.0,
+        )
+        .expect("bounded shape current reconstruction should return saturated current");
+
+        assert!(reconstruction.coil_currents[0].abs() <= limits[0] + 1.0e-12);
+        assert_eq!(reconstruction.active_bounds, 1);
+        assert!(reconstruction.relative_flux_rmse > 0.0);
     }
 }

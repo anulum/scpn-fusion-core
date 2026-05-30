@@ -821,6 +821,13 @@ minimum limiter clearance, axis flux, X-point flux, X-point flux span, and
 symmetric X-point pair flux residual. This is a full Rust implementation using
 the same circular-filament Green function, not a wrapper around the Python
 benchmark path.
+The Rust surface also exposes `reconstruct_shape_currents_from_boundary_flux`,
+which solves the native Green-function response system for bounded coil
+currents from boundary-flux targets and reports recovered currents,
+reconstructed flux, residual RMSE, relative flux RMSE, response rank,
+condition number, and active current bounds. This ports the accepted Python
+shape-current inversion contract into Rust rather than leaving the benchmark
+as Python-only evidence.
 Go, Julia, and Lean are not listed as free-boundary parity surfaces here because
 their current native packages do not expose equivalent coil Green-function,
 limiter, axis, or X-point reconstruction logic.
