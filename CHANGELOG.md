@@ -19,6 +19,9 @@
   canonical profile-source metrics from explicitly requested public-SPARC
   source-convention adapter metrics and exposes a strict adapted-source
   contract gate.
+- Benchmark schema hardening: SPARC GEQDSK RMSE artifacts now emit explicit
+  benchmark id, reconstruction scope, reference role/class counts, and solver
+  mode counts.
 
 ## [3.9.5] - 2026-05-24
 

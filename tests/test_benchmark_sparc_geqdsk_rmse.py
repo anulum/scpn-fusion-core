@@ -103,8 +103,16 @@ def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypat
     assert result["mode"] == "reference_geqdsk"
     assert result["reference_case_count"] == 1
     assert result["machine_counts"] == {"sparc": 1}
+    assert result["benchmark_id"] == "sparc-pointwise-rmse"
+    assert result["benchmark_scope"] == "profile_source_fixed_boundary_reconstruction"
+    assert result["reference_role_counts"] == {"gate": 1}
+    assert result["reference_class_counts"] == {"public_efit_reference": 1}
+    assert result["solver_mode_counts"] == {"raw_geqdsk_profile_source_fixed_boundary": 1}
     assert len(result["cases"]) == 1
     assert result["cases"][0]["machine"] == "sparc"
+    assert result["cases"][0]["reference_class"] == "public_efit_reference"
+    assert result["cases"][0]["reference_role"] == "gate"
+    assert result["cases"][0]["solver_mode"] == "raw_geqdsk_profile_source_fixed_boundary"
     assert result["cases"][0]["source_file"] == "sparc_ref_case.geqdsk"
     assert result["cases"][0]["geqdsk_contract_pass"] is True
 
@@ -358,6 +366,7 @@ def test_run_benchmark_records_explicit_adapted_source_gate(monkeypatch) -> None
     row = result["cases"][0]
     assert row["geqdsk_source_contract_pass"] is False
     assert row["geqdsk_adapted_source_contract_pass"] is True
+    assert row["geqdsk_adapted_solver_mode"] == "adapted_geqdsk_profile_source_fixed_boundary"
     assert row["geqdsk_adapted_source_convention_adapter"] == "scaled_by_2pi"
     assert row["geqdsk_adapted_source_convention_adapter_pass"] is True
 

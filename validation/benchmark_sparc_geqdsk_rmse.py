@@ -562,14 +562,24 @@ def run_benchmark(
             passes = (err < NRMSE_THRESHOLD) and (backend_ok or not require_neural_backend)
             all_cases_neural_backend = all_cases_neural_backend and backend_ok
             machine = str(eq_ref.get("machine", "synthetic"))
-            reference_class = "public" if machine == "sparc" else "synthetic"
-            gated = (not using_reference_data) or reference_class == "public"
+            if using_reference_data and machine == "sparc":
+                reference_class = "public_efit_reference"
+                reference_role = "gate"
+            elif using_reference_data:
+                reference_class = "synthetic_proxy_reference"
+                reference_role = "diagnostic"
+            else:
+                reference_class = "synthetic_fallback_reference"
+                reference_role = "gate"
+            gated = reference_role == "gate"
 
             row = {
                 "name": str(eq_ref.get("name", "unknown")),
                 "machine": machine,
                 "reference_class": reference_class,
+                "reference_role": reference_role,
                 "gated": gated,
+                "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
                 "grid": f"{gs}x{gs}",
                 "nrmse": round(err, 6),
                 "threshold": NRMSE_THRESHOLD,
@@ -596,6 +606,9 @@ def run_benchmark(
                     row["geqdsk_adapted_source_convention_adapter"] = str(
                         adapted_contract.get("source_convention_adapter", "not_evaluated")
                     )
+                    row["geqdsk_adapted_solver_mode"] = (
+                        "adapted_geqdsk_profile_source_fixed_boundary"
+                    )
                     row["geqdsk_adapted_source_convention_adapter_pass"] = bool(
                         adapted_contract.get("source_convention_adapter_pass", False)
                     )
@@ -606,6 +619,7 @@ def run_benchmark(
                 else:
                     row["geqdsk_adapted_source_contract_pass"] = False
                     row["geqdsk_adapted_source_convention_adapter"] = "not_evaluated"
+                    row["geqdsk_adapted_solver_mode"] = "not_evaluated"
                     row["geqdsk_adapted_source_convention_adapter_pass"] = False
                 if not bool(contract["geqdsk_contract_pass"]):
                     passes = False
@@ -635,8 +649,23 @@ def run_benchmark(
         len(adapted_rows) == 0 or len(adapted_pass_rows) != len(adapted_rows)
     ):
         all_pass = False
+    reference_role_counts = {
+        role: sum(1 for case in cases if str(case.get("reference_role", "")) == role)
+        for role in sorted({str(case.get("reference_role", "")) for case in cases})
+    }
+    reference_class_counts = {
+        klass: sum(1 for case in cases if str(case.get("reference_class", "")) == klass)
+        for klass in sorted({str(case.get("reference_class", "")) for case in cases})
+    }
+    solver_mode_counts = {
+        mode: sum(1 for case in cases if str(case.get("solver_mode", "")) == mode)
+        for mode in sorted({str(case.get("solver_mode", "")) for case in cases})
+    }
     elapsed = time.time() - t0
     return {
+        "schema_version": "sparc-geqdsk-rmse-benchmark.v2",
+        "benchmark_id": "sparc-pointwise-rmse",
+        "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "reference_geqdsk" if using_reference_data else "synthetic_fallback",
         "reference_case_count": len(reference_cases),
@@ -650,6 +679,9 @@ def run_benchmark(
         "strict_adapted_source_contract": bool(strict_adapted_source_contract),
         "all_cases_neural_backend": bool(all_cases_neural_backend),
         "gate_row_count": len(gated_rows),
+        "reference_role_counts": reference_role_counts,
+        "reference_class_counts": reference_class_counts,
+        "solver_mode_counts": solver_mode_counts,
         "adapted_source_contract_row_count": len(adapted_rows),
         "adapted_source_contract_pass_count": len(adapted_pass_rows),
         "gate_adapted_source_contract_pass_count": sum(
