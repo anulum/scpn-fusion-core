@@ -306,3 +306,110 @@ def test_run_benchmark_strict_source_contract_enforces_geqdsk_pde(monkeypatch) -
     assert relaxed["passes"] is True
     assert strict["passes"] is False
     assert strict["cases"][0]["geqdsk_source_contract_pass"] is False
+
+
+def test_run_benchmark_records_explicit_adapted_source_gate(monkeypatch) -> None:
+    psi = np.eye(9, dtype=np.float64)
+
+    monkeypatch.setattr(
+        benchmark_sparc_geqdsk_rmse,
+        "_load_sparc_geqdsk_cases",
+        lambda: [
+            {
+                "name": "sparc_1310",
+                "machine": "sparc",
+                "source_file": "sparc_1310.eqdsk",
+                "psi": psi,
+                "feature_vector_full": np.array([-8.7, -12.2, 1.85, 0.0, 1.0, 1.0, 0.0, 2.37]),
+                "Ip": -8.7,
+                "B0": -12.2,
+                "R0": 1.85,
+                "kappa": 1.8,
+                "geqdsk_contract": {
+                    "geqdsk_contract_pass": True,
+                    "geqdsk_source_contract_pass": False,
+                    "psi_span": 1.0,
+                },
+                "geqdsk_adapted_contract": {
+                    "geqdsk_contract_pass": True,
+                    "geqdsk_source_contract_pass": True,
+                    "source_convention_adapter": "scaled_by_2pi",
+                    "source_convention_adapter_pass": True,
+                    "gs_profile_source_rel_l2": 0.01,
+                },
+            }
+        ],
+    )
+
+    def _proxy_only(eq: dict[str, Any]) -> tuple[np.ndarray, str, str]:
+        return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
+
+    monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)
+    result = benchmark_sparc_geqdsk_rmse.run_benchmark(
+        grid_sizes=[9],
+        strict_source_contract=False,
+        strict_adapted_source_contract=True,
+    )
+
+    assert result["passes"] is True
+    assert result["adapted_source_contract_row_count"] == 1
+    assert result["adapted_source_contract_pass_count"] == 1
+    assert result["gate_adapted_source_contract_pass_count"] == 1
+    row = result["cases"][0]
+    assert row["geqdsk_source_contract_pass"] is False
+    assert row["geqdsk_adapted_source_contract_pass"] is True
+    assert row["geqdsk_adapted_source_convention_adapter"] == "scaled_by_2pi"
+    assert row["geqdsk_adapted_source_convention_adapter_pass"] is True
+
+
+def test_run_benchmark_strict_adapted_source_gate_rejects_missing_adapter(
+    monkeypatch,
+) -> None:
+    psi = np.eye(9, dtype=np.float64)
+
+    monkeypatch.setattr(
+        benchmark_sparc_geqdsk_rmse,
+        "_load_sparc_geqdsk_cases",
+        lambda: [
+            {
+                "name": "sparc_1300",
+                "machine": "sparc",
+                "source_file": "sparc_1300.eqdsk",
+                "psi": psi,
+                "feature_vector_full": np.array([-8.7, -12.2, 1.85, 0.0, 1.0, 1.0, 0.0, 2.37]),
+                "Ip": -8.7,
+                "B0": -12.2,
+                "R0": 1.85,
+                "kappa": 1.8,
+                "geqdsk_contract": {
+                    "geqdsk_contract_pass": True,
+                    "geqdsk_source_contract_pass": False,
+                    "psi_span": 1.0,
+                },
+                "geqdsk_adapted_contract": {
+                    "geqdsk_contract_pass": True,
+                    "geqdsk_source_contract_pass": False,
+                    "source_convention_adapter": "no_named_adapter",
+                    "source_convention_adapter_pass": False,
+                    "gs_profile_source_rel_l2": float("inf"),
+                },
+            }
+        ],
+    )
+
+    def _proxy_only(eq: dict[str, Any]) -> tuple[np.ndarray, str, str]:
+        return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
+
+    monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)
+    relaxed = benchmark_sparc_geqdsk_rmse.run_benchmark(
+        grid_sizes=[9],
+        strict_adapted_source_contract=False,
+    )
+    strict = benchmark_sparc_geqdsk_rmse.run_benchmark(
+        grid_sizes=[9],
+        strict_adapted_source_contract=True,
+    )
+
+    assert relaxed["passes"] is True
+    assert strict["passes"] is False
+    assert strict["adapted_source_contract_row_count"] == 0

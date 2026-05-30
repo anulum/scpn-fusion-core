@@ -360,6 +360,12 @@ def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
 
     return {
         "geqdsk_contract_pass": pass_contract,
+        "source_convention": str(getattr(eq, "source_convention", "raw_canonical")),
+        "source_convention_adapter": str(getattr(eq, "source_convention_adapter", "not_applied")),
+        "source_convention_adapter_pass": bool(
+            getattr(eq, "source_convention_adapter_pass", False)
+        ),
+        "source_convention_metadata": dict(getattr(eq, "source_convention_metadata", {})),
         "psi_span": psi_span,
         "axis_r_m": axis_r,
         "axis_z_m": axis_z,
@@ -441,6 +447,19 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
             continue
 
         contract = _geqdsk_contract_metrics(eq)
+        adapted_contract: dict[str, Any] | None = None
+        if machine == "sparc":
+            try:
+                adapted_eq = read_geqdsk(
+                    path,
+                    source_convention_mode="public_sparc_named_adapter",
+                )
+            except Exception as exc:  # pragma: no cover - raw parse already succeeded
+                logger.warning(
+                    "Skipping adapted GEQDSK source contract for '%s': %s", path.name, exc
+                )
+            else:
+                adapted_contract = _geqdsk_contract_metrics(adapted_eq)
         kappa = 1.7
         if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
             r_span = float(np.max(eq.rbbbs) - np.min(eq.rbbbs))
@@ -480,6 +499,7 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
                 "R0": float(eq.rmaxis),
                 "kappa": float(kappa),
                 "geqdsk_contract": contract,
+                "geqdsk_adapted_contract": adapted_contract,
             }
         )
     return cases
@@ -490,6 +510,7 @@ def run_benchmark(
     *,
     require_neural_backend: bool = False,
     strict_source_contract: bool = False,
+    strict_adapted_source_contract: bool = False,
 ) -> dict[str, Any]:
     """Run SPARC/GEQDSK ψ reconstruction benchmark across configured grids."""
     if grid_sizes is None:
@@ -566,6 +587,26 @@ def run_benchmark(
                     contract.get("geqdsk_source_contract_pass", True)
                 )
                 row["geqdsk_contract"] = contract
+                adapted_contract = eq_ref.get("geqdsk_adapted_contract")
+                if isinstance(adapted_contract, dict):
+                    adapted_contract = dict(adapted_contract)
+                    row["geqdsk_adapted_source_contract_pass"] = bool(
+                        adapted_contract.get("source_convention_adapter_pass", False)
+                    )
+                    row["geqdsk_adapted_source_convention_adapter"] = str(
+                        adapted_contract.get("source_convention_adapter", "not_evaluated")
+                    )
+                    row["geqdsk_adapted_source_convention_adapter_pass"] = bool(
+                        adapted_contract.get("source_convention_adapter_pass", False)
+                    )
+                    row["geqdsk_adapted_source_rel_l2"] = float(
+                        adapted_contract.get("gs_profile_source_rel_l2", float("inf"))
+                    )
+                    row["geqdsk_adapted_contract"] = adapted_contract
+                else:
+                    row["geqdsk_adapted_source_contract_pass"] = False
+                    row["geqdsk_adapted_source_convention_adapter"] = "not_evaluated"
+                    row["geqdsk_adapted_source_convention_adapter_pass"] = False
                 if not bool(contract["geqdsk_contract_pass"]):
                     passes = False
                     row["passes"] = False
@@ -579,6 +620,21 @@ def run_benchmark(
                 all_pass = False
 
     reference_machines = [str(case.get("machine", "synthetic")) for case in reference_cases]
+    gated_rows = [case for case in cases if bool(case.get("gated", True))]
+    adapted_rows = [
+        case
+        for case in cases
+        if bool(case.get("geqdsk_adapted_source_convention_adapter_pass", False))
+    ]
+    adapted_pass_rows = [
+        case
+        for case in adapted_rows
+        if bool(case.get("geqdsk_adapted_source_contract_pass", False))
+    ]
+    if strict_adapted_source_contract and (
+        len(adapted_rows) == 0 or len(adapted_pass_rows) != len(adapted_rows)
+    ):
+        all_pass = False
     elapsed = time.time() - t0
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -591,7 +647,14 @@ def run_benchmark(
         "nrmse_threshold": NRMSE_THRESHOLD,
         "require_neural_backend": bool(require_neural_backend),
         "strict_source_contract": bool(strict_source_contract),
+        "strict_adapted_source_contract": bool(strict_adapted_source_contract),
         "all_cases_neural_backend": bool(all_cases_neural_backend),
+        "gate_row_count": len(gated_rows),
+        "adapted_source_contract_row_count": len(adapted_rows),
+        "adapted_source_contract_pass_count": len(adapted_pass_rows),
+        "gate_adapted_source_contract_pass_count": sum(
+            1 for case in adapted_pass_rows if bool(case.get("gated", True))
+        ),
         "cases": cases,
         "passes": all_pass,
         "runtime_s": round(elapsed, 2),
@@ -614,11 +677,21 @@ def main() -> int:
             "Delta*psi = -mu0 R^2 p' - FF' source contract."
         ),
     )
+    parser.add_argument(
+        "--strict-adapted-source-contract",
+        action="store_true",
+        help=(
+            "Fail if no gated public GEQDSK rows satisfy the explicitly requested "
+            "public-SPARC source-convention adapter contract, or if an accepted "
+            "adapter row fails after normalisation."
+        ),
+    )
     args = parser.parse_args()
 
     result = run_benchmark(
         require_neural_backend=bool(args.strict_backend),
         strict_source_contract=bool(args.strict_source_contract),
+        strict_adapted_source_contract=bool(args.strict_adapted_source_contract),
     )
 
     out_dir = REPO_ROOT / "artifacts"
@@ -637,14 +710,18 @@ def main() -> int:
         print(
             f"\nAll gated cases pass (threshold={NRMSE_THRESHOLD}, "
             f"strict_backend={bool(args.strict_backend)}, "
-            f"strict_source_contract={bool(args.strict_source_contract)})"
+            f"strict_source_contract={bool(args.strict_source_contract)}, "
+            "strict_adapted_source_contract="
+            f"{bool(args.strict_adapted_source_contract)})"
         )
         return 0
     else:
         print(
             f"\nSome cases FAILED (threshold={NRMSE_THRESHOLD}, "
             f"strict_backend={bool(args.strict_backend)}, "
-            f"strict_source_contract={bool(args.strict_source_contract)})"
+            f"strict_source_contract={bool(args.strict_source_contract)}, "
+            "strict_adapted_source_contract="
+            f"{bool(args.strict_adapted_source_contract)})"
         )
         return 1
 

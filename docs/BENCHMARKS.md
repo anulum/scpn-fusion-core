@@ -335,10 +335,19 @@ top level and row level. These labels keep the strict profile-source gate,
 operator-source elliptic-solver gate, and adapted-profile reconstruction gate
 machine-separable from free-boundary coil/vacuum reconstruction benchmarks.
 The SPARC point-wise JSON report likewise declares `benchmark_id =
-sparc-pointwise-rmse`, the same fixed-boundary profile-source scope, and row
-`solver_mode = raw_geqdsk_profile_source_fixed_boundary`, so it is not
-machine-readable as an operator-source, free-boundary, or reduced-order
-surrogate result.
+sparc-pointwise-rmse`, the same fixed-boundary profile-source scope, and keeps
+raw GEQDSK profile-source metrics separate from the explicitly requested
+public-SPARC convention adapter metrics. Raw canonical source metrics remain
+strict and unchanged. The report now also emits
+`geqdsk_adapted_source_contract_pass`,
+`geqdsk_adapted_source_convention_adapter`, and
+`geqdsk_adapted_source_rel_l2` per row, plus top-level
+`adapted_source_contract_row_count`, `adapted_source_contract_pass_count`, and
+`gate_adapted_source_contract_pass_count`. The adapted gate can be enforced by
+running `python validation/benchmark_sparc_geqdsk_rmse.py
+--strict-adapted-source-contract`; it is an explicit convention-normalised
+fixed-boundary reconstruction contract, not an operator-source,
+free-boundary, or reduced-order surrogate result.
 The same report now carries a separate operator-source elliptic-solver gate:
 `18/18` rows reproduce `Delta*psi_ref` below `psi_N RMSE <= 1e-6`, with worst
 operator-source row `sparc/lmode_vh.geqdsk` at `2.05e-14`. This isolates the

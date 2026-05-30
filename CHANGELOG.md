@@ -15,6 +15,10 @@
   (`runaway_electron_model`, `rust_flight_sim_wrapper`, `rwm_feedback`,
   `rzip_model`, `safe_rl_controller`, `scenario_scheduler`, `shape_controller`)
   and refreshed the internal consolidated TODO task tracker status.
+- Physics validation hardening: SPARC GEQDSK RMSE reporting now separates raw
+  canonical profile-source metrics from explicitly requested public-SPARC
+  source-convention adapter metrics and exposes a strict adapted-source
+  contract gate.
 
 ## [3.9.5] - 2026-05-24
 
