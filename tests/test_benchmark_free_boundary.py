@@ -16,6 +16,16 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
 
     assert report["benchmark_id"] == "free_boundary_coil_vacuum_reconstruction"
     assert report["benchmark_scope"] == "free_boundary_reconstruction"
+    assert report["passes"] is True
+    assert report["gate_summary"]["gate_count"] == 4
+    assert report["gate_summary"]["gate_pass_count"] == 4
+    assert report["gate_summary"]["failed_gates"] == []
+    assert report["gate_summary"]["gate_names"] == [
+        "single_coil",
+        "boundary_flux_reconstruction",
+        "solve_free_boundary_vacuum_reconstruction",
+        "jax_free_boundary_wall_flux",
+    ]
     assert report["single_coil"]["physics_scope"] == "external_coil_vacuum_flux"
     assert (
         report["boundary_flux_reconstruction"]["solver_mode"]

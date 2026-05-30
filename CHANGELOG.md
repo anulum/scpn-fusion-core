@@ -25,6 +25,8 @@
 - Free-boundary benchmark hardening: solver computational-wall containment is
   now labelled as diagnostic-only instead of being displayed as a limiter
   containment pass condition.
+- Free-boundary benchmark hardening: reports now include an aggregate `passes`
+  field and machine-readable gate summary.
 
 ## [3.9.5] - 2026-05-24
 

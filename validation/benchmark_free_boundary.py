@@ -310,6 +310,21 @@ def run_free_boundary_benchmark() -> dict:
             ),
         }
 
+        gate_names = (
+            "single_coil",
+            "boundary_flux_reconstruction",
+            "solve_free_boundary_vacuum_reconstruction",
+            "jax_free_boundary_wall_flux",
+        )
+        failed_gates = [name for name in gate_names if not bool(results[name]["pass"])]
+        results["gate_summary"] = {
+            "gate_names": list(gate_names),
+            "gate_count": len(gate_names),
+            "gate_pass_count": len(gate_names) - len(failed_gates),
+            "failed_gates": failed_gates,
+        }
+        results["passes"] = len(failed_gates) == 0
+
         return results
     finally:
         if cfg_path.exists():
@@ -331,6 +346,11 @@ def main():
         f.write(f"- Benchmark ID: `{res['benchmark_id']}`\n")
         f.write(f"- Benchmark scope: `{res['benchmark_scope']}`\n")
         f.write(f"- Contract: {res['benchmark_contract']}\n\n")
+        gs = res["gate_summary"]
+        f.write(
+            f"- Gate result: `{res['passes']}` "
+            f"({gs['gate_pass_count']}/{gs['gate_count']} gates passed)\n\n"
+        )
         f.write("| Test | Metric | Result | Pass |\n")
         f.write("|------|--------|--------|------|\n")
         sc = res["single_coil"]
