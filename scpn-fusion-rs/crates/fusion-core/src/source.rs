@@ -294,6 +294,134 @@ pub fn apply_geqdsk_source_convention(
     Ok(transformed)
 }
 
+fn validate_flux_profile_inputs(psi_norm: &Array2<f64>, profile: &[f64]) -> FusionResult<()> {
+    if profile.len() < 3 {
+        return Err(FusionError::ConfigError(
+            "GEQDSK flux profile must contain at least three samples".to_string(),
+        ));
+    }
+    if psi_norm.iter().any(|value| !value.is_finite())
+        || profile.iter().any(|value| !value.is_finite())
+    {
+        return Err(FusionError::ConfigError(
+            "GEQDSK psi_norm and profile samples must contain only finite values".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn linear_flux_profile_value(psi_norm: f64, profile: &[f64]) -> f64 {
+    let x = psi_norm.clamp(0.0, 1.0);
+    let scale = (profile.len() - 1) as f64;
+    let lower = (x * scale).floor().min(scale - 1.0) as usize;
+    let upper = lower + 1;
+    let x0 = lower as f64 / scale;
+    let x1 = upper as f64 / scale;
+    let t = if x1 > x0 { (x - x0) / (x1 - x0) } else { 0.0 };
+    profile[lower] * (1.0 - t) + profile[upper] * t
+}
+
+fn quadratic_flux_profile_value(psi_norm: f64, profile: &[f64]) -> f64 {
+    let x = psi_norm.clamp(0.0, 1.0);
+    let n = profile.len();
+    let scale = (n - 1) as f64;
+    let mut idx = (x * scale).floor() as isize;
+    idx = idx.clamp(1, (n - 2) as isize);
+    let i = idx as usize;
+
+    let x0 = (i - 1) as f64 / scale;
+    let x1 = i as f64 / scale;
+    let x2 = (i + 1) as f64 / scale;
+    let y0 = profile[i - 1];
+    let y1 = profile[i];
+    let y2 = profile[i + 1];
+
+    let term0 = y0 * (x - x1) * (x - x2) / ((x0 - x1) * (x0 - x2));
+    let term1 = y1 * (x - x0) * (x - x2) / ((x1 - x0) * (x1 - x2));
+    let term2 = y2 * (x - x0) * (x - x1) / ((x2 - x0) * (x2 - x1));
+    term0 + term1 + term2
+}
+
+/// Interpolate a GEQDSK p'/FF' flux profile with local quadratic stencils.
+///
+/// Profile samples are assumed to live on a uniform normalized-flux grid
+/// `0 <= psi_N <= 1`, matching the GEQDSK profile-array convention. Values are
+/// clipped to the profile domain before interpolation.
+pub fn interpolate_flux_profile_second_order(
+    psi_norm: &Array2<f64>,
+    profile: &[f64],
+) -> FusionResult<Array2<f64>> {
+    validate_flux_profile_inputs(psi_norm, profile)?;
+    Ok(psi_norm.mapv(|psi| quadratic_flux_profile_value(psi, profile)))
+}
+
+/// Interpolate a flux profile while preserving the masked weighted integral.
+///
+/// The quadratic interpolation gives second-order local profile accuracy.  The
+/// final scalar correction preserves the same masked weighted integral as the
+/// linear GEQDSK profile contract, preventing hidden net-current drift when the
+/// source is assembled from p' and FF' profiles.
+pub fn interpolate_flux_profile_current_conserving(
+    psi_norm: &Array2<f64>,
+    profile: &[f64],
+    weights: &Array2<f64>,
+    mask: &Array2<bool>,
+) -> FusionResult<Array2<f64>> {
+    validate_flux_profile_inputs(psi_norm, profile)?;
+    if weights.dim() != psi_norm.dim() {
+        return Err(FusionError::ConfigError(format!(
+            "GEQDSK profile weights shape mismatch: expected {:?}, got {:?}",
+            psi_norm.dim(),
+            weights.dim()
+        )));
+    }
+    if mask.dim() != psi_norm.dim() {
+        return Err(FusionError::ConfigError(format!(
+            "GEQDSK profile mask shape mismatch: expected {:?}, got {:?}",
+            psi_norm.dim(),
+            mask.dim()
+        )));
+    }
+    if weights.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "GEQDSK profile weights must contain only finite values".to_string(),
+        ));
+    }
+    if weights
+        .iter()
+        .zip(mask.iter())
+        .any(|(weight, include)| *include && *weight < 0.0)
+    {
+        return Err(FusionError::ConfigError(
+            "GEQDSK profile weights must be non-negative on the masked domain".to_string(),
+        ));
+    }
+
+    let quadratic = interpolate_flux_profile_second_order(psi_norm, profile)?;
+    if !mask.iter().any(|include| *include) {
+        return Ok(quadratic);
+    }
+
+    let mut target_integral = 0.0;
+    let mut observed_integral = 0.0;
+    for ((psi, weight), include) in psi_norm.iter().zip(weights.iter()).zip(mask.iter()) {
+        if *include {
+            target_integral += linear_flux_profile_value(*psi, profile) * weight;
+            observed_integral += quadratic_flux_profile_value(*psi, profile) * weight;
+        }
+    }
+    let scale = target_integral.abs().max(1.0);
+    if target_integral.abs() <= 1.0e-15 && observed_integral.abs() <= 1.0e-15 {
+        return Ok(quadratic);
+    }
+    if observed_integral.abs() <= 1.0e-15 * scale {
+        return Err(FusionError::ConfigError(
+            "GEQDSK quadratic profile interpolation has zero weighted integral".to_string(),
+        ));
+    }
+    Ok(quadratic.mapv(|value| value * target_integral / observed_integral))
+}
+
 fn source_relative_l2(
     operator_source: &Array2<f64>,
     candidate_source: &Array2<f64>,
@@ -777,6 +905,90 @@ mod tests {
         assert_eq!(adapter.convention, GeqdskSourceConvention::ScaledByTwoPi);
         assert!(adapter.pass);
         assert!(adapter.residual_l2 < 1.0e-14);
+    }
+
+    #[test]
+    fn test_flux_profile_second_order_is_exact_for_quadratic_profile() {
+        let profile: Vec<f64> = (0..5)
+            .map(|idx| {
+                let x = idx as f64 / 4.0;
+                1.0 - 0.5 * x + 2.0 * x * x
+            })
+            .collect();
+        let psi_norm = Array2::from_shape_vec((2, 3), vec![0.0, 0.125, 0.375, 0.5, 0.875, 1.0])
+            .expect("valid shape");
+
+        let interpolated = interpolate_flux_profile_second_order(&psi_norm, &profile)
+            .expect("valid quadratic interpolation");
+
+        for (psi, value) in psi_norm.iter().zip(interpolated.iter()) {
+            let expected = 1.0 - 0.5 * psi + 2.0 * psi * psi;
+            assert!((value - expected).abs() < 1.0e-14);
+        }
+    }
+
+    #[test]
+    fn test_current_conserving_flux_profile_preserves_weighted_linear_integral() {
+        let profile = vec![0.25, 0.7, 1.4, 2.0, 2.8];
+        let psi_norm = Array2::from_shape_vec((2, 3), vec![0.05, 0.21, 0.43, 0.66, 0.82, 0.98])
+            .expect("valid shape");
+        let weights = Array2::from_shape_vec((2, 3), vec![1.0, 1.5, 2.0, 0.5, 1.25, 0.75])
+            .expect("valid shape");
+        let mask = Array2::from_shape_vec((2, 3), vec![true, true, false, true, true, true])
+            .expect("valid shape");
+
+        let interpolated =
+            interpolate_flux_profile_current_conserving(&psi_norm, &profile, &weights, &mask)
+                .expect("valid current-conserving interpolation");
+        let target_integral: f64 = psi_norm
+            .iter()
+            .zip(weights.iter())
+            .zip(mask.iter())
+            .filter_map(|((psi, weight), include)| {
+                include.then_some(linear_flux_profile_value(*psi, &profile) * weight)
+            })
+            .sum();
+        let observed_integral: f64 = interpolated
+            .iter()
+            .zip(weights.iter())
+            .zip(mask.iter())
+            .filter_map(|((value, weight), include)| include.then_some(value * weight))
+            .sum();
+
+        assert!((observed_integral - target_integral).abs() < 1.0e-12);
+    }
+
+    #[test]
+    fn test_current_conserving_flux_profile_rejects_invalid_contracts() {
+        let psi_norm = Array2::from_elem((2, 2), 0.5);
+        let weights = Array2::from_elem((2, 2), 1.0);
+        let mask = Array2::from_elem((2, 2), true);
+
+        assert!(interpolate_flux_profile_current_conserving(
+            &psi_norm,
+            &[1.0, 2.0],
+            &weights,
+            &mask,
+        )
+        .is_err());
+
+        let bad_weights = Array2::from_elem((2, 2), -1.0);
+        assert!(interpolate_flux_profile_current_conserving(
+            &psi_norm,
+            &[0.0, 1.0, 2.0],
+            &bad_weights,
+            &mask,
+        )
+        .is_err());
+
+        let wrong_shape = Array2::from_elem((1, 4), true);
+        assert!(interpolate_flux_profile_current_conserving(
+            &psi_norm,
+            &[0.0, 1.0, 2.0],
+            &weights,
+            &wrong_shape,
+        )
+        .is_err());
     }
 
     #[test]
