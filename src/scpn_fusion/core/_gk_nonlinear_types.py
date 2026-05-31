@@ -138,7 +138,9 @@ class NonlinearGKResult:
         default_factory=lambda: np.empty(0)
     )
     dealiased_high_k_max_abs_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
-    nonlinear_invariant_pass_t: NDArray[np.bool_] = field(default_factory=lambda: np.empty(0))
+    nonlinear_invariant_pass_t: NDArray[np.bool_] = field(
+        default_factory=lambda: np.empty(0, dtype=np.bool_)
+    )
     kx_rhos: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     ky_rhos: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     theta_rad: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
@@ -149,78 +151,135 @@ class NonlinearGKResult:
     final_state: NonlinearGKState | None = None
 
     def to_reference_artifact(self) -> dict[str, object]:
-        """Return a JSON-compatible nonlinear GK parity artifact."""
+        """Return a JSON-compatible full-dimensional nonlinear GK artifact.
+
+        The spectral distribution is complex-valued in the native solver.  The
+        public parity artifact keeps the full species/kx/ky/theta/vpar/mu grid
+        and serializes the real and imaginary components separately so external
+        GENE/CGYRO/GS2 comparisons cannot silently collapse phase information.
+        """
+        if self.final_state is None:
+            raise ValueError("nonlinear GK reference artifacts require a final 5D state")
+
+        distribution = np.asarray(self.final_state.f, dtype=np.complex128)
+        species_index: NDArray[np.float64] = np.arange(
+            distribution.shape[0], dtype=np.float64
+        )
+        zonal_ky_index = int(np.argmin(np.abs(self.ky_rhos)))
+        zonal_flow_kx_t = np.asarray(
+            self.phi_energy_kxky_t[:, :, zonal_ky_index], dtype=np.float64
+        )
+
         coordinates = {
-            "time_s": self.time.tolist(),
-            "kx_rhos": self.kx_rhos.tolist(),
-            "ky_rhos": self.ky_rhos.tolist(),
-            "theta_rad": self.theta_rad.tolist(),
-            "vpar_vth": self.vpar_vth.tolist(),
-            "mu_normalized": self.mu_normalized.tolist(),
+            "species_index": species_index.tolist(),
+            "time_s": np.asarray(self.time, dtype=np.float64).tolist(),
+            "kx_rhos": np.asarray(self.kx_rhos, dtype=np.float64).tolist(),
+            "ky_rhos": np.asarray(self.ky_rhos, dtype=np.float64).tolist(),
+            "theta_rad": np.asarray(self.theta_rad, dtype=np.float64).tolist(),
+            "vpar_vth": np.asarray(self.vpar_vth, dtype=np.float64).tolist(),
+            "mu_normalized": np.asarray(self.mu_normalized, dtype=np.float64).tolist(),
         }
         coordinate_units = {
+            "species_index": "species_index",
             "time_s": "s",
             "kx_rhos": "rho_s^-1",
             "ky_rhos": "rho_s^-1",
             "theta_rad": "rad",
             "vpar_vth": "v_th",
-            "mu_normalized": "T_ref/B_ref",
+            "mu_normalized": "dimensionless",
         }
         observables = {
-            "ion_heat_flux_spectrum": self.Q_i_kxky_t.tolist(),
-            "electron_heat_flux_spectrum": self.Q_e_kxky_t.tolist(),
-            "particle_free_energy_spectrum": self.particle_free_energy_species_kxky_t.tolist(),
-            "phi_energy_spectrum": self.phi_energy_kxky_t.tolist(),
-            "electromagnetic_apar_energy_spectrum": self.A_parallel_energy_kxky_t.tolist(),
-            "electromagnetic_bpar_energy_spectrum": self.B_parallel_energy_kxky_t.tolist(),
-            "zonal_flow_energy": self.zonal_flow_energy_t.tolist(),
-            "saturated_phi_rms": float(self.saturated_phi_rms),
-            "saturated_zonal_flow_energy": float(self.saturated_zonal_flow_energy),
-            "electromagnetic_apar_energy": self.A_parallel_energy_t.tolist(),
-            "electromagnetic_bpar_energy": self.B_parallel_energy_t.tolist(),
-            "particle_free_energy": self.particle_free_energy_t.tolist(),
-            "total_energy": self.total_energy_t.tolist(),
+            "nonlinear_distribution_function": np.real(distribution).tolist(),
+            "nonlinear_distribution_function_imag": np.imag(distribution).tolist(),
+            "ion_heat_flux_spectrum": np.asarray(self.Q_i_kxky_t, dtype=np.float64).tolist(),
+            "electron_heat_flux_spectrum": np.asarray(self.Q_e_kxky_t, dtype=np.float64).tolist(),
+            "particle_free_energy_spectrum": np.asarray(
+                self.particle_free_energy_species_kxky_t, dtype=np.float64
+            ).tolist(),
+            "phi_energy_spectrum": np.asarray(self.phi_energy_kxky_t, dtype=np.float64).tolist(),
+            "zonal_flow_energy": zonal_flow_kx_t.tolist(),
+            "zonal_flow_energy_total": np.asarray(
+                self.zonal_flow_energy_t, dtype=np.float64
+            ).tolist(),
+            "saturated_phi_rms": np.asarray(self.phi_rms_t, dtype=np.float64).tolist(),
+            "saturated_phi_rms_scalar": float(self.saturated_phi_rms),
+            "electromagnetic_apar_energy": np.asarray(
+                self.A_parallel_energy_kxky_t, dtype=np.float64
+            ).tolist(),
+            "electromagnetic_bpar_energy": np.asarray(
+                self.B_parallel_energy_kxky_t, dtype=np.float64
+            ).tolist(),
+            "total_energy": np.asarray(self.total_energy_t, dtype=np.float64).tolist(),
+            "exb_free_energy_production": np.asarray(
+                self.exb_free_energy_production_t, dtype=np.float64
+            ).tolist(),
         }
         observable_units = {
-            "ion_heat_flux_spectrum": "gyroBohm",
-            "electron_heat_flux_spectrum": "gyroBohm",
+            "nonlinear_distribution_function": "delta_f_over_f0",
+            "nonlinear_distribution_function_imag": "delta_f_over_f0",
+            "ion_heat_flux_spectrum": "gyroBohm_heat_flux",
+            "electron_heat_flux_spectrum": "gyroBohm_heat_flux",
             "particle_free_energy_spectrum": "solver_normalized",
-            "phi_energy_spectrum": "solver_normalized",
-            "electromagnetic_apar_energy_spectrum": "solver_normalized",
-            "electromagnetic_bpar_energy_spectrum": "solver_normalized",
-            "zonal_flow_energy": "solver_normalized",
-            "saturated_phi_rms": "solver_normalized",
-            "saturated_zonal_flow_energy": "solver_normalized",
-            "electromagnetic_apar_energy": "solver_normalized",
-            "electromagnetic_bpar_energy": "solver_normalized",
-            "particle_free_energy": "solver_normalized",
+            "phi_energy_spectrum": "normalized_field_energy",
+            "zonal_flow_energy": "normalized_field_energy",
+            "zonal_flow_energy_total": "normalized_field_energy",
+            "saturated_phi_rms": "e_phi_over_Te",
+            "saturated_phi_rms_scalar": "e_phi_over_Te",
+            "electromagnetic_apar_energy": "normalized_apar_energy",
+            "electromagnetic_bpar_energy": "normalized_bpar_energy",
             "total_energy": "solver_normalized",
+            "exb_free_energy_production": "solver_normalized_per_second",
         }
         observable_axes = {
+            "nonlinear_distribution_function": [
+                "species_index",
+                "kx_rhos",
+                "ky_rhos",
+                "theta_rad",
+                "vpar_vth",
+                "mu_normalized",
+            ],
+            "nonlinear_distribution_function_imag": [
+                "species_index",
+                "kx_rhos",
+                "ky_rhos",
+                "theta_rad",
+                "vpar_vth",
+                "mu_normalized",
+            ],
             "ion_heat_flux_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
             "electron_heat_flux_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
-            "particle_free_energy_spectrum": ["time_s", "species", "kx_rhos", "ky_rhos"],
+            "particle_free_energy_spectrum": [
+                "time_s",
+                "species_index",
+                "kx_rhos",
+                "ky_rhos",
+            ],
             "phi_energy_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
-            "electromagnetic_apar_energy_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
-            "electromagnetic_bpar_energy_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
-            "zonal_flow_energy": ["time_s"],
-            "saturated_phi_rms": [],
-            "saturated_zonal_flow_energy": [],
-            "electromagnetic_apar_energy": ["time_s"],
-            "electromagnetic_bpar_energy": ["time_s"],
-            "particle_free_energy": ["time_s"],
+            "zonal_flow_energy": ["time_s", "kx_rhos"],
+            "zonal_flow_energy_total": ["time_s"],
+            "saturated_phi_rms": ["time_s"],
+            "saturated_phi_rms_scalar": [],
+            "electromagnetic_apar_energy": ["time_s", "kx_rhos", "ky_rhos"],
+            "electromagnetic_bpar_energy": ["time_s", "kx_rhos", "ky_rhos"],
             "total_energy": ["time_s"],
+            "exb_free_energy_production": ["time_s"],
         }
         return {
             "schema": "nonlinear-gk-reference-artifact.v1",
+            "status": "diagnostic_native_not_reference_parity",
             "surface": "native_nonlinear_gyrokinetics",
             "reference_family": "GENE/CGYRO/GS2",
-            "status": "diagnostic_native_not_reference_parity",
             "coordinates": coordinates,
             "coordinate_units": coordinate_units,
             "observables": observables,
             "observable_units": observable_units,
             "observable_axes": observable_axes,
+            "notes": [
+                "Native nonlinear GK artifact preserves the full 5D distribution grid.",
+                "Complex spectral distribution values are split into real and imaginary observables.",
+                "This artifact is not external solver parity evidence until compared against same-deck GENE/CGYRO/GS2 outputs.",
+            ],
         }
 
 

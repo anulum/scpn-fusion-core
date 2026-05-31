@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
-# (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Convert cached public upstream outputs into tracked reference artifacts.
@@ -19,8 +19,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import pickle
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -48,17 +46,31 @@ def _sha256(path: Path) -> str:
 
 
 def _git_commit(repo: Path) -> str | None:
-    try:
-        result = subprocess.run(  # nosec B603: fixed git argv, shell disabled.
-            ["git", "-C", str(repo), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+    marker = repo / ".git"
+    if marker.is_dir():
+        git_dir = marker
+    elif marker.is_file():
+        marker_text = marker.read_text(encoding="utf-8").strip()
+        prefix = "gitdir: "
+        if not marker_text.startswith(prefix):
+            return None
+        raw_git_dir = Path(marker_text.removeprefix(prefix))
+        git_dir = raw_git_dir if raw_git_dir.is_absolute() else (repo / raw_git_dir).resolve()
+    else:
         return None
-    return result.stdout.strip()
+
+    head_path = git_dir / "HEAD"
+    if not head_path.exists():
+        return None
+    head = head_path.read_text(encoding="utf-8").strip()
+    if head.startswith("ref: "):
+        ref_path = git_dir / head.removeprefix("ref: ")
+        if not ref_path.exists():
+            return None
+        head = ref_path.read_text(encoding="utf-8").strip()
+    if len(head) < 7 or not all(char in "0123456789abcdefABCDEF" for char in head):
+        return None
+    return head
 
 
 def _load_manifest() -> dict[str, Any]:
@@ -85,7 +97,8 @@ def _finite_payload(arrays: dict[str, np.ndarray]) -> bool:
 
 def _write_npz(path: Path, arrays: dict[str, np.ndarray]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(path, **arrays)
+    kwargs: dict[str, Any] = {key: value for key, value in arrays.items()}
+    np.savez_compressed(path, **kwargs)
 
 
 def _write_metadata(path: Path, metadata: dict[str, Any]) -> None:
@@ -252,93 +265,22 @@ def _convert_freegsnke_baseline(manifest: dict[str, Any], *, write: bool) -> dic
 def _convert_freegsnke_current_sidecars(
     manifest: dict[str, Any], *, write: bool
 ) -> dict[str, Any] | None:
-    del manifest
+    del manifest, write
     repo = CACHE_ROOT / "repos" / "freegsnke"
     sidecar_dir = repo / "examples" / "data"
-    sidecar_files = {
-        "mastu_diverted_paxis_ip": sidecar_dir / "simple_diverted_currents_PaxisIp.pk",
-        "mastu_limited_paxis_ip": sidecar_dir / "simple_limited_currents_PaxisIp.pk",
-    }
-    if not all(path.exists() for path in sidecar_files.values()):
+    sidecar_files = (
+        sidecar_dir / "simple_diverted_currents_PaxisIp.pk",
+        sidecar_dir / "simple_limited_currents_PaxisIp.pk",
+    )
+    if not all(path.exists() for path in sidecar_files):
         return _existing_artifact_record("freegsnke_mastu_current_sidecars_public")
 
-    cases: list[dict[str, Any]] = []
-    for case_id, path in sidecar_files.items():
-        with path.open("rb") as handle:
-            currents = pickle.load(handle)  # nosec B301: trusted cached public FreeGSNKE fixture.
-        if not isinstance(currents, dict):
-            return None
-        rows = [
-            {"coil_name": str(name), "current_a": float(value)} for name, value in currents.items()
-        ]
-        values = np.asarray([row["current_a"] for row in rows], dtype=float)
-        if values.size == 0 or not bool(np.all(np.isfinite(values))):
-            return None
-        cases.append(
-            {
-                "case_id": case_id,
-                "coil_current_count": int(values.size),
-                "coil_currents": rows,
-                "max_abs_current_a": float(np.max(np.abs(values))),
-                "source_file": _rel(path),
-                "sum_abs_current_a": float(np.sum(np.abs(values))),
-            }
-        )
-
-    artifact_path = ARTIFACT_DIR / "freegsnke_mastu_current_sidecars_public.json"
-    metadata_path = ARTIFACT_DIR / "freegsnke_mastu_current_sidecars_public.metadata.json"
-    commit = _git_commit(repo)
-    provenance_url = (
-        f"https://github.com/FusionComputingLab/freegsnke/tree/{commit or 'main'}/examples/data"
-    )
-    payload = {
-        "cases": cases,
-        "provenance": {
-            "reference_family": "FreeGSNKE",
-            "source_commit": commit,
-            "source_url": provenance_url,
-        },
-        "schema": "freegsnke-current-sidecars.v1",
-        "units": {"current_a": "A"},
-    }
-    if write:
-        _write_json_artifact(artifact_path, payload)
-
-    metadata = {
-        "accepted_full_fidelity": False,
-        "artifact_id": "freegsnke_mastu_current_sidecars_public",
-        "artifact_path": _rel(artifact_path),
-        "artifact_role": "partial_public_solver_input_output_sidecar",
-        "available_observables": [
-            "coil_currents_a",
-            "coil_names",
-            "case_labels",
-        ],
-        "cache_source_path": _rel(sidecar_dir),
-        "finite_numeric_payload": True,
-        "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
-        "missing_required_observables": [
-            "boundary_contour",
-            "limiter_contour",
-            "axis_or_xpoint_metadata",
-            "same_case_native_psi_comparison",
-        ],
-        "provenance_url": provenance_url,
-        "redistribution_license": "LGPL-3.0-or-later",
-        "reference_family": "FreeGSNKE",
-        "sha256": _sha256(artifact_path) if artifact_path.exists() else "",
-        "solver_output_comparison_ready": False,
-        "solver_output_comparison_status": (
-            "blocked_missing_same_case_boundary_limiter_axis_and_native_psi_comparison"
-        ),
-        "source_sha256": {path.name: _sha256(path) for path in sidecar_files.values()},
-        "surface": "free_boundary_equilibrium",
-        "upstream_commit": commit,
-    }
-    if write:
-        metadata["sha256"] = _sha256(artifact_path)
-        _write_metadata(metadata_path, metadata)
-    return _artifact_record(metadata, artifact_path, metadata_path)
+    # The upstream sidecars are Python pickle files.  They are useful public
+    # provenance pointers, but this converter must not deserialize pickle from
+    # an external cache.  Keep the previously tracked sanitized JSON artifact
+    # when it exists; otherwise leave the source blocked instead of executing
+    # untrusted object payloads.
+    return _existing_artifact_record("freegsnke_mastu_current_sidecars_public")
 
 
 def _blocking_sources() -> list[dict[str, str]]:

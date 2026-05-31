@@ -239,6 +239,21 @@
               "non_empty": true,
               "numeric": true,
               "units": "normalized_field_energy"
+            },
+            "nonlinear_distribution_function_imag": {
+              "axes": [
+                "species_index",
+                "kx_rhos",
+                "ky_rhos",
+                "theta_rad",
+                "vpar_vth",
+                "mu_normalized"
+              ],
+              "finite": true,
+              "min_rank": 6,
+              "non_empty": true,
+              "numeric": true,
+              "units": "delta_f_over_f0"
             }
           },
           "provenance_url": null,
@@ -246,6 +261,7 @@
           "reference_family": "GENE/CGYRO/GS2",
           "required_observables": [
             "nonlinear_distribution_function",
+            "nonlinear_distribution_function_imag",
             "ion_heat_flux_spectrum",
             "electron_heat_flux_spectrum",
             "zonal_flow_energy",
@@ -279,6 +295,11 @@
               "comparator": "<=",
               "metric": "relative_error",
               "observable": "zonal_flow_energy"
+            },
+            "distribution_imaginary_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "nonlinear_distribution_function_imag"
             }
           },
           "thresholds": {
@@ -286,7 +307,8 @@
             "field_energy_relative_error_max": 0.2,
             "heat_flux_relative_l2_max": 0.15,
             "spectrum_relative_l2_max": 0.2,
-            "zonal_energy_relative_error_max": 0.2
+            "zonal_energy_relative_error_max": 0.2,
+            "distribution_imaginary_relative_l2_max": 0.25
           }
         }
       ],

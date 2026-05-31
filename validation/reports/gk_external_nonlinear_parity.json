@@ -106,6 +106,7 @@
   "reference_output_ready": false,
   "required_observables": [
     "nonlinear_distribution_function",
+    "nonlinear_distribution_function_imag",
     "ion_heat_flux_spectrum",
     "electron_heat_flux_spectrum",
     "zonal_flow_energy",

@@ -202,10 +202,10 @@ It also has a strict external-output conversion/comparison contract in
 [`validation/reports/gk_external_nonlinear_parity.md`](validation/reports/gk_external_nonlinear_parity.md).
 Missing redistributable same-deck GENE, CGYRO, or GS2 nonlinear outputs produce
 blocked rows rather than fabricated parity. Full GENE/CGYRO/GS2 parity remains
-blocked until nonlinear distribution outputs, heat-flux spectra, field-energy
-histories, zonal/saturation metrics, grid-convergence evidence,
-production-scale scaling evidence, and native same-case comparisons are
-present for the required solver families.
+blocked until nonlinear distribution outputs with real and imaginary spectral
+components, heat-flux spectra, field-energy histories, zonal/saturation
+metrics, grid-convergence evidence, production-scale scaling evidence, and
+native same-case comparisons are present for the required solver families.
 The free-boundary lane now indexes public FreeGSNKE machine metadata for active
 coils, passive structures, limiter/wall contours, and magnetic probes, plus
 FreeGS example-script checksums, in

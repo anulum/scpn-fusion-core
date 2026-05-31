@@ -35,6 +35,7 @@ def _payload(path: Path, scale: float = 1.0) -> None:
         "coordinates": coordinates,
         "observables": {
             "nonlinear_distribution_function": distribution.tolist(),
+            "nonlinear_distribution_function_imag": (distribution * 0.01).tolist(),
             "ion_heat_flux_spectrum": spectrum.tolist(),
             "electron_heat_flux_spectrum": (spectrum * 1.2).tolist(),
             "zonal_flow_energy": (np.ones((2, 2)) * scale).tolist(),
@@ -135,6 +136,7 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
 
     with np.load(tmp_path / gene["converted_artifact_path"], allow_pickle=False) as payload_npz:
         assert "nonlinear_distribution_function" in payload_npz.files
+        assert "nonlinear_distribution_function_imag" in payload_npz.files
         assert "ion_heat_flux_spectrum" in payload_npz.files
         assert "time_s" in payload_npz.files
 

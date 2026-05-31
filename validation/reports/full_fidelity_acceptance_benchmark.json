@@ -67,6 +67,7 @@
             "observable_contracts_ready": true,
             "observable_keys_missing": [
               "nonlinear_distribution_function",
+              "nonlinear_distribution_function_imag",
               "ion_heat_flux_spectrum",
               "electron_heat_flux_spectrum",
               "zonal_flow_energy",

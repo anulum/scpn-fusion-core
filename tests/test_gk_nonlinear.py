@@ -608,6 +608,7 @@ class TestEnergyConservation:
         assert artifact["surface"] == "native_nonlinear_gyrokinetics"
         assert artifact["reference_family"] == "GENE/CGYRO/GS2"
         assert set(artifact["coordinates"]) == {
+            "species_index",
             "time_s",
             "kx_rhos",
             "ky_rhos",
@@ -617,19 +618,43 @@ class TestEnergyConservation:
         }
         assert artifact["coordinate_units"]["theta_rad"] == "rad"
         assert artifact["coordinate_units"]["vpar_vth"] == "v_th"
+        assert artifact["observable_axes"]["nonlinear_distribution_function"] == [
+            "species_index",
+            "kx_rhos",
+            "ky_rhos",
+            "theta_rad",
+            "vpar_vth",
+            "mu_normalized",
+        ]
+        assert artifact["observable_axes"]["nonlinear_distribution_function_imag"] == [
+            "species_index",
+            "kx_rhos",
+            "ky_rhos",
+            "theta_rad",
+            "vpar_vth",
+            "mu_normalized",
+        ]
         assert set(artifact["observable_axes"]["ion_heat_flux_spectrum"]) == {
             "time_s",
             "kx_rhos",
             "ky_rhos",
         }
+        assert artifact["observable_axes"]["saturated_phi_rms"] == ["time_s"]
+        assert artifact["observable_axes"]["electromagnetic_apar_energy"] == [
+            "time_s",
+            "kx_rhos",
+            "ky_rhos",
+        ]
         assert set(artifact["observable_axes"]["particle_free_energy_spectrum"]) == {
             "time_s",
-            "species",
+            "species_index",
             "kx_rhos",
             "ky_rhos",
         }
         observables = artifact["observables"]
         for required in (
+            "nonlinear_distribution_function",
+            "nonlinear_distribution_function_imag",
             "ion_heat_flux_spectrum",
             "electron_heat_flux_spectrum",
             "particle_free_energy_spectrum",
@@ -638,13 +663,26 @@ class TestEnergyConservation:
             "electromagnetic_apar_energy",
         ):
             assert required in observables
+        assert result.final_state is not None
+        np.testing.assert_allclose(
+            np.asarray(observables["nonlinear_distribution_function"], dtype=float),
+            np.real(result.final_state.f),
+        )
+        np.testing.assert_allclose(
+            np.asarray(observables["nonlinear_distribution_function_imag"], dtype=float),
+            np.imag(result.final_state.f),
+        )
         np.testing.assert_allclose(
             np.asarray(observables["ion_heat_flux_spectrum"], dtype=float),
             result.Q_i_kxky_t,
         )
         np.testing.assert_allclose(
+            np.asarray(observables["saturated_phi_rms"], dtype=float),
+            result.phi_rms_t,
+        )
+        np.testing.assert_allclose(
             np.asarray(observables["electromagnetic_apar_energy"], dtype=float),
-            result.A_parallel_energy_t,
+            result.A_parallel_energy_kxky_t,
         )
 
 

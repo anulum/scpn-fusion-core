@@ -23,7 +23,8 @@
     }
   ],
   "conversion_modes": [
-    "external_cache_conversion"
+    "external_cache_conversion",
+    "tracked_artifact_fallback"
   ],
   "converted_artifacts": [
     {
@@ -89,7 +90,7 @@
         "coil_names",
         "case_labels"
       ],
-      "conversion_mode": "external_cache_conversion",
+      "conversion_mode": "tracked_artifact_fallback",
       "finite_numeric_payload": true,
       "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.metadata.json",
       "missing_required_observables": [

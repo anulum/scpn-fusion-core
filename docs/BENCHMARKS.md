@@ -924,6 +924,10 @@ contracts, observable-to-coordinate axis contracts, and explicit quantitative
 threshold contracts linked to declared observables and supported metric
 families. The benchmark intentionally does not pass full-fidelity acceptance
 until those public reference gates exist and their artefacts are present.
+For nonlinear GK, the native artifact keeps the full species/kx/ky/theta/vpar/mu
+distribution grid and serializes the complex spectral state as required real
+and imaginary distribution components; it does not collapse the comparison to a
+magnitude, heat-flux-only, or saturation-only diagnostic.
 The production-scale lane now distinguishes a passing decomposition contract
 from actual distributed runtime readiness: `production_scale_ready` remains
 false until multi-rank execution and scaling reports exist.
