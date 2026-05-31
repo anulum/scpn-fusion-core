@@ -238,8 +238,11 @@ The production-scale decomposition contract is tracked in
 It validates deterministic radial/toroidal tiling for 5D nonlinear GK storage.
 Current local rows include a `256 x 128 x 32 x 32 x 16` phase-space case split
 over `8 x 4` rank tiles with exact owned-cell balance and halo overhead
-reported. This is a partition contract only; MPI or multi-GPU execution,
-halo-exchange correctness, and cluster scaling evidence remain required.
+reported. The local CPU gate also runs serial reference halo exchange,
+owned-state reconstruction, and decomposition-invariant inventory/free-energy
+checks on a reproducible 5D phase-space payload. This is still not distributed
+runtime evidence; MPI or multi-GPU execution, cluster timing, and
+hardware-specific scaling thresholds remain required.
 
 The free-boundary public machine-metadata inventory is tracked in
 [`validation/reports/free_boundary_public_machine_metadata_inventory.md`](../validation/reports/free_boundary_public_machine_metadata_inventory.md).

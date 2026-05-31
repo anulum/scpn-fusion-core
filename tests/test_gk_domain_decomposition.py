@@ -1,10 +1,24 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 """Tests for radial/toroidal nonlinear GK decomposition contracts."""
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
+from numpy.typing import NDArray
 
-from scpn_fusion.core.gk_domain_decomposition import build_radial_toroidal_decomposition
+from scpn_fusion.core.gk_domain_decomposition import (
+    build_radial_toroidal_decomposition,
+    decomposition_invariant_metrics,
+    reconstruct_owned_phase_state,
+    serial_halo_exchange,
+)
 from validation.benchmark_production_decomposition_contract import run_benchmark, write_reports
 
 
@@ -40,12 +54,62 @@ def test_decomposition_rejects_invalid_partition() -> None:
         )
 
 
+def test_serial_halo_exchange_reconstructs_owned_5d_state_and_invariants() -> None:
+    plan = build_radial_toroidal_decomposition(
+        n_radial=17,
+        n_toroidal=9,
+        n_theta=4,
+        n_vpar=3,
+        n_mu=2,
+        radial_parts=4,
+        toroidal_parts=3,
+        halo=1,
+    )
+    state: NDArray[np.float64] = np.arange(plan.total_owned_phase_cells, dtype=np.float64).reshape(
+        plan.n_radial,
+        plan.n_toroidal,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+
+    local_tiles = serial_halo_exchange(plan, state)
+    reconstructed = reconstruct_owned_phase_state(plan, local_tiles)
+    metrics = decomposition_invariant_metrics(plan, state)
+
+    assert len(local_tiles) == plan.total_ranks
+    for local in local_tiles:
+        tile = plan.tiles[local.rank]
+        assert local.owned.shape[:2] == (tile.radial.size, tile.toroidal.size)
+        assert local.with_halo.shape[:2] == (
+            tile.radial_with_halo.size,
+            tile.toroidal_with_halo.size,
+        )
+        np.testing.assert_allclose(
+            local.with_halo,
+            state[
+                tile.radial_with_halo.start : tile.radial_with_halo.stop,
+                tile.toroidal_with_halo.start : tile.toroidal_with_halo.stop,
+            ],
+        )
+    np.testing.assert_allclose(reconstructed, state)
+    assert metrics.halo_exchange_pass
+    assert metrics.reconstruction_linf_error == 0.0
+    assert metrics.inventory_relative_error == 0.0
+    assert metrics.free_energy_relative_error == 0.0
+
+
 def test_production_decomposition_contract_is_fail_closed() -> None:
     report = run_benchmark()
     write_reports(report)
 
     assert report["schema"] == "production-decomposition-contract.v1"
     assert report["contract_pass"] is True
+    assert report["halo_exchange_pass"] is True
+    assert report["decomposition_invariant_pass"] is True
+    assert report["cpu_benchmark_rows"]
+    assert report["hardware_metadata"]["python_version"]
+    assert report["reproducible_commands"]
     assert report["production_scale_ready"] is False
     assert report["status"].startswith("blocked_")
     assert report["missing_requirements"]

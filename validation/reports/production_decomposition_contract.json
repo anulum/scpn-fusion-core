@@ -40,15 +40,40 @@
   ],
   "contract_pass": true,
   "coverage_pass": true,
+  "cpu_benchmark_rows": [
+    {
+      "case_id": "local_cpu_64x32_4x2",
+      "cells_per_second": 15381426.580132267,
+      "elapsed_s": 0.034085785038769245,
+      "free_energy_relative_error": 0.0,
+      "halo_exchange_pass": true,
+      "inventory_relative_error": 0.0,
+      "owned_phase_cells": 524288,
+      "reconstruction_linf_error": 0.0
+    }
+  ],
+  "decomposition_invariant_pass": true,
   "description": "Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling. This is not distributed runtime scaling evidence.",
+  "halo_exchange_pass": true,
+  "hardware_metadata": {
+    "cpu_count": 12,
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python_version": "3.12.3"
+  },
   "imbalance_pass": true,
   "missing_requirements": [
     "MPI or multi-GPU execution path over the declared rank tiles",
-    "halo exchange implementation and correctness tests",
     "large-grid cluster/GPU wall-time scaling report",
-    "same-physics convergence evidence across decomposition shapes"
+    "same-physics convergence evidence across distributed decomposition shapes",
+    "hardware-specific multi-rank throughput and efficiency thresholds"
   ],
   "production_scale_ready": false,
+  "reproducible_commands": [
+    "python validation/benchmark_production_decomposition_contract.py",
+    "python -m pytest tests/test_gk_domain_decomposition.py -q"
+  ],
   "schema": "production-decomposition-contract.v1",
   "status": "blocked_contract_ready_missing_distributed_runtime_scaling"
 }

@@ -232,9 +232,10 @@ explicitly not full Faraday/displacement-current Vlasov-Maxwell parity.
 Production-scale decomposition now has a deterministic radial/toroidal
 partition contract in
 [`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).
-The contract covers rank tiling and halo storage for large 5D GK grids, but
-production scaling remains blocked until distributed MPI/multi-GPU execution and
-cluster timing evidence exist.
+The contract covers rank tiling, serial reference halo exchange, owned-state
+reconstruction, decomposition-invariant inventory/free-energy checks, local CPU
+timing metadata, and reproducible commands. Production scaling remains blocked
+until distributed MPI/multi-GPU execution and cluster timing evidence exist.
 
 ## Competitive Position
 
