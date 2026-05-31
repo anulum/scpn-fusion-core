@@ -34,6 +34,8 @@ from scpn_fusion.core.gk_domain_decomposition import (  # noqa: E402
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "production_decomposition_contract.json"
 MD_REPORT = REPORT_DIR / "production_decomposition_contract.md"
+RELATIVE_REDUCTION_TOLERANCE = 1.0e-12
+RECONSTRUCTION_LINF_TOLERANCE = 0.0
 
 
 def _plan_row(case_id: str, plan: GKDomainDecompositionPlan) -> dict[str, Any]:
@@ -85,6 +87,83 @@ def _cpu_benchmark_row(case_id: str, plan: GKDomainDecompositionPlan) -> dict[st
         "owned_phase_cells": cell_count,
         "rank_count": metrics.rank_count,
         "reconstruction_linf_error": metrics.reconstruction_linf_error,
+    }
+
+
+def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return same-physics convergence evidence across decomposition shapes."""
+    if not rows:
+        return {
+            "max_free_energy_relative_deviation": float("inf"),
+            "max_inventory_relative_deviation": float("inf"),
+            "max_reconstruction_linf_error": float("inf"),
+            "reconstruction_linf_tolerance": RECONSTRUCTION_LINF_TOLERANCE,
+            "relative_reduction_tolerance": RELATIVE_REDUCTION_TOLERANCE,
+            "schema": "production-decomposition-shape-convergence.v1",
+            "shape_convergence_pass": False,
+            "shape_count": 0,
+            "shape_rows": [],
+            "status": "blocked_no_local_shape_rows",
+        }
+
+    reference_inventory = float(rows[0]["local_inventory"])
+    reference_free_energy = float(rows[0]["local_free_energy"])
+    shape_rows: list[dict[str, Any]] = []
+    for row in rows:
+        inventory_deviation = abs(float(row["local_inventory"]) - reference_inventory) / max(
+            abs(reference_inventory), 1.0e-30
+        )
+        free_energy_deviation = abs(float(row["local_free_energy"]) - reference_free_energy) / max(
+            abs(reference_free_energy), 1.0e-30
+        )
+        reconstruction_error = float(row["reconstruction_linf_error"])
+        shape_pass = bool(
+            row["local_decomposed_execution_pass"]
+            and inventory_deviation <= RELATIVE_REDUCTION_TOLERANCE
+            and free_energy_deviation <= RELATIVE_REDUCTION_TOLERANCE
+            and reconstruction_error <= RECONSTRUCTION_LINF_TOLERANCE
+        )
+        shape_rows.append(
+            {
+                "case_id": row["case_id"],
+                "cells_per_second": row["cells_per_second"],
+                "free_energy_relative_deviation_from_reference": free_energy_deviation,
+                "inventory_relative_deviation_from_reference": inventory_deviation,
+                "owned_phase_cells": row["owned_phase_cells"],
+                "rank_count": row["rank_count"],
+                "reconstruction_linf_error": reconstruction_error,
+                "shape_convergence_pass": shape_pass,
+            }
+        )
+
+    max_inventory_deviation = max(
+        float(row["inventory_relative_deviation_from_reference"]) for row in shape_rows
+    )
+    max_free_energy_deviation = max(
+        float(row["free_energy_relative_deviation_from_reference"]) for row in shape_rows
+    )
+    max_reconstruction_error = max(float(row["reconstruction_linf_error"]) for row in shape_rows)
+    shape_convergence_pass = bool(
+        len(shape_rows) >= 3
+        and all(bool(row["shape_convergence_pass"]) for row in shape_rows)
+        and max_inventory_deviation <= RELATIVE_REDUCTION_TOLERANCE
+        and max_free_energy_deviation <= RELATIVE_REDUCTION_TOLERANCE
+        and max_reconstruction_error <= RECONSTRUCTION_LINF_TOLERANCE
+    )
+    return {
+        "max_free_energy_relative_deviation": max_free_energy_deviation,
+        "max_inventory_relative_deviation": max_inventory_deviation,
+        "max_reconstruction_linf_error": max_reconstruction_error,
+        "reconstruction_linf_tolerance": RECONSTRUCTION_LINF_TOLERANCE,
+        "reference_case_id": rows[0]["case_id"],
+        "relative_reduction_tolerance": RELATIVE_REDUCTION_TOLERANCE,
+        "schema": "production-decomposition-shape-convergence.v1",
+        "shape_convergence_pass": shape_convergence_pass,
+        "shape_count": len(shape_rows),
+        "shape_rows": shape_rows,
+        "status": "accepted_local_same_physics_shape_convergence"
+        if shape_convergence_pass
+        else "blocked_local_same_physics_shape_convergence_failed",
     }
 
 
@@ -145,10 +224,22 @@ def run_benchmark() -> dict[str, Any]:
         toroidal_parts=1,
         halo=1,
     )
+    local_cpu_toroidal_variant_plan = build_radial_toroidal_decomposition(
+        n_radial=64,
+        n_toroidal=32,
+        n_theta=8,
+        n_vpar=8,
+        n_mu=4,
+        radial_parts=2,
+        toroidal_parts=4,
+        halo=1,
+    )
     cpu_benchmark_rows = [
         _cpu_benchmark_row("local_cpu_64x32_4x2", local_cpu_plan),
         _cpu_benchmark_row("local_cpu_64x32_8x1", local_cpu_shape_variant_plan),
+        _cpu_benchmark_row("local_cpu_64x32_2x4", local_cpu_toroidal_variant_plan),
     ]
+    same_physics_shape_convergence = _shape_convergence_evidence(cpu_benchmark_rows)
     coverage_pass = all(case["min_owned_cells"] > 0 for case in cases)
     imbalance_pass = all(case["owned_cell_imbalance"] <= 1.05 for case in cases)
     communication_contract_ready = all(
@@ -160,14 +251,12 @@ def run_benchmark() -> dict[str, Any]:
     )
     decomposition_invariant_pass = all(
         row["reconstruction_linf_error"] == 0.0
-        and row["inventory_relative_error"] == 0.0
-        and row["free_energy_relative_error"] == 0.0
+        and row["inventory_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+        and row["free_energy_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
         for row in cpu_benchmark_rows
     )
-    same_physics_decomposition_shape_pass = all(
-        row["global_inventory"] == cpu_benchmark_rows[0]["global_inventory"]
-        and row["global_free_energy"] == cpu_benchmark_rows[0]["global_free_energy"]
-        for row in cpu_benchmark_rows
+    same_physics_decomposition_shape_pass = bool(
+        same_physics_shape_convergence["shape_convergence_pass"]
     )
     contract_pass = bool(
         coverage_pass
@@ -203,11 +292,12 @@ def run_benchmark() -> dict[str, Any]:
             "python -m pytest tests/test_gk_domain_decomposition.py -q",
         ],
         "same_physics_decomposition_shape_pass": same_physics_decomposition_shape_pass,
+        "same_physics_shape_convergence_evidence": same_physics_shape_convergence,
         "status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling",
         "missing_requirements": [
             "MPI or multi-GPU distributed execution path over the declared rank tiles",
             "large-grid cluster/GPU wall-time scaling report",
-            "same-physics convergence evidence across distributed decomposition shapes",
+            "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
             "hardware-specific multi-rank throughput and efficiency thresholds",
         ],
     }
@@ -287,6 +377,46 @@ def write_reports(report: dict[str, Any]) -> None:
                 halo=row["halo_exchange_pass"],
                 inventory=row["inventory_relative_error"],
                 local=row["local_decomposed_execution_pass"],
+                ranks=row["rank_count"],
+                rate=row["cells_per_second"],
+                recon=row["reconstruction_linf_error"],
+            )
+        )
+    shape_evidence = report["same_physics_shape_convergence_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Same-physics decomposition-shape convergence",
+            "",
+            f"- Schema: `{shape_evidence['schema']}`",
+            f"- Status: `{shape_evidence['status']}`",
+            f"- Shape convergence pass: `{shape_evidence['shape_convergence_pass']}`",
+            f"- Reference case: `{shape_evidence['reference_case_id']}`",
+            (
+                "- Max inventory relative deviation: "
+                f"`{shape_evidence['max_inventory_relative_deviation']:.6e}`"
+            ),
+            (
+                "- Max free-energy relative deviation: "
+                f"`{shape_evidence['max_free_energy_relative_deviation']:.6e}`"
+            ),
+            (
+                "- Relative reduction tolerance: "
+                f"`{shape_evidence['relative_reduction_tolerance']:.6e}`"
+            ),
+            "",
+            "| Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Reconstruction L_inf | Pass |",
+            "|---|---:|---:|---:|---:|---:|---:|:---:|",
+        ]
+    )
+    for row in shape_evidence["shape_rows"]:
+        lines.append(
+            "| {case_id} | {ranks} | {cells} | {rate:.6e} | {inventory:.6e} | {energy:.6e} | {recon:.6e} | `{passes}` |".format(
+                case_id=row["case_id"],
+                cells=row["owned_phase_cells"],
+                energy=row["free_energy_relative_deviation_from_reference"],
+                inventory=row["inventory_relative_deviation_from_reference"],
+                passes=row["shape_convergence_pass"],
                 ranks=row["rank_count"],
                 rate=row["cells_per_second"],
                 recon=row["reconstruction_linf_error"],

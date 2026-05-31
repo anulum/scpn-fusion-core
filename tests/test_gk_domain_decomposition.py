@@ -160,10 +160,10 @@ def test_local_decomposed_phase_execution_matches_monolithic_reductions() -> Non
     assert result.halo_exchange_pass
     assert result.decomposition_invariant_pass
     assert result.reconstruction_linf_error == 0.0
-    assert result.inventory_relative_error == 0.0
-    assert result.free_energy_relative_error == 0.0
-    assert result.local_inventory == float(np.sum(state))
-    assert result.local_free_energy == float(np.sum(state * state))
+    assert result.inventory_relative_error <= 1.0e-12
+    assert result.free_energy_relative_error <= 1.0e-12
+    np.testing.assert_allclose(result.local_inventory, float(np.sum(state)))
+    np.testing.assert_allclose(result.local_free_energy, float(np.sum(state * state)))
 
 
 def test_production_decomposition_contract_is_fail_closed() -> None:
@@ -177,6 +177,23 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert report["halo_exchange_pass"] is True
     assert report["decomposition_invariant_pass"] is True
     assert report["same_physics_decomposition_shape_pass"] is True
+    shape_evidence = report["same_physics_shape_convergence_evidence"]
+    assert shape_evidence["schema"] == "production-decomposition-shape-convergence.v1"
+    assert shape_evidence["shape_convergence_pass"] is True
+    assert shape_evidence["shape_count"] >= 3
+    assert (
+        shape_evidence["max_inventory_relative_deviation"]
+        <= shape_evidence["relative_reduction_tolerance"]
+    )
+    assert (
+        shape_evidence["max_free_energy_relative_deviation"]
+        <= shape_evidence["relative_reduction_tolerance"]
+    )
+    assert (
+        shape_evidence["max_reconstruction_linf_error"]
+        <= shape_evidence["reconstruction_linf_tolerance"]
+    )
+    assert all(row["shape_convergence_pass"] for row in shape_evidence["shape_rows"])
     assert report["cpu_benchmark_rows"]
     assert report["hardware_metadata"]["python_version"]
     assert report["reproducible_commands"]

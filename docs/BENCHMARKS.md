@@ -283,9 +283,12 @@ over `8 x 4` rank tiles with exact owned-cell balance and halo overhead
 reported. The local CPU gate also runs serial reference halo exchange,
 owned-state reconstruction, and decomposition-invariant inventory/free-energy
 checks on reproducible 5D phase-space payloads across multiple decomposition
-shapes. This is still not distributed runtime evidence; MPI or multi-GPU
-execution, cluster timing, and hardware-specific scaling thresholds remain
-required.
+shapes. The tracked report now includes same-physics shape-convergence evidence
+across `4x2`, `8x1`, and `2x4` radial/toroidal rank shapes with maximum
+inventory relative deviation `0.0`, maximum free-energy relative deviation
+`3.3306658974988877e-16`, and maximum owned-state reconstruction error `0.0`.
+This is still not distributed runtime evidence; MPI or multi-GPU execution,
+cluster timing, and hardware-specific scaling thresholds remain required.
 
 The free-boundary public machine-metadata inventory is tracked in
 [`validation/reports/free_boundary_public_machine_metadata_inventory.md`](../validation/reports/free_boundary_public_machine_metadata_inventory.md).

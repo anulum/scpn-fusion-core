@@ -60,8 +60,25 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 1.062676e-01 | 4.933659e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 5.155375e-02 | 1.016974e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 9.549962e-02 | 5.489948e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 1.017402e-01 | 5.153205e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 7.560688e-02 | 6.934395e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+
+## Same-physics decomposition-shape convergence
+
+- Schema: `production-decomposition-shape-convergence.v1`
+- Status: `accepted_local_same_physics_shape_convergence`
+- Shape convergence pass: `True`
+- Reference case: `local_cpu_64x32_4x2`
+- Max inventory relative deviation: `0.000000e+00`
+- Max free-energy relative deviation: `3.330666e-16`
+- Relative reduction tolerance: `1.000000e-12`
+
+| Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Reconstruction L_inf | Pass |
+|---|---:|---:|---:|---:|---:|---:|:---:|
+| local_cpu_64x32_4x2 | 8 | 524288 | 5.489948e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 5.153205e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 6.934395e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 
@@ -72,5 +89,5 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 - MPI or multi-GPU distributed execution path over the declared rank tiles
 - large-grid cluster/GPU wall-time scaling report
-- same-physics convergence evidence across distributed decomposition shapes
+- same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes
 - hardware-specific multi-rank throughput and efficiency thresholds

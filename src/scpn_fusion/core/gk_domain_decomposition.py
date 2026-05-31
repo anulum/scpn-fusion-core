@@ -14,6 +14,8 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
+_REDUCTION_RELATIVE_TOLERANCE = 1.0e-12
+
 
 @dataclass(frozen=True)
 class AxisBlock:
@@ -417,8 +419,8 @@ def decomposition_invariant_metrics(
     invariant_pass = bool(
         halo_exchange_pass
         and reconstruction_error == 0.0
-        and inventory_relative_error == 0.0
-        and free_energy_relative_error == 0.0
+        and inventory_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+        and free_energy_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
     )
     return DecompositionInvariantMetrics(
         halo_exchange_pass=halo_exchange_pass,
@@ -444,12 +446,14 @@ def local_decomposed_phase_execution(
     reconstructed = reconstruct_owned_phase_state(plan, local_tiles)
     reconstruction_error = float(np.max(np.abs(reconstructed - state)))
     global_inventory = float(np.sum(state))
-    local_inventory = float(np.sum(reconstructed))
+    local_inventory = float(sum(float(np.sum(local.owned)) for local in local_tiles))
     inventory_relative_error = abs(local_inventory - global_inventory) / max(
         abs(global_inventory), 1.0e-30
     )
     global_free_energy = float(np.sum(state * state))
-    local_free_energy = float(np.sum(reconstructed * reconstructed))
+    local_free_energy = float(
+        sum(float(np.sum(local.owned * local.owned)) for local in local_tiles)
+    )
     free_energy_relative_error = abs(local_free_energy - global_free_energy) / max(
         abs(global_free_energy), 1.0e-30
     )
@@ -473,8 +477,8 @@ def local_decomposed_phase_execution(
     invariant_pass = bool(
         halo_exchange_pass
         and reconstruction_error == 0.0
-        and inventory_relative_error == 0.0
-        and free_energy_relative_error == 0.0
+        and inventory_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+        and free_energy_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
     )
     return LocalDecomposedExecutionResult(
         rank_count=len(local_tiles),

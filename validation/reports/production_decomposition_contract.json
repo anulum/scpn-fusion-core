@@ -1182,9 +1182,9 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 4933659.157498443,
-      "elapsed_s": 0.10626757610589266,
-      "free_energy_relative_error": 0.0,
+      "cells_per_second": 5489948.374806735,
+      "elapsed_s": 0.09549962298478931,
+      "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
       "global_shape": [
@@ -1197,7 +1197,7 @@
       "halo_exchange_pass": true,
       "inventory_relative_error": 0.0,
       "local_decomposed_execution_pass": true,
-      "local_free_energy": 174762.83333365122,
+      "local_free_energy": 174762.83333365124,
       "local_inventory": 262144.0,
       "owned_phase_cells": 524288,
       "rank_count": 8,
@@ -1205,8 +1205,31 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 10169735.664825356,
-      "elapsed_s": 0.05155374901369214,
+      "cells_per_second": 5153204.961372518,
+      "elapsed_s": 0.10174017993267626,
+      "free_energy_relative_error": 1.665332948749444e-16,
+      "global_free_energy": 174762.83333365122,
+      "global_inventory": 262144.0,
+      "global_shape": [
+        64,
+        32,
+        8,
+        8,
+        4
+      ],
+      "halo_exchange_pass": true,
+      "inventory_relative_error": 0.0,
+      "local_decomposed_execution_pass": true,
+      "local_free_energy": 174762.8333336512,
+      "local_inventory": 262144.0,
+      "owned_phase_cells": 524288,
+      "rank_count": 8,
+      "reconstruction_linf_error": 0.0
+    },
+    {
+      "case_id": "local_cpu_64x32_2x4",
+      "cells_per_second": 6934395.387343918,
+      "elapsed_s": 0.07560688001103699,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1242,7 +1265,7 @@
   "missing_requirements": [
     "MPI or multi-GPU distributed execution path over the declared rank tiles",
     "large-grid cluster/GPU wall-time scaling report",
-    "same-physics convergence evidence across distributed decomposition shapes",
+    "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
     "hardware-specific multi-rank throughput and efficiency thresholds"
   ],
   "production_scale_ready": false,
@@ -1251,6 +1274,50 @@
     "python -m pytest tests/test_gk_domain_decomposition.py -q"
   ],
   "same_physics_decomposition_shape_pass": true,
+  "same_physics_shape_convergence_evidence": {
+    "max_free_energy_relative_deviation": 3.3306658974988877e-16,
+    "max_inventory_relative_deviation": 0.0,
+    "max_reconstruction_linf_error": 0.0,
+    "reconstruction_linf_tolerance": 0.0,
+    "reference_case_id": "local_cpu_64x32_4x2",
+    "relative_reduction_tolerance": 1e-12,
+    "schema": "production-decomposition-shape-convergence.v1",
+    "shape_convergence_pass": true,
+    "shape_count": 3,
+    "shape_rows": [
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "cells_per_second": 5489948.374806735,
+        "free_energy_relative_deviation_from_reference": 0.0,
+        "inventory_relative_deviation_from_reference": 0.0,
+        "owned_phase_cells": 524288,
+        "rank_count": 8,
+        "reconstruction_linf_error": 0.0,
+        "shape_convergence_pass": true
+      },
+      {
+        "case_id": "local_cpu_64x32_8x1",
+        "cells_per_second": 5153204.961372518,
+        "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
+        "inventory_relative_deviation_from_reference": 0.0,
+        "owned_phase_cells": 524288,
+        "rank_count": 8,
+        "reconstruction_linf_error": 0.0,
+        "shape_convergence_pass": true
+      },
+      {
+        "case_id": "local_cpu_64x32_2x4",
+        "cells_per_second": 6934395.387343918,
+        "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
+        "inventory_relative_deviation_from_reference": 0.0,
+        "owned_phase_cells": 524288,
+        "rank_count": 8,
+        "reconstruction_linf_error": 0.0,
+        "shape_convergence_pass": true
+      }
+    ],
+    "status": "accepted_local_same_physics_shape_convergence"
+  },
   "schema": "production-decomposition-contract.v1",
   "status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling"
 }

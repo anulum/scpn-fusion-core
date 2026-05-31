@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added production-decomposition same-physics shape-convergence evidence across
+  `4x2`, `8x1`, and `2x4` local radial/toroidal rank shapes, with true
+  owned-tile reductions and fail-closed distributed MPI/multi-GPU scaling
+  blockers.
+
 - Added local compact-electromagnetic GK grid-convergence evidence for
   algebraic `A_parallel`/`B_parallel` field-energy histories while keeping full
   Faraday/displacement-current Vlasov-Maxwell parity fail-closed.
