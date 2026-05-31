@@ -172,6 +172,14 @@ class PsiRMSEResult:
     source_domain_residual_class: str = "not_evaluated"
     source_domain_required_solver_mode: str = "not_evaluated"
     source_domain_next_action: str = "not_evaluated"
+    free_boundary_boundary_point_count: int = 0
+    free_boundary_limiter_point_count: int = 0
+    free_boundary_axis_inside_grid: bool = False
+    free_boundary_boundary_inside_grid_fraction: float = float("nan")
+    free_boundary_limiter_inside_grid_fraction: float = float("nan")
+    free_boundary_metadata_pass: bool = False
+    free_boundary_external_coil_data_available: bool = False
+    free_boundary_reconstruction_blocker: str = "not_evaluated"
     best_source_candidate: str = ""
     best_source_candidate_residual_l2: float = float("nan")
     profile_source_candidate_rank: int = 0
@@ -267,6 +275,8 @@ class EfitNRMSEBenchmarkGate:
     source_domain_next_action_counts: dict[str, int]
     gate_source_domain_required_solver_mode_counts: dict[str, int]
     gate_source_domain_next_action_counts: dict[str, int]
+    free_boundary_reconstruction_blocker_counts: dict[str, int]
+    gate_free_boundary_reconstruction_blocker_counts: dict[str, int]
     operator_source_threshold: float
     operator_source_pass_count: int
     gate_operator_source_pass_count: int
@@ -787,6 +797,77 @@ def source_domain_remediation_contract(source_domain_class: str) -> tuple[str, s
             "reject_or_repair_non_finite_operator_or_profile_source_inputs",
         )
     return ("not_evaluated", "not_evaluated")
+
+
+def compute_free_boundary_reconstruction_contract(
+    eq: GEqdsk,
+    required_solver_mode: str,
+) -> dict[str, float | int | bool | str]:
+    """Report whether a GEQDSK row carries metadata needed for free-boundary solve-in."""
+    r = np.asarray(eq.r, dtype=np.float64)
+    z = np.asarray(eq.z, dtype=np.float64)
+    if r.size < 2 or z.size < 2:
+        raise ValueError("free-boundary metadata contract requires non-empty R/Z axes")
+    if not np.all(np.isfinite(r)) or not np.all(np.isfinite(z)):
+        raise ValueError("free-boundary metadata contract requires finite R/Z axes")
+
+    boundary_count = int(min(eq.rbdry.size, eq.zbdry.size))
+    limiter_count = int(min(eq.rlim.size, eq.zlim.size))
+    axis_inside = bool(
+        np.isfinite(eq.rmaxis)
+        and np.isfinite(eq.zmaxis)
+        and float(r[0]) <= float(eq.rmaxis) <= float(r[-1])
+        and float(z[0]) <= float(eq.zmaxis) <= float(z[-1])
+    )
+
+    def inside_fraction(r_points: NDArray[np.float64], z_points: NDArray[np.float64]) -> float:
+        point_count = int(min(r_points.size, z_points.size))
+        if point_count == 0:
+            return 0.0
+        points_r = np.asarray(r_points[:point_count], dtype=np.float64)
+        points_z = np.asarray(z_points[:point_count], dtype=np.float64)
+        finite = np.isfinite(points_r) & np.isfinite(points_z)
+        inside = (
+            finite
+            & (points_r >= float(r[0]))
+            & (points_r <= float(r[-1]))
+            & (points_z >= float(z[0]))
+            & (points_z <= float(z[-1]))
+        )
+        return float(np.count_nonzero(inside) / point_count)
+
+    boundary_inside_fraction = inside_fraction(eq.rbdry, eq.zbdry)
+    limiter_inside_fraction = inside_fraction(eq.rlim, eq.zlim)
+    metadata_pass = bool(
+        boundary_count >= 3
+        and limiter_count >= 3
+        and axis_inside
+        and boundary_inside_fraction >= 0.999
+    )
+    requires_free_boundary = required_solver_mode in {
+        "free_boundary_coil_vacuum_reconstruction_required",
+        "profile_source_then_free_boundary_reconstruction_required",
+    }
+    external_coil_data_available = False
+    if not requires_free_boundary:
+        blocker = "not_required"
+    elif not metadata_pass:
+        blocker = "geqdsk_boundary_limiter_axis_metadata_incomplete"
+    elif not external_coil_data_available:
+        blocker = "external_coil_currents_missing_from_geqdsk"
+    else:
+        blocker = "ready_for_free_boundary_reconstruction"
+
+    return {
+        "free_boundary_boundary_point_count": boundary_count,
+        "free_boundary_limiter_point_count": limiter_count,
+        "free_boundary_axis_inside_grid": axis_inside,
+        "free_boundary_boundary_inside_grid_fraction": boundary_inside_fraction,
+        "free_boundary_limiter_inside_grid_fraction": limiter_inside_fraction,
+        "free_boundary_metadata_pass": metadata_pass,
+        "free_boundary_external_coil_data_available": external_coil_data_available,
+        "free_boundary_reconstruction_blocker": blocker,
+    }
 
 
 def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
@@ -1661,6 +1742,10 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     source_domain_required_solver_mode, source_domain_next_action = (
         source_domain_remediation_contract(source_domain_residual_class)
     )
+    free_boundary_contract = compute_free_boundary_reconstruction_contract(
+        eq,
+        source_domain_required_solver_mode,
+    )
     adapted_profile_reconstruction = compute_adapted_profile_reconstruction(
         eq,
         omega=omega_opt,
@@ -1854,6 +1939,28 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         source_domain_residual_class=source_domain_residual_class,
         source_domain_required_solver_mode=source_domain_required_solver_mode,
         source_domain_next_action=source_domain_next_action,
+        free_boundary_boundary_point_count=int(
+            free_boundary_contract["free_boundary_boundary_point_count"]
+        ),
+        free_boundary_limiter_point_count=int(
+            free_boundary_contract["free_boundary_limiter_point_count"]
+        ),
+        free_boundary_axis_inside_grid=bool(
+            free_boundary_contract["free_boundary_axis_inside_grid"]
+        ),
+        free_boundary_boundary_inside_grid_fraction=float(
+            free_boundary_contract["free_boundary_boundary_inside_grid_fraction"]
+        ),
+        free_boundary_limiter_inside_grid_fraction=float(
+            free_boundary_contract["free_boundary_limiter_inside_grid_fraction"]
+        ),
+        free_boundary_metadata_pass=bool(free_boundary_contract["free_boundary_metadata_pass"]),
+        free_boundary_external_coil_data_available=bool(
+            free_boundary_contract["free_boundary_external_coil_data_available"]
+        ),
+        free_boundary_reconstruction_blocker=str(
+            free_boundary_contract["free_boundary_reconstruction_blocker"]
+        ),
         best_source_candidate=best_source_candidate,
         best_source_candidate_residual_l2=best_source_candidate_residual,
         profile_source_candidate_rank=profile_source_rank,
@@ -2206,6 +2313,8 @@ def validate_efit_nrmse_benchmark(
     source_domain_next_action_counts: dict[str, int] = {}
     gate_source_domain_required_solver_mode_counts: dict[str, int] = {}
     gate_source_domain_next_action_counts: dict[str, int] = {}
+    free_boundary_reconstruction_blocker_counts: dict[str, int] = {}
+    gate_free_boundary_reconstruction_blocker_counts: dict[str, int] = {}
     source_sum_identity_errors: list[float] = []
     operator_current_error_entries: list[tuple[str, float]] = []
     gate_operator_current_error_entries: list[tuple[str, float]] = []
@@ -2255,6 +2364,14 @@ def validate_efit_nrmse_benchmark(
             )
             gate_source_domain_next_action_counts[next_action] = (
                 gate_source_domain_next_action_counts.get(next_action, 0) + 1
+            )
+        free_boundary_blocker = str(row["free_boundary_reconstruction_blocker"])
+        free_boundary_reconstruction_blocker_counts[free_boundary_blocker] = (
+            free_boundary_reconstruction_blocker_counts.get(free_boundary_blocker, 0) + 1
+        )
+        if row["reference_role"] == "gate":
+            gate_free_boundary_reconstruction_blocker_counts[free_boundary_blocker] = (
+                gate_free_boundary_reconstruction_blocker_counts.get(free_boundary_blocker, 0) + 1
             )
         source_adapter = str(row["source_convention_adapter"])
         source_convention_adapter_counts[source_adapter] = (
@@ -2448,6 +2565,18 @@ def validate_efit_nrmse_benchmark(
                 f"{name}={count}" for name, count in sorted(public_required_solver_blockers.items())
             )
         )
+    public_free_boundary_blockers = {
+        name: count
+        for name, count in gate_free_boundary_reconstruction_blocker_counts.items()
+        if name not in {"not_required", "ready_for_free_boundary_reconstruction"}
+    }
+    if public_free_boundary_blockers:
+        failure_reasons.append(
+            "public gate free-boundary input blockers: "
+            + ", ".join(
+                f"{name}={count}" for name, count in sorted(public_free_boundary_blockers.items())
+            )
+        )
     if gate_solver_failure_count:
         failure_reasons.append(
             "public gate operator-source solver consistency failure in "
@@ -2518,6 +2647,8 @@ def validate_efit_nrmse_benchmark(
         source_domain_next_action_counts=source_domain_next_action_counts,
         gate_source_domain_required_solver_mode_counts=gate_source_domain_required_solver_mode_counts,
         gate_source_domain_next_action_counts=gate_source_domain_next_action_counts,
+        free_boundary_reconstruction_blocker_counts=free_boundary_reconstruction_blocker_counts,
+        gate_free_boundary_reconstruction_blocker_counts=gate_free_boundary_reconstruction_blocker_counts,
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,
         gate_operator_source_pass_count=gate_operator_source_pass_count,
@@ -2749,6 +2880,13 @@ def main() -> int:
         for name, count in sorted(benchmark.gate_source_domain_required_solver_mode_counts.items())
     )
     print(f"Public required solver modes: {gate_required_solver_modes}")
+    free_boundary_blockers = ", ".join(
+        f"{name}={count}"
+        for name, count in sorted(
+            benchmark.gate_free_boundary_reconstruction_blocker_counts.items()
+        )
+    )
+    print(f"Public free-boundary input blockers: {free_boundary_blockers}")
     print(
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"

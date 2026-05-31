@@ -463,6 +463,13 @@ It also exposes `compute_geqdsk_profile_source_components`, which assembles pres
 The aggregate EFIT/GEQDSK report also gates the signed identity
 `total_source_sum == pressure_source_sum + ffprime_source_sum` through
 `source_sum_identity_max_abs_error` and `source_sum_identity_pass`.
+Rows that require free-boundary reconstruction now also report whether the
+GEQDSK file contains boundary, limiter, and magnetic-axis metadata and whether
+external coil currents are available. Current local public SPARC rows carry
+usable boundary/limiter/axis metadata, but all `8/8` public rows remain blocked
+for native free-boundary reconstruction by
+`external_coil_currents_missing_from_geqdsk`; GEQDSK alone is therefore not a
+complete coil/vacuum reconstruction input.
 The same aggregate report counts operator-current closure with
 `operator_current_closure_pass_count` and
 `gate_operator_current_closure_pass_count`, so the discrete Delta*psi current

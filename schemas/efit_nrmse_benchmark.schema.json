@@ -35,6 +35,8 @@
     "source_domain_next_action_counts",
     "gate_source_domain_required_solver_mode_counts",
     "gate_source_domain_next_action_counts",
+    "free_boundary_reconstruction_blocker_counts",
+    "gate_free_boundary_reconstruction_blocker_counts",
     "operator_source_threshold",
     "operator_source_pass_count",
     "gate_operator_source_pass_count",
@@ -516,6 +518,14 @@
           "source_domain_residual_class",
           "source_domain_required_solver_mode",
           "source_domain_next_action",
+          "free_boundary_boundary_point_count",
+          "free_boundary_limiter_point_count",
+          "free_boundary_axis_inside_grid",
+          "free_boundary_boundary_inside_grid_fraction",
+          "free_boundary_limiter_inside_grid_fraction",
+          "free_boundary_metadata_pass",
+          "free_boundary_external_coil_data_available",
+          "free_boundary_reconstruction_blocker",
           "best_source_candidate",
           "best_source_candidate_residual_l2",
           "profile_source_candidate_rank",
@@ -1008,8 +1018,58 @@
           },
           "passes_threshold": {
             "type": "boolean"
+          },
+          "free_boundary_boundary_point_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "free_boundary_limiter_point_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "free_boundary_axis_inside_grid": {
+            "type": "boolean"
+          },
+          "free_boundary_boundary_inside_grid_fraction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "free_boundary_limiter_inside_grid_fraction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "free_boundary_metadata_pass": {
+            "type": "boolean"
+          },
+          "free_boundary_external_coil_data_available": {
+            "type": "boolean"
+          },
+          "free_boundary_reconstruction_blocker": {
+            "enum": [
+              "not_required",
+              "geqdsk_boundary_limiter_axis_metadata_incomplete",
+              "external_coil_currents_missing_from_geqdsk",
+              "ready_for_free_boundary_reconstruction",
+              "not_evaluated"
+            ]
           }
         }
+      }
+    },
+    "free_boundary_reconstruction_blocker_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "gate_free_boundary_reconstruction_blocker_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
       }
     }
   }

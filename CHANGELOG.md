@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added EFIT/GEQDSK free-boundary metadata/blocker reporting so rows that need
+  full free-boundary reconstruction distinguish available boundary/limiter/axis
+  inputs from missing external coil-current data.
+
 - Added full-domain trapezoidal EFIT/GEQDSK operator-current diagnostics with
   native Rust, Go, Julia, and Lean parity; local public GEQDSK refresh remains
   failed, confirming the open rows are source-domain/free-boundary blockers

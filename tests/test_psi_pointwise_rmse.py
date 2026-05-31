@@ -833,6 +833,16 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_source_plasma_operator_norm=0.5,
                 adapted_source_vacuum_operator_norm=0.5,
                 source_domain_residual_class="passes_threshold",
+                source_domain_required_solver_mode="profile_source_fixed_boundary_reconstruction_sufficient",
+                source_domain_next_action="preserve_current_profile_source_contract",
+                free_boundary_boundary_point_count=8,
+                free_boundary_limiter_point_count=8,
+                free_boundary_axis_inside_grid=True,
+                free_boundary_boundary_inside_grid_fraction=1.0,
+                free_boundary_limiter_inside_grid_fraction=1.0,
+                free_boundary_metadata_pass=True,
+                free_boundary_external_coil_data_available=False,
+                free_boundary_reconstruction_blocker="not_required",
                 best_source_candidate="profile_source",
                 best_source_candidate_residual_l2=rmse,
                 profile_source_candidate_rank=1,
@@ -947,6 +957,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.gate_source_domain_next_action_counts == {
             "preserve_current_profile_source_contract": 4
         }
+        assert gate.free_boundary_reconstruction_blocker_counts == {"not_required": 10}
+        assert gate.gate_free_boundary_reconstruction_blocker_counts == {"not_required": 4}
         assert gate.adapted_profile_pass_count == 10
         assert gate.gate_adapted_profile_pass_count == 4
         assert gate.adapted_profile_threshold == pytest.approx(
@@ -1477,6 +1489,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert payload["gate_source_domain_next_action_counts"] == {
             "preserve_current_profile_source_contract": 4
         }
+        assert payload["free_boundary_reconstruction_blocker_counts"] == {"not_required": 10}
+        assert payload["gate_free_boundary_reconstruction_blocker_counts"] == {"not_required": 4}
         assert payload["operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["gate_operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["profile_current_worst_relative_error"] == pytest.approx(0.01)

@@ -113,6 +113,12 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         gate_source_domain_next_action_counts={
             "repair_plasma_profile_source_then_reconstruct_vacuum_boundary_response": 1
         },
+        free_boundary_reconstruction_blocker_counts={
+            "external_coil_currents_missing_from_geqdsk": 1
+        },
+        gate_free_boundary_reconstruction_blocker_counts={
+            "external_coil_currents_missing_from_geqdsk": 1
+        },
         operator_source_threshold=1e-6,
         operator_source_pass_count=1,
         gate_operator_source_pass_count=1,
@@ -239,6 +245,14 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "source_domain_next_action": (
                     "repair_plasma_profile_source_then_reconstruct_vacuum_boundary_response"
                 ),
+                "free_boundary_boundary_point_count": 8,
+                "free_boundary_limiter_point_count": 8,
+                "free_boundary_axis_inside_grid": True,
+                "free_boundary_boundary_inside_grid_fraction": 1.0,
+                "free_boundary_limiter_inside_grid_fraction": 1.0,
+                "free_boundary_metadata_pass": True,
+                "free_boundary_external_coil_data_available": False,
+                "free_boundary_reconstruction_blocker": "external_coil_currents_missing_from_geqdsk",
                 "best_source_candidate": "profile_source",
                 "best_source_candidate_residual_l2": 2.5,
                 "profile_source_candidate_rank": 1,
@@ -302,6 +316,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
     assert "Source classes:" in stdout
     assert "Source-domain residual classes:" in stdout
     assert "profile_source_mismatch=1" in stdout
+    assert "Public free-boundary input blockers:" in stdout
+    assert "external_coil_currents_missing_from_geqdsk=1" in stdout
     assert "Worst source residual:" in stdout
     assert "Best-domain operator-current closure gate:" in stdout
     assert "Worst source components:" in stdout
