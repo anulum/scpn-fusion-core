@@ -118,6 +118,55 @@ def _observable_readiness(path: Path | None, observables: Any, contracts: Any) -
     }
 
 
+def _threshold_readiness(thresholds: Any, contracts: Any) -> dict[str, Any]:
+    """Return quantitative parity-threshold value and comparator readiness."""
+    if not isinstance(thresholds, dict) or not thresholds:
+        return {
+            "ready": False,
+            "values_ready": False,
+            "contracts_ready": False,
+            "invalid": [],
+            "missing_contracts": [],
+        }
+
+    contract_map = contracts if isinstance(contracts, dict) else {}
+    invalid = []
+    missing_contracts = []
+    allowed_comparators = {"<=", ">="}
+    for name, value in thresholds.items():
+        try:
+            scalar = float(value)
+        except (TypeError, ValueError):
+            invalid.append({"threshold": name, "reason": "not_numeric"})
+            continue
+        if not bool(np.isfinite(scalar)):
+            invalid.append({"threshold": name, "reason": "non_finite"})
+        elif scalar < 0.0:
+            invalid.append({"threshold": name, "reason": "negative"})
+
+        contract = contract_map.get(name)
+        if not isinstance(contract, dict):
+            missing_contracts.append(str(name))
+            continue
+        comparator = contract.get("comparator")
+        if comparator not in allowed_comparators:
+            invalid.append({"threshold": name, "reason": "unsupported_comparator"})
+        if not contract.get("metric"):
+            invalid.append({"threshold": name, "reason": "missing_metric"})
+        if not contract.get("observable"):
+            invalid.append({"threshold": name, "reason": "missing_observable"})
+
+    values_ready = not invalid
+    contracts_ready = not missing_contracts
+    return {
+        "ready": values_ready and contracts_ready,
+        "values_ready": values_ready,
+        "contracts_ready": contracts_ready,
+        "invalid": invalid,
+        "missing_contracts": missing_contracts,
+    }
+
+
 def _reference_readiness(
     surface: str, manifest: dict[str, Any], schema: dict[str, Any]
 ) -> dict[str, Any]:
@@ -149,6 +198,8 @@ def _reference_readiness(
             name in observable_contracts for name in (observables or [])
         )
         observable_report = _observable_readiness(artifact_path, observables, observable_contracts)
+        threshold_contracts = case.get("threshold_contracts")
+        threshold_report = _threshold_readiness(thresholds, threshold_contracts)
         status = case.get("status")
         status_ready = status == "available"
         status_known = status in allowed_statuses
@@ -172,6 +223,7 @@ def _reference_readiness(
             and contracts_ready
             and observable_report["ready"]
             and threshold_ready
+            and threshold_report["ready"]
         )
         row = {
             "case_id": case.get("case_id"),
@@ -193,6 +245,10 @@ def _reference_readiness(
             "observable_keys_missing": observable_report["missing"],
             "observable_payload_invalid": observable_report["invalid"],
             "threshold_ready": threshold_ready,
+            "threshold_values_ready": threshold_report["values_ready"],
+            "threshold_contracts_ready": threshold_report["contracts_ready"],
+            "threshold_invalid": threshold_report["invalid"],
+            "threshold_contracts_missing": threshold_report["missing_contracts"],
             "missing_fields": missing_fields,
             "ready": case_ready,
         }

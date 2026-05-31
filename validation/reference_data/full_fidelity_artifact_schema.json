@@ -13,7 +13,9 @@
     "required_observables is non-empty",
     "all required_observables exist as top-level NPZ keys or JSON observables keys",
     "observable arrays are numeric, finite, non-empty, and satisfy declared minimum rank",
-    "thresholds is non-empty"
+    "thresholds is non-empty",
+    "thresholds are finite non-negative scalar values",
+    "every threshold has an explicit metric, observable, and comparator contract"
   ],
   "required_case_fields": [
     "case_id",
@@ -25,6 +27,7 @@
     "sha256",
     "required_observables",
     "thresholds",
+    "threshold_contracts",
     "observable_contracts"
   ],
   "schema": "full-fidelity-artifact-schema.v1",

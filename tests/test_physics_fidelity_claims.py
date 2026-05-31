@@ -129,3 +129,7 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
         assert case["observable_keys_ready"] is False
         assert case["observable_keys_missing"]
         assert case["observable_payload_invalid"] == []
+        assert case["threshold_values_ready"] is True
+        assert case["threshold_contracts_ready"] is True
+        assert case["threshold_invalid"] == []
+        assert case["threshold_contracts_missing"] == []

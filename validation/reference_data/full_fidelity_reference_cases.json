@@ -51,6 +51,28 @@
           ],
           "sha256": null,
           "status": "missing_public_artifact",
+          "threshold_contracts": {
+            "charge_state_density_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "charge_state_density_r_t"
+            },
+            "particle_conservation_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "charge_state_density_r_t"
+            },
+            "radiated_power_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "line_radiation_power_t"
+            },
+            "total_density_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "total_impurity_density_r_t"
+            }
+          },
           "thresholds": {
             "charge_state_density_relative_l2_max": 0.1,
             "particle_conservation_relative_error_max": 0.01,
@@ -110,6 +132,28 @@
           ],
           "sha256": null,
           "status": "missing_public_artifact",
+          "threshold_contracts": {
+            "field_energy_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "electromagnetic_apar_energy"
+            },
+            "heat_flux_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "ion_heat_flux_spectrum"
+            },
+            "spectrum_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "electron_heat_flux_spectrum"
+            },
+            "zonal_energy_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "zonal_flow_energy"
+            }
+          },
           "thresholds": {
             "field_energy_relative_error_max": 0.2,
             "heat_flux_relative_l2_max": 0.15,
@@ -169,6 +213,23 @@
           ],
           "sha256": null,
           "status": "missing_public_artifact",
+          "threshold_contracts": {
+            "distribution_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "f_p_xi_t"
+            },
+            "growth_rate_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "avalanche_growth_rate_t"
+            },
+            "runaway_current_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "runaway_current_t"
+            }
+          },
           "thresholds": {
             "distribution_relative_l2_max": 0.1,
             "growth_rate_relative_error_max": 0.1,
