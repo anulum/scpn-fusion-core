@@ -758,9 +758,12 @@ frontiers:
 The native nonlinear GK surface now exposes an explicit
 `species x kx x ky x theta x vpar x mu` phase-space contract plus a named
 conservative pseudo-spectral ExB term with de-aliasing diagnostics. The
-transport diagnostics now include saved kx/ky ion and electron heat-flux
-spectra that close exactly to the scalar flux histories and saved electrostatic
-zonal-flow energy bounded by the total electrostatic field energy. Late-window
+run results now export the actual `kx`, `ky`, `theta`, `vpar`, and `mu`
+coordinate axes used by the solver, so saved spectra carry machine-readable
+grid metadata for future GENE/CGYRO/GS2 artifact comparison. The transport
+diagnostics now include saved kx/ky ion and electron heat-flux spectra that
+close exactly to the scalar flux histories and saved electrostatic zonal-flow
+energy bounded by the total electrostatic field energy. Late-window
 saturation summaries now report scalar `phi` RMS, averaged ion/electron
 heat-flux spectra, zonal-flow energy, and electromagnetic energy components
 from the same saved histories used by the benchmark. The electromagnetic state

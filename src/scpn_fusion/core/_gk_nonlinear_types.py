@@ -139,6 +139,11 @@ class NonlinearGKResult:
     )
     dealiased_high_k_max_abs_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     nonlinear_invariant_pass_t: NDArray[np.bool_] = field(default_factory=lambda: np.empty(0))
+    kx_rhos: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    ky_rhos: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    theta_rad: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    vpar_vth: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    mu_normalized: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     time: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     converged: bool = False
     final_state: NonlinearGKState | None = None

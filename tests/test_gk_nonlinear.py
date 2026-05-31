@@ -522,6 +522,44 @@ class TestEnergyConservation:
             np.mean(result.particle_free_energy_species_kxky_t[late], axis=0),
         )
 
+    def test_run_exports_phase_space_coordinate_axes_for_spectra(self):
+        cfg = NonlinearGKConfig(
+            n_kx=6,
+            n_ky=6,
+            n_theta=8,
+            n_vpar=5,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            dt=0.005,
+            n_steps=2,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+
+        result = solver.run(solver.init_state(amplitude=1e-5, seed=71))
+
+        np.testing.assert_allclose(result.kx_rhos, solver.kx)
+        np.testing.assert_allclose(result.ky_rhos, solver.ky)
+        np.testing.assert_allclose(result.theta_rad, solver.theta)
+        np.testing.assert_allclose(result.vpar_vth, solver.vpar)
+        np.testing.assert_allclose(result.mu_normalized, solver.mu)
+        assert result.Q_i_kxky_t.shape[1:] == (result.kx_rhos.size, result.ky_rhos.size)
+        assert result.phi_energy_kxky_t.shape[1:] == (result.kx_rhos.size, result.ky_rhos.size)
+        assert result.particle_free_energy_species_kxky_t.shape[1:] == (
+            cfg.n_species,
+            result.kx_rhos.size,
+            result.ky_rhos.size,
+        )
+        assert result.final_state is not None
+        assert result.final_state.f.shape[3:] == (
+            result.theta_rad.size,
+            result.vpar_vth.size,
+            result.mu_normalized.size,
+        )
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
@@ -1035,6 +1073,11 @@ class TestJaxFallback:
             cfg.n_kx,
             cfg.n_ky,
         )
+        np.testing.assert_allclose(result.kx_rhos, solver._np_solver.kx)
+        np.testing.assert_allclose(result.ky_rhos, solver._np_solver.ky)
+        np.testing.assert_allclose(result.theta_rad, solver._np_solver.theta)
+        np.testing.assert_allclose(result.vpar_vth, solver._np_solver.vpar)
+        np.testing.assert_allclose(result.mu_normalized, solver._np_solver.mu)
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available
