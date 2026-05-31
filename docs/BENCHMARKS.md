@@ -447,6 +447,12 @@ Accepted GEQDSK source-convention adapters now also report adapted-source
 plasma/vacuum residuals in the EFIT benchmark rows, so a passing global adapter
 cannot hide whether the residual is concentrated inside the plasma domain or in
 the vacuum/source-free domain.
+The aggregate report now classifies the effective source residual domain after
+adapter selection. Current local refresh: `14/18` rows are
+`plasma_and_vacuum_source_mismatch`, while the `4/18` accepted-adapter rows are
+`vacuum_source_free_operator_residual`, meaning the named adapter aligns the
+plasma-domain source but leaves a vacuum/free-boundary operator residual that
+profile-only fixed-boundary reconstruction does not model.
 Rust `fusion-core::source` now also exposes native second-order and current-conserving flux-profile interpolation helpers matching the Python profile-source construction contract: local quadratic GEQDSK profile interpolation, masked weighted-integral preservation against the linear GEQDSK contract, finite input guards, shape guards, and non-negative masked weight enforcement.
 It also exposes `compute_geqdsk_profile_source_components`, which assembles pressure, FFprime, and total Grad-Shafranov source arrays with plasma-mask reporting, explicit boundary zeroing, source-norm diagnostics, and signed source-sum diagnostics matching the Python profile-source path. The signed sums are retained because source norms alone can hide pressure/FFprime sign regressions or cancelling assembly errors, and the EFIT/GEQDSK benchmark schema now requires those signed sums in every row.
 The aggregate EFIT/GEQDSK report also gates the signed identity

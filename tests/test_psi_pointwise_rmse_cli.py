@@ -100,6 +100,7 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
             "adapted_geqdsk_profile_source_fixed_boundary": 1,
         },
         source_consistency_counts={"profile_source_mismatch": 1},
+        source_domain_residual_class_counts={"plasma_and_vacuum_source_mismatch": 1},
         operator_source_threshold=1e-6,
         operator_source_pass_count=1,
         gate_operator_source_pass_count=1,
@@ -219,6 +220,7 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "adapted_source_vacuum_residual_l2": float("nan"),
                 "adapted_source_plasma_operator_norm": float("nan"),
                 "adapted_source_vacuum_operator_norm": float("nan"),
+                "source_domain_residual_class": "plasma_and_vacuum_source_mismatch",
                 "best_source_candidate": "profile_source",
                 "best_source_candidate_residual_l2": 2.5,
                 "profile_source_candidate_rank": 1,
@@ -276,6 +278,7 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
     stdout = ascii_stdout.getvalue()
     assert "psi_N RMSE" in stdout
     assert "Source classes:" in stdout
+    assert "Source-domain residual classes:" in stdout
     assert "profile_source_mismatch=1" in stdout
     assert "Worst source residual:" in stdout
     assert "Best-domain operator-current closure gate:" in stdout

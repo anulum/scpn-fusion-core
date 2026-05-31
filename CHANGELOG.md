@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added EFIT/GEQDSK effective source-domain residual classification to separate
+  plasma-source mismatch from vacuum/source-free operator residuals after
+  accepted source-convention adaptation.
+
 - Added EFIT/GEQDSK adapted-source plasma/vacuum residual diagnostics so
   accepted source-convention adapters expose masked source quality, not only a
   global residual.

@@ -169,6 +169,7 @@ class PsiRMSEResult:
     adapted_source_vacuum_residual_l2: float = float("nan")
     adapted_source_plasma_operator_norm: float = float("nan")
     adapted_source_vacuum_operator_norm: float = float("nan")
+    source_domain_residual_class: str = "not_evaluated"
     best_source_candidate: str = ""
     best_source_candidate_residual_l2: float = float("nan")
     profile_source_candidate_rank: int = 0
@@ -255,6 +256,7 @@ class EfitNRMSEBenchmarkGate:
     reference_class_counts: dict[str, int]
     solver_mode_counts: dict[str, int]
     source_consistency_counts: dict[str, int]
+    source_domain_residual_class_counts: dict[str, int]
     operator_source_threshold: float
     operator_source_pass_count: int
     gate_operator_source_pass_count: int
@@ -723,6 +725,28 @@ def compute_source_alignment(
         "source_vacuum_point_count": float(vacuum_count),
     }
     return metrics, best_fit_convention
+
+
+def classify_source_domain_residual(
+    plasma_residual: float,
+    vacuum_residual: float,
+    *,
+    threshold: float = SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD,
+) -> str:
+    """Classify whether source mismatch lives in plasma, vacuum, both, or neither domain."""
+    plasma_finite = np.isfinite(plasma_residual)
+    vacuum_finite = np.isfinite(vacuum_residual)
+    if not plasma_finite and not vacuum_finite:
+        return "non_finite_source_domain_residual"
+    plasma_fail = (not plasma_finite) or plasma_residual > threshold
+    vacuum_fail = (not vacuum_finite) or vacuum_residual > threshold
+    if plasma_fail and vacuum_fail:
+        return "plasma_and_vacuum_source_mismatch"
+    if plasma_fail:
+        return "plasma_source_mismatch"
+    if vacuum_fail:
+        return "vacuum_source_free_operator_residual"
+    return "passes_threshold"
 
 
 def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
@@ -1557,6 +1581,20 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
             "source_plasma_operator_norm": float("nan"),
             "source_vacuum_operator_norm": float("nan"),
         }
+    effective_source_plasma_residual = (
+        float(adapted_source_alignment["source_plasma_residual_l2"])
+        if bool(source_convention_adapter["source_convention_adapter_pass"])
+        else float(source_alignment["source_plasma_residual_l2"])
+    )
+    effective_source_vacuum_residual = (
+        float(adapted_source_alignment["source_vacuum_residual_l2"])
+        if bool(source_convention_adapter["source_convention_adapter_pass"])
+        else float(source_alignment["source_vacuum_residual_l2"])
+    )
+    source_domain_residual_class = classify_source_domain_residual(
+        effective_source_plasma_residual,
+        effective_source_vacuum_residual,
+    )
     adapted_profile_reconstruction = compute_adapted_profile_reconstruction(
         eq,
         omega=omega_opt,
@@ -1747,6 +1785,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         adapted_source_vacuum_residual_l2=adapted_source_alignment["source_vacuum_residual_l2"],
         adapted_source_plasma_operator_norm=adapted_source_alignment["source_plasma_operator_norm"],
         adapted_source_vacuum_operator_norm=adapted_source_alignment["source_vacuum_operator_norm"],
+        source_domain_residual_class=source_domain_residual_class,
         best_source_candidate=best_source_candidate,
         best_source_candidate_residual_l2=best_source_candidate_residual,
         profile_source_candidate_rank=profile_source_rank,
@@ -2082,6 +2121,7 @@ def validate_efit_nrmse_benchmark(
     solver_mode_counts: dict[str, int] = {}
     source_residual_entries: list[tuple[str, float]] = []
     gate_source_residual_entries: list[tuple[str, float]] = []
+    source_domain_residual_class_counts: dict[str, int] = {}
     source_sum_identity_errors: list[float] = []
     operator_current_error_entries: list[tuple[str, float]] = []
     gate_operator_current_error_entries: list[tuple[str, float]] = []
@@ -2107,6 +2147,10 @@ def validate_efit_nrmse_benchmark(
             solver_mode_counts[solver_mode] = solver_mode_counts.get(solver_mode, 0) + 1
         source_class = str(row["source_consistency_class"])
         source_consistency_counts[source_class] = source_consistency_counts.get(source_class, 0) + 1
+        source_domain_class = str(row["source_domain_residual_class"])
+        source_domain_residual_class_counts[source_domain_class] = (
+            source_domain_residual_class_counts.get(source_domain_class, 0) + 1
+        )
         source_adapter = str(row["source_convention_adapter"])
         source_convention_adapter_counts[source_adapter] = (
             source_convention_adapter_counts.get(source_adapter, 0) + 1
@@ -2348,6 +2392,7 @@ def validate_efit_nrmse_benchmark(
         reference_class_counts=reference_class_counts,
         solver_mode_counts=solver_mode_counts,
         source_consistency_counts=source_consistency_counts,
+        source_domain_residual_class_counts=source_domain_residual_class_counts,
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,
         gate_operator_source_pass_count=gate_operator_source_pass_count,
@@ -2564,6 +2609,11 @@ def main() -> int:
         f"{name}={count}" for name, count in sorted(benchmark.source_consistency_counts.items())
     )
     print(f"Source classes:        {source_classes}")
+    source_domain_classes = ", ".join(
+        f"{name}={count}"
+        for name, count in sorted(benchmark.source_domain_residual_class_counts.items())
+    )
+    print(f"Source-domain residual classes: {source_domain_classes}")
     print(
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"

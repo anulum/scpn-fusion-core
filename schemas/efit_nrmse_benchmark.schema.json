@@ -30,6 +30,7 @@
     "reference_class_counts",
     "solver_mode_counts",
     "source_consistency_counts",
+    "source_domain_residual_class_counts",
     "operator_source_threshold",
     "operator_source_pass_count",
     "gate_operator_source_pass_count",
@@ -195,6 +196,13 @@
       }
     },
     "source_consistency_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "source_domain_residual_class_counts": {
       "type": "object",
       "additionalProperties": {
         "type": "integer",
@@ -473,6 +481,7 @@
           "adapted_source_vacuum_residual_l2",
           "adapted_source_plasma_operator_norm",
           "adapted_source_vacuum_operator_norm",
+          "source_domain_residual_class",
           "best_source_candidate",
           "best_source_candidate_residual_l2",
           "profile_source_candidate_rank",
@@ -771,6 +780,16 @@
           },
           "adapted_source_vacuum_operator_norm": {
             "type": "number"
+          },
+          "source_domain_residual_class": {
+            "enum": [
+              "passes_threshold",
+              "plasma_source_mismatch",
+              "vacuum_source_free_operator_residual",
+              "plasma_and_vacuum_source_mismatch",
+              "non_finite_source_domain_residual",
+              "not_evaluated"
+            ]
           },
           "best_source_candidate": {
             "type": "string",
