@@ -192,9 +192,67 @@
   "missing_full_fidelity_requirements": [
     "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
     "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
-    "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
+    "external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
     "same-deck external electromagnetic grid-convergence evidence"
   ],
+  "native_em_same_case_threshold_evidence": {
+    "benchmark_case_id": "native_em_replay_4x4x8_seed419",
+    "observable_count": 4,
+    "observable_rows": [
+      {
+        "absolute_tolerance": 1e-18,
+        "max_absolute_error": 0.0,
+        "max_relative_error": 0.0,
+        "observable": "electromagnetic_apar_energy",
+        "relative_tolerance": 1e-15,
+        "shape": [
+          4
+        ],
+        "shape_matches": true,
+        "threshold_pass": true
+      },
+      {
+        "absolute_tolerance": 1e-18,
+        "max_absolute_error": 0.0,
+        "max_relative_error": 0.0,
+        "observable": "electromagnetic_bpar_energy",
+        "relative_tolerance": 1e-15,
+        "shape": [
+          4
+        ],
+        "shape_matches": true,
+        "threshold_pass": true
+      },
+      {
+        "absolute_tolerance": 1e-18,
+        "max_absolute_error": 0.0,
+        "max_relative_error": 0.0,
+        "observable": "electromagnetic_phi_energy",
+        "relative_tolerance": 1e-15,
+        "shape": [
+          4
+        ],
+        "shape_matches": true,
+        "threshold_pass": true
+      },
+      {
+        "absolute_tolerance": 1e-18,
+        "max_absolute_error": 0.0,
+        "max_relative_error": 0.0,
+        "observable": "electromagnetic_total_field_energy",
+        "relative_tolerance": 1e-15,
+        "shape": [
+          4
+        ],
+        "shape_matches": true,
+        "threshold_pass": true
+      }
+    ],
+    "reference_kind": "native_deterministic_replay_not_external_parity",
+    "same_case_thresholds_ready": true,
+    "schema": "gk-native-em-same-case-thresholds.v1",
+    "status": "accepted_native_em_same_case_thresholds"
+  },
   "omitted_physics": [
     "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
     "external same-deck electromagnetic GENE/CGYRO/GS2 output parity"

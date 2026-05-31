@@ -21,7 +21,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -60,6 +60,8 @@ GRID_CONVERGENCE_CASES: list[dict[str, int | str]] = [
     {"case_id": "compact_em_8x8x12", "n_kx": 8, "n_ky": 8, "n_theta": 12},
 ]
 GRID_CONVERGENCE_RELATIVE_ENERGY_TOLERANCE = 5.0e-1
+NATIVE_EM_SAME_CASE_ABSOLUTE_TOLERANCE = 1.0e-18
+NATIVE_EM_SAME_CASE_RELATIVE_TOLERANCE = 1.0e-15
 
 
 def _maxwell_evolution_contract(
@@ -359,7 +361,72 @@ def _run_maxwell_evolution_evidence() -> dict[str, Any]:
     result = run_local_maxwell_evolution(
         MaxwellEvolutionConfig(n_kx=6, n_ky=6, n_steps=16, dt=1.0e-12, seed=311)
     )
-    return result.to_evidence()
+    return cast(dict[str, Any], result.to_evidence())
+
+
+def _run_native_em_same_case_threshold_evidence() -> dict[str, Any]:
+    """Gate deterministic native EM same-case field-energy thresholds."""
+    cfg = _config(electromagnetic=True)
+    solver_a = NonlinearGKSolver(cfg)
+    solver_b = NonlinearGKSolver(cfg)
+    result_a = solver_a.run(solver_a.init_state(amplitude=1.0e-5, seed=419))
+    result_b = solver_b.run(solver_b.init_state(amplitude=1.0e-5, seed=419))
+    total_field_a = (
+        result_a.phi_energy_t + result_a.A_parallel_energy_t + result_a.B_parallel_energy_t
+    )
+    total_field_b = (
+        result_b.phi_energy_t + result_b.A_parallel_energy_t + result_b.B_parallel_energy_t
+    )
+    observables: dict[str, tuple[NDArray[np.float64], NDArray[np.float64]]] = {
+        "electromagnetic_apar_energy": (
+            result_a.A_parallel_energy_t,
+            result_b.A_parallel_energy_t,
+        ),
+        "electromagnetic_bpar_energy": (
+            result_a.B_parallel_energy_t,
+            result_b.B_parallel_energy_t,
+        ),
+        "electromagnetic_phi_energy": (result_a.phi_energy_t, result_b.phi_energy_t),
+        "electromagnetic_total_field_energy": (total_field_a, total_field_b),
+    }
+    rows: list[dict[str, Any]] = []
+    for observable, (native, replay) in sorted(observables.items()):
+        shape_matches = native.shape == replay.shape
+        if shape_matches and native.size:
+            max_absolute_error = float(np.max(np.abs(native - replay)))
+            denominator = max(float(np.max(np.abs(native))), 1.0e-30)
+            max_relative_error = float(max_absolute_error / denominator)
+        else:
+            max_absolute_error = float("inf")
+            max_relative_error = float("inf")
+        rows.append(
+            {
+                "absolute_tolerance": NATIVE_EM_SAME_CASE_ABSOLUTE_TOLERANCE,
+                "max_absolute_error": max_absolute_error,
+                "max_relative_error": max_relative_error,
+                "observable": observable,
+                "relative_tolerance": NATIVE_EM_SAME_CASE_RELATIVE_TOLERANCE,
+                "shape": list(native.shape),
+                "shape_matches": shape_matches,
+                "threshold_pass": bool(
+                    shape_matches
+                    and max_absolute_error <= NATIVE_EM_SAME_CASE_ABSOLUTE_TOLERANCE
+                    and max_relative_error <= NATIVE_EM_SAME_CASE_RELATIVE_TOLERANCE
+                ),
+            }
+        )
+    same_case_thresholds_ready = bool(rows and all(row["threshold_pass"] for row in rows))
+    return {
+        "benchmark_case_id": "native_em_replay_4x4x8_seed419",
+        "observable_count": len(rows),
+        "observable_rows": rows,
+        "reference_kind": "native_deterministic_replay_not_external_parity",
+        "same_case_thresholds_ready": same_case_thresholds_ready,
+        "schema": "gk-native-em-same-case-thresholds.v1",
+        "status": "accepted_native_em_same_case_thresholds"
+        if same_case_thresholds_ready
+        else "blocked_native_em_same_case_thresholds_failed",
+    }
 
 
 def run_benchmark() -> dict[str, Any]:
@@ -370,8 +437,12 @@ def run_benchmark() -> dict[str, Any]:
     grid_convergence_evidence = _run_grid_convergence_evidence()
     grid_convergence_ready = bool(grid_convergence_evidence["grid_convergence_ready"])
     maxwell_evolution_evidence = _run_maxwell_evolution_evidence()
+    native_same_case_threshold_evidence = _run_native_em_same_case_threshold_evidence()
     maxwell_evolution_ready = bool(
         maxwell_evolution_evidence["status"] == "accepted_local_source_free_maxwell_evolution"
+    )
+    native_same_case_thresholds_ready = bool(
+        native_same_case_threshold_evidence["same_case_thresholds_ready"]
     )
     maxwell_contract = _maxwell_evolution_contract(
         compact_closure_ready=compact_ready,
@@ -379,7 +450,12 @@ def run_benchmark() -> dict[str, Any]:
     )
     status = (
         "blocked_missing_external_em_parity_outputs"
-        if compact_ready and grid_convergence_ready and maxwell_evolution_ready
+        if (
+            compact_ready
+            and grid_convergence_ready
+            and maxwell_evolution_ready
+            and native_same_case_thresholds_ready
+        )
         else "blocked_compact_electromagnetic_contract_failed"
     )
     return {
@@ -396,14 +472,18 @@ def run_benchmark() -> dict[str, Any]:
         "electrostatic_gate": electrostatic_gate,
         "external_em_parity_comparison_ready": False,
         "locally_actionable_contract_ready": (
-            compact_ready and grid_convergence_ready and maxwell_evolution_ready
+            compact_ready
+            and grid_convergence_ready
+            and maxwell_evolution_ready
+            and native_same_case_thresholds_ready
         ),
         "maxwell_evolution_contract": maxwell_contract,
         "maxwell_evolution_evidence": maxwell_evolution_evidence,
+        "native_em_same_case_threshold_evidence": native_same_case_threshold_evidence,
         "missing_full_fidelity_requirements": [
             "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
             "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
-            "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
+            "external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
             "same-deck external electromagnetic grid-convergence evidence",
         ],
         "omitted_physics": OMITTED_PHYSICS,
@@ -520,6 +600,36 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
             ),
         ]
     )
+    native_thresholds = report["native_em_same_case_threshold_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Native EM same-case threshold evidence",
+            "",
+            f"- Schema: `{native_thresholds['schema']}`",
+            f"- Status: `{native_thresholds['status']}`",
+            f"- Benchmark case id: `{native_thresholds['benchmark_case_id']}`",
+            f"- Reference kind: `{native_thresholds['reference_kind']}`",
+            (f"- Same-case thresholds ready: `{native_thresholds['same_case_thresholds_ready']}`"),
+            "",
+            "| Observable | Shape | Max absolute error | Absolute tolerance | "
+            "Max relative error | Relative tolerance | Pass |",
+            "|---|---|---:|---:|---:|---:|:---:|",
+        ]
+    )
+    for row in native_thresholds["observable_rows"]:
+        lines.append(
+            "| {observable} | `{shape}` | {abs_err:.6e} | {abs_tol:.6e} | "
+            "{rel_err:.6e} | {rel_tol:.6e} | `{passed}` |".format(
+                abs_err=row["max_absolute_error"],
+                abs_tol=row["absolute_tolerance"],
+                observable=row["observable"],
+                passed=row["threshold_pass"],
+                rel_err=row["max_relative_error"],
+                rel_tol=row["relative_tolerance"],
+                shape="x".join(str(item) for item in row["shape"]),
+            )
+        )
     lines.extend(["", "## Omitted physics", ""])
     for item in report["omitted_physics"]:
         lines.append(f"- {item}")

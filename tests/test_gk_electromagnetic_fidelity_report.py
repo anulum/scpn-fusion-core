@@ -96,6 +96,35 @@ def test_gk_electromagnetic_fidelity_report_records_maxwell_evolution_evidence()
     assert evidence["max_inductive_e_parallel_linf_residual"] <= evidence["residual_tolerance"]
 
 
+def test_gk_electromagnetic_fidelity_report_records_native_same_case_thresholds() -> None:
+    report = run_benchmark()
+
+    evidence = report["native_em_same_case_threshold_evidence"]
+    assert evidence["schema"] == "gk-native-em-same-case-thresholds.v1"
+    assert evidence["reference_kind"] == "native_deterministic_replay_not_external_parity"
+    assert evidence["same_case_thresholds_ready"] is True
+    assert evidence["observable_count"] == 4
+    assert {row["observable"] for row in evidence["observable_rows"]} == {
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy",
+        "electromagnetic_total_field_energy",
+    }
+    assert all(row["threshold_pass"] for row in evidence["observable_rows"])
+    assert all(
+        row["max_absolute_error"] <= row["absolute_tolerance"]
+        for row in evidence["observable_rows"]
+    )
+    assert (
+        "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds"
+        not in report["missing_full_fidelity_requirements"]
+    )
+    assert (
+        "external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds"
+        in report["missing_full_fidelity_requirements"]
+    )
+
+
 def test_gk_electromagnetic_fidelity_report_writes_json_and_markdown(tmp_path: Path) -> None:
     report = run_benchmark()
 

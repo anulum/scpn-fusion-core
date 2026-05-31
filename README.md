@@ -256,12 +256,17 @@ electric-field relation. The latest local Maxwell evidence reports maximum
 relative total-field-energy drift `5.090958569120036e-16` with zero Faraday,
 Ampere-Maxwell, and inductive parallel electric-field residuals under tolerance
 `1.0e-12`.
+Native same-case EM replay thresholds are also tracked for `phi`,
+`A_parallel`, `B_parallel`, and total field-energy histories. The latest local
+threshold gate passes with maximum absolute and relative error `0.0` for every
+observable under absolute tolerance `1.0e-18` and relative tolerance `1.0e-15`.
 It also records local compact-EM grid-convergence evidence for the algebraic
 field-energy histories across `4x4x8`, `6x6x10`, and `8x8x12` spectral/theta
 grids. The latest local run passes that compact-grid contract with maximum
 relative total-energy drift `5.494182e-03` under tolerance `5.0e-01`, while
 full Vlasov-Maxwell parity remains blocked on self-consistent 5D kinetic
-current coupling and same-deck external electromagnetic outputs.
+current coupling, same-deck external electromagnetic outputs, and external
+same-case parity thresholds.
 Production-scale decomposition now has a deterministic radial/toroidal
 partition contract in
 [`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).

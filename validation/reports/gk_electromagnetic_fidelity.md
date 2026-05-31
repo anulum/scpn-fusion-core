@@ -41,6 +41,21 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - Max Ampere-Maxwell residual: `0.000000e+00`
 - Max inductive parallel electric-field residual: `0.000000e+00`
 
+## Native EM same-case threshold evidence
+
+- Schema: `gk-native-em-same-case-thresholds.v1`
+- Status: `accepted_native_em_same_case_thresholds`
+- Benchmark case id: `native_em_replay_4x4x8_seed419`
+- Reference kind: `native_deterministic_replay_not_external_parity`
+- Same-case thresholds ready: `True`
+
+| Observable | Shape | Max absolute error | Absolute tolerance | Max relative error | Relative tolerance | Pass |
+|---|---|---:|---:|---:|---:|:---:|
+| electromagnetic_apar_energy | `4` | 0.000000e+00 | 1.000000e-18 | 0.000000e+00 | 1.000000e-15 | `True` |
+| electromagnetic_bpar_energy | `4` | 0.000000e+00 | 1.000000e-18 | 0.000000e+00 | 1.000000e-15 | `True` |
+| electromagnetic_phi_energy | `4` | 0.000000e+00 | 1.000000e-18 | 0.000000e+00 | 1.000000e-15 | `True` |
+| electromagnetic_total_field_energy | `4` | 0.000000e+00 | 1.000000e-18 | 0.000000e+00 | 1.000000e-15 | `True` |
+
 ## Omitted physics
 
 - self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop
@@ -66,5 +81,5 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 
 - self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop
 - same-deck electromagnetic GENE/CGYRO/GS2 output artifacts
-- native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds
+- external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds
 - same-deck external electromagnetic grid-convergence evidence

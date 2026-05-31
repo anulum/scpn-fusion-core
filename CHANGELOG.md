@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added native electromagnetic same-case replay thresholds for `phi`,
+  `A_parallel`, `B_parallel`, and total field-energy histories while keeping
+  external electromagnetic same-deck parity thresholds fail-closed.
+
 - Added local source-free spectral Maxwell evolution evidence for Faraday
   induction, Ampere-Maxwell displacement current, and inductive parallel
   electric-field diagnostics while keeping self-consistent 5D kinetic current

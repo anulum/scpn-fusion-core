@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -43,7 +43,7 @@ from validation.benchmark_runaway_dream_contract import run_benchmark as run_run
 
 
 def _load_sources() -> dict[str, Any]:
-    registry = json.loads(PUBLIC_SOURCES.read_text(encoding="utf-8"))
+    registry = cast(dict[str, Any], json.loads(PUBLIC_SOURCES.read_text(encoding="utf-8")))
     if registry.get("schema") != "full-fidelity-public-source-registry.v1":
         raise ValueError("full-fidelity public source registry schema mismatch")
     sources = registry.get("sources")
@@ -60,7 +60,9 @@ def _load_downloads() -> dict[str, Any]:
             "items": [],
             "schema": "full-fidelity-public-source-downloads.v1",
         }
-    downloads = json.loads(PUBLIC_SOURCE_DOWNLOADS.read_text(encoding="utf-8"))
+    downloads = cast(
+        dict[str, Any], json.loads(PUBLIC_SOURCE_DOWNLOADS.read_text(encoding="utf-8"))
+    )
     if downloads.get("schema") != "full-fidelity-public-source-downloads.v1":
         raise ValueError("full-fidelity public source download report schema mismatch")
     return downloads
@@ -73,7 +75,9 @@ def _load_conversion() -> dict[str, Any]:
             "partial_output_artifacts": 0,
             "schema": "full-fidelity-reference-artifact-conversion.v1",
         }
-    conversion = json.loads(REFERENCE_ARTIFACT_CONVERSION.read_text(encoding="utf-8"))
+    conversion = cast(
+        dict[str, Any], json.loads(REFERENCE_ARTIFACT_CONVERSION.read_text(encoding="utf-8"))
+    )
     if conversion.get("schema") != "full-fidelity-reference-artifact-conversion.v1":
         raise ValueError("full-fidelity reference artifact conversion report schema mismatch")
     return conversion
@@ -87,7 +91,7 @@ def _load_dream_execution() -> dict[str, Any]:
             "settings_deck_generated": False,
             "status": "not_run",
         }
-    report = json.loads(DREAM_EXECUTION_REQUEST.read_text(encoding="utf-8"))
+    report = cast(dict[str, Any], json.loads(DREAM_EXECUTION_REQUEST.read_text(encoding="utf-8")))
     if report.get("schema") != "dream-reference-execution-request.v1":
         raise ValueError("DREAM reference execution request schema mismatch")
     return report
@@ -102,7 +106,7 @@ def _load_aurora_execution() -> dict[str, Any]:
             "schema": "aurora-reference-execution-artifact.v1",
             "status": "not_run",
         }
-    report = json.loads(AURORA_EXECUTION_ARTIFACT.read_text(encoding="utf-8"))
+    report = cast(dict[str, Any], json.loads(AURORA_EXECUTION_ARTIFACT.read_text(encoding="utf-8")))
     if report.get("schema") != "aurora-reference-execution-artifact.v1":
         raise ValueError("Aurora reference execution artifact schema mismatch")
     return report
@@ -118,7 +122,7 @@ def _load_gk_deck_inventory() -> dict[str, Any]:
             "schema": "gk-public-reference-deck-inventory-report.v1",
             "status": "not_run",
         }
-    report = json.loads(GK_DECK_INVENTORY.read_text(encoding="utf-8"))
+    report = cast(dict[str, Any], json.loads(GK_DECK_INVENTORY.read_text(encoding="utf-8")))
     if report.get("schema") != "gk-public-reference-deck-inventory-report.v1":
         raise ValueError("GK public reference deck inventory schema mismatch")
     return report
@@ -136,7 +140,7 @@ def _load_gk_external_parity() -> dict[str, Any]:
             "schema": "gk-external-nonlinear-output-parity-report.v1",
             "status": "not_run",
         }
-    report = json.loads(GK_EXTERNAL_PARITY.read_text(encoding="utf-8"))
+    report = cast(dict[str, Any], json.loads(GK_EXTERNAL_PARITY.read_text(encoding="utf-8")))
     if report.get("schema") != "gk-external-nonlinear-output-parity-report.v1":
         raise ValueError("GK external nonlinear parity report schema mismatch")
     return report
@@ -151,7 +155,7 @@ def _load_production_decomposition() -> dict[str, Any]:
             "schema": "production-decomposition-contract.v1",
             "status": "not_run",
         }
-    report = json.loads(PRODUCTION_DECOMPOSITION.read_text(encoding="utf-8"))
+    report = cast(dict[str, Any], json.loads(PRODUCTION_DECOMPOSITION.read_text(encoding="utf-8")))
     if report.get("schema") != "production-decomposition-contract.v1":
         raise ValueError("production decomposition contract schema mismatch")
     return report
@@ -166,7 +170,9 @@ def _load_free_boundary_machine_metadata() -> dict[str, Any]:
             "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
             "status": "not_run",
         }
-    report = json.loads(FREE_BOUNDARY_MACHINE_METADATA.read_text(encoding="utf-8"))
+    report = cast(
+        dict[str, Any], json.loads(FREE_BOUNDARY_MACHINE_METADATA.read_text(encoding="utf-8"))
+    )
     if report.get("schema") != "free-boundary-public-machine-metadata-inventory-report.v1":
         raise ValueError("free-boundary public machine metadata inventory schema mismatch")
     return report
@@ -181,7 +187,9 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
             "status": "not_run",
             "vacuum_comparison_pass": False,
         }
-    report = json.loads(FREEGS_PUBLIC_RECONSTRUCTION.read_text(encoding="utf-8"))
+    report = cast(
+        dict[str, Any], json.loads(FREEGS_PUBLIC_RECONSTRUCTION.read_text(encoding="utf-8"))
+    )
     if report.get("schema") != "freegs-public-example-reconstruction-report.v1":
         raise ValueError("FreeGS public example reconstruction schema mismatch")
     return report
@@ -198,7 +206,7 @@ def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]
 def _acceptance_surface(report: dict[str, Any], surface: str) -> dict[str, Any]:
     for row in report["surfaces"]:
         if row["surface"] == surface:
-            return row
+            return cast(dict[str, Any], row)
     raise KeyError(surface)
 
 
@@ -374,6 +382,11 @@ def run_campaign() -> dict[str, Any]:
             gk_electromagnetic_fidelity["maxwell_evolution_evidence"]["status"]
             == "accepted_local_source_free_maxwell_evolution"
         ),
+        "gk_electromagnetic_native_same_case_thresholds_ready": bool(
+            gk_electromagnetic_fidelity["native_em_same_case_threshold_evidence"][
+                "same_case_thresholds_ready"
+            ]
+        ),
         "gk_electromagnetic_self_consistent_kinetic_current_ready": bool(
             gk_electromagnetic_fidelity["maxwell_evolution_evidence"][
                 "self_consistent_kinetic_current_supported"
@@ -481,6 +494,10 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- GK electromagnetic Maxwell evolution ready: "
             f"`{report['gk_electromagnetic_maxwell_evolution_ready']}`"
+        ),
+        (
+            "- GK electromagnetic native same-case thresholds ready: "
+            f"`{report['gk_electromagnetic_native_same_case_thresholds_ready']}`"
         ),
         (
             "- GK electromagnetic self-consistent kinetic current ready: "

@@ -28,6 +28,7 @@
   "gk_electromagnetic_fidelity_status": "blocked_missing_external_em_parity_outputs",
   "gk_electromagnetic_grid_convergence_ready": true,
   "gk_electromagnetic_maxwell_evolution_ready": true,
+  "gk_electromagnetic_native_same_case_thresholds_ready": true,
   "gk_electromagnetic_self_consistent_kinetic_current_ready": false,
   "gk_external_nonlinear_parity_report": "validation/reports/gk_external_nonlinear_parity.json",
   "gk_external_nonlinear_parity_status": "blocked_missing_external_output_manifest",
@@ -104,7 +105,7 @@
       "next_required_evidence": [
         "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
         "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
-        "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
+        "external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
         "same-deck external electromagnetic grid-convergence evidence"
       ],
       "reference_cases_ready": false,
