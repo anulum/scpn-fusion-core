@@ -86,6 +86,86 @@ class DreamKineticArtifact:
             "provenance": self.provenance,
         }
 
+    def validate_contract(self) -> dict[str, Any]:
+        """Validate the DREAM-style kinetic artifact axes, shapes, and finiteness."""
+        required_axes = ["time_s", "radius_m", "momentum_mec", "pitch_cosine"]
+        required_axis_units = {
+            "time_s": "s",
+            "radius_m": "m",
+            "momentum_mec": "m_e_c",
+            "pitch_cosine": "dimensionless",
+        }
+        required_observable_axes = {
+            "f_p_xi_t": ["time_s", "radius_m", "momentum_mec", "pitch_cosine"],
+            "runaway_current_t": ["time_s", "radius_m"],
+            "avalanche_growth_rate_t": ["time_s", "radius_m"],
+            "synchrotron_loss_power_t": ["time_s", "radius_m"],
+            "partial_screening_drag_t": ["time_s", "radius_m"],
+            "bremsstrahlung_loss_power_t": ["time_s", "radius_m"],
+        }
+        required_observable_units = {
+            "f_p_xi_t": "m^-3_per_mec_per_pitch",
+            "runaway_current_t": "A",
+            "avalanche_growth_rate_t": "s^-1",
+            "synchrotron_loss_power_t": "W",
+            "partial_screening_drag_t": "N",
+            "bremsstrahlung_loss_power_t": "W",
+        }
+        required_axes_present = all(
+            axis in self.coordinates and self.coordinate_units.get(axis) == unit
+            for axis, unit in required_axis_units.items()
+        )
+        required_observables_present = all(
+            name in self.observables
+            and self.observable_axes.get(name) == axes
+            and self.observable_units.get(name) == required_observable_units[name]
+            for name, axes in required_observable_axes.items()
+        )
+        coordinate_lengths: dict[str, int] = {}
+        coordinates_finite = True
+        coordinates_strict = True
+        for axis in required_axes:
+            values = np.asarray(self.coordinates.get(axis, []), dtype=np.float64)
+            coordinate_lengths[axis] = int(values.size)
+            coordinates_finite = coordinates_finite and bool(np.all(np.isfinite(values)))
+            coordinates_strict = coordinates_strict and bool(
+                values.ndim == 1 and values.size >= 2 and np.all(np.diff(values) > 0.0)
+            )
+
+        observable_shapes: dict[str, list[int]] = {}
+        finite_observables = True
+        nonnegative_observables = True
+        shape_contract = True
+        for name, axes in required_observable_axes.items():
+            arr = np.asarray(self.observables.get(name, []), dtype=np.float64)
+            observable_shapes[name] = [int(v) for v in arr.shape]
+            expected_shape = tuple(coordinate_lengths[axis] for axis in axes)
+            shape_contract = shape_contract and bool(arr.shape == expected_shape)
+            finite_observables = finite_observables and bool(np.all(np.isfinite(arr)))
+            nonnegative_observables = nonnegative_observables and bool(np.all(arr >= 0.0))
+
+        passed = bool(
+            required_axes_present
+            and required_observables_present
+            and coordinates_finite
+            and coordinates_strict
+            and shape_contract
+            and finite_observables
+            and nonnegative_observables
+        )
+        return {
+            "coordinate_lengths": coordinate_lengths,
+            "coordinates_finite": coordinates_finite,
+            "coordinates_strictly_increasing": coordinates_strict,
+            "finite_observables": finite_observables,
+            "nonnegative_observables": nonnegative_observables,
+            "observable_shapes": observable_shapes,
+            "passed": passed,
+            "required_axes_present": required_axes_present,
+            "required_observables_present": required_observables_present,
+            "shape_contract": shape_contract,
+        }
+
 
 class FokkerPlanckSolver:
     """

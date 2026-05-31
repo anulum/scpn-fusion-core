@@ -10,7 +10,15 @@ Public DREAM 2kinetic reference execution request. Settings generation uses the 
 - Settings SHA-256: `0b185469ee2babaf25785cca406d4b2832b3ef10ac20975952632a18f8b62ed1`
 - DREAM backend available: `False`
 - Reference output ready: `False`
+- Same-case comparison ready: `False`
+- Comparison status: `blocked_missing_reference_output`
 - Accepted full-fidelity ready: `False`
+
+## Required DREAM output contract
+
+- Schema: `dream-output-contract.v1`
+- Coordinate axes: `time_s, radius_m, momentum_mec, pitch_cosine`
+- Observables: `f_p_xi_t, runaway_current_t, avalanche_growth_rate_t, synchrotron_loss_power_t, partial_screening_drag_t, bremsstrahlung_loss_power_t`
 
 ## Next action
 

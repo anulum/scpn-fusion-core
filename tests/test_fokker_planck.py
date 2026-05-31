@@ -124,6 +124,20 @@ def test_dream_kinetic_artifact_exports_radius_momentum_pitch_contract() -> None
         arr = np.asarray(payload["observables"][name], dtype=np.float64)
         assert arr.shape == (3, 3)
         assert np.all(np.isfinite(arr))
+    validation = artifact.validate_contract()
+    assert validation["passed"] is True
+    assert validation["required_axes_present"] is True
+    assert validation["required_observables_present"] is True
+    assert validation["observable_shapes"] == {
+        "f_p_xi_t": [3, 3, 32, 3],
+        "runaway_current_t": [3, 3],
+        "avalanche_growth_rate_t": [3, 3],
+        "synchrotron_loss_power_t": [3, 3],
+        "partial_screening_drag_t": [3, 3],
+        "bremsstrahlung_loss_power_t": [3, 3],
+    }
+    assert validation["nonnegative_observables"] is True
+    assert validation["finite_observables"] is True
 
 
 def test_dream_kinetic_artifact_rejects_invalid_axes() -> None:

@@ -9,7 +9,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 1e-08,
       "total_source_m3_s": 0.0,
-      "wall_time_s": 0.0001715420512482524
+      "wall_time_s": 4.699593409895897e-05
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -19,7 +19,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9297121255879576.0,
-      "wall_time_s": 5.245499778538942e-05
+      "wall_time_s": 2.4047913029789925e-05
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -29,21 +29,114 @@
       "loss_source_m3_s": 10000000000000.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9287121255879576.0,
-      "wall_time_s": 1.40779884532094e-05
+      "wall_time_s": 1.537008211016655e-05
     }
   ],
-  "description": "DREAM-style fluid runaway density-balance contract; not kinetic DREAM parity.",
+  "description": "DREAM-style fluid density-balance plus native momentum-pitch-radius artifact contract; not kinetic DREAM parity.",
   "invariants": {
     "density_cap_enforced": true,
     "loss_accounting_exact": true,
+    "native_kinetic_artifact_contract": true,
     "subcritical_avalanche_zero": true,
     "supercritical_avalanche_positive": true
   },
+  "native_kinetic_artifact": {
+    "artifact_sha256": "dbadcede66e42484ee48f5087c5608c1f631abaeb564d628d821a736aefe25e6",
+    "contract_validation": {
+      "coordinate_lengths": {
+        "momentum_mec": 48,
+        "pitch_cosine": 5,
+        "radius_m": 4,
+        "time_s": 4
+      },
+      "coordinates_finite": true,
+      "coordinates_strictly_increasing": true,
+      "finite_observables": true,
+      "nonnegative_observables": true,
+      "observable_shapes": {
+        "avalanche_growth_rate_t": [
+          4,
+          4
+        ],
+        "bremsstrahlung_loss_power_t": [
+          4,
+          4
+        ],
+        "f_p_xi_t": [
+          4,
+          4,
+          48,
+          5
+        ],
+        "partial_screening_drag_t": [
+          4,
+          4
+        ],
+        "runaway_current_t": [
+          4,
+          4
+        ],
+        "synchrotron_loss_power_t": [
+          4,
+          4
+        ]
+      },
+      "passed": true,
+      "required_axes_present": true,
+      "required_observables_present": true,
+      "shape_contract": true
+    },
+    "coordinate_lengths": {
+      "momentum_mec": 48,
+      "pitch_cosine": 5,
+      "radius_m": 4,
+      "time_s": 4
+    },
+    "observable_shapes": {
+      "avalanche_growth_rate_t": [
+        4,
+        4
+      ],
+      "bremsstrahlung_loss_power_t": [
+        4,
+        4
+      ],
+      "f_p_xi_t": [
+        4,
+        4,
+        48,
+        5
+      ],
+      "partial_screening_drag_t": [
+        4,
+        4
+      ],
+      "runaway_current_t": [
+        4,
+        4
+      ],
+      "synchrotron_loss_power_t": [
+        4,
+        4
+      ]
+    },
+    "parity_status": "native_contract_only_not_dream_parity",
+    "required_dream_observables": [
+      "f_p_xi_t",
+      "runaway_current_t",
+      "avalanche_growth_rate_t",
+      "synchrotron_loss_power_t",
+      "partial_screening_drag_t",
+      "bremsstrahlung_loss_power_t"
+    ],
+    "same_case_dream_comparison_ready": false,
+    "schema": "dream-kinetic-artifact.v1"
+  },
   "passed": true,
   "timing": {
-    "max_balance_wall_time_s": 2.303102519363165e-05,
-    "median_balance_wall_time_s": 9.635929018259048e-06,
-    "min_balance_wall_time_s": 8.539063856005669e-06,
+    "max_balance_wall_time_s": 1.2996024452149868e-05,
+    "median_balance_wall_time_s": 9.215902537107468e-06,
+    "min_balance_wall_time_s": 8.9320819824934e-06,
     "repeats": 25
   }
 }

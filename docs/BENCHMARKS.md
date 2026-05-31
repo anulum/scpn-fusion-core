@@ -837,9 +837,10 @@ The native runaway-electron surface now exports a DREAM-style
 `time_s x radius_m x momentum_mec x pitch_cosine` artifact contract from the
 1D momentum Fokker-Planck kernel, with `f_p_xi_t`, runaway-current,
 avalanche-growth, synchrotron-loss, partial-screening-drag, and bremsstrahlung
-observables. This is a reference-gate artifact contract only; it does not
-replace public DREAM deck ingestion or full momentum-pitch-radius kinetic
-operator parity.
+observables. The runaway benchmark now validates those axes, shapes,
+non-negativity, finiteness, and a deterministic artifact checksum. This is a
+reference-gate artifact contract only; it does not replace public DREAM deck
+ingestion or full momentum-pitch-radius kinetic operator parity.
 
 The native impurity surface now exports an Aurora/STRAHL-style
 `time_s x radius_m x charge_state` artifact contract with total impurity

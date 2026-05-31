@@ -1,4 +1,11 @@
-"""Benchmark DREAM-style runaway-electron fluid contracts.
+#!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+"""Benchmark DREAM-style runaway-electron contracts.
 
 This validates scalar density-balance invariants compatible with DREAM fluid
 runs: subcritical avalanche suppression, supercritical avalanche growth,
@@ -9,6 +16,7 @@ parity with DREAM's kinetic momentum-space distribution solver.
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 import time
 from pathlib import Path
@@ -27,7 +35,8 @@ from scpn_fusion.core.runaway_electrons import (  # noqa: E402
     critical_field,
     dream_fluid_density_balance,
 )
-from typing import TypedDict
+from scpn_fusion.control.fokker_planck_re import FokkerPlanckSolver  # noqa: E402
+from typing import Any, TypedDict
 
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "runaway_dream_contract_benchmark.json"
@@ -49,6 +58,7 @@ class _RunawayBenchmarkResult(TypedDict):
     benchmark: str
     description: str
     cases: list[_CaseResult]
+    native_kinetic_artifact: dict[str, Any]
     timing: dict[str, float]
     invariants: dict[str, bool]
     passed: bool
@@ -74,8 +84,44 @@ def _case_result(name: str, params: RunawayParams, n_re: float, loss_time_s: flo
     }
 
 
+def _native_kinetic_artifact_gate() -> dict[str, Any]:
+    solver = FokkerPlanckSolver(np_grid=48, p_max=12.0)
+    solver.f[12] = 2.5e10
+    artifact = solver.run_dream_kinetic_artifact(
+        n_steps=4,
+        dt=1.0e-6,
+        e_field=10.0,
+        n_e=5.0e19,
+        t_e_ev=2500.0,
+        z_eff=2.0,
+        radius_m=[0.0, 0.35, 0.70, 1.05],
+        pitch_cosine=[-1.0, -0.5, 0.0, 0.5, 1.0],
+    )
+    payload = artifact.to_dict()
+    validation = artifact.validate_contract()
+    canonical_payload = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    required_observables = [
+        "f_p_xi_t",
+        "runaway_current_t",
+        "avalanche_growth_rate_t",
+        "synchrotron_loss_power_t",
+        "partial_screening_drag_t",
+        "bremsstrahlung_loss_power_t",
+    ]
+    return {
+        "artifact_sha256": hashlib.sha256(canonical_payload).hexdigest(),
+        "contract_validation": validation,
+        "coordinate_lengths": validation["coordinate_lengths"],
+        "observable_shapes": validation["observable_shapes"],
+        "parity_status": "native_contract_only_not_dream_parity",
+        "required_dream_observables": required_observables,
+        "same_case_dream_comparison_ready": False,
+        "schema": payload["schema"],
+    }
+
+
 def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
-    """Run DREAM-style scalar runaway density-balance scenarios and contracts."""
+    """Run DREAM-style scalar balance and native kinetic artifact contracts."""
     params_subcritical = RunawayParams(
         ne_20=1.0,
         Te_keV=0.04,
@@ -107,6 +153,7 @@ def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
 
     evo = RunawayEvolution(params_supercritical)
     capped_density = evo.step(1.0, 9.0e13, 50.0, max_runaway_fraction=1.0e-6)
+    native_kinetic_artifact = _native_kinetic_artifact_gate()
 
     invariants = {
         "subcritical_avalanche_zero": bool(cases[0]["avalanche_source_m3_s"] == 0.0),
@@ -120,12 +167,19 @@ def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
             )
         ),
         "density_cap_enforced": bool(np.isclose(capped_density, 1.0e14)),
+        "native_kinetic_artifact_contract": bool(
+            native_kinetic_artifact["contract_validation"]["passed"]
+        ),
     }
 
     return {
         "benchmark": "runaway_dream_contract",
-        "description": "DREAM-style fluid runaway density-balance contract; not kinetic DREAM parity.",
+        "description": (
+            "DREAM-style fluid density-balance plus native momentum-pitch-radius "
+            "artifact contract; not kinetic DREAM parity."
+        ),
         "cases": cases,
+        "native_kinetic_artifact": native_kinetic_artifact,
         "timing": {
             "repeats": repeats,
             "median_balance_wall_time_s": median(timings),
@@ -145,10 +199,11 @@ def write_reports(results: _RunawayBenchmarkResult) -> None:
     cases = results["cases"]
     timing = results["timing"]
     invariants = results["invariants"]
+    artifact = results["native_kinetic_artifact"]
     lines = [
-        "# Runaway DREAM-Style Fluid Contract Benchmark",
+        "# Runaway DREAM-Style Contract Benchmark",
         "",
-        "This benchmark validates scalar runaway-density balance contracts compatible with DREAM fluid runs.",
+        "This benchmark validates scalar runaway-density balance contracts compatible with DREAM fluid runs plus a native DREAM-style kinetic artifact contract.",
         "It does not claim parity with DREAM's kinetic momentum-space distribution solver.",
         "",
         "## Timing",
@@ -175,6 +230,21 @@ def write_reports(results: _RunawayBenchmarkResult) -> None:
     lines.extend(["", "## Invariants", ""])
     for name, passed in invariants.items():
         lines.append(f"- {name}: {'PASS' if passed else 'FAIL'}")
+    lines.extend(
+        [
+            "",
+            "## Native kinetic artifact contract",
+            "",
+            f"- Schema: `{artifact['schema']}`",
+            f"- SHA-256: `{artifact['artifact_sha256']}`",
+            f"- Parity status: `{artifact['parity_status']}`",
+            f"- Same-case DREAM comparison ready: `{artifact['same_case_dream_comparison_ready']}`",
+            f"- Contract validation passed: `{artifact['contract_validation']['passed']}`",
+            f"- Coordinate lengths: `{json.dumps(artifact['coordinate_lengths'], sort_keys=True)}`",
+            f"- Observable shapes: `{json.dumps(artifact['observable_shapes'], sort_keys=True)}`",
+            f"- Required DREAM observables: `{', '.join(artifact['required_dream_observables'])}`",
+        ]
+    )
     lines.extend(["", f"Overall: {'PASS' if results['passed'] else 'FAIL'}", ""])
     MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
 

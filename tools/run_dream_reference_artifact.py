@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
-# (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Prepare and, when possible, execute a public DREAM reference case.
@@ -20,7 +20,8 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess
+# DREAM backend execution requires subprocess with fixed argv, shell disabled, and timeouts.
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 from typing import Any
@@ -33,6 +34,18 @@ DREAM_OUTPUT = DREAM_EXAMPLE / "output.h5"
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "dream_reference_execution_request.json"
 MD_REPORT = REPORT_DIR / "dream_reference_execution_request.md"
+DREAM_OUTPUT_CONTRACT = {
+    "coordinate_axes": ["time_s", "radius_m", "momentum_mec", "pitch_cosine"],
+    "observables": [
+        "f_p_xi_t",
+        "runaway_current_t",
+        "avalanche_growth_rate_t",
+        "synchrotron_loss_power_t",
+        "partial_screening_drag_t",
+        "bremsstrahlung_loss_power_t",
+    ],
+    "schema": "dream-output-contract.v1",
+}
 
 
 def _rel(path: Path) -> str:
@@ -48,7 +61,8 @@ def _sha256(path: Path) -> str:
 
 
 def _capture(args: list[str], *, cwd: Path, env: dict[str, str] | None = None) -> str:
-    result = subprocess.run(  # nosec B603: fixed argv, shell disabled.
+    # Fixed argv, shell disabled, bounded timeout.
+    result = subprocess.run(  # nosec B603
         args,
         cwd=cwd,
         env=env,
@@ -209,6 +223,11 @@ def build_dream_reference_execution_report(
     report = {
         "accepted_full_fidelity_ready": False,
         "case_id": "dream_2kinetic_public_reference_request",
+        "comparison_status": (
+            "blocked_reference_output_not_converted"
+            if output_ready
+            else "blocked_missing_reference_output"
+        ),
         "description": (
             "Public DREAM 2kinetic reference execution request. Settings generation uses the "
             "external source cache when present and otherwise preserves tracked deck evidence; "
@@ -225,6 +244,7 @@ def build_dream_reference_execution_report(
             "petsc_dir": os.environ.get("PETSC_DIR"),
             "required": "DREAM iface/dreami compiled with PETSc, HDF5, and GSL",
         },
+        "required_output_contract": DREAM_OUTPUT_CONTRACT,
         "schema": "dream-reference-execution-request.v1",
         "settings_deck_generated": bool(settings["generated"]),
         "settings_deck_path": settings.get("path"),
@@ -234,6 +254,7 @@ def build_dream_reference_execution_report(
         "source_commit": commit or settings.get("source_commit"),
         "source_family": "DREAM",
         "source_repo": _rel(DREAM_REPO),
+        "same_case_comparison_ready": False,
         "status": status,
     }
     if write:
@@ -258,7 +279,15 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Settings SHA-256: `{report['settings_deck_sha256']}`",
         f"- DREAM backend available: `{report['required_backend']['dreami_available']}`",
         f"- Reference output ready: `{report['reference_output_ready']}`",
+        f"- Same-case comparison ready: `{report['same_case_comparison_ready']}`",
+        f"- Comparison status: `{report['comparison_status']}`",
         f"- Accepted full-fidelity ready: `{report['accepted_full_fidelity_ready']}`",
+        "",
+        "## Required DREAM output contract",
+        "",
+        f"- Schema: `{report['required_output_contract']['schema']}`",
+        f"- Coordinate axes: `{', '.join(report['required_output_contract']['coordinate_axes'])}`",
+        f"- Observables: `{', '.join(report['required_output_contract']['observables'])}`",
         "",
         "## Next action",
         "",

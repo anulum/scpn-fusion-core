@@ -1,6 +1,7 @@
 {
   "accepted_full_fidelity_ready": false,
   "case_id": "dream_2kinetic_public_reference_request",
+  "comparison_status": "blocked_missing_reference_output",
   "description": "Public DREAM 2kinetic reference execution request. Settings generation uses the external source cache when present and otherwise preserves tracked deck evidence; full reference output requires a compiled DREAM backend.",
   "example_script": "data/external/full_fidelity_public_sources/repos/dream/examples/2kinetic/generate.py",
   "next_action": "Install/build PETSc and compile DREAM with iface/dreami, then rerun this harness.",
@@ -17,6 +18,24 @@
     "petsc_dir": null,
     "required": "DREAM iface/dreami compiled with PETSc, HDF5, and GSL"
   },
+  "required_output_contract": {
+    "coordinate_axes": [
+      "time_s",
+      "radius_m",
+      "momentum_mec",
+      "pitch_cosine"
+    ],
+    "observables": [
+      "f_p_xi_t",
+      "runaway_current_t",
+      "avalanche_growth_rate_t",
+      "synchrotron_loss_power_t",
+      "partial_screening_drag_t",
+      "bremsstrahlung_loss_power_t"
+    ],
+    "schema": "dream-output-contract.v1"
+  },
+  "same_case_comparison_ready": false,
   "schema": "dream-reference-execution-request.v1",
   "settings_deck_generated": true,
   "settings_deck_path": "data/external/full_fidelity_public_sources/repos/dream/examples/2kinetic/dream_settings.h5",
