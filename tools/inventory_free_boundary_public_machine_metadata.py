@@ -320,6 +320,19 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
     freegsnke_commit = _git_commit(FREEGSNKE_REPO) if FREEGSNKE_REPO.exists() else None
     machine_configs = [_machine_record(path, freegsnke_commit) for path in _machine_config_paths()]
     freegs_examples = _freegs_example_records(freegs_commit)
+    if not machine_configs:
+        fallback = _tracked_report_fallback()
+        if fallback is not None:
+            if write:
+                REPORT_DIR.mkdir(parents=True, exist_ok=True)
+                JSON_REPORT.write_text(json.dumps(fallback, indent=2, sort_keys=True) + "\n")
+                artifact = (
+                    json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
+                    if ARTIFACT_PATH.exists()
+                    else {"machine_configs": []}
+                )
+                _write_markdown(fallback, artifact)
+            return fallback
     artifact = {
         "schema": "free-boundary-public-machine-metadata-inventory.v1",
         "surface": "free_boundary_equilibrium",
@@ -385,12 +398,31 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
         "missing_full_fidelity_requirements": metadata["missing_required_observables"],
         "reference_output_ready": False,
         "sha256": metadata["sha256"],
+        "report_generation_mode": "external_cache_inventory",
+        "source_cache_available": FREEGS_REPO.exists() or FREEGSNKE_REPO.exists(),
         "status": status,
     }
     if write:
         JSON_REPORT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
         _write_markdown(report, artifact)
     return report
+
+
+def _tracked_report_fallback() -> dict[str, Any] | None:
+    if not JSON_REPORT.exists():
+        return None
+    try:
+        report = json.loads(JSON_REPORT.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if report.get("schema") != "free-boundary-public-machine-metadata-inventory-report.v1":
+        return None
+    if not report.get("machine_metadata_ready"):
+        return None
+    fallback = dict(report)
+    fallback["report_generation_mode"] = "tracked_report_fallback"
+    fallback["source_cache_available"] = FREEGS_REPO.exists() or FREEGSNKE_REPO.exists()
+    return fallback
 
 
 def main(argv: list[str] | None = None) -> int:

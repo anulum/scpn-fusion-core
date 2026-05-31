@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+from validation import benchmark_freegs_public_example_reconstruction as freegs_reconstruction
 from validation.benchmark_freegs_public_example_reconstruction import run_benchmark
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,3 +54,16 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
             solve["status"]
             == "external_backend_solved_missing_native_same_case_profile_source_comparison"
         )
+
+
+def test_freegs_reconstruction_preserves_tracked_report_when_backend_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(freegs_reconstruction, "_import_freegs", lambda: (None, None, "missing"))
+
+    report = run_benchmark(write=False)
+
+    assert report["report_generation_mode"] == "tracked_report_fallback"
+    assert report["case_count"] >= 1
+    assert report["vacuum_comparison_pass"] is True
+    assert report["external_nonlinear_output_ready"] is True

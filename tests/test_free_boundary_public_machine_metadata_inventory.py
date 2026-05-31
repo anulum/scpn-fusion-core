@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+from tools import inventory_free_boundary_public_machine_metadata as machine_inventory
 from tools.inventory_free_boundary_public_machine_metadata import (
     build_free_boundary_machine_metadata_inventory,
 )
@@ -44,3 +47,16 @@ def test_free_boundary_machine_metadata_inventory_is_fail_closed() -> None:
         record["deserialisation_guard"] == "restricted_numpy_builtin_unpickler"
         for record in artifact["machine_configs"]
     )
+
+
+def test_free_boundary_machine_metadata_preserves_tracked_inventory_without_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(machine_inventory, "_machine_config_paths", lambda: [])
+    monkeypatch.setattr(machine_inventory, "_freegs_example_records", lambda _commit: [])
+
+    report = build_free_boundary_machine_metadata_inventory(write=False)
+
+    assert report["report_generation_mode"] == "tracked_report_fallback"
+    assert report["machine_config_count"] > 0
+    assert report["machine_metadata_ready"] is True

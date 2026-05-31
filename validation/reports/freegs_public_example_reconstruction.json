@@ -21,7 +21,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 5.335473036044277,
+        "elapsed_s": 4.5308306500082836,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -36,7 +36,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.039693082915619,
+          "elapsed_s": 0.9915868770331144,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -46,7 +46,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 5.335473036044277,
+          "elapsed_s": 4.5308306500082836,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -170,7 +170,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 12.463782178005204,
+        "elapsed_s": 7.012478230986744,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -185,7 +185,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 2.3911918740486726,
+          "elapsed_s": 1.572259459993802,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -195,7 +195,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 12.463782178005204,
+          "elapsed_s": 7.012478230986744,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -426,8 +426,10 @@
     "grid convergence across public example resolutions"
   ],
   "reference_output_ready": false,
+  "report_generation_mode": "external_backend_reconstruction",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "7a78897ca9e327845764b393f532a03ae8ffbad338e83596e7f1c05d9fcc8e50",
+  "sha256": "37cb6f93a10ef06a79bada427cf5d4cb07184ed23057f5685fb309050d6f74f5",
+  "source_cache_available": true,
   "status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "vacuum_comparison_pass": true
 }

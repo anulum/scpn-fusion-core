@@ -22,7 +22,9 @@
     "grid convergence and current-closure evidence"
   ],
   "reference_output_ready": false,
+  "report_generation_mode": "external_cache_inventory",
   "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
   "sha256": "d0b7985a3f7eb10d6f880a9e97543bb50c829049f00e13d28f691d745629c70b",
+  "source_cache_available": true,
   "status": "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
 }
