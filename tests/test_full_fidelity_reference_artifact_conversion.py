@@ -24,6 +24,7 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
     converted = {artifact["artifact_id"]: artifact for artifact in report["converted_artifacts"]}
     assert "dream_avalanche_public_raw" in converted
     assert "freegsnke_static_inverse_baseline_public" in converted
+    assert "freegsnke_mastu_current_sidecars_public" in converted
 
     for artifact in converted.values():
         path = ROOT / artifact["artifact_path"]
@@ -34,12 +35,21 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
         assert artifact["provenance_url"].startswith("https://")
         assert len(artifact["sha256"]) == 64
         assert artifact["finite_numeric_payload"] is True
-        with np.load(path, allow_pickle=False) as payload:
-            assert payload.files
-            for name in payload.files:
-                array = np.asarray(payload[name], dtype=float)
-                assert array.size > 0
-                assert np.all(np.isfinite(array))
+        if path.suffix == ".npz":
+            with np.load(path, allow_pickle=False) as payload:
+                assert payload.files
+                for name in payload.files:
+                    array = np.asarray(payload[name], dtype=float)
+                    assert array.size > 0
+                    assert np.all(np.isfinite(array))
+        else:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            assert payload["schema"] == "freegsnke-current-sidecars.v1"
+            assert payload["cases"]
+            for case in payload["cases"]:
+                currents = np.asarray([row["current_a"] for row in case["coil_currents"]])
+                assert currents.size > 0
+                assert np.all(np.isfinite(currents))
 
 
 def test_converter_keeps_partial_outputs_out_of_acceptance_manifest() -> None:

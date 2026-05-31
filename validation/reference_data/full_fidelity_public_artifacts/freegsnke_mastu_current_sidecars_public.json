@@ -1,0 +1,1231 @@
+{
+  "cases": [
+    {
+      "case_id": "mastu_diverted_paxis_ip",
+      "coil_current_count": 150,
+      "coil_currents": [
+        {
+          "coil_name": "Solenoid",
+          "current_a": 5000.0
+        },
+        {
+          "coil_name": "PX",
+          "current_a": 3696.8092115569957
+        },
+        {
+          "coil_name": "D1",
+          "current_a": 6941.236112077644
+        },
+        {
+          "coil_name": "D2",
+          "current_a": 4390.861602674374
+        },
+        {
+          "coil_name": "D3",
+          "current_a": 2924.3553544164297
+        },
+        {
+          "coil_name": "Dp",
+          "current_a": -2488.200236468273
+        },
+        {
+          "coil_name": "D5",
+          "current_a": 249.20508015928846
+        },
+        {
+          "coil_name": "D6",
+          "current_a": -314.99568319364187
+        },
+        {
+          "coil_name": "D7",
+          "current_a": 511.07585617014746
+        },
+        {
+          "coil_name": "P4",
+          "current_a": -3564.3802837276703
+        },
+        {
+          "coil_name": "P5",
+          "current_a": -3954.236183375143
+        },
+        {
+          "coil_name": "P6",
+          "current_a": 1.910665388976174e-05
+        },
+        {
+          "coil_name": "vessel_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_4",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_5",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_6",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_7",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_8",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_9",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_10",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_11",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_12",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_13",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_14",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_15",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_16",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_17",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_18",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_19",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_20",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_21",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_22",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_4",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_5",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_6",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_7",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_8",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_9",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_10",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_major_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_major_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "psp_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "psp_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_4",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_4",
+          "current_a": 0.0
+        }
+      ],
+      "max_abs_current_a": 6941.236112077644,
+      "source_file": "data/external/full_fidelity_public_sources/repos/freegsnke/examples/data/simple_diverted_currents_PaxisIp.pk",
+      "sum_abs_current_a": 34035.35562292626
+    },
+    {
+      "case_id": "mastu_limited_paxis_ip",
+      "coil_current_count": 150,
+      "coil_currents": [
+        {
+          "coil_name": "Solenoid",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "PX",
+          "current_a": 1567.2781495804986
+        },
+        {
+          "coil_name": "D1",
+          "current_a": 350.11712396726676
+        },
+        {
+          "coil_name": "D2",
+          "current_a": 3890.007632879582
+        },
+        {
+          "coil_name": "D3",
+          "current_a": 2176.2384639384836
+        },
+        {
+          "coil_name": "Dp",
+          "current_a": -2668.862577181633
+        },
+        {
+          "coil_name": "D5",
+          "current_a": 324.48018660480943
+        },
+        {
+          "coil_name": "D6",
+          "current_a": -354.20142380089453
+        },
+        {
+          "coil_name": "D7",
+          "current_a": 816.8796004027851
+        },
+        {
+          "coil_name": "P4",
+          "current_a": -2225.500253676616
+        },
+        {
+          "coil_name": "P5",
+          "current_a": -2965.7681975171686
+        },
+        {
+          "coil_name": "P6",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_4",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_5",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_6",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_7",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_8",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_9",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_10",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_11",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_12",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_13",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_14",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_15",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_16",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_17",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_18",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_19",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_20",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_21",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "vessel_22",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_4",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_5",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_6",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_7",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_8",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_9",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "centrecolumn_10",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "colosseum_outer_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_minor_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_major_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "ring_plate_major_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "psp_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "psp_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "gas_baffle_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d1_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d2_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d3_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d5_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d6_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "d7_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "dp_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p4_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p5_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_upper_4",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_0",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_1",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_2",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_3",
+          "current_a": 0.0
+        },
+        {
+          "coil_name": "p6_case_lower_4",
+          "current_a": 0.0
+        }
+      ],
+      "max_abs_current_a": 3890.007632879582,
+      "source_file": "data/external/full_fidelity_public_sources/repos/freegsnke/examples/data/simple_limited_currents_PaxisIp.pk",
+      "sum_abs_current_a": 17339.333609549736
+    }
+  ],
+  "provenance": {
+    "reference_family": "FreeGSNKE",
+    "source_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+    "source_url": "https://github.com/FusionComputingLab/freegsnke/tree/00b79a08fbb6e642ac5ed2e440383cc5962e0358/examples/data"
+  },
+  "schema": "freegsnke-current-sidecars.v1",
+  "units": {
+    "current_a": "A"
+  }
+}

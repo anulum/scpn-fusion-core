@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import pickle
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -90,6 +91,11 @@ def _write_npz(path: Path, arrays: dict[str, np.ndarray]) -> None:
 def _write_metadata(path: Path, metadata: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _write_json_artifact(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _artifact_record(
@@ -228,6 +234,98 @@ def _convert_freegsnke_baseline(manifest: dict[str, Any], *, write: bool) -> dic
     return _artifact_record(metadata, artifact_path, metadata_path)
 
 
+def _convert_freegsnke_current_sidecars(
+    manifest: dict[str, Any], *, write: bool
+) -> dict[str, Any] | None:
+    del manifest
+    repo = CACHE_ROOT / "repos" / "freegsnke"
+    sidecar_dir = repo / "examples" / "data"
+    sidecar_files = {
+        "mastu_diverted_paxis_ip": sidecar_dir / "simple_diverted_currents_PaxisIp.pk",
+        "mastu_limited_paxis_ip": sidecar_dir / "simple_limited_currents_PaxisIp.pk",
+    }
+    if not all(path.exists() for path in sidecar_files.values()):
+        return None
+
+    cases: list[dict[str, Any]] = []
+    for case_id, path in sidecar_files.items():
+        with path.open("rb") as handle:
+            currents = pickle.load(handle)  # nosec B301: trusted cached public FreeGSNKE fixture.
+        if not isinstance(currents, dict):
+            return None
+        rows = [
+            {"coil_name": str(name), "current_a": float(value)} for name, value in currents.items()
+        ]
+        values = np.asarray([row["current_a"] for row in rows], dtype=float)
+        if values.size == 0 or not bool(np.all(np.isfinite(values))):
+            return None
+        cases.append(
+            {
+                "case_id": case_id,
+                "coil_current_count": int(values.size),
+                "coil_currents": rows,
+                "max_abs_current_a": float(np.max(np.abs(values))),
+                "source_file": _rel(path),
+                "sum_abs_current_a": float(np.sum(np.abs(values))),
+            }
+        )
+
+    artifact_path = ARTIFACT_DIR / "freegsnke_mastu_current_sidecars_public.json"
+    metadata_path = ARTIFACT_DIR / "freegsnke_mastu_current_sidecars_public.metadata.json"
+    commit = _git_commit(repo)
+    payload = {
+        "cases": cases,
+        "provenance": {
+            "reference_family": "FreeGSNKE",
+            "source_commit": commit,
+            "source_url": (
+                "https://github.com/FusionComputingLab/freegsnke/tree/"
+                f"{commit or 'main'}/examples/data"
+            ),
+        },
+        "schema": "freegsnke-current-sidecars.v1",
+        "units": {"current_a": "A"},
+    }
+    if write:
+        _write_json_artifact(artifact_path, payload)
+
+    metadata = {
+        "accepted_full_fidelity": False,
+        "artifact_id": "freegsnke_mastu_current_sidecars_public",
+        "artifact_path": _rel(artifact_path),
+        "artifact_role": "partial_public_solver_input_output_sidecar",
+        "available_observables": [
+            "coil_currents_a",
+            "coil_names",
+            "case_labels",
+        ],
+        "cache_source_path": _rel(sidecar_dir),
+        "finite_numeric_payload": True,
+        "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+        "missing_required_observables": [
+            "boundary_contour",
+            "limiter_contour",
+            "axis_or_xpoint_metadata",
+            "same_case_native_psi_comparison",
+        ],
+        "provenance_url": payload["provenance"]["source_url"],
+        "redistribution_license": "LGPL-3.0-or-later",
+        "reference_family": "FreeGSNKE",
+        "sha256": _sha256(artifact_path) if artifact_path.exists() else "",
+        "solver_output_comparison_ready": False,
+        "solver_output_comparison_status": (
+            "blocked_missing_same_case_boundary_limiter_axis_and_native_psi_comparison"
+        ),
+        "source_sha256": {path.name: _sha256(path) for path in sidecar_files.values()},
+        "surface": "free_boundary_equilibrium",
+        "upstream_commit": commit,
+    }
+    if write:
+        metadata["sha256"] = _sha256(artifact_path)
+        _write_metadata(metadata_path, metadata)
+    return _artifact_record(metadata, artifact_path, metadata_path)
+
+
 def _blocking_sources() -> list[dict[str, str]]:
     return [
         {
@@ -261,8 +359,8 @@ def _blocking_sources() -> list[dict[str, str]]:
             "surface": "free_boundary_equilibrium",
             "source_family": "FreeGS/FreeGSNKE",
             "reason": (
-                "FreeGSNKE baselines were converted as partial raw outputs, but strict FreeGS parity "
-                "still needs coil-current sidecars, boundary/limiter metadata, axis/X-point data, "
+                "FreeGSNKE baselines and current sidecars were converted as partial raw artifacts, "
+                "but strict FreeGS parity still needs boundary/limiter metadata, axis/X-point data, "
                 "and native psi comparison for the same public case"
             ),
         },
@@ -273,7 +371,11 @@ def run_conversion(*, write: bool = True) -> dict[str, Any]:
     """Convert available public output payloads and return a fail-closed report."""
     manifest = _load_manifest()
     converted = []
-    for converter in (_convert_dream_avalanche, _convert_freegsnke_baseline):
+    for converter in (
+        _convert_dream_avalanche,
+        _convert_freegsnke_baseline,
+        _convert_freegsnke_current_sidecars,
+    ):
         record = converter(manifest, write=write)
         if record is not None:
             converted.append(record)

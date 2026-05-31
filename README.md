@@ -174,11 +174,11 @@ summarised in
 [`validation/reports/full_fidelity_public_source_downloads.md`](validation/reports/full_fidelity_public_source_downloads.md).
 Those snapshots are acquisition inputs only; they are not accepted parity
 artifacts until converted into schema-valid repository-local JSON/NPZ evidence.
-The first conversion pass exports two finite public output payloads, DREAM
-avalanche HDF5 data and FreeGSNKE static inverse baselines, into tracked NPZ
-artifacts with metadata and checksums:
+The first conversion pass exports three finite public payloads, DREAM
+avalanche HDF5 data, FreeGSNKE static inverse baselines, and FreeGSNKE
+MAST-U-like current sidecars, into tracked artifacts with metadata and checksums:
 [`validation/reports/full_fidelity_reference_artifact_conversion.md`](validation/reports/full_fidelity_reference_artifact_conversion.md).
-Both are partial diagnostic artifacts, not full-fidelity acceptance artifacts,
+These are partial diagnostic artifacts, not full-fidelity acceptance artifacts,
 because required observables and same-case solver-output comparisons are still
 missing.
 The DREAM execution lane now also generates the upstream `examples/2kinetic`

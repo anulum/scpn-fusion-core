@@ -10,7 +10,7 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Public sources cached: `True`
 - Public source cache root: `data/external/full_fidelity_public_sources`
 - Public reference artifact conversion report: `validation/reports/full_fidelity_reference_artifact_conversion.json`
-- Partial public output artifacts: `2`
+- Partial public output artifacts: `3`
 - Accepted public reference artifacts: `0`
 - DREAM execution report: `validation/reports/dream_reference_execution_request.json`
 - DREAM settings deck generated: `True`

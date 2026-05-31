@@ -1,0 +1,32 @@
+{
+  "accepted_full_fidelity": false,
+  "artifact_id": "freegsnke_mastu_current_sidecars_public",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.json",
+  "artifact_role": "partial_public_solver_input_output_sidecar",
+  "available_observables": [
+    "coil_currents_a",
+    "coil_names",
+    "case_labels"
+  ],
+  "cache_source_path": "data/external/full_fidelity_public_sources/repos/freegsnke/examples/data",
+  "finite_numeric_payload": true,
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [
+    "boundary_contour",
+    "limiter_contour",
+    "axis_or_xpoint_metadata",
+    "same_case_native_psi_comparison"
+  ],
+  "provenance_url": "https://github.com/FusionComputingLab/freegsnke/tree/00b79a08fbb6e642ac5ed2e440383cc5962e0358/examples/data",
+  "redistribution_license": "LGPL-3.0-or-later",
+  "reference_family": "FreeGSNKE",
+  "sha256": "dd8240df50657c9752456abedf637a9900ef792ec12fb28282414705986e592d",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_missing_same_case_boundary_limiter_axis_and_native_psi_comparison",
+  "source_sha256": {
+    "simple_diverted_currents_PaxisIp.pk": "a5c994ee469b0052fffd569caf043e7c50fbbc630a6a9925125bf4d3cfa42a39",
+    "simple_limited_currents_PaxisIp.pk": "2f863c6454ed32e3c844d3ab48f9560aa72b683a9125e14ae761e59c445d8397"
+  },
+  "surface": "free_boundary_equilibrium",
+  "upstream_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358"
+}

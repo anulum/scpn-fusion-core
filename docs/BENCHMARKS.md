@@ -186,14 +186,16 @@ Aurora, FreeGS, and FreeGSNKE. These raw snapshots are not benchmark parity
 artifacts; production parity still requires schema-valid JSON/NPZ reference
 artifacts, licenses, thresholds, observables, and solver-output comparisons.
 
-The first public-output conversion pass is tracked in
+The public-output conversion pass is tracked in
 [`validation/reports/full_fidelity_reference_artifact_conversion.md`](../validation/reports/full_fidelity_reference_artifact_conversion.md).
-It exports two finite, checksummed partial artifacts:
+It exports three finite, checksummed partial artifacts:
 
 - DREAM avalanche HDF5 data to
   `validation/reference_data/full_fidelity_public_artifacts/dream_avalanche_public_raw.npz`
 - FreeGSNKE static inverse baseline arrays to
   `validation/reference_data/full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.npz`
+- FreeGSNKE MAST-U-like coil-current sidecars to
+  `validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.json`
 
 Accepted full-fidelity artifacts remain `0`: the converted payloads lack the
 required full manifest observables and same-case native solver-output

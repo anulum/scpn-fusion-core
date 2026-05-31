@@ -17,7 +17,7 @@
       "surface": "impurity_transport"
     },
     {
-      "reason": "FreeGSNKE baselines were converted as partial raw outputs, but strict FreeGS parity still needs coil-current sidecars, boundary/limiter metadata, axis/X-point data, and native psi comparison for the same public case",
+      "reason": "FreeGSNKE baselines and current sidecars were converted as partial raw artifacts, but strict FreeGS parity still needs boundary/limiter metadata, axis/X-point data, and native psi comparison for the same public case",
       "source_family": "FreeGS/FreeGSNKE",
       "surface": "free_boundary_equilibrium"
     }
@@ -74,10 +74,34 @@
       "sha256": "75c6941c66174b37738181891071e5071c4addca3a1344bbdd75b8f4587fa561",
       "solver_output_comparison_ready": false,
       "surface": "free_boundary_equilibrium"
+    },
+    {
+      "accepted_full_fidelity": false,
+      "artifact_id": "freegsnke_mastu_current_sidecars_public",
+      "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.json",
+      "available_observables": [
+        "coil_currents_a",
+        "coil_names",
+        "case_labels"
+      ],
+      "finite_numeric_payload": true,
+      "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.metadata.json",
+      "missing_required_observables": [
+        "boundary_contour",
+        "limiter_contour",
+        "axis_or_xpoint_metadata",
+        "same_case_native_psi_comparison"
+      ],
+      "provenance_url": "https://github.com/FusionComputingLab/freegsnke/tree/00b79a08fbb6e642ac5ed2e440383cc5962e0358/examples/data",
+      "redistribution_license": "LGPL-3.0-or-later",
+      "reference_family": "FreeGSNKE",
+      "sha256": "dd8240df50657c9752456abedf637a9900ef792ec12fb28282414705986e592d",
+      "solver_output_comparison_ready": false,
+      "surface": "free_boundary_equilibrium"
     }
   ],
   "description": "Conversion of cached public upstream outputs into tracked artifacts. Partial outputs remain outside full-fidelity acceptance until required observables and solver-output comparisons are present.",
-  "partial_output_artifacts": 2,
+  "partial_output_artifacts": 3,
   "reference_manifest": "validation/reference_data/full_fidelity_reference_cases.json",
   "reference_manifest_updated": false,
   "schema": "full-fidelity-reference-artifact-conversion.v1",

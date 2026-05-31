@@ -219,7 +219,7 @@
       "surface": "free_boundary_equilibrium"
     }
   ],
-  "partial_public_output_artifacts": 2,
+  "partial_public_output_artifacts": 3,
   "public_reference_artifact_conversion_report": "validation/reports/full_fidelity_reference_artifact_conversion.json",
   "public_source_cache_root": "data/external/full_fidelity_public_sources",
   "public_source_download_report": "validation/reports/full_fidelity_public_source_downloads.json",
