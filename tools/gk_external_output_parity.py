@@ -544,7 +544,12 @@ def _convert_case(
                 }
                 status = "blocked_native_same_case_output_contract_invalid"
         except (OSError, ValueError, json.JSONDecodeError) as exc:
-            threshold_evaluation = {"ready": False, "passed": False, "checks": [], "reason": str(exc)}
+            threshold_evaluation = {
+                "ready": False,
+                "passed": False,
+                "checks": [],
+                "reason": str(exc),
+            }
             status = "blocked_native_same_case_output_missing_or_invalid"
 
     metadata["solver_output_comparison_ready"] = comparison_ready
@@ -648,7 +653,9 @@ def build_gk_external_output_parity_report(
     if not grid_ready:
         missing.append("grid-convergence evidence for converted public nonlinear GK outputs")
     if not scaling_ready:
-        missing.append("production-scale scaling evidence for converted public nonlinear GK outputs")
+        missing.append(
+            "production-scale scaling evidence for converted public nonlinear GK outputs"
+        )
 
     report = {
         "accepted_full_fidelity_ready": accepted,
@@ -720,7 +727,9 @@ def _markdown(report: dict[str, Any]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="Exit non-zero if full fidelity is blocked")
+    parser.add_argument(
+        "--check", action="store_true", help="Exit non-zero if full fidelity is blocked"
+    )
     args = parser.parse_args()
     report = build_gk_external_output_parity_report(write=True)
     if args.check and not report["accepted_full_fidelity_ready"]:

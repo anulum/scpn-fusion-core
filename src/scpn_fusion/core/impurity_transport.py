@@ -174,7 +174,9 @@ class AuroraStrahlArtifact:
             and total_density.shape == charge_density.shape[:2]
             and np.allclose(total_density, np.sum(charge_density, axis=2), rtol=1.0e-13)
         )
-        source_sink_scale = max(float(np.max(np.abs(source_sink))) if source_sink.size else 0.0, 1.0)
+        source_sink_scale = max(
+            float(np.max(np.abs(source_sink))) if source_sink.size else 0.0, 1.0
+        )
         source_sink_tolerance = 1.0e-12 * source_sink_scale + 1.0e-6
         source_sink_conservative = bool(
             source_sink.ndim == 4
@@ -430,9 +432,7 @@ def build_aurora_strahl_charge_state_artifact(
         [te_hist[0].min(), te_hist[0].max()],
     )
     coeffs = adas_style_charge_state_coefficients(element, charge_axis, te_charge)
-    final_ion, final_rec = collisional_radiative_source_sink_matrices(
-        density, ne_hist[0], coeffs
-    )
+    final_ion, final_rec = collisional_radiative_source_sink_matrices(density, ne_hist[0], coeffs)
     source_sink_history.append(_source_sink_transfer_matrix(final_ion, final_rec))
     rad_density = ne_hist[0, :, np.newaxis] * density * coeffs.line_radiation_w_m3[np.newaxis, :]
     line_power_by_charge.append(rad_density)
@@ -457,7 +457,9 @@ def build_aurora_strahl_charge_state_artifact(
         line_power.append(
             _volume_integral(np.sum(rad_density, axis=1), radius_axis, major_radius_m)
         )
-        inventory_history.append(_volume_integral(np.sum(density, axis=1), radius_axis, major_radius_m))
+        inventory_history.append(
+            _volume_integral(np.sum(density, axis=1), radius_axis, major_radius_m)
+        )
 
     density_t_r_z = np.stack(density_history, axis=0)
     total_t_r = np.sum(density_t_r_z, axis=2)

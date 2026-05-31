@@ -204,7 +204,9 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="Exit non-zero if full EM parity is blocked")
+    parser.add_argument(
+        "--check", action="store_true", help="Exit non-zero if full EM parity is blocked"
+    )
     args = parser.parse_args(argv)
     report = run_benchmark()
     write_reports(report)

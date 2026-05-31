@@ -22,6 +22,7 @@ import importlib
 import json
 import os
 import shutil
+
 # Aurora source provenance probing requires subprocess with fixed argv and timeouts.
 import subprocess  # nosec B404
 import sys

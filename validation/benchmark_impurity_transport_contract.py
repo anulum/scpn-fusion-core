@@ -128,9 +128,7 @@ def run_benchmark() -> dict[str, Any]:
         "charge_state_particle_conservation": bool(
             cr_artifact.conservation["relative_inventory_error"] <= 1.0e-12
         ),
-        "source_sink_matrix_conservative": bool(
-            artifact_validation["source_sink_conservative"]
-        ),
+        "source_sink_matrix_conservative": bool(artifact_validation["source_sink_conservative"]),
         "line_radiation_power_finite": bool(
             np.all(np.isfinite(line_power_t_r_z)) and np.all(line_power_t_r_z >= 0.0)
         ),

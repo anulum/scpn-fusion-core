@@ -202,9 +202,7 @@ class NonlinearMPC:
             options={"maxiter": self.iterations, "disp": False},
         )
 
-        best_U = np.asarray(res.x, dtype=np.float64).reshape(
-            self.horizon, self.dynamics.action_dim
-        )
+        best_U = np.asarray(res.x, dtype=np.float64).reshape(self.horizon, self.dynamics.action_dim)
         return np.asarray(best_U[0], dtype=np.float64)
 
 

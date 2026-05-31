@@ -242,8 +242,7 @@ def run_campaign() -> dict[str, Any]:
             "sources": _sources_for(registry, "native_nonlinear_gyrokinetics"),
             "next_required_evidence": (
                 gk_external_parity["missing_full_fidelity_requirements"]
-                or
-                gk_deck_inventory["missing_full_fidelity_requirements"]
+                or gk_deck_inventory["missing_full_fidelity_requirements"]
                 or gk["missing_requirements"]
             ),
         },
@@ -367,9 +366,7 @@ def run_campaign() -> dict[str, Any]:
         "gk_public_outputs_indexed": int(gk_deck_inventory["output_summary_count"]),
         "gk_public_deck_inventory_status": str(gk_deck_inventory["status"]),
         "gk_external_nonlinear_parity_report": str(GK_EXTERNAL_PARITY.relative_to(ROOT)),
-        "gk_electromagnetic_fidelity_report": str(
-            GK_ELECTROMAGNETIC_FIDELITY.relative_to(ROOT)
-        ),
+        "gk_electromagnetic_fidelity_report": str(GK_ELECTROMAGNETIC_FIDELITY.relative_to(ROOT)),
         "gk_electromagnetic_fidelity_status": str(gk_electromagnetic_fidelity["status"]),
         "gk_electromagnetic_compact_closure_ready": bool(
             gk_electromagnetic_fidelity["compact_em_contract_ready"]

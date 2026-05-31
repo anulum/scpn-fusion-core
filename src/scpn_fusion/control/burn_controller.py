@@ -49,7 +49,9 @@ class AlphaHeating:
         p_alpha_W = nD * nT * sigv * self.E_alpha_J
         return p_alpha_W / 1e6
 
-    def power(self, ne_20: FloatArray, Te_keV: FloatArray, Ti_keV: FloatArray, rho: FloatArray) -> float:
+    def power(
+        self, ne_20: FloatArray, Te_keV: FloatArray, Ti_keV: FloatArray, rho: FloatArray
+    ) -> float:
         """
         P_alpha [MW] integrated over volume.
         """

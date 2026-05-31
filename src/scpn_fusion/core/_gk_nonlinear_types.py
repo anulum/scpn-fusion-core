@@ -173,13 +173,9 @@ class NonlinearGKResult:
             raise ValueError("nonlinear GK reference artifacts require a final 5D state")
 
         distribution = np.asarray(self.final_state.f, dtype=np.complex128)
-        species_index: NDArray[np.float64] = np.arange(
-            distribution.shape[0], dtype=np.float64
-        )
+        species_index: NDArray[np.float64] = np.arange(distribution.shape[0], dtype=np.float64)
         zonal_ky_index = int(np.argmin(np.abs(self.ky_rhos)))
-        zonal_flow_kx_t = np.asarray(
-            self.phi_energy_kxky_t[:, :, zonal_ky_index], dtype=np.float64
-        )
+        zonal_flow_kx_t = np.asarray(self.phi_energy_kxky_t[:, :, zonal_ky_index], dtype=np.float64)
 
         coordinates = {
             "species_index": species_index.tolist(),

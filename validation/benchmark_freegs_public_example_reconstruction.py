@@ -424,7 +424,9 @@ def _native_same_case_profile_source_comparison(
     psi_n_rmse = float(np.sqrt(np.mean(residual_n * residual_n)))
     native_axis = _axis_location(r_axis, z_axis, native_psi)
     external_axis = _axis_location(r_axis, z_axis, external_psi)
-    axis_error = float(np.hypot(native_axis[0] - external_axis[0], native_axis[1] - external_axis[1]))
+    axis_error = float(
+        np.hypot(native_axis[0] - external_axis[0], native_axis[1] - external_axis[1])
+    )
     native_current = _integrate_current(r_axis, z_axis, jtor)
     current_target = float(spec.plasma_current_a)
     current_closure = abs(native_current - current_target) / max(abs(current_target), 1.0)
@@ -599,9 +601,9 @@ def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str,
         "grid": {"nx": spec.nx, "ny": spec.ny},
         "machine_class": spec.machine_class,
         "missing_full_fidelity_requirements": [
-        "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
-        "grid-convergence evidence for the public example",
-        "coil/vacuum reconstruction linked to public machine current sidecars",
+            "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
+            "grid-convergence evidence for the public example",
+            "coil/vacuum reconstruction linked to public machine current sidecars",
         ],
         "external_nonlinear_output_ready": solve_sweep["external_nonlinear_output_ready"],
         "nonlinear_solve_attempt": solve,
@@ -623,9 +625,7 @@ def _blocked_status(cases: list[dict[str, Any]], backend_available: bool) -> str
     if cases and all(case["vacuum_green_function_comparison"]["pass"] for case in cases):
         if all(case["external_nonlinear_output_ready"] for case in cases):
             if all(
-                case["nonlinear_solve_attempt"].get(
-                    "native_same_case_psi_comparison_ready", False
-                )
+                case["nonlinear_solve_attempt"].get("native_same_case_psi_comparison_ready", False)
                 for case in cases
             ):
                 return (
