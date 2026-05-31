@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Extended the FreeGS public-example reconstruction benchmark with a Picard
+  convergence sweep that records finite external `psi(R,Z)` output while
+  keeping strict free-boundary parity blocked until native same-case
+  reconstruction and solver-output comparison exist.
+
 - Added a FreeGS public-example reconstruction attempt benchmark that checks
   native-vs-FreeGS vacuum Green-function parity on public machine coils while
   keeping strict free-boundary parity blocked on nonlinear same-case

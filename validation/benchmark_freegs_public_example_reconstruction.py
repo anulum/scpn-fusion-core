@@ -66,7 +66,7 @@ class FreeGSPublicExampleCase:
     isoflux: tuple[tuple[float, float, float, float], ...]
     boundary_name: str | None = None
     gamma: float | None = None
-    solve_maxits: int = 5
+    nonlinear_attempts: tuple[tuple[int, float], ...] = ((5, 0.0), (50, 0.0))
 
 
 PUBLIC_CASES = (
@@ -103,6 +103,7 @@ PUBLIC_CASES = (
         xpoints=((1.285, -1.176), (1.2, 1.0)),
         isoflux=((1.285, -1.176, 1.2, 1.2),),
         gamma=1.0e-12,
+        nonlinear_attempts=((5, 0.0), (25, 0.0)),
     ),
 )
 
@@ -285,11 +286,12 @@ def _vacuum_comparison(tokamak: Any, spec: FreeGSPublicExampleCase) -> dict[str,
 
 def _attempt_solve(
     freegs: ModuleType,
-    eq: Any,
-    profiles: Any,
-    constrain: Any,
     spec: FreeGSPublicExampleCase,
+    *,
+    maxits: int,
+    blend: float,
 ) -> dict[str, Any]:
+    _, eq, profiles, constrain = _make_equilibrium(freegs, spec)
     start = time.perf_counter()
     try:
         freegs.solve(
@@ -297,15 +299,18 @@ def _attempt_solve(
             profiles,
             constrain,
             show=False,
-            maxits=spec.solve_maxits,
+            maxits=maxits,
+            blend=blend,
             convergenceInfo=False,
         )
     except Exception as exc:
         return {
+            "blend": blend,
             "elapsed_s": float(time.perf_counter() - start),
             "error": str(exc)[:1000],
             "error_type": type(exc).__name__,
-            "maxits": spec.solve_maxits,
+            "external_psi_finite": False,
+            "maxits": maxits,
             "native_same_case_psi_comparison_ready": False,
             "status": "failed_external_backend_solve",
         }
@@ -318,27 +323,57 @@ def _attempt_solve(
         finite_psi = False
         psi_shape = []
         return {
+            "blend": blend,
             "elapsed_s": elapsed,
             "error": str(exc)[:1000],
             "error_type": type(exc).__name__,
-            "maxits": spec.solve_maxits,
+            "external_psi_finite": False,
+            "maxits": maxits,
             "native_same_case_psi_comparison_ready": False,
             "status": "failed_external_psi_extraction",
         }
     return {
+        "blend": blend,
         "elapsed_s": elapsed,
         "external_psi_finite": finite_psi,
+        "external_psi_max": float(np.max(psi)) if finite_psi else None,
+        "external_psi_min": float(np.min(psi)) if finite_psi else None,
         "external_psi_shape": psi_shape,
-        "maxits": spec.solve_maxits,
+        "maxits": maxits,
         "native_same_case_psi_comparison_ready": False,
         "status": "external_backend_solved_missing_native_same_case_profile_source_comparison",
     }
 
 
+def _attempt_solve_sweep(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str, Any]:
+    attempts: list[dict[str, Any]] = []
+    for maxits, blend in spec.nonlinear_attempts:
+        attempt = _attempt_solve(freegs, spec, maxits=maxits, blend=blend)
+        attempts.append(attempt)
+        if (
+            attempt["status"]
+            == "external_backend_solved_missing_native_same_case_profile_source_comparison"
+        ):
+            break
+    successful = [
+        attempt
+        for attempt in attempts
+        if attempt["status"]
+        == "external_backend_solved_missing_native_same_case_profile_source_comparison"
+    ]
+    best = successful[0] if successful else attempts[-1]
+    return {
+        "attempts": attempts,
+        "best_attempt": best,
+        "external_nonlinear_output_ready": bool(successful),
+    }
+
+
 def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str, Any]:
-    tokamak, eq, profiles, constrain = _make_equilibrium(freegs, spec)
+    tokamak, _, _, _ = _make_equilibrium(freegs, spec)
     vacuum = _vacuum_comparison(tokamak, spec)
-    solve = _attempt_solve(freegs, eq, profiles, constrain, spec)
+    solve_sweep = _attempt_solve_sweep(freegs, spec)
+    solve = solve_sweep["best_attempt"]
     return {
         "accepted_full_fidelity": False,
         "case_id": spec.case_id,
@@ -352,7 +387,9 @@ def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str,
             "psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
             "grid-convergence evidence for the public example",
         ],
+        "external_nonlinear_output_ready": solve_sweep["external_nonlinear_output_ready"],
         "nonlinear_solve_attempt": solve,
+        "nonlinear_solve_attempts": solve_sweep["attempts"],
         "source_contract": {
             "fvac": spec.fvac,
             "isoflux": [list(row) for row in spec.isoflux],
@@ -368,6 +405,8 @@ def _blocked_status(cases: list[dict[str, Any]], backend_available: bool) -> str
     if not backend_available:
         return "blocked_freegs_backend_unavailable"
     if cases and all(case["vacuum_green_function_comparison"]["pass"] for case in cases):
+        if all(case["external_nonlinear_output_ready"] for case in cases):
+            return "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison"
         return "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi"
     return "blocked_public_freegs_vacuum_or_backend_contract_failed"
 
@@ -387,6 +426,7 @@ def _write_markdown(report: dict[str, Any]) -> None:
         f"- FreeGS version: `{report['freegs_version']}`",
         f"- Case count: `{report['case_count']}`",
         f"- Vacuum comparison pass: `{report['vacuum_comparison_pass']}`",
+        f"- External nonlinear output ready: `{report['external_nonlinear_output_ready']}`",
         f"- Accepted full fidelity: `{report['accepted_full_fidelity_ready']}`",
         f"- Artifact: `{report['artifact_path']}`",
         "",
@@ -445,6 +485,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
             "public_example_source_checksums",
             "FreeGS_machine_coil_currents_after_constraints",
             "native_vs_FreeGS_vacuum_Green_function_residuals",
+            "external_FreeGS_nonlinear_psi_shape_and_range",
             "external_nonlinear_backend_solve_status",
         ],
         "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
@@ -468,6 +509,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
     vacuum_pass = bool(cases) and all(
         case["vacuum_green_function_comparison"]["pass"] for case in cases
     )
+    external_ready = bool(cases) and all(case["external_nonlinear_output_ready"] for case in cases)
     report = {
         "schema": "freegs-public-example-reconstruction-report.v1",
         "accepted_full_fidelity_ready": False,
@@ -477,6 +519,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "freegs_backend_available": backend_available,
         "freegs_import_error": import_error,
         "freegs_version": version,
+        "external_nonlinear_output_ready": external_ready,
         "metadata_path": _rel(METADATA_PATH),
         "missing_full_fidelity_requirements": missing_requirements,
         "reference_output_ready": False,

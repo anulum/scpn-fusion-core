@@ -53,6 +53,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     )
     assert report["freegs_public_example_cases"] >= 0
     assert report["freegs_public_example_vacuum_comparison_pass"] in {True, False}
+    assert report["freegs_public_example_external_output_ready"] in {True, False}
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {

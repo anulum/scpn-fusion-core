@@ -357,6 +357,9 @@ def run_campaign() -> dict[str, Any]:
         "freegs_public_example_vacuum_comparison_pass": bool(
             freegs_public_reconstruction["vacuum_comparison_pass"]
         ),
+        "freegs_public_example_external_output_ready": bool(
+            freegs_public_reconstruction.get("external_nonlinear_output_ready", False)
+        ),
         "freegs_public_example_reconstruction_status": str(freegs_public_reconstruction["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
@@ -438,6 +441,10 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- FreeGS public example vacuum comparison pass: "
             f"`{report['freegs_public_example_vacuum_comparison_pass']}`"
+        ),
+        (
+            "- FreeGS public example external output ready: "
+            f"`{report['freegs_public_example_external_output_ready']}`"
         ),
         (
             "- FreeGS public example reconstruction status: "

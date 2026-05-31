@@ -18,8 +18,9 @@
   "free_boundary_machine_metadata_report": "validation/reports/free_boundary_public_machine_metadata_inventory.json",
   "free_boundary_machine_metadata_status": "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction",
   "freegs_public_example_cases": 2,
+  "freegs_public_example_external_output_ready": true,
   "freegs_public_example_reconstruction_report": "validation/reports/freegs_public_example_reconstruction.json",
-  "freegs_public_example_reconstruction_status": "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi",
+  "freegs_public_example_reconstruction_status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "freegs_public_example_vacuum_comparison_pass": true,
   "gk_public_deck_inventory_report": "validation/reports/gk_public_reference_deck_inventory.json",
   "gk_public_deck_inventory_status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
@@ -237,7 +238,7 @@
           "surface": "free_boundary_equilibrium"
         }
       ],
-      "status": "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi",
+      "status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
       "surface": "free_boundary_equilibrium"
     }
   ],

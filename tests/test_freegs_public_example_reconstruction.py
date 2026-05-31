@@ -26,6 +26,7 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
 
     assert report["case_count"] >= 1
     assert report["vacuum_comparison_pass"] is True
+    assert report["external_nonlinear_output_ready"] is True
     assert len(report["sha256"]) == 64
 
     artifact_path = ROOT / report["artifact_path"]
@@ -41,9 +42,12 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
         solve = case["nonlinear_solve_attempt"]
         assert vacuum["pass"] is True
         assert vacuum["filament_count"] >= vacuum["coil_count"]
+        assert case["external_nonlinear_output_ready"] is True
+        assert case["nonlinear_solve_attempts"]
+        assert solve["external_psi_finite"] is True
+        assert solve["external_psi_shape"]
         assert solve["native_same_case_psi_comparison_ready"] is False
-        assert solve["status"] in {
-            "failed_external_backend_solve",
-            "failed_external_psi_extraction",
-            "external_backend_solved_missing_native_same_case_profile_source_comparison",
-        }
+        assert (
+            solve["status"]
+            == "external_backend_solved_missing_native_same_case_profile_source_comparison"
+        )

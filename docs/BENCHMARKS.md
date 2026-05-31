@@ -250,9 +250,11 @@ The FreeGS public-example reconstruction attempt is tracked in
 [`validation/reports/freegs_public_example_reconstruction.md`](../validation/reports/freegs_public_example_reconstruction.md).
 It reconstructs the public FreeGS example machine coils after their control
 constraints and compares native Green-function vacuum flux against FreeGS on
-the same sample points. Current local rows pass the vacuum convention check but
-the external nonlinear FreeGS solve does not yet provide accepted same-case
-`psi(R,Z)` output, so strict free-boundary parity remains fail-closed.
+the same sample points. Current local rows pass the vacuum convention check and
+the recorded Picard sweep produces finite external `psi(R,Z)` output for both
+public examples. Strict free-boundary parity remains fail-closed because native
+same-case profile-source/coil-vacuum reconstruction and quantitative
+solver-output comparisons are still missing.
 
 ## Solver Performance
 

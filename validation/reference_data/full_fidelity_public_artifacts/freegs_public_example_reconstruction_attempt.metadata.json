@@ -7,6 +7,7 @@
     "public_example_source_checksums",
     "FreeGS_machine_coil_currents_after_constraints",
     "native_vs_FreeGS_vacuum_Green_function_residuals",
+    "external_FreeGS_nonlinear_psi_shape_and_range",
     "external_nonlinear_backend_solve_status"
   ],
   "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
@@ -19,8 +20,8 @@
   ],
   "redistribution_license": "FreeGS LGPL-3.0-or-later",
   "reference_family": "FreeGS",
-  "sha256": "2c3db46c82fc64542e1a063d3918813779914aef198d7935a9893690a1bd34a0",
+  "sha256": "dc810ca195e3475ace966aa97bbe461f7fc0b8ff7760fabf846cd5af2b51f974",
   "solver_output_comparison_ready": false,
-  "solver_output_comparison_status": "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi",
+  "solver_output_comparison_status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "surface": "free_boundary_equilibrium"
 }

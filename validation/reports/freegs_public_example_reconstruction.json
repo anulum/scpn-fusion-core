@@ -8,6 +8,7 @@
       "case_id": "freegs_01_test_tokamak_freeboundary",
       "example_path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
       "example_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
+      "external_nonlinear_output_ready": true,
       "grid": {
         "nx": 65,
         "ny": 65
@@ -20,13 +21,45 @@
         "grid-convergence evidence for the public example"
       ],
       "nonlinear_solve_attempt": {
-        "elapsed_s": 0.8904510820284486,
-        "error": "Picard iteration failed to converge (too many iterations)",
-        "error_type": "RuntimeError",
-        "maxits": 5,
+        "blend": 0.0,
+        "elapsed_s": 4.635164284962229,
+        "external_psi_finite": true,
+        "external_psi_max": 0.09060208530754858,
+        "external_psi_min": -0.10514200122920463,
+        "external_psi_shape": [
+          65,
+          65
+        ],
+        "maxits": 50,
         "native_same_case_psi_comparison_ready": false,
-        "status": "failed_external_backend_solve"
+        "status": "external_backend_solved_missing_native_same_case_profile_source_comparison"
       },
+      "nonlinear_solve_attempts": [
+        {
+          "blend": 0.0,
+          "elapsed_s": 0.9994963289937004,
+          "error": "Picard iteration failed to converge (too many iterations)",
+          "error_type": "RuntimeError",
+          "external_psi_finite": false,
+          "maxits": 5,
+          "native_same_case_psi_comparison_ready": false,
+          "status": "failed_external_backend_solve"
+        },
+        {
+          "blend": 0.0,
+          "elapsed_s": 4.635164284962229,
+          "external_psi_finite": true,
+          "external_psi_max": 0.09060208530754858,
+          "external_psi_min": -0.10514200122920463,
+          "external_psi_shape": [
+            65,
+            65
+          ],
+          "maxits": 50,
+          "native_same_case_psi_comparison_ready": false,
+          "status": "external_backend_solved_missing_native_same_case_profile_source_comparison"
+        }
+      ],
       "source_contract": {
         "fvac": 2.0,
         "isoflux": [
@@ -125,6 +158,7 @@
       "case_id": "freegs_16_diiid_public_example",
       "example_path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
       "example_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
+      "external_nonlinear_output_ready": true,
       "grid": {
         "nx": 65,
         "ny": 65
@@ -137,13 +171,45 @@
         "grid-convergence evidence for the public example"
       ],
       "nonlinear_solve_attempt": {
-        "elapsed_s": 1.9785471779759973,
-        "error": "Picard iteration failed to converge (too many iterations)",
-        "error_type": "RuntimeError",
-        "maxits": 5,
+        "blend": 0.0,
+        "elapsed_s": 8.382401398033835,
+        "external_psi_finite": true,
+        "external_psi_max": 0.425434420767573,
+        "external_psi_min": -0.6609953436689098,
+        "external_psi_shape": [
+          65,
+          65
+        ],
+        "maxits": 25,
         "native_same_case_psi_comparison_ready": false,
-        "status": "failed_external_backend_solve"
+        "status": "external_backend_solved_missing_native_same_case_profile_source_comparison"
       },
+      "nonlinear_solve_attempts": [
+        {
+          "blend": 0.0,
+          "elapsed_s": 1.792878063977696,
+          "error": "Picard iteration failed to converge (too many iterations)",
+          "error_type": "RuntimeError",
+          "external_psi_finite": false,
+          "maxits": 5,
+          "native_same_case_psi_comparison_ready": false,
+          "status": "failed_external_backend_solve"
+        },
+        {
+          "blend": 0.0,
+          "elapsed_s": 8.382401398033835,
+          "external_psi_finite": true,
+          "external_psi_max": 0.425434420767573,
+          "external_psi_min": -0.6609953436689098,
+          "external_psi_shape": [
+            65,
+            65
+          ],
+          "maxits": 25,
+          "native_same_case_psi_comparison_ready": false,
+          "status": "external_backend_solved_missing_native_same_case_profile_source_comparison"
+        }
+      ],
       "source_contract": {
         "fvac": -3.231962138124,
         "isoflux": [
@@ -350,6 +416,7 @@
       }
     }
   ],
+  "external_nonlinear_output_ready": true,
   "freegs_backend_available": true,
   "freegs_import_error": null,
   "freegs_version": "0.8.2",
@@ -363,7 +430,7 @@
   ],
   "reference_output_ready": false,
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "2c3db46c82fc64542e1a063d3918813779914aef198d7935a9893690a1bd34a0",
-  "status": "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi",
+  "sha256": "dc810ca195e3475ace966aa97bbe461f7fc0b8ff7760fabf846cd5af2b51f974",
+  "status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "vacuum_comparison_pass": true
 }
