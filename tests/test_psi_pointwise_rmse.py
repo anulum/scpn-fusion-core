@@ -1127,7 +1127,9 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_source_vacuum_residual_l2=0.01,
                 adapted_source_plasma_operator_norm=0.5,
                 adapted_source_vacuum_operator_norm=0.5,
-                source_domain_residual_class="passes_threshold",
+                source_domain_residual_class=(
+                    "plasma_and_vacuum_source_mismatch" if is_worst else "passes_threshold"
+                ),
                 best_source_candidate="profile_source",
                 best_source_candidate_residual_l2=0.01,
                 profile_source_candidate_rank=1,
@@ -1172,6 +1174,10 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.worst_source_alignment_file == f"{worst.parent.name}/{worst.name}"
         assert gate.worst_source_residual_l2 == pytest.approx(3.5)
         assert "public gate profile-source mismatch attribution in 1/4 rows" in gate.failure_reasons
+        assert (
+            "public gate required solver queue: "
+            "profile_source_then_free_boundary_reconstruction_required=1" in gate.failure_reasons
+        )
 
     def test_aggregate_operator_source_gate_reports_solver_failure(
         self,

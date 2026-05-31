@@ -2393,6 +2393,18 @@ def validate_efit_nrmse_benchmark(
             "public gate profile-source mismatch attribution in "
             f"{gate_source_mismatch_count}/{gate_row_count} rows"
         )
+    public_required_solver_blockers = {
+        name: count
+        for name, count in gate_source_domain_required_solver_mode_counts.items()
+        if name != "profile_source_fixed_boundary_reconstruction_sufficient"
+    }
+    if public_required_solver_blockers:
+        failure_reasons.append(
+            "public gate required solver queue: "
+            + ", ".join(
+                f"{name}={count}" for name, count in sorted(public_required_solver_blockers.items())
+            )
+        )
     if gate_solver_failure_count:
         failure_reasons.append(
             "public gate operator-source solver consistency failure in "

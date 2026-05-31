@@ -21,6 +21,9 @@
 - Added public-gate EFIT/GEQDSK source-domain required-solver and next-action
   counts to separate SPARC gate blockers from diagnostic-only proxy rows.
 
+- Added EFIT/GEQDSK public-gate required-solver queue failure reasons so
+  benchmark failures state the remaining full-order reconstruction class.
+
 - Added EFIT/GEQDSK effective source-domain residual classification to separate
   plasma-source mismatch from vacuum/source-free operator residuals after
   accepted source-convention adaptation.
