@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Hardened the fail-closed GENE/CGYRO/GS2 nonlinear GK external-output parity
+  manifest so readiness requires shared same-deck identity across all three
+  solver families and per-family grid-convergence and production-scaling
+  evidence before parity can pass.
+
 - Added disruption contract primitives, mitigation contracts, and replay contracts to the configured global mypy strict cohort with a typed reactor-design evaluation boundary.
 
 - Added the real-time density-profile controller to the configured global mypy strict cohort with explicit radial-profile array contracts.

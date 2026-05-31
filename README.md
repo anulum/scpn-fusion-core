@@ -211,7 +211,10 @@ blocked until nonlinear distribution outputs with real and imaginary spectral
 components, heat-flux spectra, phi/A_parallel/B_parallel field-energy
 histories, zonal/saturation metrics, grid-convergence evidence,
 production-scale scaling evidence, and native same-case comparisons are
-present for the required solver families.
+present for the required solver families. The external-output manifest is
+strictly same-deck: all three solver-family rows must share one
+`benchmark_case_id` and one `deck_physics_sha256`, and convergence/scaling
+evidence must cover GENE, CGYRO, and GS2 before readiness can pass.
 The free-boundary lane now indexes public FreeGSNKE machine metadata for active
 coils, passive structures, limiter/wall contours, and magnetic probes, plus
 FreeGS example-script checksums, in

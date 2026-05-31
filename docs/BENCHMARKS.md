@@ -249,6 +249,11 @@ On this runner it records `40` public decks and `21` CGYRO precision-output
 summaries, but GS2 is not installed and the cached CGYRO wrapper lacks the
 GACODE runtime helper. This inventory is therefore a reproducibility input, not
 a full nonlinear 5D solver-output parity result.
+The downstream external-output parity manifest is fail-closed by solver
+family: accepted readiness requires one redistribution-permitted GENE, CGYRO,
+and GS2 nonlinear output row sharing the same `benchmark_case_id` and
+`deck_physics_sha256`, plus grid-convergence and production-scaling evidence
+for every required family.
 
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
@@ -962,8 +967,11 @@ redistribution/license status, checksum, required observable keys, numeric
 finite payload contracts, unit-labelled observable and coordinate/grid
 contracts, observable-to-coordinate axis contracts, and explicit quantitative
 threshold contracts linked to declared observables and supported metric
-families. The benchmark intentionally does not pass full-fidelity acceptance
-until those public reference gates exist and their artefacts are present.
+families. For multi-solver nonlinear GK, the manifest must also prove
+same-deck identity across GENE, CGYRO, and GS2 and provide per-family
+convergence/scaling evidence. The benchmark intentionally does not pass
+full-fidelity acceptance until those public reference gates exist and their
+artefacts are present.
 For nonlinear GK, the native artifact keeps the full species/kx/ky/theta/vpar/mu
 distribution grid and serializes the complex spectral state as required real
 and imaginary distribution components; it does not collapse the comparison to a

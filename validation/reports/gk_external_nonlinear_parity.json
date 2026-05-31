@@ -5,9 +5,11 @@
   "external_output_manifest": "data/external/full_fidelity_public_sources/gk_external_outputs/manifest.json",
   "external_output_rows": [
     {
+      "benchmark_case_id": null,
       "case_id": null,
       "converted_artifact_path": null,
       "deck_id": null,
+      "deck_physics_sha256": null,
       "missing_requirements": [
         "same_deck_external_nonlinear_output",
         "nonlinear_distribution_output",
@@ -33,9 +35,11 @@
       }
     },
     {
+      "benchmark_case_id": null,
       "case_id": null,
       "converted_artifact_path": null,
       "deck_id": null,
+      "deck_physics_sha256": null,
       "missing_requirements": [
         "same_deck_external_nonlinear_output",
         "nonlinear_distribution_output",
@@ -61,9 +65,11 @@
       }
     },
     {
+      "benchmark_case_id": null,
       "case_id": null,
       "converted_artifact_path": null,
       "deck_id": null,
+      "deck_physics_sha256": null,
       "missing_requirements": [
         "same_deck_external_nonlinear_output",
         "nonlinear_distribution_output",
@@ -96,6 +102,7 @@
     "heat_flux_spectra_time_kx_ky_species for all required solver families",
     "field_energy_history_phi_apar_bpar for all required solver families",
     "zonal_flow_and_saturation_metrics for all required solver families",
+    "shared benchmark_case_id and deck_physics_sha256 across GENE, CGYRO, and GS2",
     "native same-case nonlinear GK solver-output comparison",
     "grid-convergence evidence for converted public nonlinear GK outputs",
     "production-scale scaling evidence for converted public nonlinear GK outputs"
@@ -120,6 +127,18 @@
     "CGYRO",
     "GS2"
   ],
+  "same_deck_group": {
+    "benchmark_case_id": null,
+    "deck_physics_sha256": null,
+    "missing_families": [
+      "GENE",
+      "CGYRO",
+      "GS2"
+    ],
+    "ready": false,
+    "reason": "missing_solver_family_same_deck_rows"
+  },
+  "same_deck_group_ready": false,
   "schema": "gk-external-nonlinear-output-parity-report.v1",
   "status": "blocked_missing_external_output_manifest"
 }

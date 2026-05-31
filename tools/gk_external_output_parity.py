@@ -36,6 +36,16 @@ REQUIRED_SOLVER_FAMILIES = ("GENE", "CGYRO", "GS2")
 MANIFEST_NAME = "manifest.json"
 MANIFEST_SCHEMA = "gk-nonlinear-external-output-manifest.v1"
 OUTPUT_SCHEMA = "gk-nonlinear-external-output.v1"
+REQUIRED_MANIFEST_CASE_FIELDS = (
+    "case_id",
+    "deck_id",
+    "benchmark_case_id",
+    "deck_physics_sha256",
+    "output_path",
+    "provenance_url",
+    "redistribution_license",
+    "sha256",
+)
 
 
 def _rel(path: Path, base: Path = ROOT) -> str:
@@ -86,8 +96,10 @@ def _missing_requirements() -> list[str]:
 
 def _blocked_row(family: str, status: str) -> dict[str, Any]:
     return {
+        "benchmark_case_id": None,
         "case_id": None,
         "converted_artifact_path": None,
+        "deck_physics_sha256": None,
         "deck_id": None,
         "missing_requirements": _missing_requirements(),
         "native_same_case_comparison_passed": False,
@@ -110,6 +122,12 @@ def _load_manifest(source_root: Path) -> dict[str, Any] | None:
     if payload.get("schema") != MANIFEST_SCHEMA:
         raise ValueError("GK external output manifest schema mismatch")
     return payload
+
+
+def _looks_like_sha256(value: Any) -> bool:
+    if not isinstance(value, str) or len(value) != 64:
+        return False
+    return all(character in "0123456789abcdefABCDEF" for character in value)
 
 
 def _resolve_under(root: Path, raw_path: str) -> Path:
@@ -257,15 +275,22 @@ def _write_metadata(path: Path, metadata: dict[str, Any]) -> None:
     path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _validate_evidence(rows: Any, required_keys: tuple[str, ...]) -> bool:
+def _validate_evidence(
+    rows: Any, required_keys: tuple[str, ...], required_families: tuple[str, ...]
+) -> bool:
     if not isinstance(rows, list) or not rows:
         return False
+    seen_families: set[str] = set()
     for row in rows:
         if not isinstance(row, dict) or not all(key in row for key in required_keys):
             return False
+        family = str(row.get("solver_family", "")).upper()
+        if family not in required_families:
+            return False
+        seen_families.add(family)
         numeric_values: list[float] = []
         for key, value in row.items():
-            if key in {"case_id", "observable", "device"}:
+            if key in {"case_id", "observable", "device", "solver_family"}:
                 continue
             if isinstance(value, (int, float)):
                 numeric_values.append(float(value))
@@ -280,7 +305,54 @@ def _validate_evidence(rows: Any, required_keys: tuple[str, ...]) -> bool:
                 numeric_values.extend(float(item) for item in array.ravel())
         if not numeric_values or not all(np.isfinite(value) for value in numeric_values):
             return False
-    return True
+    return seen_families == set(required_families)
+
+
+def _same_deck_group_status(
+    cases: dict[str, dict[str, Any]], required_families: tuple[str, ...]
+) -> dict[str, Any]:
+    """Return fail-closed shared physics/deck identity status for solver rows."""
+    missing_families = [family for family in required_families if family not in cases]
+    if missing_families:
+        return {
+            "benchmark_case_id": None,
+            "deck_physics_sha256": None,
+            "missing_families": missing_families,
+            "ready": False,
+            "reason": "missing_solver_family_same_deck_rows",
+        }
+
+    benchmark_case_ids = {
+        str(cases[family].get("benchmark_case_id", "")) for family in required_families
+    }
+    deck_physics_hashes = {
+        str(cases[family].get("deck_physics_sha256", "")) for family in required_families
+    }
+    if "" in benchmark_case_ids or not all(
+        _looks_like_sha256(value) for value in deck_physics_hashes
+    ):
+        return {
+            "benchmark_case_id": None,
+            "deck_physics_sha256": None,
+            "missing_families": [],
+            "ready": False,
+            "reason": "missing_or_invalid_same_deck_identity",
+        }
+    if len(benchmark_case_ids) != 1 or len(deck_physics_hashes) != 1:
+        return {
+            "benchmark_case_id": sorted(benchmark_case_ids),
+            "deck_physics_sha256": sorted(deck_physics_hashes),
+            "missing_families": [],
+            "ready": False,
+            "reason": "same_deck_identity_mismatch",
+        }
+    return {
+        "benchmark_case_id": next(iter(benchmark_case_ids)),
+        "deck_physics_sha256": next(iter(deck_physics_hashes)),
+        "missing_families": [],
+        "ready": True,
+        "reason": "same_deck_identity_valid",
+    }
 
 
 def _observable_array(
@@ -410,18 +482,14 @@ def _convert_case(
     reference_case: dict[str, Any],
     write: bool,
 ) -> dict[str, Any]:
-    required_fields = (
-        "case_id",
-        "deck_id",
-        "output_path",
-        "provenance_url",
-        "redistribution_license",
-        "sha256",
-    )
-    missing_fields = [field for field in required_fields if not raw_case.get(field)]
+    missing_fields = [field for field in REQUIRED_MANIFEST_CASE_FIELDS if not raw_case.get(field)]
     if missing_fields:
         row = _blocked_row(family, "blocked_external_output_manifest_incomplete")
         row["missing_fields"] = missing_fields
+        return row
+    if not _looks_like_sha256(raw_case["deck_physics_sha256"]):
+        row = _blocked_row(family, "blocked_external_output_manifest_incomplete")
+        row["missing_fields"] = ["deck_physics_sha256"]
         return row
 
     case_id = str(raw_case["case_id"])
@@ -486,7 +554,9 @@ def _convert_case(
         "artifact_role": "same_deck_external_nonlinear_gk_reference_output",
         "available_coordinates": sorted(reference_payload["coordinates"]),
         "available_observables": sorted(reference_payload["observables"]),
+        "benchmark_case_id": str(raw_case["benchmark_case_id"]),
         "deck_id": str(raw_case["deck_id"]),
+        "deck_physics_sha256": str(raw_case["deck_physics_sha256"]),
         "finite_numeric_payload": True,
         "metadata_schema": "gk-external-nonlinear-output-metadata.v1",
         "missing_required_observables": [],
@@ -563,8 +633,10 @@ def _convert_case(
     if not comparison_passed:
         missing_requirements.append("native_same_case_threshold_pass")
     return {
+        "benchmark_case_id": str(raw_case["benchmark_case_id"]),
         "case_id": case_id,
         "converted_artifact_path": _public_path(artifact_path, artifact_dir),
+        "deck_physics_sha256": str(raw_case["deck_physics_sha256"]),
         "deck_id": str(raw_case["deck_id"]),
         "metadata_path": _public_path(metadata_path, artifact_dir),
         "missing_requirements": missing_requirements,
@@ -583,6 +655,7 @@ def _convert_case(
 def _report_status(
     manifest: dict[str, Any] | None,
     reference_ready: bool,
+    same_deck_ready: bool,
     native_ready: bool,
     grid_ready: bool,
     scaling_ready: bool,
@@ -591,6 +664,8 @@ def _report_status(
         return "blocked_missing_external_output_manifest"
     if not reference_ready:
         return "blocked_missing_same_deck_external_outputs"
+    if not same_deck_ready:
+        return "blocked_same_deck_identity_mismatch"
     if not native_ready:
         return "blocked_missing_native_same_case_output_comparison"
     if not grid_ready:
@@ -611,6 +686,7 @@ def build_gk_external_output_parity_report(
     manifest = _load_manifest(source_root)
     reference_case = _load_reference_case()
     cases = _case_map(manifest)
+    same_deck_group = _same_deck_group_status(cases, REQUIRED_SOLVER_FAMILIES)
     rows = [
         _convert_case(cases[family], family, source_root, artifact_dir, reference_case, write)
         if family in cases
@@ -627,17 +703,29 @@ def build_gk_external_output_parity_report(
     scaling_rows = manifest.get("production_scaling_evidence", []) if manifest else []
     grid_ready = _validate_evidence(
         grid_rows,
-        ("case_id", "observable", "coarse_grid", "fine_grid", "relative_l2"),
+        ("case_id", "solver_family", "observable", "coarse_grid", "fine_grid", "relative_l2"),
+        REQUIRED_SOLVER_FAMILIES,
     )
     scaling_ready = _validate_evidence(
         scaling_rows,
-        ("case_id", "device", "grid", "ranks", "wall_time_s"),
+        ("case_id", "solver_family", "device", "grid", "ranks", "wall_time_s"),
+        REQUIRED_SOLVER_FAMILIES,
     )
     reference_ready = all(bool(row["reference_output_ready"]) for row in rows)
+    same_deck_ready = bool(same_deck_group["ready"])
     native_ready = all(bool(row["native_same_case_comparison_ready"]) for row in rows)
     native_passed = all(bool(row["native_same_case_comparison_passed"]) for row in rows)
-    accepted = reference_ready and native_ready and native_passed and grid_ready and scaling_ready
-    status = _report_status(manifest, reference_ready, native_ready, grid_ready, scaling_ready)
+    accepted = (
+        reference_ready
+        and same_deck_ready
+        and native_ready
+        and native_passed
+        and grid_ready
+        and scaling_ready
+    )
+    status = _report_status(
+        manifest, reference_ready, same_deck_ready, native_ready, grid_ready, scaling_ready
+    )
     missing = []
     if not reference_ready:
         missing.extend(
@@ -647,6 +735,10 @@ def build_gk_external_output_parity_report(
                 "field_energy_history_phi_apar_bpar for all required solver families",
                 "zonal_flow_and_saturation_metrics for all required solver families",
             ]
+        )
+    if not same_deck_ready:
+        missing.append(
+            "shared benchmark_case_id and deck_physics_sha256 across GENE, CGYRO, and GS2"
         )
     if not native_ready:
         missing.append("native same-case nonlinear GK solver-output comparison")
@@ -676,6 +768,8 @@ def build_gk_external_output_parity_report(
         "required_observables": reference_case["required_observables"],
         "required_solver_families": list(REQUIRED_SOLVER_FAMILIES),
         "schema": "gk-external-nonlinear-output-parity-report.v1",
+        "same_deck_group": same_deck_group,
+        "same_deck_group_ready": same_deck_ready,
         "status": status,
     }
     if write:
@@ -697,10 +791,12 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- Status: `{report['status']}`",
         f"- Accepted full-fidelity ready: `{report['accepted_full_fidelity_ready']}`",
         f"- Reference output ready: `{report['reference_output_ready']}`",
+        f"- Same-deck group ready: `{report['same_deck_group_ready']}`",
         f"- Native same-case comparison ready: `{report['native_same_case_comparison_ready']}`",
         f"- Grid convergence ready: `{report['grid_convergence_ready']}`",
         f"- Production-scale scaling ready: `{report['production_scale_scaling_ready']}`",
         f"- Converted reference artefacts: `{report['converted_reference_artifacts']}`",
+        f"- Same-deck group reason: `{report['same_deck_group']['reason']}`",
         "",
         "## Solver-family rows",
         "",

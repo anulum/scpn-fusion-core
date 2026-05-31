@@ -46,6 +46,7 @@
         "heat_flux_spectra_time_kx_ky_species for all required solver families",
         "field_energy_history_phi_apar_bpar for all required solver families",
         "zonal_flow_and_saturation_metrics for all required solver families",
+        "shared benchmark_case_id and deck_physics_sha256 across GENE, CGYRO, and GS2",
         "native same-case nonlinear GK solver-output comparison",
         "grid-convergence evidence for converted public nonlinear GK outputs",
         "production-scale scaling evidence for converted public nonlinear GK outputs"

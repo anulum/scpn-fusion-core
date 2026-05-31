@@ -17,6 +17,8 @@ import numpy as np
 
 from tools import gk_external_output_parity as parity
 
+DECK_PHYSICS_SHA256 = "0" * 64
+
 
 def _payload(path: Path, scale: float = 1.0) -> None:
     coordinates = {
@@ -64,6 +66,7 @@ def test_gk_external_output_parity_blocks_without_manifest(tmp_path: Path) -> No
     assert report["status"] == "blocked_missing_external_output_manifest"
     assert report["accepted_full_fidelity_ready"] is False
     assert report["reference_output_ready"] is False
+    assert report["same_deck_group_ready"] is False
     assert report["native_same_case_comparison_ready"] is False
     assert report["grid_convergence_ready"] is False
     assert report["production_scale_scaling_ready"] is False
@@ -88,6 +91,8 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
             {
                 "case_id": "gene_itg_public",
                 "deck_id": "gene_itg_public_deck",
+                "benchmark_case_id": "public_itg_em_same_deck",
+                "deck_physics_sha256": DECK_PHYSICS_SHA256,
                 "solver_family": "GENE",
                 "output_path": output.name,
                 "provenance_url": "https://example.invalid/gene/gene_itg_public",
@@ -98,6 +103,7 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
         "grid_convergence_evidence": [
             {
                 "case_id": "gene_itg_public",
+                "solver_family": "GENE",
                 "observable": "ion_heat_flux_spectrum",
                 "coarse_grid": [2, 2, 2],
                 "fine_grid": [4, 4, 4],
@@ -107,6 +113,7 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
         "production_scaling_evidence": [
             {
                 "case_id": "gene_itg_public",
+                "solver_family": "GENE",
                 "device": "public-cpu-cluster",
                 "grid": [2, 2, 2, 2, 2, 2],
                 "ranks": 8,
@@ -133,8 +140,9 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
     assert len(gene["sha256"]) == 64
     assert report["converted_reference_artifacts"] == 1
     assert report["accepted_full_fidelity_ready"] is False
-    assert report["grid_convergence_ready"] is True
-    assert report["production_scale_scaling_ready"] is True
+    assert report["same_deck_group_ready"] is False
+    assert report["grid_convergence_ready"] is False
+    assert report["production_scale_scaling_ready"] is False
 
     with np.load(tmp_path / gene["converted_artifact_path"], allow_pickle=False) as payload_npz:
         assert "nonlinear_distribution_function" in payload_npz.files
@@ -156,6 +164,8 @@ def test_gk_external_output_parity_compares_native_same_case_output(tmp_path: Pa
             {
                 "case_id": "gs2_itg_public",
                 "deck_id": "gs2_itg_public_deck",
+                "benchmark_case_id": "public_itg_em_same_deck",
+                "deck_physics_sha256": DECK_PHYSICS_SHA256,
                 "solver_family": "GS2",
                 "output_path": reference.name,
                 "native_output_path": native.name,
@@ -185,4 +195,80 @@ def test_gk_external_output_parity_compares_native_same_case_output(tmp_path: Pa
     assert gs2["status"] == "native_same_case_comparison_passed"
     assert gs2["threshold_evaluation"]["passed"] is True
     assert report["native_same_case_comparison_ready"] is False
+    assert report["accepted_full_fidelity_ready"] is False
+
+
+def test_gk_external_output_parity_blocks_cross_solver_deck_mismatch(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "external"
+    source_root.mkdir()
+    cases = []
+    for family, suffix, benchmark_case_id, deck_hash in (
+        ("GENE", "gene", "public_itg_em_same_deck", "1" * 64),
+        ("CGYRO", "cgyro", "public_itg_em_same_deck", "1" * 64),
+        ("GS2", "gs2", "different_public_itg_em_deck", "2" * 64),
+    ):
+        reference = source_root / f"{suffix}_reference.json"
+        native = source_root / f"{suffix}_native.json"
+        _payload(reference, scale=1.0)
+        _payload(native, scale=1.0)
+        cases.append(
+            {
+                "case_id": f"{suffix}_itg_public",
+                "deck_id": f"{suffix}_itg_public_deck",
+                "benchmark_case_id": benchmark_case_id,
+                "deck_physics_sha256": deck_hash,
+                "solver_family": family,
+                "output_path": reference.name,
+                "native_output_path": native.name,
+                "provenance_url": f"https://example.invalid/{suffix}/itg_public",
+                "redistribution_license": "CC-BY-4.0",
+                "sha256": _sha256(reference),
+            }
+        )
+    manifest = {
+        "schema": "gk-nonlinear-external-output-manifest.v1",
+        "cases": cases,
+        "grid_convergence_evidence": [
+            {
+                "case_id": case["case_id"],
+                "solver_family": case["solver_family"],
+                "observable": "ion_heat_flux_spectrum",
+                "coarse_grid": [2, 2, 2],
+                "fine_grid": [4, 4, 4],
+                "relative_l2": 0.08,
+            }
+            for case in cases
+        ],
+        "production_scaling_evidence": [
+            {
+                "case_id": case["case_id"],
+                "solver_family": case["solver_family"],
+                "device": "public-cpu-cluster",
+                "grid": [2, 2, 2, 2, 2, 2],
+                "ranks": 8,
+                "wall_time_s": 12.5,
+            }
+            for case in cases
+        ],
+    }
+    (source_root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    report = parity.build_gk_external_output_parity_report(
+        source_root=source_root,
+        artifact_dir=tmp_path / "artifacts",
+        report_dir=tmp_path / "reports",
+        write=True,
+    )
+
+    assert report["reference_output_ready"] is True
+    assert report["native_same_case_comparison_ready"] is True
+    assert report["grid_convergence_ready"] is True
+    assert report["production_scale_scaling_ready"] is True
+    assert report["same_deck_group_ready"] is False
+    assert report["same_deck_group"]["reason"] == "same_deck_identity_mismatch"
+    assert report["status"] == "blocked_same_deck_identity_mismatch"
     assert report["accepted_full_fidelity_ready"] is False
