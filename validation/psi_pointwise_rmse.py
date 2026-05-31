@@ -259,6 +259,8 @@ class EfitNRMSEBenchmarkGate:
     solver_mode_counts: dict[str, int]
     source_consistency_counts: dict[str, int]
     source_domain_residual_class_counts: dict[str, int]
+    source_domain_required_solver_mode_counts: dict[str, int]
+    source_domain_next_action_counts: dict[str, int]
     operator_source_threshold: float
     operator_source_pass_count: int
     gate_operator_source_pass_count: int
@@ -2159,6 +2161,8 @@ def validate_efit_nrmse_benchmark(
     source_residual_entries: list[tuple[str, float]] = []
     gate_source_residual_entries: list[tuple[str, float]] = []
     source_domain_residual_class_counts: dict[str, int] = {}
+    source_domain_required_solver_mode_counts: dict[str, int] = {}
+    source_domain_next_action_counts: dict[str, int] = {}
     source_sum_identity_errors: list[float] = []
     operator_current_error_entries: list[tuple[str, float]] = []
     gate_operator_current_error_entries: list[tuple[str, float]] = []
@@ -2187,6 +2191,20 @@ def validate_efit_nrmse_benchmark(
         source_domain_class = str(row["source_domain_residual_class"])
         source_domain_residual_class_counts[source_domain_class] = (
             source_domain_residual_class_counts.get(source_domain_class, 0) + 1
+        )
+        required_solver_mode = str(row["source_domain_required_solver_mode"])
+        next_action = str(row["source_domain_next_action"])
+        if required_solver_mode == "not_evaluated" or next_action == "not_evaluated":
+            required_solver_mode, next_action = source_domain_remediation_contract(
+                source_domain_class
+            )
+            row["source_domain_required_solver_mode"] = required_solver_mode
+            row["source_domain_next_action"] = next_action
+        source_domain_required_solver_mode_counts[required_solver_mode] = (
+            source_domain_required_solver_mode_counts.get(required_solver_mode, 0) + 1
+        )
+        source_domain_next_action_counts[next_action] = (
+            source_domain_next_action_counts.get(next_action, 0) + 1
         )
         source_adapter = str(row["source_convention_adapter"])
         source_convention_adapter_counts[source_adapter] = (
@@ -2430,6 +2448,8 @@ def validate_efit_nrmse_benchmark(
         solver_mode_counts=solver_mode_counts,
         source_consistency_counts=source_consistency_counts,
         source_domain_residual_class_counts=source_domain_residual_class_counts,
+        source_domain_required_solver_mode_counts=source_domain_required_solver_mode_counts,
+        source_domain_next_action_counts=source_domain_next_action_counts,
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,
         gate_operator_source_pass_count=gate_operator_source_pass_count,
@@ -2651,6 +2671,11 @@ def main() -> int:
         for name, count in sorted(benchmark.source_domain_residual_class_counts.items())
     )
     print(f"Source-domain residual classes: {source_domain_classes}")
+    required_solver_modes = ", ".join(
+        f"{name}={count}"
+        for name, count in sorted(benchmark.source_domain_required_solver_mode_counts.items())
+    )
+    print(f"Required solver modes: {required_solver_modes}")
     print(
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"

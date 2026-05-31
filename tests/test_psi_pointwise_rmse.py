@@ -926,6 +926,12 @@ class TestValidateEFITNRMSEBenchmark:
             psi_rmse_mod.SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD
         )
         assert gate.source_convention_adapter_counts == {"canonical": 10}
+        assert gate.source_domain_required_solver_mode_counts == {
+            "profile_source_fixed_boundary_reconstruction_sufficient": 10
+        }
+        assert gate.source_domain_next_action_counts == {
+            "preserve_current_profile_source_contract": 10
+        }
         assert gate.adapted_profile_pass_count == 10
         assert gate.gate_adapted_profile_pass_count == 4
         assert gate.adapted_profile_threshold == pytest.approx(
@@ -1435,6 +1441,12 @@ class TestValidateEFITNRMSEBenchmark:
         assert payload["profile_current_closure_pass_count"] == 10
         assert payload["gate_profile_current_closure_pass_count"] == 4
         assert payload["profile_current_closure_failure_class_counts"] == {"passes_threshold": 10}
+        assert payload["source_domain_required_solver_mode_counts"] == {
+            "profile_source_fixed_boundary_reconstruction_sufficient": 10
+        }
+        assert payload["source_domain_next_action_counts"] == {
+            "preserve_current_profile_source_contract": 10
+        }
         assert payload["operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["gate_operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["profile_current_worst_relative_error"] == pytest.approx(0.01)

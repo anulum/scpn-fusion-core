@@ -101,6 +101,12 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         },
         source_consistency_counts={"profile_source_mismatch": 1},
         source_domain_residual_class_counts={"plasma_and_vacuum_source_mismatch": 1},
+        source_domain_required_solver_mode_counts={
+            "profile_source_then_free_boundary_reconstruction_required": 1
+        },
+        source_domain_next_action_counts={
+            "repair_plasma_profile_source_then_reconstruct_vacuum_boundary_response": 1
+        },
         operator_source_threshold=1e-6,
         operator_source_pass_count=1,
         gate_operator_source_pass_count=1,

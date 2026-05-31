@@ -14,6 +14,10 @@
   states whether the next required solver mode is fixed-boundary profile-source
   repair, free-boundary coil/vacuum reconstruction, or both.
 
+- Added aggregate EFIT/GEQDSK source-domain required-solver and next-action
+  counts so benchmark reports expose the free-boundary reconstruction queue
+  without row scanning.
+
 - Added EFIT/GEQDSK effective source-domain residual classification to separate
   plasma-source mismatch from vacuum/source-free operator residuals after
   accepted source-convention adaptation.
