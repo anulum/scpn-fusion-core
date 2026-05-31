@@ -414,10 +414,13 @@
           "declared_toroidal_current_A",
           "operator_toroidal_current_A",
           "profile_toroidal_current_A",
+          "operator_current_ratio_to_declared",
+          "profile_current_ratio_to_declared",
           "operator_current_relative_error",
           "profile_current_relative_error",
           "operator_current_closure_pass",
           "profile_current_closure_pass",
+          "profile_current_closure_failure_class",
           "threshold",
           "passes_threshold"
         ],
@@ -694,6 +697,12 @@
           "profile_toroidal_current_A": {
             "type": "number"
           },
+          "operator_current_ratio_to_declared": {
+            "type": "number"
+          },
+          "profile_current_ratio_to_declared": {
+            "type": "number"
+          },
           "operator_current_relative_error": {
             "type": "number"
           },
@@ -705,6 +714,15 @@
           },
           "profile_current_closure_pass": {
             "type": "boolean"
+          },
+          "profile_current_closure_failure_class": {
+            "enum": [
+              "passes_threshold",
+              "profile_current_under_closes_declared_current",
+              "profile_current_over_closes_declared_current",
+              "non_finite_profile_current_error",
+              "not_evaluated"
+            ]
           },
           "threshold": {
             "type": "number",

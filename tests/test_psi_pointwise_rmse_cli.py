@@ -209,10 +209,13 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "declared_toroidal_current_A": -8.7e6,
                 "operator_toroidal_current_A": -8.69e6,
                 "profile_toroidal_current_A": -7.95e6,
+                "operator_current_ratio_to_declared": 0.99885,
+                "profile_current_ratio_to_declared": 0.9138,
                 "operator_current_relative_error": 0.00115,
                 "profile_current_relative_error": 0.0862,
                 "operator_current_closure_pass": True,
                 "profile_current_closure_pass": False,
+                "profile_current_closure_failure_class": "profile_current_under_closes_declared_current",
                 "threshold": 0.05,
                 "passes_threshold": False,
             }

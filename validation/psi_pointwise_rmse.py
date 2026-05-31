@@ -170,10 +170,13 @@ class PsiRMSEResult:
     declared_toroidal_current_A: float = float("nan")
     operator_toroidal_current_A: float = float("nan")
     profile_toroidal_current_A: float = float("nan")
+    operator_current_ratio_to_declared: float = float("nan")
+    profile_current_ratio_to_declared: float = float("nan")
     operator_current_relative_error: float = float("nan")
     profile_current_relative_error: float = float("nan")
     operator_current_closure_pass: bool = False
     profile_current_closure_pass: bool = False
+    profile_current_closure_failure_class: str = "not_evaluated"
 
 
 @dataclass
@@ -706,6 +709,8 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
 
     declared_current = float(eq.current)
     scale = max(abs(declared_current), 1.0)
+    operator_ratio = abs(operator_current) / scale
+    profile_ratio = abs(profile_current) / scale
     operator_error = abs(abs(operator_current) - abs(declared_current)) / scale
     profile_error = abs(abs(profile_current) - abs(declared_current)) / scale
     operator_pass = bool(
@@ -714,14 +719,25 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     profile_pass = bool(
         np.isfinite(profile_error) and profile_error <= PROFILE_CURRENT_CLOSURE_THRESHOLD
     )
+    if profile_pass:
+        profile_failure_class = "passes_threshold"
+    elif not np.isfinite(profile_error) or not np.isfinite(profile_ratio):
+        profile_failure_class = "non_finite_profile_current_error"
+    elif profile_ratio < 1.0:
+        profile_failure_class = "profile_current_under_closes_declared_current"
+    else:
+        profile_failure_class = "profile_current_over_closes_declared_current"
     return {
         "declared_toroidal_current_A": declared_current,
         "operator_toroidal_current_A": operator_current,
         "profile_toroidal_current_A": profile_current,
+        "operator_current_ratio_to_declared": float(operator_ratio),
+        "profile_current_ratio_to_declared": float(profile_ratio),
         "operator_current_relative_error": float(operator_error),
         "profile_current_relative_error": float(profile_error),
         "operator_current_closure_pass": operator_pass,
         "profile_current_closure_pass": profile_pass,
+        "profile_current_closure_failure_class": profile_failure_class,
     }
 
 
@@ -1543,12 +1559,21 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         declared_toroidal_current_A=float(current_consistency["declared_toroidal_current_A"]),
         operator_toroidal_current_A=float(current_consistency["operator_toroidal_current_A"]),
         profile_toroidal_current_A=float(current_consistency["profile_toroidal_current_A"]),
+        operator_current_ratio_to_declared=float(
+            current_consistency["operator_current_ratio_to_declared"]
+        ),
+        profile_current_ratio_to_declared=float(
+            current_consistency["profile_current_ratio_to_declared"]
+        ),
         operator_current_relative_error=float(
             current_consistency["operator_current_relative_error"]
         ),
         profile_current_relative_error=float(current_consistency["profile_current_relative_error"]),
         operator_current_closure_pass=bool(current_consistency["operator_current_closure_pass"]),
         profile_current_closure_pass=bool(current_consistency["profile_current_closure_pass"]),
+        profile_current_closure_failure_class=str(
+            current_consistency["profile_current_closure_failure_class"]
+        ),
     )
 
 

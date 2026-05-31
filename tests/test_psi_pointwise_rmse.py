@@ -434,6 +434,13 @@ class TestToroidalCurrentConsistency:
         assert np.sign(metrics["operator_toroidal_current_A"]) == np.sign(eq.current)
         assert np.isfinite(metrics["profile_current_relative_error"])
         assert isinstance(metrics["profile_current_closure_pass"], bool)
+        assert np.isfinite(metrics["operator_current_ratio_to_declared"])
+        assert np.isfinite(metrics["profile_current_ratio_to_declared"])
+        assert metrics["profile_current_closure_failure_class"] in {
+            "passes_threshold",
+            "profile_current_under_closes_declared_current",
+            "profile_current_over_closes_declared_current",
+        }
 
     def test_current_consistency_rejects_invalid_grid(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
@@ -763,9 +770,13 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                operator_current_ratio_to_declared=0.99995,
+                profile_current_ratio_to_declared=0.99,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.01,
                 operator_current_closure_pass=True,
+                profile_current_closure_pass=True,
+                profile_current_closure_failure_class="passes_threshold",
             )
 
         monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
@@ -870,6 +881,9 @@ class TestValidateEFITNRMSEBenchmark:
         assert all(row["delta_star_psi_candidate_rank"] >= 1 for row in gate.rows)
         assert all(row["operator_current_closure_pass"] for row in gate.rows)
         assert all(row["profile_current_closure_pass"] for row in gate.rows)
+        assert all(
+            row["profile_current_closure_failure_class"] == "passes_threshold" for row in gate.rows
+        )
         assert all(row["operator_current_relative_error"] < 0.05 for row in gate.rows)
         assert all(row["q_profile_finite_fraction"] == pytest.approx(1.0) for row in gate.rows)
         assert all(row["q_profile_min_abs"] > 0.0 for row in gate.rows)
@@ -1006,9 +1020,13 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                operator_current_ratio_to_declared=0.99995,
+                profile_current_ratio_to_declared=0.1724,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.8,
                 operator_current_closure_pass=True,
+                profile_current_closure_pass=False,
+                profile_current_closure_failure_class="profile_current_under_closes_declared_current",
             )
 
         monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
@@ -1099,9 +1117,13 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                operator_current_ratio_to_declared=0.99995,
+                profile_current_ratio_to_declared=0.1724,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.8,
                 operator_current_closure_pass=True,
+                profile_current_closure_pass=False,
+                profile_current_closure_failure_class="profile_current_under_closes_declared_current",
             )
 
         monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
@@ -1188,9 +1210,13 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                operator_current_ratio_to_declared=0.99995,
+                profile_current_ratio_to_declared=0.1724,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.8,
                 operator_current_closure_pass=True,
+                profile_current_closure_pass=False,
+                profile_current_closure_failure_class="profile_current_under_closes_declared_current",
             )
 
         monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
