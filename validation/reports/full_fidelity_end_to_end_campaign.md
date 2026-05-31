@@ -20,12 +20,16 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Aurora artifact generated: `False`
 - Aurora reference output ready: `False`
 - Aurora execution status: `blocked_aurora_reference_artifact_generation_failed`
+- GK deck inventory report: `validation/reports/gk_public_reference_deck_inventory.json`
+- GK public decks indexed: `40`
+- GK public outputs indexed: `21`
+- GK deck inventory status: `blocked_public_gk_decks_indexed_missing_solver_output_parity`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
 
 | Lane | Status | Local contract ready | Reference parity ready | Sources | Next evidence |
 | --- | --- | ---: | ---: | --- | --- |
-| gene_cgyro_gs2_nonlinear_gk_parity | blocked_missing_public_reference_artifacts | True | False | GENE, CGYRO, GS2 | public nonlinear GENE/CGYRO/GS2 benchmark deck parity<br>production-scale radial/toroidal domain decomposition and convergence evidence<br>Maxwell field solve parity beyond compact A_parallel contract<br>validated flux spectra, zonal-flow, and saturation parity against production GK outputs |
+| gene_cgyro_gs2_nonlinear_gk_parity | blocked_public_gk_decks_indexed_missing_solver_output_parity | True | False | GENE, CGYRO, GS2 | same-deck external nonlinear distribution output<br>heat_flux_spectra_time_kx_ky_species<br>field_energy_history_phi_apar_bpar<br>zonal_flow_and_saturation_metrics<br>native_same_case_solver_output_comparison<br>grid_convergence_and_production_scale_scaling_evidence |
 | full_maxwell_electromagnetic_fidelity | blocked_missing_full_vlasov_maxwell_field_solve | True | False | GENE, CGYRO, GS2 | native nonlinear Ampere/Faraday closure beyond compact A_parallel/B_parallel contracts<br>GENE/CGYRO/GS2 electromagnetic field-energy and transport parity artifacts |
 | production_scale_decomposition | blocked_missing_cluster_scaling_evidence | True | False | none | radial/toroidal domain decomposition implementation<br>multi-GPU or cluster scaling reports on production-size grids<br>large-grid warm GPU throughput and convergence evidence |
 | dream_grade_runaway_electrons | blocked_missing_public_dream_artifacts | True | False | DREAM | public DREAM deck ingestion and production artifact parity<br>full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact<br>validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM<br>distribution-function, current, and growth-rate RMSE thresholds against public DREAM output |

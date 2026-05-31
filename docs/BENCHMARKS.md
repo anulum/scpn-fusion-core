@@ -209,6 +209,17 @@ It runs the cached Aurora/Open-ADAS argon atomic-data path and exports
 with source-data checksums and metadata. This is an ADAS-backed fractional
 abundance artifact, not a full Aurora/STRAHL radial transport parity result.
 
+The nonlinear GK deck inventory is tracked in
+[`validation/reports/gk_public_reference_deck_inventory.md`](../validation/reports/gk_public_reference_deck_inventory.md).
+It indexes public GS2 nonlinear input decks, CGYRO nonlinear input decks, CGYRO
+regression precision output snippets, and public GENE/GS2/CGYRO web-source
+hashes into
+`validation/reference_data/full_fidelity_public_artifacts/gk_public_reference_deck_inventory.json`.
+On this runner it records `40` public decks and `21` CGYRO precision-output
+summaries, but GS2 is not installed and the cached CGYRO wrapper lacks the
+GACODE runtime helper. This inventory is therefore a reproducibility input, not
+a full nonlinear 5D solver-output parity result.
+
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
 It generates the public `examples/2kinetic/dream_settings.h5` deck from the
@@ -827,7 +838,9 @@ The native nonlinear GK surface now exposes an explicit
 conservative pseudo-spectral ExB term with de-aliasing diagnostics. The
 run results now export the actual `kx`, `ky`, `theta`, `vpar`, and `mu`
 coordinate axes used by the solver, so saved spectra carry machine-readable
-grid metadata for future GENE/CGYRO/GS2 artifact comparison. The result surface
+grid metadata for future GENE/CGYRO/GS2 artifact comparison. Public GS2/CGYRO
+deck hashes are now tracked, but external nonlinear outputs and native same-case
+comparisons remain required. The result surface
 also exposes a JSON-compatible reference-artifact export with coordinates,
 units, observable axes, heat-flux spectra, particle/field energy spectra, and
 saturation diagnostics. The acceptance harness includes a quantitative

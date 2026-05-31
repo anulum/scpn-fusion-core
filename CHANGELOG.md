@@ -10,6 +10,12 @@
 
 ## [Unreleased]
 
+- Added a fail-closed nonlinear GK public deck inventory that hashes GS2
+  nonlinear decks, CGYRO nonlinear decks, CGYRO regression precision outputs,
+  and GENE/GS2/CGYRO public web-source snapshots while keeping full
+  GENE/CGYRO/GS2 parity blocked until runnable external outputs and native
+  same-case comparisons exist.
+
 - Added an Aurora/Open-ADAS reference execution harness that generates a
   checksummed argon charge-state fractional-abundance artifact with ADAS source
   checksums and keeps Aurora/STRAHL transport parity fail-closed until radial

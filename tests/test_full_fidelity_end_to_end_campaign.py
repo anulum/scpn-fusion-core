@@ -31,6 +31,11 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         == "validation/reports/aurora_reference_execution_artifact.json"
     )
     assert report["aurora_reference_artifact_generated"] in {True, False}
+    assert (
+        report["gk_public_deck_inventory_report"]
+        == "validation/reports/gk_public_reference_deck_inventory.json"
+    )
+    assert report["gk_public_decks_indexed"] >= 0
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {

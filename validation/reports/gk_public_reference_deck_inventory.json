@@ -1,0 +1,33 @@
+{
+  "accepted_full_fidelity_ready": false,
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/gk_public_reference_deck_inventory.json",
+  "backend_probe": {
+    "cgyro_wrapper_path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/bin/cgyro",
+    "cgyro_wrapper_present": true,
+    "gacode_printversion_available": false,
+    "gacode_printversion_path": null,
+    "gs2_available": false,
+    "gs2_path": null,
+    "runnable_external_backends": false
+  },
+  "deck_count": 40,
+  "description": "Public GENE/CGYRO/GS2 deck inventory for nonlinear GK parity. This is an input/output provenance artifact, not accepted full-fidelity parity.",
+  "gacode_commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+  "gs2_commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+  "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/gk_public_reference_deck_inventory.metadata.json",
+  "missing_full_fidelity_requirements": [
+    "same-deck external nonlinear distribution output",
+    "heat_flux_spectra_time_kx_ky_species",
+    "field_energy_history_phi_apar_bpar",
+    "zonal_flow_and_saturation_metrics",
+    "native_same_case_solver_output_comparison",
+    "grid_convergence_and_production_scale_scaling_evidence"
+  ],
+  "next_action": "Run GS2/CGYRO/GENE nonlinear decks with public outputs, then compare native 5D nonlinear GK heat-flux spectra, field energy, saturation, and convergence.",
+  "output_summary_count": 21,
+  "reference_output_ready": false,
+  "schema": "gk-public-reference-deck-inventory-report.v1",
+  "sha256": "13263237e53944e37d40ba04fc551ae0a073f1e31fe8fc0b0efb06d39710fb2c",
+  "status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
+  "web_source_count": 6
+}

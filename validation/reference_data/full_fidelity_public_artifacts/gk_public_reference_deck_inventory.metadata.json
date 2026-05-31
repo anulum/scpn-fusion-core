@@ -1,0 +1,29 @@
+{
+  "accepted_full_fidelity": false,
+  "artifact_id": "gk_public_reference_deck_inventory",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/gk_public_reference_deck_inventory.json",
+  "artifact_role": "partial_public_input_output_inventory",
+  "available_observables": [
+    "public_input_deck_checksums",
+    "public_cgyro_regression_precision_values",
+    "public_web_source_checksums"
+  ],
+  "deck_count": 40,
+  "finite_numeric_payload": true,
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [
+    "same-deck external nonlinear distribution output",
+    "heat_flux_spectra_time_kx_ky_species",
+    "field_energy_history_phi_apar_bpar",
+    "zonal_flow_and_saturation_metrics",
+    "native_same_case_solver_output_comparison",
+    "grid_convergence_and_production_scale_scaling_evidence"
+  ],
+  "output_summary_count": 21,
+  "redistribution_license": "GS2 MIT; GACODE/CGYRO Apache-2.0; GENE web pages are source links only",
+  "reference_family": "GENE/CGYRO/GS2",
+  "sha256": "13263237e53944e37d40ba04fc551ae0a073f1e31fe8fc0b0efb06d39710fb2c",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_decks_and_partial_regression_outputs_not_full_nonlinear_parity",
+  "surface": "native_nonlinear_gyrokinetics"
+}

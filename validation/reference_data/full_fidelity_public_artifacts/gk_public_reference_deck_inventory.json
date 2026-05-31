@@ -1,0 +1,919 @@
+{
+  "accepted_full_fidelity": false,
+  "decks": [
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {
+        "nesub": 3,
+        "nesuper": 3,
+        "npassing": 3,
+        "nperiod": 1,
+        "nspec": 1,
+        "ntheta": 12,
+        "nx": 32,
+        "ny": 32
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg/cyclone_itg_low_res.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "06354e379fd28b10da3d16c3d78d94c504a66d67c358d9b9e57c06b0f4202cfb",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {
+        "nesub": 3,
+        "nesuper": 3,
+        "npassing": 3,
+        "nperiod": 1,
+        "nspec": 1,
+        "ntheta": 12,
+        "nx": 48,
+        "ny": 48
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg/cyclone_itg_low_res_pad.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "6f7604089eb56338b77810f6b20b4545105e606cb0b050c36b5c8fb89b610000",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {
+        "nesub": 3,
+        "nesuper": 3,
+        "npassing": 3,
+        "nperiod": 1,
+        "nspec": 2,
+        "ntheta": 6,
+        "nx": 8,
+        "ny": 16
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_all_diagnostics/cyclone_itg_low_res_base.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "36cd1dbf45565b71aa24aa5befdd8cf1ae6e4137569e0face21dbb3769c4153d",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": true,
+      "grid_contract": {},
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_all_diagnostics/cyclone_itg_low_res_new.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "f1753150ff474d1214c143b5093a7ad65632b72830e88471ae8151506cfbbc43",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": true,
+      "grid_contract": {},
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_all_diagnostics/cyclone_itg_low_res_old.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "c7afca1fc118fb9667d4d78f79a7356a5e828ecd7a43b79e79ace771628f2681",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {
+        "nesub": 8,
+        "nesuper": 2,
+        "npassing": 5,
+        "nperiod": 1,
+        "nspec": 1,
+        "ntheta": 8,
+        "nx": 10,
+        "ny": 10
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_flux/test_cyclone_itg_flux_base.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "bf830496eda9fea17402f715a710e2e468544302adaf29139b4f11c1eba18a71",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {},
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_flux/test_cyclone_itg_flux_split_rk.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "e50e1fa462868f994d8c2bcec2faaec4a61adf180aacadc7fc0ea124160990ba",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {},
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_flux/test_cyclone_itg_flux_split_rk_strang.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "17a229f74f2bf6a0137820f57c31473656fec413b523f2cb86eb1949ad969ed1",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {},
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_flux/test_cyclone_itg_flux_unsplit.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "5ffdb49c45f7592cec2fc946c095f0dfc9a7f65a593a74e56ddd7607088ba660",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {
+        "npassing": 3,
+        "nperiod": 1,
+        "nspec": 1,
+        "ntheta": 12,
+        "nx": 32,
+        "ny": 32
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_timestep_change/cyclone_itg_timestep_change.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "7973ab87245f390c31b247943c72a1dde5f7d7fb80faa2dbcec277cb91c39772",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {},
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_timestep_change/cyclone_itg_timestep_change_error_based.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "aafe7a44307ed6f9364b63a5fe04b24a1d174be26a31c1677874dc76f3379027",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "4d8c94bcfd976ed5d04ec83e776c3d915038a589",
+      "electromagnetic": false,
+      "grid_contract": {},
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gs2/tests/nonlinear_tests/cyclone_itg_timestep_change/cyclone_itg_timestep_change_no_limits.in",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "61a24ad16236d568b1559d236e17a2990e29b68c1eee61fad7a80a9d6d4f4433",
+      "solver_family": "GS2"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 4,
+        "n_field": 1,
+        "n_radial": 48,
+        "n_species": 1,
+        "n_theta": 16,
+        "n_toroidal": 4,
+        "n_xi": 8
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/nl00/input.cgyro",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "75092fea009f4ae21d09d95a1fed2a0ed7047b1f37e00cdce073dbdb4a59ca30",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 96,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_toroidal": 16,
+        "n_xi": 16
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/nl01/input.cgyro",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "ed9f4ae4217bcc85feadc31cdce7367385f13fe130986900641d61f3cbb70deb",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 192,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_toroidal": 32,
+        "n_xi": 16
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/nl02/input.cgyro",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "0053997a8a42ba795da6d0c7937dc47b331c6059198569c1fe4a9156c7c2c770",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 512,
+        "n_species": 3,
+        "n_theta": 32,
+        "n_toroidal": 64,
+        "n_xi": 24
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/nl03/input.cgyro",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "7d19ae1d3d9d4e5566997893d70d8bf8cfcb0ea6ec91c658d8ef270e4504f5c3",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 512,
+        "n_species": 3,
+        "n_theta": 30,
+        "n_toroidal": 64,
+        "n_xi": 24
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/nl03s/input.cgyro",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "27ae4b02d8599f3f044778253329eb345cce546ad55e81c3aaec96667389683d",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 512,
+        "n_species": 4,
+        "n_theta": 48,
+        "n_toroidal": 128,
+        "n_xi": 24
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/nl04/input.cgyro",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "22823c9dba9fc013a07bd3f61830ff719a80feb6670068493cf3cfa1ec5304bc",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 2304,
+        "n_species": 3,
+        "n_theta": 24,
+        "n_toroidal": 192,
+        "n_xi": 18
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/nl05/input.cgyro",
+      "role": "public_nonlinear_input_deck",
+      "sha256": "cae635201f40952ea6716540a25e8ac4c2379f6542afd8988f1d8324a4d59320",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg01/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "7d723b5512157536299205a6e7d27619ddd41ef88a991a9092fac864b2b02d62",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg02/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "68015d46b6ff9ee95c7ce48de13737d157e1a2456e24813f9b59616e8311ee76",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg03/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "adcad7e7086d9fe7bb8614edc64b81495298b303eee5c42058dc911c60cfcd39",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 1,
+        "n_radial": 16,
+        "n_species": 1,
+        "n_theta": 16,
+        "n_toroidal": 2,
+        "n_xi": 16
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg05/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "ef1ae1d9e4ad8357aa67207cc1c5ace3528d6ea42cac26d73ac1db8370bd3c63",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 6,
+        "n_field": 2,
+        "n_radial": 16,
+        "n_species": 2,
+        "n_theta": 16,
+        "n_toroidal": 2,
+        "n_xi": 12
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg06/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "56033c2df593099160366e150a08df7ee6f1f0cc5eb4c6c7e46c705bd54a81fb",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 1,
+        "n_radial": 16,
+        "n_species": 1,
+        "n_theta": 16,
+        "n_toroidal": 2,
+        "n_xi": 16
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg07/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "2ca2242f7a1c6428af8418ccfa1bb59d48727385f7eb50ac1bbaf0fd84dd6e92",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 3,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg08/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "6d89867145278ba57d1162a8993a418a4ef4b3d371ea0e76881d671d25026859",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 6,
+        "n_field": 3,
+        "n_radial": 16,
+        "n_species": 2,
+        "n_theta": 16,
+        "n_toroidal": 2,
+        "n_xi": 12
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg09/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "0bc7e244263dc59f77f4c15afbd6b62f9a0f3a0f5899e0790561099684fc6108",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 3,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg10/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "34b2237465406f3bc7336a7af9ee12f6cb5c6c9edb231a58029015ee99950b42",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg11/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "704993a8a3245eca94ed6679b3a1be42ed3cbfdb0468a1e8fcfa5f23ecf5cd56",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_radial": 1,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg12/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "52aabd8fb0b6bc77989b48ad8532d965e30fc2929915b73d51b9675795ca2206",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 1,
+        "n_radial": 6,
+        "n_species": 1,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg13/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "f1c77f01c274d7753fc3cf2c81983e0cf76042b842ecb2f56223f4f01d4e3791",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 1,
+        "n_radial": 6,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg14/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "754b9478c523c9e458904ecf738e993b428f235de6ddfd1052eb302db77213b5",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 2,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg15/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "b474757468c88850765ede05156244e6099dca034e1bf5895fcd9bcf92d81715",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_radial": 4,
+        "n_species": 1,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg16/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "fc18a666cf05657e153b684901065908ceda987464ebbdf321fe886afbc44993",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_field": 1,
+        "n_radial": 16,
+        "n_species": 1,
+        "n_theta": 16,
+        "n_toroidal": 2,
+        "n_xi": 16
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg17/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "2d63e360f614a436b34c375144ceb0fa3725959178acf0cb6b7168187e24b278",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 6,
+        "n_field": 3,
+        "n_radial": 16,
+        "n_species": 2,
+        "n_theta": 16,
+        "n_toroidal": 2,
+        "n_xi": 12
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg18/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "c17f175b3fe962297e42d64862d20459b730c6886dc434f55491913f33e60ea5",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 6,
+        "n_field": 3,
+        "n_radial": 16,
+        "n_species": 2,
+        "n_theta": 16,
+        "n_toroidal": 4,
+        "n_xi": 12
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg19/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "911dea56fa246e11d6385a7809f6c926e399cb3cc4983b52c661f66e4f949f8e",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": true,
+      "grid_contract": {
+        "n_energy": 6,
+        "n_field": 3,
+        "n_radial": 16,
+        "n_species": 2,
+        "n_theta": 16,
+        "n_toroidal": 2,
+        "n_xi": 12
+      },
+      "nonlinear": true,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg20/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "47f868ea1bc228a8644a98af65d925e336730d7d04ac2b3a806eace7c5817c61",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg21/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "c64044bfbd7dd86bc754da11b8c28e8fc50cf84cde65ff9c6eeb3c1b3c75da9d",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "electromagnetic": false,
+      "grid_contract": {
+        "n_energy": 8,
+        "n_radial": 4,
+        "n_species": 2,
+        "n_theta": 24,
+        "n_xi": 16
+      },
+      "nonlinear": false,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg22/input.cgyro",
+      "role": "public_regression_input_deck",
+      "sha256": "e636995300681828c190d9345c43965f89a9eca22d5664ed70986a6c4c9a2839",
+      "solver_family": "CGYRO"
+    }
+  ],
+  "output_summaries": [
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.559561538002,
+      "min": 2.013013119164,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg01/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "4f41489edcdfafbc0edd8d51ce340a1fa10077c5182a55928c35650b6023d0af",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.574077406327,
+      "min": 1.979346853663,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg02/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "20410997773c673c5ce7f443d26362723b74b56ca513858f0ccb704f578f7d68",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.561642464045,
+      "min": 2.307345208053,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg03/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "300acf890e8884b95800675cbf4ca5e99e80fa3ceeb422dd5c7e9caadc967e11",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.0005427862510043,
+      "min": 0.0001870402145742,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg05/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "72a278743980ce9be8a5c78e98401178c54a7ebc77b4e68bd2267be149dd3a3d",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.005042246336869,
+      "min": 0.00127900458386,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg06/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "1f76117f3485bad9110d40f22f8f33820f8b506592fc4afd92683dda430cf1b4",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.0005767228615583,
+      "min": 0.0001874828574249,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg07/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "e0b9172991bc083512663f34df686662b4ba4fea2721a94ac7c2d4942c115619",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.627271999124,
+      "min": 2.370593031333,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg08/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "1f8b07473e4a38976a3df3089e1d07c387ad6498b705a1104c3b08894527a08c",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.005137787769992,
+      "min": 0.001279168131537,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg09/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "7191bbdc46dcab6d19d12f3aea53b693c5f68c4232636a338a8ba9c67ae646ee",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.648606283857,
+      "min": 1.101502827566,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg10/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "6ab8a124a22618c2920de0cbae17bd8b3fb05c93e19f203a7be310be69a7f627",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.560143360494,
+      "min": 1.316064580013,
+      "numeric_count": 8,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg11/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "bd285445448f3d7630cdc1dc6eb75ffce6fefc27dc42f5ac9b1416b6fa59f0b6",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.01616316398785,
+      "min": 0.0009730295107701,
+      "numeric_count": 40,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg12/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "c9423da2538d99f522bd2a18a066a892c9ef1550d65ee9c454bdcf7619bd3495",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 1.943933408378,
+      "min": 0.6767515743951,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg13/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "ed3d469b32f8d4445bffd3c6ead250565db2fd9f2f97598a7008e1540ab60e33",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 3.951681412406,
+      "min": 2.365411622234,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg14/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "23f2b1b22450b2581488987aad19b160b3dd98859e34f56a108191e683036f79",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 3.132703021798,
+      "min": 2.820459572687,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg15/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "311e26ec10715cda1cfb48999deca49a0682eca86f6b91ab261a2995b90ba22a",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 8.011141935648,
+      "min": 4.761292029556,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg16/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "cd3c7fe74cfabbdb11d9008e03d93917378dc3f915da20a7fb2533dbb68f33c9",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.0005767228615583,
+      "min": 0.0001874828574249,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg17/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "e0b9172991bc083512663f34df686662b4ba4fea2721a94ac7c2d4942c115619",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.005137787771581,
+      "min": 0.001279168131653,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg18/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "2576a59ab73b2909603bde6979db564c76a944d37612e9dcedda56bd259018ea",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.06560343659191,
+      "min": 0.02474555381547,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg19/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "8340f3121bae1a74377df0537e468a02534d5a9b4650af489643e7968546d471",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 0.005175932024371,
+      "min": 0.001279683857453,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg20/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "9055f8780d5e4d405783ef29ecd5c374f848af1de72674222d53be0b36aa79e0",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.57433667172,
+      "min": 1.980979281808,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg21/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "c2aa17a29c03225ae7214267422f4406c9e59b243a37481c196ccd2091edb8d3",
+      "solver_family": "CGYRO"
+    },
+    {
+      "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",
+      "finite_numeric_payload": true,
+      "max": 2.56388301752,
+      "min": 1.972384968053,
+      "numeric_count": 4,
+      "path": "data/external/full_fidelity_public_sources/repos/gacode/cgyro/tools/input/reg22/out.cgyro.prec",
+      "role": "cgyro_regression_precision_output",
+      "sha256": "4fdbc6dcd89c251bb5d817d84a056de9d703104c58d05b90deb1f1bed6407d75",
+      "solver_family": "CGYRO"
+    }
+  ],
+  "schema": "gk-public-reference-deck-inventory.v1",
+  "surface": "native_nonlinear_gyrokinetics",
+  "web_sources": [
+    {
+      "path": "data/external/full_fidelity_public_sources/web/genecode.org.html",
+      "sha256": "3f9be26c8b48b8df6f3a5d06cbe7915d6aedc204776858e4ea4485918822a32a",
+      "solver_family": "GENE"
+    },
+    {
+      "path": "data/external/full_fidelity_public_sources/web/genecode_main.html",
+      "sha256": "2223d735b703bd1853c53f7dec1d3af13836a4351f2c1a68f549bd20b458dc0e",
+      "solver_family": "GENE"
+    },
+    {
+      "path": "data/external/full_fidelity_public_sources/web/gs2.html",
+      "sha256": "69b9e94b9b748925d0c0cd4076e0bddef2abd0987a7462b798133674accd51aa",
+      "solver_family": "GS2"
+    },
+    {
+      "path": "data/external/full_fidelity_public_sources/web/gs2_user_manual.html",
+      "sha256": "41454829b3ec54a6e280687506a4b37ad132453c8f46607fa6e3679b28adb066",
+      "solver_family": "GS2"
+    },
+    {
+      "path": "data/external/full_fidelity_public_sources/web/cgyro.html",
+      "sha256": "f9d0810a95846394e8f1d6302ddf47926e1cef861c45f805366c82f7197f3398",
+      "solver_family": "CGYRO"
+    },
+    {
+      "path": "data/external/full_fidelity_public_sources/web/gacode_cgyro.html",
+      "sha256": "f9d0810a95846394e8f1d6302ddf47926e1cef861c45f805366c82f7197f3398",
+      "solver_family": "CGYRO"
+    }
+  ]
+}

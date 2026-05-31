@@ -19,6 +19,7 @@ PUBLIC_SOURCE_DOWNLOADS = REPORT_DIR / "full_fidelity_public_source_downloads.js
 REFERENCE_ARTIFACT_CONVERSION = REPORT_DIR / "full_fidelity_reference_artifact_conversion.json"
 DREAM_EXECUTION_REQUEST = REPORT_DIR / "dream_reference_execution_request.json"
 AURORA_EXECUTION_ARTIFACT = REPORT_DIR / "aurora_reference_execution_artifact.json"
+GK_DECK_INVENTORY = REPORT_DIR / "gk_public_reference_deck_inventory.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -95,6 +96,22 @@ def _load_aurora_execution() -> dict[str, Any]:
     return report
 
 
+def _load_gk_deck_inventory() -> dict[str, Any]:
+    if not GK_DECK_INVENTORY.exists():
+        return {
+            "deck_count": 0,
+            "missing_full_fidelity_requirements": [],
+            "output_summary_count": 0,
+            "reference_output_ready": False,
+            "schema": "gk-public-reference-deck-inventory-report.v1",
+            "status": "not_run",
+        }
+    report = json.loads(GK_DECK_INVENTORY.read_text(encoding="utf-8"))
+    if report.get("schema") != "gk-public-reference-deck-inventory-report.v1":
+        raise ValueError("GK public reference deck inventory schema mismatch")
+    return report
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -121,6 +138,7 @@ def run_campaign() -> dict[str, Any]:
     conversion = _load_conversion()
     dream_execution = _load_dream_execution()
     aurora_execution = _load_aurora_execution()
+    gk_deck_inventory = _load_gk_deck_inventory()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -132,11 +150,18 @@ def run_campaign() -> dict[str, Any]:
         {
             "lane": "gene_cgyro_gs2_nonlinear_gk_parity",
             "surface": "native_nonlinear_gyrokinetics",
-            "status": "blocked_missing_public_reference_artifacts",
+            "status": (
+                "blocked_public_gk_decks_indexed_missing_solver_output_parity"
+                if gk_deck_inventory["deck_count"]
+                else "blocked_missing_public_reference_artifacts"
+            ),
             "locally_actionable_contract_ready": bool(gk["implemented_dimensions"]),
             "reference_cases_ready": bool(gk["reference_cases"]["ready"]),
             "sources": _sources_for(registry, "native_nonlinear_gyrokinetics"),
-            "next_required_evidence": gk["missing_requirements"],
+            "next_required_evidence": (
+                gk_deck_inventory["missing_full_fidelity_requirements"]
+                or gk["missing_requirements"]
+            ),
         },
         {
             "lane": "full_maxwell_electromagnetic_fidelity",
@@ -241,6 +266,10 @@ def run_campaign() -> dict[str, Any]:
         "aurora_reference_artifact_generated": bool(aurora_execution["artifact_generated"]),
         "aurora_reference_output_ready": bool(aurora_execution["reference_output_ready"]),
         "aurora_reference_execution_status": str(aurora_execution["status"]),
+        "gk_public_deck_inventory_report": str(GK_DECK_INVENTORY.relative_to(ROOT)),
+        "gk_public_decks_indexed": int(gk_deck_inventory["deck_count"]),
+        "gk_public_outputs_indexed": int(gk_deck_inventory["output_summary_count"]),
+        "gk_public_deck_inventory_status": str(gk_deck_inventory["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -286,6 +315,10 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Aurora artifact generated: `{report['aurora_reference_artifact_generated']}`",
         f"- Aurora reference output ready: `{report['aurora_reference_output_ready']}`",
         f"- Aurora execution status: `{report['aurora_reference_execution_status']}`",
+        f"- GK deck inventory report: `{report['gk_public_deck_inventory_report']}`",
+        f"- GK public decks indexed: `{report['gk_public_decks_indexed']}`",
+        f"- GK public outputs indexed: `{report['gk_public_outputs_indexed']}`",
+        f"- GK deck inventory status: `{report['gk_public_deck_inventory_status']}`",
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

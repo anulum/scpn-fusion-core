@@ -52,7 +52,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 385 |
+| Python test files | 386 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -192,6 +192,13 @@ The Aurora execution lane runs a cached Aurora/Open-ADAS atomic-data path and
 exports normalized argon charge-state fractions, but remains blocked for full
 Aurora/STRAHL parity until public radial transport output, source/sink matrices,
 radiation observables, and native same-case comparisons are present.
+The nonlinear GK lane now indexes public GS2 nonlinear decks, CGYRO nonlinear
+decks, CGYRO regression precision outputs, and GENE/GS2/CGYRO public web-source
+hashes in
+[`validation/reports/gk_public_reference_deck_inventory.md`](validation/reports/gk_public_reference_deck_inventory.md).
+This is a reproducibility inventory only; full GENE/CGYRO/GS2 parity remains
+blocked until runnable external outputs, heat-flux spectra, field-energy
+histories, convergence evidence, and native same-case comparisons are present.
 
 ## Competitive Position
 

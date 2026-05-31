@@ -2338,7 +2338,7 @@
     "python_capability_classes": 492,
     "python_capability_source_modules": 262,
     "rust_workspace_crates": 12,
-    "test_files": 385
+    "test_files": 386
   },
   "documentation": {
     "public_pages": [
@@ -2591,6 +2591,7 @@
       "tests/test_gk_nonlinear.py",
       "tests/test_gk_online_learner.py",
       "tests/test_gk_ood_detector.py",
+      "tests/test_gk_public_reference_deck_inventory.py",
       "tests/test_gk_qualikiz.py",
       "tests/test_gk_quasilinear.py",
       "tests/test_gk_scheduler.py",

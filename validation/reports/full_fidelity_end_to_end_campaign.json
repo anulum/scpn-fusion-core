@@ -13,15 +13,21 @@
   "dream_reference_execution_status": "blocked_missing_dream_backend",
   "dream_reference_output_ready": false,
   "dream_settings_deck_generated": true,
+  "gk_public_deck_inventory_report": "validation/reports/gk_public_reference_deck_inventory.json",
+  "gk_public_deck_inventory_status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
+  "gk_public_decks_indexed": 40,
+  "gk_public_outputs_indexed": 21,
   "lanes": [
     {
       "lane": "gene_cgyro_gs2_nonlinear_gk_parity",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "public nonlinear GENE/CGYRO/GS2 benchmark deck parity",
-        "production-scale radial/toroidal domain decomposition and convergence evidence",
-        "Maxwell field solve parity beyond compact A_parallel contract",
-        "validated flux spectra, zonal-flow, and saturation parity against production GK outputs"
+        "same-deck external nonlinear distribution output",
+        "heat_flux_spectra_time_kx_ky_species",
+        "field_energy_history_phi_apar_bpar",
+        "zonal_flow_and_saturation_metrics",
+        "native_same_case_solver_output_comparison",
+        "grid_convergence_and_production_scale_scaling_evidence"
       ],
       "reference_cases_ready": false,
       "sources": [
@@ -64,7 +70,7 @@
           "surface": "native_nonlinear_gyrokinetics"
         }
       ],
-      "status": "blocked_missing_public_reference_artifacts",
+      "status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
       "surface": "native_nonlinear_gyrokinetics"
     },
     {
