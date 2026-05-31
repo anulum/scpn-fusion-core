@@ -1,13 +1,15 @@
 # Production Decomposition Contract
 
-Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling. This is not distributed runtime scaling evidence.
+Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling with executable local rank-tile evidence. This is not distributed MPI or multi-GPU scaling evidence.
 
 - Schema: `production-decomposition-contract.v1`
-- Status: `blocked_contract_ready_missing_distributed_runtime_scaling`
+- Status: `blocked_local_decomposition_ready_missing_distributed_runtime_scaling`
 - Contract pass: `True`
 - Communication contract ready: `True`
+- Local decomposed execution pass: `True`
 - Halo exchange pass: `True`
 - Decomposition invariant pass: `True`
+- Same-physics decomposition shape pass: `True`
 - Production-scale ready: `False`
 - Python: `3.12.3`
 - CPU count: `12`
@@ -56,9 +58,10 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 ## Local CPU halo/invariant benchmark
 
-| Case | Owned phase cells | Elapsed s | Cells/s | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
-|---|---:|---:|---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 524288 | 5.676130e-02 | 9.236716e+06 | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
+|---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
+| local_cpu_64x32_4x2 | 8 | 524288 | 1.062676e-01 | 4.933659e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 5.155375e-02 | 1.016974e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Reproducible commands
 
@@ -67,7 +70,7 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 ## Missing requirements
 
-- MPI or multi-GPU execution path over the declared rank tiles
+- MPI or multi-GPU distributed execution path over the declared rank tiles
 - large-grid cluster/GPU wall-time scaling report
 - same-physics convergence evidence across distributed decomposition shapes
 - hardware-specific multi-rank throughput and efficiency thresholds

@@ -18,7 +18,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 |---|---|---|
 | GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons | `python validation/full_fidelity_end_to_end_campaign.py` |
 | Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure exists, full Faraday/displacement-current Vlasov-Maxwell parity does not | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
-| Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition and rank communication contracts pass, distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
+| Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence exists, PETSc/compiled `dreami` backend output is missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact exists, full radial transport parity is missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum and native profile-source comparison metrics exist, strict thresholds/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
@@ -281,9 +281,10 @@ Current local rows include a `256 x 128 x 32 x 32 x 16` phase-space case split
 over `8 x 4` rank tiles with exact owned-cell balance and halo overhead
 reported. The local CPU gate also runs serial reference halo exchange,
 owned-state reconstruction, and decomposition-invariant inventory/free-energy
-checks on a reproducible 5D phase-space payload. This is still not distributed
-runtime evidence; MPI or multi-GPU execution, cluster timing, and
-hardware-specific scaling thresholds remain required.
+checks on reproducible 5D phase-space payloads across multiple decomposition
+shapes. This is still not distributed runtime evidence; MPI or multi-GPU
+execution, cluster timing, and hardware-specific scaling thresholds remain
+required.
 
 The free-boundary public machine-metadata inventory is tracked in
 [`validation/reports/free_boundary_public_machine_metadata_inventory.md`](../validation/reports/free_boundary_public_machine_metadata_inventory.md).
@@ -1000,8 +1001,9 @@ magnitude, heat-flux-only, or saturation-only diagnostic. Electromagnetic GK is
 gated separately from electrostatic GK and requires phi, `A_parallel`, and
 `B_parallel` field-energy histories for future GENE/CGYRO/GS2 same-case parity.
 The production-scale lane now distinguishes a passing decomposition contract
-from actual distributed runtime readiness: `production_scale_ready` remains
-false until multi-rank execution and scaling reports exist.
+and executable local rank-tile reductions from actual distributed runtime
+readiness: `production_scale_ready` remains false until MPI or multi-GPU
+execution and scaling reports exist.
 
 ## Extended Community Baseline Comparison
 

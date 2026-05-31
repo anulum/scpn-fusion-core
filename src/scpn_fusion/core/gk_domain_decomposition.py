@@ -70,6 +70,23 @@ class DecompositionInvariantMetrics:
 
 
 @dataclass(frozen=True)
+class LocalDecomposedExecutionResult:
+    """Local executable multi-rank decomposition result for one 5D phase state."""
+
+    rank_count: int
+    global_shape: tuple[int, int, int, int, int]
+    local_inventory: float
+    global_inventory: float
+    inventory_relative_error: float
+    local_free_energy: float
+    global_free_energy: float
+    free_energy_relative_error: float
+    reconstruction_linf_error: float
+    halo_exchange_pass: bool
+    decomposition_invariant_pass: bool
+
+
+@dataclass(frozen=True)
 class GKDomainDecompositionPlan:
     """Validated radial/toroidal decomposition plan for 5D nonlinear GK state."""
 
@@ -412,14 +429,78 @@ def decomposition_invariant_metrics(
     )
 
 
+def local_decomposed_phase_execution(
+    plan: GKDomainDecompositionPlan, phase_state: NDArray[np.float64]
+) -> LocalDecomposedExecutionResult:
+    """Execute the decomposition locally over rank-owned 5D payloads.
+
+    This is an executable CPU reference for future MPI or multi-GPU rank
+    execution. It materialises per-rank owned payloads, reconstructs the global
+    owned state, and checks inventory and free-energy reductions against the
+    monolithic state without claiming distributed runtime scaling.
+    """
+    state = _validate_phase_state(plan, phase_state)
+    local_tiles = serial_halo_exchange(plan, state)
+    reconstructed = reconstruct_owned_phase_state(plan, local_tiles)
+    reconstruction_error = float(np.max(np.abs(reconstructed - state)))
+    global_inventory = float(np.sum(state))
+    local_inventory = float(np.sum(reconstructed))
+    inventory_relative_error = abs(local_inventory - global_inventory) / max(
+        abs(global_inventory), 1.0e-30
+    )
+    global_free_energy = float(np.sum(state * state))
+    local_free_energy = float(np.sum(reconstructed * reconstructed))
+    free_energy_relative_error = abs(local_free_energy - global_free_energy) / max(
+        abs(global_free_energy), 1.0e-30
+    )
+    halo_exchange_pass = all(
+        np.array_equal(
+            local.with_halo,
+            state[
+                plan.tiles[local.rank].radial_with_halo.start : plan.tiles[
+                    local.rank
+                ].radial_with_halo.stop,
+                plan.tiles[local.rank].toroidal_with_halo.start : plan.tiles[
+                    local.rank
+                ].toroidal_with_halo.stop,
+                :,
+                :,
+                :,
+            ],
+        )
+        for local in local_tiles
+    )
+    invariant_pass = bool(
+        halo_exchange_pass
+        and reconstruction_error == 0.0
+        and inventory_relative_error == 0.0
+        and free_energy_relative_error == 0.0
+    )
+    return LocalDecomposedExecutionResult(
+        rank_count=len(local_tiles),
+        global_shape=state.shape,
+        local_inventory=local_inventory,
+        global_inventory=global_inventory,
+        inventory_relative_error=inventory_relative_error,
+        local_free_energy=local_free_energy,
+        global_free_energy=global_free_energy,
+        free_energy_relative_error=free_energy_relative_error,
+        reconstruction_linf_error=reconstruction_error,
+        halo_exchange_pass=halo_exchange_pass,
+        decomposition_invariant_pass=invariant_pass,
+    )
+
+
 __all__ = [
     "AxisBlock",
     "DecompositionInvariantMetrics",
     "GKDomainDecompositionPlan",
+    "LocalDecomposedExecutionResult",
     "RankPhaseTile",
     "RankTile",
     "build_radial_toroidal_decomposition",
     "decomposition_invariant_metrics",
+    "local_decomposed_phase_execution",
     "reconstruct_owned_phase_state",
     "serial_halo_exchange",
 ]

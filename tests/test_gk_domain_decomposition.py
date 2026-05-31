@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 from scpn_fusion.core.gk_domain_decomposition import (
     build_radial_toroidal_decomposition,
     decomposition_invariant_metrics,
+    local_decomposed_phase_execution,
     rank_tile_communication_contract,
     reconstruct_owned_phase_state,
     serial_halo_exchange,
@@ -131,6 +132,40 @@ def test_rank_tile_communication_contract_declares_neighbour_faces() -> None:
     assert all(row["communication_contract_ready"] for row in rows)
 
 
+def test_local_decomposed_phase_execution_matches_monolithic_reductions() -> None:
+    plan = build_radial_toroidal_decomposition(
+        n_radial=12,
+        n_toroidal=10,
+        n_theta=4,
+        n_vpar=3,
+        n_mu=2,
+        radial_parts=3,
+        toroidal_parts=2,
+        halo=1,
+    )
+    state: NDArray[np.float64] = np.sin(
+        np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 17.0
+    ).reshape(
+        plan.n_radial,
+        plan.n_toroidal,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+
+    result = local_decomposed_phase_execution(plan, state)
+
+    assert result.rank_count == plan.total_ranks
+    assert result.global_shape == state.shape
+    assert result.halo_exchange_pass
+    assert result.decomposition_invariant_pass
+    assert result.reconstruction_linf_error == 0.0
+    assert result.inventory_relative_error == 0.0
+    assert result.free_energy_relative_error == 0.0
+    assert result.local_inventory == float(np.sum(state))
+    assert result.local_free_energy == float(np.sum(state * state))
+
+
 def test_production_decomposition_contract_is_fail_closed() -> None:
     report = run_benchmark()
     write_reports(report)
@@ -138,8 +173,10 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert report["schema"] == "production-decomposition-contract.v1"
     assert report["contract_pass"] is True
     assert report["communication_contract_ready"] is True
+    assert report["local_decomposed_execution_pass"] is True
     assert report["halo_exchange_pass"] is True
     assert report["decomposition_invariant_pass"] is True
+    assert report["same_physics_decomposition_shape_pass"] is True
     assert report["cpu_benchmark_rows"]
     assert report["hardware_metadata"]["python_version"]
     assert report["reproducible_commands"]

@@ -262,11 +262,7 @@ def run_campaign() -> dict[str, Any]:
         {
             "lane": "production_scale_decomposition",
             "surface": "solver_runtime",
-            "status": (
-                "blocked_contract_ready_missing_distributed_runtime_scaling"
-                if production_decomposition["contract_pass"]
-                else "blocked_missing_cluster_scaling_evidence"
-            ),
+            "status": str(production_decomposition["status"]),
             "locally_actionable_contract_ready": bool(production_decomposition["contract_pass"]),
             "reference_cases_ready": False,
             "sources": [],

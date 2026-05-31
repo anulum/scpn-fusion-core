@@ -152,14 +152,14 @@
       "lane": "production_scale_decomposition",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "MPI or multi-GPU execution path over the declared rank tiles",
+        "MPI or multi-GPU distributed execution path over the declared rank tiles",
         "large-grid cluster/GPU wall-time scaling report",
         "same-physics convergence evidence across distributed decomposition shapes",
         "hardware-specific multi-rank throughput and efficiency thresholds"
       ],
       "reference_cases_ready": false,
       "sources": [],
-      "status": "blocked_contract_ready_missing_distributed_runtime_scaling",
+      "status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling",
       "surface": "solver_runtime"
     },
     {
@@ -258,7 +258,7 @@
   "partial_public_output_artifacts": 3,
   "production_decomposition_contract_pass": true,
   "production_decomposition_report": "validation/reports/production_decomposition_contract.json",
-  "production_decomposition_status": "blocked_contract_ready_missing_distributed_runtime_scaling",
+  "production_decomposition_status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling",
   "production_scale_ready": false,
   "public_reference_artifact_conversion_report": "validation/reports/full_fidelity_reference_artifact_conversion.json",
   "public_source_cache_root": "data/external/full_fidelity_public_sources",

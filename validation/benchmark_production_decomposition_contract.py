@@ -27,7 +27,7 @@ if str(SRC) not in sys.path:
 from scpn_fusion.core.gk_domain_decomposition import (  # noqa: E402
     GKDomainDecompositionPlan,
     build_radial_toroidal_decomposition,
-    decomposition_invariant_metrics,
+    local_decomposed_phase_execution,
     rank_tile_communication_contract,
 )
 
@@ -67,16 +67,23 @@ def _cpu_benchmark_row(case_id: str, plan: GKDomainDecompositionPlan) -> dict[st
         plan.n_mu,
     )
     started = time.perf_counter()
-    metrics = decomposition_invariant_metrics(plan, state)
+    metrics = local_decomposed_phase_execution(plan, state)
     elapsed = max(time.perf_counter() - started, 1.0e-12)
     return {
         "case_id": case_id,
         "cells_per_second": cell_count / elapsed,
         "elapsed_s": elapsed,
         "free_energy_relative_error": metrics.free_energy_relative_error,
+        "global_free_energy": metrics.global_free_energy,
+        "global_inventory": metrics.global_inventory,
+        "global_shape": list(metrics.global_shape),
         "halo_exchange_pass": metrics.halo_exchange_pass,
         "inventory_relative_error": metrics.inventory_relative_error,
+        "local_decomposed_execution_pass": metrics.decomposition_invariant_pass,
+        "local_free_energy": metrics.local_free_energy,
+        "local_inventory": metrics.local_inventory,
         "owned_phase_cells": cell_count,
+        "rank_count": metrics.rank_count,
         "reconstruction_linf_error": metrics.reconstruction_linf_error,
     }
 
@@ -128,32 +135,56 @@ def run_benchmark() -> dict[str, Any]:
         _plan_row("production_256x128_8x4", production_plan),
     ]
     communication_contract_rows = rank_tile_communication_contract(production_plan)
-    cpu_benchmark_rows = [_cpu_benchmark_row("local_cpu_64x32_4x2", local_cpu_plan)]
+    local_cpu_shape_variant_plan = build_radial_toroidal_decomposition(
+        n_radial=64,
+        n_toroidal=32,
+        n_theta=8,
+        n_vpar=8,
+        n_mu=4,
+        radial_parts=8,
+        toroidal_parts=1,
+        halo=1,
+    )
+    cpu_benchmark_rows = [
+        _cpu_benchmark_row("local_cpu_64x32_4x2", local_cpu_plan),
+        _cpu_benchmark_row("local_cpu_64x32_8x1", local_cpu_shape_variant_plan),
+    ]
     coverage_pass = all(case["min_owned_cells"] > 0 for case in cases)
     imbalance_pass = all(case["owned_cell_imbalance"] <= 1.05 for case in cases)
     communication_contract_ready = all(
         bool(row["communication_contract_ready"]) for row in communication_contract_rows
     )
     halo_exchange_pass = all(bool(row["halo_exchange_pass"]) for row in cpu_benchmark_rows)
+    local_decomposed_execution_pass = all(
+        bool(row["local_decomposed_execution_pass"]) for row in cpu_benchmark_rows
+    )
     decomposition_invariant_pass = all(
         row["reconstruction_linf_error"] == 0.0
         and row["inventory_relative_error"] == 0.0
         and row["free_energy_relative_error"] == 0.0
         for row in cpu_benchmark_rows
     )
+    same_physics_decomposition_shape_pass = all(
+        row["global_inventory"] == cpu_benchmark_rows[0]["global_inventory"]
+        and row["global_free_energy"] == cpu_benchmark_rows[0]["global_free_energy"]
+        for row in cpu_benchmark_rows
+    )
     contract_pass = bool(
         coverage_pass
         and imbalance_pass
         and communication_contract_ready
+        and local_decomposed_execution_pass
         and halo_exchange_pass
         and decomposition_invariant_pass
+        and same_physics_decomposition_shape_pass
     )
     return {
         "benchmark": "production_decomposition_contract",
         "schema": "production-decomposition-contract.v1",
         "description": (
             "Deterministic radial/toroidal decomposition contract for production-scale "
-            "5D nonlinear GK scheduling. This is not distributed runtime scaling evidence."
+            "5D nonlinear GK scheduling with executable local rank-tile evidence. "
+            "This is not distributed MPI or multi-GPU scaling evidence."
         ),
         "cases": cases,
         "communication_contract_ready": communication_contract_ready,
@@ -165,14 +196,16 @@ def run_benchmark() -> dict[str, Any]:
         "halo_exchange_pass": halo_exchange_pass,
         "hardware_metadata": _hardware_metadata(),
         "imbalance_pass": imbalance_pass,
+        "local_decomposed_execution_pass": local_decomposed_execution_pass,
         "production_scale_ready": False,
         "reproducible_commands": [
             "python validation/benchmark_production_decomposition_contract.py",
             "python -m pytest tests/test_gk_domain_decomposition.py -q",
         ],
-        "status": "blocked_contract_ready_missing_distributed_runtime_scaling",
+        "same_physics_decomposition_shape_pass": same_physics_decomposition_shape_pass,
+        "status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling",
         "missing_requirements": [
-            "MPI or multi-GPU execution path over the declared rank tiles",
+            "MPI or multi-GPU distributed execution path over the declared rank tiles",
             "large-grid cluster/GPU wall-time scaling report",
             "same-physics convergence evidence across distributed decomposition shapes",
             "hardware-specific multi-rank throughput and efficiency thresholds",
@@ -193,8 +226,10 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Status: `{report['status']}`",
         f"- Contract pass: `{report['contract_pass']}`",
         f"- Communication contract ready: `{report['communication_contract_ready']}`",
+        f"- Local decomposed execution pass: `{report['local_decomposed_execution_pass']}`",
         f"- Halo exchange pass: `{report['halo_exchange_pass']}`",
         f"- Decomposition invariant pass: `{report['decomposition_invariant_pass']}`",
+        f"- Same-physics decomposition shape pass: `{report['same_physics_decomposition_shape_pass']}`",
         f"- Production-scale ready: `{report['production_scale_ready']}`",
         f"- Python: `{report['hardware_metadata']['python_version']}`",
         f"- CPU count: `{report['hardware_metadata']['cpu_count']}`",
@@ -238,19 +273,21 @@ def write_reports(report: dict[str, Any]) -> None:
             "",
             "## Local CPU halo/invariant benchmark",
             "",
-            "| Case | Owned phase cells | Elapsed s | Cells/s | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |",
-            "|---|---:|---:|---:|:---:|---:|---:|---:|",
+            "| Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |",
+            "|---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|",
         ]
     )
     for row in report["cpu_benchmark_rows"]:
         lines.append(
-            "| {case_id} | {cells} | {elapsed:.6e} | {rate:.6e} | `{halo}` | {recon:.6e} | {inventory:.6e} | {energy:.6e} |".format(
+            "| {case_id} | {ranks} | {cells} | {elapsed:.6e} | {rate:.6e} | `{local}` | `{halo}` | {recon:.6e} | {inventory:.6e} | {energy:.6e} |".format(
                 case_id=row["case_id"],
                 cells=row["owned_phase_cells"],
                 elapsed=row["elapsed_s"],
                 energy=row["free_energy_relative_error"],
                 halo=row["halo_exchange_pass"],
                 inventory=row["inventory_relative_error"],
+                local=row["local_decomposed_execution_pass"],
+                ranks=row["rank_count"],
                 rate=row["cells_per_second"],
                 recon=row["reconstruction_linf_error"],
             )

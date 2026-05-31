@@ -1182,17 +1182,53 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 9236715.697246268,
-      "elapsed_s": 0.05676130100619048,
+      "cells_per_second": 4933659.157498443,
+      "elapsed_s": 0.10626757610589266,
       "free_energy_relative_error": 0.0,
+      "global_free_energy": 174762.83333365122,
+      "global_inventory": 262144.0,
+      "global_shape": [
+        64,
+        32,
+        8,
+        8,
+        4
+      ],
       "halo_exchange_pass": true,
       "inventory_relative_error": 0.0,
+      "local_decomposed_execution_pass": true,
+      "local_free_energy": 174762.83333365122,
+      "local_inventory": 262144.0,
       "owned_phase_cells": 524288,
+      "rank_count": 8,
+      "reconstruction_linf_error": 0.0
+    },
+    {
+      "case_id": "local_cpu_64x32_8x1",
+      "cells_per_second": 10169735.664825356,
+      "elapsed_s": 0.05155374901369214,
+      "free_energy_relative_error": 0.0,
+      "global_free_energy": 174762.83333365122,
+      "global_inventory": 262144.0,
+      "global_shape": [
+        64,
+        32,
+        8,
+        8,
+        4
+      ],
+      "halo_exchange_pass": true,
+      "inventory_relative_error": 0.0,
+      "local_decomposed_execution_pass": true,
+      "local_free_energy": 174762.83333365122,
+      "local_inventory": 262144.0,
+      "owned_phase_cells": 524288,
+      "rank_count": 8,
       "reconstruction_linf_error": 0.0
     }
   ],
   "decomposition_invariant_pass": true,
-  "description": "Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling. This is not distributed runtime scaling evidence.",
+  "description": "Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling with executable local rank-tile evidence. This is not distributed MPI or multi-GPU scaling evidence.",
   "halo_exchange_pass": true,
   "hardware_metadata": {
     "cpu_count": 12,
@@ -1202,8 +1238,9 @@
     "python_version": "3.12.3"
   },
   "imbalance_pass": true,
+  "local_decomposed_execution_pass": true,
   "missing_requirements": [
-    "MPI or multi-GPU execution path over the declared rank tiles",
+    "MPI or multi-GPU distributed execution path over the declared rank tiles",
     "large-grid cluster/GPU wall-time scaling report",
     "same-physics convergence evidence across distributed decomposition shapes",
     "hardware-specific multi-rank throughput and efficiency thresholds"
@@ -1213,6 +1250,7 @@
     "python validation/benchmark_production_decomposition_contract.py",
     "python -m pytest tests/test_gk_domain_decomposition.py -q"
   ],
+  "same_physics_decomposition_shape_pass": true,
   "schema": "production-decomposition-contract.v1",
-  "status": "blocked_contract_ready_missing_distributed_runtime_scaling"
+  "status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling"
 }

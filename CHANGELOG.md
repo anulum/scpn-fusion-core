@@ -62,6 +62,10 @@
   neighbour ranks and halo-face payload shapes for future MPI/multi-GPU
   exchange implementation.
 
+- Added executable local rank-tile decomposition reductions for production GK
+  scheduling evidence while keeping distributed MPI/multi-GPU scaling blocked
+  until external hardware runs exist.
+
 - Added a strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output
   parity lane that converts redistribution-permitted same-deck outputs into
   tracked NPZ artefacts, validates nonlinear distribution, heat-flux,
