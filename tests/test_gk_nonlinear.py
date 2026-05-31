@@ -375,6 +375,53 @@ class TestEnergyConservation:
         assert np.all(result.zonal_flow_energy_t >= 0.0)
         assert np.all(result.zonal_flow_energy_t <= result.phi_energy_t)
 
+    def test_run_exports_saturation_window_diagnostics(self):
+        cfg = NonlinearGKConfig(
+            n_kx=6,
+            n_ky=6,
+            n_theta=8,
+            n_vpar=5,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            dt=0.005,
+            n_steps=5,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+
+        result = solver.run(solver.init_state(amplitude=1e-5, seed=59))
+
+        n_half = max(result.time.size // 2, 1)
+        late = slice(n_half, None)
+
+        assert result.saturated_Q_i_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert result.saturated_Q_e_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        np.testing.assert_allclose(
+            result.saturated_Q_i_kxky, np.mean(result.Q_i_kxky_t[late], axis=0)
+        )
+        np.testing.assert_allclose(
+            result.saturated_Q_e_kxky, np.mean(result.Q_e_kxky_t[late], axis=0)
+        )
+        np.testing.assert_allclose(np.sum(result.saturated_Q_i_kxky), result.chi_i)
+        np.testing.assert_allclose(np.sum(result.saturated_Q_e_kxky), result.chi_e)
+        np.testing.assert_allclose(result.saturated_phi_rms, np.mean(result.phi_rms_t[late]))
+        np.testing.assert_allclose(
+            result.saturated_zonal_flow_energy, np.mean(result.zonal_flow_energy_t[late])
+        )
+        np.testing.assert_allclose(result.saturated_phi_energy, np.mean(result.phi_energy_t[late]))
+        np.testing.assert_allclose(
+            result.saturated_A_parallel_energy, np.mean(result.A_parallel_energy_t[late])
+        )
+        np.testing.assert_allclose(
+            result.saturated_B_parallel_energy, np.mean(result.B_parallel_energy_t[late])
+        )
+        np.testing.assert_allclose(
+            result.saturated_total_energy, np.mean(result.total_energy_t[late])
+        )
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
@@ -866,6 +913,11 @@ class TestJaxFallback:
         np.testing.assert_allclose(np.sum(result.Q_e_kxky_t, axis=(1, 2)), result.Q_e_t)
         assert result.zonal_flow_energy_t.shape == result.time.shape
         assert np.all(result.zonal_flow_energy_t <= result.phi_energy_t)
+        assert result.saturated_Q_i_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert result.saturated_Q_e_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert np.isfinite(result.saturated_phi_rms)
+        assert np.isfinite(result.saturated_zonal_flow_energy)
+        assert np.isfinite(result.saturated_total_energy)
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available

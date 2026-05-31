@@ -24,6 +24,7 @@
         "named_conservative_exb_term": true,
         "nonlinear_exb_operator": true,
         "nonlinear_invariant_history_export": true,
+        "saturation_window_diagnostics_export": true,
         "zonal_flow_energy_history_export": true
       },
       "missing_requirements": [

@@ -101,6 +101,14 @@ class NonlinearGKResult:
     Q_e_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     Q_i_kxky_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     Q_e_kxky_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    saturated_Q_i_kxky: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    saturated_Q_e_kxky: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    saturated_phi_rms: float = 0.0
+    saturated_zonal_flow_energy: float = 0.0
+    saturated_phi_energy: float = 0.0
+    saturated_A_parallel_energy: float = 0.0
+    saturated_B_parallel_energy: float = 0.0
+    saturated_total_energy: float = 0.0
     phi_rms_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     zonal_rms_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     zonal_flow_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))

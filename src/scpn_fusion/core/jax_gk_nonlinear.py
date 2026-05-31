@@ -494,6 +494,31 @@ class JaxNonlinearGKSolver:
         n_half = max(len(Q_i_t) // 2, 1)
         chi_i = float(np.mean(Q_i_t[n_half:])) if len(Q_i_t) > 0 else 0.0
         chi_e = float(np.mean(Q_e_t[n_half:])) if len(Q_e_t) > 0 else 0.0
+        late = slice(n_half, None)
+        saturated_Q_i_kxky = (
+            np.mean(Q_i_kxky_t[late], axis=0)
+            if len(Q_i_kxky_t) > 0
+            else np.zeros((c.n_kx, c.n_ky), dtype=np.float64)
+        )
+        saturated_Q_e_kxky = (
+            np.mean(Q_e_kxky_t[late], axis=0)
+            if len(Q_e_kxky_t) > 0
+            else np.zeros((c.n_kx, c.n_ky), dtype=np.float64)
+        )
+        saturated_phi_rms = float(np.mean(phi_rms_t[late])) if len(phi_rms_t) > 0 else 0.0
+        saturated_zonal_flow_energy = (
+            float(np.mean(zonal_flow_energy_t[late])) if len(zonal_flow_energy_t) > 0 else 0.0
+        )
+        saturated_phi_energy = float(np.mean(phi_energy_t[late])) if len(phi_energy_t) > 0 else 0.0
+        saturated_A_parallel_energy = (
+            float(np.mean(A_parallel_energy_t[late])) if len(A_parallel_energy_t) > 0 else 0.0
+        )
+        saturated_B_parallel_energy = (
+            float(np.mean(B_parallel_energy_t[late])) if len(B_parallel_energy_t) > 0 else 0.0
+        )
+        saturated_total_energy = (
+            float(np.mean(total_energy_t[late])) if len(total_energy_t) > 0 else 0.0
+        )
         chi_i_gB = chi_i / max(c.R_L_Ti, 0.01)
 
         f_np = np.asarray(f)
@@ -510,6 +535,14 @@ class JaxNonlinearGKSolver:
             Q_e_t=Q_e_t,
             Q_i_kxky_t=Q_i_kxky_t,
             Q_e_kxky_t=Q_e_kxky_t,
+            saturated_Q_i_kxky=saturated_Q_i_kxky,
+            saturated_Q_e_kxky=saturated_Q_e_kxky,
+            saturated_phi_rms=saturated_phi_rms,
+            saturated_zonal_flow_energy=saturated_zonal_flow_energy,
+            saturated_phi_energy=saturated_phi_energy,
+            saturated_A_parallel_energy=saturated_A_parallel_energy,
+            saturated_B_parallel_energy=saturated_B_parallel_energy,
+            saturated_total_energy=saturated_total_energy,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
             zonal_flow_energy_t=zonal_flow_energy_t,

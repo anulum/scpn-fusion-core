@@ -760,8 +760,11 @@ The native nonlinear GK surface now exposes an explicit
 conservative pseudo-spectral ExB term with de-aliasing diagnostics. The
 transport diagnostics now include saved kx/ky ion and electron heat-flux
 spectra that close exactly to the scalar flux histories and saved electrostatic
-zonal-flow energy bounded by the total electrostatic field energy. The
-electromagnetic state contract now carries `phi`, `A_parallel`, and
+zonal-flow energy bounded by the total electrostatic field energy. Late-window
+saturation summaries now report scalar `phi` RMS, averaged ion/electron
+heat-flux spectra, zonal-flow energy, and electromagnetic energy components
+from the same saved histories used by the benchmark. The electromagnetic state
+contract now carries `phi`, `A_parallel`, and
 `B_parallel` field components, and `B_parallel` now enters the Hamiltonian
 gradient drive through the magnetic-moment compression term. The energy
 diagnostics now account for particle free energy and electromagnetic field
