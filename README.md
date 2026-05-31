@@ -161,6 +161,8 @@ impurity transport is tracked by
 [`validation/reports/full_fidelity_acceptance_benchmark.md`](validation/reports/full_fidelity_acceptance_benchmark.md).
 The current diagnostic is fail-closed: these surfaces are not marked full-order
 until public GENE/CGYRO/GS2, DREAM, and Aurora/STRAHL parity gates are met.
+Required public artefacts and thresholds are declared in
+[`validation/reference_data/full_fidelity_reference_cases.json`](validation/reference_data/full_fidelity_reference_cases.json).
 
 ## Competitive Position
 

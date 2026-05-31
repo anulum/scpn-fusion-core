@@ -3,6 +3,7 @@
   "benchmark": "full_fidelity_acceptance",
   "description": "Fail-closed acceptance contract for native nonlinear GK, runaway electron, and impurity transport equivalence against production community solvers.",
   "gate_mode": "diagnostic_fail_closed",
+  "reference_manifest": "validation/reference_data/full_fidelity_reference_cases.json",
   "schema": "full-fidelity-acceptance.v1",
   "surfaces": [
     {
@@ -20,6 +21,23 @@
         "Maxwell field solve parity beyond compact A_parallel contract",
         "validated flux spectra, zonal-flow, and saturation parity against production GK outputs"
       ],
+      "reference_cases": {
+        "manifest": "validation/reference_data/full_fidelity_reference_cases.json",
+        "missing_cases": [
+          {
+            "artifact_exists": false,
+            "artifact_path": null,
+            "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
+            "ready": false,
+            "reference_family": "GENE/CGYRO/GS2",
+            "status": "missing_public_artifact",
+            "threshold_ready": true
+          }
+        ],
+        "ready": false,
+        "ready_cases": [],
+        "required_equivalence": "GENE/CGYRO/GS2 full nonlinear 5D Vlasov-Maxwell"
+      },
       "required_reference_equivalence": "GENE/CGYRO/GS2 full nonlinear 5D Vlasov-Maxwell",
       "status": "not_full_fidelity",
       "surface": "native_nonlinear_gyrokinetics"
@@ -39,6 +57,23 @@
         "synchrotron, bremsstrahlung, partial-screening, and transport parity gates",
         "public DREAM deck ingestion and distribution-function RMSE thresholds"
       ],
+      "reference_cases": {
+        "manifest": "validation/reference_data/full_fidelity_reference_cases.json",
+        "missing_cases": [
+          {
+            "artifact_exists": false,
+            "artifact_path": null,
+            "case_id": "dream_kinetic_hot_tail_avalanche_public",
+            "ready": false,
+            "reference_family": "DREAM",
+            "status": "missing_public_artifact",
+            "threshold_ready": true
+          }
+        ],
+        "ready": false,
+        "ready_cases": [],
+        "required_equivalence": "DREAM kinetic/fluid runaway electron solver"
+      },
       "required_reference_equivalence": "DREAM kinetic/fluid runaway electron solver",
       "status": "not_full_fidelity",
       "surface": "runaway_electrons"
@@ -57,6 +92,23 @@
         "Aurora/STRAHL public case ingestion and density/radiation RMSE gates",
         "multi-species source/sink matrix conservation across charge states"
       ],
+      "reference_cases": {
+        "manifest": "validation/reference_data/full_fidelity_reference_cases.json",
+        "missing_cases": [
+          {
+            "artifact_exists": false,
+            "artifact_path": null,
+            "case_id": "aurora_strahl_charge_state_transport_public",
+            "ready": false,
+            "reference_family": "Aurora/STRAHL",
+            "status": "missing_public_artifact",
+            "threshold_ready": true
+          }
+        ],
+        "ready": false,
+        "ready_cases": [],
+        "required_equivalence": "Aurora/STRAHL collisional-operator impurity transport"
+      },
       "required_reference_equivalence": "Aurora/STRAHL collisional-operator impurity transport",
       "status": "not_full_fidelity",
       "surface": "impurity_transport"

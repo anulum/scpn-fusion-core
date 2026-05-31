@@ -92,6 +92,10 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
     assert report["schema"] == "full-fidelity-acceptance.v1"
     assert report["gate_mode"] == "diagnostic_fail_closed"
     assert report["acceptance_passed"] is False
+    assert (
+        report["reference_manifest"]
+        == "validation/reference_data/full_fidelity_reference_cases.json"
+    )
 
     surfaces = {surface["surface"]: surface for surface in report["surfaces"]}
     assert set(surfaces) == {
@@ -113,3 +117,5 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
         assert surface["status"] == "not_full_fidelity"
         assert surface["acceptance_passed"] is False
         assert surface["missing_requirements"]
+        assert surface["reference_cases"]["ready"] is False
+        assert surface["reference_cases"]["missing_cases"]
