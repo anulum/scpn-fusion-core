@@ -22,6 +22,10 @@
   "freegs_public_example_reconstruction_report": "validation/reports/freegs_public_example_reconstruction.json",
   "freegs_public_example_reconstruction_status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "freegs_public_example_vacuum_comparison_pass": true,
+  "gk_electromagnetic_compact_closure_ready": true,
+  "gk_electromagnetic_external_parity_ready": false,
+  "gk_electromagnetic_fidelity_report": "validation/reports/gk_electromagnetic_fidelity.json",
+  "gk_electromagnetic_fidelity_status": "blocked_missing_full_vlasov_maxwell_field_solve",
   "gk_external_nonlinear_parity_report": "validation/reports/gk_external_nonlinear_parity.json",
   "gk_external_nonlinear_parity_status": "blocked_missing_external_output_manifest",
   "gk_external_reference_artifacts_converted": 0,
@@ -94,8 +98,10 @@
       "lane": "full_maxwell_electromagnetic_fidelity",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "native nonlinear Ampere/Faraday closure beyond compact A_parallel/B_parallel contracts",
-        "GENE/CGYRO/GS2 electromagnetic field-energy and transport parity artifacts"
+        "full Faraday/displacement-current Maxwell field evolution",
+        "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
+        "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
+        "grid-convergence evidence for electromagnetic field-energy histories"
       ],
       "reference_cases_ready": false,
       "sources": [

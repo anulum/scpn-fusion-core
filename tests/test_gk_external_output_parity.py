@@ -40,7 +40,9 @@ def _payload(path: Path, scale: float = 1.0) -> None:
             "electron_heat_flux_spectrum": (spectrum * 1.2).tolist(),
             "zonal_flow_energy": (np.ones((2, 2)) * scale).tolist(),
             "saturated_phi_rms": (np.ones(2) * scale).tolist(),
+            "electromagnetic_phi_energy": (spectrum * 0.5).tolist(),
             "electromagnetic_apar_energy": (spectrum * 0.25).tolist(),
+            "electromagnetic_bpar_energy": (spectrum * 0.125).tolist(),
         },
     }
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

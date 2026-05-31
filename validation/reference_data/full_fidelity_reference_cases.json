@@ -254,6 +254,30 @@
               "non_empty": true,
               "numeric": true,
               "units": "delta_f_over_f0"
+            },
+            "electromagnetic_phi_energy": {
+              "axes": [
+                "time_s",
+                "kx_rhos",
+                "ky_rhos"
+              ],
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true,
+              "units": "normalized_phi_energy"
+            },
+            "electromagnetic_bpar_energy": {
+              "axes": [
+                "time_s",
+                "kx_rhos",
+                "ky_rhos"
+              ],
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true,
+              "units": "normalized_bpar_energy"
             }
           },
           "provenance_url": null,
@@ -266,7 +290,9 @@
             "electron_heat_flux_spectrum",
             "zonal_flow_energy",
             "saturated_phi_rms",
-            "electromagnetic_apar_energy"
+            "electromagnetic_phi_energy",
+            "electromagnetic_apar_energy",
+            "electromagnetic_bpar_energy"
           ],
           "sha256": null,
           "status": "missing_public_artifact",
@@ -300,6 +326,16 @@
               "comparator": "<=",
               "metric": "relative_l2",
               "observable": "nonlinear_distribution_function_imag"
+            },
+            "field_phi_energy_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "electromagnetic_phi_energy"
+            },
+            "field_bpar_energy_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "electromagnetic_bpar_energy"
             }
           },
           "thresholds": {
@@ -308,7 +344,9 @@
             "heat_flux_relative_l2_max": 0.15,
             "spectrum_relative_l2_max": 0.2,
             "zonal_energy_relative_error_max": 0.2,
-            "distribution_imaginary_relative_l2_max": 0.25
+            "distribution_imaginary_relative_l2_max": 0.25,
+            "field_phi_energy_relative_error_max": 0.2,
+            "field_bpar_energy_relative_error_max": 0.2
           }
         }
       ],

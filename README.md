@@ -203,9 +203,10 @@ It also has a strict external-output conversion/comparison contract in
 Missing redistributable same-deck GENE, CGYRO, or GS2 nonlinear outputs produce
 blocked rows rather than fabricated parity. Full GENE/CGYRO/GS2 parity remains
 blocked until nonlinear distribution outputs with real and imaginary spectral
-components, heat-flux spectra, field-energy histories, zonal/saturation
-metrics, grid-convergence evidence, production-scale scaling evidence, and
-native same-case comparisons are present for the required solver families.
+components, heat-flux spectra, phi/A_parallel/B_parallel field-energy
+histories, zonal/saturation metrics, grid-convergence evidence,
+production-scale scaling evidence, and native same-case comparisons are
+present for the required solver families.
 The free-boundary lane now indexes public FreeGSNKE machine metadata for active
 coils, passive structures, limiter/wall contours, and magnetic probes, plus
 FreeGS example-script checksums, in
@@ -223,8 +224,11 @@ and solver-output comparisons are present.
 The electromagnetic GK diagnostic now reports compact Ampere and perpendicular
 pressure-balance residuals in
 [`validation/reports/gk_nonlinear_solver_comparison.md`](validation/reports/gk_nonlinear_solver_comparison.md).
-Those residuals verify the native compact `A_parallel`/`B_parallel` closure, but
-they are explicitly not full Faraday/displacement-current Vlasov-Maxwell parity.
+Those residuals are now also exported as nonlinear GK time histories and gated
+separately from electrostatic GK in
+[`validation/reports/gk_electromagnetic_fidelity.md`](validation/reports/gk_electromagnetic_fidelity.md).
+They verify the native compact `A_parallel`/`B_parallel` closure, but they are
+explicitly not full Faraday/displacement-current Vlasov-Maxwell parity.
 Production-scale decomposition now has a deterministic radial/toroidal
 partition contract in
 [`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).

@@ -1,0 +1,61 @@
+{
+  "benchmark": "gk_electromagnetic_fidelity",
+  "compact_em_contract_ready": true,
+  "description": "Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel/B_parallel diagnostics are local readiness evidence only, not full Vlasov-Maxwell parity.",
+  "electromagnetic_gate": {
+    "A_parallel_energy_max": 0.0025630597158647875,
+    "B_parallel_energy_max": 9.011323972419965e-11,
+    "compact_closure_ready": true,
+    "electromagnetic_enabled": true,
+    "field_energy_total_closes": true,
+    "full_faraday_displacement_current_supported": false,
+    "full_vlasov_maxwell_parity_ready": false,
+    "max_ampere_parallel_linf_residual": 0.0,
+    "max_pressure_balance_linf_residual": 0.0,
+    "saved_steps": 4,
+    "time_history_ready": true
+  },
+  "electrostatic_gate": {
+    "A_parallel_energy_max": 0.0,
+    "B_parallel_energy_max": 0.0,
+    "compact_closure_ready": false,
+    "electromagnetic_enabled": false,
+    "field_energy_total_closes": true,
+    "full_faraday_displacement_current_supported": false,
+    "full_vlasov_maxwell_parity_ready": false,
+    "max_ampere_parallel_linf_residual": 0.0,
+    "max_pressure_balance_linf_residual": 0.0,
+    "saved_steps": 4,
+    "time_history_ready": true
+  },
+  "external_em_parity_comparison_ready": false,
+  "locally_actionable_contract_ready": true,
+  "missing_full_fidelity_requirements": [
+    "full Faraday/displacement-current Maxwell field evolution",
+    "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
+    "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
+    "grid-convergence evidence for electromagnetic field-energy histories"
+  ],
+  "omitted_physics": [
+    "Faraday induction equation for evolving B",
+    "displacement-current Ampere-Maxwell evolution",
+    "self-consistent inductive parallel electric field evolution",
+    "external same-deck electromagnetic GENE/CGYRO/GS2 output parity"
+  ],
+  "required_external_observables": [
+    "electromagnetic_phi_energy",
+    "electromagnetic_apar_energy",
+    "electromagnetic_bpar_energy",
+    "ion_heat_flux_spectrum",
+    "electron_heat_flux_spectrum",
+    "nonlinear_distribution_function",
+    "nonlinear_distribution_function_imag"
+  ],
+  "required_external_solver_families": [
+    "GENE",
+    "CGYRO",
+    "GS2"
+  ],
+  "schema": "gk-electromagnetic-fidelity.v1",
+  "status": "blocked_missing_full_vlasov_maxwell_field_solve"
+}

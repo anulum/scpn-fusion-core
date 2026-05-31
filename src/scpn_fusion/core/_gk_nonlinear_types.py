@@ -141,6 +141,17 @@ class NonlinearGKResult:
     nonlinear_invariant_pass_t: NDArray[np.bool_] = field(
         default_factory=lambda: np.empty(0, dtype=np.bool_)
     )
+    maxwell_ampere_parallel_linf_residual_t: NDArray[np.float64] = field(
+        default_factory=lambda: np.empty(0)
+    )
+    maxwell_pressure_balance_linf_residual_t: NDArray[np.float64] = field(
+        default_factory=lambda: np.empty(0)
+    )
+    compact_maxwell_closure_pass_t: NDArray[np.bool_] = field(
+        default_factory=lambda: np.empty(0, dtype=np.bool_)
+    )
+    full_faraday_displacement_current_supported: bool = False
+    full_vlasov_maxwell_parity_ready: bool = False
     kx_rhos: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     ky_rhos: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     theta_rad: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
@@ -196,6 +207,9 @@ class NonlinearGKResult:
             "particle_free_energy_spectrum": np.asarray(
                 self.particle_free_energy_species_kxky_t, dtype=np.float64
             ).tolist(),
+            "electromagnetic_phi_energy": np.asarray(
+                self.phi_energy_kxky_t, dtype=np.float64
+            ).tolist(),
             "phi_energy_spectrum": np.asarray(self.phi_energy_kxky_t, dtype=np.float64).tolist(),
             "zonal_flow_energy": zonal_flow_kx_t.tolist(),
             "zonal_flow_energy_total": np.asarray(
@@ -209,6 +223,19 @@ class NonlinearGKResult:
             "electromagnetic_bpar_energy": np.asarray(
                 self.B_parallel_energy_kxky_t, dtype=np.float64
             ).tolist(),
+            "maxwell_ampere_parallel_residual": np.asarray(
+                self.maxwell_ampere_parallel_linf_residual_t, dtype=np.float64
+            ).tolist(),
+            "maxwell_pressure_balance_residual": np.asarray(
+                self.maxwell_pressure_balance_linf_residual_t, dtype=np.float64
+            ).tolist(),
+            "compact_maxwell_closure_success": np.asarray(
+                self.compact_maxwell_closure_pass_t, dtype=np.bool_
+            ).tolist(),
+            "full_faraday_displacement_current_supported": (
+                self.full_faraday_displacement_current_supported
+            ),
+            "full_vlasov_maxwell_parity_ready": self.full_vlasov_maxwell_parity_ready,
             "total_energy": np.asarray(self.total_energy_t, dtype=np.float64).tolist(),
             "exb_free_energy_production": np.asarray(
                 self.exb_free_energy_production_t, dtype=np.float64
@@ -220,6 +247,7 @@ class NonlinearGKResult:
             "ion_heat_flux_spectrum": "gyroBohm_heat_flux",
             "electron_heat_flux_spectrum": "gyroBohm_heat_flux",
             "particle_free_energy_spectrum": "solver_normalized",
+            "electromagnetic_phi_energy": "normalized_field_energy",
             "phi_energy_spectrum": "normalized_field_energy",
             "zonal_flow_energy": "normalized_field_energy",
             "zonal_flow_energy_total": "normalized_field_energy",
@@ -227,6 +255,11 @@ class NonlinearGKResult:
             "saturated_phi_rms_scalar": "e_phi_over_Te",
             "electromagnetic_apar_energy": "normalized_apar_energy",
             "electromagnetic_bpar_energy": "normalized_bpar_energy",
+            "maxwell_ampere_parallel_residual": "solver_normalized",
+            "maxwell_pressure_balance_residual": "solver_normalized",
+            "compact_maxwell_closure_success": "dimensionless_flag",
+            "full_faraday_displacement_current_supported": "dimensionless_flag",
+            "full_vlasov_maxwell_parity_ready": "dimensionless_flag",
             "total_energy": "solver_normalized",
             "exb_free_energy_production": "solver_normalized_per_second",
         }
@@ -255,6 +288,7 @@ class NonlinearGKResult:
                 "kx_rhos",
                 "ky_rhos",
             ],
+            "electromagnetic_phi_energy": ["time_s", "kx_rhos", "ky_rhos"],
             "phi_energy_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
             "zonal_flow_energy": ["time_s", "kx_rhos"],
             "zonal_flow_energy_total": ["time_s"],
@@ -262,6 +296,11 @@ class NonlinearGKResult:
             "saturated_phi_rms_scalar": [],
             "electromagnetic_apar_energy": ["time_s", "kx_rhos", "ky_rhos"],
             "electromagnetic_bpar_energy": ["time_s", "kx_rhos", "ky_rhos"],
+            "maxwell_ampere_parallel_residual": ["time_s"],
+            "maxwell_pressure_balance_residual": ["time_s"],
+            "compact_maxwell_closure_success": ["time_s"],
+            "full_faraday_displacement_current_supported": [],
+            "full_vlasov_maxwell_parity_ready": [],
             "total_energy": ["time_s"],
             "exb_free_energy_production": ["time_s"],
         }

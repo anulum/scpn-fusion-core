@@ -369,6 +369,9 @@ class NonlinearGKTimeMixin:
         exb_relative_free_energy_production_t: NDArray[np.float64] = np.zeros(n_saves)
         dealiased_high_k_max_abs_t: NDArray[np.float64] = np.zeros(n_saves)
         nonlinear_invariant_pass_t: NDArray[np.bool_] = np.zeros(n_saves, dtype=np.bool_)
+        maxwell_ampere_parallel_linf_residual_t: NDArray[np.float64] = np.zeros(n_saves)
+        maxwell_pressure_balance_linf_residual_t: NDArray[np.float64] = np.zeros(n_saves)
+        compact_maxwell_closure_pass_t: NDArray[np.bool_] = np.zeros(n_saves, dtype=np.bool_)
         time_t: NDArray[np.float64] = np.zeros(n_saves)
         save_idx = 0
 
@@ -411,12 +414,20 @@ class NonlinearGKTimeMixin:
                     + B_parallel_energy_t[save_idx]
                 )
                 invariant = self.nonlinear_invariant_diagnostics(state)
+                maxwell = self.maxwell_closure_diagnostics(state)
                 exb_free_energy_production_t[save_idx] = invariant.exb_free_energy_production
                 exb_relative_free_energy_production_t[save_idx] = (
                     invariant.exb_relative_free_energy_production
                 )
                 dealiased_high_k_max_abs_t[save_idx] = invariant.dealiased_high_k_max_abs
                 nonlinear_invariant_pass_t[save_idx] = invariant.passes
+                maxwell_ampere_parallel_linf_residual_t[save_idx] = (
+                    maxwell.ampere_parallel_linf_residual
+                )
+                maxwell_pressure_balance_linf_residual_t[save_idx] = (
+                    maxwell.pressure_balance_linf_residual
+                )
+                compact_maxwell_closure_pass_t[save_idx] = maxwell.compact_closure_passes
                 time_t[save_idx] = state.time
                 save_idx += 1
 
@@ -449,6 +460,15 @@ class NonlinearGKTimeMixin:
         )
         nonlinear_invariant_pass_t = np.asarray(
             nonlinear_invariant_pass_t[:save_idx], dtype=np.bool_
+        )
+        maxwell_ampere_parallel_linf_residual_t = np.asarray(
+            maxwell_ampere_parallel_linf_residual_t[:save_idx], dtype=np.float64
+        )
+        maxwell_pressure_balance_linf_residual_t = np.asarray(
+            maxwell_pressure_balance_linf_residual_t[:save_idx], dtype=np.float64
+        )
+        compact_maxwell_closure_pass_t = np.asarray(
+            compact_maxwell_closure_pass_t[:save_idx], dtype=np.bool_
         )
         time_t = np.asarray(time_t[:save_idx], dtype=np.float64)
 
@@ -539,6 +559,11 @@ class NonlinearGKTimeMixin:
             exb_relative_free_energy_production_t=exb_relative_free_energy_production_t,
             dealiased_high_k_max_abs_t=dealiased_high_k_max_abs_t,
             nonlinear_invariant_pass_t=nonlinear_invariant_pass_t,
+            maxwell_ampere_parallel_linf_residual_t=maxwell_ampere_parallel_linf_residual_t,
+            maxwell_pressure_balance_linf_residual_t=maxwell_pressure_balance_linf_residual_t,
+            compact_maxwell_closure_pass_t=compact_maxwell_closure_pass_t,
+            full_faraday_displacement_current_supported=False,
+            full_vlasov_maxwell_parity_ready=False,
             kx_rhos=np.asarray(self.kx, dtype=np.float64),
             ky_rhos=np.asarray(self.ky, dtype=np.float64),
             theta_rad=np.asarray(self.theta, dtype=np.float64),

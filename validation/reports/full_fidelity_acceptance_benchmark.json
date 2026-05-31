@@ -11,12 +11,14 @@
       "acceptance_passed": false,
       "implemented_dimensions": {
         "compact_maxwell_closure_residual_diagnostics": true,
+        "compact_maxwell_closure_residual_history_export": true,
         "electromagnetic_a_parallel_surface": true,
         "electromagnetic_b_parallel_hamiltonian_coupling": true,
         "electromagnetic_b_parallel_surface": true,
         "electromagnetic_energy_history_export": true,
         "electromagnetic_energy_spectrum_history_export": true,
         "electromagnetic_field_energy_accounting": true,
+        "electromagnetic_phi_apar_bpar_energy_parity_contract": true,
         "explicit_5d_phase_space_contract": true,
         "five_dimensional_delta_f_state": true,
         "heat_flux_spectrum_history_export": true,
@@ -36,7 +38,8 @@
       "missing_requirements": [
         "public nonlinear GENE/CGYRO/GS2 benchmark deck parity",
         "production-scale radial/toroidal domain decomposition and convergence evidence",
-        "Maxwell field solve parity beyond compact A_parallel contract",
+        "Maxwell field solve parity beyond compact A_parallel/B_parallel contract",
+        "full Faraday/displacement-current electromagnetic field evolution",
         "validated flux spectra, zonal-flow, and saturation parity against production GK outputs"
       ],
       "reference_cases": {
@@ -72,7 +75,9 @@
               "electron_heat_flux_spectrum",
               "zonal_flow_energy",
               "saturated_phi_rms",
-              "electromagnetic_apar_energy"
+              "electromagnetic_phi_energy",
+              "electromagnetic_apar_energy",
+              "electromagnetic_bpar_energy"
             ],
             "observable_keys_present": [],
             "observable_keys_ready": false,

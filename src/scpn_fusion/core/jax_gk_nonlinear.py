@@ -420,6 +420,9 @@ class JaxNonlinearGKSolver:
         exb_relative_free_energy_production_list = []
         dealiased_high_k_max_abs_list = []
         nonlinear_invariant_pass_list = []
+        maxwell_ampere_parallel_linf_residual_list = []
+        maxwell_pressure_balance_linf_residual_list = []
+        compact_maxwell_closure_pass_list = []
         time_list = []
 
         for step in range(c.n_steps):
@@ -463,6 +466,7 @@ class JaxNonlinearGKSolver:
                 a_parallel_energy = float(np.sum(a_parallel_energy_kxky))
                 b_parallel_energy = float(np.sum(b_parallel_energy_kxky))
                 invariant = self.nonlinear_invariant_diagnostics(np_state)
+                maxwell = self._np_solver.maxwell_closure_diagnostics(np_state)
                 Q_i_list.append(Q_i)
                 Q_e_list.append(Q_e)
                 Q_i_kxky_list.append(Q_i_kxky)
@@ -487,6 +491,13 @@ class JaxNonlinearGKSolver:
                 )
                 dealiased_high_k_max_abs_list.append(invariant.dealiased_high_k_max_abs)
                 nonlinear_invariant_pass_list.append(invariant.passes)
+                maxwell_ampere_parallel_linf_residual_list.append(
+                    maxwell.ampere_parallel_linf_residual
+                )
+                maxwell_pressure_balance_linf_residual_list.append(
+                    maxwell.pressure_balance_linf_residual
+                )
+                compact_maxwell_closure_pass_list.append(maxwell.compact_closure_passes)
                 time_list.append(float(t))
 
         Q_i_t = np.array(Q_i_list)
@@ -527,6 +538,15 @@ class JaxNonlinearGKSolver:
         )
         dealiased_high_k_max_abs_t = np.asarray(dealiased_high_k_max_abs_list, dtype=np.float64)
         nonlinear_invariant_pass_t = np.asarray(nonlinear_invariant_pass_list, dtype=np.bool_)
+        maxwell_ampere_parallel_linf_residual_t = np.asarray(
+            maxwell_ampere_parallel_linf_residual_list, dtype=np.float64
+        )
+        maxwell_pressure_balance_linf_residual_t = np.asarray(
+            maxwell_pressure_balance_linf_residual_list, dtype=np.float64
+        )
+        compact_maxwell_closure_pass_t = np.asarray(
+            compact_maxwell_closure_pass_list, dtype=np.bool_
+        )
         time_t = np.array(time_list)
 
         n_half = max(len(Q_i_t) // 2, 1)
@@ -621,6 +641,11 @@ class JaxNonlinearGKSolver:
             exb_relative_free_energy_production_t=exb_relative_free_energy_production_t,
             dealiased_high_k_max_abs_t=dealiased_high_k_max_abs_t,
             nonlinear_invariant_pass_t=nonlinear_invariant_pass_t,
+            maxwell_ampere_parallel_linf_residual_t=maxwell_ampere_parallel_linf_residual_t,
+            maxwell_pressure_balance_linf_residual_t=maxwell_pressure_balance_linf_residual_t,
+            compact_maxwell_closure_pass_t=compact_maxwell_closure_pass_t,
+            full_faraday_displacement_current_supported=False,
+            full_vlasov_maxwell_parity_ready=False,
             kx_rhos=np.asarray(self._np_solver.kx, dtype=np.float64),
             ky_rhos=np.asarray(self._np_solver.ky, dtype=np.float64),
             theta_rad=np.asarray(self._np_solver.theta, dtype=np.float64),

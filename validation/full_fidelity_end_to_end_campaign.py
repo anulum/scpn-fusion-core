@@ -25,6 +25,7 @@ DREAM_EXECUTION_REQUEST = REPORT_DIR / "dream_reference_execution_request.json"
 AURORA_EXECUTION_ARTIFACT = REPORT_DIR / "aurora_reference_execution_artifact.json"
 GK_DECK_INVENTORY = REPORT_DIR / "gk_public_reference_deck_inventory.json"
 GK_EXTERNAL_PARITY = REPORT_DIR / "gk_external_nonlinear_parity.json"
+GK_ELECTROMAGNETIC_FIDELITY = REPORT_DIR / "gk_electromagnetic_fidelity.json"
 PRODUCTION_DECOMPOSITION = REPORT_DIR / "production_decomposition_contract.json"
 FREE_BOUNDARY_MACHINE_METADATA = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
 FREEGS_PUBLIC_RECONSTRUCTION = REPORT_DIR / "freegs_public_example_reconstruction.json"
@@ -32,6 +33,9 @@ JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
 from validation.benchmark_full_fidelity_acceptance import run_benchmark as run_acceptance
+from validation.benchmark_gk_electromagnetic_fidelity import (
+    run_benchmark as run_gk_electromagnetic_fidelity,
+)
 from validation.benchmark_impurity_transport_contract import (
     run_benchmark as run_impurity_contract,
 )
@@ -211,6 +215,7 @@ def run_campaign() -> dict[str, Any]:
     aurora_execution = _load_aurora_execution()
     gk_deck_inventory = _load_gk_deck_inventory()
     gk_external_parity = _load_gk_external_parity()
+    gk_electromagnetic_fidelity = run_gk_electromagnetic_fidelity()
     production_decomposition = _load_production_decomposition()
     free_boundary_machine_metadata = _load_free_boundary_machine_metadata()
     freegs_public_reconstruction = _load_freegs_public_reconstruction()
@@ -245,17 +250,14 @@ def run_campaign() -> dict[str, Any]:
         {
             "lane": "full_maxwell_electromagnetic_fidelity",
             "surface": "native_nonlinear_gyrokinetics",
-            "status": "blocked_missing_full_vlasov_maxwell_field_solve",
+            "status": str(gk_electromagnetic_fidelity["status"]),
             "locally_actionable_contract_ready": bool(
-                gk["implemented_dimensions"].get("electromagnetic_a_parallel_surface")
-                and gk["implemented_dimensions"].get("electromagnetic_b_parallel_surface")
-                and gk["implemented_dimensions"].get("electromagnetic_energy_history_export")
+                gk_electromagnetic_fidelity["locally_actionable_contract_ready"]
             ),
             "reference_cases_ready": bool(gk["reference_cases"]["ready"]),
             "sources": _sources_for(registry, "native_nonlinear_gyrokinetics"),
-            "next_required_evidence": [
-                "native nonlinear Ampere/Faraday closure beyond compact A_parallel/B_parallel contracts",
-                "GENE/CGYRO/GS2 electromagnetic field-energy and transport parity artifacts",
+            "next_required_evidence": gk_electromagnetic_fidelity[
+                "missing_full_fidelity_requirements"
             ],
         },
         {
@@ -365,6 +367,16 @@ def run_campaign() -> dict[str, Any]:
         "gk_public_outputs_indexed": int(gk_deck_inventory["output_summary_count"]),
         "gk_public_deck_inventory_status": str(gk_deck_inventory["status"]),
         "gk_external_nonlinear_parity_report": str(GK_EXTERNAL_PARITY.relative_to(ROOT)),
+        "gk_electromagnetic_fidelity_report": str(
+            GK_ELECTROMAGNETIC_FIDELITY.relative_to(ROOT)
+        ),
+        "gk_electromagnetic_fidelity_status": str(gk_electromagnetic_fidelity["status"]),
+        "gk_electromagnetic_compact_closure_ready": bool(
+            gk_electromagnetic_fidelity["compact_em_contract_ready"]
+        ),
+        "gk_electromagnetic_external_parity_ready": bool(
+            gk_electromagnetic_fidelity["external_em_parity_comparison_ready"]
+        ),
         "gk_external_reference_artifacts_converted": int(
             gk_external_parity["converted_reference_artifacts"]
         ),
@@ -451,6 +463,16 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- GK public decks indexed: `{report['gk_public_decks_indexed']}`",
         f"- GK public outputs indexed: `{report['gk_public_outputs_indexed']}`",
         f"- GK deck inventory status: `{report['gk_public_deck_inventory_status']}`",
+        f"- GK electromagnetic fidelity report: `{report['gk_electromagnetic_fidelity_report']}`",
+        f"- GK electromagnetic fidelity status: `{report['gk_electromagnetic_fidelity_status']}`",
+        (
+            "- GK electromagnetic compact closure ready: "
+            f"`{report['gk_electromagnetic_compact_closure_ready']}`"
+        ),
+        (
+            "- GK electromagnetic external parity ready: "
+            f"`{report['gk_electromagnetic_external_parity_ready']}`"
+        ),
         f"- Production decomposition report: `{report['production_decomposition_report']}`",
         (
             "- Production decomposition contract pass: "

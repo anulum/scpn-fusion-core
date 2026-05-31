@@ -586,6 +586,8 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "electromagnetic_energy_history_export": cfg.electromagnetic,
         "electromagnetic_energy_spectrum_history_export": cfg.electromagnetic,
         "compact_maxwell_closure_residual_diagnostics": cfg.electromagnetic,
+        "compact_maxwell_closure_residual_history_export": cfg.electromagnetic,
+        "electromagnetic_phi_apar_bpar_energy_parity_contract": cfg.electromagnetic,
         "particle_free_energy_spectrum_history_export": True,
         "heat_flux_spectrum_history_export": True,
         "zonal_flow_energy_history_export": True,
@@ -608,7 +610,8 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
     missing_requirements = [
         "public nonlinear GENE/CGYRO/GS2 benchmark deck parity",
         "production-scale radial/toroidal domain decomposition and convergence evidence",
-        "Maxwell field solve parity beyond compact A_parallel contract",
+        "Maxwell field solve parity beyond compact A_parallel/B_parallel contract",
+        "full Faraday/displacement-current electromagnetic field evolution",
         "validated flux spectra, zonal-flow, and saturation parity against production GK outputs",
     ]
     return {

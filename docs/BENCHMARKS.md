@@ -875,8 +875,9 @@ coordinate axes used by the solver, so saved spectra carry machine-readable
 grid metadata for future GENE/CGYRO/GS2 artifact comparison. Public GS2/CGYRO
 deck hashes are now tracked, but external nonlinear outputs and native same-case
 comparisons remain required. The electromagnetic case now also reports compact
-Ampere `A_parallel` and perpendicular pressure-balance `B_parallel` residuals;
-these prove internal algebraic-closure consistency only, not full
+Ampere `A_parallel` and perpendicular pressure-balance `B_parallel` residual
+histories through `validation/reports/gk_electromagnetic_fidelity.md`; these
+prove internal algebraic-closure consistency only, not full
 Faraday/displacement-current Vlasov-Maxwell parity. The result surface
 also exposes a JSON-compatible reference-artifact export with coordinates,
 units, observable axes, heat-flux spectra, particle/field energy spectra, and
@@ -927,7 +928,9 @@ until those public reference gates exist and their artefacts are present.
 For nonlinear GK, the native artifact keeps the full species/kx/ky/theta/vpar/mu
 distribution grid and serializes the complex spectral state as required real
 and imaginary distribution components; it does not collapse the comparison to a
-magnitude, heat-flux-only, or saturation-only diagnostic.
+magnitude, heat-flux-only, or saturation-only diagnostic. Electromagnetic GK is
+gated separately from electrostatic GK and requires phi, `A_parallel`, and
+`B_parallel` field-energy histories for future GENE/CGYRO/GS2 same-case parity.
 The production-scale lane now distinguishes a passing decomposition contract
 from actual distributed runtime readiness: `production_scale_ready` remains
 false until multi-rank execution and scaling reports exist.

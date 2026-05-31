@@ -330,7 +330,17 @@ class TestEnergyConservation:
         assert result.A_parallel_energy_t.shape == result.time.shape
         assert result.B_parallel_energy_t.shape == result.time.shape
         assert result.total_energy_t.shape == result.time.shape
+        assert result.maxwell_ampere_parallel_linf_residual_t.shape == result.time.shape
+        assert result.maxwell_pressure_balance_linf_residual_t.shape == result.time.shape
+        assert result.compact_maxwell_closure_pass_t.shape == result.time.shape
         assert np.all(np.isfinite(result.total_energy_t))
+        assert np.all(np.isfinite(result.maxwell_ampere_parallel_linf_residual_t))
+        assert np.all(np.isfinite(result.maxwell_pressure_balance_linf_residual_t))
+        assert bool(np.all(result.compact_maxwell_closure_pass_t))
+        assert np.max(result.maxwell_ampere_parallel_linf_residual_t) <= 1e-12
+        assert np.max(result.maxwell_pressure_balance_linf_residual_t) <= 1e-12
+        assert result.full_faraday_displacement_current_supported is False
+        assert result.full_vlasov_maxwell_parity_ready is False
         np.testing.assert_allclose(
             result.total_energy_t,
             result.particle_free_energy_t
@@ -1167,9 +1177,14 @@ class TestJaxFallback:
         assert result.exb_relative_free_energy_production_t.shape == result.time.shape
         assert result.dealiased_high_k_max_abs_t.shape == result.time.shape
         assert result.nonlinear_invariant_pass_t.shape == result.time.shape
+        assert result.maxwell_ampere_parallel_linf_residual_t.shape == result.time.shape
+        assert result.maxwell_pressure_balance_linf_residual_t.shape == result.time.shape
+        assert result.compact_maxwell_closure_pass_t.shape == result.time.shape
         assert result.nonlinear_invariant_pass_t.dtype == np.bool_
+        assert result.compact_maxwell_closure_pass_t.dtype == np.bool_
         assert np.all(np.isfinite(result.total_energy_t))
         assert np.all(np.isfinite(result.exb_relative_free_energy_production_t))
+        assert bool(np.all(result.compact_maxwell_closure_pass_t))
         assert result.Q_i_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
         assert result.Q_e_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
         np.testing.assert_allclose(np.sum(result.Q_i_kxky_t, axis=(1, 2)), result.Q_i_t)
@@ -1207,6 +1222,8 @@ class TestJaxFallback:
         assert artifact["schema"] == "nonlinear-gk-reference-artifact.v1"
         assert artifact["coordinates"]["kx_rhos"] == result.kx_rhos.tolist()
         assert "ion_heat_flux_spectrum" in artifact["observables"]
+        assert "maxwell_ampere_parallel_residual" in artifact["observables"]
+        assert "maxwell_pressure_balance_residual" in artifact["observables"]
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available
