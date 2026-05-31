@@ -378,6 +378,11 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
           python-version: "3.12"
+      - name: Install Lean toolchain for polyglot solver contracts
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
         run: |
           pip install --require-hashes -r requirements/ci-py312.txt
