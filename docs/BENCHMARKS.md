@@ -930,7 +930,11 @@ comparisons remain required. The electromagnetic case now also reports compact
 Ampere `A_parallel` and perpendicular pressure-balance `B_parallel` residual
 histories through `validation/reports/gk_electromagnetic_fidelity.md`; these
 prove internal algebraic-closure consistency only, not full
-Faraday/displacement-current Vlasov-Maxwell parity. The result surface
+Faraday/displacement-current Vlasov-Maxwell parity. The report includes a
+machine-readable Maxwell equation contract that marks Faraday induction,
+displacement-current Ampere-Maxwell evolution, and self-consistent inductive
+parallel electric-field evolution as blocking requirements until implemented
+and externally compared. The result surface
 also exposes a JSON-compatible reference-artifact export with coordinates,
 units, observable axes, heat-flux spectra, particle/field energy spectra, and
 saturation diagnostics. The acceptance harness includes a quantitative

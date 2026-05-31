@@ -249,6 +249,10 @@ separately from electrostatic GK in
 [`validation/reports/gk_electromagnetic_fidelity.md`](validation/reports/gk_electromagnetic_fidelity.md).
 They verify the native compact `A_parallel`/`B_parallel` closure, but they are
 explicitly not full Faraday/displacement-current Vlasov-Maxwell parity.
+The report now includes a machine-readable Maxwell equation contract that marks
+Faraday induction, displacement-current Ampere-Maxwell evolution, and
+self-consistent inductive parallel electric-field evolution as blocking
+requirements until implemented and externally compared.
 Production-scale decomposition now has a deterministic radial/toroidal
 partition contract in
 [`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).

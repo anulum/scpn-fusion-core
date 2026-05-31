@@ -4,7 +4,7 @@
   "description": "Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel/B_parallel diagnostics are local readiness evidence only, not full Vlasov-Maxwell parity.",
   "electromagnetic_gate": {
     "A_parallel_energy_max": 0.0025630597158647875,
-    "B_parallel_energy_max": 9.011323972419965e-11,
+    "B_parallel_energy_max": 9.011323972419964e-11,
     "compact_closure_ready": true,
     "electromagnetic_enabled": true,
     "field_energy_total_closes": true,
@@ -30,6 +30,57 @@
   },
   "external_em_parity_comparison_ready": false,
   "locally_actionable_contract_ready": true,
+  "maxwell_evolution_contract": {
+    "blocking_equation_ids": [
+      "faraday_induction",
+      "ampere_maxwell_displacement_current",
+      "inductive_parallel_electric_field"
+    ],
+    "equations": [
+      {
+        "compact_closure_ready": false,
+        "equation": "dB/dt = -curl(E)",
+        "equation_id": "faraday_induction",
+        "implemented_by_native_solver": false,
+        "native_status": "missing_time_evolved_magnetic_field",
+        "required_for_full_vlasov_maxwell": true
+      },
+      {
+        "compact_closure_ready": false,
+        "equation": "curl(B) = mu0 J + mu0 eps0 dE/dt",
+        "equation_id": "ampere_maxwell_displacement_current",
+        "implemented_by_native_solver": false,
+        "native_status": "missing_displacement_current_evolution",
+        "required_for_full_vlasov_maxwell": true
+      },
+      {
+        "compact_closure_ready": false,
+        "equation": "E_parallel = -grad_parallel(phi) - dA_parallel/dt",
+        "equation_id": "inductive_parallel_electric_field",
+        "implemented_by_native_solver": false,
+        "native_status": "missing_self_consistent_inductive_parallel_e_field",
+        "required_for_full_vlasov_maxwell": true
+      },
+      {
+        "compact_closure_ready": true,
+        "equation": "A_parallel from compact parallel Ampere closure",
+        "equation_id": "compact_parallel_ampere_closure",
+        "implemented_by_native_solver": true,
+        "native_status": "implemented_as_algebraic_closure_not_maxwell_evolution",
+        "required_for_full_vlasov_maxwell": false
+      },
+      {
+        "compact_closure_ready": true,
+        "equation": "B_parallel from perpendicular pressure-balance closure",
+        "equation_id": "compact_perpendicular_pressure_balance_closure",
+        "implemented_by_native_solver": true,
+        "native_status": "implemented_as_algebraic_closure_not_maxwell_evolution",
+        "required_for_full_vlasov_maxwell": false
+      }
+    ],
+    "full_vlasov_maxwell_parity_ready": false,
+    "native_field_evolution_mode": "compact_algebraic_Apar_Bpar_closure"
+  },
   "missing_full_fidelity_requirements": [
     "full Faraday/displacement-current Maxwell field evolution",
     "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",

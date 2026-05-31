@@ -36,6 +36,27 @@ def test_gk_electromagnetic_fidelity_report_gates_em_separately() -> None:
     assert report["locally_actionable_contract_ready"] is True
 
 
+def test_gk_electromagnetic_fidelity_report_declares_maxwell_evolution_contract() -> None:
+    report = run_benchmark()
+
+    contract = report["maxwell_evolution_contract"]
+    assert contract["native_field_evolution_mode"] == "compact_algebraic_Apar_Bpar_closure"
+    assert contract["full_vlasov_maxwell_parity_ready"] is False
+    equations = {equation["equation_id"]: equation for equation in contract["equations"]}
+    assert equations["faraday_induction"]["implemented_by_native_solver"] is False
+    assert equations["ampere_maxwell_displacement_current"]["implemented_by_native_solver"] is False
+    assert equations["inductive_parallel_electric_field"]["implemented_by_native_solver"] is False
+    assert equations["compact_parallel_ampere_closure"]["compact_closure_ready"] is True
+    assert (
+        equations["compact_perpendicular_pressure_balance_closure"]["compact_closure_ready"] is True
+    )
+    assert contract["blocking_equation_ids"] == [
+        "faraday_induction",
+        "ampere_maxwell_displacement_current",
+        "inductive_parallel_electric_field",
+    ]
+
+
 def test_gk_electromagnetic_fidelity_report_writes_json_and_markdown(tmp_path: Path) -> None:
     report = run_benchmark()
 

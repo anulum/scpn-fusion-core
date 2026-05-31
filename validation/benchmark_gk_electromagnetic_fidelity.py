@@ -52,6 +52,64 @@ OMITTED_PHYSICS = [
 ]
 
 
+def _maxwell_evolution_contract(*, compact_closure_ready: bool) -> dict[str, Any]:
+    """Return the fail-closed full-Maxwell equation implementation contract."""
+    equations = [
+        {
+            "compact_closure_ready": False,
+            "equation_id": "faraday_induction",
+            "equation": "dB/dt = -curl(E)",
+            "implemented_by_native_solver": False,
+            "native_status": "missing_time_evolved_magnetic_field",
+            "required_for_full_vlasov_maxwell": True,
+        },
+        {
+            "compact_closure_ready": False,
+            "equation_id": "ampere_maxwell_displacement_current",
+            "equation": "curl(B) = mu0 J + mu0 eps0 dE/dt",
+            "implemented_by_native_solver": False,
+            "native_status": "missing_displacement_current_evolution",
+            "required_for_full_vlasov_maxwell": True,
+        },
+        {
+            "compact_closure_ready": False,
+            "equation_id": "inductive_parallel_electric_field",
+            "equation": "E_parallel = -grad_parallel(phi) - dA_parallel/dt",
+            "implemented_by_native_solver": False,
+            "native_status": "missing_self_consistent_inductive_parallel_e_field",
+            "required_for_full_vlasov_maxwell": True,
+        },
+        {
+            "compact_closure_ready": compact_closure_ready,
+            "equation_id": "compact_parallel_ampere_closure",
+            "equation": "A_parallel from compact parallel Ampere closure",
+            "implemented_by_native_solver": compact_closure_ready,
+            "native_status": "implemented_as_algebraic_closure_not_maxwell_evolution",
+            "required_for_full_vlasov_maxwell": False,
+        },
+        {
+            "compact_closure_ready": compact_closure_ready,
+            "equation_id": "compact_perpendicular_pressure_balance_closure",
+            "equation": "B_parallel from perpendicular pressure-balance closure",
+            "implemented_by_native_solver": compact_closure_ready,
+            "native_status": "implemented_as_algebraic_closure_not_maxwell_evolution",
+            "required_for_full_vlasov_maxwell": False,
+        },
+    ]
+    blocking_equation_ids = [
+        str(equation["equation_id"])
+        for equation in equations
+        if equation["required_for_full_vlasov_maxwell"]
+        and not equation["implemented_by_native_solver"]
+    ]
+    return {
+        "blocking_equation_ids": blocking_equation_ids,
+        "equations": equations,
+        "full_vlasov_maxwell_parity_ready": not blocking_equation_ids,
+        "native_field_evolution_mode": "compact_algebraic_Apar_Bpar_closure",
+    }
+
+
 def _config(*, electromagnetic: bool) -> NonlinearGKConfig:
     return NonlinearGKConfig(
         n_kx=4,
@@ -126,6 +184,7 @@ def run_benchmark() -> dict[str, Any]:
     electrostatic_gate = _run_gate(electromagnetic=False, seed=211)
     electromagnetic_gate = _run_gate(electromagnetic=True, seed=223)
     compact_ready = bool(electromagnetic_gate["compact_closure_ready"])
+    maxwell_contract = _maxwell_evolution_contract(compact_closure_ready=compact_ready)
     status = (
         "blocked_missing_full_vlasov_maxwell_field_solve"
         if compact_ready
@@ -143,6 +202,7 @@ def run_benchmark() -> dict[str, Any]:
         "electrostatic_gate": electrostatic_gate,
         "external_em_parity_comparison_ready": False,
         "locally_actionable_contract_ready": compact_ready,
+        "maxwell_evolution_contract": maxwell_contract,
         "missing_full_fidelity_requirements": [
             "full Faraday/displacement-current Maxwell field evolution",
             "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
@@ -195,6 +255,32 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
     lines.extend(["", "## Omitted physics", ""])
     for item in report["omitted_physics"]:
         lines.append(f"- {item}")
+    lines.extend(["", "## Maxwell evolution contract", ""])
+    contract = report["maxwell_evolution_contract"]
+    lines.append(f"- Native field-evolution mode: `{contract['native_field_evolution_mode']}`")
+    lines.append(
+        f"- Full Vlasov-Maxwell parity ready: `{contract['full_vlasov_maxwell_parity_ready']}`"
+    )
+    lines.append(
+        "- Blocking equation ids: "
+        + ", ".join(f"`{item}`" for item in contract["blocking_equation_ids"])
+    )
+    lines.extend(
+        [
+            "",
+            "| Equation id | Implemented | Compact closure | Native status |",
+            "|---|:---:|:---:|---|",
+        ]
+    )
+    for equation in contract["equations"]:
+        lines.append(
+            "| {equation_id} | `{implemented}` | `{compact}` | {status} |".format(
+                compact=equation["compact_closure_ready"],
+                equation_id=equation["equation_id"],
+                implemented=equation["implemented_by_native_solver"],
+                status=equation["native_status"],
+            )
+        )
     lines.extend(["", "## Missing full-fidelity requirements", ""])
     for item in report["missing_full_fidelity_requirements"]:
         lines.append(f"- {item}")

@@ -21,6 +21,20 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - self-consistent inductive parallel electric field evolution
 - external same-deck electromagnetic GENE/CGYRO/GS2 output parity
 
+## Maxwell evolution contract
+
+- Native field-evolution mode: `compact_algebraic_Apar_Bpar_closure`
+- Full Vlasov-Maxwell parity ready: `False`
+- Blocking equation ids: `faraday_induction`, `ampere_maxwell_displacement_current`, `inductive_parallel_electric_field`
+
+| Equation id | Implemented | Compact closure | Native status |
+|---|:---:|:---:|---|
+| faraday_induction | `False` | `False` | missing_time_evolved_magnetic_field |
+| ampere_maxwell_displacement_current | `False` | `False` | missing_displacement_current_evolution |
+| inductive_parallel_electric_field | `False` | `False` | missing_self_consistent_inductive_parallel_e_field |
+| compact_parallel_ampere_closure | `True` | `True` | implemented_as_algebraic_closure_not_maxwell_evolution |
+| compact_perpendicular_pressure_balance_closure | `True` | `True` | implemented_as_algebraic_closure_not_maxwell_evolution |
+
 ## Missing full-fidelity requirements
 
 - full Faraday/displacement-current Maxwell field evolution

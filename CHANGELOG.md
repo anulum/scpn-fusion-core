@@ -28,6 +28,10 @@
 - Required nonlinear GK grid-convergence and production-scaling evidence rows to
   reference the converted same-case solver-family output rows.
 
+- Added a machine-readable electromagnetic GK Maxwell equation contract that
+  distinguishes compact algebraic `A_parallel`/`B_parallel` closures from
+  missing Faraday, displacement-current, and inductive parallel-field evolution.
+
 - Added disruption contract primitives, mitigation contracts, and replay contracts to the configured global mypy strict cohort with a typed reactor-design evaluation boundary.
 
 - Added the real-time density-profile controller to the configured global mypy strict cohort with explicit radial-profile array contracts.
