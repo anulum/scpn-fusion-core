@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added local source-free spectral Maxwell evolution evidence for Faraday
+  induction, Ampere-Maxwell displacement current, and inductive parallel
+  electric-field diagnostics while keeping self-consistent 5D kinetic current
+  coupling and external electromagnetic parity fail-closed.
+
 - Added production-decomposition same-physics shape-convergence evidence across
   `4x2`, `8x1`, and `2x4` local radial/toroidal rank shapes, with true
   owned-tile reductions and fail-closed distributed MPI/multi-GPU scaling

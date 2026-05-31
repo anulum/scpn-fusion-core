@@ -8,10 +8,11 @@
 """Fail-closed electromagnetic nonlinear GK fidelity gate.
 
 The native nonlinear GK path currently implements compact algebraic
-``A_parallel`` and ``B_parallel`` closures. This benchmark verifies those
-closures and their field-energy histories separately from electrostatic GK
-runs, then keeps full Vlasov-Maxwell parity blocked until same-deck
-electromagnetic GENE/CGYRO/GS2 outputs and Maxwell evolution evidence exist.
+``A_parallel`` and ``B_parallel`` closures plus a local source-free spectral
+Maxwell field-evolution contract. This benchmark verifies those contracts
+separately from electrostatic GK runs, then keeps full Vlasov-Maxwell parity
+blocked until the Maxwell fields are coupled to 5D kinetic current moments and
+same-deck electromagnetic GENE/CGYRO/GS2 outputs are compared.
 """
 
 from __future__ import annotations
@@ -23,12 +24,17 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from scpn_fusion.core.gk_maxwell_evolution import (
+    MaxwellEvolutionConfig,
+    run_local_maxwell_evolution,
+)
 from scpn_fusion.core.gk_nonlinear import NonlinearGKConfig, NonlinearGKSolver
 
 REPORT_DIR = ROOT / "validation" / "reports"
@@ -45,12 +51,10 @@ REQUIRED_EXTERNAL_OBSERVABLES = [
     "nonlinear_distribution_function_imag",
 ]
 OMITTED_PHYSICS = [
-    "Faraday induction equation for evolving B",
-    "displacement-current Ampere-Maxwell evolution",
-    "self-consistent inductive parallel electric field evolution",
+    "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
     "external same-deck electromagnetic GENE/CGYRO/GS2 output parity",
 ]
-GRID_CONVERGENCE_CASES = [
+GRID_CONVERGENCE_CASES: list[dict[str, int | str]] = [
     {"case_id": "compact_em_4x4x8", "n_kx": 4, "n_ky": 4, "n_theta": 8},
     {"case_id": "compact_em_6x6x10", "n_kx": 6, "n_ky": 6, "n_theta": 10},
     {"case_id": "compact_em_8x8x12", "n_kx": 8, "n_ky": 8, "n_theta": 12},
@@ -58,31 +62,54 @@ GRID_CONVERGENCE_CASES = [
 GRID_CONVERGENCE_RELATIVE_ENERGY_TOLERANCE = 5.0e-1
 
 
-def _maxwell_evolution_contract(*, compact_closure_ready: bool) -> dict[str, Any]:
+def _maxwell_evolution_contract(
+    *, compact_closure_ready: bool, maxwell_evolution_evidence: dict[str, Any]
+) -> dict[str, Any]:
     """Return the fail-closed full-Maxwell equation implementation contract."""
+    faraday_ready = bool(maxwell_evolution_evidence["faraday_induction_supported"])
+    ampere_ready = bool(maxwell_evolution_evidence["ampere_maxwell_displacement_current_supported"])
+    inductive_ready = bool(
+        maxwell_evolution_evidence["inductive_parallel_electric_field_supported"]
+    )
     equations = [
         {
             "compact_closure_ready": False,
             "equation_id": "faraday_induction",
             "equation": "dB/dt = -curl(E)",
-            "implemented_by_native_solver": False,
-            "native_status": "missing_time_evolved_magnetic_field",
+            "implemented_by_native_solver": faraday_ready,
+            "native_status": "implemented_as_local_source_free_spectral_field_evolution",
             "required_for_full_vlasov_maxwell": True,
         },
         {
             "compact_closure_ready": False,
             "equation_id": "ampere_maxwell_displacement_current",
             "equation": "curl(B) = mu0 J + mu0 eps0 dE/dt",
-            "implemented_by_native_solver": False,
-            "native_status": "missing_displacement_current_evolution",
+            "implemented_by_native_solver": ampere_ready,
+            "native_status": "implemented_as_local_source_free_spectral_field_evolution",
             "required_for_full_vlasov_maxwell": True,
         },
         {
             "compact_closure_ready": False,
             "equation_id": "inductive_parallel_electric_field",
             "equation": "E_parallel = -grad_parallel(phi) - dA_parallel/dt",
+            "implemented_by_native_solver": inductive_ready,
+            "native_status": "implemented_as_local_source_free_spectral_field_evolution",
+            "required_for_full_vlasov_maxwell": True,
+        },
+        {
+            "compact_closure_ready": False,
+            "equation_id": "self_consistent_kinetic_current_coupling",
+            "equation": "J_parallel and perpendicular current moments from evolved 5D distribution",
             "implemented_by_native_solver": False,
-            "native_status": "missing_self_consistent_inductive_parallel_e_field",
+            "native_status": "missing_self_consistent_5d_kinetic_current_coupling",
+            "required_for_full_vlasov_maxwell": True,
+        },
+        {
+            "compact_closure_ready": False,
+            "equation_id": "same_deck_external_em_parity",
+            "equation": "same-deck phi/A_parallel/B_parallel comparison to GENE/CGYRO/GS2",
+            "implemented_by_native_solver": False,
+            "native_status": "missing_external_same_deck_em_outputs_and_thresholds",
             "required_for_full_vlasov_maxwell": True,
         },
         {
@@ -112,7 +139,7 @@ def _maxwell_evolution_contract(*, compact_closure_ready: bool) -> dict[str, Any
         "blocking_equation_ids": blocking_equation_ids,
         "equations": equations,
         "full_vlasov_maxwell_parity_ready": not blocking_equation_ids,
-        "native_field_evolution_mode": "compact_algebraic_Apar_Bpar_closure",
+        "native_field_evolution_mode": "local_spectral_maxwell_evolution",
     }
 
 
@@ -207,7 +234,7 @@ def _grid_convergence_config(*, n_kx: int, n_ky: int, n_theta: int) -> Nonlinear
     )
 
 
-def _relative_drift(values: np.ndarray) -> float:
+def _relative_drift(values: NDArray[np.float64]) -> float:
     """Return max relative drift from the first finite history value."""
     if values.size == 0:
         return float("inf")
@@ -327,6 +354,14 @@ def _run_grid_convergence_evidence() -> dict[str, Any]:
     }
 
 
+def _run_maxwell_evolution_evidence() -> dict[str, Any]:
+    """Run native source-free Maxwell evolution evidence for the EM gate."""
+    result = run_local_maxwell_evolution(
+        MaxwellEvolutionConfig(n_kx=6, n_ky=6, n_steps=16, dt=1.0e-12, seed=311)
+    )
+    return result.to_evidence()
+
+
 def run_benchmark() -> dict[str, Any]:
     """Run the local compact-EM gate and return fail-closed parity status."""
     electrostatic_gate = _run_gate(electromagnetic=False, seed=211)
@@ -334,10 +369,17 @@ def run_benchmark() -> dict[str, Any]:
     compact_ready = bool(electromagnetic_gate["compact_closure_ready"])
     grid_convergence_evidence = _run_grid_convergence_evidence()
     grid_convergence_ready = bool(grid_convergence_evidence["grid_convergence_ready"])
-    maxwell_contract = _maxwell_evolution_contract(compact_closure_ready=compact_ready)
+    maxwell_evolution_evidence = _run_maxwell_evolution_evidence()
+    maxwell_evolution_ready = bool(
+        maxwell_evolution_evidence["status"] == "accepted_local_source_free_maxwell_evolution"
+    )
+    maxwell_contract = _maxwell_evolution_contract(
+        compact_closure_ready=compact_ready,
+        maxwell_evolution_evidence=maxwell_evolution_evidence,
+    )
     status = (
-        "blocked_missing_full_vlasov_maxwell_field_solve"
-        if compact_ready and grid_convergence_ready
+        "blocked_missing_external_em_parity_outputs"
+        if compact_ready and grid_convergence_ready and maxwell_evolution_ready
         else "blocked_compact_electromagnetic_contract_failed"
     )
     return {
@@ -353,10 +395,13 @@ def run_benchmark() -> dict[str, Any]:
         "electromagnetic_grid_convergence_ready": grid_convergence_ready,
         "electrostatic_gate": electrostatic_gate,
         "external_em_parity_comparison_ready": False,
-        "locally_actionable_contract_ready": compact_ready and grid_convergence_ready,
+        "locally_actionable_contract_ready": (
+            compact_ready and grid_convergence_ready and maxwell_evolution_ready
+        ),
         "maxwell_evolution_contract": maxwell_contract,
+        "maxwell_evolution_evidence": maxwell_evolution_evidence,
         "missing_full_fidelity_requirements": [
-            "full Faraday/displacement-current Maxwell field evolution",
+            "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
             "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
             "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
             "same-deck external electromagnetic grid-convergence evidence",
@@ -439,6 +484,42 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
                 n_mu=shape["n_mu"],
             )
         )
+    maxwell_evidence = report["maxwell_evolution_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Local Maxwell evolution evidence",
+            "",
+            f"- Schema: `{maxwell_evidence['schema']}`",
+            f"- Status: `{maxwell_evidence['status']}`",
+            (f"- Faraday induction supported: `{maxwell_evidence['faraday_induction_supported']}`"),
+            (
+                "- Ampere-Maxwell displacement current supported: "
+                f"`{maxwell_evidence['ampere_maxwell_displacement_current_supported']}`"
+            ),
+            (
+                "- Inductive parallel electric field supported: "
+                f"`{maxwell_evidence['inductive_parallel_electric_field_supported']}`"
+            ),
+            (
+                "- Self-consistent kinetic current supported: "
+                f"`{maxwell_evidence['self_consistent_kinetic_current_supported']}`"
+            ),
+            (
+                "- Max relative total-field-energy drift: "
+                f"`{maxwell_evidence['max_relative_total_field_energy_drift']:.6e}`"
+            ),
+            (f"- Max Faraday residual: `{maxwell_evidence['max_faraday_linf_residual']:.6e}`"),
+            (
+                "- Max Ampere-Maxwell residual: "
+                f"`{maxwell_evidence['max_ampere_maxwell_linf_residual']:.6e}`"
+            ),
+            (
+                "- Max inductive parallel electric-field residual: "
+                f"`{maxwell_evidence['max_inductive_e_parallel_linf_residual']:.6e}`"
+            ),
+        ]
+    )
     lines.extend(["", "## Omitted physics", ""])
     for item in report["omitted_physics"]:
         lines.append(f"- {item}")

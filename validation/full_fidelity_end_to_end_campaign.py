@@ -370,6 +370,15 @@ def run_campaign() -> dict[str, Any]:
         "gk_electromagnetic_grid_convergence_ready": bool(
             gk_electromagnetic_fidelity["electromagnetic_grid_convergence_ready"]
         ),
+        "gk_electromagnetic_maxwell_evolution_ready": bool(
+            gk_electromagnetic_fidelity["maxwell_evolution_evidence"]["status"]
+            == "accepted_local_source_free_maxwell_evolution"
+        ),
+        "gk_electromagnetic_self_consistent_kinetic_current_ready": bool(
+            gk_electromagnetic_fidelity["maxwell_evolution_evidence"][
+                "self_consistent_kinetic_current_supported"
+            ]
+        ),
         "gk_electromagnetic_external_parity_ready": bool(
             gk_electromagnetic_fidelity["external_em_parity_comparison_ready"]
         ),
@@ -468,6 +477,14 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- GK electromagnetic grid convergence ready: "
             f"`{report['gk_electromagnetic_grid_convergence_ready']}`"
+        ),
+        (
+            "- GK electromagnetic Maxwell evolution ready: "
+            f"`{report['gk_electromagnetic_maxwell_evolution_ready']}`"
+        ),
+        (
+            "- GK electromagnetic self-consistent kinetic current ready: "
+            f"`{report['gk_electromagnetic_self_consistent_kinetic_current_ready']}`"
         ),
         (
             "- GK electromagnetic external parity ready: "

@@ -17,7 +17,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Lane | Current status | Reproducibility command |
 |---|---|---|
 | GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons | `python validation/full_fidelity_end_to_end_campaign.py` |
-| Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure and local compact-EM grid-convergence evidence pass; full Faraday/displacement-current Vlasov-Maxwell parity does not | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
+| Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, and local compact-EM grid-convergence evidence pass; self-consistent 5D kinetic current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence exists, PETSc/compiled `dreami` backend output is missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact exists, full radial transport parity is missing | `python tools/run_aurora_reference_artifact.py` |
@@ -939,13 +939,18 @@ deck hashes are now tracked, but external nonlinear outputs and native same-case
 comparisons remain required. The electromagnetic case now also reports compact
 Ampere `A_parallel` and perpendicular pressure-balance `B_parallel` residual
 histories through `validation/reports/gk_electromagnetic_fidelity.md`; these
-prove internal algebraic-closure consistency only, not full
-Faraday/displacement-current Vlasov-Maxwell parity. The report includes a
-machine-readable Maxwell equation contract that marks Faraday induction,
-displacement-current Ampere-Maxwell evolution, and self-consistent inductive
-parallel electric-field evolution as blocking requirements until implemented
-and externally compared. The same report now includes local compact-EM
-grid-convergence evidence for algebraic field-energy histories over
+prove internal algebraic-closure consistency and are gated separately from the
+local source-free Maxwell evolution evidence. The report includes a
+machine-readable Maxwell equation contract and native source-free spectral
+Faraday, Ampere-Maxwell displacement-current, and inductive parallel electric
+field evolution diagnostics. Full Vlasov-Maxwell parity remains blocked until
+those fields are coupled to self-consistent 5D kinetic current moments and
+same-deck electromagnetic GENE/CGYRO/GS2 outputs. The latest local Maxwell
+evolution evidence reports maximum relative total-field-energy drift
+`5.090958569120036e-16` with zero Faraday, Ampere-Maxwell, and inductive
+parallel electric-field residuals under tolerance `1.0e-12`. The same report
+now includes local compact-EM grid-convergence evidence for algebraic
+field-energy histories over
 `4x4x8x5x4`, `6x6x10x5x4`, and `8x8x12x5x4` retained
 `kx x ky x theta x vpar x mu` grids. The latest local benchmark status is
 `accepted_local_compact_em_grid_convergence`, with maximum relative
@@ -1013,8 +1018,10 @@ For nonlinear GK, the native artifact keeps the full species/kx/ky/theta/vpar/mu
 distribution grid and serializes the complex spectral state as required real
 and imaginary distribution components; it does not collapse the comparison to a
 magnitude, heat-flux-only, or saturation-only diagnostic. Electromagnetic GK is
-gated separately from electrostatic GK and requires phi, `A_parallel`, and
-`B_parallel` field-energy histories for future GENE/CGYRO/GS2 same-case parity.
+gated separately from electrostatic GK and now carries local source-free
+Faraday/Ampere-Maxwell evolution evidence while still requiring phi,
+`A_parallel`, and `B_parallel` field-energy histories for future GENE/CGYRO/GS2
+same-case parity.
 The production-scale lane now distinguishes a passing decomposition contract
 and executable local rank-tile reductions from actual distributed runtime
 readiness: `production_scale_ready` remains false until MPI or multi-GPU

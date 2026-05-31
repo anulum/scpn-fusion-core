@@ -25,8 +25,10 @@
   "gk_electromagnetic_compact_closure_ready": true,
   "gk_electromagnetic_external_parity_ready": false,
   "gk_electromagnetic_fidelity_report": "validation/reports/gk_electromagnetic_fidelity.json",
-  "gk_electromagnetic_fidelity_status": "blocked_missing_full_vlasov_maxwell_field_solve",
+  "gk_electromagnetic_fidelity_status": "blocked_missing_external_em_parity_outputs",
   "gk_electromagnetic_grid_convergence_ready": true,
+  "gk_electromagnetic_maxwell_evolution_ready": true,
+  "gk_electromagnetic_self_consistent_kinetic_current_ready": false,
   "gk_external_nonlinear_parity_report": "validation/reports/gk_external_nonlinear_parity.json",
   "gk_external_nonlinear_parity_status": "blocked_missing_external_output_manifest",
   "gk_external_reference_artifacts_converted": 0,
@@ -100,7 +102,7 @@
       "lane": "full_maxwell_electromagnetic_fidelity",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "full Faraday/displacement-current Maxwell field evolution",
+        "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
         "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
         "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
         "same-deck external electromagnetic grid-convergence evidence"
@@ -146,7 +148,7 @@
           "surface": "native_nonlinear_gyrokinetics"
         }
       ],
-      "status": "blocked_missing_full_vlasov_maxwell_field_solve",
+      "status": "blocked_missing_external_em_parity_outputs",
       "surface": "native_nonlinear_gyrokinetics"
     },
     {
@@ -155,7 +157,7 @@
       "next_required_evidence": [
         "MPI or multi-GPU distributed execution path over the declared rank tiles",
         "large-grid cluster/GPU wall-time scaling report",
-        "same-physics convergence evidence across distributed decomposition shapes",
+        "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
         "hardware-specific multi-rank throughput and efficiency thresholds"
       ],
       "reference_cases_ready": false,

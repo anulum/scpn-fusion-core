@@ -248,17 +248,20 @@ Those residuals are now also exported as nonlinear GK time histories and gated
 separately from electrostatic GK in
 [`validation/reports/gk_electromagnetic_fidelity.md`](validation/reports/gk_electromagnetic_fidelity.md).
 They verify the native compact `A_parallel`/`B_parallel` closure, but they are
-explicitly not full Faraday/displacement-current Vlasov-Maxwell parity.
-The report now includes a machine-readable Maxwell equation contract that marks
-Faraday induction, displacement-current Ampere-Maxwell evolution, and
-self-consistent inductive parallel electric-field evolution as blocking
-requirements until implemented and externally compared.
+explicitly not same-deck external Vlasov-Maxwell parity.
+The report now includes a machine-readable Maxwell equation contract and local
+source-free spectral Maxwell evolution evidence for Faraday induction,
+displacement-current Ampere-Maxwell evolution, and the inductive parallel
+electric-field relation. The latest local Maxwell evidence reports maximum
+relative total-field-energy drift `5.090958569120036e-16` with zero Faraday,
+Ampere-Maxwell, and inductive parallel electric-field residuals under tolerance
+`1.0e-12`.
 It also records local compact-EM grid-convergence evidence for the algebraic
 field-energy histories across `4x4x8`, `6x6x10`, and `8x8x12` spectral/theta
 grids. The latest local run passes that compact-grid contract with maximum
 relative total-energy drift `5.494182e-03` under tolerance `5.0e-01`, while
-full Vlasov-Maxwell parity remains blocked on the missing Maxwell evolution
-equations and same-deck external electromagnetic outputs.
+full Vlasov-Maxwell parity remains blocked on self-consistent 5D kinetic
+current coupling and same-deck external electromagnetic outputs.
 Production-scale decomposition now has a deterministic radial/toroidal
 partition contract in
 [`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).

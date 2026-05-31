@@ -45,11 +45,12 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         == "validation/reports/gk_electromagnetic_fidelity.json"
     )
     assert (
-        report["gk_electromagnetic_fidelity_status"]
-        == "blocked_missing_full_vlasov_maxwell_field_solve"
+        report["gk_electromagnetic_fidelity_status"] == "blocked_missing_external_em_parity_outputs"
     )
     assert report["gk_electromagnetic_compact_closure_ready"] is True
     assert report["gk_electromagnetic_grid_convergence_ready"] is True
+    assert report["gk_electromagnetic_maxwell_evolution_ready"] is True
+    assert report["gk_electromagnetic_self_consistent_kinetic_current_ready"] is False
     assert report["gk_electromagnetic_external_parity_ready"] is False
     assert report["gk_external_reference_artifacts_converted"] >= 0
     assert report["gk_external_reference_output_ready"] in {True, False}

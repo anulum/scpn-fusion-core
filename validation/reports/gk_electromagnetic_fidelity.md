@@ -3,7 +3,7 @@
 Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel/B_parallel diagnostics are local readiness evidence only, not full Vlasov-Maxwell parity.
 
 - Schema: `gk-electromagnetic-fidelity.v1`
-- Status: `blocked_missing_full_vlasov_maxwell_field_solve`
+- Status: `blocked_missing_external_em_parity_outputs`
 - Compact EM contract ready: `True`
 - External EM parity comparison ready: `False`
 
@@ -28,30 +28,43 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 | compact_em_6x6x10 | `6x6x10x5x4` | `True` | `True` | 4.761628e-03 |
 | compact_em_8x8x12 | `8x8x12x5x4` | `True` | `True` | 5.494182e-03 |
 
+## Local Maxwell evolution evidence
+
+- Schema: `gk-maxwell-evolution.v1`
+- Status: `accepted_local_source_free_maxwell_evolution`
+- Faraday induction supported: `True`
+- Ampere-Maxwell displacement current supported: `True`
+- Inductive parallel electric field supported: `True`
+- Self-consistent kinetic current supported: `False`
+- Max relative total-field-energy drift: `5.090959e-16`
+- Max Faraday residual: `0.000000e+00`
+- Max Ampere-Maxwell residual: `0.000000e+00`
+- Max inductive parallel electric-field residual: `0.000000e+00`
+
 ## Omitted physics
 
-- Faraday induction equation for evolving B
-- displacement-current Ampere-Maxwell evolution
-- self-consistent inductive parallel electric field evolution
+- self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop
 - external same-deck electromagnetic GENE/CGYRO/GS2 output parity
 
 ## Maxwell evolution contract
 
-- Native field-evolution mode: `compact_algebraic_Apar_Bpar_closure`
+- Native field-evolution mode: `local_spectral_maxwell_evolution`
 - Full Vlasov-Maxwell parity ready: `False`
-- Blocking equation ids: `faraday_induction`, `ampere_maxwell_displacement_current`, `inductive_parallel_electric_field`
+- Blocking equation ids: `self_consistent_kinetic_current_coupling`, `same_deck_external_em_parity`
 
 | Equation id | Implemented | Compact closure | Native status |
 |---|:---:|:---:|---|
-| faraday_induction | `False` | `False` | missing_time_evolved_magnetic_field |
-| ampere_maxwell_displacement_current | `False` | `False` | missing_displacement_current_evolution |
-| inductive_parallel_electric_field | `False` | `False` | missing_self_consistent_inductive_parallel_e_field |
+| faraday_induction | `True` | `False` | implemented_as_local_source_free_spectral_field_evolution |
+| ampere_maxwell_displacement_current | `True` | `False` | implemented_as_local_source_free_spectral_field_evolution |
+| inductive_parallel_electric_field | `True` | `False` | implemented_as_local_source_free_spectral_field_evolution |
+| self_consistent_kinetic_current_coupling | `False` | `False` | missing_self_consistent_5d_kinetic_current_coupling |
+| same_deck_external_em_parity | `False` | `False` | missing_external_same_deck_em_outputs_and_thresholds |
 | compact_parallel_ampere_closure | `True` | `True` | implemented_as_algebraic_closure_not_maxwell_evolution |
 | compact_perpendicular_pressure_balance_closure | `True` | `True` | implemented_as_algebraic_closure_not_maxwell_evolution |
 
 ## Missing full-fidelity requirements
 
-- full Faraday/displacement-current Maxwell field evolution
+- self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop
 - same-deck electromagnetic GENE/CGYRO/GS2 output artifacts
 - native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds
 - same-deck external electromagnetic grid-convergence evidence
