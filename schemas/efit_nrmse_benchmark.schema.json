@@ -422,8 +422,12 @@
           "declared_toroidal_current_A",
           "operator_toroidal_current_A",
           "profile_toroidal_current_A",
+          "pressure_toroidal_current_A",
+          "ffprime_toroidal_current_A",
           "operator_current_ratio_to_declared",
           "profile_current_ratio_to_declared",
+          "pressure_current_ratio_to_declared",
+          "ffprime_current_ratio_to_declared",
           "operator_current_relative_error",
           "profile_current_relative_error",
           "operator_current_closure_pass",
@@ -705,10 +709,22 @@
           "profile_toroidal_current_A": {
             "type": "number"
           },
+          "pressure_toroidal_current_A": {
+            "type": "number"
+          },
+          "ffprime_toroidal_current_A": {
+            "type": "number"
+          },
           "operator_current_ratio_to_declared": {
             "type": "number"
           },
           "profile_current_ratio_to_declared": {
+            "type": "number"
+          },
+          "pressure_current_ratio_to_declared": {
+            "type": "number"
+          },
+          "ffprime_current_ratio_to_declared": {
             "type": "number"
           },
           "operator_current_relative_error": {

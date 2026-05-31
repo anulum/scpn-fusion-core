@@ -436,6 +436,11 @@ class TestToroidalCurrentConsistency:
         assert isinstance(metrics["profile_current_closure_pass"], bool)
         assert np.isfinite(metrics["operator_current_ratio_to_declared"])
         assert np.isfinite(metrics["profile_current_ratio_to_declared"])
+        assert np.isfinite(metrics["pressure_current_ratio_to_declared"])
+        assert np.isfinite(metrics["ffprime_current_ratio_to_declared"])
+        assert metrics["profile_toroidal_current_A"] == pytest.approx(
+            metrics["pressure_toroidal_current_A"] + metrics["ffprime_toroidal_current_A"]
+        )
         assert metrics["profile_current_closure_failure_class"] in {
             "passes_threshold",
             "profile_current_under_closes_declared_current",
@@ -770,8 +775,12 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                pressure_toroidal_current_A=-0.6e6,
+                ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
                 profile_current_ratio_to_declared=0.99,
+                pressure_current_ratio_to_declared=0.4,
+                ffprime_current_ratio_to_declared=0.59,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.01,
                 operator_current_closure_pass=True,
@@ -1021,8 +1030,12 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                pressure_toroidal_current_A=-0.6e6,
+                ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
                 profile_current_ratio_to_declared=0.1724,
+                pressure_current_ratio_to_declared=0.0690,
+                ffprime_current_ratio_to_declared=0.1034,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.8,
                 operator_current_closure_pass=True,
@@ -1118,8 +1131,12 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                pressure_toroidal_current_A=-0.6e6,
+                ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
                 profile_current_ratio_to_declared=0.1724,
+                pressure_current_ratio_to_declared=0.0690,
+                ffprime_current_ratio_to_declared=0.1034,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.8,
                 operator_current_closure_pass=True,
@@ -1211,8 +1228,12 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                pressure_toroidal_current_A=-0.6e6,
+                ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
                 profile_current_ratio_to_declared=0.1724,
+                pressure_current_ratio_to_declared=0.0690,
+                ffprime_current_ratio_to_declared=0.1034,
                 operator_current_relative_error=5.0e-5,
                 profile_current_relative_error=0.8,
                 operator_current_closure_pass=True,

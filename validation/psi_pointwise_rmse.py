@@ -155,6 +155,10 @@ class PsiRMSEResult:
     total_source_sum: float = float("nan")
     pressure_source_fraction: float = float("nan")
     ffprime_source_fraction: float = float("nan")
+    pressure_toroidal_current_A: float = float("nan")
+    ffprime_toroidal_current_A: float = float("nan")
+    pressure_current_ratio_to_declared: float = float("nan")
+    ffprime_current_ratio_to_declared: float = float("nan")
     source_plasma_residual_l2: float = float("nan")
     source_vacuum_residual_l2: float = float("nan")
     source_plasma_operator_norm: float = float("nan")
@@ -703,15 +707,23 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     operator_current = float(np.sum(operator_jphi[1:-1, 1:-1]) * cell_area)
 
     source_components = compute_source_components(eq)
+    pressure_source = np.asarray(source_components["pressure_source"], dtype=np.float64)
+    ffprime_source = np.asarray(source_components["ffprime_source"], dtype=np.float64)
     profile_source = np.asarray(source_components["total_source"], dtype=np.float64)
     plasma_mask = np.asarray(source_components["plasma_mask"], dtype=bool)
+    pressure_jphi = -pressure_source / (mu0 * rr)
+    ffprime_jphi = -ffprime_source / (mu0 * rr)
     profile_jphi = -profile_source / (mu0 * rr)
+    pressure_current = float(np.sum(pressure_jphi[plasma_mask]) * cell_area)
+    ffprime_current = float(np.sum(ffprime_jphi[plasma_mask]) * cell_area)
     profile_current = float(np.sum(profile_jphi[plasma_mask]) * cell_area)
 
     declared_current = float(eq.current)
     scale = max(abs(declared_current), 1.0)
     operator_ratio = abs(operator_current) / scale
     profile_ratio = abs(profile_current) / scale
+    pressure_ratio = abs(pressure_current) / scale
+    ffprime_ratio = abs(ffprime_current) / scale
     operator_error = abs(abs(operator_current) - abs(declared_current)) / scale
     profile_error = abs(abs(profile_current) - abs(declared_current)) / scale
     operator_pass = bool(
@@ -732,8 +744,12 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
         "declared_toroidal_current_A": declared_current,
         "operator_toroidal_current_A": operator_current,
         "profile_toroidal_current_A": profile_current,
+        "pressure_toroidal_current_A": pressure_current,
+        "ffprime_toroidal_current_A": ffprime_current,
         "operator_current_ratio_to_declared": float(operator_ratio),
         "profile_current_ratio_to_declared": float(profile_ratio),
+        "pressure_current_ratio_to_declared": float(pressure_ratio),
+        "ffprime_current_ratio_to_declared": float(ffprime_ratio),
         "operator_current_relative_error": float(operator_error),
         "profile_current_relative_error": float(profile_error),
         "operator_current_closure_pass": operator_pass,
@@ -1560,11 +1576,19 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         declared_toroidal_current_A=float(current_consistency["declared_toroidal_current_A"]),
         operator_toroidal_current_A=float(current_consistency["operator_toroidal_current_A"]),
         profile_toroidal_current_A=float(current_consistency["profile_toroidal_current_A"]),
+        pressure_toroidal_current_A=float(current_consistency["pressure_toroidal_current_A"]),
+        ffprime_toroidal_current_A=float(current_consistency["ffprime_toroidal_current_A"]),
         operator_current_ratio_to_declared=float(
             current_consistency["operator_current_ratio_to_declared"]
         ),
         profile_current_ratio_to_declared=float(
             current_consistency["profile_current_ratio_to_declared"]
+        ),
+        pressure_current_ratio_to_declared=float(
+            current_consistency["pressure_current_ratio_to_declared"]
+        ),
+        ffprime_current_ratio_to_declared=float(
+            current_consistency["ffprime_current_ratio_to_declared"]
         ),
         operator_current_relative_error=float(
             current_consistency["operator_current_relative_error"]

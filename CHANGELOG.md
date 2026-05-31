@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added EFIT/GEQDSK pressure and FFprime toroidal-current contribution diagnostics for profile-source current closure attribution.
+
 - Added aggregate EFIT/GEQDSK profile-current failure-class counts to expose current-closure failure mode distribution without row scanning.
 
 - Added EFIT/GEQDSK current-ratio and profile-current failure-class diagnostics to make profile-source current closure failures row-actionable.
