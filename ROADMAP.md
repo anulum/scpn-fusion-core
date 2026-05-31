@@ -1,22 +1,23 @@
 # Roadmap
 
-> Last updated: 2026-05-27. This roadmap reflects current priorities and may
+> Last updated: 2026-05-31. This roadmap reflects current priorities and may
 > change based on community feedback and validation results.
 
 Execution detail: maintained in local-only governance notes (not exposed in public docs).
 
-## Current Snapshot (2026-05-27)
+## Current Snapshot (2026-05-31)
 
 | Area | Current State | Tracking / Gate |
 |---|---|---|
-| Source modules | **277 Python files**, 73,552 lines | `src/scpn_fusion/` |
-| Tests | **3,817 tests** (382 test files) | `pytest tests/ -v` |
-| Internal readiness queue | Maintained in local-only governance notes | Local-only governance gate |
+| Source modules | **263 capability source modules** in the generated public inventory | `tools/capability_manifest.py` |
+| Tests | **3,817 tests** and **389 Python test files** in the generated public inventory | `pytest tests/ -v` |
+| Release-readiness governance | Maintained in local-only governance notes; public docs expose only evidence-backed gates | Local-only governance gate |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
 | QLKNN transport surrogate | **test_rel_L2 = 0.094** (GPU L40S, 500K samples, gated 1024×512×256, 911 epochs) | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence (JAX) | **val_rel_L2 = 0.055** (4-layer, modes=24, width=128, 5-channel input, 5000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |
-| Validation pipeline | **24/24 benchmarks passing** (15 legacy + 9 new) | `python validation/collect_results.py` |
-| Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` |
+| Validation pipeline | Legacy/local contract suite is tracked separately from fail-closed production-parity gates | `python validation/collect_results.py` |
+| Full-fidelity campaign | `not_full_fidelity`; local contracts ready, `0` accepted full-fidelity reference artefacts, external parity not ready | `python validation/full_fidelity_end_to_end_campaign.py` |
+| Real-data roadmap progress | 63.8% target completion: 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` |
 | Enterprise hardening | **19/20 sections passing** (branch protection, labels, tool config, Docker healthcheck) | Local-only enterprise hardening criteria |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
 | FreeGS strict parity | Dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` |
@@ -31,6 +32,20 @@ python tools/real_data_roadmap_non_regression_guard.py \
   --progress-json artifacts/real_data_roadmap_progress.json \
   --baseline-json tools/real_data_roadmap_baseline.json
 ```
+
+## Active governance and reproducibility work
+
+These items are public-facing work queues, not acceptance claims:
+
+| Workstream | Current action |
+|---|---|
+| README, changelog, and roadmap consistency | Keep public docs aligned with fail-closed full-fidelity reports and recent FreeGS/DREAM/Aurora/GK hardening commits. |
+| Benchmark reproducibility | Publish exact local commands, hardware metadata expectations, and blocked-row semantics for full-fidelity reports. |
+| Formal verification | Extend the committed Lean 4 safety surface to PID bounded-output and Petri-net-to-SNN reachability preservation. |
+| CI hygiene | Keep benchmark/provenance checks fail-closed and avoid converting blocked production-parity rows into passes. |
+| Dataset and release hygiene | Preserve provenance, checksums, redistribution status, and quantitative thresholds for every accepted reference artefact. |
+| FPGA and control replay | Add deterministic replay evidence before claiming bit-for-bit FPGA/control equivalence. |
+| Public documentation hygiene | Keep local-only planning, readiness queues, and workflow-control notes out of public docs. |
 
 ## Shipped
 
@@ -90,11 +105,13 @@ Runbook: execute `validation/task10_free_boundary_state_estimation_disturbance.p
 | DIII-D disruption shots | 16 reconstructed profiles | Raw MDSplus data (pending GA access) |
 | JET DT campaign | None | 5+ shots (pending EUROfusion access) |
 
-### Reduce internal readiness debt
+### Release readiness governance
 
-Current totals are maintained in local-only governance notes for each hardening
-wave. As of 2026-05-27: **18 total flags**, 8 P0/P1.
-Target for v4.0: resolve all P0/P1 flags, reduce total below 80.
+Detailed readiness queues are local-only governance material. Public release
+docs should expose only evidence-backed gates, reproducible commands, and
+fail-closed blocker classes. Target for v4.0: no public claim without a tracked
+evidence artefact and no production-parity claim while the corresponding
+full-fidelity lane is blocked.
 
 ### Formal verification and outreach
 
@@ -126,7 +143,8 @@ The Petri net -> SNN compiler targets NumPy today. v4.0 adds:
 - [x] Inverse reconstruction mode (bounded coil-current fit to magnetic probes)
 - [x] Strict 10+ file EFIT/GEQDSK ψ_N RMSE benchmark gate with provenance labels and source-attribution diagnostics
 - [x] EFIT source/operator convention diagnostics: source sign/component sweep plus operator flux-span and curvature-variant sweep
-- [ ] Benchmark: NRMSE < 5% against EFIT on 10+ shots
+- [x] Native same-case FreeGS public-example profile-source comparison with `psi_N` RMSE, axis, boundary, X-point, current-closure, and signed-q sanity reporting
+- [ ] Strict benchmark: `psi_N` NRMSE < 5% against public EFIT/FreeGS same-case outputs with grid convergence and public coil/vacuum sidecars
 
 ## v4.1 — Community & Integration (target: Q3 2026)
 

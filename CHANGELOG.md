@@ -10,6 +10,20 @@
 
 ## [Unreleased]
 
+- Aligned public README, roadmap, benchmark, and Sphinx changelog surfaces with
+  the current fail-closed full-fidelity campaign status, reproducibility
+  commands, and public documentation hygiene boundaries.
+
+- Added native same-case FreeGS public-example profile-source comparison
+  documentation for `psi_N` RMSE, magnetic-axis error, boundary error,
+  sampled X-point constraint error, current closure, and finite signed-q sanity
+  while keeping strict free-boundary parity blocked on thresholds, grid
+  convergence, and public coil/vacuum sidecars.
+
+- Documented production-scale decomposition halo exchange and
+  decomposition-invariant inventory/free-energy checks as local contracts while
+  preserving the distributed MPI/multi-GPU scaling blocker.
+
 - Added a strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output
   parity lane that converts redistribution-permitted same-deck outputs into
   tracked NPZ artefacts, validates nonlinear distribution, heat-flux,
@@ -227,7 +241,9 @@
 
 ### Changed
 - Validation governance hardening (Wave A): release preflight now enforces source P0/P1 issue-readiness drift checks and untested-module linkage guard checks.
-- Governance hardening: refreshed the internal readiness queue from the current codebase snapshot and removed stale hard-coded readiness counts from README/ROADMAP/CONTRIBUTING/internal readiness notes.
+- Governance hardening: refreshed local-only release-readiness reporting from
+  the current codebase snapshot and removed stale hard-coded readiness counts
+  from public docs.
 - Security hardening: disruption predictor checkpoint loading now fails closed when `weights_only=True` is unavailable; insecure legacy torch deserialization is opt-in via `SCPN_ALLOW_INSECURE_TORCH_LOAD=1` for trusted checkpoints only.
 - Security hardening: remaining `.npz` loaders in runtime/validation paths now use `allow_pickle=False` and context-managed reads (`tokamak_archive`, `neural_transport`, `fno_turbulence_suppressor`, `fno_jax_training`, `validate_real_shots`, `validate_fno_tglf`, `validate_transport_qlknn`).
 - Runtime hardening: quantum bridge now validates required script presence and fails fast on non-zero subprocess exits instead of silently continuing.

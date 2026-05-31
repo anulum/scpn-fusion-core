@@ -15,8 +15,13 @@ v3.9.5 (Current)
   volt-second manager, RWM feedback, mu-synthesis, detachment/density control
 - **GK three-path architecture**: native linear eigenvalue solver, quasilinear flux,
   5 external GK interfaces, OOD detection, hybrid surrogate validation
-- **Hardening waves**: 263 tasks across 8 waves (S2-S4, H5-H8)
-- **3,817 tests** passing across 382 test files
+- **Full-fidelity campaign**: fail-closed GENE/CGYRO/GS2, full EM, DREAM,
+  Aurora/STRAHL, production-decomposition, and FreeGS strict-parity gates with
+  local contracts ready but external same-case parity still blocked
+- **FreeGS public examples**: native profile-source comparison metrics and
+  finite signed-q sanity are published while strict thresholds, grid
+  convergence, and public coil/vacuum sidecars remain open
+- **3,817 tests** tracked across 389 Python test files in the generated public inventory
 - **Ruff-only formatting** (black eliminated)
 
 v3.1.0

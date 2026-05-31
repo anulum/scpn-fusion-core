@@ -114,7 +114,8 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | SPARC GEQDSK validation | 8 public EFIT equilibria; operator-source gate passes, profile-source/free-boundary reconstruction gate remains open | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
-| Free-boundary equilibrium validation | Public operator-source GEQDSK gate passes; public profile-source/free-boundary gate fails with 4/8 rows needing profile-source repair and 4/8 rows needing coil/vacuum reconstruction | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_vs_freegs.py` |
+| Free-boundary equilibrium validation | Public operator-source GEQDSK gate passes; FreeGS public-example vacuum comparison passes; native same-case profile-source metrics and finite signed-q sanity are published; strict parity remains blocked on thresholds, grid convergence, and public coil/vacuum sidecars | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_freegs_public_example_reconstruction.py` |
+| Full-fidelity end-to-end campaign | `not_full_fidelity`; local contracts ready, `0` accepted full-fidelity reference artefacts, and all six production-parity lanes remain fail-closed until external same-case evidence exists | `validation/reports/full_fidelity_end_to_end_campaign.md` |
 
 Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),
 `control.closed_loop_step_us` (controller loop with explicit surrogate/full
@@ -144,12 +145,13 @@ those solvers.
 ## Honest Scope
 
 This is **not** a replacement for TRANSP, JINTRAC, or GENE. It is a
-**control-algorithm development framework** with reduced-order physics models
-fast enough for real-time loop closure. See
-[`docs/internal readiness notes.md`](docs/internal readiness notes.md) for the full limitations
-assessment, and
-`python tools/generate_claims_evidence_map.py --check` for every claim mapped
-to its evidence artifact.
+**control-algorithm development framework** with explicit fidelity boundaries,
+fast controller-support models, native research solver contracts, and
+fail-closed production-parity gates. See
+[`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md),
+[`validation/reports/full_fidelity_acceptance_benchmark.md`](validation/reports/full_fidelity_acceptance_benchmark.md),
+and `python tools/generate_claims_evidence_map.py --check` for public claim
+evidence.
 
 Top limitations:
 - No GENE/CGYRO-class full nonlinear 5D turbulence campaign in-loop; native nonlinear GK is a bounded NumPy/JAX research solver with explicit invariant benchmarks.
@@ -547,6 +549,9 @@ python validation/validate_real_shots.py        # real-shot gate
 python validation/collect_results.py            # full 15-lane benchmark
 python validation/benchmark_gk_linear.py        # GK eigenvalue benchmark
 PYTHONPATH=src python benchmarks/gk_solver_comparison.py  # nonlinear GK NumPy/JAX comparison
+python validation/benchmark_full_fidelity_acceptance.py    # fail-closed full-fidelity acceptance status
+python validation/full_fidelity_end_to_end_campaign.py     # six-lane production-parity campaign status
+python validation/benchmark_freegs_public_example_reconstruction.py  # FreeGS public-example comparison gate
 ```
 
 </details>
