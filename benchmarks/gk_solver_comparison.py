@@ -110,6 +110,13 @@ def _exb_invariant_diagnostics(cfg: NonlinearGKConfig) -> dict[str, Any]:
     return asdict(diagnostics)
 
 
+def _maxwell_closure_diagnostics(cfg: NonlinearGKConfig) -> dict[str, Any]:
+    solver = NonlinearGKSolver(cfg)
+    state = solver.init_state(amplitude=1e-5, seed=127)
+    diagnostics = solver.maxwell_closure_diagnostics(state)
+    return asdict(diagnostics)
+
+
 def run_benchmark() -> dict[str, Any]:
     cases: dict[str, Any] = {}
     for collision_model in ("krook", "sugama"):
@@ -130,6 +137,7 @@ def run_benchmark() -> dict[str, Any]:
         "jax": _run_jax(em_cfg),
         "moment_residuals": _sugama_moment_residuals(em_cfg),
         "exb_invariants": _exb_invariant_diagnostics(em_cfg),
+        "maxwell_closure": _maxwell_closure_diagnostics(em_cfg),
     }
 
     return {
@@ -212,6 +220,35 @@ def _write_reports(report: dict[str, Any]) -> None:
                 passes=invariants["passes"],
             )
         )
+    maxwell = report["cases"]["sugama_electromagnetic_kinetic"]["maxwell_closure"]
+    lines.extend(
+        [
+            "",
+            "## Compact Electromagnetic Closure Diagnostics",
+            "",
+            "These residuals verify the native compact A_parallel and B_parallel "
+            "closures against their algebraic field solves. They are not full "
+            "Faraday/displacement-current Vlasov-Maxwell parity evidence.",
+            "",
+            "| Residual | Value |",
+            "|---|---:|",
+            f"| Ampere A_parallel L_inf | {maxwell['ampere_parallel_linf_residual']:.6e} |",
+            (
+                "| Pressure-balance B_parallel L_inf | "
+                f"{maxwell['pressure_balance_linf_residual']:.6e} |"
+            ),
+            f"| Compact closure finite | {maxwell['compact_closure_finite']} |",
+            f"| Compact closure passes | {maxwell['compact_closure_passes']} |",
+            (
+                "| Full Faraday/displacement-current supported | "
+                f"{maxwell['full_faraday_displacement_current_supported']} |"
+            ),
+            (
+                "| Full Vlasov-Maxwell parity ready | "
+                f"{maxwell['full_vlasov_maxwell_parity_ready']} |"
+            ),
+        ]
+    )
     REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

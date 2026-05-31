@@ -1114,6 +1114,10 @@
         "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
       },
       {
+        "name": "NonlinearGKMaxwellClosureDiagnostics",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
+      },
+      {
         "name": "NonlinearGKOperatorsMixin",
         "path": "src/scpn_fusion/core/_gk_nonlinear_operators.py"
       },
@@ -2335,7 +2339,7 @@
     "optional_extras": 11,
     "public_api_exports": 2,
     "public_documentation_pages": 41,
-    "python_capability_classes": 492,
+    "python_capability_classes": 493,
     "python_capability_source_modules": 262,
     "rust_workspace_crates": 12,
     "test_files": 386

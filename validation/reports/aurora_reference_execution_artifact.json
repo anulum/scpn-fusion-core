@@ -1,19 +1,41 @@
 {
   "accepted_full_fidelity_ready": false,
-  "artifact_generated": false,
+  "artifact": {
+    "artifact_id": "aurora_argon_fractional_abundance_public",
+    "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.npz",
+    "available_observables": [
+      "Te_eV",
+      "charge_state_index",
+      "fraction_sum_no_cx",
+      "fraction_sum_with_cx",
+      "fz_no_cx",
+      "fz_with_cx",
+      "ne_cm3",
+      "neutral_fraction_n0_by_ne",
+      "returned_Te_grid_no_cx_eV",
+      "returned_Te_grid_with_cx_eV",
+      "rhop"
+    ],
+    "finite_numeric_payload": true,
+    "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.metadata.json",
+    "redistribution_license": "MIT with Aurora User Agreement citation notice; Open-ADAS public derived data",
+    "sha256": "a2b5b42d333609884976c70788fa94c22f4322d1d758094e186517916aaa93fd",
+    "solver_output_comparison_ready": false
+  },
+  "artifact_generated": true,
   "case_id": "aurora_argon_fractional_abundance_public",
-  "description": "Public Aurora/Open-ADAS execution request for an argon charge-state fractional-abundance artifact.",
+  "description": "Public Aurora/Open-ADAS argon fractional-abundance execution artifact. This is a partial atomic-physics output, not full transport parity.",
   "missing_full_fidelity_requirements": [
-    "charge-state-resolved radial transport run with Aurora or STRAHL",
-    "finite ionisation/recombination/source/sink matrix conservation evidence",
-    "line-radiation and total radiated-power observables on the same case",
-    "native same-case impurity solver-output comparison",
-    "quantitative parity thresholds against public Aurora/STRAHL output"
+    "transported_charge_state_density_time_radius_charge",
+    "line_radiation_power_time_radius_charge",
+    "ionisation_recombination_source_sink_matrix_time_radius_charge_charge",
+    "total_impurity_inventory_closure",
+    "native_same_case_solver_output_comparison"
   ],
-  "next_action": "DeprecationWarning: Please import `map_coordinates` from the `scipy.ndimage` namespace; the `scipy.ndimage.interpolation` namespace is deprecated and will be removed in SciPy 2.0.0.",
-  "reference_output_ready": false,
+  "next_action": "Run a public Aurora or STRAHL radial transport case with line radiation, source/sink matrices, inventory closure, and native same-case comparison.",
+  "reference_output_ready": true,
   "schema": "aurora-reference-execution-artifact.v1",
   "source_family": "Aurora",
   "source_repo": "data/external/full_fidelity_public_sources/repos/aurora",
-  "status": "blocked_aurora_reference_artifact_generation_failed"
+  "status": "blocked_partial_public_atomic_artifact_not_transport_parity"
 }

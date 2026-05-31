@@ -17,9 +17,9 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - DREAM reference output ready: `False`
 - DREAM execution status: `blocked_missing_dream_backend`
 - Aurora execution report: `validation/reports/aurora_reference_execution_artifact.json`
-- Aurora artifact generated: `False`
-- Aurora reference output ready: `False`
-- Aurora execution status: `blocked_aurora_reference_artifact_generation_failed`
+- Aurora artifact generated: `True`
+- Aurora reference output ready: `True`
+- Aurora execution status: `blocked_partial_public_atomic_artifact_not_transport_parity`
 - GK deck inventory report: `validation/reports/gk_public_reference_deck_inventory.json`
 - GK public decks indexed: `40`
 - GK public outputs indexed: `21`
@@ -33,5 +33,5 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 | full_maxwell_electromagnetic_fidelity | blocked_missing_full_vlasov_maxwell_field_solve | True | False | GENE, CGYRO, GS2 | native nonlinear Ampere/Faraday closure beyond compact A_parallel/B_parallel contracts<br>GENE/CGYRO/GS2 electromagnetic field-energy and transport parity artifacts |
 | production_scale_decomposition | blocked_missing_cluster_scaling_evidence | True | False | none | radial/toroidal domain decomposition implementation<br>multi-GPU or cluster scaling reports on production-size grids<br>large-grid warm GPU throughput and convergence evidence |
 | dream_grade_runaway_electrons | blocked_missing_public_dream_artifacts | True | False | DREAM | public DREAM deck ingestion and production artifact parity<br>full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact<br>validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM<br>distribution-function, current, and growth-rate RMSE thresholds against public DREAM output |
-| aurora_strahl_grade_impurities | blocked_missing_public_aurora_strahl_artifacts | True | False | Aurora | charge-state-resolved radial transport run with Aurora or STRAHL<br>finite ionisation/recombination/source/sink matrix conservation evidence<br>line-radiation and total radiated-power observables on the same case<br>native same-case impurity solver-output comparison<br>quantitative parity thresholds against public Aurora/STRAHL output |
+| aurora_strahl_grade_impurities | blocked_partial_public_atomic_artifact_not_transport_parity | True | False | Aurora | transported_charge_state_density_time_radius_charge<br>line_radiation_power_time_radius_charge<br>ionisation_recombination_source_sink_matrix_time_radius_charge_charge<br>total_impurity_inventory_closure<br>native_same_case_solver_output_comparison |
 | free_boundary_equilibrium_strict_parity | blocked_missing_external_coil_current_reference_artifacts | True | False | FreeGS, FreeGSNKE | public coil-current sidecars or machine coil metadata for GEQDSK rows<br>strict FreeGS backend convergence on public free-boundary cases<br>profile-source/free-boundary reconstruction parity artifacts |

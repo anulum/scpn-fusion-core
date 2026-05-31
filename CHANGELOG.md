@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added compact electromagnetic GK closure diagnostics for native
+  `A_parallel`/`B_parallel` residuals in the nonlinear GK benchmark while
+  explicitly keeping full Faraday/displacement-current Vlasov-Maxwell parity
+  fail-closed.
+
 - Added a fail-closed nonlinear GK public deck inventory that hashes GS2
   nonlinear decks, CGYRO nonlinear decks, CGYRO regression precision outputs,
   and GENE/GS2/CGYRO public web-source snapshots while keeping full

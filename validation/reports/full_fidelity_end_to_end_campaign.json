@@ -3,10 +3,10 @@
   "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
   "accepted_public_reference_artifacts": 0,
   "all_locally_actionable_contracts_ready": true,
-  "aurora_reference_artifact_generated": false,
+  "aurora_reference_artifact_generated": true,
   "aurora_reference_execution_report": "validation/reports/aurora_reference_execution_artifact.json",
-  "aurora_reference_execution_status": "blocked_aurora_reference_artifact_generation_failed",
-  "aurora_reference_output_ready": false,
+  "aurora_reference_execution_status": "blocked_partial_public_atomic_artifact_not_transport_parity",
+  "aurora_reference_output_ready": true,
   "benchmark": "full_fidelity_end_to_end_campaign",
   "description": "Integrated fail-closed campaign covering GK, EM, production-scale runtime, DREAM, Aurora/STRAHL, and free-boundary blockers.",
   "dream_reference_execution_report": "validation/reports/dream_reference_execution_request.json",
@@ -168,11 +168,11 @@
       "lane": "aurora_strahl_grade_impurities",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "charge-state-resolved radial transport run with Aurora or STRAHL",
-        "finite ionisation/recombination/source/sink matrix conservation evidence",
-        "line-radiation and total radiated-power observables on the same case",
-        "native same-case impurity solver-output comparison",
-        "quantitative parity thresholds against public Aurora/STRAHL output"
+        "transported_charge_state_density_time_radius_charge",
+        "line_radiation_power_time_radius_charge",
+        "ionisation_recombination_source_sink_matrix_time_radius_charge_charge",
+        "total_impurity_inventory_closure",
+        "native_same_case_solver_output_comparison"
       ],
       "reference_cases_ready": false,
       "sources": [
@@ -189,7 +189,7 @@
           "surface": "impurity_transport"
         }
       ],
-      "status": "blocked_missing_public_aurora_strahl_artifacts",
+      "status": "blocked_partial_public_atomic_artifact_not_transport_parity",
       "surface": "impurity_transport"
     },
     {

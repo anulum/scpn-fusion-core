@@ -15,6 +15,7 @@ from numpy.typing import NDArray
 from scpn_fusion.core._gk_nonlinear_types import (
     NonlinearGKFieldEnergyDiagnostics,
     NonlinearGKInvariantDiagnostics,
+    NonlinearGKMaxwellClosureDiagnostics,
     NonlinearGKResult,
     NonlinearGKState,
 )
@@ -223,6 +224,43 @@ class NonlinearGKTimeMixin:
             B_parallel=b_parallel_energy,
             total=total,
             finite=finite,
+        )
+
+    def maxwell_closure_diagnostics(
+        self, state: NonlinearGKState, *, atol: float = 1e-12
+    ) -> NonlinearGKMaxwellClosureDiagnostics:
+        """Return compact Ampere/pressure-balance residuals and full-Maxwell flags.
+
+        The native nonlinear GK surface currently uses algebraic compact
+        A_parallel and B_parallel closures. This diagnostic verifies those
+        closures are internally consistent for the stored state while
+        explicitly reporting that Faraday/displacement-current evolution and
+        full Vlasov-Maxwell parity are not implemented by this compact path.
+        """
+        self.validate_state(state)
+        if not self.cfg.electromagnetic or state.A_par is None or state.B_par is None:
+            return NonlinearGKMaxwellClosureDiagnostics(
+                ampere_parallel_linf_residual=0.0,
+                pressure_balance_linf_residual=0.0,
+                compact_closure_finite=True,
+                compact_closure_passes=False,
+                full_faraday_displacement_current_supported=False,
+                full_vlasov_maxwell_parity_ready=False,
+            )
+
+        expected_a_parallel = self.ampere_solve(state.f)
+        expected_b_parallel = self.magnetic_compression_solve(state.f)
+        ampere_residual = float(np.max(np.abs(state.A_par - expected_a_parallel)))
+        pressure_residual = float(np.max(np.abs(state.B_par - expected_b_parallel)))
+        finite = bool(np.isfinite(ampere_residual) and np.isfinite(pressure_residual))
+        compact_passes = bool(finite and ampere_residual <= atol and pressure_residual <= atol)
+        return NonlinearGKMaxwellClosureDiagnostics(
+            ampere_parallel_linf_residual=ampere_residual,
+            pressure_balance_linf_residual=pressure_residual,
+            compact_closure_finite=finite,
+            compact_closure_passes=compact_passes,
+            full_faraday_displacement_current_supported=False,
+            full_vlasov_maxwell_parity_ready=False,
         )
 
     def total_energy(self, state: NonlinearGKState) -> float:

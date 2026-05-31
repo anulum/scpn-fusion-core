@@ -51,15 +51,15 @@
         "chi_e": 3.385913883788609e-11,
         "chi_i": 6.771827767577217e-11,
         "converged": true,
-        "elapsed_s": 8.215419844957069,
+        "elapsed_s": 11.773385099018924,
         "phi_rms_final": 0.001732037973500738
       },
       "numpy": {
         "backend": "numpy",
-        "chi_e": 3.385913881662564e-11,
-        "chi_i": 6.771827763325128e-11,
+        "chi_e": 3.3859138816625626e-11,
+        "chi_i": 6.771827763325125e-11,
         "converged": true,
-        "elapsed_s": 0.09461500204633921,
+        "elapsed_s": 0.11570986302103847,
         "phi_rms_final": 0.0017090879429649377
       }
     },
@@ -110,10 +110,10 @@
       },
       "jax": {
         "backend": "jax",
-        "chi_e": 3.385913755833296e-11,
-        "chi_i": 6.771827511666592e-11,
+        "chi_e": 3.385913755833297e-11,
+        "chi_i": 6.771827511666593e-11,
         "converged": true,
-        "elapsed_s": 3.99990465992596,
+        "elapsed_s": 4.604101945064031,
         "phi_rms_final": 0.001732043766867551
       },
       "moment_residuals": {
@@ -123,10 +123,10 @@
       },
       "numpy": {
         "backend": "numpy",
-        "chi_e": 3.3859137537071375e-11,
-        "chi_i": 6.771827507414275e-11,
+        "chi_e": 3.385913753707139e-11,
+        "chi_i": 6.771827507414278e-11,
         "converged": true,
-        "elapsed_s": 0.10241536295507103,
+        "elapsed_s": 0.15274989197496325,
         "phi_rms_final": 0.0017090936596847984
       }
     },
@@ -180,8 +180,16 @@
         "chi_e": -6.507130425745713e-07,
         "chi_i": 6.13856908241856e-07,
         "converged": true,
-        "elapsed_s": 2.5945418069604784,
+        "elapsed_s": 4.285303478012793,
         "phi_rms_final": 0.003170643533260236
+      },
+      "maxwell_closure": {
+        "ampere_parallel_linf_residual": 0.0,
+        "compact_closure_finite": true,
+        "compact_closure_passes": true,
+        "full_faraday_displacement_current_supported": false,
+        "full_vlasov_maxwell_parity_ready": false,
+        "pressure_balance_linf_residual": 0.0
       },
       "moment_residuals": {
         "density_max_abs": 1.6740958540805346e-22,
@@ -190,11 +198,11 @@
       },
       "numpy": {
         "backend": "numpy",
-        "chi_e": -6.507130423634977e-07,
-        "chi_i": 6.13856908020201e-07,
+        "chi_e": -6.506028914055627e-07,
+        "chi_i": 6.137781281071752e-07,
         "converged": true,
-        "elapsed_s": 0.17992814909666777,
-        "phi_rms_final": 0.003146493138925403
+        "elapsed_s": 0.21503378089983016,
+        "phi_rms_final": 0.0031464402521369787
       }
     }
   },

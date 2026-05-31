@@ -8,12 +8,12 @@
 
 | Collision model | Backend | Elapsed s | Converged | chi_i | chi_e | phi_rms_final |
 |---|---:|---:|---:|---:|---:|---:|
-| krook | numpy | 0.094615 | True | 6.771828e-11 | 3.385914e-11 | 1.709088e-03 |
-| krook | jax | 8.215420 | True | 6.771828e-11 | 3.385914e-11 | 1.732038e-03 |
-| sugama | numpy | 0.102415 | True | 6.771828e-11 | 3.385914e-11 | 1.709094e-03 |
-| sugama | jax | 3.999905 | True | 6.771828e-11 | 3.385914e-11 | 1.732044e-03 |
-| sugama_electromagnetic_kinetic | numpy | 0.179928 | True | 6.138569e-07 | -6.507130e-07 | 3.146493e-03 |
-| sugama_electromagnetic_kinetic | jax | 2.594542 | True | 6.138569e-07 | -6.507130e-07 | 3.170644e-03 |
+| krook | numpy | 0.115710 | True | 6.771828e-11 | 3.385914e-11 | 1.709088e-03 |
+| krook | jax | 11.773385 | True | 6.771828e-11 | 3.385914e-11 | 1.732038e-03 |
+| sugama | numpy | 0.152750 | True | 6.771828e-11 | 3.385914e-11 | 1.709094e-03 |
+| sugama | jax | 4.604102 | True | 6.771828e-11 | 3.385914e-11 | 1.732044e-03 |
+| sugama_electromagnetic_kinetic | numpy | 0.215034 | True | 6.137781e-07 | -6.506029e-07 | 3.146440e-03 |
+| sugama_electromagnetic_kinetic | jax | 4.285303 | True | 6.138569e-07 | -6.507130e-07 | 3.170644e-03 |
 
 ## Sugama Moment Residuals
 
@@ -32,3 +32,16 @@ The diagnostic contracts the dealiased nonlinear bracket with the 5D distributio
 | krook | 2.611359e-12 | 1.512070e-02 | 0.000000e+00 | True |
 | sugama | 2.611359e-12 | 1.512070e-02 | 0.000000e+00 | True |
 | sugama_electromagnetic_kinetic | 2.212299e-11 | 2.642871e-02 | 0.000000e+00 | True |
+
+## Compact Electromagnetic Closure Diagnostics
+
+These residuals verify the native compact A_parallel and B_parallel closures against their algebraic field solves. They are not full Faraday/displacement-current Vlasov-Maxwell parity evidence.
+
+| Residual | Value |
+|---|---:|
+| Ampere A_parallel L_inf | 0.000000e+00 |
+| Pressure-balance B_parallel L_inf | 0.000000e+00 |
+| Compact closure finite | True |
+| Compact closure passes | True |
+| Full Faraday/displacement-current supported | False |
+| Full Vlasov-Maxwell parity ready | False |

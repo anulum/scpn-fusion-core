@@ -246,10 +246,23 @@ class NonlinearGKFieldEnergyDiagnostics:
     finite: bool
 
 
+@dataclass(frozen=True)
+class NonlinearGKMaxwellClosureDiagnostics:
+    """Compact electromagnetic closure residuals and full-Maxwell readiness flags."""
+
+    ampere_parallel_linf_residual: float
+    pressure_balance_linf_residual: float
+    compact_closure_finite: bool
+    compact_closure_passes: bool
+    full_faraday_displacement_current_supported: bool
+    full_vlasov_maxwell_parity_ready: bool
+
+
 __all__ = [
     "NonlinearGKConfig",
     "NonlinearGKFieldEnergyDiagnostics",
     "NonlinearGKInvariantDiagnostics",
+    "NonlinearGKMaxwellClosureDiagnostics",
     "NonlinearGKPhaseSpaceContract",
     "NonlinearGKResult",
     "NonlinearGKState",

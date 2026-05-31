@@ -48,7 +48,7 @@ facades and evidence-bounded validation reports.
 | Package version | 3.9.5 |
 | Public API exports | 2 |
 | Python capability source modules | 262 |
-| Python capability classes | 492 |
+| Python capability classes | 493 |
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
@@ -199,6 +199,11 @@ hashes in
 This is a reproducibility inventory only; full GENE/CGYRO/GS2 parity remains
 blocked until runnable external outputs, heat-flux spectra, field-energy
 histories, convergence evidence, and native same-case comparisons are present.
+The electromagnetic GK diagnostic now reports compact Ampere and perpendicular
+pressure-balance residuals in
+[`validation/reports/gk_nonlinear_solver_comparison.md`](validation/reports/gk_nonlinear_solver_comparison.md).
+Those residuals verify the native compact `A_parallel`/`B_parallel` closure, but
+they are explicitly not full Faraday/displacement-current Vlasov-Maxwell parity.
 
 ## Competitive Position
 

@@ -840,7 +840,10 @@ run results now export the actual `kx`, `ky`, `theta`, `vpar`, and `mu`
 coordinate axes used by the solver, so saved spectra carry machine-readable
 grid metadata for future GENE/CGYRO/GS2 artifact comparison. Public GS2/CGYRO
 deck hashes are now tracked, but external nonlinear outputs and native same-case
-comparisons remain required. The result surface
+comparisons remain required. The electromagnetic case now also reports compact
+Ampere `A_parallel` and perpendicular pressure-balance `B_parallel` residuals;
+these prove internal algebraic-closure consistency only, not full
+Faraday/displacement-current Vlasov-Maxwell parity. The result surface
 also exposes a JSON-compatible reference-artifact export with coordinates,
 units, observable axes, heat-flux spectra, particle/field energy spectra, and
 saturation diagnostics. The acceptance harness includes a quantitative

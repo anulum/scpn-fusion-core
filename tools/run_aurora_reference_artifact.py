@@ -98,6 +98,7 @@ def _load_aurora() -> Any:
     os.environ["AURORA_ADAS_DIR"] = str(AURORA_ADAS_DIR)
     sys.path.insert(0, str(AURORA_REPO))
     warnings.filterwarnings("ignore", category=SyntaxWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     return importlib.import_module("aurora")
 
 

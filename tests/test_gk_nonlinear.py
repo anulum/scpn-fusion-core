@@ -262,6 +262,30 @@ class TestEnergyConservation:
             field_energy.phi + field_energy.A_parallel + field_energy.B_parallel
         )
 
+    def test_maxwell_closure_diagnostics_are_fail_closed_for_full_parity(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=6,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=30)
+
+        diagnostics = solver.maxwell_closure_diagnostics(state)
+
+        assert diagnostics.compact_closure_finite
+        assert diagnostics.compact_closure_passes
+        assert diagnostics.ampere_parallel_linf_residual <= 1e-12
+        assert diagnostics.pressure_balance_linf_residual <= 1e-12
+        assert diagnostics.full_faraday_displacement_current_supported is False
+        assert diagnostics.full_vlasov_maxwell_parity_ready is False
+
     def test_total_energy_includes_particle_and_electromagnetic_field_energy(self):
         cfg = NonlinearGKConfig(
             n_kx=4,
