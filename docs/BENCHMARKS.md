@@ -441,6 +441,9 @@ non-executable fitted-scale diagnostics; flux-span candidates are emitted only
 when the physical flux span is finite and non-zero.
 Rust `fusion-core::source` now also exposes native second-order and current-conserving flux-profile interpolation helpers matching the Python profile-source construction contract: local quadratic GEQDSK profile interpolation, masked weighted-integral preservation against the linear GEQDSK contract, finite input guards, shape guards, and non-negative masked weight enforcement.
 It also exposes `compute_geqdsk_profile_source_components`, which assembles pressure, FFprime, and total Grad-Shafranov source arrays with plasma-mask reporting, explicit boundary zeroing, source-norm diagnostics, and signed source-sum diagnostics matching the Python profile-source path. The signed sums are retained because source norms alone can hide pressure/FFprime sign regressions or cancelling assembly errors, and the EFIT/GEQDSK benchmark schema now requires those signed sums in every row.
+The aggregate EFIT/GEQDSK report also gates the signed identity
+`total_source_sum == pressure_source_sum + ffprime_source_sum` through
+`source_sum_identity_max_abs_error` and `source_sum_identity_pass`.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current

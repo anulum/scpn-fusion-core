@@ -240,6 +240,8 @@ class EfitNRMSEBenchmarkGate:
     worst_source_alignment_file: str
     gate_worst_source_residual_l2: float
     gate_worst_source_alignment_file: str
+    source_sum_identity_max_abs_error: float
+    source_sum_identity_pass: bool
     failure_reasons: list[str]
     rows: list[dict[str, Any]]
 
@@ -1772,6 +1774,7 @@ def validate_efit_nrmse_benchmark(
     solver_mode_counts: dict[str, int] = {}
     source_residual_entries: list[tuple[str, float]] = []
     gate_source_residual_entries: list[tuple[str, float]] = []
+    source_sum_identity_errors: list[float] = []
     for row in rows:
         for key in (
             "raw_profile_solver_mode",
@@ -1795,6 +1798,15 @@ def validate_efit_nrmse_benchmark(
             source_residual_entries.append((str(row["file"]), source_residual))
             if row["reference_role"] == "gate":
                 gate_source_residual_entries.append((str(row["file"]), source_residual))
+        source_sum_error = abs(
+            float(row["total_source_sum"])
+            - float(row["pressure_source_sum"])
+            - float(row["ffprime_source_sum"])
+        )
+        if np.isfinite(source_sum_error):
+            source_sum_identity_errors.append(source_sum_error)
+        else:
+            failure_reasons.append(f"non-finite source sum identity error in {row['file']}")
 
     if source_residual_entries:
         worst_source_alignment_file, worst_source_residual = max(
@@ -1841,6 +1853,19 @@ def validate_efit_nrmse_benchmark(
     if solver_failure_count:
         failure_reasons.append(
             f"operator-source solver consistency failure in {solver_failure_count} rows"
+        )
+    source_sum_identity_max_abs_error = (
+        max(source_sum_identity_errors) if source_sum_identity_errors else float("nan")
+    )
+    source_sum_identity_pass = bool(
+        source_sum_identity_errors
+        and len(source_sum_identity_errors) == len(rows)
+        and source_sum_identity_max_abs_error <= 1.0e-9
+    )
+    if not source_sum_identity_pass:
+        failure_reasons.append(
+            "source-sum identity gate failed: max abs error "
+            f"{source_sum_identity_max_abs_error:.6g} > 1e-09"
         )
     if adapted_profile_entries and adapted_profile_pass_count != len(adapted_profile_entries):
         failure_reasons.append(
@@ -1899,6 +1924,8 @@ def validate_efit_nrmse_benchmark(
         worst_source_alignment_file=worst_source_alignment_file,
         gate_worst_source_residual_l2=float(gate_worst_source_residual),
         gate_worst_source_alignment_file=gate_worst_source_alignment_file,
+        source_sum_identity_max_abs_error=float(source_sum_identity_max_abs_error),
+        source_sum_identity_pass=source_sum_identity_pass,
         failure_reasons=failure_reasons,
         rows=rows,
     )
@@ -2070,6 +2097,11 @@ def main() -> int:
     print(
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"
+    )
+    print(
+        "Source-sum identity gate: "
+        f"{'PASS' if benchmark.source_sum_identity_pass else 'FAIL'} "
+        f"(max abs error = {benchmark.source_sum_identity_max_abs_error:.6e})"
     )
     if benchmark.gate_worst_source_alignment_file:
         print(

@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added an aggregate EFIT/GEQDSK source-sum identity gate over signed pressure, FFprime, and total source diagnostics.
+
 - Added signed GEQDSK source-sum fields to EFIT/GEQDSK benchmark rows and schema validation.
 
 - Added signed source-sum diagnostics to Python and Rust GEQDSK profile-source component assembly so pressure/FFprime sign regressions are not hidden by norms.

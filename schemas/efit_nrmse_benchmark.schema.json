@@ -50,6 +50,8 @@
     "worst_source_alignment_file",
     "gate_worst_source_residual_l2",
     "gate_worst_source_alignment_file",
+    "source_sum_identity_max_abs_error",
+    "source_sum_identity_pass",
     "failure_reasons",
     "rows"
   ],
@@ -270,6 +272,12 @@
     },
     "gate_worst_source_alignment_file": {
       "type": "string"
+    },
+    "source_sum_identity_max_abs_error": {
+      "type": "number"
+    },
+    "source_sum_identity_pass": {
+      "type": "boolean"
     },
     "failure_reasons": {
       "type": "array",

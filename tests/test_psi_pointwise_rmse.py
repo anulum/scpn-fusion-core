@@ -742,6 +742,9 @@ class TestValidateEFITNRMSEBenchmark:
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
                 total_source_norm=1.0,
+                pressure_source_sum=-0.7,
+                ffprime_source_sum=-0.3,
+                total_source_sum=-1.0,
                 pressure_source_fraction=0.7,
                 ffprime_source_fraction=0.3,
                 source_plasma_residual_l2=0.01,
@@ -895,6 +898,7 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.passes is False
         assert gate.count == 9
         assert gate.pass_count == 9
+        assert gate.source_sum_identity_pass is True
         assert "count 9 < required 10" in gate.failure_reasons
 
     def test_fails_when_any_finite_row_exceeds_threshold_and_reports_worst(
@@ -973,6 +977,9 @@ class TestValidateEFITNRMSEBenchmark:
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
                 total_source_norm=1.0,
+                pressure_source_sum=-0.7,
+                ffprime_source_sum=-0.3,
+                total_source_sum=-1.0,
                 pressure_source_fraction=0.7,
                 ffprime_source_fraction=0.3,
                 source_plasma_residual_l2=2.0 if is_worst else 0.01,
@@ -1063,6 +1070,9 @@ class TestValidateEFITNRMSEBenchmark:
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
                 total_source_norm=1.0,
+                pressure_source_sum=-0.7,
+                ffprime_source_sum=-0.3,
+                total_source_sum=-1.0,
                 pressure_source_fraction=0.7,
                 ffprime_source_fraction=0.3,
                 source_plasma_residual_l2=0.01,
@@ -1149,6 +1159,9 @@ class TestValidateEFITNRMSEBenchmark:
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
                 total_source_norm=1.0,
+                pressure_source_sum=-0.7,
+                ffprime_source_sum=-0.3,
+                total_source_sum=-1.0,
                 pressure_source_fraction=0.7,
                 ffprime_source_fraction=0.3,
                 source_plasma_residual_l2=0.01,
@@ -1219,6 +1232,8 @@ class TestValidateEFITNRMSEBenchmark:
             payload,
             load_efit_nrmse_benchmark_schema(),
         )
+        assert payload["source_sum_identity_pass"] is True
+        assert payload["source_sum_identity_max_abs_error"] == pytest.approx(0.0)
         assert {
             "pressure_source_sum",
             "ffprime_source_sum",
