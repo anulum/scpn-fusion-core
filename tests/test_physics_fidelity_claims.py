@@ -32,7 +32,11 @@ def test_reduced_order_competitive_claims_disclose_actual_fidelity() -> None:
     readme = README.read_text(encoding="utf-8")
 
     required_boundaries = {
-        "Free-boundary GS solve": ("Public GEQDSK gate passes", "not EFIT-grade"),
+        "Free-boundary GS solve": (
+            "Public GEQDSK operator-source gate passes",
+            "profile-source/free-boundary reconstruction gate remains open",
+            "not EFIT-grade",
+        ),
         "Native GK solver": (
             "Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks",
             "not GENE/CGYRO-class",
