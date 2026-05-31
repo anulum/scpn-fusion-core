@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added a native Rust GEQDSK profile-source component benchmark for pressure/FFprime source assembly timing evidence.
+
 - Added Rust GEQDSK profile-source component assembly with pressure, FFprime, total-source, plasma-mask, boundary-masking, and source-norm diagnostics matching the Python native solver contract.
 
 - Added Rust `fusion-core::source` parity for GEQDSK second-order and current-conserving flux-profile interpolation, matching the Python profile-source source-construction contract.

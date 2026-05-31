@@ -35,3 +35,7 @@ harness = false
 [[bench]]
 name = "transport_bench"
 harness = false
+
+[[bench]]
+name = "source_bench"
+harness = false
