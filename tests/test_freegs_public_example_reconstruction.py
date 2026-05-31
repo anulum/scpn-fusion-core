@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — FreeGS Public Example Reconstruction Tests
 """Tests for FreeGS public-example reconstruction attempt reporting."""
 
 from __future__ import annotations
@@ -49,10 +56,20 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
         assert case["nonlinear_solve_attempts"]
         assert solve["external_psi_finite"] is True
         assert solve["external_psi_shape"]
-        assert solve["native_same_case_psi_comparison_ready"] is False
+        assert solve["native_same_case_psi_comparison_ready"] is True
+        comparison = solve["native_same_case_profile_source_comparison"]
+        assert comparison["schema"] == "native-freegs-profile-source-comparison.v1"
+        assert comparison["accepted_full_fidelity"] is False
+        assert comparison["finite_native_psi"] is True
+        assert comparison["finite_external_psi"] is True
+        assert comparison["psi_n_rmse"] >= 0.0
+        assert comparison["axis_error_m"] >= 0.0
+        assert comparison["boundary_max_abs_error_wb"] >= 0.0
+        assert comparison["current_closure_relative_error"] >= 0.0
+        assert comparison["q_profile_sanity"]["status"].startswith("blocked_")
         assert (
             solve["status"]
-            == "external_backend_solved_missing_native_same_case_profile_source_comparison"
+            == "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
         )
 
 

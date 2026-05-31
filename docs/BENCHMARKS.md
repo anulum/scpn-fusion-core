@@ -259,12 +259,15 @@ It reconstructs the public FreeGS example machine coils after their control
 constraints and compares native Green-function vacuum flux against FreeGS on
 the same sample points. Current local rows pass the vacuum convention check and
 the recorded Picard sweep produces finite external `psi(R,Z)` output for both
-public examples. Clean CI checkouts preserve tracked machine-metadata and
+public examples. The same report now runs a native fixed-boundary profile-source
+comparison on the finite FreeGS psi grid and publishes `psi_N` RMSE, magnetic
+axis error, boundary error, sampled X-point constraint error, and current
+closure. Clean CI checkouts preserve tracked machine-metadata and
 reconstruction reports when the gitignored public-source cache is absent, so
 the integrated campaign cannot erase prior public evidence during full-suite
 test order. Strict free-boundary parity remains fail-closed because native
-same-case profile-source/coil-vacuum reconstruction and quantitative
-solver-output comparisons are still missing.
+q-profile extraction, strict threshold acceptance, grid-convergence evidence,
+and public coil/vacuum sidecars are still missing.
 
 ## Solver Performance
 

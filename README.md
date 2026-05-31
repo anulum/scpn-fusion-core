@@ -218,12 +218,15 @@ It also attempts same-case FreeGS public-example reconstruction in
 [`validation/reports/freegs_public_example_reconstruction.md`](validation/reports/freegs_public_example_reconstruction.md):
 native and FreeGS vacuum Green-function flux agree on the public machine coils,
 and the external FreeGS nonlinear examples now produce finite `psi(R,Z)` output
-under the recorded Picard iteration sweep. Clean CI checkouts preserve the
+under the recorded Picard iteration sweep. The report now also publishes native
+fixed-boundary profile-source comparison metrics for `psi_N` RMSE, magnetic
+axis error, boundary error, sampled X-point constraint error, and current
+closure on the finite FreeGS grid. Clean CI checkouts preserve the
 tracked metadata and reconstruction evidence when gitignored public-source
 caches are absent, so full-suite report generation remains deterministic
 without promoting those partial artefacts to parity. Strict free-boundary parity remains
-blocked until native same-case profile-source/coil-vacuum reconstruction output
-and solver-output comparisons are present.
+blocked until strict thresholds, native q-profile extraction, grid convergence,
+and public coil/vacuum sidecars are accepted.
 The electromagnetic GK diagnostic now reports compact Ampere and perpendicular
 pressure-balance residuals in
 [`validation/reports/gk_nonlinear_solver_comparison.md`](validation/reports/gk_nonlinear_solver_comparison.md).

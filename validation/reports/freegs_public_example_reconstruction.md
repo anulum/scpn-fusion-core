@@ -6,23 +6,24 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 `psi(R,Z)` comparison evidence exists.
 
 - Schema: `freegs-public-example-reconstruction-report.v1`
-- Status: `blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison`
+- Status: `blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence`
 - Backend available: `True`
 - FreeGS version: `0.8.2`
 - Case count: `2`
 - Vacuum comparison pass: `True`
 - External nonlinear output ready: `True`
+- Native same-case comparison ready: `True`
 - Accepted full fidelity: `False`
 - Artifact: `validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json`
 
-| Case | Machine | Vacuum NRMSE | Vacuum pass | Nonlinear status |
-| --- | --- | ---: | ---: | --- |
-| freegs_01_test_tokamak_freeboundary | TestTokamak | 2.353629e-16 | True | `external_backend_solved_missing_native_same_case_profile_source_comparison` |
-| freegs_16_diiid_public_example | DIIID | 5.750194e-16 | True | `external_backend_solved_missing_native_same_case_profile_source_comparison` |
+| Case | Machine | Vacuum NRMSE | Vacuum pass | Native psi_N RMSE | Axis error [m] | Nonlinear status |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| freegs_01_test_tokamak_freeboundary | TestTokamak | 2.353629e-16 | True | 2.291811e-01 | 4.310348e-02 | `external_backend_solved_native_same_case_profile_source_compared_fail_closed` |
+| freegs_16_diiid_public_example | DIIID | 5.750194e-16 | True | 6.656438e-02 | 2.250000e-01 | `external_backend_solved_native_same_case_profile_source_compared_fail_closed` |
 
 ## Missing full-fidelity requirements
 
-- native same-case free-boundary profile-source reconstruction against finite external FreeGS psi output
-- native-vs-FreeGS psi_N RMSE threshold
-- axis/X-point/boundary containment and q-profile thresholds
+- strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance
+- native q-profile extraction and sanity thresholds
 - grid convergence across public example resolutions
+- coil/vacuum reconstruction linked to public machine current sidecars

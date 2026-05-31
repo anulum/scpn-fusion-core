@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
-# (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Attempt same-case reconstruction against cached public FreeGS examples.
@@ -44,6 +44,7 @@ JSON_REPORT = REPORT_DIR / "freegs_public_example_reconstruction.json"
 MD_REPORT = REPORT_DIR / "freegs_public_example_reconstruction.md"
 VACUUM_NRMSE_THRESHOLD = 1.0e-12
 VACUUM_MAX_ABS_THRESHOLD = 1.0e-12
+MU0 = 4.0e-7 * np.pi
 
 
 @dataclass(frozen=True)
@@ -252,6 +253,186 @@ def _native_vacuum_psi(
     return out
 
 
+def _native_profile_source_reconstruction(
+    r_axis: NDArray[np.float64],
+    z_axis: NDArray[np.float64],
+    external_psi: NDArray[np.float64],
+    jtor: NDArray[np.float64],
+    *,
+    omega: float = 1.35,
+    iterations: int = 800,
+) -> NDArray[np.float64]:
+    """Solve native fixed-boundary Grad-Shafranov profile source on FreeGS grid."""
+    if external_psi.shape != jtor.shape:
+        raise ValueError("external_psi and jtor must have matching shapes")
+    if external_psi.shape != (z_axis.size, r_axis.size):
+        raise ValueError("external_psi must have shape len(Z) x len(R)")
+    if r_axis.size < 3 or z_axis.size < 3:
+        raise ValueError("native reconstruction requires at least 3x3 grid")
+    if not np.all(np.isfinite(external_psi)) or not np.all(np.isfinite(jtor)):
+        raise ValueError("native reconstruction inputs must be finite")
+    if not np.all(np.diff(r_axis) > 0.0) or not np.all(np.diff(z_axis) > 0.0):
+        raise ValueError("native reconstruction axes must be strictly increasing")
+
+    d_r = float(np.mean(np.diff(r_axis)))
+    d_z = float(np.mean(np.diff(z_axis)))
+    psi = np.array(external_psi, dtype=np.float64, copy=True)
+    psi[1:-1, 1:-1] = 0.0
+    rhs = -MU0 * np.asarray(r_axis, dtype=np.float64)[np.newaxis, :] * jtor
+    inv_dr2 = 1.0 / (d_r * d_r)
+    inv_dz2 = 1.0 / (d_z * d_z)
+    omega_f = float(omega)
+    if not np.isfinite(omega_f) or omega_f <= 0.0 or omega_f >= 2.0:
+        raise ValueError("omega must be finite and in (0, 2)")
+    for _ in range(iterations):
+        for j in range(1, z_axis.size - 1):
+            for i in range(1, r_axis.size - 1):
+                r_val = max(float(r_axis[i]), 1.0e-12)
+                coef_ip = inv_dr2 - 0.5 / (r_val * d_r)
+                coef_im = inv_dr2 + 0.5 / (r_val * d_r)
+                coef_j = inv_dz2
+                center = -2.0 * (inv_dr2 + inv_dz2)
+                neighbor_sum = (
+                    coef_ip * psi[j, i + 1]
+                    + coef_im * psi[j, i - 1]
+                    + coef_j * (psi[j + 1, i] + psi[j - 1, i])
+                )
+                updated = (rhs[j, i] - neighbor_sum) / center
+                psi[j, i] = (1.0 - omega_f) * psi[j, i] + omega_f * updated
+    return psi
+
+
+def _normalise_psi(psi: NDArray[np.float64]) -> NDArray[np.float64]:
+    psi_min = float(np.min(psi))
+    span = max(float(np.max(psi) - psi_min), 1.0e-30)
+    return (psi - psi_min) / span
+
+
+def _axis_location(
+    r_axis: NDArray[np.float64],
+    z_axis: NDArray[np.float64],
+    psi: NDArray[np.float64],
+) -> tuple[float, float]:
+    idx = np.unravel_index(int(np.nanargmax(psi)), psi.shape)
+    return float(r_axis[idx[1]]), float(z_axis[idx[0]])
+
+
+def _boundary_max_abs_error(
+    native_psi: NDArray[np.float64], external_psi: NDArray[np.float64]
+) -> float:
+    residual = native_psi - external_psi
+    edges = np.concatenate(
+        [
+            residual[0, :],
+            residual[-1, :],
+            residual[1:-1, 0],
+            residual[1:-1, -1],
+        ]
+    )
+    return float(np.max(np.abs(edges))) if edges.size else 0.0
+
+
+def _boundary_containment_fraction(
+    native_psi: NDArray[np.float64], external_psi: NDArray[np.float64], threshold: float
+) -> float:
+    residual = np.abs(native_psi - external_psi)
+    edges = np.concatenate(
+        [
+            residual[0, :],
+            residual[-1, :],
+            residual[1:-1, 0],
+            residual[1:-1, -1],
+        ]
+    )
+    return float(np.mean(edges <= threshold)) if edges.size else 0.0
+
+
+def _integrate_current(
+    r_axis: NDArray[np.float64], z_axis: NDArray[np.float64], jtor: NDArray[np.float64]
+) -> float:
+    trapz = getattr(np, "trapezoid", None) or np.trapz
+    radial_integral = trapz(jtor, r_axis, axis=1)
+    return float(trapz(radial_integral, z_axis))
+
+
+def _nearest_grid_value(
+    r_axis: NDArray[np.float64],
+    z_axis: NDArray[np.float64],
+    psi: NDArray[np.float64],
+    point: tuple[float, float],
+) -> float:
+    r_idx = int(np.argmin(np.abs(r_axis - float(point[0]))))
+    z_idx = int(np.argmin(np.abs(z_axis - float(point[1]))))
+    return float(psi[z_idx, r_idx])
+
+
+def _native_same_case_profile_source_comparison(
+    eq: Any,
+    profiles: Any,
+    spec: FreeGSPublicExampleCase,
+    external_psi: NDArray[np.float64],
+) -> dict[str, Any]:
+    r_axis = np.asarray(eq.R_1D, dtype=np.float64)
+    z_axis = np.asarray(eq.Z_1D, dtype=np.float64)
+    jtor_raw = getattr(eq, "Jtor", None)
+    if isinstance(jtor_raw, np.ndarray):
+        jtor = np.asarray(jtor_raw, dtype=np.float64)
+    else:
+        jtor = np.asarray(profiles.Jtor(eq.R, eq.Z, external_psi, eq.psi_bndry), dtype=np.float64)
+    native_psi = _native_profile_source_reconstruction(r_axis, z_axis, external_psi, jtor)
+    finite_native = bool(native_psi.size and np.all(np.isfinite(native_psi)))
+    finite_external = bool(external_psi.size and np.all(np.isfinite(external_psi)))
+    native_n = _normalise_psi(native_psi)
+    external_n = _normalise_psi(external_psi)
+    residual_n = native_n - external_n
+    psi_n_rmse = float(np.sqrt(np.mean(residual_n * residual_n)))
+    native_axis = _axis_location(r_axis, z_axis, native_psi)
+    external_axis = _axis_location(r_axis, z_axis, external_psi)
+    axis_error = float(np.hypot(native_axis[0] - external_axis[0], native_axis[1] - external_axis[1]))
+    native_current = _integrate_current(r_axis, z_axis, jtor)
+    current_target = float(spec.plasma_current_a)
+    current_closure = abs(native_current - current_target) / max(abs(current_target), 1.0)
+    xpoint_errors = [
+        abs(
+            _nearest_grid_value(r_axis, z_axis, native_n, point)
+            - _nearest_grid_value(r_axis, z_axis, external_n, point)
+        )
+        for point in spec.xpoints
+    ]
+    boundary_threshold = 1.0e-10
+    return {
+        "accepted_full_fidelity": False,
+        "axis_error_m": axis_error,
+        "boundary_containment_fraction": _boundary_containment_fraction(
+            native_psi, external_psi, boundary_threshold
+        ),
+        "boundary_max_abs_error_wb": _boundary_max_abs_error(native_psi, external_psi),
+        "current_closure_relative_error": float(current_closure),
+        "external_axis_r_m": external_axis[0],
+        "external_axis_z_m": external_axis[1],
+        "finite_external_psi": finite_external,
+        "finite_native_psi": finite_native,
+        "native_axis_r_m": native_axis[0],
+        "native_axis_z_m": native_axis[1],
+        "native_current_a": float(native_current),
+        "psi_n_rmse": psi_n_rmse,
+        "q_profile_sanity": {
+            "finite_q_profile": False,
+            "status": "blocked_native_q_profile_extraction_not_yet_implemented",
+        },
+        "schema": "native-freegs-profile-source-comparison.v1",
+        "thresholds": {
+            "axis_error_m": 2.5e-2,
+            "boundary_max_abs_error_wb": boundary_threshold,
+            "current_closure_relative_error": 5.0e-2,
+            "psi_n_rmse": 5.0e-2,
+            "xpoint_psi_n_error": 5.0e-2,
+        },
+        "xpoint_constraint_count": len(spec.xpoints),
+        "xpoint_psi_n_error_max": float(max(xpoint_errors, default=0.0)),
+    }
+
+
 def _vacuum_comparison(tokamak: Any, spec: FreeGSPublicExampleCase) -> dict[str, Any]:
     coil_records, filaments = _machine_filaments(tokamak)
     points = _sample_points(spec)
@@ -332,6 +513,7 @@ def _attempt_solve(
             "native_same_case_psi_comparison_ready": False,
             "status": "failed_external_psi_extraction",
         }
+    comparison = _native_same_case_profile_source_comparison(eq, profiles, spec, psi)
     return {
         "blend": blend,
         "elapsed_s": elapsed,
@@ -340,8 +522,11 @@ def _attempt_solve(
         "external_psi_min": float(np.min(psi)) if finite_psi else None,
         "external_psi_shape": psi_shape,
         "maxits": maxits,
-        "native_same_case_psi_comparison_ready": False,
-        "status": "external_backend_solved_missing_native_same_case_profile_source_comparison",
+        "native_same_case_profile_source_comparison": comparison,
+        "native_same_case_psi_comparison_ready": bool(
+            comparison["finite_native_psi"] and comparison["finite_external_psi"]
+        ),
+        "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed",
     }
 
 
@@ -350,16 +535,15 @@ def _attempt_solve_sweep(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> d
     for maxits, blend in spec.nonlinear_attempts:
         attempt = _attempt_solve(freegs, spec, maxits=maxits, blend=blend)
         attempts.append(attempt)
-        if (
-            attempt["status"]
-            == "external_backend_solved_missing_native_same_case_profile_source_comparison"
+        if attempt["status"] == (
+            "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
         ):
             break
     successful = [
         attempt
         for attempt in attempts
         if attempt["status"]
-        == "external_backend_solved_missing_native_same_case_profile_source_comparison"
+        == "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
     ]
     best = successful[0] if successful else attempts[-1]
     return {
@@ -382,9 +566,10 @@ def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str,
         "grid": {"nx": spec.nx, "ny": spec.ny},
         "machine_class": spec.machine_class,
         "missing_full_fidelity_requirements": [
-            "native profile-source/free-boundary solve using same coil currents and profiles",
-            "native-vs-FreeGS psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
+            "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
+            "native q-profile extraction and sanity thresholds",
             "grid-convergence evidence for the public example",
+            "coil/vacuum reconstruction linked to public machine current sidecars",
         ],
         "external_nonlinear_output_ready": solve_sweep["external_nonlinear_output_ready"],
         "nonlinear_solve_attempt": solve,
@@ -405,6 +590,16 @@ def _blocked_status(cases: list[dict[str, Any]], backend_available: bool) -> str
         return "blocked_freegs_backend_unavailable"
     if cases and all(case["vacuum_green_function_comparison"]["pass"] for case in cases):
         if all(case["external_nonlinear_output_ready"] for case in cases):
+            if all(
+                case["nonlinear_solve_attempt"].get(
+                    "native_same_case_psi_comparison_ready", False
+                )
+                for case in cases
+            ):
+                return (
+                    "blocked_public_freegs_native_same_case_compared_missing_"
+                    "strict_threshold_q_profile_grid_convergence"
+                )
             return "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison"
         return "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi"
     return "blocked_public_freegs_vacuum_or_backend_contract_failed"
@@ -426,21 +621,25 @@ def _write_markdown(report: dict[str, Any]) -> None:
         f"- Case count: `{report['case_count']}`",
         f"- Vacuum comparison pass: `{report['vacuum_comparison_pass']}`",
         f"- External nonlinear output ready: `{report['external_nonlinear_output_ready']}`",
+        f"- Native same-case comparison ready: `{report['native_same_case_psi_comparison_ready']}`",
         f"- Accepted full fidelity: `{report['accepted_full_fidelity_ready']}`",
         f"- Artifact: `{report['artifact_path']}`",
         "",
-        "| Case | Machine | Vacuum NRMSE | Vacuum pass | Nonlinear status |",
-        "| --- | --- | ---: | ---: | --- |",
+        "| Case | Machine | Vacuum NRMSE | Vacuum pass | Native psi_N RMSE | Axis error [m] | Nonlinear status |",
+        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
     ]
     for case in report["cases"]:
         vacuum = case["vacuum_green_function_comparison"]
         solve = case["nonlinear_solve_attempt"]
+        comparison = solve.get("native_same_case_profile_source_comparison", {})
         lines.append(
-            "| {case_id} | {machine} | {nrmse:.6e} | {vac_pass} | `{status}` |".format(
+            "| {case_id} | {machine} | {nrmse:.6e} | {vac_pass} | {psi_rmse:.6e} | {axis_error:.6e} | `{status}` |".format(
                 case_id=case["case_id"],
                 machine=case["machine_class"],
                 nrmse=vacuum["nrmse"],
                 vac_pass=vacuum["pass"],
+                psi_rmse=float(comparison.get("psi_n_rmse", np.nan)),
+                axis_error=float(comparison.get("axis_error_m", np.nan)),
                 status=solve["status"],
             )
         )
@@ -477,15 +676,19 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
             cases.append(_case_record(freegs, spec))
     backend_available = freegs is not None
     missing_requirements = [
-        "native same-case free-boundary profile-source reconstruction against finite external FreeGS psi output",
-        "native-vs-FreeGS psi_N RMSE threshold",
-        "axis/X-point/boundary containment and q-profile thresholds",
+        "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
+        "native q-profile extraction and sanity thresholds",
         "grid convergence across public example resolutions",
+        "coil/vacuum reconstruction linked to public machine current sidecars",
     ]
     vacuum_pass = bool(cases) and all(
         case["vacuum_green_function_comparison"]["pass"] for case in cases
     )
     external_ready = bool(cases) and all(case["external_nonlinear_output_ready"] for case in cases)
+    native_comparison_ready = bool(cases) and all(
+        case["nonlinear_solve_attempt"].get("native_same_case_psi_comparison_ready", False)
+        for case in cases
+    )
     if not vacuum_pass:
         fallback = _tracked_report_fallback()
         if fallback is not None:
@@ -513,6 +716,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
             "FreeGS_machine_coil_currents_after_constraints",
             "native_vs_FreeGS_vacuum_Green_function_residuals",
             "external_FreeGS_nonlinear_psi_shape_and_range",
+            "native_same_case_profile_source_psi_N_RMSE_axis_current_boundary_metrics",
             "external_nonlinear_backend_solve_status",
         ],
         "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
@@ -520,7 +724,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "redistribution_license": "FreeGS LGPL-3.0-or-later",
         "reference_family": "FreeGS",
         "sha256": "",
-        "solver_output_comparison_ready": False,
+        "solver_output_comparison_ready": native_comparison_ready,
         "solver_output_comparison_status": _blocked_status(cases, backend_available),
         "surface": "free_boundary_equilibrium",
     }
@@ -545,6 +749,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "external_nonlinear_output_ready": external_ready,
         "metadata_path": _rel(METADATA_PATH),
         "missing_full_fidelity_requirements": missing_requirements,
+        "native_same_case_psi_comparison_ready": native_comparison_ready,
         "reference_output_ready": False,
         "sha256": metadata["sha256"],
         "report_generation_mode": "external_backend_reconstruction",
