@@ -256,7 +256,8 @@ and GS2 nonlinear output row sharing the same `benchmark_case_id` and
 for every required family. Candidate output rows with private `file://`
 provenance, placeholder provenance, unknown licensing, proprietary licensing,
 or explicitly non-redistributable licensing are blocked before artifact
-conversion.
+conversion. Native same-case comparison rows are also checksum-gated with
+`native_output_sha256` before threshold evaluation.
 
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
@@ -974,6 +975,8 @@ families. For multi-solver nonlinear GK, the manifest must also prove
 same-deck identity across GENE, CGYRO, and GS2 and provide per-family
 convergence/scaling evidence. Candidate artifacts must carry public HTTP(S)
 provenance and an explicit redistribution-permitted license before conversion.
+Native same-case comparison artefacts must carry a matching checksum before any
+threshold can be marked ready.
 The benchmark intentionally does not pass
 full-fidelity acceptance until those public reference gates exist and their
 artefacts are present.

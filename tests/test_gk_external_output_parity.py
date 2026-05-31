@@ -169,6 +169,7 @@ def test_gk_external_output_parity_compares_native_same_case_output(tmp_path: Pa
                 "solver_family": "GS2",
                 "output_path": reference.name,
                 "native_output_path": native.name,
+                "native_output_sha256": _sha256(native),
                 "provenance_url": "https://example.invalid/gs2/gs2_itg_public",
                 "redistribution_license": "MIT",
                 "sha256": _sha256(reference),
@@ -198,6 +199,54 @@ def test_gk_external_output_parity_compares_native_same_case_output(tmp_path: Pa
     assert report["accepted_full_fidelity_ready"] is False
 
 
+def test_gk_external_output_parity_blocks_unchecksummed_native_output(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "external"
+    source_root.mkdir()
+    reference = source_root / "cgyro_reference.json"
+    native = source_root / "cgyro_native.json"
+    _payload(reference, scale=1.0)
+    _payload(native, scale=1.0)
+    manifest = {
+        "schema": "gk-nonlinear-external-output-manifest.v1",
+        "cases": [
+            {
+                "case_id": "cgyro_itg_public",
+                "deck_id": "cgyro_itg_public_deck",
+                "benchmark_case_id": "public_itg_em_same_deck",
+                "deck_physics_sha256": DECK_PHYSICS_SHA256,
+                "solver_family": "CGYRO",
+                "output_path": reference.name,
+                "native_output_path": native.name,
+                "provenance_url": "https://example.invalid/cgyro/cgyro_itg_public",
+                "redistribution_license": "MIT",
+                "sha256": _sha256(reference),
+            }
+        ],
+        "grid_convergence_evidence": [],
+        "production_scaling_evidence": [],
+    }
+    (source_root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    report = parity.build_gk_external_output_parity_report(
+        source_root=source_root,
+        artifact_dir=tmp_path / "artifacts",
+        report_dir=tmp_path / "reports",
+        write=True,
+    )
+
+    rows = {row["solver_family"]: row for row in report["external_output_rows"]}
+    cgyro = rows["CGYRO"]
+    assert cgyro["reference_output_ready"] is True
+    assert cgyro["native_same_case_comparison_ready"] is False
+    assert cgyro["status"] == "blocked_native_same_case_output_checksum_missing"
+    assert cgyro["threshold_evaluation"]["reason"] == "native_output_sha256_missing"
+    assert report["accepted_full_fidelity_ready"] is False
+
+
 def test_gk_external_output_parity_blocks_cross_solver_deck_mismatch(
     tmp_path: Path,
 ) -> None:
@@ -222,6 +271,7 @@ def test_gk_external_output_parity_blocks_cross_solver_deck_mismatch(
                 "solver_family": family,
                 "output_path": reference.name,
                 "native_output_path": native.name,
+                "native_output_sha256": _sha256(native),
                 "provenance_url": f"https://example.invalid/{suffix}/itg_public",
                 "redistribution_license": "CC-BY-4.0",
                 "sha256": _sha256(reference),

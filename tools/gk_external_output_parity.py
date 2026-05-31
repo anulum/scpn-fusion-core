@@ -623,6 +623,13 @@ def _convert_case(
     if native_path_value:
         try:
             native_path = _resolve_under(source_root, str(native_path_value))
+            native_sha256 = raw_case.get("native_output_sha256")
+            if not native_sha256:
+                raise ValueError("native_output_sha256_missing")
+            if not _looks_like_sha256(native_sha256):
+                raise ValueError("native_output_sha256_invalid")
+            if _sha256(native_path) != str(native_sha256):
+                raise ValueError("native_output_checksum_mismatch")
             native_payload = _load_payload(native_path)
             native_coordinates_ok, native_coordinate_failures = _validate_coordinates(
                 native_payload["coordinates"], coordinate_contracts
@@ -658,13 +665,21 @@ def _convert_case(
                 }
                 status = "blocked_native_same_case_output_contract_invalid"
         except (OSError, ValueError, json.JSONDecodeError) as exc:
+            reason = str(exc)
+            checksum_status = {
+                "native_output_checksum_mismatch": "blocked_native_same_case_output_checksum_mismatch",
+                "native_output_sha256_invalid": "blocked_native_same_case_output_checksum_invalid",
+                "native_output_sha256_missing": "blocked_native_same_case_output_checksum_missing",
+            }
             threshold_evaluation = {
                 "ready": False,
                 "passed": False,
                 "checks": [],
-                "reason": str(exc),
+                "reason": reason,
             }
-            status = "blocked_native_same_case_output_missing_or_invalid"
+            status = checksum_status.get(
+                reason, "blocked_native_same_case_output_missing_or_invalid"
+            )
 
     metadata["solver_output_comparison_ready"] = comparison_ready
     metadata["solver_output_comparison_status"] = status

@@ -27,7 +27,8 @@
     "threshold contract observables are declared in required_observables",
     "threshold contract metrics use supported quantitative metric families",
     "multi-solver nonlinear GK manifests require one GENE, one CGYRO, and one GS2 row with shared benchmark_case_id and deck_physics_sha256",
-    "nonlinear GK grid-convergence and production-scaling evidence must cover every required solver family before readiness can pass"
+    "nonlinear GK grid-convergence and production-scaling evidence must cover every required solver family before readiness can pass",
+    "nonlinear GK native same-case comparison requires native_output_sha256 before thresholds are evaluated"
   ],
   "required_case_fields": [
     "case_id",

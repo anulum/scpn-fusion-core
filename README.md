@@ -217,6 +217,8 @@ strictly same-deck: all three solver-family rows must share one
 evidence must cover GENE, CGYRO, and GS2 before readiness can pass. Candidate
 external outputs are rejected before conversion if provenance is private or the
 license is unknown, proprietary, restricted, or otherwise non-redistributable.
+Native same-case comparison rows must also provide `native_output_sha256`
+before quantitative thresholds are evaluated.
 The free-boundary lane now indexes public FreeGSNKE machine metadata for active
 coils, passive structures, limiter/wall contours, and magnetic probes, plus
 FreeGS example-script checksums, in

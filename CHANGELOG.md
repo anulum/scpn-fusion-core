@@ -19,6 +19,9 @@
   provide private provenance URLs or non-redistributable, unknown, restricted,
   or proprietary licensing.
 
+- Required `native_output_sha256` for nonlinear GK native same-case comparison
+  rows before quantitative threshold evaluation can become ready.
+
 - Added disruption contract primitives, mitigation contracts, and replay contracts to the configured global mypy strict cohort with a typed reactor-design evaluation boundary.
 
 - Added the real-time density-profile controller to the configured global mypy strict cohort with explicit radial-profile array contracts.
