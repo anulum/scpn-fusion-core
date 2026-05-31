@@ -13,6 +13,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from scpn_fusion.core._gk_nonlinear_types import (
+    NonlinearGKFieldEnergyDiagnostics,
     NonlinearGKInvariantDiagnostics,
     NonlinearGKResult,
     NonlinearGKState,
@@ -138,9 +139,44 @@ class NonlinearGKTimeMixin:
         ky0_idx = np.argmin(np.abs(self.ky))
         return float(np.sqrt(np.mean(np.abs(state.phi[:, ky0_idx, :]) ** 2)))
 
-    def total_energy(self, state: NonlinearGKState) -> float:
-        """Total delta-f squared energy for conservation diagnostics."""
+    def particle_free_energy(self, state: NonlinearGKState) -> float:
+        """Distribution-function free energy for conservation diagnostics."""
+        self.validate_state(state)
         return float(np.sum(np.abs(state.f) ** 2) * self.dvpar * self.dmu * self.dtheta)
+
+    def field_energy(self, state: NonlinearGKState) -> NonlinearGKFieldEnergyDiagnostics:
+        """Electromagnetic field energy across phi, A_parallel, and B_parallel."""
+        self.validate_state(state)
+        kperp_weight = 1.0 + self.kperp2[:, :, None]
+        theta_weight = self.dtheta
+        beta = max(float(self.cfg.beta_e), 1e-30)
+        phi_energy = 0.5 * float(np.sum(kperp_weight * np.abs(state.phi) ** 2) * theta_weight)
+        a_parallel_energy = 0.0
+        if state.A_par is not None:
+            a_parallel_energy = 0.5 * float(
+                np.sum(kperp_weight * np.abs(state.A_par) ** 2) * theta_weight / beta
+            )
+        b_parallel_energy = 0.0
+        if state.B_par is not None:
+            b_parallel_energy = 0.5 * float(np.sum(np.abs(state.B_par) ** 2) * theta_weight / beta)
+        total = phi_energy + a_parallel_energy + b_parallel_energy
+        finite = bool(
+            np.isfinite(phi_energy)
+            and np.isfinite(a_parallel_energy)
+            and np.isfinite(b_parallel_energy)
+            and np.isfinite(total)
+        )
+        return NonlinearGKFieldEnergyDiagnostics(
+            phi=phi_energy,
+            A_parallel=a_parallel_energy,
+            B_parallel=b_parallel_energy,
+            total=total,
+            finite=finite,
+        )
+
+    def total_energy(self, state: NonlinearGKState) -> float:
+        """Total particle plus electromagnetic field energy."""
+        return self.particle_free_energy(state) + self.field_energy(state).total
 
     def nonlinear_invariant_diagnostics(
         self, state: NonlinearGKState

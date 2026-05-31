@@ -237,6 +237,51 @@ class TestEnergyConservation:
         # Energy should not grow (may decrease slightly due to dealiasing)
         assert E1 < E0 * 10.0  # generous bound — no unbounded growth
 
+    def test_electromagnetic_field_energy_accounts_all_field_components(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=6,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=29)
+
+        field_energy = solver.field_energy(state)
+
+        assert field_energy.finite
+        assert field_energy.phi >= 0.0
+        assert field_energy.A_parallel >= 0.0
+        assert field_energy.B_parallel >= 0.0
+        assert field_energy.total == (
+            field_energy.phi + field_energy.A_parallel + field_energy.B_parallel
+        )
+
+    def test_total_energy_includes_particle_and_electromagnetic_field_energy(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=6,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=31)
+
+        particle = solver.particle_free_energy(state)
+        field = solver.field_energy(state)
+
+        assert solver.total_energy(state) == particle + field.total
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):

@@ -756,7 +756,9 @@ The native nonlinear GK surface now exposes an explicit
 conservative pseudo-spectral ExB term with de-aliasing diagnostics. The
 electromagnetic state contract now carries `phi`, `A_parallel`, and
 `B_parallel` field components, and `B_parallel` now enters the Hamiltonian
-gradient drive through the magnetic-moment compression term. This is necessary
+gradient drive through the magnetic-moment compression term. The energy
+diagnostics now account for particle free energy and electromagnetic field
+energy separately before reporting total energy. This is necessary
 infrastructure for full nonlinear 5D parity, but it is not sufficient to claim
 GENE/CGYRO/GS2 equivalence.
 

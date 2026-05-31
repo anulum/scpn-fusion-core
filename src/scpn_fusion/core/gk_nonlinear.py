@@ -28,6 +28,7 @@ from scpn_fusion.core._gk_nonlinear_setup import NonlinearGKSetupMixin
 from scpn_fusion.core._gk_nonlinear_time import NonlinearGKTimeMixin
 from scpn_fusion.core._gk_nonlinear_types import (
     NonlinearGKConfig,
+    NonlinearGKFieldEnergyDiagnostics,
     NonlinearGKInvariantDiagnostics,
     NonlinearGKPhaseSpaceContract,
     NonlinearGKResult,
@@ -52,6 +53,7 @@ class NonlinearGKSolver(
 
 __all__ = [
     "NonlinearGKConfig",
+    "NonlinearGKFieldEnergyDiagnostics",
     "NonlinearGKInvariantDiagnostics",
     "NonlinearGKPhaseSpaceContract",
     "NonlinearGKResult",

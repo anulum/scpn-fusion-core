@@ -425,6 +425,7 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "explicit_5d_phase_space_contract": True,
         "electromagnetic_b_parallel_surface": cfg.electromagnetic,
         "electromagnetic_b_parallel_hamiltonian_coupling": cfg.electromagnetic,
+        "electromagnetic_field_energy_accounting": cfg.electromagnetic,
         "five_dimensional_delta_f_state": cfg.n_kx > 1
         and cfg.n_ky > 1
         and cfg.n_theta > 1

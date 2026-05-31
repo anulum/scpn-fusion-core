@@ -117,8 +117,20 @@ class NonlinearGKInvariantDiagnostics:
     passes: bool
 
 
+@dataclass(frozen=True)
+class NonlinearGKFieldEnergyDiagnostics:
+    """Electromagnetic field-energy components in solver-normalised units."""
+
+    phi: float
+    A_parallel: float
+    B_parallel: float
+    total: float
+    finite: bool
+
+
 __all__ = [
     "NonlinearGKConfig",
+    "NonlinearGKFieldEnergyDiagnostics",
     "NonlinearGKInvariantDiagnostics",
     "NonlinearGKPhaseSpaceContract",
     "NonlinearGKResult",
