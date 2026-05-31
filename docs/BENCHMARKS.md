@@ -63,8 +63,10 @@ timing remain required before making throughput claims.
 | `inverse_reconstruct_analytic_60probes` | `42.133 us` |
 | `finite_difference_60probes` | `520.29 us` |
 | `analytical_60probes` | `338.89 us` |
-| `geqdsk_profile_source_components/source_components_33x33` | `106.76 us` |
-| `geqdsk_profile_source_components/source_components_65x65` | `409.07 us` |
+| `geqdsk_profile_source_components/source_components_33x33` | `105.32 us` |
+| `geqdsk_profile_source_components/source_components_65x65` | `450.24 us` |
+| `geqdsk_source_convention_adapter/select_adapter_33x33` | `45.809 us` |
+| `geqdsk_source_convention_adapter/select_adapter_65x65` | `196.68 us` |
 | `transport_step/lmode_single_step` | `754.06 ns` |
 | `transport_step/hmode_single_step` | `866.43 ns` |
 | `transport_step/hmode_neoclassical_single_step` | `3.4128 us` |

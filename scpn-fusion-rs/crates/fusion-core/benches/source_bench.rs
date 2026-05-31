@@ -7,7 +7,9 @@
 // SCPN Fusion Core — GEQDSK Profile Source Benchmarks
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use fusion_core::source::compute_geqdsk_profile_source_components;
+use fusion_core::source::{
+    compute_geqdsk_profile_source_components, select_geqdsk_source_convention_adapter,
+};
 use ndarray::Array2;
 use std::hint::black_box;
 
@@ -46,6 +48,20 @@ fn ffprime_profile(n: usize) -> Vec<f64> {
         .collect()
 }
 
+fn synthetic_profile_source(nz: usize, nr: usize) -> Array2<f64> {
+    Array2::from_shape_fn((nz, nr), |(iz, ir)| {
+        let z = iz as f64 / (nz - 1) as f64;
+        let r = ir as f64 / (nr - 1) as f64;
+        let envelope =
+            (1.0 - (2.0 * r - 1.0).powi(2)).max(0.0) * (1.0 - (2.0 * z - 1.0).powi(2)).max(0.0);
+        1.0e-3 + envelope * (1.0 + 0.25 * r + 0.1 * z)
+    })
+}
+
+fn scaled_operator_source(profile_source: &Array2<f64>) -> Array2<f64> {
+    profile_source.mapv(|value| value * 2.0 * std::f64::consts::PI)
+}
+
 /// Benchmark native GEQDSK pressure/FFprime source assembly on representative grids.
 fn bench_geqdsk_profile_source_components(c: &mut Criterion) {
     let mut group = c.benchmark_group("geqdsk_profile_source_components");
@@ -79,5 +95,39 @@ fn bench_geqdsk_profile_source_components(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_geqdsk_profile_source_components);
+/// Benchmark explicit named source-convention adapter selection without fitted scales.
+fn bench_geqdsk_source_convention_adapter(c: &mut Criterion) {
+    let mut group = c.benchmark_group("geqdsk_source_convention_adapter");
+    group.sample_size(10);
+
+    for &(nz, nr) in &[(33usize, 33usize), (65usize, 65usize)] {
+        let profile_source = synthetic_profile_source(nz, nr);
+        let operator_source = scaled_operator_source(&profile_source);
+
+        group.bench_function(format!("select_adapter_{nz}x{nr}"), |b| {
+            b.iter(|| {
+                let adapter = select_geqdsk_source_convention_adapter(
+                    black_box(&operator_source),
+                    black_box(&profile_source),
+                    black_box(0.4),
+                    black_box(0.15),
+                )
+                .expect("GEQDSK source convention adapter should select");
+                black_box((
+                    adapter.convention.as_str(),
+                    adapter.residual_l2,
+                    adapter.pass,
+                ));
+            })
+        });
+    }
+
+    group.finish();
+}
+
+criterion_group!(
+    benches,
+    bench_geqdsk_profile_source_components,
+    bench_geqdsk_source_convention_adapter
+);
 criterion_main!(benches);
