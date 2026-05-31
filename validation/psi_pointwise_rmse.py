@@ -261,6 +261,8 @@ class EfitNRMSEBenchmarkGate:
     source_domain_residual_class_counts: dict[str, int]
     source_domain_required_solver_mode_counts: dict[str, int]
     source_domain_next_action_counts: dict[str, int]
+    gate_source_domain_required_solver_mode_counts: dict[str, int]
+    gate_source_domain_next_action_counts: dict[str, int]
     operator_source_threshold: float
     operator_source_pass_count: int
     gate_operator_source_pass_count: int
@@ -2163,6 +2165,8 @@ def validate_efit_nrmse_benchmark(
     source_domain_residual_class_counts: dict[str, int] = {}
     source_domain_required_solver_mode_counts: dict[str, int] = {}
     source_domain_next_action_counts: dict[str, int] = {}
+    gate_source_domain_required_solver_mode_counts: dict[str, int] = {}
+    gate_source_domain_next_action_counts: dict[str, int] = {}
     source_sum_identity_errors: list[float] = []
     operator_current_error_entries: list[tuple[str, float]] = []
     gate_operator_current_error_entries: list[tuple[str, float]] = []
@@ -2206,6 +2210,13 @@ def validate_efit_nrmse_benchmark(
         source_domain_next_action_counts[next_action] = (
             source_domain_next_action_counts.get(next_action, 0) + 1
         )
+        if row["reference_role"] == "gate":
+            gate_source_domain_required_solver_mode_counts[required_solver_mode] = (
+                gate_source_domain_required_solver_mode_counts.get(required_solver_mode, 0) + 1
+            )
+            gate_source_domain_next_action_counts[next_action] = (
+                gate_source_domain_next_action_counts.get(next_action, 0) + 1
+            )
         source_adapter = str(row["source_convention_adapter"])
         source_convention_adapter_counts[source_adapter] = (
             source_convention_adapter_counts.get(source_adapter, 0) + 1
@@ -2450,6 +2461,8 @@ def validate_efit_nrmse_benchmark(
         source_domain_residual_class_counts=source_domain_residual_class_counts,
         source_domain_required_solver_mode_counts=source_domain_required_solver_mode_counts,
         source_domain_next_action_counts=source_domain_next_action_counts,
+        gate_source_domain_required_solver_mode_counts=gate_source_domain_required_solver_mode_counts,
+        gate_source_domain_next_action_counts=gate_source_domain_next_action_counts,
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,
         gate_operator_source_pass_count=gate_operator_source_pass_count,
@@ -2676,6 +2689,11 @@ def main() -> int:
         for name, count in sorted(benchmark.source_domain_required_solver_mode_counts.items())
     )
     print(f"Required solver modes: {required_solver_modes}")
+    gate_required_solver_modes = ", ".join(
+        f"{name}={count}"
+        for name, count in sorted(benchmark.gate_source_domain_required_solver_mode_counts.items())
+    )
+    print(f"Public required solver modes: {gate_required_solver_modes}")
     print(
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"

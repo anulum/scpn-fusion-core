@@ -162,7 +162,7 @@ required before any CUDA throughput claim.
 | EFIT/GEQDSK raw profile-source gate | FAIL | `0/18` rows under `psi_N RMSE <= 0.05`; worst `jet/jet_lmode_2MA.geqdsk` at `10.626997` |
 | Public operator-source gate | PASS | `8/8` public rows under `psi_N RMSE <= 1e-6` |
 | Adapted profile-source gate | PASS | `4/4` accepted adapter rows under `psi_N RMSE <= 0.05` |
-| GEQDSK source-domain action attribution | FAIL | Aggregate report counts show `14/18` rows require profile-source repair before free-boundary attribution; `4/18` accepted-adapter rows require free-boundary coil/vacuum reconstruction directly |
+| GEQDSK source-domain action attribution | FAIL | Aggregate report counts show `14/18` rows require profile-source repair before free-boundary attribution; public gate counts show `4/8` accepted-adapter rows require free-boundary coil/vacuum reconstruction directly |
 | Native operator/current closure | PASS | radial convergence order `2.000000`, worst radial current closure `8.31e-16` |
 
 The raw profile-source and strict FreeGS failures are open benchmark blockers.

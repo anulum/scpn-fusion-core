@@ -33,6 +33,8 @@
     "source_domain_residual_class_counts",
     "source_domain_required_solver_mode_counts",
     "source_domain_next_action_counts",
+    "gate_source_domain_required_solver_mode_counts",
+    "gate_source_domain_next_action_counts",
     "operator_source_threshold",
     "operator_source_pass_count",
     "gate_operator_source_pass_count",
@@ -219,6 +221,20 @@
       }
     },
     "source_domain_next_action_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "gate_source_domain_required_solver_mode_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "gate_source_domain_next_action_counts": {
       "type": "object",
       "additionalProperties": {
         "type": "integer",

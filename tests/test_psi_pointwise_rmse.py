@@ -932,6 +932,12 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.source_domain_next_action_counts == {
             "preserve_current_profile_source_contract": 10
         }
+        assert gate.gate_source_domain_required_solver_mode_counts == {
+            "profile_source_fixed_boundary_reconstruction_sufficient": 4
+        }
+        assert gate.gate_source_domain_next_action_counts == {
+            "preserve_current_profile_source_contract": 4
+        }
         assert gate.adapted_profile_pass_count == 10
         assert gate.gate_adapted_profile_pass_count == 4
         assert gate.adapted_profile_threshold == pytest.approx(
@@ -1446,6 +1452,12 @@ class TestValidateEFITNRMSEBenchmark:
         }
         assert payload["source_domain_next_action_counts"] == {
             "preserve_current_profile_source_contract": 10
+        }
+        assert payload["gate_source_domain_required_solver_mode_counts"] == {
+            "profile_source_fixed_boundary_reconstruction_sufficient": 4
+        }
+        assert payload["gate_source_domain_next_action_counts"] == {
+            "preserve_current_profile_source_contract": 4
         }
         assert payload["operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["gate_operator_current_worst_relative_error"] == pytest.approx(5.0e-5)

@@ -18,6 +18,9 @@
   counts so benchmark reports expose the free-boundary reconstruction queue
   without row scanning.
 
+- Added public-gate EFIT/GEQDSK source-domain required-solver and next-action
+  counts to separate SPARC gate blockers from diagnostic-only proxy rows.
+
 - Added EFIT/GEQDSK effective source-domain residual classification to separate
   plasma-source mismatch from vacuum/source-free operator residuals after
   accepted source-convention adaptation.
