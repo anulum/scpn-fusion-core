@@ -204,7 +204,7 @@
     {
       "id": "readme_free_boundary_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Free-boundary GS solve \\| Public GEQDSK operator-source gate passes; profile-source/free-boundary reconstruction gate remains open; not EFIT-grade inverse reconstruction",
+      "source_pattern": "Free-boundary GS solve \\| Public GEQDSK operator-source gate passes; FreeGSNKE public machine metadata is indexed; FreeGS public-example vacuum convention passes; profile-source/free-boundary reconstruction gate remains open; not EFIT-grade inverse reconstruction",
       "evidence_files": [
         "README.md"
       ],
@@ -288,7 +288,7 @@
         },
         {
           "file": "docs/PHYSICS_METHODS_COMPLETE.md",
-          "pattern": "does not claim Aurora/STRAHL/JINTRAC collisional-operator parity"
+          "pattern": "does not claim\\s+Aurora/STRAHL/JINTRAC collisional-operator parity"
         }
       ]
     }
