@@ -126,6 +126,8 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
         assert case["sha256_ready"] is False
         assert case["observables_declared"] is True
         assert case["observable_contracts_ready"] is True
+        assert case["observable_axis_contracts_ready"] is True
+        assert case["observable_axis_contracts_invalid"] == []
         assert case["observable_keys_ready"] is False
         assert case["observable_keys_missing"]
         assert case["observable_payload_invalid"] == []

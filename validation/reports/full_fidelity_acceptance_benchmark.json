@@ -44,6 +44,8 @@
             "coordinate_payload_invalid": [],
             "coordinates_declared": true,
             "missing_fields": [],
+            "observable_axis_contracts_invalid": [],
+            "observable_axis_contracts_ready": true,
             "observable_contracts_ready": true,
             "observable_keys_missing": [
               "ion_heat_flux_spectrum",
@@ -115,6 +117,8 @@
             "coordinate_payload_invalid": [],
             "coordinates_declared": true,
             "missing_fields": [],
+            "observable_axis_contracts_invalid": [],
+            "observable_axis_contracts_ready": true,
             "observable_contracts_ready": true,
             "observable_keys_missing": [
               "f_p_xi_t",
@@ -184,6 +188,8 @@
             "coordinate_payload_invalid": [],
             "coordinates_declared": true,
             "missing_fields": [],
+            "observable_axis_contracts_invalid": [],
+            "observable_axis_contracts_ready": true,
             "observable_contracts_ready": true,
             "observable_keys_missing": [
               "charge_state_density_r_t",

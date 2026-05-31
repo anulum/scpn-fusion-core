@@ -241,6 +241,54 @@ def _coordinate_readiness(path: Path | None, contracts: Any) -> dict[str, Any]:
     }
 
 
+def _observable_axis_contract_readiness(
+    observables: Any, observable_contracts: Any, coordinate_contracts: Any
+) -> dict[str, Any]:
+    """Return observable-to-coordinate axis contract readiness."""
+    required_observables = (
+        [str(name) for name in observables] if isinstance(observables, list) else []
+    )
+    observable_contract_map = observable_contracts if isinstance(observable_contracts, dict) else {}
+    coordinate_names = (
+        set(coordinate_contracts) if isinstance(coordinate_contracts, dict) else set()
+    )
+    invalid = []
+    for name in required_observables:
+        contract = observable_contract_map.get(name)
+        if not isinstance(contract, dict):
+            invalid.append({"observable": name, "reason": "missing_observable_contract"})
+            continue
+        axes = contract.get("axes")
+        if not isinstance(axes, list) or not axes:
+            invalid.append({"observable": name, "reason": "missing_axes"})
+            continue
+        axis_names = [str(axis) for axis in axes]
+        min_rank = int(contract.get("min_rank", 0))
+        if len(axis_names) < min_rank:
+            invalid.append(
+                {
+                    "observable": name,
+                    "reason": "axes_below_min_rank",
+                    "axis_count": len(axis_names),
+                    "min_rank": min_rank,
+                }
+            )
+        missing_axes = [axis for axis in axis_names if axis not in coordinate_names]
+        if missing_axes:
+            invalid.append(
+                {
+                    "observable": name,
+                    "reason": "axis_not_declared",
+                    "missing_axes": missing_axes,
+                }
+            )
+
+    return {
+        "ready": not invalid and bool(required_observables),
+        "invalid": invalid,
+    }
+
+
 def _reference_readiness(
     surface: str, manifest: dict[str, Any], schema: dict[str, Any]
 ) -> dict[str, Any]:
@@ -275,6 +323,9 @@ def _reference_readiness(
         coordinate_contracts = case.get("coordinate_contracts")
         coordinates_declared = isinstance(coordinate_contracts, dict) and bool(coordinate_contracts)
         coordinate_report = _coordinate_readiness(artifact_path, coordinate_contracts)
+        observable_axis_report = _observable_axis_contract_readiness(
+            observables, observable_contracts, coordinate_contracts
+        )
         threshold_contracts = case.get("threshold_contracts")
         threshold_report = _threshold_readiness(thresholds, threshold_contracts, observables)
         status = case.get("status")
@@ -298,6 +349,7 @@ def _reference_readiness(
             and sha_ready
             and observables_declared
             and contracts_ready
+            and observable_axis_report["ready"]
             and observable_report["ready"]
             and coordinates_declared
             and coordinate_report["ready"]
@@ -319,6 +371,8 @@ def _reference_readiness(
             "sha256_ready": sha_ready,
             "observables_declared": observables_declared,
             "observable_contracts_ready": contracts_ready,
+            "observable_axis_contracts_ready": observable_axis_report["ready"],
+            "observable_axis_contracts_invalid": observable_axis_report["invalid"],
             "observable_keys_ready": observable_report["ready"],
             "observable_keys_present": observable_report["present"],
             "observable_keys_missing": observable_report["missing"],

@@ -26,30 +26,50 @@
           },
           "observable_contracts": {
             "charge_state_density_r_t": {
+              "axes": [
+                "time_s",
+                "radius_m",
+                "charge_state"
+              ],
               "finite": true,
               "min_rank": 3,
               "non_empty": true,
               "numeric": true
             },
             "ionisation_source_matrix": {
+              "axes": [
+                "radius_m",
+                "charge_state"
+              ],
               "finite": true,
               "min_rank": 2,
               "non_empty": true,
               "numeric": true
             },
             "line_radiation_power_t": {
+              "axes": [
+                "time_s"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "recombination_sink_matrix": {
+              "axes": [
+                "radius_m",
+                "charge_state"
+              ],
               "finite": true,
               "min_rank": 2,
               "non_empty": true,
               "numeric": true
             },
             "total_impurity_density_r_t": {
+              "axes": [
+                "time_s",
+                "radius_m"
+              ],
               "finite": true,
               "min_rank": 2,
               "non_empty": true,
@@ -139,30 +159,52 @@
           },
           "observable_contracts": {
             "electromagnetic_apar_energy": {
+              "axes": [
+                "time_s",
+                "kx_rhos",
+                "ky_rhos"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "electron_heat_flux_spectrum": {
+              "axes": [
+                "time_s",
+                "kx_rhos",
+                "ky_rhos"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "ion_heat_flux_spectrum": {
+              "axes": [
+                "time_s",
+                "kx_rhos",
+                "ky_rhos"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "saturated_phi_rms": {
+              "axes": [
+                "time_s"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "zonal_flow_energy": {
+              "axes": [
+                "time_s",
+                "kx_rhos"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
@@ -242,30 +284,52 @@
           },
           "observable_contracts": {
             "avalanche_growth_rate_t": {
+              "axes": [
+                "time_s",
+                "radius_m"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "f_p_xi_t": {
+              "axes": [
+                "time_s",
+                "radius_m",
+                "momentum_mec",
+                "pitch_cosine"
+              ],
               "finite": true,
               "min_rank": 3,
               "non_empty": true,
               "numeric": true
             },
             "partial_screening_drag_t": {
+              "axes": [
+                "time_s",
+                "radius_m"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "runaway_current_t": {
+              "axes": [
+                "time_s",
+                "radius_m"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
               "numeric": true
             },
             "synchrotron_loss_power_t": {
+              "axes": [
+                "time_s",
+                "radius_m"
+              ],
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
