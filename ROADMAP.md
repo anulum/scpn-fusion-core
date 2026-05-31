@@ -72,6 +72,10 @@ Next targets for v4.0:
 - QLKNN: ensemble of 3 models for UQ, 10M sample retrain
 - FNO: retrain on real gyrokinetic spatial data when available
 - Neural equilibrium: acquire 50+ GEQDSK equilibria, retrain
+- Nonlinear GK: ingest redistribution-permitted same-deck GENE, CGYRO, and
+  GS2 nonlinear output artefacts, then pass the strict distribution,
+  heat-flux, field-energy, zonal/saturation, convergence, scaling, and
+  native same-case comparison gates.
 
 The legacy NumPy FNO (rel_L2 = 0.79) is DEPRECATED and will be removed in v4.0.
 

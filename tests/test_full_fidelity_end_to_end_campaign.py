@@ -37,6 +37,24 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     )
     assert report["gk_public_decks_indexed"] >= 0
     assert (
+        report["gk_external_nonlinear_parity_report"]
+        == "validation/reports/gk_external_nonlinear_parity.json"
+    )
+    assert report["gk_external_reference_artifacts_converted"] >= 0
+    assert report["gk_external_reference_output_ready"] in {True, False}
+    assert report["gk_native_same_case_comparison_ready"] in {True, False}
+    assert report["gk_grid_convergence_ready"] in {True, False}
+    assert report["gk_production_scale_scaling_ready"] in {True, False}
+    assert report["gk_external_nonlinear_parity_status"] in {
+        "not_run",
+        "blocked_missing_external_output_manifest",
+        "blocked_missing_same_deck_external_outputs",
+        "blocked_missing_native_same_case_output_comparison",
+        "blocked_missing_grid_convergence_evidence",
+        "blocked_missing_production_scale_scaling_evidence",
+        "accepted_full_fidelity_ready",
+    }
+    assert (
         report["production_decomposition_report"]
         == "validation/reports/production_decomposition_contract.json"
     )

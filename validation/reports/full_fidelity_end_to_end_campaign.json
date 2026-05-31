@@ -22,6 +22,13 @@
   "freegs_public_example_reconstruction_report": "validation/reports/freegs_public_example_reconstruction.json",
   "freegs_public_example_reconstruction_status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "freegs_public_example_vacuum_comparison_pass": true,
+  "gk_external_nonlinear_parity_report": "validation/reports/gk_external_nonlinear_parity.json",
+  "gk_external_nonlinear_parity_status": "blocked_missing_external_output_manifest",
+  "gk_external_reference_artifacts_converted": 0,
+  "gk_external_reference_output_ready": false,
+  "gk_grid_convergence_ready": false,
+  "gk_native_same_case_comparison_ready": false,
+  "gk_production_scale_scaling_ready": false,
   "gk_public_deck_inventory_report": "validation/reports/gk_public_reference_deck_inventory.json",
   "gk_public_deck_inventory_status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
   "gk_public_decks_indexed": 40,
@@ -31,12 +38,13 @@
       "lane": "gene_cgyro_gs2_nonlinear_gk_parity",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "same-deck external nonlinear distribution output",
-        "heat_flux_spectra_time_kx_ky_species",
-        "field_energy_history_phi_apar_bpar",
-        "zonal_flow_and_saturation_metrics",
-        "native_same_case_solver_output_comparison",
-        "grid_convergence_and_production_scale_scaling_evidence"
+        "same-deck external nonlinear distribution output for GENE, CGYRO, and GS2",
+        "heat_flux_spectra_time_kx_ky_species for all required solver families",
+        "field_energy_history_phi_apar_bpar for all required solver families",
+        "zonal_flow_and_saturation_metrics for all required solver families",
+        "native same-case nonlinear GK solver-output comparison",
+        "grid-convergence evidence for converted public nonlinear GK outputs",
+        "production-scale scaling evidence for converted public nonlinear GK outputs"
       ],
       "reference_cases_ready": false,
       "sources": [
@@ -79,7 +87,7 @@
           "surface": "native_nonlinear_gyrokinetics"
         }
       ],
-      "status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
+      "status": "blocked_missing_external_output_manifest",
       "surface": "native_nonlinear_gyrokinetics"
     },
     {

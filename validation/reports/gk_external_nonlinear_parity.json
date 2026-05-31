@@ -1,0 +1,122 @@
+{
+  "accepted_full_fidelity_ready": false,
+  "converted_reference_artifacts": 0,
+  "description": "Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and native parity report.",
+  "external_output_manifest": "data/external/full_fidelity_public_sources/gk_external_outputs/manifest.json",
+  "external_output_rows": [
+    {
+      "case_id": null,
+      "converted_artifact_path": null,
+      "deck_id": null,
+      "missing_requirements": [
+        "same_deck_external_nonlinear_output",
+        "nonlinear_distribution_output",
+        "heat_flux_spectra_time_kx_ky_species",
+        "field_energy_history_phi_apar_bpar",
+        "zonal_flow_and_saturation_metrics",
+        "native_same_case_solver_output_comparison",
+        "grid_convergence_evidence",
+        "production_scale_scaling_evidence"
+      ],
+      "native_same_case_comparison_passed": false,
+      "native_same_case_comparison_ready": false,
+      "provenance_url": null,
+      "redistribution_license": null,
+      "reference_output_ready": false,
+      "sha256": null,
+      "solver_family": "GENE",
+      "status": "blocked_missing_external_output_manifest",
+      "threshold_evaluation": {
+        "checks": [],
+        "passed": false,
+        "ready": false
+      }
+    },
+    {
+      "case_id": null,
+      "converted_artifact_path": null,
+      "deck_id": null,
+      "missing_requirements": [
+        "same_deck_external_nonlinear_output",
+        "nonlinear_distribution_output",
+        "heat_flux_spectra_time_kx_ky_species",
+        "field_energy_history_phi_apar_bpar",
+        "zonal_flow_and_saturation_metrics",
+        "native_same_case_solver_output_comparison",
+        "grid_convergence_evidence",
+        "production_scale_scaling_evidence"
+      ],
+      "native_same_case_comparison_passed": false,
+      "native_same_case_comparison_ready": false,
+      "provenance_url": null,
+      "redistribution_license": null,
+      "reference_output_ready": false,
+      "sha256": null,
+      "solver_family": "CGYRO",
+      "status": "blocked_missing_external_output_manifest",
+      "threshold_evaluation": {
+        "checks": [],
+        "passed": false,
+        "ready": false
+      }
+    },
+    {
+      "case_id": null,
+      "converted_artifact_path": null,
+      "deck_id": null,
+      "missing_requirements": [
+        "same_deck_external_nonlinear_output",
+        "nonlinear_distribution_output",
+        "heat_flux_spectra_time_kx_ky_species",
+        "field_energy_history_phi_apar_bpar",
+        "zonal_flow_and_saturation_metrics",
+        "native_same_case_solver_output_comparison",
+        "grid_convergence_evidence",
+        "production_scale_scaling_evidence"
+      ],
+      "native_same_case_comparison_passed": false,
+      "native_same_case_comparison_ready": false,
+      "provenance_url": null,
+      "redistribution_license": null,
+      "reference_output_ready": false,
+      "sha256": null,
+      "solver_family": "GS2",
+      "status": "blocked_missing_external_output_manifest",
+      "threshold_evaluation": {
+        "checks": [],
+        "passed": false,
+        "ready": false
+      }
+    }
+  ],
+  "grid_convergence_ready": false,
+  "grid_convergence_rows": [],
+  "missing_full_fidelity_requirements": [
+    "same-deck external nonlinear distribution output for GENE, CGYRO, and GS2",
+    "heat_flux_spectra_time_kx_ky_species for all required solver families",
+    "field_energy_history_phi_apar_bpar for all required solver families",
+    "zonal_flow_and_saturation_metrics for all required solver families",
+    "native same-case nonlinear GK solver-output comparison",
+    "grid-convergence evidence for converted public nonlinear GK outputs",
+    "production-scale scaling evidence for converted public nonlinear GK outputs"
+  ],
+  "native_same_case_comparison_ready": false,
+  "production_scale_scaling_ready": false,
+  "production_scaling_rows": [],
+  "reference_output_ready": false,
+  "required_observables": [
+    "nonlinear_distribution_function",
+    "ion_heat_flux_spectrum",
+    "electron_heat_flux_spectrum",
+    "zonal_flow_energy",
+    "saturated_phi_rms",
+    "electromagnetic_apar_energy"
+  ],
+  "required_solver_families": [
+    "GENE",
+    "CGYRO",
+    "GS2"
+  ],
+  "schema": "gk-external-nonlinear-output-parity-report.v1",
+  "status": "blocked_missing_external_output_manifest"
+}

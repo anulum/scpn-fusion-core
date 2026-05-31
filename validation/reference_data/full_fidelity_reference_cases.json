@@ -131,6 +131,11 @@
           "artifact_path": null,
           "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
           "coordinate_contracts": {
+            "species_index": {
+              "min_length": 1,
+              "strictly_increasing": true,
+              "units": "species_index"
+            },
             "kx_rhos": {
               "min_length": 2,
               "strictly_increasing": true,
@@ -163,6 +168,21 @@
             }
           },
           "observable_contracts": {
+            "nonlinear_distribution_function": {
+              "axes": [
+                "species_index",
+                "kx_rhos",
+                "ky_rhos",
+                "theta_rad",
+                "vpar_vth",
+                "mu_normalized"
+              ],
+              "finite": true,
+              "min_rank": 6,
+              "non_empty": true,
+              "numeric": true,
+              "units": "delta_f_over_f0"
+            },
             "electromagnetic_apar_energy": {
               "axes": [
                 "time_s",
@@ -225,6 +245,7 @@
           "redistribution_license": null,
           "reference_family": "GENE/CGYRO/GS2",
           "required_observables": [
+            "nonlinear_distribution_function",
             "ion_heat_flux_spectrum",
             "electron_heat_flux_spectrum",
             "zonal_flow_energy",
@@ -234,6 +255,11 @@
           "sha256": null,
           "status": "missing_public_artifact",
           "threshold_contracts": {
+            "distribution_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "nonlinear_distribution_function"
+            },
             "field_energy_relative_error_max": {
               "comparator": "<=",
               "metric": "relative_error",
@@ -256,6 +282,7 @@
             }
           },
           "thresholds": {
+            "distribution_relative_l2_max": 0.25,
             "field_energy_relative_error_max": 0.2,
             "heat_flux_relative_l2_max": 0.15,
             "spectrum_relative_l2_max": 0.2,

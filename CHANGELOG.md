@@ -10,6 +10,13 @@
 
 ## [Unreleased]
 
+- Added a strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output
+  parity lane that converts redistribution-permitted same-deck outputs into
+  tracked NPZ artefacts, validates nonlinear distribution, heat-flux,
+  field-energy, zonal/saturation, convergence, and scaling evidence, and keeps
+  parity blocked when external outputs or native same-case comparisons are
+  missing.
+
 - Extended the FreeGS public-example reconstruction benchmark with a Picard
   convergence sweep that records finite external `psi(R,Z)` output while
   keeping strict free-boundary parity blocked until native same-case
@@ -192,7 +199,7 @@
 - Documentation/API hardening: Completed the queued control-module docstring cluster
   (`runaway_electron_model`, `rust_flight_sim_wrapper`, `rwm_feedback`,
   `rzip_model`, `safe_rl_controller`, `scenario_scheduler`, `shape_controller`)
-  and refreshed the internal consolidated TODO task tracker status.
+  and refreshed the internal consolidated task tracker status.
 - Physics validation hardening: SPARC GEQDSK RMSE reporting now separates raw
   canonical profile-source metrics from explicitly requested public-SPARC
   source-convention adapter metrics and exposes a strict adapted-source

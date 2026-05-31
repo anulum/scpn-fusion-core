@@ -239,7 +239,7 @@ def _observable_readiness(path: Path | None, observables: Any, contracts: Any) -
     present = [name for name in required if name in keys]
     missing = [name for name in required if name not in keys]
     contract_map = contracts if isinstance(contracts, dict) else {}
-    invalid = []
+    invalid: list[dict[str, Any]] = []
     for name in present:
         contract = (
             contract_map.get(name, {}) if isinstance(contract_map.get(name, {}), dict) else {}
@@ -285,7 +285,7 @@ def _threshold_readiness(thresholds: Any, contracts: Any, observables: Any) -> d
 
     contract_map = contracts if isinstance(contracts, dict) else {}
     observable_names = set(observables) if isinstance(observables, list) else set()
-    invalid = []
+    invalid: list[dict[str, Any]] = []
     missing_contracts = []
     allowed_comparators = {"<=", ">="}
     allowed_metrics = {"absolute_error", "relative_error", "relative_l2"}
@@ -358,7 +358,7 @@ def _coordinate_readiness(path: Path | None, contracts: Any) -> dict[str, Any]:
     keys = set(data)
     present = [name for name in required if name in keys]
     missing = [name for name in required if name not in keys]
-    invalid = []
+    invalid: list[dict[str, Any]] = []
     for name in present:
         contract = contract_map[name]
         try:
@@ -406,7 +406,7 @@ def _observable_axis_contract_readiness(
     coordinate_names = (
         set(coordinate_contracts) if isinstance(coordinate_contracts, dict) else set()
     )
-    invalid = []
+    invalid: list[dict[str, Any]] = []
     for name in required_observables:
         contract = observable_contract_map.get(name)
         if not isinstance(contract, dict):

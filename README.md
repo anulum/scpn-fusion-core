@@ -173,14 +173,14 @@ FreeGS, and FreeGSNKE are cached under gitignored `data/external/` and
 summarised in
 [`validation/reports/full_fidelity_public_source_downloads.md`](validation/reports/full_fidelity_public_source_downloads.md).
 Those snapshots are acquisition inputs only; they are not accepted parity
-artifacts until converted into schema-valid repository-local JSON/NPZ evidence.
+artefacts until converted into schema-valid repository-local JSON/NPZ evidence.
 The public conversion/execution pass exports four finite public payloads: DREAM
 avalanche HDF5 data, FreeGSNKE static inverse baselines, FreeGSNKE
 MAST-U-like current sidecars, and an Aurora/Open-ADAS argon fractional-abundance
 artifact, into tracked artifacts with metadata and checksums:
 [`validation/reports/full_fidelity_reference_artifact_conversion.md`](validation/reports/full_fidelity_reference_artifact_conversion.md).
 [`validation/reports/aurora_reference_execution_artifact.md`](validation/reports/aurora_reference_execution_artifact.md).
-These are partial diagnostic artifacts, not full-fidelity acceptance artifacts,
+These are partial diagnostic artefacts, not full-fidelity acceptance artefacts,
 because required transport observables and same-case solver-output comparisons
 are still missing.
 The DREAM execution lane now also generates the upstream `examples/2kinetic`
@@ -198,9 +198,14 @@ The nonlinear GK lane now indexes public GS2 nonlinear decks, CGYRO nonlinear
 decks, CGYRO regression precision outputs, and GENE/GS2/CGYRO public web-source
 hashes in
 [`validation/reports/gk_public_reference_deck_inventory.md`](validation/reports/gk_public_reference_deck_inventory.md).
-This is a reproducibility inventory only; full GENE/CGYRO/GS2 parity remains
-blocked until runnable external outputs, heat-flux spectra, field-energy
-histories, convergence evidence, and native same-case comparisons are present.
+It also has a strict external-output conversion/comparison contract in
+[`validation/reports/gk_external_nonlinear_parity.md`](validation/reports/gk_external_nonlinear_parity.md).
+Missing redistributable same-deck GENE, CGYRO, or GS2 nonlinear outputs produce
+blocked rows rather than fabricated parity. Full GENE/CGYRO/GS2 parity remains
+blocked until nonlinear distribution outputs, heat-flux spectra, field-energy
+histories, zonal/saturation metrics, grid-convergence evidence,
+production-scale scaling evidence, and native same-case comparisons are
+present for the required solver families.
 The free-boundary lane now indexes public FreeGSNKE machine metadata for active
 coils, passive structures, limiter/wall contours, and magnetic probes, plus
 FreeGS example-script checksums, in
@@ -212,7 +217,7 @@ and the external FreeGS nonlinear examples now produce finite `psi(R,Z)` output
 under the recorded Picard iteration sweep. Clean CI checkouts preserve the
 tracked metadata and reconstruction evidence when gitignored public-source
 caches are absent, so full-suite report generation remains deterministic
-without promoting those partial artifacts to parity. Strict free-boundary parity remains
+without promoting those partial artefacts to parity. Strict free-boundary parity remains
 blocked until native same-case profile-source/coil-vacuum reconstruction output
 and solver-output comparisons are present.
 The electromagnetic GK diagnostic now reports compact Ampere and perpendicular

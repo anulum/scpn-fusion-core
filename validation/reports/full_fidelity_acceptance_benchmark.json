@@ -49,6 +49,7 @@
             "artifact_path": null,
             "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
             "coordinate_keys_missing": [
+              "species_index",
               "kx_rhos",
               "ky_rhos",
               "mu_normalized",
@@ -65,6 +66,7 @@
             "observable_axis_contracts_ready": true,
             "observable_contracts_ready": true,
             "observable_keys_missing": [
+              "nonlinear_distribution_function",
               "ion_heat_flux_spectrum",
               "electron_heat_flux_spectrum",
               "zonal_flow_energy",

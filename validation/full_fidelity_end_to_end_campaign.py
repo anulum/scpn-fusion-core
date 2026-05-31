@@ -9,10 +9,14 @@ metadata, checksums, thresholds, and external solver comparison evidence.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 REPORT_DIR = ROOT / "validation" / "reports"
 PUBLIC_SOURCES = ROOT / "validation" / "reference_data" / "full_fidelity_public_sources.json"
 PUBLIC_SOURCE_DOWNLOADS = REPORT_DIR / "full_fidelity_public_source_downloads.json"
@@ -20,6 +24,7 @@ REFERENCE_ARTIFACT_CONVERSION = REPORT_DIR / "full_fidelity_reference_artifact_c
 DREAM_EXECUTION_REQUEST = REPORT_DIR / "dream_reference_execution_request.json"
 AURORA_EXECUTION_ARTIFACT = REPORT_DIR / "aurora_reference_execution_artifact.json"
 GK_DECK_INVENTORY = REPORT_DIR / "gk_public_reference_deck_inventory.json"
+GK_EXTERNAL_PARITY = REPORT_DIR / "gk_external_nonlinear_parity.json"
 PRODUCTION_DECOMPOSITION = REPORT_DIR / "production_decomposition_contract.json"
 FREE_BOUNDARY_MACHINE_METADATA = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
 FREEGS_PUBLIC_RECONSTRUCTION = REPORT_DIR / "freegs_public_example_reconstruction.json"
@@ -115,6 +120,24 @@ def _load_gk_deck_inventory() -> dict[str, Any]:
     return report
 
 
+def _load_gk_external_parity() -> dict[str, Any]:
+    if not GK_EXTERNAL_PARITY.exists():
+        return {
+            "converted_reference_artifacts": 0,
+            "grid_convergence_ready": False,
+            "missing_full_fidelity_requirements": [],
+            "native_same_case_comparison_ready": False,
+            "production_scale_scaling_ready": False,
+            "reference_output_ready": False,
+            "schema": "gk-external-nonlinear-output-parity-report.v1",
+            "status": "not_run",
+        }
+    report = json.loads(GK_EXTERNAL_PARITY.read_text(encoding="utf-8"))
+    if report.get("schema") != "gk-external-nonlinear-output-parity-report.v1":
+        raise ValueError("GK external nonlinear parity report schema mismatch")
+    return report
+
+
 def _load_production_decomposition() -> dict[str, Any]:
     if not PRODUCTION_DECOMPOSITION.exists():
         return {
@@ -187,6 +210,7 @@ def run_campaign() -> dict[str, Any]:
     dream_execution = _load_dream_execution()
     aurora_execution = _load_aurora_execution()
     gk_deck_inventory = _load_gk_deck_inventory()
+    gk_external_parity = _load_gk_external_parity()
     production_decomposition = _load_production_decomposition()
     free_boundary_machine_metadata = _load_free_boundary_machine_metadata()
     freegs_public_reconstruction = _load_freegs_public_reconstruction()
@@ -202,7 +226,9 @@ def run_campaign() -> dict[str, Any]:
             "lane": "gene_cgyro_gs2_nonlinear_gk_parity",
             "surface": "native_nonlinear_gyrokinetics",
             "status": (
-                "blocked_public_gk_decks_indexed_missing_solver_output_parity"
+                str(gk_external_parity["status"])
+                if gk_external_parity["status"] != "not_run"
+                else "blocked_public_gk_decks_indexed_missing_solver_output_parity"
                 if gk_deck_inventory["deck_count"]
                 else "blocked_missing_public_reference_artifacts"
             ),
@@ -210,6 +236,8 @@ def run_campaign() -> dict[str, Any]:
             "reference_cases_ready": bool(gk["reference_cases"]["ready"]),
             "sources": _sources_for(registry, "native_nonlinear_gyrokinetics"),
             "next_required_evidence": (
+                gk_external_parity["missing_full_fidelity_requirements"]
+                or
                 gk_deck_inventory["missing_full_fidelity_requirements"]
                 or gk["missing_requirements"]
             ),
@@ -336,6 +364,19 @@ def run_campaign() -> dict[str, Any]:
         "gk_public_decks_indexed": int(gk_deck_inventory["deck_count"]),
         "gk_public_outputs_indexed": int(gk_deck_inventory["output_summary_count"]),
         "gk_public_deck_inventory_status": str(gk_deck_inventory["status"]),
+        "gk_external_nonlinear_parity_report": str(GK_EXTERNAL_PARITY.relative_to(ROOT)),
+        "gk_external_reference_artifacts_converted": int(
+            gk_external_parity["converted_reference_artifacts"]
+        ),
+        "gk_external_reference_output_ready": bool(gk_external_parity["reference_output_ready"]),
+        "gk_native_same_case_comparison_ready": bool(
+            gk_external_parity["native_same_case_comparison_ready"]
+        ),
+        "gk_grid_convergence_ready": bool(gk_external_parity["grid_convergence_ready"]),
+        "gk_production_scale_scaling_ready": bool(
+            gk_external_parity["production_scale_scaling_ready"]
+        ),
+        "gk_external_nonlinear_parity_status": str(gk_external_parity["status"]),
         "production_decomposition_report": str(PRODUCTION_DECOMPOSITION.relative_to(ROOT)),
         "production_decomposition_contract_pass": bool(production_decomposition["contract_pass"]),
         "production_scale_ready": bool(production_decomposition["production_scale_ready"]),
