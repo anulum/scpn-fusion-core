@@ -372,6 +372,43 @@ pub fn total_toroidal_current_from_flux(
     Ok(total)
 }
 
+/// Integrate J_phi implied by a flux grid over an explicit R-Z domain mask.
+///
+/// The mask must match the flux matrix shape. Boundary cells may be present in
+/// the mask, but contribute zero because the Delta* stencil is interior-only.
+pub fn total_toroidal_current_from_flux_masked(
+    case: &GradShafranovCase,
+    psi: &[Vec<f64>],
+    domain_mask: &[Vec<bool>],
+) -> Result<f64, String> {
+    validate_flux_matrix(case, psi)?;
+    if domain_mask.len() != case.nz || domain_mask.iter().any(|row| row.len() != case.nr) {
+        return Err(format!(
+            "toroidal current mask shape must match case shape ({}, {})",
+            case.nz, case.nr
+        ));
+    }
+    if !domain_mask.iter().flatten().any(|value| *value) {
+        return Err("toroidal current mask must include at least one cell".to_string());
+    }
+
+    let current_density = toroidal_current_density_from_flux(case, psi)?;
+    let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
+    let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
+    let mut total = 0.0;
+    for iz in 0..case.nz {
+        for ir in 0..case.nr {
+            if domain_mask[iz][ir] {
+                total += current_density[iz][ir] * dr * dz;
+            }
+        }
+    }
+    if !total.is_finite() {
+        return Err("masked integrated toroidal current became non-finite".to_string());
+    }
+    Ok(total)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -470,6 +507,27 @@ omega_j = 0.6666666666666666
             }
         }
         assert!(((total_current - expected_total) / expected_total).abs() < 1.0e-12);
+
+        let mask: Vec<Vec<bool>> = (0..case.nz)
+            .map(|iz| {
+                (0..case.nr)
+                    .map(|ir| iz > 2 && iz < case.nz - 3 && ir > 3 && ir < case.nr - 4)
+                    .collect()
+            })
+            .collect();
+        let masked_current = total_toroidal_current_from_flux_masked(&case, &psi, &mask).unwrap();
+        let mut expected_masked_total = 0.0;
+        for row in mask.iter().take(case.nz - 1).skip(1) {
+            for (ir, in_domain) in row.iter().enumerate().take(case.nr - 1).skip(1) {
+                if *in_domain {
+                    let r = case.r_min + (ir as f64) * dr;
+                    expected_masked_total += -2.0 * coeff / (case.mu0 * r) * dr * dz;
+                }
+            }
+        }
+        assert!(((masked_current - expected_masked_total) / expected_masked_total).abs() < 1.0e-12);
+        assert!(masked_current.abs() < total_current.abs());
+        assert!(total_toroidal_current_from_flux_masked(&case, &psi, &[]).is_err());
 
         let radial_coeff = 0.03125_f64;
         let vertical_coeff = -0.125_f64;

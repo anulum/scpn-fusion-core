@@ -464,6 +464,11 @@ best-domain current residual through `operator_current_best_domain`,
 The original `operator_current_closure_pass` remains the strict full-domain
 contract, so plasma-domain near-closure is evidence rather than a hidden
 threshold relaxation.
+Rust parity now includes native masked current integration through
+`fusion_core::kernel::total_toroidal_current_from_flux_masked` and
+`fusion_polyglot::total_toroidal_current_from_flux_masked`, allowing the same
+full-domain/plasma-domain current comparison outside Python without wrapper
+delegation.
 Current local worst rows: operator current closure `sparc/sparc_1300.eqdsk`
 with relative error `2.184689e+00`, and profile current closure
 `jet/jet_lmode_2MA.geqdsk` with relative error `4.168623e+01`.

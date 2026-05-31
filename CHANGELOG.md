@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added native Rust and Rust-polyglot masked toroidal-current integration so
+  full-domain and plasma-domain Grad-Shafranov current closure can be compared
+  without Python wrapper delegation.
+
 - Added GEQDSK operator-current domain attribution, reporting full-domain,
   plasma-domain, and best-domain current closure without relaxing the strict
   full-domain gate.

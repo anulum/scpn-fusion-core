@@ -215,6 +215,51 @@ pub fn total_toroidal_current_from_flux(
     Ok(total)
 }
 
+/// Integrate J_phi implied by a flux grid over an explicit R-Z domain mask.
+///
+/// This is the native Rust counterpart of the Python GEQDSK current-domain
+/// diagnostic: callers can compare the strict full computational-domain current
+/// against a physics-domain mask such as psi_N in [0, 1). Boundary cells are
+/// accepted in the mask but contribute zero because the Delta* stencil is
+/// interior-only.
+pub fn total_toroidal_current_from_flux_masked(
+    psi: &Array2<f64>,
+    grid: &Grid2D,
+    mu0: f64,
+    domain_mask: &Array2<bool>,
+) -> FusionResult<f64> {
+    validate_operator_inputs(psi, grid, Some(mu0))?;
+    if domain_mask.dim() != (grid.nz, grid.nr) {
+        return Err(FusionError::ConfigError(format!(
+            "toroidal current mask shape {:?} must match grid shape ({}, {})",
+            domain_mask.dim(),
+            grid.nz,
+            grid.nr
+        )));
+    }
+    if !domain_mask.iter().any(|value| *value) {
+        return Err(FusionError::ConfigError(
+            "toroidal current mask must include at least one cell".to_string(),
+        ));
+    }
+
+    let current_density = toroidal_current_density_from_flux(psi, grid, mu0)?;
+    let mut total = 0.0;
+    for iz in 0..grid.nz {
+        for ir in 0..grid.nr {
+            if domain_mask[[iz, ir]] {
+                total += current_density[[iz, ir]] * grid.dr * grid.dz;
+            }
+        }
+    }
+    if !total.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "masked integrated toroidal current became non-finite".to_string(),
+        ));
+    }
+    Ok(total)
+}
+
 /// Selects the inner linear solver used in Picard iteration.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SolverMethod {
@@ -1076,6 +1121,47 @@ mod tests {
         expected_total *= grid.dr * grid.dz;
 
         assert!((total_current - expected_total).abs() / expected_total.abs() < 1.0e-12);
+    }
+
+    #[test]
+    fn test_masked_total_current_integrates_explicit_plasma_domain() {
+        let grid = Grid2D::new(19, 21, 1.0, 3.0, -1.0, 1.0);
+        let coeff = -0.125_f64;
+        let mu0 = 4.0 * std::f64::consts::PI * 1.0e-7;
+        let psi = Array2::from_shape_fn((grid.nz, grid.nr), |(iz, _ir)| {
+            coeff * grid.z[iz] * grid.z[iz]
+        });
+        let mask = Array2::from_shape_fn((grid.nz, grid.nr), |(iz, ir)| {
+            iz > 2 && iz < grid.nz - 3 && ir > 3 && ir < grid.nr - 4
+        });
+
+        let masked_current =
+            total_toroidal_current_from_flux_masked(&psi, &grid, mu0, &mask).unwrap();
+        let mut expected_total = 0.0;
+        for iz in 1..(grid.nz - 1) {
+            for ir in 1..(grid.nr - 1) {
+                if mask[[iz, ir]] {
+                    expected_total += -2.0 * coeff / (mu0 * grid.rr[[iz, ir]]);
+                }
+            }
+        }
+        expected_total *= grid.dr * grid.dz;
+
+        assert!((masked_current - expected_total).abs() / expected_total.abs() < 1.0e-12);
+        let full_current = total_toroidal_current_from_flux(&psi, &grid, mu0).unwrap();
+        assert!(masked_current.abs() < full_current.abs());
+    }
+
+    #[test]
+    fn test_masked_total_current_rejects_invalid_domain_mask() {
+        let grid = Grid2D::new(9, 11, 1.0, 3.0, -1.0, 1.0);
+        let mu0 = 4.0 * std::f64::consts::PI * 1.0e-7;
+        let psi = Array2::zeros((grid.nz, grid.nr));
+        let wrong_shape = Array2::from_elem((grid.nz - 1, grid.nr), true);
+        let empty_mask = Array2::from_elem((grid.nz, grid.nr), false);
+
+        assert!(total_toroidal_current_from_flux_masked(&psi, &grid, mu0, &wrong_shape).is_err());
+        assert!(total_toroidal_current_from_flux_masked(&psi, &grid, mu0, &empty_mask).is_err());
     }
 
     #[test]
