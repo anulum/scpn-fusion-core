@@ -92,6 +92,21 @@ Current totals are maintained in local-only governance notes for each hardening
 wave. As of 2026-05-27: **18 total flags**, 8 P0/P1.
 Target for v4.0: resolve all P0/P1 flags, reduce total below 80.
 
+### Formal verification and outreach
+
+This workstream turns the committed Lean 4 proof surface into a progressively
+larger safety-evidence story without overstating the current proof boundary.
+
+| Timeline | Action | Why | Status |
+|----------|--------|-----|--------|
+| This week | Add dedicated Formal Verification section to README | Make the current Lean safety proof visible from the main entry point | Done |
+| This week | Publish blog post draft: First Machine-Checkable Safety Proof for a Tokamak Plasma Solver | Prepare public narrative around the first proof boundary | Drafted in `docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md` |
+| This week | Post to Lean Prover Zulip, Hacker News, and r/fusion | Recruit formal-methods and fusion collaborators | Pending explicit publication approval |
+| Next week | Prove PID bounded-output property in Lean | Expand the proof surface to actuator safety | Planned |
+| Next week | Prove SNN compiler preserves Petri-net reachability contract | Expand the proof surface to neuro-symbolic compilation | Planned |
+| This month | Prepare paper submission package for Nuclear Fusion or IEEE TPS | Convert proof and validation evidence into academic review material | Planned |
+| Next month | Recruit co-maintainer through the formal-methods community | Add proof-maintenance capacity | Planned |
+
 ### FPGA deployment path
 
 The Petri net -> SNN compiler targets NumPy today. v4.0 adds:

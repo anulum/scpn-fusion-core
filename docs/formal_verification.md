@@ -3,6 +3,31 @@
 This document records the formal verification status of the stochastic
 Petri net (SCPN) controller compilation pipeline.
 
+## 0. Lean 4 machine-checked solver safety boundary
+
+**Property**: Invalid Grad-Shafranov case descriptions fail closed before any
+numerical solver work is performed.
+
+**Proof method**: Lean 4 theorem over the native solver model in
+`scpn-fusion-lean/SafetyProof.lean`.
+
+The theorem `solveGradShafranov_rejects_validation_error` proves that whenever
+`validateCase c = Except.error err`, the solver result is exactly
+`Except.error err`. This prevents validation failures from being swallowed,
+rewritten, or followed by solver execution in the Lean model.
+
+**Verification**: Built by the `lean-safety-proofs` CI job. Reproduce locally
+with:
+
+```bash
+cd scpn-fusion-lean
+lake build
+```
+
+**Status**: MACHINE-CHECKED for the stated fail-closed solver boundary. This is
+not a full formal verification claim for nonlinear plasma physics, controller
+certification, or the entire Python/Rust implementation.
+
 ## 1. Boundedness
 
 **Property**: All place markings remain in [0, 1] at every simulation step.

@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added public formal-verification positioning for the Lean 4 solver safety proof, including README evidence boundary, formal-verification status, blog draft, and roadmap follow-up actions.
+
 - Added aggregate EFIT/GEQDSK profile-current closure threshold counts and fail-closed row coverage.
 
 - Added worst-row EFIT/GEQDSK operator/profile current-closure severity diagnostics to the aggregate benchmark report.

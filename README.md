@@ -210,6 +210,29 @@ model for the controller to operate against.
 | Explicit backend policy | Production solver lanes fail closed; reference backends require explicit opt-in |
 | Deterministic replay | Identical inputs produce identical outputs across platforms |
 
+## Formal Verification
+
+SCPN Fusion Core now includes a committed Lean 4 safety-proof surface for the
+native solver stack. The first machine-checkable theorem proves that invalid
+Grad-Shafranov case descriptions fail closed: when `validateCase` rejects a
+case, `solveGradShafranov` returns the same validation error before numerical
+solver work can begin.
+
+Evidence boundary:
+
+| Item | Evidence |
+|------|----------|
+| Lean project | `scpn-fusion-lean/` |
+| First theorem | `scpn-fusion-lean/SafetyProof.lean` |
+| Verified property | Grad-Shafranov validation errors are propagated exactly |
+| CI surface | `lean-safety-proofs` job in `.github/workflows/ci.yml` |
+| Narrative draft | `docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md` |
+
+This is an intentionally narrow proof boundary, not a claim that the full
+plasma solver, controller stack, or nonlinear plant model is formally verified.
+Next proof targets are PID bounded-output and Petri-net-to-SNN reachability
+preservation.
+
 ## Controller Stress-Test Campaign (1,000 shots)
 
 The campaign table is a mixed-fidelity controller benchmark, not an
