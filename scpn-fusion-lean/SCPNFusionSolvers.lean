@@ -322,6 +322,18 @@ def totalToroidalCurrentFromFlux (c : GradShafranovCase) (psi : Matrix) : Float 
           total := total + get2D currentDensity iz ir * dR * dZ
   return total
 
+def totalToroidalCurrentFromFluxTrapezoidal (c : GradShafranovCase) (psi : Matrix) : Float := Id.run do
+  let currentDensity := toroidalCurrentDensityFromFlux c psi
+  let dR := (c.rMax - c.rMin) / Float.ofNat (c.nr - 1)
+  let dZ := (c.zMax - c.zMin) / Float.ofNat (c.nz - 1)
+  let mut total := 0.0
+  for iz in List.range c.nz do
+    let zWeight := if iz == 0 || iz + 1 == c.nz then 0.5 else 1.0
+    for ir in List.range c.nr do
+      let rWeight := if ir == 0 || ir + 1 == c.nr then 0.5 else 1.0
+      total := total + get2D currentDensity iz ir * zWeight * rWeight * dR * dZ
+  return total
+
 def totalToroidalCurrentFromFluxMasked
     (c : GradShafranovCase) (psi : Matrix) (domainMask : BoolMatrix) : Float := Id.run do
   let currentDensity := toroidalCurrentDensityFromFlux c psi

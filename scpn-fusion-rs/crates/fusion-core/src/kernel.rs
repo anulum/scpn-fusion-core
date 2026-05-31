@@ -215,6 +215,42 @@ pub fn total_toroidal_current_from_flux(
     Ok(total)
 }
 
+/// Integrate J_phi over the full R-Z grid with tensor-product trapezoidal weights.
+///
+/// This exposes the same diagnostic current-domain contract as the Python
+/// EFIT/GEQDSK benchmark. The Delta* stencil remains interior-only, so boundary
+/// current-density entries are zero unless a future boundary-aware stencil
+/// explicitly populates them.
+pub fn total_toroidal_current_from_flux_trapezoidal(
+    psi: &Array2<f64>,
+    grid: &Grid2D,
+    mu0: f64,
+) -> FusionResult<f64> {
+    let current_density = toroidal_current_density_from_flux(psi, grid, mu0)?;
+    let mut total = 0.0;
+    for iz in 0..grid.nz {
+        let z_weight = if iz == 0 || iz + 1 == grid.nz {
+            0.5
+        } else {
+            1.0
+        };
+        for ir in 0..grid.nr {
+            let r_weight = if ir == 0 || ir + 1 == grid.nr {
+                0.5
+            } else {
+                1.0
+            };
+            total += current_density[[iz, ir]] * z_weight * r_weight * grid.dr * grid.dz;
+        }
+    }
+    if !total.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "trapezoidal integrated toroidal current became non-finite".to_string(),
+        ));
+    }
+    Ok(total)
+}
+
 /// Integrate J_phi implied by a flux grid over an explicit R-Z domain mask.
 ///
 /// This is the native Rust counterpart of the Python GEQDSK current-domain
@@ -1112,6 +1148,8 @@ mod tests {
         });
 
         let total_current = total_toroidal_current_from_flux(&psi, &grid, mu0).unwrap();
+        let trapezoidal_current =
+            total_toroidal_current_from_flux_trapezoidal(&psi, &grid, mu0).unwrap();
         let mut expected_total = 0.0;
         for iz in 1..(grid.nz - 1) {
             for ir in 1..(grid.nr - 1) {
@@ -1121,6 +1159,7 @@ mod tests {
         expected_total *= grid.dr * grid.dz;
 
         assert!((total_current - expected_total).abs() / expected_total.abs() < 1.0e-12);
+        assert!((trapezoidal_current - expected_total).abs() / expected_total.abs() < 1.0e-12);
     }
 
     #[test]

@@ -10,7 +10,8 @@ module SCPNFusionSolvers
 export GradShafranovCase, GradShafranovResult, case_from_toml,
     grad_shafranov_delta_star, solve_grad_shafranov,
     toroidal_current_density_from_flux, total_toroidal_current_from_flux,
-    total_toroidal_current_from_flux_masked
+    total_toroidal_current_from_flux_masked,
+    total_toroidal_current_from_flux_trapezoidal
 
 using TOML
 
@@ -189,6 +190,23 @@ function total_toroidal_current_from_flux(case::GradShafranovCase, psi::Matrix{F
     _, _, _, dR, dZ = _r_grid(case)
     current_density = toroidal_current_density_from_flux(case, psi)
     return sum(@view current_density[2:end-1, 2:end-1]) * dR * dZ
+end
+
+"""Integrate J_phi implied by a flux grid using full-domain trapezoidal weights."""
+function total_toroidal_current_from_flux_trapezoidal(case::GradShafranovCase,
+    psi::Matrix{Float64})::Float64
+    _validate_flux_matrix(case, psi)
+    _, _, _, dR, dZ = _r_grid(case)
+    current_density = toroidal_current_density_from_flux(case, psi)
+    total = 0.0
+    for iz in 1:case.NZ, ir in 1:case.NR
+        z_weight = (iz == 1 || iz == case.NZ) ? 0.5 : 1.0
+        r_weight = (ir == 1 || ir == case.NR) ? 0.5 : 1.0
+        total += current_density[iz, ir] * z_weight * r_weight * dR * dZ
+    end
+    isfinite(total) || throw(ArgumentError(
+        "trapezoidal integrated toroidal current became non-finite"))
+    return total
 end
 
 """Integrate J_phi implied by a flux grid over an explicit R-Z domain mask."""

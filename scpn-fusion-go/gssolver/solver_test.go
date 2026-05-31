@@ -87,6 +87,10 @@ func TestOperatorCurrentClosureManufacturedZQuadratic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	trapezoidalCurrent, err := TotalToroidalCurrentFromFluxTrapezoidal(c, psi)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	expectedTotal := 0.0
 	for iz := 1; iz < c.NZ-1; iz++ {
@@ -104,6 +108,9 @@ func TestOperatorCurrentClosureManufacturedZQuadratic(t *testing.T) {
 	}
 	if math.Abs((totalCurrent-expectedTotal)/expectedTotal) > 1.0e-12 {
 		t.Fatalf("unexpected total current: got %.17g expected %.17g", totalCurrent, expectedTotal)
+	}
+	if math.Abs((trapezoidalCurrent-expectedTotal)/expectedTotal) > 1.0e-12 {
+		t.Fatalf("unexpected trapezoidal total current: got %.17g expected %.17g", trapezoidalCurrent, expectedTotal)
 	}
 
 	mask := make([][]bool, c.NZ)

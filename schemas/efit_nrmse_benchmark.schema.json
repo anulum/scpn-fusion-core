@@ -526,6 +526,7 @@
           "operator_toroidal_current_A",
           "operator_toroidal_current_full_domain_A",
           "operator_toroidal_current_plasma_domain_A",
+          "operator_toroidal_current_trapezoidal_A",
           "profile_toroidal_current_A",
           "adapted_profile_toroidal_current_A",
           "adapted_profile_current_ratio_to_declared",
@@ -542,6 +543,7 @@
           "operator_current_ratio_to_declared",
           "operator_current_full_domain_ratio_to_declared",
           "operator_current_plasma_domain_ratio_to_declared",
+          "operator_current_trapezoidal_ratio_to_declared",
           "operator_current_best_domain",
           "operator_current_best_ratio_to_declared",
           "operator_current_best_relative_error",
@@ -552,10 +554,12 @@
           "operator_current_relative_error",
           "operator_current_full_domain_relative_error",
           "operator_current_plasma_domain_relative_error",
+          "operator_current_trapezoidal_relative_error",
           "profile_current_relative_error",
           "operator_current_closure_pass",
           "operator_current_full_domain_closure_pass",
           "operator_current_plasma_domain_closure_pass",
+          "operator_current_trapezoidal_closure_pass",
           "profile_current_closure_pass",
           "profile_current_closure_failure_class",
           "threshold",
@@ -879,6 +883,9 @@
           "operator_toroidal_current_plasma_domain_A": {
             "type": "number"
           },
+          "operator_toroidal_current_trapezoidal_A": {
+            "type": "number"
+          },
           "profile_toroidal_current_A": {
             "type": "number"
           },
@@ -927,10 +934,14 @@
           "operator_current_plasma_domain_ratio_to_declared": {
             "type": "number"
           },
+          "operator_current_trapezoidal_ratio_to_declared": {
+            "type": "number"
+          },
           "operator_current_best_domain": {
             "enum": [
               "full_domain",
               "plasma_domain",
+              "trapezoidal_full_domain",
               "not_evaluated"
             ]
           },
@@ -961,6 +972,9 @@
           "operator_current_plasma_domain_relative_error": {
             "type": "number"
           },
+          "operator_current_trapezoidal_relative_error": {
+            "type": "number"
+          },
           "profile_current_relative_error": {
             "type": "number"
           },
@@ -971,6 +985,9 @@
             "type": "boolean"
           },
           "operator_current_plasma_domain_closure_pass": {
+            "type": "boolean"
+          },
+          "operator_current_trapezoidal_closure_pass": {
             "type": "boolean"
           },
           "profile_current_closure_pass": {

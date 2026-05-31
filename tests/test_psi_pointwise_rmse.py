@@ -487,8 +487,13 @@ class TestToroidalCurrentConsistency:
             metrics["operator_current_best_relative_error"]
             <= metrics["operator_current_plasma_domain_relative_error"]
         )
+        assert (
+            metrics["operator_current_best_relative_error"]
+            <= metrics["operator_current_trapezoidal_relative_error"]
+        )
         assert np.isfinite(metrics["operator_toroidal_current_full_domain_A"])
         assert np.isfinite(metrics["operator_toroidal_current_plasma_domain_A"])
+        assert np.isfinite(metrics["operator_toroidal_current_trapezoidal_A"])
         assert np.isfinite(metrics["profile_current_relative_error"])
         assert isinstance(metrics["profile_current_closure_pass"], bool)
         assert np.isfinite(metrics["operator_current_ratio_to_declared"])
@@ -838,6 +843,7 @@ class TestValidateEFITNRMSEBenchmark:
                 operator_toroidal_current_A=-8.6995e6,
                 operator_toroidal_current_full_domain_A=-8.6995e6,
                 operator_toroidal_current_plasma_domain_A=-8.68e6,
+                operator_toroidal_current_trapezoidal_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
                 adapted_profile_toroidal_current_A=-1.5e6,
                 adapted_profile_current_ratio_to_declared=0.99,
@@ -854,6 +860,7 @@ class TestValidateEFITNRMSEBenchmark:
                 operator_current_ratio_to_declared=0.99995,
                 operator_current_full_domain_ratio_to_declared=0.99995,
                 operator_current_plasma_domain_ratio_to_declared=0.9977,
+                operator_current_trapezoidal_ratio_to_declared=0.99995,
                 operator_current_best_domain="full_domain",
                 operator_current_best_ratio_to_declared=0.99995,
                 operator_current_best_relative_error=5.0e-5,
@@ -864,10 +871,12 @@ class TestValidateEFITNRMSEBenchmark:
                 operator_current_relative_error=5.0e-5,
                 operator_current_full_domain_relative_error=5.0e-5,
                 operator_current_plasma_domain_relative_error=0.0023,
+                operator_current_trapezoidal_relative_error=5.0e-5,
                 profile_current_relative_error=0.01,
                 operator_current_closure_pass=True,
                 operator_current_full_domain_closure_pass=True,
                 operator_current_plasma_domain_closure_pass=True,
+                operator_current_trapezoidal_closure_pass=True,
                 profile_current_closure_pass=True,
                 profile_current_closure_failure_class="passes_threshold",
             )

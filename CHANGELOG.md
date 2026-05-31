@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added full-domain trapezoidal EFIT/GEQDSK operator-current diagnostics with
+  native Rust, Go, Julia, and Lean parity; local public GEQDSK refresh remains
+  failed, confirming the open rows are source-domain/free-boundary blockers
+  rather than a quadrature-only mismatch.
+
 - Added EFIT/GEQDSK source-domain remediation contracts so each benchmark row
   states whether the next required solver mode is fixed-boundary profile-source
   repair, free-boundary coil/vacuum reconstruction, or both.

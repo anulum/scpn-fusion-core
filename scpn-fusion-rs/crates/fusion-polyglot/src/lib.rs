@@ -372,6 +372,36 @@ pub fn total_toroidal_current_from_flux(
     Ok(total)
 }
 
+/// Integrate J_phi implied by a flux grid with full-domain trapezoidal weights.
+pub fn total_toroidal_current_from_flux_trapezoidal(
+    case: &GradShafranovCase,
+    psi: &[Vec<f64>],
+) -> Result<f64, String> {
+    let current_density = toroidal_current_density_from_flux(case, psi)?;
+    let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
+    let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
+    let mut total = 0.0;
+    for (iz, row) in current_density.iter().enumerate().take(case.nz) {
+        let z_weight = if iz == 0 || iz + 1 == case.nz {
+            0.5
+        } else {
+            1.0
+        };
+        for (ir, value) in row.iter().enumerate().take(case.nr) {
+            let r_weight = if ir == 0 || ir + 1 == case.nr {
+                0.5
+            } else {
+                1.0
+            };
+            total += value * z_weight * r_weight * dr * dz;
+        }
+    }
+    if !total.is_finite() {
+        return Err("trapezoidal integrated toroidal current became non-finite".to_string());
+    }
+    Ok(total)
+}
+
 /// Integrate J_phi implied by a flux grid over an explicit R-Z domain mask.
 ///
 /// The mask must match the flux matrix shape. Boundary cells may be present in
@@ -493,6 +523,8 @@ omega_j = 0.6666666666666666
         let delta_star = grad_shafranov_delta_star(&case, &psi).unwrap();
         let current_density = toroidal_current_density_from_flux(&case, &psi).unwrap();
         let total_current = total_toroidal_current_from_flux(&case, &psi).unwrap();
+        let trapezoidal_current =
+            total_toroidal_current_from_flux_trapezoidal(&case, &psi).unwrap();
         let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
         let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
 
@@ -507,6 +539,7 @@ omega_j = 0.6666666666666666
             }
         }
         assert!(((total_current - expected_total) / expected_total).abs() < 1.0e-12);
+        assert!(((trapezoidal_current - expected_total) / expected_total).abs() < 1.0e-12);
 
         let mask: Vec<Vec<bool>> = (0..case.nz)
             .map(|iz| {

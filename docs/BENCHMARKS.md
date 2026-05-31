@@ -71,10 +71,12 @@ timing remain required before making throughput claims.
 | `geqdsk_profile_source_components/source_components_65x65` | `461.19 us` |
 | `geqdsk_source_convention_adapter/select_adapter_33x33` | `45.674 us` |
 | `geqdsk_source_convention_adapter/select_adapter_65x65` | `193.43 us` |
-| `geqdsk_operator_current_domains/full_domain_current_33x33` | `6.3107 us` |
-| `geqdsk_operator_current_domains/plasma_domain_current_33x33` | `9.1759 us` |
-| `geqdsk_operator_current_domains/full_domain_current_65x65` | `32.094 us` |
-| `geqdsk_operator_current_domains/plasma_domain_current_65x65` | `32.490 us` |
+| `geqdsk_operator_current_domains/full_domain_current_33x33` | `5.6648 us` |
+| `geqdsk_operator_current_domains/plasma_domain_current_33x33` | `6.6529 us` |
+| `geqdsk_operator_current_domains/trapezoidal_full_domain_current_33x33` | `6.6539 us` |
+| `geqdsk_operator_current_domains/full_domain_current_65x65` | `24.067 us` |
+| `geqdsk_operator_current_domains/plasma_domain_current_65x65` | `27.543 us` |
+| `geqdsk_operator_current_domains/trapezoidal_full_domain_current_65x65` | `29.637 us` |
 | `transport_step/lmode_single_step` | `754.06 ns` |
 | `transport_step/hmode_single_step` | `866.43 ns` |
 | `transport_step/hmode_neoclassical_single_step` | `3.4128 us` |
@@ -217,7 +219,7 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 | DIII-D | 3 | 0.10–0.18 | 0.09–0.17 | 6–10% |
 | ASDEX-U | 3 | 0.05–0.12 | 0.05–0.11 | 4–9% |
 | C-Mod | 2 | 0.02–0.04 | 0.02–0.04 | 3–7% |
-| SPARC | 8 GEQDSK/EQDSK | B=12.2 T, I_p=8.7 MA | 16 public-case gated rows pass at 65x65 and 129x129 | ψ NRMSE, axis metadata, boundary containment, signed-q finite profile |
+| SPARC | 8 GEQDSK/EQDSK | B=12.2 T, I_p=8.7 MA | Operator-source public rows pass; profile-source/free-boundary gate remains open | ψ NRMSE, axis metadata, boundary containment, signed-q finite profile |
 | DIII-D/JET synthetic GEQDSK | 10 GEQDSK | synthetic Solov'ev references | diagnostic rows, not public EFIT gate | ψ NRMSE and GEQDSK scalar/contour diagnostics |
 
 > **Note on confinement accuracy:** The JET/DIII-D/ASDEX-U/C-Mod error
@@ -475,8 +477,9 @@ through `operator_current_worst_relative_error`,
 `profile_current_worst_relative_error`, so closure severity is visible without
 manual row scanning.
 Operator-current closure now carries domain attribution: every EFIT/GEQDSK row
-reports full computational-domain current, plasma-domain current, and the
-best-domain current residual through `operator_current_best_domain`,
+reports full computational-domain current, plasma-domain current, trapezoidal
+full-domain current, and the best-domain current residual through
+`operator_current_best_domain`,
 `operator_current_best_relative_error`, and aggregate best-domain pass counts.
 The original `operator_current_closure_pass` remains the strict full-domain
 contract, so plasma-domain near-closure is evidence rather than a hidden
@@ -486,9 +489,19 @@ Rust parity now includes native masked current integration through
 `fusion_polyglot::total_toroidal_current_from_flux_masked`, allowing the same
 full-domain/plasma-domain current comparison outside Python without wrapper
 delegation.
+Rust also exposes
+`fusion_core::kernel::total_toroidal_current_from_flux_trapezoidal` and
+`fusion_polyglot::total_toroidal_current_from_flux_trapezoidal`, matching the
+Python full-domain trapezoidal diagnostic. Current local GEQDSK refresh shows
+this does not close the public current failures: best-domain operator-current
+closure remains `5/8` public rows, so the remaining failures are source-domain
+and free-boundary reconstruction blockers rather than a full-domain quadrature
+artefact.
 The same masked current-domain contract is also exposed natively in Go, Julia,
 and Lean through their existing Grad-Shafranov operator-current implementations;
-these are implementation parity surfaces, not wrappers around Python or Rust.
+their native trapezoidal current integrations mirror the same diagnostic
+surface. These are implementation parity surfaces, not wrappers around Python
+or Rust.
 Current local worst rows: operator current closure `sparc/sparc_1300.eqdsk`
 with relative error `2.184689e+00`, and profile current closure
 `jet/jet_lmode_2MA.geqdsk` with relative error `4.168623e+01`.

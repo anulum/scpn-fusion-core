@@ -9,6 +9,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use fusion_core::kernel::{
     total_toroidal_current_from_flux, total_toroidal_current_from_flux_masked,
+    total_toroidal_current_from_flux_trapezoidal,
 };
 use fusion_core::source::{
     compute_geqdsk_profile_source_components, interpolate_flux_profile_current_conserving,
@@ -153,6 +154,18 @@ fn bench_geqdsk_operator_current_domains(c: &mut Criterion) {
                     black_box(&plasma_mask),
                 )
                 .expect("plasma-domain operator current should integrate");
+                black_box(total_current);
+            })
+        });
+
+        group.bench_function(format!("trapezoidal_full_domain_current_{nz}x{nr}"), |b| {
+            b.iter(|| {
+                let total_current = total_toroidal_current_from_flux_trapezoidal(
+                    black_box(&psi),
+                    black_box(&grid),
+                    black_box(MU0),
+                )
+                .expect("trapezoidal full-domain operator current should integrate");
                 black_box(total_current);
             })
         });

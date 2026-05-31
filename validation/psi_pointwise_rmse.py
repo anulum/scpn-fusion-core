@@ -182,6 +182,7 @@ class PsiRMSEResult:
     operator_toroidal_current_A: float = float("nan")
     operator_toroidal_current_full_domain_A: float = float("nan")
     operator_toroidal_current_plasma_domain_A: float = float("nan")
+    operator_toroidal_current_trapezoidal_A: float = float("nan")
     profile_toroidal_current_A: float = float("nan")
     adapted_profile_toroidal_current_A: float = float("nan")
     adapted_profile_current_ratio_to_declared: float = float("nan")
@@ -196,6 +197,7 @@ class PsiRMSEResult:
     operator_current_ratio_to_declared: float = float("nan")
     operator_current_full_domain_ratio_to_declared: float = float("nan")
     operator_current_plasma_domain_ratio_to_declared: float = float("nan")
+    operator_current_trapezoidal_ratio_to_declared: float = float("nan")
     operator_current_best_domain: str = "not_evaluated"
     operator_current_best_ratio_to_declared: float = float("nan")
     operator_current_best_relative_error: float = float("nan")
@@ -204,10 +206,12 @@ class PsiRMSEResult:
     operator_current_relative_error: float = float("nan")
     operator_current_full_domain_relative_error: float = float("nan")
     operator_current_plasma_domain_relative_error: float = float("nan")
+    operator_current_trapezoidal_relative_error: float = float("nan")
     profile_current_relative_error: float = float("nan")
     operator_current_closure_pass: bool = False
     operator_current_full_domain_closure_pass: bool = False
     operator_current_plasma_domain_closure_pass: bool = False
+    operator_current_trapezoidal_closure_pass: bool = False
     profile_current_closure_pass: bool = False
     profile_current_closure_failure_class: str = "not_evaluated"
 
@@ -799,10 +803,14 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     d_z = float(z[1] - z[0])
     rr = np.maximum(r[np.newaxis, :], 1e-12)
     cell_area = d_r * d_z
+    trapezoidal_weights = np.ones((eq.nh, eq.nw), dtype=np.float64)
+    trapezoidal_weights[[0, -1], :] *= 0.5
+    trapezoidal_weights[:, [0, -1]] *= 0.5
 
     operator_source = gs_operator(eq.psirz, r, z)
     operator_jphi = -operator_source / (mu0 * rr)
     operator_full_domain_current = float(np.sum(operator_jphi[1:-1, 1:-1]) * cell_area)
+    operator_trapezoidal_current = float(np.sum(operator_jphi * trapezoidal_weights) * cell_area)
 
     source_components = compute_source_components(eq)
     pressure_source = np.asarray(source_components["pressure_source"], dtype=np.float64)
@@ -821,6 +829,7 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     scale = max(abs(declared_current), 1.0)
     operator_full_domain_ratio = abs(operator_full_domain_current) / scale
     operator_plasma_domain_ratio = abs(operator_plasma_domain_current) / scale
+    operator_trapezoidal_ratio = abs(operator_trapezoidal_current) / scale
     profile_ratio = abs(profile_current) / scale
     pressure_ratio = abs(pressure_current) / scale
     ffprime_ratio = abs(ffprime_current) / scale
@@ -830,6 +839,9 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     operator_plasma_domain_error = (
         abs(abs(operator_plasma_domain_current) - abs(declared_current)) / scale
     )
+    operator_trapezoidal_error = (
+        abs(abs(operator_trapezoidal_current) - abs(declared_current)) / scale
+    )
     profile_error = abs(abs(profile_current) - abs(declared_current)) / scale
     operator_full_domain_pass = bool(
         np.isfinite(operator_full_domain_error)
@@ -838,6 +850,10 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     operator_plasma_domain_pass = bool(
         np.isfinite(operator_plasma_domain_error)
         and operator_plasma_domain_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD
+    )
+    operator_trapezoidal_pass = bool(
+        np.isfinite(operator_trapezoidal_error)
+        and operator_trapezoidal_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD
     )
     operator_candidates = [
         (
@@ -853,6 +869,13 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
             operator_plasma_domain_ratio,
             operator_plasma_domain_error,
             operator_plasma_domain_pass,
+        ),
+        (
+            "trapezoidal_full_domain",
+            operator_trapezoidal_current,
+            operator_trapezoidal_ratio,
+            operator_trapezoidal_error,
+            operator_trapezoidal_pass,
         ),
     ]
     finite_operator_candidates = [
@@ -888,12 +911,14 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
         "operator_toroidal_current_A": operator_full_domain_current,
         "operator_toroidal_current_full_domain_A": operator_full_domain_current,
         "operator_toroidal_current_plasma_domain_A": operator_plasma_domain_current,
+        "operator_toroidal_current_trapezoidal_A": operator_trapezoidal_current,
         "profile_toroidal_current_A": profile_current,
         "pressure_toroidal_current_A": pressure_current,
         "ffprime_toroidal_current_A": ffprime_current,
         "operator_current_ratio_to_declared": float(operator_full_domain_ratio),
         "operator_current_full_domain_ratio_to_declared": float(operator_full_domain_ratio),
         "operator_current_plasma_domain_ratio_to_declared": float(operator_plasma_domain_ratio),
+        "operator_current_trapezoidal_ratio_to_declared": float(operator_trapezoidal_ratio),
         "operator_current_best_domain": str(operator_best_domain),
         "operator_current_best_ratio_to_declared": float(operator_best_ratio),
         "operator_current_best_relative_error": float(operator_best_error),
@@ -904,10 +929,12 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
         "operator_current_relative_error": float(operator_full_domain_error),
         "operator_current_full_domain_relative_error": float(operator_full_domain_error),
         "operator_current_plasma_domain_relative_error": float(operator_plasma_domain_error),
+        "operator_current_trapezoidal_relative_error": float(operator_trapezoidal_error),
         "profile_current_relative_error": float(profile_error),
         "operator_current_closure_pass": operator_full_domain_pass,
         "operator_current_full_domain_closure_pass": operator_full_domain_pass,
         "operator_current_plasma_domain_closure_pass": operator_plasma_domain_pass,
+        "operator_current_trapezoidal_closure_pass": operator_trapezoidal_pass,
         "profile_current_closure_pass": profile_pass,
         "profile_current_closure_failure_class": profile_failure_class,
     }
@@ -1842,6 +1869,9 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         operator_toroidal_current_plasma_domain_A=float(
             current_consistency["operator_toroidal_current_plasma_domain_A"]
         ),
+        operator_toroidal_current_trapezoidal_A=float(
+            current_consistency["operator_toroidal_current_trapezoidal_A"]
+        ),
         adapted_profile_toroidal_current_A=float(adapted_profile_current),
         adapted_profile_current_ratio_to_declared=float(adapted_profile_current_ratio),
         adapted_profile_current_relative_error=float(adapted_profile_current_error),
@@ -1866,6 +1896,9 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         ),
         operator_current_plasma_domain_ratio_to_declared=float(
             current_consistency["operator_current_plasma_domain_ratio_to_declared"]
+        ),
+        operator_current_trapezoidal_ratio_to_declared=float(
+            current_consistency["operator_current_trapezoidal_ratio_to_declared"]
         ),
         operator_current_best_domain=str(current_consistency["operator_current_best_domain"]),
         operator_current_best_ratio_to_declared=float(
@@ -1895,6 +1928,9 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         operator_current_plasma_domain_relative_error=float(
             current_consistency["operator_current_plasma_domain_relative_error"]
         ),
+        operator_current_trapezoidal_relative_error=float(
+            current_consistency["operator_current_trapezoidal_relative_error"]
+        ),
         profile_current_relative_error=float(current_consistency["profile_current_relative_error"]),
         operator_current_closure_pass=bool(current_consistency["operator_current_closure_pass"]),
         operator_current_full_domain_closure_pass=bool(
@@ -1902,6 +1938,9 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         ),
         operator_current_plasma_domain_closure_pass=bool(
             current_consistency["operator_current_plasma_domain_closure_pass"]
+        ),
+        operator_current_trapezoidal_closure_pass=bool(
+            current_consistency["operator_current_trapezoidal_closure_pass"]
         ),
         profile_current_closure_pass=bool(current_consistency["profile_current_closure_pass"]),
         profile_current_closure_failure_class=str(

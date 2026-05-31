@@ -365,6 +365,32 @@ func TotalToroidalCurrentFromFlux(c Case, psi [][]float64) (float64, error) {
 	return total, nil
 }
 
+func TotalToroidalCurrentFromFluxTrapezoidal(c Case, psi [][]float64) (float64, error) {
+	currentDensity, err := ToroidalCurrentDensityFromFlux(c, psi)
+	if err != nil {
+		return 0, err
+	}
+	_, _, _, dR, dZ := grid(c)
+	total := 0.0
+	for iz := 0; iz < c.NZ; iz++ {
+		zWeight := 1.0
+		if iz == 0 || iz == c.NZ-1 {
+			zWeight = 0.5
+		}
+		for ir := 0; ir < c.NR; ir++ {
+			rWeight := 1.0
+			if ir == 0 || ir == c.NR-1 {
+				rWeight = 0.5
+			}
+			total += currentDensity[iz][ir] * zWeight * rWeight * dR * dZ
+		}
+	}
+	if math.IsNaN(total) || math.IsInf(total, 0) {
+		return 0, fmt.Errorf("trapezoidal integrated toroidal current became non-finite")
+	}
+	return total, nil
+}
+
 func TotalToroidalCurrentFromFluxMasked(c Case, psi [][]float64, domainMask [][]bool) (float64, error) {
 	if err := validateFluxMatrix(c, psi); err != nil {
 		return 0, err

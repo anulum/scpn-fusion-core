@@ -43,6 +43,7 @@ end
     delta_star = grad_shafranov_delta_star(case, psi)
     current_density = toroidal_current_density_from_flux(case, psi)
     total_current = total_toroidal_current_from_flux(case, psi)
+    trapezoidal_current = total_toroidal_current_from_flux_trapezoidal(case, psi)
 
     expected_total = 0.0
     for iz in 2:case.NZ-1, ir in 2:case.NR-1
@@ -52,6 +53,7 @@ end
         expected_total += expected_j * dR * dZ
     end
     @test abs((total_current - expected_total) / expected_total) < 1.0e-12
+    @test abs((trapezoidal_current - expected_total) / expected_total) < 1.0e-12
 
     mask = [iz > 3 && iz < case.NZ - 2 && ir > 4 && ir < case.NR - 3
             for iz in 1:case.NZ, ir in 1:case.NR]
