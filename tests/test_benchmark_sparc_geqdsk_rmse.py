@@ -422,3 +422,66 @@ def test_run_benchmark_strict_adapted_source_gate_rejects_missing_adapter(
     assert relaxed["passes"] is True
     assert strict["passes"] is False
     assert strict["adapted_source_contract_row_count"] == 0
+
+
+def test_run_benchmark_records_geqdsk_debug_trace_first_blocker(monkeypatch) -> None:
+    psi = np.eye(9, dtype=np.float64)
+
+    monkeypatch.setattr(
+        benchmark_sparc_geqdsk_rmse,
+        "_load_sparc_geqdsk_cases",
+        lambda: [
+            {
+                "name": "sparc_debug_case",
+                "machine": "sparc",
+                "source_file": "sparc_debug_case.eqdsk",
+                "psi": psi,
+                "feature_vector_full": np.array([-8.7, -12.2, 1.85, 0.0, 1.0, 1.0, 0.0, 2.37]),
+                "Ip": -8.7,
+                "B0": -12.2,
+                "R0": 1.85,
+                "kappa": 1.8,
+                "geqdsk_contract": {
+                    "geqdsk_contract_pass": True,
+                    "geqdsk_source_contract_pass": False,
+                    "gs_profile_source_best_fit_convention": "scaled_by_2pi",
+                    "gs_profile_source_best_fit_rel_l2": 1.0e-12,
+                    "gs_profile_source_rel_l2": 7.5,
+                    "psi_span": 1.0,
+                },
+            }
+        ],
+    )
+
+    def _proxy_only(eq: dict[str, Any]) -> tuple[np.ndarray, str, str]:
+        return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
+
+    monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)
+    result = benchmark_sparc_geqdsk_rmse.run_benchmark(
+        grid_sizes=[9],
+        strict_source_contract=False,
+    )
+
+    row = result["cases"][0]
+    trace = row["geqdsk_debug_trace"]
+
+    assert result["debug_methodology_steps"] == [
+        "attribute",
+        "normalise",
+        "solve",
+        "residual",
+        "classify",
+        "blockers",
+    ]
+    assert row["geqdsk_debug_first_blocker"] == {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter",
+    }
+    assert trace[0]["stage"] == "attribute"
+    assert trace[0]["status"] == "pass"
+    assert trace[1]["stage"] == "normalise"
+    assert trace[1]["status"] == "blocked"
+    assert trace[4]["stage"] == "classify"
+    assert trace[4]["status"] == "pass"
+    assert result["debug_first_blocker_counts"] == {"normalise": 1}
+    assert result["debug_stage_counts"]["normalise"]["blocked"] == 1

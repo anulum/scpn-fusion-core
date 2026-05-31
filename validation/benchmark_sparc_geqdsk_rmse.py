@@ -16,7 +16,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -38,6 +38,14 @@ REFERENCE_MACHINE_DIRS = {
     "jet": REPO_ROOT / "validation" / "reference_data" / "jet",
 }
 GEQDSK_EXTENSIONS = ("*.geqdsk", "*.eqdsk")
+GEQDSK_DEBUG_METHODOLOGY_STEPS = [
+    "attribute",
+    "normalise",
+    "solve",
+    "residual",
+    "classify",
+    "blockers",
+]
 
 
 def nrmse(y_true: FloatArray, y_pred: FloatArray) -> float:
@@ -88,6 +96,161 @@ def _source_best_fit_attribution(
         "best_fit_rel_l2": residual,
         "best_fit_convention": convention,
     }
+
+
+def _debug_step(
+    stage: str,
+    status: str,
+    *,
+    evidence: dict[str, Any],
+    next_action: str,
+) -> dict[str, Any]:
+    """Build one machine-readable GEQDSK debug trace step."""
+    return {
+        "evidence": evidence,
+        "next_action": next_action,
+        "stage": stage,
+        "status": status,
+    }
+
+
+def _geqdsk_debug_trace(row: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return row-level GEQDSK debug-methodology trace from existing evidence."""
+    contract = row.get("geqdsk_contract")
+    contract_dict = contract if isinstance(contract, dict) else {}
+    source_contract_pass = bool(row.get("geqdsk_source_contract_pass", False))
+    adapted_contract_pass = bool(row.get("geqdsk_adapted_source_contract_pass", False))
+    adapter_pass = bool(row.get("geqdsk_adapted_source_convention_adapter_pass", False))
+    backend_ready = bool(row.get("backend_requirement_satisfied", False))
+    psi_ready = bool(float(row.get("nrmse", float("inf"))) <= float(row.get("threshold", 0.0)))
+    has_source_file = "source_file" in row or str(row.get("reference_class", "")).startswith(
+        "synthetic"
+    )
+    raw_or_adapted_source_ready = bool(source_contract_pass or adapted_contract_pass)
+
+    best_fit_convention = str(
+        contract_dict.get("gs_profile_source_best_fit_convention", "not_evaluated")
+    )
+    classified = best_fit_convention not in {
+        "not_evaluated",
+        "no_finite_points",
+        "",
+    }
+
+    trace = [
+        _debug_step(
+            "attribute",
+            "pass" if has_source_file else "blocked",
+            evidence={
+                "machine": row.get("machine", "unknown"),
+                "reference_class": row.get("reference_class", "unknown"),
+                "source_file": row.get("source_file", "synthetic_or_missing"),
+            },
+            next_action="none" if has_source_file else "attach_reference_source_file",
+        ),
+        _debug_step(
+            "normalise",
+            "pass" if source_contract_pass or adapter_pass else "blocked",
+            evidence={
+                "adapted_source_contract_pass": adapted_contract_pass,
+                "adapter": row.get("geqdsk_adapted_source_convention_adapter", "not_evaluated"),
+                "adapter_pass": adapter_pass,
+                "raw_source_contract_pass": source_contract_pass,
+            },
+            next_action=(
+                "none"
+                if source_contract_pass or adapter_pass
+                else "select_or_add_source_convention_adapter"
+            ),
+        ),
+        _debug_step(
+            "solve",
+            "pass" if backend_ready and psi_ready else "blocked",
+            evidence={
+                "backend_requirement_satisfied": backend_ready,
+                "nrmse": row.get("nrmse", float("inf")),
+                "surrogate_backend": row.get("surrogate_backend", "unknown"),
+                "threshold": row.get("threshold", NRMSE_THRESHOLD),
+            },
+            next_action=(
+                "none"
+                if backend_ready and psi_ready
+                else "debug_profile_source_fixed_boundary_reconstruction"
+            ),
+        ),
+        _debug_step(
+            "residual",
+            "pass" if raw_or_adapted_source_ready else "blocked",
+            evidence={
+                "adapted_source_rel_l2": row.get("geqdsk_adapted_source_rel_l2", float("inf")),
+                "raw_source_rel_l2": contract_dict.get("gs_profile_source_rel_l2", float("inf")),
+                "source_threshold": contract_dict.get(
+                    "gs_profile_source_threshold",
+                    GEQDSK_GS_SOURCE_REL_L2_THRESHOLD,
+                ),
+            },
+            next_action=(
+                "none" if raw_or_adapted_source_ready else "inspect_operator_source_residual_budget"
+            ),
+        ),
+        _debug_step(
+            "classify",
+            "pass" if classified else "blocked",
+            evidence={
+                "best_fit_convention": best_fit_convention,
+                "best_fit_rel_l2": contract_dict.get(
+                    "gs_profile_source_best_fit_rel_l2", float("inf")
+                ),
+                "best_fit_scale": contract_dict.get(
+                    "gs_profile_source_best_fit_scale", float("nan")
+                ),
+            },
+            next_action="none" if classified else "add_residual_failure_classification",
+        ),
+    ]
+    open_blockers = [step for step in trace if str(step["status"]) in {"blocked", "fail"}]
+    trace.append(
+        _debug_step(
+            "blockers",
+            "pass" if not open_blockers else "blocked",
+            evidence={
+                "blocked_stages": [str(step["stage"]) for step in open_blockers],
+                "row_passes": bool(row.get("passes", False)),
+            },
+            next_action="none" if not open_blockers else str(open_blockers[0]["next_action"]),
+        )
+    )
+    return trace
+
+
+def _first_debug_blocker(trace: list[dict[str, Any]]) -> dict[str, str] | None:
+    """Return the first blocking stage from a row debug trace."""
+    for step in trace:
+        if str(step["stage"]) == "blockers":
+            continue
+        if str(step["status"]) in {"blocked", "fail"}:
+            return {
+                "stage": str(step["stage"]),
+                "next_action": str(step["next_action"]),
+            }
+    return None
+
+
+def _debug_stage_counts(cases: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Count GEQDSK debug-trace statuses per methodology stage."""
+    counts: dict[str, dict[str, int]] = {stage: {} for stage in GEQDSK_DEBUG_METHODOLOGY_STEPS}
+    for case in cases:
+        trace = case.get("geqdsk_debug_trace", [])
+        if not isinstance(trace, list):
+            continue
+        for step in trace:
+            if not isinstance(step, dict):
+                continue
+            stage = str(step.get("stage", "unknown"))
+            status = str(step.get("status", "unknown"))
+            counts.setdefault(stage, {})
+            counts[stage][status] = counts[stage].get(status, 0) + 1
+    return counts
 
 
 def _build_sparc_like_equilibrium(
@@ -629,6 +792,10 @@ def run_benchmark(
                 ):
                     passes = False
                     row["passes"] = False
+            trace = _geqdsk_debug_trace(row)
+            first_blocker = _first_debug_blocker(trace)
+            row["geqdsk_debug_trace"] = trace
+            row["geqdsk_debug_first_blocker"] = first_blocker
             cases.append(row)
             if gated and not passes:
                 all_pass = False
@@ -661,6 +828,21 @@ def run_benchmark(
         mode: sum(1 for case in cases if str(case.get("solver_mode", "")) == mode)
         for mode in sorted({str(case.get("solver_mode", "")) for case in cases})
     }
+    first_blocker_counts = {
+        stage: sum(
+            1
+            for case in cases
+            if isinstance(case.get("geqdsk_debug_first_blocker"), dict)
+            and str(cast(dict[str, Any], case["geqdsk_debug_first_blocker"]).get("stage")) == stage
+        )
+        for stage in sorted(
+            {
+                str(cast(dict[str, Any], case["geqdsk_debug_first_blocker"]).get("stage"))
+                for case in cases
+                if isinstance(case.get("geqdsk_debug_first_blocker"), dict)
+            }
+        )
+    }
     elapsed = time.time() - t0
     return {
         "schema_version": "sparc-geqdsk-rmse-benchmark.v2",
@@ -682,6 +864,9 @@ def run_benchmark(
         "reference_role_counts": reference_role_counts,
         "reference_class_counts": reference_class_counts,
         "solver_mode_counts": solver_mode_counts,
+        "debug_methodology_steps": GEQDSK_DEBUG_METHODOLOGY_STEPS,
+        "debug_stage_counts": _debug_stage_counts(cases),
+        "debug_first_blocker_counts": first_blocker_counts,
         "adapted_source_contract_row_count": len(adapted_rows),
         "adapted_source_contract_pass_count": len(adapted_pass_rows),
         "gate_adapted_source_contract_pass_count": sum(
@@ -729,7 +914,7 @@ def main() -> int:
     out_dir = REPO_ROOT / "artifacts"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "sparc_geqdsk_rmse_benchmark.json"
-    out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    out_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
     for case in result["cases"]:
         if not case.get("gated", True):

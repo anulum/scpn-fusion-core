@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added row-level GEQDSK debug traces and aggregate first-blocker counts for
+  source attribution, source-unit normalisation, reconstruction, residual,
+  classification, and blocker reporting.
+
 - Hardened the fail-closed GENE/CGYRO/GS2 nonlinear GK external-output parity
   manifest so readiness requires shared same-deck identity across all three
   solver families and per-family grid-convergence and production-scaling

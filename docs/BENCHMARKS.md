@@ -193,6 +193,7 @@ required before any CUDA throughput claim.
 | Public operator-source gate | PASS | `8/8` public rows under `psi_N RMSE <= 1e-6` |
 | Adapted profile-source gate | PASS | `4/4` accepted adapter rows under `psi_N RMSE <= 0.05` |
 | GEQDSK source-domain action attribution | FAIL | Aggregate report counts and failure reasons show `4/8` public rows require free-boundary coil/vacuum reconstruction directly and `4/8` require profile-source repair before free-boundary reconstruction |
+| GEQDSK debug trace coverage | PASS | Every benchmark row records `attribute`, `normalise`, `solve`, `residual`, `classify`, and `blockers` stages plus first-blocker aggregate counts |
 | Native operator/current closure | PASS | radial convergence order `2.000000`, worst radial current closure `8.31e-16` |
 
 The raw profile-source and strict FreeGS failures are open benchmark blockers.
@@ -462,6 +463,11 @@ profile/q arrays, in-plasma source sample count, absolute source residual,
 source-relative L2 residual, and best-fit convention attribution for global
 source scaling (`canonical`, sign flips, `2π`, and inverse-`2π`). The current
 source-rel-L2 threshold is `5e-2`.
+Each benchmark row also emits a deterministic GEQDSK debug trace over
+`attribute`, `normalise`, `solve`, `residual`, `classify`, and `blockers`
+stages. The aggregate report counts the first blocking stage so source-unit
+normalisation failures, reconstruction failures, residual-budget failures, and
+unclassified rows can be triaged without row-by-row log inspection.
 The source contract is available as a strict gate via
 `python validation/benchmark_sparc_geqdsk_rmse.py --strict-source-contract`.
 The default benchmark records these metrics without failing mixed-convention
