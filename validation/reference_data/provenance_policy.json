@@ -221,6 +221,21 @@
       "reference_role": "gate",
       "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
       "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes"
+    },
+    {
+      "id": "full_fidelity_reference_metadata",
+      "glob": "full_fidelity_*.json",
+      "source_type": "documentation",
+      "source": "Repository-maintained full-fidelity reference schema, source registry, and reference-case metadata.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "full_fidelity_public_artifacts",
+      "glob": "full_fidelity_public_artifacts/*",
+      "source_type": "derived_reference_artifact",
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "license": "citation-required",
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs."
     }
   ]
 }

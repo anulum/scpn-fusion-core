@@ -72,6 +72,29 @@
       "total_bytes": 381655
     },
     {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "file_count": 14,
+      "id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact",
+      "total_bytes": 252785
+    },
+    {
+      "file_count": 3,
+      "id": "full_fidelity_reference_metadata",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Repository-maintained full-fidelity reference schema, source registry, and reference-case metadata.",
+      "source_type": "documentation",
+      "total_bytes": 18371
+    },
+    {
       "citation": "Derived from cited ITPA subset artifacts.",
       "file_count": 3,
       "id": "itpa_reference_bundle",
@@ -130,7 +153,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 11539
+      "total_bytes": 12309
     },
     {
       "file_count": 1,
@@ -195,7 +218,7 @@
       "total_bytes": 3182
     }
   ],
-  "file_count": 53,
+  "file_count": 70,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -554,6 +577,224 @@
       "source_type": "documentation"
     },
     {
+      "dataset_id": "full_fidelity_reference_metadata",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "full_fidelity_artifact_schema.json",
+      "sha256": "5fb125a1832b8cf8951770ffcd9d01dc7de8409e56dad772da95aedb095fe75f",
+      "size_bytes": 1853,
+      "source": "Repository-maintained full-fidelity reference schema, source registry, and reference-case metadata.",
+      "source_type": "documentation"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.metadata.json",
+      "sha256": "327dc222b8201f608a9a2caeca4c2e825fa8a06341f91be0cd1bdf6cd163d2fa",
+      "size_bytes": 2450,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.npz",
+      "sha256": "a2b5b42d333609884976c70788fa94c22f4322d1d758094e186517916aaa93fd",
+      "size_bytes": 24580,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/dream_avalanche_public_raw.metadata.json",
+      "sha256": "35dc14d5cb806deca36d4da97064cc04a469ff231f5d0216976710a0b1f2d967",
+      "size_bytes": 1404,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/dream_avalanche_public_raw.npz",
+      "sha256": "5b03dad4f8845551bdd305453ce6dae62cbc05233d1d34828cfd856ee389ccf3",
+      "size_bytes": 1204,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.json",
+      "sha256": "d0b7985a3f7eb10d6f880a9e97543bb50c829049f00e13d28f691d745629c70b",
+      "size_bytes": 25053,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.metadata.json",
+      "sha256": "2ccc97465ade67d1675b9e10227201ab97a3afc183707251301dfecb5b6f7019",
+      "size_bytes": 1400,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json",
+      "sha256": "7a78897ca9e327845764b393f532a03ae8ffbad338e83596e7f1c05d9fcc8e50",
+      "size_bytes": 12778,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
+      "sha256": "85408e0642181d367cbf83783a5adab8156c691963dae64e437e37eabfaa2fe5",
+      "size_bytes": 1343,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.json",
+      "sha256": "dd8240df50657c9752456abedf637a9900ef792ec12fb28282414705986e592d",
+      "size_bytes": 27987,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.metadata.json",
+      "sha256": "eb5fc3ccb4e7ac1807e625355be256cf9773675a96843a06814bf9ee2228af7e",
+      "size_bytes": 1548,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.metadata.json",
+      "sha256": "a37d8a2834050e3c7fa4cfffb2e0a2bbfa173fcd1ce7fd63b4cc2b2ee98addf0",
+      "size_bytes": 1802,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.npz",
+      "sha256": "75c6941c66174b37738181891071e5071c4addca3a1344bbdd75b8f4587fa561",
+      "size_bytes": 115985,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/gk_public_reference_deck_inventory.json",
+      "sha256": "13263237e53944e37d40ba04fc551ae0a073f1e31fe8fc0b0efb06d39710fb2c",
+      "size_bytes": 33915,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
+      "dataset_id": "full_fidelity_public_artifacts",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_artifacts/gk_public_reference_deck_inventory.metadata.json",
+      "sha256": "c1402296894740aae41a038f2a86f0736c7f265088277f88342433d8a5778a60",
+      "size_bytes": 1336,
+      "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
+      "dataset_id": "full_fidelity_reference_metadata",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "full_fidelity_public_sources.json",
+      "sha256": "10b0d0b86e58179d455a020c01fed33b34b6bd08117f7104347b0f612cd02527",
+      "size_bytes": 4202,
+      "source": "Repository-maintained full-fidelity reference schema, source registry, and reference-case metadata.",
+      "source_type": "documentation"
+    },
+    {
+      "dataset_id": "full_fidelity_reference_metadata",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "full_fidelity_reference_cases.json",
+      "sha256": "a812315c1c9e17a0462feb3f8555db8abf342ee8d965c30d3b225d797c42fa29",
+      "size_bytes": 12316,
+      "source": "Repository-maintained full-fidelity reference schema, source registry, and reference-case metadata.",
+      "source_type": "documentation"
+    },
+    {
       "citation": "ITER Physics Basis, Nucl. Fusion (public literature summary).",
       "dataset_id": "published_reference_metadata",
       "license": "citation-required",
@@ -704,8 +945,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "e453551c682682e8c9b388c0ca496dc83861d01f501a8af3ec93bf9fcfce1d5c",
-      "size_bytes": 8523,
+      "sha256": "7cb6b64a7356c05b18874e6d2bd7977a81195f793dcbfed1ebb5d03cdfeeba5e",
+      "size_bytes": 9293,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -923,7 +1164,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-05-25T20:42:03.314955+00:00",
+  "generated_at_utc": "2026-05-31T13:42:58.734984+00:00",
   "license_registry": [
     {
       "attribution_required": true,
