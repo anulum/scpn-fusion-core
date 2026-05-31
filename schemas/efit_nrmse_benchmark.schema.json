@@ -57,6 +57,10 @@
     "profile_current_closure_threshold",
     "profile_current_closure_pass_count",
     "gate_profile_current_closure_pass_count",
+    "adapted_profile_current_closure_pass_count",
+    "gate_adapted_profile_current_closure_pass_count",
+    "effective_profile_current_closure_pass_count",
+    "gate_effective_profile_current_closure_pass_count",
     "profile_current_closure_failure_class_counts",
     "operator_current_worst_relative_error",
     "operator_current_worst_file",
@@ -311,6 +315,22 @@
       "type": "integer",
       "minimum": 0
     },
+    "adapted_profile_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_adapted_profile_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "effective_profile_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_effective_profile_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
     "profile_current_closure_failure_class_counts": {
       "type": "object",
       "additionalProperties": {
@@ -422,6 +442,11 @@
           "declared_toroidal_current_A",
           "operator_toroidal_current_A",
           "profile_toroidal_current_A",
+          "adapted_profile_toroidal_current_A",
+          "adapted_profile_current_ratio_to_declared",
+          "adapted_profile_current_relative_error",
+          "adapted_profile_current_closure_pass",
+          "effective_profile_current_closure_pass",
           "pressure_toroidal_current_A",
           "ffprime_toroidal_current_A",
           "operator_current_ratio_to_declared",
@@ -708,6 +733,21 @@
           },
           "profile_toroidal_current_A": {
             "type": "number"
+          },
+          "adapted_profile_toroidal_current_A": {
+            "type": "number"
+          },
+          "adapted_profile_current_ratio_to_declared": {
+            "type": "number"
+          },
+          "adapted_profile_current_relative_error": {
+            "type": "number"
+          },
+          "adapted_profile_current_closure_pass": {
+            "type": "boolean"
+          },
+          "effective_profile_current_closure_pass": {
+            "type": "boolean"
           },
           "pressure_toroidal_current_A": {
             "type": "number"

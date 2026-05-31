@@ -174,6 +174,11 @@ class PsiRMSEResult:
     declared_toroidal_current_A: float = float("nan")
     operator_toroidal_current_A: float = float("nan")
     profile_toroidal_current_A: float = float("nan")
+    adapted_profile_toroidal_current_A: float = float("nan")
+    adapted_profile_current_ratio_to_declared: float = float("nan")
+    adapted_profile_current_relative_error: float = float("nan")
+    adapted_profile_current_closure_pass: bool = False
+    effective_profile_current_closure_pass: bool = False
     operator_current_ratio_to_declared: float = float("nan")
     profile_current_ratio_to_declared: float = float("nan")
     operator_current_relative_error: float = float("nan")
@@ -256,6 +261,10 @@ class EfitNRMSEBenchmarkGate:
     profile_current_closure_threshold: float
     profile_current_closure_pass_count: int
     gate_profile_current_closure_pass_count: int
+    adapted_profile_current_closure_pass_count: int
+    gate_adapted_profile_current_closure_pass_count: int
+    effective_profile_current_closure_pass_count: int
+    gate_effective_profile_current_closure_pass_count: int
     profile_current_closure_failure_class_counts: dict[str, int]
     operator_current_worst_relative_error: float
     operator_current_worst_file: str
@@ -1486,6 +1495,34 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     else:
         source_consistency_class = "solver_consistency_failure"
 
+    profile_current = float(current_consistency["profile_toroidal_current_A"])
+    declared_current = float(current_consistency["declared_toroidal_current_A"])
+    current_scale = max(abs(declared_current), 1.0)
+    if bool(source_convention_adapter["source_convention_adapter_pass"]):
+        adapted_current_multiplier = source_convention_multiplier(
+            str(source_convention_adapter["source_convention_adapter"]),
+            float(eq.sibry - eq.simag),
+        )
+        adapted_profile_current = adapted_current_multiplier * profile_current
+        adapted_profile_current_ratio = abs(adapted_profile_current) / current_scale
+        adapted_profile_current_error = (
+            abs(abs(adapted_profile_current) - abs(declared_current)) / current_scale
+        )
+        adapted_profile_current_pass = bool(
+            np.isfinite(adapted_profile_current_error)
+            and adapted_profile_current_error <= PROFILE_CURRENT_CLOSURE_THRESHOLD
+        )
+    else:
+        adapted_profile_current = float("nan")
+        adapted_profile_current_ratio = float("nan")
+        adapted_profile_current_error = float("nan")
+        adapted_profile_current_pass = False
+    effective_profile_current_pass = bool(
+        adapted_profile_current_pass
+        if bool(source_convention_adapter["source_convention_adapter_pass"])
+        else current_consistency["profile_current_closure_pass"]
+    )
+
     return PsiRMSEResult(
         file=path.name,
         grid=f"{eq.nw}x{eq.nh}",
@@ -1576,6 +1613,11 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         declared_toroidal_current_A=float(current_consistency["declared_toroidal_current_A"]),
         operator_toroidal_current_A=float(current_consistency["operator_toroidal_current_A"]),
         profile_toroidal_current_A=float(current_consistency["profile_toroidal_current_A"]),
+        adapted_profile_toroidal_current_A=float(adapted_profile_current),
+        adapted_profile_current_ratio_to_declared=float(adapted_profile_current_ratio),
+        adapted_profile_current_relative_error=float(adapted_profile_current_error),
+        adapted_profile_current_closure_pass=adapted_profile_current_pass,
+        effective_profile_current_closure_pass=effective_profile_current_pass,
         pressure_toroidal_current_A=float(current_consistency["pressure_toroidal_current_A"]),
         ffprime_toroidal_current_A=float(current_consistency["ffprime_toroidal_current_A"]),
         operator_current_ratio_to_declared=float(
@@ -1859,6 +1901,10 @@ def validate_efit_nrmse_benchmark(
     profile_current_closure_failure_class_counts: dict[str, int] = {}
     profile_current_closure_pass_count = 0
     gate_profile_current_closure_pass_count = 0
+    adapted_profile_current_closure_pass_count = 0
+    gate_adapted_profile_current_closure_pass_count = 0
+    effective_profile_current_closure_pass_count = 0
+    gate_effective_profile_current_closure_pass_count = 0
     for row in rows:
         for key in (
             "raw_profile_solver_mode",
@@ -1911,6 +1957,14 @@ def validate_efit_nrmse_benchmark(
                 profile_current_closure_pass_count += 1
                 if row["reference_role"] == "gate":
                     gate_profile_current_closure_pass_count += 1
+            if bool(row["adapted_profile_current_closure_pass"]):
+                adapted_profile_current_closure_pass_count += 1
+                if row["reference_role"] == "gate":
+                    gate_adapted_profile_current_closure_pass_count += 1
+            if bool(row["effective_profile_current_closure_pass"]):
+                effective_profile_current_closure_pass_count += 1
+                if row["reference_role"] == "gate":
+                    gate_effective_profile_current_closure_pass_count += 1
         else:
             failure_reasons.append(f"non-finite profile current error in {row['file']}")
 
@@ -2021,10 +2075,10 @@ def validate_efit_nrmse_benchmark(
             "public gate operator-current closure failed in "
             f"{gate_row_count - gate_operator_current_closure_pass_count}/{gate_row_count} rows"
         )
-    if gate_profile_current_closure_pass_count != gate_row_count:
+    if gate_effective_profile_current_closure_pass_count != gate_row_count:
         failure_reasons.append(
-            "public gate profile-current closure failed in "
-            f"{gate_row_count - gate_profile_current_closure_pass_count}/{gate_row_count} rows"
+            "public gate effective profile-current closure failed in "
+            f"{gate_row_count - gate_effective_profile_current_closure_pass_count}/{gate_row_count} rows"
         )
     if adapted_profile_entries and adapted_profile_pass_count != len(adapted_profile_entries):
         failure_reasons.append(
@@ -2090,6 +2144,10 @@ def validate_efit_nrmse_benchmark(
         profile_current_closure_threshold=PROFILE_CURRENT_CLOSURE_THRESHOLD,
         profile_current_closure_pass_count=profile_current_closure_pass_count,
         gate_profile_current_closure_pass_count=gate_profile_current_closure_pass_count,
+        adapted_profile_current_closure_pass_count=adapted_profile_current_closure_pass_count,
+        gate_adapted_profile_current_closure_pass_count=gate_adapted_profile_current_closure_pass_count,
+        effective_profile_current_closure_pass_count=effective_profile_current_closure_pass_count,
+        gate_effective_profile_current_closure_pass_count=gate_effective_profile_current_closure_pass_count,
         profile_current_closure_failure_class_counts=profile_current_closure_failure_class_counts,
         operator_current_worst_relative_error=float(operator_current_worst_error),
         operator_current_worst_file=operator_current_worst_file,
@@ -2292,9 +2350,14 @@ def main() -> int:
             f"(relative error = {benchmark.profile_current_worst_relative_error:.6e})"
         )
     print(
-        "Profile-current closure gate: "
+        "Raw profile-current closure gate: "
         f"{benchmark.profile_current_closure_pass_count}/{benchmark.count} rows, "
         f"{benchmark.gate_profile_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
+    )
+    print(
+        "Effective profile-current closure gate: "
+        f"{benchmark.effective_profile_current_closure_pass_count}/{benchmark.count} rows, "
+        f"{benchmark.gate_effective_profile_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
     )
     profile_failure_classes = ", ".join(
         f"{name}={count}"

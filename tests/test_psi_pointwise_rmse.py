@@ -775,6 +775,11 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                adapted_profile_toroidal_current_A=-1.5e6,
+                adapted_profile_current_ratio_to_declared=0.99,
+                adapted_profile_current_relative_error=0.01,
+                adapted_profile_current_closure_pass=True,
+                effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
@@ -929,6 +934,10 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.profile_current_closure_threshold == pytest.approx(0.05)
         assert gate.profile_current_closure_pass_count == 9
         assert gate.gate_profile_current_closure_pass_count == 3
+        assert gate.adapted_profile_current_closure_pass_count == 9
+        assert gate.gate_adapted_profile_current_closure_pass_count == 3
+        assert gate.effective_profile_current_closure_pass_count == 9
+        assert gate.gate_effective_profile_current_closure_pass_count == 3
         assert gate.profile_current_closure_failure_class_counts == {"passes_threshold": 9}
         assert gate.operator_current_worst_relative_error == pytest.approx(5.0e-5)
         assert gate.profile_current_worst_relative_error == pytest.approx(0.01)
@@ -1030,6 +1039,11 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                adapted_profile_toroidal_current_A=-1.5e6,
+                adapted_profile_current_ratio_to_declared=0.99,
+                adapted_profile_current_relative_error=0.01,
+                adapted_profile_current_closure_pass=True,
+                effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
@@ -1131,6 +1145,11 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                adapted_profile_toroidal_current_A=-1.5e6,
+                adapted_profile_current_ratio_to_declared=0.99,
+                adapted_profile_current_relative_error=0.01,
+                adapted_profile_current_closure_pass=True,
+                effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
@@ -1231,6 +1250,11 @@ class TestValidateEFITNRMSEBenchmark:
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
+                adapted_profile_toroidal_current_A=-1.5e6,
+                adapted_profile_current_ratio_to_declared=0.99,
+                adapted_profile_current_relative_error=0.01,
+                adapted_profile_current_closure_pass=True,
+                effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,

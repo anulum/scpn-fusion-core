@@ -131,6 +131,10 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         profile_current_closure_threshold=0.05,
         profile_current_closure_pass_count=0,
         gate_profile_current_closure_pass_count=0,
+        adapted_profile_current_closure_pass_count=0,
+        gate_adapted_profile_current_closure_pass_count=0,
+        effective_profile_current_closure_pass_count=0,
+        gate_effective_profile_current_closure_pass_count=0,
         profile_current_closure_failure_class_counts={
             "profile_current_under_closes_declared_current": 1
         },
@@ -212,6 +216,11 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "declared_toroidal_current_A": -8.7e6,
                 "operator_toroidal_current_A": -8.69e6,
                 "profile_toroidal_current_A": -7.95e6,
+                "adapted_profile_toroidal_current_A": float("nan"),
+                "adapted_profile_current_ratio_to_declared": float("nan"),
+                "adapted_profile_current_relative_error": float("nan"),
+                "adapted_profile_current_closure_pass": False,
+                "effective_profile_current_closure_pass": False,
                 "pressure_toroidal_current_A": -1.95e6,
                 "ffprime_toroidal_current_A": -6.0e6,
                 "operator_current_ratio_to_declared": 0.99885,

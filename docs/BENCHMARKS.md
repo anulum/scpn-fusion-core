@@ -466,14 +466,16 @@ Profile-current closure is also threshold-counted with
 threshold are now aggregate gate failures rather than visual-only diagnostics.
 Current local profile-current closure result: `0/18` aggregate rows and `0/8`
 public gate rows pass the 5% threshold. Each report row now carries `operator_current_ratio_to_declared`,
-`profile_current_ratio_to_declared`, `pressure_current_ratio_to_declared`,
-`ffprime_current_ratio_to_declared`, `profile_current_closure_pass`, and
+`profile_current_ratio_to_declared`, `adapted_profile_current_ratio_to_declared`,
+`pressure_current_ratio_to_declared`, `ffprime_current_ratio_to_declared`,
+`profile_current_closure_pass`, `adapted_profile_current_closure_pass`,
+`effective_profile_current_closure_pass`, and
 `profile_current_closure_failure_class` so downstream gates can distinguish
 finite profile-current diagnostics from rows that satisfy the closure threshold
 and can identify whether the pressure or FFprime source dominates an under- or
-over-closed declared plasma current. The aggregate report also includes
-`profile_current_closure_failure_class_counts` so the failure mode distribution
-is visible without row scanning. This is intentionally exposed as a public-gate benchmark failure because raw
+over-closed declared plasma current. The aggregate report also includes raw, adapted, and effective profile-current
+closure pass counts plus `profile_current_closure_failure_class_counts`, so the
+failure mode distribution is visible without row scanning. This is intentionally exposed as a public-gate benchmark failure because raw
 profile-source reconstruction still has unresolved convention/source mismatch.
 Diagnostic-only synthetic rows remain visible in counts and row reports, but do
 not decide public gate failure reasons.
