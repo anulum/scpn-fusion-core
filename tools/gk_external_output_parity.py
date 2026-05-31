@@ -332,7 +332,10 @@ def _write_metadata(path: Path, metadata: dict[str, Any]) -> None:
 
 
 def _validate_evidence(
-    rows: Any, required_keys: tuple[str, ...], required_families: tuple[str, ...]
+    rows: Any,
+    required_keys: tuple[str, ...],
+    required_families: tuple[str, ...],
+    expected_case_ids: dict[str, str] | None = None,
 ) -> bool:
     if not isinstance(rows, list) or not rows:
         return False
@@ -342,6 +345,10 @@ def _validate_evidence(
             return False
         family = str(row.get("solver_family", "")).upper()
         if family not in required_families:
+            return False
+        if expected_case_ids is not None and str(row.get("case_id", "")) != expected_case_ids.get(
+            family, ""
+        ):
             return False
         seen_families.add(family)
         numeric_values: list[float] = []
@@ -788,15 +795,22 @@ def build_gk_external_output_parity_report(
 
     grid_rows = manifest.get("grid_convergence_evidence", []) if manifest else []
     scaling_rows = manifest.get("production_scaling_evidence", []) if manifest else []
+    expected_case_ids = {
+        str(row["solver_family"]): str(row["case_id"])
+        for row in rows
+        if row.get("reference_output_ready") and row.get("case_id")
+    }
     grid_ready = _validate_evidence(
         grid_rows,
         ("case_id", "solver_family", "observable", "coarse_grid", "fine_grid", "relative_l2"),
         REQUIRED_SOLVER_FAMILIES,
+        expected_case_ids,
     )
     scaling_ready = _validate_evidence(
         scaling_rows,
         ("case_id", "solver_family", "device", "grid", "ranks", "wall_time_s"),
         REQUIRED_SOLVER_FAMILIES,
+        expected_case_ids,
     )
     reference_ready = all(bool(row["reference_output_ready"]) for row in rows)
     same_deck_ready = bool(same_deck_group["ready"])

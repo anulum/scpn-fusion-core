@@ -260,6 +260,8 @@ conversion. Native same-case comparison rows are also checksum-gated with
 `native_output_sha256` before threshold evaluation.
 For top-level NPZ payloads, the converter classifies keys by the declared
 coordinate and observable contracts before metadata publication.
+Grid-convergence and production-scaling rows must link to the converted
+same-case `case_id` for each solver family.
 
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
@@ -981,6 +983,9 @@ Native same-case comparison artefacts must carry a matching checksum before any
 threshold can be marked ready.
 For NPZ inputs, top-level keys are separated into coordinate and observable
 metadata by the declared contracts before converted artefacts are reported.
+Grid-convergence and production-scale evidence rows are accepted only when they
+reference the converted same-case output row for the corresponding solver
+family.
 The benchmark intentionally does not pass
 full-fidelity acceptance until those public reference gates exist and their
 artefacts are present.

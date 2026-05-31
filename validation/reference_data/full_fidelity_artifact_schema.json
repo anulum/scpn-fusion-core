@@ -29,7 +29,8 @@
     "multi-solver nonlinear GK manifests require one GENE, one CGYRO, and one GS2 row with shared benchmark_case_id and deck_physics_sha256",
     "nonlinear GK grid-convergence and production-scaling evidence must cover every required solver family before readiness can pass",
     "nonlinear GK native same-case comparison requires native_output_sha256 before thresholds are evaluated",
-    "top-level nonlinear GK NPZ keys are classified by declared coordinate and observable contracts before converted metadata is emitted"
+    "top-level nonlinear GK NPZ keys are classified by declared coordinate and observable contracts before converted metadata is emitted",
+    "nonlinear GK grid-convergence and production-scaling evidence rows must reference the converted same-case solver-family output rows"
   ],
   "required_case_fields": [
     "case_id",
