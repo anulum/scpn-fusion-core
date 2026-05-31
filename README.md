@@ -156,6 +156,12 @@ Top limitations:
 - No full 3D nonlinear MHD stack in-loop (external coupling required for that fidelity).
 - Free-boundary equilibrium/inverse reconstruction is not yet EFIT-grade; public SPARC GEQDSK operator-source rows pass, while profile-source/free-boundary reconstruction and FreeGS strict-backend parity remain open evidence gates.
 
+Full-fidelity acceptance status for native nonlinear GK, runaway electrons, and
+impurity transport is tracked by
+[`validation/reports/full_fidelity_acceptance_benchmark.md`](validation/reports/full_fidelity_acceptance_benchmark.md).
+The current diagnostic is fail-closed: these surfaces are not marked full-order
+until public GENE/CGYRO/GS2, DREAM, and Aurora/STRAHL parity gates are met.
+
 ## Competitive Position
 
 | Capability | SCPN Fusion Core | TORAX | FUSE | FreeGS | DREAM |

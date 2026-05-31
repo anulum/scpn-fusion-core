@@ -8,20 +8,20 @@
 
 | Collision model | Backend | Elapsed s | Converged | chi_i | chi_e | phi_rms_final |
 |---|---:|---:|---:|---:|---:|---:|
-| krook | numpy | 0.058042 | True | 6.771828e-11 | 3.385914e-11 | 1.709088e-03 |
-| krook | jax | 5.988251 | True | 6.771828e-11 | 3.385914e-11 | 1.732038e-03 |
-| sugama | numpy | 0.053767 | True | 6.771828e-11 | 3.385914e-11 | 1.709094e-03 |
-| sugama | jax | 3.245545 | True | 6.771828e-11 | 3.385914e-11 | 1.732044e-03 |
-| sugama_electromagnetic_kinetic | numpy | 0.111406 | True | 6.138569e-07 | -6.507130e-07 | 3.146493e-03 |
-| sugama_electromagnetic_kinetic | jax | 3.379930 | True | 6.138569e-07 | -6.507130e-07 | 3.170644e-03 |
+| krook | numpy | 0.094615 | True | 6.771828e-11 | 3.385914e-11 | 1.709088e-03 |
+| krook | jax | 8.215420 | True | 6.771828e-11 | 3.385914e-11 | 1.732038e-03 |
+| sugama | numpy | 0.102415 | True | 6.771828e-11 | 3.385914e-11 | 1.709094e-03 |
+| sugama | jax | 3.999905 | True | 6.771828e-11 | 3.385914e-11 | 1.732044e-03 |
+| sugama_electromagnetic_kinetic | numpy | 0.179928 | True | 6.138569e-07 | -6.507130e-07 | 3.146493e-03 |
+| sugama_electromagnetic_kinetic | jax | 2.594542 | True | 6.138569e-07 | -6.507130e-07 | 3.170644e-03 |
 
 ## Sugama Moment Residuals
 
 | Moment | Max abs residual |
 |---|---:|
-| density | 1.610094e-22 |
-| parallel_momentum | 5.918823e-23 |
-| energy | 3.176374e-22 |
+| density | 1.674096e-22 |
+| parallel_momentum | 6.277859e-23 |
+| energy | 3.220188e-22 |
 
 ## Nonlinear E x B Invariant Contract
 

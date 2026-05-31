@@ -14,6 +14,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from validation.benchmark_full_fidelity_acceptance import run_benchmark
+
 
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
@@ -81,3 +83,33 @@ def test_public_scope_names_first_principles_comparators() -> None:
 
     for phrase in required_phrases:
         assert phrase in public_scope
+
+
+def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity() -> None:
+    """Full-order claims require explicit public reference parity evidence."""
+    report = run_benchmark()
+
+    assert report["schema"] == "full-fidelity-acceptance.v1"
+    assert report["gate_mode"] == "diagnostic_fail_closed"
+    assert report["acceptance_passed"] is False
+
+    surfaces = {surface["surface"]: surface for surface in report["surfaces"]}
+    assert set(surfaces) == {
+        "native_nonlinear_gyrokinetics",
+        "runaway_electrons",
+        "impurity_transport",
+    }
+    assert surfaces["native_nonlinear_gyrokinetics"]["required_reference_equivalence"] == (
+        "GENE/CGYRO/GS2 full nonlinear 5D Vlasov-Maxwell"
+    )
+    assert surfaces["runaway_electrons"]["required_reference_equivalence"] == (
+        "DREAM kinetic/fluid runaway electron solver"
+    )
+    assert surfaces["impurity_transport"]["required_reference_equivalence"] == (
+        "Aurora/STRAHL collisional-operator impurity transport"
+    )
+
+    for surface in surfaces.values():
+        assert surface["status"] == "not_full_fidelity"
+        assert surface["acceptance_passed"] is False
+        assert surface["missing_requirements"]

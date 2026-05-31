@@ -1,0 +1,65 @@
+{
+  "acceptance_passed": false,
+  "benchmark": "full_fidelity_acceptance",
+  "description": "Fail-closed acceptance contract for native nonlinear GK, runaway electron, and impurity transport equivalence against production community solvers.",
+  "gate_mode": "diagnostic_fail_closed",
+  "schema": "full-fidelity-acceptance.v1",
+  "surfaces": [
+    {
+      "acceptance_passed": false,
+      "implemented_dimensions": {
+        "electromagnetic_a_parallel_surface": true,
+        "five_dimensional_delta_f_state": true,
+        "kinetic_electron_surface": true,
+        "moment_conserving_collision_contract": true,
+        "nonlinear_exb_operator": true
+      },
+      "missing_requirements": [
+        "public nonlinear GENE/CGYRO/GS2 benchmark deck parity",
+        "production-scale radial/toroidal domain decomposition and convergence evidence",
+        "Maxwell field solve parity beyond compact A_parallel contract",
+        "validated flux spectra, zonal-flow, and saturation parity against production GK outputs"
+      ],
+      "required_reference_equivalence": "GENE/CGYRO/GS2 full nonlinear 5D Vlasov-Maxwell",
+      "status": "not_full_fidelity",
+      "surface": "native_nonlinear_gyrokinetics"
+    },
+    {
+      "acceptance_passed": false,
+      "implemented_dimensions": {
+        "avalanche_source": true,
+        "dreicer_source": true,
+        "fluid_density_balance": true,
+        "hot_tail_seed": true,
+        "one_dimensional_momentum_fokker_planck_contract": true
+      },
+      "missing_requirements": [
+        "multidimensional DREAM kinetic distribution parity",
+        "coupled radial-momentum-pitch kinetic grid with DREAM reference cases",
+        "synchrotron, bremsstrahlung, partial-screening, and transport parity gates",
+        "public DREAM deck ingestion and distribution-function RMSE thresholds"
+      ],
+      "required_reference_equivalence": "DREAM kinetic/fluid runaway electron solver",
+      "status": "not_full_fidelity",
+      "surface": "runaway_electrons"
+    },
+    {
+      "acceptance_passed": false,
+      "implemented_dimensions": {
+        "edge_source_particle_conservation": true,
+        "neoclassical_pinch_contract": true,
+        "radiated_power_monotonicity": true,
+        "trace_radial_transport": true
+      },
+      "missing_requirements": [
+        "charge-state-resolved collisional-radiative operator parity",
+        "ADAS-backed ionisation/recombination/radiation coefficient ingestion",
+        "Aurora/STRAHL public case ingestion and density/radiation RMSE gates",
+        "multi-species source/sink matrix conservation across charge states"
+      ],
+      "required_reference_equivalence": "Aurora/STRAHL collisional-operator impurity transport",
+      "status": "not_full_fidelity",
+      "surface": "impurity_transport"
+    }
+  ]
+}

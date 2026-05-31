@@ -6,9 +6,9 @@ It does not claim parity with DREAM's kinetic momentum-space distribution solver
 ## Timing
 
 - Repeats: 25
-- Median balance wall time: 7.672992e-06 s
-- Minimum balance wall time: 7.411989e-06 s
-- Maximum balance wall time: 1.453501e-05 s
+- Median balance wall time: 9.635929e-06 s
+- Minimum balance wall time: 8.539064e-06 s
+- Maximum balance wall time: 2.303103e-05 s
 
 ## Cases
 

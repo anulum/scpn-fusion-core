@@ -738,6 +738,23 @@ free-energy injection from the undriven collisionless nonlinear bracket.
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.
 
+## Full-Fidelity Acceptance Contract
+
+`validation/benchmark_full_fidelity_acceptance.py` is a fail-closed diagnostic
+for native full-order claims across the three remaining high-fidelity physics
+frontiers:
+
+- Nonlinear gyrokinetics must demonstrate public GENE/CGYRO/GS2 parity for a
+  full nonlinear 5D Vlasov-Maxwell campaign.
+- Runaway electrons must demonstrate DREAM kinetic/fluid parity beyond the
+  current scalar balance and 1D momentum Fokker-Planck contracts.
+- Impurity transport must demonstrate Aurora/STRAHL collisional-operator parity
+  with charge-state-resolved conservation and public reference cases.
+
+The current report is
+`validation/reports/full_fidelity_acceptance_benchmark.md`. It intentionally
+does not pass full-fidelity acceptance until those public reference gates exist.
+
 ## Extended Community Baseline Comparison
 
 Comparison against established equilibrium, transport, and integrated

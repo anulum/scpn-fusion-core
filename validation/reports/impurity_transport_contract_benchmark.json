@@ -12,7 +12,7 @@
     "edge_density_m3": 2.0933367531619228e+16,
     "expected_particles": 9.790647565880644e+17,
     "high_radiated_power_mw": 39.217850922494925,
-    "low_radiated_power_mw": 3.921785092249493,
+    "low_radiated_power_mw": 3.9217850922494937,
     "midradius_pinch_m_s": -8.68341083344053,
     "relative_conservation_error": 1.3073701115140358e-16
   },

@@ -9,7 +9,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 1e-08,
       "total_source_m3_s": 0.0,
-      "wall_time_s": 3.1962001230567694e-05
+      "wall_time_s": 0.0001715420512482524
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -19,7 +19,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9297121255879576.0,
-      "wall_time_s": 1.940698712132871e-05
+      "wall_time_s": 5.245499778538942e-05
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -29,7 +29,7 @@
       "loss_source_m3_s": 10000000000000.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9287121255879576.0,
-      "wall_time_s": 1.2495991541072726e-05
+      "wall_time_s": 1.40779884532094e-05
     }
   ],
   "description": "DREAM-style fluid runaway density-balance contract; not kinetic DREAM parity.",
@@ -41,9 +41,9 @@
   },
   "passed": true,
   "timing": {
-    "max_balance_wall_time_s": 1.453500590287149e-05,
-    "median_balance_wall_time_s": 7.672992069274187e-06,
-    "min_balance_wall_time_s": 7.411988917738199e-06,
+    "max_balance_wall_time_s": 2.303102519363165e-05,
+    "median_balance_wall_time_s": 9.635929018259048e-06,
+    "min_balance_wall_time_s": 8.539063856005669e-06,
     "repeats": 25
   }
 }
