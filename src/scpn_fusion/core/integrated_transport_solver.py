@@ -516,8 +516,8 @@ class TransportSolver(
 
     def __init__(self, config_path: str | Path, *, multi_ion: bool = False) -> None:
         """Build a transport solver with deterministic defaults and requested mode."""
-        base_init = cast(Callable[[str | Path], None], object.__getattribute__(super(), "__init__"))
-        base_init(config_path)
+        fusion_kernel_init = cast(Callable[[Any, str | Path], None], FusionKernel.__init__)
+        fusion_kernel_init(self, config_path)
         self._initialize_transport_solver_state(multi_ion=multi_ion)
 
     # Model/configuration methods are provided by TransportSolverModelMixin.
