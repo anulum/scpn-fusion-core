@@ -6,7 +6,7 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 `psi(R,Z)` comparison evidence exists.
 
 - Schema: `freegs-public-example-reconstruction-report.v1`
-- Status: `blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence`
+- Status: `blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars`
 - Backend available: `True`
 - FreeGS version: `0.8.2`
 - Case count: `2`
@@ -24,6 +24,5 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 ## Missing full-fidelity requirements
 
 - strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance
-- native q-profile extraction and sanity thresholds
 - grid convergence across public example resolutions
 - coil/vacuum reconstruction linked to public machine current sidecars

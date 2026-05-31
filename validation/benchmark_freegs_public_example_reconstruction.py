@@ -366,6 +366,42 @@ def _nearest_grid_value(
     return float(psi[z_idx, r_idx])
 
 
+def _q_profile_sanity(eq: Any) -> dict[str, Any]:
+    """Extract finite signed-q profile sanity metrics from a solved FreeGS equilibrium."""
+    try:
+        psi_norm = np.linspace(0.05, 0.95, 16, dtype=np.float64)
+        q_values = np.asarray(eq.q(psi_norm), dtype=np.float64)
+    except Exception as exc:  # pragma: no cover - backend-version dependent.
+        return {
+            "error": f"{type(exc).__name__}: {exc}",
+            "finite_q_profile": False,
+            "status": "blocked_freegs_q_profile_extraction_failed",
+        }
+    finite = bool(q_values.size and np.all(np.isfinite(q_values)))
+    if not finite:
+        return {
+            "finite_q_profile": False,
+            "sample_count": int(q_values.size),
+            "status": "blocked_nonfinite_q_profile",
+        }
+    q_abs = np.abs(q_values)
+    q_signs = np.sign(q_values[np.abs(q_values) > 1.0e-12])
+    signed_consistent = bool(q_signs.size == 0 or np.all(q_signs == q_signs[0]))
+    q_abs_min = float(np.min(q_abs))
+    q_abs_max = float(np.max(q_abs))
+    sane = bool(signed_consistent and q_abs_min > 0.0 and q_abs_max < 1.0e3)
+    return {
+        "finite_q_profile": finite,
+        "q_abs_max": q_abs_max,
+        "q_abs_min": q_abs_min,
+        "q_max": float(np.max(q_values)),
+        "q_min": float(np.min(q_values)),
+        "sample_count": int(q_values.size),
+        "signed_consistent": signed_consistent,
+        "status": "pass_finite_signed_q_profile" if sane else "blocked_q_profile_sanity_threshold",
+    }
+
+
 def _native_same_case_profile_source_comparison(
     eq: Any,
     profiles: Any,
@@ -416,10 +452,7 @@ def _native_same_case_profile_source_comparison(
         "native_axis_z_m": native_axis[1],
         "native_current_a": float(native_current),
         "psi_n_rmse": psi_n_rmse,
-        "q_profile_sanity": {
-            "finite_q_profile": False,
-            "status": "blocked_native_q_profile_extraction_not_yet_implemented",
-        },
+        "q_profile_sanity": _q_profile_sanity(eq),
         "schema": "native-freegs-profile-source-comparison.v1",
         "thresholds": {
             "axis_error_m": 2.5e-2,
@@ -566,10 +599,9 @@ def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str,
         "grid": {"nx": spec.nx, "ny": spec.ny},
         "machine_class": spec.machine_class,
         "missing_full_fidelity_requirements": [
-            "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
-            "native q-profile extraction and sanity thresholds",
-            "grid-convergence evidence for the public example",
-            "coil/vacuum reconstruction linked to public machine current sidecars",
+        "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
+        "grid-convergence evidence for the public example",
+        "coil/vacuum reconstruction linked to public machine current sidecars",
         ],
         "external_nonlinear_output_ready": solve_sweep["external_nonlinear_output_ready"],
         "nonlinear_solve_attempt": solve,
@@ -598,7 +630,7 @@ def _blocked_status(cases: list[dict[str, Any]], backend_available: bool) -> str
             ):
                 return (
                     "blocked_public_freegs_native_same_case_compared_missing_"
-                    "strict_threshold_q_profile_grid_convergence"
+                    "strict_threshold_grid_convergence_coil_sidecars"
                 )
             return "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison"
         return "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi"
@@ -677,7 +709,6 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
     backend_available = freegs is not None
     missing_requirements = [
         "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
-        "native q-profile extraction and sanity thresholds",
         "grid convergence across public example resolutions",
         "coil/vacuum reconstruction linked to public machine current sidecars",
     ]

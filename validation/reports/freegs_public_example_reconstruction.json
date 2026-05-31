@@ -16,13 +16,12 @@
       "machine_class": "TestTokamak",
       "missing_full_fidelity_requirements": [
         "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
-        "native q-profile extraction and sanity thresholds",
         "grid-convergence evidence for the public example",
         "coil/vacuum reconstruction linked to public machine current sidecars"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 4.491138283978216,
+        "elapsed_s": 16.71302858204581,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -46,8 +45,14 @@
           "native_current_a": 199999.04842899938,
           "psi_n_rmse": 0.229181105368877,
           "q_profile_sanity": {
-            "finite_q_profile": false,
-            "status": "blocked_native_q_profile_extraction_not_yet_implemented"
+            "finite_q_profile": true,
+            "q_abs_max": 7.758966622055577,
+            "q_abs_min": 1.4114962405214913,
+            "q_max": 7.758966622055577,
+            "q_min": 1.4114962405214913,
+            "sample_count": 16,
+            "signed_consistent": true,
+            "status": "pass_finite_signed_q_profile"
           },
           "schema": "native-freegs-profile-source-comparison.v1",
           "thresholds": {
@@ -66,7 +71,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.8694045769516379,
+          "elapsed_s": 2.178532652906142,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -76,7 +81,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 4.491138283978216,
+          "elapsed_s": 16.71302858204581,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -100,8 +105,14 @@
             "native_current_a": 199999.04842899938,
             "psi_n_rmse": 0.229181105368877,
             "q_profile_sanity": {
-              "finite_q_profile": false,
-              "status": "blocked_native_q_profile_extraction_not_yet_implemented"
+              "finite_q_profile": true,
+              "q_abs_max": 7.758966622055577,
+              "q_abs_min": 1.4114962405214913,
+              "q_max": 7.758966622055577,
+              "q_min": 1.4114962405214913,
+              "sample_count": 16,
+              "signed_consistent": true,
+              "status": "pass_finite_signed_q_profile"
             },
             "schema": "native-freegs-profile-source-comparison.v1",
             "thresholds": {
@@ -224,13 +235,12 @@
       "machine_class": "DIIID",
       "missing_full_fidelity_requirements": [
         "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
-        "native q-profile extraction and sanity thresholds",
         "grid-convergence evidence for the public example",
         "coil/vacuum reconstruction linked to public machine current sidecars"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 7.726551694911905,
+        "elapsed_s": 11.46025431889575,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -254,8 +264,14 @@
           "native_current_a": -1533648.2278270852,
           "psi_n_rmse": 0.06656438258503716,
           "q_profile_sanity": {
-            "finite_q_profile": false,
-            "status": "blocked_native_q_profile_extraction_not_yet_implemented"
+            "finite_q_profile": true,
+            "q_abs_max": 3.25174467113492,
+            "q_abs_min": 0.47079572159242383,
+            "q_max": 3.25174467113492,
+            "q_min": 0.47079572159242383,
+            "sample_count": 16,
+            "signed_consistent": true,
+            "status": "pass_finite_signed_q_profile"
           },
           "schema": "native-freegs-profile-source-comparison.v1",
           "thresholds": {
@@ -274,7 +290,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.5904231240274385,
+          "elapsed_s": 2.5085418219678104,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -284,7 +300,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 7.726551694911905,
+          "elapsed_s": 11.46025431889575,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -308,8 +324,14 @@
             "native_current_a": -1533648.2278270852,
             "psi_n_rmse": 0.06656438258503716,
             "q_profile_sanity": {
-              "finite_q_profile": false,
-              "status": "blocked_native_q_profile_extraction_not_yet_implemented"
+              "finite_q_profile": true,
+              "q_abs_max": 3.25174467113492,
+              "q_abs_min": 0.47079572159242383,
+              "q_max": 3.25174467113492,
+              "q_min": 0.47079572159242383,
+              "sample_count": 16,
+              "signed_consistent": true,
+              "status": "pass_finite_signed_q_profile"
             },
             "schema": "native-freegs-profile-source-comparison.v1",
             "thresholds": {
@@ -539,7 +561,6 @@
   "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
   "missing_full_fidelity_requirements": [
     "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
-    "native q-profile extraction and sanity thresholds",
     "grid convergence across public example resolutions",
     "coil/vacuum reconstruction linked to public machine current sidecars"
   ],
@@ -547,8 +568,8 @@
   "reference_output_ready": false,
   "report_generation_mode": "tracked_report_fallback",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "628ce5802f7b8bde559625c9c75d965749921aaa92188a9c6ada0854f66d9c3a",
+  "sha256": "14fb7e3ef0173ad0defa82031f93895d2818b9d46a4bf1ac4e9ae626fe7e8200",
   "source_cache_available": true,
-  "status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence",
+  "status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
   "vacuum_comparison_pass": true
 }

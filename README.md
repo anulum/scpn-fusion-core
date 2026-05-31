@@ -221,12 +221,13 @@ and the external FreeGS nonlinear examples now produce finite `psi(R,Z)` output
 under the recorded Picard iteration sweep. The report now also publishes native
 fixed-boundary profile-source comparison metrics for `psi_N` RMSE, magnetic
 axis error, boundary error, sampled X-point constraint error, and current
-closure on the finite FreeGS grid. Clean CI checkouts preserve the
+closure on the finite FreeGS grid, plus finite signed-q profile sanity from
+the solved public FreeGS equilibrium. Clean CI checkouts preserve the
 tracked metadata and reconstruction evidence when gitignored public-source
 caches are absent, so full-suite report generation remains deterministic
 without promoting those partial artefacts to parity. Strict free-boundary parity remains
-blocked until strict thresholds, native q-profile extraction, grid convergence,
-and public coil/vacuum sidecars are accepted.
+blocked until strict thresholds, grid convergence, and public coil/vacuum
+sidecars are accepted.
 The electromagnetic GK diagnostic now reports compact Ampere and perpendicular
 pressure-balance residuals in
 [`validation/reports/gk_nonlinear_solver_comparison.md`](validation/reports/gk_nonlinear_solver_comparison.md).

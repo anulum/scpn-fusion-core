@@ -20,7 +20,7 @@
   "freegs_public_example_cases": 2,
   "freegs_public_example_external_output_ready": true,
   "freegs_public_example_reconstruction_report": "validation/reports/freegs_public_example_reconstruction.json",
-  "freegs_public_example_reconstruction_status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence",
+  "freegs_public_example_reconstruction_status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
   "freegs_public_example_vacuum_comparison_pass": true,
   "gk_electromagnetic_compact_closure_ready": true,
   "gk_electromagnetic_external_parity_ready": false,
@@ -221,7 +221,6 @@
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
         "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
-        "native q-profile extraction and sanity thresholds",
         "grid convergence across public example resolutions",
         "coil/vacuum reconstruction linked to public machine current sidecars"
       ],
@@ -251,7 +250,7 @@
           "surface": "free_boundary_equilibrium"
         }
       ],
-      "status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence",
+      "status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
       "surface": "free_boundary_equilibrium"
     }
   ],

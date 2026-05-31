@@ -40,7 +40,7 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - FreeGS public example cases: `2`
 - FreeGS public example vacuum comparison pass: `True`
 - FreeGS public example external output ready: `True`
-- FreeGS public example reconstruction status: `blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence`
+- FreeGS public example reconstruction status: `blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
 
@@ -51,4 +51,4 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 | production_scale_decomposition | blocked_contract_ready_missing_distributed_runtime_scaling | True | False | none | MPI or multi-GPU execution path over the declared rank tiles<br>large-grid cluster/GPU wall-time scaling report<br>same-physics convergence evidence across distributed decomposition shapes<br>hardware-specific multi-rank throughput and efficiency thresholds |
 | dream_grade_runaway_electrons | blocked_missing_public_dream_artifacts | True | False | DREAM | public DREAM deck ingestion and production artifact parity<br>full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact<br>validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM<br>distribution-function, current, and growth-rate RMSE thresholds against public DREAM output |
 | aurora_strahl_grade_impurities | blocked_partial_public_atomic_artifact_not_transport_parity | True | False | Aurora | transported_charge_state_density_time_radius_charge<br>line_radiation_power_time_radius_charge<br>ionisation_recombination_source_sink_matrix_time_radius_charge_charge<br>total_impurity_inventory_closure<br>native_same_case_solver_output_comparison |
-| free_boundary_equilibrium_strict_parity | blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence | True | False | FreeGS, FreeGSNKE | strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance<br>native q-profile extraction and sanity thresholds<br>grid convergence across public example resolutions<br>coil/vacuum reconstruction linked to public machine current sidecars |
+| free_boundary_equilibrium_strict_parity | blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars | True | False | FreeGS, FreeGSNKE | strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance<br>grid convergence across public example resolutions<br>coil/vacuum reconstruction linked to public machine current sidecars |

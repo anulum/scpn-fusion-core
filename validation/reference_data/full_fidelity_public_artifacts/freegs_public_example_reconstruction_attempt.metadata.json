@@ -14,14 +14,13 @@
   "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
   "missing_required_observables": [
     "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
-    "native q-profile extraction and sanity thresholds",
     "grid convergence across public example resolutions",
     "coil/vacuum reconstruction linked to public machine current sidecars"
   ],
   "redistribution_license": "FreeGS LGPL-3.0-or-later",
   "reference_family": "FreeGS",
-  "sha256": "628ce5802f7b8bde559625c9c75d965749921aaa92188a9c6ada0854f66d9c3a",
+  "sha256": "14fb7e3ef0173ad0defa82031f93895d2818b9d46a4bf1ac4e9ae626fe7e8200",
   "solver_output_comparison_ready": true,
-  "solver_output_comparison_status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_q_profile_grid_convergence",
+  "solver_output_comparison_status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
   "surface": "free_boundary_equilibrium"
 }

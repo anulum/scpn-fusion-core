@@ -262,12 +262,13 @@ the recorded Picard sweep produces finite external `psi(R,Z)` output for both
 public examples. The same report now runs a native fixed-boundary profile-source
 comparison on the finite FreeGS psi grid and publishes `psi_N` RMSE, magnetic
 axis error, boundary error, sampled X-point constraint error, and current
-closure. Clean CI checkouts preserve tracked machine-metadata and
+closure, plus finite signed-q profile sanity from the solved public FreeGS
+equilibrium. Clean CI checkouts preserve tracked machine-metadata and
 reconstruction reports when the gitignored public-source cache is absent, so
 the integrated campaign cannot erase prior public evidence during full-suite
-test order. Strict free-boundary parity remains fail-closed because native
-q-profile extraction, strict threshold acceptance, grid-convergence evidence,
-and public coil/vacuum sidecars are still missing.
+test order. Strict free-boundary parity remains fail-closed because strict
+threshold acceptance, grid-convergence evidence, and public coil/vacuum
+sidecars are still missing.
 
 ## Solver Performance
 

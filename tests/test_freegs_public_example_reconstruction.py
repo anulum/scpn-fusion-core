@@ -66,7 +66,12 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
         assert comparison["axis_error_m"] >= 0.0
         assert comparison["boundary_max_abs_error_wb"] >= 0.0
         assert comparison["current_closure_relative_error"] >= 0.0
-        assert comparison["q_profile_sanity"]["status"].startswith("blocked_")
+        q_sanity = comparison["q_profile_sanity"]
+        assert q_sanity["status"] == "pass_finite_signed_q_profile"
+        assert q_sanity["finite_q_profile"] is True
+        assert q_sanity["sample_count"] >= 8
+        assert q_sanity["q_abs_min"] > 0.0
+        assert q_sanity["q_abs_max"] >= q_sanity["q_abs_min"]
         assert (
             solve["status"]
             == "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
