@@ -382,7 +382,8 @@ def _source_sink_transfer_matrix(ionisation: np.ndarray, recombination: np.ndarr
     for _ in range(3):
         residual = np.sum(matrix, axis=2)
         for z_idx in range(ion.shape[1]):
-            matrix[:, z_idx, z_idx] -= residual[:, z_idx]
+            target_idx = z_idx + 1 if z_idx < ion.shape[1] - 1 else z_idx - 1
+            matrix[:, z_idx, target_idx] -= residual[:, z_idx]
     return matrix
 
 
