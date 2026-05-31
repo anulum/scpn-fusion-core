@@ -406,6 +406,7 @@ class JaxNonlinearGKSolver:
         Q_e_kxky_list = []
         phi_rms_list = []
         zonal_rms_list = []
+        zonal_flow_energy_list = []
         particle_free_energy_list = []
         phi_energy_list = []
         a_parallel_energy_list = []
@@ -456,6 +457,7 @@ class JaxNonlinearGKSolver:
                 Q_e_kxky_list.append(Q_e_kxky)
                 phi_rms_list.append(self._np_solver.phi_rms(np_state))
                 zonal_rms_list.append(self._np_solver.zonal_rms(np_state))
+                zonal_flow_energy_list.append(self._np_solver.zonal_flow_energy(np_state))
                 particle_free_energy_list.append(particle_energy)
                 phi_energy_list.append(field_energy.phi)
                 a_parallel_energy_list.append(field_energy.A_parallel)
@@ -475,6 +477,7 @@ class JaxNonlinearGKSolver:
         Q_e_kxky_t = np.asarray(Q_e_kxky_list, dtype=np.float64)
         phi_rms_t = np.array(phi_rms_list)
         zonal_rms_t = np.array(zonal_rms_list)
+        zonal_flow_energy_t = np.asarray(zonal_flow_energy_list, dtype=np.float64)
         particle_free_energy_t = np.asarray(particle_free_energy_list, dtype=np.float64)
         phi_energy_t = np.asarray(phi_energy_list, dtype=np.float64)
         A_parallel_energy_t = np.asarray(a_parallel_energy_list, dtype=np.float64)
@@ -509,6 +512,7 @@ class JaxNonlinearGKSolver:
             Q_e_kxky_t=Q_e_kxky_t,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
+            zonal_flow_energy_t=zonal_flow_energy_t,
             particle_free_energy_t=particle_free_energy_t,
             phi_energy_t=phi_energy_t,
             A_parallel_energy_t=A_parallel_energy_t,

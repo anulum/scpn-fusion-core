@@ -155,6 +155,13 @@ class NonlinearGKTimeMixin:
         ky0_idx = np.argmin(np.abs(self.ky))
         return float(np.sqrt(np.mean(np.abs(state.phi[:, ky0_idx, :]) ** 2)))
 
+    def zonal_flow_energy(self, state: NonlinearGKState) -> float:
+        """Electrostatic zonal-flow energy retained in the k_y = 0 field slice."""
+        ky0_idx = np.argmin(np.abs(self.ky))
+        zonal_phi = state.phi[:, ky0_idx, :]
+        kperp_weight = 1.0 + self.kperp2[:, ky0_idx, None]
+        return 0.5 * float(np.sum(kperp_weight * np.abs(zonal_phi) ** 2) * self.dtheta)
+
     def particle_free_energy(self, state: NonlinearGKState) -> float:
         """Distribution-function free energy for conservation diagnostics."""
         self.validate_state(state)
@@ -280,6 +287,7 @@ class NonlinearGKTimeMixin:
         Q_e_kxky_t: NDArray[np.float64] = np.zeros((n_saves, c.n_kx, c.n_ky))
         phi_rms_t: NDArray[np.float64] = np.zeros(n_saves)
         zonal_rms_t: NDArray[np.float64] = np.zeros(n_saves)
+        zonal_flow_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         particle_free_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         phi_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         A_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
@@ -310,6 +318,7 @@ class NonlinearGKTimeMixin:
                 Q_e_kxky_t[save_idx] = Q_e_kxky
                 phi_rms_t[save_idx] = self.phi_rms(state)
                 zonal_rms_t[save_idx] = self.zonal_rms(state)
+                zonal_flow_energy_t[save_idx] = self.zonal_flow_energy(state)
                 particle_energy = self.particle_free_energy(state)
                 field_energy = self.field_energy(state)
                 particle_free_energy_t[save_idx] = particle_energy
@@ -333,6 +342,7 @@ class NonlinearGKTimeMixin:
         Q_e_kxky_t = np.asarray(Q_e_kxky_t[:save_idx], dtype=np.float64)
         phi_rms_t = np.asarray(phi_rms_t[:save_idx], dtype=np.float64)
         zonal_rms_t = np.asarray(zonal_rms_t[:save_idx], dtype=np.float64)
+        zonal_flow_energy_t = np.asarray(zonal_flow_energy_t[:save_idx], dtype=np.float64)
         particle_free_energy_t = np.asarray(particle_free_energy_t[:save_idx], dtype=np.float64)
         phi_energy_t = np.asarray(phi_energy_t[:save_idx], dtype=np.float64)
         A_parallel_energy_t = np.asarray(A_parallel_energy_t[:save_idx], dtype=np.float64)
@@ -368,6 +378,7 @@ class NonlinearGKTimeMixin:
             Q_e_kxky_t=Q_e_kxky_t,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
+            zonal_flow_energy_t=zonal_flow_energy_t,
             particle_free_energy_t=particle_free_energy_t,
             phi_energy_t=phi_energy_t,
             A_parallel_energy_t=A_parallel_energy_t,

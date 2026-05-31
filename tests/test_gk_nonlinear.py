@@ -346,6 +346,35 @@ class TestEnergyConservation:
         np.testing.assert_allclose(np.sum(result.Q_i_kxky_t, axis=(1, 2)), result.Q_i_t)
         np.testing.assert_allclose(np.sum(result.Q_e_kxky_t, axis=(1, 2)), result.Q_e_t)
 
+    def test_zonal_flow_energy_history_is_saved_and_bounded(self):
+        cfg = NonlinearGKConfig(
+            n_kx=6,
+            n_ky=6,
+            n_theta=8,
+            n_vpar=5,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            dt=0.005,
+            n_steps=3,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=53)
+
+        zonal_energy = solver.zonal_flow_energy(state)
+
+        assert np.isfinite(zonal_energy)
+        assert zonal_energy >= 0.0
+        assert zonal_energy <= solver.field_energy(state).phi
+
+        result = solver.run(state)
+        assert result.zonal_flow_energy_t.shape == result.time.shape
+        assert np.all(np.isfinite(result.zonal_flow_energy_t))
+        assert np.all(result.zonal_flow_energy_t >= 0.0)
+        assert np.all(result.zonal_flow_energy_t <= result.phi_energy_t)
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
@@ -835,6 +864,8 @@ class TestJaxFallback:
         assert result.Q_e_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
         np.testing.assert_allclose(np.sum(result.Q_i_kxky_t, axis=(1, 2)), result.Q_i_t)
         np.testing.assert_allclose(np.sum(result.Q_e_kxky_t, axis=(1, 2)), result.Q_e_t)
+        assert result.zonal_flow_energy_t.shape == result.time.shape
+        assert np.all(result.zonal_flow_energy_t <= result.phi_energy_t)
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available

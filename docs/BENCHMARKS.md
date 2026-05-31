@@ -735,8 +735,9 @@ moment residuals, kx/ky heat-flux spectra, and the nonlinear E x B invariant
 diagnostic. The invariant requires zero high-k leakage outside the 2/3
 dealiased spectral mask and no free-energy injection from the undriven
 collisionless nonlinear bracket. The native run result now exports those
-invariant histories so saturation windows can be audited against the same
-discrete nonlinear-operator contract used by the benchmark.
+invariant histories plus zonal-flow energy histories so saturation windows can
+be audited against the same discrete nonlinear-operator contract used by the
+benchmark.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.
@@ -758,7 +759,8 @@ The native nonlinear GK surface now exposes an explicit
 `species x kx x ky x theta x vpar x mu` phase-space contract plus a named
 conservative pseudo-spectral ExB term with de-aliasing diagnostics. The
 transport diagnostics now include saved kx/ky ion and electron heat-flux
-spectra that close exactly to the scalar flux histories. The
+spectra that close exactly to the scalar flux histories and saved electrostatic
+zonal-flow energy bounded by the total electrostatic field energy. The
 electromagnetic state contract now carries `phi`, `A_parallel`, and
 `B_parallel` field components, and `B_parallel` now enters the Hamiltonian
 gradient drive through the magnetic-moment compression term. The energy
