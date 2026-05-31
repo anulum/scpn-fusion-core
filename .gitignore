@@ -119,6 +119,7 @@ papers/*.tar.gz
 data/qlknn10d/
 data/qlknn10d_processed/
 data/fno_qlknn_spatial/
+data/external/
 
 # Local weight backups (not shipped)
 weights/*_original.*
