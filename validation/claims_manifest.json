@@ -204,14 +204,14 @@
     {
       "id": "readme_free_boundary_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Free-boundary GS solve \\| Public GEQDSK gate passes; FreeGS strict backend opt-in; not EFIT-grade inverse reconstruction",
+      "source_pattern": "Free-boundary GS solve \\| Public GEQDSK operator-source gate passes; profile-source/free-boundary reconstruction gate remains open; not EFIT-grade inverse reconstruction",
       "evidence_files": [
         "README.md"
       ],
       "evidence_patterns": [
         {
           "file": "README.md",
-          "pattern": "public SPARC GEQDSK gates pass"
+          "pattern": "public SPARC GEQDSK operator-source rows pass"
         },
         {
           "file": "README.md",

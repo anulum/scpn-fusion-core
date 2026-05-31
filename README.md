@@ -49,11 +49,11 @@ facades and evidence-bounded validation reports.
 | Public API exports | 2 |
 | Python capability source modules | 262 |
 | Python capability classes | 487 |
-| Capability documentation pages | 40 |
+| Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
 | Python test files | 380 |
-| Public documentation pages | 40 |
+| Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

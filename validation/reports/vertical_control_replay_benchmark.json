@@ -452,10 +452,10 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "730e408009804435ec56ead0576ed714bc766dd4",
+          "source_commit": "ff31fa81b00b95c45bb82fc3b93fb490863be79a",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
-          "numpy_version": "2.2.6",
+          "numpy_version": "1.26.4",
           "schema": "schemas/vertical_control_replay_benchmark.schema.json",
           "schema_version": "1.0.0",
           "scenario_checksum_sha256": "3cc5cf2c053434c9d1eaa1335f91b108fc3193a771d9c26d041e45e34c1ac7a5",
@@ -908,10 +908,10 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "730e408009804435ec56ead0576ed714bc766dd4",
+          "source_commit": "ff31fa81b00b95c45bb82fc3b93fb490863be79a",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
-          "numpy_version": "2.2.6",
+          "numpy_version": "1.26.4",
           "schema": "schemas/vertical_control_replay_benchmark.schema.json",
           "schema_version": "1.0.0",
           "scenario_checksum_sha256": "3ca76ce06bce7f6be8f1a37e86e00a0a8cd8c227425c04da78d4f74bc29d9b75",
@@ -1364,10 +1364,10 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "730e408009804435ec56ead0576ed714bc766dd4",
+          "source_commit": "ff31fa81b00b95c45bb82fc3b93fb490863be79a",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
-          "numpy_version": "2.2.6",
+          "numpy_version": "1.26.4",
           "schema": "schemas/vertical_control_replay_benchmark.schema.json",
           "schema_version": "1.0.0",
           "scenario_checksum_sha256": "58fba05fb68c93be4543467e58914df0042f967951c6291a54904d406dfb05ea",

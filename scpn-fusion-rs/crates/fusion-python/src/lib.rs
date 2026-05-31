@@ -1074,7 +1074,7 @@ impl PySnnController {
     }
 }
 
-// ─── Extended PyO3 bridges (Rust superiority plan) ───
+// ─── Extended PyO3 bridges (Rust extension plan) ───
 
 #[pyclass]
 struct PyHallMHD {

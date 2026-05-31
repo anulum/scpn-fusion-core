@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Superior Core Validation
+# SCPN Fusion Core - Core Integration Validation
 """
 Validates the integration of:
 1. Unified State Space
@@ -53,7 +53,7 @@ def validate():
     print(f"NMPC Optimal Action: {u_opt}")
     assert len(u_opt) == 1
 
-    print("\nINTEGRATION SUCCESSFUL: Core is now Physically Hardened.")
+    print("\nINTEGRATION CHECK PASSED: core pipeline contracts are wired.")
 
 
 if __name__ == "__main__":

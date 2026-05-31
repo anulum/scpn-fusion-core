@@ -358,7 +358,7 @@
 - **Unified State Space**: Introduced `FusionState` dataclass in `src/scpn_fusion/core/state_space.py`:
   - Standardized representation of axis position, global physics (Ip, beta), and topological danger zones.
   - Direct construction from physics kernels and easy vectorization for ML/MPC pipelines.
-- **Validation**: Added `validation/validate_superior_core.py` and `validation/benchmark_nmpc.py` to confirm integration and quantify performance gains.
+- **Validation**: Added `validation/validate_core_integration.py` and `validation/benchmark_nmpc.py` to confirm integration and quantify performance gains.
 
 ## [3.5.0] — 2026-02-19
 
@@ -935,7 +935,7 @@ solver-method bridge regression tests.
 - Added symplectic integration baseline in `fusion-math`:
   - new `symplectic.rs` with canonical velocity-Verlet stepper and RK4 reference
   - long-horizon Hamiltonian drift checks for harmonic-oscillator stress profiles
-  - regression coverage for bounded symplectic drift and coarse-step drift superiority vs RK4
+  - regression coverage for bounded symplectic drift and coarse-step drift comparison against RK4
 - Added reduced non-LTE impurity-radiation lookup in `fusion-nuclear/wall_interaction.rs`:
   - ADAS-style synthetic PEC grids with charge-state distinction (including W20+ and W40+)
   - bilinear PEC interpolation in `(log ne, log Te)` space
