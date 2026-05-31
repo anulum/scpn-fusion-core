@@ -18,6 +18,9 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -25,7 +28,7 @@ class SafetyConstraint:
     """Named constraint: cost_fn(obs, act, next_obs) must stay below limit."""
 
     name: str
-    cost_fn: Callable[[np.ndarray, np.ndarray, np.ndarray], float]
+    cost_fn: Callable[[FloatArray, FloatArray, FloatArray], float]
     limit: float
 
 
@@ -41,13 +44,13 @@ class ConstrainedGymTokamakEnv:
         self.action_space = base_env.action_space
         self.observation_space = base_env.observation_space
 
-    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[FloatArray, dict[str, Any]]:
         """Reset base environment and cache initial observation."""
         obs, info = self.base_env.reset(**kwargs)
         self._last_obs = obs
         return obs, info
 
-    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
+    def step(self, action: FloatArray) -> tuple[FloatArray, float, bool, bool, dict[str, Any]]:
         """Step base env and append constraint costs to info dict."""
         obs, reward, terminated, truncated, info = self.base_env.step(action)
 
@@ -112,12 +115,12 @@ class LagrangianPPO:
 
         self.trained = True
 
-    def predict(self, obs: np.ndarray) -> np.ndarray:
+    def predict(self, obs: FloatArray) -> FloatArray:
         """Return action for given observation. Currently samples randomly."""
         return np.asarray(self.env.action_space.sample())
 
 
-def q95_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
+def q95_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float:
     """Compute a lower-bound violation cost on edge safety factor ``q95``.
 
     Args:
@@ -132,7 +135,7 @@ def q95_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float
     return float(max(0.0, 2.0 - q95))
 
 
-def beta_n_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
+def beta_n_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float:
     """Compute an upper-bound violation cost on normalized beta ``beta_N``.
 
     Args:
@@ -147,7 +150,7 @@ def beta_n_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> fl
     return float(max(0.0, beta_N - 3.5))
 
 
-def ip_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
+def ip_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float:
     """Compute a lower-bound violation cost on plasma current.
 
     Args:

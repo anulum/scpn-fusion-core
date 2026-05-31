@@ -17,6 +17,11 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
+FeedbackFn = Callable[[FloatArray, FloatArray, float, float], FloatArray]
+PlantModelFn = Callable[[FloatArray, FloatArray, float], FloatArray]
 
 
 @dataclass
@@ -24,8 +29,8 @@ class ScenarioWaveform:
     """Piecewise-linear time-series for a single actuator channel."""
 
     name: str
-    times: np.ndarray
-    values: np.ndarray
+    times: FloatArray
+    values: FloatArray
     interp_kind: str = "linear"
 
     def __call__(self, t: float) -> float:
@@ -71,12 +76,12 @@ class ScenarioSchedule:
 class FeedforwardController:
     """Combines pre-computed feedforward trajectories with a feedback trim."""
 
-    def __init__(self, schedule: ScenarioSchedule, feedback: Callable):
+    def __init__(self, schedule: ScenarioSchedule, feedback: FeedbackFn):
         """Bind a scenario schedule to a feedback correction callback."""
         self.schedule = schedule
         self.feedback = feedback
 
-    def step(self, x: np.ndarray, t: float, dt: float) -> np.ndarray:
+    def step(self, x: FloatArray, t: float, dt: float) -> FloatArray:
         """u = u_ff(t) + u_fb(x_err)."""
         ff_dict = self.schedule.evaluate(t)
 
@@ -97,8 +102,8 @@ class ScenarioOptimizer:
     """Offline trajectory design via Nelder-Mead."""
 
     def __init__(
-        self, plant_model: Callable, target_state: np.ndarray, T_total: float, dt: float = 0.5
-    ):
+        self, plant_model: PlantModelFn, target_state: FloatArray, T_total: float, dt: float = 0.5
+    ) -> None:
         """Initialize an offline waveform optimizer for a target terminal state."""
         self.plant_model = plant_model
         self.target_state = target_state
@@ -112,7 +117,7 @@ class ScenarioOptimizer:
         n_u = 2
         p0 = np.zeros(n_u * len(times))
 
-        def objective(p: np.ndarray) -> float:
+        def objective(p: FloatArray) -> float:
             """Evaluate terminal tracking cost for a candidate waveform stack."""
             p = p.reshape(n_u, len(times))
             wfs = {

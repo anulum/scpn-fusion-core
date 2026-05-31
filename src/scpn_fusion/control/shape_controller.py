@@ -18,6 +18,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -36,10 +39,10 @@ class ShapeControlResult:
     """Shape control performance: isoflux, gap, X-point, and strike-point errors."""
 
     isoflux_error: float
-    gap_errors: np.ndarray
+    gap_errors: FloatArray
     min_gap: float
     xpoint_error: float
-    strike_point_errors: np.ndarray
+    strike_point_errors: FloatArray
 
 
 class CoilSet:
@@ -70,7 +73,7 @@ class ShapeJacobian:
         self.J = self._build_reference_jacobian()
         self._reference_J = np.array(self.J, copy=True)
 
-    def _build_reference_jacobian(self) -> np.ndarray:
+    def _build_reference_jacobian(self) -> FloatArray:
         """
         Build deterministic, full-rank baseline sensitivities.
 
@@ -121,7 +124,7 @@ class ShapeJacobian:
         # Controller uses small-signal derivatives [shape_error / A].
         return mat * 1e-4
 
-    def compute(self) -> np.ndarray:
+    def compute(self) -> FloatArray:
         """Return the shape Jacobian matrix d(e_shape)/dI_coils."""
         return np.array(self.J, copy=True)
 
@@ -213,14 +216,14 @@ class PlasmaShapeController:
         self.lambda_reg = 1e-6
         self.K_shape = self._compute_gain()
 
-    def _compute_gain(self) -> np.ndarray:
+    def _compute_gain(self) -> FloatArray:
         """K = (J^T W J + lambda I)^-1 J^T W (Tikhonov pseudoinverse)."""
         J = self.jacobian.compute()
         J_T_W = J.T @ self.W
         H = J_T_W @ J + self.lambda_reg * np.eye(self.coil_set.n_coils)
         return np.asarray(np.linalg.inv(H) @ J_T_W)
 
-    def _compute_shape_error(self, psi: np.ndarray) -> np.ndarray:
+    def _compute_shape_error(self, psi: FloatArray) -> FloatArray:
         """Evaluate [isoflux; gap; X-point; strike-point] error vector from psi."""
         field = np.asarray(psi, dtype=float)
         if field.ndim != 2:
@@ -314,7 +317,7 @@ class PlasmaShapeController:
         iz = int(np.clip(round(zz * (nz - 1)), 0, nz - 1))
         return ir, iz
 
-    def step(self, psi: np.ndarray, coil_currents: np.ndarray) -> np.ndarray:
+    def step(self, psi: FloatArray, coil_currents: FloatArray) -> FloatArray:
         """Compute coil current changes to correct shape errors."""
         e_shape = self._compute_shape_error(psi)
         delta_I = -self.K_shape @ e_shape
@@ -327,7 +330,7 @@ class PlasmaShapeController:
 
         return np.asarray(I_next - coil_currents)
 
-    def evaluate_performance(self, psi: np.ndarray) -> ShapeControlResult:
+    def evaluate_performance(self, psi: FloatArray) -> ShapeControlResult:
         """Decompose the shape error vector into per-category metrics."""
         e_shape = self._compute_shape_error(psi)
 

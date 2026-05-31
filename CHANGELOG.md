@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Expanded the global mypy strict cohort to the control docstring cluster (`runaway_electron_model`, `rust_flight_sim_wrapper`, `rwm_feedback`, `rzip_model`, `safe_rl_controller`, `scenario_scheduler`, `shape_controller`) and fixed typed callback and NumPy array contracts without new suppressions.
+
 - Enabled global mypy strict defaults, removed the broad internal package
   `ignore_errors` override, and fixed the currently gated typed cohort so the
   strict runner passes without hidden package-level suppressions.

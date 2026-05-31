@@ -19,7 +19,7 @@ import argparse
 logger = logging.getLogger(__name__)
 
 
-def run():
+def run() -> None:
     """Execute a Rust flight-simulation shot and log latency metrics.
 
     The helper exits with code 1 when the optional native extension is missing.

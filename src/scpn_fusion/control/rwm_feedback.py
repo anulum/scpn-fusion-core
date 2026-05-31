@@ -16,6 +16,9 @@ from __future__ import annotations
 
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class RWMPhysics:
@@ -88,7 +91,7 @@ class RWMFeedbackController:
         self.M_coil = M_coil
         self.prev_B_r = np.zeros(n_sensors)
 
-    def step(self, B_r_sensors: np.ndarray, dt: float) -> np.ndarray:
+    def step(self, B_r_sensors: FloatArray, dt: float) -> FloatArray:
         """
         Compute coil currents for feedback from radial-field samples.
 

@@ -15,10 +15,13 @@ from __future__ import annotations
 
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.vessel_model import VesselElement, VesselModel
 
 MU_0 = 4.0 * np.pi * 1e-7
+FloatArray = NDArray[np.float64]
+ComplexArray = NDArray[np.complex128]
 
 
 class RZIPModel:
@@ -65,7 +68,7 @@ class RZIPModel:
         M_minus = self.vessel._calculate_mutual_inductance(R1, Z1 - dZ, R2, Z2)
         return (M_plus - M_minus) / (2.0 * dZ)
 
-    def build_state_space(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def build_state_space(self) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
         """Build continuous-time state-space matrices for vertical motion.
 
         Returns:
@@ -179,7 +182,7 @@ class VerticalStabilityAnalysis:
     """Utility formulas for vertical stability index and feedback sizing."""
 
     @staticmethod
-    def compute_n_index(psi: np.ndarray, R: np.ndarray, Z: np.ndarray, R0: float) -> float:
+    def compute_n_index(psi: FloatArray, R: FloatArray, Z: FloatArray, R0: float) -> float:
         """Compute the local vertical stability index on the mid-plane.
 
         Args:
@@ -309,7 +312,7 @@ class RZIPController:
             # Fallback if scipy not available or LQR fails
             self.K_gain = np.zeros((B.shape[1], A.shape[1]))
 
-    def step(self, dZ_measured: float, dt: float) -> np.ndarray:
+    def step(self, dZ_measured: float, dt: float) -> FloatArray:
         """Compute active-coil voltage commands from a vertical displacement sample.
 
         Args:
@@ -337,7 +340,7 @@ class RZIPController:
         V_coils = -self.K_gain @ x
         return np.asarray(V_coils)
 
-    def closed_loop_eigenvalues(self) -> np.ndarray:
+    def closed_loop_eigenvalues(self) -> ComplexArray:
         """Return eigenvalues of the controller-closed RZIP state matrix.
 
         Returns:

@@ -133,6 +133,13 @@ files = [
     "src/scpn_fusion/control/fokker_planck_re.py",
     "src/scpn_fusion/control/spi_ablation.py",
     "src/scpn_fusion/control/fusion_nmpc_jax.py",
+    "src/scpn_fusion/control/runaway_electron_model.py",
+    "src/scpn_fusion/control/rust_flight_sim_wrapper.py",
+    "src/scpn_fusion/control/rwm_feedback.py",
+    "src/scpn_fusion/control/rzip_model.py",
+    "src/scpn_fusion/control/safe_rl_controller.py",
+    "src/scpn_fusion/control/scenario_scheduler.py",
+    "src/scpn_fusion/control/shape_controller.py",
     "src/scpn_fusion/core/mhd_sawtooth.py",
     "src/scpn_fusion/core/divertor_thermal_sim.py",
 ]
