@@ -203,7 +203,12 @@ Aurora/STRAHL parity until public radial transport output, source/sink matrices,
 radiation observables, and native same-case comparisons are present. The native
 artifact gate validates charge-state density, conservative source-sink transfer
 matrices, per-charge line-radiation power, and total impurity inventory history
-as local contracts only.
+as local contracts only. The impurity benchmark now also publishes fail-closed
+native transport-operator evidence: trace radial transport, edge-source
+conservation, neoclassical pinch, charge-state source/sink matrices, line
+radiation, and inventory closure are local evidence, while charge-state
+resolved radial transport parity, external ADAS transport coefficients,
+same-case Aurora/STRAHL outputs, and quantitative thresholds remain blocked.
 The nonlinear GK lane now indexes public GS2 nonlinear decks, CGYRO nonlinear
 decks, CGYRO regression precision outputs, and GENE/GS2/CGYRO public web-source
 hashes in
@@ -303,7 +308,7 @@ and cluster timing evidence exist.
 | ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
 | Runaway electron dynamics | DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, and fail-closed kinetic-operator evidence; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
-| Impurity transport (neoclassical) | Trace radial transport with source conservation, neoclassical pinch, and charge-state artifact/source-sink contract; no public Aurora/STRAHL collisional-operator parity | N | N | N | N |
+| Impurity transport (neoclassical) | Trace radial transport with source conservation, neoclassical pinch, charge-state artifact/source-sink contract, and fail-closed native transport evidence; no public Aurora/STRAHL collisional-operator parity or same-case transport thresholds | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |
 | MHD stability (7 criteria) | **Y** | N | N | N | N |
 | Digital twin + HIL testing | **Y** | N | N | N | N |

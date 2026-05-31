@@ -24,6 +24,10 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Aurora artifact generated: `True`
 - Aurora reference output ready: `True`
 - Aurora execution status: `blocked_partial_public_atomic_artifact_not_transport_parity`
+- Impurity native transport evidence ready: `True`
+- Impurity charge-state radial transport operator ready: `False`
+- Impurity Aurora/STRAHL same-case thresholds ready: `False`
+- Impurity transport operator evidence status: `blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator`
 - GK deck inventory report: `validation/reports/gk_public_reference_deck_inventory.json`
 - GK public decks indexed: `40`
 - GK public outputs indexed: `21`
@@ -58,5 +62,5 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 | full_maxwell_electromagnetic_fidelity | blocked_missing_external_em_parity_outputs | True | False | GENE, CGYRO, GS2 | self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop<br>same-deck electromagnetic GENE/CGYRO/GS2 output artifacts<br>external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds<br>same-deck external electromagnetic grid-convergence evidence |
 | production_scale_decomposition | blocked_local_decomposition_ready_missing_distributed_runtime_scaling | True | False | none | MPI or multi-GPU distributed execution path over the declared rank tiles<br>large-grid cluster/GPU wall-time scaling report<br>same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes<br>hardware-specific multi-rank throughput and efficiency thresholds |
 | dream_grade_runaway_electrons | blocked_missing_public_dream_artifacts | True | False | DREAM | compiled DREAM iface/dreami same-case output<br>native coupled momentum-pitch-radius Fokker-Planck operator<br>radial transport operator on evolved radius grid<br>full pitch-angle scattering operator on evolved pitch grid<br>DREAM partial-screening operator parity<br>DREAM bremsstrahlung and synchrotron loss parity<br>distribution, current, and growth-rate threshold comparison against DREAM |
-| aurora_strahl_grade_impurities | blocked_partial_public_atomic_artifact_not_transport_parity | True | False | Aurora | transported_charge_state_density_time_radius_charge<br>line_radiation_power_time_radius_charge<br>ionisation_recombination_source_sink_matrix_time_radius_charge_charge<br>total_impurity_inventory_closure<br>native_same_case_solver_output_comparison |
+| aurora_strahl_grade_impurities | blocked_partial_public_atomic_artifact_not_transport_parity | True | False | Aurora | public Aurora or STRAHL radial transport output<br>charge-state-resolved radial transport operator on evolved density<br>external ADAS coefficient ingestion for transport parity<br>same-case line-radiation output from Aurora or STRAHL<br>same-case ionisation/recombination source-sink matrix output<br>native same-case solver-output comparison<br>distribution, radiation, and inventory threshold comparison against Aurora/STRAHL |
 | free_boundary_equilibrium_strict_parity | blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars | True | False | FreeGS, FreeGSNKE | strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance<br>grid convergence across public example resolutions<br>coil/vacuum reconstruction linked to public machine current sidecars |

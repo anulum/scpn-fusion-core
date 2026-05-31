@@ -33,6 +33,34 @@ def test_impurity_benchmark_exports_validated_aurora_strahl_artifact_gate() -> N
     assert report["invariants"]["line_radiation_power_finite"] is True
 
 
+def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() -> None:
+    report = run_benchmark()
+
+    evidence = report["native_impurity_transport_evidence"]
+    assert evidence["schema"] == "native-impurity-transport-operator-evidence.v1"
+    assert evidence["operator_evidence_status"] == (
+        "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator"
+    )
+    assert evidence["density_axes"] == ["time_s", "radius_m", "charge_state"]
+    assert evidence["density_shape"] == [3, 80, 4]
+    assert evidence["source_sink_shape"] == [3, 80, 4, 4]
+    assert evidence["line_radiation_shape"] == [3, 80, 4]
+    assert evidence["native_artifact_ready"] is True
+    assert evidence["charge_state_density_closure"] is True
+    assert evidence["source_sink_conservative"] is True
+    assert evidence["inventory_conserved"] is True
+    assert evidence["charge_state_radial_transport_operator_ready"] is False
+    assert evidence["aurora_strahl_same_case_threshold_ready"] is False
+    assert evidence["operator_terms_present"]["trace_radial_transport"] is True
+    assert evidence["operator_terms_present"]["charge_state_source_sink_matrix"] is True
+    assert evidence["operator_terms_present"]["line_radiation_power"] is True
+    assert evidence["operator_terms_present"]["charge_state_resolved_radial_transport"] is False
+    assert evidence["operator_terms_present"]["external_adas_transport_coefficients"] is False
+    assert evidence["operator_terms_present"]["same_case_aurora_strahl_transport_output"] is False
+    assert report["invariants"]["native_impurity_transport_evidence_fail_closed"] is True
+    assert "public Aurora or STRAHL radial transport output" in evidence["blocking_requirements"]
+
+
 def test_aurora_reference_report_declares_fail_closed_transport_output_contract() -> None:
     report = build_aurora_reference_execution_report(write=False)
 

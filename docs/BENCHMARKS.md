@@ -913,7 +913,13 @@ history, finite shapes, and a deterministic checksum. The charge-state CR step
 is pairwise conservative and uses deterministic ADAS-style coefficient tables
 for ingestion-shape testing; an upstream Aurora/Open-ADAS argon
 fractional-abundance artifact is also tracked for public atomic-data
-provenance. Public Aurora/STRAHL radial transport decks, radiation outputs,
+provenance. The benchmark also exports fail-closed native transport evidence:
+trace radial transport, edge-source conservation, neoclassical pinch,
+charge-state source/sink matrices, line radiation, and inventory closure are
+marked present, while charge-state-resolved radial transport, external ADAS
+transport coefficients, same-case Aurora/STRAHL transport outputs, and
+quantitative parity thresholds remain blocked. Public Aurora/STRAHL radial
+transport decks, radiation outputs,
 source/sink matrices, and same-case native comparisons are still required
 before full collisional-operator parity can pass.
 

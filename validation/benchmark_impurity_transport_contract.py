@@ -19,9 +19,10 @@ import json
 import hashlib
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -39,12 +40,78 @@ from scpn_fusion.core.impurity_transport import (  # noqa: E402
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "impurity_transport_contract_benchmark.json"
 MD_REPORT = REPORT_DIR / "impurity_transport_contract_benchmark.md"
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
-def _inventory(n_z: np.ndarray, rho: np.ndarray, R0: float, a: float) -> float:
+def _inventory(n_z: FloatArray, rho: FloatArray, R0: float, a: float) -> float:
     vol_element = 4.0 * np.pi**2 * R0 * a**2 * rho
     trapz = getattr(np, "trapezoid", None) or np.trapz
     return float(trapz(n_z * vol_element, rho))
+
+
+def _observable_finiteness(
+    payload: dict[str, Any], required_observables: list[str]
+) -> dict[str, bool]:
+    observables = payload["observables"]
+    return {
+        name: bool(
+            (values := np.asarray(observables.get(name, []), dtype=np.float64)).size > 0
+            and np.all(np.isfinite(values))
+        )
+        for name in required_observables
+    }
+
+
+def _native_impurity_transport_evidence(
+    payload: dict[str, Any],
+    artifact_validation: dict[str, Any],
+    required_observables: list[str],
+) -> dict[str, Any]:
+    observables = payload["observables"]
+    density = np.asarray(observables["charge_state_density_r_t"], dtype=np.float64)
+    source_sink = np.asarray(observables["source_sink_matrix_t_r_z_z"], dtype=np.float64)
+    line_radiation = np.asarray(observables["line_radiation_power_t_r_z"], dtype=np.float64)
+    row_sum_abs_max = float(np.max(np.abs(np.sum(source_sink, axis=3))))
+
+    return {
+        "schema": "native-impurity-transport-operator-evidence.v1",
+        "operator_evidence_status": (
+            "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator"
+        ),
+        "density_axes": ["time_s", "radius_m", "charge_state"],
+        "density_shape": [int(value) for value in density.shape],
+        "source_sink_shape": [int(value) for value in source_sink.shape],
+        "line_radiation_shape": [int(value) for value in line_radiation.shape],
+        "native_artifact_ready": bool(artifact_validation["passed"]),
+        "charge_state_density_closure": bool(artifact_validation["density_closure"]),
+        "source_sink_conservative": bool(artifact_validation["source_sink_conservative"]),
+        "source_sink_row_sum_abs_max": row_sum_abs_max,
+        "inventory_conserved": bool(artifact_validation["inventory_conserved"]),
+        "charge_state_radial_transport_operator_ready": False,
+        "aurora_strahl_same_case_threshold_ready": False,
+        "operator_terms_present": {
+            "trace_radial_transport": True,
+            "edge_source_particle_conservation": True,
+            "neoclassical_pinch": True,
+            "charge_state_source_sink_matrix": True,
+            "line_radiation_power": True,
+            "total_impurity_inventory_closure": True,
+            "charge_state_resolved_radial_transport": False,
+            "external_adas_transport_coefficients": False,
+            "same_case_aurora_strahl_transport_output": False,
+            "aurora_strahl_collisional_operator_parity": False,
+        },
+        "observable_finiteness": _observable_finiteness(payload, required_observables),
+        "blocking_requirements": [
+            "public Aurora or STRAHL radial transport output",
+            "charge-state-resolved radial transport operator on evolved density",
+            "external ADAS coefficient ingestion for transport parity",
+            "same-case line-radiation output from Aurora or STRAHL",
+            "same-case ionisation/recombination source-sink matrix output",
+            "native same-case solver-output comparison",
+            "distribution, radiation, and inventory threshold comparison against Aurora/STRAHL",
+        ],
+    }
 
 
 def run_benchmark() -> dict[str, Any]:
@@ -110,6 +177,11 @@ def run_benchmark() -> dict[str, Any]:
     canonical_payload = json.dumps(cr_payload, sort_keys=True, separators=(",", ":")).encode(
         "utf-8"
     )
+    native_impurity_transport_evidence = _native_impurity_transport_evidence(
+        cr_payload,
+        artifact_validation,
+        required_observables,
+    )
 
     invariants = {
         "positivity": bool(np.all(n_w >= 0.0) and np.all(np.isfinite(n_w))),
@@ -131,6 +203,14 @@ def run_benchmark() -> dict[str, Any]:
         "source_sink_matrix_conservative": bool(artifact_validation["source_sink_conservative"]),
         "line_radiation_power_finite": bool(
             np.all(np.isfinite(line_power_t_r_z)) and np.all(line_power_t_r_z >= 0.0)
+        ),
+        "native_impurity_transport_evidence_fail_closed": bool(
+            native_impurity_transport_evidence["native_artifact_ready"]
+            and not native_impurity_transport_evidence[
+                "charge_state_radial_transport_operator_ready"
+            ]
+            and not native_impurity_transport_evidence["aurora_strahl_same_case_threshold_ready"]
+            and bool(native_impurity_transport_evidence["blocking_requirements"])
         ),
     }
 
@@ -163,6 +243,7 @@ def run_benchmark() -> dict[str, Any]:
             "required_aurora_strahl_observables": required_observables,
             "same_case_aurora_strahl_comparison_ready": False,
         },
+        "native_impurity_transport_evidence": native_impurity_transport_evidence,
         "invariants": invariants,
         "passed": all(invariants.values()),
     }
@@ -176,6 +257,7 @@ def write_reports(results: dict[str, Any]) -> None:
     metrics = results["metrics"]
     thresholds = results["thresholds"]
     invariants = results["invariants"]
+    evidence = results["native_impurity_transport_evidence"]
     lines = [
         "# Impurity Transport Contract Benchmark",
         "",
@@ -216,6 +298,33 @@ def write_reports(results: dict[str, Any]) -> None:
             "- Required Aurora/STRAHL observables: "
             f"`{', '.join(results['artifact_contract']['required_aurora_strahl_observables'])}`"
         ),
+        "",
+        "## Native impurity transport operator evidence",
+        "",
+        f"- Schema: `{evidence['schema']}`",
+        f"- Status: `{evidence['operator_evidence_status']}`",
+        f"- Native artifact ready: `{evidence['native_artifact_ready']}`",
+        (
+            "- Charge-state radial transport operator ready: "
+            f"`{evidence['charge_state_radial_transport_operator_ready']}`"
+        ),
+        (
+            "- Aurora/STRAHL same-case thresholds ready: "
+            f"`{evidence['aurora_strahl_same_case_threshold_ready']}`"
+        ),
+        f"- Density axes: `{', '.join(evidence['density_axes'])}`",
+        f"- Density shape: `{json.dumps(evidence['density_shape'])}`",
+        f"- Source-sink shape: `{json.dumps(evidence['source_sink_shape'])}`",
+        f"- Line-radiation shape: `{json.dumps(evidence['line_radiation_shape'])}`",
+        (
+            "- Operator terms present: "
+            f"`{json.dumps(evidence['operator_terms_present'], sort_keys=True)}`"
+        ),
+        (
+            "- Observable finiteness: "
+            f"`{json.dumps(evidence['observable_finiteness'], sort_keys=True)}`"
+        ),
+        f"- Blocking requirements: `{'; '.join(evidence['blocking_requirements'])}`",
         "",
         "## Invariants",
         "",

@@ -21,11 +21,26 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Coordinates: time_s, radius_m, charge_state
 - Observables: charge_state_density_r_t, total_impurity_density_r_t, line_radiation_power_t, line_radiation_power_t_r_z, source_sink_matrix_t_r_z_z, total_impurity_inventory_t, ionisation_source_matrix, recombination_sink_matrix
 - Parity status: `artifact_contract_only_not_public_aurora_strahl_parity`
-- SHA-256: `e5804b23ced11d5a36db144ac8f298a7e8af0feebdb901e92a43c5ed09d890d1`
+- SHA-256: `4a250651cf21a5c36b3fe6221e8dc3761e2c1562f5da4810405752e13a1ac8d8`
 - Contract validation passed: `True`
 - Same-case Aurora/STRAHL comparison ready: `False`
 - Observable shapes: `{"charge_state_density_r_t": [3, 80, 4], "ionisation_source_matrix": [80, 4], "line_radiation_power_t": [3], "line_radiation_power_t_r_z": [3, 80, 4], "recombination_sink_matrix": [80, 4], "source_sink_matrix_t_r_z_z": [3, 80, 4, 4], "total_impurity_density_r_t": [3, 80], "total_impurity_inventory_t": [3]}`
 - Required Aurora/STRAHL observables: `charge_state_density_r_t, total_impurity_density_r_t, line_radiation_power_t, line_radiation_power_t_r_z, source_sink_matrix_t_r_z_z, total_impurity_inventory_t`
+
+## Native impurity transport operator evidence
+
+- Schema: `native-impurity-transport-operator-evidence.v1`
+- Status: `blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator`
+- Native artifact ready: `True`
+- Charge-state radial transport operator ready: `False`
+- Aurora/STRAHL same-case thresholds ready: `False`
+- Density axes: `time_s, radius_m, charge_state`
+- Density shape: `[3, 80, 4]`
+- Source-sink shape: `[3, 80, 4, 4]`
+- Line-radiation shape: `[3, 80, 4]`
+- Operator terms present: `{"aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": false, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": false, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": false, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
+- Observable finiteness: `{"charge_state_density_r_t": true, "line_radiation_power_t": true, "line_radiation_power_t_r_z": true, "source_sink_matrix_t_r_z_z": true, "total_impurity_density_r_t": true, "total_impurity_inventory_t": true}`
+- Blocking requirements: `public Aurora or STRAHL radial transport output; charge-state-resolved radial transport operator on evolved density; external ADAS coefficient ingestion for transport parity; same-case line-radiation output from Aurora or STRAHL; same-case ionisation/recombination source-sink matrix output; native same-case solver-output comparison; distribution, radiation, and inventory threshold comparison against Aurora/STRAHL`
 
 ## Invariants
 
@@ -38,5 +53,6 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - charge_state_particle_conservation: PASS
 - source_sink_matrix_conservative: PASS
 - line_radiation_power_finite: PASS
+- native_impurity_transport_evidence_fail_closed: PASS
 
 Overall: PASS

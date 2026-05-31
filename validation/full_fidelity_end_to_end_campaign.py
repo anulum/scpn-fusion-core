@@ -231,6 +231,7 @@ def run_campaign() -> dict[str, Any]:
     runaway = run_runaway_contract(repeats=3)
     runaway_operator = runaway["native_kinetic_operator_evidence"]
     impurity = run_impurity_contract()
+    impurity_operator = impurity["native_impurity_transport_evidence"]
     gk = _acceptance_surface(acceptance, "native_nonlinear_gyrokinetics")
     runaway_surface = _acceptance_surface(acceptance, "runaway_electrons")
     impurity_surface = _acceptance_surface(acceptance, "impurity_transport")
@@ -309,6 +310,7 @@ def run_campaign() -> dict[str, Any]:
             ),
             "locally_actionable_contract_ready": bool(
                 impurity["passed"]
+                and impurity_operator["native_artifact_ready"]
                 and impurity_surface["implemented_dimensions"].get(
                     "charge_state_resolved_density_artifact_export"
                 )
@@ -316,7 +318,8 @@ def run_campaign() -> dict[str, Any]:
             "reference_cases_ready": bool(impurity_surface["reference_cases"]["ready"]),
             "sources": _sources_for(registry, "impurity_transport"),
             "next_required_evidence": (
-                aurora_execution["missing_full_fidelity_requirements"]
+                impurity_operator["blocking_requirements"]
+                or aurora_execution["missing_full_fidelity_requirements"]
                 or impurity_surface["missing_requirements"]
             ),
         },
@@ -381,6 +384,18 @@ def run_campaign() -> dict[str, Any]:
         "aurora_reference_artifact_generated": bool(aurora_execution["artifact_generated"]),
         "aurora_reference_output_ready": bool(aurora_execution["reference_output_ready"]),
         "aurora_reference_execution_status": str(aurora_execution["status"]),
+        "impurity_native_transport_evidence_ready": bool(
+            impurity_operator["native_artifact_ready"]
+        ),
+        "impurity_charge_state_radial_transport_operator_ready": bool(
+            impurity_operator["charge_state_radial_transport_operator_ready"]
+        ),
+        "impurity_aurora_strahl_same_case_threshold_ready": bool(
+            impurity_operator["aurora_strahl_same_case_threshold_ready"]
+        ),
+        "impurity_transport_operator_evidence_status": str(
+            impurity_operator["operator_evidence_status"]
+        ),
         "gk_public_deck_inventory_report": str(GK_DECK_INVENTORY.relative_to(ROOT)),
         "gk_public_decks_indexed": int(gk_deck_inventory["deck_count"]),
         "gk_public_outputs_indexed": int(gk_deck_inventory["output_summary_count"]),
@@ -509,6 +524,22 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Aurora artifact generated: `{report['aurora_reference_artifact_generated']}`",
         f"- Aurora reference output ready: `{report['aurora_reference_output_ready']}`",
         f"- Aurora execution status: `{report['aurora_reference_execution_status']}`",
+        (
+            "- Impurity native transport evidence ready: "
+            f"`{report['impurity_native_transport_evidence_ready']}`"
+        ),
+        (
+            "- Impurity charge-state radial transport operator ready: "
+            f"`{report['impurity_charge_state_radial_transport_operator_ready']}`"
+        ),
+        (
+            "- Impurity Aurora/STRAHL same-case thresholds ready: "
+            f"`{report['impurity_aurora_strahl_same_case_threshold_ready']}`"
+        ),
+        (
+            "- Impurity transport operator evidence status: "
+            f"`{report['impurity_transport_operator_evidence_status']}`"
+        ),
         f"- GK deck inventory report: `{report['gk_public_deck_inventory_report']}`",
         f"- GK public decks indexed: `{report['gk_public_decks_indexed']}`",
         f"- GK public outputs indexed: `{report['gk_public_outputs_indexed']}`",

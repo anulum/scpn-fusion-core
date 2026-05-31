@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added fail-closed native impurity transport-operator evidence that separates
+  trace radial transport and charge-state artifact contracts from missing
+  Aurora/STRAHL charge-state-resolved radial transport parity, external ADAS
+  transport coefficients, same-case outputs, and quantitative thresholds.
+
 - Added fail-closed native runaway kinetic-operator evidence that separates the
   finite DREAM-style multidimensional artifact export from missing coupled
   momentum-pitch-radius DREAM parity, same-case thresholds, radial transport,

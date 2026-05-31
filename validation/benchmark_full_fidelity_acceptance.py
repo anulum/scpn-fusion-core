@@ -672,6 +672,9 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "conservative_source_sink_transfer_matrix_contract": True,
         "line_radiation_power_time_radius_charge_export": True,
         "total_impurity_inventory_history_export": True,
+        "native_impurity_transport_evidence_fail_closed": True,
+        "charge_state_resolved_radial_transport_operator": False,
+        "aurora_strahl_same_case_transport_thresholds": False,
         "adas_style_coefficient_ingestion_contract": True,
         "charge_state_particle_conservation_gate": True,
     }
