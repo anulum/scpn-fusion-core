@@ -242,6 +242,8 @@ class EfitNRMSEBenchmarkGate:
     gate_worst_source_alignment_file: str
     source_sum_identity_max_abs_error: float
     source_sum_identity_pass: bool
+    operator_current_closure_pass_count: int
+    gate_operator_current_closure_pass_count: int
     failure_reasons: list[str]
     rows: list[dict[str, Any]]
 
@@ -1662,6 +1664,8 @@ def validate_efit_nrmse_benchmark(
     adapted_profile_pass_count = 0
     gate_source_convention_adapter_pass_count = 0
     gate_adapted_profile_pass_count = 0
+    operator_current_closure_pass_count = 0
+    gate_operator_current_closure_pass_count = 0
     gate_row_count = 0
     gate_pass_count = 0
     failure_reasons: list[str] = []
@@ -1724,6 +1728,10 @@ def validate_efit_nrmse_benchmark(
         row.update(reference_contract)
         row["threshold"] = max_nrmse
         row["passes_threshold"] = bool(np.isfinite(rmse_norm) and rmse_norm <= max_nrmse)
+        if bool(row["operator_current_closure_pass"]):
+            operator_current_closure_pass_count += 1
+            if is_gate_row:
+                gate_operator_current_closure_pass_count += 1
         rows.append(row)
 
     if finite_entries:
@@ -1867,6 +1875,11 @@ def validate_efit_nrmse_benchmark(
             "source-sum identity gate failed: max abs error "
             f"{source_sum_identity_max_abs_error:.6g} > 1e-09"
         )
+    if operator_current_closure_pass_count != len(rows):
+        failure_reasons.append(
+            "operator-current closure gate failed in "
+            f"{len(rows) - operator_current_closure_pass_count}/{len(rows)} rows"
+        )
     if adapted_profile_entries and adapted_profile_pass_count != len(adapted_profile_entries):
         failure_reasons.append(
             "adapted-profile reconstruction gate failed in "
@@ -1926,6 +1939,8 @@ def validate_efit_nrmse_benchmark(
         gate_worst_source_alignment_file=gate_worst_source_alignment_file,
         source_sum_identity_max_abs_error=float(source_sum_identity_max_abs_error),
         source_sum_identity_pass=source_sum_identity_pass,
+        operator_current_closure_pass_count=operator_current_closure_pass_count,
+        gate_operator_current_closure_pass_count=gate_operator_current_closure_pass_count,
         failure_reasons=failure_reasons,
         rows=rows,
     )
@@ -2102,6 +2117,11 @@ def main() -> int:
         "Source-sum identity gate: "
         f"{'PASS' if benchmark.source_sum_identity_pass else 'FAIL'} "
         f"(max abs error = {benchmark.source_sum_identity_max_abs_error:.6e})"
+    )
+    print(
+        "Operator-current closure gate: "
+        f"{benchmark.operator_current_closure_pass_count}/{benchmark.count} rows, "
+        f"{benchmark.gate_operator_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
     )
     if benchmark.gate_worst_source_alignment_file:
         print(

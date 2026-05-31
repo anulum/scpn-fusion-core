@@ -52,6 +52,8 @@
     "gate_worst_source_alignment_file",
     "source_sum_identity_max_abs_error",
     "source_sum_identity_pass",
+    "operator_current_closure_pass_count",
+    "gate_operator_current_closure_pass_count",
     "failure_reasons",
     "rows"
   ],
@@ -278,6 +280,14 @@
     },
     "source_sum_identity_pass": {
       "type": "boolean"
+    },
+    "operator_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_operator_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
     },
     "failure_reasons": {
       "type": "array",

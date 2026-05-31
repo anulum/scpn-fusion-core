@@ -444,6 +444,14 @@ It also exposes `compute_geqdsk_profile_source_components`, which assembles pres
 The aggregate EFIT/GEQDSK report also gates the signed identity
 `total_source_sum == pressure_source_sum + ffprime_source_sum` through
 `source_sum_identity_max_abs_error` and `source_sum_identity_pass`.
+The same aggregate report counts operator-current closure with
+`operator_current_closure_pass_count` and
+`gate_operator_current_closure_pass_count`, so the discrete Delta*psi current
+closure row contract cannot silently regress while profile-source RMSE remains
+unchanged.
+Current local refresh: operator-current closure passes `5/18` aggregate rows
+and `5/8` public gate rows. That is now exposed as an aggregate failure reason
+instead of being buried in per-row diagnostics.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current

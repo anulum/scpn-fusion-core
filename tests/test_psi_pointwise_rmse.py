@@ -899,6 +899,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.count == 9
         assert gate.pass_count == 9
         assert gate.source_sum_identity_pass is True
+        assert gate.operator_current_closure_pass_count == 9
+        assert gate.gate_operator_current_closure_pass_count == 3
         assert "count 9 < required 10" in gate.failure_reasons
 
     def test_fails_when_any_finite_row_exceeds_threshold_and_reports_worst(
@@ -1234,6 +1236,8 @@ class TestValidateEFITNRMSEBenchmark:
         )
         assert payload["source_sum_identity_pass"] is True
         assert payload["source_sum_identity_max_abs_error"] == pytest.approx(0.0)
+        assert payload["operator_current_closure_pass_count"] == 10
+        assert payload["gate_operator_current_closure_pass_count"] == 4
         assert {
             "pressure_source_sum",
             "ffprime_source_sum",
