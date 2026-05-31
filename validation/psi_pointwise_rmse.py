@@ -149,6 +149,9 @@ class PsiRMSEResult:
     pressure_source_norm: float = float("nan")
     ffprime_source_norm: float = float("nan")
     total_source_norm: float = float("nan")
+    pressure_source_sum: float = float("nan")
+    ffprime_source_sum: float = float("nan")
+    total_source_sum: float = float("nan")
     pressure_source_fraction: float = float("nan")
     ffprime_source_fraction: float = float("nan")
     source_plasma_residual_l2: float = float("nan")
@@ -1495,6 +1498,9 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         pressure_source_norm=float(source_components["pressure_source_norm"]),
         ffprime_source_norm=float(source_components["ffprime_source_norm"]),
         total_source_norm=float(source_components["total_source_norm"]),
+        pressure_source_sum=float(source_components["pressure_source_sum"]),
+        ffprime_source_sum=float(source_components["ffprime_source_sum"]),
+        total_source_sum=float(source_components["total_source_sum"]),
         pressure_source_fraction=float(
             source_components["pressure_source_norm"]
             / max(source_components["total_source_norm"], 1e-15)

@@ -588,6 +588,11 @@ class TestValidateFile:
         assert np.isfinite(result.psi_rmse_norm)
         assert result.sor_iterations > 0
         assert result.solve_time_ms > 0
+        assert result.total_source_sum == pytest.approx(
+            result.pressure_source_sum + result.ffprime_source_sum,
+            rel=1.0e-13,
+            abs=1.0e-13,
+        )
 
     @pytest.mark.parametrize(
         "fname",
@@ -1214,6 +1219,11 @@ class TestValidateEFITNRMSEBenchmark:
             payload,
             load_efit_nrmse_benchmark_schema(),
         )
+        assert {
+            "pressure_source_sum",
+            "ffprime_source_sum",
+            "total_source_sum",
+        }.issubset(payload["rows"][0])
         assert payload["schema_version"] == "efit-nrmse-benchmark.v2"
         assert payload["benchmark_id"] == "efit-nrmse-benchmark"
         assert payload["benchmark_scope"] == "profile_source_fixed_boundary_reconstruction"

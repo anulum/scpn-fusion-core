@@ -337,6 +337,9 @@
           "pressure_source_norm",
           "ffprime_source_norm",
           "total_source_norm",
+          "pressure_source_sum",
+          "ffprime_source_sum",
+          "total_source_sum",
           "pressure_source_fraction",
           "ffprime_source_fraction",
           "source_plasma_residual_l2",
@@ -567,6 +570,15 @@
             "type": "number"
           },
           "total_source_norm": {
+            "type": "number"
+          },
+          "pressure_source_sum": {
+            "type": "number"
+          },
+          "ffprime_source_sum": {
+            "type": "number"
+          },
+          "total_source_sum": {
             "type": "number"
           },
           "pressure_source_fraction": {
