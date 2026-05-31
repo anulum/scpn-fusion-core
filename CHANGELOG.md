@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added native Rust benchmark evidence for GEQDSK second-order and current-conserving flux-profile interpolation primitives.
+
 - Added a native Rust GEQDSK source-convention adapter-selection benchmark for explicit named transform ranking without fitted scales.
 
 - Added a native Rust GEQDSK profile-source component benchmark for pressure/FFprime source assembly timing evidence.

@@ -8,7 +8,8 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use fusion_core::source::{
-    compute_geqdsk_profile_source_components, select_geqdsk_source_convention_adapter,
+    compute_geqdsk_profile_source_components, interpolate_flux_profile_current_conserving,
+    interpolate_flux_profile_second_order, select_geqdsk_source_convention_adapter,
 };
 use ndarray::Array2;
 use std::hint::black_box;
@@ -62,6 +63,12 @@ fn scaled_operator_source(profile_source: &Array2<f64>) -> Array2<f64> {
     profile_source.mapv(|value| value * 2.0 * std::f64::consts::PI)
 }
 
+fn source_mask(nz: usize, nr: usize) -> Array2<bool> {
+    Array2::from_shape_fn((nz, nr), |(iz, ir)| {
+        iz > 0 && ir > 0 && iz + 1 < nz && ir + 1 < nr
+    })
+}
+
 /// Benchmark native GEQDSK pressure/FFprime source assembly on representative grids.
 fn bench_geqdsk_profile_source_components(c: &mut Criterion) {
     let mut group = c.benchmark_group("geqdsk_profile_source_components");
@@ -88,6 +95,45 @@ fn bench_geqdsk_profile_source_components(c: &mut Criterion) {
                     components.ffprime_source_norm,
                     components.total_source_norm,
                 ));
+            })
+        });
+    }
+
+    group.finish();
+}
+
+/// Benchmark flux-profile interpolation primitives used by GEQDSK source assembly.
+fn bench_flux_profile_interpolation(c: &mut Criterion) {
+    let mut group = c.benchmark_group("geqdsk_flux_profile_interpolation");
+    group.sample_size(10);
+
+    for &(nz, nr) in &[(33usize, 33usize), (65usize, 65usize)] {
+        let psi_norm = synthetic_psi_norm(nz, nr);
+        let profile = pprime_profile(nr);
+        let weights = synthetic_rr(nz, nr);
+        let mask = source_mask(nz, nr);
+
+        group.bench_function(format!("second_order_{nz}x{nr}"), |b| {
+            b.iter(|| {
+                let interpolated = interpolate_flux_profile_second_order(
+                    black_box(&psi_norm),
+                    black_box(&profile),
+                )
+                .expect("second-order interpolation should succeed");
+                black_box(interpolated[[nz / 2, nr / 2]]);
+            })
+        });
+
+        group.bench_function(format!("current_conserving_{nz}x{nr}"), |b| {
+            b.iter(|| {
+                let interpolated = interpolate_flux_profile_current_conserving(
+                    black_box(&psi_norm),
+                    black_box(&profile),
+                    black_box(&weights),
+                    black_box(&mask),
+                )
+                .expect("current-conserving interpolation should succeed");
+                black_box(interpolated[[nz / 2, nr / 2]]);
             })
         });
     }
@@ -127,6 +173,7 @@ fn bench_geqdsk_source_convention_adapter(c: &mut Criterion) {
 
 criterion_group!(
     benches,
+    bench_flux_profile_interpolation,
     bench_geqdsk_profile_source_components,
     bench_geqdsk_source_convention_adapter
 );
