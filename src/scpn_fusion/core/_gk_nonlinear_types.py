@@ -75,6 +75,19 @@ class NonlinearGKState:
     A_par: NDArray[np.complex128] | None = None
 
 
+@dataclass(frozen=True)
+class NonlinearGKPhaseSpaceContract:
+    """Explicit five-dimensional nonlinear GK state/grid contract."""
+
+    distribution_shape: tuple[int, int, int, int, int, int]
+    field_shape: tuple[int, int, int]
+    distribution_axes: tuple[str, str, str, str, str, str]
+    field_axes: tuple[str, str, str]
+    axis_units: dict[str, str]
+    boundary_semantics: dict[str, str]
+    dealiasing: str
+
+
 @dataclass
 class NonlinearGKResult:
     """Time-averaged transport and diagnostics."""
@@ -105,6 +118,7 @@ class NonlinearGKInvariantDiagnostics:
 __all__ = [
     "NonlinearGKConfig",
     "NonlinearGKInvariantDiagnostics",
+    "NonlinearGKPhaseSpaceContract",
     "NonlinearGKResult",
     "NonlinearGKState",
     "_E_CHARGE",

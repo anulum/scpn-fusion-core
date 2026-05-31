@@ -10,13 +10,72 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
-from scpn_fusion.core._gk_nonlinear_types import _E_CHARGE, _M_PROTON
+from scpn_fusion.core._gk_nonlinear_types import (
+    NonlinearGKPhaseSpaceContract,
+    NonlinearGKState,
+    _E_CHARGE,
+    _M_PROTON,
+)
 from scpn_fusion.core.gk_geometry import circular_geometry
 from scpn_fusion.core.gk_species import deuterium_ion, electron
 
 
 class NonlinearGKSetupMixin:
     """Setup helpers used by :class:`NonlinearGKSolver`."""
+
+    def phase_space_contract(self) -> NonlinearGKPhaseSpaceContract:
+        """Return the explicit 5D distribution and field grid contract."""
+        c = self.cfg
+        return NonlinearGKPhaseSpaceContract(
+            distribution_shape=(c.n_species, c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu),
+            field_shape=(c.n_kx, c.n_ky, c.n_theta),
+            distribution_axes=(
+                "species",
+                "kx_rhos",
+                "ky_rhos",
+                "theta_rad",
+                "vpar_vth",
+                "mu_normalized",
+            ),
+            field_axes=("kx_rhos", "ky_rhos", "theta_rad"),
+            axis_units={
+                "species": "index",
+                "kx_rhos": "rho_s^-1",
+                "ky_rhos": "rho_s^-1",
+                "theta_rad": "rad",
+                "vpar_vth": "v_th",
+                "mu_normalized": "T_ref/B_ref",
+            },
+            boundary_semantics={
+                "species": "discrete kinetic species",
+                "kx": "periodic spectral",
+                "ky": "periodic spectral",
+                "theta": "ballooning-connected periodic",
+                "vpar": "finite velocity-domain endpoint closure",
+                "mu": "finite magnetic-moment endpoint closure",
+            },
+            dealiasing=c.dealiasing,
+        )
+
+    def validate_state(self, state: NonlinearGKState) -> None:
+        """Validate nonlinear GK state shape, finiteness, and field contracts."""
+        contract = self.phase_space_contract()
+        if state.f.shape != contract.distribution_shape:
+            raise ValueError(
+                f"distribution shape must be {contract.distribution_shape}, got {state.f.shape}"
+            )
+        if state.phi.shape != contract.field_shape:
+            raise ValueError(f"phi shape must be {contract.field_shape}, got {state.phi.shape}")
+        if state.A_par is not None and state.A_par.shape != contract.field_shape:
+            raise ValueError(f"A_par shape must be {contract.field_shape}, got {state.A_par.shape}")
+        if not np.all(np.isfinite(state.f)):
+            raise ValueError("distribution must contain only finite values")
+        if not np.all(np.isfinite(state.phi)):
+            raise ValueError("phi must contain only finite values")
+        if state.A_par is not None and not np.all(np.isfinite(state.A_par)):
+            raise ValueError("A_par must contain only finite values")
+        if not np.isfinite(state.time):
+            raise ValueError("time must be finite")
 
     def _setup_grids(self) -> None:
         c = self.cfg

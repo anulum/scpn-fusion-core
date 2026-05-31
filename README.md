@@ -48,7 +48,7 @@ facades and evidence-bounded validation reports.
 | Package version | 3.9.5 |
 | Public API exports | 2 |
 | Python capability source modules | 262 |
-| Python capability classes | 487 |
+| Python capability classes | 488 |
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |

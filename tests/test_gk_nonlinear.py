@@ -95,6 +95,38 @@ class TestConfigState:
         # Other modes should be zero (except at the specified mode)
         assert np.max(np.abs(state.f[0, 2, 3])) == 0.0
 
+    def test_phase_space_contract_declares_5d_storage_units_and_boundaries(self):
+        solver = NonlinearGKSolver(_FAST_CFG)
+        contract = solver.phase_space_contract()
+
+        assert contract.distribution_shape == (2, 8, 8, 16, 8, 4)
+        assert contract.field_shape == (8, 8, 16)
+        assert contract.distribution_axes == (
+            "species",
+            "kx_rhos",
+            "ky_rhos",
+            "theta_rad",
+            "vpar_vth",
+            "mu_normalized",
+        )
+        assert contract.axis_units["theta_rad"] == "rad"
+        assert contract.axis_units["vpar_vth"] == "v_th"
+        assert contract.boundary_semantics["kx"] == "periodic spectral"
+        assert contract.boundary_semantics["theta"] == "ballooning-connected periodic"
+        assert contract.dealiasing == "2/3"
+
+    def test_validate_state_rejects_non_5d_distribution_shape(self):
+        solver = NonlinearGKSolver(_FAST_CFG)
+        state = solver.init_state()
+        bad = state.__class__(f=state.f[0], phi=state.phi, time=state.time)
+
+        try:
+            solver.validate_state(bad)
+        except ValueError as exc:
+            assert "distribution shape" in str(exc)
+        else:
+            raise AssertionError("validate_state must reject non-5D species storage")
+
 
 # ── Field solve ───────────────────────────────────────────────────────
 
@@ -148,6 +180,18 @@ class TestExBBracket:
             for v in range(8):
                 for m in range(4):
                     assert np.all(bracket[mask, t, v, m] == 0.0)
+
+    def test_nonlinear_exb_term_is_negative_conservative_bracket(self):
+        solver = NonlinearGKSolver(_FAST_CFG)
+        state = solver.init_state(amplitude=1e-4, seed=5)
+
+        term, diagnostics = solver.nonlinear_exb_term(state, return_diagnostics=True)
+
+        assert term.shape == state.f.shape
+        np.testing.assert_allclose(term[0], -solver.exb_bracket(state.phi, state.f[0]))
+        np.testing.assert_allclose(term[1], 0.0)
+        assert diagnostics.finite
+        assert diagnostics.passes
 
 
 # ── Parallel streaming ───────────────────────────────────────────────

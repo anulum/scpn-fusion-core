@@ -91,6 +91,21 @@ class NonlinearGKOperatorsMixin:
         bracket_k *= self.dealias_mask[:, :, None]
         return bracket_k.reshape(shape5)
 
+    def nonlinear_exb_term(
+        self, state: NonlinearGKState, *, return_diagnostics: bool = False
+    ) -> NDArray[np.complex128] | tuple[NDArray[np.complex128], object]:
+        """Return the conservative nonlinear term ``-{phi, g}`` for active species."""
+        self.validate_state(state)
+        term = np.zeros_like(state.f)
+        active_species = (
+            self.cfg.n_species if self.cfg.kinetic_electrons else min(self.cfg.n_species, 1)
+        )
+        for species_idx in range(active_species):
+            term[species_idx] = -self.exb_bracket(state.phi, state.f[species_idx])
+        if return_diagnostics:
+            return term, self.nonlinear_invariant_diagnostics(state)
+        return term
+
     def parallel_streaming(self, f_s: NDArray[np.complex128]) -> NDArray[np.complex128]:
         """Fourth-order theta derivative with ballooning connection BC."""
         h = self.dtheta
@@ -225,6 +240,7 @@ class NonlinearGKOperatorsMixin:
         f = state.f
         phi = state.phi
         dfdt = np.zeros_like(f)
+        exb_terms = self.nonlinear_exb_term(state) if c.nonlinear else None
 
         for s in range(c.n_species):
             if s == 1 and not c.kinetic_electrons:
@@ -235,8 +251,8 @@ class NonlinearGKOperatorsMixin:
             is_elec = s == 1 and c.kinetic_electrons
             v_scale = self.vth_ratio_e if (is_elec and not c.implicit_electrons) else 1.0
 
-            if c.nonlinear:
-                terms -= self.exb_bracket(phi, f_s)
+            if exb_terms is not None:
+                terms += exb_terms[s]
             terms -= v_scale * self.parallel_streaming(f_s)
 
             charge_sign = -1.0 if s == 1 else 1.0

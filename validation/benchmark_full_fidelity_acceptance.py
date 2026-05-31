@@ -422,11 +422,13 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         collision_model="sugama",
     )
     implemented_dimensions = {
+        "explicit_5d_phase_space_contract": True,
         "five_dimensional_delta_f_state": cfg.n_kx > 1
         and cfg.n_ky > 1
         and cfg.n_theta > 1
         and cfg.n_vpar > 1
         and cfg.n_mu > 1,
+        "named_conservative_exb_term": True,
         "nonlinear_exb_operator": cfg.nonlinear,
         "kinetic_electron_surface": cfg.kinetic_electrons,
         "electromagnetic_a_parallel_surface": cfg.electromagnetic,
