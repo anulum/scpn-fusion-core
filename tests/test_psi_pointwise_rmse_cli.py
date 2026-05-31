@@ -212,6 +212,7 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "operator_current_relative_error": 0.00115,
                 "profile_current_relative_error": 0.0862,
                 "operator_current_closure_pass": True,
+                "profile_current_closure_pass": False,
                 "threshold": 0.05,
                 "passes_threshold": False,
             }

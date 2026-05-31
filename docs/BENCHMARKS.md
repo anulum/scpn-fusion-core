@@ -465,9 +465,11 @@ Profile-current closure is also threshold-counted with
 `gate_profile_current_closure_pass_count`; rows above the 5% current-closure
 threshold are now aggregate gate failures rather than visual-only diagnostics.
 Current local profile-current closure result: `0/18` aggregate rows and `0/8`
-public gate rows pass the 5% threshold. This is intentionally exposed as a
-benchmark failure because raw profile-source reconstruction still has unresolved
-convention/source mismatch.
+public gate rows pass the 5% threshold. Each report row now carries
+`profile_current_closure_pass` so downstream gates can distinguish finite
+profile-current diagnostics from rows that satisfy the closure threshold. This
+is intentionally exposed as a benchmark failure because raw profile-source
+reconstruction still has unresolved convention/source mismatch.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current

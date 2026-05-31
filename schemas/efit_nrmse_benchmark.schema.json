@@ -417,6 +417,7 @@
           "operator_current_relative_error",
           "profile_current_relative_error",
           "operator_current_closure_pass",
+          "profile_current_closure_pass",
           "threshold",
           "passes_threshold"
         ],
@@ -700,6 +701,9 @@
             "type": "number"
           },
           "operator_current_closure_pass": {
+            "type": "boolean"
+          },
+          "profile_current_closure_pass": {
             "type": "boolean"
           },
           "threshold": {

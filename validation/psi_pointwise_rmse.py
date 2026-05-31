@@ -173,6 +173,7 @@ class PsiRMSEResult:
     operator_current_relative_error: float = float("nan")
     profile_current_relative_error: float = float("nan")
     operator_current_closure_pass: bool = False
+    profile_current_closure_pass: bool = False
 
 
 @dataclass
@@ -710,6 +711,9 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     operator_pass = bool(
         np.isfinite(operator_error) and operator_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD
     )
+    profile_pass = bool(
+        np.isfinite(profile_error) and profile_error <= PROFILE_CURRENT_CLOSURE_THRESHOLD
+    )
     return {
         "declared_toroidal_current_A": declared_current,
         "operator_toroidal_current_A": operator_current,
@@ -717,6 +721,7 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
         "operator_current_relative_error": float(operator_error),
         "profile_current_relative_error": float(profile_error),
         "operator_current_closure_pass": operator_pass,
+        "profile_current_closure_pass": profile_pass,
     }
 
 
@@ -1543,6 +1548,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         ),
         profile_current_relative_error=float(current_consistency["profile_current_relative_error"]),
         operator_current_closure_pass=bool(current_consistency["operator_current_closure_pass"]),
+        profile_current_closure_pass=bool(current_consistency["profile_current_closure_pass"]),
     )
 
 
@@ -1742,6 +1748,10 @@ def validate_efit_nrmse_benchmark(
             operator_current_closure_pass_count += 1
             if is_gate_row:
                 gate_operator_current_closure_pass_count += 1
+        row["profile_current_closure_pass"] = bool(
+            np.isfinite(float(row["profile_current_relative_error"]))
+            and float(row["profile_current_relative_error"]) <= PROFILE_CURRENT_CLOSURE_THRESHOLD
+        )
         rows.append(row)
 
     if finite_entries:
@@ -1842,7 +1852,7 @@ def validate_efit_nrmse_benchmark(
         profile_current_error = float(row["profile_current_relative_error"])
         if np.isfinite(profile_current_error):
             profile_current_error_entries.append((str(row["file"]), profile_current_error))
-            if profile_current_error <= PROFILE_CURRENT_CLOSURE_THRESHOLD:
+            if bool(row["profile_current_closure_pass"]):
                 profile_current_closure_pass_count += 1
                 if row["reference_role"] == "gate":
                     gate_profile_current_closure_pass_count += 1

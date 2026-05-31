@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added row-level EFIT/GEQDSK profile-current closure pass fields so profile-source current failures are machine-readable in benchmark reports.
+
 - Added public formal-verification positioning for the Lean 4 solver safety proof, including README evidence boundary, formal-verification status, blog draft, and roadmap follow-up actions.
 
 - Added aggregate EFIT/GEQDSK profile-current closure threshold counts and fail-closed row coverage.

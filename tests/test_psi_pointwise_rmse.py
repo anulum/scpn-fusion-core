@@ -433,6 +433,7 @@ class TestToroidalCurrentConsistency:
         assert abs(metrics["operator_current_relative_error"]) < 1e-3
         assert np.sign(metrics["operator_toroidal_current_A"]) == np.sign(eq.current)
         assert np.isfinite(metrics["profile_current_relative_error"])
+        assert isinstance(metrics["profile_current_closure_pass"], bool)
 
     def test_current_consistency_rejects_invalid_grid(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
@@ -868,6 +869,7 @@ class TestValidateEFITNRMSEBenchmark:
         assert all(row["best_operator_candidate_residual_l2"] >= 0.0 for row in gate.rows)
         assert all(row["delta_star_psi_candidate_rank"] >= 1 for row in gate.rows)
         assert all(row["operator_current_closure_pass"] for row in gate.rows)
+        assert all(row["profile_current_closure_pass"] for row in gate.rows)
         assert all(row["operator_current_relative_error"] < 0.05 for row in gate.rows)
         assert all(row["q_profile_finite_fraction"] == pytest.approx(1.0) for row in gate.rows)
         assert all(row["q_profile_min_abs"] > 0.0 for row in gate.rows)
