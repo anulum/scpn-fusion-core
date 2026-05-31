@@ -119,3 +119,8 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
         assert surface["missing_requirements"]
         assert surface["reference_cases"]["ready"] is False
         assert surface["reference_cases"]["missing_cases"]
+        case = surface["reference_cases"]["missing_cases"][0]
+        assert case["artifact_exists"] is False
+        assert case["provenance_ready"] is False
+        assert case["redistribution_license_ready"] is False
+        assert case["sha256_ready"] is False

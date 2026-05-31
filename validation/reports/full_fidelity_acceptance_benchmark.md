@@ -6,6 +6,7 @@ A surface passes only after public reference parity against the named production
 - Schema: `full-fidelity-acceptance.v1`
 - Gate mode: `diagnostic_fail_closed`
 - Reference manifest: `validation/reference_data/full_fidelity_reference_cases.json`
+- Artefact schema: `validation/reference_data/full_fidelity_artifact_schema.json`
 - Acceptance passed: `False`
 
 | Surface | Required reference equivalence | Status | Reference cases ready | Implemented dimensions | Missing requirements |

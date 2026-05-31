@@ -10,6 +10,7 @@ reported as an unmet requirement rather than silently downgraded.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -24,8 +25,26 @@ from scpn_fusion.core._gk_nonlinear_types import NonlinearGKConfig  # noqa: E402
 
 REPORT_DIR = ROOT / "validation" / "reports"
 REFERENCE_CASES = ROOT / "validation" / "reference_data" / "full_fidelity_reference_cases.json"
+ARTIFACT_SCHEMA = ROOT / "validation" / "reference_data" / "full_fidelity_artifact_schema.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_acceptance_benchmark.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_acceptance_benchmark.md"
+
+
+def _load_artifact_schema() -> dict[str, Any]:
+    """Load the strict public reference artefact schema."""
+    schema = json.loads(ARTIFACT_SCHEMA.read_text(encoding="utf-8"))
+    if schema.get("schema") != "full-fidelity-artifact-schema.v1":
+        raise ValueError("full-fidelity artefact schema mismatch")
+    return schema
+
+
+def _sha256(path: Path) -> str:
+    """Return the SHA-256 digest for a reference artefact."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _load_reference_cases() -> dict[str, Any]:
@@ -39,7 +58,9 @@ def _load_reference_cases() -> dict[str, Any]:
     return manifest
 
 
-def _reference_readiness(surface: str, manifest: dict[str, Any]) -> dict[str, Any]:
+def _reference_readiness(
+    surface: str, manifest: dict[str, Any], schema: dict[str, Any]
+) -> dict[str, Any]:
     """Return fail-closed public reference readiness for one physics surface."""
     surface_manifest = manifest["surfaces"].get(surface)
     if not isinstance(surface_manifest, dict):
@@ -48,22 +69,59 @@ def _reference_readiness(surface: str, manifest: dict[str, Any]) -> dict[str, An
     if not isinstance(cases, list) or not cases:
         raise ValueError(f"surface {surface} must define at least one required reference case")
 
+    required_fields = tuple(schema["required_case_fields"])
+    allowed_statuses = set(schema["allowed_statuses"])
+    supported_suffixes = set(schema["supported_artifact_formats"])
     ready_cases = []
     missing_cases = []
     for case in cases:
+        missing_fields = [field for field in required_fields if field not in case]
         artifact = case.get("artifact_path")
-        artifact_exists = bool(artifact) and (ROOT / str(artifact)).exists()
+        artifact_path = ROOT / str(artifact) if artifact else None
+        artifact_exists = bool(artifact_path and artifact_path.exists())
+        suffix_ready = bool(artifact_path and artifact_path.suffix in supported_suffixes)
         thresholds = case.get("thresholds")
         threshold_ready = isinstance(thresholds, dict) and bool(thresholds)
-        status_ready = case.get("status") == "available"
-        case_ready = bool(status_ready and artifact_exists and threshold_ready)
+        observables = case.get("required_observables")
+        observables_ready = isinstance(observables, list) and bool(observables)
+        status = case.get("status")
+        status_ready = status == "available"
+        status_known = status in allowed_statuses
+        provenance_ready = bool(case.get("provenance_url"))
+        license_ready = bool(case.get("redistribution_license"))
+        expected_sha = case.get("sha256")
+        actual_sha = (
+            _sha256(artifact_path) if artifact_exists and artifact_path is not None else None
+        )
+        sha_ready = bool(expected_sha and actual_sha == expected_sha)
+        case_ready = bool(
+            not missing_fields
+            and status_known
+            and status_ready
+            and artifact_exists
+            and suffix_ready
+            and provenance_ready
+            and license_ready
+            and sha_ready
+            and observables_ready
+            and threshold_ready
+        )
         row = {
             "case_id": case.get("case_id"),
             "reference_family": case.get("reference_family"),
-            "status": case.get("status"),
+            "status": status,
+            "status_known": status_known,
             "artifact_path": artifact,
             "artifact_exists": artifact_exists,
+            "artifact_format_ready": suffix_ready,
+            "provenance_ready": provenance_ready,
+            "redistribution_license_ready": license_ready,
+            "sha256_expected": expected_sha,
+            "sha256_actual": actual_sha,
+            "sha256_ready": sha_ready,
+            "observables_ready": observables_ready,
             "threshold_ready": threshold_ready,
+            "missing_fields": missing_fields,
             "ready": case_ready,
         }
         if case_ready:
@@ -73,6 +131,7 @@ def _reference_readiness(surface: str, manifest: dict[str, Any]) -> dict[str, An
 
     return {
         "manifest": str(REFERENCE_CASES.relative_to(ROOT)),
+        "artifact_schema": str(ARTIFACT_SCHEMA.relative_to(ROOT)),
         "required_equivalence": surface_manifest.get("required_equivalence"),
         "ready": len(missing_cases) == 0,
         "ready_cases": ready_cases,
@@ -105,7 +164,8 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "electromagnetic_a_parallel_surface": cfg.electromagnetic,
         "moment_conserving_collision_contract": cfg.collisions and cfg.collision_model == "sugama",
     }
-    readiness = _reference_readiness("native_nonlinear_gyrokinetics", reference_cases)
+    schema = _load_artifact_schema()
+    readiness = _reference_readiness("native_nonlinear_gyrokinetics", reference_cases, schema)
     missing_requirements = [
         "public nonlinear GENE/CGYRO/GS2 benchmark deck parity",
         "production-scale radial/toroidal domain decomposition and convergence evidence",
@@ -131,7 +191,8 @@ def _runaway_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "fluid_density_balance": True,
         "one_dimensional_momentum_fokker_planck_contract": True,
     }
-    readiness = _reference_readiness("runaway_electrons", reference_cases)
+    schema = _load_artifact_schema()
+    readiness = _reference_readiness("runaway_electrons", reference_cases, schema)
     missing_requirements = [
         "multidimensional DREAM kinetic distribution parity",
         "coupled radial-momentum-pitch kinetic grid with DREAM reference cases",
@@ -156,7 +217,8 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "neoclassical_pinch_contract": True,
         "radiated_power_monotonicity": True,
     }
-    readiness = _reference_readiness("impurity_transport", reference_cases)
+    schema = _load_artifact_schema()
+    readiness = _reference_readiness("impurity_transport", reference_cases, schema)
     missing_requirements = [
         "charge-state-resolved collisional-radiative operator parity",
         "ADAS-backed ionisation/recombination/radiation coefficient ingestion",
@@ -191,6 +253,7 @@ def run_benchmark() -> dict[str, Any]:
         ),
         "gate_mode": "diagnostic_fail_closed",
         "reference_manifest": str(REFERENCE_CASES.relative_to(ROOT)),
+        "artifact_schema": str(ARTIFACT_SCHEMA.relative_to(ROOT)),
         "surfaces": surfaces,
         "acceptance_passed": all(surface["acceptance_passed"] for surface in surfaces),
     }
@@ -210,6 +273,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Schema: `{report['schema']}`",
         f"- Gate mode: `{report['gate_mode']}`",
         f"- Reference manifest: `{report['reference_manifest']}`",
+        f"- Artefact schema: `{report['artifact_schema']}`",
         f"- Acceptance passed: `{report['acceptance_passed']}`",
         "",
         "| Surface | Required reference equivalence | Status | Reference cases ready | Implemented dimensions | Missing requirements |",

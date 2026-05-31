@@ -1,5 +1,6 @@
 {
   "acceptance_passed": false,
+  "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",
   "benchmark": "full_fidelity_acceptance",
   "description": "Fail-closed acceptance contract for native nonlinear GK, runaway electron, and impurity transport equivalence against production community solvers.",
   "gate_mode": "diagnostic_fail_closed",
@@ -22,15 +23,25 @@
         "validated flux spectra, zonal-flow, and saturation parity against production GK outputs"
       ],
       "reference_cases": {
+        "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",
         "manifest": "validation/reference_data/full_fidelity_reference_cases.json",
         "missing_cases": [
           {
             "artifact_exists": false,
+            "artifact_format_ready": false,
             "artifact_path": null,
             "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
+            "missing_fields": [],
+            "observables_ready": true,
+            "provenance_ready": false,
             "ready": false,
+            "redistribution_license_ready": false,
             "reference_family": "GENE/CGYRO/GS2",
+            "sha256_actual": null,
+            "sha256_expected": null,
+            "sha256_ready": false,
             "status": "missing_public_artifact",
+            "status_known": true,
             "threshold_ready": true
           }
         ],
@@ -58,15 +69,25 @@
         "public DREAM deck ingestion and distribution-function RMSE thresholds"
       ],
       "reference_cases": {
+        "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",
         "manifest": "validation/reference_data/full_fidelity_reference_cases.json",
         "missing_cases": [
           {
             "artifact_exists": false,
+            "artifact_format_ready": false,
             "artifact_path": null,
             "case_id": "dream_kinetic_hot_tail_avalanche_public",
+            "missing_fields": [],
+            "observables_ready": true,
+            "provenance_ready": false,
             "ready": false,
+            "redistribution_license_ready": false,
             "reference_family": "DREAM",
+            "sha256_actual": null,
+            "sha256_expected": null,
+            "sha256_ready": false,
             "status": "missing_public_artifact",
+            "status_known": true,
             "threshold_ready": true
           }
         ],
@@ -93,15 +114,25 @@
         "multi-species source/sink matrix conservation across charge states"
       ],
       "reference_cases": {
+        "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",
         "manifest": "validation/reference_data/full_fidelity_reference_cases.json",
         "missing_cases": [
           {
             "artifact_exists": false,
+            "artifact_format_ready": false,
             "artifact_path": null,
             "case_id": "aurora_strahl_charge_state_transport_public",
+            "missing_fields": [],
+            "observables_ready": true,
+            "provenance_ready": false,
             "ready": false,
+            "redistribution_license_ready": false,
             "reference_family": "Aurora/STRAHL",
+            "sha256_actual": null,
+            "sha256_expected": null,
+            "sha256_ready": false,
             "status": "missing_public_artifact",
+            "status_known": true,
             "threshold_ready": true
           }
         ],

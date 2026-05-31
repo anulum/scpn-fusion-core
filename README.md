@@ -162,7 +162,9 @@ impurity transport is tracked by
 The current diagnostic is fail-closed: these surfaces are not marked full-order
 until public GENE/CGYRO/GS2, DREAM, and Aurora/STRAHL parity gates are met.
 Required public artefacts and thresholds are declared in
-[`validation/reference_data/full_fidelity_reference_cases.json`](validation/reference_data/full_fidelity_reference_cases.json).
+[`validation/reference_data/full_fidelity_reference_cases.json`](validation/reference_data/full_fidelity_reference_cases.json);
+accepted artefacts must also satisfy
+[`validation/reference_data/full_fidelity_artifact_schema.json`](validation/reference_data/full_fidelity_artifact_schema.json).
 
 ## Competitive Position
 

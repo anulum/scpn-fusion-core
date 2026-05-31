@@ -1,62 +1,15 @@
 {
-  "schema": "full-fidelity-reference-cases.v1",
   "description": "Required public reference artefacts for native full-fidelity acceptance. A surface cannot pass full-fidelity acceptance until every required case is available, licensed for redistribution or reproducible download, and has quantitative parity thresholds.",
+  "schema": "full-fidelity-reference-cases.v1",
   "surfaces": {
-    "native_nonlinear_gyrokinetics": {
-      "required_equivalence": "GENE/CGYRO/GS2 full nonlinear 5D Vlasov-Maxwell",
-      "required_cases": [
-        {
-          "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
-          "reference_family": "GENE/CGYRO/GS2",
-          "status": "missing_public_artifact",
-          "artifact_path": null,
-          "required_observables": [
-            "ion_heat_flux_spectrum",
-            "electron_heat_flux_spectrum",
-            "zonal_flow_energy",
-            "saturated_phi_rms",
-            "electromagnetic_apar_energy"
-          ],
-          "thresholds": {
-            "heat_flux_relative_l2_max": 0.15,
-            "spectrum_relative_l2_max": 0.20,
-            "zonal_energy_relative_error_max": 0.20,
-            "field_energy_relative_error_max": 0.20
-          }
-        }
-      ]
-    },
-    "runaway_electrons": {
-      "required_equivalence": "DREAM kinetic/fluid runaway electron solver",
-      "required_cases": [
-        {
-          "case_id": "dream_kinetic_hot_tail_avalanche_public",
-          "reference_family": "DREAM",
-          "status": "missing_public_artifact",
-          "artifact_path": null,
-          "required_observables": [
-            "f_p_xi_t",
-            "runaway_current_t",
-            "avalanche_growth_rate_t",
-            "synchrotron_loss_power_t",
-            "partial_screening_drag_t"
-          ],
-          "thresholds": {
-            "distribution_relative_l2_max": 0.10,
-            "runaway_current_relative_l2_max": 0.05,
-            "growth_rate_relative_error_max": 0.10
-          }
-        }
-      ]
-    },
     "impurity_transport": {
-      "required_equivalence": "Aurora/STRAHL collisional-operator impurity transport",
       "required_cases": [
         {
-          "case_id": "aurora_strahl_charge_state_transport_public",
-          "reference_family": "Aurora/STRAHL",
-          "status": "missing_public_artifact",
           "artifact_path": null,
+          "case_id": "aurora_strahl_charge_state_transport_public",
+          "provenance_url": null,
+          "redistribution_license": null,
+          "reference_family": "Aurora/STRAHL",
           "required_observables": [
             "charge_state_density_r_t",
             "total_impurity_density_r_t",
@@ -64,14 +17,70 @@
             "ionisation_source_matrix",
             "recombination_sink_matrix"
           ],
+          "sha256": null,
+          "status": "missing_public_artifact",
           "thresholds": {
-            "charge_state_density_relative_l2_max": 0.10,
-            "total_density_relative_l2_max": 0.05,
-            "radiated_power_relative_l2_max": 0.10,
-            "particle_conservation_relative_error_max": 0.01
+            "charge_state_density_relative_l2_max": 0.1,
+            "particle_conservation_relative_error_max": 0.01,
+            "radiated_power_relative_l2_max": 0.1,
+            "total_density_relative_l2_max": 0.05
           }
         }
-      ]
+      ],
+      "required_equivalence": "Aurora/STRAHL collisional-operator impurity transport"
+    },
+    "native_nonlinear_gyrokinetics": {
+      "required_cases": [
+        {
+          "artifact_path": null,
+          "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
+          "provenance_url": null,
+          "redistribution_license": null,
+          "reference_family": "GENE/CGYRO/GS2",
+          "required_observables": [
+            "ion_heat_flux_spectrum",
+            "electron_heat_flux_spectrum",
+            "zonal_flow_energy",
+            "saturated_phi_rms",
+            "electromagnetic_apar_energy"
+          ],
+          "sha256": null,
+          "status": "missing_public_artifact",
+          "thresholds": {
+            "field_energy_relative_error_max": 0.2,
+            "heat_flux_relative_l2_max": 0.15,
+            "spectrum_relative_l2_max": 0.2,
+            "zonal_energy_relative_error_max": 0.2
+          }
+        }
+      ],
+      "required_equivalence": "GENE/CGYRO/GS2 full nonlinear 5D Vlasov-Maxwell"
+    },
+    "runaway_electrons": {
+      "required_cases": [
+        {
+          "artifact_path": null,
+          "case_id": "dream_kinetic_hot_tail_avalanche_public",
+          "provenance_url": null,
+          "redistribution_license": null,
+          "reference_family": "DREAM",
+          "required_observables": [
+            "f_p_xi_t",
+            "runaway_current_t",
+            "avalanche_growth_rate_t",
+            "synchrotron_loss_power_t",
+            "partial_screening_drag_t"
+          ],
+          "sha256": null,
+          "status": "missing_public_artifact",
+          "thresholds": {
+            "distribution_relative_l2_max": 0.1,
+            "growth_rate_relative_error_max": 0.1,
+            "runaway_current_relative_l2_max": 0.05
+          }
+        }
+      ],
+      "required_equivalence": "DREAM kinetic/fluid runaway electron solver"
     }
   }
 }
