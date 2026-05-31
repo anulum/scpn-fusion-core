@@ -53,6 +53,23 @@ end
     end
     @test abs((total_current - expected_total) / expected_total) < 1.0e-12
 
+    mask = [iz > 3 && iz < case.NZ - 2 && ir > 4 && ir < case.NR - 3
+            for iz in 1:case.NZ, ir in 1:case.NR]
+    masked_current = total_toroidal_current_from_flux_masked(case, psi, mask)
+    expected_masked_total = 0.0
+    for iz in 2:case.NZ-1, ir in 2:case.NR-1
+        if mask[iz, ir]
+            expected_j = -2.0 * coeff / (case.mu0 * (case.R_min + (ir - 1) * dR))
+            expected_masked_total += expected_j * dR * dZ
+        end
+    end
+    @test abs((masked_current - expected_masked_total) / expected_masked_total) < 1.0e-12
+    @test abs(masked_current) < abs(total_current)
+    @test_throws ArgumentError total_toroidal_current_from_flux_masked(
+        case, psi, falses(case.NZ, case.NR))
+    @test_throws ArgumentError total_toroidal_current_from_flux_masked(
+        case, psi, trues(case.NZ - 1, case.NR))
+
     radial_coeff = 0.03125
     vertical_coeff = -0.125
     r = range(case.R_min, case.R_max; length=case.NR)

@@ -32,6 +32,8 @@ structure GradShafranovResult where
 
 abbrev Matrix := Array (Array Float)
 
+abbrev BoolMatrix := Array (Array Bool)
+
 def fmax (a b : Float) : Float :=
   if a >= b then a else b
 
@@ -171,6 +173,11 @@ def get2D (m : Matrix) (iz ir : Nat) : Float :=
   match m[iz]? with
   | some row => row.getD ir 0.0
   | none => 0.0
+
+def get2DBool (m : BoolMatrix) (iz ir : Nat) : Bool :=
+  match m[iz]? with
+  | some row => row.getD ir false
+  | none => false
 
 def set2D (m : Matrix) (iz ir : Nat) (value : Float) : Matrix :=
   match m[iz]? with
@@ -312,6 +319,19 @@ def totalToroidalCurrentFromFlux (c : GradShafranovCase) (psi : Matrix) : Float 
     if iz > 0 && iz + 1 < c.nz then
       for ir in List.range c.nr do
         if ir > 0 && ir + 1 < c.nr then
+          total := total + get2D currentDensity iz ir * dR * dZ
+  return total
+
+def totalToroidalCurrentFromFluxMasked
+    (c : GradShafranovCase) (psi : Matrix) (domainMask : BoolMatrix) : Float := Id.run do
+  let currentDensity := toroidalCurrentDensityFromFlux c psi
+  let dR := (c.rMax - c.rMin) / Float.ofNat (c.nr - 1)
+  let dZ := (c.zMax - c.zMin) / Float.ofNat (c.nz - 1)
+  let mut total := 0.0
+  for iz in List.range c.nz do
+    if iz > 0 && iz + 1 < c.nz then
+      for ir in List.range c.nr do
+        if ir > 0 && ir + 1 < c.nr && get2DBool domainMask iz ir then
           total := total + get2D currentDensity iz ir * dR * dZ
   return total
 

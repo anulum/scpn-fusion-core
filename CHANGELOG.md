@@ -10,6 +10,9 @@
 
 ## [Unreleased]
 
+- Added Go, Julia, and Lean native masked toroidal-current integration parity
+  for the full-domain/plasma-domain Grad-Shafranov current-closure contract.
+
 - Added Criterion benchmark evidence for native Rust GEQDSK full-domain and
   plasma-domain operator-current integration.
 

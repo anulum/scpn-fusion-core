@@ -9,7 +9,8 @@ module SCPNFusionSolvers
 
 export GradShafranovCase, GradShafranovResult, case_from_toml,
     grad_shafranov_delta_star, solve_grad_shafranov,
-    toroidal_current_density_from_flux, total_toroidal_current_from_flux
+    toroidal_current_density_from_flux, total_toroidal_current_from_flux,
+    total_toroidal_current_from_flux_masked
 
 using TOML
 
@@ -188,6 +189,22 @@ function total_toroidal_current_from_flux(case::GradShafranovCase, psi::Matrix{F
     _, _, _, dR, dZ = _r_grid(case)
     current_density = toroidal_current_density_from_flux(case, psi)
     return sum(@view current_density[2:end-1, 2:end-1]) * dR * dZ
+end
+
+"""Integrate J_phi implied by a flux grid over an explicit R-Z domain mask."""
+function total_toroidal_current_from_flux_masked(case::GradShafranovCase,
+    psi::Matrix{Float64}, domain_mask::AbstractMatrix{Bool})::Float64
+    _validate_flux_matrix(case, psi)
+    size(domain_mask) == (case.NZ, case.NR) || throw(ArgumentError(
+        "toroidal current mask shape must match the Grad-Shafranov case grid"))
+    any(domain_mask) || throw(ArgumentError(
+        "toroidal current mask must include at least one cell"))
+    _, _, _, dR, dZ = _r_grid(case)
+    current_density = toroidal_current_density_from_flux(case, psi)
+    total = sum(current_density[domain_mask]) * dR * dZ
+    isfinite(total) || throw(ArgumentError(
+        "masked integrated toroidal current became non-finite"))
+    return total
 end
 
 function _max_change(a::Matrix{Float64}, b::Matrix{Float64})::Float64

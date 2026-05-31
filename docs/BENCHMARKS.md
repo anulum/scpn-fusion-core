@@ -473,6 +473,9 @@ Rust parity now includes native masked current integration through
 `fusion_polyglot::total_toroidal_current_from_flux_masked`, allowing the same
 full-domain/plasma-domain current comparison outside Python without wrapper
 delegation.
+The same masked current-domain contract is also exposed natively in Go, Julia,
+and Lean through their existing Grad-Shafranov operator-current implementations;
+these are implementation parity surfaces, not wrappers around Python or Rust.
 Current local worst rows: operator current closure `sparc/sparc_1300.eqdsk`
 with relative error `2.184689e+00`, and profile current closure
 `jet/jet_lmode_2MA.geqdsk` with relative error `4.168623e+01`.

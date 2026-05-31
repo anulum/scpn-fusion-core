@@ -106,6 +106,36 @@ func TestOperatorCurrentClosureManufacturedZQuadratic(t *testing.T) {
 		t.Fatalf("unexpected total current: got %.17g expected %.17g", totalCurrent, expectedTotal)
 	}
 
+	mask := make([][]bool, c.NZ)
+	for iz := 0; iz < c.NZ; iz++ {
+		mask[iz] = make([]bool, c.NR)
+		for ir := 0; ir < c.NR; ir++ {
+			mask[iz][ir] = iz > 2 && iz < c.NZ-3 && ir > 3 && ir < c.NR-4
+		}
+	}
+	maskedCurrent, err := TotalToroidalCurrentFromFluxMasked(c, psi, mask)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedMaskedTotal := 0.0
+	for iz := 1; iz < c.NZ-1; iz++ {
+		for ir := 1; ir < c.NR-1; ir++ {
+			if mask[iz][ir] {
+				r := c.RMin + float64(ir)*dR
+				expectedMaskedTotal += -2.0 * coeff / (c.Mu0 * r) * dR * dZ
+			}
+		}
+	}
+	if math.Abs((maskedCurrent-expectedMaskedTotal)/expectedMaskedTotal) > 1.0e-12 {
+		t.Fatalf("unexpected masked total current: got %.17g expected %.17g", maskedCurrent, expectedMaskedTotal)
+	}
+	if math.Abs(maskedCurrent) >= math.Abs(totalCurrent) {
+		t.Fatalf("masked current should be smaller than full-domain current")
+	}
+	if _, err := TotalToroidalCurrentFromFluxMasked(c, psi, nil); err == nil {
+		t.Fatalf("empty current mask must fail")
+	}
+
 	radialCoeff := 0.03125
 	verticalCoeff := -0.125
 	psiRadial := zeros(c.NZ, c.NR)

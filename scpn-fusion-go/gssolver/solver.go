@@ -364,3 +364,41 @@ func TotalToroidalCurrentFromFlux(c Case, psi [][]float64) (float64, error) {
 	}
 	return total, nil
 }
+
+func TotalToroidalCurrentFromFluxMasked(c Case, psi [][]float64, domainMask [][]bool) (float64, error) {
+	if err := validateFluxMatrix(c, psi); err != nil {
+		return 0, err
+	}
+	if len(domainMask) != c.NZ {
+		return 0, fmt.Errorf("toroidal current mask row count mismatch")
+	}
+	hasDomainCell := false
+	for _, row := range domainMask {
+		if len(row) != c.NR {
+			return 0, fmt.Errorf("toroidal current mask column count mismatch")
+		}
+		for _, inDomain := range row {
+			hasDomainCell = hasDomainCell || inDomain
+		}
+	}
+	if !hasDomainCell {
+		return 0, fmt.Errorf("toroidal current mask must include at least one cell")
+	}
+	currentDensity, err := ToroidalCurrentDensityFromFlux(c, psi)
+	if err != nil {
+		return 0, err
+	}
+	_, _, _, dR, dZ := grid(c)
+	total := 0.0
+	for iz := 0; iz < c.NZ; iz++ {
+		for ir := 0; ir < c.NR; ir++ {
+			if domainMask[iz][ir] {
+				total += currentDensity[iz][ir] * dR * dZ
+			}
+		}
+	}
+	if math.IsNaN(total) || math.IsInf(total, 0) {
+		return 0, fmt.Errorf("masked integrated toroidal current became non-finite")
+	}
+	return total, nil
+}
