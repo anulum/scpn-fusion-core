@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added aggregate EFIT/GEQDSK profile-current failure-class counts to expose current-closure failure mode distribution without row scanning.
+
 - Added EFIT/GEQDSK current-ratio and profile-current failure-class diagnostics to make profile-source current closure failures row-actionable.
 
 - Added row-level EFIT/GEQDSK profile-current closure pass fields so profile-source current failures are machine-readable in benchmark reports.

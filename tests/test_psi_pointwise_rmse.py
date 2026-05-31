@@ -920,6 +920,7 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.profile_current_closure_threshold == pytest.approx(0.05)
         assert gate.profile_current_closure_pass_count == 9
         assert gate.gate_profile_current_closure_pass_count == 3
+        assert gate.profile_current_closure_failure_class_counts == {"passes_threshold": 9}
         assert gate.operator_current_worst_relative_error == pytest.approx(5.0e-5)
         assert gate.profile_current_worst_relative_error == pytest.approx(0.01)
         assert "count 9 < required 10" in gate.failure_reasons
@@ -1274,6 +1275,7 @@ class TestValidateEFITNRMSEBenchmark:
         assert payload["profile_current_closure_threshold"] == pytest.approx(0.05)
         assert payload["profile_current_closure_pass_count"] == 10
         assert payload["gate_profile_current_closure_pass_count"] == 4
+        assert payload["profile_current_closure_failure_class_counts"] == {"passes_threshold": 10}
         assert payload["operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["gate_operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["profile_current_worst_relative_error"] == pytest.approx(0.01)

@@ -470,7 +470,9 @@ public gate rows pass the 5% threshold. Each report row now carries `operator_cu
 `profile_current_closure_failure_class` so downstream gates can distinguish
 finite profile-current diagnostics from rows that satisfy the closure threshold
 and can identify whether the profile source under-closes or over-closes the
-declared plasma current. This is intentionally exposed as a benchmark failure
+declared plasma current. The aggregate report also includes
+`profile_current_closure_failure_class_counts` so the failure mode distribution
+is visible without row scanning. This is intentionally exposed as a benchmark failure
 because raw profile-source reconstruction still has unresolved convention/source
 mismatch.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust

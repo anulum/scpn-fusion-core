@@ -252,6 +252,7 @@ class EfitNRMSEBenchmarkGate:
     profile_current_closure_threshold: float
     profile_current_closure_pass_count: int
     gate_profile_current_closure_pass_count: int
+    profile_current_closure_failure_class_counts: dict[str, int]
     operator_current_worst_relative_error: float
     operator_current_worst_file: str
     gate_operator_current_worst_relative_error: float
@@ -1831,6 +1832,7 @@ def validate_efit_nrmse_benchmark(
     operator_current_error_entries: list[tuple[str, float]] = []
     gate_operator_current_error_entries: list[tuple[str, float]] = []
     profile_current_error_entries: list[tuple[str, float]] = []
+    profile_current_closure_failure_class_counts: dict[str, int] = {}
     profile_current_closure_pass_count = 0
     gate_profile_current_closure_pass_count = 0
     for row in rows:
@@ -1874,6 +1876,10 @@ def validate_efit_nrmse_benchmark(
                 )
         else:
             failure_reasons.append(f"non-finite operator current error in {row['file']}")
+        failure_class = str(row["profile_current_closure_failure_class"])
+        profile_current_closure_failure_class_counts[failure_class] = (
+            profile_current_closure_failure_class_counts.get(failure_class, 0) + 1
+        )
         profile_current_error = float(row["profile_current_relative_error"])
         if np.isfinite(profile_current_error):
             profile_current_error_entries.append((str(row["file"]), profile_current_error))
@@ -2044,6 +2050,7 @@ def validate_efit_nrmse_benchmark(
         profile_current_closure_threshold=PROFILE_CURRENT_CLOSURE_THRESHOLD,
         profile_current_closure_pass_count=profile_current_closure_pass_count,
         gate_profile_current_closure_pass_count=gate_profile_current_closure_pass_count,
+        profile_current_closure_failure_class_counts=profile_current_closure_failure_class_counts,
         operator_current_worst_relative_error=float(operator_current_worst_error),
         operator_current_worst_file=operator_current_worst_file,
         gate_operator_current_worst_relative_error=float(gate_operator_current_worst_error),
@@ -2249,6 +2256,11 @@ def main() -> int:
         f"{benchmark.profile_current_closure_pass_count}/{benchmark.count} rows, "
         f"{benchmark.gate_profile_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
     )
+    profile_failure_classes = ", ".join(
+        f"{name}={count}"
+        for name, count in sorted(benchmark.profile_current_closure_failure_class_counts.items())
+    )
+    print(f"Profile-current failure classes: {profile_failure_classes}")
     if benchmark.gate_worst_source_alignment_file:
         print(
             "Worst public source residual: "

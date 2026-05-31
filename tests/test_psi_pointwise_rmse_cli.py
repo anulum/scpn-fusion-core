@@ -131,6 +131,9 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         profile_current_closure_threshold=0.05,
         profile_current_closure_pass_count=0,
         gate_profile_current_closure_pass_count=0,
+        profile_current_closure_failure_class_counts={
+            "profile_current_under_closes_declared_current": 1
+        },
         profile_current_worst_relative_error=0.0862,
         profile_current_worst_file="sparc/sample.geqdsk",
         failure_reasons=["profile-source mismatch attribution in 1 rows"],

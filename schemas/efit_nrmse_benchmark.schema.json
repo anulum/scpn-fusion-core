@@ -57,6 +57,7 @@
     "profile_current_closure_threshold",
     "profile_current_closure_pass_count",
     "gate_profile_current_closure_pass_count",
+    "profile_current_closure_failure_class_counts",
     "operator_current_worst_relative_error",
     "operator_current_worst_file",
     "gate_operator_current_worst_relative_error",
@@ -309,6 +310,13 @@
     "gate_profile_current_closure_pass_count": {
       "type": "integer",
       "minimum": 0
+    },
+    "profile_current_closure_failure_class_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
     },
     "operator_current_worst_relative_error": {
       "type": "number"
