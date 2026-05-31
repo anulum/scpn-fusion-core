@@ -110,6 +110,9 @@ pub struct GeqdskProfileSourceComponents {
     pub pressure_source_norm: f64,
     pub ffprime_source_norm: f64,
     pub total_source_norm: f64,
+    pub pressure_source_sum: f64,
+    pub ffprime_source_sum: f64,
+    pub total_source_sum: f64,
 }
 
 /// mTanh profile parameters used by inverse reconstruction.
@@ -449,6 +452,19 @@ fn interior_norm(values: &Array2<f64>) -> f64 {
     sum_sq.sqrt()
 }
 
+fn interior_sum(values: &Array2<f64>) -> f64 {
+    if values.nrows() <= 2 || values.ncols() <= 2 {
+        return 0.0;
+    }
+    let mut sum = 0.0;
+    for iz in 1..values.nrows() - 1 {
+        for ir in 1..values.ncols() - 1 {
+            sum += values[[iz, ir]];
+        }
+    }
+    sum
+}
+
 fn interior_mask_fraction(mask: &Array2<bool>) -> f64 {
     if mask.nrows() <= 2 || mask.ncols() <= 2 {
         return 0.0;
@@ -559,6 +575,9 @@ pub fn compute_geqdsk_profile_source_components(
         pressure_source_norm: interior_norm(&pressure_source),
         ffprime_source_norm: interior_norm(&ffprime_source),
         total_source_norm: interior_norm(&total_source),
+        pressure_source_sum: interior_sum(&pressure_source),
+        ffprime_source_sum: interior_sum(&ffprime_source),
+        total_source_sum: interior_sum(&total_source),
         plasma_mask_fraction: interior_mask_fraction(&plasma_mask),
         pressure_source,
         ffprime_source,
@@ -1163,6 +1182,12 @@ mod tests {
         assert!(components.pressure_source_norm > 0.0);
         assert!(components.ffprime_source_norm > 0.0);
         assert!(components.total_source_norm > 0.0);
+        assert!(
+            (components.pressure_source_sum + components.ffprime_source_sum
+                - components.total_source_sum)
+                .abs()
+                < 1.0e-14
+        );
     }
 
     #[test]
@@ -1184,6 +1209,12 @@ mod tests {
         {
             assert!((*pressure + *ffprime - *total).abs() < 1.0e-14);
         }
+        assert!(
+            (components.pressure_source_sum + components.ffprime_source_sum
+                - components.total_source_sum)
+                .abs()
+                < 1.0e-14
+        );
     }
 
     #[test]

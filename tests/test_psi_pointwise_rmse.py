@@ -180,6 +180,11 @@ class TestComputeGSSource:
         assert components["pressure_source_norm"] >= 0.0
         assert components["ffprime_source_norm"] >= 0.0
         assert components["total_source_norm"] > 0.0
+        assert components["total_source_sum"] == pytest.approx(
+            components["pressure_source_sum"] + components["ffprime_source_sum"],
+            rel=1.0e-13,
+            abs=1.0e-13,
+        )
 
     def test_flux_profile_interpolation_is_quadratic_exact_and_masks_boundaries(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")

@@ -63,14 +63,14 @@ timing remain required before making throughput claims.
 | `inverse_reconstruct_analytic_60probes` | `42.133 us` |
 | `finite_difference_60probes` | `520.29 us` |
 | `analytical_60probes` | `338.89 us` |
-| `geqdsk_flux_profile_interpolation/second_order_33x33` | `16.742 us` |
-| `geqdsk_flux_profile_interpolation/current_conserving_33x33` | `44.082 us` |
-| `geqdsk_flux_profile_interpolation/second_order_65x65` | `60.039 us` |
-| `geqdsk_flux_profile_interpolation/current_conserving_65x65` | `170.17 us` |
-| `geqdsk_profile_source_components/source_components_33x33` | `107.13 us` |
-| `geqdsk_profile_source_components/source_components_65x65` | `403.90 us` |
-| `geqdsk_source_convention_adapter/select_adapter_33x33` | `44.608 us` |
-| `geqdsk_source_convention_adapter/select_adapter_65x65` | `188.28 us` |
+| `geqdsk_flux_profile_interpolation/second_order_33x33` | `17.266 us` |
+| `geqdsk_flux_profile_interpolation/current_conserving_33x33` | `46.203 us` |
+| `geqdsk_flux_profile_interpolation/second_order_65x65` | `59.550 us` |
+| `geqdsk_flux_profile_interpolation/current_conserving_65x65` | `180.66 us` |
+| `geqdsk_profile_source_components/source_components_33x33` | `113.78 us` |
+| `geqdsk_profile_source_components/source_components_65x65` | `461.19 us` |
+| `geqdsk_source_convention_adapter/select_adapter_33x33` | `45.674 us` |
+| `geqdsk_source_convention_adapter/select_adapter_65x65` | `193.43 us` |
 | `transport_step/lmode_single_step` | `754.06 ns` |
 | `transport_step/hmode_single_step` | `866.43 ns` |
 | `transport_step/hmode_neoclassical_single_step` | `3.4128 us` |
@@ -440,7 +440,7 @@ candidate rows so Rust audits can distinguish evaluated named transforms from
 non-executable fitted-scale diagnostics; flux-span candidates are emitted only
 when the physical flux span is finite and non-zero.
 Rust `fusion-core::source` now also exposes native second-order and current-conserving flux-profile interpolation helpers matching the Python profile-source construction contract: local quadratic GEQDSK profile interpolation, masked weighted-integral preservation against the linear GEQDSK contract, finite input guards, shape guards, and non-negative masked weight enforcement.
-It also exposes `compute_geqdsk_profile_source_components`, which assembles pressure, FFprime, and total Grad-Shafranov source arrays with plasma-mask reporting, explicit boundary zeroing, and source-norm diagnostics matching the Python profile-source path.
+It also exposes `compute_geqdsk_profile_source_components`, which assembles pressure, FFprime, and total Grad-Shafranov source arrays with plasma-mask reporting, explicit boundary zeroing, source-norm diagnostics, and signed source-sum diagnostics matching the Python profile-source path. The signed sums are retained because source norms alone can hide pressure/FFprime sign regressions or cancelling assembly errors.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current

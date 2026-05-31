@@ -446,6 +446,9 @@ def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
             "pressure_source_norm": 0.0,
             "ffprime_source_norm": 0.0,
             "total_source_norm": 0.0,
+            "pressure_source_sum": 0.0,
+            "ffprime_source_sum": 0.0,
+            "total_source_sum": 0.0,
         }
     psi_n = (psirz - eq.simag) / denom
 
@@ -485,6 +488,9 @@ def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
         "pressure_source_norm": float(np.linalg.norm(pressure_source[interior].ravel())),
         "ffprime_source_norm": float(np.linalg.norm(ffprime_source[interior].ravel())),
         "total_source_norm": float(np.linalg.norm(total_source[interior].ravel())),
+        "pressure_source_sum": float(np.sum(pressure_source[interior])),
+        "ffprime_source_sum": float(np.sum(ffprime_source[interior])),
+        "total_source_sum": float(np.sum(total_source[interior])),
     }
 
 

@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added signed source-sum diagnostics to Python and Rust GEQDSK profile-source component assembly so pressure/FFprime sign regressions are not hidden by norms.
+
 - Added native Rust benchmark evidence for GEQDSK second-order and current-conserving flux-profile interpolation primitives.
 
 - Added a native Rust GEQDSK source-convention adapter-selection benchmark for explicit named transform ranking without fitted scales.
