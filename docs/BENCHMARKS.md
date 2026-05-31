@@ -166,7 +166,9 @@ required before any CUDA throughput claim.
 | Native operator/current closure | PASS | radial convergence order `2.000000`, worst radial current closure `8.31e-16` |
 
 The raw profile-source and strict FreeGS failures are open benchmark blockers.
-They are not CI or harness failures and must not be hidden by fallback rows.
+Accepted named-adapter rows are no longer counted as unresolved profile-source
+blockers, but they remain blocked on free-boundary coil/vacuum reconstruction.
+These are not CI or harness failures and must not be hidden by fallback rows.
 
 ## Solver Performance
 

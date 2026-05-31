@@ -1173,7 +1173,10 @@ class TestValidateEFITNRMSEBenchmark:
         }
         assert gate.worst_source_alignment_file == f"{worst.parent.name}/{worst.name}"
         assert gate.worst_source_residual_l2 == pytest.approx(3.5)
-        assert "public gate profile-source mismatch attribution in 1/4 rows" in gate.failure_reasons
+        assert (
+            "public gate unresolved profile-source mismatch attribution in 1/4 rows"
+            in gate.failure_reasons
+        )
         assert (
             "public gate required solver queue: "
             "profile_source_then_free_boundary_reconstruction_required=1" in gate.failure_reasons

@@ -2370,14 +2370,18 @@ def validate_efit_nrmse_benchmark(
             "operator-source psi_rmse_norm "
             f"{operator_source_worst_norm:.6g} > threshold {OPERATOR_SOURCE_RMSE_THRESHOLD:.6g}"
         )
-    source_mismatch_count = sum(
-        1 for row in rows if row["source_consistency_class"] == "profile_source_mismatch"
+    unresolved_source_mismatch_count = sum(
+        1
+        for row in rows
+        if row["source_consistency_class"] == "profile_source_mismatch"
+        and not bool(row["source_convention_adapter_pass"])
     )
-    gate_source_mismatch_count = sum(
+    gate_unresolved_source_mismatch_count = sum(
         1
         for row in rows
         if row["reference_role"] == "gate"
         and row["source_consistency_class"] == "profile_source_mismatch"
+        and not bool(row["source_convention_adapter_pass"])
     )
     solver_failure_count = sum(
         1 for row in rows if row["source_consistency_class"] == "solver_consistency_failure"
@@ -2388,10 +2392,10 @@ def validate_efit_nrmse_benchmark(
         if row["reference_role"] == "gate"
         and row["source_consistency_class"] == "solver_consistency_failure"
     )
-    if gate_source_mismatch_count:
+    if gate_unresolved_source_mismatch_count:
         failure_reasons.append(
-            "public gate profile-source mismatch attribution in "
-            f"{gate_source_mismatch_count}/{gate_row_count} rows"
+            "public gate unresolved profile-source mismatch attribution in "
+            f"{gate_unresolved_source_mismatch_count}/{gate_row_count} rows"
         )
     public_required_solver_blockers = {
         name: count

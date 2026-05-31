@@ -24,6 +24,10 @@
 - Added EFIT/GEQDSK public-gate required-solver queue failure reasons so
   benchmark failures state the remaining full-order reconstruction class.
 
+- Corrected EFIT/GEQDSK public profile-source mismatch failure semantics so
+  accepted named-adapter rows are not counted as unresolved profile-source
+  blockers while their free-boundary blockers remain explicit.
+
 - Added EFIT/GEQDSK effective source-domain residual classification to separate
   plasma-source mismatch from vacuum/source-free operator residuals after
   accepted source-convention adaptation.
