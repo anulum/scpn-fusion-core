@@ -47,12 +47,12 @@ facades and evidence-bounded validation reports.
 |---|---:|
 | Package version | 3.9.5 |
 | Public API exports | 2 |
-| Python capability source modules | 262 |
-| Python capability classes | 493 |
+| Python capability source modules | 263 |
+| Python capability classes | 496 |
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 386 |
+| Python test files | 387 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -204,6 +204,12 @@ pressure-balance residuals in
 [`validation/reports/gk_nonlinear_solver_comparison.md`](validation/reports/gk_nonlinear_solver_comparison.md).
 Those residuals verify the native compact `A_parallel`/`B_parallel` closure, but
 they are explicitly not full Faraday/displacement-current Vlasov-Maxwell parity.
+Production-scale decomposition now has a deterministic radial/toroidal
+partition contract in
+[`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).
+The contract covers rank tiling and halo storage for large 5D GK grids, but
+production scaling remains blocked until distributed MPI/multi-GPU execution and
+cluster timing evidence exist.
 
 ## Competitive Position
 

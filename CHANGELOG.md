@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added a deterministic radial/toroidal production-decomposition contract for
+  5D nonlinear GK grids, including halo-overhead and load-balance reporting,
+  while keeping production-scale readiness blocked until distributed
+  MPI/multi-GPU execution and scaling evidence exist.
+
 - Added compact electromagnetic GK closure diagnostics for native
   `A_parallel`/`B_parallel` residuals in the nonlinear GK benchmark while
   explicitly keeping full Faraday/displacement-current Vlasov-Maxwell parity

@@ -20,6 +20,7 @@ REFERENCE_ARTIFACT_CONVERSION = REPORT_DIR / "full_fidelity_reference_artifact_c
 DREAM_EXECUTION_REQUEST = REPORT_DIR / "dream_reference_execution_request.json"
 AURORA_EXECUTION_ARTIFACT = REPORT_DIR / "aurora_reference_execution_artifact.json"
 GK_DECK_INVENTORY = REPORT_DIR / "gk_public_reference_deck_inventory.json"
+PRODUCTION_DECOMPOSITION = REPORT_DIR / "production_decomposition_contract.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -112,6 +113,21 @@ def _load_gk_deck_inventory() -> dict[str, Any]:
     return report
 
 
+def _load_production_decomposition() -> dict[str, Any]:
+    if not PRODUCTION_DECOMPOSITION.exists():
+        return {
+            "contract_pass": False,
+            "missing_requirements": [],
+            "production_scale_ready": False,
+            "schema": "production-decomposition-contract.v1",
+            "status": "not_run",
+        }
+    report = json.loads(PRODUCTION_DECOMPOSITION.read_text(encoding="utf-8"))
+    if report.get("schema") != "production-decomposition-contract.v1":
+        raise ValueError("production decomposition contract schema mismatch")
+    return report
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -139,6 +155,7 @@ def run_campaign() -> dict[str, Any]:
     dream_execution = _load_dream_execution()
     aurora_execution = _load_aurora_execution()
     gk_deck_inventory = _load_gk_deck_inventory()
+    production_decomposition = _load_production_decomposition()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -182,13 +199,16 @@ def run_campaign() -> dict[str, Any]:
         {
             "lane": "production_scale_decomposition",
             "surface": "solver_runtime",
-            "status": "blocked_missing_cluster_scaling_evidence",
-            "locally_actionable_contract_ready": _report_exists(
-                "validation/reports/upcloud_l4_native_solver_benchmarks.json"
+            "status": (
+                "blocked_contract_ready_missing_distributed_runtime_scaling"
+                if production_decomposition["contract_pass"]
+                else "blocked_missing_cluster_scaling_evidence"
             ),
+            "locally_actionable_contract_ready": bool(production_decomposition["contract_pass"]),
             "reference_cases_ready": False,
             "sources": [],
-            "next_required_evidence": [
+            "next_required_evidence": production_decomposition["missing_requirements"]
+            or [
                 "radial/toroidal domain decomposition implementation",
                 "multi-GPU or cluster scaling reports on production-size grids",
                 "large-grid warm GPU throughput and convergence evidence",
@@ -270,6 +290,10 @@ def run_campaign() -> dict[str, Any]:
         "gk_public_decks_indexed": int(gk_deck_inventory["deck_count"]),
         "gk_public_outputs_indexed": int(gk_deck_inventory["output_summary_count"]),
         "gk_public_deck_inventory_status": str(gk_deck_inventory["status"]),
+        "production_decomposition_report": str(PRODUCTION_DECOMPOSITION.relative_to(ROOT)),
+        "production_decomposition_contract_pass": bool(production_decomposition["contract_pass"]),
+        "production_scale_ready": bool(production_decomposition["production_scale_ready"]),
+        "production_decomposition_status": str(production_decomposition["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -319,6 +343,13 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- GK public decks indexed: `{report['gk_public_decks_indexed']}`",
         f"- GK public outputs indexed: `{report['gk_public_outputs_indexed']}`",
         f"- GK deck inventory status: `{report['gk_public_deck_inventory_status']}`",
+        f"- Production decomposition report: `{report['production_decomposition_report']}`",
+        (
+            "- Production decomposition contract pass: "
+            f"`{report['production_decomposition_contract_pass']}`"
+        ),
+        f"- Production-scale ready: `{report['production_scale_ready']}`",
+        f"- Production decomposition status: `{report['production_decomposition_status']}`",
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

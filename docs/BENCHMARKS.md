@@ -229,6 +229,14 @@ runner provides that backend, rerun
 `uv run --no-sync python tools/run_dream_reference_artifact.py` to execute the
 same deck and produce a candidate output HDF5 for conversion.
 
+The production-scale decomposition contract is tracked in
+[`validation/reports/production_decomposition_contract.md`](../validation/reports/production_decomposition_contract.md).
+It validates deterministic radial/toroidal tiling for 5D nonlinear GK storage.
+Current local rows include a `256 x 128 x 32 x 32 x 16` phase-space case split
+over `8 x 4` rank tiles with exact owned-cell balance and halo overhead
+reported. This is a partition contract only; MPI or multi-GPU execution,
+halo-exchange correctness, and cluster scaling evidence remain required.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
@@ -890,6 +898,9 @@ contracts, observable-to-coordinate axis contracts, and explicit quantitative
 threshold contracts linked to declared observables and supported metric
 families. The benchmark intentionally does not pass full-fidelity acceptance
 until those public reference gates exist and their artefacts are present.
+The production-scale lane now distinguishes a passing decomposition contract
+from actual distributed runtime readiness: `production_scale_ready` remains
+false until multi-rank execution and scaling reports exist.
 
 ## Extended Community Baseline Comparison
 

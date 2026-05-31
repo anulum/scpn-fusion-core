@@ -134,6 +134,10 @@
         "path": "src/scpn_fusion/core/plasma_startup.py"
       },
       {
+        "name": "AxisBlock",
+        "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
+      },
+      {
         "name": "AxisymmetricTokamakBoundary",
         "path": "src/scpn_fusion/core/vmec_lite.py"
       },
@@ -720,6 +724,10 @@
       {
         "name": "GKCorrector",
         "path": "src/scpn_fusion/core/gk_corrector.py"
+      },
+      {
+        "name": "GKDomainDecompositionPlan",
+        "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
       },
       {
         "name": "GKLocalParams",
@@ -1380,6 +1388,10 @@
       {
         "name": "RadiationFrontModel",
         "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "RankTile",
+        "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
       },
       {
         "name": "RationalSurface",
@@ -2140,6 +2152,7 @@
       "src/scpn_fusion/core/geometry_3d.py",
       "src/scpn_fusion/core/gk_cgyro.py",
       "src/scpn_fusion/core/gk_corrector.py",
+      "src/scpn_fusion/core/gk_domain_decomposition.py",
       "src/scpn_fusion/core/gk_eigenvalue.py",
       "src/scpn_fusion/core/gk_gene.py",
       "src/scpn_fusion/core/gk_geometry.py",
@@ -2339,10 +2352,10 @@
     "optional_extras": 11,
     "public_api_exports": 2,
     "public_documentation_pages": 41,
-    "python_capability_classes": 493,
-    "python_capability_source_modules": 262,
+    "python_capability_classes": 496,
+    "python_capability_source_modules": 263,
     "rust_workspace_crates": 12,
-    "test_files": 386
+    "test_files": 387
   },
   "documentation": {
     "public_pages": [
@@ -2587,6 +2600,7 @@
       "tests/test_github_token_format_guard.py",
       "tests/test_gk_cgyro.py",
       "tests/test_gk_corrector.py",
+      "tests/test_gk_domain_decomposition.py",
       "tests/test_gk_eigenvalue.py",
       "tests/test_gk_gene.py",
       "tests/test_gk_geometry.py",

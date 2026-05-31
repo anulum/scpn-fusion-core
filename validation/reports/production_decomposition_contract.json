@@ -1,0 +1,54 @@
+{
+  "benchmark": "production_decomposition_contract",
+  "cases": [
+    {
+      "case_id": "medium_64x32_4x2",
+      "halo": 1,
+      "halo_overhead_ratio": 1.162109375,
+      "max_owned_cells": 256,
+      "min_owned_cells": 256,
+      "n_mu": 8,
+      "n_radial": 64,
+      "n_theta": 16,
+      "n_toroidal": 32,
+      "n_vpar": 16,
+      "owned_cell_imbalance": 1.0,
+      "radial_parts": 4,
+      "toroidal_parts": 2,
+      "total_halo_phase_cells": 4874240,
+      "total_owned_phase_cells": 4194304,
+      "total_ranks": 8
+    },
+    {
+      "case_id": "production_256x128_8x4",
+      "halo": 1,
+      "halo_overhead_ratio": 1.1041259765625,
+      "max_owned_cells": 1024,
+      "min_owned_cells": 1024,
+      "n_mu": 16,
+      "n_radial": 256,
+      "n_theta": 32,
+      "n_toroidal": 128,
+      "n_vpar": 32,
+      "owned_cell_imbalance": 1.0,
+      "radial_parts": 8,
+      "toroidal_parts": 4,
+      "total_halo_phase_cells": 592773120,
+      "total_owned_phase_cells": 536870912,
+      "total_ranks": 32
+    }
+  ],
+  "contract_pass": true,
+  "coverage_pass": true,
+  "description": "Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling. This is not distributed runtime scaling evidence.",
+  "imbalance_pass": true,
+  "missing_requirements": [
+    "MPI or multi-GPU execution path over the declared rank tiles",
+    "halo exchange implementation and correctness tests",
+    "large-grid cluster/GPU wall-time scaling report",
+    "same-physics convergence evidence across decomposition shapes"
+  ],
+  "production_scale_ready": false,
+  "schema": "production-decomposition-contract.v1",
+  "status": "blocked_contract_ready_missing_distributed_runtime_scaling"
+}
