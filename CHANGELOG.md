@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added disruption contract primitives, mitigation contracts, and replay contracts to the configured global mypy strict cohort with a typed reactor-design evaluation boundary.
+
 - Added the real-time density-profile controller to the configured global mypy strict cohort with explicit radial-profile array contracts.
 
 - Expanded the global mypy strict cohort to burn, detachment, fuelling, sliding-mode vertical control, state-estimation, and volt-second management control modules with explicit NumPy and callback contracts.

@@ -11,7 +11,8 @@
 
 from __future__ import annotations
 
-from typing import Literal, overload
+from collections.abc import Mapping
+from typing import Literal, Protocol, cast, overload
 
 import numpy as np
 
@@ -30,6 +31,17 @@ from scpn_fusion.control.spi_mitigation import ShatteredPelletInjection
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
 
 _TBR_EQUIVALENCE_SCALE = 1.45
+DesignMetric = float | str | bool
+
+
+class DesignEvaluator(Protocol):
+    """Typed reactor-design evaluation surface used by disruption contracts."""
+
+    def evaluate_design(
+        self, R_maj: float, B_field: float, I_plasma: float
+    ) -> Mapping[str, DesignMetric]:
+        """Return finite reactor design metrics for one scalar design point."""
+        ...
 
 
 @overload
@@ -355,7 +367,7 @@ def run_disruption_episode(
     r_maj = float(rng.uniform(1.2, 1.6))
     b_t = float(rng.uniform(9.0, 12.0))
     ip = float(rng.uniform(3.5, 8.0))
-    design = explorer.evaluate_design(r_maj, b_t, ip)
+    design = cast(DesignEvaluator, explorer).evaluate_design(r_maj, b_t, ip)
     q_proxy = float(7.5 + 1.2 * max(float(design["Q"]), 0.0) * (1.0 - 0.25 * disturbance))
     li6_enrichment = float(rng.uniform(0.85, 1.0))
     be_multiplier_fraction = float(rng.uniform(0.35, 0.95))
