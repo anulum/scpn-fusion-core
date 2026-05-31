@@ -253,6 +253,12 @@ The report now includes a machine-readable Maxwell equation contract that marks
 Faraday induction, displacement-current Ampere-Maxwell evolution, and
 self-consistent inductive parallel electric-field evolution as blocking
 requirements until implemented and externally compared.
+It also records local compact-EM grid-convergence evidence for the algebraic
+field-energy histories across `4x4x8`, `6x6x10`, and `8x8x12` spectral/theta
+grids. The latest local run passes that compact-grid contract with maximum
+relative total-energy drift `5.494182e-03` under tolerance `5.0e-01`, while
+full Vlasov-Maxwell parity remains blocked on the missing Maxwell evolution
+equations and same-deck external electromagnetic outputs.
 Production-scale decomposition now has a deterministic radial/toroidal
 partition contract in
 [`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).

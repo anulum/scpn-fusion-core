@@ -17,7 +17,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Lane | Current status | Reproducibility command |
 |---|---|---|
 | GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons | `python validation/full_fidelity_end_to_end_campaign.py` |
-| Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure exists, full Faraday/displacement-current Vlasov-Maxwell parity does not | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
+| Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure and local compact-EM grid-convergence evidence pass; full Faraday/displacement-current Vlasov-Maxwell parity does not | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence exists, PETSc/compiled `dreami` backend output is missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact exists, full radial transport parity is missing | `python tools/run_aurora_reference_artifact.py` |
@@ -941,7 +941,13 @@ Faraday/displacement-current Vlasov-Maxwell parity. The report includes a
 machine-readable Maxwell equation contract that marks Faraday induction,
 displacement-current Ampere-Maxwell evolution, and self-consistent inductive
 parallel electric-field evolution as blocking requirements until implemented
-and externally compared. The result surface
+and externally compared. The same report now includes local compact-EM
+grid-convergence evidence for algebraic field-energy histories over
+`4x4x8x5x4`, `6x6x10x5x4`, and `8x8x12x5x4` retained
+`kx x ky x theta x vpar x mu` grids. The latest local benchmark status is
+`accepted_local_compact_em_grid_convergence`, with maximum relative
+total-energy drift `5.494182e-03` under tolerance `5.0e-01`; this is still
+local compact-closure evidence, not external Vlasov-Maxwell parity. The result surface
 also exposes a JSON-compatible reference-artifact export with coordinates,
 units, observable axes, heat-flux spectra, particle/field energy spectra, and
 saturation diagnostics. The acceptance harness includes a quantitative

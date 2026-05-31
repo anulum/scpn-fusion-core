@@ -15,6 +15,84 @@
     "saved_steps": 4,
     "time_history_ready": true
   },
+  "electromagnetic_grid_convergence_evidence": {
+    "compact_closure_residuals_converged": true,
+    "field_energy_histories_finite": true,
+    "field_energy_refinement_comparison_ready": true,
+    "grid_case_count": 3,
+    "grid_convergence_ready": true,
+    "grid_rows": [
+      {
+        "A_parallel_energy_final": 3.394337262316717e-07,
+        "B_parallel_energy_final": 4.759104842051009e-12,
+        "case_id": "compact_em_4x4x8",
+        "compact_closure_ready": true,
+        "field_energy_total_closes": true,
+        "grid_shape": {
+          "n_kx": 4,
+          "n_ky": 4,
+          "n_mu": 4,
+          "n_species": 2,
+          "n_theta": 8,
+          "n_vpar": 5
+        },
+        "max_ampere_parallel_linf_residual": 0.0,
+        "max_pressure_balance_linf_residual": 0.0,
+        "phi_energy_final": 9.894250952833001e-05,
+        "relative_total_energy_drift": 0.0038819468746138443,
+        "saved_steps": 5,
+        "total_field_energy_final": 9.928194801366652e-05
+      },
+      {
+        "A_parallel_energy_final": 4.037986365983621e-07,
+        "B_parallel_energy_final": 4.7679018682068105e-12,
+        "case_id": "compact_em_6x6x10",
+        "compact_closure_ready": true,
+        "field_energy_total_closes": true,
+        "grid_shape": {
+          "n_kx": 6,
+          "n_ky": 6,
+          "n_mu": 4,
+          "n_species": 2,
+          "n_theta": 10,
+          "n_vpar": 5
+        },
+        "max_ampere_parallel_linf_residual": 0.0,
+        "max_pressure_balance_linf_residual": 0.0,
+        "phi_energy_final": 9.896572679198478e-05,
+        "relative_total_energy_drift": 0.004761627831468399,
+        "saved_steps": 5,
+        "total_field_energy_final": 9.9369530196485e-05
+      },
+      {
+        "A_parallel_energy_final": 4.585154811077167e-07,
+        "B_parallel_energy_final": 4.774413471205485e-12,
+        "case_id": "compact_em_8x8x12",
+        "compact_closure_ready": true,
+        "field_energy_total_closes": true,
+        "grid_shape": {
+          "n_kx": 8,
+          "n_ky": 8,
+          "n_mu": 4,
+          "n_species": 2,
+          "n_theta": 12,
+          "n_vpar": 5
+        },
+        "max_ampere_parallel_linf_residual": 0.0,
+        "max_pressure_balance_linf_residual": 0.0,
+        "phi_energy_final": 9.898386048073838e-05,
+        "relative_total_energy_drift": 0.005494181583319518,
+        "saved_steps": 5,
+        "total_field_energy_final": 9.944238073625956e-05
+      }
+    ],
+    "max_relative_total_energy_drift": 0.005494181583319518,
+    "relative_energy_tolerance": 0.5,
+    "schema": "gk-electromagnetic-grid-convergence.v1",
+    "scope": "native_compact_Apar_Bpar_field_energy_histories",
+    "status": "accepted_local_compact_em_grid_convergence"
+  },
+  "electromagnetic_grid_convergence_ready": true,
   "electrostatic_gate": {
     "A_parallel_energy_max": 0.0,
     "B_parallel_energy_max": 0.0,
@@ -85,7 +163,7 @@
     "full Faraday/displacement-current Maxwell field evolution",
     "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
     "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
-    "grid-convergence evidence for electromagnetic field-energy histories"
+    "same-deck external electromagnetic grid-convergence evidence"
   ],
   "omitted_physics": [
     "Faraday induction equation for evolving B",

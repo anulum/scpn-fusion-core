@@ -14,6 +14,20 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 | electrostatic_gate | `False` | `True` | `False` | `False` |
 | electromagnetic_gate | `True` | `True` | `True` | `False` |
 
+## Compact-EM grid convergence evidence
+
+- Schema: `gk-electromagnetic-grid-convergence.v1`
+- Status: `accepted_local_compact_em_grid_convergence`
+- Grid convergence ready: `True`
+- Max relative total-energy drift: `5.494182e-03`
+- Relative energy tolerance: `5.000000e-01`
+
+| Case | Grid | Field-energy closure | Compact closure | Relative total-energy drift |
+|---|---|:---:|:---:|---:|
+| compact_em_4x4x8 | `4x4x8x5x4` | `True` | `True` | 3.881947e-03 |
+| compact_em_6x6x10 | `6x6x10x5x4` | `True` | `True` | 4.761628e-03 |
+| compact_em_8x8x12 | `8x8x12x5x4` | `True` | `True` | 5.494182e-03 |
+
 ## Omitted physics
 
 - Faraday induction equation for evolving B
@@ -40,4 +54,4 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - full Faraday/displacement-current Maxwell field evolution
 - same-deck electromagnetic GENE/CGYRO/GS2 output artifacts
 - native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds
-- grid-convergence evidence for electromagnetic field-energy histories
+- same-deck external electromagnetic grid-convergence evidence

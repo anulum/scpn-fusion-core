@@ -367,6 +367,9 @@ def run_campaign() -> dict[str, Any]:
         "gk_electromagnetic_compact_closure_ready": bool(
             gk_electromagnetic_fidelity["compact_em_contract_ready"]
         ),
+        "gk_electromagnetic_grid_convergence_ready": bool(
+            gk_electromagnetic_fidelity["electromagnetic_grid_convergence_ready"]
+        ),
         "gk_electromagnetic_external_parity_ready": bool(
             gk_electromagnetic_fidelity["external_em_parity_comparison_ready"]
         ),
@@ -461,6 +464,10 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- GK electromagnetic compact closure ready: "
             f"`{report['gk_electromagnetic_compact_closure_ready']}`"
+        ),
+        (
+            "- GK electromagnetic grid convergence ready: "
+            f"`{report['gk_electromagnetic_grid_convergence_ready']}`"
         ),
         (
             "- GK electromagnetic external parity ready: "

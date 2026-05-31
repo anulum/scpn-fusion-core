@@ -50,6 +50,12 @@ OMITTED_PHYSICS = [
     "self-consistent inductive parallel electric field evolution",
     "external same-deck electromagnetic GENE/CGYRO/GS2 output parity",
 ]
+GRID_CONVERGENCE_CASES = [
+    {"case_id": "compact_em_4x4x8", "n_kx": 4, "n_ky": 4, "n_theta": 8},
+    {"case_id": "compact_em_6x6x10", "n_kx": 6, "n_ky": 6, "n_theta": 10},
+    {"case_id": "compact_em_8x8x12", "n_kx": 8, "n_ky": 8, "n_theta": 12},
+]
+GRID_CONVERGENCE_RELATIVE_ENERGY_TOLERANCE = 5.0e-1
 
 
 def _maxwell_evolution_contract(*, compact_closure_ready: bool) -> dict[str, Any]:
@@ -179,15 +185,159 @@ def _run_gate(*, electromagnetic: bool, seed: int) -> dict[str, Any]:
     }
 
 
+def _grid_convergence_config(*, n_kx: int, n_ky: int, n_theta: int) -> NonlinearGKConfig:
+    """Return a compact electromagnetic grid-refinement case."""
+    return NonlinearGKConfig(
+        n_kx=n_kx,
+        n_ky=n_ky,
+        n_theta=n_theta,
+        n_vpar=5,
+        n_mu=4,
+        n_species=2,
+        kinetic_electrons=True,
+        electromagnetic=True,
+        nonlinear=True,
+        collisions=False,
+        hyper_coeff=0.0,
+        dt=0.0025,
+        n_steps=5,
+        save_interval=1,
+        cfl_adapt=False,
+        beta_e=0.02,
+    )
+
+
+def _relative_drift(values: np.ndarray) -> float:
+    """Return max relative drift from the first finite history value."""
+    if values.size == 0:
+        return float("inf")
+    finite_values = np.asarray(values, dtype=np.float64)
+    if not np.all(np.isfinite(finite_values)):
+        return float("inf")
+    baseline = max(abs(float(finite_values[0])), 1.0e-30)
+    return float(np.max(np.abs(finite_values - finite_values[0])) / baseline)
+
+
+def _run_grid_convergence_evidence() -> dict[str, Any]:
+    """Run local compact-EM grid refinement without promoting Maxwell parity."""
+    grid_rows: list[dict[str, Any]] = []
+    for case in GRID_CONVERGENCE_CASES:
+        cfg = _grid_convergence_config(
+            n_kx=int(case["n_kx"]),
+            n_ky=int(case["n_ky"]),
+            n_theta=int(case["n_theta"]),
+        )
+        solver = NonlinearGKSolver(cfg)
+        result = solver.run(solver.init_single_mode(kx_idx=0, ky_idx=1, amplitude=1.0e-5))
+        total_field_energy = (
+            result.phi_energy_t + result.A_parallel_energy_t + result.B_parallel_energy_t
+        )
+        total_energy = result.total_energy_t
+        grid_rows.append(
+            {
+                "A_parallel_energy_final": float(result.A_parallel_energy_t[-1])
+                if result.A_parallel_energy_t.size
+                else 0.0,
+                "B_parallel_energy_final": float(result.B_parallel_energy_t[-1])
+                if result.B_parallel_energy_t.size
+                else 0.0,
+                "case_id": str(case["case_id"]),
+                "compact_closure_ready": bool(
+                    result.compact_maxwell_closure_pass_t.size == result.time.size
+                    and np.all(result.compact_maxwell_closure_pass_t)
+                ),
+                "field_energy_total_closes": bool(
+                    np.allclose(
+                        total_energy,
+                        result.particle_free_energy_t + total_field_energy,
+                    )
+                ),
+                "grid_shape": {
+                    "n_kx": cfg.n_kx,
+                    "n_ky": cfg.n_ky,
+                    "n_theta": cfg.n_theta,
+                    "n_vpar": cfg.n_vpar,
+                    "n_mu": cfg.n_mu,
+                    "n_species": cfg.n_species,
+                },
+                "max_ampere_parallel_linf_residual": float(
+                    np.max(result.maxwell_ampere_parallel_linf_residual_t)
+                )
+                if result.maxwell_ampere_parallel_linf_residual_t.size
+                else float("inf"),
+                "max_pressure_balance_linf_residual": float(
+                    np.max(result.maxwell_pressure_balance_linf_residual_t)
+                )
+                if result.maxwell_pressure_balance_linf_residual_t.size
+                else float("inf"),
+                "phi_energy_final": float(result.phi_energy_t[-1])
+                if result.phi_energy_t.size
+                else 0.0,
+                "relative_total_energy_drift": _relative_drift(result.total_energy_t),
+                "saved_steps": int(result.time.size),
+                "total_field_energy_final": float(total_field_energy[-1])
+                if total_field_energy.size
+                else 0.0,
+            }
+        )
+
+    row_drifts = [float(row["relative_total_energy_drift"]) for row in grid_rows]
+    field_energy_histories_finite = bool(
+        grid_rows
+        and all(
+            np.isfinite(row["total_field_energy_final"])
+            and np.isfinite(row["relative_total_energy_drift"])
+            for row in grid_rows
+        )
+    )
+    compact_closure_residuals_converged = bool(
+        grid_rows
+        and all(
+            row["compact_closure_ready"]
+            and row["max_ampere_parallel_linf_residual"] <= 1.0e-12
+            and row["max_pressure_balance_linf_residual"] <= 1.0e-12
+            for row in grid_rows
+        )
+    )
+    field_energy_refinement_comparison_ready = bool(
+        len(grid_rows) >= 3
+        and all(row["field_energy_total_closes"] for row in grid_rows)
+        and field_energy_histories_finite
+    )
+    max_relative_total_energy_drift = max(row_drifts) if row_drifts else float("inf")
+    grid_convergence_ready = bool(
+        compact_closure_residuals_converged
+        and field_energy_refinement_comparison_ready
+        and max_relative_total_energy_drift <= GRID_CONVERGENCE_RELATIVE_ENERGY_TOLERANCE
+    )
+    return {
+        "compact_closure_residuals_converged": compact_closure_residuals_converged,
+        "field_energy_histories_finite": field_energy_histories_finite,
+        "field_energy_refinement_comparison_ready": field_energy_refinement_comparison_ready,
+        "grid_case_count": len(grid_rows),
+        "grid_convergence_ready": grid_convergence_ready,
+        "grid_rows": grid_rows,
+        "max_relative_total_energy_drift": max_relative_total_energy_drift,
+        "relative_energy_tolerance": GRID_CONVERGENCE_RELATIVE_ENERGY_TOLERANCE,
+        "schema": "gk-electromagnetic-grid-convergence.v1",
+        "scope": "native_compact_Apar_Bpar_field_energy_histories",
+        "status": "accepted_local_compact_em_grid_convergence"
+        if grid_convergence_ready
+        else "blocked_local_compact_em_grid_convergence_failed",
+    }
+
+
 def run_benchmark() -> dict[str, Any]:
     """Run the local compact-EM gate and return fail-closed parity status."""
     electrostatic_gate = _run_gate(electromagnetic=False, seed=211)
     electromagnetic_gate = _run_gate(electromagnetic=True, seed=223)
     compact_ready = bool(electromagnetic_gate["compact_closure_ready"])
+    grid_convergence_evidence = _run_grid_convergence_evidence()
+    grid_convergence_ready = bool(grid_convergence_evidence["grid_convergence_ready"])
     maxwell_contract = _maxwell_evolution_contract(compact_closure_ready=compact_ready)
     status = (
         "blocked_missing_full_vlasov_maxwell_field_solve"
-        if compact_ready
+        if compact_ready and grid_convergence_ready
         else "blocked_compact_electromagnetic_contract_failed"
     )
     return {
@@ -199,15 +349,17 @@ def run_benchmark() -> dict[str, Any]:
             "evidence only, not full Vlasov-Maxwell parity."
         ),
         "electromagnetic_gate": electromagnetic_gate,
+        "electromagnetic_grid_convergence_evidence": grid_convergence_evidence,
+        "electromagnetic_grid_convergence_ready": grid_convergence_ready,
         "electrostatic_gate": electrostatic_gate,
         "external_em_parity_comparison_ready": False,
-        "locally_actionable_contract_ready": compact_ready,
+        "locally_actionable_contract_ready": compact_ready and grid_convergence_ready,
         "maxwell_evolution_contract": maxwell_contract,
         "missing_full_fidelity_requirements": [
             "full Faraday/displacement-current Maxwell field evolution",
             "same-deck electromagnetic GENE/CGYRO/GS2 output artifacts",
             "native electromagnetic phi/A_parallel/B_parallel same-case parity thresholds",
-            "grid-convergence evidence for electromagnetic field-energy histories",
+            "same-deck external electromagnetic grid-convergence evidence",
         ],
         "omitted_physics": OMITTED_PHYSICS,
         "required_external_observables": REQUIRED_EXTERNAL_OBSERVABLES,
@@ -250,6 +402,41 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
                 history=gate["time_history_ready"],
                 name=name,
                 parity=gate["full_vlasov_maxwell_parity_ready"],
+            )
+        )
+    grid_evidence = report["electromagnetic_grid_convergence_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Compact-EM grid convergence evidence",
+            "",
+            f"- Schema: `{grid_evidence['schema']}`",
+            f"- Status: `{grid_evidence['status']}`",
+            (f"- Grid convergence ready: `{grid_evidence['grid_convergence_ready']}`"),
+            (
+                "- Max relative total-energy drift: "
+                f"`{grid_evidence['max_relative_total_energy_drift']:.6e}`"
+            ),
+            (f"- Relative energy tolerance: `{grid_evidence['relative_energy_tolerance']:.6e}`"),
+            "",
+            "| Case | Grid | Field-energy closure | Compact closure | Relative total-energy drift |",
+            "|---|---|:---:|:---:|---:|",
+        ]
+    )
+    for row in grid_evidence["grid_rows"]:
+        shape = row["grid_shape"]
+        lines.append(
+            "| {case_id} | `{n_kx}x{n_ky}x{n_theta}x{n_vpar}x{n_mu}` | "
+            "`{field}` | `{compact}` | {drift:.6e} |".format(
+                case_id=row["case_id"],
+                compact=row["compact_closure_ready"],
+                drift=row["relative_total_energy_drift"],
+                field=row["field_energy_total_closes"],
+                n_kx=shape["n_kx"],
+                n_ky=shape["n_ky"],
+                n_theta=shape["n_theta"],
+                n_vpar=shape["n_vpar"],
+                n_mu=shape["n_mu"],
             )
         )
     lines.extend(["", "## Omitted physics", ""])

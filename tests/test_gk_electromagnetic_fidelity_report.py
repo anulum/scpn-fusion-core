@@ -57,6 +57,29 @@ def test_gk_electromagnetic_fidelity_report_declares_maxwell_evolution_contract(
     ]
 
 
+def test_gk_electromagnetic_fidelity_report_records_grid_convergence_evidence() -> None:
+    report = run_benchmark()
+
+    evidence = report["electromagnetic_grid_convergence_evidence"]
+    assert evidence["schema"] == "gk-electromagnetic-grid-convergence.v1"
+    assert report["electromagnetic_grid_convergence_ready"] is True
+    assert evidence["grid_case_count"] >= 3
+    assert evidence["field_energy_histories_finite"] is True
+    assert evidence["compact_closure_residuals_converged"] is True
+    assert evidence["field_energy_refinement_comparison_ready"] is True
+    assert evidence["max_relative_total_energy_drift"] <= evidence["relative_energy_tolerance"]
+    assert all(row["compact_closure_ready"] for row in evidence["grid_rows"])
+    assert all(row["field_energy_total_closes"] for row in evidence["grid_rows"])
+    assert (
+        "grid-convergence evidence for electromagnetic field-energy histories"
+        not in report["missing_full_fidelity_requirements"]
+    )
+    assert (
+        "same-deck external electromagnetic grid-convergence evidence"
+        in report["missing_full_fidelity_requirements"]
+    )
+
+
 def test_gk_electromagnetic_fidelity_report_writes_json_and_markdown(tmp_path: Path) -> None:
     report = run_benchmark()
 

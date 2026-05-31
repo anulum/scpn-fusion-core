@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added local compact-electromagnetic GK grid-convergence evidence for
+  algebraic `A_parallel`/`B_parallel` field-energy histories while keeping full
+  Faraday/displacement-current Vlasov-Maxwell parity fail-closed.
+
 - Added row-level GEQDSK debug traces and aggregate first-blocker counts for
   source attribution, source-unit normalisation, reconstruction, residual,
   classification, and blocker reporting.

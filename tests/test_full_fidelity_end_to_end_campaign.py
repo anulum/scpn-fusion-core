@@ -49,6 +49,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         == "blocked_missing_full_vlasov_maxwell_field_solve"
     )
     assert report["gk_electromagnetic_compact_closure_ready"] is True
+    assert report["gk_electromagnetic_grid_convergence_ready"] is True
     assert report["gk_electromagnetic_external_parity_ready"] is False
     assert report["gk_external_reference_artifacts_converted"] >= 0
     assert report["gk_external_reference_output_ready"] in {True, False}
