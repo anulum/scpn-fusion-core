@@ -893,9 +893,15 @@ The native runaway-electron surface now exports a DREAM-style
 1D momentum Fokker-Planck kernel, with `f_p_xi_t`, runaway-current,
 avalanche-growth, synchrotron-loss, partial-screening-drag, and bremsstrahlung
 observables. The runaway benchmark now validates those axes, shapes,
-non-negativity, finiteness, and a deterministic artifact checksum. This is a
-reference-gate artifact contract only; it does not replace public DREAM deck
-ingestion or full momentum-pitch-radius kinetic operator parity.
+non-negativity, finiteness, and a deterministic artifact checksum. It also
+exports fail-closed native kinetic-operator evidence: momentum advection,
+diffusion, Dreicer source, avalanche growth, and synchrotron force evidence are
+present in the native path, while full pitch-angle scattering, radial transport,
+DREAM partial-screening, DREAM bremsstrahlung-loss parity, same-case
+distribution/current/growth thresholds, and coupled momentum-pitch-radius
+operator parity remain blocked. This is a reference-gate artifact contract
+only; it does not replace public DREAM deck ingestion or full
+momentum-pitch-radius kinetic operator parity.
 
 The native impurity surface now exports an Aurora/STRAHL-style
 `time_s x radius_m x charge_state` artifact contract with total impurity

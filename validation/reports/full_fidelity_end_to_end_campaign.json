@@ -170,10 +170,13 @@
       "lane": "dream_grade_runaway_electrons",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "public DREAM deck ingestion and production artifact parity",
-        "full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact",
-        "validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM",
-        "distribution-function, current, and growth-rate RMSE thresholds against public DREAM output"
+        "compiled DREAM iface/dreami same-case output",
+        "native coupled momentum-pitch-radius Fokker-Planck operator",
+        "radial transport operator on evolved radius grid",
+        "full pitch-angle scattering operator on evolved pitch grid",
+        "DREAM partial-screening operator parity",
+        "DREAM bremsstrahlung and synchrotron loss parity",
+        "distribution, current, and growth-rate threshold comparison against DREAM"
       ],
       "reference_cases_ready": false,
       "sources": [
@@ -270,6 +273,10 @@
   "public_source_registry": "validation/reference_data/full_fidelity_public_sources.json",
   "public_sources_cached": true,
   "reference_parity_ready": false,
+  "runaway_dream_same_case_threshold_ready": false,
+  "runaway_full_momentum_pitch_radius_operator_ready": false,
+  "runaway_kinetic_operator_evidence_status": "blocked_native_projection_artifact_not_full_dream_operator",
+  "runaway_native_kinetic_operator_evidence_ready": true,
   "schema": "full-fidelity-end-to-end-campaign.v1",
   "status": "not_full_fidelity"
 }

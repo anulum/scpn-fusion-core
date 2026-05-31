@@ -26,6 +26,13 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     )
     assert report["dream_settings_deck_generated"] is True
     assert report["dream_reference_output_ready"] is False
+    assert report["runaway_native_kinetic_operator_evidence_ready"] is True
+    assert report["runaway_full_momentum_pitch_radius_operator_ready"] is False
+    assert report["runaway_dream_same_case_threshold_ready"] is False
+    assert (
+        report["runaway_kinetic_operator_evidence_status"]
+        == "blocked_native_projection_artifact_not_full_dream_operator"
+    )
     assert (
         report["aurora_reference_execution_report"]
         == "validation/reports/aurora_reference_execution_artifact.json"

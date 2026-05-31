@@ -229,6 +229,7 @@ def run_campaign() -> dict[str, Any]:
     freegs_public_reconstruction = _load_freegs_public_reconstruction()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
+    runaway_operator = runaway["native_kinetic_operator_evidence"]
     impurity = run_impurity_contract()
     gk = _acceptance_surface(acceptance, "native_nonlinear_gyrokinetics")
     runaway_surface = _acceptance_surface(acceptance, "runaway_electrons")
@@ -287,13 +288,16 @@ def run_campaign() -> dict[str, Any]:
             "status": "blocked_missing_public_dream_artifacts",
             "locally_actionable_contract_ready": bool(
                 runaway["passed"]
+                and runaway_operator["native_artifact_ready"]
                 and runaway_surface["implemented_dimensions"].get(
                     "dream_style_multidimensional_artifact_export"
                 )
             ),
             "reference_cases_ready": bool(runaway_surface["reference_cases"]["ready"]),
             "sources": _sources_for(registry, "runaway_electrons"),
-            "next_required_evidence": runaway_surface["missing_requirements"],
+            "next_required_evidence": (
+                runaway_operator["blocking_requirements"] or runaway_surface["missing_requirements"]
+            ),
         },
         {
             "lane": "aurora_strahl_grade_impurities",
@@ -361,6 +365,18 @@ def run_campaign() -> dict[str, Any]:
         "dream_settings_deck_generated": bool(dream_execution["settings_deck_generated"]),
         "dream_reference_output_ready": bool(dream_execution["reference_output_ready"]),
         "dream_reference_execution_status": str(dream_execution["status"]),
+        "runaway_native_kinetic_operator_evidence_ready": bool(
+            runaway_operator["native_artifact_ready"]
+        ),
+        "runaway_full_momentum_pitch_radius_operator_ready": bool(
+            runaway_operator["full_momentum_pitch_radius_operator_ready"]
+        ),
+        "runaway_dream_same_case_threshold_ready": bool(
+            runaway_operator["dream_same_case_threshold_ready"]
+        ),
+        "runaway_kinetic_operator_evidence_status": str(
+            runaway_operator["operator_evidence_status"]
+        ),
         "aurora_reference_execution_report": str(AURORA_EXECUTION_ARTIFACT.relative_to(ROOT)),
         "aurora_reference_artifact_generated": bool(aurora_execution["artifact_generated"]),
         "aurora_reference_output_ready": bool(aurora_execution["reference_output_ready"]),
@@ -473,6 +489,22 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- DREAM settings deck generated: `{report['dream_settings_deck_generated']}`",
         f"- DREAM reference output ready: `{report['dream_reference_output_ready']}`",
         f"- DREAM execution status: `{report['dream_reference_execution_status']}`",
+        (
+            "- Runaway native kinetic operator evidence ready: "
+            f"`{report['runaway_native_kinetic_operator_evidence_ready']}`"
+        ),
+        (
+            "- Runaway full momentum-pitch-radius operator ready: "
+            f"`{report['runaway_full_momentum_pitch_radius_operator_ready']}`"
+        ),
+        (
+            "- Runaway DREAM same-case thresholds ready: "
+            f"`{report['runaway_dream_same_case_threshold_ready']}`"
+        ),
+        (
+            "- Runaway kinetic operator evidence status: "
+            f"`{report['runaway_kinetic_operator_evidence_status']}`"
+        ),
         f"- Aurora execution report: `{report['aurora_reference_execution_report']}`",
         f"- Aurora artifact generated: `{report['aurora_reference_artifact_generated']}`",
         f"- Aurora reference output ready: `{report['aurora_reference_output_ready']}`",

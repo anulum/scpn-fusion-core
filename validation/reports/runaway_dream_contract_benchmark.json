@@ -9,7 +9,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 1e-08,
       "total_source_m3_s": 0.0,
-      "wall_time_s": 4.699593409895897e-05
+      "wall_time_s": 0.0001095370389521122
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -19,7 +19,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9297121255879576.0,
-      "wall_time_s": 2.4047913029789925e-05
+      "wall_time_s": 5.043193232268095e-05
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -29,7 +29,7 @@
       "loss_source_m3_s": 10000000000000.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9287121255879576.0,
-      "wall_time_s": 1.537008211016655e-05
+      "wall_time_s": 3.692600876092911e-05
     }
   ],
   "description": "DREAM-style fluid density-balance plus native momentum-pitch-radius artifact contract; not kinetic DREAM parity.",
@@ -37,6 +37,7 @@
     "density_cap_enforced": true,
     "loss_accounting_exact": true,
     "native_kinetic_artifact_contract": true,
+    "native_kinetic_operator_evidence_fail_closed": true,
     "subcritical_avalanche_zero": true,
     "supercritical_avalanche_positive": true
   },
@@ -92,6 +93,64 @@
       "radius_m": 4,
       "time_s": 4
     },
+    "kinetic_operator_evidence": {
+      "blocking_requirements": [
+        "compiled DREAM iface/dreami same-case output",
+        "native coupled momentum-pitch-radius Fokker-Planck operator",
+        "radial transport operator on evolved radius grid",
+        "full pitch-angle scattering operator on evolved pitch grid",
+        "DREAM partial-screening operator parity",
+        "DREAM bremsstrahlung and synchrotron loss parity",
+        "distribution, current, and growth-rate threshold comparison against DREAM"
+      ],
+      "distribution_axes": [
+        "time_s",
+        "radius_m",
+        "momentum_mec",
+        "pitch_cosine"
+      ],
+      "distribution_shape": [
+        4,
+        4,
+        48,
+        5
+      ],
+      "dream_same_case_threshold_ready": false,
+      "full_momentum_pitch_radius_operator_ready": false,
+      "native_artifact_ready": true,
+      "observable_finiteness": {
+        "avalanche_growth_rate_t": true,
+        "bremsstrahlung_loss_power_t": true,
+        "f_p_xi_t": true,
+        "partial_screening_drag_t": true,
+        "runaway_current_t": true,
+        "synchrotron_loss_power_t": true
+      },
+      "observable_nonnegativity": {
+        "avalanche_growth_rate_t": true,
+        "bremsstrahlung_loss_power_t": true,
+        "f_p_xi_t": true,
+        "partial_screening_drag_t": true,
+        "runaway_current_t": true,
+        "synchrotron_loss_power_t": true
+      },
+      "operator_evidence_status": "blocked_native_projection_artifact_not_full_dream_operator",
+      "operator_terms_present": {
+        "avalanche_growth": true,
+        "bremsstrahlung_radiation_loss_operator": false,
+        "coupled_momentum_pitch_radius_operator": false,
+        "dreicer_source": true,
+        "full_pitch_angle_scattering_operator": false,
+        "full_radial_transport_operator": false,
+        "momentum_advection_drag": true,
+        "momentum_diffusion": true,
+        "partial_screening_dream_operator": false,
+        "synchrotron_radiation_reaction": true
+      },
+      "radius_pitch_are_evolved_operator_axes": false,
+      "schema": "native-runaway-kinetic-operator-evidence.v1",
+      "unweighted_inventory_relative_change_max": 0.47903625413372164
+    },
     "observable_shapes": {
       "avalanche_growth_rate_t": [
         4,
@@ -132,11 +191,69 @@
     "same_case_dream_comparison_ready": false,
     "schema": "dream-kinetic-artifact.v1"
   },
+  "native_kinetic_operator_evidence": {
+    "blocking_requirements": [
+      "compiled DREAM iface/dreami same-case output",
+      "native coupled momentum-pitch-radius Fokker-Planck operator",
+      "radial transport operator on evolved radius grid",
+      "full pitch-angle scattering operator on evolved pitch grid",
+      "DREAM partial-screening operator parity",
+      "DREAM bremsstrahlung and synchrotron loss parity",
+      "distribution, current, and growth-rate threshold comparison against DREAM"
+    ],
+    "distribution_axes": [
+      "time_s",
+      "radius_m",
+      "momentum_mec",
+      "pitch_cosine"
+    ],
+    "distribution_shape": [
+      4,
+      4,
+      48,
+      5
+    ],
+    "dream_same_case_threshold_ready": false,
+    "full_momentum_pitch_radius_operator_ready": false,
+    "native_artifact_ready": true,
+    "observable_finiteness": {
+      "avalanche_growth_rate_t": true,
+      "bremsstrahlung_loss_power_t": true,
+      "f_p_xi_t": true,
+      "partial_screening_drag_t": true,
+      "runaway_current_t": true,
+      "synchrotron_loss_power_t": true
+    },
+    "observable_nonnegativity": {
+      "avalanche_growth_rate_t": true,
+      "bremsstrahlung_loss_power_t": true,
+      "f_p_xi_t": true,
+      "partial_screening_drag_t": true,
+      "runaway_current_t": true,
+      "synchrotron_loss_power_t": true
+    },
+    "operator_evidence_status": "blocked_native_projection_artifact_not_full_dream_operator",
+    "operator_terms_present": {
+      "avalanche_growth": true,
+      "bremsstrahlung_radiation_loss_operator": false,
+      "coupled_momentum_pitch_radius_operator": false,
+      "dreicer_source": true,
+      "full_pitch_angle_scattering_operator": false,
+      "full_radial_transport_operator": false,
+      "momentum_advection_drag": true,
+      "momentum_diffusion": true,
+      "partial_screening_dream_operator": false,
+      "synchrotron_radiation_reaction": true
+    },
+    "radius_pitch_are_evolved_operator_axes": false,
+    "schema": "native-runaway-kinetic-operator-evidence.v1",
+    "unweighted_inventory_relative_change_max": 0.47903625413372164
+  },
   "passed": true,
   "timing": {
-    "max_balance_wall_time_s": 1.2996024452149868e-05,
-    "median_balance_wall_time_s": 9.215902537107468e-06,
-    "min_balance_wall_time_s": 8.9320819824934e-06,
+    "max_balance_wall_time_s": 0.00013313302770256996,
+    "median_balance_wall_time_s": 2.2914959117770195e-05,
+    "min_balance_wall_time_s": 1.4286022633314133e-05,
     "repeats": 25
   }
 }

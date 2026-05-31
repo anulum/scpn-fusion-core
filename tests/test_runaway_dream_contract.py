@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# Copyright Concepts 1996-2026 Miroslav Sotek. All rights reserved.
+# Copyright Code 2020-2026 Miroslav Sotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — DREAM Runaway Contract Tests
@@ -30,6 +30,38 @@ def test_runaway_dream_benchmark_exports_native_kinetic_artifact_gate() -> None:
     ]
     assert artifact["observable_shapes"]["f_p_xi_t"] == [4, 4, 48, 5]
     assert report["invariants"]["native_kinetic_artifact_contract"] is True
+
+
+def test_runaway_dream_benchmark_exports_fail_closed_operator_evidence() -> None:
+    report = run_benchmark(repeats=2)
+
+    evidence = report["native_kinetic_operator_evidence"]
+    assert evidence["schema"] == "native-runaway-kinetic-operator-evidence.v1"
+    assert evidence["operator_evidence_status"] == (
+        "blocked_native_projection_artifact_not_full_dream_operator"
+    )
+    assert evidence["distribution_axes"] == [
+        "time_s",
+        "radius_m",
+        "momentum_mec",
+        "pitch_cosine",
+    ]
+    assert evidence["distribution_shape"] == [4, 4, 48, 5]
+    assert evidence["native_artifact_ready"] is True
+    assert evidence["radius_pitch_are_evolved_operator_axes"] is False
+    assert evidence["full_momentum_pitch_radius_operator_ready"] is False
+    assert evidence["dream_same_case_threshold_ready"] is False
+    assert evidence["operator_terms_present"]["momentum_advection_drag"] is True
+    assert evidence["operator_terms_present"]["momentum_diffusion"] is True
+    assert evidence["operator_terms_present"]["synchrotron_radiation_reaction"] is True
+    assert evidence["operator_terms_present"]["full_pitch_angle_scattering_operator"] is False
+    assert evidence["operator_terms_present"]["full_radial_transport_operator"] is False
+    assert evidence["operator_terms_present"]["partial_screening_dream_operator"] is False
+    assert evidence["operator_terms_present"]["bremsstrahlung_radiation_loss_operator"] is False
+    assert all(evidence["observable_finiteness"].values())
+    assert all(evidence["observable_nonnegativity"].values())
+    assert report["invariants"]["native_kinetic_operator_evidence_fail_closed"] is True
+    assert "compiled DREAM iface/dreami same-case output" in evidence["blocking_requirements"]
 
 
 def test_dream_reference_request_declares_fail_closed_output_contract() -> None:

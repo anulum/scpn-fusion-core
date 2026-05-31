@@ -14,7 +14,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -35,7 +35,7 @@ MD_REPORT = REPORT_DIR / "full_fidelity_acceptance_benchmark.md"
 
 def _load_artifact_schema() -> dict[str, Any]:
     """Load the strict public reference artefact schema."""
-    schema = json.loads(ARTIFACT_SCHEMA.read_text(encoding="utf-8"))
+    schema = cast(dict[str, Any], json.loads(ARTIFACT_SCHEMA.read_text(encoding="utf-8")))
     if schema.get("schema") != "full-fidelity-artifact-schema.v1":
         raise ValueError("full-fidelity artefact schema mismatch")
     return schema
@@ -52,7 +52,7 @@ def _sha256(path: Path) -> str:
 
 def _load_reference_cases() -> dict[str, Any]:
     """Load and validate the full-fidelity public reference manifest."""
-    manifest = json.loads(REFERENCE_CASES.read_text(encoding="utf-8"))
+    manifest = cast(dict[str, Any], json.loads(REFERENCE_CASES.read_text(encoding="utf-8")))
     if manifest.get("schema") != "full-fidelity-reference-cases.v1":
         raise ValueError("full-fidelity reference manifest schema mismatch")
     surfaces = manifest.get("surfaces")
@@ -634,6 +634,9 @@ def _runaway_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "one_dimensional_momentum_fokker_planck_contract": True,
         "dream_style_multidimensional_artifact_export": True,
         "momentum_pitch_radius_axis_contract": True,
+        "native_kinetic_operator_evidence_fail_closed": True,
+        "full_momentum_pitch_radius_fokker_planck_operator": False,
+        "dream_same_case_distribution_thresholds": False,
         "python_rust_dream_artifact_contract_parity": True,
         "synchrotron_loss_observable_export": True,
         "partial_screening_drag_observable_export": True,

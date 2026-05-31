@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────
 # SCPN Fusion Core — Changelog
-# © 1998–2026 Miroslav Šotek. All rights reserved.
+# Copyright 1998-2026 Miroslav Sotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
@@ -9,6 +9,11 @@
 # Changelog
 
 ## [Unreleased]
+
+- Added fail-closed native runaway kinetic-operator evidence that separates the
+  finite DREAM-style multidimensional artifact export from missing coupled
+  momentum-pitch-radius DREAM parity, same-case thresholds, radial transport,
+  pitch-angle scattering, partial-screening, and bremsstrahlung operator gates.
 
 - Added native electromagnetic same-case replay thresholds for `phi`,
   `A_parallel`, `B_parallel`, and total field-energy histories while keeping
