@@ -106,6 +106,7 @@ def _artifact_record(
         "artifact_id": metadata["artifact_id"],
         "artifact_path": _rel(artifact_path),
         "available_observables": metadata["available_observables"],
+        "conversion_mode": metadata.get("conversion_mode", "external_cache_conversion"),
         "finite_numeric_payload": bool(metadata["finite_numeric_payload"]),
         "metadata_path": _rel(metadata_path),
         "missing_required_observables": metadata["missing_required_observables"],
@@ -118,16 +119,30 @@ def _artifact_record(
     }
 
 
+def _existing_artifact_record(artifact_id: str) -> dict[str, Any] | None:
+    metadata_path = ARTIFACT_DIR / f"{artifact_id}.metadata.json"
+    if not metadata_path.exists():
+        return None
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    artifact_path = ROOT / str(metadata["artifact_path"])
+    if not artifact_path.exists():
+        return None
+    metadata = dict(metadata)
+    metadata["sha256"] = _sha256(artifact_path)
+    metadata["conversion_mode"] = "tracked_artifact_fallback"
+    return _artifact_record(metadata, artifact_path, metadata_path)
+
+
 def _convert_dream_avalanche(manifest: dict[str, Any], *, write: bool) -> dict[str, Any] | None:
     try:
         import h5py
     except ImportError:
-        return None
+        return _existing_artifact_record("dream_avalanche_public_raw")
 
     repo = CACHE_ROOT / "repos" / "dream"
     source = repo / "tests" / "physics" / "DREAM_avalanche" / "DREAM-avalanche-data.h5"
     if not source.exists():
-        return None
+        return _existing_artifact_record("dream_avalanche_public_raw")
 
     with h5py.File(source, "r") as handle:
         arrays = {str(name): np.asarray(handle[name], dtype=float) for name in handle}
@@ -183,7 +198,7 @@ def _convert_freegsnke_baseline(manifest: dict[str, Any], *, write: bool) -> dic
         "test_psi.npy": "psi_wb",
     }
     if not all((baseline_dir / name).exists() for name in required_files):
-        return None
+        return _existing_artifact_record("freegsnke_static_inverse_baseline_public")
 
     arrays = {
         key: np.asarray(np.load(baseline_dir / filename, allow_pickle=False), dtype=float)
@@ -245,7 +260,7 @@ def _convert_freegsnke_current_sidecars(
         "mastu_limited_paxis_ip": sidecar_dir / "simple_limited_currents_PaxisIp.pk",
     }
     if not all(path.exists() for path in sidecar_files.values()):
-        return None
+        return _existing_artifact_record("freegsnke_mastu_current_sidecars_public")
 
     cases: list[dict[str, Any]] = []
     for case_id, path in sidecar_files.items():
@@ -273,15 +288,15 @@ def _convert_freegsnke_current_sidecars(
     artifact_path = ARTIFACT_DIR / "freegsnke_mastu_current_sidecars_public.json"
     metadata_path = ARTIFACT_DIR / "freegsnke_mastu_current_sidecars_public.metadata.json"
     commit = _git_commit(repo)
+    provenance_url = (
+        f"https://github.com/FusionComputingLab/freegsnke/tree/{commit or 'main'}/examples/data"
+    )
     payload = {
         "cases": cases,
         "provenance": {
             "reference_family": "FreeGSNKE",
             "source_commit": commit,
-            "source_url": (
-                "https://github.com/FusionComputingLab/freegsnke/tree/"
-                f"{commit or 'main'}/examples/data"
-            ),
+            "source_url": provenance_url,
         },
         "schema": "freegsnke-current-sidecars.v1",
         "units": {"current_a": "A"},
@@ -308,7 +323,7 @@ def _convert_freegsnke_current_sidecars(
             "axis_or_xpoint_metadata",
             "same_case_native_psi_comparison",
         ],
-        "provenance_url": payload["provenance"]["source_url"],
+        "provenance_url": provenance_url,
         "redistribution_license": "LGPL-3.0-or-later",
         "reference_family": "FreeGSNKE",
         "sha256": _sha256(artifact_path) if artifact_path.exists() else "",
@@ -385,6 +400,12 @@ def run_conversion(*, write: bool = True) -> dict[str, Any]:
     report = {
         "accepted_full_fidelity_artifacts": len(accepted),
         "blocking_sources": _blocking_sources(),
+        "conversion_modes": sorted(
+            {
+                str(record.get("conversion_mode", "external_cache_conversion"))
+                for record in converted
+            }
+        ),
         "converted_artifacts": converted,
         "description": (
             "Conversion of cached public upstream outputs into tracked artifacts. Partial outputs "
@@ -415,6 +436,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Status: `{report['status']}`",
         f"- Accepted full-fidelity artifacts: `{report['accepted_full_fidelity_artifacts']}`",
         f"- Partial public output artifacts: `{report['partial_output_artifacts']}`",
+        f"- Conversion modes: `{', '.join(report['conversion_modes'])}`",
         f"- Reference manifest updated: `{report['reference_manifest_updated']}`",
         "",
         "## Converted public output artifacts",

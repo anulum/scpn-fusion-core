@@ -6,6 +6,7 @@ Conversion of cached public upstream outputs into tracked artifacts. Partial out
 - Status: `partial_public_outputs_converted_not_full_fidelity`
 - Accepted full-fidelity artifacts: `0`
 - Partial public output artifacts: `3`
+- Conversion modes: `external_cache_conversion`
 - Reference manifest updated: `False`
 
 ## Converted public output artifacts

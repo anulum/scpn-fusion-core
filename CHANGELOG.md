@@ -50,13 +50,17 @@
 - Added a DREAM public reference execution harness that generates the upstream
   `examples/2kinetic` settings deck, records source/deck checksums, and reports
   the exact PETSc/`dreami` backend blocker needed before DREAM output can be
-  converted into full-fidelity reference observables.
+  converted into full-fidelity reference observables. Clean checkouts without
+  the gitignored external cache now retain tracked settings-deck evidence
+  instead of rewriting the report as missing.
 
 - Added a fail-closed public reference-artifact converter that exports finite,
   checksummed DREAM avalanche, FreeGSNKE baseline, and FreeGSNKE MAST-U-like
   current-sidecar payloads to tracked artifacts with provenance metadata while
   keeping accepted full-fidelity artifact count at zero until required
-  observables and same-case solver-output comparisons exist.
+  observables and same-case solver-output comparisons exist. The converter now
+  records whether artifacts came from the external cache or tracked fallback
+  evidence.
 
 - Added a reproducible full-fidelity public source downloader and provenance
   report for GENE, CGYRO/GACODE, GS2, DREAM, Aurora, FreeGS, and FreeGSNKE,

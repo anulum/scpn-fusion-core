@@ -22,6 +22,9 @@
       "surface": "free_boundary_equilibrium"
     }
   ],
+  "conversion_modes": [
+    "external_cache_conversion"
+  ],
   "converted_artifacts": [
     {
       "accepted_full_fidelity": false,
@@ -33,6 +36,7 @@
         "nD",
         "nZ"
       ],
+      "conversion_mode": "external_cache_conversion",
       "finite_numeric_payload": true,
       "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/dream_avalanche_public_raw.metadata.json",
       "missing_required_observables": [
@@ -59,6 +63,7 @@
         "inverse_psi_wb",
         "psi_wb"
       ],
+      "conversion_mode": "external_cache_conversion",
       "finite_numeric_payload": true,
       "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.metadata.json",
       "missing_required_observables": [
@@ -84,6 +89,7 @@
         "coil_names",
         "case_labels"
       ],
+      "conversion_mode": "external_cache_conversion",
       "finite_numeric_payload": true,
       "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.metadata.json",
       "missing_required_observables": [

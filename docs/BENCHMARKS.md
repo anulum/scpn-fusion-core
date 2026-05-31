@@ -200,7 +200,9 @@ It exports three finite, checksummed partial artifacts:
 Accepted full-fidelity artifacts remain `0`: the converted payloads lack the
 required full manifest observables and same-case native solver-output
 comparisons. They are retained as provenance-backed public outputs and
-conversion smoke tests, not as acceptance evidence.
+conversion smoke tests, not as acceptance evidence. Clean checkouts without the
+gitignored external cache use the tracked artifacts as a provenance-preserving
+fallback so CI does not erase public-output evidence.
 
 The Aurora execution lane is tracked in
 [`validation/reports/aurora_reference_execution_artifact.md`](../validation/reports/aurora_reference_execution_artifact.md).
@@ -223,9 +225,11 @@ a full nonlinear 5D solver-output parity result.
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
 It generates the public `examples/2kinetic/dream_settings.h5` deck from the
-cached DREAM source and records a fail-closed backend blocker on this machine:
-PETSc and the compiled DREAM `iface/dreami` executable are not installed. Once a
-runner provides that backend, rerun
+cached DREAM source when available; clean checkouts preserve the committed
+settings-deck checksum as tracked evidence when the external cache is absent.
+The report records a fail-closed backend blocker on this machine: PETSc and the
+compiled DREAM `iface/dreami` executable are not installed. Once a runner
+provides that backend, rerun
 `uv run --no-sync python tools/run_dream_reference_artifact.py` to execute the
 same deck and produce a candidate output HDF5 for conversion.
 

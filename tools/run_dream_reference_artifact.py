@@ -86,6 +86,9 @@ def _python_env() -> dict[str, str]:
 
 def _generate_settings() -> dict[str, Any]:
     if not (DREAM_EXAMPLE / "generate.py").exists():
+        fallback = _tracked_settings_generation()
+        if fallback is not None:
+            return fallback
         return {
             "generated": False,
             "reason": "DREAM examples/2kinetic/generate.py is missing",
@@ -109,8 +112,33 @@ def _generate_settings() -> dict[str, Any]:
         }
     return {
         "generated": True,
+        "mode": "external_cache_generation",
         "path": _rel(DREAM_SETTINGS),
         "sha256": _sha256(DREAM_SETTINGS),
+    }
+
+
+def _tracked_settings_generation() -> dict[str, Any] | None:
+    if not JSON_REPORT.exists():
+        return None
+    try:
+        tracked = json.loads(JSON_REPORT.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if tracked.get("schema") != "dream-reference-execution-request.v1":
+        return None
+    if not tracked.get("settings_deck_generated") or not tracked.get("settings_deck_sha256"):
+        return None
+    return {
+        "generated": True,
+        "mode": "tracked_report_fallback",
+        "path": tracked.get("settings_deck_path"),
+        "reason": (
+            "DREAM source cache is absent; retaining the committed settings-deck evidence "
+            "instead of rewriting it as missing."
+        ),
+        "sha256": tracked["settings_deck_sha256"],
+        "source_commit": tracked.get("source_commit"),
     }
 
 
@@ -182,7 +210,8 @@ def build_dream_reference_execution_report(
         "accepted_full_fidelity_ready": False,
         "case_id": "dream_2kinetic_public_reference_request",
         "description": (
-            "Public DREAM 2kinetic reference execution request. Settings generation is local; "
+            "Public DREAM 2kinetic reference execution request. Settings generation uses the "
+            "external source cache when present and otherwise preserves tracked deck evidence; "
             "full reference output requires a compiled DREAM backend."
         ),
         "example_script": _rel(DREAM_EXAMPLE / "generate.py"),
@@ -201,7 +230,8 @@ def build_dream_reference_execution_report(
         "settings_deck_path": settings.get("path"),
         "settings_deck_sha256": settings.get("sha256"),
         "settings_generation": settings,
-        "source_commit": commit,
+        "source_cache_available": (DREAM_EXAMPLE / "generate.py").exists(),
+        "source_commit": commit or settings.get("source_commit"),
         "source_family": "DREAM",
         "source_repo": _rel(DREAM_REPO),
         "status": status,

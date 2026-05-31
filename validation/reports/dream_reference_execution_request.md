@@ -1,6 +1,6 @@
 # DREAM Reference Execution Request
 
-Public DREAM 2kinetic reference execution request. Settings generation is local; full reference output requires a compiled DREAM backend.
+Public DREAM 2kinetic reference execution request. Settings generation uses the external source cache when present and otherwise preserves tracked deck evidence; full reference output requires a compiled DREAM backend.
 
 - Schema: `dream-reference-execution-request.v1`
 - Status: `blocked_missing_dream_backend`

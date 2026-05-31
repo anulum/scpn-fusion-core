@@ -186,8 +186,10 @@ are still missing.
 The DREAM execution lane now also generates the upstream `examples/2kinetic`
 settings deck and records backend readiness in
 [`validation/reports/dream_reference_execution_request.md`](validation/reports/dream_reference_execution_request.md).
-On this local runner the deck generation succeeds, but DREAM execution is
-blocked until PETSc and the compiled `iface/dreami` backend are available.
+On this local runner the deck generation succeeds; clean CI checkouts without
+the gitignored external cache preserve the tracked settings-deck evidence
+instead of rewriting the report as missing. DREAM execution remains blocked
+until PETSc and the compiled `iface/dreami` backend are available.
 The Aurora execution lane runs a cached Aurora/Open-ADAS atomic-data path and
 exports normalized argon charge-state fractions, but remains blocked for full
 Aurora/STRAHL parity until public radial transport output, source/sink matrices,

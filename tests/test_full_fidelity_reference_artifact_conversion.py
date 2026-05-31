@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
+from tools import convert_full_fidelity_reference_artifacts as conversion
 from tools.convert_full_fidelity_reference_artifacts import run_conversion
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,3 +77,15 @@ def test_converter_reports_missing_solver_output_mappings() -> None:
     assert "nonlinear output" in blockers["native_nonlinear_gyrokinetics"]["reason"]
     assert "Aurora/STRAHL output" in blockers["impurity_transport"]["reason"]
     assert "strict FreeGS" in blockers["free_boundary_equilibrium"]["reason"]
+
+
+def test_converter_uses_tracked_artifacts_when_external_cache_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(conversion, "CACHE_ROOT", Path("/nonexistent/full_fidelity_public_sources"))
+
+    report = run_conversion(write=False)
+
+    assert report["partial_output_artifacts"] >= 2
+    assert report["accepted_full_fidelity_artifacts"] == 0
+    assert "tracked_artifact_fallback" in report["conversion_modes"]
