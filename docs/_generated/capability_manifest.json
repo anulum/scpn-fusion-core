@@ -2338,7 +2338,7 @@
     "python_capability_classes": 492,
     "python_capability_source_modules": 262,
     "rust_workspace_crates": 12,
-    "test_files": 383
+    "test_files": 384
   },
   "documentation": {
     "public_pages": [
@@ -2518,6 +2518,7 @@
       "tests/test_disruption_toroidal_features.py",
       "tests/test_divertor_thermal_sim.py",
       "tests/test_docstring_guard_tool.py",
+      "tests/test_dream_reference_execution_request.py",
       "tests/test_elm_model.py",
       "tests/test_elm_model_full.py",
       "tests/test_eped_domain_contract_benchmark.py",

@@ -52,7 +52,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 383 |
+| Python test files | 384 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -181,6 +181,11 @@ artifacts with metadata and checksums:
 Both are partial diagnostic artifacts, not full-fidelity acceptance artifacts,
 because required observables and same-case solver-output comparisons are still
 missing.
+The DREAM execution lane now also generates the upstream `examples/2kinetic`
+settings deck and records backend readiness in
+[`validation/reports/dream_reference_execution_request.md`](validation/reports/dream_reference_execution_request.md).
+On this local runner the deck generation succeeds, but DREAM execution is
+blocked until PETSc and the compiled `iface/dreami` backend are available.
 
 ## Competitive Position
 

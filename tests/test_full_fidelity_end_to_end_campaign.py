@@ -20,6 +20,12 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     )
     assert report["partial_public_output_artifacts"] >= 2
     assert report["accepted_public_reference_artifacts"] == 0
+    assert (
+        report["dream_reference_execution_report"]
+        == "validation/reports/dream_reference_execution_request.json"
+    )
+    assert report["dream_settings_deck_generated"] is True
+    assert report["dream_reference_output_ready"] is False
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {

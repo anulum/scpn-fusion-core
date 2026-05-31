@@ -12,6 +12,10 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Public reference artifact conversion report: `validation/reports/full_fidelity_reference_artifact_conversion.json`
 - Partial public output artifacts: `2`
 - Accepted public reference artifacts: `0`
+- DREAM execution report: `validation/reports/dream_reference_execution_request.json`
+- DREAM settings deck generated: `True`
+- DREAM reference output ready: `False`
+- DREAM execution status: `blocked_missing_dream_backend`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
 

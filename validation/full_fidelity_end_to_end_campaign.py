@@ -17,6 +17,7 @@ REPORT_DIR = ROOT / "validation" / "reports"
 PUBLIC_SOURCES = ROOT / "validation" / "reference_data" / "full_fidelity_public_sources.json"
 PUBLIC_SOURCE_DOWNLOADS = REPORT_DIR / "full_fidelity_public_source_downloads.json"
 REFERENCE_ARTIFACT_CONVERSION = REPORT_DIR / "full_fidelity_reference_artifact_conversion.json"
+DREAM_EXECUTION_REQUEST = REPORT_DIR / "dream_reference_execution_request.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -64,6 +65,20 @@ def _load_conversion() -> dict[str, Any]:
     return conversion
 
 
+def _load_dream_execution() -> dict[str, Any]:
+    if not DREAM_EXECUTION_REQUEST.exists():
+        return {
+            "reference_output_ready": False,
+            "schema": "dream-reference-execution-request.v1",
+            "settings_deck_generated": False,
+            "status": "not_run",
+        }
+    report = json.loads(DREAM_EXECUTION_REQUEST.read_text(encoding="utf-8"))
+    if report.get("schema") != "dream-reference-execution-request.v1":
+        raise ValueError("DREAM reference execution request schema mismatch")
+    return report
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -88,6 +103,7 @@ def run_campaign() -> dict[str, Any]:
     registry = _load_sources()
     downloads = _load_downloads()
     conversion = _load_conversion()
+    dream_execution = _load_dream_execution()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -193,6 +209,10 @@ def run_campaign() -> dict[str, Any]:
         ),
         "partial_public_output_artifacts": int(conversion["partial_output_artifacts"]),
         "accepted_public_reference_artifacts": int(conversion["accepted_full_fidelity_artifacts"]),
+        "dream_reference_execution_report": str(DREAM_EXECUTION_REQUEST.relative_to(ROOT)),
+        "dream_settings_deck_generated": bool(dream_execution["settings_deck_generated"]),
+        "dream_reference_output_ready": bool(dream_execution["reference_output_ready"]),
+        "dream_reference_execution_status": str(dream_execution["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -230,6 +250,10 @@ def write_reports(report: dict[str, Any]) -> None:
             "- Accepted public reference artifacts: "
             f"`{report['accepted_public_reference_artifacts']}`"
         ),
+        f"- DREAM execution report: `{report['dream_reference_execution_report']}`",
+        f"- DREAM settings deck generated: `{report['dream_settings_deck_generated']}`",
+        f"- DREAM reference output ready: `{report['dream_reference_output_ready']}`",
+        f"- DREAM execution status: `{report['dream_reference_execution_status']}`",
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

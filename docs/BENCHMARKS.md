@@ -200,6 +200,15 @@ required full manifest observables and same-case native solver-output
 comparisons. They are retained as provenance-backed public outputs and
 conversion smoke tests, not as acceptance evidence.
 
+The DREAM execution lane is tracked in
+[`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
+It generates the public `examples/2kinetic/dream_settings.h5` deck from the
+cached DREAM source and records a fail-closed backend blocker on this machine:
+PETSc and the compiled DREAM `iface/dreami` executable are not installed. Once a
+runner provides that backend, rerun
+`uv run --no-sync python tools/run_dream_reference_artifact.py` to execute the
+same deck and produce a candidate output HDF5 for conversion.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |

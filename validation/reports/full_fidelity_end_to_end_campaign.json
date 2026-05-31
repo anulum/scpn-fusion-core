@@ -5,6 +5,10 @@
   "all_locally_actionable_contracts_ready": true,
   "benchmark": "full_fidelity_end_to_end_campaign",
   "description": "Integrated fail-closed campaign covering GK, EM, production-scale runtime, DREAM, Aurora/STRAHL, and free-boundary blockers.",
+  "dream_reference_execution_report": "validation/reports/dream_reference_execution_request.json",
+  "dream_reference_execution_status": "blocked_missing_dream_backend",
+  "dream_reference_output_ready": false,
+  "dream_settings_deck_generated": true,
   "lanes": [
     {
       "lane": "gene_cgyro_gs2_nonlinear_gk_parity",

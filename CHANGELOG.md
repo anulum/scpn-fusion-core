@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added a DREAM public reference execution harness that generates the upstream
+  `examples/2kinetic` settings deck, records source/deck checksums, and reports
+  the exact PETSc/`dreami` backend blocker needed before DREAM output can be
+  converted into full-fidelity reference observables.
+
 - Added a fail-closed public reference-artifact converter that exports finite,
   checksummed DREAM avalanche and FreeGSNKE baseline output payloads to tracked
   NPZ artifacts with provenance metadata while keeping accepted full-fidelity
