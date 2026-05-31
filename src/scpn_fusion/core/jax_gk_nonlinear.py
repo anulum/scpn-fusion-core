@@ -404,6 +404,15 @@ class JaxNonlinearGKSolver:
         Q_e_list = []
         phi_rms_list = []
         zonal_rms_list = []
+        particle_free_energy_list = []
+        phi_energy_list = []
+        a_parallel_energy_list = []
+        b_parallel_energy_list = []
+        total_energy_list = []
+        exb_free_energy_production_list = []
+        exb_relative_free_energy_production_list = []
+        dealiased_high_k_max_abs_list = []
+        nonlinear_invariant_pass_list = []
         time_list = []
 
         for step in range(c.n_steps):
@@ -426,18 +435,49 @@ class JaxNonlinearGKSolver:
                 phi = self._jax_field_solve(f)
                 f_np = np.asarray(f)
                 phi_np = np.asarray(phi)
-                np_state = NonlinearGKState(f=f_np, phi=phi_np, time=float(t))
+                a_par_np = self._np_solver.ampere_solve(f_np) if c.electromagnetic else None
+                b_par_np = (
+                    self._np_solver.magnetic_compression_solve(f_np) if c.electromagnetic else None
+                )
+                np_state = NonlinearGKState(
+                    f=f_np, phi=phi_np, time=float(t), A_par=a_par_np, B_par=b_par_np
+                )
                 Q_i, Q_e = self._np_solver.compute_fluxes(np_state)
+                particle_energy = self._np_solver.particle_free_energy(np_state)
+                field_energy = self._np_solver.field_energy(np_state)
+                invariant = self.nonlinear_invariant_diagnostics(np_state)
                 Q_i_list.append(Q_i)
                 Q_e_list.append(Q_e)
                 phi_rms_list.append(self._np_solver.phi_rms(np_state))
                 zonal_rms_list.append(self._np_solver.zonal_rms(np_state))
+                particle_free_energy_list.append(particle_energy)
+                phi_energy_list.append(field_energy.phi)
+                a_parallel_energy_list.append(field_energy.A_parallel)
+                b_parallel_energy_list.append(field_energy.B_parallel)
+                total_energy_list.append(particle_energy + field_energy.total)
+                exb_free_energy_production_list.append(invariant.exb_free_energy_production)
+                exb_relative_free_energy_production_list.append(
+                    invariant.exb_relative_free_energy_production
+                )
+                dealiased_high_k_max_abs_list.append(invariant.dealiased_high_k_max_abs)
+                nonlinear_invariant_pass_list.append(invariant.passes)
                 time_list.append(float(t))
 
         Q_i_t = np.array(Q_i_list)
         Q_e_t = np.array(Q_e_list)
         phi_rms_t = np.array(phi_rms_list)
         zonal_rms_t = np.array(zonal_rms_list)
+        particle_free_energy_t = np.asarray(particle_free_energy_list, dtype=np.float64)
+        phi_energy_t = np.asarray(phi_energy_list, dtype=np.float64)
+        A_parallel_energy_t = np.asarray(a_parallel_energy_list, dtype=np.float64)
+        B_parallel_energy_t = np.asarray(b_parallel_energy_list, dtype=np.float64)
+        total_energy_t = np.asarray(total_energy_list, dtype=np.float64)
+        exb_free_energy_production_t = np.asarray(exb_free_energy_production_list, dtype=np.float64)
+        exb_relative_free_energy_production_t = np.asarray(
+            exb_relative_free_energy_production_list, dtype=np.float64
+        )
+        dealiased_high_k_max_abs_t = np.asarray(dealiased_high_k_max_abs_list, dtype=np.float64)
+        nonlinear_invariant_pass_t = np.asarray(nonlinear_invariant_pass_list, dtype=np.bool_)
         time_t = np.array(time_list)
 
         n_half = max(len(Q_i_t) // 2, 1)
@@ -447,7 +487,9 @@ class JaxNonlinearGKSolver:
 
         f_np = np.asarray(f)
         phi_np = np.asarray(self._jax_field_solve(f))
-        final = NonlinearGKState(f=f_np, phi=phi_np, time=float(t))
+        a_par_np = self._np_solver.ampere_solve(f_np) if c.electromagnetic else None
+        b_par_np = self._np_solver.magnetic_compression_solve(f_np) if c.electromagnetic else None
+        final = NonlinearGKState(f=f_np, phi=phi_np, time=float(t), A_par=a_par_np, B_par=b_par_np)
 
         return NonlinearGKResult(
             chi_i=chi_i,
@@ -457,6 +499,15 @@ class JaxNonlinearGKSolver:
             Q_e_t=Q_e_t,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
+            particle_free_energy_t=particle_free_energy_t,
+            phi_energy_t=phi_energy_t,
+            A_parallel_energy_t=A_parallel_energy_t,
+            B_parallel_energy_t=B_parallel_energy_t,
+            total_energy_t=total_energy_t,
+            exb_free_energy_production_t=exb_free_energy_production_t,
+            exb_relative_free_energy_production_t=exb_relative_free_energy_production_t,
+            dealiased_high_k_max_abs_t=dealiased_high_k_max_abs_t,
+            nonlinear_invariant_pass_t=nonlinear_invariant_pass_t,
             time=time_t,
             converged=bool(len(Q_i_t) > 1 and np.all(np.isfinite(Q_i_t))),
             final_state=final,

@@ -765,8 +765,9 @@ energy separately before reporting total energy, and `run()` exports particle,
 `phi`, `A_parallel`, `B_parallel`, and total-energy histories for saturation
 and invariant analysis. It also exports nonlinear ExB free-energy production,
 relative production, dealiased high-k leakage, and per-save invariant-pass
-histories. This is necessary infrastructure for full nonlinear 5D parity, but
-it is not sufficient to claim GENE/CGYRO/GS2 equivalence.
+histories from both NumPy and JAX run paths. This is necessary infrastructure
+for full nonlinear 5D parity, but it is not sufficient to claim
+GENE/CGYRO/GS2 equivalence.
 
 The current report is
 `validation/reports/full_fidelity_acceptance_benchmark.md`. Required public

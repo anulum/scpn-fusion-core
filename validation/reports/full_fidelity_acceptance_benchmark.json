@@ -17,6 +17,7 @@
         "electromagnetic_field_energy_accounting": true,
         "explicit_5d_phase_space_contract": true,
         "five_dimensional_delta_f_state": true,
+        "jax_run_history_parity": true,
         "kinetic_electron_surface": true,
         "moment_conserving_collision_contract": true,
         "named_conservative_exb_term": true,

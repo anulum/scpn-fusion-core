@@ -764,6 +764,43 @@ class TestJaxFallback:
         expected_chi_i_gB = result.chi_i / max(_FAST_CFG.R_L_Ti, 0.01)
         assert result.chi_i_gB == expected_chi_i_gB
 
+    def test_jax_run_exports_numpy_parity_histories(self):
+        from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver
+
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=4,
+            n_mu=3,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            nonlinear=True,
+            collisions=False,
+            hyper_coeff=0.0,
+            dt=0.005,
+            n_steps=3,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = JaxNonlinearGKSolver(cfg)
+
+        result = solver.run(solver._np_solver.init_state(amplitude=1e-5, seed=43))
+
+        assert result.particle_free_energy_t.shape == result.time.shape
+        assert result.phi_energy_t.shape == result.time.shape
+        assert result.A_parallel_energy_t.shape == result.time.shape
+        assert result.B_parallel_energy_t.shape == result.time.shape
+        assert result.total_energy_t.shape == result.time.shape
+        assert result.exb_free_energy_production_t.shape == result.time.shape
+        assert result.exb_relative_free_energy_production_t.shape == result.time.shape
+        assert result.dealiased_high_k_max_abs_t.shape == result.time.shape
+        assert result.nonlinear_invariant_pass_t.shape == result.time.shape
+        assert result.nonlinear_invariant_pass_t.dtype == np.bool_
+        assert np.all(np.isfinite(result.total_energy_t))
+        assert np.all(np.isfinite(result.exb_relative_free_energy_production_t))
+
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available
 
