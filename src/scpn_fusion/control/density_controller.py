@@ -13,6 +13,9 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class ParticleTransportModel:
@@ -32,13 +35,13 @@ class ParticleTransportModel:
         self.V = 2.0 * np.pi**2 * self.R0 * (self.a * self.rho) ** 2
         self.V_prime = 4.0 * np.pi**2 * self.R0 * self.a**2 * self.rho
 
-    def set_transport(self, D: np.ndarray, V_pinch: np.ndarray) -> None:
+    def set_transport(self, D: FloatArray, V_pinch: FloatArray) -> None:
         """Set radial diffusivity and pinch-velocity profiles used by transport stepping."""
 
         self.D = D
         self.V_pinch = V_pinch
 
-    def gas_puff_source(self, rate: float, penetration_depth: float = 0.03) -> np.ndarray:
+    def gas_puff_source(self, rate: float, penetration_depth: float = 0.03) -> FloatArray:
         """rate in particles/s. Source localised at edge."""
         # Edge-localised exponential neutral-screening profile.
         decay = np.exp(-(1.0 - self.rho) / penetration_depth)
@@ -47,7 +50,7 @@ class ParticleTransportModel:
 
     def pellet_source(
         self, speed_ms: float, radius_mm: float, launch_angle_deg: float = 0.0
-    ) -> np.ndarray:
+    ) -> FloatArray:
         """Neutral-gas-shielding inspired pellet deposition profile."""
         if radius_mm <= 0.0:
             return np.zeros(self.n_rho)
@@ -60,7 +63,7 @@ class ParticleTransportModel:
         dep /= np.sum(dep * self.V_prime * self.drho) + 1e-10
         return np.asarray(N_pellet * dep)
 
-    def nbi_source(self, beam_energy_keV: float, power_MW: float) -> np.ndarray:
+    def nbi_source(self, beam_energy_keV: float, power_MW: float) -> FloatArray:
         """Broad core source."""
         if power_MW <= 0.0:
             return np.zeros(self.n_rho)
@@ -72,19 +75,19 @@ class ParticleTransportModel:
         dep /= np.sum(dep * self.V_prime * self.drho) + 1e-10
         return np.asarray(rate * dep)
 
-    def cryopump_sink(self, pump_speed: float, ne_edge: float) -> np.ndarray:
+    def cryopump_sink(self, pump_speed: float, ne_edge: float) -> FloatArray:
         """Extracts particles from the edge."""
         # This is a rate, not a profile shape itself, but we'll return the sink profile
         sink = np.zeros(self.n_rho)
         sink[-1] = pump_speed * ne_edge / (self.V_prime[-1] * self.drho + 1e-10)
         return sink
 
-    def recycling_source(self, outflux: float, recycling_coeff: float = 0.97) -> np.ndarray:
+    def recycling_source(self, outflux: float, recycling_coeff: float = 0.97) -> FloatArray:
         """Return the edge-localised recycled-particle source from an outgoing flux."""
 
         return self.gas_puff_source(outflux * recycling_coeff, penetration_depth=0.02)
 
-    def step(self, ne: np.ndarray, sources: np.ndarray, dt: float) -> np.ndarray:
+    def step(self, ne: FloatArray, sources: FloatArray, dt: float) -> FloatArray:
         """Advance the density profile by one CFL-limited explicit transport step."""
 
         # Explicit forward-Euler diffusion: CFL requires dt < drho^2 / (2 * D_max)
@@ -151,7 +154,7 @@ class DensityController:
 
         self.integral_error = 0.0
 
-    def set_target(self, ne_target: np.ndarray) -> None:
+    def set_target(self, ne_target: FloatArray) -> None:
         """Set the target radial electron-density profile."""
 
         self.ne_target = ne_target
@@ -166,7 +169,7 @@ class DensityController:
         self.pellet_freq_max = pellet_freq_max
         self.pump_max = pump_max
 
-    def greenwald_fraction(self, ne: np.ndarray, I_p_MA: float, a: float) -> float:
+    def greenwald_fraction(self, ne: FloatArray, I_p_MA: float, a: float) -> float:
         """Return volume-averaged density normalised to the Greenwald density."""
 
         vol = np.sum(self.model.V_prime * self.model.drho)
@@ -176,7 +179,7 @@ class DensityController:
         n_GW = I_p_MA / (math.pi * a**2) * 1e20
         return float(n_avg / n_GW)
 
-    def step(self, ne_measured: np.ndarray) -> ActuatorCommand:
+    def step(self, ne_measured: FloatArray) -> ActuatorCommand:
         """Compute one fuelling or pumping command from the measured density profile."""
 
         vol = np.sum(self.model.V_prime * self.model.drho)
@@ -248,7 +251,7 @@ class KalmanDensityEstimator:
         self.Q = np.eye(n_rho) * 1e36  # Process noise
         self.R = np.eye(n_chords) * 1e34  # Meas noise
 
-    def set_transport(self, diffusivity_m2_s: np.ndarray, pinch_velocity_m_s: np.ndarray) -> None:
+    def set_transport(self, diffusivity_m2_s: FloatArray, pinch_velocity_m_s: FloatArray) -> None:
         """Set estimator transport coefficients and validate their radial shape."""
 
         D = np.asarray(diffusivity_m2_s, dtype=float)
@@ -262,7 +265,7 @@ class KalmanDensityEstimator:
         self.D = D
         self.V_pinch = V
 
-    def measurement_matrix(self, chord_angles: np.ndarray) -> np.ndarray:
+    def measurement_matrix(self, chord_angles: FloatArray) -> FloatArray:
         """Build the line-integrated chord response matrix for the configured channels."""
 
         # Mock Abel transform matrix
@@ -275,7 +278,7 @@ class KalmanDensityEstimator:
                     C[i, j] = 2.0 * rho / math.sqrt(rho**2 - impact**2 + 1e-6)
         return C
 
-    def predict(self, ne: np.ndarray, dt: float) -> np.ndarray:
+    def predict(self, ne: FloatArray, dt: float) -> FloatArray:
         """Predict the next density profile and covariance using transport dynamics."""
 
         dt = float(dt)
@@ -292,7 +295,7 @@ class KalmanDensityEstimator:
         self.P = self.P + self.Q * dt
         return self.x
 
-    def _advance_transport(self, ne: np.ndarray, dt: float) -> np.ndarray:
+    def _advance_transport(self, ne: FloatArray, dt: float) -> FloatArray:
         if dt == 0.0:
             return np.asarray(np.maximum(ne, 1e16), dtype=float)
 
@@ -325,8 +328,8 @@ class KalmanDensityEstimator:
         return np.asarray(state)
 
     def update(
-        self, ne_pred: np.ndarray, measurements: np.ndarray, chord_angles: np.ndarray
-    ) -> np.ndarray:
+        self, ne_pred: FloatArray, measurements: FloatArray, chord_angles: FloatArray
+    ) -> FloatArray:
         """Assimilate chord measurements into the predicted density profile."""
 
         C = self.measurement_matrix(chord_angles)
@@ -357,7 +360,7 @@ class FuelingOptimizer:
     """Generate simple open-loop pellet schedules over a requested horizon."""
 
     def optimize_pellet_sequence(
-        self, ne_current: np.ndarray, ne_target: np.ndarray, n_pellets: int, time_horizon: float
+        self, ne_current: FloatArray, ne_target: FloatArray, n_pellets: int, time_horizon: float
     ) -> PelletSchedule:
         """Return an evenly spaced pellet schedule for the requested launch count."""
 

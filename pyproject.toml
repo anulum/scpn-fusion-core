@@ -134,6 +134,7 @@ files = [
     "src/scpn_fusion/control/spi_ablation.py",
     "src/scpn_fusion/control/fusion_nmpc_jax.py",
     "src/scpn_fusion/control/burn_controller.py",
+    "src/scpn_fusion/control/density_controller.py",
     "src/scpn_fusion/control/detachment_controller.py",
     "src/scpn_fusion/control/fueling_mode.py",
     "src/scpn_fusion/control/sliding_mode_vertical.py",
