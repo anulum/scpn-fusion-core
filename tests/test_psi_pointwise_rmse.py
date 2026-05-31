@@ -432,6 +432,18 @@ class TestToroidalCurrentConsistency:
         assert metrics["operator_current_closure_pass"] is True
         assert abs(metrics["operator_current_relative_error"]) < 1e-3
         assert np.sign(metrics["operator_toroidal_current_A"]) == np.sign(eq.current)
+        assert metrics["operator_current_best_closure_pass"] is True
+        assert metrics["operator_current_best_domain"] in {"full_domain", "plasma_domain"}
+        assert (
+            metrics["operator_current_best_relative_error"]
+            <= metrics["operator_current_full_domain_relative_error"]
+        )
+        assert (
+            metrics["operator_current_best_relative_error"]
+            <= metrics["operator_current_plasma_domain_relative_error"]
+        )
+        assert np.isfinite(metrics["operator_toroidal_current_full_domain_A"])
+        assert np.isfinite(metrics["operator_toroidal_current_plasma_domain_A"])
         assert np.isfinite(metrics["profile_current_relative_error"])
         assert isinstance(metrics["profile_current_closure_pass"], bool)
         assert np.isfinite(metrics["operator_current_ratio_to_declared"])
@@ -774,6 +786,8 @@ class TestValidateEFITNRMSEBenchmark:
                 delta_star_psi_candidate_rank=1,
                 declared_toroidal_current_A=-8.7e6,
                 operator_toroidal_current_A=-8.6995e6,
+                operator_toroidal_current_full_domain_A=-8.6995e6,
+                operator_toroidal_current_plasma_domain_A=-8.68e6,
                 profile_toroidal_current_A=-1.5e6,
                 adapted_profile_toroidal_current_A=-1.5e6,
                 adapted_profile_current_ratio_to_declared=0.99,
@@ -788,12 +802,22 @@ class TestValidateEFITNRMSEBenchmark:
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
                 operator_current_ratio_to_declared=0.99995,
+                operator_current_full_domain_ratio_to_declared=0.99995,
+                operator_current_plasma_domain_ratio_to_declared=0.9977,
+                operator_current_best_domain="full_domain",
+                operator_current_best_ratio_to_declared=0.99995,
+                operator_current_best_relative_error=5.0e-5,
+                operator_current_best_closure_pass=True,
                 profile_current_ratio_to_declared=0.99,
                 pressure_current_ratio_to_declared=0.4,
                 ffprime_current_ratio_to_declared=0.59,
                 operator_current_relative_error=5.0e-5,
+                operator_current_full_domain_relative_error=5.0e-5,
+                operator_current_plasma_domain_relative_error=0.0023,
                 profile_current_relative_error=0.01,
                 operator_current_closure_pass=True,
+                operator_current_full_domain_closure_pass=True,
+                operator_current_plasma_domain_closure_pass=True,
                 profile_current_closure_pass=True,
                 profile_current_closure_failure_class="passes_threshold",
             )

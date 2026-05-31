@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added GEQDSK operator-current domain attribution, reporting full-domain,
+  plasma-domain, and best-domain current closure without relaxing the strict
+  full-domain gate.
+
 - Added current-limited EFIT/GEQDSK adapted-profile source diagnostics to preserve accepted ψ reconstruction while closing declared-current error bands where possible.
 
 - Added effective EFIT/GEQDSK profile-current closure diagnostics that use accepted source-convention adapters while preserving raw canonical current evidence.

@@ -54,6 +54,8 @@
     "source_sum_identity_pass",
     "operator_current_closure_pass_count",
     "gate_operator_current_closure_pass_count",
+    "operator_current_best_closure_pass_count",
+    "gate_operator_current_best_closure_pass_count",
     "profile_current_closure_threshold",
     "profile_current_closure_pass_count",
     "gate_profile_current_closure_pass_count",
@@ -68,6 +70,10 @@
     "operator_current_worst_file",
     "gate_operator_current_worst_relative_error",
     "gate_operator_current_worst_file",
+    "operator_current_best_worst_relative_error",
+    "operator_current_best_worst_file",
+    "gate_operator_current_best_worst_relative_error",
+    "gate_operator_current_best_worst_file",
     "profile_current_worst_relative_error",
     "profile_current_worst_file",
     "failure_reasons",
@@ -305,6 +311,14 @@
       "type": "integer",
       "minimum": 0
     },
+    "operator_current_best_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_operator_current_best_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
     "profile_current_closure_threshold": {
       "type": "number",
       "exclusiveMinimum": 0
@@ -358,6 +372,18 @@
       "type": "number"
     },
     "gate_operator_current_worst_file": {
+      "type": "string"
+    },
+    "operator_current_best_worst_relative_error": {
+      "type": "number"
+    },
+    "operator_current_best_worst_file": {
+      "type": "string"
+    },
+    "gate_operator_current_best_worst_relative_error": {
+      "type": "number"
+    },
+    "gate_operator_current_best_worst_file": {
       "type": "string"
     },
     "profile_current_worst_relative_error": {
@@ -451,6 +477,8 @@
           "delta_star_psi_candidate_rank",
           "declared_toroidal_current_A",
           "operator_toroidal_current_A",
+          "operator_toroidal_current_full_domain_A",
+          "operator_toroidal_current_plasma_domain_A",
           "profile_toroidal_current_A",
           "adapted_profile_toroidal_current_A",
           "adapted_profile_current_ratio_to_declared",
@@ -465,12 +493,22 @@
           "pressure_toroidal_current_A",
           "ffprime_toroidal_current_A",
           "operator_current_ratio_to_declared",
+          "operator_current_full_domain_ratio_to_declared",
+          "operator_current_plasma_domain_ratio_to_declared",
+          "operator_current_best_domain",
+          "operator_current_best_ratio_to_declared",
+          "operator_current_best_relative_error",
+          "operator_current_best_closure_pass",
           "profile_current_ratio_to_declared",
           "pressure_current_ratio_to_declared",
           "ffprime_current_ratio_to_declared",
           "operator_current_relative_error",
+          "operator_current_full_domain_relative_error",
+          "operator_current_plasma_domain_relative_error",
           "profile_current_relative_error",
           "operator_current_closure_pass",
+          "operator_current_full_domain_closure_pass",
+          "operator_current_plasma_domain_closure_pass",
           "profile_current_closure_pass",
           "profile_current_closure_failure_class",
           "threshold",
@@ -746,6 +784,12 @@
           "operator_toroidal_current_A": {
             "type": "number"
           },
+          "operator_toroidal_current_full_domain_A": {
+            "type": "number"
+          },
+          "operator_toroidal_current_plasma_domain_A": {
+            "type": "number"
+          },
           "profile_toroidal_current_A": {
             "type": "number"
           },
@@ -788,6 +832,28 @@
           "operator_current_ratio_to_declared": {
             "type": "number"
           },
+          "operator_current_full_domain_ratio_to_declared": {
+            "type": "number"
+          },
+          "operator_current_plasma_domain_ratio_to_declared": {
+            "type": "number"
+          },
+          "operator_current_best_domain": {
+            "enum": [
+              "full_domain",
+              "plasma_domain",
+              "not_evaluated"
+            ]
+          },
+          "operator_current_best_ratio_to_declared": {
+            "type": "number"
+          },
+          "operator_current_best_relative_error": {
+            "type": "number"
+          },
+          "operator_current_best_closure_pass": {
+            "type": "boolean"
+          },
           "profile_current_ratio_to_declared": {
             "type": "number"
           },
@@ -800,10 +866,22 @@
           "operator_current_relative_error": {
             "type": "number"
           },
+          "operator_current_full_domain_relative_error": {
+            "type": "number"
+          },
+          "operator_current_plasma_domain_relative_error": {
+            "type": "number"
+          },
           "profile_current_relative_error": {
             "type": "number"
           },
           "operator_current_closure_pass": {
+            "type": "boolean"
+          },
+          "operator_current_full_domain_closure_pass": {
+            "type": "boolean"
+          },
+          "operator_current_plasma_domain_closure_pass": {
             "type": "boolean"
           },
           "profile_current_closure_pass": {

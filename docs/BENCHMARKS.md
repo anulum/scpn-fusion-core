@@ -457,6 +457,13 @@ through `operator_current_worst_relative_error`,
 `gate_operator_current_worst_relative_error`, and
 `profile_current_worst_relative_error`, so closure severity is visible without
 manual row scanning.
+Operator-current closure now carries domain attribution: every EFIT/GEQDSK row
+reports full computational-domain current, plasma-domain current, and the
+best-domain current residual through `operator_current_best_domain`,
+`operator_current_best_relative_error`, and aggregate best-domain pass counts.
+The original `operator_current_closure_pass` remains the strict full-domain
+contract, so plasma-domain near-closure is evidence rather than a hidden
+threshold relaxation.
 Current local worst rows: operator current closure `sparc/sparc_1300.eqdsk`
 with relative error `2.184689e+00`, and profile current closure
 `jet/jet_lmode_2MA.geqdsk` with relative error `4.168623e+01`.

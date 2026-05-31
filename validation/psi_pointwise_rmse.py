@@ -173,6 +173,8 @@ class PsiRMSEResult:
     delta_star_psi_candidate_rank: int = 0
     declared_toroidal_current_A: float = float("nan")
     operator_toroidal_current_A: float = float("nan")
+    operator_toroidal_current_full_domain_A: float = float("nan")
+    operator_toroidal_current_plasma_domain_A: float = float("nan")
     profile_toroidal_current_A: float = float("nan")
     adapted_profile_toroidal_current_A: float = float("nan")
     adapted_profile_current_ratio_to_declared: float = float("nan")
@@ -185,10 +187,20 @@ class PsiRMSEResult:
     current_limited_adapted_profile_pass: bool = False
     effective_profile_current_closure_pass: bool = False
     operator_current_ratio_to_declared: float = float("nan")
+    operator_current_full_domain_ratio_to_declared: float = float("nan")
+    operator_current_plasma_domain_ratio_to_declared: float = float("nan")
+    operator_current_best_domain: str = "not_evaluated"
+    operator_current_best_ratio_to_declared: float = float("nan")
+    operator_current_best_relative_error: float = float("nan")
+    operator_current_best_closure_pass: bool = False
     profile_current_ratio_to_declared: float = float("nan")
     operator_current_relative_error: float = float("nan")
+    operator_current_full_domain_relative_error: float = float("nan")
+    operator_current_plasma_domain_relative_error: float = float("nan")
     profile_current_relative_error: float = float("nan")
     operator_current_closure_pass: bool = False
+    operator_current_full_domain_closure_pass: bool = False
+    operator_current_plasma_domain_closure_pass: bool = False
     profile_current_closure_pass: bool = False
     profile_current_closure_failure_class: str = "not_evaluated"
 
@@ -263,6 +275,8 @@ class EfitNRMSEBenchmarkGate:
     source_sum_identity_pass: bool
     operator_current_closure_pass_count: int
     gate_operator_current_closure_pass_count: int
+    operator_current_best_closure_pass_count: int
+    gate_operator_current_best_closure_pass_count: int
     profile_current_closure_threshold: float
     profile_current_closure_pass_count: int
     gate_profile_current_closure_pass_count: int
@@ -277,6 +291,10 @@ class EfitNRMSEBenchmarkGate:
     operator_current_worst_file: str
     gate_operator_current_worst_relative_error: float
     gate_operator_current_worst_file: str
+    operator_current_best_worst_relative_error: float
+    operator_current_best_worst_file: str
+    gate_operator_current_best_worst_relative_error: float
+    gate_operator_current_best_worst_file: str
     profile_current_worst_relative_error: float
     profile_current_worst_file: str
     failure_reasons: list[str]
@@ -720,13 +738,14 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
 
     operator_source = gs_operator(eq.psirz, r, z)
     operator_jphi = -operator_source / (mu0 * rr)
-    operator_current = float(np.sum(operator_jphi[1:-1, 1:-1]) * cell_area)
+    operator_full_domain_current = float(np.sum(operator_jphi[1:-1, 1:-1]) * cell_area)
 
     source_components = compute_source_components(eq)
     pressure_source = np.asarray(source_components["pressure_source"], dtype=np.float64)
     ffprime_source = np.asarray(source_components["ffprime_source"], dtype=np.float64)
     profile_source = np.asarray(source_components["total_source"], dtype=np.float64)
     plasma_mask = np.asarray(source_components["plasma_mask"], dtype=bool)
+    operator_plasma_domain_current = float(np.sum(operator_jphi[plasma_mask]) * cell_area)
     pressure_jphi = -pressure_source / (mu0 * rr)
     ffprime_jphi = -ffprime_source / (mu0 * rr)
     profile_jphi = -profile_source / (mu0 * rr)
@@ -736,15 +755,59 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
 
     declared_current = float(eq.current)
     scale = max(abs(declared_current), 1.0)
-    operator_ratio = abs(operator_current) / scale
+    operator_full_domain_ratio = abs(operator_full_domain_current) / scale
+    operator_plasma_domain_ratio = abs(operator_plasma_domain_current) / scale
     profile_ratio = abs(profile_current) / scale
     pressure_ratio = abs(pressure_current) / scale
     ffprime_ratio = abs(ffprime_current) / scale
-    operator_error = abs(abs(operator_current) - abs(declared_current)) / scale
-    profile_error = abs(abs(profile_current) - abs(declared_current)) / scale
-    operator_pass = bool(
-        np.isfinite(operator_error) and operator_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD
+    operator_full_domain_error = (
+        abs(abs(operator_full_domain_current) - abs(declared_current)) / scale
     )
+    operator_plasma_domain_error = (
+        abs(abs(operator_plasma_domain_current) - abs(declared_current)) / scale
+    )
+    profile_error = abs(abs(profile_current) - abs(declared_current)) / scale
+    operator_full_domain_pass = bool(
+        np.isfinite(operator_full_domain_error)
+        and operator_full_domain_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD
+    )
+    operator_plasma_domain_pass = bool(
+        np.isfinite(operator_plasma_domain_error)
+        and operator_plasma_domain_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD
+    )
+    operator_candidates = [
+        (
+            "full_domain",
+            operator_full_domain_current,
+            operator_full_domain_ratio,
+            operator_full_domain_error,
+            operator_full_domain_pass,
+        ),
+        (
+            "plasma_domain",
+            operator_plasma_domain_current,
+            operator_plasma_domain_ratio,
+            operator_plasma_domain_error,
+            operator_plasma_domain_pass,
+        ),
+    ]
+    finite_operator_candidates = [
+        candidate for candidate in operator_candidates if np.isfinite(float(candidate[3]))
+    ]
+    if finite_operator_candidates:
+        (
+            operator_best_domain,
+            _operator_best_current,
+            operator_best_ratio,
+            operator_best_error,
+            operator_best_pass,
+        ) = min(finite_operator_candidates, key=lambda candidate: float(candidate[3]))
+    else:
+        operator_best_domain = "not_evaluated"
+        operator_best_current = float("nan")
+        operator_best_ratio = float("nan")
+        operator_best_error = float("nan")
+        operator_best_pass = False
     profile_pass = bool(
         np.isfinite(profile_error) and profile_error <= PROFILE_CURRENT_CLOSURE_THRESHOLD
     )
@@ -758,17 +821,29 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
         profile_failure_class = "profile_current_over_closes_declared_current"
     return {
         "declared_toroidal_current_A": declared_current,
-        "operator_toroidal_current_A": operator_current,
+        "operator_toroidal_current_A": operator_full_domain_current,
+        "operator_toroidal_current_full_domain_A": operator_full_domain_current,
+        "operator_toroidal_current_plasma_domain_A": operator_plasma_domain_current,
         "profile_toroidal_current_A": profile_current,
         "pressure_toroidal_current_A": pressure_current,
         "ffprime_toroidal_current_A": ffprime_current,
-        "operator_current_ratio_to_declared": float(operator_ratio),
+        "operator_current_ratio_to_declared": float(operator_full_domain_ratio),
+        "operator_current_full_domain_ratio_to_declared": float(operator_full_domain_ratio),
+        "operator_current_plasma_domain_ratio_to_declared": float(operator_plasma_domain_ratio),
+        "operator_current_best_domain": str(operator_best_domain),
+        "operator_current_best_ratio_to_declared": float(operator_best_ratio),
+        "operator_current_best_relative_error": float(operator_best_error),
+        "operator_current_best_closure_pass": bool(operator_best_pass),
         "profile_current_ratio_to_declared": float(profile_ratio),
         "pressure_current_ratio_to_declared": float(pressure_ratio),
         "ffprime_current_ratio_to_declared": float(ffprime_ratio),
-        "operator_current_relative_error": float(operator_error),
+        "operator_current_relative_error": float(operator_full_domain_error),
+        "operator_current_full_domain_relative_error": float(operator_full_domain_error),
+        "operator_current_plasma_domain_relative_error": float(operator_plasma_domain_error),
         "profile_current_relative_error": float(profile_error),
-        "operator_current_closure_pass": operator_pass,
+        "operator_current_closure_pass": operator_full_domain_pass,
+        "operator_current_full_domain_closure_pass": operator_full_domain_pass,
+        "operator_current_plasma_domain_closure_pass": operator_plasma_domain_pass,
         "profile_current_closure_pass": profile_pass,
         "profile_current_closure_failure_class": profile_failure_class,
     }
@@ -1663,6 +1738,12 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         declared_toroidal_current_A=float(current_consistency["declared_toroidal_current_A"]),
         operator_toroidal_current_A=float(current_consistency["operator_toroidal_current_A"]),
         profile_toroidal_current_A=float(current_consistency["profile_toroidal_current_A"]),
+        operator_toroidal_current_full_domain_A=float(
+            current_consistency["operator_toroidal_current_full_domain_A"]
+        ),
+        operator_toroidal_current_plasma_domain_A=float(
+            current_consistency["operator_toroidal_current_plasma_domain_A"]
+        ),
         adapted_profile_toroidal_current_A=float(adapted_profile_current),
         adapted_profile_current_ratio_to_declared=float(adapted_profile_current_ratio),
         adapted_profile_current_relative_error=float(adapted_profile_current_error),
@@ -1682,6 +1763,22 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         operator_current_ratio_to_declared=float(
             current_consistency["operator_current_ratio_to_declared"]
         ),
+        operator_current_full_domain_ratio_to_declared=float(
+            current_consistency["operator_current_full_domain_ratio_to_declared"]
+        ),
+        operator_current_plasma_domain_ratio_to_declared=float(
+            current_consistency["operator_current_plasma_domain_ratio_to_declared"]
+        ),
+        operator_current_best_domain=str(current_consistency["operator_current_best_domain"]),
+        operator_current_best_ratio_to_declared=float(
+            current_consistency["operator_current_best_ratio_to_declared"]
+        ),
+        operator_current_best_relative_error=float(
+            current_consistency["operator_current_best_relative_error"]
+        ),
+        operator_current_best_closure_pass=bool(
+            current_consistency["operator_current_best_closure_pass"]
+        ),
         profile_current_ratio_to_declared=float(
             current_consistency["profile_current_ratio_to_declared"]
         ),
@@ -1694,8 +1791,20 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         operator_current_relative_error=float(
             current_consistency["operator_current_relative_error"]
         ),
+        operator_current_full_domain_relative_error=float(
+            current_consistency["operator_current_full_domain_relative_error"]
+        ),
+        operator_current_plasma_domain_relative_error=float(
+            current_consistency["operator_current_plasma_domain_relative_error"]
+        ),
         profile_current_relative_error=float(current_consistency["profile_current_relative_error"]),
         operator_current_closure_pass=bool(current_consistency["operator_current_closure_pass"]),
+        operator_current_full_domain_closure_pass=bool(
+            current_consistency["operator_current_full_domain_closure_pass"]
+        ),
+        operator_current_plasma_domain_closure_pass=bool(
+            current_consistency["operator_current_plasma_domain_closure_pass"]
+        ),
         profile_current_closure_pass=bool(current_consistency["profile_current_closure_pass"]),
         profile_current_closure_failure_class=str(
             current_consistency["profile_current_closure_failure_class"]
@@ -1833,6 +1942,8 @@ def validate_efit_nrmse_benchmark(
     gate_adapted_profile_pass_count = 0
     operator_current_closure_pass_count = 0
     gate_operator_current_closure_pass_count = 0
+    operator_current_best_closure_pass_count = 0
+    gate_operator_current_best_closure_pass_count = 0
     gate_row_count = 0
     gate_pass_count = 0
     failure_reasons: list[str] = []
@@ -1956,6 +2067,8 @@ def validate_efit_nrmse_benchmark(
     source_sum_identity_errors: list[float] = []
     operator_current_error_entries: list[tuple[str, float]] = []
     gate_operator_current_error_entries: list[tuple[str, float]] = []
+    operator_current_best_error_entries: list[tuple[str, float]] = []
+    gate_operator_current_best_error_entries: list[tuple[str, float]] = []
     profile_current_error_entries: list[tuple[str, float]] = []
     profile_current_closure_failure_class_counts: dict[str, int] = {}
     profile_current_closure_pass_count = 0
@@ -2007,6 +2120,23 @@ def validate_efit_nrmse_benchmark(
                 )
         else:
             failure_reasons.append(f"non-finite operator current error in {row['file']}")
+        operator_current_best_error = float(row["operator_current_best_relative_error"])
+        if np.isfinite(operator_current_best_error):
+            operator_current_best_error_entries.append(
+                (str(row["file"]), operator_current_best_error)
+            )
+            if bool(row["operator_current_best_closure_pass"]):
+                operator_current_best_closure_pass_count += 1
+                if row["reference_role"] == "gate":
+                    gate_operator_current_best_closure_pass_count += 1
+            if row["reference_role"] == "gate":
+                gate_operator_current_best_error_entries.append(
+                    (str(row["file"]), operator_current_best_error)
+                )
+        else:
+            failure_reasons.append(
+                f"non-finite best-domain operator current error in {row['file']}"
+            )
         failure_class = str(row["profile_current_closure_failure_class"])
         profile_current_closure_failure_class_counts[failure_class] = (
             profile_current_closure_failure_class_counts.get(failure_class, 0) + 1
@@ -2068,6 +2198,24 @@ def validate_efit_nrmse_benchmark(
     else:
         gate_operator_current_worst_file = ""
         gate_operator_current_worst_error = float("nan")
+
+    if operator_current_best_error_entries:
+        operator_current_best_worst_file, operator_current_best_worst_error = max(
+            operator_current_best_error_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        operator_current_best_worst_file = ""
+        operator_current_best_worst_error = float("nan")
+
+    if gate_operator_current_best_error_entries:
+        gate_operator_current_best_worst_file, gate_operator_current_best_worst_error = max(
+            gate_operator_current_best_error_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        gate_operator_current_best_worst_file = ""
+        gate_operator_current_best_worst_error = float("nan")
 
     if profile_current_error_entries:
         profile_current_worst_file, profile_current_worst_error = max(
@@ -2206,6 +2354,8 @@ def validate_efit_nrmse_benchmark(
         source_sum_identity_pass=source_sum_identity_pass,
         operator_current_closure_pass_count=operator_current_closure_pass_count,
         gate_operator_current_closure_pass_count=gate_operator_current_closure_pass_count,
+        operator_current_best_closure_pass_count=operator_current_best_closure_pass_count,
+        gate_operator_current_best_closure_pass_count=gate_operator_current_best_closure_pass_count,
         profile_current_closure_threshold=PROFILE_CURRENT_CLOSURE_THRESHOLD,
         profile_current_closure_pass_count=profile_current_closure_pass_count,
         gate_profile_current_closure_pass_count=gate_profile_current_closure_pass_count,
@@ -2220,6 +2370,12 @@ def validate_efit_nrmse_benchmark(
         operator_current_worst_file=operator_current_worst_file,
         gate_operator_current_worst_relative_error=float(gate_operator_current_worst_error),
         gate_operator_current_worst_file=gate_operator_current_worst_file,
+        operator_current_best_worst_relative_error=float(operator_current_best_worst_error),
+        operator_current_best_worst_file=operator_current_best_worst_file,
+        gate_operator_current_best_worst_relative_error=float(
+            gate_operator_current_best_worst_error
+        ),
+        gate_operator_current_best_worst_file=gate_operator_current_best_worst_file,
         profile_current_worst_relative_error=float(profile_current_worst_error),
         profile_current_worst_file=profile_current_worst_file,
         failure_reasons=failure_reasons,
@@ -2404,11 +2560,23 @@ def main() -> int:
         f"{benchmark.operator_current_closure_pass_count}/{benchmark.count} rows, "
         f"{benchmark.gate_operator_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
     )
+    print(
+        "Best-domain operator-current closure gate: "
+        f"{benchmark.operator_current_best_closure_pass_count}/{benchmark.count} rows, "
+        f"{benchmark.gate_operator_current_best_closure_pass_count}/"
+        f"{benchmark.gate_row_count} public rows"
+    )
     if benchmark.operator_current_worst_file:
         print(
             "Worst operator current closure: "
             f"{benchmark.operator_current_worst_file} "
             f"(relative error = {benchmark.operator_current_worst_relative_error:.6e})"
+        )
+    if benchmark.operator_current_best_worst_file:
+        print(
+            "Worst best-domain operator current closure: "
+            f"{benchmark.operator_current_best_worst_file} "
+            f"(relative error = {benchmark.operator_current_best_worst_relative_error:.6e})"
         )
     if benchmark.profile_current_worst_file:
         print(

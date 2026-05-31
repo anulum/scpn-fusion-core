@@ -124,10 +124,16 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         source_sum_identity_pass=True,
         operator_current_closure_pass_count=1,
         gate_operator_current_closure_pass_count=1,
+        operator_current_best_closure_pass_count=1,
+        gate_operator_current_best_closure_pass_count=1,
         operator_current_worst_relative_error=0.00115,
         operator_current_worst_file="sparc/sample.geqdsk",
         gate_operator_current_worst_relative_error=0.00115,
         gate_operator_current_worst_file="sparc/sample.geqdsk",
+        operator_current_best_worst_relative_error=0.00115,
+        operator_current_best_worst_file="sparc/sample.geqdsk",
+        gate_operator_current_best_worst_relative_error=0.00115,
+        gate_operator_current_best_worst_file="sparc/sample.geqdsk",
         profile_current_closure_threshold=0.05,
         profile_current_closure_pass_count=0,
         gate_profile_current_closure_pass_count=0,
@@ -217,6 +223,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "delta_star_psi_candidate_rank": 1,
                 "declared_toroidal_current_A": -8.7e6,
                 "operator_toroidal_current_A": -8.69e6,
+                "operator_toroidal_current_full_domain_A": -8.69e6,
+                "operator_toroidal_current_plasma_domain_A": -8.68e6,
                 "profile_toroidal_current_A": -7.95e6,
                 "adapted_profile_toroidal_current_A": float("nan"),
                 "adapted_profile_current_ratio_to_declared": float("nan"),
@@ -231,12 +239,22 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "pressure_toroidal_current_A": -1.95e6,
                 "ffprime_toroidal_current_A": -6.0e6,
                 "operator_current_ratio_to_declared": 0.99885,
+                "operator_current_full_domain_ratio_to_declared": 0.99885,
+                "operator_current_plasma_domain_ratio_to_declared": 0.9977,
+                "operator_current_best_domain": "full_domain",
+                "operator_current_best_ratio_to_declared": 0.99885,
+                "operator_current_best_relative_error": 0.00115,
+                "operator_current_best_closure_pass": True,
                 "profile_current_ratio_to_declared": 0.9138,
                 "pressure_current_ratio_to_declared": 0.2241,
                 "ffprime_current_ratio_to_declared": 0.6897,
                 "operator_current_relative_error": 0.00115,
+                "operator_current_full_domain_relative_error": 0.00115,
+                "operator_current_plasma_domain_relative_error": 0.0023,
                 "profile_current_relative_error": 0.0862,
                 "operator_current_closure_pass": True,
+                "operator_current_full_domain_closure_pass": True,
+                "operator_current_plasma_domain_closure_pass": True,
                 "profile_current_closure_pass": False,
                 "profile_current_closure_failure_class": "profile_current_under_closes_declared_current",
                 "threshold": 0.05,
@@ -256,6 +274,7 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
     assert "Source classes:" in stdout
     assert "profile_source_mismatch=1" in stdout
     assert "Worst source residual:" in stdout
+    assert "Best-domain operator-current closure gate:" in stdout
     assert "Worst source components:" in stdout
     assert "pressure_fraction=0.700000" in stdout
     assert "ffprime_fraction=0.300000" in stdout
