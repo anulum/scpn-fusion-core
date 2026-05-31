@@ -99,6 +99,19 @@ pub struct GeqdskSourceConventionCandidate {
     pub residual_l2: f64,
 }
 
+/// GEQDSK profile-source components assembled on an R-Z grid.
+#[derive(Debug, Clone)]
+pub struct GeqdskProfileSourceComponents {
+    pub pressure_source: Array2<f64>,
+    pub ffprime_source: Array2<f64>,
+    pub total_source: Array2<f64>,
+    pub plasma_mask: Array2<bool>,
+    pub plasma_mask_fraction: f64,
+    pub pressure_source_norm: f64,
+    pub ffprime_source_norm: f64,
+    pub total_source_norm: f64,
+}
+
 /// mTanh profile parameters used by inverse reconstruction.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ProfileParams {
@@ -420,6 +433,138 @@ pub fn interpolate_flux_profile_current_conserving(
         ));
     }
     Ok(quadratic.mapv(|value| value * target_integral / observed_integral))
+}
+
+fn interior_norm(values: &Array2<f64>) -> f64 {
+    if values.nrows() <= 2 || values.ncols() <= 2 {
+        return 0.0;
+    }
+    let mut sum_sq = 0.0;
+    for iz in 1..values.nrows() - 1 {
+        for ir in 1..values.ncols() - 1 {
+            let value = values[[iz, ir]];
+            sum_sq += value * value;
+        }
+    }
+    sum_sq.sqrt()
+}
+
+fn interior_mask_fraction(mask: &Array2<bool>) -> f64 {
+    if mask.nrows() <= 2 || mask.ncols() <= 2 {
+        return 0.0;
+    }
+    let mut count = 0usize;
+    let mut total = 0usize;
+    for iz in 1..mask.nrows() - 1 {
+        for ir in 1..mask.ncols() - 1 {
+            total += 1;
+            if mask[[iz, ir]] {
+                count += 1;
+            }
+        }
+    }
+    count as f64 / total as f64
+}
+
+/// Assemble GEQDSK-derived Grad-Shafranov source components on an R-Z grid.
+///
+/// The profile arrays are interpolated through the same second-order,
+/// current-conserving flux-profile contract used by Python. Boundary rows and
+/// columns are excluded from the physical source domain before the pressure and
+/// FFprime terms are assembled.
+pub fn compute_geqdsk_profile_source_components(
+    psi_norm: &Array2<f64>,
+    rr: &Array2<f64>,
+    pprime: &[f64],
+    ffprime: &[f64],
+    mu0: f64,
+) -> FusionResult<GeqdskProfileSourceComponents> {
+    if psi_norm.dim() != rr.dim() {
+        return Err(FusionError::ConfigError(format!(
+            "GEQDSK source R grid shape mismatch: psi {:?}, rr {:?}",
+            psi_norm.dim(),
+            rr.dim()
+        )));
+    }
+    if psi_norm.nrows() < 3 || psi_norm.ncols() < 3 {
+        return Err(FusionError::ConfigError(
+            "GEQDSK source grid must be at least 3x3".to_string(),
+        ));
+    }
+    if !mu0.is_finite() || mu0 <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "GEQDSK source requires finite mu0 > 0, got {mu0}"
+        )));
+    }
+    if rr.iter().any(|value| !value.is_finite() || *value <= 0.0) {
+        return Err(FusionError::ConfigError(
+            "GEQDSK source R grid must contain finite positive radii".to_string(),
+        ));
+    }
+    validate_flux_profile_inputs(psi_norm, pprime)?;
+    validate_flux_profile_inputs(psi_norm, ffprime)?;
+    if pprime.len() != ffprime.len() {
+        return Err(FusionError::ConfigError(format!(
+            "GEQDSK pprime/ffprime lengths must match: got {} and {}",
+            pprime.len(),
+            ffprime.len()
+        )));
+    }
+
+    let psi_clipped = psi_norm.mapv(|value| value.clamp(0.0, 1.0));
+    let plasma_mask = psi_norm.mapv(|value| (0.0..1.0).contains(&value));
+    let mut source_mask = plasma_mask.clone();
+    let nrows = source_mask.nrows();
+    let ncols = source_mask.ncols();
+    for ir in 0..ncols {
+        source_mask[[0, ir]] = false;
+        source_mask[[nrows - 1, ir]] = false;
+    }
+    for iz in 0..nrows {
+        source_mask[[iz, 0]] = false;
+        source_mask[[iz, ncols - 1]] = false;
+    }
+
+    let rr_safe = rr.mapv(|value| value.max(1.0e-12));
+    let inv_rr = rr_safe.mapv(|value| 1.0 / value);
+    let pprime_2d =
+        interpolate_flux_profile_current_conserving(&psi_clipped, pprime, &rr_safe, &source_mask)?;
+    let ffprime_2d =
+        interpolate_flux_profile_current_conserving(&psi_clipped, ffprime, &inv_rr, &source_mask)?;
+
+    let mut pressure_source = Array2::zeros(psi_norm.dim());
+    let mut ffprime_source = Array2::zeros(psi_norm.dim());
+    let mut total_source = Array2::zeros(psi_norm.dim());
+    for iz in 0..psi_norm.nrows() {
+        for ir in 0..psi_norm.ncols() {
+            if source_mask[[iz, ir]] {
+                let pressure = -(mu0 * rr_safe[[iz, ir]].powi(2) * pprime_2d[[iz, ir]]);
+                let ff = -ffprime_2d[[iz, ir]];
+                pressure_source[[iz, ir]] = pressure;
+                ffprime_source[[iz, ir]] = ff;
+                total_source[[iz, ir]] = pressure + ff;
+            }
+        }
+    }
+    if pressure_source.iter().any(|value| !value.is_finite())
+        || ffprime_source.iter().any(|value| !value.is_finite())
+        || total_source.iter().any(|value| !value.is_finite())
+    {
+        return Err(FusionError::ConfigError(
+            "GEQDSK source components produced non-finite values".to_string(),
+        ));
+    }
+
+    Ok(GeqdskProfileSourceComponents {
+        pressure_source_norm: interior_norm(&pressure_source),
+        ffprime_source_norm: interior_norm(&ffprime_source),
+        total_source_norm: interior_norm(&total_source),
+        plasma_mask_fraction: interior_mask_fraction(&plasma_mask),
+        pressure_source,
+        ffprime_source,
+        total_source,
+        plasma_mask,
+    })
 }
 
 fn source_relative_l2(
@@ -987,6 +1132,89 @@ mod tests {
             &[0.0, 1.0, 2.0],
             &weights,
             &wrong_shape,
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn test_geqdsk_profile_source_components_mask_boundary_and_report_norms() {
+        let psi_norm = Array2::from_shape_fn((5, 5), |(iz, ir)| {
+            if iz == 0 || ir == 0 || iz == 4 || ir == 4 {
+                1.0
+            } else {
+                0.2 + 0.05 * iz as f64 + 0.04 * ir as f64
+            }
+        });
+        let rr = Array2::from_shape_fn((5, 5), |(_iz, ir)| 1.0 + 0.25 * ir as f64);
+        let pprime = vec![0.2, 0.4, 0.7, 1.0, 1.4];
+        let ffprime = vec![0.1, 0.05, -0.05, -0.1, -0.2];
+
+        let components =
+            compute_geqdsk_profile_source_components(&psi_norm, &rr, &pprime, &ffprime, 1.0)
+                .expect("valid GEQDSK source components");
+
+        for idx in 0..5 {
+            assert_eq!(components.total_source[[0, idx]], 0.0);
+            assert_eq!(components.total_source[[4, idx]], 0.0);
+            assert_eq!(components.total_source[[idx, 0]], 0.0);
+            assert_eq!(components.total_source[[idx, 4]], 0.0);
+        }
+        assert!(components.plasma_mask_fraction > 0.0);
+        assert!(components.pressure_source_norm > 0.0);
+        assert!(components.ffprime_source_norm > 0.0);
+        assert!(components.total_source_norm > 0.0);
+    }
+
+    #[test]
+    fn test_geqdsk_profile_source_components_preserve_total_source_identity() {
+        let psi_norm = Array2::from_shape_fn((4, 4), |(iz, ir)| 0.1 + 0.1 * (iz + ir) as f64);
+        let rr = Array2::from_shape_fn((4, 4), |(_iz, ir)| 1.2 + 0.1 * ir as f64);
+        let pprime = vec![0.5, 0.75, 1.0, 1.25];
+        let ffprime = vec![0.25, 0.1, -0.1, -0.25];
+
+        let components =
+            compute_geqdsk_profile_source_components(&psi_norm, &rr, &pprime, &ffprime, 1.0)
+                .expect("valid GEQDSK source components");
+
+        for ((pressure, ffprime), total) in components
+            .pressure_source
+            .iter()
+            .zip(components.ffprime_source.iter())
+            .zip(components.total_source.iter())
+        {
+            assert!((*pressure + *ffprime - *total).abs() < 1.0e-14);
+        }
+    }
+
+    #[test]
+    fn test_geqdsk_profile_source_components_reject_invalid_inputs() {
+        let psi_norm = Array2::from_elem((3, 3), 0.5);
+        let rr = Array2::from_elem((3, 3), 1.0);
+        assert!(compute_geqdsk_profile_source_components(
+            &psi_norm,
+            &rr,
+            &[1.0, 2.0],
+            &[1.0, 2.0],
+            1.0,
+        )
+        .is_err());
+
+        let bad_rr = Array2::from_elem((3, 3), 0.0);
+        assert!(compute_geqdsk_profile_source_components(
+            &psi_norm,
+            &bad_rr,
+            &[0.0, 1.0, 2.0],
+            &[0.0, 1.0, 2.0],
+            1.0,
+        )
+        .is_err());
+
+        assert!(compute_geqdsk_profile_source_components(
+            &psi_norm,
+            &rr,
+            &[0.0, 1.0, 2.0],
+            &[0.0, 1.0, 2.0, 3.0],
+            1.0,
         )
         .is_err());
     }

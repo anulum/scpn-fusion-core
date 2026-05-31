@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added Rust GEQDSK profile-source component assembly with pressure, FFprime, total-source, plasma-mask, boundary-masking, and source-norm diagnostics matching the Python native solver contract.
+
 - Added Rust `fusion-core::source` parity for GEQDSK second-order and current-conserving flux-profile interpolation, matching the Python profile-source source-construction contract.
 
 - Added integrated `solve_free_boundary(..., optimize_shape=True)` diagnostics and a benchmark gate for shape-current optimization residuals, response rank, current recovery, and vacuum-boundary consistency.

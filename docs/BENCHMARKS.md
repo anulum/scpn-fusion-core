@@ -432,6 +432,7 @@ candidate rows so Rust audits can distinguish evaluated named transforms from
 non-executable fitted-scale diagnostics; flux-span candidates are emitted only
 when the physical flux span is finite and non-zero.
 Rust `fusion-core::source` now also exposes native second-order and current-conserving flux-profile interpolation helpers matching the Python profile-source construction contract: local quadratic GEQDSK profile interpolation, masked weighted-integral preservation against the linear GEQDSK contract, finite input guards, shape guards, and non-negative masked weight enforcement.
+It also exposes `compute_geqdsk_profile_source_components`, which assembles pressure, FFprime, and total Grad-Shafranov source arrays with plasma-mask reporting, explicit boundary zeroing, and source-norm diagnostics matching the Python profile-source path.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current
