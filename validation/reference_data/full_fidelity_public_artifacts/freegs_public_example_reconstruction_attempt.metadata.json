@@ -1,0 +1,26 @@
+{
+  "accepted_full_fidelity": false,
+  "artifact_id": "freegs_public_example_reconstruction_attempt",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json",
+  "artifact_role": "partial_public_freegs_reconstruction_attempt",
+  "available_observables": [
+    "public_example_source_checksums",
+    "FreeGS_machine_coil_currents_after_constraints",
+    "native_vs_FreeGS_vacuum_Green_function_residuals",
+    "external_nonlinear_backend_solve_status"
+  ],
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [
+    "converged FreeGS/FreeGSNKE public nonlinear equilibrium output",
+    "native same-case free-boundary profile-source reconstruction",
+    "psi_N RMSE threshold against external output",
+    "axis/X-point/boundary containment and q-profile thresholds",
+    "grid convergence across public example resolutions"
+  ],
+  "redistribution_license": "FreeGS LGPL-3.0-or-later",
+  "reference_family": "FreeGS",
+  "sha256": "2c3db46c82fc64542e1a063d3918813779914aef198d7935a9893690a1bd34a0",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi",
+  "surface": "free_boundary_equilibrium"
+}

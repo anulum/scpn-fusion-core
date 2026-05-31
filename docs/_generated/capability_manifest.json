@@ -2355,7 +2355,7 @@
     "python_capability_classes": 496,
     "python_capability_source_modules": 263,
     "rust_workspace_crates": 12,
-    "test_files": 388
+    "test_files": 389
   },
   "documentation": {
     "public_pages": [
@@ -2568,6 +2568,7 @@
       "tests/test_free_boundary_tracking_acceptance.py",
       "tests/test_freegs_benchmark.py",
       "tests/test_freegs_benchmark_enhanced.py",
+      "tests/test_freegs_public_example_reconstruction.py",
       "tests/test_fueling_mode_runtime.py",
       "tests/test_full_fidelity_end_to_end_campaign.py",
       "tests/test_full_fidelity_public_source_downloads.py",

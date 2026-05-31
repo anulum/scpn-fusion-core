@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added a FreeGS public-example reconstruction attempt benchmark that checks
+  native-vs-FreeGS vacuum Green-function parity on public machine coils while
+  keeping strict free-boundary parity blocked on nonlinear same-case
+  `psi(R,Z)` output and native reconstruction comparison.
+
 - Added a fail-closed FreeGS/FreeGSNKE public machine-metadata inventory that
   records active-coil, passive-structure, limiter/wall, magnetic-probe, and
   FreeGS example-script checksums while keeping strict free-boundary parity

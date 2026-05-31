@@ -22,6 +22,7 @@ AURORA_EXECUTION_ARTIFACT = REPORT_DIR / "aurora_reference_execution_artifact.js
 GK_DECK_INVENTORY = REPORT_DIR / "gk_public_reference_deck_inventory.json"
 PRODUCTION_DECOMPOSITION = REPORT_DIR / "production_decomposition_contract.json"
 FREE_BOUNDARY_MACHINE_METADATA = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
+FREEGS_PUBLIC_RECONSTRUCTION = REPORT_DIR / "freegs_public_example_reconstruction.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -144,6 +145,21 @@ def _load_free_boundary_machine_metadata() -> dict[str, Any]:
     return report
 
 
+def _load_freegs_public_reconstruction() -> dict[str, Any]:
+    if not FREEGS_PUBLIC_RECONSTRUCTION.exists():
+        return {
+            "case_count": 0,
+            "missing_full_fidelity_requirements": [],
+            "schema": "freegs-public-example-reconstruction-report.v1",
+            "status": "not_run",
+            "vacuum_comparison_pass": False,
+        }
+    report = json.loads(FREEGS_PUBLIC_RECONSTRUCTION.read_text(encoding="utf-8"))
+    if report.get("schema") != "freegs-public-example-reconstruction-report.v1":
+        raise ValueError("FreeGS public example reconstruction schema mismatch")
+    return report
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -173,6 +189,7 @@ def run_campaign() -> dict[str, Any]:
     gk_deck_inventory = _load_gk_deck_inventory()
     production_decomposition = _load_production_decomposition()
     free_boundary_machine_metadata = _load_free_boundary_machine_metadata()
+    freegs_public_reconstruction = _load_freegs_public_reconstruction()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -270,18 +287,22 @@ def run_campaign() -> dict[str, Any]:
             "lane": "free_boundary_equilibrium_strict_parity",
             "surface": "free_boundary_equilibrium",
             "status": (
-                "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
+                freegs_public_reconstruction["status"]
+                if freegs_public_reconstruction["case_count"]
+                else "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
                 if free_boundary_machine_metadata["machine_metadata_ready"]
                 else "blocked_missing_external_coil_current_reference_artifacts"
             ),
             "locally_actionable_contract_ready": _report_exists(
                 "validation/reports/free_boundary_benchmark.json"
             )
-            and bool(free_boundary_machine_metadata["machine_metadata_ready"]),
+            and bool(free_boundary_machine_metadata["machine_metadata_ready"])
+            and bool(freegs_public_reconstruction["vacuum_comparison_pass"]),
             "reference_cases_ready": False,
             "sources": _sources_for(registry, "free_boundary_equilibrium"),
             "next_required_evidence": (
-                free_boundary_machine_metadata["missing_full_fidelity_requirements"]
+                freegs_public_reconstruction["missing_full_fidelity_requirements"]
+                or free_boundary_machine_metadata["missing_full_fidelity_requirements"]
                 or [
                     "public coil-current sidecars or machine coil metadata for GEQDSK rows",
                     "strict FreeGS backend convergence on public free-boundary cases",
@@ -329,6 +350,14 @@ def run_campaign() -> dict[str, Any]:
             free_boundary_machine_metadata["machine_metadata_ready"]
         ),
         "free_boundary_machine_metadata_status": str(free_boundary_machine_metadata["status"]),
+        "freegs_public_example_reconstruction_report": str(
+            FREEGS_PUBLIC_RECONSTRUCTION.relative_to(ROOT)
+        ),
+        "freegs_public_example_cases": int(freegs_public_reconstruction["case_count"]),
+        "freegs_public_example_vacuum_comparison_pass": bool(
+            freegs_public_reconstruction["vacuum_comparison_pass"]
+        ),
+        "freegs_public_example_reconstruction_status": str(freegs_public_reconstruction["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -400,6 +429,19 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- Free-boundary machine metadata status: "
             f"`{report['free_boundary_machine_metadata_status']}`"
+        ),
+        (
+            "- FreeGS public example reconstruction report: "
+            f"`{report['freegs_public_example_reconstruction_report']}`"
+        ),
+        f"- FreeGS public example cases: `{report['freegs_public_example_cases']}`",
+        (
+            "- FreeGS public example vacuum comparison pass: "
+            f"`{report['freegs_public_example_vacuum_comparison_pass']}`"
+        ),
+        (
+            "- FreeGS public example reconstruction status: "
+            f"`{report['freegs_public_example_reconstruction_status']}`"
         ),
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",

@@ -246,6 +246,14 @@ reconstruction input inventory only; strict parity remains blocked until those
 metadata are linked to same-case public equilibria, native coil/vacuum
 reconstruction outputs, and FreeGS/FreeGSNKE solver-output comparisons.
 
+The FreeGS public-example reconstruction attempt is tracked in
+[`validation/reports/freegs_public_example_reconstruction.md`](../validation/reports/freegs_public_example_reconstruction.md).
+It reconstructs the public FreeGS example machine coils after their control
+constraints and compares native Green-function vacuum flux against FreeGS on
+the same sample points. Current local rows pass the vacuum convention check but
+the external nonlinear FreeGS solve does not yet provide accepted same-case
+`psi(R,Z)` output, so strict free-boundary parity remains fail-closed.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |

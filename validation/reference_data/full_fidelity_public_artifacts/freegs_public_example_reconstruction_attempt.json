@@ -1,0 +1,356 @@
+{
+  "accepted_full_fidelity": false,
+  "cases": [
+    {
+      "accepted_full_fidelity": false,
+      "case_id": "freegs_01_test_tokamak_freeboundary",
+      "example_path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
+      "example_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
+      "grid": {
+        "nx": 65,
+        "ny": 65
+      },
+      "machine_class": "TestTokamak",
+      "missing_full_fidelity_requirements": [
+        "converged FreeGS/FreeGSNKE same-case nonlinear solve",
+        "native profile-source/free-boundary solve using same coil currents and profiles",
+        "psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
+        "grid-convergence evidence for the public example"
+      ],
+      "nonlinear_solve_attempt": {
+        "elapsed_s": 0.8904510820284486,
+        "error": "Picard iteration failed to converge (too many iterations)",
+        "error_type": "RuntimeError",
+        "maxits": 5,
+        "native_same_case_psi_comparison_ready": false,
+        "status": "failed_external_backend_solve"
+      },
+      "source_contract": {
+        "fvac": 2.0,
+        "isoflux": [
+          [
+            1.1,
+            -0.6,
+            1.1,
+            0.6
+          ]
+        ],
+        "p_axis_pa": 1000.0,
+        "plasma_current_a": 200000.0,
+        "xpoints": [
+          [
+            1.1,
+            -0.6
+          ],
+          [
+            1.1,
+            0.8
+          ]
+        ]
+      },
+      "vacuum_green_function_comparison": {
+        "coil_count": 4,
+        "coils": [
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 3239636.4585113823,
+            "effective_current_a_turns": 3239636.4585113823,
+            "filament_count": 12,
+            "name": "P1L",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 1747575.3329826852,
+            "effective_current_a_turns": 1747575.3329826852,
+            "filament_count": 12,
+            "name": "P1U",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "Coil",
+            "current_a": -625835.9581427034,
+            "effective_current_a_turns": -625835.9581427034,
+            "filament_count": 1,
+            "name": "P2L",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "Coil",
+            "current_a": 80743.67312022898,
+            "effective_current_a_turns": 80743.67312022898,
+            "filament_count": 1,
+            "name": "P2U",
+            "turns": 1.0
+          }
+        ],
+        "filament_count": 26,
+        "freegs_vacuum_psi_sample": [
+          0.19097274593205085,
+          0.43371849175061344,
+          0.26152762005212177,
+          0.11437138313814108,
+          0.26585891459366057,
+          0.2994304088940809,
+          0.1374583273957732,
+          0.34277115586307966,
+          0.4088744415668707
+        ],
+        "max_abs_error_wb": 1.1102230246251565e-16,
+        "native_vacuum_psi_sample": [
+          0.19097274593205082,
+          0.43371849175061333,
+          0.2615276200521219,
+          0.1143713831381411,
+          0.26585891459366046,
+          0.2994304088940809,
+          0.1374583273957732,
+          0.34277115586307977,
+          0.4088744415668707
+        ],
+        "nrmse": 2.3536287648870445e-16,
+        "pass": true,
+        "rmse_wb": 7.516245408138222e-17,
+        "sample_point_count": 9,
+        "thresholds": {
+          "max_abs_error_wb": 1e-12,
+          "nrmse": 1e-12
+        }
+      }
+    },
+    {
+      "accepted_full_fidelity": false,
+      "case_id": "freegs_16_diiid_public_example",
+      "example_path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+      "example_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
+      "grid": {
+        "nx": 65,
+        "ny": 65
+      },
+      "machine_class": "DIIID",
+      "missing_full_fidelity_requirements": [
+        "converged FreeGS/FreeGSNKE same-case nonlinear solve",
+        "native profile-source/free-boundary solve using same coil currents and profiles",
+        "psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
+        "grid-convergence evidence for the public example"
+      ],
+      "nonlinear_solve_attempt": {
+        "elapsed_s": 1.9785471779759973,
+        "error": "Picard iteration failed to converge (too many iterations)",
+        "error_type": "RuntimeError",
+        "maxits": 5,
+        "native_same_case_psi_comparison_ready": false,
+        "status": "failed_external_backend_solve"
+      },
+      "source_contract": {
+        "fvac": -3.231962138124,
+        "isoflux": [
+          [
+            1.285,
+            -1.176,
+            1.2,
+            1.2
+          ]
+        ],
+        "p_axis_pa": 159811.0,
+        "plasma_current_a": -1533632.0,
+        "xpoints": [
+          [
+            1.285,
+            -1.176
+          ],
+          [
+            1.2,
+            1.0
+          ]
+        ]
+      },
+      "vacuum_green_function_comparison": {
+        "coil_count": 18,
+        "coils": [
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 181806.0,
+            "effective_current_a_turns": 181806.0,
+            "filament_count": 12,
+            "name": "FC1",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -320605.0,
+            "effective_current_a_turns": -320605.0,
+            "filament_count": 12,
+            "name": "FC2",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -422619.5,
+            "effective_current_a_turns": -422619.5,
+            "filament_count": 12,
+            "name": "FC3",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -198811.125,
+            "effective_current_a_turns": -198811.125,
+            "filament_count": 12,
+            "name": "FC4",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 422818.0,
+            "effective_current_a_turns": 422818.0,
+            "filament_count": 12,
+            "name": "FC5",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 422659.0,
+            "effective_current_a_turns": 422659.0,
+            "filament_count": 12,
+            "name": "FC6",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -390758.0,
+            "effective_current_a_turns": -390758.0,
+            "filament_count": 12,
+            "name": "FC7",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -312487.0,
+            "effective_current_a_turns": -312487.0,
+            "filament_count": 12,
+            "name": "FC8",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 348880.5,
+            "effective_current_a_turns": 348880.5,
+            "filament_count": 12,
+            "name": "FC9",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 54158.0,
+            "effective_current_a_turns": 54158.0,
+            "filament_count": 12,
+            "name": "FC10",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -244786.0,
+            "effective_current_a_turns": -244786.0,
+            "filament_count": 12,
+            "name": "FC11",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -212908.0,
+            "effective_current_a_turns": -212908.0,
+            "filament_count": 12,
+            "name": "FC12",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -163580.0,
+            "effective_current_a_turns": -163580.0,
+            "filament_count": 12,
+            "name": "FC13",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 60156.0,
+            "effective_current_a_turns": 60156.0,
+            "filament_count": 12,
+            "name": "FC14",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 318664.0,
+            "effective_current_a_turns": 318664.0,
+            "filament_count": 12,
+            "name": "FC15",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -318564.0,
+            "effective_current_a_turns": -318564.0,
+            "filament_count": 12,
+            "name": "FC16",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": -180168.0,
+            "effective_current_a_turns": -180168.0,
+            "filament_count": 12,
+            "name": "FC17",
+            "turns": 1.0
+          },
+          {
+            "coil_type": "ShapedCoil",
+            "current_a": 431744.0,
+            "effective_current_a_turns": 431744.0,
+            "filament_count": 12,
+            "name": "FC18",
+            "turns": 1.0
+          }
+        ],
+        "filament_count": 216,
+        "freegs_vacuum_psi_sample": [
+          -0.08415270686250467,
+          -0.14076746951288915,
+          -0.41955224655486695,
+          -0.2552614364754644,
+          -0.34763920796298964,
+          -0.6046285786778952,
+          -0.07051050933030185,
+          -0.1852317287677403,
+          -0.5575014980862698
+        ],
+        "max_abs_error_wb": 7.771561172376096e-16,
+        "native_vacuum_psi_sample": [
+          -0.08415270686250467,
+          -0.1407674695128892,
+          -0.419552246554867,
+          -0.2552614364754644,
+          -0.3476392079629896,
+          -0.6046285786778944,
+          -0.07051050933030183,
+          -0.1852317287677401,
+          -0.5575014980862694
+        ],
+        "nrmse": 5.750194176761481e-16,
+        "pass": true,
+        "rmse_wb": 3.071282612065616e-16,
+        "sample_point_count": 9,
+        "thresholds": {
+          "max_abs_error_wb": 1e-12,
+          "nrmse": 1e-12
+        }
+      }
+    }
+  ],
+  "freegs_backend_available": true,
+  "freegs_import_error": null,
+  "freegs_version": "0.8.2",
+  "schema": "freegs-public-example-reconstruction-attempt.v1",
+  "surface": "free_boundary_equilibrium"
+}

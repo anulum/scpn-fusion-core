@@ -47,6 +47,12 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     )
     assert report["free_boundary_machine_metadata_indexed"] >= 0
     assert report["free_boundary_machine_metadata_ready"] in {True, False}
+    assert (
+        report["freegs_public_example_reconstruction_report"]
+        == "validation/reports/freegs_public_example_reconstruction.json"
+    )
+    assert report["freegs_public_example_cases"] >= 0
+    assert report["freegs_public_example_vacuum_comparison_pass"] in {True, False}
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {

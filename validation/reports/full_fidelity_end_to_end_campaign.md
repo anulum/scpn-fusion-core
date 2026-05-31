@@ -32,6 +32,10 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Free-boundary machine metadata indexed: `23`
 - Free-boundary machine metadata ready: `True`
 - Free-boundary machine metadata status: `blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction`
+- FreeGS public example reconstruction report: `validation/reports/freegs_public_example_reconstruction.json`
+- FreeGS public example cases: `2`
+- FreeGS public example vacuum comparison pass: `True`
+- FreeGS public example reconstruction status: `blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
 
@@ -42,4 +46,4 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 | production_scale_decomposition | blocked_contract_ready_missing_distributed_runtime_scaling | True | False | none | MPI or multi-GPU execution path over the declared rank tiles<br>halo exchange implementation and correctness tests<br>large-grid cluster/GPU wall-time scaling report<br>same-physics convergence evidence across decomposition shapes |
 | dream_grade_runaway_electrons | blocked_missing_public_dream_artifacts | True | False | DREAM | public DREAM deck ingestion and production artifact parity<br>full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact<br>validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM<br>distribution-function, current, and growth-rate RMSE thresholds against public DREAM output |
 | aurora_strahl_grade_impurities | blocked_partial_public_atomic_artifact_not_transport_parity | True | False | Aurora | transported_charge_state_density_time_radius_charge<br>line_radiation_power_time_radius_charge<br>ionisation_recombination_source_sink_matrix_time_radius_charge_charge<br>total_impurity_inventory_closure<br>native_same_case_solver_output_comparison |
-| free_boundary_equilibrium_strict_parity | blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction | True | False | FreeGS, FreeGSNKE | same-case public equilibrium with linked external coil currents<br>native free-boundary coil/vacuum reconstruction output<br>strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison<br>axis_X-point_boundary_containment_thresholds<br>grid convergence and current-closure evidence |
+| free_boundary_equilibrium_strict_parity | blocked_public_freegs_vacuum_matched_missing_nonlinear_same_case_psi | True | False | FreeGS, FreeGSNKE | converged FreeGS/FreeGSNKE public nonlinear equilibrium output<br>native same-case free-boundary profile-source reconstruction<br>psi_N RMSE threshold against external output<br>axis/X-point/boundary containment and q-profile thresholds<br>grid convergence across public example resolutions |
