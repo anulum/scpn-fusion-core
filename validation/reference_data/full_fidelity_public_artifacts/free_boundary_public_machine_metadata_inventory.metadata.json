@@ -1,0 +1,28 @@
+{
+  "accepted_full_fidelity": false,
+  "artifact_id": "free_boundary_public_machine_metadata_inventory",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.json",
+  "artifact_role": "partial_public_machine_metadata_inventory",
+  "available_observables": [
+    "machine_active_coil_geometry_summary",
+    "machine_passive_conductor_geometry_summary",
+    "limiter_wall_contour_summary",
+    "magnetic_probe_inventory_summary",
+    "public_freegs_example_script_checksums"
+  ],
+  "machine_config_count": 23,
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [
+    "same-case public equilibrium with linked external coil currents",
+    "native free-boundary coil/vacuum reconstruction output",
+    "strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison",
+    "axis_X-point_boundary_containment_thresholds",
+    "grid convergence and current-closure evidence"
+  ],
+  "redistribution_license": "FreeGS LGPL-3.0-or-later; FreeGSNKE LGPL-3.0-or-later",
+  "reference_family": "FreeGS/FreeGSNKE",
+  "sha256": "d0b7985a3f7eb10d6f880a9e97543bb50c829049f00e13d28f691d745629c70b",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_machine_metadata_without_same_case_free_boundary_reconstruction",
+  "surface": "free_boundary_equilibrium"
+}

@@ -1,0 +1,28 @@
+{
+  "accepted_full_fidelity_ready": false,
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.json",
+  "freegs_commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+  "freegs_example_count": 16,
+  "freegsnke_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+  "machine_config_count": 23,
+  "machine_metadata_ready": true,
+  "machines": [
+    "ITER",
+    "MAST-U",
+    "SPARC",
+    "example",
+    "test"
+  ],
+  "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.metadata.json",
+  "missing_full_fidelity_requirements": [
+    "same-case public equilibrium with linked external coil currents",
+    "native free-boundary coil/vacuum reconstruction output",
+    "strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison",
+    "axis_X-point_boundary_containment_thresholds",
+    "grid convergence and current-closure evidence"
+  ],
+  "reference_output_ready": false,
+  "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
+  "sha256": "d0b7985a3f7eb10d6f880a9e97543bb50c829049f00e13d28f691d745629c70b",
+  "status": "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
+}

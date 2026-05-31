@@ -1,0 +1,748 @@
+{
+  "accepted_full_fidelity": false,
+  "freegs_examples": [
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
+      "sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": false,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/02-read-geqdsk.py",
+      "sha256": "1780867de081c377d8d85f434f38d3740c07241f52645becc571adc177358d78"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/03-mast.py",
+      "sha256": "39693d27fd34fdb2f2072b3f76b0d1073dc5f2c0d54741b9c3b38e1b7798d9c0"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": false,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/04-read-mast-geqdsk.py",
+      "sha256": "e0ad4dfcef21e02f2a497ae520946df75dbbb7121c391d3008e76aef95a724a2"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": false,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/05-fixed-boundary.py",
+      "sha256": "aac7947672027e2b0de43df6935f67cf2bd8b2f74cd06131511aa56ec68ea448"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/06-xpoints.py",
+      "sha256": "f85cf01f95288311433234433f5be0a1026e7fa7a22acba7799ac4d2e393317a"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": false,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/07-increase-resolution.py",
+      "sha256": "44a397b5b541aca17909e6170df28a57c64f247b63c60a5b8a35dc04c029b2a0"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/08-mast-upgrade.py",
+      "sha256": "02a833bb5bf34fa0767f5d9a5745b1d37a9204f83751b0d00d6f50886d24ec17"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": true,
+      "contains_machine_contract": true,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/09-metal-wall.py",
+      "sha256": "c0dbd4659a830ce54e32f4abe829baf66eb34bb6b92a53acea74e64e6013760a"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": false,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/10-mastu-connection.py",
+      "sha256": "19414a1aa59c3b23081ac0217e70dbbe9251c6a8242ec42adc1e2dcfd11c727b"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/11-optimise-coils.py",
+      "sha256": "60f6269b81b93e309d1e7cbc714bacadceb828722c42ce3363037638dac8dcc7"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": true,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/12-limited.py",
+      "sha256": "c88877cc44116c826009fc8752c20213d2b7c04a71e157ab08c1a2635c88affa"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/13-coil-limits.py",
+      "sha256": "d1024e66d249130f80c5ccc09442aae6cbd4d7b79d9c73c991dc4e9d77c81cb7"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": true,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/14-read-geqdsk-constrained.py",
+      "sha256": "abba12215106da7158b7bf08307a067925c05996c3196d02ed089921e05467ee"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": false,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/15-sensorMeasurements.py",
+      "sha256": "d1762feea2067d612b24d5c6351d7c981be6174633c16a579d996cde519c2634"
+    },
+    {
+      "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
+      "contains_coil_contract": true,
+      "contains_limiter_or_wall_contract": false,
+      "contains_machine_contract": false,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+      "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
+    }
+  ],
+  "machine_configs": [
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "ITER_active_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 14,
+      "machine": "ITER",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/ITER/ITER_active_coils.pickle",
+      "point_count": 20,
+      "probe_counts": {},
+      "r_bounds_m": [
+        1.687,
+        11.9919
+      ],
+      "role": "active_coils",
+      "sha256": "a871d1474e546715244feab0ef11dd39f90a52e1f2612bb828b676c4619f5d43",
+      "size_bytes": 3107,
+      "top_level_count": 10,
+      "top_level_names_sample": [
+        "CS1",
+        "CS2",
+        "CS3",
+        "VS3",
+        "PF1",
+        "PF2",
+        "PF3",
+        "PF4"
+      ],
+      "z_bounds_m": [
+        -7.4665,
+        7.5741
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "ITER_limiter",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 57,
+      "machine": "ITER",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/ITER/ITER_limiter.pickle",
+      "point_count": 57,
+      "probe_counts": {},
+      "r_bounds_m": [
+        3.9421000480651855,
+        8.393799781799316
+      ],
+      "role": "limiter",
+      "sha256": "8c182b5cfd19142ba5e573960b52172cf8d67a870332a82bd5d0ee67439a3d64",
+      "size_bytes": 2683,
+      "top_level_count": 57,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -4.5742998123168945,
+        4.719600200653076
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "ITER_passive_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 148,
+      "machine": "ITER",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/ITER/ITER_passive_coils.pickle",
+      "point_count": 592,
+      "probe_counts": {},
+      "r_bounds_m": [
+        3.232390525236794,
+        9.713243671403042
+      ],
+      "role": "passive_coils",
+      "sha256": "a169949b5535ab8e6151c504e1f15c5b69982078ae1cca65d74120aa5dd43234",
+      "size_bytes": 26036,
+      "top_level_count": 148,
+      "top_level_names_sample": [
+        "I1_0",
+        "I2_0",
+        "I3_0",
+        "I4_0",
+        "I5_0",
+        "I6_0",
+        "I7_0",
+        "I8_0"
+      ],
+      "z_bounds_m": [
+        -5.657072112334092,
+        5.689480898760705
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "ITER_wall",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 57,
+      "machine": "ITER",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/ITER/ITER_wall.pickle",
+      "point_count": 57,
+      "probe_counts": {},
+      "r_bounds_m": [
+        3.9421000480651855,
+        8.393799781799316
+      ],
+      "role": "wall",
+      "sha256": "8c182b5cfd19142ba5e573960b52172cf8d67a870332a82bd5d0ee67439a3d64",
+      "size_bytes": 2683,
+      "top_level_count": 57,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -4.5742998123168945,
+        4.719600200653076
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "MAST-U_like_active_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 23,
+      "machine": "MAST-U",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/MAST-U/MAST-U_like_active_coils.pickle",
+      "point_count": 876,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.19475,
+        1.92205048
+      ],
+      "role": "active_coils",
+      "sha256": "205601d38fe734866fcc14399c07f7c126f2a7af49f4b0172ca364ad9d3048d7",
+      "size_bytes": 18540,
+      "top_level_count": 12,
+      "top_level_names_sample": [
+        "Solenoid",
+        "PX",
+        "D1",
+        "D2",
+        "D3",
+        "Dp",
+        "D5",
+        "D6"
+      ],
+      "z_bounds_m": [
+        -2.00405002,
+        2.00405002
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "MAST-U_like_limiter",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 47,
+      "machine": "MAST-U",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/MAST-U/MAST-U_like_limiter.pickle",
+      "point_count": 47,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.260841,
+        1.8
+      ],
+      "role": "limiter",
+      "sha256": "a27a01a2d335ec9c9572db9645a62466a3ecf9ec7fc3d82eb11b243c2b955701",
+      "size_bytes": 1218,
+      "top_level_count": 47,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -1.5099,
+        1.49874
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "MAST-U_like_magnetic_probes",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 0,
+      "machine": "MAST-U",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/MAST-U/MAST-U_like_magnetic_probes.pickle",
+      "point_count": 0,
+      "probe_counts": {
+        "flux_loops": 102,
+        "pickups": 398
+      },
+      "r_bounds_m": null,
+      "role": "magnetic_probes",
+      "sha256": "f4c178e7ef5e8d4b63d5988d8f2efae70e9b34b64c04ac7181a0722b1cf96723",
+      "size_bytes": 60072,
+      "top_level_count": 2,
+      "top_level_names_sample": [
+        "flux_loops",
+        "pickups"
+      ],
+      "z_bounds_m": null
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "MAST-U_like_passive_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 138,
+      "machine": "MAST-U",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/MAST-U/MAST-U_like_passive_coils.pickle",
+      "point_count": 552,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.2289999993517995,
+        2.1199999414384365
+      ],
+      "role": "passive_coils",
+      "sha256": "7f0f3f133d19a0fa78bc30639a6016a67fd369e23330d421c5bdca9c9e12af3d",
+      "size_bytes": 31505,
+      "top_level_count": 138,
+      "top_level_names_sample": [
+        "vessel_1",
+        "vessel_2",
+        "vessel_3",
+        "vessel_4",
+        "vessel_5",
+        "vessel_6",
+        "vessel_7",
+        "vessel_8"
+      ],
+      "z_bounds_m": [
+        -2.226369803622849,
+        2.2203990871464088
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "MAST-U_like_wall",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 91,
+      "machine": "MAST-U",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/MAST-U/MAST-U_like_wall.pickle",
+      "point_count": 91,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.260841,
+        1.8
+      ],
+      "role": "wall",
+      "sha256": "46a29b7831b43621f7839d9fcbb79b870f1731024b7378f4d043ba83cf52fcd7",
+      "size_bytes": 2386,
+      "top_level_count": 91,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -2.06614,
+        2.06041
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "SPARC_active_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 22,
+      "machine": "SPARC",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/SPARC/SPARC_active_coils.pickle",
+      "point_count": 1380,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.45861999999999997,
+        3.954
+      ],
+      "role": "active_coils",
+      "sha256": "f71345906e0c1c7e20d4165147b9abc1b795ef0c87fdf1d089e47745a0e68a53",
+      "size_bytes": 25606,
+      "top_level_count": 11,
+      "top_level_names_sample": [
+        "CS1I",
+        "CS1O",
+        "CS2",
+        "CS3",
+        "PF1",
+        "PF2",
+        "PF3",
+        "PF4"
+      ],
+      "z_bounds_m": [
+        -2.5076,
+        2.5076
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "SPARC_limiter",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 176,
+      "machine": "SPARC",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/SPARC/SPARC_limiter.pickle",
+      "point_count": 176,
+      "probe_counts": {},
+      "r_bounds_m": [
+        1.264,
+        2.43
+      ],
+      "role": "limiter",
+      "sha256": "2d345bc8b67dbf77b4e0715461ccf1c185d9fd8319d931836d9f57faa1d9126c",
+      "size_bytes": 8201,
+      "top_level_count": 176,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -1.575,
+        1.575
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "SPARC_passive_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 18,
+      "machine": "SPARC",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/SPARC/SPARC_passive_coils.pickle",
+      "point_count": 368,
+      "probe_counts": {},
+      "r_bounds_m": [
+        1.1199999999999968,
+        2.850002959211986
+      ],
+      "role": "passive_coils",
+      "sha256": "2f88dbb507f3f167a31b0d5905b1672d1b9c417d6c64a054619c97a5c565d59f",
+      "size_bytes": 7842,
+      "top_level_count": 18,
+      "top_level_names_sample": [
+        "vacuum_vessel_0",
+        "vacuum_vessel_1",
+        "vacuum_vessel_2",
+        "vacuum_vessel_3",
+        "vacuum_vessel_4",
+        "vacuum_vessel_5",
+        "vacuum_vessel_6",
+        "vacuum_vessel_7"
+      ],
+      "z_bounds_m": [
+        -1.765,
+        1.765
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "SPARC_wall",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 176,
+      "machine": "SPARC",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/SPARC/SPARC_wall.pickle",
+      "point_count": 176,
+      "probe_counts": {},
+      "r_bounds_m": [
+        1.264,
+        2.43
+      ],
+      "role": "wall",
+      "sha256": "2d345bc8b67dbf77b4e0715461ccf1c185d9fd8319d931836d9f57faa1d9126c",
+      "size_bytes": 8201,
+      "top_level_count": 176,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -1.575,
+        1.575
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "active_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 6,
+      "machine": "example",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/example/active_coils.pickle",
+      "point_count": 47,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.15,
+        1.8
+      ],
+      "role": "active_coils",
+      "sha256": "cc96f4c55a310b7b00e7d26d6e77e529c72458c4fcc6a91e009b8ce8fff99973",
+      "size_bytes": 1712,
+      "top_level_count": 4,
+      "top_level_names_sample": [
+        "Pz",
+        "P1",
+        "P2",
+        "Solenoid"
+      ],
+      "z_bounds_m": [
+        -1.2,
+        1.2
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "limiter",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 20,
+      "machine": "example",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/example/limiter.pickle",
+      "point_count": 20,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.35681935,
+        1.35
+      ],
+      "role": "limiter",
+      "sha256": "42ae7432e8a93a3547113232c9e3b670d14e365611a760d92be8a731508b863c",
+      "size_bytes": 540,
+      "top_level_count": 20,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -0.797267594,
+        0.797267594
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "magnetic_probes",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 0,
+      "machine": "example",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/example/magnetic_probes.pickle",
+      "point_count": 0,
+      "probe_counts": {
+        "flux_loops": 2,
+        "pickups": 2
+      },
+      "r_bounds_m": null,
+      "role": "magnetic_probes",
+      "sha256": "b6d7ef537991987ffd4ad4f8fbc0e2ef84c0894ee624e9b8cd22e5ca647c086b",
+      "size_bytes": 611,
+      "top_level_count": 2,
+      "top_level_names_sample": [
+        "flux_loops",
+        "pickups"
+      ],
+      "z_bounds_m": null
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "passive_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 8,
+      "machine": "example",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/example/passive_coils.pickle",
+      "point_count": 20,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.25,
+        2.1
+      ],
+      "role": "passive_coils",
+      "sha256": "4f88e171654f11756483d234b012d8252adbae7fabb121f1e52e89b4af15df55",
+      "size_bytes": 752,
+      "top_level_count": 8,
+      "top_level_names_sample": [
+        "passive_lower_wall",
+        "passive_upper_wall",
+        "passive_left_wall",
+        "passive_right_wall"
+      ],
+      "z_bounds_m": [
+        -1.4,
+        1.4
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "wall",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 5,
+      "machine": "example",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/example/wall.pickle",
+      "point_count": 5,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.3,
+        1.4
+      ],
+      "role": "wall",
+      "sha256": "2af27dde62c3dff9e890d47267e710a5fed5fc03dabb4ae7d1ca3741e960dcc6",
+      "size_bytes": 150,
+      "top_level_count": 5,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -0.85,
+        0.85
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "active_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 23,
+      "machine": "test",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/test/active_coils.pickle",
+      "point_count": 878,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.19475,
+        1.92205
+      ],
+      "role": "active_coils",
+      "sha256": "e1c40ad8e1bbd708693ea0a566b77d76da4f5e2c8ddc05efff6014b054f9ee9c",
+      "size_bytes": 18590,
+      "top_level_count": 12,
+      "top_level_names_sample": [
+        "Solenoid",
+        "PX",
+        "D1",
+        "D2",
+        "D3",
+        "Dp",
+        "D5",
+        "D6"
+      ],
+      "z_bounds_m": [
+        -2.00705,
+        2.00705
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "limiter",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 47,
+      "machine": "test",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/test/limiter.pickle",
+      "point_count": 47,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.260841,
+        1.8
+      ],
+      "role": "limiter",
+      "sha256": "a27a01a2d335ec9c9572db9645a62466a3ecf9ec7fc3d82eb11b243c2b955701",
+      "size_bytes": 1218,
+      "top_level_count": 47,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -1.5099,
+        1.49874
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "magnetic_probes",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 0,
+      "machine": "test",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/test/magnetic_probes.pickle",
+      "point_count": 0,
+      "probe_counts": {
+        "flux_loops": 102,
+        "pickups": 398
+      },
+      "r_bounds_m": null,
+      "role": "magnetic_probes",
+      "sha256": "f4c178e7ef5e8d4b63d5988d8f2efae70e9b34b64c04ac7181a0722b1cf96723",
+      "size_bytes": 60072,
+      "top_level_count": 2,
+      "top_level_names_sample": [
+        "flux_loops",
+        "pickups"
+      ],
+      "z_bounds_m": null
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "passive_coils",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 138,
+      "machine": "test",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/test/passive_coils.pickle",
+      "point_count": 552,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.2289999993517995,
+        2.1199999414384365
+      ],
+      "role": "passive_coils",
+      "sha256": "7f0f3f133d19a0fa78bc30639a6016a67fd369e23330d421c5bdca9c9e12af3d",
+      "size_bytes": 31505,
+      "top_level_count": 138,
+      "top_level_names_sample": [
+        "vessel_1",
+        "vessel_2",
+        "vessel_3",
+        "vessel_4",
+        "vessel_5",
+        "vessel_6",
+        "vessel_7",
+        "vessel_8"
+      ],
+      "z_bounds_m": [
+        -2.226369803622849,
+        2.2203990871464088
+      ]
+    },
+    {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "config_name": "wall",
+      "deserialisation_guard": "restricted_numpy_builtin_unpickler",
+      "geometry_element_count": 91,
+      "machine": "test",
+      "path": "data/external/full_fidelity_public_sources/repos/freegsnke/machine_configs/test/wall.pickle",
+      "point_count": 91,
+      "probe_counts": {},
+      "r_bounds_m": [
+        0.260841,
+        1.8
+      ],
+      "role": "wall",
+      "sha256": "46a29b7831b43621f7839d9fcbb79b870f1731024b7378f4d043ba83cf52fcd7",
+      "size_bytes": 2386,
+      "top_level_count": 91,
+      "top_level_names_sample": [],
+      "z_bounds_m": [
+        -2.06614,
+        2.06041
+      ]
+    }
+  ],
+  "schema": "free-boundary-public-machine-metadata-inventory.v1",
+  "surface": "free_boundary_equilibrium"
+}

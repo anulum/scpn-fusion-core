@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added a fail-closed FreeGS/FreeGSNKE public machine-metadata inventory that
+  records active-coil, passive-structure, limiter/wall, magnetic-probe, and
+  FreeGS example-script checksums while keeping strict free-boundary parity
+  blocked until same-case reconstruction outputs and solver comparisons exist.
+
 - Added a deterministic radial/toroidal production-decomposition contract for
   5D nonlinear GK grids, including halo-overhead and load-balance reporting,
   while keeping production-scale readiness blocked until distributed

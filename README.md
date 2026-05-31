@@ -52,7 +52,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 387 |
+| Python test files | 388 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -199,6 +199,14 @@ hashes in
 This is a reproducibility inventory only; full GENE/CGYRO/GS2 parity remains
 blocked until runnable external outputs, heat-flux spectra, field-energy
 histories, convergence evidence, and native same-case comparisons are present.
+The free-boundary lane now indexes public FreeGSNKE machine metadata for active
+coils, passive structures, limiter/wall contours, and magnetic probes, plus
+FreeGS example-script checksums, in
+[`validation/reports/free_boundary_public_machine_metadata_inventory.md`](validation/reports/free_boundary_public_machine_metadata_inventory.md).
+This is geometry/provenance inventory only; strict free-boundary parity remains
+blocked until same-case external coil currents, native coil/vacuum
+reconstruction output, and FreeGS/FreeGSNKE solver-output comparisons are
+present.
 The electromagnetic GK diagnostic now reports compact Ampere and perpendicular
 pressure-balance residuals in
 [`validation/reports/gk_nonlinear_solver_comparison.md`](validation/reports/gk_nonlinear_solver_comparison.md).
@@ -215,7 +223,7 @@ cluster timing evidence exist.
 
 | Capability | SCPN Fusion Core | TORAX | FUSE | FreeGS | DREAM |
 |-----------|:---:|:---:|:---:|:---:|:---:|
-| Free-boundary GS solve | Public GEQDSK operator-source gate passes; profile-source/free-boundary reconstruction gate remains open; not EFIT-grade inverse reconstruction | N | N | Y | N |
+| Free-boundary GS solve | Public GEQDSK operator-source gate passes; FreeGSNKE public machine metadata is indexed; profile-source/free-boundary reconstruction gate remains open; not EFIT-grade inverse reconstruction | N | N | Y | N |
 | 1.5D coupled transport | **Y** | Y | Y | N | N |
 | Neural transport surrogate | **Y** (QLKNN-10D) | N | N | N | N |
 | Native GK solver | Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence | N | N | N | N |

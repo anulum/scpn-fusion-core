@@ -41,6 +41,12 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         == "validation/reports/production_decomposition_contract.json"
     )
     assert report["production_decomposition_contract_pass"] in {True, False}
+    assert (
+        report["free_boundary_machine_metadata_report"]
+        == "validation/reports/free_boundary_public_machine_metadata_inventory.json"
+    )
+    assert report["free_boundary_machine_metadata_indexed"] >= 0
+    assert report["free_boundary_machine_metadata_ready"] in {True, False}
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {

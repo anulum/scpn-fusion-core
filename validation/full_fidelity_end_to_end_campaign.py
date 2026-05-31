@@ -21,6 +21,7 @@ DREAM_EXECUTION_REQUEST = REPORT_DIR / "dream_reference_execution_request.json"
 AURORA_EXECUTION_ARTIFACT = REPORT_DIR / "aurora_reference_execution_artifact.json"
 GK_DECK_INVENTORY = REPORT_DIR / "gk_public_reference_deck_inventory.json"
 PRODUCTION_DECOMPOSITION = REPORT_DIR / "production_decomposition_contract.json"
+FREE_BOUNDARY_MACHINE_METADATA = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -128,6 +129,21 @@ def _load_production_decomposition() -> dict[str, Any]:
     return report
 
 
+def _load_free_boundary_machine_metadata() -> dict[str, Any]:
+    if not FREE_BOUNDARY_MACHINE_METADATA.exists():
+        return {
+            "machine_config_count": 0,
+            "machine_metadata_ready": False,
+            "missing_full_fidelity_requirements": [],
+            "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
+            "status": "not_run",
+        }
+    report = json.loads(FREE_BOUNDARY_MACHINE_METADATA.read_text(encoding="utf-8"))
+    if report.get("schema") != "free-boundary-public-machine-metadata-inventory-report.v1":
+        raise ValueError("free-boundary public machine metadata inventory schema mismatch")
+    return report
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -156,6 +172,7 @@ def run_campaign() -> dict[str, Any]:
     aurora_execution = _load_aurora_execution()
     gk_deck_inventory = _load_gk_deck_inventory()
     production_decomposition = _load_production_decomposition()
+    free_boundary_machine_metadata = _load_free_boundary_machine_metadata()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -252,17 +269,25 @@ def run_campaign() -> dict[str, Any]:
         {
             "lane": "free_boundary_equilibrium_strict_parity",
             "surface": "free_boundary_equilibrium",
-            "status": "blocked_missing_external_coil_current_reference_artifacts",
+            "status": (
+                "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
+                if free_boundary_machine_metadata["machine_metadata_ready"]
+                else "blocked_missing_external_coil_current_reference_artifacts"
+            ),
             "locally_actionable_contract_ready": _report_exists(
                 "validation/reports/free_boundary_benchmark.json"
-            ),
+            )
+            and bool(free_boundary_machine_metadata["machine_metadata_ready"]),
             "reference_cases_ready": False,
             "sources": _sources_for(registry, "free_boundary_equilibrium"),
-            "next_required_evidence": [
-                "public coil-current sidecars or machine coil metadata for GEQDSK rows",
-                "strict FreeGS backend convergence on public free-boundary cases",
-                "profile-source/free-boundary reconstruction parity artifacts",
-            ],
+            "next_required_evidence": (
+                free_boundary_machine_metadata["missing_full_fidelity_requirements"]
+                or [
+                    "public coil-current sidecars or machine coil metadata for GEQDSK rows",
+                    "strict FreeGS backend convergence on public free-boundary cases",
+                    "profile-source/free-boundary reconstruction parity artifacts",
+                ]
+            ),
         },
     ]
 
@@ -294,6 +319,16 @@ def run_campaign() -> dict[str, Any]:
         "production_decomposition_contract_pass": bool(production_decomposition["contract_pass"]),
         "production_scale_ready": bool(production_decomposition["production_scale_ready"]),
         "production_decomposition_status": str(production_decomposition["status"]),
+        "free_boundary_machine_metadata_report": str(
+            FREE_BOUNDARY_MACHINE_METADATA.relative_to(ROOT)
+        ),
+        "free_boundary_machine_metadata_indexed": int(
+            free_boundary_machine_metadata["machine_config_count"]
+        ),
+        "free_boundary_machine_metadata_ready": bool(
+            free_boundary_machine_metadata["machine_metadata_ready"]
+        ),
+        "free_boundary_machine_metadata_status": str(free_boundary_machine_metadata["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -350,6 +385,22 @@ def write_reports(report: dict[str, Any]) -> None:
         ),
         f"- Production-scale ready: `{report['production_scale_ready']}`",
         f"- Production decomposition status: `{report['production_decomposition_status']}`",
+        (
+            "- Free-boundary machine metadata report: "
+            f"`{report['free_boundary_machine_metadata_report']}`"
+        ),
+        (
+            "- Free-boundary machine metadata indexed: "
+            f"`{report['free_boundary_machine_metadata_indexed']}`"
+        ),
+        (
+            "- Free-boundary machine metadata ready: "
+            f"`{report['free_boundary_machine_metadata_ready']}`"
+        ),
+        (
+            "- Free-boundary machine metadata status: "
+            f"`{report['free_boundary_machine_metadata_status']}`"
+        ),
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

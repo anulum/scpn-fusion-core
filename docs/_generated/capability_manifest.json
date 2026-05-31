@@ -2355,7 +2355,7 @@
     "python_capability_classes": 496,
     "python_capability_source_modules": 263,
     "rust_workspace_crates": 12,
-    "test_files": 387
+    "test_files": 388
   },
   "documentation": {
     "public_pages": [
@@ -2562,6 +2562,7 @@
       "tests/test_formal_safety_contract_replay_benchmark.py",
       "tests/test_forward_diagnostics_extended.py",
       "tests/test_forward_diagnostics_guards.py",
+      "tests/test_free_boundary_public_machine_metadata_inventory.py",
       "tests/test_free_boundary_supervisory_control.py",
       "tests/test_free_boundary_tracking.py",
       "tests/test_free_boundary_tracking_acceptance.py",

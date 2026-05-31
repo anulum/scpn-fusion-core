@@ -237,6 +237,15 @@ over `8 x 4` rank tiles with exact owned-cell balance and halo overhead
 reported. This is a partition contract only; MPI or multi-GPU execution,
 halo-exchange correctness, and cluster scaling evidence remain required.
 
+The free-boundary public machine-metadata inventory is tracked in
+[`validation/reports/free_boundary_public_machine_metadata_inventory.md`](../validation/reports/free_boundary_public_machine_metadata_inventory.md).
+It indexes cached FreeGSNKE machine configuration metadata for active coils,
+passive structures, limiter/wall contours, and magnetic probes, with checksums
+and guarded geometry summaries, plus FreeGS example-script checksums. This is a
+reconstruction input inventory only; strict parity remains blocked until those
+metadata are linked to same-case public equilibria, native coil/vacuum
+reconstruction outputs, and FreeGS/FreeGSNKE solver-output comparisons.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
