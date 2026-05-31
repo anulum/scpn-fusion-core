@@ -90,6 +90,10 @@
         "path": "src/scpn_fusion/core/integrated_transport_solver_adaptive.py"
       },
       {
+        "name": "AdasChargeStateCoefficients",
+        "path": "src/scpn_fusion/core/impurity_transport.py"
+      },
+      {
         "name": "AlfvenContinuum",
         "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
       },
@@ -120,6 +124,10 @@
       {
         "name": "ArtifactValidationError",
         "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "AuroraStrahlArtifact",
+        "path": "src/scpn_fusion/core/impurity_transport.py"
       },
       {
         "name": "AvalancheResult",
@@ -2327,7 +2335,7 @@
     "optional_extras": 11,
     "public_api_exports": 2,
     "public_documentation_pages": 41,
-    "python_capability_classes": 490,
+    "python_capability_classes": 492,
     "python_capability_source_modules": 262,
     "rust_workspace_crates": 12,
     "test_files": 380

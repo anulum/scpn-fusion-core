@@ -660,14 +660,18 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "edge_source_particle_conservation": True,
         "neoclassical_pinch_contract": True,
         "radiated_power_monotonicity": True,
+        "charge_state_resolved_density_artifact_export": True,
+        "collisional_radiative_source_sink_matrix_contract": True,
+        "adas_style_coefficient_ingestion_contract": True,
+        "charge_state_particle_conservation_gate": True,
     }
     schema = _load_artifact_schema()
     readiness = _reference_readiness("impurity_transport", reference_cases, schema)
     missing_requirements = [
-        "charge-state-resolved collisional-radiative operator parity",
-        "ADAS-backed ionisation/recombination/radiation coefficient ingestion",
-        "Aurora/STRAHL public case ingestion and density/radiation RMSE gates",
-        "multi-species source/sink matrix conservation across charge states",
+        "public Aurora/STRAHL artifact ingestion and production parity",
+        "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
+        "validated charge-state transport, recycling, and radiation operators against Aurora/STRAHL",
+        "charge-state density, total-density, and radiation RMSE thresholds against public outputs",
     ]
     return {
         "surface": "impurity_transport",

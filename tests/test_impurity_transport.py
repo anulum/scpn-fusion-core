@@ -11,9 +11,14 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core.impurity_transport import (
+    AuroraStrahlArtifact,
     CoolingCurve,
     ImpuritySpecies,
     ImpurityTransportSolver,
+    adas_style_charge_state_coefficients,
+    advance_charge_state_collisional_radiative,
+    build_aurora_strahl_charge_state_artifact,
+    collisional_radiative_source_sink_matrices,
     neoclassical_impurity_pinch,
     total_radiated_power,
     tungsten_accumulation_diagnostic,
@@ -160,3 +165,70 @@ def test_accumulation_diagnostic():
 
     assert diag["danger_level"] == "critical"
     assert diag["peaking_factor"] == 10.0
+
+
+def test_charge_state_collisional_radiative_step_conserves_density() -> None:
+    radius = np.linspace(0.0, 1.0, 8)
+    charge = np.array([0, 1, 2, 3], dtype=float)
+    ne = np.ones_like(radius) * 1.0e20
+    coeffs = adas_style_charge_state_coefficients("Ar", charge, np.linspace(100.0, 600.0, 4))
+    density = np.zeros((radius.size, charge.size))
+    density[:, 1] = 1.0e15 * (1.0 - 0.2 * radius)
+
+    updated, ion, rec = advance_charge_state_collisional_radiative(density, ne, coeffs, dt=1.0e-5)
+
+    assert ion.shape == density.shape
+    assert rec.shape == density.shape
+    assert np.all(updated >= 0.0)
+    np.testing.assert_allclose(np.sum(updated, axis=1), np.sum(density, axis=1), rtol=1e-13)
+
+
+def test_collisional_radiative_source_sink_rejects_invalid_shapes() -> None:
+    charge = np.array([0, 1, 2], dtype=float)
+    coeffs = adas_style_charge_state_coefficients("Ne", charge, np.array([50.0, 100.0, 200.0]))
+    with pytest.raises(ValueError, match="radius"):
+        collisional_radiative_source_sink_matrices(
+            np.ones((4, 3)),
+            np.ones(3) * 1.0e20,
+            coeffs,
+        )
+
+
+def test_aurora_strahl_charge_state_artifact_contract() -> None:
+    radius = np.linspace(0.0, 1.0, 7)
+    time = np.array([0.0, 1.0e-5, 2.0e-5])
+    charge = np.array([0, 1, 2, 3], dtype=float)
+    ne = np.ones((time.size, radius.size)) * 1.0e20
+    te = np.tile(np.linspace(100.0, 500.0, radius.size), (time.size, 1))
+    density = np.zeros((radius.size, charge.size))
+    density[:, 1] = 1.0e15
+
+    artifact = build_aurora_strahl_charge_state_artifact(
+        element="Ar",
+        charge_states=charge,
+        radius_m=radius,
+        time_s=time,
+        ne_t_r=ne,
+        Te_t_r=te,
+        initial_charge_state_density_rz=density,
+        major_radius_m=6.2,
+    )
+
+    assert isinstance(artifact, AuroraStrahlArtifact)
+    payload = artifact.to_dict()
+    assert payload["schema"] == "aurora-strahl-charge-state-artifact.v1"
+    assert payload["observable_axes"]["charge_state_density_r_t"] == [
+        "time_s",
+        "radius_m",
+        "charge_state",
+    ]
+    charge_density = np.asarray(payload["observables"]["charge_state_density_r_t"])
+    total_density = np.asarray(payload["observables"]["total_impurity_density_r_t"])
+    line_power = np.asarray(payload["observables"]["line_radiation_power_t"])
+    assert charge_density.shape == (3, 7, 4)
+    assert total_density.shape == (3, 7)
+    assert line_power.shape == (3,)
+    assert np.all(np.isfinite(charge_density))
+    assert np.all(charge_density >= 0.0)
+    np.testing.assert_allclose(total_density, np.sum(charge_density, axis=2))
+    assert artifact.conservation["relative_inventory_error"] <= 1.0e-12

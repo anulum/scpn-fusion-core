@@ -371,7 +371,8 @@ $$V_Z = -D_{\rm neo}\left[\frac{Z}{L_n} + \left(\frac{Z}{2} - H_Z\right)\frac{1}
 
 The native benchmark validates source conservation, positivity, inward pinch
 for peaked profiles, and monotonic radiated power. This is a trace transport
-contract and does not claim STRAHL/JINTRAC collisional-operator parity.
+contract, adds a charge-state artifact/source-sink contract, and does not claim
+Aurora/STRAHL/JINTRAC collisional-operator parity.
 
 **Key files:** `core/impurity_transport.py`, `core/integrated_transport_solver.py` (multi-ion mode), `control/spi_mitigation.py`.
 

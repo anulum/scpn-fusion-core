@@ -36,6 +36,63 @@ class ImpuritySpecies:
             raise ValueError("source_decay_width_rho must be finite and positive")
 
 
+@dataclass(frozen=True)
+class AdasChargeStateCoefficients:
+    """ADAS-style charge-state coefficient tables for native CR contracts."""
+
+    charge_states: np.ndarray
+    ionisation_m3_s: np.ndarray
+    recombination_m3_s: np.ndarray
+    line_radiation_w_m3: np.ndarray
+
+    def __post_init__(self) -> None:
+        charge = np.asarray(self.charge_states, dtype=np.float64)
+        ion = np.asarray(self.ionisation_m3_s, dtype=np.float64)
+        rec = np.asarray(self.recombination_m3_s, dtype=np.float64)
+        rad = np.asarray(self.line_radiation_w_m3, dtype=np.float64)
+        if charge.ndim != 1 or charge.size < 2:
+            raise ValueError("charge_states must be a 1D axis with at least two states")
+        if not np.all(np.isfinite(charge)) or not np.all(np.diff(charge) > 0.0):
+            raise ValueError("charge_states must be finite and strictly increasing")
+        if not np.all(np.equal(charge, np.floor(charge))):
+            raise ValueError("charge_states must contain integer charge values")
+        for name, values in {
+            "ionisation_m3_s": ion,
+            "recombination_m3_s": rec,
+            "line_radiation_w_m3": rad,
+        }.items():
+            if values.shape != charge.shape:
+                raise ValueError(f"{name} must match charge_states shape")
+            if not np.all(np.isfinite(values)) or np.any(values < 0.0):
+                raise ValueError(f"{name} must be finite and non-negative")
+
+
+@dataclass(frozen=True)
+class AuroraStrahlArtifact:
+    """JSON-compatible Aurora/STRAHL-style charge-state artifact."""
+
+    coordinates: dict[str, list[float]]
+    coordinate_units: dict[str, str]
+    observable_axes: dict[str, list[str]]
+    observable_units: dict[str, str]
+    observables: dict[str, Any]
+    conservation: dict[str, float]
+    provenance: dict[str, str]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a deterministic JSON-compatible artifact payload."""
+        return {
+            "schema": "aurora-strahl-charge-state-artifact.v1",
+            "coordinates": self.coordinates,
+            "coordinate_units": self.coordinate_units,
+            "observable_axes": self.observable_axes,
+            "observable_units": self.observable_units,
+            "observables": self.observables,
+            "conservation": self.conservation,
+            "provenance": self.provenance,
+        }
+
+
 class CoolingCurve:
     """
     Parametric cooling rate L_Z(Te) [W m^3].
@@ -72,6 +129,230 @@ class CoolingCurve:
             L[~valid] = 0.0
             return np.asarray(L)
         return np.zeros_like(Te)
+
+
+def adas_style_charge_state_coefficients(
+    element: str,
+    charge_states: np.ndarray | list[int] | tuple[int, ...],
+    Te_eV: np.ndarray,
+) -> AdasChargeStateCoefficients:
+    """Return finite ADAS-style CR coefficients on a charge-state axis.
+
+    The tables are analytic, deterministic coefficient contracts for native
+    testing. They are shaped and unit-labelled for ADAS/Aurora/STRAHL artifact
+    ingestion, but they are not a substitute for licensed Open-ADAS datasets.
+    """
+    charge = np.asarray(charge_states, dtype=np.float64)
+    te = np.asarray(Te_eV, dtype=np.float64)
+    if te.shape != charge.shape:
+        raise ValueError("Te_eV must match charge_states shape")
+    if not np.all(np.isfinite(te)) or np.any(te <= 0.0):
+        raise ValueError("Te_eV must be finite and positive")
+    if charge.ndim != 1 or charge.size < 2:
+        raise ValueError("charge_states must be a 1D axis with at least two states")
+    if not np.all(np.isfinite(charge)) or not np.all(np.diff(charge) > 0.0):
+        raise ValueError("charge_states must be finite and strictly increasing")
+
+    element_scale = {"C": 0.65, "Ne": 0.9, "Ar": 1.15, "W": 2.8}.get(element, 1.0)
+    z_norm = charge / max(float(np.max(charge)), 1.0)
+    ion_peak = 30.0 * (1.0 + 12.0 * z_norm) ** 1.35
+    rec_peak = 5.0e3 / (1.0 + 8.0 * z_norm)
+    ionisation = element_scale * 2.5e-14 * np.sqrt(te / 100.0) * np.exp(-ion_peak / te)
+    recombination = element_scale * 1.8e-14 * (rec_peak / (te + rec_peak)) ** 0.75
+    recombination[-1] = 0.0
+    ionisation[-1] = 0.0
+    line_radiation = (
+        element_scale
+        * 1.0e-32
+        * (1.0 + 0.15 * charge)
+        * np.exp(-(((np.log(te) - np.log(np.maximum(ion_peak, 2.0))) / 1.8) ** 2))
+    )
+    return AdasChargeStateCoefficients(
+        charge_states=charge,
+        ionisation_m3_s=ionisation,
+        recombination_m3_s=recombination,
+        line_radiation_w_m3=line_radiation,
+    )
+
+
+def _strict_axis(name: str, values: np.ndarray, *, min_length: int = 2) -> np.ndarray:
+    axis = np.asarray(values, dtype=np.float64)
+    if axis.ndim != 1 or axis.size < min_length:
+        raise ValueError(f"{name} must be a 1D axis with at least {min_length} points")
+    if not np.all(np.isfinite(axis)) or not np.all(np.diff(axis) > 0.0):
+        raise ValueError(f"{name} must be finite and strictly increasing")
+    return axis
+
+
+def _volume_integral(profile: np.ndarray, radius_m: np.ndarray, R0: float) -> float:
+    trapz: Any = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
+    vol_element = 4.0 * np.pi**2 * R0 * radius_m
+    return float(trapz(profile * vol_element, radius_m))
+
+
+def collisional_radiative_source_sink_matrices(
+    charge_state_density_rz: np.ndarray,
+    ne: np.ndarray,
+    coeffs: AdasChargeStateCoefficients,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return finite ionisation and recombination transfer matrices."""
+    density = np.asarray(charge_state_density_rz, dtype=np.float64)
+    ne_arr = np.asarray(ne, dtype=np.float64)
+    ion = np.asarray(coeffs.ionisation_m3_s, dtype=np.float64)
+    rec = np.asarray(coeffs.recombination_m3_s, dtype=np.float64)
+    if density.ndim != 2:
+        raise ValueError("charge_state_density_rz must have shape radius x charge_state")
+    if ne_arr.ndim != 1 or ne_arr.shape[0] != density.shape[0]:
+        raise ValueError("ne must match the radius dimension")
+    if density.shape[1] != ion.shape[0] or density.shape[1] != rec.shape[0]:
+        raise ValueError("coefficient charge axis must match density charge axis")
+    if not np.all(np.isfinite(density)) or np.any(density < 0.0):
+        raise ValueError("charge_state_density_rz must be finite and non-negative")
+    if not np.all(np.isfinite(ne_arr)) or np.any(ne_arr <= 0.0):
+        raise ValueError("ne must be finite and positive")
+
+    ionisation = ne_arr[:, np.newaxis] * density * ion[np.newaxis, :]
+    recombination = ne_arr[:, np.newaxis] * density * rec[np.newaxis, :]
+    ionisation[:, -1] = 0.0
+    recombination[:, 0] = 0.0
+    return ionisation, recombination
+
+
+def advance_charge_state_collisional_radiative(
+    charge_state_density_rz: np.ndarray,
+    ne: np.ndarray,
+    coeffs: AdasChargeStateCoefficients,
+    dt: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Advance one conservative charge-state CR step.
+
+    Transfers are pairwise between neighbouring charge states and limited by
+    donor inventory, preserving total impurity density per radius without
+    introducing negative densities.
+    """
+    dt_s = float(dt)
+    if not np.isfinite(dt_s) or dt_s <= 0.0:
+        raise ValueError("dt must be finite and positive")
+    density = np.asarray(charge_state_density_rz, dtype=np.float64)
+    ionisation, recombination = collisional_radiative_source_sink_matrices(density, ne, coeffs)
+    updated = density.copy()
+    for z_idx in range(density.shape[1] - 1):
+        ion_flux = np.minimum(ionisation[:, z_idx], updated[:, z_idx] / dt_s)
+        rec_flux = np.minimum(recombination[:, z_idx + 1], updated[:, z_idx + 1] / dt_s)
+        updated[:, z_idx] += dt_s * (rec_flux - ion_flux)
+        updated[:, z_idx + 1] += dt_s * (ion_flux - rec_flux)
+    return np.maximum(updated, 0.0), ionisation, recombination
+
+
+def build_aurora_strahl_charge_state_artifact(
+    *,
+    element: str,
+    charge_states: np.ndarray | list[int] | tuple[int, ...],
+    radius_m: np.ndarray,
+    time_s: np.ndarray,
+    ne_t_r: np.ndarray,
+    Te_t_r: np.ndarray,
+    initial_charge_state_density_rz: np.ndarray,
+    major_radius_m: float,
+) -> AuroraStrahlArtifact:
+    """Simulate and export an Aurora/STRAHL-style charge-state artifact."""
+    charge_axis = _strict_axis("charge_state", np.asarray(charge_states, dtype=np.float64))
+    radius_axis = _strict_axis("radius_m", np.asarray(radius_m, dtype=np.float64))
+    time_axis = _strict_axis("time_s", np.asarray(time_s, dtype=np.float64))
+    if radius_axis[0] < 0.0:
+        raise ValueError("radius_m must be non-negative")
+    if not np.isfinite(major_radius_m) or major_radius_m <= 0.0:
+        raise ValueError("major_radius_m must be finite and positive")
+    ne_hist = np.asarray(ne_t_r, dtype=np.float64)
+    te_hist = np.asarray(Te_t_r, dtype=np.float64)
+    density = np.asarray(initial_charge_state_density_rz, dtype=np.float64)
+    expected_2d = (time_axis.size, radius_axis.size)
+    expected_density = (radius_axis.size, charge_axis.size)
+    if ne_hist.shape != expected_2d or te_hist.shape != expected_2d:
+        raise ValueError("ne_t_r and Te_t_r must have shape time x radius")
+    if density.shape != expected_density:
+        raise ValueError("initial_charge_state_density_rz must have shape radius x charge_state")
+    if not np.all(np.isfinite(ne_hist)) or np.any(ne_hist <= 0.0):
+        raise ValueError("ne_t_r must be finite and positive")
+    if not np.all(np.isfinite(te_hist)) or np.any(te_hist <= 0.0):
+        raise ValueError("Te_t_r must be finite and positive")
+    if not np.all(np.isfinite(density)) or np.any(density < 0.0):
+        raise ValueError("initial_charge_state_density_rz must be finite and non-negative")
+
+    density_history = [density.copy()]
+    line_power: list[float] = [
+        0.0,
+    ]
+    final_ion = np.zeros_like(density)
+    final_rec = np.zeros_like(density)
+    for step in range(1, time_axis.size):
+        dt_s = float(time_axis[step] - time_axis[step - 1])
+        te_charge = np.interp(
+            charge_axis,
+            [charge_axis[0], charge_axis[-1]],
+            [te_hist[step].min(), te_hist[step].max()],
+        )
+        coeffs = adas_style_charge_state_coefficients(element, charge_axis, te_charge)
+        density, final_ion, final_rec = advance_charge_state_collisional_radiative(
+            density, ne_hist[step], coeffs, dt_s
+        )
+        density_history.append(density.copy())
+        rad_density = (
+            ne_hist[step, :, np.newaxis] * density * coeffs.line_radiation_w_m3[np.newaxis, :]
+        )
+        line_power.append(
+            _volume_integral(np.sum(rad_density, axis=1), radius_axis, major_radius_m)
+        )
+
+    density_t_r_z = np.stack(density_history, axis=0)
+    total_t_r = np.sum(density_t_r_z, axis=2)
+    initial_inventory = _volume_integral(total_t_r[0], radius_axis, major_radius_m)
+    final_inventory = _volume_integral(total_t_r[-1], radius_axis, major_radius_m)
+    conservation_error = abs(final_inventory - initial_inventory) / max(abs(initial_inventory), 1.0)
+
+    return AuroraStrahlArtifact(
+        coordinates={
+            "time_s": [float(v) for v in time_axis],
+            "radius_m": [float(v) for v in radius_axis],
+            "charge_state": [float(v) for v in charge_axis],
+        },
+        coordinate_units={
+            "time_s": "s",
+            "radius_m": "m",
+            "charge_state": "integer_charge",
+        },
+        observable_axes={
+            "charge_state_density_r_t": ["time_s", "radius_m", "charge_state"],
+            "total_impurity_density_r_t": ["time_s", "radius_m"],
+            "line_radiation_power_t": ["time_s"],
+            "ionisation_source_matrix": ["radius_m", "charge_state"],
+            "recombination_sink_matrix": ["radius_m", "charge_state"],
+        },
+        observable_units={
+            "charge_state_density_r_t": "m^-3",
+            "total_impurity_density_r_t": "m^-3",
+            "line_radiation_power_t": "W",
+            "ionisation_source_matrix": "m^-3_s^-1",
+            "recombination_sink_matrix": "m^-3_s^-1",
+        },
+        observables={
+            "charge_state_density_r_t": density_t_r_z.tolist(),
+            "total_impurity_density_r_t": total_t_r.tolist(),
+            "line_radiation_power_t": [float(v) for v in line_power],
+            "ionisation_source_matrix": final_ion.tolist(),
+            "recombination_sink_matrix": final_rec.tolist(),
+        },
+        conservation={
+            "initial_inventory": float(initial_inventory),
+            "final_inventory": float(final_inventory),
+            "relative_inventory_error": float(conservation_error),
+        },
+        provenance={
+            "reference_family": "Aurora/STRAHL",
+            "implementation": "native_charge_state_collisional_radiative_contract_with_adas_style_coefficients",
+            "parity_status": "artifact_contract_only_not_public_aurora_strahl_parity",
+        },
+    )
 
 
 def neoclassical_impurity_pinch(

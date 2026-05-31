@@ -23,6 +23,7 @@ if str(SRC) not in sys.path:
 from scpn_fusion.core.impurity_transport import (  # noqa: E402
     ImpuritySpecies,
     ImpurityTransportSolver,
+    build_aurora_strahl_charge_state_artifact,
     neoclassical_impurity_pinch,
     total_radiated_power,
 )
@@ -67,12 +68,44 @@ def run_benchmark() -> dict[str, Any]:
 
     low_rad = total_radiated_power(ne, {"W": ne * 1.0e-5}, Te, rho, R0, a)
     high_rad = total_radiated_power(ne, {"W": ne * 1.0e-4}, Te, rho, R0, a)
+    radius_m = rho * a
+    time_s = np.array([0.0, 1.0e-5, 2.0e-5], dtype=float)
+    charge_states = np.array([0, 1, 2, 3], dtype=float)
+    ne_t_r = np.tile(ne, (time_s.size, 1))
+    Te_t_r = np.tile(Te, (time_s.size, 1))
+    density_r_z = np.zeros((rho.size, charge_states.size), dtype=float)
+    density_r_z[:, 1] = 1.0e15 * (1.0 - 0.1 * rho)
+    cr_artifact = build_aurora_strahl_charge_state_artifact(
+        element="Ar",
+        charge_states=charge_states,
+        radius_m=radius_m,
+        time_s=time_s,
+        ne_t_r=ne_t_r,
+        Te_t_r=Te_t_r,
+        initial_charge_state_density_rz=density_r_z,
+        major_radius_m=R0,
+    )
+    cr_payload = cr_artifact.to_dict()
+    charge_density = np.asarray(cr_payload["observables"]["charge_state_density_r_t"])
+    total_density = np.asarray(cr_payload["observables"]["total_impurity_density_r_t"])
 
     invariants = {
         "positivity": bool(np.all(n_w >= 0.0) and np.all(np.isfinite(n_w))),
         "edge_source_conservation": bool(conservation_error <= 2.0e-2),
         "inward_pinch_midradius": bool(pinch[len(rho) // 2] < 0.0),
         "radiation_monotonicity": bool(high_rad > low_rad > 0.0),
+        "charge_state_artifact_contract": bool(
+            cr_payload["schema"] == "aurora-strahl-charge-state-artifact.v1"
+            and charge_density.shape == (time_s.size, rho.size, charge_states.size)
+            and total_density.shape == (time_s.size, rho.size)
+            and np.all(np.isfinite(charge_density))
+        ),
+        "charge_state_density_closure": bool(
+            np.allclose(total_density, np.sum(charge_density, axis=2), rtol=1.0e-13)
+        ),
+        "charge_state_particle_conservation": bool(
+            cr_artifact.conservation["relative_inventory_error"] <= 1.0e-12
+        ),
     }
 
     return {
@@ -86,9 +119,18 @@ def run_benchmark() -> dict[str, Any]:
             "low_radiated_power_mw": low_rad,
             "high_radiated_power_mw": high_rad,
             "edge_density_m3": float(n_w[-1]),
+            "charge_state_inventory_error": cr_artifact.conservation["relative_inventory_error"],
+            "charge_state_count": int(charge_states.size),
         },
         "thresholds": {
             "max_relative_conservation_error": 2.0e-2,
+            "max_charge_state_inventory_error": 1.0e-12,
+        },
+        "artifact_contract": {
+            "schema": cr_payload["schema"],
+            "coordinates": list(cr_payload["coordinates"].keys()),
+            "observables": list(cr_payload["observables"].keys()),
+            "parity_status": cr_payload["provenance"]["parity_status"],
         },
         "invariants": invariants,
         "passed": all(invariants.values()),
@@ -122,6 +164,19 @@ def write_reports(results: dict[str, Any]) -> None:
         f"- Low radiated power: {metrics['low_radiated_power_mw']:.6e} MW",
         f"- High radiated power: {metrics['high_radiated_power_mw']:.6e} MW",
         f"- Edge density: {metrics['edge_density_m3']:.6e} m^-3",
+        f"- Charge-state count: {metrics['charge_state_count']}",
+        (
+            "- Charge-state inventory error: "
+            f"{metrics['charge_state_inventory_error']:.6e} "
+            f"(threshold {thresholds['max_charge_state_inventory_error']:.2e})"
+        ),
+        "",
+        "## Aurora/STRAHL-style artifact contract",
+        "",
+        f"- Schema: `{results['artifact_contract']['schema']}`",
+        f"- Coordinates: {', '.join(results['artifact_contract']['coordinates'])}",
+        f"- Observables: {', '.join(results['artifact_contract']['observables'])}",
+        f"- Parity status: `{results['artifact_contract']['parity_status']}`",
         "",
         "## Invariants",
         "",

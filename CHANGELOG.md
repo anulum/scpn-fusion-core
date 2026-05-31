@@ -10,6 +10,12 @@
 
 ## [Unreleased]
 
+- Added Aurora/STRAHL-style impurity charge-state artifact contracts with
+  conservative collisional-radiative source/sink matrices, deterministic
+  ADAS-style coefficient ingestion-shape checks, finite line-radiation
+  observables, and inventory conservation gates while keeping public
+  Aurora/STRAHL parity fail-closed.
+
 - Added Python and Rust DREAM-style runaway-electron kinetic artifact export
   contracts over the native 1D momentum Fokker-Planck kernel, including
   explicit time, radius, momentum, and pitch axes plus finite current,

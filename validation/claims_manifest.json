@@ -277,7 +277,7 @@
     {
       "id": "readme_impurity_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Impurity transport \\(neoclassical\\) \\| Trace radial transport with source conservation and neoclassical pinch contracts; no STRAHL/JINTRAC collisional-operator parity",
+      "source_pattern": "Impurity transport \\(neoclassical\\) \\| Trace radial transport with source conservation, neoclassical pinch, and charge-state artifact/source-sink contract; no public Aurora/STRAHL collisional-operator parity",
       "evidence_files": [
         "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
@@ -288,7 +288,7 @@
         },
         {
           "file": "docs/PHYSICS_METHODS_COMPLETE.md",
-          "pattern": "does not claim STRAHL/JINTRAC collisional-operator parity"
+          "pattern": "does not claim Aurora/STRAHL/JINTRAC collisional-operator parity"
         }
       ]
     }

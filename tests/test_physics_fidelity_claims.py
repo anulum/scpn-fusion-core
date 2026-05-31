@@ -56,7 +56,8 @@ def test_reduced_order_competitive_claims_disclose_actual_fidelity() -> None:
         ),
         "Impurity transport (neoclassical)": (
             "Trace radial transport",
-            "no STRAHL/JINTRAC collisional-operator parity",
+            "charge-state artifact/source-sink contract",
+            "no public Aurora/STRAHL collisional-operator parity",
         ),
     }
 
@@ -80,7 +81,7 @@ def test_public_scope_names_first_principles_comparators() -> None:
         "not GENE/CGYRO-class production turbulence",
         "not yet EFIT-grade",
         "Hirshman-Sigmar-style",
-        "does not claim STRAHL/JINTRAC collisional-operator parity",
+        "does not claim Aurora/STRAHL/JINTRAC collisional-operator parity",
         "does not claim parity with DREAM's kinetic momentum-space distribution solver",
         "no nonlinear MHD ELM simulation",
     ]

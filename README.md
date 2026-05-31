@@ -48,7 +48,7 @@ facades and evidence-bounded validation reports.
 | Package version | 3.9.5 |
 | Public API exports | 2 |
 | Python capability source modules | 262 |
-| Python capability classes | 490 |
+| Python capability classes | 492 |
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
@@ -183,7 +183,7 @@ accepted artefacts must also satisfy
 | ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
 | Runaway electron dynamics | DREAM-style fluid balance, 1D momentum Fokker-Planck, and multidimensional artifact-export contract; no public DREAM kinetic-distribution parity | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
-| Impurity transport (neoclassical) | Trace radial transport with source conservation and neoclassical pinch contracts; no STRAHL/JINTRAC collisional-operator parity | N | N | N | N |
+| Impurity transport (neoclassical) | Trace radial transport with source conservation, neoclassical pinch, and charge-state artifact/source-sink contract; no public Aurora/STRAHL collisional-operator parity | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |
 | MHD stability (7 criteria) | **Y** | N | N | N | N |
 | Digital twin + HIL testing | **Y** | N | N | N | N |

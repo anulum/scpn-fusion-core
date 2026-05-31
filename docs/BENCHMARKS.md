@@ -747,6 +747,14 @@ observables. This is a reference-gate artifact contract only; it does not
 replace public DREAM deck ingestion or full momentum-pitch-radius kinetic
 operator parity.
 
+The native impurity surface now exports an Aurora/STRAHL-style
+`time_s x radius_m x charge_state` artifact contract with total impurity
+density closure, line-radiation power, and finite ionisation/recombination
+source-sink matrices. The charge-state CR step is pairwise conservative and
+uses deterministic ADAS-style coefficient tables for ingestion-shape testing;
+public Aurora/STRAHL decks and licensed ADAS/Open-ADAS coefficient parity are
+still required before full collisional-operator parity can pass.
+
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.
 
@@ -762,7 +770,8 @@ frontiers:
   current scalar balance, 1D momentum Fokker-Planck kernel, and
   multidimensional DREAM-style artifact-export contract.
 - Impurity transport must demonstrate Aurora/STRAHL collisional-operator parity
-  with charge-state-resolved conservation and public reference cases.
+  beyond the current trace radial transport, charge-state artifact/source-sink
+  conservation contract, and public reference-case manifest.
 
 The native nonlinear GK surface now exposes an explicit
 `species x kx x ky x theta x vpar x mu` phase-space contract plus a named

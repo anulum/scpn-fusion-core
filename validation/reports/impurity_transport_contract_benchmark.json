@@ -1,7 +1,26 @@
 {
+  "artifact_contract": {
+    "coordinates": [
+      "time_s",
+      "radius_m",
+      "charge_state"
+    ],
+    "observables": [
+      "charge_state_density_r_t",
+      "total_impurity_density_r_t",
+      "line_radiation_power_t",
+      "ionisation_source_matrix",
+      "recombination_sink_matrix"
+    ],
+    "parity_status": "artifact_contract_only_not_public_aurora_strahl_parity",
+    "schema": "aurora-strahl-charge-state-artifact.v1"
+  },
   "benchmark": "impurity_transport_contract",
   "description": "Trace impurity transport contract; not Aurora/STRAHL/JINTRAC collisional-operator parity.",
   "invariants": {
+    "charge_state_artifact_contract": true,
+    "charge_state_density_closure": true,
+    "charge_state_particle_conservation": true,
     "edge_source_conservation": true,
     "inward_pinch_midradius": true,
     "positivity": true,
@@ -9,6 +28,8 @@
   },
   "metrics": {
     "actual_particles": 9.790647565880643e+17,
+    "charge_state_count": 4,
+    "charge_state_inventory_error": 0.0,
     "edge_density_m3": 2.0933367531619228e+16,
     "expected_particles": 9.790647565880644e+17,
     "high_radiated_power_mw": 39.217850922494925,
@@ -18,6 +39,7 @@
   },
   "passed": true,
   "thresholds": {
+    "max_charge_state_inventory_error": 1e-12,
     "max_relative_conservation_error": 0.02
   }
 }
