@@ -433,6 +433,7 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         and cfg.n_vpar > 1
         and cfg.n_mu > 1,
         "named_conservative_exb_term": True,
+        "nonlinear_invariant_history_export": cfg.nonlinear,
         "nonlinear_exb_operator": cfg.nonlinear,
         "kinetic_electron_surface": cfg.kinetic_electrons,
         "electromagnetic_a_parallel_surface": cfg.electromagnetic,

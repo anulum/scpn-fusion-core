@@ -733,7 +733,10 @@ contract, not a replacement for production GENE or CGYRO turbulence campaigns.
 `benchmarks/gk_solver_comparison.py` records transport diagnostics, Sugama
 moment residuals, and the nonlinear E x B invariant diagnostic. The invariant
 requires zero high-k leakage outside the 2/3 dealiased spectral mask and no
-free-energy injection from the undriven collisionless nonlinear bracket.
+free-energy injection from the undriven collisionless nonlinear bracket. The
+native run result now exports those invariant histories so saturation windows
+can be audited against the same discrete nonlinear-operator contract used by
+the benchmark.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.
@@ -760,8 +763,10 @@ gradient drive through the magnetic-moment compression term. The energy
 diagnostics now account for particle free energy and electromagnetic field
 energy separately before reporting total energy, and `run()` exports particle,
 `phi`, `A_parallel`, `B_parallel`, and total-energy histories for saturation
-and invariant analysis. This is necessary infrastructure for full nonlinear 5D
-parity, but it is not sufficient to claim GENE/CGYRO/GS2 equivalence.
+and invariant analysis. It also exports nonlinear ExB free-energy production,
+relative production, dealiased high-k leakage, and per-save invariant-pass
+histories. This is necessary infrastructure for full nonlinear 5D parity, but
+it is not sufficient to claim GENE/CGYRO/GS2 equivalence.
 
 The current report is
 `validation/reports/full_fidelity_acceptance_benchmark.md`. Required public

@@ -709,6 +709,39 @@ class TestNonlinearInvariantDiagnostics:
         assert abs(diagnostics.exb_free_energy_production) <= 1e-8
         assert diagnostics.dealiased_high_k_max_abs <= 1e-12
 
+    def test_run_exports_nonlinear_invariant_histories(self):
+        cfg = NonlinearGKConfig(
+            n_kx=8,
+            n_ky=8,
+            n_theta=8,
+            n_vpar=4,
+            n_mu=3,
+            n_species=2,
+            nonlinear=True,
+            collisions=False,
+            hyper_coeff=0.0,
+            R_L_Ti=0.0,
+            R_L_Te=0.0,
+            R_L_ne=0.0,
+            dt=0.005,
+            n_steps=4,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+
+        result = solver.run(solver.init_state(amplitude=1e-5, seed=41))
+
+        assert result.exb_free_energy_production_t.shape == result.time.shape
+        assert result.exb_relative_free_energy_production_t.shape == result.time.shape
+        assert result.dealiased_high_k_max_abs_t.shape == result.time.shape
+        assert result.nonlinear_invariant_pass_t.shape == result.time.shape
+        assert result.nonlinear_invariant_pass_t.dtype == np.bool_
+        assert np.all(np.isfinite(result.exb_free_energy_production_t))
+        assert np.all(np.isfinite(result.exb_relative_free_energy_production_t))
+        assert np.all(result.dealiased_high_k_max_abs_t <= 1e-12)
+        assert np.all(result.nonlinear_invariant_pass_t)
+
 
 # ── JAX fallback ─────────────────────────────────────────────────────
 

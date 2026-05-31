@@ -106,6 +106,12 @@ class NonlinearGKResult:
     A_parallel_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     B_parallel_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     total_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    exb_free_energy_production_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    exb_relative_free_energy_production_t: NDArray[np.float64] = field(
+        default_factory=lambda: np.empty(0)
+    )
+    dealiased_high_k_max_abs_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    nonlinear_invariant_pass_t: NDArray[np.bool_] = field(default_factory=lambda: np.empty(0))
     time: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     converged: bool = False
     final_state: NonlinearGKState | None = None

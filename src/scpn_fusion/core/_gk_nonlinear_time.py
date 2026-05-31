@@ -267,6 +267,10 @@ class NonlinearGKTimeMixin:
         A_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         B_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         total_energy_t: NDArray[np.float64] = np.zeros(n_saves)
+        exb_free_energy_production_t: NDArray[np.float64] = np.zeros(n_saves)
+        exb_relative_free_energy_production_t: NDArray[np.float64] = np.zeros(n_saves)
+        dealiased_high_k_max_abs_t: NDArray[np.float64] = np.zeros(n_saves)
+        nonlinear_invariant_pass_t: NDArray[np.bool_] = np.zeros(n_saves, dtype=np.bool_)
         time_t: NDArray[np.float64] = np.zeros(n_saves)
         save_idx = 0
 
@@ -291,6 +295,13 @@ class NonlinearGKTimeMixin:
                 A_parallel_energy_t[save_idx] = field_energy.A_parallel
                 B_parallel_energy_t[save_idx] = field_energy.B_parallel
                 total_energy_t[save_idx] = particle_energy + field_energy.total
+                invariant = self.nonlinear_invariant_diagnostics(state)
+                exb_free_energy_production_t[save_idx] = invariant.exb_free_energy_production
+                exb_relative_free_energy_production_t[save_idx] = (
+                    invariant.exb_relative_free_energy_production
+                )
+                dealiased_high_k_max_abs_t[save_idx] = invariant.dealiased_high_k_max_abs
+                nonlinear_invariant_pass_t[save_idx] = invariant.passes
                 time_t[save_idx] = state.time
                 save_idx += 1
 
@@ -303,6 +314,18 @@ class NonlinearGKTimeMixin:
         A_parallel_energy_t = np.asarray(A_parallel_energy_t[:save_idx], dtype=np.float64)
         B_parallel_energy_t = np.asarray(B_parallel_energy_t[:save_idx], dtype=np.float64)
         total_energy_t = np.asarray(total_energy_t[:save_idx], dtype=np.float64)
+        exb_free_energy_production_t = np.asarray(
+            exb_free_energy_production_t[:save_idx], dtype=np.float64
+        )
+        exb_relative_free_energy_production_t = np.asarray(
+            exb_relative_free_energy_production_t[:save_idx], dtype=np.float64
+        )
+        dealiased_high_k_max_abs_t = np.asarray(
+            dealiased_high_k_max_abs_t[:save_idx], dtype=np.float64
+        )
+        nonlinear_invariant_pass_t = np.asarray(
+            nonlinear_invariant_pass_t[:save_idx], dtype=np.bool_
+        )
         time_t = np.asarray(time_t[:save_idx], dtype=np.float64)
 
         n_half = max(len(Q_i_t) // 2, 1)
@@ -324,6 +347,10 @@ class NonlinearGKTimeMixin:
             A_parallel_energy_t=A_parallel_energy_t,
             B_parallel_energy_t=B_parallel_energy_t,
             total_energy_t=total_energy_t,
+            exb_free_energy_production_t=exb_free_energy_production_t,
+            exb_relative_free_energy_production_t=exb_relative_free_energy_production_t,
+            dealiased_high_k_max_abs_t=dealiased_high_k_max_abs_t,
+            nonlinear_invariant_pass_t=nonlinear_invariant_pass_t,
             time=time_t,
             converged=converged,
             final_state=state,

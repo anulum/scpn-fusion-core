@@ -20,7 +20,8 @@
         "kinetic_electron_surface": true,
         "moment_conserving_collision_contract": true,
         "named_conservative_exb_term": true,
-        "nonlinear_exb_operator": true
+        "nonlinear_exb_operator": true,
+        "nonlinear_invariant_history_export": true
       },
       "missing_requirements": [
         "public nonlinear GENE/CGYRO/GS2 benchmark deck parity",
