@@ -14,7 +14,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from validation.benchmark_full_fidelity_acceptance import run_benchmark
+from validation.benchmark_full_fidelity_acceptance import (
+    evaluate_artifact_thresholds,
+    run_benchmark,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -139,3 +142,63 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
         assert case["threshold_contracts_ready"] is True
         assert case["threshold_invalid"] == []
         assert case["threshold_contracts_missing"] == []
+
+
+def test_full_fidelity_artifact_threshold_evaluator_passes_matching_payloads() -> None:
+    """Reference artifact comparisons must compute thresholded quantitative metrics."""
+    reference = {
+        "observables": {
+            "ion_heat_flux_spectrum": [[[1.0, 2.0], [3.0, 4.0]]],
+            "electromagnetic_apar_energy": [1.0, 2.0, 3.0],
+        }
+    }
+    candidate = {
+        "observables": {
+            "ion_heat_flux_spectrum": [[[1.01, 2.01], [2.99, 3.99]]],
+            "electromagnetic_apar_energy": [1.0, 2.02, 2.98],
+        }
+    }
+    thresholds = {
+        "ion_heat_flux_relative_l2_max": 0.01,
+        "field_energy_relative_error_max": 0.02,
+    }
+    threshold_contracts = {
+        "ion_heat_flux_relative_l2_max": {
+            "comparator": "<=",
+            "metric": "relative_l2",
+            "observable": "ion_heat_flux_spectrum",
+        },
+        "field_energy_relative_error_max": {
+            "comparator": "<=",
+            "metric": "relative_error",
+            "observable": "electromagnetic_apar_energy",
+        },
+    }
+
+    report = evaluate_artifact_thresholds(candidate, reference, thresholds, threshold_contracts)
+
+    assert report["ready"] is True
+    assert report["passed"] is True
+    assert {check["threshold"] for check in report["checks"]} == set(thresholds)
+    assert all(check["valid"] and check["passed"] for check in report["checks"])
+
+
+def test_full_fidelity_artifact_threshold_evaluator_fails_closed_on_missing_observable() -> None:
+    """Missing candidate/reference observables must be invalid, not silently skipped."""
+    reference = {"observables": {"ion_heat_flux_spectrum": [1.0, 2.0]}}
+    candidate = {"observables": {}}
+    thresholds = {"ion_heat_flux_relative_l2_max": 0.1}
+    threshold_contracts = {
+        "ion_heat_flux_relative_l2_max": {
+            "comparator": "<=",
+            "metric": "relative_l2",
+            "observable": "ion_heat_flux_spectrum",
+        }
+    }
+
+    report = evaluate_artifact_thresholds(candidate, reference, thresholds, threshold_contracts)
+
+    assert report["ready"] is False
+    assert report["passed"] is False
+    assert report["checks"][0]["valid"] is False
+    assert report["checks"][0]["reason"] == "missing_candidate_observable"

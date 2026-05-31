@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -58,6 +59,159 @@ def _load_reference_cases() -> dict[str, Any]:
     if not isinstance(surfaces, dict):
         raise ValueError("full-fidelity reference manifest must define surfaces")
     return manifest
+
+
+def _artifact_observables(artifact: dict[str, Any]) -> dict[str, Any]:
+    """Return observable mapping from a JSON-compatible artifact payload."""
+    observables = artifact.get("observables", artifact)
+    return observables if isinstance(observables, dict) else {}
+
+
+def _artifact_observable_array(
+    artifact: dict[str, Any], observable: str
+) -> tuple[bool, NDArray[np.float64] | None]:
+    """Return one finite numeric observable array from an artifact payload."""
+    observables = _artifact_observables(artifact)
+    if observable not in observables:
+        return False, None
+    try:
+        array = np.asarray(observables[observable], dtype=np.float64)
+    except (TypeError, ValueError):
+        return True, None
+    if array.size == 0 or not bool(np.all(np.isfinite(array))):
+        return True, None
+    return True, array
+
+
+def _artifact_metric_value(
+    candidate: NDArray[np.float64], reference: NDArray[np.float64], metric: str
+) -> float:
+    """Compute one supported artifact parity metric."""
+    delta = candidate - reference
+    if metric == "absolute_error":
+        return float(np.max(np.abs(delta)))
+    if metric == "relative_error":
+        return float(np.max(np.abs(delta)) / max(float(np.max(np.abs(reference))), 1e-30))
+    if metric == "relative_l2":
+        return float(
+            np.linalg.norm(delta.ravel()) / max(float(np.linalg.norm(reference.ravel())), 1e-30)
+        )
+    raise ValueError(f"unsupported artifact metric: {metric}")
+
+
+def evaluate_artifact_thresholds(
+    candidate_artifact: dict[str, Any],
+    reference_artifact: dict[str, Any],
+    thresholds: dict[str, Any],
+    threshold_contracts: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare candidate and reference artifacts against declared thresholds.
+
+    The evaluator is intentionally fail-closed: missing observables, non-finite
+    payloads, unsupported contracts, and shape mismatches are invalid checks
+    rather than skipped comparisons.
+    """
+    allowed_comparators = {"<=", ">="}
+    allowed_metrics = {"absolute_error", "relative_error", "relative_l2"}
+    checks: list[dict[str, Any]] = []
+
+    for threshold_name, raw_limit in thresholds.items():
+        contract = (
+            threshold_contracts.get(threshold_name)
+            if isinstance(threshold_contracts, dict)
+            else None
+        )
+        check: dict[str, Any] = {
+            "threshold": str(threshold_name),
+            "valid": False,
+            "passed": False,
+        }
+        try:
+            limit = float(raw_limit)
+        except (TypeError, ValueError):
+            check["reason"] = "invalid_threshold_value"
+            checks.append(check)
+            continue
+        if not bool(np.isfinite(limit)) or limit < 0.0:
+            check["reason"] = "invalid_threshold_value"
+            checks.append(check)
+            continue
+        check["limit"] = limit
+
+        if not isinstance(contract, dict):
+            check["reason"] = "missing_threshold_contract"
+            checks.append(check)
+            continue
+        comparator = contract.get("comparator")
+        metric = contract.get("metric")
+        observable = contract.get("observable")
+        check.update(
+            {
+                "comparator": comparator,
+                "metric": metric,
+                "observable": observable,
+            }
+        )
+        if comparator not in allowed_comparators:
+            check["reason"] = "unsupported_comparator"
+            checks.append(check)
+            continue
+        if metric not in allowed_metrics:
+            check["reason"] = "unsupported_metric"
+            checks.append(check)
+            continue
+        if not isinstance(observable, str) or not observable:
+            check["reason"] = "missing_observable_contract"
+            checks.append(check)
+            continue
+
+        candidate_present, candidate = _artifact_observable_array(candidate_artifact, observable)
+        if not candidate_present:
+            check["reason"] = "missing_candidate_observable"
+            checks.append(check)
+            continue
+        if candidate is None:
+            check["reason"] = "invalid_candidate_observable"
+            checks.append(check)
+            continue
+        reference_present, reference = _artifact_observable_array(reference_artifact, observable)
+        if not reference_present:
+            check["reason"] = "missing_reference_observable"
+            checks.append(check)
+            continue
+        if reference is None:
+            check["reason"] = "invalid_reference_observable"
+            checks.append(check)
+            continue
+        if candidate.shape != reference.shape:
+            check.update(
+                {
+                    "reason": "observable_shape_mismatch",
+                    "candidate_shape": list(candidate.shape),
+                    "reference_shape": list(reference.shape),
+                }
+            )
+            checks.append(check)
+            continue
+
+        value = _artifact_metric_value(candidate, reference, str(metric))
+        passed = value <= limit if comparator == "<=" else value >= limit
+        check.update(
+            {
+                "value": value,
+                "valid": True,
+                "passed": bool(passed),
+            }
+        )
+        checks.append(check)
+
+    ready = bool(checks) and all(bool(check["valid"]) for check in checks)
+    passed = ready and all(bool(check["passed"]) for check in checks)
+    return {
+        "ready": ready,
+        "passed": passed,
+        "checks": checks,
+    }
 
 
 def _observable_readiness(path: Path | None, observables: Any, contracts: Any) -> dict[str, Any]:
@@ -425,6 +579,7 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "explicit_5d_phase_space_contract": True,
         "phase_space_coordinate_axis_export": True,
         "json_compatible_reference_artifact_export": True,
+        "quantitative_reference_artifact_comparator": True,
         "electromagnetic_b_parallel_surface": cfg.electromagnetic,
         "electromagnetic_b_parallel_hamiltonian_coupling": cfg.electromagnetic,
         "electromagnetic_field_energy_accounting": cfg.electromagnetic,

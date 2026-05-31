@@ -763,10 +763,13 @@ coordinate axes used by the solver, so saved spectra carry machine-readable
 grid metadata for future GENE/CGYRO/GS2 artifact comparison. The result surface
 also exposes a JSON-compatible reference-artifact export with coordinates,
 units, observable axes, heat-flux spectra, particle/field energy spectra, and
-saturation diagnostics. The transport diagnostics now include saved kx/ky ion
-and electron heat-flux spectra that close exactly to the scalar flux histories
-and saved electrostatic zonal-flow energy bounded by the total electrostatic
-field energy. Late-window
+saturation diagnostics. The acceptance harness includes a quantitative
+reference-artifact comparator for declared `absolute_error`, `relative_error`,
+and `relative_l2` thresholds; it fails closed on missing observables, non-finite
+payloads, unsupported contracts, and shape mismatches. The transport
+diagnostics now include saved kx/ky ion and electron heat-flux spectra that
+close exactly to the scalar flux histories and saved electrostatic zonal-flow
+energy bounded by the total electrostatic field energy. Late-window
 saturation summaries now report scalar `phi` RMS, averaged ion/electron
 heat-flux spectra, zonal-flow energy, and electromagnetic energy components
 from the same saved histories used by the benchmark. The electromagnetic state

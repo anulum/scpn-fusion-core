@@ -28,6 +28,7 @@
         "nonlinear_invariant_history_export": true,
         "particle_free_energy_spectrum_history_export": true,
         "phase_space_coordinate_axis_export": true,
+        "quantitative_reference_artifact_comparator": true,
         "saturation_window_diagnostics_export": true,
         "zonal_flow_energy_history_export": true
       },
