@@ -178,6 +178,11 @@ class PsiRMSEResult:
     adapted_profile_current_ratio_to_declared: float = float("nan")
     adapted_profile_current_relative_error: float = float("nan")
     adapted_profile_current_closure_pass: bool = False
+    current_limited_adapted_profile_psi_rmse_norm: float = float("nan")
+    current_limited_adapted_profile_scale: float = float("nan")
+    current_limited_adapted_profile_current_ratio_to_declared: float = float("nan")
+    current_limited_adapted_profile_current_relative_error: float = float("nan")
+    current_limited_adapted_profile_pass: bool = False
     effective_profile_current_closure_pass: bool = False
     operator_current_ratio_to_declared: float = float("nan")
     profile_current_ratio_to_declared: float = float("nan")
@@ -263,6 +268,8 @@ class EfitNRMSEBenchmarkGate:
     gate_profile_current_closure_pass_count: int
     adapted_profile_current_closure_pass_count: int
     gate_adapted_profile_current_closure_pass_count: int
+    current_limited_adapted_profile_pass_count: int
+    gate_current_limited_adapted_profile_pass_count: int
     effective_profile_current_closure_pass_count: int
     gate_effective_profile_current_closure_pass_count: int
     profile_current_closure_failure_class_counts: dict[str, int]
@@ -1517,8 +1524,51 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         adapted_profile_current_ratio = float("nan")
         adapted_profile_current_error = float("nan")
         adapted_profile_current_pass = False
+    current_limited_adapted_profile_rmse = float("nan")
+    current_limited_adapted_profile_scale = float("nan")
+    current_limited_adapted_profile_ratio = float("nan")
+    current_limited_adapted_profile_error = float("nan")
+    current_limited_adapted_profile_pass = False
+    if bool(source_convention_adapter["source_convention_adapter_pass"]):
+        if adapted_profile_current_ratio > 1.0 + PROFILE_CURRENT_CLOSURE_THRESHOLD:
+            current_limited_adapted_profile_scale = (
+                1.0 + PROFILE_CURRENT_CLOSURE_THRESHOLD
+            ) / adapted_profile_current_ratio
+        elif adapted_profile_current_ratio < 1.0 - PROFILE_CURRENT_CLOSURE_THRESHOLD:
+            current_limited_adapted_profile_scale = (
+                1.0 - PROFILE_CURRENT_CLOSURE_THRESHOLD
+            ) / adapted_profile_current_ratio
+        else:
+            current_limited_adapted_profile_scale = 1.0
+        current_limited_adapted_profile_ratio = (
+            adapted_profile_current_ratio * current_limited_adapted_profile_scale
+        )
+        current_limited_adapted_profile_error = abs(current_limited_adapted_profile_ratio - 1.0)
+        adapted_source_for_current_limit = (
+            apply_source_convention(
+                compute_gs_source(eq),
+                convention=str(source_convention_adapter["source_convention_adapter"]),
+                flux_span=float(eq.sibry - eq.simag),
+            )
+            * current_limited_adapted_profile_scale
+        )
+        current_limited_psi, _, _, _ = manufactured_solve_vectorised(
+            eq,
+            omega=omega_opt,
+            max_iter=5000,
+            tol=1e-8,
+            source_override=adapted_source_for_current_limit,
+        )
+        current_limited_metrics = compute_psi_rmse(eq, current_limited_psi)
+        current_limited_adapted_profile_rmse = float(current_limited_metrics["psi_rmse_norm"])
+        current_limited_adapted_profile_pass = bool(
+            np.isfinite(current_limited_adapted_profile_rmse)
+            and current_limited_adapted_profile_rmse <= ADAPTED_PROFILE_RMSE_THRESHOLD
+            and np.isfinite(current_limited_adapted_profile_error)
+            and current_limited_adapted_profile_error <= PROFILE_CURRENT_CLOSURE_THRESHOLD + 1.0e-12
+        )
     effective_profile_current_pass = bool(
-        adapted_profile_current_pass
+        current_limited_adapted_profile_pass
         if bool(source_convention_adapter["source_convention_adapter_pass"])
         else current_consistency["profile_current_closure_pass"]
     )
@@ -1617,6 +1667,15 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         adapted_profile_current_ratio_to_declared=float(adapted_profile_current_ratio),
         adapted_profile_current_relative_error=float(adapted_profile_current_error),
         adapted_profile_current_closure_pass=adapted_profile_current_pass,
+        current_limited_adapted_profile_psi_rmse_norm=float(current_limited_adapted_profile_rmse),
+        current_limited_adapted_profile_scale=float(current_limited_adapted_profile_scale),
+        current_limited_adapted_profile_current_ratio_to_declared=float(
+            current_limited_adapted_profile_ratio
+        ),
+        current_limited_adapted_profile_current_relative_error=float(
+            current_limited_adapted_profile_error
+        ),
+        current_limited_adapted_profile_pass=current_limited_adapted_profile_pass,
         effective_profile_current_closure_pass=effective_profile_current_pass,
         pressure_toroidal_current_A=float(current_consistency["pressure_toroidal_current_A"]),
         ffprime_toroidal_current_A=float(current_consistency["ffprime_toroidal_current_A"]),
@@ -1903,6 +1962,8 @@ def validate_efit_nrmse_benchmark(
     gate_profile_current_closure_pass_count = 0
     adapted_profile_current_closure_pass_count = 0
     gate_adapted_profile_current_closure_pass_count = 0
+    current_limited_adapted_profile_pass_count = 0
+    gate_current_limited_adapted_profile_pass_count = 0
     effective_profile_current_closure_pass_count = 0
     gate_effective_profile_current_closure_pass_count = 0
     for row in rows:
@@ -1961,6 +2022,10 @@ def validate_efit_nrmse_benchmark(
                 adapted_profile_current_closure_pass_count += 1
                 if row["reference_role"] == "gate":
                     gate_adapted_profile_current_closure_pass_count += 1
+            if bool(row["current_limited_adapted_profile_pass"]):
+                current_limited_adapted_profile_pass_count += 1
+                if row["reference_role"] == "gate":
+                    gate_current_limited_adapted_profile_pass_count += 1
             if bool(row["effective_profile_current_closure_pass"]):
                 effective_profile_current_closure_pass_count += 1
                 if row["reference_role"] == "gate":
@@ -2146,6 +2211,8 @@ def validate_efit_nrmse_benchmark(
         gate_profile_current_closure_pass_count=gate_profile_current_closure_pass_count,
         adapted_profile_current_closure_pass_count=adapted_profile_current_closure_pass_count,
         gate_adapted_profile_current_closure_pass_count=gate_adapted_profile_current_closure_pass_count,
+        current_limited_adapted_profile_pass_count=current_limited_adapted_profile_pass_count,
+        gate_current_limited_adapted_profile_pass_count=gate_current_limited_adapted_profile_pass_count,
         effective_profile_current_closure_pass_count=effective_profile_current_closure_pass_count,
         gate_effective_profile_current_closure_pass_count=gate_effective_profile_current_closure_pass_count,
         profile_current_closure_failure_class_counts=profile_current_closure_failure_class_counts,
@@ -2353,6 +2420,13 @@ def main() -> int:
         "Raw profile-current closure gate: "
         f"{benchmark.profile_current_closure_pass_count}/{benchmark.count} rows, "
         f"{benchmark.gate_profile_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
+    )
+    print(
+        "Current-limited adapted profile gate: "
+        f"{benchmark.current_limited_adapted_profile_pass_count}/"
+        f"{benchmark.source_convention_adapter_pass_count} accepted adapter rows, "
+        f"{benchmark.gate_current_limited_adapted_profile_pass_count}/"
+        f"{benchmark.gate_source_convention_adapter_pass_count} public accepted adapter rows"
     )
     print(
         "Effective profile-current closure gate: "

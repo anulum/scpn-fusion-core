@@ -779,6 +779,11 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_current_ratio_to_declared=0.99,
                 adapted_profile_current_relative_error=0.01,
                 adapted_profile_current_closure_pass=True,
+                current_limited_adapted_profile_psi_rmse_norm=0.01,
+                current_limited_adapted_profile_scale=1.0,
+                current_limited_adapted_profile_current_ratio_to_declared=0.99,
+                current_limited_adapted_profile_current_relative_error=0.01,
+                current_limited_adapted_profile_pass=True,
                 effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
@@ -936,6 +941,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.gate_profile_current_closure_pass_count == 3
         assert gate.adapted_profile_current_closure_pass_count == 9
         assert gate.gate_adapted_profile_current_closure_pass_count == 3
+        assert gate.current_limited_adapted_profile_pass_count == 9
+        assert gate.gate_current_limited_adapted_profile_pass_count == 3
         assert gate.effective_profile_current_closure_pass_count == 9
         assert gate.gate_effective_profile_current_closure_pass_count == 3
         assert gate.profile_current_closure_failure_class_counts == {"passes_threshold": 9}
@@ -1043,6 +1050,11 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_current_ratio_to_declared=0.99,
                 adapted_profile_current_relative_error=0.01,
                 adapted_profile_current_closure_pass=True,
+                current_limited_adapted_profile_psi_rmse_norm=0.01,
+                current_limited_adapted_profile_scale=1.0,
+                current_limited_adapted_profile_current_ratio_to_declared=0.99,
+                current_limited_adapted_profile_current_relative_error=0.01,
+                current_limited_adapted_profile_pass=True,
                 effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
@@ -1149,6 +1161,11 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_current_ratio_to_declared=0.99,
                 adapted_profile_current_relative_error=0.01,
                 adapted_profile_current_closure_pass=True,
+                current_limited_adapted_profile_psi_rmse_norm=0.01,
+                current_limited_adapted_profile_scale=1.0,
+                current_limited_adapted_profile_current_ratio_to_declared=0.99,
+                current_limited_adapted_profile_current_relative_error=0.01,
+                current_limited_adapted_profile_pass=True,
                 effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,
@@ -1254,6 +1271,11 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_current_ratio_to_declared=0.99,
                 adapted_profile_current_relative_error=0.01,
                 adapted_profile_current_closure_pass=True,
+                current_limited_adapted_profile_psi_rmse_norm=0.01,
+                current_limited_adapted_profile_scale=1.0,
+                current_limited_adapted_profile_current_ratio_to_declared=0.99,
+                current_limited_adapted_profile_current_relative_error=0.01,
+                current_limited_adapted_profile_pass=True,
                 effective_profile_current_closure_pass=True,
                 pressure_toroidal_current_A=-0.6e6,
                 ffprime_toroidal_current_A=-0.9e6,

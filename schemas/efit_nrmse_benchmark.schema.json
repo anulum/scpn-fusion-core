@@ -59,6 +59,8 @@
     "gate_profile_current_closure_pass_count",
     "adapted_profile_current_closure_pass_count",
     "gate_adapted_profile_current_closure_pass_count",
+    "current_limited_adapted_profile_pass_count",
+    "gate_current_limited_adapted_profile_pass_count",
     "effective_profile_current_closure_pass_count",
     "gate_effective_profile_current_closure_pass_count",
     "profile_current_closure_failure_class_counts",
@@ -323,6 +325,14 @@
       "type": "integer",
       "minimum": 0
     },
+    "current_limited_adapted_profile_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_current_limited_adapted_profile_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
     "effective_profile_current_closure_pass_count": {
       "type": "integer",
       "minimum": 0
@@ -446,6 +456,11 @@
           "adapted_profile_current_ratio_to_declared",
           "adapted_profile_current_relative_error",
           "adapted_profile_current_closure_pass",
+          "current_limited_adapted_profile_psi_rmse_norm",
+          "current_limited_adapted_profile_scale",
+          "current_limited_adapted_profile_current_ratio_to_declared",
+          "current_limited_adapted_profile_current_relative_error",
+          "current_limited_adapted_profile_pass",
           "effective_profile_current_closure_pass",
           "pressure_toroidal_current_A",
           "ffprime_toroidal_current_A",
@@ -744,6 +759,21 @@
             "type": "number"
           },
           "adapted_profile_current_closure_pass": {
+            "type": "boolean"
+          },
+          "current_limited_adapted_profile_psi_rmse_norm": {
+            "type": "number"
+          },
+          "current_limited_adapted_profile_scale": {
+            "type": "number"
+          },
+          "current_limited_adapted_profile_current_ratio_to_declared": {
+            "type": "number"
+          },
+          "current_limited_adapted_profile_current_relative_error": {
+            "type": "number"
+          },
+          "current_limited_adapted_profile_pass": {
             "type": "boolean"
           },
           "effective_profile_current_closure_pass": {
