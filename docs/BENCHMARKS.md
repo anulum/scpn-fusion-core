@@ -473,9 +473,10 @@ finite profile-current diagnostics from rows that satisfy the closure threshold
 and can identify whether the pressure or FFprime source dominates an under- or
 over-closed declared plasma current. The aggregate report also includes
 `profile_current_closure_failure_class_counts` so the failure mode distribution
-is visible without row scanning. This is intentionally exposed as a benchmark failure
-because raw profile-source reconstruction still has unresolved convention/source
-mismatch.
+is visible without row scanning. This is intentionally exposed as a public-gate benchmark failure because raw
+profile-source reconstruction still has unresolved convention/source mismatch.
+Diagnostic-only synthetic rows remain visible in counts and row reports, but do
+not decide public gate failure reasons.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current

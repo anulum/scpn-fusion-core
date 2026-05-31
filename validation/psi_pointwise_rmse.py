@@ -1961,8 +1961,10 @@ def validate_efit_nrmse_benchmark(
 
     if len(files) < min_files:
         failure_reasons.append(f"count {len(files)} < required {min_files}")
-    if np.isfinite(worst_norm) and worst_norm > max_nrmse:
-        failure_reasons.append(f"worst psi_rmse_norm {worst_norm:.6g} > threshold {max_nrmse:.6g}")
+    if np.isfinite(gate_worst_norm) and gate_worst_norm > max_nrmse:
+        failure_reasons.append(
+            f"public gate worst psi_rmse_norm {gate_worst_norm:.6g} > threshold {max_nrmse:.6g}"
+        )
     if len(operator_source_entries) != len(files):
         missing = len(files) - len(operator_source_entries)
         failure_reasons.append(f"operator-source solver gate missing finite RMSE in {missing} rows")
@@ -1976,16 +1978,30 @@ def validate_efit_nrmse_benchmark(
     source_mismatch_count = sum(
         1 for row in rows if row["source_consistency_class"] == "profile_source_mismatch"
     )
+    gate_source_mismatch_count = sum(
+        1
+        for row in rows
+        if row["reference_role"] == "gate"
+        and row["source_consistency_class"] == "profile_source_mismatch"
+    )
     solver_failure_count = sum(
         1 for row in rows if row["source_consistency_class"] == "solver_consistency_failure"
     )
-    if source_mismatch_count:
+    gate_solver_failure_count = sum(
+        1
+        for row in rows
+        if row["reference_role"] == "gate"
+        and row["source_consistency_class"] == "solver_consistency_failure"
+    )
+    if gate_source_mismatch_count:
         failure_reasons.append(
-            f"profile-source mismatch attribution in {source_mismatch_count} rows"
+            "public gate profile-source mismatch attribution in "
+            f"{gate_source_mismatch_count}/{gate_row_count} rows"
         )
-    if solver_failure_count:
+    if gate_solver_failure_count:
         failure_reasons.append(
-            f"operator-source solver consistency failure in {solver_failure_count} rows"
+            "public gate operator-source solver consistency failure in "
+            f"{gate_solver_failure_count}/{gate_row_count} rows"
         )
     source_sum_identity_max_abs_error = (
         max(source_sum_identity_errors) if source_sum_identity_errors else float("nan")
@@ -2000,15 +2016,15 @@ def validate_efit_nrmse_benchmark(
             "source-sum identity gate failed: max abs error "
             f"{source_sum_identity_max_abs_error:.6g} > 1e-09"
         )
-    if operator_current_closure_pass_count != len(rows):
+    if gate_operator_current_closure_pass_count != gate_row_count:
         failure_reasons.append(
-            "operator-current closure gate failed in "
-            f"{len(rows) - operator_current_closure_pass_count}/{len(rows)} rows"
+            "public gate operator-current closure failed in "
+            f"{gate_row_count - gate_operator_current_closure_pass_count}/{gate_row_count} rows"
         )
-    if profile_current_closure_pass_count != len(rows):
+    if gate_profile_current_closure_pass_count != gate_row_count:
         failure_reasons.append(
-            "profile-current closure gate failed in "
-            f"{len(rows) - profile_current_closure_pass_count}/{len(rows)} rows"
+            "public gate profile-current closure failed in "
+            f"{gate_row_count - gate_profile_current_closure_pass_count}/{gate_row_count} rows"
         )
     if adapted_profile_entries and adapted_profile_pass_count != len(adapted_profile_entries):
         failure_reasons.append(

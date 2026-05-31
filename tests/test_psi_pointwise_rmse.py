@@ -953,7 +953,7 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.pass_count == 9
         assert gate.worst_file == f"{worst.parent.name}/{worst.name}"
         assert gate.worst_psi_rmse_norm == pytest.approx(0.075)
-        assert "worst psi_rmse_norm 0.075 > threshold 0.05" in gate.failure_reasons
+        assert "public gate worst psi_rmse_norm 0.075 > threshold 0.05" in gate.failure_reasons
 
     def test_aggregate_source_alignment_reports_worst_profile_mismatch(
         self,
@@ -1054,7 +1054,7 @@ class TestValidateEFITNRMSEBenchmark:
         }
         assert gate.worst_source_alignment_file == f"{worst.parent.name}/{worst.name}"
         assert gate.worst_source_residual_l2 == pytest.approx(3.5)
-        assert "profile-source mismatch attribution in 1 rows" in gate.failure_reasons
+        assert "public gate profile-source mismatch attribution in 1/4 rows" in gate.failure_reasons
 
     def test_aggregate_operator_source_gate_reports_solver_failure(
         self,
@@ -1153,7 +1153,10 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.operator_source_worst_file == f"{worst.parent.name}/{worst.name}"
         assert gate.operator_source_worst_psi_rmse_norm == pytest.approx(2.0e-6)
         assert "operator-source psi_rmse_norm 2e-06 > threshold 1e-06" in gate.failure_reasons
-        assert "operator-source solver consistency failure in 1 rows" in gate.failure_reasons
+        assert (
+            "public gate operator-source solver consistency failure in 1/4 rows"
+            in gate.failure_reasons
+        )
 
     def test_aggregate_adapted_profile_gate_reports_failed_reconstruction(
         self,

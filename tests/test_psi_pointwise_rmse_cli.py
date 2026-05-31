@@ -136,7 +136,7 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         },
         profile_current_worst_relative_error=0.0862,
         profile_current_worst_file="sparc/sample.geqdsk",
-        failure_reasons=["profile-source mismatch attribution in 1 rows"],
+        failure_reasons=["public gate profile-source mismatch attribution in 1/1 rows"],
         rows=[
             {
                 "file": "sparc/sample.geqdsk",

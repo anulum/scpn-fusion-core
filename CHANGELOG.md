@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Scoped EFIT/GEQDSK aggregate failure reasons to public gate rows while preserving diagnostic-only synthetic row evidence in counts and reports.
+
 - Added EFIT/GEQDSK pressure and FFprime toroidal-current contribution diagnostics for profile-source current closure attribution.
 
 - Added aggregate EFIT/GEQDSK profile-current failure-class counts to expose current-closure failure mode distribution without row scanning.
