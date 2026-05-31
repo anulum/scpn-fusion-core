@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added worst-row EFIT/GEQDSK operator/profile current-closure severity diagnostics to the aggregate benchmark report.
+
 - Added aggregate EFIT/GEQDSK operator-current closure pass counts and fail-closed row coverage.
 
 - Added an aggregate EFIT/GEQDSK source-sum identity gate over signed pressure, FFprime, and total source diagnostics.

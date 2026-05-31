@@ -244,6 +244,12 @@ class EfitNRMSEBenchmarkGate:
     source_sum_identity_pass: bool
     operator_current_closure_pass_count: int
     gate_operator_current_closure_pass_count: int
+    operator_current_worst_relative_error: float
+    operator_current_worst_file: str
+    gate_operator_current_worst_relative_error: float
+    gate_operator_current_worst_file: str
+    profile_current_worst_relative_error: float
+    profile_current_worst_file: str
     failure_reasons: list[str]
     rows: list[dict[str, Any]]
 
@@ -1783,6 +1789,9 @@ def validate_efit_nrmse_benchmark(
     source_residual_entries: list[tuple[str, float]] = []
     gate_source_residual_entries: list[tuple[str, float]] = []
     source_sum_identity_errors: list[float] = []
+    operator_current_error_entries: list[tuple[str, float]] = []
+    gate_operator_current_error_entries: list[tuple[str, float]] = []
+    profile_current_error_entries: list[tuple[str, float]] = []
     for row in rows:
         for key in (
             "raw_profile_solver_mode",
@@ -1815,6 +1824,20 @@ def validate_efit_nrmse_benchmark(
             source_sum_identity_errors.append(source_sum_error)
         else:
             failure_reasons.append(f"non-finite source sum identity error in {row['file']}")
+        operator_current_error = float(row["operator_current_relative_error"])
+        if np.isfinite(operator_current_error):
+            operator_current_error_entries.append((str(row["file"]), operator_current_error))
+            if row["reference_role"] == "gate":
+                gate_operator_current_error_entries.append(
+                    (str(row["file"]), operator_current_error)
+                )
+        else:
+            failure_reasons.append(f"non-finite operator current error in {row['file']}")
+        profile_current_error = float(row["profile_current_relative_error"])
+        if np.isfinite(profile_current_error):
+            profile_current_error_entries.append((str(row["file"]), profile_current_error))
+        else:
+            failure_reasons.append(f"non-finite profile current error in {row['file']}")
 
     if source_residual_entries:
         worst_source_alignment_file, worst_source_residual = max(
@@ -1833,6 +1856,33 @@ def validate_efit_nrmse_benchmark(
     else:
         gate_worst_source_alignment_file = ""
         gate_worst_source_residual = float("nan")
+
+    if operator_current_error_entries:
+        operator_current_worst_file, operator_current_worst_error = max(
+            operator_current_error_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        operator_current_worst_file = ""
+        operator_current_worst_error = float("nan")
+
+    if gate_operator_current_error_entries:
+        gate_operator_current_worst_file, gate_operator_current_worst_error = max(
+            gate_operator_current_error_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        gate_operator_current_worst_file = ""
+        gate_operator_current_worst_error = float("nan")
+
+    if profile_current_error_entries:
+        profile_current_worst_file, profile_current_worst_error = max(
+            profile_current_error_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        profile_current_worst_file = ""
+        profile_current_worst_error = float("nan")
 
     if len(files) < min_files:
         failure_reasons.append(f"count {len(files)} < required {min_files}")
@@ -1941,6 +1991,12 @@ def validate_efit_nrmse_benchmark(
         source_sum_identity_pass=source_sum_identity_pass,
         operator_current_closure_pass_count=operator_current_closure_pass_count,
         gate_operator_current_closure_pass_count=gate_operator_current_closure_pass_count,
+        operator_current_worst_relative_error=float(operator_current_worst_error),
+        operator_current_worst_file=operator_current_worst_file,
+        gate_operator_current_worst_relative_error=float(gate_operator_current_worst_error),
+        gate_operator_current_worst_file=gate_operator_current_worst_file,
+        profile_current_worst_relative_error=float(profile_current_worst_error),
+        profile_current_worst_file=profile_current_worst_file,
         failure_reasons=failure_reasons,
         rows=rows,
     )
@@ -2123,6 +2179,18 @@ def main() -> int:
         f"{benchmark.operator_current_closure_pass_count}/{benchmark.count} rows, "
         f"{benchmark.gate_operator_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
     )
+    if benchmark.operator_current_worst_file:
+        print(
+            "Worst operator current closure: "
+            f"{benchmark.operator_current_worst_file} "
+            f"(relative error = {benchmark.operator_current_worst_relative_error:.6e})"
+        )
+    if benchmark.profile_current_worst_file:
+        print(
+            "Worst profile current closure: "
+            f"{benchmark.profile_current_worst_file} "
+            f"(relative error = {benchmark.profile_current_worst_relative_error:.6e})"
+        )
     if benchmark.gate_worst_source_alignment_file:
         print(
             "Worst public source residual: "

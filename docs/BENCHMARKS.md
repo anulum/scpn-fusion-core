@@ -452,6 +452,14 @@ unchanged.
 Current local refresh: operator-current closure passes `5/18` aggregate rows
 and `5/8` public gate rows. That is now exposed as an aggregate failure reason
 instead of being buried in per-row diagnostics.
+The report also identifies the worst operator and profile current-closure rows
+through `operator_current_worst_relative_error`,
+`gate_operator_current_worst_relative_error`, and
+`profile_current_worst_relative_error`, so closure severity is visible without
+manual row scanning.
+Current local worst rows: operator current closure `sparc/sparc_1300.eqdsk`
+with relative error `2.184689e+00`, and profile current closure
+`jet/jet_lmode_2MA.geqdsk` with relative error `4.168623e+01`.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current

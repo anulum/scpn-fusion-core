@@ -54,6 +54,12 @@
     "source_sum_identity_pass",
     "operator_current_closure_pass_count",
     "gate_operator_current_closure_pass_count",
+    "operator_current_worst_relative_error",
+    "operator_current_worst_file",
+    "gate_operator_current_worst_relative_error",
+    "gate_operator_current_worst_file",
+    "profile_current_worst_relative_error",
+    "profile_current_worst_file",
     "failure_reasons",
     "rows"
   ],
@@ -288,6 +294,24 @@
     "gate_operator_current_closure_pass_count": {
       "type": "integer",
       "minimum": 0
+    },
+    "operator_current_worst_relative_error": {
+      "type": "number"
+    },
+    "operator_current_worst_file": {
+      "type": "string"
+    },
+    "gate_operator_current_worst_relative_error": {
+      "type": "number"
+    },
+    "gate_operator_current_worst_file": {
+      "type": "string"
+    },
+    "profile_current_worst_relative_error": {
+      "type": "number"
+    },
+    "profile_current_worst_file": {
+      "type": "string"
     },
     "failure_reasons": {
       "type": "array",
