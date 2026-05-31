@@ -214,7 +214,9 @@ production-scale scaling evidence, and native same-case comparisons are
 present for the required solver families. The external-output manifest is
 strictly same-deck: all three solver-family rows must share one
 `benchmark_case_id` and one `deck_physics_sha256`, and convergence/scaling
-evidence must cover GENE, CGYRO, and GS2 before readiness can pass.
+evidence must cover GENE, CGYRO, and GS2 before readiness can pass. Candidate
+external outputs are rejected before conversion if provenance is private or the
+license is unknown, proprietary, restricted, or otherwise non-redistributable.
 The free-boundary lane now indexes public FreeGSNKE machine metadata for active
 coils, passive structures, limiter/wall contours, and magnetic probes, plus
 FreeGS example-script checksums, in

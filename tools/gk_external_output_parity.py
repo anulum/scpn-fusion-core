@@ -46,6 +46,26 @@ REQUIRED_MANIFEST_CASE_FIELDS = (
     "redistribution_license",
     "sha256",
 )
+ALLOWED_REDISTRIBUTION_LICENSES = {
+    "agpl-3.0-or-later",
+    "apache-2.0",
+    "bsd-2-clause",
+    "bsd-3-clause",
+    "cc-by-4.0",
+    "cc0-1.0",
+    "gpl-2.0-or-later",
+    "gpl-3.0-or-later",
+    "mit",
+}
+BLOCKED_LICENSE_TOKENS = (
+    "all-rights-reserved",
+    "internal",
+    "non-redistributable",
+    "private",
+    "proprietary",
+    "restricted",
+    "unknown",
+)
 
 
 def _rel(path: Path, base: Path = ROOT) -> str:
@@ -128,6 +148,22 @@ def _looks_like_sha256(value: Any) -> bool:
     if not isinstance(value, str) or len(value) != 64:
         return False
     return all(character in "0123456789abcdefABCDEF" for character in value)
+
+
+def _validate_provenance_license(
+    provenance_url: Any, redistribution_license: Any
+) -> tuple[bool, str]:
+    license_text = str(redistribution_license).strip().lower()
+    if (
+        not license_text
+        or license_text not in ALLOWED_REDISTRIBUTION_LICENSES
+        or any(token in license_text for token in BLOCKED_LICENSE_TOKENS)
+    ):
+        return False, "non_redistributable_license"
+    url = str(provenance_url).strip()
+    if not (url.startswith("https://") or url.startswith("http://")):
+        return False, "non_public_provenance_url"
+    return True, "redistribution_and_provenance_valid"
 
 
 def _resolve_under(root: Path, raw_path: str) -> Path:
@@ -490,6 +526,14 @@ def _convert_case(
     if not _looks_like_sha256(raw_case["deck_physics_sha256"]):
         row = _blocked_row(family, "blocked_external_output_manifest_incomplete")
         row["missing_fields"] = ["deck_physics_sha256"]
+        return row
+    provenance_ok, provenance_reason = _validate_provenance_license(
+        raw_case["provenance_url"], raw_case["redistribution_license"]
+    )
+    if not provenance_ok:
+        row = _blocked_row(family, "blocked_external_output_provenance_or_license_invalid")
+        row["case_id"] = str(raw_case["case_id"])
+        row["reason"] = provenance_reason
         return row
 
     case_id = str(raw_case["case_id"])

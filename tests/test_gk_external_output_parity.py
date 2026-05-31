@@ -272,3 +272,48 @@ def test_gk_external_output_parity_blocks_cross_solver_deck_mismatch(
     assert report["same_deck_group"]["reason"] == "same_deck_identity_mismatch"
     assert report["status"] == "blocked_same_deck_identity_mismatch"
     assert report["accepted_full_fidelity_ready"] is False
+
+
+def test_gk_external_output_parity_blocks_non_redistributable_output(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "external"
+    source_root.mkdir()
+    output = source_root / "gene_case.json"
+    _payload(output)
+    manifest = {
+        "schema": "gk-nonlinear-external-output-manifest.v1",
+        "cases": [
+            {
+                "case_id": "gene_restricted_itg",
+                "deck_id": "gene_restricted_itg_deck",
+                "benchmark_case_id": "restricted_itg_em_same_deck",
+                "deck_physics_sha256": DECK_PHYSICS_SHA256,
+                "solver_family": "GENE",
+                "output_path": output.name,
+                "provenance_url": "file:///private/gene/restricted-output",
+                "redistribution_license": "all-rights-reserved",
+                "sha256": _sha256(output),
+            }
+        ],
+        "grid_convergence_evidence": [],
+        "production_scaling_evidence": [],
+    }
+    (source_root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    report = parity.build_gk_external_output_parity_report(
+        source_root=source_root,
+        artifact_dir=tmp_path / "artifacts",
+        report_dir=tmp_path / "reports",
+        write=True,
+    )
+
+    rows = {row["solver_family"]: row for row in report["external_output_rows"]}
+    gene = rows["GENE"]
+    assert gene["reference_output_ready"] is False
+    assert gene["status"] == "blocked_external_output_provenance_or_license_invalid"
+    assert gene["reason"] == "non_redistributable_license"
+    assert report["converted_reference_artifacts"] == 0
+    assert report["accepted_full_fidelity_ready"] is False

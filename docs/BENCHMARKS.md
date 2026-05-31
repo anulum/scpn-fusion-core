@@ -253,7 +253,10 @@ The downstream external-output parity manifest is fail-closed by solver
 family: accepted readiness requires one redistribution-permitted GENE, CGYRO,
 and GS2 nonlinear output row sharing the same `benchmark_case_id` and
 `deck_physics_sha256`, plus grid-convergence and production-scaling evidence
-for every required family.
+for every required family. Candidate output rows with private `file://`
+provenance, placeholder provenance, unknown licensing, proprietary licensing,
+or explicitly non-redistributable licensing are blocked before artifact
+conversion.
 
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
@@ -969,7 +972,9 @@ contracts, observable-to-coordinate axis contracts, and explicit quantitative
 threshold contracts linked to declared observables and supported metric
 families. For multi-solver nonlinear GK, the manifest must also prove
 same-deck identity across GENE, CGYRO, and GS2 and provide per-family
-convergence/scaling evidence. The benchmark intentionally does not pass
+convergence/scaling evidence. Candidate artifacts must carry public HTTP(S)
+provenance and an explicit redistribution-permitted license before conversion.
+The benchmark intentionally does not pass
 full-fidelity acceptance until those public reference gates exist and their
 artefacts are present.
 For nonlinear GK, the native artifact keeps the full species/kx/ky/theta/vpar/mu

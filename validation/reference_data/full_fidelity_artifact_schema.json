@@ -11,6 +11,8 @@
     "redistribution_license is non-empty",
     "sha256 matches artifact bytes",
     "required_observables is non-empty",
+    "redistribution_license is an explicit redistributable license identifier accepted by the artifact converter",
+    "provenance_url is an HTTP(S) public source URL, not a private file path",
     "all required_observables exist as top-level NPZ keys or JSON observables keys",
     "observable arrays are numeric, finite, non-empty, and satisfy declared minimum rank",
     "observable_contracts declare physical units for each observable",

@@ -15,6 +15,10 @@
   solver families and per-family grid-convergence and production-scaling
   evidence before parity can pass.
 
+- Blocked nonlinear GK external-output artifact conversion when candidate rows
+  provide private provenance URLs or non-redistributable, unknown, restricted,
+  or proprietary licensing.
+
 - Added disruption contract primitives, mitigation contracts, and replay contracts to the configured global mypy strict cohort with a typed reactor-design evaluation boundary.
 
 - Added the real-time density-profile controller to the configured global mypy strict cohort with explicit radial-profile array contracts.
