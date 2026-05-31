@@ -23,6 +23,7 @@
     "redistribution_license is non-empty",
     "sha256 matches artifact bytes",
     "required_observables is non-empty",
+    "all required_observables exist as top-level NPZ keys or JSON observables keys",
     "thresholds is non-empty"
   ],
   "supported_artifact_formats": [

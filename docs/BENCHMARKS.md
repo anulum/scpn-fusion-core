@@ -756,7 +756,7 @@ The current report is
 reference artefacts and quantitative thresholds are declared in
 `validation/reference_data/full_fidelity_reference_cases.json`; accepted artefacts
 must also satisfy `validation/reference_data/full_fidelity_artifact_schema.json`
-with provenance, redistribution/license status, checksum, observables, and
+with provenance, redistribution/license status, checksum, required observable keys, and
 thresholds. The benchmark intentionally does not pass full-fidelity acceptance
 until those public reference gates exist and their artefacts are present.
 

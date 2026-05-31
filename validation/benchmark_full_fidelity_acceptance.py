@@ -16,6 +16,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
@@ -58,6 +60,27 @@ def _load_reference_cases() -> dict[str, Any]:
     return manifest
 
 
+def _observable_readiness(path: Path | None, observables: Any) -> dict[str, Any]:
+    """Return required observable presence for JSON or NPZ reference artefacts."""
+    if path is None or not path.exists() or not isinstance(observables, list) or not observables:
+        return {"ready": False, "present": [], "missing": list(observables or [])}
+
+    if path.suffix == ".json":
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        data = payload.get("observables", payload) if isinstance(payload, dict) else {}
+        keys = set(data) if isinstance(data, dict) else set()
+    elif path.suffix == ".npz":
+        with np.load(path, allow_pickle=False) as payload:
+            keys = set(payload.files)
+    else:
+        keys = set()
+
+    required = [str(name) for name in observables]
+    present = [name for name in required if name in keys]
+    missing = [name for name in required if name not in keys]
+    return {"ready": not missing, "present": present, "missing": missing}
+
+
 def _reference_readiness(
     surface: str, manifest: dict[str, Any], schema: dict[str, Any]
 ) -> dict[str, Any]:
@@ -83,7 +106,8 @@ def _reference_readiness(
         thresholds = case.get("thresholds")
         threshold_ready = isinstance(thresholds, dict) and bool(thresholds)
         observables = case.get("required_observables")
-        observables_ready = isinstance(observables, list) and bool(observables)
+        observables_declared = isinstance(observables, list) and bool(observables)
+        observable_report = _observable_readiness(artifact_path, observables)
         status = case.get("status")
         status_ready = status == "available"
         status_known = status in allowed_statuses
@@ -103,7 +127,8 @@ def _reference_readiness(
             and provenance_ready
             and license_ready
             and sha_ready
-            and observables_ready
+            and observables_declared
+            and observable_report["ready"]
             and threshold_ready
         )
         row = {
@@ -119,7 +144,10 @@ def _reference_readiness(
             "sha256_expected": expected_sha,
             "sha256_actual": actual_sha,
             "sha256_ready": sha_ready,
-            "observables_ready": observables_ready,
+            "observables_declared": observables_declared,
+            "observable_keys_ready": observable_report["ready"],
+            "observable_keys_present": observable_report["present"],
+            "observable_keys_missing": observable_report["missing"],
             "threshold_ready": threshold_ready,
             "missing_fields": missing_fields,
             "ready": case_ready,
