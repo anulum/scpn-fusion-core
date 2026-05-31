@@ -50,6 +50,7 @@ from validation.psi_pointwise_rmse import (
     load_efit_nrmse_benchmark_schema,
     manufactured_solve_vectorised,
     select_source_convention_adapter,
+    source_domain_remediation_contract,
     source_convention_multiplier,
     validate_all_sparc,
     validate_efit_nrmse_benchmark_report,
@@ -256,6 +257,40 @@ class TestComputeSourceAlignment:
         assert best_fit_convention == "canonical"
         assert metrics["source_plasma_residual_l2"] < 1e-12
         assert metrics["source_vacuum_residual_l2"] < 1e-12
+
+    @pytest.mark.parametrize(
+        ("source_domain_class", "required_solver_mode", "next_action"),
+        [
+            (
+                "passes_threshold",
+                "profile_source_fixed_boundary_reconstruction_sufficient",
+                "preserve_current_profile_source_contract",
+            ),
+            (
+                "vacuum_source_free_operator_residual",
+                "free_boundary_coil_vacuum_reconstruction_required",
+                "solve_with_external_coils_limiter_axis_xpoint_and_vacuum_green_functions",
+            ),
+            (
+                "plasma_and_vacuum_source_mismatch",
+                "profile_source_then_free_boundary_reconstruction_required",
+                "repair_plasma_profile_source_then_reconstruct_vacuum_boundary_response",
+            ),
+        ],
+    )
+    def test_source_domain_remediation_contract_maps_required_solver_mode(
+        self,
+        source_domain_class,
+        required_solver_mode,
+        next_action,
+    ):
+        """Source-domain classes must drive the next physics solver contract."""
+        observed_solver_mode, observed_next_action = source_domain_remediation_contract(
+            source_domain_class
+        )
+
+        assert observed_solver_mode == required_solver_mode
+        assert observed_next_action == next_action
 
     def test_profile_source_mismatch_metrics_are_finite_on_sparc_reference(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")

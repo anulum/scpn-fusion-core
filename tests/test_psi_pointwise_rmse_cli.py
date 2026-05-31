@@ -221,6 +221,12 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "adapted_source_plasma_operator_norm": float("nan"),
                 "adapted_source_vacuum_operator_norm": float("nan"),
                 "source_domain_residual_class": "plasma_and_vacuum_source_mismatch",
+                "source_domain_required_solver_mode": (
+                    "profile_source_then_free_boundary_reconstruction_required"
+                ),
+                "source_domain_next_action": (
+                    "repair_plasma_profile_source_then_reconstruct_vacuum_boundary_response"
+                ),
                 "best_source_candidate": "profile_source",
                 "best_source_candidate_residual_l2": 2.5,
                 "profile_source_candidate_rank": 1,

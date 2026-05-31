@@ -482,6 +482,8 @@
           "adapted_source_plasma_operator_norm",
           "adapted_source_vacuum_operator_norm",
           "source_domain_residual_class",
+          "source_domain_required_solver_mode",
+          "source_domain_next_action",
           "best_source_candidate",
           "best_source_candidate_residual_l2",
           "profile_source_candidate_rank",
@@ -788,6 +790,26 @@
               "vacuum_source_free_operator_residual",
               "plasma_and_vacuum_source_mismatch",
               "non_finite_source_domain_residual",
+              "not_evaluated"
+            ]
+          },
+          "source_domain_required_solver_mode": {
+            "enum": [
+              "profile_source_fixed_boundary_reconstruction_sufficient",
+              "free_boundary_coil_vacuum_reconstruction_required",
+              "profile_source_convention_or_profile_reconstruction_required",
+              "profile_source_then_free_boundary_reconstruction_required",
+              "source_domain_residual_audit_required",
+              "not_evaluated"
+            ]
+          },
+          "source_domain_next_action": {
+            "enum": [
+              "preserve_current_profile_source_contract",
+              "solve_with_external_coils_limiter_axis_xpoint_and_vacuum_green_functions",
+              "repair_plasma_profile_source_before_free_boundary_attribution",
+              "repair_plasma_profile_source_then_reconstruct_vacuum_boundary_response",
+              "reject_or_repair_non_finite_operator_or_profile_source_inputs",
               "not_evaluated"
             ]
           },

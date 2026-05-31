@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added EFIT/GEQDSK source-domain remediation contracts so each benchmark row
+  states whether the next required solver mode is fixed-boundary profile-source
+  repair, free-boundary coil/vacuum reconstruction, or both.
+
 - Added EFIT/GEQDSK effective source-domain residual classification to separate
   plasma-source mismatch from vacuum/source-free operator residuals after
   accepted source-convention adaptation.

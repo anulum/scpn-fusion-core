@@ -170,6 +170,8 @@ class PsiRMSEResult:
     adapted_source_plasma_operator_norm: float = float("nan")
     adapted_source_vacuum_operator_norm: float = float("nan")
     source_domain_residual_class: str = "not_evaluated"
+    source_domain_required_solver_mode: str = "not_evaluated"
+    source_domain_next_action: str = "not_evaluated"
     best_source_candidate: str = ""
     best_source_candidate_residual_l2: float = float("nan")
     profile_source_candidate_rank: int = 0
@@ -747,6 +749,36 @@ def classify_source_domain_residual(
     if vacuum_fail:
         return "vacuum_source_free_operator_residual"
     return "passes_threshold"
+
+
+def source_domain_remediation_contract(source_domain_class: str) -> tuple[str, str]:
+    """Map source-domain residual classes to the required solver contract."""
+    if source_domain_class == "passes_threshold":
+        return (
+            "profile_source_fixed_boundary_reconstruction_sufficient",
+            "preserve_current_profile_source_contract",
+        )
+    if source_domain_class == "vacuum_source_free_operator_residual":
+        return (
+            "free_boundary_coil_vacuum_reconstruction_required",
+            "solve_with_external_coils_limiter_axis_xpoint_and_vacuum_green_functions",
+        )
+    if source_domain_class == "plasma_source_mismatch":
+        return (
+            "profile_source_convention_or_profile_reconstruction_required",
+            "repair_plasma_profile_source_before_free_boundary_attribution",
+        )
+    if source_domain_class == "plasma_and_vacuum_source_mismatch":
+        return (
+            "profile_source_then_free_boundary_reconstruction_required",
+            "repair_plasma_profile_source_then_reconstruct_vacuum_boundary_response",
+        )
+    if source_domain_class == "non_finite_source_domain_residual":
+        return (
+            "source_domain_residual_audit_required",
+            "reject_or_repair_non_finite_operator_or_profile_source_inputs",
+        )
+    return ("not_evaluated", "not_evaluated")
 
 
 def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
@@ -1595,6 +1627,9 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         effective_source_plasma_residual,
         effective_source_vacuum_residual,
     )
+    source_domain_required_solver_mode, source_domain_next_action = (
+        source_domain_remediation_contract(source_domain_residual_class)
+    )
     adapted_profile_reconstruction = compute_adapted_profile_reconstruction(
         eq,
         omega=omega_opt,
@@ -1786,6 +1821,8 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         adapted_source_plasma_operator_norm=adapted_source_alignment["source_plasma_operator_norm"],
         adapted_source_vacuum_operator_norm=adapted_source_alignment["source_vacuum_operator_norm"],
         source_domain_residual_class=source_domain_residual_class,
+        source_domain_required_solver_mode=source_domain_required_solver_mode,
+        source_domain_next_action=source_domain_next_action,
         best_source_candidate=best_source_candidate,
         best_source_candidate_residual_l2=best_source_candidate_residual,
         profile_source_candidate_rank=profile_source_rank,
