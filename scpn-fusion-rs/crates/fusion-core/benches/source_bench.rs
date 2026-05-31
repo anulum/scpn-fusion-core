@@ -7,10 +7,14 @@
 // SCPN Fusion Core — GEQDSK Profile Source Benchmarks
 
 use criterion::{criterion_group, criterion_main, Criterion};
+use fusion_core::kernel::{
+    total_toroidal_current_from_flux, total_toroidal_current_from_flux_masked,
+};
 use fusion_core::source::{
     compute_geqdsk_profile_source_components, interpolate_flux_profile_current_conserving,
     interpolate_flux_profile_second_order, select_geqdsk_source_convention_adapter,
 };
+use fusion_types::state::Grid2D;
 use ndarray::Array2;
 use std::hint::black_box;
 
@@ -69,6 +73,22 @@ fn source_mask(nz: usize, nr: usize) -> Array2<bool> {
     })
 }
 
+fn synthetic_flux(grid: &Grid2D) -> Array2<f64> {
+    Array2::from_shape_fn((grid.nz, grid.nr), |(iz, ir)| {
+        let r = grid.r[ir];
+        let z = grid.z[iz];
+        0.03125 * r.powi(4) - 0.125 * z.powi(2) + 0.05 * r.powi(2) * z.powi(2)
+    })
+}
+
+fn synthetic_plasma_domain_mask(grid: &Grid2D) -> Array2<bool> {
+    Array2::from_shape_fn((grid.nz, grid.nr), |(iz, ir)| {
+        let r = (grid.r[ir] - 2.0) / 0.75;
+        let z = grid.z[iz] / 0.65;
+        r * r + z * z <= 1.0
+    })
+}
+
 /// Benchmark native GEQDSK pressure/FFprime source assembly on representative grids.
 fn bench_geqdsk_profile_source_components(c: &mut Criterion) {
     let mut group = c.benchmark_group("geqdsk_profile_source_components");
@@ -95,6 +115,45 @@ fn bench_geqdsk_profile_source_components(c: &mut Criterion) {
                     components.ffprime_source_norm,
                     components.total_source_norm,
                 ));
+            })
+        });
+    }
+
+    group.finish();
+}
+
+/// Benchmark full-domain and plasma-domain operator-current integration.
+fn bench_geqdsk_operator_current_domains(c: &mut Criterion) {
+    let mut group = c.benchmark_group("geqdsk_operator_current_domains");
+    group.sample_size(10);
+
+    for &(nz, nr) in &[(33usize, 33usize), (65usize, 65usize)] {
+        let grid = Grid2D::new(nr, nz, 1.0, 3.0, -1.0, 1.0);
+        let psi = synthetic_flux(&grid);
+        let plasma_mask = synthetic_plasma_domain_mask(&grid);
+
+        group.bench_function(format!("full_domain_current_{nz}x{nr}"), |b| {
+            b.iter(|| {
+                let total_current = total_toroidal_current_from_flux(
+                    black_box(&psi),
+                    black_box(&grid),
+                    black_box(MU0),
+                )
+                .expect("full-domain operator current should integrate");
+                black_box(total_current);
+            })
+        });
+
+        group.bench_function(format!("plasma_domain_current_{nz}x{nr}"), |b| {
+            b.iter(|| {
+                let total_current = total_toroidal_current_from_flux_masked(
+                    black_box(&psi),
+                    black_box(&grid),
+                    black_box(MU0),
+                    black_box(&plasma_mask),
+                )
+                .expect("plasma-domain operator current should integrate");
+                black_box(total_current);
             })
         });
     }
@@ -174,6 +233,7 @@ fn bench_geqdsk_source_convention_adapter(c: &mut Criterion) {
 criterion_group!(
     benches,
     bench_flux_profile_interpolation,
+    bench_geqdsk_operator_current_domains,
     bench_geqdsk_profile_source_components,
     bench_geqdsk_source_convention_adapter
 );

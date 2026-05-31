@@ -10,6 +10,9 @@
 
 ## [Unreleased]
 
+- Added Criterion benchmark evidence for native Rust GEQDSK full-domain and
+  plasma-domain operator-current integration.
+
 - Added native Rust and Rust-polyglot masked toroidal-current integration so
   full-domain and plasma-domain Grad-Shafranov current closure can be compared
   without Python wrapper delegation.

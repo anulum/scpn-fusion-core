@@ -71,6 +71,10 @@ timing remain required before making throughput claims.
 | `geqdsk_profile_source_components/source_components_65x65` | `461.19 us` |
 | `geqdsk_source_convention_adapter/select_adapter_33x33` | `45.674 us` |
 | `geqdsk_source_convention_adapter/select_adapter_65x65` | `193.43 us` |
+| `geqdsk_operator_current_domains/full_domain_current_33x33` | `6.3107 us` |
+| `geqdsk_operator_current_domains/plasma_domain_current_33x33` | `9.1759 us` |
+| `geqdsk_operator_current_domains/full_domain_current_65x65` | `32.094 us` |
+| `geqdsk_operator_current_domains/plasma_domain_current_65x65` | `32.490 us` |
 | `transport_step/lmode_single_step` | `754.06 ns` |
 | `transport_step/hmode_single_step` | `866.43 ns` |
 | `transport_step/hmode_neoclassical_single_step` | `3.4128 us` |
