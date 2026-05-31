@@ -470,6 +470,14 @@ usable boundary/limiter/axis metadata, but all `8/8` public rows remain blocked
 for native free-boundary reconstruction by
 `external_coil_currents_missing_from_geqdsk`; GEQDSK alone is therefore not a
 complete coil/vacuum reconstruction input.
+The reconstruction contract now accepts an explicit
+`external-coil-sidecar.v1` companion input with Ampere currents, metre
+positions, positive turn counts, current-limit checks, finite-value guards,
+unique coil names, strict unit labels, and provenance. GEQDSK-only public rows
+still report `free_boundary_external_coil_sidecar_present = false` and
+`free_boundary_external_coil_count = 0`; a row is allowed to report
+`ready_for_free_boundary_reconstruction` only after valid sidecar data is
+supplied.
 The same aggregate report counts operator-current closure with
 `operator_current_closure_pass_count` and
 `gate_operator_current_closure_pass_count`, so the discrete Delta*psi current
@@ -943,7 +951,11 @@ points at `psi_boundary`, carries limiter points, and records magnetic-axis
 metadata. A local SPARC `lmode_vv.geqdsk` conversion exported `177` boundary
 points and `178` limiter points. This wires public EFIT contours into native
 free-boundary workflows; it is still not a full free-boundary reconstruction
-pass because GEQDSK does not include external coil currents.
+pass because GEQDSK does not include external coil currents. Public acquisition
+materials for FreeGS and NSTX-U/MDSplus have been cached locally under ignored
+`data/external/`; direct NSTX-U MDSplus and Princeton DataSpace payload access
+were blocked from this workstation, so no public coil-current array has been
+accepted into the benchmark gate yet.
 
 Interpretation: the 33x33 Rust full-order equilibrium path is sub-millisecond
 and therefore competitive for low-resolution control-support updates and

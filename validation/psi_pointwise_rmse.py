@@ -178,7 +178,10 @@ class PsiRMSEResult:
     free_boundary_boundary_inside_grid_fraction: float = float("nan")
     free_boundary_limiter_inside_grid_fraction: float = float("nan")
     free_boundary_metadata_pass: bool = False
+    free_boundary_external_coil_sidecar_present: bool = False
     free_boundary_external_coil_data_available: bool = False
+    free_boundary_external_coil_count: int = 0
+    free_boundary_external_coil_provenance: str = ""
     free_boundary_reconstruction_blocker: str = "not_evaluated"
     best_source_candidate: str = ""
     best_source_candidate_residual_l2: float = float("nan")
@@ -799,9 +802,78 @@ def source_domain_remediation_contract(source_domain_class: str) -> tuple[str, s
     return ("not_evaluated", "not_evaluated")
 
 
+def validate_external_coil_sidecar(
+    external_coil_sidecar: Mapping[str, Any] | None,
+) -> dict[str, int | bool | str]:
+    """Validate a GEQDSK companion external-coil sidecar contract."""
+    if external_coil_sidecar is None:
+        return {
+            "present": False,
+            "available": False,
+            "coil_count": 0,
+            "provenance": "",
+        }
+    if not isinstance(external_coil_sidecar, Mapping):
+        raise ValueError("external coil sidecar must be a mapping")
+    if external_coil_sidecar.get("schema_version") != "external-coil-sidecar.v1":
+        raise ValueError("external coil sidecar schema_version must be external-coil-sidecar.v1")
+    expected_units = {
+        "current_unit": "A",
+        "position_unit": "m",
+        "turns_unit": "turn",
+    }
+    for key, expected in expected_units.items():
+        if external_coil_sidecar.get(key) != expected:
+            raise ValueError(f"external coil sidecar {key} must be {expected}")
+    provenance = str(external_coil_sidecar.get("provenance", "")).strip()
+    if not provenance:
+        raise ValueError("external coil sidecar provenance is required")
+    coils = external_coil_sidecar.get("coils")
+    if not isinstance(coils, list) or not coils:
+        raise ValueError("external coil sidecar requires a non-empty coils list")
+    seen_names: set[str] = set()
+    for index, coil in enumerate(coils):
+        if not isinstance(coil, Mapping):
+            raise ValueError(f"external coil sidecar coil {index} must be a mapping")
+        name = str(coil.get("name", "")).strip()
+        if not name:
+            raise ValueError(f"external coil sidecar coil {index} name is required")
+        if name in seen_names:
+            raise ValueError(f"external coil sidecar duplicate coil name {name}")
+        seen_names.add(name)
+        for field in ("r_m", "z_m", "current_A", "turns"):
+            value = coil.get(field)
+            if not isinstance(value, int | float) or not np.isfinite(float(value)):
+                raise ValueError(f"external coil sidecar coil {name} requires finite {field}")
+        if float(coil["turns"]) <= 0.0:
+            raise ValueError(f"external coil sidecar coil {name} requires positive turns")
+        current_limit = coil.get("current_limit_A")
+        if current_limit is not None:
+            if not isinstance(current_limit, int | float) or not np.isfinite(float(current_limit)):
+                raise ValueError(
+                    f"external coil sidecar coil {name} requires finite current_limit_A"
+                )
+            if float(current_limit) <= 0.0:
+                raise ValueError(
+                    f"external coil sidecar coil {name} requires positive current_limit_A"
+                )
+            if abs(float(coil["current_A"])) > float(current_limit):
+                raise ValueError(
+                    f"external coil sidecar coil {name} current_A exceeds current_limit_A"
+                )
+    return {
+        "present": True,
+        "available": True,
+        "coil_count": len(coils),
+        "provenance": provenance,
+    }
+
+
 def compute_free_boundary_reconstruction_contract(
     eq: GEqdsk,
     required_solver_mode: str,
+    *,
+    external_coil_sidecar: Mapping[str, Any] | None = None,
 ) -> dict[str, float | int | bool | str]:
     """Report whether a GEQDSK row carries metadata needed for free-boundary solve-in."""
     r = np.asarray(eq.r, dtype=np.float64)
@@ -848,7 +920,9 @@ def compute_free_boundary_reconstruction_contract(
         "free_boundary_coil_vacuum_reconstruction_required",
         "profile_source_then_free_boundary_reconstruction_required",
     }
-    external_coil_data_available = False
+    sidecar_contract = validate_external_coil_sidecar(external_coil_sidecar)
+    external_coil_sidecar_present = bool(sidecar_contract["present"])
+    external_coil_data_available = bool(sidecar_contract["available"])
     if not requires_free_boundary:
         blocker = "not_required"
     elif not metadata_pass:
@@ -865,7 +939,10 @@ def compute_free_boundary_reconstruction_contract(
         "free_boundary_boundary_inside_grid_fraction": boundary_inside_fraction,
         "free_boundary_limiter_inside_grid_fraction": limiter_inside_fraction,
         "free_boundary_metadata_pass": metadata_pass,
+        "free_boundary_external_coil_sidecar_present": external_coil_sidecar_present,
         "free_boundary_external_coil_data_available": external_coil_data_available,
+        "free_boundary_external_coil_count": int(sidecar_contract["coil_count"]),
+        "free_boundary_external_coil_provenance": str(sidecar_contract["provenance"]),
         "free_boundary_reconstruction_blocker": blocker,
     }
 
@@ -1955,8 +2032,17 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
             free_boundary_contract["free_boundary_limiter_inside_grid_fraction"]
         ),
         free_boundary_metadata_pass=bool(free_boundary_contract["free_boundary_metadata_pass"]),
+        free_boundary_external_coil_sidecar_present=bool(
+            free_boundary_contract["free_boundary_external_coil_sidecar_present"]
+        ),
         free_boundary_external_coil_data_available=bool(
             free_boundary_contract["free_boundary_external_coil_data_available"]
+        ),
+        free_boundary_external_coil_count=int(
+            free_boundary_contract["free_boundary_external_coil_count"]
+        ),
+        free_boundary_external_coil_provenance=str(
+            free_boundary_contract["free_boundary_external_coil_provenance"]
         ),
         free_boundary_reconstruction_blocker=str(
             free_boundary_contract["free_boundary_reconstruction_blocker"]

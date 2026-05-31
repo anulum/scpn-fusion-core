@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added a fail-closed EFIT/GEQDSK external-coil sidecar contract for
+  free-boundary reconstruction readiness, including strict unit, finite-value,
+  turn-count, current-limit, unique-name, provenance, schema, test, and report
+  fields while keeping current public GEQDSK-only rows blocked.
+
 - Added EFIT/GEQDSK free-boundary metadata/blocker reporting so rows that need
   full free-boundary reconstruction distinguish available boundary/limiter/axis
   inputs from missing external coil-current data.

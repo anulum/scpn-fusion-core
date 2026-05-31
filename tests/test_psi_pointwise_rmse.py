@@ -38,6 +38,7 @@ from validation.psi_pointwise_rmse import (
     classify_source_scale_convention,
     compute_gs_source,
     compute_adapted_profile_reconstruction,
+    compute_free_boundary_reconstruction_contract,
     compute_psi_rmse,
     compute_operator_candidate_rankings,
     compute_source_alignment,
@@ -257,6 +258,99 @@ class TestComputeSourceAlignment:
         assert best_fit_convention == "canonical"
         assert metrics["source_plasma_residual_l2"] < 1e-12
         assert metrics["source_vacuum_residual_l2"] < 1e-12
+
+
+class TestFreeBoundaryExternalCoilSidecar:
+    """Fail-closed external coil contract for GEQDSK free-boundary rows."""
+
+    def test_geqdsk_only_free_boundary_contract_requires_external_coils(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+
+        contract = compute_free_boundary_reconstruction_contract(
+            eq,
+            "free_boundary_coil_vacuum_reconstruction_required",
+        )
+
+        assert contract["free_boundary_metadata_pass"] is True
+        assert contract["free_boundary_external_coil_sidecar_present"] is False
+        assert contract["free_boundary_external_coil_data_available"] is False
+        assert contract["free_boundary_external_coil_count"] == 0
+        assert (
+            contract["free_boundary_reconstruction_blocker"]
+            == "external_coil_currents_missing_from_geqdsk"
+        )
+
+    def test_valid_external_coil_sidecar_unblocks_reconstruction_contract(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        sidecar = {
+            "schema_version": "external-coil-sidecar.v1",
+            "provenance": "unit_test_public_contract_fixture",
+            "current_unit": "A",
+            "position_unit": "m",
+            "turns_unit": "turn",
+            "coils": [
+                {
+                    "name": "PF_TEST_U",
+                    "r_m": float(eq.rmaxis + 0.6),
+                    "z_m": float(eq.zmaxis + 0.4),
+                    "current_A": 1200.0,
+                    "turns": 4.0,
+                    "current_limit_A": 5000.0,
+                },
+                {
+                    "name": "PF_TEST_L",
+                    "r_m": float(eq.rmaxis + 0.6),
+                    "z_m": float(eq.zmaxis - 0.4),
+                    "current_A": -1180.0,
+                    "turns": 4.0,
+                    "current_limit_A": 5000.0,
+                },
+            ],
+        }
+
+        contract = compute_free_boundary_reconstruction_contract(
+            eq,
+            "free_boundary_coil_vacuum_reconstruction_required",
+            external_coil_sidecar=sidecar,
+        )
+
+        assert contract["free_boundary_external_coil_sidecar_present"] is True
+        assert contract["free_boundary_external_coil_data_available"] is True
+        assert contract["free_boundary_external_coil_count"] == 2
+        assert (
+            contract["free_boundary_external_coil_provenance"]
+            == "unit_test_public_contract_fixture"
+        )
+        assert contract["free_boundary_reconstruction_blocker"] == (
+            "ready_for_free_boundary_reconstruction"
+        )
+
+    def test_external_coil_sidecar_rejects_non_finite_current(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        sidecar = {
+            "schema_version": "external-coil-sidecar.v1",
+            "provenance": "unit_test_public_contract_fixture",
+            "current_unit": "A",
+            "position_unit": "m",
+            "turns_unit": "turn",
+            "coils": [
+                {
+                    "name": "PF_TEST",
+                    "r_m": float(eq.rmaxis + 0.6),
+                    "z_m": float(eq.zmaxis),
+                    "current_A": float("nan"),
+                    "turns": 1.0,
+                    "current_limit_A": 5000.0,
+                }
+            ],
+        }
+
+        with pytest.raises(ValueError, match="finite current_A"):
+            compute_free_boundary_reconstruction_contract(
+                eq,
+                "free_boundary_coil_vacuum_reconstruction_required",
+                external_coil_sidecar=sidecar,
+            )
 
     @pytest.mark.parametrize(
         ("source_domain_class", "required_solver_mode", "next_action"),

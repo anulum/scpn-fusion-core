@@ -524,7 +524,10 @@
           "free_boundary_boundary_inside_grid_fraction",
           "free_boundary_limiter_inside_grid_fraction",
           "free_boundary_metadata_pass",
+          "free_boundary_external_coil_sidecar_present",
           "free_boundary_external_coil_data_available",
+          "free_boundary_external_coil_count",
+          "free_boundary_external_coil_provenance",
           "free_boundary_reconstruction_blocker",
           "best_source_candidate",
           "best_source_candidate_residual_l2",
@@ -1043,8 +1046,18 @@
           "free_boundary_metadata_pass": {
             "type": "boolean"
           },
+          "free_boundary_external_coil_sidecar_present": {
+            "type": "boolean"
+          },
           "free_boundary_external_coil_data_available": {
             "type": "boolean"
+          },
+          "free_boundary_external_coil_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "free_boundary_external_coil_provenance": {
+            "type": "string"
           },
           "free_boundary_reconstruction_blocker": {
             "enum": [
