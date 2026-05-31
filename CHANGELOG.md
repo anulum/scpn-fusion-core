@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added a reproducible full-fidelity public source downloader and provenance
+  report for GENE, CGYRO/GACODE, GS2, DREAM, Aurora, FreeGS, and FreeGSNKE,
+  while keeping raw upstream snapshots gitignored and fail-closed as
+  acquisition inputs rather than accepted parity artifacts.
+
 - Added an integrated six-lane full-fidelity end-to-end campaign registry and
   report covering GENE/CGYRO/GS2 nonlinear GK parity, full Maxwell/EM fidelity,
   production-scale decomposition, DREAM runaway electrons, Aurora/STRAHL

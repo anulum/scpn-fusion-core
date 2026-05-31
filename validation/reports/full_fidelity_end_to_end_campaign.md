@@ -6,6 +6,9 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Status: `not_full_fidelity`
 - Acceptance passed: `False`
 - Public source registry: `validation/reference_data/full_fidelity_public_sources.json`
+- Public source download report: `validation/reports/full_fidelity_public_source_downloads.json`
+- Public sources cached: `True`
+- Public source cache root: `data/external/full_fidelity_public_sources`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
 

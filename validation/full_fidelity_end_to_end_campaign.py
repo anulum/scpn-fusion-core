@@ -15,6 +15,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "validation" / "reports"
 PUBLIC_SOURCES = ROOT / "validation" / "reference_data" / "full_fidelity_public_sources.json"
+PUBLIC_SOURCE_DOWNLOADS = REPORT_DIR / "full_fidelity_public_source_downloads.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -35,11 +36,25 @@ def _load_sources() -> dict[str, Any]:
     return registry
 
 
-def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, str]]:
-    out: list[dict[str, str]] = []
+def _load_downloads() -> dict[str, Any]:
+    if not PUBLIC_SOURCE_DOWNLOADS.exists():
+        return {
+            "all_reachable_downloads_completed": False,
+            "cache_root": "data/external/full_fidelity_public_sources",
+            "items": [],
+            "schema": "full-fidelity-public-source-downloads.v1",
+        }
+    downloads = json.loads(PUBLIC_SOURCE_DOWNLOADS.read_text(encoding="utf-8"))
+    if downloads.get("schema") != "full-fidelity-public-source-downloads.v1":
+        raise ValueError("full-fidelity public source download report schema mismatch")
+    return downloads
+
+
+def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
     for source in registry["sources"]:
         if source.get("surface") == surface:
-            out.append({str(k): str(v) for k, v in source.items()})
+            out.append(dict(source))
     return out
 
 
@@ -57,6 +72,7 @@ def _report_exists(path: str) -> bool:
 def run_campaign() -> dict[str, Any]:
     """Return integrated full-fidelity status for all six blocker classes."""
     registry = _load_sources()
+    downloads = _load_downloads()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -154,6 +170,9 @@ def run_campaign() -> dict[str, Any]:
         "benchmark": "full_fidelity_end_to_end_campaign",
         "schema": "full-fidelity-end-to-end-campaign.v1",
         "description": "Integrated fail-closed campaign covering GK, EM, production-scale runtime, DREAM, Aurora/STRAHL, and free-boundary blockers.",
+        "public_source_cache_root": downloads["cache_root"],
+        "public_source_download_report": str(PUBLIC_SOURCE_DOWNLOADS.relative_to(ROOT)),
+        "public_sources_cached": bool(downloads["all_reachable_downloads_completed"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -179,6 +198,9 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Status: `{report['status']}`",
         f"- Acceptance passed: `{report['acceptance_passed']}`",
         f"- Public source registry: `{report['public_source_registry']}`",
+        f"- Public source download report: `{report['public_source_download_report']}`",
+        f"- Public sources cached: `{report['public_sources_cached']}`",
+        f"- Public source cache root: `{report['public_source_cache_root']}`",
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

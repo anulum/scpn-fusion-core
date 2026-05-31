@@ -52,7 +52,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 381 |
+| Python test files | 382 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -168,6 +168,12 @@ accepted artefacts must also satisfy
 The integrated six-lane campaign, including public source acquisition targets
 and production-scale blockers, is tracked by
 [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md).
+Public upstream source snapshots for GENE, CGYRO/GACODE, GS2, DREAM, Aurora,
+FreeGS, and FreeGSNKE are cached under gitignored `data/external/` and
+summarised in
+[`validation/reports/full_fidelity_public_source_downloads.md`](validation/reports/full_fidelity_public_source_downloads.md).
+Those snapshots are acquisition inputs only; they are not accepted parity
+artifacts until converted into schema-valid repository-local JSON/NPZ evidence.
 
 ## Competitive Position
 

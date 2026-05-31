@@ -172,6 +172,20 @@ Accepted named-adapter rows are no longer counted as unresolved profile-source
 blockers, but they remain blocked on free-boundary coil/vacuum reconstruction.
 These are not CI or harness failures and must not be hidden by fallback rows.
 
+### Full-fidelity public source acquisition
+
+Public upstream source snapshots needed for the full-fidelity parity campaign
+are cached under gitignored `data/external/full_fidelity_public_sources/`.
+The tracked provenance report is
+[`validation/reports/full_fidelity_public_source_downloads.md`](../validation/reports/full_fidelity_public_source_downloads.md),
+with machine-readable checksums and revisions in
+[`validation/reports/full_fidelity_public_source_downloads.json`](../validation/reports/full_fidelity_public_source_downloads.json).
+
+The current acquisition covers GENE public pages, CGYRO/GACODE, GS2, DREAM,
+Aurora, FreeGS, and FreeGSNKE. These raw snapshots are not benchmark parity
+artifacts; production parity still requires schema-valid JSON/NPZ reference
+artifacts, licenses, thresholds, observables, and solver-output comparisons.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
