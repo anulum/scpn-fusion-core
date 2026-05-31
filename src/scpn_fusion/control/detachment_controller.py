@@ -14,8 +14,11 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.sol_model import TwoPointSOL
+
+FloatArray = NDArray[np.float64]
 
 
 class DetachmentState(Enum):
@@ -173,7 +176,7 @@ class DetachmentBifurcation:
         return DetachmentPoint(seeding_rate, T_t, res.n_target_19, dod, f_rad, state)
 
     def scan_seeding(
-        self, seeding_range: np.ndarray, P_SOL_MW: float, n_u_19: float
+        self, seeding_range: FloatArray, P_SOL_MW: float, n_u_19: float
     ) -> list[DetachmentPoint]:
         """Evaluate steady-state detachment points over a seeding-rate grid."""
 

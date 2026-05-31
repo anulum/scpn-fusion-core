@@ -14,6 +14,10 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
+TransportModel = Callable[[FloatArray], FloatArray]
 
 
 @dataclass
@@ -50,7 +54,7 @@ class FluxBudget:
         """Return inductive flux required to reach the target plasma current."""
         return self.L_plasma_H * (Ip_MA * 1e6)
 
-    def resistive_flux_ramp(self, Ip_trace: np.ndarray, dt: float) -> float:
+    def resistive_flux_ramp(self, Ip_trace: FloatArray, dt: float) -> float:
         """Integrate resistive volt-second consumption over a current trace."""
         # Integral of R_p * I_p dt
         return float(np.sum(self.R_plasma_Ohm * (Ip_trace * 1e6) * dt))
@@ -71,13 +75,13 @@ class FluxBudget:
 class VoltSecondOptimizer:
     """Generate current-ramp candidates under a flux budget."""
 
-    def __init__(self, flux_budget: FluxBudget, transport_model: Callable | None = None):
+    def __init__(self, flux_budget: FluxBudget, transport_model: TransportModel | None = None):
         self.budget = flux_budget
         self.transport_model = transport_model
 
     def optimize_ramp(
         self, Ip_target_MA: float, t_ramp_max: float, n_segments: int = 10
-    ) -> np.ndarray:
+    ) -> FloatArray:
         """Return a deterministic plasma-current ramp to the target current."""
         # A simple optimal ramp: ramp as fast as possible, but we just generate a linear ramp for testing
         # Real optimization would consider CS stress and MHD stability (li limits)
@@ -91,11 +95,11 @@ class BootstrapCurrentEstimate:
 
     @staticmethod
     def from_profiles(
-        ne: np.ndarray,
-        Te: np.ndarray,
-        Ti: np.ndarray,
-        q: np.ndarray,
-        rho: np.ndarray,
+        ne: FloatArray,
+        Te: FloatArray,
+        Ti: FloatArray,
+        q: FloatArray,
+        rho: FloatArray,
         R0: float,
         a: float,
     ) -> float:

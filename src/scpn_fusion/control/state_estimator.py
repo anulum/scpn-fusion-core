@@ -15,6 +15,9 @@ current, and temperature tracking.
 from __future__ import annotations
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class ExtendedKalmanFilter:
@@ -37,10 +40,10 @@ class ExtendedKalmanFilter:
 
     def __init__(
         self,
-        x0: np.ndarray,
-        P0: np.ndarray,
-        Q: np.ndarray,
-        R_cov: np.ndarray,
+        x0: FloatArray,
+        P0: FloatArray,
+        Q: FloatArray,
+        R_cov: FloatArray,
     ) -> None:
         self.x = x0.astype(float)
         self.P = P0.astype(float)
@@ -54,7 +57,7 @@ class ExtendedKalmanFilter:
         self.H[2, 4] = 1.0  # Ip
         self.H[3, 5] = 1.0  # Te_core
 
-    def predict(self, dt: float, u: np.ndarray | None = None) -> np.ndarray:
+    def predict(self, dt: float, u: FloatArray | None = None) -> FloatArray:
         """Advance the state estimate and covariance using the process model.
 
         Parameters
@@ -83,7 +86,7 @@ class ExtendedKalmanFilter:
 
         return self.x
 
-    def update(self, z: np.ndarray) -> np.ndarray:
+    def update(self, z: FloatArray) -> FloatArray:
         """Correct the state estimate using a new measurement.
 
         Parameters
@@ -111,6 +114,6 @@ class ExtendedKalmanFilter:
 
         return self.x
 
-    def estimate(self) -> np.ndarray:
+    def estimate(self) -> FloatArray:
         """Return the current state estimate."""
         return self.x.copy()

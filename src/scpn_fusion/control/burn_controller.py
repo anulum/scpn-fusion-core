@@ -10,11 +10,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.uncertainty import bosch_hale_reactivity
+
+FloatArray = NDArray[np.float64]
+ReactivityFn = Callable[[FloatArray], FloatArray]
+_bosch_hale_reactivity = cast(ReactivityFn, bosch_hale_reactivity)
 
 
 class AlphaHeating:
@@ -27,8 +32,8 @@ class AlphaHeating:
         self.E_alpha_J = 3.52 * 1e6 * 1.602e-19
 
     def power_density(
-        self, ne_20: np.ndarray, Te_keV: np.ndarray, Ti_keV: np.ndarray
-    ) -> np.ndarray:
+        self, ne_20: FloatArray, Te_keV: FloatArray, Ti_keV: FloatArray
+    ) -> FloatArray:
         """
         p_alpha [MW/m^3] for 50:50 DT mixture.
         """
@@ -38,15 +43,13 @@ class AlphaHeating:
         nD = ne_m3 / 2.0
         nT = ne_m3 / 2.0
 
-        sigv = bosch_hale_reactivity(Ti_keV)
+        sigv = _bosch_hale_reactivity(Ti_keV)
 
         # p_alpha_W = n_D n_T <sigma v> E_alpha
         p_alpha_W = nD * nT * sigv * self.E_alpha_J
         return p_alpha_W / 1e6
 
-    def power(
-        self, ne_20: np.ndarray, Te_keV: np.ndarray, Ti_keV: np.ndarray, rho: np.ndarray
-    ) -> float:
+    def power(self, ne_20: FloatArray, Te_keV: FloatArray, Ti_keV: FloatArray, rho: FloatArray) -> float:
         """
         P_alpha [MW] integrated over volume.
         """
@@ -81,8 +84,8 @@ class BurnStabilityAnalysis:
             return 10.0
 
         dT = 0.01 * Ti_keV
-        sv_arr_plus = np.asarray(bosch_hale_reactivity(np.array([Ti_keV + dT])))
-        sv_arr_minus = np.asarray(bosch_hale_reactivity(np.array([Ti_keV - dT])))
+        sv_arr_plus = np.asarray(_bosch_hale_reactivity(np.array([Ti_keV + dT])), dtype=np.float64)
+        sv_arr_minus = np.asarray(_bosch_hale_reactivity(np.array([Ti_keV - dT])), dtype=np.float64)
         sv_plus = sv_arr_plus[0]
         sv_minus = sv_arr_minus[0]
 
@@ -190,7 +193,7 @@ class SubignitedBurnPoint:
         We just scan T to find intersections.
         """
         T_scan = np.linspace(1.0, 40.0, 400)
-        points = []
+        points: list[BurnPoint] = []
 
         V = 2.0 * np.pi**2 * self.alpha.R0 * self.alpha.a**2 * self.alpha.kappa
         e_charge = 1.602e-19
