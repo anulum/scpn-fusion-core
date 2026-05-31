@@ -422,6 +422,64 @@ class TestEnergyConservation:
             result.saturated_total_energy, np.mean(result.total_energy_t[late])
         )
 
+    def test_electromagnetic_field_energy_spectra_close_component_energies(self):
+        cfg = NonlinearGKConfig(
+            n_kx=6,
+            n_ky=6,
+            n_theta=8,
+            n_vpar=5,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            dt=0.005,
+            n_steps=4,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=61)
+
+        phi_kxky, a_parallel_kxky, b_parallel_kxky = solver.field_energy_spectra(state)
+        field_energy = solver.field_energy(state)
+
+        assert phi_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert a_parallel_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert b_parallel_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert np.all(phi_kxky >= 0.0)
+        assert np.all(a_parallel_kxky >= 0.0)
+        assert np.all(b_parallel_kxky >= 0.0)
+        np.testing.assert_allclose(np.sum(phi_kxky), field_energy.phi)
+        np.testing.assert_allclose(np.sum(a_parallel_kxky), field_energy.A_parallel)
+        np.testing.assert_allclose(np.sum(b_parallel_kxky), field_energy.B_parallel)
+
+        result = solver.run(state)
+        late = slice(max(result.time.size // 2, 1), None)
+
+        assert result.phi_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.A_parallel_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.B_parallel_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        np.testing.assert_allclose(
+            np.sum(result.phi_energy_kxky_t, axis=(1, 2)), result.phi_energy_t
+        )
+        np.testing.assert_allclose(
+            np.sum(result.A_parallel_energy_kxky_t, axis=(1, 2)), result.A_parallel_energy_t
+        )
+        np.testing.assert_allclose(
+            np.sum(result.B_parallel_energy_kxky_t, axis=(1, 2)), result.B_parallel_energy_t
+        )
+        np.testing.assert_allclose(
+            result.saturated_phi_energy_kxky, np.mean(result.phi_energy_kxky_t[late], axis=0)
+        )
+        np.testing.assert_allclose(
+            result.saturated_A_parallel_energy_kxky,
+            np.mean(result.A_parallel_energy_kxky_t[late], axis=0),
+        )
+        np.testing.assert_allclose(
+            result.saturated_B_parallel_energy_kxky,
+            np.mean(result.B_parallel_energy_kxky_t[late], axis=0),
+        )
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
@@ -918,6 +976,12 @@ class TestJaxFallback:
         assert np.isfinite(result.saturated_phi_rms)
         assert np.isfinite(result.saturated_zonal_flow_energy)
         assert np.isfinite(result.saturated_total_energy)
+        assert result.phi_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.A_parallel_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.B_parallel_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.saturated_phi_energy_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert result.saturated_A_parallel_energy_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert result.saturated_B_parallel_energy_kxky.shape == (cfg.n_kx, cfg.n_ky)
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available

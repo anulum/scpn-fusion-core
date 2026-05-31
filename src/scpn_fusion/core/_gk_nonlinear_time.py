@@ -167,21 +167,41 @@ class NonlinearGKTimeMixin:
         self.validate_state(state)
         return float(np.sum(np.abs(state.f) ** 2) * self.dvpar * self.dmu * self.dtheta)
 
+    def field_energy_spectra(
+        self, state: NonlinearGKState
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+        """Electromagnetic field-energy spectra over retained kx/ky modes."""
+        self.validate_state(state)
+        kperp_weight = 1.0 + self.kperp2
+        beta = max(float(self.cfg.beta_e), 1e-30)
+        phi_energy = 0.5 * np.asarray(
+            np.sum(kperp_weight[:, :, None] * np.abs(state.phi) ** 2, axis=-1) * self.dtheta,
+            dtype=np.float64,
+        )
+        a_parallel_energy = np.zeros_like(phi_energy)
+        if state.A_par is not None:
+            a_parallel_energy = 0.5 * np.asarray(
+                np.sum(kperp_weight[:, :, None] * np.abs(state.A_par) ** 2, axis=-1)
+                * self.dtheta
+                / beta,
+                dtype=np.float64,
+            )
+        b_parallel_energy = np.zeros_like(phi_energy)
+        if state.B_par is not None:
+            b_parallel_energy = 0.5 * np.asarray(
+                np.sum(np.abs(state.B_par) ** 2, axis=-1) * self.dtheta / beta,
+                dtype=np.float64,
+            )
+        return phi_energy, a_parallel_energy, b_parallel_energy
+
     def field_energy(self, state: NonlinearGKState) -> NonlinearGKFieldEnergyDiagnostics:
         """Electromagnetic field energy across phi, A_parallel, and B_parallel."""
-        self.validate_state(state)
-        kperp_weight = 1.0 + self.kperp2[:, :, None]
-        theta_weight = self.dtheta
-        beta = max(float(self.cfg.beta_e), 1e-30)
-        phi_energy = 0.5 * float(np.sum(kperp_weight * np.abs(state.phi) ** 2) * theta_weight)
-        a_parallel_energy = 0.0
-        if state.A_par is not None:
-            a_parallel_energy = 0.5 * float(
-                np.sum(kperp_weight * np.abs(state.A_par) ** 2) * theta_weight / beta
-            )
-        b_parallel_energy = 0.0
-        if state.B_par is not None:
-            b_parallel_energy = 0.5 * float(np.sum(np.abs(state.B_par) ** 2) * theta_weight / beta)
+        phi_energy_kxky, a_parallel_energy_kxky, b_parallel_energy_kxky = self.field_energy_spectra(
+            state
+        )
+        phi_energy = float(np.sum(phi_energy_kxky))
+        a_parallel_energy = float(np.sum(a_parallel_energy_kxky))
+        b_parallel_energy = float(np.sum(b_parallel_energy_kxky))
         total = phi_energy + a_parallel_energy + b_parallel_energy
         finite = bool(
             np.isfinite(phi_energy)
@@ -292,6 +312,9 @@ class NonlinearGKTimeMixin:
         phi_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         A_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         B_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
+        phi_energy_kxky_t: NDArray[np.float64] = np.zeros((n_saves, c.n_kx, c.n_ky))
+        A_parallel_energy_kxky_t: NDArray[np.float64] = np.zeros((n_saves, c.n_kx, c.n_ky))
+        B_parallel_energy_kxky_t: NDArray[np.float64] = np.zeros((n_saves, c.n_kx, c.n_ky))
         total_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         exb_free_energy_production_t: NDArray[np.float64] = np.zeros(n_saves)
         exb_relative_free_energy_production_t: NDArray[np.float64] = np.zeros(n_saves)
@@ -320,12 +343,22 @@ class NonlinearGKTimeMixin:
                 zonal_rms_t[save_idx] = self.zonal_rms(state)
                 zonal_flow_energy_t[save_idx] = self.zonal_flow_energy(state)
                 particle_energy = self.particle_free_energy(state)
-                field_energy = self.field_energy(state)
+                phi_energy_kxky, A_parallel_energy_kxky, B_parallel_energy_kxky = (
+                    self.field_energy_spectra(state)
+                )
                 particle_free_energy_t[save_idx] = particle_energy
-                phi_energy_t[save_idx] = field_energy.phi
-                A_parallel_energy_t[save_idx] = field_energy.A_parallel
-                B_parallel_energy_t[save_idx] = field_energy.B_parallel
-                total_energy_t[save_idx] = particle_energy + field_energy.total
+                phi_energy_kxky_t[save_idx] = phi_energy_kxky
+                A_parallel_energy_kxky_t[save_idx] = A_parallel_energy_kxky
+                B_parallel_energy_kxky_t[save_idx] = B_parallel_energy_kxky
+                phi_energy_t[save_idx] = float(np.sum(phi_energy_kxky))
+                A_parallel_energy_t[save_idx] = float(np.sum(A_parallel_energy_kxky))
+                B_parallel_energy_t[save_idx] = float(np.sum(B_parallel_energy_kxky))
+                total_energy_t[save_idx] = (
+                    particle_energy
+                    + phi_energy_t[save_idx]
+                    + A_parallel_energy_t[save_idx]
+                    + B_parallel_energy_t[save_idx]
+                )
                 invariant = self.nonlinear_invariant_diagnostics(state)
                 exb_free_energy_production_t[save_idx] = invariant.exb_free_energy_production
                 exb_relative_free_energy_production_t[save_idx] = (
@@ -347,6 +380,9 @@ class NonlinearGKTimeMixin:
         phi_energy_t = np.asarray(phi_energy_t[:save_idx], dtype=np.float64)
         A_parallel_energy_t = np.asarray(A_parallel_energy_t[:save_idx], dtype=np.float64)
         B_parallel_energy_t = np.asarray(B_parallel_energy_t[:save_idx], dtype=np.float64)
+        phi_energy_kxky_t = np.asarray(phi_energy_kxky_t[:save_idx], dtype=np.float64)
+        A_parallel_energy_kxky_t = np.asarray(A_parallel_energy_kxky_t[:save_idx], dtype=np.float64)
+        B_parallel_energy_kxky_t = np.asarray(B_parallel_energy_kxky_t[:save_idx], dtype=np.float64)
         total_energy_t = np.asarray(total_energy_t[:save_idx], dtype=np.float64)
         exb_free_energy_production_t = np.asarray(
             exb_free_energy_production_t[:save_idx], dtype=np.float64
@@ -387,6 +423,21 @@ class NonlinearGKTimeMixin:
         saturated_B_parallel_energy = (
             float(np.mean(B_parallel_energy_t[late])) if len(B_parallel_energy_t) > 0 else 0.0
         )
+        saturated_phi_energy_kxky = (
+            np.mean(phi_energy_kxky_t[late], axis=0)
+            if len(phi_energy_kxky_t) > 0
+            else np.zeros((c.n_kx, c.n_ky), dtype=np.float64)
+        )
+        saturated_A_parallel_energy_kxky = (
+            np.mean(A_parallel_energy_kxky_t[late], axis=0)
+            if len(A_parallel_energy_kxky_t) > 0
+            else np.zeros((c.n_kx, c.n_ky), dtype=np.float64)
+        )
+        saturated_B_parallel_energy_kxky = (
+            np.mean(B_parallel_energy_kxky_t[late], axis=0)
+            if len(B_parallel_energy_kxky_t) > 0
+            else np.zeros((c.n_kx, c.n_ky), dtype=np.float64)
+        )
         saturated_total_energy = (
             float(np.mean(total_energy_t[late])) if len(total_energy_t) > 0 else 0.0
         )
@@ -408,6 +459,9 @@ class NonlinearGKTimeMixin:
             saturated_phi_energy=saturated_phi_energy,
             saturated_A_parallel_energy=saturated_A_parallel_energy,
             saturated_B_parallel_energy=saturated_B_parallel_energy,
+            saturated_phi_energy_kxky=saturated_phi_energy_kxky,
+            saturated_A_parallel_energy_kxky=saturated_A_parallel_energy_kxky,
+            saturated_B_parallel_energy_kxky=saturated_B_parallel_energy_kxky,
             saturated_total_energy=saturated_total_energy,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
@@ -416,6 +470,9 @@ class NonlinearGKTimeMixin:
             phi_energy_t=phi_energy_t,
             A_parallel_energy_t=A_parallel_energy_t,
             B_parallel_energy_t=B_parallel_energy_t,
+            phi_energy_kxky_t=phi_energy_kxky_t,
+            A_parallel_energy_kxky_t=A_parallel_energy_kxky_t,
+            B_parallel_energy_kxky_t=B_parallel_energy_kxky_t,
             total_energy_t=total_energy_t,
             exb_free_energy_production_t=exb_free_energy_production_t,
             exb_relative_free_energy_production_t=exb_relative_free_energy_production_t,

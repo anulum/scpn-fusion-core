@@ -14,6 +14,7 @@
         "electromagnetic_b_parallel_hamiltonian_coupling": true,
         "electromagnetic_b_parallel_surface": true,
         "electromagnetic_energy_history_export": true,
+        "electromagnetic_energy_spectrum_history_export": true,
         "electromagnetic_field_energy_accounting": true,
         "explicit_5d_phase_space_contract": true,
         "five_dimensional_delta_f_state": true,

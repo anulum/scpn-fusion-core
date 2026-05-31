@@ -770,7 +770,11 @@ gradient drive through the magnetic-moment compression term. The energy
 diagnostics now account for particle free energy and electromagnetic field
 energy separately before reporting total energy, and `run()` exports particle,
 `phi`, `A_parallel`, `B_parallel`, and total-energy histories for saturation
-and invariant analysis. It also exports nonlinear ExB free-energy production,
+and invariant analysis. The same NumPy and JAX run paths now also export
+electromagnetic `phi`, `A_parallel`, and `B_parallel` field-energy spectra over
+the retained kx/ky grid; each spectrum closes to the corresponding scalar
+component energy, and late-window saturated spectra are reported from those
+saved histories. It also exports nonlinear ExB free-energy production,
 relative production, dealiased high-k leakage, and per-save invariant-pass
 histories from both NumPy and JAX run paths. This is necessary infrastructure
 for full nonlinear 5D parity, but it is not sufficient to claim
