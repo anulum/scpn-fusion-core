@@ -60,25 +60,62 @@ def _load_reference_cases() -> dict[str, Any]:
     return manifest
 
 
-def _observable_readiness(path: Path | None, observables: Any) -> dict[str, Any]:
-    """Return required observable presence for JSON or NPZ reference artefacts."""
-    if path is None or not path.exists() or not isinstance(observables, list) or not observables:
-        return {"ready": False, "present": [], "missing": list(observables or [])}
+def _observable_readiness(path: Path | None, observables: Any, contracts: Any) -> dict[str, Any]:
+    """Return required observable presence and payload validity for JSON/NPZ artefacts."""
+    required = [str(name) for name in observables] if isinstance(observables, list) else []
+    if path is None or not path.exists() or not required:
+        return {
+            "ready": False,
+            "present": [],
+            "missing": required,
+            "invalid": [],
+        }
 
+    data: dict[str, Any]
     if path.suffix == ".json":
         payload = json.loads(path.read_text(encoding="utf-8"))
         data = payload.get("observables", payload) if isinstance(payload, dict) else {}
-        keys = set(data) if isinstance(data, dict) else set()
     elif path.suffix == ".npz":
         with np.load(path, allow_pickle=False) as payload:
-            keys = set(payload.files)
+            data = {name: payload[name] for name in payload.files}
     else:
-        keys = set()
+        data = {}
 
-    required = [str(name) for name in observables]
+    keys = set(data) if isinstance(data, dict) else set()
     present = [name for name in required if name in keys]
     missing = [name for name in required if name not in keys]
-    return {"ready": not missing, "present": present, "missing": missing}
+    contract_map = contracts if isinstance(contracts, dict) else {}
+    invalid = []
+    for name in present:
+        contract = (
+            contract_map.get(name, {}) if isinstance(contract_map.get(name, {}), dict) else {}
+        )
+        try:
+            array = np.asarray(data[name], dtype=float)
+        except (TypeError, ValueError):
+            invalid.append({"observable": name, "reason": "not_numeric"})
+            continue
+        min_rank = int(contract.get("min_rank", 0))
+        if bool(contract.get("non_empty", True)) and array.size == 0:
+            invalid.append({"observable": name, "reason": "empty"})
+        elif array.ndim < min_rank:
+            invalid.append(
+                {
+                    "observable": name,
+                    "reason": "rank_below_minimum",
+                    "rank": int(array.ndim),
+                    "min_rank": min_rank,
+                }
+            )
+        elif bool(contract.get("finite", True)) and not bool(np.all(np.isfinite(array))):
+            invalid.append({"observable": name, "reason": "non_finite"})
+
+    return {
+        "ready": not missing and not invalid,
+        "present": present,
+        "missing": missing,
+        "invalid": invalid,
+    }
 
 
 def _reference_readiness(
@@ -106,8 +143,12 @@ def _reference_readiness(
         thresholds = case.get("thresholds")
         threshold_ready = isinstance(thresholds, dict) and bool(thresholds)
         observables = case.get("required_observables")
+        observable_contracts = case.get("observable_contracts")
         observables_declared = isinstance(observables, list) and bool(observables)
-        observable_report = _observable_readiness(artifact_path, observables)
+        contracts_ready = isinstance(observable_contracts, dict) and all(
+            name in observable_contracts for name in (observables or [])
+        )
+        observable_report = _observable_readiness(artifact_path, observables, observable_contracts)
         status = case.get("status")
         status_ready = status == "available"
         status_known = status in allowed_statuses
@@ -128,6 +169,7 @@ def _reference_readiness(
             and license_ready
             and sha_ready
             and observables_declared
+            and contracts_ready
             and observable_report["ready"]
             and threshold_ready
         )
@@ -145,9 +187,11 @@ def _reference_readiness(
             "sha256_actual": actual_sha,
             "sha256_ready": sha_ready,
             "observables_declared": observables_declared,
+            "observable_contracts_ready": contracts_ready,
             "observable_keys_ready": observable_report["ready"],
             "observable_keys_present": observable_report["present"],
             "observable_keys_missing": observable_report["missing"],
+            "observable_payload_invalid": observable_report["invalid"],
             "threshold_ready": threshold_ready,
             "missing_fields": missing_fields,
             "ready": case_ready,

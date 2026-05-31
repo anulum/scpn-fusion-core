@@ -32,6 +32,7 @@
             "artifact_path": null,
             "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
             "missing_fields": [],
+            "observable_contracts_ready": true,
             "observable_keys_missing": [
               "ion_heat_flux_spectrum",
               "electron_heat_flux_spectrum",
@@ -41,6 +42,7 @@
             ],
             "observable_keys_present": [],
             "observable_keys_ready": false,
+            "observable_payload_invalid": [],
             "observables_declared": true,
             "provenance_ready": false,
             "ready": false,
@@ -87,6 +89,7 @@
             "artifact_path": null,
             "case_id": "dream_kinetic_hot_tail_avalanche_public",
             "missing_fields": [],
+            "observable_contracts_ready": true,
             "observable_keys_missing": [
               "f_p_xi_t",
               "runaway_current_t",
@@ -96,6 +99,7 @@
             ],
             "observable_keys_present": [],
             "observable_keys_ready": false,
+            "observable_payload_invalid": [],
             "observables_declared": true,
             "provenance_ready": false,
             "ready": false,
@@ -141,6 +145,7 @@
             "artifact_path": null,
             "case_id": "aurora_strahl_charge_state_transport_public",
             "missing_fields": [],
+            "observable_contracts_ready": true,
             "observable_keys_missing": [
               "charge_state_density_r_t",
               "total_impurity_density_r_t",
@@ -150,6 +155,7 @@
             ],
             "observable_keys_present": [],
             "observable_keys_ready": false,
+            "observable_payload_invalid": [],
             "observables_declared": true,
             "provenance_ready": false,
             "ready": false,

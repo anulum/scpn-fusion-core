@@ -1,6 +1,20 @@
 {
-  "schema": "full-fidelity-artifact-schema.v1",
+  "allowed_statuses": [
+    "missing_public_artifact",
+    "available"
+  ],
   "description": "Schema required before a full-fidelity public reference artefact can be used for native solver acceptance.",
+  "required_available_case_conditions": [
+    "status is available",
+    "artifact_path exists inside repository",
+    "provenance_url is non-empty",
+    "redistribution_license is non-empty",
+    "sha256 matches artifact bytes",
+    "required_observables is non-empty",
+    "all required_observables exist as top-level NPZ keys or JSON observables keys",
+    "observable arrays are numeric, finite, non-empty, and satisfy declared minimum rank",
+    "thresholds is non-empty"
+  ],
   "required_case_fields": [
     "case_id",
     "reference_family",
@@ -10,22 +24,10 @@
     "redistribution_license",
     "sha256",
     "required_observables",
-    "thresholds"
+    "thresholds",
+    "observable_contracts"
   ],
-  "allowed_statuses": [
-    "missing_public_artifact",
-    "available"
-  ],
-  "required_available_case_conditions": [
-    "status is available",
-    "artifact_path exists inside repository",
-    "provenance_url is non-empty",
-    "redistribution_license is non-empty",
-    "sha256 matches artifact bytes",
-    "required_observables is non-empty",
-    "all required_observables exist as top-level NPZ keys or JSON observables keys",
-    "thresholds is non-empty"
-  ],
+  "schema": "full-fidelity-artifact-schema.v1",
   "supported_artifact_formats": [
     ".json",
     ".npz"

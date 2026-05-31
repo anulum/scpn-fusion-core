@@ -7,6 +7,38 @@
         {
           "artifact_path": null,
           "case_id": "aurora_strahl_charge_state_transport_public",
+          "observable_contracts": {
+            "charge_state_density_r_t": {
+              "finite": true,
+              "min_rank": 3,
+              "non_empty": true,
+              "numeric": true
+            },
+            "ionisation_source_matrix": {
+              "finite": true,
+              "min_rank": 2,
+              "non_empty": true,
+              "numeric": true
+            },
+            "line_radiation_power_t": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "recombination_sink_matrix": {
+              "finite": true,
+              "min_rank": 2,
+              "non_empty": true,
+              "numeric": true
+            },
+            "total_impurity_density_r_t": {
+              "finite": true,
+              "min_rank": 2,
+              "non_empty": true,
+              "numeric": true
+            }
+          },
           "provenance_url": null,
           "redistribution_license": null,
           "reference_family": "Aurora/STRAHL",
@@ -34,6 +66,38 @@
         {
           "artifact_path": null,
           "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
+          "observable_contracts": {
+            "electromagnetic_apar_energy": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "electron_heat_flux_spectrum": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "ion_heat_flux_spectrum": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "saturated_phi_rms": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "zonal_flow_energy": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            }
+          },
           "provenance_url": null,
           "redistribution_license": null,
           "reference_family": "GENE/CGYRO/GS2",
@@ -61,6 +125,38 @@
         {
           "artifact_path": null,
           "case_id": "dream_kinetic_hot_tail_avalanche_public",
+          "observable_contracts": {
+            "avalanche_growth_rate_t": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "f_p_xi_t": {
+              "finite": true,
+              "min_rank": 3,
+              "non_empty": true,
+              "numeric": true
+            },
+            "partial_screening_drag_t": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "runaway_current_t": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            },
+            "synchrotron_loss_power_t": {
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true
+            }
+          },
           "provenance_url": null,
           "redistribution_license": null,
           "reference_family": "DREAM",
