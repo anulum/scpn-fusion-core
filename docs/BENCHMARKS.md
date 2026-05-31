@@ -753,9 +753,11 @@ frontiers:
 
 The native nonlinear GK surface now exposes an explicit
 `species x kx x ky x theta x vpar x mu` phase-space contract plus a named
-conservative pseudo-spectral ExB term with de-aliasing diagnostics. This is
-necessary infrastructure for full nonlinear 5D parity, but it is not sufficient
-to claim GENE/CGYRO/GS2 equivalence.
+conservative pseudo-spectral ExB term with de-aliasing diagnostics. The
+electromagnetic state contract now carries `phi`, `A_parallel`, and
+`B_parallel` field components. This is necessary infrastructure for full
+nonlinear 5D parity, but it is not sufficient to claim GENE/CGYRO/GS2
+equivalence.
 
 The current report is
 `validation/reports/full_fidelity_acceptance_benchmark.md`. Required public

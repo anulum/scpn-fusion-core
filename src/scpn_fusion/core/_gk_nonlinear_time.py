@@ -50,7 +50,10 @@ class NonlinearGKTimeMixin:
 
         phi_new = self.field_solve(f_new)
         A_par_new = self.ampere_solve(f_new) if self.cfg.electromagnetic else None
-        return NonlinearGKState(f=f_new, phi=phi_new, time=t0 + dt, A_par=A_par_new)
+        B_par_new = self.magnetic_compression_solve(f_new) if self.cfg.electromagnetic else None
+        return NonlinearGKState(
+            f=f_new, phi=phi_new, time=t0 + dt, A_par=A_par_new, B_par=B_par_new
+        )
 
     def _implicit_electron_streaming(
         self, f: NDArray[np.complex128], dt: float
@@ -188,7 +191,8 @@ class NonlinearGKTimeMixin:
 
         phi = self.field_solve(f)
         A_par = self.ampere_solve(f) if c.electromagnetic else None
-        return NonlinearGKState(f=f, phi=phi, time=0.0, A_par=A_par)
+        B_par = self.magnetic_compression_solve(f) if c.electromagnetic else None
+        return NonlinearGKState(f=f, phi=phi, time=0.0, A_par=A_par, B_par=B_par)
 
     def init_single_mode(
         self, kx_idx: int = 0, ky_idx: int = 1, amplitude: float = 1e-5
@@ -207,7 +211,9 @@ class NonlinearGKTimeMixin:
         )
 
         phi = self.field_solve(f)
-        return NonlinearGKState(f=f, phi=phi, time=0.0)
+        A_par = self.ampere_solve(f) if c.electromagnetic else None
+        B_par = self.magnetic_compression_solve(f) if c.electromagnetic else None
+        return NonlinearGKState(f=f, phi=phi, time=0.0, A_par=A_par, B_par=B_par)
 
     def run(self, state: NonlinearGKState | None = None) -> NonlinearGKResult:
         """Run the nonlinear simulation."""

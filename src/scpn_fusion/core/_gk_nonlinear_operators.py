@@ -62,6 +62,23 @@ class NonlinearGKOperatorsMixin:
         A_par[0, 0, :] = 0.0
         return np.asarray(A_par, dtype=np.complex128)
 
+    def magnetic_compression_solve(self, f: NDArray[np.complex128]) -> NDArray[np.complex128]:
+        """Perpendicular pressure-balance solve for B_parallel."""
+        c = self.cfg
+        if not c.electromagnetic:
+            return np.zeros((c.n_kx, c.n_ky, c.n_theta), dtype=complex)
+
+        mu_5d = self.mu[None, None, None, None, :]
+        dv = self.dvpar * self.dmu
+        p_perp = np.sum(mu_5d * f[0], axis=(-2, -1)) * dv
+        if c.kinetic_electrons:
+            p_perp += np.sum(mu_5d * f[1], axis=(-2, -1)) * dv
+
+        denom = 1.0 + self.kperp2[:, :, None]
+        B_par = -c.beta_e * p_perp / denom
+        B_par[0, 0, :] = 0.0
+        return np.asarray(B_par, dtype=np.complex128)
+
     def exb_bracket(
         self, phi: NDArray[np.complex128], f_s: NDArray[np.complex128]
     ) -> NDArray[np.complex128]:

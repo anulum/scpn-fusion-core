@@ -38,6 +38,7 @@ class NonlinearGKSetupMixin:
                 "mu_normalized",
             ),
             field_axes=("kx_rhos", "ky_rhos", "theta_rad"),
+            field_components=("phi", "A_parallel", "B_parallel"),
             axis_units={
                 "species": "index",
                 "kx_rhos": "rho_s^-1",
@@ -68,12 +69,16 @@ class NonlinearGKSetupMixin:
             raise ValueError(f"phi shape must be {contract.field_shape}, got {state.phi.shape}")
         if state.A_par is not None and state.A_par.shape != contract.field_shape:
             raise ValueError(f"A_par shape must be {contract.field_shape}, got {state.A_par.shape}")
+        if state.B_par is not None and state.B_par.shape != contract.field_shape:
+            raise ValueError(f"B_par shape must be {contract.field_shape}, got {state.B_par.shape}")
         if not np.all(np.isfinite(state.f)):
             raise ValueError("distribution must contain only finite values")
         if not np.all(np.isfinite(state.phi)):
             raise ValueError("phi must contain only finite values")
         if state.A_par is not None and not np.all(np.isfinite(state.A_par)):
             raise ValueError("A_par must contain only finite values")
+        if state.B_par is not None and not np.all(np.isfinite(state.B_par)):
+            raise ValueError("B_par must contain only finite values")
         if not np.isfinite(state.time):
             raise ValueError("time must be finite")
 

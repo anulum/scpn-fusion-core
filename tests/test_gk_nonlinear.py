@@ -111,6 +111,7 @@ class TestConfigState:
         )
         assert contract.axis_units["theta_rad"] == "rad"
         assert contract.axis_units["vpar_vth"] == "v_th"
+        assert contract.field_components == ("phi", "A_parallel", "B_parallel")
         assert contract.boundary_semantics["kx"] == "periodic spectral"
         assert contract.boundary_semantics["theta"] == "ballooning-connected periodic"
         assert contract.dealiasing == "2/3"
@@ -482,6 +483,77 @@ class TestFluxDiagnostics:
 
 
 class TestElectromagneticDrive:
+    def test_electromagnetic_state_declares_a_parallel_and_b_parallel_fields(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=6,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=17)
+
+        assert state.A_par is not None
+        assert state.B_par is not None
+        assert state.A_par.shape == state.phi.shape
+        assert state.B_par.shape == state.phi.shape
+        solver.validate_state(state)
+
+    def test_magnetic_compression_solve_is_finite_and_zero_mean_gauge(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=6,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=23)
+
+        b_par = solver.magnetic_compression_solve(state.f)
+
+        assert b_par.shape == state.phi.shape
+        assert np.all(np.isfinite(b_par))
+        np.testing.assert_allclose(b_par[0, 0, :], 0.0, atol=1e-30)
+
+    def test_validate_state_rejects_bad_b_parallel_shape(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=6,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=19)
+        bad = state.__class__(
+            f=state.f,
+            phi=state.phi,
+            time=state.time,
+            A_par=state.A_par,
+            B_par=np.zeros((cfg.n_kx, cfg.n_ky), dtype=np.complex128),
+        )
+
+        try:
+            solver.validate_state(bad)
+        except ValueError as exc:
+            assert "B_par shape" in str(exc)
+        else:
+            raise AssertionError("validate_state must reject malformed B_parallel fields")
+
     def test_kinetic_electron_drive_uses_effective_potential(self):
         cfg = NonlinearGKConfig(
             n_kx=4,

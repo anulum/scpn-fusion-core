@@ -73,6 +73,7 @@ class NonlinearGKState:
     phi: NDArray[np.complex128]
     time: float
     A_par: NDArray[np.complex128] | None = None
+    B_par: NDArray[np.complex128] | None = None
 
 
 @dataclass(frozen=True)
@@ -83,6 +84,7 @@ class NonlinearGKPhaseSpaceContract:
     field_shape: tuple[int, int, int]
     distribution_axes: tuple[str, str, str, str, str, str]
     field_axes: tuple[str, str, str]
+    field_components: tuple[str, str, str]
     axis_units: dict[str, str]
     boundary_semantics: dict[str, str]
     dealiasing: str
