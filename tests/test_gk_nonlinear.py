@@ -480,6 +480,48 @@ class TestEnergyConservation:
             np.mean(result.B_parallel_energy_kxky_t[late], axis=0),
         )
 
+    def test_particle_free_energy_spectra_close_scalar_history(self):
+        cfg = NonlinearGKConfig(
+            n_kx=6,
+            n_ky=6,
+            n_theta=8,
+            n_vpar=5,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            dt=0.005,
+            n_steps=4,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=67)
+
+        particle_kxky = solver.particle_free_energy_spectra(state)
+        particle_energy = solver.particle_free_energy(state)
+
+        assert particle_kxky.shape == (cfg.n_species, cfg.n_kx, cfg.n_ky)
+        assert np.all(particle_kxky >= 0.0)
+        np.testing.assert_allclose(np.sum(particle_kxky), particle_energy)
+
+        result = solver.run(state)
+        late = slice(max(result.time.size // 2, 1), None)
+
+        assert result.particle_free_energy_species_kxky_t.shape == (
+            result.time.size,
+            cfg.n_species,
+            cfg.n_kx,
+            cfg.n_ky,
+        )
+        np.testing.assert_allclose(
+            np.sum(result.particle_free_energy_species_kxky_t, axis=(1, 2, 3)),
+            result.particle_free_energy_t,
+        )
+        np.testing.assert_allclose(
+            result.saturated_particle_free_energy_species_kxky,
+            np.mean(result.particle_free_energy_species_kxky_t[late], axis=0),
+        )
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
@@ -979,9 +1021,20 @@ class TestJaxFallback:
         assert result.phi_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
         assert result.A_parallel_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
         assert result.B_parallel_energy_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.particle_free_energy_species_kxky_t.shape == (
+            result.time.size,
+            cfg.n_species,
+            cfg.n_kx,
+            cfg.n_ky,
+        )
         assert result.saturated_phi_energy_kxky.shape == (cfg.n_kx, cfg.n_ky)
         assert result.saturated_A_parallel_energy_kxky.shape == (cfg.n_kx, cfg.n_ky)
         assert result.saturated_B_parallel_energy_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert result.saturated_particle_free_energy_species_kxky.shape == (
+            cfg.n_species,
+            cfg.n_kx,
+            cfg.n_ky,
+        )
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available

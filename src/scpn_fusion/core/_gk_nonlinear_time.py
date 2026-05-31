@@ -167,6 +167,14 @@ class NonlinearGKTimeMixin:
         self.validate_state(state)
         return float(np.sum(np.abs(state.f) ** 2) * self.dvpar * self.dmu * self.dtheta)
 
+    def particle_free_energy_spectra(self, state: NonlinearGKState) -> NDArray[np.float64]:
+        """Species-resolved particle free-energy spectra over retained kx/ky modes."""
+        self.validate_state(state)
+        spectra = np.sum(np.abs(state.f) ** 2, axis=(3, 4, 5)) * (
+            self.dvpar * self.dmu * self.dtheta
+        )
+        return np.asarray(spectra, dtype=np.float64)
+
     def field_energy_spectra(
         self, state: NonlinearGKState
     ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
@@ -309,6 +317,9 @@ class NonlinearGKTimeMixin:
         zonal_rms_t: NDArray[np.float64] = np.zeros(n_saves)
         zonal_flow_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         particle_free_energy_t: NDArray[np.float64] = np.zeros(n_saves)
+        particle_free_energy_species_kxky_t: NDArray[np.float64] = np.zeros(
+            (n_saves, c.n_species, c.n_kx, c.n_ky)
+        )
         phi_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         A_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         B_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
@@ -342,11 +353,13 @@ class NonlinearGKTimeMixin:
                 phi_rms_t[save_idx] = self.phi_rms(state)
                 zonal_rms_t[save_idx] = self.zonal_rms(state)
                 zonal_flow_energy_t[save_idx] = self.zonal_flow_energy(state)
-                particle_energy = self.particle_free_energy(state)
+                particle_energy_species_kxky = self.particle_free_energy_spectra(state)
+                particle_energy = float(np.sum(particle_energy_species_kxky))
                 phi_energy_kxky, A_parallel_energy_kxky, B_parallel_energy_kxky = (
                     self.field_energy_spectra(state)
                 )
                 particle_free_energy_t[save_idx] = particle_energy
+                particle_free_energy_species_kxky_t[save_idx] = particle_energy_species_kxky
                 phi_energy_kxky_t[save_idx] = phi_energy_kxky
                 A_parallel_energy_kxky_t[save_idx] = A_parallel_energy_kxky
                 B_parallel_energy_kxky_t[save_idx] = B_parallel_energy_kxky
@@ -377,6 +390,9 @@ class NonlinearGKTimeMixin:
         zonal_rms_t = np.asarray(zonal_rms_t[:save_idx], dtype=np.float64)
         zonal_flow_energy_t = np.asarray(zonal_flow_energy_t[:save_idx], dtype=np.float64)
         particle_free_energy_t = np.asarray(particle_free_energy_t[:save_idx], dtype=np.float64)
+        particle_free_energy_species_kxky_t = np.asarray(
+            particle_free_energy_species_kxky_t[:save_idx], dtype=np.float64
+        )
         phi_energy_t = np.asarray(phi_energy_t[:save_idx], dtype=np.float64)
         A_parallel_energy_t = np.asarray(A_parallel_energy_t[:save_idx], dtype=np.float64)
         B_parallel_energy_t = np.asarray(B_parallel_energy_t[:save_idx], dtype=np.float64)
@@ -415,6 +431,11 @@ class NonlinearGKTimeMixin:
         saturated_phi_rms = float(np.mean(phi_rms_t[late])) if len(phi_rms_t) > 0 else 0.0
         saturated_zonal_flow_energy = (
             float(np.mean(zonal_flow_energy_t[late])) if len(zonal_flow_energy_t) > 0 else 0.0
+        )
+        saturated_particle_free_energy_species_kxky = (
+            np.mean(particle_free_energy_species_kxky_t[late], axis=0)
+            if len(particle_free_energy_species_kxky_t) > 0
+            else np.zeros((c.n_species, c.n_kx, c.n_ky), dtype=np.float64)
         )
         saturated_phi_energy = float(np.mean(phi_energy_t[late])) if len(phi_energy_t) > 0 else 0.0
         saturated_A_parallel_energy = (
@@ -456,6 +477,7 @@ class NonlinearGKTimeMixin:
             saturated_Q_e_kxky=saturated_Q_e_kxky,
             saturated_phi_rms=saturated_phi_rms,
             saturated_zonal_flow_energy=saturated_zonal_flow_energy,
+            saturated_particle_free_energy_species_kxky=saturated_particle_free_energy_species_kxky,
             saturated_phi_energy=saturated_phi_energy,
             saturated_A_parallel_energy=saturated_A_parallel_energy,
             saturated_B_parallel_energy=saturated_B_parallel_energy,
@@ -467,6 +489,7 @@ class NonlinearGKTimeMixin:
             zonal_rms_t=zonal_rms_t,
             zonal_flow_energy_t=zonal_flow_energy_t,
             particle_free_energy_t=particle_free_energy_t,
+            particle_free_energy_species_kxky_t=particle_free_energy_species_kxky_t,
             phi_energy_t=phi_energy_t,
             A_parallel_energy_t=A_parallel_energy_t,
             B_parallel_energy_t=B_parallel_energy_t,
