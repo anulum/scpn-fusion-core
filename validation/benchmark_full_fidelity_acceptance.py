@@ -258,6 +258,8 @@ def _observable_axis_contract_readiness(
         if not isinstance(contract, dict):
             invalid.append({"observable": name, "reason": "missing_observable_contract"})
             continue
+        if not contract.get("units"):
+            invalid.append({"observable": name, "reason": "missing_units"})
         axes = contract.get("axes")
         if not isinstance(axes, list) or not axes:
             invalid.append({"observable": name, "reason": "missing_axes"})

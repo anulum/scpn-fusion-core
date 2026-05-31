@@ -34,7 +34,8 @@
               "finite": true,
               "min_rank": 3,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "m^-3"
             },
             "ionisation_source_matrix": {
               "axes": [
@@ -44,7 +45,8 @@
               "finite": true,
               "min_rank": 2,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "m^-3_s^-1"
             },
             "line_radiation_power_t": {
               "axes": [
@@ -53,7 +55,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "W"
             },
             "recombination_sink_matrix": {
               "axes": [
@@ -63,7 +66,8 @@
               "finite": true,
               "min_rank": 2,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "m^-3_s^-1"
             },
             "total_impurity_density_r_t": {
               "axes": [
@@ -73,7 +77,8 @@
               "finite": true,
               "min_rank": 2,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "m^-3"
             }
           },
           "provenance_url": null,
@@ -167,7 +172,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "normalized_apar_energy"
             },
             "electron_heat_flux_spectrum": {
               "axes": [
@@ -178,7 +184,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "gyroBohm_heat_flux"
             },
             "ion_heat_flux_spectrum": {
               "axes": [
@@ -189,7 +196,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "gyroBohm_heat_flux"
             },
             "saturated_phi_rms": {
               "axes": [
@@ -198,7 +206,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "e_phi_over_Te"
             },
             "zonal_flow_energy": {
               "axes": [
@@ -208,7 +217,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "normalized_field_energy"
             }
           },
           "provenance_url": null,
@@ -291,7 +301,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "s^-1"
             },
             "f_p_xi_t": {
               "axes": [
@@ -303,7 +314,8 @@
               "finite": true,
               "min_rank": 3,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "m^-3_per_mec_per_pitch"
             },
             "partial_screening_drag_t": {
               "axes": [
@@ -313,7 +325,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "N"
             },
             "runaway_current_t": {
               "axes": [
@@ -323,7 +336,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "A"
             },
             "synchrotron_loss_power_t": {
               "axes": [
@@ -333,7 +347,8 @@
               "finite": true,
               "min_rank": 1,
               "non_empty": true,
-              "numeric": true
+              "numeric": true,
+              "units": "W"
             }
           },
           "provenance_url": null,

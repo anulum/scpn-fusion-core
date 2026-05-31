@@ -13,6 +13,7 @@
     "required_observables is non-empty",
     "all required_observables exist as top-level NPZ keys or JSON observables keys",
     "observable arrays are numeric, finite, non-empty, and satisfy declared minimum rank",
+    "observable_contracts declare physical units for each observable",
     "observable_contracts declare the coordinate axes for each observable",
     "observable axes are declared in coordinate_contracts",
     "coordinate_contracts is non-empty",
