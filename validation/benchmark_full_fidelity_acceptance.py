@@ -666,6 +666,9 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "radiated_power_monotonicity": True,
         "charge_state_resolved_density_artifact_export": True,
         "collisional_radiative_source_sink_matrix_contract": True,
+        "conservative_source_sink_transfer_matrix_contract": True,
+        "line_radiation_power_time_radius_charge_export": True,
+        "total_impurity_inventory_history_export": True,
         "adas_style_coefficient_ingestion_contract": True,
         "charge_state_particle_conservation_gate": True,
     }

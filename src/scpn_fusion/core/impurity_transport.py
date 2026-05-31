@@ -92,6 +92,124 @@ class AuroraStrahlArtifact:
             "provenance": self.provenance,
         }
 
+    def validate_contract(self) -> dict[str, Any]:
+        """Validate Aurora/STRAHL-style axes, shapes, conservation, and finiteness."""
+        required_axis_units = {
+            "time_s": "s",
+            "radius_m": "m",
+            "charge_state": "integer_charge",
+        }
+        required_observable_axes = {
+            "charge_state_density_r_t": ["time_s", "radius_m", "charge_state"],
+            "total_impurity_density_r_t": ["time_s", "radius_m"],
+            "line_radiation_power_t": ["time_s"],
+            "line_radiation_power_t_r_z": ["time_s", "radius_m", "charge_state"],
+            "source_sink_matrix_t_r_z_z": [
+                "time_s",
+                "radius_m",
+                "charge_state",
+                "charge_state",
+            ],
+            "total_impurity_inventory_t": ["time_s"],
+            "ionisation_source_matrix": ["radius_m", "charge_state"],
+            "recombination_sink_matrix": ["radius_m", "charge_state"],
+        }
+        required_observable_units = {
+            "charge_state_density_r_t": "m^-3",
+            "total_impurity_density_r_t": "m^-3",
+            "line_radiation_power_t": "W",
+            "line_radiation_power_t_r_z": "W",
+            "source_sink_matrix_t_r_z_z": "m^-3_s^-1",
+            "total_impurity_inventory_t": "particles",
+            "ionisation_source_matrix": "m^-3_s^-1",
+            "recombination_sink_matrix": "m^-3_s^-1",
+        }
+        required_axes_present = all(
+            axis in self.coordinates and self.coordinate_units.get(axis) == unit
+            for axis, unit in required_axis_units.items()
+        )
+        required_observables_present = all(
+            name in self.observables
+            and self.observable_axes.get(name) == axes
+            and self.observable_units.get(name) == required_observable_units[name]
+            for name, axes in required_observable_axes.items()
+        )
+        coordinate_lengths: dict[str, int] = {}
+        coordinates_finite = True
+        coordinates_strict = True
+        for axis in required_axis_units:
+            values = np.asarray(self.coordinates.get(axis, []), dtype=np.float64)
+            coordinate_lengths[axis] = int(values.size)
+            coordinates_finite = coordinates_finite and bool(np.all(np.isfinite(values)))
+            coordinates_strict = coordinates_strict and bool(
+                values.ndim == 1 and values.size >= 2 and np.all(np.diff(values) > 0.0)
+            )
+
+        observable_shapes: dict[str, list[int]] = {}
+        finite_observables = True
+        nonnegative_density_and_power = True
+        shape_contract = True
+        for name, axes in required_observable_axes.items():
+            arr = np.asarray(self.observables.get(name, []), dtype=np.float64)
+            observable_shapes[name] = [int(v) for v in arr.shape]
+            expected_shape = tuple(coordinate_lengths[axis] for axis in axes)
+            shape_contract = shape_contract and bool(arr.shape == expected_shape)
+            finite_observables = finite_observables and bool(np.all(np.isfinite(arr)))
+            if name != "source_sink_matrix_t_r_z_z":
+                nonnegative_density_and_power = nonnegative_density_and_power and bool(
+                    np.all(arr >= 0.0)
+                )
+
+        charge_density = np.asarray(
+            self.observables.get("charge_state_density_r_t", []), dtype=np.float64
+        )
+        total_density = np.asarray(
+            self.observables.get("total_impurity_density_r_t", []), dtype=np.float64
+        )
+        source_sink = np.asarray(
+            self.observables.get("source_sink_matrix_t_r_z_z", []), dtype=np.float64
+        )
+        density_closure = bool(
+            charge_density.ndim == 3
+            and total_density.shape == charge_density.shape[:2]
+            and np.allclose(total_density, np.sum(charge_density, axis=2), rtol=1.0e-13)
+        )
+        source_sink_scale = max(float(np.max(np.abs(source_sink))) if source_sink.size else 0.0, 1.0)
+        source_sink_tolerance = 1.0e-12 * source_sink_scale + 1.0e-6
+        source_sink_conservative = bool(
+            source_sink.ndim == 4
+            and np.all(np.abs(np.sum(source_sink, axis=3)) <= source_sink_tolerance)
+        )
+        inventory_error = float(self.conservation.get("relative_inventory_error", np.inf))
+        inventory_conserved = bool(np.isfinite(inventory_error) and inventory_error <= 1.0e-12)
+        passed = bool(
+            required_axes_present
+            and required_observables_present
+            and coordinates_finite
+            and coordinates_strict
+            and shape_contract
+            and finite_observables
+            and nonnegative_density_and_power
+            and density_closure
+            and source_sink_conservative
+            and inventory_conserved
+        )
+        return {
+            "coordinate_lengths": coordinate_lengths,
+            "coordinates_finite": coordinates_finite,
+            "coordinates_strictly_increasing": coordinates_strict,
+            "density_closure": density_closure,
+            "finite_observables": finite_observables,
+            "inventory_conserved": inventory_conserved,
+            "nonnegative_density_and_power": nonnegative_density_and_power,
+            "observable_shapes": observable_shapes,
+            "passed": passed,
+            "required_axes_present": required_axes_present,
+            "required_observables_present": required_observables_present,
+            "shape_contract": shape_contract,
+            "source_sink_conservative": source_sink_conservative,
+        }
+
 
 class CoolingCurve:
     """
@@ -244,6 +362,24 @@ def advance_charge_state_collisional_radiative(
     return np.maximum(updated, 0.0), ionisation, recombination
 
 
+def _source_sink_transfer_matrix(ionisation: np.ndarray, recombination: np.ndarray) -> np.ndarray:
+    """Return conservative charge-state transfer matrix with from-charge rows."""
+    ion = np.asarray(ionisation, dtype=np.float64)
+    rec = np.asarray(recombination, dtype=np.float64)
+    if ion.shape != rec.shape or ion.ndim != 2:
+        raise ValueError("ionisation and recombination must have matching radius x charge shapes")
+    matrix = np.zeros((ion.shape[0], ion.shape[1], ion.shape[1]), dtype=np.float64)
+    for z_idx in range(ion.shape[1] - 1):
+        ion_flux = ion[:, z_idx]
+        rec_flux = rec[:, z_idx + 1]
+        matrix[:, z_idx, z_idx + 1] += ion_flux
+        matrix[:, z_idx + 1, z_idx] += rec_flux
+    for z_idx in range(ion.shape[1]):
+        off_diagonal_sum = np.sum(matrix[:, z_idx, :], axis=1)
+        matrix[:, z_idx, z_idx] = -off_diagonal_sum
+    return matrix
+
+
 def build_aurora_strahl_charge_state_artifact(
     *,
     element: str,
@@ -280,11 +416,27 @@ def build_aurora_strahl_charge_state_artifact(
         raise ValueError("initial_charge_state_density_rz must be finite and non-negative")
 
     density_history = [density.copy()]
-    line_power: list[float] = [
-        0.0,
+    line_power_by_charge: list[np.ndarray] = []
+    line_power: list[float] = []
+    source_sink_history: list[np.ndarray] = []
+    inventory_history: list[float] = [
+        _volume_integral(np.sum(density, axis=1), radius_axis, major_radius_m)
     ]
     final_ion = np.zeros_like(density)
     final_rec = np.zeros_like(density)
+    te_charge = np.interp(
+        charge_axis,
+        [charge_axis[0], charge_axis[-1]],
+        [te_hist[0].min(), te_hist[0].max()],
+    )
+    coeffs = adas_style_charge_state_coefficients(element, charge_axis, te_charge)
+    final_ion, final_rec = collisional_radiative_source_sink_matrices(
+        density, ne_hist[0], coeffs
+    )
+    source_sink_history.append(_source_sink_transfer_matrix(final_ion, final_rec))
+    rad_density = ne_hist[0, :, np.newaxis] * density * coeffs.line_radiation_w_m3[np.newaxis, :]
+    line_power_by_charge.append(rad_density)
+    line_power.append(_volume_integral(np.sum(rad_density, axis=1), radius_axis, major_radius_m))
     for step in range(1, time_axis.size):
         dt_s = float(time_axis[step] - time_axis[step - 1])
         te_charge = np.interp(
@@ -296,13 +448,16 @@ def build_aurora_strahl_charge_state_artifact(
         density, final_ion, final_rec = advance_charge_state_collisional_radiative(
             density, ne_hist[step], coeffs, dt_s
         )
+        source_sink_history.append(_source_sink_transfer_matrix(final_ion, final_rec))
         density_history.append(density.copy())
         rad_density = (
             ne_hist[step, :, np.newaxis] * density * coeffs.line_radiation_w_m3[np.newaxis, :]
         )
+        line_power_by_charge.append(rad_density)
         line_power.append(
             _volume_integral(np.sum(rad_density, axis=1), radius_axis, major_radius_m)
         )
+        inventory_history.append(_volume_integral(np.sum(density, axis=1), radius_axis, major_radius_m))
 
     density_t_r_z = np.stack(density_history, axis=0)
     total_t_r = np.sum(density_t_r_z, axis=2)
@@ -325,6 +480,14 @@ def build_aurora_strahl_charge_state_artifact(
             "charge_state_density_r_t": ["time_s", "radius_m", "charge_state"],
             "total_impurity_density_r_t": ["time_s", "radius_m"],
             "line_radiation_power_t": ["time_s"],
+            "line_radiation_power_t_r_z": ["time_s", "radius_m", "charge_state"],
+            "source_sink_matrix_t_r_z_z": [
+                "time_s",
+                "radius_m",
+                "charge_state",
+                "charge_state",
+            ],
+            "total_impurity_inventory_t": ["time_s"],
             "ionisation_source_matrix": ["radius_m", "charge_state"],
             "recombination_sink_matrix": ["radius_m", "charge_state"],
         },
@@ -332,6 +495,9 @@ def build_aurora_strahl_charge_state_artifact(
             "charge_state_density_r_t": "m^-3",
             "total_impurity_density_r_t": "m^-3",
             "line_radiation_power_t": "W",
+            "line_radiation_power_t_r_z": "W",
+            "source_sink_matrix_t_r_z_z": "m^-3_s^-1",
+            "total_impurity_inventory_t": "particles",
             "ionisation_source_matrix": "m^-3_s^-1",
             "recombination_sink_matrix": "m^-3_s^-1",
         },
@@ -339,6 +505,9 @@ def build_aurora_strahl_charge_state_artifact(
             "charge_state_density_r_t": density_t_r_z.tolist(),
             "total_impurity_density_r_t": total_t_r.tolist(),
             "line_radiation_power_t": [float(v) for v in line_power],
+            "line_radiation_power_t_r_z": np.stack(line_power_by_charge, axis=0).tolist(),
+            "source_sink_matrix_t_r_z_z": np.stack(source_sink_history, axis=0).tolist(),
+            "total_impurity_inventory_t": [float(v) for v in inventory_history],
             "ionisation_source_matrix": final_ion.tolist(),
             "recombination_sink_matrix": final_rec.tolist(),
         },

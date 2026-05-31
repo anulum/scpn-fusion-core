@@ -232,3 +232,20 @@ def test_aurora_strahl_charge_state_artifact_contract() -> None:
     assert np.all(charge_density >= 0.0)
     np.testing.assert_allclose(total_density, np.sum(charge_density, axis=2))
     assert artifact.conservation["relative_inventory_error"] <= 1.0e-12
+    validation = artifact.validate_contract()
+    assert validation["passed"] is True
+    assert validation["observable_shapes"] == {
+        "charge_state_density_r_t": [3, 7, 4],
+        "total_impurity_density_r_t": [3, 7],
+        "line_radiation_power_t": [3],
+        "line_radiation_power_t_r_z": [3, 7, 4],
+        "source_sink_matrix_t_r_z_z": [3, 7, 4, 4],
+        "total_impurity_inventory_t": [3],
+        "ionisation_source_matrix": [7, 4],
+        "recombination_sink_matrix": [7, 4],
+    }
+    source_sink = np.asarray(payload["observables"]["source_sink_matrix_t_r_z_z"])
+    np.testing.assert_allclose(np.sum(source_sink, axis=3), 0.0, atol=1.0e-6)
+    inventory = np.asarray(payload["observables"]["total_impurity_inventory_t"])
+    assert inventory.shape == (3,)
+    assert inventory[-1] == pytest.approx(inventory[0], rel=1.0e-12)

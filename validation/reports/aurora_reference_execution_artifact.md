@@ -6,7 +6,14 @@ Public Aurora/Open-ADAS argon fractional-abundance execution artifact. This is a
 - Status: `blocked_partial_public_atomic_artifact_not_transport_parity`
 - Artifact generated: `True`
 - Reference output ready: `True`
+- Same-case comparison ready: `False`
 - Accepted full-fidelity ready: `False`
+
+## Required Aurora/STRAHL output contract
+
+- Schema: `aurora-strahl-output-contract.v1`
+- Coordinate axes: `time_s, radius_m, charge_state`
+- Observables: `charge_state_density_r_t, total_impurity_density_r_t, line_radiation_power_t, line_radiation_power_t_r_z, source_sink_matrix_t_r_z_z, total_impurity_inventory_t`
 
 ## Next action
 

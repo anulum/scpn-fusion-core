@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
-# (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Generate a public Aurora/Open-ADAS impurity reference artifact.
@@ -21,7 +21,9 @@ import hashlib
 import importlib
 import json
 import os
-import subprocess
+import shutil
+# Aurora source provenance probing requires subprocess with fixed argv and timeouts.
+import subprocess  # nosec B404
 import sys
 import warnings
 from pathlib import Path
@@ -39,6 +41,18 @@ METADATA_PATH = ARTIFACT_DIR / "aurora_argon_fractional_abundance_public.metadat
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "aurora_reference_execution_artifact.json"
 MD_REPORT = REPORT_DIR / "aurora_reference_execution_artifact.md"
+AURORA_STRAHL_OUTPUT_CONTRACT = {
+    "coordinate_axes": ["time_s", "radius_m", "charge_state"],
+    "observables": [
+        "charge_state_density_r_t",
+        "total_impurity_density_r_t",
+        "line_radiation_power_t",
+        "line_radiation_power_t_r_z",
+        "source_sink_matrix_t_r_z_z",
+        "total_impurity_inventory_t",
+    ],
+    "schema": "aurora-strahl-output-contract.v1",
+}
 
 
 def _rel(path: Path) -> str:
@@ -54,9 +68,13 @@ def _sha256(path: Path) -> str:
 
 
 def _git_commit(repo: Path) -> str | None:
+    git = shutil.which("git")
+    if git is None:
+        return None
     try:
-        result = subprocess.run(  # nosec B603: fixed git argv, shell disabled.
-            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        # Fixed git argv, shell disabled, bounded timeout.
+        result = subprocess.run(  # nosec B603
+            [git, "-C", str(repo), "rev-parse", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
@@ -85,7 +103,9 @@ def _blocked_report(status: str, reason: str) -> dict[str, Any]:
         ],
         "next_action": reason,
         "reference_output_ready": False,
+        "required_output_contract": AURORA_STRAHL_OUTPUT_CONTRACT,
         "schema": "aurora-reference-execution-artifact.v1",
+        "same_case_comparison_ready": False,
         "source_family": "Aurora",
         "source_repo": _rel(AURORA_REPO) if AURORA_REPO.exists() else None,
         "status": status,
@@ -254,7 +274,9 @@ def build_aurora_reference_execution_report(*, write: bool = True) -> dict[str, 
                 "source/sink matrices, inventory closure, and native same-case comparison."
             ),
             "reference_output_ready": True,
+            "required_output_contract": AURORA_STRAHL_OUTPUT_CONTRACT,
             "schema": "aurora-reference-execution-artifact.v1",
+            "same_case_comparison_ready": False,
             "source_family": "Aurora",
             "source_repo": _rel(AURORA_REPO),
             "status": "blocked_partial_public_atomic_artifact_not_transport_parity",
@@ -277,7 +299,14 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Status: `{report['status']}`",
         f"- Artifact generated: `{report['artifact_generated']}`",
         f"- Reference output ready: `{report['reference_output_ready']}`",
+        f"- Same-case comparison ready: `{report['same_case_comparison_ready']}`",
         f"- Accepted full-fidelity ready: `{report['accepted_full_fidelity_ready']}`",
+        "",
+        "## Required Aurora/STRAHL output contract",
+        "",
+        f"- Schema: `{report['required_output_contract']['schema']}`",
+        f"- Coordinate axes: `{', '.join(report['required_output_contract']['coordinate_axes'])}`",
+        f"- Observables: `{', '.join(report['required_output_contract']['observables'])}`",
         "",
         "## Next action",
         "",

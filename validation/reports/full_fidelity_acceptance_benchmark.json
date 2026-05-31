@@ -193,9 +193,12 @@
         "charge_state_particle_conservation_gate": true,
         "charge_state_resolved_density_artifact_export": true,
         "collisional_radiative_source_sink_matrix_contract": true,
+        "conservative_source_sink_transfer_matrix_contract": true,
         "edge_source_particle_conservation": true,
+        "line_radiation_power_time_radius_charge_export": true,
         "neoclassical_pinch_contract": true,
         "radiated_power_monotonicity": true,
+        "total_impurity_inventory_history_export": true,
         "trace_radial_transport": true
       },
       "missing_requirements": [

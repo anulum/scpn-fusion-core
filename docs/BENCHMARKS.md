@@ -845,13 +845,16 @@ ingestion or full momentum-pitch-radius kinetic operator parity.
 The native impurity surface now exports an Aurora/STRAHL-style
 `time_s x radius_m x charge_state` artifact contract with total impurity
 density closure, line-radiation power, and finite ionisation/recombination
-source-sink matrices. The charge-state CR step is pairwise conservative and
-uses deterministic ADAS-style coefficient tables for ingestion-shape testing;
-an upstream Aurora/Open-ADAS argon fractional-abundance artifact is also
-tracked for public atomic-data provenance. Public Aurora/STRAHL radial
-transport decks, radiation outputs, source/sink matrices, and same-case native
-comparisons are still required before full collisional-operator parity can
-pass.
+source-sink matrices. The artifact now validates `time_s x radius_m x
+charge_state` densities, `time_s x radius_m x charge_state x charge_state`
+conservative transfer matrices, per-charge line-radiation power, inventory
+history, finite shapes, and a deterministic checksum. The charge-state CR step
+is pairwise conservative and uses deterministic ADAS-style coefficient tables
+for ingestion-shape testing; an upstream Aurora/Open-ADAS argon
+fractional-abundance artifact is also tracked for public atomic-data
+provenance. Public Aurora/STRAHL radial transport decks, radiation outputs,
+source/sink matrices, and same-case native comparisons are still required
+before full collisional-operator parity can pass.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.

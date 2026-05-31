@@ -193,7 +193,10 @@ until PETSc and the compiled `iface/dreami` backend are available.
 The Aurora execution lane runs a cached Aurora/Open-ADAS atomic-data path and
 exports normalized argon charge-state fractions, but remains blocked for full
 Aurora/STRAHL parity until public radial transport output, source/sink matrices,
-radiation observables, and native same-case comparisons are present.
+radiation observables, and native same-case comparisons are present. The native
+artifact gate validates charge-state density, conservative source-sink transfer
+matrices, per-charge line-radiation power, and total impurity inventory history
+as local contracts only.
 The nonlinear GK lane now indexes public GS2 nonlinear decks, CGYRO nonlinear
 decks, CGYRO regression precision outputs, and GENE/GS2/CGYRO public web-source
 hashes in

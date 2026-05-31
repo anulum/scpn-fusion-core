@@ -1,18 +1,121 @@
 {
   "artifact_contract": {
+    "artifact_sha256": "e5804b23ced11d5a36db144ac8f298a7e8af0feebdb901e92a43c5ed09d890d1",
+    "contract_validation": {
+      "coordinate_lengths": {
+        "charge_state": 4,
+        "radius_m": 80,
+        "time_s": 3
+      },
+      "coordinates_finite": true,
+      "coordinates_strictly_increasing": true,
+      "density_closure": true,
+      "finite_observables": true,
+      "inventory_conserved": true,
+      "nonnegative_density_and_power": true,
+      "observable_shapes": {
+        "charge_state_density_r_t": [
+          3,
+          80,
+          4
+        ],
+        "ionisation_source_matrix": [
+          80,
+          4
+        ],
+        "line_radiation_power_t": [
+          3
+        ],
+        "line_radiation_power_t_r_z": [
+          3,
+          80,
+          4
+        ],
+        "recombination_sink_matrix": [
+          80,
+          4
+        ],
+        "source_sink_matrix_t_r_z_z": [
+          3,
+          80,
+          4,
+          4
+        ],
+        "total_impurity_density_r_t": [
+          3,
+          80
+        ],
+        "total_impurity_inventory_t": [
+          3
+        ]
+      },
+      "passed": true,
+      "required_axes_present": true,
+      "required_observables_present": true,
+      "shape_contract": true,
+      "source_sink_conservative": true
+    },
     "coordinates": [
       "time_s",
       "radius_m",
       "charge_state"
     ],
+    "observable_shapes": {
+      "charge_state_density_r_t": [
+        3,
+        80,
+        4
+      ],
+      "ionisation_source_matrix": [
+        80,
+        4
+      ],
+      "line_radiation_power_t": [
+        3
+      ],
+      "line_radiation_power_t_r_z": [
+        3,
+        80,
+        4
+      ],
+      "recombination_sink_matrix": [
+        80,
+        4
+      ],
+      "source_sink_matrix_t_r_z_z": [
+        3,
+        80,
+        4,
+        4
+      ],
+      "total_impurity_density_r_t": [
+        3,
+        80
+      ],
+      "total_impurity_inventory_t": [
+        3
+      ]
+    },
     "observables": [
       "charge_state_density_r_t",
       "total_impurity_density_r_t",
       "line_radiation_power_t",
+      "line_radiation_power_t_r_z",
+      "source_sink_matrix_t_r_z_z",
+      "total_impurity_inventory_t",
       "ionisation_source_matrix",
       "recombination_sink_matrix"
     ],
     "parity_status": "artifact_contract_only_not_public_aurora_strahl_parity",
+    "required_aurora_strahl_observables": [
+      "charge_state_density_r_t",
+      "total_impurity_density_r_t",
+      "line_radiation_power_t",
+      "line_radiation_power_t_r_z",
+      "source_sink_matrix_t_r_z_z",
+      "total_impurity_inventory_t"
+    ],
+    "same_case_aurora_strahl_comparison_ready": false,
     "schema": "aurora-strahl-charge-state-artifact.v1"
   },
   "benchmark": "impurity_transport_contract",
@@ -23,8 +126,10 @@
     "charge_state_particle_conservation": true,
     "edge_source_conservation": true,
     "inward_pinch_midradius": true,
+    "line_radiation_power_finite": true,
     "positivity": true,
-    "radiation_monotonicity": true
+    "radiation_monotonicity": true,
+    "source_sink_matrix_conservative": true
   },
   "metrics": {
     "actual_particles": 9.790647565880643e+17,

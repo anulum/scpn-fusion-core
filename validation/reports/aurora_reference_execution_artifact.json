@@ -34,6 +34,23 @@
   ],
   "next_action": "Run a public Aurora or STRAHL radial transport case with line radiation, source/sink matrices, inventory closure, and native same-case comparison.",
   "reference_output_ready": true,
+  "required_output_contract": {
+    "coordinate_axes": [
+      "time_s",
+      "radius_m",
+      "charge_state"
+    ],
+    "observables": [
+      "charge_state_density_r_t",
+      "total_impurity_density_r_t",
+      "line_radiation_power_t",
+      "line_radiation_power_t_r_z",
+      "source_sink_matrix_t_r_z_z",
+      "total_impurity_inventory_t"
+    ],
+    "schema": "aurora-strahl-output-contract.v1"
+  },
+  "same_case_comparison_ready": false,
   "schema": "aurora-reference-execution-artifact.v1",
   "source_family": "Aurora",
   "source_repo": "data/external/full_fidelity_public_sources/repos/aurora",

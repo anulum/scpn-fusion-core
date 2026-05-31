@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 """Benchmark trace impurity transport contracts.
 
 This validates Aurora/STRAHL-style transport invariants available in the native
@@ -9,6 +16,7 @@ collisional-operator parity with Aurora, STRAHL, or JINTRAC.
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 from pathlib import Path
 from typing import Any
@@ -86,8 +94,22 @@ def run_benchmark() -> dict[str, Any]:
         major_radius_m=R0,
     )
     cr_payload = cr_artifact.to_dict()
+    artifact_validation = cr_artifact.validate_contract()
     charge_density = np.asarray(cr_payload["observables"]["charge_state_density_r_t"])
     total_density = np.asarray(cr_payload["observables"]["total_impurity_density_r_t"])
+    source_sink = np.asarray(cr_payload["observables"]["source_sink_matrix_t_r_z_z"])
+    line_power_t_r_z = np.asarray(cr_payload["observables"]["line_radiation_power_t_r_z"])
+    required_observables = [
+        "charge_state_density_r_t",
+        "total_impurity_density_r_t",
+        "line_radiation_power_t",
+        "line_radiation_power_t_r_z",
+        "source_sink_matrix_t_r_z_z",
+        "total_impurity_inventory_t",
+    ]
+    canonical_payload = json.dumps(cr_payload, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
 
     invariants = {
         "positivity": bool(np.all(n_w >= 0.0) and np.all(np.isfinite(n_w))),
@@ -105,6 +127,12 @@ def run_benchmark() -> dict[str, Any]:
         ),
         "charge_state_particle_conservation": bool(
             cr_artifact.conservation["relative_inventory_error"] <= 1.0e-12
+        ),
+        "source_sink_matrix_conservative": bool(
+            artifact_validation["source_sink_conservative"]
+        ),
+        "line_radiation_power_finite": bool(
+            np.all(np.isfinite(line_power_t_r_z)) and np.all(line_power_t_r_z >= 0.0)
         ),
     }
 
@@ -127,10 +155,15 @@ def run_benchmark() -> dict[str, Any]:
             "max_charge_state_inventory_error": 1.0e-12,
         },
         "artifact_contract": {
+            "artifact_sha256": hashlib.sha256(canonical_payload).hexdigest(),
+            "contract_validation": artifact_validation,
             "schema": cr_payload["schema"],
             "coordinates": list(cr_payload["coordinates"].keys()),
             "observables": list(cr_payload["observables"].keys()),
+            "observable_shapes": artifact_validation["observable_shapes"],
             "parity_status": cr_payload["provenance"]["parity_status"],
+            "required_aurora_strahl_observables": required_observables,
+            "same_case_aurora_strahl_comparison_ready": False,
         },
         "invariants": invariants,
         "passed": all(invariants.values()),
@@ -177,6 +210,14 @@ def write_reports(results: dict[str, Any]) -> None:
         f"- Coordinates: {', '.join(results['artifact_contract']['coordinates'])}",
         f"- Observables: {', '.join(results['artifact_contract']['observables'])}",
         f"- Parity status: `{results['artifact_contract']['parity_status']}`",
+        f"- SHA-256: `{results['artifact_contract']['artifact_sha256']}`",
+        f"- Contract validation passed: `{results['artifact_contract']['contract_validation']['passed']}`",
+        f"- Same-case Aurora/STRAHL comparison ready: `{results['artifact_contract']['same_case_aurora_strahl_comparison_ready']}`",
+        f"- Observable shapes: `{json.dumps(results['artifact_contract']['observable_shapes'], sort_keys=True)}`",
+        (
+            "- Required Aurora/STRAHL observables: "
+            f"`{', '.join(results['artifact_contract']['required_aurora_strahl_observables'])}`"
+        ),
         "",
         "## Invariants",
         "",
