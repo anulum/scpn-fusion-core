@@ -38,13 +38,1152 @@
       "total_ranks": 32
     }
   ],
+  "communication_contract_ready": true,
+  "communication_contract_rows": [
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": null,
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": null,
+        "radial_upper": 4,
+        "toroidal_lower": null,
+        "toroidal_upper": 1
+      },
+      "rank": 0
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": null,
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": null,
+        "radial_upper": 5,
+        "toroidal_lower": 0,
+        "toroidal_upper": 2
+      },
+      "rank": 1
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": null,
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": null,
+        "radial_upper": 6,
+        "toroidal_lower": 1,
+        "toroidal_upper": 3
+      },
+      "rank": 2
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": null,
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": null,
+        "radial_upper": 7,
+        "toroidal_lower": 2,
+        "toroidal_upper": null
+      },
+      "rank": 3
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 0,
+        "radial_upper": 8,
+        "toroidal_lower": null,
+        "toroidal_upper": 5
+      },
+      "rank": 4
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 1,
+        "radial_upper": 9,
+        "toroidal_lower": 4,
+        "toroidal_upper": 6
+      },
+      "rank": 5
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 2,
+        "radial_upper": 10,
+        "toroidal_lower": 5,
+        "toroidal_upper": 7
+      },
+      "rank": 6
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": 3,
+        "radial_upper": 11,
+        "toroidal_lower": 6,
+        "toroidal_upper": null
+      },
+      "rank": 7
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 4,
+        "radial_upper": 12,
+        "toroidal_lower": null,
+        "toroidal_upper": 9
+      },
+      "rank": 8
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 5,
+        "radial_upper": 13,
+        "toroidal_lower": 8,
+        "toroidal_upper": 10
+      },
+      "rank": 9
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 6,
+        "radial_upper": 14,
+        "toroidal_lower": 9,
+        "toroidal_upper": 11
+      },
+      "rank": 10
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": 7,
+        "radial_upper": 15,
+        "toroidal_lower": 10,
+        "toroidal_upper": null
+      },
+      "rank": 11
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 8,
+        "radial_upper": 16,
+        "toroidal_lower": null,
+        "toroidal_upper": 13
+      },
+      "rank": 12
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 9,
+        "radial_upper": 17,
+        "toroidal_lower": 12,
+        "toroidal_upper": 14
+      },
+      "rank": 13
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 10,
+        "radial_upper": 18,
+        "toroidal_lower": 13,
+        "toroidal_upper": 15
+      },
+      "rank": 14
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": 11,
+        "radial_upper": 19,
+        "toroidal_lower": 14,
+        "toroidal_upper": null
+      },
+      "rank": 15
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 12,
+        "radial_upper": 20,
+        "toroidal_lower": null,
+        "toroidal_upper": 17
+      },
+      "rank": 16
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 13,
+        "radial_upper": 21,
+        "toroidal_lower": 16,
+        "toroidal_upper": 18
+      },
+      "rank": 17
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 14,
+        "radial_upper": 22,
+        "toroidal_lower": 17,
+        "toroidal_upper": 19
+      },
+      "rank": 18
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": 15,
+        "radial_upper": 23,
+        "toroidal_lower": 18,
+        "toroidal_upper": null
+      },
+      "rank": 19
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 16,
+        "radial_upper": 24,
+        "toroidal_lower": null,
+        "toroidal_upper": 21
+      },
+      "rank": 20
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 17,
+        "radial_upper": 25,
+        "toroidal_lower": 20,
+        "toroidal_upper": 22
+      },
+      "rank": 21
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 18,
+        "radial_upper": 26,
+        "toroidal_lower": 21,
+        "toroidal_upper": 23
+      },
+      "rank": 22
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": 19,
+        "radial_upper": 27,
+        "toroidal_lower": 22,
+        "toroidal_upper": null
+      },
+      "rank": 23
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 20,
+        "radial_upper": 28,
+        "toroidal_lower": null,
+        "toroidal_upper": 25
+      },
+      "rank": 24
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 21,
+        "radial_upper": 29,
+        "toroidal_lower": 24,
+        "toroidal_upper": 26
+      },
+      "rank": 25
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 22,
+        "radial_upper": 30,
+        "toroidal_lower": 25,
+        "toroidal_upper": 27
+      },
+      "rank": 26
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": 23,
+        "radial_upper": 31,
+        "toroidal_lower": 26,
+        "toroidal_upper": null
+      },
+      "rank": 27
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": null,
+        "toroidal_lower": null,
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 24,
+        "radial_upper": null,
+        "toroidal_lower": null,
+        "toroidal_upper": 29
+      },
+      "rank": 28
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": null,
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 25,
+        "radial_upper": null,
+        "toroidal_lower": 28,
+        "toroidal_upper": 30
+      },
+      "rank": 29
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": null,
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ]
+      },
+      "neighbour_ranks": {
+        "radial_lower": 26,
+        "radial_upper": null,
+        "toroidal_lower": 29,
+        "toroidal_upper": 31
+      },
+      "rank": 30
+    },
+    {
+      "communication_contract_ready": true,
+      "halo_face_payload_shapes": {
+        "radial_lower": [
+          1,
+          32,
+          32,
+          32,
+          16
+        ],
+        "radial_upper": null,
+        "toroidal_lower": [
+          32,
+          1,
+          32,
+          32,
+          16
+        ],
+        "toroidal_upper": null
+      },
+      "neighbour_ranks": {
+        "radial_lower": 27,
+        "radial_upper": null,
+        "toroidal_lower": 30,
+        "toroidal_upper": null
+      },
+      "rank": 31
+    }
+  ],
   "contract_pass": true,
   "coverage_pass": true,
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 15381426.580132267,
-      "elapsed_s": 0.034085785038769245,
+      "cells_per_second": 9236715.697246268,
+      "elapsed_s": 0.05676130100619048,
       "free_energy_relative_error": 0.0,
       "halo_exchange_pass": true,
       "inventory_relative_error": 0.0,

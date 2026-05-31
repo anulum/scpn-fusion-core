@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 from scpn_fusion.core.gk_domain_decomposition import (
     build_radial_toroidal_decomposition,
     decomposition_invariant_metrics,
+    rank_tile_communication_contract,
     reconstruct_owned_phase_state,
     serial_halo_exchange,
 )
@@ -99,12 +100,44 @@ def test_serial_halo_exchange_reconstructs_owned_5d_state_and_invariants() -> No
     assert metrics.free_energy_relative_error == 0.0
 
 
+def test_rank_tile_communication_contract_declares_neighbour_faces() -> None:
+    plan = build_radial_toroidal_decomposition(
+        n_radial=8,
+        n_toroidal=6,
+        n_theta=4,
+        n_vpar=3,
+        n_mu=2,
+        radial_parts=2,
+        toroidal_parts=3,
+        halo=1,
+    )
+
+    rows = rank_tile_communication_contract(plan)
+
+    assert len(rows) == plan.total_ranks
+    centre = next(row for row in rows if row["rank"] == 1)
+    assert centre["neighbour_ranks"] == {
+        "radial_lower": None,
+        "radial_upper": 4,
+        "toroidal_lower": 0,
+        "toroidal_upper": 2,
+    }
+    assert centre["halo_face_payload_shapes"] == {
+        "radial_lower": None,
+        "radial_upper": [plan.halo, 2, 4, 3, 2],
+        "toroidal_lower": [4, plan.halo, 4, 3, 2],
+        "toroidal_upper": [4, plan.halo, 4, 3, 2],
+    }
+    assert all(row["communication_contract_ready"] for row in rows)
+
+
 def test_production_decomposition_contract_is_fail_closed() -> None:
     report = run_benchmark()
     write_reports(report)
 
     assert report["schema"] == "production-decomposition-contract.v1"
     assert report["contract_pass"] is True
+    assert report["communication_contract_ready"] is True
     assert report["halo_exchange_pass"] is True
     assert report["decomposition_invariant_pass"] is True
     assert report["cpu_benchmark_rows"]

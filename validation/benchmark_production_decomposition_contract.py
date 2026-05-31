@@ -28,6 +28,7 @@ from scpn_fusion.core.gk_domain_decomposition import (  # noqa: E402
     GKDomainDecompositionPlan,
     build_radial_toroidal_decomposition,
     decomposition_invariant_metrics,
+    rank_tile_communication_contract,
 )
 
 REPORT_DIR = ROOT / "validation" / "reports"
@@ -126,9 +127,13 @@ def run_benchmark() -> dict[str, Any]:
         _plan_row("medium_64x32_4x2", medium_plan),
         _plan_row("production_256x128_8x4", production_plan),
     ]
+    communication_contract_rows = rank_tile_communication_contract(production_plan)
     cpu_benchmark_rows = [_cpu_benchmark_row("local_cpu_64x32_4x2", local_cpu_plan)]
     coverage_pass = all(case["min_owned_cells"] > 0 for case in cases)
     imbalance_pass = all(case["owned_cell_imbalance"] <= 1.05 for case in cases)
+    communication_contract_ready = all(
+        bool(row["communication_contract_ready"]) for row in communication_contract_rows
+    )
     halo_exchange_pass = all(bool(row["halo_exchange_pass"]) for row in cpu_benchmark_rows)
     decomposition_invariant_pass = all(
         row["reconstruction_linf_error"] == 0.0
@@ -137,7 +142,11 @@ def run_benchmark() -> dict[str, Any]:
         for row in cpu_benchmark_rows
     )
     contract_pass = bool(
-        coverage_pass and imbalance_pass and halo_exchange_pass and decomposition_invariant_pass
+        coverage_pass
+        and imbalance_pass
+        and communication_contract_ready
+        and halo_exchange_pass
+        and decomposition_invariant_pass
     )
     return {
         "benchmark": "production_decomposition_contract",
@@ -147,6 +156,8 @@ def run_benchmark() -> dict[str, Any]:
             "5D nonlinear GK scheduling. This is not distributed runtime scaling evidence."
         ),
         "cases": cases,
+        "communication_contract_ready": communication_contract_ready,
+        "communication_contract_rows": communication_contract_rows,
         "contract_pass": contract_pass,
         "coverage_pass": coverage_pass,
         "cpu_benchmark_rows": cpu_benchmark_rows,
@@ -181,6 +192,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Schema: `{report['schema']}`",
         f"- Status: `{report['status']}`",
         f"- Contract pass: `{report['contract_pass']}`",
+        f"- Communication contract ready: `{report['communication_contract_ready']}`",
         f"- Halo exchange pass: `{report['halo_exchange_pass']}`",
         f"- Decomposition invariant pass: `{report['decomposition_invariant_pass']}`",
         f"- Production-scale ready: `{report['production_scale_ready']}`",
@@ -201,6 +213,24 @@ def write_reports(report: dict[str, Any]) -> None:
                 ranks=case["total_ranks"],
                 imb=case["owned_cell_imbalance"],
                 halo=case["halo_overhead_ratio"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Rank communication contract",
+            "",
+            "| Rank | Neighbours | Halo face shapes ready |",
+            "|---:|---|:---:|",
+        ]
+    )
+    for row in report["communication_contract_rows"]:
+        neighbours = ", ".join(f"{face}={rank}" for face, rank in row["neighbour_ranks"].items())
+        lines.append(
+            "| {rank} | {neighbours} | `{ready}` |".format(
+                neighbours=neighbours,
+                rank=row["rank"],
+                ready=row["communication_contract_ready"],
             )
         )
     lines.extend(

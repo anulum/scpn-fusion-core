@@ -18,7 +18,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 |---|---|---|
 | GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons | `python validation/full_fidelity_end_to_end_campaign.py` |
 | Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure exists, full Faraday/displacement-current Vlasov-Maxwell parity does not | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
-| Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition contract passes, distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
+| Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition and rank communication contracts pass, distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence exists, PETSc/compiled `dreami` backend output is missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact exists, full radial transport parity is missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum and native profile-source comparison metrics exist, strict thresholds/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |

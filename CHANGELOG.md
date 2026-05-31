@@ -58,6 +58,10 @@
   decomposition-invariant inventory/free-energy checks as local contracts while
   preserving the distributed MPI/multi-GPU scaling blocker.
 
+- Added a production-decomposition rank communication contract with explicit
+  neighbour ranks and halo-face payload shapes for future MPI/multi-GPU
+  exchange implementation.
+
 - Added a strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output
   parity lane that converts redistribution-permitted same-deck outputs into
   tracked NPZ artefacts, validates nonlinear distribution, heat-flux,

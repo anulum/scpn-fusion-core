@@ -300,6 +300,68 @@ def reconstruct_owned_phase_state(
     return reconstructed
 
 
+def rank_tile_communication_contract(plan: GKDomainDecompositionPlan) -> list[dict[str, object]]:
+    """Return deterministic neighbour and halo-face payload contracts per rank.
+
+    This is the fail-closed CPU contract that a future MPI or multi-GPU runtime
+    must implement. It declares neighbour ranks and the exact phase-space face
+    shapes needed for one-layer radial/toroidal halo exchange without claiming
+    distributed execution.
+    """
+    by_block = {
+        (tile.radial.start, tile.radial.stop, tile.toroidal.start, tile.toroidal.stop): tile
+        for tile in plan.tiles
+    }
+
+    def neighbour_rank(
+        tile: RankTile, *, radial_offset: int = 0, toroidal_offset: int = 0
+    ) -> int | None:
+        radial_start = tile.radial.start + radial_offset
+        radial_stop = tile.radial.stop + radial_offset
+        toroidal_start = tile.toroidal.start + toroidal_offset
+        toroidal_stop = tile.toroidal.stop + toroidal_offset
+        neighbour = by_block.get((radial_start, radial_stop, toroidal_start, toroidal_stop))
+        return None if neighbour is None else neighbour.rank
+
+    rows: list[dict[str, object]] = []
+    velocity_shape = [plan.n_theta, plan.n_vpar, plan.n_mu]
+    for tile in plan.tiles:
+        radial_width = tile.radial.size
+        toroidal_width = tile.toroidal.size
+        neighbours = {
+            "radial_lower": neighbour_rank(tile, radial_offset=-radial_width),
+            "radial_upper": neighbour_rank(tile, radial_offset=radial_width),
+            "toroidal_lower": neighbour_rank(tile, toroidal_offset=-toroidal_width),
+            "toroidal_upper": neighbour_rank(tile, toroidal_offset=toroidal_width),
+        }
+        halo_shapes = {
+            "radial_lower": [plan.halo, toroidal_width, *velocity_shape]
+            if neighbours["radial_lower"] is not None and plan.halo > 0
+            else None,
+            "radial_upper": [plan.halo, toroidal_width, *velocity_shape]
+            if neighbours["radial_upper"] is not None and plan.halo > 0
+            else None,
+            "toroidal_lower": [radial_width, plan.halo, *velocity_shape]
+            if neighbours["toroidal_lower"] is not None and plan.halo > 0
+            else None,
+            "toroidal_upper": [radial_width, plan.halo, *velocity_shape]
+            if neighbours["toroidal_upper"] is not None and plan.halo > 0
+            else None,
+        }
+        rows.append(
+            {
+                "communication_contract_ready": all(
+                    shape is not None or neighbours[face] is None
+                    for face, shape in halo_shapes.items()
+                ),
+                "halo_face_payload_shapes": halo_shapes,
+                "neighbour_ranks": neighbours,
+                "rank": tile.rank,
+            }
+        )
+    return rows
+
+
 def decomposition_invariant_metrics(
     plan: GKDomainDecompositionPlan, phase_state: NDArray[np.float64]
 ) -> DecompositionInvariantMetrics:

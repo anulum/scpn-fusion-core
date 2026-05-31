@@ -258,7 +258,8 @@ partition contract in
 [`validation/reports/production_decomposition_contract.md`](validation/reports/production_decomposition_contract.md).
 The contract covers rank tiling, serial reference halo exchange, owned-state
 reconstruction, decomposition-invariant inventory/free-energy checks, local CPU
-timing metadata, and reproducible commands. Production scaling remains blocked
+timing metadata, rank-neighbour/halo-face payload-shape contracts, and
+reproducible commands. Production scaling remains blocked
 until distributed MPI/multi-GPU execution and cluster timing evidence exist.
 
 ## Competitive Position
