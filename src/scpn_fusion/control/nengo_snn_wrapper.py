@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -33,6 +34,7 @@ from numpy.typing import NDArray
 logger = logging.getLogger(__name__)
 
 _nengo_available = True
+FloatArray = NDArray[np.float64]
 
 
 def nengo_available() -> bool:
@@ -67,7 +69,7 @@ class _Lowpass:
         self._decay = np.exp(-dt / tau) if tau > 0 else 0.0
         self._val = np.zeros(n)
 
-    def step(self, x: NDArray) -> NDArray:
+    def step(self, x: FloatArray) -> FloatArray:
         self._val[:] = self._decay * self._val + (1.0 - self._decay) * x
         return self._val
 
@@ -94,9 +96,9 @@ class _LIFPopulation:
         n: int,
         tau_rc: float,
         tau_ref: float,
-        max_rates: NDArray,
-        intercepts: NDArray,
-        encoders: NDArray,
+        max_rates: FloatArray,
+        intercepts: FloatArray,
+        encoders: FloatArray,
         dt: float,
     ) -> None:
         self.n = n
@@ -112,7 +114,7 @@ class _LIFPopulation:
         self.voltage = np.zeros(n)
         self.ref_time = np.zeros(n)
 
-    def step(self, x: float) -> NDArray:
+    def step(self, x: float) -> FloatArray:
         """One dt step. Returns spike rates (1/dt on spike, else 0)."""
         J = self.alpha * self.encoders * x + self.J_bias
         delta = np.clip(self.dt - self.ref_time, 0.0, self.dt)
@@ -125,20 +127,25 @@ class _LIFPopulation:
 
         return spiked.astype(np.float64) / self.dt
 
-    def steady_rates(self, x_eval: NDArray) -> NDArray:
+    def steady_rates(self, x_eval: FloatArray) -> FloatArray:
         """Analytic steady-state firing rates. Shape (n, len(x_eval))."""
         J = self.alpha[:, None] * self.encoders[:, None] * x_eval[None, :] + self.J_bias[:, None]
         rates = np.zeros_like(J)
         ok = J > 1.0
         rates[ok] = 1.0 / (self.tau_ref - self.tau_rc * np.log1p(-1.0 / J[ok]))
-        return rates
+        return np.asarray(rates, dtype=np.float64)
 
     def reset(self) -> None:
         self.voltage[:] = 0.0
         self.ref_time[:] = 0.0
 
 
-def _nef_decoder(pop: _LIFPopulation, fn, n_eval: int = 200, reg: float = 0.1) -> NDArray:
+def _nef_decoder(
+    pop: _LIFPopulation,
+    fn: Callable[[FloatArray], FloatArray],
+    n_eval: int = 200,
+    reg: float = 0.1,
+) -> FloatArray:
     """Least-squares NEF decoder for target function fn(x).
 
     Tikhonov regularization matches Nengo's LstsqL2 default.
@@ -146,11 +153,11 @@ def _nef_decoder(pop: _LIFPopulation, fn, n_eval: int = 200, reg: float = 0.1) -
     """
     x = np.linspace(-1, 1, n_eval)
     A = pop.steady_rates(x)
-    Y = fn(x)
+    Y = np.asarray(fn(x), dtype=np.float64)
     AAt = A @ A.T
     max_a = max(float(np.max(A)), 1e-10)
     gamma = n_eval * reg * max_a**2
-    return np.linalg.solve(AAt + gamma * np.eye(pop.n), A @ Y)
+    return np.asarray(np.linalg.solve(AAt + gamma * np.eye(pop.n), A @ Y), dtype=np.float64)
 
 
 class _Channel:
@@ -231,7 +238,7 @@ class NengoSNNController:
         self._built = False
         self._step_count = 0
         self._last_output = np.zeros(self.cfg.n_channels)
-        self._output_history: list[NDArray] = []
+        self._output_history: list[FloatArray] = []
         self._output_probe_filt = _Lowpass(0.01, self.cfg.dt, self.cfg.n_channels)
 
         self.build_network()
@@ -251,7 +258,7 @@ class NengoSNNController:
             cfg.dt,
         )
 
-    def step(self, state: NDArray[np.float64]) -> NDArray[np.float64]:
+    def step(self, state: FloatArray) -> FloatArray:
         """Run one control step.
 
         Parameters
@@ -288,11 +295,11 @@ class NengoSNNController:
         self._output_history.clear()
         self._output_probe_filt.reset()
 
-    def get_spike_data(self) -> dict[str, NDArray]:
+    def get_spike_data(self) -> dict[str, FloatArray]:
         """Return probe data from simulation."""
         if not self._output_history:
             return {}
-        data: dict[str, NDArray] = {
+        data: dict[str, FloatArray] = {
             "output": np.array(self._output_history),
         }
         for i, ch in enumerate(self._channels):
@@ -300,7 +307,7 @@ class NengoSNNController:
                 data[f"error_ch{i}"] = np.array(ch.probe_history)[:, None]
         return data
 
-    def export_weights(self) -> dict[str, NDArray]:
+    def export_weights(self) -> dict[str, FloatArray]:
         """Extract decoder, encoder, and gain/bias arrays.
 
         Returns
@@ -310,7 +317,7 @@ class NengoSNNController:
         if not self._built:
             raise RuntimeError("Network not built.")
 
-        weights: dict[str, NDArray] = {}
+        weights: dict[str, FloatArray] = {}
         for i, ch in enumerate(self._channels):
             weights[f"ch{i}_error_encoders"] = ch.error_pop.encoders.copy()
             weights[f"ch{i}_error_alpha"] = ch.error_pop.alpha.copy()

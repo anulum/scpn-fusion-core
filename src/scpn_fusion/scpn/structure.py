@@ -21,6 +21,7 @@ from enum import Enum, auto
 from typing import Dict, List, Tuple
 
 import numpy as np
+import numpy.typing as npt
 from numpy.typing import NDArray
 from scipy import sparse  # noqa: F401
 
@@ -453,8 +454,10 @@ class StochasticPetriNet:
         _W_out = self.W_out
         if _W_in is None or _W_out is None:
             raise RuntimeError("Net must be compiled before verification.")
-        W_in_dense: np.ndarray = _W_in.toarray() if hasattr(_W_in, "toarray") else np.asarray(_W_in)
-        W_out_dense: np.ndarray = (
+        W_in_dense: npt.NDArray[np.float64] = (
+            _W_in.toarray() if hasattr(_W_in, "toarray") else np.asarray(_W_in)
+        )
+        W_out_dense: npt.NDArray[np.float64] = (
             _W_out.toarray() if hasattr(_W_out, "toarray") else np.asarray(_W_out)
         )
 
@@ -508,8 +511,10 @@ class StochasticPetriNet:
         _W_out = self.W_out
         if _W_in is None or _W_out is None:
             raise RuntimeError("Net must be compiled before verification.")
-        W_in_dense: np.ndarray = _W_in.toarray() if hasattr(_W_in, "toarray") else np.asarray(_W_in)
-        W_out_dense: np.ndarray = (
+        W_in_dense: npt.NDArray[np.float64] = (
+            _W_in.toarray() if hasattr(_W_in, "toarray") else np.asarray(_W_in)
+        )
+        W_out_dense: npt.NDArray[np.float64] = (
             _W_out.toarray() if hasattr(_W_out, "toarray") else np.asarray(_W_out)
         )
         thresholds = self.get_thresholds()

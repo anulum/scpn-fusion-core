@@ -93,15 +93,12 @@ scpn-fusion = "scpn_fusion.cli:main"
 scpn-dashboard = "scpn_fusion.ui.dashboard_launcher:main"
 
 [tool.mypy]
-strict = false
-disallow_untyped_calls = false
-disallow_untyped_defs = false
-disallow_any_generics = false
-check_untyped_defs = true
-warn_return_any = false
-no_implicit_optional = false
-ignore_missing_imports = true
+strict = true
+ignore_missing_imports = false
 
+# Strict defaults apply to every mypy invocation. The file cohort below is the
+# currently gated typed surface and is expanded incrementally as modules are
+# brought to strict-clean status.
 files = [
     # scpn/ (existing)
     "src/scpn_fusion/scpn/contracts.py",
@@ -141,11 +138,11 @@ files = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["scpn_fusion.ui.*", "scpn_fusion.diagnostics.*", "scpn_fusion.engineering.*", "scpn_fusion.io.*"]
-ignore_errors = true
+module = ["sc_neurocore", "sc_neurocore.*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["sc_neurocore", "sc_neurocore.*"]
+module = ["scpn_fusion_rs"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

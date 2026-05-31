@@ -13,8 +13,10 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+ComplexArray = NDArray[np.complex128]
 
 # Kadomtsev (1975) sawtooth crash model parameters
 _CRASH_THRESHOLD = 0.1  # psi_11 amplitude triggering reconnection
@@ -46,7 +48,7 @@ class ReducedMHD:
 
         self.psi_11[:] = 1e-4 * self.r * (1 - self.r) * (1 + 1j)
 
-    def laplacian(self, f: np.ndarray, m: int = 1) -> np.ndarray:
+    def laplacian(self, f: ComplexArray, m: int = 1) -> ComplexArray:
         """Radial Laplacian: 1/r d/dr (r df/dr) - m^2/r^2 f"""
         # Finite difference
         d2f = np.zeros_like(f)
@@ -103,9 +105,9 @@ class ReducedMHD:
         # q-profile recovery toward equilibrium
         self.q = self.q - (self.q - (0.8 + 2.0 * self.r**2)) * _Q_RECOVERY_RATE
 
-        return amplitude, crash
+        return float(amplitude), crash
 
-    def solve_poisson(self, U: np.ndarray) -> np.ndarray:
+    def solve_poisson(self, U: ComplexArray) -> ComplexArray:
         """
         Solves Del^2 phi = U for phi using the Thomas Algorithm (O(N)).
         Optimized for tridiagonal Laplacian in cylindrical coordinates.

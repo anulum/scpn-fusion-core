@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Enabled global mypy strict defaults, removed the broad internal package
+  `ignore_errors` override, and fixed the currently gated typed cohort so the
+  strict runner passes without hidden package-level suppressions.
+
 - Aligned public README, roadmap, benchmark, and Sphinx changelog surfaces with
   the current fail-closed full-fidelity campaign status, reproducibility
   commands, and public documentation hygiene boundaries.

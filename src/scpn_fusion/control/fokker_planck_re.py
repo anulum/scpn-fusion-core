@@ -30,6 +30,7 @@ import logging
 import numpy as np
 from dataclasses import dataclass
 from typing import Any, Tuple, cast
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +50,17 @@ DREICER_SOURCE = 1.0e15  # Dreicer injection flux [m^-3 s^-1]
 _KNOCK_ON_SCALE = 1.0e-25
 _KNOCK_ON_MAX_SOURCE = 1.0e24
 _RE_SEED_FLOOR = 1.0e6
+FloatArray = NDArray[np.float64]
+FloatAxisInput = FloatArray | list[float] | tuple[float, ...]
 
 
 @dataclass
 class RunawayElectronState:
     """State of the RE population."""
 
-    f: np.ndarray  # Distribution function f(p) [1/m^3 / (mc)^3] ?
+    f: FloatArray  # Distribution function f(p) [1/m^3 / (mc)^3] ?
     # Normalized such that integral f dp = n_RE
-    p_grid: np.ndarray  # Momentum grid (normalized to mc)
+    p_grid: FloatArray  # Momentum grid (normalized to mc)
     time: float = 0.0
     n_re: float = 0.0  # Total RE density [m^-3]
     current_re: float = 0.0  # Runaway current density [A/m^2]
@@ -181,14 +184,14 @@ class FokkerPlanckSolver:
         self.np_grid = int(np_grid)
         self.p_max = float(p_max)
         # Log-spaced momentum grid, p normalised to m_e c
-        self.p = np.logspace(-2, np.log10(self.p_max), self.np_grid)
-        self.dp = np.gradient(self.p)
-        self.f = np.zeros(self.np_grid)
+        self.p: FloatArray = np.logspace(-2, np.log10(self.p_max), self.np_grid)
+        self.dp: FloatArray = np.gradient(self.p)
+        self.f: FloatArray = np.zeros(self.np_grid)
         self.time = 0.0
 
     def compute_coefficients(
         self, E_field: float, n_e: float, Z_eff: float, T_e_eV: float
-    ) -> Tuple[np.ndarray, np.ndarray, float]:
+    ) -> Tuple[FloatArray, FloatArray, float]:
         """Compute advection (A), diffusion (D), and critical field (Fc) coefficients.
 
         A = F_acc - F_drag - F_synch, per Hesslow et al. J. Plasma Phys. 85 (2019).
@@ -224,12 +227,12 @@ class FokkerPlanckSolver:
     @staticmethod
     def _strict_axis(
         name: str,
-        values: np.ndarray | list[float] | tuple[float, ...],
+        values: FloatAxisInput,
         *,
         min_length: int = 2,
         lower: float | None = None,
         upper: float | None = None,
-    ) -> np.ndarray:
+    ) -> FloatArray:
         axis = np.asarray(values, dtype=np.float64)
         if axis.ndim != 1 or axis.size < min_length:
             raise ValueError(f"{name} must be a 1D axis with at least {min_length} points.")
@@ -244,7 +247,7 @@ class FokkerPlanckSolver:
         return axis
 
     @staticmethod
-    def _normalized_axis_weights(axis: np.ndarray) -> np.ndarray:
+    def _normalized_axis_weights(axis: FloatArray) -> FloatArray:
         weights = np.ones_like(axis, dtype=np.float64)
         norm = float(np.sum(weights))
         if norm <= 0.0 or not np.isfinite(norm):
@@ -297,8 +300,8 @@ class FokkerPlanckSolver:
         n_e: float,
         t_e_ev: float,
         z_eff: float,
-        radius_m: np.ndarray | list[float] | tuple[float, ...],
-        pitch_cosine: np.ndarray | list[float] | tuple[float, ...],
+        radius_m: FloatAxisInput,
+        pitch_cosine: FloatAxisInput,
     ) -> DreamKineticArtifact:
         """Run and export a DREAM-style radius-momentum-pitch artifact.
 
@@ -323,12 +326,12 @@ class FokkerPlanckSolver:
         pitch_weights = pitch_weights / float(np.sum(pitch_weights))
 
         time_s: list[float] = []
-        distribution: list[np.ndarray] = []
-        current_history: list[np.ndarray] = []
-        avalanche_history: list[np.ndarray] = []
-        synch_history: list[np.ndarray] = []
-        screening_history: list[np.ndarray] = []
-        brems_history: list[np.ndarray] = []
+        distribution: list[FloatArray] = []
+        current_history: list[FloatArray] = []
+        avalanche_history: list[FloatArray] = []
+        synch_history: list[FloatArray] = []
+        screening_history: list[FloatArray] = []
+        brems_history: list[FloatArray] = []
 
         for _ in range(steps):
             state = self.step(dt_s, e_field, n_e, t_e_ev, z_eff)
@@ -409,7 +412,7 @@ class FokkerPlanckSolver:
         self.f = np.maximum(self.f, f_hottail * 1e10)
         logger.info("Hottail seed: %.2e m^-3", np.sum(self.f * self.dp))
 
-    def explicit_knock_on_source(self, n_e: float) -> np.ndarray:
+    def explicit_knock_on_source(self, n_e: float) -> FloatArray:
         """Knock-on collision source via Moller cross-section (1/p² scaling).
 
         Reduced-order closure from Rosenbluth-Putvinski, Nucl. Fusion 37 (1997).
@@ -424,10 +427,10 @@ class FokkerPlanckSolver:
             return np.zeros_like(self.f)
         out = source * n_e * n_re * _KNOCK_ON_SCALE
         out = np.nan_to_num(out, nan=0.0, posinf=_KNOCK_ON_MAX_SOURCE, neginf=0.0)
-        return np.clip(out, 0.0, _KNOCK_ON_MAX_SOURCE)
+        return np.asarray(np.clip(out, 0.0, _KNOCK_ON_MAX_SOURCE), dtype=np.float64)
 
     @staticmethod
-    def _minmod(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def _minmod(a: FloatArray, b: FloatArray) -> FloatArray:
         """Minmod slope limiter (vectorized)."""
         return np.where(
             a * b > 0,
@@ -517,7 +520,7 @@ class FokkerPlanckSolver:
         # Sources
         f_new[1 : N - 1] += dt * (S_av[1 : N - 1] + S_dr[1 : N - 1] + S_ko[1 : N - 1])
 
-        self.f = cast(np.ndarray, np.maximum(0.0, f_new))
+        self.f = cast(FloatArray, np.asarray(np.maximum(0.0, f_new), dtype=np.float64))
         self.time += dt
 
         dp = self.dp

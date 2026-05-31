@@ -63,7 +63,7 @@ class DynamicsMLP:
         xu = np.concatenate([x, u])
         h = np.tanh(self.W1 @ xu + self.b1)
         dxdt = self.W2 @ h + self.b2
-        return dxdt
+        return np.asarray(dxdt, dtype=np.float64)
 
     def forward_jax(self, params: list[Any], x: Any, u: Any) -> Any:
         """Evaluate the surrogate dynamics with JAX-compatible parameters."""
@@ -175,8 +175,10 @@ class NonlinearMPC:
                     stall_count = 0
                 prev_cost = cost
 
-        best_U = np.array(U_curr).reshape(self.horizon, self.dynamics.action_dim)
-        return best_U[0]
+        best_U = np.asarray(U_curr, dtype=np.float64).reshape(
+            self.horizon, self.dynamics.action_dim
+        )
+        return np.asarray(best_U[0], dtype=np.float64)
 
     def _plan_numpy(self, x0: FloatArray, target: FloatArray, U: FloatArray) -> FloatArray:
         from scipy.optimize import minimize
@@ -200,8 +202,10 @@ class NonlinearMPC:
             options={"maxiter": self.iterations, "disp": False},
         )
 
-        best_U = res.x.reshape(self.horizon, self.dynamics.action_dim)
-        return best_U[0]
+        best_U = np.asarray(res.x, dtype=np.float64).reshape(
+            self.horizon, self.dynamics.action_dim
+        )
+        return np.asarray(best_U[0], dtype=np.float64)
 
 
 def get_nmpc_controller(state_dim: int = 4, action_dim: int = 4, horizon: int = 10) -> NonlinearMPC:

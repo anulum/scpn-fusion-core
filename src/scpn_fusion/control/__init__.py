@@ -7,6 +7,8 @@
 # SCPN Fusion Core — Control Module
 """Control-system public facade with lazy exports for optional subsystems."""
 
+from typing import Any
+
 from .fusion_sota_mpc import run_sota_simulation, ModelPredictiveController
 from .fusion_nmpc_jax import get_nmpc_controller, NonlinearMPC
 
@@ -81,7 +83,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
 }
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     if name in _LAZY_IMPORTS:
         module_path, attr = _LAZY_IMPORTS[name]
         import importlib

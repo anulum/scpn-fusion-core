@@ -21,8 +21,10 @@ from __future__ import annotations
 import json
 import logging
 import numpy as np
+import numpy.typing as npt
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
 from scpn_fusion.io.safe_loaders import checked_json_load
@@ -65,8 +67,9 @@ __all__ = [
 _rust_transport_available = False
 _PyTransportSolver: Any = None
 try:
-    from scpn_fusion_rs import PyTransportSolver as _PyTransportSolver  # type: ignore[assignment,no-redef]
+    import scpn_fusion_rs
 
+    _PyTransportSolver = scpn_fusion_rs.PyTransportSolver
     _rust_transport_available = True
 except ImportError as exc:
     _logger.debug("Rust transport bindings unavailable; using Python transport kernels: %s", exc)
@@ -87,6 +90,7 @@ _EPED_FALLBACK_EXCEPTIONS = (
     KeyError,
     FloatingPointError,
 )
+FloatArray = npt.NDArray[np.float64]
 
 
 class PhysicsError(RuntimeError, _FusionCoreError):
@@ -174,7 +178,17 @@ def _load_gyro_bohm_coefficient_cached_with_contract() -> tuple[float, dict[str,
     return float(_gyro_bohm_cache), dict(_gyro_bohm_cache_contract)
 
 
-def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
+def chang_hinton_chi_profile(
+    rho: npt.ArrayLike,
+    T_i: npt.ArrayLike,
+    n_e_19: npt.ArrayLike,
+    q: npt.ArrayLike,
+    R0: float,
+    a: float,
+    B0: float,
+    A_ion: float = 2.0,
+    Z_eff: float = 1.5,
+) -> FloatArray:
     """
     Chang-Hinton (1982) neoclassical ion thermal diffusivity profile [m²/s].
 
@@ -306,7 +320,17 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
     return chi_nc
 
 
-def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff=1.5):
+def calculate_sauter_bootstrap_current_full(
+    rho: npt.ArrayLike,
+    Te: npt.ArrayLike,
+    Ti: npt.ArrayLike,
+    ne: npt.ArrayLike,
+    q: npt.ArrayLike,
+    R0: float,
+    a: float,
+    B0: float,
+    Z_eff: float = 1.5,
+) -> FloatArray:
     """Full Sauter bootstrap current model (Sauter et al., Phys. Plasmas 6, 1999).
 
     Parameters
@@ -492,7 +516,8 @@ class TransportSolver(
 
     def __init__(self, config_path: str | Path, *, multi_ion: bool = False) -> None:
         """Build a transport solver with deterministic defaults and requested mode."""
-        super().__init__(config_path)
+        base_init = cast(Callable[[str | Path], None], object.__getattribute__(super(), "__init__"))
+        base_init(config_path)
         self._initialize_transport_solver_state(multi_ion=multi_ion)
 
     # Model/configuration methods are provided by TransportSolverModelMixin.

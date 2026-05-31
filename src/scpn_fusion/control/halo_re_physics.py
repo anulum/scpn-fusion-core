@@ -143,7 +143,7 @@ class DisruptionMitigationReport:
     p95_re_peak_ma: float
     mean_tpf_product: float
     passes_iter_limits: bool
-    per_run_details: list[dict]
+    per_run_details: list[dict[str, object]]
 
 
 class HaloCurrentModel:
@@ -319,7 +319,10 @@ def run_disruption_ensemble(
 
     rng = np.random.default_rng(seed)
 
-    per_run: list[dict] = []
+    per_run: list[dict[str, object]] = []
+    halo_peaks: list[float] = []
+    re_peaks: list[float] = []
+    tpf_products: list[float] = []
     prevented_count = 0
 
     for run_idx in range(ensemble_runs):
@@ -403,7 +406,7 @@ def run_disruption_ensemble(
         if prevented:
             prevented_count += 1
 
-        run_detail = {
+        run_detail: dict[str, object] = {
             "run": run_idx,
             "Ip_ma": Ip_ma,
             "W_mj": W_mj,
@@ -425,6 +428,9 @@ def run_disruption_ensemble(
             "prevented": prevented,
         }
         per_run.append(run_detail)
+        halo_peaks.append(float(halo_result.peak_halo_ma))
+        re_peaks.append(float(re_result.peak_re_current_ma))
+        tpf_products.append(float(halo_result.peak_tpf_product))
 
         if verbose:
             status = "PREVENTED" if prevented else "FAILED"
@@ -439,10 +445,6 @@ def run_disruption_ensemble(
             )
 
     prevention_rate = prevented_count / max(ensemble_runs, 1)
-    halo_peaks = [r["halo_peak_ma"] for r in per_run]
-    re_peaks = [r["re_peak_ma"] for r in per_run]
-    tpf_products = [r["tpf_product"] for r in per_run]
-
     passes_iter = (
         prevention_rate >= 0.90
         and float(np.percentile(halo_peaks, 95)) <= 3.4

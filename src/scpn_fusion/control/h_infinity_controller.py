@@ -35,14 +35,15 @@ import numpy.typing as npt
 from scipy.linalg import solve_continuous_are, solve_discrete_are, expm
 
 logger = logging.getLogger(__name__)
+FloatArray = npt.NDArray[np.float64]
 
 
-def _check_finite(mat: np.ndarray, name: str) -> None:
+def _check_finite(mat: FloatArray, name: str) -> None:
     if not np.all(np.isfinite(mat)):
         raise ValueError(f"{name} must contain only finite values.")
 
 
-def _zoh_discretize(A: np.ndarray, B: np.ndarray, dt: float) -> tuple[np.ndarray, np.ndarray]:
+def _zoh_discretize(A: FloatArray, B: FloatArray, dt: float) -> tuple[FloatArray, FloatArray]:
     """Exact zero-order-hold discretisation via matrix exponential.
 
     Returns (Ad, Bd) such that  x_{k+1} = Ad x_k + Bd u_k.
@@ -167,10 +168,10 @@ class HInfinityController:
 
         # Discrete gains cache (recomputed when dt changes)
         self._cached_dt: float = 0.0
-        self._Fd: np.ndarray = self.F  # compatibility default: continuous gain
-        self._Ld: np.ndarray = self.L_gain.copy()
-        self._Ad: np.ndarray = np.eye(self.n)
-        self._Bd_u: np.ndarray = np.zeros((self.n, self.m))
+        self._Fd: FloatArray = self.F  # compatibility default: continuous gain
+        self._Ld: FloatArray = self.L_gain.copy()
+        self._Ad: FloatArray = np.eye(self.n)
+        self._Bd_u: FloatArray = np.zeros((self.n, self.m))
 
         # Controller state
         self.state = np.zeros(self.n)
@@ -190,7 +191,7 @@ class HInfinityController:
         rows: int,
         cols: int,
         name: str,
-    ) -> np.ndarray:
+    ) -> FloatArray:
         if value is not None:
             mat = np.atleast_2d(np.asarray(value, dtype=float))
         else:
@@ -200,9 +201,9 @@ class HInfinityController:
         if mat.shape != (rows, cols):
             raise ValueError(f"{name} must have shape ({rows}, {cols}).")
         _check_finite(mat, name)
-        return mat
+        return np.asarray(mat, dtype=np.float64)
 
-    def _synthesize(self, gamma: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def _synthesize(self, gamma: float) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
         """Solve the two continuous Riccati equations and extract gains.
 
         Returns (X, Y, F, L) where:

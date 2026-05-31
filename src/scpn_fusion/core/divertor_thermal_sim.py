@@ -26,6 +26,8 @@ class DivertorLab:
         self.P_sol = P_sol_MW
         self.R = R_major
         self.B_pol = B_pol
+        self.q_parallel = 0.0
+        self.q_target_solid = 0.0
 
         # Eich scaling: lambda_q [mm] = 0.63 * B_pol^(-1.19)
         self.lambda_q_mm = 0.63 * (B_pol ** (-1.19))
@@ -66,7 +68,7 @@ class DivertorLab:
         T_t_eV = float(np.clip(T_t_eV, 1.0, T_u_eV))
 
         self.q_target_solid = q_target
-        return T_u_eV, T_t_eV
+        return float(T_u_eV), float(T_t_eV)
 
     def calculate_heat_load(self, expansion_factor: float = 10.0) -> float:
         """
@@ -79,7 +81,7 @@ class DivertorLab:
         print(f"Target Temp (T_t): {T_t:.1f} eV")
         print(f"Unmitigated Target Flux: {self.q_target_solid / 1e6:.1f} MW/m2")
 
-        return self.q_target_solid
+        return float(self.q_target_solid)
 
     def simulate_tungsten(self) -> tuple[float, str]:
         """

@@ -24,7 +24,7 @@ from __future__ import annotations
 import logging
 import numpy as np
 from dataclasses import dataclass
-from typing import List
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ RHO_NEON_SOLID = 1444.0  # solid neon density [kg/m^3], CRC Handbook
 # Derived from Parks NF 57 (2017) Eq. 8: C_P = 1.25e16 (CGS), converted to mixed units
 # via dimensional analysis: C_P_mixed = C_P * (1e20)^{-1/3} * keV^{-1.64} * cm^{-1.33} ≈ 2.0.
 _PARKS_COEFFICIENT = 2.0
+FloatArray = NDArray[np.float64]
 
 # Tokamak geometry (ITER-like)
 R_MAJOR = 6.2  # major radius [m]
@@ -51,8 +52,8 @@ class SpiFragment:
     id: int
     radius: float  # m
     mass: float  # kg
-    pos: np.ndarray  # (x, y, z) [m]
-    vel: np.ndarray  # (vx, vy, vz) [m/s]
+    pos: FloatArray  # (x, y, z) [m]
+    vel: FloatArray  # (vx, vy, vz) [m/s]
     active: bool = True
 
 
@@ -65,10 +66,10 @@ class SpiAblationSolver:
         total_mass_kg: float = 0.01,  # 10g Neon
         velocity_mps: float = 200.0,
         dispersion: float = 0.1,  # Velocity spread fraction
-        injector_pos: np.ndarray | None = None,  # Outboard midplane
-        injector_dir: np.ndarray | None = None,  # Radial inward
+        injector_pos: FloatArray | None = None,  # Outboard midplane
+        injector_dir: FloatArray | None = None,  # Radial inward
         seed: int = 42,
-    ):
+    ) -> None:
         if isinstance(n_fragments, bool) or int(n_fragments) < 1:
             raise ValueError("n_fragments must be an integer >= 1.")
         total_mass_kg = float(total_mass_kg)
@@ -100,7 +101,7 @@ class SpiAblationSolver:
         if dir_norm <= 0.0:
             raise ValueError("injector_dir must be non-zero.")
 
-        self.fragments: List[SpiFragment] = []
+        self.fragments: list[SpiFragment] = []
 
         # Uniform fragment mass; size from solid-sphere volume
         m_frag = total_mass_kg / n_fragments
@@ -120,10 +121,10 @@ class SpiAblationSolver:
     def step(
         self,
         dt: float,
-        plasma_ne_profile: np.ndarray,
-        plasma_te_profile: np.ndarray,
-        r_grid: np.ndarray,
-    ) -> np.ndarray:
+        plasma_ne_profile: FloatArray,
+        plasma_te_profile: FloatArray,
+        r_grid: FloatArray,
+    ) -> FloatArray:
         """Advance fragments and return deposition profile [particles/m^3/s]."""
         dt = float(dt)
         if not np.isfinite(dt) or dt <= 0.0:

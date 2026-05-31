@@ -162,7 +162,7 @@ def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
     # Compute gradient scale lengths (central differences)
     dr = float(ts.rho[1] - ts.rho[0]) if len(ts.rho) > 1 else 0.01
 
-    def _grad_scale(arr: NDArray, idx: int) -> float:
+    def _grad_scale(arr: NDArray[np.float64], idx: int) -> float:
         if idx <= 0 or idx >= len(arr) - 1:
             return 0.0
         grad = (arr[idx + 1] - arr[idx - 1]) / (2.0 * dr)
