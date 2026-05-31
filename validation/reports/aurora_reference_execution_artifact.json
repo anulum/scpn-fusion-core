@@ -1,0 +1,19 @@
+{
+  "accepted_full_fidelity_ready": false,
+  "artifact_generated": false,
+  "case_id": "aurora_argon_fractional_abundance_public",
+  "description": "Public Aurora/Open-ADAS execution request for an argon charge-state fractional-abundance artifact.",
+  "missing_full_fidelity_requirements": [
+    "charge-state-resolved radial transport run with Aurora or STRAHL",
+    "finite ionisation/recombination/source/sink matrix conservation evidence",
+    "line-radiation and total radiated-power observables on the same case",
+    "native same-case impurity solver-output comparison",
+    "quantitative parity thresholds against public Aurora/STRAHL output"
+  ],
+  "next_action": "DeprecationWarning: Please import `map_coordinates` from the `scipy.ndimage` namespace; the `scipy.ndimage.interpolation` namespace is deprecated and will be removed in SciPy 2.0.0.",
+  "reference_output_ready": false,
+  "schema": "aurora-reference-execution-artifact.v1",
+  "source_family": "Aurora",
+  "source_repo": "data/external/full_fidelity_public_sources/repos/aurora",
+  "status": "blocked_aurora_reference_artifact_generation_failed"
+}

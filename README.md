@@ -52,7 +52,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 384 |
+| Python test files | 385 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -174,18 +174,24 @@ summarised in
 [`validation/reports/full_fidelity_public_source_downloads.md`](validation/reports/full_fidelity_public_source_downloads.md).
 Those snapshots are acquisition inputs only; they are not accepted parity
 artifacts until converted into schema-valid repository-local JSON/NPZ evidence.
-The first conversion pass exports three finite public payloads, DREAM
-avalanche HDF5 data, FreeGSNKE static inverse baselines, and FreeGSNKE
-MAST-U-like current sidecars, into tracked artifacts with metadata and checksums:
+The public conversion/execution pass exports four finite public payloads: DREAM
+avalanche HDF5 data, FreeGSNKE static inverse baselines, FreeGSNKE
+MAST-U-like current sidecars, and an Aurora/Open-ADAS argon fractional-abundance
+artifact, into tracked artifacts with metadata and checksums:
 [`validation/reports/full_fidelity_reference_artifact_conversion.md`](validation/reports/full_fidelity_reference_artifact_conversion.md).
+[`validation/reports/aurora_reference_execution_artifact.md`](validation/reports/aurora_reference_execution_artifact.md).
 These are partial diagnostic artifacts, not full-fidelity acceptance artifacts,
-because required observables and same-case solver-output comparisons are still
-missing.
+because required transport observables and same-case solver-output comparisons
+are still missing.
 The DREAM execution lane now also generates the upstream `examples/2kinetic`
 settings deck and records backend readiness in
 [`validation/reports/dream_reference_execution_request.md`](validation/reports/dream_reference_execution_request.md).
 On this local runner the deck generation succeeds, but DREAM execution is
 blocked until PETSc and the compiled `iface/dreami` backend are available.
+The Aurora execution lane runs a cached Aurora/Open-ADAS atomic-data path and
+exports normalized argon charge-state fractions, but remains blocked for full
+Aurora/STRAHL parity until public radial transport output, source/sink matrices,
+radiation observables, and native same-case comparisons are present.
 
 ## Competitive Position
 

@@ -1,0 +1,61 @@
+{
+  "accepted_full_fidelity": false,
+  "artifact_id": "aurora_argon_fractional_abundance_public",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.npz",
+  "artifact_role": "partial_public_solver_output",
+  "available_observables": [
+    "Te_eV",
+    "charge_state_index",
+    "fraction_sum_no_cx",
+    "fraction_sum_with_cx",
+    "fz_no_cx",
+    "fz_with_cx",
+    "ne_cm3",
+    "neutral_fraction_n0_by_ne",
+    "returned_Te_grid_no_cx_eV",
+    "returned_Te_grid_with_cx_eV",
+    "rhop"
+  ],
+  "case_contract": {
+    "charge_states": 19,
+    "electron_density_units": "cm^-3",
+    "electron_temperature_units": "eV",
+    "impurity": "Ar",
+    "radial_coordinate": "rhop",
+    "radial_points": 64
+  },
+  "finite_numeric_payload": true,
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [
+    "transported_charge_state_density_time_radius_charge",
+    "line_radiation_power_time_radius_charge",
+    "ionisation_recombination_source_sink_matrix_time_radius_charge_charge",
+    "total_impurity_inventory_closure",
+    "native_same_case_solver_output_comparison"
+  ],
+  "provenance_url": "https://github.com/fsciortino/Aurora/tree/4c53ee2fb5202977682c3da4deba5fc07ab3a203/examples",
+  "redistribution_license": "MIT with Aurora User Agreement citation notice; Open-ADAS public derived data",
+  "reference_family": "Aurora",
+  "sha256": "a2b5b42d333609884976c70788fa94c22f4322d1d758094e186517916aaa93fd",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_no_native_same_case_transport_comparison_for_partial_atomic_artifact",
+  "source_data_files": [
+    {
+      "filetype": "acd",
+      "path": "data/external/full_fidelity_public_sources/adas/aurora/adf11/acd89_ar.dat",
+      "sha256": "c92310622ada4abdffac1fca42b322e05e5dc9b4424db629efb4d52775083a0a"
+    },
+    {
+      "filetype": "scd",
+      "path": "data/external/full_fidelity_public_sources/adas/aurora/adf11/scd89_ar.dat",
+      "sha256": "ceeb71322dd9462ddf161ba0aebb1483928a1b9cbd08f72c8bb2dccff5d81e1a"
+    },
+    {
+      "filetype": "ccd",
+      "path": "data/external/full_fidelity_public_sources/adas/aurora/adf11/ccd89_ar.dat",
+      "sha256": "7d37b0d29bb8c860e2e324adc088f0d3e83a42fba7f0a9a8661fa63f5c80f5c0"
+    }
+  ],
+  "surface": "impurity_transport",
+  "upstream_commit": "4c53ee2fb5202977682c3da4deba5fc07ab3a203"
+}

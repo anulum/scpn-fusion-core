@@ -18,6 +18,7 @@ PUBLIC_SOURCES = ROOT / "validation" / "reference_data" / "full_fidelity_public_
 PUBLIC_SOURCE_DOWNLOADS = REPORT_DIR / "full_fidelity_public_source_downloads.json"
 REFERENCE_ARTIFACT_CONVERSION = REPORT_DIR / "full_fidelity_reference_artifact_conversion.json"
 DREAM_EXECUTION_REQUEST = REPORT_DIR / "dream_reference_execution_request.json"
+AURORA_EXECUTION_ARTIFACT = REPORT_DIR / "aurora_reference_execution_artifact.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -79,6 +80,21 @@ def _load_dream_execution() -> dict[str, Any]:
     return report
 
 
+def _load_aurora_execution() -> dict[str, Any]:
+    if not AURORA_EXECUTION_ARTIFACT.exists():
+        return {
+            "artifact_generated": False,
+            "missing_full_fidelity_requirements": [],
+            "reference_output_ready": False,
+            "schema": "aurora-reference-execution-artifact.v1",
+            "status": "not_run",
+        }
+    report = json.loads(AURORA_EXECUTION_ARTIFACT.read_text(encoding="utf-8"))
+    if report.get("schema") != "aurora-reference-execution-artifact.v1":
+        raise ValueError("Aurora reference execution artifact schema mismatch")
+    return report
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -104,6 +120,7 @@ def run_campaign() -> dict[str, Any]:
     downloads = _load_downloads()
     conversion = _load_conversion()
     dream_execution = _load_dream_execution()
+    aurora_execution = _load_aurora_execution()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -169,7 +186,11 @@ def run_campaign() -> dict[str, Any]:
         {
             "lane": "aurora_strahl_grade_impurities",
             "surface": "impurity_transport",
-            "status": "blocked_missing_public_aurora_strahl_artifacts",
+            "status": (
+                "blocked_partial_public_atomic_artifact_not_transport_parity"
+                if aurora_execution["reference_output_ready"]
+                else "blocked_missing_public_aurora_strahl_artifacts"
+            ),
             "locally_actionable_contract_ready": bool(
                 impurity["passed"]
                 and impurity_surface["implemented_dimensions"].get(
@@ -178,7 +199,10 @@ def run_campaign() -> dict[str, Any]:
             ),
             "reference_cases_ready": bool(impurity_surface["reference_cases"]["ready"]),
             "sources": _sources_for(registry, "impurity_transport"),
-            "next_required_evidence": impurity_surface["missing_requirements"],
+            "next_required_evidence": (
+                aurora_execution["missing_full_fidelity_requirements"]
+                or impurity_surface["missing_requirements"]
+            ),
         },
         {
             "lane": "free_boundary_equilibrium_strict_parity",
@@ -213,6 +237,10 @@ def run_campaign() -> dict[str, Any]:
         "dream_settings_deck_generated": bool(dream_execution["settings_deck_generated"]),
         "dream_reference_output_ready": bool(dream_execution["reference_output_ready"]),
         "dream_reference_execution_status": str(dream_execution["status"]),
+        "aurora_reference_execution_report": str(AURORA_EXECUTION_ARTIFACT.relative_to(ROOT)),
+        "aurora_reference_artifact_generated": bool(aurora_execution["artifact_generated"]),
+        "aurora_reference_output_ready": bool(aurora_execution["reference_output_ready"]),
+        "aurora_reference_execution_status": str(aurora_execution["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -254,6 +282,10 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- DREAM settings deck generated: `{report['dream_settings_deck_generated']}`",
         f"- DREAM reference output ready: `{report['dream_reference_output_ready']}`",
         f"- DREAM execution status: `{report['dream_reference_execution_status']}`",
+        f"- Aurora execution report: `{report['aurora_reference_execution_report']}`",
+        f"- Aurora artifact generated: `{report['aurora_reference_artifact_generated']}`",
+        f"- Aurora reference output ready: `{report['aurora_reference_output_ready']}`",
+        f"- Aurora execution status: `{report['aurora_reference_execution_status']}`",
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

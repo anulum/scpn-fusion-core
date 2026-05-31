@@ -202,6 +202,13 @@ required full manifest observables and same-case native solver-output
 comparisons. They are retained as provenance-backed public outputs and
 conversion smoke tests, not as acceptance evidence.
 
+The Aurora execution lane is tracked in
+[`validation/reports/aurora_reference_execution_artifact.md`](../validation/reports/aurora_reference_execution_artifact.md).
+It runs the cached Aurora/Open-ADAS argon atomic-data path and exports
+`validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.npz`
+with source-data checksums and metadata. This is an ADAS-backed fractional
+abundance artifact, not a full Aurora/STRAHL radial transport parity result.
+
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
 It generates the public `examples/2kinetic/dream_settings.h5` deck from the
@@ -791,8 +798,11 @@ The native impurity surface now exports an Aurora/STRAHL-style
 density closure, line-radiation power, and finite ionisation/recombination
 source-sink matrices. The charge-state CR step is pairwise conservative and
 uses deterministic ADAS-style coefficient tables for ingestion-shape testing;
-public Aurora/STRAHL decks and licensed ADAS/Open-ADAS coefficient parity are
-still required before full collisional-operator parity can pass.
+an upstream Aurora/Open-ADAS argon fractional-abundance artifact is also
+tracked for public atomic-data provenance. Public Aurora/STRAHL radial
+transport decks, radiation outputs, source/sink matrices, and same-case native
+comparisons are still required before full collisional-operator parity can
+pass.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.

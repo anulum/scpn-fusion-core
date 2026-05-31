@@ -10,6 +10,12 @@
 
 ## [Unreleased]
 
+- Added an Aurora/Open-ADAS reference execution harness that generates a
+  checksummed argon charge-state fractional-abundance artifact with ADAS source
+  checksums and keeps Aurora/STRAHL transport parity fail-closed until radial
+  transport, radiation, source/sink conservation, and native same-case
+  comparisons exist.
+
 - Added a DREAM public reference execution harness that generates the upstream
   `examples/2kinetic` settings deck, records source/deck checksums, and reports
   the exact PETSc/`dreami` backend blocker needed before DREAM output can be

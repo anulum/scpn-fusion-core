@@ -3,6 +3,10 @@
   "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
   "accepted_public_reference_artifacts": 0,
   "all_locally_actionable_contracts_ready": true,
+  "aurora_reference_artifact_generated": false,
+  "aurora_reference_execution_report": "validation/reports/aurora_reference_execution_artifact.json",
+  "aurora_reference_execution_status": "blocked_aurora_reference_artifact_generation_failed",
+  "aurora_reference_output_ready": false,
   "benchmark": "full_fidelity_end_to_end_campaign",
   "description": "Integrated fail-closed campaign covering GK, EM, production-scale runtime, DREAM, Aurora/STRAHL, and free-boundary blockers.",
   "dream_reference_execution_report": "validation/reports/dream_reference_execution_request.json",
@@ -158,10 +162,11 @@
       "lane": "aurora_strahl_grade_impurities",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "public Aurora/STRAHL artifact ingestion and production parity",
-        "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
-        "validated charge-state transport, recycling, and radiation operators against Aurora/STRAHL",
-        "charge-state density, total-density, and radiation RMSE thresholds against public outputs"
+        "charge-state-resolved radial transport run with Aurora or STRAHL",
+        "finite ionisation/recombination/source/sink matrix conservation evidence",
+        "line-radiation and total radiated-power observables on the same case",
+        "native same-case impurity solver-output comparison",
+        "quantitative parity thresholds against public Aurora/STRAHL output"
       ],
       "reference_cases_ready": false,
       "sources": [

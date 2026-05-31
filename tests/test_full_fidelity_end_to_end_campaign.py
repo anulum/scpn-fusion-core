@@ -26,6 +26,11 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     )
     assert report["dream_settings_deck_generated"] is True
     assert report["dream_reference_output_ready"] is False
+    assert (
+        report["aurora_reference_execution_report"]
+        == "validation/reports/aurora_reference_execution_artifact.json"
+    )
+    assert report["aurora_reference_artifact_generated"] in {True, False}
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {
