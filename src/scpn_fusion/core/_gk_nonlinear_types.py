@@ -99,6 +99,8 @@ class NonlinearGKResult:
     chi_i_gB: float = 0.0
     Q_i_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     Q_e_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    Q_i_kxky_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    Q_e_kxky_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     phi_rms_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     zonal_rms_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     particle_free_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))

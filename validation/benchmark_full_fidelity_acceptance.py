@@ -427,6 +427,7 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "electromagnetic_b_parallel_hamiltonian_coupling": cfg.electromagnetic,
         "electromagnetic_field_energy_accounting": cfg.electromagnetic,
         "electromagnetic_energy_history_export": cfg.electromagnetic,
+        "heat_flux_spectrum_history_export": True,
         "five_dimensional_delta_f_state": cfg.n_kx > 1
         and cfg.n_ky > 1
         and cfg.n_theta > 1

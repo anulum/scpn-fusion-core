@@ -108,8 +108,10 @@ class NonlinearGKTimeMixin:
         dt_cfl = c.cfl_factor / max(v_exb + v_par_eff + v_hyper, 1e-30)
         return float(min(dt_cfl, c.dt))
 
-    def compute_fluxes(self, state: NonlinearGKState) -> tuple[float, float]:
-        """Ion and electron heat flux in gyro-Bohm units."""
+    def heat_flux_spectra(
+        self, state: NonlinearGKState
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Ion and electron heat-flux spectra over the retained kx/ky grid."""
         phi = state.phi
 
         vpar2 = self.vpar[None, None, None, :, None] ** 2
@@ -119,15 +121,29 @@ class NonlinearGKTimeMixin:
         ky_pos = self.ky > 1e-10
         ky_vals = self.ky[ky_pos]
 
-        def heat_flux(f_s: NDArray[np.complex128]) -> float:
+        def heat_flux_spectrum(f_s: NDArray[np.complex128]) -> NDArray[np.float64]:
             pressure = np.sum(energy * f_s, axis=(-2, -1)) * self.dvpar * self.dmu
-            flux_k = (
-                1j * ky_vals[None, :, None] * np.conj(phi[:, ky_pos, :]) * pressure[:, ky_pos, :]
-            )
-            return float(np.real(np.sum(flux_k)))
+            spectrum = np.zeros((self.cfg.n_kx, self.cfg.n_ky), dtype=np.float64)
+            if ky_vals.size:
+                flux_k = (
+                    1j
+                    * ky_vals[None, :, None]
+                    * np.conj(phi[:, ky_pos, :])
+                    * pressure[:, ky_pos, :]
+                )
+                spectrum[:, ky_pos] = np.real(np.sum(flux_k, axis=-1))
+            return spectrum
 
-        Q_i = heat_flux(state.f[0])
-        Q_e = heat_flux(state.f[1]) if self.cfg.kinetic_electrons else 0.5 * Q_i
+        Q_i_kxky = heat_flux_spectrum(state.f[0])
+        Q_e_kxky = heat_flux_spectrum(state.f[1]) if self.cfg.kinetic_electrons else 0.5 * Q_i_kxky
+        return Q_i_kxky, Q_e_kxky
+
+    def compute_fluxes(self, state: NonlinearGKState) -> tuple[float, float]:
+        """Ion and electron heat flux in gyro-Bohm units."""
+        Q_i_kxky, Q_e_kxky = self.heat_flux_spectra(state)
+        Q_i = float(np.sum(Q_i_kxky))
+        Q_e = float(np.sum(Q_e_kxky))
+
         return Q_i, Q_e
 
     def phi_rms(self, state: NonlinearGKState) -> float:
@@ -260,6 +276,8 @@ class NonlinearGKTimeMixin:
         n_saves = c.n_steps // c.save_interval + 1
         Q_i_t: NDArray[np.float64] = np.zeros(n_saves)
         Q_e_t: NDArray[np.float64] = np.zeros(n_saves)
+        Q_i_kxky_t: NDArray[np.float64] = np.zeros((n_saves, c.n_kx, c.n_ky))
+        Q_e_kxky_t: NDArray[np.float64] = np.zeros((n_saves, c.n_kx, c.n_ky))
         phi_rms_t: NDArray[np.float64] = np.zeros(n_saves)
         zonal_rms_t: NDArray[np.float64] = np.zeros(n_saves)
         particle_free_energy_t: NDArray[np.float64] = np.zeros(n_saves)
@@ -283,9 +301,13 @@ class NonlinearGKTimeMixin:
                 break
 
             if step % c.save_interval == 0 and save_idx < n_saves:
-                Q_i, Q_e = self.compute_fluxes(state)
+                Q_i_kxky, Q_e_kxky = self.heat_flux_spectra(state)
+                Q_i = float(np.sum(Q_i_kxky))
+                Q_e = float(np.sum(Q_e_kxky))
                 Q_i_t[save_idx] = Q_i
                 Q_e_t[save_idx] = Q_e
+                Q_i_kxky_t[save_idx] = Q_i_kxky
+                Q_e_kxky_t[save_idx] = Q_e_kxky
                 phi_rms_t[save_idx] = self.phi_rms(state)
                 zonal_rms_t[save_idx] = self.zonal_rms(state)
                 particle_energy = self.particle_free_energy(state)
@@ -307,6 +329,8 @@ class NonlinearGKTimeMixin:
 
         Q_i_t = np.asarray(Q_i_t[:save_idx], dtype=np.float64)
         Q_e_t = np.asarray(Q_e_t[:save_idx], dtype=np.float64)
+        Q_i_kxky_t = np.asarray(Q_i_kxky_t[:save_idx], dtype=np.float64)
+        Q_e_kxky_t = np.asarray(Q_e_kxky_t[:save_idx], dtype=np.float64)
         phi_rms_t = np.asarray(phi_rms_t[:save_idx], dtype=np.float64)
         zonal_rms_t = np.asarray(zonal_rms_t[:save_idx], dtype=np.float64)
         particle_free_energy_t = np.asarray(particle_free_energy_t[:save_idx], dtype=np.float64)
@@ -340,6 +364,8 @@ class NonlinearGKTimeMixin:
             chi_i_gB=chi_i_gB,
             Q_i_t=Q_i_t,
             Q_e_t=Q_e_t,
+            Q_i_kxky_t=Q_i_kxky_t,
+            Q_e_kxky_t=Q_e_kxky_t,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
             particle_free_energy_t=particle_free_energy_t,

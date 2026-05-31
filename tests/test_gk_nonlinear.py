@@ -315,6 +315,37 @@ class TestEnergyConservation:
             + result.B_parallel_energy_t,
         )
 
+    def test_heat_flux_spectra_close_scalar_fluxes(self):
+        cfg = NonlinearGKConfig(
+            n_kx=6,
+            n_ky=6,
+            n_theta=8,
+            n_vpar=5,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            dt=0.005,
+            n_steps=3,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-5, seed=47)
+
+        Q_i, Q_e = solver.compute_fluxes(state)
+        Q_i_kxky, Q_e_kxky = solver.heat_flux_spectra(state)
+
+        assert Q_i_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        assert Q_e_kxky.shape == (cfg.n_kx, cfg.n_ky)
+        np.testing.assert_allclose(np.sum(Q_i_kxky), Q_i)
+        np.testing.assert_allclose(np.sum(Q_e_kxky), Q_e)
+
+        result = solver.run(state)
+        assert result.Q_i_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.Q_e_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        np.testing.assert_allclose(np.sum(result.Q_i_kxky_t, axis=(1, 2)), result.Q_i_t)
+        np.testing.assert_allclose(np.sum(result.Q_e_kxky_t, axis=(1, 2)), result.Q_e_t)
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
@@ -800,6 +831,10 @@ class TestJaxFallback:
         assert result.nonlinear_invariant_pass_t.dtype == np.bool_
         assert np.all(np.isfinite(result.total_energy_t))
         assert np.all(np.isfinite(result.exb_relative_free_energy_production_t))
+        assert result.Q_i_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        assert result.Q_e_kxky_t.shape == (result.time.size, cfg.n_kx, cfg.n_ky)
+        np.testing.assert_allclose(np.sum(result.Q_i_kxky_t, axis=(1, 2)), result.Q_i_t)
+        np.testing.assert_allclose(np.sum(result.Q_e_kxky_t, axis=(1, 2)), result.Q_e_t)
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available

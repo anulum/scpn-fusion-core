@@ -402,6 +402,8 @@ class JaxNonlinearGKSolver:
         n_saves = c.n_steps // c.save_interval + 1
         Q_i_list = []
         Q_e_list = []
+        Q_i_kxky_list = []
+        Q_e_kxky_list = []
         phi_rms_list = []
         zonal_rms_list = []
         particle_free_energy_list = []
@@ -442,12 +444,16 @@ class JaxNonlinearGKSolver:
                 np_state = NonlinearGKState(
                     f=f_np, phi=phi_np, time=float(t), A_par=a_par_np, B_par=b_par_np
                 )
-                Q_i, Q_e = self._np_solver.compute_fluxes(np_state)
+                Q_i_kxky, Q_e_kxky = self._np_solver.heat_flux_spectra(np_state)
+                Q_i = float(np.sum(Q_i_kxky))
+                Q_e = float(np.sum(Q_e_kxky))
                 particle_energy = self._np_solver.particle_free_energy(np_state)
                 field_energy = self._np_solver.field_energy(np_state)
                 invariant = self.nonlinear_invariant_diagnostics(np_state)
                 Q_i_list.append(Q_i)
                 Q_e_list.append(Q_e)
+                Q_i_kxky_list.append(Q_i_kxky)
+                Q_e_kxky_list.append(Q_e_kxky)
                 phi_rms_list.append(self._np_solver.phi_rms(np_state))
                 zonal_rms_list.append(self._np_solver.zonal_rms(np_state))
                 particle_free_energy_list.append(particle_energy)
@@ -465,6 +471,8 @@ class JaxNonlinearGKSolver:
 
         Q_i_t = np.array(Q_i_list)
         Q_e_t = np.array(Q_e_list)
+        Q_i_kxky_t = np.asarray(Q_i_kxky_list, dtype=np.float64)
+        Q_e_kxky_t = np.asarray(Q_e_kxky_list, dtype=np.float64)
         phi_rms_t = np.array(phi_rms_list)
         zonal_rms_t = np.array(zonal_rms_list)
         particle_free_energy_t = np.asarray(particle_free_energy_list, dtype=np.float64)
@@ -497,6 +505,8 @@ class JaxNonlinearGKSolver:
             chi_i_gB=chi_i_gB,
             Q_i_t=Q_i_t,
             Q_e_t=Q_e_t,
+            Q_i_kxky_t=Q_i_kxky_t,
+            Q_e_kxky_t=Q_e_kxky_t,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
             particle_free_energy_t=particle_free_energy_t,
