@@ -15,7 +15,9 @@
     "observable arrays are numeric, finite, non-empty, and satisfy declared minimum rank",
     "thresholds is non-empty",
     "thresholds are finite non-negative scalar values",
-    "every threshold has an explicit metric, observable, and comparator contract"
+    "every threshold has an explicit metric, observable, and comparator contract",
+    "threshold contract observables are declared in required_observables",
+    "threshold contract metrics use supported quantitative metric families"
   ],
   "required_case_fields": [
     "case_id",

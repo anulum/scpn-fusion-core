@@ -118,7 +118,7 @@ def _observable_readiness(path: Path | None, observables: Any, contracts: Any) -
     }
 
 
-def _threshold_readiness(thresholds: Any, contracts: Any) -> dict[str, Any]:
+def _threshold_readiness(thresholds: Any, contracts: Any, observables: Any) -> dict[str, Any]:
     """Return quantitative parity-threshold value and comparator readiness."""
     if not isinstance(thresholds, dict) or not thresholds:
         return {
@@ -130,9 +130,11 @@ def _threshold_readiness(thresholds: Any, contracts: Any) -> dict[str, Any]:
         }
 
     contract_map = contracts if isinstance(contracts, dict) else {}
+    observable_names = set(observables) if isinstance(observables, list) else set()
     invalid = []
     missing_contracts = []
     allowed_comparators = {"<=", ">="}
+    allowed_metrics = {"absolute_error", "relative_error", "relative_l2"}
     for name, value in thresholds.items():
         try:
             scalar = float(value)
@@ -151,10 +153,16 @@ def _threshold_readiness(thresholds: Any, contracts: Any) -> dict[str, Any]:
         comparator = contract.get("comparator")
         if comparator not in allowed_comparators:
             invalid.append({"threshold": name, "reason": "unsupported_comparator"})
-        if not contract.get("metric"):
+        metric = contract.get("metric")
+        if not metric:
             invalid.append({"threshold": name, "reason": "missing_metric"})
-        if not contract.get("observable"):
+        elif metric not in allowed_metrics:
+            invalid.append({"threshold": name, "reason": "unsupported_metric"})
+        observable = contract.get("observable")
+        if not observable:
             invalid.append({"threshold": name, "reason": "missing_observable"})
+        elif observable not in observable_names:
+            invalid.append({"threshold": name, "reason": "observable_not_required"})
 
     values_ready = not invalid
     contracts_ready = not missing_contracts
@@ -199,7 +207,7 @@ def _reference_readiness(
         )
         observable_report = _observable_readiness(artifact_path, observables, observable_contracts)
         threshold_contracts = case.get("threshold_contracts")
-        threshold_report = _threshold_readiness(thresholds, threshold_contracts)
+        threshold_report = _threshold_readiness(thresholds, threshold_contracts, observables)
         status = case.get("status")
         status_ready = status == "available"
         status_known = status in allowed_statuses
