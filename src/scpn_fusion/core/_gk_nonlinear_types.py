@@ -101,6 +101,11 @@ class NonlinearGKResult:
     Q_e_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     phi_rms_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     zonal_rms_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    particle_free_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    phi_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    A_parallel_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    B_parallel_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
+    total_energy_t: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     time: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     converged: bool = False
     final_state: NonlinearGKState | None = None

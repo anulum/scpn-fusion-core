@@ -758,9 +758,10 @@ electromagnetic state contract now carries `phi`, `A_parallel`, and
 `B_parallel` field components, and `B_parallel` now enters the Hamiltonian
 gradient drive through the magnetic-moment compression term. The energy
 diagnostics now account for particle free energy and electromagnetic field
-energy separately before reporting total energy. This is necessary
-infrastructure for full nonlinear 5D parity, but it is not sufficient to claim
-GENE/CGYRO/GS2 equivalence.
+energy separately before reporting total energy, and `run()` exports particle,
+`phi`, `A_parallel`, `B_parallel`, and total-energy histories for saturation
+and invariant analysis. This is necessary infrastructure for full nonlinear 5D
+parity, but it is not sufficient to claim GENE/CGYRO/GS2 equivalence.
 
 The current report is
 `validation/reports/full_fidelity_acceptance_benchmark.md`. Required public

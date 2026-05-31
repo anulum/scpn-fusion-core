@@ -262,6 +262,11 @@ class NonlinearGKTimeMixin:
         Q_e_t: NDArray[np.float64] = np.zeros(n_saves)
         phi_rms_t: NDArray[np.float64] = np.zeros(n_saves)
         zonal_rms_t: NDArray[np.float64] = np.zeros(n_saves)
+        particle_free_energy_t: NDArray[np.float64] = np.zeros(n_saves)
+        phi_energy_t: NDArray[np.float64] = np.zeros(n_saves)
+        A_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
+        B_parallel_energy_t: NDArray[np.float64] = np.zeros(n_saves)
+        total_energy_t: NDArray[np.float64] = np.zeros(n_saves)
         time_t: NDArray[np.float64] = np.zeros(n_saves)
         save_idx = 0
 
@@ -279,6 +284,13 @@ class NonlinearGKTimeMixin:
                 Q_e_t[save_idx] = Q_e
                 phi_rms_t[save_idx] = self.phi_rms(state)
                 zonal_rms_t[save_idx] = self.zonal_rms(state)
+                particle_energy = self.particle_free_energy(state)
+                field_energy = self.field_energy(state)
+                particle_free_energy_t[save_idx] = particle_energy
+                phi_energy_t[save_idx] = field_energy.phi
+                A_parallel_energy_t[save_idx] = field_energy.A_parallel
+                B_parallel_energy_t[save_idx] = field_energy.B_parallel
+                total_energy_t[save_idx] = particle_energy + field_energy.total
                 time_t[save_idx] = state.time
                 save_idx += 1
 
@@ -286,6 +298,11 @@ class NonlinearGKTimeMixin:
         Q_e_t = np.asarray(Q_e_t[:save_idx], dtype=np.float64)
         phi_rms_t = np.asarray(phi_rms_t[:save_idx], dtype=np.float64)
         zonal_rms_t = np.asarray(zonal_rms_t[:save_idx], dtype=np.float64)
+        particle_free_energy_t = np.asarray(particle_free_energy_t[:save_idx], dtype=np.float64)
+        phi_energy_t = np.asarray(phi_energy_t[:save_idx], dtype=np.float64)
+        A_parallel_energy_t = np.asarray(A_parallel_energy_t[:save_idx], dtype=np.float64)
+        B_parallel_energy_t = np.asarray(B_parallel_energy_t[:save_idx], dtype=np.float64)
+        total_energy_t = np.asarray(total_energy_t[:save_idx], dtype=np.float64)
         time_t = np.asarray(time_t[:save_idx], dtype=np.float64)
 
         n_half = max(len(Q_i_t) // 2, 1)
@@ -302,6 +319,11 @@ class NonlinearGKTimeMixin:
             Q_e_t=Q_e_t,
             phi_rms_t=phi_rms_t,
             zonal_rms_t=zonal_rms_t,
+            particle_free_energy_t=particle_free_energy_t,
+            phi_energy_t=phi_energy_t,
+            A_parallel_energy_t=A_parallel_energy_t,
+            B_parallel_energy_t=B_parallel_energy_t,
+            total_energy_t=total_energy_t,
             time=time_t,
             converged=converged,
             final_state=state,

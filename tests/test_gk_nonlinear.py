@@ -282,6 +282,39 @@ class TestEnergyConservation:
 
         assert solver.total_energy(state) == particle + field.total
 
+    def test_run_exports_particle_and_electromagnetic_energy_histories(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=6,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            dt=0.01,
+            n_steps=4,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+
+        result = solver.run(solver.init_state(amplitude=1e-5, seed=37))
+
+        assert result.particle_free_energy_t.shape == result.time.shape
+        assert result.phi_energy_t.shape == result.time.shape
+        assert result.A_parallel_energy_t.shape == result.time.shape
+        assert result.B_parallel_energy_t.shape == result.time.shape
+        assert result.total_energy_t.shape == result.time.shape
+        assert np.all(np.isfinite(result.total_energy_t))
+        np.testing.assert_allclose(
+            result.total_energy_t,
+            result.particle_free_energy_t
+            + result.phi_energy_t
+            + result.A_parallel_energy_t
+            + result.B_parallel_energy_t,
+        )
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
