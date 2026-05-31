@@ -12,15 +12,14 @@
   ],
   "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
   "missing_required_observables": [
-    "converged FreeGS/FreeGSNKE public nonlinear equilibrium output",
-    "native same-case free-boundary profile-source reconstruction",
-    "psi_N RMSE threshold against external output",
+    "native same-case free-boundary profile-source reconstruction against finite external FreeGS psi output",
+    "native-vs-FreeGS psi_N RMSE threshold",
     "axis/X-point/boundary containment and q-profile thresholds",
     "grid convergence across public example resolutions"
   ],
   "redistribution_license": "FreeGS LGPL-3.0-or-later",
   "reference_family": "FreeGS",
-  "sha256": "dc810ca195e3475ace966aa97bbe461f7fc0b8ff7760fabf846cd5af2b51f974",
+  "sha256": "7a78897ca9e327845764b393f532a03ae8ffbad338e83596e7f1c05d9fcc8e50",
   "solver_output_comparison_ready": false,
   "solver_output_comparison_status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "surface": "free_boundary_equilibrium"

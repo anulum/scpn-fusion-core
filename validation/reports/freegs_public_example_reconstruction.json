@@ -15,14 +15,13 @@
       },
       "machine_class": "TestTokamak",
       "missing_full_fidelity_requirements": [
-        "converged FreeGS/FreeGSNKE same-case nonlinear solve",
         "native profile-source/free-boundary solve using same coil currents and profiles",
-        "psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
+        "native-vs-FreeGS psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
         "grid-convergence evidence for the public example"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 4.635164284962229,
+        "elapsed_s": 5.335473036044277,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -37,7 +36,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.9994963289937004,
+          "elapsed_s": 1.039693082915619,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -47,7 +46,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 4.635164284962229,
+          "elapsed_s": 5.335473036044277,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -165,14 +164,13 @@
       },
       "machine_class": "DIIID",
       "missing_full_fidelity_requirements": [
-        "converged FreeGS/FreeGSNKE same-case nonlinear solve",
         "native profile-source/free-boundary solve using same coil currents and profiles",
-        "psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
+        "native-vs-FreeGS psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
         "grid-convergence evidence for the public example"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 8.382401398033835,
+        "elapsed_s": 12.463782178005204,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -187,7 +185,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.792878063977696,
+          "elapsed_s": 2.3911918740486726,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -197,7 +195,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 8.382401398033835,
+          "elapsed_s": 12.463782178005204,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -422,15 +420,14 @@
   "freegs_version": "0.8.2",
   "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
   "missing_full_fidelity_requirements": [
-    "converged FreeGS/FreeGSNKE public nonlinear equilibrium output",
-    "native same-case free-boundary profile-source reconstruction",
-    "psi_N RMSE threshold against external output",
+    "native same-case free-boundary profile-source reconstruction against finite external FreeGS psi output",
+    "native-vs-FreeGS psi_N RMSE threshold",
     "axis/X-point/boundary containment and q-profile thresholds",
     "grid convergence across public example resolutions"
   ],
   "reference_output_ready": false,
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "dc810ca195e3475ace966aa97bbe461f7fc0b8ff7760fabf846cd5af2b51f974",
+  "sha256": "7a78897ca9e327845764b393f532a03ae8ffbad338e83596e7f1c05d9fcc8e50",
   "status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "vacuum_comparison_pass": true
 }

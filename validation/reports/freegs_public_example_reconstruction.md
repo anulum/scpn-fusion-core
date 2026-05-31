@@ -22,8 +22,7 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 
 ## Missing full-fidelity requirements
 
-- converged FreeGS/FreeGSNKE public nonlinear equilibrium output
-- native same-case free-boundary profile-source reconstruction
-- psi_N RMSE threshold against external output
+- native same-case free-boundary profile-source reconstruction against finite external FreeGS psi output
+- native-vs-FreeGS psi_N RMSE threshold
 - axis/X-point/boundary containment and q-profile thresholds
 - grid convergence across public example resolutions

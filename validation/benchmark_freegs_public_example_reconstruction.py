@@ -382,9 +382,8 @@ def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str,
         "grid": {"nx": spec.nx, "ny": spec.ny},
         "machine_class": spec.machine_class,
         "missing_full_fidelity_requirements": [
-            "converged FreeGS/FreeGSNKE same-case nonlinear solve",
             "native profile-source/free-boundary solve using same coil currents and profiles",
-            "psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
+            "native-vs-FreeGS psi_N RMSE, axis, X-point, boundary-containment, and q-profile thresholds",
             "grid-convergence evidence for the public example",
         ],
         "external_nonlinear_output_ready": solve_sweep["external_nonlinear_output_ready"],
@@ -461,9 +460,8 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
             cases.append(_case_record(freegs, spec))
     backend_available = freegs is not None
     missing_requirements = [
-        "converged FreeGS/FreeGSNKE public nonlinear equilibrium output",
-        "native same-case free-boundary profile-source reconstruction",
-        "psi_N RMSE threshold against external output",
+        "native same-case free-boundary profile-source reconstruction against finite external FreeGS psi output",
+        "native-vs-FreeGS psi_N RMSE threshold",
         "axis/X-point/boundary containment and q-profile thresholds",
         "grid convergence across public example resolutions",
     ]
