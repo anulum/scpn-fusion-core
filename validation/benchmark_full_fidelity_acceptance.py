@@ -175,6 +175,72 @@ def _threshold_readiness(thresholds: Any, contracts: Any, observables: Any) -> d
     }
 
 
+def _coordinate_readiness(path: Path | None, contracts: Any) -> dict[str, Any]:
+    """Return coordinate/grid axis presence and payload validity for JSON/NPZ artefacts."""
+    contract_map = contracts if isinstance(contracts, dict) else {}
+    required = list(contract_map)
+    if path is None or not path.exists() or not required:
+        return {
+            "ready": False,
+            "present": [],
+            "missing": required,
+            "invalid": [],
+        }
+
+    data: dict[str, Any]
+    if path.suffix == ".json":
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            coordinates = payload.get("coordinates", {})
+            data = coordinates if isinstance(coordinates, dict) else {}
+        else:
+            data = {}
+    elif path.suffix == ".npz":
+        with np.load(path, allow_pickle=False) as payload:
+            data = {name: payload[name] for name in payload.files}
+    else:
+        data = {}
+
+    keys = set(data)
+    present = [name for name in required if name in keys]
+    missing = [name for name in required if name not in keys]
+    invalid = []
+    for name in present:
+        contract = contract_map[name]
+        try:
+            axis = np.asarray(data[name], dtype=float)
+        except (TypeError, ValueError):
+            invalid.append({"coordinate": name, "reason": "not_numeric"})
+            continue
+        min_length = int(contract.get("min_length", 1))
+        if axis.size < min_length:
+            invalid.append(
+                {
+                    "coordinate": name,
+                    "reason": "below_min_length",
+                    "length": int(axis.size),
+                    "min_length": min_length,
+                }
+            )
+        elif axis.ndim != 1:
+            invalid.append({"coordinate": name, "reason": "not_one_dimensional"})
+        elif not bool(np.all(np.isfinite(axis))):
+            invalid.append({"coordinate": name, "reason": "non_finite"})
+        elif bool(contract.get("strictly_increasing", False)) and not bool(
+            np.all(np.diff(axis) > 0.0)
+        ):
+            invalid.append({"coordinate": name, "reason": "not_strictly_increasing"})
+        if not contract.get("units"):
+            invalid.append({"coordinate": name, "reason": "missing_units"})
+
+    return {
+        "ready": not missing and not invalid,
+        "present": present,
+        "missing": missing,
+        "invalid": invalid,
+    }
+
+
 def _reference_readiness(
     surface: str, manifest: dict[str, Any], schema: dict[str, Any]
 ) -> dict[str, Any]:
@@ -206,6 +272,9 @@ def _reference_readiness(
             name in observable_contracts for name in (observables or [])
         )
         observable_report = _observable_readiness(artifact_path, observables, observable_contracts)
+        coordinate_contracts = case.get("coordinate_contracts")
+        coordinates_declared = isinstance(coordinate_contracts, dict) and bool(coordinate_contracts)
+        coordinate_report = _coordinate_readiness(artifact_path, coordinate_contracts)
         threshold_contracts = case.get("threshold_contracts")
         threshold_report = _threshold_readiness(thresholds, threshold_contracts, observables)
         status = case.get("status")
@@ -230,6 +299,8 @@ def _reference_readiness(
             and observables_declared
             and contracts_ready
             and observable_report["ready"]
+            and coordinates_declared
+            and coordinate_report["ready"]
             and threshold_ready
             and threshold_report["ready"]
         )
@@ -252,6 +323,11 @@ def _reference_readiness(
             "observable_keys_present": observable_report["present"],
             "observable_keys_missing": observable_report["missing"],
             "observable_payload_invalid": observable_report["invalid"],
+            "coordinates_declared": coordinates_declared,
+            "coordinate_keys_ready": coordinate_report["ready"],
+            "coordinate_keys_present": coordinate_report["present"],
+            "coordinate_keys_missing": coordinate_report["missing"],
+            "coordinate_payload_invalid": coordinate_report["invalid"],
             "threshold_ready": threshold_ready,
             "threshold_values_ready": threshold_report["values_ready"],
             "threshold_contracts_ready": threshold_report["contracts_ready"],

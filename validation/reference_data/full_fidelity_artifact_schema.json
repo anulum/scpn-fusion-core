@@ -13,6 +13,9 @@
     "required_observables is non-empty",
     "all required_observables exist as top-level NPZ keys or JSON observables keys",
     "observable arrays are numeric, finite, non-empty, and satisfy declared minimum rank",
+    "coordinate_contracts is non-empty",
+    "all coordinate_contracts exist as top-level NPZ keys or JSON coordinates keys",
+    "coordinate arrays are one-dimensional, numeric, finite, unit-labelled, and satisfy declared length/monotonicity contracts",
     "thresholds is non-empty",
     "thresholds are finite non-negative scalar values",
     "every threshold has an explicit metric, observable, and comparator contract",
@@ -30,6 +33,7 @@
     "required_observables",
     "thresholds",
     "threshold_contracts",
+    "coordinate_contracts",
     "observable_contracts"
   ],
   "schema": "full-fidelity-artifact-schema.v1",

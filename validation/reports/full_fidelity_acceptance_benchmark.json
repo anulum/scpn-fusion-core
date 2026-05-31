@@ -31,6 +31,18 @@
             "artifact_format_ready": false,
             "artifact_path": null,
             "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
+            "coordinate_keys_missing": [
+              "kx_rhos",
+              "ky_rhos",
+              "mu_normalized",
+              "theta_rad",
+              "time_s",
+              "vpar_vth"
+            ],
+            "coordinate_keys_present": [],
+            "coordinate_keys_ready": false,
+            "coordinate_payload_invalid": [],
+            "coordinates_declared": true,
             "missing_fields": [],
             "observable_contracts_ready": true,
             "observable_keys_missing": [
@@ -92,6 +104,16 @@
             "artifact_format_ready": false,
             "artifact_path": null,
             "case_id": "dream_kinetic_hot_tail_avalanche_public",
+            "coordinate_keys_missing": [
+              "momentum_mec",
+              "pitch_cosine",
+              "radius_m",
+              "time_s"
+            ],
+            "coordinate_keys_present": [],
+            "coordinate_keys_ready": false,
+            "coordinate_payload_invalid": [],
+            "coordinates_declared": true,
             "missing_fields": [],
             "observable_contracts_ready": true,
             "observable_keys_missing": [
@@ -152,6 +174,15 @@
             "artifact_format_ready": false,
             "artifact_path": null,
             "case_id": "aurora_strahl_charge_state_transport_public",
+            "coordinate_keys_missing": [
+              "charge_state",
+              "radius_m",
+              "time_s"
+            ],
+            "coordinate_keys_present": [],
+            "coordinate_keys_ready": false,
+            "coordinate_payload_invalid": [],
+            "coordinates_declared": true,
             "missing_fields": [],
             "observable_contracts_ready": true,
             "observable_keys_missing": [

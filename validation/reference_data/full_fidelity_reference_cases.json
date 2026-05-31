@@ -7,6 +7,23 @@
         {
           "artifact_path": null,
           "case_id": "aurora_strahl_charge_state_transport_public",
+          "coordinate_contracts": {
+            "charge_state": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "integer_charge"
+            },
+            "radius_m": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "m"
+            },
+            "time_s": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "s"
+            }
+          },
           "observable_contracts": {
             "charge_state_density_r_t": {
               "finite": true,
@@ -88,6 +105,38 @@
         {
           "artifact_path": null,
           "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
+          "coordinate_contracts": {
+            "kx_rhos": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "rho_s^-1"
+            },
+            "ky_rhos": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "rho_s^-1"
+            },
+            "mu_normalized": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "dimensionless"
+            },
+            "theta_rad": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "rad"
+            },
+            "time_s": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "s"
+            },
+            "vpar_vth": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "v_th"
+            }
+          },
           "observable_contracts": {
             "electromagnetic_apar_energy": {
               "finite": true,
@@ -169,6 +218,28 @@
         {
           "artifact_path": null,
           "case_id": "dream_kinetic_hot_tail_avalanche_public",
+          "coordinate_contracts": {
+            "momentum_mec": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "m_e_c"
+            },
+            "pitch_cosine": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "dimensionless"
+            },
+            "radius_m": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "m"
+            },
+            "time_s": {
+              "min_length": 2,
+              "strictly_increasing": true,
+              "units": "s"
+            }
+          },
           "observable_contracts": {
             "avalanche_growth_rate_t": {
               "finite": true,
