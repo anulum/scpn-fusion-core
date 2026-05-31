@@ -19,7 +19,7 @@
   ],
   "redistribution_license": "FreeGS LGPL-3.0-or-later",
   "reference_family": "FreeGS",
-  "sha256": "37cb6f93a10ef06a79bada427cf5d4cb07184ed23057f5685fb309050d6f74f5",
+  "sha256": "d77238d3041c2b51de6e70b305bf3058bbc0f7c5171af37a26bd56dc26c580bd",
   "solver_output_comparison_ready": false,
   "solver_output_comparison_status": "blocked_public_freegs_external_psi_ready_missing_native_same_case_comparison",
   "surface": "free_boundary_equilibrium"

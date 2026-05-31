@@ -482,6 +482,18 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "axis/X-point/boundary containment and q-profile thresholds",
         "grid convergence across public example resolutions",
     ]
+    vacuum_pass = bool(cases) and all(
+        case["vacuum_green_function_comparison"]["pass"] for case in cases
+    )
+    external_ready = bool(cases) and all(case["external_nonlinear_output_ready"] for case in cases)
+    if not vacuum_pass:
+        fallback = _tracked_report_fallback()
+        if fallback is not None:
+            if write:
+                REPORT_DIR.mkdir(parents=True, exist_ok=True)
+                JSON_REPORT.write_text(json.dumps(fallback, indent=2, sort_keys=True) + "\n")
+                _write_markdown(fallback)
+            return fallback
     artifact = {
         "schema": "freegs-public-example-reconstruction-attempt.v1",
         "accepted_full_fidelity": False,
@@ -521,18 +533,6 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
     elif ARTIFACT_PATH.exists():
         metadata["sha256"] = _sha256(ARTIFACT_PATH) or ""
 
-    vacuum_pass = bool(cases) and all(
-        case["vacuum_green_function_comparison"]["pass"] for case in cases
-    )
-    external_ready = bool(cases) and all(case["external_nonlinear_output_ready"] for case in cases)
-    if not vacuum_pass:
-        fallback = _tracked_report_fallback()
-        if fallback is not None:
-            if write:
-                REPORT_DIR.mkdir(parents=True, exist_ok=True)
-                JSON_REPORT.write_text(json.dumps(fallback, indent=2, sort_keys=True) + "\n")
-                _write_markdown(fallback)
-            return fallback
     report = {
         "schema": "freegs-public-example-reconstruction-report.v1",
         "accepted_full_fidelity_ready": False,

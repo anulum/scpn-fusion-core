@@ -19,7 +19,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 4.5308306500082836,
+        "elapsed_s": 4.607028448022902,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -34,7 +34,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.9915868770331144,
+          "elapsed_s": 0.8323354200692847,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -44,7 +44,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 4.5308306500082836,
+          "elapsed_s": 4.607028448022902,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -168,7 +168,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 7.012478230986744,
+        "elapsed_s": 8.394702908000909,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -183,7 +183,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.572259459993802,
+          "elapsed_s": 1.8435425739735365,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -193,7 +193,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 7.012478230986744,
+          "elapsed_s": 8.394702908000909,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,

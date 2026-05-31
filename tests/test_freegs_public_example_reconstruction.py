@@ -61,9 +61,11 @@ def test_freegs_reconstruction_preserves_tracked_report_when_backend_is_absent(
 ) -> None:
     monkeypatch.setattr(freegs_reconstruction, "_import_freegs", lambda: (None, None, "missing"))
 
-    report = run_benchmark(write=False)
+    report = run_benchmark(write=True)
 
     assert report["report_generation_mode"] == "tracked_report_fallback"
     assert report["case_count"] >= 1
     assert report["vacuum_comparison_pass"] is True
     assert report["external_nonlinear_output_ready"] is True
+    artifact = json.loads((ROOT / report["artifact_path"]).read_text(encoding="utf-8"))
+    assert artifact["freegs_backend_available"] is True
