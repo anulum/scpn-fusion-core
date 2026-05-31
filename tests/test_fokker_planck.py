@@ -8,7 +8,7 @@
 
 import numpy as np
 import pytest
-from scpn_fusion.control.fokker_planck_re import FokkerPlanckSolver
+from scpn_fusion.control.fokker_planck_re import DreamKineticArtifact, FokkerPlanckSolver
 
 
 def test_fokker_planck_initialization():
@@ -78,3 +78,64 @@ def test_fokker_planck_step_rejects_invalid_dt():
     solver = FokkerPlanckSolver()
     with pytest.raises(ValueError, match="dt"):
         solver.step(dt=0.0, E_field=10.0, n_e=5e19, T_e_eV=5000.0, Z_eff=1.0)
+
+
+def test_dream_kinetic_artifact_exports_radius_momentum_pitch_contract() -> None:
+    solver = FokkerPlanckSolver(np_grid=32, p_max=8.0)
+    solver.f[8] = 1.0e10
+
+    artifact = solver.run_dream_kinetic_artifact(
+        n_steps=3,
+        dt=1.0e-6,
+        e_field=10.0,
+        n_e=5.0e19,
+        t_e_ev=2500.0,
+        z_eff=2.0,
+        radius_m=[0.0, 0.5, 1.0],
+        pitch_cosine=[-1.0, 0.0, 1.0],
+    )
+
+    assert isinstance(artifact, DreamKineticArtifact)
+    payload = artifact.to_dict()
+    assert payload["schema"] == "dream-kinetic-artifact.v1"
+    assert payload["coordinate_units"] == {
+        "time_s": "s",
+        "radius_m": "m",
+        "momentum_mec": "m_e_c",
+        "pitch_cosine": "dimensionless",
+    }
+    assert payload["observable_axes"]["f_p_xi_t"] == [
+        "time_s",
+        "radius_m",
+        "momentum_mec",
+        "pitch_cosine",
+    ]
+    f = np.asarray(payload["observables"]["f_p_xi_t"], dtype=np.float64)
+    assert f.shape == (3, 3, 32, 3)
+    assert np.all(np.isfinite(f))
+    assert np.all(f >= 0.0)
+    for name in [
+        "runaway_current_t",
+        "avalanche_growth_rate_t",
+        "synchrotron_loss_power_t",
+        "partial_screening_drag_t",
+        "bremsstrahlung_loss_power_t",
+    ]:
+        arr = np.asarray(payload["observables"][name], dtype=np.float64)
+        assert arr.shape == (3, 3)
+        assert np.all(np.isfinite(arr))
+
+
+def test_dream_kinetic_artifact_rejects_invalid_axes() -> None:
+    solver = FokkerPlanckSolver(np_grid=32, p_max=8.0)
+    with pytest.raises(ValueError, match="pitch_cosine"):
+        solver.run_dream_kinetic_artifact(
+            n_steps=2,
+            dt=1.0e-6,
+            e_field=10.0,
+            n_e=5.0e19,
+            t_e_ev=2500.0,
+            z_eff=2.0,
+            radius_m=[0.0, 0.5, 1.0],
+            pitch_cosine=[-1.0, -1.0, 1.0],
+        )

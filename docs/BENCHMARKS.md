@@ -739,6 +739,14 @@ invariant histories plus zonal-flow energy histories so saturation windows can
 be audited against the same discrete nonlinear-operator contract used by the
 benchmark.
 
+The native runaway-electron surface now exports a DREAM-style
+`time_s x radius_m x momentum_mec x pitch_cosine` artifact contract from the
+1D momentum Fokker-Planck kernel, with `f_p_xi_t`, runaway-current,
+avalanche-growth, synchrotron-loss, partial-screening-drag, and bremsstrahlung
+observables. This is a reference-gate artifact contract only; it does not
+replace public DREAM deck ingestion or full momentum-pitch-radius kinetic
+operator parity.
+
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.
 
@@ -751,7 +759,8 @@ frontiers:
 - Nonlinear gyrokinetics must demonstrate public GENE/CGYRO/GS2 parity for a
   full nonlinear 5D Vlasov-Maxwell campaign.
 - Runaway electrons must demonstrate DREAM kinetic/fluid parity beyond the
-  current scalar balance and 1D momentum Fokker-Planck contracts.
+  current scalar balance, 1D momentum Fokker-Planck kernel, and
+  multidimensional DREAM-style artifact-export contract.
 - Impurity transport must demonstrate Aurora/STRAHL collisional-operator parity
   with charge-state-resolved conservation and public reference cases.
 

@@ -10,6 +10,12 @@
 
 ## [Unreleased]
 
+- Added Python and Rust DREAM-style runaway-electron kinetic artifact export
+  contracts over the native 1D momentum Fokker-Planck kernel, including
+  explicit time, radius, momentum, and pitch axes plus finite current,
+  avalanche-growth, synchrotron-loss, partial-screening-drag, and
+  bremsstrahlung observables while keeping public DREAM parity fail-closed.
+
 - Added a fail-closed EFIT/GEQDSK external-coil sidecar contract for
   free-boundary reconstruction readiness, including strict unit, finite-value,
   turn-count, current-limit, unique-name, provenance, schema, test, and report

@@ -51,7 +51,8 @@ def test_reduced_order_competitive_claims_disclose_actual_fidelity() -> None:
         "ELM model + RMP suppression": ("Peeling-ballooning proxy", "no nonlinear MHD"),
         "Runaway electron dynamics": (
             "DREAM-style fluid balance",
-            "no multidimensional DREAM kinetic-distribution parity",
+            "multidimensional artifact-export contract",
+            "no public DREAM kinetic-distribution parity",
         ),
         "Impurity transport (neoclassical)": (
             "Trace radial transport",

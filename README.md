@@ -48,7 +48,7 @@ facades and evidence-bounded validation reports.
 | Package version | 3.9.5 |
 | Public API exports | 2 |
 | Python capability source modules | 262 |
-| Python capability classes | 489 |
+| Python capability classes | 490 |
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
@@ -181,7 +181,7 @@ accepted artefacts must also satisfy
 | Free-boundary tracking | Direct kernel + supervisor; not EFIT/LiUQE-grade inverse reconstruction | N | N | N | N |
 | Disruption chain (TQ+CQ+RE+halo) | Reduced chain with 0D runaway rates | N | N | N | Y |
 | ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
-| Runaway electron dynamics | DREAM-style fluid balance and 1D momentum Fokker-Planck contracts; no multidimensional DREAM kinetic-distribution parity | N | N | N | Y |
+| Runaway electron dynamics | DREAM-style fluid balance, 1D momentum Fokker-Planck, and multidimensional artifact-export contract; no public DREAM kinetic-distribution parity | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
 | Impurity transport (neoclassical) | Trace radial transport with source conservation and neoclassical pinch contracts; no STRAHL/JINTRAC collisional-operator parity | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |

@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 import numpy as np
 from dataclasses import dataclass
-from typing import Tuple, cast
+from typing import Any, Tuple, cast
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,30 @@ class RunawayElectronState:
     time: float = 0.0
     n_re: float = 0.0  # Total RE density [m^-3]
     current_re: float = 0.0  # Runaway current density [A/m^2]
+
+
+@dataclass(frozen=True)
+class DreamKineticArtifact:
+    """JSON-compatible DREAM-style multidimensional kinetic artifact."""
+
+    coordinates: dict[str, list[float]]
+    coordinate_units: dict[str, str]
+    observable_axes: dict[str, list[str]]
+    observable_units: dict[str, str]
+    observables: dict[str, Any]
+    provenance: dict[str, str]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a deterministic JSON-compatible artifact payload."""
+        return {
+            "schema": "dream-kinetic-artifact.v1",
+            "coordinates": self.coordinates,
+            "coordinate_units": self.coordinate_units,
+            "observable_axes": self.observable_axes,
+            "observable_units": self.observable_units,
+            "observables": self.observables,
+            "provenance": self.provenance,
+        }
 
 
 class FokkerPlanckSolver:
@@ -116,6 +140,183 @@ class FokkerPlanckSolver:
         D = np.full_like(self.p, DIFFUSION_FLOOR)
 
         return A, D, Fc_norm
+
+    @staticmethod
+    def _strict_axis(
+        name: str,
+        values: np.ndarray | list[float] | tuple[float, ...],
+        *,
+        min_length: int = 2,
+        lower: float | None = None,
+        upper: float | None = None,
+    ) -> np.ndarray:
+        axis = np.asarray(values, dtype=np.float64)
+        if axis.ndim != 1 or axis.size < min_length:
+            raise ValueError(f"{name} must be a 1D axis with at least {min_length} points.")
+        if not np.all(np.isfinite(axis)):
+            raise ValueError(f"{name} must contain only finite values.")
+        if not np.all(np.diff(axis) > 0.0):
+            raise ValueError(f"{name} must be strictly increasing.")
+        if lower is not None and np.any(axis < lower):
+            raise ValueError(f"{name} values must be >= {lower}.")
+        if upper is not None and np.any(axis > upper):
+            raise ValueError(f"{name} values must be <= {upper}.")
+        return axis
+
+    @staticmethod
+    def _normalized_axis_weights(axis: np.ndarray) -> np.ndarray:
+        weights = np.ones_like(axis, dtype=np.float64)
+        norm = float(np.sum(weights))
+        if norm <= 0.0 or not np.isfinite(norm):
+            raise ValueError("axis weights are not normalisable.")
+        return weights / norm
+
+    def _diagnostic_scalars(
+        self,
+        *,
+        e_field: float,
+        n_e: float,
+        t_e_ev: float,
+        z_eff: float,
+        current_re: float,
+        radius_edge_m: float,
+    ) -> tuple[float, float, float, float, float]:
+        """Return DREAM-style scalar observables from the current 1D state."""
+        A, _, Fc = self.compute_coefficients(e_field, n_e, z_eff, t_e_ev)
+        e_crit = Fc * MC / E_CHARGE
+        gamma_av = 0.0
+        if e_field > e_crit:
+            gamma_av = (e_field / e_crit - 1.0) * np.sqrt(np.pi * (z_eff + 1.0) / 2.0)
+            gamma_av *= AVALANCHE_RATE
+
+        gamma = np.sqrt(1.0 + self.p**2)
+        tau_rad = (6.0 * np.pi * EPS0 * MC**3) / (E_CHARGE**4 * B_TOROIDAL**2)
+        synch_force_norm = (1.0 / tau_rad) * self.p * gamma * np.sqrt(1.0 + z_eff)
+        velocity = C * self.p / gamma
+        synch_power_density = float(np.sum(self.f * synch_force_norm * MC * velocity * self.dp))
+
+        accel_norm = (E_CHARGE * e_field) / MC
+        drag_force_norm = accel_norm - np.asarray(A, dtype=np.float64) - synch_force_norm
+        drag_force = float(
+            np.sum(self.f * np.maximum(drag_force_norm, 0.0) * MC * self.dp)
+            / max(float(np.sum(self.f * self.dp)), 1.0)
+        )
+
+        total_current = float(current_re * np.pi * max(radius_edge_m, 1.0e-12) ** 2)
+        brems_power = float(
+            5.35e-37 * max(z_eff, 1.0) * n_e * n_e * np.sqrt(max(t_e_ev, 1.0) / 1.0e3)
+        )
+        return gamma_av, synch_power_density, drag_force, total_current, brems_power
+
+    def run_dream_kinetic_artifact(
+        self,
+        *,
+        n_steps: int,
+        dt: float,
+        e_field: float,
+        n_e: float,
+        t_e_ev: float,
+        z_eff: float,
+        radius_m: np.ndarray | list[float] | tuple[float, ...],
+        pitch_cosine: np.ndarray | list[float] | tuple[float, ...],
+    ) -> DreamKineticArtifact:
+        """Run and export a DREAM-style radius-momentum-pitch artifact.
+
+        The native kinetic state is evolved by the existing conservative
+        1D momentum Fokker-Planck kernel, then exported on explicit
+        ``time_s x radius_m x momentum_mec x pitch_cosine`` axes. Radius and
+        pitch dimensions are artifact axes for reference-gate comparison
+        readiness; public DREAM decks remain required for parity.
+        """
+        steps = int(n_steps)
+        dt_s = float(dt)
+        if steps < 2:
+            raise ValueError("n_steps must be at least 2 for artifact threshold comparisons.")
+        if not np.isfinite(dt_s) or dt_s <= 0.0:
+            raise ValueError("dt must be finite and > 0.")
+        radius_axis = self._strict_axis("radius_m", radius_m, lower=0.0)
+        pitch_axis = self._strict_axis("pitch_cosine", pitch_cosine, lower=-1.0, upper=1.0)
+        momentum_axis = self._strict_axis("momentum_mec", self.p, lower=0.0)
+
+        radial_weights = self._normalized_axis_weights(radius_axis)
+        pitch_weights = np.clip(1.0 + 0.25 * pitch_axis, 1.0e-12, None)
+        pitch_weights = pitch_weights / float(np.sum(pitch_weights))
+
+        time_s: list[float] = []
+        distribution: list[np.ndarray] = []
+        current_history: list[np.ndarray] = []
+        avalanche_history: list[np.ndarray] = []
+        synch_history: list[np.ndarray] = []
+        screening_history: list[np.ndarray] = []
+        brems_history: list[np.ndarray] = []
+
+        for _ in range(steps):
+            state = self.step(dt_s, e_field, n_e, t_e_ev, z_eff)
+            gamma_av, synch_power, screening_drag, total_current, brems_power = (
+                self._diagnostic_scalars(
+                    e_field=e_field,
+                    n_e=n_e,
+                    t_e_ev=t_e_ev,
+                    z_eff=z_eff,
+                    current_re=state.current_re,
+                    radius_edge_m=float(radius_axis[-1]),
+                )
+            )
+            time_s.append(float(state.time))
+            distribution.append(
+                state.f[np.newaxis, :, np.newaxis]
+                * radial_weights[:, np.newaxis, np.newaxis]
+                * pitch_weights[np.newaxis, np.newaxis, :]
+            )
+            current_history.append(total_current * radial_weights)
+            avalanche_history.append(np.full_like(radius_axis, gamma_av, dtype=np.float64))
+            synch_history.append(synch_power * radial_weights)
+            screening_history.append(np.full_like(radius_axis, screening_drag, dtype=np.float64))
+            brems_history.append(brems_power * radial_weights)
+
+        return DreamKineticArtifact(
+            coordinates={
+                "time_s": [float(v) for v in time_s],
+                "radius_m": [float(v) for v in radius_axis],
+                "momentum_mec": [float(v) for v in momentum_axis],
+                "pitch_cosine": [float(v) for v in pitch_axis],
+            },
+            coordinate_units={
+                "time_s": "s",
+                "radius_m": "m",
+                "momentum_mec": "m_e_c",
+                "pitch_cosine": "dimensionless",
+            },
+            observable_axes={
+                "f_p_xi_t": ["time_s", "radius_m", "momentum_mec", "pitch_cosine"],
+                "runaway_current_t": ["time_s", "radius_m"],
+                "avalanche_growth_rate_t": ["time_s", "radius_m"],
+                "synchrotron_loss_power_t": ["time_s", "radius_m"],
+                "partial_screening_drag_t": ["time_s", "radius_m"],
+                "bremsstrahlung_loss_power_t": ["time_s", "radius_m"],
+            },
+            observable_units={
+                "f_p_xi_t": "m^-3_per_mec_per_pitch",
+                "runaway_current_t": "A",
+                "avalanche_growth_rate_t": "s^-1",
+                "synchrotron_loss_power_t": "W",
+                "partial_screening_drag_t": "N",
+                "bremsstrahlung_loss_power_t": "W",
+            },
+            observables={
+                "f_p_xi_t": np.stack(distribution, axis=0).tolist(),
+                "runaway_current_t": np.stack(current_history, axis=0).tolist(),
+                "avalanche_growth_rate_t": np.stack(avalanche_history, axis=0).tolist(),
+                "synchrotron_loss_power_t": np.stack(synch_history, axis=0).tolist(),
+                "partial_screening_drag_t": np.stack(screening_history, axis=0).tolist(),
+                "bremsstrahlung_loss_power_t": np.stack(brems_history, axis=0).tolist(),
+            },
+            provenance={
+                "reference_family": "DREAM",
+                "implementation": "native_1d_momentum_fokker_planck_with_radius_pitch_artifact_axes",
+                "parity_status": "artifact_contract_only_not_public_dream_parity",
+            },
+        )
 
     def seed_hottail(self, T_initial_eV: float, T_final_eV: float, t_quench_s: float) -> None:
         """Seed hottail RE population from thermal quench.

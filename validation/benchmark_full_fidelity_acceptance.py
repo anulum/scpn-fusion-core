@@ -628,14 +628,20 @@ def _runaway_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "hot_tail_seed": True,
         "fluid_density_balance": True,
         "one_dimensional_momentum_fokker_planck_contract": True,
+        "dream_style_multidimensional_artifact_export": True,
+        "momentum_pitch_radius_axis_contract": True,
+        "python_rust_dream_artifact_contract_parity": True,
+        "synchrotron_loss_observable_export": True,
+        "partial_screening_drag_observable_export": True,
+        "bremsstrahlung_loss_observable_export": True,
     }
     schema = _load_artifact_schema()
     readiness = _reference_readiness("runaway_electrons", reference_cases, schema)
     missing_requirements = [
-        "multidimensional DREAM kinetic distribution parity",
-        "coupled radial-momentum-pitch kinetic grid with DREAM reference cases",
-        "synchrotron, bremsstrahlung, partial-screening, and transport parity gates",
-        "public DREAM deck ingestion and distribution-function RMSE thresholds",
+        "public DREAM deck ingestion and production artifact parity",
+        "full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact",
+        "validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM",
+        "distribution-function, current, and growth-rate RMSE thresholds against public DREAM output",
     ]
     return {
         "surface": "runaway_electrons",

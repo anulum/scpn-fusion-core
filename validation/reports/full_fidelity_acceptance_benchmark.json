@@ -102,16 +102,22 @@
       "acceptance_passed": false,
       "implemented_dimensions": {
         "avalanche_source": true,
+        "bremsstrahlung_loss_observable_export": true,
+        "dream_style_multidimensional_artifact_export": true,
         "dreicer_source": true,
         "fluid_density_balance": true,
         "hot_tail_seed": true,
-        "one_dimensional_momentum_fokker_planck_contract": true
+        "momentum_pitch_radius_axis_contract": true,
+        "one_dimensional_momentum_fokker_planck_contract": true,
+        "partial_screening_drag_observable_export": true,
+        "python_rust_dream_artifact_contract_parity": true,
+        "synchrotron_loss_observable_export": true
       },
       "missing_requirements": [
-        "multidimensional DREAM kinetic distribution parity",
-        "coupled radial-momentum-pitch kinetic grid with DREAM reference cases",
-        "synchrotron, bremsstrahlung, partial-screening, and transport parity gates",
-        "public DREAM deck ingestion and distribution-function RMSE thresholds"
+        "public DREAM deck ingestion and production artifact parity",
+        "full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact",
+        "validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM",
+        "distribution-function, current, and growth-rate RMSE thresholds against public DREAM output"
       ],
       "reference_cases": {
         "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",

@@ -240,7 +240,7 @@
     {
       "id": "readme_runaway_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance and 1D momentum Fokker-Planck contracts; no multidimensional DREAM kinetic-distribution parity",
+      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance, 1D momentum Fokker-Planck, and multidimensional artifact-export contract; no public DREAM kinetic-distribution parity",
       "evidence_files": [
         "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
