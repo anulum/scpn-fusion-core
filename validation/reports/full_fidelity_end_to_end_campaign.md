@@ -9,6 +9,9 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Public source download report: `validation/reports/full_fidelity_public_source_downloads.json`
 - Public sources cached: `True`
 - Public source cache root: `data/external/full_fidelity_public_sources`
+- Public reference artifact conversion report: `validation/reports/full_fidelity_reference_artifact_conversion.json`
+- Partial public output artifacts: `2`
+- Accepted public reference artifacts: `0`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
 

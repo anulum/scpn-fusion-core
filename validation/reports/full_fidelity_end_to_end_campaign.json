@@ -1,6 +1,7 @@
 {
   "acceptance_passed": false,
   "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
+  "accepted_public_reference_artifacts": 0,
   "all_locally_actionable_contracts_ready": true,
   "benchmark": "full_fidelity_end_to_end_campaign",
   "description": "Integrated fail-closed campaign covering GK, EM, production-scale runtime, DREAM, Aurora/STRAHL, and free-boundary blockers.",
@@ -214,6 +215,8 @@
       "surface": "free_boundary_equilibrium"
     }
   ],
+  "partial_public_output_artifacts": 2,
+  "public_reference_artifact_conversion_report": "validation/reports/full_fidelity_reference_artifact_conversion.json",
   "public_source_cache_root": "data/external/full_fidelity_public_sources",
   "public_source_download_report": "validation/reports/full_fidelity_public_source_downloads.json",
   "public_source_registry": "validation/reference_data/full_fidelity_public_sources.json",

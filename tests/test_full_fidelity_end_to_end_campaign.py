@@ -14,6 +14,12 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["status"] == "not_full_fidelity"
     assert report["acceptance_passed"] is False
     assert report["reference_parity_ready"] is False
+    assert (
+        report["public_reference_artifact_conversion_report"]
+        == "validation/reports/full_fidelity_reference_artifact_conversion.json"
+    )
+    assert report["partial_public_output_artifacts"] >= 2
+    assert report["accepted_public_reference_artifacts"] == 0
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {

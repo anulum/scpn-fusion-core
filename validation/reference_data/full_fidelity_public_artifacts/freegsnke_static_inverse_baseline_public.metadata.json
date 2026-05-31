@@ -1,0 +1,36 @@
+{
+  "accepted_full_fidelity": false,
+  "artifact_id": "freegsnke_static_inverse_baseline_public",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.npz",
+  "artifact_role": "partial_public_solver_output",
+  "available_observables": [
+    "control_currents_a",
+    "inverse_control_currents_a",
+    "inverse_psi_wb",
+    "psi_wb"
+  ],
+  "cache_source_path": "data/external/full_fidelity_public_sources/repos/freegsnke/freegsnke/tests/baselines",
+  "finite_numeric_payload": true,
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [
+    "strict_FreeGS_or_FreeGSNKE_coil_current_sidecar",
+    "boundary_contour",
+    "limiter_contour",
+    "native_psi_comparison",
+    "axis_or_xpoint_metadata"
+  ],
+  "provenance_url": "https://github.com/FusionComputingLab/freegsnke/tree/00b79a08fbb6e642ac5ed2e440383cc5962e0358/freegsnke/tests/baselines",
+  "redistribution_license": "LGPL-3.0-or-later",
+  "reference_family": "FreeGSNKE",
+  "sha256": "75c6941c66174b37738181891071e5071c4addca3a1344bbdd75b8f4587fa561",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_no_matching_native_free_boundary_case_or_current_schema",
+  "source_sha256": {
+    "test_controlCurrents.npy": "8d621a4655556f344aadc94e29f5e45ef98343a4fe4f506ad8952cc914bed3ee",
+    "test_inverse_control_currents.npy": "aac2fd8bd435e9042d0b29a15e4a6b8302410db7a80c00912f0924ad216f668f",
+    "test_inverse_psi.npy": "7a8411dc7afba9c53d508c2415da5314ba3e3d7f9c9e1b76967cd72f5ec950fb",
+    "test_psi.npy": "769becef24beb51b78a79595fd7b0098bc875b255a36d39d34c19a9d83747187"
+  },
+  "surface": "free_boundary_equilibrium",
+  "upstream_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358"
+}

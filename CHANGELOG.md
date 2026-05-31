@@ -10,6 +10,12 @@
 
 ## [Unreleased]
 
+- Added a fail-closed public reference-artifact converter that exports finite,
+  checksummed DREAM avalanche and FreeGSNKE baseline output payloads to tracked
+  NPZ artifacts with provenance metadata while keeping accepted full-fidelity
+  artifact count at zero until required observables and same-case solver-output
+  comparisons exist.
+
 - Added a reproducible full-fidelity public source downloader and provenance
   report for GENE, CGYRO/GACODE, GS2, DREAM, Aurora, FreeGS, and FreeGSNKE,
   while keeping raw upstream snapshots gitignored and fail-closed as

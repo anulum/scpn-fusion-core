@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "validation" / "reports"
 PUBLIC_SOURCES = ROOT / "validation" / "reference_data" / "full_fidelity_public_sources.json"
 PUBLIC_SOURCE_DOWNLOADS = REPORT_DIR / "full_fidelity_public_source_downloads.json"
+REFERENCE_ARTIFACT_CONVERSION = REPORT_DIR / "full_fidelity_reference_artifact_conversion.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -50,6 +51,19 @@ def _load_downloads() -> dict[str, Any]:
     return downloads
 
 
+def _load_conversion() -> dict[str, Any]:
+    if not REFERENCE_ARTIFACT_CONVERSION.exists():
+        return {
+            "accepted_full_fidelity_artifacts": 0,
+            "partial_output_artifacts": 0,
+            "schema": "full-fidelity-reference-artifact-conversion.v1",
+        }
+    conversion = json.loads(REFERENCE_ARTIFACT_CONVERSION.read_text(encoding="utf-8"))
+    if conversion.get("schema") != "full-fidelity-reference-artifact-conversion.v1":
+        raise ValueError("full-fidelity reference artifact conversion report schema mismatch")
+    return conversion
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -73,6 +87,7 @@ def run_campaign() -> dict[str, Any]:
     """Return integrated full-fidelity status for all six blocker classes."""
     registry = _load_sources()
     downloads = _load_downloads()
+    conversion = _load_conversion()
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     impurity = run_impurity_contract()
@@ -173,6 +188,11 @@ def run_campaign() -> dict[str, Any]:
         "public_source_cache_root": downloads["cache_root"],
         "public_source_download_report": str(PUBLIC_SOURCE_DOWNLOADS.relative_to(ROOT)),
         "public_sources_cached": bool(downloads["all_reachable_downloads_completed"]),
+        "public_reference_artifact_conversion_report": str(
+            REFERENCE_ARTIFACT_CONVERSION.relative_to(ROOT)
+        ),
+        "partial_public_output_artifacts": int(conversion["partial_output_artifacts"]),
+        "accepted_public_reference_artifacts": int(conversion["accepted_full_fidelity_artifacts"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -201,6 +221,15 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Public source download report: `{report['public_source_download_report']}`",
         f"- Public sources cached: `{report['public_sources_cached']}`",
         f"- Public source cache root: `{report['public_source_cache_root']}`",
+        (
+            "- Public reference artifact conversion report: "
+            f"`{report['public_reference_artifact_conversion_report']}`"
+        ),
+        f"- Partial public output artifacts: `{report['partial_public_output_artifacts']}`",
+        (
+            "- Accepted public reference artifacts: "
+            f"`{report['accepted_public_reference_artifacts']}`"
+        ),
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

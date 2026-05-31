@@ -52,7 +52,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 382 |
+| Python test files | 383 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -174,6 +174,13 @@ summarised in
 [`validation/reports/full_fidelity_public_source_downloads.md`](validation/reports/full_fidelity_public_source_downloads.md).
 Those snapshots are acquisition inputs only; they are not accepted parity
 artifacts until converted into schema-valid repository-local JSON/NPZ evidence.
+The first conversion pass exports two finite public output payloads, DREAM
+avalanche HDF5 data and FreeGSNKE static inverse baselines, into tracked NPZ
+artifacts with metadata and checksums:
+[`validation/reports/full_fidelity_reference_artifact_conversion.md`](validation/reports/full_fidelity_reference_artifact_conversion.md).
+Both are partial diagnostic artifacts, not full-fidelity acceptance artifacts,
+because required observables and same-case solver-output comparisons are still
+missing.
 
 ## Competitive Position
 

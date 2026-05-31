@@ -2338,7 +2338,7 @@
     "python_capability_classes": 492,
     "python_capability_source_modules": 262,
     "rust_workspace_crates": 12,
-    "test_files": 382
+    "test_files": 383
   },
   "documentation": {
     "public_pages": [
@@ -2551,6 +2551,7 @@
       "tests/test_fueling_mode_runtime.py",
       "tests/test_full_fidelity_end_to_end_campaign.py",
       "tests/test_full_fidelity_public_source_downloads.py",
+      "tests/test_full_fidelity_reference_artifact_conversion.py",
       "tests/test_full_validation_pipeline.py",
       "tests/test_fusion_control_room.py",
       "tests/test_fusion_ignition_sim.py",

@@ -1,0 +1,31 @@
+{
+  "accepted_full_fidelity": false,
+  "artifact_id": "dream_avalanche_public_raw",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/dream_avalanche_public_raw.npz",
+  "artifact_role": "partial_public_solver_output",
+  "available_observables": [
+    "EOverEcTot",
+    "GammaNum",
+    "nD",
+    "nZ"
+  ],
+  "cache_source_path": "data/external/full_fidelity_public_sources/repos/dream/tests/physics/DREAM_avalanche/DREAM-avalanche-data.h5",
+  "finite_numeric_payload": true,
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [
+    "f_p_xi_t",
+    "runaway_current_t",
+    "avalanche_growth_rate_t",
+    "synchrotron_loss_power_t",
+    "partial_screening_drag_t"
+  ],
+  "provenance_url": "https://github.com/chalmersplasmatheory/DREAM/blob/ecdd5e146537c77602c9d7cc76b36100200e4b9a/tests/physics/DREAM_avalanche/DREAM-avalanche-data.h5",
+  "redistribution_license": "MIT",
+  "reference_family": "DREAM",
+  "sha256": "5b03dad4f8845551bdd305453ce6dae62cbc05233d1d34828cfd856ee389ccf3",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_required_manifest_observables_missing_from_public_h5_payload",
+  "source_sha256": "cca0f32950f70b11bdea3c36c14896e6f9a762bb871eaacf94479eb2b878c3c6",
+  "surface": "runaway_electrons",
+  "upstream_commit": "ecdd5e146537c77602c9d7cc76b36100200e4b9a"
+}
