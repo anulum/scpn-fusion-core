@@ -22,6 +22,9 @@
 - Required `native_output_sha256` for nonlinear GK native same-case comparison
   rows before quantitative threshold evaluation can become ready.
 
+- Classified top-level NPZ nonlinear GK output keys by declared coordinate and
+  observable contracts before writing converted artefact metadata.
+
 - Added disruption contract primitives, mitigation contracts, and replay contracts to the configured global mypy strict cohort with a typed reactor-design evaluation boundary.
 
 - Added the real-time density-profile controller to the configured global mypy strict cohort with explicit radial-profile array contracts.

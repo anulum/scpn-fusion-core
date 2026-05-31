@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Collection
 from pathlib import Path
 from typing import Any
 
@@ -174,7 +175,12 @@ def _resolve_under(root: Path, raw_path: str) -> Path:
     return candidate
 
 
-def _load_payload(path: Path) -> dict[str, dict[str, NDArray[np.float64]]]:
+def _load_payload(
+    path: Path,
+    *,
+    coordinate_names: Collection[str] | None = None,
+    observable_names: Collection[str] | None = None,
+) -> dict[str, dict[str, NDArray[np.float64]]]:
     if path.suffix == ".json":
         payload = json.loads(path.read_text(encoding="utf-8"))
         if payload.get("schema") != OUTPUT_SCHEMA:
@@ -183,8 +189,22 @@ def _load_payload(path: Path) -> dict[str, dict[str, NDArray[np.float64]]]:
         observables = payload.get("observables", {})
     elif path.suffix == ".npz":
         with np.load(path, allow_pickle=False) as npz:
-            coordinates = {name: npz[name] for name in npz.files}
-            observables = {name: npz[name] for name in npz.files}
+            arrays = {name: npz[name] for name in npz.files}
+        coordinate_set = {str(name) for name in coordinate_names or ()}
+        observable_set = {str(name) for name in observable_names or ()}
+        if coordinate_set or observable_set:
+            coordinates = {name: arrays[name] for name in coordinate_set if name in arrays}
+            observables = {
+                name: arrays[name]
+                for name in observable_set
+                if name in arrays and name not in coordinate_set
+            }
+            observables.update(
+                {name: array for name, array in arrays.items() if name not in coordinate_set}
+            )
+        else:
+            coordinates = arrays
+            observables = arrays
     else:
         raise ValueError(f"unsupported GK external output format: {path.suffix}")
 
@@ -557,7 +577,11 @@ def _convert_case(
     coordinate_contracts = reference_case["coordinate_contracts"]
     observable_contracts = reference_case["observable_contracts"]
     try:
-        reference_payload = _load_payload(output_path)
+        reference_payload = _load_payload(
+            output_path,
+            coordinate_names=coordinate_contracts,
+            observable_names=required_observables,
+        )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         row = _blocked_row(family, "blocked_external_output_payload_invalid")
         row["case_id"] = case_id
@@ -630,7 +654,11 @@ def _convert_case(
                 raise ValueError("native_output_sha256_invalid")
             if _sha256(native_path) != str(native_sha256):
                 raise ValueError("native_output_checksum_mismatch")
-            native_payload = _load_payload(native_path)
+            native_payload = _load_payload(
+                native_path,
+                coordinate_names=coordinate_contracts,
+                observable_names=required_observables,
+            )
             native_coordinates_ok, native_coordinate_failures = _validate_coordinates(
                 native_payload["coordinates"], coordinate_contracts
             )

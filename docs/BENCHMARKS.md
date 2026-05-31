@@ -258,6 +258,8 @@ provenance, placeholder provenance, unknown licensing, proprietary licensing,
 or explicitly non-redistributable licensing are blocked before artifact
 conversion. Native same-case comparison rows are also checksum-gated with
 `native_output_sha256` before threshold evaluation.
+For top-level NPZ payloads, the converter classifies keys by the declared
+coordinate and observable contracts before metadata publication.
 
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
@@ -977,6 +979,8 @@ convergence/scaling evidence. Candidate artifacts must carry public HTTP(S)
 provenance and an explicit redistribution-permitted license before conversion.
 Native same-case comparison artefacts must carry a matching checksum before any
 threshold can be marked ready.
+For NPZ inputs, top-level keys are separated into coordinate and observable
+metadata by the declared contracts before converted artefacts are reported.
 The benchmark intentionally does not pass
 full-fidelity acceptance until those public reference gates exist and their
 artefacts are present.

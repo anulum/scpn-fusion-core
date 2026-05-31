@@ -14,40 +14,54 @@ import json
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 from tools import gk_external_output_parity as parity
 
 DECK_PHYSICS_SHA256 = "0" * 64
 
 
-def _payload(path: Path, scale: float = 1.0) -> None:
+def _payload_maps(
+    scale: float = 1.0,
+) -> tuple[dict[str, NDArray[np.float64]], dict[str, NDArray[np.float64]]]:
     coordinates = {
-        "species_index": [0.0, 1.0],
-        "kx_rhos": [0.1, 0.2],
-        "ky_rhos": [0.05, 0.15],
-        "theta_rad": [-1.0, 1.0],
-        "vpar_vth": [-2.0, 2.0],
-        "mu_normalized": [0.25, 0.75],
-        "time_s": [0.0, 1.0],
+        "species_index": np.asarray([0.0, 1.0], dtype=np.float64),
+        "kx_rhos": np.asarray([0.1, 0.2], dtype=np.float64),
+        "ky_rhos": np.asarray([0.05, 0.15], dtype=np.float64),
+        "theta_rad": np.asarray([-1.0, 1.0], dtype=np.float64),
+        "vpar_vth": np.asarray([-2.0, 2.0], dtype=np.float64),
+        "mu_normalized": np.asarray([0.25, 0.75], dtype=np.float64),
+        "time_s": np.asarray([0.0, 1.0], dtype=np.float64),
     }
-    distribution = np.arange(64, dtype=float).reshape(2, 2, 2, 2, 2, 2) * scale + 1.0
-    spectrum = np.arange(8, dtype=float).reshape(2, 2, 2) * scale + 1.0
+    distribution = np.arange(64, dtype=np.float64).reshape(2, 2, 2, 2, 2, 2) * scale + 1.0
+    spectrum = np.arange(8, dtype=np.float64).reshape(2, 2, 2) * scale + 1.0
+    observables = {
+        "nonlinear_distribution_function": distribution,
+        "nonlinear_distribution_function_imag": distribution * 0.01,
+        "ion_heat_flux_spectrum": spectrum,
+        "electron_heat_flux_spectrum": spectrum * 1.2,
+        "zonal_flow_energy": np.ones((2, 2), dtype=np.float64) * scale,
+        "saturated_phi_rms": np.ones(2, dtype=np.float64) * scale,
+        "electromagnetic_phi_energy": spectrum * 0.5,
+        "electromagnetic_apar_energy": spectrum * 0.25,
+        "electromagnetic_bpar_energy": spectrum * 0.125,
+    }
+    return coordinates, observables
+
+
+def _payload(path: Path, scale: float = 1.0) -> None:
+    coordinates, observables = _payload_maps(scale)
     payload = {
         "schema": "gk-nonlinear-external-output.v1",
-        "coordinates": coordinates,
-        "observables": {
-            "nonlinear_distribution_function": distribution.tolist(),
-            "nonlinear_distribution_function_imag": (distribution * 0.01).tolist(),
-            "ion_heat_flux_spectrum": spectrum.tolist(),
-            "electron_heat_flux_spectrum": (spectrum * 1.2).tolist(),
-            "zonal_flow_energy": (np.ones((2, 2)) * scale).tolist(),
-            "saturated_phi_rms": (np.ones(2) * scale).tolist(),
-            "electromagnetic_phi_energy": (spectrum * 0.5).tolist(),
-            "electromagnetic_apar_energy": (spectrum * 0.25).tolist(),
-            "electromagnetic_bpar_energy": (spectrum * 0.125).tolist(),
-        },
+        "coordinates": {name: value.tolist() for name, value in coordinates.items()},
+        "observables": {name: value.tolist() for name, value in observables.items()},
     }
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _payload_npz(path: Path, scale: float = 1.0) -> None:
+    coordinates, observables = _payload_maps(scale)
+    np.savez_compressed(path, **coordinates, **observables)
 
 
 def _sha256(path: Path) -> str:
@@ -197,6 +211,58 @@ def test_gk_external_output_parity_compares_native_same_case_output(tmp_path: Pa
     assert gs2["threshold_evaluation"]["passed"] is True
     assert report["native_same_case_comparison_ready"] is False
     assert report["accepted_full_fidelity_ready"] is False
+
+
+def test_gk_external_output_parity_accepts_npz_payload_with_separated_metadata(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "external"
+    source_root.mkdir()
+    reference = source_root / "gene_reference.npz"
+    native = source_root / "gene_native.npz"
+    _payload_npz(reference, scale=1.0)
+    _payload_npz(native, scale=1.0)
+    manifest = {
+        "schema": "gk-nonlinear-external-output-manifest.v1",
+        "cases": [
+            {
+                "case_id": "gene_itg_npz_public",
+                "deck_id": "gene_itg_npz_public_deck",
+                "benchmark_case_id": "public_itg_em_same_deck",
+                "deck_physics_sha256": DECK_PHYSICS_SHA256,
+                "solver_family": "GENE",
+                "output_path": reference.name,
+                "native_output_path": native.name,
+                "native_output_sha256": _sha256(native),
+                "provenance_url": "https://example.invalid/gene/gene_itg_npz_public",
+                "redistribution_license": "CC-BY-4.0",
+                "sha256": _sha256(reference),
+            }
+        ],
+        "grid_convergence_evidence": [],
+        "production_scaling_evidence": [],
+    }
+    (source_root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    report = parity.build_gk_external_output_parity_report(
+        source_root=source_root,
+        artifact_dir=tmp_path / "artifacts",
+        report_dir=tmp_path / "reports",
+        write=True,
+    )
+
+    rows = {row["solver_family"]: row for row in report["external_output_rows"]}
+    gene = rows["GENE"]
+    assert gene["reference_output_ready"] is True
+    assert gene["native_same_case_comparison_ready"] is True
+    assert gene["native_same_case_comparison_passed"] is True
+    metadata = json.loads((tmp_path / gene["metadata_path"]).read_text(encoding="utf-8"))
+    assert "species_index" in metadata["available_coordinates"]
+    assert "ion_heat_flux_spectrum" not in metadata["available_coordinates"]
+    assert "ion_heat_flux_spectrum" in metadata["available_observables"]
+    assert "species_index" not in metadata["available_observables"]
 
 
 def test_gk_external_output_parity_blocks_unchecksummed_native_output(
