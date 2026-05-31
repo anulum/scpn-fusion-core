@@ -763,7 +763,7 @@ class TestValidateEFITNRMSEBenchmark:
                 operator_toroidal_current_A=-8.6995e6,
                 profile_toroidal_current_A=-1.5e6,
                 operator_current_relative_error=5.0e-5,
-                profile_current_relative_error=0.8,
+                profile_current_relative_error=0.01,
                 operator_current_closure_pass=True,
             )
 
@@ -901,8 +901,11 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.source_sum_identity_pass is True
         assert gate.operator_current_closure_pass_count == 9
         assert gate.gate_operator_current_closure_pass_count == 3
+        assert gate.profile_current_closure_threshold == pytest.approx(0.05)
+        assert gate.profile_current_closure_pass_count == 9
+        assert gate.gate_profile_current_closure_pass_count == 3
         assert gate.operator_current_worst_relative_error == pytest.approx(5.0e-5)
-        assert gate.profile_current_worst_relative_error == pytest.approx(0.8)
+        assert gate.profile_current_worst_relative_error == pytest.approx(0.01)
         assert "count 9 < required 10" in gate.failure_reasons
 
     def test_fails_when_any_finite_row_exceeds_threshold_and_reports_worst(
@@ -1240,9 +1243,12 @@ class TestValidateEFITNRMSEBenchmark:
         assert payload["source_sum_identity_max_abs_error"] == pytest.approx(0.0)
         assert payload["operator_current_closure_pass_count"] == 10
         assert payload["gate_operator_current_closure_pass_count"] == 4
+        assert payload["profile_current_closure_threshold"] == pytest.approx(0.05)
+        assert payload["profile_current_closure_pass_count"] == 10
+        assert payload["gate_profile_current_closure_pass_count"] == 4
         assert payload["operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
         assert payload["gate_operator_current_worst_relative_error"] == pytest.approx(5.0e-5)
-        assert payload["profile_current_worst_relative_error"] == pytest.approx(0.8)
+        assert payload["profile_current_worst_relative_error"] == pytest.approx(0.01)
         assert {
             "pressure_source_sum",
             "ffprime_source_sum",

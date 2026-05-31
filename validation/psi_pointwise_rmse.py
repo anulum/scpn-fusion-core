@@ -54,6 +54,7 @@ OPERATOR_SOURCE_SOLVER_MODE = "operator_source_fixed_boundary_delta_star_psi"
 ADAPTED_PROFILE_SOLVER_MODE = "adapted_geqdsk_profile_source_fixed_boundary"
 OPERATOR_SOURCE_RMSE_THRESHOLD = 1e-6
 OPERATOR_CURRENT_CLOSURE_THRESHOLD = 0.05
+PROFILE_CURRENT_CLOSURE_THRESHOLD = 0.05
 SOURCE_CONVENTION_DISTANCE_THRESHOLD = 0.15
 SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD = 0.15
 ADAPTED_PROFILE_RMSE_THRESHOLD = 0.05
@@ -244,6 +245,9 @@ class EfitNRMSEBenchmarkGate:
     source_sum_identity_pass: bool
     operator_current_closure_pass_count: int
     gate_operator_current_closure_pass_count: int
+    profile_current_closure_threshold: float
+    profile_current_closure_pass_count: int
+    gate_profile_current_closure_pass_count: int
     operator_current_worst_relative_error: float
     operator_current_worst_file: str
     gate_operator_current_worst_relative_error: float
@@ -1792,6 +1796,8 @@ def validate_efit_nrmse_benchmark(
     operator_current_error_entries: list[tuple[str, float]] = []
     gate_operator_current_error_entries: list[tuple[str, float]] = []
     profile_current_error_entries: list[tuple[str, float]] = []
+    profile_current_closure_pass_count = 0
+    gate_profile_current_closure_pass_count = 0
     for row in rows:
         for key in (
             "raw_profile_solver_mode",
@@ -1836,6 +1842,10 @@ def validate_efit_nrmse_benchmark(
         profile_current_error = float(row["profile_current_relative_error"])
         if np.isfinite(profile_current_error):
             profile_current_error_entries.append((str(row["file"]), profile_current_error))
+            if profile_current_error <= PROFILE_CURRENT_CLOSURE_THRESHOLD:
+                profile_current_closure_pass_count += 1
+                if row["reference_role"] == "gate":
+                    gate_profile_current_closure_pass_count += 1
         else:
             failure_reasons.append(f"non-finite profile current error in {row['file']}")
 
@@ -1930,6 +1940,11 @@ def validate_efit_nrmse_benchmark(
             "operator-current closure gate failed in "
             f"{len(rows) - operator_current_closure_pass_count}/{len(rows)} rows"
         )
+    if profile_current_closure_pass_count != len(rows):
+        failure_reasons.append(
+            "profile-current closure gate failed in "
+            f"{len(rows) - profile_current_closure_pass_count}/{len(rows)} rows"
+        )
     if adapted_profile_entries and adapted_profile_pass_count != len(adapted_profile_entries):
         failure_reasons.append(
             "adapted-profile reconstruction gate failed in "
@@ -1991,6 +2006,9 @@ def validate_efit_nrmse_benchmark(
         source_sum_identity_pass=source_sum_identity_pass,
         operator_current_closure_pass_count=operator_current_closure_pass_count,
         gate_operator_current_closure_pass_count=gate_operator_current_closure_pass_count,
+        profile_current_closure_threshold=PROFILE_CURRENT_CLOSURE_THRESHOLD,
+        profile_current_closure_pass_count=profile_current_closure_pass_count,
+        gate_profile_current_closure_pass_count=gate_profile_current_closure_pass_count,
         operator_current_worst_relative_error=float(operator_current_worst_error),
         operator_current_worst_file=operator_current_worst_file,
         gate_operator_current_worst_relative_error=float(gate_operator_current_worst_error),
@@ -2191,6 +2209,11 @@ def main() -> int:
             f"{benchmark.profile_current_worst_file} "
             f"(relative error = {benchmark.profile_current_worst_relative_error:.6e})"
         )
+    print(
+        "Profile-current closure gate: "
+        f"{benchmark.profile_current_closure_pass_count}/{benchmark.count} rows, "
+        f"{benchmark.gate_profile_current_closure_pass_count}/{benchmark.gate_row_count} public rows"
+    )
     if benchmark.gate_worst_source_alignment_file:
         print(
             "Worst public source residual: "

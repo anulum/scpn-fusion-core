@@ -460,6 +460,14 @@ manual row scanning.
 Current local worst rows: operator current closure `sparc/sparc_1300.eqdsk`
 with relative error `2.184689e+00`, and profile current closure
 `jet/jet_lmode_2MA.geqdsk` with relative error `4.168623e+01`.
+Profile-current closure is also threshold-counted with
+`profile_current_closure_threshold`, `profile_current_closure_pass_count`, and
+`gate_profile_current_closure_pass_count`; rows above the 5% current-closure
+threshold are now aggregate gate failures rather than visual-only diagnostics.
+Current local profile-current closure result: `0/18` aggregate rows and `0/8`
+public gate rows pass the 5% threshold. This is intentionally exposed as a
+benchmark failure because raw profile-source reconstruction still has unresolved
+convention/source mismatch.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current

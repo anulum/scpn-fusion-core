@@ -54,6 +54,9 @@
     "source_sum_identity_pass",
     "operator_current_closure_pass_count",
     "gate_operator_current_closure_pass_count",
+    "profile_current_closure_threshold",
+    "profile_current_closure_pass_count",
+    "gate_profile_current_closure_pass_count",
     "operator_current_worst_relative_error",
     "operator_current_worst_file",
     "gate_operator_current_worst_relative_error",
@@ -292,6 +295,18 @@
       "minimum": 0
     },
     "gate_operator_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "profile_current_closure_threshold": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "profile_current_closure_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_profile_current_closure_pass_count": {
       "type": "integer",
       "minimum": 0
     },
