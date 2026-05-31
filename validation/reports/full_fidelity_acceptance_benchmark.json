@@ -11,6 +11,7 @@
       "acceptance_passed": false,
       "implemented_dimensions": {
         "electromagnetic_a_parallel_surface": true,
+        "electromagnetic_b_parallel_hamiltonian_coupling": true,
         "electromagnetic_b_parallel_surface": true,
         "explicit_5d_phase_space_contract": true,
         "five_dimensional_delta_f_state": true,

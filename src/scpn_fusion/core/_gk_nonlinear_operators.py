@@ -211,6 +211,7 @@ class NonlinearGKOperatorsMixin:
         self,
         phi: NDArray[np.complex128],
         A_par: NDArray[np.complex128] | None = None,
+        B_par: NDArray[np.complex128] | None = None,
     ) -> NDArray[np.complex128]:
         """Background gradient drive with optional electromagnetic contribution."""
         c = self.cfg
@@ -228,6 +229,8 @@ class NonlinearGKOperatorsMixin:
             phi_eff = phi_5d - vpar_5d * A_5d
         else:
             phi_eff = phi_5d
+        if c.electromagnetic and B_par is not None:
+            phi_eff = phi_eff + mu_val * B_par[:, :, :, None, None]
 
         drive = np.zeros(
             (c.n_species, c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu),
@@ -281,7 +284,8 @@ class NonlinearGKOperatorsMixin:
             dfdt[s] = terms
 
         A_par = self.ampere_solve(f) if c.electromagnetic else None
-        dfdt += self.gradient_drive(phi, A_par)
+        B_par = self.magnetic_compression_solve(f) if c.electromagnetic else None
+        dfdt += self.gradient_drive(phi, A_par, B_par)
         dfdt -= self._rh_rate * f * self._ky_zero_5d
         return dfdt
 
