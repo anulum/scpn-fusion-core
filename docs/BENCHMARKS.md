@@ -807,16 +807,23 @@ high-k leakage, and per-save invariant-pass histories from both NumPy and JAX
 run paths. This is necessary infrastructure for full nonlinear 5D parity, but
 it is not sufficient to claim GENE/CGYRO/GS2 equivalence.
 
-The current report is
-`validation/reports/full_fidelity_acceptance_benchmark.md`. Required public
+The current acceptance report is
+`validation/reports/full_fidelity_acceptance_benchmark.md`. The integrated
+end-to-end campaign report is
+`validation/reports/full_fidelity_end_to_end_campaign.md`; it keeps the
+GENE/CGYRO/GS2, full Maxwell/EM, production-scale decomposition, DREAM,
+Aurora/STRAHL, and free-boundary blockers in one fail-closed gate. Public
+source acquisition targets are declared in
+`validation/reference_data/full_fidelity_public_sources.json`. Required public
 reference artefacts and quantitative thresholds are declared in
-`validation/reference_data/full_fidelity_reference_cases.json`; accepted artefacts
-must also satisfy `validation/reference_data/full_fidelity_artifact_schema.json`
-with provenance, redistribution/license status, checksum, required observable
-keys, numeric finite payload contracts, unit-labelled observable and
-coordinate/grid contracts, observable-to-coordinate axis contracts, and explicit
-quantitative threshold contracts linked to declared observables and supported metric families. The
-benchmark intentionally does not pass full-fidelity acceptance
+`validation/reference_data/full_fidelity_reference_cases.json`; accepted
+artefacts must also satisfy
+`validation/reference_data/full_fidelity_artifact_schema.json` with provenance,
+redistribution/license status, checksum, required observable keys, numeric
+finite payload contracts, unit-labelled observable and coordinate/grid
+contracts, observable-to-coordinate axis contracts, and explicit quantitative
+threshold contracts linked to declared observables and supported metric
+families. The benchmark intentionally does not pass full-fidelity acceptance
 until those public reference gates exist and their artefacts are present.
 
 ## Extended Community Baseline Comparison

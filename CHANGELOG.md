@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added an integrated six-lane full-fidelity end-to-end campaign registry and
+  report covering GENE/CGYRO/GS2 nonlinear GK parity, full Maxwell/EM fidelity,
+  production-scale decomposition, DREAM runaway electrons, Aurora/STRAHL
+  impurities, and strict free-boundary reconstruction in one fail-closed gate.
+
 - Added Aurora/STRAHL-style impurity charge-state artifact contracts with
   conservative collisional-radiative source/sink matrices, deterministic
   ADAS-style coefficient ingestion-shape checks, finite line-radiation

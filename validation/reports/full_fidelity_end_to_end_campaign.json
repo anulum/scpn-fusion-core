@@ -1,0 +1,178 @@
+{
+  "acceptance_passed": false,
+  "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
+  "all_locally_actionable_contracts_ready": true,
+  "benchmark": "full_fidelity_end_to_end_campaign",
+  "description": "Integrated fail-closed campaign covering GK, EM, production-scale runtime, DREAM, Aurora/STRAHL, and free-boundary blockers.",
+  "lanes": [
+    {
+      "lane": "gene_cgyro_gs2_nonlinear_gk_parity",
+      "locally_actionable_contract_ready": true,
+      "next_required_evidence": [
+        "public nonlinear GENE/CGYRO/GS2 benchmark deck parity",
+        "production-scale radial/toroidal domain decomposition and convergence evidence",
+        "Maxwell field solve parity beyond compact A_parallel contract",
+        "validated flux spectra, zonal-flow, and saturation parity against production GK outputs"
+      ],
+      "reference_cases_ready": false,
+      "sources": [
+        {
+          "evidence_url": "https://genecode.org/",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Acquire redistribution-permitted nonlinear 5D GENE benchmark decks and output artifacts, then map heat flux, zonal flow, saturation, and electromagnetic observables into the full-fidelity artifact schema.",
+          "solver_family": "GENE",
+          "source_id": "gene_public_site",
+          "surface": "native_nonlinear_gyrokinetics"
+        },
+        {
+          "evidence_url": "https://gafusion.github.io/doc/cgyro.html",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Acquire public CGYRO nonlinear electromagnetic benchmark inputs and outputs, preserve provenance/license metadata, and compare against native 5D nonlinear GK artifacts.",
+          "solver_family": "CGYRO",
+          "source_id": "gacode_cgyro_docs",
+          "surface": "native_nonlinear_gyrokinetics"
+        },
+        {
+          "evidence_url": "https://gyrokinetics.gitlab.io/gs2/",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Acquire GS2 nonlinear benchmark decks and output artifacts, then gate native nonlinear GK heat-flux spectra and field-energy histories against declared thresholds.",
+          "solver_family": "GS2",
+          "source_id": "gs2_docs",
+          "surface": "native_nonlinear_gyrokinetics"
+        }
+      ],
+      "status": "blocked_missing_public_reference_artifacts",
+      "surface": "native_nonlinear_gyrokinetics"
+    },
+    {
+      "lane": "full_maxwell_electromagnetic_fidelity",
+      "locally_actionable_contract_ready": true,
+      "next_required_evidence": [
+        "native nonlinear Ampere/Faraday closure beyond compact A_parallel/B_parallel contracts",
+        "GENE/CGYRO/GS2 electromagnetic field-energy and transport parity artifacts"
+      ],
+      "reference_cases_ready": false,
+      "sources": [
+        {
+          "evidence_url": "https://genecode.org/",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Acquire redistribution-permitted nonlinear 5D GENE benchmark decks and output artifacts, then map heat flux, zonal flow, saturation, and electromagnetic observables into the full-fidelity artifact schema.",
+          "solver_family": "GENE",
+          "source_id": "gene_public_site",
+          "surface": "native_nonlinear_gyrokinetics"
+        },
+        {
+          "evidence_url": "https://gafusion.github.io/doc/cgyro.html",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Acquire public CGYRO nonlinear electromagnetic benchmark inputs and outputs, preserve provenance/license metadata, and compare against native 5D nonlinear GK artifacts.",
+          "solver_family": "CGYRO",
+          "source_id": "gacode_cgyro_docs",
+          "surface": "native_nonlinear_gyrokinetics"
+        },
+        {
+          "evidence_url": "https://gyrokinetics.gitlab.io/gs2/",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Acquire GS2 nonlinear benchmark decks and output artifacts, then gate native nonlinear GK heat-flux spectra and field-energy histories against declared thresholds.",
+          "solver_family": "GS2",
+          "source_id": "gs2_docs",
+          "surface": "native_nonlinear_gyrokinetics"
+        }
+      ],
+      "status": "blocked_missing_full_vlasov_maxwell_field_solve",
+      "surface": "native_nonlinear_gyrokinetics"
+    },
+    {
+      "lane": "production_scale_decomposition",
+      "locally_actionable_contract_ready": true,
+      "next_required_evidence": [
+        "radial/toroidal domain decomposition implementation",
+        "multi-GPU or cluster scaling reports on production-size grids",
+        "large-grid warm GPU throughput and convergence evidence"
+      ],
+      "reference_cases_ready": false,
+      "sources": [],
+      "status": "blocked_missing_cluster_scaling_evidence",
+      "surface": "solver_runtime"
+    },
+    {
+      "lane": "dream_grade_runaway_electrons",
+      "locally_actionable_contract_ready": true,
+      "next_required_evidence": [
+        "public DREAM deck ingestion and production artifact parity",
+        "full momentum-pitch-radius Fokker-Planck evolution rather than 1D momentum projection artifact",
+        "validated synchrotron, bremsstrahlung, partial-screening, and transport operators against DREAM",
+        "distribution-function, current, and growth-rate RMSE thresholds against public DREAM output"
+      ],
+      "reference_cases_ready": false,
+      "sources": [
+        {
+          "evidence_url": "https://github.com/chalmersplasmatheory/DREAM",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Ingest DREAM example or publication decks, run or acquire kinetic outputs, and map f_p_xi_t, runaway current, avalanche growth, synchrotron, bremsstrahlung, and partial-screening observables into the full-fidelity artifact schema.",
+          "solver_family": "DREAM",
+          "source_id": "dream_github",
+          "surface": "runaway_electrons"
+        }
+      ],
+      "status": "blocked_missing_public_dream_artifacts",
+      "surface": "runaway_electrons"
+    },
+    {
+      "lane": "aurora_strahl_grade_impurities",
+      "locally_actionable_contract_ready": true,
+      "next_required_evidence": [
+        "public Aurora/STRAHL artifact ingestion and production parity",
+        "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
+        "validated charge-state transport, recycling, and radiation operators against Aurora/STRAHL",
+        "charge-state density, total-density, and radiation RMSE thresholds against public outputs"
+      ],
+      "reference_cases_ready": false,
+      "sources": [
+        {
+          "evidence_url": "https://github.com/fsciortino/Aurora",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Ingest Aurora impurity transport examples and ADAS-backed outputs, then compare charge-state densities, total density, line radiation, ionisation, and recombination source/sink matrices.",
+          "solver_family": "Aurora",
+          "source_id": "aurora_github",
+          "surface": "impurity_transport"
+        }
+      ],
+      "status": "blocked_missing_public_aurora_strahl_artifacts",
+      "surface": "impurity_transport"
+    },
+    {
+      "lane": "free_boundary_equilibrium_strict_parity",
+      "locally_actionable_contract_ready": true,
+      "next_required_evidence": [
+        "public coil-current sidecars or machine coil metadata for GEQDSK rows",
+        "strict FreeGS backend convergence on public free-boundary cases",
+        "profile-source/free-boundary reconstruction parity artifacts"
+      ],
+      "reference_cases_ready": false,
+      "sources": [
+        {
+          "evidence_url": "https://github.com/freegs-plasma/freegs",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Ingest FreeGS free-boundary coil-current examples, run strict backend comparisons, and preserve coil, limiter, X-point, and GEQDSK provenance.",
+          "solver_family": "FreeGS",
+          "source_id": "freegs_github",
+          "surface": "free_boundary_equilibrium"
+        },
+        {
+          "evidence_url": "https://github.com/FusionComputingLab/freegsnke",
+          "local_artifact_status": "not_ingested",
+          "required_action": "Ingest evolutive free-boundary examples with machine coil metadata for strict native coil/vacuum reconstruction comparisons.",
+          "solver_family": "FreeGSNKE",
+          "source_id": "freegsnke_github",
+          "surface": "free_boundary_equilibrium"
+        }
+      ],
+      "status": "blocked_missing_external_coil_current_reference_artifacts",
+      "surface": "free_boundary_equilibrium"
+    }
+  ],
+  "public_source_registry": "validation/reference_data/full_fidelity_public_sources.json",
+  "reference_parity_ready": false,
+  "schema": "full-fidelity-end-to-end-campaign.v1",
+  "status": "not_full_fidelity"
+}

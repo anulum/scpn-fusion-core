@@ -52,7 +52,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 380 |
+| Python test files | 381 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -165,6 +165,9 @@ Required public artefacts and thresholds are declared in
 [`validation/reference_data/full_fidelity_reference_cases.json`](validation/reference_data/full_fidelity_reference_cases.json);
 accepted artefacts must also satisfy
 [`validation/reference_data/full_fidelity_artifact_schema.json`](validation/reference_data/full_fidelity_artifact_schema.json).
+The integrated six-lane campaign, including public source acquisition targets
+and production-scale blockers, is tracked by
+[`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md).
 
 ## Competitive Position
 
