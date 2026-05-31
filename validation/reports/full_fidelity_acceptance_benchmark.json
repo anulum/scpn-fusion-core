@@ -20,6 +20,7 @@
         "five_dimensional_delta_f_state": true,
         "heat_flux_spectrum_history_export": true,
         "jax_run_history_parity": true,
+        "json_compatible_reference_artifact_export": true,
         "kinetic_electron_surface": true,
         "moment_conserving_collision_contract": true,
         "named_conservative_exb_term": true,

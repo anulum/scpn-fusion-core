@@ -148,6 +148,81 @@ class NonlinearGKResult:
     converged: bool = False
     final_state: NonlinearGKState | None = None
 
+    def to_reference_artifact(self) -> dict[str, object]:
+        """Return a JSON-compatible nonlinear GK parity artifact."""
+        coordinates = {
+            "time_s": self.time.tolist(),
+            "kx_rhos": self.kx_rhos.tolist(),
+            "ky_rhos": self.ky_rhos.tolist(),
+            "theta_rad": self.theta_rad.tolist(),
+            "vpar_vth": self.vpar_vth.tolist(),
+            "mu_normalized": self.mu_normalized.tolist(),
+        }
+        coordinate_units = {
+            "time_s": "s",
+            "kx_rhos": "rho_s^-1",
+            "ky_rhos": "rho_s^-1",
+            "theta_rad": "rad",
+            "vpar_vth": "v_th",
+            "mu_normalized": "T_ref/B_ref",
+        }
+        observables = {
+            "ion_heat_flux_spectrum": self.Q_i_kxky_t.tolist(),
+            "electron_heat_flux_spectrum": self.Q_e_kxky_t.tolist(),
+            "particle_free_energy_spectrum": self.particle_free_energy_species_kxky_t.tolist(),
+            "phi_energy_spectrum": self.phi_energy_kxky_t.tolist(),
+            "electromagnetic_apar_energy_spectrum": self.A_parallel_energy_kxky_t.tolist(),
+            "electromagnetic_bpar_energy_spectrum": self.B_parallel_energy_kxky_t.tolist(),
+            "zonal_flow_energy": self.zonal_flow_energy_t.tolist(),
+            "saturated_phi_rms": float(self.saturated_phi_rms),
+            "saturated_zonal_flow_energy": float(self.saturated_zonal_flow_energy),
+            "electromagnetic_apar_energy": self.A_parallel_energy_t.tolist(),
+            "electromagnetic_bpar_energy": self.B_parallel_energy_t.tolist(),
+            "particle_free_energy": self.particle_free_energy_t.tolist(),
+            "total_energy": self.total_energy_t.tolist(),
+        }
+        observable_units = {
+            "ion_heat_flux_spectrum": "gyroBohm",
+            "electron_heat_flux_spectrum": "gyroBohm",
+            "particle_free_energy_spectrum": "solver_normalized",
+            "phi_energy_spectrum": "solver_normalized",
+            "electromagnetic_apar_energy_spectrum": "solver_normalized",
+            "electromagnetic_bpar_energy_spectrum": "solver_normalized",
+            "zonal_flow_energy": "solver_normalized",
+            "saturated_phi_rms": "solver_normalized",
+            "saturated_zonal_flow_energy": "solver_normalized",
+            "electromagnetic_apar_energy": "solver_normalized",
+            "electromagnetic_bpar_energy": "solver_normalized",
+            "particle_free_energy": "solver_normalized",
+            "total_energy": "solver_normalized",
+        }
+        observable_axes = {
+            "ion_heat_flux_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
+            "electron_heat_flux_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
+            "particle_free_energy_spectrum": ["time_s", "species", "kx_rhos", "ky_rhos"],
+            "phi_energy_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
+            "electromagnetic_apar_energy_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
+            "electromagnetic_bpar_energy_spectrum": ["time_s", "kx_rhos", "ky_rhos"],
+            "zonal_flow_energy": ["time_s"],
+            "saturated_phi_rms": [],
+            "saturated_zonal_flow_energy": [],
+            "electromagnetic_apar_energy": ["time_s"],
+            "electromagnetic_bpar_energy": ["time_s"],
+            "particle_free_energy": ["time_s"],
+            "total_energy": ["time_s"],
+        }
+        return {
+            "schema": "nonlinear-gk-reference-artifact.v1",
+            "surface": "native_nonlinear_gyrokinetics",
+            "reference_family": "GENE/CGYRO/GS2",
+            "status": "diagnostic_native_not_reference_parity",
+            "coordinates": coordinates,
+            "coordinate_units": coordinate_units,
+            "observables": observables,
+            "observable_units": observable_units,
+            "observable_axes": observable_axes,
+        }
+
 
 @dataclass(frozen=True)
 class NonlinearGKInvariantDiagnostics:

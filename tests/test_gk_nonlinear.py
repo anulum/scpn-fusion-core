@@ -560,6 +560,69 @@ class TestEnergyConservation:
             result.mu_normalized.size,
         )
 
+    def test_run_exports_json_compatible_reference_artifact(self):
+        cfg = NonlinearGKConfig(
+            n_kx=6,
+            n_ky=6,
+            n_theta=8,
+            n_vpar=5,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            dt=0.005,
+            n_steps=3,
+            save_interval=1,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        result = solver.run(solver.init_state(amplitude=1e-5, seed=73))
+
+        artifact = result.to_reference_artifact()
+
+        assert artifact["schema"] == "nonlinear-gk-reference-artifact.v1"
+        assert artifact["surface"] == "native_nonlinear_gyrokinetics"
+        assert artifact["reference_family"] == "GENE/CGYRO/GS2"
+        assert set(artifact["coordinates"]) == {
+            "time_s",
+            "kx_rhos",
+            "ky_rhos",
+            "theta_rad",
+            "vpar_vth",
+            "mu_normalized",
+        }
+        assert artifact["coordinate_units"]["theta_rad"] == "rad"
+        assert artifact["coordinate_units"]["vpar_vth"] == "v_th"
+        assert set(artifact["observable_axes"]["ion_heat_flux_spectrum"]) == {
+            "time_s",
+            "kx_rhos",
+            "ky_rhos",
+        }
+        assert set(artifact["observable_axes"]["particle_free_energy_spectrum"]) == {
+            "time_s",
+            "species",
+            "kx_rhos",
+            "ky_rhos",
+        }
+        observables = artifact["observables"]
+        for required in (
+            "ion_heat_flux_spectrum",
+            "electron_heat_flux_spectrum",
+            "particle_free_energy_spectrum",
+            "zonal_flow_energy",
+            "saturated_phi_rms",
+            "electromagnetic_apar_energy",
+        ):
+            assert required in observables
+        np.testing.assert_allclose(
+            np.asarray(observables["ion_heat_flux_spectrum"], dtype=float),
+            result.Q_i_kxky_t,
+        )
+        np.testing.assert_allclose(
+            np.asarray(observables["electromagnetic_apar_energy"], dtype=float),
+            result.A_parallel_energy_t,
+        )
+
 
 class TestSugamaCollisionProjection:
     def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
@@ -1078,6 +1141,10 @@ class TestJaxFallback:
         np.testing.assert_allclose(result.theta_rad, solver._np_solver.theta)
         np.testing.assert_allclose(result.vpar_vth, solver._np_solver.vpar)
         np.testing.assert_allclose(result.mu_normalized, solver._np_solver.mu)
+        artifact = result.to_reference_artifact()
+        assert artifact["schema"] == "nonlinear-gk-reference-artifact.v1"
+        assert artifact["coordinates"]["kx_rhos"] == result.kx_rhos.tolist()
+        assert "ion_heat_flux_spectrum" in artifact["observables"]
 
     def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
         from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available

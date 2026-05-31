@@ -424,6 +424,7 @@ def _nonlinear_gk_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
     implemented_dimensions = {
         "explicit_5d_phase_space_contract": True,
         "phase_space_coordinate_axis_export": True,
+        "json_compatible_reference_artifact_export": True,
         "electromagnetic_b_parallel_surface": cfg.electromagnetic,
         "electromagnetic_b_parallel_hamiltonian_coupling": cfg.electromagnetic,
         "electromagnetic_field_energy_accounting": cfg.electromagnetic,
