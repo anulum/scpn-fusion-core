@@ -165,6 +165,10 @@ class PsiRMSEResult:
     source_vacuum_operator_norm: float = float("nan")
     source_plasma_point_count: float = float("nan")
     source_vacuum_point_count: float = float("nan")
+    adapted_source_plasma_residual_l2: float = float("nan")
+    adapted_source_vacuum_residual_l2: float = float("nan")
+    adapted_source_plasma_operator_norm: float = float("nan")
+    adapted_source_vacuum_operator_norm: float = float("nan")
     best_source_candidate: str = ""
     best_source_candidate_residual_l2: float = float("nan")
     profile_source_candidate_rank: int = 0
@@ -1538,6 +1542,21 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     current_consistency = compute_toroidal_current_consistency(eq)
     source_candidates = compute_source_candidate_rankings(eq)
     source_convention_adapter = select_source_convention_adapter(eq)
+    if bool(source_convention_adapter["source_convention_adapter_pass"]):
+        adapted_source = apply_source_convention(
+            compute_gs_source(eq),
+            convention=str(source_convention_adapter["source_convention_adapter"]),
+            flux_span=float(eq.sibry - eq.simag),
+        )
+        adapted_source_alignment, _ = compute_source_alignment(eq, adapted_source)
+    else:
+        adapted_source = None
+        adapted_source_alignment = {
+            "source_plasma_residual_l2": float("nan"),
+            "source_vacuum_residual_l2": float("nan"),
+            "source_plasma_operator_norm": float("nan"),
+            "source_vacuum_operator_norm": float("nan"),
+        }
     adapted_profile_reconstruction = compute_adapted_profile_reconstruction(
         eq,
         omega=omega_opt,
@@ -1619,14 +1638,9 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
             adapted_profile_current_ratio * current_limited_adapted_profile_scale
         )
         current_limited_adapted_profile_error = abs(current_limited_adapted_profile_ratio - 1.0)
-        adapted_source_for_current_limit = (
-            apply_source_convention(
-                compute_gs_source(eq),
-                convention=str(source_convention_adapter["source_convention_adapter"]),
-                flux_span=float(eq.sibry - eq.simag),
-            )
-            * current_limited_adapted_profile_scale
-        )
+        if adapted_source is None:
+            raise RuntimeError("passing source-convention adapter must produce an adapted source")
+        adapted_source_for_current_limit = adapted_source * current_limited_adapted_profile_scale
         current_limited_psi, _, _, _ = manufactured_solve_vectorised(
             eq,
             omega=omega_opt,
@@ -1729,6 +1743,10 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         source_vacuum_operator_norm=source_alignment["source_vacuum_operator_norm"],
         source_plasma_point_count=source_alignment["source_plasma_point_count"],
         source_vacuum_point_count=source_alignment["source_vacuum_point_count"],
+        adapted_source_plasma_residual_l2=adapted_source_alignment["source_plasma_residual_l2"],
+        adapted_source_vacuum_residual_l2=adapted_source_alignment["source_vacuum_residual_l2"],
+        adapted_source_plasma_operator_norm=adapted_source_alignment["source_plasma_operator_norm"],
+        adapted_source_vacuum_operator_norm=adapted_source_alignment["source_vacuum_operator_norm"],
         best_source_candidate=best_source_candidate,
         best_source_candidate_residual_l2=best_source_candidate_residual,
         profile_source_candidate_rank=profile_source_rank,

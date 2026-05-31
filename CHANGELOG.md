@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added EFIT/GEQDSK adapted-source plasma/vacuum residual diagnostics so
+  accepted source-convention adapters expose masked source quality, not only a
+  global residual.
+
 - Added Go, Julia, and Lean native masked toroidal-current integration parity
   for the full-domain/plasma-domain Grad-Shafranov current-closure contract.
 

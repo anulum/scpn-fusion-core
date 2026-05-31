@@ -469,6 +469,10 @@
           "source_vacuum_operator_norm",
           "source_plasma_point_count",
           "source_vacuum_point_count",
+          "adapted_source_plasma_residual_l2",
+          "adapted_source_vacuum_residual_l2",
+          "adapted_source_plasma_operator_norm",
+          "adapted_source_vacuum_operator_norm",
           "best_source_candidate",
           "best_source_candidate_residual_l2",
           "profile_source_candidate_rank",
@@ -754,6 +758,18 @@
             "type": "number"
           },
           "source_vacuum_point_count": {
+            "type": "number"
+          },
+          "adapted_source_plasma_residual_l2": {
+            "type": "number"
+          },
+          "adapted_source_vacuum_residual_l2": {
+            "type": "number"
+          },
+          "adapted_source_plasma_operator_norm": {
+            "type": "number"
+          },
+          "adapted_source_vacuum_operator_norm": {
             "type": "number"
           },
           "best_source_candidate": {

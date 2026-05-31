@@ -312,10 +312,20 @@ class TestComputeSourceAlignment:
         eq = read_geqdsk(SPARC_DIR / "sparc_1310.eqdsk")
 
         adapter = select_source_convention_adapter(eq)
+        adapted_source = psi_rmse_mod.apply_source_convention(
+            compute_gs_source(eq),
+            convention=str(adapter["source_convention_adapter"]),
+            flux_span=float(eq.sibry - eq.simag),
+        )
+        adapted_alignment, _ = compute_source_alignment(eq, adapted_source)
 
         assert adapter["source_convention_adapter"] == "scaled_by_2pi"
         assert adapter["source_convention_adapter_pass"] is True
         assert float(adapter["source_convention_adapter_residual_l2"]) < 0.15
+        assert np.isfinite(adapted_alignment["source_plasma_residual_l2"])
+        assert np.isfinite(adapted_alignment["source_vacuum_residual_l2"])
+        assert adapted_alignment["source_plasma_point_count"] > 0
+        assert adapted_alignment["source_vacuum_point_count"] > 0
 
     def test_source_convention_adapter_keeps_lmode_diagnostic_only(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
@@ -778,6 +788,10 @@ class TestValidateEFITNRMSEBenchmark:
                 source_vacuum_operator_norm=0.5,
                 source_plasma_point_count=4.0,
                 source_vacuum_point_count=5.0,
+                adapted_source_plasma_residual_l2=0.01,
+                adapted_source_vacuum_residual_l2=0.01,
+                adapted_source_plasma_operator_norm=0.5,
+                adapted_source_vacuum_operator_norm=0.5,
                 best_source_candidate="profile_source",
                 best_source_candidate_residual_l2=rmse,
                 profile_source_candidate_rank=1,
@@ -1061,6 +1075,10 @@ class TestValidateEFITNRMSEBenchmark:
                 source_vacuum_operator_norm=0.5,
                 source_plasma_point_count=4.0,
                 source_vacuum_point_count=5.0,
+                adapted_source_plasma_residual_l2=0.01,
+                adapted_source_vacuum_residual_l2=0.01,
+                adapted_source_plasma_operator_norm=0.5,
+                adapted_source_vacuum_operator_norm=0.5,
                 best_source_candidate="profile_source",
                 best_source_candidate_residual_l2=0.01,
                 profile_source_candidate_rank=1,
@@ -1172,6 +1190,10 @@ class TestValidateEFITNRMSEBenchmark:
                 source_vacuum_operator_norm=0.5,
                 source_plasma_point_count=4.0,
                 source_vacuum_point_count=5.0,
+                adapted_source_plasma_residual_l2=0.01,
+                adapted_source_vacuum_residual_l2=0.01,
+                adapted_source_plasma_operator_norm=0.5,
+                adapted_source_vacuum_operator_norm=0.5,
                 best_source_candidate="profile_source",
                 best_source_candidate_residual_l2=0.01,
                 profile_source_candidate_rank=1,
@@ -1282,6 +1304,10 @@ class TestValidateEFITNRMSEBenchmark:
                 source_vacuum_operator_norm=0.5,
                 source_plasma_point_count=4.0,
                 source_vacuum_point_count=5.0,
+                adapted_source_plasma_residual_l2=0.01,
+                adapted_source_vacuum_residual_l2=0.01,
+                adapted_source_plasma_operator_norm=0.5,
+                adapted_source_vacuum_operator_norm=0.5,
                 best_source_candidate="profile_source",
                 best_source_candidate_residual_l2=0.01,
                 profile_source_candidate_rank=1,
