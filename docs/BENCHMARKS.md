@@ -149,6 +149,7 @@ The report writes `validation/reports/gpu_backend_alternatives.json` and
 only when the Vulkan/WGPU device is physical. A CUDA/JAX lane is publishable
 only when JAX reports a CUDA device and the deterministic kernel result carries
 a SHA-256 checksum. The two lanes are never merged into a generic GPU result.
+The 2026-06-01 JarvisLabs L4 cloud report is tracked in [`validation/reports/gpu_backend_alternatives_jarvis_l4.md`](../validation/reports/gpu_backend_alternatives_jarvis_l4.md). It reports CUDA/JAX `passed` on `cuda:0` with median `8.9e-05 s` for the deterministic `256x256` JAX workload and WGPU `blocked_cpu_adapter` because Vulkan/WGPU exposed only `llvmpipe`, not the physical NVIDIA L4.
 
 ### Native Rust solver kernels
 

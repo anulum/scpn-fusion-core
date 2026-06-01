@@ -86,6 +86,15 @@ def _run_command(command: list[str], *, cwd: Path = ROOT, timeout_s: int = 180) 
             "output": str(exc.stdout or "") + str(exc.stderr or ""),
             "timed_out": True,
         }
+    except FileNotFoundError as exc:
+        elapsed = time.perf_counter() - start
+        return {
+            "command": command,
+            "elapsed_s": round(elapsed, 6),
+            "exit_code": 127,
+            "output": f"command_not_found:{exc.filename}",
+            "timed_out": False,
+        }
 
 
 def _sha256_bytes(data: bytes) -> str:

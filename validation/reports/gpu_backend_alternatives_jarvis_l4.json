@@ -1,0 +1,61 @@
+{
+  "_metadata": {
+    "code_rights": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+    "commercial_license": "Commercial license available",
+    "concepts_rights": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+    "contact": "www.anulum.li | protoscience@anulum.li",
+    "orcid": "0009-0009-3560-0851",
+    "spdx_license": "AGPL-3.0-or-later"
+  },
+  "benchmark_id": "gpu_backend_alternatives",
+  "generated_at_utc": "2026-06-01T20:50:28.867984+00:00",
+  "lanes": [
+    {
+      "blocker": "vulkan_wgpu_exposes_only_cpu_software_adapter",
+      "command": null,
+      "criterion_timings": {},
+      "elapsed_s": null,
+      "lane": "wgpu_physical",
+      "nvidia_smi_exit_code": 0,
+      "physical_vulkan_device_present": false,
+      "status": "blocked_cpu_adapter",
+      "vulkan_devices": [
+        {
+          "deviceName": "llvmpipe (LLVM 15.0.7, 256 bits)",
+          "deviceType": "PHYSICAL_DEVICE_TYPE_CPU",
+          "driverInfo": "Mesa 23.2.1-1ubuntu3.1~22.04.3 (LLVM 15.0.7)",
+          "driverName": "llvmpipe",
+          "slot": "GPU0",
+          "vendorID": "0x10005"
+        }
+      ],
+      "vulkaninfo_exit_code": 0
+    },
+    {
+      "cuda_device_present": true,
+      "elapsed_s": 0.000517,
+      "jax_devices": [
+        "cuda:0"
+      ],
+      "jax_version_or_error": "0.6.2",
+      "lane": "cuda_jax",
+      "max_s": 0.000145,
+      "median_s": 8.9e-05,
+      "min_s": 7.8e-05,
+      "repeats": 5,
+      "result_l2_norm": 243.057328078962,
+      "result_sha256": "c37f3690af105089f344784d0a6e43b7083f301301c368e08640cffa6086246b",
+      "size": 256,
+      "status": "passed"
+    }
+  ],
+  "platform": "Linux-6.8.0-107-generic-x86_64-with-glibc2.35",
+  "probe_only": false,
+  "publishable_gpu_throughput": true,
+  "python": "3.10.20",
+  "schema": "gpu-backend-alternatives.v1",
+  "summary": {
+    "cuda_jax": "passed",
+    "wgpu_physical": "blocked_cpu_adapter"
+  }
+}
