@@ -64,6 +64,22 @@
   "impurity_transport_operator_evidence_status": "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator",
   "lanes": [
     {
+      "lane": "sas_dataset_readiness",
+      "locally_actionable_contract_ready": true,
+      "next_required_evidence": [
+        "facility_raw_data",
+        "free_boundary_coil_current_sidecars",
+        "gyrokinetics_em_same_deck_outputs",
+        "gyrokinetics_same_deck_outputs",
+        "impurity_transport_same_deck_outputs",
+        "runaway_same_deck_outputs"
+      ],
+      "reference_cases_ready": false,
+      "sources": [],
+      "status": "blocked_missing_required_external_parity_datasets",
+      "surface": "external_reference_data"
+    },
+    {
       "lane": "gene_cgyro_gs2_nonlinear_gk_parity",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
@@ -307,6 +323,21 @@
   "runaway_native_kinetic_operator_evidence_ready": true,
   "runaway_source_term_budget_dream_same_case_ready": false,
   "runaway_source_term_budget_evidence_ready": true,
+  "sas_dataset_accepted_full_fidelity_ready": false,
+  "sas_dataset_available_entries": 11,
+  "sas_dataset_blocked_entries": 38,
+  "sas_dataset_checksum_rows": 84,
+  "sas_dataset_external_parity_outputs_ready": false,
+  "sas_dataset_next_required_evidence": [
+    "facility_raw_data",
+    "free_boundary_coil_current_sidecars",
+    "gyrokinetics_em_same_deck_outputs",
+    "gyrokinetics_same_deck_outputs",
+    "impurity_transport_same_deck_outputs",
+    "runaway_same_deck_outputs"
+  ],
+  "sas_dataset_readiness_report": "validation/reports/sas_dataset_readiness.json",
+  "sas_dataset_readiness_status": "blocked_missing_required_external_parity_datasets",
   "schema": "full-fidelity-end-to-end-campaign.v1",
   "status": "not_full_fidelity"
 }

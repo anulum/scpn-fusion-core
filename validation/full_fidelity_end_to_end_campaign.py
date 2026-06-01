@@ -41,6 +41,7 @@ from validation.benchmark_impurity_transport_contract import (
     run_benchmark as run_impurity_contract,
 )
 from validation.benchmark_runaway_dream_contract import run_benchmark as run_runaway_contract
+from validation.benchmark_sas_dataset_manifest import run_benchmark as run_sas_dataset_readiness
 
 
 def _load_sources() -> dict[str, Any]:
@@ -307,8 +308,24 @@ def run_campaign() -> dict[str, Any]:
     gk = _acceptance_surface(acceptance, "native_nonlinear_gyrokinetics")
     runaway_surface = _acceptance_surface(acceptance, "runaway_electrons")
     impurity_surface = _acceptance_surface(acceptance, "impurity_transport")
+    sas_dataset_readiness = run_sas_dataset_readiness()
 
     lanes = [
+        {
+            "lane": "sas_dataset_readiness",
+            "surface": "external_reference_data",
+            "status": str(sas_dataset_readiness["status"]),
+            "locally_actionable_contract_ready": bool(
+                sas_dataset_readiness["manifest_present"]
+                and sas_dataset_readiness["available_entries"]
+                and sas_dataset_readiness["checksum_rows"]
+            ),
+            "reference_cases_ready": bool(
+                sas_dataset_readiness["accepted_full_fidelity_dataset_ready"]
+            ),
+            "sources": [],
+            "next_required_evidence": sas_dataset_readiness["next_required_evidence"],
+        },
         {
             "lane": "gene_cgyro_gs2_nonlinear_gk_parity",
             "surface": "native_nonlinear_gyrokinetics",
@@ -435,6 +452,20 @@ def run_campaign() -> dict[str, Any]:
         "benchmark": "full_fidelity_end_to_end_campaign",
         "schema": "full-fidelity-end-to-end-campaign.v1",
         "description": "Integrated fail-closed campaign covering GK, EM, production-scale runtime, DREAM, Aurora/STRAHL, and free-boundary blockers.",
+        "sas_dataset_readiness_report": "validation/reports/sas_dataset_readiness.json",
+        "sas_dataset_readiness_status": str(sas_dataset_readiness["status"]),
+        "sas_dataset_available_entries": int(sas_dataset_readiness["available_entries"]),
+        "sas_dataset_blocked_entries": int(sas_dataset_readiness["blocked_entries"]),
+        "sas_dataset_checksum_rows": int(sas_dataset_readiness["checksum_rows"]),
+        "sas_dataset_external_parity_outputs_ready": bool(
+            sas_dataset_readiness["external_parity_outputs_ready"]
+        ),
+        "sas_dataset_accepted_full_fidelity_ready": bool(
+            sas_dataset_readiness["accepted_full_fidelity_dataset_ready"]
+        ),
+        "sas_dataset_next_required_evidence": list(
+            sas_dataset_readiness["next_required_evidence"]
+        ),
         "public_source_cache_root": downloads["cache_root"],
         "public_source_download_report": str(PUBLIC_SOURCE_DOWNLOADS.relative_to(ROOT)),
         "public_sources_cached": bool(downloads["all_reachable_downloads_completed"]),
@@ -635,6 +666,19 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Schema: `{report['schema']}`",
         f"- Status: `{report['status']}`",
         f"- Acceptance passed: `{report['acceptance_passed']}`",
+        f"- SAS dataset readiness report: `{report['sas_dataset_readiness_report']}`",
+        f"- SAS dataset readiness status: `{report['sas_dataset_readiness_status']}`",
+        f"- SAS dataset available entries: `{report['sas_dataset_available_entries']}`",
+        f"- SAS dataset blocked entries: `{report['sas_dataset_blocked_entries']}`",
+        f"- SAS dataset checksum rows: `{report['sas_dataset_checksum_rows']}`",
+        (
+            "- SAS dataset external parity outputs ready: "
+            f"`{report['sas_dataset_external_parity_outputs_ready']}`"
+        ),
+        (
+            "- SAS dataset accepted full-fidelity ready: "
+            f"`{report['sas_dataset_accepted_full_fidelity_ready']}`"
+        ),
         f"- Public source registry: `{report['public_source_registry']}`",
         f"- Public source download report: `{report['public_source_download_report']}`",
         f"- Public sources cached: `{report['public_sources_cached']}`",

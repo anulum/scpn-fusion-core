@@ -13,6 +13,22 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["schema"] == "full-fidelity-end-to-end-campaign.v1"
     assert report["status"] == "not_full_fidelity"
     assert report["acceptance_passed"] is False
+    assert (
+        report["sas_dataset_readiness_report"]
+        == "validation/reports/sas_dataset_readiness.json"
+    )
+    assert report["sas_dataset_readiness_status"] in {
+        "blocked_missing_required_external_parity_datasets",
+        "blocked_missing_sas_dataset_manifest",
+        "blocked_incomplete_sas_dataset_manifest",
+        "accepted_full_fidelity_dataset_ready",
+    }
+    assert report["sas_dataset_available_entries"] >= 0
+    assert report["sas_dataset_blocked_entries"] >= 0
+    assert report["sas_dataset_checksum_rows"] >= 0
+    assert report["sas_dataset_external_parity_outputs_ready"] in {True, False}
+    assert report["sas_dataset_accepted_full_fidelity_ready"] is False
+    assert report["sas_dataset_next_required_evidence"]
     assert report["reference_parity_ready"] is False
     assert (
         report["public_reference_artifact_conversion_report"]
@@ -126,6 +142,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {
+        "sas_dataset_readiness",
         "gene_cgyro_gs2_nonlinear_gk_parity",
         "full_maxwell_electromagnetic_fidelity",
         "production_scale_decomposition",
@@ -133,6 +150,8 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         "aurora_strahl_grade_impurities",
         "free_boundary_equilibrium_strict_parity",
     }
+    assert lanes["sas_dataset_readiness"]["surface"] == "external_reference_data"
+    assert lanes["sas_dataset_readiness"]["status"].startswith("blocked_")
     assert lanes["dream_grade_runaway_electrons"]["sources"][0]["solver_family"] == "DREAM"
     assert lanes["aurora_strahl_grade_impurities"]["sources"][0]["solver_family"] == "Aurora"
     assert {

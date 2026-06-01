@@ -22,12 +22,14 @@ same-case external reference artefacts and quantitative comparisons exist.
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact plus native source/sink budget diagnostics exist; full radial transport parity and same-case source-budget parity are missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Blocked: dedicated strict-parity gate now consumes the FreeGS public-example reconstruction and machine-metadata reports; threshold acceptance, grid convergence, public coil/vacuum sidecars, and same-case public reference output remain missing | `python validation/benchmark_free_boundary_strict_parity.py` |
+| SAS dataset readiness | Blocked: SAS now holds public or locally authorised source snapshots and reference inputs under `DATASETS/SCPN-FUSION-CORE`, but missing same-deck external parity outputs remain explicit blocked rows rather than accepted evidence | `python validation/benchmark_sas_dataset_manifest.py` |
 
 Source acquisition and conversion commands:
 
 ```bash
 python tools/download_full_fidelity_public_sources.py --allow-failures
 python tools/convert_full_fidelity_reference_artifacts.py --check
+python validation/benchmark_sas_dataset_manifest.py
 python validation/benchmark_full_fidelity_acceptance.py
 python validation/full_fidelity_end_to_end_campaign.py
 ```
@@ -264,6 +266,18 @@ The current acquisition covers GENE public pages, CGYRO/GACODE, GS2, DREAM,
 Aurora, FreeGS, and FreeGSNKE. These raw snapshots are not benchmark parity
 artifacts; production parity still requires schema-valid JSON/NPZ reference
 artifacts, licenses, thresholds, observables, and solver-output comparisons.
+
+The SAS dataset readiness gate is tracked in
+[`validation/reports/sas_dataset_readiness.md`](../validation/reports/sas_dataset_readiness.md).
+It reads `DATASETS/SCPN-FUSION-CORE/manifests/dataset_manifest.json`
+from the shared data volume by auto-discovery, or
+`SCPN_FUSION_DATASET_ROOT/manifests/dataset_manifest.json` when an alternate
+dataset root is provided, plus its checksum sidecar. Public source trees, web snapshots, Aurora-bundled
+ADAS data, FreeGS metadata, and repository-curated reference inputs are
+accepted only as acquisition evidence. Missing GENE/CGYRO/GS2 same-deck
+outputs, electromagnetic outputs, DREAM production outputs, Aurora/STRAHL
+transport outputs, public coil-current sidecars, and restricted facility raw
+data remain blocked rows.
 
 The public-output conversion pass is tracked in
 [`validation/reports/full_fidelity_reference_artifact_conversion.md`](../validation/reports/full_fidelity_reference_artifact_conversion.md).

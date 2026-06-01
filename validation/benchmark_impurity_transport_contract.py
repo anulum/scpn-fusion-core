@@ -208,7 +208,7 @@ def _native_impurity_transport_evidence(
 
 def run_benchmark() -> dict[str, Any]:
     """Run impurity transport contract checks and return invariant summary."""
-    rho = np.linspace(0.0, 1.0, 80)
+    rho = np.linspace(0.0, 1.0, 80, dtype=np.float64)
     R0 = 6.2
     a = 2.0
     dt = 0.2
@@ -227,7 +227,7 @@ def run_benchmark() -> dict[str, Any]:
     )
     pinch = neoclassical_impurity_pinch(74, ne, Te, Ti, q, rho, R0, a, eps)
     result = solver.step(dt, ne, Te, Ti, D_anom=0.0, V_pinch={"W": np.zeros_like(rho)})
-    n_w = np.asarray(result["W"], dtype=float)
+    n_w = np.asarray(result["W"], dtype=np.float64)
 
     expected_particles = source_rate * (4.0 * np.pi**2 * R0 * a) * dt
     actual_particles = _inventory(n_w, rho, R0, a)

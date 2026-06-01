@@ -5,6 +5,13 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Schema: `full-fidelity-end-to-end-campaign.v1`
 - Status: `not_full_fidelity`
 - Acceptance passed: `False`
+- SAS dataset readiness report: `validation/reports/sas_dataset_readiness.json`
+- SAS dataset readiness status: `blocked_missing_required_external_parity_datasets`
+- SAS dataset available entries: `11`
+- SAS dataset blocked entries: `38`
+- SAS dataset checksum rows: `84`
+- SAS dataset external parity outputs ready: `False`
+- SAS dataset accepted full-fidelity ready: `False`
 - Public source registry: `validation/reference_data/full_fidelity_public_sources.json`
 - Public source download report: `validation/reports/full_fidelity_public_source_downloads.json`
 - Public sources cached: `True`
@@ -74,6 +81,7 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 
 | Lane | Status | Local contract ready | Reference parity ready | Sources | Next evidence |
 | --- | --- | ---: | ---: | --- | --- |
+| sas_dataset_readiness | blocked_missing_required_external_parity_datasets | True | False | none | facility_raw_data<br>free_boundary_coil_current_sidecars<br>gyrokinetics_em_same_deck_outputs<br>gyrokinetics_same_deck_outputs<br>impurity_transport_same_deck_outputs<br>runaway_same_deck_outputs |
 | gene_cgyro_gs2_nonlinear_gk_parity | blocked_missing_external_output_manifest | True | False | GENE, CGYRO, GS2 | same-deck external nonlinear distribution output for GENE, CGYRO, and GS2<br>heat_flux_spectra_time_kx_ky_species for all required solver families<br>field_energy_history_phi_apar_bpar for all required solver families<br>zonal_flow_and_saturation_metrics for all required solver families<br>shared benchmark_case_id and deck_physics_sha256 across GENE, CGYRO, and GS2<br>native same-case nonlinear GK solver-output comparison<br>grid-convergence evidence for converted public nonlinear GK outputs<br>production-scale scaling evidence for converted public nonlinear GK outputs |
 | full_maxwell_electromagnetic_fidelity | blocked_missing_external_em_parity_outputs | True | False | GENE, CGYRO, GS2 | self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop<br>same-deck electromagnetic GENE/CGYRO/GS2 output artifacts<br>external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds<br>same-deck external electromagnetic grid-convergence evidence |
 | production_scale_decomposition | blocked_local_decomposition_ready_missing_distributed_runtime_scaling | True | False | none | MPI or multi-GPU distributed execution path over the declared rank tiles<br>large-grid cluster/GPU wall-time scaling report<br>same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes<br>hardware-specific multi-rank throughput and efficiency thresholds<br>accepted distributed scaling gate over required rank counts<br>accepted distributed run manifests with reproducibility fields and checksums |

@@ -1,0 +1,25 @@
+{
+  "accepted_full_fidelity_dataset_ready": false,
+  "available_entries": 11,
+  "blocked_entries": 38,
+  "checksum_rows": 84,
+  "checksums_path": "DATASETS/SCPN-FUSION-CORE/manifests/checksums.json",
+  "dataset_root": "DATASETS/SCPN-FUSION-CORE",
+  "external_parity_outputs_ready": false,
+  "invalid_available_rows": [],
+  "invalid_blocked_rows": [],
+  "manifest_path": "DATASETS/SCPN-FUSION-CORE/manifests/dataset_manifest.json",
+  "manifest_present": true,
+  "missing_available_lanes": [],
+  "missing_blocked_lanes": [],
+  "next_required_evidence": [
+    "facility_raw_data",
+    "free_boundary_coil_current_sidecars",
+    "gyrokinetics_em_same_deck_outputs",
+    "gyrokinetics_same_deck_outputs",
+    "impurity_transport_same_deck_outputs",
+    "runaway_same_deck_outputs"
+  ],
+  "schema": "sas-dataset-readiness-benchmark.v1",
+  "status": "blocked_missing_required_external_parity_datasets"
+}
