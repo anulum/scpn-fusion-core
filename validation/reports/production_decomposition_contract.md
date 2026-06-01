@@ -90,13 +90,58 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 | 30 | radial_lower=26, radial_upper=None, toroidal_lower=29, toroidal_upper=31 | `True` |
 | 31 | radial_lower=27, radial_upper=None, toroidal_lower=30, toroidal_upper=None | `True` |
 
+## Distributed communication volume evidence
+
+- Schema: `production-decomposition-communication-volume.v1`
+- Status: `blocked_missing_distributed_runtime_execution`
+- Distributed runtime ready: `False`
+- Halo dtype: `float64`
+- Communicating faces: `104`
+- Total halo-exchange bytes per step: `436207616`
+- Max rank halo-exchange bytes per step: `16777216`
+
+| Rank | Bytes/step | Communicating faces |
+|---:|---:|---:|
+| 0 | 8388608 | 2 |
+| 1 | 12582912 | 3 |
+| 2 | 12582912 | 3 |
+| 3 | 8388608 | 2 |
+| 4 | 12582912 | 3 |
+| 5 | 16777216 | 4 |
+| 6 | 16777216 | 4 |
+| 7 | 12582912 | 3 |
+| 8 | 12582912 | 3 |
+| 9 | 16777216 | 4 |
+| 10 | 16777216 | 4 |
+| 11 | 12582912 | 3 |
+| 12 | 12582912 | 3 |
+| 13 | 16777216 | 4 |
+| 14 | 16777216 | 4 |
+| 15 | 12582912 | 3 |
+| 16 | 12582912 | 3 |
+| 17 | 16777216 | 4 |
+| 18 | 16777216 | 4 |
+| 19 | 12582912 | 3 |
+| 20 | 12582912 | 3 |
+| 21 | 16777216 | 4 |
+| 22 | 16777216 | 4 |
+| 23 | 12582912 | 3 |
+| 24 | 12582912 | 3 |
+| 25 | 16777216 | 4 |
+| 26 | 16777216 | 4 |
+| 27 | 12582912 | 3 |
+| 28 | 8388608 | 2 |
+| 29 | 12582912 | 3 |
+| 30 | 12582912 | 3 |
+| 31 | 8388608 | 2 |
+
 ## Local CPU halo/invariant benchmark
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 5.785675e-02 | 9.061829e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 4.416930e-02 | 1.186996e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 3.453628e-02 | 1.518079e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 1.508423e-01 | 3.475736e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 1.312949e-01 | 3.993209e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 2.180745e-01 | 2.404169e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -111,9 +156,9 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 | Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 9.061829e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 1.186996e+07 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 1.518079e+07 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_4x2 | 8 | 524288 | 3.475736e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 3.993209e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 2.404169e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 

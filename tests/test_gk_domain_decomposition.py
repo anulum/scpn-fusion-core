@@ -189,6 +189,17 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert halo_evidence["halo_face_integrity_pass"] is True
     assert halo_evidence["distributed_runtime_halo_exchange_ready"] is False
     assert all(row["face_integrity_pass"] for row in halo_evidence["face_rows"])
+    communication_volume = report["distributed_communication_volume_evidence"]
+    assert communication_volume["schema"] == "production-decomposition-communication-volume.v1"
+    assert communication_volume["status"] == "blocked_missing_distributed_runtime_execution"
+    assert communication_volume["distributed_runtime_ready"] is False
+    assert communication_volume["halo_dtype"] == "float64"
+    assert communication_volume["bytes_per_float64"] == 8
+    assert communication_volume["rank_count"] == 32
+    assert communication_volume["communicating_face_count"] > 0
+    assert communication_volume["total_halo_exchange_bytes_per_step"] > 0
+    assert communication_volume["max_rank_halo_exchange_bytes_per_step"] > 0
+    assert all(row["rank_halo_exchange_bytes_per_step"] >= 0 for row in communication_volume["rank_rows"])
     shape_evidence = report["same_physics_shape_convergence_evidence"]
     assert shape_evidence["schema"] == "production-decomposition-shape-convergence.v1"
     assert shape_evidence["shape_convergence_pass"] is True

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -37,6 +38,7 @@ JSON_REPORT = REPORT_DIR / "production_decomposition_contract.json"
 MD_REPORT = REPORT_DIR / "production_decomposition_contract.md"
 RELATIVE_REDUCTION_TOLERANCE = 1.0e-12
 RECONSTRUCTION_LINF_TOLERANCE = 0.0
+FLOAT64_BYTES = 8
 
 
 def _plan_row(case_id: str, plan: GKDomainDecompositionPlan) -> dict[str, Any]:
@@ -186,7 +188,7 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _halo_face_integrity_evidence(case_id: str, plan: GKDomainDecompositionPlan) -> dict[str, Any]:
     """Return serial halo-face integrity evidence for future distributed exchange."""
-    state = np.arange(plan.total_owned_phase_cells, dtype=np.float64).reshape(
+    state: NDArray[np.float64] = np.arange(plan.total_owned_phase_cells, dtype=np.float64).reshape(
         plan.n_radial,
         plan.n_toroidal,
         plan.n_theta,
@@ -264,6 +266,60 @@ def _halo_face_integrity_evidence(case_id: str, plan: GKDomainDecompositionPlan)
     }
 
 
+def _communication_volume_evidence(
+    plan: GKDomainDecompositionPlan, communication_rows: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Return fail-closed per-step halo communication volume evidence."""
+    rank_rows: list[dict[str, Any]] = []
+    total_bytes = 0
+    communicating_face_count = 0
+    for row in communication_rows:
+        face_rows: list[dict[str, Any]] = []
+        rank_bytes = 0
+        halo_shapes = row["halo_face_payload_shapes"]
+        if not isinstance(halo_shapes, dict):
+            raise TypeError("halo_face_payload_shapes must be a dictionary")
+        for face, shape in halo_shapes.items():
+            if shape is None:
+                continue
+            shape_list = [int(axis) for axis in shape]
+            value_count = int(np.prod(shape_list, dtype=np.int64))
+            face_bytes = value_count * FLOAT64_BYTES
+            communicating_face_count += 1
+            rank_bytes += face_bytes
+            face_rows.append(
+                {
+                    "face": face,
+                    "payload_bytes": face_bytes,
+                    "payload_shape": shape_list,
+                    "payload_values": value_count,
+                }
+            )
+        total_bytes += rank_bytes
+        rank_rows.append(
+            {
+                "face_rows": face_rows,
+                "rank": int(row["rank"]),
+                "rank_halo_exchange_bytes_per_step": rank_bytes,
+            }
+        )
+    max_rank_bytes = max(
+        int(row["rank_halo_exchange_bytes_per_step"]) for row in rank_rows
+    ) if rank_rows else 0
+    return {
+        "bytes_per_float64": FLOAT64_BYTES,
+        "communicating_face_count": communicating_face_count,
+        "distributed_runtime_ready": False,
+        "halo_dtype": "float64",
+        "max_rank_halo_exchange_bytes_per_step": max_rank_bytes,
+        "rank_count": plan.total_ranks,
+        "rank_rows": rank_rows,
+        "schema": "production-decomposition-communication-volume.v1",
+        "status": "blocked_missing_distributed_runtime_execution",
+        "total_halo_exchange_bytes_per_step": total_bytes,
+    }
+
+
 def _hardware_metadata() -> dict[str, Any]:
     return {
         "cpu_count": os.cpu_count(),
@@ -311,6 +367,9 @@ def run_benchmark() -> dict[str, Any]:
         _plan_row("production_256x128_8x4", production_plan),
     ]
     communication_contract_rows = rank_tile_communication_contract(production_plan)
+    communication_volume_evidence = _communication_volume_evidence(
+        production_plan, communication_contract_rows
+    )
     local_cpu_shape_variant_plan = build_radial_toroidal_decomposition(
         n_radial=64,
         n_toroidal=32,
@@ -389,6 +448,7 @@ def run_benchmark() -> dict[str, Any]:
         "coverage_pass": coverage_pass,
         "cpu_benchmark_rows": cpu_benchmark_rows,
         "decomposition_invariant_pass": decomposition_invariant_pass,
+        "distributed_communication_volume_evidence": communication_volume_evidence,
         "halo_face_integrity_evidence": halo_face_integrity_evidence,
         "halo_exchange_pass": halo_exchange_pass,
         "hardware_metadata": _hardware_metadata(),
@@ -501,6 +561,38 @@ def write_reports(report: dict[str, Any]) -> None:
                 neighbours=neighbours,
                 rank=row["rank"],
                 ready=row["communication_contract_ready"],
+            )
+        )
+    volume = report["distributed_communication_volume_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Distributed communication volume evidence",
+            "",
+            f"- Schema: `{volume['schema']}`",
+            f"- Status: `{volume['status']}`",
+            f"- Distributed runtime ready: `{volume['distributed_runtime_ready']}`",
+            f"- Halo dtype: `{volume['halo_dtype']}`",
+            f"- Communicating faces: `{volume['communicating_face_count']}`",
+            (
+                "- Total halo-exchange bytes per step: "
+                f"`{volume['total_halo_exchange_bytes_per_step']}`"
+            ),
+            (
+                "- Max rank halo-exchange bytes per step: "
+                f"`{volume['max_rank_halo_exchange_bytes_per_step']}`"
+            ),
+            "",
+            "| Rank | Bytes/step | Communicating faces |",
+            "|---:|---:|---:|",
+        ]
+    )
+    for row in volume["rank_rows"]:
+        lines.append(
+            "| {rank} | {bytes_per_step} | {faces} |".format(
+                bytes_per_step=row["rank_halo_exchange_bytes_per_step"],
+                faces=len(row["face_rows"]),
+                rank=row["rank"],
             )
         )
     lines.extend(

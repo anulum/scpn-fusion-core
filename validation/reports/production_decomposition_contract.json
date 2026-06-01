@@ -1182,8 +1182,8 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 9061828.79775041,
-      "elapsed_s": 0.0578567540505901,
+      "cells_per_second": 3475735.8953314046,
+      "elapsed_s": 0.1508423009654507,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1208,8 +1208,8 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 11869964.792121455,
-      "elapsed_s": 0.044169296976178885,
+      "cells_per_second": 3993209.4856786598,
+      "elapsed_s": 0.13129488995764405,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1234,8 +1234,8 @@
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 15180790.936162658,
-      "elapsed_s": 0.03453627694398165,
+      "cells_per_second": 2404168.755602782,
+      "elapsed_s": 0.21807454188819975,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1261,6 +1261,1459 @@
   ],
   "decomposition_invariant_pass": true,
   "description": "Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling with executable local rank-tile evidence. This is not distributed MPI or multi-GPU scaling evidence.",
+  "distributed_communication_volume_evidence": {
+    "bytes_per_float64": 8,
+    "communicating_face_count": 104,
+    "distributed_runtime_ready": false,
+    "halo_dtype": "float64",
+    "max_rank_halo_exchange_bytes_per_step": 16777216,
+    "rank_count": 32,
+    "rank_rows": [
+      {
+        "face_rows": [
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 0,
+        "rank_halo_exchange_bytes_per_step": 8388608
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 1,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 2,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 3,
+        "rank_halo_exchange_bytes_per_step": 8388608
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 4,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 5,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 6,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 7,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 8,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 9,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 10,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 11,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 12,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 13,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 14,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 15,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 16,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 17,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 18,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 19,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 20,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 21,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 22,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 23,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 24,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 25,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 26,
+        "rank_halo_exchange_bytes_per_step": 16777216
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "radial_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 27,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 28,
+        "rank_halo_exchange_bytes_per_step": 8388608
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 29,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_upper",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 30,
+        "rank_halo_exchange_bytes_per_step": 12582912
+      },
+      {
+        "face_rows": [
+          {
+            "face": "radial_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              1,
+              32,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          },
+          {
+            "face": "toroidal_lower",
+            "payload_bytes": 4194304,
+            "payload_shape": [
+              32,
+              1,
+              32,
+              32,
+              16
+            ],
+            "payload_values": 524288
+          }
+        ],
+        "rank": 31,
+        "rank_halo_exchange_bytes_per_step": 8388608
+      }
+    ],
+    "schema": "production-decomposition-communication-volume.v1",
+    "status": "blocked_missing_distributed_runtime_execution",
+    "total_halo_exchange_bytes_per_step": 436207616
+  },
   "halo_exchange_pass": true,
   "halo_face_integrity_evidence": {
     "case_id": "local_cpu_64x32_4x2",
@@ -1609,7 +3062,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 9061828.79775041,
+        "cells_per_second": 3475735.8953314046,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -1620,7 +3073,7 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 11869964.792121455,
+        "cells_per_second": 3993209.4856786598,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -1631,7 +3084,7 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 15180790.936162658,
+        "cells_per_second": 2404168.755602782,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
