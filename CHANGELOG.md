@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added a public GitHub Pages financing landing page that presents the full-fidelity parity campaign, evidence links, blocked validation lanes, and staged GPU/reference-solver funding plan without promoting partial artefacts to accepted parity evidence.
+
 - Declared the `requests` runtime dependency required by public Aurora
   acquisition and made public NPZ reference-artifact writing deterministic.
 

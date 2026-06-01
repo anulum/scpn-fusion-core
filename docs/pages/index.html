@@ -1,0 +1,487 @@
+<!--
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright 1998-2026 Miroslav Sotek. All rights reserved.
+Contact: www.anulum.li | protoscience@anulum.li
+ORCID: https://orcid.org/0009-0009-3560-0851
+License: GNU AGPL v3 with commercial licensing available.
+SCPN Fusion Core public financing landing page.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SCPN Fusion Core is an open-source neuro-symbolic tokamak control and physics validation platform seeking financing for full-fidelity fusion-solver parity campaigns.">
+  <title>SCPN Fusion Core - Financing Full-Fidelity Fusion Validation</title>
+  <style>
+    :root {
+      --ink: #101716;
+      --paper: #f3efe5;
+      --paper-2: #fffaf0;
+      --green: #0d4d43;
+      --teal: #1d7f72;
+      --amber: #c7771b;
+      --rust: #8f3c1d;
+      --line: rgba(16, 23, 22, 0.18);
+      --muted: #5b6965;
+      --shadow: 0 28px 80px rgba(22, 49, 45, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(199, 119, 27, 0.22), transparent 34rem),
+        radial-gradient(circle at 78% 4%, rgba(29, 127, 114, 0.20), transparent 31rem),
+        linear-gradient(135deg, #eee6d2 0%, var(--paper) 42%, #e7f0ea 100%);
+    }
+
+    a { color: inherit; }
+
+    .shell { max-width: 1180px; margin: 0 auto; padding: 28px; }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 0 34px;
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      font-size: 0.86rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav a { text-decoration: none; color: var(--green); }
+
+    .nav-links { display: flex; gap: 18px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .mark {
+      border: 1px solid var(--green);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255, 250, 240, 0.65);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(255, 250, 240, 0.76);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-copy { padding: clamp(30px, 6vw, 72px); border-radius: 34px; }
+
+    .eyebrow {
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--rust);
+      font-size: 0.76rem;
+      margin: 0 0 18px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 820px;
+      font-size: clamp(3.1rem, 8vw, 7.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.065em;
+      color: var(--green);
+    }
+
+    .lead {
+      max-width: 740px;
+      margin: 28px 0 0;
+      font-size: clamp(1.12rem, 2.4vw, 1.72rem);
+      line-height: 1.35;
+    }
+
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid var(--green);
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      background: var(--green);
+      color: #fffaf0;
+    }
+
+    .button.secondary { background: transparent; color: var(--green); }
+
+    .status-card {
+      border-radius: 34px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100%;
+    }
+
+    .status-card h2 { color: var(--green); margin: 0 0 14px; font-size: 1.42rem; }
+
+    .status-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+
+    .status-list li {
+      border-left: 4px solid var(--amber);
+      background: rgba(13, 77, 67, 0.06);
+      padding: 12px 14px;
+      line-height: 1.38;
+    }
+
+    .truth { margin-top: 20px; color: var(--muted); font-size: 0.95rem; line-height: 1.48; }
+
+    section { margin-top: 28px; }
+
+    .section-title {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(260px, 0.42fr);
+      gap: 22px;
+      align-items: end;
+      margin: 58px 0 18px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: clamp(2rem, 4vw, 4rem);
+      line-height: 0.94;
+      letter-spacing: -0.045em;
+    }
+
+    .section-title p { margin: 0; color: var(--muted); line-height: 1.55; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      background: rgba(255, 250, 240, 0.66);
+      min-height: 205px;
+    }
+
+    .card h3 { margin: 0 0 12px; color: var(--green); font-size: 1.28rem; }
+
+    .card p { margin: 0; line-height: 1.53; color: var(--muted); }
+
+    .metric { font-size: 2.2rem; color: var(--rust); line-height: 1; margin-bottom: 10px; }
+
+    .lane-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 24px;
+      background: rgba(255, 250, 240, 0.7);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .lane-table th,
+    .lane-table td {
+      padding: 16px;
+      vertical-align: top;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      line-height: 1.45;
+    }
+
+    .lane-table th {
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.74rem;
+      color: var(--green);
+      background: rgba(13, 77, 67, 0.08);
+    }
+
+    .pill {
+      display: inline-block;
+      border: 1px solid rgba(143, 60, 29, 0.35);
+      border-radius: 999px;
+      padding: 4px 9px;
+      color: var(--rust);
+      background: rgba(143, 60, 29, 0.08);
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .money {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .money .card { min-height: 255px; }
+
+    .money strong { color: var(--green); }
+
+    .evidence {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .link-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+    .link-list a {
+      display: block;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      text-decoration: none;
+      background: rgba(13, 77, 67, 0.05);
+      color: var(--green);
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      font-size: 0.92rem;
+    }
+
+    .closing {
+      margin: 58px 0 28px;
+      padding: clamp(26px, 5vw, 54px);
+      border-radius: 34px;
+      color: #fffaf0;
+      background:
+        radial-gradient(circle at 78% 22%, rgba(199, 119, 27, 0.55), transparent 22rem),
+        linear-gradient(135deg, #0d4d43, #102521);
+    }
+
+    .closing h2 { margin: 0; font-size: clamp(2rem, 5vw, 4.8rem); line-height: 0.92; letter-spacing: -0.045em; }
+
+    .closing p { max-width: 820px; font-size: 1.16rem; line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      font-size: 0.82rem;
+      padding: 24px 0 40px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 880px) {
+      .hero, .section-title, .evidence { grid-template-columns: 1fr; }
+      .grid, .money { grid-template-columns: 1fr; }
+      .nav { align-items: flex-start; flex-direction: column; }
+      .lane-table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="mark" href="https://github.com/anulum/scpn-fusion-core">SCPN Fusion Core</a>
+      <div class="nav-links">
+        <a href="#evidence">Evidence</a>
+        <a href="#financing">Financing plan</a>
+        <a href="python/">Python API</a>
+        <a href="rust/">Rust API</a>
+        <a href="notebooks/">Notebooks</a>
+      </div>
+    </nav>
+
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="panel hero-copy">
+        <p class="eyebrow">Open-source fusion control and validation infrastructure</p>
+        <h1 id="hero-title">Finance the full-fidelity parity campaign.</h1>
+        <p class="lead">
+          SCPN Fusion Core connects neuro-symbolic plasma-control logic, native physics kernels,
+          Rust acceleration, Lean safety proofs, and fail-closed benchmark gates. The next financing
+          step is not marketing polish: it is same-case public-reference execution against GENE,
+          CGYRO, GS2, DREAM, Aurora/STRAHL, FreeGS, and production GPU/cluster decomposition.
+        </p>
+        <div class="hero-actions">
+          <a class="button" href="mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20financing">Discuss financing</a>
+          <a class="button secondary" href="https://github.com/anulum/scpn-fusion-core">Audit the repository</a>
+          <a class="button secondary" href="https://github.com/anulum/scpn-fusion-core/blob/main/validation/reports/full_fidelity_end_to_end_campaign.md">Read the gate report</a>
+        </div>
+      </div>
+
+      <aside class="panel status-card" aria-label="Current status">
+        <div>
+          <h2>Current acceptance status</h2>
+          <ul class="status-list">
+            <li><strong>Local contracts:</strong> ready across the six production-parity lanes.</li>
+            <li><strong>Reference parity:</strong> not yet accepted; external same-case evidence is missing.</li>
+            <li><strong>Full-fidelity claim:</strong> intentionally blocked until public reference artefacts and thresholds pass.</li>
+          </ul>
+        </div>
+        <p class="truth">
+          This page is deliberately evidence-bounded. The project does not claim GENE/CGYRO/GS2,
+          DREAM, Aurora/STRAHL, or strict FreeGS production parity until the published gates pass.
+        </p>
+      </aside>
+    </section>
+
+    <section aria-labelledby="why-title">
+      <div class="section-title">
+        <h2 id="why-title">Why this is fundable now</h2>
+        <p>
+          The repository already exposes the instrumentation needed for a disciplined parity campaign:
+          source provenance, benchmark reports, native operators, blocked rows, and reproducibility commands.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="metric">40</div>
+          <h3>Public GK decks indexed</h3>
+          <p>GENE, CGYRO, and GS2 public-deck inventory exists, but same-deck nonlinear output artefacts are still required.</p>
+        </article>
+        <article class="card">
+          <div class="metric">23</div>
+          <h3>Free-boundary metadata rows</h3>
+          <p>Public FreeGSNKE machine metadata is indexed. Strict parity still needs accepted thresholds, grid convergence, and linked coil/vacuum sidecars.</p>
+        </article>
+        <article class="card">
+          <div class="metric">0</div>
+          <h3>Accepted full-fidelity artefacts</h3>
+          <p>The campaign is honest by construction: partial public outputs are tracked, but none are promoted to full-fidelity acceptance evidence.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="evidence" aria-labelledby="lanes-title">
+      <div class="section-title">
+        <h2 id="lanes-title">Six financing lanes</h2>
+        <p>
+          Funding converts blocked rows into same-case solver-output comparisons, thresholded reports,
+          reproducible commands, and hardware-specific scaling evidence.
+        </p>
+      </div>
+      <table class="lane-table">
+        <thead>
+          <tr>
+            <th>Lane</th>
+            <th>Ready now</th>
+            <th>Financing unlocks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>GENE/CGYRO/GS2 nonlinear GK</strong><br><span class="pill">blocked</span></td>
+            <td>Public decks and fail-closed manifest contracts.</td>
+            <td>Same-deck nonlinear distributions, heat-flux spectra, field-energy histories, zonal-flow metrics, convergence evidence, and production-scale comparisons.</td>
+          </tr>
+          <tr>
+            <td><strong>Full electromagnetic fidelity</strong><br><span class="pill">blocked</span></td>
+            <td>Compact electromagnetic closure, local Maxwell evolution evidence, and native EM replay thresholds.</td>
+            <td>Self-consistent 5D kinetic current coupling and external electromagnetic GENE/CGYRO/GS2 parity outputs.</td>
+          </tr>
+          <tr>
+            <td><strong>Production-scale decomposition</strong><br><span class="pill">blocked</span></td>
+            <td>Radial/toroidal decomposition contracts, local halo-face checks, and distributed-run acceptance schema.</td>
+            <td>MPI or multi-GPU runtime execution, large-grid wall-time scaling, throughput thresholds, and hardware metadata.</td>
+          </tr>
+          <tr>
+            <td><strong>DREAM-grade runaway electrons</strong><br><span class="pill">blocked</span></td>
+            <td>DREAM deck generation and native kinetic/source-term budget contracts.</td>
+            <td>PETSc-backed DREAM execution, compiled interface output, momentum-pitch-radius comparison, and loss/operator thresholds.</td>
+          </tr>
+          <tr>
+            <td><strong>Aurora/STRAHL-grade impurities</strong><br><span class="pill">blocked</span></td>
+            <td>Aurora/Open-ADAS atomic artifact and native charge-state source/sink contracts.</td>
+            <td>Radial transport outputs, line-radiation histories, ionisation/recombination matrices, inventory closure, and same-case native comparison.</td>
+          </tr>
+          <tr>
+            <td><strong>Free-boundary strict parity</strong><br><span class="pill">blocked</span></td>
+            <td>Public FreeGS example output, vacuum comparison, geometry containment, and native profile-source metrics.</td>
+            <td>Strict psi/current/axis/X-point/boundary thresholds, grid convergence, and public coil/vacuum reconstruction sidecars.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="financing" aria-labelledby="capital-title">
+      <div class="section-title">
+        <h2 id="capital-title">Capital plan</h2>
+        <p>
+          The GPU campaign should be staged. More compute without same-case external outputs only improves native benchmarks;
+          financing must cover reference-code execution, artefact curation, and independent reproducibility.
+        </p>
+      </div>
+      <div class="money">
+        <article class="card">
+          <h3>Phase A</h3>
+          <p><strong>USD 250k-500k.</strong> Convert remaining public outputs where redistributable, build reference execution scripts, and run smoke-scale GPU/CPU parity checks.</p>
+        </article>
+        <article class="card">
+          <h3>Phase B</h3>
+          <p><strong>USD 2M-5M.</strong> Produce credible same-case nonlinear GK, DREAM, Aurora/STRAHL, and FreeGS comparison bundles with tracked reports.</p>
+        </article>
+        <article class="card">
+          <h3>Phase C</h3>
+          <p><strong>USD 10M-25M.</strong> Add production-scale cluster and GPU scaling evidence, independent reproduction, and publication-grade convergence studies.</p>
+        </article>
+        <article class="card">
+          <h3>Phase D</h3>
+          <p><strong>USD 50M+.</strong> Sustain an external validation programme with larger machines, multi-site hardware evidence, and long-run controls integration.</p>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="links-title">
+      <div class="section-title">
+        <h2 id="links-title">Audit trail</h2>
+        <p>Investors and technical reviewers can inspect the exact public evidence rather than relying on a slide deck.</p>
+      </div>
+      <div class="evidence">
+        <article class="card">
+          <h3>Primary reports</h3>
+          <ul class="link-list">
+            <li><a href="https://github.com/anulum/scpn-fusion-core/blob/main/validation/reports/full_fidelity_end_to_end_campaign.md">Full-fidelity end-to-end campaign</a></li>
+            <li><a href="https://github.com/anulum/scpn-fusion-core/blob/main/validation/reports/full_fidelity_acceptance_benchmark.md">Acceptance benchmark</a></li>
+            <li><a href="https://github.com/anulum/scpn-fusion-core/blob/main/validation/reports/full_fidelity_reference_artifact_conversion.md">Reference artifact conversion</a></li>
+            <li><a href="https://github.com/anulum/scpn-fusion-core/blob/main/validation/reports/full_fidelity_public_source_downloads.md">Public source downloads</a></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Developer surfaces</h3>
+          <ul class="link-list">
+            <li><a href="python/">Python API reference</a></li>
+            <li><a href="rust/">Rust API reference</a></li>
+            <li><a href="notebooks/">Tutorial notebooks</a></li>
+            <li><a href="https://github.com/anulum/scpn-fusion-core">Source repository</a></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="closing-title">
+      <h2 id="closing-title">The ask is specific.</h2>
+      <p>
+        Finance a transparent full-fidelity campaign: same-deck external solver outputs, native same-case comparisons,
+        thresholded reports, reproducible artefacts, GPU/cluster scaling evidence, and independent review. The goal is not
+        to hide blockers. The goal is to burn them down in public, one gate at a time.
+      </p>
+      <a class="button" href="mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20financing">Contact protoscience@anulum.li</a>
+    </section>
+
+    <footer>
+      SCPN Fusion Core is licensed under GNU AGPL v3 with commercial licensing available.
+      Public claims are bounded by tracked repository evidence and fail-closed validation reports.
+    </footer>
+  </main>
+</body>
+</html>
