@@ -317,7 +317,7 @@ timing metadata, rank-neighbour/halo-face payload-shape contracts, and
 executable local rank-tile reductions across multiple decomposition shapes.
 It now also publishes per-rank halo-face integrity evidence comparing radial and
 toroidal halo faces against the serial reference payload, local process-isolated
-CPU rank execution, real local 2D radial/toroidal MPI halo exchange when mpi4py/mpiexec are
+CPU rank execution, real local 2D radial/toroidal MPI face-and-corner halo exchange when mpi4py/mpiexec are
 available, and CUDA rank-tile reductions when CuPy can access a GPU. Cluster MPI
 scaling and multi-GPU scaling remain blocked until measured artefacts exist. The
 optional runtime dependency contract pins base NumPy below 2 and gates MPI/GPU

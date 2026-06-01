@@ -426,7 +426,7 @@ def _mpi_runtime_evidence() -> dict[str, Any]:
         and payload.get("topology") == "radial_toroidal_2d"
         and payload.get("radial_parts") == 2
         and payload.get("toroidal_parts") == 2
-        and payload.get("min_halo_verified_fraction", 0.0) > 0.0
+        and payload.get("min_halo_verified_fraction", 0.0) == 1.0
         and payload["reconstruction_linf_error"] <= RECONSTRUCTION_LINF_TOLERANCE
         and payload["inventory_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
         and payload["free_energy_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
@@ -1471,13 +1471,14 @@ def write_reports(report: dict[str, Any]) -> None:
                     f"`{mpi_runtime['parallel_moment_relative_error']:.6e}`"
                 ),
                 "",
-                "| Rank | Owned shape | Neighbours | Halo verified fraction | Halo L_inf |",
-                "|---:|---|---|---:|---:|",
+                "| Rank | Owned shape | Face neighbours | Corner neighbours | Halo verified fraction | Halo L_inf |",
+                "|---:|---|---|---|---:|---:|",
             ]
         )
         for row in mpi_runtime["rank_rows"]:
             lines.append(
-                "| {rank} | `{shape}` | `{neighbours}` | {fraction:.6e} | {halo:.6e} |".format(
+                "| {rank} | `{shape}` | `{neighbours}` | `{corners}` | {fraction:.6e} | {halo:.6e} |".format(
+                    corners=json.dumps(row["corner_neighbour_ranks"], sort_keys=True),
                     halo=row["halo_linf_error"],
                     fraction=row["halo_verified_fraction"],
                     neighbours=json.dumps(row["neighbour_ranks"], sort_keys=True),

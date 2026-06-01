@@ -133,6 +133,20 @@ def run(output: Path) -> int:
         if toroidal_index < toroidal_parts - 1
         else MPI.PROC_NULL
     )
+    corner_ranks = {
+        "radial_lower_toroidal_lower": (radial_index - 1) * toroidal_parts + toroidal_index - 1
+        if radial_index > 0 and toroidal_index > 0
+        else MPI.PROC_NULL,
+        "radial_lower_toroidal_upper": (radial_index - 1) * toroidal_parts + toroidal_index + 1
+        if radial_index > 0 and toroidal_index < toroidal_parts - 1
+        else MPI.PROC_NULL,
+        "radial_upper_toroidal_lower": (radial_index + 1) * toroidal_parts + toroidal_index - 1
+        if radial_index < radial_parts - 1 and toroidal_index > 0
+        else MPI.PROC_NULL,
+        "radial_upper_toroidal_upper": (radial_index + 1) * toroidal_parts + toroidal_index + 1
+        if radial_index < radial_parts - 1 and toroidal_index < toroidal_parts - 1
+        else MPI.PROC_NULL,
+    }
     radial_face_shape = (
         plan.halo,
         tile.toroidal.size,
@@ -216,6 +230,68 @@ def run(output: Path) -> int:
             :,
             :,
         ] = toroidal_upper_recv
+    corner_shape = (
+        plan.halo,
+        plan.halo,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+    corner_exchange_specs = (
+        (
+            "radial_lower_toroidal_lower",
+            owned[: plan.halo, : plan.halo, :, :, :].copy(),
+            corner_ranks["radial_lower_toroidal_lower"],
+            31,
+            "radial_upper_toroidal_upper",
+            corner_ranks["radial_upper_toroidal_upper"],
+            31,
+            (slice(radial_offset + tile.radial.size, None), slice(toroidal_offset + tile.toroidal.size, None)),
+        ),
+        (
+            "radial_upper_toroidal_upper",
+            owned[-plan.halo :, -plan.halo :, :, :, :].copy(),
+            corner_ranks["radial_upper_toroidal_upper"],
+            37,
+            "radial_lower_toroidal_lower",
+            corner_ranks["radial_lower_toroidal_lower"],
+            37,
+            (slice(0, radial_offset), slice(0, toroidal_offset)),
+        ),
+        (
+            "radial_lower_toroidal_upper",
+            owned[: plan.halo, -plan.halo :, :, :, :].copy(),
+            corner_ranks["radial_lower_toroidal_upper"],
+            41,
+            "radial_upper_toroidal_lower",
+            corner_ranks["radial_upper_toroidal_lower"],
+            41,
+            (slice(radial_offset + tile.radial.size, None), slice(0, toroidal_offset)),
+        ),
+        (
+            "radial_upper_toroidal_lower",
+            owned[-plan.halo :, : plan.halo, :, :, :].copy(),
+            corner_ranks["radial_upper_toroidal_lower"],
+            43,
+            "radial_lower_toroidal_upper",
+            corner_ranks["radial_lower_toroidal_upper"],
+            43,
+            (slice(0, radial_offset), slice(toroidal_offset + tile.toroidal.size, None)),
+        ),
+    )
+    for _, sendbuf, dest, sendtag, _, source, recvtag, target_slices in corner_exchange_specs:
+        corner_recv = np.empty(corner_shape, dtype=np.float64)
+        comm.Sendrecv(
+            sendbuf=sendbuf,
+            dest=dest,
+            sendtag=sendtag,
+            recvbuf=corner_recv,
+            source=source,
+            recvtag=recvtag,
+        )
+        if source != MPI.PROC_NULL:
+            radial_slice, toroidal_slice = target_slices
+            with_halo[radial_slice, toroidal_slice, :, :, :] = corner_recv
 
     expected_halo = state[
         tile.radial_with_halo.start : tile.radial_with_halo.stop,
@@ -243,6 +319,17 @@ def run(output: Path) -> int:
             radial_offset : radial_offset + tile.radial.size,
             toroidal_offset + tile.toroidal.size :,
         ] = True
+    if corner_ranks["radial_lower_toroidal_lower"] != MPI.PROC_NULL:
+        covered[:radial_offset, :toroidal_offset] = True
+    if corner_ranks["radial_lower_toroidal_upper"] != MPI.PROC_NULL:
+        covered[:radial_offset, toroidal_offset + tile.toroidal.size :] = True
+    if corner_ranks["radial_upper_toroidal_lower"] != MPI.PROC_NULL:
+        covered[radial_offset + tile.radial.size :, :toroidal_offset] = True
+    if corner_ranks["radial_upper_toroidal_upper"] != MPI.PROC_NULL:
+        covered[
+            radial_offset + tile.radial.size :,
+            toroidal_offset + tile.toroidal.size :,
+        ] = True
     halo_linf = float(np.max(np.abs(with_halo[covered] - expected_halo[covered])))
     row: dict[str, Any] = {
         "free_energy": float(np.sum(owned * owned)),
@@ -258,6 +345,10 @@ def run(output: Path) -> int:
             "toroidal_upper": None
             if toroidal_upper_rank == MPI.PROC_NULL
             else int(toroidal_upper_rank),
+        },
+        "corner_neighbour_ranks": {
+            key: None if value == MPI.PROC_NULL else int(value)
+            for key, value in corner_ranks.items()
         },
         "owned": owned,
         "owned_shape": [int(axis) for axis in owned.shape],
@@ -291,6 +382,7 @@ def run(output: Path) -> int:
             {
                 "halo_linf_error": float(rank_row["halo_linf_error"]),
                 "halo_verified_fraction": float(rank_row["halo_verified_fraction"]),
+                "corner_neighbour_ranks": rank_row["corner_neighbour_ranks"],
                 "neighbour_ranks": rank_row["neighbour_ranks"],
                 "owned_shape": rank_row["owned_shape"],
                 "rank": rank_id,

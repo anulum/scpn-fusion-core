@@ -381,19 +381,25 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
         assert mpi_runtime["topology"] == "radial_toroidal_2d"
         assert mpi_runtime["radial_parts"] == 2
         assert mpi_runtime["toroidal_parts"] == 2
-        assert mpi_runtime["min_halo_verified_fraction"] > 0.0
+        assert mpi_runtime["min_halo_verified_fraction"] == 1.0
         assert mpi_runtime["reconstruction_linf_error"] == 0.0
         assert mpi_runtime["inventory_relative_error"] <= 1.0e-12
         assert mpi_runtime["free_energy_relative_error"] <= 1.0e-12
         assert mpi_runtime["parallel_moment_relative_error"] <= 1.0e-12
         assert mpi_runtime["halo_exchange_pass"] is True
         for row in mpi_runtime["rank_rows"]:
-            assert row["halo_verified_fraction"] > 0.0
+            assert row["halo_verified_fraction"] == 1.0
             assert set(row["neighbour_ranks"]) == {
                 "radial_lower",
                 "radial_upper",
                 "toroidal_lower",
                 "toroidal_upper",
+            }
+            assert set(row["corner_neighbour_ranks"]) == {
+                "radial_lower_toroidal_lower",
+                "radial_lower_toroidal_upper",
+                "radial_upper_toroidal_lower",
+                "radial_upper_toroidal_upper",
             }
     gpu_evidence = report["gpu_rank_tile_evidence"]
     assert gpu_evidence["schema"] == "production-decomposition-gpu-rank-tile-evidence.v1"
