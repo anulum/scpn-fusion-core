@@ -18,6 +18,18 @@ def test_gk_public_deck_inventory_is_fail_closed() -> None:
     assert report["accepted_full_fidelity_ready"] is False
     assert report["missing_full_fidelity_requirements"]
     assert report["reference_output_ready"] is False
+    assert report["public_output_candidate_ready"] is False
+    assert {row["solver_family"] for row in report["public_output_candidate_matrix"]} == {
+        "GENE",
+        "CGYRO",
+        "GS2",
+    }
+    for row in report["public_output_candidate_matrix"]:
+        assert row["ready"] is False
+        assert row["same_deck_output_ready"] is False
+        assert "nonlinear_distribution_function" in row["required_observables"]
+        assert "electromagnetic_apar_energy" in row["required_observables"]
+        assert row["required_output_schema"] == "gk-nonlinear-external-output.v1"
 
     if report["deck_count"] == 0:
         assert report["status"] == "blocked_missing_gk_public_source_cache"
@@ -33,6 +45,14 @@ def test_gk_public_deck_inventory_is_fail_closed() -> None:
     assert metadata_path.exists()
 
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert artifact["output_acceptance_contract"]["required_solver_families"] == [
+        "GENE",
+        "CGYRO",
+        "GS2",
+    ]
+    assert artifact["output_acceptance_contract"]["required_manifest_schema"] == (
+        "gk-nonlinear-external-output-manifest.v1"
+    )
     solvers = {deck["solver_family"] for deck in artifact["decks"]}
     assert {"GS2", "CGYRO"}.issubset(solvers)
     assert any(deck["nonlinear"] for deck in artifact["decks"] if deck["solver_family"] == "GS2")

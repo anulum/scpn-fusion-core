@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
-# (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Inventory public free-boundary machine metadata without accepting parity.
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 
 # Restricted unpickler for fixed cached public metadata files.
@@ -29,6 +30,8 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
+
+NUMPY_MULTIARRAY = cast(Any, importlib.import_module("numpy.core.multiarray"))
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE_ROOT = ROOT / "data" / "external" / "full_fidelity_public_sources"
@@ -70,11 +73,9 @@ class RestrictedMachineConfigUnpickler(pickle.Unpickler):
             if name == "ndarray":
                 return np.ndarray
             if name == "_reconstruct":
-                multiarray = cast(Any, np.core.multiarray)
-                return multiarray._reconstruct
+                return NUMPY_MULTIARRAY._reconstruct
             if name == "scalar":
-                multiarray = cast(Any, np.core.multiarray)
-                return multiarray.scalar
+                return NUMPY_MULTIARRAY.scalar
         raise pickle.UnpicklingError(f"disallowed pickle global: {module}.{name}")
 
 

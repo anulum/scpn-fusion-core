@@ -18,6 +18,9 @@
 - Added explicit grid-convergence and production-scaling acceptance matrices to
   the nonlinear GK parity report so linked evidence rows must satisfy declared
   thresholds instead of merely existing.
+- Added a GENE/CGYRO/GS2 public-output candidate matrix to the nonlinear GK
+  deck inventory, keeping public decks and partial numeric snippets separate
+  from accepted same-deck nonlinear parity artifacts.
 
 - Added an explicit vertical-control replay release-gate object that accepts
   only the reduced-order RZIP replay claim and keeps full PCS production-grade

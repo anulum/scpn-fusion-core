@@ -54,7 +54,7 @@ facades and evidence-bounded validation reports.
 | Capability documentation pages | 41 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 394 |
+| Python test files | 397 |
 | Public documentation pages | 41 |
 | GitHub Actions workflows | 12 |
 
@@ -224,6 +224,12 @@ The nonlinear GK lane now indexes public GS2 nonlinear decks, CGYRO nonlinear
 decks, CGYRO regression precision outputs, and GENE/GS2/CGYRO public web-source
 hashes in
 [`validation/reports/gk_public_reference_deck_inventory.md`](validation/reports/gk_public_reference_deck_inventory.md).
+That inventory now publishes a per-solver public-output candidate matrix for
+GENE, CGYRO, and GS2. It records deck/source candidates separately from
+accepted nonlinear output artifacts and keeps every row blocked until the
+required same-deck `gk-nonlinear-external-output.v1` payload exists with
+distribution, heat-flux, field-energy, zonal/saturation, convergence, scaling,
+and native comparison evidence.
 It also has a strict external-output conversion/comparison contract in
 [`validation/reports/gk_external_nonlinear_parity.md`](validation/reports/gk_external_nonlinear_parity.md).
 Missing redistributable same-deck GENE, CGYRO, or GS2 nonlinear outputs produce

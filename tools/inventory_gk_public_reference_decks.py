@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
-# (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Inventory public nonlinear GK reference decks and partial outputs.
@@ -21,7 +21,7 @@ import hashlib
 import json
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +38,34 @@ METADATA_PATH = ARTIFACT_DIR / "gk_public_reference_deck_inventory.metadata.json
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "gk_public_reference_deck_inventory.json"
 MD_REPORT = REPORT_DIR / "gk_public_reference_deck_inventory.md"
+REQUIRED_SOLVER_FAMILIES = ("GENE", "CGYRO", "GS2")
+REQUIRED_OUTPUT_OBSERVABLES = (
+    "nonlinear_distribution_function",
+    "nonlinear_distribution_function_imag",
+    "ion_heat_flux_spectrum",
+    "electron_heat_flux_spectrum",
+    "zonal_flow_energy",
+    "saturated_phi_rms",
+    "electromagnetic_phi_energy",
+    "electromagnetic_apar_energy",
+    "electromagnetic_bpar_energy",
+)
+REQUIRED_COORDINATES = (
+    "species_index",
+    "kx_rhos",
+    "ky_rhos",
+    "theta_rad",
+    "vpar_vth",
+    "mu_normalized",
+    "time_s",
+)
+REQUIRED_OUTPUT_SCHEMA = "gk-nonlinear-external-output.v1"
+REQUIRED_MANIFEST_SCHEMA = "gk-nonlinear-external-output-manifest.v1"
+OUTPUT_CANDIDATE_STATUS = {
+    "GENE": "blocked_public_web_source_only_missing_redistributable_output_artifact",
+    "CGYRO": "blocked_public_decks_and_precision_snippets_not_same_deck_nonlinear_output",
+    "GS2": "blocked_public_decks_not_executed_output_artifact",
+}
 
 KEY_VALUE_RE = re.compile(r"^\s*([A-Za-z0-9_]+)\s*=\s*([^!#/]*)")
 
@@ -55,9 +83,13 @@ def _sha256(path: Path) -> str:
 
 
 def _git_commit(repo: Path) -> str | None:
+    git = shutil.which("git")
+    if git is None:
+        return None
     try:
-        result = subprocess.run(  # nosec B603: fixed git argv, shell disabled.
-            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        # Fixed git argv, resolved executable, and shell is disabled.
+        result = subprocess.run(  # nosec B603
+            [git, "-C", str(repo), "rev-parse", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
@@ -174,6 +206,48 @@ def _backend_probe() -> dict[str, Any]:
     }
 
 
+def _public_output_candidate_matrix(
+    decks: list[dict[str, Any]],
+    outputs: list[dict[str, Any]],
+    web_sources: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    """Return fail-closed rows for required public nonlinear output artifacts."""
+    matrix: list[dict[str, Any]] = []
+    for family in REQUIRED_SOLVER_FAMILIES:
+        family_decks = [deck for deck in decks if deck["solver_family"] == family]
+        family_outputs = [output for output in outputs if output["solver_family"] == family]
+        family_web_sources = [source for source in web_sources if source["solver_family"] == family]
+        same_deck_output_ready = False
+        reasons = [
+            "missing_redistributable_same_deck_output_payload",
+            "missing_native_same_case_output_payload",
+            "missing_grid_convergence_output_evidence",
+            "missing_production_scaling_output_evidence",
+        ]
+        if not family_decks and not family_web_sources:
+            reasons.append("missing_public_source_candidate")
+        if family_outputs:
+            reasons.append("partial_numeric_output_not_full_observable_contract")
+        matrix.append(
+            {
+                "deck_candidate_count": len(family_decks),
+                "native_same_case_ready": False,
+                "output_summary_count": len(family_outputs),
+                "ready": same_deck_output_ready,
+                "required_coordinates": list(REQUIRED_COORDINATES),
+                "required_manifest_schema": REQUIRED_MANIFEST_SCHEMA,
+                "required_observables": list(REQUIRED_OUTPUT_OBSERVABLES),
+                "required_output_schema": REQUIRED_OUTPUT_SCHEMA,
+                "reasons": reasons,
+                "same_deck_output_ready": same_deck_output_ready,
+                "solver_family": family,
+                "status": OUTPUT_CANDIDATE_STATUS[family],
+                "web_source_count": len(family_web_sources),
+            }
+        )
+    return matrix
+
+
 def build_gk_public_deck_inventory(*, write: bool = True) -> dict[str, Any]:
     """Build and optionally write the GK public deck inventory report."""
     gs2_commit = _git_commit(GS2_REPO) if GS2_REPO.exists() else None
@@ -205,11 +279,20 @@ def build_gk_public_deck_inventory(*, write: bool = True) -> dict[str, Any]:
             web_sources.append(_web_record(path, solver))
 
     finite_outputs = all(item["finite_numeric_payload"] for item in outputs) if outputs else False
+    output_candidate_matrix = _public_output_candidate_matrix(decks, outputs, web_sources)
     artifact = {
         "schema": "gk-public-reference-deck-inventory.v1",
         "surface": "native_nonlinear_gyrokinetics",
         "accepted_full_fidelity": False,
         "decks": decks,
+        "output_acceptance_contract": {
+            "required_coordinates": list(REQUIRED_COORDINATES),
+            "required_manifest_schema": REQUIRED_MANIFEST_SCHEMA,
+            "required_observables": list(REQUIRED_OUTPUT_OBSERVABLES),
+            "required_output_schema": REQUIRED_OUTPUT_SCHEMA,
+            "required_solver_families": list(REQUIRED_SOLVER_FAMILIES),
+        },
+        "output_candidate_matrix": output_candidate_matrix,
         "output_summaries": outputs,
         "web_sources": web_sources,
     }
@@ -235,6 +318,7 @@ def build_gk_public_deck_inventory(*, write: bool = True) -> dict[str, Any]:
             "grid_convergence_and_production_scale_scaling_evidence",
         ],
         "output_summary_count": len(outputs),
+        "public_output_candidate_matrix": output_candidate_matrix,
         "redistribution_license": "GS2 MIT; GACODE/CGYRO Apache-2.0; GENE web pages are source links only",
         "reference_family": "GENE/CGYRO/GS2",
         "sha256": "",
@@ -276,6 +360,8 @@ def build_gk_public_deck_inventory(*, write: bool = True) -> dict[str, Any]:
             "5D nonlinear GK heat-flux spectra, field energy, saturation, and convergence."
         ),
         "output_summary_count": len(outputs),
+        "public_output_candidate_matrix": output_candidate_matrix,
+        "public_output_candidate_ready": all(row["ready"] for row in output_candidate_matrix),
         "reference_output_ready": False,
         "schema": "gk-public-reference-deck-inventory-report.v1",
         "sha256": metadata["sha256"],
@@ -301,6 +387,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Decks indexed: `{report['deck_count']}`",
         f"- Output summaries indexed: `{report['output_summary_count']}`",
         f"- Web sources indexed: `{report['web_source_count']}`",
+        f"- Public output candidate ready: `{report['public_output_candidate_ready']}`",
         f"- Artifact: `{report['artifact_path']}`",
         f"- Metadata: `{report['metadata_path']}`",
         f"- SHA-256: `{report['sha256']}`",
@@ -319,7 +406,24 @@ def write_reports(report: dict[str, Any]) -> None:
         "",
         report["next_action"],
         "",
+        "## Public output candidate matrix",
+        "",
+        "| Solver | Status | Deck candidates | Output summaries | Web sources | Ready | Reasons |",
+        "|---|---|---:|---:|---:|:---:|---|",
     ]
+    for row in report["public_output_candidate_matrix"]:
+        reasons = ", ".join(row["reasons"]) if row["reasons"] else "-"
+        lines.append(
+            "| {solver} | `{status}` | {decks} | {outputs} | {web} | `{ready}` | {reasons} |".format(
+                solver=row["solver_family"],
+                status=row["status"],
+                decks=row["deck_candidate_count"],
+                outputs=row["output_summary_count"],
+                web=row["web_source_count"],
+                ready=row["ready"],
+                reasons=reasons,
+            )
+        )
     MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
 
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
-# (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Download public upstream sources for full-fidelity parity work.
@@ -20,7 +20,7 @@ import argparse
 import hashlib
 import json
 import shutil
-import subprocess
+import subprocess  # nosec B404
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -175,7 +175,8 @@ def _rel(path: Path) -> str:
 
 def _run(args: list[str], *, cwd: Path | None = None, timeout: int = 600) -> None:
     """Run a trusted local command with shell disabled."""
-    subprocess.run(  # nosec B603: args are allowlisted git invocations, shell is disabled.
+    # Args are allowlisted git invocations and shell is disabled.
+    subprocess.run(  # nosec B603
         args,
         cwd=cwd,
         check=True,
@@ -187,7 +188,8 @@ def _run(args: list[str], *, cwd: Path | None = None, timeout: int = 600) -> Non
 
 def _capture(args: list[str], *, cwd: Path | None = None, timeout: int = 120) -> str:
     """Capture a trusted local command with shell disabled."""
-    result = subprocess.run(  # nosec B603: args are allowlisted git invocations, shell is disabled.
+    # Args are allowlisted git invocations and shell is disabled.
+    result = subprocess.run(  # nosec B603
         args,
         cwd=cwd,
         check=True,
@@ -271,7 +273,8 @@ def _download_web(source: WebSource, *, timeout: int) -> dict[str, Any]:
         headers={"User-Agent": "scpn-fusion-core-public-source-downloader/1.0"},
     )
     try:
-        with urlopen(request, timeout=timeout) as response:  # nosec B310: fixed public URLs.
+        # URLs come from the fixed public source registry above.
+        with urlopen(request, timeout=timeout) as response:  # nosec B310
             payload = response.read()
         cache_path.write_bytes(payload)
         return {

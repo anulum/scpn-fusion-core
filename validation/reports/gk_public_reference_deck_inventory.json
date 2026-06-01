@@ -25,9 +25,127 @@
   ],
   "next_action": "Run GS2/CGYRO/GENE nonlinear decks with public outputs, then compare native 5D nonlinear GK heat-flux spectra, field energy, saturation, and convergence.",
   "output_summary_count": 21,
+  "public_output_candidate_matrix": [
+    {
+      "deck_candidate_count": 0,
+      "native_same_case_ready": false,
+      "output_summary_count": 0,
+      "ready": false,
+      "reasons": [
+        "missing_redistributable_same_deck_output_payload",
+        "missing_native_same_case_output_payload",
+        "missing_grid_convergence_output_evidence",
+        "missing_production_scaling_output_evidence"
+      ],
+      "required_coordinates": [
+        "species_index",
+        "kx_rhos",
+        "ky_rhos",
+        "theta_rad",
+        "vpar_vth",
+        "mu_normalized",
+        "time_s"
+      ],
+      "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag",
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum",
+        "zonal_flow_energy",
+        "saturated_phi_rms",
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "required_output_schema": "gk-nonlinear-external-output.v1",
+      "same_deck_output_ready": false,
+      "solver_family": "GENE",
+      "status": "blocked_public_web_source_only_missing_redistributable_output_artifact",
+      "web_source_count": 2
+    },
+    {
+      "deck_candidate_count": 28,
+      "native_same_case_ready": false,
+      "output_summary_count": 21,
+      "ready": false,
+      "reasons": [
+        "missing_redistributable_same_deck_output_payload",
+        "missing_native_same_case_output_payload",
+        "missing_grid_convergence_output_evidence",
+        "missing_production_scaling_output_evidence",
+        "partial_numeric_output_not_full_observable_contract"
+      ],
+      "required_coordinates": [
+        "species_index",
+        "kx_rhos",
+        "ky_rhos",
+        "theta_rad",
+        "vpar_vth",
+        "mu_normalized",
+        "time_s"
+      ],
+      "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag",
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum",
+        "zonal_flow_energy",
+        "saturated_phi_rms",
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "required_output_schema": "gk-nonlinear-external-output.v1",
+      "same_deck_output_ready": false,
+      "solver_family": "CGYRO",
+      "status": "blocked_public_decks_and_precision_snippets_not_same_deck_nonlinear_output",
+      "web_source_count": 2
+    },
+    {
+      "deck_candidate_count": 12,
+      "native_same_case_ready": false,
+      "output_summary_count": 0,
+      "ready": false,
+      "reasons": [
+        "missing_redistributable_same_deck_output_payload",
+        "missing_native_same_case_output_payload",
+        "missing_grid_convergence_output_evidence",
+        "missing_production_scaling_output_evidence"
+      ],
+      "required_coordinates": [
+        "species_index",
+        "kx_rhos",
+        "ky_rhos",
+        "theta_rad",
+        "vpar_vth",
+        "mu_normalized",
+        "time_s"
+      ],
+      "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag",
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum",
+        "zonal_flow_energy",
+        "saturated_phi_rms",
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "required_output_schema": "gk-nonlinear-external-output.v1",
+      "same_deck_output_ready": false,
+      "solver_family": "GS2",
+      "status": "blocked_public_decks_not_executed_output_artifact",
+      "web_source_count": 2
+    }
+  ],
+  "public_output_candidate_ready": false,
   "reference_output_ready": false,
   "schema": "gk-public-reference-deck-inventory-report.v1",
-  "sha256": "13263237e53944e37d40ba04fc551ae0a073f1e31fe8fc0b0efb06d39710fb2c",
+  "sha256": "5cbb93ef19922e0a229aec1ea3a2a0e971db3e49203f31e34b3ace0c8dbc1bf6",
   "status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
   "web_source_count": 6
 }

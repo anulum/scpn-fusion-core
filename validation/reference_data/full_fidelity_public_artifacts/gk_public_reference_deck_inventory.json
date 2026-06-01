@@ -649,6 +649,152 @@
       "solver_family": "CGYRO"
     }
   ],
+  "output_acceptance_contract": {
+    "required_coordinates": [
+      "species_index",
+      "kx_rhos",
+      "ky_rhos",
+      "theta_rad",
+      "vpar_vth",
+      "mu_normalized",
+      "time_s"
+    ],
+    "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+    "required_observables": [
+      "nonlinear_distribution_function",
+      "nonlinear_distribution_function_imag",
+      "ion_heat_flux_spectrum",
+      "electron_heat_flux_spectrum",
+      "zonal_flow_energy",
+      "saturated_phi_rms",
+      "electromagnetic_phi_energy",
+      "electromagnetic_apar_energy",
+      "electromagnetic_bpar_energy"
+    ],
+    "required_output_schema": "gk-nonlinear-external-output.v1",
+    "required_solver_families": [
+      "GENE",
+      "CGYRO",
+      "GS2"
+    ]
+  },
+  "output_candidate_matrix": [
+    {
+      "deck_candidate_count": 0,
+      "native_same_case_ready": false,
+      "output_summary_count": 0,
+      "ready": false,
+      "reasons": [
+        "missing_redistributable_same_deck_output_payload",
+        "missing_native_same_case_output_payload",
+        "missing_grid_convergence_output_evidence",
+        "missing_production_scaling_output_evidence"
+      ],
+      "required_coordinates": [
+        "species_index",
+        "kx_rhos",
+        "ky_rhos",
+        "theta_rad",
+        "vpar_vth",
+        "mu_normalized",
+        "time_s"
+      ],
+      "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag",
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum",
+        "zonal_flow_energy",
+        "saturated_phi_rms",
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "required_output_schema": "gk-nonlinear-external-output.v1",
+      "same_deck_output_ready": false,
+      "solver_family": "GENE",
+      "status": "blocked_public_web_source_only_missing_redistributable_output_artifact",
+      "web_source_count": 2
+    },
+    {
+      "deck_candidate_count": 28,
+      "native_same_case_ready": false,
+      "output_summary_count": 21,
+      "ready": false,
+      "reasons": [
+        "missing_redistributable_same_deck_output_payload",
+        "missing_native_same_case_output_payload",
+        "missing_grid_convergence_output_evidence",
+        "missing_production_scaling_output_evidence",
+        "partial_numeric_output_not_full_observable_contract"
+      ],
+      "required_coordinates": [
+        "species_index",
+        "kx_rhos",
+        "ky_rhos",
+        "theta_rad",
+        "vpar_vth",
+        "mu_normalized",
+        "time_s"
+      ],
+      "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag",
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum",
+        "zonal_flow_energy",
+        "saturated_phi_rms",
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "required_output_schema": "gk-nonlinear-external-output.v1",
+      "same_deck_output_ready": false,
+      "solver_family": "CGYRO",
+      "status": "blocked_public_decks_and_precision_snippets_not_same_deck_nonlinear_output",
+      "web_source_count": 2
+    },
+    {
+      "deck_candidate_count": 12,
+      "native_same_case_ready": false,
+      "output_summary_count": 0,
+      "ready": false,
+      "reasons": [
+        "missing_redistributable_same_deck_output_payload",
+        "missing_native_same_case_output_payload",
+        "missing_grid_convergence_output_evidence",
+        "missing_production_scaling_output_evidence"
+      ],
+      "required_coordinates": [
+        "species_index",
+        "kx_rhos",
+        "ky_rhos",
+        "theta_rad",
+        "vpar_vth",
+        "mu_normalized",
+        "time_s"
+      ],
+      "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag",
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum",
+        "zonal_flow_energy",
+        "saturated_phi_rms",
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "required_output_schema": "gk-nonlinear-external-output.v1",
+      "same_deck_output_ready": false,
+      "solver_family": "GS2",
+      "status": "blocked_public_decks_not_executed_output_artifact",
+      "web_source_count": 2
+    }
+  ],
   "output_summaries": [
     {
       "commit": "7ddccf01ff0d8d479854b522a68f401d1ba85d51",

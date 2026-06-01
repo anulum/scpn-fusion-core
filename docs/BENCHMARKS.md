@@ -321,6 +321,12 @@ It indexes public GS2 nonlinear input decks, CGYRO nonlinear input decks, CGYRO
 regression precision output snippets, and public GENE/GS2/CGYRO web-source
 hashes into
 `validation/reference_data/full_fidelity_public_artifacts/gk_public_reference_deck_inventory.json`.
+The same artifact now publishes a GENE/CGYRO/GS2 public-output candidate
+matrix. The matrix is intentionally fail-closed: public decks, web pages, and
+CGYRO precision snippets are acquisition candidates only, while accepted
+nonlinear parity requires schema-valid same-deck output payloads with the full
+distribution, heat-flux, field-energy, zonal/saturation, convergence, scaling,
+and native-comparison contract.
 On this runner it records `40` public decks and `21` CGYRO precision-output
 summaries, but GS2 is not installed and the cached CGYRO wrapper lacks the
 GACODE runtime helper. This inventory is therefore a reproducibility input, not
