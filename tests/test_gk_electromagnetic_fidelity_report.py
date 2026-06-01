@@ -140,6 +140,7 @@ def test_gk_electromagnetic_fidelity_report_records_sourced_maxwell_future_contr
     assert contract["current_moment_ready"] is True
     assert contract["current_moment_history_ready"] is True
     assert contract["continuity_residual_history_ready"] is True
+    assert contract["field_particle_exchange_ready"] is True
     assert contract["self_consistent_sourced_field_evolution_ready"] is False
     assert "J_parallel(kx, ky, t)" in contract["required_inputs"]
     assert "rho_charge(kx, ky, t)" in contract["required_inputs"]
@@ -162,11 +163,15 @@ def test_gk_electromagnetic_fidelity_report_extracts_time_resolved_current_momen
     assert evidence["j_kx_shape"] == [5, 4, 4]
     assert evidence["j_ky_shape"] == [5, 4, 4]
     assert evidence["charge_density_shape"] == [5, 4, 4]
+    assert evidence["e_parallel_shape"] == [5, 4, 4]
     assert evidence["time_resolved_current_history_ready"] is True
     assert evidence["perpendicular_current_history_ready"] is True
     assert evidence["continuity_residual_history_ready"] is True
     assert evidence["continuity_residual_status"] == "accepted_spectral_continuity_proxy_not_sourced_field_coupling"
     assert evidence["d_charge_dt_ready"] is True
+    assert evidence["field_particle_exchange_ready"] is True
+    assert evidence["field_particle_exchange_status"] == "accepted_native_j_parallel_e_parallel_proxy"
+    assert len(evidence["field_particle_exchange_t"]) == 5
     assert evidence["continuity_relative_residual_max"] <= evidence["continuity_relative_residual_tolerance"]
     assert evidence["j_parallel_l2_norm_max"] > 0.0
     assert evidence["charge_density_l2_norm_max"] > 0.0
@@ -175,6 +180,7 @@ def test_gk_electromagnetic_fidelity_report_extracts_time_resolved_current_momen
     assert residual_rows[0]["ready"] is False
     assert residual_rows[0]["status"] == "blocked_missing_sourced_field_evolution_terms"
     assert "missing_self_consistent_displacement_current_from_sourced_field_evolution" in residual_rows[0]["blockers"]
+    assert "missing_self_consistent_e_parallel_field_evolution" in residual_rows[0]["blockers"]
 
 
 def test_gk_electromagnetic_fidelity_report_records_native_same_case_thresholds() -> None:

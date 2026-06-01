@@ -209,11 +209,13 @@ def _sourced_maxwell_contract(current_moment_evidence: dict[str, Any]) -> dict[s
     current_history_ready = bool(current_moment_evidence.get("time_resolved_current_history_ready", False))
     continuity_ready = bool(current_moment_evidence.get("continuity_residual_history_ready", False))
     self_consistent_field_ready = bool(current_moment_evidence.get("self_consistent_sourced_field_evolution_ready", False))
+    field_particle_exchange_ready = bool(current_moment_evidence.get("field_particle_exchange_ready", False))
     return {
         "current_status": "blocked_pending_5d_kinetic_current_continuity_closure",
         "current_moment_ready": current_moment_ready,
         "current_moment_history_ready": current_history_ready,
         "continuity_residual_history_ready": continuity_ready,
+        "field_particle_exchange_ready": field_particle_exchange_ready,
         "self_consistent_sourced_field_evolution_ready": self_consistent_field_ready,
         "readiness_criteria": [
             "J_parallel(kx, ky, t) derived from the evolved 5D distribution",
@@ -549,6 +551,7 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
     state = solver.init_state(amplitude=1.0e-5, seed=443)
     charge_history: list[NDArray[np.complex128]] = []
     current_history: list[NDArray[np.complex128]] = []
+    a_parallel_history: list[NDArray[np.complex128]] = []
     time_history: list[float] = []
 
     for step in range(cfg.n_steps + 1):
@@ -556,19 +559,26 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
             charge_density, j_parallel = _charge_current_moments(solver, state)
             charge_history.append(charge_density)
             current_history.append(j_parallel)
+            if state.A_par is None:
+                a_parallel_history.append(np.zeros_like(j_parallel))
+            else:
+                a_parallel_history.append(np.mean(state.A_par, axis=-1))
             time_history.append(float(state.time))
         if step < cfg.n_steps:
             state = solver._rk4_step(state, solver._cfl_dt(state))
 
     charge_density_t = np.asarray(charge_history, dtype=np.complex128)
     j_parallel_t = np.asarray(current_history, dtype=np.complex128)
+    a_parallel_t = np.asarray(a_parallel_history, dtype=np.complex128)
     time_t = np.asarray(time_history, dtype=np.float64)
     expected_shape = (time_t.size, cfg.n_kx, cfg.n_ky)
     histories_finite = bool(
         charge_density_t.shape == expected_shape
         and j_parallel_t.shape == expected_shape
+        and a_parallel_t.shape == expected_shape
         and np.all(np.isfinite(charge_density_t))
         and np.all(np.isfinite(j_parallel_t))
+        and np.all(np.isfinite(a_parallel_t))
         and np.all(np.isfinite(time_t))
     )
     monotonic_time = bool(time_t.size >= 2 and np.all(np.diff(time_t) > 0.0))
@@ -594,6 +604,14 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
         continuity_relative_residual_t = residual_norm / np.maximum(source_norm, 1.0e-30)
         continuity_linf_residual_max = float(np.max(continuity_linf_residual_t))
         continuity_relative_residual_max = float(np.max(continuity_relative_residual_t))
+        e_parallel_t = -np.gradient(a_parallel_t, time_t, axis=0)
+        field_particle_exchange_t = np.real(np.sum(np.conj(j_parallel_t) * e_parallel_t, axis=(1, 2)))
+        field_particle_exchange_ready = bool(
+            field_particle_exchange_t.shape == time_t.shape
+            and np.all(np.isfinite(e_parallel_t))
+            and np.all(np.isfinite(field_particle_exchange_t))
+        )
+        field_particle_exchange_max_abs = float(np.max(np.abs(field_particle_exchange_t)))
         perpendicular_current_history_ready = bool(np.all(np.isfinite(j_kx_t)) and np.all(np.isfinite(j_ky_t)))
     else:
         d_charge_dt_linf = float("inf")
@@ -601,8 +619,12 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
         j_ky_t = np.empty((0, 0, 0), dtype=np.complex128)
         continuity_linf_residual_t = np.empty(0, dtype=np.float64)
         continuity_relative_residual_t = np.empty(0, dtype=np.float64)
+        e_parallel_t = np.empty((0, 0, 0), dtype=np.complex128)
+        field_particle_exchange_t = np.empty(0, dtype=np.float64)
         continuity_linf_residual_max = float("inf")
         continuity_relative_residual_max = float("inf")
+        field_particle_exchange_max_abs = float("inf")
+        field_particle_exchange_ready = False
         perpendicular_current_history_ready = False
     current_history_ready = bool(histories_finite and monotonic_time)
     continuity_ready = bool(
@@ -627,6 +649,13 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
         "current_moment_ready": current_history_ready,
         "current_moment_source": "native_time_resolved_5d_distribution_state",
         "d_charge_dt_linf": d_charge_dt_linf,
+        "e_parallel_shape": list(e_parallel_t.shape),
+        "field_particle_exchange_max_abs": field_particle_exchange_max_abs,
+        "field_particle_exchange_ready": field_particle_exchange_ready,
+        "field_particle_exchange_status": "accepted_native_j_parallel_e_parallel_proxy"
+        if field_particle_exchange_ready
+        else "blocked_invalid_field_particle_exchange_proxy",
+        "field_particle_exchange_t": field_particle_exchange_t.tolist(),
         "d_charge_dt_ready": d_charge_dt_ready,
         "j_kx_shape": list(j_kx_t.shape),
         "j_ky_shape": list(j_ky_t.shape),
@@ -643,7 +672,7 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
             {
                 "blockers": [
                     "missing_self_consistent_displacement_current_from_sourced_field_evolution",
-                    "missing_field_particle_energy_exchange_closure",
+                    "missing_self_consistent_e_parallel_field_evolution",
                 ],
                 "ready": False,
                 "residual": "curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt",
@@ -1140,6 +1169,8 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
             f"- Time-resolved current history ready: `{current_moment['time_resolved_current_history_ready']}`",
             f"- Continuity residual history ready: `{current_moment['continuity_residual_history_ready']}`",
             f"- Continuity residual status: `{current_moment['continuity_residual_status']}`",
+            f"- Field-particle exchange ready: `{current_moment['field_particle_exchange_ready']}`",
+            f"- Field-particle exchange status: `{current_moment['field_particle_exchange_status']}`",
             f"- Perpendicular current history ready: `{current_moment['perpendicular_current_history_ready']}`",
             f"- d rho/dt ready: `{current_moment['d_charge_dt_ready']}`",
             f"- Phase-space source shape: `{current_moment['phase_space_source_shape']}`",
@@ -1147,11 +1178,13 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
             f"- J_kx shape: `{current_moment['j_kx_shape']}`",
             f"- J_ky shape: `{current_moment['j_ky_shape']}`",
             f"- Charge-density shape: `{current_moment['charge_density_shape']}`",
+            f"- E_parallel shape: `{current_moment['e_parallel_shape']}`",
             f"- J_parallel L2 norm max: `{current_moment['j_parallel_l2_norm_max']:.6e}`",
             f"- Charge-density L2 norm max: `{current_moment['charge_density_l2_norm_max']:.6e}`",
             f"- d rho/dt Linf: `{current_moment['d_charge_dt_linf']:.6e}`",
             f"- Continuity relative residual max: `{current_moment['continuity_relative_residual_max']:.6e}`",
             f"- Continuity relative residual tolerance: `{current_moment['continuity_relative_residual_tolerance']:.6e}`",
+            f"- Field-particle exchange max abs: `{current_moment['field_particle_exchange_max_abs']:.6e}`",
             "",
             "Sourced Ampere-Maxwell residual rows:",
         ]

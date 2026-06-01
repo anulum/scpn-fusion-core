@@ -480,6 +480,21 @@
     "current_moment_source": "native_time_resolved_5d_distribution_state",
     "d_charge_dt_linf": 0.03656263994286688,
     "d_charge_dt_ready": true,
+    "e_parallel_shape": [
+      5,
+      4,
+      4
+    ],
+    "field_particle_exchange_max_abs": 6.595662509669265e-07,
+    "field_particle_exchange_ready": true,
+    "field_particle_exchange_status": "accepted_native_j_parallel_e_parallel_proxy",
+    "field_particle_exchange_t": [
+      6.40351201612277e-07,
+      6.183991086305947e-07,
+      6.595662509669265e-07,
+      6.576220806212944e-07,
+      5.911884737855004e-07
+    ],
     "j_kx_shape": [
       5,
       4,
@@ -516,7 +531,7 @@
       {
         "blockers": [
           "missing_self_consistent_displacement_current_from_sourced_field_evolution",
-          "missing_field_particle_energy_exchange_closure"
+          "missing_self_consistent_e_parallel_field_evolution"
         ],
         "ready": false,
         "residual": "curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt",
@@ -539,6 +554,7 @@
     "current_moment_history_ready": true,
     "current_moment_ready": true,
     "current_status": "blocked_pending_5d_kinetic_current_continuity_closure",
+    "field_particle_exchange_ready": true,
     "readiness_criteria": [
       "J_parallel(kx, ky, t) derived from the evolved 5D distribution",
       "charge/current continuity residual history",

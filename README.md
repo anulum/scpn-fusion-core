@@ -290,7 +290,7 @@ separately from electrostatic GK in
 They verify the native compact `A_parallel`/`B_parallel` closure, but they are
 explicitly not same-deck external Vlasov-Maxwell parity.
 The report now includes a machine-readable Maxwell equation contract, an explicit
-electromagnetic evidence gate matrix, a blocked sourced-Maxwell contract plus time-resolved 5D current/charge moment histories plus spectral continuity-proxy evidence while self-consistent sourced field coupling remains blocked, and local source-free spectral Maxwell
+electromagnetic evidence gate matrix, a blocked sourced-Maxwell contract plus time-resolved 5D current/charge moment histories, spectral continuity-proxy evidence, and native J_parallel E_parallel exchange diagnostics while self-consistent sourced field coupling remains blocked, and local source-free spectral Maxwell
 evolution evidence for Faraday induction,
 displacement-current Ampere-Maxwell evolution, and the inductive parallel
 electric-field relation. The latest local Maxwell evidence reports maximum

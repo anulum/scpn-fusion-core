@@ -94,6 +94,8 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - Time-resolved current history ready: `True`
 - Continuity residual history ready: `True`
 - Continuity residual status: `accepted_spectral_continuity_proxy_not_sourced_field_coupling`
+- Field-particle exchange ready: `True`
+- Field-particle exchange status: `accepted_native_j_parallel_e_parallel_proxy`
 - Perpendicular current history ready: `True`
 - d rho/dt ready: `True`
 - Phase-space source shape: `[2, 4, 4, 8, 5, 4]`
@@ -101,14 +103,16 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - J_kx shape: `[5, 4, 4]`
 - J_ky shape: `[5, 4, 4]`
 - Charge-density shape: `[5, 4, 4]`
+- E_parallel shape: `[5, 4, 4]`
 - J_parallel L2 norm max: `6.648935e-04`
 - Charge-density L2 norm max: `8.745715e-04`
 - d rho/dt Linf: `3.656264e-02`
 - Continuity relative residual max: `1.536561e-16`
 - Continuity relative residual tolerance: `1.000000e-10`
+- Field-particle exchange max abs: `6.595663e-07`
 
 Sourced Ampere-Maxwell residual rows:
-- `curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt`: `blocked_missing_sourced_field_evolution_terms`; blockers: missing_self_consistent_displacement_current_from_sourced_field_evolution, missing_field_particle_energy_exchange_closure
+- `curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt`: `blocked_missing_sourced_field_evolution_terms`; blockers: missing_self_consistent_displacement_current_from_sourced_field_evolution, missing_self_consistent_e_parallel_field_evolution
 
 ## Sourced Maxwell contract
 
