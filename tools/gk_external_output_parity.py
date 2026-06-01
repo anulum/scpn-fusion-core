@@ -460,6 +460,129 @@ def _solver_family_completeness(
     return {"ready": ready, "rows": matrix}
 
 
+def _evidence_family_ready_map(
+    rows: Any,
+    required_keys: tuple[str, ...],
+    expected_case_ids: dict[str, str],
+) -> dict[str, bool]:
+    """Return per-solver evidence readiness for linked convergence/scaling rows."""
+    readiness = {family: False for family in REQUIRED_SOLVER_FAMILIES}
+    if not isinstance(rows, list):
+        return readiness
+    for family in REQUIRED_SOLVER_FAMILIES:
+        readiness[family] = _validate_evidence(
+            [row for row in rows if isinstance(row, dict) and row.get("solver_family") == family],
+            required_keys,
+            (family,),
+            expected_case_ids,
+        )
+    return readiness
+
+
+def _threshold_contract_matrix(reference_case: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the published threshold contract in report-friendly row form."""
+    threshold_contracts = reference_case["threshold_contracts"]
+    thresholds = reference_case["thresholds"]
+    matrix: list[dict[str, Any]] = []
+    for threshold_name in sorted(thresholds):
+        contract = threshold_contracts.get(threshold_name, {})
+        matrix.append(
+            {
+                "comparator": str(contract.get("comparator", "")),
+                "limit": float(thresholds[threshold_name]),
+                "metric": str(contract.get("metric", "")),
+                "observable": str(contract.get("observable", "")),
+                "threshold": threshold_name,
+            }
+        )
+    return matrix
+
+
+def _evidence_package_contract(reference_case: dict[str, Any]) -> dict[str, Any]:
+    """Return the enterprise acceptance contract for nonlinear GK parity evidence."""
+    return {
+        "contract_id": "gk_external_nonlinear_full_fidelity_evidence_package_v1",
+        "fail_closed": True,
+        "required_artifact_schema": OUTPUT_SCHEMA,
+        "required_manifest_schema": MANIFEST_SCHEMA,
+        "required_metadata_schema": "gk-external-nonlinear-output-metadata.v1",
+        "required_manifest_case_fields": list(REQUIRED_MANIFEST_CASE_FIELDS),
+        "required_solver_families": list(REQUIRED_SOLVER_FAMILIES),
+        "required_observables": list(reference_case["required_observables"]),
+        "required_thresholds": sorted(reference_case["thresholds"]),
+        "required_evidence_surfaces": [
+            "same_deck_external_outputs",
+            "converted_reference_artifacts",
+            "converted_metadata",
+            "native_same_case_comparison",
+            "grid_convergence_evidence",
+            "production_scale_scaling_evidence",
+        ],
+    }
+
+
+def _evidence_package_matrix(
+    rows: list[dict[str, Any]],
+    *,
+    grid_ready_by_family: dict[str, bool],
+    scaling_ready_by_family: dict[str, bool],
+) -> list[dict[str, Any]]:
+    """Return per-family acceptance rows for the complete parity evidence package."""
+    matrix: list[dict[str, Any]] = []
+    for row in rows:
+        family = str(row["solver_family"])
+        provenance_ok, _ = _validate_provenance_license(
+            row.get("provenance_url"), row.get("redistribution_license")
+        )
+        manifest_row_ready = bool(
+            row.get("case_id")
+            and row.get("deck_id")
+            and row.get("benchmark_case_id")
+            and _looks_like_sha256(row.get("deck_physics_sha256"))
+        )
+        converted_artifact_sha256 = str(
+            row.get("converted_artifact_sha256") or row.get("sha256") or ""
+        )
+        converted_metadata_sha256 = str(row.get("converted_metadata_sha256") or "")
+        converted_artifact_ready = bool(
+            row.get("reference_output_ready") is True
+            and row.get("converted_artifact_path")
+            and _looks_like_sha256(converted_artifact_sha256)
+        )
+        converted_metadata_ready = bool(
+            row.get("metadata_path") and _looks_like_sha256(converted_metadata_sha256)
+        )
+        required_observables_ready = bool(row.get("complete_required_observables") is True)
+        native_ready = bool(row.get("native_same_case_comparison_ready") is True)
+        native_passed = bool(row.get("native_same_case_comparison_passed") is True)
+        grid_ready = bool(grid_ready_by_family.get(family, False))
+        scaling_ready = bool(scaling_ready_by_family.get(family, False))
+        checks = {
+            "manifest_row_ready": manifest_row_ready,
+            "public_provenance_ready": provenance_ok,
+            "redistribution_license_ready": provenance_ok,
+            "source_checksum_ready": _looks_like_sha256(row.get("source_output_sha256")),
+            "converted_artifact_ready": converted_artifact_ready,
+            "converted_metadata_ready": converted_metadata_ready,
+            "required_observables_ready": required_observables_ready,
+            "native_same_case_comparison_ready": native_ready,
+            "native_same_case_thresholds_passed": native_passed,
+            "grid_convergence_evidence_ready": grid_ready,
+            "production_scale_scaling_evidence_ready": scaling_ready,
+        }
+        matrix.append(
+            {
+                **checks,
+                "case_id": row.get("case_id"),
+                "converted_artifact_sha256": converted_artifact_sha256,
+                "converted_metadata_sha256": converted_metadata_sha256,
+                "ready": all(checks.values()),
+                "solver_family": family,
+            }
+        )
+    return matrix
+
+
 def _observable_array(
     payload: dict[str, dict[str, NDArray[np.float64]]], observable: str
 ) -> NDArray[np.float64] | None:
@@ -762,6 +885,7 @@ def _convert_case(
     metadata["solver_output_comparison_status"] = status
     if write:
         _write_metadata(metadata_path, metadata)
+    metadata_sha = _sha256(metadata_path) if metadata_path.exists() else ""
 
     missing_requirements = []
     if not comparison_ready:
@@ -773,7 +897,9 @@ def _convert_case(
         "benchmark_case_id": str(raw_case["benchmark_case_id"]),
         "case_id": case_id,
         "complete_required_observables": True,
+        "converted_artifact_sha256": artifact_sha,
         "converted_artifact_path": _public_path(artifact_path, artifact_dir),
+        "converted_metadata_sha256": metadata_sha,
         "deck_physics_sha256": str(raw_case["deck_physics_sha256"]),
         "deck_id": str(raw_case["deck_id"]),
         "metadata_path": _public_path(metadata_path, artifact_dir),
@@ -785,6 +911,7 @@ def _convert_case(
         "reference_output_ready": True,
         "sha256": artifact_sha,
         "solver_family": family,
+        "source_output_sha256": str(raw_case["sha256"]),
         "status": status,
         "threshold_evaluation": threshold_evaluation,
     }
@@ -858,10 +985,28 @@ def build_gk_external_output_parity_report(
         REQUIRED_SOLVER_FAMILIES,
         expected_case_ids,
     )
+    grid_ready_by_family = _evidence_family_ready_map(
+        grid_rows,
+        ("case_id", "solver_family", "observable", "coarse_grid", "fine_grid", "relative_l2"),
+        expected_case_ids,
+    )
+    scaling_ready_by_family = _evidence_family_ready_map(
+        scaling_rows,
+        ("case_id", "solver_family", "device", "grid", "ranks", "wall_time_s"),
+        expected_case_ids,
+    )
     reference_ready = all(bool(row["reference_output_ready"]) for row in rows)
     same_deck_ready = bool(same_deck_group["ready"])
     native_ready = all(bool(row["native_same_case_comparison_ready"]) for row in rows)
     native_passed = all(bool(row["native_same_case_comparison_passed"]) for row in rows)
+    evidence_package_matrix = _evidence_package_matrix(
+        rows,
+        grid_ready_by_family=grid_ready_by_family,
+        scaling_ready_by_family=scaling_ready_by_family,
+    )
+    evidence_package_ready = same_deck_ready and bool(evidence_package_matrix) and all(
+        bool(row["ready"]) for row in evidence_package_matrix
+    )
     accepted = (
         reference_ready
         and same_deck_ready
@@ -869,10 +1014,13 @@ def build_gk_external_output_parity_report(
         and native_passed
         and grid_ready
         and scaling_ready
+        and evidence_package_ready
     )
     status = _report_status(
         manifest, reference_ready, same_deck_ready, native_ready, grid_ready, scaling_ready
     )
+    if status == "accepted_full_fidelity_ready" and not evidence_package_ready:
+        status = "blocked_incomplete_evidence_package"
     missing = []
     if not reference_ready:
         missing.extend(
@@ -895,6 +1043,8 @@ def build_gk_external_output_parity_report(
         missing.append(
             "production-scale scaling evidence for converted public nonlinear GK outputs"
         )
+    if not evidence_package_ready:
+        missing.append("complete checksum/provenance/threshold evidence package")
 
     report = {
         "accepted_full_fidelity_ready": accepted,
@@ -905,11 +1055,16 @@ def build_gk_external_output_parity_report(
         ),
         "external_output_manifest": _rel(source_root / MANIFEST_NAME),
         "external_output_rows": rows,
+        "evidence_package_contract": _evidence_package_contract(reference_case),
+        "evidence_package_matrix": evidence_package_matrix,
+        "evidence_package_ready": evidence_package_ready,
         "grid_convergence_ready": grid_ready,
+        "grid_convergence_ready_by_family": grid_ready_by_family,
         "grid_convergence_rows": grid_rows if isinstance(grid_rows, list) else [],
         "missing_full_fidelity_requirements": missing,
         "native_same_case_comparison_ready": native_ready,
         "production_scale_scaling_ready": scaling_ready,
+        "production_scale_scaling_ready_by_family": scaling_ready_by_family,
         "production_scaling_rows": scaling_rows if isinstance(scaling_rows, list) else [],
         "reference_output_ready": reference_ready,
         "required_observables": reference_case["required_observables"],
@@ -920,6 +1075,7 @@ def build_gk_external_output_parity_report(
         "solver_family_completeness_matrix": completeness["rows"],
         "solver_family_completeness_ready": completeness["ready"],
         "status": status,
+        "threshold_contract_matrix": _threshold_contract_matrix(reference_case),
     }
     if write:
         report_dir.mkdir(parents=True, exist_ok=True)
@@ -944,6 +1100,7 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- Native same-case comparison ready: `{report['native_same_case_comparison_ready']}`",
         f"- Grid convergence ready: `{report['grid_convergence_ready']}`",
         f"- Production-scale scaling ready: `{report['production_scale_scaling_ready']}`",
+        f"- Evidence package ready: `{report['evidence_package_ready']}`",
         f"- Solver-family completeness ready: `{report['solver_family_completeness_ready']}`",
         f"- Converted reference artefacts: `{report['converted_reference_artifacts']}`",
         f"- Same-deck group reason: `{report['same_deck_group']['reason']}`",
@@ -981,6 +1138,50 @@ def _markdown(report: dict[str, Any]) -> str:
                 observables=row["complete_required_observables"],
                 native=row["native_same_case_comparison_ready"],
                 thresholds=row["native_same_case_comparison_passed"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Evidence package matrix",
+            "",
+            "| Solver | Manifest | Provenance/license | Artefact | Metadata | Native thresholds | Grid | Scaling | Ready |",
+            "|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|",
+        ]
+    )
+    for row in report["evidence_package_matrix"]:
+        lines.append(
+            "| {solver} | `{manifest}` | `{provenance}` | `{artifact}` | `{metadata}` | `{thresholds}` | `{grid}` | `{scaling}` | `{ready}` |".format(
+                solver=row["solver_family"],
+                manifest=row["manifest_row_ready"],
+                provenance=(
+                    row["public_provenance_ready"] and row["redistribution_license_ready"]
+                ),
+                artifact=row["converted_artifact_ready"],
+                metadata=row["converted_metadata_ready"],
+                thresholds=row["native_same_case_thresholds_passed"],
+                grid=row["grid_convergence_evidence_ready"],
+                scaling=row["production_scale_scaling_evidence_ready"],
+                ready=row["ready"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Published threshold contract",
+            "",
+            "| Threshold | Observable | Metric | Comparator | Limit |",
+            "|---|---|---|:---:|---:|",
+        ]
+    )
+    for row in report["threshold_contract_matrix"]:
+        lines.append(
+            "| {threshold} | `{observable}` | `{metric}` | `{comparator}` | {limit:.6g} |".format(
+                threshold=row["threshold"],
+                observable=row["observable"],
+                metric=row["metric"],
+                comparator=row["comparator"],
+                limit=float(row["limit"]),
             )
         )
     lines.extend(["", "## Missing full-fidelity requirements", ""])

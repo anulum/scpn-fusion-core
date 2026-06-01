@@ -562,6 +562,7 @@ def run_campaign() -> dict[str, Any]:
         "gk_production_scale_scaling_ready": bool(
             gk_external_parity["production_scale_scaling_ready"]
         ),
+        "gk_evidence_package_ready": bool(gk_external_parity["evidence_package_ready"]),
         "gk_external_nonlinear_parity_status": str(gk_external_parity["status"]),
         "production_decomposition_report": str(PRODUCTION_DECOMPOSITION.relative_to(ROOT)),
         "production_decomposition_contract_pass": bool(production_decomposition["contract_pass"]),

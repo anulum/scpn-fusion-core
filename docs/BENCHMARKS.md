@@ -16,7 +16,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 
 | Lane | Current status | Reproducibility command |
 |---|---|---|
-| GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons; the report now exposes a fail-closed per-solver/per-observable completeness matrix so absent GENE, CGYRO, or GS2 outputs cannot be promoted to parity evidence | `python validation/full_fidelity_end_to_end_campaign.py` |
+| GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons; the report now exposes a fail-closed evidence-package matrix covering manifest fields, public provenance/license, source checksums, converted JSON/NPZ artefacts, metadata checksums, native thresholds, grid convergence, and scaling so absent GENE, CGYRO, or GS2 outputs cannot be promoted to parity evidence | `python tools/gk_external_output_parity.py` |
 | Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, native same-case EM replay thresholds, and local compact-EM grid-convergence evidence pass; self-consistent 5D kinetic current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, reciprocal rank-neighbour graph checks, rank communication contracts, local halo-face integrity, executable local rank-tile reductions, local large-grid CPU evidence over `9,437,184` phase cells, declared distributed halo-volume accounting, explicit distributed scaling gate, and distributed-run acceptance manifest pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
@@ -266,6 +266,12 @@ The current acquisition covers GENE public pages, CGYRO/GACODE, GS2, DREAM,
 Aurora, FreeGS, and FreeGSNKE. These raw snapshots are not benchmark parity
 artifacts; production parity still requires schema-valid JSON/NPZ reference
 artifacts, licenses, thresholds, observables, and solver-output comparisons.
+The nonlinear GK external-output gate additionally requires a complete
+`gk_external_nonlinear_full_fidelity_evidence_package_v1` evidence package:
+every GENE, CGYRO, and GS2 row must provide a same-deck manifest entry, public
+provenance, redistribution license, source checksum, converted artefact
+checksum, metadata checksum, native same-case threshold evaluation,
+grid-convergence row, and production-scaling row before readiness can pass.
 
 The SAS dataset readiness gate is tracked in
 [`validation/reports/sas_dataset_readiness.md`](../validation/reports/sas_dataset_readiness.md).

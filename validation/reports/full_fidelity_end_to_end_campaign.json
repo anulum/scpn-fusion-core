@@ -45,6 +45,7 @@
   "gk_electromagnetic_maxwell_evolution_ready": true,
   "gk_electromagnetic_native_same_case_thresholds_ready": true,
   "gk_electromagnetic_self_consistent_kinetic_current_ready": false,
+  "gk_evidence_package_ready": false,
   "gk_external_nonlinear_parity_report": "validation/reports/gk_external_nonlinear_parity.json",
   "gk_external_nonlinear_parity_status": "blocked_missing_external_output_manifest",
   "gk_external_reference_artifacts_converted": 0,
@@ -90,7 +91,8 @@
         "shared benchmark_case_id and deck_physics_sha256 across GENE, CGYRO, and GS2",
         "native same-case nonlinear GK solver-output comparison",
         "grid-convergence evidence for converted public nonlinear GK outputs",
-        "production-scale scaling evidence for converted public nonlinear GK outputs"
+        "production-scale scaling evidence for converted public nonlinear GK outputs",
+        "complete checksum/provenance/threshold evidence package"
       ],
       "reference_cases_ready": false,
       "sources": [

@@ -2,6 +2,114 @@
   "accepted_full_fidelity_ready": false,
   "converted_reference_artifacts": 0,
   "description": "Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and native parity report.",
+  "evidence_package_contract": {
+    "contract_id": "gk_external_nonlinear_full_fidelity_evidence_package_v1",
+    "fail_closed": true,
+    "required_artifact_schema": "gk-nonlinear-external-output.v1",
+    "required_evidence_surfaces": [
+      "same_deck_external_outputs",
+      "converted_reference_artifacts",
+      "converted_metadata",
+      "native_same_case_comparison",
+      "grid_convergence_evidence",
+      "production_scale_scaling_evidence"
+    ],
+    "required_manifest_case_fields": [
+      "case_id",
+      "deck_id",
+      "benchmark_case_id",
+      "deck_physics_sha256",
+      "output_path",
+      "provenance_url",
+      "redistribution_license",
+      "sha256"
+    ],
+    "required_manifest_schema": "gk-nonlinear-external-output-manifest.v1",
+    "required_metadata_schema": "gk-external-nonlinear-output-metadata.v1",
+    "required_observables": [
+      "nonlinear_distribution_function",
+      "nonlinear_distribution_function_imag",
+      "ion_heat_flux_spectrum",
+      "electron_heat_flux_spectrum",
+      "zonal_flow_energy",
+      "saturated_phi_rms",
+      "electromagnetic_phi_energy",
+      "electromagnetic_apar_energy",
+      "electromagnetic_bpar_energy"
+    ],
+    "required_solver_families": [
+      "GENE",
+      "CGYRO",
+      "GS2"
+    ],
+    "required_thresholds": [
+      "distribution_imaginary_relative_l2_max",
+      "distribution_relative_l2_max",
+      "field_bpar_energy_relative_error_max",
+      "field_energy_relative_error_max",
+      "field_phi_energy_relative_error_max",
+      "heat_flux_relative_l2_max",
+      "spectrum_relative_l2_max",
+      "zonal_energy_relative_error_max"
+    ]
+  },
+  "evidence_package_matrix": [
+    {
+      "case_id": null,
+      "converted_artifact_ready": false,
+      "converted_artifact_sha256": "",
+      "converted_metadata_ready": false,
+      "converted_metadata_sha256": "",
+      "grid_convergence_evidence_ready": false,
+      "manifest_row_ready": false,
+      "native_same_case_comparison_ready": false,
+      "native_same_case_thresholds_passed": false,
+      "production_scale_scaling_evidence_ready": false,
+      "public_provenance_ready": false,
+      "ready": false,
+      "redistribution_license_ready": false,
+      "required_observables_ready": false,
+      "solver_family": "GENE",
+      "source_checksum_ready": false
+    },
+    {
+      "case_id": null,
+      "converted_artifact_ready": false,
+      "converted_artifact_sha256": "",
+      "converted_metadata_ready": false,
+      "converted_metadata_sha256": "",
+      "grid_convergence_evidence_ready": false,
+      "manifest_row_ready": false,
+      "native_same_case_comparison_ready": false,
+      "native_same_case_thresholds_passed": false,
+      "production_scale_scaling_evidence_ready": false,
+      "public_provenance_ready": false,
+      "ready": false,
+      "redistribution_license_ready": false,
+      "required_observables_ready": false,
+      "solver_family": "CGYRO",
+      "source_checksum_ready": false
+    },
+    {
+      "case_id": null,
+      "converted_artifact_ready": false,
+      "converted_artifact_sha256": "",
+      "converted_metadata_ready": false,
+      "converted_metadata_sha256": "",
+      "grid_convergence_evidence_ready": false,
+      "manifest_row_ready": false,
+      "native_same_case_comparison_ready": false,
+      "native_same_case_thresholds_passed": false,
+      "production_scale_scaling_evidence_ready": false,
+      "public_provenance_ready": false,
+      "ready": false,
+      "redistribution_license_ready": false,
+      "required_observables_ready": false,
+      "solver_family": "GS2",
+      "source_checksum_ready": false
+    }
+  ],
+  "evidence_package_ready": false,
   "external_output_manifest": "data/external/full_fidelity_public_sources/gk_external_outputs/manifest.json",
   "external_output_rows": [
     {
@@ -102,6 +210,11 @@
     }
   ],
   "grid_convergence_ready": false,
+  "grid_convergence_ready_by_family": {
+    "CGYRO": false,
+    "GENE": false,
+    "GS2": false
+  },
   "grid_convergence_rows": [],
   "missing_full_fidelity_requirements": [
     "same-deck external nonlinear distribution output for GENE, CGYRO, and GS2",
@@ -111,10 +224,16 @@
     "shared benchmark_case_id and deck_physics_sha256 across GENE, CGYRO, and GS2",
     "native same-case nonlinear GK solver-output comparison",
     "grid-convergence evidence for converted public nonlinear GK outputs",
-    "production-scale scaling evidence for converted public nonlinear GK outputs"
+    "production-scale scaling evidence for converted public nonlinear GK outputs",
+    "complete checksum/provenance/threshold evidence package"
   ],
   "native_same_case_comparison_ready": false,
   "production_scale_scaling_ready": false,
+  "production_scale_scaling_ready_by_family": {
+    "CGYRO": false,
+    "GENE": false,
+    "GS2": false
+  },
   "production_scaling_rows": [],
   "reference_output_ready": false,
   "required_observables": [
@@ -209,5 +328,63 @@
     }
   ],
   "solver_family_completeness_ready": false,
-  "status": "blocked_missing_external_output_manifest"
+  "status": "blocked_missing_external_output_manifest",
+  "threshold_contract_matrix": [
+    {
+      "comparator": "<=",
+      "limit": 0.25,
+      "metric": "relative_l2",
+      "observable": "nonlinear_distribution_function_imag",
+      "threshold": "distribution_imaginary_relative_l2_max"
+    },
+    {
+      "comparator": "<=",
+      "limit": 0.25,
+      "metric": "relative_l2",
+      "observable": "nonlinear_distribution_function",
+      "threshold": "distribution_relative_l2_max"
+    },
+    {
+      "comparator": "<=",
+      "limit": 0.2,
+      "metric": "relative_error",
+      "observable": "electromagnetic_bpar_energy",
+      "threshold": "field_bpar_energy_relative_error_max"
+    },
+    {
+      "comparator": "<=",
+      "limit": 0.2,
+      "metric": "relative_error",
+      "observable": "electromagnetic_apar_energy",
+      "threshold": "field_energy_relative_error_max"
+    },
+    {
+      "comparator": "<=",
+      "limit": 0.2,
+      "metric": "relative_error",
+      "observable": "electromagnetic_phi_energy",
+      "threshold": "field_phi_energy_relative_error_max"
+    },
+    {
+      "comparator": "<=",
+      "limit": 0.15,
+      "metric": "relative_l2",
+      "observable": "ion_heat_flux_spectrum",
+      "threshold": "heat_flux_relative_l2_max"
+    },
+    {
+      "comparator": "<=",
+      "limit": 0.2,
+      "metric": "relative_l2",
+      "observable": "electron_heat_flux_spectrum",
+      "threshold": "spectrum_relative_l2_max"
+    },
+    {
+      "comparator": "<=",
+      "limit": 0.2,
+      "metric": "relative_error",
+      "observable": "zonal_flow_energy",
+      "threshold": "zonal_energy_relative_error_max"
+    }
+  ]
 }

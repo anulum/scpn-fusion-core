@@ -91,7 +91,8 @@ Next targets for v4.0:
 - Nonlinear GK: ingest redistribution-permitted same-deck GENE, CGYRO, and
   GS2 nonlinear output artefacts, then pass the strict distribution,
   heat-flux, field-energy, zonal/saturation, convergence, scaling, and
-  native same-case comparison gates.
+  native same-case comparison gates. The gate now requires a complete
+  checksum/provenance/metadata evidence package before acceptance.
 
 The legacy NumPy FNO (rel_L2 = 0.79) is DEPRECATED and will be removed in v4.0.
 

@@ -244,6 +244,11 @@ Top-level NPZ output keys are classified by declared coordinate and observable
 contracts before converted artefact metadata is emitted.
 Grid-convergence and production-scaling evidence must reference the converted
 same-case solver-family output rows before those gates can pass.
+The parity report now also emits an evidence-package matrix. Each solver-family
+row must carry manifest completeness, public provenance/license readiness,
+source and converted artefact checksums, converted metadata checksums, native
+same-case threshold results, grid convergence, and production-scaling evidence
+before the full-fidelity GK lane can be accepted.
 The free-boundary lane now indexes public FreeGSNKE machine metadata for active
 coils, passive structures, limiter/wall contours, and magnetic probes, plus
 FreeGS example-script checksums, in

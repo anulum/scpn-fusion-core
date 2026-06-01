@@ -90,6 +90,10 @@ def test_gk_external_output_parity_blocks_without_manifest(tmp_path: Path) -> No
     assert report["production_scale_scaling_ready"] is False
     assert report["required_solver_families"] == ["GENE", "CGYRO", "GS2"]
     assert report["solver_family_completeness_ready"] is False
+    assert report["evidence_package_ready"] is False
+    assert report["evidence_package_contract"]["contract_id"] == (
+        "gk_external_nonlinear_full_fidelity_evidence_package_v1"
+    )
 
     rows = {row["solver_family"]: row for row in report["external_output_rows"]}
     assert set(rows) == {"GENE", "CGYRO", "GS2"}
@@ -106,6 +110,9 @@ def test_gk_external_output_parity_blocks_without_manifest(tmp_path: Path) -> No
         assert row["complete_required_observables"] is False
         assert set(row["observable_presence"]) == set(report["required_observables"])
         assert not any(row["observable_presence"].values())
+    evidence = {row["solver_family"]: row for row in report["evidence_package_matrix"]}
+    assert set(evidence) == {"GENE", "CGYRO", "GS2"}
+    assert not any(row["ready"] for row in evidence.values())
 
 
 def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) -> None:
@@ -172,6 +179,7 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
     assert report["grid_convergence_ready"] is False
     assert report["production_scale_scaling_ready"] is False
     assert report["solver_family_completeness_ready"] is False
+    assert report["evidence_package_ready"] is False
 
     completeness = {
         row["solver_family"]: row for row in report["solver_family_completeness_matrix"]
@@ -236,6 +244,7 @@ def test_gk_external_output_parity_compares_native_same_case_output(tmp_path: Pa
     assert gs2["threshold_evaluation"]["passed"] is True
     assert report["native_same_case_comparison_ready"] is False
     assert report["accepted_full_fidelity_ready"] is False
+    assert report["evidence_package_ready"] is False
 
 
 def test_gk_external_output_parity_accepts_npz_payload_with_separated_metadata(
@@ -338,6 +347,86 @@ def test_gk_external_output_parity_blocks_unchecksummed_native_output(
     assert report["accepted_full_fidelity_ready"] is False
 
 
+def test_gk_external_output_parity_accepts_complete_same_deck_evidence_package(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "external"
+    source_root.mkdir()
+    cases = []
+    for family, suffix in (("GENE", "gene"), ("CGYRO", "cgyro"), ("GS2", "gs2")):
+        reference = source_root / f"{suffix}_reference.json"
+        native = source_root / f"{suffix}_native.json"
+        _payload(reference, scale=1.0)
+        _payload(native, scale=1.0)
+        cases.append(
+            {
+                "case_id": f"{suffix}_itg_public",
+                "deck_id": f"{suffix}_itg_public_deck",
+                "benchmark_case_id": "public_itg_em_same_deck",
+                "deck_physics_sha256": DECK_PHYSICS_SHA256,
+                "solver_family": family,
+                "output_path": reference.name,
+                "native_output_path": native.name,
+                "native_output_sha256": _sha256(native),
+                "provenance_url": f"https://example.invalid/{suffix}/itg_public",
+                "redistribution_license": "CC-BY-4.0",
+                "sha256": _sha256(reference),
+            }
+        )
+    manifest = {
+        "schema": "gk-nonlinear-external-output-manifest.v1",
+        "cases": cases,
+        "grid_convergence_evidence": [
+            {
+                "case_id": case["case_id"],
+                "solver_family": case["solver_family"],
+                "observable": "ion_heat_flux_spectrum",
+                "coarse_grid": [2, 2, 2],
+                "fine_grid": [4, 4, 4],
+                "relative_l2": 0.08,
+            }
+            for case in cases
+        ],
+        "production_scaling_evidence": [
+            {
+                "case_id": case["case_id"],
+                "solver_family": case["solver_family"],
+                "device": "public-cpu-cluster",
+                "grid": [2, 2, 2, 2, 2, 2],
+                "ranks": 8,
+                "wall_time_s": 12.5,
+            }
+            for case in cases
+        ],
+    }
+    (source_root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    report = parity.build_gk_external_output_parity_report(
+        source_root=source_root,
+        artifact_dir=tmp_path / "artifacts",
+        report_dir=tmp_path / "reports",
+        write=True,
+    )
+
+    assert report["status"] == "accepted_full_fidelity_ready"
+    assert report["accepted_full_fidelity_ready"] is True
+    assert report["reference_output_ready"] is True
+    assert report["same_deck_group_ready"] is True
+    assert report["native_same_case_comparison_ready"] is True
+    assert report["grid_convergence_ready"] is True
+    assert report["production_scale_scaling_ready"] is True
+    assert report["evidence_package_ready"] is True
+    assert len(report["threshold_contract_matrix"]) == 8
+    for row in report["evidence_package_matrix"]:
+        assert row["ready"] is True
+        assert row["converted_artifact_ready"] is True
+        assert row["converted_metadata_ready"] is True
+        assert len(row["converted_artifact_sha256"]) == 64
+        assert len(row["converted_metadata_sha256"]) == 64
+
+
 def test_gk_external_output_parity_blocks_cross_solver_deck_mismatch(
     tmp_path: Path,
 ) -> None:
@@ -413,6 +502,7 @@ def test_gk_external_output_parity_blocks_cross_solver_deck_mismatch(
     assert report["same_deck_group"]["reason"] == "same_deck_identity_mismatch"
     assert report["status"] == "blocked_same_deck_identity_mismatch"
     assert report["accepted_full_fidelity_ready"] is False
+    assert report["evidence_package_ready"] is False
 
 
 def test_gk_external_output_parity_blocks_unlinked_convergence_and_scaling_rows(

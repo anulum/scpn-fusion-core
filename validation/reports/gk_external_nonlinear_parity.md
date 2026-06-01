@@ -10,6 +10,7 @@ Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and na
 - Native same-case comparison ready: `False`
 - Grid convergence ready: `False`
 - Production-scale scaling ready: `False`
+- Evidence package ready: `False`
 - Solver-family completeness ready: `False`
 - Converted reference artefacts: `0`
 - Same-deck group reason: `missing_solver_family_same_deck_rows`
@@ -30,6 +31,27 @@ Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and na
 | CGYRO | `False` | `False` | `False` | `False` |
 | GS2 | `False` | `False` | `False` | `False` |
 
+## Evidence package matrix
+
+| Solver | Manifest | Provenance/license | Artefact | Metadata | Native thresholds | Grid | Scaling | Ready |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| GENE | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
+| CGYRO | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
+| GS2 | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
+
+## Published threshold contract
+
+| Threshold | Observable | Metric | Comparator | Limit |
+|---|---|---|:---:|---:|
+| distribution_imaginary_relative_l2_max | `nonlinear_distribution_function_imag` | `relative_l2` | `<=` | 0.25 |
+| distribution_relative_l2_max | `nonlinear_distribution_function` | `relative_l2` | `<=` | 0.25 |
+| field_bpar_energy_relative_error_max | `electromagnetic_bpar_energy` | `relative_error` | `<=` | 0.2 |
+| field_energy_relative_error_max | `electromagnetic_apar_energy` | `relative_error` | `<=` | 0.2 |
+| field_phi_energy_relative_error_max | `electromagnetic_phi_energy` | `relative_error` | `<=` | 0.2 |
+| heat_flux_relative_l2_max | `ion_heat_flux_spectrum` | `relative_l2` | `<=` | 0.15 |
+| spectrum_relative_l2_max | `electron_heat_flux_spectrum` | `relative_l2` | `<=` | 0.2 |
+| zonal_energy_relative_error_max | `zonal_flow_energy` | `relative_error` | `<=` | 0.2 |
+
 ## Missing full-fidelity requirements
 
 - same-deck external nonlinear distribution output for GENE, CGYRO, and GS2
@@ -40,3 +62,4 @@ Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and na
 - native same-case nonlinear GK solver-output comparison
 - grid-convergence evidence for converted public nonlinear GK outputs
 - production-scale scaling evidence for converted public nonlinear GK outputs
+- complete checksum/provenance/threshold evidence package
