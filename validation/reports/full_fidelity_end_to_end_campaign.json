@@ -195,7 +195,8 @@
       "lane": "production_scale_decomposition",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "MPI or multi-GPU distributed execution path over the declared rank tiles",
+        "cluster MPI scaling report over the declared rank tiles",
+        "multi-GPU distributed execution path over the declared rank tiles",
         "large-grid cluster/GPU wall-time scaling report",
         "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
         "hardware-specific multi-rank throughput and efficiency thresholds",

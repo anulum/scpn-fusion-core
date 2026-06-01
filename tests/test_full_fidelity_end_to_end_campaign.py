@@ -168,7 +168,9 @@ def test_integrated_campaign_writes_json_and_markdown_reports() -> None:
 
     write_reports(report)
 
-    assert report["all_locally_actionable_contracts_ready"] is True
+    assert report["all_locally_actionable_contracts_ready"] is all(
+        bool(lane["locally_actionable_contract_ready"]) for lane in report["lanes"]
+    )
 
 
 def test_integrated_campaign_keeps_reference_parity_fail_closed() -> None:

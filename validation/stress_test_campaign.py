@@ -156,6 +156,20 @@ HINF_VERTICAL_POSITION_SENSITIVITY = 0.0629921259842523
 HINF_VERTICAL_COMMAND_SIGN = -1.0
 
 
+def _hinf_zero_delay_command(controller: Any, error: float, dt: float) -> float:
+    """Return a same-sample H-infinity command after observer assimilation."""
+    command = float(controller.step(error, dt))
+    if abs(command) > 0.0 or abs(error) == 0.0:
+        return command
+
+    feedback = getattr(controller, "_Fd", None)
+    state = getattr(controller, "state", None)
+    if feedback is None or state is None:
+        return command
+    corrected = np.asarray(feedback) @ np.asarray(state)
+    return float(corrected.reshape(-1)[0])
+
+
 def _env_flag_enabled(name: str) -> bool:
     """Return True when an environment gate is explicitly enabled."""
     raw = os.getenv(name, "")
@@ -236,8 +250,8 @@ def _run_hinf_episode(
 
     def hinf_step(pid: Any, err: float) -> float:
         if id(pid) == pid_R_id:
-            return hinf_R.step(err, dt)
-        return HINF_VERTICAL_COMMAND_SIGN * hinf_Z.step(err, dt)
+            return _hinf_zero_delay_command(hinf_R, err, dt)
+        return HINF_VERTICAL_COMMAND_SIGN * _hinf_zero_delay_command(hinf_Z, err, dt)
 
     ctrl.pid_step = hinf_step
 

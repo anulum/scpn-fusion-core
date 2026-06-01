@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Validate packaging contracts used by release/install workflows."""
@@ -58,6 +56,8 @@ def _load_pyproject(path: Path) -> dict[str, Any]:
             buffer.append(stripped)
             if "]" in stripped:
                 values = " ".join(buffer)
+                if "[" not in values or "]" not in values:
+                    raise ValueError(f"unterminated TOML array for {name}")
                 items = [
                     part.strip().strip("\"'")
                     for part in values.split("[", 1)[1].split("]", 1)[0].split(",")
@@ -73,11 +73,31 @@ def _load_pyproject(path: Path) -> dict[str, Any]:
             section = stripped
             continue
         if section == "[project]" and stripped.startswith("dependencies"):
+            if "[" not in stripped:
+                raise ValueError("[project].dependencies must be an inline array")
             collecting = ("dependencies", [stripped])
+            if "]" in stripped:
+                values = " ".join([stripped])
+                dependencies.extend(
+                    part.strip().strip("\"'")
+                    for part in values.split("[", 1)[1].split("]", 1)[0].split(",")
+                    if part.strip()
+                )
+                collecting = None
             continue
         if section == "[project.optional-dependencies]" and "=" in stripped:
             name = stripped.split("=", 1)[0].strip()
+            if "[" not in stripped:
+                raise ValueError(f"[project.optional-dependencies].{name} must be an inline array")
             collecting = (name, [stripped])
+            if "]" in stripped:
+                values = " ".join([stripped])
+                optional[name] = [
+                    part.strip().strip("\"'")
+                    for part in values.split("[", 1)[1].split("]", 1)[0].split(",")
+                    if part.strip()
+                ]
+                collecting = None
             continue
 
     return {

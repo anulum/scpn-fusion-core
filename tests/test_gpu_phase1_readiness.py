@@ -8,7 +8,6 @@ from pathlib import Path
 from validation.benchmark_gpu_phase1_readiness import (
     evaluate_gpu_phase1_readiness,
     render_markdown,
-    run_benchmark,
 )
 
 
@@ -27,11 +26,11 @@ def _write_gpu_surfaces(root: Path) -> None:
 
 
 def test_gpu_phase1_blocks_without_tracked_benchmark_artifact() -> None:
-    report = run_benchmark(write=False)
+    report = evaluate_gpu_phase1_readiness(benchmark_report_paths=[Path("missing-gpu.json")])
 
     assert report["phase1_static_implementation_ready"] is True
     assert report["accepted_phase1_readiness"] is False
-    assert "tracked_gpu_wgpu_sor_benchmark_artifact_missing" in report["blockers"]
+    assert "tracked_gpu_physical_wgpu_sor_benchmark_artifact_missing" in report["blockers"]
 
 
 def test_gpu_phase1_accepts_complete_static_and_benchmark_contract(tmp_path: Path) -> None:
@@ -41,6 +40,7 @@ def test_gpu_phase1_accepts_complete_static_and_benchmark_contract(tmp_path: Pat
         json.dumps(
             {
                 "gpu_available": True,
+                "physical_gpu_adapter": True,
                 "solver": "wgpu_sor",
                 "output_sha256": "a" * 64,
             }
@@ -55,8 +55,8 @@ def test_gpu_phase1_accepts_complete_static_and_benchmark_contract(tmp_path: Pat
 
 
 def test_gpu_phase1_markdown_exposes_blockers() -> None:
-    report = run_benchmark(write=False)
+    report = evaluate_gpu_phase1_readiness(benchmark_report_paths=[Path("missing-gpu.json")])
     markdown = render_markdown(report)
 
-    assert "tracked_gpu_wgpu_sor_benchmark_artifact_missing" in markdown
+    assert "tracked_gpu_physical_wgpu_sor_benchmark_artifact_missing" in markdown
     assert "Production scaling ready: `False`" in markdown

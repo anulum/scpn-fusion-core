@@ -183,7 +183,7 @@ those solvers.
 
 ## Evidence Boundary
 
-This is **not** a replacement for TRANSP, JINTRAC, GENE, CGYRO, GS2, DREAM, Aurora, STRAHL, or EFIT. It is a
+At minimum, this is **not** a replacement for TRANSP, JINTRAC, or GENE; the same boundary applies to CGYRO, GS2, DREAM, Aurora, STRAHL, and EFIT. It is a
 **control-algorithm development and validation framework** with explicit fidelity boundaries,
 fast controller-support models, native research solver contracts, and
 fail-closed production-parity gates. See

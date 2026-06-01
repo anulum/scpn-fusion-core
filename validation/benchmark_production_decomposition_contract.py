@@ -330,7 +330,10 @@ def _runtime_dependency_evidence() -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     for module_name, requirement in OPTIONAL_RUNTIME_DEPENDENCIES.items():
         distribution = module_to_distribution[module_name]
-        spec = util.find_spec(module_name)
+        try:
+            spec = util.find_spec(module_name)
+        except (ModuleNotFoundError, ValueError):
+            spec = None
         version = None
         if spec is not None:
             try:
@@ -392,14 +395,27 @@ def _mpi_runtime_evidence() -> dict[str, Any]:
             str(output),
         ]
         started = time.perf_counter()
-        completed = subprocess.run(
-            command,
-            check=False,
-            env={**os.environ, "OMPI_MCA_rmaps_base_oversubscribe": "1"},
-            capture_output=True,
-            text=True,
-            timeout=30.0,
-        )
+        try:
+            completed = subprocess.run(
+                command,
+                check=False,
+                env={**os.environ, "OMPI_MCA_rmaps_base_oversubscribe": "1"},
+                capture_output=True,
+                text=True,
+                timeout=30.0,
+            )
+        except subprocess.TimeoutExpired as exc:
+            elapsed = max(time.perf_counter() - started, 1.0e-12)
+            return {
+                "blocking_reason": f"mpi_runtime_timeout_after_{exc.timeout}_s",
+                "command": command,
+                "elapsed_s": elapsed,
+                "mpi_runtime_execution_ready": False,
+                "rank_count": MPI_RUNTIME_RANK_COUNT,
+                "returncode": None,
+                "schema": "production-decomposition-mpi-runtime-evidence.v1",
+                "status": "blocked_mpi_runtime_execution_timeout",
+            }
         elapsed = max(time.perf_counter() - started, 1.0e-12)
         if completed.returncode != 0 or not output.exists():
             return {
