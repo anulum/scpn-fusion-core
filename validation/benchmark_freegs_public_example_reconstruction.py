@@ -817,9 +817,7 @@ def _grid_convergence_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
                 "machine_class": case["machine_class"],
                 "missing_resolution_count": missing_count,
                 "observed_resolution_count": observed_count,
-                "observed_resolutions": [
-                    {"nx": int(nx), "ny": int(ny)} for nx, ny in resolutions
-                ],
+                "observed_resolutions": [{"nx": int(nx), "ny": int(ny)} for nx, ny in resolutions],
                 "required_resolution_count": GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT,
             }
         )

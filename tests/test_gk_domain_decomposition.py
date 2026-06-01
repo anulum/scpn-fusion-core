@@ -235,7 +235,9 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert communication_volume["communicating_face_count"] > 0
     assert communication_volume["total_halo_exchange_bytes_per_step"] > 0
     assert communication_volume["max_rank_halo_exchange_bytes_per_step"] > 0
-    assert all(row["rank_halo_exchange_bytes_per_step"] >= 0 for row in communication_volume["rank_rows"])
+    assert all(
+        row["rank_halo_exchange_bytes_per_step"] >= 0 for row in communication_volume["rank_rows"]
+    )
     reciprocal = report["reciprocal_neighbour_graph_evidence"]
     assert reciprocal["schema"] == "production-decomposition-reciprocal-neighbour-graph.v1"
     assert reciprocal["status"] == "accepted_local_reciprocal_neighbour_graph"
@@ -254,9 +256,10 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert scaling["required_rank_counts"] == [1, 2, 4, 8, 16, 32]
     assert scaling["minimum_parallel_efficiency_threshold"] == 0.7
     assert scaling["minimum_weak_scaling_efficiency_threshold"] == 0.8
-    assert scaling["estimated_halo_bytes_per_step"] == communication_volume[
-        "total_halo_exchange_bytes_per_step"
-    ]
+    assert (
+        scaling["estimated_halo_bytes_per_step"]
+        == communication_volume["total_halo_exchange_bytes_per_step"]
+    )
     assert "MPI" in scaling["blocking_reason"]
     assert "multi-GPU" in scaling["blocking_reason"]
     manifest = report["distributed_run_acceptance_manifest"]

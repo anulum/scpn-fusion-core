@@ -163,9 +163,7 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "free_energy_relative_deviation_from_reference": free_energy_deviation,
                 "inventory_relative_deviation_from_reference": inventory_deviation,
                 "owned_phase_cells": row["owned_phase_cells"],
-                "parallel_moment_relative_deviation_from_reference": (
-                    parallel_moment_deviation
-                ),
+                "parallel_moment_relative_deviation_from_reference": (parallel_moment_deviation),
                 "rank_count": row["rank_count"],
                 "reconstruction_linf_error": reconstruction_error,
                 "shape_convergence_pass": shape_pass,
@@ -362,9 +360,9 @@ def _communication_volume_evidence(
                 "rank_halo_exchange_bytes_per_step": rank_bytes,
             }
         )
-    max_rank_bytes = max(
-        int(row["rank_halo_exchange_bytes_per_step"]) for row in rank_rows
-    ) if rank_rows else 0
+    max_rank_bytes = (
+        max(int(row["rank_halo_exchange_bytes_per_step"]) for row in rank_rows) if rank_rows else 0
+    )
     return {
         "bytes_per_float64": FLOAT64_BYTES,
         "communicating_face_count": communicating_face_count,
@@ -436,9 +434,7 @@ def _reciprocal_neighbour_graph_evidence(
                 if payload_bytes is None or reciprocal_payload_bytes is None
                 else abs(payload_bytes - reciprocal_payload_bytes)
             )
-            link_pass = bool(
-                reciprocal_rank_match and payload_shape_match and payload_byte_match
-            )
+            link_pass = bool(reciprocal_rank_match and payload_shape_match and payload_byte_match)
             link_rows.append(
                 {
                     "face": face,
@@ -458,9 +454,9 @@ def _reciprocal_neighbour_graph_evidence(
                 }
             )
     mismatched_link_count = sum(1 for row in link_rows if not bool(row["link_pass"]))
-    max_payload_byte_asymmetry = max(
-        int(row["payload_byte_asymmetry"] or 0) for row in link_rows
-    ) if link_rows else 0
+    max_payload_byte_asymmetry = (
+        max(int(row["payload_byte_asymmetry"] or 0) for row in link_rows) if link_rows else 0
+    )
     reciprocal_neighbour_graph_pass = bool(
         link_rows and len(link_rows) % 2 == 0 and mismatched_link_count == 0
     )
@@ -485,9 +481,7 @@ def _distributed_scaling_gate_evidence(
 ) -> dict[str, Any]:
     """Return fail-closed distributed runtime scaling acceptance evidence."""
     distributed_runs = [] if measured_runs is None else measured_runs
-    estimated_halo_bytes = int(
-        communication_volume_evidence["total_halo_exchange_bytes_per_step"]
-    )
+    estimated_halo_bytes = int(communication_volume_evidence["total_halo_exchange_bytes_per_step"])
     return {
         "blocking_reason": (
             "MPI or multi-GPU distributed runtime measurements are required "
@@ -933,10 +927,7 @@ def write_reports(report: dict[str, Any]) -> None:
             f"- Status: `{scaling['status']}`",
             f"- Distributed scaling ready: `{scaling['distributed_scaling_ready']}`",
             f"- Measured run count: `{scaling['measured_run_count']}`",
-            (
-                "- Required rank counts: "
-                f"`{json.dumps(scaling['required_rank_counts'])}`"
-            ),
+            (f"- Required rank counts: `{json.dumps(scaling['required_rank_counts'])}`"),
             (
                 "- Minimum parallel efficiency threshold: "
                 f"`{scaling['minimum_parallel_efficiency_threshold']:.2f}`"
@@ -945,10 +936,7 @@ def write_reports(report: dict[str, Any]) -> None:
                 "- Minimum weak-scaling efficiency threshold: "
                 f"`{scaling['minimum_weak_scaling_efficiency_threshold']:.2f}`"
             ),
-            (
-                "- Estimated halo bytes per step: "
-                f"`{scaling['estimated_halo_bytes_per_step']}`"
-            ),
+            (f"- Estimated halo bytes per step: `{scaling['estimated_halo_bytes_per_step']}`"),
             f"- Blocking reason: {scaling['blocking_reason']}",
             "",
             "Required measurements:",
@@ -969,18 +957,9 @@ def write_reports(report: dict[str, Any]) -> None:
             ),
             f"- Candidate run count: `{manifest['candidate_run_count']}`",
             f"- Accepted run count: `{manifest['accepted_run_count']}`",
-            (
-                "- Required rank counts: "
-                f"`{json.dumps(manifest['required_rank_counts'])}`"
-            ),
-            (
-                "- Missing rank counts: "
-                f"`{json.dumps(manifest['missing_rank_counts'])}`"
-            ),
-            (
-                "- Estimated halo bytes per step: "
-                f"`{manifest['estimated_halo_bytes_per_step']}`"
-            ),
+            (f"- Required rank counts: `{json.dumps(manifest['required_rank_counts'])}`"),
+            (f"- Missing rank counts: `{json.dumps(manifest['missing_rank_counts'])}`"),
+            (f"- Estimated halo bytes per step: `{manifest['estimated_halo_bytes_per_step']}`"),
             "",
             "Required distributed-run fields:",
         ]
@@ -1018,10 +997,7 @@ def write_reports(report: dict[str, Any]) -> None:
             "",
             f"- Schema: `{large_grid['schema']}`",
             f"- Status: `{large_grid['status']}`",
-            (
-                "- Large-grid CPU benchmark ready: "
-                f"`{large_grid['large_grid_cpu_benchmark_ready']}`"
-            ),
+            (f"- Large-grid CPU benchmark ready: `{large_grid['large_grid_cpu_benchmark_ready']}`"),
             (
                 "- Max reconstruction L_inf error: "
                 f"`{large_grid['max_reconstruction_linf_error']:.6e}`"

@@ -92,9 +92,7 @@ class MaxwellEvolutionResult:
             "max_ampere_maxwell_linf_residual": self.max_ampere_maxwell_linf_residual,
             "max_faraday_linf_residual": self.max_faraday_linf_residual,
             "max_inductive_e_parallel_linf_residual": (self.max_inductive_e_parallel_linf_residual),
-            "max_magnetic_divergence_linf_residual": (
-                self.max_magnetic_divergence_linf_residual
-            ),
+            "max_magnetic_divergence_linf_residual": (self.max_magnetic_divergence_linf_residual),
             "max_relative_total_field_energy_drift": (self.relative_total_field_energy_drift),
             "magnetic_divergence_constraint_supported": (
                 self.magnetic_divergence_constraint_supported
@@ -270,9 +268,7 @@ def run_local_maxwell_evolution(config: MaxwellEvolutionConfig) -> MaxwellEvolut
         max_ampere_maxwell_linf_residual=float(np.max(ampere_maxwell_linf_residual_t)),
         max_faraday_linf_residual=float(np.max(faraday_linf_residual_t)),
         max_inductive_e_parallel_linf_residual=float(np.max(inductive_e_parallel_linf_residual_t)),
-        max_magnetic_divergence_linf_residual=float(
-            np.max(magnetic_divergence_linf_residual_t)
-        ),
+        max_magnetic_divergence_linf_residual=float(np.max(magnetic_divergence_linf_residual_t)),
         phi_energy_t=phi_energy_t,
         relative_energy_tolerance=config.relative_energy_tolerance,
         relative_total_field_energy_drift=_relative_drift(total_field_energy_t),

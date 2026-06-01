@@ -444,9 +444,7 @@ def _external_em_parity_evidence() -> dict[str, Any]:
     """Return fail-closed same-deck external EM parity evidence."""
     rows: list[dict[str, Any]] = []
     for solver_family in REQUIRED_EXTERNAL_SOLVERS:
-        observable_presence = {
-            observable: False for observable in REQUIRED_EXTERNAL_OBSERVABLES
-        }
+        observable_presence = {observable: False for observable in REQUIRED_EXTERNAL_OBSERVABLES}
         rows.append(
             {
                 "complete_required_observables": False,

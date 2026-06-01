@@ -74,9 +74,10 @@ def _sha256(path: Path) -> str:
 def _write_deterministic_npz(path: Path, arrays: dict[str, NDArray[Any]]) -> None:
     """Write compressed NPZ bytes with stable member order and timestamps."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("wb") as raw, zipfile.ZipFile(
-        raw, mode="w", compression=zipfile.ZIP_DEFLATED
-    ) as archive:
+    with (
+        path.open("wb") as raw,
+        zipfile.ZipFile(raw, mode="w", compression=zipfile.ZIP_DEFLATED) as archive,
+    ):
         for name in sorted(arrays):
             buffer = io.BytesIO()
             np.save(buffer, np.asarray(arrays[name]), allow_pickle=False)

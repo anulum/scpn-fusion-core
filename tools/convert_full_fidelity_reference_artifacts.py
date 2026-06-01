@@ -103,9 +103,10 @@ def _finite_payload(arrays: dict[str, NDArray[Any]]) -> bool:
 
 def _write_npz(path: Path, arrays: dict[str, NDArray[Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("wb") as raw, zipfile.ZipFile(
-        raw, mode="w", compression=zipfile.ZIP_DEFLATED
-    ) as archive:
+    with (
+        path.open("wb") as raw,
+        zipfile.ZipFile(raw, mode="w", compression=zipfile.ZIP_DEFLATED) as archive,
+    ):
         for name in sorted(arrays):
             buffer = io.BytesIO()
             np.save(buffer, np.asarray(arrays[name]), allow_pickle=False)

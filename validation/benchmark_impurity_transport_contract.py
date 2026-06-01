@@ -88,9 +88,11 @@ def _source_sink_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
         if inventory.size
         else np.inf
     )
-    radial_density_baseline = np.maximum(
-        np.abs(total_density[0]), 1.0
-    ) if total_density.ndim == 2 and total_density.shape[0] > 0 else np.asarray([], dtype=float)
+    radial_density_baseline = (
+        np.maximum(np.abs(total_density[0]), 1.0)
+        if total_density.ndim == 2 and total_density.shape[0] > 0
+        else np.asarray([], dtype=float)
+    )
     max_radial_density_change = (
         float(np.max(np.abs(total_density - total_density[0]) / radial_density_baseline))
         if radial_density_baseline.size

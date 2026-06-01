@@ -98,9 +98,7 @@ def test_gk_external_output_parity_blocks_without_manifest(tmp_path: Path) -> No
         assert row["reference_output_ready"] is False
         assert "same_deck_external_nonlinear_output" in row["missing_requirements"]
 
-    matrix = {
-        row["solver_family"]: row for row in report["solver_family_completeness_matrix"]
-    }
+    matrix = {row["solver_family"]: row for row in report["solver_family_completeness_matrix"]}
     assert set(matrix) == {"GENE", "CGYRO", "GS2"}
     for row in matrix.values():
         assert row["same_deck_reference_output_ready"] is False
