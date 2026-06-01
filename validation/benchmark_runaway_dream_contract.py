@@ -107,6 +107,65 @@ def _relative_inventory_change(distribution: np.ndarray[Any, np.dtype[np.float64
     return relative_change if np.isfinite(relative_change) else None
 
 
+def _source_term_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
+    observables = payload["observables"]
+    budget_arrays = {
+        "avalanche_growth_rate_t": np.asarray(
+            observables["avalanche_growth_rate_t"], dtype=np.float64
+        ),
+        "synchrotron_loss_power_t": np.asarray(
+            observables["synchrotron_loss_power_t"], dtype=np.float64
+        ),
+        "partial_screening_drag_t": np.asarray(
+            observables["partial_screening_drag_t"], dtype=np.float64
+        ),
+        "bremsstrahlung_loss_power_t": np.asarray(
+            observables["bremsstrahlung_loss_power_t"], dtype=np.float64
+        ),
+    }
+    term_finiteness = {
+        name: bool(values.size > 0 and np.all(np.isfinite(values)))
+        for name, values in budget_arrays.items()
+    }
+    term_nonnegativity = {
+        name: bool(values.size > 0 and np.all(values >= 0.0))
+        for name, values in budget_arrays.items()
+    }
+    avalanche = budget_arrays["avalanche_growth_rate_t"]
+    synchrotron = budget_arrays["synchrotron_loss_power_t"]
+    screening = budget_arrays["partial_screening_drag_t"]
+    bremsstrahlung = budget_arrays["bremsstrahlung_loss_power_t"]
+    return {
+        "schema": "native-runaway-source-term-budget-evidence.v1",
+        "status": "native_artifact_observable_budget_only_not_dream_operator_parity",
+        "budget_terms": list(budget_arrays),
+        "time_count": int(avalanche.shape[0]) if avalanche.ndim >= 1 else 0,
+        "radius_count": int(avalanche.shape[1]) if avalanche.ndim >= 2 else 0,
+        "term_shapes": {
+            name: [int(axis) for axis in values.shape] for name, values in budget_arrays.items()
+        },
+        "term_finiteness": term_finiteness,
+        "term_nonnegativity": term_nonnegativity,
+        "all_observable_budgets_finite": bool(all(term_finiteness.values())),
+        "all_nonnegative_power_channels": bool(
+            term_nonnegativity["synchrotron_loss_power_t"]
+            and term_nonnegativity["partial_screening_drag_t"]
+            and term_nonnegativity["bremsstrahlung_loss_power_t"]
+        ),
+        "max_abs_avalanche_growth_rate_s_inv": float(np.max(np.abs(avalanche))),
+        "max_synchrotron_loss_power_w_m3": float(np.max(synchrotron)),
+        "max_partial_screening_drag_si": float(np.max(screening)),
+        "max_bremsstrahlung_loss_power_w_m3": float(np.max(bremsstrahlung)),
+        "dream_same_case_budget_ready": False,
+        "blocking_requirements": [
+            "same-case DREAM source-term budget output",
+            "DREAM synchrotron loss parity",
+            "DREAM bremsstrahlung loss parity",
+            "DREAM partial-screening drag parity",
+        ],
+    }
+
+
 def _native_kinetic_operator_evidence(
     payload: dict[str, Any],
     validation: dict[str, Any],
@@ -141,6 +200,7 @@ def _native_kinetic_operator_evidence(
         },
         "observable_finiteness": observable_finiteness,
         "observable_nonnegativity": observable_nonnegativity,
+        "source_term_budget_evidence": _source_term_budget_evidence(payload),
         "unweighted_inventory_relative_change_max": _relative_inventory_change(distribution),
         "blocking_requirements": [
             "compiled DREAM iface/dreami same-case output",
@@ -227,6 +287,7 @@ def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
     capped_density = evo.step(1.0, 9.0e13, 50.0, max_runaway_fraction=1.0e-6)
     native_kinetic_artifact = _native_kinetic_artifact_gate()
     native_kinetic_operator_evidence = native_kinetic_artifact["kinetic_operator_evidence"]
+    source_term_budget_evidence = native_kinetic_operator_evidence["source_term_budget_evidence"]
 
     invariants = {
         "subcritical_avalanche_zero": bool(cases[0]["avalanche_source_m3_s"] == 0.0),
@@ -248,6 +309,12 @@ def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
             and not native_kinetic_operator_evidence["full_momentum_pitch_radius_operator_ready"]
             and not native_kinetic_operator_evidence["dream_same_case_threshold_ready"]
             and bool(native_kinetic_operator_evidence["blocking_requirements"])
+        ),
+        "native_source_term_budget_evidence_fail_closed": bool(
+            source_term_budget_evidence["all_observable_budgets_finite"]
+            and source_term_budget_evidence["all_nonnegative_power_channels"]
+            and not source_term_budget_evidence["dream_same_case_budget_ready"]
+            and bool(source_term_budget_evidence["blocking_requirements"])
         ),
     }
 
@@ -281,6 +348,7 @@ def write_reports(results: _RunawayBenchmarkResult) -> None:
     invariants = results["invariants"]
     artifact = results["native_kinetic_artifact"]
     operator_evidence = results["native_kinetic_operator_evidence"]
+    source_budget = operator_evidence["source_term_budget_evidence"]
     lines = [
         "# Runaway DREAM-Style Contract Benchmark",
         "",
@@ -356,6 +424,31 @@ def write_reports(results: _RunawayBenchmarkResult) -> None:
                 "- Observable non-negativity: "
                 f"`{json.dumps(operator_evidence['observable_nonnegativity'], sort_keys=True)}`"
             ),
+            "",
+            "## Native source-term budget evidence",
+            "",
+            f"- Schema: `{source_budget['schema']}`",
+            f"- Status: `{source_budget['status']}`",
+            f"- Budget terms: `{', '.join(source_budget['budget_terms'])}`",
+            f"- Time count: `{source_budget['time_count']}`",
+            f"- Radius count: `{source_budget['radius_count']}`",
+            (
+                "- Term finiteness: "
+                f"`{json.dumps(source_budget['term_finiteness'], sort_keys=True)}`"
+            ),
+            (
+                "- Term non-negativity: "
+                f"`{json.dumps(source_budget['term_nonnegativity'], sort_keys=True)}`"
+            ),
+            (
+                "- All observable budgets finite: "
+                f"`{source_budget['all_observable_budgets_finite']}`"
+            ),
+            (
+                "- Non-negative loss/screening channels: "
+                f"`{source_budget['all_nonnegative_power_channels']}`"
+            ),
+            (f"- DREAM same-case budget ready: `{source_budget['dream_same_case_budget_ready']}`"),
             (f"- Blocking requirements: `{'; '.join(operator_evidence['blocking_requirements'])}`"),
         ]
     )

@@ -19,6 +19,8 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Runaway native kinetic operator evidence ready: `True`
 - Runaway full momentum-pitch-radius operator ready: `False`
 - Runaway DREAM same-case thresholds ready: `False`
+- Runaway source-term budget evidence ready: `True`
+- Runaway source-term DREAM same-case budget ready: `False`
 - Runaway kinetic operator evidence status: `blocked_native_projection_artifact_not_full_dream_operator`
 - Aurora execution report: `validation/reports/aurora_reference_execution_artifact.json`
 - Aurora artifact generated: `True`

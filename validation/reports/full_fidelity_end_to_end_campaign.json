@@ -288,6 +288,8 @@
   "runaway_full_momentum_pitch_radius_operator_ready": false,
   "runaway_kinetic_operator_evidence_status": "blocked_native_projection_artifact_not_full_dream_operator",
   "runaway_native_kinetic_operator_evidence_ready": true,
+  "runaway_source_term_budget_dream_same_case_ready": false,
+  "runaway_source_term_budget_evidence_ready": true,
   "schema": "full-fidelity-end-to-end-campaign.v1",
   "status": "not_full_fidelity"
 }

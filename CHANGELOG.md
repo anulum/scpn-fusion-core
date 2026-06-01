@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added native runaway source-term budget evidence for avalanche growth,
+  synchrotron loss, partial-screening drag, and bremsstrahlung loss channels
+  while keeping DREAM same-case source-budget parity fail-closed.
+
 - Added fail-closed FreeGS public-example strict threshold evidence with
   per-case native-vs-FreeGS checks, failed-check counts, and readiness booleans
   for threshold acceptance, grid convergence, and public coil/vacuum sidecars.

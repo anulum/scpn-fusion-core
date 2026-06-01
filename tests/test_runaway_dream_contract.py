@@ -60,7 +60,29 @@ def test_runaway_dream_benchmark_exports_fail_closed_operator_evidence() -> None
     assert evidence["operator_terms_present"]["bremsstrahlung_radiation_loss_operator"] is False
     assert all(evidence["observable_finiteness"].values())
     assert all(evidence["observable_nonnegativity"].values())
+    source_budget = evidence["source_term_budget_evidence"]
+    assert source_budget["schema"] == "native-runaway-source-term-budget-evidence.v1"
+    assert (
+        source_budget["status"]
+        == "native_artifact_observable_budget_only_not_dream_operator_parity"
+    )
+    assert source_budget["budget_terms"] == [
+        "avalanche_growth_rate_t",
+        "synchrotron_loss_power_t",
+        "partial_screening_drag_t",
+        "bremsstrahlung_loss_power_t",
+    ]
+    assert source_budget["time_count"] == 4
+    assert source_budget["radius_count"] == 4
+    assert source_budget["all_observable_budgets_finite"] is True
+    assert source_budget["all_nonnegative_power_channels"] is True
+    assert source_budget["dream_same_case_budget_ready"] is False
+    assert source_budget["max_abs_avalanche_growth_rate_s_inv"] >= 0.0
+    assert source_budget["max_synchrotron_loss_power_w_m3"] >= 0.0
+    assert source_budget["max_partial_screening_drag_si"] >= 0.0
+    assert source_budget["max_bremsstrahlung_loss_power_w_m3"] >= 0.0
     assert report["invariants"]["native_kinetic_operator_evidence_fail_closed"] is True
+    assert report["invariants"]["native_source_term_budget_evidence_fail_closed"] is True
     assert "compiled DREAM iface/dreami same-case output" in evidence["blocking_requirements"]
 
 

@@ -176,11 +176,12 @@ summarised in
 [`validation/reports/full_fidelity_public_source_downloads.md`](validation/reports/full_fidelity_public_source_downloads.md).
 Those snapshots are acquisition inputs only; they are not accepted parity
 artefacts until converted into schema-valid repository-local JSON/NPZ evidence.
-The public conversion/execution pass exports four finite public payloads: DREAM
-avalanche HDF5 data, FreeGSNKE static inverse baselines, FreeGSNKE
-MAST-U-like current sidecars, and an Aurora/Open-ADAS argon fractional-abundance
-artifact, into tracked artifacts with metadata and checksums:
+The public conversion pass exports three finite public payloads: DREAM
+avalanche HDF5 data, FreeGSNKE static inverse baselines, and FreeGSNKE
+MAST-U-like current sidecars into tracked artifacts with metadata and checksums:
 [`validation/reports/full_fidelity_reference_artifact_conversion.md`](validation/reports/full_fidelity_reference_artifact_conversion.md).
+The Aurora execution lane separately exports an Aurora/Open-ADAS
+argon fractional-abundance artifact:
 [`validation/reports/aurora_reference_execution_artifact.md`](validation/reports/aurora_reference_execution_artifact.md).
 These are partial diagnostic artefacts, not full-fidelity acceptance artefacts,
 because required transport observables and same-case solver-output comparisons
@@ -196,7 +197,11 @@ runaway benchmark now also publishes fail-closed kinetic-operator evidence:
 the exported `time_s x radius_m x momentum_mec x pitch_cosine` artifact is
 finite and schema-valid, but radius and pitch are not yet evolved operator
 axes, same-case DREAM thresholds are not ready, and full coupled
-momentum-pitch-radius Fokker-Planck parity remains blocked.
+momentum-pitch-radius Fokker-Planck parity remains blocked. It also publishes
+native-only source-term budget evidence for avalanche growth, synchrotron loss,
+partial-screening drag, and bremsstrahlung loss channels; DREAM same-case
+source-budget parity remains blocked until compiled `iface/dreami` output is
+available.
 The Aurora execution lane runs a cached Aurora/Open-ADAS atomic-data path and
 exports normalized argon charge-state fractions, but remains blocked for full
 Aurora/STRAHL parity until public radial transport output, source/sink matrices,
@@ -308,7 +313,7 @@ and cluster timing evidence exist.
 | Free-boundary tracking | Direct kernel + supervisor; not EFIT/LiUQE-grade inverse reconstruction | N | N | N | N |
 | Disruption chain (TQ+CQ+RE+halo) | Reduced chain with 0D runaway rates | N | N | N | Y |
 | ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
-| Runaway electron dynamics | DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, and fail-closed kinetic-operator evidence; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity | N | N | N | Y |
+| Runaway electron dynamics | DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, fail-closed kinetic-operator evidence, and native-only source-term budget diagnostics; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
 | Impurity transport (neoclassical) | Trace radial transport with source conservation, neoclassical pinch, charge-state artifact/source-sink contract, and fail-closed native transport evidence; no public Aurora/STRAHL collisional-operator parity or same-case transport thresholds | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |

@@ -29,6 +29,8 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["runaway_native_kinetic_operator_evidence_ready"] is True
     assert report["runaway_full_momentum_pitch_radius_operator_ready"] is False
     assert report["runaway_dream_same_case_threshold_ready"] is False
+    assert report["runaway_source_term_budget_evidence_ready"] is True
+    assert report["runaway_source_term_budget_dream_same_case_ready"] is False
     assert (
         report["runaway_kinetic_operator_evidence_status"]
         == "blocked_native_projection_artifact_not_full_dream_operator"

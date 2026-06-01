@@ -9,7 +9,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 1e-08,
       "total_source_m3_s": 0.0,
-      "wall_time_s": 0.0001095370389521122
+      "wall_time_s": 0.00018117902800440788
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -19,7 +19,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9297121255879576.0,
-      "wall_time_s": 5.043193232268095e-05
+      "wall_time_s": 7.397995796054602e-05
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -29,7 +29,7 @@
       "loss_source_m3_s": 10000000000000.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9287121255879576.0,
-      "wall_time_s": 3.692600876092911e-05
+      "wall_time_s": 2.6221037842333317e-05
     }
   ],
   "description": "DREAM-style fluid density-balance plus native momentum-pitch-radius artifact contract; not kinetic DREAM parity.",
@@ -38,6 +38,7 @@
     "loss_accounting_exact": true,
     "native_kinetic_artifact_contract": true,
     "native_kinetic_operator_evidence_fail_closed": true,
+    "native_source_term_budget_evidence_fail_closed": true,
     "subcritical_avalanche_zero": true,
     "supercritical_avalanche_positive": true
   },
@@ -149,6 +150,61 @@
       },
       "radius_pitch_are_evolved_operator_axes": false,
       "schema": "native-runaway-kinetic-operator-evidence.v1",
+      "source_term_budget_evidence": {
+        "all_nonnegative_power_channels": true,
+        "all_observable_budgets_finite": true,
+        "blocking_requirements": [
+          "same-case DREAM source-term budget output",
+          "DREAM synchrotron loss parity",
+          "DREAM bremsstrahlung loss parity",
+          "DREAM partial-screening drag parity"
+        ],
+        "budget_terms": [
+          "avalanche_growth_rate_t",
+          "synchrotron_loss_power_t",
+          "partial_screening_drag_t",
+          "bremsstrahlung_loss_power_t"
+        ],
+        "dream_same_case_budget_ready": false,
+        "max_abs_avalanche_growth_rate_s_inv": 56562.81992813398,
+        "max_bremsstrahlung_loss_power_w_m3": 1057.3865926188018,
+        "max_partial_screening_drag_si": 2.5566953816095445e-18,
+        "max_synchrotron_loss_power_w_m3": 1.62798518060568e-07,
+        "radius_count": 4,
+        "schema": "native-runaway-source-term-budget-evidence.v1",
+        "status": "native_artifact_observable_budget_only_not_dream_operator_parity",
+        "term_finiteness": {
+          "avalanche_growth_rate_t": true,
+          "bremsstrahlung_loss_power_t": true,
+          "partial_screening_drag_t": true,
+          "synchrotron_loss_power_t": true
+        },
+        "term_nonnegativity": {
+          "avalanche_growth_rate_t": true,
+          "bremsstrahlung_loss_power_t": true,
+          "partial_screening_drag_t": true,
+          "synchrotron_loss_power_t": true
+        },
+        "term_shapes": {
+          "avalanche_growth_rate_t": [
+            4,
+            4
+          ],
+          "bremsstrahlung_loss_power_t": [
+            4,
+            4
+          ],
+          "partial_screening_drag_t": [
+            4,
+            4
+          ],
+          "synchrotron_loss_power_t": [
+            4,
+            4
+          ]
+        },
+        "time_count": 4
+      },
       "unweighted_inventory_relative_change_max": 0.47903625413372164
     },
     "observable_shapes": {
@@ -247,13 +303,68 @@
     },
     "radius_pitch_are_evolved_operator_axes": false,
     "schema": "native-runaway-kinetic-operator-evidence.v1",
+    "source_term_budget_evidence": {
+      "all_nonnegative_power_channels": true,
+      "all_observable_budgets_finite": true,
+      "blocking_requirements": [
+        "same-case DREAM source-term budget output",
+        "DREAM synchrotron loss parity",
+        "DREAM bremsstrahlung loss parity",
+        "DREAM partial-screening drag parity"
+      ],
+      "budget_terms": [
+        "avalanche_growth_rate_t",
+        "synchrotron_loss_power_t",
+        "partial_screening_drag_t",
+        "bremsstrahlung_loss_power_t"
+      ],
+      "dream_same_case_budget_ready": false,
+      "max_abs_avalanche_growth_rate_s_inv": 56562.81992813398,
+      "max_bremsstrahlung_loss_power_w_m3": 1057.3865926188018,
+      "max_partial_screening_drag_si": 2.5566953816095445e-18,
+      "max_synchrotron_loss_power_w_m3": 1.62798518060568e-07,
+      "radius_count": 4,
+      "schema": "native-runaway-source-term-budget-evidence.v1",
+      "status": "native_artifact_observable_budget_only_not_dream_operator_parity",
+      "term_finiteness": {
+        "avalanche_growth_rate_t": true,
+        "bremsstrahlung_loss_power_t": true,
+        "partial_screening_drag_t": true,
+        "synchrotron_loss_power_t": true
+      },
+      "term_nonnegativity": {
+        "avalanche_growth_rate_t": true,
+        "bremsstrahlung_loss_power_t": true,
+        "partial_screening_drag_t": true,
+        "synchrotron_loss_power_t": true
+      },
+      "term_shapes": {
+        "avalanche_growth_rate_t": [
+          4,
+          4
+        ],
+        "bremsstrahlung_loss_power_t": [
+          4,
+          4
+        ],
+        "partial_screening_drag_t": [
+          4,
+          4
+        ],
+        "synchrotron_loss_power_t": [
+          4,
+          4
+        ]
+      },
+      "time_count": 4
+    },
     "unweighted_inventory_relative_change_max": 0.47903625413372164
   },
   "passed": true,
   "timing": {
-    "max_balance_wall_time_s": 0.00013313302770256996,
-    "median_balance_wall_time_s": 2.2914959117770195e-05,
-    "min_balance_wall_time_s": 1.4286022633314133e-05,
+    "max_balance_wall_time_s": 2.8343056328594685e-05,
+    "median_balance_wall_time_s": 1.915101893246174e-05,
+    "min_balance_wall_time_s": 1.565110869705677e-05,
     "repeats": 25
   }
 }

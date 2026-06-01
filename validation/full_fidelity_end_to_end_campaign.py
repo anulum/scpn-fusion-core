@@ -255,6 +255,7 @@ def run_campaign() -> dict[str, Any]:
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     runaway_operator = runaway["native_kinetic_operator_evidence"]
+    runaway_source_budget = runaway_operator["source_term_budget_evidence"]
     impurity = run_impurity_contract()
     impurity_operator = impurity["native_impurity_transport_evidence"]
     gk = _acceptance_surface(acceptance, "native_nonlinear_gyrokinetics")
@@ -315,6 +316,8 @@ def run_campaign() -> dict[str, Any]:
             "locally_actionable_contract_ready": bool(
                 runaway["passed"]
                 and runaway_operator["native_artifact_ready"]
+                and runaway_source_budget["all_observable_budgets_finite"]
+                and runaway_source_budget["all_nonnegative_power_channels"]
                 and runaway_surface["implemented_dimensions"].get(
                     "dream_style_multidimensional_artifact_export"
                 )
@@ -402,6 +405,13 @@ def run_campaign() -> dict[str, Any]:
         ),
         "runaway_dream_same_case_threshold_ready": bool(
             runaway_operator["dream_same_case_threshold_ready"]
+        ),
+        "runaway_source_term_budget_evidence_ready": bool(
+            runaway_source_budget["all_observable_budgets_finite"]
+            and runaway_source_budget["all_nonnegative_power_channels"]
+        ),
+        "runaway_source_term_budget_dream_same_case_ready": bool(
+            runaway_source_budget["dream_same_case_budget_ready"]
         ),
         "runaway_kinetic_operator_evidence_status": str(
             runaway_operator["operator_evidence_status"]
@@ -554,6 +564,14 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- Runaway DREAM same-case thresholds ready: "
             f"`{report['runaway_dream_same_case_threshold_ready']}`"
+        ),
+        (
+            "- Runaway source-term budget evidence ready: "
+            f"`{report['runaway_source_term_budget_evidence_ready']}`"
+        ),
+        (
+            "- Runaway source-term DREAM same-case budget ready: "
+            f"`{report['runaway_source_term_budget_dream_same_case_ready']}`"
         ),
         (
             "- Runaway kinetic operator evidence status: "
