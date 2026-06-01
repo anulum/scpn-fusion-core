@@ -423,6 +423,10 @@ def _mpi_runtime_evidence() -> dict[str, Any]:
     ready = bool(
         payload["decomposition_invariant_pass"]
         and payload["halo_exchange_pass"]
+        and payload.get("topology") == "radial_toroidal_2d"
+        and payload.get("radial_parts") == 2
+        and payload.get("toroidal_parts") == 2
+        and payload.get("min_halo_verified_fraction", 0.0) > 0.0
         and payload["reconstruction_linf_error"] <= RECONSTRUCTION_LINF_TOLERANCE
         and payload["inventory_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
         and payload["free_energy_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
@@ -1452,6 +1456,13 @@ def write_reports(report: dict[str, Any]) -> None:
         lines.extend(
             [
                 f"- Elapsed s: `{mpi_runtime['elapsed_s']:.6e}`",
+                f"- Topology: `{mpi_runtime['topology']}`",
+                f"- Radial parts: `{mpi_runtime['radial_parts']}`",
+                f"- Toroidal parts: `{mpi_runtime['toroidal_parts']}`",
+                (
+                    "- Minimum halo verified fraction: "
+                    f"`{mpi_runtime['min_halo_verified_fraction']:.6e}`"
+                ),
                 f"- Reconstruction L_inf error: `{mpi_runtime['reconstruction_linf_error']:.6e}`",
                 f"- Inventory relative error: `{mpi_runtime['inventory_relative_error']:.6e}`",
                 f"- Free-energy relative error: `{mpi_runtime['free_energy_relative_error']:.6e}`",
@@ -1460,14 +1471,16 @@ def write_reports(report: dict[str, Any]) -> None:
                     f"`{mpi_runtime['parallel_moment_relative_error']:.6e}`"
                 ),
                 "",
-                "| Rank | Owned shape | Halo L_inf |",
-                "|---:|---|---:|",
+                "| Rank | Owned shape | Neighbours | Halo verified fraction | Halo L_inf |",
+                "|---:|---|---|---:|---:|",
             ]
         )
         for row in mpi_runtime["rank_rows"]:
             lines.append(
-                "| {rank} | `{shape}` | {halo:.6e} |".format(
+                "| {rank} | `{shape}` | `{neighbours}` | {fraction:.6e} | {halo:.6e} |".format(
                     halo=row["halo_linf_error"],
+                    fraction=row["halo_verified_fraction"],
+                    neighbours=json.dumps(row["neighbour_ranks"], sort_keys=True),
                     rank=row["rank"],
                     shape=json.dumps(row["owned_shape"]),
                 )

@@ -49,17 +49,37 @@ def run(output: Path) -> int:
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
+    radial_parts = 2
+    toroidal_parts = 2
+    if size != radial_parts * toroidal_parts:
+        if rank == 0:
+            output.write_text(
+                json.dumps(
+                    {
+                        "blocking_reason": "runner_requires_2x2_topology_with_4_ranks",
+                        "rank_count": size,
+                        "schema": "production-decomposition-mpi-runtime-runner.v1",
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+        return 1
     plan = build_radial_toroidal_decomposition(
         n_radial=16,
         n_toroidal=8,
         n_theta=4,
         n_vpar=4,
         n_mu=3,
-        radial_parts=size,
-        toroidal_parts=1,
+        radial_parts=radial_parts,
+        toroidal_parts=toroidal_parts,
         halo=1,
     )
     tile = plan.tiles[rank]
+    radial_index = rank // toroidal_parts
+    toroidal_index = rank % toroidal_parts
     state_shape = (
         plan.n_radial,
         plan.n_toroidal,
@@ -77,54 +97,168 @@ def run(output: Path) -> int:
     ].copy()
     halo_shape = (
         tile.radial_with_halo.size,
-        tile.toroidal.size,
+        tile.toroidal_with_halo.size,
         plan.n_theta,
         plan.n_vpar,
         plan.n_mu,
     )
     with_halo = np.zeros(halo_shape, dtype=np.float64)
-    owned_offset = tile.radial.start - tile.radial_with_halo.start
-    with_halo[owned_offset : owned_offset + tile.radial.size, :, :, :, :] = owned
+    radial_offset = tile.radial.start - tile.radial_with_halo.start
+    toroidal_offset = tile.toroidal.start - tile.toroidal_with_halo.start
+    with_halo[
+        radial_offset : radial_offset + tile.radial.size,
+        toroidal_offset : toroidal_offset + tile.toroidal.size,
+        :,
+        :,
+        :,
+    ] = owned
 
-    lower_rank = rank - 1 if rank > 0 else MPI.PROC_NULL
-    upper_rank = rank + 1 if rank < size - 1 else MPI.PROC_NULL
-    face_shape = (plan.halo, tile.toroidal.size, plan.n_theta, plan.n_vpar, plan.n_mu)
+    radial_lower_rank = (
+        (radial_index - 1) * toroidal_parts + toroidal_index
+        if radial_index > 0
+        else MPI.PROC_NULL
+    )
+    radial_upper_rank = (
+        (radial_index + 1) * toroidal_parts + toroidal_index
+        if radial_index < radial_parts - 1
+        else MPI.PROC_NULL
+    )
+    toroidal_lower_rank = (
+        radial_index * toroidal_parts + toroidal_index - 1
+        if toroidal_index > 0
+        else MPI.PROC_NULL
+    )
+    toroidal_upper_rank = (
+        radial_index * toroidal_parts + toroidal_index + 1
+        if toroidal_index < toroidal_parts - 1
+        else MPI.PROC_NULL
+    )
+    radial_face_shape = (
+        plan.halo,
+        tile.toroidal.size,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+    toroidal_face_shape = (
+        tile.radial.size,
+        plan.halo,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
 
-    lower_recv = np.empty(face_shape, dtype=np.float64)
-    upper_recv = np.empty(face_shape, dtype=np.float64)
+    radial_lower_recv = np.empty(radial_face_shape, dtype=np.float64)
+    radial_upper_recv = np.empty(radial_face_shape, dtype=np.float64)
     comm.Sendrecv(
         sendbuf=owned[: plan.halo, :, :, :, :].copy(),
-        dest=lower_rank,
+        dest=radial_lower_rank,
         sendtag=11,
-        recvbuf=upper_recv,
-        source=upper_rank,
+        recvbuf=radial_upper_recv,
+        source=radial_upper_rank,
         recvtag=11,
     )
     comm.Sendrecv(
         sendbuf=owned[-plan.halo :, :, :, :].copy(),
-        dest=upper_rank,
+        dest=radial_upper_rank,
         sendtag=17,
-        recvbuf=lower_recv,
-        source=lower_rank,
+        recvbuf=radial_lower_recv,
+        source=radial_lower_rank,
         recvtag=17,
     )
-    if lower_rank != MPI.PROC_NULL:
-        with_halo[:owned_offset, :, :, :, :] = lower_recv
-    if upper_rank != MPI.PROC_NULL:
-        with_halo[owned_offset + tile.radial.size :, :, :, :] = upper_recv
+    toroidal_lower_recv = np.empty(toroidal_face_shape, dtype=np.float64)
+    toroidal_upper_recv = np.empty(toroidal_face_shape, dtype=np.float64)
+    comm.Sendrecv(
+        sendbuf=owned[:, : plan.halo, :, :, :].copy(),
+        dest=toroidal_lower_rank,
+        sendtag=23,
+        recvbuf=toroidal_upper_recv,
+        source=toroidal_upper_rank,
+        recvtag=23,
+    )
+    comm.Sendrecv(
+        sendbuf=owned[:, -plan.halo :, :, :, :].copy(),
+        dest=toroidal_upper_rank,
+        sendtag=29,
+        recvbuf=toroidal_lower_recv,
+        source=toroidal_lower_rank,
+        recvtag=29,
+    )
+    if radial_lower_rank != MPI.PROC_NULL:
+        with_halo[
+            :radial_offset,
+            toroidal_offset : toroidal_offset + tile.toroidal.size,
+            :,
+            :,
+            :,
+        ] = radial_lower_recv
+    if radial_upper_rank != MPI.PROC_NULL:
+        with_halo[
+            radial_offset + tile.radial.size :,
+            toroidal_offset : toroidal_offset + tile.toroidal.size,
+            :,
+            :,
+            :,
+        ] = radial_upper_recv
+    if toroidal_lower_rank != MPI.PROC_NULL:
+        with_halo[
+            radial_offset : radial_offset + tile.radial.size,
+            :toroidal_offset,
+            :,
+            :,
+            :,
+        ] = toroidal_lower_recv
+    if toroidal_upper_rank != MPI.PROC_NULL:
+        with_halo[
+            radial_offset : radial_offset + tile.radial.size,
+            toroidal_offset + tile.toroidal.size :,
+            :,
+            :,
+            :,
+        ] = toroidal_upper_recv
 
     expected_halo = state[
         tile.radial_with_halo.start : tile.radial_with_halo.stop,
-        tile.toroidal.start : tile.toroidal.stop,
+        tile.toroidal_with_halo.start : tile.toroidal_with_halo.stop,
         :,
         :,
         :,
     ]
-    halo_linf = float(np.max(np.abs(with_halo - expected_halo)))
+    covered = np.zeros(with_halo.shape[:2], dtype=bool)
+    covered[
+        radial_offset : radial_offset + tile.radial.size,
+        toroidal_offset : toroidal_offset + tile.toroidal.size,
+    ] = True
+    if radial_lower_rank != MPI.PROC_NULL:
+        covered[:radial_offset, toroidal_offset : toroidal_offset + tile.toroidal.size] = True
+    if radial_upper_rank != MPI.PROC_NULL:
+        covered[
+            radial_offset + tile.radial.size :,
+            toroidal_offset : toroidal_offset + tile.toroidal.size,
+        ] = True
+    if toroidal_lower_rank != MPI.PROC_NULL:
+        covered[radial_offset : radial_offset + tile.radial.size, :toroidal_offset] = True
+    if toroidal_upper_rank != MPI.PROC_NULL:
+        covered[
+            radial_offset : radial_offset + tile.radial.size,
+            toroidal_offset + tile.toroidal.size :,
+        ] = True
+    halo_linf = float(np.max(np.abs(with_halo[covered] - expected_halo[covered])))
     row: dict[str, Any] = {
         "free_energy": float(np.sum(owned * owned)),
         "halo_linf_error": halo_linf,
+        "halo_verified_fraction": float(np.mean(covered)),
         "inventory": float(np.sum(owned)),
+        "neighbour_ranks": {
+            "radial_lower": None if radial_lower_rank == MPI.PROC_NULL else int(radial_lower_rank),
+            "radial_upper": None if radial_upper_rank == MPI.PROC_NULL else int(radial_upper_rank),
+            "toroidal_lower": None
+            if toroidal_lower_rank == MPI.PROC_NULL
+            else int(toroidal_lower_rank),
+            "toroidal_upper": None
+            if toroidal_upper_rank == MPI.PROC_NULL
+            else int(toroidal_upper_rank),
+        },
         "owned": owned,
         "owned_shape": [int(axis) for axis in owned.shape],
         "parallel_moment": _parallel_moment(owned, plan.n_vpar),
@@ -156,6 +290,8 @@ def run(output: Path) -> int:
         rank_rows.append(
             {
                 "halo_linf_error": float(rank_row["halo_linf_error"]),
+                "halo_verified_fraction": float(rank_row["halo_verified_fraction"]),
+                "neighbour_ranks": rank_row["neighbour_ranks"],
                 "owned_shape": rank_row["owned_shape"],
                 "rank": rank_id,
             }
@@ -177,13 +313,19 @@ def run(output: Path) -> int:
         "halo_exchange_pass": bool(max(float(row["halo_linf_error"]) for row in rank_rows) == 0.0),
         "inventory_relative_error": _relative_error(local_inventory, global_inventory),
         "max_halo_linf_error": max(float(row["halo_linf_error"]) for row in rank_rows),
+        "min_halo_verified_fraction": min(
+            float(row["halo_verified_fraction"]) for row in rank_rows
+        ),
         "parallel_moment_relative_error": _relative_error(
             local_parallel_moment, global_parallel_moment
         ),
+        "radial_parts": radial_parts,
         "rank_count": size,
         "rank_rows": sorted(rank_rows, key=lambda item: int(item["rank"])),
         "reconstruction_linf_error": float(np.max(np.abs(reconstructed - state))),
         "schema": "production-decomposition-mpi-runtime-runner.v1",
+        "topology": "radial_toroidal_2d",
+        "toroidal_parts": toroidal_parts,
     }
     output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return 0
