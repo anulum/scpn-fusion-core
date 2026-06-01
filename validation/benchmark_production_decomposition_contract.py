@@ -208,6 +208,43 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _large_grid_cpu_evidence() -> dict[str, Any]:
+    """Return executable larger-grid CPU timing evidence without scaling claims."""
+    plan = build_radial_toroidal_decomposition(
+        n_radial=96,
+        n_toroidal=48,
+        n_theta=16,
+        n_vpar=16,
+        n_mu=8,
+        radial_parts=6,
+        toroidal_parts=4,
+        halo=1,
+    )
+    row = _cpu_benchmark_row("large_cpu_96x48_6x4", plan)
+    invariant_pass = bool(
+        row["local_decomposed_execution_pass"]
+        and row["halo_exchange_pass"]
+        and row["reconstruction_linf_error"] <= RECONSTRUCTION_LINF_TOLERANCE
+        and row["inventory_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+        and row["free_energy_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+        and row["parallel_moment_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+    )
+    return {
+        "blocking_reason": (
+            "This is single-process CPU evidence only. It does not satisfy the "
+            "distributed MPI or multi-GPU scaling requirement."
+        ),
+        "large_grid_cpu_benchmark_ready": invariant_pass,
+        "max_parallel_moment_relative_error": row["parallel_moment_relative_error"],
+        "max_reconstruction_linf_error": row["reconstruction_linf_error"],
+        "rows": [row],
+        "schema": "production-decomposition-large-grid-cpu-evidence.v1",
+        "status": "accepted_local_large_grid_cpu_evidence"
+        if invariant_pass
+        else "blocked_large_grid_cpu_invariants_failed",
+    }
+
+
 def _halo_face_integrity_evidence(case_id: str, plan: GKDomainDecompositionPlan) -> dict[str, Any]:
     """Return serial halo-face integrity evidence for future distributed exchange."""
     state: NDArray[np.float64] = np.arange(plan.total_owned_phase_cells, dtype=np.float64).reshape(
@@ -644,6 +681,7 @@ def run_benchmark() -> dict[str, Any]:
         "local_cpu_64x32_4x2", local_cpu_plan
     )
     same_physics_shape_convergence = _shape_convergence_evidence(cpu_benchmark_rows)
+    large_grid_cpu_evidence = _large_grid_cpu_evidence()
     coverage_pass = all(case["min_owned_cells"] > 0 for case in cases)
     imbalance_pass = all(case["owned_cell_imbalance"] <= 1.05 for case in cases)
     communication_contract_ready = all(
@@ -704,6 +742,7 @@ def run_benchmark() -> dict[str, Any]:
         "halo_exchange_pass": halo_exchange_pass,
         "hardware_metadata": _hardware_metadata(),
         "imbalance_pass": imbalance_pass,
+        "large_grid_cpu_evidence": large_grid_cpu_evidence,
         "local_decomposed_execution_pass": local_decomposed_execution_pass,
         "parallel_moment_invariant_pass": parallel_moment_invariant_pass,
         "production_scale_ready": False,
@@ -957,6 +996,47 @@ def write_reports(report: dict[str, Any]) -> None:
         ]
     )
     for row in report["cpu_benchmark_rows"]:
+        lines.append(
+            "| {case_id} | {ranks} | {cells} | {elapsed:.6e} | {rate:.6e} | `{local}` | `{halo}` | {recon:.6e} | {inventory:.6e} | {energy:.6e} |".format(
+                case_id=row["case_id"],
+                cells=row["owned_phase_cells"],
+                elapsed=row["elapsed_s"],
+                energy=row["free_energy_relative_error"],
+                halo=row["halo_exchange_pass"],
+                inventory=row["inventory_relative_error"],
+                local=row["local_decomposed_execution_pass"],
+                ranks=row["rank_count"],
+                rate=row["cells_per_second"],
+                recon=row["reconstruction_linf_error"],
+            )
+        )
+    large_grid = report["large_grid_cpu_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Large-grid CPU decomposition evidence",
+            "",
+            f"- Schema: `{large_grid['schema']}`",
+            f"- Status: `{large_grid['status']}`",
+            (
+                "- Large-grid CPU benchmark ready: "
+                f"`{large_grid['large_grid_cpu_benchmark_ready']}`"
+            ),
+            (
+                "- Max reconstruction L_inf error: "
+                f"`{large_grid['max_reconstruction_linf_error']:.6e}`"
+            ),
+            (
+                "- Max parallel-moment relative error: "
+                f"`{large_grid['max_parallel_moment_relative_error']:.6e}`"
+            ),
+            f"- Blocking reason: {large_grid['blocking_reason']}",
+            "",
+            "| Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |",
+            "|---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|",
+        ]
+    )
+    for row in large_grid["rows"]:
         lines.append(
             "| {case_id} | {ranks} | {cells} | {elapsed:.6e} | {rate:.6e} | `{local}` | `{halo}` | {recon:.6e} | {inventory:.6e} | {energy:.6e} |".format(
                 case_id=row["case_id"],

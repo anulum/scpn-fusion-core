@@ -293,6 +293,19 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     )
     assert all(row["shape_convergence_pass"] for row in shape_evidence["shape_rows"])
     assert report["cpu_benchmark_rows"]
+    large_grid = report["large_grid_cpu_evidence"]
+    assert large_grid["schema"] == "production-decomposition-large-grid-cpu-evidence.v1"
+    assert large_grid["status"] == "accepted_local_large_grid_cpu_evidence"
+    assert large_grid["large_grid_cpu_benchmark_ready"] is True
+    assert large_grid["max_reconstruction_linf_error"] == 0.0
+    assert large_grid["max_parallel_moment_relative_error"] <= 1.0e-12
+    assert large_grid["rows"][0]["case_id"] == "large_cpu_96x48_6x4"
+    assert large_grid["rows"][0]["rank_count"] == 24
+    assert large_grid["rows"][0]["owned_phase_cells"] > max(
+        row["owned_phase_cells"] for row in report["cpu_benchmark_rows"]
+    )
+    assert large_grid["rows"][0]["cells_per_second"] > 0.0
+    assert "multi-GPU" in large_grid["blocking_reason"]
     assert report["hardware_metadata"]["python_version"]
     assert report["reproducible_commands"]
     assert report["production_scale_ready"] is False

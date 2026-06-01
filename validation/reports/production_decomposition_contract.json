@@ -1182,8 +1182,8 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 2972327.1758947745,
-      "elapsed_s": 0.17638973402790725,
+      "cells_per_second": 7590543.689524557,
+      "elapsed_s": 0.06907120510004461,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1208,8 +1208,8 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 3581287.9506700463,
-      "elapsed_s": 0.14639649400487542,
+      "cells_per_second": 7936601.0442860825,
+      "elapsed_s": 0.06605951301753521,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1234,8 +1234,8 @@
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 2826390.766227606,
-      "elapsed_s": 0.18549735099077225,
+      "cells_per_second": 9903837.454242816,
+      "elapsed_s": 0.052937863976694643,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -3100,6 +3100,42 @@
     "python_version": "3.12.3"
   },
   "imbalance_pass": true,
+  "large_grid_cpu_evidence": {
+    "blocking_reason": "This is single-process CPU evidence only. It does not satisfy the distributed MPI or multi-GPU scaling requirement.",
+    "large_grid_cpu_benchmark_ready": true,
+    "max_parallel_moment_relative_error": 4.702120547224127e-16,
+    "max_reconstruction_linf_error": 0.0,
+    "rows": [
+      {
+        "case_id": "large_cpu_96x48_6x4",
+        "cells_per_second": 6060419.433927611,
+        "elapsed_s": 1.5571833109715953,
+        "free_energy_relative_error": 7.401486438689479e-16,
+        "global_free_energy": 3145728.166666682,
+        "global_inventory": 4718591.999999999,
+        "global_parallel_moment": 22.66666906847695,
+        "global_shape": [
+          96,
+          48,
+          16,
+          16,
+          8
+        ],
+        "halo_exchange_pass": true,
+        "inventory_relative_error": 1.9737298215558342e-16,
+        "local_decomposed_execution_pass": true,
+        "local_free_energy": 3145728.166666684,
+        "local_inventory": 4718592.0,
+        "local_parallel_moment": 22.66666906847694,
+        "owned_phase_cells": 9437184,
+        "parallel_moment_relative_error": 4.702120547224127e-16,
+        "rank_count": 24,
+        "reconstruction_linf_error": 0.0
+      }
+    ],
+    "schema": "production-decomposition-large-grid-cpu-evidence.v1",
+    "status": "accepted_local_large_grid_cpu_evidence"
+  },
   "local_decomposed_execution_pass": true,
   "missing_requirements": [
     "MPI or multi-GPU distributed execution path over the declared rank tiles",
@@ -6055,7 +6091,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 2972327.1758947745,
+        "cells_per_second": 7590543.689524557,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6066,7 +6102,7 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 3581287.9506700463,
+        "cells_per_second": 7936601.0442860825,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6077,7 +6113,7 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 2826390.766227606,
+        "cells_per_second": 9903837.454242816,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,

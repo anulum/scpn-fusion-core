@@ -306,7 +306,10 @@ The latest local run records same-physics shape convergence across `4x2`,
 `8x1`, and `2x4` radial/toroidal rank shapes with maximum inventory relative
 deviation `0.0`, maximum free-energy relative deviation
 `3.3306658974988877e-16`, and maximum owned-state reconstruction error `0.0`.
-Production scaling remains blocked until distributed MPI/multi-GPU execution
+It also records local large-grid CPU decomposition evidence for
+`9,437,184` 5D phase cells over `24` local rank tiles in `1.557183 s`
+(`6.060419e6` cells/s), with zero reconstruction error and invariant relative
+errors below `1e-12`. Production scaling remains blocked until distributed MPI/multi-GPU execution
 and cluster timing evidence exist.
 
 ## Competitive Position
