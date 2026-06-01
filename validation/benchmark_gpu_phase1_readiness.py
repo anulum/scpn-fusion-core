@@ -45,6 +45,19 @@ def _sha256_present(value: Any) -> bool:
     )
 
 
+def _physical_gpu_adapter_present(payload: dict[str, Any]) -> bool:
+    """Return true only for hardware GPU adapter evidence.
+
+    WGPU can run through software Vulkan adapters such as llvmpipe. Those rows
+    may be useful for shader smoke tests, but they are not GPU benchmark
+    evidence and must not satisfy the readiness gate.
+    """
+    if payload.get("physical_gpu_adapter") is True:
+        return True
+    device_type = str(payload.get("adapter_device_type", ""))
+    return device_type in {"DiscreteGpu", "IntegratedGpu"}
+
+
 def _load_benchmark_artifact(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
@@ -94,6 +107,7 @@ def evaluate_gpu_phase1_readiness(
         bool(
             artifact["payload"].get("gpu_available") is True
             and artifact["payload"].get("solver") in {"wgpu_sor", "gpu_sor"}
+            and _physical_gpu_adapter_present(artifact["payload"])
             and (
                 _sha256_present(artifact["payload"].get("output_sha256"))
                 or _sha256_present(artifact["payload"].get("result_sha256"))
@@ -107,7 +121,7 @@ def evaluate_gpu_phase1_readiness(
     if not phase1_static_ready:
         blockers.extend(key for key, ready in surface_checks.items() if not ready)
     if not benchmark_artifact_ready:
-        blockers.append("tracked_gpu_wgpu_sor_benchmark_artifact_missing")
+        blockers.append("tracked_gpu_physical_wgpu_sor_benchmark_artifact_missing")
     return {
         "schema": "gpu-phase1-readiness.v1",
         "benchmark_id": "gpu_phase1_wgpu_sor_readiness",

@@ -121,6 +121,14 @@ GPU speedup claim at these grid sizes; it shows the workload is too small to
 amortise launch and transfer overhead. Larger grids and persistent-buffer
 timing remain required before making throughput claims.
 
+WGPU benchmark rows are accepted as GPU evidence only when the adapter reports
+`DiscreteGpu` or `IntegratedGpu`. Software Vulkan adapters such as `llvmpipe`
+are rejected by default and require `SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER=1` only
+for local development smoke tests. A 2026-06-01 JarvisLabs L4 probe with driver
+`580.126.20` exposed CUDA through `nvidia-smi`, but WGPU/Vulkan enumerated only
+`llvmpipe`; its WGPU timings are therefore blocked as CPU-backed software
+adapter evidence, not published GPU throughput.
+
 ### Native Rust solver kernels
 
 | Benchmark | Median |
@@ -893,6 +901,8 @@ python validation/benchmark_gpu_phase1_readiness.py
 The gate reports static implementation readiness separately from
 `production_scaling_ready`, which remains `false` until current GPU benchmark
 artifacts include device metadata, solver identity, and output checksums.
+The artefact must also prove a physical WGPU adapter (`DiscreteGpu` or
+`IntegratedGpu`); CPU software adapters do not satisfy the gate.
 
 ### Free-boundary Strict Acceptance Matrix
 

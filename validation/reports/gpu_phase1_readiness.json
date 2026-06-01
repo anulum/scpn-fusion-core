@@ -2,7 +2,7 @@
   "accepted_phase1_readiness": false,
   "benchmark_id": "gpu_phase1_wgpu_sor_readiness",
   "blockers": [
-    "tracked_gpu_wgpu_sor_benchmark_artifact_missing"
+    "tracked_gpu_physical_wgpu_sor_benchmark_artifact_missing"
   ],
   "candidate_benchmark_artifacts": [
     "validation/reports/gpu_kernel_benchmark_results.json",

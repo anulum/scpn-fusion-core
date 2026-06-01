@@ -7,7 +7,8 @@
 //! GPU-accelerated Grad-Shafranov solver via wgpu compute shaders.
 //!
 //! Provides Red-Black SOR on the GPU for the GS equation inner loop.
-//! Falls back to CPU if no GPU adapter is available.
+//! Rejects CPU-only WGPU adapters by default so benchmark runs cannot
+//! misclassify software Vulkan devices as physical GPU evidence.
 
 use bytemuck::{Pod, Zeroable};
 use fusion_types::error::{FusionError, FusionResult};
@@ -81,6 +82,14 @@ impl GpuGsSolver {
             force_fallback_adapter: false,
         }))
         .ok_or_else(|| FusionError::ConfigError("No suitable GPU adapter found".to_string()))?;
+        let adapter_info = adapter.get_info();
+        if !adapter_device_type_accepted(adapter_info.device_type) {
+            return Err(FusionError::ConfigError(format!(
+                "No suitable physical GPU adapter found: selected '{}' ({:?}, {:?}). \
+                 Set SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER=1 only for local software-adapter development.",
+                adapter_info.name, adapter_info.backend, adapter_info.device_type
+            )));
+        }
 
         let (device, queue) = pollster::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -628,12 +637,14 @@ impl GpuGsSolver {
 /// Check if a GPU adapter is available without creating a full solver.
 pub fn gpu_available() -> bool {
     let instance = wgpu::Instance::default();
-    pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+    let Some(adapter) = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
         compatible_surface: None,
         force_fallback_adapter: false,
-    }))
-    .is_some()
+    })) else {
+        return false;
+    };
+    adapter_device_type_accepted(adapter.get_info().device_type)
 }
 
 /// Get GPU adapter info string.
@@ -649,6 +660,19 @@ pub fn gpu_info() -> Option<String> {
         "{} ({:?}, {:?})",
         info.name, info.backend, info.device_type
     ))
+}
+
+fn adapter_device_type_accepted(device_type: wgpu::DeviceType) -> bool {
+    matches!(
+        device_type,
+        wgpu::DeviceType::DiscreteGpu | wgpu::DeviceType::IntegratedGpu
+    ) || cpu_adapter_allowed()
+}
+
+fn cpu_adapter_allowed() -> bool {
+    std::env::var("SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER")
+        .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
@@ -669,6 +693,15 @@ mod tests {
     #[test]
     fn test_gpu_info_does_not_panic() {
         let _ = gpu_info();
+    }
+
+    #[test]
+    fn test_adapter_device_type_acceptance_rejects_cpu_by_default() {
+        std::env::remove_var("SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER");
+
+        assert!(adapter_device_type_accepted(wgpu::DeviceType::DiscreteGpu));
+        assert!(adapter_device_type_accepted(wgpu::DeviceType::IntegratedGpu));
+        assert!(!adapter_device_type_accepted(wgpu::DeviceType::Cpu));
     }
 
     #[test]

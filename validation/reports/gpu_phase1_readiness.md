@@ -22,4 +22,4 @@ reported separately from hardware benchmark evidence.
 
 ## Blockers
 
-- `tracked_gpu_wgpu_sor_benchmark_artifact_missing`
+- `tracked_gpu_physical_wgpu_sor_benchmark_artifact_missing`
