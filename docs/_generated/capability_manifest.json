@@ -3,6 +3,8 @@
   "capabilities": {
     "documentation_pages": [
       "docs/3d_gaps.md",
+      "docs/API_OVERVIEW.md",
+      "docs/APPLICATIONS_AND_MARKET.md",
       "docs/BENCHMARKS.md",
       "docs/BENCHMARK_FIGURES.md",
       "docs/COMPACT_REACTOR_FINDINGS.md",
@@ -10,10 +12,13 @@
       "docs/FUTURE_APPLICATIONS.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
+      "docs/ONBOARDING.md",
       "docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md",
       "docs/PERFORMANCE_METRIC_TAXONOMY.md",
       "docs/PHYSICS_METHODS_COMPLETE.md",
       "docs/PHYSICS_VALIDATION_STATUS.md",
+      "docs/PROJECT_OVERVIEW.md",
+      "docs/RELEASE_READINESS.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
       "docs/VALIDATION_AGAINST_ITER.md",
@@ -26,6 +31,7 @@
       "docs/promotions/REDDIT_COMPILERS.md",
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
+      "docs/releases/v3.9.7.md",
       "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
@@ -951,6 +957,10 @@
       },
       {
         "name": "LocalDecomposedExecutionResult",
+        "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
+      },
+      {
+        "name": "LocalMultiprocessExecutionResult",
         "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
       },
       {
@@ -2372,12 +2382,12 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 41,
+    "capability_documentation_pages": 47,
     "github_workflows": 12,
-    "optional_extras": 11,
+    "optional_extras": 12,
     "public_api_exports": 2,
-    "public_documentation_pages": 41,
-    "python_capability_classes": 502,
+    "public_documentation_pages": 47,
+    "python_capability_classes": 503,
     "python_capability_source_modules": 264,
     "rust_workspace_crates": 12,
     "test_files": 397
@@ -2385,6 +2395,8 @@
   "documentation": {
     "public_pages": [
       "docs/3d_gaps.md",
+      "docs/API_OVERVIEW.md",
+      "docs/APPLICATIONS_AND_MARKET.md",
       "docs/BENCHMARKS.md",
       "docs/BENCHMARK_FIGURES.md",
       "docs/COMPACT_REACTOR_FINDINGS.md",
@@ -2392,10 +2404,13 @@
       "docs/FUTURE_APPLICATIONS.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
+      "docs/ONBOARDING.md",
       "docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md",
       "docs/PERFORMANCE_METRIC_TAXONOMY.md",
       "docs/PHYSICS_METHODS_COMPLETE.md",
       "docs/PHYSICS_VALIDATION_STATUS.md",
+      "docs/PROJECT_OVERVIEW.md",
+      "docs/RELEASE_READINESS.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
       "docs/VALIDATION_AGAINST_ITER.md",
@@ -2408,6 +2423,7 @@
       "docs/promotions/REDDIT_COMPILERS.md",
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
+      "docs/releases/v3.9.7.md",
       "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
@@ -2458,6 +2474,7 @@
       "fuzz",
       "gpu",
       "ml",
+      "mpi",
       "rl",
       "rust",
       "snn",
