@@ -39,6 +39,12 @@ MD_REPORT = REPORT_DIR / "production_decomposition_contract.md"
 RELATIVE_REDUCTION_TOLERANCE = 1.0e-12
 RECONSTRUCTION_LINF_TOLERANCE = 0.0
 FLOAT64_BYTES = 8
+FACE_OPPOSITES = {
+    "radial_lower": "radial_upper",
+    "radial_upper": "radial_lower",
+    "toroidal_lower": "toroidal_upper",
+    "toroidal_upper": "toroidal_lower",
+}
 
 
 def _plan_row(case_id: str, plan: GKDomainDecompositionPlan) -> dict[str, Any]:
@@ -320,6 +326,106 @@ def _communication_volume_evidence(
     }
 
 
+def _shape_list(shape: Any) -> list[int] | None:
+    """Return a normalised payload shape list for a halo face."""
+    if shape is None:
+        return None
+    if not isinstance(shape, list):
+        raise TypeError("halo payload shape must be a list or None")
+    return [int(axis) for axis in shape]
+
+
+def _payload_bytes(shape: list[int] | None) -> int | None:
+    """Return payload bytes for a normalised float64 halo-face shape."""
+    if shape is None:
+        return None
+    return int(np.prod(shape, dtype=np.int64)) * FLOAT64_BYTES
+
+
+def _reciprocal_neighbour_graph_evidence(
+    plan: GKDomainDecompositionPlan, communication_rows: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Return reciprocal rank-neighbour and payload-symmetry evidence."""
+    rows_by_rank = {int(row["rank"]): row for row in communication_rows}
+    link_rows: list[dict[str, Any]] = []
+    for row in communication_rows:
+        rank = int(row["rank"])
+        neighbours = row["neighbour_ranks"]
+        halo_shapes = row["halo_face_payload_shapes"]
+        if not isinstance(neighbours, dict):
+            raise TypeError("neighbour_ranks must be a dictionary")
+        if not isinstance(halo_shapes, dict):
+            raise TypeError("halo_face_payload_shapes must be a dictionary")
+        for face, neighbour_rank in neighbours.items():
+            if neighbour_rank is None:
+                continue
+            opposite_face = FACE_OPPOSITES[str(face)]
+            neighbour_row = rows_by_rank.get(int(neighbour_rank))
+            reciprocal_neighbour = None
+            reciprocal_shape: list[int] | None = None
+            if neighbour_row is not None:
+                neighbour_neighbours = neighbour_row["neighbour_ranks"]
+                neighbour_shapes = neighbour_row["halo_face_payload_shapes"]
+                if not isinstance(neighbour_neighbours, dict):
+                    raise TypeError("neighbour_ranks must be a dictionary")
+                if not isinstance(neighbour_shapes, dict):
+                    raise TypeError("halo_face_payload_shapes must be a dictionary")
+                reciprocal_neighbour = neighbour_neighbours.get(opposite_face)
+                reciprocal_shape = _shape_list(neighbour_shapes.get(opposite_face))
+            payload_shape = _shape_list(halo_shapes.get(face))
+            payload_bytes = _payload_bytes(payload_shape)
+            reciprocal_payload_bytes = _payload_bytes(reciprocal_shape)
+            reciprocal_rank_match = reciprocal_neighbour == rank
+            payload_shape_match = payload_shape == reciprocal_shape
+            payload_byte_match = payload_bytes == reciprocal_payload_bytes
+            payload_byte_asymmetry = (
+                None
+                if payload_bytes is None or reciprocal_payload_bytes is None
+                else abs(payload_bytes - reciprocal_payload_bytes)
+            )
+            link_pass = bool(
+                reciprocal_rank_match and payload_shape_match and payload_byte_match
+            )
+            link_rows.append(
+                {
+                    "face": face,
+                    "link_pass": link_pass,
+                    "neighbour_rank": int(neighbour_rank),
+                    "opposite_face": opposite_face,
+                    "payload_byte_asymmetry": payload_byte_asymmetry,
+                    "payload_byte_match": payload_byte_match,
+                    "payload_bytes": payload_bytes,
+                    "payload_shape": payload_shape,
+                    "payload_shape_match": payload_shape_match,
+                    "rank": rank,
+                    "reciprocal_neighbour_rank": reciprocal_neighbour,
+                    "reciprocal_payload_bytes": reciprocal_payload_bytes,
+                    "reciprocal_payload_shape": reciprocal_shape,
+                    "reciprocal_rank_match": reciprocal_rank_match,
+                }
+            )
+    mismatched_link_count = sum(1 for row in link_rows if not bool(row["link_pass"]))
+    max_payload_byte_asymmetry = max(
+        int(row["payload_byte_asymmetry"] or 0) for row in link_rows
+    ) if link_rows else 0
+    reciprocal_neighbour_graph_pass = bool(
+        link_rows and len(link_rows) % 2 == 0 and mismatched_link_count == 0
+    )
+    return {
+        "directed_link_count": len(link_rows),
+        "link_rows": link_rows,
+        "max_payload_byte_asymmetry": max_payload_byte_asymmetry,
+        "mismatched_link_count": mismatched_link_count,
+        "rank_count": plan.total_ranks,
+        "reciprocal_neighbour_graph_pass": reciprocal_neighbour_graph_pass,
+        "schema": "production-decomposition-reciprocal-neighbour-graph.v1",
+        "status": "accepted_local_reciprocal_neighbour_graph"
+        if reciprocal_neighbour_graph_pass
+        else "blocked_local_reciprocal_neighbour_graph_failed",
+        "undirected_link_count": len(link_rows) // 2,
+    }
+
+
 def _hardware_metadata() -> dict[str, Any]:
     return {
         "cpu_count": os.cpu_count(),
@@ -368,6 +474,9 @@ def run_benchmark() -> dict[str, Any]:
     ]
     communication_contract_rows = rank_tile_communication_contract(production_plan)
     communication_volume_evidence = _communication_volume_evidence(
+        production_plan, communication_contract_rows
+    )
+    reciprocal_neighbour_graph_evidence = _reciprocal_neighbour_graph_evidence(
         production_plan, communication_contract_rows
     )
     local_cpu_shape_variant_plan = build_radial_toroidal_decomposition(
@@ -422,10 +531,14 @@ def run_benchmark() -> dict[str, Any]:
     same_physics_decomposition_shape_pass = bool(
         same_physics_shape_convergence["shape_convergence_pass"]
     )
+    reciprocal_neighbour_graph_pass = bool(
+        reciprocal_neighbour_graph_evidence["reciprocal_neighbour_graph_pass"]
+    )
     contract_pass = bool(
         coverage_pass
         and imbalance_pass
         and communication_contract_ready
+        and reciprocal_neighbour_graph_pass
         and halo_face_integrity_evidence["halo_face_integrity_pass"]
         and local_decomposed_execution_pass
         and halo_exchange_pass
@@ -456,6 +569,8 @@ def run_benchmark() -> dict[str, Any]:
         "local_decomposed_execution_pass": local_decomposed_execution_pass,
         "parallel_moment_invariant_pass": parallel_moment_invariant_pass,
         "production_scale_ready": False,
+        "reciprocal_neighbour_graph_evidence": reciprocal_neighbour_graph_evidence,
+        "reciprocal_neighbour_graph_pass": reciprocal_neighbour_graph_pass,
         "reproducible_commands": [
             "python validation/benchmark_production_decomposition_contract.py",
             "python -m pytest tests/test_gk_domain_decomposition.py -q",
@@ -493,6 +608,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Halo exchange pass: `{report['halo_exchange_pass']}`",
         f"- Decomposition invariant pass: `{report['decomposition_invariant_pass']}`",
         f"- Parallel-moment invariant pass: `{report['parallel_moment_invariant_pass']}`",
+        f"- Reciprocal neighbour graph pass: `{report['reciprocal_neighbour_graph_pass']}`",
         f"- Same-physics decomposition shape pass: `{report['same_physics_decomposition_shape_pass']}`",
         f"- Production-scale ready: `{report['production_scale_ready']}`",
         f"- Python: `{report['hardware_metadata']['python_version']}`",
@@ -593,6 +709,39 @@ def write_reports(report: dict[str, Any]) -> None:
                 bytes_per_step=row["rank_halo_exchange_bytes_per_step"],
                 faces=len(row["face_rows"]),
                 rank=row["rank"],
+            )
+        )
+    reciprocal = report["reciprocal_neighbour_graph_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Reciprocal neighbour graph evidence",
+            "",
+            f"- Schema: `{reciprocal['schema']}`",
+            f"- Status: `{reciprocal['status']}`",
+            (
+                "- Reciprocal neighbour graph pass: "
+                f"`{reciprocal['reciprocal_neighbour_graph_pass']}`"
+            ),
+            f"- Directed links: `{reciprocal['directed_link_count']}`",
+            f"- Undirected links: `{reciprocal['undirected_link_count']}`",
+            f"- Mismatched links: `{reciprocal['mismatched_link_count']}`",
+            f"- Max payload byte asymmetry: `{reciprocal['max_payload_byte_asymmetry']}`",
+            "",
+            "| Rank | Face | Neighbour | Opposite face | Payload bytes | Reciprocal bytes | Pass |",
+            "|---:|---|---:|---|---:|---:|:---:|",
+        ]
+    )
+    for row in reciprocal["link_rows"]:
+        lines.append(
+            "| {rank} | {face} | {neighbour} | {opposite} | {payload} | {reciprocal_payload} | `{passes}` |".format(
+                face=row["face"],
+                neighbour=row["neighbour_rank"],
+                opposite=row["opposite_face"],
+                passes=row["link_pass"],
+                payload=row["payload_bytes"],
+                rank=row["rank"],
+                reciprocal_payload=row["reciprocal_payload_bytes"],
             )
         )
     lines.extend(

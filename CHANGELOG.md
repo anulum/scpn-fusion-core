@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added production-decomposition reciprocal neighbour-graph evidence with
+  directed halo-link symmetry, payload-shape matching, and byte-asymmetry
+  diagnostics while keeping distributed MPI/multi-GPU execution blocked.
+
 - Added FreeGS public-example geometry-containment evidence for source
   X-points, isoflux endpoints, native/external magnetic axes, and boundary
   containment metrics while keeping strict FreeGS parity blocked.

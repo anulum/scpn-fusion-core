@@ -11,6 +11,7 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Halo exchange pass: `True`
 - Decomposition invariant pass: `True`
 - Parallel-moment invariant pass: `True`
+- Reciprocal neighbour graph pass: `True`
 - Same-physics decomposition shape pass: `True`
 - Production-scale ready: `False`
 - Python: `3.12.3`
@@ -135,13 +136,130 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 | 30 | 12582912 | 3 |
 | 31 | 8388608 | 2 |
 
+## Reciprocal neighbour graph evidence
+
+- Schema: `production-decomposition-reciprocal-neighbour-graph.v1`
+- Status: `accepted_local_reciprocal_neighbour_graph`
+- Reciprocal neighbour graph pass: `True`
+- Directed links: `104`
+- Undirected links: `52`
+- Mismatched links: `0`
+- Max payload byte asymmetry: `0`
+
+| Rank | Face | Neighbour | Opposite face | Payload bytes | Reciprocal bytes | Pass |
+|---:|---|---:|---|---:|---:|:---:|
+| 0 | radial_upper | 4 | radial_lower | 4194304 | 4194304 | `True` |
+| 0 | toroidal_upper | 1 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 1 | radial_upper | 5 | radial_lower | 4194304 | 4194304 | `True` |
+| 1 | toroidal_lower | 0 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 1 | toroidal_upper | 2 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 2 | radial_upper | 6 | radial_lower | 4194304 | 4194304 | `True` |
+| 2 | toroidal_lower | 1 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 2 | toroidal_upper | 3 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 3 | radial_upper | 7 | radial_lower | 4194304 | 4194304 | `True` |
+| 3 | toroidal_lower | 2 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 4 | radial_lower | 0 | radial_upper | 4194304 | 4194304 | `True` |
+| 4 | radial_upper | 8 | radial_lower | 4194304 | 4194304 | `True` |
+| 4 | toroidal_upper | 5 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 5 | radial_lower | 1 | radial_upper | 4194304 | 4194304 | `True` |
+| 5 | radial_upper | 9 | radial_lower | 4194304 | 4194304 | `True` |
+| 5 | toroidal_lower | 4 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 5 | toroidal_upper | 6 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 6 | radial_lower | 2 | radial_upper | 4194304 | 4194304 | `True` |
+| 6 | radial_upper | 10 | radial_lower | 4194304 | 4194304 | `True` |
+| 6 | toroidal_lower | 5 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 6 | toroidal_upper | 7 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 7 | radial_lower | 3 | radial_upper | 4194304 | 4194304 | `True` |
+| 7 | radial_upper | 11 | radial_lower | 4194304 | 4194304 | `True` |
+| 7 | toroidal_lower | 6 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 8 | radial_lower | 4 | radial_upper | 4194304 | 4194304 | `True` |
+| 8 | radial_upper | 12 | radial_lower | 4194304 | 4194304 | `True` |
+| 8 | toroidal_upper | 9 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 9 | radial_lower | 5 | radial_upper | 4194304 | 4194304 | `True` |
+| 9 | radial_upper | 13 | radial_lower | 4194304 | 4194304 | `True` |
+| 9 | toroidal_lower | 8 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 9 | toroidal_upper | 10 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 10 | radial_lower | 6 | radial_upper | 4194304 | 4194304 | `True` |
+| 10 | radial_upper | 14 | radial_lower | 4194304 | 4194304 | `True` |
+| 10 | toroidal_lower | 9 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 10 | toroidal_upper | 11 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 11 | radial_lower | 7 | radial_upper | 4194304 | 4194304 | `True` |
+| 11 | radial_upper | 15 | radial_lower | 4194304 | 4194304 | `True` |
+| 11 | toroidal_lower | 10 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 12 | radial_lower | 8 | radial_upper | 4194304 | 4194304 | `True` |
+| 12 | radial_upper | 16 | radial_lower | 4194304 | 4194304 | `True` |
+| 12 | toroidal_upper | 13 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 13 | radial_lower | 9 | radial_upper | 4194304 | 4194304 | `True` |
+| 13 | radial_upper | 17 | radial_lower | 4194304 | 4194304 | `True` |
+| 13 | toroidal_lower | 12 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 13 | toroidal_upper | 14 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 14 | radial_lower | 10 | radial_upper | 4194304 | 4194304 | `True` |
+| 14 | radial_upper | 18 | radial_lower | 4194304 | 4194304 | `True` |
+| 14 | toroidal_lower | 13 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 14 | toroidal_upper | 15 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 15 | radial_lower | 11 | radial_upper | 4194304 | 4194304 | `True` |
+| 15 | radial_upper | 19 | radial_lower | 4194304 | 4194304 | `True` |
+| 15 | toroidal_lower | 14 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 16 | radial_lower | 12 | radial_upper | 4194304 | 4194304 | `True` |
+| 16 | radial_upper | 20 | radial_lower | 4194304 | 4194304 | `True` |
+| 16 | toroidal_upper | 17 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 17 | radial_lower | 13 | radial_upper | 4194304 | 4194304 | `True` |
+| 17 | radial_upper | 21 | radial_lower | 4194304 | 4194304 | `True` |
+| 17 | toroidal_lower | 16 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 17 | toroidal_upper | 18 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 18 | radial_lower | 14 | radial_upper | 4194304 | 4194304 | `True` |
+| 18 | radial_upper | 22 | radial_lower | 4194304 | 4194304 | `True` |
+| 18 | toroidal_lower | 17 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 18 | toroidal_upper | 19 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 19 | radial_lower | 15 | radial_upper | 4194304 | 4194304 | `True` |
+| 19 | radial_upper | 23 | radial_lower | 4194304 | 4194304 | `True` |
+| 19 | toroidal_lower | 18 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 20 | radial_lower | 16 | radial_upper | 4194304 | 4194304 | `True` |
+| 20 | radial_upper | 24 | radial_lower | 4194304 | 4194304 | `True` |
+| 20 | toroidal_upper | 21 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 21 | radial_lower | 17 | radial_upper | 4194304 | 4194304 | `True` |
+| 21 | radial_upper | 25 | radial_lower | 4194304 | 4194304 | `True` |
+| 21 | toroidal_lower | 20 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 21 | toroidal_upper | 22 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 22 | radial_lower | 18 | radial_upper | 4194304 | 4194304 | `True` |
+| 22 | radial_upper | 26 | radial_lower | 4194304 | 4194304 | `True` |
+| 22 | toroidal_lower | 21 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 22 | toroidal_upper | 23 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 23 | radial_lower | 19 | radial_upper | 4194304 | 4194304 | `True` |
+| 23 | radial_upper | 27 | radial_lower | 4194304 | 4194304 | `True` |
+| 23 | toroidal_lower | 22 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 24 | radial_lower | 20 | radial_upper | 4194304 | 4194304 | `True` |
+| 24 | radial_upper | 28 | radial_lower | 4194304 | 4194304 | `True` |
+| 24 | toroidal_upper | 25 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 25 | radial_lower | 21 | radial_upper | 4194304 | 4194304 | `True` |
+| 25 | radial_upper | 29 | radial_lower | 4194304 | 4194304 | `True` |
+| 25 | toroidal_lower | 24 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 25 | toroidal_upper | 26 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 26 | radial_lower | 22 | radial_upper | 4194304 | 4194304 | `True` |
+| 26 | radial_upper | 30 | radial_lower | 4194304 | 4194304 | `True` |
+| 26 | toroidal_lower | 25 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 26 | toroidal_upper | 27 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 27 | radial_lower | 23 | radial_upper | 4194304 | 4194304 | `True` |
+| 27 | radial_upper | 31 | radial_lower | 4194304 | 4194304 | `True` |
+| 27 | toroidal_lower | 26 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 28 | radial_lower | 24 | radial_upper | 4194304 | 4194304 | `True` |
+| 28 | toroidal_upper | 29 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 29 | radial_lower | 25 | radial_upper | 4194304 | 4194304 | `True` |
+| 29 | toroidal_lower | 28 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 29 | toroidal_upper | 30 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 30 | radial_lower | 26 | radial_upper | 4194304 | 4194304 | `True` |
+| 30 | toroidal_lower | 29 | toroidal_upper | 4194304 | 4194304 | `True` |
+| 30 | toroidal_upper | 31 | toroidal_lower | 4194304 | 4194304 | `True` |
+| 31 | radial_lower | 27 | radial_upper | 4194304 | 4194304 | `True` |
+| 31 | toroidal_lower | 30 | toroidal_upper | 4194304 | 4194304 | `True` |
+
 ## Local CPU halo/invariant benchmark
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 1.508423e-01 | 3.475736e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 1.312949e-01 | 3.993209e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 2.180745e-01 | 2.404169e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 8.412223e-02 | 6.232455e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 9.991319e-02 | 5.247435e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 1.051828e-01 | 4.984542e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -156,9 +274,9 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 | Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 3.475736e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 3.993209e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 2.404169e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_4x2 | 8 | 524288 | 6.232455e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 5.247435e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 4.984542e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 

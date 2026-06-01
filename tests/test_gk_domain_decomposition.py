@@ -200,6 +200,16 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert communication_volume["total_halo_exchange_bytes_per_step"] > 0
     assert communication_volume["max_rank_halo_exchange_bytes_per_step"] > 0
     assert all(row["rank_halo_exchange_bytes_per_step"] >= 0 for row in communication_volume["rank_rows"])
+    reciprocal = report["reciprocal_neighbour_graph_evidence"]
+    assert reciprocal["schema"] == "production-decomposition-reciprocal-neighbour-graph.v1"
+    assert reciprocal["status"] == "accepted_local_reciprocal_neighbour_graph"
+    assert reciprocal["reciprocal_neighbour_graph_pass"] is True
+    assert reciprocal["rank_count"] == 32
+    assert reciprocal["directed_link_count"] == communication_volume["communicating_face_count"]
+    assert reciprocal["undirected_link_count"] * 2 == reciprocal["directed_link_count"]
+    assert reciprocal["mismatched_link_count"] == 0
+    assert reciprocal["max_payload_byte_asymmetry"] == 0
+    assert all(row["link_pass"] for row in reciprocal["link_rows"])
     shape_evidence = report["same_physics_shape_convergence_evidence"]
     assert shape_evidence["schema"] == "production-decomposition-shape-convergence.v1"
     assert shape_evidence["shape_convergence_pass"] is True
