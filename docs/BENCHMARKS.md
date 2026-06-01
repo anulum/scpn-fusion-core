@@ -964,16 +964,17 @@ histories through `validation/reports/gk_electromagnetic_fidelity.md`; these
 prove internal algebraic-closure consistency and are gated separately from the
 local source-free Maxwell evolution evidence. The report includes a
 machine-readable Maxwell equation contract and native source-free spectral
-Faraday, Ampere-Maxwell displacement-current, and inductive parallel electric
-field evolution diagnostics. Full Vlasov-Maxwell parity remains blocked until
-those fields are coupled to self-consistent 5D kinetic current moments and
-same-deck electromagnetic GENE/CGYRO/GS2 outputs. The latest local Maxwell
-evolution evidence reports maximum relative total-field-energy drift
-`5.090958569120036e-16` with zero Faraday, Ampere-Maxwell, and inductive
-parallel electric-field residuals under tolerance `1.0e-12`. Native same-case
-EM replay thresholds now gate `phi`, `A_parallel`, `B_parallel`, and total
-field-energy histories with maximum absolute and relative error `0.0` under
-absolute tolerance `1.0e-18` and relative tolerance `1.0e-15`; this is native
+Faraday, Ampere-Maxwell displacement-current, inductive parallel electric-field
+evolution, and perpendicular magnetic-divergence diagnostics. Full
+Vlasov-Maxwell parity remains blocked until those fields are coupled to
+self-consistent 5D kinetic current moments and same-deck electromagnetic
+GENE/CGYRO/GS2 outputs. The latest local Maxwell evolution evidence reports
+maximum relative total-field-energy drift `5.090958569120036e-16` with zero
+Faraday, Ampere-Maxwell, inductive parallel electric-field, and magnetic
+divergence residuals under tolerance `1.0e-12`. Native same-case EM replay
+thresholds now gate `phi`, `A_parallel`, `B_parallel`, and total field-energy
+histories with maximum absolute and relative error `0.0` under absolute
+tolerance `1.0e-18` and relative tolerance `1.0e-15`; this is native
 deterministic replay evidence, not external-code parity. The same report now
 includes local compact-EM grid-convergence evidence for algebraic
 field-energy histories over

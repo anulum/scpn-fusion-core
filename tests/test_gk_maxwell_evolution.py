@@ -33,6 +33,7 @@ def test_local_maxwell_evolution_conserves_source_free_field_energy() -> None:
     assert result.max_faraday_linf_residual <= result.residual_tolerance
     assert result.max_ampere_maxwell_linf_residual <= result.residual_tolerance
     assert result.max_inductive_e_parallel_linf_residual <= result.residual_tolerance
+    assert result.max_magnetic_divergence_linf_residual <= result.residual_tolerance
     assert result.A_parallel_energy_t.shape == result.time_s.shape
     assert result.B_parallel_energy_t.shape == result.time_s.shape
 

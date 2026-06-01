@@ -46,6 +46,7 @@ def test_gk_electromagnetic_fidelity_report_declares_maxwell_evolution_contract(
     assert equations["faraday_induction"]["implemented_by_native_solver"] is True
     assert equations["ampere_maxwell_displacement_current"]["implemented_by_native_solver"] is True
     assert equations["inductive_parallel_electric_field"]["implemented_by_native_solver"] is True
+    assert equations["magnetic_divergence_constraint"]["implemented_by_native_solver"] is True
     assert equations["compact_parallel_ampere_closure"]["compact_closure_ready"] is True
     assert (
         equations["compact_perpendicular_pressure_balance_closure"]["compact_closure_ready"] is True
@@ -94,6 +95,7 @@ def test_gk_electromagnetic_fidelity_report_records_maxwell_evolution_evidence()
     assert evidence["max_faraday_linf_residual"] <= evidence["residual_tolerance"]
     assert evidence["max_ampere_maxwell_linf_residual"] <= evidence["residual_tolerance"]
     assert evidence["max_inductive_e_parallel_linf_residual"] <= evidence["residual_tolerance"]
+    assert evidence["max_magnetic_divergence_linf_residual"] <= evidence["residual_tolerance"]
 
 
 def test_gk_electromagnetic_fidelity_report_records_native_same_case_thresholds() -> None:

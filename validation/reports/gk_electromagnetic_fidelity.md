@@ -36,10 +36,12 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - Ampere-Maxwell displacement current supported: `True`
 - Inductive parallel electric field supported: `True`
 - Self-consistent kinetic current supported: `False`
+- Magnetic divergence constraint supported: `True`
 - Max relative total-field-energy drift: `5.090959e-16`
 - Max Faraday residual: `0.000000e+00`
 - Max Ampere-Maxwell residual: `0.000000e+00`
 - Max inductive parallel electric-field residual: `0.000000e+00`
+- Max magnetic divergence residual: `2.028048e-16`
 
 ## Native EM same-case threshold evidence
 
@@ -72,6 +74,7 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 | faraday_induction | `True` | `False` | implemented_as_local_source_free_spectral_field_evolution |
 | ampere_maxwell_displacement_current | `True` | `False` | implemented_as_local_source_free_spectral_field_evolution |
 | inductive_parallel_electric_field | `True` | `False` | implemented_as_local_source_free_spectral_field_evolution |
+| magnetic_divergence_constraint | `True` | `False` | implemented_as_local_source_free_spectral_field_evolution |
 | self_consistent_kinetic_current_coupling | `False` | `False` | missing_self_consistent_5d_kinetic_current_coupling |
 | same_deck_external_em_parity | `False` | `False` | missing_external_same_deck_em_outputs_and_thresholds |
 | compact_parallel_ampere_closure | `True` | `True` | implemented_as_algebraic_closure_not_maxwell_evolution |

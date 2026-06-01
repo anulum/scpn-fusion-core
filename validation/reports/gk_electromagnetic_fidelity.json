@@ -4,7 +4,7 @@
   "description": "Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel/B_parallel diagnostics are local readiness evidence only, not full Vlasov-Maxwell parity.",
   "electromagnetic_gate": {
     "A_parallel_energy_max": 0.0025630597158647875,
-    "B_parallel_energy_max": 9.011323972419964e-11,
+    "B_parallel_energy_max": 9.011323972419965e-11,
     "compact_closure_ready": true,
     "electromagnetic_enabled": true,
     "field_energy_total_closes": true,
@@ -23,8 +23,8 @@
     "grid_convergence_ready": true,
     "grid_rows": [
       {
-        "A_parallel_energy_final": 3.394337262316717e-07,
-        "B_parallel_energy_final": 4.759104842051009e-12,
+        "A_parallel_energy_final": 3.3943372623167143e-07,
+        "B_parallel_energy_final": 4.75910484205101e-12,
         "case_id": "compact_em_4x4x8",
         "compact_closure_ready": true,
         "field_energy_total_closes": true,
@@ -44,8 +44,8 @@
         "total_field_energy_final": 9.928194801366652e-05
       },
       {
-        "A_parallel_energy_final": 4.037986365983621e-07,
-        "B_parallel_energy_final": 4.7679018682068105e-12,
+        "A_parallel_energy_final": 4.0379863659836173e-07,
+        "B_parallel_energy_final": 4.76790186820681e-12,
         "case_id": "compact_em_6x6x10",
         "compact_closure_ready": true,
         "field_energy_total_closes": true,
@@ -65,8 +65,8 @@
         "total_field_energy_final": 9.9369530196485e-05
       },
       {
-        "A_parallel_energy_final": 4.585154811077167e-07,
-        "B_parallel_energy_final": 4.774413471205485e-12,
+        "A_parallel_energy_final": 4.585154811077164e-07,
+        "B_parallel_energy_final": 4.774413471205486e-12,
         "case_id": "compact_em_8x8x12",
         "compact_closure_ready": true,
         "field_energy_total_closes": true,
@@ -80,13 +80,13 @@
         },
         "max_ampere_parallel_linf_residual": 0.0,
         "max_pressure_balance_linf_residual": 0.0,
-        "phi_energy_final": 9.898386048073838e-05,
-        "relative_total_energy_drift": 0.005494181583319518,
+        "phi_energy_final": 9.89838604807384e-05,
+        "relative_total_energy_drift": 0.005494181583319792,
         "saved_steps": 5,
-        "total_field_energy_final": 9.944238073625956e-05
+        "total_field_energy_final": 9.944238073625959e-05
       }
     ],
-    "max_relative_total_energy_drift": 0.005494181583319518,
+    "max_relative_total_energy_drift": 0.005494181583319792,
     "relative_energy_tolerance": 0.5,
     "schema": "gk-electromagnetic-grid-convergence.v1",
     "scope": "native_compact_Apar_Bpar_field_energy_histories",
@@ -140,6 +140,14 @@
       },
       {
         "compact_closure_ready": false,
+        "equation": "div(B) = 0",
+        "equation_id": "magnetic_divergence_constraint",
+        "implemented_by_native_solver": true,
+        "native_status": "implemented_as_local_source_free_spectral_field_evolution",
+        "required_for_full_vlasov_maxwell": true
+      },
+      {
+        "compact_closure_ready": false,
         "equation": "J_parallel and perpendicular current moments from evolved 5D distribution",
         "equation_id": "self_consistent_kinetic_current_coupling",
         "implemented_by_native_solver": false,
@@ -178,9 +186,11 @@
     "ampere_maxwell_displacement_current_supported": true,
     "faraday_induction_supported": true,
     "inductive_parallel_electric_field_supported": true,
+    "magnetic_divergence_constraint_supported": true,
     "max_ampere_maxwell_linf_residual": 0.0,
     "max_faraday_linf_residual": 0.0,
     "max_inductive_e_parallel_linf_residual": 0.0,
+    "max_magnetic_divergence_linf_residual": 2.0280477147753906e-16,
     "max_relative_total_field_energy_drift": 5.090958569120036e-16,
     "relative_energy_tolerance": 1e-11,
     "residual_tolerance": 1e-12,

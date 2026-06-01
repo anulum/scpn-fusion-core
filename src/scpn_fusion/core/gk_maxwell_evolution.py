@@ -10,10 +10,11 @@
 This module advances a source-free perpendicular spectral Maxwell field system
 for ``A_parallel`` and a compressional ``B_parallel`` component. It is a native
 field-evolution contract for Faraday induction, Ampere-Maxwell displacement
-current, and the inductive parallel electric field relation. It is not a full
-Vlasov-Maxwell gyrokinetic parity claim because the kinetic current is not yet
-self-consistently supplied by the 5D distribution and no same-deck external
-GENE/CGYRO/GS2 electromagnetic outputs are compared here.
+current, the inductive parallel electric field relation, and the perpendicular
+magnetic divergence constraint. It is not a full Vlasov-Maxwell gyrokinetic
+parity claim because the kinetic current is not yet self-consistently supplied
+by the 5D distribution and no same-deck external GENE/CGYRO/GS2
+electromagnetic outputs are compared here.
 """
 
 from __future__ import annotations
@@ -64,15 +65,18 @@ class MaxwellEvolutionResult:
     faraday_linf_residual_t: NDArray[np.float64]
     ampere_maxwell_linf_residual_t: NDArray[np.float64]
     inductive_e_parallel_linf_residual_t: NDArray[np.float64]
+    magnetic_divergence_linf_residual_t: NDArray[np.float64]
     relative_total_field_energy_drift: float
     max_faraday_linf_residual: float
     max_ampere_maxwell_linf_residual: float
     max_inductive_e_parallel_linf_residual: float
+    max_magnetic_divergence_linf_residual: float
     relative_energy_tolerance: float
     residual_tolerance: float
     faraday_induction_supported: bool
     ampere_maxwell_displacement_current_supported: bool
     inductive_parallel_electric_field_supported: bool
+    magnetic_divergence_constraint_supported: bool
     self_consistent_kinetic_current_supported: bool
 
     def to_evidence(self) -> dict[str, object]:
@@ -88,7 +92,13 @@ class MaxwellEvolutionResult:
             "max_ampere_maxwell_linf_residual": self.max_ampere_maxwell_linf_residual,
             "max_faraday_linf_residual": self.max_faraday_linf_residual,
             "max_inductive_e_parallel_linf_residual": (self.max_inductive_e_parallel_linf_residual),
+            "max_magnetic_divergence_linf_residual": (
+                self.max_magnetic_divergence_linf_residual
+            ),
             "max_relative_total_field_energy_drift": (self.relative_total_field_energy_drift),
+            "magnetic_divergence_constraint_supported": (
+                self.magnetic_divergence_constraint_supported
+            ),
             "relative_energy_tolerance": self.relative_energy_tolerance,
             "residual_tolerance": self.residual_tolerance,
             "saved_steps": int(self.time_s.size),
@@ -102,6 +112,7 @@ class MaxwellEvolutionResult:
                 and self.max_faraday_linf_residual <= self.residual_tolerance
                 and self.max_ampere_maxwell_linf_residual <= self.residual_tolerance
                 and self.max_inductive_e_parallel_linf_residual <= self.residual_tolerance
+                and self.max_magnetic_divergence_linf_residual <= self.residual_tolerance
             )
             else "blocked_local_maxwell_evolution_residuals_failed",
         }
@@ -169,6 +180,7 @@ def run_local_maxwell_evolution(config: MaxwellEvolutionConfig) -> MaxwellEvolut
     faraday_linf_residual_t = np.zeros(config.n_steps, dtype=np.float64)
     ampere_maxwell_linf_residual_t = np.zeros(config.n_steps, dtype=np.float64)
     inductive_e_parallel_linf_residual_t = np.zeros(config.n_steps, dtype=np.float64)
+    magnetic_divergence_linf_residual_t = np.zeros(config.n_steps, dtype=np.float64)
 
     inv_omega = np.zeros_like(omega)
     inv_omega[nonzero] = 1.0 / omega[nonzero]
@@ -196,6 +208,7 @@ def run_local_maxwell_evolution(config: MaxwellEvolutionConfig) -> MaxwellEvolut
         faraday_y = dBy_dt - 1j * kx * E_parallel
         ampere = d2A_dt2 + (omega * omega) * A
         inductive = E_parallel + dA_dt
+        magnetic_divergence = 1j * kx * Bx + 1j * ky * By
 
         faraday_scale = np.maximum(
             np.maximum(np.abs(dBx_dt), np.abs(dBy_dt)),
@@ -203,6 +216,7 @@ def run_local_maxwell_evolution(config: MaxwellEvolutionConfig) -> MaxwellEvolut
         )
         ampere_scale = np.maximum(np.abs(d2A_dt2), np.abs((omega * omega) * A))
         inductive_scale = np.maximum(np.abs(E_parallel), np.abs(dA_dt))
+        magnetic_divergence_scale = np.maximum(np.abs(kx * Bx), np.abs(ky * By))
 
         faraday_linf_residual_t[idx] = float(
             np.max(
@@ -217,6 +231,14 @@ def run_local_maxwell_evolution(config: MaxwellEvolutionConfig) -> MaxwellEvolut
         )
         inductive_e_parallel_linf_residual_t[idx] = float(
             np.max(np.divide(np.abs(inductive), np.maximum(inductive_scale, _TINY)))
+        )
+        magnetic_divergence_linf_residual_t[idx] = float(
+            np.max(
+                np.divide(
+                    np.abs(magnetic_divergence),
+                    np.maximum(magnetic_divergence_scale, _TINY),
+                )
+            )
         )
 
         electric_parallel_energy_t[idx] = float(0.5 * _EPSILON_0 * np.sum(np.abs(E_parallel) ** 2))
@@ -243,9 +265,14 @@ def run_local_maxwell_evolution(config: MaxwellEvolutionConfig) -> MaxwellEvolut
         faraday_linf_residual_t=faraday_linf_residual_t,
         inductive_e_parallel_linf_residual_t=inductive_e_parallel_linf_residual_t,
         inductive_parallel_electric_field_supported=True,
+        magnetic_divergence_constraint_supported=True,
+        magnetic_divergence_linf_residual_t=magnetic_divergence_linf_residual_t,
         max_ampere_maxwell_linf_residual=float(np.max(ampere_maxwell_linf_residual_t)),
         max_faraday_linf_residual=float(np.max(faraday_linf_residual_t)),
         max_inductive_e_parallel_linf_residual=float(np.max(inductive_e_parallel_linf_residual_t)),
+        max_magnetic_divergence_linf_residual=float(
+            np.max(magnetic_divergence_linf_residual_t)
+        ),
         phi_energy_t=phi_energy_t,
         relative_energy_tolerance=config.relative_energy_tolerance,
         relative_total_field_energy_drift=_relative_drift(total_field_energy_t),

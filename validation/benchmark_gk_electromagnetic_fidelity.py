@@ -73,6 +73,9 @@ def _maxwell_evolution_contract(
     inductive_ready = bool(
         maxwell_evolution_evidence["inductive_parallel_electric_field_supported"]
     )
+    magnetic_divergence_ready = bool(
+        maxwell_evolution_evidence["magnetic_divergence_constraint_supported"]
+    )
     equations = [
         {
             "compact_closure_ready": False,
@@ -95,6 +98,14 @@ def _maxwell_evolution_contract(
             "equation_id": "inductive_parallel_electric_field",
             "equation": "E_parallel = -grad_parallel(phi) - dA_parallel/dt",
             "implemented_by_native_solver": inductive_ready,
+            "native_status": "implemented_as_local_source_free_spectral_field_evolution",
+            "required_for_full_vlasov_maxwell": True,
+        },
+        {
+            "compact_closure_ready": False,
+            "equation_id": "magnetic_divergence_constraint",
+            "equation": "div(B) = 0",
+            "implemented_by_native_solver": magnetic_divergence_ready,
             "native_status": "implemented_as_local_source_free_spectral_field_evolution",
             "required_for_full_vlasov_maxwell": True,
         },
@@ -586,6 +597,10 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
                 f"`{maxwell_evidence['self_consistent_kinetic_current_supported']}`"
             ),
             (
+                "- Magnetic divergence constraint supported: "
+                f"`{maxwell_evidence['magnetic_divergence_constraint_supported']}`"
+            ),
+            (
                 "- Max relative total-field-energy drift: "
                 f"`{maxwell_evidence['max_relative_total_field_energy_drift']:.6e}`"
             ),
@@ -597,6 +612,10 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
             (
                 "- Max inductive parallel electric-field residual: "
                 f"`{maxwell_evidence['max_inductive_e_parallel_linf_residual']:.6e}`"
+            ),
+            (
+                "- Max magnetic divergence residual: "
+                f"`{maxwell_evidence['max_magnetic_divergence_linf_residual']:.6e}`"
             ),
         ]
     )
