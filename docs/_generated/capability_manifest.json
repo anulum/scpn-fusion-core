@@ -950,6 +950,10 @@
         "path": "src/scpn_fusion/core/gk_eigenvalue.py"
       },
       {
+        "name": "LocalDecomposedExecutionResult",
+        "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
+      },
+      {
         "name": "LockedModeIsland",
         "path": "src/scpn_fusion/core/locked_mode.py"
       },
@@ -992,6 +996,14 @@
       {
         "name": "MartinThreshold",
         "path": "src/scpn_fusion/core/lh_transition.py"
+      },
+      {
+        "name": "MaxwellEvolutionConfig",
+        "path": "src/scpn_fusion/core/gk_maxwell_evolution.py"
+      },
+      {
+        "name": "MaxwellEvolutionResult",
+        "path": "src/scpn_fusion/core/gk_maxwell_evolution.py"
       },
       {
         "name": "MercierResult",
@@ -2170,6 +2182,7 @@
       "src/scpn_fusion/core/gk_geometry.py",
       "src/scpn_fusion/core/gk_gs2.py",
       "src/scpn_fusion/core/gk_interface.py",
+      "src/scpn_fusion/core/gk_maxwell_evolution.py",
       "src/scpn_fusion/core/gk_nonlinear.py",
       "src/scpn_fusion/core/gk_online_learner.py",
       "src/scpn_fusion/core/gk_ood_detector.py",
@@ -2364,10 +2377,10 @@
     "optional_extras": 11,
     "public_api_exports": 2,
     "public_documentation_pages": 41,
-    "python_capability_classes": 499,
-    "python_capability_source_modules": 263,
+    "python_capability_classes": 502,
+    "python_capability_source_modules": 264,
     "rust_workspace_crates": 12,
-    "test_files": 393
+    "test_files": 394
   },
   "documentation": {
     "public_pages": [
@@ -2622,6 +2635,7 @@
       "tests/test_gk_geometry.py",
       "tests/test_gk_gs2.py",
       "tests/test_gk_interface.py",
+      "tests/test_gk_maxwell_evolution.py",
       "tests/test_gk_nonlinear.py",
       "tests/test_gk_online_learner.py",
       "tests/test_gk_ood_detector.py",
