@@ -1,14 +1,33 @@
 # Vertical Control Replay Benchmark
 
-## Profile suite
-
 - Schema version: `1.0.0`
-- Profiles: `compact_tokamak, diii_d_like, iter_like`
+- Deterministic replay pass: `YES`
 - Overall pass: `YES`
-- Profile trace checksum: `06dde884146078d7c2de6d659c27a187d3e6447573f23bf1fd1d44a340e60744`
+- Release gate status: `blocked_pending_multi_profile_release_gate`
+- Steps: `240`
+- dt: `0.001000 s`
+- State trace checksum: `8b6bfb8fe534fd895f66ca6a51a811dd3ef2746c7fbcd7023c43cebc00103865`
 
-| Profile | Max P95 |z| (m) | Max uncertain |z| (m) | Pass |
-|---------|----------------|-----------------------|------|
-| compact_tokamak | 0.005840 | 0.006008 | YES |
-| diii_d_like | 0.005254 | 0.005996 | YES |
-| iter_like | 0.005330 | 0.005997 | YES |
+| Controller | P95 |z| (m) | Final |z| (m) | Max |u| | Max slew | Pass |
+|------------|-------------|---------------|---------|----------|------|
+| pid | 0.005285 | 0.000130 | 0.164572 | 0.035000 | YES |
+| super_twisting | 0.005212 | 0.000791 | 0.175000 | 0.035000 | YES |
+| sliding_mode_vertical | 0.005212 | 0.000791 | 0.175000 | 0.035000 | YES |
+| no_control | 0.009209 | 0.009458 | 0.000000 | 0.000000 | NO |
+
+## Post-disturbance relaxation
+
+- Primary controllers must reduce vertical displacement after the disturbance window ends.
+- Maximum accepted final/start ratio: `0.750`
+
+| Controller | Start |z| (m) | Final/start ratio | Pass |
+|------------|----------------|-------------------|------|
+| pid | 0.000789 | 0.165219 | YES |
+| super_twisting | 0.001941 | 0.407205 | YES |
+| sliding_mode_vertical | 0.001941 | 0.407205 | YES |
+| no_control | 0.007187 | 1.315892 | NO |
+
+## Uncertainty
+
+- Cases: `32`
+- Max uncertain |z|: `0.005997 m`

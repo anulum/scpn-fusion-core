@@ -8,6 +8,8 @@ Contact: www.anulum.li | protoscience@anulum.li
 SCPN Fusion Core — Lean Grad-Shafranov CSV CLI
 -/
 import SCPNFusionSolvers
+import SafetyProof
+import PIDBoundedOutput
 
 open SCPNFusionSolvers
 

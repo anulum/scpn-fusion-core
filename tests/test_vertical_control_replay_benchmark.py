@@ -9,13 +9,14 @@
 
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import json
 from pathlib import Path
 import subprocess
 import sys
+from typing import Any
 
-from jsonschema import Draft202012Validator
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +26,7 @@ assert SPEC and SPEC.loader
 vertical_control_replay_benchmark = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = vertical_control_replay_benchmark
 SPEC.loader.exec_module(vertical_control_replay_benchmark)
+JSONSCHEMA: Any = importlib.import_module("jsonschema")
 
 
 def test_run_benchmark_is_deterministic_and_reports_limits() -> None:
@@ -36,6 +38,11 @@ def test_run_benchmark_is_deterministic_and_reports_limits() -> None:
     assert bench["schema_version"] == "1.0.0"
     assert bench["deterministic_replay_pass"] is True
     assert bench["passes_thresholds"] is True
+    assert bench["release_gate"]["single_profile_contract_ready"] is True
+    assert bench["release_gate"]["reduced_order_release_gate_ready"] is False
+    assert bench["release_gate"]["full_pcs_production_grade_ready"] is False
+    assert bench["release_gate"]["checks"]["multi_profile_replay_ready"] is False
+    assert bench["release_gate"]["blockers"] == ["multi_profile_replay_report_required"]
     assert bench["actuator_limits"]["max_abs_command"] == pytest.approx(0.45)
     assert bench["actuator_limits"]["max_slew_per_step"] == pytest.approx(0.035)
     assert bench["uncertainty_report"]["n_scenarios"] >= 16
@@ -220,6 +227,7 @@ def test_json_schema_contains_required_contract_keys() -> None:
         "trace_integrity",
         "provenance",
         "uncertainty_report",
+        "release_gate",
         "passes_thresholds",
     } <= required
     assert (
@@ -238,8 +246,8 @@ def test_report_validates_against_committed_json_schema() -> None:
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     report = vertical_control_replay_benchmark.run_benchmark()
 
-    Draft202012Validator.check_schema(schema)
-    Draft202012Validator(schema).validate(report)
+    JSONSCHEMA.Draft202012Validator.check_schema(schema)
+    JSONSCHEMA.Draft202012Validator(schema).validate(report)
 
 
 def test_cli_writes_json_and_markdown_reports(tmp_path: Path) -> None:
@@ -290,5 +298,9 @@ def test_cli_all_profiles_writes_multi_profile_report(tmp_path: Path) -> None:
     suite = payload["vertical_control_replay_profile_suite"]
     assert suite["profile_ids"] == ["compact_tokamak", "diii_d_like", "iter_like"]
     assert suite["all_profiles_pass"] is True
+    assert suite["release_gate"]["status"] == "accepted_reduced_order_replay_release_gate"
+    assert suite["release_gate"]["reduced_order_release_gate_ready"] is True
+    assert suite["release_gate"]["full_pcs_production_grade_ready"] is False
+    assert suite["release_gate"]["blockers"] == []
     assert set(suite["reports"]) == set(suite["profile_ids"])
     assert "## Profile suite" in out_md.read_text(encoding="utf-8")

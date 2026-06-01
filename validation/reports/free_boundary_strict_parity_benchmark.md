@@ -25,6 +25,17 @@ coil/vacuum sidecars are all present.
 | `machine_metadata_ready` | `True` |
 | `same_case_public_reference_output_ready` | `False` |
 
+## Acceptance matrix
+
+| Requirement | Ready |
+| --- | ---: |
+| `same_case_reference_output` | `False` |
+| `native_same_case_profile_source` | `True` |
+| `strict_threshold_metrics` | `False` |
+| `grid_convergence_ladder` | `False` |
+| `coil_vacuum_sidecars` | `False` |
+| `machine_metadata` | `True` |
+
 ## Blockers
 
 - `strict_threshold_acceptance_failed`

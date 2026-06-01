@@ -168,7 +168,7 @@ class SlidingModeVerticalController:
     def step(self, *, z_m: float, dz_dt_m_per_s: float, dt_s: float) -> float:
         """Delegate the step command to repository SMC implementation."""
         assert self._smc is not None
-        return self._smc.step(z_m, dz_dt_m_per_s, dt_s)
+        return float(self._smc.step(z_m, dz_dt_m_per_s, dt_s))
 
 
 @dataclass
@@ -434,6 +434,13 @@ def _sha256_json(payload: Any) -> str:
         ensure_ascii=True,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _is_sha256(value: Any) -> bool:
+    """Return True when `value` is a lowercase SHA-256 hex digest."""
+    if not isinstance(value, str) or len(value) != 64:
+        return False
+    return all(ch in "0123456789abcdef" for ch in value)
 
 
 def _source_commit() -> str:
@@ -728,6 +735,109 @@ def _build_fairness_report(
     }
 
 
+def _single_profile_release_gate(bench: dict[str, Any]) -> dict[str, Any]:
+    """Return explicit fail-closed release-gate evidence for one profile run."""
+    primary_pass = all(
+        bool(bench["controller_passes"].get(cid) is True) for cid in PRIMARY_CONTROLLER_IDS
+    )
+    no_control_diagnostic = (
+        bench["controller_roles"].get("no_control") == "diagnostic_only"
+        and bench["controller_passes"].get("no_control") is False
+    )
+    deterministic_checksums = all(
+        _is_sha256(bench["trace_integrity"].get(key))
+        for key in (
+            "state_trace_checksum_sha256",
+            "command_trace_checksum_sha256",
+            "disturbance_trace_checksum_sha256",
+        )
+    )
+    checks = {
+        "single_profile_thresholds_ready": bool(bench["passes_thresholds"] is True),
+        "deterministic_replay_ready": bool(bench["deterministic_replay_pass"] is True),
+        "fairness_ready": bool(bench["fairness_report"]["passes_fairness_checks"] is True),
+        "primary_controllers_ready": primary_pass,
+        "uncertainty_envelope_ready": bool(
+            bench["uncertainty_report"]["max_p95_abs_z_m"]
+            <= bench["thresholds"]["max_p95_abs_z_m"]
+        ),
+        "actuator_saturation_contract_ready": all(
+            bool(
+                result["actuator_limit_application"]["applied_after_controller_output"] is True
+            )
+            for result in bench["controllers"].values()
+        ),
+        "fault_diagnostic_lane_ready": no_control_diagnostic,
+        "deterministic_trace_checksums_ready": deterministic_checksums,
+        "multi_profile_replay_ready": False,
+    }
+    reduced_order_ready = all(
+        ready for key, ready in checks.items() if key != "multi_profile_replay_ready"
+    )
+    return {
+        "gate_id": "vertical_control_replay_release_gate",
+        "claim_boundary": "deterministic_reduced_order_RZIP_replay_not_full_PCS",
+        "status": "blocked_pending_multi_profile_release_gate",
+        "single_profile_contract_ready": reduced_order_ready,
+        "reduced_order_release_gate_ready": False,
+        "full_pcs_production_grade_ready": False,
+        "checks": checks,
+        "blockers": ["multi_profile_replay_report_required"],
+    }
+
+
+def _profile_suite_release_gate(
+    reports: dict[str, dict[str, Any]], profile_ids: list[str]
+) -> dict[str, Any]:
+    """Return explicit fail-closed release-gate evidence for the profile suite."""
+    checks = {
+        "strict_schema_validation_ready": True,
+        "multi_profile_replay_ready": bool(profile_ids)
+        and all(bool(reports[profile_id]["passes_thresholds"]) for profile_id in profile_ids),
+        "deterministic_replay_ready": all(
+            bool(reports[profile_id]["deterministic_replay_pass"] is True)
+            for profile_id in profile_ids
+        ),
+        "deterministic_trace_checksums_ready": all(
+            _is_sha256(reports[profile_id]["trace_integrity"]["state_trace_checksum_sha256"])
+            and _is_sha256(reports[profile_id]["trace_integrity"]["command_trace_checksum_sha256"])
+            and _is_sha256(
+                reports[profile_id]["trace_integrity"]["disturbance_trace_checksum_sha256"]
+            )
+            for profile_id in profile_ids
+        ),
+        "uncertainty_envelope_ready": all(
+            bool(reports[profile_id]["release_gate"]["checks"]["uncertainty_envelope_ready"])
+            for profile_id in profile_ids
+        ),
+        "actuator_saturation_contract_ready": all(
+            bool(
+                reports[profile_id]["release_gate"]["checks"][
+                    "actuator_saturation_contract_ready"
+                ]
+            )
+            for profile_id in profile_ids
+        ),
+        "fault_diagnostic_lane_ready": all(
+            bool(reports[profile_id]["release_gate"]["checks"]["fault_diagnostic_lane_ready"])
+            for profile_id in profile_ids
+        ),
+    }
+    blockers = [key for key, ready in checks.items() if not ready]
+    ready = not blockers
+    return {
+        "gate_id": "vertical_control_replay_release_gate",
+        "claim_boundary": "deterministic_reduced_order_RZIP_replay_not_full_PCS",
+        "status": "accepted_reduced_order_replay_release_gate"
+        if ready
+        else "blocked_vertical_replay_release_gate",
+        "reduced_order_release_gate_ready": ready,
+        "full_pcs_production_grade_ready": False,
+        "checks": checks,
+        "blockers": blockers,
+    }
+
+
 def run_benchmark(
     *,
     scenario: ReplayScenario | None = None,
@@ -808,46 +918,48 @@ def run_benchmark(
     }
     fairness_report = _build_fairness_report(first, second, scenario=scenario)
 
+    bench = {
+        "schema_version": SCHEMA_VERSION,
+        "scenario": asdict(scenario),
+        "machine_profile": asdict(machine_profile),
+        "plant_contract": plant_contract.report(),
+        "actuator_limits": asdict(actuator_limits),
+        "thresholds": asdict(thresholds),
+        "deterministic_replay_pass": deterministic,
+        "controllers": first,
+        "controller_roles": controller_roles,
+        "controller_passes": controller_passes,
+        "fairness_report": fairness_report,
+        "trace_integrity": trace_integrity,
+        "uncertainty_report": {
+            "n_scenarios": int(primary_uncertainty[0]["n_cases"]),
+            "grid_axes": [
+                "growth_scale",
+                "damping_scale",
+                "actuator_scale",
+                "sensor_bias_m",
+                "latency_steps",
+            ],
+            "max_p95_abs_z_m": max(
+                max_p95,
+                max(float(result["max_p95_abs_z_m"]) for result in primary_uncertainty),
+            ),
+            "p95_abs_z_m_p95": float(np.percentile(uncertainty_p95_values, 95.0)),
+            "max_uncertain_abs_z_m": max_uncertain,
+            "worst_case": worst_uncertainty,
+            "uncertainty_scale": float(scenario.uncertainty_scale),
+        },
+        "provenance": _provenance(scenario, actuator_limits, machine_profile),
+        "passes_thresholds": bool(
+            deterministic
+            and fairness_report["passes_fairness_checks"]
+            and all(controller_passes[cid] for cid in PRIMARY_CONTROLLER_IDS)
+        ),
+    }
+    bench["release_gate"] = _single_profile_release_gate(bench)
     return {
         "SPDX-License-Identifier": "AGPL-3.0-or-later",
-        "vertical_control_replay_benchmark": {
-            "schema_version": SCHEMA_VERSION,
-            "scenario": asdict(scenario),
-            "machine_profile": asdict(machine_profile),
-            "plant_contract": plant_contract.report(),
-            "actuator_limits": asdict(actuator_limits),
-            "thresholds": asdict(thresholds),
-            "deterministic_replay_pass": deterministic,
-            "controllers": first,
-            "controller_roles": controller_roles,
-            "controller_passes": controller_passes,
-            "fairness_report": fairness_report,
-            "trace_integrity": trace_integrity,
-            "uncertainty_report": {
-                "n_scenarios": int(primary_uncertainty[0]["n_cases"]),
-                "grid_axes": [
-                    "growth_scale",
-                    "damping_scale",
-                    "actuator_scale",
-                    "sensor_bias_m",
-                    "latency_steps",
-                ],
-                "max_p95_abs_z_m": max(
-                    max_p95,
-                    max(float(result["max_p95_abs_z_m"]) for result in primary_uncertainty),
-                ),
-                "p95_abs_z_m_p95": float(np.percentile(uncertainty_p95_values, 95.0)),
-                "max_uncertain_abs_z_m": max_uncertain,
-                "worst_case": worst_uncertainty,
-                "uncertainty_scale": float(scenario.uncertainty_scale),
-            },
-            "provenance": _provenance(scenario, actuator_limits, machine_profile),
-            "passes_thresholds": bool(
-                deterministic
-                and fairness_report["passes_fairness_checks"]
-                and all(controller_passes[cid] for cid in PRIMARY_CONTROLLER_IDS)
-            ),
-        },
+        "vertical_control_replay_benchmark": bench,
     }
 
 
@@ -862,6 +974,7 @@ def run_profile_suite() -> dict[str, Any]:
         ]
         for profile_id in profile_ids
     }
+    release_gate = _profile_suite_release_gate(reports, profile_ids)
     return {
         "SPDX-License-Identifier": "AGPL-3.0-or-later",
         "vertical_control_replay_profile_suite": {
@@ -880,6 +993,7 @@ def run_profile_suite() -> dict[str, Any]:
                 ),
                 "profile_count": len(profile_ids),
             },
+            "release_gate": release_gate,
         },
     }
 
@@ -894,6 +1008,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Schema version: `{bench['schema_version']}`",
         f"- Deterministic replay pass: `{'YES' if bench['deterministic_replay_pass'] else 'NO'}`",
         f"- Overall pass: `{'YES' if bench['passes_thresholds'] else 'NO'}`",
+        f"- Release gate status: `{bench['release_gate']['status']}`",
         f"- Steps: `{bench['scenario']['n_steps']}`",
         f"- dt: `{bench['scenario']['dt_s']:.6f} s`",
         f"- State trace checksum: `{bench['trace_integrity']['state_trace_checksum_sha256']}`",
@@ -953,6 +1068,11 @@ def render_profile_suite_markdown(report: dict[str, Any]) -> str:
         f"- Schema version: `{suite['schema_version']}`",
         f"- Profiles: `{', '.join(suite['profile_ids'])}`",
         f"- Overall pass: `{'YES' if suite['all_profiles_pass'] else 'NO'}`",
+        f"- Release gate status: `{suite['release_gate']['status']}`",
+        f"- Reduced-order release gate ready: "
+        f"`{'YES' if suite['release_gate']['reduced_order_release_gate_ready'] else 'NO'}`",
+        f"- Full PCS production-grade ready: "
+        f"`{'YES' if suite['release_gate']['full_pcs_production_grade_ready'] else 'NO'}`",
         f"- Profile trace checksum: `{suite['trace_integrity']['profile_trace_checksum_sha256']}`",
         "",
         "| Profile | Max P95 |z| (m) | Max uncertain |z| (m) | Pass |",

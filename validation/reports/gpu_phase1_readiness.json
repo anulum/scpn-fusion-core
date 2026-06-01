@@ -1,0 +1,32 @@
+{
+  "accepted_phase1_readiness": false,
+  "benchmark_id": "gpu_phase1_wgpu_sor_readiness",
+  "blockers": [
+    "tracked_gpu_wgpu_sor_benchmark_artifact_missing"
+  ],
+  "candidate_benchmark_artifacts": [
+    "validation/reports/gpu_kernel_benchmark_results.json",
+    "validation/reports/gpu_sor_benchmark_results.json",
+    "artifacts/gpu_kernel_benchmark_results.json"
+  ],
+  "checks": {
+    "cpu_sor": true,
+    "gpu_bench": true,
+    "gpu_crate": true,
+    "gpu_shader": true,
+    "gpu_solver": true,
+    "tracked_gpu_benchmark_artifact_ready": false
+  },
+  "inputs": {
+    "cpu_sor": "scpn-fusion-rs/crates/fusion-math/src/sor.rs",
+    "gpu_bench": "scpn-fusion-rs/crates/fusion-gpu/benches/gpu_sor_bench.rs",
+    "gpu_crate": "scpn-fusion-rs/crates/fusion-gpu/Cargo.toml",
+    "gpu_shader": "scpn-fusion-rs/crates/fusion-gpu/src/gs_solver.wgsl",
+    "gpu_solver": "scpn-fusion-rs/crates/fusion-gpu/src/lib.rs"
+  },
+  "observed_benchmark_artifact_count": 0,
+  "phase1_static_implementation_ready": true,
+  "production_scaling_ready": false,
+  "schema": "gpu-phase1-readiness.v1",
+  "status": "blocked_gpu_phase1_wgpu_sor_readiness"
+}

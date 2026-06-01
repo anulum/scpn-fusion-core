@@ -15,6 +15,10 @@ package «scpn-fusion-lean» where
 
 lean_lib SCPNFusionSolvers where
 
+lean_lib SafetyProof where
+
+lean_lib PIDBoundedOutput where
+
 @[default_target]
 lean_exe gs_picard_csv where
   root := `Main

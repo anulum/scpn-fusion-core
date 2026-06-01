@@ -179,6 +179,30 @@ def evaluate_strict_parity(
     if not machine_reference_ready:
         blockers.append("same_case_public_reference_output_missing")
 
+    acceptance_contract = {
+        "gate_semantics": "fail_closed",
+        "required_threshold_metrics": [
+            "psi_N_RMSE",
+            "current_closure",
+            "magnetic_axis_error",
+            "x_point_error",
+            "boundary_containment",
+            "q_profile_sanity",
+        ],
+        "requires_native_same_case_profile_source": True,
+        "requires_public_external_coil_vacuum_sidecars": True,
+        "requires_grid_convergence_ladder": True,
+        "requires_same_case_public_reference_output": True,
+    }
+    acceptance_matrix = {
+        "same_case_reference_output": external_ready and machine_reference_ready,
+        "native_same_case_profile_source": native_ready,
+        "strict_threshold_metrics": threshold_ready and geometry_ready and boundary_metric_ready,
+        "grid_convergence_ladder": grid_ready,
+        "coil_vacuum_sidecars": sidecar_ready,
+        "machine_metadata": machine_metadata_ready,
+    }
+
     return {
         "schema": "free-boundary-strict-parity-benchmark.v1",
         "benchmark_id": "free_boundary_strict_parity",
@@ -204,6 +228,8 @@ def evaluate_strict_parity(
             "machine_metadata_ready": machine_metadata_ready,
             "same_case_public_reference_output_ready": machine_reference_ready,
         },
+        "acceptance_contract": acceptance_contract,
+        "acceptance_matrix": acceptance_matrix,
         "blockers": blockers,
         "case_count": int(freegs_report.get("case_count", 0)),
         "failed_threshold_check_count": int(strict.get("failed_threshold_check_count", 0)),
@@ -248,6 +274,17 @@ def render_markdown(report: dict[str, Any]) -> str:
         "| --- | ---: |",
     ]
     for key, value in report["checks"].items():
+        lines.append(f"| `{key}` | `{value}` |")
+    lines.extend(
+        [
+            "",
+            "## Acceptance matrix",
+            "",
+            "| Requirement | Ready |",
+            "| --- | ---: |",
+        ]
+    )
+    for key, value in report["acceptance_matrix"].items():
         lines.append(f"| `{key}` | `{value}` |")
     lines.extend(["", "## Blockers", ""])
     if report["blockers"]:

@@ -10,6 +10,21 @@
 
 ## [Unreleased]
 
+- Added an explicit vertical-control replay release-gate object that accepts
+  only the reduced-order RZIP replay claim and keeps full PCS production-grade
+  readiness false.
+
+- Added a Lean 4 PID bounded-output proof for the normalized saturated actuator
+  magnitude.
+
+- Added a fail-closed GPU Phase 1 readiness gate for the Rust/wgpu SOR
+  implementation surfaces while blocking production scaling claims until a
+  tracked GPU benchmark artifact exists.
+
+- Added a free-boundary strict acceptance matrix that exposes same-case
+  reference, native profile-source, threshold, grid-convergence, coil/vacuum
+  sidecar, and machine-metadata readiness separately.
+
 ## [3.9.6] - 2026-06-01
 
 - Added local large-grid CPU evidence to the production-decomposition benchmark, measuring `9,437,184` 5D phase cells over `24` local rank tiles while keeping MPI/multi-GPU production-scale readiness fail-closed.

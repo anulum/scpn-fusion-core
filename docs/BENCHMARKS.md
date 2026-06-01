@@ -837,7 +837,7 @@ sensitive to missing control action.
 | Actuator bounds | Commands are clipped after controller output and must respect amplitude and slew limits | same |
 | Post-disturbance relaxation | Primary controllers must reduce vertical displacement after the disturbance window ends | same |
 | Fault and saturation paths | High-growth and low-actuator uncertainty cases must remain bounded and deterministic; a `no_control` lane remains diagnostic-only and must fail acceptance | same |
-| Multi-profile replay | ITER-like, DIII-D-like, and compact-tokamak reduced-order plant profiles must pass | `python validation/vertical_control_replay_benchmark.py --all-profiles --strict` |
+| Multi-profile replay | ITER-like, DIII-D-like, and compact-tokamak reduced-order plant profiles must pass and emit `accepted_reduced_order_replay_release_gate` | `python validation/vertical_control_replay_benchmark.py --all-profiles --strict` |
 | Uncertainty envelope | Growth, damping, actuator, sensor-bias, and one-step latency perturbations are replayed | same |
 
 ### Vertical-Control Replay Release Gate
@@ -852,11 +852,40 @@ recorded in the latest strict run:
 - uncertainty envelope checks (`passes_thresholds == true`, `all_profiles_pass == true`)
 - explicit saturation/fault semantics (`no_control` remains diagnostic-only and fails acceptance)
 - CI provenance gate in `.github/workflows/ci.yml` `benchmark-provenance-smoke`
-- report review of generated Markdown artifacts under `artifacts/vertical_control_replay_benchmark.md` and `artifacts/vertical_control_replay_profiles.md`
+- report review of generated Markdown artifacts under `validation/reports/vertical_control_replay_benchmark.md` and `validation/reports/vertical_control_replay_profiles.md`
 
-Until all items above are green in CI, the lane remains a deterministic
-reduced-order replay scaffold and is not presented as a full PCS production
-control claim.
+The latest profile-suite JSON now includes an explicit `release_gate` object.
+When it reports `accepted_reduced_order_replay_release_gate`, the accepted claim
+is still limited to deterministic reduced-order RZIP replay. The JSON also
+keeps `full_pcs_production_grade_ready == false`; this lane is not a full PCS
+production-control claim.
+
+### GPU Phase 1 Readiness Gate
+
+The GPU Phase 1 gate verifies the Rust/wgpu SOR implementation surfaces and
+then blocks until a tracked hardware benchmark artifact is available:
+
+```bash
+python validation/benchmark_gpu_phase1_readiness.py
+```
+
+The gate reports static implementation readiness separately from
+`production_scaling_ready`, which remains `false` until current GPU benchmark
+artifacts include device metadata, solver identity, and output checksums.
+
+### Free-boundary Strict Acceptance Matrix
+
+The strict free-boundary gate now emits both an acceptance contract and an
+acceptance matrix:
+
+```bash
+python validation/benchmark_free_boundary_strict_parity.py
+```
+
+The gate accepts only when same-case public reference output, native
+profile-source comparison, strict threshold metrics, grid convergence,
+coil/vacuum sidecars, and machine metadata are all present. Missing rows remain
+blocked rather than inferred.
 
 ### Equilibrium Solver Convergence
 

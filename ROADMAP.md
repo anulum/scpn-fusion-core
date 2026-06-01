@@ -41,8 +41,9 @@ These items are public-facing work queues, not acceptance claims:
 |---|---|
 | README, changelog, and roadmap consistency | Keep public docs aligned with fail-closed full-fidelity reports and recent FreeGS/DREAM/Aurora/GK hardening commits. |
 | Benchmark reproducibility | Publish exact local commands, hardware metadata expectations, and blocked-row semantics for full-fidelity reports. |
-| Formal verification | Extend the committed Lean 4 safety surface to PID bounded-output and Petri-net-to-SNN reachability preservation. |
+| Formal verification | Extend the committed Lean 4 safety surface beyond validation-error propagation; PID bounded-output is now proved, Petri-net-to-SNN reachability preservation remains open. |
 | CI hygiene | Keep benchmark/provenance checks fail-closed and avoid converting blocked production-parity rows into passes. |
+| GPU Phase 1 | Keep Rust/wgpu SOR surfaces behind a fail-closed readiness gate until tracked hardware benchmark artifacts exist. |
 | Dataset and release hygiene | Preserve provenance, checksums, redistribution status, and quantitative thresholds for every accepted reference artefact. |
 | FPGA and control replay | Add deterministic replay evidence before claiming bit-for-bit FPGA/control equivalence. |
 | Public documentation hygiene | Keep local-only planning, readiness queues, and workflow-control notes out of public docs. |
@@ -123,7 +124,7 @@ larger safety-evidence story without overstating the current proof boundary.
 | This week | Add dedicated Formal Verification section to README | Make the current Lean safety proof visible from the main entry point | Done |
 | This week | Publish blog post draft: First Machine-Checkable Safety Proof for a Tokamak Plasma Solver | Prepare public narrative around the first proof boundary | Drafted in `docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md` |
 | This week | Post to Lean Prover Zulip, Hacker News, and r/fusion | Recruit formal-methods and fusion collaborators | Pending explicit publication approval |
-| Next week | Prove PID bounded-output property in Lean | Expand the proof surface to actuator safety | Planned |
+| Next week | Prove PID bounded-output property in Lean | Expand the proof surface to actuator safety | Done |
 | Next week | Prove SNN compiler preserves Petri-net reachability contract | Expand the proof surface to neuro-symbolic compilation | Planned |
 | This month | Prepare paper submission package for Nuclear Fusion or IEEE TPS | Convert proof and validation evidence into academic review material | Planned |
 | Next month | Recruit co-maintainer through the formal-methods community | Add proof-maintenance capacity | Planned |

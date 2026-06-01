@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from validation.benchmark_free_boundary_strict_parity import (
     evaluate_strict_parity,
@@ -11,7 +12,7 @@ from validation.benchmark_free_boundary_strict_parity import (
 )
 
 
-def _passing_freegs_report() -> dict:
+def _passing_freegs_report() -> dict[str, Any]:
     return {
         "case_count": 1,
         "external_nonlinear_output_ready": True,
@@ -62,7 +63,7 @@ def _passing_freegs_report() -> dict:
     }
 
 
-def _passing_machine_metadata_report() -> dict:
+def _passing_machine_metadata_report() -> dict[str, Any]:
     return {
         "machine_metadata_ready": True,
         "machine_config_count": 1,
@@ -97,6 +98,8 @@ def test_strict_parity_accepts_only_complete_contract() -> None:
     assert report["blockers"] == []
     assert report["checks"]["coil_vacuum_sidecar_ready"] is True
     assert report["checks"]["grid_convergence_ready"] is True
+    assert report["acceptance_matrix"]["strict_threshold_metrics"] is True
+    assert report["acceptance_contract"]["gate_semantics"] == "fail_closed"
 
 
 def test_strict_parity_markdown_exposes_blockers() -> None:
@@ -119,3 +122,4 @@ def test_strict_parity_markdown_exposes_blockers() -> None:
 
     assert "public_external_coil_vacuum_sidecars_missing" in markdown
     assert "Accepted full fidelity: `False`" in markdown
+    assert "## Acceptance matrix" in markdown

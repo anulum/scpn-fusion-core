@@ -1,4 +1,27 @@
 {
+  "acceptance_contract": {
+    "gate_semantics": "fail_closed",
+    "required_threshold_metrics": [
+      "psi_N_RMSE",
+      "current_closure",
+      "magnetic_axis_error",
+      "x_point_error",
+      "boundary_containment",
+      "q_profile_sanity"
+    ],
+    "requires_grid_convergence_ladder": true,
+    "requires_native_same_case_profile_source": true,
+    "requires_public_external_coil_vacuum_sidecars": true,
+    "requires_same_case_public_reference_output": true
+  },
+  "acceptance_matrix": {
+    "coil_vacuum_sidecars": false,
+    "grid_convergence_ladder": false,
+    "machine_metadata": true,
+    "native_same_case_profile_source": true,
+    "same_case_reference_output": false,
+    "strict_threshold_metrics": false
+  },
   "accepted_full_fidelity": false,
   "benchmark_id": "free_boundary_strict_parity",
   "benchmark_scope": "free_boundary_full_fidelity_acceptance",

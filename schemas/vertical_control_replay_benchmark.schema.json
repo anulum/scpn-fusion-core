@@ -27,6 +27,7 @@
         "trace_integrity",
         "uncertainty_report",
         "provenance",
+        "release_gate",
         "passes_thresholds"
       ],
       "properties": {
@@ -330,6 +331,7 @@
             "actuator_limits_checksum_sha256": {"$ref": "#/$defs/sha256"}
           }
         },
+        "release_gate": {"$ref": "#/$defs/release_gate"},
         "passes_thresholds": {"type": "boolean"}
       }
     }
@@ -468,6 +470,58 @@
         "case_id": {"type": "string", "minLength": 1},
         "max_abs_z_m": {"type": "number", "minimum": 0.0},
         "p95_abs_z_m": {"type": "number", "minimum": 0.0}
+      }
+    },
+    "release_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate_id",
+        "claim_boundary",
+        "status",
+        "single_profile_contract_ready",
+        "reduced_order_release_gate_ready",
+        "full_pcs_production_grade_ready",
+        "checks",
+        "blockers"
+      ],
+      "properties": {
+        "gate_id": {"const": "vertical_control_replay_release_gate"},
+        "claim_boundary": {"const": "deterministic_reduced_order_RZIP_replay_not_full_PCS"},
+        "status": {"type": "string", "minLength": 1},
+        "single_profile_contract_ready": {"type": "boolean"},
+        "reduced_order_release_gate_ready": {"type": "boolean"},
+        "full_pcs_production_grade_ready": {"const": false},
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "single_profile_thresholds_ready",
+            "deterministic_replay_ready",
+            "fairness_ready",
+            "primary_controllers_ready",
+            "uncertainty_envelope_ready",
+            "actuator_saturation_contract_ready",
+            "fault_diagnostic_lane_ready",
+            "deterministic_trace_checksums_ready",
+            "multi_profile_replay_ready"
+          ],
+          "properties": {
+            "single_profile_thresholds_ready": {"type": "boolean"},
+            "deterministic_replay_ready": {"type": "boolean"},
+            "fairness_ready": {"type": "boolean"},
+            "primary_controllers_ready": {"type": "boolean"},
+            "uncertainty_envelope_ready": {"type": "boolean"},
+            "actuator_saturation_contract_ready": {"type": "boolean"},
+            "fault_diagnostic_lane_ready": {"type": "boolean"},
+            "deterministic_trace_checksums_ready": {"type": "boolean"},
+            "multi_profile_replay_ready": {"const": false}
+          }
+        },
+        "blockers": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
       }
     }
   },

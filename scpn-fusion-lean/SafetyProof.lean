@@ -23,6 +23,8 @@ theorem solveGradShafranov_rejects_validation_error
     (c : GradShafranovCase) (err : String)
     (h : validateCase c = Except.error err) :
     solveGradShafranov c = Except.error err := by
-  simp [solveGradShafranov, h]
+  unfold solveGradShafranov
+  rw [h]
+  rfl
 
 end SCPNFusionSolvers
