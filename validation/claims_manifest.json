@@ -240,7 +240,7 @@
     {
       "id": "readme_runaway_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance, 1D momentum Fokker-Planck, and multidimensional artifact-export contract; no public DREAM kinetic-distribution parity",
+      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, and fail-closed kinetic-operator evidence; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity",
       "evidence_files": [
         "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
@@ -277,7 +277,7 @@
     {
       "id": "readme_impurity_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Impurity transport \\(neoclassical\\) \\| Trace radial transport with source conservation, neoclassical pinch, and charge-state artifact/source-sink contract; no public Aurora/STRAHL collisional-operator parity",
+      "source_pattern": "Impurity transport \\(neoclassical\\) \\| Trace radial transport with source conservation, neoclassical pinch, charge-state artifact/source-sink contract, and fail-closed native transport evidence; no public Aurora/STRAHL collisional-operator parity or same-case transport thresholds",
       "evidence_files": [
         "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
