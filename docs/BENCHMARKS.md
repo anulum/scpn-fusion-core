@@ -36,6 +36,14 @@ Published reports must retain blocker statuses when external artefacts are
 missing. Do not substitute synthetic, reduced-order, or partial diagnostic
 outputs for accepted full-fidelity parity evidence.
 
+Distributed production-decomposition measurements can be supplied to
+`validation/benchmark_production_decomposition_contract.py` with
+`SCPN_PRODUCTION_DECOMPOSITION_DISTRIBUTED_RUNS_JSON=/path/to/runs.json`. The
+sidecar must be a JSON list whose rows include rank count, wall time, parallel
+and weak-scaling efficiencies, owned phase cells per rank, halo bytes per step,
+decomposition-invariant pass status, hardware metadata, command, and artifact
+checksum. Missing or incomplete rows remain blocked.
+
 ## UpCloud L4 Native Solver Benchmark Bundle (2026-05-25)
 
 Fresh GPU-host run:

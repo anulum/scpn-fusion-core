@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added JSON sidecar ingestion for future production-decomposition distributed
+  runtime measurements while keeping incomplete rows blocked by the acceptance
+  manifest.
+
 - Added a fail-closed production-decomposition distributed-run acceptance
   manifest with required measurement fields, rank coverage, efficiency gates,
   hardware metadata, and checksum requirements.

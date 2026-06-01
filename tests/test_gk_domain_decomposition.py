@@ -9,6 +9,9 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 from numpy.typing import NDArray
@@ -21,7 +24,11 @@ from scpn_fusion.core.gk_domain_decomposition import (
     reconstruct_owned_phase_state,
     serial_halo_exchange,
 )
-from validation.benchmark_production_decomposition_contract import run_benchmark, write_reports
+from validation.benchmark_production_decomposition_contract import (
+    DISTRIBUTED_RUNS_ENV,
+    run_benchmark,
+    write_reports,
+)
 
 
 def test_radial_toroidal_decomposition_covers_domain_once() -> None:
@@ -166,6 +173,35 @@ def test_local_decomposed_phase_execution_matches_monolithic_reductions() -> Non
     assert result.parallel_moment_relative_error <= 1.0e-12
     np.testing.assert_allclose(result.local_inventory, float(np.sum(state)))
     np.testing.assert_allclose(result.local_free_energy, float(np.sum(state * state)))
+
+
+def test_production_decomposition_distributed_sidecar_is_schema_checked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sidecar = tmp_path / "distributed_runs.json"
+    sidecar.write_text(
+        json.dumps(
+            [
+                {
+                    "rank_count": 1,
+                    "wall_time_s": 1.0,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv(DISTRIBUTED_RUNS_ENV, str(sidecar))
+
+    report = run_benchmark()
+    manifest = report["distributed_run_acceptance_manifest"]
+
+    assert manifest["status"] == "blocked_incomplete_distributed_measurement_rows"
+    assert manifest["candidate_run_count"] == 1
+    assert manifest["accepted_run_count"] == 0
+    assert manifest["distributed_run_acceptance_ready"] is False
+    assert manifest["candidate_rows"][0]["rank_count"] == 1
+    assert "parallel_efficiency" in manifest["candidate_rows"][0]["missing_fields"]
+    assert "artifact_sha256" in manifest["candidate_rows"][0]["missing_fields"]
 
 
 def test_production_decomposition_contract_is_fail_closed() -> None:

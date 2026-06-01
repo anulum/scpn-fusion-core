@@ -39,6 +39,7 @@ MD_REPORT = REPORT_DIR / "production_decomposition_contract.md"
 RELATIVE_REDUCTION_TOLERANCE = 1.0e-12
 RECONSTRUCTION_LINF_TOLERANCE = 0.0
 FLOAT64_BYTES = 8
+DISTRIBUTED_RUNS_ENV = "SCPN_PRODUCTION_DECOMPOSITION_DISTRIBUTED_RUNS_JSON"
 REQUIRED_DISTRIBUTED_RANK_COUNTS = [1, 2, 4, 8, 16, 32]
 MINIMUM_PARALLEL_EFFICIENCY = 0.70
 MINIMUM_WEAK_SCALING_EFFICIENCY = 0.80
@@ -443,8 +444,10 @@ def _reciprocal_neighbour_graph_evidence(
 
 def _distributed_scaling_gate_evidence(
     communication_volume_evidence: dict[str, Any],
+    measured_runs: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Return fail-closed distributed runtime scaling acceptance evidence."""
+    distributed_runs = [] if measured_runs is None else measured_runs
     estimated_halo_bytes = int(
         communication_volume_evidence["total_halo_exchange_bytes_per_step"]
     )
@@ -455,8 +458,8 @@ def _distributed_scaling_gate_evidence(
         ),
         "distributed_scaling_ready": False,
         "estimated_halo_bytes_per_step": estimated_halo_bytes,
-        "measured_run_count": 0,
-        "measured_runs": [],
+        "measured_run_count": len(distributed_runs),
+        "measured_runs": distributed_runs,
         "minimum_parallel_efficiency_threshold": MINIMUM_PARALLEL_EFFICIENCY,
         "minimum_weak_scaling_efficiency_threshold": MINIMUM_WEAK_SCALING_EFFICIENCY,
         "required_measurements": [
@@ -470,6 +473,23 @@ def _distributed_scaling_gate_evidence(
         "schema": "production-decomposition-distributed-scaling-gate.v1",
         "status": "blocked_missing_distributed_scaling_measurements",
     }
+
+
+def _load_distributed_measurement_rows() -> list[dict[str, Any]]:
+    """Load optional distributed runtime measurement rows from a JSON sidecar."""
+    sidecar = os.environ.get(DISTRIBUTED_RUNS_ENV)
+    if not sidecar:
+        return []
+    path = Path(sidecar)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise TypeError(f"{DISTRIBUTED_RUNS_ENV} must point to a JSON list")
+    rows: list[dict[str, Any]] = []
+    for index, row in enumerate(payload):
+        if not isinstance(row, dict):
+            raise TypeError(f"distributed measurement row {index} must be a dictionary")
+        rows.append(dict(row))
+    return rows
 
 
 def _distributed_run_acceptance_manifest(
@@ -584,11 +604,13 @@ def run_benchmark() -> dict[str, Any]:
     communication_volume_evidence = _communication_volume_evidence(
         production_plan, communication_contract_rows
     )
+    distributed_measurement_rows = _load_distributed_measurement_rows()
     reciprocal_neighbour_graph_evidence = _reciprocal_neighbour_graph_evidence(
         production_plan, communication_contract_rows
     )
     distributed_scaling_gate_evidence = _distributed_scaling_gate_evidence(
-        communication_volume_evidence
+        communication_volume_evidence,
+        distributed_measurement_rows,
     )
     distributed_run_acceptance_manifest = _distributed_run_acceptance_manifest(
         distributed_scaling_gate_evidence
