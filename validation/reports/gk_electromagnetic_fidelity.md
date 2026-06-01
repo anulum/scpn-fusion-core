@@ -128,6 +128,9 @@ Required inputs:
 - `J_parallel(kx, ky, t)`
 - `rho_charge(kx, ky, t)`
 - `continuity_residual(kx, ky, t)`
+- `dE_parallel_dt(kx, ky, t)`
+- `sourced_faraday_residual(kx, ky, t)`
+- `field_particle_energy_balance_residual(t)`
 
 Readiness criteria:
 - J_parallel(kx, ky, t) derived from the evolved 5D distribution
@@ -136,6 +139,23 @@ Readiness criteria:
 - sourced Faraday residual history
 - sourced electromagnetic energy exchange diagnostic
 - same-case native threshold rows for sourced fields
+
+Sourced field-evolution contract:
+- Schema: `gk-sourced-field-evolution-contract.v1`
+- Status: `blocked_missing_self_consistent_sourced_field_evolution`
+- Ready: `False`
+
+| Equation id | Implemented | Required history | Status |
+|---|:---:|---|---|
+| sourced_parallel_ampere_maxwell | `False` | `curl_B_minus_mu0_J_parallel_minus_mu0_epsilon0_dE_parallel_dt(kx, ky, t)` | blocked_missing_self_consistent_sourced_A_parallel_evolution |
+| sourced_faraday_induction | `False` | `curl_E_plus_dB_dt(kx, ky, t)` | blocked_missing_self_consistent_sourced_B_parallel_evolution |
+| parallel_field_particle_energy_balance | `False` | `d_field_energy_dt_plus_J_parallel_E_parallel(t)` | blocked_missing_self_consistent_field_energy_exchange_closure |
+
+Blocking sourced-field terms:
+- `self_consistent_dE_parallel_dt_from_sourced_A_parallel_phi`
+- `curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt_history`
+- `sourced_faraday_curl_E_plus_dB_dt_history`
+- `field_particle_energy_balance_residual_history`
 
 ## External EM parity evidence
 

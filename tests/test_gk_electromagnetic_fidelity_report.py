@@ -144,10 +144,28 @@ def test_gk_electromagnetic_fidelity_report_records_sourced_maxwell_future_contr
     assert contract["self_consistent_sourced_field_evolution_ready"] is False
     assert "J_parallel(kx, ky, t)" in contract["required_inputs"]
     assert "rho_charge(kx, ky, t)" in contract["required_inputs"]
+    assert "dE_parallel_dt(kx, ky, t)" in contract["required_inputs"]
     assert (
         "J_parallel(kx, ky, t) derived from the evolved 5D distribution"
         in contract["readiness_criteria"]
     )
+    field_contract = contract["sourced_field_evolution_contract"]
+    assert field_contract["schema"] == "gk-sourced-field-evolution-contract.v1"
+    assert field_contract["ready"] is False
+    assert field_contract["status"] == "blocked_missing_self_consistent_sourced_field_evolution"
+    assert field_contract["blocking_terms"] == [
+        "self_consistent_dE_parallel_dt_from_sourced_A_parallel_phi",
+        "curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt_history",
+        "sourced_faraday_curl_E_plus_dB_dt_history",
+        "field_particle_energy_balance_residual_history",
+    ]
+    equation_rows = {row["equation_id"]: row for row in field_contract["equation_rows"]}
+    assert set(equation_rows) == {
+        "parallel_field_particle_energy_balance",
+        "sourced_faraday_induction",
+        "sourced_parallel_ampere_maxwell",
+    }
+    assert not any(row["implemented_by_native_solver"] for row in equation_rows.values())
 
 
 def test_gk_electromagnetic_fidelity_report_extracts_time_resolved_current_moments() -> None:

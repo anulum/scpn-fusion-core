@@ -1132,7 +1132,7 @@ histories through `validation/reports/gk_electromagnetic_fidelity.md`; these
 prove internal algebraic-closure consistency and are gated separately from the
 local source-free Maxwell evolution evidence. The report includes a
 machine-readable Maxwell equation contract, explicit electromagnetic evidence-gate
-matrix, blocked sourced-Maxwell contract, time-resolved 5D current/charge moment histories, spectral continuity-proxy evidence, and native J_parallel E_parallel exchange diagnostics while self-consistent sourced field coupling remains blocked,
+matrix, blocked sourced-Maxwell contract, time-resolved 5D current/charge moment histories, spectral continuity-proxy evidence, and native J_parallel E_parallel exchange diagnostics, and explicit sourced-field evolution blockers for dE_parallel/dt, sourced Faraday, sourced Ampere-Maxwell, and field-particle energy balance while self-consistent sourced field coupling remains blocked,
 and native source-free spectral Faraday, Ampere-Maxwell displacement-current,
 inductive parallel electric-field
 evolution, and perpendicular magnetic-divergence diagnostics. Full

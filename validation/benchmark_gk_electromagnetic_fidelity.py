@@ -210,6 +210,37 @@ def _sourced_maxwell_contract(current_moment_evidence: dict[str, Any]) -> dict[s
     continuity_ready = bool(current_moment_evidence.get("continuity_residual_history_ready", False))
     self_consistent_field_ready = bool(current_moment_evidence.get("self_consistent_sourced_field_evolution_ready", False))
     field_particle_exchange_ready = bool(current_moment_evidence.get("field_particle_exchange_ready", False))
+    sourced_field_evolution_contract = {
+        "blocking_terms": [
+            "self_consistent_dE_parallel_dt_from_sourced_A_parallel_phi",
+            "curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt_history",
+            "sourced_faraday_curl_E_plus_dB_dt_history",
+            "field_particle_energy_balance_residual_history",
+        ],
+        "equation_rows": [
+            {
+                "equation_id": "sourced_parallel_ampere_maxwell",
+                "implemented_by_native_solver": False,
+                "required_history": "curl_B_minus_mu0_J_parallel_minus_mu0_epsilon0_dE_parallel_dt(kx, ky, t)",
+                "status": "blocked_missing_self_consistent_sourced_A_parallel_evolution",
+            },
+            {
+                "equation_id": "sourced_faraday_induction",
+                "implemented_by_native_solver": False,
+                "required_history": "curl_E_plus_dB_dt(kx, ky, t)",
+                "status": "blocked_missing_self_consistent_sourced_B_parallel_evolution",
+            },
+            {
+                "equation_id": "parallel_field_particle_energy_balance",
+                "implemented_by_native_solver": False,
+                "required_history": "d_field_energy_dt_plus_J_parallel_E_parallel(t)",
+                "status": "blocked_missing_self_consistent_field_energy_exchange_closure",
+            },
+        ],
+        "ready": self_consistent_field_ready,
+        "schema": "gk-sourced-field-evolution-contract.v1",
+        "status": "blocked_missing_self_consistent_sourced_field_evolution",
+    }
     return {
         "current_status": "blocked_pending_5d_kinetic_current_continuity_closure",
         "current_moment_ready": current_moment_ready,
@@ -232,9 +263,13 @@ def _sourced_maxwell_contract(current_moment_evidence: dict[str, Any]) -> dict[s
             "J_parallel(kx, ky, t)",
             "rho_charge(kx, ky, t)",
             "continuity_residual(kx, ky, t)",
+            "dE_parallel_dt(kx, ky, t)",
+            "sourced_faraday_residual(kx, ky, t)",
+            "field_particle_energy_balance_residual(t)",
         ],
         "schema": "gk-sourced-maxwell-contract.v1",
         "sourced_maxwell_ready": False,
+        "sourced_field_evolution_contract": sourced_field_evolution_contract,
         "status": "blocked_sourced_maxwell_requires_self_consistent_field_coupling",
     }
 
@@ -1212,6 +1247,32 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
     lines.append("Readiness criteria:")
     for item in sourced_contract["readiness_criteria"]:
         lines.append(f"- {item}")
+    field_contract = sourced_contract["sourced_field_evolution_contract"]
+    lines.extend(
+        [
+            "",
+            "Sourced field-evolution contract:",
+            f"- Schema: `{field_contract['schema']}`",
+            f"- Status: `{field_contract['status']}`",
+            f"- Ready: `{field_contract['ready']}`",
+            "",
+            "| Equation id | Implemented | Required history | Status |",
+            "|---|:---:|---|---|",
+        ]
+    )
+    for row in field_contract["equation_rows"]:
+        lines.append(
+            "| {equation_id} | `{implemented}` | `{history}` | {status} |".format(
+                equation_id=row["equation_id"],
+                history=row["required_history"],
+                implemented=row["implemented_by_native_solver"],
+                status=row["status"],
+            )
+        )
+    lines.append("")
+    lines.append("Blocking sourced-field terms:")
+    for item in field_contract["blocking_terms"]:
+        lines.append(f"- `{item}`")
     external_evidence = report["external_em_parity_evidence"]
     lines.extend(
         [

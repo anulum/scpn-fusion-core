@@ -569,10 +569,44 @@
       "B_parallel(kx, ky, t)",
       "J_parallel(kx, ky, t)",
       "rho_charge(kx, ky, t)",
-      "continuity_residual(kx, ky, t)"
+      "continuity_residual(kx, ky, t)",
+      "dE_parallel_dt(kx, ky, t)",
+      "sourced_faraday_residual(kx, ky, t)",
+      "field_particle_energy_balance_residual(t)"
     ],
     "schema": "gk-sourced-maxwell-contract.v1",
     "self_consistent_sourced_field_evolution_ready": false,
+    "sourced_field_evolution_contract": {
+      "blocking_terms": [
+        "self_consistent_dE_parallel_dt_from_sourced_A_parallel_phi",
+        "curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt_history",
+        "sourced_faraday_curl_E_plus_dB_dt_history",
+        "field_particle_energy_balance_residual_history"
+      ],
+      "equation_rows": [
+        {
+          "equation_id": "sourced_parallel_ampere_maxwell",
+          "implemented_by_native_solver": false,
+          "required_history": "curl_B_minus_mu0_J_parallel_minus_mu0_epsilon0_dE_parallel_dt(kx, ky, t)",
+          "status": "blocked_missing_self_consistent_sourced_A_parallel_evolution"
+        },
+        {
+          "equation_id": "sourced_faraday_induction",
+          "implemented_by_native_solver": false,
+          "required_history": "curl_E_plus_dB_dt(kx, ky, t)",
+          "status": "blocked_missing_self_consistent_sourced_B_parallel_evolution"
+        },
+        {
+          "equation_id": "parallel_field_particle_energy_balance",
+          "implemented_by_native_solver": false,
+          "required_history": "d_field_energy_dt_plus_J_parallel_E_parallel(t)",
+          "status": "blocked_missing_self_consistent_field_energy_exchange_closure"
+        }
+      ],
+      "ready": false,
+      "schema": "gk-sourced-field-evolution-contract.v1",
+      "status": "blocked_missing_self_consistent_sourced_field_evolution"
+    },
     "sourced_maxwell_ready": false,
     "status": "blocked_sourced_maxwell_requires_self_consistent_field_coupling"
   },
