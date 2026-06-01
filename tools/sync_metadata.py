@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Metadata Synchronization Utility
@@ -163,10 +161,10 @@ def sync(*, check_only: bool = False) -> int:
         )
     )
 
-    # 3d. docs/internal/RELEASE_READINESS.md
+    # 3d. docs/RELEASE_READINESS.md
     changed_count += int(
         update_file(
-            REPO_ROOT / "docs" / "internal" / "RELEASE_READINESS.md",
+            REPO_ROOT / "docs" / "RELEASE_READINESS.md",
             r"Release Version: `v\d+\.\d+\.\d+`",
             f"Release Version: `v{version}`",
             check_only=check_only,
@@ -263,7 +261,7 @@ def sync(*, check_only: bool = False) -> int:
     )
     changed_count += int(
         update_file(
-            REPO_ROOT / "docs" / "internal" / "RELEASE_READINESS.md",
+            REPO_ROOT / "docs" / "RELEASE_READINESS.md",
             r"v\d+\.\d+\.\d+ Release Acceptance",
             f"v{version} Release Acceptance",
             check_only=check_only,

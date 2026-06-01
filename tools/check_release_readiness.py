@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Validate docs/internal/RELEASE_READINESS.md readiness."""
+"""Validate docs/RELEASE_READINESS.md readiness."""
 
 from __future__ import annotations
 
@@ -15,7 +13,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_READINESS_FILE = REPO_ROOT / "docs" / "internal" / "RELEASE_READINESS.md"
+DEFAULT_READINESS_FILE = REPO_ROOT / "docs" / "RELEASE_READINESS.md"
 
 REQUIRED_ITEMS = (
     "Release preflight (`python tools/run_python_preflight.py --gate release`)",

@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Compose and execute release/research preflight command sequences."""
@@ -31,7 +29,7 @@ _INTERNAL_READINESS_DOCS_CLAIMS = (
 _INTERNAL_READINESS_SUMMARY = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_SUMMARY.json"
 _SOURCE_P0P1_READINESS_MD = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_READINESS.md"
 _SOURCE_P0P1_READINESS_JSON = REPO_ROOT / "docs" / "internal" / "SOURCE_P0P1_READINESS.json"
-_RELEASE_READINESS = REPO_ROOT / "docs" / "internal" / "RELEASE_READINESS.md"
+_RELEASE_READINESS = REPO_ROOT / "docs" / "RELEASE_READINESS.md"
 
 
 def _module_available(module_name: str) -> bool:
