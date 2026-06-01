@@ -277,6 +277,8 @@
   ],
   "partial_public_output_artifacts": 3,
   "production_decomposition_contract_pass": true,
+  "production_decomposition_distributed_halo_exchange_ready": false,
+  "production_decomposition_halo_face_integrity_ready": true,
   "production_decomposition_report": "validation/reports/production_decomposition_contract.json",
   "production_decomposition_status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling",
   "production_scale_ready": false,

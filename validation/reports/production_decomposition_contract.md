@@ -6,6 +6,7 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Status: `blocked_local_decomposition_ready_missing_distributed_runtime_scaling`
 - Contract pass: `True`
 - Communication contract ready: `True`
+- Halo-face integrity pass: `True`
 - Local decomposed execution pass: `True`
 - Halo exchange pass: `True`
 - Decomposition invariant pass: `True`
@@ -18,6 +19,38 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 |---|---:|---:|---:|---:|---:|
 | medium_64x32_4x2 | 64 x 32 | 4 x 2 | 8 | 1.000000 | 1.162109 |
 | production_256x128_8x4 | 256 x 128 | 8 x 4 | 32 | 1.000000 | 1.104126 |
+
+## Local serial halo-face integrity
+
+- Schema: `production-decomposition-halo-face-integrity.v1`
+- Status: `accepted_local_serial_halo_face_integrity`
+- Case: `local_cpu_64x32_4x2`
+- Checked faces: `20`
+- Max halo-face L_inf error: `0.000000e+00`
+- Distributed runtime halo exchange ready: `False`
+
+| Rank | Face | Neighbour | Shape | L_inf | Pass |
+|---:|---|---:|---|---:|:---:|
+| 0 | radial_upper | 2 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 0 | toroidal_upper | 1 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 1 | radial_upper | 3 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 1 | toroidal_lower | 0 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 2 | radial_lower | 0 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 2 | radial_upper | 4 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 2 | toroidal_upper | 3 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 3 | radial_lower | 1 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 3 | radial_upper | 5 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 3 | toroidal_lower | 2 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 4 | radial_lower | 2 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 4 | radial_upper | 6 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 4 | toroidal_upper | 5 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 5 | radial_lower | 3 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 5 | radial_upper | 7 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 5 | toroidal_lower | 4 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 6 | radial_lower | 4 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 6 | toroidal_upper | 7 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 7 | radial_lower | 5 | `[1, 16, 8, 8, 4]` | 0.000000e+00 | `True` |
+| 7 | toroidal_lower | 6 | `[16, 1, 8, 8, 4]` | 0.000000e+00 | `True` |
 
 ## Rank communication contract
 
@@ -60,9 +93,9 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 9.549962e-02 | 5.489948e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 1.017402e-01 | 5.153205e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 7.560688e-02 | 6.934395e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 2.665777e-01 | 1.966736e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 1.288339e-01 | 4.069487e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 3.004468e-01 | 1.745028e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -76,9 +109,9 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 | Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Reconstruction L_inf | Pass |
 |---|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 5.489948e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 5.153205e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 6.934395e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | `True` |
+| local_cpu_64x32_4x2 | 8 | 524288 | 1.966736e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 4.069487e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 1.745028e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 

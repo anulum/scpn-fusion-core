@@ -29,6 +29,7 @@ from scpn_fusion.core.gk_domain_decomposition import (  # noqa: E402
     build_radial_toroidal_decomposition,
     local_decomposed_phase_execution,
     rank_tile_communication_contract,
+    serial_halo_exchange,
 )
 
 REPORT_DIR = ROOT / "validation" / "reports"
@@ -167,6 +168,86 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _halo_face_integrity_evidence(case_id: str, plan: GKDomainDecompositionPlan) -> dict[str, Any]:
+    """Return serial halo-face integrity evidence for future distributed exchange."""
+    state = np.arange(plan.total_owned_phase_cells, dtype=np.float64).reshape(
+        plan.n_radial,
+        plan.n_toroidal,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+    local_tiles = serial_halo_exchange(plan, state)
+    communication_by_rank = {
+        int(row["rank"]): row for row in rank_tile_communication_contract(plan)
+    }
+    face_rows: list[dict[str, Any]] = []
+    for local in local_tiles:
+        tile = plan.tiles[local.rank]
+        radial_offset = tile.radial.start - tile.radial_with_halo.start
+        toroidal_offset = tile.toroidal.start - tile.toroidal_with_halo.start
+        face_slices = {
+            "radial_lower": (
+                slice(0, radial_offset),
+                slice(toroidal_offset, toroidal_offset + tile.toroidal.size),
+                slice(tile.radial_with_halo.start, tile.radial.start),
+                slice(tile.toroidal.start, tile.toroidal.stop),
+            ),
+            "radial_upper": (
+                slice(tile.radial.stop - tile.radial_with_halo.start, None),
+                slice(toroidal_offset, toroidal_offset + tile.toroidal.size),
+                slice(tile.radial.stop, tile.radial_with_halo.stop),
+                slice(tile.toroidal.start, tile.toroidal.stop),
+            ),
+            "toroidal_lower": (
+                slice(radial_offset, radial_offset + tile.radial.size),
+                slice(0, toroidal_offset),
+                slice(tile.radial.start, tile.radial.stop),
+                slice(tile.toroidal_with_halo.start, tile.toroidal.start),
+            ),
+            "toroidal_upper": (
+                slice(radial_offset, radial_offset + tile.radial.size),
+                slice(tile.toroidal.stop - tile.toroidal_with_halo.start, None),
+                slice(tile.radial.start, tile.radial.stop),
+                slice(tile.toroidal.stop, tile.toroidal_with_halo.stop),
+            ),
+        }
+        neighbours = communication_by_rank[local.rank]["neighbour_ranks"]
+        for face, (local_r, local_t, global_r, global_t) in face_slices.items():
+            if neighbours[face] is None:
+                continue
+            actual = local.with_halo[local_r, local_t, :, :, :]
+            expected = state[global_r, global_t, :, :, :]
+            linf_error = float(np.max(np.abs(actual - expected)))
+            face_rows.append(
+                {
+                    "case_id": case_id,
+                    "face": face,
+                    "face_integrity_pass": bool(linf_error == 0.0),
+                    "face_payload_shape": [int(axis) for axis in actual.shape],
+                    "linf_error": linf_error,
+                    "neighbour_rank": neighbours[face],
+                    "rank": local.rank,
+                }
+            )
+    max_linf_error = max(float(row["linf_error"]) for row in face_rows) if face_rows else np.inf
+    halo_face_integrity_pass = bool(
+        face_rows and all(bool(row["face_integrity_pass"]) for row in face_rows)
+    )
+    return {
+        "case_id": case_id,
+        "checked_face_count": len(face_rows),
+        "distributed_runtime_halo_exchange_ready": False,
+        "face_rows": face_rows,
+        "halo_face_integrity_pass": halo_face_integrity_pass,
+        "max_halo_face_linf_error": max_linf_error,
+        "schema": "production-decomposition-halo-face-integrity.v1",
+        "status": "accepted_local_serial_halo_face_integrity"
+        if halo_face_integrity_pass
+        else "blocked_local_serial_halo_face_integrity_failed",
+    }
+
+
 def _hardware_metadata() -> dict[str, Any]:
     return {
         "cpu_count": os.cpu_count(),
@@ -239,6 +320,9 @@ def run_benchmark() -> dict[str, Any]:
         _cpu_benchmark_row("local_cpu_64x32_8x1", local_cpu_shape_variant_plan),
         _cpu_benchmark_row("local_cpu_64x32_2x4", local_cpu_toroidal_variant_plan),
     ]
+    halo_face_integrity_evidence = _halo_face_integrity_evidence(
+        "local_cpu_64x32_4x2", local_cpu_plan
+    )
     same_physics_shape_convergence = _shape_convergence_evidence(cpu_benchmark_rows)
     coverage_pass = all(case["min_owned_cells"] > 0 for case in cases)
     imbalance_pass = all(case["owned_cell_imbalance"] <= 1.05 for case in cases)
@@ -262,6 +346,7 @@ def run_benchmark() -> dict[str, Any]:
         coverage_pass
         and imbalance_pass
         and communication_contract_ready
+        and halo_face_integrity_evidence["halo_face_integrity_pass"]
         and local_decomposed_execution_pass
         and halo_exchange_pass
         and decomposition_invariant_pass
@@ -282,6 +367,7 @@ def run_benchmark() -> dict[str, Any]:
         "coverage_pass": coverage_pass,
         "cpu_benchmark_rows": cpu_benchmark_rows,
         "decomposition_invariant_pass": decomposition_invariant_pass,
+        "halo_face_integrity_evidence": halo_face_integrity_evidence,
         "halo_exchange_pass": halo_exchange_pass,
         "hardware_metadata": _hardware_metadata(),
         "imbalance_pass": imbalance_pass,
@@ -316,6 +402,10 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Status: `{report['status']}`",
         f"- Contract pass: `{report['contract_pass']}`",
         f"- Communication contract ready: `{report['communication_contract_ready']}`",
+        (
+            "- Halo-face integrity pass: "
+            f"`{report['halo_face_integrity_evidence']['halo_face_integrity_pass']}`"
+        ),
         f"- Local decomposed execution pass: `{report['local_decomposed_execution_pass']}`",
         f"- Halo exchange pass: `{report['halo_exchange_pass']}`",
         f"- Decomposition invariant pass: `{report['decomposition_invariant_pass']}`",
@@ -338,6 +428,37 @@ def write_reports(report: dict[str, Any]) -> None:
                 ranks=case["total_ranks"],
                 imb=case["owned_cell_imbalance"],
                 halo=case["halo_overhead_ratio"],
+            )
+        )
+    halo_evidence = report["halo_face_integrity_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Local serial halo-face integrity",
+            "",
+            f"- Schema: `{halo_evidence['schema']}`",
+            f"- Status: `{halo_evidence['status']}`",
+            f"- Case: `{halo_evidence['case_id']}`",
+            f"- Checked faces: `{halo_evidence['checked_face_count']}`",
+            f"- Max halo-face L_inf error: `{halo_evidence['max_halo_face_linf_error']:.6e}`",
+            (
+                "- Distributed runtime halo exchange ready: "
+                f"`{halo_evidence['distributed_runtime_halo_exchange_ready']}`"
+            ),
+            "",
+            "| Rank | Face | Neighbour | Shape | L_inf | Pass |",
+            "|---:|---|---:|---|---:|:---:|",
+        ]
+    )
+    for row in halo_evidence["face_rows"]:
+        lines.append(
+            "| {rank} | {face} | {neighbour} | `{shape}` | {linf:.6e} | `{passes}` |".format(
+                face=row["face"],
+                linf=row["linf_error"],
+                neighbour=row["neighbour_rank"],
+                passes=row["face_integrity_pass"],
+                rank=row["rank"],
+                shape=json.dumps(row["face_payload_shape"]),
             )
         )
     lines.extend(

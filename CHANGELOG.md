@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added production-decomposition halo-face integrity evidence with per-rank
+  radial/toroidal face comparisons against the serial reference halo exchange
+  while keeping distributed MPI/multi-GPU halo exchange blocked.
+
 - Added native impurity source/sink budget evidence for conservative
   charge-state transfer matrices, ionisation/recombination source budgets,
   line-radiation power, and inventory history while keeping Aurora/STRAHL

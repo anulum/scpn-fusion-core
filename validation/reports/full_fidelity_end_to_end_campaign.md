@@ -46,6 +46,8 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - GK electromagnetic external parity ready: `False`
 - Production decomposition report: `validation/reports/production_decomposition_contract.json`
 - Production decomposition contract pass: `True`
+- Production decomposition halo-face integrity ready: `True`
+- Production decomposition distributed halo exchange ready: `False`
 - Production-scale ready: `False`
 - Production decomposition status: `blocked_local_decomposition_ready_missing_distributed_runtime_scaling`
 - Free-boundary machine metadata report: `validation/reports/free_boundary_public_machine_metadata_inventory.json`

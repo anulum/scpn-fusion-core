@@ -295,6 +295,9 @@ The contract covers rank tiling, serial reference halo exchange, owned-state
 reconstruction, decomposition-invariant inventory/free-energy checks, local CPU
 timing metadata, rank-neighbour/halo-face payload-shape contracts, and
 executable local rank-tile reductions across multiple decomposition shapes.
+It now also publishes per-rank halo-face integrity evidence comparing radial and
+toroidal halo faces against the serial reference payload, while distributed
+MPI/multi-GPU halo exchange remains blocked.
 The latest local run records same-physics shape convergence across `4x2`,
 `8x1`, and `2x4` radial/toroidal rank shapes with maximum inventory relative
 deviation `0.0`, maximum free-energy relative deviation

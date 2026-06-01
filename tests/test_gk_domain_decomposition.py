@@ -177,6 +177,15 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert report["halo_exchange_pass"] is True
     assert report["decomposition_invariant_pass"] is True
     assert report["same_physics_decomposition_shape_pass"] is True
+    halo_evidence = report["halo_face_integrity_evidence"]
+    assert halo_evidence["schema"] == "production-decomposition-halo-face-integrity.v1"
+    assert halo_evidence["status"] == "accepted_local_serial_halo_face_integrity"
+    assert halo_evidence["case_id"] == "local_cpu_64x32_4x2"
+    assert halo_evidence["checked_face_count"] == 20
+    assert halo_evidence["max_halo_face_linf_error"] == 0.0
+    assert halo_evidence["halo_face_integrity_pass"] is True
+    assert halo_evidence["distributed_runtime_halo_exchange_ready"] is False
+    assert all(row["face_integrity_pass"] for row in halo_evidence["face_rows"])
     shape_evidence = report["same_physics_shape_convergence_evidence"]
     assert shape_evidence["schema"] == "production-decomposition-shape-convergence.v1"
     assert shape_evidence["shape_convergence_pass"] is True

@@ -246,6 +246,13 @@ def run_campaign() -> dict[str, Any]:
     gk_external_parity = _load_gk_external_parity()
     gk_electromagnetic_fidelity = run_gk_electromagnetic_fidelity()
     production_decomposition = _load_production_decomposition()
+    production_halo_face_integrity = production_decomposition.get(
+        "halo_face_integrity_evidence",
+        {
+            "distributed_runtime_halo_exchange_ready": False,
+            "halo_face_integrity_pass": False,
+        },
+    )
     free_boundary_machine_metadata = _load_free_boundary_machine_metadata()
     freegs_public_reconstruction = _load_freegs_public_reconstruction()
     free_boundary_strict = cast(
@@ -487,6 +494,12 @@ def run_campaign() -> dict[str, Any]:
         "gk_external_nonlinear_parity_status": str(gk_external_parity["status"]),
         "production_decomposition_report": str(PRODUCTION_DECOMPOSITION.relative_to(ROOT)),
         "production_decomposition_contract_pass": bool(production_decomposition["contract_pass"]),
+        "production_decomposition_halo_face_integrity_ready": bool(
+            production_halo_face_integrity["halo_face_integrity_pass"]
+        ),
+        "production_decomposition_distributed_halo_exchange_ready": bool(
+            production_halo_face_integrity["distributed_runtime_halo_exchange_ready"]
+        ),
         "production_scale_ready": bool(production_decomposition["production_scale_ready"]),
         "production_decomposition_status": str(production_decomposition["status"]),
         "free_boundary_machine_metadata_report": str(
@@ -650,6 +663,14 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- Production decomposition contract pass: "
             f"`{report['production_decomposition_contract_pass']}`"
+        ),
+        (
+            "- Production decomposition halo-face integrity ready: "
+            f"`{report['production_decomposition_halo_face_integrity_ready']}`"
+        ),
+        (
+            "- Production decomposition distributed halo exchange ready: "
+            f"`{report['production_decomposition_distributed_halo_exchange_ready']}`"
         ),
         f"- Production-scale ready: `{report['production_scale_ready']}`",
         f"- Production decomposition status: `{report['production_decomposition_status']}`",

@@ -1182,8 +1182,8 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 5489948.374806735,
-      "elapsed_s": 0.09549962298478931,
+      "cells_per_second": 1966736.182139762,
+      "elapsed_s": 0.2665776959620416,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1205,8 +1205,8 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 5153204.961372518,
-      "elapsed_s": 0.10174017993267626,
+      "cells_per_second": 4069487.4485379886,
+      "elapsed_s": 0.12883391499053687,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1228,8 +1228,8 @@
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 6934395.387343918,
-      "elapsed_s": 0.07560688001103699,
+      "cells_per_second": 1745027.930293165,
+      "elapsed_s": 0.30044676701072603,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1253,6 +1253,317 @@
   "decomposition_invariant_pass": true,
   "description": "Deterministic radial/toroidal decomposition contract for production-scale 5D nonlinear GK scheduling with executable local rank-tile evidence. This is not distributed MPI or multi-GPU scaling evidence.",
   "halo_exchange_pass": true,
+  "halo_face_integrity_evidence": {
+    "case_id": "local_cpu_64x32_4x2",
+    "checked_face_count": 20,
+    "distributed_runtime_halo_exchange_ready": false,
+    "face_rows": [
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 2,
+        "rank": 0
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 1,
+        "rank": 0
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 3,
+        "rank": 1
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 0,
+        "rank": 1
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 0,
+        "rank": 2
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 4,
+        "rank": 2
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 3,
+        "rank": 2
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 1,
+        "rank": 3
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 5,
+        "rank": 3
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 2,
+        "rank": 3
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 2,
+        "rank": 4
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 6,
+        "rank": 4
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 5,
+        "rank": 4
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 3,
+        "rank": 5
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 7,
+        "rank": 5
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 4,
+        "rank": 5
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 4,
+        "rank": 6
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_upper",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 7,
+        "rank": 6
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "radial_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          1,
+          16,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 5,
+        "rank": 7
+      },
+      {
+        "case_id": "local_cpu_64x32_4x2",
+        "face": "toroidal_lower",
+        "face_integrity_pass": true,
+        "face_payload_shape": [
+          16,
+          1,
+          8,
+          8,
+          4
+        ],
+        "linf_error": 0.0,
+        "neighbour_rank": 6,
+        "rank": 7
+      }
+    ],
+    "halo_face_integrity_pass": true,
+    "max_halo_face_linf_error": 0.0,
+    "schema": "production-decomposition-halo-face-integrity.v1",
+    "status": "accepted_local_serial_halo_face_integrity"
+  },
   "hardware_metadata": {
     "cpu_count": 12,
     "machine": "x86_64",
@@ -1287,7 +1598,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 5489948.374806735,
+        "cells_per_second": 1966736.182139762,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -1297,7 +1608,7 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 5153204.961372518,
+        "cells_per_second": 4069487.4485379886,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -1307,7 +1618,7 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 6934395.387343918,
+        "cells_per_second": 1745027.930293165,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,

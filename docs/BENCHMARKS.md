@@ -18,7 +18,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 |---|---|---|
 | GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons | `python validation/full_fidelity_end_to_end_campaign.py` |
 | Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, native same-case EM replay thresholds, and local compact-EM grid-convergence evidence pass; self-consistent 5D kinetic current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
-| Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
+| Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, local halo-face integrity, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact plus native source/sink budget diagnostics exist; full radial transport parity and same-case source-budget parity are missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum, native profile-source comparison metrics, and explicit strict threshold checks exist; threshold acceptance/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
@@ -283,7 +283,8 @@ over `8 x 4` rank tiles with exact owned-cell balance and halo overhead
 reported. The local CPU gate also runs serial reference halo exchange,
 owned-state reconstruction, and decomposition-invariant inventory/free-energy
 checks on reproducible 5D phase-space payloads across multiple decomposition
-shapes. The tracked report now includes same-physics shape-convergence evidence
+shapes. The tracked report now includes per-rank halo-face integrity evidence
+for radial/toroidal face payloads, plus same-physics shape-convergence evidence
 across `4x2`, `8x1`, and `2x4` radial/toroidal rank shapes with maximum
 inventory relative deviation `0.0`, maximum free-energy relative deviation
 `3.3306658974988877e-16`, and maximum owned-state reconstruction error `0.0`.

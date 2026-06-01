@@ -90,6 +90,8 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         == "validation/reports/production_decomposition_contract.json"
     )
     assert report["production_decomposition_contract_pass"] in {True, False}
+    assert report["production_decomposition_halo_face_integrity_ready"] is True
+    assert report["production_decomposition_distributed_halo_exchange_ready"] is False
     assert (
         report["free_boundary_machine_metadata_report"]
         == "validation/reports/free_boundary_public_machine_metadata_inventory.json"
