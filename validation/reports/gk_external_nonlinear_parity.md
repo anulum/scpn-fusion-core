@@ -39,6 +39,16 @@ Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and na
 | CGYRO | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
 | GS2 | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
 
+## Grid-convergence evidence matrix
+
+| Solver | Case | Observable | Relative L2 | Limit | Ready | Reasons |
+|---|---|---|---:|---:|:---:|---|
+
+## Production-scaling evidence matrix
+
+| Solver | Case | Device | Phase cells | Ranks | Wall time s | Ready | Reasons |
+|---|---|---|---:|---:|---:|:---:|---|
+
 ## Published threshold contract
 
 | Threshold | Observable | Metric | Comparator | Limit |

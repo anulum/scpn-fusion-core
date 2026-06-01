@@ -15,6 +15,9 @@
   provenance/license, source checksums, converted artefact and metadata
   checksums, native same-case thresholds, grid convergence, and
   production-scaling rows before acceptance.
+- Added explicit grid-convergence and production-scaling acceptance matrices to
+  the nonlinear GK parity report so linked evidence rows must satisfy declared
+  thresholds instead of merely existing.
 
 - Added an explicit vertical-control replay release-gate object that accepts
   only the reduced-order RZIP replay claim and keeps full PCS production-grade

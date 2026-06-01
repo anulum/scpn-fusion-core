@@ -5,6 +5,16 @@
   "evidence_package_contract": {
     "contract_id": "gk_external_nonlinear_full_fidelity_evidence_package_v1",
     "fail_closed": true,
+    "grid_convergence_contract": {
+      "max_relative_l2": 0.15,
+      "required_linkage": "case_id must match converted same-deck output row"
+    },
+    "production_scaling_contract": {
+      "max_wall_time_s": 86400.0,
+      "min_phase_cells": 64,
+      "min_ranks": 1,
+      "required_linkage": "case_id must match converted same-deck output row"
+    },
     "required_artifact_schema": "gk-nonlinear-external-output.v1",
     "required_evidence_surfaces": [
       "same_deck_external_outputs",
@@ -209,6 +219,27 @@
       }
     }
   ],
+  "grid_convergence_contract": {
+    "max_relative_l2": 0.15,
+    "required_families": [
+      "GENE",
+      "CGYRO",
+      "GS2"
+    ],
+    "required_linkage": "case_id must match converted same-deck output row",
+    "required_observables": [
+      "nonlinear_distribution_function",
+      "nonlinear_distribution_function_imag",
+      "ion_heat_flux_spectrum",
+      "electron_heat_flux_spectrum",
+      "zonal_flow_energy",
+      "saturated_phi_rms",
+      "electromagnetic_phi_energy",
+      "electromagnetic_apar_energy",
+      "electromagnetic_bpar_energy"
+    ]
+  },
+  "grid_convergence_evidence_matrix": [],
   "grid_convergence_ready": false,
   "grid_convergence_ready_by_family": {
     "CGYRO": false,
@@ -228,6 +259,18 @@
     "complete checksum/provenance/threshold evidence package"
   ],
   "native_same_case_comparison_ready": false,
+  "production_scale_scaling_contract": {
+    "max_wall_time_s": 86400.0,
+    "min_phase_cells": 64,
+    "min_ranks": 1,
+    "required_families": [
+      "GENE",
+      "CGYRO",
+      "GS2"
+    ],
+    "required_linkage": "case_id must match converted same-deck output row"
+  },
+  "production_scale_scaling_evidence_matrix": [],
   "production_scale_scaling_ready": false,
   "production_scale_scaling_ready_by_family": {
     "CGYRO": false,

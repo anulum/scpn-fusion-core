@@ -244,6 +244,10 @@ Top-level NPZ output keys are classified by declared coordinate and observable
 contracts before converted artefact metadata is emitted.
 Grid-convergence and production-scaling evidence must reference the converted
 same-case solver-family output rows before those gates can pass.
+Grid-convergence rows are thresholded with `relative_l2 <= 0.15` against a
+strict refinement contract. Production-scaling rows must declare a non-empty
+device, positive integer grid/rank metadata, at least `64` phase cells, and
+`wall_time_s <= 86400`; presence-only timing rows are not accepted.
 The parity report now also emits an evidence-package matrix. Each solver-family
 row must carry manifest completeness, public provenance/license readiness,
 source and converted artefact checksums, converted metadata checksums, native

@@ -34,6 +34,10 @@ REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "gk_external_nonlinear_parity.json"
 MD_REPORT = REPORT_DIR / "gk_external_nonlinear_parity.md"
 REQUIRED_SOLVER_FAMILIES = ("GENE", "CGYRO", "GS2")
+GRID_CONVERGENCE_RELATIVE_L2_MAX = 0.15
+PRODUCTION_SCALING_MIN_RANKS = 1
+PRODUCTION_SCALING_MAX_WALL_TIME_S = 86_400.0
+PRODUCTION_SCALING_MIN_PHASE_CELLS = 64
 MANIFEST_NAME = "manifest.json"
 MANIFEST_SCHEMA = "gk-nonlinear-external-output-manifest.v1"
 OUTPUT_SCHEMA = "gk-nonlinear-external-output.v1"
@@ -333,44 +337,208 @@ def _write_metadata(path: Path, metadata: dict[str, Any]) -> None:
     path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _validate_evidence(
+def _positive_integer_grid(value: Any) -> tuple[list[int], str | None]:
+    if not isinstance(value, list) or not value:
+        return [], "grid_not_list"
+    try:
+        array = np.asarray(value, dtype=np.float64)
+    except (TypeError, ValueError):
+        return [], "grid_non_numeric"
+    if array.ndim != 1:
+        return [], "grid_not_one_dimensional"
+    if not bool(np.all(np.isfinite(array))):
+        return [], "grid_non_finite"
+    if not bool(np.all(array > 0.0)):
+        return [], "grid_not_positive"
+    rounded = np.rint(array)
+    if not bool(np.all(np.isclose(array, rounded))):
+        return [], "grid_not_integer"
+    return [int(item) for item in rounded.tolist()], None
+
+
+def _finite_float(value: Any) -> tuple[float, str | None]:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return 0.0, "not_numeric"
+    if not np.isfinite(numeric):
+        return numeric, "non_finite"
+    return numeric, None
+
+
+def _grid_convergence_contract(
     rows: Any,
-    required_keys: tuple[str, ...],
-    required_families: tuple[str, ...],
-    expected_case_ids: dict[str, str] | None = None,
-) -> bool:
-    if not isinstance(rows, list) or not rows:
-        return False
-    seen_families: set[str] = set()
-    for row in rows:
-        if not isinstance(row, dict) or not all(key in row for key in required_keys):
-            return False
+    *,
+    expected_case_ids: dict[str, str],
+    required_observables: list[str],
+) -> dict[str, Any]:
+    ready_by_family = {family: False for family in REQUIRED_SOLVER_FAMILIES}
+    matrix: list[dict[str, Any]] = []
+    if not isinstance(rows, list):
+        return {
+            "contract": {
+                "max_relative_l2": GRID_CONVERGENCE_RELATIVE_L2_MAX,
+                "required_families": list(REQUIRED_SOLVER_FAMILIES),
+                "required_linkage": "case_id must match converted same-deck output row",
+            },
+            "ready": False,
+            "ready_by_family": ready_by_family,
+            "rows": matrix,
+        }
+
+    for index, raw_row in enumerate(rows):
+        failures: list[str] = []
+        row = raw_row if isinstance(raw_row, dict) else {}
         family = str(row.get("solver_family", "")).upper()
-        if family not in required_families:
-            return False
-        if expected_case_ids is not None and str(row.get("case_id", "")) != expected_case_ids.get(
-            family, ""
-        ):
-            return False
-        seen_families.add(family)
-        numeric_values: list[float] = []
-        for key, value in row.items():
-            if key in {"case_id", "observable", "device", "solver_family"}:
-                continue
-            if isinstance(value, (int, float)):
-                numeric_values.append(float(value))
-                continue
-            if isinstance(value, list):
-                try:
-                    array = np.asarray(value, dtype=np.float64)
-                except (TypeError, ValueError):
-                    return False
-                if array.size == 0 or not bool(np.all(np.isfinite(array))):
-                    return False
-                numeric_values.extend(float(item) for item in array.ravel())
-        if not numeric_values or not all(np.isfinite(value) for value in numeric_values):
-            return False
-    return seen_families == set(required_families)
+        case_id = str(row.get("case_id", ""))
+        observable = str(row.get("observable", ""))
+        if not isinstance(raw_row, dict):
+            failures.append("row_not_object")
+        if family not in REQUIRED_SOLVER_FAMILIES:
+            failures.append("unknown_solver_family")
+        expected_case_id = expected_case_ids.get(family, "")
+        if not expected_case_id:
+            failures.append("missing_converted_reference_case")
+        elif case_id != expected_case_id:
+            failures.append("case_id_mismatch")
+        if observable not in required_observables:
+            failures.append("observable_not_required")
+        coarse_grid, coarse_reason = _positive_integer_grid(row.get("coarse_grid"))
+        fine_grid, fine_reason = _positive_integer_grid(row.get("fine_grid"))
+        if coarse_reason:
+            failures.append(f"coarse_{coarse_reason}")
+        if fine_reason:
+            failures.append(f"fine_{fine_reason}")
+        if coarse_grid and fine_grid:
+            if len(coarse_grid) != len(fine_grid):
+                failures.append("grid_rank_mismatch")
+            elif any(fine < coarse for coarse, fine in zip(coarse_grid, fine_grid)):
+                failures.append("fine_grid_not_refinement")
+            elif int(np.prod(fine_grid)) <= int(np.prod(coarse_grid)):
+                failures.append("fine_grid_not_larger")
+        relative_l2, relative_reason = _finite_float(row.get("relative_l2"))
+        if relative_reason:
+            failures.append(f"relative_l2_{relative_reason}")
+        elif relative_l2 > GRID_CONVERGENCE_RELATIVE_L2_MAX:
+            failures.append("relative_l2_exceeds_threshold")
+        ready = not failures
+        if ready and family in ready_by_family:
+            ready_by_family[family] = True
+        matrix.append(
+            {
+                "case_id": case_id or None,
+                "coarse_grid": coarse_grid,
+                "fine_grid": fine_grid,
+                "observable": observable or None,
+                "ready": ready,
+                "reasons": failures,
+                "relative_l2": relative_l2 if not relative_reason else None,
+                "row_index": index,
+                "solver_family": family or None,
+                "threshold": GRID_CONVERGENCE_RELATIVE_L2_MAX,
+            }
+        )
+    return {
+        "contract": {
+            "max_relative_l2": GRID_CONVERGENCE_RELATIVE_L2_MAX,
+            "required_families": list(REQUIRED_SOLVER_FAMILIES),
+            "required_linkage": "case_id must match converted same-deck output row",
+            "required_observables": required_observables,
+        },
+        "ready": all(ready_by_family.values()),
+        "ready_by_family": ready_by_family,
+        "rows": matrix,
+    }
+
+
+def _production_scaling_contract(
+    rows: Any,
+    *,
+    expected_case_ids: dict[str, str],
+) -> dict[str, Any]:
+    ready_by_family = {family: False for family in REQUIRED_SOLVER_FAMILIES}
+    matrix: list[dict[str, Any]] = []
+    if not isinstance(rows, list):
+        return {
+            "contract": {
+                "max_wall_time_s": PRODUCTION_SCALING_MAX_WALL_TIME_S,
+                "min_phase_cells": PRODUCTION_SCALING_MIN_PHASE_CELLS,
+                "min_ranks": PRODUCTION_SCALING_MIN_RANKS,
+                "required_families": list(REQUIRED_SOLVER_FAMILIES),
+                "required_linkage": "case_id must match converted same-deck output row",
+            },
+            "ready": False,
+            "ready_by_family": ready_by_family,
+            "rows": matrix,
+        }
+
+    for index, raw_row in enumerate(rows):
+        failures: list[str] = []
+        row = raw_row if isinstance(raw_row, dict) else {}
+        family = str(row.get("solver_family", "")).upper()
+        case_id = str(row.get("case_id", ""))
+        device = str(row.get("device", "")).strip()
+        if not isinstance(raw_row, dict):
+            failures.append("row_not_object")
+        if family not in REQUIRED_SOLVER_FAMILIES:
+            failures.append("unknown_solver_family")
+        expected_case_id = expected_case_ids.get(family, "")
+        if not expected_case_id:
+            failures.append("missing_converted_reference_case")
+        elif case_id != expected_case_id:
+            failures.append("case_id_mismatch")
+        if not device:
+            failures.append("device_missing")
+        grid, grid_reason = _positive_integer_grid(row.get("grid"))
+        if grid_reason:
+            failures.append(grid_reason)
+        phase_cells = int(np.prod(grid)) if grid else 0
+        if grid and phase_cells < PRODUCTION_SCALING_MIN_PHASE_CELLS:
+            failures.append("phase_cells_below_threshold")
+        ranks_value, ranks_reason = _finite_float(row.get("ranks"))
+        ranks = int(ranks_value) if ranks_reason is None and ranks_value.is_integer() else 0
+        if ranks_reason:
+            failures.append(f"ranks_{ranks_reason}")
+        elif not ranks_value.is_integer():
+            failures.append("ranks_not_integer")
+        elif ranks < PRODUCTION_SCALING_MIN_RANKS:
+            failures.append("ranks_below_threshold")
+        wall_time_s, wall_time_reason = _finite_float(row.get("wall_time_s"))
+        if wall_time_reason:
+            failures.append(f"wall_time_{wall_time_reason}")
+        elif wall_time_s <= 0.0:
+            failures.append("wall_time_not_positive")
+        elif wall_time_s > PRODUCTION_SCALING_MAX_WALL_TIME_S:
+            failures.append("wall_time_exceeds_threshold")
+        ready = not failures
+        if ready and family in ready_by_family:
+            ready_by_family[family] = True
+        matrix.append(
+            {
+                "case_id": case_id or None,
+                "device": device or None,
+                "grid": grid,
+                "phase_cells": phase_cells,
+                "ranks": ranks if ranks else None,
+                "ready": ready,
+                "reasons": failures,
+                "row_index": index,
+                "solver_family": family or None,
+                "wall_time_s": wall_time_s if not wall_time_reason else None,
+            }
+        )
+    return {
+        "contract": {
+            "max_wall_time_s": PRODUCTION_SCALING_MAX_WALL_TIME_S,
+            "min_phase_cells": PRODUCTION_SCALING_MIN_PHASE_CELLS,
+            "min_ranks": PRODUCTION_SCALING_MIN_RANKS,
+            "required_families": list(REQUIRED_SOLVER_FAMILIES),
+            "required_linkage": "case_id must match converted same-deck output row",
+        },
+        "ready": all(ready_by_family.values()),
+        "ready_by_family": ready_by_family,
+        "rows": matrix,
+    }
 
 
 def _same_deck_group_status(
@@ -460,25 +628,6 @@ def _solver_family_completeness(
     return {"ready": ready, "rows": matrix}
 
 
-def _evidence_family_ready_map(
-    rows: Any,
-    required_keys: tuple[str, ...],
-    expected_case_ids: dict[str, str],
-) -> dict[str, bool]:
-    """Return per-solver evidence readiness for linked convergence/scaling rows."""
-    readiness = {family: False for family in REQUIRED_SOLVER_FAMILIES}
-    if not isinstance(rows, list):
-        return readiness
-    for family in REQUIRED_SOLVER_FAMILIES:
-        readiness[family] = _validate_evidence(
-            [row for row in rows if isinstance(row, dict) and row.get("solver_family") == family],
-            required_keys,
-            (family,),
-            expected_case_ids,
-        )
-    return readiness
-
-
 def _threshold_contract_matrix(reference_case: dict[str, Any]) -> list[dict[str, Any]]:
     """Return the published threshold contract in report-friendly row form."""
     threshold_contracts = reference_case["threshold_contracts"]
@@ -510,6 +659,16 @@ def _evidence_package_contract(reference_case: dict[str, Any]) -> dict[str, Any]
         "required_solver_families": list(REQUIRED_SOLVER_FAMILIES),
         "required_observables": list(reference_case["required_observables"]),
         "required_thresholds": sorted(reference_case["thresholds"]),
+        "grid_convergence_contract": {
+            "max_relative_l2": GRID_CONVERGENCE_RELATIVE_L2_MAX,
+            "required_linkage": "case_id must match converted same-deck output row",
+        },
+        "production_scaling_contract": {
+            "max_wall_time_s": PRODUCTION_SCALING_MAX_WALL_TIME_S,
+            "min_phase_cells": PRODUCTION_SCALING_MIN_PHASE_CELLS,
+            "min_ranks": PRODUCTION_SCALING_MIN_RANKS,
+            "required_linkage": "case_id must match converted same-deck output row",
+        },
         "required_evidence_surfaces": [
             "same_deck_external_outputs",
             "converted_reference_artifacts",
@@ -973,28 +1132,19 @@ def build_gk_external_output_parity_report(
         for row in rows
         if row.get("reference_output_ready") and row.get("case_id")
     }
-    grid_ready = _validate_evidence(
+    grid_contract = _grid_convergence_contract(
         grid_rows,
-        ("case_id", "solver_family", "observable", "coarse_grid", "fine_grid", "relative_l2"),
-        REQUIRED_SOLVER_FAMILIES,
-        expected_case_ids,
+        expected_case_ids=expected_case_ids,
+        required_observables=required_observables,
     )
-    scaling_ready = _validate_evidence(
+    scaling_contract = _production_scaling_contract(
         scaling_rows,
-        ("case_id", "solver_family", "device", "grid", "ranks", "wall_time_s"),
-        REQUIRED_SOLVER_FAMILIES,
-        expected_case_ids,
+        expected_case_ids=expected_case_ids,
     )
-    grid_ready_by_family = _evidence_family_ready_map(
-        grid_rows,
-        ("case_id", "solver_family", "observable", "coarse_grid", "fine_grid", "relative_l2"),
-        expected_case_ids,
-    )
-    scaling_ready_by_family = _evidence_family_ready_map(
-        scaling_rows,
-        ("case_id", "solver_family", "device", "grid", "ranks", "wall_time_s"),
-        expected_case_ids,
-    )
+    grid_ready = bool(grid_contract["ready"])
+    scaling_ready = bool(scaling_contract["ready"])
+    grid_ready_by_family = cast(dict[str, bool], grid_contract["ready_by_family"])
+    scaling_ready_by_family = cast(dict[str, bool], scaling_contract["ready_by_family"])
     reference_ready = all(bool(row["reference_output_ready"]) for row in rows)
     same_deck_ready = bool(same_deck_group["ready"])
     native_ready = all(bool(row["native_same_case_comparison_ready"]) for row in rows)
@@ -1058,11 +1208,15 @@ def build_gk_external_output_parity_report(
         "evidence_package_contract": _evidence_package_contract(reference_case),
         "evidence_package_matrix": evidence_package_matrix,
         "evidence_package_ready": evidence_package_ready,
+        "grid_convergence_contract": grid_contract["contract"],
+        "grid_convergence_evidence_matrix": grid_contract["rows"],
         "grid_convergence_ready": grid_ready,
         "grid_convergence_ready_by_family": grid_ready_by_family,
         "grid_convergence_rows": grid_rows if isinstance(grid_rows, list) else [],
         "missing_full_fidelity_requirements": missing,
         "native_same_case_comparison_ready": native_ready,
+        "production_scale_scaling_contract": scaling_contract["contract"],
+        "production_scale_scaling_evidence_matrix": scaling_contract["rows"],
         "production_scale_scaling_ready": scaling_ready,
         "production_scale_scaling_ready_by_family": scaling_ready_by_family,
         "production_scaling_rows": scaling_rows if isinstance(scaling_rows, list) else [],
@@ -1163,6 +1317,54 @@ def _markdown(report: dict[str, Any]) -> str:
                 grid=row["grid_convergence_evidence_ready"],
                 scaling=row["production_scale_scaling_evidence_ready"],
                 ready=row["ready"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Grid-convergence evidence matrix",
+            "",
+            "| Solver | Case | Observable | Relative L2 | Limit | Ready | Reasons |",
+            "|---|---|---|---:|---:|:---:|---|",
+        ]
+    )
+    for row in report["grid_convergence_evidence_matrix"]:
+        reasons = ", ".join(row["reasons"]) if row["reasons"] else "-"
+        relative_l2 = "-" if row["relative_l2"] is None else f"{float(row['relative_l2']):.6g}"
+        lines.append(
+            "| {solver} | `{case}` | `{observable}` | {relative_l2} | {threshold:.6g} | `{ready}` | {reasons} |".format(
+                solver=row["solver_family"],
+                case=row["case_id"],
+                observable=row["observable"],
+                relative_l2=relative_l2,
+                threshold=float(row["threshold"]),
+                ready=row["ready"],
+                reasons=reasons,
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Production-scaling evidence matrix",
+            "",
+            "| Solver | Case | Device | Phase cells | Ranks | Wall time s | Ready | Reasons |",
+            "|---|---|---|---:|---:|---:|:---:|---|",
+        ]
+    )
+    for row in report["production_scale_scaling_evidence_matrix"]:
+        reasons = ", ".join(row["reasons"]) if row["reasons"] else "-"
+        ranks = "-" if row["ranks"] is None else str(row["ranks"])
+        wall_time_s = "-" if row["wall_time_s"] is None else f"{float(row['wall_time_s']):.6g}"
+        lines.append(
+            "| {solver} | `{case}` | `{device}` | {phase_cells} | {ranks} | {wall_time_s} | `{ready}` | {reasons} |".format(
+                solver=row["solver_family"],
+                case=row["case_id"],
+                device=row["device"],
+                phase_cells=row["phase_cells"],
+                ranks=ranks,
+                wall_time_s=wall_time_s,
+                ready=row["ready"],
+                reasons=reasons,
             )
         )
     lines.extend(

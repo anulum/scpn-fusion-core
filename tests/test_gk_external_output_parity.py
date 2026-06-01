@@ -418,7 +418,21 @@ def test_gk_external_output_parity_accepts_complete_same_deck_evidence_package(
     assert report["grid_convergence_ready"] is True
     assert report["production_scale_scaling_ready"] is True
     assert report["evidence_package_ready"] is True
+    assert report["grid_convergence_contract"]["max_relative_l2"] == 0.15
+    assert report["production_scale_scaling_contract"]["min_phase_cells"] == 64
+    assert report["production_scale_scaling_contract"]["min_ranks"] == 1
     assert len(report["threshold_contract_matrix"]) == 8
+    assert len(report["grid_convergence_evidence_matrix"]) == 3
+    assert len(report["production_scale_scaling_evidence_matrix"]) == 3
+    for row in report["grid_convergence_evidence_matrix"]:
+        assert row["ready"] is True
+        assert row["reasons"] == []
+        assert row["relative_l2"] <= row["threshold"]
+    for row in report["production_scale_scaling_evidence_matrix"]:
+        assert row["ready"] is True
+        assert row["reasons"] == []
+        assert row["phase_cells"] >= 64
+        assert row["ranks"] >= 1
     for row in report["evidence_package_matrix"]:
         assert row["ready"] is True
         assert row["converted_artifact_ready"] is True
@@ -575,6 +589,94 @@ def test_gk_external_output_parity_blocks_unlinked_convergence_and_scaling_rows(
     assert report["production_scale_scaling_ready"] is False
     assert report["status"] == "blocked_missing_grid_convergence_evidence"
     assert report["accepted_full_fidelity_ready"] is False
+
+
+def test_gk_external_output_parity_blocks_threshold_failed_grid_and_scaling_evidence(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "external"
+    source_root.mkdir()
+    cases = []
+    for family, suffix in (("GENE", "gene"), ("CGYRO", "cgyro"), ("GS2", "gs2")):
+        reference = source_root / f"{suffix}_reference.json"
+        native = source_root / f"{suffix}_native.json"
+        _payload(reference, scale=1.0)
+        _payload(native, scale=1.0)
+        cases.append(
+            {
+                "case_id": f"{suffix}_itg_public",
+                "deck_id": f"{suffix}_itg_public_deck",
+                "benchmark_case_id": "public_itg_em_same_deck",
+                "deck_physics_sha256": DECK_PHYSICS_SHA256,
+                "solver_family": family,
+                "output_path": reference.name,
+                "native_output_path": native.name,
+                "native_output_sha256": _sha256(native),
+                "provenance_url": f"https://example.invalid/{suffix}/itg_public",
+                "redistribution_license": "CC-BY-4.0",
+                "sha256": _sha256(reference),
+            }
+        )
+    manifest = {
+        "schema": "gk-nonlinear-external-output-manifest.v1",
+        "cases": cases,
+        "grid_convergence_evidence": [
+            {
+                "case_id": case["case_id"],
+                "solver_family": case["solver_family"],
+                "observable": "ion_heat_flux_spectrum",
+                "coarse_grid": [2, 2, 2],
+                "fine_grid": [4, 4, 4],
+                "relative_l2": 0.50,
+            }
+            for case in cases
+        ],
+        "production_scaling_evidence": [
+            {
+                "case_id": case["case_id"],
+                "solver_family": case["solver_family"],
+                "device": "public-cpu-cluster",
+                "grid": [1, 1, 1],
+                "ranks": 0,
+                "wall_time_s": 100_000.0,
+            }
+            for case in cases
+        ],
+    }
+    (source_root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    report = parity.build_gk_external_output_parity_report(
+        source_root=source_root,
+        artifact_dir=tmp_path / "artifacts",
+        report_dir=tmp_path / "reports",
+        write=True,
+    )
+
+    assert report["reference_output_ready"] is True
+    assert report["same_deck_group_ready"] is True
+    assert report["native_same_case_comparison_ready"] is True
+    assert report["grid_convergence_ready"] is False
+    assert report["production_scale_scaling_ready"] is False
+    assert report["status"] == "blocked_missing_grid_convergence_evidence"
+    assert report["accepted_full_fidelity_ready"] is False
+    assert all(
+        "relative_l2_exceeds_threshold" in row["reasons"]
+        for row in report["grid_convergence_evidence_matrix"]
+    )
+    assert all(
+        "wall_time_exceeds_threshold" in row["reasons"]
+        for row in report["production_scale_scaling_evidence_matrix"]
+    )
+    assert all(
+        "phase_cells_below_threshold" in row["reasons"]
+        for row in report["production_scale_scaling_evidence_matrix"]
+    )
+    assert all(
+        "ranks_below_threshold" in row["reasons"]
+        for row in report["production_scale_scaling_evidence_matrix"]
+    )
 
 
 def test_gk_external_output_parity_blocks_non_redistributable_output(

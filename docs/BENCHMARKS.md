@@ -272,6 +272,11 @@ every GENE, CGYRO, and GS2 row must provide a same-deck manifest entry, public
 provenance, redistribution license, source checksum, converted artefact
 checksum, metadata checksum, native same-case threshold evaluation,
 grid-convergence row, and production-scaling row before readiness can pass.
+Grid-convergence rows are accepted only when the linked observable reports
+`relative_l2 <= 0.15` on a strict fine-grid refinement. Production-scaling rows
+are accepted only when the linked device/grid/rank/timing record is finite,
+positive, covers at least `64` phase cells, and reports
+`wall_time_s <= 86400`; row presence alone is diagnostic-only.
 
 The SAS dataset readiness gate is tracked in
 [`validation/reports/sas_dataset_readiness.md`](../validation/reports/sas_dataset_readiness.md).
@@ -333,6 +338,10 @@ For top-level NPZ payloads, the converter classifies keys by the declared
 coordinate and observable contracts before metadata publication.
 Grid-convergence and production-scaling rows must link to the converted
 same-case `case_id` for each solver family.
+Those rows now publish their own evidence matrices and acceptance thresholds:
+grid convergence is capped at `relative_l2 <= 0.15`, while scaling requires
+finite positive rank/grid/timing metadata, at least `64` phase cells, and
+`wall_time_s <= 86400`.
 
 The DREAM execution lane is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
