@@ -319,7 +319,10 @@ It now also publishes per-rank halo-face integrity evidence comparing radial and
 toroidal halo faces against the serial reference payload, local process-isolated
 CPU rank execution, real local MPI radial halo exchange when mpi4py/mpiexec are
 available, and CUDA rank-tile reductions when CuPy can access a GPU. Cluster MPI
-scaling and multi-GPU scaling remain blocked until measured artefacts exist.
+scaling and multi-GPU scaling remain blocked until measured artefacts exist. The
+optional runtime dependency contract pins base NumPy below 2 and gates MPI/GPU
+lanes through `mpi4py>=4.1` and `cupy-cuda12x>=13.6,<14.0` so accelerator
+setup does not destabilise the base test environment.
 The latest local run records same-physics shape convergence across `4x2`,
 `8x1`, and `2x4` radial/toroidal rank shapes with maximum inventory relative
 deviation `0.0`, maximum free-energy relative deviation

@@ -86,6 +86,8 @@ and weak-scaling efficiencies, owned phase cells per rank, halo bytes per step,
 decomposition-invariant pass status, hardware metadata, command, and artifact
 checksum. Missing or incomplete rows remain blocked.
 
+The optional runtime dependency contract pins base NumPy below 2 and gates MPI/GPU lanes through `mpi4py>=4.1`, `cupy-cuda12x>=13.6,<14.0`, and `nvidia-cuda-nvrtc-cu12>=12.0,<13.0` so accelerator setup does not destabilise the base test environment.
+
 Latest local large-grid CPU decomposition evidence is tracked in [`validation/reports/production_decomposition_contract.md`](../validation/reports/production_decomposition_contract.md): `large_cpu_96x48_6x4` executed `9,437,184` 5D phase cells over `24` local rank tiles in `1.557183 s` (`6.060419e6` cells/s) with zero reconstruction error and invariant relative errors below `1e-12`. This is single-process CPU evidence only; it does not satisfy the distributed MPI or multi-GPU scaling requirement.
 
 ## UpCloud L4 Native Solver Benchmark Bundle (2026-05-25)

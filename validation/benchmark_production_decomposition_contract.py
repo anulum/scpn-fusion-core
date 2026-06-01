@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import json
 import os
 import platform
@@ -17,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from importlib import metadata, util
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +62,12 @@ REQUIRED_DISTRIBUTED_RUN_FIELDS = [
     "artifact_sha256",
 ]
 MPI_RUNTIME_RANK_COUNT = 4
+OPTIONAL_RUNTIME_DEPENDENCIES = {
+    "cupy": "cupy-cuda12x>=13.6,<14.0",
+    "mpi4py": "mpi4py>=4.1",
+    "nvidia.cuda_nvrtc": "nvidia-cuda-nvrtc-cu12>=12.0,<13.0",
+    "numpy": "numpy>=1.24,<2.0",
+}
 FACE_OPPOSITES = {
     "radial_lower": "radial_upper",
     "radial_upper": "radial_lower",
@@ -315,6 +323,56 @@ def _python_for_optional_runtime() -> str:
     return str(venv_python) if venv_python.exists() else sys.executable
 
 
+def _runtime_dependency_evidence() -> dict[str, Any]:
+    """Return import and version evidence for optional decomposition runtimes."""
+    module_to_distribution = {
+        "cupy": "cupy-cuda12x",
+        "mpi4py": "mpi4py",
+        "nvidia.cuda_nvrtc": "nvidia-cuda-nvrtc-cu12",
+        "numpy": "numpy",
+    }
+    rows: list[dict[str, Any]] = []
+    for module_name, requirement in OPTIONAL_RUNTIME_DEPENDENCIES.items():
+        distribution = module_to_distribution[module_name]
+        spec = util.find_spec(module_name)
+        version = None
+        if spec is not None:
+            try:
+                version = metadata.version(distribution)
+            except metadata.PackageNotFoundError:
+                version = None
+        rows.append(
+            {
+                "distribution": distribution,
+                "importable": spec is not None,
+                "module": module_name,
+                "required_specifier": requirement,
+                "version": version,
+            }
+        )
+    numpy_row = next(row for row in rows if row["module"] == "numpy")
+    numpy_version = str(numpy_row["version"] or "")
+    numpy_contract_pass = bool(
+        numpy_row["importable"]
+        and numpy_version
+        and not numpy_version.startswith("2.")
+    )
+    optional_runtime_dependency_ready = bool(
+        numpy_contract_pass
+        and all(row["importable"] for row in rows if row["module"] in {"cupy", "mpi4py"})
+    )
+    return {
+        "numpy_contract_pass": numpy_contract_pass,
+        "optional_runtime_dependency_ready": optional_runtime_dependency_ready,
+        "python_executable": _python_for_optional_runtime(),
+        "rows": rows,
+        "schema": "production-decomposition-runtime-dependencies.v1",
+        "status": "accepted_optional_runtime_dependencies"
+        if optional_runtime_dependency_ready
+        else "blocked_optional_runtime_dependency_contract",
+    }
+
+
 def _mpi_runtime_evidence() -> dict[str, Any]:
     """Run a real MPI rank-tile execution probe when MPI is installed."""
     mpiexec = shutil.which("mpiexec") or shutil.which("mpirun")
@@ -387,9 +445,21 @@ def _mpi_runtime_evidence() -> dict[str, Any]:
     }
 
 
+def _preload_cuda_nvrtc() -> str | None:
+    """Preload venv-packaged CUDA NVRTC for CuPy wheels when needed."""
+    venv_lib = ROOT / ".venv" / "lib"
+    candidates = list(venv_lib.glob("python*/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12"))
+    if not candidates:
+        return None
+    lib_path = candidates[0]
+    ctypes.CDLL(str(lib_path), mode=ctypes.RTLD_GLOBAL)
+    return str(lib_path)
+
+
 def _gpu_rank_tile_evidence() -> dict[str, Any]:
     """Return CUDA rank-tile reduction evidence when CuPy and a GPU are available."""
     try:
+        preloaded_nvrtc = _preload_cuda_nvrtc()
         import cupy as cp
     except Exception as exc:
         return {
@@ -505,6 +575,7 @@ def _gpu_rank_tile_evidence() -> dict[str, Any]:
         "parallel_moment_relative_error": parallel_moment_relative_error,
         "rank_count": plan.total_ranks,
         "rank_rows": rank_rows,
+        "preloaded_nvrtc": preloaded_nvrtc,
         "schema": "production-decomposition-gpu-rank-tile-evidence.v1",
         "status": "accepted_local_gpu_rank_tile_execution"
         if ready
@@ -946,6 +1017,7 @@ def run_benchmark() -> dict[str, Any]:
     same_physics_shape_convergence = _shape_convergence_evidence(cpu_benchmark_rows)
     large_grid_cpu_evidence = _large_grid_cpu_evidence()
     local_multiprocess_cpu_evidence = _local_multiprocess_cpu_evidence()
+    runtime_dependency_evidence = _runtime_dependency_evidence()
     mpi_runtime_evidence = _mpi_runtime_evidence()
     gpu_rank_tile_evidence = _gpu_rank_tile_evidence()
     coverage_pass = all(case["min_owned_cells"] > 0 for case in cases)
@@ -1029,6 +1101,7 @@ def run_benchmark() -> dict[str, Any]:
             "python validation/benchmark_production_decomposition_contract.py",
             "python -m pytest tests/test_gk_domain_decomposition.py -q",
         ],
+        "runtime_dependency_evidence": runtime_dependency_evidence,
         "same_physics_decomposition_shape_pass": same_physics_decomposition_shape_pass,
         "same_physics_shape_convergence_evidence": same_physics_shape_convergence,
         "status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling",
@@ -1091,6 +1164,35 @@ def write_reports(report: dict[str, Any]) -> None:
                 ranks=case["total_ranks"],
                 imb=case["owned_cell_imbalance"],
                 halo=case["halo_overhead_ratio"],
+            )
+        )
+    dependency_evidence = report["runtime_dependency_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Runtime dependency evidence",
+            "",
+            f"- Schema: `{dependency_evidence['schema']}`",
+            f"- Status: `{dependency_evidence['status']}`",
+            (
+                "- Optional runtime dependency ready: "
+                f"`{dependency_evidence['optional_runtime_dependency_ready']}`"
+            ),
+            f"- NumPy contract pass: `{dependency_evidence['numpy_contract_pass']}`",
+            f"- Python executable: `{dependency_evidence['python_executable']}`",
+            "",
+            "| Module | Distribution | Required specifier | Importable | Version |",
+            "|---|---|---|:---:|---|",
+        ]
+    )
+    for row in dependency_evidence["rows"]:
+        lines.append(
+            "| {module} | `{distribution}` | `{specifier}` | `{importable}` | `{version}` |".format(
+                distribution=row["distribution"],
+                importable=row["importable"],
+                module=row["module"],
+                specifier=row["required_specifier"],
+                version=row["version"],
             )
         )
     halo_evidence = report["halo_face_integrity_evidence"]

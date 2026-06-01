@@ -23,7 +23,7 @@ classifiers = [
 readme = "README.md"
 dependencies = [
     "click>=8.1",
-    "numpy>=1.24",
+    "numpy>=1.24,<2.0",
     "matplotlib",
     "scipy",
     "pydantic>=2.0",
@@ -74,7 +74,8 @@ full-physics = [
 ]
 gpu = [
     "jax[cuda12]>=0.4.20",
-    "cupy-cuda12x>=14.0",
+    "cupy-cuda12x>=13.6,<14.0",
+    "nvidia-cuda-nvrtc-cu12>=12.0,<13.0",
 ]
 mpi = [
     "mpi4py>=4.1",
@@ -83,7 +84,8 @@ full = [
     "streamlit",
     "jax>=0.4.20",
     "jaxlib>=0.4.20",
-    "cupy-cuda12x>=14.0",
+    "cupy-cuda12x>=13.6,<14.0",
+    "nvidia-cuda-nvrtc-cu12>=12.0,<13.0",
     "gymnasium>=1.0.0",
     "freegs>=0.6",
     "mpi4py>=4.1",
@@ -201,7 +203,7 @@ module = [
 disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers"
+addopts = "-p no:pytest_nengo --strict-markers"
 markers = [
     "slow: marks long-running regression tests",
     "experimental: marks experimental/research-only validation lanes",

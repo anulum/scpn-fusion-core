@@ -360,6 +360,14 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert multiprocess["parallel_moment_relative_error"] <= 1.0e-12
     assert multiprocess["halo_checksum_relative_error"] <= 1.0e-12
     assert report["local_multiprocess_cpu_execution_pass"] is True
+    dependency_evidence = report["runtime_dependency_evidence"]
+    assert dependency_evidence["schema"] == "production-decomposition-runtime-dependencies.v1"
+    assert dependency_evidence["numpy_contract_pass"] is True
+    rows_by_module = {row["module"]: row for row in dependency_evidence["rows"]}
+    assert rows_by_module["numpy"]["required_specifier"] == "numpy>=1.24,<2.0"
+    assert not str(rows_by_module["numpy"]["version"]).startswith("2.")
+    assert rows_by_module["mpi4py"]["required_specifier"] == "mpi4py>=4.1"
+    assert rows_by_module["cupy"]["required_specifier"] == "cupy-cuda12x>=13.6,<14.0"
     mpi_runtime = report["mpi_runtime_evidence"]
     assert mpi_runtime["schema"] == "production-decomposition-mpi-runtime-evidence.v1"
     assert mpi_runtime["status"] in {
