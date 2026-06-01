@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import importlib
 import json
 import os
@@ -27,10 +28,12 @@ import shutil
 import subprocess  # nosec B404
 import sys
 import warnings
+import zipfile
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE_ROOT = ROOT / "data" / "external" / "full_fidelity_public_sources"
@@ -66,6 +69,20 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _write_deterministic_npz(path: Path, arrays: dict[str, NDArray[Any]]) -> None:
+    """Write compressed NPZ bytes with stable member order and timestamps."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as raw, zipfile.ZipFile(
+        raw, mode="w", compression=zipfile.ZIP_DEFLATED
+    ) as archive:
+        for name in sorted(arrays):
+            buffer = io.BytesIO()
+            np.save(buffer, np.asarray(arrays[name]), allow_pickle=False)
+            info = zipfile.ZipInfo(f"{name}.npy", date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            archive.writestr(info, buffer.getvalue())
 
 
 def _git_commit(repo: Path) -> str | None:
@@ -222,7 +239,7 @@ def _generate_artifact(*, write: bool) -> dict[str, Any]:
     }
     if write:
         ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(ARTIFACT_PATH, **arrays)
+        _write_deterministic_npz(ARTIFACT_PATH, arrays)
         metadata["sha256"] = _sha256(ARTIFACT_PATH)
         METADATA_PATH.write_text(
             json.dumps(metadata, indent=2, sort_keys=True) + "\n",

@@ -36,7 +36,7 @@
   "provenance_url": "https://github.com/fsciortino/Aurora/tree/4c53ee2fb5202977682c3da4deba5fc07ab3a203/examples",
   "redistribution_license": "MIT with Aurora User Agreement citation notice; Open-ADAS public derived data",
   "reference_family": "Aurora",
-  "sha256": "a2b5b42d333609884976c70788fa94c22f4322d1d758094e186517916aaa93fd",
+  "sha256": "9b0760cfe99fbbaea633b914c3926f7bf8af18762f5ecaae1c5998787de6f042",
   "solver_output_comparison_ready": false,
   "solver_output_comparison_status": "blocked_no_native_same_case_transport_comparison_for_partial_atomic_artifact",
   "source_data_files": [

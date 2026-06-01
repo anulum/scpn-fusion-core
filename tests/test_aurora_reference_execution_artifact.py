@@ -41,3 +41,15 @@ def test_aurora_reference_execution_artifact_is_fail_closed() -> None:
         np.testing.assert_allclose(payload["fraction_sum_with_cx"], 1.0, rtol=0.0, atol=1e-12)
         assert np.all(np.isfinite(payload["Te_eV"]))
         assert np.all(np.isfinite(payload["ne_cm3"]))
+
+
+def test_aurora_reference_execution_artifact_is_byte_stable() -> None:
+    first = build_aurora_reference_execution_report(write=True)
+    second = build_aurora_reference_execution_report(write=True)
+
+    if not first["artifact_generated"] or not second["artifact_generated"]:
+        assert first["reference_output_ready"] is False
+        assert second["reference_output_ready"] is False
+        return
+
+    assert first["artifact"]["sha256"] == second["artifact"]["sha256"]

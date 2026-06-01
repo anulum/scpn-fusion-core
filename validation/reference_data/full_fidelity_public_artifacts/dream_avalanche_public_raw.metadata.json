@@ -22,7 +22,7 @@
   "provenance_url": "https://github.com/chalmersplasmatheory/DREAM/blob/ecdd5e146537c77602c9d7cc76b36100200e4b9a/tests/physics/DREAM_avalanche/DREAM-avalanche-data.h5",
   "redistribution_license": "MIT",
   "reference_family": "DREAM",
-  "sha256": "5b03dad4f8845551bdd305453ce6dae62cbc05233d1d34828cfd856ee389ccf3",
+  "sha256": "9c4e6465e062ca920b1f3c97d0f728d1efcaa3e905a5af58b9c5662ffe82bfd8",
   "solver_output_comparison_ready": false,
   "solver_output_comparison_status": "blocked_required_manifest_observables_missing_from_public_h5_payload",
   "source_sha256": "cca0f32950f70b11bdea3c36c14896e6f9a762bb871eaacf94479eb2b878c3c6",

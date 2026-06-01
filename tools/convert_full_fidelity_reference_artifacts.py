@@ -18,11 +18,15 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
+import importlib
 import json
+import zipfile
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE_ROOT = ROOT / "data" / "external" / "full_fidelity_public_sources"
@@ -75,9 +79,11 @@ def _git_commit(repo: Path) -> str | None:
 
 def _load_manifest() -> dict[str, Any]:
     manifest = json.loads(REFERENCE_CASES.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        raise ValueError("full-fidelity reference manifest must be a JSON object")
     if manifest.get("schema") != "full-fidelity-reference-cases.v1":
         raise ValueError("full-fidelity reference manifest schema mismatch")
-    return manifest
+    return cast(dict[str, Any], manifest)
 
 
 def _surface_required_observables(manifest: dict[str, Any], surface: str) -> list[str]:
@@ -88,17 +94,24 @@ def _surface_required_observables(manifest: dict[str, Any], surface: str) -> lis
     return [str(name) for name in observables] if isinstance(observables, list) else []
 
 
-def _finite_payload(arrays: dict[str, np.ndarray]) -> bool:
+def _finite_payload(arrays: dict[str, NDArray[Any]]) -> bool:
     return bool(arrays) and all(
         array.size > 0 and bool(np.all(np.isfinite(np.asarray(array, dtype=float))))
         for array in arrays.values()
     )
 
 
-def _write_npz(path: Path, arrays: dict[str, np.ndarray]) -> None:
+def _write_npz(path: Path, arrays: dict[str, NDArray[Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    kwargs: dict[str, Any] = {key: value for key, value in arrays.items()}
-    np.savez_compressed(path, **kwargs)
+    with path.open("wb") as raw, zipfile.ZipFile(
+        raw, mode="w", compression=zipfile.ZIP_DEFLATED
+    ) as archive:
+        for name in sorted(arrays):
+            buffer = io.BytesIO()
+            np.save(buffer, np.asarray(arrays[name]), allow_pickle=False)
+            info = zipfile.ZipInfo(f"{name}.npy", date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            archive.writestr(info, buffer.getvalue())
 
 
 def _write_metadata(path: Path, metadata: dict[str, Any]) -> None:
@@ -148,7 +161,7 @@ def _existing_artifact_record(artifact_id: str) -> dict[str, Any] | None:
 
 def _convert_dream_avalanche(manifest: dict[str, Any], *, write: bool) -> dict[str, Any] | None:
     try:
-        import h5py
+        h5py = importlib.import_module("h5py")
     except ImportError:
         return _existing_artifact_record("dream_avalanche_public_raw")
 

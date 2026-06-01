@@ -10,6 +10,9 @@
 
 ## [Unreleased]
 
+- Declared the `requests` runtime dependency required by public Aurora
+  acquisition and made public NPZ reference-artifact writing deterministic.
+
 - Added JSON sidecar ingestion for future production-decomposition distributed
   runtime measurements while keeping incomplete rows blocked by the acceptance
   manifest.

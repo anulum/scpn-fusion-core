@@ -50,7 +50,7 @@
       "provenance_url": "https://github.com/chalmersplasmatheory/DREAM/blob/ecdd5e146537c77602c9d7cc76b36100200e4b9a/tests/physics/DREAM_avalanche/DREAM-avalanche-data.h5",
       "redistribution_license": "MIT",
       "reference_family": "DREAM",
-      "sha256": "5b03dad4f8845551bdd305453ce6dae62cbc05233d1d34828cfd856ee389ccf3",
+      "sha256": "9c4e6465e062ca920b1f3c97d0f728d1efcaa3e905a5af58b9c5662ffe82bfd8",
       "solver_output_comparison_ready": false,
       "surface": "runaway_electrons"
     },
@@ -77,7 +77,7 @@
       "provenance_url": "https://github.com/FusionComputingLab/freegsnke/tree/00b79a08fbb6e642ac5ed2e440383cc5962e0358/freegsnke/tests/baselines",
       "redistribution_license": "LGPL-3.0-or-later",
       "reference_family": "FreeGSNKE",
-      "sha256": "75c6941c66174b37738181891071e5071c4addca3a1344bbdd75b8f4587fa561",
+      "sha256": "bb82f7577f380cc97881955d27bbfd90e587bbf30287fab7a25c9093ead7084c",
       "solver_output_comparison_ready": false,
       "surface": "free_boundary_equilibrium"
     },

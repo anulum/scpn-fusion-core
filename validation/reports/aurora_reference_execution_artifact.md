@@ -23,5 +23,5 @@ Run a public Aurora or STRAHL radial transport case with line radiation, source/
 
 - Artifact: `validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.npz`
 - Metadata: `validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.metadata.json`
-- SHA-256: `a2b5b42d333609884976c70788fa94c22f4322d1d758094e186517916aaa93fd`
+- SHA-256: `9b0760cfe99fbbaea633b914c3926f7bf8af18762f5ecaae1c5998787de6f042`
 - Solver comparison ready: `False`
