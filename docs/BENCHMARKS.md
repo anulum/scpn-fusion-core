@@ -129,6 +129,27 @@ for local development smoke tests. A 2026-06-01 JarvisLabs L4 probe with driver
 `llvmpipe`; its WGPU timings are therefore blocked as CPU-backed software
 adapter evidence, not published GPU throughput.
 
+### WGPU versus CUDA/JAX backend alternatives
+
+The fail-closed dual-backend benchmark measures the two GPU paths separately:
+
+```bash
+python validation/benchmark_gpu_backend_alternatives.py
+```
+
+Cloud wrapper:
+
+```bash
+scripts/cloud/measure_gpu_backend_alternatives.sh RUN_ID=gpu_backend_alternatives_$(date -u +%Y%m%dT%H%M%SZ)
+```
+
+The report writes `validation/reports/gpu_backend_alternatives.json` and
+`validation/reports/gpu_backend_alternatives.md` for local tracked runs, or
+`benchmark_runs/<RUN_ID>/reports/` for cloud runs. A WGPU lane is publishable
+only when the Vulkan/WGPU device is physical. A CUDA/JAX lane is publishable
+only when JAX reports a CUDA device and the deterministic kernel result carries
+a SHA-256 checksum. The two lanes are never merged into a generic GPU result.
+
 ### Native Rust solver kernels
 
 | Benchmark | Median |
@@ -902,7 +923,8 @@ The gate reports static implementation readiness separately from
 `production_scaling_ready`, which remains `false` until current GPU benchmark
 artifacts include device metadata, solver identity, and output checksums.
 The artefact must also prove a physical WGPU adapter (`DiscreteGpu` or
-`IntegratedGpu`); CPU software adapters do not satisfy the gate.
+`IntegratedGpu`) or a CUDA/JAX lane with a detected CUDA device and result
+checksum; CPU software adapters do not satisfy the gate.
 
 ### Free-boundary Strict Acceptance Matrix
 

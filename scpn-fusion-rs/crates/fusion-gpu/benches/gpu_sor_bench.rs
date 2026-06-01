@@ -7,7 +7,7 @@
 // SCPN Fusion Core - GPU SOR Benchmarks
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use fusion_gpu::GpuGsSolver;
+use fusion_gpu::{gpu_available, gpu_info, GpuGsSolver};
 use fusion_math::sor::sor_solve;
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
@@ -80,6 +80,11 @@ fn bench_gpu_sor_full(c: &mut Criterion, nr: usize, nz: usize) {
 }
 
 fn bench_apples_to_apples(c: &mut Criterion) {
+    eprintln!("fusion_gpu_available={}", gpu_available());
+    eprintln!(
+        "fusion_gpu_adapter={}",
+        gpu_info().unwrap_or_else(|| "unavailable".to_string())
+    );
     for (nr, nz) in [(33, 33), (65, 65), (129, 129)] {
         bench_cpu_sor(c, nr, nz);
         bench_gpu_sor_full(c, nr, nz);

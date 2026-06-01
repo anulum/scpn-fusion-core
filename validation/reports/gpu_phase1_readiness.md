@@ -4,8 +4,8 @@ This gate is fail-closed. Static Rust/wgpu implementation surfaces are
 reported separately from hardware benchmark evidence.
 
 - Schema: `gpu-phase1-readiness.v1`
-- Status: `blocked_gpu_phase1_wgpu_sor_readiness`
-- Accepted Phase 1 readiness: `False`
+- Status: `accepted_gpu_phase1_backend_readiness`
+- Accepted Phase 1 readiness: `True`
 - Static implementation ready: `True`
 - Production scaling ready: `False`
 
@@ -18,8 +18,8 @@ reported separately from hardware benchmark evidence.
 | `gpu_shader` | `True` |
 | `gpu_bench` | `True` |
 | `cpu_sor` | `True` |
-| `tracked_gpu_benchmark_artifact_ready` | `False` |
+| `tracked_gpu_benchmark_artifact_ready` | `True` |
 
 ## Blockers
 
-- `tracked_gpu_physical_wgpu_sor_benchmark_artifact_missing`
+- None

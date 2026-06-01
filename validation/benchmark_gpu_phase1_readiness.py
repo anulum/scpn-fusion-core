@@ -25,6 +25,7 @@ REPORT_DIR = ROOT / "validation" / "reports"
 DEFAULT_JSON_REPORT = REPORT_DIR / "gpu_phase1_readiness.json"
 DEFAULT_MD_REPORT = REPORT_DIR / "gpu_phase1_readiness.md"
 DEFAULT_BENCHMARK_ARTIFACTS = [
+    REPORT_DIR / "gpu_backend_alternatives.json",
     REPORT_DIR / "gpu_kernel_benchmark_results.json",
     REPORT_DIR / "gpu_sor_benchmark_results.json",
     ROOT / "artifacts" / "gpu_kernel_benchmark_results.json",
@@ -67,6 +68,29 @@ def _load_benchmark_artifact(path: Path) -> dict[str, Any] | None:
     return data
 
 
+def _dual_backend_report_ready(payload: dict[str, Any]) -> bool:
+    if payload.get("schema") != "gpu-backend-alternatives.v1":
+        return False
+    lanes = payload.get("lanes", [])
+    if not isinstance(lanes, list):
+        return False
+    for lane in lanes:
+        if not isinstance(lane, dict) or lane.get("status") != "passed":
+            continue
+        if lane.get("lane") == "wgpu_physical":
+            if (
+                lane.get("fusion_gpu_adapter_physical") is True
+                or lane.get("physical_vulkan_device_present") is True
+            ):
+                return True
+        if lane.get("lane") == "cuda_jax":
+            if lane.get("cuda_device_present") is True and _sha256_present(
+                lane.get("result_sha256")
+            ):
+                return True
+    return False
+
+
 def evaluate_gpu_phase1_readiness(
     *,
     root: Path = ROOT,
@@ -105,12 +129,15 @@ def evaluate_gpu_phase1_readiness(
 
     benchmark_artifact_ready = any(
         bool(
-            artifact["payload"].get("gpu_available") is True
-            and artifact["payload"].get("solver") in {"wgpu_sor", "gpu_sor"}
-            and _physical_gpu_adapter_present(artifact["payload"])
-            and (
-                _sha256_present(artifact["payload"].get("output_sha256"))
-                or _sha256_present(artifact["payload"].get("result_sha256"))
+            _dual_backend_report_ready(artifact["payload"])
+            or (
+                artifact["payload"].get("gpu_available") is True
+                and artifact["payload"].get("solver") in {"wgpu_sor", "gpu_sor"}
+                and _physical_gpu_adapter_present(artifact["payload"])
+                and (
+                    _sha256_present(artifact["payload"].get("output_sha256"))
+                    or _sha256_present(artifact["payload"].get("result_sha256"))
+                )
             )
         )
         for artifact in artifacts
@@ -124,10 +151,10 @@ def evaluate_gpu_phase1_readiness(
         blockers.append("tracked_gpu_physical_wgpu_sor_benchmark_artifact_missing")
     return {
         "schema": "gpu-phase1-readiness.v1",
-        "benchmark_id": "gpu_phase1_wgpu_sor_readiness",
-        "status": "accepted_gpu_phase1_wgpu_sor_readiness"
+        "benchmark_id": "gpu_phase1_backend_readiness",
+        "status": "accepted_gpu_phase1_backend_readiness"
         if accepted
-        else "blocked_gpu_phase1_wgpu_sor_readiness",
+        else "blocked_gpu_phase1_backend_readiness",
         "accepted_phase1_readiness": accepted,
         "phase1_static_implementation_ready": phase1_static_ready,
         "production_scaling_ready": False,
