@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added a fail-closed production-decomposition distributed-run acceptance
+  manifest with required measurement fields, rank coverage, efficiency gates,
+  hardware metadata, and checksum requirements.
+
 - Added a fail-closed production-decomposition distributed scaling gate with
   required rank counts, efficiency thresholds, and measurement requirements
   while keeping MPI/multi-GPU acceptance blocked until real runs exist.

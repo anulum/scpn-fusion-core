@@ -272,13 +272,36 @@ Required measurements:
 - hardware metadata for CPU, accelerator, interconnect, and driver stack
 - decomposition-invariant physics checks for every distributed run
 
+## Distributed run acceptance manifest
+
+- Schema: `production-decomposition-distributed-run-acceptance.v1`
+- Status: `blocked_no_distributed_measurement_rows`
+- Distributed run acceptance ready: `False`
+- Candidate run count: `0`
+- Accepted run count: `0`
+- Required rank counts: `[1, 2, 4, 8, 16, 32]`
+- Missing rank counts: `[1, 2, 4, 8, 16, 32]`
+- Estimated halo bytes per step: `436207616`
+
+Required distributed-run fields:
+- `rank_count`
+- `wall_time_s`
+- `parallel_efficiency`
+- `weak_scaling_efficiency`
+- `owned_phase_cells_per_rank`
+- `halo_exchange_bytes_per_step`
+- `decomposition_invariant_pass`
+- `hardware_metadata`
+- `command`
+- `artifact_sha256`
+
 ## Local CPU halo/invariant benchmark
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 5.259111e-02 | 9.969138e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 1.491587e-01 | 3.514968e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 1.786316e-01 | 2.935024e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 6.289492e-02 | 8.335936e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 4.326906e-02 | 1.211693e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 6.141168e-02 | 8.537269e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -293,9 +316,9 @@ Required measurements:
 
 | Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 9.969138e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 3.514968e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 2.935024e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_4x2 | 8 | 524288 | 8.335936e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 1.211693e+07 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 8.537269e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 
@@ -309,3 +332,4 @@ Required measurements:
 - same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes
 - hardware-specific multi-rank throughput and efficiency thresholds
 - accepted distributed scaling gate over required rank counts
+- accepted distributed run manifests with reproducibility fields and checksums

@@ -42,6 +42,18 @@ FLOAT64_BYTES = 8
 REQUIRED_DISTRIBUTED_RANK_COUNTS = [1, 2, 4, 8, 16, 32]
 MINIMUM_PARALLEL_EFFICIENCY = 0.70
 MINIMUM_WEAK_SCALING_EFFICIENCY = 0.80
+REQUIRED_DISTRIBUTED_RUN_FIELDS = [
+    "rank_count",
+    "wall_time_s",
+    "parallel_efficiency",
+    "weak_scaling_efficiency",
+    "owned_phase_cells_per_rank",
+    "halo_exchange_bytes_per_step",
+    "decomposition_invariant_pass",
+    "hardware_metadata",
+    "command",
+    "artifact_sha256",
+]
 FACE_OPPOSITES = {
     "radial_lower": "radial_upper",
     "radial_upper": "radial_lower",
@@ -460,6 +472,68 @@ def _distributed_scaling_gate_evidence(
     }
 
 
+def _distributed_run_acceptance_manifest(
+    scaling_gate: dict[str, Any],
+) -> dict[str, Any]:
+    """Return fail-closed acceptance requirements for future distributed runs."""
+    required_rank_counts = [int(rank) for rank in scaling_gate["required_rank_counts"]]
+    measured_runs = scaling_gate.get("measured_runs", [])
+    if not isinstance(measured_runs, list):
+        raise TypeError("measured_runs must be a list")
+    accepted_rows: list[dict[str, Any]] = []
+    candidate_rows: list[dict[str, Any]] = []
+    for run in measured_runs:
+        if not isinstance(run, dict):
+            raise TypeError("distributed run rows must be dictionaries")
+        missing_fields = [field for field in REQUIRED_DISTRIBUTED_RUN_FIELDS if field not in run]
+        rank_count = int(run.get("rank_count", -1))
+        parallel_efficiency = float(run.get("parallel_efficiency", 0.0))
+        weak_scaling_efficiency = float(run.get("weak_scaling_efficiency", 0.0))
+        invariant_pass = bool(run.get("decomposition_invariant_pass", False))
+        row_pass = bool(
+            not missing_fields
+            and rank_count in required_rank_counts
+            and float(run["wall_time_s"]) > 0.0
+            and parallel_efficiency >= MINIMUM_PARALLEL_EFFICIENCY
+            and weak_scaling_efficiency >= MINIMUM_WEAK_SCALING_EFFICIENCY
+            and invariant_pass
+        )
+        row = {
+            "missing_fields": missing_fields,
+            "rank_count": rank_count,
+            "run_acceptance_pass": row_pass,
+        }
+        candidate_rows.append(row)
+        if row_pass:
+            accepted_rows.append(row)
+    accepted_rank_counts = sorted({int(row["rank_count"]) for row in accepted_rows})
+    missing_rank_counts = [
+        rank for rank in required_rank_counts if rank not in accepted_rank_counts
+    ]
+    acceptance_ready = bool(
+        not missing_rank_counts and len(accepted_rank_counts) == len(required_rank_counts)
+    )
+    return {
+        "accepted_rank_counts": accepted_rank_counts,
+        "accepted_run_count": len(accepted_rows),
+        "candidate_run_count": len(candidate_rows),
+        "candidate_rows": candidate_rows,
+        "distributed_run_acceptance_ready": acceptance_ready,
+        "estimated_halo_bytes_per_step": int(scaling_gate["estimated_halo_bytes_per_step"]),
+        "minimum_parallel_efficiency_threshold": MINIMUM_PARALLEL_EFFICIENCY,
+        "minimum_weak_scaling_efficiency_threshold": MINIMUM_WEAK_SCALING_EFFICIENCY,
+        "missing_rank_counts": missing_rank_counts,
+        "required_fields": REQUIRED_DISTRIBUTED_RUN_FIELDS,
+        "required_rank_counts": required_rank_counts,
+        "schema": "production-decomposition-distributed-run-acceptance.v1",
+        "status": "accepted_distributed_run_measurements"
+        if acceptance_ready
+        else "blocked_no_distributed_measurement_rows"
+        if not candidate_rows
+        else "blocked_incomplete_distributed_measurement_rows",
+    }
+
+
 def _hardware_metadata() -> dict[str, Any]:
     return {
         "cpu_count": os.cpu_count(),
@@ -515,6 +589,9 @@ def run_benchmark() -> dict[str, Any]:
     )
     distributed_scaling_gate_evidence = _distributed_scaling_gate_evidence(
         communication_volume_evidence
+    )
+    distributed_run_acceptance_manifest = _distributed_run_acceptance_manifest(
+        distributed_scaling_gate_evidence
     )
     local_cpu_shape_variant_plan = build_radial_toroidal_decomposition(
         n_radial=64,
@@ -599,6 +676,7 @@ def run_benchmark() -> dict[str, Any]:
         "cpu_benchmark_rows": cpu_benchmark_rows,
         "decomposition_invariant_pass": decomposition_invariant_pass,
         "distributed_communication_volume_evidence": communication_volume_evidence,
+        "distributed_run_acceptance_manifest": distributed_run_acceptance_manifest,
         "distributed_scaling_gate_evidence": distributed_scaling_gate_evidence,
         "halo_face_integrity_evidence": halo_face_integrity_evidence,
         "halo_exchange_pass": halo_exchange_pass,
@@ -622,6 +700,7 @@ def run_benchmark() -> dict[str, Any]:
             "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
             "hardware-specific multi-rank throughput and efficiency thresholds",
             "accepted distributed scaling gate over required rank counts",
+            "accepted distributed run manifests with reproducibility fields and checksums",
         ],
     }
 
@@ -815,6 +894,37 @@ def write_reports(report: dict[str, Any]) -> None:
         ]
     )
     lines.extend(f"- {item}" for item in scaling["required_measurements"])
+    manifest = report["distributed_run_acceptance_manifest"]
+    lines.extend(
+        [
+            "",
+            "## Distributed run acceptance manifest",
+            "",
+            f"- Schema: `{manifest['schema']}`",
+            f"- Status: `{manifest['status']}`",
+            (
+                "- Distributed run acceptance ready: "
+                f"`{manifest['distributed_run_acceptance_ready']}`"
+            ),
+            f"- Candidate run count: `{manifest['candidate_run_count']}`",
+            f"- Accepted run count: `{manifest['accepted_run_count']}`",
+            (
+                "- Required rank counts: "
+                f"`{json.dumps(manifest['required_rank_counts'])}`"
+            ),
+            (
+                "- Missing rank counts: "
+                f"`{json.dumps(manifest['missing_rank_counts'])}`"
+            ),
+            (
+                "- Estimated halo bytes per step: "
+                f"`{manifest['estimated_halo_bytes_per_step']}`"
+            ),
+            "",
+            "Required distributed-run fields:",
+        ]
+    )
+    lines.extend(f"- `{item}`" for item in manifest["required_fields"])
     lines.extend(
         [
             "",

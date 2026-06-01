@@ -223,6 +223,18 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     ]
     assert "MPI" in scaling["blocking_reason"]
     assert "multi-GPU" in scaling["blocking_reason"]
+    manifest = report["distributed_run_acceptance_manifest"]
+    assert manifest["schema"] == "production-decomposition-distributed-run-acceptance.v1"
+    assert manifest["status"] == "blocked_no_distributed_measurement_rows"
+    assert manifest["distributed_run_acceptance_ready"] is False
+    assert manifest["accepted_run_count"] == 0
+    assert manifest["candidate_run_count"] == 0
+    assert manifest["required_rank_counts"] == scaling["required_rank_counts"]
+    assert manifest["missing_rank_counts"] == scaling["required_rank_counts"]
+    assert manifest["estimated_halo_bytes_per_step"] == scaling["estimated_halo_bytes_per_step"]
+    assert "hardware_metadata" in manifest["required_fields"]
+    assert "wall_time_s" in manifest["required_fields"]
+    assert "decomposition_invariant_pass" in manifest["required_fields"]
     shape_evidence = report["same_physics_shape_convergence_evidence"]
     assert shape_evidence["schema"] == "production-decomposition-shape-convergence.v1"
     assert shape_evidence["shape_convergence_pass"] is True

@@ -1182,8 +1182,8 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 9969138.142237574,
-      "elapsed_s": 0.0525911059230566,
+      "cells_per_second": 8335935.695662906,
+      "elapsed_s": 0.06289491895586252,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1208,8 +1208,8 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 3514967.7105752435,
-      "elapsed_s": 0.14915869594551623,
+      "cells_per_second": 12116926.606288882,
+      "elapsed_s": 0.04326905799098313,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1234,8 +1234,8 @@
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 2935024.06124628,
-      "elapsed_s": 0.17863158497493714,
+      "cells_per_second": 8537269.036997823,
+      "elapsed_s": 0.06141167599707842,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -2714,6 +2714,46 @@
     "status": "blocked_missing_distributed_runtime_execution",
     "total_halo_exchange_bytes_per_step": 436207616
   },
+  "distributed_run_acceptance_manifest": {
+    "accepted_rank_counts": [],
+    "accepted_run_count": 0,
+    "candidate_rows": [],
+    "candidate_run_count": 0,
+    "distributed_run_acceptance_ready": false,
+    "estimated_halo_bytes_per_step": 436207616,
+    "minimum_parallel_efficiency_threshold": 0.7,
+    "minimum_weak_scaling_efficiency_threshold": 0.8,
+    "missing_rank_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "required_fields": [
+      "rank_count",
+      "wall_time_s",
+      "parallel_efficiency",
+      "weak_scaling_efficiency",
+      "owned_phase_cells_per_rank",
+      "halo_exchange_bytes_per_step",
+      "decomposition_invariant_pass",
+      "hardware_metadata",
+      "command",
+      "artifact_sha256"
+    ],
+    "required_rank_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "schema": "production-decomposition-distributed-run-acceptance.v1",
+    "status": "blocked_no_distributed_measurement_rows"
+  },
   "distributed_scaling_gate_evidence": {
     "blocking_reason": "MPI or multi-GPU distributed runtime measurements are required before production-scale decomposition can be accepted.",
     "distributed_scaling_ready": false,
@@ -3066,7 +3106,8 @@
     "large-grid cluster/GPU wall-time scaling report",
     "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
     "hardware-specific multi-rank throughput and efficiency thresholds",
-    "accepted distributed scaling gate over required rank counts"
+    "accepted distributed scaling gate over required rank counts",
+    "accepted distributed run manifests with reproducibility fields and checksums"
   ],
   "parallel_moment_invariant_pass": true,
   "production_scale_ready": false,
@@ -6014,7 +6055,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 9969138.142237574,
+        "cells_per_second": 8335935.695662906,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6025,7 +6066,7 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 3514967.7105752435,
+        "cells_per_second": 12116926.606288882,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6036,7 +6077,7 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 2935024.06124628,
+        "cells_per_second": 8537269.036997823,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
