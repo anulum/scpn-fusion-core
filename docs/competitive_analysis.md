@@ -4,7 +4,7 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 
-**Version:** 3.9.6 | **Last updated:** 2026-05-24
+**Version:** 3.9.7 | **Last updated:** 2026-05-24
 
 Community code timings are from published literature (references at end).
 SCPN timings are CI-verified on GitHub Actions ubuntu-latest unless noted.

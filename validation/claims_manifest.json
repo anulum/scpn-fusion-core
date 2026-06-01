@@ -193,11 +193,11 @@
       "evidence_patterns": [
         {
           "file": "pyproject.toml",
-          "pattern": "version\\s*=\\s*\"3\\.9\\.6\""
+          "pattern": "version\\s*=\\s*\"3\\.9\\.7\""
         },
         {
           "file": "src/scpn_fusion/__init__.py",
-          "pattern": "__version__\\s*=\\s*\"3\\.9\\.6\""
+          "pattern": "__version__\\s*=\\s*\"3\\.9\\.7\""
         }
       ]
     },
