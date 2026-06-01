@@ -909,7 +909,8 @@ exports fail-closed native kinetic-operator evidence: momentum advection,
 diffusion, Dreicer source, avalanche growth, and synchrotron force evidence are
 present in the native path. The report also publishes native-only source-term
 budget diagnostics for avalanche growth, synchrotron loss, partial-screening
-drag, and bremsstrahlung loss channels. Full pitch-angle scattering, radial
+drag, and bremsstrahlung loss channels, plus bounded pitch-cosine moment
+evidence over the exported artifact pitch axis. Full pitch-angle scattering, radial
 transport, DREAM partial-screening, DREAM bremsstrahlung-loss parity,
 same-case distribution/current/growth/source-budget thresholds, and coupled
 momentum-pitch-radius operator parity remain blocked. This is a reference-gate

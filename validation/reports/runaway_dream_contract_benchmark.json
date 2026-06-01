@@ -9,7 +9,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 1e-08,
       "total_source_m3_s": 0.0,
-      "wall_time_s": 0.00018117902800440788
+      "wall_time_s": 5.4119969718158245e-05
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -19,7 +19,7 @@
       "loss_source_m3_s": 0.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9297121255879576.0,
-      "wall_time_s": 7.397995796054602e-05
+      "wall_time_s": 0.0004575669299811125
     },
     {
       "avalanche_source_m3_s": 9297121226692284.0,
@@ -29,7 +29,7 @@
       "loss_source_m3_s": 10000000000000.0,
       "runaway_fraction": 2e-08,
       "total_source_m3_s": 9287121255879576.0,
-      "wall_time_s": 2.6221037842333317e-05
+      "wall_time_s": 5.947297904640436e-05
     }
   ],
   "description": "DREAM-style fluid density-balance plus native momentum-pitch-radius artifact contract; not kinetic DREAM parity.",
@@ -38,12 +38,13 @@
     "loss_accounting_exact": true,
     "native_kinetic_artifact_contract": true,
     "native_kinetic_operator_evidence_fail_closed": true,
+    "native_pitch_moment_evidence_fail_closed": true,
     "native_source_term_budget_evidence_fail_closed": true,
     "subcritical_avalanche_zero": true,
     "supercritical_avalanche_positive": true
   },
   "native_kinetic_artifact": {
-    "artifact_sha256": "dbadcede66e42484ee48f5087c5608c1f631abaeb564d628d821a736aefe25e6",
+    "artifact_sha256": "d4b1a8abf8b403121dfe8f0f64137a5547a3d2a5f6951e757f2c4746177b3cc9",
     "contract_validation": {
       "coordinate_lengths": {
         "momentum_mec": 48,
@@ -147,6 +148,22 @@
         "momentum_diffusion": true,
         "partial_screening_dream_operator": false,
         "synchrotron_radiation_reaction": true
+      },
+      "pitch_moment_evidence": {
+        "full_pitch_angle_scattering_operator_ready": false,
+        "max_abs_pitch_moment": 0.12500000000000006,
+        "mean_pitch_moment": 0.125,
+        "pitch_axis_count": 5,
+        "pitch_axis_max": 1.0,
+        "pitch_axis_min": -1.0,
+        "pitch_moment_bounded": true,
+        "pitch_moment_finite": true,
+        "pitch_moment_shape": [
+          4,
+          4
+        ],
+        "schema": "native-runaway-pitch-moment-evidence.v1",
+        "status": "native_projection_pitch_moment_only_not_full_scattering_operator"
       },
       "radius_pitch_are_evolved_operator_axes": false,
       "schema": "native-runaway-kinetic-operator-evidence.v1",
@@ -301,6 +318,22 @@
       "partial_screening_dream_operator": false,
       "synchrotron_radiation_reaction": true
     },
+    "pitch_moment_evidence": {
+      "full_pitch_angle_scattering_operator_ready": false,
+      "max_abs_pitch_moment": 0.12500000000000006,
+      "mean_pitch_moment": 0.125,
+      "pitch_axis_count": 5,
+      "pitch_axis_max": 1.0,
+      "pitch_axis_min": -1.0,
+      "pitch_moment_bounded": true,
+      "pitch_moment_finite": true,
+      "pitch_moment_shape": [
+        4,
+        4
+      ],
+      "schema": "native-runaway-pitch-moment-evidence.v1",
+      "status": "native_projection_pitch_moment_only_not_full_scattering_operator"
+    },
     "radius_pitch_are_evolved_operator_axes": false,
     "schema": "native-runaway-kinetic-operator-evidence.v1",
     "source_term_budget_evidence": {
@@ -362,9 +395,9 @@
   },
   "passed": true,
   "timing": {
-    "max_balance_wall_time_s": 2.8343056328594685e-05,
-    "median_balance_wall_time_s": 1.915101893246174e-05,
-    "min_balance_wall_time_s": 1.565110869705677e-05,
+    "max_balance_wall_time_s": 2.688402310013771e-05,
+    "median_balance_wall_time_s": 1.7782091163098812e-05,
+    "min_balance_wall_time_s": 8.96095298230648e-06,
     "repeats": 25
   }
 }

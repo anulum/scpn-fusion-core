@@ -6,9 +6,9 @@ It does not claim parity with DREAM's kinetic momentum-space distribution solver
 ## Timing
 
 - Repeats: 25
-- Median balance wall time: 1.915102e-05 s
-- Minimum balance wall time: 1.565111e-05 s
-- Maximum balance wall time: 2.834306e-05 s
+- Median balance wall time: 1.778209e-05 s
+- Minimum balance wall time: 8.960953e-06 s
+- Maximum balance wall time: 2.688402e-05 s
 
 ## Cases
 
@@ -27,11 +27,12 @@ It does not claim parity with DREAM's kinetic momentum-space distribution solver
 - native_kinetic_artifact_contract: PASS
 - native_kinetic_operator_evidence_fail_closed: PASS
 - native_source_term_budget_evidence_fail_closed: PASS
+- native_pitch_moment_evidence_fail_closed: PASS
 
 ## Native kinetic artifact contract
 
 - Schema: `dream-kinetic-artifact.v1`
-- SHA-256: `dbadcede66e42484ee48f5087c5608c1f631abaeb564d628d821a736aefe25e6`
+- SHA-256: `d4b1a8abf8b403121dfe8f0f64137a5547a3d2a5f6951e757f2c4746177b3cc9`
 - Parity status: `native_contract_only_not_dream_parity`
 - Same-case DREAM comparison ready: `False`
 - Contract validation passed: `True`
@@ -52,6 +53,16 @@ It does not claim parity with DREAM's kinetic momentum-space distribution solver
 - Operator terms present: `{"avalanche_growth": true, "bremsstrahlung_radiation_loss_operator": false, "coupled_momentum_pitch_radius_operator": false, "dreicer_source": true, "full_pitch_angle_scattering_operator": false, "full_radial_transport_operator": false, "momentum_advection_drag": true, "momentum_diffusion": true, "partial_screening_dream_operator": false, "synchrotron_radiation_reaction": true}`
 - Observable finiteness: `{"avalanche_growth_rate_t": true, "bremsstrahlung_loss_power_t": true, "f_p_xi_t": true, "partial_screening_drag_t": true, "runaway_current_t": true, "synchrotron_loss_power_t": true}`
 - Observable non-negativity: `{"avalanche_growth_rate_t": true, "bremsstrahlung_loss_power_t": true, "f_p_xi_t": true, "partial_screening_drag_t": true, "runaway_current_t": true, "synchrotron_loss_power_t": true}`
+
+## Native pitch-moment evidence
+
+- Schema: `native-runaway-pitch-moment-evidence.v1`
+- Status: `native_projection_pitch_moment_only_not_full_scattering_operator`
+- Pitch axis count: `5`
+- Pitch moment finite: `True`
+- Pitch moment bounded: `True`
+- Max |pitch moment|: `1.250000e-01`
+- Full pitch-angle scattering operator ready: `False`
 
 ## Native source-term budget evidence
 

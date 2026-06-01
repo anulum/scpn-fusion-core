@@ -60,6 +60,13 @@ def test_runaway_dream_benchmark_exports_fail_closed_operator_evidence() -> None
     assert evidence["operator_terms_present"]["bremsstrahlung_radiation_loss_operator"] is False
     assert all(evidence["observable_finiteness"].values())
     assert all(evidence["observable_nonnegativity"].values())
+    pitch_moment = evidence["pitch_moment_evidence"]
+    assert pitch_moment["schema"] == "native-runaway-pitch-moment-evidence.v1"
+    assert pitch_moment["pitch_moment_finite"] is True
+    assert pitch_moment["pitch_moment_bounded"] is True
+    assert pitch_moment["pitch_axis_count"] == 5
+    assert pitch_moment["max_abs_pitch_moment"] <= 1.0
+    assert pitch_moment["full_pitch_angle_scattering_operator_ready"] is False
     source_budget = evidence["source_term_budget_evidence"]
     assert source_budget["schema"] == "native-runaway-source-term-budget-evidence.v1"
     assert (
@@ -83,6 +90,7 @@ def test_runaway_dream_benchmark_exports_fail_closed_operator_evidence() -> None
     assert source_budget["max_bremsstrahlung_loss_power_w_m3"] >= 0.0
     assert report["invariants"]["native_kinetic_operator_evidence_fail_closed"] is True
     assert report["invariants"]["native_source_term_budget_evidence_fail_closed"] is True
+    assert report["invariants"]["native_pitch_moment_evidence_fail_closed"] is True
     assert "compiled DREAM iface/dreami same-case output" in evidence["blocking_requirements"]
 
 

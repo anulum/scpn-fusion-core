@@ -166,6 +166,47 @@ def _source_term_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _pitch_moment_evidence(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return bounded pitch-cosine moment evidence for the native artifact."""
+    observables = payload["observables"]
+    coordinates = payload["coordinates"]
+    distribution = np.asarray(observables["f_p_xi_t"], dtype=np.float64)
+    pitch = np.asarray(coordinates["pitch_cosine"], dtype=np.float64)
+    if distribution.ndim != 4 or pitch.ndim != 1 or distribution.shape[-1] != pitch.size:
+        return {
+            "schema": "native-runaway-pitch-moment-evidence.v1",
+            "status": "blocked_native_pitch_moment_shape_mismatch",
+            "pitch_axis_count": int(pitch.size) if pitch.ndim == 1 else 0,
+            "pitch_moment_finite": False,
+            "pitch_moment_bounded": False,
+            "full_pitch_angle_scattering_operator_ready": False,
+        }
+    density = np.sum(distribution, axis=(2, 3))
+    weighted = np.sum(distribution * pitch.reshape(1, 1, 1, pitch.size), axis=(2, 3))
+    pitch_moment = np.divide(
+        weighted,
+        np.maximum(density, 1.0e-300),
+        out=np.zeros_like(weighted),
+        where=density > 0.0,
+    )
+    finite = bool(pitch_moment.size and np.all(np.isfinite(pitch_moment)))
+    max_abs = float(np.max(np.abs(pitch_moment))) if finite else float("inf")
+    bounded = bool(finite and max_abs <= 1.0 + 1.0e-12)
+    return {
+        "schema": "native-runaway-pitch-moment-evidence.v1",
+        "status": "native_projection_pitch_moment_only_not_full_scattering_operator",
+        "full_pitch_angle_scattering_operator_ready": False,
+        "max_abs_pitch_moment": max_abs,
+        "mean_pitch_moment": float(np.mean(pitch_moment)) if finite else None,
+        "pitch_axis_count": int(pitch.size),
+        "pitch_axis_max": float(np.max(pitch)),
+        "pitch_axis_min": float(np.min(pitch)),
+        "pitch_moment_bounded": bounded,
+        "pitch_moment_finite": finite,
+        "pitch_moment_shape": [int(axis) for axis in pitch_moment.shape],
+    }
+
+
 def _native_kinetic_operator_evidence(
     payload: dict[str, Any],
     validation: dict[str, Any],
@@ -200,6 +241,7 @@ def _native_kinetic_operator_evidence(
         },
         "observable_finiteness": observable_finiteness,
         "observable_nonnegativity": observable_nonnegativity,
+        "pitch_moment_evidence": _pitch_moment_evidence(payload),
         "source_term_budget_evidence": _source_term_budget_evidence(payload),
         "unweighted_inventory_relative_change_max": _relative_inventory_change(distribution),
         "blocking_requirements": [
@@ -288,6 +330,7 @@ def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
     native_kinetic_artifact = _native_kinetic_artifact_gate()
     native_kinetic_operator_evidence = native_kinetic_artifact["kinetic_operator_evidence"]
     source_term_budget_evidence = native_kinetic_operator_evidence["source_term_budget_evidence"]
+    pitch_moment_evidence = native_kinetic_operator_evidence["pitch_moment_evidence"]
 
     invariants = {
         "subcritical_avalanche_zero": bool(cases[0]["avalanche_source_m3_s"] == 0.0),
@@ -315,6 +358,11 @@ def run_benchmark(repeats: int = 25) -> _RunawayBenchmarkResult:
             and source_term_budget_evidence["all_nonnegative_power_channels"]
             and not source_term_budget_evidence["dream_same_case_budget_ready"]
             and bool(source_term_budget_evidence["blocking_requirements"])
+        ),
+        "native_pitch_moment_evidence_fail_closed": bool(
+            pitch_moment_evidence["pitch_moment_finite"]
+            and pitch_moment_evidence["pitch_moment_bounded"]
+            and not pitch_moment_evidence["full_pitch_angle_scattering_operator_ready"]
         ),
     }
 
@@ -349,6 +397,7 @@ def write_reports(results: _RunawayBenchmarkResult) -> None:
     artifact = results["native_kinetic_artifact"]
     operator_evidence = results["native_kinetic_operator_evidence"]
     source_budget = operator_evidence["source_term_budget_evidence"]
+    pitch_moment = operator_evidence["pitch_moment_evidence"]
     lines = [
         "# Runaway DREAM-Style Contract Benchmark",
         "",
@@ -423,6 +472,19 @@ def write_reports(results: _RunawayBenchmarkResult) -> None:
             (
                 "- Observable non-negativity: "
                 f"`{json.dumps(operator_evidence['observable_nonnegativity'], sort_keys=True)}`"
+            ),
+            "",
+            "## Native pitch-moment evidence",
+            "",
+            f"- Schema: `{pitch_moment['schema']}`",
+            f"- Status: `{pitch_moment['status']}`",
+            f"- Pitch axis count: `{pitch_moment['pitch_axis_count']}`",
+            f"- Pitch moment finite: `{pitch_moment['pitch_moment_finite']}`",
+            f"- Pitch moment bounded: `{pitch_moment['pitch_moment_bounded']}`",
+            f"- Max |pitch moment|: `{pitch_moment['max_abs_pitch_moment']:.6e}`",
+            (
+                "- Full pitch-angle scattering operator ready: "
+                f"`{pitch_moment['full_pitch_angle_scattering_operator_ready']}`"
             ),
             "",
             "## Native source-term budget evidence",
