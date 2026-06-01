@@ -20,7 +20,7 @@ import hashlib
 import json
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -117,8 +117,10 @@ def _missing_requirements() -> list[str]:
 
 def _blocked_row(family: str, status: str) -> dict[str, Any]:
     return {
+        "available_observables": [],
         "benchmark_case_id": None,
         "case_id": None,
+        "complete_required_observables": False,
         "converted_artifact_path": None,
         "deck_physics_sha256": None,
         "deck_id": None,
@@ -139,7 +141,7 @@ def _load_manifest(source_root: Path) -> dict[str, Any] | None:
     path = source_root / MANIFEST_NAME
     if not path.exists():
         return None
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
     if payload.get("schema") != MANIFEST_SCHEMA:
         raise ValueError("GK external output manifest schema mismatch")
     return payload
@@ -416,6 +418,46 @@ def _same_deck_group_status(
         "ready": True,
         "reason": "same_deck_identity_valid",
     }
+
+
+def _solver_family_completeness(
+    rows: list[dict[str, Any]], required_observables: list[str]
+) -> dict[str, Any]:
+    """Return per-family observable/comparison completeness without promotion."""
+    matrix: list[dict[str, Any]] = []
+    for row in rows:
+        available_observables = {
+            str(observable) for observable in row.get("available_observables", [])
+        }
+        observable_presence = {
+            observable: observable in available_observables for observable in required_observables
+        }
+        complete_required_observables = bool(observable_presence) and all(
+            observable_presence.values()
+        )
+        native_ready = bool(row.get("native_same_case_comparison_ready", False))
+        native_passed = bool(row.get("native_same_case_comparison_passed", False))
+        reference_ready = bool(row.get("reference_output_ready", False))
+        matrix.append(
+            {
+                "case_id": row.get("case_id"),
+                "complete_required_observables": complete_required_observables,
+                "native_same_case_comparison_passed": native_passed,
+                "native_same_case_comparison_ready": native_ready,
+                "observable_presence": observable_presence,
+                "same_deck_reference_output_ready": reference_ready,
+                "solver_family": row["solver_family"],
+                "status": row["status"],
+            }
+        )
+    ready = bool(matrix) and all(
+        bool(row["same_deck_reference_output_ready"])
+        and bool(row["complete_required_observables"])
+        and bool(row["native_same_case_comparison_ready"])
+        and bool(row["native_same_case_comparison_passed"])
+        for row in matrix
+    )
+    return {"ready": ready, "rows": matrix}
 
 
 def _observable_array(
@@ -727,8 +769,10 @@ def _convert_case(
     if not comparison_passed:
         missing_requirements.append("native_same_case_threshold_pass")
     return {
+        "available_observables": sorted(reference_payload["observables"]),
         "benchmark_case_id": str(raw_case["benchmark_case_id"]),
         "case_id": case_id,
+        "complete_required_observables": True,
         "converted_artifact_path": _public_path(artifact_path, artifact_dir),
         "deck_physics_sha256": str(raw_case["deck_physics_sha256"]),
         "deck_id": str(raw_case["deck_id"]),
@@ -792,6 +836,8 @@ def build_gk_external_output_parity_report(
         )
         for family in REQUIRED_SOLVER_FAMILIES
     ]
+    required_observables = [str(name) for name in reference_case["required_observables"]]
+    completeness = _solver_family_completeness(rows, required_observables)
 
     grid_rows = manifest.get("grid_convergence_evidence", []) if manifest else []
     scaling_rows = manifest.get("production_scaling_evidence", []) if manifest else []
@@ -871,6 +917,8 @@ def build_gk_external_output_parity_report(
         "schema": "gk-external-nonlinear-output-parity-report.v1",
         "same_deck_group": same_deck_group,
         "same_deck_group_ready": same_deck_ready,
+        "solver_family_completeness_matrix": completeness["rows"],
+        "solver_family_completeness_ready": completeness["ready"],
         "status": status,
     }
     if write:
@@ -896,6 +944,7 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- Native same-case comparison ready: `{report['native_same_case_comparison_ready']}`",
         f"- Grid convergence ready: `{report['grid_convergence_ready']}`",
         f"- Production-scale scaling ready: `{report['production_scale_scaling_ready']}`",
+        f"- Solver-family completeness ready: `{report['solver_family_completeness_ready']}`",
         f"- Converted reference artefacts: `{report['converted_reference_artifacts']}`",
         f"- Same-deck group reason: `{report['same_deck_group']['reason']}`",
         "",
@@ -913,6 +962,25 @@ def _markdown(report: dict[str, Any]) -> str:
                 reference=row["reference_output_ready"],
                 native=row["native_same_case_comparison_ready"],
                 missing=missing,
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Solver-family completeness matrix",
+            "",
+            "| Solver | Reference output | Required observables | Native comparison | Native thresholds |",
+            "|---|:---:|:---:|:---:|:---:|",
+        ]
+    )
+    for row in report["solver_family_completeness_matrix"]:
+        lines.append(
+            "| {solver} | `{reference}` | `{observables}` | `{native}` | `{thresholds}` |".format(
+                solver=row["solver_family"],
+                reference=row["same_deck_reference_output_ready"],
+                observables=row["complete_required_observables"],
+                native=row["native_same_case_comparison_ready"],
+                thresholds=row["native_same_case_comparison_passed"],
             )
         )
     lines.extend(["", "## Missing full-fidelity requirements", ""])

@@ -5,8 +5,10 @@
   "external_output_manifest": "data/external/full_fidelity_public_sources/gk_external_outputs/manifest.json",
   "external_output_rows": [
     {
+      "available_observables": [],
       "benchmark_case_id": null,
       "case_id": null,
+      "complete_required_observables": false,
       "converted_artifact_path": null,
       "deck_id": null,
       "deck_physics_sha256": null,
@@ -35,8 +37,10 @@
       }
     },
     {
+      "available_observables": [],
       "benchmark_case_id": null,
       "case_id": null,
+      "complete_required_observables": false,
       "converted_artifact_path": null,
       "deck_id": null,
       "deck_physics_sha256": null,
@@ -65,8 +69,10 @@
       }
     },
     {
+      "available_observables": [],
       "benchmark_case_id": null,
       "case_id": null,
+      "complete_required_observables": false,
       "converted_artifact_path": null,
       "deck_id": null,
       "deck_physics_sha256": null,
@@ -140,5 +146,68 @@
   },
   "same_deck_group_ready": false,
   "schema": "gk-external-nonlinear-output-parity-report.v1",
+  "solver_family_completeness_matrix": [
+    {
+      "case_id": null,
+      "complete_required_observables": false,
+      "native_same_case_comparison_passed": false,
+      "native_same_case_comparison_ready": false,
+      "observable_presence": {
+        "electromagnetic_apar_energy": false,
+        "electromagnetic_bpar_energy": false,
+        "electromagnetic_phi_energy": false,
+        "electron_heat_flux_spectrum": false,
+        "ion_heat_flux_spectrum": false,
+        "nonlinear_distribution_function": false,
+        "nonlinear_distribution_function_imag": false,
+        "saturated_phi_rms": false,
+        "zonal_flow_energy": false
+      },
+      "same_deck_reference_output_ready": false,
+      "solver_family": "GENE",
+      "status": "blocked_missing_external_output_manifest"
+    },
+    {
+      "case_id": null,
+      "complete_required_observables": false,
+      "native_same_case_comparison_passed": false,
+      "native_same_case_comparison_ready": false,
+      "observable_presence": {
+        "electromagnetic_apar_energy": false,
+        "electromagnetic_bpar_energy": false,
+        "electromagnetic_phi_energy": false,
+        "electron_heat_flux_spectrum": false,
+        "ion_heat_flux_spectrum": false,
+        "nonlinear_distribution_function": false,
+        "nonlinear_distribution_function_imag": false,
+        "saturated_phi_rms": false,
+        "zonal_flow_energy": false
+      },
+      "same_deck_reference_output_ready": false,
+      "solver_family": "CGYRO",
+      "status": "blocked_missing_external_output_manifest"
+    },
+    {
+      "case_id": null,
+      "complete_required_observables": false,
+      "native_same_case_comparison_passed": false,
+      "native_same_case_comparison_ready": false,
+      "observable_presence": {
+        "electromagnetic_apar_energy": false,
+        "electromagnetic_bpar_energy": false,
+        "electromagnetic_phi_energy": false,
+        "electron_heat_flux_spectrum": false,
+        "ion_heat_flux_spectrum": false,
+        "nonlinear_distribution_function": false,
+        "nonlinear_distribution_function_imag": false,
+        "saturated_phi_rms": false,
+        "zonal_flow_energy": false
+      },
+      "same_deck_reference_output_ready": false,
+      "solver_family": "GS2",
+      "status": "blocked_missing_external_output_manifest"
+    }
+  ],
+  "solver_family_completeness_ready": false,
   "status": "blocked_missing_external_output_manifest"
 }

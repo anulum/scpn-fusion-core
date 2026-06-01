@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -61,7 +62,10 @@ def _payload(path: Path, scale: float = 1.0) -> None:
 
 def _payload_npz(path: Path, scale: float = 1.0) -> None:
     coordinates, observables = _payload_maps(scale)
-    np.savez_compressed(path, **coordinates, **observables)
+    arrays: dict[str, Any] = {}
+    arrays.update(coordinates)
+    arrays.update(observables)
+    np.savez_compressed(path, **arrays)
 
 
 def _sha256(path: Path) -> str:
@@ -85,6 +89,7 @@ def test_gk_external_output_parity_blocks_without_manifest(tmp_path: Path) -> No
     assert report["grid_convergence_ready"] is False
     assert report["production_scale_scaling_ready"] is False
     assert report["required_solver_families"] == ["GENE", "CGYRO", "GS2"]
+    assert report["solver_family_completeness_ready"] is False
 
     rows = {row["solver_family"]: row for row in report["external_output_rows"]}
     assert set(rows) == {"GENE", "CGYRO", "GS2"}
@@ -92,6 +97,17 @@ def test_gk_external_output_parity_blocks_without_manifest(tmp_path: Path) -> No
         assert row["status"].startswith("blocked_")
         assert row["reference_output_ready"] is False
         assert "same_deck_external_nonlinear_output" in row["missing_requirements"]
+
+    matrix = {
+        row["solver_family"]: row for row in report["solver_family_completeness_matrix"]
+    }
+    assert set(matrix) == {"GENE", "CGYRO", "GS2"}
+    for row in matrix.values():
+        assert row["same_deck_reference_output_ready"] is False
+        assert row["native_same_case_comparison_ready"] is False
+        assert row["complete_required_observables"] is False
+        assert set(row["observable_presence"]) == set(report["required_observables"])
+        assert not any(row["observable_presence"].values())
 
 
 def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) -> None:
@@ -157,6 +173,17 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
     assert report["same_deck_group_ready"] is False
     assert report["grid_convergence_ready"] is False
     assert report["production_scale_scaling_ready"] is False
+    assert report["solver_family_completeness_ready"] is False
+
+    completeness = {
+        row["solver_family"]: row for row in report["solver_family_completeness_matrix"]
+    }
+    assert completeness["GENE"]["same_deck_reference_output_ready"] is True
+    assert completeness["GENE"]["native_same_case_comparison_ready"] is False
+    assert completeness["GENE"]["complete_required_observables"] is True
+    assert all(completeness["GENE"]["observable_presence"].values())
+    assert completeness["CGYRO"]["same_deck_reference_output_ready"] is False
+    assert completeness["GS2"]["same_deck_reference_output_ready"] is False
 
     with np.load(tmp_path / gene["converted_artifact_path"], allow_pickle=False) as payload_npz:
         assert "nonlinear_distribution_function" in payload_npz.files
