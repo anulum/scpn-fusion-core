@@ -1,6 +1,6 @@
 {
   "artifact_contract": {
-    "artifact_sha256": "4a250651cf21a5c36b3fe6221e8dc3761e2c1562f5da4810405752e13a1ac8d8",
+    "artifact_sha256": "9baac7dacf9a8147956db232f07aa1f2dd01f79f4561b65d0f77523b2efdc743",
     "contract_validation": {
       "coordinate_lengths": {
         "charge_state": 4,
@@ -124,6 +124,7 @@
     "charge_state_artifact_contract": true,
     "charge_state_density_closure": true,
     "charge_state_particle_conservation": true,
+    "charge_state_radial_density_conservation": true,
     "edge_source_conservation": true,
     "inward_pinch_midradius": true,
     "line_radiation_power_finite": true,
@@ -140,7 +141,7 @@
     "edge_density_m3": 2.0933367531619228e+16,
     "expected_particles": 9.790647565880644e+17,
     "high_radiated_power_mw": 39.217850922494925,
-    "low_radiated_power_mw": 3.9217850922494937,
+    "low_radiated_power_mw": 3.921785092249493,
     "midradius_pinch_m_s": -8.68341083344053,
     "relative_conservation_error": 1.3073701115140358e-16
   },
@@ -216,9 +217,11 @@
       "inventory_relative_change_max": 0.0,
       "ionisation_recombination_nonnegative": true,
       "line_radiation_nonnegative": true,
-      "max_ionisation_source_m3_s": 9.053657993835634e+21,
-      "max_line_radiation_power_w": 650.5456619461538,
+      "max_ionisation_source_m3_s": 9.053657993835632e+21,
+      "max_line_radiation_power_w": 650.5456619461546,
+      "max_radial_total_density_relative_change": 1.388888888888889e-16,
       "max_recombination_sink_m3_s": 122406.73507102758,
+      "radial_total_density_conserved": true,
       "radius_count": 80,
       "schema": "native-impurity-source-sink-budget-evidence.v1",
       "source_sink_diagonal_nonpositive": true,

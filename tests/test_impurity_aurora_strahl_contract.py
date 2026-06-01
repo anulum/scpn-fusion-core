@@ -78,11 +78,14 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert budget["source_sink_transfer_conservative"] is True
     assert budget["source_sink_diagonal_nonpositive"] is True
     assert budget["source_sink_offdiagonal_nonnegative"] is True
+    assert budget["radial_total_density_conserved"] is True
+    assert budget["max_radial_total_density_relative_change"] <= 1.0e-12
     assert budget["line_radiation_nonnegative"] is True
     assert budget["inventory_relative_change_max"] <= 1.0e-12
     assert budget["aurora_strahl_same_case_budget_ready"] is False
     assert report["invariants"]["native_impurity_transport_evidence_fail_closed"] is True
     assert report["invariants"]["native_source_sink_budget_evidence_fail_closed"] is True
+    assert report["invariants"]["charge_state_radial_density_conservation"] is True
     assert "public Aurora or STRAHL radial transport output" in evidence["blocking_requirements"]
 
 

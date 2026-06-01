@@ -65,6 +65,7 @@ def _observable_finiteness(
 def _source_sink_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
     observables = payload["observables"]
     source_sink = np.asarray(observables["source_sink_matrix_t_r_z_z"], dtype=np.float64)
+    total_density = np.asarray(observables["total_impurity_density_r_t"], dtype=np.float64)
     ionisation = np.asarray(observables["ionisation_source_matrix"], dtype=np.float64)
     recombination = np.asarray(observables["recombination_sink_matrix"], dtype=np.float64)
     line_radiation = np.asarray(observables["line_radiation_power_t_r_z"], dtype=np.float64)
@@ -85,6 +86,14 @@ def _source_sink_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
     inventory_relative_change = (
         float(np.max(np.abs(inventory - inventory[0]) / inventory_baseline))
         if inventory.size
+        else np.inf
+    )
+    radial_density_baseline = np.maximum(
+        np.abs(total_density[0]), 1.0
+    ) if total_density.ndim == 2 and total_density.shape[0] > 0 else np.asarray([], dtype=float)
+    max_radial_density_change = (
+        float(np.max(np.abs(total_density - total_density[0]) / radial_density_baseline))
+        if radial_density_baseline.size
         else np.inf
     )
     source_sink_scale = max(float(np.max(np.abs(source_sink))) if source_sink.size else 0.0, 1.0)
@@ -123,6 +132,8 @@ def _source_sink_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
         "source_sink_offdiagonal_nonnegative": bool(
             offdiagonal.size > 0 and np.all(offdiagonal >= 0.0)
         ),
+        "radial_total_density_conserved": bool(max_radial_density_change <= 1.0e-12),
+        "max_radial_total_density_relative_change": max_radial_density_change,
         "line_radiation_nonnegative": bool(
             line_radiation.size > 0 and np.all(line_radiation >= 0.0)
         ),
@@ -296,9 +307,13 @@ def run_benchmark() -> dict[str, Any]:
             source_sink_budget_evidence["all_budget_terms_finite"]
             and source_sink_budget_evidence["ionisation_recombination_nonnegative"]
             and source_sink_budget_evidence["source_sink_transfer_conservative"]
+            and source_sink_budget_evidence["radial_total_density_conserved"]
             and source_sink_budget_evidence["line_radiation_nonnegative"]
             and not source_sink_budget_evidence["aurora_strahl_same_case_budget_ready"]
             and bool(source_sink_budget_evidence["blocking_requirements"])
+        ),
+        "charge_state_radial_density_conservation": bool(
+            source_sink_budget_evidence["radial_total_density_conserved"]
         ),
     }
 
@@ -428,6 +443,11 @@ def write_reports(results: dict[str, Any]) -> None:
             f"`{budget['ionisation_recombination_nonnegative']}`"
         ),
         (f"- Source/sink transfer conservative: `{budget['source_sink_transfer_conservative']}`"),
+        f"- Radial total-density conserved: `{budget['radial_total_density_conserved']}`",
+        (
+            "- Max radial total-density relative change: "
+            f"`{budget['max_radial_total_density_relative_change']:.6e}`"
+        ),
         f"- Line radiation non-negative: `{budget['line_radiation_nonnegative']}`",
         (
             "- Aurora/STRAHL same-case budget ready: "

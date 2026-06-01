@@ -934,8 +934,11 @@ for conservative charge-state transfer matrices, ionisation/recombination
 source budgets, line-radiation power, and inventory history. Charge-state
 resolved radial transport, external ADAS transport coefficients, same-case
 Aurora/STRAHL transport outputs, same-case source/sink budgets, and
-quantitative parity thresholds remain blocked. Public Aurora/STRAHL radial
-transport decks, radiation outputs, source/sink matrices, and same-case native
+quantitative parity thresholds remain blocked. The native budget evidence now
+also checks per-radius total-density conservation across the charge-state
+transfer history; the latest local contract reports maximum radial
+total-density relative change `1.388888888888889e-16`. Public Aurora/STRAHL radial transport
+decks, radiation outputs, source/sink matrices, and same-case native
 comparisons are still required before full collisional-operator parity can
 pass.
 

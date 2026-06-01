@@ -21,7 +21,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Coordinates: time_s, radius_m, charge_state
 - Observables: charge_state_density_r_t, total_impurity_density_r_t, line_radiation_power_t, line_radiation_power_t_r_z, source_sink_matrix_t_r_z_z, total_impurity_inventory_t, ionisation_source_matrix, recombination_sink_matrix
 - Parity status: `artifact_contract_only_not_public_aurora_strahl_parity`
-- SHA-256: `4a250651cf21a5c36b3fe6221e8dc3761e2c1562f5da4810405752e13a1ac8d8`
+- SHA-256: `9baac7dacf9a8147956db232f07aa1f2dd01f79f4561b65d0f77523b2efdc743`
 - Contract validation passed: `True`
 - Same-case Aurora/STRAHL comparison ready: `False`
 - Observable shapes: `{"charge_state_density_r_t": [3, 80, 4], "ionisation_source_matrix": [80, 4], "line_radiation_power_t": [3], "line_radiation_power_t_r_z": [3, 80, 4], "recombination_sink_matrix": [80, 4], "source_sink_matrix_t_r_z_z": [3, 80, 4, 4], "total_impurity_density_r_t": [3, 80], "total_impurity_inventory_t": [3]}`
@@ -52,6 +52,8 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - All budget terms finite: `True`
 - Ionisation/recombination non-negative: `True`
 - Source/sink transfer conservative: `True`
+- Radial total-density conserved: `True`
+- Max radial total-density relative change: `1.388889e-16`
 - Line radiation non-negative: `True`
 - Aurora/STRAHL same-case budget ready: `False`
 - Blocking requirements: `public Aurora or STRAHL radial transport output; charge-state-resolved radial transport operator on evolved density; external ADAS coefficient ingestion for transport parity; same-case line-radiation output from Aurora or STRAHL; same-case ionisation/recombination source-sink matrix output; native same-case solver-output comparison; distribution, radiation, and inventory threshold comparison against Aurora/STRAHL`
@@ -69,5 +71,6 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - line_radiation_power_finite: PASS
 - native_impurity_transport_evidence_fail_closed: PASS
 - native_source_sink_budget_evidence_fail_closed: PASS
+- charge_state_radial_density_conservation: PASS
 
 Overall: PASS
