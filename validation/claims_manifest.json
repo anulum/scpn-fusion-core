@@ -185,7 +185,7 @@
     {
       "id": "security_current_supported_release",
       "source_file": "SECURITY.md",
-      "source_pattern": "\\| 3\\.9\\.5\\s+\\| :white_check_mark:",
+      "source_pattern": "\\| 3\\.9\\.6\\s+\\| :white_check_mark:",
       "evidence_files": [
         "pyproject.toml",
         "src/scpn_fusion/__init__.py"
@@ -193,11 +193,11 @@
       "evidence_patterns": [
         {
           "file": "pyproject.toml",
-          "pattern": "version\\s*=\\s*\"3\\.9\\.5\""
+          "pattern": "version\\s*=\\s*\"3\\.9\\.6\""
         },
         {
           "file": "src/scpn_fusion/__init__.py",
-          "pattern": "__version__\\s*=\\s*\"3\\.9\\.5\""
+          "pattern": "__version__\\s*=\\s*\"3\\.9\\.6\""
         }
       ]
     },
@@ -240,7 +240,7 @@
     {
       "id": "readme_runaway_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, and fail-closed kinetic-operator evidence; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity",
+      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, fail-closed kinetic-operator evidence, and native-only source-term budget diagnostics; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity",
       "evidence_files": [
         "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
@@ -277,7 +277,7 @@
     {
       "id": "readme_impurity_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Impurity transport \\(neoclassical\\) \\| Trace radial transport with source conservation, neoclassical pinch, charge-state artifact/source-sink contract, and fail-closed native transport evidence; no public Aurora/STRAHL collisional-operator parity or same-case transport thresholds",
+      "source_pattern": "Impurity transport \\(neoclassical\\) \\| Trace radial transport with source conservation, neoclassical pinch, charge-state artifact/source-sink contract, fail-closed native transport evidence, and native-only source/sink budget diagnostics; no public Aurora/STRAHL collisional-operator parity or same-case transport thresholds",
       "evidence_files": [
         "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
