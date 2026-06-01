@@ -8,6 +8,9 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Communication contract ready: `True`
 - Halo-face integrity pass: `True`
 - Local decomposed execution pass: `True`
+- Local multiprocess CPU execution pass: `True`
+- MPI runtime execution pass: `True`
+- GPU rank-tile execution pass: `True`
 - Halo exchange pass: `True`
 - Decomposition invariant pass: `True`
 - Parallel-moment invariant pass: `True`
@@ -299,9 +302,86 @@ Required distributed-run fields:
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 6.907121e-02 | 7.590544e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 6.605951e-02 | 7.936601e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 5.293786e-02 | 9.903837e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 7.006307e-02 | 7.483087e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 6.067638e-02 | 8.640726e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 7.930580e-02 | 6.610966e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+
+## Local multiprocess CPU rank execution
+
+- Schema: `production-decomposition-local-multiprocess-cpu-evidence.v1`
+- Status: `accepted_local_multiprocess_cpu_rank_execution`
+- Case: `local_multiprocess_cpu_32x16_4x2`
+- Local multiprocess CPU execution ready: `True`
+- Worker count: `4`
+- Unique worker process count: `4`
+- Rank count: `8`
+- Owned phase cells: `131072`
+- Elapsed s: `1.425741e-01`
+- Cells/s: `9.193251e+05`
+- Reconstruction L_inf error: `0.000000e+00`
+- Inventory relative error: `6.983344e-15`
+- Free-energy relative error: `0.000000e+00`
+- Parallel-moment relative error: `1.567739e-13`
+- Halo-checksum relative error: `0.000000e+00`
+- Blocking reason: This is local CPU process isolation over rank tiles. It is not MPI or multi-GPU execution and does not satisfy the cluster scaling gate.
+
+| Rank | PID | Owned shape | Halo shape |
+|---:|---:|---|---|
+| 0 | 3746132 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+| 1 | 3746133 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+| 2 | 3746134 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 3 | 3746136 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 4 | 3746132 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 5 | 3746133 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 6 | 3746134 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+| 7 | 3746132 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+
+## MPI runtime rank execution
+
+- Schema: `production-decomposition-mpi-runtime-evidence.v1`
+- Status: `accepted_local_mpi_rank_tile_execution`
+- MPI runtime execution ready: `True`
+- Rank count: `4`
+- Blocking reason: MPI rank-tile execution passed locally. Cluster scaling and multi-GPU runtime evidence are still required for production-scale readiness.
+- Elapsed s: `1.857700e+01`
+- Reconstruction L_inf error: `0.000000e+00`
+- Inventory relative error: `0.000000e+00`
+- Free-energy relative error: `0.000000e+00`
+- Parallel-moment relative error: `0.000000e+00`
+
+| Rank | Owned shape | Halo L_inf |
+|---:|---|---:|
+| 0 | `[4, 8, 4, 4, 3]` | 0.000000e+00 |
+| 1 | `[4, 8, 4, 4, 3]` | 0.000000e+00 |
+| 2 | `[4, 8, 4, 4, 3]` | 0.000000e+00 |
+| 3 | `[4, 8, 4, 4, 3]` | 0.000000e+00 |
+
+## GPU rank-tile execution
+
+- Schema: `production-decomposition-gpu-rank-tile-evidence.v1`
+- Status: `accepted_local_gpu_rank_tile_execution`
+- GPU rank-tile execution ready: `True`
+- Multi-GPU runtime ready: `False`
+- Blocking reason: Single-GPU rank-tile reductions passed locally; multi-GPU readiness requires at least two visible CUDA devices and scaling rows.
+- Device count: `1`
+- Rank count: `8`
+- Owned phase cells: `55296`
+- Elapsed s: `1.027677e-02`
+- Cells/s: `5.380680e+06`
+- Inventory relative error: `6.603883e-15`
+- Free-energy relative error: `1.315468e-16`
+- Parallel-moment relative error: `5.555832e-15`
+
+| Rank | Device | Owned shape |
+|---:|---:|---|
+| 0 | 0 | `[6, 6, 8, 6, 4]` |
+| 1 | 0 | `[6, 6, 8, 6, 4]` |
+| 2 | 0 | `[6, 6, 8, 6, 4]` |
+| 3 | 0 | `[6, 6, 8, 6, 4]` |
+| 4 | 0 | `[6, 6, 8, 6, 4]` |
+| 5 | 0 | `[6, 6, 8, 6, 4]` |
+| 6 | 0 | `[6, 6, 8, 6, 4]` |
+| 7 | 0 | `[6, 6, 8, 6, 4]` |
 
 ## Large-grid CPU decomposition evidence
 
@@ -309,12 +389,12 @@ Required distributed-run fields:
 - Status: `accepted_local_large_grid_cpu_evidence`
 - Large-grid CPU benchmark ready: `True`
 - Max reconstruction L_inf error: `0.000000e+00`
-- Max parallel-moment relative error: `4.702121e-16`
+- Max parallel-moment relative error: `2.037586e-14`
 - Blocking reason: This is single-process CPU evidence only. It does not satisfy the distributed MPI or multi-GPU scaling requirement.
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| large_cpu_96x48_6x4 | 24 | 9437184 | 1.557183e+00 | 6.060419e+06 | `True` | `True` | 0.000000e+00 | 1.973730e-16 | 7.401486e-16 |
+| large_cpu_96x48_6x4 | 24 | 9437184 | 1.290697e+00 | 7.311696e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -323,15 +403,15 @@ Required distributed-run fields:
 - Shape convergence pass: `True`
 - Reference case: `local_cpu_64x32_4x2`
 - Max inventory relative deviation: `0.000000e+00`
-- Max free-energy relative deviation: `3.330666e-16`
+- Max free-energy relative deviation: `1.665333e-16`
 - Max parallel-moment relative deviation: `0.000000e+00`
 - Relative reduction tolerance: `1.000000e-12`
 
 | Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 7.590544e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 7.936601e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 9.903837e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_4x2 | 8 | 524288 | 7.483087e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 8.640726e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 6.610966e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 
@@ -340,7 +420,8 @@ Required distributed-run fields:
 
 ## Missing requirements
 
-- MPI or multi-GPU distributed execution path over the declared rank tiles
+- cluster MPI scaling report over the declared rank tiles
+- multi-GPU distributed execution path over the declared rank tiles
 - large-grid cluster/GPU wall-time scaling report
 - same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes
 - hardware-specific multi-rank throughput and efficiency thresholds

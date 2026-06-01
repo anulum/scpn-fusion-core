@@ -1182,63 +1182,11 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 7590543.689524557,
-      "elapsed_s": 0.06907120510004461,
-      "free_energy_relative_error": 1.665332948749444e-16,
-      "global_free_energy": 174762.83333365122,
-      "global_inventory": 262144.0,
-      "global_parallel_moment": 6.000011444099454,
-      "global_shape": [
-        64,
-        32,
-        8,
-        8,
-        4
-      ],
-      "halo_exchange_pass": true,
-      "inventory_relative_error": 0.0,
-      "local_decomposed_execution_pass": true,
-      "local_free_energy": 174762.83333365124,
-      "local_inventory": 262144.0,
-      "local_parallel_moment": 6.000011444099454,
-      "owned_phase_cells": 524288,
-      "parallel_moment_relative_error": 0.0,
-      "rank_count": 8,
-      "reconstruction_linf_error": 0.0
-    },
-    {
-      "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 7936601.0442860825,
-      "elapsed_s": 0.06605951301753521,
-      "free_energy_relative_error": 1.665332948749444e-16,
-      "global_free_energy": 174762.83333365122,
-      "global_inventory": 262144.0,
-      "global_parallel_moment": 6.000011444099454,
-      "global_shape": [
-        64,
-        32,
-        8,
-        8,
-        4
-      ],
-      "halo_exchange_pass": true,
-      "inventory_relative_error": 0.0,
-      "local_decomposed_execution_pass": true,
-      "local_free_energy": 174762.8333336512,
-      "local_inventory": 262144.0,
-      "local_parallel_moment": 6.000011444099454,
-      "owned_phase_cells": 524288,
-      "parallel_moment_relative_error": 0.0,
-      "rank_count": 8,
-      "reconstruction_linf_error": 0.0
-    },
-    {
-      "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 9903837.454242816,
-      "elapsed_s": 0.052937863976694643,
+      "cells_per_second": 7483086.62914938,
+      "elapsed_s": 0.07006306701805443,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
-      "global_inventory": 262144.0,
+      "global_inventory": 262143.99999999997,
       "global_parallel_moment": 6.000011444099454,
       "global_shape": [
         64,
@@ -1251,7 +1199,59 @@
       "inventory_relative_error": 0.0,
       "local_decomposed_execution_pass": true,
       "local_free_energy": 174762.83333365122,
-      "local_inventory": 262144.0,
+      "local_inventory": 262143.99999999997,
+      "local_parallel_moment": 6.000011444099454,
+      "owned_phase_cells": 524288,
+      "parallel_moment_relative_error": 0.0,
+      "rank_count": 8,
+      "reconstruction_linf_error": 0.0
+    },
+    {
+      "case_id": "local_cpu_64x32_8x1",
+      "cells_per_second": 8640726.415719895,
+      "elapsed_s": 0.060676380060613155,
+      "free_energy_relative_error": 0.0,
+      "global_free_energy": 174762.83333365122,
+      "global_inventory": 262143.99999999997,
+      "global_parallel_moment": 6.000011444099454,
+      "global_shape": [
+        64,
+        32,
+        8,
+        8,
+        4
+      ],
+      "halo_exchange_pass": true,
+      "inventory_relative_error": 0.0,
+      "local_decomposed_execution_pass": true,
+      "local_free_energy": 174762.83333365122,
+      "local_inventory": 262143.99999999997,
+      "local_parallel_moment": 6.000011444099454,
+      "owned_phase_cells": 524288,
+      "parallel_moment_relative_error": 0.0,
+      "rank_count": 8,
+      "reconstruction_linf_error": 0.0
+    },
+    {
+      "case_id": "local_cpu_64x32_2x4",
+      "cells_per_second": 6610966.408636278,
+      "elapsed_s": 0.07930580305401236,
+      "free_energy_relative_error": 1.665332948749444e-16,
+      "global_free_energy": 174762.83333365122,
+      "global_inventory": 262143.99999999997,
+      "global_parallel_moment": 6.000011444099454,
+      "global_shape": [
+        64,
+        32,
+        8,
+        8,
+        4
+      ],
+      "halo_exchange_pass": true,
+      "inventory_relative_error": 0.0,
+      "local_decomposed_execution_pass": true,
+      "local_free_energy": 174762.83333365124,
+      "local_inventory": 262143.99999999997,
       "local_parallel_moment": 6.000011444099454,
       "owned_phase_cells": 524288,
       "parallel_moment_relative_error": 0.0,
@@ -2780,6 +2780,112 @@
     "schema": "production-decomposition-distributed-scaling-gate.v1",
     "status": "blocked_missing_distributed_scaling_measurements"
   },
+  "gpu_rank_tile_evidence": {
+    "blocking_reason": "Single-GPU rank-tile reductions passed locally; multi-GPU readiness requires at least two visible CUDA devices and scaling rows.",
+    "cells_per_second": 5380680.479678609,
+    "device_count": 1,
+    "elapsed_s": 0.01027676707599312,
+    "free_energy_relative_error": 1.3154684884350071e-16,
+    "gpu_rank_tile_execution_ready": true,
+    "inventory_relative_error": 6.603882860430911e-15,
+    "multi_gpu_runtime_ready": false,
+    "owned_phase_cells": 55296,
+    "parallel_moment_relative_error": 5.555831925757777e-15,
+    "rank_count": 8,
+    "rank_rows": [
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 0
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 1
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 2
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 3
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 4
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 5
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 6
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 7
+      }
+    ],
+    "schema": "production-decomposition-gpu-rank-tile-evidence.v1",
+    "status": "accepted_local_gpu_rank_tile_execution"
+  },
+  "gpu_rank_tile_execution_pass": true,
   "halo_exchange_pass": true,
   "halo_face_integrity_evidence": {
     "case_id": "local_cpu_64x32_4x2",
@@ -3103,17 +3209,17 @@
   "large_grid_cpu_evidence": {
     "blocking_reason": "This is single-process CPU evidence only. It does not satisfy the distributed MPI or multi-GPU scaling requirement.",
     "large_grid_cpu_benchmark_ready": true,
-    "max_parallel_moment_relative_error": 4.702120547224127e-16,
+    "max_parallel_moment_relative_error": 2.037585570463715e-14,
     "max_reconstruction_linf_error": 0.0,
     "rows": [
       {
         "case_id": "large_cpu_96x48_6x4",
-        "cells_per_second": 6060419.433927611,
-        "elapsed_s": 1.5571833109715953,
-        "free_energy_relative_error": 7.401486438689479e-16,
-        "global_free_energy": 3145728.166666682,
-        "global_inventory": 4718591.999999999,
-        "global_parallel_moment": 22.66666906847695,
+        "cells_per_second": 7311695.871978089,
+        "elapsed_s": 1.2906970100011677,
+        "free_energy_relative_error": 0.0,
+        "global_free_energy": 3145728.166666684,
+        "global_inventory": 4718592.0,
+        "global_parallel_moment": 22.666669068477766,
         "global_shape": [
           96,
           48,
@@ -3122,13 +3228,13 @@
           8
         ],
         "halo_exchange_pass": true,
-        "inventory_relative_error": 1.9737298215558342e-16,
+        "inventory_relative_error": 0.0,
         "local_decomposed_execution_pass": true,
         "local_free_energy": 3145728.166666684,
         "local_inventory": 4718592.0,
-        "local_parallel_moment": 22.66666906847694,
+        "local_parallel_moment": 22.666669068478228,
         "owned_phase_cells": 9437184,
-        "parallel_moment_relative_error": 4.702120547224127e-16,
+        "parallel_moment_relative_error": 2.037585570463715e-14,
         "rank_count": 24,
         "reconstruction_linf_error": 0.0
       }
@@ -3137,14 +3243,299 @@
     "status": "accepted_local_large_grid_cpu_evidence"
   },
   "local_decomposed_execution_pass": true,
+  "local_multiprocess_cpu_evidence": {
+    "blocking_reason": "This is local CPU process isolation over rank tiles. It is not MPI or multi-GPU execution and does not satisfy the cluster scaling gate.",
+    "case_id": "local_multiprocess_cpu_32x16_4x2",
+    "cells_per_second": 919325.1498989821,
+    "elapsed_s": 0.14257414801977575,
+    "free_energy_relative_error": 0.0,
+    "global_shape": [
+      32,
+      16,
+      8,
+      8,
+      4
+    ],
+    "halo_checksum_relative_error": 0.0,
+    "halo_exchange_pass": true,
+    "inventory_relative_error": 6.983343773688783e-15,
+    "local_multiprocess_cpu_execution_ready": true,
+    "owned_phase_cells": 131072,
+    "parallel_moment_relative_error": 1.5677386500338327e-13,
+    "rank_count": 8,
+    "rank_rows": [
+      {
+        "free_energy": 8203.058595594128,
+        "halo_checksum": -1.421988241688858,
+        "halo_shape": [
+          9,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": -4.0947892555143355,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": -5.037679605773919,
+        "pid": 3746132,
+        "rank": 0
+      },
+      {
+        "free_energy": 8181.632197432124,
+        "halo_checksum": -0.13018018436572376,
+        "halo_shape": [
+          9,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": -18.390105143652892,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": -1.4054627214277193,
+        "pid": 3746133,
+        "rank": 1
+      },
+      {
+        "free_energy": 8180.77818707346,
+        "halo_checksum": 7.877821066978463,
+        "halo_shape": [
+          10,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": 18.73519217290994,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": -1.0210466960824318,
+        "pid": 3746134,
+        "rank": 2
+      },
+      {
+        "free_energy": 8202.149920613161,
+        "halo_checksum": -3.742977405738298,
+        "halo_shape": [
+          10,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": 5.513511617711082,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": -4.938189902013417,
+        "pid": 3746136,
+        "rank": 3
+      },
+      {
+        "free_energy": 8203.372638071141,
+        "halo_checksum": -4.62696520110541,
+        "halo_shape": [
+          10,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": 3.472201416569476,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": 5.071609935932594,
+        "pid": 3746132,
+        "rank": 4
+      },
+      {
+        "free_energy": 8182.079169844437,
+        "halo_checksum": 8.323642684923772,
+        "halo_shape": [
+          10,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": 18.20688603111882,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": 1.5695633589283906,
+        "pid": 3746133,
+        "rank": 5
+      },
+      {
+        "free_energy": 8180.4890955274695,
+        "halo_checksum": 0.1563381893343454,
+        "halo_shape": [
+          9,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": -18.850576651296,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": 0.8525123869158655,
+        "pid": 3746134,
+        "rank": 6
+      },
+      {
+        "free_energy": 8201.680784178447,
+        "halo_checksum": -1.653202250789132,
+        "halo_shape": [
+          9,
+          9,
+          8,
+          8,
+          4
+        ],
+        "inventory": -6.11854335282305,
+        "owned_shape": [
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "parallel_moment": 4.886031853634489,
+        "pid": 3746132,
+        "rank": 7
+      }
+    ],
+    "reconstruction_linf_error": 0.0,
+    "schema": "production-decomposition-local-multiprocess-cpu-evidence.v1",
+    "status": "accepted_local_multiprocess_cpu_rank_execution",
+    "unique_worker_process_count": 4,
+    "worker_count": 4
+  },
+  "local_multiprocess_cpu_execution_pass": true,
   "missing_requirements": [
-    "MPI or multi-GPU distributed execution path over the declared rank tiles",
+    "cluster MPI scaling report over the declared rank tiles",
+    "multi-GPU distributed execution path over the declared rank tiles",
     "large-grid cluster/GPU wall-time scaling report",
     "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
     "hardware-specific multi-rank throughput and efficiency thresholds",
     "accepted distributed scaling gate over required rank counts",
     "accepted distributed run manifests with reproducibility fields and checksums"
   ],
+  "mpi_runtime_evidence": {
+    "blocking_reason": "MPI rank-tile execution passed locally. Cluster scaling and multi-GPU runtime evidence are still required for production-scale readiness.",
+    "command": [
+      "/usr/bin/mpiexec",
+      "-n",
+      "4",
+      "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python",
+      "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/mpi_production_decomposition_runner.py",
+      "--output",
+      "/tmp/scpn_mpi_decomposition_xfl2sv3t/mpi_result.json"
+    ],
+    "decomposition_invariant_pass": true,
+    "elapsed_s": 18.57699556800071,
+    "free_energy_relative_error": 0.0,
+    "global_shape": [
+      16,
+      8,
+      4,
+      4,
+      3
+    ],
+    "halo_exchange_pass": true,
+    "inventory_relative_error": 0.0,
+    "max_halo_linf_error": 0.0,
+    "mpi_runtime_execution_ready": true,
+    "parallel_moment_relative_error": 0.0,
+    "rank_count": 4,
+    "rank_rows": [
+      {
+        "halo_linf_error": 0.0,
+        "owned_shape": [
+          4,
+          8,
+          4,
+          4,
+          3
+        ],
+        "rank": 0
+      },
+      {
+        "halo_linf_error": 0.0,
+        "owned_shape": [
+          4,
+          8,
+          4,
+          4,
+          3
+        ],
+        "rank": 1
+      },
+      {
+        "halo_linf_error": 0.0,
+        "owned_shape": [
+          4,
+          8,
+          4,
+          4,
+          3
+        ],
+        "rank": 2
+      },
+      {
+        "halo_linf_error": 0.0,
+        "owned_shape": [
+          4,
+          8,
+          4,
+          4,
+          3
+        ],
+        "rank": 3
+      }
+    ],
+    "reconstruction_linf_error": 0.0,
+    "returncode": 0,
+    "schema": "production-decomposition-mpi-runtime-evidence.v1",
+    "status": "accepted_local_mpi_rank_tile_execution"
+  },
+  "mpi_runtime_execution_pass": true,
   "parallel_moment_invariant_pass": true,
   "production_scale_ready": false,
   "reciprocal_neighbour_graph_evidence": {
@@ -6078,7 +6469,7 @@
   ],
   "same_physics_decomposition_shape_pass": true,
   "same_physics_shape_convergence_evidence": {
-    "max_free_energy_relative_deviation": 3.3306658974988877e-16,
+    "max_free_energy_relative_deviation": 1.665332948749444e-16,
     "max_inventory_relative_deviation": 0.0,
     "max_parallel_moment_relative_deviation": 0.0,
     "max_reconstruction_linf_error": 0.0,
@@ -6091,7 +6482,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 7590543.689524557,
+        "cells_per_second": 7483086.62914938,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6102,8 +6493,8 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 7936601.0442860825,
-        "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
+        "cells_per_second": 8640726.415719895,
+        "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
         "parallel_moment_relative_deviation_from_reference": 0.0,
@@ -6113,8 +6504,8 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 9903837.454242816,
-        "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
+        "cells_per_second": 6610966.408636278,
+        "free_energy_relative_deviation_from_reference": 1.665332948749444e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
         "parallel_moment_relative_deviation_from_reference": 0.0,

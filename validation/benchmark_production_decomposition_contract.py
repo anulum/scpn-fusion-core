@@ -12,7 +12,10 @@ from __future__ import annotations
 import json
 import os
 import platform
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -29,6 +32,7 @@ from scpn_fusion.core.gk_domain_decomposition import (  # noqa: E402
     GKDomainDecompositionPlan,
     build_radial_toroidal_decomposition,
     local_decomposed_phase_execution,
+    local_multiprocess_rank_tile_execution,
     rank_tile_communication_contract,
     serial_halo_exchange,
 )
@@ -55,6 +59,7 @@ REQUIRED_DISTRIBUTED_RUN_FIELDS = [
     "command",
     "artifact_sha256",
 ]
+MPI_RUNTIME_RANK_COUNT = 4
 FACE_OPPOSITES = {
     "radial_lower": "radial_upper",
     "radial_upper": "radial_lower",
@@ -240,6 +245,270 @@ def _large_grid_cpu_evidence() -> dict[str, Any]:
         "status": "accepted_local_large_grid_cpu_evidence"
         if invariant_pass
         else "blocked_large_grid_cpu_invariants_failed",
+    }
+
+
+def _local_multiprocess_cpu_evidence() -> dict[str, Any]:
+    """Return process-isolated local CPU rank-tile execution evidence."""
+    plan = build_radial_toroidal_decomposition(
+        n_radial=32,
+        n_toroidal=16,
+        n_theta=8,
+        n_vpar=8,
+        n_mu=4,
+        radial_parts=4,
+        toroidal_parts=2,
+        halo=1,
+    )
+    state = np.cos(
+        np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 23.0
+    ).reshape(
+        plan.n_radial,
+        plan.n_toroidal,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+    started = time.perf_counter()
+    metrics = local_multiprocess_rank_tile_execution(plan, state, max_workers=4)
+    elapsed = max(time.perf_counter() - started, 1.0e-12)
+    execution_ready = bool(
+        metrics.decomposition_invariant_pass
+        and metrics.halo_exchange_pass
+        and metrics.reconstruction_linf_error <= RECONSTRUCTION_LINF_TOLERANCE
+        and metrics.inventory_relative_error <= RELATIVE_REDUCTION_TOLERANCE
+        and metrics.free_energy_relative_error <= RELATIVE_REDUCTION_TOLERANCE
+        and metrics.parallel_moment_relative_error <= RELATIVE_REDUCTION_TOLERANCE
+        and metrics.halo_checksum_relative_error <= RELATIVE_REDUCTION_TOLERANCE
+    )
+    return {
+        "blocking_reason": (
+            "This is local CPU process isolation over rank tiles. It is not MPI "
+            "or multi-GPU execution and does not satisfy the cluster scaling gate."
+        ),
+        "case_id": "local_multiprocess_cpu_32x16_4x2",
+        "cells_per_second": plan.total_owned_phase_cells / elapsed,
+        "elapsed_s": elapsed,
+        "free_energy_relative_error": metrics.free_energy_relative_error,
+        "global_shape": list(metrics.global_shape),
+        "halo_checksum_relative_error": metrics.halo_checksum_relative_error,
+        "halo_exchange_pass": metrics.halo_exchange_pass,
+        "inventory_relative_error": metrics.inventory_relative_error,
+        "local_multiprocess_cpu_execution_ready": execution_ready,
+        "owned_phase_cells": plan.total_owned_phase_cells,
+        "parallel_moment_relative_error": metrics.parallel_moment_relative_error,
+        "rank_count": metrics.rank_count,
+        "rank_rows": list(metrics.rank_rows),
+        "reconstruction_linf_error": metrics.reconstruction_linf_error,
+        "schema": "production-decomposition-local-multiprocess-cpu-evidence.v1",
+        "status": "accepted_local_multiprocess_cpu_rank_execution"
+        if execution_ready
+        else "blocked_local_multiprocess_cpu_rank_execution_failed",
+        "unique_worker_process_count": metrics.unique_worker_process_count,
+        "worker_count": metrics.worker_count,
+    }
+
+
+def _python_for_optional_runtime() -> str:
+    """Return the Python executable with optional local runtime deps if present."""
+    venv_python = ROOT / ".venv" / "bin" / "python"
+    return str(venv_python) if venv_python.exists() else sys.executable
+
+
+def _mpi_runtime_evidence() -> dict[str, Any]:
+    """Run a real MPI rank-tile execution probe when MPI is installed."""
+    mpiexec = shutil.which("mpiexec") or shutil.which("mpirun")
+    if mpiexec is None:
+        return {
+            "blocking_reason": "mpiexec_or_mpirun_not_found",
+            "mpi_runtime_execution_ready": False,
+            "rank_count": MPI_RUNTIME_RANK_COUNT,
+            "schema": "production-decomposition-mpi-runtime-evidence.v1",
+            "status": "blocked_mpi_launcher_missing",
+        }
+    python_executable = _python_for_optional_runtime()
+    runner = ROOT / "validation" / "mpi_production_decomposition_runner.py"
+    with tempfile.TemporaryDirectory(prefix="scpn_mpi_decomposition_") as tmp_dir:
+        output = Path(tmp_dir) / "mpi_result.json"
+        command = [
+            mpiexec,
+            "-n",
+            str(MPI_RUNTIME_RANK_COUNT),
+            python_executable,
+            str(runner),
+            "--output",
+            str(output),
+        ]
+        started = time.perf_counter()
+        completed = subprocess.run(
+            command,
+            check=False,
+            env={**os.environ, "OMPI_MCA_rmaps_base_oversubscribe": "1"},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30.0,
+        )
+        elapsed = max(time.perf_counter() - started, 1.0e-12)
+        if completed.returncode != 0 or not output.exists():
+            return {
+                "blocking_reason": completed.stderr.strip() or completed.stdout.strip(),
+                "command": command,
+                "elapsed_s": elapsed,
+                "mpi_runtime_execution_ready": False,
+                "rank_count": MPI_RUNTIME_RANK_COUNT,
+                "returncode": completed.returncode,
+                "schema": "production-decomposition-mpi-runtime-evidence.v1",
+                "status": "blocked_mpi_runtime_execution_failed",
+            }
+        payload = json.loads(output.read_text(encoding="utf-8"))
+    ready = bool(
+        payload["decomposition_invariant_pass"]
+        and payload["halo_exchange_pass"]
+        and payload["reconstruction_linf_error"] <= RECONSTRUCTION_LINF_TOLERANCE
+        and payload["inventory_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+        and payload["free_energy_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+        and payload["parallel_moment_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+    )
+    return {
+        **payload,
+        "blocking_reason": (
+            "MPI rank-tile execution passed locally. Cluster scaling and multi-GPU "
+            "runtime evidence are still required for production-scale readiness."
+        ),
+        "command": command,
+        "elapsed_s": elapsed,
+        "mpi_runtime_execution_ready": ready,
+        "returncode": 0,
+        "schema": "production-decomposition-mpi-runtime-evidence.v1",
+        "status": "accepted_local_mpi_rank_tile_execution"
+        if ready
+        else "blocked_mpi_runtime_invariants_failed",
+    }
+
+
+def _gpu_rank_tile_evidence() -> dict[str, Any]:
+    """Return CUDA rank-tile reduction evidence when CuPy and a GPU are available."""
+    try:
+        import cupy as cp
+    except Exception as exc:
+        return {
+            "blocking_reason": f"cupy_import_failed: {exc}",
+            "gpu_rank_tile_execution_ready": False,
+            "multi_gpu_runtime_ready": False,
+            "schema": "production-decomposition-gpu-rank-tile-evidence.v1",
+            "status": "blocked_cupy_runtime_missing",
+        }
+    try:
+        device_count = int(cp.cuda.runtime.getDeviceCount())
+    except Exception as exc:
+        return {
+            "blocking_reason": f"cuda_device_query_failed: {exc}",
+            "gpu_rank_tile_execution_ready": False,
+            "multi_gpu_runtime_ready": False,
+            "schema": "production-decomposition-gpu-rank-tile-evidence.v1",
+            "status": "blocked_cuda_device_query_failed",
+        }
+    if device_count <= 0:
+        return {
+            "blocking_reason": "no_cuda_devices_visible",
+            "device_count": device_count,
+            "gpu_rank_tile_execution_ready": False,
+            "multi_gpu_runtime_ready": False,
+            "schema": "production-decomposition-gpu-rank-tile-evidence.v1",
+            "status": "blocked_no_cuda_devices_visible",
+        }
+    plan = build_radial_toroidal_decomposition(
+        n_radial=24,
+        n_toroidal=12,
+        n_theta=8,
+        n_vpar=6,
+        n_mu=4,
+        radial_parts=4,
+        toroidal_parts=2,
+        halo=1,
+    )
+    state = np.sin(
+        np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 31.0
+    ).reshape(
+        plan.n_radial,
+        plan.n_toroidal,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+    weights = np.linspace(-1.0, 1.0, num=plan.n_vpar, dtype=np.float64).reshape(
+        1, 1, 1, plan.n_vpar, 1
+    )
+    started = time.perf_counter()
+    rank_rows: list[dict[str, Any]] = []
+    local_inventory = 0.0
+    local_free_energy = 0.0
+    local_parallel_moment = 0.0
+    for tile in plan.tiles:
+        device_id = tile.rank % device_count
+        owned = state[
+            tile.radial.start : tile.radial.stop,
+            tile.toroidal.start : tile.toroidal.stop,
+            :,
+            :,
+            :,
+        ]
+        with cp.cuda.Device(device_id):
+            owned_gpu = cp.asarray(owned)
+            inventory = float(cp.sum(owned_gpu).get())
+            free_energy = float(cp.sum(owned_gpu * owned_gpu).get())
+            parallel_moment = float(cp.sum(owned_gpu * cp.asarray(weights)).get())
+        local_inventory += inventory
+        local_free_energy += free_energy
+        local_parallel_moment += parallel_moment
+        rank_rows.append(
+            {
+                "device_id": device_id,
+                "owned_shape": [int(axis) for axis in owned.shape],
+                "rank": tile.rank,
+            }
+        )
+    elapsed = max(time.perf_counter() - started, 1.0e-12)
+    global_inventory = float(np.sum(state))
+    global_free_energy = float(np.sum(state * state))
+    global_parallel_moment = float(np.sum(state * weights))
+    inventory_relative_error = abs(local_inventory - global_inventory) / max(
+        abs(global_inventory), 1.0e-30
+    )
+    free_energy_relative_error = abs(local_free_energy - global_free_energy) / max(
+        abs(global_free_energy), 1.0e-30
+    )
+    parallel_moment_relative_error = abs(local_parallel_moment - global_parallel_moment) / max(
+        abs(global_parallel_moment), 1.0e-30
+    )
+    ready = bool(
+        inventory_relative_error <= RELATIVE_REDUCTION_TOLERANCE
+        and free_energy_relative_error <= RELATIVE_REDUCTION_TOLERANCE
+        and parallel_moment_relative_error <= RELATIVE_REDUCTION_TOLERANCE
+    )
+    return {
+        "blocking_reason": (
+            "Single-GPU rank-tile reductions passed locally; multi-GPU readiness "
+            "requires at least two visible CUDA devices and scaling rows."
+            if device_count < 2
+            else "GPU rank-tile reductions passed locally; multi-GPU scaling rows remain required."
+        ),
+        "cells_per_second": plan.total_owned_phase_cells / elapsed,
+        "device_count": device_count,
+        "elapsed_s": elapsed,
+        "free_energy_relative_error": free_energy_relative_error,
+        "gpu_rank_tile_execution_ready": ready,
+        "inventory_relative_error": inventory_relative_error,
+        "multi_gpu_runtime_ready": bool(device_count >= 2 and ready),
+        "owned_phase_cells": plan.total_owned_phase_cells,
+        "parallel_moment_relative_error": parallel_moment_relative_error,
+        "rank_count": plan.total_ranks,
+        "rank_rows": rank_rows,
+        "schema": "production-decomposition-gpu-rank-tile-evidence.v1",
+        "status": "accepted_local_gpu_rank_tile_execution"
+        if ready
+        else "blocked_gpu_rank_tile_invariants_failed",
     }
 
 
@@ -676,6 +945,9 @@ def run_benchmark() -> dict[str, Any]:
     )
     same_physics_shape_convergence = _shape_convergence_evidence(cpu_benchmark_rows)
     large_grid_cpu_evidence = _large_grid_cpu_evidence()
+    local_multiprocess_cpu_evidence = _local_multiprocess_cpu_evidence()
+    mpi_runtime_evidence = _mpi_runtime_evidence()
+    gpu_rank_tile_evidence = _gpu_rank_tile_evidence()
     coverage_pass = all(case["min_owned_cells"] > 0 for case in cases)
     imbalance_pass = all(case["owned_cell_imbalance"] <= 1.05 for case in cases)
     communication_contract_ready = all(
@@ -713,6 +985,7 @@ def run_benchmark() -> dict[str, Any]:
         and decomposition_invariant_pass
         and parallel_moment_invariant_pass
         and same_physics_decomposition_shape_pass
+        and local_multiprocess_cpu_evidence["local_multiprocess_cpu_execution_ready"]
     )
     return {
         "benchmark": "production_decomposition_contract",
@@ -738,6 +1011,16 @@ def run_benchmark() -> dict[str, Any]:
         "imbalance_pass": imbalance_pass,
         "large_grid_cpu_evidence": large_grid_cpu_evidence,
         "local_decomposed_execution_pass": local_decomposed_execution_pass,
+        "local_multiprocess_cpu_evidence": local_multiprocess_cpu_evidence,
+        "local_multiprocess_cpu_execution_pass": bool(
+            local_multiprocess_cpu_evidence["local_multiprocess_cpu_execution_ready"]
+        ),
+        "gpu_rank_tile_evidence": gpu_rank_tile_evidence,
+        "gpu_rank_tile_execution_pass": bool(
+            gpu_rank_tile_evidence["gpu_rank_tile_execution_ready"]
+        ),
+        "mpi_runtime_evidence": mpi_runtime_evidence,
+        "mpi_runtime_execution_pass": bool(mpi_runtime_evidence["mpi_runtime_execution_ready"]),
         "parallel_moment_invariant_pass": parallel_moment_invariant_pass,
         "production_scale_ready": False,
         "reciprocal_neighbour_graph_evidence": reciprocal_neighbour_graph_evidence,
@@ -750,7 +1033,8 @@ def run_benchmark() -> dict[str, Any]:
         "same_physics_shape_convergence_evidence": same_physics_shape_convergence,
         "status": "blocked_local_decomposition_ready_missing_distributed_runtime_scaling",
         "missing_requirements": [
-            "MPI or multi-GPU distributed execution path over the declared rank tiles",
+            "cluster MPI scaling report over the declared rank tiles",
+            "multi-GPU distributed execution path over the declared rank tiles",
             "large-grid cluster/GPU wall-time scaling report",
             "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
             "hardware-specific multi-rank throughput and efficiency thresholds",
@@ -778,6 +1062,12 @@ def write_reports(report: dict[str, Any]) -> None:
             f"`{report['halo_face_integrity_evidence']['halo_face_integrity_pass']}`"
         ),
         f"- Local decomposed execution pass: `{report['local_decomposed_execution_pass']}`",
+        (
+            "- Local multiprocess CPU execution pass: "
+            f"`{report['local_multiprocess_cpu_execution_pass']}`"
+        ),
+        f"- MPI runtime execution pass: `{report['mpi_runtime_execution_pass']}`",
+        f"- GPU rank-tile execution pass: `{report['gpu_rank_tile_execution_pass']}`",
         f"- Halo exchange pass: `{report['halo_exchange_pass']}`",
         f"- Decomposition invariant pass: `{report['decomposition_invariant_pass']}`",
         f"- Parallel-moment invariant pass: `{report['parallel_moment_invariant_pass']}`",
@@ -989,6 +1279,140 @@ def write_reports(report: dict[str, Any]) -> None:
                 recon=row["reconstruction_linf_error"],
             )
         )
+    multiprocess = report["local_multiprocess_cpu_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Local multiprocess CPU rank execution",
+            "",
+            f"- Schema: `{multiprocess['schema']}`",
+            f"- Status: `{multiprocess['status']}`",
+            f"- Case: `{multiprocess['case_id']}`",
+            (
+                "- Local multiprocess CPU execution ready: "
+                f"`{multiprocess['local_multiprocess_cpu_execution_ready']}`"
+            ),
+            f"- Worker count: `{multiprocess['worker_count']}`",
+            f"- Unique worker process count: `{multiprocess['unique_worker_process_count']}`",
+            f"- Rank count: `{multiprocess['rank_count']}`",
+            f"- Owned phase cells: `{multiprocess['owned_phase_cells']}`",
+            f"- Elapsed s: `{multiprocess['elapsed_s']:.6e}`",
+            f"- Cells/s: `{multiprocess['cells_per_second']:.6e}`",
+            (
+                "- Reconstruction L_inf error: "
+                f"`{multiprocess['reconstruction_linf_error']:.6e}`"
+            ),
+            (
+                "- Inventory relative error: "
+                f"`{multiprocess['inventory_relative_error']:.6e}`"
+            ),
+            (
+                "- Free-energy relative error: "
+                f"`{multiprocess['free_energy_relative_error']:.6e}`"
+            ),
+            (
+                "- Parallel-moment relative error: "
+                f"`{multiprocess['parallel_moment_relative_error']:.6e}`"
+            ),
+            (
+                "- Halo-checksum relative error: "
+                f"`{multiprocess['halo_checksum_relative_error']:.6e}`"
+            ),
+            f"- Blocking reason: {multiprocess['blocking_reason']}",
+            "",
+            "| Rank | PID | Owned shape | Halo shape |",
+            "|---:|---:|---|---|",
+        ]
+    )
+    for row in multiprocess["rank_rows"]:
+        lines.append(
+            "| {rank} | {pid} | `{owned}` | `{halo}` |".format(
+                halo=json.dumps(row["halo_shape"]),
+                owned=json.dumps(row["owned_shape"]),
+                pid=row["pid"],
+                rank=row["rank"],
+            )
+        )
+    mpi_runtime = report["mpi_runtime_evidence"]
+    lines.extend(
+        [
+            "",
+            "## MPI runtime rank execution",
+            "",
+            f"- Schema: `{mpi_runtime['schema']}`",
+            f"- Status: `{mpi_runtime['status']}`",
+            f"- MPI runtime execution ready: `{mpi_runtime['mpi_runtime_execution_ready']}`",
+            f"- Rank count: `{mpi_runtime['rank_count']}`",
+            f"- Blocking reason: {mpi_runtime['blocking_reason']}",
+        ]
+    )
+    if mpi_runtime.get("mpi_runtime_execution_ready"):
+        lines.extend(
+            [
+                f"- Elapsed s: `{mpi_runtime['elapsed_s']:.6e}`",
+                f"- Reconstruction L_inf error: `{mpi_runtime['reconstruction_linf_error']:.6e}`",
+                f"- Inventory relative error: `{mpi_runtime['inventory_relative_error']:.6e}`",
+                f"- Free-energy relative error: `{mpi_runtime['free_energy_relative_error']:.6e}`",
+                (
+                    "- Parallel-moment relative error: "
+                    f"`{mpi_runtime['parallel_moment_relative_error']:.6e}`"
+                ),
+                "",
+                "| Rank | Owned shape | Halo L_inf |",
+                "|---:|---|---:|",
+            ]
+        )
+        for row in mpi_runtime["rank_rows"]:
+            lines.append(
+                "| {rank} | `{shape}` | {halo:.6e} |".format(
+                    halo=row["halo_linf_error"],
+                    rank=row["rank"],
+                    shape=json.dumps(row["owned_shape"]),
+                )
+            )
+    gpu_evidence = report["gpu_rank_tile_evidence"]
+    lines.extend(
+        [
+            "",
+            "## GPU rank-tile execution",
+            "",
+            f"- Schema: `{gpu_evidence['schema']}`",
+            f"- Status: `{gpu_evidence['status']}`",
+            (
+                "- GPU rank-tile execution ready: "
+                f"`{gpu_evidence['gpu_rank_tile_execution_ready']}`"
+            ),
+            f"- Multi-GPU runtime ready: `{gpu_evidence['multi_gpu_runtime_ready']}`",
+            f"- Blocking reason: {gpu_evidence['blocking_reason']}",
+        ]
+    )
+    if gpu_evidence.get("gpu_rank_tile_execution_ready"):
+        lines.extend(
+            [
+                f"- Device count: `{gpu_evidence['device_count']}`",
+                f"- Rank count: `{gpu_evidence['rank_count']}`",
+                f"- Owned phase cells: `{gpu_evidence['owned_phase_cells']}`",
+                f"- Elapsed s: `{gpu_evidence['elapsed_s']:.6e}`",
+                f"- Cells/s: `{gpu_evidence['cells_per_second']:.6e}`",
+                f"- Inventory relative error: `{gpu_evidence['inventory_relative_error']:.6e}`",
+                f"- Free-energy relative error: `{gpu_evidence['free_energy_relative_error']:.6e}`",
+                (
+                    "- Parallel-moment relative error: "
+                    f"`{gpu_evidence['parallel_moment_relative_error']:.6e}`"
+                ),
+                "",
+                "| Rank | Device | Owned shape |",
+                "|---:|---:|---|",
+            ]
+        )
+        for row in gpu_evidence["rank_rows"]:
+            lines.append(
+                "| {rank} | {device} | `{shape}` |".format(
+                    device=row["device_id"],
+                    rank=row["rank"],
+                    shape=json.dumps(row["owned_shape"]),
+                )
+            )
     large_grid = report["large_grid_cpu_evidence"]
     lines.extend(
         [

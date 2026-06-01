@@ -74,13 +74,19 @@ full-physics = [
 ]
 gpu = [
     "jax[cuda12]>=0.4.20",
+    "cupy-cuda12x>=14.0",
+]
+mpi = [
+    "mpi4py>=4.1",
 ]
 full = [
     "streamlit",
     "jax>=0.4.20",
     "jaxlib>=0.4.20",
+    "cupy-cuda12x>=14.0",
     "gymnasium>=1.0.0",
     "freegs>=0.6",
+    "mpi4py>=4.1",
     "omas>=0.70",
     "maturin>=1.7,<2.0",
 ]

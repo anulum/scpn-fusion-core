@@ -316,8 +316,10 @@ reconstruction, decomposition-invariant inventory/free-energy checks, local CPU
 timing metadata, rank-neighbour/halo-face payload-shape contracts, and
 executable local rank-tile reductions across multiple decomposition shapes.
 It now also publishes per-rank halo-face integrity evidence comparing radial and
-toroidal halo faces against the serial reference payload, while distributed
-MPI/multi-GPU halo exchange remains blocked.
+toroidal halo faces against the serial reference payload, local process-isolated
+CPU rank execution, real local MPI radial halo exchange when mpi4py/mpiexec are
+available, and CUDA rank-tile reductions when CuPy can access a GPU. Cluster MPI
+scaling and multi-GPU scaling remain blocked until measured artefacts exist.
 The latest local run records same-physics shape convergence across `4x2`,
 `8x1`, and `2x4` radial/toroidal rank shapes with maximum inventory relative
 deviation `0.0`, maximum free-energy relative deviation
@@ -325,8 +327,8 @@ deviation `0.0`, maximum free-energy relative deviation
 It also records local large-grid CPU decomposition evidence for
 `9,437,184` 5D phase cells over `24` local rank tiles in `1.557183 s`
 (`6.060419e6` cells/s), with zero reconstruction error and invariant relative
-errors below `1e-12`. Production scaling remains blocked until distributed MPI/multi-GPU execution
-and cluster timing evidence exist.
+errors below `1e-12`. Production scaling remains blocked until cluster MPI scaling, multi-GPU execution,
+and hardware-specific timing evidence exist.
 
 ## Competitive Position
 

@@ -20,6 +20,7 @@ from scpn_fusion.core.gk_domain_decomposition import (
     build_radial_toroidal_decomposition,
     decomposition_invariant_metrics,
     local_decomposed_phase_execution,
+    local_multiprocess_rank_tile_execution,
     rank_tile_communication_contract,
     reconstruct_owned_phase_state,
     serial_halo_exchange,
@@ -175,6 +176,43 @@ def test_local_decomposed_phase_execution_matches_monolithic_reductions() -> Non
     np.testing.assert_allclose(result.local_free_energy, float(np.sum(state * state)))
 
 
+def test_local_multiprocess_rank_tile_execution_matches_monolithic_reductions() -> None:
+    plan = build_radial_toroidal_decomposition(
+        n_radial=12,
+        n_toroidal=8,
+        n_theta=4,
+        n_vpar=3,
+        n_mu=2,
+        radial_parts=3,
+        toroidal_parts=2,
+        halo=1,
+    )
+    state: NDArray[np.float64] = np.cos(
+        np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 19.0
+    ).reshape(
+        plan.n_radial,
+        plan.n_toroidal,
+        plan.n_theta,
+        plan.n_vpar,
+        plan.n_mu,
+    )
+
+    result = local_multiprocess_rank_tile_execution(plan, state, max_workers=2)
+
+    assert result.rank_count == plan.total_ranks
+    assert result.worker_count == 2
+    assert result.unique_worker_process_count >= 1
+    assert result.global_shape == state.shape
+    assert result.halo_exchange_pass
+    assert result.decomposition_invariant_pass
+    assert result.reconstruction_linf_error == 0.0
+    assert result.inventory_relative_error <= 1.0e-12
+    assert result.free_energy_relative_error <= 1.0e-12
+    assert result.parallel_moment_relative_error <= 1.0e-12
+    assert result.halo_checksum_relative_error <= 1.0e-12
+    assert len(result.rank_rows) == plan.total_ranks
+
+
 def test_production_decomposition_distributed_sidecar_is_schema_checked(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -309,6 +347,49 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     )
     assert large_grid["rows"][0]["cells_per_second"] > 0.0
     assert "multi-GPU" in large_grid["blocking_reason"]
+    multiprocess = report["local_multiprocess_cpu_evidence"]
+    assert multiprocess["schema"] == "production-decomposition-local-multiprocess-cpu-evidence.v1"
+    assert multiprocess["status"] == "accepted_local_multiprocess_cpu_rank_execution"
+    assert multiprocess["local_multiprocess_cpu_execution_ready"] is True
+    assert multiprocess["rank_count"] == 8
+    assert multiprocess["worker_count"] >= 1
+    assert multiprocess["unique_worker_process_count"] >= 1
+    assert multiprocess["reconstruction_linf_error"] == 0.0
+    assert multiprocess["inventory_relative_error"] <= 1.0e-12
+    assert multiprocess["free_energy_relative_error"] <= 1.0e-12
+    assert multiprocess["parallel_moment_relative_error"] <= 1.0e-12
+    assert multiprocess["halo_checksum_relative_error"] <= 1.0e-12
+    assert report["local_multiprocess_cpu_execution_pass"] is True
+    mpi_runtime = report["mpi_runtime_evidence"]
+    assert mpi_runtime["schema"] == "production-decomposition-mpi-runtime-evidence.v1"
+    assert mpi_runtime["status"] in {
+        "accepted_local_mpi_rank_tile_execution",
+        "blocked_mpi_launcher_missing",
+        "blocked_mpi_runtime_execution_failed",
+        "blocked_mpi_runtime_invariants_failed",
+    }
+    if mpi_runtime["mpi_runtime_execution_ready"]:
+        assert mpi_runtime["rank_count"] == 4
+        assert mpi_runtime["reconstruction_linf_error"] == 0.0
+        assert mpi_runtime["inventory_relative_error"] <= 1.0e-12
+        assert mpi_runtime["free_energy_relative_error"] <= 1.0e-12
+        assert mpi_runtime["parallel_moment_relative_error"] <= 1.0e-12
+        assert mpi_runtime["halo_exchange_pass"] is True
+    gpu_evidence = report["gpu_rank_tile_evidence"]
+    assert gpu_evidence["schema"] == "production-decomposition-gpu-rank-tile-evidence.v1"
+    assert gpu_evidence["status"] in {
+        "accepted_local_gpu_rank_tile_execution",
+        "blocked_cupy_runtime_missing",
+        "blocked_cuda_device_query_failed",
+        "blocked_no_cuda_devices_visible",
+        "blocked_gpu_rank_tile_invariants_failed",
+    }
+    if gpu_evidence["gpu_rank_tile_execution_ready"]:
+        assert gpu_evidence["device_count"] >= 1
+        assert gpu_evidence["rank_count"] == 8
+        assert gpu_evidence["inventory_relative_error"] <= 1.0e-12
+        assert gpu_evidence["free_energy_relative_error"] <= 1.0e-12
+        assert gpu_evidence["parallel_moment_relative_error"] <= 1.0e-12
     assert report["hardware_metadata"]["python_version"]
     assert report["reproducible_commands"]
     assert report["production_scale_ready"] is False

@@ -9,7 +9,10 @@
 
 from __future__ import annotations
 
+import os
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -90,6 +93,30 @@ class LocalDecomposedExecutionResult:
     reconstruction_linf_error: float
     halo_exchange_pass: bool
     decomposition_invariant_pass: bool
+
+
+@dataclass(frozen=True)
+class LocalMultiprocessExecutionResult:
+    """Process-isolated local rank-tile execution evidence for one 5D state."""
+
+    rank_count: int
+    worker_count: int
+    unique_worker_process_count: int
+    global_shape: tuple[int, int, int, int, int]
+    local_inventory: float
+    global_inventory: float
+    inventory_relative_error: float
+    local_free_energy: float
+    global_free_energy: float
+    free_energy_relative_error: float
+    local_parallel_moment: float
+    global_parallel_moment: float
+    parallel_moment_relative_error: float
+    halo_checksum_relative_error: float
+    reconstruction_linf_error: float
+    halo_exchange_pass: bool
+    decomposition_invariant_pass: bool
+    rank_rows: tuple[dict[str, Any], ...]
 
 
 @dataclass(frozen=True)
@@ -213,6 +240,23 @@ def _parallel_moment(state: NDArray[np.float64], n_vpar: int) -> float:
     """Return the normalized-vpar first moment of a 5D phase-space payload."""
     weights = _normalized_vpar_weights(n_vpar).reshape(1, 1, 1, n_vpar, 1)
     return float(np.sum(state * weights))
+
+
+def _rank_process_reductions(
+    payload: tuple[int, NDArray[np.float64], NDArray[np.float64], int]
+) -> dict[str, Any]:
+    """Return rank-local reductions from a worker process."""
+    rank, owned, with_halo, n_vpar = payload
+    return {
+        "free_energy": float(np.sum(owned * owned)),
+        "halo_checksum": float(np.sum(with_halo)),
+        "halo_shape": [int(axis) for axis in with_halo.shape],
+        "inventory": float(np.sum(owned)),
+        "owned_shape": [int(axis) for axis in owned.shape],
+        "parallel_moment": _parallel_moment(owned, n_vpar),
+        "pid": os.getpid(),
+        "rank": rank,
+    }
 
 
 def build_radial_toroidal_decomposition(
@@ -530,16 +574,96 @@ def local_decomposed_phase_execution(
     )
 
 
+def local_multiprocess_rank_tile_execution(
+    plan: GKDomainDecompositionPlan,
+    phase_state: NDArray[np.float64],
+    *,
+    max_workers: int | None = None,
+) -> LocalMultiprocessExecutionResult:
+    """Execute rank-local reductions in separate worker processes.
+
+    This is local CPU process isolation over the declared rank tiles. It is not
+    MPI and it is not multi-GPU execution; benchmark gates must keep production
+    scaling blocked until those runtime artefacts exist.
+    """
+    state = _validate_phase_state(plan, phase_state)
+    local_tiles = serial_halo_exchange(plan, state)
+    worker_count = max(1, min(plan.total_ranks, max_workers or (os.cpu_count() or 1)))
+    payloads = [
+        (local.rank, local.owned, local.with_halo, plan.n_vpar) for local in local_tiles
+    ]
+    with ProcessPoolExecutor(max_workers=worker_count) as executor:
+        rank_rows = tuple(sorted(executor.map(_rank_process_reductions, payloads), key=lambda row: int(row["rank"])))
+
+    reconstructed = reconstruct_owned_phase_state(plan, local_tiles)
+    reconstruction_error = float(np.max(np.abs(reconstructed - state)))
+    global_inventory = float(np.sum(state))
+    local_inventory = float(sum(float(row["inventory"]) for row in rank_rows))
+    inventory_relative_error = abs(local_inventory - global_inventory) / max(
+        abs(global_inventory), 1.0e-30
+    )
+    global_free_energy = float(np.sum(state * state))
+    local_free_energy = float(sum(float(row["free_energy"]) for row in rank_rows))
+    free_energy_relative_error = abs(local_free_energy - global_free_energy) / max(
+        abs(global_free_energy), 1.0e-30
+    )
+    global_parallel_moment = _parallel_moment(state, plan.n_vpar)
+    local_parallel_moment = float(sum(float(row["parallel_moment"]) for row in rank_rows))
+    parallel_moment_relative_error = abs(local_parallel_moment - global_parallel_moment) / max(
+        abs(global_parallel_moment), 1.0e-30
+    )
+    local_halo_checksum = float(sum(float(row["halo_checksum"]) for row in rank_rows))
+    reference_halo_checksum = float(sum(float(np.sum(local.with_halo)) for local in local_tiles))
+    halo_checksum_relative_error = abs(local_halo_checksum - reference_halo_checksum) / max(
+        abs(reference_halo_checksum), 1.0e-30
+    )
+    halo_exchange_pass = all(
+        list(local.with_halo.shape) == rank_rows[local.rank]["halo_shape"]
+        for local in local_tiles
+    )
+    invariant_pass = bool(
+        halo_exchange_pass
+        and reconstruction_error == 0.0
+        and inventory_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+        and free_energy_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+        and parallel_moment_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+        and halo_checksum_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+    )
+    return LocalMultiprocessExecutionResult(
+        rank_count=len(local_tiles),
+        worker_count=worker_count,
+        unique_worker_process_count=len({int(row["pid"]) for row in rank_rows}),
+        global_shape=state.shape,
+        local_inventory=local_inventory,
+        global_inventory=global_inventory,
+        inventory_relative_error=inventory_relative_error,
+        local_free_energy=local_free_energy,
+        global_free_energy=global_free_energy,
+        free_energy_relative_error=free_energy_relative_error,
+        local_parallel_moment=local_parallel_moment,
+        global_parallel_moment=global_parallel_moment,
+        parallel_moment_relative_error=parallel_moment_relative_error,
+        halo_checksum_relative_error=halo_checksum_relative_error,
+        reconstruction_linf_error=reconstruction_error,
+        halo_exchange_pass=halo_exchange_pass,
+        decomposition_invariant_pass=invariant_pass,
+        rank_rows=rank_rows,
+    )
+
+
 __all__ = [
     "AxisBlock",
     "DecompositionInvariantMetrics",
     "GKDomainDecompositionPlan",
     "LocalDecomposedExecutionResult",
+    "LocalMultiprocessExecutionResult",
     "RankPhaseTile",
     "RankTile",
     "build_radial_toroidal_decomposition",
     "decomposition_invariant_metrics",
     "local_decomposed_phase_execution",
+    "local_multiprocess_rank_tile_execution",
+    "rank_tile_communication_contract",
     "reconstruct_owned_phase_state",
     "serial_halo_exchange",
 ]
