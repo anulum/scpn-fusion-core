@@ -1,9 +1,3 @@
-.. -----------------------------------------------------------------------
-   SCPN Fusion Core -- Documentation Root
-   Copyright 1998-2026 Miroslav Sotek. All rights reserved.
-   License: GNU AGPL v3 | Commercial licensing available
-   -----------------------------------------------------------------------
-
 ============================
 SCPN-Fusion-Core
 ============================
@@ -68,6 +62,15 @@ Key Features
 
    installation
    quickstart
+
+Public Documentation Hubs
+-------------------------
+
+- `Project overview <../PROJECT_OVERVIEW.md>`_
+- `Onboarding guide <../ONBOARDING.md>`_
+- `API overview <../API_OVERVIEW.md>`_
+- `Applications and market context <../APPLICATIONS_AND_MARKET.md>`_
+- `Benchmark taxonomy <../BENCHMARKS.md>`_
 
 .. toctree::
    :maxdepth: 2

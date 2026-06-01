@@ -4,7 +4,6 @@
 
 **Author:** Miroslav Sotek
 **Date:** February 10, 2026
-**CopyRights:** © 1998–2026 Miroslav Šotek. All rights reserved.
 **Contact us:** www.anulum.li | protoscience@anulum.li
 **ORCID:** https://orcid.org/0009-0009-3560-0851
 **License:** GNU AFFERO GENERAL PUBLIC LICENSE v3
@@ -3028,8 +3027,8 @@ Packet C of the SCPN Fusion Core Neuro-Symbolic Logic Compiler makes the followi
 | File | Changes |
 |------|---------|
 | `compiler.py` | `firing_mode`/`firing_margin` fields, fractional `lif_fire()`, `export_artifact()` |
-| `structure.py` | Copyright header |
-| `__init__.py` | Copyright header, 10 new exports |
+| `structure.py` | license header |
+| `__init__.py` | license header, 10 new exports |
 
 **Total: 2,255 new lines** (production + test), with **zero breaking changes** to the existing 32-test Packet A & B suite.
 
@@ -3173,9 +3172,9 @@ This is ambitious, but each step along the way produces independently valuable r
 
 | File | Path | Changes |
 |------|------|---------|
-| `compiler.py` | `src/scpn_fusion/scpn/compiler.py` | Copyright, `firing_mode`/`firing_margin`, fractional `lif_fire()`, `export_artifact()` |
-| `structure.py` | `src/scpn_fusion/scpn/structure.py` | Copyright header only |
-| `__init__.py` | `src/scpn_fusion/scpn/__init__.py` | Copyright, 10 new exports |
+| `compiler.py` | `src/scpn_fusion/scpn/compiler.py` | License header, `firing_mode`/`firing_margin`, fractional `lif_fire()`, `export_artifact()` |
+| `structure.py` | `src/scpn_fusion/scpn/structure.py` | license header only |
+| `__init__.py` | `src/scpn_fusion/scpn/__init__.py` | License header, 10 new exports |
 
 ### A.3 Dependency Graph
 
@@ -3408,4 +3407,3 @@ def save_artifact(artifact: Artifact, path: str) -> None:
 *Document: SCPN Fusion Core — Packet C Control API Integration*
 *Version: 1.0*
 *Date: February 10, 2026*
-*© 1998–2026 Miroslav Šotek. All rights reserved.*

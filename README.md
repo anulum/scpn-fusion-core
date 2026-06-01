@@ -1,12 +1,12 @@
 # SCPN Fusion Core
 
-**Full-stack neuro-symbolic tokamak control and physics simulation with generated capability inventory, 0.52 us kernel latency, native gyrokinetic eigenvalue solver, and zero-disruption stress-test results.**
+**Evidence-bounded neuro-symbolic tokamak control, native plasma-solver research, and fail-closed fusion-validation infrastructure for control, equilibrium, transport, gyrokinetic, runaway-electron, impurity, and free-boundary campaigns.**
 
 <p align="center">
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core -- Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/) [![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)](https://pepy.tech/project/scpn-fusion) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.9.6-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/) [![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)](https://pepy.tech/project/scpn-fusion) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.9.7-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
 
 **Financing the full-fidelity parity campaign:** the public GitHub Pages landing page is [anulum.github.io/scpn-fusion-core](https://anulum.github.io/scpn-fusion-core/). It separates current evidence from blocked GENE/CGYRO/GS2, DREAM, Aurora/STRAHL, FreeGS, and production-scale GPU/cluster validation work.
 
@@ -47,7 +47,7 @@ facades and evidence-bounded validation reports.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.6 |
+| Package version | 3.9.7 |
 | Public API exports | 2 |
 | Python capability source modules | 264 |
 | Python capability classes | 502 |
@@ -62,6 +62,43 @@ Evidence boundary: this snapshot is a static inventory. Performance, coverage, h
 <!-- capability-snapshot:end -->
 
 ## What Is It?
+
+SCPN Fusion Core is a research-grade software stack for building and
+validating tokamak control algorithms against physics-informed plant models.
+It combines four surfaces that are usually split across separate tools:
+
+- **Control representation:** stochastic Petri nets, spiking neural network
+  execution, classical controllers, NMPC, replay, and hardware-in-the-loop
+  contracts.
+- **Native physics kernels:** Grad-Shafranov equilibrium, radial transport,
+  gyrokinetic research operators, electromagnetic diagnostics, runaway-electron
+  and impurity contracts, and free-boundary validation harnesses.
+- **Reference-code integration:** fail-closed adapters and benchmark manifests
+  for GENE, CGYRO, GS2, DREAM, Aurora, STRAHL, FreeGS, GEQDSK, IMAS/OMAS, and
+  public reference datasets.
+- **Evidence publication:** tracked JSON/Markdown reports, checksum-backed
+  artifact manifests, GitHub Pages documentation, notebooks, and release gates
+  that separate local contracts from accepted production-parity evidence.
+
+The intended users are fusion-control researchers, simulation engineers,
+validation teams, accelerator/GPU engineers, formal-methods contributors, and
+industrial groups evaluating how real-time control software can be hardened
+before plant deployment.
+
+## Documentation Map
+
+| Need | Start here |
+|---|---|
+| Understand the product and evidence boundary | [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) |
+| Install and run the first commands | [`docs/ONBOARDING.md`](docs/ONBOARDING.md) |
+| Find public APIs and extension points | [`docs/API_OVERVIEW.md`](docs/API_OVERVIEW.md) |
+| Understand applications and market value | [`docs/APPLICATIONS_AND_MARKET.md`](docs/APPLICATIONS_AND_MARKET.md) |
+| Reproduce benchmark claims | [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`RESULTS.md`](RESULTS.md) |
+| Track full-fidelity blockers | [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md) |
+| Use notebooks | [`docs/notebooks/README.md`](docs/notebooks/README.md) |
+| Read generated Sphinx docs | [`docs/sphinx/index.rst`](docs/sphinx/index.rst) |
+
+## Capability Surface
 
 | Layer | Modules | Capability |
 |-------|---------|-----------|
@@ -144,10 +181,10 @@ electrostatic/electromagnetic model metadata and can emit nonlinear 5D deck
 requests for installed production solvers; SCPN does not bundle or replace
 those solvers.
 
-## Honest Scope
+## Evidence Boundary
 
-This is **not** a replacement for TRANSP, JINTRAC, or GENE. It is a
-**control-algorithm development framework** with explicit fidelity boundaries,
+This is **not** a replacement for TRANSP, JINTRAC, GENE, CGYRO, GS2, DREAM, Aurora, STRAHL, or EFIT. It is a
+**control-algorithm development and validation framework** with explicit fidelity boundaries,
 fast controller-support models, native research solver contracts, and
 fail-closed production-parity gates. See
 [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md),
@@ -712,7 +749,7 @@ Audit artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {3.9.6}
+  version = {3.9.7}
 }
 ```
 

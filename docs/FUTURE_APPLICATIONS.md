@@ -1,47 +1,86 @@
-# Future Applications: Beyond Simulation
+# Future Applications
 
-**Version**: 1.0.0
-**Target**: Industry Partners and Research Institutions
+SCPN Fusion Core is a control-and-validation platform under active development.
+This page describes plausible application areas and the evidence needed before
+any of them should be treated as production claims.
 
----
+## 1. Real-time tokamak control research
 
-## 1. AI-Driven Real-Time Control
+Current value:
 
-The FNO-based turbulence suppressor and the neural equilibrium solver developed in this framework are ready for integration into **Tokamak Control Systems**.
-*   **Application**: Real-time disruption prediction and avoidance using low-latency FPGA implementations of our neural kernels.
-*   **Goal**: Eliminating "Disruptions"—the single greatest threat to tokamak commercial viability.
+- Encode controller logic as stochastic Petri nets and compile it into SNN
+  execution paths.
+- Compare classical PID, H-infinity, LQR, NMPC, and replay controllers under
+  reproducible simulation campaigns.
+- Publish latency and disruption-risk diagnostics with explicit hardware and
+  benchmark provenance.
 
----
+Evidence still needed for plant deployment:
 
-## 2. Integration with the SCPN "God Mode"
+- Facility-specific actuator, diagnostic, timing, and safety-system contracts.
+- Hardware-in-the-loop campaigns with plant-representative I/O latency.
+- Independent review of safety interlocks, fallback behavior, and operator
+  override paths.
 
-The Fusion-Core provides the **Material Plane (L1-L2)** foundation for the larger SCPN framework.
-*   **Quantum Bridge**: Using the `quantum_bridge.py` module to study the impact of high-energy plasma environments on microtubule coherence in biological systems (e.g., shielding for astronauts).
-*   **Lazarus Protocol**: Exploring the use of specific fusion resonance frequencies to drive cellular regeneration through transdimensional coupling (L14-L16).
+## 2. Fusion solver validation infrastructure
 
----
+Current value:
 
-## 3. Modular Decentralized Fusion
+- Fail-closed benchmark contracts for Grad-Shafranov, GEQDSK, FreeGS,
+  nonlinear gyrokinetics, electromagnetic GK, runaway electrons, impurities,
+  and production decomposition.
+- Public reports that keep missing same-case reference outputs blocked instead
+  of substituting synthetic or reduced-order evidence.
+- Polyglot parity surfaces where equivalent solver logic exists.
 
-The discovery of the **MVR-0.96** reactor design enables a new paradigm in energy:
-*   **Modular Fusion Plants**: Small, 5MW units that can be mass-produced and deployed in micro-grids.
-*   **Industrial Process Heat**: Using the 5.3MW output for carbon capture, hydrogen production, or desalination without the need for massive land use.
+Evidence still needed:
 
----
+- Redistribution-permitted same-deck nonlinear GENE/CGYRO/GS2 outputs.
+- DREAM and Aurora/STRAHL same-case output artifacts.
+- Public coil-current and machine-sidecar data for strict free-boundary parity.
+- Cluster and multi-GPU scaling evidence with reproducible hardware metadata.
 
-## 4. Space Propulsion: Fusion-Powered Rockets
+## 3. Industrial control software assurance
 
-The high power-density of compact SCPN reactors makes them ideal candidates for **Direct Fusion Drive (DFD)** propulsion systems.
-*   **Efficiency**: Specific impulse ($I_{sp}$) exceeding 10,000 seconds.
-*   **Mission Profile**: Enabling 90-day transits to Mars and rapid exploration of the outer solar system.
+Current value:
 
----
+- Machine-readable benchmark reports and acceptance gates.
+- Lean 4 proofs for narrow fail-closed controller/solver safety boundaries.
+- Deterministic replay contracts for selected stochastic-controller surfaces.
 
-## 5. Summary Roadmap
+Evidence still needed:
 
-| Phase | Application | Timeline |
-| :--- | :--- | :--- |
-| **Phase 1** | AI Control for existing Tokamaks | 2026-2027 |
-| **Phase 2** | Prototype Modular Fusion Unit | 2028-2030 |
-| **Phase 3** | Integration with SCPN Bio-Regeneration | 2031-2035 |
-| **Phase 4** | Fusion-Powered Space Exploration | 2040+ |
+- A broader formal proof surface covering actuator bounds, controller fallback,
+  and compiler preservation properties.
+- Independent security and safety reviews.
+- Facility-specific validation matrices.
+
+## 4. Accelerator and cloud benchmarking
+
+Current value:
+
+- Provider-neutral benchmark bundles for control diagnostics, native solvers,
+  and full-fidelity campaign reporting.
+- Local CPU, Rust, MPI, and optional CUDA/MPI evidence lanes.
+
+Evidence still needed:
+
+- Production-scale GPU and cluster runs across declared large-grid workloads.
+- Published cost, throughput, and efficiency thresholds per hardware class.
+- Artifact archives with checksums, commands, logs, and environment metadata.
+
+## 5. Market relevance
+
+Potential buyers or collaborators include fusion startups, national labs,
+university plasma-control groups, industrial simulation teams, and control
+software assurance groups. The practical value proposition is not that this
+repository replaces established physics codes today. The value is a transparent
+control-and-validation workbench that can connect fast control experiments to
+strict reference-code evidence as those reference artifacts become available.
+
+## Current status summary
+
+The platform is suitable for research, benchmarking, education, controller
+architecture work, and validation-pipeline development. It is not yet a
+production-certified plant controller or a full-fidelity replacement for
+GENE/CGYRO/GS2, DREAM, Aurora/STRAHL, FreeGS, EFIT, TRANSP, or JINTRAC.

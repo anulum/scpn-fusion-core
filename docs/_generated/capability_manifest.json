@@ -2472,7 +2472,7 @@
     "name": "scpn-fusion",
     "readme": "README.md",
     "requires_python": ">=3.10",
-    "version": "3.9.6"
+    "version": "3.9.7"
   },
   "project_label": "SCPN Fusion Core",
   "quality_gates": {
