@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """MPI rank-tile execution runner for production decomposition evidence."""
@@ -114,9 +112,7 @@ def run(output: Path) -> int:
     ] = owned
 
     radial_lower_rank = (
-        (radial_index - 1) * toroidal_parts + toroidal_index
-        if radial_index > 0
-        else MPI.PROC_NULL
+        (radial_index - 1) * toroidal_parts + toroidal_index if radial_index > 0 else MPI.PROC_NULL
     )
     radial_upper_rank = (
         (radial_index + 1) * toroidal_parts + toroidal_index
@@ -124,9 +120,7 @@ def run(output: Path) -> int:
         else MPI.PROC_NULL
     )
     toroidal_lower_rank = (
-        radial_index * toroidal_parts + toroidal_index - 1
-        if toroidal_index > 0
-        else MPI.PROC_NULL
+        radial_index * toroidal_parts + toroidal_index - 1 if toroidal_index > 0 else MPI.PROC_NULL
     )
     toroidal_upper_rank = (
         radial_index * toroidal_parts + toroidal_index + 1
@@ -246,7 +240,10 @@ def run(output: Path) -> int:
             "radial_upper_toroidal_upper",
             corner_ranks["radial_upper_toroidal_upper"],
             31,
-            (slice(radial_offset + tile.radial.size, None), slice(toroidal_offset + tile.toroidal.size, None)),
+            (
+                slice(radial_offset + tile.radial.size, None),
+                slice(toroidal_offset + tile.toroidal.size, None),
+            ),
         ),
         (
             "radial_upper_toroidal_upper",

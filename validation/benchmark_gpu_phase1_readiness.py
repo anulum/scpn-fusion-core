@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Fail-closed GPU Phase 1 readiness gate.
@@ -41,8 +39,10 @@ def _rel(path: Path, *, root: Path) -> str:
 
 
 def _sha256_present(value: Any) -> bool:
-    return isinstance(value, str) and len(value) == 64 and all(
-        ch in "0123456789abcdef" for ch in value
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(ch in "0123456789abcdef" for ch in value)
     )
 
 
@@ -100,24 +100,14 @@ def evaluate_gpu_phase1_readiness(
     paths = {
         "gpu_crate": root / "scpn-fusion-rs" / "crates" / "fusion-gpu" / "Cargo.toml",
         "gpu_solver": root / "scpn-fusion-rs" / "crates" / "fusion-gpu" / "src" / "lib.rs",
-        "gpu_shader": root
-        / "scpn-fusion-rs"
-        / "crates"
-        / "fusion-gpu"
-        / "src"
-        / "gs_solver.wgsl",
+        "gpu_shader": root / "scpn-fusion-rs" / "crates" / "fusion-gpu" / "src" / "gs_solver.wgsl",
         "gpu_bench": root
         / "scpn-fusion-rs"
         / "crates"
         / "fusion-gpu"
         / "benches"
         / "gpu_sor_bench.rs",
-        "cpu_sor": root
-        / "scpn-fusion-rs"
-        / "crates"
-        / "fusion-math"
-        / "src"
-        / "sor.rs",
+        "cpu_sor": root / "scpn-fusion-rs" / "crates" / "fusion-math" / "src" / "sor.rs",
     }
     surface_checks = {key: path.exists() for key, path in paths.items()}
     benchmark_paths = benchmark_report_paths or DEFAULT_BENCHMARK_ARTIFACTS

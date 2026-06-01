@@ -1,4 +1,4 @@
-# Golden Base Validation Notes (v3.9.6)
+# Golden Base Validation Notes (v3.9.7)
 
 This document covers data provenance and validation notes for:
 
@@ -55,7 +55,7 @@ The Golden Base notebook disturbance lane is intentionally linked to existing va
 
 In notebook code this appears as `VALIDATION_SCRIPT` and `FULL_PIPELINE_SCRIPT` path checks, and `load_shot(...)` points at the same reference-data directory.
 
-## Task-5 Proxy Hardening (v3.9.6)
+## Task-5 Proxy Hardening (v3.9.7)
 
 - `src/scpn_fusion/control/disruption_contracts.py` now exposes uncertainty-aware outputs for disruption-lane surrogates:
   - `mcnp_lite_tbr(..., return_uncertainty=True)` returns `tbr_sigma`, `tbr_rel_sigma`, and p95 bounds.
@@ -100,7 +100,7 @@ python validation/benchmark_multi_ion_transport_conservation.py --strict
 python validation/scpn_end_to_end_latency.py --strict
 ```
 
-## Data License And Copyright Context
+## Data License Context
 
 - Bundled `disruption_shots/*.npz` in this repo are generated synthetic reference profiles and are distributed with this codebase workflow.
 - Real DIII-D data are not bundled in this specific `disruption_shots` folder.
@@ -116,7 +116,7 @@ python validation/scpn_end_to_end_latency.py --strict
 - Golden Base currently demonstrates disturbance replay against DIII-D-like reference profiles in repo.
 - SPARC EFIT replay and broader equilibrium replay workflows are handled by the validation stack (e.g. `validation/validate_real_equilibria.py`) and can be integrated into notebook control loops as a follow-up step.
 
-## Copyright Clarity
+## Ownership Clarity
 
-- Concepts: Copyright 1996-2026
-- Code: Copyright 2024-2026
+- Concepts: 1996-2026
+- Code: 2024-2026

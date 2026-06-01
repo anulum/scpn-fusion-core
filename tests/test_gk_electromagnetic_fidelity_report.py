@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Tests for the fail-closed nonlinear GK electromagnetic fidelity gate."""
@@ -173,7 +171,10 @@ def test_gk_electromagnetic_fidelity_report_extracts_time_resolved_current_momen
 
     evidence = report["sourced_current_moment_evidence"]
     assert evidence["schema"] == "gk-sourced-current-moment-evidence.v1"
-    assert evidence["status"] == "accepted_time_resolved_current_and_continuity_proxy_field_coupling_missing"
+    assert (
+        evidence["status"]
+        == "accepted_time_resolved_current_and_continuity_proxy_field_coupling_missing"
+    )
     assert evidence["current_moment_ready"] is True
     assert evidence["current_moment_source"] == "native_time_resolved_5d_distribution_state"
     assert evidence["phase_space_source_shape"] == [2, 4, 4, 8, 5, 4]
@@ -185,19 +186,30 @@ def test_gk_electromagnetic_fidelity_report_extracts_time_resolved_current_momen
     assert evidence["time_resolved_current_history_ready"] is True
     assert evidence["perpendicular_current_history_ready"] is True
     assert evidence["continuity_residual_history_ready"] is True
-    assert evidence["continuity_residual_status"] == "accepted_spectral_continuity_proxy_not_sourced_field_coupling"
+    assert (
+        evidence["continuity_residual_status"]
+        == "accepted_spectral_continuity_proxy_not_sourced_field_coupling"
+    )
     assert evidence["d_charge_dt_ready"] is True
     assert evidence["field_particle_exchange_ready"] is True
-    assert evidence["field_particle_exchange_status"] == "accepted_native_j_parallel_e_parallel_proxy"
+    assert (
+        evidence["field_particle_exchange_status"] == "accepted_native_j_parallel_e_parallel_proxy"
+    )
     assert len(evidence["field_particle_exchange_t"]) == 5
-    assert evidence["continuity_relative_residual_max"] <= evidence["continuity_relative_residual_tolerance"]
+    assert (
+        evidence["continuity_relative_residual_max"]
+        <= evidence["continuity_relative_residual_tolerance"]
+    )
     assert evidence["j_parallel_l2_norm_max"] > 0.0
     assert evidence["charge_density_l2_norm_max"] > 0.0
     residual_rows = evidence["sourced_ampere_maxwell_residual_rows"]
     assert len(residual_rows) == 1
     assert residual_rows[0]["ready"] is False
     assert residual_rows[0]["status"] == "blocked_missing_sourced_field_evolution_terms"
-    assert "missing_self_consistent_displacement_current_from_sourced_field_evolution" in residual_rows[0]["blockers"]
+    assert (
+        "missing_self_consistent_displacement_current_from_sourced_field_evolution"
+        in residual_rows[0]["blockers"]
+    )
     assert "missing_self_consistent_e_parallel_field_evolution" in residual_rows[0]["blockers"]
 
 

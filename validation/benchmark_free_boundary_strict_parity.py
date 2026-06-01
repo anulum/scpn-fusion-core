@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Strict fail-closed free-boundary parity gate.
@@ -213,9 +211,7 @@ def evaluate_strict_parity(
         else "blocked_free_boundary_strict_parity",
         "inputs": {
             "freegs_public_example_reconstruction": _rel(freegs_report_path),
-            "free_boundary_public_machine_metadata_inventory": _rel(
-                machine_metadata_report_path
-            ),
+            "free_boundary_public_machine_metadata_inventory": _rel(machine_metadata_report_path),
         },
         "checks": {
             "external_nonlinear_output_ready": external_ready,

@@ -1,6 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────
 # SCPN Fusion Core — Citation Metadata
-# © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
@@ -13,7 +12,7 @@ authors:
   - family-names: "Sotek"
     given-names: "Miroslav"
     orcid: "https://orcid.org/0009-0009-3560-0851"
-version: "3.9.6"
+version: "3.9.7"
 date-released: "2026-06-01"
 license: "AGPL-3.0-or-later"
 repository-code: "https://github.com/anulum/scpn-fusion-core"

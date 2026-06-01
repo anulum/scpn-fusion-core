@@ -13,10 +13,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["schema"] == "full-fidelity-end-to-end-campaign.v1"
     assert report["status"] == "not_full_fidelity"
     assert report["acceptance_passed"] is False
-    assert (
-        report["sas_dataset_readiness_report"]
-        == "validation/reports/sas_dataset_readiness.json"
-    )
+    assert report["sas_dataset_readiness_report"] == "validation/reports/sas_dataset_readiness.json"
     assert report["sas_dataset_readiness_status"] in {
         "blocked_missing_required_external_parity_datasets",
         "blocked_missing_sas_dataset_manifest",

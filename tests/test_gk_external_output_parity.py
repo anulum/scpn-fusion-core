@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Tests for fail-closed nonlinear GK external output parity artefacts."""
@@ -213,9 +211,7 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
     assert surfaces[("GENE", "heat_flux_spectra_time_kx_ky_species")]["ready"] is True
     assert surfaces[("GENE", "field_energy_history_phi_apar_bpar")]["ready"] is True
     assert surfaces[("GENE", "zonal_flow_and_saturation_metrics")]["ready"] is True
-    assert (
-        surfaces[("GENE", "native_same_case_solver_output_comparison")]["ready"] is False
-    )
+    assert surfaces[("GENE", "native_same_case_solver_output_comparison")]["ready"] is False
     assert surfaces[("GENE", "grid_convergence_evidence")]["ready"] is True
     assert surfaces[("GENE", "production_scale_scaling_evidence")]["ready"] is True
     assert surfaces[("CGYRO", "nonlinear_distribution_output")]["ready"] is False

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Fail-closed measurement of WGPU and CUDA/JAX GPU backend alternatives.
@@ -25,7 +23,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import platform
 import re
 import subprocess
@@ -166,7 +163,9 @@ def measure_wgpu_physical(*, run_bench: bool, timeout_s: int) -> dict[str, Any]:
     """Measure the Rust WGPU lane, blocking CPU software adapters."""
     nvidia = _run_command(["nvidia-smi"], timeout_s=30)
     vulkan = _run_command(["vulkaninfo", "--summary"], timeout_s=30)
-    vulkan_devices = _parse_vulkan_devices(str(vulkan["output"])) if vulkan["exit_code"] == 0 else []
+    vulkan_devices = (
+        _parse_vulkan_devices(str(vulkan["output"])) if vulkan["exit_code"] == 0 else []
+    )
     physical_vulkan = _physical_vulkan_device_present(vulkan_devices)
 
     lane: dict[str, Any] = {
@@ -183,9 +182,13 @@ def measure_wgpu_physical(*, run_bench: bool, timeout_s: int) -> dict[str, Any]:
 
     if not physical_vulkan:
         software_devices = [
-            device for device in vulkan_devices if device.get("deviceType") == "PHYSICAL_DEVICE_TYPE_CPU"
+            device
+            for device in vulkan_devices
+            if device.get("deviceType") == "PHYSICAL_DEVICE_TYPE_CPU"
         ]
-        lane["status"] = LANE_BLOCKED_CPU_ADAPTER if software_devices else LANE_BLOCKED_MISSING_BACKEND
+        lane["status"] = (
+            LANE_BLOCKED_CPU_ADAPTER if software_devices else LANE_BLOCKED_MISSING_BACKEND
+        )
         lane["blocker"] = (
             "vulkan_wgpu_exposes_only_cpu_software_adapter"
             if software_devices
@@ -241,7 +244,9 @@ def _jax_devices_summary() -> tuple[bool, list[str], str]:
     except Exception as exc:  # pragma: no cover - depends on optional backend
         return False, [], f"jax_unavailable:{type(exc).__name__}:{exc}"
     devices = [str(device) for device in jax.devices()]
-    has_cuda = any("cuda" in str(device).lower() or "gpu" in str(device).lower() for device in devices)
+    has_cuda = any(
+        "cuda" in str(device).lower() or "gpu" in str(device).lower() for device in devices
+    )
     return has_cuda, devices, str(getattr(jax, "__version__", "unknown"))
 
 
@@ -317,7 +322,9 @@ def measure_cuda_jax(*, run_bench: bool, size: int, repeats: int) -> dict[str, A
 
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     wgpu = measure_wgpu_physical(run_bench=not args.probe_only, timeout_s=args.wgpu_timeout_s)
-    cuda = measure_cuda_jax(run_bench=not args.probe_only, size=args.jax_size, repeats=args.jax_repeats)
+    cuda = measure_cuda_jax(
+        run_bench=not args.probe_only, size=args.jax_size, repeats=args.jax_repeats
+    )
     lanes = [wgpu, cuda]
     return {
         "_metadata": REPORT_METADATA,
@@ -328,9 +335,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "platform": platform.platform(),
         "probe_only": bool(args.probe_only),
         "lanes": lanes,
-        "summary": {
-            lane["lane"]: lane["status"] for lane in lanes
-        },
+        "summary": {lane["lane"]: lane["status"] for lane in lanes},
         "publishable_gpu_throughput": any(lane["status"] == LANE_PASSED for lane in lanes),
     }
 
@@ -396,11 +401,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON, help="JSON report path.")
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD, help="Markdown report path.")
-    parser.add_argument("--probe-only", action="store_true", help="Probe backends without running kernels.")
+    parser.add_argument(
+        "--probe-only", action="store_true", help="Probe backends without running kernels."
+    )
     parser.add_argument("--jax-size", type=int, default=256, help="Square JAX matrix size.")
     parser.add_argument("--jax-repeats", type=int, default=5, help="JAX timed repetitions.")
     parser.add_argument("--wgpu-timeout-s", type=int, default=240, help="WGPU bench timeout.")
-    parser.add_argument("--strict", action="store_true", help="Return non-zero unless at least one lane passes.")
+    parser.add_argument(
+        "--strict", action="store_true", help="Return non-zero unless at least one lane passes."
+    )
     return parser.parse_args(argv)
 
 

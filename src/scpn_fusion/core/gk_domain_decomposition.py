@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Radial/toroidal decomposition contracts for production nonlinear GK runs."""
@@ -243,7 +241,7 @@ def _parallel_moment(state: NDArray[np.float64], n_vpar: int) -> float:
 
 
 def _rank_process_reductions(
-    payload: tuple[int, NDArray[np.float64], NDArray[np.float64], int]
+    payload: tuple[int, NDArray[np.float64], NDArray[np.float64], int],
 ) -> dict[str, Any]:
     """Return rank-local reductions from a worker process."""
     rank, owned, with_halo, n_vpar = payload
@@ -589,11 +587,13 @@ def local_multiprocess_rank_tile_execution(
     state = _validate_phase_state(plan, phase_state)
     local_tiles = serial_halo_exchange(plan, state)
     worker_count = max(1, min(plan.total_ranks, max_workers or (os.cpu_count() or 1)))
-    payloads = [
-        (local.rank, local.owned, local.with_halo, plan.n_vpar) for local in local_tiles
-    ]
+    payloads = [(local.rank, local.owned, local.with_halo, plan.n_vpar) for local in local_tiles]
     with ProcessPoolExecutor(max_workers=worker_count) as executor:
-        rank_rows = tuple(sorted(executor.map(_rank_process_reductions, payloads), key=lambda row: int(row["rank"])))
+        rank_rows = tuple(
+            sorted(
+                executor.map(_rank_process_reductions, payloads), key=lambda row: int(row["rank"])
+            )
+        )
 
     reconstructed = reconstruct_owned_phase_state(plan, local_tiles)
     reconstruction_error = float(np.max(np.abs(reconstructed - state)))
@@ -618,8 +618,7 @@ def local_multiprocess_rank_tile_execution(
         abs(reference_halo_checksum), 1.0e-30
     )
     halo_exchange_pass = all(
-        list(local.with_halo.shape) == rank_rows[local.rank]["halo_shape"]
-        for local in local_tiles
+        list(local.with_halo.shape) == rank_rows[local.rank]["halo_shape"] for local in local_tiles
     )
     invariant_pass = bool(
         halo_exchange_pass

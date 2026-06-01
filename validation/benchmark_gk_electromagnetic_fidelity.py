@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Fail-closed electromagnetic nonlinear GK fidelity gate.
@@ -206,10 +204,16 @@ def _maxwell_evolution_contract(
 def _sourced_maxwell_contract(current_moment_evidence: dict[str, Any]) -> dict[str, Any]:
     """Return the blocked sourced-Maxwell contract for the next implementation stage."""
     current_moment_ready = bool(current_moment_evidence["current_moment_ready"])
-    current_history_ready = bool(current_moment_evidence.get("time_resolved_current_history_ready", False))
+    current_history_ready = bool(
+        current_moment_evidence.get("time_resolved_current_history_ready", False)
+    )
     continuity_ready = bool(current_moment_evidence.get("continuity_residual_history_ready", False))
-    self_consistent_field_ready = bool(current_moment_evidence.get("self_consistent_sourced_field_evolution_ready", False))
-    field_particle_exchange_ready = bool(current_moment_evidence.get("field_particle_exchange_ready", False))
+    self_consistent_field_ready = bool(
+        current_moment_evidence.get("self_consistent_sourced_field_evolution_ready", False)
+    )
+    field_particle_exchange_ready = bool(
+        current_moment_evidence.get("field_particle_exchange_ready", False)
+    )
     sourced_field_evolution_contract = {
         "blocking_terms": [
             "self_consistent_dE_parallel_dt_from_sourced_A_parallel_phi",
@@ -571,8 +575,7 @@ def _charge_current_moments(
     phase_weight = float(solver.dvpar * solver.dmu * solver.dtheta)
     charge_density = np.sum(species_charges * state.f, axis=(0, 3, 4, 5)) * phase_weight
     j_parallel = (
-        np.sum(species_charges * velocity_weights * state.f, axis=(0, 3, 4, 5))
-        * phase_weight
+        np.sum(species_charges * velocity_weights * state.f, axis=(0, 3, 4, 5)) * phase_weight
     )
     return np.asarray(charge_density, dtype=np.complex128), np.asarray(
         j_parallel, dtype=np.complex128
@@ -629,9 +632,15 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
         d_charge_dt_linf = float(np.max(np.abs(d_charge_dt)))
         j_kx_t = np.zeros_like(charge_density_t)
         j_ky_t = np.zeros_like(charge_density_t)
-        j_kx_t[:, nonzero_k] = 1j * kx_grid[nonzero_k] * d_charge_dt[:, nonzero_k] / k_perp2[nonzero_k]
-        j_ky_t[:, nonzero_k] = 1j * ky_grid[nonzero_k] * d_charge_dt[:, nonzero_k] / k_perp2[nonzero_k]
-        continuity_residual_t = d_charge_dt + 1j * kx[None, :, :] * j_kx_t + 1j * ky[None, :, :] * j_ky_t
+        j_kx_t[:, nonzero_k] = (
+            1j * kx_grid[nonzero_k] * d_charge_dt[:, nonzero_k] / k_perp2[nonzero_k]
+        )
+        j_ky_t[:, nonzero_k] = (
+            1j * ky_grid[nonzero_k] * d_charge_dt[:, nonzero_k] / k_perp2[nonzero_k]
+        )
+        continuity_residual_t = (
+            d_charge_dt + 1j * kx[None, :, :] * j_kx_t + 1j * ky[None, :, :] * j_ky_t
+        )
         nonzero_residual = continuity_residual_t[:, nonzero_k]
         continuity_linf_residual_t = np.max(np.abs(nonzero_residual), axis=1)
         residual_norm = np.linalg.norm(nonzero_residual.reshape(time_t.size, -1), axis=1)
@@ -640,14 +649,18 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
         continuity_linf_residual_max = float(np.max(continuity_linf_residual_t))
         continuity_relative_residual_max = float(np.max(continuity_relative_residual_t))
         e_parallel_t = -np.gradient(a_parallel_t, time_t, axis=0)
-        field_particle_exchange_t = np.real(np.sum(np.conj(j_parallel_t) * e_parallel_t, axis=(1, 2)))
+        field_particle_exchange_t = np.real(
+            np.sum(np.conj(j_parallel_t) * e_parallel_t, axis=(1, 2))
+        )
         field_particle_exchange_ready = bool(
             field_particle_exchange_t.shape == time_t.shape
             and np.all(np.isfinite(e_parallel_t))
             and np.all(np.isfinite(field_particle_exchange_t))
         )
         field_particle_exchange_max_abs = float(np.max(np.abs(field_particle_exchange_t)))
-        perpendicular_current_history_ready = bool(np.all(np.isfinite(j_kx_t)) and np.all(np.isfinite(j_ky_t)))
+        perpendicular_current_history_ready = bool(
+            np.all(np.isfinite(j_kx_t)) and np.all(np.isfinite(j_ky_t))
+        )
     else:
         d_charge_dt_linf = float("inf")
         j_kx_t = np.empty((0, 0, 0), dtype=np.complex128)
@@ -668,7 +681,9 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
         and continuity_relative_residual_max <= CONTINUITY_RELATIVE_RESIDUAL_TOLERANCE
     )
     return {
-        "charge_density_l2_norm_max": float(np.max(np.linalg.norm(charge_density_t.reshape(time_t.size, -1), axis=1)))
+        "charge_density_l2_norm_max": float(
+            np.max(np.linalg.norm(charge_density_t.reshape(time_t.size, -1), axis=1))
+        )
         if time_t.size
         else 0.0,
         "charge_density_shape": list(charge_density_t.shape),
@@ -694,13 +709,22 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
         "d_charge_dt_ready": d_charge_dt_ready,
         "j_kx_shape": list(j_kx_t.shape),
         "j_ky_shape": list(j_ky_t.shape),
-        "j_parallel_l2_norm_max": float(np.max(np.linalg.norm(j_parallel_t.reshape(time_t.size, -1), axis=1)))
+        "j_parallel_l2_norm_max": float(
+            np.max(np.linalg.norm(j_parallel_t.reshape(time_t.size, -1), axis=1))
+        )
         if time_t.size
         else 0.0,
         "j_parallel_shape": list(j_parallel_t.shape),
         "moment_axes": ["time_s", "kx_rhos", "ky_rhos"],
         "perpendicular_current_history_ready": perpendicular_current_history_ready,
-        "phase_space_source_shape": [cfg.n_species, cfg.n_kx, cfg.n_ky, cfg.n_theta, cfg.n_vpar, cfg.n_mu],
+        "phase_space_source_shape": [
+            cfg.n_species,
+            cfg.n_kx,
+            cfg.n_ky,
+            cfg.n_theta,
+            cfg.n_vpar,
+            cfg.n_mu,
+        ],
         "schema": "gk-sourced-current-moment-evidence.v1",
         "self_consistent_sourced_field_evolution_ready": False,
         "sourced_ampere_maxwell_residual_rows": [
@@ -747,8 +771,7 @@ def _run_sourced_current_moment_evidence() -> dict[str, Any]:
     phase_weight = float(solver.dvpar * solver.dmu * solver.dtheta)
     charge_density = np.sum(species_charges * state.f, axis=(0, 3, 4, 5)) * phase_weight
     j_parallel = (
-        np.sum(species_charges * velocity_weights * state.f, axis=(0, 3, 4, 5))
-        * phase_weight
+        np.sum(species_charges * velocity_weights * state.f, axis=(0, 3, 4, 5)) * phase_weight
     )
     current_moment_ready = bool(
         charge_density.shape == (cfg.n_kx, cfg.n_ky)

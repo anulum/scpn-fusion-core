@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Control Stress-Test Campaign
@@ -575,9 +573,7 @@ def run_campaign(
         unknown = [name for name in controllers if name not in CONTROLLERS]
         if unknown:
             available = ", ".join(CONTROLLERS.keys())
-            raise ValueError(
-                f"Unknown controller(s): {', '.join(unknown)}. Available: {available}"
-            )
+            raise ValueError(f"Unknown controller(s): {', '.join(unknown)}. Available: {available}")
         controller_registry = {name: CONTROLLERS[name] for name in controllers}
 
     print(f"Controllers: {', '.join(controller_registry.keys())}")

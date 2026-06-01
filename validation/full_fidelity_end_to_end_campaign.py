@@ -435,8 +435,7 @@ def run_campaign() -> dict[str, Any]:
             "sources": _sources_for(registry, "free_boundary_equilibrium"),
             "next_required_evidence": (
                 free_boundary_strict_gate["blockers"]
-                or
-                free_boundary_strict["blocking_requirements"]
+                or free_boundary_strict["blocking_requirements"]
                 or freegs_public_reconstruction["missing_full_fidelity_requirements"]
                 or free_boundary_machine_metadata["missing_full_fidelity_requirements"]
                 or [
@@ -463,9 +462,7 @@ def run_campaign() -> dict[str, Any]:
         "sas_dataset_accepted_full_fidelity_ready": bool(
             sas_dataset_readiness["accepted_full_fidelity_dataset_ready"]
         ),
-        "sas_dataset_next_required_evidence": list(
-            sas_dataset_readiness["next_required_evidence"]
-        ),
+        "sas_dataset_next_required_evidence": list(sas_dataset_readiness["next_required_evidence"]),
         "public_source_cache_root": downloads["cache_root"],
         "public_source_download_report": str(PUBLIC_SOURCE_DOWNLOADS.relative_to(ROOT)),
         "public_sources_cached": bool(downloads["all_reachable_downloads_completed"]),
@@ -860,10 +857,7 @@ def write_reports(report: dict[str, Any]) -> None:
             "- Free-boundary strict parity blockers: "
             f"`{', '.join(report['free_boundary_strict_parity_blockers'])}`"
         ),
-        (
-            "- Free-boundary strict parity report: "
-            f"`{report['free_boundary_strict_parity_report']}`"
-        ),
+        (f"- Free-boundary strict parity report: `{report['free_boundary_strict_parity_report']}`"),
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

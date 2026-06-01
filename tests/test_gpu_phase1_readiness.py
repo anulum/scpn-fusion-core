@@ -48,9 +48,7 @@ def test_gpu_phase1_accepts_complete_static_and_benchmark_contract(tmp_path: Pat
         encoding="utf-8",
     )
 
-    report = evaluate_gpu_phase1_readiness(
-        root=tmp_path, benchmark_report_paths=[artifact]
-    )
+    report = evaluate_gpu_phase1_readiness(root=tmp_path, benchmark_report_paths=[artifact])
 
     assert report["accepted_phase1_readiness"] is True
     assert report["blockers"] == []

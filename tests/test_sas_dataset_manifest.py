@@ -69,7 +69,12 @@ def test_sas_dataset_manifest_blocks_missing_external_parity_outputs(tmp_path: P
     manifest = tmp_path / "manifests" / "dataset_manifest.json"
     manifest.parent.mkdir()
     blocked: list[dict[str, object]] = [
-        {"lane": lane, "name": lane, "notes": "missing same-case output", "status": "blocked_external_execution_required"}
+        {
+            "lane": lane,
+            "name": lane,
+            "notes": "missing same-case output",
+            "status": "blocked_external_execution_required",
+        }
         for lane in [
             "facility_raw_data",
             "free_boundary_coil_current_sidecars",

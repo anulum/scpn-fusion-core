@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Vertical Control Replay Benchmark
@@ -758,13 +756,10 @@ def _single_profile_release_gate(bench: dict[str, Any]) -> dict[str, Any]:
         "fairness_ready": bool(bench["fairness_report"]["passes_fairness_checks"] is True),
         "primary_controllers_ready": primary_pass,
         "uncertainty_envelope_ready": bool(
-            bench["uncertainty_report"]["max_p95_abs_z_m"]
-            <= bench["thresholds"]["max_p95_abs_z_m"]
+            bench["uncertainty_report"]["max_p95_abs_z_m"] <= bench["thresholds"]["max_p95_abs_z_m"]
         ),
         "actuator_saturation_contract_ready": all(
-            bool(
-                result["actuator_limit_application"]["applied_after_controller_output"] is True
-            )
+            bool(result["actuator_limit_application"]["applied_after_controller_output"] is True)
             for result in bench["controllers"].values()
         ),
         "fault_diagnostic_lane_ready": no_control_diagnostic,
@@ -812,9 +807,7 @@ def _profile_suite_release_gate(
         ),
         "actuator_saturation_contract_ready": all(
             bool(
-                reports[profile_id]["release_gate"]["checks"][
-                    "actuator_saturation_contract_ready"
-                ]
+                reports[profile_id]["release_gate"]["checks"]["actuator_saturation_contract_ready"]
             )
             for profile_id in profile_ids
         ),

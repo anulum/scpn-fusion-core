@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Commercial license available
-// © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-// © Code 2020–2026 Miroslav Šotek. All rights reserved.
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 //! GPU-accelerated Grad-Shafranov solver via wgpu compute shaders.
@@ -637,11 +635,13 @@ impl GpuGsSolver {
 /// Check if a GPU adapter is available without creating a full solver.
 pub fn gpu_available() -> bool {
     let instance = wgpu::Instance::default();
-    let Some(adapter) = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::HighPerformance,
-        compatible_surface: None,
-        force_fallback_adapter: false,
-    })) else {
+    let Some(adapter) =
+        pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            compatible_surface: None,
+            force_fallback_adapter: false,
+        }))
+    else {
         return false;
     };
     adapter_device_type_accepted(adapter.get_info().device_type)
@@ -700,7 +700,9 @@ mod tests {
         std::env::remove_var("SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER");
 
         assert!(adapter_device_type_accepted(wgpu::DeviceType::DiscreteGpu));
-        assert!(adapter_device_type_accepted(wgpu::DeviceType::IntegratedGpu));
+        assert!(adapter_device_type_accepted(
+            wgpu::DeviceType::IntegratedGpu
+        ));
         assert!(!adapter_device_type_accepted(wgpu::DeviceType::Cpu));
     }
 

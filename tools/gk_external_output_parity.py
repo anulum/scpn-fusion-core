@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Fail-closed nonlinear GK external output conversion and parity checks.
@@ -719,9 +717,7 @@ def _evidence_package_contract(reference_case: dict[str, Any]) -> dict[str, Any]
             "min_ranks": PRODUCTION_SCALING_MIN_RANKS,
             "required_linkage": "case_id must match converted same-deck output row",
         },
-        "required_evidence_surfaces": [
-            surface["surface"] for surface in ROADMAP_EVIDENCE_SURFACES
-        ],
+        "required_evidence_surfaces": [surface["surface"] for surface in ROADMAP_EVIDENCE_SURFACES],
     }
 
 
@@ -805,12 +801,11 @@ def _roadmap_evidence_surface_matrix(
             surface = str(surface_contract["surface"])
             required_observables = [str(name) for name in surface_contract["required_observables"]]
             observable_presence = {
-                observable: observable in available_observables for observable in required_observables
+                observable: observable in available_observables
+                for observable in required_observables
             }
             missing_observables = [
-                observable
-                for observable, present in observable_presence.items()
-                if not present
+                observable for observable, present in observable_presence.items() if not present
             ]
             if required_observables:
                 ready = bool(row.get("reference_output_ready")) and not missing_observables
@@ -1267,8 +1262,10 @@ def build_gk_external_output_parity_report(
     roadmap_evidence_surfaces_ready = bool(roadmap_evidence_surface_matrix) and all(
         bool(row["ready"]) for row in roadmap_evidence_surface_matrix
     )
-    evidence_package_ready = same_deck_ready and bool(evidence_package_matrix) and all(
-        bool(row["ready"]) for row in evidence_package_matrix
+    evidence_package_ready = (
+        same_deck_ready
+        and bool(evidence_package_matrix)
+        and all(bool(row["ready"]) for row in evidence_package_matrix)
     )
     accepted = (
         reference_ready
@@ -1425,9 +1422,7 @@ def _markdown(report: dict[str, Any]) -> str:
             "| {solver} | `{manifest}` | `{provenance}` | `{artifact}` | `{metadata}` | `{thresholds}` | `{grid}` | `{scaling}` | `{ready}` |".format(
                 solver=row["solver_family"],
                 manifest=row["manifest_row_ready"],
-                provenance=(
-                    row["public_provenance_ready"] and row["redistribution_license_ready"]
-                ),
+                provenance=(row["public_provenance_ready"] and row["redistribution_license_ready"]),
                 artifact=row["converted_artifact_ready"],
                 metadata=row["converted_metadata_ready"],
                 thresholds=row["native_same_case_thresholds_passed"],

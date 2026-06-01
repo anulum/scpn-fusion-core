@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 """Fail-closed production-scale decomposition contract benchmark."""
@@ -268,9 +266,7 @@ def _local_multiprocess_cpu_evidence() -> dict[str, Any]:
         toroidal_parts=2,
         halo=1,
     )
-    state = np.cos(
-        np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 23.0
-    ).reshape(
+    state = np.cos(np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 23.0).reshape(
         plan.n_radial,
         plan.n_toroidal,
         plan.n_theta,
@@ -353,9 +349,7 @@ def _runtime_dependency_evidence() -> dict[str, Any]:
     numpy_row = next(row for row in rows if row["module"] == "numpy")
     numpy_version = str(numpy_row["version"] or "")
     numpy_contract_pass = bool(
-        numpy_row["importable"]
-        and numpy_version
-        and not numpy_version.startswith("2.")
+        numpy_row["importable"] and numpy_version and not numpy_version.startswith("2.")
     )
     optional_runtime_dependency_ready = bool(
         numpy_contract_pass
@@ -402,8 +396,7 @@ def _mpi_runtime_evidence() -> dict[str, Any]:
             command,
             check=False,
             env={**os.environ, "OMPI_MCA_rmaps_base_oversubscribe": "1"},
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             timeout=30.0,
         )
@@ -502,9 +495,7 @@ def _gpu_rank_tile_evidence() -> dict[str, Any]:
         toroidal_parts=2,
         halo=1,
     )
-    state = np.sin(
-        np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 31.0
-    ).reshape(
+    state = np.sin(np.arange(plan.total_owned_phase_cells, dtype=np.float64) / 31.0).reshape(
         plan.n_radial,
         plan.n_toroidal,
         plan.n_theta,
@@ -1404,18 +1395,9 @@ def write_reports(report: dict[str, Any]) -> None:
             f"- Owned phase cells: `{multiprocess['owned_phase_cells']}`",
             f"- Elapsed s: `{multiprocess['elapsed_s']:.6e}`",
             f"- Cells/s: `{multiprocess['cells_per_second']:.6e}`",
-            (
-                "- Reconstruction L_inf error: "
-                f"`{multiprocess['reconstruction_linf_error']:.6e}`"
-            ),
-            (
-                "- Inventory relative error: "
-                f"`{multiprocess['inventory_relative_error']:.6e}`"
-            ),
-            (
-                "- Free-energy relative error: "
-                f"`{multiprocess['free_energy_relative_error']:.6e}`"
-            ),
+            (f"- Reconstruction L_inf error: `{multiprocess['reconstruction_linf_error']:.6e}`"),
+            (f"- Inventory relative error: `{multiprocess['inventory_relative_error']:.6e}`"),
+            (f"- Free-energy relative error: `{multiprocess['free_energy_relative_error']:.6e}`"),
             (
                 "- Parallel-moment relative error: "
                 f"`{multiprocess['parallel_moment_relative_error']:.6e}`"
@@ -1494,10 +1476,7 @@ def write_reports(report: dict[str, Any]) -> None:
             "",
             f"- Schema: `{gpu_evidence['schema']}`",
             f"- Status: `{gpu_evidence['status']}`",
-            (
-                "- GPU rank-tile execution ready: "
-                f"`{gpu_evidence['gpu_rank_tile_execution_ready']}`"
-            ),
+            (f"- GPU rank-tile execution ready: `{gpu_evidence['gpu_rank_tile_execution_ready']}`"),
             f"- Multi-GPU runtime ready: `{gpu_evidence['multi_gpu_runtime_ready']}`",
             f"- Blocking reason: {gpu_evidence['blocking_reason']}",
         ]
