@@ -32,7 +32,7 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 | `magnetic_divergence_constraint` | `True` | - |
 | `electromagnetic_energy_invariant_diagnostics` | `True` | - |
 | `native_em_same_case_thresholds` | `True` | - |
-| `sourced_kinetic_current_maxwell_coupling` | `False` | pending_5d_kinetic_current_moment_coupling |
+| `sourced_kinetic_current_maxwell_coupling` | `False` | missing_time_resolved_current_history_or_continuity_residuals |
 | `external_em_gene_cgyro_gs2_parity` | `False` | missing_same_deck_external_em_gene_cgyro_gs2_outputs |
 | `external_em_grid_convergence` | `False` | missing_same_deck_external_em_grid_convergence |
 
@@ -85,10 +85,24 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop
 - external same-deck electromagnetic GENE/CGYRO/GS2 output parity
 
+## Sourced current-moment evidence
+
+- Schema: `gk-sourced-current-moment-evidence.v1`
+- Status: `accepted_final_state_current_moments_time_history_missing`
+- Current moment ready: `True`
+- Current moment source: `native_final_5d_distribution_state`
+- Time-resolved current history ready: `False`
+- Continuity residual history ready: `False`
+- Phase-space source shape: `[2, 4, 4, 8, 5, 4]`
+- J_parallel shape: `[4, 4]`
+- Charge-density shape: `[4, 4]`
+- J_parallel L2 norm: `4.692205e-04`
+- Charge-density L2 norm: `7.611721e-04`
+
 ## Sourced Maxwell contract
 
 - Schema: `gk-sourced-maxwell-contract.v1`
-- Status: `blocked_sourced_maxwell_requires_5d_current_moments`
+- Status: `blocked_sourced_maxwell_requires_time_resolved_current_history`
 - Current status: `blocked_pending_5d_kinetic_current_moment_coupling`
 - Sourced Maxwell ready: `False`
 

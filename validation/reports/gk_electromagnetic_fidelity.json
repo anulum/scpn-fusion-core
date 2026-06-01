@@ -54,7 +54,7 @@
     },
     {
       "blockers": [
-        "pending_5d_kinetic_current_moment_coupling"
+        "missing_time_resolved_current_history_or_continuity_residuals"
       ],
       "description": "Sourced Maxwell evolution is coupled to current moments from the evolved 5D GK state.",
       "ready": false,
@@ -450,7 +450,43 @@
   ],
   "schema": "gk-electromagnetic-fidelity.v1",
   "source_free_maxwell_ready": true,
+  "sourced_current_moment_evidence": {
+    "charge_density_l2_norm": 0.0007611720751394501,
+    "charge_density_shape": [
+      4,
+      4
+    ],
+    "continuity_residual_history_ready": false,
+    "current_moment_ready": true,
+    "current_moment_source": "native_final_5d_distribution_state",
+    "j_parallel_l2_norm": 0.0004692205022787455,
+    "j_parallel_shape": [
+      4,
+      4
+    ],
+    "moment_axes": [
+      "kx_rhos",
+      "ky_rhos"
+    ],
+    "phase_space_source_shape": [
+      2,
+      4,
+      4,
+      8,
+      5,
+      4
+    ],
+    "schema": "gk-sourced-current-moment-evidence.v1",
+    "species_charge_e": [
+      1.0,
+      -1.0
+    ],
+    "status": "accepted_final_state_current_moments_time_history_missing",
+    "time_resolved_current_history_ready": false,
+    "units": "solver_normalized"
+  },
   "sourced_maxwell_contract": {
+    "current_moment_ready": true,
     "current_status": "blocked_pending_5d_kinetic_current_moment_coupling",
     "readiness_criteria": [
       "J_parallel(kx, ky, t) derived from the evolved 5D distribution",
@@ -470,7 +506,7 @@
     ],
     "schema": "gk-sourced-maxwell-contract.v1",
     "sourced_maxwell_ready": false,
-    "status": "blocked_sourced_maxwell_requires_5d_current_moments"
+    "status": "blocked_sourced_maxwell_requires_time_resolved_current_history"
   },
   "sourced_maxwell_ready": false,
   "status": "blocked_missing_external_em_parity_outputs"

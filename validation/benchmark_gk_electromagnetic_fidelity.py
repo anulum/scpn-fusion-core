@@ -202,10 +202,12 @@ def _maxwell_evolution_contract(
     }
 
 
-def _sourced_maxwell_contract() -> dict[str, Any]:
+def _sourced_maxwell_contract(current_moment_evidence: dict[str, Any]) -> dict[str, Any]:
     """Return the blocked sourced-Maxwell contract for the next implementation stage."""
+    current_moment_ready = bool(current_moment_evidence["current_moment_ready"])
     return {
         "current_status": "blocked_pending_5d_kinetic_current_moment_coupling",
+        "current_moment_ready": current_moment_ready,
         "readiness_criteria": [
             "J_parallel(kx, ky, t) derived from the evolved 5D distribution",
             "charge/current continuity residual history",
@@ -224,7 +226,7 @@ def _sourced_maxwell_contract() -> dict[str, Any]:
         ],
         "schema": "gk-sourced-maxwell-contract.v1",
         "sourced_maxwell_ready": False,
-        "status": "blocked_sourced_maxwell_requires_5d_current_moments",
+        "status": "blocked_sourced_maxwell_requires_time_resolved_current_history",
     }
 
 
@@ -512,6 +514,59 @@ def _run_native_em_same_case_threshold_evidence() -> dict[str, Any]:
     }
 
 
+def _run_sourced_current_moment_evidence() -> dict[str, Any]:
+    """Extract solver-normalised current/charge moments from a native 5D EM state."""
+    cfg = _config(electromagnetic=True)
+    solver = NonlinearGKSolver(cfg)
+    result = solver.run(solver.init_state(amplitude=1.0e-5, seed=431))
+    state = result.final_state
+    if state is None:
+        return {
+            "charge_density_shape": [],
+            "current_moment_ready": False,
+            "current_moment_source": "missing_final_5d_state",
+            "j_parallel_shape": [],
+            "schema": "gk-sourced-current-moment-evidence.v1",
+            "status": "blocked_missing_final_5d_state",
+        }
+
+    charges = np.ones(cfg.n_species, dtype=np.float64)
+    if cfg.n_species >= 2:
+        charges[1] = -1.0
+    velocity_weights = solver.vpar[None, None, None, :, None]
+    species_charges = charges[:, None, None, None, None, None]
+    phase_weight = float(solver.dvpar * solver.dmu * solver.dtheta)
+    charge_density = np.sum(species_charges * state.f, axis=(0, 3, 4, 5)) * phase_weight
+    j_parallel = (
+        np.sum(species_charges * velocity_weights * state.f, axis=(0, 3, 4, 5))
+        * phase_weight
+    )
+    current_moment_ready = bool(
+        charge_density.shape == (cfg.n_kx, cfg.n_ky)
+        and j_parallel.shape == (cfg.n_kx, cfg.n_ky)
+        and np.all(np.isfinite(charge_density))
+        and np.all(np.isfinite(j_parallel))
+    )
+    return {
+        "charge_density_l2_norm": float(np.linalg.norm(charge_density.ravel())),
+        "charge_density_shape": list(charge_density.shape),
+        "continuity_residual_history_ready": False,
+        "current_moment_ready": current_moment_ready,
+        "current_moment_source": "native_final_5d_distribution_state",
+        "j_parallel_l2_norm": float(np.linalg.norm(j_parallel.ravel())),
+        "j_parallel_shape": list(j_parallel.shape),
+        "moment_axes": ["kx_rhos", "ky_rhos"],
+        "phase_space_source_shape": list(state.f.shape),
+        "schema": "gk-sourced-current-moment-evidence.v1",
+        "species_charge_e": charges.tolist(),
+        "status": "accepted_final_state_current_moments_time_history_missing"
+        if current_moment_ready
+        else "blocked_invalid_final_state_current_moments",
+        "time_resolved_current_history_ready": False,
+        "units": "solver_normalized",
+    }
+
+
 def _external_em_parity_evidence() -> dict[str, Any]:
     """Return fail-closed same-deck external EM parity evidence."""
     rows: list[dict[str, Any]] = []
@@ -624,7 +679,7 @@ def _em_evidence_gate_matrix(
         ),
         "sourced_kinetic_current_maxwell_coupling": (
             bool(sourced_maxwell_contract["sourced_maxwell_ready"]),
-            ["pending_5d_kinetic_current_moment_coupling"],
+            ["missing_time_resolved_current_history_or_continuity_residuals"],
         ),
         "external_em_gene_cgyro_gs2_parity": (
             bool(external_em_parity_evidence["external_em_parity_comparison_ready"]),
@@ -660,7 +715,8 @@ def run_benchmark() -> dict[str, Any]:
     external_em_parity_evidence = _external_em_parity_evidence()
     maxwell_evolution_evidence = _run_maxwell_evolution_evidence()
     native_same_case_threshold_evidence = _run_native_em_same_case_threshold_evidence()
-    sourced_maxwell_contract = _sourced_maxwell_contract()
+    sourced_current_moment_evidence = _run_sourced_current_moment_evidence()
+    sourced_maxwell_contract = _sourced_maxwell_contract(sourced_current_moment_evidence)
     maxwell_evolution_ready = bool(
         maxwell_evolution_evidence["status"] == "accepted_local_source_free_maxwell_evolution"
     )
@@ -745,6 +801,7 @@ def run_benchmark() -> dict[str, Any]:
         "required_external_solver_families": REQUIRED_EXTERNAL_SOLVERS,
         "schema": "gk-electromagnetic-fidelity.v1",
         "source_free_maxwell_ready": source_free_maxwell_ready,
+        "sourced_current_moment_evidence": sourced_current_moment_evidence,
         "sourced_maxwell_contract": sourced_maxwell_contract,
         "sourced_maxwell_ready": sourced_maxwell_ready,
         "status": status,
@@ -925,6 +982,25 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
     lines.extend(["", "## Omitted physics", ""])
     for item in report["omitted_physics"]:
         lines.append(f"- {item}")
+    current_moment = report["sourced_current_moment_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Sourced current-moment evidence",
+            "",
+            f"- Schema: `{current_moment['schema']}`",
+            f"- Status: `{current_moment['status']}`",
+            f"- Current moment ready: `{current_moment['current_moment_ready']}`",
+            f"- Current moment source: `{current_moment['current_moment_source']}`",
+            f"- Time-resolved current history ready: `{current_moment['time_resolved_current_history_ready']}`",
+            f"- Continuity residual history ready: `{current_moment['continuity_residual_history_ready']}`",
+            f"- Phase-space source shape: `{current_moment['phase_space_source_shape']}`",
+            f"- J_parallel shape: `{current_moment['j_parallel_shape']}`",
+            f"- Charge-density shape: `{current_moment['charge_density_shape']}`",
+            f"- J_parallel L2 norm: `{current_moment['j_parallel_l2_norm']:.6e}`",
+            f"- Charge-density L2 norm: `{current_moment['charge_density_l2_norm']:.6e}`",
+        ]
+    )
     sourced_contract = report["sourced_maxwell_contract"]
     lines.extend(
         [

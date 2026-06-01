@@ -136,13 +136,31 @@ def test_gk_electromagnetic_fidelity_report_records_sourced_maxwell_future_contr
     contract = report["sourced_maxwell_contract"]
     assert contract["schema"] == "gk-sourced-maxwell-contract.v1"
     assert contract["sourced_maxwell_ready"] is False
-    assert contract["status"] == "blocked_sourced_maxwell_requires_5d_current_moments"
+    assert contract["status"] == "blocked_sourced_maxwell_requires_time_resolved_current_history"
+    assert contract["current_moment_ready"] is True
     assert "J_parallel(kx, ky, t)" in contract["required_inputs"]
     assert "rho_charge(kx, ky, t)" in contract["required_inputs"]
     assert (
         "J_parallel(kx, ky, t) derived from the evolved 5D distribution"
         in contract["readiness_criteria"]
     )
+
+
+def test_gk_electromagnetic_fidelity_report_extracts_final_state_current_moments() -> None:
+    report = run_benchmark()
+
+    evidence = report["sourced_current_moment_evidence"]
+    assert evidence["schema"] == "gk-sourced-current-moment-evidence.v1"
+    assert evidence["status"] == "accepted_final_state_current_moments_time_history_missing"
+    assert evidence["current_moment_ready"] is True
+    assert evidence["current_moment_source"] == "native_final_5d_distribution_state"
+    assert evidence["phase_space_source_shape"] == [2, 4, 4, 8, 5, 4]
+    assert evidence["j_parallel_shape"] == [4, 4]
+    assert evidence["charge_density_shape"] == [4, 4]
+    assert evidence["time_resolved_current_history_ready"] is False
+    assert evidence["continuity_residual_history_ready"] is False
+    assert evidence["j_parallel_l2_norm"] > 0.0
+    assert evidence["charge_density_l2_norm"] > 0.0
 
 
 def test_gk_electromagnetic_fidelity_report_records_native_same_case_thresholds() -> None:
