@@ -49,6 +49,8 @@
   "impurity_aurora_strahl_same_case_threshold_ready": false,
   "impurity_charge_state_radial_transport_operator_ready": false,
   "impurity_native_transport_evidence_ready": true,
+  "impurity_source_sink_budget_aurora_strahl_same_case_ready": false,
+  "impurity_source_sink_budget_evidence_ready": true,
   "impurity_transport_operator_evidence_status": "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator",
   "lanes": [
     {

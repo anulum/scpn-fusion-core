@@ -43,6 +43,8 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["impurity_native_transport_evidence_ready"] is True
     assert report["impurity_charge_state_radial_transport_operator_ready"] is False
     assert report["impurity_aurora_strahl_same_case_threshold_ready"] is False
+    assert report["impurity_source_sink_budget_evidence_ready"] is True
+    assert report["impurity_source_sink_budget_aurora_strahl_same_case_ready"] is False
     assert (
         report["impurity_transport_operator_evidence_status"]
         == "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator"

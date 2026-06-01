@@ -57,7 +57,32 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert evidence["operator_terms_present"]["charge_state_resolved_radial_transport"] is False
     assert evidence["operator_terms_present"]["external_adas_transport_coefficients"] is False
     assert evidence["operator_terms_present"]["same_case_aurora_strahl_transport_output"] is False
+    budget = evidence["source_sink_budget_evidence"]
+    assert budget["schema"] == "native-impurity-source-sink-budget-evidence.v1"
+    assert (
+        budget["status"]
+        == "native_artifact_source_sink_budget_only_not_aurora_strahl_operator_parity"
+    )
+    assert budget["budget_terms"] == [
+        "source_sink_matrix_t_r_z_z",
+        "ionisation_source_matrix",
+        "recombination_sink_matrix",
+        "line_radiation_power_t_r_z",
+        "total_impurity_inventory_t",
+    ]
+    assert budget["time_count"] == 3
+    assert budget["radius_count"] == 80
+    assert budget["charge_state_count"] == 4
+    assert budget["all_budget_terms_finite"] is True
+    assert budget["ionisation_recombination_nonnegative"] is True
+    assert budget["source_sink_transfer_conservative"] is True
+    assert budget["source_sink_diagonal_nonpositive"] is True
+    assert budget["source_sink_offdiagonal_nonnegative"] is True
+    assert budget["line_radiation_nonnegative"] is True
+    assert budget["inventory_relative_change_max"] <= 1.0e-12
+    assert budget["aurora_strahl_same_case_budget_ready"] is False
     assert report["invariants"]["native_impurity_transport_evidence_fail_closed"] is True
+    assert report["invariants"]["native_source_sink_budget_evidence_fail_closed"] is True
     assert "public Aurora or STRAHL radial transport output" in evidence["blocking_requirements"]
 
 

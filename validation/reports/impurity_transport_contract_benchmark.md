@@ -40,6 +40,20 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Line-radiation shape: `[3, 80, 4]`
 - Operator terms present: `{"aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": false, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": false, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": false, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
 - Observable finiteness: `{"charge_state_density_r_t": true, "line_radiation_power_t": true, "line_radiation_power_t_r_z": true, "source_sink_matrix_t_r_z_z": true, "total_impurity_density_r_t": true, "total_impurity_inventory_t": true}`
+
+## Native source/sink budget evidence
+
+- Schema: `native-impurity-source-sink-budget-evidence.v1`
+- Status: `native_artifact_source_sink_budget_only_not_aurora_strahl_operator_parity`
+- Budget terms: `source_sink_matrix_t_r_z_z, ionisation_source_matrix, recombination_sink_matrix, line_radiation_power_t_r_z, total_impurity_inventory_t`
+- Time count: `3`
+- Radius count: `80`
+- Charge-state count: `4`
+- All budget terms finite: `True`
+- Ionisation/recombination non-negative: `True`
+- Source/sink transfer conservative: `True`
+- Line radiation non-negative: `True`
+- Aurora/STRAHL same-case budget ready: `False`
 - Blocking requirements: `public Aurora or STRAHL radial transport output; charge-state-resolved radial transport operator on evolved density; external ADAS coefficient ingestion for transport parity; same-case line-radiation output from Aurora or STRAHL; same-case ionisation/recombination source-sink matrix output; native same-case solver-output comparison; distribution, radiation, and inventory threshold comparison against Aurora/STRAHL`
 
 ## Invariants
@@ -54,5 +68,6 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - source_sink_matrix_conservative: PASS
 - line_radiation_power_finite: PASS
 - native_impurity_transport_evidence_fail_closed: PASS
+- native_source_sink_budget_evidence_fail_closed: PASS
 
 Overall: PASS

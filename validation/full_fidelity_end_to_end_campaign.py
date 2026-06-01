@@ -258,6 +258,7 @@ def run_campaign() -> dict[str, Any]:
     runaway_source_budget = runaway_operator["source_term_budget_evidence"]
     impurity = run_impurity_contract()
     impurity_operator = impurity["native_impurity_transport_evidence"]
+    impurity_source_sink_budget = impurity_operator["source_sink_budget_evidence"]
     gk = _acceptance_surface(acceptance, "native_nonlinear_gyrokinetics")
     runaway_surface = _acceptance_surface(acceptance, "runaway_electrons")
     impurity_surface = _acceptance_surface(acceptance, "impurity_transport")
@@ -339,6 +340,8 @@ def run_campaign() -> dict[str, Any]:
             "locally_actionable_contract_ready": bool(
                 impurity["passed"]
                 and impurity_operator["native_artifact_ready"]
+                and impurity_source_sink_budget["all_budget_terms_finite"]
+                and impurity_source_sink_budget["source_sink_transfer_conservative"]
                 and impurity_surface["implemented_dimensions"].get(
                     "charge_state_resolved_density_artifact_export"
                 )
@@ -428,6 +431,14 @@ def run_campaign() -> dict[str, Any]:
         ),
         "impurity_aurora_strahl_same_case_threshold_ready": bool(
             impurity_operator["aurora_strahl_same_case_threshold_ready"]
+        ),
+        "impurity_source_sink_budget_evidence_ready": bool(
+            impurity_source_sink_budget["all_budget_terms_finite"]
+            and impurity_source_sink_budget["source_sink_transfer_conservative"]
+            and impurity_source_sink_budget["line_radiation_nonnegative"]
+        ),
+        "impurity_source_sink_budget_aurora_strahl_same_case_ready": bool(
+            impurity_source_sink_budget["aurora_strahl_same_case_budget_ready"]
         ),
         "impurity_transport_operator_evidence_status": str(
             impurity_operator["operator_evidence_status"]
@@ -592,6 +603,14 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- Impurity Aurora/STRAHL same-case thresholds ready: "
             f"`{report['impurity_aurora_strahl_same_case_threshold_ready']}`"
+        ),
+        (
+            "- Impurity source/sink budget evidence ready: "
+            f"`{report['impurity_source_sink_budget_evidence_ready']}`"
+        ),
+        (
+            "- Impurity source/sink Aurora/STRAHL same-case budget ready: "
+            f"`{report['impurity_source_sink_budget_aurora_strahl_same_case_ready']}`"
         ),
         (
             "- Impurity transport operator evidence status: "

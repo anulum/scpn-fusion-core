@@ -128,6 +128,7 @@
     "inward_pinch_midradius": true,
     "line_radiation_power_finite": true,
     "native_impurity_transport_evidence_fail_closed": true,
+    "native_source_sink_budget_evidence_fail_closed": true,
     "positivity": true,
     "radiation_monotonicity": true,
     "source_sink_matrix_conservative": true
@@ -195,6 +196,69 @@
       "trace_radial_transport": true
     },
     "schema": "native-impurity-transport-operator-evidence.v1",
+    "source_sink_budget_evidence": {
+      "all_budget_terms_finite": true,
+      "aurora_strahl_same_case_budget_ready": false,
+      "blocking_requirements": [
+        "same-case Aurora or STRAHL source-sink matrix output",
+        "same-case Aurora or STRAHL charge-state density history",
+        "same-case Aurora or STRAHL line-radiation power output",
+        "external ADAS coefficient provenance for transport parity"
+      ],
+      "budget_terms": [
+        "source_sink_matrix_t_r_z_z",
+        "ionisation_source_matrix",
+        "recombination_sink_matrix",
+        "line_radiation_power_t_r_z",
+        "total_impurity_inventory_t"
+      ],
+      "charge_state_count": 4,
+      "inventory_relative_change_max": 0.0,
+      "ionisation_recombination_nonnegative": true,
+      "line_radiation_nonnegative": true,
+      "max_ionisation_source_m3_s": 9.053657993835634e+21,
+      "max_line_radiation_power_w": 650.5456619461538,
+      "max_recombination_sink_m3_s": 122406.73507102758,
+      "radius_count": 80,
+      "schema": "native-impurity-source-sink-budget-evidence.v1",
+      "source_sink_diagonal_nonpositive": true,
+      "source_sink_offdiagonal_nonnegative": true,
+      "source_sink_row_sum_abs_max": 0.0,
+      "source_sink_transfer_conservative": true,
+      "status": "native_artifact_source_sink_budget_only_not_aurora_strahl_operator_parity",
+      "term_finiteness": {
+        "ionisation_source_matrix": true,
+        "line_radiation_power_t_r_z": true,
+        "recombination_sink_matrix": true,
+        "source_sink_matrix_t_r_z_z": true,
+        "total_impurity_inventory_t": true
+      },
+      "term_shapes": {
+        "ionisation_source_matrix": [
+          80,
+          4
+        ],
+        "line_radiation_power_t_r_z": [
+          3,
+          80,
+          4
+        ],
+        "recombination_sink_matrix": [
+          80,
+          4
+        ],
+        "source_sink_matrix_t_r_z_z": [
+          3,
+          80,
+          4,
+          4
+        ],
+        "total_impurity_inventory_t": [
+          3
+        ]
+      },
+      "time_count": 3
+    },
     "source_sink_conservative": true,
     "source_sink_row_sum_abs_max": 0.0,
     "source_sink_shape": [

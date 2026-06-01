@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+- Added native impurity source/sink budget evidence for conservative
+  charge-state transfer matrices, ionisation/recombination source budgets,
+  line-radiation power, and inventory history while keeping Aurora/STRAHL
+  same-case source-budget parity fail-closed.
+
 - Added native runaway source-term budget evidence for avalanche growth,
   synchrotron loss, partial-screening drag, and bremsstrahlung loss channels
   while keeping DREAM same-case source-budget parity fail-closed.

@@ -29,6 +29,8 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Impurity native transport evidence ready: `True`
 - Impurity charge-state radial transport operator ready: `False`
 - Impurity Aurora/STRAHL same-case thresholds ready: `False`
+- Impurity source/sink budget evidence ready: `True`
+- Impurity source/sink Aurora/STRAHL same-case budget ready: `False`
 - Impurity transport operator evidence status: `blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator`
 - GK deck inventory report: `validation/reports/gk_public_reference_deck_inventory.json`
 - GK public decks indexed: `40`

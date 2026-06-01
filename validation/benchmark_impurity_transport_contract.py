@@ -62,6 +62,84 @@ def _observable_finiteness(
     }
 
 
+def _source_sink_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
+    observables = payload["observables"]
+    source_sink = np.asarray(observables["source_sink_matrix_t_r_z_z"], dtype=np.float64)
+    ionisation = np.asarray(observables["ionisation_source_matrix"], dtype=np.float64)
+    recombination = np.asarray(observables["recombination_sink_matrix"], dtype=np.float64)
+    line_radiation = np.asarray(observables["line_radiation_power_t_r_z"], dtype=np.float64)
+    inventory = np.asarray(observables["total_impurity_inventory_t"], dtype=np.float64)
+    budget_arrays = {
+        "source_sink_matrix_t_r_z_z": source_sink,
+        "ionisation_source_matrix": ionisation,
+        "recombination_sink_matrix": recombination,
+        "line_radiation_power_t_r_z": line_radiation,
+        "total_impurity_inventory_t": inventory,
+    }
+    diagonal = np.diagonal(source_sink, axis1=2, axis2=3)
+    offdiagonal = source_sink.copy()
+    charge_count = source_sink.shape[2] if source_sink.ndim == 4 else 0
+    for charge_idx in range(charge_count):
+        offdiagonal[:, :, charge_idx, charge_idx] = 0.0
+    inventory_baseline = max(float(abs(inventory[0])) if inventory.size else 0.0, 1.0)
+    inventory_relative_change = (
+        float(np.max(np.abs(inventory - inventory[0]) / inventory_baseline))
+        if inventory.size
+        else np.inf
+    )
+    source_sink_scale = max(float(np.max(np.abs(source_sink))) if source_sink.size else 0.0, 1.0)
+    source_sink_tolerance = 1.0e-12 * source_sink_scale + 1.0e-6
+    return {
+        "schema": "native-impurity-source-sink-budget-evidence.v1",
+        "status": "native_artifact_source_sink_budget_only_not_aurora_strahl_operator_parity",
+        "budget_terms": list(budget_arrays),
+        "time_count": int(source_sink.shape[0]) if source_sink.ndim >= 1 else 0,
+        "radius_count": int(source_sink.shape[1]) if source_sink.ndim >= 2 else 0,
+        "charge_state_count": int(charge_count),
+        "term_shapes": {
+            name: [int(axis) for axis in values.shape] for name, values in budget_arrays.items()
+        },
+        "term_finiteness": {
+            name: bool(values.size > 0 and np.all(np.isfinite(values)))
+            for name, values in budget_arrays.items()
+        },
+        "all_budget_terms_finite": bool(
+            all(
+                values.size > 0 and np.all(np.isfinite(values)) for values in budget_arrays.values()
+            )
+        ),
+        "ionisation_recombination_nonnegative": bool(
+            ionisation.size > 0
+            and recombination.size > 0
+            and np.all(ionisation >= 0.0)
+            and np.all(recombination >= 0.0)
+        ),
+        "source_sink_transfer_conservative": bool(
+            source_sink.ndim == 4
+            and np.all(np.abs(np.sum(source_sink, axis=3)) <= source_sink_tolerance)
+        ),
+        "source_sink_row_sum_abs_max": float(np.max(np.abs(np.sum(source_sink, axis=3)))),
+        "source_sink_diagonal_nonpositive": bool(diagonal.size > 0 and np.all(diagonal <= 0.0)),
+        "source_sink_offdiagonal_nonnegative": bool(
+            offdiagonal.size > 0 and np.all(offdiagonal >= 0.0)
+        ),
+        "line_radiation_nonnegative": bool(
+            line_radiation.size > 0 and np.all(line_radiation >= 0.0)
+        ),
+        "inventory_relative_change_max": inventory_relative_change,
+        "max_ionisation_source_m3_s": float(np.max(ionisation)),
+        "max_recombination_sink_m3_s": float(np.max(recombination)),
+        "max_line_radiation_power_w": float(np.max(line_radiation)),
+        "aurora_strahl_same_case_budget_ready": False,
+        "blocking_requirements": [
+            "same-case Aurora or STRAHL source-sink matrix output",
+            "same-case Aurora or STRAHL charge-state density history",
+            "same-case Aurora or STRAHL line-radiation power output",
+            "external ADAS coefficient provenance for transport parity",
+        ],
+    }
+
+
 def _native_impurity_transport_evidence(
     payload: dict[str, Any],
     artifact_validation: dict[str, Any],
@@ -102,6 +180,7 @@ def _native_impurity_transport_evidence(
             "aurora_strahl_collisional_operator_parity": False,
         },
         "observable_finiteness": _observable_finiteness(payload, required_observables),
+        "source_sink_budget_evidence": _source_sink_budget_evidence(payload),
         "blocking_requirements": [
             "public Aurora or STRAHL radial transport output",
             "charge-state-resolved radial transport operator on evolved density",
@@ -182,6 +261,7 @@ def run_benchmark() -> dict[str, Any]:
         artifact_validation,
         required_observables,
     )
+    source_sink_budget_evidence = native_impurity_transport_evidence["source_sink_budget_evidence"]
 
     invariants = {
         "positivity": bool(np.all(n_w >= 0.0) and np.all(np.isfinite(n_w))),
@@ -211,6 +291,14 @@ def run_benchmark() -> dict[str, Any]:
             ]
             and not native_impurity_transport_evidence["aurora_strahl_same_case_threshold_ready"]
             and bool(native_impurity_transport_evidence["blocking_requirements"])
+        ),
+        "native_source_sink_budget_evidence_fail_closed": bool(
+            source_sink_budget_evidence["all_budget_terms_finite"]
+            and source_sink_budget_evidence["ionisation_recombination_nonnegative"]
+            and source_sink_budget_evidence["source_sink_transfer_conservative"]
+            and source_sink_budget_evidence["line_radiation_nonnegative"]
+            and not source_sink_budget_evidence["aurora_strahl_same_case_budget_ready"]
+            and bool(source_sink_budget_evidence["blocking_requirements"])
         ),
     }
 
@@ -258,6 +346,7 @@ def write_reports(results: dict[str, Any]) -> None:
     thresholds = results["thresholds"]
     invariants = results["invariants"]
     evidence = results["native_impurity_transport_evidence"]
+    budget = evidence["source_sink_budget_evidence"]
     lines = [
         "# Impurity Transport Contract Benchmark",
         "",
@@ -323,6 +412,26 @@ def write_reports(results: dict[str, Any]) -> None:
         (
             "- Observable finiteness: "
             f"`{json.dumps(evidence['observable_finiteness'], sort_keys=True)}`"
+        ),
+        "",
+        "## Native source/sink budget evidence",
+        "",
+        f"- Schema: `{budget['schema']}`",
+        f"- Status: `{budget['status']}`",
+        f"- Budget terms: `{', '.join(budget['budget_terms'])}`",
+        f"- Time count: `{budget['time_count']}`",
+        f"- Radius count: `{budget['radius_count']}`",
+        f"- Charge-state count: `{budget['charge_state_count']}`",
+        f"- All budget terms finite: `{budget['all_budget_terms_finite']}`",
+        (
+            "- Ionisation/recombination non-negative: "
+            f"`{budget['ionisation_recombination_nonnegative']}`"
+        ),
+        (f"- Source/sink transfer conservative: `{budget['source_sink_transfer_conservative']}`"),
+        f"- Line radiation non-negative: `{budget['line_radiation_nonnegative']}`",
+        (
+            "- Aurora/STRAHL same-case budget ready: "
+            f"`{budget['aurora_strahl_same_case_budget_ready']}`"
         ),
         f"- Blocking requirements: `{'; '.join(evidence['blocking_requirements'])}`",
         "",

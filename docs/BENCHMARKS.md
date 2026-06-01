@@ -20,7 +20,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, native same-case EM replay thresholds, and local compact-EM grid-convergence evidence pass; self-consistent 5D kinetic current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
-| Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact exists, full radial transport parity is missing | `python tools/run_aurora_reference_artifact.py` |
+| Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact plus native source/sink budget diagnostics exist; full radial transport parity and same-case source-budget parity are missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum, native profile-source comparison metrics, and explicit strict threshold checks exist; threshold acceptance/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
 
 Source acquisition and conversion commands:
@@ -920,12 +920,15 @@ fractional-abundance artifact is also tracked for public atomic-data
 provenance. The benchmark also exports fail-closed native transport evidence:
 trace radial transport, edge-source conservation, neoclassical pinch,
 charge-state source/sink matrices, line radiation, and inventory closure are
-marked present, while charge-state-resolved radial transport, external ADAS
-transport coefficients, same-case Aurora/STRAHL transport outputs, and
+marked present. It now also publishes native-only source/sink budget diagnostics
+for conservative charge-state transfer matrices, ionisation/recombination
+source budgets, line-radiation power, and inventory history. Charge-state
+resolved radial transport, external ADAS transport coefficients, same-case
+Aurora/STRAHL transport outputs, same-case source/sink budgets, and
 quantitative parity thresholds remain blocked. Public Aurora/STRAHL radial
-transport decks, radiation outputs,
-source/sink matrices, and same-case native comparisons are still required
-before full collisional-operator parity can pass.
+transport decks, radiation outputs, source/sink matrices, and same-case native
+comparisons are still required before full collisional-operator parity can
+pass.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.
