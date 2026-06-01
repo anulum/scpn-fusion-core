@@ -289,8 +289,10 @@ separately from electrostatic GK in
 [`validation/reports/gk_electromagnetic_fidelity.md`](validation/reports/gk_electromagnetic_fidelity.md).
 They verify the native compact `A_parallel`/`B_parallel` closure, but they are
 explicitly not same-deck external Vlasov-Maxwell parity.
-The report now includes a machine-readable Maxwell equation contract and local
-source-free spectral Maxwell evolution evidence for Faraday induction,
+The report now includes a machine-readable Maxwell equation contract, an explicit
+electromagnetic evidence gate matrix, a blocked sourced-Maxwell contract for
+future 5D kinetic-current coupling, and local source-free spectral Maxwell
+evolution evidence for Faraday induction,
 displacement-current Ampere-Maxwell evolution, and the inductive parallel
 electric-field relation. The latest local Maxwell evidence reports maximum
 relative total-field-energy drift `5.090958569120036e-16` with zero Faraday,

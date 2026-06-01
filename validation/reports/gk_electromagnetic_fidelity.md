@@ -5,6 +5,11 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - Schema: `gk-electromagnetic-fidelity.v1`
 - Status: `blocked_missing_external_em_parity_outputs`
 - Compact EM contract ready: `True`
+- Electrostatic GK ready: `True`
+- Compact EM ready: `True`
+- Source-free Maxwell ready: `True`
+- Sourced Maxwell ready: `False`
+- Full Vlasov-Maxwell ready: `False`
 - External EM parity comparison ready: `False`
 - External EM solver-family completeness ready: `False`
 
@@ -14,6 +19,22 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 |---|:---:|:---:|:---:|:---:|
 | electrostatic_gate | `False` | `True` | `False` | `False` |
 | electromagnetic_gate | `True` | `True` | `True` | `False` |
+
+## Electromagnetic evidence gate matrix
+
+| Surface | Ready | Blockers |
+|---|:---:|---|
+| `electrostatic_gk_gate_separation` | `True` | - |
+| `compact_A_parallel_B_parallel_closure` | `True` | - |
+| `source_free_faraday_induction` | `True` | - |
+| `source_free_ampere_maxwell_displacement_current` | `True` | - |
+| `source_free_inductive_parallel_electric_field` | `True` | - |
+| `magnetic_divergence_constraint` | `True` | - |
+| `electromagnetic_energy_invariant_diagnostics` | `True` | - |
+| `native_em_same_case_thresholds` | `True` | - |
+| `sourced_kinetic_current_maxwell_coupling` | `False` | pending_5d_kinetic_current_moment_coupling |
+| `external_em_gene_cgyro_gs2_parity` | `False` | missing_same_deck_external_em_gene_cgyro_gs2_outputs |
+| `external_em_grid_convergence` | `False` | missing_same_deck_external_em_grid_convergence |
 
 ## Compact-EM grid convergence evidence
 
@@ -63,6 +84,29 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 
 - self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop
 - external same-deck electromagnetic GENE/CGYRO/GS2 output parity
+
+## Sourced Maxwell contract
+
+- Schema: `gk-sourced-maxwell-contract.v1`
+- Status: `blocked_sourced_maxwell_requires_5d_current_moments`
+- Current status: `blocked_pending_5d_kinetic_current_moment_coupling`
+- Sourced Maxwell ready: `False`
+
+Required inputs:
+- `phi(kx, ky, t)`
+- `A_parallel(kx, ky, t)`
+- `B_parallel(kx, ky, t)`
+- `J_parallel(kx, ky, t)`
+- `rho_charge(kx, ky, t)`
+- `continuity_residual(kx, ky, t)`
+
+Readiness criteria:
+- J_parallel(kx, ky, t) derived from the evolved 5D distribution
+- charge/current continuity residual history
+- sourced Ampere-Maxwell residual history
+- sourced Faraday residual history
+- sourced electromagnetic energy exchange diagnostic
+- same-case native threshold rows for sourced fields
 
 ## External EM parity evidence
 

@@ -54,6 +54,52 @@ OMITTED_PHYSICS = [
     "self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop",
     "external same-deck electromagnetic GENE/CGYRO/GS2 output parity",
 ]
+EM_EVIDENCE_SURFACES: tuple[dict[str, str], ...] = (
+    {
+        "surface": "electrostatic_gk_gate_separation",
+        "description": "Electrostatic GK run remains separately reported from EM runs.",
+    },
+    {
+        "surface": "compact_A_parallel_B_parallel_closure",
+        "description": "Native compact A_parallel/B_parallel closure residuals pass.",
+    },
+    {
+        "surface": "source_free_faraday_induction",
+        "description": "Local source-free spectral Faraday residuals are below tolerance.",
+    },
+    {
+        "surface": "source_free_ampere_maxwell_displacement_current",
+        "description": "Local source-free spectral Ampere-Maxwell residuals are below tolerance.",
+    },
+    {
+        "surface": "source_free_inductive_parallel_electric_field",
+        "description": "Local inductive E_parallel relation residuals are below tolerance.",
+    },
+    {
+        "surface": "magnetic_divergence_constraint",
+        "description": "Local magnetic-divergence residuals are below tolerance.",
+    },
+    {
+        "surface": "electromagnetic_energy_invariant_diagnostics",
+        "description": "Phi, A_parallel, B_parallel, and total EM energy histories are finite and gated.",
+    },
+    {
+        "surface": "native_em_same_case_thresholds",
+        "description": "Native deterministic EM replay thresholds pass for field-energy histories.",
+    },
+    {
+        "surface": "sourced_kinetic_current_maxwell_coupling",
+        "description": "Sourced Maxwell evolution is coupled to current moments from the evolved 5D GK state.",
+    },
+    {
+        "surface": "external_em_gene_cgyro_gs2_parity",
+        "description": "Same-deck EM GENE/CGYRO/GS2 phi/A_parallel/B_parallel parity outputs exist.",
+    },
+    {
+        "surface": "external_em_grid_convergence",
+        "description": "Same-deck external electromagnetic grid-convergence evidence exists.",
+    },
+)
 GRID_CONVERGENCE_CASES: list[dict[str, int | str]] = [
     {"case_id": "compact_em_4x4x8", "n_kx": 4, "n_ky": 4, "n_theta": 8},
     {"case_id": "compact_em_6x6x10", "n_kx": 6, "n_ky": 6, "n_theta": 10},
@@ -153,6 +199,32 @@ def _maxwell_evolution_contract(
         "equations": equations,
         "full_vlasov_maxwell_parity_ready": not blocking_equation_ids,
         "native_field_evolution_mode": "local_spectral_maxwell_evolution",
+    }
+
+
+def _sourced_maxwell_contract() -> dict[str, Any]:
+    """Return the blocked sourced-Maxwell contract for the next implementation stage."""
+    return {
+        "current_status": "blocked_pending_5d_kinetic_current_moment_coupling",
+        "readiness_criteria": [
+            "J_parallel(kx, ky, t) derived from the evolved 5D distribution",
+            "charge/current continuity residual history",
+            "sourced Ampere-Maxwell residual history",
+            "sourced Faraday residual history",
+            "sourced electromagnetic energy exchange diagnostic",
+            "same-case native threshold rows for sourced fields",
+        ],
+        "required_inputs": [
+            "phi(kx, ky, t)",
+            "A_parallel(kx, ky, t)",
+            "B_parallel(kx, ky, t)",
+            "J_parallel(kx, ky, t)",
+            "rho_charge(kx, ky, t)",
+            "continuity_residual(kx, ky, t)",
+        ],
+        "schema": "gk-sourced-maxwell-contract.v1",
+        "sourced_maxwell_ready": False,
+        "status": "blocked_sourced_maxwell_requires_5d_current_moments",
     }
 
 
@@ -473,6 +545,111 @@ def _external_em_parity_evidence() -> dict[str, Any]:
     }
 
 
+def _em_evidence_gate_matrix(
+    *,
+    electrostatic_gate: dict[str, Any],
+    electromagnetic_gate: dict[str, Any],
+    grid_convergence_evidence: dict[str, Any],
+    maxwell_evolution_evidence: dict[str, Any],
+    native_same_case_threshold_evidence: dict[str, Any],
+    sourced_maxwell_contract: dict[str, Any],
+    external_em_parity_evidence: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Return separate fail-closed EM gate rows for local and external evidence."""
+    source_free_residuals_ready = bool(
+        maxwell_evolution_evidence["max_faraday_linf_residual"]
+        <= maxwell_evolution_evidence["residual_tolerance"]
+        and maxwell_evolution_evidence["max_ampere_maxwell_linf_residual"]
+        <= maxwell_evolution_evidence["residual_tolerance"]
+        and maxwell_evolution_evidence["max_inductive_e_parallel_linf_residual"]
+        <= maxwell_evolution_evidence["residual_tolerance"]
+        and maxwell_evolution_evidence["max_magnetic_divergence_linf_residual"]
+        <= maxwell_evolution_evidence["residual_tolerance"]
+    )
+    readiness: dict[str, tuple[bool, list[str]]] = {
+        "electrostatic_gk_gate_separation": (
+            bool(
+                not electrostatic_gate["electromagnetic_enabled"]
+                and electrostatic_gate["time_history_ready"]
+            ),
+            [],
+        ),
+        "compact_A_parallel_B_parallel_closure": (
+            bool(electromagnetic_gate["compact_closure_ready"]),
+            ["compact_closure_failed"],
+        ),
+        "source_free_faraday_induction": (
+            bool(
+                maxwell_evolution_evidence["faraday_induction_supported"]
+                and maxwell_evolution_evidence["max_faraday_linf_residual"]
+                <= maxwell_evolution_evidence["residual_tolerance"]
+            ),
+            ["faraday_residual_missing_or_above_tolerance"],
+        ),
+        "source_free_ampere_maxwell_displacement_current": (
+            bool(
+                maxwell_evolution_evidence["ampere_maxwell_displacement_current_supported"]
+                and maxwell_evolution_evidence["max_ampere_maxwell_linf_residual"]
+                <= maxwell_evolution_evidence["residual_tolerance"]
+            ),
+            ["ampere_maxwell_residual_missing_or_above_tolerance"],
+        ),
+        "source_free_inductive_parallel_electric_field": (
+            bool(
+                maxwell_evolution_evidence["inductive_parallel_electric_field_supported"]
+                and maxwell_evolution_evidence["max_inductive_e_parallel_linf_residual"]
+                <= maxwell_evolution_evidence["residual_tolerance"]
+            ),
+            ["inductive_parallel_electric_field_residual_missing_or_above_tolerance"],
+        ),
+        "magnetic_divergence_constraint": (
+            bool(
+                maxwell_evolution_evidence["magnetic_divergence_constraint_supported"]
+                and maxwell_evolution_evidence["max_magnetic_divergence_linf_residual"]
+                <= maxwell_evolution_evidence["residual_tolerance"]
+            ),
+            ["magnetic_divergence_residual_missing_or_above_tolerance"],
+        ),
+        "electromagnetic_energy_invariant_diagnostics": (
+            bool(
+                electromagnetic_gate["field_energy_total_closes"]
+                and grid_convergence_evidence["field_energy_histories_finite"]
+                and source_free_residuals_ready
+            ),
+            ["electromagnetic_energy_invariant_diagnostics_incomplete"],
+        ),
+        "native_em_same_case_thresholds": (
+            bool(native_same_case_threshold_evidence["same_case_thresholds_ready"]),
+            ["native_em_same_case_thresholds_missing_or_failed"],
+        ),
+        "sourced_kinetic_current_maxwell_coupling": (
+            bool(sourced_maxwell_contract["sourced_maxwell_ready"]),
+            ["pending_5d_kinetic_current_moment_coupling"],
+        ),
+        "external_em_gene_cgyro_gs2_parity": (
+            bool(external_em_parity_evidence["external_em_parity_comparison_ready"]),
+            ["missing_same_deck_external_em_gene_cgyro_gs2_outputs"],
+        ),
+        "external_em_grid_convergence": (
+            bool(external_em_parity_evidence["same_deck_group_ready"]),
+            ["missing_same_deck_external_em_grid_convergence"],
+        ),
+    }
+    rows: list[dict[str, Any]] = []
+    for surface in EM_EVIDENCE_SURFACES:
+        surface_id = str(surface["surface"])
+        ready, default_blockers = readiness[surface_id]
+        rows.append(
+            {
+                "blockers": [] if ready else default_blockers,
+                "description": str(surface["description"]),
+                "ready": ready,
+                "surface": surface_id,
+            }
+        )
+    return rows
+
+
 def run_benchmark() -> dict[str, Any]:
     """Run the local compact-EM gate and return fail-closed parity status."""
     electrostatic_gate = _run_gate(electromagnetic=False, seed=211)
@@ -483,6 +660,7 @@ def run_benchmark() -> dict[str, Any]:
     external_em_parity_evidence = _external_em_parity_evidence()
     maxwell_evolution_evidence = _run_maxwell_evolution_evidence()
     native_same_case_threshold_evidence = _run_native_em_same_case_threshold_evidence()
+    sourced_maxwell_contract = _sourced_maxwell_contract()
     maxwell_evolution_ready = bool(
         maxwell_evolution_evidence["status"] == "accepted_local_source_free_maxwell_evolution"
     )
@@ -492,6 +670,28 @@ def run_benchmark() -> dict[str, Any]:
     maxwell_contract = _maxwell_evolution_contract(
         compact_closure_ready=compact_ready,
         maxwell_evolution_evidence=maxwell_evolution_evidence,
+    )
+    em_evidence_gate_matrix = _em_evidence_gate_matrix(
+        electrostatic_gate=electrostatic_gate,
+        electromagnetic_gate=electromagnetic_gate,
+        grid_convergence_evidence=grid_convergence_evidence,
+        maxwell_evolution_evidence=maxwell_evolution_evidence,
+        native_same_case_threshold_evidence=native_same_case_threshold_evidence,
+        sourced_maxwell_contract=sourced_maxwell_contract,
+        external_em_parity_evidence=external_em_parity_evidence,
+    )
+    compact_em_ready = bool(compact_ready and grid_convergence_ready)
+    source_free_maxwell_ready = bool(maxwell_evolution_ready)
+    sourced_maxwell_ready = bool(sourced_maxwell_contract["sourced_maxwell_ready"])
+    external_em_parity_ready = bool(
+        external_em_parity_evidence["external_em_parity_comparison_ready"]
+    )
+    full_vlasov_maxwell_ready = bool(
+        compact_em_ready
+        and source_free_maxwell_ready
+        and sourced_maxwell_ready
+        and external_em_parity_ready
+        and all(row["ready"] for row in em_evidence_gate_matrix)
     )
     status = (
         "blocked_missing_external_em_parity_outputs"
@@ -506,17 +706,25 @@ def run_benchmark() -> dict[str, Any]:
     return {
         "benchmark": "gk_electromagnetic_fidelity",
         "compact_em_contract_ready": compact_ready,
+        "compact_em_ready": compact_em_ready,
         "description": (
             "Separate electrostatic and electromagnetic nonlinear GK gate. "
             "Compact A_parallel/B_parallel diagnostics are local readiness "
             "evidence only, not full Vlasov-Maxwell parity."
         ),
+        "electromagnetic_evidence_gate_matrix": em_evidence_gate_matrix,
         "electromagnetic_gate": electromagnetic_gate,
         "electromagnetic_grid_convergence_evidence": grid_convergence_evidence,
         "electromagnetic_grid_convergence_ready": grid_convergence_ready,
+        "electrostatic_gk_ready": bool(
+            not electrostatic_gate["electromagnetic_enabled"]
+            and electrostatic_gate["time_history_ready"]
+        ),
         "electrostatic_gate": electrostatic_gate,
         "external_em_parity_comparison_ready": False,
         "external_em_parity_evidence": external_em_parity_evidence,
+        "external_em_parity_ready": external_em_parity_ready,
+        "full_vlasov_maxwell_ready": full_vlasov_maxwell_ready,
         "locally_actionable_contract_ready": (
             compact_ready
             and grid_convergence_ready
@@ -536,6 +744,9 @@ def run_benchmark() -> dict[str, Any]:
         "required_external_observables": REQUIRED_EXTERNAL_OBSERVABLES,
         "required_external_solver_families": REQUIRED_EXTERNAL_SOLVERS,
         "schema": "gk-electromagnetic-fidelity.v1",
+        "source_free_maxwell_ready": source_free_maxwell_ready,
+        "sourced_maxwell_contract": sourced_maxwell_contract,
+        "sourced_maxwell_ready": sourced_maxwell_ready,
         "status": status,
     }
 
@@ -554,6 +765,11 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
         f"- Schema: `{report['schema']}`",
         f"- Status: `{report['status']}`",
         f"- Compact EM contract ready: `{report['compact_em_contract_ready']}`",
+        f"- Electrostatic GK ready: `{report['electrostatic_gk_ready']}`",
+        f"- Compact EM ready: `{report['compact_em_ready']}`",
+        f"- Source-free Maxwell ready: `{report['source_free_maxwell_ready']}`",
+        f"- Sourced Maxwell ready: `{report['sourced_maxwell_ready']}`",
+        f"- Full Vlasov-Maxwell ready: `{report['full_vlasov_maxwell_ready']}`",
         (
             "- External EM parity comparison ready: "
             f"`{report['external_em_parity_comparison_ready']}`"
@@ -577,6 +793,24 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
                 history=gate["time_history_ready"],
                 name=name,
                 parity=gate["full_vlasov_maxwell_parity_ready"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Electromagnetic evidence gate matrix",
+            "",
+            "| Surface | Ready | Blockers |",
+            "|---|:---:|---|",
+        ]
+    )
+    for row in report["electromagnetic_evidence_gate_matrix"]:
+        blockers = ", ".join(row["blockers"]) if row["blockers"] else "-"
+        lines.append(
+            "| `{surface}` | `{ready}` | {blockers} |".format(
+                blockers=blockers,
+                ready=row["ready"],
+                surface=row["surface"],
             )
         )
     grid_evidence = report["electromagnetic_grid_convergence_evidence"]
@@ -690,6 +924,26 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
         )
     lines.extend(["", "## Omitted physics", ""])
     for item in report["omitted_physics"]:
+        lines.append(f"- {item}")
+    sourced_contract = report["sourced_maxwell_contract"]
+    lines.extend(
+        [
+            "",
+            "## Sourced Maxwell contract",
+            "",
+            f"- Schema: `{sourced_contract['schema']}`",
+            f"- Status: `{sourced_contract['status']}`",
+            f"- Current status: `{sourced_contract['current_status']}`",
+            f"- Sourced Maxwell ready: `{sourced_contract['sourced_maxwell_ready']}`",
+            "",
+            "Required inputs:",
+        ]
+    )
+    for item in sourced_contract["required_inputs"]:
+        lines.append(f"- `{item}`")
+    lines.append("")
+    lines.append("Readiness criteria:")
+    for item in sourced_contract["readiness_criteria"]:
         lines.append(f"- {item}")
     external_evidence = report["external_em_parity_evidence"]
     lines.extend(

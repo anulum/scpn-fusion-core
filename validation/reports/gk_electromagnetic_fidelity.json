@@ -1,7 +1,82 @@
 {
   "benchmark": "gk_electromagnetic_fidelity",
   "compact_em_contract_ready": true,
+  "compact_em_ready": true,
   "description": "Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel/B_parallel diagnostics are local readiness evidence only, not full Vlasov-Maxwell parity.",
+  "electromagnetic_evidence_gate_matrix": [
+    {
+      "blockers": [],
+      "description": "Electrostatic GK run remains separately reported from EM runs.",
+      "ready": true,
+      "surface": "electrostatic_gk_gate_separation"
+    },
+    {
+      "blockers": [],
+      "description": "Native compact A_parallel/B_parallel closure residuals pass.",
+      "ready": true,
+      "surface": "compact_A_parallel_B_parallel_closure"
+    },
+    {
+      "blockers": [],
+      "description": "Local source-free spectral Faraday residuals are below tolerance.",
+      "ready": true,
+      "surface": "source_free_faraday_induction"
+    },
+    {
+      "blockers": [],
+      "description": "Local source-free spectral Ampere-Maxwell residuals are below tolerance.",
+      "ready": true,
+      "surface": "source_free_ampere_maxwell_displacement_current"
+    },
+    {
+      "blockers": [],
+      "description": "Local inductive E_parallel relation residuals are below tolerance.",
+      "ready": true,
+      "surface": "source_free_inductive_parallel_electric_field"
+    },
+    {
+      "blockers": [],
+      "description": "Local magnetic-divergence residuals are below tolerance.",
+      "ready": true,
+      "surface": "magnetic_divergence_constraint"
+    },
+    {
+      "blockers": [],
+      "description": "Phi, A_parallel, B_parallel, and total EM energy histories are finite and gated.",
+      "ready": true,
+      "surface": "electromagnetic_energy_invariant_diagnostics"
+    },
+    {
+      "blockers": [],
+      "description": "Native deterministic EM replay thresholds pass for field-energy histories.",
+      "ready": true,
+      "surface": "native_em_same_case_thresholds"
+    },
+    {
+      "blockers": [
+        "pending_5d_kinetic_current_moment_coupling"
+      ],
+      "description": "Sourced Maxwell evolution is coupled to current moments from the evolved 5D GK state.",
+      "ready": false,
+      "surface": "sourced_kinetic_current_maxwell_coupling"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_em_gene_cgyro_gs2_outputs"
+      ],
+      "description": "Same-deck EM GENE/CGYRO/GS2 phi/A_parallel/B_parallel parity outputs exist.",
+      "ready": false,
+      "surface": "external_em_gene_cgyro_gs2_parity"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_em_grid_convergence"
+      ],
+      "description": "Same-deck external electromagnetic grid-convergence evidence exists.",
+      "ready": false,
+      "surface": "external_em_grid_convergence"
+    }
+  ],
   "electromagnetic_gate": {
     "A_parallel_energy_max": 0.0025630597158647875,
     "B_parallel_energy_max": 9.011323972419965e-11,
@@ -106,6 +181,7 @@
     "saved_steps": 4,
     "time_history_ready": true
   },
+  "electrostatic_gk_ready": true,
   "external_em_parity_comparison_ready": false,
   "external_em_parity_evidence": {
     "external_em_parity_comparison_ready": false,
@@ -196,6 +272,8 @@
     ],
     "status": "blocked_missing_same_deck_external_em_outputs"
   },
+  "external_em_parity_ready": false,
+  "full_vlasov_maxwell_ready": false,
   "locally_actionable_contract_ready": true,
   "maxwell_evolution_contract": {
     "blocking_equation_ids": [
@@ -371,5 +449,29 @@
     "GS2"
   ],
   "schema": "gk-electromagnetic-fidelity.v1",
+  "source_free_maxwell_ready": true,
+  "sourced_maxwell_contract": {
+    "current_status": "blocked_pending_5d_kinetic_current_moment_coupling",
+    "readiness_criteria": [
+      "J_parallel(kx, ky, t) derived from the evolved 5D distribution",
+      "charge/current continuity residual history",
+      "sourced Ampere-Maxwell residual history",
+      "sourced Faraday residual history",
+      "sourced electromagnetic energy exchange diagnostic",
+      "same-case native threshold rows for sourced fields"
+    ],
+    "required_inputs": [
+      "phi(kx, ky, t)",
+      "A_parallel(kx, ky, t)",
+      "B_parallel(kx, ky, t)",
+      "J_parallel(kx, ky, t)",
+      "rho_charge(kx, ky, t)",
+      "continuity_residual(kx, ky, t)"
+    ],
+    "schema": "gk-sourced-maxwell-contract.v1",
+    "sourced_maxwell_ready": false,
+    "status": "blocked_sourced_maxwell_requires_5d_current_moments"
+  },
+  "sourced_maxwell_ready": false,
   "status": "blocked_missing_external_em_parity_outputs"
 }

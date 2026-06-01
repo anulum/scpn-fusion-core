@@ -17,7 +17,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Lane | Current status | Reproducibility command |
 |---|---|---|
 | GENE/CGYRO/GS2 nonlinear GK parity | Blocked: missing redistribution-permitted same-deck nonlinear external outputs and native same-case comparisons; the report now exposes both a fail-closed roadmap evidence-surface matrix and an evidence-package matrix covering manifest fields, public provenance/license, source checksums, converted JSON/NPZ artefacts, metadata checksums, native thresholds, grid convergence, and scaling so absent GENE, CGYRO, or GS2 outputs cannot be promoted to parity evidence | `python tools/gk_external_output_parity.py` |
-| Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, native same-case EM replay thresholds, and local compact-EM grid-convergence evidence pass; self-consistent 5D kinetic current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
+| Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, native same-case EM replay thresholds, local compact-EM grid-convergence evidence, and the EM evidence-gate matrix pass; sourced 5D kinetic-current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, reciprocal rank-neighbour graph checks, rank communication contracts, local halo-face integrity, executable local rank-tile reductions, local large-grid CPU evidence over `9,437,184` phase cells, declared distributed halo-volume accounting, explicit distributed scaling gate, and distributed-run acceptance manifest pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact plus native source/sink budget diagnostics exist; full radial transport parity and same-case source-budget parity are missing | `python tools/run_aurora_reference_artifact.py` |
@@ -1131,8 +1131,10 @@ Ampere `A_parallel` and perpendicular pressure-balance `B_parallel` residual
 histories through `validation/reports/gk_electromagnetic_fidelity.md`; these
 prove internal algebraic-closure consistency and are gated separately from the
 local source-free Maxwell evolution evidence. The report includes a
-machine-readable Maxwell equation contract and native source-free spectral
-Faraday, Ampere-Maxwell displacement-current, inductive parallel electric-field
+machine-readable Maxwell equation contract, explicit electromagnetic evidence-gate
+matrix, blocked sourced-Maxwell contract for future 5D kinetic-current coupling,
+and native source-free spectral Faraday, Ampere-Maxwell displacement-current,
+inductive parallel electric-field
 evolution, and perpendicular magnetic-divergence diagnostics. Full
 Vlasov-Maxwell parity remains blocked until those fields are coupled to
 self-consistent 5D kinetic current moments and same-deck electromagnetic

@@ -24,6 +24,12 @@ def test_gk_electromagnetic_fidelity_report_gates_em_separately() -> None:
     assert report["electromagnetic_gate"]["electromagnetic_enabled"] is True
     assert report["electromagnetic_gate"]["compact_closure_ready"] is True
     assert report["electromagnetic_gate"]["full_vlasov_maxwell_parity_ready"] is False
+    assert report["electrostatic_gk_ready"] is True
+    assert report["compact_em_ready"] is True
+    assert report["source_free_maxwell_ready"] is True
+    assert report["sourced_maxwell_ready"] is False
+    assert report["external_em_parity_ready"] is False
+    assert report["full_vlasov_maxwell_ready"] is False
     assert report["external_em_parity_comparison_ready"] is False
     assert report["required_external_solver_families"] == ["GENE", "CGYRO", "GS2"]
     assert {
@@ -48,6 +54,18 @@ def test_gk_electromagnetic_fidelity_report_gates_em_separately() -> None:
         assert row["complete_required_observables"] is False
         assert set(row["observable_presence"]) == set(report["required_external_observables"])
         assert not any(row["observable_presence"].values())
+    matrix = {row["surface"]: row for row in report["electromagnetic_evidence_gate_matrix"]}
+    assert matrix["electrostatic_gk_gate_separation"]["ready"] is True
+    assert matrix["compact_A_parallel_B_parallel_closure"]["ready"] is True
+    assert matrix["source_free_faraday_induction"]["ready"] is True
+    assert matrix["source_free_ampere_maxwell_displacement_current"]["ready"] is True
+    assert matrix["source_free_inductive_parallel_electric_field"]["ready"] is True
+    assert matrix["magnetic_divergence_constraint"]["ready"] is True
+    assert matrix["electromagnetic_energy_invariant_diagnostics"]["ready"] is True
+    assert matrix["native_em_same_case_thresholds"]["ready"] is True
+    assert matrix["sourced_kinetic_current_maxwell_coupling"]["ready"] is False
+    assert matrix["external_em_gene_cgyro_gs2_parity"]["ready"] is False
+    assert matrix["external_em_grid_convergence"]["ready"] is False
 
 
 def test_gk_electromagnetic_fidelity_report_declares_maxwell_evolution_contract() -> None:
@@ -110,6 +128,21 @@ def test_gk_electromagnetic_fidelity_report_records_maxwell_evolution_evidence()
     assert evidence["max_ampere_maxwell_linf_residual"] <= evidence["residual_tolerance"]
     assert evidence["max_inductive_e_parallel_linf_residual"] <= evidence["residual_tolerance"]
     assert evidence["max_magnetic_divergence_linf_residual"] <= evidence["residual_tolerance"]
+
+
+def test_gk_electromagnetic_fidelity_report_records_sourced_maxwell_future_contract() -> None:
+    report = run_benchmark()
+
+    contract = report["sourced_maxwell_contract"]
+    assert contract["schema"] == "gk-sourced-maxwell-contract.v1"
+    assert contract["sourced_maxwell_ready"] is False
+    assert contract["status"] == "blocked_sourced_maxwell_requires_5d_current_moments"
+    assert "J_parallel(kx, ky, t)" in contract["required_inputs"]
+    assert "rho_charge(kx, ky, t)" in contract["required_inputs"]
+    assert (
+        "J_parallel(kx, ky, t) derived from the evolved 5D distribution"
+        in contract["readiness_criteria"]
+    )
 
 
 def test_gk_electromagnetic_fidelity_report_records_native_same_case_thresholds() -> None:
