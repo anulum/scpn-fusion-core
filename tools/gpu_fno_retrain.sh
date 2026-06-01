@@ -4,7 +4,7 @@
 # © 1998–2026 Miroslav Sotek. All rights reserved.
 # ─────────────────────────────────────────────────────────────────────
 #
-# Run on UpCloud/JarvisLabs GPU instance:
+# Run on a CUDA-capable GPU instance:
 #   bash tools/gpu_fno_retrain.sh
 #
 # Prerequisites: NVIDIA GPU with >=16GB VRAM, CUDA 12+

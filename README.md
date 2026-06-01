@@ -404,7 +404,7 @@ for the same work".
 |-----------|------------------------|------------|------------|-----------------|
 | **Rust-PID** | Reduced-order linearised plasma surrogate in Rust | **0.52 us** | 0.67 us | **0%** |
 | PID (Python) | Python flight-sim path with Grad-Shafranov equilibrium work | 3,431 us | 3,624 us | 0% |
-| H-infinity | Python flight-sim research lane | 3,227 us | 3,607 us | 100% |
+| H-infinity | Python flight-sim research lane | diagnostic only | diagnostic only | blocked: stale scalar-plant artifact |
 | NMPC-JAX | Python/JAX NMPC lane | 45,450 us | 49,773 us | 0% |
 | Nengo-SNN | Python/Nengo SNN lane | 23,573 us | 24,736 us | 0% |
 

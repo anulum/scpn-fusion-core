@@ -1,0 +1,130 @@
+{
+  "accepted_full_fidelity": false,
+  "benchmark_id": "free_boundary_strict_parity",
+  "benchmark_scope": "free_boundary_full_fidelity_acceptance",
+  "blockers": [
+    "strict_threshold_acceptance_failed",
+    "grid_convergence_evidence_missing",
+    "public_external_coil_vacuum_sidecars_missing",
+    "same_case_public_reference_output_missing"
+  ],
+  "case_count": 2,
+  "checks": {
+    "boundary_containment_metric_ready": true,
+    "coil_vacuum_sidecar_ready": false,
+    "external_nonlinear_output_ready": true,
+    "geometry_containment_ready": true,
+    "grid_convergence_ready": false,
+    "machine_metadata_ready": true,
+    "native_same_case_profile_source_ready": true,
+    "same_case_public_reference_output_ready": false,
+    "strict_threshold_acceptance_ready": false
+  },
+  "failed_threshold_check_count": 6,
+  "grid_convergence": {
+    "cases": [
+      {
+        "blocking_reason": "public_example_has_single_resolution",
+        "case_id": "freegs_01_test_tokamak_freeboundary",
+        "grid_convergence_case_ready": false,
+        "machine_class": "TestTokamak",
+        "missing_resolution_count": 2,
+        "observed_resolution_count": 1,
+        "required_resolution_count": 3
+      },
+      {
+        "blocking_reason": "public_example_has_single_resolution",
+        "case_id": "freegs_16_diiid_public_example",
+        "grid_convergence_case_ready": false,
+        "machine_class": "DIIID",
+        "missing_resolution_count": 2,
+        "observed_resolution_count": 1,
+        "required_resolution_count": 3
+      }
+    ],
+    "required_resolution_count": 3,
+    "schema": "strict-free-boundary-grid-convergence-evidence.v1",
+    "status": "blocked_public_freegs_single_resolution_grid_evidence"
+  },
+  "inputs": {
+    "free_boundary_public_machine_metadata_inventory": "validation/reports/free_boundary_public_machine_metadata_inventory.json",
+    "freegs_public_example_reconstruction": "validation/reports/freegs_public_example_reconstruction.json"
+  },
+  "machine_metadata": {
+    "machine_config_count": 23,
+    "machines": [
+      "ITER",
+      "MAST-U",
+      "SPARC",
+      "example",
+      "test"
+    ],
+    "missing_full_fidelity_requirements": [
+      "same-case public equilibrium with linked external coil currents",
+      "native free-boundary coil/vacuum reconstruction output",
+      "strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison",
+      "axis_X-point_boundary_containment_thresholds",
+      "grid convergence and current-closure evidence"
+    ],
+    "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
+    "status": "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
+  },
+  "schema": "free-boundary-strict-parity-benchmark.v1",
+  "status": "blocked_free_boundary_strict_parity",
+  "threshold_cases": [
+    {
+      "case_id": "freegs_01_test_tokamak_freeboundary",
+      "external_nonlinear_output_ready": true,
+      "failed_threshold_check_count": 3,
+      "failed_threshold_checks": [
+        {
+          "comparator": "<=",
+          "limit": 0.05,
+          "metric": "psi_n_rmse",
+          "value": 0.229181105368877
+        },
+        {
+          "comparator": "<=",
+          "limit": 0.025,
+          "metric": "axis_error_m",
+          "value": 0.043103481950417945
+        },
+        {
+          "comparator": "<=",
+          "limit": 0.05,
+          "metric": "xpoint_psi_n_error_max",
+          "value": 0.2709460979429926
+        }
+      ],
+      "native_same_case_profile_source_ready": true,
+      "strict_threshold_acceptance_ready": false
+    },
+    {
+      "case_id": "freegs_16_diiid_public_example",
+      "external_nonlinear_output_ready": true,
+      "failed_threshold_check_count": 3,
+      "failed_threshold_checks": [
+        {
+          "comparator": "<=",
+          "limit": 0.05,
+          "metric": "psi_n_rmse",
+          "value": 0.06656438258503716
+        },
+        {
+          "comparator": "<=",
+          "limit": 0.025,
+          "metric": "axis_error_m",
+          "value": 0.2250000000000001
+        },
+        {
+          "comparator": "<=",
+          "limit": 0.05,
+          "metric": "xpoint_psi_n_error_max",
+          "value": 0.06964126692247141
+        }
+      ],
+      "native_same_case_profile_source_ready": true,
+      "strict_threshold_acceptance_ready": false
+    }
+  ]
+}

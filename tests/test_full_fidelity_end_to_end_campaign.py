@@ -102,6 +102,10 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         report["freegs_public_example_reconstruction_report"]
         == "validation/reports/freegs_public_example_reconstruction.json"
     )
+    assert (
+        report["free_boundary_strict_parity_report"]
+        == "validation/reports/free_boundary_strict_parity_benchmark.json"
+    )
     assert report["freegs_public_example_cases"] >= 0
     assert report["freegs_public_example_vacuum_comparison_pass"] in {True, False}
     assert report["freegs_public_example_external_output_ready"] in {True, False}
@@ -110,8 +114,11 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["free_boundary_boundary_containment_metric_ready"] is True
     assert report["free_boundary_grid_convergence_ready"] is False
     assert report["free_boundary_coil_vacuum_sidecar_ready"] is False
+    assert report["free_boundary_same_case_public_reference_output_ready"] is False
     assert report["free_boundary_failed_threshold_check_count"] >= 0
+    assert report["free_boundary_strict_parity_blockers"]
     assert report["free_boundary_strict_parity_status"] in {
+        "blocked_free_boundary_strict_parity",
         "blocked_strict_thresholds_or_grid_convergence_missing",
         "blocked_freegs_backend_unavailable",
         "not_run",

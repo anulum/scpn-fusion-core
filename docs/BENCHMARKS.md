@@ -21,7 +21,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, reciprocal rank-neighbour graph checks, rank communication contracts, local halo-face integrity, executable local rank-tile reductions, local large-grid CPU evidence over `9,437,184` phase cells, declared distributed halo-volume accounting, explicit distributed scaling gate, and distributed-run acceptance manifest pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact plus native source/sink budget diagnostics exist; full radial transport parity and same-case source-budget parity are missing | `python tools/run_aurora_reference_artifact.py` |
-| Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum, native profile-source comparison metrics, geometry-containment evidence, and explicit strict threshold checks exist; threshold acceptance/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
+| Free-boundary equilibrium strict parity | Blocked: dedicated strict-parity gate now consumes the FreeGS public-example reconstruction and machine-metadata reports; threshold acceptance, grid convergence, public coil/vacuum sidecars, and same-case public reference output remain missing | `python validation/benchmark_free_boundary_strict_parity.py` |
 
 Source acquisition and conversion commands:
 
@@ -35,6 +35,46 @@ python validation/full_fidelity_end_to_end_campaign.py
 Published reports must retain blocker statuses when external artefacts are
 missing. Do not substitute synthetic, reduced-order, or partial diagnostic
 outputs for accepted full-fidelity parity evidence.
+
+## Provider-neutral cloud benchmark bundles
+
+The tracked cloud runners are provider-neutral execution bundles. They write
+timestamped output under `benchmark_runs/<RUN_ID>/`, record per-command logs,
+snapshot generated reports, and archive the full artifact tree as
+`benchmark_runs/<RUN_ID>.tar.gz`. Operational launchers, credentials, provider
+account identifiers, and live instance IDs are internal-only material and must
+not be committed to public paths.
+
+Focused H-infinity/control diagnostic bundle:
+
+```bash
+RUN_ID=control_diag_$(date -u +%Y%m%dT%H%M%SZ) \
+STRESS_EPISODES=20 \
+STRESS_SHOT_DURATION=5 \
+STRESS_CONTROLLERS='PID,H-infinity,LQR' \
+bash scripts/cloud/gpu_benchmark_bundle.sh
+```
+
+Full-fidelity diagnostic bundle:
+
+```bash
+RUN_ID=full_fidelity_diag_$(date -u +%Y%m%dT%H%M%SZ) \
+BENCHMARK_PROFILE=diagnostic \
+bash scripts/cloud/full_fidelity_benchmark_bundle.sh
+```
+
+Native solver diagnostic bundle:
+
+```bash
+RUN_ID=solver_diag_$(date -u +%Y%m%dT%H%M%SZ) \
+SOLVER_PROFILE=diagnostic \
+bash scripts/cloud/solver_benchmark_bundle.sh
+```
+
+These bundles are reproducibility harnesses, not claim promotion mechanisms.
+Benchmark numbers become public claims only after the archived artifacts are
+retrieved, checksummed, reviewed for failed or blocked rows, and copied into
+tracked reports with matching documentation updates.
 
 Distributed production-decomposition measurements can be supplied to
 `validation/benchmark_production_decomposition_contract.py` with
@@ -336,6 +376,17 @@ the integrated campaign cannot erase prior public evidence during full-suite
 test order. Strict free-boundary parity remains fail-closed because strict
 threshold acceptance, grid-convergence evidence, and public coil/vacuum
 sidecars are still missing.
+
+The dedicated strict gate is tracked in
+[`validation/reports/free_boundary_strict_parity_benchmark.md`](../validation/reports/free_boundary_strict_parity_benchmark.md).
+It consumes the FreeGS public-example reconstruction report and public machine
+metadata inventory, then accepts full-fidelity free-boundary parity only if
+same-case external output, native profile-source comparison, strict thresholds,
+geometry containment, grid convergence, public coil/vacuum sidecars, and
+same-case public reference output are all ready. Current local result is
+`blocked_free_boundary_strict_parity` with `6` failed threshold checks, missing
+grid-convergence evidence, missing public external coil/vacuum sidecars, and
+missing same-case public reference output.
 
 ## Solver Performance
 

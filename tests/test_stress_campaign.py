@@ -551,6 +551,39 @@ def test_hinf_episode_uses_flight_sim_controller(monkeypatch):
     assert ep.mean_abs_r_error >= 0.0
 
 
+def test_hinf_episode_vertical_command_uses_flight_sim_sign(monkeypatch):
+    """Positive vertical error should map to the flight-sim upward command."""
+    import validation.stress_test_campaign as mod
+
+    commands = {}
+
+    class FakeIsoFluxController:
+        def __init__(self, *args, **kwargs):
+            self.pid_R = {"axis": "R"}
+            self.pid_Z = {"axis": "Z"}
+            self.pid_step = lambda pid, err: 0.0
+
+        def run_shot(self, shot_duration, save_plot=False):
+            commands["radial"] = float(self.pid_step(self.pid_R, 0.2))
+            commands["vertical"] = float(self.pid_step(self.pid_Z, 0.2))
+            stable = commands["radial"] > 0.0 and commands["vertical"] < 0.0
+            return {
+                "steps": int(shot_duration),
+                "mean_abs_r_error": 0.01 if stable else 1.0,
+                "mean_abs_z_error": 0.01 if stable else 1.0,
+                "mean_abs_radial_actuator_lag": 0.0,
+            }
+
+    monkeypatch.setenv(mod.HINF_RESEARCH_ENV, "1")
+    monkeypatch.setattr(mod, "IsoFluxController", FakeIsoFluxController)
+
+    ep = mod._run_hinf_episode(config_path="unused", shot_duration=1, surrogate=False)
+
+    assert ep.disrupted is False
+    assert commands["radial"] > 0.0
+    assert commands["vertical"] < 0.0
+
+
 def _make_fake_iso(kernel_cls, dt):
     """Build a minimal IsoFluxController stand-in for H-inf testing."""
 

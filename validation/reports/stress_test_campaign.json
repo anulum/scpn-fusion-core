@@ -11,7 +11,9 @@
     "p95_latency_us": 3606.87718,
     "p99_latency_us": 3619.5501026666666,
     "mean_reward": -10.133066725805051,
-    "disruption_rate": 1.0
+    "disruption_rate": 1.0,
+    "diagnostic_status": "invalidated_stale_scalar_plant_calibration",
+    "diagnostic_blocker": "Regenerate after corrected H-infinity radial sensitivity and vertical command-sign adapter."
   },
   "NMPC-JAX": {
     "p50_latency_us": 45450.299933333336,

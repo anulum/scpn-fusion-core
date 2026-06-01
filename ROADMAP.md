@@ -144,7 +144,8 @@ The Petri net -> SNN compiler targets NumPy today. v4.0 adds:
 - [x] Strict 10+ file EFIT/GEQDSK ψ_N RMSE benchmark gate with provenance labels and source-attribution diagnostics
 - [x] EFIT source/operator convention diagnostics: source sign/component sweep plus operator flux-span and curvature-variant sweep
 - [x] Native same-case FreeGS public-example profile-source comparison with `psi_N` RMSE, axis, boundary, X-point, current-closure, and signed-q sanity reporting
-- [ ] Strict benchmark: `psi_N` NRMSE < 5% against public EFIT/FreeGS same-case outputs with grid convergence and public coil/vacuum sidecars
+- [x] Dedicated fail-closed strict free-boundary parity gate consuming FreeGS public-example reconstruction and machine-metadata evidence
+- [ ] Strict acceptance: `psi_N` NRMSE < 5% against public EFIT/FreeGS same-case outputs with grid convergence and public coil/vacuum sidecars
 
 ## v4.1 — Community & Integration (target: Q3 2026)
 

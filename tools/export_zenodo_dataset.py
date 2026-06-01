@@ -144,9 +144,11 @@ This dataset accompanies the paper:
 ## Benchmark Reports
 
 ### Controller Stress-Test Campaign
-- `stress_test_campaign.json` — 400-episode campaign (100 per controller × 4 controllers)
-  - PID, H∞, NMPC-JAX, Nengo-SNN
+- `stress_test_campaign.json` — tracked controller campaign artifact
+  - PID, Rust-PID, NMPC-JAX, Nengo-SNN, and diagnostic-only H-infinity
   - Per-controller: latency percentiles, mean reward, disruption rate
+  - The H-infinity row is invalidated until regenerated after the corrected
+    flight-sim scalar-plant calibration and vertical command-sign adapter.
 
 ### Physics Benchmarks
 - `task6_heating_neutronics_realism.json` — Q scan, ECRH, TBR
@@ -214,8 +216,9 @@ def _build_metadata(version: str) -> dict:
             "description": (
                 "<p>Benchmark dataset for the paper: <em>Neuromorphic Spiking Neural Network "
                 "Control for Tokamak Plasma Stabilisation: A Comparative Benchmark Study</em>.</p>"
-                "<p>Contains raw JSON reports from an 11-module benchmark suite, a 400-episode "
-                "controller stress-test campaign (PID, H&infin;, NMPC-JAX, Nengo-SNN), "
+                "<p>Contains raw JSON reports from an 11-module benchmark suite, a tracked "
+                "controller stress-test campaign (PID, Rust-PID, diagnostic H&infin;, "
+                "NMPC-JAX, Nengo-SNN), "
                 "hardware-in-the-loop latency measurements, physics validation metrics "
                 "(Q=15, TBR=1.141, ECRH 99%), and publication-quality figures.</p>"
                 "<p>All data generated deterministically from SCPN Fusion Core v"

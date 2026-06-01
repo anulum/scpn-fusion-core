@@ -145,6 +145,18 @@ class ControllerMetrics:
 
 HINF_RESEARCH_ENV = "SCPN_ENABLE_HINF_RESEARCH"
 
+# Local flight-sim calibration for the H-infinity research lane.
+#
+# These values are measured from the same ITER flight-sim kernel and coil-command
+# convention used by IsoFluxController. A positive radial PF3 command moves the
+# axis outward. A positive vertical controller command is mapped to a negative
+# top-coil command and a positive bottom-coil command; in the current flight-sim
+# kernel that moves the axis downward, so the scalar H-infinity vertical channel
+# must invert its command before handing it back to IsoFluxController.
+HINF_RADIAL_POSITION_SENSITIVITY = 0.7559055118110241
+HINF_VERTICAL_POSITION_SENSITIVITY = 0.0629921259842523
+HINF_VERTICAL_COMMAND_SIGN = -1.0
+
 
 def _env_flag_enabled(name: str) -> bool:
     """Return True when an environment gate is explicitly enabled."""
@@ -200,8 +212,8 @@ def _run_hinf_episode(
 
     Uses two independent H-inf controllers (one per axis), each
     synthesized for the flight sim's quasi-static equilibrium dynamics
-    (error + first-order actuator lag).  The error signal from the
-    flight sim is passed directly — no sign adapter or gain scaling.
+    (error + first-order actuator lag). The vertical command is sign-adapted
+    to the IsoFluxController top/bottom coil-pair convention.
     """
     if not _env_flag_enabled(HINF_RESEARCH_ENV):
         raise RuntimeError(
@@ -214,11 +226,11 @@ def _run_hinf_episode(
     ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
 
     hinf_R = get_flight_sim_controller_v2(
-        position_sensitivity=0.567,
+        position_sensitivity=HINF_RADIAL_POSITION_SENSITIVITY,
         sample_dt=dt,
     )
     hinf_Z = get_flight_sim_controller_v2(
-        position_sensitivity=0.05,
+        position_sensitivity=HINF_VERTICAL_POSITION_SENSITIVITY,
         sample_dt=dt,
     )
 
@@ -227,7 +239,7 @@ def _run_hinf_episode(
     def hinf_step(pid: Any, err: float) -> float:
         if id(pid) == pid_R_id:
             return hinf_R.step(err, dt)
-        return hinf_Z.step(err, dt)
+        return HINF_VERTICAL_COMMAND_SIGN * hinf_Z.step(err, dt)
 
     ctrl.pid_step = hinf_step
 
@@ -512,6 +524,7 @@ def run_campaign(
     noise_level: float = 0.2,
     delay_ms: float = 50.0,
     surrogate: bool = False,
+    controllers: list[str] | None = None,
 ) -> dict[str, ControllerMetrics]:
     """Run the full stress-test campaign across all available controllers.
 
@@ -529,6 +542,9 @@ def run_campaign(
         Simulated actuator delay in milliseconds.
     surrogate : bool
         Whether to use the neural equilibrium surrogate (fast-path).
+    controllers : list[str] | None
+        Optional ordered subset of controller names to run. By default all
+        registered controllers run.
     """
     n_episodes = int(n_episodes)
     if n_episodes < 1:
@@ -554,11 +570,21 @@ def run_campaign(
         "H-infinity research lane: "
         + ("Enabled" if _env_flag_enabled(HINF_RESEARCH_ENV) else "Disabled")
     )
-    print(f"Controllers: {', '.join(CONTROLLERS.keys())}")
+    controller_registry = CONTROLLERS
+    if controllers is not None:
+        unknown = [name for name in controllers if name not in CONTROLLERS]
+        if unknown:
+            available = ", ".join(CONTROLLERS.keys())
+            raise ValueError(
+                f"Unknown controller(s): {', '.join(unknown)}. Available: {available}"
+            )
+        controller_registry = {name: CONTROLLERS[name] for name in controllers}
+
+    print(f"Controllers: {', '.join(controller_registry.keys())}")
 
     results: dict[str, ControllerMetrics] = {}
 
-    for ctrl_name, run_fn in CONTROLLERS.items():
+    for ctrl_name, run_fn in controller_registry.items():
         print(f"\n--- Running {ctrl_name} ({n_episodes} episodes) ---")
         metrics = ControllerMetrics(name=ctrl_name)
 
@@ -719,6 +745,12 @@ if __name__ == "__main__":
         help="Use neural equilibrium surrogate for ~1000x faster loop",
     )
     parser.add_argument(
+        "--shot-duration",
+        type=int,
+        default=30,
+        help="Simulated shot duration in seconds (default: 30)",
+    )
+    parser.add_argument(
         "--output",
         type=str,
         default=None,
@@ -732,6 +764,15 @@ if __name__ == "__main__":
             "this controller remains an experimental policy path."
         ),
     )
+    parser.add_argument(
+        "--controllers",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated ordered subset of controllers to run, for example "
+            "PID,H-infinity,LQR,Rust-PID."
+        ),
+    )
     args = parser.parse_args()
 
     if args.quick:
@@ -739,7 +780,17 @@ if __name__ == "__main__":
     if args.enable_hinf_research:
         os.environ[HINF_RESEARCH_ENV] = "1"
 
-    results = run_campaign(n_episodes=args.episodes, surrogate=args.surrogate)
+    selected_controllers = (
+        [name.strip() for name in args.controllers.split(",") if name.strip()]
+        if args.controllers
+        else None
+    )
+    results = run_campaign(
+        n_episodes=args.episodes,
+        shot_duration=args.shot_duration,
+        surrogate=args.surrogate,
+        controllers=selected_controllers,
+    )
     print("\n" + generate_summary_table(results))
 
     if args.output:

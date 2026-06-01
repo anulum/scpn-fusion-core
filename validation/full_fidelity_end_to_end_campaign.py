@@ -29,6 +29,7 @@ GK_ELECTROMAGNETIC_FIDELITY = REPORT_DIR / "gk_electromagnetic_fidelity.json"
 PRODUCTION_DECOMPOSITION = REPORT_DIR / "production_decomposition_contract.json"
 FREE_BOUNDARY_MACHINE_METADATA = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
 FREEGS_PUBLIC_RECONSTRUCTION = REPORT_DIR / "freegs_public_example_reconstruction.json"
+FREE_BOUNDARY_STRICT_PARITY = REPORT_DIR / "free_boundary_strict_parity_benchmark.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
 
@@ -224,6 +225,24 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
     return report
 
 
+def _load_free_boundary_strict_parity() -> dict[str, Any]:
+    if not FREE_BOUNDARY_STRICT_PARITY.exists():
+        return {
+            "accepted_full_fidelity": False,
+            "blockers": [],
+            "checks": {},
+            "failed_threshold_check_count": 0,
+            "schema": "free-boundary-strict-parity-benchmark.v1",
+            "status": "not_run",
+        }
+    report = cast(
+        dict[str, Any], json.loads(FREE_BOUNDARY_STRICT_PARITY.read_text(encoding="utf-8"))
+    )
+    if report.get("schema") != "free-boundary-strict-parity-benchmark.v1":
+        raise ValueError("free-boundary strict parity benchmark schema mismatch")
+    return report
+
+
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for source in registry["sources"]:
@@ -263,6 +282,7 @@ def run_campaign() -> dict[str, Any]:
     )
     free_boundary_machine_metadata = _load_free_boundary_machine_metadata()
     freegs_public_reconstruction = _load_freegs_public_reconstruction()
+    free_boundary_strict_gate = _load_free_boundary_strict_parity()
     free_boundary_strict = cast(
         dict[str, Any],
         freegs_public_reconstruction["strict_free_boundary_parity_evidence"],
@@ -383,7 +403,7 @@ def run_campaign() -> dict[str, Any]:
             "lane": "free_boundary_equilibrium_strict_parity",
             "surface": "free_boundary_equilibrium",
             "status": (
-                freegs_public_reconstruction["status"]
+                free_boundary_strict_gate["status"]
                 if freegs_public_reconstruction["case_count"]
                 else "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
                 if free_boundary_machine_metadata["machine_metadata_ready"]
@@ -397,6 +417,8 @@ def run_campaign() -> dict[str, Any]:
             "reference_cases_ready": False,
             "sources": _sources_for(registry, "free_boundary_equilibrium"),
             "next_required_evidence": (
+                free_boundary_strict_gate["blockers"]
+                or
                 free_boundary_strict["blocking_requirements"]
                 or freegs_public_reconstruction["missing_full_fidelity_requirements"]
                 or free_boundary_machine_metadata["missing_full_fidelity_requirements"]
@@ -533,6 +555,7 @@ def run_campaign() -> dict[str, Any]:
         "freegs_public_example_reconstruction_report": str(
             FREEGS_PUBLIC_RECONSTRUCTION.relative_to(ROOT)
         ),
+        "free_boundary_strict_parity_report": str(FREE_BOUNDARY_STRICT_PARITY.relative_to(ROOT)),
         "freegs_public_example_cases": int(freegs_public_reconstruction["case_count"]),
         "freegs_public_example_vacuum_comparison_pass": bool(
             freegs_public_reconstruction["vacuum_comparison_pass"]
@@ -542,24 +565,52 @@ def run_campaign() -> dict[str, Any]:
         ),
         "freegs_public_example_reconstruction_status": str(freegs_public_reconstruction["status"]),
         "free_boundary_strict_threshold_acceptance_ready": bool(
-            free_boundary_strict["strict_threshold_acceptance_ready"]
+            free_boundary_strict_gate.get("checks", {}).get(
+                "strict_threshold_acceptance_ready",
+                free_boundary_strict["strict_threshold_acceptance_ready"],
+            )
         ),
         "free_boundary_geometry_containment_ready": bool(
-            free_boundary_geometry["strict_geometry_containment_ready"]
+            free_boundary_strict_gate.get("checks", {}).get(
+                "geometry_containment_ready",
+                free_boundary_geometry["strict_geometry_containment_ready"],
+            )
         ),
         "free_boundary_boundary_containment_metric_ready": bool(
-            free_boundary_geometry["boundary_containment_metric_ready"]
+            free_boundary_strict_gate.get("checks", {}).get(
+                "boundary_containment_metric_ready",
+                free_boundary_geometry["boundary_containment_metric_ready"],
+            )
         ),
         "free_boundary_grid_convergence_ready": bool(
-            free_boundary_strict["grid_convergence_ready"]
+            free_boundary_strict_gate.get("checks", {}).get(
+                "grid_convergence_ready",
+                free_boundary_strict["grid_convergence_ready"],
+            )
         ),
         "free_boundary_coil_vacuum_sidecar_ready": bool(
-            free_boundary_strict["coil_vacuum_sidecar_ready"]
+            free_boundary_strict_gate.get("checks", {}).get(
+                "coil_vacuum_sidecar_ready",
+                free_boundary_strict["coil_vacuum_sidecar_ready"],
+            )
+        ),
+        "free_boundary_same_case_public_reference_output_ready": bool(
+            free_boundary_strict_gate.get("checks", {}).get(
+                "same_case_public_reference_output_ready", False
+            )
         ),
         "free_boundary_failed_threshold_check_count": int(
-            free_boundary_strict["failed_threshold_check_count"]
+            free_boundary_strict_gate.get(
+                "failed_threshold_check_count",
+                free_boundary_strict["failed_threshold_check_count"],
+            )
         ),
-        "free_boundary_strict_parity_status": str(free_boundary_strict["status"]),
+        "free_boundary_strict_parity_status": str(
+            free_boundary_strict_gate.get("status", free_boundary_strict["status"])
+        ),
+        "free_boundary_strict_parity_blockers": list(
+            free_boundary_strict_gate.get("blockers", free_boundary_strict["blocking_requirements"])
+        ),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -752,10 +803,22 @@ def write_reports(report: dict[str, Any]) -> None:
             f"`{report['free_boundary_coil_vacuum_sidecar_ready']}`"
         ),
         (
+            "- Free-boundary same-case public reference output ready: "
+            f"`{report['free_boundary_same_case_public_reference_output_ready']}`"
+        ),
+        (
             "- Free-boundary failed threshold checks: "
             f"`{report['free_boundary_failed_threshold_check_count']}`"
         ),
         (f"- Free-boundary strict parity status: `{report['free_boundary_strict_parity_status']}`"),
+        (
+            "- Free-boundary strict parity blockers: "
+            f"`{', '.join(report['free_boundary_strict_parity_blockers'])}`"
+        ),
+        (
+            "- Free-boundary strict parity report: "
+            f"`{report['free_boundary_strict_parity_report']}`"
+        ),
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",
