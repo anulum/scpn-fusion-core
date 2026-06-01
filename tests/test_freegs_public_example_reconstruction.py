@@ -53,6 +53,18 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert strict["native_same_case_profile_source_ready"] is True
     assert strict["strict_threshold_acceptance_ready"] is False
     assert strict["grid_convergence_ready"] is False
+    grid = strict["grid_convergence_evidence"]
+    assert grid["schema"] == "strict-free-boundary-grid-convergence-evidence.v1"
+    assert grid["status"] == "blocked_public_freegs_single_resolution_grid_evidence"
+    assert grid["grid_convergence_ready"] is False
+    assert grid["required_resolution_count"] == 3
+    assert grid["case_count"] == report["case_count"]
+    assert all(row["grid_convergence_case_ready"] is False for row in grid["cases"])
+    assert all(
+        row["missing_resolution_count"] >= 2
+        and row["blocking_reason"] == "public_example_has_single_resolution"
+        for row in grid["cases"]
+    )
     assert strict["coil_vacuum_sidecar_ready"] is False
     assert strict["accepted_full_fidelity"] is False
     assert strict["case_count"] == report["case_count"]

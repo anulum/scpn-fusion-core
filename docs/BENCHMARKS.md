@@ -317,7 +317,10 @@ equilibrium. It also publishes machine-readable geometry-containment evidence
 for source X-points, isoflux endpoints, native/external magnetic axes, and
 boundary-containment metric readiness, plus per-case threshold checks,
 failed-check counts, and readiness booleans for strict threshold acceptance,
-grid convergence, and public coil/vacuum sidecars. Clean CI checkouts preserve tracked machine-metadata and
+grid convergence, and public coil/vacuum sidecars. Grid-convergence evidence is
+now explicit and fail-closed: the public-example report records a required
+three-resolution ladder and per-case blockers when only one `65x65` public
+resolution is available for a machine class. Clean CI checkouts preserve tracked machine-metadata and
 reconstruction reports when the gitignored public-source cache is absent, so
 the integrated campaign cannot erase prior public evidence during full-suite
 test order. Strict free-boundary parity remains fail-closed because strict

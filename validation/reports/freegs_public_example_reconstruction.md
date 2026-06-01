@@ -40,6 +40,18 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 | freegs_01_test_tokamak_freeboundary | 4 | 2 | 2 | True | True | True |
 | freegs_16_diiid_public_example | 4 | 2 | 2 | True | True | True |
 
+## Grid-convergence evidence
+
+- Schema: `strict-free-boundary-grid-convergence-evidence.v1`
+- Status: `blocked_public_freegs_single_resolution_grid_evidence`
+- Required resolution count: `3`
+- Grid convergence ready: `False`
+
+| Case | Machine | Observed resolutions | Missing count | Ready | Blocking reason |
+| --- | --- | --- | ---: | ---: | --- |
+| freegs_01_test_tokamak_freeboundary | TestTokamak | `65x65` | 2 | False | public_example_has_single_resolution |
+| freegs_16_diiid_public_example | DIIID | `65x65` | 2 | False | public_example_has_single_resolution |
+
 ## Strict parity threshold checks
 
 ### `freegs_01_test_tokamak_freeboundary`

@@ -21,6 +21,7 @@ import hashlib
 import inspect
 import importlib
 import json
+import sys
 import time
 import warnings
 from dataclasses import dataclass
@@ -31,9 +32,13 @@ from typing import Any, cast
 import numpy as np
 from numpy.typing import NDArray
 
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
 from scpn_fusion.core.fusion_kernel_free_boundary import green_function
 
-ROOT = Path(__file__).resolve().parents[1]
 CACHE_ROOT = ROOT / "data" / "external" / "full_fidelity_public_sources"
 FREEGS_REPO = CACHE_ROOT / "repos" / "freegs"
 ARTIFACT_DIR = ROOT / "validation" / "reference_data" / "full_fidelity_public_artifacts"
@@ -44,6 +49,7 @@ JSON_REPORT = REPORT_DIR / "freegs_public_example_reconstruction.json"
 MD_REPORT = REPORT_DIR / "freegs_public_example_reconstruction.md"
 VACUUM_NRMSE_THRESHOLD = 1.0e-12
 VACUUM_MAX_ABS_THRESHOLD = 1.0e-12
+GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT = 3
 MU0 = 4.0e-7 * np.pi
 
 
@@ -786,6 +792,51 @@ def _geometry_containment_evidence(cases: list[dict[str, Any]]) -> dict[str, Any
     }
 
 
+def _grid_convergence_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return fail-closed public-example grid-convergence evidence."""
+    grouped: dict[str, set[tuple[int, int]]] = {}
+    for case in cases:
+        grouped.setdefault(str(case["machine_class"]), set()).add(
+            (int(case["grid"]["nx"]), int(case["grid"]["ny"]))
+        )
+    case_rows: list[dict[str, Any]] = []
+    for case in cases:
+        resolutions = sorted(grouped[str(case["machine_class"])])
+        observed_count = len(resolutions)
+        missing_count = max(GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT - observed_count, 0)
+        ready = bool(observed_count >= GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT)
+        case_rows.append(
+            {
+                "blocking_reason": ""
+                if ready
+                else "public_example_has_single_resolution"
+                if observed_count == 1
+                else "public_example_has_insufficient_resolution_ladder",
+                "case_id": case["case_id"],
+                "grid_convergence_case_ready": ready,
+                "machine_class": case["machine_class"],
+                "missing_resolution_count": missing_count,
+                "observed_resolution_count": observed_count,
+                "observed_resolutions": [
+                    {"nx": int(nx), "ny": int(ny)} for nx, ny in resolutions
+                ],
+                "required_resolution_count": GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT,
+            }
+        )
+    ready = bool(case_rows and all(row["grid_convergence_case_ready"] for row in case_rows))
+    return {
+        "accepted_full_fidelity": False,
+        "case_count": len(case_rows),
+        "cases": case_rows,
+        "grid_convergence_ready": ready,
+        "required_resolution_count": GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT,
+        "schema": "strict-free-boundary-grid-convergence-evidence.v1",
+        "status": "accepted_public_freegs_grid_convergence_evidence"
+        if ready
+        else "blocked_public_freegs_single_resolution_grid_evidence",
+    }
+
+
 def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
     case_rows: list[dict[str, Any]] = []
     failed_count = 0
@@ -810,7 +861,8 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
         bool(row["native_same_case_profile_source_ready"]) for row in case_rows
     )
     threshold_ready = bool(cases) and failed_count == 0 and native_ready
-    grid_ready = False
+    grid_convergence = _grid_convergence_evidence(cases)
+    grid_ready = bool(grid_convergence["grid_convergence_ready"])
     sidecar_ready = False
     return {
         "schema": "strict-free-boundary-parity-evidence.v1",
@@ -825,6 +877,7 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
         "coil_vacuum_sidecar_ready": sidecar_ready,
         "failed_threshold_check_count": failed_count,
         "geometry_containment_evidence": _geometry_containment_evidence(cases),
+        "grid_convergence_evidence": grid_convergence,
         "grid_convergence_ready": grid_ready,
         "native_same_case_profile_source_ready": native_ready,
         "status": "blocked_strict_thresholds_or_grid_convergence_missing",
@@ -835,6 +888,7 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
 def _write_markdown(report: dict[str, Any]) -> None:
     strict = report.get("strict_free_boundary_parity_evidence", {})
     geometry = strict.get("geometry_containment_evidence", {})
+    grid_convergence = strict.get("grid_convergence_evidence", {})
     lines = [
         "# FreeGS Public Example Reconstruction",
         "",
@@ -917,6 +971,35 @@ def _write_markdown(report: dict[str, Any]) -> None:
                         source_inside=case["source_points_inside_grid"],
                         source_points=case["source_point_count"],
                         xpoints=case["xpoint_count"],
+                    )
+                )
+        if grid_convergence:
+            lines.extend(["", "## Grid-convergence evidence", ""])
+            lines.append(f"- Schema: `{grid_convergence['schema']}`")
+            lines.append(f"- Status: `{grid_convergence['status']}`")
+            lines.append(
+                f"- Required resolution count: `{grid_convergence['required_resolution_count']}`"
+            )
+            lines.append(
+                f"- Grid convergence ready: `{grid_convergence['grid_convergence_ready']}`"
+            )
+            lines.append("")
+            lines.append(
+                "| Case | Machine | Observed resolutions | Missing count | Ready | Blocking reason |"
+            )
+            lines.append("| --- | --- | --- | ---: | ---: | --- |")
+            for case in grid_convergence["cases"]:
+                resolutions = ", ".join(
+                    f"{row['nx']}x{row['ny']}" for row in case["observed_resolutions"]
+                )
+                lines.append(
+                    "| {case_id} | {machine} | `{resolutions}` | {missing} | {ready} | {reason} |".format(
+                        case_id=case["case_id"],
+                        machine=case["machine_class"],
+                        missing=case["missing_resolution_count"],
+                        ready=case["grid_convergence_case_ready"],
+                        reason=case["blocking_reason"],
+                        resolutions=resolutions,
                     )
                 )
         lines.extend(["", "## Strict parity threshold checks", ""])

@@ -773,6 +773,46 @@
       "status": "accepted_local_geometry_containment_evidence",
       "strict_geometry_containment_ready": true
     },
+    "grid_convergence_evidence": {
+      "accepted_full_fidelity": false,
+      "case_count": 2,
+      "cases": [
+        {
+          "blocking_reason": "public_example_has_single_resolution",
+          "case_id": "freegs_01_test_tokamak_freeboundary",
+          "grid_convergence_case_ready": false,
+          "machine_class": "TestTokamak",
+          "missing_resolution_count": 2,
+          "observed_resolution_count": 1,
+          "observed_resolutions": [
+            {
+              "nx": 65,
+              "ny": 65
+            }
+          ],
+          "required_resolution_count": 3
+        },
+        {
+          "blocking_reason": "public_example_has_single_resolution",
+          "case_id": "freegs_16_diiid_public_example",
+          "grid_convergence_case_ready": false,
+          "machine_class": "DIIID",
+          "missing_resolution_count": 2,
+          "observed_resolution_count": 1,
+          "observed_resolutions": [
+            {
+              "nx": 65,
+              "ny": 65
+            }
+          ],
+          "required_resolution_count": 3
+        }
+      ],
+      "grid_convergence_ready": false,
+      "required_resolution_count": 3,
+      "schema": "strict-free-boundary-grid-convergence-evidence.v1",
+      "status": "blocked_public_freegs_single_resolution_grid_evidence"
+    },
     "grid_convergence_ready": false,
     "native_same_case_profile_source_ready": true,
     "schema": "strict-free-boundary-parity-evidence.v1",
