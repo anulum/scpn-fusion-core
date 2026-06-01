@@ -6,6 +6,12 @@
     {
       "accepted_full_fidelity": false,
       "case_id": "freegs_01_test_tokamak_freeboundary",
+      "domain": {
+        "r_max": 2.0,
+        "r_min": 0.1,
+        "z_max": 1.0,
+        "z_min": -1.0
+      },
       "example_path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
       "example_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
       "external_nonlinear_output_ready": true,
@@ -21,7 +27,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 4.3818358139833435,
+        "elapsed_s": 3.993523814016953,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -71,7 +77,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.8970438149990514,
+          "elapsed_s": 0.8259374720510095,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -81,7 +87,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 4.3818358139833435,
+          "elapsed_s": 3.993523814016953,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -225,6 +231,12 @@
     {
       "accepted_full_fidelity": false,
       "case_id": "freegs_16_diiid_public_example",
+      "domain": {
+        "r_max": 2.8,
+        "r_min": 0.1,
+        "z_max": 1.8,
+        "z_min": -1.8
+      },
       "example_path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
       "example_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
       "external_nonlinear_output_ready": true,
@@ -240,7 +252,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 8.045607065083459,
+        "elapsed_s": 10.691699218004942,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -290,7 +302,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.637662538094446,
+          "elapsed_s": 1.9086677170125768,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -300,7 +312,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 8.045607065083459,
+          "elapsed_s": 10.691699218004942,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -568,7 +580,7 @@
   "reference_output_ready": false,
   "report_generation_mode": "tracked_report_fallback",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "152dc1558914a1a7c65c4a15a29051c116544822f0bfa9efc7c316df8437a8b1",
+  "sha256": "b6fb6b538c5adc88d8c76007d086dd53cee9fe9e2a5cac1909afaa0b789558cc",
   "source_cache_available": true,
   "status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
   "strict_free_boundary_parity_evidence": {
@@ -713,6 +725,54 @@
     ],
     "coil_vacuum_sidecar_ready": false,
     "failed_threshold_check_count": 6,
+    "geometry_containment_evidence": {
+      "accepted_full_fidelity": false,
+      "all_source_points_inside_grid": true,
+      "axis_containment_metric_ready": true,
+      "boundary_containment_metric_ready": true,
+      "case_count": 2,
+      "cases": [
+        {
+          "axis_points_inside_grid": true,
+          "boundary_containment_fraction": 1.0,
+          "boundary_containment_metric_ready": true,
+          "case_id": "freegs_01_test_tokamak_freeboundary",
+          "external_axis": [
+            1.0796875,
+            0.25
+          ],
+          "isoflux_endpoint_count": 2,
+          "native_axis": [
+            1.109375,
+            0.21875
+          ],
+          "source_point_count": 4,
+          "source_points_inside_grid": true,
+          "xpoint_count": 2
+        },
+        {
+          "axis_points_inside_grid": true,
+          "boundary_containment_fraction": 1.0,
+          "boundary_containment_metric_ready": true,
+          "case_id": "freegs_16_diiid_public_example",
+          "external_axis": [
+            1.7874999999999999,
+            1.575
+          ],
+          "isoflux_endpoint_count": 2,
+          "native_axis": [
+            1.7874999999999999,
+            1.8
+          ],
+          "source_point_count": 4,
+          "source_points_inside_grid": true,
+          "xpoint_count": 2
+        }
+      ],
+      "schema": "strict-free-boundary-geometry-containment.v1",
+      "status": "accepted_local_geometry_containment_evidence",
+      "strict_geometry_containment_ready": true
+    },
     "grid_convergence_ready": false,
     "native_same_case_profile_source_ready": true,
     "schema": "strict-free-boundary-parity-evidence.v1",

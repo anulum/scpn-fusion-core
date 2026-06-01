@@ -16,6 +16,8 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 - Strict threshold acceptance ready: `False`
 - Grid convergence ready: `False`
 - Coil/vacuum sidecar ready: `False`
+- Geometry containment ready: `True`
+- Boundary-containment metric ready: `True`
 - Failed strict threshold checks: `6`
 - Accepted full fidelity: `False`
 - Artifact: `validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json`
@@ -24,6 +26,19 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | freegs_01_test_tokamak_freeboundary | TestTokamak | 2.353629e-16 | True | 2.291811e-01 | 4.310348e-02 | `external_backend_solved_native_same_case_profile_source_compared_fail_closed` |
 | freegs_16_diiid_public_example | DIIID | 5.750194e-16 | True | 6.656438e-02 | 2.250000e-01 | `external_backend_solved_native_same_case_profile_source_compared_fail_closed` |
+
+## Geometry containment evidence
+
+- Schema: `strict-free-boundary-geometry-containment.v1`
+- Status: `accepted_local_geometry_containment_evidence`
+- Source points inside grid: `True`
+- Axis containment metric ready: `True`
+- Boundary-containment metric ready: `True`
+
+| Case | Source points | X-points | Isoflux endpoints | Source inside | Axis inside | Boundary metric |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| freegs_01_test_tokamak_freeboundary | 4 | 2 | 2 | True | True | True |
+| freegs_16_diiid_public_example | 4 | 2 | 2 | True | True | True |
 
 ## Strict parity threshold checks
 

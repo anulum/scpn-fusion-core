@@ -255,8 +255,10 @@ fixed-boundary profile-source comparison metrics for `psi_N` RMSE, magnetic
 axis error, boundary error, sampled X-point constraint error, and current
 closure on the finite FreeGS grid, plus finite signed-q profile sanity from
 the solved public FreeGS equilibrium. The benchmark also emits per-case
-strict threshold checks and failed-check counts, so the blocker is explicit
-rather than inferred from summary prose. Clean CI checkouts preserve the
+geometry-containment evidence for source X-points, isoflux endpoints,
+native/external magnetic axes, and boundary-containment metric readiness,
+alongside strict threshold checks and failed-check counts, so the blocker is
+explicit rather than inferred from summary prose. Clean CI checkouts preserve the
 tracked metadata and reconstruction evidence when gitignored public-source
 caches are absent, so full-suite report generation remains deterministic
 without promoting those partial artefacts to parity. Strict free-boundary parity remains

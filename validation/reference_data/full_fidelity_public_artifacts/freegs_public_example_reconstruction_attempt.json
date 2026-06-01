@@ -4,6 +4,12 @@
     {
       "accepted_full_fidelity": false,
       "case_id": "freegs_01_test_tokamak_freeboundary",
+      "domain": {
+        "r_max": 2.0,
+        "r_min": 0.1,
+        "z_max": 1.0,
+        "z_min": -1.0
+      },
       "example_path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
       "example_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
       "external_nonlinear_output_ready": true,
@@ -19,7 +25,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 4.3818358139833435,
+        "elapsed_s": 3.993523814016953,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -69,7 +75,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.8970438149990514,
+          "elapsed_s": 0.8259374720510095,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -79,7 +85,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 4.3818358139833435,
+          "elapsed_s": 3.993523814016953,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -223,6 +229,12 @@
     {
       "accepted_full_fidelity": false,
       "case_id": "freegs_16_diiid_public_example",
+      "domain": {
+        "r_max": 2.8,
+        "r_min": 0.1,
+        "z_max": 1.8,
+        "z_min": -1.8
+      },
       "example_path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
       "example_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
       "external_nonlinear_output_ready": true,
@@ -238,7 +250,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 8.045607065083459,
+        "elapsed_s": 10.691699218004942,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -288,7 +300,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.637662538094446,
+          "elapsed_s": 1.9086677170125768,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -298,7 +310,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 8.045607065083459,
+          "elapsed_s": 10.691699218004942,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,

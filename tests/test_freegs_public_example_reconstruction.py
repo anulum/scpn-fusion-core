@@ -57,6 +57,17 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert strict["accepted_full_fidelity"] is False
     assert strict["case_count"] == report["case_count"]
     assert strict["failed_threshold_check_count"] >= 1
+    containment = strict["geometry_containment_evidence"]
+    assert containment["schema"] == "strict-free-boundary-geometry-containment.v1"
+    assert containment["case_count"] == report["case_count"]
+    assert containment["status"] == "accepted_local_geometry_containment_evidence"
+    assert containment["all_source_points_inside_grid"] is True
+    assert containment["axis_containment_metric_ready"] is True
+    assert containment["boundary_containment_metric_ready"] is True
+    assert containment["strict_geometry_containment_ready"] is True
+    assert containment["accepted_full_fidelity"] is False
+    assert all(row["source_points_inside_grid"] for row in containment["cases"])
+    assert all(row["axis_points_inside_grid"] for row in containment["cases"])
     assert strict["blocking_requirements"] == [
         "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
         "grid convergence across public example resolutions",

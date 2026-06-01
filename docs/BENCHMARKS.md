@@ -21,7 +21,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, local halo-face integrity, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact plus native source/sink budget diagnostics exist; full radial transport parity and same-case source-budget parity are missing | `python tools/run_aurora_reference_artifact.py` |
-| Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum, native profile-source comparison metrics, and explicit strict threshold checks exist; threshold acceptance/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
+| Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum, native profile-source comparison metrics, geometry-containment evidence, and explicit strict threshold checks exist; threshold acceptance/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
 
 Source acquisition and conversion commands:
 
@@ -310,7 +310,9 @@ public examples. The same report now runs a native fixed-boundary profile-source
 comparison on the finite FreeGS psi grid and publishes `psi_N` RMSE, magnetic
 axis error, boundary error, sampled X-point constraint error, and current
 closure, plus finite signed-q profile sanity from the solved public FreeGS
-equilibrium. It also publishes machine-readable per-case threshold checks,
+equilibrium. It also publishes machine-readable geometry-containment evidence
+for source X-points, isoflux endpoints, native/external magnetic axes, and
+boundary-containment metric readiness, plus per-case threshold checks,
 failed-check counts, and readiness booleans for strict threshold acceptance,
 grid convergence, and public coil/vacuum sidecars. Clean CI checkouts preserve tracked machine-metadata and
 reconstruction reports when the gitignored public-source cache is absent, so

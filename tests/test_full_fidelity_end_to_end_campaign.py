@@ -106,6 +106,8 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["freegs_public_example_vacuum_comparison_pass"] in {True, False}
     assert report["freegs_public_example_external_output_ready"] in {True, False}
     assert report["free_boundary_strict_threshold_acceptance_ready"] is False
+    assert report["free_boundary_geometry_containment_ready"] is True
+    assert report["free_boundary_boundary_containment_metric_ready"] is True
     assert report["free_boundary_grid_convergence_ready"] is False
     assert report["free_boundary_coil_vacuum_sidecar_ready"] is False
     assert report["free_boundary_failed_threshold_check_count"] >= 0

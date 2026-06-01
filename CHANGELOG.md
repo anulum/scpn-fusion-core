@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added FreeGS public-example geometry-containment evidence for source
+  X-points, isoflux endpoints, native/external magnetic axes, and boundary
+  containment metrics while keeping strict FreeGS parity blocked.
+
 - Added production-decomposition halo-face integrity evidence with per-rank
   radial/toroidal face comparisons against the serial reference halo exchange
   while keeping distributed MPI/multi-GPU halo exchange blocked.

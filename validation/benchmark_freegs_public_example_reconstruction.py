@@ -366,6 +366,15 @@ def _nearest_grid_value(
     return float(psi[z_idx, r_idx])
 
 
+def _point_inside_domain(point: tuple[float, float], domain: dict[str, float]) -> bool:
+    r_value = float(point[0])
+    z_value = float(point[1])
+    return bool(
+        float(domain["r_min"]) <= r_value <= float(domain["r_max"])
+        and float(domain["z_min"]) <= z_value <= float(domain["z_max"])
+    )
+
+
 def _q_profile_sanity(eq: Any) -> dict[str, Any]:
     """Extract finite signed-q profile sanity metrics from a solved FreeGS equilibrium."""
     try:
@@ -596,6 +605,12 @@ def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str,
     return {
         "accepted_full_fidelity": False,
         "case_id": spec.case_id,
+        "domain": {
+            "r_max": spec.r_max,
+            "r_min": spec.r_min,
+            "z_max": spec.z_max,
+            "z_min": spec.z_min,
+        },
         "example_path": _rel(spec.example_path),
         "example_sha256": _sha256(spec.example_path),
         "grid": {"nx": spec.nx, "ny": spec.ny},
@@ -691,6 +706,86 @@ def _strict_threshold_checks(case: dict[str, Any]) -> list[dict[str, Any]]:
     return checks
 
 
+def _geometry_containment_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    case_rows: list[dict[str, Any]] = []
+    for case in cases:
+        domain = case.get("domain", {})
+        source = case.get("source_contract", {})
+        solve = case.get("nonlinear_solve_attempt", {})
+        comparison = solve.get("native_same_case_profile_source_comparison", {})
+        xpoints = [tuple(point) for point in source.get("xpoints", [])]
+        isoflux_points = [
+            (float(row[0]), float(row[1]))
+            for row in source.get("isoflux", [])
+            if isinstance(row, list | tuple) and len(row) >= 2
+        ] + [
+            (float(row[2]), float(row[3]))
+            for row in source.get("isoflux", [])
+            if isinstance(row, list | tuple) and len(row) >= 4
+        ]
+        source_points = [*xpoints, *isoflux_points]
+        source_inside = bool(
+            source_points
+            and isinstance(domain, dict)
+            and all(_point_inside_domain(point, domain) for point in source_points)
+        )
+        native_axis = (
+            float(comparison.get("native_axis_r_m", np.nan)),
+            float(comparison.get("native_axis_z_m", np.nan)),
+        )
+        external_axis = (
+            float(comparison.get("external_axis_r_m", np.nan)),
+            float(comparison.get("external_axis_z_m", np.nan)),
+        )
+        axis_points = [native_axis, external_axis]
+        axis_inside = bool(
+            isinstance(domain, dict)
+            and all(np.all(np.isfinite(point)) for point in axis_points)
+            and all(_point_inside_domain(point, domain) for point in axis_points)
+        )
+        boundary_fraction = comparison.get("boundary_containment_fraction")
+        boundary_ready = isinstance(boundary_fraction, int | float) and np.isfinite(
+            float(boundary_fraction)
+        )
+        case_rows.append(
+            {
+                "axis_points_inside_grid": axis_inside,
+                "boundary_containment_fraction": float(boundary_fraction)
+                if boundary_ready
+                else None,
+                "boundary_containment_metric_ready": bool(boundary_ready),
+                "case_id": case["case_id"],
+                "external_axis": [external_axis[0], external_axis[1]],
+                "isoflux_endpoint_count": len(isoflux_points),
+                "native_axis": [native_axis[0], native_axis[1]],
+                "source_point_count": len(source_points),
+                "source_points_inside_grid": source_inside,
+                "xpoint_count": len(xpoints),
+            }
+        )
+    all_source_inside = bool(case_rows) and all(
+        bool(row["source_points_inside_grid"]) for row in case_rows
+    )
+    axis_ready = bool(case_rows) and all(bool(row["axis_points_inside_grid"]) for row in case_rows)
+    boundary_ready = bool(case_rows) and all(
+        bool(row["boundary_containment_metric_ready"]) for row in case_rows
+    )
+    ready = bool(all_source_inside and axis_ready and boundary_ready)
+    return {
+        "accepted_full_fidelity": False,
+        "all_source_points_inside_grid": all_source_inside,
+        "axis_containment_metric_ready": axis_ready,
+        "boundary_containment_metric_ready": boundary_ready,
+        "case_count": len(case_rows),
+        "cases": case_rows,
+        "schema": "strict-free-boundary-geometry-containment.v1",
+        "status": "accepted_local_geometry_containment_evidence"
+        if ready
+        else "blocked_geometry_containment_evidence_incomplete",
+        "strict_geometry_containment_ready": ready,
+    }
+
+
 def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
     case_rows: list[dict[str, Any]] = []
     failed_count = 0
@@ -729,6 +824,7 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
         "cases": case_rows,
         "coil_vacuum_sidecar_ready": sidecar_ready,
         "failed_threshold_check_count": failed_count,
+        "geometry_containment_evidence": _geometry_containment_evidence(cases),
         "grid_convergence_ready": grid_ready,
         "native_same_case_profile_source_ready": native_ready,
         "status": "blocked_strict_thresholds_or_grid_convergence_missing",
@@ -738,6 +834,7 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
 
 def _write_markdown(report: dict[str, Any]) -> None:
     strict = report.get("strict_free_boundary_parity_evidence", {})
+    geometry = strict.get("geometry_containment_evidence", {})
     lines = [
         "# FreeGS Public Example Reconstruction",
         "",
@@ -760,6 +857,14 @@ def _write_markdown(report: dict[str, Any]) -> None:
         ),
         f"- Grid convergence ready: `{strict.get('grid_convergence_ready', False)}`",
         f"- Coil/vacuum sidecar ready: `{strict.get('coil_vacuum_sidecar_ready', False)}`",
+        (
+            "- Geometry containment ready: "
+            f"`{geometry.get('strict_geometry_containment_ready', False)}`"
+        ),
+        (
+            "- Boundary-containment metric ready: "
+            f"`{geometry.get('boundary_containment_metric_ready', False)}`"
+        ),
         (f"- Failed strict threshold checks: `{strict.get('failed_threshold_check_count', 0)}`"),
         f"- Accepted full fidelity: `{report['accepted_full_fidelity_ready']}`",
         f"- Artifact: `{report['artifact_path']}`",
@@ -783,6 +888,37 @@ def _write_markdown(report: dict[str, Any]) -> None:
             )
         )
     if strict:
+        if geometry:
+            lines.extend(["", "## Geometry containment evidence", ""])
+            lines.append(f"- Schema: `{geometry['schema']}`")
+            lines.append(f"- Status: `{geometry['status']}`")
+            lines.append(
+                f"- Source points inside grid: `{geometry['all_source_points_inside_grid']}`"
+            )
+            lines.append(
+                f"- Axis containment metric ready: `{geometry['axis_containment_metric_ready']}`"
+            )
+            lines.append(
+                "- Boundary-containment metric ready: "
+                f"`{geometry['boundary_containment_metric_ready']}`"
+            )
+            lines.append("")
+            lines.append(
+                "| Case | Source points | X-points | Isoflux endpoints | Source inside | Axis inside | Boundary metric |"
+            )
+            lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: |")
+            for case in geometry["cases"]:
+                lines.append(
+                    "| {case_id} | {source_points} | {xpoints} | {isoflux} | {source_inside} | {axis_inside} | {boundary_ready} |".format(
+                        axis_inside=case["axis_points_inside_grid"],
+                        boundary_ready=case["boundary_containment_metric_ready"],
+                        case_id=case["case_id"],
+                        isoflux=case["isoflux_endpoint_count"],
+                        source_inside=case["source_points_inside_grid"],
+                        source_points=case["source_point_count"],
+                        xpoints=case["xpoint_count"],
+                    )
+                )
         lines.extend(["", "## Strict parity threshold checks", ""])
         for case in strict["cases"]:
             lines.append(f"### `{case['case_id']}`")

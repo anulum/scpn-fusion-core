@@ -189,6 +189,10 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
                 "blocking_requirements": [],
                 "coil_vacuum_sidecar_ready": False,
                 "failed_threshold_check_count": 0,
+                "geometry_containment_evidence": {
+                    "boundary_containment_metric_ready": False,
+                    "strict_geometry_containment_ready": False,
+                },
                 "grid_convergence_ready": False,
                 "native_same_case_profile_source_ready": False,
                 "status": "not_run",
@@ -207,6 +211,10 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
             "blocking_requirements": [],
             "coil_vacuum_sidecar_ready": False,
             "failed_threshold_check_count": 0,
+            "geometry_containment_evidence": {
+                "boundary_containment_metric_ready": False,
+                "strict_geometry_containment_ready": False,
+            },
             "grid_convergence_ready": False,
             "native_same_case_profile_source_ready": False,
             "status": "not_run",
@@ -258,6 +266,16 @@ def run_campaign() -> dict[str, Any]:
     free_boundary_strict = cast(
         dict[str, Any],
         freegs_public_reconstruction["strict_free_boundary_parity_evidence"],
+    )
+    free_boundary_geometry = cast(
+        dict[str, Any],
+        free_boundary_strict.get(
+            "geometry_containment_evidence",
+            {
+                "boundary_containment_metric_ready": False,
+                "strict_geometry_containment_ready": False,
+            },
+        ),
     )
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
@@ -526,6 +544,12 @@ def run_campaign() -> dict[str, Any]:
         "free_boundary_strict_threshold_acceptance_ready": bool(
             free_boundary_strict["strict_threshold_acceptance_ready"]
         ),
+        "free_boundary_geometry_containment_ready": bool(
+            free_boundary_geometry["strict_geometry_containment_ready"]
+        ),
+        "free_boundary_boundary_containment_metric_ready": bool(
+            free_boundary_geometry["boundary_containment_metric_ready"]
+        ),
         "free_boundary_grid_convergence_ready": bool(
             free_boundary_strict["grid_convergence_ready"]
         ),
@@ -710,6 +734,14 @@ def write_reports(report: dict[str, Any]) -> None:
         (
             "- Free-boundary strict threshold acceptance ready: "
             f"`{report['free_boundary_strict_threshold_acceptance_ready']}`"
+        ),
+        (
+            "- Free-boundary geometry containment ready: "
+            f"`{report['free_boundary_geometry_containment_ready']}`"
+        ),
+        (
+            "- Free-boundary boundary-containment metric ready: "
+            f"`{report['free_boundary_boundary_containment_metric_ready']}`"
         ),
         (
             "- Free-boundary grid convergence ready: "
