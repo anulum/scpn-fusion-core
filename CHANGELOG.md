@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [3.9.6] - 2026-06-01
+
 - Added local large-grid CPU evidence to the production-decomposition benchmark, measuring `9,437,184` 5D phase cells over `24` local rank tiles while keeping MPI/multi-GPU production-scale readiness fail-closed.
 
 - Added a public GitHub Pages financing landing page that presents the full-fidelity parity campaign, evidence links, blocked validation lanes, and staged GPU/reference-solver funding plan without promoting partial artefacts to accepted parity evidence.

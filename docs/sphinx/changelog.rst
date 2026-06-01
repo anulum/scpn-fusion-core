@@ -5,7 +5,7 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.9.5 (Current)
+v3.9.6 (Current)
 ------------------
 
 - **Phase 5/6 physics port**: 69 new modules (impurity transport, disruption chain,

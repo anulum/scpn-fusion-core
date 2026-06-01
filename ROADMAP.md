@@ -49,7 +49,7 @@ These items are public-facing work queues, not acceptance claims:
 
 ## Shipped
 
-### v3.9.5 (current)
+### v3.9.6 (current)
 
 - [x] **Phase 5 physics port** (8 modules): impurity transport, momentum transport, runaway electrons, Alfven eigenmodes, ELM model, pellet injection, plasma-wall interaction, kinetic EFIT
 - [x] **Phase 5 control port** (5 modules): free-boundary tracking, state estimator (EKF), volt-second manager, RWM feedback, mu-synthesis

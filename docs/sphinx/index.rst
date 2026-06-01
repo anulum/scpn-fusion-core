@@ -28,12 +28,14 @@ stochastic LIF neurons, and executed against physics-informed plant models.
 
 .. note::
 
-   **Honest scope:** This is not a replacement for TRANSP, JINTRAC, or
-   GENE.  It does not solve 5D gyrokinetics or full 3D MHD.  It is a
-   **control-algorithm development and surrogate-modelling framework**
-   with enough physics fidelity to validate reactor control strategies
-   against real equilibrium data (8 SPARC GEQDSK files, ITPA H-mode
-   database).
+   **Honest scope:** This is not a replacement for TRANSP, JINTRAC, GENE,
+   CGYRO, GS2, DREAM, Aurora, STRAHL, or EFIT.  The native solver stack now
+   exposes nonlinear 5D gyrokinetic state contracts, local electromagnetic
+   diagnostics, decomposition contracts, and fail-closed full-fidelity
+   benchmark gates, but production parity still requires same-case external
+   reference outputs and quantitative thresholds.  Treat the current public
+   evidence as a control-algorithm, native-kernel, and validation-framework
+   release, not as a completed production turbulence or reconstruction code.
 
 Key Features
 ------------
@@ -54,6 +56,9 @@ Key Features
   speedups with pure-Python fallback
 - **Real data validation** -- SPARC GEQDSK, ITER 15 MA baseline, ITPA
   H-mode confinement database
+- **Fail-closed full-fidelity campaign** -- explicit GENE/CGYRO/GS2,
+  DREAM, Aurora/STRAHL, FreeGS, electromagnetic, and decomposition blockers
+  tracked as reports rather than promoted to passes
 - **Graceful degradation** -- every module works without Rust, without
   SC-NeuroCore, without GPU
 

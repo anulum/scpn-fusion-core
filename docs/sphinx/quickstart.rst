@@ -50,6 +50,15 @@ from the `CFS SPARCPublic repository <https://github.com/cfs-energy/SPARCPublic>
 Run the Validation Suite
 ------------------------
 
+For the current full-fidelity production-parity snapshot, run the fail-closed
+campaign first::
+
+    python validation/full_fidelity_end_to_end_campaign.py
+
+This report is intentionally conservative.  Local contracts can pass while the
+overall campaign remains ``not_full_fidelity`` until same-case public outputs
+from external reference solvers are available.
+
 Generate an RMSE dashboard report comparing computed confinement times
 against the ITPA H-mode database and SPARC equilibrium topology::
 
@@ -151,25 +160,25 @@ Available Simulation Modes
      - Maturity
    * - ``kernel``
      - Grad-Shafranov equilibrium + 1.5D transport
-     - Production
+     - Validated local contract
    * - ``neuro-control``
-     - SNN-based cybernetic controller
-     - Production
+     - SNN-based controller
+     - Validated local contract
    * - ``optimal``
      - Model-predictive controller
-     - Production
+     - Validated local contract
    * - ``flight``
      - Real-time tokamak flight simulator
-     - Production
+     - Validated local contract
    * - ``digital-twin``
      - Live digital twin with RL policy
-     - Production
+     - Research contract
    * - ``safety``
      - ML disruption predictor
-     - Production
+     - Validated local contract
    * - ``control-room``
      - Integrated control room simulation
-     - Production
+     - Research contract
    * - ``optimizer``
      - Compact reactor design search (MVR-0.96)
      - Validated

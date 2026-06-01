@@ -96,6 +96,21 @@ GPU Acceleration Status
 GPU support is tracked through local-only governance notes and implemented
 through the public runtime surfaces below:
 
+Production-decomposition evidence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Production-scale decomposition is not accepted until distributed MPI or
+multi-GPU measurements exist.  The current public contract is::
+
+   python validation/benchmark_production_decomposition_contract.py
+
+It publishes radial/toroidal rank tiling, reciprocal neighbour checks, halo
+payload shapes, decomposition-invariant reductions, and local large-grid CPU
+timing evidence.  The latest tracked local large-grid row executes
+``9,437,184`` 5D phase cells over ``24`` local rank tiles with zero
+reconstruction error.  This is single-process CPU evidence only; it is not a
+cluster scaling or GPU throughput claim.
+
 **Phase 1: wgpu SOR kernel**
    Red-Black SOR stencil implemented as a ``wgpu`` compute shader,
    providing cross-platform GPU acceleration (Vulkan, Metal, D3D12,

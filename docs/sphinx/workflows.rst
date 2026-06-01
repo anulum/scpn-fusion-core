@@ -29,6 +29,39 @@ Default outputs:
 - ``validation/reports/rmse_dashboard.json``
 - ``validation/reports/rmse_dashboard.md``
 
+Full-Fidelity Campaign Snapshot
+-------------------------------
+
+Generate the fail-closed production-parity snapshot::
+
+    python validation/full_fidelity_end_to_end_campaign.py
+
+Default outputs:
+
+- ``validation/reports/full_fidelity_end_to_end_campaign.json``
+- ``validation/reports/full_fidelity_end_to_end_campaign.md``
+
+The snapshot must remain blocked when same-case external solver artefacts,
+thresholds, or distributed runtime measurements are missing.  Do not replace
+those rows with synthetic or reduced-order evidence.
+
+Production Decomposition Contract
+---------------------------------
+
+Refresh the production-decomposition contract and local large-grid CPU
+evidence::
+
+    python validation/benchmark_production_decomposition_contract.py
+
+Default outputs:
+
+- ``validation/reports/production_decomposition_contract.json``
+- ``validation/reports/production_decomposition_contract.md``
+
+Distributed MPI or multi-GPU measurements can be supplied through the
+``SCPN_PRODUCTION_DECOMPOSITION_DISTRIBUTED_RUNS_JSON`` environment variable.
+Incomplete rows remain blocked.
+
 Profiling
 ---------
 

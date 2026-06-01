@@ -7,6 +7,28 @@ real tokamaks.  The validation framework provides regression-grade
 checks that detect numerical regressions and ensure physically
 reasonable behaviour across releases.
 
+Full-Fidelity Campaign Gate
+---------------------------
+
+The production-parity gate is intentionally fail-closed::
+
+   python validation/full_fidelity_end_to_end_campaign.py
+
+The current gate distinguishes local solver contracts from accepted external
+reference parity.  Local nonlinear GK, electromagnetic, runaway, impurity,
+FreeGS, and decomposition contracts can be ready while the overall campaign is
+still ``not_full_fidelity``.  Accepted parity requires same-case reference
+outputs, redistributable artefacts, checksums, quantitative thresholds, and
+native solver-output comparisons.
+
+The primary public reports are:
+
+- ``validation/reports/full_fidelity_end_to_end_campaign.md``
+- ``validation/reports/full_fidelity_acceptance_benchmark.md``
+- ``validation/reports/full_fidelity_reference_artifact_conversion.md``
+- ``validation/reports/production_decomposition_contract.md``
+- ``validation/reports/gk_electromagnetic_fidelity.md``
+
 Validation Datasets
 --------------------
 
