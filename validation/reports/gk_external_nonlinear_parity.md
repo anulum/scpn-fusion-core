@@ -11,6 +11,7 @@ Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and na
 - Grid convergence ready: `False`
 - Production-scale scaling ready: `False`
 - Evidence package ready: `False`
+- Roadmap evidence surfaces ready: `False`
 - Solver-family completeness ready: `False`
 - Converted reference artefacts: `0`
 - Same-deck group reason: `missing_solver_family_same_deck_rows`
@@ -38,6 +39,32 @@ Strict fail-closed GENE/CGYRO/GS2 nonlinear GK external-output conversion and na
 | GENE | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
 | CGYRO | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
 | GS2 | `False` | `False` | `False` | `False` | `False` | `False` | `False` | `False` |
+
+## Roadmap evidence surface matrix
+
+| Solver | Surface | Ready | Required observables | Blockers |
+|---|---|:---:|---|---|
+| GENE | `nonlinear_distribution_output` | `False` | nonlinear_distribution_function, nonlinear_distribution_function_imag | missing_same_deck_external_observables, missing_observable:nonlinear_distribution_function, missing_observable:nonlinear_distribution_function_imag |
+| GENE | `heat_flux_spectra_time_kx_ky_species` | `False` | ion_heat_flux_spectrum, electron_heat_flux_spectrum | missing_same_deck_external_observables, missing_observable:ion_heat_flux_spectrum, missing_observable:electron_heat_flux_spectrum |
+| GENE | `field_energy_history_phi_apar_bpar` | `False` | electromagnetic_phi_energy, electromagnetic_apar_energy, electromagnetic_bpar_energy | missing_same_deck_external_observables, missing_observable:electromagnetic_phi_energy, missing_observable:electromagnetic_apar_energy, missing_observable:electromagnetic_bpar_energy |
+| GENE | `zonal_flow_and_saturation_metrics` | `False` | zonal_flow_energy, saturated_phi_rms | missing_same_deck_external_observables, missing_observable:zonal_flow_energy, missing_observable:saturated_phi_rms |
+| GENE | `native_same_case_solver_output_comparison` | `False` | - | missing_or_failed_native_same_case_thresholds |
+| GENE | `grid_convergence_evidence` | `False` | - | missing_grid_convergence_evidence |
+| GENE | `production_scale_scaling_evidence` | `False` | - | missing_production_scale_scaling_evidence |
+| CGYRO | `nonlinear_distribution_output` | `False` | nonlinear_distribution_function, nonlinear_distribution_function_imag | missing_same_deck_external_observables, missing_observable:nonlinear_distribution_function, missing_observable:nonlinear_distribution_function_imag |
+| CGYRO | `heat_flux_spectra_time_kx_ky_species` | `False` | ion_heat_flux_spectrum, electron_heat_flux_spectrum | missing_same_deck_external_observables, missing_observable:ion_heat_flux_spectrum, missing_observable:electron_heat_flux_spectrum |
+| CGYRO | `field_energy_history_phi_apar_bpar` | `False` | electromagnetic_phi_energy, electromagnetic_apar_energy, electromagnetic_bpar_energy | missing_same_deck_external_observables, missing_observable:electromagnetic_phi_energy, missing_observable:electromagnetic_apar_energy, missing_observable:electromagnetic_bpar_energy |
+| CGYRO | `zonal_flow_and_saturation_metrics` | `False` | zonal_flow_energy, saturated_phi_rms | missing_same_deck_external_observables, missing_observable:zonal_flow_energy, missing_observable:saturated_phi_rms |
+| CGYRO | `native_same_case_solver_output_comparison` | `False` | - | missing_or_failed_native_same_case_thresholds |
+| CGYRO | `grid_convergence_evidence` | `False` | - | missing_grid_convergence_evidence |
+| CGYRO | `production_scale_scaling_evidence` | `False` | - | missing_production_scale_scaling_evidence |
+| GS2 | `nonlinear_distribution_output` | `False` | nonlinear_distribution_function, nonlinear_distribution_function_imag | missing_same_deck_external_observables, missing_observable:nonlinear_distribution_function, missing_observable:nonlinear_distribution_function_imag |
+| GS2 | `heat_flux_spectra_time_kx_ky_species` | `False` | ion_heat_flux_spectrum, electron_heat_flux_spectrum | missing_same_deck_external_observables, missing_observable:ion_heat_flux_spectrum, missing_observable:electron_heat_flux_spectrum |
+| GS2 | `field_energy_history_phi_apar_bpar` | `False` | electromagnetic_phi_energy, electromagnetic_apar_energy, electromagnetic_bpar_energy | missing_same_deck_external_observables, missing_observable:electromagnetic_phi_energy, missing_observable:electromagnetic_apar_energy, missing_observable:electromagnetic_bpar_energy |
+| GS2 | `zonal_flow_and_saturation_metrics` | `False` | zonal_flow_energy, saturated_phi_rms | missing_same_deck_external_observables, missing_observable:zonal_flow_energy, missing_observable:saturated_phi_rms |
+| GS2 | `native_same_case_solver_output_comparison` | `False` | - | missing_or_failed_native_same_case_thresholds |
+| GS2 | `grid_convergence_evidence` | `False` | - | missing_grid_convergence_evidence |
+| GS2 | `production_scale_scaling_evidence` | `False` | - | missing_production_scale_scaling_evidence |
 
 ## Grid-convergence evidence matrix
 

@@ -17,10 +17,11 @@
     },
     "required_artifact_schema": "gk-nonlinear-external-output.v1",
     "required_evidence_surfaces": [
-      "same_deck_external_outputs",
-      "converted_reference_artifacts",
-      "converted_metadata",
-      "native_same_case_comparison",
+      "nonlinear_distribution_output",
+      "heat_flux_spectra_time_kx_ky_species",
+      "field_energy_history_phi_apar_bpar",
+      "zonal_flow_and_saturation_metrics",
+      "native_same_case_solver_output_comparison",
       "grid_convergence_evidence",
       "production_scale_scaling_evidence"
     ],
@@ -295,6 +296,366 @@
     "CGYRO",
     "GS2"
   ],
+  "roadmap_evidence_surface_matrix": [
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:nonlinear_distribution_function",
+        "missing_observable:nonlinear_distribution_function_imag"
+      ],
+      "case_id": null,
+      "description": "Complex 5D nonlinear distribution output over species, kx, ky, theta, vpar, and mu.",
+      "observable_presence": {
+        "nonlinear_distribution_function": false,
+        "nonlinear_distribution_function_imag": false
+      },
+      "ready": false,
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag"
+      ],
+      "solver_family": "GENE",
+      "surface": "nonlinear_distribution_output"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:ion_heat_flux_spectrum",
+        "missing_observable:electron_heat_flux_spectrum"
+      ],
+      "case_id": null,
+      "description": "Ion and electron heat-flux spectra over time and perpendicular spectral coordinates.",
+      "observable_presence": {
+        "electron_heat_flux_spectrum": false,
+        "ion_heat_flux_spectrum": false
+      },
+      "ready": false,
+      "required_observables": [
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum"
+      ],
+      "solver_family": "GENE",
+      "surface": "heat_flux_spectra_time_kx_ky_species"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:electromagnetic_phi_energy",
+        "missing_observable:electromagnetic_apar_energy",
+        "missing_observable:electromagnetic_bpar_energy"
+      ],
+      "case_id": null,
+      "description": "Electromagnetic field-energy histories for phi, A_parallel, and B_parallel.",
+      "observable_presence": {
+        "electromagnetic_apar_energy": false,
+        "electromagnetic_bpar_energy": false,
+        "electromagnetic_phi_energy": false
+      },
+      "ready": false,
+      "required_observables": [
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "solver_family": "GENE",
+      "surface": "field_energy_history_phi_apar_bpar"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:zonal_flow_energy",
+        "missing_observable:saturated_phi_rms"
+      ],
+      "case_id": null,
+      "description": "Zonal-flow energy and saturated phi RMS histories.",
+      "observable_presence": {
+        "saturated_phi_rms": false,
+        "zonal_flow_energy": false
+      },
+      "ready": false,
+      "required_observables": [
+        "zonal_flow_energy",
+        "saturated_phi_rms"
+      ],
+      "solver_family": "GENE",
+      "surface": "zonal_flow_and_saturation_metrics"
+    },
+    {
+      "blockers": [
+        "missing_or_failed_native_same_case_thresholds"
+      ],
+      "case_id": null,
+      "description": "Native same-case output comparison against converted external reference payload.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "GENE",
+      "surface": "native_same_case_solver_output_comparison"
+    },
+    {
+      "blockers": [
+        "missing_grid_convergence_evidence"
+      ],
+      "case_id": null,
+      "description": "Grid-refinement evidence linked to the converted solver-family case.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "GENE",
+      "surface": "grid_convergence_evidence"
+    },
+    {
+      "blockers": [
+        "missing_production_scale_scaling_evidence"
+      ],
+      "case_id": null,
+      "description": "Production-scale timing/scaling evidence linked to the converted solver-family case.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "GENE",
+      "surface": "production_scale_scaling_evidence"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:nonlinear_distribution_function",
+        "missing_observable:nonlinear_distribution_function_imag"
+      ],
+      "case_id": null,
+      "description": "Complex 5D nonlinear distribution output over species, kx, ky, theta, vpar, and mu.",
+      "observable_presence": {
+        "nonlinear_distribution_function": false,
+        "nonlinear_distribution_function_imag": false
+      },
+      "ready": false,
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag"
+      ],
+      "solver_family": "CGYRO",
+      "surface": "nonlinear_distribution_output"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:ion_heat_flux_spectrum",
+        "missing_observable:electron_heat_flux_spectrum"
+      ],
+      "case_id": null,
+      "description": "Ion and electron heat-flux spectra over time and perpendicular spectral coordinates.",
+      "observable_presence": {
+        "electron_heat_flux_spectrum": false,
+        "ion_heat_flux_spectrum": false
+      },
+      "ready": false,
+      "required_observables": [
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum"
+      ],
+      "solver_family": "CGYRO",
+      "surface": "heat_flux_spectra_time_kx_ky_species"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:electromagnetic_phi_energy",
+        "missing_observable:electromagnetic_apar_energy",
+        "missing_observable:electromagnetic_bpar_energy"
+      ],
+      "case_id": null,
+      "description": "Electromagnetic field-energy histories for phi, A_parallel, and B_parallel.",
+      "observable_presence": {
+        "electromagnetic_apar_energy": false,
+        "electromagnetic_bpar_energy": false,
+        "electromagnetic_phi_energy": false
+      },
+      "ready": false,
+      "required_observables": [
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "solver_family": "CGYRO",
+      "surface": "field_energy_history_phi_apar_bpar"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:zonal_flow_energy",
+        "missing_observable:saturated_phi_rms"
+      ],
+      "case_id": null,
+      "description": "Zonal-flow energy and saturated phi RMS histories.",
+      "observable_presence": {
+        "saturated_phi_rms": false,
+        "zonal_flow_energy": false
+      },
+      "ready": false,
+      "required_observables": [
+        "zonal_flow_energy",
+        "saturated_phi_rms"
+      ],
+      "solver_family": "CGYRO",
+      "surface": "zonal_flow_and_saturation_metrics"
+    },
+    {
+      "blockers": [
+        "missing_or_failed_native_same_case_thresholds"
+      ],
+      "case_id": null,
+      "description": "Native same-case output comparison against converted external reference payload.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "CGYRO",
+      "surface": "native_same_case_solver_output_comparison"
+    },
+    {
+      "blockers": [
+        "missing_grid_convergence_evidence"
+      ],
+      "case_id": null,
+      "description": "Grid-refinement evidence linked to the converted solver-family case.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "CGYRO",
+      "surface": "grid_convergence_evidence"
+    },
+    {
+      "blockers": [
+        "missing_production_scale_scaling_evidence"
+      ],
+      "case_id": null,
+      "description": "Production-scale timing/scaling evidence linked to the converted solver-family case.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "CGYRO",
+      "surface": "production_scale_scaling_evidence"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:nonlinear_distribution_function",
+        "missing_observable:nonlinear_distribution_function_imag"
+      ],
+      "case_id": null,
+      "description": "Complex 5D nonlinear distribution output over species, kx, ky, theta, vpar, and mu.",
+      "observable_presence": {
+        "nonlinear_distribution_function": false,
+        "nonlinear_distribution_function_imag": false
+      },
+      "ready": false,
+      "required_observables": [
+        "nonlinear_distribution_function",
+        "nonlinear_distribution_function_imag"
+      ],
+      "solver_family": "GS2",
+      "surface": "nonlinear_distribution_output"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:ion_heat_flux_spectrum",
+        "missing_observable:electron_heat_flux_spectrum"
+      ],
+      "case_id": null,
+      "description": "Ion and electron heat-flux spectra over time and perpendicular spectral coordinates.",
+      "observable_presence": {
+        "electron_heat_flux_spectrum": false,
+        "ion_heat_flux_spectrum": false
+      },
+      "ready": false,
+      "required_observables": [
+        "ion_heat_flux_spectrum",
+        "electron_heat_flux_spectrum"
+      ],
+      "solver_family": "GS2",
+      "surface": "heat_flux_spectra_time_kx_ky_species"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:electromagnetic_phi_energy",
+        "missing_observable:electromagnetic_apar_energy",
+        "missing_observable:electromagnetic_bpar_energy"
+      ],
+      "case_id": null,
+      "description": "Electromagnetic field-energy histories for phi, A_parallel, and B_parallel.",
+      "observable_presence": {
+        "electromagnetic_apar_energy": false,
+        "electromagnetic_bpar_energy": false,
+        "electromagnetic_phi_energy": false
+      },
+      "ready": false,
+      "required_observables": [
+        "electromagnetic_phi_energy",
+        "electromagnetic_apar_energy",
+        "electromagnetic_bpar_energy"
+      ],
+      "solver_family": "GS2",
+      "surface": "field_energy_history_phi_apar_bpar"
+    },
+    {
+      "blockers": [
+        "missing_same_deck_external_observables",
+        "missing_observable:zonal_flow_energy",
+        "missing_observable:saturated_phi_rms"
+      ],
+      "case_id": null,
+      "description": "Zonal-flow energy and saturated phi RMS histories.",
+      "observable_presence": {
+        "saturated_phi_rms": false,
+        "zonal_flow_energy": false
+      },
+      "ready": false,
+      "required_observables": [
+        "zonal_flow_energy",
+        "saturated_phi_rms"
+      ],
+      "solver_family": "GS2",
+      "surface": "zonal_flow_and_saturation_metrics"
+    },
+    {
+      "blockers": [
+        "missing_or_failed_native_same_case_thresholds"
+      ],
+      "case_id": null,
+      "description": "Native same-case output comparison against converted external reference payload.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "GS2",
+      "surface": "native_same_case_solver_output_comparison"
+    },
+    {
+      "blockers": [
+        "missing_grid_convergence_evidence"
+      ],
+      "case_id": null,
+      "description": "Grid-refinement evidence linked to the converted solver-family case.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "GS2",
+      "surface": "grid_convergence_evidence"
+    },
+    {
+      "blockers": [
+        "missing_production_scale_scaling_evidence"
+      ],
+      "case_id": null,
+      "description": "Production-scale timing/scaling evidence linked to the converted solver-family case.",
+      "observable_presence": {},
+      "ready": false,
+      "required_observables": [],
+      "solver_family": "GS2",
+      "surface": "production_scale_scaling_evidence"
+    }
+  ],
+  "roadmap_evidence_surfaces_ready": false,
   "same_deck_group": {
     "benchmark_case_id": null,
     "deck_physics_sha256": null,

@@ -113,6 +113,21 @@ def test_gk_external_output_parity_blocks_without_manifest(tmp_path: Path) -> No
     evidence = {row["solver_family"]: row for row in report["evidence_package_matrix"]}
     assert set(evidence) == {"GENE", "CGYRO", "GS2"}
     assert not any(row["ready"] for row in evidence.values())
+    surfaces = report["roadmap_evidence_surface_matrix"]
+    assert report["roadmap_evidence_surfaces_ready"] is False
+    assert len(surfaces) == 21
+    for row in surfaces:
+        assert row["ready"] is False
+        assert row["blockers"]
+    distribution_rows = [
+        row for row in surfaces if row["surface"] == "nonlinear_distribution_output"
+    ]
+    assert {row["solver_family"] for row in distribution_rows} == {"GENE", "CGYRO", "GS2"}
+    assert all(
+        set(row["required_observables"])
+        == {"nonlinear_distribution_function", "nonlinear_distribution_function_imag"}
+        for row in distribution_rows
+    )
 
 
 def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) -> None:
@@ -190,6 +205,21 @@ def test_gk_external_output_parity_converts_valid_public_output(tmp_path: Path) 
     assert all(completeness["GENE"]["observable_presence"].values())
     assert completeness["CGYRO"]["same_deck_reference_output_ready"] is False
     assert completeness["GS2"]["same_deck_reference_output_ready"] is False
+    surfaces = {
+        (row["solver_family"], row["surface"]): row
+        for row in report["roadmap_evidence_surface_matrix"]
+    }
+    assert surfaces[("GENE", "nonlinear_distribution_output")]["ready"] is True
+    assert surfaces[("GENE", "heat_flux_spectra_time_kx_ky_species")]["ready"] is True
+    assert surfaces[("GENE", "field_energy_history_phi_apar_bpar")]["ready"] is True
+    assert surfaces[("GENE", "zonal_flow_and_saturation_metrics")]["ready"] is True
+    assert (
+        surfaces[("GENE", "native_same_case_solver_output_comparison")]["ready"] is False
+    )
+    assert surfaces[("GENE", "grid_convergence_evidence")]["ready"] is True
+    assert surfaces[("GENE", "production_scale_scaling_evidence")]["ready"] is True
+    assert surfaces[("CGYRO", "nonlinear_distribution_output")]["ready"] is False
+    assert report["roadmap_evidence_surfaces_ready"] is False
 
     with np.load(tmp_path / gene["converted_artifact_path"], allow_pickle=False) as payload_npz:
         assert "nonlinear_distribution_function" in payload_npz.files

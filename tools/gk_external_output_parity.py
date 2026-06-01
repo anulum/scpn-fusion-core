@@ -51,6 +51,56 @@ REQUIRED_MANIFEST_CASE_FIELDS = (
     "redistribution_license",
     "sha256",
 )
+ROADMAP_EVIDENCE_SURFACES: tuple[dict[str, Any], ...] = (
+    {
+        "surface": "nonlinear_distribution_output",
+        "description": "Complex 5D nonlinear distribution output over species, kx, ky, theta, vpar, and mu.",
+        "required_observables": [
+            "nonlinear_distribution_function",
+            "nonlinear_distribution_function_imag",
+        ],
+    },
+    {
+        "surface": "heat_flux_spectra_time_kx_ky_species",
+        "description": "Ion and electron heat-flux spectra over time and perpendicular spectral coordinates.",
+        "required_observables": [
+            "ion_heat_flux_spectrum",
+            "electron_heat_flux_spectrum",
+        ],
+    },
+    {
+        "surface": "field_energy_history_phi_apar_bpar",
+        "description": "Electromagnetic field-energy histories for phi, A_parallel, and B_parallel.",
+        "required_observables": [
+            "electromagnetic_phi_energy",
+            "electromagnetic_apar_energy",
+            "electromagnetic_bpar_energy",
+        ],
+    },
+    {
+        "surface": "zonal_flow_and_saturation_metrics",
+        "description": "Zonal-flow energy and saturated phi RMS histories.",
+        "required_observables": [
+            "zonal_flow_energy",
+            "saturated_phi_rms",
+        ],
+    },
+    {
+        "surface": "native_same_case_solver_output_comparison",
+        "description": "Native same-case output comparison against converted external reference payload.",
+        "required_observables": [],
+    },
+    {
+        "surface": "grid_convergence_evidence",
+        "description": "Grid-refinement evidence linked to the converted solver-family case.",
+        "required_observables": [],
+    },
+    {
+        "surface": "production_scale_scaling_evidence",
+        "description": "Production-scale timing/scaling evidence linked to the converted solver-family case.",
+        "required_observables": [],
+    },
+)
 ALLOWED_REDISTRIBUTION_LICENSES = {
     "agpl-3.0-or-later",
     "apache-2.0",
@@ -670,12 +720,7 @@ def _evidence_package_contract(reference_case: dict[str, Any]) -> dict[str, Any]
             "required_linkage": "case_id must match converted same-deck output row",
         },
         "required_evidence_surfaces": [
-            "same_deck_external_outputs",
-            "converted_reference_artifacts",
-            "converted_metadata",
-            "native_same_case_comparison",
-            "grid_convergence_evidence",
-            "production_scale_scaling_evidence",
+            surface["surface"] for surface in ROADMAP_EVIDENCE_SURFACES
         ],
     }
 
@@ -739,6 +784,66 @@ def _evidence_package_matrix(
                 "solver_family": family,
             }
         )
+    return matrix
+
+
+def _roadmap_evidence_surface_matrix(
+    rows: list[dict[str, Any]],
+    *,
+    grid_ready_by_family: dict[str, bool],
+    scaling_ready_by_family: dict[str, bool],
+) -> list[dict[str, Any]]:
+    """Return explicit roadmap-surface readiness without promoting partial rows."""
+    matrix: list[dict[str, Any]] = []
+    row_by_family = {str(row["solver_family"]): row for row in rows}
+    for family in REQUIRED_SOLVER_FAMILIES:
+        row = row_by_family.get(family, _blocked_row(family, "blocked_missing_row"))
+        available_observables = {
+            str(observable) for observable in row.get("available_observables", [])
+        }
+        for surface_contract in ROADMAP_EVIDENCE_SURFACES:
+            surface = str(surface_contract["surface"])
+            required_observables = [str(name) for name in surface_contract["required_observables"]]
+            observable_presence = {
+                observable: observable in available_observables for observable in required_observables
+            }
+            missing_observables = [
+                observable
+                for observable, present in observable_presence.items()
+                if not present
+            ]
+            if required_observables:
+                ready = bool(row.get("reference_output_ready")) and not missing_observables
+                blockers = [] if ready else ["missing_same_deck_external_observables"]
+                blockers.extend(
+                    f"missing_observable:{observable}" for observable in missing_observables
+                )
+            elif surface == "native_same_case_solver_output_comparison":
+                ready = bool(row.get("native_same_case_comparison_ready")) and bool(
+                    row.get("native_same_case_comparison_passed")
+                )
+                blockers = [] if ready else ["missing_or_failed_native_same_case_thresholds"]
+            elif surface == "grid_convergence_evidence":
+                ready = bool(grid_ready_by_family.get(family, False))
+                blockers = [] if ready else ["missing_grid_convergence_evidence"]
+            elif surface == "production_scale_scaling_evidence":
+                ready = bool(scaling_ready_by_family.get(family, False))
+                blockers = [] if ready else ["missing_production_scale_scaling_evidence"]
+            else:
+                ready = False
+                blockers = ["unknown_roadmap_evidence_surface"]
+            matrix.append(
+                {
+                    "blockers": blockers,
+                    "case_id": row.get("case_id"),
+                    "description": str(surface_contract["description"]),
+                    "observable_presence": observable_presence,
+                    "ready": ready,
+                    "required_observables": required_observables,
+                    "solver_family": family,
+                    "surface": surface,
+                }
+            )
     return matrix
 
 
@@ -1154,6 +1259,14 @@ def build_gk_external_output_parity_report(
         grid_ready_by_family=grid_ready_by_family,
         scaling_ready_by_family=scaling_ready_by_family,
     )
+    roadmap_evidence_surface_matrix = _roadmap_evidence_surface_matrix(
+        rows,
+        grid_ready_by_family=grid_ready_by_family,
+        scaling_ready_by_family=scaling_ready_by_family,
+    )
+    roadmap_evidence_surfaces_ready = bool(roadmap_evidence_surface_matrix) and all(
+        bool(row["ready"]) for row in roadmap_evidence_surface_matrix
+    )
     evidence_package_ready = same_deck_ready and bool(evidence_package_matrix) and all(
         bool(row["ready"]) for row in evidence_package_matrix
     )
@@ -1165,6 +1278,7 @@ def build_gk_external_output_parity_report(
         and grid_ready
         and scaling_ready
         and evidence_package_ready
+        and roadmap_evidence_surfaces_ready
     )
     status = _report_status(
         manifest, reference_ready, same_deck_ready, native_ready, grid_ready, scaling_ready
@@ -1222,6 +1336,8 @@ def build_gk_external_output_parity_report(
         "production_scaling_rows": scaling_rows if isinstance(scaling_rows, list) else [],
         "reference_output_ready": reference_ready,
         "required_observables": reference_case["required_observables"],
+        "roadmap_evidence_surface_matrix": roadmap_evidence_surface_matrix,
+        "roadmap_evidence_surfaces_ready": roadmap_evidence_surfaces_ready,
         "required_solver_families": list(REQUIRED_SOLVER_FAMILIES),
         "schema": "gk-external-nonlinear-output-parity-report.v1",
         "same_deck_group": same_deck_group,
@@ -1255,6 +1371,7 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- Grid convergence ready: `{report['grid_convergence_ready']}`",
         f"- Production-scale scaling ready: `{report['production_scale_scaling_ready']}`",
         f"- Evidence package ready: `{report['evidence_package_ready']}`",
+        f"- Roadmap evidence surfaces ready: `{report['roadmap_evidence_surfaces_ready']}`",
         f"- Solver-family completeness ready: `{report['solver_family_completeness_ready']}`",
         f"- Converted reference artefacts: `{report['converted_reference_artifacts']}`",
         f"- Same-deck group reason: `{report['same_deck_group']['reason']}`",
@@ -1317,6 +1434,29 @@ def _markdown(report: dict[str, Any]) -> str:
                 grid=row["grid_convergence_evidence_ready"],
                 scaling=row["production_scale_scaling_evidence_ready"],
                 ready=row["ready"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Roadmap evidence surface matrix",
+            "",
+            "| Solver | Surface | Ready | Required observables | Blockers |",
+            "|---|---|:---:|---|---|",
+        ]
+    )
+    for row in report["roadmap_evidence_surface_matrix"]:
+        required_observables = (
+            ", ".join(row["required_observables"]) if row["required_observables"] else "-"
+        )
+        blockers = ", ".join(row["blockers"]) if row["blockers"] else "-"
+        lines.append(
+            "| {solver} | `{surface}` | `{ready}` | {observables} | {blockers} |".format(
+                solver=row["solver_family"],
+                surface=row["surface"],
+                ready=row["ready"],
+                observables=required_observables,
+                blockers=blockers,
             )
         )
     lines.extend(
