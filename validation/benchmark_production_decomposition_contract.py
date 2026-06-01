@@ -39,6 +39,9 @@ MD_REPORT = REPORT_DIR / "production_decomposition_contract.md"
 RELATIVE_REDUCTION_TOLERANCE = 1.0e-12
 RECONSTRUCTION_LINF_TOLERANCE = 0.0
 FLOAT64_BYTES = 8
+REQUIRED_DISTRIBUTED_RANK_COUNTS = [1, 2, 4, 8, 16, 32]
+MINIMUM_PARALLEL_EFFICIENCY = 0.70
+MINIMUM_WEAK_SCALING_EFFICIENCY = 0.80
 FACE_OPPOSITES = {
     "radial_lower": "radial_upper",
     "radial_upper": "radial_lower",
@@ -426,6 +429,37 @@ def _reciprocal_neighbour_graph_evidence(
     }
 
 
+def _distributed_scaling_gate_evidence(
+    communication_volume_evidence: dict[str, Any],
+) -> dict[str, Any]:
+    """Return fail-closed distributed runtime scaling acceptance evidence."""
+    estimated_halo_bytes = int(
+        communication_volume_evidence["total_halo_exchange_bytes_per_step"]
+    )
+    return {
+        "blocking_reason": (
+            "MPI or multi-GPU distributed runtime measurements are required "
+            "before production-scale decomposition can be accepted."
+        ),
+        "distributed_scaling_ready": False,
+        "estimated_halo_bytes_per_step": estimated_halo_bytes,
+        "measured_run_count": 0,
+        "measured_runs": [],
+        "minimum_parallel_efficiency_threshold": MINIMUM_PARALLEL_EFFICIENCY,
+        "minimum_weak_scaling_efficiency_threshold": MINIMUM_WEAK_SCALING_EFFICIENCY,
+        "required_measurements": [
+            "wall_time_s by rank count for the same physics deck",
+            "parallel efficiency relative to the one-rank baseline",
+            "weak-scaling efficiency at fixed owned phase cells per rank",
+            "hardware metadata for CPU, accelerator, interconnect, and driver stack",
+            "decomposition-invariant physics checks for every distributed run",
+        ],
+        "required_rank_counts": REQUIRED_DISTRIBUTED_RANK_COUNTS,
+        "schema": "production-decomposition-distributed-scaling-gate.v1",
+        "status": "blocked_missing_distributed_scaling_measurements",
+    }
+
+
 def _hardware_metadata() -> dict[str, Any]:
     return {
         "cpu_count": os.cpu_count(),
@@ -478,6 +512,9 @@ def run_benchmark() -> dict[str, Any]:
     )
     reciprocal_neighbour_graph_evidence = _reciprocal_neighbour_graph_evidence(
         production_plan, communication_contract_rows
+    )
+    distributed_scaling_gate_evidence = _distributed_scaling_gate_evidence(
+        communication_volume_evidence
     )
     local_cpu_shape_variant_plan = build_radial_toroidal_decomposition(
         n_radial=64,
@@ -562,6 +599,7 @@ def run_benchmark() -> dict[str, Any]:
         "cpu_benchmark_rows": cpu_benchmark_rows,
         "decomposition_invariant_pass": decomposition_invariant_pass,
         "distributed_communication_volume_evidence": communication_volume_evidence,
+        "distributed_scaling_gate_evidence": distributed_scaling_gate_evidence,
         "halo_face_integrity_evidence": halo_face_integrity_evidence,
         "halo_exchange_pass": halo_exchange_pass,
         "hardware_metadata": _hardware_metadata(),
@@ -583,6 +621,7 @@ def run_benchmark() -> dict[str, Any]:
             "large-grid cluster/GPU wall-time scaling report",
             "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
             "hardware-specific multi-rank throughput and efficiency thresholds",
+            "accepted distributed scaling gate over required rank counts",
         ],
     }
 
@@ -744,6 +783,38 @@ def write_reports(report: dict[str, Any]) -> None:
                 reciprocal_payload=row["reciprocal_payload_bytes"],
             )
         )
+    scaling = report["distributed_scaling_gate_evidence"]
+    lines.extend(
+        [
+            "",
+            "## Distributed scaling gate",
+            "",
+            f"- Schema: `{scaling['schema']}`",
+            f"- Status: `{scaling['status']}`",
+            f"- Distributed scaling ready: `{scaling['distributed_scaling_ready']}`",
+            f"- Measured run count: `{scaling['measured_run_count']}`",
+            (
+                "- Required rank counts: "
+                f"`{json.dumps(scaling['required_rank_counts'])}`"
+            ),
+            (
+                "- Minimum parallel efficiency threshold: "
+                f"`{scaling['minimum_parallel_efficiency_threshold']:.2f}`"
+            ),
+            (
+                "- Minimum weak-scaling efficiency threshold: "
+                f"`{scaling['minimum_weak_scaling_efficiency_threshold']:.2f}`"
+            ),
+            (
+                "- Estimated halo bytes per step: "
+                f"`{scaling['estimated_halo_bytes_per_step']}`"
+            ),
+            f"- Blocking reason: {scaling['blocking_reason']}",
+            "",
+            "Required measurements:",
+        ]
+    )
+    lines.extend(f"- {item}" for item in scaling["required_measurements"])
     lines.extend(
         [
             "",

@@ -210,6 +210,19 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert reciprocal["mismatched_link_count"] == 0
     assert reciprocal["max_payload_byte_asymmetry"] == 0
     assert all(row["link_pass"] for row in reciprocal["link_rows"])
+    scaling = report["distributed_scaling_gate_evidence"]
+    assert scaling["schema"] == "production-decomposition-distributed-scaling-gate.v1"
+    assert scaling["status"] == "blocked_missing_distributed_scaling_measurements"
+    assert scaling["distributed_scaling_ready"] is False
+    assert scaling["measured_run_count"] == 0
+    assert scaling["required_rank_counts"] == [1, 2, 4, 8, 16, 32]
+    assert scaling["minimum_parallel_efficiency_threshold"] == 0.7
+    assert scaling["minimum_weak_scaling_efficiency_threshold"] == 0.8
+    assert scaling["estimated_halo_bytes_per_step"] == communication_volume[
+        "total_halo_exchange_bytes_per_step"
+    ]
+    assert "MPI" in scaling["blocking_reason"]
+    assert "multi-GPU" in scaling["blocking_reason"]
     shape_evidence = report["same_physics_shape_convergence_evidence"]
     assert shape_evidence["schema"] == "production-decomposition-shape-convergence.v1"
     assert shape_evidence["shape_convergence_pass"] is True

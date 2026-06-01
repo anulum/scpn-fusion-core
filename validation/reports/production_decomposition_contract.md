@@ -253,13 +253,32 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 | 31 | radial_lower | 27 | radial_upper | 4194304 | 4194304 | `True` |
 | 31 | toroidal_lower | 30 | toroidal_upper | 4194304 | 4194304 | `True` |
 
+## Distributed scaling gate
+
+- Schema: `production-decomposition-distributed-scaling-gate.v1`
+- Status: `blocked_missing_distributed_scaling_measurements`
+- Distributed scaling ready: `False`
+- Measured run count: `0`
+- Required rank counts: `[1, 2, 4, 8, 16, 32]`
+- Minimum parallel efficiency threshold: `0.70`
+- Minimum weak-scaling efficiency threshold: `0.80`
+- Estimated halo bytes per step: `436207616`
+- Blocking reason: MPI or multi-GPU distributed runtime measurements are required before production-scale decomposition can be accepted.
+
+Required measurements:
+- wall_time_s by rank count for the same physics deck
+- parallel efficiency relative to the one-rank baseline
+- weak-scaling efficiency at fixed owned phase cells per rank
+- hardware metadata for CPU, accelerator, interconnect, and driver stack
+- decomposition-invariant physics checks for every distributed run
+
 ## Local CPU halo/invariant benchmark
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 8.412223e-02 | 6.232455e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 9.991319e-02 | 5.247435e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 1.051828e-01 | 4.984542e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 5.259111e-02 | 9.969138e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 1.491587e-01 | 3.514968e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 1.786316e-01 | 2.935024e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -274,9 +293,9 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 | Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 6.232455e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 5.247435e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 4.984542e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_4x2 | 8 | 524288 | 9.969138e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 3.514968e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 2.935024e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 
@@ -289,3 +308,4 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - large-grid cluster/GPU wall-time scaling report
 - same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes
 - hardware-specific multi-rank throughput and efficiency thresholds
+- accepted distributed scaling gate over required rank counts

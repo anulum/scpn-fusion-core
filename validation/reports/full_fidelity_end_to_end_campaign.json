@@ -172,7 +172,8 @@
         "MPI or multi-GPU distributed execution path over the declared rank tiles",
         "large-grid cluster/GPU wall-time scaling report",
         "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
-        "hardware-specific multi-rank throughput and efficiency thresholds"
+        "hardware-specific multi-rank throughput and efficiency thresholds",
+        "accepted distributed scaling gate over required rank counts"
       ],
       "reference_cases_ready": false,
       "sources": [],

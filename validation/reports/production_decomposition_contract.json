@@ -1182,8 +1182,8 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 6232454.625250802,
-      "elapsed_s": 0.08412223297636956,
+      "cells_per_second": 9969138.142237574,
+      "elapsed_s": 0.0525911059230566,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1208,8 +1208,8 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 5247435.194508461,
-      "elapsed_s": 0.09991319198161364,
+      "cells_per_second": 3514967.7105752435,
+      "elapsed_s": 0.14915869594551623,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1234,8 +1234,8 @@
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 4984542.479781197,
-      "elapsed_s": 0.10518277296796441,
+      "cells_per_second": 2935024.06124628,
+      "elapsed_s": 0.17863158497493714,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -2714,6 +2714,32 @@
     "status": "blocked_missing_distributed_runtime_execution",
     "total_halo_exchange_bytes_per_step": 436207616
   },
+  "distributed_scaling_gate_evidence": {
+    "blocking_reason": "MPI or multi-GPU distributed runtime measurements are required before production-scale decomposition can be accepted.",
+    "distributed_scaling_ready": false,
+    "estimated_halo_bytes_per_step": 436207616,
+    "measured_run_count": 0,
+    "measured_runs": [],
+    "minimum_parallel_efficiency_threshold": 0.7,
+    "minimum_weak_scaling_efficiency_threshold": 0.8,
+    "required_measurements": [
+      "wall_time_s by rank count for the same physics deck",
+      "parallel efficiency relative to the one-rank baseline",
+      "weak-scaling efficiency at fixed owned phase cells per rank",
+      "hardware metadata for CPU, accelerator, interconnect, and driver stack",
+      "decomposition-invariant physics checks for every distributed run"
+    ],
+    "required_rank_counts": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "schema": "production-decomposition-distributed-scaling-gate.v1",
+    "status": "blocked_missing_distributed_scaling_measurements"
+  },
   "halo_exchange_pass": true,
   "halo_face_integrity_evidence": {
     "case_id": "local_cpu_64x32_4x2",
@@ -3039,7 +3065,8 @@
     "MPI or multi-GPU distributed execution path over the declared rank tiles",
     "large-grid cluster/GPU wall-time scaling report",
     "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
-    "hardware-specific multi-rank throughput and efficiency thresholds"
+    "hardware-specific multi-rank throughput and efficiency thresholds",
+    "accepted distributed scaling gate over required rank counts"
   ],
   "parallel_moment_invariant_pass": true,
   "production_scale_ready": false,
@@ -5987,7 +6014,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 6232454.625250802,
+        "cells_per_second": 9969138.142237574,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -5998,7 +6025,7 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 5247435.194508461,
+        "cells_per_second": 3514967.7105752435,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6009,7 +6036,7 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 4984542.479781197,
+        "cells_per_second": 2935024.06124628,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
