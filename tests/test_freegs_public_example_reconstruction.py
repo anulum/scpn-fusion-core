@@ -47,6 +47,21 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     assert artifact["accepted_full_fidelity"] is False
     assert artifact["freegs_backend_available"] is True
+    strict = report["strict_free_boundary_parity_evidence"]
+    assert strict["schema"] == "strict-free-boundary-parity-evidence.v1"
+    assert strict["status"] == "blocked_strict_thresholds_or_grid_convergence_missing"
+    assert strict["native_same_case_profile_source_ready"] is True
+    assert strict["strict_threshold_acceptance_ready"] is False
+    assert strict["grid_convergence_ready"] is False
+    assert strict["coil_vacuum_sidecar_ready"] is False
+    assert strict["accepted_full_fidelity"] is False
+    assert strict["case_count"] == report["case_count"]
+    assert strict["failed_threshold_check_count"] >= 1
+    assert strict["blocking_requirements"] == [
+        "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
+        "grid convergence across public example resolutions",
+        "coil/vacuum reconstruction linked to public machine current sidecars",
+    ]
     for case in artifact["cases"]:
         vacuum = case["vacuum_green_function_comparison"]
         solve = case["nonlinear_solve_attempt"]
@@ -76,6 +91,12 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
             solve["status"]
             == "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
         )
+    assert any(
+        check["metric"] in {"psi_n_rmse", "axis_error_m", "xpoint_psi_n_error_max"}
+        and not check["passed"]
+        for case in strict["cases"]
+        for check in case["threshold_checks"]
+    )
 
 
 def test_freegs_reconstruction_preserves_tracked_report_when_backend_is_absent(

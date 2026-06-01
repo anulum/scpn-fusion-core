@@ -9,6 +9,7 @@
     "native_vs_FreeGS_vacuum_Green_function_residuals",
     "external_FreeGS_nonlinear_psi_shape_and_range",
     "native_same_case_profile_source_psi_N_RMSE_axis_current_boundary_metrics",
+    "strict_native_vs_FreeGS_threshold_checks",
     "external_nonlinear_backend_solve_status"
   ],
   "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
@@ -19,7 +20,7 @@
   ],
   "redistribution_license": "FreeGS LGPL-3.0-or-later",
   "reference_family": "FreeGS",
-  "sha256": "14fb7e3ef0173ad0defa82031f93895d2818b9d46a4bf1ac4e9ae626fe7e8200",
+  "sha256": "152dc1558914a1a7c65c4a15a29051c116544822f0bfa9efc7c316df8437a8b1",
   "solver_output_comparison_ready": true,
   "solver_output_comparison_status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
   "surface": "free_boundary_equilibrium"

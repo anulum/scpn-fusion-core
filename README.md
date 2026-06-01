@@ -114,7 +114,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | SPARC GEQDSK validation | 8 public EFIT equilibria; operator-source gate passes; row-level debug traces expose profile-source/free-boundary blockers | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
-| Free-boundary equilibrium validation | Public operator-source GEQDSK gate passes; FreeGS public-example vacuum comparison passes; native same-case profile-source metrics and finite signed-q sanity are published; strict parity remains blocked on thresholds, grid convergence, and public coil/vacuum sidecars | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_freegs_public_example_reconstruction.py` |
+| Free-boundary equilibrium validation | Public operator-source GEQDSK gate passes; FreeGS public-example vacuum comparison passes; native same-case profile-source metrics, finite signed-q sanity, and machine-readable strict threshold checks are published; strict parity remains blocked on thresholds, grid convergence, and public coil/vacuum sidecars | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_freegs_public_example_reconstruction.py` |
 | Full-fidelity end-to-end campaign | `not_full_fidelity`; local contracts ready, `0` accepted full-fidelity reference artefacts, and all six production-parity lanes remain fail-closed until external same-case evidence exists | `validation/reports/full_fidelity_end_to_end_campaign.md` |
 
 Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),
@@ -245,7 +245,9 @@ under the recorded Picard iteration sweep. The report now also publishes native
 fixed-boundary profile-source comparison metrics for `psi_N` RMSE, magnetic
 axis error, boundary error, sampled X-point constraint error, and current
 closure on the finite FreeGS grid, plus finite signed-q profile sanity from
-the solved public FreeGS equilibrium. Clean CI checkouts preserve the
+the solved public FreeGS equilibrium. The benchmark also emits per-case
+strict threshold checks and failed-check counts, so the blocker is explicit
+rather than inferred from summary prose. Clean CI checkouts preserve the
 tracked metadata and reconstruction evidence when gitignored public-source
 caches are absent, so full-suite report generation remains deterministic
 without promoting those partial artefacts to parity. Strict free-boundary parity remains

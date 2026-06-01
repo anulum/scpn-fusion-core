@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+- Added fail-closed FreeGS public-example strict threshold evidence with
+  per-case native-vs-FreeGS checks, failed-check counts, and readiness booleans
+  for threshold acceptance, grid convergence, and public coil/vacuum sidecars.
+
 - Added fail-closed native impurity transport-operator evidence that separates
   trace radial transport and charge-state artifact contracts from missing
   Aurora/STRAHL charge-state-resolved radial transport parity, external ADAS

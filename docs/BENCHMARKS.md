@@ -21,7 +21,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, rank communication contracts, and executable local rank-tile reductions pass; distributed MPI/multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence exists, PETSc/compiled `dreami` backend output is missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact exists, full radial transport parity is missing | `python tools/run_aurora_reference_artifact.py` |
-| Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum and native profile-source comparison metrics exist, strict thresholds/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
+| Free-boundary equilibrium strict parity | Blocked: FreeGS public-example vacuum, native profile-source comparison metrics, and explicit strict threshold checks exist; threshold acceptance/grid convergence/public coil sidecars are missing | `python validation/benchmark_freegs_public_example_reconstruction.py` |
 
 Source acquisition and conversion commands:
 
@@ -309,7 +309,9 @@ public examples. The same report now runs a native fixed-boundary profile-source
 comparison on the finite FreeGS psi grid and publishes `psi_N` RMSE, magnetic
 axis error, boundary error, sampled X-point constraint error, and current
 closure, plus finite signed-q profile sanity from the solved public FreeGS
-equilibrium. Clean CI checkouts preserve tracked machine-metadata and
+equilibrium. It also publishes machine-readable per-case threshold checks,
+failed-check counts, and readiness booleans for strict threshold acceptance,
+grid convergence, and public coil/vacuum sidecars. Clean CI checkouts preserve tracked machine-metadata and
 reconstruction reports when the gitignored public-source cache is absent, so
 the integrated campaign cannot erase prior public evidence during full-suite
 test order. Strict free-boundary parity remains fail-closed because strict

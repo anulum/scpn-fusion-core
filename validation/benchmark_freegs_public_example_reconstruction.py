@@ -637,7 +637,107 @@ def _blocked_status(cases: list[dict[str, Any]], backend_available: bool) -> str
     return "blocked_public_freegs_vacuum_or_backend_contract_failed"
 
 
+def _strict_threshold_checks(case: dict[str, Any]) -> list[dict[str, Any]]:
+    solve = case["nonlinear_solve_attempt"]
+    comparison = solve.get("native_same_case_profile_source_comparison", {})
+    thresholds = comparison.get("thresholds", {})
+    check_specs = [
+        ("psi_n_rmse", "<=", "psi_n_rmse"),
+        ("axis_error_m", "<=", "axis_error_m"),
+        ("current_closure_relative_error", "<=", "current_closure_relative_error"),
+        ("boundary_max_abs_error_wb", "<=", "boundary_max_abs_error_wb"),
+        ("xpoint_psi_n_error_max", "<=", "xpoint_psi_n_error"),
+    ]
+    checks: list[dict[str, Any]] = []
+    for metric, comparator, threshold_key in check_specs:
+        value = comparison.get(metric)
+        limit = thresholds.get(threshold_key)
+        valid = isinstance(value, int | float) and isinstance(limit, int | float)
+        passed = bool(valid and float(value) <= float(limit))
+        checks.append(
+            {
+                "comparator": comparator,
+                "limit": float(limit) if isinstance(limit, int | float) else None,
+                "metric": metric,
+                "passed": passed,
+                "valid": bool(valid),
+                "value": float(value) if isinstance(value, int | float) else None,
+            }
+        )
+    boundary_fraction = comparison.get("boundary_containment_fraction")
+    boundary_fraction_valid = isinstance(boundary_fraction, int | float)
+    checks.append(
+        {
+            "comparator": ">=",
+            "limit": 1.0,
+            "metric": "boundary_containment_fraction",
+            "passed": bool(boundary_fraction_valid and float(boundary_fraction) >= 1.0),
+            "valid": bool(boundary_fraction_valid),
+            "value": float(boundary_fraction) if boundary_fraction_valid else None,
+        }
+    )
+    q_sanity = comparison.get("q_profile_sanity", {})
+    q_pass = isinstance(q_sanity, dict) and q_sanity.get("status") == "pass_finite_signed_q_profile"
+    checks.append(
+        {
+            "comparator": "==",
+            "limit": "pass_finite_signed_q_profile",
+            "metric": "q_profile_sanity_status",
+            "passed": bool(q_pass),
+            "valid": isinstance(q_sanity, dict),
+            "value": q_sanity.get("status") if isinstance(q_sanity, dict) else None,
+        }
+    )
+    return checks
+
+
+def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    case_rows: list[dict[str, Any]] = []
+    failed_count = 0
+    for case in cases:
+        checks = _strict_threshold_checks(case)
+        failed = [check for check in checks if not bool(check["passed"])]
+        failed_count += len(failed)
+        solve = case["nonlinear_solve_attempt"]
+        case_rows.append(
+            {
+                "case_id": case["case_id"],
+                "external_nonlinear_output_ready": bool(case["external_nonlinear_output_ready"]),
+                "failed_threshold_check_count": len(failed),
+                "native_same_case_profile_source_ready": bool(
+                    solve.get("native_same_case_psi_comparison_ready", False)
+                ),
+                "strict_threshold_acceptance_ready": not failed,
+                "threshold_checks": checks,
+            }
+        )
+    native_ready = bool(cases) and all(
+        bool(row["native_same_case_profile_source_ready"]) for row in case_rows
+    )
+    threshold_ready = bool(cases) and failed_count == 0 and native_ready
+    grid_ready = False
+    sidecar_ready = False
+    return {
+        "schema": "strict-free-boundary-parity-evidence.v1",
+        "accepted_full_fidelity": False,
+        "blocking_requirements": [
+            "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
+            "grid convergence across public example resolutions",
+            "coil/vacuum reconstruction linked to public machine current sidecars",
+        ],
+        "case_count": len(cases),
+        "cases": case_rows,
+        "coil_vacuum_sidecar_ready": sidecar_ready,
+        "failed_threshold_check_count": failed_count,
+        "grid_convergence_ready": grid_ready,
+        "native_same_case_profile_source_ready": native_ready,
+        "status": "blocked_strict_thresholds_or_grid_convergence_missing",
+        "strict_threshold_acceptance_ready": threshold_ready,
+    }
+
+
 def _write_markdown(report: dict[str, Any]) -> None:
+    strict = report.get("strict_free_boundary_parity_evidence", {})
     lines = [
         "# FreeGS Public Example Reconstruction",
         "",
@@ -654,6 +754,13 @@ def _write_markdown(report: dict[str, Any]) -> None:
         f"- Vacuum comparison pass: `{report['vacuum_comparison_pass']}`",
         f"- External nonlinear output ready: `{report['external_nonlinear_output_ready']}`",
         f"- Native same-case comparison ready: `{report['native_same_case_psi_comparison_ready']}`",
+        (
+            "- Strict threshold acceptance ready: "
+            f"`{strict.get('strict_threshold_acceptance_ready', False)}`"
+        ),
+        f"- Grid convergence ready: `{strict.get('grid_convergence_ready', False)}`",
+        f"- Coil/vacuum sidecar ready: `{strict.get('coil_vacuum_sidecar_ready', False)}`",
+        (f"- Failed strict threshold checks: `{strict.get('failed_threshold_check_count', 0)}`"),
         f"- Accepted full fidelity: `{report['accepted_full_fidelity_ready']}`",
         f"- Artifact: `{report['artifact_path']}`",
         "",
@@ -675,6 +782,24 @@ def _write_markdown(report: dict[str, Any]) -> None:
                 status=solve["status"],
             )
         )
+    if strict:
+        lines.extend(["", "## Strict parity threshold checks", ""])
+        for case in strict["cases"]:
+            lines.append(f"### `{case['case_id']}`")
+            lines.append("")
+            lines.append("| Metric | Value | Comparator | Limit | Pass |")
+            lines.append("| --- | ---: | --- | ---: | ---: |")
+            for check in case["threshold_checks"]:
+                lines.append(
+                    "| {metric} | {value} | {comparator} | {limit} | {passed} |".format(
+                        metric=check["metric"],
+                        value=check["value"],
+                        comparator=check["comparator"],
+                        limit=check["limit"],
+                        passed=check["passed"],
+                    )
+                )
+            lines.append("")
     lines.extend(["", "## Missing full-fidelity requirements", ""])
     for item in report["missing_full_fidelity_requirements"]:
         lines.append(f"- {item}")
@@ -696,6 +821,9 @@ def _tracked_report_fallback() -> dict[str, Any] | None:
     fallback = dict(report)
     fallback["report_generation_mode"] = "tracked_report_fallback"
     fallback["source_cache_available"] = FREEGS_REPO.exists()
+    fallback["strict_free_boundary_parity_evidence"] = _strict_free_boundary_parity_evidence(
+        fallback.get("cases", [])
+    )
     return fallback
 
 
@@ -748,6 +876,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
             "native_vs_FreeGS_vacuum_Green_function_residuals",
             "external_FreeGS_nonlinear_psi_shape_and_range",
             "native_same_case_profile_source_psi_N_RMSE_axis_current_boundary_metrics",
+            "strict_native_vs_FreeGS_threshold_checks",
             "external_nonlinear_backend_solve_status",
         ],
         "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
@@ -786,6 +915,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "report_generation_mode": "external_backend_reconstruction",
         "source_cache_available": FREEGS_REPO.exists(),
         "status": metadata["solver_output_comparison_status"],
+        "strict_free_boundary_parity_evidence": _strict_free_boundary_parity_evidence(cases),
         "vacuum_comparison_pass": vacuum_pass,
     }
     if write:

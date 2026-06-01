@@ -13,6 +13,10 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 - Vacuum comparison pass: `True`
 - External nonlinear output ready: `True`
 - Native same-case comparison ready: `True`
+- Strict threshold acceptance ready: `False`
+- Grid convergence ready: `False`
+- Coil/vacuum sidecar ready: `False`
+- Failed strict threshold checks: `6`
 - Accepted full fidelity: `False`
 - Artifact: `validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json`
 
@@ -20,6 +24,33 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | freegs_01_test_tokamak_freeboundary | TestTokamak | 2.353629e-16 | True | 2.291811e-01 | 4.310348e-02 | `external_backend_solved_native_same_case_profile_source_compared_fail_closed` |
 | freegs_16_diiid_public_example | DIIID | 5.750194e-16 | True | 6.656438e-02 | 2.250000e-01 | `external_backend_solved_native_same_case_profile_source_compared_fail_closed` |
+
+## Strict parity threshold checks
+
+### `freegs_01_test_tokamak_freeboundary`
+
+| Metric | Value | Comparator | Limit | Pass |
+| --- | ---: | --- | ---: | ---: |
+| psi_n_rmse | 0.229181105368877 | <= | 0.05 | False |
+| axis_error_m | 0.043103481950417945 | <= | 0.025 | False |
+| current_closure_relative_error | 4.7578550031175836e-06 | <= | 0.05 | True |
+| boundary_max_abs_error_wb | 0.0 | <= | 1e-10 | True |
+| xpoint_psi_n_error_max | 0.2709460979429926 | <= | 0.05 | False |
+| boundary_containment_fraction | 1.0 | >= | 1.0 | True |
+| q_profile_sanity_status | pass_finite_signed_q_profile | == | pass_finite_signed_q_profile | True |
+
+### `freegs_16_diiid_public_example`
+
+| Metric | Value | Comparator | Limit | Pass |
+| --- | ---: | --- | ---: | ---: |
+| psi_n_rmse | 0.06656438258503716 | <= | 0.05 | False |
+| axis_error_m | 0.2250000000000001 | <= | 0.025 | False |
+| current_closure_relative_error | 1.0581304436254637e-05 | <= | 0.05 | True |
+| boundary_max_abs_error_wb | 0.0 | <= | 1e-10 | True |
+| xpoint_psi_n_error_max | 0.06964126692247141 | <= | 0.05 | False |
+| boundary_containment_fraction | 1.0 | >= | 1.0 | True |
+| q_profile_sanity_status | pass_finite_signed_q_profile | == | pass_finite_signed_q_profile | True |
+
 
 ## Missing full-fidelity requirements
 

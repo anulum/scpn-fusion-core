@@ -185,6 +185,15 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
             "missing_full_fidelity_requirements": [],
             "schema": "freegs-public-example-reconstruction-report.v1",
             "status": "not_run",
+            "strict_free_boundary_parity_evidence": {
+                "blocking_requirements": [],
+                "coil_vacuum_sidecar_ready": False,
+                "failed_threshold_check_count": 0,
+                "grid_convergence_ready": False,
+                "native_same_case_profile_source_ready": False,
+                "status": "not_run",
+                "strict_threshold_acceptance_ready": False,
+            },
             "vacuum_comparison_pass": False,
         }
     report = cast(
@@ -192,6 +201,18 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
     )
     if report.get("schema") != "freegs-public-example-reconstruction-report.v1":
         raise ValueError("FreeGS public example reconstruction schema mismatch")
+    report.setdefault(
+        "strict_free_boundary_parity_evidence",
+        {
+            "blocking_requirements": [],
+            "coil_vacuum_sidecar_ready": False,
+            "failed_threshold_check_count": 0,
+            "grid_convergence_ready": False,
+            "native_same_case_profile_source_ready": False,
+            "status": "not_run",
+            "strict_threshold_acceptance_ready": False,
+        },
+    )
     return report
 
 
@@ -227,6 +248,10 @@ def run_campaign() -> dict[str, Any]:
     production_decomposition = _load_production_decomposition()
     free_boundary_machine_metadata = _load_free_boundary_machine_metadata()
     freegs_public_reconstruction = _load_freegs_public_reconstruction()
+    free_boundary_strict = cast(
+        dict[str, Any],
+        freegs_public_reconstruction["strict_free_boundary_parity_evidence"],
+    )
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
     runaway_operator = runaway["native_kinetic_operator_evidence"]
@@ -341,7 +366,8 @@ def run_campaign() -> dict[str, Any]:
             "reference_cases_ready": False,
             "sources": _sources_for(registry, "free_boundary_equilibrium"),
             "next_required_evidence": (
-                freegs_public_reconstruction["missing_full_fidelity_requirements"]
+                free_boundary_strict["blocking_requirements"]
+                or freegs_public_reconstruction["missing_full_fidelity_requirements"]
                 or free_boundary_machine_metadata["missing_full_fidelity_requirements"]
                 or [
                     "public coil-current sidecars or machine coil metadata for GEQDSK rows",
@@ -463,6 +489,19 @@ def run_campaign() -> dict[str, Any]:
             freegs_public_reconstruction.get("external_nonlinear_output_ready", False)
         ),
         "freegs_public_example_reconstruction_status": str(freegs_public_reconstruction["status"]),
+        "free_boundary_strict_threshold_acceptance_ready": bool(
+            free_boundary_strict["strict_threshold_acceptance_ready"]
+        ),
+        "free_boundary_grid_convergence_ready": bool(
+            free_boundary_strict["grid_convergence_ready"]
+        ),
+        "free_boundary_coil_vacuum_sidecar_ready": bool(
+            free_boundary_strict["coil_vacuum_sidecar_ready"]
+        ),
+        "free_boundary_failed_threshold_check_count": int(
+            free_boundary_strict["failed_threshold_check_count"]
+        ),
+        "free_boundary_strict_parity_status": str(free_boundary_strict["status"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
@@ -610,6 +649,23 @@ def write_reports(report: dict[str, Any]) -> None:
             "- FreeGS public example reconstruction status: "
             f"`{report['freegs_public_example_reconstruction_status']}`"
         ),
+        (
+            "- Free-boundary strict threshold acceptance ready: "
+            f"`{report['free_boundary_strict_threshold_acceptance_ready']}`"
+        ),
+        (
+            "- Free-boundary grid convergence ready: "
+            f"`{report['free_boundary_grid_convergence_ready']}`"
+        ),
+        (
+            "- Free-boundary coil/vacuum sidecar ready: "
+            f"`{report['free_boundary_coil_vacuum_sidecar_ready']}`"
+        ),
+        (
+            "- Free-boundary failed threshold checks: "
+            f"`{report['free_boundary_failed_threshold_check_count']}`"
+        ),
+        (f"- Free-boundary strict parity status: `{report['free_boundary_strict_parity_status']}`"),
         f"- Local contracts ready: `{report['all_locally_actionable_contracts_ready']}`",
         f"- Reference parity ready: `{report['reference_parity_ready']}`",
         "",

@@ -53,6 +53,11 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - FreeGS public example vacuum comparison pass: `True`
 - FreeGS public example external output ready: `True`
 - FreeGS public example reconstruction status: `blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars`
+- Free-boundary strict threshold acceptance ready: `False`
+- Free-boundary grid convergence ready: `False`
+- Free-boundary coil/vacuum sidecar ready: `False`
+- Free-boundary failed threshold checks: `6`
+- Free-boundary strict parity status: `blocked_strict_thresholds_or_grid_convergence_missing`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
 
