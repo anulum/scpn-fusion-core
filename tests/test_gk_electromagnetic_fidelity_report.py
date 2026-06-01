@@ -136,10 +136,11 @@ def test_gk_electromagnetic_fidelity_report_records_sourced_maxwell_future_contr
     contract = report["sourced_maxwell_contract"]
     assert contract["schema"] == "gk-sourced-maxwell-contract.v1"
     assert contract["sourced_maxwell_ready"] is False
-    assert contract["status"] == "blocked_sourced_maxwell_requires_continuity_and_field_coupling"
+    assert contract["status"] == "blocked_sourced_maxwell_requires_self_consistent_field_coupling"
     assert contract["current_moment_ready"] is True
     assert contract["current_moment_history_ready"] is True
-    assert contract["continuity_residual_history_ready"] is False
+    assert contract["continuity_residual_history_ready"] is True
+    assert contract["self_consistent_sourced_field_evolution_ready"] is False
     assert "J_parallel(kx, ky, t)" in contract["required_inputs"]
     assert "rho_charge(kx, ky, t)" in contract["required_inputs"]
     assert (
@@ -153,22 +154,27 @@ def test_gk_electromagnetic_fidelity_report_extracts_time_resolved_current_momen
 
     evidence = report["sourced_current_moment_evidence"]
     assert evidence["schema"] == "gk-sourced-current-moment-evidence.v1"
-    assert evidence["status"] == "accepted_time_resolved_current_moments_continuity_missing"
+    assert evidence["status"] == "accepted_time_resolved_current_and_continuity_proxy_field_coupling_missing"
     assert evidence["current_moment_ready"] is True
     assert evidence["current_moment_source"] == "native_time_resolved_5d_distribution_state"
     assert evidence["phase_space_source_shape"] == [2, 4, 4, 8, 5, 4]
     assert evidence["j_parallel_shape"] == [5, 4, 4]
+    assert evidence["j_kx_shape"] == [5, 4, 4]
+    assert evidence["j_ky_shape"] == [5, 4, 4]
     assert evidence["charge_density_shape"] == [5, 4, 4]
     assert evidence["time_resolved_current_history_ready"] is True
-    assert evidence["continuity_residual_history_ready"] is False
-    assert evidence["continuity_residual_status"] == "blocked_missing_perpendicular_current_moment_history"
+    assert evidence["perpendicular_current_history_ready"] is True
+    assert evidence["continuity_residual_history_ready"] is True
+    assert evidence["continuity_residual_status"] == "accepted_spectral_continuity_proxy_not_sourced_field_coupling"
     assert evidence["d_charge_dt_ready"] is True
+    assert evidence["continuity_relative_residual_max"] <= evidence["continuity_relative_residual_tolerance"]
     assert evidence["j_parallel_l2_norm_max"] > 0.0
     assert evidence["charge_density_l2_norm_max"] > 0.0
     residual_rows = evidence["sourced_ampere_maxwell_residual_rows"]
     assert len(residual_rows) == 1
     assert residual_rows[0]["ready"] is False
     assert residual_rows[0]["status"] == "blocked_missing_sourced_field_evolution_terms"
+    assert "missing_self_consistent_displacement_current_from_sourced_field_evolution" in residual_rows[0]["blockers"]
 
 
 def test_gk_electromagnetic_fidelity_report_records_native_same_case_thresholds() -> None:

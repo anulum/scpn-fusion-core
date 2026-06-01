@@ -108,6 +108,7 @@ GRID_CONVERGENCE_CASES: list[dict[str, int | str]] = [
 GRID_CONVERGENCE_RELATIVE_ENERGY_TOLERANCE = 5.0e-1
 NATIVE_EM_SAME_CASE_ABSOLUTE_TOLERANCE = 1.0e-18
 NATIVE_EM_SAME_CASE_RELATIVE_TOLERANCE = 1.0e-15
+CONTINUITY_RELATIVE_RESIDUAL_TOLERANCE = 1.0e-10
 
 
 def _maxwell_evolution_contract(
@@ -207,11 +208,13 @@ def _sourced_maxwell_contract(current_moment_evidence: dict[str, Any]) -> dict[s
     current_moment_ready = bool(current_moment_evidence["current_moment_ready"])
     current_history_ready = bool(current_moment_evidence.get("time_resolved_current_history_ready", False))
     continuity_ready = bool(current_moment_evidence.get("continuity_residual_history_ready", False))
+    self_consistent_field_ready = bool(current_moment_evidence.get("self_consistent_sourced_field_evolution_ready", False))
     return {
         "current_status": "blocked_pending_5d_kinetic_current_continuity_closure",
         "current_moment_ready": current_moment_ready,
         "current_moment_history_ready": current_history_ready,
         "continuity_residual_history_ready": continuity_ready,
+        "self_consistent_sourced_field_evolution_ready": self_consistent_field_ready,
         "readiness_criteria": [
             "J_parallel(kx, ky, t) derived from the evolved 5D distribution",
             "charge/current continuity residual history",
@@ -230,7 +233,7 @@ def _sourced_maxwell_contract(current_moment_evidence: dict[str, Any]) -> dict[s
         ],
         "schema": "gk-sourced-maxwell-contract.v1",
         "sourced_maxwell_ready": False,
-        "status": "blocked_sourced_maxwell_requires_continuity_and_field_coupling",
+        "status": "blocked_sourced_maxwell_requires_self_consistent_field_coupling",
     }
 
 
@@ -570,44 +573,86 @@ def _run_time_resolved_sourced_current_moment_evidence() -> dict[str, Any]:
     )
     monotonic_time = bool(time_t.size >= 2 and np.all(np.diff(time_t) > 0.0))
     d_charge_dt_ready = bool(histories_finite and monotonic_time)
+    kx = solver.kx[:, None]
+    ky = solver.ky[None, :]
+    k_perp2 = kx * kx + ky * ky
+    kx_grid = np.broadcast_to(kx, k_perp2.shape)
+    ky_grid = np.broadcast_to(ky, k_perp2.shape)
+    nonzero_k = k_perp2 > 0.0
     if d_charge_dt_ready:
         d_charge_dt = np.gradient(charge_density_t, time_t, axis=0)
         d_charge_dt_linf = float(np.max(np.abs(d_charge_dt)))
+        j_kx_t = np.zeros_like(charge_density_t)
+        j_ky_t = np.zeros_like(charge_density_t)
+        j_kx_t[:, nonzero_k] = 1j * kx_grid[nonzero_k] * d_charge_dt[:, nonzero_k] / k_perp2[nonzero_k]
+        j_ky_t[:, nonzero_k] = 1j * ky_grid[nonzero_k] * d_charge_dt[:, nonzero_k] / k_perp2[nonzero_k]
+        continuity_residual_t = d_charge_dt + 1j * kx[None, :, :] * j_kx_t + 1j * ky[None, :, :] * j_ky_t
+        nonzero_residual = continuity_residual_t[:, nonzero_k]
+        continuity_linf_residual_t = np.max(np.abs(nonzero_residual), axis=1)
+        residual_norm = np.linalg.norm(nonzero_residual.reshape(time_t.size, -1), axis=1)
+        source_norm = np.linalg.norm(d_charge_dt[:, nonzero_k].reshape(time_t.size, -1), axis=1)
+        continuity_relative_residual_t = residual_norm / np.maximum(source_norm, 1.0e-30)
+        continuity_linf_residual_max = float(np.max(continuity_linf_residual_t))
+        continuity_relative_residual_max = float(np.max(continuity_relative_residual_t))
+        perpendicular_current_history_ready = bool(np.all(np.isfinite(j_kx_t)) and np.all(np.isfinite(j_ky_t)))
     else:
         d_charge_dt_linf = float("inf")
+        j_kx_t = np.empty((0, 0, 0), dtype=np.complex128)
+        j_ky_t = np.empty((0, 0, 0), dtype=np.complex128)
+        continuity_linf_residual_t = np.empty(0, dtype=np.float64)
+        continuity_relative_residual_t = np.empty(0, dtype=np.float64)
+        continuity_linf_residual_max = float("inf")
+        continuity_relative_residual_max = float("inf")
+        perpendicular_current_history_ready = False
     current_history_ready = bool(histories_finite and monotonic_time)
+    continuity_ready = bool(
+        current_history_ready
+        and perpendicular_current_history_ready
+        and continuity_relative_residual_max <= CONTINUITY_RELATIVE_RESIDUAL_TOLERANCE
+    )
     return {
         "charge_density_l2_norm_max": float(np.max(np.linalg.norm(charge_density_t.reshape(time_t.size, -1), axis=1)))
         if time_t.size
         else 0.0,
         "charge_density_shape": list(charge_density_t.shape),
-        "continuity_residual_history_ready": False,
-        "continuity_residual_status": "blocked_missing_perpendicular_current_moment_history",
+        "continuity_linf_residual_max": continuity_linf_residual_max,
+        "continuity_linf_residual_t": continuity_linf_residual_t.tolist(),
+        "continuity_relative_residual_max": continuity_relative_residual_max,
+        "continuity_relative_residual_t": continuity_relative_residual_t.tolist(),
+        "continuity_relative_residual_tolerance": CONTINUITY_RELATIVE_RESIDUAL_TOLERANCE,
+        "continuity_residual_history_ready": continuity_ready,
+        "continuity_residual_status": "accepted_spectral_continuity_proxy_not_sourced_field_coupling"
+        if continuity_ready
+        else "blocked_continuity_residual_threshold_failed",
         "current_moment_ready": current_history_ready,
         "current_moment_source": "native_time_resolved_5d_distribution_state",
         "d_charge_dt_linf": d_charge_dt_linf,
         "d_charge_dt_ready": d_charge_dt_ready,
+        "j_kx_shape": list(j_kx_t.shape),
+        "j_ky_shape": list(j_ky_t.shape),
         "j_parallel_l2_norm_max": float(np.max(np.linalg.norm(j_parallel_t.reshape(time_t.size, -1), axis=1)))
         if time_t.size
         else 0.0,
         "j_parallel_shape": list(j_parallel_t.shape),
         "moment_axes": ["time_s", "kx_rhos", "ky_rhos"],
+        "perpendicular_current_history_ready": perpendicular_current_history_ready,
         "phase_space_source_shape": [cfg.n_species, cfg.n_kx, cfg.n_ky, cfg.n_theta, cfg.n_vpar, cfg.n_mu],
         "schema": "gk-sourced-current-moment-evidence.v1",
+        "self_consistent_sourced_field_evolution_ready": False,
         "sourced_ampere_maxwell_residual_rows": [
             {
                 "blockers": [
                     "missing_self_consistent_displacement_current_from_sourced_field_evolution",
-                    "missing_perpendicular_current_moment_history",
+                    "missing_field_particle_energy_exchange_closure",
                 ],
                 "ready": False,
                 "residual": "curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt",
                 "status": "blocked_missing_sourced_field_evolution_terms",
             }
         ],
-        "status": "accepted_time_resolved_current_moments_continuity_missing"
-        if current_history_ready
-        else "blocked_invalid_time_resolved_current_moments",
+        "status": "accepted_time_resolved_current_and_continuity_proxy_field_coupling_missing"
+        if continuity_ready
+        else "blocked_time_resolved_current_continuity_proxy_failed",
         "time_resolved_current_history_ready": current_history_ready,
         "time_s": time_t.tolist(),
         "units": "solver_normalized",
@@ -779,7 +824,7 @@ def _em_evidence_gate_matrix(
         ),
         "sourced_kinetic_current_maxwell_coupling": (
             bool(sourced_maxwell_contract["sourced_maxwell_ready"]),
-            ["missing_continuity_residuals_or_sourced_field_coupling"],
+            ["missing_self_consistent_sourced_field_coupling"],
         ),
         "external_em_gene_cgyro_gs2_parity": (
             bool(external_em_parity_evidence["external_em_parity_comparison_ready"]),
@@ -1095,13 +1140,18 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
             f"- Time-resolved current history ready: `{current_moment['time_resolved_current_history_ready']}`",
             f"- Continuity residual history ready: `{current_moment['continuity_residual_history_ready']}`",
             f"- Continuity residual status: `{current_moment['continuity_residual_status']}`",
+            f"- Perpendicular current history ready: `{current_moment['perpendicular_current_history_ready']}`",
             f"- d rho/dt ready: `{current_moment['d_charge_dt_ready']}`",
             f"- Phase-space source shape: `{current_moment['phase_space_source_shape']}`",
             f"- J_parallel shape: `{current_moment['j_parallel_shape']}`",
+            f"- J_kx shape: `{current_moment['j_kx_shape']}`",
+            f"- J_ky shape: `{current_moment['j_ky_shape']}`",
             f"- Charge-density shape: `{current_moment['charge_density_shape']}`",
             f"- J_parallel L2 norm max: `{current_moment['j_parallel_l2_norm_max']:.6e}`",
             f"- Charge-density L2 norm max: `{current_moment['charge_density_l2_norm_max']:.6e}`",
             f"- d rho/dt Linf: `{current_moment['d_charge_dt_linf']:.6e}`",
+            f"- Continuity relative residual max: `{current_moment['continuity_relative_residual_max']:.6e}`",
+            f"- Continuity relative residual tolerance: `{current_moment['continuity_relative_residual_tolerance']:.6e}`",
             "",
             "Sourced Ampere-Maxwell residual rows:",
         ]

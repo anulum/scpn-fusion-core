@@ -54,7 +54,7 @@
     },
     {
       "blockers": [
-        "missing_continuity_residuals_or_sourced_field_coupling"
+        "missing_self_consistent_sourced_field_coupling"
       ],
       "description": "Sourced Maxwell evolution is coupled to current moments from the evolved 5D GK state.",
       "ready": false,
@@ -457,12 +457,39 @@
       4,
       4
     ],
-    "continuity_residual_history_ready": false,
-    "continuity_residual_status": "blocked_missing_perpendicular_current_moment_history",
+    "continuity_linf_residual_max": 6.938893903907228e-18,
+    "continuity_linf_residual_t": [
+      6.938893903907228e-18,
+      4.9065389333867974e-18,
+      1.939479807224432e-18,
+      1.7482234731686756e-18,
+      5.204452764587508e-18
+    ],
+    "continuity_relative_residual_max": 1.5365614198569202e-16,
+    "continuity_relative_residual_t": [
+      1.5365614198569202e-16,
+      1.218794815797392e-16,
+      6.683351509118181e-17,
+      6.764839080478015e-17,
+      1.0881086732951633e-16
+    ],
+    "continuity_relative_residual_tolerance": 1e-10,
+    "continuity_residual_history_ready": true,
+    "continuity_residual_status": "accepted_spectral_continuity_proxy_not_sourced_field_coupling",
     "current_moment_ready": true,
     "current_moment_source": "native_time_resolved_5d_distribution_state",
     "d_charge_dt_linf": 0.03656263994286688,
     "d_charge_dt_ready": true,
+    "j_kx_shape": [
+      5,
+      4,
+      4
+    ],
+    "j_ky_shape": [
+      5,
+      4,
+      4
+    ],
     "j_parallel_l2_norm_max": 0.0006648935249389875,
     "j_parallel_shape": [
       5,
@@ -474,6 +501,7 @@
       "kx_rhos",
       "ky_rhos"
     ],
+    "perpendicular_current_history_ready": true,
     "phase_space_source_shape": [
       2,
       4,
@@ -483,18 +511,19 @@
       4
     ],
     "schema": "gk-sourced-current-moment-evidence.v1",
+    "self_consistent_sourced_field_evolution_ready": false,
     "sourced_ampere_maxwell_residual_rows": [
       {
         "blockers": [
           "missing_self_consistent_displacement_current_from_sourced_field_evolution",
-          "missing_perpendicular_current_moment_history"
+          "missing_field_particle_energy_exchange_closure"
         ],
         "ready": false,
         "residual": "curl_B_minus_mu0_J_minus_mu0_epsilon0_dE_dt",
         "status": "blocked_missing_sourced_field_evolution_terms"
       }
     ],
-    "status": "accepted_time_resolved_current_moments_continuity_missing",
+    "status": "accepted_time_resolved_current_and_continuity_proxy_field_coupling_missing",
     "time_resolved_current_history_ready": true,
     "time_s": [
       0.0,
@@ -506,7 +535,7 @@
     "units": "solver_normalized"
   },
   "sourced_maxwell_contract": {
-    "continuity_residual_history_ready": false,
+    "continuity_residual_history_ready": true,
     "current_moment_history_ready": true,
     "current_moment_ready": true,
     "current_status": "blocked_pending_5d_kinetic_current_continuity_closure",
@@ -527,8 +556,9 @@
       "continuity_residual(kx, ky, t)"
     ],
     "schema": "gk-sourced-maxwell-contract.v1",
+    "self_consistent_sourced_field_evolution_ready": false,
     "sourced_maxwell_ready": false,
-    "status": "blocked_sourced_maxwell_requires_continuity_and_field_coupling"
+    "status": "blocked_sourced_maxwell_requires_self_consistent_field_coupling"
   },
   "sourced_maxwell_ready": false,
   "status": "blocked_missing_external_em_parity_outputs"
