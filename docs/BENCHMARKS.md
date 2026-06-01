@@ -283,13 +283,16 @@ over `8 x 4` rank tiles with exact owned-cell balance and halo overhead
 reported. The local CPU gate also runs serial reference halo exchange,
 owned-state reconstruction, and decomposition-invariant inventory/free-energy
 checks on reproducible 5D phase-space payloads across multiple decomposition
-shapes. The tracked report now includes per-rank halo-face integrity evidence
-for radial/toroidal face payloads, plus same-physics shape-convergence evidence
-across `4x2`, `8x1`, and `2x4` radial/toroidal rank shapes with maximum
-inventory relative deviation `0.0`, maximum free-energy relative deviation
-`3.3306658974988877e-16`, and maximum owned-state reconstruction error `0.0`.
-This is still not distributed runtime evidence; MPI or multi-GPU execution,
-cluster timing, and hardware-specific scaling thresholds remain required.
+shapes. The local invariant surface now also preserves a normalized-`vpar`
+parallel-flow moment across decomposed rank reductions. The tracked report now
+includes per-rank halo-face integrity evidence for radial/toroidal face
+payloads, plus same-physics shape-convergence evidence across `4x2`, `8x1`,
+and `2x4` radial/toroidal rank shapes with maximum inventory relative deviation
+`0.0`, maximum free-energy relative deviation `3.3306658974988877e-16`,
+maximum parallel-moment relative deviation `0.0`, and maximum owned-state
+reconstruction error `0.0`. This is still not distributed runtime evidence;
+MPI or multi-GPU execution, cluster timing, and hardware-specific scaling
+thresholds remain required.
 
 The free-boundary public machine-metadata inventory is tracked in
 [`validation/reports/free_boundary_public_machine_metadata_inventory.md`](../validation/reports/free_boundary_public_machine_metadata_inventory.md).
@@ -1050,7 +1053,8 @@ Faraday/Ampere-Maxwell evolution evidence plus native deterministic same-case
 thresholds while still requiring phi, `A_parallel`, and `B_parallel`
 field-energy histories for future GENE/CGYRO/GS2 same-case parity.
 The production-scale lane now distinguishes a passing decomposition contract
-and executable local rank-tile reductions from actual distributed runtime
+and executable local rank-tile reductions, including inventory, free-energy,
+and normalized parallel-moment invariants, from actual distributed runtime
 readiness: `production_scale_ready` remains false until MPI or multi-GPU
 execution and scaling reports exist.
 

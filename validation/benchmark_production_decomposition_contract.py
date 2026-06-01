@@ -79,13 +79,16 @@ def _cpu_benchmark_row(case_id: str, plan: GKDomainDecompositionPlan) -> dict[st
         "free_energy_relative_error": metrics.free_energy_relative_error,
         "global_free_energy": metrics.global_free_energy,
         "global_inventory": metrics.global_inventory,
+        "global_parallel_moment": metrics.global_parallel_moment,
         "global_shape": list(metrics.global_shape),
         "halo_exchange_pass": metrics.halo_exchange_pass,
         "inventory_relative_error": metrics.inventory_relative_error,
         "local_decomposed_execution_pass": metrics.decomposition_invariant_pass,
         "local_free_energy": metrics.local_free_energy,
         "local_inventory": metrics.local_inventory,
+        "local_parallel_moment": metrics.local_parallel_moment,
         "owned_phase_cells": cell_count,
+        "parallel_moment_relative_error": metrics.parallel_moment_relative_error,
         "rank_count": metrics.rank_count,
         "reconstruction_linf_error": metrics.reconstruction_linf_error,
     }
@@ -109,6 +112,7 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
     reference_inventory = float(rows[0]["local_inventory"])
     reference_free_energy = float(rows[0]["local_free_energy"])
+    reference_parallel_moment = float(rows[0]["local_parallel_moment"])
     shape_rows: list[dict[str, Any]] = []
     for row in rows:
         inventory_deviation = abs(float(row["local_inventory"]) - reference_inventory) / max(
@@ -117,11 +121,15 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
         free_energy_deviation = abs(float(row["local_free_energy"]) - reference_free_energy) / max(
             abs(reference_free_energy), 1.0e-30
         )
+        parallel_moment_deviation = abs(
+            float(row["local_parallel_moment"]) - reference_parallel_moment
+        ) / max(abs(reference_parallel_moment), 1.0e-30)
         reconstruction_error = float(row["reconstruction_linf_error"])
         shape_pass = bool(
             row["local_decomposed_execution_pass"]
             and inventory_deviation <= RELATIVE_REDUCTION_TOLERANCE
             and free_energy_deviation <= RELATIVE_REDUCTION_TOLERANCE
+            and parallel_moment_deviation <= RELATIVE_REDUCTION_TOLERANCE
             and reconstruction_error <= RECONSTRUCTION_LINF_TOLERANCE
         )
         shape_rows.append(
@@ -131,6 +139,9 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "free_energy_relative_deviation_from_reference": free_energy_deviation,
                 "inventory_relative_deviation_from_reference": inventory_deviation,
                 "owned_phase_cells": row["owned_phase_cells"],
+                "parallel_moment_relative_deviation_from_reference": (
+                    parallel_moment_deviation
+                ),
                 "rank_count": row["rank_count"],
                 "reconstruction_linf_error": reconstruction_error,
                 "shape_convergence_pass": shape_pass,
@@ -143,17 +154,22 @@ def _shape_convergence_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
     max_free_energy_deviation = max(
         float(row["free_energy_relative_deviation_from_reference"]) for row in shape_rows
     )
+    max_parallel_moment_deviation = max(
+        float(row["parallel_moment_relative_deviation_from_reference"]) for row in shape_rows
+    )
     max_reconstruction_error = max(float(row["reconstruction_linf_error"]) for row in shape_rows)
     shape_convergence_pass = bool(
         len(shape_rows) >= 3
         and all(bool(row["shape_convergence_pass"]) for row in shape_rows)
         and max_inventory_deviation <= RELATIVE_REDUCTION_TOLERANCE
         and max_free_energy_deviation <= RELATIVE_REDUCTION_TOLERANCE
+        and max_parallel_moment_deviation <= RELATIVE_REDUCTION_TOLERANCE
         and max_reconstruction_error <= RECONSTRUCTION_LINF_TOLERANCE
     )
     return {
         "max_free_energy_relative_deviation": max_free_energy_deviation,
         "max_inventory_relative_deviation": max_inventory_deviation,
+        "max_parallel_moment_relative_deviation": max_parallel_moment_deviation,
         "max_reconstruction_linf_error": max_reconstruction_error,
         "reconstruction_linf_tolerance": RECONSTRUCTION_LINF_TOLERANCE,
         "reference_case_id": rows[0]["case_id"],
@@ -337,6 +353,11 @@ def run_benchmark() -> dict[str, Any]:
         row["reconstruction_linf_error"] == 0.0
         and row["inventory_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
         and row["free_energy_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+        and row["parallel_moment_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
+        for row in cpu_benchmark_rows
+    )
+    parallel_moment_invariant_pass = all(
+        row["parallel_moment_relative_error"] <= RELATIVE_REDUCTION_TOLERANCE
         for row in cpu_benchmark_rows
     )
     same_physics_decomposition_shape_pass = bool(
@@ -350,6 +371,7 @@ def run_benchmark() -> dict[str, Any]:
         and local_decomposed_execution_pass
         and halo_exchange_pass
         and decomposition_invariant_pass
+        and parallel_moment_invariant_pass
         and same_physics_decomposition_shape_pass
     )
     return {
@@ -372,6 +394,7 @@ def run_benchmark() -> dict[str, Any]:
         "hardware_metadata": _hardware_metadata(),
         "imbalance_pass": imbalance_pass,
         "local_decomposed_execution_pass": local_decomposed_execution_pass,
+        "parallel_moment_invariant_pass": parallel_moment_invariant_pass,
         "production_scale_ready": False,
         "reproducible_commands": [
             "python validation/benchmark_production_decomposition_contract.py",
@@ -409,6 +432,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Local decomposed execution pass: `{report['local_decomposed_execution_pass']}`",
         f"- Halo exchange pass: `{report['halo_exchange_pass']}`",
         f"- Decomposition invariant pass: `{report['decomposition_invariant_pass']}`",
+        f"- Parallel-moment invariant pass: `{report['parallel_moment_invariant_pass']}`",
         f"- Same-physics decomposition shape pass: `{report['same_physics_decomposition_shape_pass']}`",
         f"- Production-scale ready: `{report['production_scale_ready']}`",
         f"- Python: `{report['hardware_metadata']['python_version']}`",
@@ -522,21 +546,26 @@ def write_reports(report: dict[str, Any]) -> None:
                 f"`{shape_evidence['max_free_energy_relative_deviation']:.6e}`"
             ),
             (
+                "- Max parallel-moment relative deviation: "
+                f"`{shape_evidence['max_parallel_moment_relative_deviation']:.6e}`"
+            ),
+            (
                 "- Relative reduction tolerance: "
                 f"`{shape_evidence['relative_reduction_tolerance']:.6e}`"
             ),
             "",
-            "| Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Reconstruction L_inf | Pass |",
-            "|---|---:|---:|---:|---:|---:|---:|:---:|",
+            "| Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|:---:|",
         ]
     )
     for row in shape_evidence["shape_rows"]:
         lines.append(
-            "| {case_id} | {ranks} | {cells} | {rate:.6e} | {inventory:.6e} | {energy:.6e} | {recon:.6e} | `{passes}` |".format(
+            "| {case_id} | {ranks} | {cells} | {rate:.6e} | {inventory:.6e} | {energy:.6e} | {moment:.6e} | {recon:.6e} | `{passes}` |".format(
                 case_id=row["case_id"],
                 cells=row["owned_phase_cells"],
                 energy=row["free_energy_relative_deviation_from_reference"],
                 inventory=row["inventory_relative_deviation_from_reference"],
+                moment=row["parallel_moment_relative_deviation_from_reference"],
                 passes=row["shape_convergence_pass"],
                 ranks=row["rank_count"],
                 rate=row["cells_per_second"],

@@ -99,6 +99,7 @@ def test_serial_halo_exchange_reconstructs_owned_5d_state_and_invariants() -> No
     assert metrics.reconstruction_linf_error == 0.0
     assert metrics.inventory_relative_error == 0.0
     assert metrics.free_energy_relative_error == 0.0
+    assert metrics.parallel_moment_relative_error == 0.0
 
 
 def test_rank_tile_communication_contract_declares_neighbour_faces() -> None:
@@ -162,6 +163,7 @@ def test_local_decomposed_phase_execution_matches_monolithic_reductions() -> Non
     assert result.reconstruction_linf_error == 0.0
     assert result.inventory_relative_error <= 1.0e-12
     assert result.free_energy_relative_error <= 1.0e-12
+    assert result.parallel_moment_relative_error <= 1.0e-12
     np.testing.assert_allclose(result.local_inventory, float(np.sum(state)))
     np.testing.assert_allclose(result.local_free_energy, float(np.sum(state * state)))
 
@@ -176,6 +178,7 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert report["local_decomposed_execution_pass"] is True
     assert report["halo_exchange_pass"] is True
     assert report["decomposition_invariant_pass"] is True
+    assert report["parallel_moment_invariant_pass"] is True
     assert report["same_physics_decomposition_shape_pass"] is True
     halo_evidence = report["halo_face_integrity_evidence"]
     assert halo_evidence["schema"] == "production-decomposition-halo-face-integrity.v1"
@@ -196,6 +199,10 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     )
     assert (
         shape_evidence["max_free_energy_relative_deviation"]
+        <= shape_evidence["relative_reduction_tolerance"]
+    )
+    assert (
+        shape_evidence["max_parallel_moment_relative_deviation"]
         <= shape_evidence["relative_reduction_tolerance"]
     )
     assert (

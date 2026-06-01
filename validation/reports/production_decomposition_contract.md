@@ -10,6 +10,7 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Local decomposed execution pass: `True`
 - Halo exchange pass: `True`
 - Decomposition invariant pass: `True`
+- Parallel-moment invariant pass: `True`
 - Same-physics decomposition shape pass: `True`
 - Production-scale ready: `False`
 - Python: `3.12.3`
@@ -93,9 +94,9 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 2.665777e-01 | 1.966736e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 1.288339e-01 | 4.069487e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 3.004468e-01 | 1.745028e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 5.785675e-02 | 9.061829e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 4.416930e-02 | 1.186996e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 3.453628e-02 | 1.518079e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -105,13 +106,14 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Reference case: `local_cpu_64x32_4x2`
 - Max inventory relative deviation: `0.000000e+00`
 - Max free-energy relative deviation: `3.330666e-16`
+- Max parallel-moment relative deviation: `0.000000e+00`
 - Relative reduction tolerance: `1.000000e-12`
 
-| Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Reconstruction L_inf | Pass |
-|---|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 1.966736e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 4.069487e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 1.745028e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | `True` |
+| Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |
+|---|---:|---:|---:|---:|---:|---:|---:|:---:|
+| local_cpu_64x32_4x2 | 8 | 524288 | 9.061829e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 1.186996e+07 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 1.518079e+07 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 

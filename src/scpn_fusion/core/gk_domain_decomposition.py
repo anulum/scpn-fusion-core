@@ -68,6 +68,7 @@ class DecompositionInvariantMetrics:
     reconstruction_linf_error: float
     inventory_relative_error: float
     free_energy_relative_error: float
+    parallel_moment_relative_error: float
     decomposition_invariant_pass: bool
 
 
@@ -83,6 +84,9 @@ class LocalDecomposedExecutionResult:
     local_free_energy: float
     global_free_energy: float
     free_energy_relative_error: float
+    local_parallel_moment: float
+    global_parallel_moment: float
+    parallel_moment_relative_error: float
     reconstruction_linf_error: float
     halo_exchange_pass: bool
     decomposition_invariant_pass: bool
@@ -196,6 +200,19 @@ def _validate_phase_state(
     if not bool(np.all(np.isfinite(state))):
         raise ValueError("phase_state must be finite")
     return state
+
+
+def _normalized_vpar_weights(n_vpar: int) -> NDArray[np.float64]:
+    """Return dimensionless parallel-velocity weights for reduction contracts."""
+    if n_vpar == 1:
+        return np.zeros(1, dtype=np.float64)
+    return np.linspace(-1.0, 1.0, num=n_vpar, dtype=np.float64)
+
+
+def _parallel_moment(state: NDArray[np.float64], n_vpar: int) -> float:
+    """Return the normalized-vpar first moment of a 5D phase-space payload."""
+    weights = _normalized_vpar_weights(n_vpar).reshape(1, 1, 1, n_vpar, 1)
+    return float(np.sum(state * weights))
 
 
 def build_radial_toroidal_decomposition(
@@ -399,6 +416,11 @@ def decomposition_invariant_metrics(
     free_energy_relative_error = abs(reconstructed_free_energy - global_free_energy) / max(
         abs(global_free_energy), 1.0e-30
     )
+    global_parallel_moment = _parallel_moment(state, plan.n_vpar)
+    reconstructed_parallel_moment = _parallel_moment(reconstructed, plan.n_vpar)
+    parallel_moment_relative_error = abs(
+        reconstructed_parallel_moment - global_parallel_moment
+    ) / max(abs(global_parallel_moment), 1.0e-30)
     halo_exchange_pass = all(
         np.array_equal(
             local.with_halo,
@@ -421,12 +443,14 @@ def decomposition_invariant_metrics(
         and reconstruction_error == 0.0
         and inventory_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
         and free_energy_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+        and parallel_moment_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
     )
     return DecompositionInvariantMetrics(
         halo_exchange_pass=halo_exchange_pass,
         reconstruction_linf_error=reconstruction_error,
         inventory_relative_error=inventory_relative_error,
         free_energy_relative_error=free_energy_relative_error,
+        parallel_moment_relative_error=parallel_moment_relative_error,
         decomposition_invariant_pass=invariant_pass,
     )
 
@@ -457,6 +481,13 @@ def local_decomposed_phase_execution(
     free_energy_relative_error = abs(local_free_energy - global_free_energy) / max(
         abs(global_free_energy), 1.0e-30
     )
+    global_parallel_moment = _parallel_moment(state, plan.n_vpar)
+    local_parallel_moment = float(
+        sum(_parallel_moment(local.owned, plan.n_vpar) for local in local_tiles)
+    )
+    parallel_moment_relative_error = abs(local_parallel_moment - global_parallel_moment) / max(
+        abs(global_parallel_moment), 1.0e-30
+    )
     halo_exchange_pass = all(
         np.array_equal(
             local.with_halo,
@@ -479,6 +510,7 @@ def local_decomposed_phase_execution(
         and reconstruction_error == 0.0
         and inventory_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
         and free_energy_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
+        and parallel_moment_relative_error <= _REDUCTION_RELATIVE_TOLERANCE
     )
     return LocalDecomposedExecutionResult(
         rank_count=len(local_tiles),
@@ -489,6 +521,9 @@ def local_decomposed_phase_execution(
         local_free_energy=local_free_energy,
         global_free_energy=global_free_energy,
         free_energy_relative_error=free_energy_relative_error,
+        local_parallel_moment=local_parallel_moment,
+        global_parallel_moment=global_parallel_moment,
+        parallel_moment_relative_error=parallel_moment_relative_error,
         reconstruction_linf_error=reconstruction_error,
         halo_exchange_pass=halo_exchange_pass,
         decomposition_invariant_pass=invariant_pass,

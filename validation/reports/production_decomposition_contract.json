@@ -1182,11 +1182,12 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 1966736.182139762,
-      "elapsed_s": 0.2665776959620416,
+      "cells_per_second": 9061828.79775041,
+      "elapsed_s": 0.0578567540505901,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
+      "global_parallel_moment": 6.000011444099454,
       "global_shape": [
         64,
         32,
@@ -1199,17 +1200,20 @@
       "local_decomposed_execution_pass": true,
       "local_free_energy": 174762.83333365124,
       "local_inventory": 262144.0,
+      "local_parallel_moment": 6.000011444099454,
       "owned_phase_cells": 524288,
+      "parallel_moment_relative_error": 0.0,
       "rank_count": 8,
       "reconstruction_linf_error": 0.0
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 4069487.4485379886,
-      "elapsed_s": 0.12883391499053687,
+      "cells_per_second": 11869964.792121455,
+      "elapsed_s": 0.044169296976178885,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
+      "global_parallel_moment": 6.000011444099454,
       "global_shape": [
         64,
         32,
@@ -1222,17 +1226,20 @@
       "local_decomposed_execution_pass": true,
       "local_free_energy": 174762.8333336512,
       "local_inventory": 262144.0,
+      "local_parallel_moment": 6.000011444099454,
       "owned_phase_cells": 524288,
+      "parallel_moment_relative_error": 0.0,
       "rank_count": 8,
       "reconstruction_linf_error": 0.0
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 1745027.930293165,
-      "elapsed_s": 0.30044676701072603,
+      "cells_per_second": 15180790.936162658,
+      "elapsed_s": 0.03453627694398165,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
+      "global_parallel_moment": 6.000011444099454,
       "global_shape": [
         64,
         32,
@@ -1245,7 +1252,9 @@
       "local_decomposed_execution_pass": true,
       "local_free_energy": 174762.83333365122,
       "local_inventory": 262144.0,
+      "local_parallel_moment": 6.000011444099454,
       "owned_phase_cells": 524288,
+      "parallel_moment_relative_error": 0.0,
       "rank_count": 8,
       "reconstruction_linf_error": 0.0
     }
@@ -1579,6 +1588,7 @@
     "same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes",
     "hardware-specific multi-rank throughput and efficiency thresholds"
   ],
+  "parallel_moment_invariant_pass": true,
   "production_scale_ready": false,
   "reproducible_commands": [
     "python validation/benchmark_production_decomposition_contract.py",
@@ -1588,6 +1598,7 @@
   "same_physics_shape_convergence_evidence": {
     "max_free_energy_relative_deviation": 3.3306658974988877e-16,
     "max_inventory_relative_deviation": 0.0,
+    "max_parallel_moment_relative_deviation": 0.0,
     "max_reconstruction_linf_error": 0.0,
     "reconstruction_linf_tolerance": 0.0,
     "reference_case_id": "local_cpu_64x32_4x2",
@@ -1598,30 +1609,33 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 1966736.182139762,
+        "cells_per_second": 9061828.79775041,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
+        "parallel_moment_relative_deviation_from_reference": 0.0,
         "rank_count": 8,
         "reconstruction_linf_error": 0.0,
         "shape_convergence_pass": true
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 4069487.4485379886,
+        "cells_per_second": 11869964.792121455,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
+        "parallel_moment_relative_deviation_from_reference": 0.0,
         "rank_count": 8,
         "reconstruction_linf_error": 0.0,
         "shape_convergence_pass": true
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 1745027.930293165,
+        "cells_per_second": 15180790.936162658,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
+        "parallel_moment_relative_deviation_from_reference": 0.0,
         "rank_count": 8,
         "reconstruction_linf_error": 0.0,
         "shape_convergence_pass": true
