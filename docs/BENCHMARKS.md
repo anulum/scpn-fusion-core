@@ -978,7 +978,12 @@ Faraday, Ampere-Maxwell displacement-current, inductive parallel electric-field
 evolution, and perpendicular magnetic-divergence diagnostics. Full
 Vlasov-Maxwell parity remains blocked until those fields are coupled to
 self-consistent 5D kinetic current moments and same-deck electromagnetic
-GENE/CGYRO/GS2 outputs. The latest local Maxwell evolution evidence reports
+GENE/CGYRO/GS2 outputs. The electromagnetic gate now publishes a fail-closed
+external-EM parity evidence matrix for GENE, CGYRO, and GS2 over the required
+`phi`, `A_parallel`, `B_parallel`, heat-flux, and nonlinear-distribution
+observables; every row remains blocked until same-deck external artefacts,
+native same-case comparisons, and external grid-convergence evidence exist.
+The latest local Maxwell evolution evidence reports
 maximum relative total-field-energy drift `5.090958569120036e-16` with zero
 Faraday, Ampere-Maxwell, inductive parallel electric-field, and magnetic
 divergence residuals under tolerance `1.0e-12`. Native same-case EM replay

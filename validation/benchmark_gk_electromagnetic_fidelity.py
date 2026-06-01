@@ -440,6 +440,41 @@ def _run_native_em_same_case_threshold_evidence() -> dict[str, Any]:
     }
 
 
+def _external_em_parity_evidence() -> dict[str, Any]:
+    """Return fail-closed same-deck external EM parity evidence."""
+    rows: list[dict[str, Any]] = []
+    for solver_family in REQUIRED_EXTERNAL_SOLVERS:
+        observable_presence = {
+            observable: False for observable in REQUIRED_EXTERNAL_OBSERVABLES
+        }
+        rows.append(
+            {
+                "complete_required_observables": False,
+                "missing_requirements": [
+                    "same_deck_electromagnetic_output_artifact",
+                    "external_phi_A_parallel_B_parallel_threshold_comparison",
+                    "same_deck_external_electromagnetic_grid_convergence",
+                ],
+                "native_same_case_comparison_ready": False,
+                "native_same_case_threshold_passed": False,
+                "observable_presence": observable_presence,
+                "same_deck_reference_output_ready": False,
+                "solver_family": solver_family,
+                "status": "blocked_missing_same_deck_external_em_output",
+            }
+        )
+    return {
+        "external_em_parity_comparison_ready": False,
+        "required_observables": REQUIRED_EXTERNAL_OBSERVABLES,
+        "required_solver_families": REQUIRED_EXTERNAL_SOLVERS,
+        "same_deck_group_ready": False,
+        "schema": "gk-electromagnetic-external-parity-evidence.v1",
+        "solver_family_completeness_ready": False,
+        "solver_family_rows": rows,
+        "status": "blocked_missing_same_deck_external_em_outputs",
+    }
+
+
 def run_benchmark() -> dict[str, Any]:
     """Run the local compact-EM gate and return fail-closed parity status."""
     electrostatic_gate = _run_gate(electromagnetic=False, seed=211)
@@ -447,6 +482,7 @@ def run_benchmark() -> dict[str, Any]:
     compact_ready = bool(electromagnetic_gate["compact_closure_ready"])
     grid_convergence_evidence = _run_grid_convergence_evidence()
     grid_convergence_ready = bool(grid_convergence_evidence["grid_convergence_ready"])
+    external_em_parity_evidence = _external_em_parity_evidence()
     maxwell_evolution_evidence = _run_maxwell_evolution_evidence()
     native_same_case_threshold_evidence = _run_native_em_same_case_threshold_evidence()
     maxwell_evolution_ready = bool(
@@ -482,6 +518,7 @@ def run_benchmark() -> dict[str, Any]:
         "electromagnetic_grid_convergence_ready": grid_convergence_ready,
         "electrostatic_gate": electrostatic_gate,
         "external_em_parity_comparison_ready": False,
+        "external_em_parity_evidence": external_em_parity_evidence,
         "locally_actionable_contract_ready": (
             compact_ready
             and grid_convergence_ready
@@ -522,6 +559,10 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
         (
             "- External EM parity comparison ready: "
             f"`{report['external_em_parity_comparison_ready']}`"
+        ),
+        (
+            "- External EM solver-family completeness ready: "
+            f"`{report['external_em_parity_evidence']['solver_family_completeness_ready']}`"
         ),
         "",
         "## Gate rows",
@@ -652,6 +693,34 @@ def write_reports(report: dict[str, Any], *, report_dir: Path = REPORT_DIR) -> N
     lines.extend(["", "## Omitted physics", ""])
     for item in report["omitted_physics"]:
         lines.append(f"- {item}")
+    external_evidence = report["external_em_parity_evidence"]
+    lines.extend(
+        [
+            "",
+            "## External EM parity evidence",
+            "",
+            f"- Schema: `{external_evidence['schema']}`",
+            f"- Status: `{external_evidence['status']}`",
+            f"- Same-deck group ready: `{external_evidence['same_deck_group_ready']}`",
+            (
+                "- Solver-family completeness ready: "
+                f"`{external_evidence['solver_family_completeness_ready']}`"
+            ),
+            "",
+            "| Solver | Reference output | Required observables | Native comparison | Native thresholds |",
+            "|---|:---:|:---:|:---:|:---:|",
+        ]
+    )
+    for row in external_evidence["solver_family_rows"]:
+        lines.append(
+            "| {solver} | `{reference}` | `{observables}` | `{native}` | `{thresholds}` |".format(
+                native=row["native_same_case_comparison_ready"],
+                observables=row["complete_required_observables"],
+                reference=row["same_deck_reference_output_ready"],
+                solver=row["solver_family"],
+                thresholds=row["native_same_case_threshold_passed"],
+            )
+        )
     lines.extend(["", "## Maxwell evolution contract", ""])
     contract = report["maxwell_evolution_contract"]
     lines.append(f"- Native field-evolution mode: `{contract['native_field_evolution_mode']}`")

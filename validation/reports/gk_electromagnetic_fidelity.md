@@ -6,6 +6,7 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 - Status: `blocked_missing_external_em_parity_outputs`
 - Compact EM contract ready: `True`
 - External EM parity comparison ready: `False`
+- External EM solver-family completeness ready: `False`
 
 ## Gate rows
 
@@ -62,6 +63,19 @@ Separate electrostatic and electromagnetic nonlinear GK gate. Compact A_parallel
 
 - self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop
 - external same-deck electromagnetic GENE/CGYRO/GS2 output parity
+
+## External EM parity evidence
+
+- Schema: `gk-electromagnetic-external-parity-evidence.v1`
+- Status: `blocked_missing_same_deck_external_em_outputs`
+- Same-deck group ready: `False`
+- Solver-family completeness ready: `False`
+
+| Solver | Reference output | Required observables | Native comparison | Native thresholds |
+|---|:---:|:---:|:---:|:---:|
+| GENE | `False` | `False` | `False` | `False` |
+| CGYRO | `False` | `False` | `False` | `False` |
+| GS2 | `False` | `False` | `False` | `False` |
 
 ## Maxwell evolution contract
 

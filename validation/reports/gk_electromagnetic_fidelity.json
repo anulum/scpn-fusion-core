@@ -107,6 +107,95 @@
     "time_history_ready": true
   },
   "external_em_parity_comparison_ready": false,
+  "external_em_parity_evidence": {
+    "external_em_parity_comparison_ready": false,
+    "required_observables": [
+      "electromagnetic_phi_energy",
+      "electromagnetic_apar_energy",
+      "electromagnetic_bpar_energy",
+      "ion_heat_flux_spectrum",
+      "electron_heat_flux_spectrum",
+      "nonlinear_distribution_function",
+      "nonlinear_distribution_function_imag"
+    ],
+    "required_solver_families": [
+      "GENE",
+      "CGYRO",
+      "GS2"
+    ],
+    "same_deck_group_ready": false,
+    "schema": "gk-electromagnetic-external-parity-evidence.v1",
+    "solver_family_completeness_ready": false,
+    "solver_family_rows": [
+      {
+        "complete_required_observables": false,
+        "missing_requirements": [
+          "same_deck_electromagnetic_output_artifact",
+          "external_phi_A_parallel_B_parallel_threshold_comparison",
+          "same_deck_external_electromagnetic_grid_convergence"
+        ],
+        "native_same_case_comparison_ready": false,
+        "native_same_case_threshold_passed": false,
+        "observable_presence": {
+          "electromagnetic_apar_energy": false,
+          "electromagnetic_bpar_energy": false,
+          "electromagnetic_phi_energy": false,
+          "electron_heat_flux_spectrum": false,
+          "ion_heat_flux_spectrum": false,
+          "nonlinear_distribution_function": false,
+          "nonlinear_distribution_function_imag": false
+        },
+        "same_deck_reference_output_ready": false,
+        "solver_family": "GENE",
+        "status": "blocked_missing_same_deck_external_em_output"
+      },
+      {
+        "complete_required_observables": false,
+        "missing_requirements": [
+          "same_deck_electromagnetic_output_artifact",
+          "external_phi_A_parallel_B_parallel_threshold_comparison",
+          "same_deck_external_electromagnetic_grid_convergence"
+        ],
+        "native_same_case_comparison_ready": false,
+        "native_same_case_threshold_passed": false,
+        "observable_presence": {
+          "electromagnetic_apar_energy": false,
+          "electromagnetic_bpar_energy": false,
+          "electromagnetic_phi_energy": false,
+          "electron_heat_flux_spectrum": false,
+          "ion_heat_flux_spectrum": false,
+          "nonlinear_distribution_function": false,
+          "nonlinear_distribution_function_imag": false
+        },
+        "same_deck_reference_output_ready": false,
+        "solver_family": "CGYRO",
+        "status": "blocked_missing_same_deck_external_em_output"
+      },
+      {
+        "complete_required_observables": false,
+        "missing_requirements": [
+          "same_deck_electromagnetic_output_artifact",
+          "external_phi_A_parallel_B_parallel_threshold_comparison",
+          "same_deck_external_electromagnetic_grid_convergence"
+        ],
+        "native_same_case_comparison_ready": false,
+        "native_same_case_threshold_passed": false,
+        "observable_presence": {
+          "electromagnetic_apar_energy": false,
+          "electromagnetic_bpar_energy": false,
+          "electromagnetic_phi_energy": false,
+          "electron_heat_flux_spectrum": false,
+          "ion_heat_flux_spectrum": false,
+          "nonlinear_distribution_function": false,
+          "nonlinear_distribution_function_imag": false
+        },
+        "same_deck_reference_output_ready": false,
+        "solver_family": "GS2",
+        "status": "blocked_missing_same_deck_external_em_output"
+      }
+    ],
+    "status": "blocked_missing_same_deck_external_em_outputs"
+  },
   "locally_actionable_contract_ready": true,
   "maxwell_evolution_contract": {
     "blocking_equation_ids": [

@@ -35,6 +35,20 @@ def test_gk_electromagnetic_fidelity_report_gates_em_separately() -> None:
     assert "displacement-current Ampere-Maxwell evolution" not in report["omitted_physics"]
     assert report["locally_actionable_contract_ready"] is True
 
+    evidence = report["external_em_parity_evidence"]
+    assert evidence["schema"] == "gk-electromagnetic-external-parity-evidence.v1"
+    assert evidence["status"] == "blocked_missing_same_deck_external_em_outputs"
+    assert evidence["same_deck_group_ready"] is False
+    assert evidence["solver_family_completeness_ready"] is False
+    rows = {row["solver_family"]: row for row in evidence["solver_family_rows"]}
+    assert set(rows) == {"GENE", "CGYRO", "GS2"}
+    for row in rows.values():
+        assert row["same_deck_reference_output_ready"] is False
+        assert row["native_same_case_comparison_ready"] is False
+        assert row["complete_required_observables"] is False
+        assert set(row["observable_presence"]) == set(report["required_external_observables"])
+        assert not any(row["observable_presence"].values())
+
 
 def test_gk_electromagnetic_fidelity_report_declares_maxwell_evolution_contract() -> None:
     report = run_benchmark()
