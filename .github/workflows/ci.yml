@@ -934,6 +934,7 @@ jobs:
   validation-regression:
     name: Physics Validation Suite
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     needs: [python-tests, rust-tests, rust-python-interop]
@@ -966,8 +967,17 @@ jobs:
           PY
       - name: IPB98 confinement scaling validation
         run: pytest tests/test_uncertainty.py -v --tb=short
-      - name: Full regression suite
-        run: pytest tests/ -v --tb=short -x -m "not experimental"
+      - name: Focused physics validation regression suite
+        run: |
+          pytest \
+            tests/test_validation_regression.py \
+            tests/test_benchmark_sparc_geqdsk_rmse.py \
+            tests/test_benchmark_free_boundary_strict_parity.py \
+            tests/test_benchmark_disruption_transfer_generalization.py \
+            tests/test_vertical_control_replay_benchmark.py \
+            tests/test_benchmark_vs_torax.py \
+            tests/test_check_freegs_strict_artifact.py \
+            -v --tb=short -x -m "not experimental"
 
   stress-test:
     name: Stress Test
