@@ -4,10 +4,17 @@
   "$id": "https://anulum.github.io/scpn-fusion-core/schemas/vertical_control_replay_benchmark.schema.json",
   "title": "SCPN Fusion Core Vertical Control Replay Benchmark",
   "type": "object",
-  "required": ["SPDX-License-Identifier", "vertical_control_replay_benchmark"],
+  "required": [
+    "SPDX-License-Identifier",
+    "benchmark_id",
+    "vertical_control_replay_benchmark"
+  ],
   "properties": {
     "SPDX-License-Identifier": {
       "const": "AGPL-3.0-or-later"
+    },
+    "benchmark_id": {
+      "const": "vertical_control_replay_benchmark"
     },
     "vertical_control_replay_benchmark": {
       "type": "object",
