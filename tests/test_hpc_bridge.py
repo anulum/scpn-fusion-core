@@ -353,17 +353,32 @@ def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd: list[str], check: bool, timeout: float) -> None:
+    def _fake_run(
+        cmd: list[str],
+        check: bool,
+        timeout: float,
+        env: dict[str, str],
+    ) -> None:
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
+        calls["env"] = dict(env)
         Path(cmd[cmd.index("-o") + 1]).write_bytes(b"compiled-native-linux")
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    monkeypatch.setenv("CXXFLAGS", "-include /tmp/attacker.hpp")
+    monkeypatch.setenv("LDFLAGS", "-Wl,--wrap=system")
     module_file = tmp_path / "hpc_bridge.py"
     module_file.write_text("# test module\n", encoding="utf-8")
+    solver_src = tmp_path / "solver.cpp"
+    solver_src.write_text("int scpn_solver_test = 0;\n", encoding="utf-8")
+    solver_src.chmod(0o644)
+    compiler = tmp_path / "g++"
+    compiler.write_text("#!/bin/sh\n", encoding="utf-8")
+    compiler.chmod(0o755)
     monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
     monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
 
     out = hpc_mod.compile_cpp()
@@ -373,23 +388,40 @@ def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.M
     assert calls["check"] is True
     assert calls["timeout"] == hpc_mod._CPP_BUILD_TIMEOUT_SECONDS
     assert isinstance(calls["cmd"], list)
-    assert calls["cmd"][0] == "g++"
+    assert Path(calls["cmd"][0]).name == "g++"
+    assert "-include /tmp/attacker.hpp" not in calls["cmd"]
+    assert isinstance(calls["env"], dict)
+    assert "CXXFLAGS" not in calls["env"]
+    assert "LDFLAGS" not in calls["env"]
 
 
 def test_compile_cpp_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd: list[str], check: bool, timeout: float) -> None:
+    def _fake_run(
+        cmd: list[str],
+        check: bool,
+        timeout: float,
+        env: dict[str, str],
+    ) -> None:
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
+        calls["env"] = dict(env)
         Path(cmd[cmd.index("-o") + 1]).write_bytes(b"compiled-native-windows")
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
     module_file = tmp_path / "hpc_bridge.py"
     module_file.write_text("# test module\n", encoding="utf-8")
+    solver_src = tmp_path / "solver.cpp"
+    solver_src.write_text("int scpn_solver_test = 0;\n", encoding="utf-8")
+    solver_src.chmod(0o644)
+    compiler = tmp_path / "g++"
+    compiler.write_text("#!/bin/sh\n", encoding="utf-8")
+    compiler.chmod(0o755)
     monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
     monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
 
     out = hpc_mod.compile_cpp()
@@ -399,13 +431,61 @@ def test_compile_cpp_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert calls["timeout"] == hpc_mod._CPP_BUILD_TIMEOUT_SECONDS
 
 
-def test_compile_cpp_handles_build_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_compile_cpp_rejects_unapproved_compiler(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module_file = tmp_path / "hpc_bridge.py"
+    module_file.write_text("# test module\n", encoding="utf-8")
+    solver_src = tmp_path / "solver.cpp"
+    solver_src.write_text("int scpn_solver_test = 0;\n", encoding="utf-8")
+    solver_src.chmod(0o644)
+
+    monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
+    monkeypatch.setattr(
+        hpc_mod.shutil,
+        "which",
+        lambda name, path=None: "/tmp/attacker-compiler",
+    )
+
+    assert hpc_mod.compile_cpp() is None
+
+
+def test_compile_cpp_rejects_symlinked_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "untrusted.cpp"
+    target.write_text("int scpn_solver_test = 0;\n", encoding="utf-8")
+    module_file = tmp_path / "hpc_bridge.py"
+    module_file.write_text("# test module\n", encoding="utf-8")
+    (tmp_path / "solver.cpp").symlink_to(target)
+
+    monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
+    compiler = tmp_path / "g++"
+    compiler.write_text("#!/bin/sh\n", encoding="utf-8")
+    compiler.chmod(0o755)
+    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
+
+    assert hpc_mod.compile_cpp() is None
+
+
+def test_compile_cpp_handles_build_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import subprocess
 
-    def _fail_run(cmd: list[str], check: bool, timeout: float) -> None:
+    def _fail_run(
+        cmd: list[str],
+        check: bool,
+        timeout: float,
+        env: dict[str, str],
+    ) -> None:
         raise subprocess.CalledProcessError(1, cmd)
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    compiler = tmp_path / "g++"
+    compiler.write_text("#!/bin/sh\n", encoding="utf-8")
+    compiler.chmod(0o755)
+    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
     monkeypatch.setattr(hpc_mod.subprocess, "run", _fail_run)
 
     assert hpc_mod.compile_cpp() is None

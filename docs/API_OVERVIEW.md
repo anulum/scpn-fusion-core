@@ -61,3 +61,21 @@ Reference-code adapters and benchmark requests exist for GENE, CGYRO, GS2,
 DREAM, Aurora, STRAHL, FreeGS, and related data formats. These adapters do not
 bundle the external solvers. Acceptance requires same-case outputs, licenses,
 provenance, thresholds, checksums, and native comparisons.
+
+
+## API stability model
+
+| Surface | Stability expectation |
+|---|---|
+| CLI smoke commands | Stable enough for demos and CI smoke tests; scientific claims still require validation reports. |
+| Python package APIs | Evolve with tests and changelog entries; public imports should keep backwards-compatible behavior when possible. |
+| Rust/PyO3 kernels | Optional acceleration path; Python fallbacks remain the compatibility baseline. |
+| Validation schemas | Treated as evidence contracts; changes require report and documentation updates. |
+| External solver adapters | Fail closed when the solver, license, provenance, or output artifact is missing. |
+
+## Security-sensitive surfaces
+
+Native compilation, subprocess launchers, external solver execution, artifact
+loading, and dashboard/browser entry points are security-sensitive. Changes to
+these surfaces should include scoped tests, timeout handling, fixed argv where
+possible, and documentation of the trust boundary.

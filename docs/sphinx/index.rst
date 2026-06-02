@@ -31,6 +31,15 @@ stochastic LIF neurons, and executed against physics-informed plant models.
    evidence as a control-algorithm, native-kernel, and validation-framework
    release, not as a completed production turbulence or reconstruction code.
 
+Reader Orientation
+------------------
+
+SCPN-Fusion-Core is best read as three connected systems: a control compiler, a
+native physics-kernel laboratory, and a reproducible validation/reporting
+surface.  The public reports distinguish validated local contracts from blocked
+full-fidelity parity rows.  Use the project overview, onboarding guide, and
+benchmark taxonomy before treating any number as a production claim.
+
 Key Features
 ------------
 

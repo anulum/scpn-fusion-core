@@ -6,6 +6,15 @@ This guide walks through the essential operations: solving an equilibrium,
 running a validation suite, using the Rust accelerated kernel, and
 launching the neuro-symbolic compiler.
 
+Choose the Right First Run
+--------------------------
+
+Use ``scpn-fusion kernel`` when you want a fast equilibrium smoke test. Use
+``python validation/full_fidelity_end_to_end_campaign.py`` when you want the
+current evidence-bound maturity report. Use the notebooks when you want a
+learning path, not production parity evidence.
+
+
 Solve a Grad-Shafranov Equilibrium
 -----------------------------------
 

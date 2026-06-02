@@ -5,7 +5,14 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.9.7 (Current)
+v3.9.8 (Current)
+------------------
+
+- Documentation and repository-polish release that improves README scanning, onboarding, API orientation, market/application context, notebook guidance, and public evidence-boundary navigation.
+- Optional native C++ compilation is hardened behind fail-closed source, compiler, environment, and timeout checks.
+- Release readiness remains pending until the remote CI run for the release commit is green.
+
+v3.9.7
 ------------------
 
 - **Phase 5/6 physics port**: 69 new modules (impurity transport, disruption chain,

@@ -55,3 +55,27 @@ missing grid/scaling evidence keep a row blocked.
 - `validation/reports/production_decomposition_contract.md` for decomposition
   evidence.
 - `validation/reports/gk_electromagnetic_fidelity.md` for EM fidelity gates.
+
+
+## How to read the maturity status
+
+The repository uses explicit maturity labels so readers can tell what is ready
+for local development and what still needs external parity evidence.
+
+| Label | Meaning |
+|---|---|
+| Validated local contract | The implementation has repository-local tests, reports, or benchmark evidence for the stated scope. |
+| Diagnostic only | The output is useful for debugging or planning, but it is not an acceptance gate. |
+| Blocked parity gate | Required public same-case data, reference-solver output, thresholds, checksums, or hardware evidence are missing. |
+| Accepted parity evidence | The row has provenance, license, command, artifact checksum, thresholds, native comparison, and pass/fail status. |
+
+## Practical value chain
+
+1. Define the control or solver contract.
+2. Run a local deterministic or physics-informed benchmark.
+3. Publish the command, inputs, outputs, checksums, hardware metadata, and thresholds.
+4. Compare against external same-case reference outputs where redistribution is permitted.
+5. Keep the row blocked until the evidence package is complete.
+
+This workflow is the market value of the project: it reduces ambiguity between a
+prototype, a benchmark result, and a defensible validation claim.

@@ -21,3 +21,11 @@ For current production-parity status, use:
 The full-fidelity campaign remains fail-closed: native local contracts can pass
 while external GENE/CGYRO/GS2, DREAM, Aurora/STRAHL, FreeGS, and distributed
 MPI/multi-GPU evidence remains blocked.
+
+
+## Suggested reading order
+
+1. Start with the neuro-symbolic compiler notebook to understand Petri-net to SNN control.
+2. Run the Grad-Shafranov equilibrium notebook to see the core solver contract.
+3. Review inverse and transport benchmarks to connect solver outputs to validation reports.
+4. Treat HTML exports as tutorials; use tracked validation reports for public benchmark claims.

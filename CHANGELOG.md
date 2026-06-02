@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [3.9.8] - 2026-06-02
+
+- Bumped package and release metadata to 3.9.8 for a documentation, security-hardening, and repository-polish release.
+- Reworked README badges and public reader paths so the project value, applications, evidence boundary, and blocked parity lanes are easier to scan.
+- Expanded onboarding, API, applications/market, notebook, quickstart, and Sphinx overview documentation with clearer contribution paths, maturity labels, and trust-boundary guidance.
+- Hardened optional native C++ compilation against arbitrary code execution risks by requiring the bundled solver source, resolving `g++` from the system default path, rejecting symlinked or group/world-writable source/compiler files, and stripping ambient compiler/linker flags from the build environment.
+
+- Hardened optional native C++ compilation against arbitrary code execution
+  risks by requiring the bundled solver source, resolving `g++` from the system
+  default path, rejecting symlinked or group/world-writable source/compiler
+  files, stripping ambient compiler/linker flags from the build environment,
+  and extending the HPC bridge tests for these fail-closed cases.
+
 ## [3.9.7] - 2026-06-02
 
 - Reworked the public documentation surface around evidence-bounded product

@@ -18,6 +18,8 @@ import math
 import numpy as np
 import os
 import platform
+import shutil
+import stat
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -26,6 +28,7 @@ from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 _CPP_BUILD_TIMEOUT_SECONDS = 300.0
+_CPP_ALLOWED_COMPILERS = frozenset({"g++", "g++.exe", "clang++", "clang++.exe"})
 _SHA256_HEX_LEN = 64
 
 
@@ -95,6 +98,60 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def _resolve_cpp_compiler() -> Path | None:
+    """Return a trusted C++ compiler path without consulting arbitrary flags."""
+    compiler = shutil.which("g++", path=os.defpath)
+    if compiler is None:
+        logger.error("Native build requires g++ on PATH.")
+        return None
+    compiler_path = Path(compiler).resolve()
+    if compiler_path.name not in _CPP_ALLOWED_COMPILERS:
+        logger.error("Rejected unsupported C++ compiler executable: %s", compiler_path)
+        return None
+    if not compiler_path.is_file():
+        logger.error("Resolved C++ compiler is not a regular file: %s", compiler_path)
+        return None
+    mode = compiler_path.stat().st_mode
+    if mode & (stat.S_IWGRP | stat.S_IWOTH):
+        logger.error("Rejected group/world-writable C++ compiler executable: %s", compiler_path)
+        return None
+    return compiler_path
+
+
+def _validate_cpp_source(src: Path, script_dir: Path) -> bool:
+    """Fail closed unless the build source is the bundled, regular solver file."""
+    expected = script_dir / "solver.cpp"
+    if src.resolve() != expected.resolve():
+        logger.error("Rejected native build source outside bundled solver.cpp: %s", src)
+        return False
+    if src.is_symlink():
+        logger.error("Rejected symlinked native build source: %s", src)
+        return False
+    if not src.is_file():
+        logger.error("Native build source is missing or not a regular file: %s", src)
+        return False
+    mode = src.stat().st_mode
+    if mode & (stat.S_IWGRP | stat.S_IWOTH):
+        logger.error("Rejected group/world-writable native build source: %s", src)
+        return False
+    return True
+
+
+def _cpp_build_env() -> dict[str, str]:
+    """Return a minimal build environment, excluding attacker-controlled flags."""
+    env: dict[str, str] = {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": os.defpath,
+    }
+    if platform.system() == "Windows":
+        for key in ("SystemRoot", "TEMP", "TMP"):
+            value = os.environ.get(key)
+            if value:
+                env[key] = value
+    return env
 
 
 def _sidecar_digest(path: Path) -> str | None:
@@ -507,8 +564,10 @@ class HPCBridge:
 def compile_cpp() -> Optional[str]:
     """Compile the C++ solver from source.
 
-    Looks for ``solver.cpp`` in the same directory as this module and
-    invokes ``g++`` to produce a shared library.
+    Looks for the bundled ``solver.cpp`` in the same directory as this module,
+    resolves an allowlisted C++ compiler, and invokes it with fixed arguments
+    and a minimal environment. The build is intentionally opt-in because local
+    native compilation is code execution.
 
     Returns
     -------
@@ -519,19 +578,26 @@ def compile_cpp() -> Optional[str]:
         logger.warning("Native build disabled. Set SCPN_ALLOW_NATIVE_BUILD=1 to enable.")
         return None
 
-    logger.info("Compiling C++ solver kernel…")
     script_dir = Path(__file__).resolve().parent
     src = script_dir / "solver.cpp"
+    if not _validate_cpp_source(src, script_dir):
+        return None
+
+    compiler = _resolve_cpp_compiler()
+    if compiler is None:
+        return None
+
+    logger.info("Compiling C++ solver kernel from trusted bundled source.")
     out_dir = script_dir / "bin"
     out_dir.mkdir(exist_ok=True)
 
     if platform.system() == "Windows":
         out = out_dir / "scpn_solver.dll"
-        cmd = ["g++", "-shared", "-o", str(out), str(src), "-O3", "-mavx2"]
+        cmd = [str(compiler), "-shared", "-o", str(out), str(src), "-O3", "-mavx2"]
     else:
         out = out_dir / "libscpn_solver.so"
         cmd = [
-            "g++",
+            str(compiler),
             "-shared",
             "-fPIC",
             "-o",
@@ -541,9 +607,14 @@ def compile_cpp() -> Optional[str]:
             "-march=native",
         ]
 
-    logger.info("Executing: %s", " ".join(cmd))
+    logger.info("Executing trusted native build command: %s", " ".join(cmd))
     try:
-        subprocess.run(cmd, check=True, timeout=_CPP_BUILD_TIMEOUT_SECONDS)
+        subprocess.run(
+            cmd,
+            check=True,
+            timeout=_CPP_BUILD_TIMEOUT_SECONDS,
+            env=_cpp_build_env(),
+        )
     except subprocess.TimeoutExpired as exc:
         logger.error(
             "Compilation timed out after %.1fs: %s",

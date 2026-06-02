@@ -32,6 +32,7 @@
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
       "docs/releases/v3.9.7.md",
+      "docs/releases/v3.9.8.md",
       "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
@@ -2376,21 +2377,25 @@
         "path": "scpn-fusion-rs/crates/fusion-types"
       },
       {
+        "name": "scpn-fusion-fuzz",
+        "path": "scpn-fusion-rs/fuzz"
+      },
+      {
         "name": "scpn-fusion-rs",
         "path": "scpn-fusion-rs/crates/fusion-python"
       }
     ]
   },
   "counts": {
-    "capability_documentation_pages": 47,
+    "capability_documentation_pages": 48,
     "github_workflows": 12,
     "optional_extras": 12,
     "public_api_exports": 2,
-    "public_documentation_pages": 47,
+    "public_documentation_pages": 48,
     "python_capability_classes": 503,
     "python_capability_source_modules": 264,
-    "rust_workspace_crates": 12,
-    "test_files": 397
+    "rust_workspace_crates": 13,
+    "test_files": 399
   },
   "documentation": {
     "public_pages": [
@@ -2424,6 +2429,7 @@
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
       "docs/releases/v3.9.7.md",
+      "docs/releases/v3.9.8.md",
       "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
@@ -2489,7 +2495,7 @@
     "name": "scpn-fusion",
     "readme": "README.md",
     "requires_python": ">=3.10",
-    "version": "3.9.7"
+    "version": "3.9.8"
   },
   "project_label": "SCPN Fusion Core",
   "quality_gates": {
@@ -2526,6 +2532,7 @@
       "tests/test_benchmark_fairness.py",
       "tests/test_benchmark_free_boundary.py",
       "tests/test_benchmark_free_boundary_strict_parity.py",
+      "tests/test_benchmark_regression_guard.py",
       "tests/test_benchmark_sparc_geqdsk_rmse.py",
       "tests/test_benchmark_vs_torax.py",
       "tests/test_bio_holonomic_controller.py",
@@ -2743,6 +2750,7 @@
       "tests/test_multi_ion_transport.py",
       "tests/test_multi_ion_transport_conservation_benchmark.py",
       "tests/test_multi_machine_validation_physics_contracts.py",
+      "tests/test_mypy_expansion_guard.py",
       "tests/test_nengo_snn_wrapper.py",
       "tests/test_neoclassical.py",
       "tests/test_neural_equilibrium.py",

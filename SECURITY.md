@@ -76,6 +76,11 @@ with `Harden`.
   quantum bridge script orchestration, native C++ compile calls, and claims
   audit git file discovery use
   explicit subprocess timeouts to avoid indefinite process hangs.
+- **Native build hardening:** optional C++ compilation is fail-closed behind
+  `SCPN_ALLOW_NATIVE_BUILD=1`, resolves `g++` only from the system default
+  path, rejects symlinked or group/world-writable bundled sources and compiler
+  executables, ignores ambient compiler/linker flags, and executes with fixed
+  argv plus a minimal environment.
 - **CI pipeline resilience:** Python preflight and strict-mypy tool runners
   now treat hung subprocesses as deterministic timeout failures.
 - **Local command policy:** machine-local command-permission settings are
@@ -95,6 +100,9 @@ with `Harden`.
   `SCPN_SOLVER_LIB_SHA256`, `SCPN_SOLVER_TRUST_MANIFEST`, or a `.sha256`
   sidecar.
 - Native builds write a SHA-256 sidecar beside the compiled library.
+- Native builds compile only the bundled `solver.cpp` source through fixed
+  arguments; caller-supplied source files, compiler flags, and inherited build
+  environments are not accepted.
 
 ### Dashboard Browser Headers
 - The Streamlit dashboard installs response security headers in the Tornado

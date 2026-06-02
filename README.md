@@ -6,9 +6,50 @@
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core -- Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/) [![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)](https://pepy.tech/project/scpn-fusion) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.9.7-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml)
+[![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml)
+[![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/)
+[![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/)
+[![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)](https://pepy.tech/project/scpn-fusion)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
+[![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+![Version](https://img.shields.io/badge/Version-3.9.8-brightgreen.svg)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
+![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
 
 **Financing the full-fidelity parity campaign:** the public GitHub Pages landing page is [anulum.github.io/scpn-fusion-core](https://anulum.github.io/scpn-fusion-core/). It separates current evidence from blocked GENE/CGYRO/GS2, DREAM, Aurora/STRAHL, FreeGS, and production-scale GPU/cluster validation work.
+
+## At a Glance
+
+SCPN Fusion Core is a control-first fusion software laboratory. It helps teams
+move from a control idea to a reproducible evidence package without pretending
+that partial research kernels are already full production reference solvers.
+
+| Question | Answer |
+|---|---|
+| What does it build? | Neuro-symbolic plasma-control loops, native solver kernels, validation reports, and benchmark artifacts. |
+| Who is it for? | Fusion-control researchers, validation engineers, accelerator teams, formal-methods contributors, and investors evaluating reproducible fusion software infrastructure. |
+| What is validated today? | Local controller contracts, reduced-order replay lanes, selected Grad-Shafranov/operator-source checks, native kernel benchmarks, formal proof slices, and fail-closed benchmark gates. |
+| What remains blocked? | Full GENE/CGYRO/GS2 nonlinear turbulence parity, full Vlasov-Maxwell parity, DREAM kinetic parity, Aurora/STRAHL transport parity, strict FreeGS/free-boundary parity, and production MPI/multi-GPU scaling. |
+| How should readers judge claims? | Follow the linked reports, commands, checksums, thresholds, and accepted/blocked row status. |
+
+## Why This Matters
+
+Fusion control software needs three properties at once: physical realism,
+real-time execution, and auditable safety boundaries. Most projects optimize one
+of those surfaces and leave the others informal. SCPN Fusion Core makes the
+interfaces explicit: controllers compile from inspectable Petri-net contracts,
+solver lanes publish evidence rows, and incomplete parity evidence stays blocked
+instead of being hidden in prose.
+
+This makes the repository useful before plant deployment: it is a place to test
+controller architectures, benchmark kernel choices, prepare same-case reference
+solver campaigns, and build the documentation discipline needed for later
+hardware-in-the-loop and safety-assurance work.
 
 Most fusion codes are physics-first — solve equations, then bolt on control.
 SCPN Fusion Core inverts this: **control-first**. Express plasma control logic
@@ -47,15 +88,15 @@ facades and evidence-bounded validation reports.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.7 |
+| Package version | 3.9.8 |
 | Public API exports | 2 |
 | Python capability source modules | 264 |
 | Python capability classes | 503 |
-| Capability documentation pages | 47 |
-| Rust workspace crates | 12 |
+| Capability documentation pages | 48 |
+| Rust workspace crates | 13 |
 | Optional extras | 12 |
-| Python test files | 397 |
-| Public documentation pages | 47 |
+| Python test files | 399 |
+| Public documentation pages | 48 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -87,7 +128,7 @@ before plant deployment.
 
 ## Documentation Map
 
-| Need | Start here |
+| Reader goal | Start here |
 |---|---|
 | Understand the product and evidence boundary | [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) |
 | Install and run the first commands | [`docs/ONBOARDING.md`](docs/ONBOARDING.md) |
@@ -754,7 +795,7 @@ Audit artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {3.9.7}
+  version = {3.9.8}
 }
 ```
 

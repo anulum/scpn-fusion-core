@@ -45,3 +45,22 @@ independent comparability, not inflated claims.
 The repository is not yet full-fidelity end-to-end. Its current public value is
 a broad, inspectable control-and-validation platform with explicit blockers and
 a path to production-grade parity evidence.
+
+
+## Market value by evidence package
+
+| Evidence package | Why it matters commercially |
+|---|---|
+| Deterministic replay | Makes controller regressions auditable across software and hardware targets. |
+| Reference-solver parity manifests | Lets partners compare native kernels against trusted tools without vague claims. |
+| Formal proof artifacts | Creates a path toward safety-assurance arguments for high-consequence control software. |
+| GPU/MPI scaling reports | Converts performance claims into budgetable infrastructure plans. |
+| Open validation datasets | Reduces onboarding cost for collaborators and makes third-party replication possible. |
+
+## Near-term audience-specific value
+
+- Fusion startups can evaluate controller architecture and validation workflow before committing plant-specific data.
+- Laboratories can use the fail-closed report pattern for reproducible benchmark campaigns.
+- Hardware teams can plug in GPU, FPGA, neuromorphic, or HIL backends behind explicit replay contracts.
+- Formal-methods teams can extend proof coverage toward compiler and runtime guarantees.
+- Investors can see which money buys external data, reference runs, hardware time, or safety evidence.

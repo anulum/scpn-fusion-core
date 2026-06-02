@@ -61,3 +61,22 @@ as failures to hide.
 A benchmark number is public only when it includes command, environment,
 hardware metadata, input decks, output artifacts, checksums, thresholds, and a
 report that states pass, fail, blocked, or diagnostic-only status.
+
+
+## 6. Choose a first contribution path
+
+| Path | First useful task | Evidence expected |
+|---|---|---|
+| Control | Add or harden a deterministic replay scenario | Trace checksum, controller inputs, outputs, and pass/fail criteria |
+| Equilibrium | Improve a GEQDSK or FreeGS comparison row | Source provenance, convention metadata, RMSE/current/axis metrics |
+| Gyrokinetics | Add a same-deck external output candidate | License, checksum, deck hash, converted JSON/NPZ artifact, blocked/accepted status |
+| Runtime | Harden a native, Rust, MPI, CUDA, or HIL surface | Fixed command, hardware metadata, timeout, benchmark report |
+| Formal methods | Extend Lean proofs toward executable contracts | Lean build, theorem boundary, linked implementation contract |
+| Documentation | Improve a public guide or evidence map | Clear scope, no unsupported claims, links to reports |
+
+## 7. Release and documentation discipline
+
+Before a public-facing change is released, update the relevant README, guide,
+API overview, benchmark report, changelog, and release note. If the change is an
+internal plan or unfinished TODO, keep it under ignored internal paths and do not
+turn it into public capability prose.
