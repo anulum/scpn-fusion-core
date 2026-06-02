@@ -291,6 +291,7 @@ def evaluate(
     runtime_pass = runtime_total_ok and runtime_domain_ok
 
     return {
+        "schema": "fallback-budget-summary.v1",
         "torax": {
             "preferred_backend": torax_preferred,
             "observed_backends": torax_backends,

@@ -31,6 +31,7 @@
     "total_events": 0,
     "total_passes": true
   },
+  "schema": "fallback-budget-summary.v1",
   "sparc": {
     "backend_requirement_satisfied_rate": 1.0,
     "case_count": 6,

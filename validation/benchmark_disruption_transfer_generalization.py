@@ -164,6 +164,7 @@ def run_benchmark(
     transfer_eff_ok = transfer_eff >= THRESHOLDS["transfer_efficiency_min"]
 
     return {
+        "schema": "disruption-transfer-generalization.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source_scenarios": sorted(source_set),
         "thresholds": dict(THRESHOLDS),

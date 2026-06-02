@@ -952,6 +952,7 @@ def run_benchmark(
     bench["release_gate"] = _single_profile_release_gate(bench)
     return {
         "SPDX-License-Identifier": "AGPL-3.0-or-later",
+        "benchmark_id": "vertical_control_replay_benchmark",
         "vertical_control_replay_benchmark": bench,
     }
 
@@ -970,6 +971,7 @@ def run_profile_suite() -> dict[str, Any]:
     release_gate = _profile_suite_release_gate(reports, profile_ids)
     return {
         "SPDX-License-Identifier": "AGPL-3.0-or-later",
+        "benchmark_id": "vertical_control_replay_profile_suite",
         "vertical_control_replay_profile_suite": {
             "schema_version": SCHEMA_VERSION,
             "profile_ids": profile_ids,
