@@ -438,14 +438,19 @@ Evidence boundary:
 |------|----------|
 | Lean project | `scpn-fusion-lean/` |
 | First theorem | `scpn-fusion-lean/SafetyProof.lean` |
-| Verified property | Grad-Shafranov validation errors are propagated exactly |
+| PID bounded-output proof | `scpn-fusion-lean/PIDBoundedOutput.lean` |
+| Petri-to-SNN reachability proof | `scpn-fusion-lean/SNNReachabilityPreservation.lean` |
+| Petri token-boundedness proof | `scpn-fusion-lean/PetriTokenBoundedness.lean` |
+| Verified properties | Grad-Shafranov validation errors are propagated exactly; normalized PID magnitudes remain bounded by actuator limits and raw command magnitude, propagate actuator-limit, raw-command, and dual upper bounds, remain bounded under nested filters, preserve zero-command and at-limit boundary cases, are monotone in command and actuator limit, are idempotent under repeated saturation, take exactly the raw command or the configured limit branch, and cannot amplify a command unless saturating to the configured limit; finite Petri graph reachability paths, composed paths, direct-edge equivalence, edge-count preservation, empty-edge preservation, source/destination endpoint bounds, and full endpoint bounds are preserved and reflected by the compiled SNN edge contract; no compiled SNN direct edge or reachable path exists without a corresponding Petri edge/path or declared topology; empty Petri graphs are well-formed vacuously; well-formed Petri edges and reachable endpoints remain within the compiled SNN neuron bound; finite-capacity Petri token filters preserve per-place bounds, preserve arbitrary finite-marking length and capacity sum, do not amplify per-place tokens or aggregate token sum, keep filtered aggregate token sum below both original and filtered aggregate capacity, expose a combined original-and-capacity aggregate safety theorem, are idempotent, have stable aggregate token/capacity sums under repeated filtering, and leave already bounded finite markings unchanged |
 | CI surface | `lean-safety-proofs` job in `.github/workflows/ci.yml` |
 | Narrative draft | `docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md` |
 
 This is an intentionally narrow proof boundary, not a claim that the full
 plasma solver, controller stack, or nonlinear plant model is formally verified.
-Next proof targets are PID bounded-output and Petri-net-to-SNN reachability
-preservation.
+Next proof targets are signed PID saturation over physical coil-current units,
+SNN deterministic replay over seeded stochastic traces, matrix-level incidence
+preservation against the Python compiler artefact schema, and finite-capacity
+token boundedness tied to executable weighted firing updates.
 
 ## Controller Stress-Test Campaign (1,000 shots)
 

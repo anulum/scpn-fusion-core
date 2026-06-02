@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Rust fuzz harness manifest
+
+[package]
+name = "scpn-fusion-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+license = "AGPL-3.0-or-later"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+fusion-core = { path = "../crates/fusion-core" }
+libfuzzer-sys = "0.4"
+ndarray = "0.16"
+
+[[bin]]
+name = "mpi_domain"
+path = "fuzz_targets/mpi_domain.rs"
+test = false
+doc = false
+bench = false

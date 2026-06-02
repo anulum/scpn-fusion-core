@@ -674,6 +674,11 @@ jobs:
             --freegs artifacts/freegs_benchmark.json \
             --thresholds tools/fallback_budget_thresholds.json \
             --summary-json artifacts/fallback_budget_summary.json
+      - name: Benchmark regression guard
+        run: |
+          python tools/benchmark_regression_guard.py \
+            --thresholds tools/benchmark_regression_thresholds.json \
+            --summary-json artifacts/benchmark_regression_guard_summary.json
       - name: Upload benchmark provenance artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
@@ -683,6 +688,7 @@ jobs:
             artifacts/sparc_geqdsk_rmse_benchmark.json
             artifacts/freegs_benchmark.json
             artifacts/fallback_budget_summary.json
+            artifacts/benchmark_regression_guard_summary.json
             artifacts/disruption_transfer_generalization.json
             artifacts/disruption_transfer_generalization.md
             artifacts/vertical_control_replay_benchmark.json
@@ -867,6 +873,38 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  rust-fuzz:
+    name: Rust Fuzz Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    needs: [rust-tests]
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - name: Install Rust nightly toolchain
+        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # nightly
+        with:
+          toolchain: nightly
+      - name: Cache cargo
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            scpn-fusion-rs/target
+          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('scpn-fusion-rs/Cargo.lock', 'scpn-fusion-rs/fuzz/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Verify fuzz targets are present
+        run: test -f fuzz/fuzz_targets/mpi_domain.rs
+      - name: Run bounded fuzz smoke target
+        run: cargo +nightly fuzz run mpi_domain -- -runs=256 -max_len=128 -timeout=10 -rss_limit_mb=2048
 
   rust-audit:
     name: Rust Security Audit

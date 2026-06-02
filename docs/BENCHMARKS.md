@@ -38,6 +38,24 @@ Published reports must retain blocker statuses when external artefacts are
 missing. Do not substitute synthetic, reduced-order, or partial diagnostic
 outputs for accepted full-fidelity parity evidence.
 
+## Type-checking non-regression gate
+
+The Python CI preflight runs a MyPy expansion guard before strict MyPy:
+
+```bash
+python tools/mypy_expansion_guard.py
+python tools/run_mypy_strict.py
+```
+
+The guard compares `[tool.mypy]` in `pyproject.toml` against
+`tools/mypy_expansion_baseline.json`. It permits the typed file cohort to grow,
+but fails closed if a previously typed file is removed, `strict = true` is
+disabled, global `ignore_missing_imports = false` is loosened, an exclude rule
+hides files from the typed cohort, configured typed files disappear, or a new
+`ignore_missing_imports` override appears without an explicit baseline update.
+This prevents untyped code creep while the strict MyPy cohort expands
+incrementally across source, validation, benchmark, and test surfaces.
+
 ## Provider-neutral cloud benchmark bundles
 
 The tracked cloud runners are provider-neutral execution bundles. They write
@@ -892,6 +910,33 @@ sensitive to missing control action.
 | Fault and saturation paths | High-growth and low-actuator uncertainty cases must remain bounded and deterministic; a `no_control` lane remains diagnostic-only and must fail acceptance | same |
 | Multi-profile replay | ITER-like, DIII-D-like, and compact-tokamak reduced-order plant profiles must pass and emit `accepted_reduced_order_replay_release_gate` | `python validation/vertical_control_replay_benchmark.py --all-profiles --strict` |
 | Uncertainty envelope | Growth, damping, actuator, sensor-bias, and one-step latency perturbations are replayed | same |
+
+### Benchmark Regression Gate
+
+CI now runs a dedicated benchmark regression guard after benchmark artefact
+generation in `.github/workflows/ci.yml` `Benchmark Provenance Smoke`.
+
+The guard is configured by `tools/benchmark_regression_thresholds.json` and
+executed with:
+
+```bash
+python tools/benchmark_regression_guard.py \
+  --thresholds tools/benchmark_regression_thresholds.json \
+  --summary-json artifacts/benchmark_regression_guard_summary.json
+```
+
+It fails closed when any required benchmark artefact is missing, any configured
+metric path is absent, any boolean acceptance flag flips, or any numeric metric
+crosses its configured bound. The current CI gate covers:
+
+- single-profile vertical-control replay acceptance and deterministic replay
+- vertical-control profile-suite acceptance across the configured machine profiles
+- disruption transfer-generalisation recall, false-positive rate, and transfer efficiency
+- fallback-budget guard acceptance
+
+This is separate from benchmark publication. The guard prevents silent
+regression of already-generated benchmark artefacts; it does not convert
+diagnostic-only rows into full-fidelity parity evidence.
 
 ### Vertical-Control Replay Release Gate
 

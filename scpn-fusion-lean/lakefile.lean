@@ -19,6 +19,10 @@ lean_lib SafetyProof where
 
 lean_lib PIDBoundedOutput where
 
+lean_lib SNNReachabilityPreservation where
+
+lean_lib PetriTokenBoundedness where
+
 @[default_target]
 lean_exe gs_picard_csv where
   root := `Main

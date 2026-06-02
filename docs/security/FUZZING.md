@@ -29,3 +29,25 @@ python fuzz/fuzz_disruption_npz.py corpus/disruption_npz findings/disruption_npz
 ```
 
 All targets truncate single generated inputs to bounded sizes before writing temporary files. Production loaders enforce 10 MiB gates for JSON, GEQDSK, and NumPy archive paths before parsing.
+
+## Rust cargo-fuzz target
+
+The Rust solver workspace also ships a `cargo-fuzz` harness for domain-decomposition boundary handling:
+
+- `scpn-fusion-rs/fuzz/fuzz_targets/mpi_domain.rs`: exercises bounded 2D decomposition, tile extraction, and serial halo exchange over finite generated arrays.
+
+Install the Rust fuzzing toolchain before running the target locally:
+
+```bash
+rustup toolchain install nightly --profile minimal
+cargo install cargo-fuzz --locked
+```
+
+Run the same bounded smoke command used by CI:
+
+```bash
+cd scpn-fusion-rs
+cargo +nightly fuzz run mpi_domain -- -runs=256 -max_len=128 -timeout=10 -rss_limit_mb=2048
+```
+
+Generated Rust fuzz corpora, crash artefacts, and build outputs live under `scpn-fusion-rs/fuzz/{corpus,artifacts,target}` and are intentionally ignored. Preserve only reduced, reviewed regression inputs when a fuzz finding is promoted into a dedicated test.

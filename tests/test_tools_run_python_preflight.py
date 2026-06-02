@@ -282,6 +282,10 @@ def test_main_runs_default_checks_in_order(monkeypatch):
             SCRIPT_PATH.resolve().parents[1],
         ),
         (
+            ["python-test", "tools/mypy_expansion_guard.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
             ["python-test", "tools/run_mypy_strict.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -357,6 +361,10 @@ def test_main_honors_skip_flags(monkeypatch):
         ),
         (
             ["python-test", "tools/claims_audit.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            ["python-test", "tools/mypy_expansion_guard.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
         (

@@ -1,0 +1,88 @@
+{
+  "reports": [
+    {
+      "id": "vertical_control_replay",
+      "path": "artifacts/vertical_control_replay_benchmark.json",
+      "metrics": [
+        {
+          "path": "vertical_control_replay_benchmark.passes_thresholds",
+          "equals": true,
+          "description": "single-profile vertical replay acceptance"
+        },
+        {
+          "path": "vertical_control_replay_benchmark.deterministic_replay_pass",
+          "equals": true,
+          "description": "deterministic vertical replay"
+        },
+        {
+          "path": "vertical_control_replay_benchmark.controllers.pid.p95_abs_z_m",
+          "max": 0.0065,
+          "description": "PID vertical p95 absolute Z error"
+        },
+        {
+          "path": "vertical_control_replay_benchmark.controllers.super_twisting.p95_abs_z_m",
+          "max": 0.0065,
+          "description": "super-twisting vertical p95 absolute Z error"
+        },
+        {
+          "path": "vertical_control_replay_benchmark.controllers.sliding_mode_vertical.p95_abs_z_m",
+          "max": 0.0065,
+          "description": "sliding-mode vertical p95 absolute Z error"
+        }
+      ]
+    },
+    {
+      "id": "vertical_control_profile_suite",
+      "path": "artifacts/vertical_control_replay_profiles.json",
+      "metrics": [
+        {
+          "path": "vertical_control_replay_profile_suite.all_profiles_pass",
+          "equals": true,
+          "description": "all vertical replay machine profiles pass"
+        }
+      ]
+    },
+    {
+      "id": "disruption_transfer_generalization",
+      "path": "artifacts/disruption_transfer_generalization.json",
+      "metrics": [
+        {
+          "path": "passes",
+          "equals": true,
+          "description": "disruption transfer benchmark acceptance"
+        },
+        {
+          "path": "source_group.recall",
+          "min": 0.6,
+          "description": "source-domain disruption recall"
+        },
+        {
+          "path": "target_group.recall",
+          "min": 0.6,
+          "description": "target-domain disruption recall"
+        },
+        {
+          "path": "target_group.false_positive_rate",
+          "max": 0.4,
+          "description": "target-domain false-positive rate"
+        },
+        {
+          "path": "transfer_efficiency",
+          "min": 0.7,
+          "description": "source-to-target transfer efficiency"
+        }
+      ]
+    },
+    {
+      "id": "fallback_budget_summary",
+      "path": "artifacts/fallback_budget_summary.json",
+      "metrics": [
+        {
+          "path": "overall_pass",
+          "equals": true,
+          "description": "fallback budget guard acceptance"
+        }
+      ]
+    }
+  ]
+}

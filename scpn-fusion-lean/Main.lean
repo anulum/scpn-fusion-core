@@ -10,6 +10,8 @@ SCPN Fusion Core — Lean Grad-Shafranov CSV CLI
 import SCPNFusionSolvers
 import SafetyProof
 import PIDBoundedOutput
+import SNNReachabilityPreservation
+import PetriTokenBoundedness
 
 open SCPNFusionSolvers
 

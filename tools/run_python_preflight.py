@@ -454,6 +454,7 @@ def _build_release_checks(
             )
         )
     if not skip_mypy:
+        checks.append(("mypy expansion guard", [sys.executable, "tools/mypy_expansion_guard.py"]))
         checks.append(("mypy strict", [sys.executable, "tools/run_mypy_strict.py"]))
     return checks
 
