@@ -890,20 +890,38 @@ jobs:
         uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # nightly
         with:
           toolchain: nightly
+          components: llvm-tools-preview
       - name: Cache cargo
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: |
+            ~/.cargo/bin
             ~/.cargo/registry
             ~/.cargo/git
             scpn-fusion-rs/target
           key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('scpn-fusion-rs/Cargo.lock', 'scpn-fusion-rs/fuzz/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-cargo-fuzz-
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz --locked
+        run: |
+          if command -v cargo-fuzz >/dev/null 2>&1; then
+            cargo fuzz --version
+            exit 0
+          fi
+          for attempt in 1 2 3; do
+            if cargo install cargo-fuzz --locked; then
+              cargo fuzz --version
+              exit 0
+            fi
+            echo "cargo-fuzz locked install attempt ${attempt}/3 failed."
+            sleep $((attempt * 10))
+          done
+          cargo install cargo-fuzz
+          cargo fuzz --version
       - name: Verify fuzz targets are present
         run: test -f fuzz/fuzz_targets/mpi_domain.rs
       - name: Run bounded fuzz smoke target
+        env:
+          RUST_BACKTRACE: "1"
         run: cargo +nightly fuzz run mpi_domain -- -runs=256 -max_len=128 -timeout=10 -rss_limit_mb=2048
 
   rust-audit:
