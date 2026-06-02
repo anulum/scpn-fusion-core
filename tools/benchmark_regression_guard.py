@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import time
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_THRESHOLDS = REPO_ROOT / "tools" / "benchmark_regression_thresholds.json"
 DEFAULT_SUMMARY = REPO_ROOT / "artifacts" / "benchmark_regression_guard_summary.json"
+EXPECTED_THRESHOLD_SCHEMA = "benchmark-regression-thresholds.v2"
 
 
 def _resolve(path_value: str) -> Path:
@@ -70,6 +72,136 @@ def _finite_number(value: Any, metric_path: str) -> float:
     return number
 
 
+def _require_non_empty_string(value: Any, *, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{label}: expected non-empty string")
+    return value
+
+
+def _validate_metric_config(metric: dict[str, Any], *, report_id: str, index: int) -> None:
+    metric_path = _require_non_empty_string(
+        metric.get("path"),
+        label=f"{report_id}.metrics[{index}].path",
+    )
+    has_equals = "equals" in metric
+    has_min = "min" in metric
+    has_max = "max" in metric
+    if has_equals and (has_min or has_max):
+        raise ValueError(f"{metric_path}: equals cannot be combined with min/max")
+    if not has_equals and not has_min and not has_max:
+        raise ValueError(f"{metric_path}: metric requires equals, min, or max")
+    if has_min:
+        _finite_number(metric["min"], f"{metric_path}.min")
+    if has_max:
+        _finite_number(metric["max"], f"{metric_path}.max")
+    if has_min and has_max and float(metric["min"]) > float(metric["max"]):
+        raise ValueError(f"{metric_path}: min cannot be greater than max")
+
+
+def _validate_report_config(report_cfg: dict[str, Any], *, index: int) -> None:
+    report_id = _require_non_empty_string(report_cfg.get("id"), label=f"reports[{index}].id")
+    _require_non_empty_string(report_cfg.get("path"), label=f"{report_id}.path")
+    if "expected_schema" in report_cfg:
+        _require_non_empty_string(
+            report_cfg["expected_schema"], label=f"{report_id}.expected_schema"
+        )
+    if "expected_benchmark_id" in report_cfg:
+        _require_non_empty_string(
+            report_cfg["expected_benchmark_id"],
+            label=f"{report_id}.expected_benchmark_id",
+        )
+    metric_cfgs = report_cfg.get("metrics")
+    if not isinstance(metric_cfgs, list) or not metric_cfgs:
+        raise ValueError(f"{report_id}: report requires at least one metric")
+    seen_paths: set[str] = set()
+    for metric_index, metric_any in enumerate(metric_cfgs):
+        if not isinstance(metric_any, dict):
+            raise ValueError(f"{report_id}.metrics[{metric_index}]: expected object")
+        metric = dict(metric_any)
+        _validate_metric_config(metric, report_id=report_id, index=metric_index)
+        metric_path = str(metric["path"])
+        if metric_path in seen_paths:
+            raise ValueError(f"{report_id}: duplicate metric path {metric_path}")
+        seen_paths.add(metric_path)
+    if "max_age_seconds" in report_cfg:
+        max_age = _finite_number(report_cfg["max_age_seconds"], f"{report_id}.max_age_seconds")
+        if max_age <= 0.0:
+            raise ValueError(f"{report_id}.max_age_seconds must be > 0")
+
+
+def _validate_thresholds(thresholds: dict[str, Any]) -> list[dict[str, Any]]:
+    schema = thresholds.get("schema")
+    if schema != EXPECTED_THRESHOLD_SCHEMA:
+        raise ValueError(
+            "benchmark regression thresholds schema mismatch: "
+            f"expected {EXPECTED_THRESHOLD_SCHEMA!r}, got {schema!r}"
+        )
+    reports_cfg = thresholds.get("reports", [])
+    if not isinstance(reports_cfg, list) or not reports_cfg:
+        raise ValueError("benchmark regression thresholds must define at least one report")
+    seen_ids: set[str] = set()
+    reports: list[dict[str, Any]] = []
+    for index, report_cfg_any in enumerate(reports_cfg):
+        if not isinstance(report_cfg_any, dict):
+            raise ValueError(f"reports[{index}]: expected object")
+        report_cfg = dict(report_cfg_any)
+        _validate_report_config(report_cfg, index=index)
+        report_id = str(report_cfg["id"])
+        if report_id in seen_ids:
+            raise ValueError(f"duplicate benchmark report id: {report_id}")
+        seen_ids.add(report_id)
+        reports.append(report_cfg)
+    return reports
+
+
+def _freshness_row(report_path: Path, max_age_seconds: float | None) -> dict[str, Any] | None:
+    if max_age_seconds is None:
+        return None
+    age_seconds = max(0.0, time.time() - report_path.stat().st_mtime)
+    passes = age_seconds <= max_age_seconds
+    return {
+        "path": "__report_age_seconds__",
+        "description": "benchmark report freshness",
+        "value": age_seconds,
+        "max": max_age_seconds,
+        "passes": passes,
+        "failure_reason": None if passes else f"{age_seconds:.12g} > max {max_age_seconds:.12g}",
+    }
+
+
+def _identity_rows(payload: dict[str, Any], report_cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if "expected_schema" in report_cfg:
+        observed = payload.get("schema")
+        expected = str(report_cfg["expected_schema"])
+        passes = observed == expected
+        rows.append(
+            {
+                "path": "__report_schema__",
+                "description": "benchmark report schema identity",
+                "value": observed,
+                "expected": expected,
+                "passes": passes,
+                "failure_reason": None if passes else f"expected {expected!r}, got {observed!r}",
+            }
+        )
+    if "expected_benchmark_id" in report_cfg:
+        observed = payload.get("benchmark_id")
+        expected = str(report_cfg["expected_benchmark_id"])
+        passes = observed == expected
+        rows.append(
+            {
+                "path": "__benchmark_id__",
+                "description": "benchmark report id identity",
+                "value": observed,
+                "expected": expected,
+                "passes": passes,
+                "failure_reason": None if passes else f"expected {expected!r}, got {observed!r}",
+            }
+        )
+    return rows
+
+
 def _evaluate_metric(payload: dict[str, Any], metric: dict[str, Any]) -> dict[str, Any]:
     metric_path = str(metric["path"])
     value = _lookup(payload, metric_path)
@@ -102,8 +234,6 @@ def _evaluate_metric(payload: dict[str, Any], metric: dict[str, Any]) -> dict[st
         if number < limit:
             row["passes"] = False
             row["failure_reason"] = f"{number:.12g} < min {limit:.12g}"
-    if "max" not in metric and "min" not in metric:
-        raise ValueError(f"{metric_path}: metric requires equals, min, or max")
     return row
 
 
@@ -116,24 +246,27 @@ def evaluate(thresholds: dict[str, Any]) -> dict[str, Any]:
     Returns:
         Structured summary with per-report rows and aggregate pass state.
     """
-    reports_cfg = thresholds.get("reports", [])
-    if not isinstance(reports_cfg, list) or not reports_cfg:
-        raise ValueError("benchmark regression thresholds must define at least one report")
-
     reports: list[dict[str, Any]] = []
-    for report_cfg_any in reports_cfg:
-        report_cfg = dict(report_cfg_any)
+    for report_cfg in _validate_thresholds(thresholds):
         report_id = str(report_cfg["id"])
         report_path = _resolve(str(report_cfg["path"]))
         payload = _load_json(report_path)
-        metric_cfgs = report_cfg.get("metrics", [])
-        if not isinstance(metric_cfgs, list) or not metric_cfgs:
-            raise ValueError(f"{report_id}: report requires at least one metric")
-        metrics = [_evaluate_metric(payload, dict(metric_cfg)) for metric_cfg in metric_cfgs]
+        metric_cfgs = report_cfg["metrics"]
+        metrics = _identity_rows(payload, report_cfg)
+        metrics.extend(_evaluate_metric(payload, dict(metric_cfg)) for metric_cfg in metric_cfgs)
+        freshness = _freshness_row(
+            report_path,
+            float(report_cfg["max_age_seconds"]) if "max_age_seconds" in report_cfg else None,
+        )
+        if freshness is not None:
+            metrics.append(freshness)
         reports.append(
             {
                 "id": report_id,
                 "path": _display_path(report_path),
+                "max_age_seconds": report_cfg.get("max_age_seconds"),
+                "expected_schema": report_cfg.get("expected_schema"),
+                "expected_benchmark_id": report_cfg.get("expected_benchmark_id"),
                 "metric_count": len(metrics),
                 "failed_metric_count": sum(1 for row in metrics if not bool(row["passes"])),
                 "passes": all(bool(row["passes"]) for row in metrics),

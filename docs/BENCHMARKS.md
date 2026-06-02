@@ -929,6 +929,15 @@ It fails closed when any required benchmark artefact is missing, any configured
 metric path is absent, any boolean acceptance flag flips, or any numeric metric
 crosses its configured bound. The current CI gate covers:
 
+The threshold file is schema-versioned as
+`benchmark-regression-thresholds.v2`. The guard rejects duplicate report IDs,
+duplicate metric paths, non-finite numeric bounds, invalid `min`/`max` ranges,
+and metrics that mix exact equality checks with numeric bounds. Report rows may
+also set `expected_schema`, `expected_benchmark_id`, and `max_age_seconds`.
+CI-generated benchmark reports use these identity and freshness checks so a
+wrong, stale, local, or cached artefact cannot satisfy the gate only because it
+contains similarly named metric fields.
+
 - single-profile vertical-control replay acceptance and deterministic replay
 - vertical-control profile-suite acceptance across the configured machine profiles
 - disruption transfer-generalisation recall, false-positive rate, and transfer efficiency

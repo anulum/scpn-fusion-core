@@ -1,8 +1,11 @@
 {
+  "schema": "benchmark-regression-thresholds.v2",
   "reports": [
     {
       "id": "vertical_control_replay",
       "path": "artifacts/vertical_control_replay_benchmark.json",
+      "max_age_seconds": 14400,
+      "expected_benchmark_id": "vertical_control_replay_benchmark",
       "metrics": [
         {
           "path": "vertical_control_replay_benchmark.passes_thresholds",
@@ -34,6 +37,8 @@
     {
       "id": "vertical_control_profile_suite",
       "path": "artifacts/vertical_control_replay_profiles.json",
+      "max_age_seconds": 14400,
+      "expected_benchmark_id": "vertical_control_replay_profile_suite",
       "metrics": [
         {
           "path": "vertical_control_replay_profile_suite.all_profiles_pass",
@@ -45,6 +50,8 @@
     {
       "id": "disruption_transfer_generalization",
       "path": "artifacts/disruption_transfer_generalization.json",
+      "max_age_seconds": 14400,
+      "expected_schema": "disruption-transfer-generalization.v1",
       "metrics": [
         {
           "path": "passes",
@@ -76,6 +83,8 @@
     {
       "id": "fallback_budget_summary",
       "path": "artifacts/fallback_budget_summary.json",
+      "max_age_seconds": 14400,
+      "expected_schema": "fallback-budget-summary.v1",
       "metrics": [
         {
           "path": "overall_pass",

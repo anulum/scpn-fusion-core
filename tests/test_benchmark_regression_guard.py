@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -36,6 +37,7 @@ def test_evaluate_passes_for_configured_metrics(tmp_path: Path) -> None:
 
     summary = guard.evaluate(
         {
+            "schema": "benchmark-regression-thresholds.v2",
             "reports": [
                 {
                     "id": "bench",
@@ -45,7 +47,7 @@ def test_evaluate_passes_for_configured_metrics(tmp_path: Path) -> None:
                         {"path": "gate.p95_ms", "max": 2.0},
                     ],
                 }
-            ]
+            ],
         }
     )
 
@@ -59,13 +61,14 @@ def test_evaluate_fails_closed_on_regression(tmp_path: Path) -> None:
 
     summary = guard.evaluate(
         {
+            "schema": "benchmark-regression-thresholds.v2",
             "reports": [
                 {
                     "id": "bench",
                     "path": str(report),
                     "metrics": [{"path": "gate.p95_ms", "max": 2.0}],
                 }
-            ]
+            ],
         }
     )
 
@@ -81,13 +84,14 @@ def test_evaluate_fails_closed_on_missing_metric(tmp_path: Path) -> None:
     with pytest.raises(KeyError):
         guard.evaluate(
             {
+                "schema": "benchmark-regression-thresholds.v2",
                 "reports": [
                     {
                         "id": "bench",
                         "path": str(report),
                         "metrics": [{"path": "gate.p95_ms", "max": 2.0}],
                     }
-                ]
+                ],
             }
         )
 
@@ -100,13 +104,14 @@ def test_main_writes_summary_and_returns_nonzero(tmp_path: Path) -> None:
     _write_json(
         thresholds,
         {
+            "schema": "benchmark-regression-thresholds.v2",
             "reports": [
                 {
                     "id": "bench",
                     "path": str(report),
                     "metrics": [{"path": "gate.passes", "equals": True}],
                 }
-            ]
+            ],
         },
     )
 
@@ -121,3 +126,130 @@ def test_main_writes_summary_and_returns_nonzero(tmp_path: Path) -> None:
 
     assert rc == 1
     assert json.loads(summary_path.read_text(encoding="utf-8"))["overall_pass"] is False
+
+
+def test_evaluate_rejects_schema_mismatch(tmp_path: Path) -> None:
+    report = tmp_path / "bench.json"
+    _write_json(report, {"gate": {"passes": True}})
+
+    with pytest.raises(ValueError, match="schema mismatch"):
+        guard.evaluate(
+            {
+                "schema": "benchmark-regression-thresholds.v1",
+                "reports": [
+                    {
+                        "id": "bench",
+                        "path": str(report),
+                        "metrics": [{"path": "gate.passes", "equals": True}],
+                    }
+                ],
+            }
+        )
+
+
+def test_evaluate_rejects_duplicate_metric_paths(tmp_path: Path) -> None:
+    report = tmp_path / "bench.json"
+    _write_json(report, {"gate": {"p95_ms": 1.5}})
+
+    with pytest.raises(ValueError, match="duplicate metric path"):
+        guard.evaluate(
+            {
+                "schema": "benchmark-regression-thresholds.v2",
+                "reports": [
+                    {
+                        "id": "bench",
+                        "path": str(report),
+                        "metrics": [
+                            {"path": "gate.p95_ms", "max": 2.0},
+                            {"path": "gate.p95_ms", "max": 3.0},
+                        ],
+                    }
+                ],
+            }
+        )
+
+
+def test_evaluate_rejects_equals_with_numeric_bounds(tmp_path: Path) -> None:
+    report = tmp_path / "bench.json"
+    _write_json(report, {"gate": {"passes": True}})
+
+    with pytest.raises(ValueError, match="equals cannot be combined"):
+        guard.evaluate(
+            {
+                "schema": "benchmark-regression-thresholds.v2",
+                "reports": [
+                    {
+                        "id": "bench",
+                        "path": str(report),
+                        "metrics": [{"path": "gate.passes", "equals": True, "max": 1.0}],
+                    }
+                ],
+            }
+        )
+
+
+def test_evaluate_fails_closed_on_stale_report(tmp_path: Path) -> None:
+    report = tmp_path / "bench.json"
+    _write_json(report, {"gate": {"passes": True}})
+    os.utime(report, (1, 1))
+
+    summary = guard.evaluate(
+        {
+            "schema": "benchmark-regression-thresholds.v2",
+            "reports": [
+                {
+                    "id": "bench",
+                    "path": str(report),
+                    "max_age_seconds": 1.0,
+                    "metrics": [{"path": "gate.passes", "equals": True}],
+                }
+            ],
+        }
+    )
+
+    assert summary["overall_pass"] is False
+    assert summary["reports"][0]["metrics"][-1]["path"] == "__report_age_seconds__"
+
+
+def test_evaluate_fails_closed_on_schema_identity_mismatch(tmp_path: Path) -> None:
+    report = tmp_path / "bench.json"
+    _write_json(report, {"schema": "wrong.v1", "gate": {"passes": True}})
+
+    summary = guard.evaluate(
+        {
+            "schema": "benchmark-regression-thresholds.v2",
+            "reports": [
+                {
+                    "id": "bench",
+                    "path": str(report),
+                    "expected_schema": "right.v1",
+                    "metrics": [{"path": "gate.passes", "equals": True}],
+                }
+            ],
+        }
+    )
+
+    assert summary["overall_pass"] is False
+    assert summary["reports"][0]["metrics"][0]["path"] == "__report_schema__"
+
+
+def test_evaluate_fails_closed_on_benchmark_id_mismatch(tmp_path: Path) -> None:
+    report = tmp_path / "bench.json"
+    _write_json(report, {"benchmark_id": "other", "gate": {"passes": True}})
+
+    summary = guard.evaluate(
+        {
+            "schema": "benchmark-regression-thresholds.v2",
+            "reports": [
+                {
+                    "id": "bench",
+                    "path": str(report),
+                    "expected_benchmark_id": "expected",
+                    "metrics": [{"path": "gate.passes", "equals": True}],
+                }
+            ],
+        }
+    )
+
+    assert summary["overall_pass"] is False
+    assert summary["reports"][0]["metrics"][0]["path"] == "__benchmark_id__"

@@ -231,4 +231,64 @@ theorem repeated_filteredMarking_token_sum_le_capacity_sum (marking : Marking) :
       markingCapacitySum (filteredMarking (filteredMarking marking)) := by
   exact filteredMarking_token_sum_le_filtered_capacity_sum (filteredMarking marking)
 
+structure PlaceDelta where
+  consumed : Nat
+  produced : Nat
+  deriving Repr
+
+def rawPlaceFiringUpdate (place : PlaceToken) (delta : PlaceDelta) : PlaceToken :=
+  { place with tokens := place.tokens - delta.consumed + delta.produced }
+
+def boundedPlaceFiringUpdate (place : PlaceToken) (delta : PlaceDelta) : PlaceToken :=
+  filteredPlaceToken (rawPlaceFiringUpdate place delta)
+
+theorem boundedPlaceFiringUpdate_is_bounded
+    (place : PlaceToken) (delta : PlaceDelta) :
+    (boundedPlaceFiringUpdate place delta).Bounded := by
+  unfold boundedPlaceFiringUpdate
+  exact filteredPlaceToken_is_bounded (rawPlaceFiringUpdate place delta)
+
+theorem boundedPlaceFiringUpdate_preserves_capacity
+    (place : PlaceToken) (delta : PlaceDelta) :
+    (boundedPlaceFiringUpdate place delta).capacity = place.capacity := by
+  rfl
+
+theorem boundedPlaceFiringUpdate_tokens_le_capacity
+    (place : PlaceToken) (delta : PlaceDelta) :
+    (boundedPlaceFiringUpdate place delta).tokens <= place.capacity := by
+  exact boundedPlaceFiringUpdate_is_bounded place delta
+
+theorem boundedPlaceFiringUpdate_idempotent_filter
+    (place : PlaceToken) (delta : PlaceDelta) :
+    filteredPlaceToken (boundedPlaceFiringUpdate place delta)
+      = boundedPlaceFiringUpdate place delta := by
+  unfold boundedPlaceFiringUpdate
+  rw [filteredPlaceToken_idempotent]
+
+def rawMarkingFiringUpdate (marking deltas : Marking) : Marking :=
+  match marking, deltas with
+  | [], _ => []
+  | _, [] => []
+  | place :: restPlaces, deltaPlace :: restDeltas =>
+      rawPlaceFiringUpdate
+        place
+        { consumed := deltaPlace.tokens, produced := deltaPlace.capacity }
+        :: rawMarkingFiringUpdate restPlaces restDeltas
+
+def boundedMarkingFiringUpdate (marking deltas : Marking) : Marking :=
+  filteredMarking (rawMarkingFiringUpdate marking deltas)
+
+theorem boundedMarkingFiringUpdate_is_bounded
+    (marking deltas : Marking) :
+    markingBounded (boundedMarkingFiringUpdate marking deltas) := by
+  unfold boundedMarkingFiringUpdate
+  exact filteredMarking_is_bounded (rawMarkingFiringUpdate marking deltas)
+
+theorem boundedMarkingFiringUpdate_idempotent_filter
+    (marking deltas : Marking) :
+    filteredMarking (boundedMarkingFiringUpdate marking deltas)
+      = boundedMarkingFiringUpdate marking deltas := by
+  unfold boundedMarkingFiringUpdate
+  rw [filteredMarking_idempotent]
+
 end SCPNFusionSolvers
