@@ -151,7 +151,7 @@ def _nef_decoder(
     Tikhonov regularization matches Nengo's LstsqL2 default.
     Returns shape (n_neurons,).
     """
-    x = np.linspace(-1, 1, n_eval)
+    x: FloatArray = np.linspace(-1, 1, n_eval, dtype=np.float64)
     A = pop.steady_rates(x)
     Y = np.asarray(fn(x), dtype=np.float64)
     AAt = A @ A.T

@@ -34,11 +34,13 @@ class ReducedMHD:
     def __init__(self, nr: int = 100) -> None:
         """Create a reduced-MHD 1D m=1, n=1 model on a radial grid."""
         self.nr = nr
-        self.r = np.linspace(0, 1, nr)
+        self.r = np.linspace(0, 1, nr, dtype=np.float64)
         self.dr = self.r[1] - self.r[0]
 
-        self.psi_11 = np.zeros(nr, dtype=complex)  # m=1,n=1 flux perturbation
-        self.phi_11 = np.zeros(nr, dtype=complex)  # stream function perturbation
+        self.psi_11: ComplexArray = np.zeros(nr, dtype=np.complex128)  # m=1,n=1 flux perturbation
+        self.phi_11: ComplexArray = np.zeros(
+            nr, dtype=np.complex128
+        )  # stream function perturbation
 
         # q(0) < 1 required for internal kink instability
         self.q = 0.8 + 2.0 * self.r**2
@@ -83,9 +85,11 @@ class ReducedMHD:
         dpsi_dt = (k_par * self.phi_11) + (self.eta * J_11)  # Ohm's law
 
         # Vorticity: dU/dt = k_∥ J + instability source
-        U_11 = self.laplacian(self.phi_11)
+        U_11: ComplexArray = np.asarray(self.laplacian(self.phi_11), dtype=np.complex128)
 
-        dU_dt = (k_par * J_11) + (growth_drive * self.psi_11)
+        dU_dt: ComplexArray = np.asarray(
+            (k_par * J_11) + (growth_drive * self.psi_11), dtype=np.complex128
+        )
 
         self.psi_11 += dpsi_dt * dt
         U_11 += dU_dt * dt

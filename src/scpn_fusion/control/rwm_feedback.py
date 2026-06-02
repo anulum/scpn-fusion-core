@@ -89,7 +89,7 @@ class RWMFeedbackController:
         self.G_d = G_d
         self.tau_controller = tau_controller
         self.M_coil = M_coil
-        self.prev_B_r = np.zeros(n_sensors)
+        self.prev_B_r: FloatArray = np.zeros(n_sensors, dtype=np.float64)
 
     def step(self, B_r_sensors: FloatArray, dt: float) -> FloatArray:
         """
@@ -103,19 +103,21 @@ class RWMFeedbackController:
             Current commands for each control coil.
         """
         if dt <= 0.0:
-            dB_dt = np.zeros_like(B_r_sensors)
+            dB_dt: FloatArray = np.zeros_like(B_r_sensors, dtype=np.float64)
         else:
-            dB_dt = (B_r_sensors - self.prev_B_r) / dt
+            dB_dt = np.asarray((B_r_sensors - self.prev_B_r) / dt, dtype=np.float64)
 
         self.prev_B_r = B_r_sensors.copy()
 
         # Simple mapping from sensors to coils (assume 1:1 or broadcast)
         if self.n_sensors == self.n_coils:
-            I_coil = self.G_p * B_r_sensors + self.G_d * dB_dt
+            I_coil: FloatArray = np.asarray(
+                self.G_p * B_r_sensors + self.G_d * dB_dt, dtype=np.float64
+            )
         else:
             # Average or project if different numbers
             I_mean = np.mean(self.G_p * B_r_sensors + self.G_d * dB_dt)
-            I_coil = np.full(self.n_coils, I_mean)
+            I_coil = np.full(self.n_coils, I_mean, dtype=np.float64)
 
         return I_coil
 

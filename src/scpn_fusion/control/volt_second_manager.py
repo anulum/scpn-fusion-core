@@ -85,8 +85,8 @@ class VoltSecondOptimizer:
         """Return a deterministic plasma-current ramp to the target current."""
         # A simple optimal ramp: ramp as fast as possible, but we just generate a linear ramp for testing
         # Real optimization would consider CS stress and MHD stability (li limits)
-        t_arr = np.linspace(0, t_ramp_max, n_segments)
-        Ip_trace = Ip_target_MA * (t_arr / t_ramp_max)
+        t_arr: FloatArray = np.linspace(0, t_ramp_max, n_segments, dtype=np.float64)
+        Ip_trace: FloatArray = np.asarray(Ip_target_MA * (t_arr / t_ramp_max), dtype=np.float64)
         return Ip_trace
 
 

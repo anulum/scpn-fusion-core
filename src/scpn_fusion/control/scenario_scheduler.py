@@ -119,20 +119,20 @@ class ScenarioOptimizer:
 
         def objective(p: FloatArray) -> float:
             """Evaluate terminal tracking cost for a candidate waveform stack."""
-            p = p.reshape(n_u, len(times))
+            p_grid: FloatArray = np.asarray(p.reshape(n_u, len(times)), dtype=np.float64)
             wfs = {
-                "P_aux": ScenarioWaveform("P_aux", times, p[0]),
-                "Ip": ScenarioWaveform("Ip", times, p[1]),
+                "P_aux": ScenarioWaveform("P_aux", times, p_grid[0]),
+                "Ip": ScenarioWaveform("Ip", times, p_grid[1]),
             }
             sched = ScenarioSchedule(wfs)
 
-            x = np.zeros(len(self.target_state))
+            x: FloatArray = np.zeros(len(self.target_state), dtype=np.float64)
             cost = 0.0
 
             t = 0.0
             while t < self.T_total:
                 u_dict = sched.evaluate(t)
-                u = np.array([u_dict["P_aux"], u_dict["Ip"]])
+                u: FloatArray = np.array([u_dict["P_aux"], u_dict["Ip"]], dtype=np.float64)
 
                 x = self.plant_model(x, u, self.dt)
 

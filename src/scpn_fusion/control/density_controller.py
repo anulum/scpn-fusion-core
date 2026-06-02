@@ -145,7 +145,7 @@ class DensityController:
     def __init__(self, model: ParticleTransportModel, dt_control: float = 0.001):
         self.model = model
         self.dt = dt_control
-        self.ne_target = np.zeros(model.n_rho)
+        self.ne_target: FloatArray = np.zeros(model.n_rho, dtype=np.float64)
 
         self.n_GW = 1.0e20
         self.gas_max = 1e22
@@ -157,7 +157,7 @@ class DensityController:
     def set_target(self, ne_target: FloatArray) -> None:
         """Set the target radial electron-density profile."""
 
-        self.ne_target = ne_target
+        self.ne_target = np.asarray(ne_target, dtype=np.float64)
 
     def set_constraints(
         self, n_GW: float, gas_max: float, pellet_freq_max: float, pump_max: float
@@ -237,25 +237,25 @@ class KalmanDensityEstimator:
         self.n_rho = n_rho
         self.n_chords = n_chords
         self.a = float(minor_radius_m)
-        self.rho = np.linspace(0.0, 1.0, n_rho)
+        self.rho: FloatArray = np.linspace(0.0, 1.0, n_rho, dtype=np.float64)
         self.drho = float(self.rho[1] - self.rho[0])
-        self.x = np.zeros(n_rho)
-        self.P = np.eye(n_rho) * 1e38
+        self.x: FloatArray = np.zeros(n_rho, dtype=np.float64)
+        self.P: FloatArray = np.eye(n_rho, dtype=np.float64) * 1e38
 
         self.set_transport(
-            diffusivity_m2_s=np.full(n_rho, diffusivity_m2_s, dtype=float),
-            pinch_velocity_m_s=np.full(n_rho, pinch_velocity_m_s, dtype=float),
+            diffusivity_m2_s=np.full(n_rho, diffusivity_m2_s, dtype=np.float64),
+            pinch_velocity_m_s=np.full(n_rho, pinch_velocity_m_s, dtype=np.float64),
         )
 
         # Q and R
-        self.Q = np.eye(n_rho) * 1e36  # Process noise
-        self.R = np.eye(n_chords) * 1e34  # Meas noise
+        self.Q: FloatArray = np.eye(n_rho, dtype=np.float64) * 1e36  # Process noise
+        self.R: FloatArray = np.eye(n_chords, dtype=np.float64) * 1e34  # Meas noise
 
     def set_transport(self, diffusivity_m2_s: FloatArray, pinch_velocity_m_s: FloatArray) -> None:
         """Set estimator transport coefficients and validate their radial shape."""
 
-        D = np.asarray(diffusivity_m2_s, dtype=float)
-        V = np.asarray(pinch_velocity_m_s, dtype=float)
+        D: FloatArray = np.asarray(diffusivity_m2_s, dtype=np.float64)
+        V: FloatArray = np.asarray(pinch_velocity_m_s, dtype=np.float64)
         if D.shape != (self.n_rho,) or V.shape != (self.n_rho,):
             raise ValueError("transport profiles must have shape (n_rho,)")
         if not np.all(np.isfinite(D)) or np.any(D < 0.0):
@@ -269,7 +269,7 @@ class KalmanDensityEstimator:
         """Build the line-integrated chord response matrix for the configured channels."""
 
         # Mock Abel transform matrix
-        C = np.zeros((self.n_chords, self.n_rho))
+        C: FloatArray = np.zeros((self.n_chords, self.n_rho), dtype=np.float64)
         for i in range(self.n_chords):
             impact = i / self.n_chords
             for j in range(self.n_rho):
@@ -285,7 +285,7 @@ class KalmanDensityEstimator:
         if not math.isfinite(dt) or dt < 0.0:
             raise ValueError("dt must be finite and non-negative")
 
-        profile = np.asarray(ne, dtype=float)
+        profile: FloatArray = np.asarray(ne, dtype=np.float64)
         if profile.shape != (self.n_rho,):
             raise ValueError("density profile must have shape (n_rho,)")
         if not np.all(np.isfinite(profile)):
@@ -297,7 +297,7 @@ class KalmanDensityEstimator:
 
     def _advance_transport(self, ne: FloatArray, dt: float) -> FloatArray:
         if dt == 0.0:
-            return np.asarray(np.maximum(ne, 1e16), dtype=float)
+            return np.asarray(np.maximum(ne, 1e16), dtype=np.float64)
 
         D_max = float(np.max(self.D))
         if D_max > 0.0:
@@ -341,8 +341,10 @@ class KalmanDensityEstimator:
         y_pred = C @ ne_pred
         inn = measurements - y_pred
 
-        self.x = ne_pred + K @ inn
-        self.P = (np.eye(self.n_rho) - K @ C) @ self.P
+        self.x = np.asarray(ne_pred + K @ inn, dtype=np.float64)
+        self.P = np.asarray(
+            (np.eye(self.n_rho, dtype=np.float64) - K @ C) @ self.P, dtype=np.float64
+        )
 
         return self.x
 

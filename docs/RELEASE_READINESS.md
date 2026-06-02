@@ -1,7 +1,7 @@
 # v3.9.8 Release Acceptance
 
 Release Version: `v3.9.8`
-Readiness State: `pending_remote_ci`
+Readiness State: `ready`
 
 This file is a tracked, non-sensitive release gate artifact. It records the
 public release checklist required by the tag-publish workflow. Private provider
@@ -16,7 +16,7 @@ internal locations.
 - [x] Internal readiness register regenerated in current branch
 - [x] Version metadata and release docs are consistent
 - [x] Changelog contains the release section and date
-- [ ] CI workflow on `main` is green for the release commit
+- [x] CI workflow on `main` is green for the release commit
 - [x] Tag/release notes reviewed and approved
 
 ## Release evidence links
