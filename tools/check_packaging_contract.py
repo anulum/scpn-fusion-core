@@ -34,6 +34,69 @@ def _canonical_requirement_name(requirement: str) -> str:
     return token.strip().lower()
 
 
+def _toml_array_complete(lines: list[str]) -> bool:
+    """Return True when TOML array brackets are balanced outside quoted strings."""
+    depth = 0
+    quote: str | None = None
+    escaped = False
+    for char in "\n".join(lines):
+        if escaped:
+            escaped = False
+            continue
+        if quote is not None:
+            if char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            continue
+        if char in {"'", '"'}:
+            quote = char
+        elif char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+    return depth <= 0
+
+
+def _parse_inline_array(lines: list[str], name: str) -> list[str]:
+    """Parse the limited inline string-array form used by project metadata."""
+    values = " ".join(lines)
+    if not _toml_array_complete(lines) or "[" not in values or "]" not in values:
+        raise ValueError(f"unterminated TOML array for {name}")
+    start = values.index("[") + 1
+    end = values.rindex("]")
+    items: list[str] = []
+    token: list[str] = []
+    quote: str | None = None
+    escaped = False
+    for char in values[start:end]:
+        if escaped:
+            token.append(char)
+            escaped = False
+            continue
+        if quote is not None:
+            token.append(char)
+            if char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            continue
+        if char in {"'", '"'}:
+            token.append(char)
+            quote = char
+        elif char == ",":
+            item = "".join(token).strip().strip("\"'")
+            if item:
+                items.append(item)
+            token = []
+        else:
+            token.append(char)
+    item = "".join(token).strip().strip("\"'")
+    if item:
+        items.append(item)
+    return items
+
+
 def _load_pyproject(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     if tomllib is not None:
@@ -54,15 +117,8 @@ def _load_pyproject(path: Path) -> dict[str, Any]:
         if collecting is not None:
             name, buffer = collecting
             buffer.append(stripped)
-            if "]" in stripped:
-                values = " ".join(buffer)
-                if "[" not in values or "]" not in values:
-                    raise ValueError(f"unterminated TOML array for {name}")
-                items = [
-                    part.strip().strip("\"'")
-                    for part in values.split("[", 1)[1].split("]", 1)[0].split(",")
-                    if part.strip()
-                ]
+            if _toml_array_complete(buffer):
+                items = _parse_inline_array(buffer, name)
                 if section == "[project]":
                     dependencies.extend(items)
                 elif section == "[project.optional-dependencies]":
@@ -76,13 +132,8 @@ def _load_pyproject(path: Path) -> dict[str, Any]:
             if "[" not in stripped:
                 raise ValueError("[project].dependencies must be an inline array")
             collecting = ("dependencies", [stripped])
-            if "]" in stripped:
-                values = " ".join([stripped])
-                dependencies.extend(
-                    part.strip().strip("\"'")
-                    for part in values.split("[", 1)[1].split("]", 1)[0].split(",")
-                    if part.strip()
-                )
+            if _toml_array_complete([stripped]):
+                dependencies.extend(_parse_inline_array([stripped], "dependencies"))
                 collecting = None
             continue
         if section == "[project.optional-dependencies]" and "=" in stripped:
@@ -90,13 +141,8 @@ def _load_pyproject(path: Path) -> dict[str, Any]:
             if "[" not in stripped:
                 raise ValueError(f"[project.optional-dependencies].{name} must be an inline array")
             collecting = (name, [stripped])
-            if "]" in stripped:
-                values = " ".join([stripped])
-                optional[name] = [
-                    part.strip().strip("\"'")
-                    for part in values.split("[", 1)[1].split("]", 1)[0].split(",")
-                    if part.strip()
-                ]
+            if _toml_array_complete([stripped]):
+                optional[name] = _parse_inline_array([stripped], name)
                 collecting = None
             continue
 

@@ -9,6 +9,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "check_packaging_contract.py"
@@ -25,6 +27,18 @@ def test_packaging_contract_passes_current_pyproject() -> None:
     assert summary["blocked_in_base"] == []
     assert summary["missing_required_extras"] == []
     assert summary["missing_from_full_extra"] == []
+
+
+def test_packaging_contract_fallback_parser_handles_requirement_extras(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(check_packaging_contract, "tomllib", None)
+    payload = check_packaging_contract._load_pyproject(ROOT / "pyproject.toml")
+    optional = payload["project"]["optional-dependencies"]
+
+    assert "jax[cuda12]>=0.4.20" in optional["gpu"]
+    assert "cupy-cuda12x>=13.6,<14.0" in optional["gpu"]
+    assert "nvidia-cuda-nvrtc-cu12>=12.0,<13.0" in optional["gpu"]
 
 
 def test_packaging_contract_detects_blocked_base_dependency() -> None:
