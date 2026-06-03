@@ -1242,6 +1242,26 @@ high-k leakage, and per-save invariant-pass histories from both NumPy and JAX
 run paths. This is necessary infrastructure for full nonlinear 5D parity, but
 it is not sufficient to claim GENE/CGYRO/GS2 equivalence.
 
+### Nonlinear GK parity item 1 execution checklist
+
+- Current fail state: all GENE/CGYRO/GS2 external-output rows remain blocked on
+  `blocked_missing_external_output_manifest` because same-deck external payloads
+  are not yet redistributable.
+- Required acceptance evidence for this lane:
+  - strict `gk-nonlinear-external-output` payloads (coordinates, observables,
+    redistributable provenance, and checksums)
+  - native same-case comparison rows with thresholds on distribution RMSE,
+    heat-flux spectra RMSE, field-energy history RMSE, and saturation/zonal-flow
+    metrics
+  - linked coarse-vs-fine grid-convergence row
+  - linked production-scale row with hardware/device metadata
+- Evidence refresh sequence (run after any new raw output):
+  - `python tools/inventory_gk_public_reference_decks.py`
+  - `python tools/gk_external_output_parity.py`
+  - `python validation/benchmark_full_fidelity_acceptance.py`
+- Internal acquisition plan is tracked in
+  `docs/internal/gk_same_deck_external_output_acquisition_todo_2026-06-01.md`.
+
 The current acceptance report is
 `validation/reports/full_fidelity_acceptance_benchmark.md`. The integrated
 end-to-end campaign report is
