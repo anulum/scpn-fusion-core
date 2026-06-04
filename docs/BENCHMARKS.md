@@ -71,10 +71,11 @@ consistency, force-balance, and weighted numerical checksums for `B_z`,
 `J_theta`, `psi`, and pressure. It also records peak toroidal current density,
 analytical flux-primitive derivative residuals, pressure-balance residuals,
 Ampere closure residuals, separatrix pressure-energy inventory,
-magnetic-deficit inventory, energy-closure relative error, and a finite-grid
+magnetic-deficit inventory, energy-closure relative error, separatrix
+current-sheet field-gradient/current-density closure, and a finite-grid
 convergence block for null radius, separatrix radius error, Eq. 27 `s`, energy
 per metre, pressure-balance ratio, pressure-balance residual, flux derivative
-residual, and the independent
+residual, current-sheet closure, and the independent
 Ampere residual against the finest tracked grid. Go, Julia, and Lean are recorded as
 `not_applicable_no_frc_surface` until those languages expose equivalent solver
 logic. Nonzero-rotation FRC cases remain fail-closed and are not benchmarked as
@@ -1585,10 +1586,11 @@ metre, pressure-balance ratio, pressure residual, solved peak density, input
 central density, central-density residual, central-density relative error,
 beta peak, separatrix-averaged beta, particle line density, input thermal
 pressure, separatrix pressure-energy inventory, magnetic-deficit inventory,
-energy-closure relative error, thermal-pressure ratio, flux residual, Ampere residual,
+energy-closure relative error, separatrix field-gradient/current-density
+closure, thermal-pressure ratio, flux residual, Ampere residual,
 force-balance residual, and weighted checksums for `B_z`, `J_theta`, `psi`,
 pressure, density, and beta. Python, Rust, and PyO3 rows must agree on the
-same pressure-density-beta-energy closure contract; Go, Julia, and Lean remain
+same pressure-density-beta-energy-current-sheet closure contract; Go, Julia, and Lean remain
 `not_applicable_no_frc_surface` until equivalent native FRC solver logic exists.
 
 Reproduce locally:

@@ -88,6 +88,12 @@ class FRCEquilibriumState:
     ampere_residual_linf: float
     ampere_residual_l2: float
     peak_j_theta_A_m2: float
+    separatrix_bz_gradient_T_m: float
+    separatrix_expected_bz_gradient_T_m: float
+    separatrix_gradient_relative_error: float
+    separatrix_current_density_A_m2: float
+    separatrix_expected_current_density_A_m2: float
+    separatrix_current_density_relative_error: float
     force_balance_residual: FloatArray
     force_balance_residual_linf: float
     force_balance_residual_l2: float
@@ -129,6 +135,13 @@ class FRCValidationReport:
     ampere_residual_linf: float
     ampere_residual_l2: float
     ampere_closure_passed: bool
+    separatrix_bz_gradient_T_m: float
+    separatrix_expected_bz_gradient_T_m: float
+    separatrix_gradient_relative_error: float
+    separatrix_current_density_A_m2: float
+    separatrix_expected_current_density_A_m2: float
+    separatrix_current_density_relative_error: float
+    current_sheet_passed: bool
     force_balance_residual_linf: float
     force_balance_residual_l2: float
     force_balance_passed: bool
@@ -178,10 +191,21 @@ def solve_frc_equilibrium(
         inputs.R_s,
         delta,
     )
+    dBz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
+    separatrix_bz_gradient_T_m = float(np.interp(inputs.R_s, rho, dBz_dr))
+    separatrix_expected_bz_gradient_T_m = float(-inputs.B_ext / delta)
+    separatrix_gradient_relative_error = abs(
+        separatrix_bz_gradient_T_m - separatrix_expected_bz_gradient_T_m
+    ) / max(abs(separatrix_expected_bz_gradient_T_m), tolerance)
+    separatrix_current_density_A_m2 = float(np.interp(inputs.R_s, rho, J_theta))
+    separatrix_expected_current_density_A_m2 = float(inputs.B_ext / (MU_0 * delta))
+    separatrix_current_density_relative_error = abs(
+        separatrix_current_density_A_m2 - separatrix_expected_current_density_A_m2
+    ) / max(abs(separatrix_expected_current_density_A_m2), tolerance)
     ampere_residual = _ampere_current_closure_residual(rho, B_z, J_theta)
     ampere_scale = max(
         tolerance,
-        float(np.max(np.abs(np.gradient(B_z, rho, edge_order=2)))),
+        float(np.max(np.abs(dBz_dr))),
         float(MU_0 * np.max(np.abs(J_theta))),
     )
     ampere_residual_linf = float(np.max(np.abs(ampere_residual)) / ampere_scale)
@@ -300,6 +324,12 @@ def solve_frc_equilibrium(
         ampere_residual_linf=ampere_residual_linf,
         ampere_residual_l2=ampere_residual_l2,
         peak_j_theta_A_m2=float(np.max(np.abs(J_theta))),
+        separatrix_bz_gradient_T_m=separatrix_bz_gradient_T_m,
+        separatrix_expected_bz_gradient_T_m=separatrix_expected_bz_gradient_T_m,
+        separatrix_gradient_relative_error=float(separatrix_gradient_relative_error),
+        separatrix_current_density_A_m2=separatrix_current_density_A_m2,
+        separatrix_expected_current_density_A_m2=separatrix_expected_current_density_A_m2,
+        separatrix_current_density_relative_error=float(separatrix_current_density_relative_error),
         force_balance_residual=force_residual,
         force_balance_residual_linf=force_balance_residual_linf,
         force_balance_residual_l2=force_balance_residual_l2,
@@ -359,6 +389,7 @@ def validate_equilibrium(
     beta_limit_tolerance: float = 2e-2,
     energy_inventory_tolerance: float = 1e-10,
     ampere_tolerance: float = 2e-2,
+    current_sheet_tolerance: float = 2e-2,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
     """Validate finite values, null placement, pressure peaking, and optional force balance."""
@@ -404,6 +435,12 @@ def validate_equilibrium(
     energy_inventory_passed = state.separatrix_energy_closure_relative_error <= energy_inventory_tolerance
     flux_closure_passed = state.flux_derivative_residual_linf <= flux_tolerance
     ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
+    current_sheet_passed = (
+        np.isfinite(state.separatrix_gradient_relative_error)
+        and np.isfinite(state.separatrix_current_density_relative_error)
+        and state.separatrix_gradient_relative_error <= current_sheet_tolerance
+        and state.separatrix_current_density_relative_error <= current_sheet_tolerance
+    )
     force_balance_passed = (
         force_balance_tolerance is None or state.force_balance_residual_linf <= force_balance_tolerance
     )
@@ -415,6 +452,7 @@ def validate_equilibrium(
         and energy_inventory_passed
         and flux_closure_passed
         and ampere_closure_passed
+        and current_sheet_passed
         and force_balance_passed
     )
     return FRCValidationReport(
@@ -449,6 +487,13 @@ def validate_equilibrium(
         ampere_residual_linf=state.ampere_residual_linf,
         ampere_residual_l2=state.ampere_residual_l2,
         ampere_closure_passed=bool(ampere_closure_passed),
+        separatrix_bz_gradient_T_m=state.separatrix_bz_gradient_T_m,
+        separatrix_expected_bz_gradient_T_m=state.separatrix_expected_bz_gradient_T_m,
+        separatrix_gradient_relative_error=state.separatrix_gradient_relative_error,
+        separatrix_current_density_A_m2=state.separatrix_current_density_A_m2,
+        separatrix_expected_current_density_A_m2=state.separatrix_expected_current_density_A_m2,
+        separatrix_current_density_relative_error=state.separatrix_current_density_relative_error,
+        current_sheet_passed=bool(current_sheet_passed),
         force_balance_residual_linf=state.force_balance_residual_linf,
         force_balance_residual_l2=state.force_balance_residual_l2,
         force_balance_passed=bool(force_balance_passed),

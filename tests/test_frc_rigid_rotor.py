@@ -168,6 +168,10 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         "separatrix_pressure_energy_J_m",
         "separatrix_magnetic_deficit_energy_J_m",
         "separatrix_energy_closure_relative_error",
+        "separatrix_bz_gradient_T_m",
+        "separatrix_current_density_A_m2",
+        "separatrix_gradient_relative_error",
+        "separatrix_current_density_relative_error",
     ):
         reference_value = float(getattr(reference, metric))
         coarse_error = abs(float(getattr(coarse, metric)) - reference_value)
@@ -238,6 +242,10 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.peak_j_theta_A_m2 > 0.0
     assert state.ampere_residual_linf <= 2.0e-2
     assert state.ampere_residual_l2 <= 2.0e-2
+    assert state.separatrix_expected_bz_gradient_T_m == pytest.approx(-inputs.B_ext / inputs.delta)
+    assert state.separatrix_expected_current_density_A_m2 == pytest.approx(inputs.B_ext / (MU_0 * inputs.delta))
+    assert state.separatrix_gradient_relative_error <= 2.0e-2
+    assert state.separatrix_current_density_relative_error <= 2.0e-2
     assert state.force_balance_residual.shape == rho.shape
     assert state.force_balance_residual_linf >= 0.0
     assert state.force_balance_residual_l2 >= 0.0
@@ -257,6 +265,10 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
     d_bz_dr = np.gradient(state.B_z, state.rho, edge_order=2)
     dp_dr = np.gradient(state.p, state.rho, edge_order=2)
     expected_force_residual = dp_dr - state.J_theta * state.B_z
+    expected_separatrix_gradient = -inputs.B_ext / delta
+    expected_separatrix_current_density = inputs.B_ext / (MU_0 * delta)
+    interpolated_gradient = float(np.interp(inputs.R_s, rho, d_bz_dr))
+    interpolated_current_density = float(np.interp(inputs.R_s, rho, state.J_theta))
 
     np.testing.assert_allclose(state.J_theta, expected_j_theta, rtol=1.0e-12, atol=1.0e-6)
     np.testing.assert_allclose(
@@ -270,6 +282,19 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
         expected_force_residual,
         rtol=1.0e-12,
         atol=1.0e-4,
+    )
+    assert state.separatrix_bz_gradient_T_m == pytest.approx(interpolated_gradient, rel=1.0e-12)
+    assert state.separatrix_expected_bz_gradient_T_m == pytest.approx(expected_separatrix_gradient)
+    assert state.separatrix_gradient_relative_error == pytest.approx(
+        abs(interpolated_gradient - expected_separatrix_gradient) / abs(expected_separatrix_gradient),
+        rel=1.0e-12,
+    )
+    assert state.separatrix_current_density_A_m2 == pytest.approx(interpolated_current_density, rel=1.0e-12)
+    assert state.separatrix_expected_current_density_A_m2 == pytest.approx(expected_separatrix_current_density)
+    assert state.separatrix_current_density_relative_error == pytest.approx(
+        abs(interpolated_current_density - expected_separatrix_current_density)
+        / abs(expected_separatrix_current_density),
+        rel=1.0e-12,
     )
 
 
@@ -468,6 +493,18 @@ def test_energy_inventory_gate_is_fail_closed() -> None:
     report = validate_equilibrium(corrupted, energy_inventory_tolerance=1.0e-6)
 
     assert report.energy_inventory_passed is False
+    assert report.passed is False
+
+
+def test_current_sheet_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, separatrix_gradient_relative_error=0.5)
+    report = validate_equilibrium(corrupted, current_sheet_tolerance=1.0e-3)
+
+    assert report.current_sheet_passed is False
     assert report.passed is False
 
 

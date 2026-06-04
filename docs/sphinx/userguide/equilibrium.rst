@@ -128,10 +128,13 @@ magnetic-deficit inventory, energy-closure relative error, the pressure-balance
 residual ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical flux-primitive closure
 residual ``dpsi/dr - r B_z``, the Ampere closure residual ``mu_0 J_theta +
 dB_z/dr``, and the radial ideal-MHD force-balance residual ``dp/dr - (J x
-B)_r``.  Density, beta limit, separatrix energy inventory, pressure, flux, and
-Ampere closure are active finite-grid gates by default. Force balance is
-reported as a diagnostic by default; pass an explicit ``force_balance_tolerance``
-to make that residual part of the acceptance gate for a specific run.
+B)_r``. It also checks the separatrix current-sheet identities
+``dB_z/dr|_R_s = -B_ext / delta`` and
+``J_theta(R_s) = B_ext / (mu_0 delta)``. Density, beta limit, separatrix energy
+inventory, current-sheet closure, pressure, flux, and Ampere closure are active
+finite-grid gates by default. Force balance is reported as a diagnostic by
+default; pass an explicit ``force_balance_tolerance`` to make that residual part
+of the acceptance gate for a specific run.
 
 The Rust surface is exposed as ``fusion_physics::frc`` and benchmarked by
 ``cargo bench -p fusion-physics --bench frc_rigid_rotor_bench``.  The tracked

@@ -85,8 +85,20 @@ pub fn solve_frc_equilibrium(
     let b_theta = Array1::zeros(b_z.len());
     let j_theta =
         toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
-    let ampere_residual = ampere_current_closure_residual(&rho, &b_z, &j_theta);
     let grad_bz = gradient_edge_order2(&rho, &b_z);
+    let separatrix_bz_gradient_t_m = interpolate(&rho, &grad_bz, inputs.r_s);
+    let separatrix_expected_bz_gradient_t_m = -inputs.b_ext / delta;
+    let separatrix_gradient_relative_error =
+        (separatrix_bz_gradient_t_m - separatrix_expected_bz_gradient_t_m).abs()
+            / separatrix_expected_bz_gradient_t_m.abs().max(tolerance);
+    let separatrix_current_density_a_m2 = interpolate(&rho, &j_theta, inputs.r_s);
+    let separatrix_expected_current_density_a_m2 = inputs.b_ext / (MU_0 * delta);
+    let separatrix_current_density_relative_error =
+        (separatrix_current_density_a_m2 - separatrix_expected_current_density_a_m2).abs()
+            / separatrix_expected_current_density_a_m2
+                .abs()
+                .max(tolerance);
+    let ampere_residual = ampere_current_closure_residual(&rho, &b_z, &j_theta);
     let ampere_scale = tolerance
         .max(max_abs(&grad_bz))
         .max(MU_0 * max_abs(&j_theta));
@@ -264,6 +276,12 @@ pub fn solve_frc_equilibrium(
         ampere_residual_linf,
         ampere_residual_l2,
         peak_j_theta_a_m2: max_abs(&j_theta),
+        separatrix_bz_gradient_t_m,
+        separatrix_expected_bz_gradient_t_m,
+        separatrix_gradient_relative_error,
+        separatrix_current_density_a_m2,
+        separatrix_expected_current_density_a_m2,
+        separatrix_current_density_relative_error,
         force_balance_residual,
         force_balance_residual_linf,
         force_balance_residual_l2,
@@ -647,6 +665,13 @@ mod tests {
         assert!(state.peak_j_theta_a_m2 > 0.0);
         assert!(state.ampere_residual_linf <= 2.0e-2);
         assert!(state.ampere_residual_l2 <= 2.0e-2);
+        assert!((state.separatrix_expected_bz_gradient_t_m + inputs.b_ext / 0.02).abs() <= 1.0e-12);
+        assert!(
+            (state.separatrix_expected_current_density_a_m2 - inputs.b_ext / (MU_0 * 0.02)).abs()
+                <= state.separatrix_expected_current_density_a_m2.abs() * 1.0e-12
+        );
+        assert!(state.separatrix_gradient_relative_error <= 2.0e-2);
+        assert!(state.separatrix_current_density_relative_error <= 2.0e-2);
         assert_eq!(state.j_theta.len(), rho.len());
         assert_eq!(state.ampere_residual.len(), rho.len());
         assert!(state.force_balance_residual_linf.is_finite());
@@ -675,6 +700,20 @@ mod tests {
                     <= 1.0e-6
             );
         }
+        assert!(
+            (state.separatrix_bz_gradient_t_m - interpolate(&rho, &dbz_dr, inputs.r_s)).abs()
+                <= 1.0e-12
+        );
+        assert!((state.separatrix_expected_bz_gradient_t_m + inputs.b_ext / 0.02).abs() <= 1.0e-12);
+        assert!(
+            (state.separatrix_current_density_a_m2 - interpolate(&rho, &state.j_theta, inputs.r_s))
+                .abs()
+                <= state.separatrix_current_density_a_m2.abs().max(1.0) * 1.0e-12
+        );
+        assert!(
+            (state.separatrix_expected_current_density_a_m2 - inputs.b_ext / (MU_0 * 0.02)).abs()
+                <= state.separatrix_expected_current_density_a_m2.abs() * 1.0e-12
+        );
     }
 
     #[test]

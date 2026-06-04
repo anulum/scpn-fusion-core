@@ -152,12 +152,24 @@ tolerance, and its report row must converge under grid refinement. The
 force-balance diagnostic is visible by default and becomes a fail-closed gate
 only when an explicit `force_balance_tolerance` is supplied.
 
+The separatrix current sheet is also checked directly from the analytical
+no-rotation field:
+
+$$\left.\frac{dB_z}{dr}\right|_{R_s}=-\frac{B_{\rm ext}}{\delta},\qquad
+J_\theta(R_s)=\frac{B_{\rm ext}}{\mu_0\delta}.$$
+
+The solver interpolates the finite-grid derivative and current-density profile
+to $R_s$ and reports relative closure errors for both identities. These
+current-sheet diagnostics are active validation gates for the accepted
+analytical field; they are not a substitute for the unresolved rotating FRC BVP.
+
 The tracked benchmark report now includes finite-grid convergence evidence for
 the accepted no-rotation scalar invariants: null radius, separatrix radius
 error, Eq. 27 `s`, energy per metre, pressure-balance ratio, central-density
 relative error, beta peak, separatrix-averaged beta, particle line density,
 separatrix pressure energy, separatrix magnetic-deficit energy, energy-closure
-relative error, and the independent pressure, flux, and Ampere residuals. This is local
+relative error, separatrix field-gradient/current-density closure, and the
+independent pressure, flux, and Ampere residuals. This is local
 convergence evidence for the implemented analytical contract, not validation
 of the unresolved rotating FRC BVP or kinetic/transport evolution.
 

@@ -117,6 +117,12 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "thermal_pressure_ratio": state.thermal_pressure_ratio,
                 "flux_derivative_residual_linf": state.flux_derivative_residual_linf,
                 "peak_j_theta_a_m2": state.peak_j_theta_A_m2,
+                "separatrix_bz_gradient_t_m": state.separatrix_bz_gradient_T_m,
+                "separatrix_expected_bz_gradient_t_m": state.separatrix_expected_bz_gradient_T_m,
+                "separatrix_gradient_relative_error": state.separatrix_gradient_relative_error,
+                "separatrix_current_density_a_m2": state.separatrix_current_density_A_m2,
+                "separatrix_expected_current_density_a_m2": state.separatrix_expected_current_density_A_m2,
+                "separatrix_current_density_relative_error": state.separatrix_current_density_relative_error,
                 "ampere_residual_linf": state.ampere_residual_linf,
                 "force_balance_residual_linf": state.force_balance_residual_linf,
                 "b_z_checksum": _checksum(state.B_z),
@@ -230,6 +236,14 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "thermal_pressure_ratio": float(state["thermal_pressure_ratio"]),
                 "flux_derivative_residual_linf": float(state["flux_derivative_residual_linf"]),
                 "peak_j_theta_a_m2": float(state["peak_j_theta_A_m2"]),
+                "separatrix_bz_gradient_t_m": float(state["separatrix_bz_gradient_T_m"]),
+                "separatrix_expected_bz_gradient_t_m": float(state["separatrix_expected_bz_gradient_T_m"]),
+                "separatrix_gradient_relative_error": float(state["separatrix_gradient_relative_error"]),
+                "separatrix_current_density_a_m2": float(state["separatrix_current_density_A_m2"]),
+                "separatrix_expected_current_density_a_m2": float(state["separatrix_expected_current_density_A_m2"]),
+                "separatrix_current_density_relative_error": float(
+                    state["separatrix_current_density_relative_error"]
+                ),
                 "ampere_residual_linf": float(state["ampere_residual_linf"]),
                 "force_balance_residual_linf": float(state["force_balance_residual_linf"]),
                 "b_z_checksum": _checksum(cast(FloatArray, state["B_z"])),
@@ -344,6 +358,30 @@ def _compare_surface(
                 float(cand["peak_j_theta_a_m2"]),
                 float(ref["peak_j_theta_a_m2"]),
             ),
+            "separatrix_bz_gradient_rel_error": _relative_error(
+                float(cand["separatrix_bz_gradient_t_m"]),
+                float(ref["separatrix_bz_gradient_t_m"]),
+            ),
+            "separatrix_expected_bz_gradient_rel_error": _relative_error(
+                float(cand["separatrix_expected_bz_gradient_t_m"]),
+                float(ref["separatrix_expected_bz_gradient_t_m"]),
+            ),
+            "separatrix_gradient_relative_error_abs_error": abs(
+                float(cand["separatrix_gradient_relative_error"])
+                - float(ref["separatrix_gradient_relative_error"])
+            ),
+            "separatrix_current_density_rel_error": _relative_error(
+                float(cand["separatrix_current_density_a_m2"]),
+                float(ref["separatrix_current_density_a_m2"]),
+            ),
+            "separatrix_expected_current_density_rel_error": _relative_error(
+                float(cand["separatrix_expected_current_density_a_m2"]),
+                float(ref["separatrix_expected_current_density_a_m2"]),
+            ),
+            "separatrix_current_density_relative_error_abs_error": abs(
+                float(cand["separatrix_current_density_relative_error"])
+                - float(ref["separatrix_current_density_relative_error"])
+            ),
             "ampere_residual_linf_abs_error": abs(
                 float(cand["ampere_residual_linf"]) - float(ref["ampere_residual_linf"])
             ),
@@ -398,6 +436,12 @@ def _compare_surface(
             and checks["thermal_pressure_ratio_rel_error"] <= 1.0e-12
             and checks["flux_derivative_residual_linf_abs_error"] <= 1.0e-12
             and checks["peak_j_theta_rel_error"] <= 1.0e-12
+            and checks["separatrix_bz_gradient_rel_error"] <= 1.0e-12
+            and checks["separatrix_expected_bz_gradient_rel_error"] <= 1.0e-12
+            and checks["separatrix_gradient_relative_error_abs_error"] <= 1.0e-12
+            and checks["separatrix_current_density_rel_error"] <= 1.0e-12
+            and checks["separatrix_expected_current_density_rel_error"] <= 1.0e-12
+            and checks["separatrix_current_density_relative_error_abs_error"] <= 1.0e-12
             and checks["ampere_residual_linf_abs_error"] <= 1.0e-12
             and checks["force_balance_linf_rel_error"] <= 1.0e-9
             and checks["b_z_checksum_abs_error"] <= 1.0e-9
@@ -429,6 +473,10 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "separatrix_pressure_energy_j_per_m",
         "separatrix_magnetic_deficit_energy_j_per_m",
         "separatrix_energy_closure_relative_error",
+        "separatrix_bz_gradient_t_m",
+        "separatrix_gradient_relative_error",
+        "separatrix_current_density_a_m2",
+        "separatrix_current_density_relative_error",
         "flux_derivative_residual_linf",
         "ampere_residual_linf",
     )

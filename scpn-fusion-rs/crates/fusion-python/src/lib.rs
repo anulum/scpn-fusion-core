@@ -1819,6 +1819,30 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("ampere_residual_l2", state.ampere_residual_l2)?;
     out.set_item("peak_j_theta_A_m2", state.peak_j_theta_a_m2)?;
     out.set_item(
+        "separatrix_bz_gradient_T_m",
+        state.separatrix_bz_gradient_t_m,
+    )?;
+    out.set_item(
+        "separatrix_expected_bz_gradient_T_m",
+        state.separatrix_expected_bz_gradient_t_m,
+    )?;
+    out.set_item(
+        "separatrix_gradient_relative_error",
+        state.separatrix_gradient_relative_error,
+    )?;
+    out.set_item(
+        "separatrix_current_density_A_m2",
+        state.separatrix_current_density_a_m2,
+    )?;
+    out.set_item(
+        "separatrix_expected_current_density_A_m2",
+        state.separatrix_expected_current_density_a_m2,
+    )?;
+    out.set_item(
+        "separatrix_current_density_relative_error",
+        state.separatrix_current_density_relative_error,
+    )?;
+    out.set_item(
         "force_balance_residual",
         state.force_balance_residual.into_pyarray(py),
     )?;

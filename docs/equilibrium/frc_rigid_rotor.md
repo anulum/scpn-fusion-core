@@ -94,6 +94,20 @@ J_theta = B_ext * (1 - tanh(a)^2) * r / (mu_0 R_s delta)
 a = (r^2 - R_s^2) / (2 R_s delta)
 ```
 
+At the separatrix, the same analytical field fixes the current-sheet slope and
+peak sheet current:
+
+```text
+(dB_z/dr)|_R_s = -B_ext / delta
+J_theta(R_s) = B_ext / (mu_0 delta)
+```
+
+The validation report interpolates the finite-grid derivative and current
+density to `R_s`, compares both against these analytical values, and fails
+closed when the relative current-sheet closure exceeds tolerance. This is a
+grid-realisation gate for the accepted no-rotation field, not a rotating-BVP
+stability claim.
+
 The Ampere closure residual compares that analytical current against the
 second-order finite-difference derivative on the active grid:
 
@@ -136,6 +150,9 @@ Accepted:
   beta profile, separatrix-averaged beta, particle line density, input thermal
   pressure, separatrix pressure-energy inventory, separatrix magnetic-deficit
   inventory, energy-inventory closure, and thermal-pressure ratio diagnostics.
+- Separatrix current-sheet slope and current-density closure diagnostics tied
+  to `(dB_z/dr)|_R_s = -B_ext / delta` and
+  `J_theta(R_s) = B_ext / (mu_0 delta)`.
 - Finite-grid convergence diagnostics for the implemented no-rotation scalar
   invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
   ratio.
@@ -185,12 +202,13 @@ also records separatrix radius error, field reversal, pressure-balance
 residual, central-density consistency, thermal-pressure consistency, flux
 derivative residual, Ampere residual, peak-current diagnostics, beta
 diagnostics, particle line density, separatrix energy inventory, and
-magnetic-deficit closure plus finite-grid convergence against the
+magnetic-deficit closure, separatrix current-sheet closure, plus finite-grid convergence against the
 finest tracked radial grid for the scalar invariants, separatrix error,
 pressure-balance residual, central-density relative error, beta peak,
 separatrix-averaged beta, particle line density, pressure-energy inventory,
-magnetic-deficit inventory, energy-closure relative error, flux derivative
-residual, and the independent Ampere residual accepted in this contract. Blocked or
+magnetic-deficit inventory, energy-closure relative error, separatrix
+field-gradient/current-density diagnostics, flux derivative residual, and the
+independent Ampere residual accepted in this contract. Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
 explicit no-rotation analytical FRC contract.

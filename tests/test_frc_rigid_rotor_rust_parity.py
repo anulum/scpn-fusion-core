@@ -205,6 +205,30 @@ def test_rust_frc_matches_python_reference() -> None:
             python_state.ampere_residual_l2,
             abs=1.0e-12,
         )
+        assert float(rust_state["separatrix_bz_gradient_T_m"]) == pytest.approx(
+            python_state.separatrix_bz_gradient_T_m,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["separatrix_expected_bz_gradient_T_m"]) == pytest.approx(
+            python_state.separatrix_expected_bz_gradient_T_m,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["separatrix_gradient_relative_error"]) == pytest.approx(
+            python_state.separatrix_gradient_relative_error,
+            abs=1.0e-12,
+        )
+        assert float(rust_state["separatrix_current_density_A_m2"]) == pytest.approx(
+            python_state.separatrix_current_density_A_m2,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["separatrix_expected_current_density_A_m2"]) == pytest.approx(
+            python_state.separatrix_expected_current_density_A_m2,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["separatrix_current_density_relative_error"]) == pytest.approx(
+            python_state.separatrix_current_density_relative_error,
+            abs=1.0e-12,
+        )
         assert float(rust_state["force_balance_residual_linf"]) == pytest.approx(
             python_state.force_balance_residual_linf,
             rel=1.0e-10,

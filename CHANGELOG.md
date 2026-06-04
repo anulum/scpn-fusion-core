@@ -48,6 +48,10 @@
   compared across Python/Rust/PyO3, recorded in the benchmark JSON, and
   documented without extending the claim beyond the accepted no-rotation
   analytical contract.
+- Added FRC separatrix current-sheet closure diagnostics so the finite-grid
+  `dB_z/dr` slope and `J_theta(R_s)` are compared against the analytical
+  no-rotation identities across Python/Rust/PyO3, validation gates, benchmark
+  JSON, tests, and public docs.
 
 ## [3.9.8] - 2026-06-02
 
