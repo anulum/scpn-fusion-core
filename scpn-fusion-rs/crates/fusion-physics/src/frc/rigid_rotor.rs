@@ -146,6 +146,30 @@ pub fn solve_frc_equilibrium(
             .map(|(density, r)| density * 2.0 * std::f64::consts::PI * r),
     );
     let particle_line_density_m1 = trapezoid(&density_r_clip, &density_integrand);
+    let (pressure_r_clip, pressure_clip) = clip_to_separatrix(&rho, &p, inputs.r_s)?;
+    let pressure_energy_integrand = Array1::from_iter(
+        pressure_clip
+            .iter()
+            .zip(pressure_r_clip.iter())
+            .map(|(pressure, r)| pressure * 2.0 * std::f64::consts::PI * r),
+    );
+    let separatrix_pressure_energy_j_m = trapezoid(&pressure_r_clip, &pressure_energy_integrand);
+    let magnetic_deficit = b_z.mapv(|b| external_magnetic_pressure - b * b / (2.0 * MU_0));
+    let (deficit_r_clip, deficit_clip) = clip_to_separatrix(&rho, &magnetic_deficit, inputs.r_s)?;
+    let deficit_energy_integrand = Array1::from_iter(
+        deficit_clip
+            .iter()
+            .zip(deficit_r_clip.iter())
+            .map(|(deficit, r)| deficit * 2.0 * std::f64::consts::PI * r),
+    );
+    let separatrix_magnetic_deficit_energy_j_m =
+        trapezoid(&deficit_r_clip, &deficit_energy_integrand);
+    let separatrix_energy_closure_relative_error =
+        (separatrix_pressure_energy_j_m - separatrix_magnetic_deficit_energy_j_m).abs()
+            / separatrix_pressure_energy_j_m
+                .abs()
+                .max(separatrix_magnetic_deficit_energy_j_m.abs())
+                .max(tolerance);
     let pressure_balance_residual = pressure_balance_residual_profile(&p, &b_z, inputs.b_ext);
     let pressure_balance_residual_linf = max_abs(&pressure_balance_residual) / pressure_scale;
     let pressure_balance_residual_l2 = (pressure_balance_residual
@@ -228,6 +252,9 @@ pub fn solve_frc_equilibrium(
         beta_peak,
         beta_separatrix_average,
         particle_line_density_m1,
+        separatrix_pressure_energy_j_m,
+        separatrix_magnetic_deficit_energy_j_m,
+        separatrix_energy_closure_relative_error,
         input_thermal_pressure_pa,
         thermal_pressure_ratio: input_thermal_pressure_pa / pressure_scale,
         flux_derivative_residual,
@@ -609,6 +636,9 @@ mod tests {
         assert!(state.beta_separatrix_average > 0.0);
         assert!(state.beta_separatrix_average <= state.beta_peak);
         assert!(state.particle_line_density_m1 > 0.0);
+        assert!(state.separatrix_pressure_energy_j_m > 0.0);
+        assert!(state.separatrix_magnetic_deficit_energy_j_m > 0.0);
+        assert!(state.separatrix_energy_closure_relative_error <= 1.0e-12);
         assert!(state.input_thermal_pressure_pa > 0.0);
         assert!(state.thermal_pressure_ratio > 0.0);
         assert!(state.flux_derivative_residual_linf <= 2.0e-2);
@@ -692,6 +722,9 @@ mod tests {
         assert!((state.beta_peak - 1.0).abs() <= 1.0e-4);
         assert!(state.beta_separatrix_average > 0.0);
         assert!(state.particle_line_density_m1 > 0.0);
+        assert!(state.separatrix_pressure_energy_j_m > 0.0);
+        assert!(state.separatrix_magnetic_deficit_energy_j_m > 0.0);
+        assert!(state.separatrix_energy_closure_relative_error <= 1.0e-12);
         assert!(
             (state.input_thermal_pressure_pa - input_pressure).abs() <= input_pressure * 1.0e-14
         );

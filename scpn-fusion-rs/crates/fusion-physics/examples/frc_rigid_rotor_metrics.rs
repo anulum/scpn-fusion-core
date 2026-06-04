@@ -54,7 +54,7 @@ fn main() {
             print!(",");
         }
         print!(
-            "{{\"grid_points\":{},\"wall_time_s\":{:.12e},\"r_null_m\":{:.17e},\"target_separatrix_radius_m\":{:.17e},\"separatrix_radius_error_m\":{:.17e},\"field_reversal_passed\":{},\"s_parameter\":{:.17e},\"energy_j_per_m\":{:.17e},\"pressure_balance_ratio\":{:.17e},\"pressure_balance_residual_linf\":{:.17e},\"peak_pressure_pa\":{:.17e},\"density_peak_m3\":{:.17e},\"input_density_m3\":{:.17e},\"central_density_residual_m3\":{:.17e},\"central_density_relative_error\":{:.17e},\"beta_peak\":{:.17e},\"beta_separatrix_average\":{:.17e},\"particle_line_density_m1\":{:.17e},\"input_thermal_pressure_pa\":{:.17e},\"thermal_pressure_ratio\":{:.17e},\"flux_derivative_residual_linf\":{:.17e},\"peak_j_theta_a_m2\":{:.17e},\"ampere_residual_linf\":{:.17e},\"force_balance_residual_linf\":{:.17e},\"b_z_checksum\":{:.17e},\"j_theta_checksum\":{:.17e},\"psi_checksum\":{:.17e},\"p_checksum\":{:.17e},\"density_checksum\":{:.17e},\"beta_checksum\":{:.17e}}}",
+            "{{\"grid_points\":{},\"wall_time_s\":{:.12e},\"r_null_m\":{:.17e},\"target_separatrix_radius_m\":{:.17e},\"separatrix_radius_error_m\":{:.17e},\"field_reversal_passed\":{},\"s_parameter\":{:.17e},\"energy_j_per_m\":{:.17e},\"pressure_balance_ratio\":{:.17e},\"pressure_balance_residual_linf\":{:.17e},\"peak_pressure_pa\":{:.17e},\"density_peak_m3\":{:.17e},\"input_density_m3\":{:.17e},\"central_density_residual_m3\":{:.17e},\"central_density_relative_error\":{:.17e},\"beta_peak\":{:.17e},\"beta_separatrix_average\":{:.17e},\"particle_line_density_m1\":{:.17e},\"separatrix_pressure_energy_j_per_m\":{:.17e},\"separatrix_magnetic_deficit_energy_j_per_m\":{:.17e},\"separatrix_energy_closure_relative_error\":{:.17e},\"input_thermal_pressure_pa\":{:.17e},\"thermal_pressure_ratio\":{:.17e},\"flux_derivative_residual_linf\":{:.17e},\"peak_j_theta_a_m2\":{:.17e},\"ampere_residual_linf\":{:.17e},\"force_balance_residual_linf\":{:.17e},\"b_z_checksum\":{:.17e},\"j_theta_checksum\":{:.17e},\"psi_checksum\":{:.17e},\"p_checksum\":{:.17e},\"density_checksum\":{:.17e},\"beta_checksum\":{:.17e}}}",
             n,
             wall_time_s,
             state.r_null,
@@ -73,6 +73,9 @@ fn main() {
             state.beta_peak,
             state.beta_separatrix_average,
             state.particle_line_density_m1,
+            state.separatrix_pressure_energy_j_m,
+            state.separatrix_magnetic_deficit_energy_j_m,
+            state.separatrix_energy_closure_relative_error,
             state.input_thermal_pressure_pa,
             state.thermal_pressure_ratio,
             state.flux_derivative_residual_linf,

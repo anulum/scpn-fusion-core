@@ -165,6 +165,18 @@ def test_rust_frc_matches_python_reference() -> None:
             python_state.particle_line_density_m1,
             rel=1.0e-12,
         )
+        assert float(rust_state["separatrix_pressure_energy_J_m"]) == pytest.approx(
+            python_state.separatrix_pressure_energy_J_m,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["separatrix_magnetic_deficit_energy_J_m"]) == pytest.approx(
+            python_state.separatrix_magnetic_deficit_energy_J_m,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["separatrix_energy_closure_relative_error"]) == pytest.approx(
+            python_state.separatrix_energy_closure_relative_error,
+            abs=1.0e-12,
+        )
         assert float(rust_state["input_thermal_pressure_pa"]) == pytest.approx(
             python_state.input_thermal_pressure_pa,
             rel=1.0e-12,

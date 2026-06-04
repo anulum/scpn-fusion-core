@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import os
 import platform
 import shutil
 import subprocess  # nosec B404
@@ -38,6 +39,18 @@ _RUST_PROJECT = _REPO / "scpn-fusion-rs"
 _REPORT_JSON = _REPO / "validation" / "reports" / "frc_rigid_rotor_benchmark.json"
 _GRIDS = (64, 256, 1024)
 _REPEATS = 5
+
+
+def _host_load() -> list[float]:
+    if hasattr(os, "getloadavg"):
+        return [float(value) for value in os.getloadavg()]
+    return []
+
+
+def _cpu_affinity() -> list[int]:
+    if hasattr(os, "sched_getaffinity"):
+        return sorted(int(cpu) for cpu in os.sched_getaffinity(0))
+    return []
 
 
 def _inputs() -> RigidRotorFRCInputs:
@@ -97,6 +110,9 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "beta_peak": state.beta_peak,
                 "beta_separatrix_average": state.beta_separatrix_average,
                 "particle_line_density_m1": state.particle_line_density_m1,
+                "separatrix_pressure_energy_j_per_m": state.separatrix_pressure_energy_J_m,
+                "separatrix_magnetic_deficit_energy_j_per_m": state.separatrix_magnetic_deficit_energy_J_m,
+                "separatrix_energy_closure_relative_error": state.separatrix_energy_closure_relative_error,
                 "input_thermal_pressure_pa": state.input_thermal_pressure_pa,
                 "thermal_pressure_ratio": state.thermal_pressure_ratio,
                 "flux_derivative_residual_linf": state.flux_derivative_residual_linf,
@@ -203,6 +219,13 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "beta_peak": float(state["beta_peak"]),
                 "beta_separatrix_average": float(state["beta_separatrix_average"]),
                 "particle_line_density_m1": float(state["particle_line_density_m1"]),
+                "separatrix_pressure_energy_j_per_m": float(state["separatrix_pressure_energy_J_m"]),
+                "separatrix_magnetic_deficit_energy_j_per_m": float(
+                    state["separatrix_magnetic_deficit_energy_J_m"]
+                ),
+                "separatrix_energy_closure_relative_error": float(
+                    state["separatrix_energy_closure_relative_error"]
+                ),
                 "input_thermal_pressure_pa": float(state["input_thermal_pressure_pa"]),
                 "thermal_pressure_ratio": float(state["thermal_pressure_ratio"]),
                 "flux_derivative_residual_linf": float(state["flux_derivative_residual_linf"]),
@@ -294,6 +317,18 @@ def _compare_surface(
                 float(cand["particle_line_density_m1"]),
                 float(ref["particle_line_density_m1"]),
             ),
+            "separatrix_pressure_energy_rel_error": _relative_error(
+                float(cand["separatrix_pressure_energy_j_per_m"]),
+                float(ref["separatrix_pressure_energy_j_per_m"]),
+            ),
+            "separatrix_magnetic_deficit_energy_rel_error": _relative_error(
+                float(cand["separatrix_magnetic_deficit_energy_j_per_m"]),
+                float(ref["separatrix_magnetic_deficit_energy_j_per_m"]),
+            ),
+            "separatrix_energy_closure_abs_error": abs(
+                float(cand["separatrix_energy_closure_relative_error"])
+                - float(ref["separatrix_energy_closure_relative_error"])
+            ),
             "input_thermal_pressure_rel_error": _relative_error(
                 float(cand["input_thermal_pressure_pa"]),
                 float(ref["input_thermal_pressure_pa"]),
@@ -356,6 +391,9 @@ def _compare_surface(
             and checks["beta_peak_abs_error"] <= 1.0e-12
             and checks["beta_separatrix_average_rel_error"] <= 1.0e-12
             and checks["particle_line_density_rel_error"] <= 1.0e-12
+            and checks["separatrix_pressure_energy_rel_error"] <= 1.0e-12
+            and checks["separatrix_magnetic_deficit_energy_rel_error"] <= 1.0e-12
+            and checks["separatrix_energy_closure_abs_error"] <= 1.0e-12
             and checks["input_thermal_pressure_rel_error"] <= 1.0e-12
             and checks["thermal_pressure_ratio_rel_error"] <= 1.0e-12
             and checks["flux_derivative_residual_linf_abs_error"] <= 1.0e-12
@@ -388,6 +426,9 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "beta_peak",
         "beta_separatrix_average",
         "particle_line_density_m1",
+        "separatrix_pressure_energy_j_per_m",
+        "separatrix_magnetic_deficit_energy_j_per_m",
+        "separatrix_energy_closure_relative_error",
         "flux_derivative_residual_linf",
         "ampere_residual_linf",
     )
@@ -445,10 +486,12 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
 
 def main() -> None:
     _REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
+    host_load_before = _host_load()
     python_rows = _python_metrics()
     rust_status, rust_rows = _rust_metrics()
     pyo3_status, pyo3_rows = _pyo3_metrics()
     convergence = _convergence(python_rows)
+    host_load_after = _host_load()
     report: dict[str, Any] = {
         "schema_version": 1,
         "generated_at_utc": datetime.now(UTC).isoformat(),
@@ -458,6 +501,20 @@ def main() -> None:
         "host": {
             "platform": platform.platform(),
             "python": sys.version,
+        },
+        "benchmark_evidence": {
+            "classification": "local_regression_non_isolated",
+            "claim_boundary": (
+                "Functional parity and local regression timing only; not a production "
+                "throughput or latency claim because no dedicated core isolation was used."
+            ),
+            "command": " ".join([sys.executable, *sys.argv]),
+            "cpu_affinity": _cpu_affinity(),
+            "isolation_method": "none",
+            "host_load_before": host_load_before,
+            "host_load_after": host_load_after,
+            "cpu_governor": "not_recorded",
+            "heavy_jobs_running": "not_recorded",
         },
         "grids": list(_GRIDS),
         "repeats": _REPEATS,

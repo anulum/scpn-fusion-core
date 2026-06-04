@@ -128,10 +128,18 @@ $$\beta(r)=\frac{p(r)}{B_{\rm ext}^2/(2\mu_0)},\qquad
 
 $$N_{\rm line}=\int_0^{R_s} n(r)\,2\pi r\,dr.$$
 
+The separatrix pressure-energy inventory is checked against the independently
+assembled magnetic-field deficit:
+
+$$E_{p,s}=\int_0^{R_s}p(r)\,2\pi r\,dr,\qquad
+E_{{\rm def},s}=\int_0^{R_s}\frac{B_{\rm ext}^2-B_z(r)^2}{2\mu_0}\,2\pi r\,dr.$$
+
 The validation gate keeps $\beta_{\rm peak}\leq 1$ within finite-grid
 tolerance for the accepted no-rotation pressure-balance contract.  The line
 density is reported in particles per metre of axial length and is included in
-cross-surface parity reports.
+cross-surface parity reports. The accepted pressure-balance contract also
+requires $E_{p,s}=E_{{\rm def},s}$, so the validation report carries the
+relative closure error as a fail-closed implementation gate.
 
 The validation report carries both the Ampere closure residual
 $\mathcal{A}_r$ and the normalised radial force-balance diagnostic
@@ -148,7 +156,8 @@ The tracked benchmark report now includes finite-grid convergence evidence for
 the accepted no-rotation scalar invariants: null radius, separatrix radius
 error, Eq. 27 `s`, energy per metre, pressure-balance ratio, central-density
 relative error, beta peak, separatrix-averaged beta, particle line density,
-and the independent pressure, flux, and Ampere residuals. This is local
+separatrix pressure energy, separatrix magnetic-deficit energy, energy-closure
+relative error, and the independent pressure, flux, and Ampere residuals. This is local
 convergence evidence for the implemented analytical contract, not validation
 of the unresolved rotating FRC BVP or kinetic/transport evolution.
 

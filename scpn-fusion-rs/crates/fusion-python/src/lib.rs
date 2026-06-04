@@ -1788,6 +1788,18 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("beta_peak", state.beta_peak)?;
     out.set_item("beta_separatrix_average", state.beta_separatrix_average)?;
     out.set_item("particle_line_density_m1", state.particle_line_density_m1)?;
+    out.set_item(
+        "separatrix_pressure_energy_J_m",
+        state.separatrix_pressure_energy_j_m,
+    )?;
+    out.set_item(
+        "separatrix_magnetic_deficit_energy_J_m",
+        state.separatrix_magnetic_deficit_energy_j_m,
+    )?;
+    out.set_item(
+        "separatrix_energy_closure_relative_error",
+        state.separatrix_energy_closure_relative_error,
+    )?;
     out.set_item("input_thermal_pressure_pa", state.input_thermal_pressure_pa)?;
     out.set_item("thermal_pressure_ratio", state.thermal_pressure_ratio)?;
     out.set_item(

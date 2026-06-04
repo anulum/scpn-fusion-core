@@ -76,6 +76,9 @@ class FRCEquilibriumState:
     beta_peak: float
     beta_separatrix_average: float
     particle_line_density_m1: float
+    separatrix_pressure_energy_J_m: float
+    separatrix_magnetic_deficit_energy_J_m: float
+    separatrix_energy_closure_relative_error: float
     input_thermal_pressure_pa: float
     thermal_pressure_ratio: float
     flux_derivative_residual: FloatArray
@@ -116,6 +119,10 @@ class FRCValidationReport:
     beta_separatrix_average: float
     particle_line_density_m1: float
     beta_limit_passed: bool
+    separatrix_pressure_energy_J_m: float
+    separatrix_magnetic_deficit_energy_J_m: float
+    separatrix_energy_closure_relative_error: float
+    energy_inventory_passed: bool
     flux_derivative_residual_linf: float
     flux_derivative_residual_l2: float
     flux_closure_passed: bool
@@ -211,6 +218,22 @@ def solve_frc_equilibrium(
     )
     density_r_clip, density_clip = _clip_to_separatrix(rho, density_m3, inputs.R_s)
     particle_line_density_m1 = float(trapezoid(density_clip * 2.0 * np.pi * density_r_clip, density_r_clip))
+    pressure_r_clip, pressure_clip = _clip_to_separatrix(rho, p, inputs.R_s)
+    separatrix_pressure_energy_J_m = float(
+        trapezoid(pressure_clip * 2.0 * np.pi * pressure_r_clip, pressure_r_clip)
+    )
+    magnetic_deficit = cast(FloatArray, external_magnetic_pressure - B_z**2 / (2.0 * MU_0))
+    deficit_r_clip, deficit_clip = _clip_to_separatrix(rho, magnetic_deficit, inputs.R_s)
+    separatrix_magnetic_deficit_energy_J_m = float(
+        trapezoid(deficit_clip * 2.0 * np.pi * deficit_r_clip, deficit_r_clip)
+    )
+    separatrix_energy_closure_relative_error = abs(
+        separatrix_pressure_energy_J_m - separatrix_magnetic_deficit_energy_J_m
+    ) / max(
+        abs(separatrix_pressure_energy_J_m),
+        abs(separatrix_magnetic_deficit_energy_J_m),
+        tolerance,
+    )
     pressure_balance_residual = _pressure_balance_residual(p, B_z, inputs.B_ext)
     pressure_balance_residual_linf = float(np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance))
     pressure_balance_residual_l2 = float(
@@ -265,6 +288,9 @@ def solve_frc_equilibrium(
         beta_peak=beta_peak,
         beta_separatrix_average=beta_separatrix_average,
         particle_line_density_m1=particle_line_density_m1,
+        separatrix_pressure_energy_J_m=separatrix_pressure_energy_J_m,
+        separatrix_magnetic_deficit_energy_J_m=separatrix_magnetic_deficit_energy_J_m,
+        separatrix_energy_closure_relative_error=float(separatrix_energy_closure_relative_error),
         input_thermal_pressure_pa=float(input_thermal_pressure),
         thermal_pressure_ratio=float(input_thermal_pressure / max(external_magnetic_pressure, tolerance)),
         flux_derivative_residual=flux_derivative_residual,
@@ -331,6 +357,7 @@ def validate_equilibrium(
     pressure_balance_tolerance: float = 2e-2,
     density_tolerance: float = 2e-2,
     beta_limit_tolerance: float = 2e-2,
+    energy_inventory_tolerance: float = 1e-10,
     ampere_tolerance: float = 2e-2,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
@@ -374,6 +401,7 @@ def validate_equilibrium(
     pressure_balance_passed = state.pressure_balance_residual_linf <= pressure_balance_tolerance
     density_consistency_passed = state.central_density_relative_error <= density_tolerance
     beta_limit_passed = state.beta_peak <= 1.0 + beta_limit_tolerance
+    energy_inventory_passed = state.separatrix_energy_closure_relative_error <= energy_inventory_tolerance
     flux_closure_passed = state.flux_derivative_residual_linf <= flux_tolerance
     ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
     force_balance_passed = (
@@ -384,6 +412,7 @@ def validate_equilibrium(
         and pressure_balance_passed
         and density_consistency_passed
         and beta_limit_passed
+        and energy_inventory_passed
         and flux_closure_passed
         and ampere_closure_passed
         and force_balance_passed
@@ -410,6 +439,10 @@ def validate_equilibrium(
         beta_separatrix_average=state.beta_separatrix_average,
         particle_line_density_m1=state.particle_line_density_m1,
         beta_limit_passed=bool(beta_limit_passed),
+        separatrix_pressure_energy_J_m=state.separatrix_pressure_energy_J_m,
+        separatrix_magnetic_deficit_energy_J_m=state.separatrix_magnetic_deficit_energy_J_m,
+        separatrix_energy_closure_relative_error=state.separatrix_energy_closure_relative_error,
+        energy_inventory_passed=bool(energy_inventory_passed),
         flux_derivative_residual_linf=state.flux_derivative_residual_linf,
         flux_derivative_residual_l2=state.flux_derivative_residual_l2,
         flux_closure_passed=bool(flux_closure_passed),

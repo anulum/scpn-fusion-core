@@ -1,8 +1,40 @@
 {
   "benchmark": "frc_rigid_rotor_no_rotation_analytical",
+  "benchmark_evidence": {
+    "claim_boundary": "Functional parity and local regression timing only; not a production throughput or latency claim because no dedicated core isolation was used.",
+    "classification": "local_regression_non_isolated",
+    "command": "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python benchmarks/bench_frc_rigid_rotor.py",
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "cpu_governor": "not_recorded",
+    "heavy_jobs_running": "not_recorded",
+    "host_load_after": [
+      4.43798828125,
+      4.1435546875,
+      3.73388671875
+    ],
+    "host_load_before": [
+      4.65869140625,
+      4.16845703125,
+      3.73583984375
+    ],
+    "isolation_method": "none"
+  },
   "claim_boundary": "No rotating rigid-rotor BVP, no full FRC transport, no reduced-order substitution.",
   "contract": "Steinhauer 2011 no-rotation analytical axial-field profile",
-  "generated_at_utc": "2026-06-04T10:31:19.595354+00:00",
+  "generated_at_utc": "2026-06-04T10:50:54.232309+00:00",
   "grid_convergence": {
     "checked_metrics": [
       "r_null_m",
@@ -15,6 +47,9 @@
       "beta_peak",
       "beta_separatrix_average",
       "particle_line_density_m1",
+      "separatrix_pressure_energy_j_per_m",
+      "separatrix_magnetic_deficit_energy_j_per_m",
+      "separatrix_energy_closure_relative_error",
       "flux_derivative_residual_linf",
       "ampere_residual_linf"
     ],
@@ -44,6 +79,12 @@
       "r_null_m_64_to_256_improves_or_exact": true,
       "s_parameter_1024_is_reference": true,
       "s_parameter_64_to_256_improves_or_exact": true,
+      "separatrix_energy_closure_relative_error_1024_is_reference": true,
+      "separatrix_energy_closure_relative_error_64_to_256_improves_or_exact": true,
+      "separatrix_magnetic_deficit_energy_j_per_m_1024_is_reference": true,
+      "separatrix_magnetic_deficit_energy_j_per_m_64_to_256_improves_or_exact": true,
+      "separatrix_pressure_energy_j_per_m_1024_is_reference": true,
+      "separatrix_pressure_energy_j_per_m_64_to_256_improves_or_exact": true,
       "separatrix_radius_error_m_1024_is_reference": true,
       "separatrix_radius_error_m_64_to_256_improves_or_exact": true
     },
@@ -73,6 +114,12 @@
         "reference_grid_points": 1024,
         "s_parameter_abs_error_vs_grid_1024": 0.042491314317889106,
         "s_parameter_rel_error_vs_grid_1024": 0.002015826556402448,
+        "separatrix_energy_closure_relative_error_abs_error_vs_grid_1024": 0.0,
+        "separatrix_energy_closure_relative_error_rel_error_vs_grid_1024": 0.0,
+        "separatrix_magnetic_deficit_energy_j_per_m_abs_error_vs_grid_1024": 189.85251332182088,
+        "separatrix_magnetic_deficit_energy_j_per_m_rel_error_vs_grid_1024": 0.0007589002258274863,
+        "separatrix_pressure_energy_j_per_m_abs_error_vs_grid_1024": 189.85251332182088,
+        "separatrix_pressure_energy_j_per_m_rel_error_vs_grid_1024": 0.0007589002258274863,
         "separatrix_radius_error_m_abs_error_vs_grid_1024": 2.4681464330600367e-05,
         "separatrix_radius_error_m_rel_error_vs_grid_1024": 2.4681464330600367e-05,
         "status": "diagnostic"
@@ -102,6 +149,12 @@
         "reference_grid_points": 1024,
         "s_parameter_abs_error_vs_grid_1024": 0.0025569343903022457,
         "s_parameter_rel_error_vs_grid_1024": 0.0001213032905593123,
+        "separatrix_energy_closure_relative_error_abs_error_vs_grid_1024": 0.0,
+        "separatrix_energy_closure_relative_error_rel_error_vs_grid_1024": 0.0,
+        "separatrix_magnetic_deficit_energy_j_per_m_abs_error_vs_grid_1024": 11.944639011315303,
+        "separatrix_magnetic_deficit_energy_j_per_m_rel_error_vs_grid_1024": 4.7780459320277166e-05,
+        "separatrix_pressure_energy_j_per_m_abs_error_vs_grid_1024": 11.944639011315303,
+        "separatrix_pressure_energy_j_per_m_rel_error_vs_grid_1024": 4.7780459320277166e-05,
         "separatrix_radius_error_m_abs_error_vs_grid_1024": 1.440746608072363e-06,
         "separatrix_radius_error_m_rel_error_vs_grid_1024": 1.440746608072363e-06,
         "status": "diagnostic"
@@ -131,6 +184,12 @@
         "reference_grid_points": 1024,
         "s_parameter_abs_error_vs_grid_1024": 0.0,
         "s_parameter_rel_error_vs_grid_1024": 0.0,
+        "separatrix_energy_closure_relative_error_abs_error_vs_grid_1024": 0.0,
+        "separatrix_energy_closure_relative_error_rel_error_vs_grid_1024": 0.0,
+        "separatrix_magnetic_deficit_energy_j_per_m_abs_error_vs_grid_1024": 0.0,
+        "separatrix_magnetic_deficit_energy_j_per_m_rel_error_vs_grid_1024": 0.0,
+        "separatrix_pressure_energy_j_per_m_abs_error_vs_grid_1024": 0.0,
+        "separatrix_pressure_energy_j_per_m_rel_error_vs_grid_1024": 0.0,
         "separatrix_radius_error_m_abs_error_vs_grid_1024": 0.0,
         "separatrix_radius_error_m_rel_error_vs_grid_1024": 0.0,
         "status": "reference"
@@ -191,17 +250,20 @@
           "psi_checksum": -57.779462577368776,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 250167.94943605442,
+          "separatrix_pressure_energy_j_per_m": 250167.94943605442,
           "separatrix_radius_error_m": 2.4777012213178518e-05,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.0008256321307271719,
-          "wall_time_s_min": 0.0005229639355093241,
+          "wall_time_s_median": 0.00047967792488634586,
+          "wall_time_s_min": 0.0004535180050879717,
           "wall_time_s_repeats": [
-            0.0008875718340277672,
-            0.0008338741026818752,
-            0.0008256321307271719,
-            0.0006731750909239054,
-            0.0005229639355093241
+            0.0005017491057515144,
+            0.00047967792488634586,
+            0.0004535180050879717,
+            0.0005070611368864775,
+            0.0004589811433106661
           ]
         },
         {
@@ -231,17 +293,20 @@
           "psi_checksum": -865.4177196721777,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 249990.0415617439,
+          "separatrix_pressure_energy_j_per_m": 249990.0415617439,
           "separatrix_radius_error_m": 1.5362944906505138e-06,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.0005741200875490904,
-          "wall_time_s_min": 0.0005178200080990791,
+          "wall_time_s_median": 0.0004972838796675205,
+          "wall_time_s_min": 0.0004894679877907038,
           "wall_time_s_repeats": [
-            0.0006041419692337513,
-            0.0005923788994550705,
-            0.0005178200080990791,
-            0.0005574778188019991,
-            0.0005741200875490904
+            0.0004894679877907038,
+            0.0004999970551580191,
+            0.0004983998369425535,
+            0.0004972838796675205,
+            0.0004970941226929426
           ]
         },
         {
@@ -271,17 +336,20 @@
           "psi_checksum": -13614.82489479892,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 249978.0969227326,
+          "separatrix_pressure_energy_j_per_m": 249978.0969227326,
           "separatrix_radius_error_m": 9.554788257815083e-08,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.0006952299736440182,
-          "wall_time_s_min": 0.0006503399927169085,
+          "wall_time_s_median": 0.0006445040926337242,
+          "wall_time_s_min": 0.0006052518729120493,
           "wall_time_s_repeats": [
-            0.0006952299736440182,
-            0.0007279310375452042,
-            0.0006503399927169085,
-            0.0007123500108718872,
-            0.0006678281351923943
+            0.0006052518729120493,
+            0.000726236030459404,
+            0.000650402158498764,
+            0.0006234049797058105,
+            0.0006445040926337242
           ]
         }
       ],
@@ -316,17 +384,20 @@
           "psi_checksum": -57.779462577368776,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 250167.9494360544,
+          "separatrix_pressure_energy_j_per_m": 250167.9494360544,
           "separatrix_radius_error_m": 2.4777012213178518e-05,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 4.12908848375082e-05,
-          "wall_time_s_min": 3.313296474516392e-05,
+          "wall_time_s_median": 1.8496066331863403e-05,
+          "wall_time_s_min": 1.719617284834385e-05,
           "wall_time_s_repeats": [
-            5.432101897895336e-05,
-            3.52649949491024e-05,
-            5.0969887524843216e-05,
-            4.12908848375082e-05,
-            3.313296474516392e-05
+            2.5071902200579643e-05,
+            1.9558938220143318e-05,
+            1.8496066331863403e-05,
+            1.7709098756313324e-05,
+            1.719617284834385e-05
           ]
         },
         {
@@ -356,17 +427,20 @@
           "psi_checksum": -865.4177196721777,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 249990.04156174388,
+          "separatrix_pressure_energy_j_per_m": 249990.04156174388,
           "separatrix_radius_error_m": 1.5362944906505138e-06,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 7.525482214987278e-05,
-          "wall_time_s_min": 6.39499630779028e-05,
+          "wall_time_s_median": 3.740889951586723e-05,
+          "wall_time_s_min": 3.605685196816921e-05,
           "wall_time_s_repeats": [
-            7.525482214987278e-05,
-            8.316291496157646e-05,
-            8.154893293976784e-05,
-            7.082195952534676e-05,
-            6.39499630779028e-05
+            4.025781527161598e-05,
+            3.740889951586723e-05,
+            3.7871068343520164e-05,
+            3.605685196816921e-05,
+            3.696396015584469e-05
           ]
         },
         {
@@ -396,17 +470,20 @@
           "psi_checksum": -13614.82489479892,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 249978.0969227327,
+          "separatrix_pressure_energy_j_per_m": 249978.0969227327,
           "separatrix_radius_error_m": 9.554788257815083e-08,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.00020422018133103848,
-          "wall_time_s_min": 0.00014218990691006184,
+          "wall_time_s_median": 0.00012532807886600494,
+          "wall_time_s_min": 0.0001149340532720089,
           "wall_time_s_repeats": [
-            0.00014218990691006184,
-            0.00015259301289916039,
-            0.00021684309467673302,
-            0.00020422018133103848,
-            0.0002441899850964546
+            0.00015250197611749172,
+            0.0001274759415537119,
+            0.00012532807886600494,
+            0.00012199883349239826,
+            0.0001149340532720089
           ]
         }
       ],
@@ -439,6 +516,9 @@
             "psi_checksum_abs_error": 0.0,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
+            "separatrix_energy_closure_abs_error": 0.0,
+            "separatrix_magnetic_deficit_energy_rel_error": 1.1633716678072284e-16,
+            "separatrix_pressure_energy_rel_error": 1.1633716678072284e-16,
             "separatrix_radius_error_abs_error": 0.0,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
@@ -471,6 +551,9 @@
             "psi_checksum_abs_error": 0.0,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
+            "separatrix_energy_closure_abs_error": 0.0,
+            "separatrix_magnetic_deficit_energy_rel_error": 1.164199592708395e-16,
+            "separatrix_pressure_energy_rel_error": 1.164199592708395e-16,
             "separatrix_radius_error_abs_error": 0.0,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
@@ -503,6 +586,9 @@
             "psi_checksum_abs_error": 0.0,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
+            "separatrix_energy_closure_abs_error": 0.0,
+            "separatrix_magnetic_deficit_energy_rel_error": 3.492765664072912e-16,
+            "separatrix_pressure_energy_rel_error": 3.492765664072912e-16,
             "separatrix_radius_error_abs_error": 0.0,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
@@ -543,10 +629,13 @@
           "psi_checksum": -57.77946257736879,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 250167.9494360544,
+          "separatrix_pressure_energy_j_per_m": 250167.9494360544,
           "separatrix_radius_error_m": 2.4777012213178518e-05,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.000247902
+          "wall_time_s": 0.000106202
         },
         {
           "ampere_residual_linf": 0.0020760453606177855,
@@ -575,10 +664,13 @@
           "psi_checksum": -865.4177196721777,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 249990.04156174388,
+          "separatrix_pressure_energy_j_per_m": 249990.04156174388,
           "separatrix_radius_error_m": 1.5362944906505138e-06,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 9.0894e-05
+          "wall_time_s": 8.2341e-05
         },
         {
           "ampere_residual_linf": 0.00012988613047863225,
@@ -607,10 +699,13 @@
           "psi_checksum": -13614.824894798927,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
+          "separatrix_energy_closure_relative_error": 0.0,
+          "separatrix_magnetic_deficit_energy_j_per_m": 249978.0969227327,
+          "separatrix_pressure_energy_j_per_m": 249978.0969227327,
           "separatrix_radius_error_m": 9.554788257815083e-08,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.000322234
+          "wall_time_s": 0.000258373
         }
       ],
       "parity": {
@@ -642,6 +737,9 @@
             "psi_checksum_abs_error": 1.4210854715202004e-14,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
+            "separatrix_energy_closure_abs_error": 0.0,
+            "separatrix_magnetic_deficit_energy_rel_error": 1.1633716678072284e-16,
+            "separatrix_pressure_energy_rel_error": 1.1633716678072284e-16,
             "separatrix_radius_error_abs_error": 0.0,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
@@ -674,6 +772,9 @@
             "psi_checksum_abs_error": 0.0,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
+            "separatrix_energy_closure_abs_error": 0.0,
+            "separatrix_magnetic_deficit_energy_rel_error": 1.164199592708395e-16,
+            "separatrix_pressure_energy_rel_error": 1.164199592708395e-16,
             "separatrix_radius_error_abs_error": 0.0,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
@@ -706,6 +807,9 @@
             "psi_checksum_abs_error": 7.275957614183426e-12,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
+            "separatrix_energy_closure_abs_error": 0.0,
+            "separatrix_magnetic_deficit_energy_rel_error": 3.492765664072912e-16,
+            "separatrix_pressure_energy_rel_error": 3.492765664072912e-16,
             "separatrix_radius_error_abs_error": 0.0,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,

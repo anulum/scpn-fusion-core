@@ -43,6 +43,11 @@
 - Added FRC beta and particle-line-density diagnostics derived from the same
   accepted pressure/density fields, with beta-limit validation, Python/Rust/PyO3
   parity checks, benchmark JSON coverage, tests, and public docs.
+- Added FRC separatrix energy-inventory closure diagnostics so pressure-energy
+  and magnetic-field-deficit integrals are independently assembled, gated,
+  compared across Python/Rust/PyO3, recorded in the benchmark JSON, and
+  documented without extending the claim beyond the accepted no-rotation
+  analytical contract.
 
 ## [3.9.8] - 2026-06-02
 

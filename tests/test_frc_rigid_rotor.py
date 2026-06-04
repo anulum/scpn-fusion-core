@@ -165,6 +165,9 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         "beta_peak",
         "beta_separatrix_average",
         "particle_line_density_m1",
+        "separatrix_pressure_energy_J_m",
+        "separatrix_magnetic_deficit_energy_J_m",
+        "separatrix_energy_closure_relative_error",
     ):
         reference_value = float(getattr(reference, metric))
         coarse_error = abs(float(getattr(coarse, metric)) - reference_value)
@@ -219,6 +222,9 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert 0.0 < state.beta_peak <= 1.0 + 1.0e-12
     assert 0.0 < state.beta_separatrix_average <= state.beta_peak
     assert state.particle_line_density_m1 > 0.0
+    assert state.separatrix_pressure_energy_J_m > 0.0
+    assert state.separatrix_magnetic_deficit_energy_J_m > 0.0
+    assert state.separatrix_energy_closure_relative_error <= 1.0e-12
     assert state.input_thermal_pressure_pa > 0.0
     assert state.thermal_pressure_ratio == pytest.approx(1.0)
     assert state.target_separatrix_radius_m == inputs.R_s
@@ -301,6 +307,21 @@ def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
     expected_density = expected_pressure / ((inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C)
     expected_beta = expected_pressure / external_pressure
     separatrix_mask = rho <= inputs.R_s
+    expected_pressure_energy = float(
+        trapezoid(
+            expected_pressure[separatrix_mask] * 2.0 * np.pi * rho[separatrix_mask],
+            rho[separatrix_mask],
+        )
+    )
+    expected_magnetic_deficit_energy = float(
+        trapezoid(
+            (external_pressure - state.B_z[separatrix_mask] ** 2 / (2.0 * MU_0))
+            * 2.0
+            * np.pi
+            * rho[separatrix_mask],
+            rho[separatrix_mask],
+        )
+    )
 
     np.testing.assert_allclose(state.p, expected_pressure, rtol=1.0e-14, atol=1.0e-8)
     np.testing.assert_allclose(density_profile(state), expected_density, rtol=1.0e-14, atol=1.0e-8)
@@ -337,6 +358,12 @@ def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
         ),
         rel=1.0e-12,
     )
+    assert state.separatrix_pressure_energy_J_m == pytest.approx(expected_pressure_energy, rel=1.0e-12)
+    assert state.separatrix_magnetic_deficit_energy_J_m == pytest.approx(
+        expected_magnetic_deficit_energy,
+        rel=1.0e-12,
+    )
+    assert state.separatrix_energy_closure_relative_error <= 1.0e-12
     assert state.input_thermal_pressure_pa == pytest.approx(expected_input_pressure)
     assert state.thermal_pressure_ratio == pytest.approx(expected_input_pressure / external_pressure)
 
@@ -429,6 +456,18 @@ def test_beta_limit_gate_is_fail_closed() -> None:
     report = validate_equilibrium(corrupted, beta_limit_tolerance=1.0e-3)
 
     assert report.beta_limit_passed is False
+    assert report.passed is False
+
+
+def test_energy_inventory_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, separatrix_energy_closure_relative_error=0.5)
+    report = validate_equilibrium(corrupted, energy_inventory_tolerance=1.0e-6)
+
+    assert report.energy_inventory_passed is False
     assert report.passed is False
 
 
