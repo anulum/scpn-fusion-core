@@ -68,6 +68,9 @@
 - Added generated FRC no-rotation property gates for pressure monotonicity away
   from the magnetic null, beta bounds, separatrix energy closure, and
   Rust/PyO3 energy-invariant parity on accepted MIF/FRC decks.
+- Added an executable FRC rigid-rotor quickstart that reproduces the accepted
+  Steinhauer no-rotation field and magnetic-pressure-balance contract, writes
+  reproducible JSON samples, and is covered by a module-specific example test.
 
 ## [3.9.8] - 2026-06-02
 

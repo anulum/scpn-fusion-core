@@ -8,7 +8,10 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError, replace
-from typing import TypeAlias
+import json
+from pathlib import Path
+from runpy import run_path
+from typing import Any, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -58,6 +61,13 @@ def _inputs(delta: float | None = 0.02, theta_dot: float = 0.0) -> RigidRotorFRC
         B_ext=b_ext,
         delta=delta,
     )
+
+
+def _frc_quickstart_namespace() -> dict[str, Any]:
+    example_path = (
+        Path(__file__).resolve().parents[1] / "examples" / "03_frc_rigid_rotor_quickstart.py"
+    )
+    return run_path(str(example_path))
 
 
 def test_inputs_are_immutable() -> None:
@@ -672,3 +682,34 @@ def test_validation_recomputes_separatrix_target_and_field_reversal() -> None:
     assert wrong_target_report.passed is False
     assert non_reversing_report.field_reversal_passed is False
     assert non_reversing_report.passed is False
+
+
+def test_frc_quickstart_reproduces_steinhauer_no_rotation_contract(tmp_path: Path) -> None:
+    namespace = _frc_quickstart_namespace()
+    run_case = cast(Any, namespace["run_case"])
+    main = cast(Any, namespace["main"])
+
+    result = run_case(grid_points=401)
+    rho = cast(FloatArray, result["rho_m"])
+    b_z = cast(FloatArray, result["B_z_T"])
+    pressure = cast(FloatArray, result["pressure_Pa"])
+    inputs = cast(dict[str, float], result["inputs"])
+    diagnostics = cast(dict[str, float | bool | str], result["diagnostics"])
+
+    expected_b_z = -inputs["B_ext_T"] * np.tanh(
+        (rho**2 - inputs["R_s_m"] ** 2) / (2.0 * inputs["R_s_m"] * inputs["delta_m"])
+    )
+    expected_pressure = inputs["B_ext_T"] ** 2 / (2.0 * MU_0) - b_z**2 / (2.0 * MU_0)
+
+    np.testing.assert_allclose(b_z, expected_b_z, rtol=0.0, atol=1.0e-14)
+    np.testing.assert_allclose(pressure, expected_pressure, rtol=1.0e-14, atol=1.0e-8)
+    assert diagnostics["validation_passed"] is True
+    assert diagnostics["field_reversal_passed"] is True
+    assert float(diagnostics["pressure_balance_residual_linf"]) <= 1.0e-12
+    assert float(diagnostics["separatrix_energy_closure_relative_error"]) <= 1.0e-12
+
+    output_json = tmp_path / "frc_quickstart_summary.json"
+    assert main(["--grid-points", "401", "--output-json", str(output_json)]) == 0
+    payload = json.loads(output_json.read_text(encoding="utf-8"))
+    assert payload["diagnostics"]["validation_passed"] is True
+    assert payload["inputs"]["grid_points"] == 401

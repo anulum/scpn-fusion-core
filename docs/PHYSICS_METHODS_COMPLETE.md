@@ -213,9 +213,18 @@ within the local pressure-balance bound, separatrix pressure energy must close
 against magnetic-field deficit, and Rust/PyO3 must preserve energy and
 separatrix-inventory invariants for generated accepted decks.
 
+The executable quickstart `examples/03_frc_rigid_rotor_quickstart.py` runs the
+same accepted solver path, emits the validated radial profiles and scalar
+diagnostics, and is covered by a module-specific test that checks the
+Steinhauer analytical field, magnetic-pressure-balance profile, validation
+report, and JSON output. This keeps onboarding examples aligned with the
+accepted no-rotation contract and does not extend the claim to the unresolved
+rotating BVP.
+
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 
 **Validation:** `tests/test_frc_rigid_rotor.py`, `tests/test_frc_rigid_rotor_property.py`, `tests/test_frc_rigid_rotor_rust_parity.py`,
+`examples/03_frc_rigid_rotor_quickstart.py`,
 `benchmarks/bench_frc_rigid_rotor.py`.
 
 ---

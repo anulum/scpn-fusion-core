@@ -190,6 +190,10 @@ Accepted:
 - Benchmark artifact generation in `validation/reports/frc_rigid_rotor_benchmark.json`,
   with grid-convergence rows and the deterministic 16-case MIF/FRC parameter
   parity cohort recorded separately.
+- Executable quickstart reproduction in
+  `examples/03_frc_rigid_rotor_quickstart.py`, which emits the accepted
+  Steinhauer no-rotation radial profiles, validation diagnostics, optional JSON
+  samples, and an optional figure from the same solver path used by tests.
 
 Fail-closed:
 
@@ -211,6 +215,12 @@ Run focused Python tests:
 
 ```bash
 PYTHONPATH=src python -m pytest tests/test_frc_rigid_rotor.py tests/test_frc_rigid_rotor_property.py tests/test_frc_rigid_rotor_rust_parity.py
+```
+
+Run the executable quickstart and write a reproducible JSON sample:
+
+```bash
+PYTHONPATH=src python examples/03_frc_rigid_rotor_quickstart.py --grid-points 401 --output-json /tmp/frc_quickstart_summary.json
 ```
 
 Run focused Rust tests:
@@ -249,7 +259,10 @@ contract while keeping Go, Julia, and Lean marked `not_applicable_no_frc_surface
 until native FRC solver surfaces exist. The property test surface also
 generates accepted MIF/FRC no-rotation decks to check that pressure decreases
 outward from the magnetic null, beta remains bounded by the pressure-balance
-limit, and Rust/PyO3 preserves energy and separatrix-inventory invariants.
+limit, and Rust/PyO3 preserves energy and separatrix-inventory invariants. The
+quickstart test imports the example directly and verifies the same analytical
+field and pressure equations, so public onboarding stays tied to the validated
+solver contract rather than a disconnected demonstration.
 Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
