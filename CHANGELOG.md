@@ -36,6 +36,10 @@
   pressure-balance profile and added pressure-balance residual plus
   thermal-pressure consistency diagnostics across Python, Rust, PyO3,
   benchmark JSON, tests, and public docs.
+- Added FRC density-closure validation so the solved density profile is derived
+  from magnetic-pressure-balanced `p(r)` and configured temperatures, while
+  `n0` is gated against the solved peak density across Python, Rust, PyO3,
+  benchmark JSON, tests, and public docs.
 
 ## [3.9.8] - 2026-06-02
 

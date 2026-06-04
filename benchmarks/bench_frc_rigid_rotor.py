@@ -26,7 +26,12 @@ from numpy.typing import NDArray
 _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO / "src"))
 
-from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
+from scpn_fusion.core.frc_rigid_rotor import (
+    ELEMENTARY_CHARGE_C,
+    MU_0,
+    RigidRotorFRCInputs,
+    solve_frc_equilibrium,
+)
 
 FloatArray: TypeAlias = NDArray[np.float64]
 _RUST_PROJECT = _REPO / "scpn-fusion-rs"
@@ -36,13 +41,16 @@ _REPEATS = 5
 
 
 def _inputs() -> RigidRotorFRCInputs:
+    t_i_ev = 10_000.0
+    t_e_ev = 5_000.0
+    b_ext = 5.0
     return RigidRotorFRCInputs(
-        n0=2.0e20,
-        T_i_eV=10_000.0,
-        T_e_eV=5_000.0,
+        n0=b_ext**2 / (2.0 * MU_0) / ((t_i_ev + t_e_ev) * ELEMENTARY_CHARGE_C),
+        T_i_eV=t_i_ev,
+        T_e_eV=t_e_ev,
         theta_dot=0.0,
         R_s=0.20,
-        B_ext=5.0,
+        B_ext=b_ext,
         delta=0.02,
     )
 
@@ -82,6 +90,10 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "pressure_balance_ratio": state.pressure_balance_ratio,
                 "pressure_balance_residual_linf": state.pressure_balance_residual_linf,
                 "peak_pressure_pa": state.peak_pressure_pa,
+                "density_peak_m3": state.density_peak_m3,
+                "input_density_m3": state.input_density_m3,
+                "central_density_residual_m3": state.central_density_residual_m3,
+                "central_density_relative_error": state.central_density_relative_error,
                 "input_thermal_pressure_pa": state.input_thermal_pressure_pa,
                 "thermal_pressure_ratio": state.thermal_pressure_ratio,
                 "flux_derivative_residual_linf": state.flux_derivative_residual_linf,
@@ -92,6 +104,7 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "j_theta_checksum": _checksum(state.J_theta),
                 "psi_checksum": _checksum(state.psi),
                 "p_checksum": _checksum(state.p),
+                "density_checksum": _checksum(state.density_m3),
             }
         )
     return rows
@@ -179,6 +192,10 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "pressure_balance_ratio": float(state["pressure_balance_ratio"]),
                 "pressure_balance_residual_linf": float(state["pressure_balance_residual_linf"]),
                 "peak_pressure_pa": float(state["peak_pressure_pa"]),
+                "density_peak_m3": float(state["density_peak_m3"]),
+                "input_density_m3": float(state["input_density_m3"]),
+                "central_density_residual_m3": float(state["central_density_residual_m3"]),
+                "central_density_relative_error": float(state["central_density_relative_error"]),
                 "input_thermal_pressure_pa": float(state["input_thermal_pressure_pa"]),
                 "thermal_pressure_ratio": float(state["thermal_pressure_ratio"]),
                 "flux_derivative_residual_linf": float(state["flux_derivative_residual_linf"]),
@@ -189,6 +206,7 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "j_theta_checksum": _checksum(cast(FloatArray, state["J_theta"])),
                 "psi_checksum": _checksum(cast(FloatArray, state["psi"])),
                 "p_checksum": _checksum(cast(FloatArray, state["p"])),
+                "density_checksum": _checksum(cast(FloatArray, state["density_m3"])),
             }
         )
     return "available", rows
@@ -243,6 +261,20 @@ def _compare_surface(
                 float(cand["peak_pressure_pa"]),
                 float(ref["peak_pressure_pa"]),
             ),
+            "density_peak_rel_error": _relative_error(
+                float(cand["density_peak_m3"]),
+                float(ref["density_peak_m3"]),
+            ),
+            "input_density_rel_error": _relative_error(
+                float(cand["input_density_m3"]),
+                float(ref["input_density_m3"]),
+            ),
+            "central_density_residual_abs_error": abs(
+                float(cand["central_density_residual_m3"]) - float(ref["central_density_residual_m3"])
+            ),
+            "central_density_relative_error_abs_error": abs(
+                float(cand["central_density_relative_error"]) - float(ref["central_density_relative_error"])
+            ),
             "input_thermal_pressure_rel_error": _relative_error(
                 float(cand["input_thermal_pressure_pa"]),
                 float(ref["input_thermal_pressure_pa"]),
@@ -279,6 +311,10 @@ def _compare_surface(
                 float(cand["p_checksum"]),
                 float(ref["p_checksum"]),
             ),
+            "density_checksum_rel_error": _relative_error(
+                float(cand["density_checksum"]),
+                float(ref["density_checksum"]),
+            ),
         }
         passed = (
             checks["r_null_abs_error"] <= 1.0e-12
@@ -290,6 +326,10 @@ def _compare_surface(
             and checks["pressure_balance_rel_error"] <= 1.0e-12
             and checks["pressure_balance_residual_linf_abs_error"] <= 1.0e-12
             and checks["peak_pressure_rel_error"] <= 1.0e-12
+            and checks["density_peak_rel_error"] <= 1.0e-12
+            and checks["input_density_rel_error"] <= 1.0e-12
+            and checks["central_density_residual_abs_error"] <= 1.0e9
+            and checks["central_density_relative_error_abs_error"] <= 1.0e-12
             and checks["input_thermal_pressure_rel_error"] <= 1.0e-12
             and checks["thermal_pressure_ratio_rel_error"] <= 1.0e-12
             and checks["flux_derivative_residual_linf_abs_error"] <= 1.0e-12
@@ -300,6 +340,7 @@ def _compare_surface(
             and checks["j_theta_checksum_rel_error"] <= 1.0e-12
             and checks["psi_checksum_abs_error"] <= 1.0e-10
             and checks["p_checksum_rel_error"] <= 1.0e-12
+            and checks["density_checksum_rel_error"] <= 1.0e-12
         )
         parity_passed = parity_passed and passed
         comparisons.append({"grid_points": grid, "status": "passed" if passed else "failed", **checks})
@@ -316,6 +357,7 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "energy_j_per_m",
         "pressure_balance_ratio",
         "pressure_balance_residual_linf",
+        "central_density_relative_error",
         "flux_derivative_residual_linf",
         "ampere_residual_linf",
     )

@@ -120,6 +120,12 @@ pub fn solve_frc_equilibrium(
     let external_magnetic_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
     let p = b_z.mapv(|b| (external_magnetic_pressure - b * b / (2.0 * MU_0)).max(0.0));
     let peak_pressure_pa = max_abs(&p);
+    let thermal_energy_j = (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+    let density_m3 = p.mapv(|pressure| pressure / thermal_energy_j);
+    let density_peak_m3 = max_abs(&density_m3);
+    let central_density_residual_m3 = density_peak_m3 - inputs.n0;
+    let central_density_relative_error =
+        central_density_residual_m3.abs() / density_peak_m3.max(inputs.n0).max(tolerance);
     let pressure_balance_residual = pressure_balance_residual_profile(&p, &b_z, inputs.b_ext);
     let pressure_scale = external_magnetic_pressure.max(tolerance);
     let pressure_balance_residual_linf = max_abs(&pressure_balance_residual) / pressure_scale;
@@ -179,6 +185,7 @@ pub fn solve_frc_equilibrium(
         b_theta,
         j_theta: j_theta.clone(),
         p,
+        density_m3,
         r_null,
         target_separatrix_radius_m: inputs.r_s,
         separatrix_radius_error_m,
@@ -194,6 +201,10 @@ pub fn solve_frc_equilibrium(
         pressure_balance_residual_linf,
         pressure_balance_residual_l2,
         peak_pressure_pa,
+        density_peak_m3,
+        input_density_m3: inputs.n0,
+        central_density_residual_m3,
+        central_density_relative_error,
         input_thermal_pressure_pa,
         thermal_pressure_ratio: input_thermal_pressure_pa / pressure_scale,
         flux_derivative_residual,
@@ -519,7 +530,7 @@ mod tests {
 
     fn inputs(delta: Option<f64>, theta_dot: f64) -> RigidRotorFrcInputs {
         RigidRotorFrcInputs {
-            n0: 2.0e20,
+            n0: 25.0 / (2.0 * MU_0) / (15_000.0 * ELEMENTARY_CHARGE_C),
             t_i_ev: 10_000.0,
             t_e_ev: 5_000.0,
             theta_dot,
@@ -565,6 +576,10 @@ mod tests {
         assert!(state.pressure_balance_residual_l2 <= 1.0e-12);
         assert_eq!(state.pressure_balance_residual.len(), rho.len());
         assert!(state.peak_pressure_pa > 0.0);
+        assert_eq!(state.density_m3.len(), rho.len());
+        assert!(state.density_peak_m3 > 0.0);
+        assert!(state.input_density_m3 > 0.0);
+        assert!(state.central_density_relative_error <= 1.0e-12);
         assert!(state.input_thermal_pressure_pa > 0.0);
         assert!(state.thermal_pressure_ratio > 0.0);
         assert!(state.flux_derivative_residual_linf <= 2.0e-2);
@@ -631,15 +646,19 @@ mod tests {
         let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
         let external_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
         let input_pressure = inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+        let thermal_energy_j = (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
         for i in 0..rho.len() {
             let expected_pressure = external_pressure - state.b_z[i] * state.b_z[i] / (2.0 * MU_0);
             assert!((state.p[i] - expected_pressure).abs() <= 1.0e-8);
             let expected_residual =
                 state.p[i] + state.b_z[i] * state.b_z[i] / (2.0 * MU_0) - external_pressure;
             assert!((state.pressure_balance_residual[i] - expected_residual).abs() <= 1.0e-8);
+            assert!((state.density_m3[i] - state.p[i] / thermal_energy_j).abs() <= 1.0e-8);
         }
         assert!(state.pressure_balance_residual_linf <= 1.0e-12);
         assert!((state.peak_pressure_pa - external_pressure).abs() <= external_pressure * 1.0e-4);
+        assert!((state.density_peak_m3 - inputs.n0).abs() <= inputs.n0 * 1.0e-4);
+        assert!(state.central_density_relative_error <= 1.0e-4);
         assert!(
             (state.input_thermal_pressure_pa - input_pressure).abs() <= input_pressure * 1.0e-14
         );

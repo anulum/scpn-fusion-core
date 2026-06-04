@@ -52,6 +52,7 @@ class FRCEquilibriumState:
     B_theta: FloatArray
     J_theta: FloatArray
     p: FloatArray
+    density_m3: FloatArray
     R_null: float
     target_separatrix_radius_m: float
     separatrix_radius_error_m: float
@@ -67,6 +68,10 @@ class FRCEquilibriumState:
     pressure_balance_residual_linf: float
     pressure_balance_residual_l2: float
     peak_pressure_pa: float
+    density_peak_m3: float
+    input_density_m3: float
+    central_density_residual_m3: float
+    central_density_relative_error: float
     input_thermal_pressure_pa: float
     thermal_pressure_ratio: float
     flux_derivative_residual: FloatArray
@@ -98,6 +103,11 @@ class FRCValidationReport:
     pressure_balance_residual_l2: float
     pressure_balance_passed: bool
     thermal_pressure_ratio: float
+    density_peak_m3: float
+    input_density_m3: float
+    central_density_residual_m3: float
+    central_density_relative_error: float
+    density_consistency_passed: bool
     flux_derivative_residual_linf: float
     flux_derivative_residual_l2: float
     flux_closure_passed: bool
@@ -176,6 +186,15 @@ def solve_frc_equilibrium(
     external_magnetic_pressure = inputs.B_ext**2 / (2.0 * MU_0)
     p = cast(FloatArray, external_magnetic_pressure - B_z**2 / (2.0 * MU_0))
     p = cast(FloatArray, np.maximum(p, 0.0))
+    thermal_energy_j = (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
+    density_m3 = cast(FloatArray, p / thermal_energy_j)
+    density_peak_m3 = float(np.max(density_m3))
+    central_density_residual_m3 = density_peak_m3 - inputs.n0
+    central_density_relative_error = abs(central_density_residual_m3) / max(
+        density_peak_m3,
+        inputs.n0,
+        tolerance,
+    )
     pressure_balance_residual = _pressure_balance_residual(p, B_z, inputs.B_ext)
     pressure_balance_residual_linf = float(np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance))
     pressure_balance_residual_l2 = float(
@@ -206,6 +225,7 @@ def solve_frc_equilibrium(
         B_theta=B_theta,
         J_theta=J_theta,
         p=p,
+        density_m3=density_m3,
         R_null=r_null,
         target_separatrix_radius_m=inputs.R_s,
         separatrix_radius_error_m=float(separatrix_radius_error),
@@ -221,6 +241,10 @@ def solve_frc_equilibrium(
         pressure_balance_residual_linf=pressure_balance_residual_linf,
         pressure_balance_residual_l2=pressure_balance_residual_l2,
         peak_pressure_pa=float(np.max(p)),
+        density_peak_m3=density_peak_m3,
+        input_density_m3=float(inputs.n0),
+        central_density_residual_m3=float(central_density_residual_m3),
+        central_density_relative_error=float(central_density_relative_error),
         input_thermal_pressure_pa=float(input_thermal_pressure),
         thermal_pressure_ratio=float(input_thermal_pressure / max(external_magnetic_pressure, tolerance)),
         flux_derivative_residual=flux_derivative_residual,
@@ -269,12 +293,18 @@ def pressure_balance_residual(state: FRCEquilibriumState) -> FloatArray:
     return state.pressure_balance_residual
 
 
+def density_profile(state: FRCEquilibriumState) -> FloatArray:
+    """Return solved density profile ``n(r) = p(r) / ((T_i + T_e) e)`` in m^-3."""
+    return state.density_m3
+
+
 def validate_equilibrium(
     state: FRCEquilibriumState,
     *,
     tolerance: float = 1e-6,
     flux_tolerance: float = 2e-2,
     pressure_balance_tolerance: float = 2e-2,
+    density_tolerance: float = 2e-2,
     ampere_tolerance: float = 2e-2,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
@@ -288,6 +318,7 @@ def validate_equilibrium(
             state.B_theta,
             state.J_theta,
             state.p,
+            state.density_m3,
             state.pressure_balance_residual,
             state.flux_derivative_residual,
             state.ampere_residual,
@@ -314,6 +345,7 @@ def validate_equilibrium(
         and pressure_peak_error <= max(tolerance, 2.0 * radial_spacing)
     )
     pressure_balance_passed = state.pressure_balance_residual_linf <= pressure_balance_tolerance
+    density_consistency_passed = state.central_density_relative_error <= density_tolerance
     flux_closure_passed = state.flux_derivative_residual_linf <= flux_tolerance
     ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
     force_balance_passed = (
@@ -322,6 +354,7 @@ def validate_equilibrium(
     passed = (
         geometric_passed
         and pressure_balance_passed
+        and density_consistency_passed
         and flux_closure_passed
         and ampere_closure_passed
         and force_balance_passed
@@ -339,6 +372,11 @@ def validate_equilibrium(
         pressure_balance_residual_l2=state.pressure_balance_residual_l2,
         pressure_balance_passed=bool(pressure_balance_passed),
         thermal_pressure_ratio=state.thermal_pressure_ratio,
+        density_peak_m3=state.density_peak_m3,
+        input_density_m3=state.input_density_m3,
+        central_density_residual_m3=state.central_density_residual_m3,
+        central_density_relative_error=state.central_density_relative_error,
+        density_consistency_passed=bool(density_consistency_passed),
         flux_derivative_residual_linf=state.flux_derivative_residual_linf,
         flux_derivative_residual_l2=state.flux_derivative_residual_l2,
         flux_closure_passed=bool(flux_closure_passed),

@@ -20,7 +20,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
+from scpn_fusion.core.frc_rigid_rotor import ELEMENTARY_CHARGE_C, MU_0, RigidRotorFRCInputs, solve_frc_equilibrium
 
 FloatArray: TypeAlias = NDArray[np.float64]
 
@@ -35,10 +35,13 @@ pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust FRC extension not ava
 
 
 def _case(delta: float | None, grid_points: int, b_ext: float, r_s: float) -> tuple[RigidRotorFRCInputs, FloatArray]:
+    t_i_ev = 10_000.0
+    t_e_ev = 5_000.0
+    n0 = b_ext**2 / (2.0 * MU_0) / ((t_i_ev + t_e_ev) * ELEMENTARY_CHARGE_C)
     inputs = RigidRotorFRCInputs(
-        n0=2.0e20,
-        T_i_eV=10_000.0,
-        T_e_eV=5_000.0,
+        n0=n0,
+        T_i_eV=t_i_ev,
+        T_e_eV=t_e_ev,
         theta_dot=0.0,
         R_s=r_s,
         B_ext=b_ext,
@@ -75,6 +78,7 @@ def test_rust_frc_matches_python_reference() -> None:
         np.testing.assert_allclose(rust_state["J_theta"], python_state.J_theta, rtol=1.0e-12, atol=1.0e-6)
         np.testing.assert_allclose(rust_state["psi"], python_state.psi, rtol=1.0e-13, atol=1.0e-13)
         np.testing.assert_allclose(rust_state["p"], python_state.p, rtol=1.0e-12, atol=1.0e-6)
+        np.testing.assert_allclose(rust_state["density_m3"], python_state.density_m3, rtol=1.0e-10, atol=1.0e7)
         np.testing.assert_allclose(
             rust_state["pressure_balance_residual"],
             python_state.pressure_balance_residual,
@@ -131,6 +135,22 @@ def test_rust_frc_matches_python_reference() -> None:
         assert float(rust_state["peak_pressure_pa"]) == pytest.approx(
             python_state.peak_pressure_pa,
             rel=1.0e-12,
+        )
+        assert float(rust_state["density_peak_m3"]) == pytest.approx(
+            python_state.density_peak_m3,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["input_density_m3"]) == pytest.approx(
+            python_state.input_density_m3,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["central_density_residual_m3"]) == pytest.approx(
+            python_state.central_density_residual_m3,
+            abs=max(python_state.input_density_m3, 1.0) * 1.0e-12,
+        )
+        assert float(rust_state["central_density_relative_error"]) == pytest.approx(
+            python_state.central_density_relative_error,
+            abs=1.0e-12,
         )
         assert float(rust_state["input_thermal_pressure_pa"]) == pytest.approx(
             python_state.input_thermal_pressure_pa,

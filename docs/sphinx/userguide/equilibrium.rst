@@ -96,7 +96,7 @@ available.
    from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
 
    inputs = RigidRotorFRCInputs(
-       n0=2.0e20,
+       n0=4.138e21,
        T_i_eV=10_000.0,
        T_e_eV=5_000.0,
        theta_dot=0.0,
@@ -119,14 +119,16 @@ The no-rotation pressure profile follows local magnetic-pressure balance,
 ``p = (B_ext^2 - B_z^2) / (2 mu_0)``. The scalar input thermal pressure
 ``n0 * (T_i + T_e) * e`` is reported as a consistency ratio against the
 magnetic-pressure-balance peak; it is not substituted for the local solved
-profile. The validation report includes the pressure-balance residual
+profile. The solver also derives ``n(r) = p(r) / ((T_i + T_e) * e)`` and gates
+the configured central density against the solved peak density. The validation
+report includes the density-consistency row, the pressure-balance residual
 ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical flux-primitive
 closure residual ``dpsi/dr - r B_z``, the Ampere closure residual
 ``mu_0 J_theta + dB_z/dr``, and the radial ideal-MHD force-balance residual
-``dp/dr - (J x B)_r``.  Pressure, flux, and Ampere closure are active
-finite-grid gates by default. Force balance is reported as a diagnostic by default; pass an explicit
-``force_balance_tolerance`` to make that residual part of the acceptance gate
-for a specific run.
+``dp/dr - (J x B)_r``.  Density, pressure, flux, and Ampere closure are active
+finite-grid gates by default. Force balance is reported as a diagnostic by
+default; pass an explicit ``force_balance_tolerance`` to make that residual
+part of the acceptance gate for a specific run.
 
 The Rust surface is exposed as ``fusion_physics::frc`` and benchmarked by
 ``cargo bench -p fusion-physics --bench frc_rigid_rotor_bench``.  The tracked

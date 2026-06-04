@@ -1567,6 +1567,27 @@ Rust flight simulator, and it is not EFIT-grade reconstruction parity evidence.
 
 ### Rust `fusion-math` SOR kernel source-convention benchmark
 
+### FRC rigid-rotor analytical benchmark
+
+The tracked FRC benchmark report is `frc_rigid_rotor_no_rotation_analytical`.
+It covers the accepted Steinhauer no-rotation axial-field contract only. The
+input deck is pressure matched so `n0 * (T_i + T_e) * e` equals the
+magnetic-pressure-balance peak for the configured `B_ext`. Reported scalar
+diagnostics include null radius, separatrix error, Eq. 27 `s`, energy per
+metre, pressure-balance ratio, pressure residual, solved peak density, input
+central density, central-density residual, central-density relative error,
+input thermal pressure, thermal-pressure ratio, flux residual, Ampere
+residual, force-balance residual, and weighted checksums for `B_z`, `J_theta`,
+`psi`, pressure, and density. Python, Rust, and PyO3 rows must agree on the
+same density-closure contract; Go, Julia, and Lean remain
+`not_applicable_no_frc_surface` until equivalent native FRC solver logic exists.
+
+Reproduce locally:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
+```
+
 Local run on 2026-05-25 after aligning the Rust `fusion-math` SOR, multigrid,
 and GMRES kernels to the Python native convention `Delta*psi = source`:
 

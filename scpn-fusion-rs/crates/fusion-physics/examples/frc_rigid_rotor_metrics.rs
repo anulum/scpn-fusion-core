@@ -35,7 +35,7 @@ fn main() {
         grids
     };
     let inputs = RigidRotorFrcInputs {
-        n0: 2.0e20,
+        n0: 25.0 / (2.0 * 1.2566370614359173e-6) / (15_000.0 * 1.602176634e-19),
         t_i_ev: 10_000.0,
         t_e_ev: 5_000.0,
         theta_dot: 0.0,
@@ -54,7 +54,7 @@ fn main() {
             print!(",");
         }
         print!(
-            "{{\"grid_points\":{},\"wall_time_s\":{:.12e},\"r_null_m\":{:.17e},\"target_separatrix_radius_m\":{:.17e},\"separatrix_radius_error_m\":{:.17e},\"field_reversal_passed\":{},\"s_parameter\":{:.17e},\"energy_j_per_m\":{:.17e},\"pressure_balance_ratio\":{:.17e},\"pressure_balance_residual_linf\":{:.17e},\"peak_pressure_pa\":{:.17e},\"input_thermal_pressure_pa\":{:.17e},\"thermal_pressure_ratio\":{:.17e},\"flux_derivative_residual_linf\":{:.17e},\"peak_j_theta_a_m2\":{:.17e},\"ampere_residual_linf\":{:.17e},\"force_balance_residual_linf\":{:.17e},\"b_z_checksum\":{:.17e},\"j_theta_checksum\":{:.17e},\"psi_checksum\":{:.17e},\"p_checksum\":{:.17e}}}",
+            "{{\"grid_points\":{},\"wall_time_s\":{:.12e},\"r_null_m\":{:.17e},\"target_separatrix_radius_m\":{:.17e},\"separatrix_radius_error_m\":{:.17e},\"field_reversal_passed\":{},\"s_parameter\":{:.17e},\"energy_j_per_m\":{:.17e},\"pressure_balance_ratio\":{:.17e},\"pressure_balance_residual_linf\":{:.17e},\"peak_pressure_pa\":{:.17e},\"density_peak_m3\":{:.17e},\"input_density_m3\":{:.17e},\"central_density_residual_m3\":{:.17e},\"central_density_relative_error\":{:.17e},\"input_thermal_pressure_pa\":{:.17e},\"thermal_pressure_ratio\":{:.17e},\"flux_derivative_residual_linf\":{:.17e},\"peak_j_theta_a_m2\":{:.17e},\"ampere_residual_linf\":{:.17e},\"force_balance_residual_linf\":{:.17e},\"b_z_checksum\":{:.17e},\"j_theta_checksum\":{:.17e},\"psi_checksum\":{:.17e},\"p_checksum\":{:.17e},\"density_checksum\":{:.17e}}}",
             n,
             wall_time_s,
             state.r_null,
@@ -66,6 +66,10 @@ fn main() {
             state.pressure_balance_ratio,
             state.pressure_balance_residual_linf,
             state.peak_pressure_pa,
+            state.density_peak_m3,
+            state.input_density_m3,
+            state.central_density_residual_m3,
+            state.central_density_relative_error,
             state.input_thermal_pressure_pa,
             state.thermal_pressure_ratio,
             state.flux_derivative_residual_linf,
@@ -75,7 +79,8 @@ fn main() {
             checksum(&state.b_z),
             checksum(&state.j_theta),
             checksum(&state.psi),
-            checksum(&state.p)
+            checksum(&state.p),
+            checksum(&state.density_m3)
         );
     }
     println!("]}}");

@@ -17,8 +17,10 @@ from scipy.integrate import trapezoid
 
 from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
 from scpn_fusion.core.frc_rigid_rotor import (
+    ELEMENTARY_CHARGE_C,
     MU_0,
     ampere_residual,
+    density_profile,
     force_balance_residual,
     flux_derivative_residual,
     ion_gyroradius_m,
@@ -31,14 +33,22 @@ from scpn_fusion.core.frc_rigid_rotor import (
 FloatArray: TypeAlias = NDArray[np.float64]
 
 
+def _pressure_matched_density_m3(t_i_ev: float, t_e_ev: float, b_ext: float) -> float:
+    external_pressure = b_ext**2 / (2.0 * MU_0)
+    return external_pressure / ((t_i_ev + t_e_ev) * ELEMENTARY_CHARGE_C)
+
+
 def _inputs(delta: float | None = 0.02, theta_dot: float = 0.0) -> RigidRotorFRCInputs:
+    t_i_ev = 10_000.0
+    t_e_ev = 5_000.0
+    b_ext = 5.0
     return RigidRotorFRCInputs(
-        n0=2.0e20,
-        T_i_eV=10_000.0,
-        T_e_eV=5_000.0,
+        n0=_pressure_matched_density_m3(t_i_ev, t_e_ev, b_ext),
+        T_i_eV=t_i_ev,
+        T_e_eV=t_e_ev,
         theta_dot=theta_dot,
         R_s=0.20,
-        B_ext=5.0,
+        B_ext=b_ext,
         delta=delta,
     )
 
@@ -113,12 +123,26 @@ def test_s_parameter_matches_steinhauer_integral_definition() -> None:
 
 def test_s_parameter_increases_with_axial_field_strength() -> None:
     rho: FloatArray = np.linspace(0.0, 0.4, 513)
+    low_b_ext = 3.0
+    high_b_ext = 7.5
     low_field = solve_frc_equilibrium(
-        RigidRotorFRCInputs(**{**_inputs().__dict__, "B_ext": 3.0}),
+        RigidRotorFRCInputs(
+            **{
+                **_inputs().__dict__,
+                "B_ext": low_b_ext,
+                "n0": _pressure_matched_density_m3(10_000.0, 5_000.0, low_b_ext),
+            }
+        ),
         rho,
     )
     high_field = solve_frc_equilibrium(
-        RigidRotorFRCInputs(**{**_inputs().__dict__, "B_ext": 7.5}),
+        RigidRotorFRCInputs(
+            **{
+                **_inputs().__dict__,
+                "B_ext": high_b_ext,
+                "n0": _pressure_matched_density_m3(10_000.0, 5_000.0, high_b_ext),
+            }
+        ),
         rho,
     )
 
@@ -182,8 +206,13 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.pressure_balance_residual_linf <= 1.0e-12
     assert state.pressure_balance_residual_l2 <= 1.0e-12
     assert state.peak_pressure_pa > 0.0
+    assert state.density_m3.shape == rho.shape
+    assert state.density_peak_m3 > 0.0
+    assert state.input_density_m3 == pytest.approx(inputs.n0)
+    assert abs(state.central_density_residual_m3) <= state.input_density_m3 * 1.0e-3
+    assert state.central_density_relative_error <= 1.0e-3
     assert state.input_thermal_pressure_pa > 0.0
-    assert state.thermal_pressure_ratio > 0.0
+    assert state.thermal_pressure_ratio == pytest.approx(1.0)
     assert state.target_separatrix_radius_m == inputs.R_s
     assert state.separatrix_radius_error_m <= float(np.max(np.diff(rho)))
     assert state.field_reversal_passed is True
@@ -261,8 +290,10 @@ def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
     external_pressure = inputs.B_ext**2 / (2.0 * MU_0)
     expected_pressure = external_pressure - state.B_z**2 / (2.0 * MU_0)
     expected_input_pressure = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * 1.602176634e-19
+    expected_density = expected_pressure / ((inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C)
 
     np.testing.assert_allclose(state.p, expected_pressure, rtol=1.0e-14, atol=1.0e-8)
+    np.testing.assert_allclose(density_profile(state), expected_density, rtol=1.0e-14, atol=1.0e-8)
     np.testing.assert_allclose(
         pressure_balance_residual(state),
         state.p + state.B_z**2 / (2.0 * MU_0) - external_pressure,
@@ -271,6 +302,10 @@ def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
     )
     assert state.pressure_balance_residual_linf <= 1.0e-12
     assert state.peak_pressure_pa == pytest.approx(external_pressure, rel=1.0e-4)
+    assert state.density_peak_m3 == pytest.approx(inputs.n0, rel=1.0e-4)
+    assert state.input_density_m3 == pytest.approx(inputs.n0)
+    assert state.central_density_residual_m3 == pytest.approx(0.0, abs=inputs.n0 * 1.0e-4)
+    assert state.central_density_relative_error <= 1.0e-4
     assert state.input_thermal_pressure_pa == pytest.approx(expected_input_pressure)
     assert state.thermal_pressure_ratio == pytest.approx(expected_input_pressure / external_pressure)
 
@@ -339,6 +374,18 @@ def test_pressure_balance_gate_is_fail_closed() -> None:
     report = validate_equilibrium(corrupted, pressure_balance_tolerance=1.0e-3)
 
     assert report.pressure_balance_passed is False
+    assert report.passed is False
+
+
+def test_density_consistency_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, central_density_relative_error=0.5)
+    report = validate_equilibrium(corrupted, density_tolerance=1.0e-3)
+
+    assert report.density_consistency_passed is False
     assert report.passed is False
 
 
