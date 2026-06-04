@@ -17,13 +17,13 @@ from scpn_fusion.core.current_diffusion import (
 )
 
 
-def test_neoclassical_resistivity():
+def test_neoclassical_resistivity() -> None:
     eta = neoclassical_resistivity(Te_keV=1.0, ne_19=1.0, Z_eff=1.5, epsilon=0.1)
     assert eta > 0.0
     assert 1e-8 < eta < 1e-7
 
 
-def test_q_from_psi():
+def test_q_from_psi() -> None:
     rho = np.linspace(0, 1, 50)
     R0 = 2.0
     a = 0.5
@@ -34,12 +34,12 @@ def test_q_from_psi():
     assert np.allclose(q, 1.0, atol=0.1)
 
 
-def test_resistive_diffusion_time():
+def test_resistive_diffusion_time() -> None:
     tau = resistive_diffusion_time(a=2.0, eta=1e-8)
     assert tau > 100.0
 
 
-def test_pure_ohmic_relaxation():
+def test_pure_ohmic_relaxation() -> None:
     rho = np.linspace(0, 1, 50)
     solver = CurrentDiffusionSolver(rho, R0=2.0, a=0.5, B0=1.0)
 
@@ -59,7 +59,7 @@ def test_pure_ohmic_relaxation():
     assert np.all(q > 0)
 
 
-def test_conservation_and_steady_state():
+def test_conservation_and_steady_state() -> None:
     rho = np.linspace(0, 1, 50)
     solver = CurrentDiffusionSolver(rho, R0=2.0, a=0.5, B0=1.0)
 
@@ -77,7 +77,7 @@ def test_conservation_and_steady_state():
     assert np.allclose(psi_new, solver.psi, rtol=1e-3, atol=1e-3)
 
 
-def test_bootstrap_steepens_q():
+def test_bootstrap_steepens_q() -> None:
     rho = np.linspace(0, 1, 50)
     solver = CurrentDiffusionSolver(rho, R0=2.0, a=0.5, B0=1.0)
 

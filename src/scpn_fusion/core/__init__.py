@@ -92,7 +92,12 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "WholeDeviceModel": (".wdm_engine", "WholeDeviceModel"),
     # Current diffusion — Sauter neoclassical resistivity, Crank-Nicolson solver
     "CurrentDiffusionSolver": (".current_diffusion", "CurrentDiffusionSolver"),
+    "FluxEvolutionTrajectory": (".current_diffusion", "FluxEvolutionTrajectory"),
     "neoclassical_resistivity": (".current_diffusion", "neoclassical_resistivity"),
+    "solve_flux_evolution_nonadiabatic": (
+        ".current_diffusion",
+        "solve_flux_evolution_nonadiabatic",
+    ),
     # FRC rigid-rotor equilibrium — Steinhauer no-rotation analytical limit
     "RigidRotorFRCInputs": (".frc_rigid_rotor", "RigidRotorFRCInputs"),
     "FRCEquilibriumState": (".frc_rigid_rotor", "FRCEquilibriumState"),

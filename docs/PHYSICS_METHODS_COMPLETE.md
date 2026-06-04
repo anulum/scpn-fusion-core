@@ -299,6 +299,27 @@ When `multi_ion=True`, the solver evolves separate D/T fuel densities, He-ash wi
 
 **Validation:** `tests/test_integrated_transport_solver.py`, `tests/test_cn_transport.py`, `tests/test_multi_ion_transport.py`, `validation/benchmark_transport_power_balance.py`.
 
+### 3.6 Non-adiabatic MIF/FRC flux carrier
+
+For pulsed MIF/FRC workflows the current-diffusion surface now includes the
+flattened Ono-style non-adiabatic carrier:
+
+$$\frac{\partial\psi}{\partial t} =
+-\frac{\psi}{\tau_\psi} + R_{\rm null} E_\theta - \eta J_\theta.$$
+
+The public Python helper `solve_flux_evolution_nonadiabatic` returns a
+`FluxEvolutionTrajectory` with `psi`, `R_null E_theta`, `eta J_theta`, net
+source, and damping histories on the supplied radial grid. Each step advances
+the local linear damping analytically with endpoint-averaged source sampling,
+so constant damping recovers the exact exponential solution and zero drive,
+zero damping preserves the input flux exactly. Rust parity math lives in
+`fusion-core::current_diffusion`, and the benchmark report is local regression
+evidence only unless rerun under the repository benchmark-isolation policy.
+
+**Validation:** `tests/test_current_diffusion_nonadiabatic.py`, Rust unit tests
+in `fusion-core::current_diffusion`, and
+`validation/reports/current_diffusion_nonadiabatic_benchmark.json`.
+
 ---
 
 ## 4. Gyrokinetic Three-Path Closure

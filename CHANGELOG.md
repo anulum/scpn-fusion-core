@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Added the FUS-C.3 non-adiabatic MIF/FRC flux carrier
+  `solve_flux_evolution_nonadiabatic`, with Python trajectory diagnostics, Rust
+  `fusion-core::current_diffusion` parity math, module-specific tests, local
+  non-isolated benchmark evidence, and public physics-method documentation.
 - Added a differentiable JAX observable kernel for the accepted Steinhauer
   no-rotation FRC analytical contract. The new path matches the NumPy solver on
   axial field, pressure, normalised flux, energy, and `s`, and exposes finite
