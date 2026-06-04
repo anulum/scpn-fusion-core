@@ -102,6 +102,16 @@ independent second-order finite-difference derivative:
 
 $$\mathcal{F}_r = \frac{d\psi}{dr} - rB_z.$$
 
+The accepted no-rotation pressure profile is the local magnetic-pressure
+balance profile:
+
+$$p(r)=\frac{B_{\rm ext}^2-B_z(r)^2}{2\mu_0},\qquad
+\mathcal{P}_r=p+\frac{B_z^2}{2\mu_0}-\frac{B_{\rm ext}^2}{2\mu_0}.$$
+
+The scalar input pressure $n_0(T_i+T_e)e$ is reported as a consistency
+diagnostic relative to the magnetic-pressure-balance peak. It is not used to
+replace the solved local pressure profile.
+
 The validation report carries both the Ampere closure residual
 $\mathcal{A}_r$ and the normalised radial force-balance diagnostic
 
@@ -116,9 +126,9 @@ only when an explicit `force_balance_tolerance` is supplied.
 The tracked benchmark report now includes finite-grid convergence evidence for
 the accepted no-rotation scalar invariants: null radius, separatrix radius
 error, Eq. 27 `s`, energy per metre, pressure-balance ratio, and the
-independent flux and Ampere residuals. This is local convergence evidence for
-the implemented analytical contract, not validation of the unresolved rotating
-FRC BVP or kinetic/transport evolution.
+independent pressure, flux, and Ampere residuals. This is local convergence
+evidence for the implemented analytical contract, not validation of the
+unresolved rotating FRC BVP or kinetic/transport evolution.
 
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 

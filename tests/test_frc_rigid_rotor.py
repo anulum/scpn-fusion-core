@@ -23,6 +23,7 @@ from scpn_fusion.core.frc_rigid_rotor import (
     flux_derivative_residual,
     ion_gyroradius_m,
     null_radius,
+    pressure_balance_residual,
     s_parameter,
     validate_equilibrium,
 )
@@ -141,8 +142,13 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         coarse_error = abs(float(getattr(coarse, metric)) - reference_value)
         medium_error = abs(float(getattr(medium, metric)) - reference_value)
         fine_error = abs(float(getattr(fine, metric)) - reference_value)
-        assert medium_error < coarse_error
-        assert fine_error < medium_error
+        exact_tolerance = max(abs(reference_value), 1.0) * 1.0e-13
+        if medium_error <= exact_tolerance and fine_error <= exact_tolerance:
+            continue
+        assert medium_error <= coarse_error + exact_tolerance
+        assert fine_error <= medium_error + exact_tolerance
+        assert medium_error < coarse_error or medium_error <= exact_tolerance
+        assert fine_error < medium_error or fine_error <= exact_tolerance
 
 
 def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
@@ -172,6 +178,12 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
 
     assert state.energy_J > 0.0
     assert state.pressure_balance_ratio > 0.0
+    assert state.pressure_balance_residual.shape == rho.shape
+    assert state.pressure_balance_residual_linf <= 1.0e-12
+    assert state.pressure_balance_residual_l2 <= 1.0e-12
+    assert state.peak_pressure_pa > 0.0
+    assert state.input_thermal_pressure_pa > 0.0
+    assert state.thermal_pressure_ratio > 0.0
     assert state.target_separatrix_radius_m == inputs.R_s
     assert state.separatrix_radius_error_m <= float(np.max(np.diff(rho)))
     assert state.field_reversal_passed is True
@@ -240,6 +252,29 @@ def test_cylindrical_flux_matches_steinhauer_primitive() -> None:
     assert state.flux_derivative_residual_linf <= 2.0e-2
 
 
+def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
+    inputs = _inputs(delta=0.02)
+    rho: FloatArray = np.linspace(0.0, 0.4, 401)
+
+    state = solve_frc_equilibrium(inputs, rho)
+
+    external_pressure = inputs.B_ext**2 / (2.0 * MU_0)
+    expected_pressure = external_pressure - state.B_z**2 / (2.0 * MU_0)
+    expected_input_pressure = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * 1.602176634e-19
+
+    np.testing.assert_allclose(state.p, expected_pressure, rtol=1.0e-14, atol=1.0e-8)
+    np.testing.assert_allclose(
+        pressure_balance_residual(state),
+        state.p + state.B_z**2 / (2.0 * MU_0) - external_pressure,
+        rtol=0.0,
+        atol=1.0e-8,
+    )
+    assert state.pressure_balance_residual_linf <= 1.0e-12
+    assert state.peak_pressure_pa == pytest.approx(external_pressure, rel=1.0e-4)
+    assert state.input_thermal_pressure_pa == pytest.approx(expected_input_pressure)
+    assert state.thermal_pressure_ratio == pytest.approx(expected_input_pressure / external_pressure)
+
+
 def test_ampere_residual_refines_with_grid() -> None:
     inputs = _inputs(delta=0.02)
 
@@ -282,6 +317,7 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
 
     assert residual.shape == rho.shape
     assert np.all(np.isfinite(residual))
+    assert diagnostic_report.pressure_balance_passed is True
     assert diagnostic_report.flux_closure_passed is True
     assert diagnostic_report.ampere_closure_passed is True
     assert diagnostic_report.field_reversal_passed is True
@@ -292,6 +328,18 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     assert strict_report.passed is False
     assert loose_report.force_balance_passed is True
     assert loose_report.passed is True
+
+
+def test_pressure_balance_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, pressure_balance_residual_linf=1.0)
+    report = validate_equilibrium(corrupted, pressure_balance_tolerance=1.0e-3)
+
+    assert report.pressure_balance_passed is False
+    assert report.passed is False
 
 
 def test_flux_closure_gate_is_fail_closed() -> None:

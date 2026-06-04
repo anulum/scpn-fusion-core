@@ -115,11 +115,16 @@ The implemented axial field is:
 Rotating rigid-rotor cases fail closed with ``NotImplementedError`` until the
 dedicated FRC BVP task is implemented and validated.
 
-The validation report includes the analytical flux-primitive closure residual
-``dpsi/dr - r B_z``, the Ampere closure residual ``mu_0 J_theta + dB_z/dr``,
-and the radial ideal-MHD force-balance residual ``dp/dr - (J x B)_r``.  Flux
-and Ampere closure are active finite-grid gates by default. Force balance is
-reported as a diagnostic by default; pass an explicit
+The no-rotation pressure profile follows local magnetic-pressure balance,
+``p = (B_ext^2 - B_z^2) / (2 mu_0)``. The scalar input thermal pressure
+``n0 * (T_i + T_e) * e`` is reported as a consistency ratio against the
+magnetic-pressure-balance peak; it is not substituted for the local solved
+profile. The validation report includes the pressure-balance residual
+``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical flux-primitive
+closure residual ``dpsi/dr - r B_z``, the Ampere closure residual
+``mu_0 J_theta + dB_z/dr``, and the radial ideal-MHD force-balance residual
+``dp/dr - (J x B)_r``.  Pressure, flux, and Ampere closure are active
+finite-grid gates by default. Force balance is reported as a diagnostic by default; pass an explicit
 ``force_balance_tolerance`` to make that residual part of the acceptance gate
 for a specific run.
 

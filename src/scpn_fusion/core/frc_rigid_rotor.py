@@ -63,6 +63,12 @@ class FRCEquilibriumState:
     residual: float
     delta: float
     pressure_balance_ratio: float
+    pressure_balance_residual: FloatArray
+    pressure_balance_residual_linf: float
+    pressure_balance_residual_l2: float
+    peak_pressure_pa: float
+    input_thermal_pressure_pa: float
+    thermal_pressure_ratio: float
     flux_derivative_residual: FloatArray
     flux_derivative_residual_linf: float
     flux_derivative_residual_l2: float
@@ -88,6 +94,10 @@ class FRCValidationReport:
     pressure_peak_error_m: float
     edge_field_error_T: float
     pressure_balance_ratio: float
+    pressure_balance_residual_linf: float
+    pressure_balance_residual_l2: float
+    pressure_balance_passed: bool
+    thermal_pressure_ratio: float
     flux_derivative_residual_linf: float
     flux_derivative_residual_l2: float
     flux_closure_passed: bool
@@ -162,10 +172,15 @@ def solve_frc_equilibrium(
     separatrix_index = int(np.argmin(np.abs(rho - r_null)))
     field_reversal = _field_reversal_passed(rho, B_z, inputs.R_s)
 
-    p0 = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
-    psi_axis = np.interp(r_null, rho, psi)
-    pressure_span = max(abs(inputs.B_ext * inputs.R_s), tolerance)
-    p = p0 * np.exp(-2.0 * ((psi - psi_axis) / pressure_span) ** 2)
+    input_thermal_pressure = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
+    external_magnetic_pressure = inputs.B_ext**2 / (2.0 * MU_0)
+    p = cast(FloatArray, external_magnetic_pressure - B_z**2 / (2.0 * MU_0))
+    p = cast(FloatArray, np.maximum(p, 0.0))
+    pressure_balance_residual = _pressure_balance_residual(p, B_z, inputs.B_ext)
+    pressure_balance_residual_linf = float(np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance))
+    pressure_balance_residual_l2 = float(
+        np.sqrt(np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2))
+    )
     force_residual = _radial_force_balance_residual(rho, B_z, J_theta, p)
     residual_scale = max(
         tolerance,
@@ -202,6 +217,12 @@ def solve_frc_equilibrium(
         residual=float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument))))),
         delta=delta,
         pressure_balance_ratio=float(pressure_balance_ratio),
+        pressure_balance_residual=pressure_balance_residual,
+        pressure_balance_residual_linf=pressure_balance_residual_linf,
+        pressure_balance_residual_l2=pressure_balance_residual_l2,
+        peak_pressure_pa=float(np.max(p)),
+        input_thermal_pressure_pa=float(input_thermal_pressure),
+        thermal_pressure_ratio=float(input_thermal_pressure / max(external_magnetic_pressure, tolerance)),
         flux_derivative_residual=flux_derivative_residual,
         flux_derivative_residual_linf=flux_derivative_residual_linf,
         flux_derivative_residual_l2=flux_derivative_residual_l2,
@@ -243,11 +264,17 @@ def flux_derivative_residual(state: FRCEquilibriumState) -> FloatArray:
     return state.flux_derivative_residual
 
 
+def pressure_balance_residual(state: FRCEquilibriumState) -> FloatArray:
+    """Return local pressure-balance residual ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``."""
+    return state.pressure_balance_residual
+
+
 def validate_equilibrium(
     state: FRCEquilibriumState,
     *,
     tolerance: float = 1e-6,
     flux_tolerance: float = 2e-2,
+    pressure_balance_tolerance: float = 2e-2,
     ampere_tolerance: float = 2e-2,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
@@ -261,6 +288,7 @@ def validate_equilibrium(
             state.B_theta,
             state.J_theta,
             state.p,
+            state.pressure_balance_residual,
             state.flux_derivative_residual,
             state.ampere_residual,
             state.force_balance_residual,
@@ -285,12 +313,19 @@ def validate_equilibrium(
         and null_error <= max(tolerance, radial_spacing)
         and pressure_peak_error <= max(tolerance, 2.0 * radial_spacing)
     )
+    pressure_balance_passed = state.pressure_balance_residual_linf <= pressure_balance_tolerance
     flux_closure_passed = state.flux_derivative_residual_linf <= flux_tolerance
     ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
     force_balance_passed = (
         force_balance_tolerance is None or state.force_balance_residual_linf <= force_balance_tolerance
     )
-    passed = geometric_passed and flux_closure_passed and ampere_closure_passed and force_balance_passed
+    passed = (
+        geometric_passed
+        and pressure_balance_passed
+        and flux_closure_passed
+        and ampere_closure_passed
+        and force_balance_passed
+    )
     return FRCValidationReport(
         finite=finite,
         monotonic_grid=monotonic_grid,
@@ -300,6 +335,10 @@ def validate_equilibrium(
         pressure_peak_error_m=float(pressure_peak_error),
         edge_field_error_T=float(edge_field_error),
         pressure_balance_ratio=state.pressure_balance_ratio,
+        pressure_balance_residual_linf=state.pressure_balance_residual_linf,
+        pressure_balance_residual_l2=state.pressure_balance_residual_l2,
+        pressure_balance_passed=bool(pressure_balance_passed),
+        thermal_pressure_ratio=state.thermal_pressure_ratio,
         flux_derivative_residual_linf=state.flux_derivative_residual_linf,
         flux_derivative_residual_l2=state.flux_derivative_residual_l2,
         flux_closure_passed=bool(flux_closure_passed),
@@ -422,6 +461,11 @@ def _flux_derivative_closure_residual(rho: FloatArray, psi: FloatArray, B_z: Flo
     """Return ``dpsi/dr - r B_z``; zero means the flux primitive closes."""
     dpsi_dr = cast(FloatArray, np.gradient(psi, rho, edge_order=2))
     return cast(FloatArray, dpsi_dr - rho * B_z)
+
+
+def _pressure_balance_residual(p: FloatArray, B_z: FloatArray, B_ext: float) -> FloatArray:
+    """Return ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)`` in Pa."""
+    return cast(FloatArray, p + B_z**2 / (2.0 * MU_0) - B_ext**2 / (2.0 * MU_0))
 
 
 def _radial_force_balance_residual(

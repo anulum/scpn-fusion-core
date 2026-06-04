@@ -1761,6 +1761,21 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("delta", state.delta)?;
     out.set_item("pressure_balance_ratio", state.pressure_balance_ratio)?;
     out.set_item(
+        "pressure_balance_residual",
+        state.pressure_balance_residual.into_pyarray(py),
+    )?;
+    out.set_item(
+        "pressure_balance_residual_linf",
+        state.pressure_balance_residual_linf,
+    )?;
+    out.set_item(
+        "pressure_balance_residual_l2",
+        state.pressure_balance_residual_l2,
+    )?;
+    out.set_item("peak_pressure_pa", state.peak_pressure_pa)?;
+    out.set_item("input_thermal_pressure_pa", state.input_thermal_pressure_pa)?;
+    out.set_item("thermal_pressure_ratio", state.thermal_pressure_ratio)?;
+    out.set_item(
         "flux_derivative_residual",
         state.flux_derivative_residual.into_pyarray(py),
     )?;

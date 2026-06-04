@@ -115,10 +115,20 @@ pub fn solve_frc_equilibrium(
     let separatrix_index = nearest_index(&rho, r_null);
     let field_reversal_passed = field_reversal_passed(&rho, &b_z, inputs.r_s);
 
-    let p0 = inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
-    let psi_axis = interpolate(&rho, &psi, r_null);
-    let pressure_span = (inputs.b_ext * inputs.r_s).abs().max(tolerance);
-    let p = psi.mapv(|value| p0 * (-2.0 * ((value - psi_axis) / pressure_span).powi(2)).exp());
+    let input_thermal_pressure_pa =
+        inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+    let external_magnetic_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
+    let p = b_z.mapv(|b| (external_magnetic_pressure - b * b / (2.0 * MU_0)).max(0.0));
+    let peak_pressure_pa = max_abs(&p);
+    let pressure_balance_residual = pressure_balance_residual_profile(&p, &b_z, inputs.b_ext);
+    let pressure_scale = external_magnetic_pressure.max(tolerance);
+    let pressure_balance_residual_linf = max_abs(&pressure_balance_residual) / pressure_scale;
+    let pressure_balance_residual_l2 = (pressure_balance_residual
+        .iter()
+        .map(|value| (value / pressure_scale).powi(2))
+        .sum::<f64>()
+        / pressure_balance_residual.len() as f64)
+        .sqrt();
 
     let force_balance_residual = radial_force_balance_residual(&rho, &b_z, &j_theta, &p);
     let grad_p = gradient_edge_order2(&rho, &p);
@@ -180,6 +190,12 @@ pub fn solve_frc_equilibrium(
         residual,
         delta,
         pressure_balance_ratio,
+        pressure_balance_residual,
+        pressure_balance_residual_linf,
+        pressure_balance_residual_l2,
+        peak_pressure_pa,
+        input_thermal_pressure_pa,
+        thermal_pressure_ratio: input_thermal_pressure_pa / pressure_scale,
         flux_derivative_residual,
         flux_derivative_residual_linf,
         flux_derivative_residual_l2,
@@ -321,6 +337,18 @@ fn flux_derivative_closure_residual(
             .iter()
             .zip(rho.iter().zip(b_z.iter()))
             .map(|(dpsi, (r, b))| dpsi - r * b),
+    )
+}
+
+fn pressure_balance_residual_profile(
+    p: &Array1<f64>,
+    b_z: &Array1<f64>,
+    b_ext: f64,
+) -> Array1<f64> {
+    Array1::from_iter(
+        p.iter()
+            .zip(b_z.iter())
+            .map(|(pressure, b)| pressure + b * b / (2.0 * MU_0) - b_ext * b_ext / (2.0 * MU_0)),
     )
 }
 
@@ -533,6 +561,12 @@ mod tests {
         assert!(state.field_reversal_passed);
         assert!(state.energy_j > 0.0);
         assert!(state.pressure_balance_ratio > 0.0);
+        assert!(state.pressure_balance_residual_linf <= 1.0e-12);
+        assert!(state.pressure_balance_residual_l2 <= 1.0e-12);
+        assert_eq!(state.pressure_balance_residual.len(), rho.len());
+        assert!(state.peak_pressure_pa > 0.0);
+        assert!(state.input_thermal_pressure_pa > 0.0);
+        assert!(state.thermal_pressure_ratio > 0.0);
         assert!(state.flux_derivative_residual_linf <= 2.0e-2);
         assert!(state.flux_derivative_residual_l2 <= 2.0e-2);
         assert_eq!(state.flux_derivative_residual.len(), rho.len());
@@ -588,6 +622,31 @@ mod tests {
             );
         }
         assert!(state.flux_derivative_residual_linf <= 2.0e-2);
+    }
+
+    #[test]
+    fn pressure_profile_matches_local_magnetic_pressure_balance() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 401);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let external_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
+        let input_pressure = inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+        for i in 0..rho.len() {
+            let expected_pressure = external_pressure - state.b_z[i] * state.b_z[i] / (2.0 * MU_0);
+            assert!((state.p[i] - expected_pressure).abs() <= 1.0e-8);
+            let expected_residual =
+                state.p[i] + state.b_z[i] * state.b_z[i] / (2.0 * MU_0) - external_pressure;
+            assert!((state.pressure_balance_residual[i] - expected_residual).abs() <= 1.0e-8);
+        }
+        assert!(state.pressure_balance_residual_linf <= 1.0e-12);
+        assert!((state.peak_pressure_pa - external_pressure).abs() <= external_pressure * 1.0e-4);
+        assert!(
+            (state.input_thermal_pressure_pa - input_pressure).abs() <= input_pressure * 1.0e-14
+        );
+        assert!(
+            (state.thermal_pressure_ratio - input_pressure / external_pressure).abs()
+                <= state.thermal_pressure_ratio * 1.0e-14
+        );
     }
 
     #[test]
@@ -648,8 +707,14 @@ mod tests {
             let coarse_error = (coarse - reference).abs();
             let medium_error = (medium - reference).abs();
             let fine_error = (fine - reference).abs();
-            assert!(medium_error < coarse_error);
-            assert!(fine_error < medium_error);
+            let exact_tolerance = reference.abs().max(1.0) * 1.0e-13;
+            if medium_error <= exact_tolerance && fine_error <= exact_tolerance {
+                return;
+            }
+            assert!(medium_error <= coarse_error + exact_tolerance);
+            assert!(fine_error <= medium_error + exact_tolerance);
+            assert!(medium_error < coarse_error || medium_error <= exact_tolerance);
+            assert!(fine_error < medium_error || fine_error <= exact_tolerance);
         }
 
         let inputs = inputs(Some(0.02), 0.0);

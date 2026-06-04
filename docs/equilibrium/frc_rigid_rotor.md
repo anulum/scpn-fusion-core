@@ -43,6 +43,20 @@ independent second-order finite-difference derivative on the active grid:
 F_r = dpsi/dr - r B_z
 ```
 
+The accepted no-rotation pressure is the local magnetic-pressure-balance
+profile, not a fitted Gaussian:
+
+```text
+p(r) = B_ext^2 / (2 mu_0) - B_z(r)^2 / (2 mu_0)
+P_r = p + B_z^2 / (2 mu_0) - B_ext^2 / (2 mu_0)
+```
+
+The input `n0`, `T_i_eV`, and `T_e_eV` remain part of the contract for
+thermal consistency diagnostics. The solver reports the ratio between the
+input scalar thermal pressure and the magnetic-pressure-balance peak instead
+of silently substituting the input scalar pressure for the solved local
+profile.
+
 ```text
 R_r = dp/dr - (J x B)_r
 ```
@@ -91,6 +105,8 @@ Accepted:
 - Closed-form cylindrical flux primitive and a finite-grid derivative closure
   gate so `psi` is mathematically tied to the accepted axial-field equation
   instead of only being produced by numerical quadrature.
+- Local pressure-balance pressure profile, pressure-balance residual, peak
+  pressure, input thermal pressure, and thermal-pressure ratio diagnostics.
 - Finite-grid convergence diagnostics for the implemented no-rotation scalar
   invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
   ratio.
@@ -136,11 +152,12 @@ cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
 
 The benchmark report compares scalar diagnostics and weighted numerical
 checksums for `B_z`, `J_theta`, `psi`, pressure, and the Eq. 27 `s` value. It
-also records separatrix radius error, field reversal, flux derivative residual,
-Ampere residual, and peak-current diagnostics plus finite-grid convergence
-against the finest tracked radial grid for the scalar invariants, separatrix
-error, flux derivative residual, and the independent Ampere residual accepted
-in this contract. Blocked or
+also records separatrix radius error, field reversal, pressure-balance
+residual, thermal-pressure consistency, flux derivative residual, Ampere
+residual, and peak-current diagnostics plus finite-grid convergence against
+the finest tracked radial grid for the scalar invariants, separatrix error,
+pressure-balance residual, flux derivative residual, and the independent
+Ampere residual accepted in this contract. Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
 explicit no-rotation analytical FRC contract.

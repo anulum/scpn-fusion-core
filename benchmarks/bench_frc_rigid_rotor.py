@@ -80,6 +80,10 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "s_parameter": state.s_parameter,
                 "energy_j_per_m": state.energy_J,
                 "pressure_balance_ratio": state.pressure_balance_ratio,
+                "pressure_balance_residual_linf": state.pressure_balance_residual_linf,
+                "peak_pressure_pa": state.peak_pressure_pa,
+                "input_thermal_pressure_pa": state.input_thermal_pressure_pa,
+                "thermal_pressure_ratio": state.thermal_pressure_ratio,
                 "flux_derivative_residual_linf": state.flux_derivative_residual_linf,
                 "peak_j_theta_a_m2": state.peak_j_theta_A_m2,
                 "ampere_residual_linf": state.ampere_residual_linf,
@@ -173,6 +177,10 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "s_parameter": float(state["s_parameter"]),
                 "energy_j_per_m": float(state["energy_J"]),
                 "pressure_balance_ratio": float(state["pressure_balance_ratio"]),
+                "pressure_balance_residual_linf": float(state["pressure_balance_residual_linf"]),
+                "peak_pressure_pa": float(state["peak_pressure_pa"]),
+                "input_thermal_pressure_pa": float(state["input_thermal_pressure_pa"]),
+                "thermal_pressure_ratio": float(state["thermal_pressure_ratio"]),
                 "flux_derivative_residual_linf": float(state["flux_derivative_residual_linf"]),
                 "peak_j_theta_a_m2": float(state["peak_j_theta_A_m2"]),
                 "ampere_residual_linf": float(state["ampere_residual_linf"]),
@@ -228,6 +236,21 @@ def _compare_surface(
                 float(cand["pressure_balance_ratio"]),
                 float(ref["pressure_balance_ratio"]),
             ),
+            "pressure_balance_residual_linf_abs_error": abs(
+                float(cand["pressure_balance_residual_linf"]) - float(ref["pressure_balance_residual_linf"])
+            ),
+            "peak_pressure_rel_error": _relative_error(
+                float(cand["peak_pressure_pa"]),
+                float(ref["peak_pressure_pa"]),
+            ),
+            "input_thermal_pressure_rel_error": _relative_error(
+                float(cand["input_thermal_pressure_pa"]),
+                float(ref["input_thermal_pressure_pa"]),
+            ),
+            "thermal_pressure_ratio_rel_error": _relative_error(
+                float(cand["thermal_pressure_ratio"]),
+                float(ref["thermal_pressure_ratio"]),
+            ),
             "flux_derivative_residual_linf_abs_error": abs(
                 float(cand["flux_derivative_residual_linf"]) - float(ref["flux_derivative_residual_linf"])
             ),
@@ -265,6 +288,10 @@ def _compare_surface(
             and checks["s_parameter_rel_error"] <= 1.0e-12
             and checks["energy_rel_error"] <= 1.0e-12
             and checks["pressure_balance_rel_error"] <= 1.0e-12
+            and checks["pressure_balance_residual_linf_abs_error"] <= 1.0e-12
+            and checks["peak_pressure_rel_error"] <= 1.0e-12
+            and checks["input_thermal_pressure_rel_error"] <= 1.0e-12
+            and checks["thermal_pressure_ratio_rel_error"] <= 1.0e-12
             and checks["flux_derivative_residual_linf_abs_error"] <= 1.0e-12
             and checks["peak_j_theta_rel_error"] <= 1.0e-12
             and checks["ampere_residual_linf_abs_error"] <= 1.0e-12
@@ -288,6 +315,7 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "s_parameter",
         "energy_j_per_m",
         "pressure_balance_ratio",
+        "pressure_balance_residual_linf",
         "flux_derivative_residual_linf",
         "ampere_residual_linf",
     )
@@ -317,8 +345,11 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
     refinement_checks: dict[str, bool] = {}
     for metric in checked_metrics:
         error_key = f"{metric}_rel_error_vs_grid_{finest_grid}"
-        refinement_checks[f"{metric}_{low_grid}_to_{mid_grid}_improves"] = (
-            float(by_grid[mid_grid][error_key]) < float(by_grid[low_grid][error_key])
+        low_error = float(by_grid[low_grid][error_key])
+        mid_error = float(by_grid[mid_grid][error_key])
+        exact_tolerance = 1.0e-13
+        refinement_checks[f"{metric}_{low_grid}_to_{mid_grid}_improves_or_exact"] = (
+            mid_error <= low_error + exact_tolerance and (mid_error < low_error or mid_error <= exact_tolerance)
         )
         reference_key = f"{metric}_abs_error_vs_grid_{finest_grid}"
         refinement_checks[f"{metric}_{high_grid}_is_reference"] = (
