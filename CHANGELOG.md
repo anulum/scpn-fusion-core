@@ -6,6 +6,8 @@
   Steinhauer no-rotation analytical axial-field profile, finite pressure and
   energy diagnostics, lazy public exports, module-specific tests, and Sphinx
   API documentation while keeping rotating BVP cases fail-closed.
+- Added explicit FRC radial force-balance residual diagnostics with an optional
+  fail-closed validation tolerance for analytical no-rotation runs.
 
 ## [3.9.8] - 2026-06-02
 

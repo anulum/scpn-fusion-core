@@ -14,6 +14,7 @@ import pytest
 
 from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
 from scpn_fusion.core.frc_rigid_rotor import (
+    force_balance_residual,
     ion_gyroradius_m,
     null_radius,
     s_parameter,
@@ -97,5 +98,30 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics():
 
     assert state.energy_J > 0.0
     assert state.pressure_balance_ratio > 0.0
+    assert state.force_balance_residual.shape == rho.shape
+    assert state.force_balance_residual_linf >= 0.0
+    assert state.force_balance_residual_l2 >= 0.0
     assert np.all(np.isfinite(state.psi))
     assert np.all(state.p > 0.0)
+
+
+def test_force_balance_residual_is_explicit_diagnostic_gate():
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+
+    state = solve_frc_equilibrium(inputs, rho)
+    residual = force_balance_residual(state)
+    diagnostic_report = validate_equilibrium(state)
+    strict_report = validate_equilibrium(state, force_balance_tolerance=1.0e-12)
+    loose_report = validate_equilibrium(
+        state,
+        force_balance_tolerance=state.force_balance_residual_linf * 1.01,
+    )
+
+    assert residual.shape == rho.shape
+    assert np.all(np.isfinite(residual))
+    assert diagnostic_report.passed
+    assert strict_report.force_balance_passed is False
+    assert strict_report.passed is False
+    assert loose_report.force_balance_passed is True
+    assert loose_report.passed is True

@@ -105,6 +105,11 @@ The implemented axial field is:
 Rotating rigid-rotor cases fail closed with ``NotImplementedError`` until the
 dedicated FRC BVP task is implemented and validated.
 
+The validation report includes the radial ideal-MHD force-balance residual
+``dp/dr - (J x B)_r``.  It is reported as a diagnostic by default; pass an
+explicit ``force_balance_tolerance`` to make that residual part of the
+acceptance gate for a specific run.
+
 Profile Models
 ^^^^^^^^^^^^^^
 

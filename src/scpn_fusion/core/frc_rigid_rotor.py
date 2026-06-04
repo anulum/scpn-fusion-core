@@ -59,6 +59,9 @@ class FRCEquilibriumState:
     residual: float
     delta: float
     pressure_balance_ratio: float
+    force_balance_residual: FloatArray
+    force_balance_residual_linf: float
+    force_balance_residual_l2: float
     model: str
 
 
@@ -72,6 +75,9 @@ class FRCValidationReport:
     pressure_peak_error_m: float
     edge_field_error_T: float
     pressure_balance_ratio: float
+    force_balance_residual_linf: float
+    force_balance_residual_l2: float
+    force_balance_passed: bool
     passed: bool
 
 
@@ -119,6 +125,14 @@ def solve_frc_equilibrium(
     psi_axis = np.interp(r_null, rho, psi)
     pressure_span = max(abs(inputs.B_ext * inputs.R_s), tolerance)
     p = p0 * np.exp(-2.0 * ((psi - psi_axis) / pressure_span) ** 2)
+    force_residual = _radial_force_balance_residual(rho, B_z, p)
+    residual_scale = max(
+        tolerance,
+        float(np.max(np.abs(np.gradient(p, rho, edge_order=2)))),
+        float(np.max(np.abs((B_z / MU_0) * np.gradient(B_z, rho, edge_order=2)))),
+    )
+    force_balance_residual_linf = float(np.max(np.abs(force_residual)) / residual_scale)
+    force_balance_residual_l2 = float(np.sqrt(np.mean((force_residual / residual_scale) ** 2)))
 
     magnetic_energy_density = B_z**2 / (2.0 * MU_0)
     total_energy_density = magnetic_energy_density + p
@@ -142,6 +156,9 @@ def solve_frc_equilibrium(
         residual=float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument))))),
         delta=delta,
         pressure_balance_ratio=float(pressure_balance_ratio),
+        force_balance_residual=force_residual,
+        force_balance_residual_linf=force_balance_residual_linf,
+        force_balance_residual_l2=force_balance_residual_l2,
         model="steinhauer_2011_no_rotation_analytical",
     )
 
@@ -157,11 +174,21 @@ def s_parameter(state: FRCEquilibriumState, mass_amu: float = DEUTERIUM_MASS_AMU
     return float(state.s_parameter)
 
 
-def validate_equilibrium(state: FRCEquilibriumState, *, tolerance: float = 1e-6) -> FRCValidationReport:
-    """Validate finite values, magnetic-null placement, and pressure peaking."""
+def force_balance_residual(state: FRCEquilibriumState) -> FloatArray:
+    """Return radial ``dp/dr - (J x B)_r`` force-balance residual in Pa/m."""
+    return state.force_balance_residual
+
+
+def validate_equilibrium(
+    state: FRCEquilibriumState,
+    *,
+    tolerance: float = 1e-6,
+    force_balance_tolerance: float | None = None,
+) -> FRCValidationReport:
+    """Validate finite values, null placement, pressure peaking, and optional force balance."""
     finite = all(
         bool(np.all(np.isfinite(values)))
-        for values in (state.rho, state.psi, state.B_z, state.B_theta, state.p)
+        for values in (state.rho, state.psi, state.B_z, state.B_theta, state.p, state.force_balance_residual)
     )
     monotonic_grid = bool(np.all(np.diff(state.rho) > 0.0))
     r_null = null_radius(state)
@@ -169,9 +196,13 @@ def validate_equilibrium(state: FRCEquilibriumState, *, tolerance: float = 1e-6)
     pressure_peak_radius = float(state.rho[int(np.argmax(state.p))])
     pressure_peak_error = abs(pressure_peak_radius - state.R_null)
     edge_field_error = abs(abs(float(state.B_z[-1])) - abs(float(state.B_z[0])))
-    passed = finite and monotonic_grid and null_error <= tolerance and pressure_peak_error <= max(
+    geometric_passed = finite and monotonic_grid and null_error <= tolerance and pressure_peak_error <= max(
         tolerance, 2.0 * float(np.max(np.diff(state.rho)))
     )
+    force_balance_passed = (
+        force_balance_tolerance is None or state.force_balance_residual_linf <= force_balance_tolerance
+    )
+    passed = geometric_passed and force_balance_passed
     return FRCValidationReport(
         finite=finite,
         monotonic_grid=monotonic_grid,
@@ -179,6 +210,9 @@ def validate_equilibrium(state: FRCEquilibriumState, *, tolerance: float = 1e-6)
         pressure_peak_error_m=float(pressure_peak_error),
         edge_field_error_T=float(edge_field_error),
         pressure_balance_ratio=state.pressure_balance_ratio,
+        force_balance_residual_linf=state.force_balance_residual_linf,
+        force_balance_residual_l2=state.force_balance_residual_l2,
+        force_balance_passed=bool(force_balance_passed),
         passed=bool(passed),
     )
 
@@ -221,6 +255,13 @@ def _cylindrical_flux_from_bz(rho: FloatArray, B_z: FloatArray) -> FloatArray:
     increments = cast(FloatArray, 0.5 * (integrand[1:] + integrand[:-1]) * np.diff(rho))
     psi[1:] = np.cumsum(increments)
     return psi
+
+
+def _radial_force_balance_residual(rho: FloatArray, B_z: FloatArray, p: FloatArray) -> FloatArray:
+    dp_dr = cast(FloatArray, np.gradient(p, rho, edge_order=2))
+    d_bz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
+    j_cross_b_r = cast(FloatArray, -(B_z / MU_0) * d_bz_dr)
+    return cast(FloatArray, dp_dr - j_cross_b_r)
 
 
 def _zero_crossing_radius(rho: FloatArray, values: FloatArray) -> float:

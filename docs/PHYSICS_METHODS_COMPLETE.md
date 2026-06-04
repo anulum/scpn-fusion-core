@@ -64,6 +64,15 @@ requires the grid to include the separatrix radius, derives
 thickness is supplied, and rejects rotating cases until the BVP implementation
 is added.
 
+The validation report also carries the normalised radial force-balance
+diagnostic
+
+$$\mathcal{R}_r = \frac{d p}{d r} - (\mathbf{J}\times\mathbf{B})_r,$$
+
+with $\mathbf{J}_\theta = -\mu_0^{-1} dB_z/dr$ for the no-rotation axial-field
+slice.  The diagnostic is visible by default and becomes a fail-closed gate only
+when an explicit `force_balance_tolerance` is supplied.
+
 **Key file:** `core/frc_rigid_rotor.py`.
 
 **Validation:** `tests/test_frc_rigid_rotor.py`.
