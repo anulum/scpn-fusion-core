@@ -48,6 +48,28 @@ where $\hat\psi = (\psi - \psi_{\rm axis})/(\psi_{\rm bdry} - \psi_{\rm axis})$.
 
 ---
 
+## 1A. Field-Reversed Configuration Rigid-Rotor Analytical Limit
+
+The FRC workstream now exposes the Steinhauer no-rotation analytical limit as
+the first accepted `FUS-C.1` slice.  It is not yet the full rotating
+rigid-rotor BVP and it is not yet the Rust production path.
+
+The axial field follows Steinhauer (2011), Eq. 7:
+
+$$B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2R_s\delta}\right)$$
+
+The solver validates a one-dimensional, strictly increasing radial grid,
+requires the grid to include the separatrix radius, derives
+`delta = rho_i` from the deuterium thermal ion gyroradius when no layer
+thickness is supplied, and rejects rotating cases until the BVP implementation
+is added.
+
+**Key file:** `core/frc_rigid_rotor.py`.
+
+**Validation:** `tests/test_frc_rigid_rotor.py`.
+
+---
+
 ## 2. JAX Differentiable GS Transport
 
 A fully differentiable 1.5D transport kernel in JAX, enabling `jax.grad` through the transport evolution for optimal-control and inverse problems.

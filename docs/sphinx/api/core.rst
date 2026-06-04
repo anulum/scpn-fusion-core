@@ -15,6 +15,15 @@ Equilibrium Solver
    :show-inheritance:
    :no-index:
 
+FRC Rigid-Rotor Equilibrium
+----------------------------
+
+.. automodule:: scpn_fusion.core.frc_rigid_rotor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
 Free-Boundary Kernel Adapters
 ------------------------------
 

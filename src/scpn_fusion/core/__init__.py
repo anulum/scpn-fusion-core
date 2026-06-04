@@ -91,6 +91,15 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # Current diffusion — Sauter neoclassical resistivity, Crank-Nicolson solver
     "CurrentDiffusionSolver": (".current_diffusion", "CurrentDiffusionSolver"),
     "neoclassical_resistivity": (".current_diffusion", "neoclassical_resistivity"),
+    # FRC rigid-rotor equilibrium — Steinhauer no-rotation analytical limit
+    "RigidRotorFRCInputs": (".frc_rigid_rotor", "RigidRotorFRCInputs"),
+    "FRCEquilibriumState": (".frc_rigid_rotor", "FRCEquilibriumState"),
+    "FRCValidationReport": (".frc_rigid_rotor", "FRCValidationReport"),
+    "ion_gyroradius_m": (".frc_rigid_rotor", "ion_gyroradius_m"),
+    "solve_frc_equilibrium": (".frc_rigid_rotor", "solve_frc_equilibrium"),
+    "null_radius": (".frc_rigid_rotor", "null_radius"),
+    "s_parameter": (".frc_rigid_rotor", "s_parameter"),
+    "validate_equilibrium": (".frc_rigid_rotor", "validate_equilibrium"),
     # Current drive — ECCD, NBI, LHCD sources
     "ECCDSource": (".current_drive", "ECCDSource"),
     "NBISource": (".current_drive", "NBISource"),

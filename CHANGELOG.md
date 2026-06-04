@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Added the first FRC rigid-rotor equilibrium slice: validated
+  Steinhauer no-rotation analytical axial-field profile, finite pressure and
+  energy diagnostics, lazy public exports, module-specific tests, and Sphinx
+  API documentation while keeping rotating BVP cases fail-closed.
+
 ## [3.9.8] - 2026-06-02
 
 - Bumped package and release metadata to 3.9.8 for a documentation, security-hardening, and repository-polish release.

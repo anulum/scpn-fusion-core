@@ -73,6 +73,38 @@ The inner linear system is solved by one of two methods:
    The multigrid path is asymptotically faster for large grids but
    carries slightly more implementation complexity.
 
+Field-Reversed Configuration Analytical Limit
+---------------------------------------------
+
+The FRC workstream begins with the Steinhauer rigid-rotor no-rotation
+analytical limit.  The public API is intentionally narrow until the rotating
+BVP, Rust path, and cross-code parity tasks land.
+
+.. code-block:: python
+
+   import numpy as np
+   from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
+
+   inputs = RigidRotorFRCInputs(
+       n0=2.0e20,
+       T_i_eV=10_000.0,
+       T_e_eV=5_000.0,
+       theta_dot=0.0,
+       R_s=0.20,
+       B_ext=5.0,
+       delta=0.02,
+   )
+   state = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 129))
+
+The implemented axial field is:
+
+.. math::
+
+   B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2 R_s \delta}\right)
+
+Rotating rigid-rotor cases fail closed with ``NotImplementedError`` until the
+dedicated FRC BVP task is implemented and validated.
+
 Profile Models
 ^^^^^^^^^^^^^^
 
