@@ -10,13 +10,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import sys
 from pathlib import Path
-from typing import Any, TypeAlias, cast
+from typing import Any, TypeAlias, TypeVar, cast
 
 import numpy as np
 from numpy.typing import NDArray
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -28,6 +31,9 @@ from scpn_fusion.core.frc_rigid_rotor import (
 )
 
 FloatArray: TypeAlias = NDArray[np.float64]
+_F = TypeVar("_F", bound=Callable[..., object])
+_TYPED_GIVEN = cast(Callable[..., Callable[[_F], _F]], given)
+_TYPED_SETTINGS = cast(Callable[..., Callable[[_F], _F]], settings)
 
 try:
     scpn_fusion_rs = cast(Any, __import__("scpn_fusion_rs"))
@@ -77,6 +83,27 @@ def _case(
         delta=delta,
     )
     return inputs, np.linspace(0.0, 2.0 * r_s, grid_points)
+
+
+_frc_delta = st.floats(
+    min_value=0.010,
+    max_value=0.045,
+    allow_nan=False,
+    allow_infinity=False,
+)
+_frc_b_ext = st.floats(
+    min_value=2.5,
+    max_value=9.0,
+    allow_nan=False,
+    allow_infinity=False,
+)
+_frc_r_s = st.floats(
+    min_value=0.14,
+    max_value=0.32,
+    allow_nan=False,
+    allow_infinity=False,
+)
+_frc_grid = st.integers(min_value=65, max_value=257)
 
 
 def test_rust_frc_matches_python_reference() -> None:
@@ -337,6 +364,57 @@ def test_rust_frc_matches_python_reference() -> None:
             python_state.force_balance_residual_l2,
             rel=1.0e-10,
         )
+
+
+@_TYPED_GIVEN(delta=_frc_delta, b_ext=_frc_b_ext, r_s=_frc_r_s, grid_points=_frc_grid)
+@_TYPED_SETTINGS(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+def test_rust_energy_invariants_match_python_for_generated_no_rotation_decks(
+    delta: float,
+    b_ext: float,
+    r_s: float,
+    grid_points: int,
+) -> None:
+    inputs, rho = _case(delta, grid_points, b_ext, r_s)
+    python_state = solve_frc_equilibrium(inputs, rho)
+
+    rust_state = scpn_fusion_rs.py_solve_frc_equilibrium(
+        rho,
+        inputs.n0,
+        inputs.T_i_eV,
+        inputs.T_e_eV,
+        inputs.theta_dot,
+        inputs.R_s,
+        inputs.B_ext,
+        inputs.delta,
+        1.0e-10,
+    )
+
+    assert float(rust_state["energy_J"]) == pytest.approx(
+        python_state.energy_J,
+        rel=1.0e-12,
+    )
+    assert float(rust_state["pressure_balance_ratio"]) == pytest.approx(
+        python_state.pressure_balance_ratio,
+        rel=1.0e-12,
+    )
+    assert float(rust_state["separatrix_pressure_energy_J_m"]) == pytest.approx(
+        python_state.separatrix_pressure_energy_J_m,
+        rel=1.0e-12,
+    )
+    assert float(rust_state["separatrix_magnetic_deficit_energy_J_m"]) == pytest.approx(
+        python_state.separatrix_magnetic_deficit_energy_J_m,
+        rel=1.0e-12,
+    )
+    assert float(rust_state["separatrix_energy_closure_relative_error"]) == pytest.approx(
+        python_state.separatrix_energy_closure_relative_error,
+        abs=1.0e-12,
+    )
+    np.testing.assert_allclose(
+        rust_state["psi_normalized"],
+        python_state.psi_normalized,
+        rtol=1.0e-13,
+        atol=1.0e-13,
+    )
 
 
 def test_rust_frc_rejects_rotating_bvp_until_implemented() -> None:

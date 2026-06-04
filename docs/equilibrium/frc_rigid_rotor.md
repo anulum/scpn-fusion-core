@@ -159,6 +159,9 @@ Accepted:
 - Cross-surface parity tests for the exposed Python and Rust/PyO3 paths,
   including a deterministic 16-case MIF/FRC no-rotation parameter cohort that
   spans accepted field, separatrix-radius, grid, and layer-thickness scales.
+- Property-based no-rotation invariant tests for pressure monotonicity away
+  from the magnetic null, beta bounds, separatrix energy closure, and
+  Rust/PyO3 energy-invariant parity on generated accepted MIF/FRC decks.
 - Explicit `J_theta` current-density and Ampere closure residual diagnostics
   for the accepted axial-field slice, with the residual kept as an independent
   grid diagnostic instead of a self-cancelling derivative reuse.
@@ -207,7 +210,7 @@ PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
 Run focused Python tests:
 
 ```bash
-PYTHONPATH=src python -m pytest tests/test_frc_rigid_rotor.py tests/test_frc_rigid_rotor_rust_parity.py
+PYTHONPATH=src python -m pytest tests/test_frc_rigid_rotor.py tests/test_frc_rigid_rotor_property.py tests/test_frc_rigid_rotor_rust_parity.py
 ```
 
 Run focused Rust tests:
@@ -243,7 +246,11 @@ flux derivative residual, and the independent Ampere residual accepted in this
 contract. A separate deterministic 16-case MIF/FRC no-rotation parameter
 cohort compares Python, Rust `fusion-physics`, and PyO3 on the same accepted
 contract while keeping Go, Julia, and Lean marked `not_applicable_no_frc_surface`
-until native FRC solver surfaces exist. Blocked or
+until native FRC solver surfaces exist. The property test surface also
+generates accepted MIF/FRC no-rotation decks to check that pressure decreases
+outward from the magnetic null, beta remains bounded by the pressure-balance
+limit, and Rust/PyO3 preserves energy and separatrix-inventory invariants.
+Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
 explicit no-rotation analytical FRC contract.

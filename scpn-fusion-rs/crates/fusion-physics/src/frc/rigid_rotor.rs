@@ -944,6 +944,48 @@ mod tests {
     }
 
     #[test]
+    fn no_rotation_pressure_decreases_outward_from_null_for_parameter_cohort() {
+        let cases = [
+            (0.012, 33_usize, 2.75, 0.16),
+            (0.016, 129, 3.75, 0.19),
+            (0.020, 257, 4.75, 0.21),
+            (0.024, 129, 5.75, 0.23),
+            (0.028, 65, 6.75, 0.25),
+            (0.032, 257, 7.75, 0.27),
+        ];
+        for (delta, grid_points, b_ext, r_s) in cases {
+            let inputs = RigidRotorFrcInputs {
+                n0: b_ext * b_ext / (2.0 * MU_0) / (15_000.0 * ELEMENTARY_CHARGE_C),
+                t_i_ev: 10_000.0,
+                t_e_ev: 5_000.0,
+                theta_dot: 0.0,
+                r_s,
+                b_ext,
+                delta: Some(delta),
+            };
+            let rho = linspace(0.0, 2.0 * r_s, grid_points);
+            let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+            let pressure_scale = state.p.iter().map(|p| p.abs()).fold(1.0, f64::max);
+            let mut previous: Option<f64> = None;
+            for (r, pressure) in state.rho.iter().zip(state.p.iter()) {
+                if *r < state.r_null {
+                    continue;
+                }
+                if let Some(prev) = previous {
+                    assert!(
+                        *pressure <= prev + pressure_scale * 1.0e-12,
+                        "pressure must decrease outward from R_null for B_ext={b_ext}, R_s={r_s}, delta={delta}"
+                    );
+                }
+                previous = Some(*pressure);
+            }
+            assert!((state.beta_peak - 1.0).abs() <= 1.0e-12);
+            assert!(state.separatrix_energy_closure_relative_error <= 1.0e-12);
+            assert!(state.pressure_balance_residual_linf <= 1.0e-12);
+        }
+    }
+
+    #[test]
     fn ampere_residual_refines_with_grid() {
         let inputs = inputs(Some(0.02), 0.0);
         let coarse =

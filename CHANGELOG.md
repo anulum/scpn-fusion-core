@@ -65,6 +65,9 @@
 - Expanded the accepted FRC no-rotation parity gate to a deterministic 16-case
   MIF/FRC parameter cohort across Python, Rust `fusion-physics`, and PyO3 while
   keeping rotating-BVP cases fail-closed.
+- Added generated FRC no-rotation property gates for pressure monotonicity away
+  from the magnetic null, beta bounds, separatrix energy closure, and
+  Rust/PyO3 energy-invariant parity on accepted MIF/FRC decks.
 
 ## [3.9.8] - 2026-06-02
 

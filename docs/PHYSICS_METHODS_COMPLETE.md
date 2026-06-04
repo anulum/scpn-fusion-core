@@ -207,9 +207,15 @@ radial grid sizes. Go, Julia, and Lean remain explicit
 `not_applicable_no_frc_surface` rows until equivalent native FRC solver logic
 exists; wrappers are not treated as parity.
 
+The no-rotation test surface also includes generated MIF/FRC property gates:
+pressure must decrease outward from the magnetic null, `beta_peak` must remain
+within the local pressure-balance bound, separatrix pressure energy must close
+against magnetic-field deficit, and Rust/PyO3 must preserve energy and
+separatrix-inventory invariants for generated accepted decks.
+
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 
-**Validation:** `tests/test_frc_rigid_rotor.py`, `tests/test_frc_rigid_rotor_rust_parity.py`,
+**Validation:** `tests/test_frc_rigid_rotor.py`, `tests/test_frc_rigid_rotor_property.py`, `tests/test_frc_rigid_rotor_rust_parity.py`,
 `benchmarks/bench_frc_rigid_rotor.py`.
 
 ---
