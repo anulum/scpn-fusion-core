@@ -454,6 +454,47 @@ mod tests {
     }
 
     #[test]
+    fn no_rotation_scalar_diagnostics_converge_with_grid_refinement() {
+        fn assert_refines(coarse: f64, medium: f64, fine: f64, reference: f64) {
+            let coarse_error = (coarse - reference).abs();
+            let medium_error = (medium - reference).abs();
+            let fine_error = (fine - reference).abs();
+            assert!(medium_error < coarse_error);
+            assert!(fine_error < medium_error);
+        }
+
+        let inputs = inputs(Some(0.02), 0.0);
+        let reference =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 4097), 1.0e-10).expect("reference");
+        let coarse =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 64), 1.0e-10).expect("coarse");
+        let medium =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 256), 1.0e-10).expect("medium");
+        let fine =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 1024), 1.0e-10).expect("fine");
+
+        assert_refines(coarse.r_null, medium.r_null, fine.r_null, reference.r_null);
+        assert_refines(
+            coarse.s_parameter,
+            medium.s_parameter,
+            fine.s_parameter,
+            reference.s_parameter,
+        );
+        assert_refines(
+            coarse.energy_j,
+            medium.energy_j,
+            fine.energy_j,
+            reference.energy_j,
+        );
+        assert_refines(
+            coarse.pressure_balance_ratio,
+            medium.pressure_balance_ratio,
+            fine.pressure_balance_ratio,
+            reference.pressure_balance_ratio,
+        );
+    }
+
+    #[test]
     fn rejects_invalid_inputs_and_rotating_bvp() {
         let rho = linspace(0.0, 0.4, 32);
         assert!(solve_frc_equilibrium(&inputs(Some(0.02), 1.0), &rho, 1.0e-10).is_err());

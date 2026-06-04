@@ -115,6 +115,27 @@ def test_s_parameter_increases_with_axial_field_strength() -> None:
     assert high_field.s_parameter > low_field.s_parameter
 
 
+def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
+    inputs = _inputs(delta=0.02)
+    reference = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 4097))
+    coarse = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 64))
+    medium = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 256))
+    fine = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 1024))
+
+    for metric in (
+        "R_null",
+        "s_parameter",
+        "energy_J",
+        "pressure_balance_ratio",
+    ):
+        reference_value = float(getattr(reference, metric))
+        coarse_error = abs(float(getattr(coarse, metric)) - reference_value)
+        medium_error = abs(float(getattr(medium, metric)) - reference_value)
+        fine_error = abs(float(getattr(fine, metric)) - reference_value)
+        assert medium_error < coarse_error
+        assert fine_error < medium_error
+
+
 def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
     inputs = _inputs()
 

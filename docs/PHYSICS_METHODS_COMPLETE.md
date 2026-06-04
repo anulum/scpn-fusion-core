@@ -1,9 +1,12 @@
-# ──────────────────────────────────────────────────────────────────────
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Commercial license available -->
+<!-- © Concepts 1996–2026 Miroslav Šotek. All rights reserved. -->
+<!-- © Code 2020–2026 Miroslav Šotek. All rights reserved. -->
+<!-- ORCID: 0009-0009-3560-0851 -->
+<!-- Contact: www.anulum.li | protoscience@anulum.li -->
+<!-- SCPN Fusion Core — Physics Methods Reference -->
+
 # SCPN Fusion Core — Physics Methods Reference
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# Contact: www.anulum.li | protoscience@anulum.li
-# License: GNU AGPL v3 | Commercial licensing available
-# ──────────────────────────────────────────────────────────────────────
 
 **Version**: 4.0.0 &nbsp;|&nbsp; **Scope**: All implemented physics closures with equations, numerical methods, references, and validation scripts.
 
@@ -81,6 +84,12 @@ $$\mathcal{R}_r = \frac{d p}{d r} - (\mathbf{J}\times\mathbf{B})_r,$$
 with $\mathbf{J}_\theta = -\mu_0^{-1} dB_z/dr$ for the no-rotation axial-field
 slice.  The diagnostic is visible by default and becomes a fail-closed gate only
 when an explicit `force_balance_tolerance` is supplied.
+
+The tracked benchmark report now includes finite-grid convergence evidence for
+the accepted no-rotation scalar invariants: null radius, Eq. 27 `s`, energy per
+metre, and pressure-balance ratio. This is local convergence evidence for the
+implemented analytical contract, not validation of the unresolved rotating FRC
+BVP or kinetic/transport evolution.
 
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 

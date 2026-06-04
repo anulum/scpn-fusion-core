@@ -237,11 +237,70 @@ def _compare_surface(
     return {"status": status, "parity_passed": parity_passed, "comparisons": comparisons}
 
 
+def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
+    finest = max(reference, key=lambda row: int(row["grid_points"]))
+    finest_grid = int(finest["grid_points"])
+    checked_metrics = (
+        "r_null_m",
+        "s_parameter",
+        "energy_j_per_m",
+        "pressure_balance_ratio",
+    )
+    rows: list[dict[str, Any]] = []
+    for row in reference:
+        grid = int(row["grid_points"])
+        checks: dict[str, Any] = {}
+        for metric in checked_metrics:
+            checks[f"{metric}_abs_error_vs_grid_{finest_grid}"] = abs(
+                float(row[metric]) - float(finest[metric])
+            )
+            checks[f"{metric}_rel_error_vs_grid_{finest_grid}"] = _relative_error(
+                float(row[metric]),
+                float(finest[metric]),
+            )
+        rows.append(
+            {
+                "grid_points": grid,
+                "reference_grid_points": finest_grid,
+                "status": "reference" if grid == finest_grid else "diagnostic",
+                **checks,
+            }
+        )
+
+    by_grid = {int(row["grid_points"]): row for row in rows}
+    low_grid, mid_grid, high_grid = _GRIDS
+    refinement_checks: dict[str, bool] = {}
+    for metric in checked_metrics:
+        error_key = f"{metric}_rel_error_vs_grid_{finest_grid}"
+        refinement_checks[f"{metric}_{low_grid}_to_{mid_grid}_improves"] = (
+            float(by_grid[mid_grid][error_key]) < float(by_grid[low_grid][error_key])
+        )
+        reference_key = f"{metric}_abs_error_vs_grid_{finest_grid}"
+        refinement_checks[f"{metric}_{high_grid}_is_reference"] = (
+            float(by_grid[high_grid][reference_key]) == 0.0
+        )
+
+    convergence_passed = all(refinement_checks.values())
+    return {
+        "status": "passed" if convergence_passed else "failed",
+        "claim_boundary": (
+            "Finite-grid convergence for the accepted no-rotation analytical "
+            "FRC contract only; not external FRC rotating-BVP validation."
+        ),
+        "reference_surface": "python_numpy",
+        "reference_grid_points": finest_grid,
+        "checked_metrics": list(checked_metrics),
+        "refinement_checks": refinement_checks,
+        "rows": rows,
+    }
+
+
 def main() -> None:
     _REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
     python_rows = _python_metrics()
     rust_status, rust_rows = _rust_metrics()
     pyo3_status, pyo3_rows = _pyo3_metrics()
+    convergence = _convergence(python_rows)
     report: dict[str, Any] = {
         "schema_version": 1,
         "generated_at_utc": datetime.now(UTC).isoformat(),
@@ -254,6 +313,7 @@ def main() -> None:
         },
         "grids": list(_GRIDS),
         "repeats": _REPEATS,
+        "grid_convergence": convergence,
         "surfaces": {
             "python_numpy": {"status": "available", "metrics": python_rows},
             "rust_fusion_physics": {
@@ -292,6 +352,7 @@ def main() -> None:
         parity_payload = surface.get("parity", {})
         parity = parity_payload.get("parity_passed", "n/a") if isinstance(parity_payload, dict) else "n/a"
         print(f"| {name} | {surface.get('status', 'unknown')} | {parity} | {median} |")
+    print(f"\nGrid convergence: {convergence['status']} against grid {convergence['reference_grid_points']}")
     print(f"\nWrote {_REPORT_JSON.relative_to(_REPO)}")
 
 

@@ -1,3 +1,11 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Commercial license available -->
+<!-- © Concepts 1996–2026 Miroslav Šotek. All rights reserved. -->
+<!-- © Code 2020–2026 Miroslav Šotek. All rights reserved. -->
+<!-- ORCID: 0009-0009-3560-0851 -->
+<!-- Contact: www.anulum.li | protoscience@anulum.li -->
+<!-- SCPN Fusion Core — Benchmark Comparison -->
+
 # SCPN Fusion Core — Benchmark Comparison
 
 Comparison of SCPN Fusion Core against established fusion simulation codes.
@@ -53,10 +61,12 @@ Tracked report: [`validation/reports/frc_rigid_rotor_benchmark.json`](../validat
 The report compares Python NumPy, Rust `fusion-physics`, and optional PyO3
 surfaces on `64`, `256`, and `1024` point radial grids using null radius,
 Steinhauer Eq. 27 S-parameter, energy, pressure-balance, force-balance, and
-weighted numerical checksums for `B_z`, `psi`, and pressure. Go, Julia, and Lean are recorded as
-`not_applicable_no_frc_surface` until those languages expose equivalent solver
-logic. Nonzero-rotation FRC cases remain fail-closed and are not benchmarked as
-accepted physics.
+weighted numerical checksums for `B_z`, `psi`, and pressure. It also records a
+finite-grid convergence block for null radius, Eq. 27 `s`, energy per metre,
+and pressure-balance ratio against the finest tracked grid. Go, Julia, and Lean
+are recorded as `not_applicable_no_frc_surface` until those languages expose
+equivalent solver logic. Nonzero-rotation FRC cases remain fail-closed and are
+not benchmarked as accepted physics.
 
 ## Type-checking non-regression gate
 

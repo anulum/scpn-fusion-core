@@ -15,6 +15,9 @@
 - Hardened the FRC quality-of-equilibrium diagnostic to use the Steinhauer
   Eq. 27 local-gyroradius integral across Python, Rust, PyO3 parity tests, and
   the tracked benchmark report.
+- Added finite-grid convergence evidence for the accepted no-rotation FRC
+  scalar invariants across the tracked benchmark report, Python tests, Rust
+  tests, and public benchmark/method documentation.
 
 ## [3.9.8] - 2026-06-02
 

@@ -54,6 +54,9 @@ Accepted:
 - PyO3 exposure through `scpn_fusion_rs.py_solve_frc_equilibrium` when the
   Rust extension is built.
 - Cross-surface parity tests for the exposed Python and Rust/PyO3 paths.
+- Finite-grid convergence diagnostics for the implemented no-rotation scalar
+  invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
+  ratio.
 - Benchmark artifact generation in `validation/reports/frc_rigid_rotor_benchmark.json`.
 
 Fail-closed:
@@ -96,6 +99,8 @@ cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
 
 The benchmark report compares scalar diagnostics and weighted numerical
 checksums for `B_z`, `psi`, pressure, and the Eq. 27 `s` value. It also records
-blocked or not-applicable rows instead of promoting missing surfaces to parity
-evidence. This is intentional: the accepted claim is limited to the explicit
-no-rotation analytical FRC contract.
+finite-grid convergence against the finest tracked radial grid for the scalar
+invariants accepted in this contract. Blocked or not-applicable rows are
+recorded instead of promoting missing surfaces to parity evidence. This is
+intentional: the accepted claim is limited to the explicit no-rotation
+analytical FRC contract.
