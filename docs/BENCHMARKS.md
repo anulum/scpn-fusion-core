@@ -70,13 +70,13 @@ Steinhauer Eq. 27 S-parameter, energy, local pressure balance, thermal-pressure
 consistency, force-balance, and weighted numerical checksums for `B_z`,
 `J_theta`, `psi`, and pressure. It also records peak toroidal current density,
 analytical flux-primitive derivative residuals, pressure-balance residuals,
-Ampere closure residuals, separatrix pressure-energy inventory,
+analytical pressure-gradient residuals, Ampere closure residuals, separatrix pressure-energy inventory,
 magnetic-deficit inventory, energy-closure relative error, separatrix
 current-sheet field-gradient/current-density closure, resolved sheet-current
 integral closure, and a finite-grid convergence block for null radius,
 separatrix radius error, Eq. 27 `s`, energy
-per metre, pressure-balance ratio, pressure-balance residual, flux derivative
-residual, current-sheet closure, and the independent
+per metre, pressure-balance ratio, pressure-balance residual,
+analytical pressure-gradient residual, flux derivative residual, current-sheet closure, and the independent
 Ampere residual against the finest tracked grid. Go, Julia, and Lean are recorded as
 `not_applicable_no_frc_surface` until those languages expose equivalent solver
 logic. Nonzero-rotation FRC cases remain fail-closed and are not benchmarked as
@@ -1583,8 +1583,8 @@ It covers the accepted Steinhauer no-rotation axial-field contract only. The
 input deck is pressure matched so `n0 * (T_i + T_e) * e` equals the
 magnetic-pressure-balance peak for the configured `B_ext`. Reported scalar
 diagnostics include null radius, separatrix error, Eq. 27 `s`, energy per
-metre, pressure-balance ratio, pressure residual, solved peak density, input
-central density, central-density residual, central-density relative error,
+metre, pressure-balance ratio, pressure residual, analytical pressure-gradient residual,
+solved peak density, input central density, central-density residual, central-density relative error,
 beta peak, separatrix-averaged beta, particle line density, input thermal
 pressure, separatrix pressure-energy inventory, magnetic-deficit inventory,
 energy-closure relative error, separatrix field-gradient/current-density

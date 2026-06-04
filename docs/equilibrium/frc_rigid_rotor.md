@@ -49,6 +49,8 @@ profile, not a fitted Gaussian:
 ```text
 p(r) = B_ext^2 / (2 mu_0) - B_z(r)^2 / (2 mu_0)
 P_r = p + B_z^2 / (2 mu_0) - B_ext^2 / (2 mu_0)
+dp/dr = -(B_z / mu_0) * dB_z/dr
+G_r = finite_grid(dp/dr) - analytical(dp/dr)
 ```
 
 The input `n0`, `T_i_eV`, and `T_e_eV` remain part of the contract for
@@ -151,8 +153,9 @@ Accepted:
 - Closed-form cylindrical flux primitive and a finite-grid derivative closure
   gate so `psi` is mathematically tied to the accepted axial-field equation
   instead of only being produced by numerical quadrature.
-- Local pressure-balance pressure profile, pressure-balance residual, peak
-  pressure, solved density profile, peak/input central-density consistency,
+- Local pressure-balance pressure profile, pressure-balance residual,
+  analytical pressure-gradient closure residual, peak pressure, solved density
+  profile, peak/input central-density consistency,
   beta profile, separatrix-averaged beta, particle line density, input thermal
   pressure, separatrix pressure-energy inventory, separatrix magnetic-deficit
   inventory, energy-inventory closure, and thermal-pressure ratio diagnostics.
@@ -211,8 +214,8 @@ derivative residual, Ampere residual, peak-current diagnostics, beta
 diagnostics, particle line density, separatrix energy inventory, and
 magnetic-deficit closure, separatrix current-sheet closure, plus finite-grid convergence against the
 finest tracked radial grid for the scalar invariants, separatrix error,
-pressure-balance residual, central-density relative error, beta peak,
-separatrix-averaged beta, particle line density, pressure-energy inventory,
+pressure-balance residual, analytical pressure-gradient residual,
+central-density relative error, beta peak, separatrix-averaged beta, particle line density, pressure-energy inventory,
 magnetic-deficit inventory, energy-closure relative error, separatrix
 field-gradient/current-density diagnostics, resolved sheet-current integral,
 flux derivative residual, and the independent Ampere residual accepted in this

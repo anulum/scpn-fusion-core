@@ -27,6 +27,7 @@ from scpn_fusion.core.frc_rigid_rotor import (
     ion_gyroradius_m,
     null_radius,
     pressure_balance_residual,
+    pressure_gradient_residual,
     s_parameter,
     validate_equilibrium,
 )
@@ -162,6 +163,7 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         "s_parameter",
         "energy_J",
         "pressure_balance_ratio",
+        "pressure_gradient_residual_linf",
         "beta_peak",
         "beta_separatrix_average",
         "particle_line_density_m1",
@@ -218,6 +220,10 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.pressure_balance_residual.shape == rho.shape
     assert state.pressure_balance_residual_linf <= 1.0e-12
     assert state.pressure_balance_residual_l2 <= 1.0e-12
+    assert state.pressure_gradient_analytic_Pa_m.shape == rho.shape
+    assert state.pressure_gradient_residual.shape == rho.shape
+    assert state.pressure_gradient_residual_linf <= 2.0e-2
+    assert state.pressure_gradient_residual_l2 <= 2.0e-2
     assert state.peak_pressure_pa > 0.0
     assert state.density_m3.shape == rho.shape
     assert state.density_peak_m3 > 0.0
@@ -271,6 +277,9 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
     d_bz_dr = np.gradient(state.B_z, state.rho, edge_order=2)
     dp_dr = np.gradient(state.p, state.rho, edge_order=2)
     expected_force_residual = dp_dr - state.J_theta * state.B_z
+    d_bz_dr_analytic = -inputs.B_ext * (1.0 - np.tanh(argument) ** 2) * rho / (inputs.R_s * delta)
+    expected_pressure_gradient = -(state.B_z * d_bz_dr_analytic) / MU_0
+    expected_pressure_gradient_residual = dp_dr - expected_pressure_gradient
     expected_separatrix_gradient = -inputs.B_ext / delta
     expected_separatrix_current_density = inputs.B_ext / (MU_0 * delta)
     interpolated_gradient = float(np.interp(inputs.R_s, rho, d_bz_dr))
@@ -282,6 +291,18 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
         MU_0 * state.J_theta + d_bz_dr,
         rtol=0.0,
         atol=1.0e-12,
+    )
+    np.testing.assert_allclose(
+        pressure_gradient_residual(state),
+        expected_pressure_gradient_residual,
+        rtol=1.0e-12,
+        atol=1.0e-4,
+    )
+    np.testing.assert_allclose(
+        state.pressure_gradient_analytic_Pa_m,
+        expected_pressure_gradient,
+        rtol=1.0e-12,
+        atol=1.0e-4,
     )
     np.testing.assert_allclose(
         force_balance_residual(state),
@@ -449,6 +470,7 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     assert residual.shape == rho.shape
     assert np.all(np.isfinite(residual))
     assert diagnostic_report.pressure_balance_passed is True
+    assert diagnostic_report.pressure_gradient_passed is True
     assert diagnostic_report.flux_closure_passed is True
     assert diagnostic_report.ampere_closure_passed is True
     assert diagnostic_report.field_reversal_passed is True
@@ -470,6 +492,18 @@ def test_pressure_balance_gate_is_fail_closed() -> None:
     report = validate_equilibrium(corrupted, pressure_balance_tolerance=1.0e-3)
 
     assert report.pressure_balance_passed is False
+    assert report.passed is False
+
+
+def test_pressure_gradient_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, pressure_gradient_residual_linf=1.0)
+    report = validate_equilibrium(corrupted, pressure_gradient_tolerance=1.0e-3)
+
+    assert report.pressure_gradient_passed is False
     assert report.passed is False
 
 

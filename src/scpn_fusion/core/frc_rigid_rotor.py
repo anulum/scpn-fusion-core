@@ -68,6 +68,10 @@ class FRCEquilibriumState:
     pressure_balance_residual: FloatArray
     pressure_balance_residual_linf: float
     pressure_balance_residual_l2: float
+    pressure_gradient_analytic_Pa_m: FloatArray
+    pressure_gradient_residual: FloatArray
+    pressure_gradient_residual_linf: float
+    pressure_gradient_residual_l2: float
     peak_pressure_pa: float
     density_peak_m3: float
     input_density_m3: float
@@ -118,6 +122,9 @@ class FRCValidationReport:
     pressure_balance_residual_linf: float
     pressure_balance_residual_l2: float
     pressure_balance_passed: bool
+    pressure_gradient_residual_linf: float
+    pressure_gradient_residual_l2: float
+    pressure_gradient_passed: bool
     thermal_pressure_ratio: float
     density_peak_m3: float
     input_density_m3: float
@@ -192,6 +199,13 @@ def solve_frc_equilibrium(
     B_z = -inputs.B_ext * np.tanh(argument)
     B_theta = np.zeros_like(B_z)
     J_theta = _toroidal_current_density_from_steinhauer(
+        rho,
+        argument,
+        inputs.B_ext,
+        inputs.R_s,
+        delta,
+    )
+    dBz_dr_analytic = _axial_field_derivative_from_steinhauer(
         rho,
         argument,
         inputs.B_ext,
@@ -275,6 +289,22 @@ def solve_frc_equilibrium(
     pressure_balance_residual_l2 = float(
         np.sqrt(np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2))
     )
+    pressure_gradient_analytic = _pressure_gradient_from_steinhauer(B_z, dBz_dr_analytic)
+    pressure_gradient_residual = _pressure_gradient_closure_residual(
+        rho,
+        p,
+        pressure_gradient_analytic,
+    )
+    finite_pressure_gradient = cast(FloatArray, np.gradient(p, rho, edge_order=2))
+    pressure_gradient_scale = max(
+        tolerance,
+        float(np.max(np.abs(finite_pressure_gradient))),
+        float(np.max(np.abs(pressure_gradient_analytic))),
+    )
+    pressure_gradient_residual_linf = float(np.max(np.abs(pressure_gradient_residual)) / pressure_gradient_scale)
+    pressure_gradient_residual_l2 = float(
+        np.sqrt(np.mean((pressure_gradient_residual / pressure_gradient_scale) ** 2))
+    )
     force_residual = _radial_force_balance_residual(rho, B_z, J_theta, p)
     residual_scale = max(
         tolerance,
@@ -316,6 +346,10 @@ def solve_frc_equilibrium(
         pressure_balance_residual=pressure_balance_residual,
         pressure_balance_residual_linf=pressure_balance_residual_linf,
         pressure_balance_residual_l2=pressure_balance_residual_l2,
+        pressure_gradient_analytic_Pa_m=pressure_gradient_analytic,
+        pressure_gradient_residual=pressure_gradient_residual,
+        pressure_gradient_residual_linf=pressure_gradient_residual_linf,
+        pressure_gradient_residual_l2=pressure_gradient_residual_l2,
         peak_pressure_pa=float(np.max(p)),
         density_peak_m3=density_peak_m3,
         input_density_m3=float(inputs.n0),
@@ -384,6 +418,11 @@ def pressure_balance_residual(state: FRCEquilibriumState) -> FloatArray:
     return state.pressure_balance_residual
 
 
+def pressure_gradient_residual(state: FRCEquilibriumState) -> FloatArray:
+    """Return finite-grid ``dp/dr`` minus analytical magnetic-pressure gradient."""
+    return state.pressure_gradient_residual
+
+
 def density_profile(state: FRCEquilibriumState) -> FloatArray:
     """Return solved density profile ``n(r) = p(r) / ((T_i + T_e) e)`` in m^-3."""
     return state.density_m3
@@ -400,6 +439,7 @@ def validate_equilibrium(
     tolerance: float = 1e-6,
     flux_tolerance: float = 2e-2,
     pressure_balance_tolerance: float = 2e-2,
+    pressure_gradient_tolerance: float = 2e-2,
     density_tolerance: float = 2e-2,
     beta_limit_tolerance: float = 2e-2,
     energy_inventory_tolerance: float = 1e-10,
@@ -421,6 +461,8 @@ def validate_equilibrium(
             state.density_m3,
             state.beta,
             state.pressure_balance_residual,
+            state.pressure_gradient_analytic_Pa_m,
+            state.pressure_gradient_residual,
             state.flux_derivative_residual,
             state.ampere_residual,
             state.force_balance_residual,
@@ -446,6 +488,7 @@ def validate_equilibrium(
         and pressure_peak_error <= max(tolerance, 2.0 * radial_spacing)
     )
     pressure_balance_passed = state.pressure_balance_residual_linf <= pressure_balance_tolerance
+    pressure_gradient_passed = state.pressure_gradient_residual_linf <= pressure_gradient_tolerance
     density_consistency_passed = state.central_density_relative_error <= density_tolerance
     beta_limit_passed = state.beta_peak <= 1.0 + beta_limit_tolerance
     energy_inventory_passed = state.separatrix_energy_closure_relative_error <= energy_inventory_tolerance
@@ -467,6 +510,7 @@ def validate_equilibrium(
     passed = (
         geometric_passed
         and pressure_balance_passed
+        and pressure_gradient_passed
         and density_consistency_passed
         and beta_limit_passed
         and energy_inventory_passed
@@ -488,6 +532,9 @@ def validate_equilibrium(
         pressure_balance_residual_linf=state.pressure_balance_residual_linf,
         pressure_balance_residual_l2=state.pressure_balance_residual_l2,
         pressure_balance_passed=bool(pressure_balance_passed),
+        pressure_gradient_residual_linf=state.pressure_gradient_residual_linf,
+        pressure_gradient_residual_l2=state.pressure_gradient_residual_l2,
+        pressure_gradient_passed=bool(pressure_gradient_passed),
         thermal_pressure_ratio=state.thermal_pressure_ratio,
         density_peak_m3=state.density_peak_m3,
         input_density_m3=state.input_density_m3,
@@ -623,6 +670,34 @@ def _toroidal_current_density_from_steinhauer(
     tanh_argument = cast(FloatArray, np.tanh(argument))
     sech_squared = cast(FloatArray, 1.0 - tanh_argument**2)
     return cast(FloatArray, B_ext * sech_squared * rho / (MU_0 * R_s * delta))
+
+
+def _axial_field_derivative_from_steinhauer(
+    rho: FloatArray,
+    argument: FloatArray,
+    B_ext: float,
+    R_s: float,
+    delta: float,
+) -> FloatArray:
+    """Return analytical ``dB_z/dr`` for the accepted Steinhauer field."""
+    tanh_argument = cast(FloatArray, np.tanh(argument))
+    sech_squared = cast(FloatArray, 1.0 - tanh_argument**2)
+    return cast(FloatArray, -B_ext * sech_squared * rho / (R_s * delta))
+
+
+def _pressure_gradient_from_steinhauer(B_z: FloatArray, dBz_dr: FloatArray) -> FloatArray:
+    """Return analytical ``dp/dr = -(B_z / mu_0) dB_z/dr`` in Pa/m."""
+    return cast(FloatArray, -(B_z * dBz_dr) / MU_0)
+
+
+def _pressure_gradient_closure_residual(
+    rho: FloatArray,
+    p: FloatArray,
+    pressure_gradient_analytic: FloatArray,
+) -> FloatArray:
+    """Return finite-grid ``dp/dr`` minus the analytical pressure gradient."""
+    finite_pressure_gradient = cast(FloatArray, np.gradient(p, rho, edge_order=2))
+    return cast(FloatArray, finite_pressure_gradient - pressure_gradient_analytic)
 
 
 def _ampere_current_closure_residual(rho: FloatArray, B_z: FloatArray, J_theta: FloatArray) -> FloatArray:

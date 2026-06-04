@@ -1774,6 +1774,22 @@ fn py_solve_frc_equilibrium<'py>(
         "pressure_balance_residual_l2",
         state.pressure_balance_residual_l2,
     )?;
+    out.set_item(
+        "pressure_gradient_analytic_Pa_m",
+        state.pressure_gradient_analytic_pa_m.into_pyarray(py),
+    )?;
+    out.set_item(
+        "pressure_gradient_residual",
+        state.pressure_gradient_residual.into_pyarray(py),
+    )?;
+    out.set_item(
+        "pressure_gradient_residual_linf",
+        state.pressure_gradient_residual_linf,
+    )?;
+    out.set_item(
+        "pressure_gradient_residual_l2",
+        state.pressure_gradient_residual_l2,
+    )?;
     out.set_item("peak_pressure_pa", state.peak_pressure_pa)?;
     out.set_item("density_peak_m3", state.density_peak_m3)?;
     out.set_item("input_density_m3", state.input_density_m3)?;

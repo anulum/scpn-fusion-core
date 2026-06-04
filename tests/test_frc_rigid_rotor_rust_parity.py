@@ -87,6 +87,18 @@ def test_rust_frc_matches_python_reference() -> None:
             atol=1.0e-8,
         )
         np.testing.assert_allclose(
+            rust_state["pressure_gradient_analytic_Pa_m"],
+            python_state.pressure_gradient_analytic_Pa_m,
+            rtol=1.0e-12,
+            atol=1.0e-4,
+        )
+        np.testing.assert_allclose(
+            rust_state["pressure_gradient_residual"],
+            python_state.pressure_gradient_residual,
+            rtol=1.0e-10,
+            atol=1.0e-2,
+        )
+        np.testing.assert_allclose(
             rust_state["flux_derivative_residual"],
             python_state.flux_derivative_residual,
             rtol=0.0,
@@ -132,6 +144,14 @@ def test_rust_frc_matches_python_reference() -> None:
         assert float(rust_state["pressure_balance_residual_l2"]) == pytest.approx(
             python_state.pressure_balance_residual_l2,
             abs=1.0e-12,
+        )
+        assert float(rust_state["pressure_gradient_residual_linf"]) == pytest.approx(
+            python_state.pressure_gradient_residual_linf,
+            rel=1.0e-10,
+        )
+        assert float(rust_state["pressure_gradient_residual_l2"]) == pytest.approx(
+            python_state.pressure_gradient_residual_l2,
+            rel=1.0e-10,
         )
         assert float(rust_state["peak_pressure_pa"]) == pytest.approx(
             python_state.peak_pressure_pa,

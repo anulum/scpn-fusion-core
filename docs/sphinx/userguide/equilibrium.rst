@@ -125,14 +125,15 @@ report includes the density-consistency row, local ``beta = p / (B_ext^2 /
 (2 mu_0))``, separatrix-averaged beta, particle line density
 ``integral_0^R_s n(r) 2 pi r dr``, separatrix pressure-energy inventory,
 magnetic-deficit inventory, energy-closure relative error, the pressure-balance
-residual ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical flux-primitive closure
+residual ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical pressure-gradient
+closure residual ``finite_grid(dp/dr) - (-(B_z / mu_0) * dB_z/dr)``, the analytical flux-primitive closure
 residual ``dpsi/dr - r B_z``, the Ampere closure residual ``mu_0 J_theta +
 dB_z/dr``, and the radial ideal-MHD force-balance residual ``dp/dr - (J x
 B)_r``. It also checks the separatrix current-sheet identities
 ``dB_z/dr|_R_s = -B_ext / delta`` and
 ``J_theta(R_s) = B_ext / (mu_0 delta)`` plus the resolved integral
 ``integral J_theta dr = (B_z(0) - B_z(r_out)) / mu_0``. Density, beta limit,
-separatrix energy inventory, current-sheet closure, pressure, flux, and Ampere closure are active
+separatrix energy inventory, current-sheet closure, pressure, pressure-gradient, flux, and Ampere closure are active
 finite-grid gates by default. Force balance is reported as a diagnostic by
 default; pass an explicit ``force_balance_tolerance`` to make that residual part
 of the acceptance gate for a specific run.

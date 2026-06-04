@@ -85,6 +85,8 @@ pub fn solve_frc_equilibrium(
     let b_theta = Array1::zeros(b_z.len());
     let j_theta =
         toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
+    let grad_bz_analytic =
+        axial_field_derivative_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
     let grad_bz = gradient_edge_order2(&rho, &b_z);
     let separatrix_bz_gradient_t_m = interpolate(&rho, &grad_bz, inputs.r_s);
     let separatrix_expected_bz_gradient_t_m = -inputs.b_ext / delta;
@@ -195,9 +197,24 @@ pub fn solve_frc_equilibrium(
         .sum::<f64>()
         / pressure_balance_residual.len() as f64)
         .sqrt();
+    let pressure_gradient_analytic_pa_m =
+        pressure_gradient_from_steinhauer(&b_z, &grad_bz_analytic);
+    let pressure_gradient_residual =
+        pressure_gradient_closure_residual(&rho, &p, &pressure_gradient_analytic_pa_m);
+    let grad_p = gradient_edge_order2(&rho, &p);
+    let pressure_gradient_scale = tolerance
+        .max(max_abs(&grad_p))
+        .max(max_abs(&pressure_gradient_analytic_pa_m));
+    let pressure_gradient_residual_linf =
+        max_abs(&pressure_gradient_residual) / pressure_gradient_scale;
+    let pressure_gradient_residual_l2 = (pressure_gradient_residual
+        .iter()
+        .map(|value| (value / pressure_gradient_scale).powi(2))
+        .sum::<f64>()
+        / pressure_gradient_residual.len() as f64)
+        .sqrt();
 
     let force_balance_residual = radial_force_balance_residual(&rho, &b_z, &j_theta, &p);
-    let grad_p = gradient_edge_order2(&rho, &p);
     let lorentz_scale =
         Array1::from_iter(b_z.iter().zip(j_theta.iter()).map(|(b, j)| (j * b).abs()));
     let residual_scale = tolerance.max(max_abs(&grad_p)).max(max_abs(&lorentz_scale));
@@ -261,6 +278,10 @@ pub fn solve_frc_equilibrium(
         pressure_balance_residual,
         pressure_balance_residual_linf,
         pressure_balance_residual_l2,
+        pressure_gradient_analytic_pa_m,
+        pressure_gradient_residual,
+        pressure_gradient_residual_linf,
+        pressure_gradient_residual_l2,
         peak_pressure_pa,
         density_peak_m3,
         input_density_m3: inputs.n0,
@@ -399,6 +420,20 @@ fn toroidal_current_density_from_steinhauer(
     )
 }
 
+fn axial_field_derivative_from_steinhauer(
+    rho: &Array1<f64>,
+    argument: &Array1<f64>,
+    b_ext: f64,
+    r_s: f64,
+    delta: f64,
+) -> Array1<f64> {
+    Array1::from_iter(
+        rho.iter()
+            .zip(argument.iter())
+            .map(|(r, a)| -b_ext * (1.0 - a.tanh().powi(2)) * r / (r_s * delta)),
+    )
+}
+
 fn ampere_current_closure_residual(
     rho: &Array1<f64>,
     b_z: &Array1<f64>,
@@ -436,6 +471,28 @@ fn pressure_balance_residual_profile(
         p.iter()
             .zip(b_z.iter())
             .map(|(pressure, b)| pressure + b * b / (2.0 * MU_0) - b_ext * b_ext / (2.0 * MU_0)),
+    )
+}
+
+fn pressure_gradient_from_steinhauer(b_z: &Array1<f64>, dbz_dr: &Array1<f64>) -> Array1<f64> {
+    Array1::from_iter(
+        b_z.iter()
+            .zip(dbz_dr.iter())
+            .map(|(b, db)| -(b * db) / MU_0),
+    )
+}
+
+fn pressure_gradient_closure_residual(
+    rho: &Array1<f64>,
+    p: &Array1<f64>,
+    pressure_gradient_analytic: &Array1<f64>,
+) -> Array1<f64> {
+    let finite_pressure_gradient = gradient_edge_order2(rho, p);
+    Array1::from_iter(
+        finite_pressure_gradient
+            .iter()
+            .zip(pressure_gradient_analytic.iter())
+            .map(|(finite, analytic)| finite - analytic),
     )
 }
 

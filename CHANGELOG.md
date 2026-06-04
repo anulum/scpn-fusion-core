@@ -55,6 +55,9 @@
 - Added an FRC resolved sheet-current integral closure so the radial integral
   of `J_theta` is checked against the finite-grid magnetic-field jump across
   Python/Rust/PyO3, validation gates, benchmark JSON, tests, and public docs.
+- Added an analytical FRC pressure-gradient closure so finite-grid `dp/dr` is
+  checked against `-(B_z / mu_0) dB_z/dr` across Python/Rust/PyO3, validation
+  gates, benchmark JSON, tests, and public docs.
 
 ## [3.9.8] - 2026-06-02
 

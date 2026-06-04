@@ -102,6 +102,7 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "energy_j_per_m": state.energy_J,
                 "pressure_balance_ratio": state.pressure_balance_ratio,
                 "pressure_balance_residual_linf": state.pressure_balance_residual_linf,
+                "pressure_gradient_residual_linf": state.pressure_gradient_residual_linf,
                 "peak_pressure_pa": state.peak_pressure_pa,
                 "density_peak_m3": state.density_peak_m3,
                 "input_density_m3": state.input_density_m3,
@@ -220,6 +221,7 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "energy_j_per_m": float(state["energy_J"]),
                 "pressure_balance_ratio": float(state["pressure_balance_ratio"]),
                 "pressure_balance_residual_linf": float(state["pressure_balance_residual_linf"]),
+                "pressure_gradient_residual_linf": float(state["pressure_gradient_residual_linf"]),
                 "peak_pressure_pa": float(state["peak_pressure_pa"]),
                 "density_peak_m3": float(state["density_peak_m3"]),
                 "input_density_m3": float(state["input_density_m3"]),
@@ -307,6 +309,9 @@ def _compare_surface(
             ),
             "pressure_balance_residual_linf_abs_error": abs(
                 float(cand["pressure_balance_residual_linf"]) - float(ref["pressure_balance_residual_linf"])
+            ),
+            "pressure_gradient_residual_linf_abs_error": abs(
+                float(cand["pressure_gradient_residual_linf"]) - float(ref["pressure_gradient_residual_linf"])
             ),
             "peak_pressure_rel_error": _relative_error(
                 float(cand["peak_pressure_pa"]),
@@ -439,6 +444,7 @@ def _compare_surface(
             and checks["energy_rel_error"] <= 1.0e-12
             and checks["pressure_balance_rel_error"] <= 1.0e-12
             and checks["pressure_balance_residual_linf_abs_error"] <= 1.0e-12
+            and checks["pressure_gradient_residual_linf_abs_error"] <= 1.0e-12
             and checks["peak_pressure_rel_error"] <= 1.0e-12
             and checks["density_peak_rel_error"] <= 1.0e-12
             and checks["input_density_rel_error"] <= 1.0e-12
@@ -487,6 +493,7 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "energy_j_per_m",
         "pressure_balance_ratio",
         "pressure_balance_residual_linf",
+        "pressure_gradient_residual_linf",
         "central_density_relative_error",
         "beta_peak",
         "beta_separatrix_average",
