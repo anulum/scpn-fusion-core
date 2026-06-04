@@ -120,6 +120,19 @@ so thermally inconsistent input decks fail closed instead of being accepted as
 valid equilibria. The scalar input pressure is not used to replace the solved
 local pressure profile.
 
+The same accepted pressure and density profiles define beta and line-density
+invariants on the separatrix domain:
+
+$$\beta(r)=\frac{p(r)}{B_{\rm ext}^2/(2\mu_0)},\qquad
+\langle\beta\rangle_s=\frac{1}{\pi R_s^2}\int_0^{R_s}\beta(r)\,2\pi r\,dr,$$
+
+$$N_{\rm line}=\int_0^{R_s} n(r)\,2\pi r\,dr.$$
+
+The validation gate keeps $\beta_{\rm peak}\leq 1$ within finite-grid
+tolerance for the accepted no-rotation pressure-balance contract.  The line
+density is reported in particles per metre of axial length and is included in
+cross-surface parity reports.
+
 The validation report carries both the Ampere closure residual
 $\mathcal{A}_r$ and the normalised radial force-balance diagnostic
 
@@ -134,9 +147,10 @@ only when an explicit `force_balance_tolerance` is supplied.
 The tracked benchmark report now includes finite-grid convergence evidence for
 the accepted no-rotation scalar invariants: null radius, separatrix radius
 error, Eq. 27 `s`, energy per metre, pressure-balance ratio, central-density
-relative error, and the independent pressure, flux, and Ampere residuals. This
-is local convergence evidence for the implemented analytical contract, not
-validation of the unresolved rotating FRC BVP or kinetic/transport evolution.
+relative error, beta peak, separatrix-averaged beta, particle line density,
+and the independent pressure, flux, and Ampere residuals. This is local
+convergence evidence for the implemented analytical contract, not validation
+of the unresolved rotating FRC BVP or kinetic/transport evolution.
 
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 

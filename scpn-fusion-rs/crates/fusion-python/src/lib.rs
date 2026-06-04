@@ -1747,6 +1747,7 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("J_theta", state.j_theta.into_pyarray(py))?;
     out.set_item("p", state.p.into_pyarray(py))?;
     out.set_item("density_m3", state.density_m3.into_pyarray(py))?;
+    out.set_item("beta", state.beta.into_pyarray(py))?;
     out.set_item("R_null", state.r_null)?;
     out.set_item(
         "target_separatrix_radius_m",
@@ -1784,6 +1785,9 @@ fn py_solve_frc_equilibrium<'py>(
         "central_density_relative_error",
         state.central_density_relative_error,
     )?;
+    out.set_item("beta_peak", state.beta_peak)?;
+    out.set_item("beta_separatrix_average", state.beta_separatrix_average)?;
+    out.set_item("particle_line_density_m1", state.particle_line_density_m1)?;
     out.set_item("input_thermal_pressure_pa", state.input_thermal_pressure_pa)?;
     out.set_item("thermal_pressure_ratio", state.thermal_pressure_ratio)?;
     out.set_item(

@@ -40,6 +40,9 @@
   from magnetic-pressure-balanced `p(r)` and configured temperatures, while
   `n0` is gated against the solved peak density across Python, Rust, PyO3,
   benchmark JSON, tests, and public docs.
+- Added FRC beta and particle-line-density diagnostics derived from the same
+  accepted pressure/density fields, with beta-limit validation, Python/Rust/PyO3
+  parity checks, benchmark JSON coverage, tests, and public docs.
 
 ## [3.9.8] - 2026-06-02
 

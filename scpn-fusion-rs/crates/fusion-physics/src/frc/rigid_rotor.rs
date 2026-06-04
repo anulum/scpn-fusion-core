@@ -126,8 +126,27 @@ pub fn solve_frc_equilibrium(
     let central_density_residual_m3 = density_peak_m3 - inputs.n0;
     let central_density_relative_error =
         central_density_residual_m3.abs() / density_peak_m3.max(inputs.n0).max(tolerance);
-    let pressure_balance_residual = pressure_balance_residual_profile(&p, &b_z, inputs.b_ext);
     let pressure_scale = external_magnetic_pressure.max(tolerance);
+    let beta = p.mapv(|pressure| pressure / pressure_scale);
+    let beta_peak = max_abs(&beta);
+    let (beta_r_clip, beta_clip) = clip_to_separatrix(&rho, &beta, inputs.r_s)?;
+    let beta_integrand = Array1::from_iter(
+        beta_clip
+            .iter()
+            .zip(beta_r_clip.iter())
+            .map(|(beta_value, r)| beta_value * 2.0 * std::f64::consts::PI * r),
+    );
+    let beta_separatrix_average = trapezoid(&beta_r_clip, &beta_integrand)
+        / (std::f64::consts::PI * inputs.r_s * inputs.r_s).max(tolerance);
+    let (density_r_clip, density_clip) = clip_to_separatrix(&rho, &density_m3, inputs.r_s)?;
+    let density_integrand = Array1::from_iter(
+        density_clip
+            .iter()
+            .zip(density_r_clip.iter())
+            .map(|(density, r)| density * 2.0 * std::f64::consts::PI * r),
+    );
+    let particle_line_density_m1 = trapezoid(&density_r_clip, &density_integrand);
+    let pressure_balance_residual = pressure_balance_residual_profile(&p, &b_z, inputs.b_ext);
     let pressure_balance_residual_linf = max_abs(&pressure_balance_residual) / pressure_scale;
     let pressure_balance_residual_l2 = (pressure_balance_residual
         .iter()
@@ -186,6 +205,7 @@ pub fn solve_frc_equilibrium(
         j_theta: j_theta.clone(),
         p,
         density_m3,
+        beta,
         r_null,
         target_separatrix_radius_m: inputs.r_s,
         separatrix_radius_error_m,
@@ -205,6 +225,9 @@ pub fn solve_frc_equilibrium(
         input_density_m3: inputs.n0,
         central_density_residual_m3,
         central_density_relative_error,
+        beta_peak,
+        beta_separatrix_average,
+        particle_line_density_m1,
         input_thermal_pressure_pa,
         thermal_pressure_ratio: input_thermal_pressure_pa / pressure_scale,
         flux_derivative_residual,
@@ -580,6 +603,12 @@ mod tests {
         assert!(state.density_peak_m3 > 0.0);
         assert!(state.input_density_m3 > 0.0);
         assert!(state.central_density_relative_error <= 1.0e-12);
+        assert_eq!(state.beta.len(), rho.len());
+        assert!(state.beta_peak > 0.0);
+        assert!(state.beta_peak <= 1.0 + 1.0e-12);
+        assert!(state.beta_separatrix_average > 0.0);
+        assert!(state.beta_separatrix_average <= state.beta_peak);
+        assert!(state.particle_line_density_m1 > 0.0);
         assert!(state.input_thermal_pressure_pa > 0.0);
         assert!(state.thermal_pressure_ratio > 0.0);
         assert!(state.flux_derivative_residual_linf <= 2.0e-2);
@@ -654,11 +683,15 @@ mod tests {
                 state.p[i] + state.b_z[i] * state.b_z[i] / (2.0 * MU_0) - external_pressure;
             assert!((state.pressure_balance_residual[i] - expected_residual).abs() <= 1.0e-8);
             assert!((state.density_m3[i] - state.p[i] / thermal_energy_j).abs() <= 1.0e-8);
+            assert!((state.beta[i] - state.p[i] / external_pressure).abs() <= 1.0e-12);
         }
         assert!(state.pressure_balance_residual_linf <= 1.0e-12);
         assert!((state.peak_pressure_pa - external_pressure).abs() <= external_pressure * 1.0e-4);
         assert!((state.density_peak_m3 - inputs.n0).abs() <= inputs.n0 * 1.0e-4);
         assert!(state.central_density_relative_error <= 1.0e-4);
+        assert!((state.beta_peak - 1.0).abs() <= 1.0e-4);
+        assert!(state.beta_separatrix_average > 0.0);
+        assert!(state.particle_line_density_m1 > 0.0);
         assert!(
             (state.input_thermal_pressure_pa - input_pressure).abs() <= input_pressure * 1.0e-14
         );

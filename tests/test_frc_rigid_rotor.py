@@ -20,6 +20,7 @@ from scpn_fusion.core.frc_rigid_rotor import (
     ELEMENTARY_CHARGE_C,
     MU_0,
     ampere_residual,
+    beta_profile,
     density_profile,
     force_balance_residual,
     flux_derivative_residual,
@@ -161,6 +162,9 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         "s_parameter",
         "energy_J",
         "pressure_balance_ratio",
+        "beta_peak",
+        "beta_separatrix_average",
+        "particle_line_density_m1",
     ):
         reference_value = float(getattr(reference, metric))
         coarse_error = abs(float(getattr(coarse, metric)) - reference_value)
@@ -211,6 +215,10 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.input_density_m3 == pytest.approx(inputs.n0)
     assert abs(state.central_density_residual_m3) <= state.input_density_m3 * 1.0e-3
     assert state.central_density_relative_error <= 1.0e-3
+    assert state.beta.shape == rho.shape
+    assert 0.0 < state.beta_peak <= 1.0 + 1.0e-12
+    assert 0.0 < state.beta_separatrix_average <= state.beta_peak
+    assert state.particle_line_density_m1 > 0.0
     assert state.input_thermal_pressure_pa > 0.0
     assert state.thermal_pressure_ratio == pytest.approx(1.0)
     assert state.target_separatrix_radius_m == inputs.R_s
@@ -291,9 +299,12 @@ def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
     expected_pressure = external_pressure - state.B_z**2 / (2.0 * MU_0)
     expected_input_pressure = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * 1.602176634e-19
     expected_density = expected_pressure / ((inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C)
+    expected_beta = expected_pressure / external_pressure
+    separatrix_mask = rho <= inputs.R_s
 
     np.testing.assert_allclose(state.p, expected_pressure, rtol=1.0e-14, atol=1.0e-8)
     np.testing.assert_allclose(density_profile(state), expected_density, rtol=1.0e-14, atol=1.0e-8)
+    np.testing.assert_allclose(beta_profile(state), expected_beta, rtol=1.0e-14, atol=1.0e-14)
     np.testing.assert_allclose(
         pressure_balance_residual(state),
         state.p + state.B_z**2 / (2.0 * MU_0) - external_pressure,
@@ -306,6 +317,26 @@ def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
     assert state.input_density_m3 == pytest.approx(inputs.n0)
     assert state.central_density_residual_m3 == pytest.approx(0.0, abs=inputs.n0 * 1.0e-4)
     assert state.central_density_relative_error <= 1.0e-4
+    assert state.beta_peak == pytest.approx(1.0, rel=1.0e-4)
+    assert state.beta_separatrix_average == pytest.approx(
+        float(
+            trapezoid(
+                expected_beta[separatrix_mask] * 2.0 * np.pi * rho[separatrix_mask],
+                rho[separatrix_mask],
+            )
+            / (np.pi * inputs.R_s**2)
+        ),
+        rel=1.0e-12,
+    )
+    assert state.particle_line_density_m1 == pytest.approx(
+        float(
+            trapezoid(
+                expected_density[separatrix_mask] * 2.0 * np.pi * rho[separatrix_mask],
+                rho[separatrix_mask],
+            )
+        ),
+        rel=1.0e-12,
+    )
     assert state.input_thermal_pressure_pa == pytest.approx(expected_input_pressure)
     assert state.thermal_pressure_ratio == pytest.approx(expected_input_pressure / external_pressure)
 
@@ -386,6 +417,18 @@ def test_density_consistency_gate_is_fail_closed() -> None:
     report = validate_equilibrium(corrupted, density_tolerance=1.0e-3)
 
     assert report.density_consistency_passed is False
+    assert report.passed is False
+
+
+def test_beta_limit_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, beta_peak=1.5)
+    report = validate_equilibrium(corrupted, beta_limit_tolerance=1.0e-3)
+
+    assert report.beta_limit_passed is False
     assert report.passed is False
 
 

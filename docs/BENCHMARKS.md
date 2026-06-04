@@ -1576,10 +1576,11 @@ magnetic-pressure-balance peak for the configured `B_ext`. Reported scalar
 diagnostics include null radius, separatrix error, Eq. 27 `s`, energy per
 metre, pressure-balance ratio, pressure residual, solved peak density, input
 central density, central-density residual, central-density relative error,
-input thermal pressure, thermal-pressure ratio, flux residual, Ampere
-residual, force-balance residual, and weighted checksums for `B_z`, `J_theta`,
-`psi`, pressure, and density. Python, Rust, and PyO3 rows must agree on the
-same density-closure contract; Go, Julia, and Lean remain
+beta peak, separatrix-averaged beta, particle line density, input thermal
+pressure, thermal-pressure ratio, flux residual, Ampere residual,
+force-balance residual, and weighted checksums for `B_z`, `J_theta`, `psi`,
+pressure, density, and beta. Python, Rust, and PyO3 rows must agree on the
+same pressure-density-beta closure contract; Go, Julia, and Lean remain
 `not_applicable_no_frc_surface` until equivalent native FRC solver logic exists.
 
 Reproduce locally:

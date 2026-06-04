@@ -121,11 +121,13 @@ The no-rotation pressure profile follows local magnetic-pressure balance,
 magnetic-pressure-balance peak; it is not substituted for the local solved
 profile. The solver also derives ``n(r) = p(r) / ((T_i + T_e) * e)`` and gates
 the configured central density against the solved peak density. The validation
-report includes the density-consistency row, the pressure-balance residual
-``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical flux-primitive
-closure residual ``dpsi/dr - r B_z``, the Ampere closure residual
-``mu_0 J_theta + dB_z/dr``, and the radial ideal-MHD force-balance residual
-``dp/dr - (J x B)_r``.  Density, pressure, flux, and Ampere closure are active
+report includes the density-consistency row, local ``beta = p / (B_ext^2 /
+(2 mu_0))``, separatrix-averaged beta, particle line density
+``integral_0^R_s n(r) 2 pi r dr``, the pressure-balance residual ``p +
+B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical flux-primitive closure
+residual ``dpsi/dr - r B_z``, the Ampere closure residual ``mu_0 J_theta +
+dB_z/dr``, and the radial ideal-MHD force-balance residual ``dp/dr - (J x
+B)_r``.  Density, beta limit, pressure, flux, and Ampere closure are active
 finite-grid gates by default. Force balance is reported as a diagnostic by
 default; pass an explicit ``force_balance_tolerance`` to make that residual
 part of the acceptance gate for a specific run.

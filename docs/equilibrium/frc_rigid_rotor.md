@@ -65,6 +65,19 @@ input pressure `n0 * (T_i + T_e) * e` is still reported as a ratio against the
 magnetic-pressure-balance peak, but a non-matching `n0` makes the validation
 report fail closed through the density-consistency row.
 
+The same local pressure field defines explicit beta and particle-inventory
+diagnostics over the accepted no-rotation separatrix domain:
+
+```text
+beta(r) = p(r) / (B_ext^2 / (2 mu_0))
+<beta>_s = (1 / (pi R_s^2)) * integral_0^R_s beta(r) 2 pi r dr
+N_line = integral_0^R_s n(r) 2 pi r dr
+```
+
+`beta_peak` is gated by default against the pressure-balance bound
+`beta_peak <= 1` with finite-grid tolerance, and `N_line` is reported in
+particles per metre of axial length.
+
 ```text
 R_r = dp/dr - (J x B)_r
 ```
@@ -115,7 +128,8 @@ Accepted:
   instead of only being produced by numerical quadrature.
 - Local pressure-balance pressure profile, pressure-balance residual, peak
   pressure, solved density profile, peak/input central-density consistency,
-  input thermal pressure, and thermal-pressure ratio diagnostics.
+  beta profile, separatrix-averaged beta, particle line density, input thermal
+  pressure, and thermal-pressure ratio diagnostics.
 - Finite-grid convergence diagnostics for the implemented no-rotation scalar
   invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
   ratio.
@@ -163,11 +177,12 @@ The benchmark report compares scalar diagnostics and weighted numerical
 checksums for `B_z`, `J_theta`, `psi`, pressure, and the Eq. 27 `s` value. It
 also records separatrix radius error, field reversal, pressure-balance
 residual, central-density consistency, thermal-pressure consistency, flux
-derivative residual, Ampere residual, and peak-current diagnostics plus
-finite-grid convergence against the finest tracked radial grid for the scalar
-invariants, separatrix error, pressure-balance residual, central-density
-relative error, flux derivative residual, and the independent Ampere residual
-accepted in this contract. Blocked or
+derivative residual, Ampere residual, peak-current diagnostics, beta
+diagnostics, and particle line density plus finite-grid convergence against the
+finest tracked radial grid for the scalar invariants, separatrix error,
+pressure-balance residual, central-density relative error, beta peak,
+separatrix-averaged beta, particle line density, flux derivative residual, and
+the independent Ampere residual accepted in this contract. Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
 explicit no-rotation analytical FRC contract.

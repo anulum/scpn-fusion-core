@@ -79,6 +79,7 @@ def test_rust_frc_matches_python_reference() -> None:
         np.testing.assert_allclose(rust_state["psi"], python_state.psi, rtol=1.0e-13, atol=1.0e-13)
         np.testing.assert_allclose(rust_state["p"], python_state.p, rtol=1.0e-12, atol=1.0e-6)
         np.testing.assert_allclose(rust_state["density_m3"], python_state.density_m3, rtol=1.0e-10, atol=1.0e7)
+        np.testing.assert_allclose(rust_state["beta"], python_state.beta, rtol=1.0e-12, atol=1.0e-12)
         np.testing.assert_allclose(
             rust_state["pressure_balance_residual"],
             python_state.pressure_balance_residual,
@@ -151,6 +152,18 @@ def test_rust_frc_matches_python_reference() -> None:
         assert float(rust_state["central_density_relative_error"]) == pytest.approx(
             python_state.central_density_relative_error,
             abs=1.0e-12,
+        )
+        assert float(rust_state["beta_peak"]) == pytest.approx(
+            python_state.beta_peak,
+            abs=1.0e-12,
+        )
+        assert float(rust_state["beta_separatrix_average"]) == pytest.approx(
+            python_state.beta_separatrix_average,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["particle_line_density_m1"]) == pytest.approx(
+            python_state.particle_line_density_m1,
+            rel=1.0e-12,
         )
         assert float(rust_state["input_thermal_pressure_pa"]) == pytest.approx(
             python_state.input_thermal_pressure_pa,

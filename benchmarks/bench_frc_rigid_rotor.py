@@ -94,6 +94,9 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "input_density_m3": state.input_density_m3,
                 "central_density_residual_m3": state.central_density_residual_m3,
                 "central_density_relative_error": state.central_density_relative_error,
+                "beta_peak": state.beta_peak,
+                "beta_separatrix_average": state.beta_separatrix_average,
+                "particle_line_density_m1": state.particle_line_density_m1,
                 "input_thermal_pressure_pa": state.input_thermal_pressure_pa,
                 "thermal_pressure_ratio": state.thermal_pressure_ratio,
                 "flux_derivative_residual_linf": state.flux_derivative_residual_linf,
@@ -105,6 +108,7 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "psi_checksum": _checksum(state.psi),
                 "p_checksum": _checksum(state.p),
                 "density_checksum": _checksum(state.density_m3),
+                "beta_checksum": _checksum(state.beta),
             }
         )
     return rows
@@ -196,6 +200,9 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "input_density_m3": float(state["input_density_m3"]),
                 "central_density_residual_m3": float(state["central_density_residual_m3"]),
                 "central_density_relative_error": float(state["central_density_relative_error"]),
+                "beta_peak": float(state["beta_peak"]),
+                "beta_separatrix_average": float(state["beta_separatrix_average"]),
+                "particle_line_density_m1": float(state["particle_line_density_m1"]),
                 "input_thermal_pressure_pa": float(state["input_thermal_pressure_pa"]),
                 "thermal_pressure_ratio": float(state["thermal_pressure_ratio"]),
                 "flux_derivative_residual_linf": float(state["flux_derivative_residual_linf"]),
@@ -207,6 +214,7 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "psi_checksum": _checksum(cast(FloatArray, state["psi"])),
                 "p_checksum": _checksum(cast(FloatArray, state["p"])),
                 "density_checksum": _checksum(cast(FloatArray, state["density_m3"])),
+                "beta_checksum": _checksum(cast(FloatArray, state["beta"])),
             }
         )
     return "available", rows
@@ -275,6 +283,17 @@ def _compare_surface(
             "central_density_relative_error_abs_error": abs(
                 float(cand["central_density_relative_error"]) - float(ref["central_density_relative_error"])
             ),
+            "beta_peak_abs_error": abs(
+                float(cand["beta_peak"]) - float(ref["beta_peak"])
+            ),
+            "beta_separatrix_average_rel_error": _relative_error(
+                float(cand["beta_separatrix_average"]),
+                float(ref["beta_separatrix_average"]),
+            ),
+            "particle_line_density_rel_error": _relative_error(
+                float(cand["particle_line_density_m1"]),
+                float(ref["particle_line_density_m1"]),
+            ),
             "input_thermal_pressure_rel_error": _relative_error(
                 float(cand["input_thermal_pressure_pa"]),
                 float(ref["input_thermal_pressure_pa"]),
@@ -315,6 +334,10 @@ def _compare_surface(
                 float(cand["density_checksum"]),
                 float(ref["density_checksum"]),
             ),
+            "beta_checksum_rel_error": _relative_error(
+                float(cand["beta_checksum"]),
+                float(ref["beta_checksum"]),
+            ),
         }
         passed = (
             checks["r_null_abs_error"] <= 1.0e-12
@@ -330,6 +353,9 @@ def _compare_surface(
             and checks["input_density_rel_error"] <= 1.0e-12
             and checks["central_density_residual_abs_error"] <= 1.0e9
             and checks["central_density_relative_error_abs_error"] <= 1.0e-12
+            and checks["beta_peak_abs_error"] <= 1.0e-12
+            and checks["beta_separatrix_average_rel_error"] <= 1.0e-12
+            and checks["particle_line_density_rel_error"] <= 1.0e-12
             and checks["input_thermal_pressure_rel_error"] <= 1.0e-12
             and checks["thermal_pressure_ratio_rel_error"] <= 1.0e-12
             and checks["flux_derivative_residual_linf_abs_error"] <= 1.0e-12
@@ -341,6 +367,7 @@ def _compare_surface(
             and checks["psi_checksum_abs_error"] <= 1.0e-10
             and checks["p_checksum_rel_error"] <= 1.0e-12
             and checks["density_checksum_rel_error"] <= 1.0e-12
+            and checks["beta_checksum_rel_error"] <= 1.0e-12
         )
         parity_passed = parity_passed and passed
         comparisons.append({"grid_points": grid, "status": "passed" if passed else "failed", **checks})
@@ -358,6 +385,9 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "pressure_balance_ratio",
         "pressure_balance_residual_linf",
         "central_density_relative_error",
+        "beta_peak",
+        "beta_separatrix_average",
+        "particle_line_density_m1",
         "flux_derivative_residual_linf",
         "ampere_residual_linf",
     )
