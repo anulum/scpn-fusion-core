@@ -117,6 +117,25 @@ pub fn solve_frc_equilibrium(
         / ampere_residual.len() as f64)
         .sqrt();
     let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
+    let psi_axis_wb = psi[0];
+    let psi_separatrix_wb = interpolate(&rho, &psi, inputs.r_s);
+    let psi_span_wb = psi_separatrix_wb - psi_axis_wb;
+    if psi_span_wb.abs() <= tolerance {
+        return Err(FrcSolverError::InvalidInput(
+            "psi separatrix span must be non-zero",
+        ));
+    }
+    let psi_normalized = psi.mapv(|value| (value - psi_axis_wb) / psi_span_wb);
+    let psi_normalized_axis_error = psi_normalized[0].abs();
+    let psi_normalized_separatrix = interpolate(&rho, &psi_normalized, inputs.r_s);
+    let psi_normalized_separatrix_error = (psi_normalized_separatrix - 1.0).abs();
+    let psi_normalized_residual =
+        psi_normalized_closure_residual(&psi, psi_axis_wb, psi_separatrix_wb, &psi_normalized)?;
+    let psi_normalized_residual_linf = max_abs(&psi_normalized_residual);
+    let psi_normalized_monotonic_passed =
+        psi_normalized_monotonic_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
+    let psi_normalized_bounds_passed =
+        psi_normalized_bounds_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
     let flux_derivative_residual = flux_derivative_closure_residual(&rho, &psi, &b_z);
     let dpsi_dr = gradient_edge_order2(&rho, &psi);
     let flux_scale = tolerance
@@ -258,6 +277,7 @@ pub fn solve_frc_equilibrium(
     Ok(FrcEquilibriumState {
         rho,
         psi,
+        psi_normalized,
         b_z,
         b_theta,
         j_theta: j_theta.clone(),
@@ -274,6 +294,14 @@ pub fn solve_frc_equilibrium(
         converged: true,
         residual,
         delta,
+        psi_axis_wb,
+        psi_separatrix_wb,
+        psi_normalized_axis_error,
+        psi_normalized_separatrix,
+        psi_normalized_separatrix_error,
+        psi_normalized_residual_linf,
+        psi_normalized_monotonic_passed,
+        psi_normalized_bounds_passed,
         pressure_balance_ratio,
         pressure_balance_residual,
         pressure_balance_residual_linf,
@@ -460,6 +488,50 @@ fn flux_derivative_closure_residual(
             .zip(rho.iter().zip(b_z.iter()))
             .map(|(dpsi, (r, b))| dpsi - r * b),
     )
+}
+
+fn psi_normalized_closure_residual(
+    psi: &Array1<f64>,
+    psi_axis_wb: f64,
+    psi_separatrix_wb: f64,
+    psi_normalized: &Array1<f64>,
+) -> Result<Array1<f64>, FrcSolverError> {
+    let span = psi_separatrix_wb - psi_axis_wb;
+    if span == 0.0 {
+        return Err(FrcSolverError::InvalidInput(
+            "psi separatrix span must be non-zero",
+        ));
+    }
+    Ok(Array1::from_iter(
+        psi.iter()
+            .zip(psi_normalized.iter())
+            .map(|(raw, normalized)| normalized - (raw - psi_axis_wb) / span),
+    ))
+}
+
+fn psi_normalized_monotonic_passed(
+    rho: &Array1<f64>,
+    psi_normalized: &Array1<f64>,
+    r_s: f64,
+    tolerance: f64,
+) -> Result<bool, FrcSolverError> {
+    let (_, psi_clip) = clip_to_separatrix(rho, psi_normalized, r_s)?;
+    Ok(psi_clip
+        .iter()
+        .zip(psi_clip.iter().skip(1))
+        .all(|(left, right)| *right >= *left - tolerance))
+}
+
+fn psi_normalized_bounds_passed(
+    rho: &Array1<f64>,
+    psi_normalized: &Array1<f64>,
+    r_s: f64,
+    tolerance: f64,
+) -> Result<bool, FrcSolverError> {
+    let (_, psi_clip) = clip_to_separatrix(rho, psi_normalized, r_s)?;
+    Ok(psi_clip
+        .iter()
+        .all(|value| *value >= -tolerance && *value <= 1.0 + tolerance))
 }
 
 fn pressure_balance_residual_profile(
@@ -726,6 +798,15 @@ mod tests {
         assert!(state.thermal_pressure_ratio > 0.0);
         assert!(state.flux_derivative_residual_linf <= 2.0e-2);
         assert!(state.flux_derivative_residual_l2 <= 2.0e-2);
+        assert_eq!(state.psi_normalized.len(), rho.len());
+        assert!(state.psi_axis_wb.abs() <= 1.0e-14);
+        assert!(state.psi_separatrix_wb > 0.0);
+        assert!(state.psi_normalized_axis_error <= 1.0e-12);
+        assert!((state.psi_normalized_separatrix - 1.0).abs() <= 1.0e-12);
+        assert!(state.psi_normalized_separatrix_error <= 1.0e-12);
+        assert!(state.psi_normalized_residual_linf <= 1.0e-12);
+        assert!(state.psi_normalized_monotonic_passed);
+        assert!(state.psi_normalized_bounds_passed);
         assert_eq!(state.flux_derivative_residual.len(), rho.len());
         assert!(state.peak_j_theta_a_m2 > 0.0);
         assert!(state.ampere_residual_linf <= 2.0e-2);
@@ -800,18 +881,30 @@ mod tests {
         let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
         let dpsi_dr = gradient_edge_order2(&rho, &state.psi);
         let axis_argument = (rho[0] * rho[0] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
+        let expected_psi_separatrix = interpolate(&rho, &state.psi, inputs.r_s);
         let axis_log_cosh = log_cosh(axis_argument);
         for i in 0..rho.len() {
             let argument = (rho[i] * rho[i] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
             let expected_psi =
                 -inputs.b_ext * inputs.r_s * 0.02 * (log_cosh(argument) - axis_log_cosh);
+            let expected_psi_normalized =
+                (expected_psi - state.psi_axis_wb) / (expected_psi_separatrix - state.psi_axis_wb);
             assert!((state.psi[i] - expected_psi).abs() <= 1.0e-14);
+            assert!((state.psi_normalized[i] - expected_psi_normalized).abs() <= 1.0e-14);
             assert!(
                 (state.flux_derivative_residual[i] - (dpsi_dr[i] - rho[i] * state.b_z[i])).abs()
                     <= 1.0e-14
             );
         }
         assert!(state.flux_derivative_residual_linf <= 2.0e-2);
+        assert!(state.psi_axis_wb.abs() <= 1.0e-14);
+        assert!((state.psi_separatrix_wb - expected_psi_separatrix).abs() <= 1.0e-14);
+        assert!(state.psi_normalized_axis_error <= 1.0e-14);
+        assert!((state.psi_normalized_separatrix - 1.0).abs() <= 1.0e-14);
+        assert!(state.psi_normalized_separatrix_error <= 1.0e-14);
+        assert!(state.psi_normalized_residual_linf <= 1.0e-14);
+        assert!(state.psi_normalized_monotonic_passed);
+        assert!(state.psi_normalized_bounds_passed);
     }
 
     #[test]

@@ -100,6 +100,14 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "field_reversal_passed": state.field_reversal_passed,
                 "s_parameter": state.s_parameter,
                 "energy_j_per_m": state.energy_J,
+                "psi_axis_wb": state.psi_axis_Wb,
+                "psi_separatrix_wb": state.psi_separatrix_Wb,
+                "psi_normalized_axis_error": state.psi_normalized_axis_error,
+                "psi_normalized_separatrix": state.psi_normalized_separatrix,
+                "psi_normalized_separatrix_error": state.psi_normalized_separatrix_error,
+                "psi_normalized_residual_linf": state.psi_normalized_residual_linf,
+                "psi_normalized_monotonic_passed": state.psi_normalized_monotonic_passed,
+                "psi_normalized_bounds_passed": state.psi_normalized_bounds_passed,
                 "pressure_balance_ratio": state.pressure_balance_ratio,
                 "pressure_balance_residual_linf": state.pressure_balance_residual_linf,
                 "pressure_gradient_residual_linf": state.pressure_gradient_residual_linf,
@@ -135,6 +143,7 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "p_checksum": _checksum(state.p),
                 "density_checksum": _checksum(state.density_m3),
                 "beta_checksum": _checksum(state.beta),
+                "psi_normalized_checksum": _checksum(state.psi_normalized),
             }
         )
     return rows
@@ -219,6 +228,14 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "field_reversal_passed": bool(state["field_reversal_passed"]),
                 "s_parameter": float(state["s_parameter"]),
                 "energy_j_per_m": float(state["energy_J"]),
+                "psi_axis_wb": float(state["psi_axis_Wb"]),
+                "psi_separatrix_wb": float(state["psi_separatrix_Wb"]),
+                "psi_normalized_axis_error": float(state["psi_normalized_axis_error"]),
+                "psi_normalized_separatrix": float(state["psi_normalized_separatrix"]),
+                "psi_normalized_separatrix_error": float(state["psi_normalized_separatrix_error"]),
+                "psi_normalized_residual_linf": float(state["psi_normalized_residual_linf"]),
+                "psi_normalized_monotonic_passed": bool(state["psi_normalized_monotonic_passed"]),
+                "psi_normalized_bounds_passed": bool(state["psi_normalized_bounds_passed"]),
                 "pressure_balance_ratio": float(state["pressure_balance_ratio"]),
                 "pressure_balance_residual_linf": float(state["pressure_balance_residual_linf"]),
                 "pressure_gradient_residual_linf": float(state["pressure_gradient_residual_linf"]),
@@ -230,7 +247,9 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "beta_peak": float(state["beta_peak"]),
                 "beta_separatrix_average": float(state["beta_separatrix_average"]),
                 "particle_line_density_m1": float(state["particle_line_density_m1"]),
-                "separatrix_pressure_energy_j_per_m": float(state["separatrix_pressure_energy_J_m"]),
+                "separatrix_pressure_energy_j_per_m": float(
+                    state["separatrix_pressure_energy_J_m"]
+                ),
                 "separatrix_magnetic_deficit_energy_j_per_m": float(
                     state["separatrix_magnetic_deficit_energy_J_m"]
                 ),
@@ -242,16 +261,26 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "flux_derivative_residual_linf": float(state["flux_derivative_residual_linf"]),
                 "peak_j_theta_a_m2": float(state["peak_j_theta_A_m2"]),
                 "separatrix_bz_gradient_t_m": float(state["separatrix_bz_gradient_T_m"]),
-                "separatrix_expected_bz_gradient_t_m": float(state["separatrix_expected_bz_gradient_T_m"]),
-                "separatrix_gradient_relative_error": float(state["separatrix_gradient_relative_error"]),
+                "separatrix_expected_bz_gradient_t_m": float(
+                    state["separatrix_expected_bz_gradient_T_m"]
+                ),
+                "separatrix_gradient_relative_error": float(
+                    state["separatrix_gradient_relative_error"]
+                ),
                 "separatrix_current_density_a_m2": float(state["separatrix_current_density_A_m2"]),
-                "separatrix_expected_current_density_a_m2": float(state["separatrix_expected_current_density_A_m2"]),
+                "separatrix_expected_current_density_a_m2": float(
+                    state["separatrix_expected_current_density_A_m2"]
+                ),
                 "separatrix_current_density_relative_error": float(
                     state["separatrix_current_density_relative_error"]
                 ),
                 "sheet_current_integral_a_m": float(state["sheet_current_integral_A_m"]),
-                "expected_sheet_current_integral_a_m": float(state["expected_sheet_current_integral_A_m"]),
-                "sheet_current_integral_relative_error": float(state["sheet_current_integral_relative_error"]),
+                "expected_sheet_current_integral_a_m": float(
+                    state["expected_sheet_current_integral_A_m"]
+                ),
+                "sheet_current_integral_relative_error": float(
+                    state["sheet_current_integral_relative_error"]
+                ),
                 "ampere_residual_linf": float(state["ampere_residual_linf"]),
                 "force_balance_residual_linf": float(state["force_balance_residual_linf"]),
                 "b_z_checksum": _checksum(cast(FloatArray, state["B_z"])),
@@ -260,6 +289,7 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "p_checksum": _checksum(cast(FloatArray, state["p"])),
                 "density_checksum": _checksum(cast(FloatArray, state["density_m3"])),
                 "beta_checksum": _checksum(cast(FloatArray, state["beta"])),
+                "psi_normalized_checksum": _checksum(cast(FloatArray, state["psi_normalized"])),
             }
         )
     return "available", rows
@@ -294,7 +324,8 @@ def _compare_surface(
             "separatrix_radius_error_abs_error": abs(
                 float(cand["separatrix_radius_error_m"]) - float(ref["separatrix_radius_error_m"])
             ),
-            "field_reversal_matches": bool(cand["field_reversal_passed"]) == bool(ref["field_reversal_passed"]),
+            "field_reversal_matches": bool(cand["field_reversal_passed"])
+            == bool(ref["field_reversal_passed"]),
             "s_parameter_rel_error": _relative_error(
                 float(cand["s_parameter"]),
                 float(ref["s_parameter"]),
@@ -303,15 +334,40 @@ def _compare_surface(
                 float(cand["energy_j_per_m"]),
                 float(ref["energy_j_per_m"]),
             ),
+            "psi_axis_abs_error": abs(float(cand["psi_axis_wb"]) - float(ref["psi_axis_wb"])),
+            "psi_separatrix_rel_error": _relative_error(
+                float(cand["psi_separatrix_wb"]),
+                float(ref["psi_separatrix_wb"]),
+            ),
+            "psi_normalized_axis_error_abs_error": abs(
+                float(cand["psi_normalized_axis_error"]) - float(ref["psi_normalized_axis_error"])
+            ),
+            "psi_normalized_separatrix_abs_error": abs(
+                float(cand["psi_normalized_separatrix"]) - float(ref["psi_normalized_separatrix"])
+            ),
+            "psi_normalized_separatrix_error_abs_error": abs(
+                float(cand["psi_normalized_separatrix_error"])
+                - float(ref["psi_normalized_separatrix_error"])
+            ),
+            "psi_normalized_residual_linf_abs_error": abs(
+                float(cand["psi_normalized_residual_linf"])
+                - float(ref["psi_normalized_residual_linf"])
+            ),
+            "psi_normalized_monotonic_matches": bool(cand["psi_normalized_monotonic_passed"])
+            == bool(ref["psi_normalized_monotonic_passed"]),
+            "psi_normalized_bounds_matches": bool(cand["psi_normalized_bounds_passed"])
+            == bool(ref["psi_normalized_bounds_passed"]),
             "pressure_balance_rel_error": _relative_error(
                 float(cand["pressure_balance_ratio"]),
                 float(ref["pressure_balance_ratio"]),
             ),
             "pressure_balance_residual_linf_abs_error": abs(
-                float(cand["pressure_balance_residual_linf"]) - float(ref["pressure_balance_residual_linf"])
+                float(cand["pressure_balance_residual_linf"])
+                - float(ref["pressure_balance_residual_linf"])
             ),
             "pressure_gradient_residual_linf_abs_error": abs(
-                float(cand["pressure_gradient_residual_linf"]) - float(ref["pressure_gradient_residual_linf"])
+                float(cand["pressure_gradient_residual_linf"])
+                - float(ref["pressure_gradient_residual_linf"])
             ),
             "peak_pressure_rel_error": _relative_error(
                 float(cand["peak_pressure_pa"]),
@@ -326,14 +382,14 @@ def _compare_surface(
                 float(ref["input_density_m3"]),
             ),
             "central_density_residual_abs_error": abs(
-                float(cand["central_density_residual_m3"]) - float(ref["central_density_residual_m3"])
+                float(cand["central_density_residual_m3"])
+                - float(ref["central_density_residual_m3"])
             ),
             "central_density_relative_error_abs_error": abs(
-                float(cand["central_density_relative_error"]) - float(ref["central_density_relative_error"])
+                float(cand["central_density_relative_error"])
+                - float(ref["central_density_relative_error"])
             ),
-            "beta_peak_abs_error": abs(
-                float(cand["beta_peak"]) - float(ref["beta_peak"])
-            ),
+            "beta_peak_abs_error": abs(float(cand["beta_peak"]) - float(ref["beta_peak"])),
             "beta_separatrix_average_rel_error": _relative_error(
                 float(cand["beta_separatrix_average"]),
                 float(ref["beta_separatrix_average"]),
@@ -363,7 +419,8 @@ def _compare_surface(
                 float(ref["thermal_pressure_ratio"]),
             ),
             "flux_derivative_residual_linf_abs_error": abs(
-                float(cand["flux_derivative_residual_linf"]) - float(ref["flux_derivative_residual_linf"])
+                float(cand["flux_derivative_residual_linf"])
+                - float(ref["flux_derivative_residual_linf"])
             ),
             "peak_j_theta_rel_error": _relative_error(
                 float(cand["peak_j_theta_a_m2"]),
@@ -412,19 +469,18 @@ def _compare_surface(
                 float(cand["force_balance_residual_linf"]),
                 float(ref["force_balance_residual_linf"]),
             ),
-            "b_z_checksum_abs_error": abs(
-                float(cand["b_z_checksum"]) - float(ref["b_z_checksum"])
-            ),
+            "b_z_checksum_abs_error": abs(float(cand["b_z_checksum"]) - float(ref["b_z_checksum"])),
             "j_theta_checksum_rel_error": _relative_error(
                 float(cand["j_theta_checksum"]),
                 float(ref["j_theta_checksum"]),
             ),
-            "psi_checksum_abs_error": abs(
-                float(cand["psi_checksum"]) - float(ref["psi_checksum"])
-            ),
+            "psi_checksum_abs_error": abs(float(cand["psi_checksum"]) - float(ref["psi_checksum"])),
             "p_checksum_rel_error": _relative_error(
                 float(cand["p_checksum"]),
                 float(ref["p_checksum"]),
+            ),
+            "psi_normalized_checksum_abs_error": abs(
+                float(cand["psi_normalized_checksum"]) - float(ref["psi_normalized_checksum"])
             ),
             "density_checksum_rel_error": _relative_error(
                 float(cand["density_checksum"]),
@@ -442,6 +498,14 @@ def _compare_surface(
             and checks["field_reversal_matches"]
             and checks["s_parameter_rel_error"] <= 1.0e-12
             and checks["energy_rel_error"] <= 1.0e-12
+            and checks["psi_axis_abs_error"] <= 1.0e-14
+            and checks["psi_separatrix_rel_error"] <= 1.0e-12
+            and checks["psi_normalized_axis_error_abs_error"] <= 1.0e-14
+            and checks["psi_normalized_separatrix_abs_error"] <= 1.0e-12
+            and checks["psi_normalized_separatrix_error_abs_error"] <= 1.0e-12
+            and checks["psi_normalized_residual_linf_abs_error"] <= 1.0e-12
+            and checks["psi_normalized_monotonic_matches"]
+            and checks["psi_normalized_bounds_matches"]
             and checks["pressure_balance_rel_error"] <= 1.0e-12
             and checks["pressure_balance_residual_linf_abs_error"] <= 1.0e-12
             and checks["pressure_gradient_residual_linf_abs_error"] <= 1.0e-12
@@ -475,11 +539,14 @@ def _compare_surface(
             and checks["j_theta_checksum_rel_error"] <= 1.0e-12
             and checks["psi_checksum_abs_error"] <= 1.0e-10
             and checks["p_checksum_rel_error"] <= 1.0e-12
+            and checks["psi_normalized_checksum_abs_error"] <= 1.0e-9
             and checks["density_checksum_rel_error"] <= 1.0e-12
             and checks["beta_checksum_rel_error"] <= 1.0e-12
         )
         parity_passed = parity_passed and passed
-        comparisons.append({"grid_points": grid, "status": "passed" if passed else "failed", **checks})
+        comparisons.append(
+            {"grid_points": grid, "status": "passed" if passed else "failed", **checks}
+        )
     return {"status": status, "parity_passed": parity_passed, "comparisons": comparisons}
 
 
@@ -491,6 +558,10 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "separatrix_radius_error_m",
         "s_parameter",
         "energy_j_per_m",
+        "psi_separatrix_wb",
+        "psi_normalized_axis_error",
+        "psi_normalized_separatrix_error",
+        "psi_normalized_residual_linf",
         "pressure_balance_ratio",
         "pressure_balance_residual_linf",
         "pressure_gradient_residual_linf",
@@ -540,7 +611,8 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         mid_error = float(by_grid[mid_grid][error_key])
         exact_tolerance = 1.0e-13
         refinement_checks[f"{metric}_{low_grid}_to_{mid_grid}_improves_or_exact"] = (
-            mid_error <= low_error + exact_tolerance and (mid_error < low_error or mid_error <= exact_tolerance)
+            mid_error <= low_error + exact_tolerance
+            and (mid_error < low_error or mid_error <= exact_tolerance)
         )
         reference_key = f"{metric}_abs_error_vs_grid_{finest_grid}"
         refinement_checks[f"{metric}_{high_grid}_is_reference"] = (
@@ -633,9 +705,15 @@ def main() -> None:
         if isinstance(metrics, list) and metrics:
             median = f"{float(metrics[-1].get('wall_time_s_median', metrics[-1].get('wall_time_s', 0.0))):.6e}"
         parity_payload = surface.get("parity", {})
-        parity = parity_payload.get("parity_passed", "n/a") if isinstance(parity_payload, dict) else "n/a"
+        parity = (
+            parity_payload.get("parity_passed", "n/a")
+            if isinstance(parity_payload, dict)
+            else "n/a"
+        )
         print(f"| {name} | {surface.get('status', 'unknown')} | {parity} | {median} |")
-    print(f"\nGrid convergence: {convergence['status']} against grid {convergence['reference_grid_points']}")
+    print(
+        f"\nGrid convergence: {convergence['status']} against grid {convergence['reference_grid_points']}"
+    )
     print(f"\nWrote {_REPORT_JSON.relative_to(_REPO)}")
 
 

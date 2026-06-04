@@ -69,6 +69,15 @@ $$\psi(r) = -B_{\rm ext}R_s\delta\left[\log\cosh(a(r)) -
 \log\cosh(a(0))\right],\qquad
 a(r)=\frac{r^2-R_s^2}{2R_s\delta}.$$
 
+The accepted MIF-facing coordinate is the separatrix-normalised flux:
+
+$$\psi_N(r)=\frac{\psi(r)-\psi(0)}{\psi(R_s)-\psi(0)}.$$
+
+Validation gates the raw flux span as nonzero, requires
+$\psi_N(0)=0$ and $\psi_N(R_s)=1$, and checks that $\psi_N$ is monotone and
+bounded on $0\leq r\leq R_s$. These gates are carried through Python, Rust,
+PyO3 parity, and the tracked benchmark report.
+
 The solver validates a one-dimensional, strictly increasing radial grid,
 requires the grid to start at the magnetic axis and extend outside the
 separatrix radius, derives `delta = rho_i` from the deuterium thermal ion
@@ -185,7 +194,8 @@ error, Eq. 27 `s`, energy per metre, pressure-balance ratio, analytical
 pressure-gradient residual, central-density relative error, beta peak,
 separatrix-averaged beta, particle line density,
 separatrix pressure energy, separatrix magnetic-deficit energy, energy-closure
-relative error, separatrix field-gradient/current-density closure, and the
+relative error, separatrix field-gradient/current-density closure,
+`psi_N` axis/separatrix closure, `psi_N` monotonic/bounds diagnostics, and the
 independent pressure, flux, and Ampere residuals. This is local
 convergence evidence for the implemented analytical contract, not validation
 of the unresolved rotating FRC BVP or kinetic/transport evolution.

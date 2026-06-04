@@ -48,6 +48,7 @@ class FRCEquilibriumState:
 
     rho: FloatArray
     psi: FloatArray
+    psi_normalized: FloatArray
     B_z: FloatArray
     B_theta: FloatArray
     J_theta: FloatArray
@@ -64,6 +65,14 @@ class FRCEquilibriumState:
     converged: bool
     residual: float
     delta: float
+    psi_axis_Wb: float
+    psi_separatrix_Wb: float
+    psi_normalized_axis_error: float
+    psi_normalized_separatrix: float
+    psi_normalized_separatrix_error: float
+    psi_normalized_residual_linf: float
+    psi_normalized_monotonic_passed: bool
+    psi_normalized_bounds_passed: bool
     pressure_balance_ratio: float
     pressure_balance_residual: FloatArray
     pressure_balance_residual_linf: float
@@ -116,6 +125,15 @@ class FRCValidationReport:
     null_error_m: float
     target_separatrix_radius_m: float
     field_reversal_passed: bool
+    psi_axis_Wb: float
+    psi_separatrix_Wb: float
+    psi_normalized_axis_error: float
+    psi_normalized_separatrix: float
+    psi_normalized_separatrix_error: float
+    psi_normalized_residual_linf: float
+    psi_normalized_monotonic_passed: bool
+    psi_normalized_bounds_passed: bool
+    psi_normalized_passed: bool
     pressure_peak_error_m: float
     edge_field_error_T: float
     pressure_balance_ratio: float
@@ -193,7 +211,9 @@ def solve_frc_equilibrium(
         raise ValueError("only the numpy analytical no-rotation path is implemented")
     _validate_inputs(inputs, tolerance)
     rho = _validate_grid(rho_grid, inputs.R_s)
-    delta = inputs.delta if inputs.delta is not None else ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
+    delta = (
+        inputs.delta if inputs.delta is not None else ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
+    )
 
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
     B_z = -inputs.B_ext * np.tanh(argument)
@@ -237,11 +257,41 @@ def solve_frc_equilibrium(
     ampere_residual_linf = float(np.max(np.abs(ampere_residual)) / ampere_scale)
     ampere_residual_l2 = float(np.sqrt(np.mean((ampere_residual / ampere_scale) ** 2)))
     psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
+    psi_axis_Wb = float(psi[0])
+    psi_separatrix_Wb = float(np.interp(inputs.R_s, rho, psi))
+    psi_span_Wb = psi_separatrix_Wb - psi_axis_Wb
+    if abs(psi_span_Wb) <= tolerance:
+        raise ValueError("psi separatrix span must be non-zero")
+    psi_normalized = (psi - psi_axis_Wb) / psi_span_Wb
+    psi_normalized_axis_error = abs(float(psi_normalized[0]))
+    psi_normalized_separatrix = float(np.interp(inputs.R_s, rho, psi_normalized))
+    psi_normalized_separatrix_error = abs(psi_normalized_separatrix - 1.0)
+    psi_normalized_residual = _psi_normalized_closure_residual(
+        psi,
+        psi_axis_Wb,
+        psi_separatrix_Wb,
+        psi_normalized,
+    )
+    psi_normalized_residual_linf = float(np.max(np.abs(psi_normalized_residual)))
+    psi_normalized_monotonic_passed = _psi_normalized_monotonic_passed(
+        rho,
+        psi_normalized,
+        inputs.R_s,
+        tolerance,
+    )
+    psi_normalized_bounds_passed = _psi_normalized_bounds_passed(
+        rho,
+        psi_normalized,
+        inputs.R_s,
+        tolerance,
+    )
     flux_derivative_residual = _flux_derivative_closure_residual(rho, psi, B_z)
-    dpsi_dr = cast(FloatArray, np.gradient(psi, rho, edge_order=2))
+    dpsi_dr = np.gradient(psi, rho, edge_order=2)
     flux_scale = max(tolerance, float(np.max(np.abs(rho * B_z))), float(np.max(np.abs(dpsi_dr))))
     flux_derivative_residual_linf = float(np.max(np.abs(flux_derivative_residual)) / flux_scale)
-    flux_derivative_residual_l2 = float(np.sqrt(np.mean((flux_derivative_residual / flux_scale) ** 2)))
+    flux_derivative_residual_l2 = float(
+        np.sqrt(np.mean((flux_derivative_residual / flux_scale) ** 2))
+    )
     r_null = _zero_crossing_radius(rho, B_z)
     separatrix_radius_error = abs(r_null - inputs.R_s)
     separatrix_index = int(np.argmin(np.abs(rho - r_null)))
@@ -249,10 +299,10 @@ def solve_frc_equilibrium(
 
     input_thermal_pressure = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
     external_magnetic_pressure = inputs.B_ext**2 / (2.0 * MU_0)
-    p = cast(FloatArray, external_magnetic_pressure - B_z**2 / (2.0 * MU_0))
-    p = cast(FloatArray, np.maximum(p, 0.0))
+    p = external_magnetic_pressure - B_z**2 / (2.0 * MU_0)
+    p = np.maximum(p, 0.0)
     thermal_energy_j = (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
-    density_m3 = cast(FloatArray, p / thermal_energy_j)
+    density_m3 = p / thermal_energy_j
     density_peak_m3 = float(np.max(density_m3))
     central_density_residual_m3 = density_peak_m3 - inputs.n0
     central_density_relative_error = abs(central_density_residual_m3) / max(
@@ -260,19 +310,21 @@ def solve_frc_equilibrium(
         inputs.n0,
         tolerance,
     )
-    beta = cast(FloatArray, p / max(external_magnetic_pressure, tolerance))
+    beta = p / max(external_magnetic_pressure, tolerance)
     beta_peak = float(np.max(beta))
     beta_r_clip, beta_clip = _clip_to_separatrix(rho, beta, inputs.R_s)
     beta_separatrix_average = float(
         trapezoid(beta_clip * 2.0 * np.pi * beta_r_clip, beta_r_clip) / (np.pi * inputs.R_s**2)
     )
     density_r_clip, density_clip = _clip_to_separatrix(rho, density_m3, inputs.R_s)
-    particle_line_density_m1 = float(trapezoid(density_clip * 2.0 * np.pi * density_r_clip, density_r_clip))
+    particle_line_density_m1 = float(
+        trapezoid(density_clip * 2.0 * np.pi * density_r_clip, density_r_clip)
+    )
     pressure_r_clip, pressure_clip = _clip_to_separatrix(rho, p, inputs.R_s)
     separatrix_pressure_energy_J_m = float(
         trapezoid(pressure_clip * 2.0 * np.pi * pressure_r_clip, pressure_r_clip)
     )
-    magnetic_deficit = cast(FloatArray, external_magnetic_pressure - B_z**2 / (2.0 * MU_0))
+    magnetic_deficit = external_magnetic_pressure - B_z**2 / (2.0 * MU_0)
     deficit_r_clip, deficit_clip = _clip_to_separatrix(rho, magnetic_deficit, inputs.R_s)
     separatrix_magnetic_deficit_energy_J_m = float(
         trapezoid(deficit_clip * 2.0 * np.pi * deficit_r_clip, deficit_r_clip)
@@ -285,9 +337,13 @@ def solve_frc_equilibrium(
         tolerance,
     )
     pressure_balance_residual = _pressure_balance_residual(p, B_z, inputs.B_ext)
-    pressure_balance_residual_linf = float(np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance))
+    pressure_balance_residual_linf = float(
+        np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance)
+    )
     pressure_balance_residual_l2 = float(
-        np.sqrt(np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2))
+        np.sqrt(
+            np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2)
+        )
     )
     pressure_gradient_analytic = _pressure_gradient_from_steinhauer(B_z, dBz_dr_analytic)
     pressure_gradient_residual = _pressure_gradient_closure_residual(
@@ -295,13 +351,15 @@ def solve_frc_equilibrium(
         p,
         pressure_gradient_analytic,
     )
-    finite_pressure_gradient = cast(FloatArray, np.gradient(p, rho, edge_order=2))
+    finite_pressure_gradient = np.gradient(p, rho, edge_order=2)
     pressure_gradient_scale = max(
         tolerance,
         float(np.max(np.abs(finite_pressure_gradient))),
         float(np.max(np.abs(pressure_gradient_analytic))),
     )
-    pressure_gradient_residual_linf = float(np.max(np.abs(pressure_gradient_residual)) / pressure_gradient_scale)
+    pressure_gradient_residual_linf = float(
+        np.max(np.abs(pressure_gradient_residual)) / pressure_gradient_scale
+    )
     pressure_gradient_residual_l2 = float(
         np.sqrt(np.mean((pressure_gradient_residual / pressure_gradient_scale) ** 2))
     )
@@ -326,6 +384,7 @@ def solve_frc_equilibrium(
     return FRCEquilibriumState(
         rho=rho,
         psi=psi,
+        psi_normalized=psi_normalized,
         B_z=B_z,
         B_theta=B_theta,
         J_theta=J_theta,
@@ -342,6 +401,14 @@ def solve_frc_equilibrium(
         converged=True,
         residual=float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument))))),
         delta=delta,
+        psi_axis_Wb=psi_axis_Wb,
+        psi_separatrix_Wb=psi_separatrix_Wb,
+        psi_normalized_axis_error=float(psi_normalized_axis_error),
+        psi_normalized_separatrix=float(psi_normalized_separatrix),
+        psi_normalized_separatrix_error=float(psi_normalized_separatrix_error),
+        psi_normalized_residual_linf=psi_normalized_residual_linf,
+        psi_normalized_monotonic_passed=bool(psi_normalized_monotonic_passed),
+        psi_normalized_bounds_passed=bool(psi_normalized_bounds_passed),
         pressure_balance_ratio=float(pressure_balance_ratio),
         pressure_balance_residual=pressure_balance_residual,
         pressure_balance_residual_linf=pressure_balance_residual_linf,
@@ -362,7 +429,9 @@ def solve_frc_equilibrium(
         separatrix_magnetic_deficit_energy_J_m=separatrix_magnetic_deficit_energy_J_m,
         separatrix_energy_closure_relative_error=float(separatrix_energy_closure_relative_error),
         input_thermal_pressure_pa=float(input_thermal_pressure),
-        thermal_pressure_ratio=float(input_thermal_pressure / max(external_magnetic_pressure, tolerance)),
+        thermal_pressure_ratio=float(
+            input_thermal_pressure / max(external_magnetic_pressure, tolerance)
+        ),
         flux_derivative_residual=flux_derivative_residual,
         flux_derivative_residual_linf=flux_derivative_residual_linf,
         flux_derivative_residual_l2=flux_derivative_residual_l2,
@@ -413,6 +482,11 @@ def flux_derivative_residual(state: FRCEquilibriumState) -> FloatArray:
     return state.flux_derivative_residual
 
 
+def psi_normalized_profile(state: FRCEquilibriumState) -> FloatArray:
+    """Return separatrix-normalised cylindrical flux ``psi_N`` with ``psi_N(R_s)=1``."""
+    return state.psi_normalized
+
+
 def pressure_balance_residual(state: FRCEquilibriumState) -> FloatArray:
     """Return local pressure-balance residual ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``."""
     return state.pressure_balance_residual
@@ -446,6 +520,7 @@ def validate_equilibrium(
     ampere_tolerance: float = 2e-2,
     current_sheet_tolerance: float = 2e-2,
     sheet_current_tolerance: float = 2e-2,
+    psi_normalized_tolerance: float = 1e-10,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
     """Validate finite values, null placement, pressure peaking, and optional force balance."""
@@ -454,6 +529,7 @@ def validate_equilibrium(
         for values in (
             state.rho,
             state.psi,
+            state.psi_normalized,
             state.B_z,
             state.B_theta,
             state.J_theta,
@@ -491,7 +567,9 @@ def validate_equilibrium(
     pressure_gradient_passed = state.pressure_gradient_residual_linf <= pressure_gradient_tolerance
     density_consistency_passed = state.central_density_relative_error <= density_tolerance
     beta_limit_passed = state.beta_peak <= 1.0 + beta_limit_tolerance
-    energy_inventory_passed = state.separatrix_energy_closure_relative_error <= energy_inventory_tolerance
+    energy_inventory_passed = (
+        state.separatrix_energy_closure_relative_error <= energy_inventory_tolerance
+    )
     flux_closure_passed = state.flux_derivative_residual_linf <= flux_tolerance
     ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
     current_sheet_passed = (
@@ -504,8 +582,22 @@ def validate_equilibrium(
         np.isfinite(state.sheet_current_integral_relative_error)
         and state.sheet_current_integral_relative_error <= sheet_current_tolerance
     )
+    psi_normalized_passed = (
+        np.isfinite(state.psi_axis_Wb)
+        and np.isfinite(state.psi_separatrix_Wb)
+        and np.isfinite(state.psi_normalized_axis_error)
+        and np.isfinite(state.psi_normalized_separatrix)
+        and np.isfinite(state.psi_normalized_separatrix_error)
+        and np.isfinite(state.psi_normalized_residual_linf)
+        and state.psi_normalized_axis_error <= psi_normalized_tolerance
+        and state.psi_normalized_separatrix_error <= psi_normalized_tolerance
+        and state.psi_normalized_residual_linf <= psi_normalized_tolerance
+        and state.psi_normalized_monotonic_passed
+        and state.psi_normalized_bounds_passed
+    )
     force_balance_passed = (
-        force_balance_tolerance is None or state.force_balance_residual_linf <= force_balance_tolerance
+        force_balance_tolerance is None
+        or state.force_balance_residual_linf <= force_balance_tolerance
     )
     passed = (
         geometric_passed
@@ -518,6 +610,7 @@ def validate_equilibrium(
         and ampere_closure_passed
         and current_sheet_passed
         and sheet_current_passed
+        and psi_normalized_passed
         and force_balance_passed
     )
     return FRCValidationReport(
@@ -526,6 +619,15 @@ def validate_equilibrium(
         null_error_m=float(null_error),
         target_separatrix_radius_m=state.target_separatrix_radius_m,
         field_reversal_passed=bool(field_reversal_passed),
+        psi_axis_Wb=state.psi_axis_Wb,
+        psi_separatrix_Wb=state.psi_separatrix_Wb,
+        psi_normalized_axis_error=state.psi_normalized_axis_error,
+        psi_normalized_separatrix=state.psi_normalized_separatrix,
+        psi_normalized_separatrix_error=state.psi_normalized_separatrix_error,
+        psi_normalized_residual_linf=state.psi_normalized_residual_linf,
+        psi_normalized_monotonic_passed=bool(state.psi_normalized_monotonic_passed),
+        psi_normalized_bounds_passed=bool(state.psi_normalized_bounds_passed),
+        psi_normalized_passed=bool(psi_normalized_passed),
         pressure_peak_error_m=float(pressure_peak_error),
         edge_field_error_T=float(edge_field_error),
         pressure_balance_ratio=state.pressure_balance_ratio,
@@ -623,21 +725,23 @@ def _s_parameter_from_profile(
     r_clip, b_clip = _clip_to_separatrix(rho, B_z, R_s)
     ion_mass_kg = mass_amu * ATOMIC_MASS_KG
     thermal_momentum = np.sqrt(2.0 * ion_mass_kg * T_i_eV * ELEMENTARY_CHARGE_C)
-    inverse_gyroradius = cast(FloatArray, ELEMENTARY_CHARGE_C * np.abs(b_clip) / thermal_momentum)
-    integrand = cast(FloatArray, r_clip * inverse_gyroradius)
+    inverse_gyroradius = ELEMENTARY_CHARGE_C * np.abs(b_clip) / thermal_momentum
+    integrand = r_clip * inverse_gyroradius
     return float(trapezoid(integrand, r_clip) / R_s)
 
 
-def _clip_to_separatrix(rho: FloatArray, values: FloatArray, R_s: float) -> tuple[FloatArray, FloatArray]:
+def _clip_to_separatrix(
+    rho: FloatArray, values: FloatArray, R_s: float
+) -> tuple[FloatArray, FloatArray]:
     """Return profile samples on ``[0, R_s]`` with an interpolated separatrix endpoint."""
     stop = int(np.searchsorted(rho, R_s, side="right"))
-    r_clip = cast(FloatArray, rho[:stop])
-    value_clip = cast(FloatArray, values[:stop])
+    r_clip = rho[:stop]
+    value_clip = values[:stop]
     if r_clip.size == 0:
         raise ValueError("rho_grid must contain points below R_s")
     if r_clip[-1] < R_s:
-        r_clip = cast(FloatArray, np.append(r_clip, R_s))
-        value_clip = cast(FloatArray, np.append(value_clip, np.interp(R_s, rho, values)))
+        r_clip = np.append(r_clip, R_s)
+        value_clip = np.append(value_clip, np.interp(R_s, rho, values))
     return r_clip, value_clip
 
 
@@ -650,13 +754,13 @@ def _cylindrical_flux_from_steinhauer(
     """Return analytical ``psi(r) = integral_0^r r' B_z(r') dr'`` for Eq. 7."""
     log_cosh_argument = _log_cosh(argument)
     axis_log_cosh = float(log_cosh_argument[0])
-    return cast(FloatArray, -B_ext * R_s * delta * (log_cosh_argument - axis_log_cosh))
+    return -B_ext * R_s * delta * (log_cosh_argument - axis_log_cosh)
 
 
 def _log_cosh(values: FloatArray) -> FloatArray:
     """Return numerically stable ``log(cosh(values))``."""
-    abs_values = cast(FloatArray, np.abs(values))
-    return cast(FloatArray, abs_values + np.log1p(np.exp(-2.0 * abs_values)) - np.log(2.0))
+    abs_values = np.abs(values)
+    return abs_values + np.log1p(np.exp(-2.0 * abs_values)) - np.log(2.0)
 
 
 def _toroidal_current_density_from_steinhauer(
@@ -667,9 +771,9 @@ def _toroidal_current_density_from_steinhauer(
     delta: float,
 ) -> FloatArray:
     """Return analytical ``J_theta = -mu_0^-1 dB_z/dr`` for Eq. 7."""
-    tanh_argument = cast(FloatArray, np.tanh(argument))
-    sech_squared = cast(FloatArray, 1.0 - tanh_argument**2)
-    return cast(FloatArray, B_ext * sech_squared * rho / (MU_0 * R_s * delta))
+    tanh_argument = np.tanh(argument)
+    sech_squared = 1.0 - tanh_argument**2
+    return B_ext * sech_squared * rho / (MU_0 * R_s * delta)
 
 
 def _axial_field_derivative_from_steinhauer(
@@ -680,14 +784,14 @@ def _axial_field_derivative_from_steinhauer(
     delta: float,
 ) -> FloatArray:
     """Return analytical ``dB_z/dr`` for the accepted Steinhauer field."""
-    tanh_argument = cast(FloatArray, np.tanh(argument))
-    sech_squared = cast(FloatArray, 1.0 - tanh_argument**2)
-    return cast(FloatArray, -B_ext * sech_squared * rho / (R_s * delta))
+    tanh_argument = np.tanh(argument)
+    sech_squared = 1.0 - tanh_argument**2
+    return -B_ext * sech_squared * rho / (R_s * delta)
 
 
 def _pressure_gradient_from_steinhauer(B_z: FloatArray, dBz_dr: FloatArray) -> FloatArray:
     """Return analytical ``dp/dr = -(B_z / mu_0) dB_z/dr`` in Pa/m."""
-    return cast(FloatArray, -(B_z * dBz_dr) / MU_0)
+    return -(B_z * dBz_dr) / MU_0
 
 
 def _pressure_gradient_closure_residual(
@@ -696,25 +800,65 @@ def _pressure_gradient_closure_residual(
     pressure_gradient_analytic: FloatArray,
 ) -> FloatArray:
     """Return finite-grid ``dp/dr`` minus the analytical pressure gradient."""
-    finite_pressure_gradient = cast(FloatArray, np.gradient(p, rho, edge_order=2))
-    return cast(FloatArray, finite_pressure_gradient - pressure_gradient_analytic)
+    finite_pressure_gradient = np.gradient(p, rho, edge_order=2)
+    return finite_pressure_gradient - pressure_gradient_analytic
 
 
-def _ampere_current_closure_residual(rho: FloatArray, B_z: FloatArray, J_theta: FloatArray) -> FloatArray:
+def _ampere_current_closure_residual(
+    rho: FloatArray, B_z: FloatArray, J_theta: FloatArray
+) -> FloatArray:
     """Return ``mu_0 J_theta + dB_z/dr``; zero means Ampere's law closes."""
-    d_bz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
-    return cast(FloatArray, MU_0 * J_theta + d_bz_dr)
+    d_bz_dr = np.gradient(B_z, rho, edge_order=2)
+    return MU_0 * J_theta + d_bz_dr
 
 
-def _flux_derivative_closure_residual(rho: FloatArray, psi: FloatArray, B_z: FloatArray) -> FloatArray:
+def _flux_derivative_closure_residual(
+    rho: FloatArray, psi: FloatArray, B_z: FloatArray
+) -> FloatArray:
     """Return ``dpsi/dr - r B_z``; zero means the flux primitive closes."""
-    dpsi_dr = cast(FloatArray, np.gradient(psi, rho, edge_order=2))
-    return cast(FloatArray, dpsi_dr - rho * B_z)
+    dpsi_dr = np.gradient(psi, rho, edge_order=2)
+    return dpsi_dr - rho * B_z
+
+
+def _psi_normalized_closure_residual(
+    psi: FloatArray,
+    psi_axis_Wb: float,
+    psi_separatrix_Wb: float,
+    psi_normalized: FloatArray,
+) -> FloatArray:
+    """Return consistency residual for ``psi_N = (psi - psi_axis)/(psi_sep - psi_axis)``."""
+    span = psi_separatrix_Wb - psi_axis_Wb
+    if span == 0.0:
+        raise ValueError("psi separatrix span must be non-zero")
+    expected = (psi - psi_axis_Wb) / span
+    return psi_normalized - expected
+
+
+def _psi_normalized_monotonic_passed(
+    rho: FloatArray,
+    psi_normalized: FloatArray,
+    R_s: float,
+    tolerance: float,
+) -> bool:
+    """Return whether ``psi_N`` is monotone on the resolved separatrix interval."""
+    _, psi_clip = _clip_to_separatrix(rho, psi_normalized, R_s)
+    return bool(np.all(np.diff(psi_clip) >= -tolerance))
+
+
+def _psi_normalized_bounds_passed(
+    rho: FloatArray,
+    psi_normalized: FloatArray,
+    R_s: float,
+    tolerance: float,
+) -> bool:
+    """Return whether ``psi_N`` remains inside the expected [0, 1] interval on ``[0, R_s]``."""
+    _, psi_clip = _clip_to_separatrix(rho, psi_normalized, R_s)
+    return bool(np.min(psi_clip) >= -tolerance and np.max(psi_clip) <= 1.0 + tolerance)
 
 
 def _pressure_balance_residual(p: FloatArray, B_z: FloatArray, B_ext: float) -> FloatArray:
     """Return ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)`` in Pa."""
-    return cast(FloatArray, p + B_z**2 / (2.0 * MU_0) - B_ext**2 / (2.0 * MU_0))
+    return p + B_z**2 / (2.0 * MU_0) - B_ext**2 / (2.0 * MU_0)
 
 
 def _radial_force_balance_residual(
@@ -723,9 +867,9 @@ def _radial_force_balance_residual(
     J_theta: FloatArray,
     p: FloatArray,
 ) -> FloatArray:
-    dp_dr = cast(FloatArray, np.gradient(p, rho, edge_order=2))
-    j_cross_b_r = cast(FloatArray, J_theta * B_z)
-    return cast(FloatArray, dp_dr - j_cross_b_r)
+    dp_dr = np.gradient(p, rho, edge_order=2)
+    j_cross_b_r = J_theta * B_z
+    return dp_dr - j_cross_b_r
 
 
 def _zero_crossing_radius(rho: FloatArray, values: FloatArray) -> float:
@@ -749,4 +893,6 @@ def _field_reversal_passed(rho: FloatArray, B_z: FloatArray, R_s: float) -> bool
         return False
     inner_field = float(B_z[int(inner_indices[-1])])
     outer_field = float(B_z[int(outer_indices[0])])
-    return bool(np.isfinite(inner_field) and np.isfinite(outer_field) and inner_field * outer_field < 0.0)
+    return bool(
+        np.isfinite(inner_field) and np.isfinite(outer_field) and inner_field * outer_field < 0.0
+    )

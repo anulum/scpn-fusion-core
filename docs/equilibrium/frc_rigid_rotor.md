@@ -36,6 +36,19 @@ psi(r) = -B_ext R_s delta * (log(cosh(a(r))) - log(cosh(a(0))))
 a(r) = (r^2 - R_s^2) / (2 R_s delta)
 ```
 
+The same primitive now defines the separatrix-normalised FRC coordinate used by
+MIF consumers:
+
+```text
+psi_N(r) = (psi(r) - psi_axis) / (psi_sep - psi_axis)
+psi_axis = psi(0)
+psi_sep = psi(R_s)
+```
+
+Validation gates `psi_N(0) = 0`, `psi_N(R_s) = 1`, monotonicity on
+`0 <= r <= R_s`, boundedness on the separatrix interval, and the explicit
+normalisation residual. A zero or non-finite flux span fails closed.
+
 The flux derivative residual compares the analytical primitive against an
 independent second-order finite-difference derivative on the active grid:
 
@@ -153,6 +166,9 @@ Accepted:
 - Closed-form cylindrical flux primitive and a finite-grid derivative closure
   gate so `psi` is mathematically tied to the accepted axial-field equation
   instead of only being produced by numerical quadrature.
+- Separatrix-normalised flux coordinate `psi_N` with axis/span diagnostics,
+  separatrix endpoint closure, monotonicity, boundedness, and cross-surface
+  checksum parity for the accepted no-rotation FRC slice.
 - Local pressure-balance pressure profile, pressure-balance residual,
   analytical pressure-gradient closure residual, peak pressure, solved density
   profile, peak/input central-density consistency,
@@ -207,13 +223,14 @@ cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
 ## Evidence interpretation
 
 The benchmark report compares scalar diagnostics and weighted numerical
-checksums for `B_z`, `J_theta`, `psi`, pressure, and the Eq. 27 `s` value. It
+checksums for `B_z`, `J_theta`, `psi`, `psi_N`, pressure, and the Eq. 27 `s` value. It
 also records separatrix radius error, field reversal, pressure-balance
 residual, central-density consistency, thermal-pressure consistency, flux
 derivative residual, Ampere residual, peak-current diagnostics, beta
 diagnostics, particle line density, separatrix energy inventory, and
-magnetic-deficit closure, separatrix current-sheet closure, plus finite-grid convergence against the
-finest tracked radial grid for the scalar invariants, separatrix error,
+magnetic-deficit closure, `psi_N` axis/separatrix closure, `psi_N`
+monotonic/bounds gates, separatrix current-sheet closure, plus finite-grid
+convergence against the finest tracked radial grid for the scalar invariants, separatrix error,
 pressure-balance residual, analytical pressure-gradient residual,
 central-density relative error, beta peak, separatrix-averaged beta, particle line density, pressure-energy inventory,
 magnetic-deficit inventory, energy-closure relative error, separatrix

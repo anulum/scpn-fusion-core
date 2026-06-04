@@ -58,6 +58,10 @@
 - Added an analytical FRC pressure-gradient closure so finite-grid `dp/dr` is
   checked against `-(B_z / mu_0) dB_z/dr` across Python/Rust/PyO3, validation
   gates, benchmark JSON, tests, and public docs.
+- Added a separatrix-normalised FRC flux coordinate `psi_N` with raw flux-span
+  diagnostics, axis/separatrix endpoint gates, monotonic/bounds validation,
+  Python/Rust/PyO3 parity checks, benchmark JSON coverage, and public docs for
+  the accepted no-rotation analytical MIF lane.
 
 ## [3.9.8] - 2026-06-02
 

@@ -115,6 +115,13 @@ The implemented axial field is:
 Rotating rigid-rotor cases fail closed with ``NotImplementedError`` until the
 dedicated FRC BVP task is implemented and validated.
 
+The accepted MIF-facing flux coordinate is the separatrix-normalised
+``psi_N = (psi - psi_axis) / (psi_sep - psi_axis)`` derived from the same
+closed-form cylindrical flux primitive. Validation fails closed if the flux
+span is zero, if ``psi_N(0)`` or ``psi_N(R_s)`` misses its endpoint, or if the
+normalised coordinate is non-monotone or out of bounds on the resolved
+separatrix interval.
+
 The no-rotation pressure profile follows local magnetic-pressure balance,
 ``p = (B_ext^2 - B_z^2) / (2 mu_0)``. The scalar input thermal pressure
 ``n0 * (T_i + T_e) * e`` is reported as a consistency ratio against the
@@ -133,7 +140,7 @@ B)_r``. It also checks the separatrix current-sheet identities
 ``dB_z/dr|_R_s = -B_ext / delta`` and
 ``J_theta(R_s) = B_ext / (mu_0 delta)`` plus the resolved integral
 ``integral J_theta dr = (B_z(0) - B_z(r_out)) / mu_0``. Density, beta limit,
-separatrix energy inventory, current-sheet closure, pressure, pressure-gradient, flux, and Ampere closure are active
+separatrix energy inventory, current-sheet closure, pressure, pressure-gradient, normalised flux, flux, and Ampere closure are active
 finite-grid gates by default. Force balance is reported as a diagnostic by
 default; pass an explicit ``force_balance_tolerance`` to make that residual part
 of the acceptance gate for a specific run.

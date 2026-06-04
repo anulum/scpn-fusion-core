@@ -68,15 +68,16 @@ surfaces on `64`, `256`, and `1024` point radial grids using null radius,
 configured separatrix target, separatrix radius error, field reversal,
 Steinhauer Eq. 27 S-parameter, energy, local pressure balance, thermal-pressure
 consistency, force-balance, and weighted numerical checksums for `B_z`,
-`J_theta`, `psi`, and pressure. It also records peak toroidal current density,
+`J_theta`, `psi`, `psi_N`, and pressure. It also records peak toroidal current density,
 analytical flux-primitive derivative residuals, pressure-balance residuals,
-analytical pressure-gradient residuals, Ampere closure residuals, separatrix pressure-energy inventory,
+analytical pressure-gradient residuals, Ampere closure residuals, `psi_N`
+axis/separatrix closure, `psi_N` monotonicity and bounds gates, separatrix pressure-energy inventory,
 magnetic-deficit inventory, energy-closure relative error, separatrix
 current-sheet field-gradient/current-density closure, resolved sheet-current
 integral closure, and a finite-grid convergence block for null radius,
 separatrix radius error, Eq. 27 `s`, energy
 per metre, pressure-balance ratio, pressure-balance residual,
-analytical pressure-gradient residual, flux derivative residual, current-sheet closure, and the independent
+analytical pressure-gradient residual, `psi_N` closure, flux derivative residual, current-sheet closure, and the independent
 Ampere residual against the finest tracked grid. Go, Julia, and Lean are recorded as
 `not_applicable_no_frc_surface` until those languages expose equivalent solver
 logic. Nonzero-rotation FRC cases remain fail-closed and are not benchmarked as

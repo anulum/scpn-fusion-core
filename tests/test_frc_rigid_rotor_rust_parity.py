@@ -20,7 +20,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from scpn_fusion.core.frc_rigid_rotor import ELEMENTARY_CHARGE_C, MU_0, RigidRotorFRCInputs, solve_frc_equilibrium
+from scpn_fusion.core.frc_rigid_rotor import (
+    ELEMENTARY_CHARGE_C,
+    MU_0,
+    RigidRotorFRCInputs,
+    solve_frc_equilibrium,
+)
 
 FloatArray: TypeAlias = NDArray[np.float64]
 
@@ -34,7 +39,9 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust FRC extension not available")
 
 
-def _case(delta: float | None, grid_points: int, b_ext: float, r_s: float) -> tuple[RigidRotorFRCInputs, FloatArray]:
+def _case(
+    delta: float | None, grid_points: int, b_ext: float, r_s: float
+) -> tuple[RigidRotorFRCInputs, FloatArray]:
     t_i_ev = 10_000.0
     t_e_ev = 5_000.0
     n0 = b_ext**2 / (2.0 * MU_0) / ((t_i_ev + t_e_ev) * ELEMENTARY_CHARGE_C)
@@ -75,11 +82,23 @@ def test_rust_frc_matches_python_reference() -> None:
         np.testing.assert_allclose(rust_state["rho"], python_state.rho, rtol=0.0, atol=0.0)
         np.testing.assert_allclose(rust_state["B_z"], python_state.B_z, rtol=0.0, atol=1.0e-12)
         np.testing.assert_allclose(rust_state["B_theta"], python_state.B_theta, rtol=0.0, atol=0.0)
-        np.testing.assert_allclose(rust_state["J_theta"], python_state.J_theta, rtol=1.0e-12, atol=1.0e-6)
+        np.testing.assert_allclose(
+            rust_state["J_theta"], python_state.J_theta, rtol=1.0e-12, atol=1.0e-6
+        )
         np.testing.assert_allclose(rust_state["psi"], python_state.psi, rtol=1.0e-13, atol=1.0e-13)
+        np.testing.assert_allclose(
+            rust_state["psi_normalized"],
+            python_state.psi_normalized,
+            rtol=1.0e-13,
+            atol=1.0e-13,
+        )
         np.testing.assert_allclose(rust_state["p"], python_state.p, rtol=1.0e-12, atol=1.0e-6)
-        np.testing.assert_allclose(rust_state["density_m3"], python_state.density_m3, rtol=1.0e-10, atol=1.0e7)
-        np.testing.assert_allclose(rust_state["beta"], python_state.beta, rtol=1.0e-12, atol=1.0e-12)
+        np.testing.assert_allclose(
+            rust_state["density_m3"], python_state.density_m3, rtol=1.0e-10, atol=1.0e7
+        )
+        np.testing.assert_allclose(
+            rust_state["beta"], python_state.beta, rtol=1.0e-12, atol=1.0e-12
+        )
         np.testing.assert_allclose(
             rust_state["pressure_balance_residual"],
             python_state.pressure_balance_residual,
@@ -130,9 +149,42 @@ def test_rust_frc_matches_python_reference() -> None:
             python_state.separatrix_radius_error_m,
             abs=1.0e-12,
         )
-        assert float(rust_state["s_parameter"]) == pytest.approx(python_state.s_parameter, rel=1.0e-12)
+        assert float(rust_state["s_parameter"]) == pytest.approx(
+            python_state.s_parameter, rel=1.0e-12
+        )
         assert float(rust_state["delta"]) == pytest.approx(python_state.delta, rel=1.0e-13)
         assert float(rust_state["energy_J"]) == pytest.approx(python_state.energy_J, rel=1.0e-12)
+        assert float(rust_state["psi_axis_Wb"]) == pytest.approx(
+            python_state.psi_axis_Wb, abs=1.0e-14
+        )
+        assert float(rust_state["psi_separatrix_Wb"]) == pytest.approx(
+            python_state.psi_separatrix_Wb,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["psi_normalized_axis_error"]) == pytest.approx(
+            python_state.psi_normalized_axis_error,
+            abs=1.0e-14,
+        )
+        assert float(rust_state["psi_normalized_separatrix"]) == pytest.approx(
+            python_state.psi_normalized_separatrix,
+            abs=1.0e-12,
+        )
+        assert float(rust_state["psi_normalized_separatrix_error"]) == pytest.approx(
+            python_state.psi_normalized_separatrix_error,
+            abs=1.0e-12,
+        )
+        assert float(rust_state["psi_normalized_residual_linf"]) == pytest.approx(
+            python_state.psi_normalized_residual_linf,
+            abs=1.0e-12,
+        )
+        assert (
+            bool(rust_state["psi_normalized_monotonic_passed"])
+            is python_state.psi_normalized_monotonic_passed
+        )
+        assert (
+            bool(rust_state["psi_normalized_bounds_passed"])
+            is python_state.psi_normalized_bounds_passed
+        )
         assert float(rust_state["pressure_balance_ratio"]) == pytest.approx(
             python_state.pressure_balance_ratio,
             rel=1.0e-12,

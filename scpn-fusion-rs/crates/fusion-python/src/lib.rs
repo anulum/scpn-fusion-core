@@ -1742,6 +1742,7 @@ fn py_solve_frc_equilibrium<'py>(
     let out = PyDict::new(py);
     out.set_item("rho", state.rho.into_pyarray(py))?;
     out.set_item("psi", state.psi.into_pyarray(py))?;
+    out.set_item("psi_normalized", state.psi_normalized.into_pyarray(py))?;
     out.set_item("B_z", state.b_z.into_pyarray(py))?;
     out.set_item("B_theta", state.b_theta.into_pyarray(py))?;
     out.set_item("J_theta", state.j_theta.into_pyarray(py))?;
@@ -1761,6 +1762,26 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("converged", state.converged)?;
     out.set_item("residual", state.residual)?;
     out.set_item("delta", state.delta)?;
+    out.set_item("psi_axis_Wb", state.psi_axis_wb)?;
+    out.set_item("psi_separatrix_Wb", state.psi_separatrix_wb)?;
+    out.set_item("psi_normalized_axis_error", state.psi_normalized_axis_error)?;
+    out.set_item("psi_normalized_separatrix", state.psi_normalized_separatrix)?;
+    out.set_item(
+        "psi_normalized_separatrix_error",
+        state.psi_normalized_separatrix_error,
+    )?;
+    out.set_item(
+        "psi_normalized_residual_linf",
+        state.psi_normalized_residual_linf,
+    )?;
+    out.set_item(
+        "psi_normalized_monotonic_passed",
+        state.psi_normalized_monotonic_passed,
+    )?;
+    out.set_item(
+        "psi_normalized_bounds_passed",
+        state.psi_normalized_bounds_passed,
+    )?;
     out.set_item("pressure_balance_ratio", state.pressure_balance_ratio)?;
     out.set_item(
         "pressure_balance_residual",

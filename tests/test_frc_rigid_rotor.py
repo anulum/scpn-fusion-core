@@ -25,6 +25,7 @@ from scpn_fusion.core.frc_rigid_rotor import (
     force_balance_residual,
     flux_derivative_residual,
     ion_gyroradius_m,
+    psi_normalized_profile,
     null_radius,
     pressure_balance_residual,
     pressure_gradient_residual,
@@ -68,7 +69,9 @@ def test_no_rotation_limit_matches_steinhauer_field() -> None:
 
         state = solve_frc_equilibrium(inputs, rho)
 
-        expected = -inputs.B_ext * np.tanh((rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * inputs.delta))
+        expected = -inputs.B_ext * np.tanh(
+            (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * inputs.delta)
+        )
         assert np.allclose(state.B_z, expected, rtol=0.0, atol=1e-14)
         assert state.converged is True
         assert state.residual <= 1e-14
@@ -176,6 +179,12 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         "separatrix_current_density_relative_error",
         "sheet_current_integral_A_m",
         "sheet_current_integral_relative_error",
+        "psi_axis_Wb",
+        "psi_separatrix_Wb",
+        "psi_normalized_axis_error",
+        "psi_normalized_separatrix",
+        "psi_normalized_separatrix_error",
+        "psi_normalized_residual_linf",
     ):
         reference_value = float(getattr(reference, metric))
         coarse_error = abs(float(getattr(coarse, metric)) - reference_value)
@@ -251,13 +260,26 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.ampere_residual_linf <= 2.0e-2
     assert state.ampere_residual_l2 <= 2.0e-2
     assert state.separatrix_expected_bz_gradient_T_m == pytest.approx(-inputs.B_ext / inputs.delta)
-    assert state.separatrix_expected_current_density_A_m2 == pytest.approx(inputs.B_ext / (MU_0 * inputs.delta))
+    assert state.separatrix_expected_current_density_A_m2 == pytest.approx(
+        inputs.B_ext / (MU_0 * inputs.delta)
+    )
     assert state.separatrix_gradient_relative_error <= 2.0e-2
     assert state.separatrix_current_density_relative_error <= 2.0e-2
     expected_sheet_current = (state.B_z[0] - state.B_z[-1]) / MU_0
     assert state.expected_sheet_current_integral_A_m == pytest.approx(float(expected_sheet_current))
-    assert state.sheet_current_integral_A_m == pytest.approx(float(trapezoid(state.J_theta, state.rho)), rel=1.0e-12)
+    assert state.sheet_current_integral_A_m == pytest.approx(
+        float(trapezoid(state.J_theta, state.rho)), rel=1.0e-12
+    )
     assert state.sheet_current_integral_relative_error <= 2.0e-2
+    assert state.psi_normalized.shape == rho.shape
+    assert state.psi_axis_Wb == pytest.approx(0.0, abs=1.0e-14)
+    assert state.psi_separatrix_Wb > 0.0
+    assert state.psi_normalized_axis_error <= 1.0e-12
+    assert state.psi_normalized_separatrix == pytest.approx(1.0, abs=1.0e-12)
+    assert state.psi_normalized_separatrix_error <= 1.0e-12
+    assert state.psi_normalized_residual_linf <= 1.0e-12
+    assert state.psi_normalized_monotonic_passed is True
+    assert state.psi_normalized_bounds_passed is True
     assert state.force_balance_residual.shape == rho.shape
     assert state.force_balance_residual_linf >= 0.0
     assert state.force_balance_residual_l2 >= 0.0
@@ -273,7 +295,9 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
     state = solve_frc_equilibrium(inputs, rho)
 
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
-    expected_j_theta = inputs.B_ext * (1.0 - np.tanh(argument) ** 2) * rho / (MU_0 * inputs.R_s * delta)
+    expected_j_theta = (
+        inputs.B_ext * (1.0 - np.tanh(argument) ** 2) * rho / (MU_0 * inputs.R_s * delta)
+    )
     d_bz_dr = np.gradient(state.B_z, state.rho, edge_order=2)
     dp_dr = np.gradient(state.p, state.rho, edge_order=2)
     expected_force_residual = dp_dr - state.J_theta * state.B_z
@@ -313,11 +337,16 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
     assert state.separatrix_bz_gradient_T_m == pytest.approx(interpolated_gradient, rel=1.0e-12)
     assert state.separatrix_expected_bz_gradient_T_m == pytest.approx(expected_separatrix_gradient)
     assert state.separatrix_gradient_relative_error == pytest.approx(
-        abs(interpolated_gradient - expected_separatrix_gradient) / abs(expected_separatrix_gradient),
+        abs(interpolated_gradient - expected_separatrix_gradient)
+        / abs(expected_separatrix_gradient),
         rel=1.0e-12,
     )
-    assert state.separatrix_current_density_A_m2 == pytest.approx(interpolated_current_density, rel=1.0e-12)
-    assert state.separatrix_expected_current_density_A_m2 == pytest.approx(expected_separatrix_current_density)
+    assert state.separatrix_current_density_A_m2 == pytest.approx(
+        interpolated_current_density, rel=1.0e-12
+    )
+    assert state.separatrix_expected_current_density_A_m2 == pytest.approx(
+        expected_separatrix_current_density
+    )
     assert state.separatrix_current_density_relative_error == pytest.approx(
         abs(interpolated_current_density - expected_separatrix_current_density)
         / abs(expected_separatrix_current_density),
@@ -325,9 +354,12 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
     )
     expected_sheet_current = float((state.B_z[0] - state.B_z[-1]) / MU_0)
     assert state.expected_sheet_current_integral_A_m == pytest.approx(expected_sheet_current)
-    assert state.sheet_current_integral_A_m == pytest.approx(float(trapezoid(state.J_theta, state.rho)), rel=1.0e-12)
+    assert state.sheet_current_integral_A_m == pytest.approx(
+        float(trapezoid(state.J_theta, state.rho)), rel=1.0e-12
+    )
     assert state.sheet_current_integral_relative_error == pytest.approx(
-        abs(state.sheet_current_integral_A_m - expected_sheet_current) / abs(expected_sheet_current),
+        abs(state.sheet_current_integral_A_m - expected_sheet_current)
+        / abs(expected_sheet_current),
         rel=1.0e-12,
     )
 
@@ -344,7 +376,24 @@ def test_cylindrical_flux_matches_steinhauer_primitive() -> None:
     expected_psi = -inputs.B_ext * inputs.R_s * delta * (log_cosh - float(log_cosh[0]))
     dpsi_dr = np.gradient(state.psi, state.rho, edge_order=2)
 
+    expected_psi_normalized = (expected_psi - float(expected_psi[0])) / (
+        float(np.interp(inputs.R_s, rho, expected_psi)) - float(expected_psi[0])
+    )
+
     np.testing.assert_allclose(state.psi, expected_psi, rtol=1.0e-14, atol=1.0e-14)
+    np.testing.assert_allclose(
+        psi_normalized_profile(state), expected_psi_normalized, rtol=1.0e-14, atol=1.0e-14
+    )
+    assert state.psi_axis_Wb == pytest.approx(float(expected_psi[0]), abs=1.0e-14)
+    assert state.psi_separatrix_Wb == pytest.approx(
+        float(np.interp(inputs.R_s, rho, expected_psi)), rel=1.0e-14
+    )
+    assert state.psi_normalized_axis_error <= 1.0e-14
+    assert state.psi_normalized_separatrix == pytest.approx(1.0, abs=1.0e-14)
+    assert state.psi_normalized_separatrix_error <= 1.0e-14
+    assert state.psi_normalized_residual_linf <= 1.0e-14
+    assert state.psi_normalized_monotonic_passed is True
+    assert state.psi_normalized_bounds_passed is True
     np.testing.assert_allclose(
         flux_derivative_residual(state),
         dpsi_dr - state.rho * state.B_z,
@@ -417,14 +466,18 @@ def test_pressure_profile_matches_local_magnetic_pressure_balance() -> None:
         ),
         rel=1.0e-12,
     )
-    assert state.separatrix_pressure_energy_J_m == pytest.approx(expected_pressure_energy, rel=1.0e-12)
+    assert state.separatrix_pressure_energy_J_m == pytest.approx(
+        expected_pressure_energy, rel=1.0e-12
+    )
     assert state.separatrix_magnetic_deficit_energy_J_m == pytest.approx(
         expected_magnetic_deficit_energy,
         rel=1.0e-12,
     )
     assert state.separatrix_energy_closure_relative_error <= 1.0e-12
     assert state.input_thermal_pressure_pa == pytest.approx(expected_input_pressure)
-    assert state.thermal_pressure_ratio == pytest.approx(expected_input_pressure / external_pressure)
+    assert state.thermal_pressure_ratio == pytest.approx(
+        expected_input_pressure / external_pressure
+    )
 
 
 def test_ampere_residual_refines_with_grid() -> None:
@@ -472,11 +525,21 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     assert diagnostic_report.pressure_balance_passed is True
     assert diagnostic_report.pressure_gradient_passed is True
     assert diagnostic_report.flux_closure_passed is True
+    assert diagnostic_report.psi_normalized_passed is True
+    assert diagnostic_report.psi_normalized_monotonic_passed is True
+    assert diagnostic_report.psi_normalized_bounds_passed is True
     assert diagnostic_report.ampere_closure_passed is True
     assert diagnostic_report.field_reversal_passed is True
     assert diagnostic_report.passed
     assert ampere_fail_report.ampere_closure_passed is False
     assert ampere_fail_report.passed is False
+    corrupted_psi_normalized = replace(state, psi_normalized_separatrix_error=0.5)
+    psi_normalized_fail_report = validate_equilibrium(
+        corrupted_psi_normalized,
+        psi_normalized_tolerance=1.0e-3,
+    )
+    assert psi_normalized_fail_report.psi_normalized_passed is False
+    assert psi_normalized_fail_report.passed is False
     assert strict_report.force_balance_passed is False
     assert strict_report.passed is False
     assert loose_report.force_balance_passed is True
