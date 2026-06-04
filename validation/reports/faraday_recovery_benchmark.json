@@ -1,0 +1,104 @@
+{
+  "claim_boundary": "Local non-isolated regression evidence for the exact classical Faraday recovery contract over supplied trajectories. This is not FUS-C.6 Hall-MHD trajectory or Slough compression-work acceptance evidence.",
+  "environment": {
+    "isolated": false,
+    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "physics_contract": {
+    "blocked_acceptance": "self-consistent FUS-C.6 compression-work trajectory absent",
+    "emf": "EMF = -N*pi*(R_s^2*dB_ext/dt + 2*B_ext*R_s*dR_s/dt)",
+    "flux": "Phi = B_ext*pi*R_s^2",
+    "load_power": "P = EMF^2/R_load"
+  },
+  "results": [
+    {
+      "budget_claim_status": "blocked_missing_compression_work",
+      "case": "python_64_samples",
+      "language": "python",
+      "max_abs_back_emf_v": 464453.0579067704,
+      "max_abs_load_current_a": 5805663.223834629,
+      "mean_seconds": 0.0005038988571428571,
+      "recovered_energy_j": 2627026.631267688,
+      "samples": 64,
+      "samples_seconds": [
+        0.0007925120000000001,
+        0.0005075370000000001,
+        0.000450057,
+        0.00045010000000000004,
+        0.00043915200000000005,
+        0.00044460400000000003,
+        0.00044333
+      ]
+    },
+    {
+      "budget_claim_status": "blocked_missing_compression_work",
+      "case": "python_256_samples",
+      "language": "python",
+      "max_abs_back_emf_v": 464453.0579071631,
+      "max_abs_load_current_a": 5805663.223839539,
+      "mean_seconds": 0.0021093615714285717,
+      "recovered_energy_j": 2627026.559539832,
+      "samples": 256,
+      "samples_seconds": [
+        0.001691914,
+        0.001956935,
+        0.00198625,
+        0.0027226340000000003,
+        0.002323654,
+        0.001998971,
+        0.002085173
+      ]
+    },
+    {
+      "budget_claim_status": "blocked_missing_compression_work",
+      "case": "python_1024_samples",
+      "language": "python",
+      "max_abs_back_emf_v": 464453.0579075545,
+      "max_abs_load_current_a": 5805663.223844431,
+      "mean_seconds": 0.009757099,
+      "recovered_energy_j": 2627026.555166813,
+      "samples": 1024,
+      "samples_seconds": [
+        0.010605155000000002,
+        0.014010235000000001,
+        0.009190168,
+        0.008812842000000001,
+        0.008553468,
+        0.009274616000000001,
+        0.007853209
+      ]
+    },
+    {
+      "case": "rust_1024_samples",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_1024_samples/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 2.425855563483589e-05,
+      "samples": 1024,
+      "stddev_seconds": 1.582502107801969e-06
+    },
+    {
+      "case": "rust_256_samples",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_256_samples/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 4.98571866385867e-06,
+      "samples": 256,
+      "stddev_seconds": 2.8669896407448214e-07
+    },
+    {
+      "case": "rust_64_samples",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_64_samples/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 1.3768150422264242e-06,
+      "samples": 64,
+      "stddev_seconds": 8.455058825166761e-08
+    }
+  ],
+  "schema": "scpn-fusion-core.faraday_recovery_benchmark.v1",
+  "source_checksums": {
+    "benchmarks/bench_faraday_recovery.py": "69c05609f39a11e8144b4d857bfd13b531f15d56302bfe6b2bc95f5929e61040",
+    "scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs": "e1e903b95f18c96e7c3f74683899d1cf332b2305b914e4a0891841d934e0178a",
+    "src/scpn_fusion/core/faraday_recovery.py": "3edfd49f72558c30f189e8a069a7cbdb4d1cfbf5c783886da70a988dc94ab147"
+  }
+}

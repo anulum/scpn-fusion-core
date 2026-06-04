@@ -126,6 +126,20 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         "effective_acceleration_from_radius_rate",
     ),
     "mrti_growth_rate": (".mrti", "mrti_growth_rate"),
+    # Faraday recovery — closed-form MIF/FRC back-EMF over supplied trajectory
+    "FaradayRecoveryReport": (".faraday_recovery", "FaradayRecoveryReport"),
+    "FaradayRecoverySample": (".faraday_recovery", "FaradayRecoverySample"),
+    "FaradayRecoveryTrajectoryPoint": (
+        ".faraday_recovery",
+        "FaradayRecoveryTrajectoryPoint",
+    ),
+    "faraday_back_emf": (".faraday_recovery", "faraday_back_emf"),
+    "faraday_back_emf_from_values": (
+        ".faraday_recovery",
+        "faraday_back_emf_from_values",
+    ),
+    "integrated_recovery_energy": (".faraday_recovery", "integrated_recovery_energy"),
+    "magnetic_flux_wb": (".faraday_recovery", "magnetic_flux_wb"),
     # Current drive — ECCD, NBI, LHCD sources
     "ECCDSource": (".current_drive", "ECCDSource"),
     "NBISource": (".current_drive", "NBISource"),

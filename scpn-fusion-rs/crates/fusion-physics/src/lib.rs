@@ -9,10 +9,11 @@
 //!
 //! Stage 5: sandpile, sawtooth, FNO, turbulence, Hall-MHD,
 //! compact optimizer, design scanner, FRC analytical contracts,
-//! and MRTI growth-spectrum contracts.
+//! MRTI growth-spectrum contracts, and Faraday recovery contracts.
 
 pub mod compact_optimizer;
 pub mod design_scanner;
+pub mod faraday_recovery;
 pub mod fno;
 pub mod fokker_planck;
 pub mod frc;

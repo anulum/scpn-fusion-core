@@ -267,6 +267,38 @@ evidence.
 
 ---
 
+## 1C. FRC Faraday Recovery
+
+The MIF lane now exposes the FUS-C.7 classical recovery-coil induction contract
+in Python and Rust. It operates on a supplied separatrix-radius and external
+field trajectory:
+
+$$\Phi(t) = B_{\rm ext}(t)\,\pi R_s(t)^2,$$
+
+$$\mathrm{EMF}(t) = -N_{\rm turns}\,\pi
+\left(R_s^2\frac{dB_{\rm ext}}{dt}
++ 2B_{\rm ext}R_s\frac{dR_s}{dt}\right).$$
+
+For a resistive recovery load, the integrated recovered energy is evaluated as
+
+$$E_{\rm recovered} = \int \frac{\mathrm{EMF}(t)^2}{R_{\rm load}}\,dt.$$
+
+The implementation does not generate the unresolved FUS-C.6 Hall-MHD
+pulsed-compression trajectory. If a caller does not supply a self-consistent
+compression-work sidecar, `FaradayRecoveryReport.budget_claim_status` is
+`blocked_missing_compression_work` instead of a fabricated pass/fail result.
+
+**Key files:** `core/faraday_recovery.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs`,
+`docs/physics/faraday_recovery.md`.
+
+**Validation:** `tests/test_faraday_recovery.py`, Rust
+`fusion_physics::faraday_recovery` unit tests,
+`benchmarks/bench_faraday_recovery.py`,
+`validation/reports/faraday_recovery_benchmark.json`.
+
+---
+
 ## 2. JAX Differentiable GS Transport
 
 A fully differentiable 1.5D transport kernel in JAX, enabling `jax.grad` through the transport evolution for optimal-control and inverse problems.

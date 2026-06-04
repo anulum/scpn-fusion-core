@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Added the FUS-C.7 classical Faraday recovery contract across Python and Rust,
+  including closed-form back-EMF, resistive-load energy integration, blocked
+  budget status for missing FUS-C.6 compression-work evidence, local
+  non-isolated benchmark evidence, and public physics documentation.
 - Added the FUS-C.4 analytical MRTI growth-spectrum contract across Python and
   Rust, including magnetic-tension stabilization, exponential spectrum
   tracking, separatrix-acceleration helper, fail-closed validation, local
