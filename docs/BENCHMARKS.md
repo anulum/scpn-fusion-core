@@ -61,7 +61,8 @@ Tracked report: [`validation/reports/frc_rigid_rotor_benchmark.json`](../validat
 The report compares Python NumPy, Rust `fusion-physics`, and optional PyO3
 surfaces on `64`, `256`, and `1024` point radial grids using null radius,
 Steinhauer Eq. 27 S-parameter, energy, pressure-balance, force-balance, and
-weighted numerical checksums for `B_z`, `psi`, and pressure. It also records a
+weighted numerical checksums for `B_z`, `J_theta`, `psi`, and pressure. It also
+records peak toroidal current density, Ampere closure residuals, and a
 finite-grid convergence block for null radius, Eq. 27 `s`, energy per metre,
 and pressure-balance ratio against the finest tracked grid. Go, Julia, and Lean
 are recorded as `not_applicable_no_frc_surface` until those languages expose

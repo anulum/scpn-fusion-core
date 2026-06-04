@@ -2,7 +2,7 @@
   "benchmark": "frc_rigid_rotor_no_rotation_analytical",
   "claim_boundary": "No rotating rigid-rotor BVP, no full FRC transport, no reduced-order substitution.",
   "contract": "Steinhauer 2011 no-rotation analytical axial-field profile",
-  "generated_at_utc": "2026-06-04T03:16:54.391694+00:00",
+  "generated_at_utc": "2026-06-04T03:38:58.014925+00:00",
   "grid_convergence": {
     "checked_metrics": [
       "r_null_m",
@@ -93,63 +93,72 @@
     "python_numpy": {
       "metrics": [
         {
+          "ampere_residual_linf": 2.9658972080196315e-17,
           "b_z_checksum": -5120.926580205899,
           "energy_j_per_m": 4732409.656562342,
           "force_balance_residual_linf": 0.9999772890794661,
           "grid_points": 64,
+          "j_theta_checksum": 40562506580.839,
           "p_checksum": 960315552.5670326,
+          "peak_j_theta_a_m2": 190644484.18589604,
           "pressure_balance_ratio": 0.18590953563409618,
           "psi_checksum": -57.86598757739498,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
-          "wall_time_s_median": 0.001002119155600667,
-          "wall_time_s_min": 0.000574897974729538,
+          "wall_time_s_median": 0.0005278999451547861,
+          "wall_time_s_min": 0.0004917101468890905,
           "wall_time_s_repeats": [
-            0.0021935650147497654,
-            0.001002119155600667,
-            0.0010914450976997614,
-            0.000574897974729538,
-            0.0008106930181384087
+            0.0006803448777645826,
+            0.0007457931060343981,
+            0.0005226810462772846,
+            0.0005278999451547861,
+            0.0004917101468890905
           ]
         },
         {
+          "ampere_residual_linf": 1.1365362484018752e-16,
           "b_z_checksum": -81924.74186706443,
           "energy_j_per_m": 4732380.633575541,
           "force_balance_residual_linf": 0.9999866711956095,
           "grid_points": 256,
+          "j_theta_checksum": 649084408150.0868,
           "p_checksum": 15201308095.28419,
+          "peak_j_theta_a_m2": 199001815.97071493,
           "pressure_balance_ratio": 0.18588634585135236,
           "psi_checksum": -865.501835563199,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
-          "wall_time_s_median": 0.0017318250611424446,
-          "wall_time_s_min": 0.001197907840833068,
+          "wall_time_s_median": 0.0005949179176241159,
+          "wall_time_s_min": 0.0005409480072557926,
           "wall_time_s_repeats": [
-            0.003179999068379402,
-            0.0012107479851692915,
-            0.0017318250611424446,
-            0.003748880000784993,
-            0.001197907840833068
+            0.0006137320306152105,
+            0.0006316720973700285,
+            0.000566698145121336,
+            0.0005409480072557926,
+            0.0005949179176241159
           ]
         },
         {
+          "ampere_residual_linf": 1.1342038287931828e-16,
           "b_z_checksum": -1310735.8190520962,
           "energy_j_per_m": 4732378.833975077,
           "force_balance_residual_linf": 0.9999873739759757,
           "grid_points": 1024,
+          "j_theta_checksum": 10385238200499.477,
           "p_checksum": 242571941278.3713,
+          "peak_j_theta_a_m2": 199411050.82423276,
           "pressure_balance_ratio": 0.1858849079168695,
           "psi_checksum": -13614.908420752407,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
-          "wall_time_s_median": 0.0027181950863450766,
-          "wall_time_s_min": 0.0011413670144975185,
+          "wall_time_s_median": 0.0006542559713125229,
+          "wall_time_s_min": 0.0006080570165067911,
           "wall_time_s_repeats": [
-            0.0012815350200980902,
-            0.0011413670144975185,
-            0.0027181950863450766,
-            0.0037235079798847437,
-            0.0028628860600292683
+            0.0006542559713125229,
+            0.0006080570165067911,
+            0.0006658209022134542,
+            0.0006344739813357592,
+            0.0007400871254503727
           ]
         }
       ],
@@ -158,74 +167,86 @@
     "python_pyo3": {
       "metrics": [
         {
+          "ampere_residual_linf": 2.9658972080196315e-17,
           "b_z_checksum": -5120.9265802059,
           "energy_j_per_m": 4732409.656562341,
           "force_balance_residual_linf": 0.9999772890794661,
           "grid_points": 64,
+          "j_theta_checksum": 40562506580.83899,
           "p_checksum": 960315552.5670326,
+          "peak_j_theta_a_m2": 190644484.18589604,
           "pressure_balance_ratio": 0.18590953563409615,
           "psi_checksum": -57.86598757739499,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
-          "wall_time_s_median": 9.92603600025177e-06,
-          "wall_time_s_min": 8.712057024240494e-06,
+          "wall_time_s_median": 1.766905188560486e-05,
+          "wall_time_s_min": 1.671910285949707e-05,
           "wall_time_s_repeats": [
-            2.78521329164505e-05,
-            1.1696945875883102e-05,
-            9.92603600025177e-06,
-            9.611016139388084e-06,
-            8.712057024240494e-06
+            2.2508902475237846e-05,
+            2.0273029804229736e-05,
+            1.766905188560486e-05,
+            1.7356127500534058e-05,
+            1.671910285949707e-05
           ]
         },
         {
+          "ampere_residual_linf": 1.1365362484018752e-16,
           "b_z_checksum": -81924.74186706443,
           "energy_j_per_m": 4732380.633575541,
           "force_balance_residual_linf": 0.9999866711956092,
           "grid_points": 256,
+          "j_theta_checksum": 649084408150.0867,
           "p_checksum": 15201308095.284187,
+          "peak_j_theta_a_m2": 199001815.97071493,
           "pressure_balance_ratio": 0.18588634585135233,
           "psi_checksum": -865.5018355631989,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
-          "wall_time_s_median": 4.0904851630330086e-05,
-          "wall_time_s_min": 3.6390963941812515e-05,
+          "wall_time_s_median": 4.045316018164158e-05,
+          "wall_time_s_min": 3.802194260060787e-05,
           "wall_time_s_repeats": [
-            4.0904851630330086e-05,
-            8.554896339774132e-05,
-            3.724987618625164e-05,
-            3.6390963941812515e-05,
-            4.331907257437706e-05
+            4.048692062497139e-05,
+            4.045316018164158e-05,
+            3.802194260060787e-05,
+            4.019821062684059e-05,
+            4.340079613029957e-05
           ]
         },
         {
+          "ampere_residual_linf": 1.1342038287931828e-16,
           "b_z_checksum": -1310735.8190520962,
           "energy_j_per_m": 4732378.8339750795,
           "force_balance_residual_linf": 0.9999873739759754,
           "grid_points": 1024,
+          "j_theta_checksum": 10385238200499.475,
           "p_checksum": 242571941278.3713,
+          "peak_j_theta_a_m2": 199411050.82423276,
           "pressure_balance_ratio": 0.1858849079168695,
           "psi_checksum": -13614.908420752397,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
-          "wall_time_s_median": 0.00011878996156156063,
-          "wall_time_s_min": 0.00011853897012770176,
+          "wall_time_s_median": 8.089491166174412e-05,
+          "wall_time_s_min": 7.798592559993267e-05,
           "wall_time_s_repeats": [
-            0.00012051896192133427,
-            0.00011988100595772266,
-            0.00011853897012770176,
-            0.00011865491978824139,
-            0.00011878996156156063
+            8.089491166174412e-05,
+            7.901783101260662e-05,
+            8.988101035356522e-05,
+            7.798592559993267e-05,
+            8.941581472754478e-05
           ]
         }
       ],
       "parity": {
         "comparisons": [
           {
+            "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 9.094947017729282e-13,
             "energy_rel_error": 1.9679669390498163e-16,
             "force_balance_linf_rel_error": 0.0,
             "grid_points": 64,
+            "j_theta_checksum_rel_error": 1.8808981925328031e-16,
             "p_checksum_rel_error": 0.0,
+            "peak_j_theta_rel_error": 0.0,
             "pressure_balance_rel_error": 2.7755575615628914e-17,
             "psi_checksum_abs_error": 7.105427357601002e-15,
             "r_null_abs_error": 0.0,
@@ -233,11 +254,14 @@
             "status": "passed"
           },
           {
+            "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 0.0,
             "energy_rel_error": 0.0,
             "force_balance_linf_rel_error": 2.220446049250313e-16,
             "grid_points": 256,
+            "j_theta_checksum_rel_error": 1.8806539021312289e-16,
             "p_checksum_rel_error": 1.2547266464549886e-16,
+            "peak_j_theta_rel_error": 0.0,
             "pressure_balance_rel_error": 2.7755575615628914e-17,
             "psi_checksum_abs_error": 1.1368683772161603e-13,
             "r_null_abs_error": 0.0,
@@ -245,11 +269,14 @@
             "status": "passed"
           },
           {
+            "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 0.0,
             "energy_rel_error": 5.903939270008891e-16,
             "force_balance_linf_rel_error": 3.3306690738754696e-16,
             "grid_points": 1024,
+            "j_theta_checksum_rel_error": 1.8806742438570786e-16,
             "p_checksum_rel_error": 0.0,
+            "peak_j_theta_rel_error": 0.0,
             "pressure_balance_rel_error": 0.0,
             "psi_checksum_abs_error": 9.094947017729282e-12,
             "r_null_abs_error": 0.0,
@@ -265,50 +292,62 @@
     "rust_fusion_physics": {
       "metrics": [
         {
+          "ampere_residual_linf": 2.9658972080196315e-17,
           "b_z_checksum": -5120.9265802059,
           "energy_j_per_m": 4732409.656562341,
           "force_balance_residual_linf": 0.9999772890794661,
           "grid_points": 64,
+          "j_theta_checksum": 40562506580.83899,
           "p_checksum": 960315552.5670326,
+          "peak_j_theta_a_m2": 190644484.18589604,
           "pressure_balance_ratio": 0.18590953563409615,
           "psi_checksum": -57.865987577394975,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
-          "wall_time_s": 2.113e-05
+          "wall_time_s": 3.0035e-05
         },
         {
+          "ampere_residual_linf": 1.1365362484018752e-16,
           "b_z_checksum": -81924.74186706445,
           "energy_j_per_m": 4732380.633575541,
           "force_balance_residual_linf": 0.9999866711956092,
           "grid_points": 256,
+          "j_theta_checksum": 649084408150.0868,
           "p_checksum": 15201308095.28419,
+          "peak_j_theta_a_m2": 199001815.97071493,
           "pressure_balance_ratio": 0.18588634585135233,
           "psi_checksum": -865.5018355631995,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
-          "wall_time_s": 9.2874e-05
+          "wall_time_s": 4.6471e-05
         },
         {
+          "ampere_residual_linf": 1.1342038287931828e-16,
           "b_z_checksum": -1310735.8190520972,
           "energy_j_per_m": 4732378.8339750795,
           "force_balance_residual_linf": 0.9999873739759754,
           "grid_points": 1024,
+          "j_theta_checksum": 10385238200499.473,
           "p_checksum": 242571941278.37112,
+          "peak_j_theta_a_m2": 199411050.82423276,
           "pressure_balance_ratio": 0.1858849079168695,
           "psi_checksum": -13614.908420752376,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
-          "wall_time_s": 0.000131509
+          "wall_time_s": 0.000167662
         }
       ],
       "parity": {
         "comparisons": [
           {
+            "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 9.094947017729282e-13,
             "energy_rel_error": 1.9679669390498163e-16,
             "force_balance_linf_rel_error": 0.0,
             "grid_points": 64,
+            "j_theta_checksum_rel_error": 1.8808981925328031e-16,
             "p_checksum_rel_error": 0.0,
+            "peak_j_theta_rel_error": 0.0,
             "pressure_balance_rel_error": 2.7755575615628914e-17,
             "psi_checksum_abs_error": 7.105427357601002e-15,
             "r_null_abs_error": 0.0,
@@ -316,11 +355,14 @@
             "status": "passed"
           },
           {
+            "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 2.9103830456733704e-11,
             "energy_rel_error": 0.0,
             "force_balance_linf_rel_error": 2.220446049250313e-16,
             "grid_points": 256,
+            "j_theta_checksum_rel_error": 0.0,
             "p_checksum_rel_error": 0.0,
+            "peak_j_theta_rel_error": 0.0,
             "pressure_balance_rel_error": 2.7755575615628914e-17,
             "psi_checksum_abs_error": 4.547473508864641e-13,
             "r_null_abs_error": 0.0,
@@ -328,11 +370,14 @@
             "status": "passed"
           },
           {
+            "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 9.313225746154785e-10,
             "energy_rel_error": 5.903939270008891e-16,
             "force_balance_linf_rel_error": 3.3306690738754696e-16,
             "grid_points": 1024,
+            "j_theta_checksum_rel_error": 3.761348487714157e-16,
             "p_checksum_rel_error": 7.548501602659451e-16,
+            "peak_j_theta_rel_error": 0.0,
             "pressure_balance_rel_error": 0.0,
             "psi_checksum_abs_error": 3.092281986027956e-11,
             "r_null_abs_error": 0.0,

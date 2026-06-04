@@ -50,6 +50,7 @@ class FRCEquilibriumState:
     psi: FloatArray
     B_z: FloatArray
     B_theta: FloatArray
+    J_theta: FloatArray
     p: FloatArray
     R_null: float
     separatrix_index: int
@@ -59,6 +60,10 @@ class FRCEquilibriumState:
     residual: float
     delta: float
     pressure_balance_ratio: float
+    ampere_residual: FloatArray
+    ampere_residual_linf: float
+    ampere_residual_l2: float
+    peak_j_theta_A_m2: float
     force_balance_residual: FloatArray
     force_balance_residual_linf: float
     force_balance_residual_l2: float
@@ -75,6 +80,9 @@ class FRCValidationReport:
     pressure_peak_error_m: float
     edge_field_error_T: float
     pressure_balance_ratio: float
+    ampere_residual_linf: float
+    ampere_residual_l2: float
+    ampere_closure_passed: bool
     force_balance_residual_linf: float
     force_balance_residual_l2: float
     force_balance_passed: bool
@@ -117,6 +125,15 @@ def solve_frc_equilibrium(
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
     B_z = -inputs.B_ext * np.tanh(argument)
     B_theta = np.zeros_like(B_z)
+    J_theta = _toroidal_current_density_from_bz(rho, B_z)
+    ampere_residual = _ampere_current_closure_residual(rho, B_z, J_theta)
+    ampere_scale = max(
+        tolerance,
+        float(np.max(np.abs(np.gradient(B_z, rho, edge_order=2)))),
+        float(MU_0 * np.max(np.abs(J_theta))),
+    )
+    ampere_residual_linf = float(np.max(np.abs(ampere_residual)) / ampere_scale)
+    ampere_residual_l2 = float(np.sqrt(np.mean((ampere_residual / ampere_scale) ** 2)))
     psi = _cylindrical_flux_from_bz(rho, B_z)
     r_null = _zero_crossing_radius(rho, B_z)
     separatrix_index = int(np.argmin(np.abs(rho - r_null)))
@@ -125,11 +142,11 @@ def solve_frc_equilibrium(
     psi_axis = np.interp(r_null, rho, psi)
     pressure_span = max(abs(inputs.B_ext * inputs.R_s), tolerance)
     p = p0 * np.exp(-2.0 * ((psi - psi_axis) / pressure_span) ** 2)
-    force_residual = _radial_force_balance_residual(rho, B_z, p)
+    force_residual = _radial_force_balance_residual(rho, B_z, J_theta, p)
     residual_scale = max(
         tolerance,
         float(np.max(np.abs(np.gradient(p, rho, edge_order=2)))),
-        float(np.max(np.abs((B_z / MU_0) * np.gradient(B_z, rho, edge_order=2)))),
+        float(np.max(np.abs(J_theta * B_z))),
     )
     force_balance_residual_linf = float(np.max(np.abs(force_residual)) / residual_scale)
     force_balance_residual_l2 = float(np.sqrt(np.mean((force_residual / residual_scale) ** 2)))
@@ -148,6 +165,7 @@ def solve_frc_equilibrium(
         psi=psi,
         B_z=B_z,
         B_theta=B_theta,
+        J_theta=J_theta,
         p=p,
         R_null=r_null,
         separatrix_index=separatrix_index,
@@ -157,6 +175,10 @@ def solve_frc_equilibrium(
         residual=float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument))))),
         delta=delta,
         pressure_balance_ratio=float(pressure_balance_ratio),
+        ampere_residual=ampere_residual,
+        ampere_residual_linf=ampere_residual_linf,
+        ampere_residual_l2=ampere_residual_l2,
+        peak_j_theta_A_m2=float(np.max(np.abs(J_theta))),
         force_balance_residual=force_residual,
         force_balance_residual_linf=force_balance_residual_linf,
         force_balance_residual_l2=force_balance_residual_l2,
@@ -181,16 +203,31 @@ def force_balance_residual(state: FRCEquilibriumState) -> FloatArray:
     return state.force_balance_residual
 
 
+def ampere_residual(state: FRCEquilibriumState) -> FloatArray:
+    """Return radial Ampere closure residual ``mu_0 J_theta + dB_z/dr`` in T/m."""
+    return state.ampere_residual
+
+
 def validate_equilibrium(
     state: FRCEquilibriumState,
     *,
     tolerance: float = 1e-6,
+    ampere_tolerance: float = 1e-9,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
     """Validate finite values, null placement, pressure peaking, and optional force balance."""
     finite = all(
         bool(np.all(np.isfinite(values)))
-        for values in (state.rho, state.psi, state.B_z, state.B_theta, state.p, state.force_balance_residual)
+        for values in (
+            state.rho,
+            state.psi,
+            state.B_z,
+            state.B_theta,
+            state.J_theta,
+            state.p,
+            state.ampere_residual,
+            state.force_balance_residual,
+        )
     )
     monotonic_grid = bool(np.all(np.diff(state.rho) > 0.0))
     r_null = null_radius(state)
@@ -201,10 +238,11 @@ def validate_equilibrium(
     geometric_passed = finite and monotonic_grid and null_error <= tolerance and pressure_peak_error <= max(
         tolerance, 2.0 * float(np.max(np.diff(state.rho)))
     )
+    ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
     force_balance_passed = (
         force_balance_tolerance is None or state.force_balance_residual_linf <= force_balance_tolerance
     )
-    passed = geometric_passed and force_balance_passed
+    passed = geometric_passed and ampere_closure_passed and force_balance_passed
     return FRCValidationReport(
         finite=finite,
         monotonic_grid=monotonic_grid,
@@ -212,6 +250,9 @@ def validate_equilibrium(
         pressure_peak_error_m=float(pressure_peak_error),
         edge_field_error_T=float(edge_field_error),
         pressure_balance_ratio=state.pressure_balance_ratio,
+        ampere_residual_linf=state.ampere_residual_linf,
+        ampere_residual_l2=state.ampere_residual_l2,
+        ampere_closure_passed=bool(ampere_closure_passed),
         force_balance_residual_linf=state.force_balance_residual_linf,
         force_balance_residual_l2=state.force_balance_residual_l2,
         force_balance_passed=bool(force_balance_passed),
@@ -295,10 +336,26 @@ def _cylindrical_flux_from_bz(rho: FloatArray, B_z: FloatArray) -> FloatArray:
     return psi
 
 
-def _radial_force_balance_residual(rho: FloatArray, B_z: FloatArray, p: FloatArray) -> FloatArray:
-    dp_dr = cast(FloatArray, np.gradient(p, rho, edge_order=2))
+def _toroidal_current_density_from_bz(rho: FloatArray, B_z: FloatArray) -> FloatArray:
+    """Return ``J_theta = -mu_0^-1 dB_z/dr`` for the axial-field FRC slice."""
     d_bz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
-    j_cross_b_r = cast(FloatArray, -(B_z / MU_0) * d_bz_dr)
+    return cast(FloatArray, -d_bz_dr / MU_0)
+
+
+def _ampere_current_closure_residual(rho: FloatArray, B_z: FloatArray, J_theta: FloatArray) -> FloatArray:
+    """Return ``mu_0 J_theta + dB_z/dr``; zero means Ampere's law closes."""
+    d_bz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
+    return cast(FloatArray, MU_0 * J_theta + d_bz_dr)
+
+
+def _radial_force_balance_residual(
+    rho: FloatArray,
+    B_z: FloatArray,
+    J_theta: FloatArray,
+    p: FloatArray,
+) -> FloatArray:
+    dp_dr = cast(FloatArray, np.gradient(p, rho, edge_order=2))
+    j_cross_b_r = cast(FloatArray, J_theta * B_z)
     return cast(FloatArray, dp_dr - j_cross_b_r)
 
 

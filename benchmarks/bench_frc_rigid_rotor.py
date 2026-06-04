@@ -77,8 +77,11 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "s_parameter": state.s_parameter,
                 "energy_j_per_m": state.energy_J,
                 "pressure_balance_ratio": state.pressure_balance_ratio,
+                "peak_j_theta_a_m2": state.peak_j_theta_A_m2,
+                "ampere_residual_linf": state.ampere_residual_linf,
                 "force_balance_residual_linf": state.force_balance_residual_linf,
                 "b_z_checksum": _checksum(state.B_z),
+                "j_theta_checksum": _checksum(state.J_theta),
                 "psi_checksum": _checksum(state.psi),
                 "p_checksum": _checksum(state.p),
             }
@@ -163,8 +166,11 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "s_parameter": float(state["s_parameter"]),
                 "energy_j_per_m": float(state["energy_J"]),
                 "pressure_balance_ratio": float(state["pressure_balance_ratio"]),
+                "peak_j_theta_a_m2": float(state["peak_j_theta_A_m2"]),
+                "ampere_residual_linf": float(state["ampere_residual_linf"]),
                 "force_balance_residual_linf": float(state["force_balance_residual_linf"]),
                 "b_z_checksum": _checksum(cast(FloatArray, state["B_z"])),
+                "j_theta_checksum": _checksum(cast(FloatArray, state["J_theta"])),
                 "psi_checksum": _checksum(cast(FloatArray, state["psi"])),
                 "p_checksum": _checksum(cast(FloatArray, state["p"])),
             }
@@ -207,12 +213,23 @@ def _compare_surface(
                 float(cand["pressure_balance_ratio"]),
                 float(ref["pressure_balance_ratio"]),
             ),
+            "peak_j_theta_rel_error": _relative_error(
+                float(cand["peak_j_theta_a_m2"]),
+                float(ref["peak_j_theta_a_m2"]),
+            ),
+            "ampere_residual_linf_abs_error": abs(
+                float(cand["ampere_residual_linf"]) - float(ref["ampere_residual_linf"])
+            ),
             "force_balance_linf_rel_error": _relative_error(
                 float(cand["force_balance_residual_linf"]),
                 float(ref["force_balance_residual_linf"]),
             ),
             "b_z_checksum_abs_error": abs(
                 float(cand["b_z_checksum"]) - float(ref["b_z_checksum"])
+            ),
+            "j_theta_checksum_rel_error": _relative_error(
+                float(cand["j_theta_checksum"]),
+                float(ref["j_theta_checksum"]),
             ),
             "psi_checksum_abs_error": abs(
                 float(cand["psi_checksum"]) - float(ref["psi_checksum"])
@@ -227,8 +244,11 @@ def _compare_surface(
             and checks["s_parameter_rel_error"] <= 1.0e-12
             and checks["energy_rel_error"] <= 1.0e-12
             and checks["pressure_balance_rel_error"] <= 1.0e-12
+            and checks["peak_j_theta_rel_error"] <= 1.0e-12
+            and checks["ampere_residual_linf_abs_error"] <= 1.0e-12
             and checks["force_balance_linf_rel_error"] <= 1.0e-9
             and checks["b_z_checksum_abs_error"] <= 1.0e-9
+            and checks["j_theta_checksum_rel_error"] <= 1.0e-12
             and checks["psi_checksum_abs_error"] <= 1.0e-10
             and checks["p_checksum_rel_error"] <= 1.0e-12
         )

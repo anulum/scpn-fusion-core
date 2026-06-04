@@ -83,6 +83,19 @@ pub fn solve_frc_equilibrium(
     let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
     let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
     let b_theta = Array1::zeros(b_z.len());
+    let j_theta = toroidal_current_density_from_bz(&rho, &b_z);
+    let ampere_residual = ampere_current_closure_residual(&rho, &b_z, &j_theta);
+    let grad_bz = gradient_edge_order2(&rho, &b_z);
+    let ampere_scale = tolerance
+        .max(max_abs(&grad_bz))
+        .max(MU_0 * max_abs(&j_theta));
+    let ampere_residual_linf = max_abs(&ampere_residual) / ampere_scale;
+    let ampere_residual_l2 = (ampere_residual
+        .iter()
+        .map(|value| (value / ampere_scale).powi(2))
+        .sum::<f64>()
+        / ampere_residual.len() as f64)
+        .sqrt();
     let psi = cylindrical_flux_from_bz(&rho, &b_z);
     let r_null = zero_crossing_radius(&rho, &b_z);
     let separatrix_index = nearest_index(&rho, r_null);
@@ -92,14 +105,10 @@ pub fn solve_frc_equilibrium(
     let pressure_span = (inputs.b_ext * inputs.r_s).abs().max(tolerance);
     let p = psi.mapv(|value| p0 * (-2.0 * ((value - psi_axis) / pressure_span).powi(2)).exp());
 
-    let force_balance_residual = radial_force_balance_residual(&rho, &b_z, &p);
+    let force_balance_residual = radial_force_balance_residual(&rho, &b_z, &j_theta, &p);
     let grad_p = gradient_edge_order2(&rho, &p);
-    let grad_bz = gradient_edge_order2(&rho, &b_z);
-    let lorentz_scale = Array1::from_iter(
-        b_z.iter()
-            .zip(grad_bz.iter())
-            .map(|(b, db)| ((b / MU_0) * db).abs()),
-    );
+    let lorentz_scale =
+        Array1::from_iter(b_z.iter().zip(j_theta.iter()).map(|(b, j)| (j * b).abs()));
     let residual_scale = tolerance.max(max_abs(&grad_p)).max(max_abs(&lorentz_scale));
     let force_balance_residual_linf = max_abs(&force_balance_residual) / residual_scale;
     let force_balance_residual_l2 = (force_balance_residual
@@ -143,6 +152,7 @@ pub fn solve_frc_equilibrium(
         psi,
         b_z,
         b_theta,
+        j_theta: j_theta.clone(),
         p,
         r_null,
         separatrix_index,
@@ -152,6 +162,10 @@ pub fn solve_frc_equilibrium(
         residual,
         delta,
         pressure_balance_ratio,
+        ampere_residual,
+        ampere_residual_linf,
+        ampere_residual_l2,
+        peak_j_theta_a_m2: max_abs(&j_theta),
         force_balance_residual,
         force_balance_residual_linf,
         force_balance_residual_l2,
@@ -238,18 +252,37 @@ fn cylindrical_flux_from_bz(rho: &Array1<f64>, b_z: &Array1<f64>) -> Array1<f64>
     psi
 }
 
+fn toroidal_current_density_from_bz(rho: &Array1<f64>, b_z: &Array1<f64>) -> Array1<f64> {
+    let dbz_dr = gradient_edge_order2(rho, b_z);
+    dbz_dr.mapv(|value| -value / MU_0)
+}
+
+fn ampere_current_closure_residual(
+    rho: &Array1<f64>,
+    b_z: &Array1<f64>,
+    j_theta: &Array1<f64>,
+) -> Array1<f64> {
+    let dbz_dr = gradient_edge_order2(rho, b_z);
+    Array1::from_iter(
+        j_theta
+            .iter()
+            .zip(dbz_dr.iter())
+            .map(|(j, db)| MU_0 * j + db),
+    )
+}
+
 fn radial_force_balance_residual(
     rho: &Array1<f64>,
     b_z: &Array1<f64>,
+    j_theta: &Array1<f64>,
     p: &Array1<f64>,
 ) -> Array1<f64> {
     let dp_dr = gradient_edge_order2(rho, p);
-    let dbz_dr = gradient_edge_order2(rho, b_z);
     Array1::from_iter(
         dp_dr
             .iter()
-            .zip(b_z.iter().zip(dbz_dr.iter()))
-            .map(|(dp, (b, db))| dp - (-(b / MU_0) * db)),
+            .zip(j_theta.iter().zip(b_z.iter()))
+            .map(|(dp, (j, b))| dp - (j * b)),
     )
 }
 
@@ -420,9 +453,32 @@ mod tests {
         assert!((state.r_null - inputs.r_s).abs() < 2.5e-4);
         assert!(state.energy_j > 0.0);
         assert!(state.pressure_balance_ratio > 0.0);
+        assert!(state.peak_j_theta_a_m2 > 0.0);
+        assert!(state.ampere_residual_linf <= 1.0e-12);
+        assert!(state.ampere_residual_l2 <= 1.0e-12);
+        assert_eq!(state.j_theta.len(), rho.len());
+        assert_eq!(state.ampere_residual.len(), rho.len());
         assert!(state.force_balance_residual_linf.is_finite());
         assert!(state.force_balance_residual_l2.is_finite());
         assert_eq!(state.force_balance_residual.len(), rho.len());
+    }
+
+    #[test]
+    fn toroidal_current_density_closes_ampere_law() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 401);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let dbz_dr = gradient_edge_order2(&rho, &state.b_z);
+        let dp_dr = gradient_edge_order2(&rho, &state.p);
+        for i in 0..rho.len() {
+            assert!((state.j_theta[i] + dbz_dr[i] / MU_0).abs() <= 1.0e-6);
+            assert!(state.ampere_residual[i].abs() <= 1.0e-12);
+            assert!(
+                (state.force_balance_residual[i] - (dp_dr[i] - state.j_theta[i] * state.b_z[i]))
+                    .abs()
+                    <= 1.0e-6
+            );
+        }
     }
 
     #[test]

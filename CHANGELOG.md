@@ -18,6 +18,9 @@
 - Added finite-grid convergence evidence for the accepted no-rotation FRC
   scalar invariants across the tracked benchmark report, Python tests, Rust
   tests, and public benchmark/method documentation.
+- Added explicit toroidal current-density and Ampere closure diagnostics for
+  the accepted no-rotation FRC contract across Python, Rust, PyO3 parity tests,
+  benchmark JSON, and public physics documentation.
 
 ## [3.9.8] - 2026-06-02
 

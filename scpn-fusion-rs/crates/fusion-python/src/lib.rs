@@ -1744,6 +1744,7 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("psi", state.psi.into_pyarray(py))?;
     out.set_item("B_z", state.b_z.into_pyarray(py))?;
     out.set_item("B_theta", state.b_theta.into_pyarray(py))?;
+    out.set_item("J_theta", state.j_theta.into_pyarray(py))?;
     out.set_item("p", state.p.into_pyarray(py))?;
     out.set_item("R_null", state.r_null)?;
     out.set_item("separatrix_index", state.separatrix_index)?;
@@ -1753,6 +1754,10 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("residual", state.residual)?;
     out.set_item("delta", state.delta)?;
     out.set_item("pressure_balance_ratio", state.pressure_balance_ratio)?;
+    out.set_item("ampere_residual", state.ampere_residual.into_pyarray(py))?;
+    out.set_item("ampere_residual_linf", state.ampere_residual_linf)?;
+    out.set_item("ampere_residual_l2", state.ampere_residual_l2)?;
+    out.set_item("peak_j_theta_A_m2", state.peak_j_theta_a_m2)?;
     out.set_item(
         "force_balance_residual",
         state.force_balance_residual.into_pyarray(py),

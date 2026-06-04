@@ -76,14 +76,21 @@ where $\rho_i(r) = \sqrt{2m_iT_i}/(e|B_z(r)|)$.  Numerically the code
 integrates the finite form
 $r e |B_z(r)|/\sqrt{2m_iT_i}$ over the clipped interval $[0,R_s]$.
 
-The validation report also carries the normalised radial force-balance
-diagnostic
+The solver derives the toroidal diamagnetic current density directly from
+Ampere's law:
+
+$$J_\theta = -\mu_0^{-1}\frac{dB_z}{dr},\qquad
+\mathcal{A}_r = \mu_0J_\theta + \frac{dB_z}{dr}.$$
+
+The validation report carries both the Ampere closure residual
+$\mathcal{A}_r$ and the normalised radial force-balance diagnostic
 
 $$\mathcal{R}_r = \frac{d p}{d r} - (\mathbf{J}\times\mathbf{B})_r,$$
 
 with $\mathbf{J}_\theta = -\mu_0^{-1} dB_z/dr$ for the no-rotation axial-field
-slice.  The diagnostic is visible by default and becomes a fail-closed gate only
-when an explicit `force_balance_tolerance` is supplied.
+slice.  The Ampere closure gate is active by default; the force-balance
+diagnostic is visible by default and becomes a fail-closed gate only when an
+explicit `force_balance_tolerance` is supplied.
 
 The tracked benchmark report now includes finite-grid convergence evidence for
 the accepted no-rotation scalar invariants: null radius, Eq. 27 `s`, energy per

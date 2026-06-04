@@ -24,14 +24,20 @@ B_z(r) = -B_ext * tanh((r^2 - R_s^2) / (2 R_s delta))
 ```
 
 The solver integrates the cylindrical flux from `r * B_z`, reports finite
-pressure and energy diagnostics, locates the magnetic null, and exposes the
-normalised radial ideal-MHD force-balance residual:
+pressure and energy diagnostics, locates the magnetic null, exposes toroidal
+diamagnetic current density from Ampere's law, and records the normalised
+radial ideal-MHD force-balance residual:
 
 ```text
 R_r = dp/dr - (J x B)_r
 ```
 
 For this no-rotation axial-field slice, `J_theta = -mu_0^-1 dB_z/dr`.
+The Ampere closure residual is recorded as:
+
+```text
+A_r = mu_0 J_theta + dB_z/dr
+```
 
 The quality-of-equilibrium parameter is computed from the local thermal-ion
 gyroradius profile, not from the separatrix-layer shortcut:
@@ -54,6 +60,8 @@ Accepted:
 - PyO3 exposure through `scpn_fusion_rs.py_solve_frc_equilibrium` when the
   Rust extension is built.
 - Cross-surface parity tests for the exposed Python and Rust/PyO3 paths.
+- Explicit `J_theta` current-density and Ampere closure residual diagnostics
+  for the accepted axial-field slice.
 - Finite-grid convergence diagnostics for the implemented no-rotation scalar
   invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
   ratio.
@@ -98,9 +106,9 @@ cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
 ## Evidence interpretation
 
 The benchmark report compares scalar diagnostics and weighted numerical
-checksums for `B_z`, `psi`, pressure, and the Eq. 27 `s` value. It also records
-finite-grid convergence against the finest tracked radial grid for the scalar
-invariants accepted in this contract. Blocked or not-applicable rows are
-recorded instead of promoting missing surfaces to parity evidence. This is
-intentional: the accepted claim is limited to the explicit no-rotation
-analytical FRC contract.
+checksums for `B_z`, `J_theta`, `psi`, pressure, and the Eq. 27 `s` value. It
+also records Ampere residual and peak-current diagnostics plus finite-grid
+convergence against the finest tracked radial grid for the scalar invariants
+accepted in this contract. Blocked or not-applicable rows are recorded instead
+of promoting missing surfaces to parity evidence. This is intentional: the
+accepted claim is limited to the explicit no-rotation analytical FRC contract.

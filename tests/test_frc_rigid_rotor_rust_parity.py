@@ -72,8 +72,15 @@ def test_rust_frc_matches_python_reference() -> None:
         np.testing.assert_allclose(rust_state["rho"], python_state.rho, rtol=0.0, atol=0.0)
         np.testing.assert_allclose(rust_state["B_z"], python_state.B_z, rtol=0.0, atol=1.0e-12)
         np.testing.assert_allclose(rust_state["B_theta"], python_state.B_theta, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(rust_state["J_theta"], python_state.J_theta, rtol=1.0e-12, atol=1.0e-6)
         np.testing.assert_allclose(rust_state["psi"], python_state.psi, rtol=1.0e-13, atol=1.0e-13)
         np.testing.assert_allclose(rust_state["p"], python_state.p, rtol=1.0e-12, atol=1.0e-6)
+        np.testing.assert_allclose(
+            rust_state["ampere_residual"],
+            python_state.ampere_residual,
+            rtol=0.0,
+            atol=1.0e-12,
+        )
         np.testing.assert_allclose(
             rust_state["force_balance_residual"],
             python_state.force_balance_residual,
@@ -91,6 +98,18 @@ def test_rust_frc_matches_python_reference() -> None:
         assert float(rust_state["pressure_balance_ratio"]) == pytest.approx(
             python_state.pressure_balance_ratio,
             rel=1.0e-12,
+        )
+        assert float(rust_state["peak_j_theta_A_m2"]) == pytest.approx(
+            python_state.peak_j_theta_A_m2,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["ampere_residual_linf"]) == pytest.approx(
+            python_state.ampere_residual_linf,
+            abs=1.0e-12,
+        )
+        assert float(rust_state["ampere_residual_l2"]) == pytest.approx(
+            python_state.ampere_residual_l2,
+            abs=1.0e-12,
         )
         assert float(rust_state["force_balance_residual_linf"]) == pytest.approx(
             python_state.force_balance_residual_linf,

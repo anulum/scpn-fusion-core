@@ -7,7 +7,7 @@
 # SCPN Fusion Core — FRC Rigid-Rotor Tests
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from typing import TypeAlias
 
 import numpy as np
@@ -17,6 +17,8 @@ from scipy.integrate import trapezoid
 
 from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
 from scpn_fusion.core.frc_rigid_rotor import (
+    MU_0,
+    ampere_residual,
     force_balance_residual,
     ion_gyroradius_m,
     null_radius,
@@ -160,11 +162,42 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
 
     assert state.energy_J > 0.0
     assert state.pressure_balance_ratio > 0.0
+    assert state.J_theta.shape == rho.shape
+    assert state.ampere_residual.shape == rho.shape
+    assert state.peak_j_theta_A_m2 > 0.0
+    assert state.ampere_residual_linf <= 1.0e-12
+    assert state.ampere_residual_l2 <= 1.0e-12
     assert state.force_balance_residual.shape == rho.shape
     assert state.force_balance_residual_linf >= 0.0
     assert state.force_balance_residual_l2 >= 0.0
     assert np.all(np.isfinite(state.psi))
     assert np.all(state.p > 0.0)
+
+
+def test_toroidal_current_density_closes_ampere_law() -> None:
+    inputs = _inputs(delta=0.02)
+    rho: FloatArray = np.linspace(0.0, 0.4, 401)
+
+    state = solve_frc_equilibrium(inputs, rho)
+
+    d_bz_dr = np.gradient(state.B_z, state.rho, edge_order=2)
+    dp_dr = np.gradient(state.p, state.rho, edge_order=2)
+    expected_j_theta = -d_bz_dr / MU_0
+    expected_force_residual = dp_dr - state.J_theta * state.B_z
+
+    np.testing.assert_allclose(state.J_theta, expected_j_theta, rtol=1.0e-12, atol=1.0e-6)
+    np.testing.assert_allclose(
+        ampere_residual(state),
+        MU_0 * state.J_theta + d_bz_dr,
+        rtol=0.0,
+        atol=1.0e-12,
+    )
+    np.testing.assert_allclose(
+        force_balance_residual(state),
+        expected_force_residual,
+        rtol=1.0e-12,
+        atol=1.0e-4,
+    )
 
 
 def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
@@ -174,6 +207,11 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     state = solve_frc_equilibrium(inputs, rho)
     residual = force_balance_residual(state)
     diagnostic_report = validate_equilibrium(state)
+    corrupted_ampere = replace(state, ampere_residual_linf=1.0e-6)
+    ampere_fail_report = validate_equilibrium(
+        corrupted_ampere,
+        ampere_tolerance=1.0e-9,
+    )
     strict_report = validate_equilibrium(state, force_balance_tolerance=1.0e-12)
     loose_report = validate_equilibrium(
         state,
@@ -182,7 +220,10 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
 
     assert residual.shape == rho.shape
     assert np.all(np.isfinite(residual))
+    assert diagnostic_report.ampere_closure_passed is True
     assert diagnostic_report.passed
+    assert ampere_fail_report.ampere_closure_passed is False
+    assert ampere_fail_report.passed is False
     assert strict_report.force_balance_passed is False
     assert strict_report.passed is False
     assert loose_report.force_balance_passed is True

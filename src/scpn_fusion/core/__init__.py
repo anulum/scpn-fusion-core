@@ -6,6 +6,8 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 """Public core package exports for physics models, solvers, and utilities."""
 
+from typing import Any
+
 try:
     from ._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
@@ -97,6 +99,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "FRCValidationReport": (".frc_rigid_rotor", "FRCValidationReport"),
     "ion_gyroradius_m": (".frc_rigid_rotor", "ion_gyroradius_m"),
     "solve_frc_equilibrium": (".frc_rigid_rotor", "solve_frc_equilibrium"),
+    "ampere_residual": (".frc_rigid_rotor", "ampere_residual"),
     "force_balance_residual": (".frc_rigid_rotor", "force_balance_residual"),
     "null_radius": (".frc_rigid_rotor", "null_radius"),
     "s_parameter": (".frc_rigid_rotor", "s_parameter"),
@@ -216,7 +219,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
 }
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     if name in _LAZY_IMPORTS:
         module_path, attr = _LAZY_IMPORTS[name]
         import importlib
