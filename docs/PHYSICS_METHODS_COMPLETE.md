@@ -51,8 +51,9 @@ where $\hat\psi = (\psi - \psi_{\rm axis})/(\psi_{\rm bdry} - \psi_{\rm axis})$.
 ## 1A. Field-Reversed Configuration Rigid-Rotor Analytical Limit
 
 The FRC workstream now exposes the Steinhauer no-rotation analytical limit as
-the first accepted `FUS-C.1` slice.  It is not yet the full rotating
-rigid-rotor BVP and it is not yet the Rust production path.
+the first accepted `FUS-C.1` contract.  It is not yet the full rotating
+rigid-rotor BVP.  The accepted no-rotation contract is implemented in Python
+and Rust, with optional PyO3 exposure when the native extension is built.
 
 The axial field follows Steinhauer (2011), Eq. 7:
 
@@ -73,9 +74,10 @@ with $\mathbf{J}_\theta = -\mu_0^{-1} dB_z/dr$ for the no-rotation axial-field
 slice.  The diagnostic is visible by default and becomes a fail-closed gate only
 when an explicit `force_balance_tolerance` is supplied.
 
-**Key file:** `core/frc_rigid_rotor.py`.
+**Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 
-**Validation:** `tests/test_frc_rigid_rotor.py`.
+**Validation:** `tests/test_frc_rigid_rotor.py`, `tests/test_frc_rigid_rotor_rust_parity.py`,
+`benchmarks/bench_frc_rigid_rotor.py`.
 
 ---
 

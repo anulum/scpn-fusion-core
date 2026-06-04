@@ -12,6 +12,7 @@
 use ndarray::{Array1, Array2};
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -40,6 +41,9 @@ use fusion_nuclear::neutronics::{BreedingBlanket, VolumetricBlanketConfig};
 use fusion_physics::design_scanner;
 use fusion_physics::fno::FnoController;
 use fusion_physics::fokker_planck::FokkerPlanckSolver;
+use fusion_physics::frc::{
+    solve_frc_equilibrium as solve_frc_equilibrium_rust, RigidRotorFrcInputs,
+};
 use fusion_physics::hall_mhd::HallMHD;
 use fusion_physics::sawtooth::ReducedMHD;
 use fusion_physics::turbulence::DriftWavePhysics;
@@ -1708,6 +1712,60 @@ impl PyNonlinearGKSolver {
     }
 }
 
+/// Python-accessible Steinhauer no-rotation FRC analytical solver.
+#[pyfunction]
+#[pyo3(signature = (rho, n0, t_i_ev, t_e_ev, theta_dot, r_s, b_ext, delta=None, tolerance=1.0e-10))]
+fn py_solve_frc_equilibrium<'py>(
+    py: Python<'py>,
+    rho: PyReadonlyArray1<'py, f64>,
+    n0: f64,
+    t_i_ev: f64,
+    t_e_ev: f64,
+    theta_dot: f64,
+    r_s: f64,
+    b_ext: f64,
+    delta: Option<f64>,
+    tolerance: f64,
+) -> PyResult<Bound<'py, PyDict>> {
+    let inputs = RigidRotorFrcInputs {
+        n0,
+        t_i_ev,
+        t_e_ev,
+        theta_dot,
+        r_s,
+        b_ext,
+        delta,
+    };
+    let rho_grid = rho.as_array().to_owned();
+    let state = solve_frc_equilibrium_rust(&inputs, &rho_grid, tolerance)
+        .map_err(|err| pyo3::exceptions::PyValueError::new_err(err.to_string()))?;
+    let out = PyDict::new(py);
+    out.set_item("rho", state.rho.into_pyarray(py))?;
+    out.set_item("psi", state.psi.into_pyarray(py))?;
+    out.set_item("B_z", state.b_z.into_pyarray(py))?;
+    out.set_item("B_theta", state.b_theta.into_pyarray(py))?;
+    out.set_item("p", state.p.into_pyarray(py))?;
+    out.set_item("R_null", state.r_null)?;
+    out.set_item("separatrix_index", state.separatrix_index)?;
+    out.set_item("s_parameter", state.s_parameter)?;
+    out.set_item("energy_J", state.energy_j)?;
+    out.set_item("converged", state.converged)?;
+    out.set_item("residual", state.residual)?;
+    out.set_item("delta", state.delta)?;
+    out.set_item("pressure_balance_ratio", state.pressure_balance_ratio)?;
+    out.set_item(
+        "force_balance_residual",
+        state.force_balance_residual.into_pyarray(py),
+    )?;
+    out.set_item(
+        "force_balance_residual_linf",
+        state.force_balance_residual_linf,
+    )?;
+    out.set_item("force_balance_residual_l2", state.force_balance_residual_l2)?;
+    out.set_item("model", state.model)?;
+    Ok(out)
+}
+
 #[pymodule]
 fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFusionKernel>()?;
@@ -1759,5 +1817,6 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_info, m)?)?;
     }
     m.add_class::<PyNonlinearGKSolver>()?;
+    m.add_function(wrap_pyfunction!(py_solve_frc_equilibrium, m)?)?;
     Ok(())
 }

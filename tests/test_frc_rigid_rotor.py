@@ -8,8 +8,10 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
+from typing import TypeAlias
 
 import numpy as np
+from numpy.typing import NDArray
 import pytest
 
 from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
@@ -20,6 +22,8 @@ from scpn_fusion.core.frc_rigid_rotor import (
     s_parameter,
     validate_equilibrium,
 )
+
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
 def _inputs(delta: float | None = 0.02, theta_dot: float = 0.0) -> RigidRotorFRCInputs:
@@ -34,26 +38,26 @@ def _inputs(delta: float | None = 0.02, theta_dot: float = 0.0) -> RigidRotorFRC
     )
 
 
-def test_inputs_are_immutable():
+def test_inputs_are_immutable() -> None:
     inputs = _inputs()
     with pytest.raises(FrozenInstanceError):
         inputs.__setattr__("R_s", 0.3)
 
 
-@pytest.mark.parametrize("n_points", [32, 64, 128, 256])
-def test_no_rotation_limit_matches_steinhauer_field(n_points: int):
-    inputs = _inputs(delta=0.018)
-    rho = np.linspace(0.0, 0.35, n_points)
+def test_no_rotation_limit_matches_steinhauer_field() -> None:
+    for n_points in [32, 64, 128, 256]:
+        inputs = _inputs(delta=0.018)
+        rho: FloatArray = np.linspace(0.0, 0.35, n_points)
 
-    state = solve_frc_equilibrium(inputs, rho)
+        state = solve_frc_equilibrium(inputs, rho)
 
-    expected = -inputs.B_ext * np.tanh((rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * inputs.delta))
-    assert np.allclose(state.B_z, expected, rtol=0.0, atol=1e-14)
-    assert state.converged is True
-    assert state.residual <= 1e-14
+        expected = -inputs.B_ext * np.tanh((rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * inputs.delta))
+        assert np.allclose(state.B_z, expected, rtol=0.0, atol=1e-14)
+        assert state.converged is True
+        assert state.residual <= 1e-14
 
 
-def test_null_radius_and_pressure_peak_track_separatrix():
+def test_null_radius_and_pressure_peak_track_separatrix() -> None:
     inputs = _inputs(delta=0.015)
     rho = np.linspace(0.0, 0.4, 401)
 
@@ -66,7 +70,7 @@ def test_null_radius_and_pressure_peak_track_separatrix():
     assert report.passed
 
 
-def test_default_delta_uses_thermal_ion_gyroradius():
+def test_default_delta_uses_thermal_ion_gyroradius() -> None:
     inputs = _inputs(delta=None)
     rho = np.linspace(0.0, 0.4, 129)
 
@@ -77,7 +81,7 @@ def test_default_delta_uses_thermal_ion_gyroradius():
     assert np.isclose(s_parameter(state), inputs.R_s / (2.0 * expected_delta))
 
 
-def test_input_validation_rejects_bad_grid_and_rotating_bvp():
+def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
     inputs = _inputs()
 
     with pytest.raises(ValueError, match="strictly increasing"):
@@ -90,7 +94,7 @@ def test_input_validation_rejects_bad_grid_and_rotating_bvp():
         solve_frc_equilibrium(_inputs(theta_dot=1.0), np.linspace(0.0, 0.4, 32))
 
 
-def test_energy_and_pressure_balance_are_finite_positive_diagnostics():
+def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     inputs = _inputs(delta=0.025)
     rho = np.linspace(0.0, 0.45, 257)
 
@@ -105,7 +109,7 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics():
     assert np.all(state.p > 0.0)
 
 
-def test_force_balance_residual_is_explicit_diagnostic_gate():
+def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     inputs = _inputs(delta=0.02)
     rho = np.linspace(0.0, 0.4, 401)
 

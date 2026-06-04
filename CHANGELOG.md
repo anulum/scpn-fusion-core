@@ -8,6 +8,10 @@
   API documentation while keeping rotating BVP cases fail-closed.
 - Added explicit FRC radial force-balance residual diagnostics with an optional
   fail-closed validation tolerance for analytical no-rotation runs.
+- Added Rust `fusion-physics::frc` support, a PyO3
+  `py_solve_frc_equilibrium` bridge, parity tests, Criterion coverage, and the
+  tracked `validation/reports/frc_rigid_rotor_benchmark.json` benchmark report for the
+  accepted Steinhauer no-rotation FRC analytical contract.
 
 ## [3.9.8] - 2026-06-02
 

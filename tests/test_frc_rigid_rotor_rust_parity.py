@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — FRC Rust Parity Tests
+"""Parity tests for the Rust FRC analytical solver exposed through PyO3."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+from typing import Any, TypeAlias, cast
+
+import numpy as np
+from numpy.typing import NDArray
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
+
+FloatArray: TypeAlias = NDArray[np.float64]
+
+try:
+    scpn_fusion_rs = cast(Any, __import__("scpn_fusion_rs"))
+    HAS_RUST = hasattr(scpn_fusion_rs, "py_solve_frc_equilibrium")
+except ImportError:
+    scpn_fusion_rs = cast(Any, None)
+    HAS_RUST = False
+
+pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust FRC extension not available")
+
+
+def _case(delta: float | None, grid_points: int, b_ext: float, r_s: float) -> tuple[RigidRotorFRCInputs, FloatArray]:
+    inputs = RigidRotorFRCInputs(
+        n0=2.0e20,
+        T_i_eV=10_000.0,
+        T_e_eV=5_000.0,
+        theta_dot=0.0,
+        R_s=r_s,
+        B_ext=b_ext,
+        delta=delta,
+    )
+    return inputs, np.linspace(0.0, 2.0 * r_s, grid_points)
+
+
+def test_rust_frc_matches_python_reference() -> None:
+    cases: list[tuple[float | None, int, float, float]] = [
+        (0.015, 33, 3.0, 0.18),
+        (0.020, 65, 5.0, 0.20),
+        (0.025, 129, 7.5, 0.24),
+        (None, 257, 5.0, 0.20),
+    ]
+    for delta, grid_points, b_ext, r_s in cases:
+        inputs, rho = _case(delta, grid_points, b_ext, r_s)
+        python_state = solve_frc_equilibrium(inputs, rho)
+        rust_state = scpn_fusion_rs.py_solve_frc_equilibrium(
+            rho,
+            inputs.n0,
+            inputs.T_i_eV,
+            inputs.T_e_eV,
+            inputs.theta_dot,
+            inputs.R_s,
+            inputs.B_ext,
+            inputs.delta,
+            1.0e-10,
+        )
+
+        np.testing.assert_allclose(rust_state["rho"], python_state.rho, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(rust_state["B_z"], python_state.B_z, rtol=0.0, atol=1.0e-12)
+        np.testing.assert_allclose(rust_state["B_theta"], python_state.B_theta, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(rust_state["psi"], python_state.psi, rtol=1.0e-13, atol=1.0e-13)
+        np.testing.assert_allclose(rust_state["p"], python_state.p, rtol=1.0e-12, atol=1.0e-6)
+        np.testing.assert_allclose(
+            rust_state["force_balance_residual"],
+            python_state.force_balance_residual,
+            rtol=1.0e-10,
+            atol=1.0e-2,
+        )
+
+        assert rust_state["model"] == python_state.model
+        assert rust_state["converged"] is python_state.converged
+        assert int(rust_state["separatrix_index"]) == python_state.separatrix_index
+        assert float(rust_state["R_null"]) == pytest.approx(python_state.R_null, abs=1.0e-12)
+        assert float(rust_state["s_parameter"]) == pytest.approx(python_state.s_parameter, rel=1.0e-13)
+        assert float(rust_state["delta"]) == pytest.approx(python_state.delta, rel=1.0e-13)
+        assert float(rust_state["energy_J"]) == pytest.approx(python_state.energy_J, rel=1.0e-12)
+        assert float(rust_state["pressure_balance_ratio"]) == pytest.approx(
+            python_state.pressure_balance_ratio,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["force_balance_residual_linf"]) == pytest.approx(
+            python_state.force_balance_residual_linf,
+            rel=1.0e-10,
+        )
+        assert float(rust_state["force_balance_residual_l2"]) == pytest.approx(
+            python_state.force_balance_residual_l2,
+            rel=1.0e-10,
+        )
+
+
+def test_rust_frc_rejects_rotating_bvp_until_implemented() -> None:
+    inputs, rho = _case(0.02, 65, 5.0, 0.20)
+    with pytest.raises(ValueError, match="rotating rigid-rotor BVP"):
+        scpn_fusion_rs.py_solve_frc_equilibrium(
+            rho,
+            inputs.n0,
+            inputs.T_i_eV,
+            inputs.T_e_eV,
+            1.0,
+            inputs.R_s,
+            inputs.B_ext,
+            inputs.delta,
+            1.0e-10,
+        )

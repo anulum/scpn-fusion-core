@@ -1,0 +1,286 @@
+{
+  "benchmark": "frc_rigid_rotor_no_rotation_analytical",
+  "claim_boundary": "No rotating rigid-rotor BVP, no full FRC transport, no reduced-order substitution.",
+  "contract": "Steinhauer 2011 no-rotation analytical axial-field profile",
+  "generated_at_utc": "2026-06-04T02:38:14.760070+00:00",
+  "grids": [
+    64,
+    256,
+    1024
+  ],
+  "host": {
+    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]"
+  },
+  "repeats": 5,
+  "schema_version": 1,
+  "surfaces": {
+    "go": {
+      "reason": "No equivalent FRC rigid-rotor solver is exposed in the Go surface.",
+      "status": "not_applicable_no_frc_surface"
+    },
+    "julia": {
+      "reason": "No equivalent FRC rigid-rotor solver is exposed in the Julia surface.",
+      "status": "not_applicable_no_frc_surface"
+    },
+    "lean": {
+      "reason": "No equivalent executable FRC rigid-rotor solver is exposed in the Lean surface.",
+      "status": "not_applicable_no_frc_surface"
+    },
+    "python_numpy": {
+      "metrics": [
+        {
+          "b_z_checksum": -5120.926580205899,
+          "energy_j_per_m": 4732409.656562342,
+          "force_balance_residual_linf": 0.9999772890794661,
+          "grid_points": 64,
+          "p_checksum": 960315552.5670326,
+          "pressure_balance_ratio": 0.18590953563409618,
+          "psi_checksum": -57.86598757739498,
+          "r_null_m": 0.19997522298778683,
+          "s_parameter": 5.0,
+          "wall_time_s_median": 0.00028902897611260414,
+          "wall_time_s_min": 0.0002609100192785263,
+          "wall_time_s_repeats": [
+            0.00040097511373460293,
+            0.0003330651670694351,
+            0.00028902897611260414,
+            0.0002805229742079973,
+            0.0002609100192785263
+          ]
+        },
+        {
+          "b_z_checksum": -81924.74186706443,
+          "energy_j_per_m": 4732380.633575541,
+          "force_balance_residual_linf": 0.9999866711956095,
+          "grid_points": 256,
+          "p_checksum": 15201308095.28419,
+          "pressure_balance_ratio": 0.18588634585135236,
+          "psi_checksum": -865.501835563199,
+          "r_null_m": 0.19999846370550936,
+          "s_parameter": 5.0,
+          "wall_time_s_median": 0.0003242159727960825,
+          "wall_time_s_min": 0.00028673489578068256,
+          "wall_time_s_repeats": [
+            0.00031173788011074066,
+            0.00028673489578068256,
+            0.0003293082118034363,
+            0.00034397211857140064,
+            0.0003242159727960825
+          ]
+        },
+        {
+          "b_z_checksum": -1310735.8190520962,
+          "energy_j_per_m": 4732378.833975077,
+          "force_balance_residual_linf": 0.9999873739759757,
+          "grid_points": 1024,
+          "p_checksum": 242571941278.3713,
+          "pressure_balance_ratio": 0.1858849079168695,
+          "psi_checksum": -13614.908420752407,
+          "r_null_m": 0.19999990445211743,
+          "s_parameter": 5.0,
+          "wall_time_s_median": 0.0004494418390095234,
+          "wall_time_s_min": 0.00033785798586905,
+          "wall_time_s_repeats": [
+            0.00033785798586905,
+            0.0003773858770728111,
+            0.0004494418390095234,
+            0.0004718650598078966,
+            0.0006350670009851456
+          ]
+        }
+      ],
+      "status": "available"
+    },
+    "python_pyo3": {
+      "metrics": [
+        {
+          "b_z_checksum": -5120.9265802059,
+          "energy_j_per_m": 4732409.656562341,
+          "force_balance_residual_linf": 0.9999772890794661,
+          "grid_points": 64,
+          "p_checksum": 960315552.5670326,
+          "pressure_balance_ratio": 0.18590953563409615,
+          "psi_checksum": -57.86598757739499,
+          "r_null_m": 0.19997522298778683,
+          "s_parameter": 5.0,
+          "wall_time_s_median": 1.0438961908221245e-05,
+          "wall_time_s_min": 7.346039637923241e-06,
+          "wall_time_s_repeats": [
+            3.218301571905613e-05,
+            1.0438961908221245e-05,
+            9.813113138079643e-06,
+            7.346039637923241e-06,
+            2.1120067685842514e-05
+          ]
+        },
+        {
+          "b_z_checksum": -81924.74186706443,
+          "energy_j_per_m": 4732380.633575541,
+          "force_balance_residual_linf": 0.9999866711956092,
+          "grid_points": 256,
+          "p_checksum": 15201308095.284187,
+          "pressure_balance_ratio": 0.18588634585135233,
+          "psi_checksum": -865.5018355631989,
+          "r_null_m": 0.19999846370550936,
+          "s_parameter": 5.0,
+          "wall_time_s_median": 2.649403177201748e-05,
+          "wall_time_s_min": 2.022692933678627e-05,
+          "wall_time_s_repeats": [
+            2.649403177201748e-05,
+            2.03610397875309e-05,
+            2.022692933678627e-05,
+            2.739601768553257e-05,
+            2.9316870495676994e-05
+          ]
+        },
+        {
+          "b_z_checksum": -1310735.8190520962,
+          "energy_j_per_m": 4732378.8339750795,
+          "force_balance_residual_linf": 0.9999873739759754,
+          "grid_points": 1024,
+          "p_checksum": 242571941278.3713,
+          "pressure_balance_ratio": 0.1858849079168695,
+          "psi_checksum": -13614.908420752397,
+          "r_null_m": 0.19999990445211743,
+          "s_parameter": 5.0,
+          "wall_time_s_median": 0.00010383804328739643,
+          "wall_time_s_min": 8.380296640098095e-05,
+          "wall_time_s_repeats": [
+            8.380296640098095e-05,
+            8.646398782730103e-05,
+            0.0001084539107978344,
+            0.00010383804328739643,
+            0.00010393280535936356
+          ]
+        }
+      ],
+      "parity": {
+        "comparisons": [
+          {
+            "b_z_checksum_abs_error": 9.094947017729282e-13,
+            "energy_rel_error": 1.9679669390498163e-16,
+            "force_balance_linf_rel_error": 0.0,
+            "grid_points": 64,
+            "p_checksum_rel_error": 0.0,
+            "pressure_balance_rel_error": 2.7755575615628914e-17,
+            "psi_checksum_abs_error": 7.105427357601002e-15,
+            "r_null_abs_error": 0.0,
+            "s_parameter_rel_error": 0.0,
+            "status": "passed"
+          },
+          {
+            "b_z_checksum_abs_error": 0.0,
+            "energy_rel_error": 0.0,
+            "force_balance_linf_rel_error": 2.220446049250313e-16,
+            "grid_points": 256,
+            "p_checksum_rel_error": 1.2547266464549886e-16,
+            "pressure_balance_rel_error": 2.7755575615628914e-17,
+            "psi_checksum_abs_error": 1.1368683772161603e-13,
+            "r_null_abs_error": 0.0,
+            "s_parameter_rel_error": 0.0,
+            "status": "passed"
+          },
+          {
+            "b_z_checksum_abs_error": 0.0,
+            "energy_rel_error": 5.903939270008891e-16,
+            "force_balance_linf_rel_error": 3.3306690738754696e-16,
+            "grid_points": 1024,
+            "p_checksum_rel_error": 0.0,
+            "pressure_balance_rel_error": 0.0,
+            "psi_checksum_abs_error": 9.094947017729282e-12,
+            "r_null_abs_error": 0.0,
+            "s_parameter_rel_error": 0.0,
+            "status": "passed"
+          }
+        ],
+        "parity_passed": true,
+        "status": "available"
+      },
+      "status": "available"
+    },
+    "rust_fusion_physics": {
+      "metrics": [
+        {
+          "b_z_checksum": -5120.9265802059,
+          "energy_j_per_m": 4732409.656562341,
+          "force_balance_residual_linf": 0.9999772890794661,
+          "grid_points": 64,
+          "p_checksum": 960315552.5670326,
+          "pressure_balance_ratio": 0.18590953563409615,
+          "psi_checksum": -57.865987577394975,
+          "r_null_m": 0.19997522298778683,
+          "s_parameter": 5.0,
+          "wall_time_s": 7.9002e-05
+        },
+        {
+          "b_z_checksum": -81924.74186706445,
+          "energy_j_per_m": 4732380.633575541,
+          "force_balance_residual_linf": 0.9999866711956092,
+          "grid_points": 256,
+          "p_checksum": 15201308095.28419,
+          "pressure_balance_ratio": 0.18588634585135233,
+          "psi_checksum": -865.5018355631995,
+          "r_null_m": 0.19999846370550936,
+          "s_parameter": 5.0,
+          "wall_time_s": 5.0195e-05
+        },
+        {
+          "b_z_checksum": -1310735.8190520972,
+          "energy_j_per_m": 4732378.8339750795,
+          "force_balance_residual_linf": 0.9999873739759754,
+          "grid_points": 1024,
+          "p_checksum": 242571941278.37112,
+          "pressure_balance_ratio": 0.1858849079168695,
+          "psi_checksum": -13614.908420752376,
+          "r_null_m": 0.19999990445211743,
+          "s_parameter": 5.0,
+          "wall_time_s": 0.000175338
+        }
+      ],
+      "parity": {
+        "comparisons": [
+          {
+            "b_z_checksum_abs_error": 9.094947017729282e-13,
+            "energy_rel_error": 1.9679669390498163e-16,
+            "force_balance_linf_rel_error": 0.0,
+            "grid_points": 64,
+            "p_checksum_rel_error": 0.0,
+            "pressure_balance_rel_error": 2.7755575615628914e-17,
+            "psi_checksum_abs_error": 7.105427357601002e-15,
+            "r_null_abs_error": 0.0,
+            "s_parameter_rel_error": 0.0,
+            "status": "passed"
+          },
+          {
+            "b_z_checksum_abs_error": 2.9103830456733704e-11,
+            "energy_rel_error": 0.0,
+            "force_balance_linf_rel_error": 2.220446049250313e-16,
+            "grid_points": 256,
+            "p_checksum_rel_error": 0.0,
+            "pressure_balance_rel_error": 2.7755575615628914e-17,
+            "psi_checksum_abs_error": 4.547473508864641e-13,
+            "r_null_abs_error": 0.0,
+            "s_parameter_rel_error": 0.0,
+            "status": "passed"
+          },
+          {
+            "b_z_checksum_abs_error": 9.313225746154785e-10,
+            "energy_rel_error": 5.903939270008891e-16,
+            "force_balance_linf_rel_error": 3.3306690738754696e-16,
+            "grid_points": 1024,
+            "p_checksum_rel_error": 7.548501602659451e-16,
+            "pressure_balance_rel_error": 0.0,
+            "psi_checksum_abs_error": 3.092281986027956e-11,
+            "r_null_abs_error": 0.0,
+            "s_parameter_rel_error": 0.0,
+            "status": "passed"
+          }
+        ],
+        "parity_passed": true,
+        "status": "available"
+      },
+      "status": "available"
+    }
+  }
+}

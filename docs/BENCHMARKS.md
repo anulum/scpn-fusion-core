@@ -38,6 +38,26 @@ Published reports must retain blocker statuses when external artefacts are
 missing. Do not substitute synthetic, reduced-order, or partial diagnostic
 outputs for accepted full-fidelity parity evidence.
 
+## FRC rigid-rotor no-rotation analytical benchmark
+
+The accepted FRC analytical lane is benchmarked separately from Grad-Shafranov,
+gyrokinetic, and free-boundary evidence. It covers the Steinhauer no-rotation
+axial-field contract only:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
+```
+
+Tracked report: [`validation/reports/frc_rigid_rotor_benchmark.json`](../validation/reports/frc_rigid_rotor_benchmark.json)
+
+The report compares Python NumPy, Rust `fusion-physics`, and optional PyO3
+surfaces on `64`, `256`, and `1024` point radial grids using null radius,
+S-parameter, energy, pressure-balance, force-balance, and weighted numerical
+checksums for `B_z`, `psi`, and pressure. Go, Julia, and Lean are recorded as
+`not_applicable_no_frc_surface` until those languages expose equivalent solver
+logic. Nonzero-rotation FRC cases remain fail-closed and are not benchmarked as
+accepted physics.
+
 ## Type-checking non-regression gate
 
 The Python CI preflight runs a MyPy expansion guard before strict MyPy:
