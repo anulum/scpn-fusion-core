@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Added the FUS-C.5 conservative FRC n=1 tilt-mode diagnostic across Python
+  and Rust, including Belova-normalised MHD Alfvén-time growth scaling,
+  Steinhauer `s / E` rigid-body diagnostics, local non-isolated benchmark
+  evidence, public physics documentation, and explicit blocked Belova Table I
+  parity status.
 - Added the FUS-C.6 supplied-current MIF/FRC pulsed-compression contract
   across Python and Rust, including coil-field mapping, pressure-driven radial
   dynamics, adiabatic temperature and density evolution, energy residuals,

@@ -40,3 +40,7 @@ harness = false
 [[bench]]
 name = "pulsed_compression_bench"
 harness = false
+
+[[bench]]
+name = "tilt_mode_frc_bench"
+harness = false

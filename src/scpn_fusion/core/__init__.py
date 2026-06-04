@@ -160,6 +160,18 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     ),
     "spitzer_resistivity_ohm_m": (".pulsed_compression", "spitzer_resistivity_ohm_m"),
     "step_pulsed_compression": (".pulsed_compression", "step_pulsed_compression"),
+    # FRC tilt mode — conservative n=1 MHD diagnostic with blocked Belova parity
+    "FRCTiltModeReport": (".tilt_mode_frc", "FRCTiltModeReport"),
+    "FRCTiltModeThresholds": (".tilt_mode_frc", "FRCTiltModeThresholds"),
+    "alfven_speed_m_s": (".tilt_mode_frc", "alfven_speed_m_s"),
+    "belova_table1_acceptance_status": (
+        ".tilt_mode_frc",
+        "belova_table1_acceptance_status",
+    ),
+    "frc_tilt_growth_rate": (".tilt_mode_frc", "frc_tilt_growth_rate"),
+    "rigid_body_flr_regime": (".tilt_mode_frc", "rigid_body_flr_regime"),
+    "tilt_mode_report": (".tilt_mode_frc", "tilt_mode_report"),
+    "tilt_mode_stable": (".tilt_mode_frc", "tilt_mode_stable"),
     # Current drive — ECCD, NBI, LHCD sources
     "ECCDSource": (".current_drive", "ECCDSource"),
     "NBISource": (".current_drive", "NBISource"),

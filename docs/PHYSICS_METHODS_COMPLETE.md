@@ -355,6 +355,42 @@ external parity.
 
 ---
 
+## 1E. FRC n=1 Tilt-Mode Diagnostics
+
+The MIF lane exposes FUS-C.5 as a conservative FRC n=1 tilt diagnostic in
+Python and Rust. The accepted surface uses the Belova-normalised MHD
+Alfvén-time growth scaling and the Steinhauer `s` parameter already carried by
+the validated FRC equilibrium. It does not claim full Belova hybrid eigenvalue
+parity.
+
+For a supplied FRC equilibrium, the reference Alfvén speed is
+
+$$V_A = \frac{B_{\rm ref}}{\sqrt{\mu_0 n_{\rm peak}m_i}},$$
+
+and the axial half-length is
+
+$$Z_s = E R_s,$$
+
+where `E` is the prolate elongation. The MHD tilt diagnostic is
+
+$$\gamma_{\rm tilt} = C V_A/Z_s,$$
+
+with default `C = 1.2`. The rigid-body FLR diagnostic reports `s / E` against
+the thresholds `1.7`, `2.2`, and `2.8`. These thresholds are labelled as
+diagnostics only; the public stability boolean remains fail-closed while the
+Belova Table I and hybrid-eigenvalue parity row is blocked.
+
+**Key files:** `core/tilt_mode_frc.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/tilt_mode_frc.rs`,
+`docs/physics/tilt_mode_frc.md`.
+
+**Validation:** `tests/test_tilt_mode_frc.py`, Rust
+`fusion_physics::tilt_mode_frc` unit tests,
+`benchmarks/bench_tilt_mode_frc.py`,
+`validation/reports/tilt_mode_frc_benchmark.json`.
+
+---
+
 ## 2. JAX Differentiable GS Transport
 
 A fully differentiable 1.5D transport kernel in JAX, enabling `jax.grad` through the transport evolution for optimal-control and inverse problems.

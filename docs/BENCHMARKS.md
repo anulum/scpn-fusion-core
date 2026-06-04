@@ -1608,6 +1608,37 @@ Reproduce locally:
 PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
 ```
 
+### FRC n=1 tilt-mode diagnostic benchmark
+
+The tracked FUS-C.5 benchmark report is
+`validation/reports/tilt_mode_frc_benchmark.json`. It covers the conservative
+MHD Alfvén-time diagnostic only:
+
+$$\gamma_{\rm tilt}=C V_A/(E R_s).$$
+
+The report includes Python timing rows, Rust Criterion rows, source checksums,
+and an external-reference row for `belova_2001_table1_tilt_stability` with
+status `blocked_missing_public_digitised_reference`. It does not claim full
+Belova hybrid eigenvalue parity or Table I reproduction.
+
+Latest local non-isolated regression rows:
+
+| Row | Iterations | Mean seconds |
+|---|---:|---:|
+| Python `python_1000_reports` | 1,000 | 0.0181689320 |
+| Python `python_10000_reports` | 10,000 | 0.1856616192 |
+| Python `python_100000_reports` | 100,000 | 1.8066176060 |
+| Rust `rust_1000_reports` | 1,000 | 0.0000169120 |
+| Rust `rust_10000_reports` | 10,000 | 0.0001630262 |
+| Rust `rust_100000_reports` | 100,000 | 0.0016065238 |
+
+Reproduce locally:
+
+```bash
+cargo bench --manifest-path scpn-fusion-rs/Cargo.toml -p fusion-physics --bench tilt_mode_frc_bench -- --sample-size 10
+PYTHONPATH=src python benchmarks/bench_tilt_mode_frc.py
+```
+
 Local run on 2026-05-25 after aligning the Rust `fusion-math` SOR, multigrid,
 and GMRES kernels to the Python native convention `Delta*psi = source`:
 
