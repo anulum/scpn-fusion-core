@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Added the FUS-C.6 supplied-current MIF/FRC pulsed-compression contract
+  across Python and Rust, including coil-field mapping, pressure-driven radial
+  dynamics, adiabatic temperature and density evolution, energy residuals,
+  Ono non-adiabatic flux-carrier wiring, local non-isolated benchmark evidence,
+  and explicit blocked Slough Fig. 5 parity status.
 - Added the FUS-C.7 classical Faraday recovery contract across Python and Rust,
   including closed-form back-EMF, resistive-load energy integration, blocked
   budget status for missing FUS-C.6 compression-work evidence, local

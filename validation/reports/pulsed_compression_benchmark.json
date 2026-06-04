@@ -1,0 +1,101 @@
+{
+  "claim_boundary": "Local non-isolated regression evidence for supplied-current pulsed-compression dynamics wired to the Ono non-adiabatic flux carrier. Slough Fig. 5 parity remains blocked until a public digitised reference trajectory exists.",
+  "environment": {
+    "isolated": false,
+    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "results": [
+    {
+      "case": "python_64_steps",
+      "energy_balance_residual": 0.0,
+      "final_beta": 0.17775203038497003,
+      "final_ion_temperature_eV": 31751.606880027404,
+      "final_radius_m": 0.08408251898081921,
+      "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
+      "language": "python",
+      "mean_seconds": 0.024288590600000003,
+      "samples_seconds": [
+        0.026248783,
+        0.020876660000000002,
+        0.025713728,
+        0.021649221,
+        0.026954561000000002
+      ],
+      "steps": 64
+    },
+    {
+      "case": "python_256_steps",
+      "energy_balance_residual": 0.0,
+      "final_beta": 1.2691115525717518,
+      "final_ion_temperature_eV": 69701.12692249447,
+      "final_radius_m": 0.04662299255553862,
+      "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
+      "language": "python",
+      "mean_seconds": 0.0712454996,
+      "samples_seconds": [
+        0.078304354,
+        0.06972096500000001,
+        0.073241489,
+        0.056685757,
+        0.078274933
+      ],
+      "steps": 256
+    },
+    {
+      "case": "python_1024_steps",
+      "energy_balance_residual": 0.0,
+      "final_beta": 0.09010267152368466,
+      "final_ion_temperature_eV": 24195.51931762668,
+      "final_radius_m": 0.10309290669378662,
+      "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
+      "language": "python",
+      "mean_seconds": 0.2769814654,
+      "samples_seconds": [
+        0.264334008,
+        0.30246934400000003,
+        0.29404694800000003,
+        0.254079881,
+        0.269977146
+      ],
+      "steps": 1024
+    },
+    {
+      "case": "rust_1024_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_1024_steps/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 0.00010628791861652639,
+      "stddev_seconds": 4.8722007278265825e-06,
+      "steps": 1024
+    },
+    {
+      "case": "rust_256_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_256_steps/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 2.502995661022716e-05,
+      "stddev_seconds": 1.0781592828218411e-06,
+      "steps": 256
+    },
+    {
+      "case": "rust_64_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_64_steps/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 5.966838301779201e-06,
+      "stddev_seconds": 9.354974505873312e-08,
+      "steps": 64
+    },
+    {
+      "case": "slough_2011_fig5",
+      "language": "external_reference",
+      "required_artifact": "digitised radius/temperature/field trajectory with provenance and checksum",
+      "status": "blocked_missing_public_digitised_reference"
+    }
+  ],
+  "schema": "scpn-fusion-core.pulsed_compression_benchmark.v1",
+  "source_checksums": {
+    "benchmarks/bench_pulsed_compression.py": "b02a5aeb1aae636841b87c78aa86b55598127056f931773f9d90a5d97a4b8d64",
+    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "fb37598385e492b68966e930e368621b09d27429e344cb2e788f4aff9bf047c5",
+    "src/scpn_fusion/core/pulsed_compression.py": "a75f6331220535cf856619903b0d0bd1e3de869efd98efbbf235c63886b9e230"
+  }
+}

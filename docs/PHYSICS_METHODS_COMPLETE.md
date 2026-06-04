@@ -299,6 +299,62 @@ compression-work sidecar, `FaradayRecoveryReport.budget_claim_status` is
 
 ---
 
+## 1D. FRC Pulsed Compression
+
+The MIF lane now exposes the FUS-C.6 pulsed-compression contract in Python and
+Rust. The model evolves a separatrix-radius trajectory under internal thermal
+pressure, external coil magnetic pressure, adiabatic compression heating, and a
+one-step non-adiabatic flux-diffusion coupling. It is a full-state trajectory
+contract for the implemented FRC/MIF lane, not a reduced-order surrogate or a
+claim of same-case Slough Fig. 5 reproduction.
+
+The external coil field is computed from the declared solenoid geometry:
+
+$$B_{\rm ext}(t)=\mu_0\,N_{\rm coil}\,I_{\rm coil}(t)/L_{\rm coil}.$$
+
+The radial shell update uses the TODO-specified momentum balance with explicit
+geometry and mass:
+
+$$m_{\rm shell}\,\frac{d^2R_s}{dt^2}
+= \left(p_{\rm int}-p_{\rm mag,ext}\right)\,A,$$
+
+where
+
+$$p_{\rm int}=n\,(T_i+T_e)e,\qquad
+p_{\rm mag,ext}=B_{\rm ext}^2/(2\mu_0).$$
+
+The code reports the instantaneous beta diagnostic
+
+$$\beta = \frac{2\mu_0 p_{\rm int}}{B_{\rm ext}^2},$$
+
+and advances adiabatic ion/electron heating with cylindrical volume
+compression:
+
+$$T_{\rm next}=T_{\rm prev}\left(V_{\rm prev}/V_{\rm next}\right)^{\gamma-1}.$$
+
+Flux diffusion is coupled through the accepted non-adiabatic current-diffusion
+kernel using the instantaneous Spitzer resistivity and external-field-induced
+flux target. The trajectory therefore carries both mechanical compression
+state and magnetic-flux state at every step.
+
+The public acceptance boundary is fail-closed: the helper
+`slough_fig5_acceptance_status()` reports `blocked_missing_public_reference`
+until a redistributable, digitised reference trajectory is available. The
+tracked benchmark report includes that blocked row instead of fabricating
+external parity.
+
+**Key files:** `core/pulsed_compression.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs`,
+`scpn-fusion-rs/crates/fusion-physics/src/compression/coil_geometry.rs`,
+`docs/physics/pulsed_compression.md`.
+
+**Validation:** `tests/test_pulsed_compression.py`, Rust
+`fusion_physics::compression` unit tests,
+`benchmarks/bench_pulsed_compression.py`,
+`validation/reports/pulsed_compression_benchmark.json`.
+
+---
+
 ## 2. JAX Differentiable GS Transport
 
 A fully differentiable 1.5D transport kernel in JAX, enabling `jax.grad` through the transport evolution for optimal-control and inverse problems.

@@ -36,3 +36,7 @@ harness = false
 [[bench]]
 name = "faraday_recovery_bench"
 harness = false
+
+[[bench]]
+name = "pulsed_compression_bench"
+harness = false
