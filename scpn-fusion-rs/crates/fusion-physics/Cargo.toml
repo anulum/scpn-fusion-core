@@ -26,6 +26,10 @@ name = "hall_mhd_bench"
 harness = false
 
 [[bench]]
+name = "hall_mhd_pulsed_bench"
+harness = false
+
+[[bench]]
 name = "frc_rigid_rotor_bench"
 harness = false
 

@@ -1608,6 +1608,37 @@ Reproduce locally:
 PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
 ```
 
+### FRC pulsed Hall-MHD flux-carrier benchmark
+
+The tracked FUS-C.2 benchmark report is
+`validation/reports/hall_mhd_pulsed_benchmark.json`. It covers the accepted
+axisymmetric Ono Eq. 8 flux carrier:
+
+$$\partial_t\psi=-\psi/\tau_\psi+R_{\rm null}E_\theta-\eta J_\theta.$$
+
+The report includes Python timing rows, Rust Criterion rows, source checksums,
+and blocked external-reference rows for `gkeyll_axisymmetric_small_hall` and
+`ono_1997_fig4_flux_decay`. It does not claim full 2D two-fluid Hall-MHD,
+Gkeyll/BOUT++ same-case parity, WGPU execution, or Ono figure reproduction.
+
+Latest local non-isolated regression rows:
+
+| Row | Grid | Steps | Mean seconds |
+|---|---:|---:|---:|
+| Python `python_64_grid_256_steps` | 64 | 256 | 0.0528046082 |
+| Python `python_256_grid_256_steps` | 256 | 256 | 0.0620382902 |
+| Python `python_1024_grid_256_steps` | 1,024 | 256 | 0.0689889970 |
+| Rust `rust_64_grid_256_steps` | 64 | 256 | 0.0002328276 |
+| Rust `rust_256_grid_256_steps` | 256 | 256 | 0.0008544832 |
+| Rust `rust_1024_grid_256_steps` | 1,024 | 256 | 0.0031026612 |
+
+Reproduce locally:
+
+```bash
+cargo bench --manifest-path scpn-fusion-rs/Cargo.toml -p fusion-physics --bench hall_mhd_pulsed_bench -- --sample-size 10
+PYTHONPATH=src python benchmarks/bench_hall_mhd_pulsed.py
+```
+
 ### FRC n=1 tilt-mode diagnostic benchmark
 
 The tracked FUS-C.5 benchmark report is

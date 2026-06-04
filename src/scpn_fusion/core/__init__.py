@@ -118,6 +118,29 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "null_radius": (".frc_rigid_rotor", "null_radius"),
     "s_parameter": (".frc_rigid_rotor", "s_parameter"),
     "validate_equilibrium": (".frc_rigid_rotor", "validate_equilibrium"),
+    # Pulsed Hall-MHD — axisymmetric Ono Eq. 8 flux carrier
+    "HallMHDPulsedConfig": (".hall_mhd_pulsed", "HallMHDPulsedConfig"),
+    "HallMHDPulsedState": (".hall_mhd_pulsed", "HallMHDPulsedState"),
+    "axial_field_from_flux": (".hall_mhd_pulsed", "axial_field_from_flux"),
+    "faraday_e_theta_from_b_ramp": (
+        ".hall_mhd_pulsed",
+        "faraday_e_theta_from_b_ramp",
+    ),
+    "gkeyll_small_hall_acceptance_status": (
+        ".hall_mhd_pulsed",
+        "gkeyll_small_hall_acceptance_status",
+    ),
+    "initial_hall_mhd_pulsed_state": (
+        ".hall_mhd_pulsed",
+        "initial_hall_mhd_pulsed_state",
+    ),
+    "ono_fig4_acceptance_status": (".hall_mhd_pulsed", "ono_fig4_acceptance_status"),
+    "run_hall_mhd_pulsed": (".hall_mhd_pulsed", "run_hall_mhd_pulsed"),
+    "spitzer_resistivity_ohm_m_hall": (
+        ".hall_mhd_pulsed",
+        "spitzer_resistivity_ohm_m",
+    ),
+    "step_hall_mhd_pulsed": (".hall_mhd_pulsed", "step_hall_mhd_pulsed"),
     # MRTI — analytical MIF/FRC growth spectrum with magnetic tension
     "MRTISpectrumState": (".mrti", "MRTISpectrumState"),
     "MRTISpectrumTracker": (".mrti", "MRTISpectrumTracker"),

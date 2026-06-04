@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Added the FUS-C.2 axisymmetric pulsed Hall-MHD flux carrier across Python
+  and Rust, including Ono Eq. 8 source terms, Faraday external-field drive,
+  Spitzer resistivity, implicit damping, field/energy diagnostics, local
+  non-isolated benchmark evidence, public physics documentation, and explicit
+  blocked Gkeyll/Ono parity rows.
 - Added the FUS-C.5 conservative FRC n=1 tilt-mode diagnostic across Python
   and Rust, including Belova-normalised MHD Alfvén-time growth scaling,
   Steinhauer `s / E` rigid-body diagnostics, local non-isolated benchmark

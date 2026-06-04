@@ -237,7 +237,54 @@ rotating BVP.
 
 ---
 
-## 1B. MIF/FRC MRTI Growth Spectrum
+## 1B. MIF/FRC Pulsed Hall-MHD Flux Carrier
+
+The MIF lane exposes FUS-C.2 as an axisymmetric pulsed Hall-MHD flux carrier in
+Python and Rust. The accepted public contract is the flattened Ono Eq. 8 form:
+
+$$
+\frac{\partial\psi}{\partial t}
+=-\frac{\psi}{\tau_\psi}+R_{\rm null}E_\theta-\eta_{\rm Spitzer}J_\theta.
+$$
+
+When no explicit azimuthal electric-field profile is supplied, the external
+field ramp supplies the circular-loop Faraday drive:
+
+$$E_\theta(r,t)=-\frac{r}{2}\frac{dB_{\rm ext}}{dt}.$$
+
+Spitzer resistivity uses the NRL-style scaling:
+
+$$\eta_{\rm Spitzer}=1.65\times10^{-9}
+\frac{Z_{\rm eff}\ln\Lambda}{T_e[\mathrm{eV}]^{3/2}}\;\Omega\mathrm{m}.$$
+
+The default step treats damping implicitly and the Ono source explicitly:
+
+$$\psi_{n+1} =
+\frac{\psi_n+\Delta t\left(R_{\rm null}E_{\theta,n+1}
+-\eta J_{\theta,n+1}\right)}
+{1+\Delta t/\tau_\psi}.$$
+
+The axial field diagnostic is reconstructed as
+$B_z=(1/r)\,d\psi/dr$ with finite-axis handling. The report carries Hall-drive,
+resistive-sink, damping-sink, source-residual, and magnetic-energy proxy
+diagnostics.
+
+Full 2D two-fluid Hall-MHD, Gkeyll/BOUT++ same-case parity, WGPU execution,
+and Ono figure reproduction remain explicit blocked rows until redistributable
+reference artefacts are available.
+
+**Key files:** `core/hall_mhd_pulsed.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/hall_mhd_pulsed.rs`,
+`docs/physics/hall_mhd_pulsed.md`.
+
+**Validation:** `tests/test_hall_mhd_pulsed.py`, Rust
+`fusion_physics::hall_mhd_pulsed` unit tests,
+`benchmarks/bench_hall_mhd_pulsed.py`,
+`validation/reports/hall_mhd_pulsed_benchmark.json`.
+
+---
+
+## 1C. MIF/FRC MRTI Growth Spectrum
 
 The MIF lane now exposes an analytical Magneto-Rayleigh-Taylor instability
 growth-spectrum contract in Python and Rust. It evaluates the resolved
@@ -267,7 +314,7 @@ evidence.
 
 ---
 
-## 1C. FRC Faraday Recovery
+## 1D. FRC Faraday Recovery
 
 The MIF lane now exposes the FUS-C.7 classical recovery-coil induction contract
 in Python and Rust. It operates on a supplied separatrix-radius and external
@@ -299,7 +346,7 @@ compression-work sidecar, `FaradayRecoveryReport.budget_claim_status` is
 
 ---
 
-## 1D. FRC Pulsed Compression
+## 1E. FRC Pulsed Compression
 
 The MIF lane now exposes the FUS-C.6 pulsed-compression contract in Python and
 Rust. The model evolves a separatrix-radius trajectory under internal thermal
@@ -355,7 +402,7 @@ external parity.
 
 ---
 
-## 1E. FRC n=1 Tilt-Mode Diagnostics
+## 1F. FRC n=1 Tilt-Mode Diagnostics
 
 The MIF lane exposes FUS-C.5 as a conservative FRC n=1 tilt diagnostic in
 Python and Rust. The accepted surface uses the Belova-normalised MHD
