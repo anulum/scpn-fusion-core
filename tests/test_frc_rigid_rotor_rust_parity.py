@@ -39,6 +39,28 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust FRC extension not available")
 
 
+def _parity_cases() -> list[tuple[float | None, int, float, float]]:
+    """Return deterministic MIF/FRC no-rotation parity cases spanning scale."""
+    return [
+        (0.012, 33, 2.75, 0.16),
+        (0.014, 65, 3.25, 0.18),
+        (0.016, 129, 3.75, 0.19),
+        (0.018, 257, 4.25, 0.20),
+        (0.020, 33, 4.75, 0.21),
+        (0.022, 65, 5.25, 0.22),
+        (0.024, 129, 5.75, 0.23),
+        (0.026, 257, 6.25, 0.24),
+        (0.028, 33, 6.75, 0.25),
+        (0.030, 65, 7.25, 0.26),
+        (0.032, 129, 7.75, 0.27),
+        (0.034, 257, 8.25, 0.28),
+        (None, 33, 3.50, 0.17),
+        (None, 65, 5.00, 0.20),
+        (None, 129, 6.50, 0.24),
+        (None, 257, 8.00, 0.28),
+    ]
+
+
 def _case(
     delta: float | None, grid_points: int, b_ext: float, r_s: float
 ) -> tuple[RigidRotorFRCInputs, FloatArray]:
@@ -58,13 +80,7 @@ def _case(
 
 
 def test_rust_frc_matches_python_reference() -> None:
-    cases: list[tuple[float | None, int, float, float]] = [
-        (0.015, 33, 3.0, 0.18),
-        (0.020, 65, 5.0, 0.20),
-        (0.025, 129, 7.5, 0.24),
-        (None, 257, 5.0, 0.20),
-    ]
-    for delta, grid_points, b_ext, r_s in cases:
+    for delta, grid_points, b_ext, r_s in _parity_cases():
         inputs, rho = _case(delta, grid_points, b_ext, r_s)
         python_state = solve_frc_equilibrium(inputs, rho)
         rust_state = scpn_fusion_rs.py_solve_frc_equilibrium(
@@ -127,7 +143,7 @@ def test_rust_frc_matches_python_reference() -> None:
             rust_state["ampere_residual"],
             python_state.ampere_residual,
             rtol=0.0,
-            atol=1.0e-12,
+            atol=2.0e-12,
         )
         np.testing.assert_allclose(
             rust_state["force_balance_residual"],

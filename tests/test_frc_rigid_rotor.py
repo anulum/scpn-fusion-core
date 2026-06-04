@@ -15,7 +15,11 @@ from numpy.typing import NDArray
 import pytest
 from scipy.integrate import trapezoid
 
-from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
+from scpn_fusion.core import (
+    RigidRotorFRCInputs,
+    psi_normalized_profile as public_psi_normalized_profile,
+    solve_frc_equilibrium,
+)
 from scpn_fusion.core.frc_rigid_rotor import (
     ELEMENTARY_CHARGE_C,
     MU_0,
@@ -38,7 +42,7 @@ FloatArray: TypeAlias = NDArray[np.float64]
 
 def _pressure_matched_density_m3(t_i_ev: float, t_e_ev: float, b_ext: float) -> float:
     external_pressure = b_ext**2 / (2.0 * MU_0)
-    return external_pressure / ((t_i_ev + t_e_ev) * ELEMENTARY_CHARGE_C)
+    return float(external_pressure / ((t_i_ev + t_e_ev) * ELEMENTARY_CHARGE_C))
 
 
 def _inputs(delta: float | None = 0.02, theta_dot: float = 0.0) -> RigidRotorFRCInputs:
@@ -383,6 +387,9 @@ def test_cylindrical_flux_matches_steinhauer_primitive() -> None:
     np.testing.assert_allclose(state.psi, expected_psi, rtol=1.0e-14, atol=1.0e-14)
     np.testing.assert_allclose(
         psi_normalized_profile(state), expected_psi_normalized, rtol=1.0e-14, atol=1.0e-14
+    )
+    np.testing.assert_allclose(
+        public_psi_normalized_profile(state), expected_psi_normalized, rtol=1.0e-14, atol=1.0e-14
     )
     assert state.psi_axis_Wb == pytest.approx(float(expected_psi[0]), abs=1.0e-14)
     assert state.psi_separatrix_Wb == pytest.approx(

@@ -156,7 +156,9 @@ Accepted:
 - Rust implementation in `fusion-physics::frc`.
 - PyO3 exposure through `scpn_fusion_rs.py_solve_frc_equilibrium` when the
   Rust extension is built.
-- Cross-surface parity tests for the exposed Python and Rust/PyO3 paths.
+- Cross-surface parity tests for the exposed Python and Rust/PyO3 paths,
+  including a deterministic 16-case MIF/FRC no-rotation parameter cohort that
+  spans accepted field, separatrix-radius, grid, and layer-thickness scales.
 - Explicit `J_theta` current-density and Ampere closure residual diagnostics
   for the accepted axial-field slice, with the residual kept as an independent
   grid diagnostic instead of a self-cancelling derivative reuse.
@@ -182,7 +184,9 @@ Accepted:
 - Finite-grid convergence diagnostics for the implemented no-rotation scalar
   invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
   ratio.
-- Benchmark artifact generation in `validation/reports/frc_rigid_rotor_benchmark.json`.
+- Benchmark artifact generation in `validation/reports/frc_rigid_rotor_benchmark.json`,
+  with grid-convergence rows and the deterministic 16-case MIF/FRC parameter
+  parity cohort recorded separately.
 
 Fail-closed:
 
@@ -236,7 +240,10 @@ central-density relative error, beta peak, separatrix-averaged beta, particle li
 magnetic-deficit inventory, energy-closure relative error, separatrix
 field-gradient/current-density diagnostics, resolved sheet-current integral,
 flux derivative residual, and the independent Ampere residual accepted in this
-contract. Blocked or
+contract. A separate deterministic 16-case MIF/FRC no-rotation parameter
+cohort compares Python, Rust `fusion-physics`, and PyO3 on the same accepted
+contract while keeping Go, Julia, and Lean marked `not_applicable_no_frc_surface`
+until native FRC solver surfaces exist. Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
 explicit no-rotation analytical FRC contract.

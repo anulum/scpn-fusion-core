@@ -148,7 +148,10 @@ of the acceptance gate for a specific run.
 The Rust surface is exposed as ``fusion_physics::frc`` and benchmarked by
 ``cargo bench -p fusion-physics --bench frc_rigid_rotor_bench``.  The tracked
 cross-surface report is created with ``python benchmarks/bench_frc_rigid_rotor.py``
-and stored at ``validation/reports/frc_rigid_rotor_benchmark.json``.  Go, Julia, and Lean
+and stored at ``validation/reports/frc_rigid_rotor_benchmark.json``.  The report
+includes grid-convergence rows plus a deterministic 16-case MIF/FRC
+no-rotation parameter cohort across Python, Rust ``fusion-physics``, and PyO3.
+Go, Julia, and Lean
 rows remain explicit ``not_applicable_no_frc_surface`` rows until those
 languages expose equivalent solver logic; wrappers are not treated as parity.
 

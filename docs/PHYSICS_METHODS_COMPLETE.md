@@ -200,6 +200,13 @@ independent pressure, flux, and Ampere residuals. This is local
 convergence evidence for the implemented analytical contract, not validation
 of the unresolved rotating FRC BVP or kinetic/transport evolution.
 
+The same report now carries a deterministic 16-case MIF/FRC no-rotation
+parameter cohort across Python, Rust `fusion-physics`, and PyO3. The cohort
+spans accepted separatrix radii, layer thicknesses, external axial fields, and
+radial grid sizes. Go, Julia, and Lean remain explicit
+`not_applicable_no_frc_surface` rows until equivalent native FRC solver logic
+exists; wrappers are not treated as parity.
+
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 
 **Validation:** `tests/test_frc_rigid_rotor.py`, `tests/test_frc_rigid_rotor_rust_parity.py`,

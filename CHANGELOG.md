@@ -62,6 +62,9 @@
   diagnostics, axis/separatrix endpoint gates, monotonic/bounds validation,
   Python/Rust/PyO3 parity checks, benchmark JSON coverage, and public docs for
   the accepted no-rotation analytical MIF lane.
+- Expanded the accepted FRC no-rotation parity gate to a deterministic 16-case
+  MIF/FRC parameter cohort across Python, Rust `fusion-physics`, and PyO3 while
+  keeping rotating-BVP cases fail-closed.
 
 ## [3.9.8] - 2026-06-02
 

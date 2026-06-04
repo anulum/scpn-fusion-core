@@ -101,6 +101,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "solve_frc_equilibrium": (".frc_rigid_rotor", "solve_frc_equilibrium"),
     "ampere_residual": (".frc_rigid_rotor", "ampere_residual"),
     "flux_derivative_residual": (".frc_rigid_rotor", "flux_derivative_residual"),
+    "psi_normalized_profile": (".frc_rigid_rotor", "psi_normalized_profile"),
     "pressure_balance_residual": (".frc_rigid_rotor", "pressure_balance_residual"),
     "density_profile": (".frc_rigid_rotor", "density_profile"),
     "beta_profile": (".frc_rigid_rotor", "beta_profile"),
