@@ -125,7 +125,13 @@ def solve_frc_equilibrium(
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
     B_z = -inputs.B_ext * np.tanh(argument)
     B_theta = np.zeros_like(B_z)
-    J_theta = _toroidal_current_density_from_bz(rho, B_z)
+    J_theta = _toroidal_current_density_from_steinhauer(
+        rho,
+        argument,
+        inputs.B_ext,
+        inputs.R_s,
+        delta,
+    )
     ampere_residual = _ampere_current_closure_residual(rho, B_z, J_theta)
     ampere_scale = max(
         tolerance,
@@ -212,7 +218,7 @@ def validate_equilibrium(
     state: FRCEquilibriumState,
     *,
     tolerance: float = 1e-6,
-    ampere_tolerance: float = 1e-9,
+    ampere_tolerance: float = 2e-2,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
     """Validate finite values, null placement, pressure peaking, and optional force balance."""
@@ -336,10 +342,17 @@ def _cylindrical_flux_from_bz(rho: FloatArray, B_z: FloatArray) -> FloatArray:
     return psi
 
 
-def _toroidal_current_density_from_bz(rho: FloatArray, B_z: FloatArray) -> FloatArray:
-    """Return ``J_theta = -mu_0^-1 dB_z/dr`` for the axial-field FRC slice."""
-    d_bz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
-    return cast(FloatArray, -d_bz_dr / MU_0)
+def _toroidal_current_density_from_steinhauer(
+    rho: FloatArray,
+    argument: FloatArray,
+    B_ext: float,
+    R_s: float,
+    delta: float,
+) -> FloatArray:
+    """Return analytical ``J_theta = -mu_0^-1 dB_z/dr`` for Eq. 7."""
+    tanh_argument = cast(FloatArray, np.tanh(argument))
+    sech_squared = cast(FloatArray, 1.0 - tanh_argument**2)
+    return cast(FloatArray, B_ext * sech_squared * rho / (MU_0 * R_s * delta))
 
 
 def _ampere_current_closure_residual(rho: FloatArray, B_z: FloatArray, J_theta: FloatArray) -> FloatArray:

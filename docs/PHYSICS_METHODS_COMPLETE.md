@@ -76,11 +76,17 @@ where $\rho_i(r) = \sqrt{2m_iT_i}/(e|B_z(r)|)$.  Numerically the code
 integrates the finite form
 $r e |B_z(r)|/\sqrt{2m_iT_i}$ over the clipped interval $[0,R_s]$.
 
-The solver derives the toroidal diamagnetic current density directly from
-Ampere's law:
+The solver derives the toroidal diamagnetic current density from the
+closed-form Steinhauer derivative:
 
-$$J_\theta = -\mu_0^{-1}\frac{dB_z}{dr},\qquad
-\mathcal{A}_r = \mu_0J_\theta + \frac{dB_z}{dr}.$$
+$$J_\theta =
+\frac{B_{\rm ext}}{\mu_0R_s\delta}
+\left[1-\tanh^2\left(\frac{r^2-R_s^2}{2R_s\delta}\right)\right]r.$$
+
+The Ampere residual then compares this analytical current against an
+independent second-order finite-difference derivative on the active grid:
+
+$$\mathcal{A}_r = \mu_0J_\theta + \frac{dB_z}{dr}.$$
 
 The validation report carries both the Ampere closure residual
 $\mathcal{A}_r$ and the normalised radial force-balance diagnostic
@@ -88,15 +94,16 @@ $\mathcal{A}_r$ and the normalised radial force-balance diagnostic
 $$\mathcal{R}_r = \frac{d p}{d r} - (\mathbf{J}\times\mathbf{B})_r,$$
 
 with $\mathbf{J}_\theta = -\mu_0^{-1} dB_z/dr$ for the no-rotation axial-field
-slice.  The Ampere closure gate is active by default; the force-balance
-diagnostic is visible by default and becomes a fail-closed gate only when an
-explicit `force_balance_tolerance` is supplied.
+slice.  The Ampere closure gate is active by default with a finite-grid
+tolerance, and its report row must converge under grid refinement. The
+force-balance diagnostic is visible by default and becomes a fail-closed gate
+only when an explicit `force_balance_tolerance` is supplied.
 
 The tracked benchmark report now includes finite-grid convergence evidence for
 the accepted no-rotation scalar invariants: null radius, Eq. 27 `s`, energy per
-metre, and pressure-balance ratio. This is local convergence evidence for the
-implemented analytical contract, not validation of the unresolved rotating FRC
-BVP or kinetic/transport evolution.
+metre, pressure-balance ratio, and the independent Ampere residual. This is
+local convergence evidence for the implemented analytical contract, not
+validation of the unresolved rotating FRC BVP or kinetic/transport evolution.
 
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 

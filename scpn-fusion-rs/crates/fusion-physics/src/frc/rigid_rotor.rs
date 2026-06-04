@@ -83,7 +83,8 @@ pub fn solve_frc_equilibrium(
     let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
     let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
     let b_theta = Array1::zeros(b_z.len());
-    let j_theta = toroidal_current_density_from_bz(&rho, &b_z);
+    let j_theta =
+        toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
     let ampere_residual = ampere_current_closure_residual(&rho, &b_z, &j_theta);
     let grad_bz = gradient_edge_order2(&rho, &b_z);
     let ampere_scale = tolerance
@@ -252,9 +253,18 @@ fn cylindrical_flux_from_bz(rho: &Array1<f64>, b_z: &Array1<f64>) -> Array1<f64>
     psi
 }
 
-fn toroidal_current_density_from_bz(rho: &Array1<f64>, b_z: &Array1<f64>) -> Array1<f64> {
-    let dbz_dr = gradient_edge_order2(rho, b_z);
-    dbz_dr.mapv(|value| -value / MU_0)
+fn toroidal_current_density_from_steinhauer(
+    rho: &Array1<f64>,
+    argument: &Array1<f64>,
+    b_ext: f64,
+    r_s: f64,
+    delta: f64,
+) -> Array1<f64> {
+    Array1::from_iter(
+        rho.iter()
+            .zip(argument.iter())
+            .map(|(r, a)| b_ext * (1.0 - a.tanh().powi(2)) * r / (MU_0 * r_s * delta)),
+    )
 }
 
 fn ampere_current_closure_residual(
@@ -454,8 +464,8 @@ mod tests {
         assert!(state.energy_j > 0.0);
         assert!(state.pressure_balance_ratio > 0.0);
         assert!(state.peak_j_theta_a_m2 > 0.0);
-        assert!(state.ampere_residual_linf <= 1.0e-12);
-        assert!(state.ampere_residual_l2 <= 1.0e-12);
+        assert!(state.ampere_residual_linf <= 2.0e-2);
+        assert!(state.ampere_residual_l2 <= 2.0e-2);
         assert_eq!(state.j_theta.len(), rho.len());
         assert_eq!(state.ampere_residual.len(), rho.len());
         assert!(state.force_balance_residual_linf.is_finite());
@@ -464,21 +474,38 @@ mod tests {
     }
 
     #[test]
-    fn toroidal_current_density_closes_ampere_law() {
+    fn toroidal_current_density_matches_steinhauer_derivative() {
         let inputs = inputs(Some(0.02), 0.0);
         let rho = linspace(0.0, 0.4, 401);
         let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
         let dbz_dr = gradient_edge_order2(&rho, &state.b_z);
         let dp_dr = gradient_edge_order2(&rho, &state.p);
         for i in 0..rho.len() {
-            assert!((state.j_theta[i] + dbz_dr[i] / MU_0).abs() <= 1.0e-6);
-            assert!(state.ampere_residual[i].abs() <= 1.0e-12);
+            let argument = (rho[i] * rho[i] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
+            let expected_j = inputs.b_ext * (1.0 - argument.tanh().powi(2)) * rho[i]
+                / (MU_0 * inputs.r_s * 0.02);
+            assert!((state.j_theta[i] - expected_j).abs() <= expected_j.abs().max(1.0) * 1.0e-12);
+            assert!(
+                (state.ampere_residual[i] - (MU_0 * state.j_theta[i] + dbz_dr[i])).abs() <= 1.0e-12
+            );
             assert!(
                 (state.force_balance_residual[i] - (dp_dr[i] - state.j_theta[i] * state.b_z[i]))
                     .abs()
                     <= 1.0e-6
             );
         }
+    }
+
+    #[test]
+    fn ampere_residual_refines_with_grid() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let coarse =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 101), 1.0e-10).expect("coarse");
+        let medium =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 201), 1.0e-10).expect("medium");
+        let fine = solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 401), 1.0e-10).expect("fine");
+        assert!(medium.ampere_residual_linf < coarse.ampere_residual_linf);
+        assert!(fine.ampere_residual_linf < medium.ampere_residual_linf);
     }
 
     #[test]

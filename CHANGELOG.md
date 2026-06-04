@@ -21,6 +21,9 @@
 - Added explicit toroidal current-density and Ampere closure diagnostics for
   the accepted no-rotation FRC contract across Python, Rust, PyO3 parity tests,
   benchmark JSON, and public physics documentation.
+- Hardened the FRC current-density contract to use the closed-form Steinhauer
+  derivative while keeping Ampere residuals as independent finite-grid
+  diagnostics with Python, Rust, PyO3, benchmark, and documentation coverage.
 
 ## [3.9.8] - 2026-06-02
 

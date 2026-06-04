@@ -265,6 +265,7 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "s_parameter",
         "energy_j_per_m",
         "pressure_balance_ratio",
+        "ampere_residual_linf",
     )
     rows: list[dict[str, Any]] = []
     for row in reference:
@@ -304,8 +305,8 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "status": "passed" if convergence_passed else "failed",
         "claim_boundary": (
-            "Finite-grid convergence for the accepted no-rotation analytical "
-            "FRC contract only; not external FRC rotating-BVP validation."
+            "Finite-grid convergence for accepted no-rotation FRC analytical "
+            "diagnostics only; not external FRC rotating-BVP validation."
         ),
         "reference_surface": "python_numpy",
         "reference_grid_points": finest_grid,

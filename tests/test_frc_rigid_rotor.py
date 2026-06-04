@@ -165,8 +165,8 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.J_theta.shape == rho.shape
     assert state.ampere_residual.shape == rho.shape
     assert state.peak_j_theta_A_m2 > 0.0
-    assert state.ampere_residual_linf <= 1.0e-12
-    assert state.ampere_residual_l2 <= 1.0e-12
+    assert state.ampere_residual_linf <= 2.0e-2
+    assert state.ampere_residual_l2 <= 2.0e-2
     assert state.force_balance_residual.shape == rho.shape
     assert state.force_balance_residual_linf >= 0.0
     assert state.force_balance_residual_l2 >= 0.0
@@ -174,15 +174,17 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert np.all(state.p > 0.0)
 
 
-def test_toroidal_current_density_closes_ampere_law() -> None:
-    inputs = _inputs(delta=0.02)
+def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
+    delta = 0.02
+    inputs = _inputs(delta=delta)
     rho: FloatArray = np.linspace(0.0, 0.4, 401)
 
     state = solve_frc_equilibrium(inputs, rho)
 
+    argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
+    expected_j_theta = inputs.B_ext * (1.0 - np.tanh(argument) ** 2) * rho / (MU_0 * inputs.R_s * delta)
     d_bz_dr = np.gradient(state.B_z, state.rho, edge_order=2)
     dp_dr = np.gradient(state.p, state.rho, edge_order=2)
-    expected_j_theta = -d_bz_dr / MU_0
     expected_force_residual = dp_dr - state.J_theta * state.B_z
 
     np.testing.assert_allclose(state.J_theta, expected_j_theta, rtol=1.0e-12, atol=1.0e-6)
@@ -198,6 +200,17 @@ def test_toroidal_current_density_closes_ampere_law() -> None:
         rtol=1.0e-12,
         atol=1.0e-4,
     )
+
+
+def test_ampere_residual_refines_with_grid() -> None:
+    inputs = _inputs(delta=0.02)
+
+    coarse = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 101))
+    medium = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 201))
+    fine = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 401))
+
+    assert medium.ampere_residual_linf < coarse.ampere_residual_linf
+    assert fine.ampere_residual_linf < medium.ampere_residual_linf
 
 
 def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:

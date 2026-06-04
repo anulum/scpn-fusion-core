@@ -64,10 +64,11 @@ Steinhauer Eq. 27 S-parameter, energy, pressure-balance, force-balance, and
 weighted numerical checksums for `B_z`, `J_theta`, `psi`, and pressure. It also
 records peak toroidal current density, Ampere closure residuals, and a
 finite-grid convergence block for null radius, Eq. 27 `s`, energy per metre,
-and pressure-balance ratio against the finest tracked grid. Go, Julia, and Lean
-are recorded as `not_applicable_no_frc_surface` until those languages expose
-equivalent solver logic. Nonzero-rotation FRC cases remain fail-closed and are
-not benchmarked as accepted physics.
+pressure-balance ratio, and the independent Ampere residual against the finest
+tracked grid. Go, Julia, and Lean are recorded as
+`not_applicable_no_frc_surface` until those languages expose equivalent solver
+logic. Nonzero-rotation FRC cases remain fail-closed and are not benchmarked as
+accepted physics.
 
 ## Type-checking non-regression gate
 
