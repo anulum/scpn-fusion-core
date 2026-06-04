@@ -52,8 +52,8 @@ Tracked report: [`validation/reports/frc_rigid_rotor_benchmark.json`](../validat
 
 The report compares Python NumPy, Rust `fusion-physics`, and optional PyO3
 surfaces on `64`, `256`, and `1024` point radial grids using null radius,
-S-parameter, energy, pressure-balance, force-balance, and weighted numerical
-checksums for `B_z`, `psi`, and pressure. Go, Julia, and Lean are recorded as
+Steinhauer Eq. 27 S-parameter, energy, pressure-balance, force-balance, and
+weighted numerical checksums for `B_z`, `psi`, and pressure. Go, Julia, and Lean are recorded as
 `not_applicable_no_frc_surface` until those languages expose equivalent solver
 logic. Nonzero-rotation FRC cases remain fail-closed and are not benchmarked as
 accepted physics.

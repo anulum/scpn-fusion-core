@@ -60,10 +60,18 @@ The axial field follows Steinhauer (2011), Eq. 7:
 $$B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2R_s\delta}\right)$$
 
 The solver validates a one-dimensional, strictly increasing radial grid,
-requires the grid to include the separatrix radius, derives
+requires the grid to start at the magnetic axis and include the separatrix radius, derives
 `delta = rho_i` from the deuterium thermal ion gyroradius when no layer
 thickness is supplied, and rejects rotating cases until the BVP implementation
 is added.
+
+The reported quality-of-equilibrium parameter follows Steinhauer Eq. 27:
+
+$$s = \frac{1}{R_s}\int_0^{R_s}\frac{r}{\rho_i(r)}\,dr,$$
+
+where $\rho_i(r) = \sqrt{2m_iT_i}/(e|B_z(r)|)$.  Numerically the code
+integrates the finite form
+$r e |B_z(r)|/\sqrt{2m_iT_i}$ over the clipped interval $[0,R_s]$.
 
 The validation report also carries the normalised radial force-balance
 diagnostic

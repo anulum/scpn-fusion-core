@@ -141,6 +141,7 @@ def solve_frc_equilibrium(
     pressure_integral = float(trapezoid(p * 2.0 * np.pi * rho, rho))
     external_pressure_energy = (inputs.B_ext**2 / (2.0 * MU_0)) * np.pi * inputs.R_s**2
     pressure_balance_ratio = pressure_integral / max(external_pressure_energy, tolerance)
+    s_value = _s_parameter_from_profile(rho, B_z, inputs.R_s, inputs.T_i_eV)
 
     return FRCEquilibriumState(
         rho=rho,
@@ -150,7 +151,7 @@ def solve_frc_equilibrium(
         p=p,
         R_null=r_null,
         separatrix_index=separatrix_index,
-        s_parameter=inputs.R_s / (2.0 * delta),
+        s_parameter=s_value,
         energy_J=energy_J_per_m,
         converged=True,
         residual=float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument))))),
@@ -169,8 +170,9 @@ def null_radius(state: FRCEquilibriumState) -> float:
 
 
 def s_parameter(state: FRCEquilibriumState, mass_amu: float = DEUTERIUM_MASS_AMU) -> float:
-    """Return the analytical no-rotation ``s`` parameter for this FRC state."""
-    del mass_amu
+    """Return the Steinhauer Eq. 27 ``s`` parameter carried by this FRC state."""
+    if mass_amu <= 0.0:
+        raise ValueError("mass_amu must be positive")
     return float(state.s_parameter)
 
 
@@ -240,13 +242,49 @@ def _validate_grid(rho_grid: FloatArray, R_s: float) -> FloatArray:
         raise ValueError("rho_grid must contain at least four points")
     if not np.all(np.isfinite(rho)):
         raise ValueError("rho_grid must contain finite values")
-    if rho[0] < 0.0:
-        raise ValueError("rho_grid must start at a non-negative radius")
+    if rho[0] != 0.0:
+        raise ValueError("rho_grid must start at the magnetic axis radius 0")
     if not np.all(np.diff(rho) > 0.0):
         raise ValueError("rho_grid must be strictly increasing")
     if rho[-1] < R_s:
         raise ValueError("rho_grid must include the separatrix radius R_s")
     return rho
+
+
+def _s_parameter_from_profile(
+    rho: FloatArray,
+    B_z: FloatArray,
+    R_s: float,
+    T_i_eV: float,
+    *,
+    mass_amu: float = DEUTERIUM_MASS_AMU,
+) -> float:
+    """Return Steinhauer Eq. 27 ``s = R_s^-1 integral_0^R_s r / rho_i(r) dr``."""
+    if R_s <= 0.0:
+        raise ValueError("R_s must be positive")
+    if T_i_eV <= 0.0:
+        raise ValueError("T_i_eV must be positive")
+    if mass_amu <= 0.0:
+        raise ValueError("mass_amu must be positive")
+    r_clip, b_clip = _clip_to_separatrix(rho, B_z, R_s)
+    ion_mass_kg = mass_amu * ATOMIC_MASS_KG
+    thermal_momentum = np.sqrt(2.0 * ion_mass_kg * T_i_eV * ELEMENTARY_CHARGE_C)
+    inverse_gyroradius = cast(FloatArray, ELEMENTARY_CHARGE_C * np.abs(b_clip) / thermal_momentum)
+    integrand = cast(FloatArray, r_clip * inverse_gyroradius)
+    return float(trapezoid(integrand, r_clip) / R_s)
+
+
+def _clip_to_separatrix(rho: FloatArray, values: FloatArray, R_s: float) -> tuple[FloatArray, FloatArray]:
+    """Return profile samples on ``[0, R_s]`` with an interpolated separatrix endpoint."""
+    stop = int(np.searchsorted(rho, R_s, side="right"))
+    r_clip = cast(FloatArray, rho[:stop])
+    value_clip = cast(FloatArray, values[:stop])
+    if r_clip.size == 0:
+        raise ValueError("rho_grid must contain points below R_s")
+    if r_clip[-1] < R_s:
+        r_clip = cast(FloatArray, np.append(r_clip, R_s))
+        value_clip = cast(FloatArray, np.append(value_clip, np.interp(R_s, rho, values)))
+    return r_clip, value_clip
 
 
 def _cylindrical_flux_from_bz(rho: FloatArray, B_z: FloatArray) -> FloatArray:

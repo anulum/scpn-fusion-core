@@ -11,4 +11,4 @@ pub mod data;
 pub mod rigid_rotor;
 
 pub use data::{FrcEquilibriumState, FrcSolverError, RigidRotorFrcInputs};
-pub use rigid_rotor::{ion_gyroradius_m, solve_frc_equilibrium};
+pub use rigid_rotor::{ion_gyroradius_m, s_parameter_from_profile, solve_frc_equilibrium};

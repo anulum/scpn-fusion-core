@@ -12,6 +12,9 @@
   `py_solve_frc_equilibrium` bridge, parity tests, Criterion coverage, and the
   tracked `validation/reports/frc_rigid_rotor_benchmark.json` benchmark report for the
   accepted Steinhauer no-rotation FRC analytical contract.
+- Hardened the FRC quality-of-equilibrium diagnostic to use the Steinhauer
+  Eq. 27 local-gyroradius integral across Python, Rust, PyO3 parity tests, and
+  the tracked benchmark report.
 
 ## [3.9.8] - 2026-06-02
 

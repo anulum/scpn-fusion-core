@@ -33,6 +33,18 @@ R_r = dp/dr - (J x B)_r
 
 For this no-rotation axial-field slice, `J_theta = -mu_0^-1 dB_z/dr`.
 
+The quality-of-equilibrium parameter is computed from the local thermal-ion
+gyroradius profile, not from the separatrix-layer shortcut:
+
+```text
+s = (1 / R_s) * integral_0^R_s r / rho_i(r) dr
+rho_i(r) = sqrt(2 m_i T_i) / (e * abs(B_z(r)))
+```
+
+The implementation evaluates the equivalent finite integrand
+`r * e * abs(B_z(r)) / sqrt(2 m_i T_i)` and inserts an interpolated
+separatrix endpoint when the grid does not land exactly on `R_s`.
+
 ## Production boundary
 
 Accepted:
@@ -83,7 +95,7 @@ cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
 ## Evidence interpretation
 
 The benchmark report compares scalar diagnostics and weighted numerical
-checksums for `B_z`, `psi`, and pressure. It also records blocked or
-not-applicable rows instead of promoting missing surfaces to parity evidence.
-This is intentional: the accepted claim is limited to the explicit
+checksums for `B_z`, `psi`, pressure, and the Eq. 27 `s` value. It also records
+blocked or not-applicable rows instead of promoting missing surfaces to parity
+evidence. This is intentional: the accepted claim is limited to the explicit
 no-rotation analytical FRC contract.

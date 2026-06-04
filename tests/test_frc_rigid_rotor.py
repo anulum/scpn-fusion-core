@@ -13,6 +13,7 @@ from typing import TypeAlias
 import numpy as np
 from numpy.typing import NDArray
 import pytest
+from scipy.integrate import trapezoid
 
 from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
 from scpn_fusion.core.frc_rigid_rotor import (
@@ -78,7 +79,40 @@ def test_default_delta_uses_thermal_ion_gyroradius() -> None:
 
     expected_delta = ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
     assert np.isclose(state.delta, expected_delta)
-    assert np.isclose(s_parameter(state), inputs.R_s / (2.0 * expected_delta))
+    assert s_parameter(state) > 0.0
+
+
+def test_s_parameter_matches_steinhauer_integral_definition() -> None:
+    inputs = _inputs(delta=0.02)
+    rho: FloatArray = np.linspace(0.0, 0.4, 1025)
+
+    state = solve_frc_equilibrium(inputs, rho)
+
+    ion_mass_kg = 2.014 * 1.66053906660e-27
+    thermal_momentum = np.sqrt(2.0 * ion_mass_kg * inputs.T_i_eV * 1.602176634e-19)
+    mask = rho <= inputs.R_s
+    r_clip = rho[mask]
+    b_clip = state.B_z[mask]
+    if r_clip[-1] < inputs.R_s:
+        r_clip = np.append(r_clip, inputs.R_s)
+        b_clip = np.append(b_clip, np.interp(inputs.R_s, rho, state.B_z))
+    integrand = r_clip * 1.602176634e-19 * np.abs(b_clip) / thermal_momentum
+    expected = trapezoid(integrand, r_clip) / inputs.R_s
+    assert s_parameter(state) == pytest.approx(float(expected), rel=1.0e-12)
+
+
+def test_s_parameter_increases_with_axial_field_strength() -> None:
+    rho: FloatArray = np.linspace(0.0, 0.4, 513)
+    low_field = solve_frc_equilibrium(
+        RigidRotorFRCInputs(**{**_inputs().__dict__, "B_ext": 3.0}),
+        rho,
+    )
+    high_field = solve_frc_equilibrium(
+        RigidRotorFRCInputs(**{**_inputs().__dict__, "B_ext": 7.5}),
+        rho,
+    )
+
+    assert high_field.s_parameter > low_field.s_parameter
 
 
 def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
@@ -86,6 +120,9 @@ def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
 
     with pytest.raises(ValueError, match="strictly increasing"):
         solve_frc_equilibrium(inputs, np.array([0.0, 0.1, 0.1, 0.3]))
+
+    with pytest.raises(ValueError, match="magnetic axis"):
+        solve_frc_equilibrium(inputs, np.linspace(0.01, 0.4, 32))
 
     with pytest.raises(ValueError, match="separatrix"):
         solve_frc_equilibrium(inputs, np.linspace(0.0, 0.1, 8))

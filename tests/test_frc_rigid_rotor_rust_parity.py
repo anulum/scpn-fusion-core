@@ -85,7 +85,7 @@ def test_rust_frc_matches_python_reference() -> None:
         assert rust_state["converged"] is python_state.converged
         assert int(rust_state["separatrix_index"]) == python_state.separatrix_index
         assert float(rust_state["R_null"]) == pytest.approx(python_state.R_null, abs=1.0e-12)
-        assert float(rust_state["s_parameter"]) == pytest.approx(python_state.s_parameter, rel=1.0e-13)
+        assert float(rust_state["s_parameter"]) == pytest.approx(python_state.s_parameter, rel=1.0e-12)
         assert float(rust_state["delta"]) == pytest.approx(python_state.delta, rel=1.0e-13)
         assert float(rust_state["energy_J"]) == pytest.approx(python_state.energy_J, rel=1.0e-12)
         assert float(rust_state["pressure_balance_ratio"]) == pytest.approx(

@@ -32,6 +32,40 @@ pub fn ion_gyroradius_m(t_i_ev: f64, b_t: f64, mass_amu: f64) -> Result<f64, Frc
     Ok(thermal_momentum / (ELEMENTARY_CHARGE_C * b_t.abs()))
 }
 
+/// Return Steinhauer Eq. 27 `s = R_s^-1 integral_0^R_s r / rho_i(r) dr`.
+pub fn s_parameter_from_profile(
+    rho: &Array1<f64>,
+    b_z: &Array1<f64>,
+    r_s: f64,
+    t_i_ev: f64,
+    mass_amu: f64,
+) -> Result<f64, FrcSolverError> {
+    if !r_s.is_finite() || r_s <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("R_s must be positive"));
+    }
+    if !t_i_ev.is_finite() || t_i_ev <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("T_i_eV must be positive"));
+    }
+    if !mass_amu.is_finite() || mass_amu <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("mass_amu must be positive"));
+    }
+    if rho.len() != b_z.len() {
+        return Err(FrcSolverError::InvalidInput(
+            "rho and B_z profiles must have matching lengths",
+        ));
+    }
+    let ion_mass_kg = mass_amu * ATOMIC_MASS_KG;
+    let thermal_momentum = (2.0 * ion_mass_kg * t_i_ev * ELEMENTARY_CHARGE_C).sqrt();
+    let (r_clip, b_clip) = clip_to_separatrix(rho, b_z, r_s)?;
+    let integrand = Array1::from_iter(
+        r_clip
+            .iter()
+            .zip(b_clip.iter())
+            .map(|(r, b)| r * ELEMENTARY_CHARGE_C * b.abs() / thermal_momentum),
+    );
+    Ok(trapezoid(&r_clip, &integrand) / r_s)
+}
+
 /// Solve the Steinhauer no-rotation FRC analytical limit on a radial grid.
 pub fn solve_frc_equilibrium(
     inputs: &RigidRotorFrcInputs,
@@ -95,6 +129,8 @@ pub fn solve_frc_equilibrium(
         * inputs.r_s
         * inputs.r_s;
     let pressure_balance_ratio = pressure_integral / external_pressure_energy.max(tolerance);
+    let s_parameter =
+        s_parameter_from_profile(&rho, &b_z, inputs.r_s, inputs.t_i_ev, DEUTERIUM_MASS_AMU)?;
 
     let residual = b_z
         .iter()
@@ -110,7 +146,7 @@ pub fn solve_frc_equilibrium(
         p,
         r_null,
         separatrix_index,
-        s_parameter: inputs.r_s / (2.0 * delta),
+        s_parameter,
         energy_j,
         converged: true,
         residual,
@@ -172,9 +208,9 @@ fn validate_grid(rho: &Array1<f64>, r_s: f64) -> Result<(), FrcSolverError> {
             "rho_grid must contain finite values",
         ));
     }
-    if rho[0] < 0.0 {
+    if rho[0] != 0.0 {
         return Err(FrcSolverError::InvalidInput(
-            "rho_grid must start at a non-negative radius",
+            "rho_grid must start at the magnetic axis radius 0",
         ));
     }
     for i in 1..rho.len() {
@@ -303,6 +339,38 @@ fn trapezoid(x: &Array1<f64>, y: &Array1<f64>) -> f64 {
     total
 }
 
+fn clip_to_separatrix(
+    rho: &Array1<f64>,
+    values: &Array1<f64>,
+    r_s: f64,
+) -> Result<(Array1<f64>, Array1<f64>), FrcSolverError> {
+    if rho.is_empty() || values.is_empty() || rho.len() != values.len() {
+        return Err(FrcSolverError::InvalidInput(
+            "rho and value profiles must have matching non-empty lengths",
+        ));
+    }
+    let mut r_clip = Vec::new();
+    let mut value_clip = Vec::new();
+    for (r, value) in rho.iter().zip(values.iter()) {
+        if *r <= r_s {
+            r_clip.push(*r);
+            value_clip.push(*value);
+        } else {
+            break;
+        }
+    }
+    if r_clip.is_empty() {
+        return Err(FrcSolverError::InvalidInput(
+            "rho_grid must contain points below R_s",
+        ));
+    }
+    if *r_clip.last().unwrap_or(&0.0) < r_s {
+        r_clip.push(r_s);
+        value_clip.push(interpolate(rho, values, r_s));
+    }
+    Ok((Array1::from_vec(r_clip), Array1::from_vec(value_clip)))
+}
+
 fn max_abs(values: &Array1<f64>) -> f64 {
     values.iter().map(|value| value.abs()).fold(0.0, f64::max)
 }
@@ -365,7 +433,24 @@ mod tests {
         let expected =
             ion_gyroradius_m(inputs.t_i_ev, inputs.b_ext, DEUTERIUM_MASS_AMU).expect("delta");
         assert!((state.delta - expected).abs() <= expected * 1.0e-15);
-        assert!((state.s_parameter - inputs.r_s / (2.0 * expected)).abs() <= 1.0e-12);
+        assert!(state.s_parameter > 0.0);
+        assert_ne!(state.s_parameter, inputs.r_s / (2.0 * expected));
+    }
+
+    #[test]
+    fn s_parameter_matches_profile_integral() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 1025);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let expected = s_parameter_from_profile(
+            &rho,
+            &state.b_z,
+            inputs.r_s,
+            inputs.t_i_ev,
+            DEUTERIUM_MASS_AMU,
+        )
+        .expect("s parameter");
+        assert!((state.s_parameter - expected).abs() <= expected * 1.0e-14);
     }
 
     #[test]
@@ -374,5 +459,7 @@ mod tests {
         assert!(solve_frc_equilibrium(&inputs(Some(0.02), 1.0), &rho, 1.0e-10).is_err());
         let bad_grid = Array1::from_vec(vec![0.0, 0.1, 0.1, 0.3]);
         assert!(solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &bad_grid, 1.0e-10).is_err());
+        let off_axis_grid = linspace(0.01, 0.4, 32);
+        assert!(solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &off_axis_grid, 1.0e-10).is_err());
     }
 }
