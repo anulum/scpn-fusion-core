@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Added the FUS-C.4 analytical MRTI growth-spectrum contract across Python and
+  Rust, including magnetic-tension stabilization, exponential spectrum
+  tracking, separatrix-acceleration helper, fail-closed validation, local
+  non-isolated benchmark evidence, and public physics documentation.
 - Added the FUS-C.3 non-adiabatic MIF/FRC flux carrier
   `solve_flux_evolution_nonadiabatic`, with Python trajectory diagnostics, Rust
   `fusion-core::current_diffusion` parity math, module-specific tests, local

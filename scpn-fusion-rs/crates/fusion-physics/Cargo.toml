@@ -28,3 +28,7 @@ harness = false
 [[bench]]
 name = "frc_rigid_rotor_bench"
 harness = false
+
+[[bench]]
+name = "mrti_bench"
+harness = false

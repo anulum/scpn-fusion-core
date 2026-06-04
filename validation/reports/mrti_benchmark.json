@@ -1,0 +1,104 @@
+{
+  "claim_boundary": "Local non-isolated MRTI analytical growth/spectrum regression evidence. Rust rows are present only after running the Criterion benchmark.",
+  "environment": {
+    "isolated": false,
+    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "physics_contract": {
+    "equation": "gamma^2 = k*a_eff - k^2*B_perp^2/(mu0*rho)",
+    "name": "MIF/FRC linear MRTI growth spectrum",
+    "not_claimed": "full Hall-MHD pulsed-compression trajectory coupling or nonlinear saturation physics",
+    "stabilization": "negative radicands clipped to zero for magnetic-tension-stabilized modes"
+  },
+  "results": [
+    {
+      "case": "python_64_modes_512_steps",
+      "fastest_growing_k_m_inv": 6406.25,
+      "final_max_amplitude_m": 0.002537535432989228,
+      "final_time_s": 0.00010240000000000081,
+      "language": "python",
+      "mean_seconds": 0.0123515748,
+      "n_modes": 64,
+      "samples_seconds": [
+        0.013359059000000001,
+        0.011578623000000001,
+        0.011598500000000001,
+        0.013154248,
+        0.012067444
+      ],
+      "saturation_warning": true,
+      "steps": 512
+    },
+    {
+      "case": "python_256_modes_512_steps",
+      "fastest_growing_k_m_inv": 6367.1875,
+      "final_max_amplitude_m": 0.0025377277952026893,
+      "final_time_s": 0.00010240000000000081,
+      "language": "python",
+      "mean_seconds": 0.0139189876,
+      "n_modes": 256,
+      "samples_seconds": [
+        0.013232922000000001,
+        0.013942958,
+        0.016206088,
+        0.013706094,
+        0.012506876
+      ],
+      "saturation_warning": true,
+      "steps": 512
+    },
+    {
+      "case": "python_1024_modes_512_steps",
+      "fastest_growing_k_m_inv": 6376.953125,
+      "final_max_amplitude_m": 0.002537811168944513,
+      "final_time_s": 0.00010240000000000081,
+      "language": "python",
+      "mean_seconds": 0.016018591800000002,
+      "n_modes": 1024,
+      "samples_seconds": [
+        0.01606551,
+        0.014589836,
+        0.017094927,
+        0.016929887,
+        0.015412799000000001
+      ],
+      "saturation_warning": true,
+      "steps": 512
+    },
+    {
+      "case": "rust_1024_modes_512_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_1024_modes_512_steps/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 0.004791525463686508,
+      "n_modes": 1024,
+      "stddev_seconds": 0.000373959908969077,
+      "steps": 512
+    },
+    {
+      "case": "rust_256_modes_512_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_256_modes_512_steps/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 0.0012222265372108065,
+      "n_modes": 256,
+      "stddev_seconds": 2.668621661349006e-05,
+      "steps": 512
+    },
+    {
+      "case": "rust_64_modes_512_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_64_modes_512_steps/new/estimates.json",
+      "language": "rust",
+      "mean_seconds": 0.0003798639032881517,
+      "n_modes": 64,
+      "stddev_seconds": 3.787077891804517e-05,
+      "steps": 512
+    }
+  ],
+  "schema": "scpn-fusion-core.mrti_benchmark.v1",
+  "source_checksums": {
+    "benchmarks/bench_mrti.py": "19ffdc321eb24d0dbf07ba5d653492440c143cbbedae4ac6bd64136ffaa3d73f",
+    "scpn-fusion-rs/crates/fusion-physics/src/mrti.rs": "a7829fa24c9928cde07e3b57347e87ea7a4f4f9bf985f390c8dcda321b32cf20",
+    "src/scpn_fusion/core/mrti.py": "988deeaafd8c57c8bd191fa8d62717ef62933a0964f8111bcf8ea45276e26b7c"
+  }
+}

@@ -237,6 +237,36 @@ rotating BVP.
 
 ---
 
+## 1B. MIF/FRC MRTI Growth Spectrum
+
+The MIF lane now exposes an analytical Magneto-Rayleigh-Taylor instability
+growth-spectrum contract in Python and Rust. It evaluates the resolved
+linear-mode growth rate with magnetic-tension stabilisation:
+
+$$\gamma^2(k) = k\,a_{\rm eff} -
+\frac{k^2B_\perp^2}{\mu_0\rho}.$$
+
+Modes with negative radicand are reported as zero-growth stabilised modes. The
+hydrodynamic limit is recovered as $\gamma=\sqrt{k\,a_{\rm eff}}$ when
+$B_\perp=0$. `MRTISpectrumTracker` advances perturbation amplitudes through
+frozen-coefficient exponential growth, records the fastest growing mode, and
+captures the first saturation-threshold breach.
+
+The coupling helper `effective_acceleration_from_radius_rate()` estimates
+$d^2R_s/dt^2$ from a supplied separatrix radial-speed history using finite
+differences and optional edge-padded smoothing. This is only an adapter for
+future pulsed-compression trajectories; it is not the unresolved FUS-C.6
+Hall-MHD compression solver and is not accepted as nonlinear saturation
+evidence.
+
+**Key files:** `core/mrti.py`, `scpn-fusion-rs/crates/fusion-physics/src/mrti.rs`,
+`docs/physics/mrti.md`.
+
+**Validation:** `tests/test_mrti.py`, Rust `fusion_physics::mrti` unit tests,
+`benchmarks/bench_mrti.py`, `validation/reports/mrti_benchmark.json`.
+
+---
+
 ## 2. JAX Differentiable GS Transport
 
 A fully differentiable 1.5D transport kernel in JAX, enabling `jax.grad` through the transport evolution for optimal-control and inverse problems.

@@ -118,6 +118,14 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "null_radius": (".frc_rigid_rotor", "null_radius"),
     "s_parameter": (".frc_rigid_rotor", "s_parameter"),
     "validate_equilibrium": (".frc_rigid_rotor", "validate_equilibrium"),
+    # MRTI — analytical MIF/FRC growth spectrum with magnetic tension
+    "MRTISpectrumState": (".mrti", "MRTISpectrumState"),
+    "MRTISpectrumTracker": (".mrti", "MRTISpectrumTracker"),
+    "effective_acceleration_from_radius_rate": (
+        ".mrti",
+        "effective_acceleration_from_radius_rate",
+    ),
+    "mrti_growth_rate": (".mrti", "mrti_growth_rate"),
     # Current drive — ECCD, NBI, LHCD sources
     "ECCDSource": (".current_drive", "ECCDSource"),
     "NBISource": (".current_drive", "NBISource"),
