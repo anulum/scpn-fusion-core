@@ -15,7 +15,7 @@ until the dedicated FUS-C.1 BVP implementation lands.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -455,6 +455,125 @@ def solve_frc_equilibrium(
     )
 
 
+def frc_no_rotation_jax_observables(
+    rho_normalized_grid: FloatArray,
+    *,
+    n0: Any,
+    T_i_eV: float,
+    T_e_eV: float,
+    R_s: Any,
+    B_ext: Any,
+    delta: Any | None,
+    mass_amu: float = DEUTERIUM_MASS_AMU,
+) -> dict[str, Any]:
+    """Return differentiable observables for the accepted no-rotation FRC contract.
+
+    The independent grid is ``x = r / R_s``. Keeping the grid normalised makes
+    gradients with respect to ``R_s`` well-defined because the separatrix
+    interval remains the fixed domain ``0 <= x <= 1``. The implemented equations
+    are the same Steinhauer no-rotation field, cylindrical flux primitive,
+    magnetic-pressure-balance profile, and Eq. 27 ``s`` integral used by the
+    NumPy and Rust solver paths.
+
+    This helper intentionally does not implement the rotating rigid-rotor BVP.
+    """
+    try:
+        from jax import config as jax_config
+
+        jax_config.update("jax_enable_x64", True)
+        import jax.numpy as jnp
+    except ImportError as exc:
+        raise ImportError(
+            "frc_no_rotation_jax_observables requires the optional JAX dependency"
+        ) from exc
+
+    x_np = _validate_normalized_grid(rho_normalized_grid)
+    _validate_positive_concrete(T_i_eV, "T_i_eV")
+    _validate_positive_concrete(T_e_eV, "T_e_eV")
+    _validate_positive_concrete(mass_amu, "mass_amu")
+    _validate_positive_concrete(R_s, "R_s")
+    _validate_nonzero_concrete(B_ext, "B_ext")
+    _validate_positive_concrete(n0, "n0")
+    if delta is not None:
+        _validate_positive_concrete(delta, "delta")
+
+    x = jnp.asarray(x_np, dtype=jnp.float64)
+    r_s = jnp.asarray(R_s, dtype=jnp.float64)
+    b_ext = jnp.asarray(B_ext, dtype=jnp.float64)
+    t_i = jnp.asarray(T_i_eV, dtype=jnp.float64)
+    t_e = jnp.asarray(T_e_eV, dtype=jnp.float64)
+    density_at_null = jnp.asarray(n0, dtype=jnp.float64)
+    ion_mass_kg = jnp.asarray(mass_amu * ATOMIC_MASS_KG, dtype=jnp.float64)
+    element_charge = jnp.asarray(ELEMENTARY_CHARGE_C, dtype=jnp.float64)
+    mu0 = jnp.asarray(MU_0, dtype=jnp.float64)
+    pi = jnp.asarray(np.pi, dtype=jnp.float64)
+    layer = (
+        jnp.sqrt(2.0 * ion_mass_kg * t_i * element_charge) / (element_charge * jnp.abs(b_ext))
+        if delta is None
+        else jnp.asarray(delta, dtype=jnp.float64)
+    )
+
+    rho = x * r_s
+    argument = (x * x - 1.0) * r_s / (2.0 * layer)
+    tanh_argument = jnp.tanh(argument)
+    b_z = -b_ext * tanh_argument
+    b_theta = jnp.zeros_like(b_z)
+    j_theta = b_ext * (1.0 - tanh_argument * tanh_argument) * x / (mu0 * layer)
+    psi = -b_ext * r_s * layer * (_jax_log_cosh(jnp, argument) - _jax_log_cosh(jnp, argument[0]))
+    psi_axis = psi[0]
+    psi_separatrix = _jax_steinhauer_psi_at_x(jnp, 1.0, b_ext, r_s, layer)
+    psi_normalized = (psi - psi_axis) / (psi_separatrix - psi_axis)
+
+    external_pressure = b_ext * b_ext / (2.0 * mu0)
+    pressure = jnp.maximum(external_pressure - b_z * b_z / (2.0 * mu0), 0.0)
+    thermal_energy_j = (t_i + t_e) * element_charge
+    density = pressure / thermal_energy_j
+    beta = pressure / external_pressure
+    magnetic_energy_density = b_z * b_z / (2.0 * mu0)
+    energy_integrand = (magnetic_energy_density + pressure) * 2.0 * pi * rho
+    energy_j_per_m = jnp.trapezoid(energy_integrand, rho)
+    pressure_integrand = pressure * 2.0 * pi * rho
+    pressure_balance_ratio = jnp.trapezoid(pressure_integrand, rho) / (
+        external_pressure * pi * r_s * r_s
+    )
+
+    x_sep = jnp.asarray(_normalised_separatrix_grid(x_np), dtype=jnp.float64)
+    rho_sep = x_sep * r_s
+    argument_sep = (x_sep * x_sep - 1.0) * r_s / (2.0 * layer)
+    b_z_sep = -b_ext * jnp.tanh(argument_sep)
+    pressure_sep = jnp.maximum(external_pressure - b_z_sep * b_z_sep / (2.0 * mu0), 0.0)
+    separatrix_pressure_energy = jnp.trapezoid(pressure_sep * 2.0 * pi * rho_sep, rho_sep)
+    magnetic_deficit_sep = external_pressure - b_z_sep * b_z_sep / (2.0 * mu0)
+    separatrix_magnetic_deficit_energy = jnp.trapezoid(
+        magnetic_deficit_sep * 2.0 * pi * rho_sep,
+        rho_sep,
+    )
+    thermal_momentum = jnp.sqrt(2.0 * ion_mass_kg * t_i * element_charge)
+    s_integrand = rho_sep * element_charge * jnp.abs(b_z_sep) / thermal_momentum
+    s_value = jnp.trapezoid(s_integrand, rho_sep) / r_s
+
+    return {
+        "model": "steinhauer_2011_no_rotation_analytical_jax",
+        "rho": rho,
+        "rho_normalized": x,
+        "B_z": b_z,
+        "B_theta": b_theta,
+        "J_theta": j_theta,
+        "psi": psi,
+        "psi_normalized": psi_normalized,
+        "pressure": pressure,
+        "density_m3": density,
+        "density_at_null_m3": density_at_null,
+        "beta": beta,
+        "energy_J": energy_j_per_m,
+        "pressure_balance_ratio": pressure_balance_ratio,
+        "separatrix_pressure_energy_J_m": separatrix_pressure_energy,
+        "separatrix_magnetic_deficit_energy_J_m": separatrix_magnetic_deficit_energy,
+        "s_parameter": s_value,
+        "delta_m": layer,
+    }
+
+
 def null_radius(state: FRCEquilibriumState) -> float:
     """Return the interpolated radius where the axial field reverses."""
     return _zero_crossing_radius(state.rho, state.B_z)
@@ -707,6 +826,49 @@ def _validate_grid(rho_grid: FloatArray, R_s: float) -> FloatArray:
     return rho
 
 
+def _validate_normalized_grid(rho_normalized_grid: FloatArray) -> FloatArray:
+    x = cast(FloatArray, np.asarray(rho_normalized_grid, dtype=np.float64))
+    if x.ndim != 1:
+        raise ValueError("rho_normalized_grid must be one-dimensional")
+    if x.size < 4:
+        raise ValueError("rho_normalized_grid must contain at least four points")
+    if not np.all(np.isfinite(x)):
+        raise ValueError("rho_normalized_grid must contain finite values")
+    if x[0] != 0.0:
+        raise ValueError("rho_normalized_grid must start at 0")
+    if not np.all(np.diff(x) > 0.0):
+        raise ValueError("rho_normalized_grid must be strictly increasing")
+    if x[-1] <= 1.0:
+        raise ValueError("rho_normalized_grid must extend outside the separatrix x=1")
+    return x
+
+
+def _normalised_separatrix_grid(x: FloatArray) -> FloatArray:
+    stop = int(np.searchsorted(x, 1.0, side="right"))
+    x_sep = x[:stop]
+    if x_sep.size == 0:
+        raise ValueError("rho_normalized_grid must contain points below x=1")
+    if x_sep[-1] < 1.0:
+        x_sep = np.append(x_sep, 1.0)
+    return cast(FloatArray, x_sep)
+
+
+def _validate_positive_concrete(value: Any, name: str) -> None:
+    if not isinstance(value, int | float | np.floating):
+        return
+    numeric = float(value)
+    if not np.isfinite(numeric) or numeric <= 0.0:
+        raise ValueError(f"{name} must be positive")
+
+
+def _validate_nonzero_concrete(value: Any, name: str) -> None:
+    if not isinstance(value, int | float | np.floating):
+        return
+    numeric = float(value)
+    if not np.isfinite(numeric) or numeric == 0.0:
+        raise ValueError(f"{name} must be non-zero")
+
+
 def _s_parameter_from_profile(
     rho: FloatArray,
     B_z: FloatArray,
@@ -761,6 +923,19 @@ def _log_cosh(values: FloatArray) -> FloatArray:
     """Return numerically stable ``log(cosh(values))``."""
     abs_values = np.abs(values)
     return abs_values + np.log1p(np.exp(-2.0 * abs_values)) - np.log(2.0)
+
+
+def _jax_log_cosh(jnp: Any, values: Any) -> Any:
+    """Return a JAX-traceable numerically stable ``log(cosh(values))``."""
+    abs_values = jnp.abs(values)
+    return abs_values + jnp.log1p(jnp.exp(-2.0 * abs_values)) - jnp.log(2.0)
+
+
+def _jax_steinhauer_psi_at_x(jnp: Any, x: float, b_ext: Any, r_s: Any, delta: Any) -> Any:
+    """Return the JAX-traceable Steinhauer flux primitive at normalised radius ``x``."""
+    argument = (x * x - 1.0) * r_s / (2.0 * delta)
+    axis_argument = -r_s / (2.0 * delta)
+    return -b_ext * r_s * delta * (_jax_log_cosh(jnp, argument) - _jax_log_cosh(jnp, axis_argument))
 
 
 def _toroidal_current_density_from_steinhauer(

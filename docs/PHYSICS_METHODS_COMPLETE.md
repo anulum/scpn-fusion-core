@@ -58,6 +58,14 @@ the first accepted `FUS-C.1` contract.  It is not yet the full rotating
 rigid-rotor BVP.  The accepted no-rotation contract is implemented in Python
 and Rust, with optional PyO3 exposure when the native extension is built.
 
+The same accepted no-rotation equations are exposed through
+`frc_no_rotation_jax_observables` when JAX is installed. That helper evaluates
+the Steinhauer field, pressure-balance profile, cylindrical flux primitive,
+energy inventory, and Eq. 27 `s` integral on a fixed normalised grid
+`x = r / R_s`, making `B_ext` and `R_s` gradients well-defined for optimisation
+workflows. It is not a substitute for the unresolved rotating rigid-rotor BVP
+or nonlinear MIF parity gates.
+
 The axial field follows Steinhauer (2011), Eq. 7:
 
 $$B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2R_s\delta}\right)$$

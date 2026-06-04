@@ -98,6 +98,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "FRCEquilibriumState": (".frc_rigid_rotor", "FRCEquilibriumState"),
     "FRCValidationReport": (".frc_rigid_rotor", "FRCValidationReport"),
     "ion_gyroradius_m": (".frc_rigid_rotor", "ion_gyroradius_m"),
+    "frc_no_rotation_jax_observables": (
+        ".frc_rigid_rotor",
+        "frc_no_rotation_jax_observables",
+    ),
     "solve_frc_equilibrium": (".frc_rigid_rotor", "solve_frc_equilibrium"),
     "ampere_residual": (".frc_rigid_rotor", "ampere_residual"),
     "flux_derivative_residual": (".frc_rigid_rotor", "flux_derivative_residual"),

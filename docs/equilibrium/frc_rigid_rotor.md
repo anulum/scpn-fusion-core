@@ -153,6 +153,11 @@ separatrix endpoint when the grid does not land exactly on `R_s`.
 Accepted:
 
 - Python NumPy reference implementation in `scpn_fusion.core.frc_rigid_rotor`.
+- Optional JAX observable helper `frc_no_rotation_jax_observables` for the same
+  no-rotation Steinhauer contract on a fixed normalised grid `x = r / R_s`.
+  This surface exposes differentiable `B_ext` and `R_s` observables for
+  optimisation and controller co-design studies without claiming rotating-BVP
+  or nonlinear MIF parity.
 - Rust implementation in `fusion-physics::frc`.
 - PyO3 exposure through `scpn_fusion_rs.py_solve_frc_equilibrium` when the
   Rust extension is built.

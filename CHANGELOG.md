@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Added a differentiable JAX observable kernel for the accepted Steinhauer
+  no-rotation FRC analytical contract. The new path matches the NumPy solver on
+  axial field, pressure, normalised flux, energy, and `s`, and exposes finite
+  gradients with respect to `B_ext` and `R_s` on a fixed `r / R_s` grid. This is
+  explicitly not a rotating rigid-rotor BVP implementation.
 - Added the first FRC rigid-rotor equilibrium slice: validated
   Steinhauer no-rotation analytical axial-field profile, finite pressure and
   energy diagnostics, lazy public exports, module-specific tests, and Sphinx

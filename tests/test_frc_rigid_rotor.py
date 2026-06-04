@@ -31,6 +31,7 @@ from scpn_fusion.core.frc_rigid_rotor import (
     density_profile,
     force_balance_residual,
     flux_derivative_residual,
+    frc_no_rotation_jax_observables,
     ion_gyroradius_m,
     psi_normalized_profile,
     null_radius,
@@ -166,6 +167,77 @@ def test_s_parameter_increases_with_axial_field_strength() -> None:
     )
 
     assert high_field.s_parameter > low_field.s_parameter
+
+
+def test_jax_no_rotation_observables_match_numpy_and_have_finite_gradients() -> None:
+    import jax
+
+    jax.config.update("jax_enable_x64", True)
+    import jax.numpy as jnp
+
+    x_grid: FloatArray = np.linspace(0.0, 2.0, 401)
+    inputs = _inputs(delta=0.02)
+    rho = x_grid * inputs.R_s
+    numpy_state = solve_frc_equilibrium(inputs, rho)
+
+    jax_state = frc_no_rotation_jax_observables(
+        x_grid,
+        n0=inputs.n0,
+        T_i_eV=inputs.T_i_eV,
+        T_e_eV=inputs.T_e_eV,
+        R_s=inputs.R_s,
+        B_ext=inputs.B_ext,
+        delta=inputs.delta,
+    )
+
+    np.testing.assert_allclose(np.asarray(jax_state["rho"]), numpy_state.rho, rtol=0.0, atol=0.0)
+    np.testing.assert_allclose(
+        np.asarray(jax_state["B_z"]),
+        numpy_state.B_z,
+        rtol=1.0e-12,
+        atol=1.0e-12,
+    )
+    np.testing.assert_allclose(
+        np.asarray(jax_state["pressure"]),
+        numpy_state.p,
+        rtol=1.0e-12,
+        atol=1.0e-7,
+    )
+    np.testing.assert_allclose(
+        np.asarray(jax_state["psi_normalized"]),
+        numpy_state.psi_normalized,
+        rtol=1.0e-12,
+        atol=1.0e-12,
+    )
+    assert float(jax_state["energy_J"]) == pytest.approx(numpy_state.energy_J, rel=1.0e-12)
+    assert float(jax_state["s_parameter"]) == pytest.approx(
+        numpy_state.s_parameter,
+        rel=1.0e-12,
+    )
+
+    def energy_for(field_t: jnp.ndarray, radius_m: jnp.ndarray) -> jnp.ndarray:
+        matched_density = field_t**2 / (2.0 * MU_0)
+        matched_density = matched_density / ((inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C)
+        observables = frc_no_rotation_jax_observables(
+            x_grid,
+            n0=matched_density,
+            T_i_eV=inputs.T_i_eV,
+            T_e_eV=inputs.T_e_eV,
+            R_s=radius_m,
+            B_ext=field_t,
+            delta=inputs.delta,
+        )
+        return cast(jnp.ndarray, observables["energy_J"])
+
+    grad_b_ext, grad_r_s = jax.grad(energy_for, argnums=(0, 1))(
+        jnp.asarray(inputs.B_ext),
+        jnp.asarray(inputs.R_s),
+    )
+
+    assert np.isfinite(float(grad_b_ext))
+    assert np.isfinite(float(grad_r_s))
+    assert float(grad_b_ext) > 0.0
+    assert float(grad_r_s) > 0.0
 
 
 def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
