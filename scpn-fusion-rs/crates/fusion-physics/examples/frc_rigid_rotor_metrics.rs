@@ -54,7 +54,7 @@ fn main() {
             print!(",");
         }
         print!(
-            "{{\"grid_points\":{},\"wall_time_s\":{:.12e},\"r_null_m\":{:.17e},\"target_separatrix_radius_m\":{:.17e},\"separatrix_radius_error_m\":{:.17e},\"field_reversal_passed\":{},\"s_parameter\":{:.17e},\"energy_j_per_m\":{:.17e},\"pressure_balance_ratio\":{:.17e},\"peak_j_theta_a_m2\":{:.17e},\"ampere_residual_linf\":{:.17e},\"force_balance_residual_linf\":{:.17e},\"b_z_checksum\":{:.17e},\"j_theta_checksum\":{:.17e},\"psi_checksum\":{:.17e},\"p_checksum\":{:.17e}}}",
+            "{{\"grid_points\":{},\"wall_time_s\":{:.12e},\"r_null_m\":{:.17e},\"target_separatrix_radius_m\":{:.17e},\"separatrix_radius_error_m\":{:.17e},\"field_reversal_passed\":{},\"s_parameter\":{:.17e},\"energy_j_per_m\":{:.17e},\"pressure_balance_ratio\":{:.17e},\"flux_derivative_residual_linf\":{:.17e},\"peak_j_theta_a_m2\":{:.17e},\"ampere_residual_linf\":{:.17e},\"force_balance_residual_linf\":{:.17e},\"b_z_checksum\":{:.17e},\"j_theta_checksum\":{:.17e},\"psi_checksum\":{:.17e},\"p_checksum\":{:.17e}}}",
             n,
             wall_time_s,
             state.r_null,
@@ -64,6 +64,7 @@ fn main() {
             state.s_parameter,
             state.energy_j,
             state.pressure_balance_ratio,
+            state.flux_derivative_residual_linf,
             state.peak_j_theta_a_m2,
             state.ampere_residual_linf,
             state.force_balance_residual_linf,

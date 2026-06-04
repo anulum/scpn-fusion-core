@@ -29,6 +29,9 @@
   configured `R_s`, requires radial samples on both sides of `R_s`, carries the
   diagnostics through Python, Rust, PyO3, benchmark JSON, and public docs, and
   keeps missing non-Python/Rust FRC surfaces fail-closed.
+- Replaced numerical FRC cylindrical-flux integration with the closed-form
+  Steinhauer primitive and added a flux derivative closure residual across
+  Python, Rust, PyO3, package exports, benchmark JSON, tests, and public docs.
 
 ## [3.9.8] - 2026-06-02
 

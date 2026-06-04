@@ -97,7 +97,19 @@ pub fn solve_frc_equilibrium(
         .sum::<f64>()
         / ampere_residual.len() as f64)
         .sqrt();
-    let psi = cylindrical_flux_from_bz(&rho, &b_z);
+    let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
+    let flux_derivative_residual = flux_derivative_closure_residual(&rho, &psi, &b_z);
+    let dpsi_dr = gradient_edge_order2(&rho, &psi);
+    let flux_scale = tolerance
+        .max(max_abs(&rho_times_bz(&rho, &b_z)))
+        .max(max_abs(&dpsi_dr));
+    let flux_derivative_residual_linf = max_abs(&flux_derivative_residual) / flux_scale;
+    let flux_derivative_residual_l2 = (flux_derivative_residual
+        .iter()
+        .map(|value| (value / flux_scale).powi(2))
+        .sum::<f64>()
+        / flux_derivative_residual.len() as f64)
+        .sqrt();
     let r_null = zero_crossing_radius(&rho, &b_z);
     let separatrix_radius_error_m = (r_null - inputs.r_s).abs();
     let separatrix_index = nearest_index(&rho, r_null);
@@ -168,6 +180,9 @@ pub fn solve_frc_equilibrium(
         residual,
         delta,
         pressure_balance_ratio,
+        flux_derivative_residual,
+        flux_derivative_residual_linf,
+        flux_derivative_residual_l2,
         ampere_residual,
         ampere_residual_linf,
         ampere_residual_l2,
@@ -248,14 +263,23 @@ fn validate_grid(rho: &Array1<f64>, r_s: f64) -> Result<(), FrcSolverError> {
     Ok(())
 }
 
-fn cylindrical_flux_from_bz(rho: &Array1<f64>, b_z: &Array1<f64>) -> Array1<f64> {
-    let integrand = Array1::from_iter(rho.iter().zip(b_z.iter()).map(|(r, b)| r * b));
-    let mut psi = Array1::zeros(rho.len());
-    for i in 1..rho.len() {
-        let dr = rho[i] - rho[i - 1];
-        psi[i] = psi[i - 1] + 0.5 * (integrand[i] + integrand[i - 1]) * dr;
-    }
-    psi
+fn cylindrical_flux_from_steinhauer(
+    argument: &Array1<f64>,
+    b_ext: f64,
+    r_s: f64,
+    delta: f64,
+) -> Array1<f64> {
+    let axis_log_cosh = log_cosh(argument[0]);
+    Array1::from_iter(
+        argument
+            .iter()
+            .map(|a| -b_ext * r_s * delta * (log_cosh(*a) - axis_log_cosh)),
+    )
+}
+
+fn log_cosh(value: f64) -> f64 {
+    let abs_value = value.abs();
+    abs_value + (-2.0 * abs_value).exp().ln_1p() - std::f64::consts::LN_2
 }
 
 fn toroidal_current_density_from_steinhauer(
@@ -284,6 +308,24 @@ fn ampere_current_closure_residual(
             .zip(dbz_dr.iter())
             .map(|(j, db)| MU_0 * j + db),
     )
+}
+
+fn flux_derivative_closure_residual(
+    rho: &Array1<f64>,
+    psi: &Array1<f64>,
+    b_z: &Array1<f64>,
+) -> Array1<f64> {
+    let dpsi_dr = gradient_edge_order2(rho, psi);
+    Array1::from_iter(
+        dpsi_dr
+            .iter()
+            .zip(rho.iter().zip(b_z.iter()))
+            .map(|(dpsi, (r, b))| dpsi - r * b),
+    )
+}
+
+fn rho_times_bz(rho: &Array1<f64>, b_z: &Array1<f64>) -> Array1<f64> {
+    Array1::from_iter(rho.iter().zip(b_z.iter()).map(|(r, b)| r * b))
 }
 
 fn radial_force_balance_residual(
@@ -491,6 +533,9 @@ mod tests {
         assert!(state.field_reversal_passed);
         assert!(state.energy_j > 0.0);
         assert!(state.pressure_balance_ratio > 0.0);
+        assert!(state.flux_derivative_residual_linf <= 2.0e-2);
+        assert!(state.flux_derivative_residual_l2 <= 2.0e-2);
+        assert_eq!(state.flux_derivative_residual.len(), rho.len());
         assert!(state.peak_j_theta_a_m2 > 0.0);
         assert!(state.ampere_residual_linf <= 2.0e-2);
         assert!(state.ampere_residual_l2 <= 2.0e-2);
@@ -525,6 +570,27 @@ mod tests {
     }
 
     #[test]
+    fn cylindrical_flux_matches_steinhauer_primitive() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 401);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let dpsi_dr = gradient_edge_order2(&rho, &state.psi);
+        let axis_argument = (rho[0] * rho[0] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
+        let axis_log_cosh = log_cosh(axis_argument);
+        for i in 0..rho.len() {
+            let argument = (rho[i] * rho[i] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
+            let expected_psi =
+                -inputs.b_ext * inputs.r_s * 0.02 * (log_cosh(argument) - axis_log_cosh);
+            assert!((state.psi[i] - expected_psi).abs() <= 1.0e-14);
+            assert!(
+                (state.flux_derivative_residual[i] - (dpsi_dr[i] - rho[i] * state.b_z[i])).abs()
+                    <= 1.0e-14
+            );
+        }
+        assert!(state.flux_derivative_residual_linf <= 2.0e-2);
+    }
+
+    #[test]
     fn ampere_residual_refines_with_grid() {
         let inputs = inputs(Some(0.02), 0.0);
         let coarse =
@@ -534,6 +600,18 @@ mod tests {
         let fine = solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 401), 1.0e-10).expect("fine");
         assert!(medium.ampere_residual_linf < coarse.ampere_residual_linf);
         assert!(fine.ampere_residual_linf < medium.ampere_residual_linf);
+    }
+
+    #[test]
+    fn flux_derivative_residual_refines_with_grid() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let coarse =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 101), 1.0e-10).expect("coarse");
+        let medium =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 201), 1.0e-10).expect("medium");
+        let fine = solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 401), 1.0e-10).expect("fine");
+        assert!(medium.flux_derivative_residual_linf < coarse.flux_derivative_residual_linf);
+        assert!(fine.flux_derivative_residual_linf < medium.flux_derivative_residual_linf);
     }
 
     #[test]

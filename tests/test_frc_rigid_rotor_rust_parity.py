@@ -76,6 +76,12 @@ def test_rust_frc_matches_python_reference() -> None:
         np.testing.assert_allclose(rust_state["psi"], python_state.psi, rtol=1.0e-13, atol=1.0e-13)
         np.testing.assert_allclose(rust_state["p"], python_state.p, rtol=1.0e-12, atol=1.0e-6)
         np.testing.assert_allclose(
+            rust_state["flux_derivative_residual"],
+            python_state.flux_derivative_residual,
+            rtol=0.0,
+            atol=1.0e-12,
+        )
+        np.testing.assert_allclose(
             rust_state["ampere_residual"],
             python_state.ampere_residual,
             rtol=0.0,
@@ -107,6 +113,14 @@ def test_rust_frc_matches_python_reference() -> None:
         assert float(rust_state["pressure_balance_ratio"]) == pytest.approx(
             python_state.pressure_balance_ratio,
             rel=1.0e-12,
+        )
+        assert float(rust_state["flux_derivative_residual_linf"]) == pytest.approx(
+            python_state.flux_derivative_residual_linf,
+            abs=1.0e-12,
+        )
+        assert float(rust_state["flux_derivative_residual_l2"]) == pytest.approx(
+            python_state.flux_derivative_residual_l2,
+            abs=1.0e-12,
         )
         assert float(rust_state["peak_j_theta_A_m2"]) == pytest.approx(
             python_state.peak_j_theta_A_m2,

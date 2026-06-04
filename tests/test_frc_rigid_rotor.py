@@ -20,6 +20,7 @@ from scpn_fusion.core.frc_rigid_rotor import (
     MU_0,
     ampere_residual,
     force_balance_residual,
+    flux_derivative_residual,
     ion_gyroradius_m,
     null_radius,
     s_parameter,
@@ -174,6 +175,9 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.target_separatrix_radius_m == inputs.R_s
     assert state.separatrix_radius_error_m <= float(np.max(np.diff(rho)))
     assert state.field_reversal_passed is True
+    assert state.flux_derivative_residual.shape == rho.shape
+    assert state.flux_derivative_residual_linf <= 2.0e-2
+    assert state.flux_derivative_residual_l2 <= 2.0e-2
     assert state.J_theta.shape == rho.shape
     assert state.ampere_residual.shape == rho.shape
     assert state.peak_j_theta_A_m2 > 0.0
@@ -214,6 +218,28 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
     )
 
 
+def test_cylindrical_flux_matches_steinhauer_primitive() -> None:
+    delta = 0.02
+    inputs = _inputs(delta=delta)
+    rho: FloatArray = np.linspace(0.0, 0.4, 401)
+
+    state = solve_frc_equilibrium(inputs, rho)
+
+    argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
+    log_cosh = np.log(np.cosh(argument))
+    expected_psi = -inputs.B_ext * inputs.R_s * delta * (log_cosh - float(log_cosh[0]))
+    dpsi_dr = np.gradient(state.psi, state.rho, edge_order=2)
+
+    np.testing.assert_allclose(state.psi, expected_psi, rtol=1.0e-14, atol=1.0e-14)
+    np.testing.assert_allclose(
+        flux_derivative_residual(state),
+        dpsi_dr - state.rho * state.B_z,
+        rtol=0.0,
+        atol=1.0e-14,
+    )
+    assert state.flux_derivative_residual_linf <= 2.0e-2
+
+
 def test_ampere_residual_refines_with_grid() -> None:
     inputs = _inputs(delta=0.02)
 
@@ -223,6 +249,17 @@ def test_ampere_residual_refines_with_grid() -> None:
 
     assert medium.ampere_residual_linf < coarse.ampere_residual_linf
     assert fine.ampere_residual_linf < medium.ampere_residual_linf
+
+
+def test_flux_derivative_residual_refines_with_grid() -> None:
+    inputs = _inputs(delta=0.02)
+
+    coarse = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 101))
+    medium = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 201))
+    fine = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 401))
+
+    assert medium.flux_derivative_residual_linf < coarse.flux_derivative_residual_linf
+    assert fine.flux_derivative_residual_linf < medium.flux_derivative_residual_linf
 
 
 def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
@@ -245,6 +282,7 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
 
     assert residual.shape == rho.shape
     assert np.all(np.isfinite(residual))
+    assert diagnostic_report.flux_closure_passed is True
     assert diagnostic_report.ampere_closure_passed is True
     assert diagnostic_report.field_reversal_passed is True
     assert diagnostic_report.passed
@@ -254,6 +292,18 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     assert strict_report.passed is False
     assert loose_report.force_balance_passed is True
     assert loose_report.passed is True
+
+
+def test_flux_closure_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, flux_derivative_residual_linf=1.0)
+    report = validate_equilibrium(corrupted, flux_tolerance=1.0e-3)
+
+    assert report.flux_closure_passed is False
+    assert report.passed is False
 
 
 def test_validation_recomputes_separatrix_target_and_field_reversal() -> None:

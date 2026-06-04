@@ -80,6 +80,7 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "s_parameter": state.s_parameter,
                 "energy_j_per_m": state.energy_J,
                 "pressure_balance_ratio": state.pressure_balance_ratio,
+                "flux_derivative_residual_linf": state.flux_derivative_residual_linf,
                 "peak_j_theta_a_m2": state.peak_j_theta_A_m2,
                 "ampere_residual_linf": state.ampere_residual_linf,
                 "force_balance_residual_linf": state.force_balance_residual_linf,
@@ -172,6 +173,7 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "s_parameter": float(state["s_parameter"]),
                 "energy_j_per_m": float(state["energy_J"]),
                 "pressure_balance_ratio": float(state["pressure_balance_ratio"]),
+                "flux_derivative_residual_linf": float(state["flux_derivative_residual_linf"]),
                 "peak_j_theta_a_m2": float(state["peak_j_theta_A_m2"]),
                 "ampere_residual_linf": float(state["ampere_residual_linf"]),
                 "force_balance_residual_linf": float(state["force_balance_residual_linf"]),
@@ -226,6 +228,9 @@ def _compare_surface(
                 float(cand["pressure_balance_ratio"]),
                 float(ref["pressure_balance_ratio"]),
             ),
+            "flux_derivative_residual_linf_abs_error": abs(
+                float(cand["flux_derivative_residual_linf"]) - float(ref["flux_derivative_residual_linf"])
+            ),
             "peak_j_theta_rel_error": _relative_error(
                 float(cand["peak_j_theta_a_m2"]),
                 float(ref["peak_j_theta_a_m2"]),
@@ -260,6 +265,7 @@ def _compare_surface(
             and checks["s_parameter_rel_error"] <= 1.0e-12
             and checks["energy_rel_error"] <= 1.0e-12
             and checks["pressure_balance_rel_error"] <= 1.0e-12
+            and checks["flux_derivative_residual_linf_abs_error"] <= 1.0e-12
             and checks["peak_j_theta_rel_error"] <= 1.0e-12
             and checks["ampere_residual_linf_abs_error"] <= 1.0e-12
             and checks["force_balance_linf_rel_error"] <= 1.0e-9
@@ -282,6 +288,7 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "s_parameter",
         "energy_j_per_m",
         "pressure_balance_ratio",
+        "flux_derivative_residual_linf",
         "ampere_residual_linf",
     )
     rows: list[dict[str, Any]] = []

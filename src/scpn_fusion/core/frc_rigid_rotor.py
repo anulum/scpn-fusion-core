@@ -63,6 +63,9 @@ class FRCEquilibriumState:
     residual: float
     delta: float
     pressure_balance_ratio: float
+    flux_derivative_residual: FloatArray
+    flux_derivative_residual_linf: float
+    flux_derivative_residual_l2: float
     ampere_residual: FloatArray
     ampere_residual_linf: float
     ampere_residual_l2: float
@@ -85,6 +88,9 @@ class FRCValidationReport:
     pressure_peak_error_m: float
     edge_field_error_T: float
     pressure_balance_ratio: float
+    flux_derivative_residual_linf: float
+    flux_derivative_residual_l2: float
+    flux_closure_passed: bool
     ampere_residual_linf: float
     ampere_residual_l2: float
     ampere_closure_passed: bool
@@ -145,7 +151,12 @@ def solve_frc_equilibrium(
     )
     ampere_residual_linf = float(np.max(np.abs(ampere_residual)) / ampere_scale)
     ampere_residual_l2 = float(np.sqrt(np.mean((ampere_residual / ampere_scale) ** 2)))
-    psi = _cylindrical_flux_from_bz(rho, B_z)
+    psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
+    flux_derivative_residual = _flux_derivative_closure_residual(rho, psi, B_z)
+    dpsi_dr = cast(FloatArray, np.gradient(psi, rho, edge_order=2))
+    flux_scale = max(tolerance, float(np.max(np.abs(rho * B_z))), float(np.max(np.abs(dpsi_dr))))
+    flux_derivative_residual_linf = float(np.max(np.abs(flux_derivative_residual)) / flux_scale)
+    flux_derivative_residual_l2 = float(np.sqrt(np.mean((flux_derivative_residual / flux_scale) ** 2)))
     r_null = _zero_crossing_radius(rho, B_z)
     separatrix_radius_error = abs(r_null - inputs.R_s)
     separatrix_index = int(np.argmin(np.abs(rho - r_null)))
@@ -191,6 +202,9 @@ def solve_frc_equilibrium(
         residual=float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument))))),
         delta=delta,
         pressure_balance_ratio=float(pressure_balance_ratio),
+        flux_derivative_residual=flux_derivative_residual,
+        flux_derivative_residual_linf=flux_derivative_residual_linf,
+        flux_derivative_residual_l2=flux_derivative_residual_l2,
         ampere_residual=ampere_residual,
         ampere_residual_linf=ampere_residual_linf,
         ampere_residual_l2=ampere_residual_l2,
@@ -224,10 +238,16 @@ def ampere_residual(state: FRCEquilibriumState) -> FloatArray:
     return state.ampere_residual
 
 
+def flux_derivative_residual(state: FRCEquilibriumState) -> FloatArray:
+    """Return cylindrical flux closure residual ``dpsi/dr - r B_z`` in T m."""
+    return state.flux_derivative_residual
+
+
 def validate_equilibrium(
     state: FRCEquilibriumState,
     *,
     tolerance: float = 1e-6,
+    flux_tolerance: float = 2e-2,
     ampere_tolerance: float = 2e-2,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
@@ -241,6 +261,7 @@ def validate_equilibrium(
             state.B_theta,
             state.J_theta,
             state.p,
+            state.flux_derivative_residual,
             state.ampere_residual,
             state.force_balance_residual,
         )
@@ -264,11 +285,12 @@ def validate_equilibrium(
         and null_error <= max(tolerance, radial_spacing)
         and pressure_peak_error <= max(tolerance, 2.0 * radial_spacing)
     )
+    flux_closure_passed = state.flux_derivative_residual_linf <= flux_tolerance
     ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
     force_balance_passed = (
         force_balance_tolerance is None or state.force_balance_residual_linf <= force_balance_tolerance
     )
-    passed = geometric_passed and ampere_closure_passed and force_balance_passed
+    passed = geometric_passed and flux_closure_passed and ampere_closure_passed and force_balance_passed
     return FRCValidationReport(
         finite=finite,
         monotonic_grid=monotonic_grid,
@@ -278,6 +300,9 @@ def validate_equilibrium(
         pressure_peak_error_m=float(pressure_peak_error),
         edge_field_error_T=float(edge_field_error),
         pressure_balance_ratio=state.pressure_balance_ratio,
+        flux_derivative_residual_linf=state.flux_derivative_residual_linf,
+        flux_derivative_residual_l2=state.flux_derivative_residual_l2,
+        flux_closure_passed=bool(flux_closure_passed),
         ampere_residual_linf=state.ampere_residual_linf,
         ampere_residual_l2=state.ampere_residual_l2,
         ampere_closure_passed=bool(ampere_closure_passed),
@@ -356,12 +381,22 @@ def _clip_to_separatrix(rho: FloatArray, values: FloatArray, R_s: float) -> tupl
     return r_clip, value_clip
 
 
-def _cylindrical_flux_from_bz(rho: FloatArray, B_z: FloatArray) -> FloatArray:
-    integrand = cast(FloatArray, rho * B_z)
-    psi = cast(FloatArray, np.zeros_like(rho))
-    increments = cast(FloatArray, 0.5 * (integrand[1:] + integrand[:-1]) * np.diff(rho))
-    psi[1:] = np.cumsum(increments)
-    return psi
+def _cylindrical_flux_from_steinhauer(
+    argument: FloatArray,
+    B_ext: float,
+    R_s: float,
+    delta: float,
+) -> FloatArray:
+    """Return analytical ``psi(r) = integral_0^r r' B_z(r') dr'`` for Eq. 7."""
+    log_cosh_argument = _log_cosh(argument)
+    axis_log_cosh = float(log_cosh_argument[0])
+    return cast(FloatArray, -B_ext * R_s * delta * (log_cosh_argument - axis_log_cosh))
+
+
+def _log_cosh(values: FloatArray) -> FloatArray:
+    """Return numerically stable ``log(cosh(values))``."""
+    abs_values = cast(FloatArray, np.abs(values))
+    return cast(FloatArray, abs_values + np.log1p(np.exp(-2.0 * abs_values)) - np.log(2.0))
 
 
 def _toroidal_current_density_from_steinhauer(
@@ -381,6 +416,12 @@ def _ampere_current_closure_residual(rho: FloatArray, B_z: FloatArray, J_theta: 
     """Return ``mu_0 J_theta + dB_z/dr``; zero means Ampere's law closes."""
     d_bz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
     return cast(FloatArray, MU_0 * J_theta + d_bz_dr)
+
+
+def _flux_derivative_closure_residual(rho: FloatArray, psi: FloatArray, B_z: FloatArray) -> FloatArray:
+    """Return ``dpsi/dr - r B_z``; zero means the flux primitive closes."""
+    dpsi_dr = cast(FloatArray, np.gradient(psi, rho, edge_order=2))
+    return cast(FloatArray, dpsi_dr - rho * B_z)
 
 
 def _radial_force_balance_residual(

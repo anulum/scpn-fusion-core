@@ -23,13 +23,25 @@ For radial coordinate `r`, external axial field `B_ext`, separatrix radius
 B_z(r) = -B_ext * tanh((r^2 - R_s^2) / (2 R_s delta))
 ```
 
-The solver requires radial samples on both sides of `R_s`, integrates the
-cylindrical flux from `r * B_z`, reports finite pressure and energy
-diagnostics, locates the magnetic null, validates that the interpolated
-zero-crossing matches the configured separatrix radius, verifies that the
-axial field reverses sign across the separatrix, exposes toroidal diamagnetic
-current density from the closed-form derivative of the analytical field, and
-records the normalised radial ideal-MHD force-balance residual:
+The solver requires radial samples on both sides of `R_s`, evaluates the
+cylindrical flux from the closed-form primitive of `r * B_z`, reports finite
+pressure and energy diagnostics, locates the magnetic null, validates that the
+interpolated zero-crossing matches the configured separatrix radius, verifies
+that the axial field reverses sign across the separatrix, exposes toroidal
+diamagnetic current density from the closed-form derivative of the analytical
+field, and records the normalised radial ideal-MHD force-balance residual:
+
+```text
+psi(r) = -B_ext R_s delta * (log(cosh(a(r))) - log(cosh(a(0))))
+a(r) = (r^2 - R_s^2) / (2 R_s delta)
+```
+
+The flux derivative residual compares the analytical primitive against an
+independent second-order finite-difference derivative on the active grid:
+
+```text
+F_r = dpsi/dr - r B_z
+```
 
 ```text
 R_r = dp/dr - (J x B)_r
@@ -76,6 +88,9 @@ Accepted:
 - Explicit separatrix target, interpolated radius error, and field-reversal
   diagnostics so validation compares against the configured `R_s` rather than
   only against a recomputed state value.
+- Closed-form cylindrical flux primitive and a finite-grid derivative closure
+  gate so `psi` is mathematically tied to the accepted axial-field equation
+  instead of only being produced by numerical quadrature.
 - Finite-grid convergence diagnostics for the implemented no-rotation scalar
   invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
   ratio.
@@ -121,10 +136,11 @@ cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
 
 The benchmark report compares scalar diagnostics and weighted numerical
 checksums for `B_z`, `J_theta`, `psi`, pressure, and the Eq. 27 `s` value. It
-also records separatrix radius error, field reversal, Ampere residual, and
-peak-current diagnostics plus finite-grid convergence against the finest
-tracked radial grid for the scalar invariants, separatrix error, and the
-independent Ampere residual accepted in this contract. Blocked or
+also records separatrix radius error, field reversal, flux derivative residual,
+Ampere residual, and peak-current diagnostics plus finite-grid convergence
+against the finest tracked radial grid for the scalar invariants, separatrix
+error, flux derivative residual, and the independent Ampere residual accepted
+in this contract. Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
 explicit no-rotation analytical FRC contract.

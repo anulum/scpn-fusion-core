@@ -1,3 +1,11 @@
+.. SPDX-License-Identifier: AGPL-3.0-or-later
+.. Commercial license available
+.. © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+.. © Code 2020–2026 Miroslav Šotek. All rights reserved.
+.. ORCID: 0009-0009-3560-0851
+.. Contact: www.anulum.li | protoscience@anulum.li
+.. SCPN Fusion Core — Equilibrium user guide
+
 ==============================
 Equilibrium Solver
 ==============================
@@ -107,10 +115,13 @@ The implemented axial field is:
 Rotating rigid-rotor cases fail closed with ``NotImplementedError`` until the
 dedicated FRC BVP task is implemented and validated.
 
-The validation report includes the radial ideal-MHD force-balance residual
-``dp/dr - (J x B)_r``.  It is reported as a diagnostic by default; pass an
-explicit ``force_balance_tolerance`` to make that residual part of the
-acceptance gate for a specific run.
+The validation report includes the analytical flux-primitive closure residual
+``dpsi/dr - r B_z``, the Ampere closure residual ``mu_0 J_theta + dB_z/dr``,
+and the radial ideal-MHD force-balance residual ``dp/dr - (J x B)_r``.  Flux
+and Ampere closure are active finite-grid gates by default. Force balance is
+reported as a diagnostic by default; pass an explicit
+``force_balance_tolerance`` to make that residual part of the acceptance gate
+for a specific run.
 
 The Rust surface is exposed as ``fusion_physics::frc`` and benchmarked by
 ``cargo bench -p fusion-physics --bench frc_rigid_rotor_bench``.  The tracked

@@ -62,6 +62,13 @@ The axial field follows Steinhauer (2011), Eq. 7:
 
 $$B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2R_s\delta}\right)$$
 
+The cylindrical flux primitive is evaluated analytically from the same
+accepted field:
+
+$$\psi(r) = -B_{\rm ext}R_s\delta\left[\log\cosh(a(r)) -
+\log\cosh(a(0))\right],\qquad
+a(r)=\frac{r^2-R_s^2}{2R_s\delta}.$$
+
 The solver validates a one-dimensional, strictly increasing radial grid,
 requires the grid to start at the magnetic axis and extend outside the
 separatrix radius, derives `delta = rho_i` from the deuterium thermal ion
@@ -90,6 +97,11 @@ independent second-order finite-difference derivative on the active grid:
 
 $$\mathcal{A}_r = \mu_0J_\theta + \frac{dB_z}{dr}.$$
 
+The flux derivative residual compares the analytical primitive against an
+independent second-order finite-difference derivative:
+
+$$\mathcal{F}_r = \frac{d\psi}{dr} - rB_z.$$
+
 The validation report carries both the Ampere closure residual
 $\mathcal{A}_r$ and the normalised radial force-balance diagnostic
 
@@ -104,9 +116,9 @@ only when an explicit `force_balance_tolerance` is supplied.
 The tracked benchmark report now includes finite-grid convergence evidence for
 the accepted no-rotation scalar invariants: null radius, separatrix radius
 error, Eq. 27 `s`, energy per metre, pressure-balance ratio, and the
-independent Ampere residual. This is local convergence evidence for the
-implemented analytical contract, not validation of the unresolved rotating FRC
-BVP or kinetic/transport evolution.
+independent flux and Ampere residuals. This is local convergence evidence for
+the implemented analytical contract, not validation of the unresolved rotating
+FRC BVP or kinetic/transport evolution.
 
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 
