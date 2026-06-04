@@ -1843,6 +1843,18 @@ fn py_solve_frc_equilibrium<'py>(
         state.separatrix_current_density_relative_error,
     )?;
     out.set_item(
+        "sheet_current_integral_A_m",
+        state.sheet_current_integral_a_m,
+    )?;
+    out.set_item(
+        "expected_sheet_current_integral_A_m",
+        state.expected_sheet_current_integral_a_m,
+    )?;
+    out.set_item(
+        "sheet_current_integral_relative_error",
+        state.sheet_current_integral_relative_error,
+    )?;
+    out.set_item(
         "force_balance_residual",
         state.force_balance_residual.into_pyarray(py),
     )?;

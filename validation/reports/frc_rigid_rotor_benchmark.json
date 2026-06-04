@@ -21,20 +21,20 @@
     "cpu_governor": "not_recorded",
     "heavy_jobs_running": "not_recorded",
     "host_load_after": [
-      3.171875,
-      3.87890625,
-      4.099609375
+      5.5908203125,
+      4.40966796875,
+      4.10888671875
     ],
     "host_load_before": [
-      3.23681640625,
-      3.9248046875,
-      4.11865234375
+      6.01806640625,
+      4.3486328125,
+      4.08056640625
     ],
     "isolation_method": "none"
   },
   "claim_boundary": "No rotating rigid-rotor BVP, no full FRC transport, no reduced-order substitution.",
   "contract": "Steinhauer 2011 no-rotation analytical axial-field profile",
-  "generated_at_utc": "2026-06-04T11:04:47.650046+00:00",
+  "generated_at_utc": "2026-06-04T11:33:20.830905+00:00",
   "grid_convergence": {
     "checked_metrics": [
       "r_null_m",
@@ -54,6 +54,8 @@
       "separatrix_gradient_relative_error",
       "separatrix_current_density_a_m2",
       "separatrix_current_density_relative_error",
+      "sheet_current_integral_a_m",
+      "sheet_current_integral_relative_error",
       "flux_derivative_residual_linf",
       "ampere_residual_linf"
     ],
@@ -98,7 +100,11 @@
       "separatrix_pressure_energy_j_per_m_1024_is_reference": true,
       "separatrix_pressure_energy_j_per_m_64_to_256_improves_or_exact": true,
       "separatrix_radius_error_m_1024_is_reference": true,
-      "separatrix_radius_error_m_64_to_256_improves_or_exact": true
+      "separatrix_radius_error_m_64_to_256_improves_or_exact": true,
+      "sheet_current_integral_a_m_1024_is_reference": true,
+      "sheet_current_integral_a_m_64_to_256_improves_or_exact": true,
+      "sheet_current_integral_relative_error_1024_is_reference": true,
+      "sheet_current_integral_relative_error_64_to_256_improves_or_exact": true
     },
     "rows": [
       {
@@ -142,6 +148,10 @@
         "separatrix_pressure_energy_j_per_m_rel_error_vs_grid_1024": 0.0007589002258274863,
         "separatrix_radius_error_m_abs_error_vs_grid_1024": 2.4681464330600367e-05,
         "separatrix_radius_error_m_rel_error_vs_grid_1024": 2.4681464330600367e-05,
+        "sheet_current_integral_a_m_abs_error_vs_grid_1024": 0.6038455162197351,
+        "sheet_current_integral_a_m_rel_error_vs_grid_1024": 7.588491054151916e-08,
+        "sheet_current_integral_relative_error_abs_error_vs_grid_1024": 7.588491051957362e-08,
+        "sheet_current_integral_relative_error_rel_error_vs_grid_1024": 7.588491051957362e-08,
         "status": "diagnostic"
       },
       {
@@ -185,6 +195,10 @@
         "separatrix_pressure_energy_j_per_m_rel_error_vs_grid_1024": 4.7780459320277166e-05,
         "separatrix_radius_error_m_abs_error_vs_grid_1024": 1.440746608072363e-06,
         "separatrix_radius_error_m_rel_error_vs_grid_1024": 1.440746608072363e-06,
+        "sheet_current_integral_a_m_abs_error_vs_grid_1024": 0.03473335783928633,
+        "sheet_current_integral_a_m_rel_error_vs_grid_1024": 4.364920632252719e-09,
+        "sheet_current_integral_relative_error_abs_error_vs_grid_1024": 4.364920630990406e-09,
+        "sheet_current_integral_relative_error_rel_error_vs_grid_1024": 4.364920630990406e-09,
         "status": "diagnostic"
       },
       {
@@ -228,6 +242,10 @@
         "separatrix_pressure_energy_j_per_m_rel_error_vs_grid_1024": 0.0,
         "separatrix_radius_error_m_abs_error_vs_grid_1024": 0.0,
         "separatrix_radius_error_m_rel_error_vs_grid_1024": 0.0,
+        "sheet_current_integral_a_m_abs_error_vs_grid_1024": 0.0,
+        "sheet_current_integral_a_m_rel_error_vs_grid_1024": 0.0,
+        "sheet_current_integral_relative_error_abs_error_vs_grid_1024": 0.0,
+        "sheet_current_integral_relative_error_rel_error_vs_grid_1024": 0.0,
         "status": "reference"
       }
     ],
@@ -270,6 +288,7 @@
           "density_checksum": 8.47796940219048e+23,
           "density_peak_m3": 4.0380672111049903e+21,
           "energy_j_per_m": 5000000.0,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 0.00690547626788814,
           "force_balance_residual_linf": 0.08812301275327512,
@@ -296,16 +315,18 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 250167.94943605442,
           "separatrix_pressure_energy_j_per_m": 250167.94943605442,
           "separatrix_radius_error_m": 2.4777012213178518e-05,
+          "sheet_current_integral_a_m": 7957385.283686778,
+          "sheet_current_integral_relative_error": 7.61741054530759e-08,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.0006448160856962204,
-          "wall_time_s_min": 0.0005626420024782419,
+          "wall_time_s_median": 0.0007682838477194309,
+          "wall_time_s_min": 0.0006642101798206568,
           "wall_time_s_repeats": [
-            0.0009158910252153873,
-            0.0007440699264407158,
-            0.0006448160856962204,
-            0.0005985940806567669,
-            0.0005626420024782419
+            0.0009130940306931734,
+            0.000723028089851141,
+            0.0007957760244607925,
+            0.0007682838477194309,
+            0.0006642101798206568
           ]
         },
         {
@@ -319,6 +340,7 @@
           "density_checksum": 1.3563441722134227e+25,
           "density_peak_m3": 4.1326953741301554e+21,
           "energy_j_per_m": 5000000.0,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 0.0004322518600839336,
           "force_balance_residual_linf": 0.005453294887580658,
@@ -345,16 +367,18 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 249990.0415617439,
           "separatrix_pressure_energy_j_per_m": 249990.0415617439,
           "separatrix_radius_error_m": 1.5362944906505138e-06,
+          "sheet_current_integral_a_m": 7957385.852798936,
+          "sheet_current_integral_relative_error": 4.654115564492681e-09,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.0006447089836001396,
-          "wall_time_s_min": 0.000551341101527214,
+          "wall_time_s_median": 0.0007158138323575258,
+          "wall_time_s_min": 0.0006925112102180719,
           "wall_time_s_repeats": [
-            0.0006306571885943413,
-            0.000551341101527214,
-            0.0006524119526147842,
-            0.0006447089836001396,
-            0.001014708075672388
+            0.0007217959500849247,
+            0.0006925112102180719,
+            0.0007158138323575258,
+            0.000720075098797679,
+            0.0006930150557309389
           ]
         },
         {
@@ -368,6 +392,7 @@
           "density_checksum": 2.1700026850049267e+26,
           "density_peak_m3": 4.1386341674556e+21,
           "energy_j_per_m": 5000000.0,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 2.6899461511219616e-05,
           "force_balance_residual_linf": 0.00034187785197315135,
@@ -394,16 +419,18 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 249978.0969227326,
           "separatrix_pressure_energy_j_per_m": 249978.0969227326,
           "separatrix_radius_error_m": 9.554788257815083e-08,
+          "sheet_current_integral_a_m": 7957385.887532294,
+          "sheet_current_integral_relative_error": 2.891949335022749e-10,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.0009413119405508041,
-          "wall_time_s_min": 0.0007846350781619549,
+          "wall_time_s_median": 0.0011180369183421135,
+          "wall_time_s_min": 0.0008585951291024685,
           "wall_time_s_repeats": [
-            0.001121744979172945,
-            0.0010680400300770998,
-            0.0008963230066001415,
-            0.0007846350781619549,
-            0.0009413119405508041
+            0.0011180369183421135,
+            0.0009685708209872246,
+            0.0008585951291024685,
+            0.0013188051525503397,
+            0.0017529160249978304
           ]
         }
       ],
@@ -422,6 +449,7 @@
           "density_checksum": 8.477969402190476e+23,
           "density_peak_m3": 4.0380672111049903e+21,
           "energy_j_per_m": 5000000.0,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 0.006905476267888196,
           "force_balance_residual_linf": 0.08812301275327512,
@@ -448,16 +476,18 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 250167.9494360544,
           "separatrix_pressure_energy_j_per_m": 250167.9494360544,
           "separatrix_radius_error_m": 2.4777012213178518e-05,
+          "sheet_current_integral_a_m": 7957385.283686773,
+          "sheet_current_integral_relative_error": 7.61741060382697e-08,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 1.6768928617239e-05,
-          "wall_time_s_min": 1.5835976228117943e-05,
+          "wall_time_s_median": 3.333599306643009e-05,
+          "wall_time_s_min": 2.988101914525032e-05,
           "wall_time_s_repeats": [
-            2.3989006876945496e-05,
-            1.9063008949160576e-05,
-            1.6768928617239e-05,
-            1.6070902347564697e-05,
-            1.5835976228117943e-05
+            4.6689994633197784e-05,
+            3.7861987948417664e-05,
+            3.333599306643009e-05,
+            2.988101914525032e-05,
+            3.075809217989445e-05
           ]
         },
         {
@@ -471,6 +501,7 @@
           "density_checksum": 1.3563441722134227e+25,
           "density_peak_m3": 4.1326953741301554e+21,
           "energy_j_per_m": 5000000.000000002,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 0.0004322518600839336,
           "force_balance_residual_linf": 0.005453294887580512,
@@ -497,16 +528,18 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 249990.04156174388,
           "separatrix_pressure_energy_j_per_m": 249990.04156174388,
           "separatrix_radius_error_m": 1.5362944906505138e-06,
+          "sheet_current_integral_a_m": 7957385.852798934,
+          "sheet_current_integral_relative_error": 4.6541157985702005e-09,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 3.71329952031374e-05,
-          "wall_time_s_min": 3.603100776672363e-05,
+          "wall_time_s_median": 7.38480594009161e-05,
+          "wall_time_s_min": 7.067597471177578e-05,
           "wall_time_s_repeats": [
-            3.980216570198536e-05,
-            3.71329952031374e-05,
-            3.6316923797130585e-05,
-            3.603100776672363e-05,
-            3.895489498972893e-05
+            8.989498019218445e-05,
+            7.38480594009161e-05,
+            7.359706796705723e-05,
+            7.067597471177578e-05,
+            8.583301678299904e-05
           ]
         },
         {
@@ -520,6 +553,7 @@
           "density_checksum": 2.170002685004926e+26,
           "density_peak_m3": 4.1386341674556e+21,
           "energy_j_per_m": 4999999.999999998,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 2.6899461504141944e-05,
           "force_balance_residual_linf": 0.00034187785197300515,
@@ -546,16 +580,18 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 249978.0969227327,
           "separatrix_pressure_energy_j_per_m": 249978.0969227327,
           "separatrix_radius_error_m": 9.554788257815083e-08,
+          "sheet_current_integral_a_m": 7957385.887532288,
+          "sheet_current_integral_relative_error": 2.891956357348328e-10,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s_median": 0.00012626592069864273,
-          "wall_time_s_min": 0.00011474499478936195,
+          "wall_time_s_median": 0.00021295505575835705,
+          "wall_time_s_min": 0.00019787810742855072,
           "wall_time_s_repeats": [
-            0.0001337430439889431,
-            0.00011693895794451237,
-            0.00012626592069864273,
-            0.00012658792547881603,
-            0.00011474499478936195
+            0.00027462304569780827,
+            0.00020825490355491638,
+            0.00021295505575835705,
+            0.0002518750261515379,
+            0.00019787810742855072
           ]
         }
       ],
@@ -572,6 +608,7 @@
             "density_checksum_rel_error": 4.749405959119942e-16,
             "density_peak_rel_error": 0.0,
             "energy_rel_error": 0.0,
+            "expected_sheet_current_integral_rel_error": 0.0,
             "field_reversal_matches": true,
             "flux_derivative_residual_linf_abs_error": 5.551115123125783e-17,
             "force_balance_linf_rel_error": 0.0,
@@ -598,6 +635,8 @@
             "separatrix_magnetic_deficit_energy_rel_error": 1.1633716678072284e-16,
             "separatrix_pressure_energy_rel_error": 1.1633716678072284e-16,
             "separatrix_radius_error_abs_error": 0.0,
+            "sheet_current_integral_rel_error": 5.85193842834755e-16,
+            "sheet_current_integral_relative_error_abs_error": 5.851937947900861e-16,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
             "thermal_pressure_ratio_rel_error": 0.0
@@ -613,6 +652,7 @@
             "density_checksum_rel_error": 0.0,
             "density_peak_rel_error": 0.0,
             "energy_rel_error": 3.725290298461913e-16,
+            "expected_sheet_current_integral_rel_error": 0.0,
             "field_reversal_matches": true,
             "flux_derivative_residual_linf_abs_error": 0.0,
             "force_balance_linf_rel_error": 1.465841337200402e-16,
@@ -639,6 +679,8 @@
             "separatrix_magnetic_deficit_energy_rel_error": 1.164199592708395e-16,
             "separatrix_pressure_energy_rel_error": 1.164199592708395e-16,
             "separatrix_radius_error_abs_error": 0.0,
+            "sheet_current_integral_rel_error": 2.3407752039267884e-16,
+            "sheet_current_integral_relative_error_abs_error": 2.3407751940495956e-16,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
             "thermal_pressure_ratio_rel_error": 0.0
@@ -654,6 +696,7 @@
             "density_checksum_rel_error": 3.166792244583973e-16,
             "density_peak_rel_error": 0.0,
             "energy_rel_error": 3.725290298461914e-16,
+            "expected_sheet_current_integral_rel_error": 0.0,
             "field_reversal_matches": true,
             "flux_derivative_residual_linf_abs_error": 7.077671781985373e-15,
             "force_balance_linf_rel_error": 1.4620466295967027e-16,
@@ -680,6 +723,8 @@
             "separatrix_magnetic_deficit_energy_rel_error": 3.492765664072912e-16,
             "separatrix_pressure_energy_rel_error": 3.492765664072912e-16,
             "separatrix_radius_error_abs_error": 0.0,
+            "sheet_current_integral_rel_error": 7.022325581128471e-16,
+            "sheet_current_integral_relative_error_abs_error": 7.022325579046859e-16,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
             "thermal_pressure_ratio_rel_error": 0.0
@@ -703,6 +748,7 @@
           "density_checksum": 8.477969402190476e+23,
           "density_peak_m3": 4.0380672111049903e+21,
           "energy_j_per_m": 5000000.0,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 0.006905476267888196,
           "force_balance_residual_linf": 0.08812301275327512,
@@ -729,9 +775,11 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 250167.9494360544,
           "separatrix_pressure_energy_j_per_m": 250167.9494360544,
           "separatrix_radius_error_m": 2.4777012213178518e-05,
+          "sheet_current_integral_a_m": 7957385.283686773,
+          "sheet_current_integral_relative_error": 7.61741060382697e-08,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 3.9801e-05
+          "wall_time_s": 0.000324966
         },
         {
           "ampere_residual_linf": 0.0020760453606177855,
@@ -744,6 +792,7 @@
           "density_checksum": 1.3563441722134223e+25,
           "density_peak_m3": 4.1326953741301554e+21,
           "energy_j_per_m": 5000000.000000002,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 0.0004322518600839336,
           "force_balance_residual_linf": 0.005453294887580512,
@@ -770,9 +819,11 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 249990.04156174388,
           "separatrix_pressure_energy_j_per_m": 249990.04156174388,
           "separatrix_radius_error_m": 1.5362944906505138e-06,
+          "sheet_current_integral_a_m": 7957385.852798934,
+          "sheet_current_integral_relative_error": 4.6541157985702005e-09,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 4.5771e-05
+          "wall_time_s": 5.2396e-05
         },
         {
           "ampere_residual_linf": 0.00012988613047863225,
@@ -785,6 +836,7 @@
           "density_checksum": 2.1700026850049247e+26,
           "density_peak_m3": 4.1386341674556e+21,
           "energy_j_per_m": 4999999.999999998,
+          "expected_sheet_current_integral_a_m": 7957385.8898335295,
           "field_reversal_passed": true,
           "flux_derivative_residual_linf": 2.6899461504141944e-05,
           "force_balance_residual_linf": 0.00034187785197300515,
@@ -811,9 +863,11 @@
           "separatrix_magnetic_deficit_energy_j_per_m": 249978.0969227327,
           "separatrix_pressure_energy_j_per_m": 249978.0969227327,
           "separatrix_radius_error_m": 9.554788257815083e-08,
+          "sheet_current_integral_a_m": 7957385.887532288,
+          "sheet_current_integral_relative_error": 2.891956357348328e-10,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.000166551
+          "wall_time_s": 0.00019691
         }
       ],
       "parity": {
@@ -829,6 +883,7 @@
             "density_checksum_rel_error": 4.749405959119942e-16,
             "density_peak_rel_error": 0.0,
             "energy_rel_error": 0.0,
+            "expected_sheet_current_integral_rel_error": 0.0,
             "field_reversal_matches": true,
             "flux_derivative_residual_linf_abs_error": 5.551115123125783e-17,
             "force_balance_linf_rel_error": 0.0,
@@ -855,6 +910,8 @@
             "separatrix_magnetic_deficit_energy_rel_error": 1.1633716678072284e-16,
             "separatrix_pressure_energy_rel_error": 1.1633716678072284e-16,
             "separatrix_radius_error_abs_error": 0.0,
+            "sheet_current_integral_rel_error": 5.85193842834755e-16,
+            "sheet_current_integral_relative_error_abs_error": 5.851937947900861e-16,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
             "thermal_pressure_ratio_rel_error": 0.0
@@ -870,6 +927,7 @@
             "density_checksum_rel_error": 3.1665762894022896e-16,
             "density_peak_rel_error": 0.0,
             "energy_rel_error": 3.725290298461913e-16,
+            "expected_sheet_current_integral_rel_error": 0.0,
             "field_reversal_matches": true,
             "flux_derivative_residual_linf_abs_error": 0.0,
             "force_balance_linf_rel_error": 1.465841337200402e-16,
@@ -896,6 +954,8 @@
             "separatrix_magnetic_deficit_energy_rel_error": 1.164199592708395e-16,
             "separatrix_pressure_energy_rel_error": 1.164199592708395e-16,
             "separatrix_radius_error_abs_error": 0.0,
+            "sheet_current_integral_rel_error": 2.3407752039267884e-16,
+            "sheet_current_integral_relative_error_abs_error": 2.3407751940495956e-16,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
             "thermal_pressure_ratio_rel_error": 0.0
@@ -911,6 +971,7 @@
             "density_checksum_rel_error": 9.500376733751918e-16,
             "density_peak_rel_error": 0.0,
             "energy_rel_error": 3.725290298461914e-16,
+            "expected_sheet_current_integral_rel_error": 0.0,
             "field_reversal_matches": true,
             "flux_derivative_residual_linf_abs_error": 7.077671781985373e-15,
             "force_balance_linf_rel_error": 1.4620466295967027e-16,
@@ -937,6 +998,8 @@
             "separatrix_magnetic_deficit_energy_rel_error": 3.492765664072912e-16,
             "separatrix_pressure_energy_rel_error": 3.492765664072912e-16,
             "separatrix_radius_error_abs_error": 0.0,
+            "sheet_current_integral_rel_error": 7.022325581128471e-16,
+            "sheet_current_integral_relative_error_abs_error": 7.022325579046859e-16,
             "status": "passed",
             "target_separatrix_radius_abs_error": 0.0,
             "thermal_pressure_ratio_rel_error": 0.0

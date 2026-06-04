@@ -139,7 +139,10 @@ tolerance for the accepted no-rotation pressure-balance contract.  The line
 density is reported in particles per metre of axial length and is included in
 cross-surface parity reports. The accepted pressure-balance contract also
 requires $E_{p,s}=E_{{\rm def},s}$, so the validation report carries the
-relative closure error as a fail-closed implementation gate.
+relative closure error as a fail-closed implementation gate. The current-sheet
+closure also carries the resolved sheet-current integral above, which fails
+closed when the implemented current profile no longer conserves the finite-grid
+field jump.
 
 The validation report carries both the Ampere closure residual
 $\mathcal{A}_r$ and the normalised radial force-balance diagnostic
@@ -157,6 +160,12 @@ no-rotation field:
 
 $$\left.\frac{dB_z}{dr}\right|_{R_s}=-\frac{B_{\rm ext}}{\delta},\qquad
 J_\theta(R_s)=\frac{B_{\rm ext}}{\mu_0\delta}.$$
+
+It also integrates the resolved current-density profile over the radial domain
+and compares it with the magnetic-field jump on that same domain:
+
+$$K_{\theta,{\rm grid}}=\int_0^{r_{\rm out}}J_\theta\,dr,\qquad
+K_{\theta,{\rm expected}}=\frac{B_z(0)-B_z(r_{\rm out})}{\mu_0}.$$
 
 The solver interpolates the finite-grid derivative and current-density profile
 to $R_s$ and reports relative closure errors for both identities. These

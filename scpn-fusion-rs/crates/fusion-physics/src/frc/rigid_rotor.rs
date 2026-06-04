@@ -98,6 +98,11 @@ pub fn solve_frc_equilibrium(
             / separatrix_expected_current_density_a_m2
                 .abs()
                 .max(tolerance);
+    let sheet_current_integral_a_m = trapezoid(&rho, &j_theta);
+    let expected_sheet_current_integral_a_m = (b_z[0] - b_z[b_z.len() - 1]) / MU_0;
+    let sheet_current_integral_relative_error =
+        (sheet_current_integral_a_m - expected_sheet_current_integral_a_m).abs()
+            / expected_sheet_current_integral_a_m.abs().max(tolerance);
     let ampere_residual = ampere_current_closure_residual(&rho, &b_z, &j_theta);
     let ampere_scale = tolerance
         .max(max_abs(&grad_bz))
@@ -282,6 +287,9 @@ pub fn solve_frc_equilibrium(
         separatrix_current_density_a_m2,
         separatrix_expected_current_density_a_m2,
         separatrix_current_density_relative_error,
+        sheet_current_integral_a_m,
+        expected_sheet_current_integral_a_m,
+        sheet_current_integral_relative_error,
         force_balance_residual,
         force_balance_residual_linf,
         force_balance_residual_l2,
@@ -672,6 +680,9 @@ mod tests {
         );
         assert!(state.separatrix_gradient_relative_error <= 2.0e-2);
         assert!(state.separatrix_current_density_relative_error <= 2.0e-2);
+        assert!(state.sheet_current_integral_a_m > 0.0);
+        assert!(state.expected_sheet_current_integral_a_m > 0.0);
+        assert!(state.sheet_current_integral_relative_error <= 2.0e-2);
         assert_eq!(state.j_theta.len(), rho.len());
         assert_eq!(state.ampere_residual.len(), rho.len());
         assert!(state.force_balance_residual_linf.is_finite());
@@ -709,6 +720,15 @@ mod tests {
             (state.separatrix_current_density_a_m2 - interpolate(&rho, &state.j_theta, inputs.r_s))
                 .abs()
                 <= state.separatrix_current_density_a_m2.abs().max(1.0) * 1.0e-12
+        );
+        let expected_sheet_current = (state.b_z[0] - state.b_z[state.b_z.len() - 1]) / MU_0;
+        assert!(
+            (state.expected_sheet_current_integral_a_m - expected_sheet_current).abs()
+                <= expected_sheet_current.abs().max(1.0) * 1.0e-12
+        );
+        assert!(
+            (state.sheet_current_integral_a_m - trapezoid(&rho, &state.j_theta)).abs()
+                <= state.sheet_current_integral_a_m.abs().max(1.0) * 1.0e-12
         );
         assert!(
             (state.separatrix_expected_current_density_a_m2 - inputs.b_ext / (MU_0 * 0.02)).abs()

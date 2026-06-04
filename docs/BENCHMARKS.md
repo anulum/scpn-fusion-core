@@ -72,8 +72,9 @@ consistency, force-balance, and weighted numerical checksums for `B_z`,
 analytical flux-primitive derivative residuals, pressure-balance residuals,
 Ampere closure residuals, separatrix pressure-energy inventory,
 magnetic-deficit inventory, energy-closure relative error, separatrix
-current-sheet field-gradient/current-density closure, and a finite-grid
-convergence block for null radius, separatrix radius error, Eq. 27 `s`, energy
+current-sheet field-gradient/current-density closure, resolved sheet-current
+integral closure, and a finite-grid convergence block for null radius,
+separatrix radius error, Eq. 27 `s`, energy
 per metre, pressure-balance ratio, pressure-balance residual, flux derivative
 residual, current-sheet closure, and the independent
 Ampere residual against the finest tracked grid. Go, Julia, and Lean are recorded as

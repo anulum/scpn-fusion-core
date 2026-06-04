@@ -123,6 +123,9 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "separatrix_current_density_a_m2": state.separatrix_current_density_A_m2,
                 "separatrix_expected_current_density_a_m2": state.separatrix_expected_current_density_A_m2,
                 "separatrix_current_density_relative_error": state.separatrix_current_density_relative_error,
+                "sheet_current_integral_a_m": state.sheet_current_integral_A_m,
+                "expected_sheet_current_integral_a_m": state.expected_sheet_current_integral_A_m,
+                "sheet_current_integral_relative_error": state.sheet_current_integral_relative_error,
                 "ampere_residual_linf": state.ampere_residual_linf,
                 "force_balance_residual_linf": state.force_balance_residual_linf,
                 "b_z_checksum": _checksum(state.B_z),
@@ -244,6 +247,9 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "separatrix_current_density_relative_error": float(
                     state["separatrix_current_density_relative_error"]
                 ),
+                "sheet_current_integral_a_m": float(state["sheet_current_integral_A_m"]),
+                "expected_sheet_current_integral_a_m": float(state["expected_sheet_current_integral_A_m"]),
+                "sheet_current_integral_relative_error": float(state["sheet_current_integral_relative_error"]),
                 "ampere_residual_linf": float(state["ampere_residual_linf"]),
                 "force_balance_residual_linf": float(state["force_balance_residual_linf"]),
                 "b_z_checksum": _checksum(cast(FloatArray, state["B_z"])),
@@ -382,6 +388,18 @@ def _compare_surface(
                 float(cand["separatrix_current_density_relative_error"])
                 - float(ref["separatrix_current_density_relative_error"])
             ),
+            "sheet_current_integral_rel_error": _relative_error(
+                float(cand["sheet_current_integral_a_m"]),
+                float(ref["sheet_current_integral_a_m"]),
+            ),
+            "expected_sheet_current_integral_rel_error": _relative_error(
+                float(cand["expected_sheet_current_integral_a_m"]),
+                float(ref["expected_sheet_current_integral_a_m"]),
+            ),
+            "sheet_current_integral_relative_error_abs_error": abs(
+                float(cand["sheet_current_integral_relative_error"])
+                - float(ref["sheet_current_integral_relative_error"])
+            ),
             "ampere_residual_linf_abs_error": abs(
                 float(cand["ampere_residual_linf"]) - float(ref["ampere_residual_linf"])
             ),
@@ -442,6 +460,9 @@ def _compare_surface(
             and checks["separatrix_current_density_rel_error"] <= 1.0e-12
             and checks["separatrix_expected_current_density_rel_error"] <= 1.0e-12
             and checks["separatrix_current_density_relative_error_abs_error"] <= 1.0e-12
+            and checks["sheet_current_integral_rel_error"] <= 1.0e-12
+            and checks["expected_sheet_current_integral_rel_error"] <= 1.0e-12
+            and checks["sheet_current_integral_relative_error_abs_error"] <= 1.0e-12
             and checks["ampere_residual_linf_abs_error"] <= 1.0e-12
             and checks["force_balance_linf_rel_error"] <= 1.0e-9
             and checks["b_z_checksum_abs_error"] <= 1.0e-9
@@ -477,6 +498,8 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
         "separatrix_gradient_relative_error",
         "separatrix_current_density_a_m2",
         "separatrix_current_density_relative_error",
+        "sheet_current_integral_a_m",
+        "sheet_current_integral_relative_error",
         "flux_derivative_residual_linf",
         "ampere_residual_linf",
     )

@@ -130,8 +130,9 @@ residual ``dpsi/dr - r B_z``, the Ampere closure residual ``mu_0 J_theta +
 dB_z/dr``, and the radial ideal-MHD force-balance residual ``dp/dr - (J x
 B)_r``. It also checks the separatrix current-sheet identities
 ``dB_z/dr|_R_s = -B_ext / delta`` and
-``J_theta(R_s) = B_ext / (mu_0 delta)``. Density, beta limit, separatrix energy
-inventory, current-sheet closure, pressure, flux, and Ampere closure are active
+``J_theta(R_s) = B_ext / (mu_0 delta)`` plus the resolved integral
+``integral J_theta dr = (B_z(0) - B_z(r_out)) / mu_0``. Density, beta limit,
+separatrix energy inventory, current-sheet closure, pressure, flux, and Ampere closure are active
 finite-grid gates by default. Force balance is reported as a diagnostic by
 default; pass an explicit ``force_balance_tolerance`` to make that residual part
 of the acceptance gate for a specific run.

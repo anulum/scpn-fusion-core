@@ -100,7 +100,13 @@ peak sheet current:
 ```text
 (dB_z/dr)|_R_s = -B_ext / delta
 J_theta(R_s) = B_ext / (mu_0 delta)
+K_theta,grid = integral_0^r_out J_theta dr
+K_theta,expected = (B_z(0) - B_z(r_out)) / mu_0
 ```
+
+The integrated sheet-current identity is evaluated on the resolved radial
+domain, so it checks conservation between the accepted current-density profile
+and the field reversal actually present on the grid.
 
 The validation report interpolates the finite-grid derivative and current
 density to `R_s`, compares both against these analytical values, and fails
@@ -150,9 +156,10 @@ Accepted:
   beta profile, separatrix-averaged beta, particle line density, input thermal
   pressure, separatrix pressure-energy inventory, separatrix magnetic-deficit
   inventory, energy-inventory closure, and thermal-pressure ratio diagnostics.
-- Separatrix current-sheet slope and current-density closure diagnostics tied
-  to `(dB_z/dr)|_R_s = -B_ext / delta` and
-  `J_theta(R_s) = B_ext / (mu_0 delta)`.
+- Separatrix current-sheet slope, current-density, and resolved sheet-current
+  integral closure diagnostics tied to `(dB_z/dr)|_R_s = -B_ext / delta`,
+  `J_theta(R_s) = B_ext / (mu_0 delta)`, and
+  `integral J_theta dr = (B_z(0) - B_z(r_out)) / mu_0`.
 - Finite-grid convergence diagnostics for the implemented no-rotation scalar
   invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
   ratio.
@@ -207,8 +214,9 @@ finest tracked radial grid for the scalar invariants, separatrix error,
 pressure-balance residual, central-density relative error, beta peak,
 separatrix-averaged beta, particle line density, pressure-energy inventory,
 magnetic-deficit inventory, energy-closure relative error, separatrix
-field-gradient/current-density diagnostics, flux derivative residual, and the
-independent Ampere residual accepted in this contract. Blocked or
+field-gradient/current-density diagnostics, resolved sheet-current integral,
+flux derivative residual, and the independent Ampere residual accepted in this
+contract. Blocked or
 not-applicable rows are recorded instead of promoting missing surfaces to
 parity evidence. This is intentional: the accepted claim is limited to the
 explicit no-rotation analytical FRC contract.

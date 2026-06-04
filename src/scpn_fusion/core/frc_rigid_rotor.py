@@ -94,6 +94,9 @@ class FRCEquilibriumState:
     separatrix_current_density_A_m2: float
     separatrix_expected_current_density_A_m2: float
     separatrix_current_density_relative_error: float
+    sheet_current_integral_A_m: float
+    expected_sheet_current_integral_A_m: float
+    sheet_current_integral_relative_error: float
     force_balance_residual: FloatArray
     force_balance_residual_linf: float
     force_balance_residual_l2: float
@@ -141,6 +144,10 @@ class FRCValidationReport:
     separatrix_current_density_A_m2: float
     separatrix_expected_current_density_A_m2: float
     separatrix_current_density_relative_error: float
+    sheet_current_integral_A_m: float
+    expected_sheet_current_integral_A_m: float
+    sheet_current_integral_relative_error: float
+    sheet_current_passed: bool
     current_sheet_passed: bool
     force_balance_residual_linf: float
     force_balance_residual_l2: float
@@ -202,6 +209,11 @@ def solve_frc_equilibrium(
     separatrix_current_density_relative_error = abs(
         separatrix_current_density_A_m2 - separatrix_expected_current_density_A_m2
     ) / max(abs(separatrix_expected_current_density_A_m2), tolerance)
+    sheet_current_integral_A_m = float(trapezoid(J_theta, rho))
+    expected_sheet_current_integral_A_m = float((B_z[0] - B_z[-1]) / MU_0)
+    sheet_current_integral_relative_error = abs(
+        sheet_current_integral_A_m - expected_sheet_current_integral_A_m
+    ) / max(abs(expected_sheet_current_integral_A_m), tolerance)
     ampere_residual = _ampere_current_closure_residual(rho, B_z, J_theta)
     ampere_scale = max(
         tolerance,
@@ -330,6 +342,9 @@ def solve_frc_equilibrium(
         separatrix_current_density_A_m2=separatrix_current_density_A_m2,
         separatrix_expected_current_density_A_m2=separatrix_expected_current_density_A_m2,
         separatrix_current_density_relative_error=float(separatrix_current_density_relative_error),
+        sheet_current_integral_A_m=sheet_current_integral_A_m,
+        expected_sheet_current_integral_A_m=expected_sheet_current_integral_A_m,
+        sheet_current_integral_relative_error=float(sheet_current_integral_relative_error),
         force_balance_residual=force_residual,
         force_balance_residual_linf=force_balance_residual_linf,
         force_balance_residual_l2=force_balance_residual_l2,
@@ -390,6 +405,7 @@ def validate_equilibrium(
     energy_inventory_tolerance: float = 1e-10,
     ampere_tolerance: float = 2e-2,
     current_sheet_tolerance: float = 2e-2,
+    sheet_current_tolerance: float = 2e-2,
     force_balance_tolerance: float | None = None,
 ) -> FRCValidationReport:
     """Validate finite values, null placement, pressure peaking, and optional force balance."""
@@ -441,6 +457,10 @@ def validate_equilibrium(
         and state.separatrix_gradient_relative_error <= current_sheet_tolerance
         and state.separatrix_current_density_relative_error <= current_sheet_tolerance
     )
+    sheet_current_passed = (
+        np.isfinite(state.sheet_current_integral_relative_error)
+        and state.sheet_current_integral_relative_error <= sheet_current_tolerance
+    )
     force_balance_passed = (
         force_balance_tolerance is None or state.force_balance_residual_linf <= force_balance_tolerance
     )
@@ -453,6 +473,7 @@ def validate_equilibrium(
         and flux_closure_passed
         and ampere_closure_passed
         and current_sheet_passed
+        and sheet_current_passed
         and force_balance_passed
     )
     return FRCValidationReport(
@@ -493,6 +514,10 @@ def validate_equilibrium(
         separatrix_current_density_A_m2=state.separatrix_current_density_A_m2,
         separatrix_expected_current_density_A_m2=state.separatrix_expected_current_density_A_m2,
         separatrix_current_density_relative_error=state.separatrix_current_density_relative_error,
+        sheet_current_integral_A_m=state.sheet_current_integral_A_m,
+        expected_sheet_current_integral_A_m=state.expected_sheet_current_integral_A_m,
+        sheet_current_integral_relative_error=state.sheet_current_integral_relative_error,
+        sheet_current_passed=bool(sheet_current_passed),
         current_sheet_passed=bool(current_sheet_passed),
         force_balance_residual_linf=state.force_balance_residual_linf,
         force_balance_residual_l2=state.force_balance_residual_l2,

@@ -172,6 +172,8 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         "separatrix_current_density_A_m2",
         "separatrix_gradient_relative_error",
         "separatrix_current_density_relative_error",
+        "sheet_current_integral_A_m",
+        "sheet_current_integral_relative_error",
     ):
         reference_value = float(getattr(reference, metric))
         coarse_error = abs(float(getattr(coarse, metric)) - reference_value)
@@ -246,6 +248,10 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     assert state.separatrix_expected_current_density_A_m2 == pytest.approx(inputs.B_ext / (MU_0 * inputs.delta))
     assert state.separatrix_gradient_relative_error <= 2.0e-2
     assert state.separatrix_current_density_relative_error <= 2.0e-2
+    expected_sheet_current = (state.B_z[0] - state.B_z[-1]) / MU_0
+    assert state.expected_sheet_current_integral_A_m == pytest.approx(float(expected_sheet_current))
+    assert state.sheet_current_integral_A_m == pytest.approx(float(trapezoid(state.J_theta, state.rho)), rel=1.0e-12)
+    assert state.sheet_current_integral_relative_error <= 2.0e-2
     assert state.force_balance_residual.shape == rho.shape
     assert state.force_balance_residual_linf >= 0.0
     assert state.force_balance_residual_l2 >= 0.0
@@ -294,6 +300,13 @@ def test_toroidal_current_density_matches_steinhauer_derivative() -> None:
     assert state.separatrix_current_density_relative_error == pytest.approx(
         abs(interpolated_current_density - expected_separatrix_current_density)
         / abs(expected_separatrix_current_density),
+        rel=1.0e-12,
+    )
+    expected_sheet_current = float((state.B_z[0] - state.B_z[-1]) / MU_0)
+    assert state.expected_sheet_current_integral_A_m == pytest.approx(expected_sheet_current)
+    assert state.sheet_current_integral_A_m == pytest.approx(float(trapezoid(state.J_theta, state.rho)), rel=1.0e-12)
+    assert state.sheet_current_integral_relative_error == pytest.approx(
+        abs(state.sheet_current_integral_A_m - expected_sheet_current) / abs(expected_sheet_current),
         rel=1.0e-12,
     )
 
@@ -505,6 +518,18 @@ def test_current_sheet_gate_is_fail_closed() -> None:
     report = validate_equilibrium(corrupted, current_sheet_tolerance=1.0e-3)
 
     assert report.current_sheet_passed is False
+    assert report.passed is False
+
+
+def test_sheet_current_gate_is_fail_closed() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    corrupted = replace(state, sheet_current_integral_relative_error=1.0)
+    report = validate_equilibrium(corrupted, sheet_current_tolerance=1.0e-3)
+
+    assert report.sheet_current_passed is False
     assert report.passed is False
 
 

@@ -229,6 +229,18 @@ def test_rust_frc_matches_python_reference() -> None:
             python_state.separatrix_current_density_relative_error,
             abs=1.0e-12,
         )
+        assert float(rust_state["sheet_current_integral_A_m"]) == pytest.approx(
+            python_state.sheet_current_integral_A_m,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["expected_sheet_current_integral_A_m"]) == pytest.approx(
+            python_state.expected_sheet_current_integral_A_m,
+            rel=1.0e-12,
+        )
+        assert float(rust_state["sheet_current_integral_relative_error"]) == pytest.approx(
+            python_state.sheet_current_integral_relative_error,
+            abs=1.0e-12,
+        )
         assert float(rust_state["force_balance_residual_linf"]) == pytest.approx(
             python_state.force_balance_residual_linf,
             rel=1.0e-10,
