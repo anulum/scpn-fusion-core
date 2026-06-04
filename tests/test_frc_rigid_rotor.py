@@ -69,6 +69,12 @@ def test_null_radius_and_pressure_peak_track_separatrix() -> None:
 
     assert abs(null_radius(state) - inputs.R_s) < 2.5e-4
     assert abs(state.R_null - inputs.R_s) < 2.5e-4
+    assert state.target_separatrix_radius_m == inputs.R_s
+    assert state.separatrix_radius_error_m < 2.5e-4
+    assert state.field_reversal_passed is True
+    assert report.target_separatrix_radius_m == inputs.R_s
+    assert report.field_reversal_passed is True
+    assert report.null_error_m < 2.5e-4
     assert abs(rho[np.argmax(state.p)] - inputs.R_s) < 1.1e-3
     assert report.passed
 
@@ -150,6 +156,9 @@ def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
     with pytest.raises(ValueError, match="separatrix"):
         solve_frc_equilibrium(inputs, np.linspace(0.0, 0.1, 8))
 
+    with pytest.raises(ValueError, match="outside the separatrix"):
+        solve_frc_equilibrium(inputs, np.linspace(0.0, inputs.R_s, 8))
+
     with pytest.raises(NotImplementedError, match="rotating"):
         solve_frc_equilibrium(_inputs(theta_dot=1.0), np.linspace(0.0, 0.4, 32))
 
@@ -162,6 +171,9 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
 
     assert state.energy_J > 0.0
     assert state.pressure_balance_ratio > 0.0
+    assert state.target_separatrix_radius_m == inputs.R_s
+    assert state.separatrix_radius_error_m <= float(np.max(np.diff(rho)))
+    assert state.field_reversal_passed is True
     assert state.J_theta.shape == rho.shape
     assert state.ampere_residual.shape == rho.shape
     assert state.peak_j_theta_A_m2 > 0.0
@@ -234,6 +246,7 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     assert residual.shape == rho.shape
     assert np.all(np.isfinite(residual))
     assert diagnostic_report.ampere_closure_passed is True
+    assert diagnostic_report.field_reversal_passed is True
     assert diagnostic_report.passed
     assert ampere_fail_report.ampere_closure_passed is False
     assert ampere_fail_report.passed is False
@@ -241,3 +254,28 @@ def test_force_balance_residual_is_explicit_diagnostic_gate() -> None:
     assert strict_report.passed is False
     assert loose_report.force_balance_passed is True
     assert loose_report.passed is True
+
+
+def test_validation_recomputes_separatrix_target_and_field_reversal() -> None:
+    inputs = _inputs(delta=0.02)
+    rho = np.linspace(0.0, 0.4, 401)
+    state = solve_frc_equilibrium(inputs, rho)
+
+    wrong_target = replace(
+        state,
+        target_separatrix_radius_m=inputs.R_s + 0.02,
+        separatrix_radius_error_m=0.0,
+    )
+    wrong_target_report = validate_equilibrium(wrong_target)
+
+    non_reversing = replace(
+        state,
+        B_z=np.abs(state.B_z),
+        field_reversal_passed=True,
+    )
+    non_reversing_report = validate_equilibrium(non_reversing)
+
+    assert wrong_target_report.null_error_m > 0.01
+    assert wrong_target_report.passed is False
+    assert non_reversing_report.field_reversal_passed is False
+    assert non_reversing_report.passed is False

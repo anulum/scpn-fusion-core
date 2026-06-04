@@ -74,6 +74,9 @@ def _python_metrics() -> list[dict[str, Any]]:
                 "wall_time_s_median": float(np.median(np.asarray(timings))),
                 "wall_time_s_repeats": timings,
                 "r_null_m": state.R_null,
+                "target_separatrix_radius_m": state.target_separatrix_radius_m,
+                "separatrix_radius_error_m": state.separatrix_radius_error_m,
+                "field_reversal_passed": state.field_reversal_passed,
                 "s_parameter": state.s_parameter,
                 "energy_j_per_m": state.energy_J,
                 "pressure_balance_ratio": state.pressure_balance_ratio,
@@ -163,6 +166,9 @@ def _pyo3_metrics() -> tuple[str, list[dict[str, Any]] | None]:
                 "wall_time_s_median": float(np.median(np.asarray(timings))),
                 "wall_time_s_repeats": timings,
                 "r_null_m": float(state["R_null"]),
+                "target_separatrix_radius_m": float(state["target_separatrix_radius_m"]),
+                "separatrix_radius_error_m": float(state["separatrix_radius_error_m"]),
+                "field_reversal_passed": bool(state["field_reversal_passed"]),
                 "s_parameter": float(state["s_parameter"]),
                 "energy_j_per_m": float(state["energy_J"]),
                 "pressure_balance_ratio": float(state["pressure_balance_ratio"]),
@@ -199,8 +205,15 @@ def _compare_surface(
             comparisons.append({"grid_points": grid, "status": "blocked_missing_grid"})
             parity_passed = False
             continue
-        checks = {
+        checks: dict[str, Any] = {
             "r_null_abs_error": abs(float(cand["r_null_m"]) - float(ref["r_null_m"])),
+            "target_separatrix_radius_abs_error": abs(
+                float(cand["target_separatrix_radius_m"]) - float(ref["target_separatrix_radius_m"])
+            ),
+            "separatrix_radius_error_abs_error": abs(
+                float(cand["separatrix_radius_error_m"]) - float(ref["separatrix_radius_error_m"])
+            ),
+            "field_reversal_matches": bool(cand["field_reversal_passed"]) == bool(ref["field_reversal_passed"]),
             "s_parameter_rel_error": _relative_error(
                 float(cand["s_parameter"]),
                 float(ref["s_parameter"]),
@@ -241,6 +254,9 @@ def _compare_surface(
         }
         passed = (
             checks["r_null_abs_error"] <= 1.0e-12
+            and checks["target_separatrix_radius_abs_error"] <= 1.0e-12
+            and checks["separatrix_radius_error_abs_error"] <= 1.0e-12
+            and checks["field_reversal_matches"]
             and checks["s_parameter_rel_error"] <= 1.0e-12
             and checks["energy_rel_error"] <= 1.0e-12
             and checks["pressure_balance_rel_error"] <= 1.0e-12
@@ -262,6 +278,7 @@ def _convergence(reference: list[dict[str, Any]]) -> dict[str, Any]:
     finest_grid = int(finest["grid_points"])
     checked_metrics = (
         "r_null_m",
+        "separatrix_radius_error_m",
         "s_parameter",
         "energy_j_per_m",
         "pressure_balance_ratio",

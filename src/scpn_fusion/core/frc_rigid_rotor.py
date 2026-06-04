@@ -53,7 +53,10 @@ class FRCEquilibriumState:
     J_theta: FloatArray
     p: FloatArray
     R_null: float
+    target_separatrix_radius_m: float
+    separatrix_radius_error_m: float
     separatrix_index: int
+    field_reversal_passed: bool
     s_parameter: float
     energy_J: float
     converged: bool
@@ -77,6 +80,8 @@ class FRCValidationReport:
     finite: bool
     monotonic_grid: bool
     null_error_m: float
+    target_separatrix_radius_m: float
+    field_reversal_passed: bool
     pressure_peak_error_m: float
     edge_field_error_T: float
     pressure_balance_ratio: float
@@ -142,7 +147,9 @@ def solve_frc_equilibrium(
     ampere_residual_l2 = float(np.sqrt(np.mean((ampere_residual / ampere_scale) ** 2)))
     psi = _cylindrical_flux_from_bz(rho, B_z)
     r_null = _zero_crossing_radius(rho, B_z)
+    separatrix_radius_error = abs(r_null - inputs.R_s)
     separatrix_index = int(np.argmin(np.abs(rho - r_null)))
+    field_reversal = _field_reversal_passed(rho, B_z, inputs.R_s)
 
     p0 = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
     psi_axis = np.interp(r_null, rho, psi)
@@ -174,7 +181,10 @@ def solve_frc_equilibrium(
         J_theta=J_theta,
         p=p,
         R_null=r_null,
+        target_separatrix_radius_m=inputs.R_s,
+        separatrix_radius_error_m=float(separatrix_radius_error),
         separatrix_index=separatrix_index,
+        field_reversal_passed=field_reversal,
         s_parameter=s_value,
         energy_J=energy_J_per_m,
         converged=True,
@@ -237,12 +247,22 @@ def validate_equilibrium(
     )
     monotonic_grid = bool(np.all(np.diff(state.rho) > 0.0))
     r_null = null_radius(state)
-    null_error = abs(r_null - state.R_null)
+    null_error = abs(r_null - state.target_separatrix_radius_m)
+    field_reversal_passed = _field_reversal_passed(
+        state.rho,
+        state.B_z,
+        state.target_separatrix_radius_m,
+    )
     pressure_peak_radius = float(state.rho[int(np.argmax(state.p))])
     pressure_peak_error = abs(pressure_peak_radius - state.R_null)
     edge_field_error = abs(abs(float(state.B_z[-1])) - abs(float(state.B_z[0])))
-    geometric_passed = finite and monotonic_grid and null_error <= tolerance and pressure_peak_error <= max(
-        tolerance, 2.0 * float(np.max(np.diff(state.rho)))
+    radial_spacing = float(np.max(np.diff(state.rho)))
+    geometric_passed = (
+        finite
+        and monotonic_grid
+        and field_reversal_passed
+        and null_error <= max(tolerance, radial_spacing)
+        and pressure_peak_error <= max(tolerance, 2.0 * radial_spacing)
     )
     ampere_closure_passed = state.ampere_residual_linf <= ampere_tolerance
     force_balance_passed = (
@@ -253,6 +273,8 @@ def validate_equilibrium(
         finite=finite,
         monotonic_grid=monotonic_grid,
         null_error_m=float(null_error),
+        target_separatrix_radius_m=state.target_separatrix_radius_m,
+        field_reversal_passed=bool(field_reversal_passed),
         pressure_peak_error_m=float(pressure_peak_error),
         edge_field_error_T=float(edge_field_error),
         pressure_balance_ratio=state.pressure_balance_ratio,
@@ -293,8 +315,8 @@ def _validate_grid(rho_grid: FloatArray, R_s: float) -> FloatArray:
         raise ValueError("rho_grid must start at the magnetic axis radius 0")
     if not np.all(np.diff(rho) > 0.0):
         raise ValueError("rho_grid must be strictly increasing")
-    if rho[-1] < R_s:
-        raise ValueError("rho_grid must include the separatrix radius R_s")
+    if rho[-1] <= R_s:
+        raise ValueError("rho_grid must include radii outside the separatrix radius R_s")
     return rho
 
 
@@ -383,3 +405,14 @@ def _zero_crossing_radius(rho: FloatArray, values: FloatArray) -> float:
         return float(rho[i])
     weight = -y0 / (y1 - y0)
     return float(rho[i] + weight * (rho[i + 1] - rho[i]))
+
+
+def _field_reversal_passed(rho: FloatArray, B_z: FloatArray, R_s: float) -> bool:
+    """Return whether the axial field reverses sign across the separatrix."""
+    inner_indices = np.flatnonzero(rho < R_s)
+    outer_indices = np.flatnonzero(rho > R_s)
+    if inner_indices.size == 0 or outer_indices.size == 0:
+        return False
+    inner_field = float(B_z[int(inner_indices[-1])])
+    outer_field = float(B_z[int(outer_indices[0])])
+    return bool(np.isfinite(inner_field) and np.isfinite(outer_field) and inner_field * outer_field < 0.0)

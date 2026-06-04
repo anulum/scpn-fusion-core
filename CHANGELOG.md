@@ -24,6 +24,11 @@
 - Hardened the FRC current-density contract to use the closed-form Steinhauer
   derivative while keeping Ampere residuals as independent finite-grid
   diagnostics with Python, Rust, PyO3, benchmark, and documentation coverage.
+- Added an explicit FRC separatrix and field-reversal validation contract so
+  the no-rotation analytical solver compares the interpolated null against the
+  configured `R_s`, requires radial samples on both sides of `R_s`, carries the
+  diagnostics through Python, Rust, PyO3, benchmark JSON, and public docs, and
+  keeps missing non-Python/Rust FRC surfaces fail-closed.
 
 ## [3.9.8] - 2026-06-02
 

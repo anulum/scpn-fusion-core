@@ -1747,7 +1747,13 @@ fn py_solve_frc_equilibrium<'py>(
     out.set_item("J_theta", state.j_theta.into_pyarray(py))?;
     out.set_item("p", state.p.into_pyarray(py))?;
     out.set_item("R_null", state.r_null)?;
+    out.set_item(
+        "target_separatrix_radius_m",
+        state.target_separatrix_radius_m,
+    )?;
+    out.set_item("separatrix_radius_error_m", state.separatrix_radius_error_m)?;
     out.set_item("separatrix_index", state.separatrix_index)?;
+    out.set_item("field_reversal_passed", state.field_reversal_passed)?;
     out.set_item("s_parameter", state.s_parameter)?;
     out.set_item("energy_J", state.energy_j)?;
     out.set_item("converged", state.converged)?;

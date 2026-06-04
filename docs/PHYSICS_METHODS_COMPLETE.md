@@ -63,10 +63,12 @@ The axial field follows Steinhauer (2011), Eq. 7:
 $$B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2R_s\delta}\right)$$
 
 The solver validates a one-dimensional, strictly increasing radial grid,
-requires the grid to start at the magnetic axis and include the separatrix radius, derives
-`delta = rho_i` from the deuterium thermal ion gyroradius when no layer
-thickness is supplied, and rejects rotating cases until the BVP implementation
-is added.
+requires the grid to start at the magnetic axis and extend outside the
+separatrix radius, derives `delta = rho_i` from the deuterium thermal ion
+gyroradius when no layer thickness is supplied, and rejects rotating cases
+until the BVP implementation is added. The validation report now compares the
+interpolated zero-crossing against the configured `R_s` and requires the axial
+field sign to reverse between the last inner sample and the first outer sample.
 
 The reported quality-of-equilibrium parameter follows Steinhauer Eq. 27:
 
@@ -100,10 +102,11 @@ force-balance diagnostic is visible by default and becomes a fail-closed gate
 only when an explicit `force_balance_tolerance` is supplied.
 
 The tracked benchmark report now includes finite-grid convergence evidence for
-the accepted no-rotation scalar invariants: null radius, Eq. 27 `s`, energy per
-metre, pressure-balance ratio, and the independent Ampere residual. This is
-local convergence evidence for the implemented analytical contract, not
-validation of the unresolved rotating FRC BVP or kinetic/transport evolution.
+the accepted no-rotation scalar invariants: null radius, separatrix radius
+error, Eq. 27 `s`, energy per metre, pressure-balance ratio, and the
+independent Ampere residual. This is local convergence evidence for the
+implemented analytical contract, not validation of the unresolved rotating FRC
+BVP or kinetic/transport evolution.
 
 **Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
 

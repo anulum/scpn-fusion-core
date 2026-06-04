@@ -2,10 +2,11 @@
   "benchmark": "frc_rigid_rotor_no_rotation_analytical",
   "claim_boundary": "No rotating rigid-rotor BVP, no full FRC transport, no reduced-order substitution.",
   "contract": "Steinhauer 2011 no-rotation analytical axial-field profile",
-  "generated_at_utc": "2026-06-04T06:25:34.919667+00:00",
+  "generated_at_utc": "2026-06-04T06:48:16.117059+00:00",
   "grid_convergence": {
     "checked_metrics": [
       "r_null_m",
+      "separatrix_radius_error_m",
       "s_parameter",
       "energy_j_per_m",
       "pressure_balance_ratio",
@@ -24,7 +25,9 @@
       "r_null_m_1024_is_reference": true,
       "r_null_m_64_to_256_improves": true,
       "s_parameter_1024_is_reference": true,
-      "s_parameter_64_to_256_improves": true
+      "s_parameter_64_to_256_improves": true,
+      "separatrix_radius_error_m_1024_is_reference": true,
+      "separatrix_radius_error_m_64_to_256_improves": true
     },
     "rows": [
       {
@@ -40,6 +43,8 @@
         "reference_grid_points": 1024,
         "s_parameter_abs_error_vs_grid_1024": 0.042491314317889106,
         "s_parameter_rel_error_vs_grid_1024": 0.002015826556402448,
+        "separatrix_radius_error_m_abs_error_vs_grid_1024": 2.4681464330600367e-05,
+        "separatrix_radius_error_m_rel_error_vs_grid_1024": 2.4681464330600367e-05,
         "status": "diagnostic"
       },
       {
@@ -55,6 +60,8 @@
         "reference_grid_points": 1024,
         "s_parameter_abs_error_vs_grid_1024": 0.0025569343903022457,
         "s_parameter_rel_error_vs_grid_1024": 0.0001213032905593123,
+        "separatrix_radius_error_m_abs_error_vs_grid_1024": 1.440746608072363e-06,
+        "separatrix_radius_error_m_rel_error_vs_grid_1024": 1.440746608072363e-06,
         "status": "diagnostic"
       },
       {
@@ -70,6 +77,8 @@
         "reference_grid_points": 1024,
         "s_parameter_abs_error_vs_grid_1024": 0.0,
         "s_parameter_rel_error_vs_grid_1024": 0.0,
+        "separatrix_radius_error_m_abs_error_vs_grid_1024": 0.0,
+        "separatrix_radius_error_m_rel_error_vs_grid_1024": 0.0,
         "status": "reference"
       }
     ],
@@ -105,6 +114,7 @@
           "ampere_residual_linf": 0.03233705630930771,
           "b_z_checksum": -5120.926580205899,
           "energy_j_per_m": 4732409.656562342,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999771349699724,
           "grid_points": 64,
           "j_theta_checksum": 40562506791.33214,
@@ -114,20 +124,23 @@
           "psi_checksum": -57.86598757739498,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
-          "wall_time_s_median": 0.002014503115788102,
-          "wall_time_s_min": 0.0010003938805311918,
+          "separatrix_radius_error_m": 2.4777012213178518e-05,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s_median": 0.0007818290032446384,
+          "wall_time_s_min": 0.00037583615630865097,
           "wall_time_s_repeats": [
-            0.006202192045748234,
-            0.002014503115788102,
-            0.0010003938805311918,
-            0.0023483450058847666,
-            0.001872190972790122
+            0.0007869680412113667,
+            0.0013700569979846478,
+            0.0007818290032446384,
+            0.0007221659179776907,
+            0.00037583615630865097
           ]
         },
         {
           "ampere_residual_linf": 0.0020760453606177855,
           "b_z_checksum": -81924.74186706443,
           "energy_j_per_m": 4732380.633575541,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999866739514768,
           "grid_points": 256,
           "j_theta_checksum": 649084408197.5979,
@@ -137,20 +150,23 @@
           "psi_checksum": -865.501835563199,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
-          "wall_time_s_median": 0.0011763118673115969,
-          "wall_time_s_min": 0.0006872410885989666,
+          "separatrix_radius_error_m": 1.5362944906505138e-06,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s_median": 0.000829359982162714,
+          "wall_time_s_min": 0.0006456139963120222,
           "wall_time_s_repeats": [
-            0.0027609169483184814,
-            0.0006872410885989666,
-            0.0010259738191962242,
-            0.0011763118673115969,
-            0.006668828893452883
+            0.0011511200573295355,
+            0.000829359982162714,
+            0.0008312349673360586,
+            0.0006456139963120222,
+            0.0006949529051780701
           ]
         },
         {
           "ampere_residual_linf": 0.00012988613047863225,
           "b_z_checksum": -1310735.8190520962,
           "energy_j_per_m": 4732378.833975077,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999873741849441,
           "grid_points": 1024,
           "j_theta_checksum": 10385238200511.258,
@@ -160,14 +176,16 @@
           "psi_checksum": -13614.908420752407,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
-          "wall_time_s_median": 0.0009296259377151728,
-          "wall_time_s_min": 0.0008647099602967501,
+          "separatrix_radius_error_m": 9.554788257815083e-08,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s_median": 0.0004548479337245226,
+          "wall_time_s_min": 0.00044365692883729935,
           "wall_time_s_repeats": [
-            0.0022050580009818077,
-            0.0012151228729635477,
-            0.0009296259377151728,
-            0.0008761568460613489,
-            0.0008647099602967501
+            0.0004609390161931515,
+            0.0004548479337245226,
+            0.00044365692883729935,
+            0.0006538929883390665,
+            0.00044776080176234245
           ]
         }
       ],
@@ -179,6 +197,7 @@
           "ampere_residual_linf": 0.03233705630930771,
           "b_z_checksum": -5120.9265802059,
           "energy_j_per_m": 4732409.656562341,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999771349699724,
           "grid_points": 64,
           "j_theta_checksum": 40562506791.332115,
@@ -188,20 +207,23 @@
           "psi_checksum": -57.86598757739499,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
-          "wall_time_s_median": 2.1104933694005013e-05,
-          "wall_time_s_min": 1.7386162653565407e-05,
+          "separatrix_radius_error_m": 2.4777012213178518e-05,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s_median": 1.2034084647893906e-05,
+          "wall_time_s_min": 1.0986113920807838e-05,
           "wall_time_s_repeats": [
-            8.766818791627884e-05,
-            2.529914490878582e-05,
-            2.1104933694005013e-05,
-            2.0837876945734024e-05,
-            1.7386162653565407e-05
+            4.703085869550705e-05,
+            1.6026897355914116e-05,
+            1.2034084647893906e-05,
+            1.0986113920807838e-05,
+            1.2016156688332558e-05
           ]
         },
         {
           "ampere_residual_linf": 0.0020760453606177855,
           "b_z_checksum": -81924.74186706443,
           "energy_j_per_m": 4732380.633575541,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999866739514768,
           "grid_points": 256,
           "j_theta_checksum": 649084408197.5978,
@@ -211,20 +233,23 @@
           "psi_checksum": -865.5018355631989,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
-          "wall_time_s_median": 4.5732129365205765e-05,
-          "wall_time_s_min": 4.385807551443577e-05,
+          "separatrix_radius_error_m": 1.5362944906505138e-06,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s_median": 2.9996037483215332e-05,
+          "wall_time_s_min": 2.823001705110073e-05,
           "wall_time_s_repeats": [
-            5.5284006521105766e-05,
-            4.505296237766743e-05,
-            5.153100937604904e-05,
-            4.385807551443577e-05,
-            4.5732129365205765e-05
+            6.0237012803554535e-05,
+            4.073907621204853e-05,
+            2.9996037483215332e-05,
+            2.8552953153848648e-05,
+            2.823001705110073e-05
           ]
         },
         {
           "ampere_residual_linf": 0.00012988613047863225,
           "b_z_checksum": -1310735.8190520962,
           "energy_j_per_m": 4732378.8339750795,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999873741849438,
           "grid_points": 1024,
           "j_theta_checksum": 10385238200511.256,
@@ -234,14 +259,16 @@
           "psi_checksum": -13614.908420752397,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
-          "wall_time_s_median": 0.00015656184405088425,
-          "wall_time_s_min": 0.00015136715956032276,
+          "separatrix_radius_error_m": 9.554788257815083e-08,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s_median": 0.00011214590631425381,
+          "wall_time_s_min": 0.00010138098150491714,
           "wall_time_s_repeats": [
-            0.00018169102258980274,
-            0.00017529516480863094,
-            0.00015656184405088425,
-            0.00015136715956032276,
-            0.00015426799654960632
+            0.00011214590631425381,
+            0.00013866089284420013,
+            0.00016264012083411217,
+            0.00010543595999479294,
+            0.00010138098150491714
           ]
         }
       ],
@@ -251,6 +278,7 @@
             "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 9.094947017729282e-13,
             "energy_rel_error": 1.9679669390498163e-16,
+            "field_reversal_matches": true,
             "force_balance_linf_rel_error": 0.0,
             "grid_points": 64,
             "j_theta_checksum_rel_error": 5.642694548316479e-16,
@@ -260,12 +288,15 @@
             "psi_checksum_abs_error": 7.105427357601002e-15,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
-            "status": "passed"
+            "separatrix_radius_error_abs_error": 0.0,
+            "status": "passed",
+            "target_separatrix_radius_abs_error": 0.0
           },
           {
             "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 0.0,
             "energy_rel_error": 0.0,
+            "field_reversal_matches": true,
             "force_balance_linf_rel_error": 0.0,
             "grid_points": 256,
             "j_theta_checksum_rel_error": 1.8806539019935704e-16,
@@ -275,12 +306,15 @@
             "psi_checksum_abs_error": 1.1368683772161603e-13,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
-            "status": "passed"
+            "separatrix_radius_error_abs_error": 0.0,
+            "status": "passed",
+            "target_separatrix_radius_abs_error": 0.0
           },
           {
             "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 0.0,
             "energy_rel_error": 5.903939270008891e-16,
+            "field_reversal_matches": true,
             "force_balance_linf_rel_error": 3.3306690738754696e-16,
             "grid_points": 1024,
             "j_theta_checksum_rel_error": 1.880674243854945e-16,
@@ -290,7 +324,9 @@
             "psi_checksum_abs_error": 9.094947017729282e-12,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
-            "status": "passed"
+            "separatrix_radius_error_abs_error": 0.0,
+            "status": "passed",
+            "target_separatrix_radius_abs_error": 0.0
           }
         ],
         "parity_passed": true,
@@ -304,6 +340,7 @@
           "ampere_residual_linf": 0.03233705630930771,
           "b_z_checksum": -5120.9265802059,
           "energy_j_per_m": 4732409.656562341,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999771349699724,
           "grid_points": 64,
           "j_theta_checksum": 40562506791.33212,
@@ -313,12 +350,15 @@
           "psi_checksum": -57.865987577394975,
           "r_null_m": 0.19997522298778683,
           "s_parameter": 21.036363006225134,
-          "wall_time_s": 3.8495e-05
+          "separatrix_radius_error_m": 2.4777012213178518e-05,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s": 6.5668e-05
         },
         {
           "ampere_residual_linf": 0.0020760453606177855,
           "b_z_checksum": -81924.74186706445,
           "energy_j_per_m": 4732380.633575541,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999866739514768,
           "grid_points": 256,
           "j_theta_checksum": 649084408197.5975,
@@ -328,12 +368,15 @@
           "psi_checksum": -865.5018355631995,
           "r_null_m": 0.19999846370550936,
           "s_parameter": 21.07629738615272,
-          "wall_time_s": 8.6974e-05
+          "separatrix_radius_error_m": 1.5362944906505138e-06,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s": 7.4303e-05
         },
         {
           "ampere_residual_linf": 0.00012988613047863225,
           "b_z_checksum": -1310735.8190520972,
           "energy_j_per_m": 4732378.8339750795,
+          "field_reversal_passed": true,
           "force_balance_residual_linf": 0.9999873741849438,
           "grid_points": 1024,
           "j_theta_checksum": 10385238200511.229,
@@ -343,7 +386,9 @@
           "psi_checksum": -13614.908420752376,
           "r_null_m": 0.19999990445211743,
           "s_parameter": 21.078854320543023,
-          "wall_time_s": 0.000272456
+          "separatrix_radius_error_m": 9.554788257815083e-08,
+          "target_separatrix_radius_m": 0.2,
+          "wall_time_s": 0.000244481
         }
       ],
       "parity": {
@@ -352,6 +397,7 @@
             "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 9.094947017729282e-13,
             "energy_rel_error": 1.9679669390498163e-16,
+            "field_reversal_matches": true,
             "force_balance_linf_rel_error": 0.0,
             "grid_points": 64,
             "j_theta_checksum_rel_error": 3.761796365544319e-16,
@@ -361,12 +407,15 @@
             "psi_checksum_abs_error": 7.105427357601002e-15,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
-            "status": "passed"
+            "separatrix_radius_error_abs_error": 0.0,
+            "status": "passed",
+            "target_separatrix_radius_abs_error": 0.0
           },
           {
             "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 2.9103830456733704e-11,
             "energy_rel_error": 0.0,
+            "field_reversal_matches": true,
             "force_balance_linf_rel_error": 0.0,
             "grid_points": 256,
             "j_theta_checksum_rel_error": 5.641961705980711e-16,
@@ -376,12 +425,15 @@
             "psi_checksum_abs_error": 4.547473508864641e-13,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
-            "status": "passed"
+            "separatrix_radius_error_abs_error": 0.0,
+            "status": "passed",
+            "target_separatrix_radius_abs_error": 0.0
           },
           {
             "ampere_residual_linf_abs_error": 0.0,
             "b_z_checksum_abs_error": 9.313225746154785e-10,
             "energy_rel_error": 5.903939270008891e-16,
+            "field_reversal_matches": true,
             "force_balance_linf_rel_error": 3.3306690738754696e-16,
             "grid_points": 1024,
             "j_theta_checksum_rel_error": 2.8210113657824177e-15,
@@ -391,7 +443,9 @@
             "psi_checksum_abs_error": 3.092281986027956e-11,
             "r_null_abs_error": 0.0,
             "s_parameter_rel_error": 0.0,
-            "status": "passed"
+            "separatrix_radius_error_abs_error": 0.0,
+            "status": "passed",
+            "target_separatrix_radius_abs_error": 0.0
           }
         ],
         "parity_passed": true,

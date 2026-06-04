@@ -99,7 +99,9 @@ pub fn solve_frc_equilibrium(
         .sqrt();
     let psi = cylindrical_flux_from_bz(&rho, &b_z);
     let r_null = zero_crossing_radius(&rho, &b_z);
+    let separatrix_radius_error_m = (r_null - inputs.r_s).abs();
     let separatrix_index = nearest_index(&rho, r_null);
+    let field_reversal_passed = field_reversal_passed(&rho, &b_z, inputs.r_s);
 
     let p0 = inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
     let psi_axis = interpolate(&rho, &psi, r_null);
@@ -156,7 +158,10 @@ pub fn solve_frc_equilibrium(
         j_theta: j_theta.clone(),
         p,
         r_null,
+        target_separatrix_radius_m: inputs.r_s,
+        separatrix_radius_error_m,
         separatrix_index,
+        field_reversal_passed,
         s_parameter,
         energy_j,
         converged: true,
@@ -235,9 +240,9 @@ fn validate_grid(rho: &Array1<f64>, r_s: f64) -> Result<(), FrcSolverError> {
             ));
         }
     }
-    if rho[rho.len() - 1] < r_s {
+    if rho[rho.len() - 1] <= r_s {
         return Err(FrcSolverError::InvalidInput(
-            "rho_grid must include the separatrix radius R_s",
+            "rho_grid must include radii outside the separatrix radius R_s",
         ));
     }
     Ok(())
@@ -341,6 +346,26 @@ fn zero_crossing_radius(rho: &Array1<f64>, values: &Array1<f64>) -> f64 {
         .map(|(idx, _)| idx)
         .unwrap_or(0);
     rho[idx]
+}
+
+fn field_reversal_passed(rho: &Array1<f64>, b_z: &Array1<f64>, r_s: f64) -> bool {
+    let inner = rho
+        .iter()
+        .zip(b_z.iter())
+        .take_while(|(r, _)| **r < r_s)
+        .last()
+        .map(|(_, b)| *b);
+    let outer = rho
+        .iter()
+        .zip(b_z.iter())
+        .find(|(r, _)| **r > r_s)
+        .map(|(_, b)| *b);
+    match (inner, outer) {
+        (Some(inner_field), Some(outer_field)) => {
+            inner_field.is_finite() && outer_field.is_finite() && inner_field * outer_field < 0.0
+        }
+        _ => false,
+    }
 }
 
 fn nearest_index(rho: &Array1<f64>, target: f64) -> usize {
@@ -461,6 +486,9 @@ mod tests {
         let rho = linspace(0.0, 0.4, 401);
         let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
         assert!((state.r_null - inputs.r_s).abs() < 2.5e-4);
+        assert_eq!(state.target_separatrix_radius_m, inputs.r_s);
+        assert!(state.separatrix_radius_error_m < 2.5e-4);
+        assert!(state.field_reversal_passed);
         assert!(state.energy_j > 0.0);
         assert!(state.pressure_balance_ratio > 0.0);
         assert!(state.peak_j_theta_a_m2 > 0.0);
@@ -585,5 +613,9 @@ mod tests {
         assert!(solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &bad_grid, 1.0e-10).is_err());
         let off_axis_grid = linspace(0.01, 0.4, 32);
         assert!(solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &off_axis_grid, 1.0e-10).is_err());
+        let no_outer_field_grid = linspace(0.0, 0.20, 32);
+        assert!(
+            solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &no_outer_field_grid, 1.0e-10).is_err()
+        );
     }
 }
