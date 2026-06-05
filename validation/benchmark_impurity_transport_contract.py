@@ -220,13 +220,27 @@ def _load_reference_npz(case: dict[str, Any]) -> tuple[Path | None, dict[str, Fl
         if isinstance(coordinate_contracts, dict)
         else []
     )
+    optional_case_keys = [
+        "convection_m_s_r_z",
+        "diffusion_m2_s_r_z",
+        "electron_density_t_r_m3",
+        "electron_temperature_t_r_ev",
+        "ionisation_coeff_m3_s_t_r_z",
+        "line_radiation_coeff_w_m3_t_r_z",
+        "recombination_coeff_m3_s_t_r_z",
+    ]
     with np.load(artifact_path, allow_pickle=False) as payload:
         missing = [
             name for name in (*coordinate_names, *required_names) if name not in payload.files
         ]
         if missing:
             return artifact_path, {}, [f"missing_payload_keys:{','.join(sorted(missing))}"]
-        for name in (*coordinate_names, *required_names, "line_radiation_power_t_r_z"):
+        for name in (
+            *coordinate_names,
+            *required_names,
+            "line_radiation_power_t_r_z",
+            *optional_case_keys,
+        ):
             if name in payload.files and name not in arrays:
                 array = np.asarray(payload[name], dtype=np.float64)
                 if array.size == 0 or not np.all(np.isfinite(array)):
@@ -247,21 +261,37 @@ def _native_same_case_payload(reference: dict[str, FloatArray]) -> dict[str, Any
         raise ValueError("reference density shape does not match time/radius/charge axes")
 
     radius_norm = radius_m / max(float(radius_m[-1]), 1.0e-30)
-    ne_profile = 1.0e20 * (1.0 - 0.4 * radius_norm**2) + 4.0e19
-    te_profile = 5.0e3 * (1.0 - radius_norm**2) ** 1.5 + 100.0
-    diffusion = np.tile(np.ones(radius_m.size, dtype=np.float64)[:, np.newaxis], (1, charge_state.size))
-    convection = np.tile((-10.0 * radius_norm**5)[:, np.newaxis], (1, charge_state.size))
+    ne_t_r = reference.get("electron_density_t_r_m3")
+    if ne_t_r is None:
+        ne_profile = 1.0e20 * (1.0 - 0.4 * radius_norm**2) + 4.0e19
+        ne_t_r = np.tile(ne_profile, (time_s.size, 1))
+    te_t_r = reference.get("electron_temperature_t_r_ev")
+    if te_t_r is None:
+        te_profile = 5.0e3 * (1.0 - radius_norm**2) ** 1.5 + 100.0
+        te_t_r = np.tile(te_profile, (time_s.size, 1))
+    diffusion = reference.get("diffusion_m2_s_r_z")
+    if diffusion is None:
+        diffusion = np.tile(
+            np.ones(radius_m.size, dtype=np.float64)[:, np.newaxis],
+            (1, charge_state.size),
+        )
+    convection = reference.get("convection_m_s_r_z")
+    if convection is None:
+        convection = np.tile((-10.0 * radius_norm**5)[:, np.newaxis], (1, charge_state.size))
     parity_case = AuroraParityCase(
         element="Ar",
         charge_states=charge_state,
         radius_m=radius_m,
         time_s=time_s,
-        ne_t_r=np.tile(ne_profile, (time_s.size, 1)),
-        Te_t_r=np.tile(te_profile, (time_s.size, 1)),
+        ne_t_r=ne_t_r,
+        Te_t_r=te_t_r,
         initial_charge_state_density_rz=np.maximum(charge_density[0], 0.0),
         diffusion_m2_s_r_z=diffusion,
         convection_m_s_r_z=convection,
         major_radius_m=1.7,
+        ionisation_m3_s_t_r_z=reference.get("ionisation_coeff_m3_s_t_r_z"),
+        recombination_m3_s_t_r_z=reference.get("recombination_coeff_m3_s_t_r_z"),
+        line_radiation_w_m3_t_r_z=reference.get("line_radiation_coeff_w_m3_t_r_z"),
     )
     return dict(AuroraParityImpuritySolver(parity_case).solve().to_dict())
 
@@ -394,8 +424,8 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
     density_closure = bool(np.allclose(total_density, np.sum(density, axis=2), rtol=1.0e-10))
     blocking_requirements = [] if thresholds_passed else [
         "native Aurora same-case thresholds are outside accepted limits",
-        "native operator still uses parametric ADAS-style coefficients rather than external Open-ADAS transport coefficients",
-        "charge-state-resolved radial transport/recycling parity is not yet implemented",
+        "Aurora source/recycling/effective transport closure is not yet represented in the native parity case",
+        "charge-state-resolved radial transport/recycling parity is not yet accepted",
     ]
     status = (
         "accepted_native_aurora_same_case_thresholds"
@@ -418,6 +448,17 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
             np.array_equal(candidate["time_s"], reference["time_s"])
             and np.array_equal(candidate["radius_m"], reference["radius_m"])
             and np.array_equal(candidate["charge_state"], reference["charge_state"])
+        ),
+        "external_coefficient_tables_ready": bool(
+            "ionisation_coeff_m3_s_t_r_z" in reference
+            and "recombination_coeff_m3_s_t_r_z" in reference
+            and "line_radiation_coeff_w_m3_t_r_z" in reference
+        ),
+        "aurora_case_profiles_ready": bool(
+            "electron_density_t_r_m3" in reference
+            and "electron_temperature_t_r_ev" in reference
+            and "diffusion_m2_s_r_z" in reference
+            and "convection_m_s_r_z" in reference
         ),
         "checks": checks,
         "blocking_requirements": blocking_requirements,
@@ -479,7 +520,7 @@ def _native_impurity_transport_evidence(
         "same_case_aurora_strahl_comparison": same_case_comparison,
         "blocking_requirements": [
             "charge-state-resolved radial transport operator on evolved density",
-            "external ADAS coefficient ingestion for transport parity",
+            "Aurora source/recycling/effective transport closure",
             "native same-case Aurora threshold pass",
         ],
     }

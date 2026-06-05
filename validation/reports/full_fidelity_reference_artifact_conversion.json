@@ -29,10 +29,17 @@
       "available_observables": [
         "charge_state",
         "charge_state_density_r_t",
+        "convection_m_s_r_z",
+        "diffusion_m2_s_r_z",
+        "electron_density_t_r_m3",
+        "electron_temperature_t_r_ev",
+        "ionisation_coeff_m3_s_t_r_z",
         "ionisation_source_matrix",
+        "line_radiation_coeff_w_m3_t_r_z",
         "line_radiation_power_t",
         "line_radiation_power_t_r_z",
         "radius_m",
+        "recombination_coeff_m3_s_t_r_z",
         "recombination_sink_matrix",
         "time_s",
         "total_impurity_density_r_t"
@@ -44,7 +51,7 @@
       "provenance_url": "https://github.com/fsciortino/Aurora/tree/4c53ee2fb5202977682c3da4deba5fc07ab3a203/examples",
       "redistribution_license": "MIT",
       "reference_family": "Aurora",
-      "sha256": "be18361a9c2b1e86f5f1f9bbc463127a7845b771289fa98cc5311f8baf0ca5e2",
+      "sha256": "7929fcf4844cee198258acfaeb864855ceb3b241244e1c2a5ed9b25faac21b39",
       "solver_output_comparison_ready": true,
       "surface": "impurity_transport"
     },

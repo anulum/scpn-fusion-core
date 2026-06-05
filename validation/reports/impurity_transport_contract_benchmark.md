@@ -54,7 +54,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Native coordinate match: `True`
 - Native total-density closure: `True`
 - Checks: `[{"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "charge_state_density_r_t", "passed": false, "threshold": "charge_state_density_relative_l2_max", "valid": true, "value": 1.0}, {"comparator": "<=", "limit": 0.01, "metric": "relative_error", "observable": "charge_state_density_r_t", "passed": false, "threshold": "particle_conservation_relative_error_max", "valid": true, "value": 1.0}, {"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "line_radiation_power_t", "passed": false, "threshold": "radiated_power_relative_l2_max", "valid": true, "value": 1.0}, {"comparator": "<=", "limit": 0.05, "metric": "relative_l2", "observable": "total_impurity_density_r_t", "passed": false, "threshold": "total_density_relative_l2_max", "valid": true, "value": 1.0}]`
-- Blocking requirements: `native Aurora same-case thresholds are outside accepted limits; native operator still uses parametric ADAS-style coefficients rather than external Open-ADAS transport coefficients; charge-state-resolved radial transport/recycling parity is not yet implemented`
+- Blocking requirements: `native Aurora same-case thresholds are outside accepted limits; Aurora source/recycling/effective transport closure is not yet represented in the native parity case; charge-state-resolved radial transport/recycling parity is not yet accepted`
 
 ## Native source/sink budget evidence
 
@@ -71,7 +71,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Max radial total-density relative change: `1.388889e-16`
 - Line radiation non-negative: `True`
 - Aurora/STRAHL same-case budget ready: `False`
-- Blocking requirements: `charge-state-resolved radial transport operator on evolved density; external ADAS coefficient ingestion for transport parity; native same-case Aurora threshold pass`
+- Blocking requirements: `charge-state-resolved radial transport operator on evolved density; Aurora source/recycling/effective transport closure; native same-case Aurora threshold pass`
 
 ## Invariants
 

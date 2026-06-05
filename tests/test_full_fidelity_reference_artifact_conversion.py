@@ -31,6 +31,15 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
     assert converted["aurora_argon_transport_public"]["accepted_full_fidelity"] is True
     assert converted["aurora_argon_transport_public"]["missing_required_observables"] == []
     assert converted["aurora_argon_transport_public"]["solver_output_comparison_ready"] is True
+    assert {
+        "convection_m_s_r_z",
+        "diffusion_m2_s_r_z",
+        "electron_density_t_r_m3",
+        "electron_temperature_t_r_ev",
+        "ionisation_coeff_m3_s_t_r_z",
+        "line_radiation_coeff_w_m3_t_r_z",
+        "recombination_coeff_m3_s_t_r_z",
+    }.issubset(set(converted["aurora_argon_transport_public"]["available_observables"]))
 
     for artifact in converted.values():
         path = ROOT / artifact["artifact_path"]

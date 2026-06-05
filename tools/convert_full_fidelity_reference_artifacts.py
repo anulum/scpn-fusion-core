@@ -127,6 +127,22 @@ def _write_json_artifact(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _as_time_radius_profile(values: NDArray[Any], *, time_count: int, radius_count: int) -> NDArray[np.float64]:
+    """Return Aurora profile data as time x radius without changing values."""
+    profile = np.asarray(values, dtype=float)
+    if profile.shape == (time_count, radius_count):
+        return profile
+    if profile.shape == (radius_count, time_count):
+        return profile.T
+    if profile.shape == (radius_count,):
+        return np.tile(profile[np.newaxis, :], (time_count, 1))
+    if profile.shape == (radius_count, 1):
+        return np.tile(profile.T, (time_count, 1))
+    if profile.shape == (1, radius_count):
+        return np.tile(profile, (time_count, 1))
+    raise ValueError(f"Aurora profile cannot be reshaped to time x radius: {profile.shape}")
+
+
 def _artifact_record(
     metadata: dict[str, Any], artifact_path: Path, metadata_path: Path
 ) -> dict[str, Any]:
@@ -242,6 +258,19 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
     radius_m = np.asarray(asim.rvol_grid, dtype=float) / 100.0
     charge_state = np.arange(density_t_r_z.shape[2], dtype=float)
     total_density_t_r = np.sum(density_t_r_z, axis=2)
+    electron_density_t_r_m3 = (
+        _as_time_radius_profile(
+            np.asarray(asim.ne, dtype=float),
+            time_count=time_s.size,
+            radius_count=radius_m.size,
+        )
+        * 1.0e6
+    )
+    electron_temperature_t_r_ev = _as_time_radius_profile(
+        np.asarray(asim.Te, dtype=float),
+        time_count=time_s.size,
+        radius_count=radius_m.size,
+    )
     line_rad_raw = np.asarray(radiation["line_rad"], dtype=float)
     line_rad_t_z_r = line_rad_raw
     if line_rad_t_z_r.shape[1] < charge_state.size:
@@ -252,21 +281,45 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
         line_rad_t_z_r = np.concatenate([pad, line_rad_t_z_r], axis=1)
     line_radiation_power_t_r_z = np.transpose(line_rad_t_z_r[:, : charge_state.size, :], (0, 2, 1))
     line_radiation_power_t = np.sum(line_radiation_power_t_r_z, axis=(1, 2))
-    ion_rate_r_z = np.asarray(ion_rate_s, dtype=float)[0].T
-    rec_rate_r_z = np.asarray(rec_rate_s, dtype=float)[0].T
-    if ion_rate_r_z.shape[1] < charge_state.size:
-        pad_cols = charge_state.size - ion_rate_r_z.shape[1]
-        ion_rate_r_z = np.pad(ion_rate_r_z, ((0, 0), (0, pad_cols)))
-        rec_rate_r_z = np.pad(rec_rate_r_z, ((0, 0), (0, pad_cols)))
-    ionisation_source_matrix = density_t_r_z[0] * ion_rate_r_z[:, : charge_state.size]
-    recombination_sink_matrix = density_t_r_z[0] * rec_rate_r_z[:, : charge_state.size]
+    ion_rate_t_r_z = np.asarray(ion_rate_s, dtype=float).transpose(0, 2, 1)
+    rec_rate_t_r_z = np.asarray(rec_rate_s, dtype=float).transpose(0, 2, 1)
+    if ion_rate_t_r_z.shape[2] < charge_state.size:
+        pad_cols = charge_state.size - ion_rate_t_r_z.shape[2]
+        ion_rate_t_r_z = np.pad(ion_rate_t_r_z, ((0, 0), (0, 0), (0, pad_cols)))
+        rec_rate_t_r_z = np.pad(rec_rate_t_r_z, ((0, 0), (0, 0), (0, pad_cols)))
+    ion_rate_t_r_z = ion_rate_t_r_z[:, :, : charge_state.size]
+    rec_rate_t_r_z = rec_rate_t_r_z[:, :, : charge_state.size]
+    ne_safe = np.maximum(electron_density_t_r_m3[:, :, np.newaxis], 1.0)
+    ionisation_coeff_t_r_z = ion_rate_t_r_z / ne_safe
+    recombination_coeff_t_r_z = rec_rate_t_r_z / ne_safe
+    line_radiation_coeff_t_r_z = np.divide(
+        line_radiation_power_t_r_z,
+        ne_safe * np.maximum(density_t_r_z, 1.0),
+        out=np.zeros_like(line_radiation_power_t_r_z),
+        where=density_t_r_z > 0.0,
+    )
+    ionisation_source_matrix = density_t_r_z[-1] * ion_rate_t_r_z[-1]
+    recombination_sink_matrix = density_t_r_z[-1] * rec_rate_t_r_z[-1]
+    diffusion_m2_s_r_z = np.tile(
+        (diffusion_cm2_s * 1.0e-4)[:, np.newaxis], (1, charge_state.size)
+    )
+    convection_m_s_r_z = np.tile(
+        (convection_cm_s * 1.0e-2)[:, np.newaxis], (1, charge_state.size)
+    )
     arrays: dict[str, NDArray[Any]] = {
         "charge_state": charge_state,
         "charge_state_density_r_t": density_t_r_z,
+        "convection_m_s_r_z": convection_m_s_r_z,
+        "diffusion_m2_s_r_z": diffusion_m2_s_r_z,
+        "electron_density_t_r_m3": electron_density_t_r_m3,
+        "electron_temperature_t_r_ev": electron_temperature_t_r_ev,
+        "ionisation_coeff_m3_s_t_r_z": ionisation_coeff_t_r_z,
         "ionisation_source_matrix": ionisation_source_matrix,
+        "line_radiation_coeff_w_m3_t_r_z": line_radiation_coeff_t_r_z,
         "line_radiation_power_t": line_radiation_power_t,
         "line_radiation_power_t_r_z": line_radiation_power_t_r_z,
         "radius_m": radius_m,
+        "recombination_coeff_m3_s_t_r_z": recombination_coeff_t_r_z,
         "recombination_sink_matrix": recombination_sink_matrix,
         "time_s": time_s,
         "total_impurity_density_r_t": total_density_t_r,
@@ -282,6 +335,20 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
         "artifact_role": "accepted_public_reference_output",
         "available_observables": available,
         "cache_source_path": _rel(repo / "examples" / "steady_state_run.py"),
+        "case_contract": {
+            "coefficient_tables": [
+                "ionisation_coeff_m3_s_t_r_z",
+                "recombination_coeff_m3_s_t_r_z",
+                "line_radiation_coeff_w_m3_t_r_z",
+            ],
+            "convection_profile": "convection_m_s_r_z",
+            "density_profile": "electron_density_t_r_m3",
+            "diffusion_profile": "diffusion_m2_s_r_z",
+            "element": "Ar",
+            "geometry_major_radius_m": 1.7,
+            "source_rate_s^-1": 1.0e18,
+            "temperature_profile": "electron_temperature_t_r_ev",
+        },
         "conversion_mode": "external_cache_conversion",
         "finite_numeric_payload": _finite_payload(arrays),
         "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",

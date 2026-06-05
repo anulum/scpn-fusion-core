@@ -102,6 +102,8 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert same_case["thresholds_passed"] is False
     assert same_case["native_coordinate_match"] is True
     assert same_case["native_total_density_closure"] is True
+    assert same_case["external_coefficient_tables_ready"] is True
+    assert same_case["aurora_case_profiles_ready"] is True
     assert same_case["native_density_shape"] == [4, 65, 19]
     assert same_case["reference_density_shape"] == [4, 65, 19]
     assert {check["threshold"] for check in same_case["checks"]} == {
@@ -141,6 +143,7 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert report["invariants"]["native_impurity_transport_evidence_fail_closed"] is True
     assert report["invariants"]["native_source_sink_budget_evidence_fail_closed"] is True
     assert report["invariants"]["charge_state_radial_density_conservation"] is True
+    assert "Aurora source/recycling/effective transport closure" in evidence["blocking_requirements"]
     assert "native same-case Aurora threshold pass" in evidence["blocking_requirements"]
 
 

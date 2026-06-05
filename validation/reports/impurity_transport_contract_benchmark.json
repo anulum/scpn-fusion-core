@@ -151,7 +151,7 @@
     "aurora_strahl_same_case_threshold_ready": true,
     "blocking_requirements": [
       "charge-state-resolved radial transport operator on evolved density",
-      "external ADAS coefficient ingestion for transport parity",
+      "Aurora source/recycling/effective transport closure",
       "native same-case Aurora threshold pass"
     ],
     "charge_state_density_closure": true,
@@ -196,10 +196,11 @@
     },
     "same_case_aurora_strahl_comparison": {
       "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
+      "aurora_case_profiles_ready": true,
       "blocking_requirements": [
         "native Aurora same-case thresholds are outside accepted limits",
-        "native operator still uses parametric ADAS-style coefficients rather than external Open-ADAS transport coefficients",
-        "charge-state-resolved radial transport/recycling parity is not yet implemented"
+        "Aurora source/recycling/effective transport closure is not yet represented in the native parity case",
+        "charge-state-resolved radial transport/recycling parity is not yet accepted"
       ],
       "case_id": "aurora_strahl_charge_state_transport_public",
       "checks": [
@@ -245,6 +246,7 @@
         }
       ],
       "comparison_ready": true,
+      "external_coefficient_tables_ready": true,
       "native_coordinate_match": true,
       "native_density_shape": [
         4,

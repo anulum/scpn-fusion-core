@@ -1238,8 +1238,9 @@ transport solver used for ongoing native-model development, and a separate
 `AuroraParityImpuritySolver` used only for Aurora/STRAHL same-case threshold
 gates. The parity solver is a native implementation, not an Aurora wrapper; it
 consumes an Aurora-compatible case contract with `time_s`, `radius_m`,
-`charge_state`, density/temperature profiles, diffusion/convection tables, and
-optional rate/radiation tables. The native impurity surface also exports an
+`charge_state`, tracked density/temperature profiles, diffusion/convection
+tables, and Open-ADAS-derived ionisation, recombination, and line-radiation
+coefficient tables. The native impurity surface also exports an
 Aurora/STRAHL-style `time_s x radius_m x charge_state` artifact contract with
 total impurity density closure, line-radiation power, and finite
 ionisation/recombination source-sink matrices. The artifact now validates `time_s x radius_m x
@@ -1262,12 +1263,15 @@ total-density conservation across the charge-state transfer history; the latest
 local contract reports maximum radial total-density relative change
 `1.388888888888889e-16`. The accepted Aurora argon transport artefact is now used by the separate
 Aurora-compatible native parity solver with matching `time_s x radius_m x
-charge_state` axes. That comparator is structurally ready and checksum-gated,
-but the native candidate fails charge-state density, total-density, radiation,
-and particle-conservation thresholds against Aurora with relative mismatch
-`1.0`; external ADAS transport coefficients and charge-state radial transport
-operator parity are still required before full collisional-operator parity can
-pass.
+charge_state` axes. That comparator is structurally ready and checksum-gated. The tracked Aurora
+artefact now also carries the density/temperature profiles, diffusion and
+convection tables, and Open-ADAS-derived ionisation, recombination, and
+line-radiation coefficient tables consumed by the parity solver. The native
+candidate still fails charge-state density, total-density, radiation, and
+particle-conservation thresholds against Aurora with relative mismatch `1.0`;
+the remaining blocker is Aurora source/recycling/effective transport closure
+and accepted charge-state radial transport parity, not missing coefficient
+ingestion.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.
