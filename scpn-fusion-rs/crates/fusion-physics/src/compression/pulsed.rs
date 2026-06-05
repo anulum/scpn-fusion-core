@@ -61,6 +61,7 @@ pub struct PulsedCompressionState {
     pub t_s: f64,
     pub r_s_m: f64,
     pub d_r_s_dt_m_s: f64,
+    pub radial_acceleration_m_s2: f64,
     pub t_i_ev: f64,
     pub t_e_ev: f64,
     pub density_m3: f64,
@@ -279,6 +280,7 @@ pub fn step_pulsed_compression(
         t_s: state.t_s + dt,
         r_s_m: radius,
         d_r_s_dt_m_s: speed,
+        radial_acceleration_m_s2: acceleration,
         t_i_ev: t_i,
         t_e_ev: t_e,
         density_m3: density,
@@ -389,6 +391,7 @@ fn validate_state(state: &PulsedCompressionState) -> Result<(), String> {
     require_finite("t_s", state.t_s)?;
     require_positive("r_s_m", state.r_s_m)?;
     require_finite("d_r_s_dt_m_s", state.d_r_s_dt_m_s)?;
+    require_finite("radial_acceleration_m_s2", state.radial_acceleration_m_s2)?;
     require_positive("t_i_ev", state.t_i_ev)?;
     require_positive("t_e_ev", state.t_e_ev)?;
     require_positive("density_m3", state.density_m3)?;
@@ -622,6 +625,7 @@ mod tests {
             t_s: 0.0,
             r_s_m: 0.2,
             d_r_s_dt_m_s: 0.0,
+            radial_acceleration_m_s2: 0.0,
             t_i_ev: t_i,
             t_e_ev: t_e,
             density_m3: density,
@@ -681,6 +685,7 @@ mod tests {
     fn external_compression_heats_and_shrinks_plasma() {
         let next = step_pulsed_compression(&state(), &config(), 5.0e5, 2.0e-8).unwrap();
         assert!(next.r_s_m < 0.2);
+        assert!(next.radial_acceleration_m_s2 < 0.0);
         assert!(next.t_i_ev > 10_000.0);
         assert!(next.compression_work_j > 0.0);
         assert!(next.energy_balance_residual.abs() < 1.0e-12);

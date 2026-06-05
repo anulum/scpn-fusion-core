@@ -409,6 +409,11 @@ geometry and mass:
 $$m_{\rm shell}\,\frac{d^2R_s}{dt^2}
 = \left(p_{\rm int}-p_{\rm mag,ext}\right)\,A,$$
 
+The resulting finite `radial_acceleration_m_s2` is part of the Python and Rust
+state contract. Downstream Faraday, MRTI, and tilt lanes can therefore audit the
+same force-balance acceleration used by the radius update instead of relying
+only on velocity finite differences.
+
 where
 
 $$p_{\rm int}=n\,(T_i+T_e)e,\qquad

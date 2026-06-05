@@ -65,6 +65,12 @@ damping-decrement checksum, maximum absolute update residual, and a
 tilt diagnostics from consuming an opaque flux checksum without knowing whether
 the underlying carrier update actually closed.
 
+The public state also exposes `radial_acceleration_m_s2` from the same
+force-balance evaluation that advances `dR_s/dt`. This gives downstream MRTI,
+Faraday, and tilt adapters a finite acceleration diagnostic tied to the
+implemented pressure-balance step instead of forcing each lane to reconstruct
+acceleration from differenced velocities.
+
 The trajectory carries the compression-work sidecar consumed by FUS-C.7
 Faraday recovery:
 
@@ -146,6 +152,7 @@ Tracked tests cover:
 - uniform-solenoid coil-field mapping,
 - adiabatic invariant preservation,
 - radial acceleration under pressure imbalance,
+- finite force-balance acceleration exposure,
 - exact lumped R-L coil-current trajectory and circuit-energy residual,
 - external compression heating and shrinkage,
 - voltage-driven coil-current coupling into pulsed compression,

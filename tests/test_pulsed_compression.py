@@ -123,7 +123,15 @@ def test_pressure_imbalance_accelerates_radially() -> None:
 
     next_state = step_pulsed_compression(state, config, 1.0e-9)
 
+    force_area = 2.0 * np.pi * state.R_s_m * config.plasma_length_m
+    expected_acceleration = (
+        (state.internal_pressure_Pa - next_state.external_magnetic_pressure_Pa)
+        * force_area
+        / config.plasma_mass_kg
+    )
     assert next_state.dR_s_dt_m_s > state.dR_s_dt_m_s
+    assert next_state.radial_acceleration_m_s2 == pytest.approx(expected_acceleration)
+    assert next_state.radial_acceleration_m_s2 > 0.0
     assert next_state.R_s_m > state.R_s_m
     assert next_state.flux_coupling_status == "ono_nonadiabatic_flux_carrier"
     assert next_state.flux_budget_claim_status == "passed"
@@ -138,6 +146,7 @@ def test_external_compression_heats_and_shrinks_plasma() -> None:
     next_state = step_pulsed_compression(state, config, 2.0e-8)
 
     assert next_state.R_s_m < state.R_s_m
+    assert next_state.radial_acceleration_m_s2 < 0.0
     assert next_state.T_i_eV > state.T_i_eV
     assert next_state.T_e_eV > state.T_e_eV
     assert next_state.compression_work_J > state.compression_work_J
@@ -153,6 +162,7 @@ def test_run_pulsed_compression_tracks_flux_history() -> None:
     assert len(states) == 5
     assert states[-1].t_s == pytest.approx(4.0e-8)
     assert all(state.flux_psi.shape == initial.flux_psi.shape for state in states)
+    assert all(np.isfinite(state.radial_acceleration_m_s2) for state in states)
     assert np.isfinite(states[-1].flux_psi_checksum)
     assert all(state.flux_budget_claim_status == "passed" for state in states[1:])
     assert max(state.flux_update_residual_abs_max for state in states[1:]) <= 1.0e-12

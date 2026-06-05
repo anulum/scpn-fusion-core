@@ -94,14 +94,20 @@ def _python_case(steps: int) -> dict[str, Any]:
     cfg = _config()
     timings = []
     final_state = None
+    final_trajectory = None
     for _ in range(5):
         initial = initial_pulsed_compression_state(cfg)
         start_ns = time.perf_counter_ns()
         states = run_pulsed_compression(initial, cfg, 1.0e-9, steps)
         timings.append(float(time.perf_counter_ns() - start_ns))
         final_state = states[-1]
-    if final_state is None:
+        final_trajectory = states
+    if final_state is None or final_trajectory is None:
         raise RuntimeError("benchmark did not run")
+    accelerations = np.asarray(
+        [state.radial_acceleration_m_s2 for state in final_trajectory],
+        dtype=np.float64,
+    )
     return {
         "language": "python",
         "case": f"python_{steps}_steps",
@@ -111,6 +117,8 @@ def _python_case(steps: int) -> dict[str, Any]:
         "final_radius_m": final_state.R_s_m,
         "final_ion_temperature_eV": final_state.T_i_eV,
         "final_beta": final_state.beta,
+        "final_radial_acceleration_m_s2": final_state.radial_acceleration_m_s2,
+        "max_abs_radial_acceleration_m_s2": float(np.max(np.abs(accelerations))),
         "energy_balance_residual": final_state.energy_balance_residual,
         "flux_coupling_status": final_state.flux_coupling_status,
         "flux_budget_claim_status": final_state.flux_budget_claim_status,
@@ -125,6 +133,7 @@ def _python_voltage_driven_case(steps: int) -> dict[str, Any]:
     timings = []
     final_state = None
     final_circuit = None
+    final_trajectory = None
     for _ in range(5):
         start_ns = time.perf_counter_ns()
         result = run_voltage_driven_pulsed_compression(
@@ -137,8 +146,13 @@ def _python_voltage_driven_case(steps: int) -> dict[str, Any]:
         timings.append(float(time.perf_counter_ns() - start_ns))
         final_state = result.compression[-1]
         final_circuit = result.coil_circuit[-1]
-    if final_state is None or final_circuit is None:
+        final_trajectory = result.compression
+    if final_state is None or final_circuit is None or final_trajectory is None:
         raise RuntimeError("voltage-driven benchmark did not run")
+    accelerations = np.asarray(
+        [state.radial_acceleration_m_s2 for state in final_trajectory],
+        dtype=np.float64,
+    )
     return {
         "language": "python",
         "case": f"python_voltage_driven_{steps}_steps",
@@ -148,6 +162,8 @@ def _python_voltage_driven_case(steps: int) -> dict[str, Any]:
         "final_radius_m": final_state.R_s_m,
         "final_ion_temperature_eV": final_state.T_i_eV,
         "final_beta": final_state.beta,
+        "final_radial_acceleration_m_s2": final_state.radial_acceleration_m_s2,
+        "max_abs_radial_acceleration_m_s2": float(np.max(np.abs(accelerations))),
         "final_coil_current_A": final_circuit.current_A,
         "coil_circuit_energy_balance_residual": final_circuit.energy_balance_residual,
         "compression_energy_balance_residual": final_state.energy_balance_residual,
@@ -201,13 +217,14 @@ def build_report() -> dict[str, Any]:
         }
     )
     return {
-        "schema": "scpn-fusion-core.pulsed_compression_benchmark.v2",
+        "schema": "scpn-fusion-core.pulsed_compression_benchmark.v3",
         "claim_boundary": (
             "Local non-isolated regression evidence for supplied-current and exact lumped "
             "R-L voltage-driven pulsed-compression dynamics wired to the Ono non-adiabatic "
             "flux carrier with explicit flux source, damping, and update-residual budget "
-            "diagnostics. Slough Fig. 5 parity remains blocked until a public digitised "
-            "reference trajectory exists."
+            "diagnostics, plus force-balance radial-acceleration observability. Slough "
+            "Fig. 5 parity remains blocked until a public digitised reference trajectory "
+            "exists."
         ),
         "environment": {
             "python": platform.python_version(),

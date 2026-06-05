@@ -47,6 +47,7 @@ fn compression_states(n_steps: usize) -> Vec<PulsedCompressionState> {
                 t_s: index as f64 * 1.0e-8,
                 r_s_m: 0.2 - 0.02 * fraction,
                 d_r_s_dt_m_s: -2.0e5,
+                radial_acceleration_m_s2: -1.0e10,
                 t_i_ev: 10_000.0 + 1_000.0 * fraction,
                 t_e_ev: 5_000.0 + 500.0 * fraction,
                 density_m3: 3.0e21 * (1.0 + 0.1 * fraction),

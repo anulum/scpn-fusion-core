@@ -734,6 +734,7 @@ mod tests {
             t_s: 0.0,
             r_s_m: radius,
             d_r_s_dt_m_s: 0.0,
+            radial_acceleration_m_s2: 0.0,
             t_i_ev: t_i,
             t_e_ev: t_e,
             density_m3: density,

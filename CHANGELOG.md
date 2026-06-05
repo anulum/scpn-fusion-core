@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Hardened FUS-C.6 pulsed compression with explicit force-balance radial
+  acceleration exposure across Python, Rust, benchmark reports, and
+  documentation.
 - Hardened FUS-C.7 Faraday recovery with explicit Faraday-law
   flux-derivative closure diagnostics across Python, Rust, benchmarks, and
   documentation.

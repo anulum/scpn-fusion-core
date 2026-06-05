@@ -380,6 +380,7 @@ mod tests {
             t_s,
             r_s_m,
             d_r_s_dt_m_s: -1.0e5,
+            radial_acceleration_m_s2: -1.0e10,
             t_i_ev,
             t_e_ev: 5_000.0,
             density_m3,

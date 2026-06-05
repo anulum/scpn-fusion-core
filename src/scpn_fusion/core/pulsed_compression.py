@@ -78,6 +78,7 @@ class PulsedCompressionState:
     t_s: float
     R_s_m: float
     dR_s_dt_m_s: float
+    radial_acceleration_m_s2: float
     T_i_eV: float
     T_e_eV: float
     density_m3: float
@@ -311,6 +312,7 @@ def initial_pulsed_compression_state(config: PulsedCompressionConfig) -> PulsedC
         t_s=0.0,
         R_s_m=radius,
         dR_s_dt_m_s=0.0,
+        radial_acceleration_m_s2=0.0,
         T_i_eV=float(cfg.ion_temperature_eV),
         T_e_eV=float(cfg.electron_temperature_eV),
         density_m3=density,
@@ -409,6 +411,7 @@ def step_pulsed_compression(
         t_s=state.t_s + dt,
         R_s_m=radius,
         dR_s_dt_m_s=float(dR_s_dt),
+        radial_acceleration_m_s2=float(radial_acceleration),
         T_i_eV=T_i,
         T_e_eV=T_e,
         density_m3=density,
@@ -533,6 +536,7 @@ def _validate_state(state: PulsedCompressionState, config: PulsedCompressionConf
     _require_finite("state.t_s", state.t_s)
     _require_positive("state.R_s_m", state.R_s_m)
     _require_finite("state.dR_s_dt_m_s", state.dR_s_dt_m_s)
+    _require_finite("state.radial_acceleration_m_s2", state.radial_acceleration_m_s2)
     _require_positive("state.T_i_eV", state.T_i_eV)
     _require_positive("state.T_e_eV", state.T_e_eV)
     _require_positive("state.density_m3", state.density_m3)
