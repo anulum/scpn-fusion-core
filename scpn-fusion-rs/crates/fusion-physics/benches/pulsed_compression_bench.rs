@@ -8,8 +8,8 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use fusion_physics::compression::{
-    plasma_volume_m3, run_pulsed_compression, CoilGeometry, PulsedCompressionConfig,
-    PulsedCompressionState,
+    plasma_volume_m3, run_pulsed_compression, run_voltage_driven_pulsed_compression, CoilGeometry,
+    PulsedCompressionConfig, PulsedCompressionState,
 };
 
 const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
@@ -67,6 +67,24 @@ fn bench_pulsed_compression(c: &mut Criterion) {
             b.iter(|| {
                 std::hint::black_box(
                     run_pulsed_compression(state(), &cfg, 5.0e5, 1.0e-9, steps).expect("valid run"),
+                )
+            });
+        });
+    }
+    for steps in [64_usize, 256] {
+        group.bench_function(format!("rust_voltage_driven_{steps}_steps"), |b| {
+            let cfg = config();
+            b.iter(|| {
+                std::hint::black_box(
+                    run_voltage_driven_pulsed_compression(
+                        state(),
+                        &cfg,
+                        20_000.0,
+                        1.0e-9,
+                        steps,
+                        5.0e5,
+                    )
+                    .expect("valid voltage-driven run"),
                 )
             });
         });

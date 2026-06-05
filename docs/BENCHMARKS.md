@@ -1708,6 +1708,23 @@ Verification paired with this benchmark:
 `python -m pytest tests/test_fusion_kernel_solver_mixins.py -q` passed the
 Python counterpart fixed-point contracts.
 
+## MIF/FRC pulsed compression
+
+Tracked report:
+[`validation/reports/pulsed_compression_benchmark.json`](../validation/reports/pulsed_compression_benchmark.json)
+
+The report records local non-isolated regression rows for the FUS-C.6
+pulsed-compression path. Supplied-current rows exercise the pressure-balance
+trajectory, adiabatic heating, compression-work sidecar, and Ono
+non-adiabatic flux-carrier coupling. Voltage-driven rows add the exact lumped
+R-L coil-current contract over the declared bank-voltage limit and record the
+coil-circuit energy residual before feeding the same compression path.
+
+This is not a production throughput claim and not external Slough Fig. 5
+parity. The Slough row remains blocked until a public digitised trajectory with
+compatible radius, temperature, field, current, provenance, and checksum data
+is available.
+
 ## MIF/FRC MRTI growth spectrum
 
 Tracked report:

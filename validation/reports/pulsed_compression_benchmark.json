@@ -1,5 +1,5 @@
 {
-  "claim_boundary": "Local non-isolated regression evidence for supplied-current pulsed-compression dynamics wired to the Ono non-adiabatic flux carrier. Slough Fig. 5 parity remains blocked until a public digitised reference trajectory exists.",
+  "claim_boundary": "Local non-isolated regression evidence for supplied-current and exact lumped R-L voltage-driven pulsed-compression dynamics wired to the Ono non-adiabatic flux carrier. Slough Fig. 5 parity remains blocked until a public digitised reference trajectory exists.",
   "environment": {
     "isolated": false,
     "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
@@ -15,13 +15,13 @@
       "final_radius_m": 0.08408251898081921,
       "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
       "language": "python",
-      "mean_seconds": 0.024288590600000003,
+      "mean_seconds": 0.013708992000000001,
       "samples_seconds": [
-        0.026248783,
-        0.020876660000000002,
-        0.025713728,
-        0.021649221,
-        0.026954561000000002
+        0.01684058,
+        0.012955777000000002,
+        0.012049128000000001,
+        0.013528074000000001,
+        0.013171401000000001
       ],
       "steps": 64
     },
@@ -33,13 +33,13 @@
       "final_radius_m": 0.04662299255553862,
       "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
       "language": "python",
-      "mean_seconds": 0.0712454996,
+      "mean_seconds": 0.053355691000000004,
       "samples_seconds": [
-        0.078304354,
-        0.06972096500000001,
-        0.073241489,
-        0.056685757,
-        0.078274933
+        0.050952920000000006,
+        0.051029463000000004,
+        0.055948548,
+        0.057110363000000004,
+        0.051737161000000004
       ],
       "steps": 256
     },
@@ -51,38 +51,98 @@
       "final_radius_m": 0.10309290669378662,
       "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
       "language": "python",
-      "mean_seconds": 0.2769814654,
+      "mean_seconds": 0.20965351580000002,
       "samples_seconds": [
-        0.264334008,
-        0.30246934400000003,
-        0.29404694800000003,
-        0.254079881,
-        0.269977146
+        0.21150764600000002,
+        0.213466549,
+        0.204547686,
+        0.21050317400000002,
+        0.208242524
       ],
       "steps": 1024
+    },
+    {
+      "case": "python_voltage_driven_64_steps",
+      "coil_circuit_energy_balance_residual": 8.315495944280826e-17,
+      "compression_energy_balance_residual": 0.0,
+      "drive_status": "exact_lumped_rl_bank_limited",
+      "final_beta": 0.17782041422674763,
+      "final_coil_current_A": 500319.89762183855,
+      "final_ion_temperature_eV": 31772.49166594906,
+      "final_radius_m": 0.08404106355092787,
+      "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
+      "language": "python",
+      "mean_seconds": 0.0146769256,
+      "samples_seconds": [
+        0.021385527,
+        0.014455646,
+        0.012494147,
+        0.012490616000000001,
+        0.012558692000000002
+      ],
+      "steps": 64
+    },
+    {
+      "case": "python_voltage_driven_256_steps",
+      "coil_circuit_energy_balance_residual": 3.619730046755173e-16,
+      "compression_energy_balance_residual": 0.0,
+      "drive_status": "exact_lumped_rl_bank_limited",
+      "final_beta": 1.366099685600403,
+      "final_coil_current_A": 501278.36299719405,
+      "final_ion_temperature_eV": 71931.07397861547,
+      "final_radius_m": 0.04553471127639358,
+      "flux_coupling_status": "ono_nonadiabatic_flux_carrier",
+      "language": "python",
+      "mean_seconds": 0.0574789818,
+      "samples_seconds": [
+        0.058955729000000005,
+        0.066214568,
+        0.054812241000000005,
+        0.053396229,
+        0.054016142
+      ],
+      "steps": 256
     },
     {
       "case": "rust_1024_steps",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_1024_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 0.00010628791861652639,
-      "stddev_seconds": 4.8722007278265825e-06,
+      "mean_seconds": 0.00011536334209787351,
+      "stddev_seconds": 1.6536727261688125e-06,
       "steps": 1024
     },
     {
       "case": "rust_256_steps",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_256_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 2.502995661022716e-05,
-      "stddev_seconds": 1.0781592828218411e-06,
+      "mean_seconds": 2.7293716594648875e-05,
+      "stddev_seconds": 3.5286622117123566e-07,
       "steps": 256
     },
     {
       "case": "rust_64_steps",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_64_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 5.966838301779201e-06,
-      "stddev_seconds": 9.354974505873312e-08,
+      "mean_seconds": 6.820331047103894e-06,
+      "stddev_seconds": 1.9544114688778654e-07,
+      "steps": 64
+    },
+    {
+      "case": "rust_voltage_driven_256_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_voltage_driven_256_steps/new/estimates.json",
+      "drive_status": "exact_lumped_rl_bank_limited",
+      "language": "rust",
+      "mean_seconds": 3.318834178500116e-05,
+      "stddev_seconds": 1.1625819209905336e-06,
+      "steps": 256
+    },
+    {
+      "case": "rust_voltage_driven_64_steps",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/pulsed_compression/rust_voltage_driven_64_steps/new/estimates.json",
+      "drive_status": "exact_lumped_rl_bank_limited",
+      "language": "rust",
+      "mean_seconds": 8.483771187665178e-06,
+      "stddev_seconds": 9.186565969012601e-07,
       "steps": 64
     },
     {
@@ -94,8 +154,8 @@
   ],
   "schema": "scpn-fusion-core.pulsed_compression_benchmark.v1",
   "source_checksums": {
-    "benchmarks/bench_pulsed_compression.py": "b02a5aeb1aae636841b87c78aa86b55598127056f931773f9d90a5d97a4b8d64",
-    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "fb37598385e492b68966e930e368621b09d27429e344cb2e788f4aff9bf047c5",
-    "src/scpn_fusion/core/pulsed_compression.py": "a75f6331220535cf856619903b0d0bd1e3de869efd98efbbf235c63886b9e230"
+    "benchmarks/bench_pulsed_compression.py": "b2a629cdcc7592dac297c11fc0a97dcd6962fd14cacf2510eee0eb5afed52a34",
+    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "19338d6cf613d195c313d24fecb87edaf09705bc9911c5729b331b4a25329c76",
+    "src/scpn_fusion/core/pulsed_compression.py": "00c8224dfa226fbb1956ff8aa30e2794cc0db6ff2691f98386d901f97d25986f"
   }
 }

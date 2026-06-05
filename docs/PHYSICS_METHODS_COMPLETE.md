@@ -370,6 +370,19 @@ The external coil field is computed from the declared solenoid geometry:
 
 $$B_{\rm ext}(t)=\mu_0\,N_{\rm coil}\,I_{\rm coil}(t)/L_{\rm coil}.$$
 
+FUS-C.6 now also exposes a voltage-driven coil path that uses the exact
+piecewise-constant solution of the declared lumped circuit
+
+$$L_{\rm coil}\frac{dI_{\rm coil}}{dt}
++R_{\rm coil}I_{\rm coil}=V_{\rm bank}(t),\qquad
+|V_{\rm bank}|\le V_{\rm bank,max}.$$
+
+The circuit state records coil magnetic energy, source work, Ohmic loss, and a
+normalised energy residual before feeding the current trajectory into the same
+pressure-balance compression path. This is an exact R-L contract for the
+declared lumped coil model; it is not a 3D coil electromagnetic or liner
+circuit field solve.
+
 The radial shell update uses the TODO-specified momentum balance with explicit
 geometry and mass:
 

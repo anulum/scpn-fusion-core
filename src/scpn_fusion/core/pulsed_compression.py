@@ -23,7 +23,7 @@ the reference trajectory and compression-work sidecar exist.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TypeAlias, cast
 
 import numpy as np
@@ -93,12 +93,144 @@ class PulsedCompressionState:
     flux_coupling_status: str
 
 
+@dataclass(frozen=True)
+class CoilCircuitState:
+    """Exact lumped R-L coil-circuit state for one voltage-drive interval."""
+
+    t_s: float
+    current_A: float
+    drive_voltage_V: float
+    d_current_dt_A_s: float
+    magnetic_energy_J: float
+    ohmic_loss_J: float
+    source_work_J: float
+    energy_balance_residual: float
+
+
+@dataclass(frozen=True)
+class VoltageDrivenCompressionResult:
+    """Coupled coil-circuit and pulsed-compression trajectories."""
+
+    coil_circuit: tuple[CoilCircuitState, ...]
+    compression: tuple[PulsedCompressionState, ...]
+
+
 def coil_field_t(coil: CoilGeometry, coil_current_a: float) -> float:
     """Return ``B_ext = mu0*N*I/L`` for the uniform-solenoid approximation."""
 
     checked = _validate_coil(coil)
     current = _require_finite("coil_current_a", coil_current_a)
     return float(MU_0 * checked.N_turns * current / checked.L_coil_m)
+
+
+def initial_coil_circuit_state(
+    coil: CoilGeometry, initial_current_A: float = 0.0
+) -> CoilCircuitState:
+    """Return an initial lumped R-L coil-circuit state."""
+
+    checked = _validate_coil(coil)
+    current = _require_finite("initial_current_A", initial_current_A)
+    return CoilCircuitState(
+        t_s=0.0,
+        current_A=current,
+        drive_voltage_V=0.0,
+        d_current_dt_A_s=0.0,
+        magnetic_energy_J=0.5 * checked.L_inductance_H * current * current,
+        ohmic_loss_J=0.0,
+        source_work_J=0.0,
+        energy_balance_residual=0.0,
+    )
+
+
+def step_coil_circuit(
+    state: CoilCircuitState,
+    coil: CoilGeometry,
+    drive_voltage_V: float,
+    dt_s: float,
+) -> CoilCircuitState:
+    """Advance the exact constant-voltage solution of ``L dI/dt + R I = V``."""
+
+    checked = _validate_coil(coil)
+    _validate_circuit_state(state)
+    voltage = _require_bank_voltage(checked, drive_voltage_V)
+    dt = _require_positive("dt_s", dt_s)
+    inductance = checked.L_inductance_H
+    resistance = checked.R_resistance_ohm
+    tau = inductance / resistance
+    decay = float(np.exp(-dt / tau))
+    steady_current = voltage / resistance
+    delta = state.current_A - steady_current
+    current = steady_current + delta * decay
+    int_i_dt = steady_current * dt + delta * tau * (1.0 - decay)
+    int_i2_dt = (
+        steady_current * steady_current * dt
+        + 2.0 * steady_current * delta * tau * (1.0 - decay)
+        + delta * delta * tau * 0.5 * (1.0 - decay * decay)
+    )
+    interval_source_work = voltage * int_i_dt
+    interval_ohmic_loss = resistance * int_i2_dt
+    magnetic_energy = 0.5 * inductance * current * current
+    energy_delta = magnetic_energy - state.magnetic_energy_J
+    residual = energy_delta - interval_source_work + interval_ohmic_loss
+    scale = max(
+        abs(energy_delta),
+        abs(interval_source_work),
+        abs(interval_ohmic_loss),
+        abs(magnetic_energy),
+        1.0e-30,
+    )
+    return CoilCircuitState(
+        t_s=state.t_s + dt,
+        current_A=current,
+        drive_voltage_V=voltage,
+        d_current_dt_A_s=(voltage - resistance * current) / inductance,
+        magnetic_energy_J=magnetic_energy,
+        ohmic_loss_J=state.ohmic_loss_J + interval_ohmic_loss,
+        source_work_J=state.source_work_J + interval_source_work,
+        energy_balance_residual=float(residual / scale),
+    )
+
+
+def run_coil_circuit(
+    coil: CoilGeometry,
+    drive_voltage_t: ScalarCallable,
+    dt_s: float,
+    n_steps: int,
+    *,
+    initial_current_A: float = 0.0,
+) -> tuple[CoilCircuitState, ...]:
+    """Run a bank-limited lumped R-L coil-current trajectory."""
+
+    if n_steps <= 0:
+        raise ValueError("n_steps must be positive")
+    dt = _require_positive("dt_s", dt_s)
+    state = initial_coil_circuit_state(coil, initial_current_A)
+    states = [state]
+    for _ in range(n_steps):
+        state = step_coil_circuit(state, coil, drive_voltage_t(state.t_s), dt)
+        states.append(state)
+    return tuple(states)
+
+
+def coil_current_interpolator(states: tuple[CoilCircuitState, ...]) -> ScalarCallable:
+    """Return a finite piecewise-linear current interpolator for circuit states."""
+
+    if len(states) < 2:
+        raise ValueError("at least two coil-circuit states are required")
+    time_s = np.asarray([state.t_s for state in states], dtype=np.float64)
+    current_a = np.asarray([state.current_A for state in states], dtype=np.float64)
+    if not np.all(np.isfinite(time_s)) or not np.all(np.isfinite(current_a)):
+        raise ValueError("coil-circuit trajectory must contain finite values")
+    if not np.all(np.diff(time_s) > 0.0):
+        raise ValueError("coil-circuit time_s must be strictly increasing")
+
+    def _current_at(time_value_s: float) -> float:
+        time_value = _require_finite("time_s", time_value_s)
+        if time_value < time_s[0] or time_value > time_s[-1]:
+            raise ValueError("time_s is outside the coil-circuit trajectory span")
+        return float(np.interp(time_value, time_s, current_a))
+
+    return _current_at
 
 
 def magnetic_pressure_pa(B_ext_T: float) -> float:
@@ -299,6 +431,47 @@ def run_pulsed_compression(
     return tuple(states)
 
 
+def run_voltage_driven_pulsed_compression(
+    config: PulsedCompressionConfig,
+    drive_voltage_t: ScalarCallable,
+    dt_s: float,
+    n_steps: int,
+    *,
+    initial_current_A: float = 0.0,
+) -> VoltageDrivenCompressionResult:
+    """Run a bank-limited R-L coil drive coupled to pulsed compression.
+
+    The coil circuit is the exact solution of the declared lumped equation
+    ``L dI/dt + R I = V`` over piecewise-constant voltage intervals. It feeds
+    the existing pressure-balance compression path through the public
+    ``coil_current_t`` contract and raises when the requested voltage exceeds
+    the configured bank limit.
+    """
+
+    cfg = _validate_config(config)
+    if n_steps <= 0:
+        raise ValueError("n_steps must be positive")
+    dt = _require_positive("dt_s", dt_s)
+    circuit_states = run_coil_circuit(
+        cfg.coil,
+        drive_voltage_t,
+        dt,
+        n_steps,
+        initial_current_A=initial_current_A,
+    )
+    driven_config = replace(cfg, coil_current_t=coil_current_interpolator(circuit_states))
+    compression_states = run_pulsed_compression(
+        initial_pulsed_compression_state(driven_config),
+        driven_config,
+        dt,
+        n_steps,
+    )
+    return VoltageDrivenCompressionResult(
+        coil_circuit=circuit_states,
+        compression=compression_states,
+    )
+
+
 def slough_fig5_acceptance_status() -> dict[str, str]:
     """Return the current fail-closed status for the external Slough comparison."""
 
@@ -349,6 +522,24 @@ def _validate_state(state: PulsedCompressionState, config: PulsedCompressionConf
     psi = np.asarray(state.flux_psi, dtype=np.float64)
     if psi.shape != config.equilibrium.rho.shape or not np.all(np.isfinite(psi)):
         raise ValueError("state.flux_psi must match the equilibrium radial grid")
+
+
+def _validate_circuit_state(state: CoilCircuitState) -> None:
+    _require_finite("state.t_s", state.t_s)
+    _require_finite("state.current_A", state.current_A)
+    _require_finite("state.drive_voltage_V", state.drive_voltage_V)
+    _require_finite("state.d_current_dt_A_s", state.d_current_dt_A_s)
+    _require_finite("state.magnetic_energy_J", state.magnetic_energy_J)
+    _require_finite("state.ohmic_loss_J", state.ohmic_loss_J)
+    _require_finite("state.source_work_J", state.source_work_J)
+    _require_finite("state.energy_balance_residual", state.energy_balance_residual)
+
+
+def _require_bank_voltage(coil: CoilGeometry, drive_voltage_V: float) -> float:
+    voltage = _require_finite("drive_voltage_V", drive_voltage_V)
+    if abs(voltage) > coil.bank_voltage_max_V:
+        raise ValueError("drive_voltage_V exceeds coil.bank_voltage_max_V")
+    return voltage
 
 
 def _thermal_energy_j(density_m3: float, volume_m3: float, T_i_eV: float, T_e_eV: float) -> float:

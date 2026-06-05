@@ -178,23 +178,36 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "magnetic_flux_wb": (".faraday_recovery", "magnetic_flux_wb"),
     # Pulsed compression — pressure-driven MIF/FRC trajectory with flux carrier
     "CoilGeometry": (".pulsed_compression", "CoilGeometry"),
+    "CoilCircuitState": (".pulsed_compression", "CoilCircuitState"),
     "PulsedCompressionConfig": (".pulsed_compression", "PulsedCompressionConfig"),
     "PulsedCompressionState": (".pulsed_compression", "PulsedCompressionState"),
+    "VoltageDrivenCompressionResult": (
+        ".pulsed_compression",
+        "VoltageDrivenCompressionResult",
+    ),
     "adiabatic_temperature_update_eV": (
         ".pulsed_compression",
         "adiabatic_temperature_update_eV",
     ),
     "coil_field_t": (".pulsed_compression", "coil_field_t"),
+    "coil_current_interpolator": (".pulsed_compression", "coil_current_interpolator"),
+    "initial_coil_circuit_state": (".pulsed_compression", "initial_coil_circuit_state"),
     "initial_pulsed_compression_state": (
         ".pulsed_compression",
         "initial_pulsed_compression_state",
     ),
+    "run_coil_circuit": (".pulsed_compression", "run_coil_circuit"),
     "run_pulsed_compression": (".pulsed_compression", "run_pulsed_compression"),
+    "run_voltage_driven_pulsed_compression": (
+        ".pulsed_compression",
+        "run_voltage_driven_pulsed_compression",
+    ),
     "slough_fig5_acceptance_status": (
         ".pulsed_compression",
         "slough_fig5_acceptance_status",
     ),
     "spitzer_resistivity_ohm_m": (".pulsed_compression", "spitzer_resistivity_ohm_m"),
+    "step_coil_circuit": (".pulsed_compression", "step_coil_circuit"),
     "step_pulsed_compression": (".pulsed_compression", "step_pulsed_compression"),
     # FRC tilt mode — conservative n=1 MHD diagnostic with blocked Belova parity
     "FRCTiltModeReport": (".tilt_mode_frc", "FRCTiltModeReport"),

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Added FUS-C.6 voltage-driven coil-current coupling across Python and Rust:
+  the pulsed-compression path now supports an exact bank-limited lumped R-L
+  coil circuit, circuit-energy residuals, voltage-driven benchmark rows, and
+  explicit documentation that external Slough parity remains blocked.
 - Added FUS-C.4/FUS-C.6 coupling evidence: MRTI now consumes supplied-current
   pulsed-compression state histories across Python and Rust, projects signed
   separatrix acceleration through an explicit interface-normal convention,
