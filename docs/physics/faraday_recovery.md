@@ -5,8 +5,10 @@ trajectories. The implementation is a closed-form electromagnetic calculation
 over supplied trajectory samples. It now includes an explicit adapter from the
 implemented FUS-C.6 supplied-current and voltage-driven pulsed-compression
 trajectories into Faraday trajectory samples, plus compression-work and
-coil-source-work sidecars. It is not a substitute for external Slough same-case
-acceptance data.
+coil-source-work sidecars. It also consumes the FUS-C.6 flux-budget sidecar so
+Faraday rows can fail closed when the upstream non-adiabatic flux carrier did
+not close. It is not a substitute for external Slough same-case acceptance
+data.
 
 ## Governing equations
 
@@ -36,6 +38,8 @@ Python:
 
 ```python
 from scpn_fusion.core import (
+    compression_flux_budget_from_pulsed_compression,
+    compression_flux_budget_from_voltage_driven_compression,
     FaradayRecoveryTrajectoryPoint,
     coil_source_work_from_voltage_driven_compression,
     compression_work_from_pulsed_compression,
@@ -68,11 +72,13 @@ When FUS-C.6 compression states are available:
 ```python
 trajectory = faraday_trajectory_from_pulsed_compression(compression_states)
 compression_work_j = compression_work_from_pulsed_compression(compression_states)
+compression_flux_budget = compression_flux_budget_from_pulsed_compression(compression_states)
 report = integrated_recovery_energy(
     trajectory,
     N_turns=recovery_turns,
     coil_resistance_ohm=recovery_resistance_ohm,
     compression_work_j=compression_work_j,
+    compression_flux_budget=compression_flux_budget,
 )
 ```
 
@@ -82,12 +88,14 @@ When a voltage-driven FUS-C.6 result is available:
 trajectory = faraday_trajectory_from_voltage_driven_compression(result)
 compression_work_j = compression_work_from_voltage_driven_compression(result)
 coil_source_work_j = coil_source_work_from_voltage_driven_compression(result)
+compression_flux_budget = compression_flux_budget_from_voltage_driven_compression(result)
 report = integrated_recovery_energy(
     trajectory,
     N_turns=recovery_turns,
     coil_resistance_ohm=recovery_resistance_ohm,
     compression_work_j=compression_work_j,
     coil_source_work_j=coil_source_work_j,
+    compression_flux_budget=compression_flux_budget,
 )
 ```
 
@@ -117,7 +125,7 @@ let trajectory = vec![
         d_b_ext_dt_t_s: None,
     },
 ];
-let report = integrated_recovery_energy(&trajectory, 6, 0.08, None, None, 0.01)?;
+let report = integrated_recovery_energy(&trajectory, 6, 0.08, None, None, None, 0.01)?;
 ```
 
 ## Evidence boundary
@@ -128,9 +136,11 @@ validated trajectory. If the caller does not provide a self-consistent
 compression-work value, the energy-budget status is
 `blocked_missing_compression_work`. If the caller does not provide a
 coil-source-work sidecar, the source-budget status is
-`blocked_missing_coil_source_work`. When sidecars are supplied, each budget is
-evaluated as `passed` or `failed`; failure is a real load/trajectory/source
-mismatch, not a fabricated blocked row.
+`blocked_missing_coil_source_work`. If the caller does not provide the FUS-C.6
+flux-budget sidecar, the compression-flux budget status is
+`blocked_missing_compression_flux_budget`. When sidecars are supplied, each
+budget is evaluated as `passed` or `failed`; failure is a real
+load/trajectory/source/flux mismatch, not a placeholder blocked row.
 
 This avoids fabricating Slough-style trajectory acceptance from a synthetic
 radius trace.
@@ -145,9 +155,9 @@ Tracked tests cover:
 - Integrated recovery energy against an analytical linear-radius integral.
 - Explicit blocked budget status when compression work is absent.
 - FUS-C.6 supplied-current trajectory conversion into Faraday samples and
-  evaluated compression-work sidecar status.
+  evaluated compression-work and compression-flux sidecar status.
 - FUS-C.6 voltage-driven trajectory conversion into Faraday samples and
-  evaluated coil-source-work sidecar status.
+  evaluated coil-source-work and compression-flux sidecar status.
 - Python and Rust fail-closed invalid-input paths.
 
 Tracked report:
@@ -168,6 +178,6 @@ production throughput claim.
 
 Full external FUS-C.7 acceptance still requires a public Slough-style or
 facility trajectory with compression-work and source-work sidecars, provenance,
-and checksums. The internal FUS-C.6 supplied-current and voltage-driven
-trajectory paths are now evaluated directly and no longer marked missing when
-those states are supplied.
+checksums, and compatible upstream flux-budget evidence. The internal FUS-C.6
+supplied-current and voltage-driven trajectory paths are now evaluated directly
+and no longer marked missing when those states are supplied.

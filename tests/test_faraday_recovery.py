@@ -7,6 +7,7 @@
 # SCPN Fusion Core — Faraday Recovery Tests
 from __future__ import annotations
 
+from dataclasses import replace
 import math
 
 import numpy as np
@@ -17,6 +18,8 @@ from scpn_fusion.core import (
     FaradayRecoveryTrajectoryPoint,
     RigidRotorFRCInputs,
     coil_source_work_from_voltage_driven_compression,
+    compression_flux_budget_from_pulsed_compression,
+    compression_flux_budget_from_voltage_driven_compression,
     compression_work_from_pulsed_compression,
     compression_work_from_voltage_driven_compression,
     faraday_back_emf,
@@ -110,6 +113,8 @@ def test_integrated_recovery_energy_matches_analytical_linear_radius_case() -> N
     assert report.energy_budget_passed is None
     assert report.source_budget_claim_status == "blocked_missing_coil_source_work"
     assert report.source_energy_budget_passed is None
+    assert report.compression_flux_budget_claim_status == "blocked_missing_compression_flux_budget"
+    assert report.compression_flux_budget_passed is None
 
 
 def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> None:
@@ -132,6 +137,7 @@ def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> No
     assert report.energy_budget_passed is False
     assert report.budget_claim_status == "failed"
     assert report.source_budget_claim_status == "blocked_missing_coil_source_work"
+    assert report.compression_flux_budget_claim_status == "blocked_missing_compression_flux_budget"
 
 
 def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
@@ -172,11 +178,13 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
 
     trajectory = faraday_trajectory_from_pulsed_compression(states)
     compression_work = compression_work_from_pulsed_compression(states)
+    compression_flux_budget = compression_flux_budget_from_pulsed_compression(states)
     report = integrated_recovery_energy(
         trajectory,
         coil.N_turns,
         coil.R_resistance_ohm,
         compression_work_j=compression_work,
+        compression_flux_budget=compression_flux_budget,
     )
 
     assert len(trajectory) == len(states)
@@ -190,6 +198,11 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
     assert report.budget_claim_status in {"passed", "failed"}
     assert report.source_budget_claim_status == "blocked_missing_coil_source_work"
     assert report.source_energy_budget_passed is None
+    assert compression_flux_budget.budget_claim_status == "passed"
+    assert compression_flux_budget.update_residual_abs_max <= 1.0e-12
+    assert report.compression_flux_budget == compression_flux_budget
+    assert report.compression_flux_budget_passed is True
+    assert report.compression_flux_budget_claim_status == "passed"
 
 
 def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
@@ -236,6 +249,7 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
 
     trajectory = faraday_trajectory_from_voltage_driven_compression(result)
     compression_work = compression_work_from_voltage_driven_compression(result)
+    compression_flux_budget = compression_flux_budget_from_voltage_driven_compression(result)
     source_work = coil_source_work_from_voltage_driven_compression(result)
     report = integrated_recovery_energy(
         trajectory,
@@ -243,6 +257,7 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
         coil.R_resistance_ohm,
         compression_work_j=compression_work,
         coil_source_work_j=source_work,
+        compression_flux_budget=compression_flux_budget,
     )
 
     assert len(trajectory) == len(result.compression)
@@ -257,6 +272,64 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
     assert np.isfinite(report.source_energy_budget_relative_error)
     assert report.budget_claim_status in {"passed", "failed"}
     assert report.source_budget_claim_status in {"passed", "failed"}
+    assert report.compression_flux_budget_passed is True
+    assert report.compression_flux_budget_claim_status == "passed"
+
+
+def test_faraday_recovery_propagates_failed_compression_flux_budget() -> None:
+    b_ext = 5.0
+    t_i = 10_000.0
+    t_e = 5_000.0
+    n0 = b_ext**2 / (2.0 * MU_0) / ((t_i + t_e) * ELEMENTARY_CHARGE_C)
+    equilibrium = solve_frc_equilibrium(
+        RigidRotorFRCInputs(
+            n0=n0,
+            T_i_eV=t_i,
+            T_e_eV=t_e,
+            theta_dot=0.0,
+            R_s=0.20,
+            B_ext=b_ext,
+            delta=0.02,
+        ),
+        np.linspace(0.0, 0.4, 65, dtype=np.float64),
+    )
+    coil = CoilGeometry(
+        N_turns=80,
+        L_coil_m=1.0,
+        R_coil_m=0.35,
+        L_inductance_H=2.0e-6,
+        R_resistance_ohm=0.02,
+        bank_voltage_max_V=20_000.0,
+    )
+    config = PulsedCompressionConfig(
+        equilibrium=equilibrium,
+        coil=coil,
+        coil_current_t=lambda _t: 5.0e5,
+        plasma_mass_kg=2.0e-5,
+        ion_temperature_eV=t_i,
+        electron_temperature_eV=t_e,
+        tau_psi_s=np.inf,
+    )
+    states = list(
+        run_pulsed_compression(initial_pulsed_compression_state(config), config, 1.0e-9, 4)
+    )
+    states[-1] = replace(
+        states[-1],
+        flux_budget_claim_status="failed",
+        flux_update_residual_abs_max=1.0e-3,
+    )
+    compression_flux_budget = compression_flux_budget_from_pulsed_compression(states)
+    report = integrated_recovery_energy(
+        faraday_trajectory_from_pulsed_compression(states),
+        coil.N_turns,
+        coil.R_resistance_ohm,
+        compression_work_j=compression_work_from_pulsed_compression(states),
+        compression_flux_budget=compression_flux_budget,
+    )
+
+    assert compression_flux_budget.budget_claim_status == "failed"
+    assert report.compression_flux_budget_passed is False
+    assert report.compression_flux_budget_claim_status == "failed"
 
 
 def test_faraday_recovery_inputs_fail_closed() -> None:

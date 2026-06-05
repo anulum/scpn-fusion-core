@@ -342,13 +342,20 @@ that maps pulsed-compression states into Faraday samples
 Voltage-driven FUS-C.6 results use the same Faraday trajectory adapter and add
 the final coil-circuit `source_work_J` sidecar, so recovered load energy is
 checked independently against plasma compression work and coil source work.
+The Faraday report also consumes the FUS-C.6 compression flux-budget sidecar,
+including source-increment checksum, damping-decrement checksum, update
+residual, and pass/fail status, so recovery rows fail closed when the upstream
+non-adiabatic flux carrier did not close.
 If a caller does not supply a self-consistent compression-work sidecar,
 `FaradayRecoveryReport.budget_claim_status` remains
 `blocked_missing_compression_work`; if a caller does not supply a source-work
 sidecar, `source_budget_claim_status` remains
-`blocked_missing_coil_source_work`. When sidecars are supplied, each gate is
-evaluated as a real `passed` or `failed` result. External Slough same-case
-acceptance remains blocked until a public digitised trajectory exists.
+`blocked_missing_coil_source_work`; if a caller does not supply a compression
+flux-budget sidecar, `compression_flux_budget_claim_status` remains
+`blocked_missing_compression_flux_budget`. When sidecars are supplied, each
+gate is evaluated as a real `passed` or `failed` result. External Slough
+same-case acceptance remains blocked until a public digitised trajectory
+exists.
 
 **Key files:** `core/faraday_recovery.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs`,

@@ -12,10 +12,12 @@ use fusion_physics::compression::{
     PulsedCompressionConfig, PulsedCompressionState,
 };
 use fusion_physics::faraday_recovery::{
-    coil_source_work_from_voltage_driven_compression, compression_work_from_pulsed_compression,
-    compression_work_from_voltage_driven_compression, faraday_trajectory_from_pulsed_compression,
-    faraday_trajectory_from_voltage_driven_compression, integrated_recovery_energy,
-    FaradayRecoveryTrajectoryPoint,
+    coil_source_work_from_voltage_driven_compression,
+    compression_flux_budget_from_pulsed_compression,
+    compression_flux_budget_from_voltage_driven_compression,
+    compression_work_from_pulsed_compression, compression_work_from_voltage_driven_compression,
+    faraday_trajectory_from_pulsed_compression, faraday_trajectory_from_voltage_driven_compression,
+    integrated_recovery_energy, FaradayRecoveryTrajectoryPoint,
 };
 
 fn trajectory(samples: usize) -> Vec<FaradayRecoveryTrajectoryPoint> {
@@ -95,7 +97,7 @@ fn bench_faraday_recovery(c: &mut Criterion) {
         group.bench_function(format!("rust_{samples}_samples"), |b| {
             b.iter(|| {
                 std::hint::black_box(
-                    integrated_recovery_energy(&trace, 6, 0.08, None, None, 0.01)
+                    integrated_recovery_energy(&trace, 6, 0.08, None, None, None, 0.01)
                         .expect("valid report"),
                 )
             });
@@ -116,9 +118,19 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                     faraday_trajectory_from_pulsed_compression(&states).expect("valid trajectory");
                 let work = compression_work_from_pulsed_compression(&states)
                     .expect("positive compression work");
+                let flux_budget = compression_flux_budget_from_pulsed_compression(&states)
+                    .expect("valid flux budget");
                 std::hint::black_box(
-                    integrated_recovery_energy(&trajectory, 80, 0.02, Some(work), None, 0.01)
-                        .expect("valid report"),
+                    integrated_recovery_energy(
+                        &trajectory,
+                        80,
+                        0.02,
+                        Some(work),
+                        None,
+                        Some(flux_budget),
+                        0.01,
+                    )
+                    .expect("valid report"),
                 )
             });
         });
@@ -141,6 +153,8 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                     .expect("positive compression work");
                 let source_work = coil_source_work_from_voltage_driven_compression(&result)
                     .expect("positive source work");
+                let flux_budget = compression_flux_budget_from_voltage_driven_compression(&result)
+                    .expect("valid flux budget");
                 std::hint::black_box(
                     integrated_recovery_energy(
                         &trajectory,
@@ -148,6 +162,7 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                         0.02,
                         Some(compression_work),
                         Some(source_work),
+                        Some(flux_budget),
                         0.01,
                     )
                     .expect("valid report"),

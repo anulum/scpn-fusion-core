@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Hardened FUS-C.7/FUS-C.6 coupling across Python and Rust by adding a
+  Faraday-side compression flux-budget sidecar, blocked missing-flux status,
+  failed-budget propagation, benchmark rows, and documentation.
 - Hardened FUS-C.6 pulsed compression across Python and Rust with explicit
   Ono carrier flux-budget state: source-increment checksum,
   damping-decrement checksum, maximum update residual, pass/fail budget status,

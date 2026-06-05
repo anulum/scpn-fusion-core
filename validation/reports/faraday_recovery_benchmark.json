@@ -1,5 +1,5 @@
 {
-  "claim_boundary": "Local non-isolated regression evidence for the exact classical Faraday recovery contract over supplied trajectories, including internal FUS-C.6 supplied-current compression-work sidecars and voltage-driven coil-source sidecars. This is not Slough compression-work acceptance evidence.",
+  "claim_boundary": "Local non-isolated regression evidence for the exact classical Faraday recovery contract over supplied trajectories, including internal FUS-C.6 supplied-current compression-work sidecars, FUS-C.6 flux-budget sidecars, and voltage-driven coil-source sidecars. This is not Slough compression-work acceptance evidence.",
   "environment": {
     "isolated": false,
     "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
@@ -11,6 +11,7 @@
     "external_slough_acceptance": "blocked_missing_public_digitised_reference",
     "flux": "Phi = B_ext*pi*R_s^2",
     "internal_fus_c6_budget": "evaluated when supplied-current or voltage-driven compression states provide compression_work_j",
+    "internal_fus_c6_flux_budget": "evaluated when compression states provide source/damping/update-residual flux-budget sidecars",
     "internal_fus_c6_source_budget": "evaluated when voltage-driven coil-circuit states provide coil_source_work_j",
     "load_power": "P = EMF^2/R_load"
   },
@@ -18,121 +19,139 @@
     {
       "budget_claim_status": "blocked_missing_compression_work",
       "case": "python_64_samples",
+      "compression_flux_budget_claim_status": "blocked_missing_compression_flux_budget",
       "language": "python",
       "max_abs_back_emf_v": 464453.0579067704,
       "max_abs_load_current_a": 5805663.223834629,
-      "mean_seconds": 0.00048192700000000005,
+      "mean_seconds": 0.0010305610000000002,
       "recovered_energy_j": 2627026.631267688,
       "samples": 64,
       "samples_seconds": [
-        0.0006176020000000001,
-        0.000491057,
-        0.000444172,
-        0.000444993,
-        0.000476268,
-        0.000447061,
-        0.000452336
-      ]
+        0.001711377,
+        0.001176968,
+        0.0007832970000000001,
+        0.000603111,
+        0.0006341960000000001,
+        0.001165018,
+        0.00113996
+      ],
+      "source_budget_claim_status": "blocked_missing_coil_source_work"
     },
     {
       "budget_claim_status": "blocked_missing_compression_work",
       "case": "python_256_samples",
+      "compression_flux_budget_claim_status": "blocked_missing_compression_flux_budget",
       "language": "python",
       "max_abs_back_emf_v": 464453.0579071631,
       "max_abs_load_current_a": 5805663.223839539,
-      "mean_seconds": 0.0016460155714285714,
+      "mean_seconds": 0.0029135880000000004,
       "recovered_energy_j": 2627026.559539832,
       "samples": 256,
       "samples_seconds": [
-        0.0016497080000000002,
-        0.001717633,
-        0.0016365650000000002,
-        0.00162899,
-        0.0016030600000000001,
-        0.001658963,
-        0.0016271900000000001
-      ]
+        0.0033744860000000003,
+        0.0033689880000000003,
+        0.0025685860000000003,
+        0.002682411,
+        0.002946508,
+        0.002638524,
+        0.0028156130000000002
+      ],
+      "source_budget_claim_status": "blocked_missing_coil_source_work"
     },
     {
       "budget_claim_status": "blocked_missing_compression_work",
       "case": "python_1024_samples",
+      "compression_flux_budget_claim_status": "blocked_missing_compression_flux_budget",
       "language": "python",
       "max_abs_back_emf_v": 464453.0579075545,
       "max_abs_load_current_a": 5805663.223844431,
-      "mean_seconds": 0.0067709182857142855,
+      "mean_seconds": 0.013293063714285715,
       "recovered_energy_j": 2627026.555166813,
       "samples": 1024,
       "samples_seconds": [
-        0.007222910000000001,
-        0.00821009,
-        0.006242884000000001,
-        0.006749486000000001,
-        0.006357619,
-        0.006129303,
-        0.006484136000000001
-      ]
+        0.011289475,
+        0.015298394000000002,
+        0.013056132000000002,
+        0.011280141,
+        0.009718284,
+        0.017499841000000002,
+        0.014909179000000002
+      ],
+      "source_budget_claim_status": "blocked_missing_coil_source_work"
     },
     {
       "budget_claim_status": "failed",
       "case": "python_fus_c6_coupled_64_steps",
+      "compression_flux_budget_claim_status": "passed",
+      "compression_flux_damping_decrement_checksum": 0.0,
+      "compression_flux_source_increment_checksum": 0.0,
+      "compression_flux_update_residual_abs_max": 0.0,
       "compression_work_j": 4078426.2900051386,
       "energy_budget_passed": false,
       "energy_budget_relative_error": 0.9999999731247082,
       "language": "python",
       "max_abs_back_emf_v": 8824791974.652592,
       "max_abs_load_current_a": 441239598732.6296,
-      "mean_seconds": 0.013464064400000001,
+      "mean_seconds": 0.0283614184,
       "recovered_energy_j": 151753748924416.44,
       "samples": 65,
       "samples_seconds": [
-        0.012637471,
-        0.013708148000000002,
-        0.01370523,
-        0.014486233000000001,
-        0.012783240000000001
+        0.039591239,
+        0.024950695000000002,
+        0.021317625,
+        0.028671367000000003,
+        0.027276166
       ],
       "steps": 64
     },
     {
       "budget_claim_status": "failed",
       "case": "python_fus_c6_coupled_256_steps",
+      "compression_flux_budget_claim_status": "passed",
+      "compression_flux_damping_decrement_checksum": 0.0,
+      "compression_flux_source_increment_checksum": 0.0,
+      "compression_flux_update_residual_abs_max": 0.0,
       "compression_work_j": 11193961.297967725,
       "energy_budget_passed": false,
       "energy_budget_relative_error": 0.9999999784973052,
       "language": "python",
       "max_abs_back_emf_v": 8980530707.674376,
       "max_abs_load_current_a": 449026535383.71875,
-      "mean_seconds": 0.0530641004,
+      "mean_seconds": 0.1108297736,
       "recovered_energy_j": 520584111642637.8,
       "samples": 257,
       "samples_seconds": [
-        0.051873186,
-        0.053308298000000004,
-        0.053101936,
-        0.054820874000000006,
-        0.052216208
+        0.102734166,
+        0.11809722,
+        0.10366306900000001,
+        0.11694209800000001,
+        0.11271231500000001
       ],
       "steps": 256
     },
     {
       "budget_claim_status": "failed",
       "case": "python_fus_c6_voltage_driven_64_steps",
-      "coil_source_work_j": 640.2047563230574,
-      "compression_work_j": 4082342.187365449,
+      "coil_source_work_j": 640.2047563159566,
+      "compression_flux_budget_claim_status": "passed",
+      "compression_flux_damping_decrement_checksum": 0.0,
+      "compression_flux_source_increment_checksum": 0.0,
+      "compression_flux_update_residual_abs_max": 0.0,
+      "compression_work_j": 4082342.187365504,
       "energy_budget_passed": false,
       "energy_budget_relative_error": 0.9999999731106524,
       "language": "python",
-      "max_abs_back_emf_v": 8828515981.66141,
-      "max_abs_load_current_a": 441425799083.07043,
-      "mean_seconds": 0.0140256462,
-      "recovered_energy_j": 151820052995551.1,
+      "max_abs_back_emf_v": 8828515981.661457,
+      "max_abs_load_current_a": 441425799083.0728,
+      "mean_seconds": 0.0285354594,
+      "recovered_energy_j": 151820052995551.7,
       "samples": 65,
       "samples_seconds": [
-        0.012859099,
-        0.014779174,
-        0.014912177,
-        0.0142389,
-        0.013338881
+        0.026012774000000002,
+        0.024880970000000002,
+        0.026814817,
+        0.023825541000000002,
+        0.041143195
       ],
       "source_budget_claim_status": "failed",
       "source_energy_budget_passed": false,
@@ -142,22 +161,26 @@
     {
       "budget_claim_status": "failed",
       "case": "python_fus_c6_voltage_driven_256_steps",
-      "coil_source_work_j": 2563.274005612875,
-      "compression_work_j": 11612076.37099039,
+      "coil_source_work_j": 2563.274005584527,
+      "compression_flux_budget_claim_status": "passed",
+      "compression_flux_damping_decrement_checksum": 0.0,
+      "compression_flux_source_increment_checksum": 0.0,
+      "compression_flux_update_residual_abs_max": 0.0,
+      "compression_work_j": 11612076.370995164,
       "energy_budget_passed": false,
       "energy_budget_relative_error": 0.9999999777318832,
       "language": "python",
-      "max_abs_back_emf_v": 8992314031.828554,
-      "max_abs_load_current_a": 449615701591.4277,
-      "mean_seconds": 0.056450628200000005,
-      "recovered_energy_j": 521466475559095.3,
+      "max_abs_back_emf_v": 8992314031.828682,
+      "max_abs_load_current_a": 449615701591.4341,
+      "mean_seconds": 0.1047935126,
+      "recovered_energy_j": 521466475559104.1,
       "samples": 257,
       "samples_seconds": [
-        0.056491871000000006,
-        0.054296630000000005,
-        0.057187176000000006,
-        0.05472976500000001,
-        0.059547699
+        0.116562461,
+        0.115958721,
+        0.087011736,
+        0.104087117,
+        0.100347528
       ],
       "source_budget_claim_status": "failed",
       "source_energy_budget_passed": false,
@@ -166,67 +189,74 @@
     },
     {
       "case": "rust_1024_samples",
+      "compression_flux_budget_claim_status": "blocked_missing_compression_flux_budget",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_1024_samples/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 1.8096808428092052e-05,
+      "mean_seconds": 1.9106075477620332e-05,
       "samples": 1024,
-      "stddev_seconds": 1.286099621682056e-06
+      "stddev_seconds": 1.1334123233874457e-06
     },
     {
       "case": "rust_256_samples",
+      "compression_flux_budget_claim_status": "blocked_missing_compression_flux_budget",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_256_samples/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 4.314393003547875e-06,
+      "mean_seconds": 4.2122700394326786e-06,
       "samples": 256,
-      "stddev_seconds": 2.243373390842782e-07
+      "stddev_seconds": 8.57315773350926e-08
     },
     {
       "case": "rust_64_samples",
+      "compression_flux_budget_claim_status": "blocked_missing_compression_flux_budget",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_64_samples/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 1.184263268585974e-06,
+      "mean_seconds": 1.149957495427066e-06,
       "samples": 64,
-      "stddev_seconds": 6.222077737546489e-08
+      "stddev_seconds": 8.566372078853294e-08
     },
     {
       "case": "rust_fus_c6_coupled_256_steps",
+      "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_coupled_256_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 3.617732126145719e-05,
-      "stddev_seconds": 1.501081760974532e-06,
+      "mean_seconds": 0.00041149408594844843,
+      "stddev_seconds": 2.1442190379995208e-05,
       "steps": 256
     },
     {
       "case": "rust_fus_c6_coupled_64_steps",
+      "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_coupled_64_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 8.891949006912056e-06,
-      "stddev_seconds": 9.814882688478611e-08,
+      "mean_seconds": 8.24422296616345e-05,
+      "stddev_seconds": 4.593215441442281e-06,
       "steps": 64
     },
     {
       "case": "rust_fus_c6_voltage_driven_256_steps",
+      "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_voltage_driven_256_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 4.69500272630719e-05,
-      "stddev_seconds": 2.425531155779859e-06,
-      "steps": null
+      "mean_seconds": 0.0003680402544688902,
+      "stddev_seconds": 2.0145437139503436e-05,
+      "steps": 256
     },
     {
       "case": "rust_fus_c6_voltage_driven_64_steps",
+      "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_voltage_driven_64_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 1.1162166799688869e-05,
-      "stddev_seconds": 2.820421067629096e-07,
-      "steps": null
+      "mean_seconds": 0.0001043217867649171,
+      "stddev_seconds": 7.285510510070883e-06,
+      "steps": 64
     }
   ],
-  "schema": "scpn-fusion-core.faraday_recovery_benchmark.v2",
+  "schema": "scpn-fusion-core.faraday_recovery_benchmark.v3",
   "source_checksums": {
-    "benchmarks/bench_faraday_recovery.py": "4628facf2946aa1a18c05ee822b3f89fd03dcae913528ccceb7cdd778780ba9f",
-    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "19338d6cf613d195c313d24fecb87edaf09705bc9911c5729b331b4a25329c76",
-    "scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs": "9cf2b95eaee24e0ff691d2fd23f1124fc671665b7865ad1ccb6c4cd1d1f69523",
-    "src/scpn_fusion/core/faraday_recovery.py": "48e4eaa892255a0dcae7dfd28702cc340c93e60b3a7ee14b2a92eabdd4f7cf46",
-    "src/scpn_fusion/core/pulsed_compression.py": "00c8224dfa226fbb1956ff8aa30e2794cc0db6ff2691f98386d901f97d25986f"
+    "benchmarks/bench_faraday_recovery.py": "6c7a6ae3e0435650d7b1c2ece920e1091e96bfcec1a3067ef2ab52761397fea7",
+    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "6c1ef3b7dedd54133c259b99026f412a30951e316713da7b12a5d5ef155b49e2",
+    "scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs": "a9a549c494e0e96fa02d6b758f8db7472aa0bb7b8a66150fa59c145d818b5eaa",
+    "src/scpn_fusion/core/faraday_recovery.py": "f5ddb985b42059e5e03e5cf6527bc927f884fb6550648fba5b02473a1423deca",
+    "src/scpn_fusion/core/pulsed_compression.py": "1526a60323b52c394c39d9148cafda6b315539e81d3556e44c8eb7d53a854e74"
   }
 }

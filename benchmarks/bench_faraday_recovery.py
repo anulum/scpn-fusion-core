@@ -24,6 +24,8 @@ import numpy as np
 from scpn_fusion.core.faraday_recovery import (
     FaradayRecoveryTrajectoryPoint,
     coil_source_work_from_voltage_driven_compression,
+    compression_flux_budget_from_pulsed_compression,
+    compression_flux_budget_from_voltage_driven_compression,
     compression_work_from_pulsed_compression,
     compression_work_from_voltage_driven_compression,
     faraday_trajectory_from_pulsed_compression,
@@ -98,6 +100,8 @@ def _python_case(samples: int) -> dict[str, Any]:
         "max_abs_back_emf_v": state.max_abs_back_emf_v,
         "max_abs_load_current_a": state.max_abs_load_current_a,
         "budget_claim_status": state.budget_claim_status,
+        "source_budget_claim_status": state.source_budget_claim_status,
+        "compression_flux_budget_claim_status": state.compression_flux_budget_claim_status,
     }
 
 
@@ -155,11 +159,13 @@ def _python_compression_coupled_case(steps: int) -> dict[str, Any]:
         )
         trajectory = faraday_trajectory_from_pulsed_compression(states)
         compression_work = compression_work_from_pulsed_compression(states)
+        compression_flux_budget = compression_flux_budget_from_pulsed_compression(states)
         report = integrated_recovery_energy(
             trajectory,
             config.coil.N_turns,
             config.coil.R_resistance_ohm,
             compression_work_j=compression_work,
+            compression_flux_budget=compression_flux_budget,
         )
         timings.append(float(time.perf_counter_ns() - start_ns))
     if report is None:
@@ -176,6 +182,22 @@ def _python_compression_coupled_case(steps: int) -> dict[str, Any]:
         "energy_budget_relative_error": report.energy_budget_relative_error,
         "energy_budget_passed": report.energy_budget_passed,
         "budget_claim_status": report.budget_claim_status,
+        "compression_flux_budget_claim_status": report.compression_flux_budget_claim_status,
+        "compression_flux_update_residual_abs_max": (
+            report.compression_flux_budget.update_residual_abs_max
+            if report.compression_flux_budget is not None
+            else None
+        ),
+        "compression_flux_source_increment_checksum": (
+            report.compression_flux_budget.source_increment_checksum
+            if report.compression_flux_budget is not None
+            else None
+        ),
+        "compression_flux_damping_decrement_checksum": (
+            report.compression_flux_budget.damping_decrement_checksum
+            if report.compression_flux_budget is not None
+            else None
+        ),
         "max_abs_back_emf_v": report.max_abs_back_emf_v,
         "max_abs_load_current_a": report.max_abs_load_current_a,
     }
@@ -198,6 +220,7 @@ def _python_voltage_driven_coupled_case(steps: int) -> dict[str, Any]:
         )
         trajectory = faraday_trajectory_from_voltage_driven_compression(result)
         compression_work = compression_work_from_voltage_driven_compression(result)
+        compression_flux_budget = compression_flux_budget_from_voltage_driven_compression(result)
         source_work = coil_source_work_from_voltage_driven_compression(result)
         report = integrated_recovery_energy(
             trajectory,
@@ -205,6 +228,7 @@ def _python_voltage_driven_coupled_case(steps: int) -> dict[str, Any]:
             config.coil.R_resistance_ohm,
             compression_work_j=compression_work,
             coil_source_work_j=source_work,
+            compression_flux_budget=compression_flux_budget,
         )
         timings.append(float(time.perf_counter_ns() - start_ns))
     if report is None:
@@ -225,6 +249,22 @@ def _python_voltage_driven_coupled_case(steps: int) -> dict[str, Any]:
         "source_energy_budget_relative_error": report.source_energy_budget_relative_error,
         "source_energy_budget_passed": report.source_energy_budget_passed,
         "source_budget_claim_status": report.source_budget_claim_status,
+        "compression_flux_budget_claim_status": report.compression_flux_budget_claim_status,
+        "compression_flux_update_residual_abs_max": (
+            report.compression_flux_budget.update_residual_abs_max
+            if report.compression_flux_budget is not None
+            else None
+        ),
+        "compression_flux_source_increment_checksum": (
+            report.compression_flux_budget.source_increment_checksum
+            if report.compression_flux_budget is not None
+            else None
+        ),
+        "compression_flux_damping_decrement_checksum": (
+            report.compression_flux_budget.damping_decrement_checksum
+            if report.compression_flux_budget is not None
+            else None
+        ),
         "max_abs_back_emf_v": report.max_abs_back_emf_v,
         "max_abs_load_current_a": report.max_abs_load_current_a,
     }
@@ -250,6 +290,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "mean_seconds": float(estimates["mean"]["point_estimate"]) * 1.0e-9,
                 "stddev_seconds": float(estimates["std_dev"]["point_estimate"]) * 1.0e-9,
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
+                "compression_flux_budget_claim_status": ("blocked_missing_compression_flux_budget"),
             }
         )
     for estimates_path in sorted(
@@ -259,10 +300,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
             estimates = json.load(handle)
         benchmark_name = estimates_path.parents[1].name
         parts = benchmark_name.split("_")
-        try:
-            steps = int(parts[4])
-        except (IndexError, ValueError):
-            steps = None
+        steps = _steps_from_benchmark_parts(parts)
         rows.append(
             {
                 "language": "rust",
@@ -271,6 +309,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "mean_seconds": float(estimates["mean"]["point_estimate"]) * 1.0e-9,
                 "stddev_seconds": float(estimates["std_dev"]["point_estimate"]) * 1.0e-9,
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
+                "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
             }
         )
     for estimates_path in sorted(
@@ -280,10 +319,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
             estimates = json.load(handle)
         benchmark_name = estimates_path.parents[1].name
         parts = benchmark_name.split("_")
-        try:
-            steps = int(parts[4])
-        except (IndexError, ValueError):
-            steps = None
+        steps = _steps_from_benchmark_parts(parts)
         rows.append(
             {
                 "language": "rust",
@@ -292,9 +328,20 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "mean_seconds": float(estimates["mean"]["point_estimate"]) * 1.0e-9,
                 "stddev_seconds": float(estimates["std_dev"]["point_estimate"]) * 1.0e-9,
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
+                "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
             }
         )
     return rows
+
+
+def _steps_from_benchmark_parts(parts: list[str]) -> int | None:
+    for index, part in enumerate(parts):
+        if part == "steps" and index > 0:
+            try:
+                return int(parts[index - 1])
+            except ValueError:
+                return None
+    return None
 
 
 def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
@@ -303,12 +350,12 @@ def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
     rows.extend(_python_voltage_driven_coupled_case(steps) for steps in (64, 256))
     rows.extend(_criterion_rows())
     return {
-        "schema": "scpn-fusion-core.faraday_recovery_benchmark.v2",
+        "schema": "scpn-fusion-core.faraday_recovery_benchmark.v3",
         "claim_boundary": (
             "Local non-isolated regression evidence for the exact classical Faraday recovery "
             "contract over supplied trajectories, including internal FUS-C.6 supplied-current "
-            "compression-work sidecars and voltage-driven coil-source sidecars. This is not "
-            "Slough compression-work acceptance evidence."
+            "compression-work sidecars, FUS-C.6 flux-budget sidecars, and voltage-driven "
+            "coil-source sidecars. This is not Slough compression-work acceptance evidence."
         ),
         "physics_contract": {
             "flux": "Phi = B_ext*pi*R_s^2",
@@ -320,6 +367,10 @@ def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
             ),
             "internal_fus_c6_source_budget": (
                 "evaluated when voltage-driven coil-circuit states provide coil_source_work_j"
+            ),
+            "internal_fus_c6_flux_budget": (
+                "evaluated when compression states provide source/damping/update-residual "
+                "flux-budget sidecars"
             ),
             "external_slough_acceptance": "blocked_missing_public_digitised_reference",
         },

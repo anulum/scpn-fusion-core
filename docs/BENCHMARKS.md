@@ -105,11 +105,14 @@ each row converts compression states to `(t, R_s, B_ext, dR_s/dt)`, carries the
 final `compression_work_J`, and evaluates the energy-budget gate as `passed` or
 `failed` instead of marking the work sidecar missing. Voltage-driven rows also
 carry final coil-circuit `source_work_J` and evaluate `source_budget_claim_status`
-separately.
+separately. FUS-C.6 coupled rows now also carry the upstream compression
+flux-budget sidecar and publish `compression_flux_budget_claim_status`, while
+plain supplied-trajectory rows remain
+`blocked_missing_compression_flux_budget`.
 
 External Slough same-case parity remains blocked until a public digitised
-trajectory and compression-work sidecar are available with provenance and
-checksums.
+trajectory, compression-work sidecar, and compatible upstream flux-budget
+evidence are available with provenance and checksums.
 
 ## Type-checking non-regression gate
 

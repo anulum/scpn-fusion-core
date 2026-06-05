@@ -57,6 +57,17 @@ class FaradayRecoverySample:
 
 
 @dataclass(frozen=True)
+class FaradayCompressionFluxBudget:
+    """FUS-C.6 flux-budget sidecar consumed by the Faraday recovery report."""
+
+    source_increment_checksum: float
+    damping_decrement_checksum: float
+    update_residual_abs_max: float
+    budget_claim_status: str
+    coupling_status: str
+
+
+@dataclass(frozen=True)
 class FaradayRecoveryReport:
     """Integrated recovery-energy result over a supplied trajectory."""
 
@@ -76,6 +87,9 @@ class FaradayRecoveryReport:
     source_energy_budget_relative_error: float | None
     source_energy_budget_passed: bool | None
     source_budget_claim_status: str
+    compression_flux_budget: FaradayCompressionFluxBudget | None
+    compression_flux_budget_passed: bool | None
+    compression_flux_budget_claim_status: str
 
 
 def faraday_trajectory_from_pulsed_compression(
@@ -122,6 +136,66 @@ def compression_work_from_pulsed_compression(states: Sequence[object]) -> float:
     )
 
 
+def compression_flux_budget_from_pulsed_compression(
+    states: Sequence[object],
+) -> FaradayCompressionFluxBudget:
+    """Return aggregate FUS-C.6 flux-budget evidence for Faraday reporting."""
+
+    if len(states) < 2:
+        raise ValueError("pulsed-compression trajectory must contain at least two states")
+    post_initial_states = states[1:]
+    residual = max(
+        _state_attr(state, "flux_update_residual_abs_max", "flux_state.update_residual_abs_max")
+        for state in post_initial_states
+    )
+    source_checksum = sum(
+        _state_attr(
+            state,
+            "flux_source_increment_checksum",
+            "flux_state.source_increment_checksum",
+        )
+        for state in post_initial_states
+    )
+    damping_checksum = sum(
+        _state_attr(
+            state,
+            "flux_damping_decrement_checksum",
+            "flux_state.damping_decrement_checksum",
+        )
+        for state in post_initial_states
+    )
+    statuses = tuple(
+        _state_str_attr(state, "flux_budget_claim_status", "flux_state.budget_claim_status")
+        for state in post_initial_states
+    )
+    coupling_statuses = tuple(
+        _state_str_attr(state, "flux_coupling_status", "flux_state.coupling_status")
+        for state in post_initial_states
+    )
+    budget_claim_status = "passed" if all(status == "passed" for status in statuses) else "failed"
+    coupling_status = (
+        coupling_statuses[0]
+        if all(status == coupling_statuses[0] for status in coupling_statuses)
+        else "mixed_flux_coupling_status"
+    )
+    return FaradayCompressionFluxBudget(
+        source_increment_checksum=_require_finite(
+            "compression_flux_source_increment_checksum",
+            source_checksum,
+        ),
+        damping_decrement_checksum=_require_finite(
+            "compression_flux_damping_decrement_checksum",
+            damping_checksum,
+        ),
+        update_residual_abs_max=_require_finite(
+            "compression_flux_update_residual_abs_max",
+            residual,
+        ),
+        budget_claim_status=budget_claim_status,
+        coupling_status=coupling_status,
+    )
+
+
 def faraday_trajectory_from_voltage_driven_compression(
     result: object,
 ) -> tuple[FaradayRecoveryTrajectoryPoint, ...]:
@@ -134,6 +208,14 @@ def compression_work_from_voltage_driven_compression(result: object) -> float:
     """Return final plasma compression work from an FUS-C.6 voltage-driven result."""
 
     return compression_work_from_pulsed_compression(_sequence_attr(result, "compression"))
+
+
+def compression_flux_budget_from_voltage_driven_compression(
+    result: object,
+) -> FaradayCompressionFluxBudget:
+    """Return aggregate FUS-C.6 flux-budget evidence from a voltage-driven result."""
+
+    return compression_flux_budget_from_pulsed_compression(_sequence_attr(result, "compression"))
 
 
 def coil_source_work_from_voltage_driven_compression(result: object) -> float:
@@ -231,6 +313,7 @@ def integrated_recovery_energy(
     *,
     compression_work_j: float | None = None,
     coil_source_work_j: float | None = None,
+    compression_flux_budget: FaradayCompressionFluxBudget | None = None,
     budget_tolerance: float = 0.01,
 ) -> FaradayRecoveryReport:
     """Integrate recoverable load energy over a supplied FRC trajectory.
@@ -311,6 +394,11 @@ def integrated_recovery_energy(
         work_name="coil_source_work_j",
         missing_status="blocked_missing_coil_source_work",
     )
+    (
+        compression_flux_budget_checked,
+        compression_flux_budget_passed,
+        compression_flux_budget_claim_status,
+    ) = _evaluate_compression_flux_budget(compression_flux_budget)
 
     return FaradayRecoveryReport(
         samples=tuple(samples),
@@ -329,6 +417,9 @@ def integrated_recovery_energy(
         source_energy_budget_relative_error=source_energy_budget_relative_error,
         source_energy_budget_passed=source_energy_budget_passed,
         source_budget_claim_status=source_budget_claim_status,
+        compression_flux_budget=compression_flux_budget_checked,
+        compression_flux_budget_passed=compression_flux_budget_passed,
+        compression_flux_budget_claim_status=compression_flux_budget_claim_status,
     )
 
 
@@ -367,10 +458,55 @@ def _coerce_point(
 def _state_attr(state: object, *names: str) -> float:
     raw = cast(Any, state)
     for name in names:
+        if "." in name:
+            container_name, nested_name = name.split(".", 1)
+            if hasattr(raw, container_name):
+                container = getattr(raw, container_name)
+                if hasattr(container, nested_name):
+                    return cast(float, getattr(container, nested_name))
+            if isinstance(raw, Mapping) and container_name in raw:
+                container = raw[container_name]
+                if isinstance(container, Mapping) and nested_name in container:
+                    return cast(float, container[nested_name])
+                if hasattr(container, nested_name):
+                    return cast(float, getattr(container, nested_name))
         if hasattr(raw, name):
             return cast(float, getattr(raw, name))
         if isinstance(raw, Mapping) and name in raw:
             return cast(float, raw[name])
+    joined = ", ".join(names)
+    raise ValueError(f"pulsed-compression state is missing required field: {joined}")
+
+
+def _state_str_attr(state: object, *names: str) -> str:
+    raw = cast(Any, state)
+    for name in names:
+        if "." in name:
+            container_name, nested_name = name.split(".", 1)
+            if hasattr(raw, container_name):
+                container = getattr(raw, container_name)
+                if hasattr(container, nested_name):
+                    value = getattr(container, nested_name)
+                    if isinstance(value, str) and value:
+                        return value
+            if isinstance(raw, Mapping) and container_name in raw:
+                container = raw[container_name]
+                if isinstance(container, Mapping) and nested_name in container:
+                    value = container[nested_name]
+                    if isinstance(value, str) and value:
+                        return value
+                if hasattr(container, nested_name):
+                    value = getattr(container, nested_name)
+                    if isinstance(value, str) and value:
+                        return value
+        if hasattr(raw, name):
+            value = getattr(raw, name)
+            if isinstance(value, str) and value:
+                return value
+        if isinstance(raw, Mapping) and name in raw:
+            value = raw[name]
+            if isinstance(value, str) and value:
+                return value
     joined = ", ".join(names)
     raise ValueError(f"pulsed-compression state is missing required field: {joined}")
 
@@ -409,6 +545,24 @@ def _evaluate_budget(
     return work, relative_error, passed, "passed" if passed else "failed"
 
 
+def _evaluate_compression_flux_budget(
+    budget: FaradayCompressionFluxBudget | None,
+) -> tuple[FaradayCompressionFluxBudget | None, bool | None, str]:
+    if budget is None:
+        return None, None, "blocked_missing_compression_flux_budget"
+    _require_finite("compression_flux_source_increment_checksum", budget.source_increment_checksum)
+    _require_finite(
+        "compression_flux_damping_decrement_checksum", budget.damping_decrement_checksum
+    )
+    _require_finite("compression_flux_update_residual_abs_max", budget.update_residual_abs_max)
+    if not budget.budget_claim_status:
+        raise ValueError("compression_flux_budget.budget_claim_status must be non-empty")
+    if not budget.coupling_status:
+        raise ValueError("compression_flux_budget.coupling_status must be non-empty")
+    passed = budget.budget_claim_status == "passed"
+    return budget, passed, budget.budget_claim_status
+
+
 def _optional_finite(name: str, value: object | None) -> float | None:
     if value is None:
         return None
@@ -419,7 +573,7 @@ def _array_from_points(points: Sequence[FaradayRecoveryTrajectoryPoint], field: 
     values = np.asarray([getattr(point, field) for point in points], dtype=np.float64)
     if not np.all(np.isfinite(values)):
         raise ValueError(f"trajectory {field} samples must be finite")
-    return cast(FloatArray, values)
+    return values
 
 
 def _trajectory_derivative(
@@ -436,17 +590,17 @@ def _trajectory_derivative(
         result = np.asarray(cast(list[float], supplied), dtype=np.float64)
         if not np.all(np.isfinite(result)):
             raise ValueError(f"trajectory {field} samples must be finite")
-        return cast(FloatArray, result)
+        return result
 
     result = np.empty_like(values)
     if values.size == 2:
         slope = (values[1] - values[0]) / (time_s[1] - time_s[0])
         result[:] = slope
-        return cast(FloatArray, result)
+        return result
     result[0] = (values[1] - values[0]) / (time_s[1] - time_s[0])
     result[-1] = (values[-1] - values[-2]) / (time_s[-1] - time_s[-2])
     result[1:-1] = (values[2:] - values[:-2]) / (time_s[2:] - time_s[:-2])
-    return cast(FloatArray, result)
+    return result
 
 
 def _trapezoid(x: FloatArray, y: FloatArray) -> float:

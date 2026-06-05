@@ -32,6 +32,15 @@ pub struct FaradayRecoverySample {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct FaradayCompressionFluxBudget {
+    pub source_increment_checksum: f64,
+    pub damping_decrement_checksum: f64,
+    pub update_residual_abs_max: f64,
+    pub budget_claim_status: String,
+    pub coupling_status: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct FaradayRecoveryReport {
     pub samples: Vec<FaradayRecoverySample>,
     pub n_turns: u32,
@@ -49,6 +58,9 @@ pub struct FaradayRecoveryReport {
     pub source_energy_budget_relative_error: Option<f64>,
     pub source_energy_budget_passed: Option<bool>,
     pub source_budget_claim_status: String,
+    pub compression_flux_budget: Option<FaradayCompressionFluxBudget>,
+    pub compression_flux_budget_passed: Option<bool>,
+    pub compression_flux_budget_claim_status: String,
 }
 
 struct BudgetEvaluation {
@@ -112,6 +124,7 @@ pub fn integrated_recovery_energy(
     coil_resistance_ohm: f64,
     compression_work_j: Option<f64>,
     coil_source_work_j: Option<f64>,
+    compression_flux_budget: Option<FaradayCompressionFluxBudget>,
     budget_tolerance: f64,
 ) -> Result<FaradayRecoveryReport, String> {
     let turns = require_positive_turns(n_turns)?;
@@ -178,6 +191,7 @@ pub fn integrated_recovery_energy(
         "coil_source_work_j",
         "blocked_missing_coil_source_work",
     )?;
+    let flux_budget = evaluate_compression_flux_budget(compression_flux_budget)?;
 
     let flux_initial_wb = samples[0].magnetic_flux_wb;
     let flux_final_wb = samples[samples.len() - 1].magnetic_flux_wb;
@@ -207,6 +221,9 @@ pub fn integrated_recovery_energy(
         source_energy_budget_relative_error: source_budget.relative_error,
         source_energy_budget_passed: source_budget.passed,
         source_budget_claim_status: source_budget.status,
+        compression_flux_budget: flux_budget.budget,
+        compression_flux_budget_passed: flux_budget.passed,
+        compression_flux_budget_claim_status: flux_budget.status,
     })
 }
 
@@ -247,6 +264,53 @@ pub fn compression_work_from_pulsed_compression(
     require_positive("compression_work_j", work)
 }
 
+pub fn compression_flux_budget_from_pulsed_compression(
+    states: &[PulsedCompressionState],
+) -> Result<FaradayCompressionFluxBudget, String> {
+    if states.len() < 2 {
+        return Err("pulsed-compression trajectory must contain at least two states".to_string());
+    }
+    let post_initial_states = &states[1..];
+    let source_increment_checksum = post_initial_states
+        .iter()
+        .map(|state| state.flux_state.source_increment_checksum)
+        .sum::<f64>();
+    let damping_decrement_checksum = post_initial_states
+        .iter()
+        .map(|state| state.flux_state.damping_decrement_checksum)
+        .sum::<f64>();
+    let update_residual_abs_max = post_initial_states
+        .iter()
+        .map(|state| state.flux_state.update_residual_abs_max)
+        .fold(0.0_f64, f64::max);
+    let budget_claim_status = if post_initial_states
+        .iter()
+        .all(|state| state.flux_state.budget_claim_status == "passed")
+    {
+        "passed"
+    } else {
+        "failed"
+    };
+    let first_coupling_status = post_initial_states[0].flux_state.coupling_status.as_str();
+    let coupling_status = if post_initial_states
+        .iter()
+        .all(|state| state.flux_state.coupling_status == first_coupling_status)
+    {
+        first_coupling_status
+    } else {
+        "mixed_flux_coupling_status"
+    };
+    let budget = FaradayCompressionFluxBudget {
+        source_increment_checksum,
+        damping_decrement_checksum,
+        update_residual_abs_max,
+        budget_claim_status: budget_claim_status.to_string(),
+        coupling_status: coupling_status.to_string(),
+    };
+    validate_compression_flux_budget(&budget)?;
+    Ok(budget)
+}
+
 pub fn faraday_trajectory_from_voltage_driven_compression(
     result: &VoltageDrivenPulsedCompressionResult,
 ) -> Result<Vec<FaradayRecoveryTrajectoryPoint>, String> {
@@ -257,6 +321,12 @@ pub fn compression_work_from_voltage_driven_compression(
     result: &VoltageDrivenPulsedCompressionResult,
 ) -> Result<f64, String> {
     compression_work_from_pulsed_compression(&result.compression)
+}
+
+pub fn compression_flux_budget_from_voltage_driven_compression(
+    result: &VoltageDrivenPulsedCompressionResult,
+) -> Result<FaradayCompressionFluxBudget, String> {
+    compression_flux_budget_from_pulsed_compression(&result.compression)
 }
 
 pub fn coil_source_work_from_voltage_driven_compression(
@@ -271,6 +341,12 @@ pub fn coil_source_work_from_voltage_driven_compression(
         .map(|state| state.source_work_j)
         .unwrap_or(f64::NAN);
     require_positive("coil_source_work_j", work)
+}
+
+struct FluxBudgetEvaluation {
+    budget: Option<FaradayCompressionFluxBudget>,
+    passed: Option<bool>,
+    status: String,
 }
 
 fn evaluate_budget(
@@ -304,6 +380,50 @@ fn evaluate_budget(
             })
         }
     }
+}
+
+fn evaluate_compression_flux_budget(
+    budget: Option<FaradayCompressionFluxBudget>,
+) -> Result<FluxBudgetEvaluation, String> {
+    match budget {
+        None => Ok(FluxBudgetEvaluation {
+            budget: None,
+            passed: None,
+            status: "blocked_missing_compression_flux_budget".to_string(),
+        }),
+        Some(value) => {
+            validate_compression_flux_budget(&value)?;
+            let passed = value.budget_claim_status == "passed";
+            let status = value.budget_claim_status.clone();
+            Ok(FluxBudgetEvaluation {
+                budget: Some(value),
+                passed: Some(passed),
+                status,
+            })
+        }
+    }
+}
+
+fn validate_compression_flux_budget(budget: &FaradayCompressionFluxBudget) -> Result<(), String> {
+    require_finite(
+        "compression_flux_source_increment_checksum",
+        budget.source_increment_checksum,
+    )?;
+    require_finite(
+        "compression_flux_damping_decrement_checksum",
+        budget.damping_decrement_checksum,
+    )?;
+    require_finite(
+        "compression_flux_update_residual_abs_max",
+        budget.update_residual_abs_max,
+    )?;
+    if budget.budget_claim_status.is_empty() {
+        return Err("compression_flux_budget.budget_claim_status must be non-empty".to_string());
+    }
+    if budget.coupling_status.is_empty() {
+        return Err("compression_flux_budget.coupling_status must be non-empty".to_string());
+    }
+    Ok(())
 }
 
 fn validate_trajectory(trajectory: &[FaradayRecoveryTrajectoryPoint]) -> Result<(), String> {
@@ -382,9 +502,11 @@ fn trapezoid(x: &[f64], y: &[f64]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        coil_source_work_from_voltage_driven_compression, compression_work_from_pulsed_compression,
-        compression_work_from_voltage_driven_compression, faraday_back_emf_from_values,
-        faraday_trajectory_from_pulsed_compression,
+        coil_source_work_from_voltage_driven_compression,
+        compression_flux_budget_from_pulsed_compression,
+        compression_flux_budget_from_voltage_driven_compression,
+        compression_work_from_pulsed_compression, compression_work_from_voltage_driven_compression,
+        faraday_back_emf_from_values, faraday_trajectory_from_pulsed_compression,
         faraday_trajectory_from_voltage_driven_compression, integrated_recovery_energy,
         magnetic_flux_wb, FaradayRecoveryTrajectoryPoint,
     };
@@ -426,8 +548,9 @@ mod tests {
                 }
             })
             .collect::<Vec<_>>();
-        let report = integrated_recovery_energy(&trajectory, turns, resistance, None, None, 0.01)
-            .expect("valid report");
+        let report =
+            integrated_recovery_energy(&trajectory, turns, resistance, None, None, None, 0.01)
+                .expect("valid report");
         let coefficient = turns as f64 * std::f64::consts::PI * 2.0 * b_ext * speed;
         let expected = coefficient * coefficient / resistance
             * ((radius_0 + speed * duration).powi(3) - radius_0.powi(3))
@@ -443,6 +566,11 @@ mod tests {
             "blocked_missing_coil_source_work"
         );
         assert_eq!(report.source_energy_budget_passed, None);
+        assert_eq!(
+            report.compression_flux_budget_claim_status,
+            "blocked_missing_compression_flux_budget"
+        );
+        assert_eq!(report.compression_flux_budget_passed, None);
     }
 
     #[test]
@@ -463,14 +591,19 @@ mod tests {
                 d_b_ext_dt_t_s: Some(0.0),
             },
         ];
-        let report = integrated_recovery_energy(&trajectory, 4, 0.1, Some(1.0e-12), None, 0.01)
-            .expect("valid report");
+        let report =
+            integrated_recovery_energy(&trajectory, 4, 0.1, Some(1.0e-12), None, None, 0.01)
+                .expect("valid report");
         assert_eq!(report.recovered_energy_j, 0.0);
         assert_eq!(report.energy_budget_passed, Some(false));
         assert_eq!(report.budget_claim_status, "failed");
         assert_eq!(
             report.source_budget_claim_status,
             "blocked_missing_coil_source_work"
+        );
+        assert_eq!(
+            report.compression_flux_budget_claim_status,
+            "blocked_missing_compression_flux_budget"
         );
     }
 
@@ -485,7 +618,7 @@ mod tests {
             d_radius_dt_m_s: None,
             d_b_ext_dt_t_s: None,
         }];
-        assert!(integrated_recovery_energy(&one, 2, 0.1, None, None, 0.01).is_err());
+        assert!(integrated_recovery_energy(&one, 2, 0.1, None, None, None, 0.01).is_err());
     }
 
     fn compression_coil() -> CoilGeometry {
@@ -556,9 +689,18 @@ mod tests {
             faraday_trajectory_from_pulsed_compression(&states).expect("valid trajectory");
         let compression_work =
             compression_work_from_pulsed_compression(&states).expect("positive compression work");
-        let report =
-            integrated_recovery_energy(&trajectory, 80, 0.02, Some(compression_work), None, 0.01)
-                .expect("valid recovery report");
+        let compression_flux_budget =
+            compression_flux_budget_from_pulsed_compression(&states).expect("valid flux budget");
+        let report = integrated_recovery_energy(
+            &trajectory,
+            80,
+            0.02,
+            Some(compression_work),
+            None,
+            Some(compression_flux_budget.clone()),
+            0.01,
+        )
+        .expect("valid recovery report");
 
         assert_eq!(trajectory.len(), states.len());
         assert_eq!(
@@ -583,6 +725,14 @@ mod tests {
             report.source_budget_claim_status,
             "blocked_missing_coil_source_work"
         );
+        assert_eq!(compression_flux_budget.budget_claim_status, "passed");
+        assert!(compression_flux_budget.update_residual_abs_max <= 1.0e-12);
+        assert_eq!(
+            report.compression_flux_budget,
+            Some(compression_flux_budget)
+        );
+        assert_eq!(report.compression_flux_budget_passed, Some(true));
+        assert_eq!(report.compression_flux_budget_claim_status, "passed");
     }
 
     #[test]
@@ -600,6 +750,9 @@ mod tests {
             .expect("valid voltage-driven trajectory");
         let compression_work = compression_work_from_voltage_driven_compression(&result)
             .expect("positive compression work");
+        let compression_flux_budget =
+            compression_flux_budget_from_voltage_driven_compression(&result)
+                .expect("valid flux budget");
         let source_work = coil_source_work_from_voltage_driven_compression(&result)
             .expect("positive source work");
         let report = integrated_recovery_energy(
@@ -608,6 +761,7 @@ mod tests {
             0.02,
             Some(compression_work),
             Some(source_work),
+            Some(compression_flux_budget),
             0.01,
         )
         .expect("valid recovery report");
@@ -629,5 +783,41 @@ mod tests {
             report.source_budget_claim_status.as_str(),
             "passed" | "failed"
         ));
+        assert_eq!(report.compression_flux_budget_passed, Some(true));
+        assert_eq!(report.compression_flux_budget_claim_status, "passed");
+    }
+
+    #[test]
+    fn failed_compression_flux_budget_is_propagated() {
+        let mut states = run_pulsed_compression(
+            compression_initial(),
+            &compression_config(),
+            5.0e5,
+            1.0e-9,
+            4,
+        )
+        .expect("valid compression states");
+        let final_state = states.last_mut().expect("state exists");
+        final_state.flux_state.budget_claim_status = "failed".to_string();
+        final_state.flux_state.update_residual_abs_max = 1.0e-3;
+        let trajectory =
+            faraday_trajectory_from_pulsed_compression(&states).expect("valid trajectory");
+        let compression_work =
+            compression_work_from_pulsed_compression(&states).expect("positive compression work");
+        let compression_flux_budget =
+            compression_flux_budget_from_pulsed_compression(&states).expect("valid flux budget");
+        let report = integrated_recovery_energy(
+            &trajectory,
+            80,
+            0.02,
+            Some(compression_work),
+            None,
+            Some(compression_flux_budget),
+            0.01,
+        )
+        .expect("valid recovery report");
+
+        assert_eq!(report.compression_flux_budget_passed, Some(false));
+        assert_eq!(report.compression_flux_budget_claim_status, "failed");
     }
 }

@@ -157,6 +157,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # Faraday recovery — closed-form MIF/FRC back-EMF over supplied trajectory
     "FaradayRecoveryReport": (".faraday_recovery", "FaradayRecoveryReport"),
     "FaradayRecoverySample": (".faraday_recovery", "FaradayRecoverySample"),
+    "FaradayCompressionFluxBudget": (
+        ".faraday_recovery",
+        "FaradayCompressionFluxBudget",
+    ),
     "FaradayRecoveryTrajectoryPoint": (
         ".faraday_recovery",
         "FaradayRecoveryTrajectoryPoint",
@@ -174,6 +178,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".faraday_recovery",
         "compression_work_from_pulsed_compression",
     ),
+    "compression_flux_budget_from_pulsed_compression": (
+        ".faraday_recovery",
+        "compression_flux_budget_from_pulsed_compression",
+    ),
     "faraday_trajectory_from_voltage_driven_compression": (
         ".faraday_recovery",
         "faraday_trajectory_from_voltage_driven_compression",
@@ -181,6 +189,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "compression_work_from_voltage_driven_compression": (
         ".faraday_recovery",
         "compression_work_from_voltage_driven_compression",
+    ),
+    "compression_flux_budget_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "compression_flux_budget_from_voltage_driven_compression",
     ),
     "coil_source_work_from_voltage_driven_compression": (
         ".faraday_recovery",
