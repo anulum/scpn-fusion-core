@@ -144,6 +144,9 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
             assert surface["implemented_dimensions"][
                 "charge_state_resolved_radial_transport_operator"
             ] is True
+            assert surface["implemented_dimensions"][
+                "aurora_strahl_same_case_source_sink_matrix_parity"
+            ] is True
             assert surface["reference_cases"]["missing_cases"] == []
             case = surface["reference_cases"]["ready_cases"][0]
             assert case["artifact_exists"] is True

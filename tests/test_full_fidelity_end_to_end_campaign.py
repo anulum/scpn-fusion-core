@@ -63,10 +63,10 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         == "accepted_native_aurora_effective_transport_closure_thresholds"
     )
     assert report["impurity_source_sink_budget_evidence_ready"] is True
-    assert report["impurity_source_sink_budget_aurora_strahl_same_case_ready"] is False
+    assert report["impurity_source_sink_budget_aurora_strahl_same_case_ready"] is True
     assert (
         report["impurity_transport_operator_evidence_status"]
-        == "accepted_native_effective_transport_closure_not_full_collisional_operator_parity"
+        == "accepted_native_effective_transport_source_sink_closure"
     )
     assert (
         report["gk_public_deck_inventory_report"]

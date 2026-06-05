@@ -152,7 +152,6 @@
     "aurora_strahl_same_case_threshold_passed": true,
     "aurora_strahl_same_case_threshold_ready": true,
     "blocking_requirements": [
-      "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
       "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay"
     ],
     "charge_state_density_closure": true,
@@ -182,7 +181,7 @@
       "total_impurity_density_r_t": true,
       "total_impurity_inventory_t": true
     },
-    "operator_evidence_status": "accepted_native_effective_transport_closure_not_full_collisional_operator_parity",
+    "operator_evidence_status": "accepted_native_effective_transport_source_sink_closure",
     "operator_terms_present": {
       "aurora_effective_source_recycling_closure": true,
       "aurora_strahl_collisional_operator_parity": false,
@@ -193,6 +192,7 @@
       "line_radiation_power": true,
       "neoclassical_pinch": true,
       "same_case_aurora_strahl_transport_output": true,
+      "time_resolved_same_case_source_sink_matrix_parity": true,
       "total_impurity_inventory_closure": true,
       "trace_radial_transport": true
     },
@@ -234,6 +234,16 @@
         },
         {
           "comparator": "<=",
+          "limit": 0.1,
+          "metric": "relative_l2",
+          "observable": "source_sink_matrix_t_r_z_z",
+          "passed": true,
+          "threshold": "source_sink_matrix_relative_l2_max",
+          "valid": true,
+          "value": 1.4786716335136195e-16
+        },
+        {
+          "comparator": "<=",
           "limit": 0.05,
           "metric": "relative_l2",
           "observable": "total_impurity_density_r_t",
@@ -260,6 +270,7 @@
       ],
       "reference_family": "Aurora",
       "schema": "aurora-strahl-native-same-case-comparison.v1",
+      "source_sink_matrix_parity_ready": true,
       "status": "accepted_native_aurora_effective_transport_closure_thresholds",
       "threshold_checks_ready": true,
       "thresholds_passed": true
@@ -267,12 +278,8 @@
     "schema": "native-impurity-transport-operator-evidence.v1",
     "source_sink_budget_evidence": {
       "all_budget_terms_finite": true,
-      "aurora_strahl_same_case_budget_ready": false,
-      "blocking_requirements": [
-        "same-case Aurora or STRAHL source-sink matrix output",
-        "same-case Aurora or STRAHL charge-state density history",
-        "same-case Aurora or STRAHL line-radiation power output"
-      ],
+      "aurora_strahl_same_case_budget_ready": true,
+      "blocking_requirements": [],
       "budget_terms": [
         "source_sink_matrix_t_r_z_z",
         "ionisation_source_matrix",
@@ -295,7 +302,7 @@
       "source_sink_offdiagonal_nonnegative": true,
       "source_sink_row_sum_abs_max": 0.0,
       "source_sink_transfer_conservative": true,
-      "status": "native_artifact_source_sink_budget_only_not_aurora_strahl_operator_parity",
+      "status": "accepted_native_same_case_source_sink_budget_parity",
       "term_finiteness": {
         "ionisation_source_matrix": true,
         "line_radiation_power_t_r_z": true,

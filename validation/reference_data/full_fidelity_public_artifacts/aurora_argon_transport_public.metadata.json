@@ -19,6 +19,7 @@
     "radius_m",
     "recombination_coeff_m3_s_t_r_z",
     "recombination_sink_matrix",
+    "source_sink_matrix_t_r_z_z",
     "time_s",
     "total_impurity_density_r_t"
   ],
@@ -37,7 +38,8 @@
     "element": "Ar",
     "geometry_major_radius_m": 1.7,
     "source_rate_s^-1": 1e+18,
-    "temperature_profile": "electron_temperature_t_r_ev"
+    "temperature_profile": "electron_temperature_t_r_ev",
+    "time_resolved_source_sink_matrix": "source_sink_matrix_t_r_z_z"
   },
   "conversion_mode": "external_cache_conversion",
   "finite_numeric_payload": true,
@@ -46,7 +48,7 @@
   "provenance_url": "https://github.com/fsciortino/Aurora/tree/4c53ee2fb5202977682c3da4deba5fc07ab3a203/examples",
   "redistribution_license": "MIT",
   "reference_family": "Aurora",
-  "sha256": "2d4e880306d84eba3f021a7e46a426c1fe8bf5c4f5558fdbca9a8bd318f6cf70",
+  "sha256": "bc45e83dd4a6717996f860153f584bbaa7babfa6478f3783a888f9a0b4784f6e",
   "solver_output_comparison_ready": true,
   "solver_output_comparison_status": "diagnostic_effective_source_closure_ready_not_mechanistic_parity",
   "surface": "impurity_transport",

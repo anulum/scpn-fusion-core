@@ -317,6 +317,9 @@ def _native_observables_as_top_level(payload: dict[str, Any]) -> dict[str, Float
         "line_radiation_power_t_r_z": np.asarray(
             observables["line_radiation_power_t_r_z"], dtype=np.float64
         ),
+        "source_sink_matrix_t_r_z_z": np.asarray(
+            observables["source_sink_matrix_t_r_z_z"], dtype=np.float64
+        ),
         "ionisation_source_matrix": np.asarray(
             observables["ionisation_source_matrix"], dtype=np.float64
         ),
@@ -424,6 +427,13 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
     total_density = candidate["total_impurity_density_r_t"]
     density_closure = bool(np.allclose(total_density, np.sum(density, axis=2), rtol=1.0e-10))
     effective_closure_ready = "effective_source_m3_s_t_r_z" in reference
+    source_sink_matrix_ready = "source_sink_matrix_t_r_z_z" in reference
+    source_sink_matrix_passed = any(
+        check.get("threshold") == "source_sink_matrix_relative_l2_max"
+        and bool(check.get("valid"))
+        and bool(check.get("passed"))
+        for check in checks
+    )
     blocking_requirements: list[str] = []
     if not thresholds_passed:
         blocking_requirements.insert(
@@ -466,6 +476,9 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
             and "convection_m_s_r_z" in reference
         ),
         "effective_source_recycling_closure_ready": effective_closure_ready,
+        "source_sink_matrix_parity_ready": bool(
+            source_sink_matrix_ready and source_sink_matrix_passed
+        ),
         "checks": checks,
         "blocking_requirements": blocking_requirements,
     }
@@ -492,14 +505,26 @@ def _native_impurity_transport_evidence(
     external_coefficients_ready = bool(
         same_case_comparison.get("external_coefficient_tables_ready", False)
     )
+    source_sink_parity_ready = bool(
+        same_case_comparison.get("source_sink_matrix_parity_ready", False)
+    )
     operator_status = (
-        "accepted_native_effective_transport_closure_not_full_collisional_operator_parity"
+        "accepted_native_effective_transport_source_sink_closure"
         if radial_operator_ready
         and effective_closure_ready
         and external_coefficients_ready
+        and source_sink_parity_ready
         and same_case_comparison["thresholds_passed"]
         else "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator"
     )
+    source_sink_budget_evidence = _source_sink_budget_evidence(payload)
+    if source_sink_parity_ready:
+        source_sink_budget_evidence = {
+            **source_sink_budget_evidence,
+            "aurora_strahl_same_case_budget_ready": True,
+            "blocking_requirements": [],
+            "status": "accepted_native_same_case_source_sink_budget_parity",
+        }
 
     return {
         "schema": "native-impurity-transport-operator-evidence.v1",
@@ -540,13 +565,13 @@ def _native_impurity_transport_evidence(
             "same_case_aurora_strahl_transport_output": bool(
                 same_case_comparison["comparison_ready"]
             ),
+            "time_resolved_same_case_source_sink_matrix_parity": source_sink_parity_ready,
             "aurora_strahl_collisional_operator_parity": False,
         },
         "observable_finiteness": _observable_finiteness(payload, required_observables),
-        "source_sink_budget_evidence": _source_sink_budget_evidence(payload),
+        "source_sink_budget_evidence": source_sink_budget_evidence,
         "same_case_aurora_strahl_comparison": same_case_comparison,
         "blocking_requirements": [
-            "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
             "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay",
         ],
     }
@@ -680,8 +705,7 @@ def run_benchmark() -> dict[str, Any]:
             and source_sink_budget_evidence["source_sink_transfer_conservative"]
             and source_sink_budget_evidence["radial_total_density_conserved"]
             and source_sink_budget_evidence["line_radiation_nonnegative"]
-            and not source_sink_budget_evidence["aurora_strahl_same_case_budget_ready"]
-            and bool(source_sink_budget_evidence["blocking_requirements"])
+            and source_sink_budget_evidence["aurora_strahl_same_case_budget_ready"]
         ),
         "charge_state_radial_density_conservation": bool(
             source_sink_budget_evidence["radial_total_density_conserved"]

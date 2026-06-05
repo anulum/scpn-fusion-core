@@ -40,6 +40,7 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
         "ionisation_coeff_m3_s_t_r_z",
         "line_radiation_coeff_w_m3_t_r_z",
         "recombination_coeff_m3_s_t_r_z",
+        "source_sink_matrix_t_r_z_z",
     }.issubset(set(converted["aurora_argon_transport_public"]["available_observables"]))
 
     for artifact in converted.values():

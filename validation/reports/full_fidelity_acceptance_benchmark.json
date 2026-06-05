@@ -194,6 +194,7 @@
       "implemented_dimensions": {
         "adas_style_coefficient_ingestion_contract": true,
         "aurora_effective_source_recycling_closure": true,
+        "aurora_strahl_same_case_source_sink_matrix_parity": true,
         "aurora_strahl_same_case_transport_comparison": true,
         "aurora_strahl_same_case_transport_threshold_checks": true,
         "aurora_strahl_same_case_transport_thresholds_passed": true,
@@ -211,7 +212,6 @@
         "trace_radial_transport": true
       },
       "missing_requirements": [
-        "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
         "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay"
       ],
       "native_same_case_comparison": {
@@ -252,6 +252,16 @@
           },
           {
             "comparator": "<=",
+            "limit": 0.1,
+            "metric": "relative_l2",
+            "observable": "source_sink_matrix_t_r_z_z",
+            "passed": true,
+            "threshold": "source_sink_matrix_relative_l2_max",
+            "valid": true,
+            "value": 1.4786716335136195e-16
+          },
+          {
+            "comparator": "<=",
             "limit": 0.05,
             "metric": "relative_l2",
             "observable": "total_impurity_density_r_t",
@@ -278,6 +288,7 @@
         ],
         "reference_family": "Aurora",
         "schema": "aurora-strahl-native-same-case-comparison.v1",
+        "source_sink_matrix_parity_ready": true,
         "status": "accepted_native_aurora_effective_transport_closure_thresholds",
         "threshold_checks_ready": true,
         "thresholds_passed": true
@@ -312,7 +323,8 @@
               "total_impurity_density_r_t",
               "line_radiation_power_t",
               "ionisation_source_matrix",
-              "recombination_sink_matrix"
+              "recombination_sink_matrix",
+              "source_sink_matrix_t_r_z_z"
             ],
             "observable_keys_ready": true,
             "observable_payload_invalid": [],
@@ -321,8 +333,8 @@
             "ready": true,
             "redistribution_license_ready": true,
             "reference_family": "Aurora",
-            "sha256_actual": "2d4e880306d84eba3f021a7e46a426c1fe8bf5c4f5558fdbca9a8bd318f6cf70",
-            "sha256_expected": "2d4e880306d84eba3f021a7e46a426c1fe8bf5c4f5558fdbca9a8bd318f6cf70",
+            "sha256_actual": "bc45e83dd4a6717996f860153f584bbaa7babfa6478f3783a888f9a0b4784f6e",
+            "sha256_expected": "bc45e83dd4a6717996f860153f584bbaa7babfa6478f3783a888f9a0b4784f6e",
             "sha256_ready": true,
             "status": "available",
             "status_known": true,

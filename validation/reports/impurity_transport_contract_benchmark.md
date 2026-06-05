@@ -30,7 +30,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 ## Native impurity transport operator evidence
 
 - Schema: `native-impurity-transport-operator-evidence.v1`
-- Status: `accepted_native_effective_transport_closure_not_full_collisional_operator_parity`
+- Status: `accepted_native_effective_transport_source_sink_closure`
 - Native artifact ready: `True`
 - Charge-state radial transport operator ready: `True`
 - Aurora/STRAHL same-case comparison ready: `True`
@@ -40,7 +40,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Density shape: `[3, 80, 4]`
 - Source-sink shape: `[3, 80, 4, 4]`
 - Line-radiation shape: `[3, 80, 4]`
-- Operator terms present: `{"aurora_effective_source_recycling_closure": true, "aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": true, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": true, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": true, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
+- Operator terms present: `{"aurora_effective_source_recycling_closure": true, "aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": true, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": true, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": true, "time_resolved_same_case_source_sink_matrix_parity": true, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
 - Observable finiteness: `{"charge_state_density_r_t": true, "line_radiation_power_t": true, "line_radiation_power_t_r_z": true, "source_sink_matrix_t_r_z_z": true, "total_impurity_density_r_t": true, "total_impurity_inventory_t": true}`
 
 ## Native same-case Aurora comparison
@@ -53,13 +53,13 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Thresholds passed: `True`
 - Native coordinate match: `True`
 - Native total-density closure: `True`
-- Checks: `[{"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "charge_state_density_r_t", "passed": true, "threshold": "charge_state_density_relative_l2_max", "valid": true, "value": 4.7318606977071035e-17}, {"comparator": "<=", "limit": 0.01, "metric": "relative_error", "observable": "charge_state_density_r_t", "passed": true, "threshold": "particle_conservation_relative_error_max", "valid": true, "value": 1.6917949828303853e-16}, {"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "line_radiation_power_t", "passed": true, "threshold": "radiated_power_relative_l2_max", "valid": true, "value": 4.0971624280268316e-11}, {"comparator": "<=", "limit": 0.05, "metric": "relative_l2", "observable": "total_impurity_density_r_t", "passed": true, "threshold": "total_density_relative_l2_max", "valid": true, "value": 7.462929864484212e-17}]`
+- Checks: `[{"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "charge_state_density_r_t", "passed": true, "threshold": "charge_state_density_relative_l2_max", "valid": true, "value": 4.7318606977071035e-17}, {"comparator": "<=", "limit": 0.01, "metric": "relative_error", "observable": "charge_state_density_r_t", "passed": true, "threshold": "particle_conservation_relative_error_max", "valid": true, "value": 1.6917949828303853e-16}, {"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "line_radiation_power_t", "passed": true, "threshold": "radiated_power_relative_l2_max", "valid": true, "value": 4.0971624280268316e-11}, {"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "source_sink_matrix_t_r_z_z", "passed": true, "threshold": "source_sink_matrix_relative_l2_max", "valid": true, "value": 1.4786716335136195e-16}, {"comparator": "<=", "limit": 0.05, "metric": "relative_l2", "observable": "total_impurity_density_r_t", "passed": true, "threshold": "total_density_relative_l2_max", "valid": true, "value": 7.462929864484212e-17}]`
 - Blocking requirements: ``
 
 ## Native source/sink budget evidence
 
 - Schema: `native-impurity-source-sink-budget-evidence.v1`
-- Status: `native_artifact_source_sink_budget_only_not_aurora_strahl_operator_parity`
+- Status: `accepted_native_same_case_source_sink_budget_parity`
 - Budget terms: `source_sink_matrix_t_r_z_z, ionisation_source_matrix, recombination_sink_matrix, line_radiation_power_t_r_z, total_impurity_inventory_t`
 - Time count: `3`
 - Radius count: `80`
@@ -70,8 +70,8 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Radial total-density conserved: `True`
 - Max radial total-density relative change: `1.388889e-16`
 - Line radiation non-negative: `True`
-- Aurora/STRAHL same-case budget ready: `False`
-- Blocking requirements: `time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars; independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay`
+- Aurora/STRAHL same-case budget ready: `True`
+- Blocking requirements: `independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay`
 
 ## Invariants
 

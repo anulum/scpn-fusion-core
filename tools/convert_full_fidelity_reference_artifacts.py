@@ -151,6 +151,30 @@ def _as_time_radius_profile(values: NDArray[Any], *, time_count: int, radius_cou
     raise ValueError(f"Aurora profile cannot be reshaped to time x radius: {profile.shape}")
 
 
+def _charge_transfer_matrix_t_r_z_z(
+    ionisation_t_r_z: NDArray[np.float64],
+    recombination_t_r_z: NDArray[np.float64],
+) -> NDArray[np.float64]:
+    """Return conservative from-charge transfer matrices for all times."""
+    ion = np.asarray(ionisation_t_r_z, dtype=np.float64)
+    rec = np.asarray(recombination_t_r_z, dtype=np.float64)
+    if ion.shape != rec.shape or ion.ndim != 3:
+        raise ValueError("ionisation_t_r_z and recombination_t_r_z must be time x radius x charge")
+    matrix = np.zeros((ion.shape[0], ion.shape[1], ion.shape[2], ion.shape[2]), dtype=np.float64)
+    for charge_idx in range(ion.shape[2] - 1):
+        matrix[:, :, charge_idx, charge_idx + 1] += ion[:, :, charge_idx]
+        matrix[:, :, charge_idx + 1, charge_idx] += rec[:, :, charge_idx + 1]
+    for charge_idx in range(ion.shape[2]):
+        off_diagonal_sum = np.sum(matrix[:, :, charge_idx, :], axis=2)
+        matrix[:, :, charge_idx, charge_idx] = -off_diagonal_sum
+    for _ in range(3):
+        residual = np.sum(matrix, axis=3)
+        for charge_idx in range(ion.shape[2]):
+            target_idx = charge_idx + 1 if charge_idx < ion.shape[2] - 1 else charge_idx - 1
+            matrix[:, :, charge_idx, target_idx] -= residual[:, :, charge_idx]
+    return matrix
+
+
 def _artifact_record(
     metadata: dict[str, Any], artifact_path: Path, metadata_path: Path
 ) -> dict[str, Any]:
@@ -308,6 +332,12 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
     )
     ionisation_source_matrix = density_t_r_z[-1] * ion_rate_t_r_z[-1]
     recombination_sink_matrix = density_t_r_z[-1] * rec_rate_t_r_z[-1]
+    ionisation_source_t_r_z = density_t_r_z * ion_rate_t_r_z
+    recombination_sink_t_r_z = density_t_r_z * rec_rate_t_r_z
+    source_sink_matrix_t_r_z_z = _charge_transfer_matrix_t_r_z_z(
+        ionisation_source_t_r_z,
+        recombination_sink_t_r_z,
+    )
     diffusion_m2_s_r_z = np.tile(
         (diffusion_cm2_s * 1.0e-4)[:, np.newaxis], (1, charge_state.size)
     )
@@ -348,6 +378,7 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
         "radius_m": radius_m,
         "recombination_coeff_m3_s_t_r_z": recombination_coeff_t_r_z,
         "recombination_sink_matrix": recombination_sink_matrix,
+        "source_sink_matrix_t_r_z_z": source_sink_matrix_t_r_z_z,
         "time_s": time_s,
         "total_impurity_density_r_t": total_density_t_r,
     }
@@ -380,6 +411,7 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
             "element": "Ar",
             "geometry_major_radius_m": 1.7,
             "source_rate_s^-1": 1.0e18,
+            "time_resolved_source_sink_matrix": "source_sink_matrix_t_r_z_z",
             "temperature_profile": "electron_temperature_t_r_ev",
         },
         "conversion_mode": "external_cache_conversion",

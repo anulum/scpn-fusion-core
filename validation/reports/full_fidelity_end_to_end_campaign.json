@@ -63,9 +63,9 @@
   "impurity_aurora_strahl_same_case_threshold_ready": true,
   "impurity_charge_state_radial_transport_operator_ready": true,
   "impurity_native_transport_evidence_ready": true,
-  "impurity_source_sink_budget_aurora_strahl_same_case_ready": false,
+  "impurity_source_sink_budget_aurora_strahl_same_case_ready": true,
   "impurity_source_sink_budget_evidence_ready": true,
-  "impurity_transport_operator_evidence_status": "accepted_native_effective_transport_closure_not_full_collisional_operator_parity",
+  "impurity_transport_operator_evidence_status": "accepted_native_effective_transport_source_sink_closure",
   "lanes": [
     {
       "lane": "sas_dataset_readiness",
@@ -245,7 +245,6 @@
       "lane": "aurora_strahl_grade_impurities",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
         "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay"
       ],
       "reference_cases_ready": true,

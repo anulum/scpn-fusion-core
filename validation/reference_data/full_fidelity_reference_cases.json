@@ -69,6 +69,19 @@
               "numeric": true,
               "units": "m^-3_s^-1"
             },
+            "source_sink_matrix_t_r_z_z": {
+              "axes": [
+                "time_s",
+                "radius_m",
+                "charge_state",
+                "charge_state"
+              ],
+              "finite": true,
+              "min_rank": 4,
+              "non_empty": true,
+              "numeric": true,
+              "units": "m^-3_s^-1"
+            },
             "total_impurity_density_r_t": {
               "axes": [
                 "time_s",
@@ -89,9 +102,10 @@
             "total_impurity_density_r_t",
             "line_radiation_power_t",
             "ionisation_source_matrix",
-            "recombination_sink_matrix"
+            "recombination_sink_matrix",
+            "source_sink_matrix_t_r_z_z"
           ],
-          "sha256": "2d4e880306d84eba3f021a7e46a426c1fe8bf5c4f5558fdbca9a8bd318f6cf70",
+          "sha256": "bc45e83dd4a6717996f860153f584bbaa7babfa6478f3783a888f9a0b4784f6e",
           "status": "available",
           "threshold_contracts": {
             "charge_state_density_relative_l2_max": {
@@ -109,6 +123,11 @@
               "metric": "relative_l2",
               "observable": "line_radiation_power_t"
             },
+            "source_sink_matrix_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "source_sink_matrix_t_r_z_z"
+            },
             "total_density_relative_l2_max": {
               "comparator": "<=",
               "metric": "relative_l2",
@@ -119,6 +138,7 @@
             "charge_state_density_relative_l2_max": 0.1,
             "particle_conservation_relative_error_max": 0.01,
             "radiated_power_relative_l2_max": 0.1,
+            "source_sink_matrix_relative_l2_max": 0.1,
             "total_density_relative_l2_max": 0.05
           }
         }

@@ -127,7 +127,7 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     evidence = report["native_impurity_transport_evidence"]
     assert evidence["schema"] == "native-impurity-transport-operator-evidence.v1"
     assert evidence["operator_evidence_status"] == (
-        "accepted_native_effective_transport_closure_not_full_collisional_operator_parity"
+        "accepted_native_effective_transport_source_sink_closure"
     )
     assert evidence["density_axes"] == ["time_s", "radius_m", "charge_state"]
     assert evidence["density_shape"] == [3, 80, 4]
@@ -148,6 +148,7 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert evidence["operator_terms_present"]["external_adas_transport_coefficients"] is True
     assert evidence["operator_terms_present"]["aurora_effective_source_recycling_closure"] is True
     assert evidence["operator_terms_present"]["same_case_aurora_strahl_transport_output"] is True
+    assert evidence["operator_terms_present"]["time_resolved_same_case_source_sink_matrix_parity"] is True
     same_case = evidence["same_case_aurora_strahl_comparison"]
     assert same_case["schema"] == "aurora-strahl-native-same-case-comparison.v1"
     assert same_case["status"] == "accepted_native_aurora_effective_transport_closure_thresholds"
@@ -166,6 +167,7 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
         "particle_conservation_relative_error_max",
         "radiated_power_relative_l2_max",
         "total_density_relative_l2_max",
+        "source_sink_matrix_relative_l2_max",
     }
     assert all(check["valid"] for check in same_case["checks"])
     assert all(check["passed"] for check in same_case["checks"])
@@ -173,7 +175,7 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert budget["schema"] == "native-impurity-source-sink-budget-evidence.v1"
     assert (
         budget["status"]
-        == "native_artifact_source_sink_budget_only_not_aurora_strahl_operator_parity"
+        == "accepted_native_same_case_source_sink_budget_parity"
     )
     assert budget["budget_terms"] == [
         "source_sink_matrix_t_r_z_z",
@@ -194,15 +196,15 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert budget["max_radial_total_density_relative_change"] <= 1.0e-12
     assert budget["line_radiation_nonnegative"] is True
     assert budget["inventory_relative_change_max"] <= 1.0e-12
-    assert budget["aurora_strahl_same_case_budget_ready"] is False
+    assert budget["aurora_strahl_same_case_budget_ready"] is True
+    assert budget["blocking_requirements"] == []
     assert report["invariants"]["native_impurity_transport_evidence_fail_closed"] is True
     assert report["invariants"]["native_source_sink_budget_evidence_fail_closed"] is True
     assert report["invariants"]["charge_state_radial_density_conservation"] is True
     assert report["invariants"]["charge_state_radial_transport_operator_budget"] is True
-    assert (
-        "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars"
-        in evidence["blocking_requirements"]
-    )
+    assert evidence["blocking_requirements"] == [
+        "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay"
+    ]
 
 
 def test_aurora_reference_report_declares_fail_closed_transport_output_contract() -> None:

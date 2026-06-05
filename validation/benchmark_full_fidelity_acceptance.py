@@ -696,12 +696,14 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "aurora_effective_source_recycling_closure": bool(
             same_case_comparison.get("effective_source_recycling_closure_ready", False)
         ),
+        "aurora_strahl_same_case_source_sink_matrix_parity": bool(
+            same_case_comparison.get("source_sink_matrix_parity_ready", False)
+        ),
         "charge_state_particle_conservation_gate": True,
     }
     schema = _load_artifact_schema()
     readiness = _reference_readiness("impurity_transport", reference_cases, schema)
     missing_requirements = [
-        "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
         "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay",
     ]
     return {

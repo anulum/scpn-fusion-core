@@ -474,6 +474,7 @@ class AuroraParityImpuritySolver:
                     dtype=np.float64,
                 )
             density = np.maximum(density, 0.0)
+            final_ion, final_rec = self._rate_tables(step, density)
             source_sink_history.append(_source_sink_transfer_matrix(final_ion, final_rec))
             density_history.append(density.copy())
             line_density = self._line_radiation_density(step, density)
