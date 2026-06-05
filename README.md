@@ -15,11 +15,27 @@
 [![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)](https://pepy.tech/project/scpn-fusion)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
 ![Version](https://img.shields.io/badge/Version-3.9.10-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
+
+## Dual Licensing
+
+SCPN Fusion Core uses a deliberate dual-licensing model:
+
+- **Open-source path:** AGPL-3.0-or-later for research, review, education,
+  reproducible validation, public derivative work, and network-deployed AGPL
+  services.
+- **Commercial path:** separate commercial licences are available for
+  proprietary reactor programs, internal deployments, closed operational
+  workflows, commercial support, and integrations that cannot use AGPL
+  reciprocal terms.
+
+Commercial licensing contact:
+[protoscience@anulum.li](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License).
 
 **Financing the full-fidelity parity campaign:** the public GitHub Pages landing page is [anulum.github.io/scpn-fusion-core](https://anulum.github.io/scpn-fusion-core/). It separates current evidence from blocked GENE/CGYRO/GS2, DREAM, Aurora/STRAHL, FreeGS, and production-scale GPU/cluster validation work.
 
@@ -819,5 +835,13 @@ Audit artifacts:
 
 ## License
 
-GNU Affero General Public License v3.0 — see [LICENSE](LICENSE).
-Commercial licensing: protoscience@anulum.li
+Dual licensing is intentional:
+
+- Open-source use is governed by GNU Affero General Public License v3.0 or
+  later. See [LICENSE](LICENSE).
+- Commercial licences are available for proprietary/internal deployments,
+  closed operational workflows, commercial support, and integrations that
+  cannot use AGPL reciprocal terms.
+
+Commercial licensing:
+[protoscience@anulum.li](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License).

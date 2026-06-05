@@ -40,6 +40,18 @@ surface.  The public reports distinguish validated local contracts from blocked
 full-fidelity parity rows.  Use the project overview, onboarding guide, and
 benchmark taxonomy before treating any number as a production claim.
 
+Licensing Model
+---------------
+
+SCPN-Fusion-Core is dual-licensed.  The open-source path is AGPL-3.0-or-later
+for research, review, education, reproducible validation, public derivative
+work, and network-deployed AGPL services.  Commercial licences are available
+for proprietary reactor programs, internal deployments, closed operational
+workflows, commercial support, and integrations that cannot use AGPL reciprocal
+terms.
+
+Commercial licensing contact: protoscience@anulum.li
+
 Key Features
 ------------
 

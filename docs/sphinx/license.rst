@@ -2,8 +2,15 @@
 License
 =======
 
-SCPN-Fusion-Core is released under the **GNU Affero General Public
-License v3.0** (AGPL-3.0).
+SCPN-Fusion-Core uses a deliberate dual-licensing model:
+
+- **Open-source path:** GNU Affero General Public License v3.0 or later
+  (AGPL-3.0-or-later) for research, review, education, reproducible
+  validation, public derivative work, and network-deployed AGPL services.
+- **Commercial path:** separate commercial licences are available for
+  proprietary reactor programs, internal deployments, closed operational
+  workflows, commercial support, and integrations that cannot use AGPL
+  reciprocal terms.
 
 The full license text is available in the ``LICENSE`` file at the
 project root and at https://www.gnu.org/licenses/agpl-3.0.html.
@@ -23,8 +30,7 @@ Key Provisions
 Commercial Licensing
 ---------------------
 
-For commercial licensing inquiries (e.g., proprietary integration
-without AGPL obligations), contact:
+For commercial licensing inquiries, contact:
 
 - **Email:** protoscience@anulum.li
 - **Web:** https://www.anulum.li
@@ -65,7 +71,7 @@ If you use SCPN-Fusion-Core in your research, please cite:
      author  = {Sotek, Miroslav},
      year    = {2026},
      url     = {https://github.com/anulum/scpn-fusion-core},
-     version = {1.0.2}
+     version = {3.9.10}
    }
 
 Authors
