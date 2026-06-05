@@ -37,7 +37,7 @@
         "time_s",
         "total_impurity_density_r_t"
       ],
-      "conversion_mode": "tracked_artifact_fallback",
+      "conversion_mode": "external_cache_conversion",
       "finite_numeric_payload": true,
       "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.metadata.json",
       "missing_required_observables": [],
@@ -45,7 +45,7 @@
       "redistribution_license": "MIT",
       "reference_family": "Aurora",
       "sha256": "be18361a9c2b1e86f5f1f9bbc463127a7845b771289fa98cc5311f8baf0ca5e2",
-      "solver_output_comparison_ready": false,
+      "solver_output_comparison_ready": true,
       "surface": "impurity_transport"
     },
     {

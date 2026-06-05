@@ -23,8 +23,8 @@
   "redistribution_license": "MIT",
   "reference_family": "Aurora",
   "sha256": "be18361a9c2b1e86f5f1f9bbc463127a7845b771289fa98cc5311f8baf0ca5e2",
-  "solver_output_comparison_ready": false,
-  "solver_output_comparison_status": "blocked_native_same_case_aurora_strahl_thresholds_not_yet_implemented",
+  "solver_output_comparison_ready": true,
+  "solver_output_comparison_status": "blocked_native_aurora_same_case_threshold_mismatch",
   "surface": "impurity_transport",
   "upstream_commit": "4c53ee2fb5202977682c3da4deba5fc07ab3a203"
 }

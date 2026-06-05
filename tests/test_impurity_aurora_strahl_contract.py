@@ -18,7 +18,7 @@ def test_impurity_benchmark_exports_validated_aurora_strahl_artifact_gate() -> N
     artifact = report["artifact_contract"]
     assert artifact["schema"] == "aurora-strahl-charge-state-artifact.v1"
     assert artifact["contract_validation"]["passed"] is True
-    assert artifact["same_case_aurora_strahl_comparison_ready"] is False
+    assert artifact["same_case_aurora_strahl_comparison_ready"] is True
     assert artifact["required_aurora_strahl_observables"] == [
         "charge_state_density_r_t",
         "total_impurity_density_r_t",
@@ -50,13 +50,33 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert evidence["source_sink_conservative"] is True
     assert evidence["inventory_conserved"] is True
     assert evidence["charge_state_radial_transport_operator_ready"] is False
-    assert evidence["aurora_strahl_same_case_threshold_ready"] is False
+    assert evidence["aurora_strahl_same_case_comparison_ready"] is True
+    assert evidence["aurora_strahl_same_case_threshold_ready"] is True
+    assert evidence["aurora_strahl_same_case_threshold_passed"] is False
     assert evidence["operator_terms_present"]["trace_radial_transport"] is True
     assert evidence["operator_terms_present"]["charge_state_source_sink_matrix"] is True
     assert evidence["operator_terms_present"]["line_radiation_power"] is True
     assert evidence["operator_terms_present"]["charge_state_resolved_radial_transport"] is False
     assert evidence["operator_terms_present"]["external_adas_transport_coefficients"] is False
-    assert evidence["operator_terms_present"]["same_case_aurora_strahl_transport_output"] is False
+    assert evidence["operator_terms_present"]["same_case_aurora_strahl_transport_output"] is True
+    same_case = evidence["same_case_aurora_strahl_comparison"]
+    assert same_case["schema"] == "aurora-strahl-native-same-case-comparison.v1"
+    assert same_case["status"] == "blocked_native_aurora_same_case_threshold_mismatch"
+    assert same_case["comparison_ready"] is True
+    assert same_case["threshold_checks_ready"] is True
+    assert same_case["thresholds_passed"] is False
+    assert same_case["native_coordinate_match"] is True
+    assert same_case["native_total_density_closure"] is True
+    assert same_case["native_density_shape"] == [4, 65, 19]
+    assert same_case["reference_density_shape"] == [4, 65, 19]
+    assert {check["threshold"] for check in same_case["checks"]} == {
+        "charge_state_density_relative_l2_max",
+        "particle_conservation_relative_error_max",
+        "radiated_power_relative_l2_max",
+        "total_density_relative_l2_max",
+    }
+    assert all(check["valid"] for check in same_case["checks"])
+    assert not any(check["passed"] for check in same_case["checks"])
     budget = evidence["source_sink_budget_evidence"]
     assert budget["schema"] == "native-impurity-source-sink-budget-evidence.v1"
     assert (
@@ -86,7 +106,7 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert report["invariants"]["native_impurity_transport_evidence_fail_closed"] is True
     assert report["invariants"]["native_source_sink_budget_evidence_fail_closed"] is True
     assert report["invariants"]["charge_state_radial_density_conservation"] is True
-    assert "public Aurora or STRAHL radial transport output" in evidence["blocking_requirements"]
+    assert "native same-case Aurora threshold pass" in evidence["blocking_requirements"]
 
 
 def test_aurora_reference_report_declares_fail_closed_transport_output_contract() -> None:

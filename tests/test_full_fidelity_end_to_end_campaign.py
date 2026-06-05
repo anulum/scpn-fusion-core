@@ -55,7 +55,13 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["aurora_reference_artifact_generated"] in {True, False}
     assert report["impurity_native_transport_evidence_ready"] is True
     assert report["impurity_charge_state_radial_transport_operator_ready"] is False
-    assert report["impurity_aurora_strahl_same_case_threshold_ready"] is False
+    assert report["impurity_aurora_strahl_same_case_comparison_ready"] is True
+    assert report["impurity_aurora_strahl_same_case_threshold_ready"] is True
+    assert report["impurity_aurora_strahl_same_case_threshold_passed"] is False
+    assert (
+        report["impurity_aurora_strahl_same_case_comparison_status"]
+        == "blocked_native_aurora_same_case_threshold_mismatch"
+    )
     assert report["impurity_source_sink_budget_evidence_ready"] is True
     assert report["impurity_source_sink_budget_aurora_strahl_same_case_ready"] is False
     assert (
@@ -155,6 +161,10 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert lanes["dream_grade_runaway_electrons"]["sources"][0]["solver_family"] == "DREAM"
     assert lanes["aurora_strahl_grade_impurities"]["sources"][0]["solver_family"] == "Aurora"
     assert lanes["aurora_strahl_grade_impurities"]["reference_cases_ready"] is True
+    assert (
+        lanes["aurora_strahl_grade_impurities"]["status"]
+        == "blocked_native_aurora_same_case_threshold_mismatch"
+    )
     assert {
         source["solver_family"]
         for source in lanes["free_boundary_equilibrium_strict_parity"]["sources"]

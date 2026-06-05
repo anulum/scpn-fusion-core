@@ -193,7 +193,9 @@
       "acceptance_passed": false,
       "implemented_dimensions": {
         "adas_style_coefficient_ingestion_contract": true,
-        "aurora_strahl_same_case_transport_thresholds": false,
+        "aurora_strahl_same_case_transport_comparison": true,
+        "aurora_strahl_same_case_transport_threshold_checks": true,
+        "aurora_strahl_same_case_transport_thresholds_passed": false,
         "charge_state_particle_conservation_gate": true,
         "charge_state_resolved_density_artifact_export": true,
         "charge_state_resolved_radial_transport_operator": false,
@@ -208,11 +210,80 @@
         "trace_radial_transport": true
       },
       "missing_requirements": [
-        "public Aurora/STRAHL artifact ingestion and production parity",
+        "native same-case Aurora threshold pass",
         "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
-        "validated charge-state transport, recycling, and radiation operators against Aurora/STRAHL",
-        "charge-state density, total-density, and radiation RMSE thresholds against public outputs"
+        "validated charge-state radial transport and recycling operators against Aurora/STRAHL",
+        "accepted charge-state density, total-density, and radiation RMSE thresholds against the public Aurora output"
       ],
+      "native_same_case_comparison": {
+        "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
+        "blocking_requirements": [
+          "native Aurora same-case thresholds are outside accepted limits",
+          "native operator still uses parametric ADAS-style coefficients rather than external Open-ADAS transport coefficients",
+          "charge-state-resolved radial transport/recycling parity is not yet implemented"
+        ],
+        "case_id": "aurora_strahl_charge_state_transport_public",
+        "checks": [
+          {
+            "comparator": "<=",
+            "limit": 0.1,
+            "metric": "relative_l2",
+            "observable": "charge_state_density_r_t",
+            "passed": false,
+            "threshold": "charge_state_density_relative_l2_max",
+            "valid": true,
+            "value": 1.0
+          },
+          {
+            "comparator": "<=",
+            "limit": 0.01,
+            "metric": "relative_error",
+            "observable": "charge_state_density_r_t",
+            "passed": false,
+            "threshold": "particle_conservation_relative_error_max",
+            "valid": true,
+            "value": 1.0
+          },
+          {
+            "comparator": "<=",
+            "limit": 0.1,
+            "metric": "relative_l2",
+            "observable": "line_radiation_power_t",
+            "passed": false,
+            "threshold": "radiated_power_relative_l2_max",
+            "valid": true,
+            "value": 1.0
+          },
+          {
+            "comparator": "<=",
+            "limit": 0.05,
+            "metric": "relative_l2",
+            "observable": "total_impurity_density_r_t",
+            "passed": false,
+            "threshold": "total_density_relative_l2_max",
+            "valid": true,
+            "value": 1.0
+          }
+        ],
+        "comparison_ready": true,
+        "native_coordinate_match": true,
+        "native_density_shape": [
+          4,
+          65,
+          19
+        ],
+        "native_total_density_closure": true,
+        "reference_density_shape": [
+          4,
+          65,
+          19
+        ],
+        "reference_family": "Aurora",
+        "schema": "aurora-strahl-native-same-case-comparison.v1",
+        "status": "blocked_native_aurora_same_case_threshold_mismatch",
+        "threshold_checks_ready": true,
+        "thresholds_passed": false
+      },
       "reference_cases": {
         "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",
         "manifest": "validation/reference_data/full_fidelity_reference_cases.json",

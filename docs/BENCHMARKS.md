@@ -450,12 +450,15 @@ checksummed partial artefacts:
 
 Accepted external reference artefacts are now `1`: the Aurora argon transport
 payload satisfies the manifest observable, coordinate, provenance, checksum,
-and redistribution contract. Native Aurora/STRAHL solver parity remains
-blocked until same-case native comparison thresholds pass. The DREAM and
-FreeGSNKE payloads remain partial provenance-backed public outputs and
-conversion smoke tests, not accepted parity evidence. Clean checkouts without
-the gitignored external cache use the tracked artefacts as a
-provenance-preserving fallback so CI does not erase public-output evidence.
+and redistribution contract. The native same-case Aurora comparison now runs
+on the tracked artefact axes and validates the declared threshold checks, but
+it fails all four current thresholds with relative mismatch `1.0`; the lane is
+therefore `blocked_native_aurora_same_case_threshold_mismatch`, not full
+Aurora/STRAHL parity. The DREAM and FreeGSNKE payloads remain partial
+provenance-backed public outputs and conversion smoke tests, not accepted
+parity evidence. Clean checkouts without the gitignored external cache use the
+tracked artefacts as a provenance-preserving fallback so CI does not erase
+public-output evidence.
 
 The Aurora execution lane is tracked in
 [`validation/reports/aurora_reference_execution_artifact.md`](../validation/reports/aurora_reference_execution_artifact.md).
@@ -1247,13 +1250,17 @@ marked present. It now also publishes native-only source/sink budget diagnostics
 for conservative charge-state transfer matrices, ionisation/recombination
 source budgets, line-radiation power, and inventory history. Charge-state
 resolved radial transport, external ADAS transport coefficients, same-case
-Aurora/STRAHL transport outputs, same-case source/sink budgets, and
-quantitative parity thresholds remain blocked. The native budget evidence now
-also checks per-radius total-density conservation across the charge-state
-transfer history; the latest local contract reports maximum radial
-total-density relative change `1.388888888888889e-16`. Public Aurora/STRAHL radial transport
-decks, radiation outputs, source/sink matrices, and same-case native
-comparisons are still required before full collisional-operator parity can
+source/sink budget parity, and quantitative same-case threshold acceptance
+remain blocked. The native budget evidence now also checks per-radius
+total-density conservation across the charge-state transfer history; the latest
+local contract reports maximum radial total-density relative change
+`1.388888888888889e-16`. The accepted Aurora argon transport artefact is now
+used by the native same-case comparator with matching `time_s x radius_m x
+charge_state` axes. That comparator is structurally ready and checksum-gated,
+but the native candidate fails charge-state density, total-density, radiation,
+and particle-conservation thresholds against Aurora with relative mismatch
+`1.0`; external ADAS transport coefficients and charge-state radial transport
+operator parity are still required before full collisional-operator parity can
 pass.
 
 Latest local results are written to

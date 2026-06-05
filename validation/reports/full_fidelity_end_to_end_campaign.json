@@ -57,7 +57,10 @@
   "gk_public_deck_inventory_status": "blocked_public_gk_decks_indexed_missing_solver_output_parity",
   "gk_public_decks_indexed": 40,
   "gk_public_outputs_indexed": 21,
-  "impurity_aurora_strahl_same_case_threshold_ready": false,
+  "impurity_aurora_strahl_same_case_comparison_ready": true,
+  "impurity_aurora_strahl_same_case_comparison_status": "blocked_native_aurora_same_case_threshold_mismatch",
+  "impurity_aurora_strahl_same_case_threshold_passed": false,
+  "impurity_aurora_strahl_same_case_threshold_ready": true,
   "impurity_charge_state_radial_transport_operator_ready": false,
   "impurity_native_transport_evidence_ready": true,
   "impurity_source_sink_budget_aurora_strahl_same_case_ready": false,
@@ -242,13 +245,9 @@
       "lane": "aurora_strahl_grade_impurities",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "public Aurora or STRAHL radial transport output",
         "charge-state-resolved radial transport operator on evolved density",
         "external ADAS coefficient ingestion for transport parity",
-        "same-case line-radiation output from Aurora or STRAHL",
-        "same-case ionisation/recombination source-sink matrix output",
-        "native same-case solver-output comparison",
-        "distribution, radiation, and inventory threshold comparison against Aurora/STRAHL"
+        "native same-case Aurora threshold pass"
       ],
       "reference_cases_ready": true,
       "sources": [
@@ -265,7 +264,7 @@
           "surface": "impurity_transport"
         }
       ],
-      "status": "blocked_partial_public_atomic_artifact_not_transport_parity",
+      "status": "blocked_native_aurora_same_case_threshold_mismatch",
       "surface": "impurity_transport"
     },
     {

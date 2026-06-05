@@ -122,6 +122,22 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
         assert surface["missing_requirements"]
         if surface_name == "impurity_transport":
             assert surface["reference_cases"]["ready"] is True
+            assert surface["native_same_case_comparison"]["comparison_ready"] is True
+            assert surface["native_same_case_comparison"]["threshold_checks_ready"] is True
+            assert surface["native_same_case_comparison"]["thresholds_passed"] is False
+            assert (
+                surface["native_same_case_comparison"]["status"]
+                == "blocked_native_aurora_same_case_threshold_mismatch"
+            )
+            assert surface["implemented_dimensions"][
+                "aurora_strahl_same_case_transport_comparison"
+            ] is True
+            assert surface["implemented_dimensions"][
+                "aurora_strahl_same_case_transport_threshold_checks"
+            ] is True
+            assert surface["implemented_dimensions"][
+                "aurora_strahl_same_case_transport_thresholds_passed"
+            ] is False
             assert surface["reference_cases"]["missing_cases"] == []
             case = surface["reference_cases"]["ready_cases"][0]
             assert case["artifact_exists"] is True

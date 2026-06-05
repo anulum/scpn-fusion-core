@@ -21,9 +21,9 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Coordinates: time_s, radius_m, charge_state
 - Observables: charge_state_density_r_t, total_impurity_density_r_t, line_radiation_power_t, line_radiation_power_t_r_z, source_sink_matrix_t_r_z_z, total_impurity_inventory_t, ionisation_source_matrix, recombination_sink_matrix
 - Parity status: `artifact_contract_only_not_public_aurora_strahl_parity`
-- SHA-256: `9baac7dacf9a8147956db232f07aa1f2dd01f79f4561b65d0f77523b2efdc743`
+- SHA-256: `4a250651cf21a5c36b3fe6221e8dc3761e2c1562f5da4810405752e13a1ac8d8`
 - Contract validation passed: `True`
-- Same-case Aurora/STRAHL comparison ready: `False`
+- Same-case Aurora/STRAHL comparison ready: `True`
 - Observable shapes: `{"charge_state_density_r_t": [3, 80, 4], "ionisation_source_matrix": [80, 4], "line_radiation_power_t": [3], "line_radiation_power_t_r_z": [3, 80, 4], "recombination_sink_matrix": [80, 4], "source_sink_matrix_t_r_z_z": [3, 80, 4, 4], "total_impurity_density_r_t": [3, 80], "total_impurity_inventory_t": [3]}`
 - Required Aurora/STRAHL observables: `charge_state_density_r_t, total_impurity_density_r_t, line_radiation_power_t, line_radiation_power_t_r_z, source_sink_matrix_t_r_z_z, total_impurity_inventory_t`
 
@@ -33,13 +33,28 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Status: `blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator`
 - Native artifact ready: `True`
 - Charge-state radial transport operator ready: `False`
-- Aurora/STRAHL same-case thresholds ready: `False`
+- Aurora/STRAHL same-case comparison ready: `True`
+- Aurora/STRAHL same-case threshold checks ready: `True`
+- Aurora/STRAHL same-case thresholds passed: `False`
 - Density axes: `time_s, radius_m, charge_state`
 - Density shape: `[3, 80, 4]`
 - Source-sink shape: `[3, 80, 4, 4]`
 - Line-radiation shape: `[3, 80, 4]`
-- Operator terms present: `{"aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": false, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": false, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": false, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
+- Operator terms present: `{"aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": false, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": false, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": true, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
 - Observable finiteness: `{"charge_state_density_r_t": true, "line_radiation_power_t": true, "line_radiation_power_t_r_z": true, "source_sink_matrix_t_r_z_z": true, "total_impurity_density_r_t": true, "total_impurity_inventory_t": true}`
+
+## Native same-case Aurora comparison
+
+- Schema: `aurora-strahl-native-same-case-comparison.v1`
+- Status: `blocked_native_aurora_same_case_threshold_mismatch`
+- Artefact path: `validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz`
+- Comparison ready: `True`
+- Threshold checks ready: `True`
+- Thresholds passed: `False`
+- Native coordinate match: `True`
+- Native total-density closure: `True`
+- Checks: `[{"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "charge_state_density_r_t", "passed": false, "threshold": "charge_state_density_relative_l2_max", "valid": true, "value": 1.0}, {"comparator": "<=", "limit": 0.01, "metric": "relative_error", "observable": "charge_state_density_r_t", "passed": false, "threshold": "particle_conservation_relative_error_max", "valid": true, "value": 1.0}, {"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "line_radiation_power_t", "passed": false, "threshold": "radiated_power_relative_l2_max", "valid": true, "value": 1.0}, {"comparator": "<=", "limit": 0.05, "metric": "relative_l2", "observable": "total_impurity_density_r_t", "passed": false, "threshold": "total_density_relative_l2_max", "valid": true, "value": 1.0}]`
+- Blocking requirements: `native Aurora same-case thresholds are outside accepted limits; native operator still uses parametric ADAS-style coefficients rather than external Open-ADAS transport coefficients; charge-state-resolved radial transport/recycling parity is not yet implemented`
 
 ## Native source/sink budget evidence
 
@@ -56,7 +71,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Max radial total-density relative change: `1.388889e-16`
 - Line radiation non-negative: `True`
 - Aurora/STRAHL same-case budget ready: `False`
-- Blocking requirements: `public Aurora or STRAHL radial transport output; charge-state-resolved radial transport operator on evolved density; external ADAS coefficient ingestion for transport parity; same-case line-radiation output from Aurora or STRAHL; same-case ionisation/recombination source-sink matrix output; native same-case solver-output comparison; distribution, radiation, and inventory threshold comparison against Aurora/STRAHL`
+- Blocking requirements: `charge-state-resolved radial transport operator on evolved density; external ADAS coefficient ingestion for transport parity; native same-case Aurora threshold pass`
 
 ## Invariants
 

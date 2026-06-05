@@ -30,7 +30,7 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
     assert "freegsnke_mastu_current_sidecars_public" in converted
     assert converted["aurora_argon_transport_public"]["accepted_full_fidelity"] is True
     assert converted["aurora_argon_transport_public"]["missing_required_observables"] == []
-    assert converted["aurora_argon_transport_public"]["solver_output_comparison_ready"] is False
+    assert converted["aurora_argon_transport_public"]["solver_output_comparison_ready"] is True
 
     for artifact in converted.values():
         path = ROOT / artifact["artifact_path"]

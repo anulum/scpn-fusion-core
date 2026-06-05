@@ -293,9 +293,9 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
         "redistribution_license": "MIT",
         "reference_family": "Aurora",
         "sha256": _sha256(artifact_path) if artifact_path.exists() else "",
-        "solver_output_comparison_ready": False,
+        "solver_output_comparison_ready": True,
         "solver_output_comparison_status": (
-            "blocked_native_same_case_aurora_strahl_thresholds_not_yet_implemented"
+            "blocked_native_aurora_same_case_threshold_mismatch"
         ),
         "surface": "impurity_transport",
         "upstream_commit": commit,

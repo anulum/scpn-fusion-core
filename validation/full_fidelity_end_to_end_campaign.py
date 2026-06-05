@@ -305,6 +305,7 @@ def run_campaign() -> dict[str, Any]:
     impurity = run_impurity_contract()
     impurity_operator = impurity["native_impurity_transport_evidence"]
     impurity_source_sink_budget = impurity_operator["source_sink_budget_evidence"]
+    impurity_same_case = impurity_operator["same_case_aurora_strahl_comparison"]
     gk = _acceptance_surface(acceptance, "native_nonlinear_gyrokinetics")
     runaway_surface = _acceptance_surface(acceptance, "runaway_electrons")
     impurity_surface = _acceptance_surface(acceptance, "impurity_transport")
@@ -395,7 +396,9 @@ def run_campaign() -> dict[str, Any]:
             "lane": "aurora_strahl_grade_impurities",
             "surface": "impurity_transport",
             "status": (
-                "blocked_partial_public_atomic_artifact_not_transport_parity"
+                str(impurity_same_case["status"])
+                if impurity_same_case["comparison_ready"]
+                else "blocked_partial_public_atomic_artifact_not_transport_parity"
                 if aurora_execution["reference_output_ready"]
                 else "blocked_missing_public_aurora_strahl_artifacts"
             ),
@@ -506,6 +509,15 @@ def run_campaign() -> dict[str, Any]:
         ),
         "impurity_aurora_strahl_same_case_threshold_ready": bool(
             impurity_operator["aurora_strahl_same_case_threshold_ready"]
+        ),
+        "impurity_aurora_strahl_same_case_comparison_ready": bool(
+            impurity_operator["aurora_strahl_same_case_comparison_ready"]
+        ),
+        "impurity_aurora_strahl_same_case_threshold_passed": bool(
+            impurity_operator["aurora_strahl_same_case_threshold_passed"]
+        ),
+        "impurity_aurora_strahl_same_case_comparison_status": str(
+            impurity_same_case["status"]
         ),
         "impurity_source_sink_budget_evidence_ready": bool(
             impurity_source_sink_budget["all_budget_terms_finite"]
@@ -731,8 +743,20 @@ def write_reports(report: dict[str, Any]) -> None:
             f"`{report['impurity_charge_state_radial_transport_operator_ready']}`"
         ),
         (
-            "- Impurity Aurora/STRAHL same-case thresholds ready: "
+            "- Impurity Aurora/STRAHL same-case comparison ready: "
+            f"`{report['impurity_aurora_strahl_same_case_comparison_ready']}`"
+        ),
+        (
+            "- Impurity Aurora/STRAHL same-case threshold checks ready: "
             f"`{report['impurity_aurora_strahl_same_case_threshold_ready']}`"
+        ),
+        (
+            "- Impurity Aurora/STRAHL same-case thresholds passed: "
+            f"`{report['impurity_aurora_strahl_same_case_threshold_passed']}`"
+        ),
+        (
+            "- Impurity Aurora/STRAHL same-case comparison status: "
+            f"`{report['impurity_aurora_strahl_same_case_comparison_status']}`"
         ),
         (
             "- Impurity source/sink budget evidence ready: "

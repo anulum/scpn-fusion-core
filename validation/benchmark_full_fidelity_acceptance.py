@@ -662,6 +662,13 @@ def _runaway_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
 
 
 def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
+    from validation.benchmark_impurity_transport_contract import (  # noqa: PLC0415
+        run_benchmark as run_impurity_contract,
+    )
+
+    impurity_contract = run_impurity_contract()
+    native_evidence = impurity_contract["native_impurity_transport_evidence"]
+    same_case_comparison = native_evidence["same_case_aurora_strahl_comparison"]
     implemented_dimensions = {
         "trace_radial_transport": True,
         "edge_source_particle_conservation": True,
@@ -674,23 +681,32 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "total_impurity_inventory_history_export": True,
         "native_impurity_transport_evidence_fail_closed": True,
         "charge_state_resolved_radial_transport_operator": False,
-        "aurora_strahl_same_case_transport_thresholds": False,
+        "aurora_strahl_same_case_transport_comparison": bool(
+            same_case_comparison["comparison_ready"]
+        ),
+        "aurora_strahl_same_case_transport_threshold_checks": bool(
+            same_case_comparison["threshold_checks_ready"]
+        ),
+        "aurora_strahl_same_case_transport_thresholds_passed": bool(
+            same_case_comparison["thresholds_passed"]
+        ),
         "adas_style_coefficient_ingestion_contract": True,
         "charge_state_particle_conservation_gate": True,
     }
     schema = _load_artifact_schema()
     readiness = _reference_readiness("impurity_transport", reference_cases, schema)
     missing_requirements = [
-        "public Aurora/STRAHL artifact ingestion and production parity",
+        "native same-case Aurora threshold pass",
         "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
-        "validated charge-state transport, recycling, and radiation operators against Aurora/STRAHL",
-        "charge-state density, total-density, and radiation RMSE thresholds against public outputs",
+        "validated charge-state radial transport and recycling operators against Aurora/STRAHL",
+        "accepted charge-state density, total-density, and radiation RMSE thresholds against the public Aurora output",
     ]
     return {
         "surface": "impurity_transport",
         "required_reference_equivalence": "Aurora/STRAHL collisional-operator impurity transport",
         "implemented_dimensions": implemented_dimensions,
         "reference_cases": readiness,
+        "native_same_case_comparison": same_case_comparison,
         "missing_requirements": missing_requirements,
         "acceptance_passed": False,
         "status": "not_full_fidelity",

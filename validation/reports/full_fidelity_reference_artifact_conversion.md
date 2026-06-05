@@ -13,7 +13,7 @@ Conversion of cached public upstream outputs into tracked artifacts. Accepted pu
 
 | Artifact | Surface | Family | Accepted | Comparison ready | Missing required observables | Path |
 | --- | --- | --- | ---: | ---: | --- | --- |
-| aurora_argon_transport_public | impurity_transport | Aurora | True | False | none | `validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz` |
+| aurora_argon_transport_public | impurity_transport | Aurora | True | True | none | `validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz` |
 | dream_avalanche_public_raw | runaway_electrons | DREAM | False | False | f_p_xi_t, runaway_current_t, avalanche_growth_rate_t, synchrotron_loss_power_t, partial_screening_drag_t | `validation/reference_data/full_fidelity_public_artifacts/dream_avalanche_public_raw.npz` |
 | freegsnke_static_inverse_baseline_public | free_boundary_equilibrium | FreeGSNKE | False | False | strict_FreeGS_or_FreeGSNKE_coil_current_sidecar, boundary_contour, limiter_contour, native_psi_comparison, axis_or_xpoint_metadata | `validation/reference_data/full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.npz` |
 | freegsnke_mastu_current_sidecars_public | free_boundary_equilibrium | FreeGSNKE | False | False | boundary_contour, limiter_contour, axis_or_xpoint_metadata, same_case_native_psi_comparison | `validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.json` |
