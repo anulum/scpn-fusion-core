@@ -8,12 +8,14 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use fusion_physics::compression::{
-    plasma_volume_m3, run_pulsed_compression, CoilGeometry, PulsedCompressionConfig,
-    PulsedCompressionState,
+    plasma_volume_m3, run_pulsed_compression, run_voltage_driven_pulsed_compression, CoilGeometry,
+    PulsedCompressionConfig, PulsedCompressionState,
 };
 use fusion_physics::faraday_recovery::{
-    compression_work_from_pulsed_compression, faraday_trajectory_from_pulsed_compression,
-    integrated_recovery_energy, FaradayRecoveryTrajectoryPoint,
+    coil_source_work_from_voltage_driven_compression, compression_work_from_pulsed_compression,
+    compression_work_from_voltage_driven_compression, faraday_trajectory_from_pulsed_compression,
+    faraday_trajectory_from_voltage_driven_compression, integrated_recovery_energy,
+    FaradayRecoveryTrajectoryPoint,
 };
 
 fn trajectory(samples: usize) -> Vec<FaradayRecoveryTrajectoryPoint> {
@@ -89,7 +91,8 @@ fn bench_faraday_recovery(c: &mut Criterion) {
         group.bench_function(format!("rust_{samples}_samples"), |b| {
             b.iter(|| {
                 std::hint::black_box(
-                    integrated_recovery_energy(&trace, 6, 0.08, None, 0.01).expect("valid report"),
+                    integrated_recovery_energy(&trace, 6, 0.08, None, None, 0.01)
+                        .expect("valid report"),
                 )
             });
         });
@@ -110,8 +113,40 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                 let work = compression_work_from_pulsed_compression(&states)
                     .expect("positive compression work");
                 std::hint::black_box(
-                    integrated_recovery_energy(&trajectory, 80, 0.02, Some(work), 0.01)
+                    integrated_recovery_energy(&trajectory, 80, 0.02, Some(work), None, 0.01)
                         .expect("valid report"),
+                )
+            });
+        });
+    }
+    for steps in [64_usize, 256] {
+        group.bench_function(format!("rust_fus_c6_voltage_driven_{steps}_steps"), |b| {
+            b.iter(|| {
+                let result = run_voltage_driven_pulsed_compression(
+                    compression_initial(),
+                    &compression_config(),
+                    20_000.0,
+                    1.0e-9,
+                    steps,
+                    5.0e5,
+                )
+                .expect("valid voltage-driven compression result");
+                let trajectory = faraday_trajectory_from_voltage_driven_compression(&result)
+                    .expect("valid trajectory");
+                let compression_work = compression_work_from_voltage_driven_compression(&result)
+                    .expect("positive compression work");
+                let source_work = coil_source_work_from_voltage_driven_compression(&result)
+                    .expect("positive source work");
+                std::hint::black_box(
+                    integrated_recovery_energy(
+                        &trajectory,
+                        80,
+                        0.02,
+                        Some(compression_work),
+                        Some(source_work),
+                        0.01,
+                    )
+                    .expect("valid report"),
                 )
             });
         });

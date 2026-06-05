@@ -339,12 +339,16 @@ $$E_{\rm recovered} = \int \frac{\mathrm{EMF}(t)^2}{R_{\rm load}}\,dt.$$
 The implementation now includes a FUS-C.6 supplied-current trajectory adapter
 that maps pulsed-compression states into Faraday samples
 `(t, R_s, B_ext, dR_s/dt)` and carries the final `compression_work_J` sidecar.
+Voltage-driven FUS-C.6 results use the same Faraday trajectory adapter and add
+the final coil-circuit `source_work_J` sidecar, so recovered load energy is
+checked independently against plasma compression work and coil source work.
 If a caller does not supply a self-consistent compression-work sidecar,
 `FaradayRecoveryReport.budget_claim_status` remains
-`blocked_missing_compression_work`; when the FUS-C.6 sidecar is supplied, the
-budget gate is evaluated as a real `passed` or `failed` result. External
-Slough same-case acceptance remains blocked until a public digitised
-trajectory exists.
+`blocked_missing_compression_work`; if a caller does not supply a source-work
+sidecar, `source_budget_claim_status` remains
+`blocked_missing_coil_source_work`. When sidecars are supplied, each gate is
+evaluated as a real `passed` or `failed` result. External Slough same-case
+acceptance remains blocked until a public digitised trajectory exists.
 
 **Key files:** `core/faraday_recovery.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs`,

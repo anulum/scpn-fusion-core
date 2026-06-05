@@ -7,7 +7,7 @@
 // SCPN Fusion Core — FRC Faraday Recovery
 //! Classical Faraday back-EMF and recovery-energy contract for MIF/FRC.
 
-use crate::compression::PulsedCompressionState;
+use crate::compression::{PulsedCompressionState, VoltageDrivenPulsedCompressionResult};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FaradayRecoveryTrajectoryPoint {
@@ -45,6 +45,17 @@ pub struct FaradayRecoveryReport {
     pub energy_budget_relative_error: Option<f64>,
     pub energy_budget_passed: Option<bool>,
     pub budget_claim_status: String,
+    pub coil_source_work_j: Option<f64>,
+    pub source_energy_budget_relative_error: Option<f64>,
+    pub source_energy_budget_passed: Option<bool>,
+    pub source_budget_claim_status: String,
+}
+
+struct BudgetEvaluation {
+    work_j: Option<f64>,
+    relative_error: Option<f64>,
+    passed: Option<bool>,
+    status: String,
 }
 
 fn require_finite(name: &str, value: f64) -> Result<f64, String> {
@@ -100,6 +111,7 @@ pub fn integrated_recovery_energy(
     n_turns: u32,
     coil_resistance_ohm: f64,
     compression_work_j: Option<f64>,
+    coil_source_work_j: Option<f64>,
     budget_tolerance: f64,
 ) -> Result<FaradayRecoveryReport, String> {
     let turns = require_positive_turns(n_turns)?;
@@ -152,25 +164,20 @@ pub fn integrated_recovery_energy(
         .map(|sample| sample.load_power_w)
         .collect::<Vec<_>>();
     let recovered_energy_j = trapezoid(&time, &powers);
-    let (energy_budget_relative_error, energy_budget_passed, budget_claim_status) =
-        match compression_work_j {
-            None => (None, None, "blocked_missing_compression_work".to_string()),
-            Some(work_value) => {
-                let work = require_positive("compression_work_j", work_value)?;
-                let scale = work.abs().max(recovered_energy_j.abs()).max(f64::EPSILON);
-                let error = (recovered_energy_j - work).abs() / scale;
-                let passed = error <= tolerance;
-                (
-                    Some(error),
-                    Some(passed),
-                    if passed {
-                        "passed".to_string()
-                    } else {
-                        "failed".to_string()
-                    },
-                )
-            }
-        };
+    let compression_budget = evaluate_budget(
+        recovered_energy_j,
+        compression_work_j,
+        tolerance,
+        "compression_work_j",
+        "blocked_missing_compression_work",
+    )?;
+    let source_budget = evaluate_budget(
+        recovered_energy_j,
+        coil_source_work_j,
+        tolerance,
+        "coil_source_work_j",
+        "blocked_missing_coil_source_work",
+    )?;
 
     let flux_initial_wb = samples[0].magnetic_flux_wb;
     let flux_final_wb = samples[samples.len() - 1].magnetic_flux_wb;
@@ -192,10 +199,14 @@ pub fn integrated_recovery_energy(
         flux_final_wb,
         max_abs_back_emf_v,
         max_abs_load_current_a,
-        compression_work_j,
-        energy_budget_relative_error,
-        energy_budget_passed,
-        budget_claim_status,
+        compression_work_j: compression_budget.work_j,
+        energy_budget_relative_error: compression_budget.relative_error,
+        energy_budget_passed: compression_budget.passed,
+        budget_claim_status: compression_budget.status,
+        coil_source_work_j: source_budget.work_j,
+        source_energy_budget_relative_error: source_budget.relative_error,
+        source_energy_budget_passed: source_budget.passed,
+        source_budget_claim_status: source_budget.status,
     })
 }
 
@@ -234,6 +245,65 @@ pub fn compression_work_from_pulsed_compression(
         .map(|state| state.compression_work_j)
         .unwrap_or(f64::NAN);
     require_positive("compression_work_j", work)
+}
+
+pub fn faraday_trajectory_from_voltage_driven_compression(
+    result: &VoltageDrivenPulsedCompressionResult,
+) -> Result<Vec<FaradayRecoveryTrajectoryPoint>, String> {
+    faraday_trajectory_from_pulsed_compression(&result.compression)
+}
+
+pub fn compression_work_from_voltage_driven_compression(
+    result: &VoltageDrivenPulsedCompressionResult,
+) -> Result<f64, String> {
+    compression_work_from_pulsed_compression(&result.compression)
+}
+
+pub fn coil_source_work_from_voltage_driven_compression(
+    result: &VoltageDrivenPulsedCompressionResult,
+) -> Result<f64, String> {
+    if result.coil_circuit.len() < 2 {
+        return Err("voltage-driven coil circuit must contain at least two samples".to_string());
+    }
+    let work = result
+        .coil_circuit
+        .last()
+        .map(|state| state.source_work_j)
+        .unwrap_or(f64::NAN);
+    require_positive("coil_source_work_j", work)
+}
+
+fn evaluate_budget(
+    recovered_energy_j: f64,
+    supplied_work_j: Option<f64>,
+    tolerance: f64,
+    work_name: &str,
+    missing_status: &str,
+) -> Result<BudgetEvaluation, String> {
+    match supplied_work_j {
+        None => Ok(BudgetEvaluation {
+            work_j: None,
+            relative_error: None,
+            passed: None,
+            status: missing_status.to_string(),
+        }),
+        Some(work_value) => {
+            let work = require_positive(work_name, work_value)?;
+            let scale = work.abs().max(recovered_energy_j.abs()).max(f64::EPSILON);
+            let error = (recovered_energy_j - work).abs() / scale;
+            let passed = error <= tolerance;
+            Ok(BudgetEvaluation {
+                work_j: Some(work),
+                relative_error: Some(error),
+                passed: Some(passed),
+                status: if passed {
+                    "passed".to_string()
+                } else {
+                    "failed".to_string()
+                },
+            })
+        }
+    }
 }
 
 fn validate_trajectory(trajectory: &[FaradayRecoveryTrajectoryPoint]) -> Result<(), String> {
@@ -312,13 +382,15 @@ fn trapezoid(x: &[f64], y: &[f64]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        compression_work_from_pulsed_compression, faraday_back_emf_from_values,
-        faraday_trajectory_from_pulsed_compression, integrated_recovery_energy, magnetic_flux_wb,
-        FaradayRecoveryTrajectoryPoint,
+        coil_source_work_from_voltage_driven_compression, compression_work_from_pulsed_compression,
+        compression_work_from_voltage_driven_compression, faraday_back_emf_from_values,
+        faraday_trajectory_from_pulsed_compression,
+        faraday_trajectory_from_voltage_driven_compression, integrated_recovery_energy,
+        magnetic_flux_wb, FaradayRecoveryTrajectoryPoint,
     };
     use crate::compression::{
-        plasma_volume_m3, run_pulsed_compression, CoilGeometry, PulsedCompressionConfig,
-        PulsedCompressionState,
+        plasma_volume_m3, run_pulsed_compression, run_voltage_driven_pulsed_compression,
+        CoilGeometry, PulsedCompressionConfig, PulsedCompressionState,
     };
 
     #[test]
@@ -354,7 +426,7 @@ mod tests {
                 }
             })
             .collect::<Vec<_>>();
-        let report = integrated_recovery_energy(&trajectory, turns, resistance, None, 0.01)
+        let report = integrated_recovery_energy(&trajectory, turns, resistance, None, None, 0.01)
             .expect("valid report");
         let coefficient = turns as f64 * std::f64::consts::PI * 2.0 * b_ext * speed;
         let expected = coefficient * coefficient / resistance
@@ -366,6 +438,11 @@ mod tests {
             "blocked_missing_compression_work"
         );
         assert_eq!(report.energy_budget_passed, None);
+        assert_eq!(
+            report.source_budget_claim_status,
+            "blocked_missing_coil_source_work"
+        );
+        assert_eq!(report.source_energy_budget_passed, None);
     }
 
     #[test]
@@ -386,11 +463,15 @@ mod tests {
                 d_b_ext_dt_t_s: Some(0.0),
             },
         ];
-        let report = integrated_recovery_energy(&trajectory, 4, 0.1, Some(1.0e-12), 0.01)
+        let report = integrated_recovery_energy(&trajectory, 4, 0.1, Some(1.0e-12), None, 0.01)
             .expect("valid report");
         assert_eq!(report.recovered_energy_j, 0.0);
         assert_eq!(report.energy_budget_passed, Some(false));
         assert_eq!(report.budget_claim_status, "failed");
+        assert_eq!(
+            report.source_budget_claim_status,
+            "blocked_missing_coil_source_work"
+        );
     }
 
     #[test]
@@ -404,7 +485,7 @@ mod tests {
             d_radius_dt_m_s: None,
             d_b_ext_dt_t_s: None,
         }];
-        assert!(integrated_recovery_energy(&one, 2, 0.1, None, 0.01).is_err());
+        assert!(integrated_recovery_energy(&one, 2, 0.1, None, None, 0.01).is_err());
     }
 
     fn compression_coil() -> CoilGeometry {
@@ -472,7 +553,7 @@ mod tests {
         let compression_work =
             compression_work_from_pulsed_compression(&states).expect("positive compression work");
         let report =
-            integrated_recovery_energy(&trajectory, 80, 0.02, Some(compression_work), 0.01)
+            integrated_recovery_energy(&trajectory, 80, 0.02, Some(compression_work), None, 0.01)
                 .expect("valid recovery report");
 
         assert_eq!(trajectory.len(), states.len());
@@ -492,6 +573,56 @@ mod tests {
             .is_finite());
         assert!(matches!(
             report.budget_claim_status.as_str(),
+            "passed" | "failed"
+        ));
+        assert_eq!(
+            report.source_budget_claim_status,
+            "blocked_missing_coil_source_work"
+        );
+    }
+
+    #[test]
+    fn voltage_driven_sidecars_evaluate_source_budget_status() {
+        let result = run_voltage_driven_pulsed_compression(
+            compression_initial(),
+            &compression_config(),
+            20_000.0,
+            1.0e-9,
+            32,
+            5.0e5,
+        )
+        .expect("valid voltage-driven result");
+        let trajectory = faraday_trajectory_from_voltage_driven_compression(&result)
+            .expect("valid voltage-driven trajectory");
+        let compression_work = compression_work_from_voltage_driven_compression(&result)
+            .expect("positive compression work");
+        let source_work = coil_source_work_from_voltage_driven_compression(&result)
+            .expect("positive source work");
+        let report = integrated_recovery_energy(
+            &trajectory,
+            80,
+            0.02,
+            Some(compression_work),
+            Some(source_work),
+            0.01,
+        )
+        .expect("valid recovery report");
+
+        assert_eq!(trajectory.len(), result.compression.len());
+        assert_eq!(
+            compression_work,
+            result.compression.last().unwrap().compression_work_j
+        );
+        assert_eq!(
+            source_work,
+            result.coil_circuit.last().unwrap().source_work_j
+        );
+        assert!(report
+            .source_energy_budget_relative_error
+            .unwrap_or(f64::NAN)
+            .is_finite());
+        assert!(matches!(
+            report.source_budget_claim_status.as_str(),
             "passed" | "failed"
         ));
     }

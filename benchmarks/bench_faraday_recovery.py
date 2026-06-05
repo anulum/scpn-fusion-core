@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import replace
 import hashlib
 import json
 import platform
@@ -22,8 +23,11 @@ import numpy as np
 
 from scpn_fusion.core.faraday_recovery import (
     FaradayRecoveryTrajectoryPoint,
+    coil_source_work_from_voltage_driven_compression,
     compression_work_from_pulsed_compression,
+    compression_work_from_voltage_driven_compression,
     faraday_trajectory_from_pulsed_compression,
+    faraday_trajectory_from_voltage_driven_compression,
     integrated_recovery_energy,
 )
 from scpn_fusion.core import solve_frc_equilibrium
@@ -33,6 +37,7 @@ from scpn_fusion.core.pulsed_compression import (
     PulsedCompressionConfig,
     initial_pulsed_compression_state,
     run_pulsed_compression,
+    run_voltage_driven_pulsed_compression,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -130,6 +135,11 @@ def _compression_config() -> PulsedCompressionConfig:
     )
 
 
+def _voltage_driven_compression_config() -> PulsedCompressionConfig:
+    config = _compression_config()
+    return replace(config, coil_current_t=lambda _t: 1.0)
+
+
 def _python_compression_coupled_case(steps: int) -> dict[str, Any]:
     timings = []
     report = None
@@ -166,6 +176,55 @@ def _python_compression_coupled_case(steps: int) -> dict[str, Any]:
         "energy_budget_relative_error": report.energy_budget_relative_error,
         "energy_budget_passed": report.energy_budget_passed,
         "budget_claim_status": report.budget_claim_status,
+        "max_abs_back_emf_v": report.max_abs_back_emf_v,
+        "max_abs_load_current_a": report.max_abs_load_current_a,
+    }
+
+
+def _python_voltage_driven_coupled_case(steps: int) -> dict[str, Any]:
+    timings = []
+    report = None
+    compression_work = 0.0
+    source_work = 0.0
+    for _ in range(5):
+        config = _voltage_driven_compression_config()
+        start_ns = time.perf_counter_ns()
+        result = run_voltage_driven_pulsed_compression(
+            config,
+            lambda _t: 20_000.0,
+            1.0e-9,
+            steps,
+            initial_current_A=5.0e5,
+        )
+        trajectory = faraday_trajectory_from_voltage_driven_compression(result)
+        compression_work = compression_work_from_voltage_driven_compression(result)
+        source_work = coil_source_work_from_voltage_driven_compression(result)
+        report = integrated_recovery_energy(
+            trajectory,
+            config.coil.N_turns,
+            config.coil.R_resistance_ohm,
+            compression_work_j=compression_work,
+            coil_source_work_j=source_work,
+        )
+        timings.append(float(time.perf_counter_ns() - start_ns))
+    if report is None:
+        raise RuntimeError("voltage-driven compression-coupled benchmark did not run")
+    return {
+        "language": "python",
+        "case": f"python_fus_c6_voltage_driven_{steps}_steps",
+        "steps": steps,
+        "samples": len(report.samples),
+        "mean_seconds": float(np.mean(np.asarray(timings, dtype=np.float64)) * 1.0e-9),
+        "samples_seconds": [value * 1.0e-9 for value in timings],
+        "recovered_energy_j": report.recovered_energy_j,
+        "compression_work_j": compression_work,
+        "coil_source_work_j": source_work,
+        "energy_budget_relative_error": report.energy_budget_relative_error,
+        "energy_budget_passed": report.energy_budget_passed,
+        "budget_claim_status": report.budget_claim_status,
+        "source_energy_budget_relative_error": report.source_energy_budget_relative_error,
+        "source_energy_budget_passed": report.source_energy_budget_passed,
+        "source_budget_claim_status": report.source_budget_claim_status,
         "max_abs_back_emf_v": report.max_abs_back_emf_v,
         "max_abs_load_current_a": report.max_abs_load_current_a,
     }
@@ -214,26 +273,53 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
             }
         )
+    for estimates_path in sorted(
+        criterion_root.glob("rust_fus_c6_voltage_driven_*_steps/new/estimates.json")
+    ):
+        with estimates_path.open("r", encoding="utf-8") as handle:
+            estimates = json.load(handle)
+        benchmark_name = estimates_path.parents[1].name
+        parts = benchmark_name.split("_")
+        try:
+            steps = int(parts[4])
+        except (IndexError, ValueError):
+            steps = None
+        rows.append(
+            {
+                "language": "rust",
+                "case": benchmark_name,
+                "steps": steps,
+                "mean_seconds": float(estimates["mean"]["point_estimate"]) * 1.0e-9,
+                "stddev_seconds": float(estimates["std_dev"]["point_estimate"]) * 1.0e-9,
+                "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
+            }
+        )
     return rows
 
 
 def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
     rows = [_python_case(samples) for samples in cases]
     rows.extend(_python_compression_coupled_case(steps) for steps in (64, 256))
+    rows.extend(_python_voltage_driven_coupled_case(steps) for steps in (64, 256))
     rows.extend(_criterion_rows())
     return {
-        "schema": "scpn-fusion-core.faraday_recovery_benchmark.v1",
+        "schema": "scpn-fusion-core.faraday_recovery_benchmark.v2",
         "claim_boundary": (
             "Local non-isolated regression evidence for the exact classical Faraday recovery "
             "contract over supplied trajectories, including internal FUS-C.6 supplied-current "
-            "compression-work sidecars. This is not Slough compression-work acceptance evidence."
+            "compression-work sidecars and voltage-driven coil-source sidecars. This is not "
+            "Slough compression-work acceptance evidence."
         ),
         "physics_contract": {
             "flux": "Phi = B_ext*pi*R_s^2",
             "emf": "EMF = -N*pi*(R_s^2*dB_ext/dt + 2*B_ext*R_s*dR_s/dt)",
             "load_power": "P = EMF^2/R_load",
             "internal_fus_c6_budget": (
-                "evaluated when supplied-current compression states provide compression_work_j"
+                "evaluated when supplied-current or voltage-driven compression states provide "
+                "compression_work_j"
+            ),
+            "internal_fus_c6_source_budget": (
+                "evaluated when voltage-driven coil-circuit states provide coil_source_work_j"
             ),
             "external_slough_acceptance": "blocked_missing_public_digitised_reference",
         },

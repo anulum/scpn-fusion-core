@@ -16,14 +16,18 @@ from scpn_fusion.core import (
     CoilGeometry,
     FaradayRecoveryTrajectoryPoint,
     RigidRotorFRCInputs,
+    coil_source_work_from_voltage_driven_compression,
     compression_work_from_pulsed_compression,
+    compression_work_from_voltage_driven_compression,
     faraday_back_emf,
     faraday_back_emf_from_values,
     faraday_trajectory_from_pulsed_compression,
+    faraday_trajectory_from_voltage_driven_compression,
     initial_pulsed_compression_state,
     integrated_recovery_energy,
     magnetic_flux_wb,
     run_pulsed_compression,
+    run_voltage_driven_pulsed_compression,
     solve_frc_equilibrium,
 )
 from scpn_fusion.core.frc_rigid_rotor import ELEMENTARY_CHARGE_C, MU_0
@@ -104,6 +108,8 @@ def test_integrated_recovery_energy_matches_analytical_linear_radius_case() -> N
     assert report.recovered_energy_j == pytest.approx(expected, rel=2.0e-5)
     assert report.budget_claim_status == "blocked_missing_compression_work"
     assert report.energy_budget_passed is None
+    assert report.source_budget_claim_status == "blocked_missing_coil_source_work"
+    assert report.source_energy_budget_passed is None
 
 
 def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> None:
@@ -125,6 +131,7 @@ def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> No
     assert report.recovered_energy_j == pytest.approx(0.0, abs=0.0)
     assert report.energy_budget_passed is False
     assert report.budget_claim_status == "failed"
+    assert report.source_budget_claim_status == "blocked_missing_coil_source_work"
 
 
 def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
@@ -181,6 +188,75 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
     assert report.energy_budget_relative_error is not None
     assert np.isfinite(report.energy_budget_relative_error)
     assert report.budget_claim_status in {"passed", "failed"}
+    assert report.source_budget_claim_status == "blocked_missing_coil_source_work"
+    assert report.source_energy_budget_passed is None
+
+
+def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
+    b_ext = 5.0
+    t_i = 10_000.0
+    t_e = 5_000.0
+    n0 = b_ext**2 / (2.0 * MU_0) / ((t_i + t_e) * ELEMENTARY_CHARGE_C)
+    equilibrium = solve_frc_equilibrium(
+        RigidRotorFRCInputs(
+            n0=n0,
+            T_i_eV=t_i,
+            T_e_eV=t_e,
+            theta_dot=0.0,
+            R_s=0.20,
+            B_ext=b_ext,
+            delta=0.02,
+        ),
+        np.linspace(0.0, 0.4, 65, dtype=np.float64),
+    )
+    coil = CoilGeometry(
+        N_turns=80,
+        L_coil_m=1.0,
+        R_coil_m=0.35,
+        L_inductance_H=2.0e-6,
+        R_resistance_ohm=0.02,
+        bank_voltage_max_V=20_000.0,
+    )
+    config = PulsedCompressionConfig(
+        equilibrium=equilibrium,
+        coil=coil,
+        coil_current_t=lambda _t: 1.0,
+        plasma_mass_kg=2.0e-5,
+        ion_temperature_eV=t_i,
+        electron_temperature_eV=t_e,
+        tau_psi_s=np.inf,
+    )
+    result = run_voltage_driven_pulsed_compression(
+        config,
+        lambda _t: 20_000.0,
+        1.0e-9,
+        32,
+        initial_current_A=5.0e5,
+    )
+
+    trajectory = faraday_trajectory_from_voltage_driven_compression(result)
+    compression_work = compression_work_from_voltage_driven_compression(result)
+    source_work = coil_source_work_from_voltage_driven_compression(result)
+    report = integrated_recovery_energy(
+        trajectory,
+        coil.N_turns,
+        coil.R_resistance_ohm,
+        compression_work_j=compression_work,
+        coil_source_work_j=source_work,
+    )
+
+    assert len(trajectory) == len(result.compression)
+    assert compression_work == pytest.approx(result.compression[-1].compression_work_J)
+    assert source_work == pytest.approx(result.coil_circuit[-1].source_work_J)
+    assert source_work > 0.0
+    assert report.compression_work_j == pytest.approx(compression_work)
+    assert report.coil_source_work_j == pytest.approx(source_work)
+    assert report.energy_budget_relative_error is not None
+    assert np.isfinite(report.energy_budget_relative_error)
+    assert report.source_energy_budget_relative_error is not None
+    assert np.isfinite(report.source_energy_budget_relative_error)
+    assert report.budget_claim_status in {"passed", "failed"}
+    assert report.source_budget_claim_status in {"passed", "failed"}
 
 
 def test_faraday_recovery_inputs_fail_closed() -> None:
@@ -210,3 +286,7 @@ def test_faraday_recovery_inputs_fail_closed() -> None:
         )
     with pytest.raises(ValueError, match="at least two states"):
         faraday_trajectory_from_pulsed_compression([object()])
+    with pytest.raises(ValueError, match="voltage-driven compression result is missing"):
+        faraday_trajectory_from_voltage_driven_compression(object())
+    with pytest.raises(ValueError, match="at least two samples"):
+        coil_source_work_from_voltage_driven_compression({"coil_circuit": []})

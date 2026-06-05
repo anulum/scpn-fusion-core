@@ -174,6 +174,18 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".faraday_recovery",
         "compression_work_from_pulsed_compression",
     ),
+    "faraday_trajectory_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "faraday_trajectory_from_voltage_driven_compression",
+    ),
+    "compression_work_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "compression_work_from_voltage_driven_compression",
+    ),
+    "coil_source_work_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "coil_source_work_from_voltage_driven_compression",
+    ),
     "integrated_recovery_energy": (".faraday_recovery", "integrated_recovery_energy"),
     "magnetic_flux_wb": (".faraday_recovery", "magnetic_flux_wb"),
     # Pulsed compression — pressure-driven MIF/FRC trajectory with flux carrier

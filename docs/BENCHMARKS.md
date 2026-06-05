@@ -100,10 +100,12 @@ Tracked report:
 
 The report records local non-isolated regression rows for the exact classical
 Faraday relation over supplied trajectories. It now also includes internal
-FUS-C.6 supplied-current pulsed-compression sidecar rows: each row converts the
-compression states to `(t, R_s, B_ext, dR_s/dt)`, carries the final
-`compression_work_J`, and evaluates the energy-budget gate as `passed` or
-`failed` instead of marking the work sidecar missing.
+FUS-C.6 supplied-current and voltage-driven pulsed-compression sidecar rows:
+each row converts compression states to `(t, R_s, B_ext, dR_s/dt)`, carries the
+final `compression_work_J`, and evaluates the energy-budget gate as `passed` or
+`failed` instead of marking the work sidecar missing. Voltage-driven rows also
+carry final coil-circuit `source_work_J` and evaluate `source_budget_claim_status`
+separately.
 
 External Slough same-case parity remains blocked until a public digitised
 trajectory and compression-work sidecar are available with provenance and

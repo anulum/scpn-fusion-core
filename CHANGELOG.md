@@ -17,10 +17,11 @@
   records internal coupled benchmark rows, and keeps external nonlinear MRTI
   parity blocked instead of fabricating same-case evidence.
 - Added FUS-C.7/FUS-C.6 coupling evidence: Faraday recovery now accepts the
-  supplied-current pulsed-compression trajectory sidecar across Python and
-  Rust, evaluates the compression-work budget row when available, keeps
-  missing external Slough parity blocked, and records the result in the tracked
-  local non-isolated benchmark report.
+  supplied-current pulsed-compression trajectory sidecar and voltage-driven
+  coil-source sidecar across Python and Rust, evaluates compression-work and
+  source-work budget rows when available, keeps missing external Slough parity
+  blocked, and records the result in the tracked local non-isolated benchmark
+  report.
 - Added the FUS-C.2 axisymmetric pulsed Hall-MHD flux carrier across Python
   and Rust, including Ono Eq. 8 source terms, Faraday external-field drive,
   Spitzer resistivity, implicit damping, field/energy diagnostics, local

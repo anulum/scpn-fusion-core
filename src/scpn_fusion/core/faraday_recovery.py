@@ -72,6 +72,10 @@ class FaradayRecoveryReport:
     energy_budget_relative_error: float | None
     energy_budget_passed: bool | None
     budget_claim_status: str
+    coil_source_work_j: float | None
+    source_energy_budget_relative_error: float | None
+    source_energy_budget_passed: bool | None
+    source_budget_claim_status: str
 
 
 def faraday_trajectory_from_pulsed_compression(
@@ -115,6 +119,32 @@ def compression_work_from_pulsed_compression(states: Sequence[object]) -> float:
     return _require_positive(
         "compression_work_j",
         _state_attr(states[-1], "compression_work_J", "compression_work_j"),
+    )
+
+
+def faraday_trajectory_from_voltage_driven_compression(
+    result: object,
+) -> tuple[FaradayRecoveryTrajectoryPoint, ...]:
+    """Return Faraday trajectory samples from an FUS-C.6 voltage-driven result."""
+
+    return faraday_trajectory_from_pulsed_compression(_sequence_attr(result, "compression"))
+
+
+def compression_work_from_voltage_driven_compression(result: object) -> float:
+    """Return final plasma compression work from an FUS-C.6 voltage-driven result."""
+
+    return compression_work_from_pulsed_compression(_sequence_attr(result, "compression"))
+
+
+def coil_source_work_from_voltage_driven_compression(result: object) -> float:
+    """Return final positive coil-source work from an FUS-C.6 voltage-driven result."""
+
+    coil_circuit = _sequence_attr(result, "coil_circuit")
+    if len(coil_circuit) < 2:
+        raise ValueError("voltage-driven coil circuit must contain at least two samples")
+    return _require_positive(
+        "coil_source_work_j",
+        _state_attr(coil_circuit[-1], "source_work_J", "source_work_j"),
     )
 
 
@@ -200,6 +230,7 @@ def integrated_recovery_energy(
     coil_resistance_ohm: float,
     *,
     compression_work_j: float | None = None,
+    coil_source_work_j: float | None = None,
     budget_tolerance: float = 0.01,
 ) -> FaradayRecoveryReport:
     """Integrate recoverable load energy over a supplied FRC trajectory.
@@ -256,16 +287,30 @@ def integrated_recovery_energy(
 
     power_w = np.asarray([sample.load_power_w for sample in samples], dtype=np.float64)
     recovered_energy_j = _trapezoid(time_s, power_w)
-    if compression_work_j is None:
-        energy_budget_relative_error = None
-        energy_budget_passed = None
-        budget_claim_status = "blocked_missing_compression_work"
-    else:
-        work = _require_positive("compression_work_j", compression_work_j)
-        scale = max(abs(work), abs(recovered_energy_j), float(np.finfo(np.float64).eps))
-        energy_budget_relative_error = abs(recovered_energy_j - work) / scale
-        energy_budget_passed = energy_budget_relative_error <= tolerance
-        budget_claim_status = "passed" if energy_budget_passed else "failed"
+    (
+        compression_work_checked,
+        energy_budget_relative_error,
+        energy_budget_passed,
+        budget_claim_status,
+    ) = _evaluate_budget(
+        recovered_energy_j,
+        compression_work_j,
+        tolerance,
+        work_name="compression_work_j",
+        missing_status="blocked_missing_compression_work",
+    )
+    (
+        coil_source_work_checked,
+        source_energy_budget_relative_error,
+        source_energy_budget_passed,
+        source_budget_claim_status,
+    ) = _evaluate_budget(
+        recovered_energy_j,
+        coil_source_work_j,
+        tolerance,
+        work_name="coil_source_work_j",
+        missing_status="blocked_missing_coil_source_work",
+    )
 
     return FaradayRecoveryReport(
         samples=tuple(samples),
@@ -276,10 +321,14 @@ def integrated_recovery_energy(
         flux_final_wb=samples[-1].magnetic_flux_wb,
         max_abs_back_emf_v=float(np.max(np.abs([sample.back_emf_v for sample in samples]))),
         max_abs_load_current_a=float(np.max(np.abs([sample.load_current_a for sample in samples]))),
-        compression_work_j=compression_work_j,
+        compression_work_j=compression_work_checked,
         energy_budget_relative_error=energy_budget_relative_error,
         energy_budget_passed=energy_budget_passed,
         budget_claim_status=budget_claim_status,
+        coil_source_work_j=coil_source_work_checked,
+        source_energy_budget_relative_error=source_energy_budget_relative_error,
+        source_energy_budget_passed=source_energy_budget_passed,
+        source_budget_claim_status=source_budget_claim_status,
     )
 
 
@@ -324,6 +373,40 @@ def _state_attr(state: object, *names: str) -> float:
             return cast(float, raw[name])
     joined = ", ".join(names)
     raise ValueError(f"pulsed-compression state is missing required field: {joined}")
+
+
+def _sequence_attr(container: object, *names: str) -> Sequence[object]:
+    raw = cast(Any, container)
+    for name in names:
+        if hasattr(raw, name):
+            value = getattr(raw, name)
+            if isinstance(value, Sequence) and not isinstance(value, str):
+                return cast(Sequence[object], value)
+            raise ValueError(f"{name} must be a sequence")
+        if isinstance(raw, Mapping) and name in raw:
+            value = raw[name]
+            if isinstance(value, Sequence) and not isinstance(value, str):
+                return cast(Sequence[object], value)
+            raise ValueError(f"{name} must be a sequence")
+    joined = ", ".join(names)
+    raise ValueError(f"voltage-driven compression result is missing required field: {joined}")
+
+
+def _evaluate_budget(
+    recovered_energy_j: float,
+    supplied_work_j: float | None,
+    tolerance: float,
+    *,
+    work_name: str,
+    missing_status: str,
+) -> tuple[float | None, float | None, bool | None, str]:
+    if supplied_work_j is None:
+        return None, None, None, missing_status
+    work = _require_positive(work_name, supplied_work_j)
+    scale = max(abs(work), abs(recovered_energy_j), float(np.finfo(np.float64).eps))
+    relative_error = abs(recovered_energy_j - work) / scale
+    passed = relative_error <= tolerance
+    return work, relative_error, passed, "passed" if passed else "failed"
 
 
 def _optional_finite(name: str, value: object | None) -> float | None:
