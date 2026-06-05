@@ -301,10 +301,16 @@ captures the first saturation-threshold breach.
 
 The coupling helper `effective_acceleration_from_radius_rate()` estimates
 $d^2R_s/dt^2$ from a supplied separatrix radial-speed history using finite
-differences and optional edge-padded smoothing. This is only an adapter for
-future pulsed-compression trajectories; it is not the unresolved FUS-C.6
-Hall-MHD compression solver and is not accepted as nonlinear saturation
-evidence.
+differences and optional edge-padded smoothing.
+`effective_acceleration_from_pulsed_compression()` now consumes the accepted
+FUS-C.6 supplied-current `PulsedCompressionState` history, validates
+strictly increasing time and positive radii, and applies an explicit radial
+projection sign. The default `-1` maps inward compression in the outward
+radius coordinate to positive MRTI effective acceleration.
+`track_mrti_from_pulsed_compression()` advances the tracker over every
+trajectory interval using the endpoint acceleration and endpoint external
+field. This is internal FUS-C.6/MRTI coupling evidence; it is not external
+nonlinear MRTI saturation or pulsed-power image parity evidence.
 
 **Key files:** `core/mrti.py`, `scpn-fusion-rs/crates/fusion-physics/src/mrti.rs`,
 `docs/physics/mrti.md`.

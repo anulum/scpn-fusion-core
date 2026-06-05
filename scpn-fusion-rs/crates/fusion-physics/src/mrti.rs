@@ -7,6 +7,8 @@
 // SCPN Fusion Core — MRTI Growth Spectrum
 //! Magneto-Rayleigh-Taylor instability growth and spectrum tracking.
 
+use crate::compression::PulsedCompressionState;
+
 pub const MU_0: f64 = 4.0e-7 * std::f64::consts::PI;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -140,6 +142,64 @@ pub fn effective_acceleration_from_radius_rate(
     Ok(smoothed)
 }
 
+pub fn effective_acceleration_from_pulsed_compression(
+    states: &[PulsedCompressionState],
+    smoothing_window: usize,
+    radial_projection_sign: f64,
+) -> Result<Vec<f64>, String> {
+    if states.len() < 2 {
+        return Err("at least two pulsed-compression states are required".to_string());
+    }
+    let projection = require_finite("radial_projection_sign", radial_projection_sign)?;
+    if projection == 0.0 {
+        return Err("radial_projection_sign must be non-zero".to_string());
+    }
+    for state in states {
+        require_finite("t_s", state.t_s)?;
+        require_positive("r_s_m", state.r_s_m)?;
+        require_finite("d_r_s_dt_m_s", state.d_r_s_dt_m_s)?;
+        require_finite("b_ext_t", state.b_ext_t)?;
+    }
+    let time_s = states.iter().map(|state| state.t_s).collect::<Vec<_>>();
+    let speed_m_s = states
+        .iter()
+        .map(|state| state.d_r_s_dt_m_s)
+        .collect::<Vec<_>>();
+    let signed = effective_acceleration_from_radius_rate(&time_s, &speed_m_s, smoothing_window)?;
+    Ok(signed.into_iter().map(|value| projection * value).collect())
+}
+
+pub fn track_mrti_from_pulsed_compression(
+    states: &[PulsedCompressionState],
+    tracker: &mut MrtiSpectrumTracker,
+    smoothing_window: usize,
+    radial_projection_sign: f64,
+    b_perp_scale: f64,
+) -> Result<Vec<MrtiSpectrumState>, String> {
+    if states.len() < 2 {
+        return Err("at least two pulsed-compression states are required".to_string());
+    }
+    let field_scale = require_finite("b_perp_scale", b_perp_scale)?;
+    if field_scale < 0.0 {
+        return Err("b_perp_scale must be non-negative".to_string());
+    }
+    let accelerations = effective_acceleration_from_pulsed_compression(
+        states,
+        smoothing_window,
+        radial_projection_sign,
+    )?;
+    let mut snapshots = Vec::with_capacity(states.len() - 1);
+    for index in 1..states.len() {
+        let dt_s = require_positive("trajectory dt_s", states[index].t_s - states[index - 1].t_s)?;
+        snapshots.push(tracker.step(
+            dt_s,
+            accelerations[index],
+            states[index].b_ext_t * field_scale,
+        )?);
+    }
+    Ok(snapshots)
+}
+
 impl MrtiSpectrumTracker {
     pub fn new(
         k_max_m_inv: f64,
@@ -262,7 +322,12 @@ impl MrtiSpectrumTracker {
 #[cfg(test)]
 mod tests {
     use super::{
-        effective_acceleration_from_radius_rate, mrti_growth_rate, MrtiSpectrumTracker, MU_0,
+        effective_acceleration_from_pulsed_compression, effective_acceleration_from_radius_rate,
+        mrti_growth_rate, track_mrti_from_pulsed_compression, MrtiSpectrumTracker, MU_0,
+    };
+    use crate::compression::{
+        coil_field_t, plasma_volume_m3, run_pulsed_compression, CoilGeometry,
+        PulsedCompressionConfig, PulsedCompressionState,
     };
 
     #[test]
@@ -322,11 +387,93 @@ mod tests {
         }
     }
 
+    fn compression_coil() -> CoilGeometry {
+        CoilGeometry {
+            n_turns: 80,
+            l_coil_m: 1.0,
+            r_coil_m: 0.35,
+            l_inductance_h: 2.0e-6,
+            r_resistance_ohm: 0.02,
+            bank_voltage_max_v: 20_000.0,
+        }
+    }
+
+    fn compression_config() -> PulsedCompressionConfig {
+        PulsedCompressionConfig {
+            coil: compression_coil(),
+            plasma_mass_kg: 2.0e-5,
+            plasma_length_m: 1.0,
+            gamma: 5.0 / 3.0,
+            radial_loss_time_s: None,
+            z_eff: 1.0,
+            ln_lambda: 17.0,
+            min_radius_m: 1.0e-4,
+        }
+    }
+
+    fn compression_state() -> PulsedCompressionState {
+        let density = 2.0e21;
+        let t_i = 10_000.0;
+        let t_e = 5_000.0;
+        let radius = 0.2;
+        let field = coil_field_t(&compression_coil(), 2.0e5).expect("valid field");
+        let volume = plasma_volume_m3(radius, 1.0).expect("valid volume");
+        let thermal_energy_j = 1.5 * density * volume * (t_i + t_e) * 1.602_176_634e-19;
+        PulsedCompressionState {
+            t_s: 0.0,
+            r_s_m: radius,
+            d_r_s_dt_m_s: 0.0,
+            t_i_ev: t_i,
+            t_e_ev: t_e,
+            density_m3: density,
+            beta: 0.0,
+            b_ext_t: field,
+            internal_pressure_pa: density * (t_i + t_e) * 1.602_176_634e-19,
+            external_magnetic_pressure_pa: field * field / (2.0 * 4.0e-7 * std::f64::consts::PI),
+            thermal_energy_j,
+            compression_work_j: 0.0,
+            radiated_loss_j: 0.0,
+            energy_balance_residual: 0.0,
+        }
+    }
+
+    #[test]
+    fn pulsed_compression_trajectory_drives_mrti_tracker() {
+        let states = run_pulsed_compression(
+            compression_state(),
+            &compression_config(),
+            5.0e5,
+            1.0e-9,
+            16,
+        )
+        .expect("valid compression states");
+        let acceleration = effective_acceleration_from_pulsed_compression(&states, 1, -1.0)
+            .expect("valid acceleration");
+        let mut tracker =
+            MrtiSpectrumTracker::new(1.0e4, 64, 1.0e-9, 1.0e-3, 1.0e-3).expect("valid tracker");
+        let snapshots = track_mrti_from_pulsed_compression(&states, &mut tracker, 1, -1.0, 1.0)
+            .expect("valid coupling");
+
+        assert_eq!(acceleration.len(), states.len());
+        assert_eq!(snapshots.len(), states.len() - 1);
+        assert!(acceleration.iter().all(|value| value.is_finite()));
+        assert!(
+            acceleration
+                .iter()
+                .copied()
+                .fold(f64::NEG_INFINITY, f64::max)
+                > 0.0
+        );
+        assert!((snapshots.last().unwrap().t_s - states.last().unwrap().t_s).abs() < 1.0e-20);
+        assert!(snapshots.last().unwrap().max_amplitude_m >= snapshots[0].max_amplitude_m);
+    }
+
     #[test]
     fn invalid_inputs_fail_closed() {
         assert!(mrti_growth_rate(-1.0, 1.0, 0.0, 1.0e-3).is_err());
         assert!(mrti_growth_rate(1.0, 1.0, 0.0, 0.0).is_err());
         assert!(MrtiSpectrumTracker::new(1.0, 1, 1.0e-9, 1.0e-3, 1.0e-3).is_err());
+        assert!(effective_acceleration_from_pulsed_compression(&[], 1, -1.0).is_err());
         assert!(effective_acceleration_from_radius_rate(&[0.0, 0.0], &[1.0, 2.0], 1).is_err());
         assert!(effective_acceleration_from_radius_rate(&[0.0, 1.0], &[1.0, 2.0], 2).is_err());
     }

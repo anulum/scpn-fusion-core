@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Added FUS-C.4/FUS-C.6 coupling evidence: MRTI now consumes supplied-current
+  pulsed-compression state histories across Python and Rust, projects signed
+  separatrix acceleration through an explicit interface-normal convention,
+  records internal coupled benchmark rows, and keeps external nonlinear MRTI
+  parity blocked instead of fabricating same-case evidence.
 - Added FUS-C.7/FUS-C.6 coupling evidence: Faraday recovery now accepts the
   supplied-current pulsed-compression trajectory sidecar across Python and
   Rust, evaluates the compression-work budget row when available, keeps

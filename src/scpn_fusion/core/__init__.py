@@ -148,7 +148,12 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".mrti",
         "effective_acceleration_from_radius_rate",
     ),
+    "effective_acceleration_from_pulsed_compression": (
+        ".mrti",
+        "effective_acceleration_from_pulsed_compression",
+    ),
     "mrti_growth_rate": (".mrti", "mrti_growth_rate"),
+    "track_mrti_from_pulsed_compression": (".mrti", "track_mrti_from_pulsed_compression"),
     # Faraday recovery — closed-form MIF/FRC back-EMF over supplied trajectory
     "FaradayRecoveryReport": (".faraday_recovery", "FaradayRecoveryReport"),
     "FaradayRecoverySample": (".faraday_recovery", "FaradayRecoverySample"),

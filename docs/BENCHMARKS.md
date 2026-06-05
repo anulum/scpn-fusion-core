@@ -1708,6 +1708,22 @@ Verification paired with this benchmark:
 `python -m pytest tests/test_fusion_kernel_solver_mixins.py -q` passed the
 Python counterpart fixed-point contracts.
 
+## MIF/FRC MRTI growth spectrum
+
+Tracked report:
+[`validation/reports/mrti_benchmark.json`](../validation/reports/mrti_benchmark.json)
+
+The report records local non-isolated regression rows for the analytical
+MRTI growth-rate and spectrum tracker. It also includes internal FUS-C.6
+supplied-current pulsed-compression rows: each row consumes the real
+`PulsedCompressionState` history, projects signed radial acceleration into the
+MRTI interface-normal convention, and advances the MRTI spectrum over the
+compression intervals.
+
+This is same-codebase coupling evidence, not external nonlinear MRTI parity.
+Redistributable pulsed-power MRTI image/diagnostic references remain blocked
+until public same-case outputs with provenance and license terms are available.
+
 ## Benchmark Environment
 
 All timing numbers in this document were measured on the following hardware
