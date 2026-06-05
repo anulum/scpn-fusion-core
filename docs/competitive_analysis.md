@@ -20,9 +20,9 @@ same-work speedup pairs.
 
 | Code | Control Freq | Step Latency | Language | Source |
 |------|-------------|-------------|----------|--------|
-| **SCPN v3.9.9 (Rust reduced-order kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Committed Rust-extension campaign artifact |
-| **SCPN v3.9.9 (controller loop, surrogate plant)** | **>10 kHz** | **PID p95 0.012 ms; SNN p95 0.284 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
-| **SCPN v3.9.9 (controller loop, full-mode plant)** | **>10 kHz** | **PID p95 0.047 ms; SNN p95 0.294 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
+| **SCPN v3.9.10 (Rust reduced-order kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Committed Rust-extension campaign artifact |
+| **SCPN v3.9.10 (controller loop, surrogate plant)** | **>10 kHz** | **PID p95 0.012 ms; SNN p95 0.284 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
+| **SCPN v3.9.10 (controller loop, full-mode plant)** | **>10 kHz** | **PID p95 0.047 ms; SNN p95 0.294 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
 | DIII-D PCS (production) | 4--10 kHz | 100--250 us per physics cycle | C / Fortran | Penaflor 2024; Barr 2024 |
 | ITER CODAC (spec) | ~1 kHz | ~1 ms processing budget | TBD | ITER RTF design docs |
 | P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | Sabbagh 2023 |
@@ -73,9 +73,9 @@ points, and `gk_corrector` applies delta corrections when the surrogate drifts.
 | JINTRAC + QLKNN | NN surrogate | ~2 hours (1 core) | ML surrogate | van de Plassche 2020 |
 | TORAX | 1D JAX | ~30 s (GPU) / minutes (CPU) | QLKNN10D | Citrin 2024 |
 | FUSE | 1D Julia | ~25 ms per step (TJLF) | TJLF surrogate | Meneghini 2024 |
-| **SCPN v3.9.9 (1.5D step)** | **1.5D coupled** | **1.5--5.5 us per step** | Crit-gradient + neoclassical | CI Criterion |
-| **SCPN v3.9.9 (MLP)** | Neural surrogate | **~24 ns single-point** | Trained QLKNN-10D surrogate | CI Criterion |
-| **SCPN v3.9.9 (native GK)** | Linear eigenvalue | **~0.3 s/surface** | Ballooning, Sugama collisions | Measured |
+| **SCPN v3.9.10 (1.5D step)** | **1.5D coupled** | **1.5--5.5 us per step** | Crit-gradient + neoclassical | CI Criterion |
+| **SCPN v3.9.10 (MLP)** | Neural surrogate | **~24 ns single-point** | Trained QLKNN-10D surrogate | CI Criterion |
+| **SCPN v3.9.10 (native GK)** | Linear eigenvalue | **~0.3 s/surface** | Ballooning, Sugama collisions | Measured |
 | QLKNN (TensorFlow) | NN inference | ~100 us (25 outputs) | Surrogate | van de Plassche 2020 |
 
 The MLP surrogate is trained on 500K QLKNN-10D gyrokinetic data points
@@ -96,9 +96,9 @@ solver uses the response-matrix formulation with Miller geometry
 | HELENA | 201 flux | Isoparametric | ~10 s | Huysmans 1991 |
 | FreeGS | Variable | Picard + multigrid | ~seconds | FreeGS GitHub |
 | FreeGSNKE | Variable | Newton-Krylov | Faster than FreeGS | FreeGSNKE 2024 |
-| **SCPN v3.9.9 (Rust)** | 65x65 | Picard + SOR | **~100 ms** | Measured |
-| **SCPN v3.9.9 (Neural)** | 129x129 | PCA + MLP surrogate | **0.39 ms mean** | CI verified |
-| **SCPN v3.9.9 (Multigrid)** | 65x65 | V-cycle | **~15 ms** | Projected |
+| **SCPN v3.9.10 (Rust)** | 65x65 | Picard + SOR | **~100 ms** | Measured |
+| **SCPN v3.9.10 (Neural)** | 129x129 | PCA + MLP surrogate | **0.39 ms mean** | CI verified |
+| **SCPN v3.9.10 (Multigrid)** | 65x65 | V-cycle | **~15 ms** | Projected |
 
 The Neural Equilibrium Kernel achieves P-EFIT-class speed (0.39 ms) on CPU only,
 without requiring CUDA or GPU hardware. Trained on 18 GEQDSK files across SPARC,

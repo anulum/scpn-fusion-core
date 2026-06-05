@@ -163,10 +163,7 @@ pub fn effective_acceleration_from_pulsed_compression(
         require_finite("t_s", state.t_s)?;
         require_positive("r_s_m", state.r_s_m)?;
         require_finite("d_r_s_dt_m_s", state.d_r_s_dt_m_s)?;
-        require_finite(
-            "radial_acceleration_m_s2",
-            state.radial_acceleration_m_s2,
-        )?;
+        require_finite("radial_acceleration_m_s2", state.radial_acceleration_m_s2)?;
         require_finite("b_ext_t", state.b_ext_t)?;
     }
     for pair in states.windows(2) {
