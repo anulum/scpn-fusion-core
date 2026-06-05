@@ -17,6 +17,11 @@ on:
         required: false
         default: ""
         type: string
+      publish_testpypi:
+        description: "Publish to TestPyPI. Requires TestPyPI trusted publisher configuration."
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: publish-${{ github.workflow }}-${{ github.ref }}
@@ -179,8 +184,8 @@ jobs:
   publish-testpypi:
     name: Publish to TestPyPI
     needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_testpypi }}
     runs-on: ubuntu-latest
-    continue-on-error: true  # TestPyPI is best-effort; don't fail the release
     environment:
       name: testpypi
       url: https://test.pypi.org/p/scpn-fusion

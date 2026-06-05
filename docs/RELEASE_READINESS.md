@@ -18,6 +18,7 @@ internal locations.
 - [x] Changelog contains the release section and date
 - [x] CI workflow on `main` is green for the release commit
 - [x] Tag/release notes reviewed and approved
+- [x] TestPyPI publish is manual-only unless its trusted publisher is configured
 
 ## Release evidence links
 
