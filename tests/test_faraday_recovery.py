@@ -20,6 +20,8 @@ from scpn_fusion.core import (
     coil_source_work_from_voltage_driven_compression,
     compression_flux_budget_from_pulsed_compression,
     compression_flux_budget_from_voltage_driven_compression,
+    compression_trajectory_diagnostics_from_pulsed_compression,
+    compression_trajectory_diagnostics_from_voltage_driven_compression,
     compression_work_from_pulsed_compression,
     compression_work_from_voltage_driven_compression,
     faraday_back_emf,
@@ -144,6 +146,11 @@ def test_faraday_recovery_flags_inconsistent_derivative_sidecars() -> None:
     assert report.flux_derivative_residual_linf > 0.5
     assert report.compression_flux_budget_claim_status == "blocked_missing_compression_flux_budget"
     assert report.compression_flux_budget_passed is None
+    assert (
+        report.compression_trajectory_diagnostics_claim_status
+        == "blocked_missing_compression_trajectory_diagnostics"
+    )
+    assert report.compression_trajectory_diagnostics_passed is None
 
 
 def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> None:
@@ -208,12 +215,17 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
     trajectory = faraday_trajectory_from_pulsed_compression(states)
     compression_work = compression_work_from_pulsed_compression(states)
     compression_flux_budget = compression_flux_budget_from_pulsed_compression(states)
+    compression_trajectory_diagnostics = compression_trajectory_diagnostics_from_pulsed_compression(
+        states,
+        radius_floor_m=config.min_radius_m,
+    )
     report = integrated_recovery_energy(
         trajectory,
         coil.N_turns,
         coil.R_resistance_ohm,
         compression_work_j=compression_work,
         compression_flux_budget=compression_flux_budget,
+        compression_trajectory_diagnostics=compression_trajectory_diagnostics,
     )
 
     assert len(trajectory) == len(states)
@@ -232,6 +244,10 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
     assert report.compression_flux_budget == compression_flux_budget
     assert report.compression_flux_budget_passed is True
     assert report.compression_flux_budget_claim_status == "passed"
+    assert report.compression_trajectory_diagnostics == compression_trajectory_diagnostics
+    assert report.compression_trajectory_diagnostics_passed is True
+    assert report.compression_trajectory_diagnostics_claim_status == "passed"
+    assert compression_trajectory_diagnostics.compression_ratio > 1.0
     assert isinstance(report.flux_derivative_closure_passed, bool)
     assert np.isfinite(report.flux_derivative_residual_linf)
     assert np.isfinite(report.flux_derivative_residual_l2)
@@ -283,6 +299,12 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
     trajectory = faraday_trajectory_from_voltage_driven_compression(result)
     compression_work = compression_work_from_voltage_driven_compression(result)
     compression_flux_budget = compression_flux_budget_from_voltage_driven_compression(result)
+    compression_trajectory_diagnostics = (
+        compression_trajectory_diagnostics_from_voltage_driven_compression(
+            result,
+            radius_floor_m=config.min_radius_m,
+        )
+    )
     source_work = coil_source_work_from_voltage_driven_compression(result)
     report = integrated_recovery_energy(
         trajectory,
@@ -291,6 +313,7 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
         compression_work_j=compression_work,
         coil_source_work_j=source_work,
         compression_flux_budget=compression_flux_budget,
+        compression_trajectory_diagnostics=compression_trajectory_diagnostics,
     )
 
     assert len(trajectory) == len(result.compression)
@@ -307,6 +330,9 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
     assert report.source_budget_claim_status in {"passed", "failed"}
     assert report.compression_flux_budget_passed is True
     assert report.compression_flux_budget_claim_status == "passed"
+    assert report.compression_trajectory_diagnostics_passed is True
+    assert report.compression_trajectory_diagnostics_claim_status == "passed"
+    assert compression_trajectory_diagnostics.compression_ratio > 1.0
     assert isinstance(report.flux_derivative_closure_passed, bool)
     assert np.isfinite(report.flux_derivative_residual_linf)
     assert np.isfinite(report.flux_derivative_residual_l2)
@@ -356,17 +382,25 @@ def test_faraday_recovery_propagates_failed_compression_flux_budget() -> None:
         flux_update_residual_abs_max=1.0e-3,
     )
     compression_flux_budget = compression_flux_budget_from_pulsed_compression(states)
+    compression_trajectory_diagnostics = compression_trajectory_diagnostics_from_pulsed_compression(
+        states,
+        radius_floor_m=config.min_radius_m,
+    )
     report = integrated_recovery_energy(
         faraday_trajectory_from_pulsed_compression(states),
         coil.N_turns,
         coil.R_resistance_ohm,
         compression_work_j=compression_work_from_pulsed_compression(states),
         compression_flux_budget=compression_flux_budget,
+        compression_trajectory_diagnostics=compression_trajectory_diagnostics,
     )
 
     assert compression_flux_budget.budget_claim_status == "failed"
     assert report.compression_flux_budget_passed is False
     assert report.compression_flux_budget_claim_status == "failed"
+    assert compression_trajectory_diagnostics.all_flux_budgets_passed is False
+    assert report.compression_trajectory_diagnostics_passed is False
+    assert report.compression_trajectory_diagnostics_claim_status == "failed"
 
 
 def test_faraday_recovery_inputs_fail_closed() -> None:

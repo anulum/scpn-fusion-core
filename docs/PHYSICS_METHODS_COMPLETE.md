@@ -352,6 +352,11 @@ The Faraday report also consumes the FUS-C.6 compression flux-budget sidecar,
 including source-increment checksum, damping-decrement checksum, update
 residual, and pass/fail status, so recovery rows fail closed when the upstream
 non-adiabatic flux carrier did not close.
+It also consumes the FUS-C.6 trajectory-quality sidecar, including minimum
+radius, compression ratio, maximum absolute acceleration, radius-floor contact
+count, radial turning-point count, and all-flux-budgets-passed status. This
+prevents Faraday rows from accepting a compression-work sidecar when the
+upstream trajectory itself failed the FUS-C.6 aggregate trajectory contract.
 It also reports the sampled Faraday-law closure
 `finite_difference(Phi) + EMF/N_turns = 0` as normalized L-infinity/L2
 residuals plus a pass/fail field, catching inconsistent supplied derivative
@@ -367,10 +372,12 @@ If a caller does not supply a self-consistent compression-work sidecar,
 sidecar, `source_budget_claim_status` remains
 `blocked_missing_coil_source_work`; if a caller does not supply a compression
 flux-budget sidecar, `compression_flux_budget_claim_status` remains
-`blocked_missing_compression_flux_budget`. When sidecars are supplied, each
-gate is evaluated as a real `passed` or `failed` result. External Slough
-same-case acceptance remains blocked until a public digitised trajectory
-exists.
+`blocked_missing_compression_flux_budget`; if a caller does not supply a
+trajectory-quality sidecar, `compression_trajectory_diagnostics_claim_status`
+remains `blocked_missing_compression_trajectory_diagnostics`. When sidecars are
+supplied, each gate is evaluated as a real `passed` or `failed` result.
+External Slough same-case acceptance remains blocked until a public digitised
+trajectory exists.
 
 **Key files:** `core/faraday_recovery.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs`,

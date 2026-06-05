@@ -161,6 +161,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".faraday_recovery",
         "FaradayCompressionFluxBudget",
     ),
+    "FaradayCompressionTrajectoryDiagnostics": (
+        ".faraday_recovery",
+        "FaradayCompressionTrajectoryDiagnostics",
+    ),
     "FaradayRecoveryTrajectoryPoint": (
         ".faraday_recovery",
         "FaradayRecoveryTrajectoryPoint",
@@ -182,6 +186,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".faraday_recovery",
         "compression_flux_budget_from_pulsed_compression",
     ),
+    "compression_trajectory_diagnostics_from_pulsed_compression": (
+        ".faraday_recovery",
+        "compression_trajectory_diagnostics_from_pulsed_compression",
+    ),
     "faraday_trajectory_from_voltage_driven_compression": (
         ".faraday_recovery",
         "faraday_trajectory_from_voltage_driven_compression",
@@ -193,6 +201,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "compression_flux_budget_from_voltage_driven_compression": (
         ".faraday_recovery",
         "compression_flux_budget_from_voltage_driven_compression",
+    ),
+    "compression_trajectory_diagnostics_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "compression_trajectory_diagnostics_from_voltage_driven_compression",
     ),
     "coil_source_work_from_voltage_driven_compression": (
         ".faraday_recovery",

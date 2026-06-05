@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Hardened FUS-C.7 Faraday recovery with FUS-C.6 trajectory-quality sidecar
+  ingestion and pass/fail diagnostics across Python, Rust, benchmarks, and
+  documentation.
 - Hardened FUS-C.6 pulsed compression with validated trajectory-level
   diagnostics for minimum radius, acceleration envelope, radius-floor contact,
   radial turning points, compression ratio, and flux-budget closure across

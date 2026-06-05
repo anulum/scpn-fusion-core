@@ -108,9 +108,10 @@ carry final coil-circuit `source_work_J` and evaluate `source_budget_claim_statu
 separately. FUS-C.6 coupled rows now also carry the upstream compression
 flux-budget sidecar and publish `compression_flux_budget_claim_status`, while
 plain supplied-trajectory rows remain
-`blocked_missing_compression_flux_budget`.
+`blocked_missing_compression_flux_budget` and
+`blocked_missing_compression_trajectory_diagnostics`.
 
-Schema `scpn-fusion-core.faraday_recovery_benchmark.v5` also records the
+Schema `scpn-fusion-core.faraday_recovery_benchmark.v6` also records the
 sampled Faraday-law closure diagnostic
 `finite_difference(Phi) + EMF/N_turns = 0`. Python rows publish
 `flux_derivative_residual_linf`, `flux_derivative_residual_l2`, and
@@ -120,10 +121,15 @@ total flux-rate terms; Rust Criterion rows publish
 supplied-trajectory Rust timing rows assert closure before emitting Criterion
 estimates; coupled FUS-C.6 rows compute the diagnostic without upgrading it to
 an external acceptance claim.
+FUS-C.6 coupled rows now also carry the validated compression trajectory
+diagnostic sidecar: minimum radius, compression ratio, maximum absolute radial
+acceleration, radius-floor contact count, radial turning-point count, and
+all-flux-budgets-passed status. Rust coupled Criterion rows assert the same
+trajectory diagnostics inside the native harness.
 
 External Slough same-case parity remains blocked until a public digitised
-trajectory, compression-work sidecar, and compatible upstream flux-budget
-evidence are available with provenance and checksums.
+trajectory, compression-work sidecar, and compatible upstream flux-budget and
+trajectory-quality evidence are available with provenance and checksums.
 
 ## Type-checking non-regression gate
 

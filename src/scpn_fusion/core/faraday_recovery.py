@@ -71,6 +71,19 @@ class FaradayCompressionFluxBudget:
 
 
 @dataclass(frozen=True)
+class FaradayCompressionTrajectoryDiagnostics:
+    """FUS-C.6 trajectory-quality sidecar consumed by Faraday recovery."""
+
+    monotonic_time: bool
+    min_radius_m: float
+    max_abs_radial_acceleration_m_s2: float
+    radius_floor_contact_count: int
+    radial_turning_point_count: int
+    compression_ratio: float
+    all_flux_budgets_passed: bool
+
+
+@dataclass(frozen=True)
 class FaradayRecoveryReport:
     """Integrated recovery-energy result over a supplied trajectory."""
 
@@ -100,6 +113,9 @@ class FaradayRecoveryReport:
     compression_flux_budget: FaradayCompressionFluxBudget | None
     compression_flux_budget_passed: bool | None
     compression_flux_budget_claim_status: str
+    compression_trajectory_diagnostics: FaradayCompressionTrajectoryDiagnostics | None
+    compression_trajectory_diagnostics_passed: bool | None
+    compression_trajectory_diagnostics_claim_status: str
 
 
 def faraday_trajectory_from_pulsed_compression(
@@ -206,6 +222,27 @@ def compression_flux_budget_from_pulsed_compression(
     )
 
 
+def compression_trajectory_diagnostics_from_pulsed_compression(
+    states: Sequence[object],
+    *,
+    radius_floor_m: float | None = None,
+) -> FaradayCompressionTrajectoryDiagnostics:
+    """Return aggregate FUS-C.6 trajectory-quality evidence for Faraday reporting."""
+
+    from .pulsed_compression import pulsed_compression_trajectory_diagnostics
+
+    diagnostics = pulsed_compression_trajectory_diagnostics(states, radius_floor_m=radius_floor_m)
+    return FaradayCompressionTrajectoryDiagnostics(
+        monotonic_time=diagnostics.monotonic_time,
+        min_radius_m=diagnostics.min_radius_m,
+        max_abs_radial_acceleration_m_s2=diagnostics.max_abs_radial_acceleration_m_s2,
+        radius_floor_contact_count=diagnostics.radius_floor_contact_count,
+        radial_turning_point_count=diagnostics.radial_turning_point_count,
+        compression_ratio=diagnostics.compression_ratio,
+        all_flux_budgets_passed=diagnostics.all_flux_budgets_passed,
+    )
+
+
 def faraday_trajectory_from_voltage_driven_compression(
     result: object,
 ) -> tuple[FaradayRecoveryTrajectoryPoint, ...]:
@@ -226,6 +263,19 @@ def compression_flux_budget_from_voltage_driven_compression(
     """Return aggregate FUS-C.6 flux-budget evidence from a voltage-driven result."""
 
     return compression_flux_budget_from_pulsed_compression(_sequence_attr(result, "compression"))
+
+
+def compression_trajectory_diagnostics_from_voltage_driven_compression(
+    result: object,
+    *,
+    radius_floor_m: float | None = None,
+) -> FaradayCompressionTrajectoryDiagnostics:
+    """Return aggregate FUS-C.6 trajectory-quality evidence from a voltage-driven result."""
+
+    return compression_trajectory_diagnostics_from_pulsed_compression(
+        _sequence_attr(result, "compression"),
+        radius_floor_m=radius_floor_m,
+    )
 
 
 def coil_source_work_from_voltage_driven_compression(result: object) -> float:
@@ -324,6 +374,7 @@ def integrated_recovery_energy(
     compression_work_j: float | None = None,
     coil_source_work_j: float | None = None,
     compression_flux_budget: FaradayCompressionFluxBudget | None = None,
+    compression_trajectory_diagnostics: FaradayCompressionTrajectoryDiagnostics | None = None,
     budget_tolerance: float = 0.01,
     flux_derivative_tolerance: float = 2.0e-2,
 ) -> FaradayRecoveryReport:
@@ -433,6 +484,11 @@ def integrated_recovery_energy(
         compression_flux_budget_passed,
         compression_flux_budget_claim_status,
     ) = _evaluate_compression_flux_budget(compression_flux_budget)
+    (
+        compression_trajectory_diagnostics_checked,
+        compression_trajectory_diagnostics_passed,
+        compression_trajectory_diagnostics_claim_status,
+    ) = _evaluate_compression_trajectory_diagnostics(compression_trajectory_diagnostics)
 
     return FaradayRecoveryReport(
         samples=tuple(samples),
@@ -467,6 +523,11 @@ def integrated_recovery_energy(
         compression_flux_budget=compression_flux_budget_checked,
         compression_flux_budget_passed=compression_flux_budget_passed,
         compression_flux_budget_claim_status=compression_flux_budget_claim_status,
+        compression_trajectory_diagnostics=compression_trajectory_diagnostics_checked,
+        compression_trajectory_diagnostics_passed=compression_trajectory_diagnostics_passed,
+        compression_trajectory_diagnostics_claim_status=(
+            compression_trajectory_diagnostics_claim_status
+        ),
     )
 
 
@@ -608,6 +669,41 @@ def _evaluate_compression_flux_budget(
         raise ValueError("compression_flux_budget.coupling_status must be non-empty")
     passed = budget.budget_claim_status == "passed"
     return budget, passed, budget.budget_claim_status
+
+
+def _evaluate_compression_trajectory_diagnostics(
+    diagnostics: FaradayCompressionTrajectoryDiagnostics | None,
+) -> tuple[FaradayCompressionTrajectoryDiagnostics | None, bool | None, str]:
+    if diagnostics is None:
+        return None, None, "blocked_missing_compression_trajectory_diagnostics"
+    _validate_compression_trajectory_diagnostics(diagnostics)
+    passed = bool(
+        diagnostics.monotonic_time
+        and diagnostics.all_flux_budgets_passed
+        and diagnostics.min_radius_m > 0.0
+        and diagnostics.max_abs_radial_acceleration_m_s2 >= 0.0
+        and diagnostics.radius_floor_contact_count >= 0
+        and diagnostics.radial_turning_point_count >= 0
+        and diagnostics.compression_ratio >= 1.0
+    )
+    return diagnostics, passed, "passed" if passed else "failed"
+
+
+def _validate_compression_trajectory_diagnostics(
+    diagnostics: FaradayCompressionTrajectoryDiagnostics,
+) -> None:
+    _require_positive("compression_trajectory.min_radius_m", diagnostics.min_radius_m)
+    acceleration = _require_finite(
+        "compression_trajectory.max_abs_radial_acceleration_m_s2",
+        diagnostics.max_abs_radial_acceleration_m_s2,
+    )
+    if acceleration < 0.0:
+        raise ValueError("compression_trajectory.max_abs_radial_acceleration_m_s2 must be non-negative")
+    _require_positive("compression_trajectory.compression_ratio", diagnostics.compression_ratio)
+    if diagnostics.radius_floor_contact_count < 0:
+        raise ValueError("compression_trajectory.radius_floor_contact_count must be non-negative")
+    if diagnostics.radial_turning_point_count < 0:
+        raise ValueError("compression_trajectory.radial_turning_point_count must be non-negative")
 
 
 def _optional_finite(name: str, value: object | None) -> float | None:
