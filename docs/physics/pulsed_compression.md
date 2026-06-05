@@ -4,7 +4,8 @@ This page documents the FUS-C.6 supplied-current and voltage-driven
 pulsed-compression surface. The implementation evolves a pressure-driven FRC
 separatrix radius, adiabatic temperature and density, an energy-accounting
 residual, an exact lumped R-L coil-current path for declared bank voltage, and
-the existing Ono non-adiabatic flux carrier.
+the existing Ono non-adiabatic flux carrier with explicit source, damping, and
+update-residual diagnostics.
 
 ## Governing contract
 
@@ -50,6 +51,19 @@ non-adiabatic carrier:
 ```text
 dpsi/dt = -psi/tau_psi + R_null*E_theta - eta_spitzer*J_theta
 ```
+
+Each compression step records the discrete carrier closure:
+
+```text
+psi[n+1] = psi[n] - damping_decrement[n] + source_increment[n]
+update_residual[n] = psi[n+1] - expected_psi[n+1]
+```
+
+The public state exposes the flux checksum, source-increment checksum,
+damping-decrement checksum, maximum absolute update residual, and a
+`flux_budget_claim_status` gate. This prevents downstream Faraday, MRTI, and
+tilt diagnostics from consuming an opaque flux checksum without knowing whether
+the underlying carrier update actually closed.
 
 The trajectory carries the compression-work sidecar consumed by FUS-C.7
 Faraday recovery:
@@ -118,7 +132,8 @@ use fusion_physics::compression::{
 
 The implementation is complete for the supplied-current pressure-balance,
 exact lumped R-L voltage-drive, and adiabatic-compression contract in the
-internal MIF lane. It is wired to the existing Ono flux carrier.
+internal MIF lane. It is wired to the existing Ono flux carrier and records
+the discrete flux-source/damping budget at every step in Python and Rust.
 
 It does not claim Slough 2011 Fig. 5 parity yet. That acceptance row is
 blocked until a public digitised reference trajectory exists with provenance
@@ -134,7 +149,7 @@ Tracked tests cover:
 - exact lumped R-L coil-current trajectory and circuit-energy residual,
 - external compression heating and shrinkage,
 - voltage-driven coil-current coupling into pulsed compression,
-- flux-history propagation,
+- flux-history propagation and flux-budget closure diagnostics,
 - FUS-C.7 compression-work sidecar consumption through Faraday recovery,
 - Spitzer resistivity scaling,
 - fail-closed invalid-input paths.

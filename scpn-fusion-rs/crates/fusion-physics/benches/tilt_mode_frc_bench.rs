@@ -58,6 +58,7 @@ fn compression_states(n_steps: usize) -> Vec<PulsedCompressionState> {
                 compression_work_j: 0.0,
                 radiated_loss_j: 0.0,
                 energy_balance_residual: 0.0,
+                flux_state: Default::default(),
             }
         })
         .collect()

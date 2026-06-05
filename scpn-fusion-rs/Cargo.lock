@@ -608,6 +608,7 @@ name = "fusion-physics"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "fusion-core",
  "fusion-math",
  "fusion-types",
  "nalgebra",

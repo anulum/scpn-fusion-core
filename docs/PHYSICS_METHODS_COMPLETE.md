@@ -410,7 +410,16 @@ $$T_{\rm next}=T_{\rm prev}\left(V_{\rm prev}/V_{\rm next}\right)^{\gamma-1}.$$
 Flux diffusion is coupled through the accepted non-adiabatic current-diffusion
 kernel using the instantaneous Spitzer resistivity and external-field-induced
 flux target. The trajectory therefore carries both mechanical compression
-state and magnetic-flux state at every step.
+state and magnetic-flux state at every step. The compression state now also
+surfaces the exact carrier source-increment checksum, damping-decrement
+checksum, maximum absolute update residual, and `flux_budget_claim_status`.
+Those diagnostics apply the same discrete closure used by FUS-C.3,
+
+$$\psi_{n+1} = \psi_n - \Delta\psi_{\rm damp} + \Delta\psi_{\rm source},$$
+
+so downstream FUS-C.7 Faraday, FUS-C.4 MRTI, and FUS-C.5 tilt consumers can
+fail closed on flux-budget evidence instead of accepting an opaque flux
+checksum.
 
 The public acceptance boundary is fail-closed: the helper
 `slough_fig5_acceptance_status()` reports `blocked_missing_public_reference`

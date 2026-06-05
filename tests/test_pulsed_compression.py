@@ -7,6 +7,8 @@
 # SCPN Fusion Core — Pulsed Compression Tests
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 from numpy.typing import NDArray
 import pytest
@@ -38,11 +40,14 @@ def _equilibrium() -> FRCEquilibriumState:
     t_e = 5_000.0
     n0 = b_ext**2 / (2.0 * MU_0) / ((t_i + t_e) * ELEMENTARY_CHARGE_C)
     rho: NDArray[np.float64] = np.linspace(0.0, 0.4, 65, dtype=np.float64)
-    return solve_frc_equilibrium(
-        RigidRotorFRCInputs(
-            n0=n0, T_i_eV=t_i, T_e_eV=t_e, theta_dot=0.0, R_s=0.2, B_ext=b_ext, delta=0.02
+    return cast(
+        FRCEquilibriumState,
+        solve_frc_equilibrium(
+            RigidRotorFRCInputs(
+                n0=n0, T_i_eV=t_i, T_e_eV=t_e, theta_dot=0.0, R_s=0.2, B_ext=b_ext, delta=0.02
+            ),
+            rho,
         ),
-        rho,
     )
 
 
@@ -121,6 +126,8 @@ def test_pressure_imbalance_accelerates_radially() -> None:
     assert next_state.dR_s_dt_m_s > state.dR_s_dt_m_s
     assert next_state.R_s_m > state.R_s_m
     assert next_state.flux_coupling_status == "ono_nonadiabatic_flux_carrier"
+    assert next_state.flux_budget_claim_status == "passed"
+    assert next_state.flux_update_residual_abs_max <= 1.0e-12
     assert abs(next_state.energy_balance_residual) < 1.0e-12
 
 
@@ -147,6 +154,34 @@ def test_run_pulsed_compression_tracks_flux_history() -> None:
     assert states[-1].t_s == pytest.approx(4.0e-8)
     assert all(state.flux_psi.shape == initial.flux_psi.shape for state in states)
     assert np.isfinite(states[-1].flux_psi_checksum)
+    assert all(state.flux_budget_claim_status == "passed" for state in states[1:])
+    assert max(state.flux_update_residual_abs_max for state in states[1:]) <= 1.0e-12
+
+
+def test_flux_budget_exposes_source_damping_and_residual() -> None:
+    config = PulsedCompressionConfig(
+        equilibrium=_equilibrium(),
+        coil=_coil(current=1.0)[0],
+        coil_current_t=lambda _t: 1.0,
+        plasma_mass_kg=2.0e-5,
+        ion_temperature_eV=10_000.0,
+        electron_temperature_eV=5_000.0,
+        tau_psi_s=np.inf,
+        E_theta_t=lambda _t, rho: np.full_like(rho, 2.0),
+        J_theta_t=lambda _t, rho: np.zeros_like(rho),
+    )
+    initial = initial_pulsed_compression_state(config)
+
+    next_state = step_pulsed_compression(initial, config, 1.0e-9)
+
+    expected_source_checksum = float(
+        np.sum(np.full_like(initial.flux_psi, next_state.R_s_m * 2.0e-9))
+    )
+    assert next_state.flux_coupling_status == "ono_nonadiabatic_flux_carrier"
+    assert next_state.flux_budget_claim_status == "passed"
+    assert next_state.flux_source_increment_checksum == pytest.approx(expected_source_checksum)
+    assert next_state.flux_damping_decrement_checksum == pytest.approx(0.0)
+    assert next_state.flux_update_residual_abs_max <= 1.0e-12
 
 
 def test_voltage_driven_coil_circuit_feeds_pulsed_compression() -> None:

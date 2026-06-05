@@ -1752,9 +1752,13 @@ Tracked report:
 The report records local non-isolated regression rows for the FUS-C.6
 pulsed-compression path. Supplied-current rows exercise the pressure-balance
 trajectory, adiabatic heating, compression-work sidecar, and Ono
-non-adiabatic flux-carrier coupling. Voltage-driven rows add the exact lumped
-R-L coil-current contract over the declared bank-voltage limit and record the
-coil-circuit energy residual before feeding the same compression path.
+non-adiabatic flux-carrier coupling. The Python rows now publish the carrier
+source-increment checksum, damping-decrement checksum, maximum absolute update
+residual, and `flux_budget_claim_status`; Rust Criterion rows assert the same
+budget gate inside the native benchmark harness. Voltage-driven rows add the
+exact lumped R-L coil-current contract over the declared bank-voltage limit and
+record the coil-circuit energy residual before feeding the same compression
+path.
 
 This is not a production throughput claim and not external Slough Fig. 5
 parity. The Slough row remains blocked until a public digitised trajectory with

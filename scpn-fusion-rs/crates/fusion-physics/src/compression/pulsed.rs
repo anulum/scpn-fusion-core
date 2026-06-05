@@ -8,9 +8,11 @@
 //! Supplied-current pulsed compression dynamics.
 
 use super::coil_geometry::CoilGeometry;
+use fusion_core::current_diffusion::{solve_flux_evolution_nonadiabatic, NonadiabaticFluxInput};
 
 const MU_0: f64 = 4.0e-7 * std::f64::consts::PI;
 const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
+const FLUX_UPDATE_RESIDUAL_ABS_TOLERANCE: f64 = 1.0e-12;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PulsedCompressionConfig {
@@ -19,9 +21,39 @@ pub struct PulsedCompressionConfig {
     pub plasma_length_m: f64,
     pub gamma: f64,
     pub radial_loss_time_s: Option<f64>,
+    pub tau_psi_s: f64,
+    pub e_theta_v_m: Option<Vec<f64>>,
+    pub j_theta_a_m2: Option<Vec<f64>>,
     pub z_eff: f64,
     pub ln_lambda: f64,
     pub min_radius_m: f64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PulsedCompressionFluxState {
+    pub rho: Vec<f64>,
+    pub psi: Vec<f64>,
+    pub psi_checksum: f64,
+    pub source_increment_checksum: f64,
+    pub damping_decrement_checksum: f64,
+    pub update_residual_abs_max: f64,
+    pub budget_claim_status: String,
+    pub coupling_status: String,
+}
+
+impl Default for PulsedCompressionFluxState {
+    fn default() -> Self {
+        Self {
+            rho: vec![0.0, 1.0],
+            psi: vec![0.0, 0.0],
+            psi_checksum: 0.0,
+            source_increment_checksum: 0.0,
+            damping_decrement_checksum: 0.0,
+            update_residual_abs_max: 0.0,
+            budget_claim_status: "not_evaluated_initial_state".to_string(),
+            coupling_status: "initialised_from_frc_equilibrium".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,6 +72,7 @@ pub struct PulsedCompressionState {
     pub compression_work_j: f64,
     pub radiated_loss_j: f64,
     pub energy_balance_residual: f64,
+    pub flux_state: PulsedCompressionFluxState,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,6 +97,23 @@ pub fn coil_field_t(coil: &CoilGeometry, coil_current_a: f64) -> Result<f64, Str
     coil.validate()?;
     let current = require_finite("coil_current_a", coil_current_a)?;
     Ok(MU_0 * coil.n_turns as f64 * current / coil.l_coil_m)
+}
+
+pub fn initial_pulsed_flux_state(
+    rho: Vec<f64>,
+    psi: Vec<f64>,
+) -> Result<PulsedCompressionFluxState, String> {
+    let psi_checksum = validate_flux_grid_and_checksum(&rho, &psi)?;
+    Ok(PulsedCompressionFluxState {
+        rho,
+        psi,
+        psi_checksum,
+        source_increment_checksum: 0.0,
+        damping_decrement_checksum: 0.0,
+        update_residual_abs_max: 0.0,
+        budget_claim_status: "not_evaluated_initial_state".to_string(),
+        coupling_status: "initialised_from_frc_equilibrium".to_string(),
+    })
 }
 
 pub fn initial_coil_circuit_state(
@@ -223,6 +273,7 @@ pub fn step_pulsed_compression(
         .max(state.thermal_energy_j.abs())
         .max(compression_work.abs())
         .max(1.0e-30);
+    let flux_state = advance_flux_state(&state.flux_state, config, radius, t_e, dt)?;
 
     Ok(PulsedCompressionState {
         t_s: state.t_s + dt,
@@ -239,6 +290,7 @@ pub fn step_pulsed_compression(
         compression_work_j: compression_work,
         radiated_loss_j: radiated_loss,
         energy_balance_residual: residual / scale,
+        flux_state,
     })
 }
 
@@ -312,6 +364,21 @@ fn validate_config(config: &PulsedCompressionConfig) -> Result<(), String> {
     if let Some(value) = config.radial_loss_time_s {
         require_positive("radial_loss_time_s", value)?;
     }
+    if !(config.tau_psi_s > 0.0
+        || (config.tau_psi_s.is_infinite() && config.tau_psi_s.is_sign_positive()))
+    {
+        return Err("tau_psi_s must be positive or infinite".to_string());
+    }
+    if let Some(values) = &config.e_theta_v_m {
+        if values.iter().any(|value| !value.is_finite()) {
+            return Err("e_theta_v_m must contain finite values".to_string());
+        }
+    }
+    if let Some(values) = &config.j_theta_a_m2 {
+        if values.iter().any(|value| !value.is_finite()) {
+            return Err("j_theta_a_m2 must contain finite values".to_string());
+        }
+    }
     require_positive("z_eff", config.z_eff)?;
     require_positive("ln_lambda", config.ln_lambda)?;
     require_positive("min_radius_m", config.min_radius_m)?;
@@ -325,6 +392,7 @@ fn validate_state(state: &PulsedCompressionState) -> Result<(), String> {
     require_positive("t_i_ev", state.t_i_ev)?;
     require_positive("t_e_ev", state.t_e_ev)?;
     require_positive("density_m3", state.density_m3)?;
+    validate_flux_state(&state.flux_state)?;
     Ok(())
 }
 
@@ -362,6 +430,124 @@ fn thermal_energy_j(density_m3: f64, volume_m3: f64, t_i_ev: f64, t_e_ev: f64) -
     1.5 * density_m3 * volume_m3 * (t_i_ev + t_e_ev) * ELEMENTARY_CHARGE_C
 }
 
+fn advance_flux_state(
+    state: &PulsedCompressionFluxState,
+    config: &PulsedCompressionConfig,
+    radius: f64,
+    t_e_ev: f64,
+    dt_s: f64,
+) -> Result<PulsedCompressionFluxState, String> {
+    validate_flux_state(state)?;
+    let n_rho = state.rho.len();
+    let e_theta = optional_profile_row(&config.e_theta_v_m, n_rho, "e_theta_v_m")?;
+    let j_theta = optional_profile_row(&config.j_theta_a_m2, n_rho, "j_theta_a_m2")?;
+    let eta = vec![spitzer_resistivity_ohm_m(t_e_ev, config.z_eff, config.ln_lambda)?; n_rho];
+    let tau = vec![config.tau_psi_s; n_rho];
+    let input = NonadiabaticFluxInput {
+        rho: state.rho.clone(),
+        psi0: state.psi.clone(),
+        tau_psi_s: vec![tau.clone(), tau],
+        r_null_m: vec![radius, radius],
+        e_theta_v_m: vec![e_theta.clone(), e_theta],
+        eta_ohm_m: vec![eta.clone(), eta],
+        j_theta_a_m2: vec![j_theta.clone(), j_theta],
+        dt_s,
+    };
+    let flux = solve_flux_evolution_nonadiabatic(&input)?;
+    let psi = flux
+        .psi
+        .last()
+        .cloned()
+        .ok_or_else(|| "flux trajectory did not return psi".to_string())?;
+    let source_increment = flux
+        .source_increment
+        .first()
+        .ok_or_else(|| "flux trajectory did not return source_increment".to_string())?;
+    let damping_decrement = flux
+        .damping_decrement
+        .first()
+        .ok_or_else(|| "flux trajectory did not return damping_decrement".to_string())?;
+    let update_residual = flux
+        .update_residual
+        .first()
+        .ok_or_else(|| "flux trajectory did not return update_residual".to_string())?;
+    let residual_abs_max = update_residual
+        .iter()
+        .fold(0.0_f64, |acc, value| acc.max(value.abs()));
+    let budget_claim_status = if residual_abs_max <= FLUX_UPDATE_RESIDUAL_ABS_TOLERANCE {
+        "passed"
+    } else {
+        "failed"
+    };
+    Ok(PulsedCompressionFluxState {
+        rho: state.rho.clone(),
+        psi_checksum: psi.iter().sum(),
+        psi,
+        source_increment_checksum: source_increment.iter().sum(),
+        damping_decrement_checksum: damping_decrement.iter().sum(),
+        update_residual_abs_max: residual_abs_max,
+        budget_claim_status: budget_claim_status.to_string(),
+        coupling_status: "ono_nonadiabatic_flux_carrier".to_string(),
+    })
+}
+
+fn optional_profile_row(
+    values: &Option<Vec<f64>>,
+    n_rho: usize,
+    name: &str,
+) -> Result<Vec<f64>, String> {
+    match values {
+        Some(row) if row.len() == n_rho => Ok(row.clone()),
+        Some(_) => Err(format!("{name} must match the flux rho grid length")),
+        None => Ok(vec![0.0; n_rho]),
+    }
+}
+
+fn validate_flux_state(state: &PulsedCompressionFluxState) -> Result<(), String> {
+    let checksum = validate_flux_grid_and_checksum(&state.rho, &state.psi)?;
+    require_finite("flux_state.psi_checksum", state.psi_checksum)?;
+    if (checksum - state.psi_checksum).abs() > 1.0e-9_f64.max(checksum.abs() * 1.0e-12) {
+        return Err("flux_state.psi_checksum must match psi".to_string());
+    }
+    require_finite(
+        "flux_state.source_increment_checksum",
+        state.source_increment_checksum,
+    )?;
+    require_finite(
+        "flux_state.damping_decrement_checksum",
+        state.damping_decrement_checksum,
+    )?;
+    require_finite(
+        "flux_state.update_residual_abs_max",
+        state.update_residual_abs_max,
+    )?;
+    if state.budget_claim_status.is_empty() {
+        return Err("flux_state.budget_claim_status must be non-empty".to_string());
+    }
+    if state.coupling_status.is_empty() {
+        return Err("flux_state.coupling_status must be non-empty".to_string());
+    }
+    Ok(())
+}
+
+fn validate_flux_grid_and_checksum(rho: &[f64], psi: &[f64]) -> Result<f64, String> {
+    if rho.len() < 2 {
+        return Err("flux rho must contain at least two points".to_string());
+    }
+    if psi.len() != rho.len() {
+        return Err("flux psi must match rho".to_string());
+    }
+    for pair in rho.windows(2) {
+        if !pair[0].is_finite() || !pair[1].is_finite() || pair[1] <= pair[0] {
+            return Err("flux rho must be finite and strictly increasing".to_string());
+        }
+    }
+    if psi.iter().any(|value| !value.is_finite()) {
+        return Err("flux psi must contain finite values".to_string());
+    }
+    Ok(psi.iter().sum())
+}
+
 fn beta(pressure_pa: f64, field_t: f64) -> f64 {
     if field_t == 0.0 {
         f64::INFINITY
@@ -391,7 +577,7 @@ fn require_positive(name: &str, value: f64) -> Result<f64, String> {
 mod tests {
     use super::{
         adiabatic_temperature_update_ev, coil_field_t, initial_coil_circuit_state,
-        plasma_volume_m3, run_coil_circuit, run_pulsed_compression,
+        initial_pulsed_flux_state, plasma_volume_m3, run_coil_circuit, run_pulsed_compression,
         run_voltage_driven_pulsed_compression, spitzer_resistivity_ohm_m, step_coil_circuit,
         step_pulsed_compression, PulsedCompressionConfig, PulsedCompressionState,
         ELEMENTARY_CHARGE_C, MU_0,
@@ -416,6 +602,9 @@ mod tests {
             plasma_length_m: 1.0,
             gamma: 5.0 / 3.0,
             radial_loss_time_s: None,
+            tau_psi_s: f64::INFINITY,
+            e_theta_v_m: None,
+            j_theta_a_m2: None,
             z_eff: 1.0,
             ln_lambda: 17.0,
             min_radius_m: 1.0e-4,
@@ -444,6 +633,11 @@ mod tests {
             compression_work_j: 0.0,
             radiated_loss_j: 0.0,
             energy_balance_residual: 0.0,
+            flux_state: initial_pulsed_flux_state(
+                (0..65).map(|index| index as f64 / 160.0).collect(),
+                vec![0.0; 65],
+            )
+            .expect("valid flux state"),
         }
     }
 
@@ -490,6 +684,26 @@ mod tests {
         assert!(next.t_i_ev > 10_000.0);
         assert!(next.compression_work_j > 0.0);
         assert!(next.energy_balance_residual.abs() < 1.0e-12);
+        assert_eq!(
+            next.flux_state.coupling_status,
+            "ono_nonadiabatic_flux_carrier"
+        );
+        assert_eq!(next.flux_state.budget_claim_status, "passed");
+        assert!(next.flux_state.update_residual_abs_max <= 1.0e-12);
+    }
+
+    #[test]
+    fn flux_budget_closes_with_external_drive() {
+        let mut cfg = config();
+        cfg.e_theta_v_m = Some(vec![2.0; 65]);
+        let next = step_pulsed_compression(&state(), &cfg, 1.0, 1.0e-9).unwrap();
+        let expected_source_checksum = next.r_s_m * 2.0e-9 * 65.0;
+        assert_eq!(next.flux_state.budget_claim_status, "passed");
+        assert!(
+            (next.flux_state.source_increment_checksum - expected_source_checksum).abs() < 1.0e-14
+        );
+        assert!(next.flux_state.damping_decrement_checksum.abs() < 1.0e-14);
+        assert!(next.flux_state.update_residual_abs_max <= 1.0e-12);
     }
 
     #[test]

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Hardened FUS-C.6 pulsed compression across Python and Rust with explicit
+  Ono carrier flux-budget state: source-increment checksum,
+  damping-decrement checksum, maximum update residual, pass/fail budget status,
+  Rust native carrier coupling, benchmark gates, and documentation.
 - Added FUS-C.5/FUS-C.6 coupling evidence: the FRC n=1 tilt diagnostic now
   consumes supplied-current pulsed-compression state histories across Python
   and Rust, projects the Steinhauer `s` parameter through explicit

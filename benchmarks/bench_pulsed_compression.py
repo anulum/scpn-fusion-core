@@ -113,6 +113,10 @@ def _python_case(steps: int) -> dict[str, Any]:
         "final_beta": final_state.beta,
         "energy_balance_residual": final_state.energy_balance_residual,
         "flux_coupling_status": final_state.flux_coupling_status,
+        "flux_budget_claim_status": final_state.flux_budget_claim_status,
+        "flux_source_increment_checksum": final_state.flux_source_increment_checksum,
+        "flux_damping_decrement_checksum": final_state.flux_damping_decrement_checksum,
+        "flux_update_residual_abs_max": final_state.flux_update_residual_abs_max,
     }
 
 
@@ -149,6 +153,10 @@ def _python_voltage_driven_case(steps: int) -> dict[str, Any]:
         "compression_energy_balance_residual": final_state.energy_balance_residual,
         "drive_status": "exact_lumped_rl_bank_limited",
         "flux_coupling_status": final_state.flux_coupling_status,
+        "flux_budget_claim_status": final_state.flux_budget_claim_status,
+        "flux_source_increment_checksum": final_state.flux_source_increment_checksum,
+        "flux_damping_decrement_checksum": final_state.flux_damping_decrement_checksum,
+        "flux_update_residual_abs_max": final_state.flux_update_residual_abs_max,
     }
 
 
@@ -177,6 +185,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
         }
         if "voltage_driven" in benchmark_name:
             row["drive_status"] = "exact_lumped_rl_bank_limited"
+        row["flux_budget_claim_status"] = "asserted_in_rust_criterion_harness"
         rows.append(row)
     return rows
 
@@ -192,11 +201,12 @@ def build_report() -> dict[str, Any]:
         }
     )
     return {
-        "schema": "scpn-fusion-core.pulsed_compression_benchmark.v1",
+        "schema": "scpn-fusion-core.pulsed_compression_benchmark.v2",
         "claim_boundary": (
             "Local non-isolated regression evidence for supplied-current and exact lumped "
             "R-L voltage-driven pulsed-compression dynamics wired to the Ono non-adiabatic "
-            "flux carrier. Slough Fig. 5 parity remains blocked until a public digitised "
+            "flux carrier with explicit flux source, damping, and update-residual budget "
+            "diagnostics. Slough Fig. 5 parity remains blocked until a public digitised "
             "reference trajectory exists."
         ),
         "environment": {

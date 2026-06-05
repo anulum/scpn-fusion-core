@@ -8,8 +8,9 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use fusion_physics::compression::{
-    plasma_volume_m3, run_pulsed_compression, run_voltage_driven_pulsed_compression, CoilGeometry,
-    PulsedCompressionConfig, PulsedCompressionState,
+    initial_pulsed_flux_state, plasma_volume_m3, run_pulsed_compression,
+    run_voltage_driven_pulsed_compression, CoilGeometry, PulsedCompressionConfig,
+    PulsedCompressionState,
 };
 
 const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
@@ -28,6 +29,9 @@ fn config() -> PulsedCompressionConfig {
         plasma_length_m: 1.0,
         gamma: 5.0 / 3.0,
         radial_loss_time_s: None,
+        tau_psi_s: f64::INFINITY,
+        e_theta_v_m: None,
+        j_theta_a_m2: None,
         z_eff: 1.0,
         ln_lambda: 17.0,
         min_radius_m: 1.0e-4,
@@ -56,6 +60,11 @@ fn state() -> PulsedCompressionState {
         compression_work_j: 0.0,
         radiated_loss_j: 0.0,
         energy_balance_residual: 0.0,
+        flux_state: initial_pulsed_flux_state(
+            (0..65).map(|index| index as f64 / 160.0).collect(),
+            vec![0.0; 65],
+        )
+        .expect("valid flux state"),
     }
 }
 
@@ -65,9 +74,14 @@ fn bench_pulsed_compression(c: &mut Criterion) {
         group.bench_function(format!("rust_{steps}_steps"), |b| {
             let cfg = config();
             b.iter(|| {
-                std::hint::black_box(
-                    run_pulsed_compression(state(), &cfg, 5.0e5, 1.0e-9, steps).expect("valid run"),
-                )
+                std::hint::black_box({
+                    let states = run_pulsed_compression(state(), &cfg, 5.0e5, 1.0e-9, steps)
+                        .expect("valid run");
+                    let final_state = states.last().expect("state exists");
+                    assert_eq!(final_state.flux_state.budget_claim_status, "passed");
+                    assert!(final_state.flux_state.update_residual_abs_max <= 1.0e-12);
+                    states
+                })
             });
         });
     }
@@ -75,8 +89,8 @@ fn bench_pulsed_compression(c: &mut Criterion) {
         group.bench_function(format!("rust_voltage_driven_{steps}_steps"), |b| {
             let cfg = config();
             b.iter(|| {
-                std::hint::black_box(
-                    run_voltage_driven_pulsed_compression(
+                std::hint::black_box({
+                    let result = run_voltage_driven_pulsed_compression(
                         state(),
                         &cfg,
                         20_000.0,
@@ -84,8 +98,12 @@ fn bench_pulsed_compression(c: &mut Criterion) {
                         steps,
                         5.0e5,
                     )
-                    .expect("valid voltage-driven run"),
-                )
+                    .expect("valid voltage-driven run");
+                    let final_state = result.compression.last().expect("state exists");
+                    assert_eq!(final_state.flux_state.budget_claim_status, "passed");
+                    assert!(final_state.flux_state.update_residual_abs_max <= 1.0e-12);
+                    result
+                })
             });
         });
     }

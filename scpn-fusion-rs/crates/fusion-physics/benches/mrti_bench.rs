@@ -31,6 +31,9 @@ fn compression_config() -> PulsedCompressionConfig {
         plasma_length_m: 1.0,
         gamma: 5.0 / 3.0,
         radial_loss_time_s: None,
+        tau_psi_s: f64::INFINITY,
+        e_theta_v_m: None,
+        j_theta_a_m2: None,
         z_eff: 1.0,
         ln_lambda: 17.0,
         min_radius_m: 1.0e-4,
@@ -60,6 +63,7 @@ fn compression_initial() -> PulsedCompressionState {
         compression_work_j: 0.0,
         radiated_loss_j: 0.0,
         energy_balance_residual: 0.0,
+        flux_state: Default::default(),
     }
 }
 

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, replace
-from typing import TypeAlias, cast
+from typing import TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -35,6 +35,7 @@ from .frc_rigid_rotor import ELEMENTARY_CHARGE_C, FRCEquilibriumState, MU_0
 FloatArray: TypeAlias = NDArray[np.float64]
 ProfileCallable: TypeAlias = Callable[[float, FloatArray], FloatArray | float]
 ScalarCallable: TypeAlias = Callable[[float], float]
+_FLUX_UPDATE_RESIDUAL_ABS_TOLERANCE = 1.0e-12
 
 
 @dataclass(frozen=True)
@@ -90,6 +91,10 @@ class PulsedCompressionState:
     energy_balance_residual: float
     flux_psi: FloatArray
     flux_psi_checksum: float
+    flux_source_increment_checksum: float
+    flux_damping_decrement_checksum: float
+    flux_update_residual_abs_max: float
+    flux_budget_claim_status: str
     flux_coupling_status: str
 
 
@@ -270,7 +275,7 @@ def spitzer_resistivity_ohm_m(
         raise ValueError("T_e_eV must contain positive finite values")
     z_eff = _require_positive("Z_eff", Z_eff)
     coulomb_log = _require_positive("ln_lambda", ln_lambda)
-    return cast(FloatArray, 1.65e-9 * z_eff * coulomb_log / np.power(temperature, 1.5))
+    return 1.65e-9 * z_eff * coulomb_log / np.power(temperature, 1.5)
 
 
 def adiabatic_temperature_update_eV(
@@ -319,6 +324,10 @@ def initial_pulsed_compression_state(config: PulsedCompressionConfig) -> PulsedC
         energy_balance_residual=0.0,
         flux_psi=cfg.equilibrium.psi.copy(),
         flux_psi_checksum=float(np.sum(cfg.equilibrium.psi, dtype=np.float64)),
+        flux_source_increment_checksum=0.0,
+        flux_damping_decrement_checksum=0.0,
+        flux_update_residual_abs_max=0.0,
+        flux_budget_claim_status="not_evaluated_initial_state",
         flux_coupling_status="initialised_from_frc_equilibrium",
     )
 
@@ -391,6 +400,10 @@ def step_pulsed_compression(
         n_steps=1,
     )
     psi = flux.psi[-1].copy()
+    flux_residual_abs_max = float(np.max(np.abs(flux.update_residual[-1])))
+    flux_budget_claim_status = (
+        "passed" if flux_residual_abs_max <= _FLUX_UPDATE_RESIDUAL_ABS_TOLERANCE else "failed"
+    )
 
     return PulsedCompressionState(
         t_s=state.t_s + dt,
@@ -409,6 +422,10 @@ def step_pulsed_compression(
         energy_balance_residual=float(balance_residual / balance_scale),
         flux_psi=psi,
         flux_psi_checksum=float(np.sum(psi, dtype=np.float64)),
+        flux_source_increment_checksum=float(np.sum(flux.source_increment[-1], dtype=np.float64)),
+        flux_damping_decrement_checksum=float(np.sum(flux.damping_decrement[-1], dtype=np.float64)),
+        flux_update_residual_abs_max=flux_residual_abs_max,
+        flux_budget_claim_status=flux_budget_claim_status,
         flux_coupling_status="ono_nonadiabatic_flux_carrier",
     )
 
@@ -522,6 +539,14 @@ def _validate_state(state: PulsedCompressionState, config: PulsedCompressionConf
     psi = np.asarray(state.flux_psi, dtype=np.float64)
     if psi.shape != config.equilibrium.rho.shape or not np.all(np.isfinite(psi)):
         raise ValueError("state.flux_psi must match the equilibrium radial grid")
+    _require_finite("state.flux_psi_checksum", state.flux_psi_checksum)
+    _require_finite("state.flux_source_increment_checksum", state.flux_source_increment_checksum)
+    _require_finite("state.flux_damping_decrement_checksum", state.flux_damping_decrement_checksum)
+    _require_finite("state.flux_update_residual_abs_max", state.flux_update_residual_abs_max)
+    if not state.flux_budget_claim_status:
+        raise ValueError("state.flux_budget_claim_status must be non-empty")
+    if not state.flux_coupling_status:
+        raise ValueError("state.flux_coupling_status must be non-empty")
 
 
 def _validate_circuit_state(state: CoilCircuitState) -> None:
