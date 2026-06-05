@@ -428,6 +428,15 @@ def write_reports(report: dict[str, Any]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Build and print a GK public-deck inventory report.
+
+    Args:
+        argv: Optional CLI argument list. If ``None``, ``argparse`` consumes
+            command line arguments from ``sys.argv``.
+
+    Returns:
+        ``0`` for successful inventory generation.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args(argv)
     report = build_gk_public_deck_inventory()

@@ -427,6 +427,16 @@ def write_reports(report: dict[str, Any]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run reference artifact conversion and optionally enforce exportability.
+
+    Args:
+        argv: Optional CLI argument list. When ``None``, uses ``sys.argv``.
+
+    Returns:
+        Exit status code. ``0`` when conversion succeeds and pass checks are met,
+        ``1`` when ``--check`` is enabled but no public output artifacts were
+        exported.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check",

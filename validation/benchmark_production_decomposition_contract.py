@@ -1616,6 +1616,11 @@ def write_reports(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    """Run production decomposition contract benchmark and write evidence artifacts.
+
+    Returns:
+        ``0`` after benchmark and report writing complete.
+    """
     report = run_benchmark()
     write_reports(report)
     print(json.dumps(report, indent=2, sort_keys=True))

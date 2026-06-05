@@ -349,6 +349,15 @@ def write_reports(report: dict[str, Any]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run Aurora reference-artifact reporting.
+
+    Args:
+        argv: Optional command-line arguments. If omitted, defaults are read from
+            ``sys.argv``.
+
+    Returns:
+        ``0`` when report construction completes successfully.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args(argv)
     report = build_aurora_reference_execution_report()

@@ -321,6 +321,15 @@ def measure_cuda_jax(*, run_bench: bool, size: int, repeats: int) -> dict[str, A
 
 
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
+    """Build benchmark payload for WGPU and CUDA/JAX backend lanes.
+
+    Args:
+        args: Parsed command-line arguments controlling benchmark execution and
+            timeout parameters.
+
+    Returns:
+        Structured report payload containing lane status and metadata.
+    """
     wgpu = measure_wgpu_physical(run_bench=not args.probe_only, timeout_s=args.wgpu_timeout_s)
     cuda = measure_cuda_jax(
         run_bench=not args.probe_only, size=args.jax_size, repeats=args.jax_repeats
@@ -341,6 +350,14 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render a markdown report from the backend benchmark result payload.
+
+    Args:
+        report: Benchmark output dictionary produced by ``build_report``.
+
+    Returns:
+        Markdown string for repository-visible benchmark documentation.
+    """
     lines = [
         "<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->",
         "<!-- Commercial license available -->",
@@ -398,6 +415,15 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI options for GPU backend alternative benchmark execution.
+
+    Args:
+        argv: Optional explicit argument list. If ``None``, parse process
+            arguments.
+
+    Returns:
+        Namespace with parsed benchmark flags and report output paths.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON, help="JSON report path.")
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD, help="Markdown report path.")
@@ -414,6 +440,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Execute benchmark and emit JSON/Markdown evidence reports.
+
+    Args:
+        argv: Optional CLI arguments. If ``None``, reads from process arguments.
+
+    Returns:
+        ``0`` on success, ``1`` when strict mode is requested and no lane
+        passed.
+    """
     args = parse_args(argv)
     report = build_report(args)
     args.json.parent.mkdir(parents=True, exist_ok=True)

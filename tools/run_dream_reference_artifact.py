@@ -299,6 +299,14 @@ def write_reports(report: dict[str, Any]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Build the DREAM reference execution report.
+
+    Args:
+        argv: Optional CLI arguments. If ``None``, parse from process arguments.
+
+    Returns:
+        ``0`` after report generation and JSON emission.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--no-execute-backend",

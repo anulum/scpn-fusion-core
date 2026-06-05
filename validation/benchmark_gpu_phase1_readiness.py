@@ -205,6 +205,15 @@ def run_benchmark(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run GPU Phase 1 readiness, write outputs, and apply strict checks if needed.
+
+    Args:
+        argv: Optional CLI arguments. If ``None``, parse from process arguments.
+
+    Returns:
+        ``0`` when readiness is accepted or non-strict mode is used,
+        ``1`` when strict mode is enabled and readiness is blocked.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Run without writing reports.")
     parser.add_argument(

@@ -42,6 +42,14 @@ def _build_state(shape: tuple[int, int, int, int, int]) -> NDArray[np.float64]:
 
 
 def run(output: Path) -> int:
+    """Execute the MPI rank-tile decomposition witness test.
+
+    Args:
+        output: Output JSON path for the rank-gathered verification payload.
+
+    Returns:
+        Exit status code from the runner.
+    """
     from mpi4py import MPI
 
     comm = MPI.COMM_WORLD
@@ -421,6 +429,12 @@ def run(output: Path) -> int:
 
 
 def main() -> int:
+    """Run the MPI decomposition witness test and return CLI exit code.
+
+    Returns:
+        ``0`` when execution and output writing succeed, ``1`` when topology
+        requirements are not met.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()

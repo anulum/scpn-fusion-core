@@ -1529,6 +1529,19 @@ def _markdown(report: dict[str, Any]) -> str:
 
 
 def main() -> None:
+    """Execute GK external-output parity report generation.
+
+    Builds the current GK parity report, emits it as JSON and, when
+    ``--check`` mode is enabled via arguments, enforces acceptance of the
+    full-fidelity gate.
+
+    Returns:
+        ``None`` on success.
+
+    Raises:
+        ``SystemExit`` with status 1 when ``--check`` is active and the parity
+        contract is not accepted.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check", action="store_true", help="Exit non-zero if full fidelity is blocked"
