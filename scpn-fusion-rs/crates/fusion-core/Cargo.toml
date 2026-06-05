@@ -39,3 +39,7 @@ harness = false
 [[bench]]
 name = "source_bench"
 harness = false
+
+[[bench]]
+name = "current_diffusion_nonadiabatic_bench"
+harness = false

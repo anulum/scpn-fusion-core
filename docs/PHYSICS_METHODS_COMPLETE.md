@@ -1,9 +1,12 @@
-# ──────────────────────────────────────────────────────────────────────
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Commercial license available -->
+<!-- © Concepts 1996–2026 Miroslav Šotek. All rights reserved. -->
+<!-- © Code 2020–2026 Miroslav Šotek. All rights reserved. -->
+<!-- ORCID: 0009-0009-3560-0851 -->
+<!-- Contact: www.anulum.li | protoscience@anulum.li -->
+<!-- SCPN Fusion Core — Physics Methods Reference -->
+
 # SCPN Fusion Core — Physics Methods Reference
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# Contact: www.anulum.li | protoscience@anulum.li
-# License: GNU AGPL v3 | Commercial licensing available
-# ──────────────────────────────────────────────────────────────────────
 
 **Version**: 4.0.0 &nbsp;|&nbsp; **Scope**: All implemented physics closures with equations, numerical methods, references, and validation scripts.
 
@@ -45,6 +48,445 @@ where $\hat\psi = (\psi - \psi_{\rm axis})/(\psi_{\rm bdry} - \psi_{\rm axis})$.
 4. Saad, Y. & Schultz, M.H. "GMRES: A Generalized Minimal Residual Algorithm." *SIAM J. Sci. Stat. Comput.* 7, 856–869 (1986). doi:[10.1137/0907058](https://doi.org/10.1137/0907058).
 
 **Validation:** `tests/test_force_balance.py`, `tests/test_gs_convergence.py`, `tests/test_gs_residual_gate.py`, `validation/validate_against_sparc.py`, `validation/benchmark_vs_freegs.py`.
+
+---
+
+## 1A. Field-Reversed Configuration Rigid-Rotor Analytical Limit
+
+The FRC workstream now exposes the Steinhauer no-rotation analytical limit as
+the first accepted `FUS-C.1` contract.  It is not yet the full rotating
+rigid-rotor BVP.  The accepted no-rotation contract is implemented in Python
+and Rust, with optional PyO3 exposure when the native extension is built.
+
+The same accepted no-rotation equations are exposed through
+`frc_no_rotation_jax_observables` when JAX is installed. That helper evaluates
+the Steinhauer field, pressure-balance profile, cylindrical flux primitive,
+energy inventory, and Eq. 27 `s` integral on a fixed normalised grid
+`x = r / R_s`, making `B_ext` and `R_s` gradients well-defined for optimisation
+workflows. It is not a substitute for the unresolved rotating rigid-rotor BVP
+or nonlinear MIF parity gates.
+
+The axial field follows Steinhauer (2011), Eq. 7:
+
+$$B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2R_s\delta}\right)$$
+
+The cylindrical flux primitive is evaluated analytically from the same
+accepted field:
+
+$$\psi(r) = -B_{\rm ext}R_s\delta\left[\log\cosh(a(r)) -
+\log\cosh(a(0))\right],\qquad
+a(r)=\frac{r^2-R_s^2}{2R_s\delta}.$$
+
+The accepted MIF-facing coordinate is the separatrix-normalised flux:
+
+$$\psi_N(r)=\frac{\psi(r)-\psi(0)}{\psi(R_s)-\psi(0)}.$$
+
+Validation gates the raw flux span as nonzero, requires
+$\psi_N(0)=0$ and $\psi_N(R_s)=1$, and checks that $\psi_N$ is monotone and
+bounded on $0\leq r\leq R_s$. These gates are carried through Python, Rust,
+PyO3 parity, and the tracked benchmark report.
+
+The solver validates a one-dimensional, strictly increasing radial grid,
+requires the grid to start at the magnetic axis and extend outside the
+separatrix radius, derives `delta = rho_i` from the deuterium thermal ion
+gyroradius when no layer thickness is supplied, and rejects rotating cases
+until the BVP implementation is added. The validation report now compares the
+interpolated zero-crossing against the configured `R_s` and requires the axial
+field sign to reverse between the last inner sample and the first outer sample.
+
+The reported quality-of-equilibrium parameter follows Steinhauer Eq. 27:
+
+$$s = \frac{1}{R_s}\int_0^{R_s}\frac{r}{\rho_i(r)}\,dr,$$
+
+where $\rho_i(r) = \sqrt{2m_iT_i}/(e|B_z(r)|)$.  Numerically the code
+integrates the finite form
+$r e |B_z(r)|/\sqrt{2m_iT_i}$ over the clipped interval $[0,R_s]$.
+
+The solver derives the toroidal diamagnetic current density from the
+closed-form Steinhauer derivative:
+
+$$J_\theta =
+\frac{B_{\rm ext}}{\mu_0R_s\delta}
+\left[1-\tanh^2\left(\frac{r^2-R_s^2}{2R_s\delta}\right)\right]r.$$
+
+The Ampere residual then compares this analytical current against an
+independent second-order finite-difference derivative on the active grid:
+
+$$\mathcal{A}_r = \mu_0J_\theta + \frac{dB_z}{dr}.$$
+
+The flux derivative residual compares the analytical primitive against an
+independent second-order finite-difference derivative:
+
+$$\mathcal{F}_r = \frac{d\psi}{dr} - rB_z.$$
+
+The accepted no-rotation pressure profile is the local magnetic-pressure
+balance profile:
+
+$$p(r)=\frac{B_{\rm ext}^2-B_z(r)^2}{2\mu_0},\qquad
+\mathcal{P}_r=p+\frac{B_z^2}{2\mu_0}-\frac{B_{\rm ext}^2}{2\mu_0}.$$
+
+It also carries the analytical pressure-gradient identity implied by the same
+magnetic-pressure-balance field:
+
+$$\frac{dp}{dr}=-\frac{B_z}{\mu_0}\frac{dB_z}{dr},\qquad
+\mathcal{G}_r=\left(\frac{dp}{dr}\right)_{\rm finite-grid}-
+\left(\frac{dp}{dr}\right)_{\rm analytical}.$$
+
+The solved density profile is derived from the accepted pressure profile and
+temperature contract:
+
+$$n(r)=\frac{p(r)}{(T_i+T_e)e}.$$
+
+The scalar input pressure $n_0(T_i+T_e)e$ is reported as a consistency
+diagnostic relative to the magnetic-pressure-balance peak. Validation now
+gates the configured central density $n_0$ against the solved peak density,
+so thermally inconsistent input decks fail closed instead of being accepted as
+valid equilibria. The scalar input pressure is not used to replace the solved
+local pressure profile.
+
+The same accepted pressure and density profiles define beta and line-density
+invariants on the separatrix domain:
+
+$$\beta(r)=\frac{p(r)}{B_{\rm ext}^2/(2\mu_0)},\qquad
+\langle\beta\rangle_s=\frac{1}{\pi R_s^2}\int_0^{R_s}\beta(r)\,2\pi r\,dr,$$
+
+$$N_{\rm line}=\int_0^{R_s} n(r)\,2\pi r\,dr.$$
+
+The separatrix pressure-energy inventory is checked against the independently
+assembled magnetic-field deficit:
+
+$$E_{p,s}=\int_0^{R_s}p(r)\,2\pi r\,dr,\qquad
+E_{{\rm def},s}=\int_0^{R_s}\frac{B_{\rm ext}^2-B_z(r)^2}{2\mu_0}\,2\pi r\,dr.$$
+
+The validation gate keeps $\beta_{\rm peak}\leq 1$ within finite-grid
+tolerance for the accepted no-rotation pressure-balance contract.  The line
+density is reported in particles per metre of axial length and is included in
+cross-surface parity reports. The accepted pressure-balance contract also
+requires $E_{p,s}=E_{{\rm def},s}$, so the validation report carries the
+relative closure error as a fail-closed implementation gate. The current-sheet
+closure also carries the resolved sheet-current integral above, which fails
+closed when the implemented current profile no longer conserves the finite-grid
+field jump.
+
+The validation report carries both the Ampere closure residual
+$\mathcal{A}_r$ and the normalised radial force-balance diagnostic
+
+$$\mathcal{R}_r = \frac{d p}{d r} - (\mathbf{J}\times\mathbf{B})_r,$$
+
+with $\mathbf{J}_\theta = -\mu_0^{-1} dB_z/dr$ for the no-rotation axial-field
+slice.  The Ampere closure gate is active by default with a finite-grid
+tolerance, and its report row must converge under grid refinement. The
+force-balance diagnostic is visible by default and becomes a fail-closed gate
+only when an explicit `force_balance_tolerance` is supplied.
+
+The separatrix current sheet is also checked directly from the analytical
+no-rotation field:
+
+$$\left.\frac{dB_z}{dr}\right|_{R_s}=-\frac{B_{\rm ext}}{\delta},\qquad
+J_\theta(R_s)=\frac{B_{\rm ext}}{\mu_0\delta}.$$
+
+It also integrates the resolved current-density profile over the radial domain
+and compares it with the magnetic-field jump on that same domain:
+
+$$K_{\theta,{\rm grid}}=\int_0^{r_{\rm out}}J_\theta\,dr,\qquad
+K_{\theta,{\rm expected}}=\frac{B_z(0)-B_z(r_{\rm out})}{\mu_0}.$$
+
+The solver interpolates the finite-grid derivative and current-density profile
+to $R_s$ and reports relative closure errors for both identities. These
+current-sheet diagnostics are active validation gates for the accepted
+analytical field; they are not a substitute for the unresolved rotating FRC BVP.
+
+The tracked benchmark report now includes finite-grid convergence evidence for
+the accepted no-rotation scalar invariants: null radius, separatrix radius
+error, Eq. 27 `s`, energy per metre, pressure-balance ratio, analytical
+pressure-gradient residual, central-density relative error, beta peak,
+separatrix-averaged beta, particle line density,
+separatrix pressure energy, separatrix magnetic-deficit energy, energy-closure
+relative error, separatrix field-gradient/current-density closure,
+`psi_N` axis/separatrix closure, `psi_N` monotonic/bounds diagnostics, and the
+independent pressure, flux, and Ampere residuals. This is local
+convergence evidence for the implemented analytical contract, not validation
+of the unresolved rotating FRC BVP or kinetic/transport evolution.
+
+The same report now carries a deterministic 16-case MIF/FRC no-rotation
+parameter cohort across Python, Rust `fusion-physics`, and PyO3. The cohort
+spans accepted separatrix radii, layer thicknesses, external axial fields, and
+radial grid sizes. Go, Julia, and Lean remain explicit
+`not_applicable_no_frc_surface` rows until equivalent native FRC solver logic
+exists; wrappers are not treated as parity.
+
+The no-rotation test surface also includes generated MIF/FRC property gates:
+pressure must decrease outward from the magnetic null, `beta_peak` must remain
+within the local pressure-balance bound, separatrix pressure energy must close
+against magnetic-field deficit, and Rust/PyO3 must preserve energy and
+separatrix-inventory invariants for generated accepted decks.
+
+The executable quickstart `examples/03_frc_rigid_rotor_quickstart.py` runs the
+same accepted solver path, emits the validated radial profiles and scalar
+diagnostics, and is covered by a module-specific test that checks the
+Steinhauer analytical field, magnetic-pressure-balance profile, validation
+report, and JSON output. This keeps onboarding examples aligned with the
+accepted no-rotation contract and does not extend the claim to the unresolved
+rotating BVP.
+
+**Key files:** `core/frc_rigid_rotor.py`, `scpn-fusion-rs/crates/fusion-physics/src/frc/`.
+
+**Validation:** `tests/test_frc_rigid_rotor.py`, `tests/test_frc_rigid_rotor_property.py`, `tests/test_frc_rigid_rotor_rust_parity.py`,
+`examples/03_frc_rigid_rotor_quickstart.py`,
+`benchmarks/bench_frc_rigid_rotor.py`.
+
+---
+
+## 1B. MIF/FRC Pulsed Hall-MHD Flux Carrier
+
+The MIF lane exposes FUS-C.2 as an axisymmetric pulsed Hall-MHD flux carrier in
+Python and Rust. The accepted public contract is the flattened Ono Eq. 8 form:
+
+$$
+\frac{\partial\psi}{\partial t}
+=-\frac{\psi}{\tau_\psi}+R_{\rm null}E_\theta-\eta_{\rm Spitzer}J_\theta.
+$$
+
+When no explicit azimuthal electric-field profile is supplied, the external
+field ramp supplies the circular-loop Faraday drive:
+
+$$E_\theta(r,t)=-\frac{r}{2}\frac{dB_{\rm ext}}{dt}.$$
+
+Spitzer resistivity uses the NRL-style scaling:
+
+$$\eta_{\rm Spitzer}=1.65\times10^{-9}
+\frac{Z_{\rm eff}\ln\Lambda}{T_e[\mathrm{eV}]^{3/2}}\;\Omega\mathrm{m}.$$
+
+The default step treats damping implicitly and the Ono source explicitly:
+
+$$\psi_{n+1} =
+\frac{\psi_n+\Delta t\left(R_{\rm null}E_{\theta,n+1}
+-\eta J_{\theta,n+1}\right)}
+{1+\Delta t/\tau_\psi}.$$
+
+The axial field diagnostic is reconstructed as
+$B_z=(1/r)\,d\psi/dr$ with finite-axis handling. The report carries Hall-drive,
+resistive-sink, damping-sink, source-residual, and magnetic-energy proxy
+diagnostics.
+
+Full 2D two-fluid Hall-MHD, Gkeyll/BOUT++ same-case parity, WGPU execution,
+and Ono figure reproduction remain explicit blocked rows until redistributable
+reference artefacts are available.
+
+**Key files:** `core/hall_mhd_pulsed.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/hall_mhd_pulsed.rs`,
+`docs/physics/hall_mhd_pulsed.md`.
+
+**Validation:** `tests/test_hall_mhd_pulsed.py`, Rust
+`fusion_physics::hall_mhd_pulsed` unit tests,
+`benchmarks/bench_hall_mhd_pulsed.py`,
+`validation/reports/hall_mhd_pulsed_benchmark.json`.
+
+---
+
+## 1C. MIF/FRC MRTI Growth Spectrum
+
+The MIF lane now exposes an analytical Magneto-Rayleigh-Taylor instability
+growth-spectrum contract in Python and Rust. It evaluates the resolved
+linear-mode growth rate with magnetic-tension stabilisation:
+
+$$\gamma^2(k) = k\,a_{\rm eff} -
+\frac{k^2B_\perp^2}{\mu_0\rho}.$$
+
+Modes with negative radicand are reported as zero-growth stabilised modes. The
+hydrodynamic limit is recovered as $\gamma=\sqrt{k\,a_{\rm eff}}$ when
+$B_\perp=0$. `MRTISpectrumTracker` advances perturbation amplitudes through
+frozen-coefficient exponential growth, records the fastest growing mode, and
+captures the first saturation-threshold breach.
+
+The coupling helper `effective_acceleration_from_radius_rate()` estimates
+$d^2R_s/dt^2$ from a supplied separatrix radial-speed history using finite
+differences and optional edge-padded smoothing.
+`effective_acceleration_from_pulsed_compression()` now consumes the accepted
+FUS-C.6 supplied-current `PulsedCompressionState` history, validates
+strictly increasing time and positive radii, and applies an explicit radial
+projection sign. The default `-1` maps inward compression in the outward
+radius coordinate to positive MRTI effective acceleration.
+`track_mrti_from_pulsed_compression()` advances the tracker over every
+trajectory interval using the endpoint acceleration and endpoint external
+field. This is internal FUS-C.6/MRTI coupling evidence; it is not external
+nonlinear MRTI saturation or pulsed-power image parity evidence.
+
+**Key files:** `core/mrti.py`, `scpn-fusion-rs/crates/fusion-physics/src/mrti.rs`,
+`docs/physics/mrti.md`.
+
+**Validation:** `tests/test_mrti.py`, Rust `fusion_physics::mrti` unit tests,
+`benchmarks/bench_mrti.py`, `validation/reports/mrti_benchmark.json`.
+
+---
+
+## 1D. FRC Faraday Recovery
+
+The MIF lane now exposes the FUS-C.7 classical recovery-coil induction contract
+in Python and Rust. It operates on a supplied separatrix-radius and external
+field trajectory:
+
+$$\Phi(t) = B_{\rm ext}(t)\,\pi R_s(t)^2,$$
+
+$$\mathrm{EMF}(t) = -N_{\rm turns}\,\pi
+\left(R_s^2\frac{dB_{\rm ext}}{dt}
++ 2B_{\rm ext}R_s\frac{dR_s}{dt}\right).$$
+
+For a resistive recovery load, the integrated recovered energy is evaluated as
+
+$$E_{\rm recovered} = \int \frac{\mathrm{EMF}(t)^2}{R_{\rm load}}\,dt.$$
+
+The implementation now includes a FUS-C.6 supplied-current trajectory adapter
+that maps pulsed-compression states into Faraday samples
+`(t, R_s, B_ext, dR_s/dt)` and carries the final `compression_work_J` sidecar.
+Voltage-driven FUS-C.6 results use the same Faraday trajectory adapter and add
+the final coil-circuit `source_work_J` sidecar, so recovered load energy is
+checked independently against plasma compression work and coil source work.
+The Faraday report also consumes the FUS-C.6 compression flux-budget sidecar,
+including source-increment checksum, damping-decrement checksum, update
+residual, and pass/fail status, so recovery rows fail closed when the upstream
+non-adiabatic flux carrier did not close.
+If a caller does not supply a self-consistent compression-work sidecar,
+`FaradayRecoveryReport.budget_claim_status` remains
+`blocked_missing_compression_work`; if a caller does not supply a source-work
+sidecar, `source_budget_claim_status` remains
+`blocked_missing_coil_source_work`; if a caller does not supply a compression
+flux-budget sidecar, `compression_flux_budget_claim_status` remains
+`blocked_missing_compression_flux_budget`. When sidecars are supplied, each
+gate is evaluated as a real `passed` or `failed` result. External Slough
+same-case acceptance remains blocked until a public digitised trajectory
+exists.
+
+**Key files:** `core/faraday_recovery.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs`,
+`docs/physics/faraday_recovery.md`.
+
+**Validation:** `tests/test_faraday_recovery.py`, Rust
+`fusion_physics::faraday_recovery` unit tests,
+`benchmarks/bench_faraday_recovery.py`,
+`validation/reports/faraday_recovery_benchmark.json`.
+
+---
+
+## 1E. FRC Pulsed Compression
+
+The MIF lane now exposes the FUS-C.6 pulsed-compression contract in Python and
+Rust. The model evolves a separatrix-radius trajectory under internal thermal
+pressure, external coil magnetic pressure, adiabatic compression heating, and a
+one-step non-adiabatic flux-diffusion coupling. It is a full-state trajectory
+contract for the implemented FRC/MIF lane, not a reduced-order surrogate or a
+claim of same-case Slough Fig. 5 reproduction.
+
+The external coil field is computed from the declared solenoid geometry:
+
+$$B_{\rm ext}(t)=\mu_0\,N_{\rm coil}\,I_{\rm coil}(t)/L_{\rm coil}.$$
+
+FUS-C.6 now also exposes a voltage-driven coil path that uses the exact
+piecewise-constant solution of the declared lumped circuit
+
+$$L_{\rm coil}\frac{dI_{\rm coil}}{dt}
++R_{\rm coil}I_{\rm coil}=V_{\rm bank}(t),\qquad
+|V_{\rm bank}|\le V_{\rm bank,max}.$$
+
+The circuit state records coil magnetic energy, source work, Ohmic loss, and a
+normalised energy residual before feeding the current trajectory into the same
+pressure-balance compression path. This is an exact R-L contract for the
+declared lumped coil model; it is not a 3D coil electromagnetic or liner
+circuit field solve.
+
+The radial shell update uses the TODO-specified momentum balance with explicit
+geometry and mass:
+
+$$m_{\rm shell}\,\frac{d^2R_s}{dt^2}
+= \left(p_{\rm int}-p_{\rm mag,ext}\right)\,A,$$
+
+where
+
+$$p_{\rm int}=n\,(T_i+T_e)e,\qquad
+p_{\rm mag,ext}=B_{\rm ext}^2/(2\mu_0).$$
+
+The code reports the instantaneous beta diagnostic
+
+$$\beta = \frac{2\mu_0 p_{\rm int}}{B_{\rm ext}^2},$$
+
+and advances adiabatic ion/electron heating with cylindrical volume
+compression:
+
+$$T_{\rm next}=T_{\rm prev}\left(V_{\rm prev}/V_{\rm next}\right)^{\gamma-1}.$$
+
+Flux diffusion is coupled through the accepted non-adiabatic current-diffusion
+kernel using the instantaneous Spitzer resistivity and external-field-induced
+flux target. The trajectory therefore carries both mechanical compression
+state and magnetic-flux state at every step. The compression state now also
+surfaces the exact carrier source-increment checksum, damping-decrement
+checksum, maximum absolute update residual, and `flux_budget_claim_status`.
+Those diagnostics apply the same discrete closure used by FUS-C.3,
+
+$$\psi_{n+1} = \psi_n - \Delta\psi_{\rm damp} + \Delta\psi_{\rm source},$$
+
+so downstream FUS-C.7 Faraday, FUS-C.4 MRTI, and FUS-C.5 tilt consumers can
+fail closed on flux-budget evidence instead of accepting an opaque flux
+checksum.
+
+The public acceptance boundary is fail-closed: the helper
+`slough_fig5_acceptance_status()` reports `blocked_missing_public_reference`
+until a redistributable, digitised reference trajectory is available. The
+tracked benchmark report includes that blocked row instead of fabricating
+external parity.
+
+**Key files:** `core/pulsed_compression.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs`,
+`scpn-fusion-rs/crates/fusion-physics/src/compression/coil_geometry.rs`,
+`docs/physics/pulsed_compression.md`.
+
+**Validation:** `tests/test_pulsed_compression.py`, Rust
+`fusion_physics::compression` unit tests,
+`benchmarks/bench_pulsed_compression.py`,
+`validation/reports/pulsed_compression_benchmark.json`.
+
+---
+
+## 1F. FRC n=1 Tilt-Mode Diagnostics
+
+The MIF lane exposes FUS-C.5 as a conservative FRC n=1 tilt diagnostic in
+Python and Rust. The accepted surface uses the Belova-normalised MHD
+Alfvén-time growth scaling and the Steinhauer `s` parameter already carried by
+the validated FRC equilibrium. It does not claim full Belova hybrid eigenvalue
+parity.
+
+For a supplied FRC equilibrium, the reference Alfvén speed is
+
+$$V_A = \frac{B_{\rm ref}}{\sqrt{\mu_0 n_{\rm peak}m_i}},$$
+
+and the axial half-length is
+
+$$Z_s = E R_s,$$
+
+where `E` is the prolate elongation. The MHD tilt diagnostic is
+
+$$\gamma_{\rm tilt} = C V_A/Z_s,$$
+
+with default `C = 1.2`. The rigid-body FLR diagnostic reports `s / E` against
+the thresholds `1.7`, `2.2`, and `2.8`. These thresholds are labelled as
+diagnostics only; the public stability boolean remains fail-closed while the
+Belova Table I and hybrid-eigenvalue parity row is blocked.
+
+FUS-C.5 is also wired into the accepted FUS-C.6 supplied-current compression
+trajectory. The adapter consumes strictly ordered `PulsedCompressionState`
+samples, recomputes the MHD Alfvén-time growth from instantaneous radius,
+field, and density, and projects the Steinhauer `s` parameter through
+self-similar ion-gyroradius scaling. This is end-to-end trajectory coupling
+inside the accepted MIF lane; it is not an external Belova same-case parity
+claim.
+
+**Key files:** `core/tilt_mode_frc.py`,
+`scpn-fusion-rs/crates/fusion-physics/src/tilt_mode_frc.rs`,
+`docs/physics/tilt_mode_frc.md`.
+
+**Validation:** `tests/test_tilt_mode_frc.py`, Rust
+`fusion_physics::tilt_mode_frc` unit tests,
+`benchmarks/bench_tilt_mode_frc.py`,
+`validation/reports/tilt_mode_frc_benchmark.json`.
 
 ---
 
@@ -109,6 +551,33 @@ When `multi_ion=True`, the solver evolves separate D/T fuel densities, He-ash wi
 **Key files:** `core/integrated_transport_solver.py`, `core/integrated_transport_solver_runtime.py`, `core/integrated_transport_solver_model.py`, `core/current_diffusion.py`.
 
 **Validation:** `tests/test_integrated_transport_solver.py`, `tests/test_cn_transport.py`, `tests/test_multi_ion_transport.py`, `validation/benchmark_transport_power_balance.py`.
+
+### 3.6 Non-adiabatic MIF/FRC flux carrier
+
+For pulsed MIF/FRC workflows the current-diffusion surface now includes the
+flattened Ono-style non-adiabatic carrier:
+
+$$\frac{\partial\psi}{\partial t} =
+-\frac{\psi}{\tau_\psi} + R_{\rm null} E_\theta - \eta J_\theta.$$
+
+The public Python helper `solve_flux_evolution_nonadiabatic` returns a
+`FluxEvolutionTrajectory` with `psi`, `R_null E_theta`, `eta J_theta`, net
+source, damping histories, and exact per-step source/damping budget increments
+on the supplied radial grid. Each step advances the local linear damping
+analytically with endpoint-averaged source sampling, so constant damping
+recovers the exact exponential solution and zero drive, zero damping preserves
+the input flux exactly. The reported discrete closure is
+
+$$\psi^{n+1}=\psi^n-\Delta\psi_{\rm damp}^n+\Delta\psi_{\rm source}^n,$$
+
+with `update_residual` stored for every step and radial point. Rust parity math
+lives in `fusion-core::current_diffusion`, and the benchmark report is local
+regression evidence only unless rerun under the repository benchmark-isolation
+policy.
+
+**Validation:** `tests/test_current_diffusion_nonadiabatic.py`, Rust unit tests
+in `fusion-core::current_diffusion`, and
+`validation/reports/current_diffusion_nonadiabatic_benchmark.json`.
 
 ---
 

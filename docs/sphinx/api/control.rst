@@ -1,9 +1,8 @@
-==========================================
-:mod:`scpn_fusion.control` -- Control
-==========================================
+Control API
+===========
 
-The control subpackage contains reactor control algorithms, digital
-twin infrastructure, disruption prediction, and mitigation systems.
+The :mod:`scpn_fusion.control` subpackage contains reactor control algorithms,
+digital twin infrastructure, disruption prediction, and mitigation systems.
 
 Tokamak Flight Simulator
 --------------------------

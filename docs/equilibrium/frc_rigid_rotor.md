@@ -1,0 +1,274 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — FRC Rigid-Rotor Analytical Contract
+
+# Field-Reversed Configuration Rigid-Rotor Analytical Contract
+
+This page documents the accepted FRC equilibrium surface currently implemented
+in SCPN Fusion Core. The implemented contract is the Steinhauer no-rotation
+analytical axial-field profile. It is a full numerical implementation of that
+contract, not a reduced-order surrogate for it. It is not a claim that the full
+rotating rigid-rotor boundary-value problem is complete.
+
+## Implemented equation
+
+For radial coordinate `r`, external axial field `B_ext`, separatrix radius
+`R_s`, and layer thickness `delta`, the accepted analytical field is:
+
+```text
+B_z(r) = -B_ext * tanh((r^2 - R_s^2) / (2 R_s delta))
+```
+
+The solver requires radial samples on both sides of `R_s`, evaluates the
+cylindrical flux from the closed-form primitive of `r * B_z`, reports finite
+pressure and energy diagnostics, locates the magnetic null, validates that the
+interpolated zero-crossing matches the configured separatrix radius, verifies
+that the axial field reverses sign across the separatrix, exposes toroidal
+diamagnetic current density from the closed-form derivative of the analytical
+field, and records the normalised radial ideal-MHD force-balance residual:
+
+```text
+psi(r) = -B_ext R_s delta * (log(cosh(a(r))) - log(cosh(a(0))))
+a(r) = (r^2 - R_s^2) / (2 R_s delta)
+```
+
+The same primitive now defines the separatrix-normalised FRC coordinate used by
+MIF consumers:
+
+```text
+psi_N(r) = (psi(r) - psi_axis) / (psi_sep - psi_axis)
+psi_axis = psi(0)
+psi_sep = psi(R_s)
+```
+
+Validation gates `psi_N(0) = 0`, `psi_N(R_s) = 1`, monotonicity on
+`0 <= r <= R_s`, boundedness on the separatrix interval, and the explicit
+normalisation residual. A zero or non-finite flux span fails closed.
+
+The flux derivative residual compares the analytical primitive against an
+independent second-order finite-difference derivative on the active grid:
+
+```text
+F_r = dpsi/dr - r B_z
+```
+
+The accepted no-rotation pressure is the local magnetic-pressure-balance
+profile, not a fitted Gaussian:
+
+```text
+p(r) = B_ext^2 / (2 mu_0) - B_z(r)^2 / (2 mu_0)
+P_r = p + B_z^2 / (2 mu_0) - B_ext^2 / (2 mu_0)
+dp/dr = -(B_z / mu_0) * dB_z/dr
+G_r = finite_grid(dp/dr) - analytical(dp/dr)
+```
+
+The input `n0`, `T_i_eV`, and `T_e_eV` remain part of the contract for
+thermal consistency diagnostics. The solver now derives the solved density
+profile from the accepted pressure profile and temperatures:
+
+```text
+n(r) = p(r) / ((T_i + T_e) e)
+```
+
+Validation gates the configured central density `n0` against the solved peak
+density instead of accepting thermally inconsistent inputs silently. The scalar
+input pressure `n0 * (T_i + T_e) * e` is still reported as a ratio against the
+magnetic-pressure-balance peak, but a non-matching `n0` makes the validation
+report fail closed through the density-consistency row.
+
+The same local pressure field defines explicit beta and particle-inventory
+diagnostics over the accepted no-rotation separatrix domain:
+
+```text
+beta(r) = p(r) / (B_ext^2 / (2 mu_0))
+<beta>_s = (1 / (pi R_s^2)) * integral_0^R_s beta(r) 2 pi r dr
+N_line = integral_0^R_s n(r) 2 pi r dr
+E_p,s = integral_0^R_s p(r) 2 pi r dr
+E_def,s = integral_0^R_s (B_ext^2 - B_z(r)^2)/(2 mu_0) 2 pi r dr
+```
+
+`beta_peak` is gated by default against the pressure-balance bound
+`beta_peak <= 1` with finite-grid tolerance, and `N_line` is reported in
+particles per metre of axial length. The separatrix pressure-energy inventory
+`E_p,s` is also gated against the independently assembled magnetic-field
+deficit `E_def,s`; nonzero closure error indicates an implementation mismatch
+in the accepted pressure-balance contract.
+
+```text
+R_r = dp/dr - (J x B)_r
+```
+
+For this no-rotation axial-field slice, the implemented current density is:
+
+```text
+J_theta = B_ext * (1 - tanh(a)^2) * r / (mu_0 R_s delta)
+a = (r^2 - R_s^2) / (2 R_s delta)
+```
+
+At the separatrix, the same analytical field fixes the current-sheet slope and
+peak sheet current:
+
+```text
+(dB_z/dr)|_R_s = -B_ext / delta
+J_theta(R_s) = B_ext / (mu_0 delta)
+K_theta,grid = integral_0^r_out J_theta dr
+K_theta,expected = (B_z(0) - B_z(r_out)) / mu_0
+```
+
+The integrated sheet-current identity is evaluated on the resolved radial
+domain, so it checks conservation between the accepted current-density profile
+and the field reversal actually present on the grid.
+
+The validation report interpolates the finite-grid derivative and current
+density to `R_s`, compares both against these analytical values, and fails
+closed when the relative current-sheet closure exceeds tolerance. This is a
+grid-realisation gate for the accepted no-rotation field, not a rotating-BVP
+stability claim.
+
+The Ampere closure residual compares that analytical current against the
+second-order finite-difference derivative on the active grid:
+
+```text
+A_r = mu_0 J_theta + dB_z/dr
+```
+
+The quality-of-equilibrium parameter is computed from the local thermal-ion
+gyroradius profile, not from the separatrix-layer shortcut:
+
+```text
+s = (1 / R_s) * integral_0^R_s r / rho_i(r) dr
+rho_i(r) = sqrt(2 m_i T_i) / (e * abs(B_z(r)))
+```
+
+The implementation evaluates the equivalent finite integrand
+`r * e * abs(B_z(r)) / sqrt(2 m_i T_i)` and inserts an interpolated
+separatrix endpoint when the grid does not land exactly on `R_s`.
+
+## Production boundary
+
+Accepted:
+
+- Python NumPy reference implementation in `scpn_fusion.core.frc_rigid_rotor`.
+- Optional JAX observable helper `frc_no_rotation_jax_observables` for the same
+  no-rotation Steinhauer contract on a fixed normalised grid `x = r / R_s`.
+  This surface exposes differentiable `B_ext` and `R_s` observables for
+  optimisation and controller co-design studies without claiming rotating-BVP
+  or nonlinear MIF parity.
+- Rust implementation in `fusion-physics::frc`.
+- PyO3 exposure through `scpn_fusion_rs.py_solve_frc_equilibrium` when the
+  Rust extension is built.
+- Cross-surface parity tests for the exposed Python and Rust/PyO3 paths,
+  including a deterministic 16-case MIF/FRC no-rotation parameter cohort that
+  spans accepted field, separatrix-radius, grid, and layer-thickness scales.
+- Property-based no-rotation invariant tests for pressure monotonicity away
+  from the magnetic null, beta bounds, separatrix energy closure, and
+  Rust/PyO3 energy-invariant parity on generated accepted MIF/FRC decks.
+- Explicit `J_theta` current-density and Ampere closure residual diagnostics
+  for the accepted axial-field slice, with the residual kept as an independent
+  grid diagnostic instead of a self-cancelling derivative reuse.
+- Explicit separatrix target, interpolated radius error, and field-reversal
+  diagnostics so validation compares against the configured `R_s` rather than
+  only against a recomputed state value.
+- Closed-form cylindrical flux primitive and a finite-grid derivative closure
+  gate so `psi` is mathematically tied to the accepted axial-field equation
+  instead of only being produced by numerical quadrature.
+- Separatrix-normalised flux coordinate `psi_N` with axis/span diagnostics,
+  separatrix endpoint closure, monotonicity, boundedness, and cross-surface
+  checksum parity for the accepted no-rotation FRC slice.
+- Local pressure-balance pressure profile, pressure-balance residual,
+  analytical pressure-gradient closure residual, peak pressure, solved density
+  profile, peak/input central-density consistency,
+  beta profile, separatrix-averaged beta, particle line density, input thermal
+  pressure, separatrix pressure-energy inventory, separatrix magnetic-deficit
+  inventory, energy-inventory closure, and thermal-pressure ratio diagnostics.
+- Separatrix current-sheet slope, current-density, and resolved sheet-current
+  integral closure diagnostics tied to `(dB_z/dr)|_R_s = -B_ext / delta`,
+  `J_theta(R_s) = B_ext / (mu_0 delta)`, and
+  `integral J_theta dr = (B_z(0) - B_z(r_out)) / mu_0`.
+- Finite-grid convergence diagnostics for the implemented no-rotation scalar
+  invariants: null radius, Eq. 27 `s`, energy per metre, and pressure-balance
+  ratio.
+- Benchmark artifact generation in `validation/reports/frc_rigid_rotor_benchmark.json`,
+  with grid-convergence rows and the deterministic 16-case MIF/FRC parameter
+  parity cohort recorded separately.
+- Executable quickstart reproduction in
+  `examples/03_frc_rigid_rotor_quickstart.py`, which emits the accepted
+  Steinhauer no-rotation radial profiles, validation diagnostics, optional JSON
+  samples, and an optional figure from the same solver path used by tests.
+
+Fail-closed:
+
+- Nonzero `theta_dot` rotating rigid-rotor cases.
+- Full FRC rotating BVP.
+- Full FRC kinetic or transport evolution.
+- Go, Julia, and Lean parity rows until those languages expose equivalent FRC
+  solver logic.
+
+## Reproducibility
+
+Run the Python/Rust benchmark and regenerate the tracked JSON report:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
+```
+
+Run focused Python tests:
+
+```bash
+PYTHONPATH=src python -m pytest tests/test_frc_rigid_rotor.py tests/test_frc_rigid_rotor_property.py tests/test_frc_rigid_rotor_rust_parity.py
+```
+
+Run the executable quickstart and write a reproducible JSON sample:
+
+```bash
+PYTHONPATH=src python examples/03_frc_rigid_rotor_quickstart.py --grid-points 401 --output-json /tmp/frc_quickstart_summary.json
+```
+
+Run focused Rust tests:
+
+```bash
+cd scpn-fusion-rs
+cargo test -p fusion-physics frc
+```
+
+Run Criterion benchmarks:
+
+```bash
+cd scpn-fusion-rs
+cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
+```
+
+## Evidence interpretation
+
+The benchmark report compares scalar diagnostics and weighted numerical
+checksums for `B_z`, `J_theta`, `psi`, `psi_N`, pressure, and the Eq. 27 `s` value. It
+also records separatrix radius error, field reversal, pressure-balance
+residual, central-density consistency, thermal-pressure consistency, flux
+derivative residual, Ampere residual, peak-current diagnostics, beta
+diagnostics, particle line density, separatrix energy inventory, and
+magnetic-deficit closure, `psi_N` axis/separatrix closure, `psi_N`
+monotonic/bounds gates, separatrix current-sheet closure, plus finite-grid
+convergence against the finest tracked radial grid for the scalar invariants, separatrix error,
+pressure-balance residual, analytical pressure-gradient residual,
+central-density relative error, beta peak, separatrix-averaged beta, particle line density, pressure-energy inventory,
+magnetic-deficit inventory, energy-closure relative error, separatrix
+field-gradient/current-density diagnostics, resolved sheet-current integral,
+flux derivative residual, and the independent Ampere residual accepted in this
+contract. A separate deterministic 16-case MIF/FRC no-rotation parameter
+cohort compares Python, Rust `fusion-physics`, and PyO3 on the same accepted
+contract while keeping Go, Julia, and Lean marked `not_applicable_no_frc_surface`
+until native FRC solver surfaces exist. The property test surface also
+generates accepted MIF/FRC no-rotation decks to check that pressure decreases
+outward from the magnetic null, beta remains bounded by the pressure-balance
+limit, and Rust/PyO3 preserves energy and separatrix-inventory invariants. The
+quickstart test imports the example directly and verifies the same analytical
+field and pressure equations, so public onboarding stays tied to the validated
+solver contract rather than a disconnected demonstration.
+Blocked or
+not-applicable rows are recorded instead of promoting missing surfaces to
+parity evidence. This is intentional: the accepted claim is limited to the
+explicit no-rotation analytical FRC contract.

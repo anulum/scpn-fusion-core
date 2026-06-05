@@ -12,6 +12,7 @@
 use ndarray::{Array1, Array2};
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -40,6 +41,9 @@ use fusion_nuclear::neutronics::{BreedingBlanket, VolumetricBlanketConfig};
 use fusion_physics::design_scanner;
 use fusion_physics::fno::FnoController;
 use fusion_physics::fokker_planck::FokkerPlanckSolver;
+use fusion_physics::frc::{
+    solve_frc_equilibrium as solve_frc_equilibrium_rust, RigidRotorFrcInputs,
+};
 use fusion_physics::hall_mhd::HallMHD;
 use fusion_physics::sawtooth::ReducedMHD;
 use fusion_physics::turbulence::DriftWavePhysics;
@@ -1708,6 +1712,202 @@ impl PyNonlinearGKSolver {
     }
 }
 
+/// Python-accessible Steinhauer no-rotation FRC analytical solver.
+#[pyfunction]
+#[pyo3(signature = (rho, n0, t_i_ev, t_e_ev, theta_dot, r_s, b_ext, delta=None, tolerance=1.0e-10))]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "PyO3 binding preserves the stable Python keyword API; inputs are assembled into RigidRotorFrcInputs immediately."
+)]
+fn py_solve_frc_equilibrium<'py>(
+    py: Python<'py>,
+    rho: PyReadonlyArray1<'py, f64>,
+    n0: f64,
+    t_i_ev: f64,
+    t_e_ev: f64,
+    theta_dot: f64,
+    r_s: f64,
+    b_ext: f64,
+    delta: Option<f64>,
+    tolerance: f64,
+) -> PyResult<Bound<'py, PyDict>> {
+    let inputs = RigidRotorFrcInputs {
+        n0,
+        t_i_ev,
+        t_e_ev,
+        theta_dot,
+        r_s,
+        b_ext,
+        delta,
+    };
+    let rho_grid = rho.as_array().to_owned();
+    let state = solve_frc_equilibrium_rust(&inputs, &rho_grid, tolerance)
+        .map_err(|err| pyo3::exceptions::PyValueError::new_err(err.to_string()))?;
+    let out = PyDict::new(py);
+    out.set_item("rho", state.rho.into_pyarray(py))?;
+    out.set_item("psi", state.psi.into_pyarray(py))?;
+    out.set_item("psi_normalized", state.psi_normalized.into_pyarray(py))?;
+    out.set_item("B_z", state.b_z.into_pyarray(py))?;
+    out.set_item("B_theta", state.b_theta.into_pyarray(py))?;
+    out.set_item("J_theta", state.j_theta.into_pyarray(py))?;
+    out.set_item("p", state.p.into_pyarray(py))?;
+    out.set_item("density_m3", state.density_m3.into_pyarray(py))?;
+    out.set_item("beta", state.beta.into_pyarray(py))?;
+    out.set_item("R_null", state.r_null)?;
+    out.set_item(
+        "target_separatrix_radius_m",
+        state.target_separatrix_radius_m,
+    )?;
+    out.set_item("separatrix_radius_error_m", state.separatrix_radius_error_m)?;
+    out.set_item("separatrix_index", state.separatrix_index)?;
+    out.set_item("field_reversal_passed", state.field_reversal_passed)?;
+    out.set_item("s_parameter", state.s_parameter)?;
+    out.set_item("energy_J", state.energy_j)?;
+    out.set_item("converged", state.converged)?;
+    out.set_item("residual", state.residual)?;
+    out.set_item("delta", state.delta)?;
+    out.set_item("psi_axis_Wb", state.psi_axis_wb)?;
+    out.set_item("psi_separatrix_Wb", state.psi_separatrix_wb)?;
+    out.set_item("psi_normalized_axis_error", state.psi_normalized_axis_error)?;
+    out.set_item("psi_normalized_separatrix", state.psi_normalized_separatrix)?;
+    out.set_item(
+        "psi_normalized_separatrix_error",
+        state.psi_normalized_separatrix_error,
+    )?;
+    out.set_item(
+        "psi_normalized_residual_linf",
+        state.psi_normalized_residual_linf,
+    )?;
+    out.set_item(
+        "psi_normalized_monotonic_passed",
+        state.psi_normalized_monotonic_passed,
+    )?;
+    out.set_item(
+        "psi_normalized_bounds_passed",
+        state.psi_normalized_bounds_passed,
+    )?;
+    out.set_item("pressure_balance_ratio", state.pressure_balance_ratio)?;
+    out.set_item(
+        "pressure_balance_residual",
+        state.pressure_balance_residual.into_pyarray(py),
+    )?;
+    out.set_item(
+        "pressure_balance_residual_linf",
+        state.pressure_balance_residual_linf,
+    )?;
+    out.set_item(
+        "pressure_balance_residual_l2",
+        state.pressure_balance_residual_l2,
+    )?;
+    out.set_item(
+        "pressure_gradient_analytic_Pa_m",
+        state.pressure_gradient_analytic_pa_m.into_pyarray(py),
+    )?;
+    out.set_item(
+        "pressure_gradient_residual",
+        state.pressure_gradient_residual.into_pyarray(py),
+    )?;
+    out.set_item(
+        "pressure_gradient_residual_linf",
+        state.pressure_gradient_residual_linf,
+    )?;
+    out.set_item(
+        "pressure_gradient_residual_l2",
+        state.pressure_gradient_residual_l2,
+    )?;
+    out.set_item("peak_pressure_pa", state.peak_pressure_pa)?;
+    out.set_item("density_peak_m3", state.density_peak_m3)?;
+    out.set_item("input_density_m3", state.input_density_m3)?;
+    out.set_item(
+        "central_density_residual_m3",
+        state.central_density_residual_m3,
+    )?;
+    out.set_item(
+        "central_density_relative_error",
+        state.central_density_relative_error,
+    )?;
+    out.set_item("beta_peak", state.beta_peak)?;
+    out.set_item("beta_separatrix_average", state.beta_separatrix_average)?;
+    out.set_item("particle_line_density_m1", state.particle_line_density_m1)?;
+    out.set_item(
+        "separatrix_pressure_energy_J_m",
+        state.separatrix_pressure_energy_j_m,
+    )?;
+    out.set_item(
+        "separatrix_magnetic_deficit_energy_J_m",
+        state.separatrix_magnetic_deficit_energy_j_m,
+    )?;
+    out.set_item(
+        "separatrix_energy_closure_relative_error",
+        state.separatrix_energy_closure_relative_error,
+    )?;
+    out.set_item("input_thermal_pressure_pa", state.input_thermal_pressure_pa)?;
+    out.set_item("thermal_pressure_ratio", state.thermal_pressure_ratio)?;
+    out.set_item(
+        "flux_derivative_residual",
+        state.flux_derivative_residual.into_pyarray(py),
+    )?;
+    out.set_item(
+        "flux_derivative_residual_linf",
+        state.flux_derivative_residual_linf,
+    )?;
+    out.set_item(
+        "flux_derivative_residual_l2",
+        state.flux_derivative_residual_l2,
+    )?;
+    out.set_item("ampere_residual", state.ampere_residual.into_pyarray(py))?;
+    out.set_item("ampere_residual_linf", state.ampere_residual_linf)?;
+    out.set_item("ampere_residual_l2", state.ampere_residual_l2)?;
+    out.set_item("peak_j_theta_A_m2", state.peak_j_theta_a_m2)?;
+    out.set_item(
+        "separatrix_bz_gradient_T_m",
+        state.separatrix_bz_gradient_t_m,
+    )?;
+    out.set_item(
+        "separatrix_expected_bz_gradient_T_m",
+        state.separatrix_expected_bz_gradient_t_m,
+    )?;
+    out.set_item(
+        "separatrix_gradient_relative_error",
+        state.separatrix_gradient_relative_error,
+    )?;
+    out.set_item(
+        "separatrix_current_density_A_m2",
+        state.separatrix_current_density_a_m2,
+    )?;
+    out.set_item(
+        "separatrix_expected_current_density_A_m2",
+        state.separatrix_expected_current_density_a_m2,
+    )?;
+    out.set_item(
+        "separatrix_current_density_relative_error",
+        state.separatrix_current_density_relative_error,
+    )?;
+    out.set_item(
+        "sheet_current_integral_A_m",
+        state.sheet_current_integral_a_m,
+    )?;
+    out.set_item(
+        "expected_sheet_current_integral_A_m",
+        state.expected_sheet_current_integral_a_m,
+    )?;
+    out.set_item(
+        "sheet_current_integral_relative_error",
+        state.sheet_current_integral_relative_error,
+    )?;
+    out.set_item(
+        "force_balance_residual",
+        state.force_balance_residual.into_pyarray(py),
+    )?;
+    out.set_item(
+        "force_balance_residual_linf",
+        state.force_balance_residual_linf,
+    )?;
+    out.set_item("force_balance_residual_l2", state.force_balance_residual_l2)?;
+    out.set_item("model", state.model)?;
+    Ok(out)
+}
+
 #[pymodule]
 fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFusionKernel>()?;
@@ -1759,5 +1959,6 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_info, m)?)?;
     }
     m.add_class::<PyNonlinearGKSolver>()?;
+    m.add_function(wrap_pyfunction!(py_solve_frc_equilibrium, m)?)?;
     Ok(())
 }

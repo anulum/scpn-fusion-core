@@ -608,6 +608,7 @@ name = "fusion-physics"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "fusion-core",
  "fusion-math",
  "fusion-types",
  "nalgebra",
@@ -617,6 +618,7 @@ dependencies = [
  "rand 0.8.6",
  "rand_distr",
  "rayon",
+ "serde_json",
 ]
 
 [[package]]

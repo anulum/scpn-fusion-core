@@ -1,3 +1,11 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Commercial license available -->
+<!-- © Concepts 1996–2026 Miroslav Šotek. All rights reserved. -->
+<!-- © Code 2020–2026 Miroslav Šotek. All rights reserved. -->
+<!-- ORCID: 0009-0009-3560-0851 -->
+<!-- Contact: www.anulum.li | protoscience@anulum.li -->
+<!-- SCPN Fusion Core — Benchmark Comparison -->
+
 # SCPN Fusion Core — Benchmark Comparison
 
 Comparison of SCPN Fusion Core against established fusion simulation codes.
@@ -37,6 +45,74 @@ python validation/full_fidelity_end_to_end_campaign.py
 Published reports must retain blocker statuses when external artefacts are
 missing. Do not substitute synthetic, reduced-order, or partial diagnostic
 outputs for accepted full-fidelity parity evidence.
+
+## FRC rigid-rotor no-rotation analytical benchmark
+
+The accepted FRC analytical lane is benchmarked separately from Grad-Shafranov,
+gyrokinetic, and free-boundary evidence. It covers the Steinhauer no-rotation
+axial-field contract only:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
+```
+
+Tracked report: [`validation/reports/frc_rigid_rotor_benchmark.json`](../validation/reports/frc_rigid_rotor_benchmark.json)
+
+The tracked report is local regression evidence unless its
+`benchmark_evidence.classification` states otherwise. Current committed FRC
+timing rows record command, CPU affinity, and host-load context, but they are
+not isolated-core production throughput claims.
+
+The report compares Python NumPy, Rust `fusion-physics`, and optional PyO3
+surfaces on `65`, `129`, `257`, and `513` point radial grids using null radius,
+configured separatrix target, separatrix radius error, field reversal,
+Steinhauer Eq. 27 S-parameter, energy, local pressure balance, thermal-pressure
+consistency, force-balance, and weighted numerical checksums for `B_z`,
+`J_theta`, `psi`, `psi_N`, and pressure. It also records peak toroidal current density,
+analytical flux-primitive derivative residuals, pressure-balance residuals,
+analytical pressure-gradient residuals, Ampere closure residuals, `psi_N`
+axis/separatrix closure, `psi_N` monotonicity and bounds gates, separatrix pressure-energy inventory,
+magnetic-deficit inventory, energy-closure relative error, separatrix
+current-sheet field-gradient/current-density closure, resolved sheet-current
+integral closure, and a finite-grid convergence block for null radius,
+separatrix radius error, Eq. 27 `s`, energy
+per metre, pressure-balance ratio, pressure-balance residual,
+analytical pressure-gradient residual, `psi_N` closure, flux derivative residual, current-sheet closure, and the independent
+Ampere residual against the finest tracked grid. It also records a deterministic
+16-case MIF/FRC no-rotation parameter cohort that spans accepted layer
+thicknesses, external axial fields, separatrix radii, and grid sizes across
+Python, Rust `fusion-physics`, and optional PyO3. Go, Julia, and Lean are
+recorded as `not_applicable_no_frc_surface` until those languages expose
+equivalent solver logic. Nonzero-rotation FRC cases remain fail-closed and are
+not benchmarked as accepted physics.
+
+## MIF/FRC Faraday recovery benchmark
+
+The FUS-C.7 recovery lane is benchmarked separately from external Slough
+acceptance evidence:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_faraday_recovery.py
+```
+
+Tracked report:
+[`validation/reports/faraday_recovery_benchmark.json`](../validation/reports/faraday_recovery_benchmark.json)
+
+The report records local non-isolated regression rows for the exact classical
+Faraday relation over supplied trajectories. It now also includes internal
+FUS-C.6 supplied-current and voltage-driven pulsed-compression sidecar rows:
+each row converts compression states to `(t, R_s, B_ext, dR_s/dt)`, carries the
+final `compression_work_J`, and evaluates the energy-budget gate as `passed` or
+`failed` instead of marking the work sidecar missing. Voltage-driven rows also
+carry final coil-circuit `source_work_J` and evaluate `source_budget_claim_status`
+separately. FUS-C.6 coupled rows now also carry the upstream compression
+flux-budget sidecar and publish `compression_flux_budget_claim_status`, while
+plain supplied-trajectory rows remain
+`blocked_missing_compression_flux_budget`.
+
+External Slough same-case parity remains blocked until a public digitised
+trajectory, compression-work sidecar, and compatible upstream flux-budget
+evidence are available with provenance and checksums.
 
 ## Type-checking non-regression gate
 
@@ -1242,6 +1318,26 @@ high-k leakage, and per-save invariant-pass histories from both NumPy and JAX
 run paths. This is necessary infrastructure for full nonlinear 5D parity, but
 it is not sufficient to claim GENE/CGYRO/GS2 equivalence.
 
+### Nonlinear GK parity item 1 execution checklist
+
+- Current fail state: all GENE/CGYRO/GS2 external-output rows remain blocked on
+  `blocked_missing_external_output_manifest` because same-deck external payloads
+  are not yet redistributable.
+- Required acceptance evidence for this lane:
+  - strict `gk-nonlinear-external-output` payloads (coordinates, observables,
+    redistributable provenance, and checksums)
+  - native same-case comparison rows with thresholds on distribution RMSE,
+    heat-flux spectra RMSE, field-energy history RMSE, and saturation/zonal-flow
+    metrics
+  - linked coarse-vs-fine grid-convergence row
+  - linked production-scale row with hardware/device metadata
+- Evidence refresh sequence (run after any new raw output):
+  - `python tools/inventory_gk_public_reference_decks.py`
+  - `python tools/gk_external_output_parity.py`
+  - `python validation/benchmark_full_fidelity_acceptance.py`
+- Internal acquisition plan is tracked in
+  `docs/internal/gk_same_deck_external_output_acquisition_todo_2026-06-01.md`.
+
 The current acceptance report is
 `validation/reports/full_fidelity_acceptance_benchmark.md`. The integrated
 end-to-end campaign report is
@@ -1512,6 +1608,130 @@ Rust flight simulator, and it is not EFIT-grade reconstruction parity evidence.
 
 ### Rust `fusion-math` SOR kernel source-convention benchmark
 
+### FRC rigid-rotor analytical benchmark
+
+The tracked FRC benchmark report is `frc_rigid_rotor_no_rotation_analytical`.
+It covers the accepted Steinhauer no-rotation axial-field contract only. The
+input deck is pressure matched so `n0 * (T_i + T_e) * e` equals the
+magnetic-pressure-balance peak for the configured `B_ext`. Reported scalar
+diagnostics include null radius, separatrix error, Eq. 27 `s`, energy per
+metre, pressure-balance ratio, pressure residual, analytical pressure-gradient residual,
+solved peak density, input central density, central-density residual, central-density relative error,
+beta peak, separatrix-averaged beta, particle line density, input thermal
+pressure, separatrix pressure-energy inventory, magnetic-deficit inventory,
+energy-closure relative error, separatrix field-gradient/current-density
+closure, thermal-pressure ratio, flux residual, Ampere residual,
+force-balance residual, and weighted checksums for `B_z`, `J_theta`, `psi`,
+pressure, density, and beta. Python, Rust, and PyO3 rows must agree on the
+same pressure-density-beta-energy-current-sheet closure contract; Go, Julia, and Lean remain
+`not_applicable_no_frc_surface` until equivalent native FRC solver logic exists.
+The same tracked report now includes a deterministic 16-case MIF/FRC
+no-rotation parameter cohort for Python, Rust `fusion-physics`, and PyO3
+checksum parity. These rows are parameter-contract evidence, not rotating-BVP
+or kinetic-transport validation.
+
+Reproduce locally:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
+```
+
+### FRC pulsed Hall-MHD flux-carrier benchmark
+
+The tracked FUS-C.2 benchmark report is
+`validation/reports/hall_mhd_pulsed_benchmark.json`. It covers the accepted
+axisymmetric Ono Eq. 8 flux carrier:
+
+$$\partial_t\psi=-\psi/\tau_\psi+R_{\rm null}E_\theta-\eta J_\theta.$$
+
+The report includes Python timing rows, Rust Criterion rows, source checksums,
+and blocked external-reference rows for `gkeyll_axisymmetric_small_hall` and
+`ono_1997_fig4_flux_decay`. It does not claim full 2D two-fluid Hall-MHD,
+Gkeyll/BOUT++ same-case parity, WGPU execution, or Ono figure reproduction.
+
+Latest local non-isolated regression rows:
+
+| Row | Grid | Steps | Mean seconds |
+|---|---:|---:|---:|
+| Python `python_64_grid_256_steps` | 64 | 256 | 0.0528046082 |
+| Python `python_256_grid_256_steps` | 256 | 256 | 0.0620382902 |
+| Python `python_1024_grid_256_steps` | 1,024 | 256 | 0.0689889970 |
+| Rust `rust_64_grid_256_steps` | 64 | 256 | 0.0002328276 |
+| Rust `rust_256_grid_256_steps` | 256 | 256 | 0.0008544832 |
+| Rust `rust_1024_grid_256_steps` | 1,024 | 256 | 0.0031026612 |
+
+Reproduce locally:
+
+```bash
+cargo bench --manifest-path scpn-fusion-rs/Cargo.toml -p fusion-physics --bench hall_mhd_pulsed_bench -- --sample-size 10
+PYTHONPATH=src python benchmarks/bench_hall_mhd_pulsed.py
+```
+
+### FRC non-adiabatic current-diffusion carrier benchmark
+
+The tracked FUS-C.3 benchmark report is
+`validation/reports/current_diffusion_nonadiabatic_benchmark.json`. It covers
+the accepted one-dimensional Ono-style carrier used by downstream pulsed
+compression:
+
+$$\partial_t\psi=-\psi/\tau_\psi+R_{\rm null}E_\theta-\eta J_\theta.$$
+
+The report includes Python timing rows, Rust Criterion rows from
+`fusion-core::current_diffusion`, and the local discrete update residual for
+the exact source/damping budget
+`psi[n+1] = psi[n] - damping_decrement[n] + source_increment[n]`. The report is
+local non-isolated regression evidence, not production throughput evidence and
+not Ono Fig. 4 same-case parity.
+
+Reproduce locally:
+
+```bash
+cargo bench --manifest-path scpn-fusion-rs/Cargo.toml -p fusion-core --bench current_diffusion_nonadiabatic_bench -- --sample-size 10
+PYTHONPATH=src python benchmarks/bench_current_diffusion_nonadiabatic.py
+```
+
+### FRC n=1 tilt-mode diagnostic benchmark
+
+The tracked FUS-C.5 benchmark report is
+`validation/reports/tilt_mode_frc_benchmark.json`. It covers the conservative
+MHD Alfvén-time diagnostic and the FUS-C.6 supplied-current trajectory adapter:
+
+$$\gamma_{\rm tilt}=C V_A/(E R_s).$$
+
+The coupled adapter uses the self-similar projection
+`s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)` and recomputes growth from the
+instantaneous compression state. The report includes Python timing rows, Rust
+Criterion rows, FUS-C.6 coupled trajectory rows, source checksums, and an
+external-reference row for `belova_2001_table1_tilt_stability` with status
+`blocked_missing_public_digitised_reference`. It does not claim full Belova
+hybrid eigenvalue parity or Table I reproduction.
+
+Latest local non-isolated regression rows:
+
+| Row | Workload | Mean seconds |
+|---|---:|---:|
+| Python `python_1000_reports` | 1,000 reports | 0.0155345608 |
+| Python `python_10000_reports` | 10,000 reports | 0.1576017428 |
+| Python `python_100000_reports` | 100,000 reports | 1.4554153114 |
+| Python `python_fus_c6_coupled_64_intervals` | 64 intervals / 65 states | 0.0012223596 |
+| Python `python_fus_c6_coupled_256_intervals` | 256 intervals / 257 states | 0.0055735386 |
+| Rust `rust_1000_reports` | 1,000 reports | 0.0000290052 |
+| Rust `rust_10000_reports` | 10,000 reports | 0.0002804347 |
+| Rust `rust_100000_reports` | 100,000 reports | 0.0027860003 |
+| Rust `rust_fus_c6_coupled_64_intervals` | 64 intervals / 65 states | 0.0000030257 |
+| Rust `rust_fus_c6_coupled_256_intervals` | 256 intervals / 257 states | 0.0000126976 |
+
+The interval count excludes the initial state; each coupled row evaluates
+`intervals + 1` compression states. Use the tracked JSON for exact local values
+because these workstation rows are non-isolated regression evidence.
+
+Reproduce locally:
+
+```bash
+cargo bench --manifest-path scpn-fusion-rs/Cargo.toml -p fusion-physics --bench tilt_mode_frc_bench -- --sample-size 10
+PYTHONPATH=src python benchmarks/bench_tilt_mode_frc.py
+```
+
 Local run on 2026-05-25 after aligning the Rust `fusion-math` SOR, multigrid,
 and GMRES kernels to the Python native convention `Delta*psi = source`:
 
@@ -1526,6 +1746,43 @@ Verification paired with this benchmark:
 `cargo test -p fusion-math` passed unit tests, property tests, and doc-tests;
 `python -m pytest tests/test_fusion_kernel_solver_mixins.py -q` passed the
 Python counterpart fixed-point contracts.
+
+## MIF/FRC pulsed compression
+
+Tracked report:
+[`validation/reports/pulsed_compression_benchmark.json`](../validation/reports/pulsed_compression_benchmark.json)
+
+The report records local non-isolated regression rows for the FUS-C.6
+pulsed-compression path. Supplied-current rows exercise the pressure-balance
+trajectory, adiabatic heating, compression-work sidecar, and Ono
+non-adiabatic flux-carrier coupling. The Python rows now publish the carrier
+source-increment checksum, damping-decrement checksum, maximum absolute update
+residual, and `flux_budget_claim_status`; Rust Criterion rows assert the same
+budget gate inside the native benchmark harness. Voltage-driven rows add the
+exact lumped R-L coil-current contract over the declared bank-voltage limit and
+record the coil-circuit energy residual before feeding the same compression
+path.
+
+This is not a production throughput claim and not external Slough Fig. 5
+parity. The Slough row remains blocked until a public digitised trajectory with
+compatible radius, temperature, field, current, provenance, and checksum data
+is available.
+
+## MIF/FRC MRTI growth spectrum
+
+Tracked report:
+[`validation/reports/mrti_benchmark.json`](../validation/reports/mrti_benchmark.json)
+
+The report records local non-isolated regression rows for the analytical
+MRTI growth-rate and spectrum tracker. It also includes internal FUS-C.6
+supplied-current pulsed-compression rows: each row consumes the real
+`PulsedCompressionState` history, projects signed radial acceleration into the
+MRTI interface-normal convention, and advances the MRTI spectrum over the
+compression intervals.
+
+This is same-codebase coupling evidence, not external nonlinear MRTI parity.
+Redistributable pulsed-power MRTI image/diagnostic references remain blocked
+until public same-case outputs with provenance and license terms are available.
 
 ## Benchmark Environment
 

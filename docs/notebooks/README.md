@@ -29,3 +29,16 @@ MPI/multi-GPU evidence remains blocked.
 2. Run the Grad-Shafranov equilibrium notebook to see the core solver contract.
 3. Review inverse and transport benchmarks to connect solver outputs to validation reports.
 4. Treat HTML exports as tutorials; use tracked validation reports for public benchmark claims.
+
+## Notebook roles
+
+| Notebook family | Role | Claim status |
+|---|---|---|
+| Neuro-symbolic control | Shows the controller and compiler workflow | Tutorial unless linked to replay reports |
+| Grad-Shafranov equilibrium | Demonstrates equilibrium inputs, solves, and diagnostics | Local contract unless linked to accepted GEQDSK/FreeGS reports |
+| Inverse and transport benchmarks | Connects model outputs to validation workflows | Diagnostic or benchmark support depending on the linked report |
+| Compact reactor and Q10 demos | Explains scenario exploration | Educational; not plant-design certification |
+
+When exporting or updating notebooks, keep setup cells deterministic, avoid
+private paths, and link any public performance or physics claim to a tracked
+report under `validation/reports/`.

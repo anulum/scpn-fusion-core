@@ -1,0 +1,1100 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Commercial license available
+// © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+// © Code 2020–2026 Miroslav Šotek. All rights reserved.
+// ORCID: 0009-0009-3560-0851
+// Contact: www.anulum.li | protoscience@anulum.li
+// SCPN Fusion Core — FRC Rigid-Rotor Solver
+//! Steinhauer no-rotation analytical FRC rigid-rotor solver.
+
+use super::data::{FrcEquilibriumState, FrcSolverError, RigidRotorFrcInputs};
+use ndarray::Array1;
+
+const MU_0: f64 = 4.0 * std::f64::consts::PI * 1.0e-7;
+const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
+const ATOMIC_MASS_KG: f64 = 1.660_539_066_60e-27;
+const DEUTERIUM_MASS_AMU: f64 = 2.014;
+const MODEL_NAME: &str = "steinhauer_2011_no_rotation_analytical";
+
+/// Return thermal ion gyroradius in metres using `sqrt(2 m_i T_i) / (e B)`.
+pub fn ion_gyroradius_m(t_i_ev: f64, b_t: f64, mass_amu: f64) -> Result<f64, FrcSolverError> {
+    if !t_i_ev.is_finite() || t_i_ev <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("T_i_eV must be positive"));
+    }
+    if !b_t.is_finite() || b_t == 0.0 {
+        return Err(FrcSolverError::InvalidInput("B_T must be non-zero"));
+    }
+    if !mass_amu.is_finite() || mass_amu <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("mass_amu must be positive"));
+    }
+    let ion_mass_kg = mass_amu * ATOMIC_MASS_KG;
+    let thermal_momentum = (2.0 * ion_mass_kg * t_i_ev * ELEMENTARY_CHARGE_C).sqrt();
+    Ok(thermal_momentum / (ELEMENTARY_CHARGE_C * b_t.abs()))
+}
+
+/// Return Steinhauer Eq. 27 `s = R_s^-1 integral_0^R_s r / rho_i(r) dr`.
+pub fn s_parameter_from_profile(
+    rho: &Array1<f64>,
+    b_z: &Array1<f64>,
+    r_s: f64,
+    t_i_ev: f64,
+    mass_amu: f64,
+) -> Result<f64, FrcSolverError> {
+    if !r_s.is_finite() || r_s <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("R_s must be positive"));
+    }
+    if !t_i_ev.is_finite() || t_i_ev <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("T_i_eV must be positive"));
+    }
+    if !mass_amu.is_finite() || mass_amu <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("mass_amu must be positive"));
+    }
+    if rho.len() != b_z.len() {
+        return Err(FrcSolverError::InvalidInput(
+            "rho and B_z profiles must have matching lengths",
+        ));
+    }
+    let ion_mass_kg = mass_amu * ATOMIC_MASS_KG;
+    let thermal_momentum = (2.0 * ion_mass_kg * t_i_ev * ELEMENTARY_CHARGE_C).sqrt();
+    let (r_clip, b_clip) = clip_to_separatrix(rho, b_z, r_s)?;
+    let integrand = Array1::from_iter(
+        r_clip
+            .iter()
+            .zip(b_clip.iter())
+            .map(|(r, b)| r * ELEMENTARY_CHARGE_C * b.abs() / thermal_momentum),
+    );
+    Ok(trapezoid(&r_clip, &integrand) / r_s)
+}
+
+/// Solve the Steinhauer no-rotation FRC analytical limit on a radial grid.
+pub fn solve_frc_equilibrium(
+    inputs: &RigidRotorFrcInputs,
+    rho_grid: &Array1<f64>,
+    tolerance: f64,
+) -> Result<FrcEquilibriumState, FrcSolverError> {
+    validate_inputs(inputs, tolerance)?;
+    validate_grid(rho_grid, inputs.r_s)?;
+    let rho = rho_grid.clone();
+    let delta = match inputs.delta {
+        Some(value) => value,
+        None => ion_gyroradius_m(inputs.t_i_ev, inputs.b_ext, DEUTERIUM_MASS_AMU)?,
+    };
+
+    let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
+    let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
+    let b_theta = Array1::zeros(b_z.len());
+    let j_theta =
+        toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
+    let grad_bz_analytic =
+        axial_field_derivative_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
+    let grad_bz = gradient_edge_order2(&rho, &b_z);
+    let separatrix_bz_gradient_t_m = interpolate(&rho, &grad_bz, inputs.r_s);
+    let separatrix_expected_bz_gradient_t_m = -inputs.b_ext / delta;
+    let separatrix_gradient_relative_error =
+        (separatrix_bz_gradient_t_m - separatrix_expected_bz_gradient_t_m).abs()
+            / separatrix_expected_bz_gradient_t_m.abs().max(tolerance);
+    let separatrix_current_density_a_m2 = interpolate(&rho, &j_theta, inputs.r_s);
+    let separatrix_expected_current_density_a_m2 = inputs.b_ext / (MU_0 * delta);
+    let separatrix_current_density_relative_error =
+        (separatrix_current_density_a_m2 - separatrix_expected_current_density_a_m2).abs()
+            / separatrix_expected_current_density_a_m2
+                .abs()
+                .max(tolerance);
+    let sheet_current_integral_a_m = trapezoid(&rho, &j_theta);
+    let expected_sheet_current_integral_a_m = (b_z[0] - b_z[b_z.len() - 1]) / MU_0;
+    let sheet_current_integral_relative_error =
+        (sheet_current_integral_a_m - expected_sheet_current_integral_a_m).abs()
+            / expected_sheet_current_integral_a_m.abs().max(tolerance);
+    let ampere_residual = ampere_current_closure_residual(&rho, &b_z, &j_theta);
+    let ampere_scale = tolerance
+        .max(max_abs(&grad_bz))
+        .max(MU_0 * max_abs(&j_theta));
+    let ampere_residual_linf = max_abs(&ampere_residual) / ampere_scale;
+    let ampere_residual_l2 = (ampere_residual
+        .iter()
+        .map(|value| (value / ampere_scale).powi(2))
+        .sum::<f64>()
+        / ampere_residual.len() as f64)
+        .sqrt();
+    let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
+    let psi_axis_wb = psi[0];
+    let psi_separatrix_wb = interpolate(&rho, &psi, inputs.r_s);
+    let psi_span_wb = psi_separatrix_wb - psi_axis_wb;
+    if psi_span_wb.abs() <= tolerance {
+        return Err(FrcSolverError::InvalidInput(
+            "psi separatrix span must be non-zero",
+        ));
+    }
+    let psi_normalized = psi.mapv(|value| (value - psi_axis_wb) / psi_span_wb);
+    let psi_normalized_axis_error = psi_normalized[0].abs();
+    let psi_normalized_separatrix = interpolate(&rho, &psi_normalized, inputs.r_s);
+    let psi_normalized_separatrix_error = (psi_normalized_separatrix - 1.0).abs();
+    let psi_normalized_residual =
+        psi_normalized_closure_residual(&psi, psi_axis_wb, psi_separatrix_wb, &psi_normalized)?;
+    let psi_normalized_residual_linf = max_abs(&psi_normalized_residual);
+    let psi_normalized_monotonic_passed =
+        psi_normalized_monotonic_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
+    let psi_normalized_bounds_passed =
+        psi_normalized_bounds_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
+    let flux_derivative_residual = flux_derivative_closure_residual(&rho, &psi, &b_z);
+    let dpsi_dr = gradient_edge_order2(&rho, &psi);
+    let flux_scale = tolerance
+        .max(max_abs(&rho_times_bz(&rho, &b_z)))
+        .max(max_abs(&dpsi_dr));
+    let flux_derivative_residual_linf = max_abs(&flux_derivative_residual) / flux_scale;
+    let flux_derivative_residual_l2 = (flux_derivative_residual
+        .iter()
+        .map(|value| (value / flux_scale).powi(2))
+        .sum::<f64>()
+        / flux_derivative_residual.len() as f64)
+        .sqrt();
+    let r_null = zero_crossing_radius(&rho, &b_z);
+    let separatrix_radius_error_m = (r_null - inputs.r_s).abs();
+    let separatrix_index = nearest_index(&rho, r_null);
+    let field_reversal_passed = field_reversal_passed(&rho, &b_z, inputs.r_s);
+
+    let input_thermal_pressure_pa =
+        inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+    let external_magnetic_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
+    let p = b_z.mapv(|b| (external_magnetic_pressure - b * b / (2.0 * MU_0)).max(0.0));
+    let peak_pressure_pa = max_abs(&p);
+    let thermal_energy_j = (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+    let density_m3 = p.mapv(|pressure| pressure / thermal_energy_j);
+    let density_peak_m3 = max_abs(&density_m3);
+    let central_density_residual_m3 = density_peak_m3 - inputs.n0;
+    let central_density_relative_error =
+        central_density_residual_m3.abs() / density_peak_m3.max(inputs.n0).max(tolerance);
+    let pressure_scale = external_magnetic_pressure.max(tolerance);
+    let beta = p.mapv(|pressure| pressure / pressure_scale);
+    let beta_peak = max_abs(&beta);
+    let (beta_r_clip, beta_clip) = clip_to_separatrix(&rho, &beta, inputs.r_s)?;
+    let beta_integrand = Array1::from_iter(
+        beta_clip
+            .iter()
+            .zip(beta_r_clip.iter())
+            .map(|(beta_value, r)| beta_value * 2.0 * std::f64::consts::PI * r),
+    );
+    let beta_separatrix_average = trapezoid(&beta_r_clip, &beta_integrand)
+        / (std::f64::consts::PI * inputs.r_s * inputs.r_s).max(tolerance);
+    let (density_r_clip, density_clip) = clip_to_separatrix(&rho, &density_m3, inputs.r_s)?;
+    let density_integrand = Array1::from_iter(
+        density_clip
+            .iter()
+            .zip(density_r_clip.iter())
+            .map(|(density, r)| density * 2.0 * std::f64::consts::PI * r),
+    );
+    let particle_line_density_m1 = trapezoid(&density_r_clip, &density_integrand);
+    let (pressure_r_clip, pressure_clip) = clip_to_separatrix(&rho, &p, inputs.r_s)?;
+    let pressure_energy_integrand = Array1::from_iter(
+        pressure_clip
+            .iter()
+            .zip(pressure_r_clip.iter())
+            .map(|(pressure, r)| pressure * 2.0 * std::f64::consts::PI * r),
+    );
+    let separatrix_pressure_energy_j_m = trapezoid(&pressure_r_clip, &pressure_energy_integrand);
+    let magnetic_deficit = b_z.mapv(|b| external_magnetic_pressure - b * b / (2.0 * MU_0));
+    let (deficit_r_clip, deficit_clip) = clip_to_separatrix(&rho, &magnetic_deficit, inputs.r_s)?;
+    let deficit_energy_integrand = Array1::from_iter(
+        deficit_clip
+            .iter()
+            .zip(deficit_r_clip.iter())
+            .map(|(deficit, r)| deficit * 2.0 * std::f64::consts::PI * r),
+    );
+    let separatrix_magnetic_deficit_energy_j_m =
+        trapezoid(&deficit_r_clip, &deficit_energy_integrand);
+    let separatrix_energy_closure_relative_error =
+        (separatrix_pressure_energy_j_m - separatrix_magnetic_deficit_energy_j_m).abs()
+            / separatrix_pressure_energy_j_m
+                .abs()
+                .max(separatrix_magnetic_deficit_energy_j_m.abs())
+                .max(tolerance);
+    let pressure_balance_residual = pressure_balance_residual_profile(&p, &b_z, inputs.b_ext);
+    let pressure_balance_residual_linf = max_abs(&pressure_balance_residual) / pressure_scale;
+    let pressure_balance_residual_l2 = (pressure_balance_residual
+        .iter()
+        .map(|value| (value / pressure_scale).powi(2))
+        .sum::<f64>()
+        / pressure_balance_residual.len() as f64)
+        .sqrt();
+    let pressure_gradient_analytic_pa_m =
+        pressure_gradient_from_steinhauer(&b_z, &grad_bz_analytic);
+    let pressure_gradient_residual =
+        pressure_gradient_closure_residual(&rho, &p, &pressure_gradient_analytic_pa_m);
+    let grad_p = gradient_edge_order2(&rho, &p);
+    let pressure_gradient_scale = tolerance
+        .max(max_abs(&grad_p))
+        .max(max_abs(&pressure_gradient_analytic_pa_m));
+    let pressure_gradient_residual_linf =
+        max_abs(&pressure_gradient_residual) / pressure_gradient_scale;
+    let pressure_gradient_residual_l2 = (pressure_gradient_residual
+        .iter()
+        .map(|value| (value / pressure_gradient_scale).powi(2))
+        .sum::<f64>()
+        / pressure_gradient_residual.len() as f64)
+        .sqrt();
+
+    let force_balance_residual = radial_force_balance_residual(&rho, &b_z, &j_theta, &p);
+    let lorentz_scale =
+        Array1::from_iter(b_z.iter().zip(j_theta.iter()).map(|(b, j)| (j * b).abs()));
+    let residual_scale = tolerance.max(max_abs(&grad_p)).max(max_abs(&lorentz_scale));
+    let force_balance_residual_linf = max_abs(&force_balance_residual) / residual_scale;
+    let force_balance_residual_l2 = (force_balance_residual
+        .iter()
+        .map(|value| (value / residual_scale).powi(2))
+        .sum::<f64>()
+        / force_balance_residual.len() as f64)
+        .sqrt();
+
+    let magnetic_energy_density = b_z.mapv(|b| b * b / (2.0 * MU_0));
+    let total_energy_density = &magnetic_energy_density + &p;
+    let energy_integrand = Array1::from_iter(
+        total_energy_density
+            .iter()
+            .zip(rho.iter())
+            .map(|(density, r)| density * 2.0 * std::f64::consts::PI * r),
+    );
+    let energy_j = trapezoid(&rho, &energy_integrand);
+    let pressure_integrand = Array1::from_iter(
+        p.iter()
+            .zip(rho.iter())
+            .map(|(pressure, r)| pressure * 2.0 * std::f64::consts::PI * r),
+    );
+    let pressure_integral = trapezoid(&rho, &pressure_integrand);
+    let external_pressure_energy = (inputs.b_ext * inputs.b_ext / (2.0 * MU_0))
+        * std::f64::consts::PI
+        * inputs.r_s
+        * inputs.r_s;
+    let pressure_balance_ratio = pressure_integral / external_pressure_energy.max(tolerance);
+    let s_parameter =
+        s_parameter_from_profile(&rho, &b_z, inputs.r_s, inputs.t_i_ev, DEUTERIUM_MASS_AMU)?;
+
+    let residual = b_z
+        .iter()
+        .zip(argument.iter())
+        .map(|(actual, arg)| (actual - (-inputs.b_ext * arg.tanh())).abs())
+        .fold(0.0, f64::max);
+
+    Ok(FrcEquilibriumState {
+        rho,
+        psi,
+        psi_normalized,
+        b_z,
+        b_theta,
+        j_theta: j_theta.clone(),
+        p,
+        density_m3,
+        beta,
+        r_null,
+        target_separatrix_radius_m: inputs.r_s,
+        separatrix_radius_error_m,
+        separatrix_index,
+        field_reversal_passed,
+        s_parameter,
+        energy_j,
+        converged: true,
+        residual,
+        delta,
+        psi_axis_wb,
+        psi_separatrix_wb,
+        psi_normalized_axis_error,
+        psi_normalized_separatrix,
+        psi_normalized_separatrix_error,
+        psi_normalized_residual_linf,
+        psi_normalized_monotonic_passed,
+        psi_normalized_bounds_passed,
+        pressure_balance_ratio,
+        pressure_balance_residual,
+        pressure_balance_residual_linf,
+        pressure_balance_residual_l2,
+        pressure_gradient_analytic_pa_m,
+        pressure_gradient_residual,
+        pressure_gradient_residual_linf,
+        pressure_gradient_residual_l2,
+        peak_pressure_pa,
+        density_peak_m3,
+        input_density_m3: inputs.n0,
+        central_density_residual_m3,
+        central_density_relative_error,
+        beta_peak,
+        beta_separatrix_average,
+        particle_line_density_m1,
+        separatrix_pressure_energy_j_m,
+        separatrix_magnetic_deficit_energy_j_m,
+        separatrix_energy_closure_relative_error,
+        input_thermal_pressure_pa,
+        thermal_pressure_ratio: input_thermal_pressure_pa / pressure_scale,
+        flux_derivative_residual,
+        flux_derivative_residual_linf,
+        flux_derivative_residual_l2,
+        ampere_residual,
+        ampere_residual_linf,
+        ampere_residual_l2,
+        peak_j_theta_a_m2: max_abs(&j_theta),
+        separatrix_bz_gradient_t_m,
+        separatrix_expected_bz_gradient_t_m,
+        separatrix_gradient_relative_error,
+        separatrix_current_density_a_m2,
+        separatrix_expected_current_density_a_m2,
+        separatrix_current_density_relative_error,
+        sheet_current_integral_a_m,
+        expected_sheet_current_integral_a_m,
+        sheet_current_integral_relative_error,
+        force_balance_residual,
+        force_balance_residual_linf,
+        force_balance_residual_l2,
+        model: MODEL_NAME,
+    })
+}
+
+fn validate_inputs(inputs: &RigidRotorFrcInputs, tolerance: f64) -> Result<(), FrcSolverError> {
+    if !tolerance.is_finite() || tolerance <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("tolerance must be positive"));
+    }
+    if !inputs.n0.is_finite() || inputs.n0 <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("n0 must be positive"));
+    }
+    if !inputs.t_i_ev.is_finite()
+        || !inputs.t_e_ev.is_finite()
+        || inputs.t_i_ev <= 0.0
+        || inputs.t_e_ev <= 0.0
+    {
+        return Err(FrcSolverError::InvalidInput(
+            "ion and electron temperatures must be positive",
+        ));
+    }
+    if !inputs.r_s.is_finite() || inputs.r_s <= 0.0 {
+        return Err(FrcSolverError::InvalidInput("R_s must be positive"));
+    }
+    if !inputs.b_ext.is_finite() || inputs.b_ext == 0.0 {
+        return Err(FrcSolverError::InvalidInput("B_ext must be non-zero"));
+    }
+    if let Some(delta) = inputs.delta {
+        if !delta.is_finite() || delta <= 0.0 {
+            return Err(FrcSolverError::InvalidInput(
+                "delta must be positive when provided",
+            ));
+        }
+    }
+    if !inputs.theta_dot.is_finite() {
+        return Err(FrcSolverError::InvalidInput("theta_dot must be finite"));
+    }
+    if inputs.theta_dot.abs() > tolerance {
+        return Err(FrcSolverError::RotatingBvpNotImplemented);
+    }
+    Ok(())
+}
+
+fn validate_grid(rho: &Array1<f64>, r_s: f64) -> Result<(), FrcSolverError> {
+    if rho.len() < 4 {
+        return Err(FrcSolverError::InvalidInput(
+            "rho_grid must contain at least four points",
+        ));
+    }
+    if rho.iter().any(|value| !value.is_finite()) {
+        return Err(FrcSolverError::InvalidInput(
+            "rho_grid must contain finite values",
+        ));
+    }
+    if rho[0] != 0.0 {
+        return Err(FrcSolverError::InvalidInput(
+            "rho_grid must start at the magnetic axis radius 0",
+        ));
+    }
+    for i in 1..rho.len() {
+        if rho[i] <= rho[i - 1] {
+            return Err(FrcSolverError::InvalidInput(
+                "rho_grid must be strictly increasing",
+            ));
+        }
+    }
+    if rho[rho.len() - 1] <= r_s {
+        return Err(FrcSolverError::InvalidInput(
+            "rho_grid must include radii outside the separatrix radius R_s",
+        ));
+    }
+    Ok(())
+}
+
+fn cylindrical_flux_from_steinhauer(
+    argument: &Array1<f64>,
+    b_ext: f64,
+    r_s: f64,
+    delta: f64,
+) -> Array1<f64> {
+    let axis_log_cosh = log_cosh(argument[0]);
+    Array1::from_iter(
+        argument
+            .iter()
+            .map(|a| -b_ext * r_s * delta * (log_cosh(*a) - axis_log_cosh)),
+    )
+}
+
+fn log_cosh(value: f64) -> f64 {
+    let abs_value = value.abs();
+    abs_value + (-2.0 * abs_value).exp().ln_1p() - std::f64::consts::LN_2
+}
+
+fn toroidal_current_density_from_steinhauer(
+    rho: &Array1<f64>,
+    argument: &Array1<f64>,
+    b_ext: f64,
+    r_s: f64,
+    delta: f64,
+) -> Array1<f64> {
+    Array1::from_iter(
+        rho.iter()
+            .zip(argument.iter())
+            .map(|(r, a)| b_ext * (1.0 - a.tanh().powi(2)) * r / (MU_0 * r_s * delta)),
+    )
+}
+
+fn axial_field_derivative_from_steinhauer(
+    rho: &Array1<f64>,
+    argument: &Array1<f64>,
+    b_ext: f64,
+    r_s: f64,
+    delta: f64,
+) -> Array1<f64> {
+    Array1::from_iter(
+        rho.iter()
+            .zip(argument.iter())
+            .map(|(r, a)| -b_ext * (1.0 - a.tanh().powi(2)) * r / (r_s * delta)),
+    )
+}
+
+fn ampere_current_closure_residual(
+    rho: &Array1<f64>,
+    b_z: &Array1<f64>,
+    j_theta: &Array1<f64>,
+) -> Array1<f64> {
+    let dbz_dr = gradient_edge_order2(rho, b_z);
+    Array1::from_iter(
+        j_theta
+            .iter()
+            .zip(dbz_dr.iter())
+            .map(|(j, db)| MU_0 * j + db),
+    )
+}
+
+fn flux_derivative_closure_residual(
+    rho: &Array1<f64>,
+    psi: &Array1<f64>,
+    b_z: &Array1<f64>,
+) -> Array1<f64> {
+    let dpsi_dr = gradient_edge_order2(rho, psi);
+    Array1::from_iter(
+        dpsi_dr
+            .iter()
+            .zip(rho.iter().zip(b_z.iter()))
+            .map(|(dpsi, (r, b))| dpsi - r * b),
+    )
+}
+
+fn psi_normalized_closure_residual(
+    psi: &Array1<f64>,
+    psi_axis_wb: f64,
+    psi_separatrix_wb: f64,
+    psi_normalized: &Array1<f64>,
+) -> Result<Array1<f64>, FrcSolverError> {
+    let span = psi_separatrix_wb - psi_axis_wb;
+    if span == 0.0 {
+        return Err(FrcSolverError::InvalidInput(
+            "psi separatrix span must be non-zero",
+        ));
+    }
+    Ok(Array1::from_iter(
+        psi.iter()
+            .zip(psi_normalized.iter())
+            .map(|(raw, normalized)| normalized - (raw - psi_axis_wb) / span),
+    ))
+}
+
+fn psi_normalized_monotonic_passed(
+    rho: &Array1<f64>,
+    psi_normalized: &Array1<f64>,
+    r_s: f64,
+    tolerance: f64,
+) -> Result<bool, FrcSolverError> {
+    let (_, psi_clip) = clip_to_separatrix(rho, psi_normalized, r_s)?;
+    Ok(psi_clip
+        .iter()
+        .zip(psi_clip.iter().skip(1))
+        .all(|(left, right)| *right >= *left - tolerance))
+}
+
+fn psi_normalized_bounds_passed(
+    rho: &Array1<f64>,
+    psi_normalized: &Array1<f64>,
+    r_s: f64,
+    tolerance: f64,
+) -> Result<bool, FrcSolverError> {
+    let (_, psi_clip) = clip_to_separatrix(rho, psi_normalized, r_s)?;
+    Ok(psi_clip
+        .iter()
+        .all(|value| *value >= -tolerance && *value <= 1.0 + tolerance))
+}
+
+fn pressure_balance_residual_profile(
+    p: &Array1<f64>,
+    b_z: &Array1<f64>,
+    b_ext: f64,
+) -> Array1<f64> {
+    Array1::from_iter(
+        p.iter()
+            .zip(b_z.iter())
+            .map(|(pressure, b)| pressure + b * b / (2.0 * MU_0) - b_ext * b_ext / (2.0 * MU_0)),
+    )
+}
+
+fn pressure_gradient_from_steinhauer(b_z: &Array1<f64>, dbz_dr: &Array1<f64>) -> Array1<f64> {
+    Array1::from_iter(
+        b_z.iter()
+            .zip(dbz_dr.iter())
+            .map(|(b, db)| -(b * db) / MU_0),
+    )
+}
+
+fn pressure_gradient_closure_residual(
+    rho: &Array1<f64>,
+    p: &Array1<f64>,
+    pressure_gradient_analytic: &Array1<f64>,
+) -> Array1<f64> {
+    let finite_pressure_gradient = gradient_edge_order2(rho, p);
+    Array1::from_iter(
+        finite_pressure_gradient
+            .iter()
+            .zip(pressure_gradient_analytic.iter())
+            .map(|(finite, analytic)| finite - analytic),
+    )
+}
+
+fn rho_times_bz(rho: &Array1<f64>, b_z: &Array1<f64>) -> Array1<f64> {
+    Array1::from_iter(rho.iter().zip(b_z.iter()).map(|(r, b)| r * b))
+}
+
+fn radial_force_balance_residual(
+    rho: &Array1<f64>,
+    b_z: &Array1<f64>,
+    j_theta: &Array1<f64>,
+    p: &Array1<f64>,
+) -> Array1<f64> {
+    let dp_dr = gradient_edge_order2(rho, p);
+    Array1::from_iter(
+        dp_dr
+            .iter()
+            .zip(j_theta.iter().zip(b_z.iter()))
+            .map(|(dp, (j, b))| dp - (j * b)),
+    )
+}
+
+fn gradient_edge_order2(x: &Array1<f64>, y: &Array1<f64>) -> Array1<f64> {
+    let n = x.len();
+    let mut out = Array1::zeros(n);
+    let h0 = x[1] - x[0];
+    let h1 = x[2] - x[1];
+    out[0] = -((2.0 * h0 + h1) / (h0 * (h0 + h1))) * y[0] + ((h0 + h1) / (h0 * h1)) * y[1]
+        - (h0 / (h1 * (h0 + h1))) * y[2];
+    for i in 1..(n - 1) {
+        let hs = x[i] - x[i - 1];
+        let hd = x[i + 1] - x[i];
+        let a = -hd / (hs * (hs + hd));
+        let b = (hd - hs) / (hs * hd);
+        let c = hs / (hd * (hs + hd));
+        out[i] = a * y[i - 1] + b * y[i] + c * y[i + 1];
+    }
+    let hm1 = x[n - 1] - x[n - 2];
+    let hm2 = x[n - 2] - x[n - 3];
+    out[n - 1] = (hm1 / (hm2 * (hm1 + hm2))) * y[n - 3] - ((hm1 + hm2) / (hm1 * hm2)) * y[n - 2]
+        + ((2.0 * hm1 + hm2) / (hm1 * (hm1 + hm2))) * y[n - 1];
+    out
+}
+
+fn zero_crossing_radius(rho: &Array1<f64>, values: &Array1<f64>) -> f64 {
+    for i in 0..(values.len() - 1) {
+        if values[i].is_sign_negative() != values[i + 1].is_sign_negative() {
+            let y0 = values[i];
+            let y1 = values[i + 1];
+            if y1 == y0 {
+                return rho[i];
+            }
+            let weight = -y0 / (y1 - y0);
+            return rho[i] + weight * (rho[i + 1] - rho[i]);
+        }
+    }
+    let idx = values
+        .iter()
+        .enumerate()
+        .min_by(|(_, a), (_, b)| {
+            a.abs()
+                .partial_cmp(&b.abs())
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .map(|(idx, _)| idx)
+        .unwrap_or(0);
+    rho[idx]
+}
+
+fn field_reversal_passed(rho: &Array1<f64>, b_z: &Array1<f64>, r_s: f64) -> bool {
+    let inner = rho
+        .iter()
+        .zip(b_z.iter())
+        .take_while(|(r, _)| **r < r_s)
+        .last()
+        .map(|(_, b)| *b);
+    let outer = rho
+        .iter()
+        .zip(b_z.iter())
+        .find(|(r, _)| **r > r_s)
+        .map(|(_, b)| *b);
+    match (inner, outer) {
+        (Some(inner_field), Some(outer_field)) => {
+            inner_field.is_finite() && outer_field.is_finite() && inner_field * outer_field < 0.0
+        }
+        _ => false,
+    }
+}
+
+fn nearest_index(rho: &Array1<f64>, target: f64) -> usize {
+    rho.iter()
+        .enumerate()
+        .min_by(|(_, a), (_, b)| {
+            (**a - target)
+                .abs()
+                .partial_cmp(&(**b - target).abs())
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .map(|(idx, _)| idx)
+        .unwrap_or(0)
+}
+
+fn interpolate(x: &Array1<f64>, y: &Array1<f64>, target: f64) -> f64 {
+    if target <= x[0] {
+        return y[0];
+    }
+    for i in 0..(x.len() - 1) {
+        if target <= x[i + 1] {
+            let span = x[i + 1] - x[i];
+            let weight = if span == 0.0 {
+                0.0
+            } else {
+                (target - x[i]) / span
+            };
+            return y[i] + weight * (y[i + 1] - y[i]);
+        }
+    }
+    y[y.len() - 1]
+}
+
+fn trapezoid(x: &Array1<f64>, y: &Array1<f64>) -> f64 {
+    let mut total = 0.0;
+    for i in 1..x.len() {
+        total += 0.5 * (y[i] + y[i - 1]) * (x[i] - x[i - 1]);
+    }
+    total
+}
+
+fn clip_to_separatrix(
+    rho: &Array1<f64>,
+    values: &Array1<f64>,
+    r_s: f64,
+) -> Result<(Array1<f64>, Array1<f64>), FrcSolverError> {
+    if rho.is_empty() || values.is_empty() || rho.len() != values.len() {
+        return Err(FrcSolverError::InvalidInput(
+            "rho and value profiles must have matching non-empty lengths",
+        ));
+    }
+    let mut r_clip = Vec::new();
+    let mut value_clip = Vec::new();
+    for (r, value) in rho.iter().zip(values.iter()) {
+        if *r <= r_s {
+            r_clip.push(*r);
+            value_clip.push(*value);
+        } else {
+            break;
+        }
+    }
+    if r_clip.is_empty() {
+        return Err(FrcSolverError::InvalidInput(
+            "rho_grid must contain points below R_s",
+        ));
+    }
+    if *r_clip.last().unwrap_or(&0.0) < r_s {
+        r_clip.push(r_s);
+        value_clip.push(interpolate(rho, values, r_s));
+    }
+    Ok((Array1::from_vec(r_clip), Array1::from_vec(value_clip)))
+}
+
+fn max_abs(values: &Array1<f64>) -> f64 {
+    values.iter().map(|value| value.abs()).fold(0.0, f64::max)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn inputs(delta: Option<f64>, theta_dot: f64) -> RigidRotorFrcInputs {
+        RigidRotorFrcInputs {
+            n0: 25.0 / (2.0 * MU_0) / (15_000.0 * ELEMENTARY_CHARGE_C),
+            t_i_ev: 10_000.0,
+            t_e_ev: 5_000.0,
+            theta_dot,
+            r_s: 0.20,
+            b_ext: 5.0,
+            delta,
+        }
+    }
+
+    fn linspace(start: f64, end: f64, n: usize) -> Array1<f64> {
+        let step = (end - start) / (n as f64 - 1.0);
+        Array1::from_iter((0..n).map(|idx| start + idx as f64 * step))
+    }
+
+    #[test]
+    fn no_rotation_field_matches_steinhauer_formula() {
+        let inputs = inputs(Some(0.018), 0.0);
+        for n in [32_usize, 64, 128, 256] {
+            let rho = linspace(0.0, 0.35, n);
+            let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+            for (r, b_z) in rho.iter().zip(state.b_z.iter()) {
+                let expected = -inputs.b_ext
+                    * ((r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.018)).tanh();
+                assert!((b_z - expected).abs() <= 1.0e-14);
+            }
+            assert!(state.converged);
+            assert!(state.residual <= 1.0e-14);
+        }
+    }
+
+    #[test]
+    fn validation_diagnostics_are_finite() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 401);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        assert!((state.r_null - inputs.r_s).abs() < 2.5e-4);
+        assert_eq!(state.target_separatrix_radius_m, inputs.r_s);
+        assert!(state.separatrix_radius_error_m < 2.5e-4);
+        assert!(state.field_reversal_passed);
+        assert!(state.energy_j > 0.0);
+        assert!(state.pressure_balance_ratio > 0.0);
+        assert!(state.pressure_balance_residual_linf <= 1.0e-12);
+        assert!(state.pressure_balance_residual_l2 <= 1.0e-12);
+        assert_eq!(state.pressure_balance_residual.len(), rho.len());
+        assert!(state.peak_pressure_pa > 0.0);
+        assert_eq!(state.density_m3.len(), rho.len());
+        assert!(state.density_peak_m3 > 0.0);
+        assert!(state.input_density_m3 > 0.0);
+        assert!(state.central_density_relative_error <= 1.0e-12);
+        assert_eq!(state.beta.len(), rho.len());
+        assert!(state.beta_peak > 0.0);
+        assert!(state.beta_peak <= 1.0 + 1.0e-12);
+        assert!(state.beta_separatrix_average > 0.0);
+        assert!(state.beta_separatrix_average <= state.beta_peak);
+        assert!(state.particle_line_density_m1 > 0.0);
+        assert!(state.separatrix_pressure_energy_j_m > 0.0);
+        assert!(state.separatrix_magnetic_deficit_energy_j_m > 0.0);
+        assert!(state.separatrix_energy_closure_relative_error <= 1.0e-12);
+        assert!(state.input_thermal_pressure_pa > 0.0);
+        assert!(state.thermal_pressure_ratio > 0.0);
+        assert!(state.flux_derivative_residual_linf <= 2.0e-2);
+        assert!(state.flux_derivative_residual_l2 <= 2.0e-2);
+        assert_eq!(state.psi_normalized.len(), rho.len());
+        assert!(state.psi_axis_wb.abs() <= 1.0e-14);
+        assert!(state.psi_separatrix_wb > 0.0);
+        assert!(state.psi_normalized_axis_error <= 1.0e-12);
+        assert!((state.psi_normalized_separatrix - 1.0).abs() <= 1.0e-12);
+        assert!(state.psi_normalized_separatrix_error <= 1.0e-12);
+        assert!(state.psi_normalized_residual_linf <= 1.0e-12);
+        assert!(state.psi_normalized_monotonic_passed);
+        assert!(state.psi_normalized_bounds_passed);
+        assert_eq!(state.flux_derivative_residual.len(), rho.len());
+        assert!(state.peak_j_theta_a_m2 > 0.0);
+        assert!(state.ampere_residual_linf <= 2.0e-2);
+        assert!(state.ampere_residual_l2 <= 2.0e-2);
+        assert!((state.separatrix_expected_bz_gradient_t_m + inputs.b_ext / 0.02).abs() <= 1.0e-12);
+        assert!(
+            (state.separatrix_expected_current_density_a_m2 - inputs.b_ext / (MU_0 * 0.02)).abs()
+                <= state.separatrix_expected_current_density_a_m2.abs() * 1.0e-12
+        );
+        assert!(state.separatrix_gradient_relative_error <= 2.0e-2);
+        assert!(state.separatrix_current_density_relative_error <= 2.0e-2);
+        assert!(state.sheet_current_integral_a_m > 0.0);
+        assert!(state.expected_sheet_current_integral_a_m > 0.0);
+        assert!(state.sheet_current_integral_relative_error <= 2.0e-2);
+        assert_eq!(state.j_theta.len(), rho.len());
+        assert_eq!(state.ampere_residual.len(), rho.len());
+        assert!(state.force_balance_residual_linf.is_finite());
+        assert!(state.force_balance_residual_l2.is_finite());
+        assert_eq!(state.force_balance_residual.len(), rho.len());
+    }
+
+    #[test]
+    fn toroidal_current_density_matches_steinhauer_derivative() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 401);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let dbz_dr = gradient_edge_order2(&rho, &state.b_z);
+        let dp_dr = gradient_edge_order2(&rho, &state.p);
+        for i in 0..rho.len() {
+            let argument = (rho[i] * rho[i] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
+            let expected_j = inputs.b_ext * (1.0 - argument.tanh().powi(2)) * rho[i]
+                / (MU_0 * inputs.r_s * 0.02);
+            assert!((state.j_theta[i] - expected_j).abs() <= expected_j.abs().max(1.0) * 1.0e-12);
+            assert!(
+                (state.ampere_residual[i] - (MU_0 * state.j_theta[i] + dbz_dr[i])).abs() <= 1.0e-12
+            );
+            assert!(
+                (state.force_balance_residual[i] - (dp_dr[i] - state.j_theta[i] * state.b_z[i]))
+                    .abs()
+                    <= 1.0e-6
+            );
+        }
+        assert!(
+            (state.separatrix_bz_gradient_t_m - interpolate(&rho, &dbz_dr, inputs.r_s)).abs()
+                <= 1.0e-12
+        );
+        assert!((state.separatrix_expected_bz_gradient_t_m + inputs.b_ext / 0.02).abs() <= 1.0e-12);
+        assert!(
+            (state.separatrix_current_density_a_m2 - interpolate(&rho, &state.j_theta, inputs.r_s))
+                .abs()
+                <= state.separatrix_current_density_a_m2.abs().max(1.0) * 1.0e-12
+        );
+        let expected_sheet_current = (state.b_z[0] - state.b_z[state.b_z.len() - 1]) / MU_0;
+        assert!(
+            (state.expected_sheet_current_integral_a_m - expected_sheet_current).abs()
+                <= expected_sheet_current.abs().max(1.0) * 1.0e-12
+        );
+        assert!(
+            (state.sheet_current_integral_a_m - trapezoid(&rho, &state.j_theta)).abs()
+                <= state.sheet_current_integral_a_m.abs().max(1.0) * 1.0e-12
+        );
+        assert!(
+            (state.separatrix_expected_current_density_a_m2 - inputs.b_ext / (MU_0 * 0.02)).abs()
+                <= state.separatrix_expected_current_density_a_m2.abs() * 1.0e-12
+        );
+    }
+
+    #[test]
+    fn cylindrical_flux_matches_steinhauer_primitive() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 401);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let dpsi_dr = gradient_edge_order2(&rho, &state.psi);
+        let axis_argument = (rho[0] * rho[0] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
+        let expected_psi_separatrix = interpolate(&rho, &state.psi, inputs.r_s);
+        let axis_log_cosh = log_cosh(axis_argument);
+        for i in 0..rho.len() {
+            let argument = (rho[i] * rho[i] - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * 0.02);
+            let expected_psi =
+                -inputs.b_ext * inputs.r_s * 0.02 * (log_cosh(argument) - axis_log_cosh);
+            let expected_psi_normalized =
+                (expected_psi - state.psi_axis_wb) / (expected_psi_separatrix - state.psi_axis_wb);
+            assert!((state.psi[i] - expected_psi).abs() <= 1.0e-14);
+            assert!((state.psi_normalized[i] - expected_psi_normalized).abs() <= 1.0e-14);
+            assert!(
+                (state.flux_derivative_residual[i] - (dpsi_dr[i] - rho[i] * state.b_z[i])).abs()
+                    <= 1.0e-14
+            );
+        }
+        assert!(state.flux_derivative_residual_linf <= 2.0e-2);
+        assert!(state.psi_axis_wb.abs() <= 1.0e-14);
+        assert!((state.psi_separatrix_wb - expected_psi_separatrix).abs() <= 1.0e-14);
+        assert!(state.psi_normalized_axis_error <= 1.0e-14);
+        assert!((state.psi_normalized_separatrix - 1.0).abs() <= 1.0e-14);
+        assert!(state.psi_normalized_separatrix_error <= 1.0e-14);
+        assert!(state.psi_normalized_residual_linf <= 1.0e-14);
+        assert!(state.psi_normalized_monotonic_passed);
+        assert!(state.psi_normalized_bounds_passed);
+    }
+
+    #[test]
+    fn pressure_profile_matches_local_magnetic_pressure_balance() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 401);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let external_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
+        let input_pressure = inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+        let thermal_energy_j = (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+        for i in 0..rho.len() {
+            let expected_pressure = external_pressure - state.b_z[i] * state.b_z[i] / (2.0 * MU_0);
+            assert!((state.p[i] - expected_pressure).abs() <= 1.0e-8);
+            let expected_residual =
+                state.p[i] + state.b_z[i] * state.b_z[i] / (2.0 * MU_0) - external_pressure;
+            assert!((state.pressure_balance_residual[i] - expected_residual).abs() <= 1.0e-8);
+            assert!((state.density_m3[i] - state.p[i] / thermal_energy_j).abs() <= 1.0e-8);
+            assert!((state.beta[i] - state.p[i] / external_pressure).abs() <= 1.0e-12);
+        }
+        assert!(state.pressure_balance_residual_linf <= 1.0e-12);
+        assert!((state.peak_pressure_pa - external_pressure).abs() <= external_pressure * 1.0e-4);
+        assert!((state.density_peak_m3 - inputs.n0).abs() <= inputs.n0 * 1.0e-4);
+        assert!(state.central_density_relative_error <= 1.0e-4);
+        assert!((state.beta_peak - 1.0).abs() <= 1.0e-4);
+        assert!(state.beta_separatrix_average > 0.0);
+        assert!(state.particle_line_density_m1 > 0.0);
+        assert!(state.separatrix_pressure_energy_j_m > 0.0);
+        assert!(state.separatrix_magnetic_deficit_energy_j_m > 0.0);
+        assert!(state.separatrix_energy_closure_relative_error <= 1.0e-12);
+        assert!(
+            (state.input_thermal_pressure_pa - input_pressure).abs() <= input_pressure * 1.0e-14
+        );
+        assert!(
+            (state.thermal_pressure_ratio - input_pressure / external_pressure).abs()
+                <= state.thermal_pressure_ratio * 1.0e-14
+        );
+    }
+
+    #[test]
+    fn no_rotation_pressure_decreases_outward_from_null_for_parameter_cohort() {
+        let cases = [
+            (0.012, 33_usize, 2.75, 0.16),
+            (0.016, 129, 3.75, 0.19),
+            (0.020, 257, 4.75, 0.21),
+            (0.024, 129, 5.75, 0.23),
+            (0.028, 65, 6.75, 0.25),
+            (0.032, 257, 7.75, 0.27),
+        ];
+        for (delta, grid_points, b_ext, r_s) in cases {
+            let inputs = RigidRotorFrcInputs {
+                n0: b_ext * b_ext / (2.0 * MU_0) / (15_000.0 * ELEMENTARY_CHARGE_C),
+                t_i_ev: 10_000.0,
+                t_e_ev: 5_000.0,
+                theta_dot: 0.0,
+                r_s,
+                b_ext,
+                delta: Some(delta),
+            };
+            let rho = linspace(0.0, 2.0 * r_s, grid_points);
+            let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+            let pressure_scale = state.p.iter().map(|p| p.abs()).fold(1.0, f64::max);
+            let mut previous: Option<f64> = None;
+            for (r, pressure) in state.rho.iter().zip(state.p.iter()) {
+                if *r < state.r_null {
+                    continue;
+                }
+                if let Some(prev) = previous {
+                    assert!(
+                        *pressure <= prev + pressure_scale * 1.0e-12,
+                        "pressure must decrease outward from R_null for B_ext={b_ext}, R_s={r_s}, delta={delta}"
+                    );
+                }
+                previous = Some(*pressure);
+            }
+            assert!((state.beta_peak - 1.0).abs() <= 1.0e-12);
+            assert!(state.separatrix_energy_closure_relative_error <= 1.0e-12);
+            assert!(state.pressure_balance_residual_linf <= 1.0e-12);
+        }
+    }
+
+    #[test]
+    fn ampere_residual_refines_with_grid() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let coarse =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 101), 1.0e-10).expect("coarse");
+        let medium =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 201), 1.0e-10).expect("medium");
+        let fine = solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 401), 1.0e-10).expect("fine");
+        assert!(medium.ampere_residual_linf < coarse.ampere_residual_linf);
+        assert!(fine.ampere_residual_linf < medium.ampere_residual_linf);
+    }
+
+    #[test]
+    fn flux_derivative_residual_refines_with_grid() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let coarse =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 101), 1.0e-10).expect("coarse");
+        let medium =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 201), 1.0e-10).expect("medium");
+        let fine = solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 401), 1.0e-10).expect("fine");
+        assert!(medium.flux_derivative_residual_linf < coarse.flux_derivative_residual_linf);
+        assert!(fine.flux_derivative_residual_linf < medium.flux_derivative_residual_linf);
+    }
+
+    #[test]
+    fn default_delta_uses_deuterium_gyroradius() {
+        let inputs = inputs(None, 0.0);
+        let rho = linspace(0.0, 0.4, 129);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let expected =
+            ion_gyroradius_m(inputs.t_i_ev, inputs.b_ext, DEUTERIUM_MASS_AMU).expect("delta");
+        assert!((state.delta - expected).abs() <= expected * 1.0e-15);
+        assert!(state.s_parameter > 0.0);
+        assert_ne!(state.s_parameter, inputs.r_s / (2.0 * expected));
+    }
+
+    #[test]
+    fn s_parameter_matches_profile_integral() {
+        let inputs = inputs(Some(0.02), 0.0);
+        let rho = linspace(0.0, 0.4, 1025);
+        let state = solve_frc_equilibrium(&inputs, &rho, 1.0e-10).expect("valid state");
+        let expected = s_parameter_from_profile(
+            &rho,
+            &state.b_z,
+            inputs.r_s,
+            inputs.t_i_ev,
+            DEUTERIUM_MASS_AMU,
+        )
+        .expect("s parameter");
+        assert!((state.s_parameter - expected).abs() <= expected * 1.0e-14);
+    }
+
+    #[test]
+    fn no_rotation_scalar_diagnostics_converge_with_grid_refinement() {
+        fn assert_refines(coarse: f64, medium: f64, fine: f64, reference: f64) {
+            let coarse_error = (coarse - reference).abs();
+            let medium_error = (medium - reference).abs();
+            let fine_error = (fine - reference).abs();
+            let exact_tolerance = reference.abs().max(1.0) * 1.0e-13;
+            if medium_error <= exact_tolerance && fine_error <= exact_tolerance {
+                return;
+            }
+            assert!(medium_error <= coarse_error + exact_tolerance);
+            assert!(fine_error <= medium_error + exact_tolerance);
+            assert!(medium_error < coarse_error || medium_error <= exact_tolerance);
+            assert!(fine_error < medium_error || fine_error <= exact_tolerance);
+        }
+
+        let inputs = inputs(Some(0.02), 0.0);
+        let reference =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 4097), 1.0e-10).expect("reference");
+        let coarse =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 64), 1.0e-10).expect("coarse");
+        let medium =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 256), 1.0e-10).expect("medium");
+        let fine =
+            solve_frc_equilibrium(&inputs, &linspace(0.0, 0.4, 1024), 1.0e-10).expect("fine");
+
+        assert_refines(coarse.r_null, medium.r_null, fine.r_null, reference.r_null);
+        assert_refines(
+            coarse.s_parameter,
+            medium.s_parameter,
+            fine.s_parameter,
+            reference.s_parameter,
+        );
+        assert_refines(
+            coarse.energy_j,
+            medium.energy_j,
+            fine.energy_j,
+            reference.energy_j,
+        );
+        assert_refines(
+            coarse.pressure_balance_ratio,
+            medium.pressure_balance_ratio,
+            fine.pressure_balance_ratio,
+            reference.pressure_balance_ratio,
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_inputs_and_rotating_bvp() {
+        let rho = linspace(0.0, 0.4, 32);
+        assert!(solve_frc_equilibrium(&inputs(Some(0.02), 1.0), &rho, 1.0e-10).is_err());
+        let bad_grid = Array1::from_vec(vec![0.0, 0.1, 0.1, 0.3]);
+        assert!(solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &bad_grid, 1.0e-10).is_err());
+        let off_axis_grid = linspace(0.01, 0.4, 32);
+        assert!(solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &off_axis_grid, 1.0e-10).is_err());
+        let no_outer_field_grid = linspace(0.0, 0.20, 32);
+        assert!(
+            solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &no_outer_field_grid, 1.0e-10).is_err()
+        );
+    }
+}
