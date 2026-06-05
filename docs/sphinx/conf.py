@@ -48,7 +48,6 @@ extensions = [
     "sphinx.ext.viewcode",      # [source] links on API pages
     "sphinx.ext.intersphinx",   # cross-reference NumPy/SciPy/Python docs
     "sphinx.ext.mathjax",       # render LaTeX math in HTML
-    "sphinx.ext.todo",          # .. todo:: directive support
     "sphinx.ext.ifconfig",      # conditional content
     "sphinx.ext.githubpages",   # .nojekyll for GitHub Pages deployment
     "sphinx_autodoc_typehints", # render type annotations in docs
@@ -171,6 +170,4 @@ mathjax3_config = {
 }
 
 # ---------------------------------------------------------------------------
-# Todo extension
 # ---------------------------------------------------------------------------
-todo_include_todos = True

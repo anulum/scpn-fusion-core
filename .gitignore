@@ -144,3 +144,6 @@ ARCHIVE/
 benchmark_logs/
 benchmark_runs/
 validation/reports/*_local_smoke.json
+
+# Internal agent coordination and task-governance support - never commit
+.coordination/

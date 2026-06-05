@@ -416,7 +416,7 @@ pressure-balance compression path. This is an exact R-L contract for the
 declared lumped coil model; it is not a 3D coil electromagnetic or liner
 circuit field solve.
 
-The radial shell update uses the TODO-specified momentum balance with explicit
+The radial shell update uses the declared momentum balance with explicit
 geometry and mass:
 
 $$m_{\rm shell}\,\frac{d^2R_s}{dt^2}

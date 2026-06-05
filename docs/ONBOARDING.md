@@ -94,5 +94,5 @@ report that states pass, fail, blocked, or diagnostic-only status.
 
 Before a public-facing change is released, update the relevant README, guide,
 API overview, benchmark report, changelog, and release note. If the change is an
-internal plan or unfinished TODO, keep it under ignored internal paths and do not
+internal plan or unfinished task note, keep it under ignored internal paths and do not
 turn it into public capability prose.

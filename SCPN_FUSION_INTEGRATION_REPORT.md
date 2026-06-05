@@ -1,6 +1,5 @@
 # SCPN Fusion Core Integration Report
 **Date:** 2026-02-01
-**Author:** Arcane Sapience
 
 ## Achievements
 1.  **HPC Integration**:

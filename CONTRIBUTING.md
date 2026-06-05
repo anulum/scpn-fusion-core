@@ -288,11 +288,9 @@ Your PR will not be merged until all CI checks pass.
 
 ## Local Operational Artifacts
 
-Operational handover notes are strictly local-only working
-artifacts and must not be committed or pushed to public remotes.
+Operational working notes are strictly local-only artifacts and must not be committed or pushed to public remotes.
 
-If you generate local handover notes, keep them outside the public tree and verify
-they are excluded from `git status` before committing.
+If you generate local operational notes, keep them outside the public tree and verify they are excluded from `git status` before committing.
 
 ---
 
@@ -518,12 +516,10 @@ structure. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full crate map.
 
 ---
 
-## Session Logs & Handovers
+## Local Operational Records
 
-All session logs and handover documents for this project are local-only operational records.
+Local operational records are not public documentation or release artifacts.
 
-**Do not** place session logs or handovers in public documentation or release artifacts.
-
-These files are **permanent records** and must never be deleted, even if outdated.
+Keep them outside tracked public files and preserve them according to the local operating rules.
 
 Follow the local coordination policy for naming conventions, templates, and retention.
