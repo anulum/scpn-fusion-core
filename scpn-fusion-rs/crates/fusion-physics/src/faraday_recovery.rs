@@ -7,6 +7,8 @@
 // SCPN Fusion Core — FRC Faraday Recovery
 //! Classical Faraday back-EMF and recovery-energy contract for MIF/FRC.
 
+use crate::compression::PulsedCompressionState;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FaradayRecoveryTrajectoryPoint {
     pub t_s: f64,
@@ -197,6 +199,43 @@ pub fn integrated_recovery_energy(
     })
 }
 
+pub fn faraday_trajectory_from_pulsed_compression(
+    states: &[PulsedCompressionState],
+) -> Result<Vec<FaradayRecoveryTrajectoryPoint>, String> {
+    if states.len() < 2 {
+        return Err("pulsed-compression trajectory must contain at least two states".to_string());
+    }
+    states
+        .iter()
+        .map(|state| {
+            require_finite("state.t_s", state.t_s)?;
+            require_positive("state.r_s_m", state.r_s_m)?;
+            require_finite("state.b_ext_t", state.b_ext_t)?;
+            require_finite("state.d_r_s_dt_m_s", state.d_r_s_dt_m_s)?;
+            Ok(FaradayRecoveryTrajectoryPoint {
+                t_s: state.t_s,
+                separatrix_radius_m: state.r_s_m,
+                b_ext_t: state.b_ext_t,
+                d_radius_dt_m_s: Some(state.d_r_s_dt_m_s),
+                d_b_ext_dt_t_s: None,
+            })
+        })
+        .collect()
+}
+
+pub fn compression_work_from_pulsed_compression(
+    states: &[PulsedCompressionState],
+) -> Result<f64, String> {
+    if states.len() < 2 {
+        return Err("pulsed-compression trajectory must contain at least two states".to_string());
+    }
+    let work = states
+        .last()
+        .map(|state| state.compression_work_j)
+        .unwrap_or(f64::NAN);
+    require_positive("compression_work_j", work)
+}
+
 fn validate_trajectory(trajectory: &[FaradayRecoveryTrajectoryPoint]) -> Result<(), String> {
     for point in trajectory {
         require_finite("t_s", point.t_s)?;
@@ -273,8 +312,13 @@ fn trapezoid(x: &[f64], y: &[f64]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        faraday_back_emf_from_values, integrated_recovery_energy, magnetic_flux_wb,
+        compression_work_from_pulsed_compression, faraday_back_emf_from_values,
+        faraday_trajectory_from_pulsed_compression, integrated_recovery_energy, magnetic_flux_wb,
         FaradayRecoveryTrajectoryPoint,
+    };
+    use crate::compression::{
+        plasma_volume_m3, run_pulsed_compression, CoilGeometry, PulsedCompressionConfig,
+        PulsedCompressionState,
     };
 
     #[test]
@@ -361,5 +405,94 @@ mod tests {
             d_b_ext_dt_t_s: None,
         }];
         assert!(integrated_recovery_energy(&one, 2, 0.1, None, 0.01).is_err());
+    }
+
+    fn compression_coil() -> CoilGeometry {
+        CoilGeometry {
+            n_turns: 80,
+            l_coil_m: 1.0,
+            r_coil_m: 0.35,
+            l_inductance_h: 2.0e-6,
+            r_resistance_ohm: 0.02,
+            bank_voltage_max_v: 20_000.0,
+        }
+    }
+
+    fn compression_config() -> PulsedCompressionConfig {
+        PulsedCompressionConfig {
+            coil: compression_coil(),
+            plasma_mass_kg: 2.0e-5,
+            plasma_length_m: 1.0,
+            gamma: 5.0 / 3.0,
+            radial_loss_time_s: None,
+            z_eff: 1.0,
+            ln_lambda: 17.0,
+            min_radius_m: 1.0e-4,
+        }
+    }
+
+    fn compression_initial() -> PulsedCompressionState {
+        let density = 2.0e21;
+        let t_i = 10_000.0;
+        let t_e = 5_000.0;
+        let radius = 0.2;
+        let field = crate::compression::coil_field_t(&compression_coil(), 2.0e5).unwrap();
+        let volume = plasma_volume_m3(radius, 1.0).unwrap();
+        let thermal_energy_j = 1.5 * density * volume * (t_i + t_e) * 1.602_176_634e-19;
+        PulsedCompressionState {
+            t_s: 0.0,
+            r_s_m: radius,
+            d_r_s_dt_m_s: 0.0,
+            t_i_ev: t_i,
+            t_e_ev: t_e,
+            density_m3: density,
+            beta: 0.0,
+            b_ext_t: field,
+            internal_pressure_pa: density * (t_i + t_e) * 1.602_176_634e-19,
+            external_magnetic_pressure_pa: field * field / (2.0 * 4.0e-7 * std::f64::consts::PI),
+            thermal_energy_j,
+            compression_work_j: 0.0,
+            radiated_loss_j: 0.0,
+            energy_balance_residual: 0.0,
+        }
+    }
+
+    #[test]
+    fn pulsed_compression_sidecar_evaluates_budget_status() {
+        let states = run_pulsed_compression(
+            compression_initial(),
+            &compression_config(),
+            5.0e5,
+            1.0e-9,
+            16,
+        )
+        .expect("valid compression states");
+        let trajectory =
+            faraday_trajectory_from_pulsed_compression(&states).expect("valid trajectory");
+        let compression_work =
+            compression_work_from_pulsed_compression(&states).expect("positive compression work");
+        let report =
+            integrated_recovery_energy(&trajectory, 80, 0.02, Some(compression_work), 0.01)
+                .expect("valid recovery report");
+
+        assert_eq!(trajectory.len(), states.len());
+        assert_eq!(
+            trajectory.last().unwrap().separatrix_radius_m,
+            states.last().unwrap().r_s_m
+        );
+        assert_eq!(
+            trajectory.last().unwrap().d_radius_dt_m_s,
+            Some(states.last().unwrap().d_r_s_dt_m_s)
+        );
+        assert!(compression_work > 0.0);
+        assert_eq!(report.compression_work_j, Some(compression_work));
+        assert!(report
+            .energy_budget_relative_error
+            .unwrap_or(f64::NAN)
+            .is_finite());
+        assert!(matches!(
+            report.budget_claim_status.as_str(),
+            "passed" | "failed"
+        ));
     }
 }

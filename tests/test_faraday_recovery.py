@@ -13,12 +13,21 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core import (
+    CoilGeometry,
     FaradayRecoveryTrajectoryPoint,
+    RigidRotorFRCInputs,
+    compression_work_from_pulsed_compression,
     faraday_back_emf,
     faraday_back_emf_from_values,
+    faraday_trajectory_from_pulsed_compression,
+    initial_pulsed_compression_state,
     integrated_recovery_energy,
     magnetic_flux_wb,
+    run_pulsed_compression,
+    solve_frc_equilibrium,
 )
+from scpn_fusion.core.frc_rigid_rotor import ELEMENTARY_CHARGE_C, MU_0
+from scpn_fusion.core.pulsed_compression import PulsedCompressionConfig
 
 
 def test_constant_radius_and_field_have_zero_back_emf() -> None:
@@ -118,6 +127,62 @@ def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> No
     assert report.budget_claim_status == "failed"
 
 
+def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
+    b_ext = 5.0
+    t_i = 10_000.0
+    t_e = 5_000.0
+    n0 = b_ext**2 / (2.0 * MU_0) / ((t_i + t_e) * ELEMENTARY_CHARGE_C)
+    equilibrium = solve_frc_equilibrium(
+        RigidRotorFRCInputs(
+            n0=n0,
+            T_i_eV=t_i,
+            T_e_eV=t_e,
+            theta_dot=0.0,
+            R_s=0.20,
+            B_ext=b_ext,
+            delta=0.02,
+        ),
+        np.linspace(0.0, 0.4, 65, dtype=np.float64),
+    )
+    coil = CoilGeometry(
+        N_turns=80,
+        L_coil_m=1.0,
+        R_coil_m=0.35,
+        L_inductance_H=2.0e-6,
+        R_resistance_ohm=0.02,
+        bank_voltage_max_V=20_000.0,
+    )
+    config = PulsedCompressionConfig(
+        equilibrium=equilibrium,
+        coil=coil,
+        coil_current_t=lambda _t: 5.0e5,
+        plasma_mass_kg=2.0e-5,
+        ion_temperature_eV=t_i,
+        electron_temperature_eV=t_e,
+        tau_psi_s=np.inf,
+    )
+    states = run_pulsed_compression(initial_pulsed_compression_state(config), config, 1.0e-9, 16)
+
+    trajectory = faraday_trajectory_from_pulsed_compression(states)
+    compression_work = compression_work_from_pulsed_compression(states)
+    report = integrated_recovery_energy(
+        trajectory,
+        coil.N_turns,
+        coil.R_resistance_ohm,
+        compression_work_j=compression_work,
+    )
+
+    assert len(trajectory) == len(states)
+    assert trajectory[-1].separatrix_radius_m == pytest.approx(states[-1].R_s_m)
+    assert trajectory[-1].d_radius_dt_m_s == pytest.approx(states[-1].dR_s_dt_m_s)
+    assert compression_work > 0.0
+    assert report.compression_work_j == pytest.approx(compression_work)
+    assert report.energy_budget_passed is not None
+    assert report.energy_budget_relative_error is not None
+    assert np.isfinite(report.energy_budget_relative_error)
+    assert report.budget_claim_status in {"passed", "failed"}
+
+
 def test_faraday_recovery_inputs_fail_closed() -> None:
     with pytest.raises(ValueError, match="positive integer"):
         faraday_back_emf_from_values(0.2, 20.0, 1.0, 0.0, 0)
@@ -143,3 +208,5 @@ def test_faraday_recovery_inputs_fail_closed() -> None:
             2,
             0.1,
         )
+    with pytest.raises(ValueError, match="at least two states"):
+        faraday_trajectory_from_pulsed_compression([object()])

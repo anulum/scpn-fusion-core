@@ -74,6 +74,50 @@ class FaradayRecoveryReport:
     budget_claim_status: str
 
 
+def faraday_trajectory_from_pulsed_compression(
+    states: Sequence[object],
+) -> tuple[FaradayRecoveryTrajectoryPoint, ...]:
+    """Return Faraday trajectory samples from a FUS-C.6 pulsed-compression run.
+
+    The adapter accepts the public Python ``PulsedCompressionState`` attribute
+    names and the Rust snake-case field names used by the equivalent native
+    contract. It supplies the separatrix radial speed carried by the
+    compression integrator and leaves ``dB_ext/dt`` to the recovery
+    integrator's finite-difference path because the compression state stores
+    field values, not an independent field-rate sidecar.
+    """
+
+    if len(states) < 2:
+        raise ValueError("pulsed-compression trajectory must contain at least two states")
+    samples = []
+    for state in states:
+        time_s = _state_attr(state, "t_s")
+        radius_m = _state_attr(state, "R_s_m", "r_s_m")
+        field_t = _state_attr(state, "B_ext_T", "b_ext_t")
+        radial_speed = _state_attr(state, "dR_s_dt_m_s", "d_r_s_dt_m_s")
+        samples.append(
+            FaradayRecoveryTrajectoryPoint(
+                t_s=_require_finite("state.t_s", time_s),
+                separatrix_radius_m=_require_positive("state.R_s_m", radius_m),
+                b_ext_t=_require_finite("state.B_ext_T", field_t),
+                d_radius_dt_m_s=_require_finite("state.dR_s_dt_m_s", radial_speed),
+                d_b_ext_dt_t_s=None,
+            )
+        )
+    return tuple(samples)
+
+
+def compression_work_from_pulsed_compression(states: Sequence[object]) -> float:
+    """Return final compression work from a FUS-C.6 trajectory sidecar."""
+
+    if len(states) < 2:
+        raise ValueError("pulsed-compression trajectory must contain at least two states")
+    return _require_positive(
+        "compression_work_j",
+        _state_attr(states[-1], "compression_work_J", "compression_work_j"),
+    )
+
+
 def _require_finite(name: str, value: float) -> float:
     result = float(value)
     if not np.isfinite(result):
@@ -269,6 +313,17 @@ def _coerce_point(
         ),
         d_b_ext_dt_t_s=_optional_finite("d_b_ext_dt_t_s", getattr(point, "d_b_ext_dt_t_s", None)),
     )
+
+
+def _state_attr(state: object, *names: str) -> float:
+    raw = cast(Any, state)
+    for name in names:
+        if hasattr(raw, name):
+            return cast(float, getattr(raw, name))
+        if isinstance(raw, Mapping) and name in raw:
+            return cast(float, raw[name])
+    joined = ", ".join(names)
+    raise ValueError(f"pulsed-compression state is missing required field: {joined}")
 
 
 def _optional_finite(name: str, value: object | None) -> float | None:

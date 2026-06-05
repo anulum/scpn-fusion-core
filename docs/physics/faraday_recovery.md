@@ -2,8 +2,10 @@
 
 This page documents the FUS-C.7 classical Faraday recovery surface for MIF/FRC
 trajectories. The implementation is a closed-form electromagnetic calculation
-over supplied trajectory samples. It is not a substitute for the unresolved
-FUS-C.6 Hall-MHD pulsed-compression trajectory.
+over supplied trajectory samples. It now includes an explicit adapter from the
+implemented FUS-C.6 supplied-current pulsed-compression trajectory into Faraday
+trajectory samples and a compression-work sidecar. It is not a substitute for
+external Slough same-case acceptance data.
 
 ## Governing equations
 
@@ -34,7 +36,9 @@ Python:
 ```python
 from scpn_fusion.core import (
     FaradayRecoveryTrajectoryPoint,
+    compression_work_from_pulsed_compression,
     faraday_back_emf,
+    faraday_trajectory_from_pulsed_compression,
     integrated_recovery_energy,
 )
 
@@ -52,6 +56,19 @@ report = integrated_recovery_energy(
     ],
     N_turns=6,
     coil_resistance_ohm=0.08,
+)
+```
+
+When FUS-C.6 compression states are available:
+
+```python
+trajectory = faraday_trajectory_from_pulsed_compression(compression_states)
+compression_work_j = compression_work_from_pulsed_compression(compression_states)
+report = integrated_recovery_energy(
+    trajectory,
+    N_turns=recovery_turns,
+    coil_resistance_ohm=recovery_resistance_ohm,
+    compression_work_j=compression_work_j,
 )
 ```
 
@@ -86,10 +103,13 @@ let report = integrated_recovery_energy(&trajectory, 6, 0.08, None, 0.01)?;
 
 ## Evidence boundary
 
-The implementation accepts supplied trajectory samples from a future FUS-C.6
-pulsed-compression solver or an external validated trajectory. If the caller
+The implementation accepts supplied trajectory samples from FUS-C.6
+pulsed-compression states or an external validated trajectory. If the caller
 does not provide a self-consistent compression-work value, the energy-budget
-status is `blocked_missing_compression_work`.
+status is `blocked_missing_compression_work`. If FUS-C.6 states are supplied,
+the budget gate is evaluated as `passed` or `failed` against the reported
+compression work; failure is a real load/trajectory mismatch, not a fabricated
+blocked row.
 
 This avoids fabricating Slough-style trajectory acceptance from a synthetic
 radius trace.
@@ -103,6 +123,8 @@ Tracked tests cover:
 - Callable finite-difference agreement for linear histories.
 - Integrated recovery energy against an analytical linear-radius integral.
 - Explicit blocked budget status when compression work is absent.
+- FUS-C.6 supplied-current trajectory conversion into Faraday samples and
+  evaluated compression-work sidecar status.
 - Python and Rust fail-closed invalid-input paths.
 
 Tracked report:
@@ -121,7 +143,7 @@ production throughput claim.
 
 ## Not yet accepted
 
-Full FUS-C.7 acceptance still requires a validated FUS-C.6 or public external
-trajectory with a compression-work sidecar. Once that exists, the same module
-will compare `E_recovered` against the supplied work value and require the
-declared one-percent budget gate.
+Full external FUS-C.7 acceptance still requires a public Slough-style or
+facility trajectory with a compression-work sidecar, provenance, and checksums.
+The internal FUS-C.6 supplied-current trajectory path is now evaluated directly
+and no longer marked missing when those states are supplied.

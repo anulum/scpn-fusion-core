@@ -330,10 +330,15 @@ For a resistive recovery load, the integrated recovered energy is evaluated as
 
 $$E_{\rm recovered} = \int \frac{\mathrm{EMF}(t)^2}{R_{\rm load}}\,dt.$$
 
-The implementation does not generate the unresolved FUS-C.6 Hall-MHD
-pulsed-compression trajectory. If a caller does not supply a self-consistent
-compression-work sidecar, `FaradayRecoveryReport.budget_claim_status` is
-`blocked_missing_compression_work` instead of a fabricated pass/fail result.
+The implementation now includes a FUS-C.6 supplied-current trajectory adapter
+that maps pulsed-compression states into Faraday samples
+`(t, R_s, B_ext, dR_s/dt)` and carries the final `compression_work_J` sidecar.
+If a caller does not supply a self-consistent compression-work sidecar,
+`FaradayRecoveryReport.budget_claim_status` remains
+`blocked_missing_compression_work`; when the FUS-C.6 sidecar is supplied, the
+budget gate is evaluated as a real `passed` or `failed` result. External
+Slough same-case acceptance remains blocked until a public digitised
+trajectory exists.
 
 **Key files:** `core/faraday_recovery.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs`,

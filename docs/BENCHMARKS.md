@@ -86,6 +86,29 @@ recorded as `not_applicable_no_frc_surface` until those languages expose
 equivalent solver logic. Nonzero-rotation FRC cases remain fail-closed and are
 not benchmarked as accepted physics.
 
+## MIF/FRC Faraday recovery benchmark
+
+The FUS-C.7 recovery lane is benchmarked separately from external Slough
+acceptance evidence:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_faraday_recovery.py
+```
+
+Tracked report:
+[`validation/reports/faraday_recovery_benchmark.json`](../validation/reports/faraday_recovery_benchmark.json)
+
+The report records local non-isolated regression rows for the exact classical
+Faraday relation over supplied trajectories. It now also includes internal
+FUS-C.6 supplied-current pulsed-compression sidecar rows: each row converts the
+compression states to `(t, R_s, B_ext, dR_s/dt)`, carries the final
+`compression_work_J`, and evaluates the energy-budget gate as `passed` or
+`failed` instead of marking the work sidecar missing.
+
+External Slough same-case parity remains blocked until a public digitised
+trajectory and compression-work sidecar are available with provenance and
+checksums.
+
 ## Type-checking non-regression gate
 
 The Python CI preflight runs a MyPy expansion guard before strict MyPy:

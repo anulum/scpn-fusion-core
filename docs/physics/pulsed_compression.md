@@ -37,6 +37,17 @@ non-adiabatic carrier:
 dpsi/dt = -psi/tau_psi + R_null*E_theta - eta_spitzer*J_theta
 ```
 
+The trajectory carries the compression-work sidecar consumed by FUS-C.7
+Faraday recovery:
+
+```text
+W_compression(t_n) = sum_k (E_thermal,adiabatic,k - E_thermal,k-1)
+```
+
+FUS-C.7 maps each state to `(t, R_s, B_ext, dR_s/dt)` and compares recovered
+load energy against the final `compression_work_J` when that sidecar is
+provided.
+
 ## Public API
 
 Python:
@@ -99,6 +110,7 @@ Tracked tests cover:
 - radial acceleration under pressure imbalance,
 - external compression heating and shrinkage,
 - flux-history propagation,
+- FUS-C.7 compression-work sidecar consumption through Faraday recovery,
 - Spitzer resistivity scaling,
 - fail-closed invalid-input paths.
 
