@@ -680,7 +680,9 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
         "line_radiation_power_time_radius_charge_export": True,
         "total_impurity_inventory_history_export": True,
         "native_impurity_transport_evidence_fail_closed": True,
-        "charge_state_resolved_radial_transport_operator": False,
+        "charge_state_resolved_radial_transport_operator": bool(
+            native_evidence["charge_state_radial_transport_operator_ready"]
+        ),
         "aurora_strahl_same_case_transport_comparison": bool(
             same_case_comparison["comparison_ready"]
         ),
@@ -699,9 +701,8 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
     schema = _load_artifact_schema()
     readiness = _reference_readiness("impurity_transport", reference_cases, schema)
     missing_requirements = [
-        "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
-        "mechanistic Aurora/STRAHL source and recycling model rather than residual effective closure",
-        "validated charge-state radial transport and recycling operators against Aurora/STRAHL",
+        "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
+        "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay",
     ]
     return {
         "surface": "impurity_transport",

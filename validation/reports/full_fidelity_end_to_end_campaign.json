@@ -58,14 +58,14 @@
   "gk_public_decks_indexed": 40,
   "gk_public_outputs_indexed": 21,
   "impurity_aurora_strahl_same_case_comparison_ready": true,
-  "impurity_aurora_strahl_same_case_comparison_status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
+  "impurity_aurora_strahl_same_case_comparison_status": "accepted_native_aurora_effective_transport_closure_thresholds",
   "impurity_aurora_strahl_same_case_threshold_passed": true,
   "impurity_aurora_strahl_same_case_threshold_ready": true,
-  "impurity_charge_state_radial_transport_operator_ready": false,
+  "impurity_charge_state_radial_transport_operator_ready": true,
   "impurity_native_transport_evidence_ready": true,
   "impurity_source_sink_budget_aurora_strahl_same_case_ready": false,
   "impurity_source_sink_budget_evidence_ready": true,
-  "impurity_transport_operator_evidence_status": "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator",
+  "impurity_transport_operator_evidence_status": "accepted_native_effective_transport_closure_not_full_collisional_operator_parity",
   "lanes": [
     {
       "lane": "sas_dataset_readiness",
@@ -245,8 +245,8 @@
       "lane": "aurora_strahl_grade_impurities",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "charge-state-resolved radial transport operator on evolved density",
-        "mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure"
+        "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
+        "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay"
       ],
       "reference_cases_ready": true,
       "sources": [
@@ -263,7 +263,7 @@
           "surface": "impurity_transport"
         }
       ],
-      "status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
+      "status": "accepted_native_aurora_effective_transport_closure_thresholds",
       "surface": "impurity_transport"
     },
     {

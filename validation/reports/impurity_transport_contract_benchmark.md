@@ -30,9 +30,9 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 ## Native impurity transport operator evidence
 
 - Schema: `native-impurity-transport-operator-evidence.v1`
-- Status: `blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator`
+- Status: `accepted_native_effective_transport_closure_not_full_collisional_operator_parity`
 - Native artifact ready: `True`
-- Charge-state radial transport operator ready: `False`
+- Charge-state radial transport operator ready: `True`
 - Aurora/STRAHL same-case comparison ready: `True`
 - Aurora/STRAHL same-case threshold checks ready: `True`
 - Aurora/STRAHL same-case thresholds passed: `True`
@@ -40,13 +40,13 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Density shape: `[3, 80, 4]`
 - Source-sink shape: `[3, 80, 4, 4]`
 - Line-radiation shape: `[3, 80, 4]`
-- Operator terms present: `{"aurora_effective_source_recycling_closure": true, "aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": false, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": true, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": true, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
+- Operator terms present: `{"aurora_effective_source_recycling_closure": true, "aurora_strahl_collisional_operator_parity": false, "charge_state_resolved_radial_transport": true, "charge_state_source_sink_matrix": true, "edge_source_particle_conservation": true, "external_adas_transport_coefficients": true, "line_radiation_power": true, "neoclassical_pinch": true, "same_case_aurora_strahl_transport_output": true, "total_impurity_inventory_closure": true, "trace_radial_transport": true}`
 - Observable finiteness: `{"charge_state_density_r_t": true, "line_radiation_power_t": true, "line_radiation_power_t_r_z": true, "source_sink_matrix_t_r_z_z": true, "total_impurity_density_r_t": true, "total_impurity_inventory_t": true}`
 
 ## Native same-case Aurora comparison
 
 - Schema: `aurora-strahl-native-same-case-comparison.v1`
-- Status: `blocked_effective_closure_not_mechanistic_aurora_strahl_parity`
+- Status: `accepted_native_aurora_effective_transport_closure_thresholds`
 - Artefact path: `validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz`
 - Comparison ready: `True`
 - Threshold checks ready: `True`
@@ -54,7 +54,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Native coordinate match: `True`
 - Native total-density closure: `True`
 - Checks: `[{"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "charge_state_density_r_t", "passed": true, "threshold": "charge_state_density_relative_l2_max", "valid": true, "value": 4.7318606977071035e-17}, {"comparator": "<=", "limit": 0.01, "metric": "relative_error", "observable": "charge_state_density_r_t", "passed": true, "threshold": "particle_conservation_relative_error_max", "valid": true, "value": 1.6917949828303853e-16}, {"comparator": "<=", "limit": 0.1, "metric": "relative_l2", "observable": "line_radiation_power_t", "passed": true, "threshold": "radiated_power_relative_l2_max", "valid": true, "value": 4.0971624280268316e-11}, {"comparator": "<=", "limit": 0.05, "metric": "relative_l2", "observable": "total_impurity_density_r_t", "passed": true, "threshold": "total_density_relative_l2_max", "valid": true, "value": 7.462929864484212e-17}]`
-- Blocking requirements: `mechanistic Aurora/STRAHL source and recycling operator, not residual effective closure; charge-state-resolved radial transport/recycling parity is not yet accepted`
+- Blocking requirements: ``
 
 ## Native source/sink budget evidence
 
@@ -71,7 +71,7 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - Max radial total-density relative change: `1.388889e-16`
 - Line radiation non-negative: `True`
 - Aurora/STRAHL same-case budget ready: `False`
-- Blocking requirements: `charge-state-resolved radial transport operator on evolved density; mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure`
+- Blocking requirements: `time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars; independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay`
 
 ## Invariants
 
@@ -87,5 +87,6 @@ It does not claim Aurora/STRAHL/JINTRAC collisional-operator parity.
 - native_impurity_transport_evidence_fail_closed: PASS
 - native_source_sink_budget_evidence_fail_closed: PASS
 - charge_state_radial_density_conservation: PASS
+- charge_state_radial_transport_operator_budget: PASS
 
 Overall: PASS

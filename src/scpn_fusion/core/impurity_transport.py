@@ -418,6 +418,34 @@ class AuroraParityImpuritySolver:
             density = reference[step].copy()
         return closure
 
+    def radial_transport_budget_diagnostic(self, density_r_z: np.ndarray, dt_s: float) -> dict[str, float | bool]:
+        """Return finite-volume radial-operator conservation diagnostics.
+
+        The radial operator uses zero-flux boundary conditions.  This diagnostic
+        validates that applying the radial transport step to an evolved
+        charge-state density preserves total impurity inventory up to numerical
+        roundoff.
+        """
+        density = np.asarray(density_r_z, dtype=np.float64)
+        expected_shape = (self.radius_m.size, self.charge_states.size)
+        if density.shape != expected_shape:
+            raise ValueError(f"density_r_z must have shape {expected_shape}")
+        if not np.all(np.isfinite(density)) or np.any(density < 0.0):
+            raise ValueError("density_r_z must be finite and non-negative")
+        if not np.isfinite(dt_s) or dt_s <= 0.0:
+            raise ValueError("dt_s must be finite and positive")
+
+        before = self._finite_volume_inventory(np.sum(density, axis=1))
+        after_density = self._radial_transport_step(density, dt_s)
+        after = self._finite_volume_inventory(np.sum(after_density, axis=1))
+        relative_error = abs(after - before) / max(abs(before), 1.0)
+        return {
+            "inventory_before": before,
+            "inventory_after": after,
+            "relative_inventory_error": float(relative_error),
+            "passed": bool(relative_error <= 1.0e-12),
+        }
+
     def solve(self) -> AuroraStrahlArtifact:
         """Return Aurora-style observables for the native parity contract."""
         density = np.asarray(self.case.initial_charge_state_density_rz, dtype=np.float64).copy()

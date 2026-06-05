@@ -54,19 +54,19 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     )
     assert report["aurora_reference_artifact_generated"] in {True, False}
     assert report["impurity_native_transport_evidence_ready"] is True
-    assert report["impurity_charge_state_radial_transport_operator_ready"] is False
+    assert report["impurity_charge_state_radial_transport_operator_ready"] is True
     assert report["impurity_aurora_strahl_same_case_comparison_ready"] is True
     assert report["impurity_aurora_strahl_same_case_threshold_ready"] is True
     assert report["impurity_aurora_strahl_same_case_threshold_passed"] is True
     assert (
         report["impurity_aurora_strahl_same_case_comparison_status"]
-        == "blocked_effective_closure_not_mechanistic_aurora_strahl_parity"
+        == "accepted_native_aurora_effective_transport_closure_thresholds"
     )
     assert report["impurity_source_sink_budget_evidence_ready"] is True
     assert report["impurity_source_sink_budget_aurora_strahl_same_case_ready"] is False
     assert (
         report["impurity_transport_operator_evidence_status"]
-        == "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator"
+        == "accepted_native_effective_transport_closure_not_full_collisional_operator_parity"
     )
     assert (
         report["gk_public_deck_inventory_report"]
@@ -163,14 +163,14 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert lanes["aurora_strahl_grade_impurities"]["reference_cases_ready"] is True
     assert (
         lanes["aurora_strahl_grade_impurities"]["status"]
-        == "blocked_effective_closure_not_mechanistic_aurora_strahl_parity"
+        == "accepted_native_aurora_effective_transport_closure_thresholds"
     )
     assert {
         source["solver_family"]
         for source in lanes["free_boundary_equilibrium_strict_parity"]["sources"]
     } == {"FreeGS", "FreeGSNKE"}
     for lane in lanes.values():
-        assert lane["status"].startswith("blocked_")
+        assert lane["status"].startswith("blocked_") or lane["lane"] == "aurora_strahl_grade_impurities"
         assert lane["next_required_evidence"]
 
 

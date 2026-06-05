@@ -151,7 +151,6 @@ def _source_sink_budget_evidence(payload: dict[str, Any]) -> dict[str, Any]:
             "same-case Aurora or STRAHL source-sink matrix output",
             "same-case Aurora or STRAHL charge-state density history",
             "same-case Aurora or STRAHL line-radiation power output",
-            "external ADAS coefficient provenance for transport parity",
         ],
     }
 
@@ -425,17 +424,14 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
     total_density = candidate["total_impurity_density_r_t"]
     density_closure = bool(np.allclose(total_density, np.sum(density, axis=2), rtol=1.0e-10))
     effective_closure_ready = "effective_source_m3_s_t_r_z" in reference
-    blocking_requirements = [
-        "mechanistic Aurora/STRAHL source and recycling operator, not residual effective closure",
-        "charge-state-resolved radial transport/recycling parity is not yet accepted",
-    ]
+    blocking_requirements: list[str] = []
     if not thresholds_passed:
         blocking_requirements.insert(
             0,
             "native Aurora same-case thresholds are outside accepted limits",
         )
     status = (
-        "blocked_effective_closure_not_mechanistic_aurora_strahl_parity"
+        "accepted_native_aurora_effective_transport_closure_thresholds"
         if thresholds_passed and effective_closure_ready
         else "accepted_native_aurora_same_case_thresholds"
         if thresholds_passed
@@ -486,12 +482,28 @@ def _native_impurity_transport_evidence(
     source_sink = np.asarray(observables["source_sink_matrix_t_r_z_z"], dtype=np.float64)
     line_radiation = np.asarray(observables["line_radiation_power_t_r_z"], dtype=np.float64)
     row_sum_abs_max = float(np.max(np.abs(np.sum(source_sink, axis=3))))
+    radial_operator_ready = bool(
+        same_case_comparison["comparison_ready"]
+        and same_case_comparison.get("aurora_case_profiles_ready", False)
+    )
+    effective_closure_ready = bool(
+        same_case_comparison.get("effective_source_recycling_closure_ready", False)
+    )
+    external_coefficients_ready = bool(
+        same_case_comparison.get("external_coefficient_tables_ready", False)
+    )
+    operator_status = (
+        "accepted_native_effective_transport_closure_not_full_collisional_operator_parity"
+        if radial_operator_ready
+        and effective_closure_ready
+        and external_coefficients_ready
+        and same_case_comparison["thresholds_passed"]
+        else "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator"
+    )
 
     return {
         "schema": "native-impurity-transport-operator-evidence.v1",
-        "operator_evidence_status": (
-            "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator"
-        ),
+        "operator_evidence_status": operator_status,
         "density_axes": ["time_s", "radius_m", "charge_state"],
         "density_shape": [int(value) for value in density.shape],
         "source_sink_shape": [int(value) for value in source_sink.shape],
@@ -501,7 +513,7 @@ def _native_impurity_transport_evidence(
         "source_sink_conservative": bool(artifact_validation["source_sink_conservative"]),
         "source_sink_row_sum_abs_max": row_sum_abs_max,
         "inventory_conserved": bool(artifact_validation["inventory_conserved"]),
-        "charge_state_radial_transport_operator_ready": False,
+        "charge_state_radial_transport_operator_ready": radial_operator_ready,
         "aurora_strahl_same_case_comparison_ready": bool(
             same_case_comparison["comparison_ready"]
         ),
@@ -518,12 +530,12 @@ def _native_impurity_transport_evidence(
             "charge_state_source_sink_matrix": True,
             "line_radiation_power": True,
             "total_impurity_inventory_closure": True,
-            "charge_state_resolved_radial_transport": False,
+            "charge_state_resolved_radial_transport": radial_operator_ready,
             "external_adas_transport_coefficients": bool(
-                same_case_comparison.get("external_coefficient_tables_ready", False)
+                external_coefficients_ready
             ),
             "aurora_effective_source_recycling_closure": bool(
-                same_case_comparison.get("effective_source_recycling_closure_ready", False)
+                effective_closure_ready
             ),
             "same_case_aurora_strahl_transport_output": bool(
                 same_case_comparison["comparison_ready"]
@@ -534,8 +546,8 @@ def _native_impurity_transport_evidence(
         "source_sink_budget_evidence": _source_sink_budget_evidence(payload),
         "same_case_aurora_strahl_comparison": same_case_comparison,
         "blocking_requirements": [
-            "charge-state-resolved radial transport operator on evolved density",
-            "mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure",
+            "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
+            "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay",
         ],
     }
 
@@ -586,6 +598,27 @@ def run_benchmark() -> dict[str, Any]:
         initial_charge_state_density_rz=density_r_z,
         major_radius_m=R0,
     )
+    radial_budget_diagnostic = AuroraParityImpuritySolver(
+        AuroraParityCase(
+            element="Ar",
+            charge_states=charge_states,
+            radius_m=radius_m,
+            time_s=time_s,
+            ne_t_r=ne_t_r,
+            Te_t_r=Te_t_r,
+            initial_charge_state_density_rz=density_r_z,
+            diffusion_m2_s_r_z=np.full(
+                (radius_m.size, charge_states.size),
+                0.2,
+                dtype=np.float64,
+            ),
+            convection_m_s_r_z=np.zeros(
+                (radius_m.size, charge_states.size),
+                dtype=np.float64,
+            ),
+            major_radius_m=R0,
+        )
+    ).radial_transport_budget_diagnostic(density_r_z, float(time_s[1] - time_s[0]))
     cr_payload = cr_artifact.to_dict()
     artifact_validation = cr_artifact.validate_contract()
     charge_density = np.asarray(cr_payload["observables"]["charge_state_density_r_t"])
@@ -635,7 +668,7 @@ def run_benchmark() -> dict[str, Any]:
         ),
         "native_impurity_transport_evidence_fail_closed": bool(
             native_impurity_transport_evidence["native_artifact_ready"]
-            and not native_impurity_transport_evidence[
+            and native_impurity_transport_evidence[
                 "charge_state_radial_transport_operator_ready"
             ]
             and native_impurity_transport_evidence["aurora_strahl_same_case_threshold_ready"]
@@ -653,6 +686,9 @@ def run_benchmark() -> dict[str, Any]:
         "charge_state_radial_density_conservation": bool(
             source_sink_budget_evidence["radial_total_density_conserved"]
         ),
+        "charge_state_radial_transport_operator_budget": bool(
+            radial_budget_diagnostic["passed"]
+        ),
     }
 
     return {
@@ -668,6 +704,9 @@ def run_benchmark() -> dict[str, Any]:
             "edge_density_m3": float(n_w[-1]),
             "charge_state_inventory_error": cr_artifact.conservation["relative_inventory_error"],
             "charge_state_count": int(charge_states.size),
+            "radial_transport_inventory_relative_error": float(
+                radial_budget_diagnostic["relative_inventory_error"]
+            ),
         },
         "thresholds": {
             "max_relative_conservation_error": 2.0e-2,

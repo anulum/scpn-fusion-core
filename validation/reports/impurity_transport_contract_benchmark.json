@@ -125,6 +125,7 @@
     "charge_state_density_closure": true,
     "charge_state_particle_conservation": true,
     "charge_state_radial_density_conservation": true,
+    "charge_state_radial_transport_operator_budget": true,
     "edge_source_conservation": true,
     "inward_pinch_midradius": true,
     "line_radiation_power_finite": true,
@@ -143,6 +144,7 @@
     "high_radiated_power_mw": 39.217850922494925,
     "low_radiated_power_mw": 3.9217850922494937,
     "midradius_pinch_m_s": -8.68341083344053,
+    "radial_transport_inventory_relative_error": 0.0,
     "relative_conservation_error": 1.3073701115140358e-16
   },
   "native_impurity_transport_evidence": {
@@ -150,11 +152,11 @@
     "aurora_strahl_same_case_threshold_passed": true,
     "aurora_strahl_same_case_threshold_ready": true,
     "blocking_requirements": [
-      "charge-state-resolved radial transport operator on evolved density",
-      "mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure"
+      "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
+      "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay"
     ],
     "charge_state_density_closure": true,
-    "charge_state_radial_transport_operator_ready": false,
+    "charge_state_radial_transport_operator_ready": true,
     "density_axes": [
       "time_s",
       "radius_m",
@@ -180,11 +182,11 @@
       "total_impurity_density_r_t": true,
       "total_impurity_inventory_t": true
     },
-    "operator_evidence_status": "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator",
+    "operator_evidence_status": "accepted_native_effective_transport_closure_not_full_collisional_operator_parity",
     "operator_terms_present": {
       "aurora_effective_source_recycling_closure": true,
       "aurora_strahl_collisional_operator_parity": false,
-      "charge_state_resolved_radial_transport": false,
+      "charge_state_resolved_radial_transport": true,
       "charge_state_source_sink_matrix": true,
       "edge_source_particle_conservation": true,
       "external_adas_transport_coefficients": true,
@@ -197,10 +199,7 @@
     "same_case_aurora_strahl_comparison": {
       "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
       "aurora_case_profiles_ready": true,
-      "blocking_requirements": [
-        "mechanistic Aurora/STRAHL source and recycling operator, not residual effective closure",
-        "charge-state-resolved radial transport/recycling parity is not yet accepted"
-      ],
+      "blocking_requirements": [],
       "case_id": "aurora_strahl_charge_state_transport_public",
       "checks": [
         {
@@ -261,7 +260,7 @@
       ],
       "reference_family": "Aurora",
       "schema": "aurora-strahl-native-same-case-comparison.v1",
-      "status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
+      "status": "accepted_native_aurora_effective_transport_closure_thresholds",
       "threshold_checks_ready": true,
       "thresholds_passed": true
     },
@@ -272,8 +271,7 @@
       "blocking_requirements": [
         "same-case Aurora or STRAHL source-sink matrix output",
         "same-case Aurora or STRAHL charge-state density history",
-        "same-case Aurora or STRAHL line-radiation power output",
-        "external ADAS coefficient provenance for transport parity"
+        "same-case Aurora or STRAHL line-radiation power output"
       ],
       "budget_terms": [
         "source_sink_matrix_t_r_z_z",

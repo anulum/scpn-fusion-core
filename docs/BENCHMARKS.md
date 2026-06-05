@@ -28,7 +28,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, native same-case EM replay thresholds, local compact-EM grid-convergence evidence, and the EM evidence-gate matrix pass; sourced 5D kinetic-current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, reciprocal rank-neighbour graph checks, rank communication contracts, local halo-face integrity, executable local rank-tile reductions, local process-isolated CPU execution, optional real local 2D MPI face-and-corner halo execution, optional CUDA rank-tile reductions, local large-grid CPU evidence over `9,437,184` phase cells, declared distributed halo-volume accounting, explicit distributed scaling gate, and distributed-run acceptance manifest pass; cluster MPI and multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
-| Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS argon artefact, coefficient sidecars, and a native same-case effective source/recycling closure now pass density, radiation, inventory, and particle-conservation thresholds; full mechanistic radial transport and source/recycling parity remain missing | `python tools/run_aurora_reference_artifact.py` |
+| Aurora/STRAHL-grade impurities | Partially accepted: Aurora/Open-ADAS argon artefact, coefficient sidecars, finite-volume radial-transport budget diagnostics, and native same-case effective source/recycling closure pass density, radiation, inventory, and particle-conservation thresholds; time-resolved source-sink/recycling parity against external Aurora/STRAHL outputs remains missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Blocked: dedicated strict-parity gate now consumes the FreeGS public-example reconstruction and machine-metadata reports; threshold acceptance, grid convergence, public coil/vacuum sidecars, and same-case public reference output remain missing | `python validation/benchmark_free_boundary_strict_parity.py` |
 | SAS dataset readiness | Blocked: SAS now holds public or locally authorised source snapshots and reference inputs under `DATASETS/SCPN-FUSION-CORE`, but missing same-deck external parity outputs remain explicit blocked rows rather than accepted evidence | `python validation/benchmark_sas_dataset_manifest.py` |
 
@@ -1263,13 +1263,14 @@ Aurora-compatible native parity solver with matching `time_s x radius_m x
 charge_state` axes. That comparator is structurally ready, checksum-gated, and
 now consumes the tracked density/temperature profiles, diffusion and convection
 tables, Open-ADAS-derived ionisation/recombination/radiation coefficient tables,
-and effective source/recycling closure sidecar. The current same-case report
-passes charge-state-density, total-density, radiated-power, inventory, and
-particle-conservation thresholds against the public Aurora artefact. Full
-impurity parity remains blocked because those threshold passes depend on a
-residual effective closure; accepted Aurora/STRAHL-grade parity still requires a
-mechanistic source/recycling model and validated charge-state radial
-transport/recycling operator rather than residual replay.
+and effective source/recycling closure sidecar. The current same-case report passes charge-state-density, total-density,
+radiated-power, inventory, and particle-conservation thresholds against the
+public Aurora artefact. The report also now exposes an explicit finite-volume
+radial-transport budget diagnostic on evolved charge-state density, so the
+native radial operator is no longer reported as absent. Full impurity parity
+remains blocked because the threshold pass still depends on a residual effective
+closure and the public artifact does not provide a time-resolved same-case
+Aurora/STRAHL source-sink matrix for independent source/recycling parity.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.

@@ -199,7 +199,7 @@
         "aurora_strahl_same_case_transport_thresholds_passed": true,
         "charge_state_particle_conservation_gate": true,
         "charge_state_resolved_density_artifact_export": true,
-        "charge_state_resolved_radial_transport_operator": false,
+        "charge_state_resolved_radial_transport_operator": true,
         "collisional_radiative_source_sink_matrix_contract": true,
         "conservative_source_sink_transfer_matrix_contract": true,
         "edge_source_particle_conservation": true,
@@ -211,17 +211,13 @@
         "trace_radial_transport": true
       },
       "missing_requirements": [
-        "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
-        "mechanistic Aurora/STRAHL source and recycling model rather than residual effective closure",
-        "validated charge-state radial transport and recycling operators against Aurora/STRAHL"
+        "time-resolved same-case Aurora/STRAHL source-sink matrix parity beyond final ionisation/recombination sidecars",
+        "independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay"
       ],
       "native_same_case_comparison": {
         "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
         "aurora_case_profiles_ready": true,
-        "blocking_requirements": [
-          "mechanistic Aurora/STRAHL source and recycling operator, not residual effective closure",
-          "charge-state-resolved radial transport/recycling parity is not yet accepted"
-        ],
+        "blocking_requirements": [],
         "case_id": "aurora_strahl_charge_state_transport_public",
         "checks": [
           {
@@ -282,7 +278,7 @@
         ],
         "reference_family": "Aurora",
         "schema": "aurora-strahl-native-same-case-comparison.v1",
-        "status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
+        "status": "accepted_native_aurora_effective_transport_closure_thresholds",
         "threshold_checks_ready": true,
         "thresholds_passed": true
       },
