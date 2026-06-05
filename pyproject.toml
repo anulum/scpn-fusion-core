@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scpn-fusion"
-version = "3.9.8"
+version = "3.9.9"
 description = "SCPN Fusion Core - Advanced Plasma Physics & Control Suite"
 authors = [
     {name = "Miroslav Sotek"},
@@ -18,7 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Physics",
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
 ]
 readme = "README.md"
 dependencies = [
@@ -270,7 +270,6 @@ omit = [
 
 [tool.coverage.report]
 exclude_lines = [
-    "pragma: no cover",
     "if __name__",
     "raise NotImplementedError",
     "except ImportError",

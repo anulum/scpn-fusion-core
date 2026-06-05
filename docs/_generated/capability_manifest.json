@@ -24,15 +24,22 @@
       "docs/VALIDATION_AGAINST_ITER.md",
       "docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md",
       "docs/competitive_analysis.md",
+      "docs/equilibrium/frc_rigid_rotor.md",
       "docs/formal_verification.md",
       "docs/hil_demo.md",
       "docs/notebooks/README.md",
+      "docs/physics/faraday_recovery.md",
+      "docs/physics/hall_mhd_pulsed.md",
+      "docs/physics/mrti.md",
+      "docs/physics/pulsed_compression.md",
+      "docs/physics/tilt_mode_frc.md",
       "docs/promotions/HN_SHOW.md",
       "docs/promotions/REDDIT_COMPILERS.md",
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
+      "docs/releases/v3.9.9.md",
       "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
@@ -259,6 +266,14 @@
       {
         "name": "Coil",
         "path": "src/scpn_fusion/core/config_schema.py"
+      },
+      {
+        "name": "CoilCircuitState",
+        "path": "src/scpn_fusion/core/pulsed_compression.py"
+      },
+      {
+        "name": "CoilGeometry",
+        "path": "src/scpn_fusion/core/pulsed_compression.py"
       },
       {
         "name": "CoilSet",
@@ -557,6 +572,42 @@
         "path": "src/scpn_fusion/control/hil_harness.py"
       },
       {
+        "name": "FRCEquilibriumState",
+        "path": "src/scpn_fusion/core/frc_rigid_rotor.py"
+      },
+      {
+        "name": "FRCTiltModeReport",
+        "path": "src/scpn_fusion/core/tilt_mode_frc.py"
+      },
+      {
+        "name": "FRCTiltModeThresholds",
+        "path": "src/scpn_fusion/core/tilt_mode_frc.py"
+      },
+      {
+        "name": "FRCTiltModeTrajectoryPoint",
+        "path": "src/scpn_fusion/core/tilt_mode_frc.py"
+      },
+      {
+        "name": "FRCValidationReport",
+        "path": "src/scpn_fusion/core/frc_rigid_rotor.py"
+      },
+      {
+        "name": "FaradayCompressionFluxBudget",
+        "path": "src/scpn_fusion/core/faraday_recovery.py"
+      },
+      {
+        "name": "FaradayRecoveryReport",
+        "path": "src/scpn_fusion/core/faraday_recovery.py"
+      },
+      {
+        "name": "FaradayRecoverySample",
+        "path": "src/scpn_fusion/core/faraday_recovery.py"
+      },
+      {
+        "name": "FaradayRecoveryTrajectoryPoint",
+        "path": "src/scpn_fusion/core/faraday_recovery.py"
+      },
+      {
         "name": "FastIonPressure",
         "path": "src/scpn_fusion/core/kinetic_efit.py"
       },
@@ -615,6 +666,10 @@
       {
         "name": "FluxConsumptionMonitor",
         "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "FluxEvolutionTrajectory",
+        "path": "src/scpn_fusion/core/current_diffusion.py"
       },
       {
         "name": "FluxReport",
@@ -833,6 +888,14 @@
         "path": "src/scpn_fusion/core/hall_mhd_discovery.py"
       },
       {
+        "name": "HallMHDPulsedConfig",
+        "path": "src/scpn_fusion/core/hall_mhd_pulsed.py"
+      },
+      {
+        "name": "HallMHDPulsedState",
+        "path": "src/scpn_fusion/core/hall_mhd_pulsed.py"
+      },
+      {
         "name": "HaloCurrentModel",
         "path": "src/scpn_fusion/control/halo_re_physics.py"
       },
@@ -991,6 +1054,14 @@
       {
         "name": "MLPWeights",
         "path": "src/scpn_fusion/core/_neural_transport_types.py"
+      },
+      {
+        "name": "MRTISpectrumState",
+        "path": "src/scpn_fusion/core/mrti.py"
+      },
+      {
+        "name": "MRTISpectrumTracker",
+        "path": "src/scpn_fusion/core/mrti.py"
       },
       {
         "name": "MachineClient",
@@ -1357,6 +1428,22 @@
         "path": "src/scpn_fusion/core/pretrained_surrogates.py"
       },
       {
+        "name": "PulsedCompressionConfig",
+        "path": "src/scpn_fusion/core/pulsed_compression.py"
+      },
+      {
+        "name": "PulsedCompressionLike",
+        "path": "src/scpn_fusion/core/mrti.py"
+      },
+      {
+        "name": "PulsedCompressionLike",
+        "path": "src/scpn_fusion/core/tilt_mode_frc.py"
+      },
+      {
+        "name": "PulsedCompressionState",
+        "path": "src/scpn_fusion/core/pulsed_compression.py"
+      },
+      {
         "name": "QLKNNSurrogate",
         "path": "src/scpn_fusion/core/neural_turbulence.py"
       },
@@ -1483,6 +1570,10 @@
       {
         "name": "ResonantFieldAmplification",
         "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "RigidRotorFRCInputs",
+        "path": "src/scpn_fusion/core/frc_rigid_rotor.py"
       },
       {
         "name": "RotationDiagnostics",
@@ -2045,6 +2136,10 @@
         "path": "src/scpn_fusion/control/volt_second_manager.py"
       },
       {
+        "name": "VoltageDrivenCompressionResult",
+        "path": "src/scpn_fusion/core/pulsed_compression.py"
+      },
+      {
         "name": "VolumetricBlanketReport",
         "path": "src/scpn_fusion/nuclear/blanket_neutronics.py"
       },
@@ -2168,12 +2263,14 @@
       "src/scpn_fusion/core/eped_pedestal.py",
       "src/scpn_fusion/core/eqdsk.py",
       "src/scpn_fusion/core/equilibrium_3d.py",
+      "src/scpn_fusion/core/faraday_recovery.py",
       "src/scpn_fusion/core/fieldline_3d.py",
       "src/scpn_fusion/core/fno_jax_training.py",
       "src/scpn_fusion/core/fno_training.py",
       "src/scpn_fusion/core/fno_training_multi_regime.py",
       "src/scpn_fusion/core/fno_turbulence_suppressor.py",
       "src/scpn_fusion/core/force_balance.py",
+      "src/scpn_fusion/core/frc_rigid_rotor.py",
       "src/scpn_fusion/core/fusion_ignition_sim.py",
       "src/scpn_fusion/core/fusion_kernel.py",
       "src/scpn_fusion/core/fusion_kernel_coilset_config.py",
@@ -2210,6 +2307,7 @@
       "src/scpn_fusion/core/gyro_swin_surrogate.py",
       "src/scpn_fusion/core/gyrokinetic_transport.py",
       "src/scpn_fusion/core/hall_mhd_discovery.py",
+      "src/scpn_fusion/core/hall_mhd_pulsed.py",
       "src/scpn_fusion/core/heat_ml_shadow_surrogate.py",
       "src/scpn_fusion/core/heating_neutronics_contracts.py",
       "src/scpn_fusion/core/hpc_bridge.py",
@@ -2238,6 +2336,7 @@
       "src/scpn_fusion/core/marfe.py",
       "src/scpn_fusion/core/mhd_sawtooth.py",
       "src/scpn_fusion/core/momentum_transport.py",
+      "src/scpn_fusion/core/mrti.py",
       "src/scpn_fusion/core/neoclassical.py",
       "src/scpn_fusion/core/neural_equilibrium.py",
       "src/scpn_fusion/core/neural_equilibrium_kernel.py",
@@ -2252,6 +2351,7 @@
       "src/scpn_fusion/core/plasma_startup.py",
       "src/scpn_fusion/core/plasma_wall_interaction.py",
       "src/scpn_fusion/core/pretrained_surrogates.py",
+      "src/scpn_fusion/core/pulsed_compression.py",
       "src/scpn_fusion/core/quantum_bridge.py",
       "src/scpn_fusion/core/quasi_3d_contracts.py",
       "src/scpn_fusion/core/rf_heating.py",
@@ -2269,6 +2369,7 @@
       "src/scpn_fusion/core/tglf_interface.py",
       "src/scpn_fusion/core/tglf_surrogate_bridge.py",
       "src/scpn_fusion/core/tglf_validation_runtime.py",
+      "src/scpn_fusion/core/tilt_mode_frc.py",
       "src/scpn_fusion/core/tokamak_config.py",
       "src/scpn_fusion/core/turbulence_oracle.py",
       "src/scpn_fusion/core/uncertainty.py",
@@ -2387,15 +2488,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 48,
+    "capability_documentation_pages": 55,
     "github_workflows": 12,
     "optional_extras": 12,
     "public_api_exports": 2,
-    "public_documentation_pages": 48,
-    "python_capability_classes": 503,
-    "python_capability_source_modules": 264,
+    "public_documentation_pages": 55,
+    "python_capability_classes": 525,
+    "python_capability_source_modules": 270,
     "rust_workspace_crates": 13,
-    "test_files": 399
+    "test_files": 408
   },
   "documentation": {
     "public_pages": [
@@ -2421,15 +2522,22 @@
       "docs/VALIDATION_AGAINST_ITER.md",
       "docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md",
       "docs/competitive_analysis.md",
+      "docs/equilibrium/frc_rigid_rotor.md",
       "docs/formal_verification.md",
       "docs/hil_demo.md",
       "docs/notebooks/README.md",
+      "docs/physics/faraday_recovery.md",
+      "docs/physics/hall_mhd_pulsed.md",
+      "docs/physics/mrti.md",
+      "docs/physics/pulsed_compression.md",
+      "docs/physics/tilt_mode_frc.md",
       "docs/promotions/HN_SHOW.md",
       "docs/promotions/REDDIT_COMPILERS.md",
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
+      "docs/releases/v3.9.9.md",
       "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
@@ -2495,7 +2603,7 @@
     "name": "scpn-fusion",
     "readme": "README.md",
     "requires_python": ">=3.10",
-    "version": "3.9.8"
+    "version": "3.9.9"
   },
   "project_label": "SCPN Fusion Core",
   "quality_gates": {
@@ -2564,6 +2672,7 @@
       "tests/test_controller_runtime_backend.py",
       "tests/test_controller_tuning.py",
       "tests/test_current_diffusion.py",
+      "tests/test_current_diffusion_nonadiabatic.py",
       "tests/test_current_drive.py",
       "tests/test_dashboard_generator.py",
       "tests/test_dashboard_launcher.py",
@@ -2597,6 +2706,7 @@
       "tests/test_exceptions_hierarchy.py",
       "tests/test_fallback_budget_guard.py",
       "tests/test_fallback_telemetry.py",
+      "tests/test_faraday_recovery.py",
       "tests/test_fault_tolerant_control.py",
       "tests/test_federated_disruption.py",
       "tests/test_fieldline_3d.py",
@@ -2612,6 +2722,9 @@
       "tests/test_formal_safety_contract_replay_benchmark.py",
       "tests/test_forward_diagnostics_extended.py",
       "tests/test_forward_diagnostics_guards.py",
+      "tests/test_frc_rigid_rotor.py",
+      "tests/test_frc_rigid_rotor_property.py",
+      "tests/test_frc_rigid_rotor_rust_parity.py",
       "tests/test_free_boundary_public_machine_metadata_inventory.py",
       "tests/test_free_boundary_supervisory_control.py",
       "tests/test_free_boundary_tracking.py",
@@ -2693,6 +2806,7 @@
       "tests/test_h_infinity_controller.py",
       "tests/test_hall_mhd.py",
       "tests/test_hall_mhd_discovery.py",
+      "tests/test_hall_mhd_pulsed.py",
       "tests/test_halo_re_physics.py",
       "tests/test_hardening_module_linkage.py",
       "tests/test_heating_neutronics_contracts.py",
@@ -2745,6 +2859,7 @@
       "tests/test_mhd_sawtooth.py",
       "tests/test_mhd_stability.py",
       "tests/test_momentum_transport.py",
+      "tests/test_mrti.py",
       "tests/test_mu_synthesis.py",
       "tests/test_multi_compat.py",
       "tests/test_multi_ion_transport.py",
@@ -2794,6 +2909,7 @@
       "tests/test_pretrained_surrogates.py",
       "tests/test_psi_pointwise_rmse.py",
       "tests/test_psi_pointwise_rmse_cli.py",
+      "tests/test_pulsed_compression.py",
       "tests/test_pwi_erosion.py",
       "tests/test_pwi_erosion_runtime.py",
       "tests/test_py39_annotation_compat.py",
@@ -2884,6 +3000,7 @@
       "tests/test_tglf_surrogate_bridge.py",
       "tests/test_tglf_validation_runtime.py",
       "tests/test_thermal_hydraulics.py",
+      "tests/test_tilt_mode_frc.py",
       "tests/test_tokamak_archive.py",
       "tests/test_tokamak_archive_profiles.py",
       "tests/test_tokamak_config.py",

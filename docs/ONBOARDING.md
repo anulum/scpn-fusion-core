@@ -33,7 +33,24 @@ The full-fidelity campaign is expected to remain fail-closed until external
 same-case reference artifacts are present. Treat blocked rows as work items, not
 as failures to hide.
 
-## 3. Learn the repository by surface
+## 3. Understand the product in one pass
+
+Before changing code, read the public claim boundary:
+
+```text
+README.md
+docs/PROJECT_OVERVIEW.md
+docs/APPLICATIONS_AND_MARKET.md
+docs/BENCHMARKS.md
+validation/reports/full_fidelity_end_to_end_campaign.md
+```
+
+The repository is not just a solver. It is a control-first validation stack:
+Petri-net and SNN control contracts, native physics kernels, Rust acceleration,
+formal proof slices, notebooks, benchmark reports, and fail-closed external
+reference gates.
+
+## 4. Learn the repository by surface
 
 | Surface | Entry point |
 |---|---|
@@ -46,7 +63,7 @@ as failures to hide.
 | Notebooks | `docs/notebooks/README.md` |
 | API map | `docs/API_OVERVIEW.md` |
 
-## 4. Contributor workflow
+## 5. Contributor workflow
 
 - Keep public claims tied to tracked reports.
 - Keep planning, scratch notes, credentials, provider instance IDs, and private
@@ -56,14 +73,13 @@ as failures to hide.
 - Update documentation and changelog entries when behavior, benchmarks, public
   claims, or user-visible APIs change.
 
-## 5. Before publishing benchmark numbers
+## 6. Before publishing benchmark numbers
 
 A benchmark number is public only when it includes command, environment,
 hardware metadata, input decks, output artifacts, checksums, thresholds, and a
 report that states pass, fail, blocked, or diagnostic-only status.
 
-
-## 6. Choose a first contribution path
+## 7. Choose a first contribution path
 
 | Path | First useful task | Evidence expected |
 |---|---|---|
@@ -74,7 +90,7 @@ report that states pass, fail, blocked, or diagnostic-only status.
 | Formal methods | Extend Lean proofs toward executable contracts | Lean build, theorem boundary, linked implementation contract |
 | Documentation | Improve a public guide or evidence map | Clear scope, no unsupported claims, links to reports |
 
-## 7. Release and documentation discipline
+## 8. Release and documentation discipline
 
 Before a public-facing change is released, update the relevant README, guide,
 API overview, benchmark report, changelog, and release note. If the change is an

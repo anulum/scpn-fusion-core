@@ -28,6 +28,19 @@ near real plant hardware?
 - Teaching the software architecture of control-first fusion simulation.
 - Preparing reference-code parity campaigns against established solvers.
 
+## What a reviewer should understand first
+
+SCPN Fusion Core is valuable because it turns fusion-control research into an
+auditable evidence pipeline. A contributor can write a controller, run it
+against local physics contracts, capture deterministic replay metadata, compare
+native kernels across Python and Rust, and then keep the claim blocked until
+external same-case reference output exists.
+
+This distinction matters commercially. It lets a laboratory, startup, or
+investor see which money buys software hardening, which money buys reference
+solver execution, and which money buys production-scale hardware evidence. The
+repository is therefore both a codebase and a validation operating model.
+
 ## What it is not
 
 - Not a completed replacement for GENE, CGYRO, GS2, DREAM, Aurora, STRAHL,
@@ -79,3 +92,11 @@ for local development and what still needs external parity evidence.
 
 This workflow is the market value of the project: it reduces ambiguity between a
 prototype, a benchmark result, and a defensible validation claim.
+
+## Fifteen-minute orientation path
+
+1. Read `README.md` for the product boundary and current headline reports.
+2. Read this overview to understand the evidence model and maturity labels.
+3. Follow `docs/ONBOARDING.md` to install and run the first local commands.
+4. Use `docs/API_OVERVIEW.md` to find the Python, Rust, and validation entry points.
+5. Use `docs/BENCHMARKS.md` and `validation/reports/` before citing any number.

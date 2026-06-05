@@ -22,6 +22,16 @@ Important surfaces:
 
 Generated Sphinx API pages live under `docs/sphinx/api/`.
 
+## How to choose an API surface
+
+| Goal | Start with | Why |
+|---|---|---|
+| Build a controller loop | `scpn_fusion.control`, `scpn_fusion.scpn` | These modules expose controller contracts, replay metadata, and Petri-net/SNN compilation. |
+| Run or inspect physics kernels | `scpn_fusion.core` | Core modules hold equilibrium, transport, gyrokinetic, electromagnetic, MIF/FRC, and validation helpers. |
+| Connect external evidence | `validation/`, `scpn_fusion.io` | Validation scripts and I/O adapters carry provenance, schema, checksum, and pass/blocked status. |
+| Accelerate or compare kernels | `scpn-fusion-rs/` | Rust crates implement selected native surfaces and benchmark contracts. |
+| Build demos or onboarding material | `examples/`, `docs/notebooks/` | Notebook flows are tutorials; they must link to reports for public claims. |
+
 ## Command-line entry point
 
 ```bash
@@ -79,3 +89,10 @@ Native compilation, subprocess launchers, external solver execution, artifact
 loading, and dashboard/browser entry points are security-sensitive. Changes to
 these surfaces should include scoped tests, timeout handling, fixed argv where
 possible, and documentation of the trust boundary.
+
+## Documentation contract for API changes
+
+When a public API, validation schema, benchmark report, or Rust/Python parity
+surface changes, update the relevant guide and changelog in the same commit.
+If the API exposes a physics claim, link it to a tracked report rather than
+describing it as accepted in prose.

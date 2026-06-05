@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- No unreleased changes yet.
+
+## [3.9.9] - 2026-06-05
+
+- Released the documentation, repository-polish, and MIF evidence-coupling update for the current public codebase.
+- Bumped package metadata, release readiness, release notes, README badge, and generated capability snapshot references to 3.9.9.
+- Expanded public project overview, onboarding, API, applications, notebook, GitHub Pages, and Sphinx release navigation while keeping full-fidelity parity gates evidence-bounded.
+
 - Hardened FUS-C.7/FUS-C.6 coupling across Python and Rust by adding a
   Faraday-side compression flux-budget sidecar, blocked missing-flux status,
   failed-budget propagation, benchmark rows, and documentation.

@@ -5,12 +5,14 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.9.8 (Current)
+v3.9.9 (Current)
 ------------------
 
-- Documentation and repository-polish release that improves README scanning, onboarding, API orientation, market/application context, notebook guidance, and public evidence-boundary navigation.
-- Optional native C++ compilation is hardened behind fail-closed source, compiler, environment, and timeout checks.
+- Documentation, repository-polish, and MIF evidence-coupling release that improves README scanning, onboarding, API orientation, market/application context, notebook guidance, public evidence-boundary navigation, and Faraday/compression sidecar traceability.
+- Optional native C++ compilation remains hardened behind fail-closed source, compiler, environment, and timeout checks.
 - Release readiness remains pending until the remote CI run for the release commit is green.
+
+  v3.9.8 covered documentation polish and native-build hardening; v3.9.9 carries forward that evidence boundary while adding the latest MIF Faraday flux-sidecar report.
 
 v3.9.7
 ------------------
