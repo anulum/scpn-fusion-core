@@ -19,7 +19,7 @@ use fusion_physics::faraday_recovery::{
     compression_trajectory_diagnostics_from_voltage_driven_compression,
     compression_work_from_pulsed_compression, compression_work_from_voltage_driven_compression,
     faraday_trajectory_from_pulsed_compression, faraday_trajectory_from_voltage_driven_compression,
-    integrated_recovery_energy, FaradayRecoveryTrajectoryPoint,
+    integrated_recovery_energy, FaradayRecoveryEnergyInput, FaradayRecoveryTrajectoryPoint,
 };
 
 fn trajectory(samples: usize) -> Vec<FaradayRecoveryTrajectoryPoint> {
@@ -100,7 +100,7 @@ fn bench_faraday_recovery(c: &mut Criterion) {
         group.bench_function(format!("rust_{samples}_samples"), |b| {
             b.iter(|| {
                 let report =
-                    integrated_recovery_energy(&trace, 6, 0.08, None, None, None, None, 0.01)
+                    integrated_recovery_energy(FaradayRecoveryEnergyInput::new(&trace, 6, 0.08))
                         .expect("valid report");
                 assert!(report.flux_derivative_closure_passed);
                 assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
@@ -131,16 +131,12 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                         Some(compression_config().min_radius_m),
                     )
                     .expect("valid trajectory diagnostics");
-                let report = integrated_recovery_energy(
-                    &trajectory,
-                    80,
-                    0.02,
-                    Some(work),
-                    None,
-                    Some(flux_budget),
-                    Some(trajectory_diagnostics),
-                    0.01,
-                )
+                let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+                    compression_work_j: Some(work),
+                    compression_flux_budget: Some(flux_budget),
+                    compression_trajectory_diagnostics: Some(trajectory_diagnostics),
+                    ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
+                })
                 .expect("valid report");
                 assert!(report.flux_derivative_residual_linf.is_finite());
                 assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
@@ -175,16 +171,13 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                         Some(compression_config().min_radius_m),
                     )
                     .expect("valid trajectory diagnostics");
-                let report = integrated_recovery_energy(
-                    &trajectory,
-                    80,
-                    0.02,
-                    Some(compression_work),
-                    Some(source_work),
-                    Some(flux_budget),
-                    Some(trajectory_diagnostics),
-                    0.01,
-                )
+                let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+                    compression_work_j: Some(compression_work),
+                    coil_source_work_j: Some(source_work),
+                    compression_flux_budget: Some(flux_budget),
+                    compression_trajectory_diagnostics: Some(trajectory_diagnostics),
+                    ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
+                })
                 .expect("valid report");
                 assert!(report.flux_derivative_residual_linf.is_finite());
                 assert!(report.max_abs_flux_rate_total_wb_s.is_finite());

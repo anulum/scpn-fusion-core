@@ -92,6 +92,37 @@ pub struct FaradayRecoveryReport {
     pub compression_trajectory_diagnostics_claim_status: String,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct FaradayRecoveryEnergyInput<'a> {
+    pub trajectory: &'a [FaradayRecoveryTrajectoryPoint],
+    pub n_turns: u32,
+    pub coil_resistance_ohm: f64,
+    pub compression_work_j: Option<f64>,
+    pub coil_source_work_j: Option<f64>,
+    pub compression_flux_budget: Option<FaradayCompressionFluxBudget>,
+    pub compression_trajectory_diagnostics: Option<FaradayCompressionTrajectoryDiagnostics>,
+    pub budget_tolerance: f64,
+}
+
+impl<'a> FaradayRecoveryEnergyInput<'a> {
+    pub fn new(
+        trajectory: &'a [FaradayRecoveryTrajectoryPoint],
+        n_turns: u32,
+        coil_resistance_ohm: f64,
+    ) -> Self {
+        Self {
+            trajectory,
+            n_turns,
+            coil_resistance_ohm,
+            compression_work_j: None,
+            coil_source_work_j: None,
+            compression_flux_budget: None,
+            compression_trajectory_diagnostics: None,
+            budget_tolerance: 0.01,
+        }
+    }
+}
+
 struct BudgetEvaluation {
     work_j: Option<f64>,
     relative_error: Option<f64>,
@@ -148,18 +179,12 @@ pub fn faraday_back_emf_from_values(
 }
 
 pub fn integrated_recovery_energy(
-    trajectory: &[FaradayRecoveryTrajectoryPoint],
-    n_turns: u32,
-    coil_resistance_ohm: f64,
-    compression_work_j: Option<f64>,
-    coil_source_work_j: Option<f64>,
-    compression_flux_budget: Option<FaradayCompressionFluxBudget>,
-    compression_trajectory_diagnostics: Option<FaradayCompressionTrajectoryDiagnostics>,
-    budget_tolerance: f64,
+    input: FaradayRecoveryEnergyInput<'_>,
 ) -> Result<FaradayRecoveryReport, String> {
-    let turns = require_positive_turns(n_turns)?;
-    let resistance = require_positive("coil_resistance_ohm", coil_resistance_ohm)?;
-    let tolerance = require_positive("budget_tolerance", budget_tolerance)?;
+    let trajectory = input.trajectory;
+    let turns = require_positive_turns(input.n_turns)?;
+    let resistance = require_positive("coil_resistance_ohm", input.coil_resistance_ohm)?;
+    let tolerance = require_positive("budget_tolerance", input.budget_tolerance)?;
     if trajectory.len() < 2 {
         return Err("trajectory must contain at least two samples".to_string());
     }
@@ -245,21 +270,21 @@ pub fn integrated_recovery_energy(
     let flux_derivative_closure_passed = flux_derivative_residual_linf <= FLUX_DERIVATIVE_TOLERANCE;
     let compression_budget = evaluate_budget(
         recovered_energy_j,
-        compression_work_j,
+        input.compression_work_j,
         tolerance,
         "compression_work_j",
         "blocked_missing_compression_work",
     )?;
     let source_budget = evaluate_budget(
         recovered_energy_j,
-        coil_source_work_j,
+        input.coil_source_work_j,
         tolerance,
         "coil_source_work_j",
         "blocked_missing_coil_source_work",
     )?;
-    let flux_budget = evaluate_compression_flux_budget(compression_flux_budget)?;
+    let flux_budget = evaluate_compression_flux_budget(input.compression_flux_budget)?;
     let trajectory_diagnostics =
-        evaluate_compression_trajectory_diagnostics(compression_trajectory_diagnostics)?;
+        evaluate_compression_trajectory_diagnostics(input.compression_trajectory_diagnostics)?;
 
     let flux_initial_wb = samples[0].magnetic_flux_wb;
     let flux_final_wb = samples[samples.len() - 1].magnetic_flux_wb;
@@ -693,7 +718,7 @@ mod tests {
         compression_work_from_pulsed_compression, compression_work_from_voltage_driven_compression,
         faraday_back_emf_from_values, faraday_trajectory_from_pulsed_compression,
         faraday_trajectory_from_voltage_driven_compression, integrated_recovery_energy,
-        magnetic_flux_wb, FaradayRecoveryTrajectoryPoint,
+        magnetic_flux_wb, FaradayRecoveryEnergyInput, FaradayRecoveryTrajectoryPoint,
     };
     use crate::compression::{
         plasma_volume_m3, run_pulsed_compression, run_voltage_driven_pulsed_compression,
@@ -733,16 +758,11 @@ mod tests {
                 }
             })
             .collect::<Vec<_>>();
-        let report = integrated_recovery_energy(
+        let report = integrated_recovery_energy(FaradayRecoveryEnergyInput::new(
             &trajectory,
             turns,
             resistance,
-            None,
-            None,
-            None,
-            None,
-            0.01,
-        )
+        ))
         .expect("valid report");
         let coefficient = turns as f64 * std::f64::consts::PI * 2.0 * b_ext * speed;
         let expected = coefficient * coefficient / resistance
@@ -794,8 +814,9 @@ mod tests {
                 }
             })
             .collect::<Vec<_>>();
-        let report = integrated_recovery_energy(&trajectory, 8, 0.1, None, None, None, None, 0.01)
-            .expect("valid report");
+        let report =
+            integrated_recovery_energy(FaradayRecoveryEnergyInput::new(&trajectory, 8, 0.1))
+                .expect("valid report");
 
         assert!(!report.flux_derivative_closure_passed);
         assert!(report.flux_derivative_residual_linf > 0.5);
@@ -819,9 +840,11 @@ mod tests {
                 d_b_ext_dt_t_s: Some(0.0),
             },
         ];
-        let report =
-            integrated_recovery_energy(&trajectory, 4, 0.1, Some(1.0e-12), None, None, None, 0.01)
-                .expect("valid report");
+        let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+            compression_work_j: Some(1.0e-12),
+            ..FaradayRecoveryEnergyInput::new(&trajectory, 4, 0.1)
+        })
+        .expect("valid report");
         assert_eq!(report.recovered_energy_j, 0.0);
         assert_eq!(report.energy_budget_passed, Some(false));
         assert_eq!(report.budget_claim_status, "failed");
@@ -846,7 +869,7 @@ mod tests {
             d_radius_dt_m_s: None,
             d_b_ext_dt_t_s: None,
         }];
-        assert!(integrated_recovery_energy(&one, 2, 0.1, None, None, None, None, 0.01).is_err());
+        assert!(integrated_recovery_energy(FaradayRecoveryEnergyInput::new(&one, 2, 0.1)).is_err());
     }
 
     fn compression_coil() -> CoilGeometry {
@@ -926,16 +949,12 @@ mod tests {
                 Some(compression_config().min_radius_m),
             )
             .expect("valid trajectory diagnostics");
-        let report = integrated_recovery_energy(
-            &trajectory,
-            80,
-            0.02,
-            Some(compression_work),
-            None,
-            Some(compression_flux_budget.clone()),
-            Some(compression_trajectory_diagnostics.clone()),
-            0.01,
-        )
+        let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+            compression_work_j: Some(compression_work),
+            compression_flux_budget: Some(compression_flux_budget.clone()),
+            compression_trajectory_diagnostics: Some(compression_trajectory_diagnostics.clone()),
+            ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
+        })
         .expect("valid recovery report");
 
         assert_eq!(trajectory.len(), states.len());
@@ -1009,16 +1028,13 @@ mod tests {
             .expect("valid trajectory diagnostics");
         let source_work = coil_source_work_from_voltage_driven_compression(&result)
             .expect("positive source work");
-        let report = integrated_recovery_energy(
-            &trajectory,
-            80,
-            0.02,
-            Some(compression_work),
-            Some(source_work),
-            Some(compression_flux_budget),
-            Some(compression_trajectory_diagnostics),
-            0.01,
-        )
+        let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+            compression_work_j: Some(compression_work),
+            coil_source_work_j: Some(source_work),
+            compression_flux_budget: Some(compression_flux_budget),
+            compression_trajectory_diagnostics: Some(compression_trajectory_diagnostics),
+            ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
+        })
         .expect("valid recovery report");
 
         assert_eq!(trajectory.len(), result.compression.len());
@@ -1074,16 +1090,12 @@ mod tests {
                 Some(compression_config().min_radius_m),
             )
             .expect("valid trajectory diagnostics");
-        let report = integrated_recovery_energy(
-            &trajectory,
-            80,
-            0.02,
-            Some(compression_work),
-            None,
-            Some(compression_flux_budget),
-            Some(compression_trajectory_diagnostics),
-            0.01,
-        )
+        let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+            compression_work_j: Some(compression_work),
+            compression_flux_budget: Some(compression_flux_budget),
+            compression_trajectory_diagnostics: Some(compression_trajectory_diagnostics),
+            ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
+        })
         .expect("valid recovery report");
 
         assert_eq!(report.compression_flux_budget_passed, Some(false));

@@ -222,9 +222,7 @@ def tilt_mode_trajectory_from_pulsed_compression(
         if previous_t is not None:
             cumulative_growth_integral += report.growth_rate_s_inv * (t_s - previous_t)
         amplification_overflow_limited = cumulative_growth_integral > FLOAT64_LOG_MAX
-        perturbation_amplification = float(
-            np.exp(min(cumulative_growth_integral, FLOAT64_LOG_MAX))
-        )
+        perturbation_amplification = float(np.exp(min(cumulative_growth_integral, FLOAT64_LOG_MAX)))
         points.append(
             FRCTiltModeTrajectoryPoint(
                 t_s=t_s,

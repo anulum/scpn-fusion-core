@@ -698,7 +698,9 @@ def _validate_compression_trajectory_diagnostics(
         diagnostics.max_abs_radial_acceleration_m_s2,
     )
     if acceleration < 0.0:
-        raise ValueError("compression_trajectory.max_abs_radial_acceleration_m_s2 must be non-negative")
+        raise ValueError(
+            "compression_trajectory.max_abs_radial_acceleration_m_s2 must be non-negative"
+        )
     _require_positive("compression_trajectory.compression_ratio", diagnostics.compression_ratio)
     if diagnostics.radius_floor_contact_count < 0:
         raise ValueError("compression_trajectory.radius_floor_contact_count must be non-negative")
