@@ -100,6 +100,7 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                 let report = integrated_recovery_energy(&trace, 6, 0.08, None, None, None, 0.01)
                     .expect("valid report");
                 assert!(report.flux_derivative_closure_passed);
+                assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
                 std::hint::black_box(report)
             });
         });
@@ -132,6 +133,7 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                 )
                 .expect("valid report");
                 assert!(report.flux_derivative_residual_linf.is_finite());
+                assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
                 std::hint::black_box(report)
             });
         });
@@ -167,6 +169,7 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                 )
                 .expect("valid report");
                 assert!(report.flux_derivative_residual_linf.is_finite());
+                assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
                 std::hint::black_box(report)
             });
         });

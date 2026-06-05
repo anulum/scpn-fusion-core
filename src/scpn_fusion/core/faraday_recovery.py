@@ -13,7 +13,7 @@ MIF work lane:
 ``EMF = -N_turns * pi * (R_s^2 dB_ext/dt + 2 B_ext R_s dR_s/dt)``.
 
 It operates on supplied pulsed-compression trajectories. It does not generate
-the unresolved FUS-C.6 Hall-MHD compression trajectory and does not fabricate a
+the unresolved FUS-C.6 Hall-MHD compression trajectory and does not invent a
 Slough-style compression-work comparison when that trajectory/work artefact is
 missing.
 """
@@ -51,6 +51,9 @@ class FaradayRecoverySample:
     d_radius_dt_m_s: float
     d_b_ext_dt_t_s: float
     magnetic_flux_wb: float
+    flux_rate_field_term_wb_s: float
+    flux_rate_radial_term_wb_s: float
+    flux_rate_total_wb_s: float
     back_emf_v: float
     load_current_a: float
     load_power_w: float
@@ -79,6 +82,9 @@ class FaradayRecoveryReport:
     flux_final_wb: float
     max_abs_back_emf_v: float
     max_abs_load_current_a: float
+    max_abs_flux_rate_field_term_wb_s: float
+    max_abs_flux_rate_radial_term_wb_s: float
+    max_abs_flux_rate_total_wb_s: float
     flux_derivative_residual_wb_s: FloatArray
     flux_derivative_residual_linf: float
     flux_derivative_residual_l2: float
@@ -351,6 +357,9 @@ def integrated_recovery_energy(
     samples = []
     for index, time_value in enumerate(time_s):
         flux = magnetic_flux_wb(radius_m[index], b_ext_t[index])
+        field_term = float(np.pi * radius_m[index] * radius_m[index] * d_b_ext_dt[index])
+        radial_term = float(2.0 * np.pi * b_ext_t[index] * radius_m[index] * d_radius_dt[index])
+        flux_rate_total = field_term + radial_term
         emf = faraday_back_emf_from_values(
             radius_m[index],
             b_ext_t[index],
@@ -368,6 +377,9 @@ def integrated_recovery_energy(
                 d_radius_dt_m_s=float(d_radius_dt[index]),
                 d_b_ext_dt_t_s=float(d_b_ext_dt[index]),
                 magnetic_flux_wb=flux,
+                flux_rate_field_term_wb_s=field_term,
+                flux_rate_radial_term_wb_s=radial_term,
+                flux_rate_total_wb_s=flux_rate_total,
                 back_emf_v=emf,
                 load_current_a=float(current),
                 load_power_w=float(power),
@@ -431,6 +443,15 @@ def integrated_recovery_energy(
         flux_final_wb=samples[-1].magnetic_flux_wb,
         max_abs_back_emf_v=float(np.max(np.abs([sample.back_emf_v for sample in samples]))),
         max_abs_load_current_a=float(np.max(np.abs([sample.load_current_a for sample in samples]))),
+        max_abs_flux_rate_field_term_wb_s=float(
+            np.max(np.abs([sample.flux_rate_field_term_wb_s for sample in samples]))
+        ),
+        max_abs_flux_rate_radial_term_wb_s=float(
+            np.max(np.abs([sample.flux_rate_radial_term_wb_s for sample in samples]))
+        ),
+        max_abs_flux_rate_total_wb_s=float(
+            np.max(np.abs([sample.flux_rate_total_wb_s for sample in samples]))
+        ),
         flux_derivative_residual_wb_s=flux_derivative_residual_wb_s,
         flux_derivative_residual_linf=flux_derivative_residual_linf,
         flux_derivative_residual_l2=flux_derivative_residual_l2,

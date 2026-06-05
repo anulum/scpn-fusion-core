@@ -30,6 +30,17 @@ The report now independently checks the sampled Faraday-law closure:
 finite_difference(Phi) + EMF / N_turns = 0
 ```
 
+It also exposes the two physical flux-rate terms:
+
+```text
+dPhi/dt = pi * R_s^2 * dB_ext/dt + 2 * pi * B_ext * R_s * dR_s/dt
+```
+
+The report records field-ramp, radial-motion, and total flux-rate maxima. This
+keeps the classical Faraday sidecar auditable when FUS-C.6 compression changes
+radius at high speed while the external field is supplied by either a current
+function or a voltage-driven coil circuit.
+
 This closure is evaluated from the flux samples and reported as
 `flux_derivative_residual_linf`, `flux_derivative_residual_l2`, and
 `flux_derivative_closure_passed`. It is intentionally separate from the
@@ -157,7 +168,7 @@ flux-budget sidecar, the compression-flux budget status is
 budget is evaluated as `passed` or `failed`; failure is a real
 load/trajectory/source/flux mismatch, not a placeholder blocked row.
 
-This avoids fabricating Slough-style trajectory acceptance from a synthetic
+This avoids inventing Slough-style trajectory acceptance from a synthetic
 radius trace.
 
 ## Validation evidence
@@ -170,6 +181,8 @@ Tracked tests cover:
 - Integrated recovery energy against an analytical linear-radius integral.
 - Explicit flux-derivative closure for the Faraday identity
   `dPhi/dt + EMF/N_turns = 0`.
+- Term-level flux-rate accounting for field-ramp and radial-motion
+  contributions.
 - Fail-closed detection of inconsistent supplied derivative sidecars.
 - Explicit blocked budget status when compression work is absent.
 - FUS-C.6 supplied-current trajectory conversion into Faraday samples and

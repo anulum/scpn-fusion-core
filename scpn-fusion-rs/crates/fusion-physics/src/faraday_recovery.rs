@@ -28,6 +28,9 @@ pub struct FaradayRecoverySample {
     pub d_radius_dt_m_s: f64,
     pub d_b_ext_dt_t_s: f64,
     pub magnetic_flux_wb: f64,
+    pub flux_rate_field_term_wb_s: f64,
+    pub flux_rate_radial_term_wb_s: f64,
+    pub flux_rate_total_wb_s: f64,
     pub back_emf_v: f64,
     pub load_current_a: f64,
     pub load_power_w: f64,
@@ -52,6 +55,9 @@ pub struct FaradayRecoveryReport {
     pub flux_final_wb: f64,
     pub max_abs_back_emf_v: f64,
     pub max_abs_load_current_a: f64,
+    pub max_abs_flux_rate_field_term_wb_s: f64,
+    pub max_abs_flux_rate_radial_term_wb_s: f64,
+    pub max_abs_flux_rate_total_wb_s: f64,
     pub flux_derivative_residual_wb_s: Vec<f64>,
     pub flux_derivative_residual_linf: f64,
     pub flux_derivative_residual_l2: f64,
@@ -156,6 +162,11 @@ pub fn integrated_recovery_energy(
     let mut samples = Vec::with_capacity(trajectory.len());
     for index in 0..trajectory.len() {
         let flux = magnetic_flux_wb(radius[index], field[index])?;
+        let flux_rate_field_term =
+            std::f64::consts::PI * radius[index] * radius[index] * d_b_ext_dt[index];
+        let flux_rate_radial_term =
+            2.0 * std::f64::consts::PI * field[index] * radius[index] * d_radius_dt[index];
+        let flux_rate_total = flux_rate_field_term + flux_rate_radial_term;
         let emf = faraday_back_emf_from_values(
             radius[index],
             field[index],
@@ -172,6 +183,9 @@ pub fn integrated_recovery_energy(
             d_radius_dt_m_s: d_radius_dt[index],
             d_b_ext_dt_t_s: d_b_ext_dt[index],
             magnetic_flux_wb: flux,
+            flux_rate_field_term_wb_s: flux_rate_field_term,
+            flux_rate_radial_term_wb_s: flux_rate_radial_term,
+            flux_rate_total_wb_s: flux_rate_total,
             back_emf_v: emf,
             load_current_a: current,
             load_power_w: power,
@@ -238,6 +252,18 @@ pub fn integrated_recovery_energy(
         .iter()
         .map(|sample| sample.load_current_a.abs())
         .fold(0.0_f64, f64::max);
+    let max_abs_flux_rate_field_term_wb_s = samples
+        .iter()
+        .map(|sample| sample.flux_rate_field_term_wb_s.abs())
+        .fold(0.0_f64, f64::max);
+    let max_abs_flux_rate_radial_term_wb_s = samples
+        .iter()
+        .map(|sample| sample.flux_rate_radial_term_wb_s.abs())
+        .fold(0.0_f64, f64::max);
+    let max_abs_flux_rate_total_wb_s = samples
+        .iter()
+        .map(|sample| sample.flux_rate_total_wb_s.abs())
+        .fold(0.0_f64, f64::max);
 
     Ok(FaradayRecoveryReport {
         samples,
@@ -248,6 +274,9 @@ pub fn integrated_recovery_energy(
         flux_final_wb,
         max_abs_back_emf_v,
         max_abs_load_current_a,
+        max_abs_flux_rate_field_term_wb_s,
+        max_abs_flux_rate_radial_term_wb_s,
+        max_abs_flux_rate_total_wb_s,
         flux_derivative_residual_wb_s,
         flux_derivative_residual_linf,
         flux_derivative_residual_l2,
@@ -624,6 +653,17 @@ mod tests {
         assert!(report.flux_derivative_closure_passed);
         assert!(report.flux_derivative_residual_linf <= 2.0e-2);
         assert_eq!(report.flux_derivative_residual_wb_s.len(), trajectory.len());
+        assert_eq!(report.max_abs_flux_rate_field_term_wb_s, 0.0);
+        assert!(report.max_abs_flux_rate_radial_term_wb_s > 0.0);
+        assert_eq!(
+            report.max_abs_flux_rate_total_wb_s,
+            report.max_abs_flux_rate_radial_term_wb_s
+        );
+        let final_sample = report.samples.last().expect("sample exists");
+        assert!(
+            (final_sample.flux_rate_total_wb_s + final_sample.back_emf_v / turns as f64).abs()
+                < 1.0e-9
+        );
     }
 
     #[test]
@@ -810,6 +850,7 @@ mod tests {
         assert_eq!(report.compression_flux_budget_claim_status, "passed");
         assert!(report.flux_derivative_residual_linf.is_finite());
         assert!(report.flux_derivative_residual_l2.is_finite());
+        assert!(report.max_abs_flux_rate_total_wb_s > 0.0);
     }
 
     #[test]

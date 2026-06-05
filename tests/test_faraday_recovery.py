@@ -116,6 +116,14 @@ def test_integrated_recovery_energy_matches_analytical_linear_radius_case() -> N
     assert report.flux_derivative_closure_passed is True
     assert report.flux_derivative_residual_linf <= 2.0e-2
     assert len(report.flux_derivative_residual_wb_s) == len(trajectory)
+    assert report.max_abs_flux_rate_field_term_wb_s == pytest.approx(0.0, abs=0.0)
+    assert report.max_abs_flux_rate_radial_term_wb_s > 0.0
+    assert report.max_abs_flux_rate_total_wb_s == pytest.approx(
+        report.max_abs_flux_rate_radial_term_wb_s
+    )
+    assert report.samples[-1].flux_rate_total_wb_s == pytest.approx(
+        -report.samples[-1].back_emf_v / turns
+    )
 
 
 def test_faraday_recovery_flags_inconsistent_derivative_sidecars() -> None:
@@ -227,6 +235,7 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
     assert isinstance(report.flux_derivative_closure_passed, bool)
     assert np.isfinite(report.flux_derivative_residual_linf)
     assert np.isfinite(report.flux_derivative_residual_l2)
+    assert report.max_abs_flux_rate_total_wb_s > 0.0
 
 
 def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
@@ -301,6 +310,7 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
     assert isinstance(report.flux_derivative_closure_passed, bool)
     assert np.isfinite(report.flux_derivative_residual_linf)
     assert np.isfinite(report.flux_derivative_residual_l2)
+    assert report.max_abs_flux_rate_total_wb_s > 0.0
 
 
 def test_faraday_recovery_propagates_failed_compression_flux_budget() -> None:

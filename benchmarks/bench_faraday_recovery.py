@@ -99,6 +99,9 @@ def _python_case(samples: int) -> dict[str, Any]:
         "recovered_energy_j": state.recovered_energy_j,
         "max_abs_back_emf_v": state.max_abs_back_emf_v,
         "max_abs_load_current_a": state.max_abs_load_current_a,
+        "max_abs_flux_rate_field_term_wb_s": state.max_abs_flux_rate_field_term_wb_s,
+        "max_abs_flux_rate_radial_term_wb_s": state.max_abs_flux_rate_radial_term_wb_s,
+        "max_abs_flux_rate_total_wb_s": state.max_abs_flux_rate_total_wb_s,
         "flux_derivative_residual_linf": state.flux_derivative_residual_linf,
         "flux_derivative_residual_l2": state.flux_derivative_residual_l2,
         "flux_derivative_closure_passed": state.flux_derivative_closure_passed,
@@ -206,6 +209,9 @@ def _python_compression_coupled_case(steps: int) -> dict[str, Any]:
         ),
         "max_abs_back_emf_v": report.max_abs_back_emf_v,
         "max_abs_load_current_a": report.max_abs_load_current_a,
+        "max_abs_flux_rate_field_term_wb_s": report.max_abs_flux_rate_field_term_wb_s,
+        "max_abs_flux_rate_radial_term_wb_s": report.max_abs_flux_rate_radial_term_wb_s,
+        "max_abs_flux_rate_total_wb_s": report.max_abs_flux_rate_total_wb_s,
     }
 
 
@@ -276,6 +282,9 @@ def _python_voltage_driven_coupled_case(steps: int) -> dict[str, Any]:
         ),
         "max_abs_back_emf_v": report.max_abs_back_emf_v,
         "max_abs_load_current_a": report.max_abs_load_current_a,
+        "max_abs_flux_rate_field_term_wb_s": report.max_abs_flux_rate_field_term_wb_s,
+        "max_abs_flux_rate_radial_term_wb_s": report.max_abs_flux_rate_radial_term_wb_s,
+        "max_abs_flux_rate_total_wb_s": report.max_abs_flux_rate_total_wb_s,
     }
 
 
@@ -301,6 +310,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
                 "compression_flux_budget_claim_status": ("blocked_missing_compression_flux_budget"),
                 "flux_derivative_closure_status": "asserted_in_rust_criterion_harness",
+                "flux_rate_term_status": "asserted_in_rust_criterion_harness",
             }
         )
     for estimates_path in sorted(
@@ -321,6 +331,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
                 "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
                 "flux_derivative_closure_status": "computed_in_rust_criterion_harness",
+                "flux_rate_term_status": "computed_in_rust_criterion_harness",
             }
         )
     for estimates_path in sorted(
@@ -341,6 +352,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
                 "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
                 "flux_derivative_closure_status": "computed_in_rust_criterion_harness",
+                "flux_rate_term_status": "computed_in_rust_criterion_harness",
             }
         )
     return rows
@@ -362,7 +374,7 @@ def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
     rows.extend(_python_voltage_driven_coupled_case(steps) for steps in (64, 256))
     rows.extend(_criterion_rows())
     return {
-        "schema": "scpn-fusion-core.faraday_recovery_benchmark.v4",
+        "schema": "scpn-fusion-core.faraday_recovery_benchmark.v5",
         "claim_boundary": (
             "Local non-isolated regression evidence for the exact classical Faraday recovery "
             "contract over supplied trajectories, including internal FUS-C.6 supplied-current "
@@ -373,6 +385,7 @@ def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
             "flux": "Phi = B_ext*pi*R_s^2",
             "emf": "EMF = -N*pi*(R_s^2*dB_ext/dt + 2*B_ext*R_s*dR_s/dt)",
             "faraday_law_closure": "finite_difference(Phi) + EMF/N_turns = 0",
+            "flux_rate_terms": "dPhi/dt = pi*R_s^2*dB_ext/dt + 2*pi*B_ext*R_s*dR_s/dt",
             "load_power": "P = EMF^2/R_load",
             "internal_fus_c6_budget": (
                 "evaluated when supplied-current or voltage-driven compression states provide "

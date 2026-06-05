@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Hardened FUS-C.7 Faraday recovery with term-level flux-rate diagnostics for
+  field-ramp, radial-motion, and total linked-flux change across Python, Rust,
+  benchmarks, and documentation.
 - Hardened FUS-C.4 MRTI/FUS-C.6 coupling so the MRTI adapter consumes explicit
   FUS-C.6 force-balance acceleration instead of reconstructing it only from
   velocity finite differences.

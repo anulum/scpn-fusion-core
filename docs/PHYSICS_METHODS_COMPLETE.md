@@ -356,6 +356,11 @@ It also reports the sampled Faraday-law closure
 `finite_difference(Phi) + EMF/N_turns = 0` as normalized L-infinity/L2
 residuals plus a pass/fail field, catching inconsistent supplied derivative
 sidecars separately from compression-work acceptance.
+The report also exposes field-ramp, radial-motion, and total flux-rate terms
+from
+`dPhi/dt = pi R_s^2 dB_ext/dt + 2 pi B_ext R_s dR_s/dt`, so FUS-C.7 evidence
+can distinguish whether recovered EMF is driven by external field ramping,
+separatrix motion, or both.
 If a caller does not supply a self-consistent compression-work sidecar,
 `FaradayRecoveryReport.budget_claim_status` remains
 `blocked_missing_compression_work`; if a caller does not supply a source-work

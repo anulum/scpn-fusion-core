@@ -110,14 +110,16 @@ flux-budget sidecar and publish `compression_flux_budget_claim_status`, while
 plain supplied-trajectory rows remain
 `blocked_missing_compression_flux_budget`.
 
-Schema `scpn-fusion-core.faraday_recovery_benchmark.v4` also records the
+Schema `scpn-fusion-core.faraday_recovery_benchmark.v5` also records the
 sampled Faraday-law closure diagnostic
 `finite_difference(Phi) + EMF/N_turns = 0`. Python rows publish
 `flux_derivative_residual_linf`, `flux_derivative_residual_l2`, and
-`flux_derivative_closure_passed`; Rust Criterion rows publish
-`flux_derivative_closure_status`. Analytical supplied-trajectory Rust timing
-rows assert closure before emitting Criterion estimates; coupled FUS-C.6 rows
-compute the diagnostic without upgrading it to an external acceptance claim.
+`flux_derivative_closure_passed`, plus maximum field-ramp, radial-motion, and
+total flux-rate terms; Rust Criterion rows publish
+`flux_derivative_closure_status` and `flux_rate_term_status`. Analytical
+supplied-trajectory Rust timing rows assert closure before emitting Criterion
+estimates; coupled FUS-C.6 rows compute the diagnostic without upgrading it to
+an external acceptance claim.
 
 External Slough same-case parity remains blocked until a public digitised
 trajectory, compression-work sidecar, and compatible upstream flux-budget
