@@ -70,13 +70,14 @@ let coupled_states = track_mrti_from_pulsed_compression(
 
 ## Trajectory coupling boundary
 
-`effective_acceleration_from_radius_rate()` estimates `d²R_s/dt²` from a
-separatrix radial-speed history using finite differences and optional
-edge-padded smoothing. `effective_acceleration_from_pulsed_compression()`
-consumes the FUS-C.6 `PulsedCompressionState` history, validates strictly
-increasing time and positive radius, and applies an explicit radial projection
-sign. The default `-1` maps inward compression in the outward `R_s` coordinate
-to positive MRTI effective acceleration.
+`effective_acceleration_from_radius_rate()` remains available for external
+separatrix radial-speed histories that do not carry a solver acceleration
+sidecar. `effective_acceleration_from_pulsed_compression()` consumes the FUS-C.6
+`PulsedCompressionState.radial_acceleration_m_s2` field directly, validates
+strictly increasing time, positive radius, finite speed, finite acceleration,
+and finite field, and applies an explicit radial projection sign. The default
+`-1` maps inward compression in the outward `R_s` coordinate to positive MRTI
+effective acceleration.
 
 `track_mrti_from_pulsed_compression()` advances one MRTI spectrum interval for
 each supplied trajectory step, using the endpoint acceleration and endpoint
@@ -94,7 +95,8 @@ Tracked tests cover:
 - Log-amplitude accounting for long or extreme growth trajectories.
 - First saturation-threshold breach detection.
 - Smoothed acceleration recovery from a synthetic radial-speed ramp.
-- FUS-C.6 supplied-current pulsed-compression trajectory driving MRTI spectra.
+- FUS-C.6 supplied-current pulsed-compression force-balance acceleration driving
+  MRTI spectra.
 - Python and Rust fail-closed validation for invalid inputs.
 
 Tracked benchmark report:

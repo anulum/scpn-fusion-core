@@ -111,6 +111,12 @@ fn bench_mrti_tracker(c: &mut Criterion) {
                     )
                     .expect("valid MRTI compression coupling");
                     let final_state = snapshots.last().expect("snapshot exists");
+                    let accelerations =
+                        fusion_physics::mrti::effective_acceleration_from_pulsed_compression(
+                            &states, 1, -1.0,
+                        )
+                        .expect("valid FUS-C.6 accelerations");
+                    assert!(accelerations.iter().all(|value| value.is_finite()));
                     assert!(final_state.max_amplitude_m.is_finite());
                     assert!(final_state.max_log_amplitude.is_finite());
                     assert!(!final_state.amplitude_overflow_limited);

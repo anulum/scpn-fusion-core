@@ -23,6 +23,7 @@ import numpy as np
 from scpn_fusion.core import solve_frc_equilibrium
 from scpn_fusion.core.frc_rigid_rotor import ELEMENTARY_CHARGE_C, MU_0, RigidRotorFRCInputs
 from scpn_fusion.core.mrti import MRTISpectrumTracker, track_mrti_from_pulsed_compression
+from scpn_fusion.core.mrti import effective_acceleration_from_pulsed_compression
 from scpn_fusion.core.pulsed_compression import (
     CoilGeometry,
     PulsedCompressionConfig,
@@ -127,6 +128,7 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
     samples = []
     final_state = None
     final_compression = None
+    final_acceleration = None
     for _ in range(5):
         config = _compression_config()
         tracker = MRTISpectrumTracker(
@@ -147,8 +149,11 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
         samples.append(float(time.perf_counter_ns() - start_ns))
         final_state = snapshots[-1]
         final_compression = compression_states[-1]
+        final_acceleration = effective_acceleration_from_pulsed_compression(compression_states)
     if final_state is None or final_compression is None:
         raise RuntimeError("compression-coupled MRTI benchmark did not run")
+    if final_acceleration is None:
+        raise RuntimeError("compression-coupled MRTI acceleration did not run")
     mean_ns = float(np.mean(np.asarray(samples, dtype=np.float64)))
     return {
         "language": "python",
@@ -160,6 +165,9 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
         "final_time_s": final_state.t_s,
         "final_radius_m": final_compression.R_s_m,
         "compression_work_j": final_compression.compression_work_J,
+        "acceleration_source": "fus_c6_state_radial_acceleration_m_s2",
+        "final_effective_acceleration_m_s2": float(final_acceleration[-1]),
+        "max_effective_acceleration_m_s2": float(np.max(final_acceleration)),
         "final_max_amplitude_m": final_state.max_amplitude_m,
         "max_log_amplitude": final_state.max_log_amplitude,
         "amplitude_overflow_limited": final_state.amplitude_overflow_limited,
@@ -201,6 +209,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
         }
         if "fus_c6_coupled" in benchmark_name:
             row["coupling_status"] = "internal_fus_c6_pulsed_compression_adapter"
+            row["acceleration_source"] = "fus_c6_state_radial_acceleration_m_s2"
         row["log_amplitude_status"] = "asserted_finite_in_rust_criterion_harness"
         rows.append(row)
     return rows
@@ -213,11 +222,12 @@ def build_report(
     rows.extend(_python_compression_coupled_case(n_modes, 64) for n_modes in (64, 256))
     rows.extend(_criterion_rows())
     return {
-        "schema": "scpn-fusion-core.mrti_benchmark.v2",
+        "schema": "scpn-fusion-core.mrti_benchmark.v3",
         "claim_boundary": (
             "Local non-isolated MRTI analytical growth/spectrum regression evidence. "
             "Internal FUS-C.6 coupled rows consume the supplied-current "
-            "pulsed-compression trajectory. External nonlinear MRTI parity remains blocked."
+            "pulsed-compression trajectory and its force-balance acceleration. "
+            "External nonlinear MRTI parity remains blocked."
         ),
         "physics_contract": {
             "name": "MIF/FRC linear MRTI growth spectrum",

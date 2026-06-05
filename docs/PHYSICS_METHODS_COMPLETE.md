@@ -304,14 +304,15 @@ The tracker now performs amplitude evolution in log space,
 histories remain finite and auditable rather than relying on physical-amplitude
 floating-point headroom.
 
-The coupling helper `effective_acceleration_from_radius_rate()` estimates
-$d^2R_s/dt^2$ from a supplied separatrix radial-speed history using finite
-differences and optional edge-padded smoothing.
-`effective_acceleration_from_pulsed_compression()` now consumes the accepted
-FUS-C.6 supplied-current `PulsedCompressionState` history, validates
-strictly increasing time and positive radii, and applies an explicit radial
-projection sign. The default `-1` maps inward compression in the outward
-radius coordinate to positive MRTI effective acceleration.
+The coupling helper `effective_acceleration_from_radius_rate()` remains
+available for external separatrix radial-speed histories that do not carry a
+solver acceleration sidecar. `effective_acceleration_from_pulsed_compression()`
+now consumes the accepted FUS-C.6 supplied-current
+`PulsedCompressionState.radial_acceleration_m_s2` field directly, validates
+strictly increasing time, positive radii, finite speed, finite acceleration,
+and finite field, and applies an explicit radial projection sign. The default
+`-1` maps inward compression in the outward radius coordinate to positive MRTI
+effective acceleration.
 `track_mrti_from_pulsed_compression()` advances the tracker over every
 trajectory interval using the endpoint acceleration and endpoint external
 field. This is internal FUS-C.6/MRTI coupling evidence; it is not external
@@ -445,7 +446,7 @@ checksum.
 The public acceptance boundary is fail-closed: the helper
 `slough_fig5_acceptance_status()` reports `blocked_missing_public_reference`
 until a redistributable, digitised reference trajectory is available. The
-tracked benchmark report includes that blocked row instead of fabricating
+tracked benchmark report includes that blocked row instead of inventing
 external parity.
 
 **Key files:** `core/pulsed_compression.py`,

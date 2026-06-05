@@ -151,9 +151,14 @@ def test_pulsed_compression_trajectory_drives_mrti_tracker() -> None:
     tracker = MRTISpectrumTracker(k_max_m_inv=1.0e4, n_modes=64)
     snapshots = track_mrti_from_pulsed_compression(states, tracker)
 
+    expected = np.asarray(
+        [-state.radial_acceleration_m_s2 for state in states],
+        dtype=np.float64,
+    )
     assert len(acceleration) == len(states)
     assert len(snapshots) == len(states) - 1
     assert np.all(np.isfinite(acceleration))
+    np.testing.assert_allclose(acceleration, expected, rtol=0.0, atol=0.0)
     assert float(np.max(acceleration)) > 0.0
     assert snapshots[-1].t_s == pytest.approx(states[-1].t_s)
     assert snapshots[-1].max_amplitude_m >= snapshots[0].max_amplitude_m

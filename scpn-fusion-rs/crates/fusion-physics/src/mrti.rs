@@ -163,15 +163,46 @@ pub fn effective_acceleration_from_pulsed_compression(
         require_finite("t_s", state.t_s)?;
         require_positive("r_s_m", state.r_s_m)?;
         require_finite("d_r_s_dt_m_s", state.d_r_s_dt_m_s)?;
+        require_finite(
+            "radial_acceleration_m_s2",
+            state.radial_acceleration_m_s2,
+        )?;
         require_finite("b_ext_t", state.b_ext_t)?;
     }
-    let time_s = states.iter().map(|state| state.t_s).collect::<Vec<_>>();
-    let speed_m_s = states
+    for pair in states.windows(2) {
+        if pair[1].t_s <= pair[0].t_s {
+            return Err("pulsed-compression time_s must be strictly increasing".to_string());
+        }
+    }
+    if smoothing_window == 0 || smoothing_window.is_multiple_of(2) {
+        return Err("smoothing_window must be a positive odd integer".to_string());
+    }
+    if smoothing_window > states.len() {
+        return Err("smoothing_window cannot exceed the number of samples".to_string());
+    }
+    let mut signed = states
         .iter()
-        .map(|state| state.d_r_s_dt_m_s)
+        .map(|state| state.radial_acceleration_m_s2)
         .collect::<Vec<_>>();
-    let signed = effective_acceleration_from_radius_rate(&time_s, &speed_m_s, smoothing_window)?;
+    if smoothing_window > 1 {
+        signed = smooth_edge_padded(&signed, smoothing_window);
+    }
     Ok(signed.into_iter().map(|value| projection * value).collect())
+}
+
+fn smooth_edge_padded(values: &[f64], smoothing_window: usize) -> Vec<f64> {
+    let half = smoothing_window / 2;
+    let mut smoothed = Vec::with_capacity(values.len());
+    for index in 0..values.len() {
+        let mut sum = 0.0;
+        for window_index in 0..smoothing_window {
+            let raw = index + window_index;
+            let source = raw.saturating_sub(half).min(values.len() - 1);
+            sum += values[source];
+        }
+        smoothed.push(sum / smoothing_window as f64);
+    }
+    smoothed
 }
 
 pub fn track_mrti_from_pulsed_compression(
@@ -501,6 +532,9 @@ mod tests {
         assert_eq!(acceleration.len(), states.len());
         assert_eq!(snapshots.len(), states.len() - 1);
         assert!(acceleration.iter().all(|value| value.is_finite()));
+        for (value, state) in acceleration.iter().zip(states.iter()) {
+            assert_eq!(*value, -state.radial_acceleration_m_s2);
+        }
         assert!(
             acceleration
                 .iter()

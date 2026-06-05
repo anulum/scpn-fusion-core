@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Hardened FUS-C.4 MRTI/FUS-C.6 coupling so the MRTI adapter consumes explicit
+  FUS-C.6 force-balance acceleration instead of reconstructing it only from
+  velocity finite differences.
 - Hardened FUS-C.6 pulsed compression with explicit force-balance radial
   acceleration exposure across Python, Rust, benchmark reports, and
   documentation.
@@ -45,7 +48,7 @@
   pulsed-compression state histories across Python and Rust, projects signed
   separatrix acceleration through an explicit interface-normal convention,
   records internal coupled benchmark rows, and keeps external nonlinear MRTI
-  parity blocked instead of fabricating same-case evidence.
+  parity blocked instead of inventing same-case evidence.
 - Added FUS-C.7/FUS-C.6 coupling evidence: Faraday recovery now accepts the
   supplied-current pulsed-compression trajectory sidecar and voltage-driven
   coil-source sidecar across Python and Rust, evaluates compression-work and

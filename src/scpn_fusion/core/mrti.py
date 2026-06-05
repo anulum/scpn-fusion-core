@@ -34,6 +34,7 @@ class PulsedCompressionLike(Protocol):
     t_s: float
     R_s_m: float
     dR_s_dt_m_s: float
+    radial_acceleration_m_s2: float
     B_ext_T: float
 
 
@@ -137,7 +138,8 @@ def effective_acceleration_from_pulsed_compression(
     """Project a FUS-C.6 pulsed-compression trajectory into MRTI acceleration.
 
     The supplied-current pulsed-compression contract stores radius in the
-    outward radial coordinate. During compression, an inward MRTI-normal
+    outward radial coordinate and exposes the force-balance acceleration used
+    by the radius update. During compression, an inward MRTI-normal
     acceleration therefore has the opposite sign of ``d²R_s/dt²``. The default
     ``radial_projection_sign=-1`` maps inward radial acceleration to positive
     ``a_eff`` for the analytical MRTI growth-rate contract. Set it explicitly
@@ -153,18 +155,38 @@ def effective_acceleration_from_pulsed_compression(
     time_s = np.asarray([state.t_s for state in states], dtype=np.float64)
     radius_m = np.asarray([state.R_s_m for state in states], dtype=np.float64)
     speed_m_s = np.asarray([state.dR_s_dt_m_s for state in states], dtype=np.float64)
+    radial_acceleration_m_s2 = np.asarray(
+        [state.radial_acceleration_m_s2 for state in states],
+        dtype=np.float64,
+    )
     field_t = np.asarray([state.B_ext_T for state in states], dtype=np.float64)
     if np.any(radius_m <= 0.0):
         raise ValueError("pulsed-compression radii must be positive")
+    if not np.all(np.isfinite(time_s)) or not np.all(np.diff(time_s) > 0.0):
+        raise ValueError("pulsed-compression time_s must be finite and strictly increasing")
+    if not np.all(np.isfinite(speed_m_s)):
+        raise ValueError("pulsed-compression speeds must be finite")
+    if not np.all(np.isfinite(radial_acceleration_m_s2)):
+        raise ValueError("pulsed-compression radial accelerations must be finite")
     if not np.all(np.isfinite(field_t)):
         raise ValueError("pulsed-compression fields must be finite")
 
-    signed_acceleration = effective_acceleration_from_radius_rate(
-        time_s,
-        speed_m_s,
-        smoothing_window=smoothing_window,
-    )
-    return cast(FloatArray, projection * signed_acceleration)
+    if smoothing_window < 1 or smoothing_window % 2 == 0:
+        raise ValueError("smoothing_window must be a positive odd integer")
+    if smoothing_window > len(states):
+        raise ValueError("smoothing_window cannot exceed the number of samples")
+    if smoothing_window > 1:
+        pad = smoothing_window // 2
+        kernel = np.ones(smoothing_window, dtype=np.float64) / float(smoothing_window)
+        radial_acceleration_m_s2 = cast(
+            FloatArray,
+            np.convolve(
+                np.pad(radial_acceleration_m_s2, pad_width=pad, mode="edge"),
+                kernel,
+                mode="valid",
+            ),
+        )
+    return cast(FloatArray, projection * radial_acceleration_m_s2)
 
 
 @dataclass(frozen=True)
@@ -308,10 +330,10 @@ def track_mrti_from_pulsed_compression(
 ) -> tuple[MRTISpectrumState, ...]:
     """Advance an MRTI tracker over a supplied FUS-C.6 compression trajectory.
 
-    Each interval uses the finite-difference acceleration at the interval end
-    and the endpoint external field as the stabilising perpendicular field. The
-    function returns one MRTI state per trajectory interval and raises on
-    malformed trajectories instead of fabricating coupled evidence.
+    Each interval uses the FUS-C.6 force-balance acceleration at the interval
+    end and the endpoint external field as the stabilising perpendicular field.
+    The function returns one MRTI state per trajectory interval and raises on
+    malformed trajectories instead of inventing coupled evidence.
     """
 
     if len(states) < 2:
