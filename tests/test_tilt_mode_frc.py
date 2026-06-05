@@ -13,6 +13,12 @@ import pytest
 
 from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
 from scpn_fusion.core.frc_rigid_rotor import ELEMENTARY_CHARGE_C, MU_0, FRCEquilibriumState
+from scpn_fusion.core.pulsed_compression import (
+    CoilGeometry,
+    PulsedCompressionConfig,
+    initial_pulsed_compression_state,
+    run_pulsed_compression,
+)
 from scpn_fusion.core.tilt_mode_frc import (
     BELOVA_MHD_GROWTH_COEFFICIENT,
     FRCTiltModeThresholds,
@@ -24,6 +30,7 @@ from scpn_fusion.core.tilt_mode_frc import (
     s_over_elongation,
     tilt_mode_report,
     tilt_mode_stable,
+    tilt_mode_trajectory_from_pulsed_compression,
 )
 
 
@@ -44,6 +51,25 @@ def _equilibrium() -> FRCEquilibriumState:
             delta=0.02,
         ),
         rho,
+    )
+
+
+def _compression_config(eq: FRCEquilibriumState) -> PulsedCompressionConfig:
+    return PulsedCompressionConfig(
+        equilibrium=eq,
+        coil=CoilGeometry(
+            N_turns=12,
+            L_coil_m=0.5,
+            R_coil_m=0.25,
+            L_inductance_H=8.0e-6,
+            R_resistance_ohm=0.02,
+            bank_voltage_max_V=25_000.0,
+        ),
+        coil_current_t=lambda _t: 2.0e5,
+        plasma_mass_kg=2.0e-6,
+        ion_temperature_eV=10_000.0,
+        electron_temperature_eV=5_000.0,
+        plasma_length_m=1.0,
     )
 
 
@@ -108,6 +134,29 @@ def test_tilt_mode_stable_tuple_is_conservative() -> None:
     assert growth == pytest.approx(frc_tilt_growth_rate(eq, 5.0), rel=1.0e-14)
 
 
+def test_tilt_trajectory_tracks_pulsed_compression_projection() -> None:
+    eq = _equilibrium()
+    config = _compression_config(eq)
+    initial = initial_pulsed_compression_state(config)
+    states = run_pulsed_compression(initial, config, dt_s=1.0e-8, n_steps=6)
+
+    trajectory = tilt_mode_trajectory_from_pulsed_compression(states, eq, elongation=4.0)
+
+    assert len(trajectory) == len(states)
+    assert trajectory[0].report.s_parameter == pytest.approx(eq.s_parameter, rel=1.0e-14)
+    expected_s = (
+        eq.s_parameter
+        * (states[1].R_s_m / states[0].R_s_m)
+        * (abs(states[1].B_ext_T) / abs(states[0].B_ext_T))
+        * np.sqrt(states[0].T_i_eV / states[1].T_i_eV)
+    )
+    assert trajectory[1].report.s_parameter == pytest.approx(expected_s, rel=1.0e-14)
+    assert trajectory[-1].report.growth_rate_s_inv > 0.0
+    assert trajectory[-1].report.external_parity_status == (
+        "blocked_missing_public_digitised_reference"
+    )
+
+
 def test_external_acceptance_and_claim_boundary_are_explicit() -> None:
     status = belova_table1_acceptance_status()
     boundary = claim_boundary()
@@ -131,3 +180,15 @@ def test_tilt_inputs_fail_closed() -> None:
         rigid_body_flr_regime(eq, 3.0, FRCTiltModeThresholds(2.0, 1.0, 3.0))
     with pytest.raises(ValueError, match="positive"):
         tilt_mode_stable(eq, 3.0, s_threshold=0.0)
+
+
+def test_tilt_trajectory_inputs_fail_closed() -> None:
+    eq = _equilibrium()
+    config = _compression_config(eq)
+    initial = initial_pulsed_compression_state(config)
+    states = run_pulsed_compression(initial, config, dt_s=1.0e-8, n_steps=3)
+
+    with pytest.raises(ValueError, match="at least one"):
+        tilt_mode_trajectory_from_pulsed_compression((), eq, elongation=4.0)
+    with pytest.raises(ValueError, match="strictly increasing"):
+        tilt_mode_trajectory_from_pulsed_compression((states[1], states[0]), eq, elongation=4.0)

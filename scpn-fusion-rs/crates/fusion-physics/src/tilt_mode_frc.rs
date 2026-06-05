@@ -7,6 +7,8 @@
 // SCPN Fusion Core — FRC Tilt-Mode Diagnostics
 //! Conservative MIF/FRC n=1 tilt-mode diagnostics.
 
+use crate::compression::PulsedCompressionState;
+
 pub const MU_0: f64 = 4.0e-7 * std::f64::consts::PI;
 pub const ATOMIC_MASS_KG: f64 = 1.660_539_066_60e-27;
 pub const DEUTERIUM_MASS_AMU: f64 = 2.014;
@@ -21,6 +23,16 @@ pub struct FrcTiltModeInputs {
     pub b_reference_t: f64,
     pub density_peak_m3: f64,
     pub r_s_m: f64,
+    pub elongation: f64,
+    pub ion_mass_amu: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FrcTiltCompressionReference {
+    pub s_parameter: f64,
+    pub r_s_m: f64,
+    pub b_reference_t: f64,
+    pub t_i_ev: f64,
     pub elongation: f64,
     pub ion_mass_amu: f64,
 }
@@ -45,6 +57,16 @@ pub struct FrcTiltModeReport {
     pub conservative_stable: bool,
     pub claim_status: &'static str,
     pub external_parity_status: &'static str,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FrcTiltModeTrajectoryPoint {
+    pub t_s: f64,
+    pub r_s_m: f64,
+    pub b_reference_t: f64,
+    pub density_m3: f64,
+    pub t_i_ev: f64,
+    pub report: FrcTiltModeReport,
 }
 
 impl Default for FrcTiltModeThresholds {
@@ -122,11 +144,95 @@ pub fn rigid_body_flr_regime(
 }
 
 pub fn tilt_mode_report(inputs: FrcTiltModeInputs) -> Result<FrcTiltModeReport, String> {
+    tilt_mode_report_from_values(
+        inputs.s_parameter,
+        inputs.b_reference_t,
+        inputs.density_peak_m3,
+        inputs.r_s_m,
+        inputs.elongation,
+        inputs.ion_mass_amu,
+        FrcTiltModeThresholds::default(),
+    )
+}
+
+pub fn compressed_s_parameter(
+    reference: FrcTiltCompressionReference,
+    state: &PulsedCompressionState,
+) -> Result<f64, String> {
+    Ok(require_positive("reference_s", reference.s_parameter)?
+        * (require_positive("state.r_s_m", state.r_s_m)?
+            / require_positive("reference.r_s_m", reference.r_s_m)?)
+        * (require_positive("state.b_ext_t", state.b_ext_t.abs())?
+            / require_positive("reference.b_reference_t", reference.b_reference_t.abs())?)
+        * (require_positive("reference.t_i_ev", reference.t_i_ev)?
+            / require_positive("state.t_i_ev", state.t_i_ev)?)
+        .sqrt())
+}
+
+pub fn tilt_mode_trajectory_from_pulsed_compression(
+    states: &[PulsedCompressionState],
+    reference: FrcTiltCompressionReference,
+) -> Result<Vec<FrcTiltModeTrajectoryPoint>, String> {
+    if states.is_empty() {
+        return Err("states must contain at least one compression state".to_string());
+    }
+    require_positive("reference.elongation", reference.elongation)?;
+    require_positive("reference.ion_mass_amu", reference.ion_mass_amu)?;
+    let mut previous_t = None;
+    let mut points = Vec::with_capacity(states.len());
+    for state in states {
+        if !state.t_s.is_finite() {
+            return Err("state.t_s must be finite".to_string());
+        }
+        if let Some(t_s) = previous_t {
+            if state.t_s <= t_s {
+                return Err("compression-state times must be strictly increasing".to_string());
+            }
+        }
+        previous_t = Some(state.t_s);
+        let projected_s = compressed_s_parameter(reference, state)?;
+        let report = tilt_mode_report_from_values(
+            projected_s,
+            state.b_ext_t,
+            state.density_m3,
+            state.r_s_m,
+            reference.elongation,
+            reference.ion_mass_amu,
+            FrcTiltModeThresholds::default(),
+        )?;
+        points.push(FrcTiltModeTrajectoryPoint {
+            t_s: state.t_s,
+            r_s_m: state.r_s_m,
+            b_reference_t: state.b_ext_t.abs(),
+            density_m3: state.density_m3,
+            t_i_ev: state.t_i_ev,
+            report,
+        });
+    }
+    Ok(points)
+}
+
+fn tilt_mode_report_from_values(
+    s_parameter: f64,
+    b_reference_t: f64,
+    density_peak_m3: f64,
+    r_s_m: f64,
+    elongation: f64,
+    ion_mass_amu: f64,
+    thresholds: FrcTiltModeThresholds,
+) -> Result<FrcTiltModeReport, String> {
+    let inputs = FrcTiltModeInputs {
+        s_parameter,
+        b_reference_t,
+        density_peak_m3,
+        r_s_m,
+        elongation,
+        ion_mass_amu,
+    };
     let growth = frc_tilt_growth_rate(inputs, BELOVA_MHD_GROWTH_COEFFICIENT)?;
     let speed = alfven_speed_m_s(inputs)?;
     let length = axial_half_length_m(inputs)?;
-    let (regime, threshold_passed) =
-        rigid_body_flr_regime(inputs, FrcTiltModeThresholds::default())?;
+    let (regime, threshold_passed) = rigid_body_flr_regime(inputs, thresholds)?;
     Ok(FrcTiltModeReport {
         growth_rate_s_inv: growth,
         alfven_speed_m_s: speed,
@@ -161,6 +267,74 @@ mod tests {
             r_s_m: 0.2,
             elongation,
             ion_mass_amu: DEUTERIUM_MASS_AMU,
+        }
+    }
+
+    #[test]
+    fn tilt_trajectory_projects_compression_state() {
+        let reference = FrcTiltCompressionReference {
+            s_parameter: 8.0,
+            r_s_m: 0.2,
+            b_reference_t: 5.0,
+            t_i_ev: 10_000.0,
+            elongation: 4.0,
+            ion_mass_amu: DEUTERIUM_MASS_AMU,
+        };
+        let states = vec![
+            compression_state(0.0, 0.2, 5.0, 10_000.0),
+            compression_state(1.0e-8, 0.18, 6.0, 11_000.0),
+        ];
+
+        let trajectory = tilt_mode_trajectory_from_pulsed_compression(&states, reference).unwrap();
+
+        let expected_s = 8.0 * (0.18 / 0.2) * (6.0 / 5.0) * (10_000.0_f64 / 11_000.0).sqrt();
+        assert_eq!(trajectory.len(), 2);
+        assert!((trajectory[1].report.s_parameter - expected_s).abs() / expected_s < 1.0e-14);
+        assert_eq!(
+            trajectory[1].report.external_parity_status,
+            "blocked_missing_public_digitised_reference"
+        );
+    }
+
+    #[test]
+    fn tilt_trajectory_inputs_fail_closed() {
+        let reference = FrcTiltCompressionReference {
+            s_parameter: 8.0,
+            r_s_m: 0.2,
+            b_reference_t: 5.0,
+            t_i_ev: 10_000.0,
+            elongation: 4.0,
+            ion_mass_amu: DEUTERIUM_MASS_AMU,
+        };
+        let states = vec![
+            compression_state(1.0e-8, 0.2, 5.0, 10_000.0),
+            compression_state(0.0, 0.18, 6.0, 11_000.0),
+        ];
+        assert!(tilt_mode_trajectory_from_pulsed_compression(&[], reference).is_err());
+        assert!(tilt_mode_trajectory_from_pulsed_compression(&states, reference).is_err());
+    }
+
+    fn compression_state(
+        t_s: f64,
+        r_s_m: f64,
+        b_ext_t: f64,
+        t_i_ev: f64,
+    ) -> PulsedCompressionState {
+        PulsedCompressionState {
+            t_s,
+            r_s_m,
+            d_r_s_dt_m_s: -1.0e5,
+            t_i_ev,
+            t_e_ev: 5_000.0,
+            density_m3: 3.0e21,
+            beta: 0.5,
+            b_ext_t,
+            internal_pressure_pa: 1.0e6,
+            external_magnetic_pressure_pa: 1.0e6,
+            thermal_energy_j: 1.0,
+            compression_work_j: 0.0,
+            radiated_loss_j: 0.0,
+            energy_balance_residual: 0.0,
         }
     }
 

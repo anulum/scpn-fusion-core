@@ -451,6 +451,14 @@ the thresholds `1.7`, `2.2`, and `2.8`. These thresholds are labelled as
 diagnostics only; the public stability boolean remains fail-closed while the
 Belova Table I and hybrid-eigenvalue parity row is blocked.
 
+FUS-C.5 is also wired into the accepted FUS-C.6 supplied-current compression
+trajectory. The adapter consumes strictly ordered `PulsedCompressionState`
+samples, recomputes the MHD Alfvén-time growth from instantaneous radius,
+field, and density, and projects the Steinhauer `s` parameter through
+self-similar ion-gyroradius scaling. This is end-to-end trajectory coupling
+inside the accepted MIF lane; it is not an external Belova same-case parity
+claim.
+
 **Key files:** `core/tilt_mode_frc.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/tilt_mode_frc.rs`,
 `docs/physics/tilt_mode_frc.md`.

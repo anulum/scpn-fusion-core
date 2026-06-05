@@ -16,7 +16,9 @@ parity remain fail-closed until a redistributable digitised reference exists.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 
@@ -32,6 +34,16 @@ BELOVA_MHD_GROWTH_COEFFICIENT = 1.2
 DIAMAGNETIC_S_OVER_E_THRESHOLD = 1.7
 GYROVISCOUS_S_OVER_E_THRESHOLD = 2.2
 COMBINED_FLR_S_OVER_E_THRESHOLD = 2.8
+
+
+class PulsedCompressionLike(Protocol):
+    """Minimal FUS-C.6 state surface required by the FUS-C.5 adapter."""
+
+    t_s: float
+    R_s_m: float
+    T_i_eV: float
+    density_m3: float
+    B_ext_T: float
 
 
 @dataclass(frozen=True)
@@ -60,6 +72,18 @@ class FRCTiltModeReport:
     external_parity_status: str
 
 
+@dataclass(frozen=True)
+class FRCTiltModeTrajectoryPoint:
+    """Tilt diagnostic projected onto one FUS-C.6 compression state."""
+
+    t_s: float
+    R_s_m: float
+    T_i_eV: float
+    density_m3: float
+    B_reference_T: float
+    report: FRCTiltModeReport
+
+
 def alfven_speed_m_s(
     eq: FRCEquilibriumState,
     *,
@@ -67,20 +91,18 @@ def alfven_speed_m_s(
 ) -> float:
     """Return ``V_A = B_ref / sqrt(mu0*rho_m)`` for the FRC peak-density state."""
 
-    mass = _require_positive("ion_mass_amu", ion_mass_amu) * ATOMIC_MASS_KG
-    density = _require_positive("eq.density_peak_m3", eq.density_peak_m3) * mass
     field = float(np.max(np.abs(eq.B_z)))
-    if not np.isfinite(field) or field <= 0.0:
-        raise ValueError("eq.B_z must contain a positive finite reference field")
-    return float(field / np.sqrt(MU_0 * density))
+    return _alfven_speed_from_values(
+        b_reference_t=field,
+        density_peak_m3=eq.density_peak_m3,
+        ion_mass_amu=ion_mass_amu,
+    )
 
 
 def axial_half_length_m(eq: FRCEquilibriumState, elongation: float) -> float:
     """Return the prolate FRC axial half-length used for the Alfvén time."""
 
-    radius = _require_positive("eq.target_separatrix_radius_m", eq.target_separatrix_radius_m)
-    elongation_value = _require_positive("elongation", elongation)
-    return float(radius * elongation_value)
+    return _axial_half_length_from_values(eq.target_separatrix_radius_m, elongation)
 
 
 def frc_tilt_growth_rate(
@@ -126,6 +148,90 @@ def rigid_body_flr_regime(
 
     ratio = s_over_elongation(eq, elongation)
     thresholds = FRCTiltModeThresholds() if thresholds is None else thresholds
+    return _rigid_body_flr_regime_from_ratio(ratio, thresholds)
+
+
+def tilt_mode_trajectory_from_pulsed_compression(
+    states: Sequence[PulsedCompressionLike],
+    eq: FRCEquilibriumState,
+    elongation: float,
+    *,
+    thresholds: FRCTiltModeThresholds | None = None,
+    mhd_coefficient: float = BELOVA_MHD_GROWTH_COEFFICIENT,
+    ion_mass_amu: float = DEUTERIUM_MASS_AMU,
+) -> tuple[FRCTiltModeTrajectoryPoint, ...]:
+    """Project the accepted FUS-C.5 diagnostic over a FUS-C.6 trajectory.
+
+    The pulsed-compression state does not carry a full radial equilibrium at
+    each time sample, so this adapter does not claim a Belova eigenvalue solve.
+    It keeps the trajectory diagnostic self-consistent by projecting the
+    Steinhauer ``s`` number with the self-similar gyroradius scaling
+    ``s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)`` and by recomputing the
+    Alfvén-time growth rate from the instantaneous radius, density, and field.
+    """
+
+    if len(states) == 0:
+        raise ValueError("states must contain at least one compression state")
+
+    thresholds = FRCTiltModeThresholds() if thresholds is None else thresholds
+    _validate_thresholds(thresholds)
+    coefficient = _require_positive("mhd_coefficient", mhd_coefficient)
+    mass_amu = _require_positive("ion_mass_amu", ion_mass_amu)
+    _require_positive("elongation", elongation)
+
+    first = states[0]
+    reference_s = s_parameter(eq, mass_amu=mass_amu)
+    reference_radius = _state_positive(first, "R_s_m")
+    reference_field = _state_positive(first, "B_ext_T")
+    reference_temperature = _state_positive(first, "T_i_eV")
+
+    points: list[FRCTiltModeTrajectoryPoint] = []
+    previous_t: float | None = None
+    for state in states:
+        t_s = _state_finite(state, "t_s")
+        if previous_t is not None and t_s <= previous_t:
+            raise ValueError("compression-state times must be strictly increasing")
+        previous_t = t_s
+        radius = _state_positive(state, "R_s_m")
+        temperature = _state_positive(state, "T_i_eV")
+        density = _state_positive(state, "density_m3")
+        field = _state_positive(state, "B_ext_T")
+        projected_s = _compressed_s_parameter(
+            reference_s=reference_s,
+            reference_radius_m=reference_radius,
+            reference_field_t=reference_field,
+            reference_temperature_eV=reference_temperature,
+            radius_m=radius,
+            field_t=field,
+            temperature_eV=temperature,
+        )
+        report = _tilt_mode_report_from_values(
+            s_value=projected_s,
+            b_reference_t=field,
+            density_peak_m3=density,
+            radius_m=radius,
+            elongation=elongation,
+            thresholds=thresholds,
+            mhd_coefficient=coefficient,
+            ion_mass_amu=mass_amu,
+        )
+        points.append(
+            FRCTiltModeTrajectoryPoint(
+                t_s=t_s,
+                R_s_m=radius,
+                T_i_eV=temperature,
+                density_m3=density,
+                B_reference_T=field,
+                report=report,
+            )
+        )
+    return tuple(points)
+
+
+def _rigid_body_flr_regime_from_ratio(
+    ratio: float,
+    thresholds: FRCTiltModeThresholds,
+) -> tuple[str, bool]:
     _validate_thresholds(thresholds)
     if ratio <= thresholds.diamagnetic_s_over_e:
         return "diamagnetic_flr_threshold_passed", True
@@ -146,29 +252,17 @@ def tilt_mode_report(
 ) -> FRCTiltModeReport:
     """Return a fail-closed FRC n=1 tilt-mode diagnostic report."""
 
-    growth = frc_tilt_growth_rate(
-        eq,
-        elongation,
+    field = float(np.max(np.abs(eq.B_z)))
+    thresholds = FRCTiltModeThresholds() if thresholds is None else thresholds
+    return _tilt_mode_report_from_values(
+        s_value=s_parameter(eq, mass_amu=ion_mass_amu),
+        b_reference_t=field,
+        density_peak_m3=eq.density_peak_m3,
+        radius_m=eq.target_separatrix_radius_m,
+        elongation=elongation,
+        thresholds=thresholds,
         mhd_coefficient=mhd_coefficient,
         ion_mass_amu=ion_mass_amu,
-    )
-    speed = alfven_speed_m_s(eq, ion_mass_amu=ion_mass_amu)
-    length = axial_half_length_m(eq, elongation)
-    thresholds = FRCTiltModeThresholds() if thresholds is None else thresholds
-    regime, threshold_passed = rigid_body_flr_regime(eq, elongation, thresholds)
-    parity = belova_table1_acceptance_status()["status"]
-    return FRCTiltModeReport(
-        growth_rate_s_inv=growth,
-        alfven_speed_m_s=speed,
-        alfven_transit_time_s=float(length / speed),
-        s_parameter=s_parameter(eq),
-        elongation=float(elongation),
-        s_over_elongation=s_over_elongation(eq, elongation),
-        rigid_body_regime=regime,
-        rigid_body_threshold_passed=threshold_passed,
-        conservative_stable=False,
-        claim_status="diagnostic_only_not_hybrid_eigenvalue_accepted",
-        external_parity_status=parity,
     )
 
 
@@ -213,12 +307,108 @@ def claim_boundary() -> dict[str, str]:
 
 
 def _require_positive(name: str, value: float) -> float:
-    checked = float(value)
-    if not np.isfinite(checked):
-        raise ValueError(f"{name} must be finite")
+    checked = _require_finite(name, value)
     if checked <= 0.0:
         raise ValueError(f"{name} must be positive")
     return checked
+
+
+def _require_finite(name: str, value: float) -> float:
+    checked = float(value)
+    if not np.isfinite(checked):
+        raise ValueError(f"{name} must be finite")
+    return checked
+
+
+def _state_positive(state: PulsedCompressionLike, attribute: str) -> float:
+    return _require_positive(f"state.{attribute}", getattr(state, attribute))
+
+
+def _state_finite(state: PulsedCompressionLike, attribute: str) -> float:
+    return _require_finite(f"state.{attribute}", getattr(state, attribute))
+
+
+def _alfven_speed_from_values(
+    *,
+    b_reference_t: float,
+    density_peak_m3: float,
+    ion_mass_amu: float,
+) -> float:
+    mass = _require_positive("ion_mass_amu", ion_mass_amu) * ATOMIC_MASS_KG
+    density = _require_positive("density_peak_m3", density_peak_m3) * mass
+    field = abs(_require_finite("b_reference_t", b_reference_t))
+    if field <= 0.0:
+        raise ValueError("b_reference_t must be positive")
+    return float(field / np.sqrt(MU_0 * density))
+
+
+def _axial_half_length_from_values(radius_m: float, elongation: float) -> float:
+    return float(
+        _require_positive("radius_m", radius_m) * _require_positive("elongation", elongation)
+    )
+
+
+def _compressed_s_parameter(
+    *,
+    reference_s: float,
+    reference_radius_m: float,
+    reference_field_t: float,
+    reference_temperature_eV: float,
+    radius_m: float,
+    field_t: float,
+    temperature_eV: float,
+) -> float:
+    return float(
+        _require_positive("reference_s", reference_s)
+        * (
+            _require_positive("radius_m", radius_m)
+            / _require_positive("reference_radius_m", reference_radius_m)
+        )
+        * (
+            _require_positive("field_t", abs(field_t))
+            / _require_positive("reference_field_t", abs(reference_field_t))
+        )
+        * np.sqrt(
+            _require_positive("reference_temperature_eV", reference_temperature_eV)
+            / _require_positive("temperature_eV", temperature_eV)
+        )
+    )
+
+
+def _tilt_mode_report_from_values(
+    *,
+    s_value: float,
+    b_reference_t: float,
+    density_peak_m3: float,
+    radius_m: float,
+    elongation: float,
+    thresholds: FRCTiltModeThresholds,
+    mhd_coefficient: float,
+    ion_mass_amu: float,
+) -> FRCTiltModeReport:
+    speed = _alfven_speed_from_values(
+        b_reference_t=b_reference_t,
+        density_peak_m3=density_peak_m3,
+        ion_mass_amu=ion_mass_amu,
+    )
+    length = _axial_half_length_from_values(radius_m, elongation)
+    coefficient = _require_positive("mhd_coefficient", mhd_coefficient)
+    checked_s = _require_positive("s_value", s_value)
+    ratio = checked_s / _require_positive("elongation", elongation)
+    regime, threshold_passed = _rigid_body_flr_regime_from_ratio(ratio, thresholds)
+    return FRCTiltModeReport(
+        growth_rate_s_inv=float(coefficient * speed / length),
+        alfven_speed_m_s=speed,
+        alfven_transit_time_s=float(length / speed),
+        s_parameter=checked_s,
+        elongation=float(elongation),
+        s_over_elongation=float(ratio),
+        rigid_body_regime=regime,
+        rigid_body_threshold_passed=threshold_passed,
+        conservative_stable=False,
+        claim_status="diagnostic_only_not_hybrid_eigenvalue_accepted",
+        external_parity_status=belova_table1_acceptance_status()["status"],
+    )
 
 
 def _validate_thresholds(thresholds: FRCTiltModeThresholds) -> None:

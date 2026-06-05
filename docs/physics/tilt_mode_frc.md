@@ -53,6 +53,22 @@ equilibrium. The default threshold labels are:
 These thresholds are reported as diagnostics only. The public stability
 boolean remains fail-closed until Belova same-case parity evidence is present.
 
+## Pulsed-compression trajectory adapter
+
+The FUS-C.5 diagnostic is now wired into the accepted FUS-C.6 supplied-current
+compression trajectory. The adapter consumes ordered `PulsedCompressionState`
+samples and recomputes the Alfvén-time growth rate from instantaneous
+`R_s`, `B_ext`, and density. Because FUS-C.6 states do not carry a full radial
+equilibrium profile at every time step, the Steinhauer `s` number is projected
+with the self-similar ion-gyroradius scaling
+
+$$s(t)=s_0\frac{R_s(t)}{R_s(0)}
+\frac{B_{\rm ext}(t)}{B_{\rm ext}(0)}
+\sqrt{\frac{T_i(0)}{T_i(t)}}.$$
+
+In code this is a product of the three factors. The trajectory adapter remains
+a diagnostic coupling contract, not a Belova hybrid eigenvalue replacement.
+
 ## Public API
 
 ```python
@@ -61,11 +77,13 @@ from scpn_fusion.core.tilt_mode_frc import (
     rigid_body_flr_regime,
     tilt_mode_report,
     tilt_mode_stable,
+    tilt_mode_trajectory_from_pulsed_compression,
 )
 
 growth = frc_tilt_growth_rate(eq, elongation=4.0)
 report = tilt_mode_report(eq, elongation=4.0)
 stable, growth = tilt_mode_stable(eq, elongation=4.0)
+trajectory = tilt_mode_trajectory_from_pulsed_compression(states, eq, elongation=4.0)
 ```
 
 `tilt_mode_stable()` returns `False` while the external parity row is blocked.
@@ -82,8 +100,9 @@ Validation surfaces:
 - `validation/reports/tilt_mode_frc_benchmark.json`
 
 The benchmark report is local non-isolated regression evidence. It records
-Python rows, Rust Criterion rows, source checksums, and a blocked external row
-for `belova_2001_table1_tilt_stability`.
+Python rows, Rust Criterion rows, FUS-C.6 coupled trajectory rows, source
+checksums, and a blocked external row for
+`belova_2001_table1_tilt_stability`.
 
 ## Evidence boundary
 

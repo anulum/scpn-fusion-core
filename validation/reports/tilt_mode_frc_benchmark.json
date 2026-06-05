@@ -1,5 +1,5 @@
 {
-  "claim_boundary": "Local non-isolated FRC tilt diagnostic regression evidence. The accepted surface is an MHD Alfv\u00e9n-time diagnostic with conservative fail-closed status, not Belova Table I or hybrid eigenvalue parity.",
+  "claim_boundary": "Local non-isolated FRC tilt diagnostic regression evidence. The accepted surface is an MHD Alfv\u00e9n-time diagnostic with conservative fail-closed status plus self-similar FUS-C.6 trajectory projection, not Belova Table I or hybrid eigenvalue parity.",
   "environment": {
     "isolated": false,
     "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
@@ -7,6 +7,7 @@
     "python": "3.12.3"
   },
   "physics_contract": {
+    "fus_c6_projection": "s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)",
     "mhd_growth_scaling": "gamma = C*V_A/(E*R_s)",
     "name": "MIF/FRC n=1 tilt diagnostic",
     "not_claimed": "full Belova hybrid eigenvalue solver or Table I same-case parity",
@@ -21,13 +22,13 @@
       "final_s_over_elongation": 6.244825652142009,
       "iterations": 1000,
       "language": "python",
-      "mean_seconds": 0.018168932000000002,
+      "mean_seconds": 0.015534560800000001,
       "samples_seconds": [
-        0.017893934,
-        0.020506088000000002,
-        0.017201979000000003,
-        0.016755125000000003,
-        0.018487534
+        0.015040007000000001,
+        0.021559176000000003,
+        0.014498388000000001,
+        0.013059476,
+        0.013515757000000002
       ]
     },
     {
@@ -38,13 +39,13 @@
       "final_s_over_elongation": 4.8174369316524075,
       "iterations": 10000,
       "language": "python",
-      "mean_seconds": 0.1856616192,
+      "mean_seconds": 0.15760174280000003,
       "samples_seconds": [
-        0.174861123,
-        0.18463942900000002,
-        0.17777741200000002,
-        0.195882939,
-        0.19514719300000002
+        0.17395433000000002,
+        0.15300332800000002,
+        0.182571944,
+        0.136160784,
+        0.14231832800000002
       ]
     },
     {
@@ -55,38 +56,90 @@
       "final_s_over_elongation": 4.8174369316524075,
       "iterations": 100000,
       "language": "python",
-      "mean_seconds": 1.806617606,
+      "mean_seconds": 1.4554153114000001,
       "samples_seconds": [
-        1.795639143,
-        1.8147332850000002,
-        1.803571164,
-        1.784604348,
-        1.8345400900000002
+        1.5535042540000001,
+        1.361334695,
+        1.434287172,
+        1.448703284,
+        1.4792471520000001
       ]
+    },
+    {
+      "case": "python_fus_c6_coupled_64_intervals",
+      "checksum": 705051590.2719046,
+      "final_claim_status": "diagnostic_only_not_hybrid_eigenvalue_accepted",
+      "final_growth_rate_s_inv": 2169371.340980638,
+      "final_s_parameter": 17.43601666191618,
+      "intervals": 64,
+      "language": "python",
+      "mean_seconds": 0.0012223596,
+      "samples_seconds": [
+        0.001274247,
+        0.001248241,
+        0.001208726,
+        0.0012024260000000001,
+        0.0011781580000000001
+      ],
+      "states": 65
+    },
+    {
+      "case": "python_fus_c6_coupled_256_intervals",
+      "checksum": 2787665026.285028,
+      "final_claim_status": "diagnostic_only_not_hybrid_eigenvalue_accepted",
+      "final_growth_rate_s_inv": 2169371.3409806383,
+      "final_s_parameter": 21.008470153273436,
+      "intervals": 256,
+      "language": "python",
+      "mean_seconds": 0.0055735386,
+      "samples_seconds": [
+        0.005766131000000001,
+        0.005791861000000001,
+        0.005684773000000001,
+        0.005436187,
+        0.005188741
+      ],
+      "states": 257
     },
     {
       "case": "rust_100000_reports",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/tilt_mode_frc/rust_100000_reports/new/estimates.json",
-      "iterations": 100000,
+      "iterations_or_intervals": 100000,
       "language": "rust",
-      "mean_seconds": 0.0016065237723906988,
-      "stddev_seconds": 1.832829223040395e-05
+      "mean_seconds": 0.002786000297996032,
+      "stddev_seconds": 4.4317032327627794e-05
     },
     {
       "case": "rust_10000_reports",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/tilt_mode_frc/rust_10000_reports/new/estimates.json",
-      "iterations": 10000,
+      "iterations_or_intervals": 10000,
       "language": "rust",
-      "mean_seconds": 0.00016302619228897444,
-      "stddev_seconds": 2.2074308087213174e-06
+      "mean_seconds": 0.0002804346853698894,
+      "stddev_seconds": 6.1520993001096395e-06
     },
     {
       "case": "rust_1000_reports",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/tilt_mode_frc/rust_1000_reports/new/estimates.json",
-      "iterations": 1000,
+      "iterations_or_intervals": 1000,
       "language": "rust",
-      "mean_seconds": 1.6912002047417384e-05,
-      "stddev_seconds": 8.546367646367753e-07
+      "mean_seconds": 2.900524186213595e-05,
+      "stddev_seconds": 8.130821341436202e-07
+    },
+    {
+      "case": "rust_fus_c6_coupled_256_intervals",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/tilt_mode_frc/rust_fus_c6_coupled_256_intervals/new/estimates.json",
+      "iterations_or_intervals": 256,
+      "language": "rust",
+      "mean_seconds": 1.269764866049989e-05,
+      "stddev_seconds": 5.950259178636174e-07
+    },
+    {
+      "case": "rust_fus_c6_coupled_64_intervals",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/tilt_mode_frc/rust_fus_c6_coupled_64_intervals/new/estimates.json",
+      "iterations_or_intervals": 64,
+      "language": "rust",
+      "mean_seconds": 3.025716674144257e-06,
+      "stddev_seconds": 8.537489578213532e-08
     },
     {
       "case": "belova_2001_table1_tilt_stability",
@@ -95,10 +148,12 @@
       "status": "blocked_missing_public_digitised_reference"
     }
   ],
-  "schema": "scpn-fusion-core.tilt_mode_frc_benchmark.v1",
+  "schema": "scpn-fusion-core.tilt_mode_frc_benchmark.v3",
   "source_checksums": {
-    "benchmarks/bench_tilt_mode_frc.py": "d240696b1a614718a180f864754212b637d9a3621270b4cd43bed63090408e26",
-    "scpn-fusion-rs/crates/fusion-physics/src/tilt_mode_frc.rs": "e97d619561d898ce6253b267b7926f74ec6829e520a0c0b1269f0a51867c0828",
-    "src/scpn_fusion/core/tilt_mode_frc.py": "169c55401666eb1ee83ab9da5da36116e2677feafe53c2219d2c4ab1aae2980c"
+    "benchmarks/bench_tilt_mode_frc.py": "92091f3a91eaa8c60252beee00417303f2f00873956a9b0b22078b5f9209efec",
+    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "19338d6cf613d195c313d24fecb87edaf09705bc9911c5729b331b4a25329c76",
+    "scpn-fusion-rs/crates/fusion-physics/src/tilt_mode_frc.rs": "13055fe1e8f61a5b2c7550bf35a9bcd81c2d51af36991925911ba1858b8229bb",
+    "src/scpn_fusion/core/pulsed_compression.py": "00c8224dfa226fbb1956ff8aa30e2794cc0db6ff2691f98386d901f97d25986f",
+    "src/scpn_fusion/core/tilt_mode_frc.py": "3a67991a3b2824545c1e95b70f34f49b4e0e06f0fac9dc9b86277415d18ce318"
   }
 }

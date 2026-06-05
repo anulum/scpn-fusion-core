@@ -1666,25 +1666,36 @@ PYTHONPATH=src python benchmarks/bench_hall_mhd_pulsed.py
 
 The tracked FUS-C.5 benchmark report is
 `validation/reports/tilt_mode_frc_benchmark.json`. It covers the conservative
-MHD Alfvén-time diagnostic only:
+MHD Alfvén-time diagnostic and the FUS-C.6 supplied-current trajectory adapter:
 
 $$\gamma_{\rm tilt}=C V_A/(E R_s).$$
 
-The report includes Python timing rows, Rust Criterion rows, source checksums,
-and an external-reference row for `belova_2001_table1_tilt_stability` with
-status `blocked_missing_public_digitised_reference`. It does not claim full
-Belova hybrid eigenvalue parity or Table I reproduction.
+The coupled adapter uses the self-similar projection
+`s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)` and recomputes growth from the
+instantaneous compression state. The report includes Python timing rows, Rust
+Criterion rows, FUS-C.6 coupled trajectory rows, source checksums, and an
+external-reference row for `belova_2001_table1_tilt_stability` with status
+`blocked_missing_public_digitised_reference`. It does not claim full Belova
+hybrid eigenvalue parity or Table I reproduction.
 
 Latest local non-isolated regression rows:
 
-| Row | Iterations | Mean seconds |
+| Row | Workload | Mean seconds |
 |---|---:|---:|
-| Python `python_1000_reports` | 1,000 | 0.0181689320 |
-| Python `python_10000_reports` | 10,000 | 0.1856616192 |
-| Python `python_100000_reports` | 100,000 | 1.8066176060 |
-| Rust `rust_1000_reports` | 1,000 | 0.0000169120 |
-| Rust `rust_10000_reports` | 10,000 | 0.0001630262 |
-| Rust `rust_100000_reports` | 100,000 | 0.0016065238 |
+| Python `python_1000_reports` | 1,000 reports | 0.0155345608 |
+| Python `python_10000_reports` | 10,000 reports | 0.1576017428 |
+| Python `python_100000_reports` | 100,000 reports | 1.4554153114 |
+| Python `python_fus_c6_coupled_64_intervals` | 64 intervals / 65 states | 0.0012223596 |
+| Python `python_fus_c6_coupled_256_intervals` | 256 intervals / 257 states | 0.0055735386 |
+| Rust `rust_1000_reports` | 1,000 reports | 0.0000290052 |
+| Rust `rust_10000_reports` | 10,000 reports | 0.0002804347 |
+| Rust `rust_100000_reports` | 100,000 reports | 0.0027860003 |
+| Rust `rust_fus_c6_coupled_64_intervals` | 64 intervals / 65 states | 0.0000030257 |
+| Rust `rust_fus_c6_coupled_256_intervals` | 256 intervals / 257 states | 0.0000126976 |
+
+The interval count excludes the initial state; each coupled row evaluates
+`intervals + 1` compression states. Use the tracked JSON for exact local values
+because these workstation rows are non-isolated regression evidence.
 
 Reproduce locally:
 
