@@ -22,7 +22,7 @@ stochastic LIF neurons, and executed against physics-informed plant models.
 
 .. note::
 
-   **Honest scope:** This is not a replacement for TRANSP, JINTRAC, GENE,
+   **Evidence boundary:** This is not a replacement for TRANSP, JINTRAC, GENE,
    CGYRO, GS2, DREAM, Aurora, STRAHL, or EFIT.  The native solver stack now
    exposes nonlinear 5D gyrokinetic state contracts, local electromagnetic
    diagnostics, decomposition contracts, and fail-closed full-fidelity

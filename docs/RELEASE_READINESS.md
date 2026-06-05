@@ -1,6 +1,6 @@
-# v3.9.9 Release Acceptance
+# v3.9.10 Release Acceptance
 
-Release Version: `v3.9.9`
+Release Version: `v3.9.10`
 Readiness State: `ready`
 
 This file is a tracked, non-sensitive release gate artifact. It records the
@@ -22,7 +22,7 @@ internal locations.
 
 ## Release evidence links
 
-- `docs/releases/v3.9.9.md`
+- `docs/releases/v3.9.10.md`
 - `CHANGELOG.md`
 - `README.md`
 - `docs/PROJECT_OVERVIEW.md`

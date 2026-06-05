@@ -37,6 +37,7 @@
       "docs/promotions/REDDIT_COMPILERS.md",
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
+      "docs/releases/v3.9.10.md",
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
       "docs/releases/v3.9.9.md",
@@ -593,6 +594,10 @@
       },
       {
         "name": "FaradayCompressionFluxBudget",
+        "path": "src/scpn_fusion/core/faraday_recovery.py"
+      },
+      {
+        "name": "FaradayCompressionTrajectoryDiagnostics",
         "path": "src/scpn_fusion/core/faraday_recovery.py"
       },
       {
@@ -1441,6 +1446,10 @@
       },
       {
         "name": "PulsedCompressionState",
+        "path": "src/scpn_fusion/core/pulsed_compression.py"
+      },
+      {
+        "name": "PulsedCompressionTrajectoryDiagnostics",
         "path": "src/scpn_fusion/core/pulsed_compression.py"
       },
       {
@@ -2488,12 +2497,12 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 55,
+    "capability_documentation_pages": 56,
     "github_workflows": 12,
     "optional_extras": 12,
     "public_api_exports": 2,
-    "public_documentation_pages": 55,
-    "python_capability_classes": 525,
+    "public_documentation_pages": 56,
+    "python_capability_classes": 527,
     "python_capability_source_modules": 270,
     "rust_workspace_crates": 13,
     "test_files": 408
@@ -2535,6 +2544,7 @@
       "docs/promotions/REDDIT_COMPILERS.md",
       "docs/promotions/REDDIT_PROGRAMMING.md",
       "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
+      "docs/releases/v3.9.10.md",
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
       "docs/releases/v3.9.9.md",
@@ -2603,7 +2613,7 @@
     "name": "scpn-fusion",
     "readme": "README.md",
     "requires_python": ">=3.10",
-    "version": "3.9.9"
+    "version": "3.9.10"
   },
   "project_label": "SCPN Fusion Core",
   "quality_gates": {

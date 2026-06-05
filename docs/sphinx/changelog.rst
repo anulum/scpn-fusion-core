@@ -5,14 +5,18 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.9.9 (Current)
-------------------
+v3.9.10 (Current)
+-------------------
 
-- Documentation, repository-polish, and MIF evidence-coupling release that improves README scanning, onboarding, API orientation, market/application context, notebook guidance, public evidence-boundary navigation, and Faraday/compression sidecar traceability.
-- Optional native C++ compilation remains hardened behind fail-closed source, compiler, environment, and timeout checks.
+- Documentation, release-readiness, and FUS-C evidence traceability release that makes the current FUS-C.4, FUS-C.6, and FUS-C.7 local-contract hardening easier to find from README, onboarding, API, benchmark, release, and notebook surfaces.
+- Keeps full-fidelity parity fail-closed for external nonlinear GK, electromagnetic, DREAM, Aurora/STRAHL, FreeGS/free-boundary, and distributed GPU/cluster lanes until same-case artifacts and thresholds exist.
 - Release readiness remains pending until the remote CI run for the release commit is green.
 
-  v3.9.8 covered documentation polish and native-build hardening; v3.9.9 carries forward that evidence boundary while adding the latest MIF Faraday flux-sidecar report.
+v3.9.9
+------------------
+
+- Documentation, repository-polish, and MIF evidence-coupling release that improved README scanning, onboarding, API orientation, market/application context, notebook guidance, public evidence-boundary navigation, and Faraday/compression sidecar traceability.
+- Optional native C++ compilation remained hardened behind fail-closed source, compiler, environment, and timeout checks.
 
 v3.9.7
 ------------------

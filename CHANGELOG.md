@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.9.10] - 2026-06-05
+
+- Bumped package, Rust/PyO3 package metadata, README badge, generated capability snapshot, release readiness, and release notes to 3.9.10.
+- Updated public documentation navigation so the current FUS-C.4, FUS-C.6, and FUS-C.7 local-contract hardening is visible without promoting blocked external full-fidelity parity gates.
+- Clarified release and onboarding surfaces around evidence-bounded FUS-C diagnostics, benchmark reproducibility, and remaining same-case external solver blockers.
+
 - Hardened FUS-C.7 Faraday recovery with FUS-C.6 trajectory-quality sidecar
   ingestion and pass/fail diagnostics across Python, Rust, benchmarks, and
   documentation.
