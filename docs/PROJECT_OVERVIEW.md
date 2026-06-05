@@ -17,6 +17,9 @@ near real plant hardware?
   kernels plus polyglot solver surfaces where equivalent logic is maintained.
 - Evidence surfaces: tracked validation reports, JSON schemas, benchmark
   bundles, notebooks, Sphinx docs, and fail-closed acceptance gates.
+- Safety-assurance surface: an IEC 61508-aligned roadmap for selected
+  controller, replay, interlock, and telemetry surfaces. The repository does
+  not claim IEC 61508 or SIL certification today.
 
 ## What it is for
 
@@ -48,12 +51,12 @@ repository is therefore both a codebase and a validation operating model.
 - Not a certified plant-control system.
 - Not a source of accepted full-fidelity parity claims unless the linked report
   marks the relevant gate as accepted and provides provenance, thresholds,
-  commands, and artifact checksums.
+  commands, and artefact checksums.
 
 ## Evidence model
 
 The project uses a fail-closed evidence model. A benchmark can be useful while
-still blocked. Missing external same-case outputs, missing license/provenance,
+still blocked. Missing external same-case outputs, missing licence/provenance,
 missing thresholds, missing checksums, missing native comparison rows, or
 missing grid/scaling evidence keep a row blocked.
 
@@ -68,6 +71,8 @@ missing grid/scaling evidence keep a row blocked.
 - `validation/reports/production_decomposition_contract.md` for decomposition
   evidence.
 - `validation/reports/gk_electromagnetic_fidelity.md` for EM fidelity gates.
+- `docs/IEC_61508_ROADMAP.md` for the functional-safety roadmap and the
+  current certification boundary.
 
 
 ## How to read the maturity status
@@ -80,7 +85,7 @@ for local development and what still needs external parity evidence.
 | Validated local contract | The implementation has repository-local tests, reports, or benchmark evidence for the stated scope. |
 | Diagnostic only | The output is useful for debugging or planning, but it is not an acceptance gate. |
 | Blocked parity gate | Required public same-case data, reference-solver output, thresholds, checksums, or hardware evidence are missing. |
-| Accepted parity evidence | The row has provenance, license, command, artifact checksum, thresholds, native comparison, and pass/fail status. |
+| Accepted parity evidence | The row has provenance, licence, command, artefact checksum, thresholds, native comparison, and pass/fail status. |
 
 ## Practical value chain
 

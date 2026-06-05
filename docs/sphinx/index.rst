@@ -92,6 +92,7 @@ Public Documentation Hubs
 - `API overview <../API_OVERVIEW.md>`_
 - `Applications and market context <../APPLICATIONS_AND_MARKET.md>`_
 - `Benchmark taxonomy <../BENCHMARKS.md>`_
+- `IEC 61508 functional-safety roadmap <../IEC_61508_ROADMAP.md>`_
 
 .. toctree::
    :maxdepth: 2

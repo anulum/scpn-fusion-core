@@ -47,11 +47,12 @@ that partial research kernels are already full production reference solvers.
 
 | Question | Answer |
 |---|---|
-| What does it build? | Neuro-symbolic plasma-control loops, native solver kernels, validation reports, and benchmark artifacts. |
+| What does it build? | Neuro-symbolic plasma-control loops, native solver kernels, validation reports, and benchmark artefacts. |
 | Who is it for? | Fusion-control researchers, validation engineers, accelerator teams, formal-methods contributors, and investors evaluating reproducible fusion software infrastructure. |
 | What is validated today? | Local controller contracts, reduced-order replay lanes, selected Grad-Shafranov/operator-source checks, native kernel benchmarks, formal proof slices, and fail-closed benchmark gates. |
 | What remains blocked? | Full GENE/CGYRO/GS2 nonlinear turbulence parity, full Vlasov-Maxwell parity, DREAM kinetic parity, Aurora/STRAHL transport parity, strict FreeGS/free-boundary parity, and production MPI/multi-GPU scaling. |
 | How should readers judge claims? | Follow the linked reports, commands, checksums, thresholds, and accepted/blocked row status. |
+| Is it safety certified? | No. The repository publishes an [IEC 61508 functional-safety roadmap](docs/IEC_61508_ROADMAP.md) for selected control surfaces, but it does not claim IEC 61508 or SIL certification. |
 
 ## Why This Matters
 
@@ -148,8 +149,11 @@ It combines four surfaces that are usually split across separate tools:
   for GENE, CGYRO, GS2, DREAM, Aurora, STRAHL, FreeGS, GEQDSK, IMAS/OMAS, and
   public reference datasets.
 - **Evidence publication:** tracked JSON/Markdown reports, checksum-backed
-  artifact manifests, GitHub Pages documentation, notebooks, and release gates
+  artefact manifests, GitHub Pages documentation, notebooks, and release gates
   that separate local contracts from accepted production-parity evidence.
+- **Safety-assurance roadmap:** an explicit
+  [IEC 61508 functional-safety roadmap](docs/IEC_61508_ROADMAP.md) for future
+  assessment of selected controller, replay, interlock, and telemetry surfaces.
 
 The intended users are fusion-control researchers, simulation engineers,
 validation teams, accelerator/GPU engineers, formal-methods contributors, and

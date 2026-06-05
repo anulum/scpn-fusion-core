@@ -175,7 +175,10 @@ Bidirectional coupling with the JAX-based TORAX integrated modelling code:
 
 ## v5.0 — Production Hardening (target: Q4 2026)
 
-- Safety-certified control loop (IEC 61508 SIL-2 target)
+- IEC 61508-aligned control-loop safety-assurance roadmap with a future SIL-2
+  assessment target for selected control surfaces. See
+  [`docs/IEC_61508_ROADMAP.md`](docs/IEC_61508_ROADMAP.md). No IEC 61508 or
+  SIL certification is claimed today.
 - Real-time telemetry streaming (gRPC)
 - Multi-device support: tokamak + stellarator equilibrium
 - Zenodo dataset DOI for all validation reference data
