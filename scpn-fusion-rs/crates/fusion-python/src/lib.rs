@@ -1715,6 +1715,10 @@ impl PyNonlinearGKSolver {
 /// Python-accessible Steinhauer no-rotation FRC analytical solver.
 #[pyfunction]
 #[pyo3(signature = (rho, n0, t_i_ev, t_e_ev, theta_dot, r_s, b_ext, delta=None, tolerance=1.0e-10))]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "PyO3 binding preserves the stable Python keyword API; inputs are assembled into RigidRotorFrcInputs immediately."
+)]
 fn py_solve_frc_equilibrium<'py>(
     py: Python<'py>,
     rho: PyReadonlyArray1<'py, f64>,
