@@ -6,6 +6,13 @@
 
 ---
 
+## Context and scope
+
+This report is a design-study artifact for the compact tokamak reactor lane inside
+SCPN-FUSION-CORE. It captures one reproducible scan outcome used by the internal
+engineering workflow and ties geometry, field limits, heat-flux assumptions, and
+performance claims to one documented configuration set.
+
 ## 1. The Challenge of Scale
 
 Traditional fusion reactors like ITER are massive ($R \approx 6.2$m) and capital-intensive. The SCPN-Fusion-Core project aims to identify the smallest possible tokamak geometry that can achieve stable ignition and net power gain using advanced technology. Recent compact tokamak designs such as SPARC [1] and ARC [2] have demonstrated the viability of this approach.

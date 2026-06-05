@@ -3,6 +3,12 @@
 This document describes the FPGA register map and expected latency for
 deploying the SNN controller on an Alveo U250 accelerator card.
 
+## Scope
+
+This document defines the HIL reference for the Alveo U250 demonstration path.
+It records the fixed interfaces, timing budget, and fault tolerance behavior that
+software and hardware teams must align before any synthesis or deployment step.
+
 ## 1. Target Platform
 
 - **FPGA**: Xilinx Alveo U250 (UltraScale+ XCU250)

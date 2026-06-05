@@ -3,6 +3,13 @@
 This guide gives a new contributor the shortest path from clone to useful
 results without overstating solver maturity.
 
+## Purpose
+
+This onboarding document is for first-time contributors who need to move from
+environment setup to a repeatable validation path. It separates fast local checks
+from full-fidelity evidence-gated campaigns so contributors know when results are
+developmental versus production-accepted.
+
 ## 1. Install
 
 ```bash

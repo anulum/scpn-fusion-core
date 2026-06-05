@@ -3,6 +3,12 @@
 This page defines the latency metric IDs used across README, public method notes, and
 competitive analysis to avoid mixing kernel-only and end-to-end timings.
 
+## Purpose and interpretation
+
+This taxonomy is the public index for performance claims. It separates
+control-kernel timing from closed-loop and hardware-in-the-loop timing so
+benchmark comparisons remain reproducible and claim-ready across reporting layers.
+
 ## Control Latency Metrics
 
 | Metric ID | Scope | Includes | Excludes | Current headline value |

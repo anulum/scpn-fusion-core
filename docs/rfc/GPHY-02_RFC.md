@@ -10,6 +10,10 @@ License: GNU AGPL v3 | Commercial licensing available
 
 Status: Draft for review
 
+## Scope and decision context
+
+This RFC is a planning contract for an explicit implementation lane in SCPN-FUSION-CORE. It records the intended scope, target modules, metrics, and acceptance path before work is promoted to default behavior or external release claims.
+
 ## 1. Task Identity
 
 - Task ID: `GPHY-02`

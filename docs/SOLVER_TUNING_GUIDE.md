@@ -7,6 +7,12 @@ surrogate. All parameters live in the reactor JSON config or in
 
 ---
 
+## How to use this guide
+
+This page is the parameter-level operating guide for equilibrium and inverse
+solvers in public release code paths. It is intended to prevent unsafe tuning
+changes by tying recommended ranges to solver stability and convergence checks.
+
 ## 1. Picard Relaxation Factor (`relaxation_factor`)
 
 The equilibrium solver uses under-relaxation to stabilise the nonlinear

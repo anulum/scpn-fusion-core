@@ -17,6 +17,13 @@
 
 ---
 
+## Positioning
+
+This technical study documents the control API Contract A–C sequence in SCPN-FUSION-CORE and
+its execution semantics. It links the Python API layer, the artifact format, and
+Rust/Python parity expectations so downstream control logic has a verified
+integration definition.
+
 ## Table of Contents
 
 - [Part I: Foundation and Context](#part-i-foundation-and-context)
