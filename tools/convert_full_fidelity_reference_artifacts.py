@@ -21,6 +21,8 @@ import hashlib
 import io
 import importlib
 import json
+import os
+import sys
 import zipfile
 from pathlib import Path
 from typing import Any, cast
@@ -160,6 +162,180 @@ def _existing_artifact_record(artifact_id: str) -> dict[str, Any] | None:
     return _artifact_record(metadata, artifact_path, metadata_path)
 
 
+def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[str, Any] | None:
+    repo = CACHE_ROOT / "repos" / "aurora"
+    artifact_path = ARTIFACT_DIR / "aurora_argon_transport_public.npz"
+    metadata_path = ARTIFACT_DIR / "aurora_argon_transport_public.metadata.json"
+    fallback = _existing_artifact_record("aurora_argon_transport_public")
+    if not repo.exists():
+        return fallback
+
+    try:
+        sys.path.insert(0, str(repo))
+        os.environ["AURORA_ADAS_DIR"] = str((CACHE_ROOT / "adas" / "aurora").resolve())
+        aurora = importlib.import_module("aurora")
+    except Exception:
+        return fallback
+
+    namelist = aurora.default_nml.load_default_namelist()
+    profile_rhop = np.linspace(0.0, 1.0, 32, dtype=float)
+    kinetic_profiles = namelist["kin_profs"]
+    kinetic_profiles["Te"]["rhop"] = profile_rhop
+    kinetic_profiles["ne"]["rhop"] = profile_rhop
+    kinetic_profiles["ne"]["vals"] = (
+        (1.0e14 - 0.4e14) * (1.0 - profile_rhop**2.0) ** 0.5 + 0.4e14
+    )
+    kinetic_profiles["Te"]["vals"] = (
+        (5.0e3 - 100.0) * (1.0 - profile_rhop**2.0) ** 1.5 + 100.0
+    )
+    namelist.update(
+        {
+            "K": 10,
+            "Raxis_cm": 170,
+            "SOL_mach": 0.1,
+            "bound_sep": 8,
+            "clen_divertor": 25,
+            "clen_limiter": 0.5,
+            "dr_0": 2,
+            "dr_1": 0.25,
+            "imp": "Ar",
+            "lim_sep": 5.6,
+            "rvol_lcfs": 70,
+            "recycling_switch": 0,
+            "source_cm_out_lcfs": 10,
+            "source_rate": 1.0e18,
+            "source_type": "const",
+        }
+    )
+    namelist["timing"]["times"] = [0.0, 2.0e-6, 4.0e-6]
+    namelist["timing"]["dt_start"] = [1.0e-6, 1.0e-6, 1.0e-6]
+    namelist["timing"]["steps_per_cycle"] = [1, 1, 1]
+    namelist["timing"]["dt_increase"] = [1.0, 1.0, 1.0]
+
+    try:
+        asim = aurora.core.aurora_sim(namelist)
+        diffusion_cm2_s = 1.0e4 * np.ones(len(asim.rvol_grid), dtype=float)
+        convection_cm_s = -1.0e3 * np.asarray(asim.rhop_grid, dtype=float) ** 5
+        output = asim.run_aurora(diffusion_cm2_s, convection_cm_s)
+        radiation = aurora.compute_rad(
+            "Ar",
+            np.asarray(output["nz"], dtype=float).transpose(2, 1, 0),
+            asim.ne,
+            asim.Te,
+            prad_flag=True,
+            thermal_cx_rad_flag=False,
+            spectral_brem_flag=False,
+            sxr_flag=False,
+        )
+        atom_data = aurora.atomic.get_atom_data("Ar", ["acd", "scd"])
+        _te_grid, ion_rate_s, rec_rate_s = aurora.atomic.get_cs_balance_terms(
+            atom_data,
+            ne_cm3=np.asarray(asim.ne, dtype=float),
+            Te_eV=np.asarray(asim.Te, dtype=float),
+            include_cx=False,
+        )
+    except Exception:
+        return fallback
+
+    density_t_r_z = np.asarray(output["nz"], dtype=float).transpose(2, 0, 1) * 1.0e6
+    time_s = np.asarray(asim.time_out, dtype=float)
+    radius_m = np.asarray(asim.rvol_grid, dtype=float) / 100.0
+    charge_state = np.arange(density_t_r_z.shape[2], dtype=float)
+    total_density_t_r = np.sum(density_t_r_z, axis=2)
+    line_rad_raw = np.asarray(radiation["line_rad"], dtype=float)
+    line_rad_t_z_r = line_rad_raw
+    if line_rad_t_z_r.shape[1] < charge_state.size:
+        pad = np.zeros(
+            (line_rad_t_z_r.shape[0], charge_state.size - line_rad_t_z_r.shape[1], line_rad_t_z_r.shape[2]),
+            dtype=float,
+        )
+        line_rad_t_z_r = np.concatenate([pad, line_rad_t_z_r], axis=1)
+    line_radiation_power_t_r_z = np.transpose(line_rad_t_z_r[:, : charge_state.size, :], (0, 2, 1))
+    line_radiation_power_t = np.sum(line_radiation_power_t_r_z, axis=(1, 2))
+    ion_rate_r_z = np.asarray(ion_rate_s, dtype=float)[0].T
+    rec_rate_r_z = np.asarray(rec_rate_s, dtype=float)[0].T
+    if ion_rate_r_z.shape[1] < charge_state.size:
+        pad_cols = charge_state.size - ion_rate_r_z.shape[1]
+        ion_rate_r_z = np.pad(ion_rate_r_z, ((0, 0), (0, pad_cols)))
+        rec_rate_r_z = np.pad(rec_rate_r_z, ((0, 0), (0, pad_cols)))
+    ionisation_source_matrix = density_t_r_z[0] * ion_rate_r_z[:, : charge_state.size]
+    recombination_sink_matrix = density_t_r_z[0] * rec_rate_r_z[:, : charge_state.size]
+    arrays: dict[str, NDArray[Any]] = {
+        "charge_state": charge_state,
+        "charge_state_density_r_t": density_t_r_z,
+        "ionisation_source_matrix": ionisation_source_matrix,
+        "line_radiation_power_t": line_radiation_power_t,
+        "line_radiation_power_t_r_z": line_radiation_power_t_r_z,
+        "radius_m": radius_m,
+        "recombination_sink_matrix": recombination_sink_matrix,
+        "time_s": time_s,
+        "total_impurity_density_r_t": total_density_t_r,
+    }
+    required = _surface_required_observables(manifest, "impurity_transport")
+    available = sorted(arrays)
+    missing = [name for name in required if name not in available]
+    commit = _git_commit(repo)
+    metadata = {
+        "accepted_full_fidelity": not missing and _finite_payload(arrays),
+        "artifact_id": "aurora_argon_transport_public",
+        "artifact_path": _rel(artifact_path),
+        "artifact_role": "accepted_public_reference_output",
+        "available_observables": available,
+        "cache_source_path": _rel(repo / "examples" / "steady_state_run.py"),
+        "conversion_mode": "external_cache_conversion",
+        "finite_numeric_payload": _finite_payload(arrays),
+        "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+        "missing_required_observables": missing,
+        "provenance_url": (
+            "https://github.com/fsciortino/Aurora/tree/"
+            f"{commit or 'master'}/examples"
+        ),
+        "redistribution_license": "MIT",
+        "reference_family": "Aurora",
+        "sha256": _sha256(artifact_path) if artifact_path.exists() else "",
+        "solver_output_comparison_ready": False,
+        "solver_output_comparison_status": (
+            "blocked_native_same_case_aurora_strahl_thresholds_not_yet_implemented"
+        ),
+        "surface": "impurity_transport",
+        "upstream_commit": commit,
+    }
+    if write:
+        _write_npz(artifact_path, arrays)
+        metadata["sha256"] = _sha256(artifact_path)
+        _write_metadata(metadata_path, metadata)
+    return _artifact_record(metadata, artifact_path, metadata_path)
+
+
+def _apply_accepted_records_to_manifest(
+    manifest: dict[str, Any], records: list[dict[str, Any]]
+) -> bool:
+    changed = False
+    surfaces = manifest.get("surfaces", {})
+    for record in records:
+        if not record.get("accepted_full_fidelity"):
+            continue
+        if record.get("surface") != "impurity_transport":
+            continue
+        cases = surfaces.get("impurity_transport", {}).get("required_cases", [])
+        if not cases:
+            continue
+        case = cases[0]
+        updates = {
+            "artifact_path": record["artifact_path"],
+            "provenance_url": record["provenance_url"],
+            "redistribution_license": record["redistribution_license"],
+            "reference_family": "Aurora",
+            "sha256": record["sha256"],
+            "status": "available",
+        }
+        for key, value in updates.items():
+            if case.get(key) != value:
+                case[key] = value
+                changed = True
+    return changed
+
+
 def _convert_dream_avalanche(manifest: dict[str, Any], *, write: bool) -> dict[str, Any] | None:
     try:
         h5py = importlib.import_module("h5py")
@@ -297,8 +473,8 @@ def _convert_freegsnke_current_sidecars(
     return _existing_artifact_record("freegsnke_mastu_current_sidecars_public")
 
 
-def _blocking_sources() -> list[dict[str, str]]:
-    return [
+def _blocking_sources(accepted_surfaces: set[str]) -> list[dict[str, str]]:
+    blockers = [
         {
             "surface": "native_nonlinear_gyrokinetics",
             "source_family": "GENE/CGYRO/GS2",
@@ -336,6 +512,7 @@ def _blocking_sources() -> list[dict[str, str]]:
             ),
         },
     ]
+    return [blocker for blocker in blockers if blocker["surface"] not in accepted_surfaces]
 
 
 def run_conversion(*, write: bool = True) -> dict[str, Any]:
@@ -343,6 +520,7 @@ def run_conversion(*, write: bool = True) -> dict[str, Any]:
     manifest = _load_manifest()
     converted = []
     for converter in (
+        _convert_aurora_transport,
         _convert_dream_avalanche,
         _convert_freegsnke_baseline,
         _convert_freegsnke_current_sidecars,
@@ -353,9 +531,11 @@ def run_conversion(*, write: bool = True) -> dict[str, Any]:
 
     accepted = [record for record in converted if record["accepted_full_fidelity"]]
     partial = [record for record in converted if not record["accepted_full_fidelity"]]
+    accepted_surfaces = {str(record["surface"]) for record in accepted}
+    manifest_updated = _apply_accepted_records_to_manifest(manifest, accepted)
     report = {
         "accepted_full_fidelity_artifacts": len(accepted),
-        "blocking_sources": _blocking_sources(),
+        "blocking_sources": _blocking_sources(accepted_surfaces),
         "conversion_modes": sorted(
             {
                 str(record.get("conversion_mode", "external_cache_conversion"))
@@ -364,17 +544,26 @@ def run_conversion(*, write: bool = True) -> dict[str, Any]:
         ),
         "converted_artifacts": converted,
         "description": (
-            "Conversion of cached public upstream outputs into tracked artifacts. Partial outputs "
-            "remain outside full-fidelity acceptance until required observables and solver-output "
-            "comparisons are present."
+            "Conversion of cached public upstream outputs into tracked artifacts. Accepted public "
+            "reference artifacts satisfy the manifest observable/provenance/checksum contract; "
+            "partial outputs remain outside full-fidelity acceptance until required observables "
+            "and solver-output comparisons are present."
         ),
         "partial_output_artifacts": len(partial),
         "reference_manifest": _rel(REFERENCE_CASES),
-        "reference_manifest_updated": False,
+        "reference_manifest_updated": manifest_updated,
         "schema": "full-fidelity-reference-artifact-conversion.v1",
-        "status": "partial_public_outputs_converted_not_full_fidelity",
+        "status": (
+            "accepted_public_reference_artifact_available"
+            if accepted
+            else "partial_public_outputs_converted_not_full_fidelity"
+        ),
     }
     if write:
+        if manifest_updated:
+            REFERENCE_CASES.write_text(
+                json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
         write_reports(report)
     return report
 

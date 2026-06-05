@@ -32,7 +32,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         == "validation/reports/full_fidelity_reference_artifact_conversion.json"
     )
     assert report["partial_public_output_artifacts"] >= 2
-    assert report["accepted_public_reference_artifacts"] == 0
+    assert report["accepted_public_reference_artifacts"] == 1
     assert (
         report["dream_reference_execution_report"]
         == "validation/reports/dream_reference_execution_request.json"
@@ -154,6 +154,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert lanes["sas_dataset_readiness"]["status"].startswith("blocked_")
     assert lanes["dream_grade_runaway_electrons"]["sources"][0]["solver_family"] == "DREAM"
     assert lanes["aurora_strahl_grade_impurities"]["sources"][0]["solver_family"] == "Aurora"
+    assert lanes["aurora_strahl_grade_impurities"]["reference_cases_ready"] is True
     assert {
         source["solver_family"]
         for source in lanes["free_boundary_equilibrium_strict_parity"]["sources"]

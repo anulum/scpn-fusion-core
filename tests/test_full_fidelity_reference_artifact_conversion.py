@@ -19,14 +19,18 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
     report = run_conversion(write=True)
 
     assert report["schema"] == "full-fidelity-reference-artifact-conversion.v1"
-    assert report["accepted_full_fidelity_artifacts"] == 0
+    assert report["accepted_full_fidelity_artifacts"] == 1
     assert report["partial_output_artifacts"] >= 2
-    assert report["reference_manifest_updated"] is False
+    assert report["status"] == "accepted_public_reference_artifact_available"
 
     converted = {artifact["artifact_id"]: artifact for artifact in report["converted_artifacts"]}
+    assert "aurora_argon_transport_public" in converted
     assert "dream_avalanche_public_raw" in converted
     assert "freegsnke_static_inverse_baseline_public" in converted
     assert "freegsnke_mastu_current_sidecars_public" in converted
+    assert converted["aurora_argon_transport_public"]["accepted_full_fidelity"] is True
+    assert converted["aurora_argon_transport_public"]["missing_required_observables"] == []
+    assert converted["aurora_argon_transport_public"]["solver_output_comparison_ready"] is False
 
     for artifact in converted.values():
         path = ROOT / artifact["artifact_path"]
@@ -58,8 +62,15 @@ def test_converter_keeps_partial_outputs_out_of_acceptance_manifest() -> None:
     report = run_conversion(write=True)
     manifest = json.loads(REFERENCE_CASES.read_text(encoding="utf-8"))
 
-    assert report["accepted_full_fidelity_artifacts"] == 0
-    for surface in manifest["surfaces"].values():
+    assert report["accepted_full_fidelity_artifacts"] == 1
+    impurity_case = manifest["surfaces"]["impurity_transport"]["required_cases"][0]
+    assert impurity_case["status"] == "available"
+    assert impurity_case["artifact_path"].endswith("aurora_argon_transport_public.npz")
+    assert len(impurity_case["sha256"]) == 64
+
+    for surface_name, surface in manifest["surfaces"].items():
+        if surface_name == "impurity_transport":
+            continue
         for case in surface["required_cases"]:
             assert case["status"] == "missing_public_artifact"
             assert case["artifact_path"] is None
@@ -71,11 +82,10 @@ def test_converter_reports_missing_solver_output_mappings() -> None:
 
     blockers = {blocker["surface"]: blocker for blocker in report["blocking_sources"]}
     assert "native_nonlinear_gyrokinetics" in blockers
-    assert "impurity_transport" in blockers
+    assert "impurity_transport" not in blockers
     assert "free_boundary_equilibrium" in blockers
 
     assert "nonlinear output" in blockers["native_nonlinear_gyrokinetics"]["reason"]
-    assert "Aurora/STRAHL output" in blockers["impurity_transport"]["reason"]
     assert "strict FreeGS" in blockers["free_boundary_equilibrium"]["reason"]
 
 
@@ -87,5 +97,5 @@ def test_converter_uses_tracked_artifacts_when_external_cache_is_absent(
     report = run_conversion(write=False)
 
     assert report["partial_output_artifacts"] >= 2
-    assert report["accepted_full_fidelity_artifacts"] == 0
+    assert report["accepted_full_fidelity_artifacts"] == 1
     assert "tracked_artifact_fallback" in report["conversion_modes"]

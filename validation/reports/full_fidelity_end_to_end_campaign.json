@@ -1,7 +1,7 @@
 {
   "acceptance_passed": false,
   "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
-  "accepted_public_reference_artifacts": 0,
+  "accepted_public_reference_artifacts": 1,
   "all_locally_actionable_contracts_ready": true,
   "aurora_reference_artifact_generated": true,
   "aurora_reference_execution_report": "validation/reports/aurora_reference_execution_artifact.json",
@@ -250,7 +250,7 @@
         "native same-case solver-output comparison",
         "distribution, radiation, and inventory threshold comparison against Aurora/STRAHL"
       ],
-      "reference_cases_ready": false,
+      "reference_cases_ready": true,
       "sources": [
         {
           "evidence_url": "https://github.com/fsciortino/Aurora",

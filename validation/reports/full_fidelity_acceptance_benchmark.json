@@ -52,10 +52,10 @@
             "artifact_path": null,
             "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
             "coordinate_keys_missing": [
-              "species_index",
               "kx_rhos",
               "ky_rhos",
               "mu_normalized",
+              "species_index",
               "theta_rad",
               "time_s",
               "vpar_vth"
@@ -216,44 +216,46 @@
       "reference_cases": {
         "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",
         "manifest": "validation/reference_data/full_fidelity_reference_cases.json",
-        "missing_cases": [
+        "missing_cases": [],
+        "ready": true,
+        "ready_cases": [
           {
-            "artifact_exists": false,
-            "artifact_format_ready": false,
-            "artifact_path": null,
+            "artifact_exists": true,
+            "artifact_format_ready": true,
+            "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
             "case_id": "aurora_strahl_charge_state_transport_public",
-            "coordinate_keys_missing": [
+            "coordinate_keys_missing": [],
+            "coordinate_keys_present": [
               "charge_state",
               "radius_m",
               "time_s"
             ],
-            "coordinate_keys_present": [],
-            "coordinate_keys_ready": false,
+            "coordinate_keys_ready": true,
             "coordinate_payload_invalid": [],
             "coordinates_declared": true,
             "missing_fields": [],
             "observable_axis_contracts_invalid": [],
             "observable_axis_contracts_ready": true,
             "observable_contracts_ready": true,
-            "observable_keys_missing": [
+            "observable_keys_missing": [],
+            "observable_keys_present": [
               "charge_state_density_r_t",
               "total_impurity_density_r_t",
               "line_radiation_power_t",
               "ionisation_source_matrix",
               "recombination_sink_matrix"
             ],
-            "observable_keys_present": [],
-            "observable_keys_ready": false,
+            "observable_keys_ready": true,
             "observable_payload_invalid": [],
             "observables_declared": true,
-            "provenance_ready": false,
-            "ready": false,
-            "redistribution_license_ready": false,
-            "reference_family": "Aurora/STRAHL",
-            "sha256_actual": null,
-            "sha256_expected": null,
-            "sha256_ready": false,
-            "status": "missing_public_artifact",
+            "provenance_ready": true,
+            "ready": true,
+            "redistribution_license_ready": true,
+            "reference_family": "Aurora",
+            "sha256_actual": "be18361a9c2b1e86f5f1f9bbc463127a7845b771289fa98cc5311f8baf0ca5e2",
+            "sha256_expected": "be18361a9c2b1e86f5f1f9bbc463127a7845b771289fa98cc5311f8baf0ca5e2",
+            "sha256_ready": true,
+            "status": "available",
             "status_known": true,
             "threshold_contracts_missing": [],
             "threshold_contracts_ready": true,
@@ -262,8 +264,6 @@
             "threshold_values_ready": true
           }
         ],
-        "ready": false,
-        "ready_cases": [],
         "required_equivalence": "Aurora/STRAHL collisional-operator impurity transport"
       },
       "required_reference_equivalence": "Aurora/STRAHL collisional-operator impurity transport",

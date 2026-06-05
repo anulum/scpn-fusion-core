@@ -1,0 +1,30 @@
+{
+  "accepted_full_fidelity": true,
+  "artifact_id": "aurora_argon_transport_public",
+  "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
+  "artifact_role": "accepted_public_reference_output",
+  "available_observables": [
+    "charge_state",
+    "charge_state_density_r_t",
+    "ionisation_source_matrix",
+    "line_radiation_power_t",
+    "line_radiation_power_t_r_z",
+    "radius_m",
+    "recombination_sink_matrix",
+    "time_s",
+    "total_impurity_density_r_t"
+  ],
+  "cache_source_path": "data/external/full_fidelity_public_sources/repos/aurora/examples/steady_state_run.py",
+  "conversion_mode": "external_cache_conversion",
+  "finite_numeric_payload": true,
+  "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
+  "missing_required_observables": [],
+  "provenance_url": "https://github.com/fsciortino/Aurora/tree/4c53ee2fb5202977682c3da4deba5fc07ab3a203/examples",
+  "redistribution_license": "MIT",
+  "reference_family": "Aurora",
+  "sha256": "be18361a9c2b1e86f5f1f9bbc463127a7845b771289fa98cc5311f8baf0ca5e2",
+  "solver_output_comparison_ready": false,
+  "solver_output_comparison_status": "blocked_native_same_case_aurora_strahl_thresholds_not_yet_implemented",
+  "surface": "impurity_transport",
+  "upstream_commit": "4c53ee2fb5202977682c3da4deba5fc07ab3a203"
+}

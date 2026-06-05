@@ -116,27 +116,38 @@ def test_full_fidelity_acceptance_contract_fails_closed_until_reference_parity()
         "Aurora/STRAHL collisional-operator impurity transport"
     )
 
-    for surface in surfaces.values():
+    for surface_name, surface in surfaces.items():
         assert surface["status"] == "not_full_fidelity"
         assert surface["acceptance_passed"] is False
         assert surface["missing_requirements"]
-        assert surface["reference_cases"]["ready"] is False
-        assert surface["reference_cases"]["missing_cases"]
-        case = surface["reference_cases"]["missing_cases"][0]
-        assert case["artifact_exists"] is False
-        assert case["provenance_ready"] is False
-        assert case["redistribution_license_ready"] is False
-        assert case["sha256_ready"] is False
+        if surface_name == "impurity_transport":
+            assert surface["reference_cases"]["ready"] is True
+            assert surface["reference_cases"]["missing_cases"] == []
+            case = surface["reference_cases"]["ready_cases"][0]
+            assert case["artifact_exists"] is True
+            assert case["provenance_ready"] is True
+            assert case["redistribution_license_ready"] is True
+            assert case["sha256_ready"] is True
+            assert case["observable_keys_ready"] is True
+            assert case["coordinate_keys_ready"] is True
+        else:
+            assert surface["reference_cases"]["ready"] is False
+            assert surface["reference_cases"]["missing_cases"]
+            case = surface["reference_cases"]["missing_cases"][0]
+            assert case["artifact_exists"] is False
+            assert case["provenance_ready"] is False
+            assert case["redistribution_license_ready"] is False
+            assert case["sha256_ready"] is False
+            assert case["observable_keys_ready"] is False
+            assert case["observable_keys_missing"]
+            assert case["coordinate_keys_ready"] is False
+            assert case["coordinate_keys_missing"]
         assert case["observables_declared"] is True
         assert case["observable_contracts_ready"] is True
         assert case["observable_axis_contracts_ready"] is True
         assert case["observable_axis_contracts_invalid"] == []
-        assert case["observable_keys_ready"] is False
-        assert case["observable_keys_missing"]
         assert case["observable_payload_invalid"] == []
         assert case["coordinates_declared"] is True
-        assert case["coordinate_keys_ready"] is False
-        assert case["coordinate_keys_missing"]
         assert case["coordinate_payload_invalid"] == []
         assert case["threshold_values_ready"] is True
         assert case["threshold_contracts_ready"] is True

@@ -435,7 +435,11 @@ data remain blocked rows.
 
 The public-output conversion pass is tracked in
 [`validation/reports/full_fidelity_reference_artifact_conversion.md`](../validation/reports/full_fidelity_reference_artifact_conversion.md).
-It exports three finite, checksummed partial artifacts:
+It exports one accepted external reference artefact and three finite,
+checksummed partial artefacts:
+
+- Aurora argon transport output to
+  `validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz`
 
 - DREAM avalanche HDF5 data to
   `validation/reference_data/full_fidelity_public_artifacts/dream_avalanche_public_raw.npz`
@@ -444,12 +448,14 @@ It exports three finite, checksummed partial artifacts:
 - FreeGSNKE MAST-U-like coil-current sidecars to
   `validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.json`
 
-Accepted full-fidelity artifacts remain `0`: the converted payloads lack the
-required full manifest observables and same-case native solver-output
-comparisons. They are retained as provenance-backed public outputs and
-conversion smoke tests, not as acceptance evidence. Clean checkouts without the
-gitignored external cache use the tracked artifacts as a provenance-preserving
-fallback so CI does not erase public-output evidence.
+Accepted external reference artefacts are now `1`: the Aurora argon transport
+payload satisfies the manifest observable, coordinate, provenance, checksum,
+and redistribution contract. Native Aurora/STRAHL solver parity remains
+blocked until same-case native comparison thresholds pass. The DREAM and
+FreeGSNKE payloads remain partial provenance-backed public outputs and
+conversion smoke tests, not accepted parity evidence. Clean checkouts without
+the gitignored external cache use the tracked artefacts as a
+provenance-preserving fallback so CI does not erase public-output evidence.
 
 The Aurora execution lane is tracked in
 [`validation/reports/aurora_reference_execution_artifact.md`](../validation/reports/aurora_reference_execution_artifact.md).

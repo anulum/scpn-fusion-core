@@ -5,7 +5,7 @@
     "impurity_transport": {
       "required_cases": [
         {
-          "artifact_path": null,
+          "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
           "case_id": "aurora_strahl_charge_state_transport_public",
           "coordinate_contracts": {
             "charge_state": {
@@ -81,9 +81,9 @@
               "units": "m^-3"
             }
           },
-          "provenance_url": null,
-          "redistribution_license": null,
-          "reference_family": "Aurora/STRAHL",
+          "provenance_url": "https://github.com/fsciortino/Aurora/tree/4c53ee2fb5202977682c3da4deba5fc07ab3a203/examples",
+          "redistribution_license": "MIT",
+          "reference_family": "Aurora",
           "required_observables": [
             "charge_state_density_r_t",
             "total_impurity_density_r_t",
@@ -91,8 +91,8 @@
             "ionisation_source_matrix",
             "recombination_sink_matrix"
           ],
-          "sha256": null,
-          "status": "missing_public_artifact",
+          "sha256": "be18361a9c2b1e86f5f1f9bbc463127a7845b771289fa98cc5311f8baf0ca5e2",
+          "status": "available",
           "threshold_contracts": {
             "charge_state_density_relative_l2_max": {
               "comparator": "<=",
@@ -131,11 +131,6 @@
           "artifact_path": null,
           "case_id": "gene_cgyro_gs2_nonlinear_itg_em_public",
           "coordinate_contracts": {
-            "species_index": {
-              "min_length": 1,
-              "strictly_increasing": true,
-              "units": "species_index"
-            },
             "kx_rhos": {
               "min_length": 2,
               "strictly_increasing": true,
@@ -150,6 +145,11 @@
               "min_length": 2,
               "strictly_increasing": true,
               "units": "dimensionless"
+            },
+            "species_index": {
+              "min_length": 1,
+              "strictly_increasing": true,
+              "units": "species_index"
             },
             "theta_rad": {
               "min_length": 2,
@@ -168,21 +168,6 @@
             }
           },
           "observable_contracts": {
-            "nonlinear_distribution_function": {
-              "axes": [
-                "species_index",
-                "kx_rhos",
-                "ky_rhos",
-                "theta_rad",
-                "vpar_vth",
-                "mu_normalized"
-              ],
-              "finite": true,
-              "min_rank": 6,
-              "non_empty": true,
-              "numeric": true,
-              "units": "delta_f_over_f0"
-            },
             "electromagnetic_apar_energy": {
               "axes": [
                 "time_s",
@@ -194,6 +179,30 @@
               "non_empty": true,
               "numeric": true,
               "units": "normalized_apar_energy"
+            },
+            "electromagnetic_bpar_energy": {
+              "axes": [
+                "time_s",
+                "kx_rhos",
+                "ky_rhos"
+              ],
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true,
+              "units": "normalized_bpar_energy"
+            },
+            "electromagnetic_phi_energy": {
+              "axes": [
+                "time_s",
+                "kx_rhos",
+                "ky_rhos"
+              ],
+              "finite": true,
+              "min_rank": 1,
+              "non_empty": true,
+              "numeric": true,
+              "units": "normalized_phi_energy"
             },
             "electron_heat_flux_spectrum": {
               "axes": [
@@ -219,6 +228,36 @@
               "numeric": true,
               "units": "gyroBohm_heat_flux"
             },
+            "nonlinear_distribution_function": {
+              "axes": [
+                "species_index",
+                "kx_rhos",
+                "ky_rhos",
+                "theta_rad",
+                "vpar_vth",
+                "mu_normalized"
+              ],
+              "finite": true,
+              "min_rank": 6,
+              "non_empty": true,
+              "numeric": true,
+              "units": "delta_f_over_f0"
+            },
+            "nonlinear_distribution_function_imag": {
+              "axes": [
+                "species_index",
+                "kx_rhos",
+                "ky_rhos",
+                "theta_rad",
+                "vpar_vth",
+                "mu_normalized"
+              ],
+              "finite": true,
+              "min_rank": 6,
+              "non_empty": true,
+              "numeric": true,
+              "units": "delta_f_over_f0"
+            },
             "saturated_phi_rms": {
               "axes": [
                 "time_s"
@@ -239,45 +278,6 @@
               "non_empty": true,
               "numeric": true,
               "units": "normalized_field_energy"
-            },
-            "nonlinear_distribution_function_imag": {
-              "axes": [
-                "species_index",
-                "kx_rhos",
-                "ky_rhos",
-                "theta_rad",
-                "vpar_vth",
-                "mu_normalized"
-              ],
-              "finite": true,
-              "min_rank": 6,
-              "non_empty": true,
-              "numeric": true,
-              "units": "delta_f_over_f0"
-            },
-            "electromagnetic_phi_energy": {
-              "axes": [
-                "time_s",
-                "kx_rhos",
-                "ky_rhos"
-              ],
-              "finite": true,
-              "min_rank": 1,
-              "non_empty": true,
-              "numeric": true,
-              "units": "normalized_phi_energy"
-            },
-            "electromagnetic_bpar_energy": {
-              "axes": [
-                "time_s",
-                "kx_rhos",
-                "ky_rhos"
-              ],
-              "finite": true,
-              "min_rank": 1,
-              "non_empty": true,
-              "numeric": true,
-              "units": "normalized_bpar_energy"
             }
           },
           "provenance_url": null,
@@ -297,15 +297,30 @@
           "sha256": null,
           "status": "missing_public_artifact",
           "threshold_contracts": {
+            "distribution_imaginary_relative_l2_max": {
+              "comparator": "<=",
+              "metric": "relative_l2",
+              "observable": "nonlinear_distribution_function_imag"
+            },
             "distribution_relative_l2_max": {
               "comparator": "<=",
               "metric": "relative_l2",
               "observable": "nonlinear_distribution_function"
             },
+            "field_bpar_energy_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "electromagnetic_bpar_energy"
+            },
             "field_energy_relative_error_max": {
               "comparator": "<=",
               "metric": "relative_error",
               "observable": "electromagnetic_apar_energy"
+            },
+            "field_phi_energy_relative_error_max": {
+              "comparator": "<=",
+              "metric": "relative_error",
+              "observable": "electromagnetic_phi_energy"
             },
             "heat_flux_relative_l2_max": {
               "comparator": "<=",
@@ -321,32 +336,17 @@
               "comparator": "<=",
               "metric": "relative_error",
               "observable": "zonal_flow_energy"
-            },
-            "distribution_imaginary_relative_l2_max": {
-              "comparator": "<=",
-              "metric": "relative_l2",
-              "observable": "nonlinear_distribution_function_imag"
-            },
-            "field_phi_energy_relative_error_max": {
-              "comparator": "<=",
-              "metric": "relative_error",
-              "observable": "electromagnetic_phi_energy"
-            },
-            "field_bpar_energy_relative_error_max": {
-              "comparator": "<=",
-              "metric": "relative_error",
-              "observable": "electromagnetic_bpar_energy"
             }
           },
           "thresholds": {
+            "distribution_imaginary_relative_l2_max": 0.25,
             "distribution_relative_l2_max": 0.25,
+            "field_bpar_energy_relative_error_max": 0.2,
             "field_energy_relative_error_max": 0.2,
+            "field_phi_energy_relative_error_max": 0.2,
             "heat_flux_relative_l2_max": 0.15,
             "spectrum_relative_l2_max": 0.2,
-            "zonal_energy_relative_error_max": 0.2,
-            "distribution_imaginary_relative_l2_max": 0.25,
-            "field_phi_energy_relative_error_max": 0.2,
-            "field_bpar_energy_relative_error_max": 0.2
+            "zonal_energy_relative_error_max": 0.2
           }
         }
       ],
