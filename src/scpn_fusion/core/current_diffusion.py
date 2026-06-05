@@ -9,11 +9,145 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TypeAlias, cast
+
 import numpy as np
+from numpy.typing import NDArray
 from scipy.linalg import solve_banded
 
 # Sauter, Angioni & Lin-Liu (1999/2002) neoclassical resistivity
 MU_0 = 4.0 * np.pi * 1e-7
+FloatArray: TypeAlias = NDArray[np.float64]
+ProfileCallable: TypeAlias = Callable[[float, FloatArray], FloatArray | float]
+EtaCallable: TypeAlias = Callable[[FloatArray], FloatArray | float]
+ScalarCallable: TypeAlias = Callable[[float], float]
+TauCallable: TypeAlias = Callable[..., FloatArray | float]
+
+
+@dataclass(frozen=True)
+class FluxEvolutionTrajectory:
+    """Time history for the non-adiabatic MIF/FRC flux carrier equation.
+
+    Arrays use SI units. ``psi`` has shape ``(n_steps + 1, n_rho)`` and stores
+    the evolved poloidal-flux profile. ``hall_drive`` stores
+    ``R_null E_theta``, ``resistive_loss`` stores ``eta J_theta``, and
+    ``damping_rate`` stores ``1 / tau_psi`` at the same time/grid points.
+    ``source_increment`` and ``damping_decrement`` have shape
+    ``(n_steps, n_rho)`` and close the exact discrete balance
+    ``psi[n+1] = psi[n] - damping_decrement[n] + source_increment[n]``.
+    """
+
+    time_s: FloatArray
+    rho: FloatArray
+    psi: FloatArray
+    hall_drive: FloatArray
+    resistive_loss: FloatArray
+    source: FloatArray
+    damping_rate: FloatArray
+    source_increment: FloatArray
+    damping_decrement: FloatArray
+    update_residual: FloatArray
+    dt_s: float
+
+
+def solve_flux_evolution_nonadiabatic(
+    rho: FloatArray,
+    psi0: FloatArray,
+    *,
+    tau_psi_fn: TauCallable,
+    R_null_t: ScalarCallable,
+    E_theta_t: ProfileCallable,
+    eta_spitzer_fn: EtaCallable,
+    J_theta_t: ProfileCallable,
+    dt: float,
+    n_steps: int,
+) -> FluxEvolutionTrajectory:
+    """Evolve the pulsed non-adiabatic flux constraint.
+
+    The implemented carrier is the Ono-style flattened FRC flux equation
+
+    ``dpsi/dt = -psi / tau_psi + R_null E_theta - eta J_theta``.
+
+    Each time step samples the source at both endpoints and advances the local
+    linear damping term analytically using the midpoint damping rate. This is
+    exact for constant damping/source, second-order for smooth time-dependent
+    drive terms, and reduces exactly to constant ``psi`` when Hall drive,
+    resistive loss, and damping are all zero.
+    """
+    rho_grid = _validate_radial_grid(rho)
+    psi_initial = _as_profile(psi0, rho_grid.size, "psi0")
+    if not np.isfinite(dt) or dt <= 0.0:
+        raise ValueError("dt must be positive")
+    if n_steps <= 0:
+        raise ValueError("n_steps must be positive")
+
+    time_s = np.linspace(0.0, dt * n_steps, n_steps + 1, dtype=np.float64)
+    psi = np.zeros((n_steps + 1, rho_grid.size), dtype=np.float64)
+    hall_drive = np.zeros_like(psi)
+    resistive_loss = np.zeros_like(psi)
+    source = np.zeros_like(psi)
+    damping_rate = np.zeros_like(psi)
+    source_increment = np.zeros((n_steps, rho_grid.size), dtype=np.float64)
+    damping_decrement = np.zeros_like(source_increment)
+    update_residual = np.zeros_like(source_increment)
+    psi[0] = psi_initial
+
+    for step_index, time_value in enumerate(time_s):
+        tau_profile = _as_profile(
+            _call_tau(tau_psi_fn, time_value, rho_grid),
+            rho_grid.size,
+            "tau",
+            allow_infinite=True,
+        )
+        invalid_tau = np.isneginf(tau_profile) | ((tau_profile <= 0.0) & ~np.isposinf(tau_profile))
+        if np.any(invalid_tau):
+            raise ValueError("tau_psi_fn must return positive finite values or np.inf")
+        damping_rate[step_index] = np.where(np.isinf(tau_profile), 0.0, 1.0 / tau_profile)
+
+        r_null = float(R_null_t(float(time_value)))
+        if not np.isfinite(r_null) or r_null < 0.0:
+            raise ValueError("R_null_t must return a finite non-negative radius")
+
+        e_theta = _as_profile(E_theta_t(float(time_value), rho_grid), rho_grid.size, "E_theta_t")
+        eta = _as_profile(eta_spitzer_fn(rho_grid), rho_grid.size, "eta_spitzer_fn")
+        if np.any(eta < 0.0):
+            raise ValueError("eta_spitzer_fn must return non-negative resistivity")
+        j_theta = _as_profile(J_theta_t(float(time_value), rho_grid), rho_grid.size, "J_theta_t")
+
+        hall_drive[step_index] = r_null * e_theta
+        resistive_loss[step_index] = eta * j_theta
+        source[step_index] = hall_drive[step_index] - resistive_loss[step_index]
+
+    for step_index in range(n_steps):
+        gamma = 0.5 * (damping_rate[step_index] + damping_rate[step_index + 1])
+        source_midpoint = 0.5 * (source[step_index] + source[step_index + 1])
+        decay = np.exp(-gamma * dt)
+        driven_increment = np.empty(rho_grid.size, dtype=np.float64)
+        damped = gamma > 0.0
+        driven_increment[damped] = source_midpoint[damped] * (1.0 - decay[damped]) / gamma[damped]
+        driven_increment[~damped] = dt * source_midpoint[~damped]
+        damping_drop = psi[step_index] * (1.0 - decay)
+        expected_next = psi[step_index] - damping_drop + driven_increment
+        psi[step_index + 1] = expected_next
+        source_increment[step_index] = driven_increment
+        damping_decrement[step_index] = damping_drop
+        update_residual[step_index] = psi[step_index + 1] - expected_next
+
+    return FluxEvolutionTrajectory(
+        time_s=time_s,
+        rho=rho_grid,
+        psi=psi,
+        hall_drive=hall_drive,
+        resistive_loss=resistive_loss,
+        source=source,
+        damping_rate=damping_rate,
+        source_increment=source_increment,
+        damping_decrement=damping_decrement,
+        update_residual=update_residual,
+        dt_s=float(dt),
+    )
 
 
 def neoclassical_resistivity(
@@ -51,7 +185,7 @@ def neoclassical_resistivity(
     return float(max(eta_neo, eta_Spitzer))
 
 
-def q_from_psi(rho: np.ndarray, psi: np.ndarray, R0: float, a: float, B0: float) -> np.ndarray:
+def q_from_psi(rho: FloatArray, psi: FloatArray, R0: float, a: float, B0: float) -> FloatArray:
     """q(rho) = -rho a^2 B0 / (R0 dpsi/drho), L'Hopital at axis."""
     nr = len(rho)
     q = np.zeros(nr)
@@ -74,7 +208,7 @@ def q_from_psi(rho: np.ndarray, psi: np.ndarray, R0: float, a: float, B0: float)
         q[0] = q[1]
 
     q = np.abs(q)
-    return q
+    return cast(FloatArray, q)
 
 
 def resistive_diffusion_time(a: float, eta: float) -> float:
@@ -82,10 +216,51 @@ def resistive_diffusion_time(a: float, eta: float) -> float:
     return MU_0 * a**2 / max(eta, 1e-12)
 
 
+def _validate_radial_grid(rho: FloatArray) -> FloatArray:
+    rho_grid = cast(FloatArray, np.asarray(rho, dtype=np.float64))
+    if rho_grid.ndim != 1:
+        raise ValueError("rho must be one-dimensional")
+    if rho_grid.size < 2:
+        raise ValueError("rho must contain at least two points")
+    if not np.all(np.isfinite(rho_grid)):
+        raise ValueError("rho must contain finite values")
+    if not np.all(np.diff(rho_grid) > 0.0):
+        raise ValueError("rho must be strictly increasing")
+    return rho_grid
+
+
+def _as_profile(
+    values: FloatArray | float,
+    expected_size: int,
+    name: str,
+    *,
+    allow_infinite: bool = False,
+) -> FloatArray:
+    profile = np.asarray(values, dtype=np.float64)
+    if profile.ndim == 0:
+        profile = np.full(expected_size, float(profile), dtype=np.float64)
+    if profile.shape != (expected_size,):
+        raise ValueError(f"{name} must be scalar or shape ({expected_size},)")
+    valid_values = (
+        np.isfinite(profile) | np.isposinf(profile) if allow_infinite else np.isfinite(profile)
+    )
+    if not np.all(valid_values):
+        suffix = "finite values or np.inf" if allow_infinite else "finite values"
+        raise ValueError(f"{name} must contain {suffix}")
+    return cast(FloatArray, profile)
+
+
+def _call_tau(tau_psi_fn: TauCallable, time_s: float, rho: FloatArray) -> FloatArray | float:
+    try:
+        return tau_psi_fn(time_s, rho)
+    except TypeError:
+        return tau_psi_fn(time_s)
+
+
 class CurrentDiffusionSolver:
     """Implicit Crank-Nicolson solver for 1D poloidal flux diffusion."""
 
-    def __init__(self, rho: np.ndarray, R0: float, a: float, B0: float):
+    def __init__(self, rho: FloatArray, R0: float, a: float, B0: float):
         self.rho = rho
         self.R0 = R0
         self.a = a
@@ -103,13 +278,13 @@ class CurrentDiffusionSolver:
     def step(
         self,
         dt: float,
-        Te: np.ndarray,
-        ne: np.ndarray,
+        Te: FloatArray,
+        ne: FloatArray,
         Z_eff: float,
-        j_bs: np.ndarray,
-        j_cd: np.ndarray,
-        j_ext: np.ndarray | None = None,
-    ) -> np.ndarray:
+        j_bs: FloatArray,
+        j_cd: FloatArray,
+        j_ext: FloatArray | None = None,
+    ) -> FloatArray:
         """Advance poloidal flux psi by one timestep dt."""
         if j_ext is None:
             j_ext = np.zeros(self.nr)
@@ -120,7 +295,14 @@ class CurrentDiffusionSolver:
         eta_prof = np.zeros(self.nr)
         for i in range(self.nr):
             epsilon = self.rho[i] * self.a / self.R0
-            eta_prof[i] = neoclassical_resistivity(Te[i], ne[i], Z_eff, epsilon, q_prof[i], self.R0)
+            eta_prof[i] = neoclassical_resistivity(
+                float(Te[i]),
+                float(ne[i]),
+                Z_eff,
+                epsilon,
+                float(q_prof[i]),
+                self.R0,
+            )
 
         D = eta_prof / (MU_0 * self.a**2)
 
@@ -168,5 +350,5 @@ class CurrentDiffusionSolver:
         ab[1, :] = diag
         ab[2, :-1] = sub[1:]
 
-        self.psi = solve_banded((1, 1), ab, rhs)
+        self.psi = cast(FloatArray, solve_banded((1, 1), ab, rhs))
         return self.psi

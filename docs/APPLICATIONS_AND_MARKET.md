@@ -40,6 +40,18 @@ runs, GPU/cluster scaling campaigns, DREAM/Aurora/STRAHL parity artifacts, and
 FreeGS/free-boundary sidecar data. Funding should buy reproducibility and
 independent comparability, not inflated claims.
 
+## Why the repository has market value before full parity
+
+The current value is not a claim that the native solver replaces production
+fusion codes. The value is the infrastructure that makes those claims testable:
+schemas, provenance fields, blocked states, reproducible commands, native
+kernel paths, Rust parity surfaces, notebooks, and public evidence reports.
+
+That gives partners a lower-risk path to collaboration. They can bring a
+reference deck, a shot replay, a hardware target, or a validation requirement
+and see exactly what must pass before a claim changes from local contract to
+accepted parity evidence.
+
 ## Claim boundary
 
 The repository is not yet full-fidelity end-to-end. Its current public value is

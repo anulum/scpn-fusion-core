@@ -2,6 +2,147 @@
 
 ## [Unreleased]
 
+- No unreleased changes yet.
+
+## [3.9.9] - 2026-06-05
+
+- Released the documentation, repository-polish, and MIF evidence-coupling update for the current public codebase.
+- Bumped package metadata, release readiness, release notes, README badge, and generated capability snapshot references to 3.9.9.
+- Expanded public project overview, onboarding, API, applications, notebook, GitHub Pages, and Sphinx release navigation while keeping full-fidelity parity gates evidence-bounded.
+
+- Hardened FUS-C.7/FUS-C.6 coupling across Python and Rust by adding a
+  Faraday-side compression flux-budget sidecar, blocked missing-flux status,
+  failed-budget propagation, benchmark rows, and documentation.
+- Hardened FUS-C.6 pulsed compression across Python and Rust with explicit
+  Ono carrier flux-budget state: source-increment checksum,
+  damping-decrement checksum, maximum update residual, pass/fail budget status,
+  Rust native carrier coupling, benchmark gates, and documentation.
+- Added FUS-C.5/FUS-C.6 coupling evidence: the FRC n=1 tilt diagnostic now
+  consumes supplied-current pulsed-compression state histories across Python
+  and Rust, projects the Steinhauer `s` parameter through explicit
+  self-similar gyroradius scaling, records coupled benchmark rows, and keeps
+  external Belova parity blocked.
+- Hardened the FUS-C.3 non-adiabatic MIF/FRC flux carrier across Python and
+  Rust with explicit source-increment, damping-decrement, and update-residual
+  diagnostics, plus tracked local benchmark evidence for the discrete budget
+  closure.
+- Added FUS-C.6 voltage-driven coil-current coupling across Python and Rust:
+  the pulsed-compression path now supports an exact bank-limited lumped R-L
+  coil circuit, circuit-energy residuals, voltage-driven benchmark rows, and
+  explicit documentation that external Slough parity remains blocked.
+- Added FUS-C.4/FUS-C.6 coupling evidence: MRTI now consumes supplied-current
+  pulsed-compression state histories across Python and Rust, projects signed
+  separatrix acceleration through an explicit interface-normal convention,
+  records internal coupled benchmark rows, and keeps external nonlinear MRTI
+  parity blocked instead of fabricating same-case evidence.
+- Added FUS-C.7/FUS-C.6 coupling evidence: Faraday recovery now accepts the
+  supplied-current pulsed-compression trajectory sidecar and voltage-driven
+  coil-source sidecar across Python and Rust, evaluates compression-work and
+  source-work budget rows when available, keeps missing external Slough parity
+  blocked, and records the result in the tracked local non-isolated benchmark
+  report.
+- Added the FUS-C.2 axisymmetric pulsed Hall-MHD flux carrier across Python
+  and Rust, including Ono Eq. 8 source terms, Faraday external-field drive,
+  Spitzer resistivity, implicit damping, field/energy diagnostics, local
+  non-isolated benchmark evidence, public physics documentation, and explicit
+  blocked Gkeyll/Ono parity rows.
+- Added the FUS-C.5 conservative FRC n=1 tilt-mode diagnostic across Python
+  and Rust, including Belova-normalised MHD Alfvén-time growth scaling,
+  Steinhauer `s / E` rigid-body diagnostics, local non-isolated benchmark
+  evidence, public physics documentation, and explicit blocked Belova Table I
+  parity status.
+- Added the FUS-C.6 supplied-current MIF/FRC pulsed-compression contract
+  across Python and Rust, including coil-field mapping, pressure-driven radial
+  dynamics, adiabatic temperature and density evolution, energy residuals,
+  Ono non-adiabatic flux-carrier wiring, local non-isolated benchmark evidence,
+  and explicit blocked Slough Fig. 5 parity status.
+- Added the FUS-C.7 classical Faraday recovery contract across Python and Rust,
+  including closed-form back-EMF, resistive-load energy integration, blocked
+  budget status for missing FUS-C.6 compression-work evidence, local
+  non-isolated benchmark evidence, and public physics documentation.
+- Added the FUS-C.4 analytical MRTI growth-spectrum contract across Python and
+  Rust, including magnetic-tension stabilization, exponential spectrum
+  tracking, separatrix-acceleration helper, fail-closed validation, local
+  non-isolated benchmark evidence, and public physics documentation.
+- Added the FUS-C.3 non-adiabatic MIF/FRC flux carrier
+  `solve_flux_evolution_nonadiabatic`, with Python trajectory diagnostics, Rust
+  `fusion-core::current_diffusion` parity math, module-specific tests, local
+  non-isolated benchmark evidence, and public physics-method documentation.
+- Added a differentiable JAX observable kernel for the accepted Steinhauer
+  no-rotation FRC analytical contract. The new path matches the NumPy solver on
+  axial field, pressure, normalised flux, energy, and `s`, and exposes finite
+  gradients with respect to `B_ext` and `R_s` on a fixed `r / R_s` grid. This is
+  explicitly not a rotating rigid-rotor BVP implementation.
+- Added the first FRC rigid-rotor equilibrium slice: validated
+  Steinhauer no-rotation analytical axial-field profile, finite pressure and
+  energy diagnostics, lazy public exports, module-specific tests, and Sphinx
+  API documentation while keeping rotating BVP cases fail-closed.
+- Added explicit FRC radial force-balance residual diagnostics with an optional
+  fail-closed validation tolerance for analytical no-rotation runs.
+- Added Rust `fusion-physics::frc` support, a PyO3
+  `py_solve_frc_equilibrium` bridge, parity tests, Criterion coverage, and the
+  tracked `validation/reports/frc_rigid_rotor_benchmark.json` benchmark report for the
+  accepted Steinhauer no-rotation FRC analytical contract.
+- Hardened the FRC quality-of-equilibrium diagnostic to use the Steinhauer
+  Eq. 27 local-gyroradius integral across Python, Rust, PyO3 parity tests, and
+  the tracked benchmark report.
+- Added finite-grid convergence evidence for the accepted no-rotation FRC
+  scalar invariants across the tracked benchmark report, Python tests, Rust
+  tests, and public benchmark/method documentation.
+- Added explicit toroidal current-density and Ampere closure diagnostics for
+  the accepted no-rotation FRC contract across Python, Rust, PyO3 parity tests,
+  benchmark JSON, and public physics documentation.
+- Hardened the FRC current-density contract to use the closed-form Steinhauer
+  derivative while keeping Ampere residuals as independent finite-grid
+  diagnostics with Python, Rust, PyO3, benchmark, and documentation coverage.
+- Added an explicit FRC separatrix and field-reversal validation contract so
+  the no-rotation analytical solver compares the interpolated null against the
+  configured `R_s`, requires radial samples on both sides of `R_s`, carries the
+  diagnostics through Python, Rust, PyO3, benchmark JSON, and public docs, and
+  keeps missing non-Python/Rust FRC surfaces fail-closed.
+- Replaced numerical FRC cylindrical-flux integration with the closed-form
+  Steinhauer primitive and added a flux derivative closure residual across
+  Python, Rust, PyO3, package exports, benchmark JSON, tests, and public docs.
+- Replaced the FRC diagnostic Gaussian pressure with the local magnetic
+  pressure-balance profile and added pressure-balance residual plus
+  thermal-pressure consistency diagnostics across Python, Rust, PyO3,
+  benchmark JSON, tests, and public docs.
+- Added FRC density-closure validation so the solved density profile is derived
+  from magnetic-pressure-balanced `p(r)` and configured temperatures, while
+  `n0` is gated against the solved peak density across Python, Rust, PyO3,
+  benchmark JSON, tests, and public docs.
+- Added FRC beta and particle-line-density diagnostics derived from the same
+  accepted pressure/density fields, with beta-limit validation, Python/Rust/PyO3
+  parity checks, benchmark JSON coverage, tests, and public docs.
+- Added FRC separatrix energy-inventory closure diagnostics so pressure-energy
+  and magnetic-field-deficit integrals are independently assembled, gated,
+  compared across Python/Rust/PyO3, recorded in the benchmark JSON, and
+  documented without extending the claim beyond the accepted no-rotation
+  analytical contract.
+- Added FRC separatrix current-sheet closure diagnostics so the finite-grid
+  `dB_z/dr` slope and `J_theta(R_s)` are compared against the analytical
+  no-rotation identities across Python/Rust/PyO3, validation gates, benchmark
+  JSON, tests, and public docs.
+- Added an FRC resolved sheet-current integral closure so the radial integral
+  of `J_theta` is checked against the finite-grid magnetic-field jump across
+  Python/Rust/PyO3, validation gates, benchmark JSON, tests, and public docs.
+- Added an analytical FRC pressure-gradient closure so finite-grid `dp/dr` is
+  checked against `-(B_z / mu_0) dB_z/dr` across Python/Rust/PyO3, validation
+  gates, benchmark JSON, tests, and public docs.
+- Added a separatrix-normalised FRC flux coordinate `psi_N` with raw flux-span
+  diagnostics, axis/separatrix endpoint gates, monotonic/bounds validation,
+  Python/Rust/PyO3 parity checks, benchmark JSON coverage, and public docs for
+  the accepted no-rotation analytical MIF lane.
+- Expanded the accepted FRC no-rotation parity gate to a deterministic 16-case
+  MIF/FRC parameter cohort across Python, Rust `fusion-physics`, and PyO3 while
+  keeping rotating-BVP cases fail-closed.
+- Added generated FRC no-rotation property gates for pressure monotonicity away
+  from the magnetic null, beta bounds, separatrix energy closure, and
+  Rust/PyO3 energy-invariant parity on accepted MIF/FRC decks.
+- Added an executable FRC rigid-rotor quickstart that reproduces the accepted
+  Steinhauer no-rotation field and magnetic-pressure-balance contract, writes
+  reproducible JSON samples, and is covered by a module-specific example test.
+
 ## [3.9.8] - 2026-06-02
 
 - Bumped package and release metadata to 3.9.8 for a documentation, security-hardening, and repository-polish release.

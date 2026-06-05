@@ -6,6 +6,8 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 """Public core package exports for physics models, solvers, and utilities."""
 
+from typing import Any
+
 try:
     from ._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
@@ -90,7 +92,167 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "WholeDeviceModel": (".wdm_engine", "WholeDeviceModel"),
     # Current diffusion — Sauter neoclassical resistivity, Crank-Nicolson solver
     "CurrentDiffusionSolver": (".current_diffusion", "CurrentDiffusionSolver"),
+    "FluxEvolutionTrajectory": (".current_diffusion", "FluxEvolutionTrajectory"),
     "neoclassical_resistivity": (".current_diffusion", "neoclassical_resistivity"),
+    "solve_flux_evolution_nonadiabatic": (
+        ".current_diffusion",
+        "solve_flux_evolution_nonadiabatic",
+    ),
+    # FRC rigid-rotor equilibrium — Steinhauer no-rotation analytical limit
+    "RigidRotorFRCInputs": (".frc_rigid_rotor", "RigidRotorFRCInputs"),
+    "FRCEquilibriumState": (".frc_rigid_rotor", "FRCEquilibriumState"),
+    "FRCValidationReport": (".frc_rigid_rotor", "FRCValidationReport"),
+    "ion_gyroradius_m": (".frc_rigid_rotor", "ion_gyroradius_m"),
+    "frc_no_rotation_jax_observables": (
+        ".frc_rigid_rotor",
+        "frc_no_rotation_jax_observables",
+    ),
+    "solve_frc_equilibrium": (".frc_rigid_rotor", "solve_frc_equilibrium"),
+    "ampere_residual": (".frc_rigid_rotor", "ampere_residual"),
+    "flux_derivative_residual": (".frc_rigid_rotor", "flux_derivative_residual"),
+    "psi_normalized_profile": (".frc_rigid_rotor", "psi_normalized_profile"),
+    "pressure_balance_residual": (".frc_rigid_rotor", "pressure_balance_residual"),
+    "density_profile": (".frc_rigid_rotor", "density_profile"),
+    "beta_profile": (".frc_rigid_rotor", "beta_profile"),
+    "force_balance_residual": (".frc_rigid_rotor", "force_balance_residual"),
+    "null_radius": (".frc_rigid_rotor", "null_radius"),
+    "s_parameter": (".frc_rigid_rotor", "s_parameter"),
+    "validate_equilibrium": (".frc_rigid_rotor", "validate_equilibrium"),
+    # Pulsed Hall-MHD — axisymmetric Ono Eq. 8 flux carrier
+    "HallMHDPulsedConfig": (".hall_mhd_pulsed", "HallMHDPulsedConfig"),
+    "HallMHDPulsedState": (".hall_mhd_pulsed", "HallMHDPulsedState"),
+    "axial_field_from_flux": (".hall_mhd_pulsed", "axial_field_from_flux"),
+    "faraday_e_theta_from_b_ramp": (
+        ".hall_mhd_pulsed",
+        "faraday_e_theta_from_b_ramp",
+    ),
+    "gkeyll_small_hall_acceptance_status": (
+        ".hall_mhd_pulsed",
+        "gkeyll_small_hall_acceptance_status",
+    ),
+    "initial_hall_mhd_pulsed_state": (
+        ".hall_mhd_pulsed",
+        "initial_hall_mhd_pulsed_state",
+    ),
+    "ono_fig4_acceptance_status": (".hall_mhd_pulsed", "ono_fig4_acceptance_status"),
+    "run_hall_mhd_pulsed": (".hall_mhd_pulsed", "run_hall_mhd_pulsed"),
+    "spitzer_resistivity_ohm_m_hall": (
+        ".hall_mhd_pulsed",
+        "spitzer_resistivity_ohm_m",
+    ),
+    "step_hall_mhd_pulsed": (".hall_mhd_pulsed", "step_hall_mhd_pulsed"),
+    # MRTI — analytical MIF/FRC growth spectrum with magnetic tension
+    "MRTISpectrumState": (".mrti", "MRTISpectrumState"),
+    "MRTISpectrumTracker": (".mrti", "MRTISpectrumTracker"),
+    "effective_acceleration_from_radius_rate": (
+        ".mrti",
+        "effective_acceleration_from_radius_rate",
+    ),
+    "effective_acceleration_from_pulsed_compression": (
+        ".mrti",
+        "effective_acceleration_from_pulsed_compression",
+    ),
+    "mrti_growth_rate": (".mrti", "mrti_growth_rate"),
+    "track_mrti_from_pulsed_compression": (".mrti", "track_mrti_from_pulsed_compression"),
+    # Faraday recovery — closed-form MIF/FRC back-EMF over supplied trajectory
+    "FaradayRecoveryReport": (".faraday_recovery", "FaradayRecoveryReport"),
+    "FaradayRecoverySample": (".faraday_recovery", "FaradayRecoverySample"),
+    "FaradayCompressionFluxBudget": (
+        ".faraday_recovery",
+        "FaradayCompressionFluxBudget",
+    ),
+    "FaradayRecoveryTrajectoryPoint": (
+        ".faraday_recovery",
+        "FaradayRecoveryTrajectoryPoint",
+    ),
+    "faraday_back_emf": (".faraday_recovery", "faraday_back_emf"),
+    "faraday_back_emf_from_values": (
+        ".faraday_recovery",
+        "faraday_back_emf_from_values",
+    ),
+    "faraday_trajectory_from_pulsed_compression": (
+        ".faraday_recovery",
+        "faraday_trajectory_from_pulsed_compression",
+    ),
+    "compression_work_from_pulsed_compression": (
+        ".faraday_recovery",
+        "compression_work_from_pulsed_compression",
+    ),
+    "compression_flux_budget_from_pulsed_compression": (
+        ".faraday_recovery",
+        "compression_flux_budget_from_pulsed_compression",
+    ),
+    "faraday_trajectory_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "faraday_trajectory_from_voltage_driven_compression",
+    ),
+    "compression_work_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "compression_work_from_voltage_driven_compression",
+    ),
+    "compression_flux_budget_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "compression_flux_budget_from_voltage_driven_compression",
+    ),
+    "coil_source_work_from_voltage_driven_compression": (
+        ".faraday_recovery",
+        "coil_source_work_from_voltage_driven_compression",
+    ),
+    "integrated_recovery_energy": (".faraday_recovery", "integrated_recovery_energy"),
+    "magnetic_flux_wb": (".faraday_recovery", "magnetic_flux_wb"),
+    # Pulsed compression — pressure-driven MIF/FRC trajectory with flux carrier
+    "CoilGeometry": (".pulsed_compression", "CoilGeometry"),
+    "CoilCircuitState": (".pulsed_compression", "CoilCircuitState"),
+    "PulsedCompressionConfig": (".pulsed_compression", "PulsedCompressionConfig"),
+    "PulsedCompressionState": (".pulsed_compression", "PulsedCompressionState"),
+    "VoltageDrivenCompressionResult": (
+        ".pulsed_compression",
+        "VoltageDrivenCompressionResult",
+    ),
+    "adiabatic_temperature_update_eV": (
+        ".pulsed_compression",
+        "adiabatic_temperature_update_eV",
+    ),
+    "coil_field_t": (".pulsed_compression", "coil_field_t"),
+    "coil_current_interpolator": (".pulsed_compression", "coil_current_interpolator"),
+    "initial_coil_circuit_state": (".pulsed_compression", "initial_coil_circuit_state"),
+    "initial_pulsed_compression_state": (
+        ".pulsed_compression",
+        "initial_pulsed_compression_state",
+    ),
+    "run_coil_circuit": (".pulsed_compression", "run_coil_circuit"),
+    "run_pulsed_compression": (".pulsed_compression", "run_pulsed_compression"),
+    "run_voltage_driven_pulsed_compression": (
+        ".pulsed_compression",
+        "run_voltage_driven_pulsed_compression",
+    ),
+    "slough_fig5_acceptance_status": (
+        ".pulsed_compression",
+        "slough_fig5_acceptance_status",
+    ),
+    "spitzer_resistivity_ohm_m": (".pulsed_compression", "spitzer_resistivity_ohm_m"),
+    "step_coil_circuit": (".pulsed_compression", "step_coil_circuit"),
+    "step_pulsed_compression": (".pulsed_compression", "step_pulsed_compression"),
+    # FRC tilt mode — conservative n=1 MHD diagnostic with blocked Belova parity
+    "FRCTiltModeReport": (".tilt_mode_frc", "FRCTiltModeReport"),
+    "FRCTiltModeThresholds": (".tilt_mode_frc", "FRCTiltModeThresholds"),
+    "FRCTiltModeTrajectoryPoint": (
+        ".tilt_mode_frc",
+        "FRCTiltModeTrajectoryPoint",
+    ),
+    "alfven_speed_m_s": (".tilt_mode_frc", "alfven_speed_m_s"),
+    "belova_table1_acceptance_status": (
+        ".tilt_mode_frc",
+        "belova_table1_acceptance_status",
+    ),
+    "frc_tilt_growth_rate": (".tilt_mode_frc", "frc_tilt_growth_rate"),
+    "rigid_body_flr_regime": (".tilt_mode_frc", "rigid_body_flr_regime"),
+    "tilt_mode_report": (".tilt_mode_frc", "tilt_mode_report"),
+    "tilt_mode_stable": (".tilt_mode_frc", "tilt_mode_stable"),
+    "tilt_mode_trajectory_from_pulsed_compression": (
+        ".tilt_mode_frc",
+        "tilt_mode_trajectory_from_pulsed_compression",
+    ),
     # Current drive — ECCD, NBI, LHCD sources
     "ECCDSource": (".current_drive", "ECCDSource"),
     "NBISource": (".current_drive", "NBISource"),
@@ -206,7 +368,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
 }
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     if name in _LAZY_IMPORTS:
         module_path, attr = _LAZY_IMPORTS[name]
         import importlib

@@ -1,3 +1,11 @@
+.. SPDX-License-Identifier: AGPL-3.0-or-later
+.. Commercial license available
+.. © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+.. © Code 2020–2026 Miroslav Šotek. All rights reserved.
+.. ORCID: 0009-0009-3560-0851
+.. Contact: www.anulum.li | protoscience@anulum.li
+.. SCPN Fusion Core — Equilibrium user guide
+
 ==============================
 Equilibrium Solver
 ==============================
@@ -72,6 +80,80 @@ The inner linear system is solved by one of two methods:
 
    The multigrid path is asymptotically faster for large grids but
    carries slightly more implementation complexity.
+
+Field-Reversed Configuration Analytical Limit
+---------------------------------------------
+
+The FRC workstream begins with the Steinhauer rigid-rotor no-rotation
+analytical limit.  The public API is intentionally narrow until the rotating
+BVP lands, but the accepted no-rotation contract is now implemented in both
+Python and Rust, with optional PyO3 exposure when the native extension is
+available.
+
+.. code-block:: python
+
+   import numpy as np
+   from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
+
+   inputs = RigidRotorFRCInputs(
+       n0=4.138e21,
+       T_i_eV=10_000.0,
+       T_e_eV=5_000.0,
+       theta_dot=0.0,
+       R_s=0.20,
+       B_ext=5.0,
+       delta=0.02,
+   )
+   state = solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 129))
+
+The implemented axial field is:
+
+.. math::
+
+   B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2 R_s \delta}\right)
+
+Rotating rigid-rotor cases fail closed with ``NotImplementedError`` until the
+dedicated FRC BVP task is implemented and validated.
+
+The accepted MIF-facing flux coordinate is the separatrix-normalised
+``psi_N = (psi - psi_axis) / (psi_sep - psi_axis)`` derived from the same
+closed-form cylindrical flux primitive. Validation fails closed if the flux
+span is zero, if ``psi_N(0)`` or ``psi_N(R_s)`` misses its endpoint, or if the
+normalised coordinate is non-monotone or out of bounds on the resolved
+separatrix interval.
+
+The no-rotation pressure profile follows local magnetic-pressure balance,
+``p = (B_ext^2 - B_z^2) / (2 mu_0)``. The scalar input thermal pressure
+``n0 * (T_i + T_e) * e`` is reported as a consistency ratio against the
+magnetic-pressure-balance peak; it is not substituted for the local solved
+profile. The solver also derives ``n(r) = p(r) / ((T_i + T_e) * e)`` and gates
+the configured central density against the solved peak density. The validation
+report includes the density-consistency row, local ``beta = p / (B_ext^2 /
+(2 mu_0))``, separatrix-averaged beta, particle line density
+``integral_0^R_s n(r) 2 pi r dr``, separatrix pressure-energy inventory,
+magnetic-deficit inventory, energy-closure relative error, the pressure-balance
+residual ``p + B_z^2/(2 mu_0) - B_ext^2/(2 mu_0)``, the analytical pressure-gradient
+closure residual ``finite_grid(dp/dr) - (-(B_z / mu_0) * dB_z/dr)``, the analytical flux-primitive closure
+residual ``dpsi/dr - r B_z``, the Ampere closure residual ``mu_0 J_theta +
+dB_z/dr``, and the radial ideal-MHD force-balance residual ``dp/dr - (J x
+B)_r``. It also checks the separatrix current-sheet identities
+``dB_z/dr|_R_s = -B_ext / delta`` and
+``J_theta(R_s) = B_ext / (mu_0 delta)`` plus the resolved integral
+``integral J_theta dr = (B_z(0) - B_z(r_out)) / mu_0``. Density, beta limit,
+separatrix energy inventory, current-sheet closure, pressure, pressure-gradient, normalised flux, flux, and Ampere closure are active
+finite-grid gates by default. Force balance is reported as a diagnostic by
+default; pass an explicit ``force_balance_tolerance`` to make that residual part
+of the acceptance gate for a specific run.
+
+The Rust surface is exposed as ``fusion_physics::frc`` and benchmarked by
+``cargo bench -p fusion-physics --bench frc_rigid_rotor_bench``.  The tracked
+cross-surface report is created with ``python benchmarks/bench_frc_rigid_rotor.py``
+and stored at ``validation/reports/frc_rigid_rotor_benchmark.json``.  The report
+includes grid-convergence rows plus a deterministic 16-case MIF/FRC
+no-rotation parameter cohort across Python, Rust ``fusion-physics``, and PyO3.
+Go, Julia, and Lean
+rows remain explicit ``not_applicable_no_frc_surface`` rows until those
+languages expose equivalent solver logic; wrappers are not treated as parity.
 
 Profile Models
 ^^^^^^^^^^^^^^

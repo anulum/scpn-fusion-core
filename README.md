@@ -15,7 +15,7 @@
 [![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)](https://pepy.tech/project/scpn-fusion)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
-![Version](https://img.shields.io/badge/Version-3.9.8-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-3.9.9-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
@@ -88,15 +88,15 @@ facades and evidence-bounded validation reports.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.8 |
+| Package version | 3.9.9 |
 | Public API exports | 2 |
-| Python capability source modules | 264 |
-| Python capability classes | 503 |
-| Capability documentation pages | 48 |
+| Python capability source modules | 270 |
+| Python capability classes | 525 |
+| Capability documentation pages | 55 |
 | Rust workspace crates | 13 |
 | Optional extras | 12 |
-| Python test files | 399 |
-| Public documentation pages | 48 |
+| Python test files | 408 |
+| Public documentation pages | 55 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -311,7 +311,7 @@ and native comparison evidence.
 It also has a strict external-output conversion/comparison contract in
 [`validation/reports/gk_external_nonlinear_parity.md`](validation/reports/gk_external_nonlinear_parity.md).
 Missing redistributable same-deck GENE, CGYRO, or GS2 nonlinear outputs produce
-blocked rows rather than fabricated parity. Full GENE/CGYRO/GS2 parity remains
+blocked rows rather than placeholder parity. Full GENE/CGYRO/GS2 parity remains
 blocked until nonlinear distribution outputs with real and imaginary spectral
 components, heat-flux spectra, phi/A_parallel/B_parallel field-energy
 histories, zonal/saturation metrics, grid-convergence evidence,
@@ -795,7 +795,7 @@ Audit artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {3.9.8}
+  version = {3.9.9}
 }
 ```
 

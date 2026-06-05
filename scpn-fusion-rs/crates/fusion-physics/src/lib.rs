@@ -8,14 +8,24 @@
 //! Standalone physics modules for SCPN Fusion Core.
 //!
 //! Stage 5: sandpile, sawtooth, FNO, turbulence, Hall-MHD,
-//! compact optimizer, design scanner.
+//! compact optimizer, design scanner, FRC analytical contracts,
+//! pulsed Hall-MHD flux-carrier contracts, MRTI growth-spectrum contracts,
+//! Faraday recovery contracts,
+//! supplied-current pulsed-compression contracts, and conservative FRC
+//! tilt-mode diagnostics.
 
 pub mod compact_optimizer;
+pub mod compression;
 pub mod design_scanner;
+pub mod faraday_recovery;
 pub mod fno;
 pub mod fokker_planck;
+pub mod frc;
 pub mod gk_nonlinear;
 pub mod hall_mhd;
+pub mod hall_mhd_pulsed;
+pub mod mrti;
 pub mod sandpile;
 pub mod sawtooth;
+pub mod tilt_mode_frc;
 pub mod turbulence;

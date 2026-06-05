@@ -15,12 +15,12 @@ deterministic to keep auditability and reproducibility in tests.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
 @dataclass
@@ -123,13 +123,10 @@ class LagrangianPPO:
 def q95_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float:
     """Compute a lower-bound violation cost on edge safety factor ``q95``.
 
-    Args:
-        obs: Previous observation (unused in this contract).
-        act: Action taken (unused in this contract).
-        next_obs: Post-step observation, where index 2 is assumed to hold ``q95``.
-
-    Returns:
-        Positive violation amount in the same unit as ``q95`` delta.
+    :param obs: Previous observation; unused in this contract.
+    :param act: Action taken; unused in this contract.
+    :param next_obs: Post-step observation, where index 2 is assumed to hold ``q95``.
+    :returns: Positive violation amount in the same unit as ``q95`` delta.
     """
     q95 = next_obs[2]
     return float(max(0.0, 2.0 - q95))
@@ -138,13 +135,10 @@ def q95_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float
 def beta_n_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float:
     """Compute an upper-bound violation cost on normalized beta ``beta_N``.
 
-    Args:
-        obs: Previous observation (unused in this contract).
-        act: Action taken (unused in this contract).
-        next_obs: Post-step observation, where index 1 is assumed to hold ``beta_N``.
-
-    Returns:
-        Positive cost when ``beta_N`` exceeds ``3.5``.
+    :param obs: Previous observation; unused in this contract.
+    :param act: Action taken; unused in this contract.
+    :param next_obs: Post-step observation, where index 1 is assumed to hold ``beta_N``.
+    :returns: Positive cost when ``beta_N`` exceeds ``3.5``.
     """
     beta_N = next_obs[1]
     return float(max(0.0, beta_N - 3.5))
@@ -153,13 +147,10 @@ def beta_n_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> fl
 def ip_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float:
     """Compute a lower-bound violation cost on plasma current.
 
-    Args:
-        obs: Previous observation (unused in this contract).
-        act: Action taken (unused in this contract).
-        next_obs: Post-step observation, where index 0 is assumed to hold ``Ip``.
-
-    Returns:
-        Positive violation value when ``Ip`` is non-positive.
+    :param obs: Previous observation; unused in this contract.
+    :param act: Action taken; unused in this contract.
+    :param next_obs: Post-step observation, where index 0 is assumed to hold ``Ip``.
+    :returns: Positive violation value when ``Ip`` is non-positive.
     """
     Ip = next_obs[0]
     return float(max(0.0, -Ip))
@@ -168,8 +159,7 @@ def ip_cost_fn(obs: FloatArray, act: FloatArray, next_obs: FloatArray) -> float:
 def default_safety_constraints() -> list[SafetyConstraint]:
     """Return the default ``q95``, ``beta_N``, and plasma-current constraints.
 
-    Returns:
-        A list of default :class:`SafetyConstraint` instances with zero limits.
+    :returns: A list of default :class:`SafetyConstraint` instances with zero limits.
     """
     return [
         SafetyConstraint("q95_lower_bound", q95_cost_fn, limit=0.0),

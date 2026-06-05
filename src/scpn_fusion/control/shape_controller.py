@@ -15,12 +15,12 @@ shape-control smoke tests.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
 @dataclass
@@ -133,9 +133,10 @@ class ShapeJacobian:
         Re-linearize Jacobian around a new operating point.
 
         Supported state paths:
-        - `jacobian`: explicit updated matrix with shape `(n_errors, n_coils)`.
-        - multiplicative scaling from baseline via:
-          `plasma_current_ma`, `beta_p`, `coil_coupling`, `error_coupling`.
+
+        * ``jacobian``: explicit updated matrix with shape ``(n_errors, n_coils)``.
+        * Baseline multiplicative scaling via ``plasma_current_ma``, ``beta_p``,
+          ``coil_coupling``, and ``error_coupling``.
         """
         if not isinstance(state, dict):
             raise TypeError("state must be a dictionary.")
@@ -343,6 +344,7 @@ class PlasmaShapeController:
         e_xp = e_shape[idx2:idx3]
         e_sp = e_shape[idx3:]
 
+        min_g: float
         if len(e_gap) > 0:
             # Only inward-closure residuals consume safety margin.
             inward_closure = np.maximum(e_gap, 0.0)

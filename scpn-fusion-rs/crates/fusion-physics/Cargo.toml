@@ -9,6 +9,7 @@ description = "SCPN Fusion Core - Standalone physics modules"
 [dependencies]
 fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }
+fusion-core = { path = "../fusion-core" }
 nalgebra = { workspace = true }
 ndarray = { workspace = true }
 rayon = { workspace = true }
@@ -16,10 +17,35 @@ num-complex = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
 ndarray-npy = { workspace = true }
+serde_json = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
 
 [[bench]]
 name = "hall_mhd_bench"
+harness = false
+
+[[bench]]
+name = "hall_mhd_pulsed_bench"
+harness = false
+
+[[bench]]
+name = "frc_rigid_rotor_bench"
+harness = false
+
+[[bench]]
+name = "mrti_bench"
+harness = false
+
+[[bench]]
+name = "faraday_recovery_bench"
+harness = false
+
+[[bench]]
+name = "pulsed_compression_bench"
+harness = false
+
+[[bench]]
+name = "tilt_mode_frc_bench"
 harness = false
