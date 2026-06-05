@@ -8,8 +8,43 @@
 
 from __future__ import annotations
 
+import numpy as np
+
+from scpn_fusion.core.impurity_transport import AuroraParityCase, AuroraParityImpuritySolver
 from tools.run_aurora_reference_artifact import build_aurora_reference_execution_report
 from validation.benchmark_impurity_transport_contract import run_benchmark
+
+
+def test_aurora_parity_solver_exports_separate_native_contract() -> None:
+    radius_m = np.linspace(0.0, 0.3, 6, dtype=np.float64)
+    time_s = np.array([0.0, 1.0e-6, 2.0e-6], dtype=np.float64)
+    charge_state = np.array([0.0, 1.0, 2.0], dtype=np.float64)
+    density = np.zeros((radius_m.size, charge_state.size), dtype=np.float64)
+    density[:, 1] = 1.0e12 * (1.0 - 0.2 * radius_m / radius_m[-1])
+    case = AuroraParityCase(
+        element="Ar",
+        charge_states=charge_state,
+        radius_m=radius_m,
+        time_s=time_s,
+        ne_t_r=np.full((time_s.size, radius_m.size), 2.0e19, dtype=np.float64),
+        Te_t_r=np.full((time_s.size, radius_m.size), 500.0, dtype=np.float64),
+        initial_charge_state_density_rz=density,
+        diffusion_m2_s_r_z=np.full((radius_m.size, charge_state.size), 0.2, dtype=np.float64),
+        convection_m_s_r_z=np.zeros((radius_m.size, charge_state.size), dtype=np.float64),
+        major_radius_m=1.7,
+    )
+
+    artifact = AuroraParityImpuritySolver(case).solve()
+    payload = artifact.to_dict()
+    validation = artifact.validate_contract()
+
+    assert payload["provenance"]["implementation"] == "native_aurora_compatibility_parity_solver"
+    assert payload["provenance"]["parity_status"] == (
+        "native_aurora_compatibility_mode_threshold_gated"
+    )
+    assert validation["passed"] is True
+    assert validation["observable_shapes"]["charge_state_density_r_t"] == [3, 6, 3]
+    assert validation["source_sink_conservative"] is True
 
 
 def test_impurity_benchmark_exports_validated_aurora_strahl_artifact_gate() -> None:

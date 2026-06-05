@@ -30,6 +30,8 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from scpn_fusion.core.impurity_transport import (  # noqa: E402
+    AuroraParityCase,
+    AuroraParityImpuritySolver,
     ImpuritySpecies,
     ImpurityTransportSolver,
     build_aurora_strahl_charge_state_artifact,
@@ -247,19 +249,21 @@ def _native_same_case_payload(reference: dict[str, FloatArray]) -> dict[str, Any
     radius_norm = radius_m / max(float(radius_m[-1]), 1.0e-30)
     ne_profile = 1.0e20 * (1.0 - 0.4 * radius_norm**2) + 4.0e19
     te_profile = 5.0e3 * (1.0 - radius_norm**2) ** 1.5 + 100.0
-    ne_t_r = np.tile(ne_profile, (time_s.size, 1))
-    te_t_r = np.tile(te_profile, (time_s.size, 1))
-    native_artifact = build_aurora_strahl_charge_state_artifact(
+    diffusion = np.tile(np.ones(radius_m.size, dtype=np.float64)[:, np.newaxis], (1, charge_state.size))
+    convection = np.tile((-10.0 * radius_norm**5)[:, np.newaxis], (1, charge_state.size))
+    parity_case = AuroraParityCase(
         element="Ar",
         charge_states=charge_state,
         radius_m=radius_m,
         time_s=time_s,
-        ne_t_r=ne_t_r,
-        Te_t_r=te_t_r,
+        ne_t_r=np.tile(ne_profile, (time_s.size, 1)),
+        Te_t_r=np.tile(te_profile, (time_s.size, 1)),
         initial_charge_state_density_rz=np.maximum(charge_density[0], 0.0),
+        diffusion_m2_s_r_z=diffusion,
+        convection_m_s_r_z=convection,
         major_radius_m=1.7,
     )
-    return dict(native_artifact.to_dict())
+    return dict(AuroraParityImpuritySolver(parity_case).solve().to_dict())
 
 
 def _native_observables_as_top_level(payload: dict[str, Any]) -> dict[str, FloatArray]:

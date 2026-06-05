@@ -290,6 +290,8 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "TwoPointSOL": (".sol_model", "TwoPointSOL"),
     "eich_heat_flux_width": (".sol_model", "eich_heat_flux_width"),
     # Phase 5 — Impurity transport (Hirshman & Sigmar 1981)
+    "AuroraParityCase": (".impurity_transport", "AuroraParityCase"),
+    "AuroraParityImpuritySolver": (".impurity_transport", "AuroraParityImpuritySolver"),
     "ImpurityTransportSolver": (".impurity_transport", "ImpurityTransportSolver"),
     "neoclassical_impurity_pinch": (".impurity_transport", "neoclassical_impurity_pinch"),
     "total_radiated_power": (".impurity_transport", "total_radiated_power"),

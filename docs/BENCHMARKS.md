@@ -1233,10 +1233,16 @@ momentum-pitch-radius operator parity remain blocked. This is a reference-gate
 artifact contract only; it does not replace public DREAM deck ingestion or
 full momentum-pitch-radius kinetic operator parity.
 
-The native impurity surface now exports an Aurora/STRAHL-style
-`time_s x radius_m x charge_state` artifact contract with total impurity
-density closure, line-radiation power, and finite ionisation/recombination
-source-sink matrices. The artifact now validates `time_s x radius_m x
+The native impurity surface now keeps two explicit paths: the general impurity
+transport solver used for ongoing native-model development, and a separate
+`AuroraParityImpuritySolver` used only for Aurora/STRAHL same-case threshold
+gates. The parity solver is a native implementation, not an Aurora wrapper; it
+consumes an Aurora-compatible case contract with `time_s`, `radius_m`,
+`charge_state`, density/temperature profiles, diffusion/convection tables, and
+optional rate/radiation tables. The native impurity surface also exports an
+Aurora/STRAHL-style `time_s x radius_m x charge_state` artifact contract with
+total impurity density closure, line-radiation power, and finite
+ionisation/recombination source-sink matrices. The artifact now validates `time_s x radius_m x
 charge_state` densities, `time_s x radius_m x charge_state x charge_state`
 conservative transfer matrices, per-charge line-radiation power, inventory
 history, finite shapes, and a deterministic checksum. The charge-state CR step
@@ -1254,8 +1260,8 @@ source/sink budget parity, and quantitative same-case threshold acceptance
 remain blocked. The native budget evidence now also checks per-radius
 total-density conservation across the charge-state transfer history; the latest
 local contract reports maximum radial total-density relative change
-`1.388888888888889e-16`. The accepted Aurora argon transport artefact is now
-used by the native same-case comparator with matching `time_s x radius_m x
+`1.388888888888889e-16`. The accepted Aurora argon transport artefact is now used by the separate
+Aurora-compatible native parity solver with matching `time_s x radius_m x
 charge_state` axes. That comparator is structurally ready and checksum-gated,
 but the native candidate fails charge-state density, total-density, radiation,
 and particle-conservation thresholds against Aurora with relative mismatch
