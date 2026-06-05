@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- No unreleased changes yet.
+- Hardened FUS-C.7 Faraday recovery with explicit Faraday-law
+  flux-derivative closure diagnostics across Python, Rust, benchmarks, and
+  documentation.
 
 ## [3.9.9] - 2026-06-05
 

@@ -79,6 +79,10 @@ class FaradayRecoveryReport:
     flux_final_wb: float
     max_abs_back_emf_v: float
     max_abs_load_current_a: float
+    flux_derivative_residual_wb_s: FloatArray
+    flux_derivative_residual_linf: float
+    flux_derivative_residual_l2: float
+    flux_derivative_closure_passed: bool
     compression_work_j: float | None
     energy_budget_relative_error: float | None
     energy_budget_passed: bool | None
@@ -315,6 +319,7 @@ def integrated_recovery_energy(
     coil_source_work_j: float | None = None,
     compression_flux_budget: FaradayCompressionFluxBudget | None = None,
     budget_tolerance: float = 0.01,
+    flux_derivative_tolerance: float = 2.0e-2,
 ) -> FaradayRecoveryReport:
     """Integrate recoverable load energy over a supplied FRC trajectory.
 
@@ -327,6 +332,7 @@ def integrated_recovery_energy(
     turns = _require_positive_int("N_turns", N_turns)
     resistance = _require_positive("coil_resistance_ohm", coil_resistance_ohm)
     tolerance = _require_positive("budget_tolerance", budget_tolerance)
+    flux_tolerance = _require_positive("flux_derivative_tolerance", flux_derivative_tolerance)
     points = tuple(_coerce_point(point) for point in trajectory)
     if len(points) < 2:
         raise ValueError("trajectory must contain at least two samples")
@@ -370,6 +376,22 @@ def integrated_recovery_energy(
 
     power_w = np.asarray([sample.load_power_w for sample in samples], dtype=np.float64)
     recovered_energy_j = _trapezoid(time_s, power_w)
+    flux_wb = np.asarray([sample.magnetic_flux_wb for sample in samples], dtype=np.float64)
+    flux_derivative_wb_s = _finite_difference_derivative(time_s, flux_wb)
+    back_emf_per_turn_v = np.asarray(
+        [sample.back_emf_v / turns for sample in samples],
+        dtype=np.float64,
+    )
+    flux_derivative_residual_wb_s = flux_derivative_wb_s + back_emf_per_turn_v
+    flux_scale = max(
+        float(np.max(np.abs(flux_derivative_wb_s))),
+        float(np.max(np.abs(back_emf_per_turn_v))),
+        float(np.finfo(np.float64).eps),
+    )
+    scaled_flux_residual = flux_derivative_residual_wb_s / flux_scale
+    flux_derivative_residual_linf = float(np.max(np.abs(scaled_flux_residual)))
+    flux_derivative_residual_l2 = float(np.sqrt(np.mean(scaled_flux_residual**2)))
+    flux_derivative_closure_passed = bool(flux_derivative_residual_linf <= flux_tolerance)
     (
         compression_work_checked,
         energy_budget_relative_error,
@@ -409,6 +431,10 @@ def integrated_recovery_energy(
         flux_final_wb=samples[-1].magnetic_flux_wb,
         max_abs_back_emf_v=float(np.max(np.abs([sample.back_emf_v for sample in samples]))),
         max_abs_load_current_a=float(np.max(np.abs([sample.load_current_a for sample in samples]))),
+        flux_derivative_residual_wb_s=flux_derivative_residual_wb_s,
+        flux_derivative_residual_linf=flux_derivative_residual_linf,
+        flux_derivative_residual_l2=flux_derivative_residual_l2,
+        flux_derivative_closure_passed=flux_derivative_closure_passed,
         compression_work_j=compression_work_checked,
         energy_budget_relative_error=energy_budget_relative_error,
         energy_budget_passed=energy_budget_passed,
@@ -592,6 +618,10 @@ def _trajectory_derivative(
             raise ValueError(f"trajectory {field} samples must be finite")
         return result
 
+    return _finite_difference_derivative(time_s, values)
+
+
+def _finite_difference_derivative(time_s: FloatArray, values: FloatArray) -> FloatArray:
     result = np.empty_like(values)
     if values.size == 2:
         slope = (values[1] - values[0]) / (time_s[1] - time_s[0])

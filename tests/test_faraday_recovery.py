@@ -113,6 +113,27 @@ def test_integrated_recovery_energy_matches_analytical_linear_radius_case() -> N
     assert report.energy_budget_passed is None
     assert report.source_budget_claim_status == "blocked_missing_coil_source_work"
     assert report.source_energy_budget_passed is None
+    assert report.flux_derivative_closure_passed is True
+    assert report.flux_derivative_residual_linf <= 2.0e-2
+    assert len(report.flux_derivative_residual_wb_s) == len(trajectory)
+
+
+def test_faraday_recovery_flags_inconsistent_derivative_sidecars() -> None:
+    trajectory = [
+        FaradayRecoveryTrajectoryPoint(
+            t_s=float(t),
+            separatrix_radius_m=0.2 + 1.0e3 * t,
+            b_ext_t=20.0,
+            d_radius_dt_m_s=0.0,
+            d_b_ext_dt_t_s=0.0,
+        )
+        for t in np.linspace(0.0, 1.0e-6, 17)
+    ]
+
+    report = integrated_recovery_energy(trajectory, 8, 0.1)
+
+    assert report.flux_derivative_closure_passed is False
+    assert report.flux_derivative_residual_linf > 0.5
     assert report.compression_flux_budget_claim_status == "blocked_missing_compression_flux_budget"
     assert report.compression_flux_budget_passed is None
 
@@ -203,6 +224,9 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
     assert report.compression_flux_budget == compression_flux_budget
     assert report.compression_flux_budget_passed is True
     assert report.compression_flux_budget_claim_status == "passed"
+    assert isinstance(report.flux_derivative_closure_passed, bool)
+    assert np.isfinite(report.flux_derivative_residual_linf)
+    assert np.isfinite(report.flux_derivative_residual_l2)
 
 
 def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
@@ -274,6 +298,9 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
     assert report.source_budget_claim_status in {"passed", "failed"}
     assert report.compression_flux_budget_passed is True
     assert report.compression_flux_budget_claim_status == "passed"
+    assert isinstance(report.flux_derivative_closure_passed, bool)
+    assert np.isfinite(report.flux_derivative_residual_linf)
+    assert np.isfinite(report.flux_derivative_residual_l2)
 
 
 def test_faraday_recovery_propagates_failed_compression_flux_budget() -> None:

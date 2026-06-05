@@ -96,10 +96,10 @@ fn bench_faraday_recovery(c: &mut Criterion) {
         let trace = trajectory(samples);
         group.bench_function(format!("rust_{samples}_samples"), |b| {
             b.iter(|| {
-                std::hint::black_box(
-                    integrated_recovery_energy(&trace, 6, 0.08, None, None, None, 0.01)
-                        .expect("valid report"),
-                )
+                let report = integrated_recovery_energy(&trace, 6, 0.08, None, None, None, 0.01)
+                    .expect("valid report");
+                assert!(report.flux_derivative_closure_passed);
+                std::hint::black_box(report)
             });
         });
     }
@@ -120,18 +120,18 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                     .expect("positive compression work");
                 let flux_budget = compression_flux_budget_from_pulsed_compression(&states)
                     .expect("valid flux budget");
-                std::hint::black_box(
-                    integrated_recovery_energy(
-                        &trajectory,
-                        80,
-                        0.02,
-                        Some(work),
-                        None,
-                        Some(flux_budget),
-                        0.01,
-                    )
-                    .expect("valid report"),
+                let report = integrated_recovery_energy(
+                    &trajectory,
+                    80,
+                    0.02,
+                    Some(work),
+                    None,
+                    Some(flux_budget),
+                    0.01,
                 )
+                .expect("valid report");
+                assert!(report.flux_derivative_residual_linf.is_finite());
+                std::hint::black_box(report)
             });
         });
     }
@@ -155,18 +155,18 @@ fn bench_faraday_recovery(c: &mut Criterion) {
                     .expect("positive source work");
                 let flux_budget = compression_flux_budget_from_voltage_driven_compression(&result)
                     .expect("valid flux budget");
-                std::hint::black_box(
-                    integrated_recovery_energy(
-                        &trajectory,
-                        80,
-                        0.02,
-                        Some(compression_work),
-                        Some(source_work),
-                        Some(flux_budget),
-                        0.01,
-                    )
-                    .expect("valid report"),
+                let report = integrated_recovery_energy(
+                    &trajectory,
+                    80,
+                    0.02,
+                    Some(compression_work),
+                    Some(source_work),
+                    Some(flux_budget),
+                    0.01,
                 )
+                .expect("valid report");
+                assert!(report.flux_derivative_residual_linf.is_finite());
+                std::hint::black_box(report)
             });
         });
     }

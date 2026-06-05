@@ -9,6 +9,8 @@
 
 use crate::compression::{PulsedCompressionState, VoltageDrivenPulsedCompressionResult};
 
+const FLUX_DERIVATIVE_TOLERANCE: f64 = 2.0e-2;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FaradayRecoveryTrajectoryPoint {
     pub t_s: f64,
@@ -50,6 +52,10 @@ pub struct FaradayRecoveryReport {
     pub flux_final_wb: f64,
     pub max_abs_back_emf_v: f64,
     pub max_abs_load_current_a: f64,
+    pub flux_derivative_residual_wb_s: Vec<f64>,
+    pub flux_derivative_residual_linf: f64,
+    pub flux_derivative_residual_l2: f64,
+    pub flux_derivative_closure_passed: bool,
     pub compression_work_j: Option<f64>,
     pub energy_budget_relative_error: Option<f64>,
     pub energy_budget_passed: Option<bool>,
@@ -177,6 +183,35 @@ pub fn integrated_recovery_energy(
         .map(|sample| sample.load_power_w)
         .collect::<Vec<_>>();
     let recovered_energy_j = trapezoid(&time, &powers);
+    let flux_values = samples
+        .iter()
+        .map(|sample| sample.magnetic_flux_wb)
+        .collect::<Vec<_>>();
+    let flux_derivative = finite_difference_derivative(&time, &flux_values)?;
+    let back_emf_per_turn = samples
+        .iter()
+        .map(|sample| sample.back_emf_v / turns as f64)
+        .collect::<Vec<_>>();
+    let flux_derivative_residual_wb_s = flux_derivative
+        .iter()
+        .zip(back_emf_per_turn.iter())
+        .map(|(derivative, emf_per_turn)| derivative + emf_per_turn)
+        .collect::<Vec<_>>();
+    let flux_scale = max_abs(&flux_derivative)
+        .max(max_abs(&back_emf_per_turn))
+        .max(f64::EPSILON);
+    let flux_derivative_residual_linf = max_abs(&flux_derivative_residual_wb_s) / flux_scale;
+    let flux_derivative_residual_l2 = (flux_derivative_residual_wb_s
+        .iter()
+        .map(|value| {
+            let scaled = value / flux_scale;
+            scaled * scaled
+        })
+        .sum::<f64>()
+        / flux_derivative_residual_wb_s.len() as f64)
+        .sqrt();
+    let flux_derivative_closure_passed =
+        flux_derivative_residual_linf <= FLUX_DERIVATIVE_TOLERANCE;
     let compression_budget = evaluate_budget(
         recovered_energy_j,
         compression_work_j,
@@ -213,6 +248,10 @@ pub fn integrated_recovery_energy(
         flux_final_wb,
         max_abs_back_emf_v,
         max_abs_load_current_a,
+        flux_derivative_residual_wb_s,
+        flux_derivative_residual_linf,
+        flux_derivative_residual_l2,
+        flux_derivative_closure_passed,
         compression_work_j: compression_budget.work_j,
         energy_budget_relative_error: compression_budget.relative_error,
         energy_budget_passed: compression_budget.passed,
@@ -475,6 +514,10 @@ fn trajectory_derivative(
             .collect();
     }
 
+    finite_difference_derivative(time, values)
+}
+
+fn finite_difference_derivative(time: &[f64], values: &[f64]) -> Result<Vec<f64>, String> {
     let n = values.len();
     let mut derivative = vec![0.0; n];
     if n == 2 {
@@ -490,6 +533,13 @@ fn trajectory_derivative(
             (values[index + 1] - values[index - 1]) / (time[index + 1] - time[index - 1]);
     }
     Ok(derivative)
+}
+
+fn max_abs(values: &[f64]) -> f64 {
+    values
+        .iter()
+        .map(|value| value.abs())
+        .fold(0.0_f64, f64::max)
 }
 
 fn trapezoid(x: &[f64], y: &[f64]) -> f64 {
@@ -571,6 +621,30 @@ mod tests {
             "blocked_missing_compression_flux_budget"
         );
         assert_eq!(report.compression_flux_budget_passed, None);
+        assert!(report.flux_derivative_closure_passed);
+        assert!(report.flux_derivative_residual_linf <= 2.0e-2);
+        assert_eq!(report.flux_derivative_residual_wb_s.len(), trajectory.len());
+    }
+
+    #[test]
+    fn flux_derivative_closure_rejects_inconsistent_supplied_derivatives() {
+        let trajectory = (0..17)
+            .map(|index| {
+                let t_s = 1.0e-6 * index as f64 / 16.0;
+                FaradayRecoveryTrajectoryPoint {
+                    t_s,
+                    separatrix_radius_m: 0.2 + 1.0e3 * t_s,
+                    b_ext_t: 20.0,
+                    d_radius_dt_m_s: Some(0.0),
+                    d_b_ext_dt_t_s: Some(0.0),
+                }
+            })
+            .collect::<Vec<_>>();
+        let report = integrated_recovery_energy(&trajectory, 8, 0.1, None, None, None, 0.01)
+            .expect("valid report");
+
+        assert!(!report.flux_derivative_closure_passed);
+        assert!(report.flux_derivative_residual_linf > 0.5);
     }
 
     #[test]
@@ -733,6 +807,8 @@ mod tests {
         );
         assert_eq!(report.compression_flux_budget_passed, Some(true));
         assert_eq!(report.compression_flux_budget_claim_status, "passed");
+        assert!(report.flux_derivative_residual_linf.is_finite());
+        assert!(report.flux_derivative_residual_l2.is_finite());
     }
 
     #[test]
@@ -785,6 +861,8 @@ mod tests {
         ));
         assert_eq!(report.compression_flux_budget_passed, Some(true));
         assert_eq!(report.compression_flux_budget_claim_status, "passed");
+        assert!(report.flux_derivative_residual_linf.is_finite());
+        assert!(report.flux_derivative_residual_l2.is_finite());
     }
 
     #[test]

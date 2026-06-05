@@ -24,6 +24,21 @@ The recovery-coil back-EMF is:
 EMF = -N_turns * pi * (R_s^2 * dB_ext/dt + 2 * B_ext * R_s * dR_s/dt)
 ```
 
+The report now independently checks the sampled Faraday-law closure:
+
+```text
+finite_difference(Phi) + EMF / N_turns = 0
+```
+
+This closure is evaluated from the flux samples and reported as
+`flux_derivative_residual_linf`, `flux_derivative_residual_l2`, and
+`flux_derivative_closure_passed`. It is intentionally separate from the
+compression-work and source-work budget gates because it checks trajectory and
+derivative-sidecar consistency, not external facility acceptance.
+FUS-C.6 coupled rows therefore publish the residual honestly even when the
+upstream compression derivative sidecars do not meet the stricter sampled-flux
+closure tolerance.
+
 For a resistive recovery load:
 
 ```text
@@ -153,6 +168,9 @@ Tracked tests cover:
 - Closed-form constant-field radial expansion.
 - Callable finite-difference agreement for linear histories.
 - Integrated recovery energy against an analytical linear-radius integral.
+- Explicit flux-derivative closure for the Faraday identity
+  `dPhi/dt + EMF/N_turns = 0`.
+- Fail-closed detection of inconsistent supplied derivative sidecars.
 - Explicit blocked budget status when compression work is absent.
 - FUS-C.6 supplied-current trajectory conversion into Faraday samples and
   evaluated compression-work and compression-flux sidecar status.

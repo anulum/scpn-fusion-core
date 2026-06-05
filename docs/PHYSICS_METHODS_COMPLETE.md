@@ -346,6 +346,10 @@ The Faraday report also consumes the FUS-C.6 compression flux-budget sidecar,
 including source-increment checksum, damping-decrement checksum, update
 residual, and pass/fail status, so recovery rows fail closed when the upstream
 non-adiabatic flux carrier did not close.
+It also reports the sampled Faraday-law closure
+`finite_difference(Phi) + EMF/N_turns = 0` as normalized L-infinity/L2
+residuals plus a pass/fail field, catching inconsistent supplied derivative
+sidecars separately from compression-work acceptance.
 If a caller does not supply a self-consistent compression-work sidecar,
 `FaradayRecoveryReport.budget_claim_status` remains
 `blocked_missing_compression_work`; if a caller does not supply a source-work
