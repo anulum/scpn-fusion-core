@@ -14,6 +14,8 @@ import math
 import numbers
 from typing import Any, Mapping
 
+MAX_IDS_SEQUENCE_LENGTH = 250_000
+
 REQUIRED_IDS_KEYS = (
     "schema",
     "machine",
@@ -84,6 +86,8 @@ def _coerce_finite_real_sequence(
 ) -> list[float]:
     if isinstance(value, (str, bytes, bytearray)) or not isinstance(value, Sequence):
         raise ValueError(f"{name} must be a sequence of finite numbers.")
+    if len(value) > MAX_IDS_SEQUENCE_LENGTH:
+        raise ValueError(f"{name} exceeds safety limit {MAX_IDS_SEQUENCE_LENGTH}.")
     parsed: list[float] = []
     for idx, item in enumerate(value):
         parsed_item = _coerce_finite_real(f"{name}[{idx}]", item, minimum=minimum)
@@ -142,6 +146,7 @@ def _coerce_profiles_1d(
 
 
 __all__ = [
+    "MAX_IDS_SEQUENCE_LENGTH",
     "REQUIRED_IDS_KEYS",
     "REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS",
     "REQUIRED_PROFILE_1D_KEYS",

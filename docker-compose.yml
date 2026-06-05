@@ -5,9 +5,20 @@
 services:
   fusion:
     build: .
+    user: "10001:10001"
     ports:
       - "8501:8501"
     volumes:
-      - ./artifacts:/app/artifacts
+      - ./artifacts:/app/artifacts:rw
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m
+      - /home/appuser/.streamlit:rw,noexec,nosuid,nodev,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./docker/seccomp-scpn-fusion.json
+      - apparmor:docker-default
     environment:
       - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false

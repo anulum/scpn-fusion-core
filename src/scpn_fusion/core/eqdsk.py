@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+import math
 from pathlib import Path
 from typing import IO, Union, cast
 
@@ -34,6 +35,7 @@ from numpy.typing import NDArray
 MAX_GEQDSK_BYTES = 10 * 1024 * 1024
 MAX_GEQDSK_GRID_POINTS = 1_000_000
 MAX_GEQDSK_CONTOUR_POINTS = 100_000
+MAX_GEQDSK_NUMERIC_TOKENS = 4_500_000
 
 GEQDSK_SOURCE_CONVENTION_MODES = {
     "raw_canonical": "raw_canonical",
@@ -224,6 +226,67 @@ def _validate_contour_count(name: str, value: int) -> None:
         raise ValueError(f"GEQDSK {name} count exceeds safety limit {MAX_GEQDSK_CONTOUR_POINTS}")
 
 
+def _parse_finite_fortran_float(token: str, *, field_name: str) -> float:
+    """Parse one GEQDSK numeric token and reject non-finite values."""
+    try:
+        value = float(token.replace("D", "E").replace("d", "e"))
+    except ValueError as exc:
+        raise ValueError(f"GEQDSK {field_name} is not a valid finite float.") from exc
+    if not math.isfinite(value):
+        raise ValueError(f"GEQDSK {field_name} must be finite.")
+    return value
+
+
+def _require_finite_array(name: str, array: NDArray[np.float64]) -> None:
+    if not np.all(np.isfinite(array)):
+        raise ValueError(f"GEQDSK {name} must contain finite values only.")
+
+
+def _validate_geqdsk_schema(eq: GEqdsk) -> None:
+    """Validate parsed GEQDSK shape and finite-value invariants."""
+    _validate_dimensions(eq.nw, eq.nh)
+    if eq.rdim <= 0.0 or eq.zdim <= 0.0:
+        raise ValueError("GEQDSK rdim and zdim must be positive.")
+    if eq.rcentr <= 0.0:
+        raise ValueError("GEQDSK rcentr must be positive.")
+    if eq.sibry == eq.simag:
+        raise ValueError("GEQDSK psi boundary must differ from psi axis.")
+    for name in (
+        "rdim",
+        "zdim",
+        "rcentr",
+        "rleft",
+        "zmid",
+        "rmaxis",
+        "zmaxis",
+        "simag",
+        "sibry",
+        "bcentr",
+        "current",
+    ):
+        value = getattr(eq, name)
+        if not math.isfinite(float(value)):
+            raise ValueError(f"GEQDSK scalar {name} must be finite.")
+    expected_profile_shape = (eq.nw,)
+    for name in ("fpol", "pres", "ffprime", "pprime", "qpsi"):
+        array = getattr(eq, name)
+        if array.shape != expected_profile_shape:
+            raise ValueError(
+                f"GEQDSK {name} shape must be {expected_profile_shape}, got {array.shape}."
+            )
+        _require_finite_array(name, array)
+    if eq.psirz.shape != (eq.nh, eq.nw):
+        raise ValueError(f"GEQDSK psirz shape must be {(eq.nh, eq.nw)}, got {eq.psirz.shape}.")
+    _require_finite_array("psirz", eq.psirz)
+    for r_name, z_name in (("rbdry", "zbdry"), ("rlim", "zlim")):
+        r_values = getattr(eq, r_name)
+        z_values = getattr(eq, z_name)
+        if r_values.shape != z_values.shape:
+            raise ValueError(f"GEQDSK {r_name}/{z_name} contours must have matching lengths.")
+        _require_finite_array(r_name, r_values)
+        _require_finite_array(z_name, z_values)
+
+
 def _detect_named_source_adapter(path: Path) -> str | None:
     """Return the explicit source adapter for known public SPARC filenames."""
     return GEQDSK_PUBLIC_SPARC_SOURCE_ADAPTERS.get(path.name.lower())
@@ -334,6 +397,10 @@ def read_geqdsk(
     tokens: list[str] = []
     for line in lines[1:]:
         tokens.extend(_split_fortran(line))
+        if len(tokens) > MAX_GEQDSK_NUMERIC_TOKENS:
+            raise ValueError(
+                f"GEQDSK numeric token count exceeds safety limit {MAX_GEQDSK_NUMERIC_TOKENS}"
+            )
 
     idx = 0
 
@@ -341,7 +408,7 @@ def read_geqdsk(
         nonlocal idx
         if idx >= len(tokens):
             raise ValueError("GEQDSK file ended before all required values were present")
-        val = float(tokens[idx].replace("D", "E").replace("d", "e"))
+        val = _parse_finite_fortran_float(tokens[idx], field_name=f"token[{idx}]")
         idx += 1
         return val
 
@@ -352,7 +419,11 @@ def read_geqdsk(
         if idx + n > len(tokens):
             raise ValueError("GEQDSK file ended before all required array values were present")
         arr = np.array(
-            [float(tokens[idx + i].replace("D", "E").replace("d", "e")) for i in range(n)]
+            [
+                _parse_finite_fortran_float(tokens[idx + i], field_name=f"token[{idx + i}]")
+                for i in range(n)
+            ],
+            dtype=np.float64,
         )
         idx += n
         return arr
@@ -396,6 +467,9 @@ def read_geqdsk(
     nlim = int(_next())
     _validate_contour_count("boundary", nbdry)
     _validate_contour_count("limiter", nlim)
+    required_contour_tokens = 2 * (nbdry + nlim)
+    if idx + required_contour_tokens > len(tokens):
+        raise ValueError("GEQDSK file ended before all required contour values were present")
 
     rbdry = np.zeros(nbdry)
     zbdry = np.zeros(nbdry)
@@ -435,6 +509,7 @@ def read_geqdsk(
         rlim=rlim,
         zlim=zlim,
     )
+    _validate_geqdsk_schema(eq)
 
     if source_convention_mode == "public_sparc_named_adapter":
         adapter = _detect_named_source_adapter(path)

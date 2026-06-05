@@ -11,6 +11,7 @@
 The repository ships Atheris-compatible fuzz targets for malformed user-controlled file inputs:
 
 - `fuzz/fuzz_geqdsk.py`: G-EQDSK parser input, including absurd grid dimensions and malformed Fortran tokens.
+- `fuzz/fuzz_imas_ids.py`: IMAS IDS JSON input, including malformed equilibrium schema and bounded-depth/list validation.
 - `fuzz/fuzz_fusion_config.py`: `FusionKernel` JSON configuration loading and schema validation.
 - `fuzz/fuzz_disruption_npz.py`: disruption-shot NumPy archive loading with pickle disabled.
 
@@ -24,11 +25,12 @@ Run one target at a time with a dedicated corpus and findings directory:
 
 ```bash
 python fuzz/fuzz_geqdsk.py corpus/geqdsk findings/geqdsk
+python fuzz/fuzz_imas_ids.py corpus/imas_ids findings/imas_ids
 python fuzz/fuzz_fusion_config.py corpus/fusion_config findings/fusion_config
 python fuzz/fuzz_disruption_npz.py corpus/disruption_npz findings/disruption_npz
 ```
 
-All targets truncate single generated inputs to bounded sizes before writing temporary files. Production loaders enforce 10 MiB gates for JSON, GEQDSK, and NumPy archive paths before parsing.
+All targets truncate single generated inputs to bounded sizes before writing temporary files. Production loaders enforce 10 MiB gates for JSON, GEQDSK, and NumPy archive paths before parsing. GEQDSK parsing also enforces bounded numeric-token, grid, contour, finite-value, and shape invariants. IMAS JSON loading enforces bounded nesting, bounded list lengths, minimal IDS properties, and equilibrium-grid schema checks before conversion.
 
 ## Rust cargo-fuzz target
 
@@ -51,3 +53,9 @@ cargo +nightly fuzz run mpi_domain -- -runs=256 -max_len=128 -timeout=10 -rss_li
 ```
 
 Generated Rust fuzz corpora, crash artefacts, and build outputs live under `scpn-fusion-rs/fuzz/{corpus,artifacts,target}` and are intentionally ignored. Preserve only reduced, reviewed regression inputs when a fuzz finding is promoted into a dedicated test.
+
+## Related deployment hardening
+
+Container runtime confinement is documented in `docs/security/CONTAINER_HARDENING.md`.
+Use the hardened Compose profile when exposing the dashboard or phase-stream
+support services outside a local development shell.

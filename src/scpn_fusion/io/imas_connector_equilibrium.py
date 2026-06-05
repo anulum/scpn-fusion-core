@@ -15,7 +15,10 @@ from typing import Any, Mapping
 import numpy as np
 
 from scpn_fusion.core.eqdsk import GEqdsk
-from scpn_fusion.io.imas_connector_common import _missing_required_keys
+from scpn_fusion.io.imas_connector_common import (
+    _coerce_finite_real_sequence,
+    _missing_required_keys,
+)
 
 
 IMAS_DD_EQUILIBRIUM_KEYS = (
@@ -23,6 +26,64 @@ IMAS_DD_EQUILIBRIUM_KEYS = (
     "time",
     "time_slice",
 )
+
+
+def validate_imas_equilibrium_payload(ids: Mapping[str, Any]) -> None:
+    """Validate the bounded IMAS equilibrium schema used by this adapter."""
+    missing = _missing_required_keys(ids, IMAS_DD_EQUILIBRIUM_KEYS)
+    if missing:
+        raise ValueError(f"IMAS equilibrium IDS missing keys: {missing}")
+
+    time_slices = ids["time_slice"]
+    if isinstance(time_slices, (str, bytes, bytearray)) or not isinstance(time_slices, Sequence):
+        raise ValueError("IMAS equilibrium time_slice must be a non-empty sequence.")
+    if len(time_slices) == 0:
+        raise ValueError("IMAS equilibrium must have at least one time_slice.")
+    if len(time_slices) > 1024:
+        raise ValueError("IMAS equilibrium time_slice exceeds safety limit 1024.")
+    first_slice = time_slices[0]
+    if not isinstance(first_slice, Mapping):
+        raise ValueError("IMAS equilibrium time_slice[0] must be a mapping.")
+
+    p2d_list = first_slice.get("profiles_2d", [])
+    if isinstance(p2d_list, (str, bytes, bytearray)) or not isinstance(p2d_list, Sequence):
+        raise ValueError("IMAS equilibrium profiles_2d must be a sequence.")
+    if len(p2d_list) == 0:
+        raise ValueError("IMAS equilibrium must have at least one profiles_2d entry.")
+    if len(p2d_list) > 64:
+        raise ValueError("IMAS equilibrium profiles_2d exceeds safety limit 64.")
+    first_profile = p2d_list[0]
+    if not isinstance(first_profile, Mapping):
+        raise ValueError("IMAS equilibrium profiles_2d[0] must be a mapping.")
+    grid = first_profile.get("grid", {})
+    if not isinstance(grid, Mapping):
+        raise ValueError("IMAS equilibrium profiles_2d[0].grid must be a mapping.")
+
+    r_grid = _coerce_finite_real_sequence(
+        "IMAS profiles_2d[0].grid.dim1",
+        grid.get("dim1", []),
+        minimum_len=2,
+        strictly_increasing=True,
+    )
+    z_grid = _coerce_finite_real_sequence(
+        "IMAS profiles_2d[0].grid.dim2",
+        grid.get("dim2", []),
+        minimum_len=2,
+        strictly_increasing=True,
+    )
+    psi_rows = first_profile.get("psi", [])
+    if isinstance(psi_rows, (str, bytes, bytearray)) or not isinstance(psi_rows, Sequence):
+        raise ValueError("IMAS profiles_2d[0].psi must be a 2-D sequence.")
+    if len(psi_rows) != len(z_grid):
+        raise ValueError("IMAS profiles_2d[0].psi row count must match grid dim2.")
+    for row_idx, row in enumerate(psi_rows):
+        parsed = _coerce_finite_real_sequence(
+            f"IMAS profiles_2d[0].psi[{row_idx}]",
+            row,
+            minimum_len=2,
+        )
+        if len(parsed) != len(r_grid):
+            raise ValueError("IMAS profiles_2d[0].psi column count must match grid dim1.")
 
 
 def geqdsk_to_imas_equilibrium(
@@ -102,9 +163,7 @@ def geqdsk_to_imas_equilibrium(
 
 def imas_equilibrium_to_geqdsk(ids: Mapping[str, Any]) -> GEqdsk:
     """Convert an IMAS Data Dictionary ``equilibrium`` IDS back to a GEqdsk."""
-    missing = _missing_required_keys(ids, IMAS_DD_EQUILIBRIUM_KEYS)
-    if missing:
-        raise ValueError(f"IMAS equilibrium IDS missing keys: {missing}")
+    validate_imas_equilibrium_payload(ids)
 
     time_slices = ids["time_slice"]
     if not isinstance(time_slices, Sequence) or len(time_slices) == 0:
@@ -174,4 +233,5 @@ __all__ = [
     "IMAS_DD_EQUILIBRIUM_KEYS",
     "geqdsk_to_imas_equilibrium",
     "imas_equilibrium_to_geqdsk",
+    "validate_imas_equilibrium_payload",
 ]

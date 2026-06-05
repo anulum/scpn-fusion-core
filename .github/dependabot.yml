@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------
 # SCPN Fusion Core — Dependabot Configuration
-# Only GitHub Actions versions — pip/cargo deps are bumped manually
-# to avoid silent numerical regressions in validated physics code.
+# Security updates are opened as PRs so physics gates and hash-locked
+# requirement regeneration still review numerical regressions before merge.
 # -----------------------------------------------------------------------
 version: 2
 
@@ -15,3 +15,43 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+  - package-ecosystem: "pip"
+    directory: "/requirements"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+  - package-ecosystem: "cargo"
+    directory: "/scpn-fusion-rs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "rust"
+      - "security"
+  - package-ecosystem: "cargo"
+    directory: "/scpn-fusion-rs/fuzz"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "rust"
+      - "security"

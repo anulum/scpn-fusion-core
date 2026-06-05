@@ -40,6 +40,11 @@ def test_npz_fuzz_harness_rejects_truncated_zip_seed() -> None:
     harness.TestOneInput(b"PK\x03\x04truncated")
 
 
+def test_imas_fuzz_harness_rejects_deeply_invalid_json_seed() -> None:
+    harness = _load_harness("fuzz_imas_ids")
+    harness.TestOneInput(b'{"ids_properties": {"homogeneous_time": 1}, "time_slice": "bad"}')
+
+
 def test_checked_npz_loader_rejects_oversized_disruption_archive(tmp_path: Path) -> None:
     from scpn_fusion.io.tokamak_disruption_archive import load_disruption_shot
     from scpn_fusion.io.safe_loaders import MAX_NPZ_BYTES

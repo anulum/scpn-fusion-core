@@ -16,7 +16,7 @@ import sys
 import pytest
 
 from scpn_fusion.phase.realtime_monitor import RealtimeMonitor
-from scpn_fusion.phase.ws_phase_stream import PhaseStreamServer
+from scpn_fusion.phase.ws_phase_stream import PhaseStreamServer, _server_tls_context
 
 
 def _make_monitor():
@@ -26,11 +26,14 @@ def _make_monitor():
 class _FakeWS:
     """Mock WebSocket for testing handler and tick loop."""
 
-    def __init__(self, messages=None):
+    def __init__(self, messages=None, headers=None):
         self._messages = list(messages or [])
         self._sent: list[str] = []
         self._idx = 0
         self.closed = False
+        self.close_code = None
+        self.close_reason = None
+        self.request_headers = dict(headers or {})
 
     def __aiter__(self):
         return self
@@ -44,6 +47,11 @@ class _FakeWS:
 
     async def send(self, data):
         self._sent.append(data)
+
+    async def close(self, code=None, reason=None):
+        self.closed = True
+        self.close_code = code
+        self.close_reason = reason
 
 
 class TestPhaseStreamServer:
@@ -98,6 +106,64 @@ class TestPhaseStreamServer:
             server = PhaseStreamServer(monitor=mon)
             ws = _FakeWS(["not-json", json.dumps({"action": "stop"})])
             await server._handler(ws)
+
+        asyncio.run(_run())
+
+    def test_handler_rejects_unauthorized_command_when_token_required(self):
+        async def _run():
+            mon = _make_monitor()
+            server = PhaseStreamServer(monitor=mon, auth_token="secret")
+            ws = _FakeWS([json.dumps({"action": "set_psi", "value": 0.5})])
+            await server._handler(ws)
+            assert mon.psi_driver == pytest.approx(0.0)
+            assert ws.closed is True
+            assert ws.close_code == 1008
+
+        asyncio.run(_run())
+
+    def test_handler_accepts_bearer_token_header(self):
+        async def _run():
+            mon = _make_monitor()
+            server = PhaseStreamServer(monitor=mon, auth_token="secret")
+            ws = _FakeWS(
+                [json.dumps({"action": "set_psi", "value": 0.5})],
+                headers={"Authorization": "Bearer secret"},
+            )
+            await server._handler(ws)
+            assert mon.psi_driver == pytest.approx(0.5)
+            assert ws.closed is False
+
+        asyncio.run(_run())
+
+    def test_handler_accepts_first_message_auth(self):
+        async def _run():
+            mon = _make_monitor()
+            server = PhaseStreamServer(monitor=mon, auth_token="secret")
+            ws = _FakeWS(
+                [
+                    json.dumps({"action": "auth", "token": "secret"}),
+                    json.dumps({"action": "set_pac_gamma", "value": 0.4}),
+                ]
+            )
+            await server._handler(ws)
+            assert mon.pac_gamma == pytest.approx(0.4)
+            assert ws.closed is False
+
+        asyncio.run(_run())
+
+    def test_handler_closes_rate_limited_client(self):
+        async def _run():
+            mon = _make_monitor()
+            server = PhaseStreamServer(monitor=mon, max_command_messages_per_second=1)
+            ws = _FakeWS(
+                [
+                    json.dumps({"action": "set_psi", "value": 0.1}),
+                    json.dumps({"action": "set_psi", "value": 0.2}),
+                ]
+            )
+            await server._handler(ws)
+            assert ws.closed is True
+            assert ws.close_code == 1008
 
         asyncio.run(_run())
 
@@ -165,3 +231,18 @@ class TestPhaseStreamServer:
                 await server.serve()
 
         asyncio.run(_run())
+
+    def test_serve_rejects_exposed_binding_without_token(self):
+        async def _run():
+            mon = _make_monitor()
+            server = PhaseStreamServer(monitor=mon, auth_token=None)
+            with pytest.raises(ValueError, match="SCPN_PHASE_STREAM_TOKEN"):
+                await server.serve(host="0.0.0.0")
+
+        asyncio.run(_run())
+
+    def test_tls_context_requires_cert_and_key(self, tmp_path):
+        cert = tmp_path / "cert.pem"
+        cert.write_text("not-a-real-cert\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="Both --tls-cert and --tls-key"):
+            _server_tls_context(str(cert), None)

@@ -67,12 +67,32 @@ with `Harden`.
   pyo3 0.24.
 - **Python:** Dependencies are minimal (`numpy`, `scipy`, `matplotlib`,
   `streamlit`). No `pickle.load` of untrusted data in any module.
+- **Supply-chain automation:** hash-pinned requirement locks are used in CI and
+  Docker installs. Dependabot covers GitHub Actions, Python requirements, and
+  Rust Cargo manifests. The security-audit workflow runs pip-audit and
+  cargo-audit, with an optional pinned Snyk audit when `SNYK_TOKEN` is
+  configured.
 - **Checkpoint hygiene:** disruption-model checkpoint loading requires
   `torch.load(..., weights_only=True)` by default; legacy torch fallback
   deserialization is disabled unless
   `SCPN_ALLOW_INSECURE_TORCH_LOAD=1` is set for trusted checkpoints.
 - **Secure NumPy loading:** runtime, validation, and QLKNN training tooling
   paths use `np.load(..., allow_pickle=False)` with required-key checks.
+- **Parser input hardening:** GEQDSK parsing enforces byte, token, grid,
+  contour, finite-value, and shape limits before solver use. IMAS IDS JSON
+  loading enforces byte, nesting-depth, list-length, and equilibrium-grid
+  schema limits before conversion.
+- **Fuzzing:** Atheris harnesses cover malformed GEQDSK, IMAS IDS JSON,
+  FusionKernel config, and disruption NPZ inputs. Cargo-fuzz covers the Rust
+  domain-decomposition boundary path.
+- **Streaming hardening:** the phase WebSocket stream binds to loopback by
+  default, refuses exposed bindings unless `SCPN_PHASE_STREAM_TOKEN` is set,
+  accepts bearer-token or first-message authentication, rate-limits client
+  commands, and supports WSS via explicit certificate/key arguments.
+- **Container confinement:** the Docker Compose profile runs as a non-root
+  user with all capabilities dropped, no-new-privileges, a read-only root
+  filesystem, bounded tmpfs mounts, seccomp syscall denial, and AppArmor
+  guidance. See `docs/security/CONTAINER_HARDENING.md`.
 - **Bounded subprocesses:** CLI mode launches, compiler git-SHA probe,
   quantum bridge script orchestration, native C++ compile calls, and claims
   audit git file discovery use
