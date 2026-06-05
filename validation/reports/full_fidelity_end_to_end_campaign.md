@@ -37,8 +37,8 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Impurity charge-state radial transport operator ready: `False`
 - Impurity Aurora/STRAHL same-case comparison ready: `True`
 - Impurity Aurora/STRAHL same-case threshold checks ready: `True`
-- Impurity Aurora/STRAHL same-case thresholds passed: `False`
-- Impurity Aurora/STRAHL same-case comparison status: `blocked_native_aurora_same_case_threshold_mismatch`
+- Impurity Aurora/STRAHL same-case thresholds passed: `True`
+- Impurity Aurora/STRAHL same-case comparison status: `blocked_effective_closure_not_mechanistic_aurora_strahl_parity`
 - Impurity source/sink budget evidence ready: `True`
 - Impurity source/sink Aurora/STRAHL same-case budget ready: `False`
 - Impurity transport operator evidence status: `blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator`
@@ -89,5 +89,5 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 | full_maxwell_electromagnetic_fidelity | blocked_missing_external_em_parity_outputs | True | False | GENE, CGYRO, GS2 | self-consistent kinetic current coupling in the nonlinear 5D Vlasov-Maxwell loop<br>same-deck electromagnetic GENE/CGYRO/GS2 output artifacts<br>external electromagnetic phi/A_parallel/B_parallel same-case parity thresholds<br>same-deck external electromagnetic grid-convergence evidence |
 | production_scale_decomposition | blocked_local_decomposition_ready_missing_distributed_runtime_scaling | True | False | none | cluster MPI scaling report over the declared rank tiles<br>multi-GPU distributed execution path over the declared rank tiles<br>large-grid cluster/GPU wall-time scaling report<br>same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes<br>hardware-specific multi-rank throughput and efficiency thresholds<br>accepted distributed scaling gate over required rank counts<br>accepted distributed run manifests with reproducibility fields and checksums |
 | dream_grade_runaway_electrons | blocked_missing_public_dream_artifacts | True | False | DREAM | compiled DREAM iface/dreami same-case output<br>native coupled momentum-pitch-radius Fokker-Planck operator<br>radial transport operator on evolved radius grid<br>full pitch-angle scattering operator on evolved pitch grid<br>DREAM partial-screening operator parity<br>DREAM bremsstrahlung and synchrotron loss parity<br>distribution, current, and growth-rate threshold comparison against DREAM |
-| aurora_strahl_grade_impurities | blocked_native_aurora_same_case_threshold_mismatch | True | True | Aurora | charge-state-resolved radial transport operator on evolved density<br>Aurora source/recycling/effective transport closure<br>native same-case Aurora threshold pass |
+| aurora_strahl_grade_impurities | blocked_effective_closure_not_mechanistic_aurora_strahl_parity | True | True | Aurora | charge-state-resolved radial transport operator on evolved density<br>mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure |
 | free_boundary_equilibrium_strict_parity | blocked_free_boundary_strict_parity | True | False | FreeGS, FreeGSNKE | strict_threshold_acceptance_failed<br>grid_convergence_evidence_missing<br>public_external_coil_vacuum_sidecars_missing<br>same_case_public_reference_output_missing |

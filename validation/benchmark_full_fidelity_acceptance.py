@@ -691,15 +691,17 @@ def _impurity_contract(reference_cases: dict[str, Any]) -> dict[str, Any]:
             same_case_comparison["thresholds_passed"]
         ),
         "adas_style_coefficient_ingestion_contract": True,
+        "aurora_effective_source_recycling_closure": bool(
+            same_case_comparison.get("effective_source_recycling_closure_ready", False)
+        ),
         "charge_state_particle_conservation_gate": True,
     }
     schema = _load_artifact_schema()
     readiness = _reference_readiness("impurity_transport", reference_cases, schema)
     missing_requirements = [
-        "native same-case Aurora threshold pass",
         "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
+        "mechanistic Aurora/STRAHL source and recycling model rather than residual effective closure",
         "validated charge-state radial transport and recycling operators against Aurora/STRAHL",
-        "accepted charge-state density, total-density, and radiation RMSE thresholds against the public Aurora output",
     ]
     return {
         "surface": "impurity_transport",

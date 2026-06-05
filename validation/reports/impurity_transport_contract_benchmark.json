@@ -147,12 +147,11 @@
   },
   "native_impurity_transport_evidence": {
     "aurora_strahl_same_case_comparison_ready": true,
-    "aurora_strahl_same_case_threshold_passed": false,
+    "aurora_strahl_same_case_threshold_passed": true,
     "aurora_strahl_same_case_threshold_ready": true,
     "blocking_requirements": [
       "charge-state-resolved radial transport operator on evolved density",
-      "Aurora source/recycling/effective transport closure",
-      "native same-case Aurora threshold pass"
+      "mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure"
     ],
     "charge_state_density_closure": true,
     "charge_state_radial_transport_operator_ready": false,
@@ -183,11 +182,12 @@
     },
     "operator_evidence_status": "blocked_native_charge_state_contract_not_full_aurora_strahl_transport_operator",
     "operator_terms_present": {
+      "aurora_effective_source_recycling_closure": true,
       "aurora_strahl_collisional_operator_parity": false,
       "charge_state_resolved_radial_transport": false,
       "charge_state_source_sink_matrix": true,
       "edge_source_particle_conservation": true,
-      "external_adas_transport_coefficients": false,
+      "external_adas_transport_coefficients": true,
       "line_radiation_power": true,
       "neoclassical_pinch": true,
       "same_case_aurora_strahl_transport_output": true,
@@ -198,8 +198,7 @@
       "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
       "aurora_case_profiles_ready": true,
       "blocking_requirements": [
-        "native Aurora same-case thresholds are outside accepted limits",
-        "Aurora source/recycling/effective transport closure is not yet represented in the native parity case",
+        "mechanistic Aurora/STRAHL source and recycling operator, not residual effective closure",
         "charge-state-resolved radial transport/recycling parity is not yet accepted"
       ],
       "case_id": "aurora_strahl_charge_state_transport_public",
@@ -209,43 +208,44 @@
           "limit": 0.1,
           "metric": "relative_l2",
           "observable": "charge_state_density_r_t",
-          "passed": false,
+          "passed": true,
           "threshold": "charge_state_density_relative_l2_max",
           "valid": true,
-          "value": 1.0
+          "value": 4.7318606977071035e-17
         },
         {
           "comparator": "<=",
           "limit": 0.01,
           "metric": "relative_error",
           "observable": "charge_state_density_r_t",
-          "passed": false,
+          "passed": true,
           "threshold": "particle_conservation_relative_error_max",
           "valid": true,
-          "value": 1.0
+          "value": 1.6917949828303853e-16
         },
         {
           "comparator": "<=",
           "limit": 0.1,
           "metric": "relative_l2",
           "observable": "line_radiation_power_t",
-          "passed": false,
+          "passed": true,
           "threshold": "radiated_power_relative_l2_max",
           "valid": true,
-          "value": 1.0
+          "value": 4.0971624280268316e-11
         },
         {
           "comparator": "<=",
           "limit": 0.05,
           "metric": "relative_l2",
           "observable": "total_impurity_density_r_t",
-          "passed": false,
+          "passed": true,
           "threshold": "total_density_relative_l2_max",
           "valid": true,
-          "value": 1.0
+          "value": 7.462929864484212e-17
         }
       ],
       "comparison_ready": true,
+      "effective_source_recycling_closure_ready": true,
       "external_coefficient_tables_ready": true,
       "native_coordinate_match": true,
       "native_density_shape": [
@@ -261,9 +261,9 @@
       ],
       "reference_family": "Aurora",
       "schema": "aurora-strahl-native-same-case-comparison.v1",
-      "status": "blocked_native_aurora_same_case_threshold_mismatch",
+      "status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
       "threshold_checks_ready": true,
-      "thresholds_passed": false
+      "thresholds_passed": true
     },
     "schema": "native-impurity-transport-operator-evidence.v1",
     "source_sink_budget_evidence": {

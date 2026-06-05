@@ -223,6 +223,7 @@ def _load_reference_npz(case: dict[str, Any]) -> tuple[Path | None, dict[str, Fl
     optional_case_keys = [
         "convection_m_s_r_z",
         "diffusion_m2_s_r_z",
+        "effective_source_m3_s_t_r_z",
         "electron_density_t_r_m3",
         "electron_temperature_t_r_ev",
         "ionisation_coeff_m3_s_t_r_z",
@@ -292,6 +293,7 @@ def _native_same_case_payload(reference: dict[str, FloatArray]) -> dict[str, Any
         ionisation_m3_s_t_r_z=reference.get("ionisation_coeff_m3_s_t_r_z"),
         recombination_m3_s_t_r_z=reference.get("recombination_coeff_m3_s_t_r_z"),
         line_radiation_w_m3_t_r_z=reference.get("line_radiation_coeff_w_m3_t_r_z"),
+        effective_source_m3_s_t_r_z=reference.get("effective_source_m3_s_t_r_z"),
     )
     return dict(AuroraParityImpuritySolver(parity_case).solve().to_dict())
 
@@ -422,13 +424,20 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
     density = candidate["charge_state_density_r_t"]
     total_density = candidate["total_impurity_density_r_t"]
     density_closure = bool(np.allclose(total_density, np.sum(density, axis=2), rtol=1.0e-10))
-    blocking_requirements = [] if thresholds_passed else [
-        "native Aurora same-case thresholds are outside accepted limits",
-        "Aurora source/recycling/effective transport closure is not yet represented in the native parity case",
+    effective_closure_ready = "effective_source_m3_s_t_r_z" in reference
+    blocking_requirements = [
+        "mechanistic Aurora/STRAHL source and recycling operator, not residual effective closure",
         "charge-state-resolved radial transport/recycling parity is not yet accepted",
     ]
+    if not thresholds_passed:
+        blocking_requirements.insert(
+            0,
+            "native Aurora same-case thresholds are outside accepted limits",
+        )
     status = (
-        "accepted_native_aurora_same_case_thresholds"
+        "blocked_effective_closure_not_mechanistic_aurora_strahl_parity"
+        if thresholds_passed and effective_closure_ready
+        else "accepted_native_aurora_same_case_thresholds"
         if thresholds_passed
         else "blocked_native_aurora_same_case_threshold_mismatch"
     )
@@ -460,6 +469,7 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
             and "diffusion_m2_s_r_z" in reference
             and "convection_m_s_r_z" in reference
         ),
+        "effective_source_recycling_closure_ready": effective_closure_ready,
         "checks": checks,
         "blocking_requirements": blocking_requirements,
     }
@@ -509,7 +519,12 @@ def _native_impurity_transport_evidence(
             "line_radiation_power": True,
             "total_impurity_inventory_closure": True,
             "charge_state_resolved_radial_transport": False,
-            "external_adas_transport_coefficients": False,
+            "external_adas_transport_coefficients": bool(
+                same_case_comparison.get("external_coefficient_tables_ready", False)
+            ),
+            "aurora_effective_source_recycling_closure": bool(
+                same_case_comparison.get("effective_source_recycling_closure_ready", False)
+            ),
             "same_case_aurora_strahl_transport_output": bool(
                 same_case_comparison["comparison_ready"]
             ),
@@ -520,8 +535,7 @@ def _native_impurity_transport_evidence(
         "same_case_aurora_strahl_comparison": same_case_comparison,
         "blocking_requirements": [
             "charge-state-resolved radial transport operator on evolved density",
-            "Aurora source/recycling/effective transport closure",
-            "native same-case Aurora threshold pass",
+            "mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure",
         ],
     }
 
@@ -625,7 +639,6 @@ def run_benchmark() -> dict[str, Any]:
                 "charge_state_radial_transport_operator_ready"
             ]
             and native_impurity_transport_evidence["aurora_strahl_same_case_threshold_ready"]
-            and not native_impurity_transport_evidence["aurora_strahl_same_case_threshold_passed"]
             and bool(native_impurity_transport_evidence["blocking_requirements"])
         ),
         "native_source_sink_budget_evidence_fail_closed": bool(

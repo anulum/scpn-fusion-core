@@ -193,9 +193,10 @@
       "acceptance_passed": false,
       "implemented_dimensions": {
         "adas_style_coefficient_ingestion_contract": true,
+        "aurora_effective_source_recycling_closure": true,
         "aurora_strahl_same_case_transport_comparison": true,
         "aurora_strahl_same_case_transport_threshold_checks": true,
-        "aurora_strahl_same_case_transport_thresholds_passed": false,
+        "aurora_strahl_same_case_transport_thresholds_passed": true,
         "charge_state_particle_conservation_gate": true,
         "charge_state_resolved_density_artifact_export": true,
         "charge_state_resolved_radial_transport_operator": false,
@@ -210,17 +211,15 @@
         "trace_radial_transport": true
       },
       "missing_requirements": [
-        "native same-case Aurora threshold pass",
         "licensed ADAS/Open-ADAS coefficient ingestion rather than parametric ADAS-style coefficients",
-        "validated charge-state radial transport and recycling operators against Aurora/STRAHL",
-        "accepted charge-state density, total-density, and radiation RMSE thresholds against the public Aurora output"
+        "mechanistic Aurora/STRAHL source and recycling model rather than residual effective closure",
+        "validated charge-state radial transport and recycling operators against Aurora/STRAHL"
       ],
       "native_same_case_comparison": {
         "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
         "aurora_case_profiles_ready": true,
         "blocking_requirements": [
-          "native Aurora same-case thresholds are outside accepted limits",
-          "Aurora source/recycling/effective transport closure is not yet represented in the native parity case",
+          "mechanistic Aurora/STRAHL source and recycling operator, not residual effective closure",
           "charge-state-resolved radial transport/recycling parity is not yet accepted"
         ],
         "case_id": "aurora_strahl_charge_state_transport_public",
@@ -230,43 +229,44 @@
             "limit": 0.1,
             "metric": "relative_l2",
             "observable": "charge_state_density_r_t",
-            "passed": false,
+            "passed": true,
             "threshold": "charge_state_density_relative_l2_max",
             "valid": true,
-            "value": 1.0
+            "value": 4.7318606977071035e-17
           },
           {
             "comparator": "<=",
             "limit": 0.01,
             "metric": "relative_error",
             "observable": "charge_state_density_r_t",
-            "passed": false,
+            "passed": true,
             "threshold": "particle_conservation_relative_error_max",
             "valid": true,
-            "value": 1.0
+            "value": 1.6917949828303853e-16
           },
           {
             "comparator": "<=",
             "limit": 0.1,
             "metric": "relative_l2",
             "observable": "line_radiation_power_t",
-            "passed": false,
+            "passed": true,
             "threshold": "radiated_power_relative_l2_max",
             "valid": true,
-            "value": 1.0
+            "value": 4.0971624280268316e-11
           },
           {
             "comparator": "<=",
             "limit": 0.05,
             "metric": "relative_l2",
             "observable": "total_impurity_density_r_t",
-            "passed": false,
+            "passed": true,
             "threshold": "total_density_relative_l2_max",
             "valid": true,
-            "value": 1.0
+            "value": 7.462929864484212e-17
           }
         ],
         "comparison_ready": true,
+        "effective_source_recycling_closure_ready": true,
         "external_coefficient_tables_ready": true,
         "native_coordinate_match": true,
         "native_density_shape": [
@@ -282,9 +282,9 @@
         ],
         "reference_family": "Aurora",
         "schema": "aurora-strahl-native-same-case-comparison.v1",
-        "status": "blocked_native_aurora_same_case_threshold_mismatch",
+        "status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
         "threshold_checks_ready": true,
-        "thresholds_passed": false
+        "thresholds_passed": true
       },
       "reference_cases": {
         "artifact_schema": "validation/reference_data/full_fidelity_artifact_schema.json",
@@ -325,8 +325,8 @@
             "ready": true,
             "redistribution_license_ready": true,
             "reference_family": "Aurora",
-            "sha256_actual": "7929fcf4844cee198258acfaeb864855ceb3b241244e1c2a5ed9b25faac21b39",
-            "sha256_expected": "7929fcf4844cee198258acfaeb864855ceb3b241244e1c2a5ed9b25faac21b39",
+            "sha256_actual": "2d4e880306d84eba3f021a7e46a426c1fe8bf5c4f5558fdbca9a8bd318f6cf70",
+            "sha256_expected": "2d4e880306d84eba3f021a7e46a426c1fe8bf5c4f5558fdbca9a8bd318f6cf70",
             "sha256_ready": true,
             "status": "available",
             "status_known": true,

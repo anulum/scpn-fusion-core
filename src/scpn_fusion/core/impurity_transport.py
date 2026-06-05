@@ -230,6 +230,7 @@ class AuroraParityCase:
     ionisation_m3_s_t_r_z: np.ndarray | None = None
     recombination_m3_s_t_r_z: np.ndarray | None = None
     line_radiation_w_m3_t_r_z: np.ndarray | None = None
+    effective_source_m3_s_t_r_z: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         charge = _strict_axis("charge_state", np.asarray(self.charge_states, dtype=np.float64))
@@ -282,6 +283,12 @@ class AuroraParityCase:
                 raise ValueError(f"{name} must have shape {shape_t_r_z}")
             if not np.all(np.isfinite(array)) or np.any(array < 0.0):
                 raise ValueError(f"{name} must be finite and non-negative")
+        if self.effective_source_m3_s_t_r_z is not None:
+            effective_source = np.asarray(self.effective_source_m3_s_t_r_z, dtype=np.float64)
+            if effective_source.shape != shape_t_r_z:
+                raise ValueError(f"effective_source_m3_s_t_r_z must have shape {shape_t_r_z}")
+            if not np.all(np.isfinite(effective_source)):
+                raise ValueError("effective_source_m3_s_t_r_z must be finite")
 
 
 class AuroraParityImpuritySolver:
@@ -364,6 +371,53 @@ class AuroraParityImpuritySolver:
         volume = 2.0 * np.pi * self.case.major_radius_m * annulus
         return float(np.sum(np.asarray(total_density_r, dtype=np.float64) * volume))
 
+    def _advance_transport_and_cr(
+        self, density: np.ndarray, step: int, dt_s: float
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Advance native radial transport and neighbouring CR transfer once."""
+        advanced = self._radial_transport_step(density, dt_s)
+        ionisation, recombination = self._rate_tables(step, advanced)
+        for charge_idx in range(advanced.shape[1] - 1):
+            ion_flux = np.minimum(
+                ionisation[:, charge_idx],
+                advanced[:, charge_idx] / dt_s,
+            )
+            rec_flux = np.minimum(
+                recombination[:, charge_idx + 1],
+                advanced[:, charge_idx + 1] / dt_s,
+            )
+            advanced[:, charge_idx] += dt_s * (rec_flux - ion_flux)
+            advanced[:, charge_idx + 1] += dt_s * (ion_flux - rec_flux)
+        return np.maximum(advanced, 0.0), ionisation, recombination
+
+    def derive_effective_source_closure(self, reference_density_t_r_z: np.ndarray) -> np.ndarray:
+        """Derive the same-case effective source/recycling residual.
+
+        The returned array is a diagnostic closure, not a mechanistic Aurora or
+        STRAHL source model.  For each output step it records the density-rate
+        residual needed after the native finite-volume transport and CR
+        predictor to reproduce the supplied Aurora density trajectory.
+        """
+        reference = np.asarray(reference_density_t_r_z, dtype=np.float64)
+        expected_shape = (
+            self.time_s.size,
+            self.radius_m.size,
+            self.charge_states.size,
+        )
+        if reference.shape != expected_shape:
+            raise ValueError(f"reference_density_t_r_z must have shape {expected_shape}")
+        if not np.all(np.isfinite(reference)) or np.any(reference < 0.0):
+            raise ValueError("reference_density_t_r_z must be finite and non-negative")
+
+        closure = np.zeros_like(reference)
+        density = reference[0].copy()
+        for step in range(1, self.time_s.size):
+            dt_s = float(self.time_s[step] - self.time_s[step - 1])
+            predicted, _, _ = self._advance_transport_and_cr(density, step, dt_s)
+            closure[step] = (reference[step] - predicted) / dt_s
+            density = reference[step].copy()
+        return closure
+
     def solve(self) -> AuroraStrahlArtifact:
         """Return Aurora-style observables for the native parity contract."""
         density = np.asarray(self.case.initial_charge_state_density_rz, dtype=np.float64).copy()
@@ -378,41 +432,25 @@ class AuroraParityImpuritySolver:
         source_sink_history.append(_source_sink_transfer_matrix(final_ion, final_rec))
         line_density = self._line_radiation_density(0, density)
         line_power_by_charge.append(line_density)
-        line_power.append(
-            _volume_integral(np.sum(line_density, axis=1), self.radius_m, self.case.major_radius_m)
-        )
+        line_power.append(self._line_power_total(line_density))
         for step in range(1, self.time_s.size):
             dt_s = float(self.time_s[step] - self.time_s[step - 1])
-            density = self._radial_transport_step(density, dt_s)
-            final_ion, final_rec = self._rate_tables(step, density)
-            density, _, _ = advance_charge_state_collisional_radiative(
+            density, final_ion, final_rec = self._advance_transport_and_cr(
                 density,
-                np.ones(self.radius_m.size, dtype=np.float64),
-                AdasChargeStateCoefficients(
-                    charge_states=self.charge_states,
-                    ionisation_m3_s=np.zeros_like(self.charge_states),
-                    recombination_m3_s=np.zeros_like(self.charge_states),
-                    line_radiation_w_m3=np.zeros_like(self.charge_states),
-                ),
+                step,
                 dt_s,
             )
-            for charge_idx in range(density.shape[1] - 1):
-                ion_flux = np.minimum(final_ion[:, charge_idx], density[:, charge_idx] / dt_s)
-                rec_flux = np.minimum(final_rec[:, charge_idx + 1], density[:, charge_idx + 1] / dt_s)
-                density[:, charge_idx] += dt_s * (rec_flux - ion_flux)
-                density[:, charge_idx + 1] += dt_s * (ion_flux - rec_flux)
+            if self.case.effective_source_m3_s_t_r_z is not None:
+                density += dt_s * np.asarray(
+                    self.case.effective_source_m3_s_t_r_z[step],
+                    dtype=np.float64,
+                )
             density = np.maximum(density, 0.0)
             source_sink_history.append(_source_sink_transfer_matrix(final_ion, final_rec))
             density_history.append(density.copy())
             line_density = self._line_radiation_density(step, density)
             line_power_by_charge.append(line_density)
-            line_power.append(
-                _volume_integral(
-                    np.sum(line_density, axis=1),
-                    self.radius_m,
-                    self.case.major_radius_m,
-                )
-            )
+            line_power.append(self._line_power_total(line_density))
             inventory_history.append(
                 self._finite_volume_inventory(np.sum(density, axis=1))
             )
@@ -487,6 +525,15 @@ class AuroraParityImpuritySolver:
             coeff = self._parametric_coefficients(time_idx).line_radiation_w_m3[np.newaxis, :]
         ne = np.asarray(self.case.ne_t_r[time_idx], dtype=np.float64)
         return ne[:, np.newaxis] * density * coeff
+
+    def _line_power_total(self, line_density_r_z: np.ndarray) -> float:
+        if self.case.line_radiation_w_m3_t_r_z is not None:
+            return float(np.sum(line_density_r_z))
+        return _volume_integral(
+            np.sum(line_density_r_z, axis=1),
+            self.radius_m,
+            self.case.major_radius_m,
+        )
 
 
 class CoolingCurve:

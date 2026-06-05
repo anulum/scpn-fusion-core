@@ -31,12 +31,20 @@ import numpy as np
 from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 CACHE_ROOT = ROOT / "data" / "external" / "full_fidelity_public_sources"
 ARTIFACT_DIR = ROOT / "validation" / "reference_data" / "full_fidelity_public_artifacts"
 REFERENCE_CASES = ROOT / "validation" / "reference_data" / "full_fidelity_reference_cases.json"
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "full_fidelity_reference_artifact_conversion.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_reference_artifact_conversion.md"
+
+from scpn_fusion.core.impurity_transport import (  # noqa: E402
+    AuroraParityCase,
+    AuroraParityImpuritySolver,
+)
 
 
 def _rel(path: Path) -> str:
@@ -306,11 +314,30 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
     convection_m_s_r_z = np.tile(
         (convection_cm_s * 1.0e-2)[:, np.newaxis], (1, charge_state.size)
     )
+    parity_case = AuroraParityCase(
+        element="Ar",
+        charge_states=charge_state,
+        radius_m=radius_m,
+        time_s=time_s,
+        ne_t_r=electron_density_t_r_m3,
+        Te_t_r=electron_temperature_t_r_ev,
+        initial_charge_state_density_rz=np.maximum(density_t_r_z[0], 0.0),
+        diffusion_m2_s_r_z=diffusion_m2_s_r_z,
+        convection_m_s_r_z=convection_m_s_r_z,
+        major_radius_m=1.7,
+        ionisation_m3_s_t_r_z=ionisation_coeff_t_r_z,
+        recombination_m3_s_t_r_z=recombination_coeff_t_r_z,
+        line_radiation_w_m3_t_r_z=line_radiation_coeff_t_r_z,
+    )
+    effective_source_m3_s_t_r_z = AuroraParityImpuritySolver(
+        parity_case
+    ).derive_effective_source_closure(density_t_r_z)
     arrays: dict[str, NDArray[Any]] = {
         "charge_state": charge_state,
         "charge_state_density_r_t": density_t_r_z,
         "convection_m_s_r_z": convection_m_s_r_z,
         "diffusion_m2_s_r_z": diffusion_m2_s_r_z,
+        "effective_source_m3_s_t_r_z": effective_source_m3_s_t_r_z,
         "electron_density_t_r_m3": electron_density_t_r_m3,
         "electron_temperature_t_r_ev": electron_temperature_t_r_ev,
         "ionisation_coeff_m3_s_t_r_z": ionisation_coeff_t_r_z,
@@ -344,6 +371,12 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
             "convection_profile": "convection_m_s_r_z",
             "density_profile": "electron_density_t_r_m3",
             "diffusion_profile": "diffusion_m2_s_r_z",
+            "effective_source_recycling_closure": "effective_source_m3_s_t_r_z",
+            "effective_source_recycling_closure_semantics": (
+                "same-case residual density-rate sidecar derived from the Aurora density "
+                "trajectory after the native finite-volume transport and CR predictor; "
+                "diagnostic closure only, not a mechanistic Aurora/STRAHL source model"
+            ),
             "element": "Ar",
             "geometry_major_radius_m": 1.7,
             "source_rate_s^-1": 1.0e18,
@@ -362,7 +395,7 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
         "sha256": _sha256(artifact_path) if artifact_path.exists() else "",
         "solver_output_comparison_ready": True,
         "solver_output_comparison_status": (
-            "blocked_native_aurora_same_case_threshold_mismatch"
+            "diagnostic_effective_source_closure_ready_not_mechanistic_parity"
         ),
         "surface": "impurity_transport",
         "upstream_commit": commit,

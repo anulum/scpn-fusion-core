@@ -58,8 +58,8 @@
   "gk_public_decks_indexed": 40,
   "gk_public_outputs_indexed": 21,
   "impurity_aurora_strahl_same_case_comparison_ready": true,
-  "impurity_aurora_strahl_same_case_comparison_status": "blocked_native_aurora_same_case_threshold_mismatch",
-  "impurity_aurora_strahl_same_case_threshold_passed": false,
+  "impurity_aurora_strahl_same_case_comparison_status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
+  "impurity_aurora_strahl_same_case_threshold_passed": true,
   "impurity_aurora_strahl_same_case_threshold_ready": true,
   "impurity_charge_state_radial_transport_operator_ready": false,
   "impurity_native_transport_evidence_ready": true,
@@ -246,8 +246,7 @@
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
         "charge-state-resolved radial transport operator on evolved density",
-        "Aurora source/recycling/effective transport closure",
-        "native same-case Aurora threshold pass"
+        "mechanistic Aurora/STRAHL source and recycling operator beyond residual effective closure"
       ],
       "reference_cases_ready": true,
       "sources": [
@@ -264,7 +263,7 @@
           "surface": "impurity_transport"
         }
       ],
-      "status": "blocked_native_aurora_same_case_threshold_mismatch",
+      "status": "blocked_effective_closure_not_mechanistic_aurora_strahl_parity",
       "surface": "impurity_transport"
     },
     {

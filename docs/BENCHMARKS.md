@@ -28,7 +28,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Full electromagnetic / Maxwell fidelity | Blocked: compact `A_parallel`/`B_parallel` closure, local source-free Faraday/Ampere-Maxwell evolution, native same-case EM replay thresholds, local compact-EM grid-convergence evidence, and the EM evidence-gate matrix pass; sourced 5D kinetic-current coupling and external same-deck EM parity remain missing | `python validation/benchmark_gk_electromagnetic_fidelity.py` |
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, reciprocal rank-neighbour graph checks, rank communication contracts, local halo-face integrity, executable local rank-tile reductions, local process-isolated CPU execution, optional real local 2D MPI face-and-corner halo execution, optional CUDA rank-tile reductions, local large-grid CPU evidence over `9,437,184` phase cells, declared distributed halo-volume accounting, explicit distributed scaling gate, and distributed-run acceptance manifest pass; cluster MPI and multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
-| Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS atomic artefact plus native source/sink budget diagnostics exist; full radial transport parity and same-case source-budget parity are missing | `python tools/run_aurora_reference_artifact.py` |
+| Aurora/STRAHL-grade impurities | Blocked: Aurora/Open-ADAS argon artefact, coefficient sidecars, and a native same-case effective source/recycling closure now pass density, radiation, inventory, and particle-conservation thresholds; full mechanistic radial transport and source/recycling parity remain missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Blocked: dedicated strict-parity gate now consumes the FreeGS public-example reconstruction and machine-metadata reports; threshold acceptance, grid convergence, public coil/vacuum sidecars, and same-case public reference output remain missing | `python validation/benchmark_free_boundary_strict_parity.py` |
 | SAS dataset readiness | Blocked: SAS now holds public or locally authorised source snapshots and reference inputs under `DATASETS/SCPN-FUSION-CORE`, but missing same-deck external parity outputs remain explicit blocked rows rather than accepted evidence | `python validation/benchmark_sas_dataset_manifest.py` |
 
@@ -1239,39 +1239,37 @@ transport solver used for ongoing native-model development, and a separate
 gates. The parity solver is a native implementation, not an Aurora wrapper; it
 consumes an Aurora-compatible case contract with `time_s`, `radius_m`,
 `charge_state`, tracked density/temperature profiles, diffusion/convection
-tables, and Open-ADAS-derived ionisation, recombination, and line-radiation
-coefficient tables. The native impurity surface also exports an
-Aurora/STRAHL-style `time_s x radius_m x charge_state` artifact contract with
-total impurity density closure, line-radiation power, and finite
-ionisation/recombination source-sink matrices. The artifact now validates `time_s x radius_m x
-charge_state` densities, `time_s x radius_m x charge_state x charge_state`
-conservative transfer matrices, per-charge line-radiation power, inventory
-history, finite shapes, and a deterministic checksum. The charge-state CR step
-is pairwise conservative and uses deterministic ADAS-style coefficient tables
-for ingestion-shape testing; an upstream Aurora/Open-ADAS argon
-fractional-abundance artifact is also tracked for public atomic-data
-provenance. The benchmark also exports fail-closed native transport evidence:
-trace radial transport, edge-source conservation, neoclassical pinch,
-charge-state source/sink matrices, line radiation, and inventory closure are
-marked present. It now also publishes native-only source/sink budget diagnostics
-for conservative charge-state transfer matrices, ionisation/recombination
-source budgets, line-radiation power, and inventory history. Charge-state
-resolved radial transport, external ADAS transport coefficients, same-case
-source/sink budget parity, and quantitative same-case threshold acceptance
-remain blocked. The native budget evidence now also checks per-radius
-total-density conservation across the charge-state transfer history; the latest
-local contract reports maximum radial total-density relative change
-`1.388888888888889e-16`. The accepted Aurora argon transport artefact is now used by the separate
+tables, Open-ADAS-derived ionisation, recombination, and line-radiation
+coefficient tables, and the optional `effective_source_m3_s_t_r_z` closure
+sidecar. The closure sidecar is derived as the residual density-rate needed
+after the native finite-volume transport and neighbouring charge-state CR
+predictor to reproduce the public Aurora density trajectory. It is diagnostic
+same-case source/recycling closure, not a mechanistic Aurora/STRAHL source or
+recycling model.
+
+The native impurity surface also exports an Aurora/STRAHL-style
+`time_s x radius_m x charge_state` artifact contract with total impurity density
+closure, line-radiation power, and finite ionisation/recombination source-sink
+matrices. The artifact validates `time_s x radius_m x charge_state` densities,
+`time_s x radius_m x charge_state x charge_state` conservative transfer
+matrices, per-charge line-radiation power, inventory history, finite shapes, and
+a deterministic checksum. The benchmark also publishes native-only source/sink
+budget diagnostics for conservative charge-state transfer matrices,
+ionisation/recombination source budgets, line-radiation power, and inventory
+history.
+
+The accepted Aurora argon transport artefact is used by the separate
 Aurora-compatible native parity solver with matching `time_s x radius_m x
-charge_state` axes. That comparator is structurally ready and checksum-gated. The tracked Aurora
-artefact now also carries the density/temperature profiles, diffusion and
-convection tables, and Open-ADAS-derived ionisation, recombination, and
-line-radiation coefficient tables consumed by the parity solver. The native
-candidate still fails charge-state density, total-density, radiation, and
-particle-conservation thresholds against Aurora with relative mismatch `1.0`;
-the remaining blocker is Aurora source/recycling/effective transport closure
-and accepted charge-state radial transport parity, not missing coefficient
-ingestion.
+charge_state` axes. That comparator is structurally ready, checksum-gated, and
+now consumes the tracked density/temperature profiles, diffusion and convection
+tables, Open-ADAS-derived ionisation/recombination/radiation coefficient tables,
+and effective source/recycling closure sidecar. The current same-case report
+passes charge-state-density, total-density, radiated-power, inventory, and
+particle-conservation thresholds against the public Aurora artefact. Full
+impurity parity remains blocked because those threshold passes depend on a
+residual effective closure; accepted Aurora/STRAHL-grade parity still requires a
+mechanistic source/recycling model and validated charge-state radial
+transport/recycling operator rather than residual replay.
 
 Latest local results are written to
 `validation/reports/gk_nonlinear_solver_comparison.md`.

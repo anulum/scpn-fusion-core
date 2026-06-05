@@ -34,6 +34,7 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
     assert {
         "convection_m_s_r_z",
         "diffusion_m2_s_r_z",
+        "effective_source_m3_s_t_r_z",
         "electron_density_t_r_m3",
         "electron_temperature_t_r_ev",
         "ionisation_coeff_m3_s_t_r_z",
