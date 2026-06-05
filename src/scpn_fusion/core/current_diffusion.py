@@ -34,6 +34,9 @@ class FluxEvolutionTrajectory:
     the evolved poloidal-flux profile. ``hall_drive`` stores
     ``R_null E_theta``, ``resistive_loss`` stores ``eta J_theta``, and
     ``damping_rate`` stores ``1 / tau_psi`` at the same time/grid points.
+    ``source_increment`` and ``damping_decrement`` have shape
+    ``(n_steps, n_rho)`` and close the exact discrete balance
+    ``psi[n+1] = psi[n] - damping_decrement[n] + source_increment[n]``.
     """
 
     time_s: FloatArray
@@ -43,6 +46,9 @@ class FluxEvolutionTrajectory:
     resistive_loss: FloatArray
     source: FloatArray
     damping_rate: FloatArray
+    source_increment: FloatArray
+    damping_decrement: FloatArray
+    update_residual: FloatArray
     dt_s: float
 
 
@@ -83,6 +89,9 @@ def solve_flux_evolution_nonadiabatic(
     resistive_loss = np.zeros_like(psi)
     source = np.zeros_like(psi)
     damping_rate = np.zeros_like(psi)
+    source_increment = np.zeros((n_steps, rho_grid.size), dtype=np.float64)
+    damping_decrement = np.zeros_like(source_increment)
+    update_residual = np.zeros_like(source_increment)
     psi[0] = psi_initial
 
     for step_index, time_value in enumerate(time_s):
@@ -119,7 +128,12 @@ def solve_flux_evolution_nonadiabatic(
         damped = gamma > 0.0
         driven_increment[damped] = source_midpoint[damped] * (1.0 - decay[damped]) / gamma[damped]
         driven_increment[~damped] = dt * source_midpoint[~damped]
-        psi[step_index + 1] = psi[step_index] * decay + driven_increment
+        damping_drop = psi[step_index] * (1.0 - decay)
+        expected_next = psi[step_index] - damping_drop + driven_increment
+        psi[step_index + 1] = expected_next
+        source_increment[step_index] = driven_increment
+        damping_decrement[step_index] = damping_drop
+        update_residual[step_index] = psi[step_index + 1] - expected_next
 
     return FluxEvolutionTrajectory(
         time_s=time_s,
@@ -129,6 +143,9 @@ def solve_flux_evolution_nonadiabatic(
         resistive_loss=resistive_loss,
         source=source,
         damping_rate=damping_rate,
+        source_increment=source_increment,
+        damping_decrement=damping_decrement,
+        update_residual=update_residual,
         dt_s=float(dt),
     )
 

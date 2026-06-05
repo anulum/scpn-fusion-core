@@ -546,12 +546,18 @@ $$\frac{\partial\psi}{\partial t} =
 
 The public Python helper `solve_flux_evolution_nonadiabatic` returns a
 `FluxEvolutionTrajectory` with `psi`, `R_null E_theta`, `eta J_theta`, net
-source, and damping histories on the supplied radial grid. Each step advances
-the local linear damping analytically with endpoint-averaged source sampling,
-so constant damping recovers the exact exponential solution and zero drive,
-zero damping preserves the input flux exactly. Rust parity math lives in
-`fusion-core::current_diffusion`, and the benchmark report is local regression
-evidence only unless rerun under the repository benchmark-isolation policy.
+source, damping histories, and exact per-step source/damping budget increments
+on the supplied radial grid. Each step advances the local linear damping
+analytically with endpoint-averaged source sampling, so constant damping
+recovers the exact exponential solution and zero drive, zero damping preserves
+the input flux exactly. The reported discrete closure is
+
+$$\psi^{n+1}=\psi^n-\Delta\psi_{\rm damp}^n+\Delta\psi_{\rm source}^n,$$
+
+with `update_residual` stored for every step and radial point. Rust parity math
+lives in `fusion-core::current_diffusion`, and the benchmark report is local
+regression evidence only unless rerun under the repository benchmark-isolation
+policy.
 
 **Validation:** `tests/test_current_diffusion_nonadiabatic.py`, Rust unit tests
 in `fusion-core::current_diffusion`, and

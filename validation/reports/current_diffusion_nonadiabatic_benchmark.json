@@ -2,16 +2,20 @@
   "benchmark": "current_diffusion_nonadiabatic",
   "benchmark_evidence_class": "local_regression_non_isolated",
   "command": "PYTHONPATH=src python benchmarks/bench_current_diffusion_nonadiabatic.py",
+  "diagnostics_contract": {
+    "balance": "psi[n+1] = psi[n] - damping_decrement[n] + source_increment[n]",
+    "update_residual_gate": "local regression report records max_abs_update_residual"
+  },
   "host": {
     "load_average_after": [
-      4.20166015625,
-      4.935546875,
-      4.29296875
+      4.0537109375,
+      3.48046875,
+      3.3740234375
     ],
     "load_average_before": [
-      4.20166015625,
-      4.935546875,
-      4.29296875
+      4.0537109375,
+      3.48046875,
+      3.3740234375
     ],
     "machine": "x86_64",
     "numpy": "1.26.4",
@@ -26,9 +30,12 @@
       "final_psi_checksum": 2.473244459692653,
       "grid_points": 64,
       "language": "python",
-      "max_wall_time_s": 0.012075648875907063,
-      "mean_wall_time_s": 0.008724815817549825,
-      "min_wall_time_s": 0.0068809641525149345,
+      "max_abs_damping_decrement": 0.00039900166458540554,
+      "max_abs_source_increment": 4.6726056263430326e-08,
+      "max_abs_update_residual": 0.0,
+      "max_wall_time_s": 0.01070623891428113,
+      "mean_wall_time_s": 0.008770260540768505,
+      "min_wall_time_s": 0.007001875899732113,
       "repeats": 5,
       "steps": 128
     },
@@ -36,9 +43,12 @@
       "final_psi_checksum": 9.898355466579837,
       "grid_points": 256,
       "language": "python",
-      "max_wall_time_s": 0.013907335000112653,
-      "mean_wall_time_s": 0.010090610617771745,
-      "min_wall_time_s": 0.008020858047530055,
+      "max_abs_damping_decrement": 0.00039900166458540554,
+      "max_abs_source_increment": 4.6726056263430326e-08,
+      "max_abs_update_residual": 0.0,
+      "max_wall_time_s": 0.009776333812624216,
+      "mean_wall_time_s": 0.00833088457584381,
+      "min_wall_time_s": 0.007461346918717027,
       "repeats": 5,
       "steps": 128
     },
@@ -46,47 +56,50 @@
       "final_psi_checksum": 39.59872064328093,
       "grid_points": 1024,
       "language": "python",
-      "max_wall_time_s": 0.017783926101401448,
-      "mean_wall_time_s": 0.01648850259371102,
-      "min_wall_time_s": 0.01446368102915585,
+      "max_abs_damping_decrement": 0.00039900166458540554,
+      "max_abs_source_increment": 4.6726056263430326e-08,
+      "max_abs_update_residual": 0.0,
+      "max_wall_time_s": 0.013952861074358225,
+      "mean_wall_time_s": 0.011899880273267627,
+      "min_wall_time_s": 0.010343954898416996,
       "repeats": 5,
       "steps": 128
     },
     {
-      "ci_lower_s": 0.004102324611736131,
-      "ci_upper_s": 0.004372114328900355,
+      "ci_lower_s": 0.00422048881270903,
+      "ci_upper_s": 0.004378659296857251,
       "confidence_level": 0.95,
       "estimate_path": "scpn-fusion-rs/target/criterion/current_diffusion_nonadiabatic/rust_1024_rho_128_steps/new/estimates.json",
       "grid_points": 1024,
       "language": "rust",
-      "mean_wall_time_s": 0.004200972081130634,
+      "mean_wall_time_s": 0.00430646709063568,
       "source": "criterion_estimates_json",
       "steps": 128
     },
     {
-      "ci_lower_s": 0.0009118883942307693,
-      "ci_upper_s": 0.0009505979565402791,
+      "ci_lower_s": 0.0007761576361667759,
+      "ci_upper_s": 0.0008026969971723629,
       "confidence_level": 0.95,
       "estimate_path": "scpn-fusion-rs/target/criterion/current_diffusion_nonadiabatic/rust_256_rho_128_steps/new/estimates.json",
       "grid_points": 256,
       "language": "rust",
-      "mean_wall_time_s": 0.0009272579073593074,
+      "mean_wall_time_s": 0.000788478178657487,
       "source": "criterion_estimates_json",
       "steps": 128
     },
     {
-      "ci_lower_s": 0.00019061938248875925,
-      "ci_upper_s": 0.0001983827090803933,
+      "ci_lower_s": 0.00019782631255294431,
+      "ci_upper_s": 0.00021158015578534497,
       "confidence_level": 0.95,
       "estimate_path": "scpn-fusion-rs/target/criterion/current_diffusion_nonadiabatic/rust_64_rho_128_steps/new/estimates.json",
       "grid_points": 64,
       "language": "rust",
-      "mean_wall_time_s": 0.00019403509848484849,
+      "mean_wall_time_s": 0.00020323653451421997,
       "source": "criterion_estimates_json",
       "steps": 128
     }
   ],
   "rust_criterion_command": "cargo bench -p fusion-core --bench current_diffusion_nonadiabatic_bench -- --sample-size 10",
   "rust_rows_status": "present",
-  "schema_version": 1
+  "schema_version": 2
 }

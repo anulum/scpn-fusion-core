@@ -25,13 +25,7 @@ from numpy.typing import NDArray
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 REPORT = ROOT / "validation" / "reports" / "current_diffusion_nonadiabatic_benchmark.json"
-CRITERION_ROOT = (
-    ROOT
-    / "scpn-fusion-rs"
-    / "target"
-    / "criterion"
-    / "current_diffusion_nonadiabatic"
-)
+CRITERION_ROOT = ROOT / "scpn-fusion-rs" / "target" / "criterion" / "current_diffusion_nonadiabatic"
 
 sys.path.insert(0, str(SRC))
 
@@ -58,6 +52,9 @@ def _benchmark_case(n_rho: int, n_steps: int) -> dict[str, Any]:
 
     elapsed_s: list[float] = []
     checksum = 0.0
+    max_abs_update_residual = 0.0
+    max_abs_source_increment = 0.0
+    max_abs_damping_decrement = 0.0
     for _ in range(_REPEATS):
         start = time.perf_counter()
         trajectory = solve_flux_evolution_nonadiabatic(
@@ -73,6 +70,9 @@ def _benchmark_case(n_rho: int, n_steps: int) -> dict[str, Any]:
         )
         elapsed_s.append(time.perf_counter() - start)
         checksum = float(np.sum(trajectory.psi[-1], dtype=np.float64))
+        max_abs_update_residual = float(np.max(np.abs(trajectory.update_residual)))
+        max_abs_source_increment = float(np.max(np.abs(trajectory.source_increment)))
+        max_abs_damping_decrement = float(np.max(np.abs(trajectory.damping_decrement)))
 
     return {
         "language": "python",
@@ -83,6 +83,9 @@ def _benchmark_case(n_rho: int, n_steps: int) -> dict[str, Any]:
         "min_wall_time_s": float(np.min(elapsed_s)),
         "max_wall_time_s": float(np.max(elapsed_s)),
         "final_psi_checksum": checksum,
+        "max_abs_update_residual": max_abs_update_residual,
+        "max_abs_source_increment": max_abs_source_increment,
+        "max_abs_damping_decrement": max_abs_damping_decrement,
     }
 
 
@@ -119,7 +122,7 @@ def main() -> None:
     rows.extend(rust_rows)
     load_after = os.getloadavg()
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "benchmark": "current_diffusion_nonadiabatic",
         "benchmark_evidence_class": "local_regression_non_isolated",
         "production_claim_allowed": False,
@@ -130,6 +133,10 @@ def main() -> None:
             "-- --sample-size 10"
         ),
         "rust_rows_status": "present" if rust_rows else "not_found_run_cargo_bench_first",
+        "diagnostics_contract": {
+            "balance": "psi[n+1] = psi[n] - damping_decrement[n] + source_increment[n]",
+            "update_residual_gate": "local regression report records max_abs_update_residual",
+        },
         "host": {
             "platform": platform.platform(),
             "machine": platform.machine(),

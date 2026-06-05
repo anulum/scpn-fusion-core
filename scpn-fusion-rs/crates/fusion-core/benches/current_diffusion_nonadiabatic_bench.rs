@@ -53,7 +53,10 @@ fn bench_nonadiabatic_flux(c: &mut Criterion) {
                 |input| {
                     let trajectory = solve_flux_evolution_nonadiabatic(&input)
                         .expect("benchmark input should be valid");
-                    black_box(trajectory.psi[n_steps][0]);
+                    black_box((
+                        trajectory.psi[n_steps][0],
+                        trajectory.update_residual[n_steps - 1][0],
+                    ));
                 },
                 criterion::BatchSize::SmallInput,
             )

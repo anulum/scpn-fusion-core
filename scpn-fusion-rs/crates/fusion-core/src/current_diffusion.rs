@@ -30,6 +30,9 @@ pub struct FluxEvolutionTrajectory {
     pub resistive_loss: Vec<Vec<f64>>,
     pub source: Vec<Vec<f64>>,
     pub damping_rate: Vec<Vec<f64>>,
+    pub source_increment: Vec<Vec<f64>>,
+    pub damping_decrement: Vec<Vec<f64>>,
+    pub update_residual: Vec<Vec<f64>>,
     pub dt_s: f64,
 }
 
@@ -52,6 +55,9 @@ pub fn solve_flux_evolution_nonadiabatic(
     let mut resistive_loss = vec![vec![0.0_f64; n_rho]; n_times];
     let mut source = vec![vec![0.0_f64; n_rho]; n_times];
     let mut damping_rate = vec![vec![0.0_f64; n_rho]; n_times];
+    let mut source_increment = vec![vec![0.0_f64; n_rho]; n_steps];
+    let mut damping_decrement = vec![vec![0.0_f64; n_rho]; n_steps];
+    let mut update_residual = vec![vec![0.0_f64; n_rho]; n_steps];
     psi[0].clone_from(&input.psi0);
 
     for time_index in 0..n_times {
@@ -79,7 +85,12 @@ pub fn solve_flux_evolution_nonadiabatic(
             } else {
                 input.dt_s * source_midpoint
             };
-            psi[step_index + 1][rho_index] = psi[step_index][rho_index] * decay + driven_increment;
+            let damping_drop = psi[step_index][rho_index] * (1.0 - decay);
+            let expected_next = psi[step_index][rho_index] - damping_drop + driven_increment;
+            psi[step_index + 1][rho_index] = expected_next;
+            source_increment[step_index][rho_index] = driven_increment;
+            damping_decrement[step_index][rho_index] = damping_drop;
+            update_residual[step_index][rho_index] = psi[step_index + 1][rho_index] - expected_next;
         }
     }
 
@@ -91,6 +102,9 @@ pub fn solve_flux_evolution_nonadiabatic(
         resistive_loss,
         source,
         damping_rate,
+        source_increment,
+        damping_decrement,
+        update_residual,
         dt_s: input.dt_s,
     })
 }
@@ -212,6 +226,14 @@ mod tests {
             .iter()
             .flatten()
             .all(|value| *value == 0.0));
+        assert_eq!(trajectory.source_increment.len(), 5);
+        assert_eq!(trajectory.damping_decrement.len(), 5);
+        assert_eq!(trajectory.update_residual.len(), 5);
+        assert!(trajectory
+            .update_residual
+            .iter()
+            .flatten()
+            .all(|value| *value == 0.0));
     }
 
     #[test]
@@ -228,6 +250,12 @@ mod tests {
         let trajectory = solve_flux_evolution_nonadiabatic(&input).unwrap();
         let expected = 0.2 + 4.0 * input.dt_s * 0.2 * 15.0;
         assert!((trajectory.psi[4][0] - expected).abs() < 1.0e-15);
+        let source_sum = trajectory
+            .source_increment
+            .iter()
+            .map(|row| row[0])
+            .sum::<f64>();
+        assert!((source_sum - (expected - 0.2)).abs() < 1.0e-15);
     }
 
     #[test]
@@ -241,5 +269,38 @@ mod tests {
         let trajectory = solve_flux_evolution_nonadiabatic(&input).unwrap();
         let expected = 0.2 * (-(8.0 * input.dt_s) / 4.0e-7).exp();
         assert!((trajectory.psi[8][0] - expected).abs() < 1.0e-15);
+        let damping_sum = trajectory
+            .damping_decrement
+            .iter()
+            .map(|row| row[0])
+            .sum::<f64>();
+        assert!((damping_sum - (0.2 - expected)).abs() < 1.0e-15);
+    }
+
+    #[test]
+    fn step_budget_closes_mixed_drive_and_damping() {
+        let mut input = base_input(14, 6);
+        for (time_index, tau_row) in input.tau_psi_s.iter_mut().enumerate() {
+            input.r_null_m[time_index] = 0.18 + 0.005 * time_index as f64;
+            for (rho_index, tau_value) in tau_row.iter_mut().enumerate() {
+                *tau_value = 3.0e-7 + 1.0e-8 * rho_index as f64;
+                input.e_theta_v_m[time_index][rho_index] =
+                    12.0 + time_index as f64 + 0.5 * rho_index as f64;
+                input.eta_ohm_m[time_index][rho_index] = 1.0e-6 * (1.0 + rho_index as f64);
+                input.j_theta_a_m2[time_index][rho_index] = 8.0e4 + 100.0 * time_index as f64;
+            }
+        }
+        let trajectory = solve_flux_evolution_nonadiabatic(&input).unwrap();
+        for step_index in 0..6 {
+            for rho_index in 0..14 {
+                let reconstructed = trajectory.psi[step_index][rho_index]
+                    - trajectory.damping_decrement[step_index][rho_index]
+                    + trajectory.source_increment[step_index][rho_index];
+                assert!(
+                    (trajectory.psi[step_index + 1][rho_index] - reconstructed).abs() < 1.0e-15
+                );
+                assert!(trajectory.update_residual[step_index][rho_index].abs() <= 1.0e-15);
+            }
+        }
     }
 }

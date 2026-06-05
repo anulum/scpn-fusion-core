@@ -7,6 +7,10 @@
   and Rust, projects the Steinhauer `s` parameter through explicit
   self-similar gyroradius scaling, records coupled benchmark rows, and keeps
   external Belova parity blocked.
+- Hardened the FUS-C.3 non-adiabatic MIF/FRC flux carrier across Python and
+  Rust with explicit source-increment, damping-decrement, and update-residual
+  diagnostics, plus tracked local benchmark evidence for the discrete budget
+  closure.
 - Added FUS-C.6 voltage-driven coil-current coupling across Python and Rust:
   the pulsed-compression path now supports an exact bank-limited lumped R-L
   coil circuit, circuit-energy residuals, voltage-driven benchmark rows, and

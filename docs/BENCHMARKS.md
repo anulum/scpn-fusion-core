@@ -1664,6 +1664,29 @@ cargo bench --manifest-path scpn-fusion-rs/Cargo.toml -p fusion-physics --bench 
 PYTHONPATH=src python benchmarks/bench_hall_mhd_pulsed.py
 ```
 
+### FRC non-adiabatic current-diffusion carrier benchmark
+
+The tracked FUS-C.3 benchmark report is
+`validation/reports/current_diffusion_nonadiabatic_benchmark.json`. It covers
+the accepted one-dimensional Ono-style carrier used by downstream pulsed
+compression:
+
+$$\partial_t\psi=-\psi/\tau_\psi+R_{\rm null}E_\theta-\eta J_\theta.$$
+
+The report includes Python timing rows, Rust Criterion rows from
+`fusion-core::current_diffusion`, and the local discrete update residual for
+the exact source/damping budget
+`psi[n+1] = psi[n] - damping_decrement[n] + source_increment[n]`. The report is
+local non-isolated regression evidence, not production throughput evidence and
+not Ono Fig. 4 same-case parity.
+
+Reproduce locally:
+
+```bash
+cargo bench --manifest-path scpn-fusion-rs/Cargo.toml -p fusion-core --bench current_diffusion_nonadiabatic_bench -- --sample-size 10
+PYTHONPATH=src python benchmarks/bench_current_diffusion_nonadiabatic.py
+```
+
 ### FRC n=1 tilt-mode diagnostic benchmark
 
 The tracked FUS-C.5 benchmark report is
