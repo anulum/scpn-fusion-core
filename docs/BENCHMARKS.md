@@ -1714,6 +1714,12 @@ Criterion rows, FUS-C.6 coupled trajectory rows, source checksums, and an
 external-reference row for `belova_2001_table1_tilt_stability` with status
 `blocked_missing_public_digitised_reference`. It does not claim full Belova
 hybrid eigenvalue parity or Table I reproduction.
+Schema `scpn-fusion-core.tilt_mode_frc_benchmark.v4` also records the
+FUS-C.6 trajectory growth exposure `G(t)=integral(gamma_tilt dt)`, finite
+perturbation amplification, and overflow-limited flag for Python coupled rows.
+Rust coupled Criterion rows publish `growth_integral_status` because the
+timing harness asserts finite cumulative growth and amplification before
+emitting estimates.
 
 Latest local non-isolated regression rows:
 

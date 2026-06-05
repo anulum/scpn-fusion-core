@@ -7,6 +7,8 @@
 # SCPN Fusion Core — FRC Tilt-Mode Tests
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 from numpy.typing import NDArray
 import pytest
@@ -152,9 +154,33 @@ def test_tilt_trajectory_tracks_pulsed_compression_projection() -> None:
     )
     assert trajectory[1].report.s_parameter == pytest.approx(expected_s, rel=1.0e-14)
     assert trajectory[-1].report.growth_rate_s_inv > 0.0
+    assert trajectory[0].cumulative_growth_integral == pytest.approx(0.0)
+    assert trajectory[1].cumulative_growth_integral == pytest.approx(
+        trajectory[1].report.growth_rate_s_inv * (states[1].t_s - states[0].t_s),
+        rel=1.0e-14,
+    )
+    assert trajectory[-1].cumulative_growth_integral >= trajectory[1].cumulative_growth_integral
+    assert np.isfinite(trajectory[-1].perturbation_amplification)
+    assert trajectory[-1].perturbation_amplification >= 1.0
+    assert trajectory[-1].amplification_overflow_limited is False
     assert trajectory[-1].report.external_parity_status == (
         "blocked_missing_public_digitised_reference"
     )
+
+
+def test_tilt_trajectory_growth_integral_limits_extreme_amplification() -> None:
+    eq = _equilibrium()
+    states = (
+        SimpleNamespace(t_s=0.0, R_s_m=1.0e-6, T_i_eV=10_000.0, density_m3=1.0e6, B_ext_T=100.0),
+        SimpleNamespace(t_s=1.0, R_s_m=1.0e-6, T_i_eV=10_000.0, density_m3=1.0e6, B_ext_T=100.0),
+    )
+
+    trajectory = tilt_mode_trajectory_from_pulsed_compression(states, eq, elongation=4.0)
+
+    assert trajectory[-1].cumulative_growth_integral > np.log(np.finfo(np.float64).max)
+    assert np.isfinite(trajectory[-1].perturbation_amplification)
+    assert trajectory[-1].perturbation_amplification > 1.0e300
+    assert trajectory[-1].amplification_overflow_limited is True
 
 
 def test_external_acceptance_and_claim_boundary_are_explicit() -> None:

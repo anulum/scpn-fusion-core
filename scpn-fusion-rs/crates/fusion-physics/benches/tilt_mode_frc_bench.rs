@@ -80,6 +80,10 @@ fn bench_tilt_mode_from_compression(c: &mut Criterion) {
             b.iter(|| {
                 let trajectory = tilt_mode_trajectory_from_pulsed_compression(&states, reference)
                     .expect("valid trajectory");
+                let final_point = trajectory.last().expect("trajectory point exists");
+                assert!(final_point.cumulative_growth_integral.is_finite());
+                assert!(final_point.perturbation_amplification.is_finite());
+                assert!(!final_point.amplification_overflow_limited);
                 let checksum: f64 = trajectory
                     .iter()
                     .map(|point| point.report.growth_rate_s_inv + point.report.s_parameter)

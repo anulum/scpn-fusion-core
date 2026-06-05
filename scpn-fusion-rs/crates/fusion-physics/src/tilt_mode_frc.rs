@@ -16,6 +16,7 @@ pub const BELOVA_MHD_GROWTH_COEFFICIENT: f64 = 1.2;
 pub const DIAMAGNETIC_S_OVER_E_THRESHOLD: f64 = 1.7;
 pub const GYROVISCOUS_S_OVER_E_THRESHOLD: f64 = 2.2;
 pub const COMBINED_FLR_S_OVER_E_THRESHOLD: f64 = 2.8;
+pub const FLOAT64_LOG_MAX: f64 = 709.782_712_893_384;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FrcTiltModeInputs {
@@ -67,6 +68,9 @@ pub struct FrcTiltModeTrajectoryPoint {
     pub density_m3: f64,
     pub t_i_ev: f64,
     pub report: FrcTiltModeReport,
+    pub cumulative_growth_integral: f64,
+    pub perturbation_amplification: f64,
+    pub amplification_overflow_limited: bool,
 }
 
 impl Default for FrcTiltModeThresholds {
@@ -179,6 +183,7 @@ pub fn tilt_mode_trajectory_from_pulsed_compression(
     require_positive("reference.elongation", reference.elongation)?;
     require_positive("reference.ion_mass_amu", reference.ion_mass_amu)?;
     let mut previous_t = None;
+    let mut cumulative_growth_integral = 0.0_f64;
     let mut points = Vec::with_capacity(states.len());
     for state in states {
         if !state.t_s.is_finite() {
@@ -189,7 +194,6 @@ pub fn tilt_mode_trajectory_from_pulsed_compression(
                 return Err("compression-state times must be strictly increasing".to_string());
             }
         }
-        previous_t = Some(state.t_s);
         let projected_s = compressed_s_parameter(reference, state)?;
         let report = tilt_mode_report_from_values(
             projected_s,
@@ -200,6 +204,11 @@ pub fn tilt_mode_trajectory_from_pulsed_compression(
             reference.ion_mass_amu,
             FrcTiltModeThresholds::default(),
         )?;
+        if let Some(t_s) = previous_t {
+            cumulative_growth_integral += report.growth_rate_s_inv * (state.t_s - t_s);
+        }
+        let amplification_overflow_limited = cumulative_growth_integral > FLOAT64_LOG_MAX;
+        let perturbation_amplification = cumulative_growth_integral.min(FLOAT64_LOG_MAX).exp();
         points.push(FrcTiltModeTrajectoryPoint {
             t_s: state.t_s,
             r_s_m: state.r_s_m,
@@ -207,7 +216,11 @@ pub fn tilt_mode_trajectory_from_pulsed_compression(
             density_m3: state.density_m3,
             t_i_ev: state.t_i_ev,
             report,
+            cumulative_growth_integral,
+            perturbation_amplification,
+            amplification_overflow_limited,
         });
+        previous_t = Some(state.t_s);
     }
     Ok(points)
 }
@@ -290,10 +303,43 @@ mod tests {
         let expected_s = 8.0 * (0.18 / 0.2) * (6.0 / 5.0) * (10_000.0_f64 / 11_000.0).sqrt();
         assert_eq!(trajectory.len(), 2);
         assert!((trajectory[1].report.s_parameter - expected_s).abs() / expected_s < 1.0e-14);
+        assert_eq!(trajectory[0].cumulative_growth_integral, 0.0);
+        assert!(
+            (trajectory[1].cumulative_growth_integral
+                - trajectory[1].report.growth_rate_s_inv * (states[1].t_s - states[0].t_s))
+                .abs()
+                < 1.0e-12
+        );
+        assert!(trajectory[1].perturbation_amplification.is_finite());
+        assert!(trajectory[1].perturbation_amplification >= 1.0);
+        assert!(!trajectory[1].amplification_overflow_limited);
         assert_eq!(
             trajectory[1].report.external_parity_status,
             "blocked_missing_public_digitised_reference"
         );
+    }
+
+    #[test]
+    fn tilt_trajectory_growth_integral_limits_extreme_amplification() {
+        let reference = FrcTiltCompressionReference {
+            s_parameter: 8.0,
+            r_s_m: 1.0e-6,
+            b_reference_t: 100.0,
+            t_i_ev: 10_000.0,
+            elongation: 4.0,
+            ion_mass_amu: DEUTERIUM_MASS_AMU,
+        };
+        let states = vec![
+            compression_state_with_density(0.0, 1.0e-6, 100.0, 10_000.0, 1.0e6),
+            compression_state_with_density(1.0, 1.0e-6, 100.0, 10_000.0, 1.0e6),
+        ];
+
+        let trajectory = tilt_mode_trajectory_from_pulsed_compression(&states, reference).unwrap();
+
+        assert!(trajectory[1].cumulative_growth_integral > FLOAT64_LOG_MAX);
+        assert!(trajectory[1].perturbation_amplification.is_finite());
+        assert!(trajectory[1].perturbation_amplification > 1.0e300);
+        assert!(trajectory[1].amplification_overflow_limited);
     }
 
     #[test]
@@ -320,13 +366,23 @@ mod tests {
         b_ext_t: f64,
         t_i_ev: f64,
     ) -> PulsedCompressionState {
+        compression_state_with_density(t_s, r_s_m, b_ext_t, t_i_ev, 3.0e21)
+    }
+
+    fn compression_state_with_density(
+        t_s: f64,
+        r_s_m: f64,
+        b_ext_t: f64,
+        t_i_ev: f64,
+        density_m3: f64,
+    ) -> PulsedCompressionState {
         PulsedCompressionState {
             t_s,
             r_s_m,
             d_r_s_dt_m_s: -1.0e5,
             t_i_ev,
             t_e_ev: 5_000.0,
-            density_m3: 3.0e21,
+            density_m3,
             beta: 0.5,
             b_ext_t,
             internal_pressure_pa: 1.0e6,

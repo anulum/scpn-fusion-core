@@ -154,6 +154,9 @@ def _python_coupled_case(n_steps: int) -> dict[str, Any]:
         "samples_seconds": [value * 1.0e-9 for value in samples],
         "final_growth_rate_s_inv": final_point.report.growth_rate_s_inv,
         "final_s_parameter": final_point.report.s_parameter,
+        "final_cumulative_growth_integral": final_point.cumulative_growth_integral,
+        "final_perturbation_amplification": final_point.perturbation_amplification,
+        "amplification_overflow_limited": final_point.amplification_overflow_limited,
         "final_claim_status": final_point.report.claim_status,
         "checksum": checksum,
     }
@@ -180,6 +183,11 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "mean_seconds": float(estimates["mean"]["point_estimate"]) * 1.0e-9,
                 "stddev_seconds": float(estimates["std_dev"]["point_estimate"]) * 1.0e-9,
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
+                "growth_integral_status": (
+                    "asserted_in_rust_criterion_harness"
+                    if "fus_c6_coupled" in benchmark_name
+                    else "not_applicable_point_report"
+                ),
             }
         )
     return rows
@@ -191,7 +199,7 @@ def build_report(cases: Iterable[int] = (1_000, 10_000, 100_000)) -> dict[str, A
     rows.extend(_criterion_rows())
     rows.append({"language": "external_reference", **belova_table1_acceptance_status()})
     return {
-        "schema": "scpn-fusion-core.tilt_mode_frc_benchmark.v3",
+        "schema": "scpn-fusion-core.tilt_mode_frc_benchmark.v4",
         "claim_boundary": (
             "Local non-isolated FRC tilt diagnostic regression evidence. "
             "The accepted surface is an MHD Alfvén-time diagnostic with conservative "
@@ -201,6 +209,7 @@ def build_report(cases: Iterable[int] = (1_000, 10_000, 100_000)) -> dict[str, A
         "physics_contract": {
             "name": "MIF/FRC n=1 tilt diagnostic",
             "mhd_growth_scaling": "gamma = C*V_A/(E*R_s)",
+            "trajectory_growth_integral": "G(t)=integral(gamma_tilt dt)",
             "rigid_body_threshold": "s/E thresholds are diagnostic only",
             "fus_c6_projection": "s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)",
             "not_claimed": "full Belova hybrid eigenvalue solver or Table I same-case parity",

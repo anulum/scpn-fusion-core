@@ -34,6 +34,7 @@ BELOVA_MHD_GROWTH_COEFFICIENT = 1.2
 DIAMAGNETIC_S_OVER_E_THRESHOLD = 1.7
 GYROVISCOUS_S_OVER_E_THRESHOLD = 2.2
 COMBINED_FLR_S_OVER_E_THRESHOLD = 2.8
+FLOAT64_LOG_MAX = float(np.log(np.finfo(np.float64).max))
 
 
 class PulsedCompressionLike(Protocol):
@@ -82,6 +83,9 @@ class FRCTiltModeTrajectoryPoint:
     density_m3: float
     B_reference_T: float
     report: FRCTiltModeReport
+    cumulative_growth_integral: float
+    perturbation_amplification: float
+    amplification_overflow_limited: bool
 
 
 def alfven_speed_m_s(
@@ -187,11 +191,11 @@ def tilt_mode_trajectory_from_pulsed_compression(
 
     points: list[FRCTiltModeTrajectoryPoint] = []
     previous_t: float | None = None
+    cumulative_growth_integral = 0.0
     for state in states:
         t_s = _state_finite(state, "t_s")
         if previous_t is not None and t_s <= previous_t:
             raise ValueError("compression-state times must be strictly increasing")
-        previous_t = t_s
         radius = _state_positive(state, "R_s_m")
         temperature = _state_positive(state, "T_i_eV")
         density = _state_positive(state, "density_m3")
@@ -215,6 +219,12 @@ def tilt_mode_trajectory_from_pulsed_compression(
             mhd_coefficient=coefficient,
             ion_mass_amu=mass_amu,
         )
+        if previous_t is not None:
+            cumulative_growth_integral += report.growth_rate_s_inv * (t_s - previous_t)
+        amplification_overflow_limited = cumulative_growth_integral > FLOAT64_LOG_MAX
+        perturbation_amplification = float(
+            np.exp(min(cumulative_growth_integral, FLOAT64_LOG_MAX))
+        )
         points.append(
             FRCTiltModeTrajectoryPoint(
                 t_s=t_s,
@@ -223,8 +233,12 @@ def tilt_mode_trajectory_from_pulsed_compression(
                 density_m3=density,
                 B_reference_T=field,
                 report=report,
+                cumulative_growth_integral=float(cumulative_growth_integral),
+                perturbation_amplification=perturbation_amplification,
+                amplification_overflow_limited=bool(amplification_overflow_limited),
             )
         )
+        previous_t = t_s
     return tuple(points)
 
 

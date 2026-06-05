@@ -487,6 +487,10 @@ field, and density, and projects the Steinhauer `s` parameter through
 self-similar ion-gyroradius scaling. This is end-to-end trajectory coupling
 inside the accepted MIF lane; it is not an external Belova same-case parity
 claim.
+The trajectory adapter also integrates diagnostic tilt exposure as
+`G(t)=integral(gamma_tilt dt)` and publishes finite perturbation amplification
+plus an overflow-limited flag, so downstream preemption logic can consume
+cumulative e-foldings instead of only pointwise growth.
 
 **Key files:** `core/tilt_mode_frc.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/tilt_mode_frc.rs`,

@@ -69,6 +69,20 @@ $$s(t)=s_0\frac{R_s(t)}{R_s(0)}
 In code this is a product of the three factors. The trajectory adapter remains
 a diagnostic coupling contract, not a Belova hybrid eigenvalue replacement.
 
+The adapter also integrates the diagnostic growth exposure along the supplied
+trajectory:
+
+```text
+G(t) = integral gamma_tilt dt
+amplification = exp(G)
+```
+
+`FRCTiltModeTrajectoryPoint` reports `cumulative_growth_integral`,
+`perturbation_amplification`, and `amplification_overflow_limited`. If the
+diagnostic exposure exceeds finite `float64` amplification range, the
+amplification is limited to a finite value while the cumulative integral keeps
+the actual e-folding count.
+
 ## Public API
 
 ```python
@@ -103,6 +117,9 @@ The benchmark report is local non-isolated regression evidence. It records
 Python rows, Rust Criterion rows, FUS-C.6 coupled trajectory rows, source
 checksums, and a blocked external row for
 `belova_2001_table1_tilt_stability`.
+Schema `scpn-fusion-core.tilt_mode_frc_benchmark.v4` records the final
+trajectory growth integral and finite amplification diagnostic for coupled
+rows.
 
 ## Evidence boundary
 
