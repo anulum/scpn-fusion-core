@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Hardened FUS-C.6 pulsed compression with validated trajectory-level
+  diagnostics for minimum radius, acceleration envelope, radius-floor contact,
+  radial turning points, compression ratio, and flux-budget closure across
+  Python, Rust, benchmarks, and documentation.
 - Hardened FUS-C.7 Faraday recovery with term-level flux-rate diagnostics for
   field-ramp, radial-motion, and total linked-flux change across Python, Rust,
   benchmarks, and documentation.

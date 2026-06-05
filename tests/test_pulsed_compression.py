@@ -23,6 +23,7 @@ from scpn_fusion.core.pulsed_compression import (
     initial_coil_circuit_state,
     initial_pulsed_compression_state,
     plasma_volume_m3,
+    pulsed_compression_trajectory_diagnostics,
     run_coil_circuit,
     run_pulsed_compression,
     run_voltage_driven_pulsed_compression,
@@ -168,6 +169,27 @@ def test_run_pulsed_compression_tracks_flux_history() -> None:
     assert max(state.flux_update_residual_abs_max for state in states[1:]) <= 1.0e-12
 
 
+def test_trajectory_diagnostics_gate_radius_acceleration_and_flux_budget() -> None:
+    config = _config(current=5.0e5)
+    initial = initial_pulsed_compression_state(config)
+    states = run_pulsed_compression(initial, config, 1.0e-8, 8)
+
+    diagnostics = pulsed_compression_trajectory_diagnostics(
+        states,
+        radius_floor_m=config.min_radius_m,
+    )
+
+    assert diagnostics.monotonic_time is True
+    assert diagnostics.min_radius_m == pytest.approx(min(state.R_s_m for state in states))
+    assert diagnostics.max_abs_radial_acceleration_m_s2 == pytest.approx(
+        max(abs(state.radial_acceleration_m_s2) for state in states)
+    )
+    assert diagnostics.radius_floor_contact_count == 0
+    assert diagnostics.radial_turning_point_count == 0
+    assert diagnostics.compression_ratio > 1.0
+    assert diagnostics.all_flux_budgets_passed is True
+
+
 def test_flux_budget_exposes_source_damping_and_residual() -> None:
     config = PulsedCompressionConfig(
         equilibrium=_equilibrium(),
@@ -235,3 +257,6 @@ def test_pulsed_compression_inputs_fail_closed() -> None:
         run_pulsed_compression(initial_pulsed_compression_state(config), config, 1.0e-8, 0)
     with pytest.raises(ValueError, match="bank_voltage"):
         run_coil_circuit(config.coil, lambda _t: config.coil.bank_voltage_max_V + 1.0, 1.0e-9, 1)
+    states = run_pulsed_compression(initial_pulsed_compression_state(config), config, 1.0e-8, 2)
+    with pytest.raises(ValueError, match="strictly increasing"):
+        pulsed_compression_trajectory_diagnostics((states[1], states[0]))

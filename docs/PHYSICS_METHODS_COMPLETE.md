@@ -448,6 +448,15 @@ so downstream FUS-C.7 Faraday, FUS-C.4 MRTI, and FUS-C.5 tilt consumers can
 fail closed on flux-budget evidence instead of accepting an opaque flux
 checksum.
 
+The trajectory diagnostics helper validates complete state histories before
+summarising them. It requires finite, strictly increasing time; positive finite
+radii; finite radial speed and force-balance acceleration; and an optional
+positive radius floor. It reports minimum radius, compression ratio, maximum
+absolute acceleration, radius-floor contact count, radial turning-point count,
+and whether every post-initial flux-budget row passed. This gives downstream
+MRTI, tilt, and Faraday consumers a single fail-closed trajectory-quality
+contract instead of endpoint-only checks.
+
 The public acceptance boundary is fail-closed: the helper
 `slough_fig5_acceptance_status()` reports `blocked_missing_public_reference`
 until a redistributable, digitised reference trajectory is available. The

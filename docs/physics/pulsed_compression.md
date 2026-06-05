@@ -82,6 +82,20 @@ FUS-C.7 maps each state to `(t, R_s, B_ext, dR_s/dt)` and compares recovered
 load energy against the final `compression_work_J` when that sidecar is
 provided.
 
+The public trajectory diagnostics contract aggregates the same state history
+without changing the step physics:
+
+```text
+min_radius = min(R_s[n])
+compression_ratio = R_s[0] / min_radius
+max_abs_acceleration = max(|a_R[n]|)
+```
+
+It also reports whether time is strictly increasing, how many samples touched a
+declared radius floor, how many radial turning points occurred, and whether every
+post-initial flux-budget row passed. Non-finite states, non-monotonic time, and
+invalid radius floors raise instead of emitting ambiguous summary rows.
+
 ## Public API
 
 Python:
@@ -90,6 +104,7 @@ Python:
 from scpn_fusion.core import (
     CoilGeometry,
     PulsedCompressionConfig,
+    pulsed_compression_trajectory_diagnostics,
     initial_pulsed_compression_state,
     run_pulsed_compression,
     run_voltage_driven_pulsed_compression,
@@ -113,6 +128,10 @@ cfg = PulsedCompressionConfig(
 
 initial = initial_pulsed_compression_state(cfg)
 trajectory = run_pulsed_compression(initial, cfg, dt_s=1.0e-9, n_steps=256)
+diagnostics = pulsed_compression_trajectory_diagnostics(
+    trajectory,
+    radius_floor_m=cfg.min_radius_m,
+)
 voltage_driven = run_voltage_driven_pulsed_compression(
     cfg,
     lambda t: 20_000.0,
@@ -126,8 +145,9 @@ Rust:
 
 ```rust
 use fusion_physics::compression::{
-    run_pulsed_compression,
-    run_voltage_driven_pulsed_compression,
+	    run_pulsed_compression,
+	    run_voltage_driven_pulsed_compression,
+	    pulsed_compression_trajectory_diagnostics,
     CoilGeometry,
     PulsedCompressionConfig,
     PulsedCompressionState,
@@ -153,6 +173,8 @@ Tracked tests cover:
 - adiabatic invariant preservation,
 - radial acceleration under pressure imbalance,
 - finite force-balance acceleration exposure,
+- trajectory-level min-radius, acceleration, floor-contact, turning-point,
+  compression-ratio, and flux-budget diagnostics,
 - exact lumped R-L coil-current trajectory and circuit-energy residual,
 - external compression heating and shrinkage,
 - voltage-driven coil-current coupling into pulsed compression,

@@ -13,8 +13,9 @@ pub mod pulsed;
 pub use coil_geometry::CoilGeometry;
 pub use pulsed::{
     adiabatic_temperature_update_ev, coil_field_t, initial_coil_circuit_state,
-    initial_pulsed_flux_state, plasma_volume_m3, run_coil_circuit, run_pulsed_compression,
-    run_voltage_driven_pulsed_compression, spitzer_resistivity_ohm_m, step_coil_circuit,
-    step_pulsed_compression, CoilCircuitState, PulsedCompressionConfig, PulsedCompressionFluxState,
-    PulsedCompressionState, VoltageDrivenPulsedCompressionResult,
+    initial_pulsed_flux_state, plasma_volume_m3, pulsed_compression_trajectory_diagnostics,
+    run_coil_circuit, run_pulsed_compression, run_voltage_driven_pulsed_compression,
+    spitzer_resistivity_ohm_m, step_coil_circuit, step_pulsed_compression, CoilCircuitState,
+    PulsedCompressionConfig, PulsedCompressionFluxState, PulsedCompressionState,
+    PulsedCompressionTrajectoryDiagnostics, VoltageDrivenPulsedCompressionResult,
 };

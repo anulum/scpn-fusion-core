@@ -205,6 +205,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "CoilCircuitState": (".pulsed_compression", "CoilCircuitState"),
     "PulsedCompressionConfig": (".pulsed_compression", "PulsedCompressionConfig"),
     "PulsedCompressionState": (".pulsed_compression", "PulsedCompressionState"),
+    "PulsedCompressionTrajectoryDiagnostics": (
+        ".pulsed_compression",
+        "PulsedCompressionTrajectoryDiagnostics",
+    ),
     "VoltageDrivenCompressionResult": (
         ".pulsed_compression",
         "VoltageDrivenCompressionResult",
@@ -225,6 +229,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "run_voltage_driven_pulsed_compression": (
         ".pulsed_compression",
         "run_voltage_driven_pulsed_compression",
+    ),
+    "pulsed_compression_trajectory_diagnostics": (
+        ".pulsed_compression",
+        "pulsed_compression_trajectory_diagnostics",
     ),
     "slough_fig5_acceptance_status": (
         ".pulsed_compression",

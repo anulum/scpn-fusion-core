@@ -77,6 +77,17 @@ pub struct PulsedCompressionState {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct PulsedCompressionTrajectoryDiagnostics {
+    pub monotonic_time: bool,
+    pub min_radius_m: f64,
+    pub max_abs_radial_acceleration_m_s2: f64,
+    pub radius_floor_contact_count: usize,
+    pub radial_turning_point_count: usize,
+    pub compression_ratio: f64,
+    pub all_flux_budgets_passed: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct CoilCircuitState {
     pub t_s: f64,
     pub current_a: f64,
@@ -356,6 +367,58 @@ pub fn run_voltage_driven_pulsed_compression(
     })
 }
 
+pub fn pulsed_compression_trajectory_diagnostics(
+    states: &[PulsedCompressionState],
+    radius_floor_m: Option<f64>,
+) -> Result<PulsedCompressionTrajectoryDiagnostics, String> {
+    if states.len() < 2 {
+        return Err("at least two pulsed-compression states are required".to_string());
+    }
+    for state in states {
+        require_finite("state.t_s", state.t_s)?;
+        require_positive("state.r_s_m", state.r_s_m)?;
+        require_finite("state.d_r_s_dt_m_s", state.d_r_s_dt_m_s)?;
+        require_finite(
+            "state.radial_acceleration_m_s2",
+            state.radial_acceleration_m_s2,
+        )?;
+    }
+    if states.windows(2).any(|pair| pair[1].t_s <= pair[0].t_s) {
+        return Err("trajectory time_s must be finite and strictly increasing".to_string());
+    }
+    let floor = match radius_floor_m {
+        Some(value) => Some(require_positive("radius_floor_m", value)?),
+        None => None,
+    };
+    let min_radius_m = states
+        .iter()
+        .map(|state| state.r_s_m)
+        .fold(f64::INFINITY, f64::min);
+    let max_abs_radial_acceleration_m_s2 = states
+        .iter()
+        .map(|state| state.radial_acceleration_m_s2.abs())
+        .fold(0.0_f64, f64::max);
+    let radius_floor_contact_count = match floor {
+        Some(value) => states
+            .iter()
+            .filter(|state| state.r_s_m <= value * (1.0 + 1.0e-12))
+            .count(),
+        None => 0,
+    };
+    Ok(PulsedCompressionTrajectoryDiagnostics {
+        monotonic_time: true,
+        min_radius_m,
+        max_abs_radial_acceleration_m_s2,
+        radius_floor_contact_count,
+        radial_turning_point_count: count_radial_turning_points(states),
+        compression_ratio: states[0].r_s_m / min_radius_m,
+        all_flux_budgets_passed: states
+            .iter()
+            .skip(1)
+            .all(|state| state.flux_state.budget_claim_status == "passed"),
+    })
+}
+
 fn validate_config(config: &PulsedCompressionConfig) -> Result<(), String> {
     config.coil.validate()?;
     require_positive("plasma_mass_kg", config.plasma_mass_kg)?;
@@ -551,6 +614,22 @@ fn validate_flux_grid_and_checksum(rho: &[f64], psi: &[f64]) -> Result<f64, Stri
     Ok(psi.iter().sum())
 }
 
+fn count_radial_turning_points(states: &[PulsedCompressionState]) -> usize {
+    let signs: Vec<i8> = states
+        .iter()
+        .filter_map(|state| {
+            if state.d_r_s_dt_m_s > 0.0 {
+                Some(1)
+            } else if state.d_r_s_dt_m_s < 0.0 {
+                Some(-1)
+            } else {
+                None
+            }
+        })
+        .collect();
+    signs.windows(2).filter(|pair| pair[0] != pair[1]).count()
+}
+
 fn beta(pressure_pa: f64, field_t: f64) -> f64 {
     if field_t == 0.0 {
         f64::INFINITY
@@ -580,10 +659,10 @@ fn require_positive(name: &str, value: f64) -> Result<f64, String> {
 mod tests {
     use super::{
         adiabatic_temperature_update_ev, coil_field_t, initial_coil_circuit_state,
-        initial_pulsed_flux_state, plasma_volume_m3, run_coil_circuit, run_pulsed_compression,
-        run_voltage_driven_pulsed_compression, spitzer_resistivity_ohm_m, step_coil_circuit,
-        step_pulsed_compression, PulsedCompressionConfig, PulsedCompressionState,
-        ELEMENTARY_CHARGE_C, MU_0,
+        initial_pulsed_flux_state, plasma_volume_m3, pulsed_compression_trajectory_diagnostics,
+        run_coil_circuit, run_pulsed_compression, run_voltage_driven_pulsed_compression,
+        spitzer_resistivity_ohm_m, step_coil_circuit, step_pulsed_compression,
+        PulsedCompressionConfig, PulsedCompressionState, ELEMENTARY_CHARGE_C, MU_0,
     };
     use crate::compression::CoilGeometry;
 
@@ -716,6 +795,26 @@ mod tests {
         let states = run_pulsed_compression(state(), &config(), 5.0e5, 1.0e-8, 4).unwrap();
         assert_eq!(states.len(), 5);
         assert!((states[4].t_s - 4.0e-8).abs() < 1.0e-20);
+    }
+
+    #[test]
+    fn trajectory_diagnostics_gate_radius_acceleration_and_flux_budget() {
+        let states = run_pulsed_compression(state(), &config(), 5.0e5, 1.0e-8, 8).unwrap();
+        let diagnostics =
+            pulsed_compression_trajectory_diagnostics(&states, Some(config().min_radius_m))
+                .expect("valid diagnostics");
+        assert!(diagnostics.monotonic_time);
+        assert!(diagnostics.min_radius_m <= states[0].r_s_m);
+        assert!(diagnostics.max_abs_radial_acceleration_m_s2 > 0.0);
+        assert_eq!(diagnostics.radius_floor_contact_count, 0);
+        assert_eq!(diagnostics.radial_turning_point_count, 0);
+        assert!(diagnostics.compression_ratio > 1.0);
+        assert!(diagnostics.all_flux_budgets_passed);
+        assert!(pulsed_compression_trajectory_diagnostics(
+            &[states[1].clone(), states[0].clone()],
+            None
+        )
+        .is_err());
     }
 
     #[test]

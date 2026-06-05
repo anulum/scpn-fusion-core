@@ -25,6 +25,7 @@ from scpn_fusion.core.pulsed_compression import (
     CoilGeometry,
     PulsedCompressionConfig,
     initial_pulsed_compression_state,
+    pulsed_compression_trajectory_diagnostics,
     run_pulsed_compression,
     run_voltage_driven_pulsed_compression,
     slough_fig5_acceptance_status,
@@ -104,9 +105,9 @@ def _python_case(steps: int) -> dict[str, Any]:
         final_trajectory = states
     if final_state is None or final_trajectory is None:
         raise RuntimeError("benchmark did not run")
-    accelerations = np.asarray(
-        [state.radial_acceleration_m_s2 for state in final_trajectory],
-        dtype=np.float64,
+    diagnostics = pulsed_compression_trajectory_diagnostics(
+        final_trajectory,
+        radius_floor_m=cfg.min_radius_m,
     )
     return {
         "language": "python",
@@ -118,7 +119,12 @@ def _python_case(steps: int) -> dict[str, Any]:
         "final_ion_temperature_eV": final_state.T_i_eV,
         "final_beta": final_state.beta,
         "final_radial_acceleration_m_s2": final_state.radial_acceleration_m_s2,
-        "max_abs_radial_acceleration_m_s2": float(np.max(np.abs(accelerations))),
+        "min_radius_m": diagnostics.min_radius_m,
+        "max_abs_radial_acceleration_m_s2": diagnostics.max_abs_radial_acceleration_m_s2,
+        "radius_floor_contact_count": diagnostics.radius_floor_contact_count,
+        "radial_turning_point_count": diagnostics.radial_turning_point_count,
+        "compression_ratio": diagnostics.compression_ratio,
+        "all_flux_budgets_passed": diagnostics.all_flux_budgets_passed,
         "energy_balance_residual": final_state.energy_balance_residual,
         "flux_coupling_status": final_state.flux_coupling_status,
         "flux_budget_claim_status": final_state.flux_budget_claim_status,
@@ -149,9 +155,9 @@ def _python_voltage_driven_case(steps: int) -> dict[str, Any]:
         final_trajectory = result.compression
     if final_state is None or final_circuit is None or final_trajectory is None:
         raise RuntimeError("voltage-driven benchmark did not run")
-    accelerations = np.asarray(
-        [state.radial_acceleration_m_s2 for state in final_trajectory],
-        dtype=np.float64,
+    diagnostics = pulsed_compression_trajectory_diagnostics(
+        final_trajectory,
+        radius_floor_m=cfg.min_radius_m,
     )
     return {
         "language": "python",
@@ -163,7 +169,12 @@ def _python_voltage_driven_case(steps: int) -> dict[str, Any]:
         "final_ion_temperature_eV": final_state.T_i_eV,
         "final_beta": final_state.beta,
         "final_radial_acceleration_m_s2": final_state.radial_acceleration_m_s2,
-        "max_abs_radial_acceleration_m_s2": float(np.max(np.abs(accelerations))),
+        "min_radius_m": diagnostics.min_radius_m,
+        "max_abs_radial_acceleration_m_s2": diagnostics.max_abs_radial_acceleration_m_s2,
+        "radius_floor_contact_count": diagnostics.radius_floor_contact_count,
+        "radial_turning_point_count": diagnostics.radial_turning_point_count,
+        "compression_ratio": diagnostics.compression_ratio,
+        "all_flux_budgets_passed": diagnostics.all_flux_budgets_passed,
         "final_coil_current_A": final_circuit.current_A,
         "coil_circuit_energy_balance_residual": final_circuit.energy_balance_residual,
         "compression_energy_balance_residual": final_state.energy_balance_residual,
@@ -202,6 +213,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
         if "voltage_driven" in benchmark_name:
             row["drive_status"] = "exact_lumped_rl_bank_limited"
         row["flux_budget_claim_status"] = "asserted_in_rust_criterion_harness"
+        row["trajectory_diagnostics_status"] = "asserted_in_rust_criterion_harness"
         rows.append(row)
     return rows
 
@@ -217,14 +229,15 @@ def build_report() -> dict[str, Any]:
         }
     )
     return {
-        "schema": "scpn-fusion-core.pulsed_compression_benchmark.v3",
+        "schema": "scpn-fusion-core.pulsed_compression_benchmark.v4",
         "claim_boundary": (
             "Local non-isolated regression evidence for supplied-current and exact lumped "
             "R-L voltage-driven pulsed-compression dynamics wired to the Ono non-adiabatic "
             "flux carrier with explicit flux source, damping, and update-residual budget "
-            "diagnostics, plus force-balance radial-acceleration observability. Slough "
-            "Fig. 5 parity remains blocked until a public digitised reference trajectory "
-            "exists."
+            "diagnostics, force-balance radial-acceleration observability, and validated "
+            "trajectory-level min-radius, floor-contact, turning-point, compression-ratio, "
+            "and all-flux-budget diagnostics. Slough Fig. 5 parity remains blocked until "
+            "a public digitised reference trajectory exists."
         ),
         "environment": {
             "python": platform.python_version(),

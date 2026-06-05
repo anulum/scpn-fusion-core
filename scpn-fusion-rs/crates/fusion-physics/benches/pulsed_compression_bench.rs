@@ -8,9 +8,9 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use fusion_physics::compression::{
-    initial_pulsed_flux_state, plasma_volume_m3, run_pulsed_compression,
-    run_voltage_driven_pulsed_compression, CoilGeometry, PulsedCompressionConfig,
-    PulsedCompressionState,
+    initial_pulsed_flux_state, plasma_volume_m3, pulsed_compression_trajectory_diagnostics,
+    run_pulsed_compression, run_voltage_driven_pulsed_compression, CoilGeometry,
+    PulsedCompressionConfig, PulsedCompressionState,
 };
 
 const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
@@ -81,6 +81,12 @@ fn bench_pulsed_compression(c: &mut Criterion) {
                     let final_state = states.last().expect("state exists");
                     assert_eq!(final_state.flux_state.budget_claim_status, "passed");
                     assert!(final_state.flux_state.update_residual_abs_max <= 1.0e-12);
+                    let diagnostics =
+                        pulsed_compression_trajectory_diagnostics(&states, Some(cfg.min_radius_m))
+                            .expect("valid trajectory diagnostics");
+                    assert!(diagnostics.monotonic_time);
+                    assert!(diagnostics.all_flux_budgets_passed);
+                    assert!(diagnostics.compression_ratio >= 1.0);
                     states
                 })
             });
@@ -103,6 +109,14 @@ fn bench_pulsed_compression(c: &mut Criterion) {
                     let final_state = result.compression.last().expect("state exists");
                     assert_eq!(final_state.flux_state.budget_claim_status, "passed");
                     assert!(final_state.flux_state.update_residual_abs_max <= 1.0e-12);
+                    let diagnostics = pulsed_compression_trajectory_diagnostics(
+                        &result.compression,
+                        Some(cfg.min_radius_m),
+                    )
+                    .expect("valid trajectory diagnostics");
+                    assert!(diagnostics.monotonic_time);
+                    assert!(diagnostics.all_flux_budgets_passed);
+                    assert!(diagnostics.compression_ratio >= 1.0);
                     result
                 })
             });

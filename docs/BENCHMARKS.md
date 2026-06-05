@@ -1775,11 +1775,18 @@ trajectory, adiabatic heating, compression-work sidecar, and Ono
 non-adiabatic flux-carrier coupling. The Python rows now publish the carrier
 source-increment checksum, damping-decrement checksum, maximum absolute update
 residual, `flux_budget_claim_status`, final force-balance
-`radial_acceleration_m_s2`, and the maximum absolute trajectory acceleration;
-Rust Criterion rows assert the same budget gate inside the native benchmark
-harness. Voltage-driven rows add the exact lumped R-L coil-current contract
-over the declared bank-voltage limit and record the coil-circuit energy
-residual before feeding the same compression path.
+`radial_acceleration_m_s2`, the maximum absolute trajectory acceleration,
+minimum radius, compression ratio, radius-floor contact count, radial
+turning-point count, and an all-flux-budgets-passed diagnostic; Rust Criterion
+rows assert the same budget and trajectory gates inside the native benchmark
+harness. Voltage-driven rows add the exact lumped R-L coil-current contract over
+the declared bank-voltage limit and record the coil-circuit energy residual
+before feeding the same compression path.
+
+Schema `scpn-fusion-core.pulsed_compression_benchmark.v4` records these
+trajectory diagnostics for Python supplied-current and voltage-driven rows.
+Rust rows publish `trajectory_diagnostics_status` because the native Criterion
+harness asserts the trajectory gates before emitting estimates.
 
 This is not a production throughput claim and not external Slough Fig. 5
 parity. The Slough row remains blocked until a public digitised trajectory with

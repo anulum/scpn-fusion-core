@@ -15,14 +15,14 @@ This module implements the explicit work-lane contract for FUS-C.6:
 * energy accounting is carried with an explicit residual, and
 * flux evolution is wired through the existing Ono non-adiabatic carrier.
 
-It does not fabricate the missing Slough 2011 Fig. 5 comparison. Reports that
+It does not invent the missing Slough 2011 Fig. 5 comparison. Reports that
 need that public digitised trajectory must carry a blocked evidence row until
 the reference trajectory and compression-work sidecar exist.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from typing import TypeAlias
 
@@ -119,6 +119,19 @@ class VoltageDrivenCompressionResult:
 
     coil_circuit: tuple[CoilCircuitState, ...]
     compression: tuple[PulsedCompressionState, ...]
+
+
+@dataclass(frozen=True)
+class PulsedCompressionTrajectoryDiagnostics:
+    """Validated aggregate diagnostics for a pulsed-compression trajectory."""
+
+    monotonic_time: bool
+    min_radius_m: float
+    max_abs_radial_acceleration_m_s2: float
+    radius_floor_contact_count: int
+    radial_turning_point_count: int
+    compression_ratio: float
+    all_flux_budgets_passed: bool
 
 
 def coil_field_t(coil: CoilGeometry, coil_current_a: float) -> float:
@@ -492,6 +505,48 @@ def run_voltage_driven_pulsed_compression(
     )
 
 
+def pulsed_compression_trajectory_diagnostics(
+    states: Sequence[PulsedCompressionState],
+    *,
+    radius_floor_m: float | None = None,
+) -> PulsedCompressionTrajectoryDiagnostics:
+    """Return fail-closed aggregate diagnostics for a compression trajectory."""
+
+    if len(states) < 2:
+        raise ValueError("at least two pulsed-compression states are required")
+    time_s = np.asarray([state.t_s for state in states], dtype=np.float64)
+    radius_m = np.asarray([state.R_s_m for state in states], dtype=np.float64)
+    speed_m_s = np.asarray([state.dR_s_dt_m_s for state in states], dtype=np.float64)
+    acceleration_m_s2 = np.asarray(
+        [state.radial_acceleration_m_s2 for state in states],
+        dtype=np.float64,
+    )
+    if not np.all(np.isfinite(time_s)) or not np.all(np.diff(time_s) > 0.0):
+        raise ValueError("trajectory time_s must be finite and strictly increasing")
+    if not np.all(np.isfinite(radius_m)) or np.any(radius_m <= 0.0):
+        raise ValueError("trajectory radius must be positive and finite")
+    if not np.all(np.isfinite(speed_m_s)):
+        raise ValueError("trajectory radial speed must be finite")
+    if not np.all(np.isfinite(acceleration_m_s2)):
+        raise ValueError("trajectory radial acceleration must be finite")
+    floor_contact_count = 0
+    if radius_floor_m is not None:
+        floor = _require_positive("radius_floor_m", radius_floor_m)
+        floor_contact_count = int(np.count_nonzero(radius_m <= floor * (1.0 + 1.0e-12)))
+    min_radius = float(np.min(radius_m))
+    return PulsedCompressionTrajectoryDiagnostics(
+        monotonic_time=True,
+        min_radius_m=min_radius,
+        max_abs_radial_acceleration_m_s2=float(np.max(np.abs(acceleration_m_s2))),
+        radius_floor_contact_count=floor_contact_count,
+        radial_turning_point_count=_count_radial_turning_points(speed_m_s),
+        compression_ratio=float(radius_m[0] / min_radius),
+        all_flux_budgets_passed=all(
+            state.flux_budget_claim_status == "passed" for state in states[1:]
+        ),
+    )
+
+
 def slough_fig5_acceptance_status() -> dict[str, str]:
     """Return the current fail-closed status for the external Slough comparison."""
 
@@ -586,6 +641,16 @@ def _beta(pressure_pa: float, field_t: float) -> float:
 
 def _zero_profile(_: float, rho: FloatArray) -> FloatArray:
     return np.zeros_like(rho)
+
+
+def _count_radial_turning_points(speed_m_s: FloatArray) -> int:
+    signs: list[int] = []
+    for value in speed_m_s:
+        if value > 0.0:
+            signs.append(1)
+        elif value < 0.0:
+            signs.append(-1)
+    return sum(1 for left, right in zip(signs, signs[1:]) if left != right)
 
 
 def _require_finite(name: str, value: float) -> float:
