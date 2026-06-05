@@ -1,5 +1,6 @@
 {
   "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "benchmark_id": "vertical_control_replay_profile_suite",
   "vertical_control_replay_profile_suite": {
     "schema_version": "1.0.0",
     "profile_ids": [
@@ -452,7 +453,7 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "dad0962ac3665f18bfcff95ec386f920fa6ec5c4",
+          "source_commit": "90099fc586793a46652339fcd35a9dd19f329494",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
           "numpy_version": "2.2.6",
@@ -930,7 +931,7 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "dad0962ac3665f18bfcff95ec386f920fa6ec5c4",
+          "source_commit": "90099fc586793a46652339fcd35a9dd19f329494",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
           "numpy_version": "2.2.6",
@@ -1408,7 +1409,7 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "dad0962ac3665f18bfcff95ec386f920fa6ec5c4",
+          "source_commit": "90099fc586793a46652339fcd35a9dd19f329494",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
           "numpy_version": "2.2.6",
