@@ -77,7 +77,11 @@ fn bench_mrti_tracker(c: &mut Criterion) {
                 for _ in 0..512 {
                     black_box(tracker.step(2.0e-7, 6.5e6, 8.0e-4).expect("valid step"));
                 }
-                black_box(tracker.state().max_amplitude_m)
+                let state = tracker.state();
+                assert!(state.max_amplitude_m.is_finite());
+                assert!(state.max_log_amplitude.is_finite());
+                assert!(!state.amplitude_overflow_limited);
+                black_box(state.max_amplitude_m)
             });
         });
     }
@@ -97,16 +101,19 @@ fn bench_mrti_tracker(c: &mut Criterion) {
                     let mut tracker =
                         MrtiSpectrumTracker::new(1.0e4, n_modes, 1.0e-9, 1.0e-3, 1.0e-3)
                             .expect("valid tracker");
-                    black_box(
-                        fusion_physics::mrti::track_mrti_from_pulsed_compression(
-                            &states,
-                            &mut tracker,
-                            1,
-                            -1.0,
-                            1.0,
-                        )
-                        .expect("valid MRTI compression coupling"),
+                    let snapshots = fusion_physics::mrti::track_mrti_from_pulsed_compression(
+                        &states,
+                        &mut tracker,
+                        1,
+                        -1.0,
+                        1.0,
                     )
+                    .expect("valid MRTI compression coupling");
+                    let final_state = snapshots.last().expect("snapshot exists");
+                    assert!(final_state.max_amplitude_m.is_finite());
+                    assert!(final_state.max_log_amplitude.is_finite());
+                    assert!(!final_state.amplitude_overflow_limited);
+                    black_box(snapshots)
                 });
             },
         );

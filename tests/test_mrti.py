@@ -68,9 +68,24 @@ def test_spectrum_tracker_matches_constant_acceleration_exponential() -> None:
     gamma = np.sqrt(np.array([2.0, 8.0], dtype=np.float64) * acceleration)
     expected = 2.0e-9 * np.exp(gamma * dt * steps)
     np.testing.assert_allclose(state.amplitudes_m, expected, rtol=1.0e-12, atol=0.0)
+    np.testing.assert_allclose(state.log_amplitudes, np.log(expected), rtol=1.0e-12, atol=1.0e-12)
     assert state.fastest_growing_k_m_inv == 8.0
     assert not state.saturation_warning
     assert state.time_of_breach_s is None
+    assert state.amplitude_overflow_limited is False
+
+
+def test_spectrum_tracker_keeps_extreme_growth_finite_in_log_space() -> None:
+    tracker = MRTISpectrumTracker(k_modes_m_inv=[1.0, 4.0], initial_perturbation_m=1.0e-9)
+
+    state = tracker.step(1.0, 1.0e8)
+
+    assert np.all(np.isfinite(state.amplitudes_m))
+    assert np.isfinite(state.max_amplitude_m)
+    assert np.all(np.isfinite(state.log_amplitudes))
+    assert state.max_log_amplitude > np.log(np.finfo(np.float64).max)
+    assert state.amplitude_overflow_limited is True
+    assert state.saturation_warning is True
 
 
 def test_spectrum_tracker_records_first_saturation_breach() -> None:

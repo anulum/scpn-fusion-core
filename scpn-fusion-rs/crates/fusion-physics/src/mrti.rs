@@ -16,22 +16,27 @@ pub struct MrtiSpectrumState {
     pub t_s: f64,
     pub k_modes_m_inv: Vec<f64>,
     pub amplitudes_m: Vec<f64>,
+    pub log_amplitudes: Vec<f64>,
     pub growth_rates_s_inv: Vec<f64>,
     pub fastest_growing_k_m_inv: f64,
     pub max_amplitude_m: f64,
+    pub max_log_amplitude: f64,
     pub saturation_warning: bool,
     pub time_of_breach_s: Option<f64>,
+    pub amplitude_overflow_limited: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct MrtiSpectrumTracker {
     k_modes_m_inv: Vec<f64>,
     amplitudes_m: Vec<f64>,
+    log_amplitudes: Vec<f64>,
     growth_rates_s_inv: Vec<f64>,
     rho_kg_m3: f64,
     saturation_threshold_m: f64,
     t_s: f64,
     time_of_breach_s: Option<f64>,
+    amplitude_overflow_limited: bool,
 }
 
 fn require_finite(name: &str, value: f64) -> Result<f64, String> {
@@ -250,12 +255,14 @@ impl MrtiSpectrumTracker {
         let threshold = require_positive("saturation_threshold_m", saturation_threshold_m)?;
         Ok(Self {
             amplitudes_m: vec![initial; k_modes_m_inv.len()],
+            log_amplitudes: vec![initial.ln(); k_modes_m_inv.len()],
             growth_rates_s_inv: vec![0.0; k_modes_m_inv.len()],
             k_modes_m_inv,
             rho_kg_m3: density,
             saturation_threshold_m: threshold,
             t_s: 0.0,
             time_of_breach_s: None,
+            amplitude_overflow_limited: false,
         })
     }
 
@@ -272,15 +279,23 @@ impl MrtiSpectrumTracker {
             .iter()
             .copied()
             .fold(f64::NEG_INFINITY, f64::max);
+        let max_log_amplitude = self
+            .log_amplitudes
+            .iter()
+            .copied()
+            .fold(f64::NEG_INFINITY, f64::max);
         MrtiSpectrumState {
             t_s: self.t_s,
             k_modes_m_inv: self.k_modes_m_inv.clone(),
             amplitudes_m: self.amplitudes_m.clone(),
+            log_amplitudes: self.log_amplitudes.clone(),
             growth_rates_s_inv: self.growth_rates_s_inv.clone(),
             fastest_growing_k_m_inv: self.k_modes_m_inv[fastest_index],
             max_amplitude_m,
+            max_log_amplitude,
             saturation_warning: max_amplitude_m >= self.saturation_threshold_m,
             time_of_breach_s: self.time_of_breach_s,
+            amplitude_overflow_limited: self.amplitude_overflow_limited,
         }
     }
 
@@ -293,12 +308,20 @@ impl MrtiSpectrumTracker {
         let dt = require_positive("dt_s", dt_s)?;
         self.growth_rates_s_inv =
             mrti_growth_rates(&self.k_modes_m_inv, a_eff_m_s2, b_perp_t, self.rho_kg_m3)?;
-        for (amplitude, gamma) in self
+        for ((amplitude, log_amplitude), gamma) in self
             .amplitudes_m
             .iter_mut()
+            .zip(self.log_amplitudes.iter_mut())
             .zip(self.growth_rates_s_inv.iter())
         {
-            *amplitude *= (gamma * dt).clamp(0.0, 700.0).exp();
+            let growth_exponent = (gamma * dt).max(0.0);
+            *log_amplitude += growth_exponent;
+            if *log_amplitude > f64::MAX.ln() {
+                self.amplitude_overflow_limited = true;
+                *amplitude = f64::MAX;
+            } else {
+                *amplitude = (*log_amplitude).exp();
+            }
         }
         self.t_s += dt;
         if self.time_of_breach_s.is_none() && self.saturation_threshold_breached(None)? {
@@ -359,8 +382,24 @@ mod tests {
         let gamma = (8.0_f64 * 4.0e6_f64).sqrt();
         let expected = 2.0e-9 * (gamma * 2.5e-7 * 12.0).exp();
         assert!((state.amplitudes_m[1] - expected).abs() / expected < 1.0e-12);
+        assert!((state.log_amplitudes[1] - expected.ln()).abs() < 1.0e-12);
         assert_eq!(state.fastest_growing_k_m_inv, 8.0);
         assert!(!state.saturation_warning);
+        assert!(!state.amplitude_overflow_limited);
+    }
+
+    #[test]
+    fn spectrum_tracker_keeps_extreme_growth_finite_in_log_space() {
+        let mut tracker = MrtiSpectrumTracker::from_modes(vec![1.0, 4.0], 1.0e-9, 1.0e-3, 1.0e-3)
+            .expect("valid tracker");
+        let state = tracker.step(1.0, 1.0e8, 0.0).expect("valid step");
+
+        assert!(state.amplitudes_m.iter().all(|value| value.is_finite()));
+        assert!(state.max_amplitude_m.is_finite());
+        assert!(state.log_amplitudes.iter().all(|value| value.is_finite()));
+        assert!(state.max_log_amplitude > f64::MAX.ln());
+        assert!(state.amplitude_overflow_limited);
+        assert!(state.saturation_warning);
     }
 
     #[test]

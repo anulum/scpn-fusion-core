@@ -1788,6 +1788,11 @@ supplied-current pulsed-compression rows: each row consumes the real
 `PulsedCompressionState` history, projects signed radial acceleration into the
 MRTI interface-normal convention, and advances the MRTI spectrum over the
 compression intervals.
+Schema `scpn-fusion-core.mrti_benchmark.v2` records log-amplitude evolution
+diagnostics for the tracker. Python rows publish `max_log_amplitude` and
+`amplitude_overflow_limited`; Rust Criterion rows publish
+`log_amplitude_status` because the timing harness asserts finite physical and
+log-amplitude state before emitting Criterion estimates.
 
 This is same-codebase coupling evidence, not external nonlinear MRTI parity.
 Redistributable pulsed-power MRTI image/diagnostic references remain blocked

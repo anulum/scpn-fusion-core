@@ -23,6 +23,18 @@ growth rate in `s^-1`.
 Negative radicands are clipped to zero. That represents magnetic-tension
 stabilisation for the supplied mode, not nonlinear mode removal.
 
+Perturbation amplitudes are integrated in log space:
+
+```text
+log(A_i) <- log(A_i) + max(gamma_i * dt, 0)
+```
+
+The public state still exposes physical amplitudes in metres, but also reports
+`log_amplitudes`, `max_log_amplitude`, and `amplitude_overflow_limited`. If an
+extreme-growth trajectory exceeds finite `float64` amplitude range, the
+physical amplitude is limited to the largest representable finite value while
+the log-amplitude diagnostic preserves the actual integrated exponent.
+
 ## Public API
 
 Python:
@@ -79,6 +91,7 @@ Tracked tests cover:
 - Hydrodynamic `B_perp = 0` limit: `gamma = sqrt(k a_eff)`.
 - Magnetic-tension stabilisation for short wavelengths.
 - Constant-acceleration exponential amplitude growth.
+- Log-amplitude accounting for long or extreme growth trajectories.
 - First saturation-threshold breach detection.
 - Smoothed acceleration recovery from a synthetic radial-speed ramp.
 - FUS-C.6 supplied-current pulsed-compression trajectory driving MRTI spectra.
@@ -90,7 +103,8 @@ Tracked benchmark report:
 
 The benchmark report is local, non-isolated regression evidence. It includes
 analytical fixed-acceleration rows and internal FUS-C.6 compression-coupled
-rows. Rust rows are included after running the Criterion benchmark:
+rows, including log-amplitude and overflow-limiting diagnostics. Rust rows are
+included after running the Criterion benchmark:
 
 ```bash
 cargo bench -p fusion-physics --bench mrti_bench

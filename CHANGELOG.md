@@ -5,6 +5,9 @@
 - Hardened FUS-C.7 Faraday recovery with explicit Faraday-law
   flux-derivative closure diagnostics across Python, Rust, benchmarks, and
   documentation.
+- Hardened FUS-C.4 MRTI spectrum tracking with log-amplitude evolution and
+  overflow-limiting diagnostics across Python, Rust, benchmarks, and
+  documentation.
 
 ## [3.9.9] - 2026-06-05
 

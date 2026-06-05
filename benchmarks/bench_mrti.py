@@ -81,6 +81,8 @@ def _python_case(n_modes: int, steps: int) -> dict[str, Any]:
         "samples_seconds": [value * 1.0e-9 for value in samples],
         "final_time_s": state.t_s,
         "final_max_amplitude_m": state.max_amplitude_m,
+        "max_log_amplitude": state.max_log_amplitude,
+        "amplitude_overflow_limited": state.amplitude_overflow_limited,
         "saturation_warning": state.saturation_warning,
         "fastest_growing_k_m_inv": state.fastest_growing_k_m_inv,
     }
@@ -159,6 +161,8 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
         "final_radius_m": final_compression.R_s_m,
         "compression_work_j": final_compression.compression_work_J,
         "final_max_amplitude_m": final_state.max_amplitude_m,
+        "max_log_amplitude": final_state.max_log_amplitude,
+        "amplitude_overflow_limited": final_state.amplitude_overflow_limited,
         "saturation_warning": final_state.saturation_warning,
         "fastest_growing_k_m_inv": final_state.fastest_growing_k_m_inv,
         "coupling_status": "internal_fus_c6_pulsed_compression_adapter",
@@ -197,6 +201,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
         }
         if "fus_c6_coupled" in benchmark_name:
             row["coupling_status"] = "internal_fus_c6_pulsed_compression_adapter"
+        row["log_amplitude_status"] = "asserted_finite_in_rust_criterion_harness"
         rows.append(row)
     return rows
 
@@ -208,7 +213,7 @@ def build_report(
     rows.extend(_python_compression_coupled_case(n_modes, 64) for n_modes in (64, 256))
     rows.extend(_criterion_rows())
     return {
-        "schema": "scpn-fusion-core.mrti_benchmark.v1",
+        "schema": "scpn-fusion-core.mrti_benchmark.v2",
         "claim_boundary": (
             "Local non-isolated MRTI analytical growth/spectrum regression evidence. "
             "Internal FUS-C.6 coupled rows consume the supplied-current "
@@ -217,6 +222,7 @@ def build_report(
         "physics_contract": {
             "name": "MIF/FRC linear MRTI growth spectrum",
             "equation": "gamma^2 = k*a_eff - k^2*B_perp^2/(mu0*rho)",
+            "amplitude_evolution": "log(A_i) <- log(A_i) + max(gamma_i*dt, 0)",
             "stabilization": "negative radicands clipped to zero for magnetic-tension-stabilized modes",
             "not_claimed": "external Slough same-case MRTI parity or nonlinear saturation physics",
         },

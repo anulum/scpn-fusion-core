@@ -174,11 +174,14 @@ class MRTISpectrumState:
     t_s: float
     k_modes_m_inv: FloatArray
     amplitudes_m: FloatArray
+    log_amplitudes: FloatArray
     growth_rates_s_inv: FloatArray
     fastest_growing_k_m_inv: float
     max_amplitude_m: float
+    max_log_amplitude: float
     saturation_warning: bool
     time_of_breach_s: float | None
+    amplitude_overflow_limited: bool
 
 
 class MRTISpectrumTracker:
@@ -219,9 +222,15 @@ class MRTISpectrumTracker:
         )
         self._k_modes_m_inv = modes.copy()
         self._amplitudes_m = np.full(self._k_modes_m_inv.shape, initial, dtype=np.float64)
+        self._log_amplitudes = np.full(
+            self._k_modes_m_inv.shape,
+            np.log(initial),
+            dtype=np.float64,
+        )
         self._growth_rates_s_inv = np.zeros(self._k_modes_m_inv.shape, dtype=np.float64)
         self._t_s = 0.0
         self._time_of_breach_s: float | None = None
+        self._amplitude_overflow_limited = False
 
     @property
     def k_modes_m_inv(self) -> FloatArray:
@@ -250,15 +259,19 @@ class MRTISpectrumTracker:
 
         fastest_index = int(np.argmax(self._growth_rates_s_inv))
         max_amplitude = float(np.max(self._amplitudes_m))
+        max_log_amplitude = float(np.max(self._log_amplitudes))
         return MRTISpectrumState(
             t_s=self._t_s,
             k_modes_m_inv=self._k_modes_m_inv.copy(),
             amplitudes_m=self._amplitudes_m.copy(),
+            log_amplitudes=self._log_amplitudes.copy(),
             growth_rates_s_inv=self._growth_rates_s_inv.copy(),
             fastest_growing_k_m_inv=float(self._k_modes_m_inv[fastest_index]),
             max_amplitude_m=max_amplitude,
+            max_log_amplitude=max_log_amplitude,
             saturation_warning=max_amplitude >= self._saturation_threshold_m,
             time_of_breach_s=self._time_of_breach_s,
+            amplitude_overflow_limited=self._amplitude_overflow_limited,
         )
 
     def step(self, dt_s: float, a_eff_m_s2: float, B_perp_t: float = 0.0) -> MRTISpectrumState:
@@ -271,8 +284,14 @@ class MRTISpectrumTracker:
             B_perp_t,
             self._rho_kg_m3,
         )
-        exponent = np.clip(self._growth_rates_s_inv * dt, 0.0, 700.0)
-        self._amplitudes_m = cast(FloatArray, self._amplitudes_m * np.exp(exponent))
+        growth_exponent = np.maximum(self._growth_rates_s_inv * dt, 0.0)
+        self._log_amplitudes = cast(FloatArray, self._log_amplitudes + growth_exponent)
+        max_log = float(np.log(np.finfo(np.float64).max))
+        self._amplitude_overflow_limited = bool(
+            self._amplitude_overflow_limited or np.any(self._log_amplitudes > max_log)
+        )
+        safe_log_amplitudes = np.minimum(self._log_amplitudes, max_log)
+        self._amplitudes_m = cast(FloatArray, np.exp(safe_log_amplitudes))
         self._t_s += dt
         if self._time_of_breach_s is None and self.saturation_threshold_breached():
             self._time_of_breach_s = self._t_s

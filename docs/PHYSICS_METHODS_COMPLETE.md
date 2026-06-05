@@ -298,6 +298,11 @@ hydrodynamic limit is recovered as $\gamma=\sqrt{k\,a_{\rm eff}}$ when
 $B_\perp=0$. `MRTISpectrumTracker` advances perturbation amplitudes through
 frozen-coefficient exponential growth, records the fastest growing mode, and
 captures the first saturation-threshold breach.
+The tracker now performs amplitude evolution in log space,
+`log(A_i) <- log(A_i) + max(gamma_i dt, 0)`, and exposes
+`max_log_amplitude` plus `amplitude_overflow_limited` so extreme-growth
+histories remain finite and auditable rather than relying on physical-amplitude
+floating-point headroom.
 
 The coupling helper `effective_acceleration_from_radius_rate()` estimates
 $d^2R_s/dt^2$ from a supplied separatrix radial-speed history using finite
