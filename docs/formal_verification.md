@@ -5,6 +5,12 @@
 
 This file defines the formal-methods lane inside the project: which properties have machine-checkable coverage, where Lean and related tooling are currently applied, and how claims map to executable contracts.
 
+## Why this file exists
+
+This document is the status index for proof scope. It separates machine-checked
+results from empirical or planning-only claims so readers can gauge how far each
+safety-relevant control property has actually been accepted in the repo.
+
 ## Practical role in the project
 
 This lane protects fail-closed behavior and safety-relevant control contracts.

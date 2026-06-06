@@ -24,6 +24,12 @@ The objective is not to force exact equality with all published values in a sing
 0D scaling expression. The objective is to detect regressions and preserve physically
 reasonable scaling behavior over time.
 
+## Position and scope
+
+This is a baseline validation source for confinement trends. It supports internal
+regression control and does not replace full external parity campaigns, which require
+additional solver contracts and external reference artifacts.
+
 ---
 
 ## 2. Validation Data Pack

@@ -5,6 +5,11 @@
 
 This document collects future application vectors. It is a planning artifact that ties candidate directions to expected technical dependencies and evidence requirements.
 
+## Position for roadmap readers
+
+This page is used as a public filter between concept exploration and claim-ready
+work. Every lane below is linked to the minimum public evidence needed before it can be treated as production-facing.
+
 ## How this document is used
 
 This document distinguishes strategic direction from validated production claims.

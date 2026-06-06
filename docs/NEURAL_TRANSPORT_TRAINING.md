@@ -31,6 +31,13 @@ python tools/download_qlknn10d.py
 python tools/download_qlknn10d.py --check
 ```
 
+## Operational context
+
+This training path is part of the transport validation stack, not the primary
+transport-physics path. It provides a repeatable surrogate reference for local
+regression checks while native-parity transport evidence remains under separate
+acceptance control.
+
 Notes:
 - Download path defaults to `data/qlknn10d/`.
 - The downloader verifies Zenodo-provided MD5 checksums.

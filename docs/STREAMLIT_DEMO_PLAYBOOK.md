@@ -12,6 +12,11 @@ A successful demo flow must be accompanied by:
 - artifact logs or screenshots for the exact run
 - a clear statement of whether results are exploratory or accepted evidence
 
+## Intended role
+
+This document is the public-facing standard runbook for demo production. It
+separates reproducible demonstration preparation from validation acceptance and
+keeps every demo run aligned with the linked artifact and benchmark chain.
 
 ## Demo scope
 

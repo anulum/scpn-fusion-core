@@ -21,6 +21,12 @@ public release checklist required by the tag-publish workflow. Private provider
 credentials, internal handovers, and operational scratch notes remain in ignored
 internal locations.
 
+## What is verified before a release commit
+
+Before a tag is considered ready, the release gate ties public-facing behavior
+changes, benchmark contracts, and documentation to current artifacts and
+preflight checks so claim state changes are evidence-backed.
+
 ## Checklist
 
 - [x] Release preflight (`python tools/run_python_preflight.py --gate release`)
