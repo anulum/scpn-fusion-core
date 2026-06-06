@@ -1,5 +1,19 @@
 # Performance Metric Taxonomy
 
+## Context for performance reporting
+
+SCPN Fusion Core publishes performance numbers from different execution layers.
+This file gives the shared vocabulary needed so a reader can compare values
+without mixing benchmark classes.
+
+Facts to use this page correctly:
+
+- A metric row is a contract, not a marketing summary.
+- Every number in benchmark docs should reference one of these IDs and the
+  associated artifact or benchmark script.
+- The same metric can only be compared across runs when hardware, runtime, and
+  execution mode are explicitly recorded in the same artifact.
+
 This page defines the latency metric IDs used across README, public method notes, and
 competitive analysis to avoid mixing kernel-only and end-to-end timings.
 

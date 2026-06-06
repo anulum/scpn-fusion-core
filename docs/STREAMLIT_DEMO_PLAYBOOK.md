@@ -1,5 +1,17 @@
 # Streamlit Demo Playbook (3 Minutes)
 
+## Audience and use case
+
+This playbook is a reproducible script for external demo preparation. It is
+designed for stakeholder briefings, investor-facing walkthroughs, and reviewable
+internal presentations where claims must remain linked to commands and artifacts.
+
+A successful demo flow must be accompanied by:
+
+- command evidence (launch and interaction steps)
+- artifact logs or screenshots for the exact run
+- a clear statement of whether results are exploratory or accepted evidence
+
 
 ## Demo scope
 

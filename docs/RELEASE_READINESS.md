@@ -1,7 +1,15 @@
 # v3.9.10 Release Acceptance
 
 
-## Purpose
+## Evidence and governance meaning
+
+This checklist is the public release-control gate for repository-wide changes.
+Its role is to make scope changes traceable before any release tag and to keep
+claim transitions explicit.
+
+The checklist is not a compliance certificate: it records that required
+preflight and documentation conditions are checked before tagging and that no
+evidence requirement was silently dropped.
 
 This checklist is the operational gate for release publication. It tracks required checks and references for traceable, repeatable release decisions.
 
