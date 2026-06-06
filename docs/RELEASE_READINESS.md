@@ -1,5 +1,10 @@
 # v3.9.10 Release Acceptance
 
+
+## Purpose
+
+This checklist is the operational gate for release publication. It tracks required checks and references for traceable, repeatable release decisions.
+
 Release Version: `v3.9.10`
 Readiness State: `ready`
 

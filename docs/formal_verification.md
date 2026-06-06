@@ -1,5 +1,10 @@
 # Formal Verification of SCPN Controller Properties
 
+
+## Verification purpose
+
+This file defines the formal-methods lane inside the project: which properties have machine-checkable coverage, where Lean and related tooling are currently applied, and how claims map to executable contracts.
+
 This document records the formal verification status of the stochastic
 Petri net (SCPN) controller compilation pipeline.
 

@@ -1,5 +1,10 @@
 # Validation Against ITER and Reference Machines
 
+
+## Evidence role
+
+This document defines the ITER and reference-machine validation baseline and its role in regression control. It distinguishes reproducible baseline checks from full external parity obligations.
+
 **Date**: 2026-02-12
 **Version**: v1.0.2 preparation (WP-E1)
 **Scope**: Regression-grade confinement validation using published reference scenarios

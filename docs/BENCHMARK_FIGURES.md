@@ -1,5 +1,10 @@
 # Benchmark Figures — Static Export
 
+
+## Usage scope
+
+This file is the static companion for benchmark visualizations. It documents representative values only and should be paired with current run commands or notebooks for hardware-specific reproductions.
+
 Static tables and figure descriptions from
 [`examples/06_inverse_and_transport_benchmarks.ipynb`](../examples/06_inverse_and_transport_benchmarks.ipynb)
 for inclusion in PDF/LaTeX/arXiv manuscripts. All values are representative;

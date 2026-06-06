@@ -3,6 +3,11 @@
 
 ### SCPN Fusion Core Capability Inventory
 
+
+## Snapshot purpose
+
+This is a generated static inventory for surface-level capability counts. It is intended as quick orientation only and must be read with benchmark and validation artifacts for performance or fidelity claims.
+
 | Surface | Current inventory |
 |---|---:|
 | Package version | 3.9.10 |

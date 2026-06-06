@@ -1,5 +1,10 @@
 # r/programming Post Draft
 
+
+## Communication scope
+
+This draft post is a public-facing technical summary. It targets programming-centric readers and should align all performance claims with reproducibility and evidence references.
+
 **Title:** SCPN Fusion Core: a Rust+Python tokamak plasma physics simulator with neuro-symbolic control
 
 ---

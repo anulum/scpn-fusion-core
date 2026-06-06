@@ -1,5 +1,10 @@
 # Applications and Market Context
 
+
+## Positioning and readers
+
+This document translates solver and control capabilities into practical deployment contexts. It is intended to help operators, technical buyers, and collaborators interpret what is demonstrably ready versus what still requires parity evidence.
+
 SCPN Fusion Core targets the gap between fast control-algorithm development and
 high-fidelity fusion-code validation. The commercial value is in reducing the
 time and ambiguity between a control idea, a reproducible simulation campaign,

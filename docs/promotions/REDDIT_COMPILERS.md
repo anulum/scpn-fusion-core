@@ -1,5 +1,10 @@
 # r/Compilers Post Draft
 
+
+## Communication scope
+
+This draft post is for engineering audiences and should state only evidence-backed comparisons with explicit links to verification artifacts.
+
 **Title:** Petri net -> stochastic neuron compiler for real-time plasma control
 
 ---

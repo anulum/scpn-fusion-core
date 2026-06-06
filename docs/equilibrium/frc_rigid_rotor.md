@@ -1,4 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+
+## Scope and validation role
+
+This page defines the analytical benchmark contract for the FRC rigid-rotor lane, including when it should be interpreted as supporting evidence and where the result boundaries are kept separate from broader full-fidelity claims.
+
 # Commercial license available
 # © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.

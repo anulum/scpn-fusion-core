@@ -1,5 +1,10 @@
 # Streamlit Demo Playbook (3 Minutes)
 
+
+## Demo scope
+
+This playbook defines the standard public demonstration flow and required sequence for reproducible and reviewable Streamlit demos.
+
 This playbook standardizes a public demo run for SCPN Fusion Core v3.9.10.
 
 ## Goal

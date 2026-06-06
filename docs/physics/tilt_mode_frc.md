@@ -8,6 +8,11 @@
 
 # FRC n=1 Tilt-Mode Diagnostics
 
+
+## Scope and interpretation
+
+This document is the operational context for tilt-mode analysis. It defines where this model path is used and how its outputs are constrained within the larger validation and evidence framework.
+
 The FUS-C.5 MIF lane exposes a conservative n=1 FRC tilt diagnostic across
 Python and Rust. The accepted public contract is intentionally bounded:
 

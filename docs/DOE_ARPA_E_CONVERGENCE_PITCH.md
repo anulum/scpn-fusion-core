@@ -1,4 +1,9 @@
 # ──────────────────────────────────────────────────────────────────────
+
+## Positioning
+
+This pitch file is a technical briefing artifact for DOE/ARPA-E audiences. It links the platform’s control-first design and validation commitments to concrete milestones and execution constraints.
+
 # SCPN Fusion Core — DOE ARPA-E / FES Grant Alignment
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li

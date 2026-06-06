@@ -1,5 +1,10 @@
 # Future Applications
 
+
+## Vision and boundary
+
+This document collects future application vectors. It is a planning artifact that ties candidate directions to expected technical dependencies and evidence requirements.
+
 SCPN Fusion Core is a control-and-validation platform under active development.
 This page describes plausible application areas and the evidence needed before
 any of them should be treated as production claims.

@@ -1,5 +1,10 @@
 # FRC Faraday recovery
 
+
+## Scope
+
+This document defines the Faraday recovery lane and its coupling assumptions in the current physics stack. It is intended for model owners and reviewers assessing recovery behavior under fast transient conditions.
+
 This page documents the FUS-C.7 classical Faraday recovery surface for MIF/FRC
 trajectories. The implementation is a closed-form electromagnetic calculation
 over supplied trajectory samples. It now includes an explicit adapter from the

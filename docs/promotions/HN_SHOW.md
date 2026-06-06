@@ -1,5 +1,10 @@
 # Show HN Draft
 
+
+## Story context
+
+This draft post is aligned to public communication with a constrained evidence boundary. It summarizes outcomes and architecture direction that are supported by tracked, reproducible artifacts.
+
 **Title:** Show HN: SCPN Fusion Core -- Full-stack tokamak simulator in Rust+Python (AGPL)
 
 **URL:** https://github.com/anulum/scpn-fusion-core

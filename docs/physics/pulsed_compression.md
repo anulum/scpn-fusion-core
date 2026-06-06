@@ -1,5 +1,10 @@
 # MIF/FRC pulsed compression
 
+
+## Context and scope
+
+This note captures the current pulsed-compression modeling contract in the project, including active assumptions, module coverage, and links to the validation commands that keep results reproducible.
+
 This page documents the FUS-C.6 supplied-current and voltage-driven
 pulsed-compression surface. The implementation evolves a pressure-driven FRC
 separatrix radius, adiabatic temperature and density, an energy-accounting

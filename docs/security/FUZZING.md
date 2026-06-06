@@ -1,4 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+
+## Fuzzing scope
+
+This page defines the public fuzzing contract for malformed and hostile inputs. It records the bounded targets, tools, and failure-handling paths used in hardening lanes.
+
 # Commercial license available
 # © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.

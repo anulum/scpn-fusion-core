@@ -1,5 +1,10 @@
 # API Overview
 
+
+## Purpose and reading guide
+
+This is the entry map for public interfaces before navigating generated API references. It shows where to begin for controller contracts, physics kernels, transport, and hardening surfaces.
+
 This page maps the main public Python and native-extension surfaces. Use it as
 an orientation layer before reading generated Sphinx API pages.
 

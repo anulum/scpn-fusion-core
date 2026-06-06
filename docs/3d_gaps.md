@@ -8,6 +8,11 @@ License: GNU AGPL v3 | Commercial licensing available
 
 # 3D Gap Audit and Phase 2 Trajectory Reset
 
+
+## Context and placement
+
+This page is the operational gap log for the 3D trajectory lane. It records each gap, risk signal, and closure path so execution sequencing remains consistent between planner, code updates, and benchmark gates.
+
 Date of restructuring: 2026-02-13
 
 This document replaces the flat queue with a gated plan so delivery remains progressive and non-regressive.

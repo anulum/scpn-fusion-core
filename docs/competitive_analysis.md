@@ -1,4 +1,9 @@
 # ──────────────────────────────────────────────────────────────────────
+
+## Purpose
+
+This comparison note summarizes how SCPN-FUSION-CORE is positioned relative to peer tooling across control, throughput, and validation posture, with explicit emphasis on traceable evidence and claim boundaries.
+
 # SCPN Fusion Core — Competitive Analysis
 # Contact: www.anulum.li | protoscience@anulum.li
 # License: GNU AGPL v3 | Commercial licensing available

@@ -1,5 +1,10 @@
 # First Machine-Checkable Safety Proof for a Tokamak Plasma Solver
 
+
+## Publication context
+
+This public proof note records the first formal contract currently shipped in Lean for solver input rejection behavior. It is intentionally scoped to the validated boundary and not a complete proof of the full control stack.
+
 SCPN Fusion Core now carries a committed Lean 4 proof surface for a safety
 boundary in the Grad-Shafranov solver path. The first theorem is intentionally
 small and strict: if physical-case validation rejects an input, the solver must

@@ -1,4 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+
+## Security scope
+
+This page defines concrete container hardening configuration used in deployment. It is the runtime security companion to benchmark, proof, and solver reproducibility docs.
+
 # Commercial license available
 # © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.

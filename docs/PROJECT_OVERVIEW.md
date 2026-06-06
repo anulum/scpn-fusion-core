@@ -1,5 +1,10 @@
 # Project Overview
 
+
+## Orientation
+
+This overview provides the first-pass map of product scope, runtime layout, and evidence discipline. It helps readers distinguish the current release intent from full industrial-scale parity claims.
+
 SCPN Fusion Core is a neuro-symbolic tokamak-control and plasma-solver research
 stack. It exists to answer a practical engineering question: how can fusion
 control software be developed, benchmarked, and constrained before it is placed

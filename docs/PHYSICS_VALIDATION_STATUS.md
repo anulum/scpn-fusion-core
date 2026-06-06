@@ -1,5 +1,10 @@
 # Physics Validation Status
 
+
+## Purpose and reading order
+
+This status sheet captures current physics-validation posture. Use it to identify what is accepted, what is blocked, and where additional evidence is still required.
+
 > Last updated: 2026-05-20. Solov'ev benchmark aggregation now requires every
 > case to report solver convergence before the overall gate can pass.
 

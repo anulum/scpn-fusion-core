@@ -1,5 +1,10 @@
 # SCPN Fusion Core: Neuro-Symbolic Logic Compiler
 
+
+## Report scope
+
+This report summarizes the neuro-symbolic compiler lane and records what parts are validated, what is experimental, and what remains to be promoted through parity or external validation contracts.
+
 ## Packets A & B — Technical Report
 
 **Author:** Miroslav Sotek,

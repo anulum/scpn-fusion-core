@@ -1,5 +1,10 @@
 # Social Media Draft — SCPN Fusion Core Benchmark Results
 
+
+## Usage context
+
+This social-post draft should be treated as release messaging only when supporting artifacts and status are current. Use this document to align published claims with claim boundaries.
+
 > **Status:** DRAFT — review before posting.
 > **Date:** 2026-02-16
 

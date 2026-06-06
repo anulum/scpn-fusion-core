@@ -8,6 +8,11 @@
 
 # SCPN Fusion Core — Benchmark Comparison
 
+
+## Benchmark purpose
+
+This comparison page is the contract for reproducible solver and runtime evidence. It separates accepted measurements from blocked lanes so external reference-parity requirements are not silently promoted.
+
 Comparison of SCPN Fusion Core against established fusion simulation codes.
 
 > **Transparency note:** Timings labelled "Rust" use the compiled Rust backend
