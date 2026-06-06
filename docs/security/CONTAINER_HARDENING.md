@@ -4,6 +4,11 @@
 
 This page defines concrete container hardening configuration used in deployment. It is the runtime security companion to benchmark, proof, and solver reproducibility docs.
 
+## Operational context
+
+This hardening profile applies to deployment readiness. Pair this with transport
+security controls and CI gating for privileged-capability surfaces.
+
 # Commercial license available
 # © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.

@@ -5,6 +5,11 @@
 
 This social-post draft should be treated as release messaging only when supporting artifacts and status are current. Use this document to align published claims with claim boundaries.
 
+## Release control
+
+This is a draft distribution text. Before posting, confirm that each metric and
+status line matches the latest public report and release boundary.
+
 > **Status:** DRAFT — review before posting.
 > **Date:** 2026-02-16
 

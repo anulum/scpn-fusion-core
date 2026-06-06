@@ -5,6 +5,12 @@
 
 This draft post is for engineering audiences and should state only evidence-backed comparisons with explicit links to verification artifacts.
 
+## Publication boundary
+
+Use this draft as an external technical summary only for verifiable claims and
+current artifact links. Update or remove claims immediately if the acceptance
+surface changes.
+
 **Title:** Petri net -> stochastic neuron compiler for real-time plasma control
 
 ---

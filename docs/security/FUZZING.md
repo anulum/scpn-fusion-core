@@ -4,6 +4,12 @@
 
 This page defines the public fuzzing contract for malformed and hostile inputs. It records the bounded targets, tools, and failure-handling paths used in hardening lanes.
 
+## Hardening role
+
+This document is the public contract for robustness against malformed input.
+Successful fuzzing builds and reviewed findings support acceptance gates where
+input-path stability and bounded resource behaviour are required.
+
 # Commercial license available
 # © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.

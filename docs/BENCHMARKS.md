@@ -13,6 +13,13 @@
 
 This comparison page is the contract for reproducible solver and runtime evidence. It separates accepted measurements from blocked lanes so external reference-parity requirements are not silently promoted.
 
+## Evidence role
+
+`BENCHMARKS.md` is the project-level acceptance index for cross-module quality.
+It is intended for external review before any public full-fidelity claim is
+presented and is the entry point for checking whether each solver lane is
+production-open or still blocked due to missing parity inputs.
+
 Comparison of SCPN Fusion Core against established fusion simulation codes.
 
 > **Transparency note:** Timings labelled "Rust" use the compiled Rust backend

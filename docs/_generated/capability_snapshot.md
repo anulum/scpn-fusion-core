@@ -8,6 +8,12 @@
 
 This is a generated static inventory for surface-level capability counts. It is intended as quick orientation only and must be read with benchmark and validation artifacts for performance or fidelity claims.
 
+## Interpretation
+
+These counts provide quick orientation, not proof obligations. For any claim
+about quality, reproduceability, or physics agreement, use the linked report set
+and the explicit benchmark command set.
+
 | Surface | Current inventory |
 |---|---:|
 | Package version | 3.9.10 |

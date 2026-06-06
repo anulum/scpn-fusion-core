@@ -5,6 +5,12 @@
 
 This file defines the formal-methods lane inside the project: which properties have machine-checkable coverage, where Lean and related tooling are currently applied, and how claims map to executable contracts.
 
+## Practical role in the project
+
+This lane protects fail-closed behavior and safety-relevant control contracts.
+It supplements numerical benchmarks by ensuring formal assertions are linked to
+specific contract surfaces and acceptance gates.
+
 This document records the formal verification status of the stochastic
 Petri net (SCPN) controller compilation pipeline.
 

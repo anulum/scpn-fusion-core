@@ -5,6 +5,12 @@
 
 This file is the static companion for benchmark visualizations. It documents representative values only and should be paired with current run commands or notebooks for hardware-specific reproductions.
 
+## Document role
+
+This file supports publications and external communication. It is a companion,
+not the primary evidence source. Reproducible claims require commands,
+artifact manifests, and hardware context from the active report surface.
+
 Static tables and figure descriptions from
 [`examples/06_inverse_and_transport_benchmarks.ipynb`](../examples/06_inverse_and_transport_benchmarks.ipynb)
 for inclusion in PDF/LaTeX/arXiv manuscripts. All values are representative;
@@ -72,6 +78,12 @@ Forward Solve Time (ms)           Est. LM Iteration (ms)
 
 *Lao, L.L. et al. (1985). "Reconstruction of current profile parameters
 and plasma shapes in tokamaks." Nucl. Fusion 25, 1611.*
+
+## Reproducibility boundary
+
+This file provides representative values; strict acceptance requires the exact
+benchmark commands, environment metadata, and commit references used for the
+public report rows.
 
 ---
 

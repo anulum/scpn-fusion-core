@@ -5,6 +5,12 @@
 
 This draft post is a public-facing technical summary. It targets programming-centric readers and should align all performance claims with reproducibility and evidence references.
 
+## Publication boundary
+
+This draft is constrained to public claims with supporting evidence links.
+Performance metrics must match current `validation/reports` entries before
+publishing.
+
 **Title:** SCPN Fusion Core: a Rust+Python tokamak plasma physics simulator with neuro-symbolic control
 
 ---

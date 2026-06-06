@@ -5,6 +5,12 @@
 
 This report summarizes the neuro-symbolic compiler lane and records what parts are validated, what is experimental, and what remains to be promoted through parity or external validation contracts.
 
+## Project-level significance
+
+This report is the canonical definition of how symbolic control semantics are
+preserved through compilation into executable forms. It is the reference for
+formal claims tied to controller artifacts and parity checks.
+
 ## Packets A & B — Technical Report
 
 **Author:** Miroslav Sotek,

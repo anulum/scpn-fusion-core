@@ -5,6 +5,11 @@
 
 This draft post is aligned to public communication with a constrained evidence boundary. It summarizes outcomes and architecture direction that are supported by tracked, reproducible artifacts.
 
+## Use in public communication
+
+This draft supports community-facing outreach and must only reference current
+accepted artifacts. It does not introduce new claims on its own.
+
 **Title:** Show HN: SCPN Fusion Core -- Full-stack tokamak simulator in Rust+Python (AGPL)
 
 **URL:** https://github.com/anulum/scpn-fusion-core

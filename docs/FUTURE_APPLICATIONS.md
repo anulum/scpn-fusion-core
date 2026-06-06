@@ -5,6 +5,12 @@
 
 This document collects future application vectors. It is a planning artifact that ties candidate directions to expected technical dependencies and evidence requirements.
 
+## How this document is used
+
+This document distinguishes strategic direction from validated production claims.
+Each future lane must map to explicit public evidence before it is treated as
+deployment-ready.
+
 SCPN Fusion Core is a control-and-validation platform under active development.
 This page describes plausible application areas and the evidence needed before
 any of them should be treated as production claims.
