@@ -48,3 +48,10 @@ internal locations.
 
 The release is documentation and repository-polish focused. It does not promote
 blocked full-fidelity solver parity gates to accepted status.
+
+## Public release boundary
+
+All tags reference concrete evidence files in this repository. A release should
+not shift a blocker state from "blocked" to "accepted" by language changes in
+documentation; only passing validation artifacts and updated benchmark contracts are
+allowed to change a claim state.

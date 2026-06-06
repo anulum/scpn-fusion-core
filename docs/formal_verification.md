@@ -142,3 +142,10 @@ This is verified by `HInfinityController.is_stable` property.
 - Consider interval arithmetic (MPFI) for guaranteed floating-point
   bounds on marking evolution.
 - Relevant for FPGA deployment where bit-exact properties matter.
+
+## Reading guidance
+
+Use this page as a status map for what is proven in CI versus what is only
+tracked as an experimental or planning result. When a property in this file is
+not labeled machine-checked, it should not be treated as a formal acceptance gate
+in release claims.

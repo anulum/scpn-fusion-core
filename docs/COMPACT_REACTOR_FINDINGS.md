@@ -13,6 +13,13 @@ SCPN-FUSION-CORE. It captures one reproducible scan outcome used by the internal
 engineering workflow and ties geometry, field limits, heat-flux assumptions, and
 performance claims to one documented configuration set.
 
+## Evidence scope
+
+These findings are tied to the `global_design_scanner.py` sweep pipeline and are
+used as an internal comparison baseline. The report is informative for design
+trade studies, but it is not used as an accepted full-fidelity reactor safety
+or licensing artifact.
+
 ## Operational interpretation
 
 This finding is a planning artifact, not a production license-to-operate.

@@ -129,3 +129,9 @@ Hardening checks enforced by loader:
   - `weights/neural_transport_qlknn.npz`
   - `weights/neural_transport_qlknn.metrics.json`
 - Record command line and git SHA in release artifacts when publishing results.
+
+## Role in validation
+
+This artifact is a surrogate-support path. It supports regression and fast
+benchmark experiments, while full-fidelity transport claims continue to rely on
+native transport and external solver parity gates when available.

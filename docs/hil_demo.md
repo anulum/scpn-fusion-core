@@ -135,3 +135,9 @@ print(runner.report())
 - **Power estimate**: ~15W for SNN inference at 250 MHz
 - **Board support**: Alveo U250 shell v2.0 or compatible
 - **Not included**: Actual bitstream generation (requires Vivado license + hardware)
+
+## Positioning
+
+This file is a control execution evidence record. It is not a production HIL
+acceptance claim. Any hardware claim should be coupled with the reproducible
+timing and fault-injection dossiers required by the safety roadmap.

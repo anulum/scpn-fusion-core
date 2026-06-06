@@ -17,6 +17,14 @@ Date of restructuring: 2026-02-13
 
 This document replaces the flat queue with a gated plan so delivery remains progressive and non-regressive.
 
+## Usage in daily engineering
+
+The document is used as the single source of execution order for 3D-related work
+in the public-facing lane. Contributors should consult the track map before coding,
+run the corresponding validation command for the lane they touch, and only
+advance to the next track when the current lane gate is explicitly complete in
+validation reports.
+
 ## Trajectory Assessment
 
 Current trajectory is positive but at risk of scope collision.

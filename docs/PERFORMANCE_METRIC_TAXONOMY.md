@@ -32,6 +32,13 @@ that produced the value.
 This avoids mixing kernel-only throughput with full-loop transport or equilibrium
 benchmarks and keeps control-timing and physics-timing claims auditable.
 
+## Interpretation rule
+
+The same metric ID can only be interpreted across runs when the recorded artifact
+shows equal hardware, driver/runtime, and input deck context. This allows readers
+to compare trend changes and regressions without attributing unrelated stack
+changes to algorithm quality.
+
 ## Control Latency Metrics
 
 | Metric ID | Scope | Includes | Excludes | Current headline value |

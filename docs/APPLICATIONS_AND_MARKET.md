@@ -45,6 +45,18 @@ runs, GPU/cluster scaling campaigns, DREAM/Aurora/STRAHL parity artifacts, and
 FreeGS/free-boundary sidecar data. Funding should buy reproducibility and
 independent comparability, not inflated claims.
 
+## Why this matters to external readers
+
+This page is not a sales-only document; it is a practical evidence index. Readers
+are expected to distinguish:
+
+- technical readiness from deployment readiness,
+- benchmark scripts from accepted parity gates,
+- local proof-of-concept value from certified safety status.
+
+The immediate commercial value is the ability to move from a controller idea to
+an auditable evidence set with explicit blockers and acceptance criteria.
+
 ## Why the repository has market value before full parity
 
 The current value is not a claim that the native solver replaces production

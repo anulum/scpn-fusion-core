@@ -66,3 +66,11 @@ safety certification:
 The engineering strategy is incremental: prove one small, executable safety
 contract at a time; keep each proof wired into CI; avoid marketing claims that
 outrun the machine-checked artifact.
+
+## Audience and use
+
+This note is for engineers and reviewers who need a boundary-defined,
+machine-checked contract in the solver entry path. It is intentionally scoped and
+should be read together with `docs/formal_verification.md` and
+`validation/reports/full_fidelity_end_to_end_campaign.md` before citing broader
+safety claims.

@@ -65,3 +65,10 @@ Dashboard URL:
 2. Upload to YouTube (public or unlisted).
 3. Update `README.md` Public Demo section with the video URL.
 4. Mirror link in release notes (`CHANGELOG.md`) for v3.5.0.
+
+## Review criteria
+
+A recorded demo is only used as evidence when its runtime command, screenshot
+set, and report linkage are preserved together. If a recording only shows
+interface behavior without commands and benchmark references, keep it labeled
+as internal demonstration material.

@@ -27,6 +27,16 @@ Important surfaces:
 
 Generated Sphinx API pages live under `docs/sphinx/api/`.
 
+## Practical orientation
+
+This map is intended as a navigation layer before opening generated API details.
+Use it to confirm that every code edit has a destination and an evidence
+destination:
+
+- Validate expected behavior through tests and benchmark artifacts first.
+- Confirm contract behavior through validation reports before changing public claims.
+- Keep a direct note in changelog and docs whenever a public-facing contract changes.
+
 ## How to choose an API surface
 
 | Goal | Start with | Why |

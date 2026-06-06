@@ -65,6 +65,12 @@ assessment-ready in any release or deployment section.
 | Verification and validation | CI, fuzzing, deterministic replay, Lean proofs, benchmark gates. | Add independence review, test adequacy rationale, and tool qualification. |
 | Operation and maintenance | Release notes, docs, deployment hardening, incident response. | Add operational procedures, anomaly reporting, and change-control evidence. |
 
+## Gate interpretation
+
+This roadmap is the boundary document for safety claims: it separates published
+workshop capabilities from safety-assessment readiness evidence. The file does not
+claim assessed SIL status and is updated as hardening milestones are completed.
+
 ## Evidence packages to build
 
 Each package must be reproducible and auditable. A package is not accepted until

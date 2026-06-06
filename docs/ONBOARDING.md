@@ -116,3 +116,12 @@ Before a public-facing change is released, update the relevant README, guide,
 API overview, benchmark report, changelog, and release note. If the change is an
 internal plan or unfinished task note, keep it under ignored internal paths and do not
 turn it into public capability prose.
+
+## Evidence checkpoints for first-time contributors
+
+After the initial setup and first local run, confirm each section below before
+starting review-ready work:
+
+1. command output and local checks are reproducible,
+2. benchmark rows are interpreted as local/blocked/accepted according to evidence state,
+3. all external references in docs point to an existing tracked report.

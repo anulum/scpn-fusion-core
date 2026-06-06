@@ -65,6 +65,13 @@ still blocked. Missing external same-case outputs, missing licence/provenance,
 missing thresholds, missing checksums, missing native comparison rows, or
 missing grid/scaling evidence keep a row blocked.
 
+## What this overview is for
+
+This document is the first orientation page for evaluators. It is used to
+understand where each claim is coming from and where it stops being an accepted
+statement. The distinction between "implemented" and "accepted parity" is the
+core governance pattern across the repository.
+
 ## Where to verify claims
 
 - `docs/BENCHMARKS.md` for benchmark taxonomy and commands.

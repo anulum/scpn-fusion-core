@@ -33,6 +33,12 @@ Evidence still needed for plant deployment:
 - Independent review of safety interlocks, fallback behavior, and operator
   override paths.
 
+## Lane entry criteria
+
+A future application enters active execution only when the needed validation
+artifacts are published and linked from `validation/reports/`. Until then it
+remains a roadmap item, not a claimed production lane.
+
 ## 2. Fusion solver validation infrastructure
 
 Current value:
