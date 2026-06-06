@@ -10,6 +10,19 @@ environment setup to a repeatable validation path. It separates fast local check
 from full-fidelity evidence-gated campaigns so contributors know when results are
 developmental versus production-accepted.
 
+## Positioning for new contributors
+
+The fastest route to productive work is to start with local commands,
+then move to tracked evidence surfaces. This repo treats all public claims as
+evidence-backed only after corresponding reports and acceptance markers are in
+place.
+
+Contributors are expected to distinguish these two categories before edits:
+
+- **Exploratory paths:** local-only scripts, draft references, and blocked rows.
+- **Accepted paths:** published benchmark rows, reproducibility metadata, and
+  documented gates in `validation/reports/`.
+
 ## 1. Install
 
 ```bash

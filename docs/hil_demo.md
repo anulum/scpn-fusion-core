@@ -9,6 +9,15 @@ This document defines the HIL reference for the Alveo U250 demonstration path.
 It records the fixed interfaces, timing budget, and fault tolerance behavior that
 software and hardware teams must align before any synthesis or deployment step.
 
+## Position in the public evidence base
+
+The HIL lane is the hardware execution check for the control stack described in
+`docs/formal_verification.md`, `docs/API_OVERVIEW.md`, and
+`docs/SECURITY_FUZZING.md`.
+It is separate from the full-fidelity equilibrium and transport acceptance paths
+and is only intended as an execution-profile evidence bundle for control timing
+and fault-tolerant behaviour.
+
 ## 1. Target Platform
 
 - **FPGA**: Xilinx Alveo U250 (UltraScale+ XCU250)

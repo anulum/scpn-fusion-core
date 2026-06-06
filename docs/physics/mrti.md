@@ -6,6 +6,16 @@ surrogate. It now consumes the accepted FUS-C.6 supplied-current pulsed
 compression state history, while external nonlinear MRTI image/data parity
 remains blocked until redistributable same-case references exist.
 
+## Role in integrated workflows
+
+MRTI is used as a physics-derived instability signal within the MIF/FRC lane.
+Its output is consumed for trending and diagnostics, with higher-priority control
+actions still gated on explicit interlocks and validated acceptance rows.
+
+When MRTI artifacts are exported, coupling assumptions and source states must be
+retained with the same-run manifest so downstream reproducibility checks can be
+re-run from the same time grid and initial conditions.
+
 ## Scope
 
 The accepted contract evaluates the linear magneto-Rayleigh-Taylor instability

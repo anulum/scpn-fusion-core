@@ -35,6 +35,13 @@ campaigns, GPU kernels, cloud benchmark runs, or reduced-order surrogate lanes.
 Those surfaces provide evidence for controller testing, but they are not safety
 functions unless a future safety case assigns them that role.
 
+## Practical use in release management
+
+This roadmap is the gatekeeper for safety-aligned claims. It is published so
+partners and reviewers can distinguish implemented evidence from future work.
+It also defines what must be present before control surfaces are presented as
+assessment-ready in any release or deployment section.
+
 ## Current status
 
 | Area | Current repository state | IEC 61508 gap |

@@ -9,6 +9,15 @@ This taxonomy is the public index for performance claims. It separates
 control-kernel timing from closed-loop and hardware-in-the-loop timing so
 benchmark comparisons remain reproducible and claim-ready across reporting layers.
 
+## Evidence boundary for timing claims
+
+Metric IDs here are the project-wide contract for benchmark comparisons. Any
+public speed claim must name one or more IDs and the exact artifact or script
+that produced the value.
+
+This avoids mixing kernel-only throughput with full-loop transport or equilibrium
+benchmarks and keeps control-timing and physics-timing claims auditable.
+
 ## Control Latency Metrics
 
 | Metric ID | Scope | Includes | Excludes | Current headline value |

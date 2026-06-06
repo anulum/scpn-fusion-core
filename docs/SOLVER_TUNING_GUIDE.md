@@ -13,6 +13,15 @@ This page is the parameter-level operating guide for equilibrium and inverse
 solvers in public release code paths. It is intended to prevent unsafe tuning
 changes by tying recommended ranges to solver stability and convergence checks.
 
+## Operational context
+
+This is a tuning baseline for stable, reproducible full-fidelity runs. Changes
+to these values should be accompanied by a convergence log and benchmark artifact,
+because solver stability is workload- and grid-dependent.
+
+Use the guide as a control: first reproduce baseline settings, then apply one
+parameter change at a time and track residual evolution.
+
 ## 1. Picard Relaxation Factor (`relaxation_factor`)
 
 The equilibrium solver uses under-relaxation to stabilise the nonlinear

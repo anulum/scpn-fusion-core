@@ -11,8 +11,18 @@ This guide reproduces the `weights/neural_transport_qlknn.npz` artifact used by
   - `tools/qlknn10d_to_npz.py`
   - `tools/train_neural_transport_qlknn.py`
 - Output artifact:
-  - `weights/neural_transport_qlknn.npz`
-  - `weights/neural_transport_qlknn.metrics.json`
+- `weights/neural_transport_qlknn.npz`
+- `weights/neural_transport_qlknn.metrics.json`
+
+## Placement in the workflow
+
+This training path exists to support regression testing of the transport surrogate
+pipeline used in non-production diagnostic studies. The generated artifact is a
+supplement, not a replacement for full-fidelity transport solvers.
+
+For parity claims, any surrogate-derived output must remain linked to a
+provenance manifest and benchmark row; surrogate-only output without corresponding
+physics-path evidence is treated as diagnostic-only.
 
 ## 1. Download + integrity check
 

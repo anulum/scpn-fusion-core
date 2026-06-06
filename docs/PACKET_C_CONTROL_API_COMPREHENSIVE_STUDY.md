@@ -24,6 +24,16 @@ its execution semantics. It links the Python API layer, the artifact format, and
 Rust/Python parity expectations so downstream control logic has a verified
 integration definition.
 
+## Fact-based role in the project
+
+Packet C defines the public contract boundary for control API interoperability.
+It is used by implementers of external orchestration clients, internal compile
+and replay tests, and safety review workflows that require deterministic
+artifact semantics.
+
+Use this study when validating control contracts across language boundaries,
+rather than treating the API surface as a design note.
+
 ## Table of Contents
 
 - [Part I: Foundation and Context](#part-i-foundation-and-context)
