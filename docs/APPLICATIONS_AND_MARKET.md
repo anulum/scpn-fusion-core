@@ -5,6 +5,12 @@
 
 This document translates solver and control capabilities into practical deployment contexts. It is intended to help operators, technical buyers, and collaborators interpret what is demonstrably ready versus what still requires parity evidence.
 
+## Scope and factual use
+
+This page is the application-side orientation for external review. It connects each deployment area to the minimum evidence package needed before a readiness claim can be treated as production-facing.
+
+For every listed use case, the repository boundary is: local reproducibility first, reference comparison second, and safety-assurance or control certification claims only after the supporting evidence set is complete. If a downstream user expects a vendor-style readiness signal from this page, they should confirm that the linked validation and benchmark contracts are published and currently passing for that use case.
+
 SCPN Fusion Core targets the gap between fast control-algorithm development and
 high-fidelity fusion-code validation. The commercial value is in reducing the
 time and ambiguity between a control idea, a reproducible simulation campaign,

@@ -3,6 +3,12 @@
 This document describes the FPGA register map and expected latency for
 deploying the SNN controller on an Alveo U250 accelerator card.
 
+## Scope and constraints
+
+This note is technical documentation for a demonstration interface, not a production control certifiability claim. It records one implementation path for evaluation hardware and is intended to be used to validate latency, fault tolerance behavior, and I/O conformance in a bounded test environment.
+
+For HIL readiness decisions, pair this interface specification with `docs/security/CONTAINER_HARDENING.md`, `docs/formal_verification.md`, and the replay/fault-injection benchmarks. The current scope remains deterministic behavior and evidence traceability, not plant deployment certification.
+
 ## Scope
 
 This document defines the HIL reference for the Alveo U250 demonstration path.

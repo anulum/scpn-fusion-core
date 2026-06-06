@@ -4,6 +4,12 @@
 
 This comparison note summarizes how SCPN-FUSION-CORE is positioned relative to peer tooling across control, throughput, and validation posture, with explicit emphasis on traceable evidence and claim boundaries.
 
+## Reader context
+
+This document is used to separate practical engineering claims from marketing shorthand. It is not a ranking list of every fusion code; it is a structured comparison of how SCPN-FUSION-CORE currently demonstrates performance and validation behavior versus peers.
+
+The intended use is to help contributors, collaborators, and evaluators decide whether a claim is supported by local reproducibility data, shared benchmark artifacts, and externally verifiable acceptance rules. Entries should be read together with `docs/BENCHMARKS.md` and the relevant files under `validation/reports/` before using any result in proposals or planning documents.
+
 # SCPN Fusion Core — Competitive Analysis
 # Contact: www.anulum.li | protoscience@anulum.li
 # License: GNU AGPL v3 | Commercial licensing available
