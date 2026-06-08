@@ -27,7 +27,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 3.993523814016953,
+        "elapsed_s": 8.591207332909107,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -77,7 +77,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.8259374720510095,
+          "elapsed_s": 1.3044237289577723,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -87,7 +87,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 3.993523814016953,
+          "elapsed_s": 8.591207332909107,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -252,7 +252,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 10.691699218004942,
+        "elapsed_s": 13.905812015058473,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -302,7 +302,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.9086677170125768,
+          "elapsed_s": 2.5421116361394525,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -312,7 +312,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 10.691699218004942,
+          "elapsed_s": 13.905812015058473,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -580,7 +580,7 @@
   "reference_output_ready": false,
   "report_generation_mode": "tracked_report_fallback",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "b6fb6b538c5adc88d8c76007d086dd53cee9fe9e2a5cac1909afaa0b789558cc",
+  "sha256": "34215674e7e71649cef59d6f4e3a09d2f585b8edbd696716e522966f1d6f1db2",
   "source_cache_available": true,
   "status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
   "strict_free_boundary_parity_evidence": {

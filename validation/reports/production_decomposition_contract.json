@@ -1182,8 +1182,8 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 16150930.448095495,
-      "elapsed_s": 0.032461783033795655,
+      "cells_per_second": 2911696.628057509,
+      "elapsed_s": 0.18006271496415138,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1208,8 +1208,8 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 16922647.32034651,
-      "elapsed_s": 0.030981441028416157,
+      "cells_per_second": 5826379.299769564,
+      "elapsed_s": 0.08998521603643894,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1234,8 +1234,8 @@
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 8775561.105841087,
-      "elapsed_s": 0.05974409996997565,
+      "cells_per_second": 9938514.37993096,
+      "elapsed_s": 0.052753156051039696,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -2781,13 +2781,112 @@
     "status": "blocked_missing_distributed_scaling_measurements"
   },
   "gpu_rank_tile_evidence": {
-    "blocking_reason": "cupy_import_failed: No module named 'cupy'",
-    "gpu_rank_tile_execution_ready": false,
+    "blocking_reason": "Single-GPU rank-tile reductions passed locally; multi-GPU readiness requires at least two visible CUDA devices and scaling rows.",
+    "cells_per_second": 319181.11194772454,
+    "device_count": 1,
+    "elapsed_s": 0.1732433340512216,
+    "free_energy_relative_error": 0.0,
+    "gpu_rank_tile_execution_ready": true,
+    "inventory_relative_error": 4.64717682771065e-15,
     "multi_gpu_runtime_ready": false,
+    "owned_phase_cells": 55296,
+    "parallel_moment_relative_error": 3.1533100119165687e-15,
+    "preloaded_nvrtc": "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+    "rank_count": 8,
+    "rank_rows": [
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 0
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 1
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 2
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 3
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 4
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 5
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 6
+      },
+      {
+        "device_id": 0,
+        "owned_shape": [
+          6,
+          6,
+          8,
+          6,
+          4
+        ],
+        "rank": 7
+      }
+    ],
     "schema": "production-decomposition-gpu-rank-tile-evidence.v1",
-    "status": "blocked_cupy_runtime_missing"
+    "status": "accepted_local_gpu_rank_tile_execution"
   },
-  "gpu_rank_tile_execution_pass": false,
+  "gpu_rank_tile_execution_pass": true,
   "halo_exchange_pass": true,
   "halo_face_integrity_evidence": {
     "case_id": "local_cpu_64x32_4x2",
@@ -3116,8 +3215,8 @@
     "rows": [
       {
         "case_id": "large_cpu_96x48_6x4",
-        "cells_per_second": 1542070.468073615,
-        "elapsed_s": 6.119813714991324,
+        "cells_per_second": 2243776.614497448,
+        "elapsed_s": 4.205937408842146,
         "free_energy_relative_error": 7.401486438689479e-16,
         "global_free_energy": 3145728.166666682,
         "global_inventory": 4718591.999999999,
@@ -3148,8 +3247,8 @@
   "local_multiprocess_cpu_evidence": {
     "blocking_reason": "This is local CPU process isolation over rank tiles. It is not MPI or multi-GPU execution and does not satisfy the cluster scaling gate.",
     "case_id": "local_multiprocess_cpu_32x16_4x2",
-    "cells_per_second": 1498171.262655856,
-    "elapsed_s": 0.08748799504246563,
+    "cells_per_second": 278344.13405637647,
+    "elapsed_s": 0.47089909203350544,
     "free_energy_relative_error": 1.1102358897082595e-16,
     "global_shape": [
       32,
@@ -3185,7 +3284,7 @@
           4
         ],
         "parallel_moment": -5.037679605773919,
-        "pid": 3991158,
+        "pid": 540385,
         "rank": 0
       },
       {
@@ -3207,7 +3306,7 @@
           4
         ],
         "parallel_moment": -1.4054627214277193,
-        "pid": 3991159,
+        "pid": 540385,
         "rank": 1
       },
       {
@@ -3229,7 +3328,7 @@
           4
         ],
         "parallel_moment": -1.0210466960824318,
-        "pid": 3991160,
+        "pid": 540389,
         "rank": 2
       },
       {
@@ -3251,7 +3350,7 @@
           4
         ],
         "parallel_moment": -4.938189902013417,
-        "pid": 3991160,
+        "pid": 540392,
         "rank": 3
       },
       {
@@ -3273,7 +3372,7 @@
           4
         ],
         "parallel_moment": 5.071609935932594,
-        "pid": 3991160,
+        "pid": 540387,
         "rank": 4
       },
       {
@@ -3295,7 +3394,7 @@
           4
         ],
         "parallel_moment": 1.5695633589283906,
-        "pid": 3991159,
+        "pid": 540389,
         "rank": 5
       },
       {
@@ -3317,7 +3416,7 @@
           4
         ],
         "parallel_moment": 0.8525123869158655,
-        "pid": 3991161,
+        "pid": 540387,
         "rank": 6
       },
       {
@@ -3339,7 +3438,7 @@
           4
         ],
         "parallel_moment": 4.886031853634489,
-        "pid": 3991158,
+        "pid": 540392,
         "rank": 7
       }
     ],
@@ -3360,7 +3459,7 @@
     "accepted distributed run manifests with reproducibility fields and checksums"
   ],
   "mpi_runtime_evidence": {
-    "blocking_reason": "MPI rank-tile execution passed locally. Cluster scaling and multi-GPU runtime evidence are still required for production-scale readiness.",
+    "blocking_reason": "mpi_runtime_timeout_after_30.0_s",
     "command": [
       "/usr/bin/mpiexec",
       "-n",
@@ -3368,132 +3467,16 @@
       "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python",
       "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/mpi_production_decomposition_runner.py",
       "--output",
-      "/tmp/scpn_mpi_decomposition_jmrcg652/mpi_result.json"
+      "/tmp/scpn_mpi_decomposition_fdly6wfp/mpi_result.json"
     ],
-    "decomposition_invariant_pass": true,
-    "elapsed_s": 26.395098606008105,
-    "free_energy_relative_error": 1.4818613523657498e-16,
-    "global_shape": [
-      16,
-      8,
-      4,
-      4,
-      3
-    ],
-    "halo_exchange_pass": true,
-    "inventory_relative_error": 2.023262710473885e-16,
-    "max_halo_linf_error": 0.0,
-    "min_halo_verified_fraction": 1.0,
-    "mpi_runtime_execution_ready": true,
-    "parallel_moment_relative_error": 0.0,
-    "radial_parts": 2,
+    "elapsed_s": 30.061406078049913,
+    "mpi_runtime_execution_ready": false,
     "rank_count": 4,
-    "rank_rows": [
-      {
-        "corner_neighbour_ranks": {
-          "radial_lower_toroidal_lower": null,
-          "radial_lower_toroidal_upper": null,
-          "radial_upper_toroidal_lower": null,
-          "radial_upper_toroidal_upper": 3
-        },
-        "halo_linf_error": 0.0,
-        "halo_verified_fraction": 1.0,
-        "neighbour_ranks": {
-          "radial_lower": null,
-          "radial_upper": 2,
-          "toroidal_lower": null,
-          "toroidal_upper": 1
-        },
-        "owned_shape": [
-          8,
-          4,
-          4,
-          4,
-          3
-        ],
-        "rank": 0
-      },
-      {
-        "corner_neighbour_ranks": {
-          "radial_lower_toroidal_lower": null,
-          "radial_lower_toroidal_upper": null,
-          "radial_upper_toroidal_lower": 2,
-          "radial_upper_toroidal_upper": null
-        },
-        "halo_linf_error": 0.0,
-        "halo_verified_fraction": 1.0,
-        "neighbour_ranks": {
-          "radial_lower": null,
-          "radial_upper": 3,
-          "toroidal_lower": 0,
-          "toroidal_upper": null
-        },
-        "owned_shape": [
-          8,
-          4,
-          4,
-          4,
-          3
-        ],
-        "rank": 1
-      },
-      {
-        "corner_neighbour_ranks": {
-          "radial_lower_toroidal_lower": null,
-          "radial_lower_toroidal_upper": 1,
-          "radial_upper_toroidal_lower": null,
-          "radial_upper_toroidal_upper": null
-        },
-        "halo_linf_error": 0.0,
-        "halo_verified_fraction": 1.0,
-        "neighbour_ranks": {
-          "radial_lower": 0,
-          "radial_upper": null,
-          "toroidal_lower": null,
-          "toroidal_upper": 3
-        },
-        "owned_shape": [
-          8,
-          4,
-          4,
-          4,
-          3
-        ],
-        "rank": 2
-      },
-      {
-        "corner_neighbour_ranks": {
-          "radial_lower_toroidal_lower": 0,
-          "radial_lower_toroidal_upper": null,
-          "radial_upper_toroidal_lower": null,
-          "radial_upper_toroidal_upper": null
-        },
-        "halo_linf_error": 0.0,
-        "halo_verified_fraction": 1.0,
-        "neighbour_ranks": {
-          "radial_lower": 1,
-          "radial_upper": null,
-          "toroidal_lower": 2,
-          "toroidal_upper": null
-        },
-        "owned_shape": [
-          8,
-          4,
-          4,
-          4,
-          3
-        ],
-        "rank": 3
-      }
-    ],
-    "reconstruction_linf_error": 0.0,
-    "returncode": 0,
+    "returncode": null,
     "schema": "production-decomposition-mpi-runtime-evidence.v1",
-    "status": "accepted_local_mpi_rank_tile_execution",
-    "topology": "radial_toroidal_2d",
-    "toroidal_parts": 2
+    "status": "blocked_mpi_runtime_execution_timeout"
   },
-  "mpi_runtime_execution_pass": true,
+  "mpi_runtime_execution_pass": false,
   "parallel_moment_invariant_pass": true,
   "production_scale_ready": false,
   "reciprocal_neighbour_graph_evidence": {
@@ -6427,29 +6410,29 @@
   ],
   "runtime_dependency_evidence": {
     "numpy_contract_pass": true,
-    "optional_runtime_dependency_ready": false,
+    "optional_runtime_dependency_ready": true,
     "python_executable": "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python",
     "rows": [
       {
         "distribution": "cupy-cuda12x",
-        "importable": false,
+        "importable": true,
         "module": "cupy",
         "required_specifier": "cupy-cuda12x>=13.6,<14.0",
-        "version": null
+        "version": "13.6.0"
       },
       {
         "distribution": "mpi4py",
-        "importable": false,
+        "importable": true,
         "module": "mpi4py",
         "required_specifier": "mpi4py>=4.1",
-        "version": null
+        "version": "4.1.2"
       },
       {
         "distribution": "nvidia-cuda-nvrtc-cu12",
-        "importable": false,
+        "importable": true,
         "module": "nvidia.cuda_nvrtc",
         "required_specifier": "nvidia-cuda-nvrtc-cu12>=12.0,<13.0",
-        "version": null
+        "version": "12.9.86"
       },
       {
         "distribution": "numpy",
@@ -6460,7 +6443,7 @@
       }
     ],
     "schema": "production-decomposition-runtime-dependencies.v1",
-    "status": "blocked_optional_runtime_dependency_contract"
+    "status": "accepted_optional_runtime_dependencies"
   },
   "same_physics_decomposition_shape_pass": true,
   "same_physics_shape_convergence_evidence": {
@@ -6477,7 +6460,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 16150930.448095495,
+        "cells_per_second": 2911696.628057509,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6488,7 +6471,7 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 16922647.32034651,
+        "cells_per_second": 5826379.299769564,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6499,7 +6482,7 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 8775561.105841087,
+        "cells_per_second": 9938514.37993096,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
