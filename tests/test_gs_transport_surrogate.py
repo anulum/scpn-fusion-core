@@ -12,7 +12,7 @@ Verifies that:
   - MLPSurrogate forward pass returns the right shape
   - MLPSurrogate save/load round-trips weights exactly
   - train_gs_transport_surrogate() runs end-to-end and returns expected keys
-  - _relative_l2 returns 0 for identical arrays and positive for different ones
+  - relative_l2 returns 0 for identical arrays and positive for different ones
 """
 
 from pathlib import Path
@@ -24,7 +24,6 @@ from scpn_fusion.core import gs_transport_surrogate_training as gsts
 from scpn_fusion.core.fno_training import (
     MLPSurrogate,
     _generate_gs_transport_pairs,
-    _relative_l2,
     train_gs_transport_surrogate,
 )
 
@@ -138,21 +137,21 @@ def test_train_gs_transport_surrogate_smoke(tmp_path: Path):
     assert len(history["train_loss"]) == history["epochs_completed"]
 
 
-# ── _relative_l2 unit tests ─────────────────────────────────────────
+# ── relative_l2 unit tests ─────────────────────────────────────────
 
 
-def test_relative_l2_perfect():
-    """_relative_l2 with identical arrays must return 0.0."""
+def testrelative_l2_perfect():
+    """relative_l2 with identical arrays must return 0.0."""
     a = np.array([1.0, 2.0, 3.0, 4.0])
-    result = _relative_l2(a, a)
+    result = relative_l2(a, a)
     assert result == pytest.approx(0.0, abs=1e-10)
 
 
-def test_relative_l2_nonzero():
-    """_relative_l2 with different arrays must return a positive value."""
+def testrelative_l2_nonzero():
+    """relative_l2 with different arrays must return a positive value."""
     a = np.array([1.0, 2.0, 3.0, 4.0])
     b = np.array([1.1, 2.2, 3.3, 4.4])
-    result = _relative_l2(a, b)
+    result = relative_l2(a, b)
     assert result > 0.0
     assert np.isfinite(result)
 

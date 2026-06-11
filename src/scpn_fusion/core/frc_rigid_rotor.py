@@ -191,72 +191,52 @@ def ion_gyroradius_m(T_i_eV: float, B_T: float, *, mass_amu: float = DEUTERIUM_M
     return float(thermal_momentum / (ELEMENTARY_CHARGE_C * abs(B_T)))
 
 
-def solve_frc_equilibrium(
+
+def _thomas_solve(a: NDArray, b: NDArray, c: NDArray, d: NDArray) -> NDArray:
+    n = len(d)
+    c_prime = np.zeros(n)
+    d_prime = np.zeros(n)
+    c_prime[0] = c[0] / b[0]
+    d_prime[0] = d[0] / b[0]
+    for i in range(1, n):
+        den = b[i] - a[i] * c_prime[i - 1]
+        if i < n - 1:
+            c_prime[i] = c[i] / den
+        d_prime[i] = (d[i] - a[i] * d_prime[i - 1]) / den
+    x = np.zeros(n)
+    x[-1] = d_prime[-1]
+    for i in range(n - 2, -1, -1):
+        x[i] = d_prime[i] - c_prime[i] * x[i + 1]
+    return x
+
+
+def _fill_equilibrium_state(
     inputs: RigidRotorFRCInputs,
-    rho_grid: FloatArray,
-    *,
-    solver: Literal["numpy"] = "numpy",
-    tolerance: float = 1e-10,
-    max_iter: int = 200,
+    rho: NDArray,
+    psi: NDArray,
+    B_z: NDArray,
+    J_theta: NDArray,
+    p: NDArray,
+    tolerance: float,
+    residual: float,
+    delta: float,
+    dBz_dr_analytic: NDArray,
 ) -> FRCEquilibriumState:
-    """Solve the Steinhauer no-rotation FRC analytical limit on a radial grid.
-
-    The implemented magnetic field is Steinhauer (2011), Eq. 7:
-    ``B_z(r) = -B_ext tanh((r^2 - R_s^2) / (2 R_s delta))``.
-    Full rotating rigid-rotor BVP support is deliberately rejected until its
-    dedicated implementation and parity tests are added.
-    """
-    del max_iter
-    if solver != "numpy":
-        raise ValueError("only the numpy analytical no-rotation path is implemented")
-    _validate_inputs(inputs, tolerance)
-    rho = _validate_grid(rho_grid, inputs.R_s)
-    delta = (
-        inputs.delta if inputs.delta is not None else ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
-    )
-
-    argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
-    B_z = -inputs.B_ext * np.tanh(argument)
     B_theta = np.zeros_like(B_z)
-    J_theta = _toroidal_current_density_from_steinhauer(
-        rho,
-        argument,
-        inputs.B_ext,
-        inputs.R_s,
-        delta,
-    )
-    dBz_dr_analytic = _axial_field_derivative_from_steinhauer(
-        rho,
-        argument,
-        inputs.B_ext,
-        inputs.R_s,
-        delta,
-    )
-    dBz_dr = cast(FloatArray, np.gradient(B_z, rho, edge_order=2))
+    dBz_dr = np.gradient(B_z, rho, edge_order=2)
     separatrix_bz_gradient_T_m = float(np.interp(inputs.R_s, rho, dBz_dr))
     separatrix_expected_bz_gradient_T_m = float(-inputs.B_ext / delta)
-    separatrix_gradient_relative_error = abs(
-        separatrix_bz_gradient_T_m - separatrix_expected_bz_gradient_T_m
-    ) / max(abs(separatrix_expected_bz_gradient_T_m), tolerance)
+    separatrix_gradient_relative_error = abs(separatrix_bz_gradient_T_m - separatrix_expected_bz_gradient_T_m) / max(abs(separatrix_expected_bz_gradient_T_m), tolerance)
     separatrix_current_density_A_m2 = float(np.interp(inputs.R_s, rho, J_theta))
     separatrix_expected_current_density_A_m2 = float(inputs.B_ext / (MU_0 * delta))
-    separatrix_current_density_relative_error = abs(
-        separatrix_current_density_A_m2 - separatrix_expected_current_density_A_m2
-    ) / max(abs(separatrix_expected_current_density_A_m2), tolerance)
+    separatrix_current_density_relative_error = abs(separatrix_current_density_A_m2 - separatrix_expected_current_density_A_m2) / max(abs(separatrix_expected_current_density_A_m2), tolerance)
     sheet_current_integral_A_m = float(trapezoid(J_theta, rho))
     expected_sheet_current_integral_A_m = float((B_z[0] - B_z[-1]) / MU_0)
-    sheet_current_integral_relative_error = abs(
-        sheet_current_integral_A_m - expected_sheet_current_integral_A_m
-    ) / max(abs(expected_sheet_current_integral_A_m), tolerance)
+    sheet_current_integral_relative_error = abs(sheet_current_integral_A_m - expected_sheet_current_integral_A_m) / max(abs(expected_sheet_current_integral_A_m), tolerance)
     ampere_residual = _ampere_current_closure_residual(rho, B_z, J_theta)
-    ampere_scale = max(
-        tolerance,
-        float(np.max(np.abs(dBz_dr))),
-        float(MU_0 * np.max(np.abs(J_theta))),
-    )
+    ampere_scale = max(tolerance, float(np.max(np.abs(dBz_dr))), float(MU_0 * np.max(np.abs(J_theta))))
     ampere_residual_linf = float(np.max(np.abs(ampere_residual)) / ampere_scale)
     ampere_residual_l2 = float(np.sqrt(np.mean((ampere_residual / ampere_scale) ** 2)))
-    psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
     psi_axis_Wb = float(psi[0])
     psi_separatrix_Wb = float(np.interp(inputs.R_s, rho, psi))
     psi_span_Wb = psi_separatrix_Wb - psi_axis_Wb
@@ -266,32 +246,15 @@ def solve_frc_equilibrium(
     psi_normalized_axis_error = abs(float(psi_normalized[0]))
     psi_normalized_separatrix = float(np.interp(inputs.R_s, rho, psi_normalized))
     psi_normalized_separatrix_error = abs(psi_normalized_separatrix - 1.0)
-    psi_normalized_residual = _psi_normalized_closure_residual(
-        psi,
-        psi_axis_Wb,
-        psi_separatrix_Wb,
-        psi_normalized,
-    )
+    psi_normalized_residual = _psi_normalized_closure_residual(psi, psi_axis_Wb, psi_separatrix_Wb, psi_normalized)
     psi_normalized_residual_linf = float(np.max(np.abs(psi_normalized_residual)))
-    psi_normalized_monotonic_passed = _psi_normalized_monotonic_passed(
-        rho,
-        psi_normalized,
-        inputs.R_s,
-        tolerance,
-    )
-    psi_normalized_bounds_passed = _psi_normalized_bounds_passed(
-        rho,
-        psi_normalized,
-        inputs.R_s,
-        tolerance,
-    )
+    psi_normalized_monotonic_passed = _psi_normalized_monotonic_passed(rho, psi_normalized, inputs.R_s, tolerance)
+    psi_normalized_bounds_passed = _psi_normalized_bounds_passed(rho, psi_normalized, inputs.R_s, tolerance)
     flux_derivative_residual = _flux_derivative_closure_residual(rho, psi, B_z)
     dpsi_dr = np.gradient(psi, rho, edge_order=2)
     flux_scale = max(tolerance, float(np.max(np.abs(rho * B_z))), float(np.max(np.abs(dpsi_dr))))
     flux_derivative_residual_linf = float(np.max(np.abs(flux_derivative_residual)) / flux_scale)
-    flux_derivative_residual_l2 = float(
-        np.sqrt(np.mean((flux_derivative_residual / flux_scale) ** 2))
-    )
+    flux_derivative_residual_l2 = float(np.sqrt(np.mean((flux_derivative_residual / flux_scale) ** 2)))
     r_null = _zero_crossing_radius(rho, B_z)
     separatrix_radius_error = abs(r_null - inputs.R_s)
     separatrix_index = int(np.argmin(np.abs(rho - r_null)))
@@ -299,76 +262,35 @@ def solve_frc_equilibrium(
 
     input_thermal_pressure = inputs.n0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
     external_magnetic_pressure = inputs.B_ext**2 / (2.0 * MU_0)
-    p = external_magnetic_pressure - B_z**2 / (2.0 * MU_0)
-    p = np.maximum(p, 0.0)
     thermal_energy_j = (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C
     density_m3 = p / thermal_energy_j
     density_peak_m3 = float(np.max(density_m3))
     central_density_residual_m3 = density_peak_m3 - inputs.n0
-    central_density_relative_error = abs(central_density_residual_m3) / max(
-        density_peak_m3,
-        inputs.n0,
-        tolerance,
-    )
+    central_density_relative_error = abs(central_density_residual_m3) / max(density_peak_m3, inputs.n0, tolerance)
     beta = p / max(external_magnetic_pressure, tolerance)
     beta_peak = float(np.max(beta))
     beta_r_clip, beta_clip = _clip_to_separatrix(rho, beta, inputs.R_s)
-    beta_separatrix_average = float(
-        trapezoid(beta_clip * 2.0 * np.pi * beta_r_clip, beta_r_clip) / (np.pi * inputs.R_s**2)
-    )
+    beta_separatrix_average = float(trapezoid(beta_clip * 2.0 * np.pi * beta_r_clip, beta_r_clip) / (np.pi * inputs.R_s**2))
     density_r_clip, density_clip = _clip_to_separatrix(rho, density_m3, inputs.R_s)
-    particle_line_density_m1 = float(
-        trapezoid(density_clip * 2.0 * np.pi * density_r_clip, density_r_clip)
-    )
+    particle_line_density_m1 = float(trapezoid(density_clip * 2.0 * np.pi * density_r_clip, density_r_clip))
     pressure_r_clip, pressure_clip = _clip_to_separatrix(rho, p, inputs.R_s)
-    separatrix_pressure_energy_J_m = float(
-        trapezoid(pressure_clip * 2.0 * np.pi * pressure_r_clip, pressure_r_clip)
-    )
+    separatrix_pressure_energy_J_m = float(trapezoid(pressure_clip * 2.0 * np.pi * pressure_r_clip, pressure_r_clip))
     magnetic_deficit = external_magnetic_pressure - B_z**2 / (2.0 * MU_0)
     deficit_r_clip, deficit_clip = _clip_to_separatrix(rho, magnetic_deficit, inputs.R_s)
-    separatrix_magnetic_deficit_energy_J_m = float(
-        trapezoid(deficit_clip * 2.0 * np.pi * deficit_r_clip, deficit_r_clip)
-    )
-    separatrix_energy_closure_relative_error = abs(
-        separatrix_pressure_energy_J_m - separatrix_magnetic_deficit_energy_J_m
-    ) / max(
-        abs(separatrix_pressure_energy_J_m),
-        abs(separatrix_magnetic_deficit_energy_J_m),
-        tolerance,
-    )
+    separatrix_magnetic_deficit_energy_J_m = float(trapezoid(deficit_clip * 2.0 * np.pi * deficit_r_clip, deficit_r_clip))
+    separatrix_energy_closure_relative_error = abs(separatrix_pressure_energy_J_m - separatrix_magnetic_deficit_energy_J_m) / max(abs(separatrix_pressure_energy_J_m), abs(separatrix_magnetic_deficit_energy_J_m), tolerance)
     pressure_balance_residual = _pressure_balance_residual(p, B_z, inputs.B_ext)
-    pressure_balance_residual_linf = float(
-        np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance)
-    )
-    pressure_balance_residual_l2 = float(
-        np.sqrt(
-            np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2)
-        )
-    )
+    pressure_balance_residual_linf = float(np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance))
+    pressure_balance_residual_l2 = float(np.sqrt(np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2)))
+    
     pressure_gradient_analytic = _pressure_gradient_from_steinhauer(B_z, dBz_dr_analytic)
-    pressure_gradient_residual = _pressure_gradient_closure_residual(
-        rho,
-        p,
-        pressure_gradient_analytic,
-    )
+    pressure_gradient_residual = _pressure_gradient_closure_residual(rho, p, pressure_gradient_analytic)
     finite_pressure_gradient = np.gradient(p, rho, edge_order=2)
-    pressure_gradient_scale = max(
-        tolerance,
-        float(np.max(np.abs(finite_pressure_gradient))),
-        float(np.max(np.abs(pressure_gradient_analytic))),
-    )
-    pressure_gradient_residual_linf = float(
-        np.max(np.abs(pressure_gradient_residual)) / pressure_gradient_scale
-    )
-    pressure_gradient_residual_l2 = float(
-        np.sqrt(np.mean((pressure_gradient_residual / pressure_gradient_scale) ** 2))
-    )
+    pressure_gradient_scale = max(tolerance, float(np.max(np.abs(finite_pressure_gradient))), float(np.max(np.abs(pressure_gradient_analytic))))
+    pressure_gradient_residual_linf = float(np.max(np.abs(pressure_gradient_residual)) / pressure_gradient_scale)
+    pressure_gradient_residual_l2 = float(np.sqrt(np.mean((pressure_gradient_residual / pressure_gradient_scale) ** 2)))
     force_residual = _radial_force_balance_residual(rho, B_z, J_theta, p)
-    residual_scale = max(
-        tolerance,
-        float(np.max(np.abs(np.gradient(p, rho, edge_order=2)))),
-        float(np.max(np.abs(J_theta * B_z))),
-    )
+    residual_scale = max(tolerance, float(np.max(np.abs(np.gradient(p, rho, edge_order=2)))), float(np.max(np.abs(J_theta * B_z))))
     force_balance_residual_linf = float(np.max(np.abs(force_residual)) / residual_scale)
     force_balance_residual_l2 = float(np.sqrt(np.mean((force_residual / residual_scale) ** 2)))
 
@@ -393,23 +315,23 @@ def solve_frc_equilibrium(
         beta=beta,
         R_null=r_null,
         target_separatrix_radius_m=inputs.R_s,
-        separatrix_radius_error_m=float(separatrix_radius_error),
+        separatrix_radius_error_m=separatrix_radius_error,
         separatrix_index=separatrix_index,
         field_reversal_passed=field_reversal,
         s_parameter=s_value,
         energy_J=energy_J_per_m,
         converged=True,
-        residual=float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument))))),
+        residual=residual,
         delta=delta,
         psi_axis_Wb=psi_axis_Wb,
         psi_separatrix_Wb=psi_separatrix_Wb,
-        psi_normalized_axis_error=float(psi_normalized_axis_error),
-        psi_normalized_separatrix=float(psi_normalized_separatrix),
-        psi_normalized_separatrix_error=float(psi_normalized_separatrix_error),
+        psi_normalized_axis_error=psi_normalized_axis_error,
+        psi_normalized_separatrix=psi_normalized_separatrix,
+        psi_normalized_separatrix_error=psi_normalized_separatrix_error,
         psi_normalized_residual_linf=psi_normalized_residual_linf,
-        psi_normalized_monotonic_passed=bool(psi_normalized_monotonic_passed),
-        psi_normalized_bounds_passed=bool(psi_normalized_bounds_passed),
-        pressure_balance_ratio=float(pressure_balance_ratio),
+        psi_normalized_monotonic_passed=psi_normalized_monotonic_passed,
+        psi_normalized_bounds_passed=psi_normalized_bounds_passed,
+        pressure_balance_ratio=pressure_balance_ratio,
         pressure_balance_residual=pressure_balance_residual,
         pressure_balance_residual_linf=pressure_balance_residual_linf,
         pressure_balance_residual_l2=pressure_balance_residual_l2,
@@ -419,19 +341,17 @@ def solve_frc_equilibrium(
         pressure_gradient_residual_l2=pressure_gradient_residual_l2,
         peak_pressure_pa=float(np.max(p)),
         density_peak_m3=density_peak_m3,
-        input_density_m3=float(inputs.n0),
-        central_density_residual_m3=float(central_density_residual_m3),
-        central_density_relative_error=float(central_density_relative_error),
+        input_density_m3=inputs.n0,
+        central_density_residual_m3=central_density_residual_m3,
+        central_density_relative_error=central_density_relative_error,
         beta_peak=beta_peak,
         beta_separatrix_average=beta_separatrix_average,
         particle_line_density_m1=particle_line_density_m1,
         separatrix_pressure_energy_J_m=separatrix_pressure_energy_J_m,
         separatrix_magnetic_deficit_energy_J_m=separatrix_magnetic_deficit_energy_J_m,
-        separatrix_energy_closure_relative_error=float(separatrix_energy_closure_relative_error),
-        input_thermal_pressure_pa=float(input_thermal_pressure),
-        thermal_pressure_ratio=float(
-            input_thermal_pressure / max(external_magnetic_pressure, tolerance)
-        ),
+        separatrix_energy_closure_relative_error=separatrix_energy_closure_relative_error,
+        input_thermal_pressure_pa=input_thermal_pressure,
+        thermal_pressure_ratio=input_thermal_pressure / max(external_magnetic_pressure, tolerance),
         flux_derivative_residual=flux_derivative_residual,
         flux_derivative_residual_linf=flux_derivative_residual_linf,
         flux_derivative_residual_l2=flux_derivative_residual_l2,
@@ -441,18 +361,127 @@ def solve_frc_equilibrium(
         peak_j_theta_A_m2=float(np.max(np.abs(J_theta))),
         separatrix_bz_gradient_T_m=separatrix_bz_gradient_T_m,
         separatrix_expected_bz_gradient_T_m=separatrix_expected_bz_gradient_T_m,
-        separatrix_gradient_relative_error=float(separatrix_gradient_relative_error),
+        separatrix_gradient_relative_error=separatrix_gradient_relative_error,
         separatrix_current_density_A_m2=separatrix_current_density_A_m2,
         separatrix_expected_current_density_A_m2=separatrix_expected_current_density_A_m2,
-        separatrix_current_density_relative_error=float(separatrix_current_density_relative_error),
+        separatrix_current_density_relative_error=separatrix_current_density_relative_error,
         sheet_current_integral_A_m=sheet_current_integral_A_m,
         expected_sheet_current_integral_A_m=expected_sheet_current_integral_A_m,
-        sheet_current_integral_relative_error=float(sheet_current_integral_relative_error),
+        sheet_current_integral_relative_error=sheet_current_integral_relative_error,
         force_balance_residual=force_residual,
         force_balance_residual_linf=force_balance_residual_linf,
         force_balance_residual_l2=force_balance_residual_l2,
-        model="steinhauer_2011_no_rotation_analytical",
+        model="steinhauer_2011_rotating_analytic_picard",
     )
+
+
+def _solve_rotating_numpy(
+    inputs: RigidRotorFRCInputs,
+    rho: NDArray,
+    delta: float,
+    tolerance: float,
+    max_iter: int,
+) -> FRCEquilibriumState:
+    # 1. Initialize static analytical solution for guess
+    argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
+    psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
+    
+    psi_0 = psi[0]
+    psi_max = psi[-1]
+    
+    expected_psi_rs = -inputs.B_ext * inputs.R_s * delta * (np.log(np.cosh(0.0)) - np.log(np.cosh(-inputs.R_s / (2.0 * delta))))
+    psi_ref = expected_psi_rs
+    
+    gamma = (2.014 * 1.66053906660e-27 * inputs.theta_dot**2) / (2.0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C)
+    
+    n = len(rho)
+    a_sub = np.zeros(n - 2)
+    b_main = np.zeros(n - 2)
+    c_sup = np.zeros(n - 2)
+    
+    for i in range(1, n - 1):
+        h0 = rho[i] - rho[i - 1]
+        h1 = rho[i + 1] - rho[i]
+        r_i = rho[i]
+        a_sub[i - 1] = (2.0 + h1 / r_i) / (h0 * (h0 + h1))
+        b_main[i - 1] = -2.0 / (h0 * h1) - (h1 - h0) / (r_i * h0 * h1)
+        c_sup[i - 1] = (2.0 - h0 / r_i) / (h1 * (h0 + h1))
+        
+    converged = False
+    residual = 0.0
+    source_coeff = -inputs.B_ext / (inputs.R_s * delta)
+    exp_coeff = 2.0 / (inputs.B_ext * inputs.R_s * delta)
+    
+    for _ in range(max_iter):
+        r_inner = rho[1:-1]
+        psi_inner = psi[1:-1]
+        
+        s = r_inner**2 * source_coeff * np.exp(exp_coeff * (psi_inner - psi_ref)) * np.exp(gamma * r_inner**2)
+        d_rhs = s.copy()
+        d_rhs[0] -= a_sub[0] * psi_0
+        d_rhs[-1] -= c_sup[-1] * psi_max
+        
+        psi_new_inner = _thomas_solve(a_sub, b_main, c_sup, d_rhs)
+        
+        psi_new = 0.5 * psi_inner + 0.5 * psi_new_inner
+        max_diff = float(np.max(np.abs(psi_new - psi_inner)))
+        psi[1:-1] = psi_new
+        
+        if max_diff < tolerance:
+            converged = True
+            residual = max_diff
+            break
+            
+    if not converged:
+        raise ValueError("Picard iteration failed to converge")
+        
+    dpsi_dr = np.gradient(psi, rho, edge_order=2)
+    b_z = np.zeros(n)
+    b_z[0] = dpsi_dr[1] / rho[1]
+    b_z[1:] = dpsi_dr[1:] / rho[1:]
+    
+    p_max = inputs.B_ext**2 / (2.0 * MU_0)
+    p = p_max * np.exp(exp_coeff * (psi - psi_ref)) * np.exp(gamma * rho**2)
+    j_theta = -(1.0 / MU_0) * rho * source_coeff * np.exp(exp_coeff * (psi - psi_ref)) * np.exp(gamma * rho**2)
+    
+    dBz_dr_analytic = np.gradient(b_z, rho, edge_order=2)
+    return _fill_equilibrium_state(inputs, rho, psi, b_z, j_theta, p, tolerance, residual, delta, dBz_dr_analytic)
+
+
+def solve_frc_equilibrium(
+    inputs: RigidRotorFRCInputs,
+    rho_grid: FloatArray,
+    *,
+    solver: Literal["numpy", "rust"] = "numpy",
+    tolerance: float = 1e-10,
+    max_iter: int = 200,
+) -> FRCEquilibriumState:
+    _validate_inputs(inputs, tolerance)
+    rho = _validate_grid(rho_grid, inputs.R_s)
+    delta = inputs.delta if inputs.delta is not None else ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
+
+    if inputs.theta_dot != 0.0:
+        if solver == "rust":
+            try:
+                import scpn_fusion_rs
+                return scpn_fusion_rs.solve_rotating_frc_equilibrium_rust(
+                    inputs.n0, inputs.T_i_eV, inputs.T_e_eV, inputs.theta_dot, inputs.R_s, inputs.B_ext, rho_grid, tolerance, inputs.delta
+                )
+            except (ImportError, AttributeError):
+                pass
+        return _solve_rotating_numpy(inputs, rho, delta, tolerance, max_iter)
+
+    argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
+    B_z = -inputs.B_ext * np.tanh(argument)
+    J_theta = _toroidal_current_density_from_steinhauer(rho, argument, inputs.B_ext, inputs.R_s, delta)
+    psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
+    external_magnetic_pressure = inputs.B_ext**2 / (2.0 * MU_0)
+    p = np.maximum(external_magnetic_pressure - B_z**2 / (2.0 * MU_0), 0.0)
+    residual = float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument)))))
+    
+    dBz_dr_analytic = _axial_field_derivative_from_steinhauer(rho, argument, inputs.B_ext, inputs.R_s, delta)
+    return _fill_equilibrium_state(inputs, rho, psi, B_z, J_theta, p, tolerance, residual, delta, dBz_dr_analytic)
+
 
 
 def frc_no_rotation_jax_observables(
