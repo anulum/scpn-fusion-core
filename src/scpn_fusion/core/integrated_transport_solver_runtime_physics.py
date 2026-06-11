@@ -33,6 +33,51 @@ def _eped_fallback_exceptions() -> tuple[type[BaseException], ...]:
     return _EPED_FALLBACK_EXCEPTIONS
 
 
+def _extract_elongation(cfg: dict[str, Any]) -> float:
+    """Resolve plasma elongation kappa from the reactor configuration.
+
+    Search order (first finite, positive value wins):
+
+    1. ``cfg["physics"]["kappa"]``
+    2. ``cfg["shape"]["kappa"]``
+    3. ``cfg["target"]["kappa"]``
+    4. ``cfg["geometry"]["kappa"]``
+
+    Fall back to ``1.0`` (circular cross-section) with a warning if no key is
+    present. Inferring kappa from the bounding-box ``dimensions`` block is
+    deliberately avoided because that block describes the computational domain
+    of the 2D equilibrium grid, not the plasma boundary elongation (ITER, for
+    example, uses an 8x8 m bounding box for a kappa~1.7 plasma).
+    """
+    candidates = (
+        ("physics", "kappa"),
+        ("shape", "kappa"),
+        ("target", "kappa"),
+        ("geometry", "kappa"),
+    )
+    for section, key in candidates:
+        block = cfg.get(section)
+        if not isinstance(block, dict):
+            continue
+        raw = block.get(key)
+        if raw is None:
+            continue
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if not np.isfinite(value) or value <= 0.0:
+            continue
+        return value
+    _logger.warning(
+        "TransportSolver: no plasma elongation (kappa) found in cfg "
+        "['physics'|'shape'|'target'|'geometry']; defaulting to 1.0 (circular). "
+        "Volume integrals and confinement-time estimates will be under-estimated "
+        "by a factor of kappa for D-shaped plasmas."
+    )
+    return 1.0
+
+
 class TransportSolverRuntimePhysicsMixin:
     """Physics-kernel mixin for transport source terms and source diagnostics.
 
@@ -42,7 +87,26 @@ class TransportSolverRuntimePhysicsMixin:
     """
 
     def _rho_volume_element(self) -> np.ndarray:
-        """Toroidal volume element per radial cell [m^3]."""
+        """Toroidal volume element per radial cell, including plasma elongation.
+
+        The plasma boundary is modelled as a torus of major radius ``R_0`` with
+        an elliptical cross-section: minor semi-axis ``a`` in the radial
+        direction and ``kappa * a`` in the vertical direction. Under this
+        approximation the differential volume at normalised flux coordinate
+        ``rho = r / a`` is
+
+        ::
+
+            dV(rho) = 2 * pi * R_0 * 2 * pi * kappa * a^2 * rho * drho
+
+        which integrates to the analytic elongated-torus volume
+        ``V = 2 * pi^2 * R_0 * a^2 * kappa`` over ``rho in [0, 1]``. Recovers
+        the circular limit ``V = 2 * pi^2 * R_0 * a^2`` when ``kappa = 1``.
+
+        ``R_0`` and ``a`` are derived from the computational ``dimensions``
+        block, while ``kappa`` is resolved via :func:`_extract_elongation`
+        (preferred key: ``cfg["physics"]["kappa"]``).
+        """
         cached: np.ndarray | None = getattr(self, "_dV_cache", None)
         if cached is not None:
             return cached
@@ -57,12 +121,14 @@ class TransportSolverRuntimePhysicsMixin:
         if (not np.isfinite(a_minor)) or a_minor <= 0.0:
             raise _physics_error_type()(f"Invalid minor radius from config: a={a_minor!r}")
 
+        kappa = _extract_elongation(self.cfg)
+
         rho = np.clip(
             np.nan_to_num(np.asarray(self.rho, dtype=np.float64), nan=0.0, posinf=1.0, neginf=0.0),
             0.0,
             1.0,
         )
-        d_v = 2.0 * np.pi * r0 * 2.0 * np.pi * rho * a_minor**2 * self.drho
+        d_v = 4.0 * np.pi**2 * r0 * kappa * a_minor**2 * rho * self.drho
         if (not np.all(np.isfinite(d_v))) or np.any(d_v < 0.0):
             raise _physics_error_type()("Invalid toroidal volume element computed from rho grid")
         self._dV_cache = d_v
@@ -298,4 +364,4 @@ class TransportSolverRuntimePhysicsMixin:
         self._last_pedestal_bc_contract = contract
 
 
-__all__ = ["TransportSolverRuntimePhysicsMixin"]
+__all__ = ["TransportSolverRuntimePhysicsMixin", "_extract_elongation"]
