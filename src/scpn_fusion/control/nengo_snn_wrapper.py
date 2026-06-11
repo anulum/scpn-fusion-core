@@ -29,12 +29,12 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
 _nengo_available = True
-FloatArray = NDArray[np.float64]
+FloatArray = NDArray[np.float64][np.float64]
 
 
 def nengo_available() -> bool:
