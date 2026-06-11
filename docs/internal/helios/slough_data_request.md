@@ -78,3 +78,11 @@ Best regards,
 
 [Your Name]
 SCPN-FUSION-CORE
+
+---
+
+## 4. LinkedIn Invitation: Martin Everts (Helion CH)
+
+**Constraint:** 200 character limit (including spaces).
+
+"Martin, following Helion’s progress with interest. I lead SCPN-FUSION-CORE, developing 10MHz FPGA control for FRCs. Seeking to validate vs Shot 2001 (Slough 2011). Open to sharing our benchmarks?"
