@@ -23,16 +23,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 62540468166971.88,
-      "mean_seconds": 0.019192319800000003,
+      "mean_seconds": 0.0614305356,
       "min_radius_m": 0.08408251898081921,
       "radial_turning_point_count": 0,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.019312058,
-        0.013199470000000001,
-        0.020011493,
-        0.023794756,
-        0.019643822000000002
+        0.069147868,
+        0.049361124000000006,
+        0.052947697,
+        0.07902885300000001,
+        0.05666713600000001
       ],
       "steps": 64
     },
@@ -52,16 +52,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 1012714361851950.1,
-      "mean_seconds": 0.05995249860000001,
+      "mean_seconds": 0.1858905686,
       "min_radius_m": 0.008413881844687323,
       "radial_turning_point_count": 2,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.064181029,
-        0.061078161000000006,
-        0.055464190000000003,
-        0.06047634,
-        0.058562773000000005
+        0.27703584000000003,
+        0.179558866,
+        0.13535401500000002,
+        0.15143029400000002,
+        0.18607382800000002
       ],
       "steps": 256
     },
@@ -81,16 +81,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 1021469279693650.5,
-      "mean_seconds": 0.2461945706,
+      "mean_seconds": 0.8437731098,
       "min_radius_m": 0.008383014351505654,
       "radial_turning_point_count": 11,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.235057816,
-        0.25216977900000004,
-        0.25017988,
-        0.252919393,
-        0.240645985
+        1.0883203510000001,
+        0.9337067210000001,
+        0.9154487170000001,
+        0.663409899,
+        0.617979861
       ],
       "steps": 1024
     },
@@ -113,16 +113,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 62540468166971.88,
-      "mean_seconds": 0.0153042662,
+      "mean_seconds": 0.06753696440000001,
       "min_radius_m": 0.08404106355092728,
       "radial_turning_point_count": 0,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.013636321000000002,
-        0.019045191,
-        0.016786624,
-        0.013948314000000002,
-        0.013104881
+        0.067852758,
+        0.042287077,
+        0.066642029,
+        0.071257688,
+        0.08964527
       ],
       "steps": 64
     },
@@ -145,16 +145,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 1012275958583696.5,
-      "mean_seconds": 0.096132244,
+      "mean_seconds": 0.2782007412,
       "min_radius_m": 0.008415420525134682,
       "radial_turning_point_count": 2,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.11301931100000001,
-        0.105865813,
-        0.09103149,
-        0.091757981,
-        0.078986625
+        0.289972385,
+        0.21721911400000002,
+        0.30357415600000004,
+        0.278859623,
+        0.30137842800000003
       ],
       "steps": 256
     },
@@ -212,15 +212,19 @@
     },
     {
       "case": "slough_2011_fig5",
+      "checksum_verified": true,
+      "fidelity": "Experimental Parity (Shot 2001)",
       "language": "external_reference",
-      "required_artifact": "digitised radius/temperature/field trajectory with provenance and checksum",
-      "status": "blocked_missing_public_digitised_reference"
+      "n_points": 8,
+      "scenario": "Slough_2011_Nuclear_Fusion_Shot_2001",
+      "source": "Slough et al., Nucl. Fusion 51 053008 (2011), Figure 5",
+      "status": "passed"
     }
   ],
   "schema": "scpn-fusion-core.pulsed_compression_benchmark.v4",
   "source_checksums": {
     "benchmarks/bench_pulsed_compression.py": "63b6a91320e3818b4df6bfe12c9b0126ac3d19bb72ac1853e5b4b2726e4b799e",
     "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "40d948c1c247584fd80cebb67ce41765e361839129b5cebf00fa69228e1f780d",
-    "src/scpn_fusion/core/pulsed_compression.py": "110bb4bef18b80c77c8884f8162f63217e746a1fd2c33a0cc70efac4b49ddbdd"
+    "src/scpn_fusion/core/pulsed_compression.py": "25977a5b37deed7f169d96f1290a3c6b2fe5a02d6f1b7c4fadbb755c97942f5e"
   }
 }

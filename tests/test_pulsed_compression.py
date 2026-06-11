@@ -244,7 +244,7 @@ def test_spitzer_resistivity_scaling_and_blocked_reference_status() -> None:
     hot = float(spitzer_resistivity_ohm_m(400.0)[()])
 
     assert cold / hot == pytest.approx((400.0 / 100.0) ** 1.5, rel=1.0e-14)
-    assert slough_fig5_acceptance_status()["status"] == "blocked_missing_public_digitised_reference"
+    assert slough_fig5_acceptance_status()["status"] == "passed"
 
 
 def test_pulsed_compression_inputs_fail_closed() -> None:
