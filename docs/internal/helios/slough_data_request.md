@@ -86,3 +86,31 @@ SCPN-FUSION-CORE
 **Constraint:** 200 character limit (including spaces).
 
 "Martin, following Helion’s progress with interest. I lead SCPN-FUSION-CORE, developing 10MHz FPGA control for FRCs. Seeking to validate vs Shot 2001 (Slough 2011). Open to sharing our benchmarks?"
+
+---
+
+## 5. Strategic Swiss Cooperation: Martin Everts (Helion CH)
+
+**Context:** Local Swiss-to-Swiss connection (Zürich).
+**Goal:** Strategic cooperation / Research sponsorship.
+
+### Option A: LinkedIn Invitation (Limit 200 chars)
+"Martin, grüezi from Zürich. I lead SCPN-FUSION-CORE, developing 10MHz FPGA control for FRCs. Seeking to validate vs Slough 2011. Open to local Swiss cooperation or research sponsorship dialogue?"
+
+### Option B: Full Follow-up Message (After Connection)
+Dear Martin,
+
+Thank you for connecting. As a fellow resident of the Zürich area, I’ve been following Helion’s recent momentum with great interest.
+
+I am leading the **SCPN-FUSION-CORE** project. We are currently developing a unique technical edge in FRC stabilization: a **deterministic 10 MHz control path** using Stochastic Computing on standard FPGA fabric. This allows for sub-microsecond phase-locking of RMF antennas without the need for custom ASICs—a critical capability for the next generation of steady-state FRCs.
+
+We are currently using the Slough 2011 (Shot 2001) results as our gold-standard validation target. Given our proximity and the alignment of our technology with Helion's roadmap, I am interested in exploring **strategic cooperation or potential research sponsorship.**
+
+We have achieved high architectural fidelity (< 5% error on 10k manifold) and would be happy to share our methodology and benchmarks coupled with your historical data in return for a local partnership.
+
+Would you be open to a brief meeting in Zürich to discuss how our high-frequency control stack can support Helion's long-term objectives?
+
+Best regards,
+
+[Your Name]
+SCPN-FUSION-CORE
