@@ -515,7 +515,7 @@ def run_hil_benchmark_detailed(
     rng_seed: int = 42,
     state_dim: int = 10,
     control_dim: int = 4,
-):
+) -> dict[str, Any]:
     """Run HIL benchmark with detailed per-stage profiling.
 
     Returns dict with latency statistics and pipeline profile.
@@ -546,8 +546,8 @@ def run_hil_benchmark_detailed(
 
         # Stage 1: state estimation surrogate.
         t0 = time.perf_counter_ns()
-        measurement = 0.97 * measurement + 0.03 * rng.standard_normal(state_width)
-        state = estimator_a @ state + estimator_b @ measurement
+        measurement[:] = 0.97 * measurement + 0.03 * rng.standard_normal(state_width)
+        state[:] = estimator_a @ state + estimator_b @ measurement
         p.state_estimation_us = (time.perf_counter_ns() - t0) / 1e3
 
         # Stage 2: controller inference surrogate.

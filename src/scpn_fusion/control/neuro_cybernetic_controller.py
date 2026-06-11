@@ -14,7 +14,7 @@ import math
 import sys
 from collections import deque
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,12 +35,12 @@ TARGET_Z = 0.0
 def _resolve_fusion_kernel() -> Any:
     """Resolve FusionKernel lazily to keep pool-only paths dependency-light."""
     try:
-        from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel
+        from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel # type: ignore
 
         return _FusionKernel
     except Exception:
         try:
-            from scpn_fusion.core.fusion_kernel import FusionKernel as _FusionKernel
+            from scpn_fusion.core.fusion_kernel import FusionKernel as _FusionKernel # type: ignore
 
             return _FusionKernel
         except Exception as exc:  # pragma: no cover - import-guard path
@@ -179,10 +179,10 @@ class SpikingControllerPool:
                     spikes_neg += 1
         else:
             spikes_pos = self._step_numpy_population(
-                self._v_pos, self._rng_pos, self._i_bias + input_pos
+                cast(Any, self._v_pos), cast(Any, self._rng_pos), self._i_bias + input_pos
             )
             spikes_neg = self._step_numpy_population(
-                self._v_neg, self._rng_neg, self._i_bias + input_neg
+                cast(Any, self._v_neg), cast(Any, self._rng_neg), self._i_bias + input_neg
             )
 
         self.history_pos.append(spikes_pos)
@@ -409,10 +409,10 @@ class NeuroCyberneticController:
                 if verbose:
                     logger.warning("Plot export skipped due to error: %s", exc)
 
-        err_r = np.asarray(self.history["Err_R"], dtype=np.float64)
-        err_z = np.asarray(self.history["Err_Z"], dtype=np.float64)
-        ctrl_r = np.asarray(self.history["Control_R"], dtype=np.float64)
-        ctrl_z = np.asarray(self.history["Control_Z"], dtype=np.float64)
+        err_r_arr: NDArray[np.float64] = np.asarray(self.history["Err_R"], dtype=np.float64)
+        err_z_arr: NDArray[np.float64] = np.asarray(self.history["Err_Z"], dtype=np.float64)
+        ctrl_r_arr: NDArray[np.float64] = np.asarray(self.history["Control_R"], dtype=np.float64)
+        ctrl_z_arr: NDArray[np.float64] = np.asarray(self.history["Control_Z"], dtype=np.float64)
         safety_position_allowed = np.asarray(
             self.history["Safety_Position_Allowed"], dtype=np.float64
         )

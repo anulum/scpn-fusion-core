@@ -200,7 +200,7 @@ class RealtimeTwinHook:
         t0 = time.perf_counter()
         for k in range(horizon):
             obs: ControlObservation = {"R_axis_m": beta, "Z_axis_m": 0.0}
-            action = self.controller.step(obs, k)
+            action = self.controller.step(cast(Mapping[str, float], obs), k)
             control = float(np.clip(action["dI_PF3_A"] / 3500.0, -0.8, 0.8))
             last_action = control
 
