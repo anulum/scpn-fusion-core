@@ -1,6 +1,7 @@
 {
   "scenario": "Slough_2011_Nuclear_Fusion_Shot_2001",
-  "source": "Slough et al., Nucl. Fusion 51 053008 (2011), Figure 5",
+  "method": "Reconstructed from reported anchor points (Nuclear Fusion 51 053008)",
+  "fidelity": "Operational-Verification",
   "trajectory": [
     {"time_s": 0.0, "B_ext_T": 0.1, "R_s_m": 0.080, "T_total_eV": 150.0, "n_e_m3": 1.0e20},
     {"time_s": 2.0e-6, "B_ext_T": 0.2, "R_s_m": 0.075, "T_total_eV": 300.0, "n_e_m3": 4.0e20},
@@ -11,5 +12,5 @@
     {"time_s": 11.0e-6, "B_ext_T": 0.5, "R_s_m": 0.060, "T_total_eV": 800.0, "n_e_m3": 9.0e20},
     {"time_s": 15.0e-6, "B_ext_T": 0.2, "R_s_m": 0.080, "T_total_eV": 250.0, "n_e_m3": 3.0e20}
   ],
-  "checksum_sha256": "5f1a9b8c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e"
+  "checksum_sha256": "9bb42d0cb471591a23b20ea4e0163aad9487b9a03ff596d7d3f42f7ddd5702b2"
 }
