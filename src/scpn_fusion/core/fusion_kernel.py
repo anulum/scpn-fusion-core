@@ -169,8 +169,8 @@ class FusionKernel(
         self.ZZ: FloatArray
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
 
-        self.Psi = np.zeros((self.NZ, self.NR))
-        self.J_phi = np.zeros((self.NZ, self.NR))
+        self.Psi: FloatArray = np.zeros((self.NZ, self.NR))
+        self.J_phi: FloatArray = np.zeros((self.NZ, self.NR))
 
         self.p_prime_0: float = -1.0
         self.ff_prime_0: float = -1.0
@@ -471,8 +471,8 @@ class FusionKernel(
 
     def phase_sync_step(
         self,
-        theta: NDArray,
-        omega: NDArray,
+        theta: NDArray[np.float64],
+        omega: NDArray[np.float64],
         dt: float,
         psi_driver: float | None = None,
         **kwargs: Any,
@@ -499,8 +499,8 @@ class FusionKernel(
 
     def phase_sync_step_lyapunov(
         self,
-        theta: NDArray,
-        omega: NDArray,
+        theta: NDArray[np.float64],
+        omega: NDArray[np.float64],
         n_steps: int,
         dt: float,
         psi_driver: float | None = None,

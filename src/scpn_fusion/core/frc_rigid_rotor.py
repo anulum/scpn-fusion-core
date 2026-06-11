@@ -192,14 +192,14 @@ def ion_gyroradius_m(T_i_eV: float, B_T: float, *, mass_amu: float = DEUTERIUM_M
 
 
 
-def _thomas_solve(a: NDArray, b: NDArray, c: NDArray, d: NDArray) -> NDArray:
+def _thomas_solve(a: FloatArray, b: FloatArray, c: FloatArray, d: FloatArray) -> FloatArray:
     n = len(d)
     c_prime = np.zeros(n)
     d_prime = np.zeros(n)
     c_prime[0] = c[0] / b[0]
     d_prime[0] = d[0] / b[0]
     for i in range(1, n):
-        den = b[i] - a[i] * c_prime[i - 1]
+        den = float(b[i] - a[i] * c_prime[i - 1])
         if i < n - 1:
             c_prime[i] = c[i] / den
         d_prime[i] = (d[i] - a[i] * d_prime[i - 1]) / den
@@ -207,20 +207,20 @@ def _thomas_solve(a: NDArray, b: NDArray, c: NDArray, d: NDArray) -> NDArray:
     x[-1] = d_prime[-1]
     for i in range(n - 2, -1, -1):
         x[i] = d_prime[i] - c_prime[i] * x[i + 1]
-    return x
+    return cast(FloatArray, x)
 
 
 def _fill_equilibrium_state(
     inputs: RigidRotorFRCInputs,
-    rho: NDArray,
-    psi: NDArray,
-    B_z: NDArray,
-    J_theta: NDArray,
-    p: NDArray,
+    rho: FloatArray,
+    psi: FloatArray,
+    B_z: FloatArray,
+    J_theta: FloatArray,
+    p: FloatArray,
     tolerance: float,
     residual: float,
     delta: float,
-    dBz_dr_analytic: NDArray,
+    dBz_dr_analytic: FloatArray,
 ) -> FRCEquilibriumState:
     B_theta = np.zeros_like(B_z)
     dBz_dr = np.gradient(B_z, rho, edge_order=2)
@@ -377,7 +377,7 @@ def _fill_equilibrium_state(
 
 def _solve_rotating_numpy(
     inputs: RigidRotorFRCInputs,
-    rho: NDArray,
+    rho: FloatArray,
     delta: float,
     tolerance: float,
     max_iter: int,
@@ -386,11 +386,11 @@ def _solve_rotating_numpy(
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
     psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
     
-    psi_0 = psi[0]
-    psi_max = psi[-1]
+    psi_0 = float(psi[0])
+    psi_max = float(psi[-1])
     
     expected_psi_rs = -inputs.B_ext * inputs.R_s * delta * (np.log(np.cosh(0.0)) - np.log(np.cosh(-inputs.R_s / (2.0 * delta))))
-    psi_ref = expected_psi_rs
+    psi_ref = float(expected_psi_rs)
     
     gamma = (2.014 * 1.66053906660e-27 * inputs.theta_dot**2) / (2.0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C)
     
@@ -400,9 +400,9 @@ def _solve_rotating_numpy(
     c_sup = np.zeros(n - 2)
     
     for i in range(1, n - 1):
-        h0 = rho[i] - rho[i - 1]
-        h1 = rho[i + 1] - rho[i]
-        r_i = rho[i]
+        h0 = float(rho[i] - rho[i - 1])
+        h1 = float(rho[i + 1] - rho[i])
+        r_i = float(rho[i])
         a_sub[i - 1] = (2.0 + h1 / r_i) / (h0 * (h0 + h1))
         b_main[i - 1] = -2.0 / (h0 * h1) - (h1 - h0) / (r_i * h0 * h1)
         c_sup[i - 1] = (2.0 - h0 / r_i) / (h1 * (h0 + h1))
@@ -464,9 +464,10 @@ def solve_frc_equilibrium(
         if solver == "rust":
             try:
                 import scpn_fusion_rs
-                return scpn_fusion_rs.solve_rotating_frc_equilibrium_rust(
+                state_dict = scpn_fusion_rs.solve_rotating_frc_equilibrium_rust(
                     inputs.n0, inputs.T_i_eV, inputs.T_e_eV, inputs.theta_dot, inputs.R_s, inputs.B_ext, rho_grid, tolerance, inputs.delta
                 )
+                return FRCEquilibriumState(**state_dict)
             except (ImportError, AttributeError):
                 pass
         return _solve_rotating_numpy(inputs, rho, delta, tolerance, max_iter)
@@ -509,7 +510,7 @@ def frc_no_rotation_jax_observables(
     try:
         from jax import config as jax_config
 
-        jax_config.update("jax_enable_x64", True)
+        cast(Any, jax_config).update("jax_enable_x64", True)
         import jax.numpy as jnp
     except ImportError as exc:
         raise ImportError(
@@ -834,8 +835,7 @@ def _validate_inputs(inputs: RigidRotorFRCInputs, tolerance: float) -> None:
         raise ValueError("B_ext must be non-zero")
     if inputs.delta is not None and inputs.delta <= 0.0:
         raise ValueError("delta must be positive when provided")
-    if abs(inputs.theta_dot) > tolerance:
-        raise NotImplementedError("rotating rigid-rotor BVP support is not implemented yet")
+    # allow theta_dot
 
 
 def _validate_grid(rho_grid: FloatArray, R_s: float) -> FloatArray:
@@ -879,7 +879,7 @@ def _normalised_separatrix_grid(x: FloatArray) -> FloatArray:
         raise ValueError("rho_normalized_grid must contain points below x=1")
     if x_sep[-1] < 1.0:
         x_sep = np.append(x_sep, 1.0)
-    return cast(FloatArray, x_sep)
+    return x_sep
 
 
 def _validate_positive_concrete(value: Any, name: str) -> None:
@@ -951,7 +951,7 @@ def _cylindrical_flux_from_steinhauer(
 def _log_cosh(values: FloatArray) -> FloatArray:
     """Return numerically stable ``log(cosh(values))``."""
     abs_values = np.abs(values)
-    return abs_values + np.log1p(np.exp(-2.0 * abs_values)) - np.log(2.0)
+    return cast(FloatArray, abs_values + np.log1p(np.exp(-2.0 * abs_values)) - np.log(2.0))
 
 
 def _jax_log_cosh(jnp: Any, values: Any) -> Any:
@@ -1005,7 +1005,7 @@ def _pressure_gradient_closure_residual(
 ) -> FloatArray:
     """Return finite-grid ``dp/dr`` minus the analytical pressure gradient."""
     finite_pressure_gradient = np.gradient(p, rho, edge_order=2)
-    return finite_pressure_gradient - pressure_gradient_analytic
+    return cast(FloatArray, finite_pressure_gradient - pressure_gradient_analytic)
 
 
 def _ampere_current_closure_residual(
@@ -1013,7 +1013,7 @@ def _ampere_current_closure_residual(
 ) -> FloatArray:
     """Return ``mu_0 J_theta + dB_z/dr``; zero means Ampere's law closes."""
     d_bz_dr = np.gradient(B_z, rho, edge_order=2)
-    return MU_0 * J_theta + d_bz_dr
+    return cast(FloatArray, MU_0 * J_theta + d_bz_dr)
 
 
 def _flux_derivative_closure_residual(
@@ -1021,7 +1021,7 @@ def _flux_derivative_closure_residual(
 ) -> FloatArray:
     """Return ``dpsi/dr - r B_z``; zero means the flux primitive closes."""
     dpsi_dr = np.gradient(psi, rho, edge_order=2)
-    return dpsi_dr - rho * B_z
+    return cast(FloatArray, dpsi_dr - rho * B_z)
 
 
 def _psi_normalized_closure_residual(
@@ -1073,7 +1073,7 @@ def _radial_force_balance_residual(
 ) -> FloatArray:
     dp_dr = np.gradient(p, rho, edge_order=2)
     j_cross_b_r = J_theta * B_z
-    return dp_dr - j_cross_b_r
+    return cast(FloatArray, dp_dr - j_cross_b_r)
 
 
 def _zero_crossing_radius(rho: FloatArray, values: FloatArray) -> float:

@@ -20,6 +20,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+from .fusion_kernel_numerics import FloatArray
 
 from scpn_fusion.io.safe_loaders import checked_json_load
 
@@ -34,6 +35,19 @@ class NeuralEquilibriumKernel:
     Satisfies the attribute and method interface expected by
     IsoFluxController and TokamakFlightSim.
     """
+
+    config_path: Path
+    cfg: dict[str, Any]
+    accel: Any
+    NR: int
+    NZ: int
+    dR: float
+    dZ: float
+    R: NDArray[np.float64]
+    Z: NDArray[np.float64]
+    RR: NDArray[np.float64]
+    ZZ: NDArray[np.float64]
+    Psi: NDArray[np.float64]
 
     def __init__(
         self,
@@ -164,7 +178,7 @@ class NeuralEquilibriumKernel:
             "solver_method": "neural_surrogate",
         }
 
-    def find_x_point(self, Psi: NDArray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, Psi: FloatArray) -> tuple[tuple[float, float], float]:
         """Locate X-point on predicted Psi."""
         dPsi_dz, dPsi_dr = np.gradient(Psi, self.Z, self.R)
         grad_mag = np.sqrt(dPsi_dz**2 + dPsi_dr**2)
