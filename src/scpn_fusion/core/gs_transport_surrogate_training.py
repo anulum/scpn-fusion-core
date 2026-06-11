@@ -21,6 +21,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from scpn_fusion.io.safe_loaders import checked_np_load
+from ._surrogate_utils import AdamOptimizer as _AdamOptimizer, gelu as _gelu, relative_l2 as _relative_l2
 
 logger = logging.getLogger(__name__)
 
@@ -44,37 +45,13 @@ _GS_TRANSPORT_MOCK_CONFIG_TEMPLATE: Dict[str, object] = {
 }
 
 
-def _gelu(x: np.ndarray) -> np.ndarray:
-    return 0.5 * x * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * (x**3))))
 
 
-def _relative_l2(pred: np.ndarray, target: np.ndarray) -> float:
-    denom = np.linalg.norm(target) + 1e-8
-    return float(np.linalg.norm(pred - target) / denom)
 
 
-class _AdamOptimizer:
-    def __init__(self, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8) -> None:
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.eps = eps
-        self.t = 0
-        self.m: Dict[str, np.ndarray] = {}
-        self.v: Dict[str, np.ndarray] = {}
 
-    def step(self, params: Dict[str, np.ndarray], grads: Dict[str, np.ndarray], lr: float) -> None:
-        self.t += 1
-        for key, param in params.items():
-            grad = grads[key]
-            if key not in self.m:
-                self.m[key] = np.zeros_like(param)
-                self.v[key] = np.zeros_like(param)
-            self.m[key] = self.beta1 * self.m[key] + (1.0 - self.beta1) * grad
-            self.v[key] = self.beta2 * self.v[key] + (1.0 - self.beta2) * (grad * grad)
 
-            m_hat = self.m[key] / (1.0 - self.beta1**self.t)
-            v_hat = self.v[key] / (1.0 - self.beta2**self.t)
-            param -= lr * m_hat / (np.sqrt(v_hat) + self.eps)
+
 
 
 def _generate_gs_transport_pairs(
@@ -112,7 +89,9 @@ def _generate_gs_transport_pairs(
             config["physics"] = {
                 "plasma_current_target": Ip,
                 "vacuum_permeability": 1.0,
+                "kappa": kappa,
             }
+            config["target"] = {"kappa": kappa}
 
             with tempfile.NamedTemporaryFile(
                 mode="w",

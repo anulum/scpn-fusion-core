@@ -23,6 +23,7 @@ import logging
 
 import numpy as np
 from scpn_fusion.io.safe_loaders import checked_np_load
+from ._surrogate_utils import AdamOptimizer, gelu, relative_l2
 from scpn_fusion.core.fno_training_multi_regime import (
     SPARC_REGIMES,  # noqa: F401 - re-exported compatibility surface
     _generate_multi_regime_pairs,  # noqa: F401 - re-exported compatibility surface
@@ -43,36 +44,10 @@ DEFAULT_SPARC_WEIGHTS_PATH = REPO_ROOT / "weights" / "fno_turbulence_sparc.npz"
 DEFAULT_GS_TRANSPORT_WEIGHTS_PATH = REPO_ROOT / "weights" / "gs_transport_surrogate.npz"
 
 
-def gelu(x: np.ndarray) -> np.ndarray:
-    """Fast GeLU approximation."""
-    return 0.5 * x * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * (x**3))))
 
 
-class AdamOptimizer:
-    """Minimal Adam optimizer for NumPy arrays."""
 
-    def __init__(self, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8) -> None:
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.eps = eps
-        self.t = 0
-        self.m: Dict[str, np.ndarray] = {}
-        self.v: Dict[str, np.ndarray] = {}
 
-    def step(self, params: Dict[str, np.ndarray], grads: Dict[str, np.ndarray], lr: float) -> None:
-        """Update parameters in place using bias-corrected Adam moments."""
-        self.t += 1
-        for key, param in params.items():
-            grad = grads[key]
-            if key not in self.m:
-                self.m[key] = np.zeros_like(param)
-                self.v[key] = np.zeros_like(param)
-            self.m[key] = self.beta1 * self.m[key] + (1.0 - self.beta1) * grad
-            self.v[key] = self.beta2 * self.v[key] + (1.0 - self.beta2) * (grad * grad)
-
-            m_hat = self.m[key] / (1.0 - self.beta1**self.t)
-            v_hat = self.v[key] / (1.0 - self.beta2**self.t)
-            param -= lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
 
 class MultiLayerFNO:
@@ -196,9 +171,7 @@ class MultiLayerFNO:
                 )
 
 
-def _relative_l2(pred: np.ndarray, target: np.ndarray) -> float:
-    denom = np.linalg.norm(target) + 1e-8
-    return float(np.linalg.norm(pred - target) / denom)
+
 
 
 def _generate_training_pairs(
@@ -251,7 +224,7 @@ def _evaluate_loss(
     losses = []
     for i in idx:
         pred = model.forward(x[i])
-        losses.append(_relative_l2(pred, y[i]))
+        losses.append(relative_l2(pred, y[i]))
     return float(np.mean(losses))
 
 

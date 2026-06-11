@@ -59,8 +59,13 @@ class NeuralEquilibriumKernel:
 
         # Mirror dimensions
         dims = self.cfg["dimensions"]
-        self.R = np.linspace(dims["R_min"], dims["R_max"], self.accel.cfg.grid_shape[1])
-        self.Z = np.linspace(dims["Z_min"], dims["Z_max"], self.accel.cfg.grid_shape[0])
+        self.NR = self.accel.cfg.grid_shape[1]
+        self.NZ = self.accel.cfg.grid_shape[0]
+        self.dR = (dims["R_max"] - dims["R_min"]) / (self.NR - 1)
+        self.dZ = (dims["Z_max"] - dims["Z_min"]) / (self.NZ - 1)
+
+        self.R = np.linspace(dims["R_min"], dims["R_max"], self.NR)
+        self.Z = np.linspace(dims["Z_min"], dims["Z_max"], self.NZ)
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
         self.Psi = np.zeros(self.accel.cfg.grid_shape)
 
@@ -84,21 +89,7 @@ class NeuralEquilibriumKernel:
             r_ax = self.R[ir] + dr_shift * (self.R[1] - self.R[0])
             z_ax = self.Z[iz] + dz_shift * (self.Z[1] - self.Z[0])
 
-            # Heuristic correction used for control-loop sensitivity experiments.
-            if r_ax > 7.5 or z_ax < -3.0:
-                coils = self.cfg.get("coils", [])
-                pf2 = float(coils[1].get("current", 0.0)) / 1e6
-                pf3 = float(coils[2].get("current", 0.0)) / 1e6
-                pf4 = float(coils[3].get("current", 0.0)) / 1e6
-                pusher_ma = pf2 + pf3 + pf4
 
-                pf1 = float(coils[0].get("current", 0.0)) / 1e6
-                pf5 = float(coils[4].get("current", 0.0)) / 1e6
-                z_asym = pf5 - pf1
-
-                # Center around ITER-like target (6.2, 0.0).
-                r_ax = 6.2 - (pusher_ma * 0.1)
-                z_ax = 0.0 + (z_asym * 0.2)
 
             psi_ax = p2 - 0.125 * (p3 - p1) ** 2 / (denom_r if abs(denom_r) > 1e-12 else 1e-12)
             return r_ax, z_ax, psi_ax
@@ -126,17 +117,31 @@ class NeuralEquilibriumKernel:
         pf5 = float(coils[4].get("current", 0.0))
         z_proxy = (pf5 - pf1) / 1e6
 
-        # 8-dim feature vector matching sparc weights.
+        physics = self.cfg.get("physics", {})
+        target = self.cfg.get("target", {})
+
+        # 12-feature input + dynamic config extraction
+        # [I_p, B_t, R_axis, Z_axis, pprime_s, ffprime_s, simag, sibry, kappa, delta_up, delta_low, q95]
+        b_t = physics.get("B_T") or target.get("B_T", 5.3)
+        r_axis = target.get("R_axis", 6.2)
+        z_axis = target.get("Z_axis", 0.0)
+        kappa = physics.get("kappa") or target.get("kappa", 1.7)
+        q95 = physics.get("q95") or target.get("q95", 3.0)
+
         features = np.array(
             [
                 total_ip_ma,
-                5.3,  # B_t (ITER nominal)
-                6.2 - (pusher_ma * 0.05),  # R_axis sensitivity
-                z_proxy * 0.1,  # Z_axis sensitivity
-                self.cfg.get("physics", {}).get("beta_scale", 1.0),
+                b_t,
+                r_axis,
+                z_axis,
+                physics.get("beta_scale", 1.0),
                 1.0,  # ff_scale
                 0.0,  # simag
                 10.0,  # sibry
+                kappa,
+                0.33,  # delta_up (nominal)
+                0.33,  # delta_low (nominal)
+                q95,
             ]
         )
 

@@ -18,6 +18,7 @@ the Rust multigrid backend when available.
 """
 
 from __future__ import annotations
+from typing import Any
 
 import logging
 from dataclasses import dataclass, field
@@ -464,6 +465,111 @@ class FusionKernel(
         np.savez(filename, R=self.R, Z=self.Z, Psi=self.Psi, J_phi=self.J_phi)
         logger.info("Saved: %s", filename)
 
+
+
+    # ── phase synchronisation ─────────────────────────────────────────
+
+    def phase_sync_step(
+        self,
+        theta: NDArray,
+        omega: NDArray,
+        dt: float,
+        psi_driver: float | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Evolve oscillator phases using the Kuramoto-Sakaguchi engine."""
+        from scpn_fusion.phase.kuramoto import kuramoto_sakaguchi_step
+
+        # Merge configuration defaults with kwargs.
+        phase_cfg = self.cfg.get("phase_sync", {})
+        K = kwargs.pop("K", phase_cfg.get("K", 1.0))
+        zeta = kwargs.pop("zeta", phase_cfg.get("zeta", 0.0))
+        psi_mode = kwargs.pop("psi_mode", phase_cfg.get("psi_mode", "external"))
+
+        return kuramoto_sakaguchi_step(
+            theta=theta,
+            omega=omega,
+            dt=dt,
+            K=K,
+            zeta=zeta,
+            psi_driver=psi_driver,
+            psi_mode=psi_mode,
+            **kwargs,
+        )
+
+    def phase_sync_step_lyapunov(
+        self,
+        theta: NDArray,
+        omega: NDArray,
+        n_steps: int,
+        dt: float,
+        psi_driver: float | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Run a batch of phase sync steps and return Lyapunov stability diagnostics."""
+        from scpn_fusion.phase.kuramoto import lyapunov_exponent, lyapunov_v
+
+        th = theta.copy()
+        R_hist = []
+        V_hist = []
+
+        for _ in range(n_steps):
+            out = self.phase_sync_step(th, omega, dt=dt, psi_driver=psi_driver, **kwargs)
+            th = out["theta1"]
+            R_hist.append(out["R"])
+            V_hist.append(lyapunov_v(th, out["Psi"]))
+
+        lam = lyapunov_exponent(V_hist, dt)
+        return {
+            "theta_final": th,
+            "R_hist": np.array(R_hist),
+            "V_hist": np.array(V_hist),
+            "lambda": lam,
+            "stable": bool(lam < 0.0),
+        }
+
+
+    # ── FRC bridge ────────────────────────────────────────────────────
+
+    def initialize_from_frc(self, frc_state: Any, kappa: float | None = None) -> None:
+        """Interpolate 1D FRC equilibrium onto the 2D Grad-Shafranov grid.
+
+        Parameters
+        ----------
+        frc_state : FRCEquilibriumState
+            The radial equilibrium state solved by the rigid-rotor engine.
+        kappa : float | None
+            Separatrix elongation (Z/R).  Falls back to config target if omitted.
+        """
+        a = frc_state.target_separatrix_radius_m
+        if kappa is None:
+            kappa = self.cfg.get("target", {}).get("kappa") or 2.0
+
+        # Center the FRC at (R_center, 0.0)
+        # We use the midpoint of the computational R domain.
+        r_center = float(0.5 * (self.R[0] + self.R[-1]))
+
+        # Relative coordinates
+        dR_2d = self.RR - r_center
+        dZ_2d = self.ZZ
+
+        # Axial Gaussian fall-off
+        # Characteristic length z_scale = a * kappa
+        z_scale = max(a * kappa, 1e-6)
+        axial_envelope = np.exp(-(dZ_2d / z_scale) ** 2)
+
+        # Radial interpolation
+        # frc_state.rho is distance from O-point (rho=0).
+        r_dist = np.abs(dR_2d)
+
+        self.Psi = np.interp(r_dist, frc_state.rho, frc_state.psi) * axial_envelope
+        self.J_phi = np.interp(r_dist, frc_state.rho, frc_state.J_theta) * axial_envelope
+
+        # Match target Ip to the interpolated integral
+        I_total = float(np.sum(self.J_phi)) * self.dR * self.dZ
+        self.cfg["physics"]["plasma_current_target"] = I_total
+
+        logger.info("Initialized 2D grid from 1D FRC (Ip=%.3f MA, kappa=%.2f)", I_total / 1e6, kappa)
 
 if __name__ == "__main__":
     import sys

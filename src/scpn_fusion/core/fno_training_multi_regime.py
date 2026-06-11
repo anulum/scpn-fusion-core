@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import numpy as np
+from ._surrogate_utils import relative_l2 as _relative_l2
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +48,7 @@ SPARC_REGIMES: Dict[str, Dict[str, Tuple[float, float]]] = {
 }
 
 
-def _relative_l2(pred: np.ndarray, target: np.ndarray) -> float:
-    denom = np.linalg.norm(target) + 1e-8
-    return float(np.linalg.norm(pred - target) / denom)
+
 
 
 def _sample_regime_params(
