@@ -45,3 +45,34 @@ We would happily share our methodology, our results, and the benchmarks coupled 
 Best regards,
 
 [Your Name]
+
+---
+
+## 3. Email Draft: Alexei Zhurba (Next Step Fusion)
+
+**Target:** Alexei Zhurba (Chief Product Officer, Next Step Fusion)  
+**Context:** Product strategy alignment / Tiered Control Architecture
+
+Dear Alexei,
+
+I am following the progress of Next Step Fusion with great interest, particularly your work on NSFsim and the Fusion Twin platform. It’s clear that we share a common vision regarding the necessity of a "software-first" intelligence layer for the next generation of fusion devices.
+
+I am currently leading the development of **SCPN-FUSION-CORE**, and I wanted to reach out to discuss a specific technological frontier we have been tackling: **deterministic, multi-tier real-time control at the 1 MHz – 10 MHz limit.**
+
+While many current platforms focus on the 1–5 kHz regime for shape control, we have implemented a 6-tier architectural stack that bridges:
+1. **Full-Fidelity Offline Oracles** (Rust-based Grad-Shafranov/multigrid solvers),
+2. **Soft Real-Time Surrogates** (JAX-accelerated non-linear MLPs),
+3. **Hard Real-Time FPGA Lanes** (Stochastic Computing SNNs and Local Jacobian State-Space models).
+
+Our most recent milestone is an **ASIC-free 10 MHz control path** using Stochastic Computing (SC) logic. By reducing neural inference to combinational AND-gates and LFSR bit-counters, we’ve enabled MHz-band phase-locking for RMF and helicity injection on standard FPGA fabric, bypassing the latency and jitter of traditional tensor-core or CPU-bound approaches.
+
+Given NSF’s position as a pure-play technology partner, I believe there is a significant opportunity to align our Mypy-hardened, high-performance core with the broader industrial requirements you are seeing in the European and Global markets.
+
+I would be happy to share our methodology and recent benchmarks (including our local performance data on Pascal/GTX hardware) if this aligns with NSF’s current product roadmap.
+
+Looking forward to hearing your thoughts.
+
+Best regards,
+
+[Your Name]
+SCPN-FUSION-CORE Lead
