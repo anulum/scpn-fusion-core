@@ -30,9 +30,55 @@ from scpn_fusion.core.neural_equilibrium import MinimalPCA
 logger = logging.getLogger(__name__)
 
 
+
+class FastNumPyPCA:
+    def __init__(self, n_components: int = 20):
+        self.n_components = n_components
+        self.mean_ = None
+        self.components_ = None
+        self.explained_variance_ratio_ = None
+
+    def fit_transform(self, X: np.ndarray):
+        logger.info("Fitting PCA using NumPy (Gram Matrix Method)...")
+        # X is (N, D) = (10000, 16384)
+        self.mean_ = X.mean(axis=0)
+        logger.info("  Centering data...")
+        # Avoid huge intermediate copy: center in-place if possible or chunked
+        # But we have 32GB RAM, so one copy of 1.3GB is fine.
+        X_c = X - self.mean_
+        
+        logger.info("  Computing Gram matrix (10000x10000)...")
+        G = X_c @ X_c.T
+        
+        logger.info("  Solving Eigenvalue Decomposition...")
+        vals, vecs = np.linalg.eigh(G)
+        
+        # Sort descending
+        idx = np.argsort(vals)[::-1]
+        vals = vals[idx]
+        vecs = vecs[:, idx]
+        
+        top_vals = vals[:self.n_components]
+        top_vecs = vecs[:, :self.n_components]
+        
+        total_var = np.sum(np.maximum(vals, 0.0))
+        self.explained_variance_ratio_ = np.maximum(top_vals, 0.0) / total_var
+        
+        # Components W = V^T * X_c / sqrt(L)
+        inv_sqrt_vals = 1.0 / np.sqrt(np.maximum(top_vals, 1e-15))
+        self.components_ = (top_vecs.T @ X_c) * inv_sqrt_vals[:, None]
+        
+        # Latent projection Z = V * sqrt(L)
+        Z = top_vecs * np.sqrt(np.maximum(top_vals, 0.0))
+        
+        logger.info("  PCA complete.")
+        return Z
+
+
+
 # ── MLP Hyperparameters ──────────────────────────────────────────────
-HIDDEN_SIZES = [128, 64, 32]
-LEARNING_RATE = 5e-4
+HIDDEN_SIZES = [256, 128, 64]
+LEARNING_RATE = 1e-4
 GRAD_CLIP = 0.5
 BATCH_SIZE = 32
 EPOCHS = 100
@@ -165,7 +211,8 @@ def generate_iter_data(n_samples: int, config_path: str | Path, seed: int = 42):
 
 def main():
     parser = argparse.ArgumentParser(description="Train ITER surrogate")
-    parser.add_argument("--config", required=True, help="Path to ITER config JSON")
+    parser.add_argument("--config", help="Path to ITER config JSON (required if generating data)")
+    parser.add_argument("--data", help="Path to existing .npz dataset")
     parser.add_argument("--samples", type=int, default=1000, help="Number of samples to generate")
     parser.add_argument("--epochs", type=int, default=EPOCHS, help="Training epochs")
     parser.add_argument("--out", default="weights/neural_equilibrium_iter_v1.npz", help="Save path")
@@ -176,8 +223,17 @@ def main():
 
     t_start = time.perf_counter()
 
-    # 1. Generate data
-    X_raw, Y_raw = generate_iter_data(args.samples, args.config, args.seed)
+    # 1. Load or generate data
+    if args.data:
+        logger.info("Loading existing dataset from .npy files...")
+        X_raw = np.load("/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/data/iter_X.npy")
+        Y_raw = np.load("/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/data/iter_Y.npy", mmap_mode='r')
+        logger.info("  Loaded X shape: %s, Y shape (mmap): %s", X_raw.shape, Y_raw.shape)
+    else:
+        if not args.config:
+            logger.error("--config is required when generating data.")
+            return
+        X_raw, Y_raw = generate_iter_data(args.samples, args.config, args.seed)
 
     n_valid = len(X_raw)
     if n_valid < 2:
@@ -186,7 +242,7 @@ def main():
 
     # 2. PCA reduction
     n_comp = min(n_valid - 1, PCA_COMPONENTS_TARGET)
-    pca = MinimalPCA(n_components=n_comp)
+    pca = FastNumPyPCA(n_components=n_comp)
     Y_latent = pca.fit_transform(Y_raw)
     explained_var = float(np.sum(pca.explained_variance_ratio_))
     logger.info("PCA: %d components explain %.2f%% variance", n_comp, explained_var * 100)
@@ -197,14 +253,22 @@ def main():
     x_std = np.where(x_std < 1e-10, 1.0, x_std)
     X_norm = (X_raw - x_mean) / x_std
 
+    
     # 4. Train MLP
+    # Normalise Latent Variables for training stability
+    z_mean = Y_latent.mean(axis=0)
+    z_std = Y_latent.std(axis=0)
+    z_std = np.where(z_std < 1e-10, 1.0, z_std)
+    Y_norm = (Y_latent - z_mean) / z_std
+    
     key = random.PRNGKey(args.seed)
     params = init_mlp_params(key, X_norm.shape[1], HIDDEN_SIZES, n_comp)
+
     m = jax.tree_util.tree_map(jnp.zeros_like, params)
     v = jax.tree_util.tree_map(jnp.zeros_like, params)
 
     X_jax = jnp.asarray(X_norm)
-    Y_jax = jnp.asarray(Y_latent)
+    Y_jax = jnp.asarray(Y_norm)
 
     logger.info("Starting JAX training loop...")
     t_step = 1
@@ -220,9 +284,10 @@ def main():
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
+    
     payload = {
         "n_components": np.array([n_comp]),
-        "grid_nh": np.array([int(np.sqrt(Y_raw.shape[1]))]), # assuming square
+        "grid_nh": np.array([int(np.sqrt(Y_raw.shape[1]))]),
         "grid_nw": np.array([int(np.sqrt(Y_raw.shape[1]))]),
         "n_input_features": np.array([X_raw.shape[1]]),
         "pca_mean": pca.mean_,
@@ -230,6 +295,8 @@ def main():
         "pca_evr": pca.explained_variance_ratio_,
         "input_mean": x_mean,
         "input_std": x_std,
+        "latent_mean": z_mean,
+        "latent_std": z_std,
         "n_layers": np.array([len(params)]),
     }
     for i, p in enumerate(params):
