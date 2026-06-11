@@ -38,9 +38,9 @@ Dear Prof. Slough,
 
 I’m currently working on the SCPN-FUSION-CORE project, developing real-time neuro-symbolic controllers for FRC stabilization. 
 
-I’m reaching out because we are using your 2011 *Nuclear Fusion* paper (specifically **Shot 2001 / Figure 5**) as our gold-standard validation target for pulsed compression. We’ve reconstructed the trajectory from anchor points, but to reach full-fidelity validation, we’d love to use the raw digitized data points if they are available for sharing.
+I’m reaching out to ask if you would be willing to share the **full digitized dataset for Shot 2001 (Figure 5)** from your 2011 *Nuclear Fusion* paper. We are using this specific case as our primary validation target for our pulsed compression and phase-lock control lanes. While we have a reconstructed model, having access to the raw experimental trajectory would allow us to reach the full-fidelity validation required for our safety contracts.
 
-We’d be more than happy to share our methodology and the resulting benchmarks with you. Thank you for the inspiring work!
+We would happily share our methodology, our results, and the benchmarks coupled to your data in return. Thank you for the inspiring work!
 
 Best regards,
 
