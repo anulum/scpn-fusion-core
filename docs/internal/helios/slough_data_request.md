@@ -114,3 +114,12 @@ Best regards,
 
 [Your Name]
 SCPN-FUSION-CORE
+
+---
+
+## 6. German LinkedIn Invitation: Martin Everts (Helion CH)
+
+**Constraint:** 200 characters max.
+**Focus:** Swiss location, 10MHz control, Cooperation/Sponsorship.
+
+"Grüezi Martin, Grüsse aus Zürich. Ich leite SCPN-FUSION-CORE (10MHz FPGA-Steuerung für FRCs). Suche Validierung vs. Slough 2011 & bin offen für lokale Kooperation/Sponsoring. Beste Grüsse, [Name]"
