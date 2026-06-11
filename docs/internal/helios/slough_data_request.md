@@ -6,7 +6,7 @@
 
 ---
 
-## 1. Email Draft
+## 1. Email Draft: Prof. John Slough
 
 **To:** [john.slough@helionenergy.com / slough@uw.edu]  
 **Subject:** Data Request: Digitized Trajectory for Shot 2001 (Slough et al. 2011, Nuclear Fusion)
@@ -48,31 +48,24 @@ Best regards,
 
 ---
 
-## 3. Email Draft: Alexei Zhurba (Next Step Fusion)
+## 3. Strategic Outreach: Alexei Zhurba (Next Step Fusion)
 
-**Target:** Alexei Zhurba (Chief Product Officer, Next Step Fusion)  
-**Context:** Product strategy alignment / Tiered Control Architecture
+**Focus:** Industrial Scalability / Deterministic MHz Control  
+**Strategic Timing:** To be sent *after* 10k-sample MAE verification.
 
 Dear Alexei,
 
-I am following the progress of Next Step Fusion with great interest, particularly your work on NSFsim and the Fusion Twin platform. It’s clear that we share a common vision regarding the necessity of a "software-first" intelligence layer for the next generation of fusion devices.
+I’ve been following Next Step Fusion’s work on the Fusion Twin and NSFsim platform with interest. Your focus on building a robust software intelligence layer for tokamak developers is very aligned with the modular control architecture we have been developing.
 
-I am currently leading the development of **SCPN-FUSION-CORE**, and I wanted to reach out to discuss a specific technological frontier we have been tackling: **deterministic, multi-tier real-time control at the 1 MHz – 10 MHz limit.**
+I am leading the **SCPN-FUSION-CORE** project, and I wanted to reach out regarding a specific technological differentiator we’ve been validating: **deterministic, multi-tier real-time control at the 1 MHz – 10 MHz limit.**
 
-While many current platforms focus on the 1–5 kHz regime for shape control, we have implemented a 6-tier architectural stack that bridges:
-1. **Full-Fidelity Offline Oracles** (Rust-based Grad-Shafranov/multigrid solvers),
-2. **Soft Real-Time Surrogates** (JAX-accelerated non-linear MLPs),
-3. **Hard Real-Time FPGA Lanes** (Stochastic Computing SNNs and Local Jacobian State-Space models).
+While industrial shape control typically targets the 1–5 kHz regime, our architecture bridges full-fidelity physics oracles with ultra-low-latency FPGA lanes (SNNs and State-Space models) capable of sub-microsecond inference. Specifically, we’ve implemented a **10 MHz control path** using Stochastic Computing logic that allows for MHz-band phase-locking on standard FPGA fabric without requiring specialized ASICs.
 
-Our most recent milestone is an **ASIC-free 10 MHz control path** using Stochastic Computing (SC) logic. By reducing neural inference to combinational AND-gates and LFSR bit-counters, we’ve enabled MHz-band phase-locking for RMF and helicity injection on standard FPGA fabric, bypassing the latency and jitter of traditional tensor-core or CPU-bound approaches.
+Given NSF’s position as a technology partner to the broader fusion ecosystem, I believe there is an opportunity to discuss how high-frequency deterministic engines like ours can complement the broader simulation and RL stacks you are bringing to market.
 
-Given NSF’s position as a pure-play technology partner, I believe there is a significant opportunity to align our Mypy-hardened, high-performance core with the broader industrial requirements you are seeing in the European and Global markets.
-
-I would be happy to share our methodology and recent benchmarks (including our local performance data on Pascal/GTX hardware) if this aligns with NSF’s current product roadmap.
-
-Looking forward to hearing your thoughts.
+I would be happy to share our recent performance benchmarks and error-bound metrics if this aligns with your current technical roadmap.
 
 Best regards,
 
 [Your Name]
-SCPN-FUSION-CORE Lead
+SCPN-FUSION-CORE
