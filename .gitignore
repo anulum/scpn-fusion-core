@@ -133,6 +133,13 @@ pytest_results.log
 
 # Internal business docs — never commit
 docs/internal/
+docs/internal/**/*.json
+docs/internal/**/*.npz
+docs/internal/**/*.docx
+docs/internal/**/*.pdf
+docs/internal/**/*.log
+docs/internal/**/*.err
+docs/internal/**/*.csv
 docs/_build/
 docs/sphinx/_build/
 
