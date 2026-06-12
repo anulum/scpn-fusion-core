@@ -42,11 +42,12 @@ use fusion_physics::design_scanner;
 use fusion_physics::fno::FnoController;
 use fusion_physics::fokker_planck::FokkerPlanckSolver;
 use fusion_physics::frc::{
-    solve_frc_equilibrium as solve_frc_equilibrium_rust, solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs,
+    solve_frc_equilibrium as solve_frc_equilibrium_rust, solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs, FrcEquilibriumState,
 };
 use fusion_physics::hall_mhd::HallMHD;
 use fusion_physics::sawtooth::ReducedMHD;
 use fusion_physics::turbulence::DriftWavePhysics;
+use fusion_physics::rmf_control::{RmfConfig, RmfPhaseLockController};
 use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
 
@@ -1731,8 +1732,8 @@ fn py_solve_rotating_frc_equilibrium<'py>(
     rho_grid: numpy::PyReadonlyArray1<'py, f64>,
     tolerance: f64,
     delta: Option<f64>,
-) -> pyo3::PyResult<FrcEquilibriumState> {
-    let rho_grid = rho_grid.as_array().to_owned();
+) -> pyo3::PyResult<pyo3::Bound<'py, pyo3::types::PyDict>> {
+    let rho_grid_owned = rho_grid.as_array().to_owned();
     let inputs = RigidRotorFrcInputs {
         n0,
         t_i_ev,
@@ -1742,9 +1743,79 @@ fn py_solve_rotating_frc_equilibrium<'py>(
         b_ext,
         delta,
     };
-    let state = solve_rotating_frc_equilibrium_rust(&inputs, &rho_grid, tolerance)
+    let state = solve_rotating_frc_equilibrium_rust(&inputs, &rho_grid_owned, tolerance)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-    Ok(state)
+        
+    let out = pyo3::types::PyDict::new(py);
+    out.set_item("rho", numpy::IntoPyArray::into_pyarray(state.rho, py))?;
+    out.set_item("psi", numpy::IntoPyArray::into_pyarray(state.psi, py))?;
+    out.set_item("psi_normalized", numpy::IntoPyArray::into_pyarray(state.psi_normalized, py))?;
+    out.set_item("B_z", numpy::IntoPyArray::into_pyarray(state.b_z, py))?;
+    out.set_item("B_theta", numpy::IntoPyArray::into_pyarray(state.b_theta, py))?;
+    out.set_item("J_theta", numpy::IntoPyArray::into_pyarray(state.j_theta, py))?;
+    out.set_item("p", numpy::IntoPyArray::into_pyarray(state.p, py))?;
+    out.set_item("density_m3", numpy::IntoPyArray::into_pyarray(state.density_m3, py))?;
+    out.set_item("beta", numpy::IntoPyArray::into_pyarray(state.beta, py))?;
+    out.set_item("R_null", state.r_null)?;
+    out.set_item("target_separatrix_radius_m", state.target_separatrix_radius_m)?;
+    out.set_item("separatrix_radius_error_m", state.separatrix_radius_error_m)?;
+    out.set_item("separatrix_index", state.separatrix_index)?;
+    out.set_item("field_reversal_passed", state.field_reversal_passed)?;
+    out.set_item("s_parameter", state.s_parameter)?;
+    out.set_item("energy_J", state.energy_j)?;
+    out.set_item("converged", state.converged)?;
+    out.set_item("residual", state.residual)?;
+    out.set_item("delta", state.delta)?;
+    out.set_item("psi_axis_Wb", state.psi_axis_wb)?;
+    out.set_item("psi_separatrix_Wb", state.psi_separatrix_wb)?;
+    out.set_item("psi_normalized_axis_error", state.psi_normalized_axis_error)?;
+    out.set_item("psi_normalized_separatrix", state.psi_normalized_separatrix)?;
+    out.set_item("psi_normalized_separatrix_error", state.psi_normalized_separatrix_error)?;
+    out.set_item("psi_normalized_residual_linf", state.psi_normalized_residual_linf)?;
+    out.set_item("psi_normalized_monotonic_passed", state.psi_normalized_monotonic_passed)?;
+    out.set_item("psi_normalized_bounds_passed", state.psi_normalized_bounds_passed)?;
+    out.set_item("pressure_balance_ratio", state.pressure_balance_ratio)?;
+    out.set_item("pressure_balance_residual", numpy::IntoPyArray::into_pyarray(state.pressure_balance_residual, py))?;
+    out.set_item("pressure_balance_residual_linf", state.pressure_balance_residual_linf)?;
+    out.set_item("pressure_balance_residual_l2", state.pressure_balance_residual_l2)?;
+    out.set_item("pressure_gradient_analytic_Pa_m", numpy::IntoPyArray::into_pyarray(state.pressure_gradient_analytic_pa_m, py))?;
+    out.set_item("pressure_gradient_residual", numpy::IntoPyArray::into_pyarray(state.pressure_gradient_residual, py))?;
+    out.set_item("pressure_gradient_residual_linf", state.pressure_gradient_residual_linf)?;
+    out.set_item("pressure_gradient_residual_l2", state.pressure_gradient_residual_l2)?;
+    out.set_item("peak_pressure_pa", state.peak_pressure_pa)?;
+    out.set_item("density_peak_m3", state.density_peak_m3)?;
+    out.set_item("input_density_m3", state.input_density_m3)?;
+    out.set_item("central_density_residual_m3", state.central_density_residual_m3)?;
+    out.set_item("central_density_relative_error", state.central_density_relative_error)?;
+    out.set_item("beta_peak", state.beta_peak)?;
+    out.set_item("beta_separatrix_average", state.beta_separatrix_average)?;
+    out.set_item("particle_line_density_m1", state.particle_line_density_m1)?;
+    out.set_item("separatrix_pressure_energy_J_m", state.separatrix_pressure_energy_j_m)?;
+    out.set_item("separatrix_magnetic_deficit_energy_J_m", state.separatrix_magnetic_deficit_energy_j_m)?;
+    out.set_item("separatrix_energy_closure_relative_error", state.separatrix_energy_closure_relative_error)?;
+    out.set_item("input_thermal_pressure_pa", state.input_thermal_pressure_pa)?;
+    out.set_item("thermal_pressure_ratio", state.thermal_pressure_ratio)?;
+    out.set_item("flux_derivative_residual", numpy::IntoPyArray::into_pyarray(state.flux_derivative_residual, py))?;
+    out.set_item("flux_derivative_residual_linf", state.flux_derivative_residual_linf)?;
+    out.set_item("flux_derivative_residual_l2", state.flux_derivative_residual_l2)?;
+    out.set_item("ampere_residual", numpy::IntoPyArray::into_pyarray(state.ampere_residual, py))?;
+    out.set_item("ampere_residual_linf", state.ampere_residual_linf)?;
+    out.set_item("ampere_residual_l2", state.ampere_residual_l2)?;
+    out.set_item("peak_j_theta_A_m2", state.peak_j_theta_a_m2)?;
+    out.set_item("separatrix_bz_gradient_T_m", state.separatrix_bz_gradient_t_m)?;
+    out.set_item("separatrix_expected_bz_gradient_T_m", state.separatrix_expected_bz_gradient_t_m)?;
+    out.set_item("separatrix_gradient_relative_error", state.separatrix_gradient_relative_error)?;
+    out.set_item("separatrix_current_density_A_m2", state.separatrix_current_density_a_m2)?;
+    out.set_item("separatrix_expected_current_density_A_m2", state.separatrix_expected_current_density_a_m2)?;
+    out.set_item("separatrix_current_density_relative_error", state.separatrix_current_density_relative_error)?;
+    out.set_item("sheet_current_integral_A_m", state.sheet_current_integral_a_m)?;
+    out.set_item("expected_sheet_current_integral_A_m", state.expected_sheet_current_integral_a_m)?;
+    out.set_item("sheet_current_integral_relative_error", state.sheet_current_integral_relative_error)?;
+    out.set_item("force_balance_residual", numpy::IntoPyArray::into_pyarray(state.force_balance_residual, py))?;
+    out.set_item("force_balance_residual_linf", state.force_balance_residual_linf)?;
+    out.set_item("force_balance_residual_l2", state.force_balance_residual_l2)?;
+    out.set_item("model", state.model)?;
+    Ok(out)
 }
 
 #[pyfunction]
@@ -1942,6 +2013,83 @@ fn py_solve_frc_equilibrium<'py>(
     Ok(out)
 }
 
+
+#[pyclass]
+#[derive(Clone)]
+struct PyRmfConfig {
+    #[pyo3(get, set)]
+    pub f_rmf_nom_hz: f64,
+    #[pyo3(get, set)]
+    pub f_sampling_hz: f64,
+    #[pyo3(get, set)]
+    pub k_p: f64,
+    #[pyo3(get, set)]
+    pub k_d: f64,
+    #[pyo3(get, set)]
+    pub n_neurons: usize,
+}
+
+#[pymethods]
+impl PyRmfConfig {
+    #[new]
+    #[pyo3(signature = (f_rmf_nom_hz=1.0e6, f_sampling_hz=10.0e6, k_p=0.5, k_d=0.01, n_neurons=128))]
+    fn new(f_rmf_nom_hz: f64, f_sampling_hz: f64, k_p: f64, k_d: f64, n_neurons: usize) -> Self {
+        Self {
+            f_rmf_nom_hz,
+            f_sampling_hz,
+            k_p,
+            k_d,
+            n_neurons,
+        }
+    }
+}
+
+#[pyclass]
+struct PyRmfController {
+    inner: RmfPhaseLockController,
+}
+
+#[pymethods]
+impl PyRmfController {
+    #[new]
+    fn new(config: PyRmfConfig) -> Self {
+        let cfg = RmfConfig {
+            f_rmf_nom_hz: config.f_rmf_nom_hz,
+            f_sampling_hz: config.f_sampling_hz,
+            k_p: config.k_p,
+            k_d: config.k_d,
+            n_neurons: config.n_neurons,
+        };
+        Self {
+            inner: RmfPhaseLockController::new(cfg),
+        }
+    }
+
+    fn step(&mut self, phi_plasma: f64) -> f64 {
+        self.inner.step(phi_plasma)
+    }
+
+    fn step_horizon<'py>(
+        &mut self,
+        py: Python<'py>,
+        phi_plasma_traj: PyReadonlyArray1<'py, f64>,
+    ) -> Bound<'py, PyArray1<f64>> {
+        let traj = phi_plasma_traj.as_array().to_owned();
+        let out = self.inner.step_horizon(traj.as_slice().unwrap());
+        Array1::from_vec(out).into_pyarray(py)
+    }
+
+    #[getter]
+    fn phi_ant(&self) -> f64 {
+        self.inner.phi_ant
+    }
+
+    #[getter]
+    fn omega_rmf(&self) -> f64 {
+        self.inner.omega_rmf
+    }
+}
+
 #[pymodule]
 fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFusionKernel>()?;
@@ -1995,5 +2143,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyNonlinearGKSolver>()?;
     m.add_function(wrap_pyfunction!(py_solve_frc_equilibrium, m)?)?;
     m.add_function(wrap_pyfunction!(py_solve_rotating_frc_equilibrium, m)?)?;
+    m.add_class::<PyRmfConfig>()?;
+    m.add_class::<PyRmfController>()?;
     Ok(())
 }

@@ -49,3 +49,7 @@ harness = false
 [[bench]]
 name = "tilt_mode_frc_bench"
 harness = false
+
+[[bench]]
+name = "rmf_control_bench"
+harness = false
