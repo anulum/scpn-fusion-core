@@ -25,9 +25,28 @@ import numpy as np
 from jax import jit, random, value_and_grad, vmap
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
-from scpn_fusion.core.neural_equilibrium import MinimalPCA
 
 logger = logging.getLogger(__name__)
+
+
+def default_iter_dataset_paths(data_dir: str | Path = "data") -> tuple[Path, Path]:
+    """Return repository-local default ITER feature and field arrays."""
+    root = Path(data_dir)
+    return root / "iter_X.npy", root / "iter_Y.npy"
+
+
+def load_iter_dataset(data_path: str | Path) -> tuple[np.ndarray, np.ndarray]:
+    """Load ITER surrogate arrays from an NPZ file or a directory of NPY files."""
+    path = Path(data_path).expanduser()
+    if path.is_dir():
+        x_path, y_path = default_iter_dataset_paths(path)
+        return np.load(x_path), np.load(y_path, mmap_mode="r")
+
+    if path.suffix == ".npz":
+        data = np.load(path, mmap_mode="r")
+        return data["X"], data["Y"]
+
+    raise ValueError("--data must point to an .npz file or a directory containing iter_X.npy and iter_Y.npy")
 
 
 
@@ -46,31 +65,31 @@ class FastNumPyPCA:
         # Avoid huge intermediate copy: center in-place if possible or chunked
         # But we have 32GB RAM, so one copy of 1.3GB is fine.
         X_c = X - self.mean_
-        
+
         logger.info("  Computing Gram matrix (10000x10000)...")
         G = X_c @ X_c.T
-        
+
         logger.info("  Solving Eigenvalue Decomposition...")
         vals, vecs = np.linalg.eigh(G)
-        
+
         # Sort descending
         idx = np.argsort(vals)[::-1]
         vals = vals[idx]
         vecs = vecs[:, idx]
-        
+
         top_vals = vals[:self.n_components]
         top_vecs = vecs[:, :self.n_components]
-        
+
         total_var = np.sum(np.maximum(vals, 0.0))
         self.explained_variance_ratio_ = np.maximum(top_vals, 0.0) / total_var
-        
+
         # Components W = V^T * X_c / sqrt(L)
         inv_sqrt_vals = 1.0 / np.sqrt(np.maximum(top_vals, 1e-15))
         self.components_ = (top_vecs.T @ X_c) * inv_sqrt_vals[:, None]
-        
+
         # Latent projection Z = V * sqrt(L)
         Z = top_vecs * np.sqrt(np.maximum(top_vals, 0.0))
-        
+
         logger.info("  PCA complete.")
         return Z
 
@@ -225,9 +244,8 @@ def main():
 
     # 1. Load or generate data
     if args.data:
-        logger.info("Loading existing dataset from .npy files...")
-        X_raw = np.load("/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/data/iter_X.npy")
-        Y_raw = np.load("/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/data/iter_Y.npy", mmap_mode='r')
+        logger.info("Loading existing dataset from %s...", args.data)
+        X_raw, Y_raw = load_iter_dataset(args.data)
         logger.info("  Loaded X shape: %s, Y shape (mmap): %s", X_raw.shape, Y_raw.shape)
     else:
         if not args.config:
@@ -253,14 +271,14 @@ def main():
     x_std = np.where(x_std < 1e-10, 1.0, x_std)
     X_norm = (X_raw - x_mean) / x_std
 
-    
+
     # 4. Train MLP
     # Normalise Latent Variables for training stability
     z_mean = Y_latent.mean(axis=0)
     z_std = Y_latent.std(axis=0)
     z_std = np.where(z_std < 1e-10, 1.0, z_std)
     Y_norm = (Y_latent - z_mean) / z_std
-    
+
     key = random.PRNGKey(args.seed)
     params = init_mlp_params(key, X_norm.shape[1], HIDDEN_SIZES, n_comp)
 
@@ -284,7 +302,7 @@ def main():
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    
+
     payload = {
         "n_components": np.array([n_comp]),
         "grid_nh": np.array([int(np.sqrt(Y_raw.shape[1]))]),

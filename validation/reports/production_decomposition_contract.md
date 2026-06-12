@@ -31,7 +31,7 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Status: `accepted_optional_runtime_dependencies`
 - Optional runtime dependency ready: `True`
 - NumPy contract pass: `True`
-- Python executable: `/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python`
+- Python executable: `.venv/bin/python`
 
 | Module | Distribution | Required specifier | Importable | Version |
 |---|---|---|:---:|---|

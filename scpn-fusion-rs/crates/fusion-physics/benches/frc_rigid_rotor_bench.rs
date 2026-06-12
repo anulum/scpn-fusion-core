@@ -12,7 +12,7 @@ use ndarray::Array1;
 
 pub fn bench_rigid_rotor(c: &mut Criterion) {
     let mut group = c.benchmark_group("frc_rigid_rotor");
-    
+
     for size in [64, 256, 1024].iter() {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &n| {
             let inputs = RigidRotorFrcInputs {
@@ -24,10 +24,10 @@ pub fn bench_rigid_rotor(c: &mut Criterion) {
                 b_ext: 5.0,
                 delta: Some(0.02),
             };
-            
+
             let step = 0.4 / (n as f64 - 1.0);
             let rho = Array1::from_iter((0..n).map(|idx| idx as f64 * step));
-            
+
             b.iter(|| solve_frc_equilibrium(black_box(&inputs), black_box(&rho), black_box(1.0e-10)))
         });
     }
@@ -36,7 +36,7 @@ pub fn bench_rigid_rotor(c: &mut Criterion) {
 
 pub fn bench_rotating_rigid_rotor(c: &mut Criterion) {
     let mut group = c.benchmark_group("frc_rotating_rigid_rotor");
-    
+
     for size in [64, 256, 1024].iter() {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &n| {
             let inputs = RigidRotorFrcInputs {
@@ -48,10 +48,10 @@ pub fn bench_rotating_rigid_rotor(c: &mut Criterion) {
                 b_ext: 5.0,
                 delta: Some(0.02),
             };
-            
+
             let step = 0.4 / (n as f64 - 1.0);
             let rho = Array1::from_iter((0..n).map(|idx| idx as f64 * step));
-            
+
             b.iter(|| solve_rotating_frc_equilibrium(black_box(&inputs), black_box(&rho), black_box(1.0e-10)))
         });
     }

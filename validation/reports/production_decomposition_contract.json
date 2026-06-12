@@ -2791,7 +2791,7 @@
     "multi_gpu_runtime_ready": false,
     "owned_phase_cells": 55296,
     "parallel_moment_relative_error": 3.1533100119165687e-15,
-    "preloaded_nvrtc": "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+    "preloaded_nvrtc": ".venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
     "rank_count": 8,
     "rank_rows": [
       {
@@ -3464,8 +3464,8 @@
       "/usr/bin/mpiexec",
       "-n",
       "4",
-      "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python",
-      "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/mpi_production_decomposition_runner.py",
+      ".venv/bin/python",
+      "validation/mpi_production_decomposition_runner.py",
       "--output",
       "/tmp/scpn_mpi_decomposition_fdly6wfp/mpi_result.json"
     ],
@@ -6411,7 +6411,7 @@
   "runtime_dependency_evidence": {
     "numpy_contract_pass": true,
     "optional_runtime_dependency_ready": true,
-    "python_executable": "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python",
+    "python_executable": ".venv/bin/python",
     "rows": [
       {
         "distribution": "cupy-cuda12x",

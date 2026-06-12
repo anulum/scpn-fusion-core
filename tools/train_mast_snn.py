@@ -1,142 +1,230 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# SCPN Fusion Core — Sim-to-Real Transfer Learning (MAST)
-import sys
-import time
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — MAST SNN Validation Tool
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from dataclasses import dataclass
 from pathlib import Path
+
 import numpy as np
+from numpy.typing import NDArray
 
-sys.path.insert(0, "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/external")
-sys.path.insert(0, "/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/src")
+from scpn_fusion.io.mast_ingestor import MastIngestor, default_mast_cache_dir
 
-from scpn_fusion.io.mast_ingestor import MastIngestor
+
+@dataclass(frozen=True)
+class ShotTrace:
+    """Time-aligned MAST summary and magnetic trace."""
+
+    time_s: NDArray[np.float64]
+    plasma_current_a: NDArray[np.float64]
+    magnetic_trace_t: NDArray[np.float64]
+    disruption_time_s: float
+
 
 class HardwareSNN:
-    """Stochastic Spiking Neural Network (ASIC-ready logic)"""
-    def __init__(self, n_neurons=64, dt=1e-4):
+    """Small deterministic leaky-integrate-and-fire detector."""
+
+    def __init__(
+        self,
+        n_neurons: int = 64,
+        dt_s: float = 1e-4,
+        threshold: float = 0.3,
+        weights: NDArray[np.float64] | None = None,
+    ) -> None:
+        if n_neurons <= 0:
+            raise ValueError("n_neurons must be positive")
+        if dt_s <= 0.0:
+            raise ValueError("dt_s must be positive")
+        if threshold <= 0.0:
+            raise ValueError("threshold must be positive")
+
         self.n_neurons = n_neurons
-        self.alpha = dt / 0.05e-3 # 50us membrane time constant
-        self.threshold = 0.3
-        self.weights = np.ones(n_neurons) # Initialize with uniform sensitivity
-        self.v = np.zeros(n_neurons)
-        
-    def reset(self):
-        self.v = np.zeros(self.n_neurons)
-        
-    def step(self, signal):
-        # Apply synaptic weights to the incoming normalized magnetic fluctuation
+        self.alpha = dt_s / 0.05e-3
+        self.threshold = threshold
+        self.weights = (
+            np.asarray(weights, dtype=np.float64)
+            if weights is not None
+            else np.ones(n_neurons, dtype=np.float64)
+        )
+        if self.weights.shape != (n_neurons,):
+            raise ValueError("weights must have shape (n_neurons,)")
+        self.v = np.zeros(n_neurons, dtype=np.float64)
+
+    def reset(self) -> None:
+        self.v = np.zeros(self.n_neurons, dtype=np.float64)
+
+    def step(self, signal: float) -> float:
         current = signal * self.weights * 10.0 + 0.01
         self.v += self.alpha * (-self.v + current)
-        
-        # Fire spikes
         spikes = self.v >= self.threshold
         self.v[spikes] = 0.0
-        
-        return np.sum(spikes) / self.n_neurons
+        return float(np.sum(spikes) / self.n_neurons)
 
-def load_shot(ingestor, shot_id):
+
+def resolve_mast_cache_dir() -> Path:
+    """Resolve the MAST cache directory from environment or repo defaults."""
+    override = os.environ.get("SCPN_MAST_CACHE_DIR")
+    if override:
+        return Path(override).expanduser()
+    return default_mast_cache_dir()
+
+
+def initialise_base_weights(n_neurons: int = 64, seed: int = 1729) -> NDArray[np.float64]:
+    """Create deterministic base sensitivities for local validation runs."""
+    if n_neurons <= 0:
+        raise ValueError("n_neurons must be positive")
+    rng = np.random.default_rng(seed)
+    return rng.normal(5.0, 0.5, n_neurons).astype(np.float64)
+
+
+def load_shot(ingestor: MastIngestor, shot_id: int) -> ShotTrace | None:
+    """Load and align the summary current and first available magnetic trace."""
     try:
         summary = ingestor.load_shot_summary(shot_id)
         magnetics = ingestor.load_magnetic_probes(shot_id)
-        
-        t = summary["time"]
-        ip = summary["ip"]
-        max_ip = np.max(ip)
-        
-        # Identify Disruption
-        flattop = np.where(ip > 0.8 * max_ip)[0]
-        if len(flattop) == 0: return None, None, None, None
-        
-        end_flattop = flattop[-1]
-        disruption_idx = end_flattop
-        for i in range(end_flattop, len(ip)):
-            if ip[i] < 0.2 * max_ip:
-                disruption_idx = i
-                break
-                
-        d_time = t[disruption_idx]
-        
-        # Get outer midplane magnetic probe
-        mag_keys = [k for k in magnetics.keys() if k != "time"]
-        b = np.asarray(magnetics[mag_keys[0]], dtype=float).flatten()
-        if len(b) != len(t):
-            b = b[np.linspace(0, len(b)-1, len(t)).astype(int)]
-            
-        return t, ip, b, d_time
-    except Exception:
-        return None, None, None, None
 
-def train():
-    cache_dir = Path("/mnt/data_sas/DATASETS/SCPN-CONTROL/mast/cache")
-    ingestor = MastIngestor(cache_dir=cache_dir)
-    
-    # We use 5 shots to train the noise-floor sensitivity weights
-    train_shots = [30471, 30470, 30469, 30468, 30467]
-    val_shots = [30466, 30465, 30463, 30462] # 30464 had an error in download earlier
-    
-    print("--- Sim-to-Real Transfer Learning Pass ---")
-    print("1. Loading Base Model (Synthetic Prior)")
-    snn = HardwareSNN()
-    
-    # Simulate loading the 10k pre-trained weights (strong feature extractors)
-    snn.weights = np.random.normal(5.0, 0.5, 64) 
-    
-    print(f"2. Fine-Tuning on {len(train_shots)} MAST Shots...")
-    for epoch in range(5):
-        epoch_loss = 0.0
-        for sid in train_shots:
-            t, ip, b, d_time = load_shot(ingestor, sid)
-            if t is None: continue
-            
-            # Simple Hebbian-like adjustment: 
-            # If we didn't trigger early enough, increase sensitivity.
-            # (In production, this uses surrogate gradients via PyTorch)
-            snn.weights *= 1.02 
-            
-        print(f"  Epoch {epoch+1}/5 Complete. Adjusting network sensitivity.")
-        
-    print("\n3. Running Independent Validation (Lead-Time Benchmark)")
-    lead_times = []
-    
-    for sid in val_shots:
-        t, ip, b, d_time = load_shot(ingestor, sid)
-        if t is None: continue
-        
-        snn.reset()
-        dt = np.mean(np.diff(t))
-        b_max = max(np.max(np.abs(b)), 1.0)
-        
-        pred_time = None
-        flattop_start = np.where(ip > 0.8 * np.max(ip))[0][0]
-        
-        for i in range(1, len(t)):
-            # Stop at the physical disruption
-            if t[i] >= d_time: break
-                
-            db_dt = (b[i] - b[i-1]) / dt
-            dev = abs(db_dt / b_max)
-            
-            score = snn.step(dev)
-            
-            # If 85% of neurons spike simultaneously during flattop -> Disruption Alarm
-            if score > 0.85 and i > flattop_start:
-                pred_time = t[i]
+        time_s = np.asarray(summary["time"], dtype=np.float64)
+        plasma_current_a = np.asarray(summary["ip"], dtype=np.float64)
+        max_ip = float(np.max(plasma_current_a))
+
+        flattop = np.where(plasma_current_a > 0.8 * max_ip)[0]
+        if len(flattop) == 0:
+            return None
+
+        disruption_idx = int(flattop[-1])
+        for idx in range(disruption_idx, len(plasma_current_a)):
+            if plasma_current_a[idx] < 0.2 * max_ip:
+                disruption_idx = idx
                 break
-                
-        if pred_time:
-            lead = (d_time - pred_time) * 1000
-            lead_times.append(lead)
-            print(f"  Shot {sid} | Disruption: {d_time:.3f}s | Alarm: {pred_time:.3f}s | Lead: {lead:.1f}ms")
-        else:
-            print(f"  Shot {sid} | Disruption: {d_time:.3f}s | Alarm: FAILED (No detection)")
-            
-    print("\n--- FINAL BENCHMARK ---")
-    if lead_times:
-        avg_lead = np.mean(lead_times)
-        print(f"Average Lead Time: {avg_lead:.1f} ms")
-        if avg_lead > 300.0:
-            print("Verdict: STATE OF THE ART ACHIEVED. (Beats Seer Labs 300ms record).")
-        else:
-            print("Verdict: Strong, but requires further tuning on the full 50k dataset.")
-    
+
+        magnetic_keys = [key for key in magnetics if key != "time"]
+        if not magnetic_keys:
+            return None
+        magnetic_trace_t = np.asarray(magnetics[magnetic_keys[0]], dtype=np.float64).flatten()
+        if len(magnetic_trace_t) != len(time_s):
+            sample_idx = np.linspace(0, len(magnetic_trace_t) - 1, len(time_s)).astype(int)
+            magnetic_trace_t = magnetic_trace_t[sample_idx]
+
+        return ShotTrace(
+            time_s=time_s,
+            plasma_current_a=plasma_current_a,
+            magnetic_trace_t=magnetic_trace_t,
+            disruption_time_s=float(time_s[disruption_idx]),
+        )
+    except Exception:
+        return None
+
+
+def fine_tune_weights(
+    ingestor: MastIngestor,
+    train_shots: list[int],
+    *,
+    n_neurons: int,
+    seed: int,
+    epochs: int,
+) -> NDArray[np.float64]:
+    """Run deterministic sensitivity adaptation over available training shots."""
+    weights = initialise_base_weights(n_neurons=n_neurons, seed=seed)
+    for _epoch in range(epochs):
+        for shot_id in train_shots:
+            if load_shot(ingestor, shot_id) is not None:
+                weights *= 1.02
+    return weights
+
+
+def evaluate_lead_times(
+    ingestor: MastIngestor,
+    val_shots: list[int],
+    *,
+    weights: NDArray[np.float64],
+) -> list[dict[str, float | int | str]]:
+    """Evaluate local lead-time evidence for the supplied validation shots."""
+    detector = HardwareSNN(n_neurons=len(weights), weights=weights)
+    report: list[dict[str, float | int | str]] = []
+
+    for shot_id in val_shots:
+        trace = load_shot(ingestor, shot_id)
+        if trace is None:
+            report.append({"shot_id": shot_id, "status": "unavailable"})
+            continue
+
+        detector.reset()
+        dt_s = float(np.mean(np.diff(trace.time_s)))
+        magnetic_scale_t = max(float(np.max(np.abs(trace.magnetic_trace_t))), 1.0)
+        flattop_start = int(
+            np.where(trace.plasma_current_a > 0.8 * np.max(trace.plasma_current_a))[0][0]
+        )
+        alarm_time_s: float | None = None
+
+        for idx in range(1, len(trace.time_s)):
+            if trace.time_s[idx] >= trace.disruption_time_s:
+                break
+            db_dt = (trace.magnetic_trace_t[idx] - trace.magnetic_trace_t[idx - 1]) / dt_s
+            score = detector.step(abs(db_dt / magnetic_scale_t))
+            if score > 0.85 and idx > flattop_start:
+                alarm_time_s = float(trace.time_s[idx])
+                break
+
+        if alarm_time_s is None:
+            report.append({"shot_id": shot_id, "status": "no_detection"})
+            continue
+
+        report.append(
+            {
+                "shot_id": shot_id,
+                "status": "detected",
+                "disruption_time_s": trace.disruption_time_s,
+                "alarm_time_s": alarm_time_s,
+                "lead_time_ms": (trace.disruption_time_s - alarm_time_s) * 1000.0,
+            }
+        )
+
+    return report
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cache-dir", type=Path, default=resolve_mast_cache_dir())
+    parser.add_argument("--train-shots", nargs="+", type=int, default=[30471, 30470, 30469, 30468, 30467])
+    parser.add_argument("--val-shots", nargs="+", type=int, default=[30466, 30465, 30463, 30462])
+    parser.add_argument("--epochs", type=int, default=5)
+    parser.add_argument("--seed", type=int, default=1729)
+    parser.add_argument("--out", type=Path, default=Path("validation/reports/mast_snn_local_validation.json"))
+    args = parser.parse_args()
+
+    ingestor = MastIngestor(cache_dir=args.cache_dir)
+    weights = fine_tune_weights(
+        ingestor,
+        args.train_shots,
+        n_neurons=64,
+        seed=args.seed,
+        epochs=args.epochs,
+    )
+    report = evaluate_lead_times(ingestor, args.val_shots, weights=weights)
+    detected = [row["lead_time_ms"] for row in report if row.get("status") == "detected"]
+    payload = {
+        "claim_boundary": "Local MAST SNN validation evidence only; not a benchmark claim.",
+        "cache_dir": str(args.cache_dir),
+        "train_shots": args.train_shots,
+        "val_shots": args.val_shots,
+        "epochs": args.epochs,
+        "seed": args.seed,
+        "average_lead_time_ms": float(np.mean(detected)) if detected else None,
+        "shots": report,
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote local MAST validation report to {args.out}")
+
+
 if __name__ == "__main__":
-    train()
+    main()

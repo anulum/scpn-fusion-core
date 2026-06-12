@@ -49,17 +49,17 @@ def _rmf_pll_scan_step(state: Tuple[float, ...], plasma_phi: float) -> Tuple[Tup
     """A single JIT-compiled cycle of the phase-lock loop (State-Space form)."""
     # Unpack state: (phi_ant, omega, t, dt, k_p, k_d, omega_nom)
     phi_ant, omega, t, dt, k_p, k_d, omega_nom = state
-    
+
     # 1. Phase Detector (sin correlation)
     error = jnp.sin(phi_ant - plasma_phi)
-    
+
     # 2. Control Law (Proportional-Derivative)
     d_omega = -k_p * error - k_d * (omega - omega_nom)
     new_omega = omega + d_omega * dt
-    
+
     # 3. Phase Integration
     new_phi = (phi_ant + new_omega * dt) % (2.0 * jnp.pi)
-    
+
     new_state = (new_phi, new_omega, t + dt, dt, k_p, k_d, omega_nom)
     return new_state, new_phi
 
@@ -67,7 +67,7 @@ def _rmf_pll_scan_step(state: Tuple[float, ...], plasma_phi: float) -> Tuple[Tup
 class RMFPhaseLockController:
     """
     Multi-lane RMF phase-lock orchestrator.
-    
+
     Bridges the 3 kHz Oracle with the 10 MHz FPGA SNN and GPU JAX lanes.
     """
 
@@ -79,12 +79,12 @@ class RMFPhaseLockController:
         self.cfg = config
         self.dt = 1.0 / self.cfg.f_sampling_hz
         self.omega_nom = 2.0 * np.pi * self.cfg.f_rmf_nom_hz
-        
+
         # State
         self.phi_ant = 0.0
         self.omega_rmf = self.omega_nom
         self.t = 0.0
-        
+
         self.history: Dict[str, list[float]] = {
             "t": [],
             "phi_ant": [],
@@ -95,30 +95,30 @@ class RMFPhaseLockController:
     def step_jax_horizon(self, plasma_phis: jnp.ndarray) -> jnp.ndarray:
         """
         Evaluate a complete control horizon on the GPU using JAX-Scan.
-        
+
         Bypasses Python-to-GPU overhead, hitting 20+ MHz throughput.
         """
         init_state = (
-            float(self.phi_ant), 
-            float(self.omega_rmf), 
-            float(self.t), 
-            float(self.dt), 
-            float(self.cfg.k_p), 
-            float(self.cfg.k_d), 
+            float(self.phi_ant),
+            float(self.omega_rmf),
+            float(self.t),
+            float(self.dt),
+            float(self.cfg.k_p),
+            float(self.cfg.k_d),
             float(self.omega_nom)
         )
-        
+
         final_state, phi_history = lax.scan(_rmf_pll_scan_step, init_state, plasma_phis)
-        
+
         # Update state from horizon end
         self.phi_ant, self.omega_rmf, self.t = final_state[0:3]
-        
+
         return phi_history
 
     def export_to_fpga(self, out_path: str) -> None:
         """
         Synthesize the RMF PLL into SC-NEUROCORE compatible RTL.
-        
+
         Generates bit-accurate combinational logic for 10 MHz execution.
         """
         logger.info("Exporting RMF Phase-Lock SNN to FPGA Verilog...")
@@ -131,9 +131,9 @@ module rmf_phase_lock_pll (
 );
     // SC-NeuroCore Stochastic Computing Logic
     // 10 MHz Control Cycle (10 clock periods)
-    
+
     parameter F_NOM = {int(self.cfg.f_rmf_nom_hz)};
-    
+
     // ... generated weights and threshold logic ...
 endmodule
 """
@@ -144,10 +144,10 @@ endmodule
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     ctrl = RMFPhaseLockController()
-    
+
     # 1ms horizon @ 10 MHz
     horizon = 10000
     plasma_traj = jnp.zeros(horizon) # static for test
-    
+
     out_phis = ctrl.step_jax_horizon(plasma_traj)
     print(f"JAX-Scan 10 MHz Horizon evaluated: {len(out_phis)} cycles.")

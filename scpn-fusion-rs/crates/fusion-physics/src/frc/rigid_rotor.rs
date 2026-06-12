@@ -74,7 +74,7 @@ pub fn solve_frc_equilibrium(
     tolerance: f64,
 ) -> Result<FrcEquilibriumState, FrcSolverError> {
     validate_inputs(inputs, tolerance)?;
-    
+
     if inputs.theta_dot.abs() > tolerance { return Err(FrcSolverError::RotatingBvpNotImplemented); }
     validate_grid(rho_grid, inputs.r_s)?;
     let rho = rho_grid.clone();
@@ -90,12 +90,12 @@ pub fn solve_frc_equilibrium(
     let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
     let j_theta = toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
     let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
-    
+
     let external_magnetic_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
     let p = b_z.mapv(|b| (external_magnetic_pressure - b * b / (2.0 * MU_0)).max(0.0));
-    
+
     let residual = b_z.iter().zip(argument.iter()).map(|(actual, arg)| (actual - (-inputs.b_ext * arg.tanh())).abs()).fold(0.0, f64::max);
-    
+
     let dbz_dr_analytic = axial_field_derivative_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
     build_equilibrium_state(inputs, rho, psi, b_z, j_theta, p, tolerance, true, residual, delta, dbz_dr_analytic)
 }
@@ -119,23 +119,23 @@ pub fn solve_rotating_frc_equilibrium(
     // Initialize static analytical solution for guess
     let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
     let mut psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
-    
+
     let psi_0 = psi[0];
     let psi_max = psi[psi.len() - 1];
-    
+
     // expected static psi at R_s
     let expected_psi_rs = -inputs.b_ext * inputs.r_s * delta * (log_cosh(0.0) - log_cosh(-inputs.r_s / (2.0 * delta)));
     let psi_ref = expected_psi_rs;
 
     // Centrifugal term: gamma = m_i omega^2 / (2 (T_i + T_e) e)
-    let gamma = (DEUTERIUM_MASS_AMU * ATOMIC_MASS_KG * inputs.theta_dot * inputs.theta_dot) 
+    let gamma = (DEUTERIUM_MASS_AMU * ATOMIC_MASS_KG * inputs.theta_dot * inputs.theta_dot)
         / (2.0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C);
-    
+
     let n = rho.len();
     let mut a_sub = vec![0.0; n - 2];
     let mut b_main = vec![0.0; n - 2];
     let mut c_sup = vec![0.0; n - 2];
-    
+
     for i in 1..n-1 {
         let h0 = rho[i] - rho[i - 1];
         let h1 = rho[i + 1] - rho[i];
@@ -144,14 +144,14 @@ pub fn solve_rotating_frc_equilibrium(
         b_main[i - 1] = -2.0 / (h0 * h1) - (h1 - h0) / (r_i * h0 * h1);
         c_sup[i - 1] = (2.0 - h0 / r_i) / (h1 * (h0 + h1));
     }
-    
+
     let max_iter = 200;
     let mut converged = false;
     let mut residual = 0.0;
-    
+
     let source_coeff = -inputs.b_ext / (inputs.r_s * delta);
     let exp_coeff = 2.0 / (inputs.b_ext * inputs.r_s * delta);
-    
+
     for _iter in 0..max_iter {
         let mut d_rhs = vec![0.0; n - 2];
         for i in 1..n-1 {
@@ -160,12 +160,12 @@ pub fn solve_rotating_frc_equilibrium(
             let s_i = r_i * r_i * source_coeff * (exp_coeff * (psi_i - psi_ref)).exp() * (gamma * r_i * r_i).exp();
             d_rhs[i - 1] = s_i;
         }
-        
+
         d_rhs[0] -= a_sub[0] * psi_0;
         d_rhs[n - 3] -= c_sup[n - 3] * psi_max;
-        
+
         let psi_new_inner = thomas_solve(&a_sub, &b_main, &c_sup, &d_rhs);
-        
+
         let mut max_diff = 0.0;
         for i in 1..n-1 {
             let psi_new = 0.5 * psi[i] + 0.5 * psi_new_inner[i - 1]; // under-relaxation
@@ -175,25 +175,25 @@ pub fn solve_rotating_frc_equilibrium(
             }
             psi[i] = psi_new;
         }
-        
+
         if max_diff < tolerance {
             converged = true;
             residual = max_diff;
             break;
         }
     }
-    
+
     if !converged {
         return Err(FrcSolverError::InvalidInput("Picard iteration failed to converge"));
     }
-    
+
     let dpsi_dr = gradient_edge_order2(&rho, &psi);
     let mut b_z = Array1::zeros(n);
     b_z[0] = dpsi_dr[1] / rho[1]; // approx limit
     for i in 1..n {
         b_z[i] = dpsi_dr[i] / rho[i];
     }
-    
+
     let mut p = Array1::zeros(n);
     let mut j_theta = Array1::zeros(n);
     let p_max = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
@@ -203,7 +203,7 @@ pub fn solve_rotating_frc_equilibrium(
         p[i] = p_max * (exp_coeff * (psi_i - psi_ref)).exp() * (gamma * r_i * r_i).exp();
         j_theta[i] = - (1.0 / MU_0) * r_i * source_coeff * (exp_coeff * (psi_i - psi_ref)).exp() * (gamma * r_i * r_i).exp();
     }
-    
+
     let dbz_dr_analytic = gradient_edge_order2(&rho, &b_z);
     build_equilibrium_state(inputs, rho, psi, b_z, j_theta, p, tolerance, converged, residual, delta, dbz_dr_analytic)
 }
@@ -243,7 +243,7 @@ fn build_equilibrium_state(
     let ampere_scale = tolerance.max(max_abs(&grad_bz)).max(MU_0 * max_abs(&j_theta));
     let ampere_residual_linf = max_abs(&ampere_residual) / ampere_scale;
     let ampere_residual_l2 = (ampere_residual.iter().map(|v| (v / ampere_scale).powi(2)).sum::<f64>() / ampere_residual.len() as f64).sqrt();
-    
+
     let psi_axis_wb = psi[0];
     let psi_separatrix_wb = interpolate(&rho, &psi, inputs.r_s);
     let psi_span_wb = psi_separatrix_wb - psi_axis_wb;
@@ -295,21 +295,21 @@ fn build_equilibrium_state(
     let force_scale = tolerance.max(max_abs(&finite_pressure_gradient)).max(max_abs(&rho_times_bz(&j_theta, &b_z)));
     let force_balance_residual_linf = max_abs(&force_balance_residual) / force_scale;
     let force_balance_residual_l2 = (force_balance_residual.iter().map(|v| (v / force_scale).powi(2)).sum::<f64>() / force_balance_residual.len() as f64).sqrt();
-    
+
     let (density_r_clip, density_clip) = clip_to_separatrix(&rho, &density_m3, inputs.r_s)?;
     let particle_integrand = Array1::from_iter(density_clip.iter().zip(density_r_clip.iter()).map(|(d, r)| d * 2.0 * std::f64::consts::PI * r));
     let particle_line_density_m1 = trapezoid(&density_r_clip, &particle_integrand);
-    
+
     let (pressure_r_clip, pressure_clip) = clip_to_separatrix(&rho, &p, inputs.r_s)?;
     let separatrix_pressure_energy_integrand = Array1::from_iter(pressure_clip.iter().zip(pressure_r_clip.iter()).map(|(pr, r)| pr * 2.0 * std::f64::consts::PI * r));
     let separatrix_pressure_energy_j_m = trapezoid(&pressure_r_clip, &separatrix_pressure_energy_integrand);
-    
+
     let magnetic_deficit = b_z.mapv(|b| external_magnetic_pressure - b * b / (2.0 * MU_0));
     let (deficit_r_clip, deficit_clip) = clip_to_separatrix(&rho, &magnetic_deficit, inputs.r_s)?;
     let deficit_integrand = Array1::from_iter(deficit_clip.iter().zip(deficit_r_clip.iter()).map(|(d, r)| d * 2.0 * std::f64::consts::PI * r));
     let separatrix_magnetic_deficit_energy_j_m = trapezoid(&deficit_r_clip, &deficit_integrand);
     let separatrix_energy_closure_relative_error = (separatrix_pressure_energy_j_m - separatrix_magnetic_deficit_energy_j_m).abs() / separatrix_pressure_energy_j_m.abs().max(separatrix_magnetic_deficit_energy_j_m.abs()).max(tolerance);
-    
+
     let energy_integrand = Array1::from_iter(p.iter().zip(b_z.iter()).zip(rho.iter()).map(|((pr, b), r)| (pr + b * b / (2.0 * MU_0)) * 2.0 * std::f64::consts::PI * r));
     let energy_j = trapezoid(&rho, &energy_integrand);
     let pressure_integrand = Array1::from_iter(p.iter().zip(rho.iter()).map(|(pr, r)| pr * 2.0 * std::f64::consts::PI * r));

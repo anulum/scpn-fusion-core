@@ -7,7 +7,7 @@
 // SCPN Fusion Core — Precision Pacer (OS Scheduler Bypass)
 
 //! High-precision timing pacer for real-time control loops.
-//! 
+//!
 //! Uses std::hint::spin_loop() to bypass the OS Completely Fair Scheduler (CFS)
 //! and standard nanosleep jitter (typically 100-200 us).
 
@@ -56,7 +56,7 @@ impl PrecisionPacer {
                 }
             }
         }
-        
+
         let actual_elapsed = self.last_tick.elapsed().as_nanos();
         self.last_tick = Instant::now();
         actual_elapsed

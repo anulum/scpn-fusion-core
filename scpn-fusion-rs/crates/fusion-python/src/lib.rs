@@ -1745,7 +1745,7 @@ fn py_solve_rotating_frc_equilibrium<'py>(
     };
     let state = solve_rotating_frc_equilibrium_rust(&inputs, &rho_grid_owned, tolerance)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        
+
     let out = pyo3::types::PyDict::new(py);
     out.set_item("rho", numpy::IntoPyArray::into_pyarray(state.rho, py))?;
     out.set_item("psi", numpy::IntoPyArray::into_pyarray(state.psi, py))?;

@@ -59,11 +59,11 @@ pub struct SpikingPhaseDetector {
 
 impl SpikingPhaseDetector {
     pub fn new(n: usize, dt: f64) -> Self {
-        let tau_mem = 0.05e-3; 
+        let tau_mem = 0.05e-3;
         Self {
             v_pos: vec![0.0; n],
             v_neg: vec![0.0; n],
-            v_threshold: 0.2, 
+            v_threshold: 0.2,
             alpha: dt / tau_mem,
         }
     }

@@ -8,16 +8,17 @@
 """
 Formal ingestor for the UKAEA FAIR MAST public dataset.
 
-Provides high-frequency streaming access to real tokamak data 
+Provides high-frequency streaming access to real tokamak data
 via the S3/Zarr stack.
 """
 
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -33,11 +34,20 @@ if _EXTERNAL_ROOT.exists() and str(_EXTERNAL_ROOT) not in sys.path:
 try:
     import fsspec
     import xarray as xr
-    import zarr
+    import zarr as _zarr  # noqa: F401
+
     _HAS_FAIR_MAST_STACK = True
 except ImportError:
     _HAS_FAIR_MAST_STACK = False
     logger.debug("FAIR MAST stack (zarr, s3fs, xarray) not available.")
+
+
+def default_mast_cache_dir() -> Path:
+    """Return the local cache directory for public MAST Zarr downloads."""
+    override = os.environ.get("SCPN_MAST_CACHE_DIR")
+    if override:
+        return Path(override).expanduser()
+    return Path(__file__).resolve().parents[3] / "data" / "mast_cache"
 
 
 class MastIngestor:
@@ -54,60 +64,60 @@ class MastIngestor:
                 "MAST ingestion requires zarr, s3fs, and xarray. "
                 "Ensure NTFS external/ directory is present."
             )
-        
+
         if cache_dir is None:
-            # Default to SAS Mirror drive (ML350)
-            cache_dir = Path("/home/anulum/remote_data_sas/DATASETS/SCPN-CONTROL/mast/cache")
-        
+            cache_dir = default_mast_cache_dir()
+
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def load_shot_summary(self, shot_id: int) -> Dict[str, NDArray[np.float64]]:
         """Load plasma current and time-series for a specific shot."""
         url = f"s3://{self.BUCKET_NAME}/level2/shots/{shot_id}.zarr"
-        
+
         fs = fsspec.filesystem(
-            'simplecache', 
+            "simplecache",
             cache_storage=str(self.cache_dir),
-            target_protocol='s3',
-            target_options={'anon': True, 'endpoint_url': self.ENDPOINT_URL}
+            target_protocol="s3",
+            target_options={"anon": True, "endpoint_url": self.ENDPOINT_URL},
         )
         store = fs.get_mapper(url)
-        
-        ds = xr.open_zarr(store, group='summary', consolidated=True)
+
+        ds = xr.open_zarr(store, group="summary", consolidated=True)
         return {
             "time": ds.time.values,
             "ip": ds.ip.values,
-            "density": ds.line_average_n_e.values
+            "density": ds.line_average_n_e.values,
         }
 
-    def load_magnetic_probes(self, shot_id: int, probe_ids: Optional[List[str]] = None) -> Dict[str, NDArray[np.float64]]:
+    def load_magnetic_probes(
+        self, shot_id: int, probe_ids: Optional[List[str]] = None
+    ) -> Dict[str, NDArray[np.float64]]:
         """Load raw magnetic probe signals."""
         url = f"s3://{self.BUCKET_NAME}/level2/shots/{shot_id}.zarr"
-        
+
         fs = fsspec.filesystem(
-            'simplecache', 
+            "simplecache",
             cache_storage=str(self.cache_dir),
-            target_protocol='s3',
-            target_options={'anon': True, 'endpoint_url': self.ENDPOINT_URL}
+            target_protocol="s3",
+            target_options={"anon": True, "endpoint_url": self.ENDPOINT_URL},
         )
         store = fs.get_mapper(url)
-        
-        ds = xr.open_zarr(store, group='magnetics', consolidated=True)
-        
+
+        ds = xr.open_zarr(store, group="magnetics", consolidated=True)
+
         if probe_ids is None:
-            # Load first 10 by default
             probe_ids = list(ds.data_vars)[:10]
-            
+
         out = {"time": ds.time.values}
         for pid in probe_ids:
             if pid in ds.data_vars:
                 out[pid] = ds[pid].values
-                
+
         return out
 
+
 if __name__ == "__main__":
-    # Integration smoke test
     logging.basicConfig(level=logging.INFO)
     try:
         ingestor = MastIngestor()

@@ -8,9 +8,9 @@
 """
 Trains an ultra-fast Linear/Ridge surrogate for the Rotating Rigid-Rotor FRC BVP.
 
-Generates data using the 1D BVP solver, performs PCA on the profiles, 
-and trains a purely linear mapping matrix. 
-This serves as the "Third Lane" for extreme real-time execution (100+ kHz) 
+Generates data using the 1D BVP solver, performs PCA on the profiles,
+and trains a purely linear mapping matrix.
+This serves as the "Third Lane" for extreme real-time execution (100+ kHz)
 on FPGAs or standard microcontrollers.
 """
 
@@ -36,17 +36,17 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
     logger.info("Generating %d FRC samples...", n_samples)
     X = []
     Y = []
-    
+
     rng = np.random.default_rng(seed)
     rho_grid = np.linspace(0.0, 0.5, grid_size)
-    
+
     valid_count = 0
     attempts = 0
     while valid_count < n_samples and attempts < n_samples * 10:
         attempts += 1
         if valid_count > 0 and valid_count % 50 == 0:
             logger.info("Generated %d / %d samples (attempts: %d)", valid_count, n_samples, attempts)
-            
+
         n0 = rng.uniform(1e20, 5e20)
         t_i = rng.uniform(5000, 15000)
         t_e = rng.uniform(2000, 10000)
@@ -54,12 +54,12 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
         r_s = rng.uniform(0.15, 0.3)
         b_ext = rng.uniform(2.0, 8.0)
         delta = rng.uniform(0.01, 0.05)
-        
+
         inputs = RigidRotorFRCInputs(
             n0=n0, T_i_eV=t_i, T_e_eV=t_e, theta_dot=theta_dot,
             R_s=r_s, B_ext=b_ext, delta=delta
         )
-        
+
         try:
             state = solve_frc_equilibrium(inputs, rho_grid, solver="rust", tolerance=1e-8)
             if not state.converged or not np.all(np.isfinite(state.B_z)):
@@ -70,7 +70,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
             valid_count += 1
         except Exception:
             continue
-            
+
     return np.array(X), np.array(Y)
 
 # ── Training Entry Point ─────────────────────────────────────────────
@@ -88,7 +88,7 @@ def main():
     t_start = time.perf_counter()
 
     X_raw, Y_raw = generate_frc_data(args.samples, args.grid, args.seed)
-    
+
     n_valid = len(X_raw)
     if n_valid < 10:
         logger.error("Insufficient samples generated. Aborting.")
@@ -113,12 +113,12 @@ def main():
     logger.info("Solving linear system (Ridge Regression, L2=%.1e)...", args.l2)
     # Append bias column to X
     X_bias = np.hstack([X_norm, np.ones((n_valid, 1))])
-    
+
     # Normal equation: W = (X^T X + alpha I)^-1 X^T Y
     # W shape will be (features + 1, n_comp)
     I = np.eye(X_bias.shape[1])
     I[-1, -1] = 0.0  # Don't penalize the bias term
-    
+
     W_full = np.linalg.solve(X_bias.T @ X_bias + args.l2 * I, X_bias.T @ Y_latent)
     W_linear = W_full[:-1, :]
     b_linear = W_full[-1, :]
@@ -131,7 +131,7 @@ def main():
     # Save weights
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     np.savez(
         out_path,
         n_components=np.array([n_comp]),
@@ -143,7 +143,7 @@ def main():
         w_linear=W_linear,
         b_linear=b_linear
     )
-    
+
     t_total = time.perf_counter() - t_start
     logger.info("Linear surrogate training complete in %.2f s. Saved to %s", t_total, out_path)
 

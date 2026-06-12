@@ -87,18 +87,18 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
     logger.info("Generating %d FRC samples...", n_samples)
     X = []
     Y = []
-    
+
     rng = np.random.default_rng(seed)
-    
+
     rho_grid = np.linspace(0.0, 0.5, grid_size)
-    
+
     valid_count = 0
     attempts = 0
     while valid_count < n_samples and attempts < n_samples * 10:
         attempts += 1
         if valid_count > 0 and valid_count % 50 == 0:
             logger.info("Generated %d / %d samples (attempts: %d)", valid_count, n_samples, attempts)
-            
+
         n0 = rng.uniform(1e20, 5e20)
         t_i = rng.uniform(5000, 15000)
         t_e = rng.uniform(2000, 10000)
@@ -106,7 +106,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
         r_s = rng.uniform(0.15, 0.3)
         b_ext = rng.uniform(2.0, 8.0)
         delta = rng.uniform(0.01, 0.05)
-        
+
         inputs = RigidRotorFRCInputs(
             n0=n0,
             T_i_eV=t_i,
@@ -116,20 +116,20 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
             B_ext=b_ext,
             delta=delta
         )
-        
+
         try:
             state = solve_frc_equilibrium(inputs, rho_grid, solver="rust", tolerance=1e-8)
             if not state.converged or not np.all(np.isfinite(state.B_z)):
                 continue
             features = [n0/1e20, t_i/1000, t_e/1000, theta_dot/1000, r_s, b_ext, delta]
             X.append(features)
-            
+
             # Predict magnetic field B_z profile
             Y.append(state.B_z)
             valid_count += 1
         except Exception as e:
             continue
-            
+
     return np.array(X), np.array(Y)
 
 
@@ -148,7 +148,7 @@ def main():
     t_start = time.perf_counter()
 
     X_raw, Y_raw = generate_frc_data(args.samples, args.grid, args.seed)
-    
+
     n_valid = len(X_raw)
     if n_valid < 10:
         logger.error("Insufficient samples generated. Aborting.")
@@ -186,7 +186,7 @@ def main():
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     payload = {
         "n_components": np.array([n_comp]),
         "grid_size": np.array([args.grid]),
@@ -200,7 +200,7 @@ def main():
         payload[f"b{i}"] = np.asarray(p["b"])
 
     np.savez(out_path, **payload)
-    
+
     t_total = time.perf_counter() - t_start
     logger.info("Retraining complete in %.2f s. Saved to %s", t_total, out_path)
 

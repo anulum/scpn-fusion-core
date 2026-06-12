@@ -282,7 +282,7 @@ def _fill_equilibrium_state(
     pressure_balance_residual = _pressure_balance_residual(p, B_z, inputs.B_ext)
     pressure_balance_residual_linf = float(np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance))
     pressure_balance_residual_l2 = float(np.sqrt(np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2)))
-    
+
     pressure_gradient_analytic = _pressure_gradient_from_steinhauer(B_z, dBz_dr_analytic)
     pressure_gradient_residual = _pressure_gradient_closure_residual(rho, p, pressure_gradient_analytic)
     finite_pressure_gradient = np.gradient(p, rho, edge_order=2)
@@ -385,20 +385,20 @@ def _solve_rotating_numpy(
     # 1. Initialize static analytical solution for guess
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
     psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
-    
+
     psi_0 = float(psi[0])
     psi_max = float(psi[-1])
-    
+
     expected_psi_rs = -inputs.B_ext * inputs.R_s * delta * (np.log(np.cosh(0.0)) - np.log(np.cosh(-inputs.R_s / (2.0 * delta))))
     psi_ref = float(expected_psi_rs)
-    
+
     gamma = (2.014 * 1.66053906660e-27 * inputs.theta_dot**2) / (2.0 * (inputs.T_i_eV + inputs.T_e_eV) * ELEMENTARY_CHARGE_C)
-    
+
     n = len(rho)
     a_sub = np.zeros(n - 2)
     b_main = np.zeros(n - 2)
     c_sup = np.zeros(n - 2)
-    
+
     for i in range(1, n - 1):
         h0 = float(rho[i] - rho[i - 1])
         h1 = float(rho[i + 1] - rho[i])
@@ -406,44 +406,44 @@ def _solve_rotating_numpy(
         a_sub[i - 1] = (2.0 + h1 / r_i) / (h0 * (h0 + h1))
         b_main[i - 1] = -2.0 / (h0 * h1) - (h1 - h0) / (r_i * h0 * h1)
         c_sup[i - 1] = (2.0 - h0 / r_i) / (h1 * (h0 + h1))
-        
+
     converged = False
     residual = 0.0
     source_coeff = -inputs.B_ext / (inputs.R_s * delta)
     exp_coeff = 2.0 / (inputs.B_ext * inputs.R_s * delta)
-    
+
     for _ in range(max_iter):
         r_inner = rho[1:-1]
         psi_inner = psi[1:-1]
-        
+
         s = r_inner**2 * source_coeff * np.exp(exp_coeff * (psi_inner - psi_ref)) * np.exp(gamma * r_inner**2)
         d_rhs = s.copy()
         d_rhs[0] -= a_sub[0] * psi_0
         d_rhs[-1] -= c_sup[-1] * psi_max
-        
+
         psi_new_inner = _thomas_solve(a_sub, b_main, c_sup, d_rhs)
-        
+
         psi_new = 0.5 * psi_inner + 0.5 * psi_new_inner
         max_diff = float(np.max(np.abs(psi_new - psi_inner)))
         psi[1:-1] = psi_new
-        
+
         if max_diff < tolerance:
             converged = True
             residual = max_diff
             break
-            
+
     if not converged:
         raise ValueError("Picard iteration failed to converge")
-        
+
     dpsi_dr = np.gradient(psi, rho, edge_order=2)
     b_z = np.zeros(n)
     b_z[0] = dpsi_dr[1] / rho[1]
     b_z[1:] = dpsi_dr[1:] / rho[1:]
-    
+
     p_max = inputs.B_ext**2 / (2.0 * MU_0)
     p = p_max * np.exp(exp_coeff * (psi - psi_ref)) * np.exp(gamma * rho**2)
     j_theta = -(1.0 / MU_0) * rho * source_coeff * np.exp(exp_coeff * (psi - psi_ref)) * np.exp(gamma * rho**2)
-    
+
     dBz_dr_analytic = np.gradient(b_z, rho, edge_order=2)
     return _fill_equilibrium_state(inputs, rho, psi, b_z, j_theta, p, tolerance, residual, delta, dBz_dr_analytic)
 
@@ -479,7 +479,7 @@ def solve_frc_equilibrium(
     external_magnetic_pressure = inputs.B_ext**2 / (2.0 * MU_0)
     p = np.maximum(external_magnetic_pressure - B_z**2 / (2.0 * MU_0), 0.0)
     residual = float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument)))))
-    
+
     dBz_dr_analytic = _axial_field_derivative_from_steinhauer(rho, argument, inputs.B_ext, inputs.R_s, delta)
     return _fill_equilibrium_state(inputs, rho, psi, B_z, J_theta, p, tolerance, residual, delta, dBz_dr_analytic)
 

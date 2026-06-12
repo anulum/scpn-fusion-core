@@ -8,10 +8,10 @@
 """
 Trains a Stochastic Computing (SC) SNN Surrogate for 1-10 MHz control.
 
-Follows the SC-NEUROCORE architecture: 
-Values are encoded as stochastic bitstreams (Bernoulli trials). 
+Follows the SC-NEUROCORE architecture:
+Values are encoded as stochastic bitstreams (Bernoulli trials).
 Multiplication is reduced to AND gates; addition to bit-counters.
-This script trains a JAX-accelerated SNN with Surrogate Gradients, 
+This script trains a JAX-accelerated SNN with Surrogate Gradients,
 benchmarks it on the GTX 1060, and provides the FPGA export bridge.
 """
 
@@ -66,13 +66,13 @@ def model_forward_snn(params, x):
     """Unroll SNN for N steps."""
     v = jnp.zeros(N_NEURONS)
     z = jnp.zeros(N_NEURONS)
-    
+
     # Simple 1-layer SNN encoding
     def body_fun(carry, _):
         v, z = carry
         v, z = lif_step(v, z, x, params["W"], params["b"], TAU_RC, DT)
         return (v, z), z
-        
+
     (v_final, z_final), spikes = jax.lax.scan(body_fun, (v, z), None, length=STEPS)
     # Decode: mean firing rate * output weights
     out_spikes = jnp.mean(spikes, axis=0)
@@ -85,7 +85,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
     X, Y = [], []
     rng = np.random.default_rng(seed)
     rho_grid = np.linspace(0.0, 0.5, grid_size)
-    
+
     for _ in range(n_samples):
         inputs = RigidRotorFRCInputs(
             n0=rng.uniform(1e20, 5e20), T_i_eV=rng.uniform(5000, 15000),
@@ -110,7 +110,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO)
     X_raw, Y_raw = generate_frc_data(args.samples, args.grid)
-    
+
     if len(X_raw) < 10: return
 
     # PCA
@@ -118,7 +118,7 @@ def main():
     n_comp = 10
     pca = MinimalPCA(n_components=n_comp)
     Y_latent = pca.fit_transform(Y_raw)
-    
+
     # Train SNN params
     key = random.PRNGKey(42)
     in_dim = X_raw.shape[1]
@@ -132,7 +132,7 @@ def main():
     # Simplified training loop
     X_jax = jnp.asarray(X_raw)
     Y_jax = jnp.asarray(Y_latent)
-    
+
     @jit
     def loss_fn(p, x, y):
         preds = vmap(lambda xi: model_forward_snn(p, xi))(x)
@@ -165,13 +165,13 @@ def main():
 def export_to_verilog(params, out_path):
     """Generates a synthesizable Verilog module for the FRC SNN Lane (5th/6th Lane)."""
     logger.info(f"Exporting SNN to Verilog: {out_path}")
-    
+
     w = np.array(params["W"])
     b = np.array(params["b"])
-    
+
     n_in = w.shape[1]
     n_neurons = w.shape[0]
-    
+
     hdl = f"""
 module frc_snn_core (
     input clk,
@@ -182,9 +182,9 @@ module frc_snn_core (
     // SC-NeuroCore Stochastic Computing Logic
     // Multiplication via AND gates
     // Integration via 16-bit LFSR bit-counters
-    
+
     parameter N_NEURONS = {n_neurons};
-    
+
     // ... generated weights and threshold logic ...
 endmodule
 """

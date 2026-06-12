@@ -8,9 +8,9 @@
 """
 Extracts an ultra-low-latency Local Jacobian (State-Space) Surrogate.
 
-For extreme control loops (500+ kHz) using GaN inverters on bare-metal FPGAs, 
-even PCA dimensionality reduction overhead (Lane 3) is too slow. 
-This "Fourth Lane" computes the exact analytical gradients around a nominal 
+For extreme control loops (500+ kHz) using GaN inverters on bare-metal FPGAs,
+even PCA dimensionality reduction overhead (Lane 3) is too slow.
+This "Fourth Lane" computes the exact analytical gradients around a nominal
 operating point using finite differences against the 1D Rust BVP Oracle.
 
 Inference requires 0 hidden layers and 0 PCA inverse transforms.
@@ -32,16 +32,16 @@ from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equi
 logger = logging.getLogger(__name__)
 
 def compute_local_jacobian(
-    nominal_features: np.ndarray, 
-    grid_size: int, 
+    nominal_features: np.ndarray,
+    grid_size: int,
     eps: float = 1e-4
 ):
     logger.info("Computing FRC Jacobian around nominal point...")
     rho_grid = np.linspace(0.0, 0.5, grid_size)
-    
+
     # 1. Unpack nominal features
     n0, t_i, t_e, theta_dot, r_s, b_ext, delta = nominal_features
-    
+
     # De-normalize inputs for the physics oracle
     nom_inputs = RigidRotorFRCInputs(
         n0=n0 * 1e20,
@@ -52,27 +52,27 @@ def compute_local_jacobian(
         B_ext=b_ext,
         delta=delta
     )
-    
+
     nom_state = solve_frc_equilibrium(nom_inputs, rho_grid, solver="rust", tolerance=1e-10)
     Y_nom = nom_state.B_z
-    
+
     num_features = len(nominal_features)
     J = np.zeros((grid_size, num_features))
-    
+
     logger.info("Nominal Y shape: %s", Y_nom.shape)
     logger.info("Extracting %d partial derivatives...", num_features)
-    
+
     feature_names = ["n0", "T_i", "T_e", "theta_dot", "R_s", "B_ext", "delta"]
-    
+
     for i in range(num_features):
         logger.info("  Computing d/d(%s)...", feature_names[i])
-        
+
         # Perturb
         X_perturbed = nominal_features.copy()
         # Ensure non-zero perturbation
         perturbation = max(X_perturbed[i] * eps, 1e-8)
         X_perturbed[i] += perturbation
-        
+
         pert_inputs = RigidRotorFRCInputs(
             n0=X_perturbed[0] * 1e20,
             T_i_eV=X_perturbed[1] * 1000.0,
@@ -82,10 +82,10 @@ def compute_local_jacobian(
             B_ext=X_perturbed[5],
             delta=X_perturbed[6]
         )
-        
+
         pert_state = solve_frc_equilibrium(pert_inputs, rho_grid, solver="rust", tolerance=1e-10)
         Y_pert = pert_state.B_z
-        
+
         # Central difference would be better, but forward difference is enough for the local surrogate matrix
         J[:, i] = (Y_pert - Y_nom) / perturbation
 
@@ -115,7 +115,7 @@ def main():
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     np.savez(
         out_path,
         grid_size=np.array([args.grid]),
@@ -123,7 +123,7 @@ def main():
         y_nom=Y_nom,
         jacobian=Jacobian
     )
-    
+
     t_total = time.perf_counter() - t_start
     logger.info("Jacobian extraction complete in %.3f s. Saved to %s", t_total, out_path)
 

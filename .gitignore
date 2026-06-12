@@ -44,9 +44,11 @@ Thumbs.db
 benchmarks/results/
 
 # Simulation outputs
+*.npy
 *.npz
 *.gif
 *.png
+data/mast_cache/
 !docs/**/*.png
 !weights/pretrained_mlp_itpa.npz
 !weights/pretrained_fno_eurofusion_jet.npz
