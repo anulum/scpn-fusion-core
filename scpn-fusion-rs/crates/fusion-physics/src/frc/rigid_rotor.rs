@@ -84,10 +84,10 @@ pub fn solve_frc_equilibrium(
     };
 
     let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
-    let _b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
+    let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
 
     let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
-    let _b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
+    let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
     let j_theta = toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
     let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
     

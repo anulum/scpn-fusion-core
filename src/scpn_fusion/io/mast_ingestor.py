@@ -56,8 +56,8 @@ class MastIngestor:
             )
         
         if cache_dir is None:
-            # Default to NTFS data root
-            cache_dir = Path(__file__).resolve().parents[3] / "data" / "mast_cache"
+            # Default to SAS Mirror drive (ML350)
+            cache_dir = Path("/home/anulum/remote_data_sas/DATASETS/SCPN-CONTROL/mast/cache")
         
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
