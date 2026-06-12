@@ -30,3 +30,4 @@ pub mod sawtooth;
 pub mod tilt_mode_frc;
 pub mod turbulence;
 pub mod rmf_control;
+pub mod precision_pacer;

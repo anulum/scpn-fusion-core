@@ -4,9 +4,27 @@
 // © Code 2020–2026 Miroslav Šotek. All rights reserved.
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
-// SCPN Fusion Core — RMF Phase-Lock Control (Rust Lane)
+// SCPN Fusion Core — RMF Phase-Lock Control (Hardened Rust Lane)
 
 use std::f64::consts::PI;
+use crate::precision_pacer::{PrecisionPacer, PacingMode};
+
+#[derive(Debug, Clone, Copy)]
+pub struct RmfAotCertificate {
+    pub max_freq_hz: f64,
+    pub min_freq_hz: f64,
+    pub max_phase_error: f64,
+}
+
+impl Default for RmfAotCertificate {
+    fn default() -> Self {
+        Self {
+            max_freq_hz: 5.0e6,
+            min_freq_hz: 1.0e5,
+            max_phase_error: PI / 2.0,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct RmfConfig {
@@ -15,6 +33,7 @@ pub struct RmfConfig {
     pub k_p: f64,
     pub k_d: f64,
     pub n_neurons: usize,
+    pub aot_safety: RmfAotCertificate,
 }
 
 impl Default for RmfConfig {
@@ -25,6 +44,7 @@ impl Default for RmfConfig {
             k_p: 1.0e6,
             k_d: 0.1,
             n_neurons: 64,
+            aot_safety: RmfAotCertificate::default(),
         }
     }
 }
@@ -63,11 +83,11 @@ impl SpikingPhaseDetector {
             *val += self.alpha * (-*val + input_neg);
             if *val >= self.v_threshold { *val = 0.0; spikes_neg += 1; }
         }
-        (spikes_pos as f64 - spikes_neg as f64) / self.v_pos.len() as f64
+        (spikes_pos as f64 - spikes_neg as f64) / self.v_pos.len().max(1) as f64
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct RmfPhaseLockController {
     cfg: RmfConfig,
     dt: f64,
@@ -76,6 +96,8 @@ pub struct RmfPhaseLockController {
     pub omega_rmf: f64,
     pub t: f64,
     detector: SpikingPhaseDetector,
+    pacer: Option<PrecisionPacer>,
+    pub safety_violations: u64,
 }
 
 impl RmfPhaseLockController {
@@ -90,18 +112,45 @@ impl RmfPhaseLockController {
             omega_rmf: omega_nom,
             t: 0.0,
             detector: SpikingPhaseDetector::new(cfg.n_neurons, dt),
+            pacer: None,
+            safety_violations: 0,
         }
     }
 
+    pub fn enable_pacing(&mut self, mode: PacingMode) {
+        self.pacer = Some(PrecisionPacer::new(self.cfg.f_sampling_hz, mode));
+    }
+
     pub fn step(&mut self, phi_plasma: f64) -> f64 {
+        if let Some(ref mut pacer) = self.pacer {
+            pacer.wait_next();
+        }
+
         let error = (self.phi_ant - phi_plasma).sin();
+        if error.abs() > self.cfg.aot_safety.max_phase_error {
+            self.safety_violations += 1;
+            return self.phi_ant;
+        }
+
         let phase_error = if self.cfg.n_neurons > 0 {
             self.detector.step(error)
         } else {
             error
         };
+
         let d_omega = -self.cfg.k_p * phase_error - self.cfg.k_d * (self.omega_rmf - self.omega_nom);
-        self.omega_rmf += d_omega * self.dt;
+        let new_omega = self.omega_rmf + d_omega * self.dt;
+
+        if new_omega < 2.0 * PI * self.cfg.aot_safety.min_freq_hz || new_omega > 2.0 * PI * self.cfg.aot_safety.max_freq_hz {
+            self.safety_violations += 1;
+            self.omega_rmf = self.omega_rmf.clamp(
+                2.0 * PI * self.cfg.aot_safety.min_freq_hz,
+                2.0 * PI * self.cfg.aot_safety.max_freq_hz
+            );
+        } else {
+            self.omega_rmf = new_omega;
+        }
+
         self.phi_ant = (self.phi_ant + self.omega_rmf * self.dt) % (2.0 * PI);
         self.t += self.dt;
         self.phi_ant

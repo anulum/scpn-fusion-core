@@ -2015,7 +2015,34 @@ fn py_solve_frc_equilibrium<'py>(
 
 
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Copy)]
+enum PyPacingMode {
+    Sleep,
+    Spin,
+}
+
+#[pyclass]
+#[derive(Clone, Copy)]
+struct PyRmfAotCertificate {
+    #[pyo3(get, set)]
+    pub max_freq_hz: f64,
+    #[pyo3(get, set)]
+    pub min_freq_hz: f64,
+    #[pyo3(get, set)]
+    pub max_phase_error: f64,
+}
+
+#[pymethods]
+impl PyRmfAotCertificate {
+    #[new]
+    #[pyo3(signature = (max_freq_hz=5.0e6, min_freq_hz=1.0e5, max_phase_error=1.570796))]
+    fn new(max_freq_hz: f64, min_freq_hz: f64, max_phase_error: f64) -> Self {
+        Self { max_freq_hz, min_freq_hz, max_phase_error }
+    }
+}
+
+#[pyclass]
+#[derive(Clone, Copy)]
 struct PyRmfConfig {
     #[pyo3(get, set)]
     pub f_rmf_nom_hz: f64,
@@ -2027,19 +2054,22 @@ struct PyRmfConfig {
     pub k_d: f64,
     #[pyo3(get, set)]
     pub n_neurons: usize,
+    #[pyo3(get, set)]
+    pub aot_safety: PyRmfAotCertificate,
 }
 
 #[pymethods]
 impl PyRmfConfig {
     #[new]
-    #[pyo3(signature = (f_rmf_nom_hz=1.0e6, f_sampling_hz=10.0e6, k_p=0.5, k_d=0.01, n_neurons=128))]
-    fn new(f_rmf_nom_hz: f64, f_sampling_hz: f64, k_p: f64, k_d: f64, n_neurons: usize) -> Self {
+    #[pyo3(signature = (f_rmf_nom_hz=1.0e6, f_sampling_hz=10.0e6, k_p=0.5, k_d=0.01, n_neurons=128, aot_safety=PyRmfAotCertificate::new(5.0e6, 1.0e5, 1.570796)))]
+    fn new(f_rmf_nom_hz: f64, f_sampling_hz: f64, k_p: f64, k_d: f64, n_neurons: usize, aot_safety: PyRmfAotCertificate) -> Self {
         Self {
             f_rmf_nom_hz,
             f_sampling_hz,
             k_p,
             k_d,
             n_neurons,
+            aot_safety,
         }
     }
 }
@@ -2053,16 +2083,36 @@ struct PyRmfController {
 impl PyRmfController {
     #[new]
     fn new(config: PyRmfConfig) -> Self {
+        use fusion_physics::rmf_control::RmfAotCertificate;
         let cfg = RmfConfig {
             f_rmf_nom_hz: config.f_rmf_nom_hz,
             f_sampling_hz: config.f_sampling_hz,
             k_p: config.k_p,
             k_d: config.k_d,
             n_neurons: config.n_neurons,
+            aot_safety: RmfAotCertificate {
+                max_freq_hz: config.aot_safety.max_freq_hz,
+                min_freq_hz: config.aot_safety.min_freq_hz,
+                max_phase_error: config.aot_safety.max_phase_error,
+            },
         };
         Self {
             inner: RmfPhaseLockController::new(cfg),
         }
+    }
+
+    fn enable_pacing(&mut self, mode: PyPacingMode) {
+        use fusion_physics::precision_pacer::PacingMode;
+        let m = match mode {
+            PyPacingMode::Sleep => PacingMode::Sleep,
+            PyPacingMode::Spin => PacingMode::Spin,
+        };
+        self.inner.enable_pacing(m);
+    }
+
+    #[getter]
+    fn safety_violations(&self) -> u64 {
+        self.inner.safety_violations
     }
 
     fn step(&mut self, phi_plasma: f64) -> f64 {
@@ -2145,5 +2195,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_solve_rotating_frc_equilibrium, m)?)?;
     m.add_class::<PyRmfConfig>()?;
     m.add_class::<PyRmfController>()?;
+    m.add_class::<PyPacingMode>()?;
+    m.add_class::<PyRmfAotCertificate>()?;
     Ok(())
 }
