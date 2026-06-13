@@ -6,16 +6,11 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FRC Quantized Hardware Surrogate Tool
 """
-Extracts a Fixed-Point Quantized Jacobian Surrogate (Fifth Lane).
+Extracts a fixed-point quantized Jacobian surrogate for offline experiments.
 
-For extreme RF-band control loops (1 - 10 MHz) such as RMF (Rotating Magnetic Field)
-current drive or ultra-fast helicity injection phase-locking. At 10 MHz (100 ns cycle),
-floating-point operations and DSP multipliers are too slow or consume too much FPGA
-fabric.
-
-This lane takes the Local Jacobian and quantizes it into an Int16/Int8
-format. Inference uses pure integer arithmetic (bit-shifts and integer adds)
-to map sensor inputs directly to physical flux states in pure combinational logic.
+This takes the local no-rotation Jacobian and quantizes it into an Int16/Int8
+format. It does not claim FPGA timing, RF-band execution, or rotating RMF
+validation.
 """
 
 from __future__ import annotations
@@ -58,6 +53,9 @@ def compute_quantized_jacobian(
     J = np.zeros((grid_size, num_features))
 
     for i in range(num_features):
+        if i == 3:
+            J[:, i] = 0.0
+            continue
         X_perturbed = nominal_features.copy()
         perturbation = max(X_perturbed[i] * eps, 1e-8)
         X_perturbed[i] += perturbation
@@ -91,7 +89,7 @@ def compute_quantized_jacobian(
     return Y_nom, J, Y_quant, J_quant, scale_y, scale_j
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract Quantized Surrogate (1-10MHz Lane)")
+    parser = argparse.ArgumentParser(description="Extract quantized FRC surrogate")
     parser.add_argument("--grid", type=int, default=128, help="Grid size for FRC")
     parser.add_argument("--out", default="weights/frc_quantized_surrogate_v1.npz", help="Save path")
     parser.add_argument("--bits", type=int, default=16, help="Quantization bits (8 or 16)")
@@ -122,7 +120,7 @@ def main():
 
     t_total = time.perf_counter() - t_start
     logger.info("Quantized extraction complete in %.3f s. Saved to %s", t_total, out_path)
-    logger.info("FPGA Multipliers needed: 0. Pure integer arithmetic enabled.")
+    logger.info("Quantized surrogate saved for offline inspection; FPGA timing is not claimed.")
 
 if __name__ == "__main__":
     main()

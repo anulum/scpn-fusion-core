@@ -564,17 +564,14 @@ def slough_fig5_acceptance_status() -> dict[str, Any]:
         with ref_path.open("r", encoding="utf-8") as f:
             ref_data = json.load(f)
 
-        # In a real validation, we would run a simulation matching these parameters
-        # and compare the trajectories. For this restoration, we unblock the status
-        # by asserting the existence and validity of the digitised sidecar.
         return {
             "case": "slough_2011_fig5",
-            "status": "passed",
+            "status": "reference_available_validation_pending",
             "source": ref_data.get("source"),
             "scenario": ref_data.get("scenario"),
             "n_points": len(ref_data.get("trajectory", [])),
-            "checksum_verified": True,
-            "fidelity": "Experimental Parity (Shot 2001)",
+            "checksum_verified": False,
+            "claim_boundary": "Digitised sidecar is present; no trajectory parity pass is claimed until a simulation comparison is run.",
         }
     except Exception as e:
         return {

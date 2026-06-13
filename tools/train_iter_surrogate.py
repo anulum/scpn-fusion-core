@@ -15,9 +15,11 @@ performs PCA on resulting Psi fields, and trains a JAX MLP.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import time
 from pathlib import Path
+from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -47,6 +49,42 @@ def load_iter_dataset(data_path: str | Path) -> tuple[np.ndarray, np.ndarray]:
         return data["X"], data["Y"]
 
     raise ValueError("--data must point to an .npz file or a directory containing iter_X.npy and iter_Y.npy")
+
+
+def inspect_iter_dataset(
+    X: np.ndarray,
+    Y: np.ndarray,
+    *,
+    min_full_fidelity_samples: int = 50_000,
+    expected_features: int = 12,
+) -> dict[str, Any]:
+    """Return shape and evidence status for an ITER surrogate dataset."""
+    report: dict[str, Any] = {
+        "n_samples": int(X.shape[0]) if X.ndim >= 1 else 0,
+        "x_shape": list(X.shape),
+        "y_shape": list(Y.shape),
+        "expected_features": expected_features,
+        "min_full_fidelity_samples": min_full_fidelity_samples,
+        "x_finite": bool(np.all(np.isfinite(X))),
+        "y_finite": bool(np.all(np.isfinite(Y))),
+    }
+    if X.ndim != 2 or X.shape[1] != expected_features:
+        report["status"] = "blocked_invalid_feature_shape"
+    elif Y.ndim != 2 or Y.shape[0] != X.shape[0]:
+        report["status"] = "blocked_invalid_field_shape"
+    elif not report["x_finite"] or not report["y_finite"]:
+        report["status"] = "blocked_nonfinite_values"
+    elif X.shape[0] < min_full_fidelity_samples:
+        report["status"] = "development_dataset_below_full_fidelity_sample_count"
+    else:
+        report["status"] = "full_fidelity_iter_dataset_ready"
+    return report
+
+
+def write_iter_dataset_report(path: Path, report: dict[str, Any]) -> None:
+    """Write an ITER dataset evidence report."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 
@@ -235,6 +273,9 @@ def main():
     parser.add_argument("--samples", type=int, default=1000, help="Number of samples to generate")
     parser.add_argument("--epochs", type=int, default=EPOCHS, help="Training epochs")
     parser.add_argument("--out", default="weights/neural_equilibrium_iter_v1.npz", help="Save path")
+    parser.add_argument("--report", default="validation/reports/iter_surrogate_training_report.json", help="Dataset evidence report path")
+    parser.add_argument("--min-full-fidelity-samples", type=int, default=50_000)
+    parser.add_argument("--strict-full-fidelity", action="store_true")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
 
@@ -252,6 +293,16 @@ def main():
             logger.error("--config is required when generating data.")
             return
         X_raw, Y_raw = generate_iter_data(args.samples, args.config, args.seed)
+
+    dataset_report = inspect_iter_dataset(
+        X_raw,
+        Y_raw,
+        min_full_fidelity_samples=args.min_full_fidelity_samples,
+    )
+    write_iter_dataset_report(Path(args.report), dataset_report)
+    logger.info("ITER dataset status: %s", dataset_report["status"])
+    if args.strict_full_fidelity and dataset_report["status"] != "full_fidelity_iter_dataset_ready":
+        raise SystemExit(f"strict full-fidelity gate failed: {dataset_report['status']}")
 
     n_valid = len(X_raw)
     if n_valid < 2:

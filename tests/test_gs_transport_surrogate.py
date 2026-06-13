@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core import gs_transport_surrogate_training as gsts
+from scpn_fusion.core._surrogate_utils import relative_l2
 from scpn_fusion.core.fno_training import (
     MLPSurrogate,
     _generate_gs_transport_pairs,

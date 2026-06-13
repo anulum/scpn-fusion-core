@@ -4,13 +4,13 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — FRC Rotating Surrogate Training Tool
+# SCPN Fusion Core — FRC No-Rotation Surrogate Training Tool
 """
-Trains a JAX-accelerated MLP surrogate for the Rotating Rigid-Rotor FRC BVP.
+Trains a JAX-accelerated MLP surrogate for the no-rotation FRC profile.
 
-Generates data using the newly implemented 1D BVP solver,
+Generates data using the Steinhauer analytical limit,
 performs PCA on resulting profiles, and trains a JAX MLP.
-This serves as the secondary (surrogate) lane for 30 kHz control loops.
+This is an offline surrogate experiment, not a validated real-time control lane.
 """
 
 from __future__ import annotations
@@ -19,7 +19,6 @@ import argparse
 import logging
 import time
 from pathlib import Path
-from typing import Any
 
 import jax
 import jax.numpy as jnp

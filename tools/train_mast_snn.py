@@ -28,6 +28,7 @@ class ShotTrace:
     plasma_current_a: NDArray[np.float64]
     magnetic_trace_t: NDArray[np.float64]
     disruption_time_s: float
+    source: str
 
 
 class HardwareSNN:
@@ -119,9 +120,78 @@ def load_shot(ingestor: MastIngestor, shot_id: int) -> ShotTrace | None:
             plasma_current_a=plasma_current_a,
             magnetic_trace_t=magnetic_trace_t,
             disruption_time_s=float(time_s[disruption_idx]),
+            source="fair_mast_zarr",
         )
     except Exception:
         return None
+
+
+def _resample_to_summary_time(trace: NDArray[np.float64], n_time: int) -> NDArray[np.float64]:
+    """Resample a magnetic trace to the summary-current time base."""
+    flat = np.asarray(trace, dtype=np.float64).reshape(-1)
+    if len(flat) == n_time:
+        return np.nan_to_num(flat, nan=0.0, posinf=0.0, neginf=0.0)
+    if len(flat) == 0:
+        return np.zeros(n_time, dtype=np.float64)
+    sample_idx = np.linspace(0, len(flat) - 1, n_time).astype(int)
+    return np.nan_to_num(flat[sample_idx], nan=0.0, posinf=0.0, neginf=0.0)
+
+
+def load_local_npz_shot(cache_dir: Path, shot_id: int) -> ShotTrace | None:
+    """Load a locally materialised MAST NPZ shot artifact when available."""
+    path = cache_dir / f"mast_shot_{shot_id}.npz"
+    if not path.exists():
+        return None
+
+    try:
+        data = np.load(path, allow_pickle=False)
+        time_s = np.asarray(data["time"], dtype=np.float64)
+        plasma_current_a = np.asarray(data["ip"], dtype=np.float64)
+        if time_s.ndim != 1 or plasma_current_a.shape != time_s.shape:
+            return None
+
+        max_ip = float(np.max(np.abs(plasma_current_a)))
+        if max_ip <= 0.0:
+            return None
+        flattop = np.where(np.abs(plasma_current_a) > 0.8 * max_ip)[0]
+        if len(flattop) == 0:
+            return None
+
+        disruption_idx = int(flattop[-1])
+        for idx in range(disruption_idx, len(plasma_current_a)):
+            if abs(float(plasma_current_a[idx])) < 0.2 * max_ip:
+                disruption_idx = idx
+                break
+
+        magnetic_keys = [key for key in data.files if key.startswith("mag_") and key.endswith("_field")]
+        if not magnetic_keys:
+            return None
+        magnetic_trace_t = _resample_to_summary_time(np.asarray(data[magnetic_keys[0]], dtype=np.float64), len(time_s))
+
+        return ShotTrace(
+            time_s=time_s,
+            plasma_current_a=plasma_current_a,
+            magnetic_trace_t=magnetic_trace_t,
+            disruption_time_s=float(time_s[disruption_idx]),
+            source=f"local_npz:{path.name}",
+        )
+    except Exception:
+        return None
+
+
+def load_shot_from_sources(
+    cache_dir: Path,
+    shot_id: int,
+    *,
+    ingestor: MastIngestor | None,
+) -> ShotTrace | None:
+    """Load a shot from local NPZ evidence first, then FAIR MAST when available."""
+    local = load_local_npz_shot(cache_dir, shot_id)
+    if local is not None:
+        return local
+    if ingestor is None:
+        return None
+    return load_shot(ingestor, shot_id)
 
 
 def fine_tune_weights(
@@ -139,6 +209,28 @@ def fine_tune_weights(
             if load_shot(ingestor, shot_id) is not None:
                 weights *= 1.02
     return weights
+
+
+def adapt_weights_from_sources(
+    cache_dir: Path,
+    train_shots: list[int],
+    *,
+    ingestor: MastIngestor | None,
+    n_neurons: int,
+    seed: int,
+    epochs: int,
+) -> tuple[NDArray[np.float64], int]:
+    """Adapt deterministic sensitivities only over shots that can be loaded."""
+    weights = initialise_base_weights(n_neurons=n_neurons, seed=seed)
+    available = [
+        shot_id
+        for shot_id in train_shots
+        if load_shot_from_sources(cache_dir, shot_id, ingestor=ingestor) is not None
+    ]
+    for _epoch in range(epochs):
+        for _shot_id in available:
+            weights *= 1.02
+    return weights, len(available)
 
 
 def evaluate_lead_times(
@@ -191,6 +283,78 @@ def evaluate_lead_times(
     return report
 
 
+def evaluate_lead_times_from_sources(
+    cache_dir: Path,
+    val_shots: list[int],
+    *,
+    ingestor: MastIngestor | None,
+    weights: NDArray[np.float64],
+) -> list[dict[str, float | int | str]]:
+    """Evaluate lead-time evidence from local NPZ and FAIR MAST sources."""
+    detector = HardwareSNN(n_neurons=len(weights), weights=weights)
+    report: list[dict[str, float | int | str]] = []
+
+    for shot_id in val_shots:
+        trace = load_shot_from_sources(cache_dir, shot_id, ingestor=ingestor)
+        if trace is None:
+            report.append({"shot_id": shot_id, "status": "unavailable"})
+            continue
+
+        detector.reset()
+        dt_s = float(np.mean(np.diff(trace.time_s)))
+        magnetic_scale_t = max(float(np.max(np.abs(trace.magnetic_trace_t))), 1.0)
+        flattop_candidates = np.where(
+            np.abs(trace.plasma_current_a) > 0.8 * np.max(np.abs(trace.plasma_current_a))
+        )[0]
+        if len(flattop_candidates) == 0:
+            report.append({"shot_id": shot_id, "status": "no_flattop", "source": trace.source})
+            continue
+        flattop_start = int(flattop_candidates[0])
+        alarm_time_s: float | None = None
+
+        for idx in range(1, len(trace.time_s)):
+            if trace.time_s[idx] >= trace.disruption_time_s:
+                break
+            db_dt = (trace.magnetic_trace_t[idx] - trace.magnetic_trace_t[idx - 1]) / dt_s
+            score = detector.step(abs(db_dt / magnetic_scale_t))
+            if score > 0.85 and idx > flattop_start:
+                alarm_time_s = float(trace.time_s[idx])
+                break
+
+        if alarm_time_s is None:
+            report.append({"shot_id": shot_id, "status": "no_detection", "source": trace.source})
+            continue
+
+        report.append(
+            {
+                "shot_id": shot_id,
+                "status": "detected",
+                "source": trace.source,
+                "disruption_time_s": trace.disruption_time_s,
+                "alarm_time_s": alarm_time_s,
+                "lead_time_ms": (trace.disruption_time_s - alarm_time_s) * 1000.0,
+            }
+        )
+
+    return report
+
+
+def classify_full_fidelity_status(
+    *,
+    train_available_count: int,
+    validation_report: list[dict[str, float | int | str]],
+    min_train_shots: int,
+    min_validation_shots: int,
+) -> str:
+    """Classify whether the report has enough evidence for a full-fidelity claim."""
+    detected = [row for row in validation_report if row.get("status") == "detected"]
+    if train_available_count < min_train_shots:
+        return "blocked_insufficient_training_shots"
+    if len(detected) < min_validation_shots:
+        return "blocked_insufficient_detected_validation_shots"
+    return "full_fidelity_local_evidence_ready"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", type=Path, default=resolve_mast_cache_dir())
@@ -198,24 +362,45 @@ def main() -> None:
     parser.add_argument("--val-shots", nargs="+", type=int, default=[30466, 30465, 30463, 30462])
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--seed", type=int, default=1729)
+    parser.add_argument("--min-train-shots", type=int, default=3)
+    parser.add_argument("--min-validation-shots", type=int, default=3)
     parser.add_argument("--out", type=Path, default=Path("validation/reports/mast_snn_local_validation.json"))
     args = parser.parse_args()
 
-    ingestor = MastIngestor(cache_dir=args.cache_dir)
-    weights = fine_tune_weights(
-        ingestor,
+    try:
+        ingestor: MastIngestor | None = MastIngestor(cache_dir=args.cache_dir)
+    except ImportError:
+        ingestor = None
+
+    weights, train_available_count = adapt_weights_from_sources(
+        args.cache_dir,
         args.train_shots,
+        ingestor=ingestor,
         n_neurons=64,
         seed=args.seed,
         epochs=args.epochs,
     )
-    report = evaluate_lead_times(ingestor, args.val_shots, weights=weights)
+    report = evaluate_lead_times_from_sources(
+        args.cache_dir,
+        args.val_shots,
+        ingestor=ingestor,
+        weights=weights,
+    )
     detected = [row["lead_time_ms"] for row in report if row.get("status") == "detected"]
+    status = classify_full_fidelity_status(
+        train_available_count=train_available_count,
+        validation_report=report,
+        min_train_shots=args.min_train_shots,
+        min_validation_shots=args.min_validation_shots,
+    )
     payload = {
-        "claim_boundary": "Local MAST SNN validation evidence only; not a benchmark claim.",
+        "status": status,
+        "claim_boundary": "Full-fidelity MAST claims require the configured minimum train and detected validation shots; otherwise this report is blocked evidence.",
         "cache_dir": str(args.cache_dir),
         "train_shots": args.train_shots,
         "val_shots": args.val_shots,
+        "train_available_count": train_available_count,
+        "detected_validation_count": len(detected),
         "epochs": args.epochs,
         "seed": args.seed,
         "average_lead_time_ms": float(np.mean(detected)) if detected else None,

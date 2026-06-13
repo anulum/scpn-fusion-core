@@ -9,7 +9,6 @@
 
 use super::data::{FrcEquilibriumState, FrcSolverError, RigidRotorFrcInputs};
 use ndarray::Array1;
-use fusion_math::tridiag::thomas_solve;
 
 const MU_0: f64 = 4.0 * std::f64::consts::PI * 1.0e-7;
 const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
@@ -85,9 +84,6 @@ pub fn solve_frc_equilibrium(
 
     let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
     let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
-
-    let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
-    let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
     let j_theta = toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
     let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
 
@@ -106,106 +102,9 @@ pub fn solve_rotating_frc_equilibrium(
     rho_grid: &Array1<f64>,
     tolerance: f64,
 ) -> Result<FrcEquilibriumState, FrcSolverError> {
-    if !tolerance.is_finite() || tolerance <= 0.0 {
-        return Err(FrcSolverError::InvalidInput("tolerance must be positive"));
-    }
+    validate_inputs(inputs, tolerance)?;
     validate_grid(rho_grid, inputs.r_s)?;
-    let rho = rho_grid.clone();
-    let delta = match inputs.delta {
-        Some(value) => value,
-        None => ion_gyroradius_m(inputs.t_i_ev, inputs.b_ext, DEUTERIUM_MASS_AMU)?,
-    };
-
-    // Initialize static analytical solution for guess
-    let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
-    let mut psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
-
-    let psi_0 = psi[0];
-    let psi_max = psi[psi.len() - 1];
-
-    // expected static psi at R_s
-    let expected_psi_rs = -inputs.b_ext * inputs.r_s * delta * (log_cosh(0.0) - log_cosh(-inputs.r_s / (2.0 * delta)));
-    let psi_ref = expected_psi_rs;
-
-    // Centrifugal term: gamma = m_i omega^2 / (2 (T_i + T_e) e)
-    let gamma = (DEUTERIUM_MASS_AMU * ATOMIC_MASS_KG * inputs.theta_dot * inputs.theta_dot)
-        / (2.0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C);
-
-    let n = rho.len();
-    let mut a_sub = vec![0.0; n - 2];
-    let mut b_main = vec![0.0; n - 2];
-    let mut c_sup = vec![0.0; n - 2];
-
-    for i in 1..n-1 {
-        let h0 = rho[i] - rho[i - 1];
-        let h1 = rho[i + 1] - rho[i];
-        let r_i = rho[i];
-        a_sub[i - 1] = (2.0 + h1 / r_i) / (h0 * (h0 + h1));
-        b_main[i - 1] = -2.0 / (h0 * h1) - (h1 - h0) / (r_i * h0 * h1);
-        c_sup[i - 1] = (2.0 - h0 / r_i) / (h1 * (h0 + h1));
-    }
-
-    let max_iter = 200;
-    let mut converged = false;
-    let mut residual = 0.0;
-
-    let source_coeff = -inputs.b_ext / (inputs.r_s * delta);
-    let exp_coeff = 2.0 / (inputs.b_ext * inputs.r_s * delta);
-
-    for _iter in 0..max_iter {
-        let mut d_rhs = vec![0.0; n - 2];
-        for i in 1..n-1 {
-            let r_i = rho[i];
-            let psi_i = psi[i];
-            let s_i = r_i * r_i * source_coeff * (exp_coeff * (psi_i - psi_ref)).exp() * (gamma * r_i * r_i).exp();
-            d_rhs[i - 1] = s_i;
-        }
-
-        d_rhs[0] -= a_sub[0] * psi_0;
-        d_rhs[n - 3] -= c_sup[n - 3] * psi_max;
-
-        let psi_new_inner = thomas_solve(&a_sub, &b_main, &c_sup, &d_rhs);
-
-        let mut max_diff = 0.0;
-        for i in 1..n-1 {
-            let psi_new = 0.5 * psi[i] + 0.5 * psi_new_inner[i - 1]; // under-relaxation
-            let diff = (psi_new - psi[i]).abs();
-            if diff > max_diff {
-                max_diff = diff;
-            }
-            psi[i] = psi_new;
-        }
-
-        if max_diff < tolerance {
-            converged = true;
-            residual = max_diff;
-            break;
-        }
-    }
-
-    if !converged {
-        return Err(FrcSolverError::InvalidInput("Picard iteration failed to converge"));
-    }
-
-    let dpsi_dr = gradient_edge_order2(&rho, &psi);
-    let mut b_z = Array1::zeros(n);
-    b_z[0] = dpsi_dr[1] / rho[1]; // approx limit
-    for i in 1..n {
-        b_z[i] = dpsi_dr[i] / rho[i];
-    }
-
-    let mut p = Array1::zeros(n);
-    let mut j_theta = Array1::zeros(n);
-    let p_max = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
-    for i in 0..n {
-        let r_i = rho[i];
-        let psi_i = psi[i];
-        p[i] = p_max * (exp_coeff * (psi_i - psi_ref)).exp() * (gamma * r_i * r_i).exp();
-        j_theta[i] = - (1.0 / MU_0) * r_i * source_coeff * (exp_coeff * (psi_i - psi_ref)).exp() * (gamma * r_i * r_i).exp();
-    }
-
-    let dbz_dr_analytic = gradient_edge_order2(&rho, &b_z);
-    build_equilibrium_state(inputs, rho, psi, b_z, j_theta, p, tolerance, converged, residual, delta, dbz_dr_analytic)
+    Err(FrcSolverError::RotatingBvpNotImplemented)
 }
 
 

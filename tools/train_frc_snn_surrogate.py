@@ -4,15 +4,13 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — FRC Stochastic Computing Surrogate Tool
+# SCPN Fusion Core — FRC SNN Surrogate Tool
 """
-Trains a Stochastic Computing (SC) SNN Surrogate for 1-10 MHz control.
+Trains an experimental software SNN surrogate for the no-rotation FRC profile.
 
-Follows the SC-NEUROCORE architecture:
-Values are encoded as stochastic bitstreams (Bernoulli trials).
-Multiplication is reduced to AND gates; addition to bit-counters.
-This script trains a JAX-accelerated SNN with Surrogate Gradients,
-benchmarks it on the GTX 1060, and provides the FPGA export bridge.
+This script does not provide FPGA export or MHz control validation. It trains a
+JAX-accelerated surrogate-gradient model against generated Steinhauer-limit
+samples for offline experiments.
 """
 
 from __future__ import annotations
@@ -95,23 +93,27 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
         )
         try:
             state = solve_frc_equilibrium(inputs, rho_grid, solver="rust")
-            if not state.converged: continue
+            if not state.converged:
+                continue
             X.append([inputs.n0/1e20, inputs.T_i_eV/1000, inputs.T_e_eV/1000, inputs.R_s, inputs.B_ext, inputs.delta])
             Y.append(state.B_z)
-        except Exception: continue
+        except Exception:
+            continue
     return np.array(X), np.array(Y)
 
 def main():
-    parser = argparse.ArgumentParser(description="Train FRC SNN Surrogate (Stochastic Lane)")
+    parser = argparse.ArgumentParser(description="Train experimental FRC SNN surrogate")
     parser.add_argument("--samples", type=int, default=200)
     parser.add_argument("--grid", type=int, default=64)
     parser.add_argument("--out", default="weights/frc_snn_surrogate_v1.npz")
+    parser.add_argument("--export-verilog", action="store_true", help="Fail-closed placeholder for future RTL export")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
     X_raw, Y_raw = generate_frc_data(args.samples, args.grid)
 
-    if len(X_raw) < 10: return
+    if len(X_raw) < 10:
+        return
 
     # PCA
     from scpn_fusion.core.neural_equilibrium import MinimalPCA
@@ -143,10 +145,11 @@ def main():
         loss, grads = value_and_grad(loss_fn)(p, x, y)
         return jax.tree_util.tree_map(lambda p_i, g_i: p_i - lr * g_i, p, grads), loss
 
-    logger.info("Training SNN surrogate on GTX 1060...")
+    logger.info("Training software SNN surrogate...")
     for i in range(50):
         params, loss = update(params, X_jax, Y_jax)
-        if i % 10 == 0: logger.info("Epoch %d: Loss=%.6f", i, loss)
+        if i % 10 == 0:
+            logger.info("Epoch %d: Loss=%.6f", i, loss)
 
     # Benchmark Latency
     t0 = time.perf_counter()
@@ -154,41 +157,19 @@ def main():
     for _ in range(100):
         _ = model_forward_snn(params, x_single).block_until_ready()
     lat = (time.perf_counter() - t0) / 100 * 1e6
-    logger.info("Simulated SNN Latency (GTX 1060): %.2f us (%.1f kHz)", lat, 1000/lat*1000)
+    logger.info("Software SNN inference latency on this host: %.2f us (%.1f kHz)", lat, 1000/lat*1000)
 
     # Save
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     np.savez(args.out, **params, pca_mean=pca.mean_, pca_components=pca.components_)
-    export_to_verilog(params, 'build/frc_snn_core.v')
-    logger.info("SNN Surrogate Saved. Architecture compatible with SC-NEUROCORE Stochastic logic.")
+    if args.export_verilog:
+        export_to_verilog(params, 'build/frc_snn_core.v')
+    logger.info("SNN surrogate saved for software experiments.")
 
 
 def export_to_verilog(params, out_path):
-    """Generates a synthesizable Verilog module for the FRC SNN Lane (5th/6th Lane)."""
-    logger.info(f"Exporting SNN to Verilog: {out_path}")
-
-    w = np.array(params["W"])
-    b = np.array(params["b"])
-
-    n_in = w.shape[1]
-    n_neurons = w.shape[0]
-
-    hdl = f"""
-module frc_snn_core (
-    input clk,
-    input rst_n,
-    input [7:0] features_in [{n_in}],
-    output [15:0] flux_out [10]
-);
-    // SC-NeuroCore Stochastic Computing Logic
-    // Multiplication via AND gates
-    // Integration via 16-bit LFSR bit-counters
-
-    parameter N_NEURONS = {n_neurons};
-
-    // ... generated weights and threshold logic ...
-endmodule
-"""
-    Path(out_path).write_text(hdl)
+    """Fail closed until real RTL generation is implemented."""
+    raise NotImplementedError("FRC SNN Verilog export is not implemented")
 
 if __name__ == "__main__":
     main()

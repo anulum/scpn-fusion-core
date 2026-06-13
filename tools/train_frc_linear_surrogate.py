@@ -6,12 +6,10 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FRC Linear Surrogate Training Tool
 """
-Trains an ultra-fast Linear/Ridge surrogate for the Rotating Rigid-Rotor FRC BVP.
+Trains a Linear/Ridge surrogate for the no-rotation FRC profile.
 
-Generates data using the 1D BVP solver, performs PCA on the profiles,
-and trains a purely linear mapping matrix.
-This serves as the "Third Lane" for extreme real-time execution (100+ kHz)
-on FPGAs or standard microcontrollers.
+Generates data using the Steinhauer analytical limit, performs PCA on the
+profiles, and trains a purely linear mapping matrix for offline experiments.
 """
 
 from __future__ import annotations
@@ -76,7 +74,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
 # ── Training Entry Point ─────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Train FRC Linear Surrogate (100kHz Lane)")
+    parser = argparse.ArgumentParser(description="Train FRC linear surrogate")
     parser.add_argument("--samples", type=int, default=500, help="Number of samples to generate")
     parser.add_argument("--grid", type=int, default=256, help="Grid size for FRC")
     parser.add_argument("--out", default="weights/frc_linear_surrogate_v1.npz", help="Save path")

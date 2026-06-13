@@ -6,15 +6,13 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FRC Local Jacobian Surrogate Training Tool
 """
-Extracts an ultra-low-latency Local Jacobian (State-Space) Surrogate.
+Extracts a local Jacobian surrogate for the no-rotation FRC profile.
 
-For extreme control loops (500+ kHz) using GaN inverters on bare-metal FPGAs,
-even PCA dimensionality reduction overhead (Lane 3) is too slow.
-This "Fourth Lane" computes the exact analytical gradients around a nominal
-operating point using finite differences against the 1D Rust BVP Oracle.
+This computes finite-difference gradients around a nominal operating point
+using the Steinhauer analytical limit. The theta_dot column is fixed at zero
+because rotating BVP support is intentionally fail-closed.
 
-Inference requires 0 hidden layers and 0 PCA inverse transforms.
-It is a direct matrix-vector multiplication mapping State -> Physical Space:
+It is a direct matrix-vector mapping from local state to physical space:
 Y_pred = Y_nom + J @ (X - X_nom)
 """
 
@@ -66,6 +64,9 @@ def compute_local_jacobian(
 
     for i in range(num_features):
         logger.info("  Computing d/d(%s)...", feature_names[i])
+        if feature_names[i] == "theta_dot":
+            J[:, i] = 0.0
+            continue
 
         # Perturb
         X_perturbed = nominal_features.copy()
@@ -92,7 +93,7 @@ def compute_local_jacobian(
     return Y_nom, J
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract FRC Jacobian Surrogate (500kHz Lane)")
+    parser = argparse.ArgumentParser(description="Extract FRC local Jacobian surrogate")
     parser.add_argument("--grid", type=int, default=256, help="Grid size for FRC")
     parser.add_argument("--out", default="weights/frc_jacobian_surrogate_v1.npz", help="Save path")
     args = parser.parse_args()

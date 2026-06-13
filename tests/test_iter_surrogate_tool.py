@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from tools.train_iter_surrogate import default_iter_dataset_paths, load_iter_dataset
+from tools.train_iter_surrogate import default_iter_dataset_paths, inspect_iter_dataset, load_iter_dataset
 
 
 def test_default_iter_dataset_paths_are_directory_relative(tmp_path) -> None:
@@ -42,3 +42,28 @@ def test_load_iter_dataset_from_npz(tmp_path) -> None:
 
     np.testing.assert_allclose(loaded_x, x)
     np.testing.assert_allclose(loaded_y, y)
+
+
+def test_iter_dataset_report_distinguishes_development_from_full_fidelity() -> None:
+    x = np.ones((10, 12), dtype=np.float64)
+    y = np.ones((10, 16), dtype=np.float64)
+
+    dev_report = inspect_iter_dataset(x, y, min_full_fidelity_samples=50)
+    ready_report = inspect_iter_dataset(x, y, min_full_fidelity_samples=10)
+
+    assert dev_report["status"] == "development_dataset_below_full_fidelity_sample_count"
+    assert ready_report["status"] == "full_fidelity_iter_dataset_ready"
+
+
+def test_iter_dataset_report_blocks_invalid_shapes_and_nonfinite_values() -> None:
+    x = np.ones((10, 11), dtype=np.float64)
+    y = np.ones((10, 16), dtype=np.float64)
+    assert inspect_iter_dataset(x, y)["status"] == "blocked_invalid_feature_shape"
+
+    x = np.ones((10, 12), dtype=np.float64)
+    y = np.ones((9, 16), dtype=np.float64)
+    assert inspect_iter_dataset(x, y)["status"] == "blocked_invalid_field_shape"
+
+    y = np.ones((10, 16), dtype=np.float64)
+    y[0, 0] = np.nan
+    assert inspect_iter_dataset(x, y)["status"] == "blocked_nonfinite_values"

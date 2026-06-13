@@ -26,15 +26,15 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import numpy as np
-from numpy.typing import NDArray[np.float64]
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
 _nengo_available = True
-FloatArray = NDArray[np.float64][np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
 def nengo_available() -> bool:

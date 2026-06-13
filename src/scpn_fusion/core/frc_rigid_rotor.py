@@ -371,7 +371,7 @@ def _fill_equilibrium_state(
         force_balance_residual=force_residual,
         force_balance_residual_linf=force_balance_residual_linf,
         force_balance_residual_l2=force_balance_residual_l2,
-        model="steinhauer_2011_rotating_analytic_picard",
+        model="steinhauer_2011_no_rotation_analytical",
     )
 
 
@@ -461,16 +461,7 @@ def solve_frc_equilibrium(
     delta = inputs.delta if inputs.delta is not None else ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
 
     if inputs.theta_dot != 0.0:
-        if solver == "rust":
-            try:
-                import scpn_fusion_rs
-                state_dict = scpn_fusion_rs.solve_rotating_frc_equilibrium_rust(
-                    inputs.n0, inputs.T_i_eV, inputs.T_e_eV, inputs.theta_dot, inputs.R_s, inputs.B_ext, rho_grid, tolerance, inputs.delta
-                )
-                return FRCEquilibriumState(**state_dict)
-            except (ImportError, AttributeError):
-                pass
-        return _solve_rotating_numpy(inputs, rho, delta, tolerance, max_iter)
+        raise NotImplementedError("rotating rigid-rotor BVP support is not implemented yet")
 
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
     B_z = -inputs.B_ext * np.tanh(argument)
