@@ -47,6 +47,7 @@ _FULL_PHYSICS_MATRIX = np.array(
     ],
     dtype=np.float64,
 )
+_FULL_PHYSICS_MATRIX_INV = np.linalg.inv(_FULL_PHYSICS_MATRIX)
 
 
 def _build_scpn_controller() -> NeuroSymbolicController:
@@ -171,7 +172,7 @@ def _physics_step(x: float, u: float, d: float, mode: str) -> float:
         return float(base)
 
     rhs = np.array([x, u, d, x * x, u * u, d * d], dtype=np.float64)
-    correction = np.linalg.solve(_FULL_PHYSICS_MATRIX, rhs)
+    correction = _FULL_PHYSICS_MATRIX_INV @ rhs
     damping = 0.004 * float(np.tanh(correction[0]))
     act_gain = 0.004 * float(np.tanh(correction[1]))
     drift = 0.002 * float(np.tanh(correction[2]))

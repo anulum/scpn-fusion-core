@@ -1,5 +1,5 @@
 {
-  "accepted_full_fidelity": false,
+  "accepted_full_fidelity": true,
   "freegs_examples": [
     {
       "commit": "9fbec2056b4322ea253bb5614896d549365163f3",
@@ -743,6 +743,40 @@
       ]
     }
   ],
+  "same_case_public_reference_output": {
+    "case_count": 2,
+    "cases": [
+      {
+        "case_id": "freegs_01_test_tokamak_freeboundary",
+        "coil_count": 4,
+        "coil_vacuum_sidecar_ready": true,
+        "example_path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
+        "example_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
+        "external_psi_shape": [
+          65,
+          65
+        ],
+        "machine_class": "TestTokamak",
+        "same_case_public_reference_output_ready": true
+      },
+      {
+        "case_id": "freegs_16_diiid_public_example",
+        "coil_count": 18,
+        "coil_vacuum_sidecar_ready": true,
+        "example_path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+        "example_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
+        "external_psi_shape": [
+          65,
+          65
+        ],
+        "machine_class": "DIIID",
+        "same_case_public_reference_output_ready": true
+      }
+    ],
+    "reference_output_ready": true,
+    "report_path": "validation/reports/freegs_public_example_reconstruction.json",
+    "status": "accepted_same_case_public_freegs_reconstruction_reference_output"
+  },
   "schema": "free-boundary-public-machine-metadata-inventory.v1",
   "surface": "free_boundary_equilibrium"
 }

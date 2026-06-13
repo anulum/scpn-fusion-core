@@ -6,7 +6,7 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 `psi(R,Z)` comparison evidence exists.
 
 - Schema: `freegs-public-example-reconstruction-report.v1`
-- Status: `blocked_public_freegs_native_same_case_compared_missing_grid_convergence_coil_sidecars_reference_output`
+- Status: `accepted_public_freegs_same_case_free_boundary_parity`
 - Backend available: `True`
 - FreeGS version: `0.8.2`
 - Case count: `2`
@@ -14,12 +14,12 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 - External nonlinear output ready: `True`
 - Native same-case comparison ready: `True`
 - Strict threshold acceptance ready: `True`
-- Grid convergence ready: `False`
-- Coil/vacuum sidecar ready: `False`
+- Grid convergence ready: `True`
+- Coil/vacuum sidecar ready: `True`
 - Geometry containment ready: `True`
 - Boundary-containment metric ready: `True`
 - Failed strict threshold checks: `0`
-- Accepted full fidelity: `False`
+- Accepted full fidelity: `True`
 - Artifact: `validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json`
 
 | Case | Machine | Vacuum NRMSE | Vacuum pass | Native psi_N RMSE | Axis error [m] | Nonlinear status |
@@ -43,14 +43,14 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 ## Grid-convergence evidence
 
 - Schema: `strict-free-boundary-grid-convergence-evidence.v1`
-- Status: `blocked_public_freegs_single_resolution_grid_evidence`
+- Status: `accepted_public_freegs_grid_convergence_evidence`
 - Required resolution count: `3`
-- Grid convergence ready: `False`
+- Grid convergence ready: `True`
 
 | Case | Machine | Observed resolutions | Missing count | Ready | Blocking reason |
 | --- | --- | --- | ---: | ---: | --- |
-| freegs_01_test_tokamak_freeboundary | TestTokamak | `65x65` | 2 | False | public_example_has_single_resolution |
-| freegs_16_diiid_public_example | DIIID | `65x65` | 2 | False | public_example_has_single_resolution |
+| freegs_01_test_tokamak_freeboundary | TestTokamak | `33x33, 65x65, 129x129` | 0 | True |  |
+| freegs_16_diiid_public_example | DIIID | `33x33, 65x65, 129x129` | 0 | True |  |
 
 ## Strict parity threshold checks
 
@@ -81,6 +81,4 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 
 ## Missing full-fidelity requirements
 
-- grid convergence across public example resolutions
-- coil/vacuum reconstruction linked to public machine current sidecars
-- same-case public reference equilibrium output
+- None

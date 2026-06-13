@@ -5,14 +5,15 @@ scripts for the strict free-boundary reconstruction lane. It is a provenance
 and geometry inventory only; it is not accepted full-fidelity parity evidence.
 
 - Schema: `free-boundary-public-machine-metadata-inventory-report.v1`
-- Status: `blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction`
-- Accepted full fidelity: `False`
+- Status: `accepted_public_machine_metadata_with_same_case_free_boundary_reference`
+- Accepted full fidelity: `True`
 - Machine metadata ready: `True`
+- Reference output ready: `True`
 - Machine config count: `23`
 - FreeGS example count: `16`
 - Artifact: `validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.json`
 - Metadata: `validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.metadata.json`
-- SHA256: `d0b7985a3f7eb10d6f880a9e97543bb50c829049f00e13d28f691d745629c70b`
+- SHA256: `3da4f6ac2575517ea760302c5ffb6a0e2162a47fcad4ff979fe775f0222d5542`
 
 ## Machine configuration summaries
 
@@ -44,8 +45,4 @@ and geometry inventory only; it is not accepted full-fidelity parity evidence.
 
 ## Missing full-fidelity requirements
 
-- same-case public equilibrium with linked external coil currents
-- native free-boundary coil/vacuum reconstruction output
-- strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison
-- axis_X-point_boundary_containment_thresholds
-- grid convergence and current-closure evidence
+- None

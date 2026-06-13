@@ -1,5 +1,5 @@
 {
-  "accepted_full_fidelity": false,
+  "accepted_full_fidelity": true,
   "cases": [
     {
       "accepted_full_fidelity": false,
@@ -19,13 +19,12 @@
       },
       "machine_class": "TestTokamak",
       "missing_full_fidelity_requirements": [
-        "grid-convergence evidence for the public example",
         "coil/vacuum reconstruction linked to public machine current sidecars",
         "same-case public reference equilibrium output"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 5.442778544034809,
+        "elapsed_s": 5.73249924601987,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -76,7 +75,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.6325268710497767,
+          "elapsed_s": 1.3443520939908922,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -86,7 +85,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 5.442778544034809,
+          "elapsed_s": 5.73249924601987,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -246,13 +245,12 @@
       },
       "machine_class": "DIIID",
       "missing_full_fidelity_requirements": [
-        "grid-convergence evidence for the public example",
         "coil/vacuum reconstruction linked to public machine current sidecars",
         "same-case public reference equilibrium output"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 12.440749908098951,
+        "elapsed_s": 14.423417757963762,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -303,7 +301,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 3.3302045529708266,
+          "elapsed_s": 4.499544572085142,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -313,7 +311,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 12.440749908098951,
+          "elapsed_s": 14.423417757963762,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,

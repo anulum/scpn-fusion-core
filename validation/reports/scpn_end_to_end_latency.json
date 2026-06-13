@@ -1,89 +1,89 @@
 {
-  "generated_at_utc": "2026-05-24T09:19:37.159402+00:00",
-  "runtime_seconds": 0.23475997301284224,
+  "generated_at_utc": "2026-06-13T20:54:49.358157+00:00",
+  "runtime_seconds": 0.5717729090247303,
   "scpn_end_to_end_latency": {
     "seed": 42,
     "steps": 320,
     "modes": {
       "surrogate": {
         "SNN": {
-          "runtime_backend": "numpy",
+          "runtime_backend": "rust",
           "rmse": 0.07458332825575847,
-          "p50_loop_ms": 0.18361100228503346,
-          "p95_loop_ms": 0.2837562075001188,
-          "p99_loop_ms": 0.4498493426945061,
-          "p95_sensor_ms": 0.006404839223250747,
-          "p95_controller_ms": 0.27160945028299466,
-          "p95_actuator_ms": 0.00869261712068692,
-          "p95_physics_ms": 0.0006276619387790562
+          "p50_loop_ms": 0.26078696828335524,
+          "p95_loop_ms": 0.7609175518155104,
+          "p99_loop_ms": 3.639670277480036,
+          "p95_sensor_ms": 0.015187636017799377,
+          "p95_controller_ms": 0.7235245313495399,
+          "p95_actuator_ms": 0.023882777895778425,
+          "p95_physics_ms": 0.0019419821910560166
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13663350372195604,
-          "p50_loop_ms": 0.00927700602915138,
-          "p95_loop_ms": 0.012165223597548902,
-          "p99_loop_ms": 0.015646280080545694,
-          "p95_sensor_ms": 0.003780014230869711,
-          "p95_controller_ms": 0.004436797462403775,
-          "p95_actuator_ms": 0.003703607944771648,
-          "p95_physics_ms": 0.00019373837858438508
+          "p50_loop_ms": 0.0164274824783206,
+          "p95_loop_ms": 0.03482300089672208,
+          "p99_loop_ms": 0.07595410803332925,
+          "p95_sensor_ms": 0.010703504085540775,
+          "p95_controller_ms": 0.012828398030251266,
+          "p95_actuator_ms": 0.009214540477842096,
+          "p95_physics_ms": 0.0007668160833418371
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05115337472048825,
-          "p50_loop_ms": 0.05271448753774166,
-          "p95_loop_ms": 0.08537324756616729,
-          "p99_loop_ms": 0.14005983917741108,
-          "p95_sensor_ms": 0.004106386040803048,
-          "p95_controller_ms": 0.07300699508050458,
-          "p95_actuator_ms": 0.009638555638957772,
-          "p95_physics_ms": 0.0003739725798368456
+          "p50_loop_ms": 0.1402029301971197,
+          "p95_loop_ms": 0.2284983638674021,
+          "p99_loop_ms": 0.5780387902632362,
+          "p95_sensor_ms": 0.014346942771226171,
+          "p95_controller_ms": 0.17675475683063277,
+          "p95_actuator_ms": 0.038485508412122726,
+          "p95_physics_ms": 0.0015072524547576904
         }
       },
       "full": {
         "SNN": {
-          "runtime_backend": "numpy",
+          "runtime_backend": "rust",
           "rmse": 0.07443897829335305,
-          "p50_loop_ms": 0.17808697884902358,
-          "p95_loop_ms": 0.2941434155218304,
-          "p99_loop_ms": 0.42491474421694886,
-          "p95_sensor_ms": 0.007220852421596646,
-          "p95_controller_ms": 0.24841360427672043,
-          "p95_actuator_ms": 0.007386448851320895,
-          "p95_physics_ms": 0.030485651222988967
+          "p50_loop_ms": 0.21213502623140812,
+          "p95_loop_ms": 0.4550228593870999,
+          "p99_loop_ms": 0.8809176436625423,
+          "p95_sensor_ms": 0.011730846017599113,
+          "p95_controller_ms": 0.368325342424214,
+          "p95_actuator_ms": 0.013400125317275526,
+          "p95_physics_ms": 0.025048328097909703
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13817093429586896,
-          "p50_loop_ms": 0.020732011762447655,
-          "p95_loop_ms": 0.0466310142655857,
-          "p99_loop_ms": 0.059495699242688715,
-          "p95_sensor_ms": 0.008111105125863105,
-          "p95_controller_ms": 0.00788938341429457,
-          "p95_actuator_ms": 0.006501801544800402,
-          "p95_physics_ms": 0.02369274443481118
+          "p50_loop_ms": 0.02165685873478651,
+          "p95_loop_ms": 0.04609077004715801,
+          "p99_loop_ms": 1.0075303167104734,
+          "p95_sensor_ms": 0.011864362750202419,
+          "p95_controller_ms": 0.010826776269823313,
+          "p95_actuator_ms": 0.00685853883624077,
+          "p95_physics_ms": 0.018128217197954655
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05258547371664243,
-          "p50_loop_ms": 0.08377899939659983,
-          "p95_loop_ms": 0.13183545524952933,
-          "p99_loop_ms": 0.18072941398713738,
-          "p95_sensor_ms": 0.009138001769315451,
-          "p95_controller_ms": 0.08563560259062798,
-          "p95_actuator_ms": 0.01426124799763784,
-          "p95_physics_ms": 0.030579189478885382
+          "p50_loop_ms": 0.12229685671627522,
+          "p95_loop_ms": 0.2598693943582478,
+          "p99_loop_ms": 1.6085330746136628,
+          "p95_sensor_ms": 0.0154070556163788,
+          "p95_controller_ms": 0.16536129405722025,
+          "p95_actuator_ms": 0.031029514502733994,
+          "p95_physics_ms": 0.0402899109758437
         }
       }
     },
-    "snn_runtime_backend": "numpy",
-    "threshold_profile": "numpy_fallback",
+    "snn_runtime_backend": "rust",
+    "threshold_profile": "accelerated",
     "ratios": {
-      "snn_full_to_surrogate_p95_ratio": 1.0366060996981263
+      "snn_full_to_surrogate_p95_ratio": 0.5979923295256347
     },
     "thresholds": {
-      "max_snn_p95_loop_ms_surrogate": 10.0,
-      "max_snn_p95_loop_ms_full": 14.0,
+      "max_snn_p95_loop_ms_surrogate": 8.0,
+      "max_snn_p95_loop_ms_full": 12.0,
       "max_snn_full_to_surrogate_ratio": 8.0
     },
     "passes_thresholds": true

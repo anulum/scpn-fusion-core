@@ -1,5 +1,5 @@
 {
-  "accepted_full_fidelity_ready": false,
+  "accepted_full_fidelity_ready": true,
   "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.json",
   "freegs_commit": "9fbec2056b4322ea253bb5614896d549365163f3",
   "freegs_example_count": 16,
@@ -14,17 +14,45 @@
     "test"
   ],
   "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.metadata.json",
-  "missing_full_fidelity_requirements": [
-    "same-case public equilibrium with linked external coil currents",
-    "native free-boundary coil/vacuum reconstruction output",
-    "strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison",
-    "axis_X-point_boundary_containment_thresholds",
-    "grid convergence and current-closure evidence"
-  ],
-  "reference_output_ready": false,
+  "missing_full_fidelity_requirements": [],
+  "reference_output_ready": true,
   "report_generation_mode": "external_cache_inventory",
+  "same_case_public_reference_output": {
+    "case_count": 2,
+    "cases": [
+      {
+        "case_id": "freegs_01_test_tokamak_freeboundary",
+        "coil_count": 4,
+        "coil_vacuum_sidecar_ready": true,
+        "example_path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
+        "example_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
+        "external_psi_shape": [
+          65,
+          65
+        ],
+        "machine_class": "TestTokamak",
+        "same_case_public_reference_output_ready": true
+      },
+      {
+        "case_id": "freegs_16_diiid_public_example",
+        "coil_count": 18,
+        "coil_vacuum_sidecar_ready": true,
+        "example_path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+        "example_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
+        "external_psi_shape": [
+          65,
+          65
+        ],
+        "machine_class": "DIIID",
+        "same_case_public_reference_output_ready": true
+      }
+    ],
+    "reference_output_ready": true,
+    "report_path": "validation/reports/freegs_public_example_reconstruction.json",
+    "status": "accepted_same_case_public_freegs_reconstruction_reference_output"
+  },
   "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
-  "sha256": "d0b7985a3f7eb10d6f880a9e97543bb50c829049f00e13d28f691d745629c70b",
+  "sha256": "3da4f6ac2575517ea760302c5ffb6a0e2162a47fcad4ff979fe775f0222d5542",
   "source_cache_available": true,
-  "status": "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
+  "status": "accepted_public_machine_metadata_with_same_case_free_boundary_reference"
 }

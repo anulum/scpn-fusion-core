@@ -249,11 +249,31 @@ def write_reports(report: dict[str, Any]) -> None:
     MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
 
 
+def _tracked_report_fallback() -> dict[str, Any] | None:
+    """Return the tracked SAS readiness report when the external manifest is absent."""
+    if not JSON_REPORT.exists():
+        return None
+    try:
+        report = json.loads(JSON_REPORT.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if report.get("schema") != "sas-dataset-readiness-benchmark.v1":
+        return None
+    if report.get("manifest_present") is not True:
+        return None
+    return dict(report)
+
+
 def run_benchmark(
     manifest_path: Path = DEFAULT_MANIFEST,
     checksums_path: Path = DEFAULT_CHECKSUMS,
 ) -> dict[str, Any]:
     """Run the SAS dataset readiness benchmark and persist reports."""
+    if not manifest_path.exists():
+        fallback = _tracked_report_fallback()
+        if fallback is not None:
+            write_reports(fallback)
+            return fallback
     report = evaluate_manifest(manifest_path, checksums_path)
     write_reports(report)
     return report

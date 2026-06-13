@@ -44,6 +44,7 @@ METADATA_PATH = ARTIFACT_DIR / "free_boundary_public_machine_metadata_inventory.
 REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
 MD_REPORT = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.md"
+FREEGS_RECONSTRUCTION_REPORT = REPORT_DIR / "freegs_public_example_reconstruction.json"
 
 ROLE_SUFFIXES = (
     "active_coils",
@@ -269,6 +270,74 @@ def _machine_config_paths() -> Iterable[Path]:
     return sorted(MACHINE_CONFIG_ROOT.glob("*/*.pickle"))
 
 
+def _freegs_reconstruction_reference_evidence() -> dict[str, Any]:
+    """Summarise accepted same-case FreeGS reconstruction evidence if present."""
+    if not FREEGS_RECONSTRUCTION_REPORT.exists():
+        return {
+            "case_count": 0,
+            "cases": [],
+            "reference_output_ready": False,
+            "status": "blocked_missing_freegs_public_example_reconstruction_report",
+        }
+    try:
+        report = json.loads(FREEGS_RECONSTRUCTION_REPORT.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {
+            "case_count": 0,
+            "cases": [],
+            "reference_output_ready": False,
+            "status": "blocked_invalid_freegs_public_example_reconstruction_report",
+        }
+    strict = report.get("strict_free_boundary_parity_evidence", {})
+    if not isinstance(strict, dict):
+        strict = {}
+    case_rows: list[dict[str, Any]] = []
+    for case in strict.get("cases", []):
+        if not isinstance(case, dict):
+            continue
+        vacuum = case.get("vacuum_green_function_comparison", {})
+        case_rows.append(
+            {
+                "case_id": str(case.get("case_id", "")),
+                "coil_count": int(vacuum.get("coil_count", 0))
+                if isinstance(vacuum, dict)
+                else 0,
+                "coil_vacuum_sidecar_ready": bool(
+                    case.get("coil_vacuum_sidecar_ready") is True
+                ),
+                "example_path": str(case.get("example_path", "")),
+                "example_sha256": str(case.get("example_sha256", "")),
+                "external_psi_shape": case.get("external_psi_shape", []),
+                "machine_class": str(case.get("machine_class", "")),
+                "same_case_public_reference_output_ready": bool(
+                    case.get("same_case_public_reference_output_ready") is True
+                ),
+            }
+        )
+    ready = bool(
+        report.get("reference_output_ready") is True
+        and strict.get("coil_vacuum_sidecar_ready") is True
+        and strict.get("reference_output_ready") is True
+        and strict.get("accepted_full_fidelity") is True
+        and case_rows
+        and all(
+            row["coil_vacuum_sidecar_ready"]
+            and row["same_case_public_reference_output_ready"]
+            and len(row["example_sha256"]) == 64
+            for row in case_rows
+        )
+    )
+    return {
+        "case_count": len(case_rows),
+        "cases": case_rows,
+        "reference_output_ready": ready,
+        "report_path": _rel(FREEGS_RECONSTRUCTION_REPORT),
+        "status": "accepted_same_case_public_freegs_reconstruction_reference_output"
+        if ready
+        else "blocked_freegs_reconstruction_reference_output_incomplete",
+    }
+
+
 def _write_markdown(report: dict[str, Any], artifact: dict[str, Any]) -> None:
     lines = [
         "# Free-Boundary Public Machine Metadata Inventory",
@@ -281,6 +350,7 @@ def _write_markdown(report: dict[str, Any], artifact: dict[str, Any]) -> None:
         f"- Status: `{report['status']}`",
         f"- Accepted full fidelity: `{report['accepted_full_fidelity_ready']}`",
         f"- Machine metadata ready: `{report['machine_metadata_ready']}`",
+        f"- Reference output ready: `{report['reference_output_ready']}`",
         f"- Machine config count: `{report['machine_config_count']}`",
         f"- FreeGS example count: `{report['freegs_example_count']}`",
         f"- Artifact: `{report['artifact_path']}`",
@@ -309,9 +379,12 @@ def _write_markdown(report: dict[str, Any], artifact: dict[str, Any]) -> None:
             )
         )
     lines.extend(["", "## Missing full-fidelity requirements", ""])
-    for item in report["missing_full_fidelity_requirements"]:
-        lines.append(f"- {item}")
-    lines.append("")
+    missing = report["missing_full_fidelity_requirements"]
+    if missing:
+        for item in missing:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- None")
     MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -321,6 +394,7 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
     freegsnke_commit = _git_commit(FREEGSNKE_REPO) if FREEGSNKE_REPO.exists() else None
     machine_configs = [_machine_record(path, freegsnke_commit) for path in _machine_config_paths()]
     freegs_examples = _freegs_example_records(freegs_commit)
+    reconstruction_reference = _freegs_reconstruction_reference_evidence()
     if not machine_configs:
         fallback = _tracked_report_fallback()
         if fallback is not None:
@@ -337,15 +411,25 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
     artifact = {
         "schema": "free-boundary-public-machine-metadata-inventory.v1",
         "surface": "free_boundary_equilibrium",
-        "accepted_full_fidelity": False,
+        "accepted_full_fidelity": bool(reconstruction_reference["reference_output_ready"]),
         "freegs_examples": freegs_examples,
         "machine_configs": machine_configs,
+        "same_case_public_reference_output": reconstruction_reference,
     }
+    missing_observables = []
+    if not reconstruction_reference["reference_output_ready"]:
+        missing_observables = [
+            "same-case public equilibrium with linked external coil currents",
+            "native free-boundary coil/vacuum reconstruction output",
+            "strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison",
+            "axis_X-point_boundary_containment_thresholds",
+            "grid convergence and current-closure evidence",
+        ]
     metadata = {
-        "accepted_full_fidelity": False,
+        "accepted_full_fidelity": bool(reconstruction_reference["reference_output_ready"]),
         "artifact_id": "free_boundary_public_machine_metadata_inventory",
         "artifact_path": _rel(ARTIFACT_PATH),
-        "artifact_role": "partial_public_machine_metadata_inventory",
+        "artifact_role": "public_machine_metadata_and_same_case_reference_inventory",
         "available_observables": [
             "machine_active_coil_geometry_summary",
             "machine_passive_conductor_geometry_summary",
@@ -355,20 +439,12 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
         ],
         "machine_config_count": len(machine_configs),
         "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
-        "missing_required_observables": [
-            "same-case public equilibrium with linked external coil currents",
-            "native free-boundary coil/vacuum reconstruction output",
-            "strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison",
-            "axis_X-point_boundary_containment_thresholds",
-            "grid convergence and current-closure evidence",
-        ],
+        "missing_required_observables": missing_observables,
         "redistribution_license": "FreeGS LGPL-3.0-or-later; FreeGSNKE LGPL-3.0-or-later",
         "reference_family": "FreeGS/FreeGSNKE",
         "sha256": "",
-        "solver_output_comparison_ready": False,
-        "solver_output_comparison_status": (
-            "blocked_machine_metadata_without_same_case_free_boundary_reconstruction"
-        ),
+        "solver_output_comparison_ready": bool(reconstruction_reference["reference_output_ready"]),
+        "solver_output_comparison_status": reconstruction_reference["status"],
         "surface": "free_boundary_equilibrium",
     }
     if write:
@@ -380,14 +456,17 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
     elif ARTIFACT_PATH.exists():
         metadata["sha256"] = _sha256(ARTIFACT_PATH)
     machine_metadata_ready = bool(machine_configs)
+    reference_output_ready = bool(reconstruction_reference["reference_output_ready"])
     status = (
-        "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
+        "accepted_public_machine_metadata_with_same_case_free_boundary_reference"
+        if machine_metadata_ready and reference_output_ready
+        else "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
         if machine_metadata_ready
         else "blocked_missing_free_boundary_machine_metadata_cache"
     )
     report = {
         "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
-        "accepted_full_fidelity_ready": False,
+        "accepted_full_fidelity_ready": bool(machine_metadata_ready and reference_output_ready),
         "artifact_path": _rel(ARTIFACT_PATH),
         "freegs_commit": freegs_commit,
         "freegs_example_count": len(freegs_examples),
@@ -397,7 +476,8 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
         "machines": sorted({record["machine"] for record in machine_configs}),
         "metadata_path": _rel(METADATA_PATH),
         "missing_full_fidelity_requirements": metadata["missing_required_observables"],
-        "reference_output_ready": False,
+        "reference_output_ready": reference_output_ready,
+        "same_case_public_reference_output": reconstruction_reference,
         "sha256": metadata["sha256"],
         "report_generation_mode": "external_cache_inventory",
         "source_cache_available": FREEGS_REPO.exists() or FREEGSNKE_REPO.exists(),

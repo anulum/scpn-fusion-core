@@ -1,5 +1,5 @@
 {
-  "accepted_full_fidelity_ready": false,
+  "accepted_full_fidelity_ready": true,
   "artifact_path": "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json",
   "case_count": 2,
   "cases": [
@@ -21,13 +21,12 @@
       },
       "machine_class": "TestTokamak",
       "missing_full_fidelity_requirements": [
-        "grid-convergence evidence for the public example",
         "coil/vacuum reconstruction linked to public machine current sidecars",
         "same-case public reference equilibrium output"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 5.442778544034809,
+        "elapsed_s": 5.73249924601987,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -78,7 +77,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.6325268710497767,
+          "elapsed_s": 1.3443520939908922,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -88,7 +87,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 5.442778544034809,
+          "elapsed_s": 5.73249924601987,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -248,13 +247,12 @@
       },
       "machine_class": "DIIID",
       "missing_full_fidelity_requirements": [
-        "grid-convergence evidence for the public example",
         "coil/vacuum reconstruction linked to public machine current sidecars",
         "same-case public reference equilibrium output"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 12.440749908098951,
+        "elapsed_s": 14.423417757963762,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -305,7 +303,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 3.3302045529708266,
+          "elapsed_s": 4.499544572085142,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -315,7 +313,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 12.440749908098951,
+          "elapsed_s": 14.423417757963762,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -575,32 +573,56 @@
   "freegs_import_error": null,
   "freegs_version": "0.8.2",
   "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
-  "missing_full_fidelity_requirements": [
-    "grid convergence across public example resolutions",
-    "coil/vacuum reconstruction linked to public machine current sidecars",
-    "same-case public reference equilibrium output"
-  ],
+  "missing_full_fidelity_requirements": [],
   "native_same_case_psi_comparison_ready": true,
-  "reference_output_ready": false,
+  "reference_output_ready": true,
   "report_generation_mode": "tracked_report_fallback",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "1e85b94167588fd5857716346539cfc948bfb15f7bc43bd65af97d5da2706b80",
+  "sha256": "843f57cc1d98e8583602986540beb2074ab4e80c7f02324845e4551b628f0015",
   "source_cache_available": true,
-  "status": "blocked_public_freegs_native_same_case_compared_missing_grid_convergence_coil_sidecars_reference_output",
+  "status": "accepted_public_freegs_same_case_free_boundary_parity",
   "strict_free_boundary_parity_evidence": {
-    "accepted_full_fidelity": false,
-    "blocking_requirements": [
-      "grid convergence across public example resolutions",
-      "coil/vacuum reconstruction linked to public machine current sidecars",
-      "same-case public reference equilibrium output"
-    ],
+    "accepted_full_fidelity": true,
+    "blocking_requirements": [],
     "case_count": 2,
     "cases": [
       {
         "case_id": "freegs_01_test_tokamak_freeboundary",
+        "coil_vacuum_sidecar_ready": true,
+        "example_path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
+        "example_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
         "external_nonlinear_output_ready": true,
+        "external_psi_shape": [
+          65,
+          65
+        ],
         "failed_threshold_check_count": 0,
+        "machine_class": "TestTokamak",
         "native_same_case_profile_source_ready": true,
+        "same_case_public_reference_output_ready": true,
+        "source_contract": {
+          "fvac": 2.0,
+          "isoflux": [
+            [
+              1.1,
+              -0.6,
+              1.1,
+              0.6
+            ]
+          ],
+          "p_axis_pa": 1000.0,
+          "plasma_current_a": 200000.0,
+          "xpoints": [
+            [
+              1.1,
+              -0.6
+            ],
+            [
+              1.1,
+              0.8
+            ]
+          ]
+        },
         "strict_threshold_acceptance_ready": true,
         "threshold_checks": [
           {
@@ -659,13 +681,114 @@
             "valid": true,
             "value": "pass_finite_signed_q_profile"
           }
-        ]
+        ],
+        "vacuum_green_function_comparison": {
+          "coil_count": 4,
+          "coils": [
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 3239636.4585113823,
+              "effective_current_a_turns": 3239636.4585113823,
+              "filament_count": 12,
+              "name": "P1L",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 1747575.3329826852,
+              "effective_current_a_turns": 1747575.3329826852,
+              "filament_count": 12,
+              "name": "P1U",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "Coil",
+              "current_a": -625835.9581427034,
+              "effective_current_a_turns": -625835.9581427034,
+              "filament_count": 1,
+              "name": "P2L",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "Coil",
+              "current_a": 80743.67312022898,
+              "effective_current_a_turns": 80743.67312022898,
+              "filament_count": 1,
+              "name": "P2U",
+              "turns": 1.0
+            }
+          ],
+          "filament_count": 26,
+          "freegs_vacuum_psi_sample": [
+            0.19097274593205085,
+            0.43371849175061344,
+            0.26152762005212177,
+            0.11437138313814108,
+            0.26585891459366057,
+            0.2994304088940809,
+            0.1374583273957732,
+            0.34277115586307966,
+            0.4088744415668707
+          ],
+          "max_abs_error_wb": 1.1102230246251565e-16,
+          "native_vacuum_psi_sample": [
+            0.19097274593205082,
+            0.43371849175061333,
+            0.2615276200521219,
+            0.1143713831381411,
+            0.26585891459366046,
+            0.2994304088940809,
+            0.1374583273957732,
+            0.34277115586307977,
+            0.4088744415668707
+          ],
+          "nrmse": 2.3536287648870445e-16,
+          "pass": true,
+          "rmse_wb": 7.516245408138222e-17,
+          "sample_point_count": 9,
+          "thresholds": {
+            "max_abs_error_wb": 1e-12,
+            "nrmse": 1e-12
+          }
+        }
       },
       {
         "case_id": "freegs_16_diiid_public_example",
+        "coil_vacuum_sidecar_ready": true,
+        "example_path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+        "example_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
         "external_nonlinear_output_ready": true,
+        "external_psi_shape": [
+          65,
+          65
+        ],
         "failed_threshold_check_count": 0,
+        "machine_class": "DIIID",
         "native_same_case_profile_source_ready": true,
+        "same_case_public_reference_output_ready": true,
+        "source_contract": {
+          "fvac": -3.231962138124,
+          "isoflux": [
+            [
+              1.285,
+              -1.176,
+              1.2,
+              1.2
+            ]
+          ],
+          "p_axis_pa": 159811.0,
+          "plasma_current_a": -1533632.0,
+          "xpoints": [
+            [
+              1.285,
+              -1.176
+            ],
+            [
+              1.2,
+              1.0
+            ]
+          ]
+        },
         "strict_threshold_acceptance_ready": true,
         "threshold_checks": [
           {
@@ -724,10 +847,191 @@
             "valid": true,
             "value": "pass_finite_signed_q_profile"
           }
-        ]
+        ],
+        "vacuum_green_function_comparison": {
+          "coil_count": 18,
+          "coils": [
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 181806.0,
+              "effective_current_a_turns": 181806.0,
+              "filament_count": 12,
+              "name": "FC1",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -320605.0,
+              "effective_current_a_turns": -320605.0,
+              "filament_count": 12,
+              "name": "FC2",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -422619.5,
+              "effective_current_a_turns": -422619.5,
+              "filament_count": 12,
+              "name": "FC3",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -198811.125,
+              "effective_current_a_turns": -198811.125,
+              "filament_count": 12,
+              "name": "FC4",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 422818.0,
+              "effective_current_a_turns": 422818.0,
+              "filament_count": 12,
+              "name": "FC5",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 422659.0,
+              "effective_current_a_turns": 422659.0,
+              "filament_count": 12,
+              "name": "FC6",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -390758.0,
+              "effective_current_a_turns": -390758.0,
+              "filament_count": 12,
+              "name": "FC7",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -312487.0,
+              "effective_current_a_turns": -312487.0,
+              "filament_count": 12,
+              "name": "FC8",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 348880.5,
+              "effective_current_a_turns": 348880.5,
+              "filament_count": 12,
+              "name": "FC9",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 54158.0,
+              "effective_current_a_turns": 54158.0,
+              "filament_count": 12,
+              "name": "FC10",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -244786.0,
+              "effective_current_a_turns": -244786.0,
+              "filament_count": 12,
+              "name": "FC11",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -212908.0,
+              "effective_current_a_turns": -212908.0,
+              "filament_count": 12,
+              "name": "FC12",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -163580.0,
+              "effective_current_a_turns": -163580.0,
+              "filament_count": 12,
+              "name": "FC13",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 60156.0,
+              "effective_current_a_turns": 60156.0,
+              "filament_count": 12,
+              "name": "FC14",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 318664.0,
+              "effective_current_a_turns": 318664.0,
+              "filament_count": 12,
+              "name": "FC15",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -318564.0,
+              "effective_current_a_turns": -318564.0,
+              "filament_count": 12,
+              "name": "FC16",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": -180168.0,
+              "effective_current_a_turns": -180168.0,
+              "filament_count": 12,
+              "name": "FC17",
+              "turns": 1.0
+            },
+            {
+              "coil_type": "ShapedCoil",
+              "current_a": 431744.0,
+              "effective_current_a_turns": 431744.0,
+              "filament_count": 12,
+              "name": "FC18",
+              "turns": 1.0
+            }
+          ],
+          "filament_count": 216,
+          "freegs_vacuum_psi_sample": [
+            -0.08415270686250467,
+            -0.14076746951288915,
+            -0.41955224655486695,
+            -0.2552614364754644,
+            -0.34763920796298964,
+            -0.6046285786778952,
+            -0.07051050933030185,
+            -0.1852317287677403,
+            -0.5575014980862698
+          ],
+          "max_abs_error_wb": 7.771561172376096e-16,
+          "native_vacuum_psi_sample": [
+            -0.08415270686250467,
+            -0.1407674695128892,
+            -0.419552246554867,
+            -0.2552614364754644,
+            -0.3476392079629896,
+            -0.6046285786778944,
+            -0.07051050933030183,
+            -0.1852317287677401,
+            -0.5575014980862694
+          ],
+          "nrmse": 5.750194176761481e-16,
+          "pass": true,
+          "rmse_wb": 3.071282612065616e-16,
+          "sample_point_count": 9,
+          "thresholds": {
+            "max_abs_error_wb": 1e-12,
+            "nrmse": 1e-12
+          }
+        }
       }
     ],
-    "coil_vacuum_sidecar_ready": false,
+    "coil_vacuum_sidecar_ready": true,
     "failed_threshold_check_count": 0,
     "geometry_containment_evidence": {
       "accepted_full_fidelity": false,
@@ -782,46 +1086,530 @@
       "case_count": 2,
       "cases": [
         {
-          "blocking_reason": "public_example_has_single_resolution",
+          "blocking_reason": "",
           "case_id": "freegs_01_test_tokamak_freeboundary",
-          "grid_convergence_case_ready": false,
+          "grid_convergence_case_ready": true,
           "machine_class": "TestTokamak",
-          "missing_resolution_count": 2,
-          "observed_resolution_count": 1,
+          "missing_resolution_count": 0,
+          "monotone_nonincreasing_metrics": {
+            "current_closure_relative_error": true,
+            "native_plasma_psi_rmse": true,
+            "psi_n_rmse": true,
+            "xpoint_psi_n_error_max": true
+          },
+          "observed_resolution_count": 3,
           "observed_resolutions": [
+            {
+              "nx": 33,
+              "ny": 33
+            },
             {
               "nx": 65,
               "ny": 65
+            },
+            {
+              "nx": 129,
+              "ny": 129
             }
           ],
-          "required_resolution_count": 3
+          "required_resolution_count": 3,
+          "resolution_rows": [
+            {
+              "external_nonlinear_output_ready": true,
+              "failed_threshold_check_count": 0,
+              "grid": {
+                "nx": 33,
+                "ny": 33
+              },
+              "metrics": {
+                "current_closure_relative_error": 0.00027023201652307764,
+                "native_plasma_psi_rmse": 7.518315753288223e-05,
+                "psi_n_rmse": 0.0017668168252742374,
+                "xpoint_psi_n_error_max": 0.00204250691360075
+              },
+              "native_same_case_profile_source_ready": true,
+              "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed",
+              "threshold_checks": [
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "psi_n_rmse",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0017668168252742374
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.025,
+                  "metric": "axis_error_m",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "current_closure_relative_error",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.00027023201652307764
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 1e-10,
+                  "metric": "boundary_max_abs_error_wb",
+                  "passed": true,
+                  "valid": true,
+                  "value": 4.2452152904104423e-14
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "xpoint_psi_n_error_max",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.00204250691360075
+                },
+                {
+                  "comparator": ">=",
+                  "limit": 1.0,
+                  "metric": "boundary_containment_fraction",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.0
+                },
+                {
+                  "comparator": "==",
+                  "limit": "pass_finite_signed_q_profile",
+                  "metric": "q_profile_sanity_status",
+                  "passed": true,
+                  "valid": true,
+                  "value": "pass_finite_signed_q_profile"
+                }
+              ]
+            },
+            {
+              "external_nonlinear_output_ready": true,
+              "failed_threshold_check_count": 0,
+              "grid": {
+                "nx": 65,
+                "ny": 65
+              },
+              "metrics": {
+                "current_closure_relative_error": 4.7578550031175836e-06,
+                "native_plasma_psi_rmse": 1.9242993844269488e-05,
+                "psi_n_rmse": 0.00043469744722436757,
+                "xpoint_psi_n_error_max": 0.0004890721048200763
+              },
+              "native_same_case_profile_source_ready": true,
+              "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed",
+              "threshold_checks": [
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "psi_n_rmse",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.00043469744722436757
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.025,
+                  "metric": "axis_error_m",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "current_closure_relative_error",
+                  "passed": true,
+                  "valid": true,
+                  "value": 4.7578550031175836e-06
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 1e-10,
+                  "metric": "boundary_max_abs_error_wb",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.464800503114816e-13
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "xpoint_psi_n_error_max",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0004890721048200763
+                },
+                {
+                  "comparator": ">=",
+                  "limit": 1.0,
+                  "metric": "boundary_containment_fraction",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.0
+                },
+                {
+                  "comparator": "==",
+                  "limit": "pass_finite_signed_q_profile",
+                  "metric": "q_profile_sanity_status",
+                  "passed": true,
+                  "valid": true,
+                  "value": "pass_finite_signed_q_profile"
+                }
+              ]
+            },
+            {
+              "external_nonlinear_output_ready": true,
+              "failed_threshold_check_count": 0,
+              "grid": {
+                "nx": 129,
+                "ny": 129
+              },
+              "metrics": {
+                "current_closure_relative_error": 7.931286690291017e-07,
+                "native_plasma_psi_rmse": 4.855527263542143e-06,
+                "psi_n_rmse": 0.00010344543217017757,
+                "xpoint_psi_n_error_max": 0.00011487806871168793
+              },
+              "native_same_case_profile_source_ready": true,
+              "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed",
+              "threshold_checks": [
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "psi_n_rmse",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.00010344543217017757
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.025,
+                  "metric": "axis_error_m",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "current_closure_relative_error",
+                  "passed": true,
+                  "valid": true,
+                  "value": 7.931286690291017e-07
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 1e-10,
+                  "metric": "boundary_max_abs_error_wb",
+                  "passed": true,
+                  "valid": true,
+                  "value": 7.593023432228563e-13
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "xpoint_psi_n_error_max",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.00011487806871168793
+                },
+                {
+                  "comparator": ">=",
+                  "limit": 1.0,
+                  "metric": "boundary_containment_fraction",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.0
+                },
+                {
+                  "comparator": "==",
+                  "limit": "pass_finite_signed_q_profile",
+                  "metric": "q_profile_sanity_status",
+                  "passed": true,
+                  "valid": true,
+                  "value": "pass_finite_signed_q_profile"
+                }
+              ]
+            }
+          ],
+          "successful_resolution_count": 3
         },
         {
-          "blocking_reason": "public_example_has_single_resolution",
+          "blocking_reason": "",
           "case_id": "freegs_16_diiid_public_example",
-          "grid_convergence_case_ready": false,
+          "grid_convergence_case_ready": true,
           "machine_class": "DIIID",
-          "missing_resolution_count": 2,
-          "observed_resolution_count": 1,
+          "missing_resolution_count": 0,
+          "monotone_nonincreasing_metrics": {
+            "current_closure_relative_error": true,
+            "native_plasma_psi_rmse": true,
+            "psi_n_rmse": true,
+            "xpoint_psi_n_error_max": true
+          },
+          "observed_resolution_count": 3,
           "observed_resolutions": [
+            {
+              "nx": 33,
+              "ny": 33
+            },
             {
               "nx": 65,
               "ny": 65
+            },
+            {
+              "nx": 129,
+              "ny": 129
             }
           ],
-          "required_resolution_count": 3
+          "required_resolution_count": 3,
+          "resolution_rows": [
+            {
+              "external_nonlinear_output_ready": true,
+              "failed_threshold_check_count": 0,
+              "grid": {
+                "nx": 33,
+                "ny": 33
+              },
+              "metrics": {
+                "current_closure_relative_error": 0.00015782137210561368,
+                "native_plasma_psi_rmse": 0.0007562198875731832,
+                "psi_n_rmse": 0.0019832281035654,
+                "xpoint_psi_n_error_max": 0.002486315421861174
+              },
+              "native_same_case_profile_source_ready": true,
+              "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed",
+              "threshold_checks": [
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "psi_n_rmse",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0019832281035654
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.025,
+                  "metric": "axis_error_m",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "current_closure_relative_error",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.00015782137210561368
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 1e-10,
+                  "metric": "boundary_max_abs_error_wb",
+                  "passed": true,
+                  "valid": true,
+                  "value": 8.967045855845512e-14
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "xpoint_psi_n_error_max",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.002486315421861174
+                },
+                {
+                  "comparator": ">=",
+                  "limit": 1.0,
+                  "metric": "boundary_containment_fraction",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.0
+                },
+                {
+                  "comparator": "==",
+                  "limit": "pass_finite_signed_q_profile",
+                  "metric": "q_profile_sanity_status",
+                  "passed": true,
+                  "valid": true,
+                  "value": "pass_finite_signed_q_profile"
+                }
+              ]
+            },
+            {
+              "external_nonlinear_output_ready": true,
+              "failed_threshold_check_count": 0,
+              "grid": {
+                "nx": 65,
+                "ny": 65
+              },
+              "metrics": {
+                "current_closure_relative_error": 1.0581304436254637e-05,
+                "native_plasma_psi_rmse": 0.00019381870182347722,
+                "psi_n_rmse": 0.0005206078212262149,
+                "xpoint_psi_n_error_max": 0.0006449156820178548
+              },
+              "native_same_case_profile_source_ready": true,
+              "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed",
+              "threshold_checks": [
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "psi_n_rmse",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0005206078212262149
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.025,
+                  "metric": "axis_error_m",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "current_closure_relative_error",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.0581304436254637e-05
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 1e-10,
+                  "metric": "boundary_max_abs_error_wb",
+                  "passed": true,
+                  "valid": true,
+                  "value": 6.568079413682426e-13
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "xpoint_psi_n_error_max",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0006449156820178548
+                },
+                {
+                  "comparator": ">=",
+                  "limit": 1.0,
+                  "metric": "boundary_containment_fraction",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.0
+                },
+                {
+                  "comparator": "==",
+                  "limit": "pass_finite_signed_q_profile",
+                  "metric": "q_profile_sanity_status",
+                  "passed": true,
+                  "valid": true,
+                  "value": "pass_finite_signed_q_profile"
+                }
+              ]
+            },
+            {
+              "external_nonlinear_output_ready": true,
+              "failed_threshold_check_count": 0,
+              "grid": {
+                "nx": 129,
+                "ny": 129
+              },
+              "metrics": {
+                "current_closure_relative_error": 1.3600892853526213e-07,
+                "native_plasma_psi_rmse": 4.895395836017188e-05,
+                "psi_n_rmse": 0.00013047203887710972,
+                "xpoint_psi_n_error_max": 0.000160897846054886
+              },
+              "native_same_case_profile_source_ready": true,
+              "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed",
+              "threshold_checks": [
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "psi_n_rmse",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.00013047203887710972
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.025,
+                  "metric": "axis_error_m",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.0
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "current_closure_relative_error",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.3600892853526213e-07
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 1e-10,
+                  "metric": "boundary_max_abs_error_wb",
+                  "passed": true,
+                  "valid": true,
+                  "value": 2.898459250388896e-12
+                },
+                {
+                  "comparator": "<=",
+                  "limit": 0.05,
+                  "metric": "xpoint_psi_n_error_max",
+                  "passed": true,
+                  "valid": true,
+                  "value": 0.000160897846054886
+                },
+                {
+                  "comparator": ">=",
+                  "limit": 1.0,
+                  "metric": "boundary_containment_fraction",
+                  "passed": true,
+                  "valid": true,
+                  "value": 1.0
+                },
+                {
+                  "comparator": "==",
+                  "limit": "pass_finite_signed_q_profile",
+                  "metric": "q_profile_sanity_status",
+                  "passed": true,
+                  "valid": true,
+                  "value": "pass_finite_signed_q_profile"
+                }
+              ]
+            }
+          ],
+          "successful_resolution_count": 3
         }
       ],
-      "grid_convergence_ready": false,
+      "grid_convergence_ready": true,
+      "monotone_metrics_required": [
+        "psi_n_rmse",
+        "native_plasma_psi_rmse",
+        "xpoint_psi_n_error_max",
+        "current_closure_relative_error"
+      ],
       "required_resolution_count": 3,
       "schema": "strict-free-boundary-grid-convergence-evidence.v1",
-      "status": "blocked_public_freegs_single_resolution_grid_evidence"
+      "status": "accepted_public_freegs_grid_convergence_evidence"
     },
-    "grid_convergence_ready": false,
+    "grid_convergence_ready": true,
     "native_same_case_profile_source_ready": true,
-    "reference_output_ready": false,
+    "reference_output_ready": true,
     "schema": "strict-free-boundary-parity-evidence.v1",
-    "status": "blocked_grid_convergence_or_public_reference_missing",
+    "status": "accepted_public_freegs_same_case_free_boundary_parity",
     "strict_threshold_acceptance_ready": true
   },
   "vacuum_comparison_pass": true

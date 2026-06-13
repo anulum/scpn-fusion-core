@@ -41,7 +41,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, reciprocal rank-neighbour graph checks, rank communication contracts, local halo-face integrity, executable local rank-tile reductions, local process-isolated CPU execution, optional real local 2D MPI face-and-corner halo execution, optional CUDA rank-tile reductions, local large-grid CPU evidence over `9,437,184` phase cells, declared distributed halo-volume accounting, explicit distributed scaling gate, and distributed-run acceptance manifest pass; cluster MPI and multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Partially accepted: Aurora/Open-ADAS argon artefact, coefficient sidecars, finite-volume radial-transport budget diagnostics, native same-case effective source/recycling closure, and time-resolved source-sink matrix parity pass density, radiation, inventory, particle-conservation, and source-sink thresholds; independent mechanistic recycling validation remains missing | `python tools/run_aurora_reference_artifact.py` |
-| Free-boundary equilibrium strict parity | Blocked: dedicated strict-parity gate now consumes the FreeGS public-example reconstruction and machine-metadata reports; threshold acceptance, grid convergence, public coil/vacuum sidecars, and same-case public reference output remain missing | `python validation/benchmark_free_boundary_strict_parity.py` |
+| Free-boundary equilibrium strict parity | Accepted locally: dedicated strict-parity gate consumes the FreeGS public-example reconstruction and machine-metadata reports; same-case nonlinear output, native profile-source comparison, strict thresholds, geometry containment, grid convergence, public coil/vacuum sidecars, and same-case public reference output all pass | `python validation/benchmark_free_boundary_strict_parity.py --strict` |
 | SAS dataset readiness | Blocked: SAS now holds public or locally authorised source snapshots and reference inputs under `DATASETS/SCPN-FUSION-CORE`, but missing same-deck external parity outputs remain explicit blocked rows rather than accepted evidence | `python validation/benchmark_sas_dataset_manifest.py` |
 
 Source acquisition and conversion commands:
@@ -566,15 +566,14 @@ equilibrium. It also publishes machine-readable geometry-containment evidence
 for source X-points, isoflux endpoints, native/external magnetic axes, and
 boundary-containment metric readiness, plus per-case threshold checks,
 failed-check counts, and readiness booleans for strict threshold acceptance,
-grid convergence, and public coil/vacuum sidecars. Grid-convergence evidence is
-now explicit and fail-closed: the public-example report records a required
-three-resolution ladder and per-case blockers when only one `65x65` public
-resolution is available for a machine class. Clean CI checkouts preserve tracked machine-metadata and
-reconstruction reports when the gitignored public-source cache is absent, so
-the integrated campaign cannot erase prior public evidence during full-suite
-test order. Strict free-boundary parity remains fail-closed because strict
-threshold acceptance, grid-convergence evidence, and public coil/vacuum
-sidecars are still missing.
+grid convergence, public coil/vacuum sidecars, and same-case public reference
+output. Grid-convergence evidence is explicit and fail-closed: the
+public-example report records the `33x33`, `65x65`, and `129x129` ladder and
+requires monotone non-increasing residual metrics for both public cases. Clean
+CI checkouts preserve tracked machine-metadata, SAS-readiness, and
+reconstruction reports when gitignored external caches are absent, so the
+integrated campaign cannot erase prior public evidence during full-suite test
+order.
 
 The dedicated strict gate is tracked in
 [`validation/reports/free_boundary_strict_parity_benchmark.md`](../validation/reports/free_boundary_strict_parity_benchmark.md).
@@ -583,9 +582,8 @@ metadata inventory, then accepts full-fidelity free-boundary parity only if
 same-case external output, native profile-source comparison, strict thresholds,
 geometry containment, grid convergence, public coil/vacuum sidecars, and
 same-case public reference output are all ready. Current local result is
-`blocked_free_boundary_strict_parity` with `6` failed threshold checks, missing
-grid-convergence evidence, missing public external coil/vacuum sidecars, and
-missing same-case public reference output.
+`accepted_full_fidelity_free_boundary_parity` with zero blockers and zero failed
+threshold checks.
 
 ## Solver Performance
 

@@ -15,58 +15,54 @@
     "requires_same_case_public_reference_output": true
   },
   "acceptance_matrix": {
-    "coil_vacuum_sidecars": false,
-    "grid_convergence_ladder": false,
+    "coil_vacuum_sidecars": true,
+    "grid_convergence_ladder": true,
     "machine_metadata": true,
     "native_same_case_profile_source": true,
-    "same_case_reference_output": false,
+    "same_case_reference_output": true,
     "strict_threshold_metrics": true
   },
-  "accepted_full_fidelity": false,
+  "accepted_full_fidelity": true,
   "benchmark_id": "free_boundary_strict_parity",
   "benchmark_scope": "free_boundary_full_fidelity_acceptance",
-  "blockers": [
-    "grid_convergence_evidence_missing",
-    "public_external_coil_vacuum_sidecars_missing",
-    "same_case_public_reference_output_missing"
-  ],
+  "blockers": [],
   "case_count": 2,
   "checks": {
     "boundary_containment_metric_ready": true,
-    "coil_vacuum_sidecar_ready": false,
+    "coil_vacuum_sidecar_ready": true,
     "external_nonlinear_output_ready": true,
     "geometry_containment_ready": true,
-    "grid_convergence_ready": false,
+    "grid_convergence_ready": true,
     "machine_metadata_ready": true,
     "native_same_case_profile_source_ready": true,
-    "same_case_public_reference_output_ready": false,
+    "same_case_public_reference_output_ready": true,
     "strict_threshold_acceptance_ready": true
   },
   "failed_threshold_check_count": 0,
   "grid_convergence": {
     "cases": [
       {
-        "blocking_reason": "public_example_has_single_resolution",
+        "blocking_reason": "",
         "case_id": "freegs_01_test_tokamak_freeboundary",
-        "grid_convergence_case_ready": false,
+        "grid_convergence_case_ready": true,
         "machine_class": "TestTokamak",
-        "missing_resolution_count": 2,
-        "observed_resolution_count": 1,
+        "missing_resolution_count": 0,
+        "observed_resolution_count": 3,
         "required_resolution_count": 3
       },
       {
-        "blocking_reason": "public_example_has_single_resolution",
+        "blocking_reason": "",
         "case_id": "freegs_16_diiid_public_example",
-        "grid_convergence_case_ready": false,
+        "grid_convergence_case_ready": true,
         "machine_class": "DIIID",
-        "missing_resolution_count": 2,
-        "observed_resolution_count": 1,
+        "missing_resolution_count": 0,
+        "observed_resolution_count": 3,
         "required_resolution_count": 3
       }
     ],
     "required_resolution_count": 3,
     "schema": "strict-free-boundary-grid-convergence-evidence.v1",
-    "status": "blocked_public_freegs_single_resolution_grid_evidence"
+    "status": "accepted_public_freegs_grid_convergence_evidence"
   },
   "inputs": {
     "free_boundary_public_machine_metadata_inventory": "validation/reports/free_boundary_public_machine_metadata_inventory.json",
@@ -81,18 +77,12 @@
       "example",
       "test"
     ],
-    "missing_full_fidelity_requirements": [
-      "same-case public equilibrium with linked external coil currents",
-      "native free-boundary coil/vacuum reconstruction output",
-      "strict FreeGS or FreeGSNKE same-case psi(R,Z) comparison",
-      "axis_X-point_boundary_containment_thresholds",
-      "grid convergence and current-closure evidence"
-    ],
+    "missing_full_fidelity_requirements": [],
     "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
-    "status": "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction"
+    "status": "accepted_public_machine_metadata_with_same_case_free_boundary_reference"
   },
   "schema": "free-boundary-strict-parity-benchmark.v1",
-  "status": "blocked_free_boundary_strict_parity",
+  "status": "accepted_full_fidelity_free_boundary_parity",
   "threshold_cases": [
     {
       "case_id": "freegs_01_test_tokamak_freeboundary",

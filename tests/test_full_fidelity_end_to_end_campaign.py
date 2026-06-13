@@ -131,20 +131,18 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["freegs_public_example_cases"] >= 0
     assert report["freegs_public_example_vacuum_comparison_pass"] in {True, False}
     assert report["freegs_public_example_external_output_ready"] in {True, False}
-    assert report["free_boundary_strict_threshold_acceptance_ready"] is False
+    assert report["free_boundary_strict_threshold_acceptance_ready"] is True
     assert report["free_boundary_geometry_containment_ready"] is True
     assert report["free_boundary_boundary_containment_metric_ready"] is True
-    assert report["free_boundary_grid_convergence_ready"] is False
-    assert report["free_boundary_coil_vacuum_sidecar_ready"] is False
-    assert report["free_boundary_same_case_public_reference_output_ready"] is False
+    assert report["free_boundary_grid_convergence_ready"] is True
+    assert report["free_boundary_coil_vacuum_sidecar_ready"] is True
+    assert report["free_boundary_same_case_public_reference_output_ready"] is True
     assert report["free_boundary_failed_threshold_check_count"] >= 0
-    assert report["free_boundary_strict_parity_blockers"]
-    assert report["free_boundary_strict_parity_status"] in {
-        "blocked_free_boundary_strict_parity",
-        "blocked_strict_thresholds_or_grid_convergence_missing",
-        "blocked_freegs_backend_unavailable",
-        "not_run",
-    }
+    assert report["free_boundary_strict_parity_blockers"] == []
+    assert (
+        report["free_boundary_strict_parity_status"]
+        == "accepted_full_fidelity_free_boundary_parity"
+    )
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {
@@ -169,9 +167,23 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
         source["solver_family"]
         for source in lanes["free_boundary_equilibrium_strict_parity"]["sources"]
     } == {"FreeGS", "FreeGSNKE"}
+    assert (
+        lanes["free_boundary_equilibrium_strict_parity"]["status"]
+        == "accepted_full_fidelity_free_boundary_parity"
+    )
+    assert lanes["free_boundary_equilibrium_strict_parity"]["reference_cases_ready"] is True
+    assert lanes["free_boundary_equilibrium_strict_parity"]["next_required_evidence"] == []
     for lane in lanes.values():
-        assert lane["status"].startswith("blocked_") or lane["lane"] == "aurora_strahl_grade_impurities"
-        assert lane["next_required_evidence"]
+        assert (
+            lane["status"].startswith("blocked_")
+            or lane["lane"]
+            in {
+                "aurora_strahl_grade_impurities",
+                "free_boundary_equilibrium_strict_parity",
+            }
+        )
+        if lane["lane"] != "free_boundary_equilibrium_strict_parity":
+            assert lane["next_required_evidence"]
 
 
 def test_integrated_campaign_writes_json_and_markdown_reports() -> None:

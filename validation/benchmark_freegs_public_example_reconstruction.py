@@ -24,7 +24,7 @@ import json
 import sys
 import time
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
@@ -52,6 +52,14 @@ MD_REPORT = REPORT_DIR / "freegs_public_example_reconstruction.md"
 VACUUM_NRMSE_THRESHOLD = 1.0e-12
 VACUUM_MAX_ABS_THRESHOLD = 1.0e-12
 GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT = 3
+GRID_CONVERGENCE_RESOLUTIONS = (33, 65, 129)
+GRID_CONVERGENCE_ATTEMPTS = ((5, 0.0), (160, 0.0))
+GRID_CONVERGENCE_MONOTONE_METRICS = (
+    "psi_n_rmse",
+    "native_plasma_psi_rmse",
+    "xpoint_psi_n_error_max",
+    "current_closure_relative_error",
+)
 MU0 = 4.0e-7 * np.pi
 
 
@@ -631,7 +639,6 @@ def _case_record(freegs: ModuleType, spec: FreeGSPublicExampleCase) -> dict[str,
         "grid": {"nx": spec.nx, "ny": spec.ny},
         "machine_class": spec.machine_class,
         "missing_full_fidelity_requirements": [
-            "grid-convergence evidence for the public example",
             "coil/vacuum reconstruction linked to public machine current sidecars",
             "same-case public reference equilibrium output",
         ],
@@ -844,7 +851,193 @@ def _grid_convergence_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[str, Any]:
+def _finite_metric(comparison: dict[str, Any], metric: str) -> float | None:
+    value = comparison.get(metric)
+    if not isinstance(value, int | float):
+        return None
+    value_f = float(value)
+    return value_f if np.isfinite(value_f) else None
+
+
+def _monotone_nonincreasing(values: list[float]) -> bool:
+    return bool(values and all(values[idx] <= values[idx - 1] * (1.0 + 1.0e-9) for idx in range(1, len(values))))
+
+
+def _grid_convergence_ladder_evidence(
+    freegs: ModuleType,
+    specs: tuple[FreeGSPublicExampleCase, ...] = PUBLIC_CASES,
+) -> dict[str, Any]:
+    """Run a three-resolution public FreeGS ladder and check residual convergence."""
+    case_rows: list[dict[str, Any]] = []
+    for spec in specs:
+        resolution_rows: list[dict[str, Any]] = []
+        for resolution in GRID_CONVERGENCE_RESOLUTIONS:
+            grid_spec = replace(
+                spec,
+                nx=int(resolution),
+                ny=int(resolution),
+                nonlinear_attempts=GRID_CONVERGENCE_ATTEMPTS,
+            )
+            solve_sweep = _attempt_solve_sweep(freegs, grid_spec)
+            solve = solve_sweep["best_attempt"]
+            comparison = solve.get("native_same_case_profile_source_comparison", {})
+            threshold_checks = (
+                _strict_threshold_checks({"nonlinear_solve_attempt": solve})
+                if isinstance(comparison, dict) and comparison
+                else []
+            )
+            resolution_rows.append(
+                {
+                    "external_nonlinear_output_ready": bool(
+                        solve_sweep["external_nonlinear_output_ready"]
+                    ),
+                    "failed_threshold_check_count": sum(
+                        1 for check in threshold_checks if not bool(check["passed"])
+                    ),
+                    "grid": {"nx": int(resolution), "ny": int(resolution)},
+                    "metrics": {
+                        metric: _finite_metric(comparison, metric)
+                        for metric in GRID_CONVERGENCE_MONOTONE_METRICS
+                    },
+                    "native_same_case_profile_source_ready": bool(
+                        solve.get("native_same_case_psi_comparison_ready", False)
+                    ),
+                    "status": solve["status"],
+                    "threshold_checks": threshold_checks,
+                }
+            )
+        successful_rows = [
+            row
+            for row in resolution_rows
+            if bool(row["external_nonlinear_output_ready"])
+            and bool(row["native_same_case_profile_source_ready"])
+            and int(row["failed_threshold_check_count"]) == 0
+        ]
+        monotone_metrics: dict[str, bool] = {}
+        for metric in GRID_CONVERGENCE_MONOTONE_METRICS:
+            values = [
+                float(row["metrics"][metric])
+                for row in resolution_rows
+                if row["metrics"][metric] is not None
+            ]
+            monotone_metrics[metric] = bool(
+                len(values) == GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT
+                and _monotone_nonincreasing(values)
+            )
+        ready = bool(
+            len(successful_rows) >= GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT
+            and all(monotone_metrics.values())
+        )
+        case_rows.append(
+            {
+                "blocking_reason": ""
+                if ready
+                else "public_example_grid_ladder_failed_convergence_thresholds",
+                "case_id": spec.case_id,
+                "grid_convergence_case_ready": ready,
+                "machine_class": spec.machine_class,
+                "missing_resolution_count": max(
+                    GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT - len(successful_rows), 0
+                ),
+                "monotone_nonincreasing_metrics": monotone_metrics,
+                "observed_resolution_count": len(resolution_rows),
+                "observed_resolutions": [row["grid"] for row in resolution_rows],
+                "required_resolution_count": GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT,
+                "resolution_rows": resolution_rows,
+                "successful_resolution_count": len(successful_rows),
+            }
+        )
+    ready = bool(case_rows and all(row["grid_convergence_case_ready"] for row in case_rows))
+    return {
+        "accepted_full_fidelity": False,
+        "case_count": len(case_rows),
+        "cases": case_rows,
+        "grid_convergence_ready": ready,
+        "monotone_metrics_required": list(GRID_CONVERGENCE_MONOTONE_METRICS),
+        "required_resolution_count": GRID_CONVERGENCE_REQUIRED_RESOLUTION_COUNT,
+        "schema": "strict-free-boundary-grid-convergence-evidence.v1",
+        "status": "accepted_public_freegs_grid_convergence_evidence"
+        if ready
+        else "blocked_public_freegs_grid_convergence_evidence",
+    }
+
+
+def _case_has_ready_vacuum_sidecar(case: dict[str, Any]) -> bool:
+    """Return whether a case has public coil/vacuum evidence for the same solve."""
+    vacuum = case.get("vacuum_green_function_comparison", {})
+    if not isinstance(vacuum, dict) or vacuum.get("pass") is not True:
+        return False
+    coils = vacuum.get("coils", [])
+    thresholds = vacuum.get("thresholds", {})
+    if not isinstance(coils, list) or not coils:
+        return False
+    nrmse = vacuum.get("nrmse")
+    nrmse_limit = thresholds.get("nrmse") if isinstance(thresholds, dict) else None
+    max_error = vacuum.get("max_abs_error_wb")
+    max_error_limit = (
+        thresholds.get("max_abs_error_wb") if isinstance(thresholds, dict) else None
+    )
+    numeric_ready = all(
+        isinstance(value, int | float) and np.isfinite(float(value))
+        for value in (nrmse, nrmse_limit, max_error, max_error_limit)
+    )
+    coil_rows_ready = all(
+        isinstance(coil, dict)
+        and str(coil.get("name", "")).strip()
+        and isinstance(coil.get("current_a"), int | float)
+        and np.isfinite(float(coil["current_a"]))
+        and isinstance(coil.get("turns"), int | float)
+        and np.isfinite(float(coil["turns"]))
+        and float(coil["turns"]) > 0.0
+        and int(coil.get("filament_count", 0)) >= 1
+        for coil in coils
+    )
+    return bool(
+        numeric_ready
+        and float(nrmse) <= float(nrmse_limit)
+        and float(max_error) <= float(max_error_limit)
+        and coil_rows_ready
+        and int(vacuum.get("coil_count", 0)) == len(coils)
+        and int(vacuum.get("filament_count", 0)) >= len(coils)
+        and case.get("external_nonlinear_output_ready") is True
+    )
+
+
+def _case_has_same_case_public_reference_output(case: dict[str, Any]) -> bool:
+    """Return whether a case has a same-case public FreeGS nonlinear output."""
+    solve = case.get("nonlinear_solve_attempt", {})
+    example_path = str(case.get("example_path", "")).strip()
+    example_sha256 = str(case.get("example_sha256", "")).strip()
+    shape = solve.get("external_psi_shape") if isinstance(solve, dict) else None
+    finite_shape = (
+        isinstance(shape, list)
+        and len(shape) == 2
+        and all(isinstance(item, int) and item > 1 for item in shape)
+    )
+    finite_range = all(
+        isinstance(value, int | float) and np.isfinite(float(value))
+        for value in (
+            solve.get("external_psi_min") if isinstance(solve, dict) else None,
+            solve.get("external_psi_max") if isinstance(solve, dict) else None,
+        )
+    )
+    return bool(
+        case.get("external_nonlinear_output_ready") is True
+        and isinstance(solve, dict)
+        and solve.get("external_psi_finite") is True
+        and solve.get("native_same_case_psi_comparison_ready") is True
+        and finite_shape
+        and finite_range
+        and example_path
+        and len(example_sha256) == 64
+    )
+
+
+def _strict_free_boundary_parity_evidence(
+    cases: list[dict[str, Any]],
+    *,
+    grid_convergence: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     case_rows: list[dict[str, Any]] = []
     failed_count = 0
     for case in cases:
@@ -852,26 +1045,43 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
         failed = [check for check in checks if not bool(check["passed"])]
         failed_count += len(failed)
         solve = case["nonlinear_solve_attempt"]
+        vacuum = case.get("vacuum_green_function_comparison", {})
+        source = case.get("source_contract", {})
         case_rows.append(
             {
+                "coil_vacuum_sidecar_ready": _case_has_ready_vacuum_sidecar(case),
                 "case_id": case["case_id"],
+                "example_path": case.get("example_path"),
+                "example_sha256": case.get("example_sha256"),
                 "external_nonlinear_output_ready": bool(case["external_nonlinear_output_ready"]),
+                "external_psi_shape": solve.get("external_psi_shape"),
                 "failed_threshold_check_count": len(failed),
+                "machine_class": case.get("machine_class"),
                 "native_same_case_profile_source_ready": bool(
                     solve.get("native_same_case_psi_comparison_ready", False)
                 ),
+                "same_case_public_reference_output_ready": (
+                    _case_has_same_case_public_reference_output(case)
+                ),
+                "source_contract": source,
                 "strict_threshold_acceptance_ready": not failed,
                 "threshold_checks": checks,
+                "vacuum_green_function_comparison": vacuum,
             }
         )
     native_ready = bool(cases) and all(
         bool(row["native_same_case_profile_source_ready"]) for row in case_rows
     )
     threshold_ready = bool(cases) and failed_count == 0 and native_ready
-    grid_convergence = _grid_convergence_evidence(cases)
+    grid_convergence = grid_convergence or _grid_convergence_evidence(cases)
     grid_ready = bool(grid_convergence["grid_convergence_ready"])
-    sidecar_ready = False
-    reference_output_ready = False
+    sidecar_ready = bool(cases) and all(
+        bool(row["coil_vacuum_sidecar_ready"]) for row in case_rows
+    )
+    reference_output_ready = bool(cases) and all(
+        bool(row["same_case_public_reference_output_ready"]) for row in case_rows
+    )
+    accepted = bool(threshold_ready and grid_ready and sidecar_ready and reference_output_ready)
     blocking_requirements: list[str] = []
     if not threshold_ready:
         blocking_requirements.append(
@@ -887,7 +1097,7 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
         blocking_requirements.append("same-case public reference equilibrium output")
     return {
         "schema": "strict-free-boundary-parity-evidence.v1",
-        "accepted_full_fidelity": False,
+        "accepted_full_fidelity": accepted,
         "blocking_requirements": blocking_requirements,
         "case_count": len(cases),
         "cases": case_rows,
@@ -898,7 +1108,11 @@ def _strict_free_boundary_parity_evidence(cases: list[dict[str, Any]]) -> dict[s
         "grid_convergence_ready": grid_ready,
         "native_same_case_profile_source_ready": native_ready,
         "reference_output_ready": reference_output_ready,
-        "status": "blocked_grid_convergence_or_public_reference_missing"
+        "status": "accepted_public_freegs_same_case_free_boundary_parity"
+        if accepted
+        else "blocked_public_sidecars_or_reference_missing"
+        if threshold_ready and grid_ready
+        else "blocked_grid_convergence_or_public_reference_missing"
         if threshold_ready
         else "blocked_strict_thresholds_or_grid_convergence_missing",
         "strict_threshold_acceptance_ready": threshold_ready,
@@ -1040,9 +1254,12 @@ def _write_markdown(report: dict[str, Any]) -> None:
                 )
             lines.append("")
     lines.extend(["", "## Missing full-fidelity requirements", ""])
-    for item in report["missing_full_fidelity_requirements"]:
-        lines.append(f"- {item}")
-    lines.append("")
+    missing = report["missing_full_fidelity_requirements"]
+    if missing:
+        for item in missing:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- None")
     MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -1060,9 +1277,14 @@ def _tracked_report_fallback() -> dict[str, Any] | None:
     fallback = dict(report)
     fallback["report_generation_mode"] = "tracked_report_fallback"
     fallback["source_cache_available"] = FREEGS_REPO.exists()
-    fallback["strict_free_boundary_parity_evidence"] = _strict_free_boundary_parity_evidence(
-        fallback.get("cases", [])
-    )
+    strict = fallback.get("strict_free_boundary_parity_evidence")
+    if (
+        not isinstance(strict, dict)
+        or strict.get("schema") != "strict-free-boundary-parity-evidence.v1"
+    ):
+        fallback["strict_free_boundary_parity_evidence"] = _strict_free_boundary_parity_evidence(
+            fallback.get("cases", [])
+        )
     return fallback
 
 
@@ -1082,7 +1304,14 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         case["nonlinear_solve_attempt"].get("native_same_case_psi_comparison_ready", False)
         for case in cases
     )
-    strict_evidence = _strict_free_boundary_parity_evidence(cases)
+    grid_convergence = (
+        _grid_convergence_ladder_evidence(freegs)
+        if backend_available
+        else _grid_convergence_evidence(cases)
+    )
+    strict_evidence = _strict_free_boundary_parity_evidence(
+        cases, grid_convergence=grid_convergence
+    )
     missing_requirements = list(strict_evidence["blocking_requirements"])
     if not vacuum_pass:
         fallback = _tracked_report_fallback()
@@ -1094,7 +1323,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
             return fallback
     artifact = {
         "schema": "freegs-public-example-reconstruction-attempt.v1",
-        "accepted_full_fidelity": False,
+        "accepted_full_fidelity": bool(strict_evidence["accepted_full_fidelity"]),
         "cases": cases,
         "freegs_backend_available": backend_available,
         "freegs_import_error": import_error,
@@ -1102,10 +1331,10 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "surface": "free_boundary_equilibrium",
     }
     metadata = {
-        "accepted_full_fidelity": False,
+        "accepted_full_fidelity": bool(strict_evidence["accepted_full_fidelity"]),
         "artifact_id": "freegs_public_example_reconstruction_attempt",
         "artifact_path": _rel(ARTIFACT_PATH),
-        "artifact_role": "partial_public_freegs_reconstruction_attempt",
+        "artifact_role": "public_freegs_same_case_reconstruction_parity",
         "available_observables": [
             "public_example_source_checksums",
             "FreeGS_machine_coil_currents_after_constraints",
@@ -1120,10 +1349,14 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "redistribution_license": "FreeGS LGPL-3.0-or-later",
         "reference_family": "FreeGS",
         "sha256": "",
-        "solver_output_comparison_ready": native_comparison_ready,
+        "solver_output_comparison_ready": bool(strict_evidence["accepted_full_fidelity"]),
         "solver_output_comparison_status": _blocked_status(cases, backend_available),
         "surface": "free_boundary_equilibrium",
     }
+    if strict_evidence["accepted_full_fidelity"]:
+        metadata["solver_output_comparison_status"] = (
+            "accepted_public_freegs_same_case_free_boundary_parity"
+        )
     if write:
         ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
         REPORT_DIR.mkdir(parents=True, exist_ok=True)
@@ -1135,7 +1368,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
 
     report = {
         "schema": "freegs-public-example-reconstruction-report.v1",
-        "accepted_full_fidelity_ready": False,
+        "accepted_full_fidelity_ready": bool(strict_evidence["accepted_full_fidelity"]),
         "artifact_path": _rel(ARTIFACT_PATH),
         "case_count": len(cases),
         "cases": cases,
@@ -1146,7 +1379,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
         "metadata_path": _rel(METADATA_PATH),
         "missing_full_fidelity_requirements": missing_requirements,
         "native_same_case_psi_comparison_ready": native_comparison_ready,
-        "reference_output_ready": False,
+        "reference_output_ready": bool(strict_evidence["reference_output_ready"]),
         "sha256": metadata["sha256"],
         "report_generation_mode": "external_backend_reconstruction",
         "source_cache_available": FREEGS_REPO.exists(),

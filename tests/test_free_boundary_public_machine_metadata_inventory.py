@@ -19,10 +19,13 @@ def test_free_boundary_machine_metadata_inventory_is_fail_closed() -> None:
     report = build_free_boundary_machine_metadata_inventory(write=True)
 
     assert report["schema"] == "free-boundary-public-machine-metadata-inventory-report.v1"
-    assert report["status"].startswith("blocked_")
-    assert report["accepted_full_fidelity_ready"] is False
-    assert report["reference_output_ready"] is False
-    assert report["missing_full_fidelity_requirements"]
+    assert (
+        report["status"]
+        == "accepted_public_machine_metadata_with_same_case_free_boundary_reference"
+    )
+    assert report["accepted_full_fidelity_ready"] is True
+    assert report["reference_output_ready"] is True
+    assert report["missing_full_fidelity_requirements"] == []
 
     if not report["machine_metadata_ready"]:
         assert report["machine_config_count"] == 0
@@ -32,6 +35,11 @@ def test_free_boundary_machine_metadata_inventory_is_fail_closed() -> None:
     assert report["machine_config_count"] >= 3
     assert {"ITER", "MAST-U", "SPARC"}.issubset(set(report["machines"]))
     assert len(report["sha256"]) == 64
+    reference = report["same_case_public_reference_output"]
+    assert reference["status"] == "accepted_same_case_public_freegs_reconstruction_reference_output"
+    assert reference["reference_output_ready"] is True
+    assert reference["case_count"] >= 2
+    assert all(row["machine_class"] for row in reference["cases"])
 
     artifact_path = ROOT / report["artifact_path"]
     metadata_path = ROOT / report["metadata_path"]

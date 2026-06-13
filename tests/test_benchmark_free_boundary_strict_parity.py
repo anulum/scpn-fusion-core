@@ -77,14 +77,18 @@ def _passing_machine_metadata_report() -> dict[str, Any]:
 def test_strict_parity_blocks_current_tracked_reports() -> None:
     report = run_benchmark(write=False)
 
-    assert report["accepted_full_fidelity"] is False
-    assert report["status"] == "blocked_free_boundary_strict_parity"
-    assert "grid_convergence_evidence_missing" in report["blockers"]
-    assert "public_external_coil_vacuum_sidecars_missing" in report["blockers"]
-    assert "same_case_public_reference_output_missing" in report["blockers"]
+    assert report["accepted_full_fidelity"] is True
+    assert report["status"] == "accepted_full_fidelity_free_boundary_parity"
+    assert "grid_convergence_evidence_missing" not in report["blockers"]
+    assert "public_external_coil_vacuum_sidecars_missing" not in report["blockers"]
+    assert "same_case_public_reference_output_missing" not in report["blockers"]
+    assert report["blockers"] == []
     assert "strict_threshold_acceptance_failed" not in report["blockers"]
     assert report["failed_threshold_check_count"] == 0
     assert report["acceptance_matrix"]["strict_threshold_metrics"] is True
+    assert report["acceptance_matrix"]["grid_convergence_ladder"] is True
+    assert report["acceptance_matrix"]["coil_vacuum_sidecars"] is True
+    assert report["acceptance_matrix"]["same_case_reference_output"] is True
 
 
 def test_strict_parity_accepts_only_complete_contract() -> None:

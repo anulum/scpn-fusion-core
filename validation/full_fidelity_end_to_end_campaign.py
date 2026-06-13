@@ -434,10 +434,14 @@ def run_campaign() -> dict[str, Any]:
             )
             and bool(free_boundary_machine_metadata["machine_metadata_ready"])
             and bool(freegs_public_reconstruction["vacuum_comparison_pass"]),
-            "reference_cases_ready": False,
+            "reference_cases_ready": bool(
+                free_boundary_strict_gate.get("accepted_full_fidelity") is True
+            ),
             "sources": _sources_for(registry, "free_boundary_equilibrium"),
             "next_required_evidence": (
-                free_boundary_strict_gate["blockers"]
+                []
+                if free_boundary_strict_gate.get("accepted_full_fidelity") is True
+                else free_boundary_strict_gate["blockers"]
                 or free_boundary_strict["blocking_requirements"]
                 or freegs_public_reconstruction["missing_full_fidelity_requirements"]
                 or free_boundary_machine_metadata["missing_full_fidelity_requirements"]
