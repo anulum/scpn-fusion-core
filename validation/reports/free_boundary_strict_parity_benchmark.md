@@ -9,7 +9,7 @@ coil/vacuum sidecars are all present.
 - Status: `blocked_free_boundary_strict_parity`
 - Accepted full fidelity: `False`
 - Case count: `2`
-- Failed threshold checks: `6`
+- Failed threshold checks: `0`
 
 ## Checks
 
@@ -17,7 +17,7 @@ coil/vacuum sidecars are all present.
 | --- | ---: |
 | `external_nonlinear_output_ready` | `True` |
 | `native_same_case_profile_source_ready` | `True` |
-| `strict_threshold_acceptance_ready` | `False` |
+| `strict_threshold_acceptance_ready` | `True` |
 | `geometry_containment_ready` | `True` |
 | `boundary_containment_metric_ready` | `True` |
 | `grid_convergence_ready` | `False` |
@@ -31,14 +31,13 @@ coil/vacuum sidecars are all present.
 | --- | ---: |
 | `same_case_reference_output` | `False` |
 | `native_same_case_profile_source` | `True` |
-| `strict_threshold_metrics` | `False` |
+| `strict_threshold_metrics` | `True` |
 | `grid_convergence_ladder` | `False` |
 | `coil_vacuum_sidecars` | `False` |
 | `machine_metadata` | `True` |
 
 ## Blockers
 
-- `strict_threshold_acceptance_failed`
 - `grid_convergence_evidence_missing`
 - `public_external_coil_vacuum_sidecars_missing`
 - `same_case_public_reference_output_missing`
@@ -47,8 +46,8 @@ coil/vacuum sidecars are all present.
 
 | Case | External output | Native comparison | Thresholds ready | Failed checks |
 | --- | ---: | ---: | ---: | ---: |
-| freegs_01_test_tokamak_freeboundary | `True` | `True` | `False` | 3 |
-| freegs_16_diiid_public_example | `True` | `True` | `False` | 3 |
+| freegs_01_test_tokamak_freeboundary | `True` | `True` | `True` | 0 |
+| freegs_16_diiid_public_example | `True` | `True` | `True` | 0 |
 
 ## Grid-convergence cases
 

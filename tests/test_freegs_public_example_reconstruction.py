@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from validation import benchmark_freegs_public_example_reconstruction as freegs_reconstruction
@@ -34,6 +35,10 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
         assert report["status"] == "blocked_freegs_backend_unavailable"
         return
 
+    assert (
+        "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance"
+        not in report["missing_full_fidelity_requirements"]
+    )
     assert report["case_count"] >= 1
     assert report["vacuum_comparison_pass"] is True
     assert report["external_nonlinear_output_ready"] is True
@@ -49,9 +54,9 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert artifact["freegs_backend_available"] is True
     strict = report["strict_free_boundary_parity_evidence"]
     assert strict["schema"] == "strict-free-boundary-parity-evidence.v1"
-    assert strict["status"] == "blocked_strict_thresholds_or_grid_convergence_missing"
+    assert strict["status"] == "blocked_grid_convergence_or_public_reference_missing"
     assert strict["native_same_case_profile_source_ready"] is True
-    assert strict["strict_threshold_acceptance_ready"] is False
+    assert strict["strict_threshold_acceptance_ready"] is True
     assert strict["grid_convergence_ready"] is False
     grid = strict["grid_convergence_evidence"]
     assert grid["schema"] == "strict-free-boundary-grid-convergence-evidence.v1"
@@ -68,7 +73,7 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert strict["coil_vacuum_sidecar_ready"] is False
     assert strict["accepted_full_fidelity"] is False
     assert strict["case_count"] == report["case_count"]
-    assert strict["failed_threshold_check_count"] >= 1
+    assert strict["failed_threshold_check_count"] == 0
     containment = strict["geometry_containment_evidence"]
     assert containment["schema"] == "strict-free-boundary-geometry-containment.v1"
     assert containment["case_count"] == report["case_count"]
@@ -81,9 +86,9 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert all(row["source_points_inside_grid"] for row in containment["cases"])
     assert all(row["axis_points_inside_grid"] for row in containment["cases"])
     assert strict["blocking_requirements"] == [
-        "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
         "grid convergence across public example resolutions",
         "coil/vacuum reconstruction linked to public machine current sidecars",
+        "same-case public reference equilibrium output",
     ]
     for case in artifact["cases"]:
         vacuum = case["vacuum_green_function_comparison"]
@@ -104,6 +109,7 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
         assert comparison["axis_error_m"] >= 0.0
         assert comparison["boundary_max_abs_error_wb"] >= 0.0
         assert comparison["current_closure_relative_error"] >= 0.0
+        assert comparison["native_plasma_psi_rmse"] >= 0.0
         q_sanity = comparison["q_profile_sanity"]
         assert q_sanity["status"] == "pass_finite_signed_q_profile"
         assert q_sanity["finite_q_profile"] is True
@@ -114,12 +120,40 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
             solve["status"]
             == "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
         )
-    assert any(
-        check["metric"] in {"psi_n_rmse", "axis_error_m", "xpoint_psi_n_error_max"}
-        and not check["passed"]
-        for case in strict["cases"]
-        for check in case["threshold_checks"]
+    assert all(
+        check["passed"] for case in strict["cases"] for check in case["threshold_checks"]
     )
+
+
+def test_native_profile_reconstruction_uses_freegs_r_z_orientation() -> None:
+    r_axis = np.linspace(1.0, 1.4, 5)
+    z_axis = np.linspace(-0.2, 0.2, 7)
+    boundary_psi = np.zeros((r_axis.size, z_axis.size), dtype=np.float64)
+    boundary_psi[0, :] = 1.0
+    boundary_psi[-1, :] = 2.0
+    boundary_psi[:, 0] = 3.0
+    boundary_psi[:, -1] = 4.0
+    jtor = np.zeros_like(boundary_psi)
+
+    psi = freegs_reconstruction._native_profile_source_reconstruction(
+        r_axis, z_axis, boundary_psi, jtor
+    )
+
+    assert psi.shape == (r_axis.size, z_axis.size)
+    np.testing.assert_allclose(psi[0, :], boundary_psi[0, :])
+    np.testing.assert_allclose(psi[-1, :], boundary_psi[-1, :])
+    np.testing.assert_allclose(psi[:, 0], boundary_psi[:, 0])
+    np.testing.assert_allclose(psi[:, -1], boundary_psi[:, -1])
+
+
+def test_freegs_grid_helpers_use_r_z_index_order() -> None:
+    r_axis = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+    z_axis = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float64)
+    psi = np.zeros((r_axis.size, z_axis.size), dtype=np.float64)
+    psi[2, 1] = 7.0
+
+    assert freegs_reconstruction._axis_location(r_axis, z_axis, psi) == (3.0, 0.0)
+    assert freegs_reconstruction._nearest_grid_value(r_axis, z_axis, psi, (3.0, 0.0)) == 7.0
 
 
 def test_freegs_reconstruction_preserves_tracked_report_when_backend_is_absent(

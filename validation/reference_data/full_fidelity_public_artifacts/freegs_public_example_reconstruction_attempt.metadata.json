@@ -14,14 +14,14 @@
   ],
   "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
   "missing_required_observables": [
-    "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
     "grid convergence across public example resolutions",
-    "coil/vacuum reconstruction linked to public machine current sidecars"
+    "coil/vacuum reconstruction linked to public machine current sidecars",
+    "same-case public reference equilibrium output"
   ],
   "redistribution_license": "FreeGS LGPL-3.0-or-later",
   "reference_family": "FreeGS",
-  "sha256": "34215674e7e71649cef59d6f4e3a09d2f585b8edbd696716e522966f1d6f1db2",
+  "sha256": "1e85b94167588fd5857716346539cfc948bfb15f7bc43bd65af97d5da2706b80",
   "solver_output_comparison_ready": true,
-  "solver_output_comparison_status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
+  "solver_output_comparison_status": "blocked_public_freegs_native_same_case_compared_missing_grid_convergence_coil_sidecars_reference_output",
   "surface": "free_boundary_equilibrium"
 }

@@ -21,13 +21,13 @@
       },
       "machine_class": "TestTokamak",
       "missing_full_fidelity_requirements": [
-        "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
         "grid-convergence evidence for the public example",
-        "coil/vacuum reconstruction linked to public machine current sidecars"
+        "coil/vacuum reconstruction linked to public machine current sidecars",
+        "same-case public reference equilibrium output"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 8.591207332909107,
+        "elapsed_s": 5.442778544034809,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -38,18 +38,19 @@
         "maxits": 50,
         "native_same_case_profile_source_comparison": {
           "accepted_full_fidelity": false,
-          "axis_error_m": 0.043103481950417945,
+          "axis_error_m": 0.0,
           "boundary_containment_fraction": 1.0,
-          "boundary_max_abs_error_wb": 0.0,
+          "boundary_max_abs_error_wb": 1.464800503114816e-13,
           "current_closure_relative_error": 4.7578550031175836e-06,
-          "external_axis_r_m": 1.0796875,
-          "external_axis_z_m": 0.25,
+          "external_axis_r_m": 1.2875,
+          "external_axis_z_m": 0.03125,
           "finite_external_psi": true,
           "finite_native_psi": true,
-          "native_axis_r_m": 1.109375,
-          "native_axis_z_m": 0.21875,
+          "native_axis_r_m": 1.2875,
+          "native_axis_z_m": 0.03125,
           "native_current_a": 199999.04842899938,
-          "psi_n_rmse": 0.229181105368877,
+          "native_plasma_psi_rmse": 1.9242993844269488e-05,
+          "psi_n_rmse": 0.00043469744722436757,
           "q_profile_sanity": {
             "finite_q_profile": true,
             "q_abs_max": 7.758966622055577,
@@ -69,7 +70,7 @@
             "xpoint_psi_n_error": 0.05
           },
           "xpoint_constraint_count": 2,
-          "xpoint_psi_n_error_max": 0.2709460979429926
+          "xpoint_psi_n_error_max": 0.0004890721048200763
         },
         "native_same_case_psi_comparison_ready": true,
         "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
@@ -77,7 +78,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.3044237289577723,
+          "elapsed_s": 1.6325268710497767,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -87,7 +88,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 8.591207332909107,
+          "elapsed_s": 5.442778544034809,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -98,18 +99,19 @@
           "maxits": 50,
           "native_same_case_profile_source_comparison": {
             "accepted_full_fidelity": false,
-            "axis_error_m": 0.043103481950417945,
+            "axis_error_m": 0.0,
             "boundary_containment_fraction": 1.0,
-            "boundary_max_abs_error_wb": 0.0,
+            "boundary_max_abs_error_wb": 1.464800503114816e-13,
             "current_closure_relative_error": 4.7578550031175836e-06,
-            "external_axis_r_m": 1.0796875,
-            "external_axis_z_m": 0.25,
+            "external_axis_r_m": 1.2875,
+            "external_axis_z_m": 0.03125,
             "finite_external_psi": true,
             "finite_native_psi": true,
-            "native_axis_r_m": 1.109375,
-            "native_axis_z_m": 0.21875,
+            "native_axis_r_m": 1.2875,
+            "native_axis_z_m": 0.03125,
             "native_current_a": 199999.04842899938,
-            "psi_n_rmse": 0.229181105368877,
+            "native_plasma_psi_rmse": 1.9242993844269488e-05,
+            "psi_n_rmse": 0.00043469744722436757,
             "q_profile_sanity": {
               "finite_q_profile": true,
               "q_abs_max": 7.758966622055577,
@@ -129,7 +131,7 @@
               "xpoint_psi_n_error": 0.05
             },
             "xpoint_constraint_count": 2,
-            "xpoint_psi_n_error_max": 0.2709460979429926
+            "xpoint_psi_n_error_max": 0.0004890721048200763
           },
           "native_same_case_psi_comparison_ready": true,
           "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
@@ -246,13 +248,13 @@
       },
       "machine_class": "DIIID",
       "missing_full_fidelity_requirements": [
-        "strict native-vs-FreeGS psi_N RMSE, current, axis, X-point, and boundary-containment threshold acceptance",
         "grid-convergence evidence for the public example",
-        "coil/vacuum reconstruction linked to public machine current sidecars"
+        "coil/vacuum reconstruction linked to public machine current sidecars",
+        "same-case public reference equilibrium output"
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 13.905812015058473,
+        "elapsed_s": 12.440749908098951,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -263,18 +265,19 @@
         "maxits": 25,
         "native_same_case_profile_source_comparison": {
           "accepted_full_fidelity": false,
-          "axis_error_m": 0.2250000000000001,
+          "axis_error_m": 0.0,
           "boundary_containment_fraction": 1.0,
-          "boundary_max_abs_error_wb": 0.0,
+          "boundary_max_abs_error_wb": 6.568079413682426e-13,
           "current_closure_relative_error": 1.0581304436254637e-05,
-          "external_axis_r_m": 1.7874999999999999,
-          "external_axis_z_m": 1.575,
+          "external_axis_r_m": 2.6312499999999996,
+          "external_axis_z_m": 0.44999999999999996,
           "finite_external_psi": true,
           "finite_native_psi": true,
-          "native_axis_r_m": 1.7874999999999999,
-          "native_axis_z_m": 1.8,
+          "native_axis_r_m": 2.6312499999999996,
+          "native_axis_z_m": 0.44999999999999996,
           "native_current_a": -1533648.2278270852,
-          "psi_n_rmse": 0.06656438258503716,
+          "native_plasma_psi_rmse": 0.00019381870182347722,
+          "psi_n_rmse": 0.0005206078212262149,
           "q_profile_sanity": {
             "finite_q_profile": true,
             "q_abs_max": 3.25174467113492,
@@ -294,7 +297,7 @@
             "xpoint_psi_n_error": 0.05
           },
           "xpoint_constraint_count": 2,
-          "xpoint_psi_n_error_max": 0.06964126692247141
+          "xpoint_psi_n_error_max": 0.0006449156820178548
         },
         "native_same_case_psi_comparison_ready": true,
         "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
@@ -302,7 +305,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 2.5421116361394525,
+          "elapsed_s": 3.3302045529708266,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -312,7 +315,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 13.905812015058473,
+          "elapsed_s": 12.440749908098951,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -323,18 +326,19 @@
           "maxits": 25,
           "native_same_case_profile_source_comparison": {
             "accepted_full_fidelity": false,
-            "axis_error_m": 0.2250000000000001,
+            "axis_error_m": 0.0,
             "boundary_containment_fraction": 1.0,
-            "boundary_max_abs_error_wb": 0.0,
+            "boundary_max_abs_error_wb": 6.568079413682426e-13,
             "current_closure_relative_error": 1.0581304436254637e-05,
-            "external_axis_r_m": 1.7874999999999999,
-            "external_axis_z_m": 1.575,
+            "external_axis_r_m": 2.6312499999999996,
+            "external_axis_z_m": 0.44999999999999996,
             "finite_external_psi": true,
             "finite_native_psi": true,
-            "native_axis_r_m": 1.7874999999999999,
-            "native_axis_z_m": 1.8,
+            "native_axis_r_m": 2.6312499999999996,
+            "native_axis_z_m": 0.44999999999999996,
             "native_current_a": -1533648.2278270852,
-            "psi_n_rmse": 0.06656438258503716,
+            "native_plasma_psi_rmse": 0.00019381870182347722,
+            "psi_n_rmse": 0.0005206078212262149,
             "q_profile_sanity": {
               "finite_q_profile": true,
               "q_abs_max": 3.25174467113492,
@@ -354,7 +358,7 @@
               "xpoint_psi_n_error": 0.05
             },
             "xpoint_constraint_count": 2,
-            "xpoint_psi_n_error_max": 0.06964126692247141
+            "xpoint_psi_n_error_max": 0.0006449156820178548
           },
           "native_same_case_psi_comparison_ready": true,
           "status": "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
@@ -572,48 +576,48 @@
   "freegs_version": "0.8.2",
   "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
   "missing_full_fidelity_requirements": [
-    "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
     "grid convergence across public example resolutions",
-    "coil/vacuum reconstruction linked to public machine current sidecars"
+    "coil/vacuum reconstruction linked to public machine current sidecars",
+    "same-case public reference equilibrium output"
   ],
   "native_same_case_psi_comparison_ready": true,
   "reference_output_ready": false,
   "report_generation_mode": "tracked_report_fallback",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "34215674e7e71649cef59d6f4e3a09d2f585b8edbd696716e522966f1d6f1db2",
+  "sha256": "1e85b94167588fd5857716346539cfc948bfb15f7bc43bd65af97d5da2706b80",
   "source_cache_available": true,
-  "status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
+  "status": "blocked_public_freegs_native_same_case_compared_missing_grid_convergence_coil_sidecars_reference_output",
   "strict_free_boundary_parity_evidence": {
     "accepted_full_fidelity": false,
     "blocking_requirements": [
-      "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance",
       "grid convergence across public example resolutions",
-      "coil/vacuum reconstruction linked to public machine current sidecars"
+      "coil/vacuum reconstruction linked to public machine current sidecars",
+      "same-case public reference equilibrium output"
     ],
     "case_count": 2,
     "cases": [
       {
         "case_id": "freegs_01_test_tokamak_freeboundary",
         "external_nonlinear_output_ready": true,
-        "failed_threshold_check_count": 3,
+        "failed_threshold_check_count": 0,
         "native_same_case_profile_source_ready": true,
-        "strict_threshold_acceptance_ready": false,
+        "strict_threshold_acceptance_ready": true,
         "threshold_checks": [
           {
             "comparator": "<=",
             "limit": 0.05,
             "metric": "psi_n_rmse",
-            "passed": false,
+            "passed": true,
             "valid": true,
-            "value": 0.229181105368877
+            "value": 0.00043469744722436757
           },
           {
             "comparator": "<=",
             "limit": 0.025,
             "metric": "axis_error_m",
-            "passed": false,
+            "passed": true,
             "valid": true,
-            "value": 0.043103481950417945
+            "value": 0.0
           },
           {
             "comparator": "<=",
@@ -629,15 +633,15 @@
             "metric": "boundary_max_abs_error_wb",
             "passed": true,
             "valid": true,
-            "value": 0.0
+            "value": 1.464800503114816e-13
           },
           {
             "comparator": "<=",
             "limit": 0.05,
             "metric": "xpoint_psi_n_error_max",
-            "passed": false,
+            "passed": true,
             "valid": true,
-            "value": 0.2709460979429926
+            "value": 0.0004890721048200763
           },
           {
             "comparator": ">=",
@@ -660,25 +664,25 @@
       {
         "case_id": "freegs_16_diiid_public_example",
         "external_nonlinear_output_ready": true,
-        "failed_threshold_check_count": 3,
+        "failed_threshold_check_count": 0,
         "native_same_case_profile_source_ready": true,
-        "strict_threshold_acceptance_ready": false,
+        "strict_threshold_acceptance_ready": true,
         "threshold_checks": [
           {
             "comparator": "<=",
             "limit": 0.05,
             "metric": "psi_n_rmse",
-            "passed": false,
+            "passed": true,
             "valid": true,
-            "value": 0.06656438258503716
+            "value": 0.0005206078212262149
           },
           {
             "comparator": "<=",
             "limit": 0.025,
             "metric": "axis_error_m",
-            "passed": false,
+            "passed": true,
             "valid": true,
-            "value": 0.2250000000000001
+            "value": 0.0
           },
           {
             "comparator": "<=",
@@ -694,15 +698,15 @@
             "metric": "boundary_max_abs_error_wb",
             "passed": true,
             "valid": true,
-            "value": 0.0
+            "value": 6.568079413682426e-13
           },
           {
             "comparator": "<=",
             "limit": 0.05,
             "metric": "xpoint_psi_n_error_max",
-            "passed": false,
+            "passed": true,
             "valid": true,
-            "value": 0.06964126692247141
+            "value": 0.0006449156820178548
           },
           {
             "comparator": ">=",
@@ -724,7 +728,7 @@
       }
     ],
     "coil_vacuum_sidecar_ready": false,
-    "failed_threshold_check_count": 6,
+    "failed_threshold_check_count": 0,
     "geometry_containment_evidence": {
       "accepted_full_fidelity": false,
       "all_source_points_inside_grid": true,
@@ -738,13 +742,13 @@
           "boundary_containment_metric_ready": true,
           "case_id": "freegs_01_test_tokamak_freeboundary",
           "external_axis": [
-            1.0796875,
-            0.25
+            1.2875,
+            0.03125
           ],
           "isoflux_endpoint_count": 2,
           "native_axis": [
-            1.109375,
-            0.21875
+            1.2875,
+            0.03125
           ],
           "source_point_count": 4,
           "source_points_inside_grid": true,
@@ -756,13 +760,13 @@
           "boundary_containment_metric_ready": true,
           "case_id": "freegs_16_diiid_public_example",
           "external_axis": [
-            1.7874999999999999,
-            1.575
+            2.6312499999999996,
+            0.44999999999999996
           ],
           "isoflux_endpoint_count": 2,
           "native_axis": [
-            1.7874999999999999,
-            1.8
+            2.6312499999999996,
+            0.44999999999999996
           ],
           "source_point_count": 4,
           "source_points_inside_grid": true,
@@ -815,9 +819,10 @@
     },
     "grid_convergence_ready": false,
     "native_same_case_profile_source_ready": true,
+    "reference_output_ready": false,
     "schema": "strict-free-boundary-parity-evidence.v1",
-    "status": "blocked_strict_thresholds_or_grid_convergence_missing",
-    "strict_threshold_acceptance_ready": false
+    "status": "blocked_grid_convergence_or_public_reference_missing",
+    "strict_threshold_acceptance_ready": true
   },
   "vacuum_comparison_pass": true
 }

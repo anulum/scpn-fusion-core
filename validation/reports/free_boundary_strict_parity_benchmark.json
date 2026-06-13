@@ -20,13 +20,12 @@
     "machine_metadata": true,
     "native_same_case_profile_source": true,
     "same_case_reference_output": false,
-    "strict_threshold_metrics": false
+    "strict_threshold_metrics": true
   },
   "accepted_full_fidelity": false,
   "benchmark_id": "free_boundary_strict_parity",
   "benchmark_scope": "free_boundary_full_fidelity_acceptance",
   "blockers": [
-    "strict_threshold_acceptance_failed",
     "grid_convergence_evidence_missing",
     "public_external_coil_vacuum_sidecars_missing",
     "same_case_public_reference_output_missing"
@@ -41,9 +40,9 @@
     "machine_metadata_ready": true,
     "native_same_case_profile_source_ready": true,
     "same_case_public_reference_output_ready": false,
-    "strict_threshold_acceptance_ready": false
+    "strict_threshold_acceptance_ready": true
   },
-  "failed_threshold_check_count": 6,
+  "failed_threshold_check_count": 0,
   "grid_convergence": {
     "cases": [
       {
@@ -98,56 +97,18 @@
     {
       "case_id": "freegs_01_test_tokamak_freeboundary",
       "external_nonlinear_output_ready": true,
-      "failed_threshold_check_count": 3,
-      "failed_threshold_checks": [
-        {
-          "comparator": "<=",
-          "limit": 0.05,
-          "metric": "psi_n_rmse",
-          "value": 0.229181105368877
-        },
-        {
-          "comparator": "<=",
-          "limit": 0.025,
-          "metric": "axis_error_m",
-          "value": 0.043103481950417945
-        },
-        {
-          "comparator": "<=",
-          "limit": 0.05,
-          "metric": "xpoint_psi_n_error_max",
-          "value": 0.2709460979429926
-        }
-      ],
+      "failed_threshold_check_count": 0,
+      "failed_threshold_checks": [],
       "native_same_case_profile_source_ready": true,
-      "strict_threshold_acceptance_ready": false
+      "strict_threshold_acceptance_ready": true
     },
     {
       "case_id": "freegs_16_diiid_public_example",
       "external_nonlinear_output_ready": true,
-      "failed_threshold_check_count": 3,
-      "failed_threshold_checks": [
-        {
-          "comparator": "<=",
-          "limit": 0.05,
-          "metric": "psi_n_rmse",
-          "value": 0.06656438258503716
-        },
-        {
-          "comparator": "<=",
-          "limit": 0.025,
-          "metric": "axis_error_m",
-          "value": 0.2250000000000001
-        },
-        {
-          "comparator": "<=",
-          "limit": 0.05,
-          "metric": "xpoint_psi_n_error_max",
-          "value": 0.06964126692247141
-        }
-      ],
+      "failed_threshold_check_count": 0,
+      "failed_threshold_checks": [],
       "native_same_case_profile_source_ready": true,
-      "strict_threshold_acceptance_ready": false
+      "strict_threshold_acceptance_ready": true
     }
   ]
 }

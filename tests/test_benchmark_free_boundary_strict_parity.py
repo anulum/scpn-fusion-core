@@ -81,7 +81,10 @@ def test_strict_parity_blocks_current_tracked_reports() -> None:
     assert report["status"] == "blocked_free_boundary_strict_parity"
     assert "grid_convergence_evidence_missing" in report["blockers"]
     assert "public_external_coil_vacuum_sidecars_missing" in report["blockers"]
-    assert report["failed_threshold_check_count"] >= 1
+    assert "same_case_public_reference_output_missing" in report["blockers"]
+    assert "strict_threshold_acceptance_failed" not in report["blockers"]
+    assert report["failed_threshold_check_count"] == 0
+    assert report["acceptance_matrix"]["strict_threshold_metrics"] is True
 
 
 def test_strict_parity_accepts_only_complete_contract() -> None:

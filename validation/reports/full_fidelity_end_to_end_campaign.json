@@ -15,7 +15,7 @@
   "dream_settings_deck_generated": true,
   "free_boundary_boundary_containment_metric_ready": true,
   "free_boundary_coil_vacuum_sidecar_ready": false,
-  "free_boundary_failed_threshold_check_count": 6,
+  "free_boundary_failed_threshold_check_count": 0,
   "free_boundary_geometry_containment_ready": true,
   "free_boundary_grid_convergence_ready": false,
   "free_boundary_machine_metadata_indexed": 23,
@@ -24,18 +24,17 @@
   "free_boundary_machine_metadata_status": "blocked_machine_metadata_indexed_missing_same_case_free_boundary_reconstruction",
   "free_boundary_same_case_public_reference_output_ready": false,
   "free_boundary_strict_parity_blockers": [
-    "strict_threshold_acceptance_failed",
     "grid_convergence_evidence_missing",
     "public_external_coil_vacuum_sidecars_missing",
     "same_case_public_reference_output_missing"
   ],
   "free_boundary_strict_parity_report": "validation/reports/free_boundary_strict_parity_benchmark.json",
   "free_boundary_strict_parity_status": "blocked_free_boundary_strict_parity",
-  "free_boundary_strict_threshold_acceptance_ready": false,
+  "free_boundary_strict_threshold_acceptance_ready": true,
   "freegs_public_example_cases": 2,
   "freegs_public_example_external_output_ready": true,
   "freegs_public_example_reconstruction_report": "validation/reports/freegs_public_example_reconstruction.json",
-  "freegs_public_example_reconstruction_status": "blocked_public_freegs_native_same_case_compared_missing_strict_threshold_grid_convergence_coil_sidecars",
+  "freegs_public_example_reconstruction_status": "blocked_public_freegs_native_same_case_compared_missing_grid_convergence_coil_sidecars_reference_output",
   "freegs_public_example_vacuum_comparison_pass": true,
   "gk_electromagnetic_compact_closure_ready": true,
   "gk_electromagnetic_external_parity_ready": false,
@@ -269,7 +268,6 @@
       "lane": "free_boundary_equilibrium_strict_parity",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "strict_threshold_acceptance_failed",
         "grid_convergence_evidence_missing",
         "public_external_coil_vacuum_sidecars_missing",
         "same_case_public_reference_output_missing"
