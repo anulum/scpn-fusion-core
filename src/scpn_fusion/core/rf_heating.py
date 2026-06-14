@@ -66,10 +66,15 @@ class RFHeatingSystem:
         """
         Returns B_mod, density, and derivatives at (R,Z).
         """
+        R = _require_finite_float("R", R)
+        Z = _require_finite_float("Z", Z)
+
         # 1. Magnetic Field (Toroidal dominates)
         # B_tor ~ B0 * R0 / R
         B0 = 5.3  # Tesla at axis (ITER)
         R0 = 6.2
+        if R <= 0.0:
+            raise ValueError("R must be > 0 for the toroidal field B0 * R0 / R.")
         B_tor = B0 * R0 / R
 
         # Poloidal field from kernel
@@ -103,6 +108,8 @@ class RFHeatingSystem:
         Calculates the local dispersion D(w, k) = 0.
         Harden with Warm Plasma thermal corrections for ICRH.
         """
+        k_R = _require_finite_float("k_R", k_R)
+        k_Z = _require_finite_float("k_Z", k_Z)
         B_mod, n_e, _, _ = self.get_plasma_params(R, Z)
 
         if n_e < 1e18:
@@ -135,7 +142,12 @@ class RFHeatingSystem:
         dr/dt = dD/dk
         dk/dt = -dD/dr
         """
-        R, Z, kR, kZ = state
+        arr = np.asarray(state, dtype=float)
+        if arr.shape != (4,):
+            raise ValueError("ray state must have shape (4,): [R, Z, k_R, k_Z].")
+        if not np.all(np.isfinite(arr)):
+            raise ValueError("ray state must be finite.")
+        R, Z, kR, kZ = arr
 
         # Finite differences for derivatives of D
         # This implicitly handles refraction and reflection
@@ -184,6 +196,7 @@ class RFHeatingSystem:
         B_res
             Resonant magnetic field value in Tesla for the configured frequency.
         """
+        n_rays = _require_int("n_rays", n_rays, 1)
         print("--- RF HEATING RAY TRACING ---")
         print(f"Frequency: {self.freq / 1e6} MHz")
 
