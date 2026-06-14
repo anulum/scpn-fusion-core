@@ -86,6 +86,7 @@ def _python_case(n_modes: int, steps: int) -> dict[str, Any]:
         "amplitude_overflow_limited": state.amplitude_overflow_limited,
         "saturation_warning": state.saturation_warning,
         "fastest_growing_k_m_inv": state.fastest_growing_k_m_inv,
+        "most_amplified_k_m_inv": state.most_amplified_k_m_inv,
     }
 
 
@@ -173,7 +174,9 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
         "amplitude_overflow_limited": final_state.amplitude_overflow_limited,
         "saturation_warning": final_state.saturation_warning,
         "fastest_growing_k_m_inv": final_state.fastest_growing_k_m_inv,
+        "most_amplified_k_m_inv": final_state.most_amplified_k_m_inv,
         "coupling_status": "internal_fus_c6_pulsed_compression_adapter",
+        "interval_integration": "trapezoidal_endpoint_growth_exponent",
     }
 
 
@@ -222,17 +225,26 @@ def build_report(
     rows.extend(_python_compression_coupled_case(n_modes, 64) for n_modes in (64, 256))
     rows.extend(_criterion_rows())
     return {
-        "schema": "scpn-fusion-core.mrti_benchmark.v3",
+        "schema": "scpn-fusion-core.mrti_benchmark.v4",
         "claim_boundary": (
             "Local non-isolated MRTI analytical growth/spectrum regression evidence. "
             "Internal FUS-C.6 coupled rows consume the supplied-current "
-            "pulsed-compression trajectory and its force-balance acceleration. "
-            "External nonlinear MRTI parity remains blocked."
+            "pulsed-compression trajectory and its force-balance acceleration and "
+            "integrate the cumulative growth exponent with the trapezoidal rule "
+            "over each compression interval. External nonlinear MRTI parity remains "
+            "blocked."
         ),
         "physics_contract": {
             "name": "MIF/FRC linear MRTI growth spectrum",
             "equation": "gamma^2 = k*a_eff - k^2*B_perp^2/(mu0*rho)",
-            "amplitude_evolution": "log(A_i) <- log(A_i) + max(gamma_i*dt, 0)",
+            "amplitude_evolution": (
+                "log(A_i) <- log(A_i) + max(0.5*(gamma_i(start)+gamma_i(end))*dt, 0)"
+            ),
+            "interval_integration": (
+                "trapezoidal cumulative growth exponent from interval-endpoint "
+                "growth rates; second-order accurate in dt for time-varying drivers; "
+                "reduces exactly to the frozen-coefficient step for constant drivers"
+            ),
             "stabilization": "negative radicands clipped to zero for magnetic-tension-stabilized modes",
             "not_claimed": "external Slough same-case MRTI parity or nonlinear saturation physics",
         },

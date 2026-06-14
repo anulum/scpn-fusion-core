@@ -33,17 +33,35 @@ growth rate in `s^-1`.
 Negative radicands are clipped to zero. That represents magnetic-tension
 stabilisation for the supplied mode, not nonlinear mode removal.
 
-Perturbation amplitudes are integrated in log space:
+Perturbation amplitudes are integrated in log space. Each interval adds the
+cumulative linear growth exponent, evaluated with the trapezoidal rule from the
+interval-endpoint growth rates:
 
 ```text
-log(A_i) <- log(A_i) + max(gamma_i * dt, 0)
+log(A_i) <- log(A_i) + max(0.5 * (gamma_i(start) + gamma_i(end)) * dt, 0)
 ```
+
+The trapezoidal endpoint integration is second-order accurate in `dt` for a
+smoothly varying acceleration or perpendicular field, against a first-order
+endpoint-frozen exponent. When the start and end drivers are equal it reduces
+exactly to the frozen-coefficient form `log(A_i) <- log(A_i) + max(gamma_i * dt, 0)`,
+so the constant-driver `step()` path is unchanged. The Velikovich eq. (18)
+dispersion relation is evaluated unchanged at each endpoint; only the temporal
+amplitude integration is hardened.
 
 The public state still exposes physical amplitudes in metres, but also reports
 `log_amplitudes`, `max_log_amplitude`, and `amplitude_overflow_limited`. If an
 extreme-growth trajectory exceeds finite `float64` amplitude range, the
 physical amplitude is limited to the largest representable finite value while
 the log-amplitude diagnostic preserves the actual integrated exponent.
+
+The spectrum state reports two complementary dominant-mode diagnostics:
+`fastest_growing_k_m_inv` is the instantaneous fastest-growing wavenumber at the
+current time (argmax of the end-of-interval growth spectrum), while
+`most_amplified_k_m_inv` is the cumulatively most-amplified wavenumber (argmax of
+the integrated log-amplitude). For constant drivers the two coincide; under a
+time-varying compression they can differ, and the cumulative diagnostic is the
+relevant signal for pre-empting a separatrix breach.
 
 ## Public API
 
@@ -59,7 +77,17 @@ from scpn_fusion.core import (
 gamma = mrti_growth_rate([10.0, 40.0], a_eff=1.0e8, B_perp=8.0e-4, rho_kg_m3=1.0e-3)
 
 tracker = MRTISpectrumTracker(k_max_m_inv=1.0e4, n_modes=256)
+# Constant-driver step (frozen coefficient, first-order):
 state = tracker.step(dt_s=2.0e-7, a_eff_m_s2=6.5e6, B_perp_t=8.0e-4)
+# Time-varying interval (trapezoidal, second-order) when the acceleration or
+# field differs across the interval endpoints:
+state = tracker.step_interval(
+    dt_s=2.0e-7,
+    a_eff_start_m_s2=6.5e6,
+    a_eff_end_m_s2=7.1e6,
+    B_perp_start_t=8.0e-4,
+    B_perp_end_t=7.6e-4,
+)
 coupled_states = track_mrti_from_pulsed_compression(compression_states, tracker)
 ```
 
@@ -73,6 +101,7 @@ use fusion_physics::mrti::{
 let gamma = mrti_growth_rate(40.0, 1.0e8, 8.0e-4, 1.0e-3)?;
 let mut tracker = MrtiSpectrumTracker::new(1.0e4, 256, 1.0e-9, 1.0e-3, 1.0e-3)?;
 let state = tracker.step(2.0e-7, 6.5e6, 8.0e-4)?;
+let state = tracker.step_interval(2.0e-7, 6.5e6, 7.1e6, 8.0e-4, 7.6e-4)?;
 let coupled_states = track_mrti_from_pulsed_compression(
     &compression_states, &mut tracker, 1, -1.0, 1.0
 )?;
@@ -102,6 +131,14 @@ Tracked tests cover:
 - Hydrodynamic `B_perp = 0` limit: `gamma = sqrt(k a_eff)`.
 - Magnetic-tension stabilisation for short wavelengths.
 - Constant-acceleration exponential amplitude growth.
+- Exact equivalence of `step_interval` to the frozen-coefficient `step` for
+  equal start and end drivers (Python and Rust).
+- Second-order accuracy of the trapezoidal interval integration on an analytic
+  acceleration ramp, verified against the closed-form cumulative growth exponent
+  and against the first-order endpoint-frozen step (Python and Rust).
+- Cumulative `most_amplified_k_m_inv` diagnostic tracking the integrated dominant
+  mode rather than the instantaneous fastest-growing mode (Python and Rust).
+- Trapezoidal interval integration of the FUS-C.6 pulsed-compression coupling.
 - Log-amplitude accounting for long or extreme growth trajectories.
 - First saturation-threshold breach detection.
 - Smoothed acceleration recovery from a synthetic radial-speed ramp.

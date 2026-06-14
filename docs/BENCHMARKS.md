@@ -1876,11 +1876,15 @@ MRTI growth-rate and spectrum tracker. It also includes internal FUS-C.6
 supplied-current pulsed-compression rows: each row consumes the real
 `PulsedCompressionState` history, projects the explicit FUS-C.6
 `radial_acceleration_m_s2` sidecar into the MRTI interface-normal convention,
-and advances the MRTI spectrum over the compression intervals.
-Schema `scpn-fusion-core.mrti_benchmark.v3` records log-amplitude evolution
-diagnostics for the tracker. Python rows publish `max_log_amplitude` and
-`amplitude_overflow_limited`, and coupled rows publish the acceleration source
-plus final and maximum effective acceleration; Rust Criterion rows publish
+and advances the MRTI spectrum over the compression intervals with a
+second-order trapezoidal cumulative growth exponent evaluated from the
+interval-endpoint growth rates.
+Schema `scpn-fusion-core.mrti_benchmark.v4` records log-amplitude evolution
+diagnostics for the tracker. Python rows publish `max_log_amplitude`,
+`amplitude_overflow_limited`, and the cumulative `most_amplified_k_m_inv`
+dominant-mode diagnostic, and coupled rows publish the acceleration source,
+the trapezoidal `interval_integration` tag, plus final and maximum effective
+acceleration; Rust Criterion rows publish
 `log_amplitude_status` because the timing harness asserts finite physical and
 log-amplitude state before emitting Criterion estimates.
 

@@ -1,14 +1,15 @@
 {
-  "claim_boundary": "Local non-isolated MRTI analytical growth/spectrum regression evidence. Internal FUS-C.6 coupled rows consume the supplied-current pulsed-compression trajectory and its force-balance acceleration. External nonlinear MRTI parity remains blocked.",
+  "claim_boundary": "Local non-isolated MRTI analytical growth/spectrum regression evidence. Internal FUS-C.6 coupled rows consume the supplied-current pulsed-compression trajectory and its force-balance acceleration and integrate the cumulative growth exponent with the trapezoidal rule over each compression interval. External nonlinear MRTI parity remains blocked.",
   "environment": {
     "isolated": false,
-    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "python": "3.12.3"
   },
   "physics_contract": {
-    "amplitude_evolution": "log(A_i) <- log(A_i) + max(gamma_i*dt, 0)",
+    "amplitude_evolution": "log(A_i) <- log(A_i) + max(0.5*(gamma_i(start)+gamma_i(end))*dt, 0)",
     "equation": "gamma^2 = k*a_eff - k^2*B_perp^2/(mu0*rho)",
+    "interval_integration": "trapezoidal cumulative growth exponent from interval-endpoint growth rates; second-order accurate in dt for time-varying drivers; reduces exactly to the frozen-coefficient step for constant drivers",
     "name": "MIF/FRC linear MRTI growth spectrum",
     "not_claimed": "external Slough same-case MRTI parity or nonlinear saturation physics",
     "stabilization": "negative radicands clipped to zero for magnetic-tension-stabilized modes"
@@ -22,14 +23,15 @@
       "final_time_s": 0.00010240000000000081,
       "language": "python",
       "max_log_amplitude": -5.976561970972142,
-      "mean_seconds": 0.021941890800000002,
+      "mean_seconds": 0.0258014692,
+      "most_amplified_k_m_inv": 6406.25,
       "n_modes": 64,
       "samples_seconds": [
-        0.017438735,
-        0.025173662000000003,
-        0.021523384000000003,
-        0.021664087000000002,
-        0.023909586
+        0.02423225,
+        0.023874351000000002,
+        0.024459498000000003,
+        0.025553156,
+        0.030888091000000003
       ],
       "saturation_warning": true,
       "steps": 512
@@ -42,14 +44,15 @@
       "final_time_s": 0.00010240000000000081,
       "language": "python",
       "max_log_amplitude": -5.976486167135271,
-      "mean_seconds": 0.0241363352,
+      "mean_seconds": 0.027891033200000002,
+      "most_amplified_k_m_inv": 6367.1875,
       "n_modes": 256,
       "samples_seconds": [
-        0.021951701,
-        0.024057427000000003,
-        0.023471795,
-        0.023394771,
-        0.027805982000000003
+        0.028458171,
+        0.027417489000000003,
+        0.028134047000000002,
+        0.027611213000000003,
+        0.027834246000000003
       ],
       "saturation_warning": true,
       "steps": 512
@@ -62,14 +65,15 @@
       "final_time_s": 0.00010240000000000081,
       "language": "python",
       "max_log_amplitude": -5.976453313976697,
-      "mean_seconds": 0.0280090898,
+      "mean_seconds": 0.0345608028,
+      "most_amplified_k_m_inv": 6376.953125,
       "n_modes": 1024,
       "samples_seconds": [
-        0.029028241000000003,
-        0.030558438,
-        0.024300352,
-        0.032500701,
-        0.023657717
+        0.041525415,
+        0.034208272000000005,
+        0.033734856,
+        0.032537192,
+        0.030798279
       ],
       "saturation_warning": true,
       "steps": 512
@@ -85,17 +89,19 @@
       "final_max_amplitude_m": 1.0000000000000007e-09,
       "final_radius_m": 0.08408251898081921,
       "final_time_s": 6.400000000000004e-08,
+      "interval_integration": "trapezoidal_endpoint_growth_exponent",
       "language": "python",
       "max_effective_acceleration_m_s2": 62540468166971.88,
       "max_log_amplitude": -20.72326583694641,
-      "mean_seconds": 0.0195236864,
+      "mean_seconds": 0.018741028399999998,
+      "most_amplified_k_m_inv": 156.25,
       "n_modes": 64,
       "samples_seconds": [
-        0.020451677,
-        0.021532609,
-        0.015475126,
-        0.020916669000000002,
-        0.019242351
+        0.018099191,
+        0.018503792,
+        0.019381565,
+        0.019130826,
+        0.018589768
       ],
       "saturation_warning": false,
       "steps": 64
@@ -111,17 +117,19 @@
       "final_max_amplitude_m": 1.0000000000000007e-09,
       "final_radius_m": 0.08408251898081921,
       "final_time_s": 6.400000000000004e-08,
+      "interval_integration": "trapezoidal_endpoint_growth_exponent",
       "language": "python",
       "max_effective_acceleration_m_s2": 62540468166971.88,
       "max_log_amplitude": -20.72326583694641,
-      "mean_seconds": 0.0210728704,
+      "mean_seconds": 0.018412966800000003,
+      "most_amplified_k_m_inv": 39.0625,
       "n_modes": 256,
       "samples_seconds": [
-        0.016848023,
-        0.023552224,
-        0.020012294,
-        0.021749164,
-        0.023202647
+        0.017976106000000002,
+        0.018478996,
+        0.019095058,
+        0.018366429,
+        0.018148245
       ],
       "saturation_warning": false,
       "steps": 64
@@ -131,9 +139,9 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_1024_modes_512_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.008383494128650795,
+      "mean_seconds": 0.013086546677500002,
       "n_modes": 1024,
-      "stddev_seconds": 7.947645718740163e-05,
+      "stddev_seconds": 0.001900675672826129,
       "steps": 512
     },
     {
@@ -141,9 +149,9 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_256_modes_512_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.002350783226745064,
+      "mean_seconds": 0.003422585838,
       "n_modes": 256,
-      "stddev_seconds": 0.00023819393681722624,
+      "stddev_seconds": 0.0003837477215554394,
       "steps": 512
     },
     {
@@ -151,9 +159,9 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_64_modes_512_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.0007066768739759344,
+      "mean_seconds": 0.0008629592980970311,
       "n_modes": 64,
-      "stddev_seconds": 9.139360791062063e-05,
+      "stddev_seconds": 6.894403015360154e-05,
       "steps": 512
     },
     {
@@ -163,9 +171,9 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_fus_c6_coupled_256_modes_64_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.00040253358761370916,
+      "mean_seconds": 0.0004811548971688492,
       "n_modes": 256,
-      "stddev_seconds": 4.0711555773708803e-05,
+      "stddev_seconds": 2.058009570933878e-05,
       "steps": 64
     },
     {
@@ -175,18 +183,18 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_fus_c6_coupled_64_modes_64_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.00018551650622048002,
+      "mean_seconds": 0.00020091528703529573,
       "n_modes": 64,
-      "stddev_seconds": 1.516746207612834e-05,
+      "stddev_seconds": 1.3349262163899834e-05,
       "steps": 64
     }
   ],
-  "schema": "scpn-fusion-core.mrti_benchmark.v3",
+  "schema": "scpn-fusion-core.mrti_benchmark.v4",
   "source_checksums": {
-    "benchmarks/bench_mrti.py": "054cd7dbb69d1b4aabbca21c7f7188cb0dd1c5cd14a01716c601c8d8fd4bf051",
-    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "74c539722a03fb4b2bc55ed79a98449001710ec2d0c1283a09200155d06ea2b6",
-    "scpn-fusion-rs/crates/fusion-physics/src/mrti.rs": "249c0d58b67874425492dadf4e4d60a72c276783a3144452d2ac91f5cf600de7",
-    "src/scpn_fusion/core/mrti.py": "12166d4e03ec23fbeaee23aa8c20e9c266511b9c76c172680e83c712b508f4fe",
-    "src/scpn_fusion/core/pulsed_compression.py": "43c84e6f605525f2b1e2c17fe48261836436ed8321d9060686bc13e04227a2fe"
+    "benchmarks/bench_mrti.py": "04bd1c2bfac3a4f6823fdba0948b6afa059cdfc17fa58628ab3da31f8fd3c0eb",
+    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "40d948c1c247584fd80cebb67ce41765e361839129b5cebf00fa69228e1f780d",
+    "scpn-fusion-rs/crates/fusion-physics/src/mrti.rs": "7299eafb0411e80335e2122e45d588b0cef2ee7c94ad980e7f5d268de58407cb",
+    "src/scpn_fusion/core/mrti.py": "179d120bdc71cde7eb90b3d362c2f545fe6db3dbcff0b9ffe28442e5a85017c0",
+    "src/scpn_fusion/core/pulsed_compression.py": "4ace5b8d4a9794d99d5e0865fbf0e903d4b0ce5f461ac442ac07a818ddc9d9a8"
   }
 }

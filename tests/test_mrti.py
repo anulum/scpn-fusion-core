@@ -7,6 +7,8 @@
 # SCPN Fusion Core — MRTI Tests
 from __future__ import annotations
 
+from dataclasses import dataclass
+import math
 from math import isclose
 
 import numpy as np
@@ -162,6 +164,133 @@ def test_pulsed_compression_trajectory_drives_mrti_tracker() -> None:
     assert float(np.max(acceleration)) > 0.0
     assert snapshots[-1].t_s == pytest.approx(states[-1].t_s)
     assert snapshots[-1].max_amplitude_m >= snapshots[0].max_amplitude_m
+
+
+def test_step_interval_constant_drivers_match_frozen_step() -> None:
+    dt = 2.5e-7
+    acceleration = 4.0e6
+    field = 8.0e-4
+
+    frozen = MRTISpectrumTracker(k_modes_m_inv=[2.0, 8.0, 20.0], initial_perturbation_m=2.0e-9)
+    interval = MRTISpectrumTracker(k_modes_m_inv=[2.0, 8.0, 20.0], initial_perturbation_m=2.0e-9)
+    for _ in range(8):
+        frozen_state = frozen.step(dt, acceleration, B_perp_t=field)
+        interval_state = interval.step_interval(dt, acceleration, acceleration, field, field)
+
+    np.testing.assert_array_equal(interval_state.amplitudes_m, frozen_state.amplitudes_m)
+    np.testing.assert_array_equal(interval_state.log_amplitudes, frozen_state.log_amplitudes)
+    np.testing.assert_array_equal(
+        interval_state.growth_rates_s_inv, frozen_state.growth_rates_s_inv
+    )
+    assert interval_state.t_s == frozen_state.t_s
+
+
+def _ramp_a0_s_t() -> tuple[float, float, float]:
+    return 1.0e6, 1.0e12, 1.0e-6
+
+
+def _ramp_cumulative_log_mode0(n_steps: int, *, use_interval: bool) -> float:
+    a0, s, total_t = _ramp_a0_s_t()
+    tracker = MRTISpectrumTracker(
+        k_modes_m_inv=[1.0, 2.0],
+        initial_perturbation_m=1.0,
+        rho_kg_m3=1.0e-3,
+        saturation_threshold_m=1.0e30,
+    )
+    h = total_t / n_steps
+    for n in range(n_steps):
+        a_start = a0 + s * (n * h)
+        a_end = a0 + s * ((n + 1) * h)
+        if use_interval:
+            tracker.step_interval(h, a_start, a_end, 0.0, 0.0)
+        else:
+            tracker.step(h, a_end, 0.0)
+    return float(tracker.state().log_amplitudes[0])
+
+
+def _ramp_analytic_log_mode0() -> float:
+    a0, s, total_t = _ramp_a0_s_t()
+    k = 1.0
+    return math.sqrt(k) * (2.0 / (3.0 * s)) * ((a0 + s * total_t) ** 1.5 - a0**1.5)
+
+
+def test_step_interval_trapezoidal_is_second_order_on_acceleration_ramp() -> None:
+    analytic = _ramp_analytic_log_mode0()
+
+    err_trap_50 = abs(_ramp_cumulative_log_mode0(50, use_interval=True) - analytic)
+    err_trap_100 = abs(_ramp_cumulative_log_mode0(100, use_interval=True) - analytic)
+    err_endpoint_50 = abs(_ramp_cumulative_log_mode0(50, use_interval=False) - analytic)
+
+    assert err_trap_100 < err_trap_50
+    # Halving dt cuts a second-order error by ~4x; allow a tolerance band.
+    assert 3.0 < err_trap_50 / err_trap_100 < 5.0
+    # Trapezoidal integration is materially closer to the analytic cumulative
+    # exponent than the first-order endpoint-frozen step on the same grid.
+    assert err_trap_50 < 0.1 * err_endpoint_50
+
+
+def test_most_amplified_mode_tracks_cumulative_not_instantaneous_peak() -> None:
+    # Interval 1 (constant) drives only the long-wavelength mode: choose a field
+    # whose Alfven speed stabilises k = 300 while k = 100 stays unstable.
+    field_va_unit = math.sqrt(MRTI_MU_0 * 1.0e-3 * 1.0)  # v_A^2 = B^2/(mu0 rho) = 1.0
+    tracker = MRTISpectrumTracker(
+        k_modes_m_inv=[100.0, 300.0],
+        initial_perturbation_m=1.0,
+        rho_kg_m3=1.0e-3,
+        saturation_threshold_m=1.0e30,
+    )
+    tracker.step(1.0, 200.0, B_perp_t=field_va_unit)
+    # Interval 2 makes k = 300 the instantaneous fastest mode (B = 0), but over a
+    # short dt it cannot overtake the cumulative lead the long-wavelength mode
+    # accrued in interval 1.
+    state = tracker.step(1.0e-3, 1.0e6, B_perp_t=0.0)
+
+    assert state.fastest_growing_k_m_inv == 300.0
+    assert state.most_amplified_k_m_inv == 100.0
+    assert state.most_amplified_k_m_inv == float(
+        state.k_modes_m_inv[int(np.argmax(state.log_amplitudes))]
+    )
+
+
+@dataclass(frozen=True)
+class _StubCompressionState:
+    t_s: float
+    R_s_m: float
+    dR_s_dt_m_s: float
+    radial_acceleration_m_s2: float
+    B_ext_T: float
+
+
+def test_track_pulsed_compression_uses_trapezoidal_interval_integration() -> None:
+    states = [
+        _StubCompressionState(0.0, 0.20, 0.0, 0.0, 4.0),
+        _StubCompressionState(1.0e-7, 0.19, -1.0e5, -1.0e12, 4.5),
+        _StubCompressionState(2.0e-7, 0.17, -2.2e5, -1.6e12, 5.2),
+        _StubCompressionState(3.0e-7, 0.14, -3.1e5, -1.1e12, 6.0),
+    ]
+    coupled = track_mrti_from_pulsed_compression(
+        states, MRTISpectrumTracker(k_modes_m_inv=[50.0, 150.0], initial_perturbation_m=1.0e-9)
+    )
+
+    accelerations = effective_acceleration_from_pulsed_compression(states)
+    reference = MRTISpectrumTracker(k_modes_m_inv=[50.0, 150.0], initial_perturbation_m=1.0e-9)
+    for index in range(1, len(states)):
+        dt_s = states[index].t_s - states[index - 1].t_s
+        reference.step_interval(
+            dt_s,
+            float(accelerations[index - 1]),
+            float(accelerations[index]),
+            float(states[index - 1].B_ext_T),
+            float(states[index].B_ext_T),
+        )
+
+    assert len(coupled) == len(states) - 1
+    np.testing.assert_array_equal(
+        coupled[-1].amplitudes_m, reference.state().amplitudes_m
+    )
+    np.testing.assert_array_equal(
+        coupled[-1].growth_rates_s_inv, reference.state().growth_rates_s_inv
+    )
 
 
 def test_mrti_inputs_fail_closed() -> None:

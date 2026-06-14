@@ -14,6 +14,14 @@
 - Tightened input contracts across the guiding-centre integrator, orbit
   classifier, Monte-Carlo ensemble, and slowing-down helpers, and made the
   ensemble sampler deterministic through an explicit seed.
+- Hardened the MIF/FRC MRTI spectrum tracker temporal integration with a
+  second-order trapezoidal cumulative growth exponent evaluated from the
+  interval-endpoint growth rates, added a `step_interval` driver-varying step
+  and a cumulative `most_amplified_k_m_inv` dominant-mode diagnostic, and routed
+  the FUS-C.6 pulsed-compression coupling through the interval integrator across
+  Python, Rust, benchmarks, and documentation. The Velikovich eq. (18)
+  dispersion relation and the constant-driver `step` path are unchanged, and the
+  benchmark report schema advances to `scpn-fusion-core.mrti_benchmark.v4`.
 
 ## [3.9.10] - 2026-06-05
 

@@ -199,6 +199,7 @@ class MRTISpectrumState:
     log_amplitudes: FloatArray
     growth_rates_s_inv: FloatArray
     fastest_growing_k_m_inv: float
+    most_amplified_k_m_inv: float
     max_amplitude_m: float
     max_log_amplitude: float
     saturation_warning: bool
@@ -280,6 +281,7 @@ class MRTISpectrumTracker:
         """Return an immutable snapshot of the current spectrum state."""
 
         fastest_index = int(np.argmax(self._growth_rates_s_inv))
+        most_amplified_index = int(np.argmax(self._log_amplitudes))
         max_amplitude = float(np.max(self._amplitudes_m))
         max_log_amplitude = float(np.max(self._log_amplitudes))
         return MRTISpectrumState(
@@ -289,6 +291,7 @@ class MRTISpectrumTracker:
             log_amplitudes=self._log_amplitudes.copy(),
             growth_rates_s_inv=self._growth_rates_s_inv.copy(),
             fastest_growing_k_m_inv=float(self._k_modes_m_inv[fastest_index]),
+            most_amplified_k_m_inv=float(self._k_modes_m_inv[most_amplified_index]),
             max_amplitude_m=max_amplitude,
             max_log_amplitude=max_log_amplitude,
             saturation_warning=max_amplitude >= self._saturation_threshold_m,
@@ -297,16 +300,51 @@ class MRTISpectrumTracker:
         )
 
     def step(self, dt_s: float, a_eff_m_s2: float, B_perp_t: float = 0.0) -> MRTISpectrumState:
-        """Advance amplitudes by ``dt_s`` using frozen-coefficient exponential growth."""
+        """Advance amplitudes by ``dt_s`` holding the drivers constant.
+
+        This frozen-coefficient step is the exact constant-driver case of
+        :meth:`step_interval`: it integrates ``gamma_i * dt`` for the supplied
+        acceleration and perpendicular field. Use :meth:`step_interval` when the
+        acceleration or field varies across the interval, as during a
+        pulsed-compression trajectory.
+        """
+
+        return self.step_interval(dt_s, a_eff_m_s2, a_eff_m_s2, B_perp_t, B_perp_t)
+
+    def step_interval(
+        self,
+        dt_s: float,
+        a_eff_start_m_s2: float,
+        a_eff_end_m_s2: float,
+        B_perp_start_t: float = 0.0,
+        B_perp_end_t: float = 0.0,
+    ) -> MRTISpectrumState:
+        """Advance amplitudes across an interval with time-varying drivers.
+
+        The cumulative linear growth exponent over ``[t_n, t_n + dt_s]`` is
+        integrated with the trapezoidal rule from the interval-endpoint growth
+        rates,
+
+        ``Delta log A_i = 0.5 * (gamma_i(start) + gamma_i(end)) * dt_s``,
+
+        which is second-order accurate in ``dt_s`` for a smoothly varying
+        acceleration or perpendicular field, against the first-order
+        endpoint-frozen exponent. The Velikovich eq. (18) dispersion relation in
+        :func:`mrti_growth_rate` is evaluated unchanged at each endpoint. The
+        reported instantaneous growth spectrum is taken at the end of the
+        interval. With equal start and end drivers this reduces exactly to the
+        frozen-coefficient :meth:`step`.
+        """
 
         dt = _require_positive("dt_s", dt_s)
-        self._growth_rates_s_inv = mrti_growth_rate(
-            self._k_modes_m_inv,
-            a_eff_m_s2,
-            B_perp_t,
-            self._rho_kg_m3,
+        gamma_start = mrti_growth_rate(
+            self._k_modes_m_inv, a_eff_start_m_s2, B_perp_start_t, self._rho_kg_m3
         )
-        growth_exponent = np.maximum(self._growth_rates_s_inv * dt, 0.0)
+        gamma_end = mrti_growth_rate(
+            self._k_modes_m_inv, a_eff_end_m_s2, B_perp_end_t, self._rho_kg_m3
+        )
+        self._growth_rates_s_inv = gamma_end
+        growth_exponent = np.maximum(0.5 * (gamma_start + gamma_end) * dt, 0.0)
         self._log_amplitudes = cast(FloatArray, self._log_amplitudes + growth_exponent)
         max_log = float(np.log(np.finfo(np.float64).max))
         self._amplitude_overflow_limited = bool(
@@ -330,10 +368,12 @@ def track_mrti_from_pulsed_compression(
 ) -> tuple[MRTISpectrumState, ...]:
     """Advance an MRTI tracker over a supplied FUS-C.6 compression trajectory.
 
-    Each interval uses the FUS-C.6 force-balance acceleration at the interval
-    end and the endpoint external field as the stabilising perpendicular field.
-    The function returns one MRTI state per trajectory interval and raises on
-    malformed trajectories instead of inventing coupled evidence.
+    Each interval is integrated with :meth:`MRTISpectrumTracker.step_interval`
+    using the FUS-C.6 force-balance accelerations and external fields at both
+    interval endpoints, so the cumulative growth exponent is second-order
+    accurate across the varying compression drivers. The function returns one
+    MRTI state per trajectory interval and raises on malformed trajectories
+    instead of inventing coupled evidence.
     """
 
     if len(states) < 2:
@@ -350,10 +390,12 @@ def track_mrti_from_pulsed_compression(
     for index in range(1, len(states)):
         dt_s = _require_positive("trajectory dt_s", states[index].t_s - states[index - 1].t_s)
         snapshots.append(
-            tracker.step(
+            tracker.step_interval(
                 dt_s,
+                float(accelerations[index - 1]),
                 float(accelerations[index]),
-                B_perp_t=float(states[index].B_ext_T) * field_scale,
+                B_perp_start_t=float(states[index - 1].B_ext_T) * field_scale,
+                B_perp_end_t=float(states[index].B_ext_T) * field_scale,
             )
         )
     return tuple(snapshots)

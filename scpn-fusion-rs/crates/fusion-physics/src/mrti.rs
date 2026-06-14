@@ -19,6 +19,7 @@ pub struct MrtiSpectrumState {
     pub log_amplitudes: Vec<f64>,
     pub growth_rates_s_inv: Vec<f64>,
     pub fastest_growing_k_m_inv: f64,
+    pub most_amplified_k_m_inv: f64,
     pub max_amplitude_m: f64,
     pub max_log_amplitude: f64,
     pub saturation_warning: bool,
@@ -224,9 +225,11 @@ pub fn track_mrti_from_pulsed_compression(
     let mut snapshots = Vec::with_capacity(states.len() - 1);
     for index in 1..states.len() {
         let dt_s = require_positive("trajectory dt_s", states[index].t_s - states[index - 1].t_s)?;
-        snapshots.push(tracker.step(
+        snapshots.push(tracker.step_interval(
             dt_s,
+            accelerations[index - 1],
             accelerations[index],
+            states[index - 1].b_ext_t * field_scale,
             states[index].b_ext_t * field_scale,
         )?);
     }
@@ -302,6 +305,13 @@ impl MrtiSpectrumTracker {
             .max_by(|lhs, rhs| lhs.1.total_cmp(rhs.1))
             .map(|(index, _)| index)
             .unwrap_or(0);
+        let most_amplified_index = self
+            .log_amplitudes
+            .iter()
+            .enumerate()
+            .max_by(|lhs, rhs| lhs.1.total_cmp(rhs.1))
+            .map(|(index, _)| index)
+            .unwrap_or(0);
         let max_amplitude_m = self
             .amplitudes_m
             .iter()
@@ -319,6 +329,7 @@ impl MrtiSpectrumTracker {
             log_amplitudes: self.log_amplitudes.clone(),
             growth_rates_s_inv: self.growth_rates_s_inv.clone(),
             fastest_growing_k_m_inv: self.k_modes_m_inv[fastest_index],
+            most_amplified_k_m_inv: self.k_modes_m_inv[most_amplified_index],
             max_amplitude_m,
             max_log_amplitude,
             saturation_warning: max_amplitude_m >= self.saturation_threshold_m,
@@ -327,30 +338,65 @@ impl MrtiSpectrumTracker {
         }
     }
 
+    /// Advance amplitudes by `dt_s` holding the drivers constant.
+    ///
+    /// This frozen-coefficient step is the exact constant-driver case of
+    /// [`MrtiSpectrumTracker::step_interval`]. Use `step_interval` when the
+    /// acceleration or perpendicular field varies across the interval, as during
+    /// a pulsed-compression trajectory.
     pub fn step(
         &mut self,
         dt_s: f64,
         a_eff_m_s2: f64,
         b_perp_t: f64,
     ) -> Result<MrtiSpectrumState, String> {
+        self.step_interval(dt_s, a_eff_m_s2, a_eff_m_s2, b_perp_t, b_perp_t)
+    }
+
+    /// Advance amplitudes across an interval with time-varying drivers.
+    ///
+    /// The cumulative linear growth exponent over `[t_n, t_n + dt_s]` is
+    /// integrated with the trapezoidal rule from the interval-endpoint growth
+    /// rates, `Δ log A_i = 0.5 * (γ_i(start) + γ_i(end)) * dt_s`, which is
+    /// second-order accurate in `dt_s` for a smoothly varying acceleration or
+    /// perpendicular field. The Velikovich eq. (18) dispersion relation in
+    /// [`mrti_growth_rate`] is evaluated unchanged at each endpoint, and the
+    /// reported instantaneous growth spectrum is taken at the end of the
+    /// interval. With equal start and end drivers this reduces exactly to the
+    /// frozen-coefficient [`MrtiSpectrumTracker::step`].
+    pub fn step_interval(
+        &mut self,
+        dt_s: f64,
+        a_eff_start_m_s2: f64,
+        a_eff_end_m_s2: f64,
+        b_perp_start_t: f64,
+        b_perp_end_t: f64,
+    ) -> Result<MrtiSpectrumState, String> {
         let dt = require_positive("dt_s", dt_s)?;
-        self.growth_rates_s_inv =
-            mrti_growth_rates(&self.k_modes_m_inv, a_eff_m_s2, b_perp_t, self.rho_kg_m3)?;
-        for ((amplitude, log_amplitude), gamma) in self
-            .amplitudes_m
-            .iter_mut()
-            .zip(self.log_amplitudes.iter_mut())
-            .zip(self.growth_rates_s_inv.iter())
-        {
-            let growth_exponent = (gamma * dt).max(0.0);
-            *log_amplitude += growth_exponent;
-            if *log_amplitude > f64::MAX.ln() {
+        let gamma_start = mrti_growth_rates(
+            &self.k_modes_m_inv,
+            a_eff_start_m_s2,
+            b_perp_start_t,
+            self.rho_kg_m3,
+        )?;
+        let gamma_end = mrti_growth_rates(
+            &self.k_modes_m_inv,
+            a_eff_end_m_s2,
+            b_perp_end_t,
+            self.rho_kg_m3,
+        )?;
+        let max_log = f64::MAX.ln();
+        for index in 0..self.k_modes_m_inv.len() {
+            let growth_exponent = (0.5 * (gamma_start[index] + gamma_end[index]) * dt).max(0.0);
+            self.log_amplitudes[index] += growth_exponent;
+            if self.log_amplitudes[index] > max_log {
                 self.amplitude_overflow_limited = true;
-                *amplitude = f64::MAX;
+                self.amplitudes_m[index] = f64::MAX;
             } else {
-                *amplitude = (*log_amplitude).exp();
+                self.amplitudes_m[index] = self.log_amplitudes[index].exp();
             }
         }
+        self.growth_rates_s_inv = gamma_end;
         self.t_s += dt;
         if self.time_of_breach_s.is_none() && self.saturation_threshold_breached(None)? {
             self.time_of_breach_s = Some(self.t_s);
@@ -551,5 +597,81 @@ mod tests {
         assert!(effective_acceleration_from_pulsed_compression(&[], 1, -1.0).is_err());
         assert!(effective_acceleration_from_radius_rate(&[0.0, 0.0], &[1.0, 2.0], 1).is_err());
         assert!(effective_acceleration_from_radius_rate(&[0.0, 1.0], &[1.0, 2.0], 2).is_err());
+    }
+
+    #[test]
+    fn step_interval_constant_drivers_match_frozen_step() {
+        let dt = 2.5e-7;
+        let acceleration = 4.0e6;
+        let field = 8.0e-4;
+        let mut frozen =
+            MrtiSpectrumTracker::from_modes(vec![2.0, 8.0, 20.0], 2.0e-9, 1.0e-3, 1.0e-3)
+                .expect("valid tracker");
+        let mut interval =
+            MrtiSpectrumTracker::from_modes(vec![2.0, 8.0, 20.0], 2.0e-9, 1.0e-3, 1.0e-3)
+                .expect("valid tracker");
+        let mut frozen_state = frozen.state();
+        let mut interval_state = interval.state();
+        for _ in 0..8 {
+            frozen_state = frozen.step(dt, acceleration, field).expect("valid step");
+            interval_state = interval
+                .step_interval(dt, acceleration, acceleration, field, field)
+                .expect("valid interval step");
+        }
+        assert_eq!(interval_state.amplitudes_m, frozen_state.amplitudes_m);
+        assert_eq!(interval_state.log_amplitudes, frozen_state.log_amplitudes);
+        assert_eq!(
+            interval_state.growth_rates_s_inv,
+            frozen_state.growth_rates_s_inv
+        );
+        assert_eq!(interval_state.t_s, frozen_state.t_s);
+    }
+
+    fn ramp_cumulative_log_mode0(n_steps: usize, use_interval: bool) -> f64 {
+        let (a0, s, total_t) = (1.0e6_f64, 1.0e12_f64, 1.0e-6_f64);
+        let mut tracker = MrtiSpectrumTracker::from_modes(vec![1.0, 2.0], 1.0, 1.0e-3, 1.0e30)
+            .expect("valid tracker");
+        let h = total_t / n_steps as f64;
+        for n in 0..n_steps {
+            let a_start = a0 + s * (n as f64 * h);
+            let a_end = a0 + s * ((n + 1) as f64 * h);
+            if use_interval {
+                tracker
+                    .step_interval(h, a_start, a_end, 0.0, 0.0)
+                    .expect("valid interval step");
+            } else {
+                tracker.step(h, a_end, 0.0).expect("valid step");
+            }
+        }
+        tracker.state().log_amplitudes[0]
+    }
+
+    fn ramp_analytic_log_mode0() -> f64 {
+        let (a0, s, total_t) = (1.0e6_f64, 1.0e12_f64, 1.0e-6_f64);
+        let k = 1.0_f64;
+        k.sqrt() * (2.0 / (3.0 * s)) * ((a0 + s * total_t).powf(1.5) - a0.powf(1.5))
+    }
+
+    #[test]
+    fn step_interval_trapezoidal_is_second_order_on_acceleration_ramp() {
+        let analytic = ramp_analytic_log_mode0();
+        let err_trap_50 = (ramp_cumulative_log_mode0(50, true) - analytic).abs();
+        let err_trap_100 = (ramp_cumulative_log_mode0(100, true) - analytic).abs();
+        let err_endpoint_50 = (ramp_cumulative_log_mode0(50, false) - analytic).abs();
+        assert!(err_trap_100 < err_trap_50);
+        let ratio = err_trap_50 / err_trap_100;
+        assert!(ratio > 3.0 && ratio < 5.0, "second-order ratio = {ratio}");
+        assert!(err_trap_50 < 0.1 * err_endpoint_50);
+    }
+
+    #[test]
+    fn most_amplified_mode_tracks_cumulative_not_instantaneous_peak() {
+        let field_va_unit = (MU_0 * 1.0e-3 * 1.0_f64).sqrt();
+        let mut tracker = MrtiSpectrumTracker::from_modes(vec![100.0, 300.0], 1.0, 1.0e-3, 1.0e30)
+            .expect("valid tracker");
+        tracker.step(1.0, 200.0, field_va_unit).expect("valid step");
+        let state = tracker.step(1.0e-3, 1.0e6, 0.0).expect("valid step");
+        assert_eq!(state.fastest_growing_k_m_inv, 300.0);
+        assert_eq!(state.most_amplified_k_m_inv, 100.0);
     }
 }

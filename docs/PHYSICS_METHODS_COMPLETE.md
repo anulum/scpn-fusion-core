@@ -317,14 +317,20 @@ $$\gamma^2(k) = k\,a_{\rm eff} -
 
 Modes with negative radicand are reported as zero-growth stabilised modes. The
 hydrodynamic limit is recovered as $\gamma=\sqrt{k\,a_{\rm eff}}$ when
-$B_\perp=0$. `MRTISpectrumTracker` advances perturbation amplitudes through
-frozen-coefficient exponential growth, records the fastest growing mode, and
-captures the first saturation-threshold breach.
-The tracker now performs amplitude evolution in log space,
-`log(A_i) <- log(A_i) + max(gamma_i dt, 0)`, and exposes
-`max_log_amplitude` plus `amplitude_overflow_limited` so extreme-growth
+$B_\perp=0$. `MRTISpectrumTracker` advances perturbation amplitudes in log
+space, records the instantaneous fastest-growing mode and the cumulative
+most-amplified mode, and captures the first saturation-threshold breach.
+Each interval adds the cumulative linear growth exponent with the trapezoidal
+rule from the interval-endpoint growth rates,
+`log(A_i) <- log(A_i) + max(0.5 (gamma_i(start) + gamma_i(end)) dt, 0)`, which is
+second-order accurate in `dt` for time-varying drivers and reduces exactly to
+the frozen-coefficient `step()` form when the start and end drivers are equal.
+The Velikovich eq. (18) dispersion relation is evaluated unchanged at each
+endpoint; only the temporal amplitude integration is hardened. The tracker
+exposes `max_log_amplitude` plus `amplitude_overflow_limited` so extreme-growth
 histories remain finite and auditable rather than relying on physical-amplitude
-floating-point headroom.
+floating-point headroom, and `most_amplified_k_m_inv` so the cumulatively
+dominant mode is reported alongside the instantaneous `fastest_growing_k_m_inv`.
 
 The coupling helper `effective_acceleration_from_radius_rate()` remains
 available for external separatrix radial-speed histories that do not carry a
@@ -336,9 +342,10 @@ and finite field, and applies an explicit radial projection sign. The default
 `-1` maps inward compression in the outward radius coordinate to positive MRTI
 effective acceleration.
 `track_mrti_from_pulsed_compression()` advances the tracker over every
-trajectory interval using the endpoint acceleration and endpoint external
-field. This is internal FUS-C.6/MRTI coupling evidence; it is not external
-nonlinear MRTI saturation or pulsed-power image parity evidence.
+trajectory interval with the trapezoidal cumulative growth exponent, using the
+acceleration and external field at both interval endpoints. This is internal
+FUS-C.6/MRTI coupling evidence; it is not external nonlinear MRTI saturation or
+pulsed-power image parity evidence.
 
 **Key files:** `core/mrti.py`, `scpn-fusion-rs/crates/fusion-physics/src/mrti.rs`,
 `docs/physics/mrti.md`.
