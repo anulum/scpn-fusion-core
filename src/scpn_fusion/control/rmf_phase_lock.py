@@ -15,12 +15,11 @@ fail-closed until a real RTL generator and timing validation are implemented.
 from __future__ import annotations
 
 import logging
+import importlib
 from dataclasses import dataclass
-from typing import Tuple
 
-import jax.numpy as jnp
 import numpy as np
-from jax import jit, lax
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
@@ -37,26 +36,9 @@ class RMFPhaseLockConfig:
     bits: int = 16               # reserved fixed-point width for future export
 
 
-# ── JAX-Scan Accelerated Lane (Fifth Lane) ───────────────────────────
-
-@jit
-def _rmf_pll_scan_step(state: Tuple[float, ...], plasma_phi: float) -> Tuple[Tuple[float, ...], float]:
-    """A single JIT-compiled cycle of the phase-lock loop (State-Space form)."""
-    # Unpack state: (phi_ant, omega, t, dt, k_p, k_d, omega_nom)
-    phi_ant, omega, t, dt, k_p, k_d, omega_nom = state
-
-    # 1. Phase Detector (sin correlation)
-    error = jnp.sin(phi_ant - plasma_phi)
-
-    # 2. Control Law (Proportional-Derivative)
-    d_omega = -k_p * error - k_d * (omega - omega_nom)
-    new_omega = omega + d_omega * dt
-
-    # 3. Phase Integration
-    new_phi = (phi_ant + new_omega * dt) % (2.0 * jnp.pi)
-
-    new_state = (new_phi, new_omega, t + dt, dt, k_p, k_d, omega_nom)
-    return new_state, new_phi
+def _wrapped_phase_delta(delta: float) -> float:
+    """Return signed phase delta in [-pi, pi)."""
+    return float((delta + np.pi) % (2.0 * np.pi) - np.pi)
 
 
 class RMFPhaseLockController:
@@ -76,6 +58,8 @@ class RMFPhaseLockController:
         # State
         self.phi_ant = 0.0
         self.omega_rmf = self.omega_nom
+        self.omega_bias = 0.0
+        self._last_phi_plasma: float | None = None
         self.t = 0.0
 
         self.history: dict[str, list[float]] = {
@@ -85,26 +69,46 @@ class RMFPhaseLockController:
             "omega": []
         }
 
-    def step_jax_horizon(self, plasma_phis: jnp.ndarray) -> jnp.ndarray:
-        """
-        Evaluate a complete control horizon using JAX-Scan.
-        """
-        init_state = (
-            float(self.phi_ant),
-            float(self.omega_rmf),
-            float(self.t),
-            float(self.dt),
-            float(self.cfg.k_p),
-            float(self.cfg.k_d),
-            float(self.omega_nom)
+    def step(self, plasma_phi: float) -> float:
+        """Advance one deterministic software phase-lock cycle."""
+        phase_error = float(np.sin(self.phi_ant - plasma_phi))
+        observed_bias = (
+            _wrapped_phase_delta(plasma_phi - self._last_phi_plasma) / self.dt - self.omega_nom
+            if self._last_phi_plasma is not None
+            else self.omega_bias
         )
+        self.omega_bias = observed_bias - self.cfg.k_p * phase_error * self.dt
+        self.omega_rmf = self.omega_nom + self.omega_bias
+        self.phi_ant = float((self.phi_ant + self.omega_rmf * self.dt) % (2.0 * np.pi))
+        self.t += self.dt
+        self._last_phi_plasma = float(plasma_phi)
+        self.history["t"].append(self.t)
+        self.history["phi_ant"].append(self.phi_ant)
+        self.history["phi_plasma"].append(float(plasma_phi))
+        self.history["omega"].append(float(self.omega_rmf))
+        return self.phi_ant
 
-        final_state, phi_history = lax.scan(_rmf_pll_scan_step, init_state, plasma_phis)
+    def step_horizon(self, plasma_phis: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Evaluate a control horizon through the deterministic software PLL."""
+        phis = np.asarray(plasma_phis, dtype=np.float64)
+        out = np.empty_like(phis, dtype=np.float64)
+        for idx, plasma_phi in enumerate(phis):
+            out[idx] = self.step(float(plasma_phi))
+        return out
 
-        # Update state from horizon end
-        self.phi_ant, self.omega_rmf, self.t = final_state[0:3]
+    def step_jax_horizon(self, plasma_phis: object) -> object:
+        """
+        Evaluate a control horizon and return a JAX array when JAX is available.
 
-        return phi_history
+        The deterministic NumPy path owns the control-law contract. This wrapper
+        preserves the historical API without importing JAX at module import time.
+        """
+        out = self.step_horizon(np.asarray(plasma_phis, dtype=np.float64))
+        try:
+            jnp = importlib.import_module("jax.numpy")
+        except ImportError:
+            return out
+        return jnp.asarray(out)
 
     def export_to_fpga(self, out_path: str) -> None:
         """Fail closed until a real RTL generator and timing proof exist."""
@@ -118,7 +122,7 @@ if __name__ == "__main__":
 
     # 1 ms software horizon at the configured sampling rate.
     horizon = 10000
-    plasma_traj = jnp.zeros(horizon) # static for test
+    plasma_traj = np.zeros(horizon)
 
-    out_phis = ctrl.step_jax_horizon(plasma_traj)
+    out_phis = ctrl.step_horizon(plasma_traj)
     print(f"JAX-Scan software horizon evaluated: {len(out_phis)} cycles.")

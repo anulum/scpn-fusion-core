@@ -346,13 +346,13 @@ def classify_full_fidelity_status(
     min_train_shots: int,
     min_validation_shots: int,
 ) -> str:
-    """Classify whether the report has enough evidence for a full-fidelity claim."""
+    """Classify the MAST SNN report without accepting local-only evidence."""
     detected = [row for row in validation_report if row.get("status") == "detected"]
     if train_available_count < min_train_shots:
         return "blocked_insufficient_training_shots"
     if len(detected) < min_validation_shots:
         return "blocked_insufficient_detected_validation_shots"
-    return "full_fidelity_local_evidence_ready"
+    return "blocked_local_mast_snn_not_physics_validation"
 
 
 def main() -> None:
@@ -364,13 +364,20 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1729)
     parser.add_argument("--min-train-shots", type=int, default=3)
     parser.add_argument("--min-validation-shots", type=int, default=3)
+    parser.add_argument(
+        "--enable-fair-mast",
+        action="store_true",
+        help="Enable FAIR MAST S3/Zarr fallback when local NPZ shots are absent.",
+    )
     parser.add_argument("--out", type=Path, default=Path("validation/reports/mast_snn_local_validation.json"))
     args = parser.parse_args()
 
-    try:
-        ingestor: MastIngestor | None = MastIngestor(cache_dir=args.cache_dir)
-    except ImportError:
-        ingestor = None
+    ingestor: MastIngestor | None = None
+    if args.enable_fair_mast:
+        try:
+            ingestor = MastIngestor(cache_dir=args.cache_dir)
+        except ImportError:
+            ingestor = None
 
     weights, train_available_count = adapt_weights_from_sources(
         args.cache_dir,
@@ -395,12 +402,23 @@ def main() -> None:
     )
     payload = {
         "status": status,
-        "claim_boundary": "Full-fidelity MAST claims require the configured minimum train and detected validation shots; otherwise this report is blocked evidence.",
+        "accepted_full_fidelity_ready": False,
+        "claim_boundary": (
+            "MAST SNN reports are local disruption-detection diagnostics only. "
+            "Full-fidelity claims require same-case magnetic-geometry validation, "
+            "shot provenance review, and independent acceptance gates beyond local "
+            "train and detected-validation counts."
+        ),
         "cache_dir": str(args.cache_dir),
+        "fair_mast_enabled": bool(args.enable_fair_mast and ingestor is not None),
         "train_shots": args.train_shots,
         "val_shots": args.val_shots,
         "train_available_count": train_available_count,
         "detected_validation_count": len(detected),
+        "local_count_gate_passed": (
+            train_available_count >= args.min_train_shots
+            and len(detected) >= args.min_validation_shots
+        ),
         "epochs": args.epochs,
         "seed": args.seed,
         "average_lead_time_ms": float(np.mean(detected)) if detected else None,

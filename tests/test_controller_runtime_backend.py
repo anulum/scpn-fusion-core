@@ -9,7 +9,11 @@ from __future__ import annotations
 import sys
 import types
 
+import numpy as np
+
+from scpn_fusion.control.rmf_phase_lock import RMFPhaseLockConfig, RMFPhaseLockController
 from scpn_fusion.scpn.controller_runtime_backend import probe_rust_runtime_bindings
+from tools.remote_mast_digestor import build_digest_report
 
 
 def test_probe_rust_runtime_bindings_handles_missing_module() -> None:
@@ -35,3 +39,52 @@ def test_probe_rust_runtime_bindings_uses_available_bindings(
     assert dense_fn is fake.scpn_dense_activations
     assert update_fn is fake.scpn_marking_update
     assert sample_fn is fake.scpn_sample_firing
+
+
+def test_rmf_horizon_bounds_phase_error_for_frequency_offset() -> None:
+    cfg = RMFPhaseLockConfig(
+        f_rmf_nom_hz=1.0e6,
+        f_sampling_hz=20.0e6,
+        k_p=5.0e8,
+        k_d=0.0,
+        n_neurons=0,
+    )
+    ctrl = RMFPhaseLockController(cfg)
+    plasma_omega = 2.0 * np.pi * 1.01e6
+    steps = np.arange(2_000, dtype=np.float64)
+    plasma_phis = np.mod(plasma_omega * ctrl.dt * steps, 2.0 * np.pi)
+
+    antenna_phis = np.asarray(ctrl.step_horizon(plasma_phis))
+    phase_error = np.abs(np.sin(antenna_phis - plasma_phis))
+    early_mean = float(np.mean(phase_error[100:300]))
+    late_mean = float(np.mean(phase_error[1_800:]))
+
+    assert early_mean < 0.40
+    assert late_mean < 0.40
+    assert abs(late_mean - early_mean) < 0.02
+    assert abs(float(ctrl.omega_rmf) - plasma_omega) / plasma_omega < 0.02
+
+
+def test_remote_mast_digestor_blocks_partial_shot_results() -> None:
+    report = build_digest_report(
+        target_shots=[30419, 30420],
+        results=[
+            {
+                "shot_id": 30419,
+                "mean_residual": 1.0e-6,
+                "samples": 10,
+                "max_ip_ma": 0.8,
+            },
+            None,
+        ],
+        elapsed_s=0.5,
+    )
+
+    assert report["status"] == "blocked_incomplete_mast_digest"
+    assert report["accepted_full_fidelity_ready"] is False
+    assert report["processed_shots"] == [30419]
+    assert report["missing_shots"] == [30420]
+    assert report["claim_boundary"] == (
+        "MAST digest reports are local ingestion diagnostics only; same-case "
+        "magnetic-geometry validation is required before physics-validation claims."
+    )

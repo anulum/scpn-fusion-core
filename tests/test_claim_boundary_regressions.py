@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -20,6 +22,7 @@ from tools.parallel_gen_iter import (
     is_boundary_xpoint,
     validate_worker_policy,
 )
+from tools import train_frc_quantized_surrogate
 from tools.train_frc_snn_surrogate import export_to_verilog
 
 
@@ -52,6 +55,19 @@ def test_placeholder_hardware_exports_fail_closed(tmp_path) -> None:
 
     with pytest.raises(NotImplementedError, match="Verilog export is not implemented"):
         export_to_verilog({"W": np.zeros((1, 1)), "b": np.zeros(1)}, tmp_path / "frc_snn_core.v")
+
+
+def test_quantized_frc_surrogate_rejects_nonfinite_solver_output(monkeypatch) -> None:
+    def fake_solver(*_args, **_kwargs):
+        return SimpleNamespace(B_z=np.array([1.0, np.nan, 3.0], dtype=np.float64))
+
+    monkeypatch.setattr(train_frc_quantized_surrogate, "solve_frc_equilibrium", fake_solver)
+
+    with pytest.raises(ValueError, match="nominal B_z must be finite"):
+        train_frc_quantized_surrogate.compute_quantized_jacobian(
+            np.array([3.0, 10.0, 5.0, 0.0, 0.2, 5.0, 0.02], dtype=np.float64),
+            grid_size=3,
+        )
 
 
 def test_iter_generator_rejects_boundary_xpoints_and_unjustified_full_host() -> None:

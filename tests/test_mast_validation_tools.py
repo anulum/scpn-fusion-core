@@ -102,5 +102,5 @@ def test_full_fidelity_status_blocks_until_enough_real_shots_are_detected() -> N
             min_train_shots=3,
             min_validation_shots=3,
         )
-        == "full_fidelity_local_evidence_ready"
+        == "blocked_local_mast_snn_not_physics_validation"
     )

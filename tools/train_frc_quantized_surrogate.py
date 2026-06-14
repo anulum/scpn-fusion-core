@@ -26,16 +26,42 @@ from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equi
 
 logger = logging.getLogger(__name__)
 
+
+def _finite_vector(name: str, values: np.ndarray, expected_size: int) -> np.ndarray:
+    arr = np.asarray(values, dtype=np.float64)
+    if arr.shape != (expected_size,):
+        raise ValueError(f"{name} must have shape ({expected_size},).")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must be finite.")
+    return arr
+
+
+def _quantized_dtype(bits: int) -> type[np.signedinteger]:
+    if bits == 8:
+        return np.int8
+    if bits == 16:
+        return np.int16
+    raise ValueError("bits must be 8 or 16.")
+
+
 def compute_quantized_jacobian(
     nominal_features: np.ndarray,
     grid_size: int,
     eps: float = 1e-4,
-    bits: int = 16
-):
+    bits: int = 16,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]:
+    if grid_size <= 1:
+        raise ValueError("grid_size must be greater than 1.")
+    if not np.isfinite(eps) or eps <= 0.0:
+        raise ValueError("eps must be finite and positive.")
+
+    features = _finite_vector("nominal_features", nominal_features, 7)
+    quant_dtype = _quantized_dtype(bits)
+
     logger.info("Extracting %d-bit Quantized FRC Jacobian...", bits)
     rho_grid = np.linspace(0.0, 0.5, grid_size)
 
-    n0, t_i, t_e, theta_dot, r_s, b_ext, delta = nominal_features
+    n0, t_i, t_e, theta_dot, r_s, b_ext, delta = features
     nom_inputs = RigidRotorFRCInputs(
         n0=n0 * 1e20,
         T_i_eV=t_i * 1000.0,
@@ -47,16 +73,16 @@ def compute_quantized_jacobian(
     )
 
     nom_state = solve_frc_equilibrium(nom_inputs, rho_grid, solver="rust", tolerance=1e-10)
-    Y_nom = nom_state.B_z
+    Y_nom = _finite_vector("nominal B_z", nom_state.B_z, grid_size)
 
-    num_features = len(nominal_features)
+    num_features = len(features)
     J = np.zeros((grid_size, num_features))
 
     for i in range(num_features):
         if i == 3:
             J[:, i] = 0.0
             continue
-        X_perturbed = nominal_features.copy()
+        X_perturbed = features.copy()
         perturbation = max(X_perturbed[i] * eps, 1e-8)
         X_perturbed[i] += perturbation
 
@@ -71,11 +97,14 @@ def compute_quantized_jacobian(
         )
 
         pert_state = solve_frc_equilibrium(pert_inputs, rho_grid, solver="rust", tolerance=1e-10)
-        J[:, i] = (pert_state.B_z - Y_nom) / perturbation
+        pert_b_z = _finite_vector(f"perturbed B_z[{i}]", pert_state.B_z, grid_size)
+        J[:, i] = (pert_b_z - Y_nom) / perturbation
 
-    # Quantization
-    # Scale factors to map floats to integer range [-2^(bits-1), 2^(bits-1) - 1]
-    max_val = 2**(bits - 1) - 1
+    if not np.all(np.isfinite(J)):
+        raise ValueError("jacobian must be finite.")
+
+    type_info = np.iinfo(quant_dtype)
+    max_val = float(type_info.max)
 
     j_max = np.max(np.abs(J))
     y_max = np.max(np.abs(Y_nom))
@@ -83,12 +112,13 @@ def compute_quantized_jacobian(
     scale_j = max_val / j_max if j_max > 0 else 1.0
     scale_y = max_val / y_max if y_max > 0 else 1.0
 
-    J_quant = np.round(J * scale_j).astype(np.int16 if bits <= 16 else np.int32)
-    Y_quant = np.round(Y_nom * scale_y).astype(np.int16 if bits <= 16 else np.int32)
+    J_quant = np.clip(np.rint(J * scale_j), type_info.min, type_info.max).astype(quant_dtype)
+    Y_quant = np.clip(np.rint(Y_nom * scale_y), type_info.min, type_info.max).astype(quant_dtype)
 
     return Y_nom, J, Y_quant, J_quant, scale_y, scale_j
 
-def main():
+
+def main() -> None:
     parser = argparse.ArgumentParser(description="Extract quantized FRC surrogate")
     parser.add_argument("--grid", type=int, default=128, help="Grid size for FRC")
     parser.add_argument("--out", default="weights/frc_quantized_surrogate_v1.npz", help="Save path")

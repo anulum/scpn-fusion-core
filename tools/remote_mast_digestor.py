@@ -12,6 +12,7 @@ MAST shot digestor for local or remote high-memory execution.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import multiprocessing as mp
 import os
@@ -25,8 +26,15 @@ from scpn_fusion.io.mast_ingestor import MastIngestor, default_mast_cache_dir
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
+MastDigestResult = dict[str, float | int]
 
-def process_shot_comparison(shot_id: int, cache_dir: Path) -> dict[str, float | int] | None:
+MAST_DIGEST_CLAIM_BOUNDARY = (
+    "MAST digest reports are local ingestion diagnostics only; same-case "
+    "magnetic-geometry validation is required before physics-validation claims."
+)
+
+
+def process_shot_comparison(shot_id: int, cache_dir: Path) -> MastDigestResult | None:
     """
     Compare the rigid-rotor equilibrium solver against MAST summary signals.
     """
@@ -81,6 +89,38 @@ def process_shot_comparison(shot_id: int, cache_dir: Path) -> dict[str, float | 
         return None
 
 
+def build_digest_report(
+    *,
+    target_shots: list[int],
+    results: list[MastDigestResult | None],
+    elapsed_s: float,
+) -> dict[str, object]:
+    valid_results = [result for result in results if result is not None]
+    processed_shots = [int(result["shot_id"]) for result in valid_results]
+    processed_set = set(processed_shots)
+    missing_shots = [int(shot_id) for shot_id in target_shots if int(shot_id) not in processed_set]
+
+    if missing_shots:
+        status = "blocked_incomplete_mast_digest"
+    elif any(int(result["samples"]) <= 0 for result in valid_results):
+        status = "blocked_no_solver_samples"
+    else:
+        status = "local_mast_digest_complete_not_physics_validation"
+
+    return {
+        "status": status,
+        "accepted_full_fidelity_ready": False,
+        "claim_boundary": MAST_DIGEST_CLAIM_BOUNDARY,
+        "target_shots": [int(shot_id) for shot_id in target_shots],
+        "processed_shots": processed_shots,
+        "missing_shots": missing_shots,
+        "elapsed_s": float(elapsed_s),
+        "shot_count": len(target_shots),
+        "valid_result_count": len(valid_results),
+        "results": valid_results,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workers", type=int, default=6)
@@ -112,12 +152,23 @@ def main() -> None:
             [(shot_id, cache_dir) for shot_id in target_shots],
         )
 
-    valid_results = [r for r in results if r is not None]
-
     t_total = time.perf_counter() - t0
-    logger.info(f"Digestion complete. Processed {len(valid_results)} shots in {t_total:.1f}s.")
+    report = build_digest_report(target_shots=target_shots, results=results, elapsed_s=t_total)
+    valid_results = report["results"]
 
-    np.savez(out_path, results=valid_results)
+    logger.info(
+        "Digestion complete. Status=%s. Processed %d/%d shots in %.1fs.",
+        report["status"],
+        report["valid_result_count"],
+        report["shot_count"],
+        t_total,
+    )
+
+    np.savez(
+        out_path,
+        results=np.array(valid_results, dtype=object),
+        report_json=np.array(json.dumps(report, sort_keys=True)),
+    )
     logger.info(f"MAST summary report saved to {out_path}")
 
 

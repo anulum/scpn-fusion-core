@@ -42,7 +42,7 @@ use fusion_physics::design_scanner;
 use fusion_physics::fno::FnoController;
 use fusion_physics::fokker_planck::FokkerPlanckSolver;
 use fusion_physics::frc::{
-    solve_frc_equilibrium as solve_frc_equilibrium_rust, solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs, FrcEquilibriumState,
+    solve_frc_equilibrium as solve_frc_equilibrium_rust, solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs,
 };
 use fusion_physics::hall_mhd::HallMHD;
 use fusion_physics::sawtooth::ReducedMHD;
