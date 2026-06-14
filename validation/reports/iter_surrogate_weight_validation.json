@@ -1,0 +1,43 @@
+{
+  "artifact": "weights/neural_equilibrium_iter_v1.npz",
+  "artifact_size_bytes": 3124396,
+  "checked_at_utc": "2026-06-14T05:31:27Z",
+  "status": "standard_iter_surrogate_artifact_present_and_runtime_loadable",
+  "structural_checks": {
+    "allow_pickle": false,
+    "all_checked_arrays_finite": true,
+    "grid_shape": [
+      128,
+      128
+    ],
+    "input_features": 12,
+    "mlp_layers": 4,
+    "pca_components": 20,
+    "pca_explained_variance_sum": 0.9999999996539304,
+    "weight_0_shape": [
+      12,
+      256
+    ]
+  },
+  "runtime_checks": {
+    "accelerator": "scpn_fusion.core.neural_equilibrium.NeuralEquilibriumAccelerator",
+    "input_vector": "stored_input_mean",
+    "prediction_all_finite": true,
+    "prediction_max": 2505.5656519537233,
+    "prediction_min": -2563.9204616012644,
+    "prediction_shape": [
+      128,
+      128
+    ]
+  },
+  "verification_commands": [
+    ".venv/bin/python -m pytest tests/test_iter_surrogate_tool.py -q",
+    ".venv/bin/python -m ruff check tools/train_iter_surrogate.py tests/test_iter_surrogate_tool.py",
+    ".venv/bin/python -m compileall -q tools/train_iter_surrogate.py tests/test_iter_surrogate_tool.py"
+  ],
+  "limitations": [
+    "Raw ITER training dataset is not tracked in the repository.",
+    "No tracked high-fidelity 5000-sample or 50000-sample GPU training report is present.",
+    "This report validates the committed weight artifact as runtime-loadable and structurally consistent; it does not claim new high-fidelity retraining was run in this session."
+  ]
+}

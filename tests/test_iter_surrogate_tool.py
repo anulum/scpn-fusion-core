@@ -8,9 +8,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
+from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
 from tools.train_iter_surrogate import default_iter_dataset_paths, inspect_iter_dataset, load_iter_dataset
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+ITER_WEIGHTS_PATH = REPO_ROOT / "weights" / "neural_equilibrium_iter_v1.npz"
 
 
 def test_default_iter_dataset_paths_are_directory_relative(tmp_path) -> None:
@@ -67,3 +74,19 @@ def test_iter_dataset_report_blocks_invalid_shapes_and_nonfinite_values() -> Non
     y = np.ones((10, 16), dtype=np.float64)
     y[0, 0] = np.nan
     assert inspect_iter_dataset(x, y)["status"] == "blocked_nonfinite_values"
+
+
+def test_iter_surrogate_weights_load_and_predict_finite_field() -> None:
+    accel = NeuralEquilibriumAccelerator()
+    accel.load_weights(ITER_WEIGHTS_PATH)
+
+    assert accel.cfg.n_input_features == 12
+    assert accel.cfg.grid_shape == (128, 128)
+    assert accel.cfg.n_components == 20
+    assert accel._input_mean is not None
+    assert accel._input_mean.shape == (12,)
+
+    psi = accel.predict(np.asarray(accel._input_mean, dtype=np.float64))
+
+    assert psi.shape == (128, 128)
+    assert np.all(np.isfinite(psi))
