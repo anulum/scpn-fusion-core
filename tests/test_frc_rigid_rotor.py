@@ -304,6 +304,35 @@ def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
         solve_frc_equilibrium(_inputs(theta_dot=1.0), np.linspace(0.0, 0.4, 32))
 
 
+@pytest.mark.parametrize("theta_dot", [1.0e-6, 1.0, -2.5, 5.0e5])
+def test_rotating_bvp_is_fail_closed_for_all_nonzero_rotation(theta_dot: float) -> None:
+    """Every non-zero rotation rate must fail closed until the verified FUS-C.1 BVP lands.
+
+    The previous prototype rotating solver was removed: it never converged (the
+    exponential-in-psi source overflowed even at the theta_dot -> 0 limit) and its
+    closure was inconsistent with the cited Steinhauer Eq. 6 pressure function.
+    Until the verified rotating derivation is implemented, the public solver must
+    reject rotation rather than return an unvalidated equilibrium.
+    """
+    inputs = _inputs(theta_dot=theta_dot)
+    with pytest.raises(NotImplementedError, match="rotating"):
+        solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 64))
+
+
+def test_no_rotation_path_is_unaffected_by_rotating_removal() -> None:
+    """The certified theta_dot == 0 analytical limit must still solve and validate."""
+    inputs = _inputs(theta_dot=0.0, delta=0.02)
+    rho = np.linspace(0.0, 0.4, 257)
+
+    state = solve_frc_equilibrium(inputs, rho)
+
+    assert state.converged
+    assert state.model == "steinhauer_2011_no_rotation_analytical"
+    assert state.field_reversal_passed
+    report = validate_equilibrium(state)
+    assert report.passed
+
+
 def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     inputs = _inputs(delta=0.025)
     rho = np.linspace(0.0, 0.45, 257)
