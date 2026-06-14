@@ -72,6 +72,45 @@ def test_density_conservation():
     assert np.isclose(N_before, N_after, rtol=1e-2)
 
 
+def test_thermal_energy_conservation():
+    rho = np.linspace(0, 1, 100)
+    q = 0.8 + 2.0 * rho**2
+    # Strongly correlated peaked profiles so that <n T> != <n> <T>; an
+    # energy-conserving reconnection must flatten to the pressure average.
+    T = 5.0 * (1 - rho**2) ** 2
+    n = 2.0 * (1 - rho**2)
+
+    T_new, n_new, q_new, rho_1, rho_mix = kadomtsev_crash(rho, T, n, q, R0=2.0, a=0.5)
+
+    idx_mix = int(np.searchsorted(rho, rho_mix))
+    rho_inner = rho[:idx_mix]
+
+    def inner_thermal_energy(n_prof: np.ndarray, t_prof: np.ndarray) -> float:
+        return float(trapezoid((1.5 * n_prof * t_prof * rho)[:idx_mix], rho_inner))
+
+    def inner_particles(n_prof: np.ndarray) -> float:
+        return float(trapezoid((n_prof * rho)[:idx_mix], rho_inner))
+
+    # Kadomtsev reconnection conserves thermal energy and particle content inside
+    # the mixing radius to machine precision.
+    assert np.isclose(
+        inner_thermal_energy(n, T), inner_thermal_energy(n_new, T_new), rtol=1e-9
+    )
+    assert np.isclose(inner_particles(n), inner_particles(n_new), rtol=1e-9)
+
+    # The region outside the mixing radius is untouched by the crash.
+    np.testing.assert_array_equal(T_new[idx_mix:], T[idx_mix:])
+    np.testing.assert_array_equal(n_new[idx_mix:], n[idx_mix:])
+
+    # A naive independent <T> flattening would lose thermal energy here; the
+    # energy-conserving pressure average is strictly above it for these
+    # positively correlated profiles.
+    t_independent = float(
+        trapezoid(T[:idx_mix] * rho_inner, rho_inner) / trapezoid(rho_inner, rho_inner)
+    )
+    assert T_new[0] > t_independent
+
+
 def test_sawtooth_cycler():
     rho = np.linspace(0, 1, 50)
     q = 0.8 + 2.0 * rho**2

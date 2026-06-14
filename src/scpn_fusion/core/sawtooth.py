@@ -80,7 +80,14 @@ class SawtoothMonitor:
 def kadomtsev_crash(
     rho: np.ndarray, T: np.ndarray, n: np.ndarray, q: np.ndarray, R0: float, a: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float]:
-    """Apply Kadomtsev reconnection. Returns (T_new, n_new, q_new, rho_1, rho_mix)."""
+    """Apply Kadomtsev reconnection inside the q=1 mixing radius.
+
+    Returns ``(T_new, n_new, q_new, rho_1, rho_mix)``. The mixing flattens the
+    density and temperature inside ``rho_mix`` so that both the particle content
+    and the thermal energy ``1.5 n T`` integrated over the mixing volume are
+    conserved (Kadomtsev 1975; Wesson, *Tokamaks*, §7.6). The reconnected core
+    safety factor is reset just above unity.
+    """
     monitor = SawtoothMonitor(rho)
     rho_1 = monitor.find_q1_radius(q)
 
@@ -122,8 +129,18 @@ def kadomtsev_crash(
             return float(prof_inner[0])
         return float(vol_int / vol_tot)
 
-    T_mix = volume_average(T)
+    # Kadomtsev reconnection conserves both particle number and thermal energy
+    # inside the mixing radius (Kadomtsev 1975; Wesson, Tokamaks, §7.6). Density
+    # flattens to the particle-conserving volume average, and temperature to the
+    # energy-conserving pressure average T_mix = <n T> / <n>, so that the mixed
+    # core leaves 1.5 n T integrated over the mixing volume invariant. Averaging
+    # T independently as <T> would not conserve thermal energy because
+    # <n T> != <n> <T> for correlated profiles.
     n_mix = volume_average(n)
+    if n_mix > 0.0:
+        T_mix = volume_average(n * T) / n_mix
+    else:
+        T_mix = volume_average(T)
 
     T_new = T.copy()
     n_new = n.copy()
@@ -157,25 +174,19 @@ class SawtoothCycler:
 
             e_charge = 1.602e-19
 
-            def plasma_energy(Te: np.ndarray, ne: np.ndarray) -> float:
-                energy_dens = 1.5 * (ne * 1e19) * (Te * 1e3 * e_charge)
-                vol_element = 4.0 * np.pi**2 * self.R0 * self.a**2 * self.rho
-                return float(trapezoid(energy_dens * vol_element, self.rho))
-
-            W_before = plasma_energy(T, n)
-
             T_new, n_new, q_new, rho_1, rho_mix = kadomtsev_crash(
                 self.rho, T, n, q, self.R0, self.a
             )
-
-            W_after = plasma_energy(T_new, n_new)
 
             np.copyto(T, T_new)
             np.copyto(n, n_new)
             np.copyto(q, q_new)
 
             T_drop = T_core_old - T[0]
-            seed_energy = max(W_before - W_after, 0.0)
+            # The reconnection conserves total thermal energy across the mixing
+            # radius, redistributing it from the q<1 core into the annulus. The
+            # seed energy that feeds downstream reconnection coupling is measured
+            # as the thermal energy removed from the q=1 core volume.
             core_energy_drop = (
                 1.5
                 * (n[0] * 1e19)

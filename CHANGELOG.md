@@ -22,6 +22,13 @@
   Python, Rust, benchmarks, and documentation. The Velikovich eq. (18)
   dispersion relation and the constant-driver `step` path are unchanged, and the
   benchmark report schema advances to `scpn-fusion-core.mrti_benchmark.v4`.
+- Made the Kadomtsev sawtooth reconnection conserve thermal energy as well as
+  particle number inside the mixing radius: the mixed-core temperature now
+  flattens to the energy-conserving pressure average `T_mix = <n T> / <n>`
+  instead of an independent `<T>` average, so `1.5 n T` integrated over the
+  mixing volume is invariant. Removed the unused per-crash energy bookkeeping in
+  `SawtoothCycler.step` and added an inner-region energy/particle conservation
+  regression test.
 
 ## [3.9.10] - 2026-06-05
 
