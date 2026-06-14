@@ -121,12 +121,12 @@ scaling evidence, and native comparisons.
 |---|---:|
 | Package version | 3.9.10 |
 | Public API exports | 2 |
-| Python capability source modules | 273 |
-| Python capability classes | 532 |
+| Python capability source modules | 274 |
+| Python capability classes | 534 |
 | Capability documentation pages | 54 |
 | Rust workspace crates | 13 |
 | Optional extras | 12 |
-| Python test files | 414 |
+| Python test files | 417 |
 | Public documentation pages | 54 |
 | GitHub Actions workflows | 12 |
 

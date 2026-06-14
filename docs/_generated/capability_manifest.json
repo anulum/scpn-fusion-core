@@ -243,6 +243,14 @@
         "path": "src/scpn_fusion/core/plasma_startup.py"
       },
       {
+        "name": "C2UPositiveHeatingShot",
+        "path": "src/scpn_fusion/core/public_frc_reference.py"
+      },
+      {
+        "name": "C2UPositiveHeatingSummary",
+        "path": "src/scpn_fusion/core/public_frc_reference.py"
+      },
+      {
         "name": "CADLoadReport",
         "path": "src/scpn_fusion/engineering/cad_raytrace.py"
       },
@@ -2380,6 +2388,7 @@
       "src/scpn_fusion/core/plasma_startup.py",
       "src/scpn_fusion/core/plasma_wall_interaction.py",
       "src/scpn_fusion/core/pretrained_surrogates.py",
+      "src/scpn_fusion/core/public_frc_reference.py",
       "src/scpn_fusion/core/pulsed_compression.py",
       "src/scpn_fusion/core/quantum_bridge.py",
       "src/scpn_fusion/core/quasi_3d_contracts.py",
@@ -2523,10 +2532,10 @@
     "optional_extras": 12,
     "public_api_exports": 2,
     "public_documentation_pages": 54,
-    "python_capability_classes": 532,
-    "python_capability_source_modules": 273,
+    "python_capability_classes": 534,
+    "python_capability_source_modules": 274,
     "rust_workspace_crates": 13,
-    "test_files": 414
+    "test_files": 417
   },
   "documentation": {
     "public_pages": [
@@ -2677,6 +2686,7 @@
       "tests/test_blob_transport.py",
       "tests/test_boris_pyo3_bridge.py",
       "tests/test_burn_controller.py",
+      "tests/test_c2u_public_frc_reference.py",
       "tests/test_cad_raytrace.py",
       "tests/test_capability_manifest.py",
       "tests/test_check_disruption_shot_splits.py",
@@ -2752,9 +2762,11 @@
       "tests/test_formal_safety_contract_replay_benchmark.py",
       "tests/test_forward_diagnostics_extended.py",
       "tests/test_forward_diagnostics_guards.py",
+      "tests/test_frc_reference_papers_manifest.py",
       "tests/test_frc_rigid_rotor.py",
       "tests/test_frc_rigid_rotor_property.py",
       "tests/test_frc_rigid_rotor_rust_parity.py",
+      "tests/test_frc_to_gs_bridge.py",
       "tests/test_free_boundary_public_machine_metadata_inventory.py",
       "tests/test_free_boundary_supervisory_control.py",
       "tests/test_free_boundary_tracking.py",
