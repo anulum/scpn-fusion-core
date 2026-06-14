@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import logging
 import time
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,6 +40,19 @@ logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_WEIGHTS_PATH = REPO_ROOT / "weights" / "neural_equilibrium_sparc.npz"
+ITER_SURROGATE_WEIGHTS_PATH = REPO_ROOT / "weights" / "neural_equilibrium_iter_v1.npz"
+ITER_SURROGATE_VALIDATION_REPORT = (
+    REPO_ROOT / "validation" / "reports" / "iter_surrogate_weight_validation.json"
+)
+ITER_SURROGATE_HIGH_FIDELITY_REPORT = (
+    REPO_ROOT / "validation" / "reports" / "iter_surrogate_training_report.json"
+)
+ITER_SURROGATE_CLAIM_BOUNDARY = (
+    "The committed ITER 6.2 m surrogate artifact is a standard runtime-loadable "
+    "PCA+MLP weight file validated by structural and finite-prediction checks. "
+    "It does not claim high-fidelity GPU retraining until a tracked 5000+ sample "
+    "training report and raw dataset provenance are present."
+)
 
 
 # ── Data containers ──────────────────────────────────────────────────
@@ -68,6 +82,44 @@ class TrainingResult:
     val_loss: float = float("nan")
     test_mse: float = float("nan")
     test_max_error: float = float("nan")
+
+
+def iter_surrogate_artifact_status(
+    *,
+    report_path: Path = ITER_SURROGATE_VALIDATION_REPORT,
+    weights_path: Path = ITER_SURROGATE_WEIGHTS_PATH,
+    high_fidelity_report_path: Path = ITER_SURROGATE_HIGH_FIDELITY_REPORT,
+) -> dict[str, object]:
+    """Return the bounded acceptance status for the tracked ITER surrogate artifact."""
+    artifact_exists = weights_path.exists()
+    artifact_size = weights_path.stat().st_size if artifact_exists else 0
+    report_exists = report_path.exists()
+    report: dict[str, object] = {}
+    if report_exists:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+
+    structural = report.get("structural_checks", {})
+    if not isinstance(structural, dict):
+        structural = {}
+
+    grid_shape_raw = structural.get("grid_shape", ())
+    grid_shape = tuple(int(value) for value in grid_shape_raw) if isinstance(grid_shape_raw, list) else ()
+
+    return {
+        "status": str(report.get("status", "blocked_missing_iter_surrogate_validation_report")),
+        "artifact": str(report.get("artifact", "weights/neural_equilibrium_iter_v1.npz")),
+        "artifact_exists": artifact_exists,
+        "artifact_size_bytes": artifact_size,
+        "validation_report_exists": report_exists,
+        "input_features": int(structural.get("input_features", 0)),
+        "grid_shape": grid_shape,
+        "pca_components": int(structural.get("pca_components", 0)),
+        "high_fidelity_gpu_retraining_complete": high_fidelity_report_path.exists(),
+        "required_high_fidelity_report": str(
+            high_fidelity_report_path.relative_to(REPO_ROOT)
+        ),
+        "claim_boundary": ITER_SURROGATE_CLAIM_BOUNDARY,
+    }
 
 
 # ── Simple MLP (pure NumPy) ──────────────────────────────────────────

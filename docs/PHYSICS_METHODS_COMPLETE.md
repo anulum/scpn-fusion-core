@@ -45,6 +45,14 @@ where $\hat\psi = (\psi - \psi_{\rm axis})/(\psi_{\rm bdry} - \psi_{\rm axis})$.
 | `core/analytic_solver.py` | Solov'ev analytic equilibrium (test and initialisation) |
 | `core/neural_equilibrium.py` | 12-feature PCA+MLP surrogate for real-time flux-surface prediction |
 
+The ITER 6.2 m surrogate artifact boundary is exposed through
+`iter_surrogate_artifact_status()`. It reports whether
+`weights/neural_equilibrium_iter_v1.npz` is present, whether the tracked
+validation report exists, the 12-feature/128x128/20-component structure, and
+whether a separate high-fidelity GPU retraining report is present. The current
+status validates the committed standard artifact as runtime-loadable; it does
+not claim a completed 5000+ sample GPU retraining campaign.
+
 **References:**
 
 1. Grad, H. & Rubin, H. "Hydromagnetic Equilibria and Force-Free Fields." *Proc. 2nd UN Conf. Peaceful Uses Atomic Energy* 31, 190–197 (1958).

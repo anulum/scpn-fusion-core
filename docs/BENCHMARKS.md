@@ -1322,6 +1322,13 @@ frontiers:
   beyond the current trace radial transport, charge-state artifact/source-sink
   conservation contract, and public reference-case manifest.
 
+ITER neural-equilibrium surrogate status is reported separately by
+`scpn_fusion.core.iter_surrogate_artifact_status()`. The current tracked ITER
+weight artifact is a standard runtime-loadable 12-feature PCA+MLP model with a
+finite-prediction validation report. It is not a completed high-fidelity GPU
+retraining benchmark until `validation/reports/iter_surrogate_training_report.json`
+and raw-dataset provenance are tracked.
+
 The native nonlinear GK surface now exposes an explicit
 `species x kx x ky x theta x vpar x mu` phase-space contract plus a named
 conservative pseudo-spectral ExB term with de-aliasing diagnostics. The

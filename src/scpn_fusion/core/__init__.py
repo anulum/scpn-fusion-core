@@ -82,6 +82,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "write_geqdsk": (".eqdsk", "write_geqdsk"),
     "GlobalDesignExplorer": (".global_design_scanner", "GlobalDesignExplorer"),
     "NeuralEqConfig": (".neural_equilibrium", "NeuralEqConfig"),
+    "iter_surrogate_artifact_status": (
+        ".neural_equilibrium",
+        "iter_surrogate_artifact_status",
+    ),
     "NeuralTransportModel": (".neural_transport", "NeuralTransportModel"),
     "RFHeatingSystem": (".rf_heating", "RFHeatingSystem"),
     "ECRHHeatingSystem": (".rf_heating", "ECRHHeatingSystem"),

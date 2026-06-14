@@ -12,7 +12,12 @@ from pathlib import Path
 
 import numpy as np
 
-from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
+from scpn_fusion.core import iter_surrogate_artifact_status as public_iter_surrogate_artifact_status
+from scpn_fusion.core.neural_equilibrium import (
+    ITER_SURROGATE_VALIDATION_REPORT,
+    NeuralEquilibriumAccelerator,
+    iter_surrogate_artifact_status,
+)
 from tools.train_iter_surrogate import default_iter_dataset_paths, inspect_iter_dataset, load_iter_dataset
 
 
@@ -90,3 +95,23 @@ def test_iter_surrogate_weights_load_and_predict_finite_field() -> None:
 
     assert psi.shape == (128, 128)
     assert np.all(np.isfinite(psi))
+
+
+def test_iter_surrogate_artifact_status_preserves_standard_vs_high_fidelity_boundary() -> None:
+    status = iter_surrogate_artifact_status()
+    public_status = public_iter_surrogate_artifact_status()
+
+    assert status == public_status
+    assert status["status"] == "standard_iter_surrogate_artifact_present_and_runtime_loadable"
+    assert status["artifact"] == "weights/neural_equilibrium_iter_v1.npz"
+    assert status["artifact_exists"] is True
+    assert status["artifact_size_bytes"] == 3_124_396
+    assert status["input_features"] == 12
+    assert status["grid_shape"] == (128, 128)
+    assert status["pca_components"] == 20
+    assert status["high_fidelity_gpu_retraining_complete"] is False
+    assert status["required_high_fidelity_report"] == (
+        "validation/reports/iter_surrogate_training_report.json"
+    )
+    assert "does not claim high-fidelity GPU retraining" in status["claim_boundary"]
+    assert ITER_SURROGATE_VALIDATION_REPORT.exists()

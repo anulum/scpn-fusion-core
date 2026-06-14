@@ -193,6 +193,12 @@ reference data GS residuals (2.5-65.7), not solver error.
 Format: `np.savez(allow_pickle=False)` with PCA + MLP weights.
 Does NOT depend on UPDE Kuramoto coupling (unaffected by prior bug fixes).
 
+`weights/neural_equilibrium_iter_v1.npz` is tracked as a standard ITER 6.2 m
+surrogate artifact with
+`validation/reports/iter_surrogate_weight_validation.json`. Runtime code exposes
+`iter_surrogate_artifact_status()` so consumers can distinguish this loadable
+standard artifact from the still-open high-fidelity GPU retraining campaign.
+
 ### Known Gaps
 
 1. Only 3 GEQDSK files — 78 samples is very small.
