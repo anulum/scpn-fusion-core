@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, cast
 
 import numpy as np
-from ._surrogate_utils import relative_l2 as _relative_l2
+from numpy.typing import NDArray
+from ._surrogate_utils import AdamOptimizer, relative_l2 as _relative_l2
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def _generate_multi_regime_pairs(
     grid_size: int,
     seed: int,
     regime_weights: Dict[str, float] | None = None,
-) -> Tuple[np.ndarray, np.ndarray, List[Dict[str, object]]]:
+) -> Tuple[NDArray[np.float64], NDArray[np.float64], List[Dict[str, object]]]:
     """
     Generate training data spanning ITG / TEM / ETG regimes.
 
@@ -168,7 +169,7 @@ def train_fno_multi_regime(
 ) -> Dict[str, object]:
     """Train FNO on multi-regime SPARC-parameterized turbulence data."""
     # Local import avoids module cycle with fno_training.py re-exports.
-    from .fno_training import AdamOptimizer, MultiLayerFNO
+    from .fno_training import MultiLayerFNO
 
     logger.info("Generating %d multi-regime samples (ITG/TEM/ETG)...", n_samples)
     x, y, meta = _generate_multi_regime_pairs(
@@ -186,7 +187,7 @@ def train_fno_multi_regime(
     # Count regimes
     regime_counts: Dict[str, int] = {}
     for m in meta:
-        r = m["regime"]
+        r = str(m["regime"])
         regime_counts[r] = regime_counts.get(r, 0) + 1
     logger.info("Regime distribution: %s", regime_counts)
 
@@ -205,6 +206,8 @@ def train_fno_multi_regime(
         "regime_counts": regime_counts,
         "data_mode": "multi_regime_sparc",
     }
+    train_history = cast(List[float], history["train_loss"])
+    val_history = cast(List[float], history["val_loss"])
 
     best_project_w = model.project_w.copy()
     best_project_b = model.project_b
@@ -246,12 +249,16 @@ def train_fno_multi_regime(
             model.project_b = float(params["project_b"][0])
 
         # Keep validation path unchanged from legacy implementation.
-        def _evaluate_loss(data_x: np.ndarray, data_y: np.ndarray, max_samples: int = 16) -> float:
+        def _evaluate_loss(
+            data_x: NDArray[np.float64],
+            data_y: NDArray[np.float64],
+            max_samples: int = 16,
+        ) -> float:
             n = min(max_samples, len(data_x))
             if n == 0:
                 return 0.0
             idx = np.arange(n)
-            losses = []
+            losses: List[float] = []
             for i in idx:
                 pred = model.forward(data_x[i])
                 losses.append(_relative_l2(pred, data_y[i]))
@@ -259,8 +266,8 @@ def train_fno_multi_regime(
 
         train_loss = _evaluate_loss(x_train, y_train)
         val_loss = _evaluate_loss(x_val, y_val)
-        history["train_loss"].append(train_loss)  # type: ignore[attr-defined]
-        history["val_loss"].append(val_loss)  # type: ignore[attr-defined]
+        train_history.append(train_loss)
+        val_history.append(val_loss)
 
         if val_loss < best_val:
             best_val = val_loss
@@ -285,7 +292,7 @@ def train_fno_multi_regime(
     # Per-regime validation breakdown
     regime_val_losses: Dict[str, List[float]] = {}
     for j in range(len(x_val)):
-        r = meta_val[j]["regime"]
+        r = str(meta_val[j]["regime"])
         pred = model.forward(x_val[j])
         loss_j = _relative_l2(pred, y_val[j])
         regime_val_losses.setdefault(r, []).append(loss_j)
@@ -296,11 +303,9 @@ def train_fno_multi_regime(
     history["regime_val_losses"] = regime_summary
 
     history["saved_path"] = str(Path(save_path))
-    history["epochs_completed"] = len(history["train_loss"])  # type: ignore[arg-type]
-    history["final_train_loss"] = (
-        float(history["train_loss"][-1]) if history["train_loss"] else None
-    )  # type: ignore[index]
-    history["final_val_loss"] = float(history["val_loss"][-1]) if history["val_loss"] else None  # type: ignore[index]
+    history["epochs_completed"] = len(train_history)
+    history["final_train_loss"] = float(train_history[-1]) if train_history else None
+    history["final_val_loss"] = float(val_history[-1]) if val_history else None
 
     logger.info(
         "Multi-regime training complete: %d epochs, best_val=%.4f",

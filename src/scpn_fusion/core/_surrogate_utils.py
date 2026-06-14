@@ -11,18 +11,20 @@ Shared helpers for surrogate training (optimizers, activations, metrics).
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
+FloatArray: TypeAlias = NDArray[np.float64]
 
-def gelu(x: NDArray) -> NDArray:
+
+def gelu(x: FloatArray) -> FloatArray:
     """Gaussian Error Linear Unit activation."""
     return 0.5 * x * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x**3)))
 
 
-def relative_l2(y_pred: NDArray, y_true: NDArray) -> float:
+def relative_l2(y_pred: FloatArray, y_true: FloatArray) -> float:
     """Calculate relative L2 error norm."""
     denom = np.linalg.norm(y_true) + 1e-8
     return float(np.linalg.norm(y_pred - y_true) / denom)
@@ -44,36 +46,40 @@ class AdamOptimizer:
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
-        self.m: Dict[Any, NDArray] = {}
-        self.v: Dict[Any, NDArray] = {}
+        self.m: dict[Any, FloatArray] = {}
+        self.v: dict[Any, FloatArray] = {}
         self.t = 0
 
     def step(
         self,
-        params: Union[Dict[Any, NDArray], List[NDArray]],
-        grads: Union[Dict[Any, NDArray], List[NDArray]],
+        params: dict[Any, FloatArray] | list[FloatArray],
+        grads: dict[Any, FloatArray] | list[FloatArray],
         lr: float,
     ) -> None:
         """Update parameters in place using bias-corrected Adam moments."""
         self.t += 1
 
         if isinstance(params, dict):
-            keys = params.keys()
+            if not isinstance(grads, dict):
+                raise TypeError("AdamOptimizer grads must be a dict when params is a dict.")
+            for key, p in params.items():
+                g = grads[key]
+                self._step_one(key, p, g, lr)
         else:
-            keys = range(len(params)) # type: ignore[assignment]
+            if not isinstance(grads, list):
+                raise TypeError("AdamOptimizer grads must be a list when params is a list.")
+            for key, p in enumerate(params):
+                self._step_one(key, p, grads[key], lr)
 
-        for key in keys:
-            p = params[key] # type: ignore[index]
-            g = grads[key] # type: ignore[index]
+    def _step_one(self, key: Any, param: FloatArray, grad: FloatArray, lr: float) -> None:
+        if key not in self.m:
+            self.m[key] = np.zeros_like(param)
+            self.v[key] = np.zeros_like(param)
 
-            if key not in self.m:
-                self.m[key] = np.zeros_like(p)
-                self.v[key] = np.zeros_like(p)
+        self.m[key] = self.beta1 * self.m[key] + (1.0 - self.beta1) * grad
+        self.v[key] = self.beta2 * self.v[key] + (1.0 - self.beta2) * (grad**2)
 
-            self.m[key] = self.beta1 * self.m[key] + (1.0 - self.beta1) * g
-            self.v[key] = self.beta2 * self.v[key] + (1.0 - self.beta2) * (g**2)
+        m_hat = self.m[key] / (1.0 - self.beta1**self.t)
+        v_hat = self.v[key] / (1.0 - self.beta2**self.t)
 
-            m_hat = self.m[key] / (1.0 - self.beta1**self.t)
-            v_hat = self.v[key] / (1.0 - self.beta2**self.t)
-
-            params[key] -= lr * m_hat / (np.sqrt(v_hat) + self.eps) # type: ignore[index]
+        param -= lr * m_hat / (np.sqrt(v_hat) + self.eps)

@@ -11,6 +11,7 @@ from __future__ import annotations
 import numpy as np
 
 import scpn_fusion.core.fno_training_multi_regime as mr
+from scpn_fusion.core._surrogate_utils import AdamOptimizer
 
 
 def test_split_module_exports_regime_constants() -> None:
@@ -25,3 +26,7 @@ def test_split_module_sampling_and_generation_are_callable() -> None:
     assert x.shape == (3, 16, 16)
     assert y.shape == (3, 16, 16)
     assert len(meta) == 3
+
+
+def test_split_module_uses_shared_adam_optimizer() -> None:
+    assert mr.AdamOptimizer is AdamOptimizer
