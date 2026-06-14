@@ -389,7 +389,7 @@ impl PyRustFlightSim {
 // ─── Result types ───
 
 /// Equilibrium solve result.
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 struct PyEquilibriumResult {
     #[pyo3(get)]
@@ -425,7 +425,7 @@ impl PyEquilibriumResult {
 }
 
 /// Thermodynamics result.
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 struct PyThermodynamicsResult {
     #[pyo3(get)]
@@ -458,7 +458,7 @@ impl PyThermodynamicsResult {
 
 // ─── Inverse solver ───
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 struct PyInverseResult {
     #[pyo3(get)]
@@ -830,7 +830,7 @@ fn simulate_tearing_mode(steps: usize) -> (Vec<f64>, u8, i64) {
 // ─── Particle / Boris integrator ───
 
 /// Python-accessible charged particle.
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 struct PyParticle {
     #[pyo3(get, set)]
@@ -903,7 +903,7 @@ impl PyParticle {
 }
 
 /// Population summary result.
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 struct PyPopulationSummary {
     #[pyo3(get)]
@@ -1739,6 +1739,9 @@ fn py_rotating_frc_bvp_acceptance_status<'py>(
     text_signature = "(n0, t_i_ev, t_e_ev, theta_dot, r_s, b_ext, rho_grid, tolerance=1e-10, delta=None)",
     name = "solve_rotating_frc_equilibrium_rust"
 )]
+// Arguments mirror the named Python keyword parameters of the binding; bundling
+// them into a struct would break the public Python call signature.
+#[allow(clippy::too_many_arguments)]
 fn py_solve_rotating_frc_equilibrium<'py>(
     py: pyo3::Python<'py>,
     n0: f64,
@@ -2139,14 +2142,14 @@ fn py_solve_frc_equilibrium<'py>(
     Ok(out)
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 enum PyPacingMode {
     Sleep,
     Spin,
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 struct PyRmfAotCertificate {
     #[pyo3(get, set)]
@@ -2160,7 +2163,7 @@ struct PyRmfAotCertificate {
 #[pymethods]
 impl PyRmfAotCertificate {
     #[new]
-    #[pyo3(signature = (max_freq_hz=5.0e6, min_freq_hz=1.0e5, max_phase_error=1.570796))]
+    #[pyo3(signature = (max_freq_hz=5.0e6, min_freq_hz=1.0e5, max_phase_error=std::f64::consts::FRAC_PI_2))]
     fn new(max_freq_hz: f64, min_freq_hz: f64, max_phase_error: f64) -> Self {
         Self {
             max_freq_hz,
@@ -2170,7 +2173,7 @@ impl PyRmfAotCertificate {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 struct PyRmfConfig {
     #[pyo3(get, set)]
@@ -2190,7 +2193,7 @@ struct PyRmfConfig {
 #[pymethods]
 impl PyRmfConfig {
     #[new]
-    #[pyo3(signature = (f_rmf_nom_hz=1.0e6, f_sampling_hz=10.0e6, k_p=0.5, k_d=0.01, n_neurons=128, aot_safety=PyRmfAotCertificate::new(5.0e6, 1.0e5, 1.570796)))]
+    #[pyo3(signature = (f_rmf_nom_hz=1.0e6, f_sampling_hz=10.0e6, k_p=0.5, k_d=0.01, n_neurons=128, aot_safety=PyRmfAotCertificate::new(5.0e6, 1.0e5, std::f64::consts::FRAC_PI_2)))]
     fn new(
         f_rmf_nom_hz: f64,
         f_sampling_hz: f64,

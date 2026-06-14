@@ -6,9 +6,10 @@
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — FRC Rigid-Rotor Benchmark
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use fusion_physics::frc::{solve_frc_equilibrium, RigidRotorFrcInputs};
 use ndarray::Array1;
+use std::hint::black_box;
 
 pub fn bench_rigid_rotor(c: &mut Criterion) {
     let mut group = c.benchmark_group("frc_rigid_rotor");

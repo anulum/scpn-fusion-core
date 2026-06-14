@@ -6,8 +6,9 @@
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — RMF Phase-Lock Benchmark
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use fusion_physics::rmf_control::{RmfConfig, RmfPhaseLockController};
+use std::hint::black_box;
 
 pub fn bench_rmf_step(c: &mut Criterion) {
     let mut group = c.benchmark_group("rmf_phase_lock");

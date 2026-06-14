@@ -164,6 +164,10 @@ pub fn solve_rotating_frc_equilibrium(
     Err(FrcSolverError::RotatingBvpNotImplemented)
 }
 
+// Each argument is a distinct precomputed equilibrium field or scalar the state
+// assembler must carry; bundling them into a struct would only relocate the same
+// list without removing a real responsibility.
+#[allow(clippy::too_many_arguments)]
 fn build_equilibrium_state(
     inputs: &RigidRotorFrcInputs,
     rho: Array1<f64>,
