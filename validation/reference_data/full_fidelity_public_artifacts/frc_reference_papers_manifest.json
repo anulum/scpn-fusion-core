@@ -1,0 +1,41 @@
+{
+  "artifact_type": "frc_reference_paper_acquisition_manifest",
+  "generated_utc": "2026-06-14T05:51:37Z",
+  "claim_boundary": "Publisher PDF acquisition was attempted for the FRC reference papers needed by the B.8/B.10/B.11 workstream. Copyrighted PDFs are not committed. Accessible publisher landing or redirect artifacts are cached only under ignored internal documentation paths; this manifest records provenance and blocked download status.",
+  "internal_cache_root": "docs/internal/reference_papers/frc",
+  "papers": [
+    {
+      "key": "steinhauer_2011_review_field_reversed_configurations",
+      "citation": "L. C. Steinhauer, Review of field-reversed configurations, Physics of Plasmas 18, 070501 (2011).",
+      "doi": "10.1063/1.3613680",
+      "publisher_article_url": "https://pubs.aip.org/aip/pop/article/18/7/070501/262397/Review-of-field-reversed-configurations",
+      "publisher_pdf_url": "https://pubs.aip.org/aip/pop/article-pdf/doi/10.1063/1.3613680/16695370/070501_1_online.pdf",
+      "local_artifacts": [],
+      "download_status": "blocked_by_publisher_http_403",
+      "notes": "The accepted no-rotation FRC implementation already encodes the Steinhauer analytical profiles used by B.10. PDF and article landing requests returned HTTP 403 from the publisher endpoint during this acquisition pass."
+    },
+    {
+      "key": "slough_2011_merging_compression_frc_plasmoids",
+      "citation": "J. Slough, G. Votroubek, and C. Pihl, Creation of a high-temperature plasma through merging and compression of supersonic field reversed configuration plasmoids, Nuclear Fusion 51, 053008 (2011).",
+      "doi": "10.1088/0029-5515/51/5/053008",
+      "publisher_article_url": "https://iopscience.iop.org/article/10.1088/0029-5515/51/5/053008",
+      "publisher_pdf_url": "https://iopscience.iop.org/article/10.1088/0029-5515/51/5/053008/pdf",
+      "local_artifacts": [
+        {
+          "path": "docs/internal/reference_papers/frc/slough_2011_merging_compression_frc_plasmoids.iop_landing.html",
+          "content_type_detected": "HTML document",
+          "size_bytes": 140214,
+          "sha256": "b69bf57d6d6814bbb2e1698b2856dbbe224c42f110e21ab780e329f1d9a4d4fe"
+        },
+        {
+          "path": "docs/internal/reference_papers/frc/slough_2011_merging_compression_frc_plasmoids.publisher_fetch",
+          "content_type_detected": "JavaScript source",
+          "size_bytes": 14371,
+          "sha256": "af3ddabe1d894e02aa30f9154eba836f2622040f2dcc43af68d2477c3675233b"
+        }
+      ],
+      "download_status": "publisher_served_landing_or_javascript_not_pdf",
+      "notes": "No machine-readable Figure 5 trajectory was acquired. B.11 remains blocked on public digitized Slough data or a human/manual extraction workflow."
+    }
+  ]
+}

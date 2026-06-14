@@ -532,7 +532,7 @@ class FusionKernel(
     # ── FRC bridge ────────────────────────────────────────────────────
 
     def initialize_from_frc(self, frc_state: Any, kappa: float | None = None) -> None:
-        """Interpolate 1D FRC equilibrium onto the 2D Grad-Shafranov grid.
+        """Interpolate a 1D FRC equilibrium onto the 2D Grad-Shafranov grid.
 
         Parameters
         ----------
@@ -541,9 +541,26 @@ class FusionKernel(
         kappa : float | None
             Separatrix elongation (Z/R).  Falls back to config target if omitted.
         """
-        a = frc_state.target_separatrix_radius_m
+        rho = np.asarray(frc_state.rho, dtype=float)
+        psi = np.asarray(frc_state.psi, dtype=float)
+        j_theta = np.asarray(frc_state.J_theta, dtype=float)
+        if rho.ndim != 1 or psi.shape != rho.shape or j_theta.shape != rho.shape:
+            raise ValueError("frc_state rho, psi, and J_theta must be same-length 1D arrays")
+        if rho.size < 2 or not np.all(np.isfinite(rho)):
+            raise ValueError("frc_state.rho must contain at least two finite samples")
+        if not np.all(np.diff(rho) > 0.0):
+            raise ValueError("frc_state.rho must be strictly increasing")
+        if not np.all(np.isfinite(psi)) or not np.all(np.isfinite(j_theta)):
+            raise ValueError("frc_state psi and J_theta must be finite")
+
+        a = float(frc_state.target_separatrix_radius_m)
+        if not np.isfinite(a) or a <= 0.0:
+            raise ValueError("frc_state.target_separatrix_radius_m must be finite and positive")
         if kappa is None:
             kappa = self.cfg.get("target", {}).get("kappa") or 2.0
+        kappa = float(kappa)
+        if not np.isfinite(kappa) or kappa <= 0.0:
+            raise ValueError("kappa must be finite and positive")
 
         # Center the FRC at (R_center, 0.0)
         # We use the midpoint of the computational R domain.
@@ -562,12 +579,21 @@ class FusionKernel(
         # frc_state.rho is distance from O-point (rho=0).
         r_dist = np.abs(dR_2d)
 
-        self.Psi = np.interp(r_dist, frc_state.rho, frc_state.psi) * axial_envelope
-        self.J_phi = np.interp(r_dist, frc_state.rho, frc_state.J_theta) * axial_envelope
+        psi_radial = np.interp(r_dist, rho, psi, left=float(psi[0]), right=float(psi[-1]))
+        j_radial = np.interp(r_dist, rho, j_theta, left=float(j_theta[0]), right=0.0)
+        j_radial = np.where(r_dist >= rho[-1], 0.0, j_radial)
+
+        self.Psi = psi_radial * axial_envelope
+        self.J_phi = j_radial * axial_envelope
 
         # Match target Ip to the interpolated integral
         I_total = float(np.sum(self.J_phi)) * self.dR * self.dZ
         self.cfg["physics"]["plasma_current_target"] = I_total
+        target_cfg = self.cfg.setdefault("target", {})
+        target_cfg["kappa"] = kappa
+        target_cfg["frc_major_radius_m"] = r_center
+        target_cfg["frc_separatrix_radius_m"] = a
+        target_cfg["frc_radial_support_m"] = float(rho[-1])
 
         logger.info("Initialized 2D grid from 1D FRC (Ip=%.3f MA, kappa=%.2f)", I_total / 1e6, kappa)
 

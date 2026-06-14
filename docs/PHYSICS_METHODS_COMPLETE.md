@@ -393,6 +393,17 @@ trajectory exists.
 `benchmarks/bench_faraday_recovery.py`,
 `validation/reports/faraday_recovery_benchmark.json`.
 
+The accepted Steinhauer no-rotation FRC equilibrium can seed the 2D
+Grad-Shafranov solver through `FusionKernel.initialize_from_frc(...)`. That
+bridge validates the 1D radial state, maps `psi` and `J_theta` onto the solver
+grid with an elongation-controlled axial envelope, zeroes `J_phi` outside the
+FRC radial support, records the mapped plasma-current integral as the active
+GS target current, and stores kappa/radius provenance under `target`. This is a
+state-initialization bridge between the reduced no-rotation FRC lane and the
+offline GS lane; it is not a rotating-BVP or Slough Fig. 5 parity claim.
+
+**Validation:** `tests/test_frc_to_gs_bridge.py`.
+
 ---
 
 ## 1E. FRC Pulsed Compression

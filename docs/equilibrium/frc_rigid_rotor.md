@@ -204,6 +204,13 @@ Accepted:
   `examples/03_frc_rigid_rotor_quickstart.py`, which emits the accepted
   Steinhauer no-rotation radial profiles, validation diagnostics, optional JSON
   samples, and an optional figure from the same solver path used by tests.
+- 1D-to-2D Grad-Shafranov initialization through
+  `FusionKernel.initialize_from_frc(frc_state, kappa=...)`. The bridge maps the
+  accepted radial `psi` and `J_theta` profiles onto the `(Z, R)` solver grid,
+  applies an elongation-controlled axial envelope, zeroes toroidal current
+  outside the FRC radial support, records the mapped current as
+  `physics.plasma_current_target`, and preserves kappa/radius provenance under
+  `target`.
 
 Fail-closed:
 
