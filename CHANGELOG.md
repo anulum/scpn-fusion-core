@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
+  with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
+  Coulomb logarithm, critical velocity, electron-drag slowing-down time,
+  velocity slowing-down time, and the ion/electron heating split.
+- Corrected the guiding-centre grad-B/curvature drift coefficient so the
+  perpendicular contribution uses `v_perp^2 / 2 = mu B / m`; the previous term
+  suppressed the grad-B drift by a factor of the particle mass.
+- Replaced the first-orbit-loss estimate with a poloidal-gyroradius
+  (banana-width) scaling set by the plasma current.
+- Tightened input contracts across the guiding-centre integrator, orbit
+  classifier, Monte-Carlo ensemble, and slowing-down helpers, and made the
+  ensemble sampler deterministic through an explicit seed.
+
 ## [3.9.10] - 2026-06-05
 
 - Bumped package, Rust/PyO3 package metadata, README badge, generated capability snapshot, release readiness, and release notes to 3.9.10.
