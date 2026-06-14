@@ -605,6 +605,70 @@ def _make_fake_iso(kernel_cls, dt):
     return FakeIso()
 
 
+def test_main_forwards_config_path_to_run_campaign(monkeypatch):
+    """CLI --config-path must reach run_campaign as the config_path argument."""
+    import validation.stress_test_campaign as mod
+
+    captured: dict[str, object] = {}
+
+    def fake_run_campaign(**kwargs):
+        captured.update(kwargs)
+        return {}
+
+    monkeypatch.setattr(mod, "run_campaign", fake_run_campaign)
+
+    mod.main(
+        [
+            "--config-path",
+            "custom.json",
+            "--quick",
+            "--controllers",
+            "PID",
+        ]
+    )
+
+    assert captured["config_path"] == "custom.json"
+    assert captured["n_episodes"] == 10
+    assert captured["controllers"] == ["PID"]
+
+
+def test_main_defaults_config_path_to_none(monkeypatch):
+    """Without --config-path the entrypoint forwards None so run_campaign defaults."""
+    import validation.stress_test_campaign as mod
+
+    captured: dict[str, object] = {}
+
+    def fake_run_campaign(**kwargs):
+        captured.update(kwargs)
+        return {}
+
+    monkeypatch.setattr(mod, "run_campaign", fake_run_campaign)
+
+    mod.main(["--quick", "--controllers", "PID"])
+
+    assert captured["config_path"] is None
+
+
+def test_run_campaign_logs_traceback_on_episode_failure(monkeypatch, capsys):
+    """A failing episode must emit a full traceback, not only a one-line message."""
+    import validation.stress_test_campaign as mod
+
+    def exploding_episode(config_path, shot_duration, surrogate=False):
+        raise ValueError("synthetic shape mismatch")
+
+    monkeypatch.setattr(mod, "CONTROLLERS", {"PID": exploding_episode})
+
+    results = mod.run_campaign(n_episodes=1, controllers=["PID"], config_path="unused")
+
+    captured = capsys.readouterr()
+    assert "Episode 0 failed: synthetic shape mismatch" in captured.out
+    # traceback.print_exc() writes the stack to stderr.
+    assert "Traceback (most recent call last):" in captured.err
+    assert "ValueError: synthetic shape mismatch" in captured.err
+    assert "exploding_episode" in captured.err
+    assert results["PID"].n_episodes == 0
+
+
 def test_rust_pid_episode_energy_efficiency_tracks_constraint_events(monkeypatch):
     """Rust lane should derive efficiency from constraint-event burden."""
     import validation.stress_test_campaign as mod

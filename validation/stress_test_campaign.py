@@ -30,6 +30,7 @@ import json
 import os
 import sys
 import time
+import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, cast
@@ -604,6 +605,7 @@ def run_campaign(
                 metrics.episodes.append(episode)
             except Exception as e:
                 print(f"  Episode {ep} failed: {e}")
+                traceback.print_exc()
                 continue
 
             if (ep + 1) % max(1, n_episodes // 10) == 0:
@@ -736,7 +738,8 @@ def save_results_json(results: dict[str, ControllerMetrics], path: Path) -> None
     print(f"Results saved to {path}")
 
 
-if __name__ == "__main__":
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Construct the stress-campaign command-line parser."""
     parser = argparse.ArgumentParser(description="1000-Shot Stress-Test Campaign")
     parser.add_argument(
         "--episodes",
@@ -761,6 +764,15 @@ if __name__ == "__main__":
         help="Simulated shot duration in seconds (default: 30)",
     )
     parser.add_argument(
+        "--config-path",
+        type=str,
+        default=None,
+        help=(
+            "Path to the FusionKernel / IsoFlux config JSON consumed by each "
+            "controller episode. Defaults to repo_root/iter_config.json when omitted."
+        ),
+    )
+    parser.add_argument(
         "--output",
         type=str,
         default=None,
@@ -783,7 +795,12 @@ if __name__ == "__main__":
             "PID,H-infinity,LQR,Rust-PID."
         ),
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> dict[str, ControllerMetrics]:
+    """Parse arguments and run the stress-test campaign entrypoint."""
+    args = build_arg_parser().parse_args(argv)
 
     if args.quick:
         args.episodes = 10
@@ -798,6 +815,7 @@ if __name__ == "__main__":
     results = run_campaign(
         n_episodes=args.episodes,
         shot_duration=args.shot_duration,
+        config_path=args.config_path,
         surrogate=args.surrogate,
         controllers=selected_controllers,
     )
@@ -805,3 +823,9 @@ if __name__ == "__main__":
 
     if args.output:
         save_results_json(results, Path(args.output))
+
+    return results
+
+
+if __name__ == "__main__":
+    main()
