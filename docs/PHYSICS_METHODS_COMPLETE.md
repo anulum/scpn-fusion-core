@@ -43,7 +43,7 @@ where $\hat\psi = (\psi - \psi_{\rm axis})/(\psi_{\rm bdry} - \psi_{\rm axis})$.
 | `core/fusion_kernel.py` | 2D GS finite-difference solver, vacuum field, X-point finder |
 | `core/force_balance.py` | Newton-Raphson coil-current solver for radial force balance |
 | `core/analytic_solver.py` | Solov'ev analytic equilibrium (test and initialisation) |
-| `core/neural_equilibrium.py` | MLP surrogate for real-time flux-surface prediction |
+| `core/neural_equilibrium.py` | 12-feature PCA+MLP surrogate for real-time flux-surface prediction |
 
 **References:**
 

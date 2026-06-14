@@ -146,6 +146,27 @@ class TestAcceleratorUnit:
         with pytest.raises(RuntimeError, match="not trained"):
             accel.predict(np.zeros(12))
 
+    def test_predict_rejects_feature_width_mismatch(self):
+        cfg = NeuralEqConfig(
+            n_components=3,
+            hidden_sizes=(8,),
+            n_input_features=12,
+            grid_shape=(6, 6),
+        )
+        accel = NeuralEquilibriumAccelerator(cfg)
+
+        rng = np.random.default_rng(8)
+        X = rng.standard_normal((20, 12))
+        Y = rng.standard_normal((20, 36))
+        accel._input_mean = X.mean(axis=0)
+        accel._input_std = np.ones(12)
+        accel.pca.fit(Y)
+        accel.mlp = SimpleMLP([12, 8, 3], seed=8)
+        accel.is_trained = True
+
+        with pytest.raises(ValueError, match="Expected 12 neural-equilibrium features"):
+            accel.predict(rng.standard_normal(8))
+
     def test_save_load_round_trip(self, tmp_path):
         """Train on synthetic data, save, load, verify predictions match."""
         cfg = NeuralEqConfig(

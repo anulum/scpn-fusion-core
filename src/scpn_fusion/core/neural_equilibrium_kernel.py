@@ -8,7 +8,8 @@
 """
 Drop-in kernel wrapper around the neural equilibrium accelerator.
 
-This module isolates runtime/orchestration concerns from training code.
+This module isolates runtime/orchestration concerns from training code and
+keeps the runtime feature contract aligned with the trained 12-feature model.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import numpy as np
 from numpy.typing import NDArray
@@ -25,6 +26,25 @@ from .fusion_kernel_numerics import FloatArray
 from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
+
+
+def _first_finite_number(
+    *sections: Mapping[str, Any],
+    keys: tuple[str, ...],
+    default: float | None = None,
+) -> float:
+    for section in sections:
+        for key in keys:
+            value = section.get(key)
+            if value is None:
+                continue
+            number = float(value)
+            if np.isfinite(number):
+                return number
+            raise ValueError(f"Neural-equilibrium feature {key!r} must be finite.")
+    if default is not None:
+        return default
+    raise KeyError(f"Missing required neural-equilibrium feature key among {keys!r}.")
 
 
 class NeuralEquilibriumKernel:
@@ -48,6 +68,21 @@ class NeuralEquilibriumKernel:
     RR: NDArray[np.float64]
     ZZ: NDArray[np.float64]
     Psi: NDArray[np.float64]
+
+    FEATURE_NAMES: tuple[str, ...] = (
+        "I_p",
+        "B_t",
+        "R_axis",
+        "Z_axis",
+        "pprime_scale",
+        "ffprime_scale",
+        "simag",
+        "sibry",
+        "kappa",
+        "delta_upper",
+        "delta_lower",
+        "q95",
+    )
 
     def __init__(
         self,
@@ -83,6 +118,126 @@ class NeuralEquilibriumKernel:
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
         self.Psi = np.zeros(self.accel.cfg.grid_shape)
 
+    def _feature_prior(self, name: str) -> float | None:
+        input_mean = getattr(self.accel, "_input_mean", None)
+        if input_mean is None:
+            return None
+        index = self.FEATURE_NAMES.index(name)
+        if index >= len(input_mean):
+            return None
+        value = float(input_mean[index])
+        return value if np.isfinite(value) else None
+
+    def _feature(
+        self,
+        name: str,
+        *sections: Mapping[str, Any],
+        keys: tuple[str, ...],
+        default: float | None = None,
+    ) -> float:
+        prior = self._feature_prior(name)
+        return _first_finite_number(
+            *sections,
+            keys=keys,
+            default=default if default is not None else prior,
+        )
+
+    def _build_feature_vector(self) -> NDArray[np.float64]:
+        physics = self.cfg.get("physics", {})
+        target = self.cfg.get("target", {})
+        profiles = self.cfg.get("profiles", {})
+        equilibrium = self.cfg.get("equilibrium", {})
+        reference = self.cfg.get("_reference", {})
+
+        total_ip_ma = _first_finite_number(
+            physics,
+            target,
+            reference,
+            keys=("plasma_current_target", "I_p", "Ip", "plasma_current_A"),
+            default=sum(float(c.get("current", 0.0)) for c in self.cfg.get("coils", [])),
+        )
+        if abs(total_ip_ma) > 100_000.0:
+            total_ip_ma /= 1e6
+
+        delta_upper = self._feature(
+            "delta_upper",
+            physics,
+            target,
+            reference,
+            keys=("delta_upper", "delta_up", "triangularity_upper", "delta"),
+        )
+        delta_lower = self._feature(
+            "delta_lower",
+            physics,
+            target,
+            reference,
+            keys=("delta_lower", "delta_low", "triangularity_lower", "delta"),
+        )
+
+        return np.array(
+            [
+                total_ip_ma,
+                self._feature(
+                    "B_t",
+                    physics,
+                    target,
+                    reference,
+                    keys=("B_T", "B_t", "B0", "bcentr"),
+                ),
+                self._feature(
+                    "R_axis",
+                    target,
+                    physics,
+                    equilibrium,
+                    reference,
+                    keys=("R_axis", "rmaxis", "R_major_m", "major_radius"),
+                ),
+                self._feature(
+                    "Z_axis",
+                    target,
+                    physics,
+                    equilibrium,
+                    keys=("Z_axis", "zmaxis"),
+                    default=0.0,
+                ),
+                self._feature(
+                    "pprime_scale",
+                    physics,
+                    target,
+                    profiles,
+                    keys=("pprime_scale", "pprime_s", "pressure_gradient_scale"),
+                    default=1.0,
+                ),
+                self._feature(
+                    "ffprime_scale",
+                    physics,
+                    target,
+                    profiles,
+                    keys=("ffprime_scale", "ffprime_s", "diamagnetic_scale"),
+                    default=1.0,
+                ),
+                self._feature("simag", physics, target, equilibrium, keys=("simag", "psi_axis")),
+                self._feature("sibry", physics, target, equilibrium, keys=("sibry", "psi_boundary")),
+                self._feature(
+                    "kappa",
+                    physics,
+                    target,
+                    reference,
+                    keys=("kappa", "elongation"),
+                ),
+                delta_upper,
+                delta_lower,
+                self._feature(
+                    "q95",
+                    physics,
+                    target,
+                    reference,
+                    keys=("q95", "q_95", "q95_typical"),
+                ),
+            ],
+            dtype=np.float64,
+        )
+
     def find_magnetic_axis(self) -> tuple[float, float, float]:
         """Find axis position (R, Z) and value Psi_axis with sub-grid precision."""
         # If the surrogate is too biased, we can mix in the target tracking.
@@ -103,74 +258,17 @@ class NeuralEquilibriumKernel:
             r_ax = self.R[ir] + dr_shift * (self.R[1] - self.R[0])
             z_ax = self.Z[iz] + dz_shift * (self.Z[1] - self.Z[0])
 
-
-
             psi_ax = p2 - 0.125 * (p3 - p1) ** 2 / (denom_r if abs(denom_r) > 1e-12 else 1e-12)
             return r_ax, z_ax, psi_ax
 
         return self.R[ir], self.Z[iz], self.Psi[iz, ir]
 
     def solve_equilibrium(self, **kwargs: Any) -> dict[str, Any]:
-        """Predict Psi using the surrogate based on current coil currents."""
+        """Predict Psi from the canonical 12-feature equilibrium descriptor."""
         t0 = time.perf_counter()
-
-        # Extract features from config (matches train_from_geqdsk format).
-        coils = self.cfg.get("coils", [])
-
-        # Calculate total current in MA from all coils to use as Ip proxy.
-        total_ip_ma = sum(float(c.get("current", 0.0)) for c in coils) / 1e6
-
-        # Calculate radial pusher current (PF2, PF3, PF4).
-        pf2 = float(coils[1].get("current", 0.0))
-        pf3 = float(coils[2].get("current", 0.0))
-        pf4 = float(coils[3].get("current", 0.0))
-        pusher_ma = (pf2 + pf3 + pf4) / 1e6
-
-        # Calculate vertical asymmetry from PF1 (top) vs PF5 (bottom).
-        pf1 = float(coils[0].get("current", 0.0))
-        pf5 = float(coils[4].get("current", 0.0))
-        z_proxy = (pf5 - pf1) / 1e6
-
-        physics = self.cfg.get("physics", {})
-        target = self.cfg.get("target", {})
-
-        # 12-feature input + dynamic config extraction
-        # [I_p, B_t, R_axis, Z_axis, pprime_s, ffprime_s, simag, sibry, kappa, delta_up, delta_low, q95]
-        b_t = physics.get("B_T") or target.get("B_T", 5.3)
-        r_axis = target.get("R_axis", 6.2)
-        z_axis = target.get("Z_axis", 0.0)
-        kappa = physics.get("kappa") or target.get("kappa", 1.7)
-        q95 = physics.get("q95") or target.get("q95", 3.0)
-
-        features = np.array(
-            [
-                total_ip_ma,
-                b_t,
-                r_axis,
-                z_axis,
-                physics.get("beta_scale", 1.0),
-                1.0,  # ff_scale
-                0.0,  # simag
-                10.0,  # sibry
-                kappa,
-                0.33,  # delta_up (nominal)
-                0.33,  # delta_low (nominal)
-                q95,
-            ]
-        )
+        features = self._build_feature_vector()
 
         self.Psi = self.accel.predict(features)
-
-        # Debug sampled logging only to avoid flooding.
-        psi_min, psi_max = np.min(self.Psi), np.max(self.Psi)
-        if np.random.random() < 0.01:
-            logger.info(
-                "Surrogate Solve: Ip=%.2fMA, Z_proxy=%.4f | Psi=[%.2f, %.2f]",
-                total_ip_ma,
-                z_proxy,
-                psi_min,
-                psi_max,
-            )
 
         return {
             "converged": True,

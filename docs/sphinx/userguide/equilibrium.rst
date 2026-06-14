@@ -268,16 +268,21 @@ Neural Equilibrium Solver
 For real-time control applications where millisecond-scale equilibrium
 updates are required, the neural equilibrium solver (``neural_equilibrium.py``)
 provides a PCA + MLP surrogate that predicts flux-surface geometry from
-an 8-dimensional input vector:
+the canonical 12-dimensional equilibrium descriptor:
 
 .. math::
 
    (I_p,\; B_T,\; R_\text{axis},\; Z_\text{axis},\;
-    p'_\text{scale},\; FF'_\text{scale},\; \psi_\text{axis},\; \psi_\text{bry})
+    p'_\text{scale},\; FF'_\text{scale},\; \psi_\text{axis},\; \psi_\text{bry},\;
+    \kappa,\; \delta_\text{upper},\; \delta_\text{lower},\; q_{95})
    \;\longrightarrow\;
    \hat{\psi}(R, Z)
 
-The surrogate is trained on SPARC GEQDSK data with profile perturbations.
+The runtime wrapper extracts the same feature order from ``physics``,
+``target``, ``profiles``, ``equilibrium``, and reactor reference metadata,
+falling back to trained model statistics only for unavailable feature-prior
+terms. The surrogate is trained on SPARC GEQDSK data with profile and shape
+perturbations.
 Inference time is approximately 5 microseconds per point (Rust backend,
 synthetic weights).
 

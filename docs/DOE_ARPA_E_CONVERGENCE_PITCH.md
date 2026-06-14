@@ -100,7 +100,7 @@ SCPN-Fusion-Core implements a four-layer AI stack that spans the full lifecycle 
 
 **Problem:** Full Grad-Shafranov equilibrium solves require 100 ms to 2 s per iteration on production grids (65x65 to 128x128). This is too slow for inner-loop control optimization where thousands of scenario evaluations are needed per second.
 
-**Solution:** A neural surrogate (`neural_equilibrium.py`, 530 lines) trained directly on real SPARC GEQDSK data. The architecture uses a SimpleMLP (8-dimensional input: I_p, B_t, R_axis, Z_axis, pprime_scale, ffprime_scale, simag, sibry) with He initialization and ReLU activations, combined with a MinimalPCA (pure NumPy SVD, no sklearn dependency) for flux-surface geometry compression.
+**Solution:** A neural surrogate (`neural_equilibrium.py`, 530 lines) trained directly on real SPARC GEQDSK data. The architecture uses a SimpleMLP with the canonical 12-dimensional equilibrium descriptor (`I_p`, `B_t`, `R_axis`, `Z_axis`, `pprime_scale`, `ffprime_scale`, `simag`, `sibry`, `kappa`, `delta_upper`, `delta_lower`, `q95`), He initialization, and ReLU activations, combined with a MinimalPCA (pure NumPy SVD, no sklearn dependency) for flux-surface geometry compression.
 
 **Key design decisions:**
 - No pickle persistence — model weights stored as `.npz` with `allow_pickle=False` for security and cross-platform reproducibility

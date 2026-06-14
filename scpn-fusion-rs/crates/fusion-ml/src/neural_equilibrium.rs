@@ -9,7 +9,8 @@
 //!
 //! Port of `neural_equilibrium.py`.
 //! PCA compresses 2D flux maps to low-rank coefficients;
-//! MLP maps coil currents → PCA coefficients for ~1000× speedup.
+//! MLP maps the 12-feature equilibrium descriptor to PCA coefficients for
+//! ~1000× speedup.
 
 use ndarray::{Array1, Array2, Axis};
 use rand::Rng;
@@ -17,6 +18,10 @@ use rand::Rng;
 /// Default number of PCA components. Python: 15.
 #[cfg(test)]
 const N_COMPONENTS: usize = 15;
+
+/// Canonical neural-equilibrium feature width.
+#[cfg(test)]
+const N_INPUT_FEATURES: usize = 12;
 
 /// MLP architecture: input → 64 (tanh) → 32 (tanh) → n_components.
 const HIDDEN1: usize = 64;
@@ -188,9 +193,9 @@ pub struct NeuralEquilibrium {
 }
 
 impl NeuralEquilibrium {
-    /// Predict equilibrium from coil currents.
-    pub fn predict(&self, currents: &Array1<f64>) -> Array1<f64> {
-        let coeffs = self.mlp.forward(currents);
+    /// Predict equilibrium from the canonical 12-feature descriptor.
+    pub fn predict(&self, features: &Array1<f64>) -> Array1<f64> {
+        let coeffs = self.mlp.forward(features);
         let coeffs_2d = coeffs.insert_axis(Axis(0));
         let psi_flat = self.pca.inverse_transform(&coeffs_2d);
         psi_flat.row(0).to_owned()
@@ -240,8 +245,8 @@ mod tests {
 
     #[test]
     fn test_mlp_output_shape() {
-        let mlp = EquilibriumMLP::new(6, N_COMPONENTS);
-        let x = Array1::from_elem(6, 1.0);
+        let mlp = EquilibriumMLP::new(N_INPUT_FEATURES, N_COMPONENTS);
+        let x = Array1::from_elem(N_INPUT_FEATURES, 1.0);
         let out = mlp.forward(&x);
         assert_eq!(out.len(), N_COMPONENTS);
         assert!(out.iter().all(|v| v.is_finite()));
@@ -249,8 +254,8 @@ mod tests {
 
     #[test]
     fn test_mlp_batch_forward() {
-        let mlp = EquilibriumMLP::new(6, N_COMPONENTS);
-        let x = Array2::from_elem((5, 6), 1.0);
+        let mlp = EquilibriumMLP::new(N_INPUT_FEATURES, N_COMPONENTS);
+        let x = Array2::from_elem((5, N_INPUT_FEATURES), 1.0);
         let out = mlp.forward_batch(&x);
         assert_eq!(out.dim(), (5, N_COMPONENTS));
     }
@@ -265,9 +270,9 @@ mod tests {
         let b = Array2::from_shape_fn((k, p), |_| rng.gen::<f64>());
         let x = a.dot(&b);
         let pca = PCA::fit(&x, k);
-        let mlp = EquilibriumMLP::new(6, k);
+        let mlp = EquilibriumMLP::new(N_INPUT_FEATURES, k);
         let ne = NeuralEquilibrium { pca, mlp };
-        let result = ne.predict(&Array1::from_elem(6, 0.5));
+        let result = ne.predict(&Array1::from_elem(N_INPUT_FEATURES, 0.5));
         assert_eq!(result.len(), p);
         assert!(result.iter().all(|v| v.is_finite()));
     }

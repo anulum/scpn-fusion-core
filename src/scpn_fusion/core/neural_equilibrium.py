@@ -8,17 +8,17 @@
 """
 PCA + MLP surrogate for Grad-Shafranov equilibrium reconstruction.
 
-Maps coil currents (or profile parameters) → PCA coefficients → ψ(R,Z)
-with ~1000× speedup over the full Picard iteration.
+Maps the canonical 12-feature equilibrium descriptor to PCA coefficients and
+then to ψ(R,Z), providing ~1000× speedup over the full Picard iteration.
 
 **Training modes:**
 
-1. **From FusionKernel** — Generate training data by perturbing coil
-   currents and running the GS solver.  Requires a valid config JSON.
+1. **From FusionKernel** — Generate training data by perturbing reactor
+   parameters and running the GS solver.  Requires a valid config JSON.
 
 2. **From SPARC GEQDSKs** — Train on real equilibrium data from CFS.
-   Uses the GEQDSK's profile parameters (p', FF', I_p) as input features
-   and ψ(R,Z) as targets.  No coil model needed.
+   Uses the GEQDSK's profile, shape, and scalar equilibrium parameters
+   as input features and ψ(R,Z) as targets.  No coil model needed.
 
 **Status:** Reduced-order surrogate.  Not on the critical control path.
 Use for rapid design-space exploration and batch equilibrium sweeps.
@@ -201,7 +201,7 @@ class NeuralEquilibriumAccelerator:
     PCA + MLP surrogate for Grad-Shafranov equilibrium.
 
     Can be trained from SPARC GEQDSK files (preferred) or from a
-    FusionKernel config with coil perturbations.
+    FusionKernel config with reactor-parameter perturbations.
     """
 
     def __init__(self, config: NeuralEqConfig | None = None) -> None:
@@ -570,11 +570,30 @@ class NeuralEquilibriumAccelerator:
 
         if features.ndim == 1:
             features = features[np.newaxis, :]
+        if features.ndim != 2:
+            raise ValueError(
+                "Neural-equilibrium features must have shape (n_features,) or "
+                "(batch, n_features)."
+            )
+        if features.shape[1] != self.cfg.n_input_features:
+            raise ValueError(
+                f"Expected {self.cfg.n_input_features} neural-equilibrium features, "
+                f"got {features.shape[1]}."
+            )
 
         if self._input_mean is None or self._input_std is None:
             raise RuntimeError("Input normalization statistics are unavailable.")
         if self.mlp is None:
             raise RuntimeError("MLP weights are unavailable.")
+        if self._input_mean.shape[0] != self.cfg.n_input_features:
+            raise RuntimeError(
+                "Input normalization mean width does not match neural-equilibrium config."
+            )
+        if self._input_std.shape[0] != self.cfg.n_input_features:
+            raise RuntimeError(
+                "Input normalization standard-deviation width does not match "
+                "neural-equilibrium config."
+            )
         x_norm = (features - self._input_mean) / self._input_std
         coeffs = self.mlp.predict(x_norm)
         psi_flat = self.pca.inverse_transform(coeffs)
@@ -597,6 +616,17 @@ class NeuralEquilibriumAccelerator:
         """Save model to .npz (no pickle dependency)."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
+
+        if self.mlp is None:
+            raise RuntimeError("MLP weights are unavailable.")
+        if (
+            self.pca.mean_ is None
+            or self.pca.components_ is None
+            or self.pca.explained_variance_ratio_ is None
+        ):
+            raise RuntimeError("PCA weights are unavailable.")
+        if self._input_mean is None or self._input_std is None:
+            raise RuntimeError("Input normalization statistics are unavailable.")
 
         payload: dict[str, NDArray] = {
             "n_components": np.array([self.cfg.n_components]),
