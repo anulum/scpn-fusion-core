@@ -28,7 +28,9 @@ pub fn bench_rigid_rotor(c: &mut Criterion) {
             let step = 0.4 / (n as f64 - 1.0);
             let rho = Array1::from_iter((0..n).map(|idx| idx as f64 * step));
 
-            b.iter(|| solve_frc_equilibrium(black_box(&inputs), black_box(&rho), black_box(1.0e-10)))
+            b.iter(|| {
+                solve_frc_equilibrium(black_box(&inputs), black_box(&rho), black_box(1.0e-10))
+            })
         });
     }
     group.finish();

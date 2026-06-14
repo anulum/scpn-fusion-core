@@ -112,7 +112,9 @@ pub fn solve_frc_equilibrium(
 ) -> Result<FrcEquilibriumState, FrcSolverError> {
     validate_inputs(inputs, tolerance)?;
 
-    if inputs.theta_dot.abs() > tolerance { return Err(FrcSolverError::RotatingBvpNotImplemented); }
+    if inputs.theta_dot.abs() > tolerance {
+        return Err(FrcSolverError::RotatingBvpNotImplemented);
+    }
     validate_grid(rho_grid, inputs.r_s)?;
     let rho = rho_grid.clone();
     let delta = match inputs.delta {
@@ -122,18 +124,35 @@ pub fn solve_frc_equilibrium(
 
     let argument = rho.mapv(|r| (r * r - inputs.r_s * inputs.r_s) / (2.0 * inputs.r_s * delta));
     let b_z = argument.mapv(|a| -inputs.b_ext * a.tanh());
-    let j_theta = toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
+    let j_theta =
+        toroidal_current_density_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
     let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
 
     let external_magnetic_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
     let p = b_z.mapv(|b| (external_magnetic_pressure - b * b / (2.0 * MU_0)).max(0.0));
 
-    let residual = b_z.iter().zip(argument.iter()).map(|(actual, arg)| (actual - (-inputs.b_ext * arg.tanh())).abs()).fold(0.0, f64::max);
+    let residual = b_z
+        .iter()
+        .zip(argument.iter())
+        .map(|(actual, arg)| (actual - (-inputs.b_ext * arg.tanh())).abs())
+        .fold(0.0, f64::max);
 
-    let dbz_dr_analytic = axial_field_derivative_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
-    build_equilibrium_state(inputs, rho, psi, b_z, j_theta, p, tolerance, true, residual, delta, dbz_dr_analytic)
+    let dbz_dr_analytic =
+        axial_field_derivative_from_steinhauer(&rho, &argument, inputs.b_ext, inputs.r_s, delta);
+    build_equilibrium_state(
+        inputs,
+        rho,
+        psi,
+        b_z,
+        j_theta,
+        p,
+        tolerance,
+        true,
+        residual,
+        delta,
+        dbz_dr_analytic,
+    )
 }
-
 
 pub fn solve_rotating_frc_equilibrium(
     inputs: &RigidRotorFrcInputs,
@@ -144,7 +163,6 @@ pub fn solve_rotating_frc_equilibrium(
     validate_grid(rho_grid, inputs.r_s)?;
     Err(FrcSolverError::RotatingBvpNotImplemented)
 }
-
 
 fn build_equilibrium_state(
     inputs: &RigidRotorFrcInputs,
@@ -170,90 +188,174 @@ fn build_equilibrium_state(
     let separatrix_expected_current_density_a_m2 = inputs.b_ext / (MU_0 * delta);
     let separatrix_current_density_relative_error =
         (separatrix_current_density_a_m2 - separatrix_expected_current_density_a_m2).abs()
-            / separatrix_expected_current_density_a_m2.abs().max(tolerance);
+            / separatrix_expected_current_density_a_m2
+                .abs()
+                .max(tolerance);
     let sheet_current_integral_a_m = trapezoid(&rho, &j_theta);
     let expected_sheet_current_integral_a_m = (b_z[0] - b_z[b_z.len() - 1]) / MU_0;
     let sheet_current_integral_relative_error =
         (sheet_current_integral_a_m - expected_sheet_current_integral_a_m).abs()
             / expected_sheet_current_integral_a_m.abs().max(tolerance);
     let ampere_residual = ampere_current_closure_residual(&rho, &b_z, &j_theta);
-    let ampere_scale = tolerance.max(max_abs(&grad_bz)).max(MU_0 * max_abs(&j_theta));
+    let ampere_scale = tolerance
+        .max(max_abs(&grad_bz))
+        .max(MU_0 * max_abs(&j_theta));
     let ampere_residual_linf = max_abs(&ampere_residual) / ampere_scale;
-    let ampere_residual_l2 = (ampere_residual.iter().map(|v| (v / ampere_scale).powi(2)).sum::<f64>() / ampere_residual.len() as f64).sqrt();
+    let ampere_residual_l2 = (ampere_residual
+        .iter()
+        .map(|v| (v / ampere_scale).powi(2))
+        .sum::<f64>()
+        / ampere_residual.len() as f64)
+        .sqrt();
 
     let psi_axis_wb = psi[0];
     let psi_separatrix_wb = interpolate(&rho, &psi, inputs.r_s);
     let psi_span_wb = psi_separatrix_wb - psi_axis_wb;
     if psi_span_wb.abs() <= tolerance {
-        return Err(FrcSolverError::InvalidInput("psi separatrix span must be non-zero"));
+        return Err(FrcSolverError::InvalidInput(
+            "psi separatrix span must be non-zero",
+        ));
     }
     let psi_normalized = psi.mapv(|v| (v - psi_axis_wb) / psi_span_wb);
     let psi_normalized_axis_error = psi_normalized[0].abs();
     let psi_normalized_separatrix = interpolate(&rho, &psi_normalized, inputs.r_s);
     let psi_normalized_separatrix_error = (psi_normalized_separatrix - 1.0).abs();
-    let psi_normalized_residual = psi_normalized_closure_residual(&psi, psi_axis_wb, psi_separatrix_wb, &psi_normalized)?;
+    let psi_normalized_residual =
+        psi_normalized_closure_residual(&psi, psi_axis_wb, psi_separatrix_wb, &psi_normalized)?;
     let psi_normalized_residual_linf = max_abs(&psi_normalized_residual);
-    let psi_normalized_monotonic_passed = psi_normalized_monotonic_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
-    let psi_normalized_bounds_passed = psi_normalized_bounds_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
+    let psi_normalized_monotonic_passed =
+        psi_normalized_monotonic_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
+    let psi_normalized_bounds_passed =
+        psi_normalized_bounds_passed(&rho, &psi_normalized, inputs.r_s, tolerance)?;
     let flux_derivative_residual = flux_derivative_closure_residual(&rho, &psi, &b_z);
     let dpsi_dr = gradient_edge_order2(&rho, &psi);
-    let flux_scale = tolerance.max(max_abs(&rho_times_bz(&rho, &b_z))).max(max_abs(&dpsi_dr));
+    let flux_scale = tolerance
+        .max(max_abs(&rho_times_bz(&rho, &b_z)))
+        .max(max_abs(&dpsi_dr));
     let flux_derivative_residual_linf = max_abs(&flux_derivative_residual) / flux_scale;
-    let flux_derivative_residual_l2 = (flux_derivative_residual.iter().map(|v| (v / flux_scale).powi(2)).sum::<f64>() / flux_derivative_residual.len() as f64).sqrt();
+    let flux_derivative_residual_l2 = (flux_derivative_residual
+        .iter()
+        .map(|v| (v / flux_scale).powi(2))
+        .sum::<f64>()
+        / flux_derivative_residual.len() as f64)
+        .sqrt();
     let r_null = zero_crossing_radius(&rho, &b_z);
     let separatrix_radius_error_m = (r_null - inputs.r_s).abs();
     let separatrix_index = nearest_index(&rho, r_null);
     let field_reversal_passed = field_reversal_passed(&rho, &b_z, inputs.r_s);
 
-    let input_thermal_pressure_pa = inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
+    let input_thermal_pressure_pa =
+        inputs.n0 * (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
     let external_magnetic_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
     let peak_pressure_pa = max_abs(&p);
     let thermal_energy_j = (inputs.t_i_ev + inputs.t_e_ev) * ELEMENTARY_CHARGE_C;
     let density_m3 = p.mapv(|pressure| pressure / thermal_energy_j);
     let density_peak_m3 = max_abs(&density_m3);
     let central_density_residual_m3 = density_peak_m3 - inputs.n0;
-    let central_density_relative_error = central_density_residual_m3.abs() / density_peak_m3.max(inputs.n0).max(tolerance);
+    let central_density_relative_error =
+        central_density_residual_m3.abs() / density_peak_m3.max(inputs.n0).max(tolerance);
     let beta = p.mapv(|pressure| pressure / external_magnetic_pressure.max(tolerance));
     let beta_peak = max_abs(&beta);
     let (beta_r_clip, beta_clip) = clip_to_separatrix(&rho, &beta, inputs.r_s)?;
-    let beta_integrand = Array1::from_iter(beta_clip.iter().zip(beta_r_clip.iter()).map(|(b, r)| b * 2.0 * std::f64::consts::PI * r));
-    let beta_separatrix_average = trapezoid(&beta_r_clip, &beta_integrand) / (std::f64::consts::PI * inputs.r_s * inputs.r_s);
-    let pressure_scale = tolerance.max(peak_pressure_pa).max(external_magnetic_pressure);
+    let beta_integrand = Array1::from_iter(
+        beta_clip
+            .iter()
+            .zip(beta_r_clip.iter())
+            .map(|(b, r)| b * 2.0 * std::f64::consts::PI * r),
+    );
+    let beta_separatrix_average =
+        trapezoid(&beta_r_clip, &beta_integrand) / (std::f64::consts::PI * inputs.r_s * inputs.r_s);
+    let pressure_scale = tolerance
+        .max(peak_pressure_pa)
+        .max(external_magnetic_pressure);
     let pressure_balance_residual = pressure_balance_residual_profile(&p, &b_z, inputs.b_ext);
     let pressure_balance_residual_linf = max_abs(&pressure_balance_residual) / pressure_scale;
-    let pressure_balance_residual_l2 = (pressure_balance_residual.iter().map(|v| (v / pressure_scale).powi(2)).sum::<f64>() / pressure_balance_residual.len() as f64).sqrt();
+    let pressure_balance_residual_l2 = (pressure_balance_residual
+        .iter()
+        .map(|v| (v / pressure_scale).powi(2))
+        .sum::<f64>()
+        / pressure_balance_residual.len() as f64)
+        .sqrt();
     let pressure_gradient_analytic_pa_m = pressure_gradient_from_steinhauer(&b_z, &dbz_dr_analytic);
-    let pressure_gradient_residual = pressure_gradient_closure_residual(&rho, &p, &pressure_gradient_analytic_pa_m);
+    let pressure_gradient_residual =
+        pressure_gradient_closure_residual(&rho, &p, &pressure_gradient_analytic_pa_m);
     let finite_pressure_gradient = gradient_edge_order2(&rho, &p);
-    let pressure_gradient_scale = tolerance.max(max_abs(&finite_pressure_gradient)).max(max_abs(&pressure_gradient_analytic_pa_m));
-    let pressure_gradient_residual_linf = max_abs(&pressure_gradient_residual) / pressure_gradient_scale;
-    let pressure_gradient_residual_l2 = (pressure_gradient_residual.iter().map(|v| (v / pressure_gradient_scale).powi(2)).sum::<f64>() / pressure_gradient_residual.len() as f64).sqrt();
+    let pressure_gradient_scale = tolerance
+        .max(max_abs(&finite_pressure_gradient))
+        .max(max_abs(&pressure_gradient_analytic_pa_m));
+    let pressure_gradient_residual_linf =
+        max_abs(&pressure_gradient_residual) / pressure_gradient_scale;
+    let pressure_gradient_residual_l2 = (pressure_gradient_residual
+        .iter()
+        .map(|v| (v / pressure_gradient_scale).powi(2))
+        .sum::<f64>()
+        / pressure_gradient_residual.len() as f64)
+        .sqrt();
     let force_balance_residual = radial_force_balance_residual(&rho, &b_z, &j_theta, &p);
-    let force_scale = tolerance.max(max_abs(&finite_pressure_gradient)).max(max_abs(&rho_times_bz(&j_theta, &b_z)));
+    let force_scale = tolerance
+        .max(max_abs(&finite_pressure_gradient))
+        .max(max_abs(&rho_times_bz(&j_theta, &b_z)));
     let force_balance_residual_linf = max_abs(&force_balance_residual) / force_scale;
-    let force_balance_residual_l2 = (force_balance_residual.iter().map(|v| (v / force_scale).powi(2)).sum::<f64>() / force_balance_residual.len() as f64).sqrt();
+    let force_balance_residual_l2 = (force_balance_residual
+        .iter()
+        .map(|v| (v / force_scale).powi(2))
+        .sum::<f64>()
+        / force_balance_residual.len() as f64)
+        .sqrt();
 
     let (density_r_clip, density_clip) = clip_to_separatrix(&rho, &density_m3, inputs.r_s)?;
-    let particle_integrand = Array1::from_iter(density_clip.iter().zip(density_r_clip.iter()).map(|(d, r)| d * 2.0 * std::f64::consts::PI * r));
+    let particle_integrand = Array1::from_iter(
+        density_clip
+            .iter()
+            .zip(density_r_clip.iter())
+            .map(|(d, r)| d * 2.0 * std::f64::consts::PI * r),
+    );
     let particle_line_density_m1 = trapezoid(&density_r_clip, &particle_integrand);
 
     let (pressure_r_clip, pressure_clip) = clip_to_separatrix(&rho, &p, inputs.r_s)?;
-    let separatrix_pressure_energy_integrand = Array1::from_iter(pressure_clip.iter().zip(pressure_r_clip.iter()).map(|(pr, r)| pr * 2.0 * std::f64::consts::PI * r));
-    let separatrix_pressure_energy_j_m = trapezoid(&pressure_r_clip, &separatrix_pressure_energy_integrand);
+    let separatrix_pressure_energy_integrand = Array1::from_iter(
+        pressure_clip
+            .iter()
+            .zip(pressure_r_clip.iter())
+            .map(|(pr, r)| pr * 2.0 * std::f64::consts::PI * r),
+    );
+    let separatrix_pressure_energy_j_m =
+        trapezoid(&pressure_r_clip, &separatrix_pressure_energy_integrand);
 
     let magnetic_deficit = b_z.mapv(|b| external_magnetic_pressure - b * b / (2.0 * MU_0));
     let (deficit_r_clip, deficit_clip) = clip_to_separatrix(&rho, &magnetic_deficit, inputs.r_s)?;
-    let deficit_integrand = Array1::from_iter(deficit_clip.iter().zip(deficit_r_clip.iter()).map(|(d, r)| d * 2.0 * std::f64::consts::PI * r));
+    let deficit_integrand = Array1::from_iter(
+        deficit_clip
+            .iter()
+            .zip(deficit_r_clip.iter())
+            .map(|(d, r)| d * 2.0 * std::f64::consts::PI * r),
+    );
     let separatrix_magnetic_deficit_energy_j_m = trapezoid(&deficit_r_clip, &deficit_integrand);
-    let separatrix_energy_closure_relative_error = (separatrix_pressure_energy_j_m - separatrix_magnetic_deficit_energy_j_m).abs() / separatrix_pressure_energy_j_m.abs().max(separatrix_magnetic_deficit_energy_j_m.abs()).max(tolerance);
+    let separatrix_energy_closure_relative_error =
+        (separatrix_pressure_energy_j_m - separatrix_magnetic_deficit_energy_j_m).abs()
+            / separatrix_pressure_energy_j_m
+                .abs()
+                .max(separatrix_magnetic_deficit_energy_j_m.abs())
+                .max(tolerance);
 
-    let energy_integrand = Array1::from_iter(p.iter().zip(b_z.iter()).zip(rho.iter()).map(|((pr, b), r)| (pr + b * b / (2.0 * MU_0)) * 2.0 * std::f64::consts::PI * r));
+    let energy_integrand = Array1::from_iter(
+        p.iter()
+            .zip(b_z.iter())
+            .zip(rho.iter())
+            .map(|((pr, b), r)| (pr + b * b / (2.0 * MU_0)) * 2.0 * std::f64::consts::PI * r),
+    );
     let energy_j = trapezoid(&rho, &energy_integrand);
-    let pressure_integrand = Array1::from_iter(p.iter().zip(rho.iter()).map(|(pr, r)| pr * 2.0 * std::f64::consts::PI * r));
+    let pressure_integrand = Array1::from_iter(
+        p.iter()
+            .zip(rho.iter())
+            .map(|(pr, r)| pr * 2.0 * std::f64::consts::PI * r),
+    );
     let pressure_integral = trapezoid(&rho, &pressure_integrand);
-    let external_pressure_energy = external_magnetic_pressure * std::f64::consts::PI * inputs.r_s * inputs.r_s;
+    let external_pressure_energy =
+        external_magnetic_pressure * std::f64::consts::PI * inputs.r_s * inputs.r_s;
     let pressure_balance_ratio = pressure_integral / external_pressure_energy.max(tolerance);
-    let s_parameter = s_parameter_from_profile(&rho, &b_z, inputs.r_s, inputs.t_i_ev, DEUTERIUM_MASS_AMU)?;
+    let s_parameter =
+        s_parameter_from_profile(&rho, &b_z, inputs.r_s, inputs.t_i_ev, DEUTERIUM_MASS_AMU)?;
 
     Ok(FrcEquilibriumState {
         rho,
@@ -326,7 +428,6 @@ fn build_equilibrium_state(
         model: MODEL_NAME,
     })
 }
-
 
 fn validate_inputs(inputs: &RigidRotorFrcInputs, tolerance: f64) -> Result<(), FrcSolverError> {
     if !tolerance.is_finite() || tolerance <= 0.0 {
@@ -1082,16 +1183,26 @@ mod tests {
     fn rotating_bvp_acceptance_status_is_fail_closed_and_reference_bound() {
         let status = rotating_frc_bvp_acceptance_status();
 
-        assert_eq!(status.status, "blocked_missing_verified_steinhauer_rotating_closure");
+        assert_eq!(
+            status.status,
+            "blocked_missing_verified_steinhauer_rotating_closure"
+        );
         assert_eq!(status.accepted_contract, MODEL_NAME);
         assert!(!status.rotating_bvp_implemented);
-        assert_eq!(status.solver_action, "raise_not_implemented_for_nonzero_theta_dot");
+        assert_eq!(
+            status.solver_action,
+            "raise_not_implemented_for_nonzero_theta_dot"
+        );
         assert_eq!(
             status.required_reference,
             "Steinhauer 2011 Section II.B plus Figure 3 closure"
         );
         assert!(status.non_closing_references.contains(&"Romero 2018"));
-        assert!(status.non_closing_references.contains(&"Slough 2011 Fig. 5"));
-        assert!(status.claim_boundary.contains("not a rotating-BVP solver certification"));
+        assert!(status
+            .non_closing_references
+            .contains(&"Slough 2011 Fig. 5"));
+        assert!(status
+            .claim_boundary
+            .contains("not a rotating-BVP solver certification"));
     }
 }
