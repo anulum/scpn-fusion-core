@@ -66,10 +66,12 @@ Fig. 5 trajectory data and must not be used as pulsed-compression trajectory
 parity evidence.
 
 `full_fidelity_public_artifacts/frc_reference_papers_manifest.json` records FRC
-paper-acquisition provenance. It now includes the open-access Romero et al.
-Nature Communications 2018 FRC topology-inference paper as metadata-only
-evidence with the ignored internal PDF checksum. That paper is not the
-Steinhauer rotating-BVP closure and not Slough 2011 Fig. 5 trajectory data.
+paper-acquisition provenance. It records the downloaded open-access Baltz 2017
+and Romero 2018 Nature-family PDFs, the Baltz supplementary CSV, the open PPPL
+Belova tilt-stability report, and blocked publisher probes for Steinhauer 2011,
+Ono 1997, Belova 2001, and Slough 2011. These papers are reference evidence
+only. They do not close the Steinhauer rotating-BVP closure, Ono/Belova
+digitised parity gates, or Slough 2011 Fig. 5 trajectory-data gate.
 
 ## Usage
 

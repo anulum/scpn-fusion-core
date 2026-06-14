@@ -1,7 +1,7 @@
 {
   "artifact_type": "frc_reference_paper_acquisition_manifest",
-  "generated_utc": "2026-06-14T06:20:00Z",
-  "claim_boundary": "Publisher PDF acquisition was attempted for the FRC reference papers needed by the B.8/B.10/B.11 workstream. Copyrighted PDFs are not committed. Accessible publisher landing or redirect artifacts are cached only under ignored internal documentation paths; this manifest records provenance and blocked download status.",
+  "generated_utc": "2026-06-14T10:40:00Z",
+  "claim_boundary": "Publisher and open-source acquisition was attempted for the FRC reference papers needed by the B.8/B.11/FUS-C external-parity workstream. Raw PDFs and publisher probe payloads are cached only under ignored internal documentation paths; this tracked manifest records provenance, checksums, and blocked download status without promoting paper PDFs to validation data.",
   "internal_cache_root": "docs/internal/reference_papers/frc",
   "papers": [
     {
@@ -10,9 +10,82 @@
       "doi": "10.1063/1.3613680",
       "publisher_article_url": "https://pubs.aip.org/aip/pop/article/18/7/070501/262397/Review-of-field-reversed-configurations",
       "publisher_pdf_url": "https://pubs.aip.org/aip/pop/article-pdf/doi/10.1063/1.3613680/16695370/070501_1_online.pdf",
-      "local_artifacts": [],
+      "local_artifacts": [
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/steinhauer_2011_aip_landing.html",
+          "content_type_detected": "HTML document",
+          "size_bytes": 5710,
+          "sha256": "043c1b0ee8b10819f262a750741f8cac36e8768f1d223cf58ca82b99cfc0b9c3"
+        },
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/steinhauer_2011_aip_pdf.html",
+          "content_type_detected": "HTML document",
+          "size_bytes": 5698,
+          "sha256": "664f33736be64655a2322f669c1712bd439a45df261f421debb01dd0cf95aa81"
+        }
+      ],
       "download_status": "blocked_by_publisher_http_403",
-      "notes": "The accepted no-rotation FRC implementation already encodes the Steinhauer analytical profiles used by B.10. PDF and article landing requests returned HTTP 403 from the publisher endpoint during this acquisition pass."
+      "notes": "AIP publisher article and PDF endpoints returned HTTP 403 HTML payloads, not a PDF. The accepted no-rotation FRC implementation still needs verified Steinhauer Section II.B/Fig. 3 closure before rotating BVP promotion."
+    },
+    {
+      "key": "ono_1997_magnetic_mode_based_modeling_frc",
+      "citation": "Y. Ono, M. Inomoto, T. Okazaki, and Y. Ueda, Magnetic-mode-based modeling for field-reversed configurations, Physics of Plasmas 4, 1953 (1997).",
+      "doi": "10.1063/1.872337",
+      "publisher_article_url": "https://pubs.aip.org/aip/pop/article/4/6/1953/258964/Magnetic-mode-based-modeling-for-field-reversed",
+      "publisher_pdf_url": "https://pubs.aip.org/aip/pop/article-pdf/4/6/1953/19159708/1953_1_online.pdf",
+      "local_artifacts": [
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/ono_1997_aip_landing.html",
+          "content_type_detected": "HTML document",
+          "size_bytes": 5725,
+          "sha256": "5c06888653b24e191566c5f91f1c7d31ab13b2987545e714dd6186de0d959a76"
+        },
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/ono_1997_aip_pdf.html",
+          "content_type_detected": "HTML document",
+          "size_bytes": 5631,
+          "sha256": "33389c8479a1b942b2641d8eeacde9e95fd34e196726fecd4f2b65fd0e78a969"
+        }
+      ],
+      "download_status": "blocked_by_publisher_http_403",
+      "notes": "AIP publisher article and PDF endpoints returned HTTP 403 HTML payloads, not a PDF. FUS-C.2 Ono Fig. 4 digitised/same-case parity remains externally blocked."
+    },
+    {
+      "key": "belova_2000_pppl_3456_tilt_stability_prolate_frc",
+      "citation": "E. V. Belova, S. C. Jardin, H. Ji, M. Yamada, and R. Kulsrud, Numerical Study of Tilt Stability of Prolate Field-Reversed Configurations, PPPL-3456 (2000).",
+      "publisher_article_url": "https://bp-pub.pppl.gov/pub_report/2000/PPPL-3456.pdf",
+      "local_artifacts": [
+        {
+          "path": "docs/internal/reference_papers/frc/open_sources/belova_2000_pppl_3456_tilt_stability_prolate_frc.pdf",
+          "content_type_detected": "PDF document",
+          "size_bytes": 772263,
+          "sha256": "91258831bdb34dd6c87e81d46ef9988c4f8f78c00092cd54f80b43f8612a5b06"
+        }
+      ],
+      "download_status": "downloaded_open_pppl_report",
+      "notes": "Open PPPL report acquired for FUS-C.5 tilt-stability hardening context. This is reference-paper evidence only; no Belova Table I digitised parity artifact has been extracted or accepted."
+    },
+    {
+      "key": "belova_2001_numerical_tilt_stability_prolate_frc_journal",
+      "citation": "E. V. Belova, S. C. Jardin, H. Ji, M. Yamada, and R. Kulsrud, Numerical study of tilt stability of prolate field-reversed configurations, Physics of Plasmas 8, 1267 (2001).",
+      "publisher_article_url": "https://pubs.aip.org/aip/pop/article/8/4/1267/103590/Numerical-study-of-tilt-stability-of-prolate",
+      "publisher_pdf_url": "https://pubs.aip.org/aip/pop/article-pdf/8/4/1267/19057286/1267_1_online.pdf",
+      "local_artifacts": [
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/belova_2001_aip_landing.html",
+          "content_type_detected": "HTML document",
+          "size_bytes": 5716,
+          "sha256": "d0f65c3cb53c8982d48e82bc26545fd81ca88309586e5fd5c9d900f696aa7e32"
+        },
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/belova_2001_aip_pdf.html",
+          "content_type_detected": "HTML document",
+          "size_bytes": 5631,
+          "sha256": "692ec40939e78e6756c29dd083ca9a62319c269a70d6ccedac982a3b0a5670a2"
+        }
+      ],
+      "download_status": "blocked_by_publisher_http_403",
+      "notes": "AIP journal article and PDF endpoints returned HTTP 403 HTML payloads. Use the open PPPL report for local reference context until journal access or an allowed public copy is available."
     },
     {
       "key": "slough_2011_merging_compression_frc_plasmoids",
@@ -32,10 +105,22 @@
           "content_type_detected": "JavaScript source",
           "size_bytes": 14371,
           "sha256": "af3ddabe1d894e02aa30f9154eba836f2622040f2dcc43af68d2477c3675233b"
+        },
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/slough_2011_iop_landing.bin",
+          "content_type_detected": "HTML/JavaScript validation payload",
+          "size_bytes": 14371,
+          "sha256": "0dabd2adf4825e7daa770d825e0bfe0961e79433ffa45e8bbc75197bcd65ea27"
+        },
+        {
+          "path": "docs/internal/reference_papers/frc/publisher_probe/slough_2011_iop_pdf.bin",
+          "content_type_detected": "HTML/JavaScript validation payload",
+          "size_bytes": 14371,
+          "sha256": "922eb0a4ac6744ff6a47c3ea8daa79bd00c2e0f35ab537d55f8658bd6694f997"
         }
       ],
-      "download_status": "publisher_served_landing_or_javascript_not_pdf",
-      "notes": "No machine-readable Figure 5 trajectory was acquired. B.11 remains blocked on public digitized Slough data or a human/manual extraction workflow."
+      "download_status": "publisher_served_landing_or_bot_validation_not_pdf",
+      "notes": "No machine-readable Figure 5 trajectory or publisher PDF was acquired. B.11 remains blocked on public digitized Slough data, author-provided data, or a human/manual extraction workflow."
     },
     {
       "key": "romero_2018_frc_topology_alfvenic_transients",
@@ -44,13 +129,46 @@
       "publisher_article_url": "https://www.nature.com/articles/s41467-018-03110-5",
       "publisher_pdf_url": "https://www.nature.com/articles/s41467-018-03110-5.pdf",
       "redistribution_license": "CC-BY-4.0",
-      "local_artifacts": [],
+      "local_artifacts": [
+        {
+          "path": "docs/internal/reference_papers/frc/open_sources/romero_2018_nature_communications_frc_topology.pdf",
+          "content_type_detected": "PDF document",
+          "size_bytes": 4588529,
+          "sha256": "63073de674e0ff09d4c4a150975653e2d943dce3615679634e112e5244569abc"
+        }
+      ],
       "internal_pdf_path": "docs/internal/TOSORT/41467_2018_Article_3110.pdf",
       "internal_pdf_sha256": "63073de674e0ff09d4c4a150975653e2d943dce3615679634e112e5244569abc",
       "internal_pdf_size_bytes": 4588529,
-      "download_status": "internal_open_access_pdf_metadata_recorded",
+      "download_status": "downloaded_open_access_pdf",
       "claim_boundary": "Open-access C-2U/C-2W FRC topology-inference paper metadata only; not Steinhauer rotating-BVP closure, not Slough 2011 Fig. 5 trajectory data, and not a pulsed-compression benchmark.",
-      "notes": "User-provided PDF was inspected from ignored internal sorting storage. The committed artifact records metadata, DOI, checksum, and claim boundary only; the PDF itself is not committed as validation data."
+      "notes": "Nature PDF acquired from publisher and matches the user-provided internal TOSORT PDF checksum."
+    },
+    {
+      "key": "baltz_2017_c2u_optometrist_algorithm",
+      "citation": "E. A. Baltz, E. Trask, M. Binderbauer, M. Dikovsky, H. Gota, R. Mendoza, J. C. Platt, and P. F. Riley, Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017).",
+      "doi": "10.1038/s41598-017-06645-7",
+      "publisher_article_url": "https://www.nature.com/articles/s41598-017-06645-7",
+      "publisher_pdf_url": "https://www.nature.com/articles/s41598-017-06645-7.pdf",
+      "supplement_url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-017-06645-7/MediaObjects/41598_2017_6645_MOESM1_ESM.csv",
+      "redistribution_license": "CC-BY-4.0",
+      "local_artifacts": [
+        {
+          "path": "docs/internal/reference_papers/frc/open_sources/baltz_2017_scientific_reports_optometrist_algorithm.pdf",
+          "content_type_detected": "PDF document",
+          "size_bytes": 4421552,
+          "sha256": "762052fcdbce6a1d50e889a8fd99fa8835b8345181920e5e0b9dc83d3c07a402"
+        },
+        {
+          "path": "docs/internal/reference_papers/frc/open_sources/baltz_2017_scientific_reports_supplement_moesm1.csv",
+          "content_type_detected": "CSV text",
+          "size_bytes": 2573,
+          "sha256": "d1168f63d66ba4a47eda52d1a7c8c39191c3af589ce35351881b5c3c42eb4262"
+        }
+      ],
+      "download_status": "downloaded_open_access_pdf_and_supplement",
+      "claim_boundary": "Public C-2U positive-net-heating performance evidence only; not Slough 2011 Fig. 5 trajectory parity and not a time-resolved pulsed-compression benchmark.",
+      "notes": "Publisher PDF and supplemental CSV acquired. The tracked derived table remains validation/reference_data/frc_public/c2u_optometrist_positive_heating_shots.csv."
     }
   ]
 }
