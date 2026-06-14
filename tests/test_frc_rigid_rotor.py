@@ -20,6 +20,7 @@ from scipy.integrate import trapezoid
 
 from scpn_fusion.core import (
     RigidRotorFRCInputs,
+    rotating_frc_bvp_acceptance_status as public_rotating_frc_bvp_acceptance_status,
     psi_normalized_profile as public_psi_normalized_profile,
     solve_frc_equilibrium,
 )
@@ -37,6 +38,7 @@ from scpn_fusion.core.frc_rigid_rotor import (
     null_radius,
     pressure_balance_residual,
     pressure_gradient_residual,
+    rotating_frc_bvp_acceptance_status,
     s_parameter,
     validate_equilibrium,
 )
@@ -75,6 +77,21 @@ def test_inputs_are_immutable() -> None:
     inputs = _inputs()
     with pytest.raises(FrozenInstanceError):
         inputs.__setattr__("R_s", 0.3)
+
+
+def test_rotating_bvp_acceptance_status_is_fail_closed_and_reference_bound() -> None:
+    status = rotating_frc_bvp_acceptance_status()
+    public_status = public_rotating_frc_bvp_acceptance_status()
+
+    assert status == public_status
+    assert status["status"] == "blocked_missing_verified_steinhauer_rotating_closure"
+    assert status["accepted_contract"] == "steinhauer_2011_no_rotation_analytical"
+    assert status["rotating_bvp_implemented"] is False
+    assert status["solver_action"] == "raise_not_implemented_for_nonzero_theta_dot"
+    assert status["required_reference"] == "Steinhauer 2011 Section II.B plus Figure 3 closure"
+    assert "Romero 2018" in status["non_closing_references"]
+    assert "Slough 2011 Fig. 5" in status["non_closing_references"]
+    assert "not a rotating-BVP solver certification" in status["claim_boundary"]
 
 
 def test_no_rotation_limit_matches_steinhauer_field() -> None:

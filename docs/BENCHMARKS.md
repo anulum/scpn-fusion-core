@@ -75,6 +75,14 @@ The tracked report is local regression evidence unless its
 timing rows record command, CPU affinity, and host-load context, but they are
 not isolated-core production throughput claims.
 
+Rotating rigid-rotor BVP acceptance is not benchmarked because nonzero
+`theta_dot` remains fail-closed. Python and Rust expose a structured
+`rotating_frc_bvp_acceptance_status()` row that reports
+`blocked_missing_verified_steinhauer_rotating_closure` until the Steinhauer
+Section II.B/Figure 3 closure is verified. The benchmark table must not promote
+C-2U performance or topology references into rotating-BVP throughput or parity
+claims.
+
 The report compares Python NumPy, Rust `fusion-physics`, and optional PyO3
 surfaces on `65`, `129`, `257`, and `513` point radial grids using null radius,
 configured separatrix target, separatrix radius error, field reversal,

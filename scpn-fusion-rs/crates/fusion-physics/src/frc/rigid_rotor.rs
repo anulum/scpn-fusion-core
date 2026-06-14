@@ -15,6 +15,44 @@ const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
 const ATOMIC_MASS_KG: f64 = 1.660_539_066_60e-27;
 const DEUTERIUM_MASS_AMU: f64 = 2.014;
 const MODEL_NAME: &str = "steinhauer_2011_no_rotation_analytical";
+const ROTATING_FRC_BVP_STATUS: &str = "blocked_missing_verified_steinhauer_rotating_closure";
+const ROTATING_FRC_BVP_REQUIRED_REFERENCE: &str =
+    "Steinhauer 2011 Section II.B plus Figure 3 closure";
+const ROTATING_FRC_BVP_SOLVER_ACTION: &str = "raise_not_implemented_for_nonzero_theta_dot";
+const ROTATING_FRC_BVP_CLAIM_BOUNDARY: &str =
+    "The certified production contract is the Steinhauer 2011 no-rotation analytical \
+     FRC equilibrium. The rotating rigid-rotor BVP remains fail-closed until the \
+     Steinhauer Section II.B closure and Figure 3 reference are verified; C-2U \
+     performance and topology references are context only, not a rotating-BVP solver \
+     certification.";
+const ROTATING_FRC_BVP_NON_CLOSING_REFERENCES: [&str; 3] = [
+    "Romero 2018",
+    "Baltz 2017 C-2U positive-net-heating table",
+    "Slough 2011 Fig. 5",
+];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RotatingFrcBvpAcceptanceStatus {
+    pub status: &'static str,
+    pub accepted_contract: &'static str,
+    pub rotating_bvp_implemented: bool,
+    pub solver_action: &'static str,
+    pub required_reference: &'static str,
+    pub non_closing_references: &'static [&'static str],
+    pub claim_boundary: &'static str,
+}
+
+pub fn rotating_frc_bvp_acceptance_status() -> RotatingFrcBvpAcceptanceStatus {
+    RotatingFrcBvpAcceptanceStatus {
+        status: ROTATING_FRC_BVP_STATUS,
+        accepted_contract: MODEL_NAME,
+        rotating_bvp_implemented: false,
+        solver_action: ROTATING_FRC_BVP_SOLVER_ACTION,
+        required_reference: ROTATING_FRC_BVP_REQUIRED_REFERENCE,
+        non_closing_references: &ROTATING_FRC_BVP_NON_CLOSING_REFERENCES,
+        claim_boundary: ROTATING_FRC_BVP_CLAIM_BOUNDARY,
+    }
+}
 
 /// Return thermal ion gyroradius in metres using `sqrt(2 m_i T_i) / (e B)`.
 pub fn ion_gyroradius_m(t_i_ev: f64, b_t: f64, mass_amu: f64) -> Result<f64, FrcSolverError> {
@@ -1038,5 +1076,22 @@ mod tests {
         assert!(
             solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &no_outer_field_grid, 1.0e-10).is_err()
         );
+    }
+
+    #[test]
+    fn rotating_bvp_acceptance_status_is_fail_closed_and_reference_bound() {
+        let status = rotating_frc_bvp_acceptance_status();
+
+        assert_eq!(status.status, "blocked_missing_verified_steinhauer_rotating_closure");
+        assert_eq!(status.accepted_contract, MODEL_NAME);
+        assert!(!status.rotating_bvp_implemented);
+        assert_eq!(status.solver_action, "raise_not_implemented_for_nonzero_theta_dot");
+        assert_eq!(
+            status.required_reference,
+            "Steinhauer 2011 Section II.B plus Figure 3 closure"
+        );
+        assert!(status.non_closing_references.contains(&"Romero 2018"));
+        assert!(status.non_closing_references.contains(&"Slough 2011 Fig. 5"));
+        assert!(status.claim_boundary.contains("not a rotating-BVP solver certification"));
     }
 }

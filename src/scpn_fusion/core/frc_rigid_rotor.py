@@ -28,6 +28,22 @@ DEUTERIUM_MASS_AMU = 2.014
 
 FloatArray: TypeAlias = NDArray[np.float64]
 
+ROTATING_FRC_BVP_STATUS = "blocked_missing_verified_steinhauer_rotating_closure"
+ROTATING_FRC_BVP_REQUIRED_REFERENCE = "Steinhauer 2011 Section II.B plus Figure 3 closure"
+ROTATING_FRC_BVP_SOLVER_ACTION = "raise_not_implemented_for_nonzero_theta_dot"
+ROTATING_FRC_BVP_CLAIM_BOUNDARY = (
+    "The certified production contract is the Steinhauer 2011 no-rotation analytical "
+    "FRC equilibrium. The rotating rigid-rotor BVP remains fail-closed until the "
+    "Steinhauer Section II.B closure and Figure 3 reference are verified; C-2U "
+    "performance and topology references are context only, not a rotating-BVP solver "
+    "certification."
+)
+ROTATING_FRC_BVP_NON_CLOSING_REFERENCES = (
+    "Romero 2018",
+    "Baltz 2017 C-2U positive-net-heating table",
+    "Slough 2011 Fig. 5",
+)
+
 
 @dataclass(frozen=True)
 class RigidRotorFRCInputs:
@@ -178,6 +194,25 @@ class FRCValidationReport:
     force_balance_residual_l2: float
     force_balance_passed: bool
     passed: bool
+
+
+def rotating_frc_bvp_acceptance_status() -> dict[str, object]:
+    """Return the fail-closed acceptance status for the unresolved rotating BVP.
+
+    This is a machine-readable claim boundary for B.8/FUS-C.1. It deliberately
+    reports the current accepted no-rotation contract and the exact external
+    reference still required before nonzero ``theta_dot`` support can be
+    certified.
+    """
+    return {
+        "status": ROTATING_FRC_BVP_STATUS,
+        "accepted_contract": "steinhauer_2011_no_rotation_analytical",
+        "rotating_bvp_implemented": False,
+        "solver_action": ROTATING_FRC_BVP_SOLVER_ACTION,
+        "required_reference": ROTATING_FRC_BVP_REQUIRED_REFERENCE,
+        "non_closing_references": ROTATING_FRC_BVP_NON_CLOSING_REFERENCES,
+        "claim_boundary": ROTATING_FRC_BVP_CLAIM_BOUNDARY,
+    }
 
 
 def ion_gyroradius_m(T_i_eV: float, B_T: float, *, mass_amu: float = DEUTERIUM_MASS_AMU) -> float:

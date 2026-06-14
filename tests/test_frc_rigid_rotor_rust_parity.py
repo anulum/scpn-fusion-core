@@ -38,9 +38,11 @@ _TYPED_SETTINGS = cast(Callable[..., Callable[[_F], _F]], settings)
 try:
     scpn_fusion_rs = cast(Any, __import__("scpn_fusion_rs"))
     HAS_RUST = hasattr(scpn_fusion_rs, "py_solve_frc_equilibrium")
+    HAS_ROTATING_STATUS = hasattr(scpn_fusion_rs, "py_rotating_frc_bvp_acceptance_status")
 except ImportError:
     scpn_fusion_rs = cast(Any, None)
     HAS_RUST = False
+    HAS_ROTATING_STATUS = False
 
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust FRC extension not available")
 
@@ -431,3 +433,19 @@ def test_rust_frc_rejects_rotating_bvp_until_implemented() -> None:
             inputs.delta,
             1.0e-10,
         )
+
+
+def test_rust_rotating_bvp_status_matches_python_fail_closed_boundary() -> None:
+    if not HAS_ROTATING_STATUS:
+        pytest.skip("local Rust extension has not been rebuilt with rotating BVP status binding")
+
+    status = scpn_fusion_rs.py_rotating_frc_bvp_acceptance_status()
+
+    assert status["status"] == "blocked_missing_verified_steinhauer_rotating_closure"
+    assert status["accepted_contract"] == "steinhauer_2011_no_rotation_analytical"
+    assert status["rotating_bvp_implemented"] is False
+    assert status["solver_action"] == "raise_not_implemented_for_nonzero_theta_dot"
+    assert status["required_reference"] == "Steinhauer 2011 Section II.B plus Figure 3 closure"
+    assert "Romero 2018" in status["non_closing_references"]
+    assert "Slough 2011 Fig. 5" in status["non_closing_references"]
+    assert "not a rotating-BVP solver certification" in status["claim_boundary"]

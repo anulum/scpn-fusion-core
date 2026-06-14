@@ -42,7 +42,8 @@ use fusion_physics::design_scanner;
 use fusion_physics::fno::FnoController;
 use fusion_physics::fokker_planck::FokkerPlanckSolver;
 use fusion_physics::frc::{
-    solve_frc_equilibrium as solve_frc_equilibrium_rust, solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs,
+    rotating_frc_bvp_acceptance_status, solve_frc_equilibrium as solve_frc_equilibrium_rust,
+    solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs,
 };
 use fusion_physics::hall_mhd::HallMHD;
 use fusion_physics::sawtooth::ReducedMHD;
@@ -1716,6 +1717,23 @@ impl PyNonlinearGKSolver {
 /// Python-accessible Steinhauer no-rotation FRC analytical solver.
 
 #[pyfunction]
+#[pyo3(name = "py_rotating_frc_bvp_acceptance_status")]
+fn py_rotating_frc_bvp_acceptance_status<'py>(
+    py: pyo3::Python<'py>,
+) -> pyo3::PyResult<pyo3::Bound<'py, pyo3::types::PyDict>> {
+    let status = rotating_frc_bvp_acceptance_status();
+    let out = pyo3::types::PyDict::new(py);
+    out.set_item("status", status.status)?;
+    out.set_item("accepted_contract", status.accepted_contract)?;
+    out.set_item("rotating_bvp_implemented", status.rotating_bvp_implemented)?;
+    out.set_item("solver_action", status.solver_action)?;
+    out.set_item("required_reference", status.required_reference)?;
+    out.set_item("non_closing_references", status.non_closing_references)?;
+    out.set_item("claim_boundary", status.claim_boundary)?;
+    Ok(out)
+}
+
+#[pyfunction]
 #[pyo3(
     signature = (n0, t_i_ev, t_e_ev, theta_dot, r_s, b_ext, rho_grid, tolerance=1.0e-10, delta=None),
     text_signature = "(n0, t_i_ev, t_e_ev, theta_dot, r_s, b_ext, rho_grid, tolerance=1e-10, delta=None)",
@@ -2192,6 +2210,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     }
     m.add_class::<PyNonlinearGKSolver>()?;
     m.add_function(wrap_pyfunction!(py_solve_frc_equilibrium, m)?)?;
+    m.add_function(wrap_pyfunction!(py_rotating_frc_bvp_acceptance_status, m)?)?;
     m.add_function(wrap_pyfunction!(py_solve_rotating_frc_equilibrium, m)?)?;
     m.add_class::<PyRmfConfig>()?;
     m.add_class::<PyRmfController>()?;

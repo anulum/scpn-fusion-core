@@ -166,6 +166,12 @@ Accepted:
 - Rust implementation in `fusion-physics::frc`.
 - PyO3 exposure through `scpn_fusion_rs.py_solve_frc_equilibrium` when the
   Rust extension is built.
+- Machine-readable rotating-BVP acceptance status through
+  `scpn_fusion.core.rotating_frc_bvp_acceptance_status()` and
+  `fusion_physics::frc::rotating_frc_bvp_acceptance_status()`. The status
+  reports the accepted no-rotation contract, the fail-closed solver action for
+  nonzero `theta_dot`, and the exact external Steinhauer Section II.B/Figure 3
+  reference gate that must be satisfied before rotating-BVP certification.
 - Cross-surface parity tests for the exposed Python and Rust/PyO3 paths,
   including a deterministic 16-case MIF/FRC no-rotation parameter cohort that
   spans accepted field, separatrix-radius, grid, and layer-thickness scales.
@@ -216,6 +222,9 @@ Fail-closed:
 
 - Nonzero `theta_dot` rotating rigid-rotor cases.
 - Full FRC rotating BVP.
+- Any claim that Romero 2018 topology evidence, the Baltz 2017 C-2U
+  performance table, or Slough 2011 Fig. 5 closes the Steinhauer rotating-BVP
+  solver-certification gate.
 - Full FRC kinetic or transport evolution.
 - Go, Julia, and Lean parity rows until those languages expose equivalent FRC
   solver logic.

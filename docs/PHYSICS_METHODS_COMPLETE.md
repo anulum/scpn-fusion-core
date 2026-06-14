@@ -99,6 +99,15 @@ until the BVP implementation is added. The validation report now compares the
 interpolated zero-crossing against the configured `R_s` and requires the axial
 field sign to reverse between the last inner sample and the first outer sample.
 
+The unresolved rotating-BVP lane also exposes
+`rotating_frc_bvp_acceptance_status()` in Python and
+`rotating_frc_bvp_acceptance_status()` in Rust. Both surfaces report
+`blocked_missing_verified_steinhauer_rotating_closure`, name the accepted
+no-rotation contract, and require Steinhauer 2011 Section II.B plus Figure 3
+closure before nonzero `theta_dot` can be certified. Romero 2018 topology
+evidence, the Baltz 2017 C-2U performance table, and Slough 2011 Fig. 5 are
+listed as non-closing context references.
+
 The reported quality-of-equilibrium parameter follows Steinhauer Eq. 27:
 
 $$s = \frac{1}{R_s}\int_0^{R_s}\frac{r}{\rho_i(r)}\,dr,$$
