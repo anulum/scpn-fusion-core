@@ -143,6 +143,13 @@ External Slough same-case parity remains blocked until a public digitised
 trajectory, compression-work sidecar, and compatible upstream flux-budget and
 trajectory-quality evidence are available with provenance and checksums.
 
+The public C-2U positive-net-heating table from Baltz et al., Scientific
+Reports 7, 6425 (2017), is tracked in
+`validation/reference_data/frc_public/c2u_optometrist_positive_heating_shots.csv`
+with metadata and loader tests. It is a public FRC performance reference, not a
+time-resolved pulsed-compression trajectory benchmark and not a substitute for
+Slough Fig. 5 parity.
+
 ## Type-checking non-regression gate
 
 The Python CI preflight runs a MyPy expansion guard before strict MyPy:
@@ -1830,6 +1837,12 @@ This is not a production throughput claim and not external Slough Fig. 5
 parity. The Slough row remains blocked until a public digitised trajectory with
 compatible radius, temperature, field, current, provenance, and checksum data
 is available.
+
+The C-2U positive-net-heating supplementary table is available as public FRC
+performance context under `validation/reference_data/frc_public/`. It is not
+used to pass this pulsed-compression benchmark because it does not provide the
+time-resolved Slough radius, temperature, and field trajectory required by the
+acceptance row.
 
 ## MIF/FRC MRTI growth spectrum
 

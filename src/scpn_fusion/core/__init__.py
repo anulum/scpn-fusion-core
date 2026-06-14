@@ -118,6 +118,24 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "null_radius": (".frc_rigid_rotor", "null_radius"),
     "s_parameter": (".frc_rigid_rotor", "s_parameter"),
     "validate_equilibrium": (".frc_rigid_rotor", "validate_equilibrium"),
+    # Public FRC references — C-2U positive-net-heating table
+    "C2UPositiveHeatingShot": (".public_frc_reference", "C2UPositiveHeatingShot"),
+    "C2UPositiveHeatingSummary": (
+        ".public_frc_reference",
+        "C2UPositiveHeatingSummary",
+    ),
+    "c2u_positive_heating_reference_status": (
+        ".public_frc_reference",
+        "c2u_positive_heating_reference_status",
+    ),
+    "load_c2u_positive_heating_shots": (
+        ".public_frc_reference",
+        "load_c2u_positive_heating_shots",
+    ),
+    "summarise_c2u_positive_heating_shots": (
+        ".public_frc_reference",
+        "summarise_c2u_positive_heating_shots",
+    ),
     # Pulsed Hall-MHD — axisymmetric Ono Eq. 8 flux carrier
     "HallMHDPulsedConfig": (".hall_mhd_pulsed", "HallMHDPulsedConfig"),
     "HallMHDPulsedState": (".hall_mhd_pulsed", "HallMHDPulsedState"),

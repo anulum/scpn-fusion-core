@@ -170,6 +170,12 @@ It does not claim Slough 2011 Fig. 5 parity yet. That acceptance row is
 blocked until a public digitised reference trajectory exists with provenance
 and checksums. The tracked benchmark report records this explicitly.
 
+The public C-2U positive-net-heating table from Baltz et al., Scientific
+Reports 7, 6425 (2017), is tracked separately under
+`validation/reference_data/frc_public/`. It supports bounded FRC performance
+context only. It is not Slough 2011 Fig. 5 trajectory data and does not satisfy
+the pulsed-compression trajectory parity gate.
+
 ## Validation evidence
 
 Tracked tests cover:

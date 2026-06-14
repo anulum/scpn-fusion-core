@@ -55,6 +55,16 @@ Four ITER-scale validation configurations with different coil current optimisati
 | `../iter_force_balanced.json` | Newton-Raphson force-balanced equilibrium |
 | `../iter_genetic_config.json` | Genetic algorithm optimised |
 
+### Public FRC performance references
+
+`frc_public/c2u_optometrist_positive_heating_shots.csv` contains the public
+C-2U positive-net-heating supplementary shot table from Baltz et al.,
+Scientific Reports 7, 6425 (2017), DOI `10.1038/s41598-017-06645-7`.
+
+This table is a bounded public FRC performance reference. It is not Slough 2011
+Fig. 5 trajectory data and must not be used as pulsed-compression trajectory
+parity evidence.
+
 ## Usage
 
 ```python

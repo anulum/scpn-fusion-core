@@ -486,12 +486,23 @@ until a redistributable, digitised reference trajectory is available. The
 tracked benchmark report includes that blocked row instead of inventing
 external parity.
 
+The repository also carries a separate public C-2U performance reference table
+from Baltz et al., Scientific Reports 7, 6425 (2017). The loader
+`load_c2u_positive_heating_shots()` validates the supplementary
+positive-net-heating shot table, converts thermal energy, poloidal flux, total
+temperature, heating time, heating power, and energy-at-maximum-heating into
+SI-compatible units, and exposes `c2u_positive_heating_reference_status()`.
+This C-2U table is public FRC performance evidence only; it is not Slough
+Fig. 5 trajectory parity and not a time-resolved pulsed-compression benchmark.
+
 **Key files:** `core/pulsed_compression.py`,
+`core/public_frc_reference.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs`,
 `scpn-fusion-rs/crates/fusion-physics/src/compression/coil_geometry.rs`,
 `docs/physics/pulsed_compression.md`.
 
-**Validation:** `tests/test_pulsed_compression.py`, Rust
+**Validation:** `tests/test_pulsed_compression.py`,
+`tests/test_c2u_public_frc_reference.py`, Rust
 `fusion_physics::compression` unit tests,
 `benchmarks/bench_pulsed_compression.py`,
 `validation/reports/pulsed_compression_benchmark.json`.

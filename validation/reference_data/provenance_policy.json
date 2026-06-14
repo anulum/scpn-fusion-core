@@ -74,6 +74,14 @@
       "citation": "QLKNN public benchmark publication (summary values only)."
     },
     {
+      "id": "slough_2011_fig5_reconstructed_sidecar",
+      "glob": "slough_2011_fig5.json",
+      "source_type": "reconstructed_operational_sidecar",
+      "source": "Repository-maintained reconstructed Slough 2011 Fig. 5 operational sidecar; fail-closed and not accepted as public digitised trajectory evidence.",
+      "license": "citation-required",
+      "citation": "Slough, Votroubek, and Pihl, Nuclear Fusion 51, 053008 (2011), DOI:10.1088/0029-5515/51/5/053008."
+    },
+    {
       "id": "synthetic_tglf_training",
       "glob": "tglf_training_data.npz",
       "source_type": "synthetic_generated",
@@ -162,6 +170,29 @@
       "source_type": "documentation",
       "source": "ITPA reference-data notes.",
       "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "frc_public_reference_notes",
+      "glob": "frc_public/*.md",
+      "source_type": "documentation",
+      "source": "FRC public-reference notes.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "c2u_positive_heating_reference",
+      "glob": "frc_public/c2u_optometrist_positive_heating_shots.csv",
+      "source_type": "reference_dataset_subset",
+      "source": "C-2U positive-net-heating supplementary shot table from Baltz et al. Scientific Reports 7, 6425 (2017).",
+      "license": "citation-required",
+      "citation": "Baltz et al., Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017), DOI:10.1038/s41598-017-06645-7."
+    },
+    {
+      "id": "c2u_positive_heating_reference_metadata",
+      "glob": "frc_public/c2u_optometrist_positive_heating_shots.metadata.json",
+      "source_type": "published_reference_metadata",
+      "source": "Repository-maintained metadata for the C-2U positive-net-heating supplementary shot table.",
+      "license": "citation-required",
+      "citation": "Baltz et al., Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017), DOI:10.1038/s41598-017-06645-7."
     },
     {
       "id": "jet_reference_equilibria",

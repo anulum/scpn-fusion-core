@@ -46,7 +46,7 @@ def test_slough_sidecar_presence_is_not_acceptance_pass() -> None:
     status = slough_fig5_acceptance_status()
 
     assert status["status"] != "passed"
-    assert status["status"] == "reference_available_validation_pending"
+    assert status["status"] == "blocked_reconstructed_reference_not_public_digitised"
 
 
 def test_placeholder_hardware_exports_fail_closed(tmp_path) -> None:

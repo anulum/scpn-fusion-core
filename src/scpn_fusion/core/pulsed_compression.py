@@ -564,6 +564,23 @@ def slough_fig5_acceptance_status() -> dict[str, Any]:
         with ref_path.open("r", encoding="utf-8") as f:
             ref_data = json.load(f)
 
+        method = str(ref_data.get("method", "")).lower()
+        fidelity = str(ref_data.get("fidelity", "")).lower()
+        if "reconstructed" in method or "operational-verification" in fidelity:
+            return {
+                "case": "slough_2011_fig5",
+                "status": "blocked_reconstructed_reference_not_public_digitised",
+                "scenario": ref_data.get("scenario"),
+                "required_artifact": (
+                    "redistributable digitised Slough Fig. 5 radius/temperature/field "
+                    "trajectory with provenance and checksum"
+                ),
+                "claim_boundary": (
+                    "Tracked sidecar is reconstructed operational evidence only; no "
+                    "external Slough trajectory parity is accepted."
+                ),
+            }
+
         return {
             "case": "slough_2011_fig5",
             "status": "reference_available_validation_pending",

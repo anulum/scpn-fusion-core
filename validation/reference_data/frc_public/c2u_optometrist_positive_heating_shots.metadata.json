@@ -1,0 +1,27 @@
+{
+  "artifact_type": "public_frc_performance_reference_table",
+  "generated_utc": "2026-06-14T06:11:49Z",
+  "source_file": "frc_public/c2u_optometrist_positive_heating_shots.csv",
+  "source_sha256": "d1168f63d66ba4a47eda52d1a7c8c39191c3af589ce35351881b5c3c42eb4262",
+  "title": "Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm",
+  "authors": "E. A. Baltz, E. Trask, M. Binderbauer, M. Dikovsky, H. Gota, R. Mendoza, J. C. Platt, and P. F. Riley",
+  "journal": "Scientific Reports",
+  "volume": "7",
+  "article": "6425",
+  "year": 2017,
+  "doi": "10.1038/s41598-017-06645-7",
+  "provenance_url": "https://www.nature.com/articles/s41598-017-06645-7",
+  "redistribution_license": "CC-BY-4.0",
+  "source_description": "Supplementary Table S1: all C-2U shots with positive heating power at t > 1 ms, remaining positive for > 0.1 ms, while E_thermal > 1 kJ.",
+  "columns": {
+    "shot": "C-2U shot identifier",
+    "Eth(kJ)": "post-formation averaged thermal energy in kilojoules",
+    "Fp(mWb)": "post-formation averaged poloidal flux in milliwebers",
+    "T(keV)": "post-formation averaged total temperature in kiloelectronvolts",
+    "t_max(ms)": "time of maximum net heating power in milliseconds",
+    "P_max(MW)": "maximum net heating power in megawatts",
+    "E_max(kJ)": "thermal energy at time of maximum net heating power in kilojoules",
+    "comment": "published shot-context note"
+  },
+  "claim_boundary": "Public C-2U positive-net-heating performance table; not Slough 2011 Fig. 5 trajectory parity and not a time-resolved pulsed-compression benchmark."
+}
