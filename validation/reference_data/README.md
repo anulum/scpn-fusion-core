@@ -65,6 +65,12 @@ This table is a bounded public FRC performance reference. It is not Slough 2011
 Fig. 5 trajectory data and must not be used as pulsed-compression trajectory
 parity evidence.
 
+`full_fidelity_public_artifacts/frc_reference_papers_manifest.json` records FRC
+paper-acquisition provenance. It now includes the open-access Romero et al.
+Nature Communications 2018 FRC topology-inference paper as metadata-only
+evidence with the ignored internal PDF checksum. That paper is not the
+Steinhauer rotating-BVP closure and not Slough 2011 Fig. 5 trajectory data.
+
 ## Usage
 
 ```python

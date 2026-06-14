@@ -1,6 +1,6 @@
 {
   "artifact_type": "frc_reference_paper_acquisition_manifest",
-  "generated_utc": "2026-06-14T05:51:37Z",
+  "generated_utc": "2026-06-14T06:20:00Z",
   "claim_boundary": "Publisher PDF acquisition was attempted for the FRC reference papers needed by the B.8/B.10/B.11 workstream. Copyrighted PDFs are not committed. Accessible publisher landing or redirect artifacts are cached only under ignored internal documentation paths; this manifest records provenance and blocked download status.",
   "internal_cache_root": "docs/internal/reference_papers/frc",
   "papers": [
@@ -36,6 +36,21 @@
       ],
       "download_status": "publisher_served_landing_or_javascript_not_pdf",
       "notes": "No machine-readable Figure 5 trajectory was acquired. B.11 remains blocked on public digitized Slough data or a human/manual extraction workflow."
+    },
+    {
+      "key": "romero_2018_frc_topology_alfvenic_transients",
+      "citation": "J. A. Romero, S. A. Dettrick, E. Granstedt, T. Roche, and Y. Mok, Inference of field reversed configuration topology and dynamics during Alfvenic transients, Nature Communications 9, 691 (2018).",
+      "doi": "10.1038/s41467-018-03110-5",
+      "publisher_article_url": "https://www.nature.com/articles/s41467-018-03110-5",
+      "publisher_pdf_url": "https://www.nature.com/articles/s41467-018-03110-5.pdf",
+      "redistribution_license": "CC-BY-4.0",
+      "local_artifacts": [],
+      "internal_pdf_path": "docs/internal/TOSORT/41467_2018_Article_3110.pdf",
+      "internal_pdf_sha256": "63073de674e0ff09d4c4a150975653e2d943dce3615679634e112e5244569abc",
+      "internal_pdf_size_bytes": 4588529,
+      "download_status": "internal_open_access_pdf_metadata_recorded",
+      "claim_boundary": "Open-access C-2U/C-2W FRC topology-inference paper metadata only; not Steinhauer rotating-BVP closure, not Slough 2011 Fig. 5 trajectory data, and not a pulsed-compression benchmark.",
+      "notes": "User-provided PDF was inspected from ignored internal sorting storage. The committed artifact records metadata, DOI, checksum, and claim boundary only; the PDF itself is not committed as validation data."
     }
   ]
 }

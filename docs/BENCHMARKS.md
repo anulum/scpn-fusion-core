@@ -150,6 +150,13 @@ with metadata and loader tests. It is a public FRC performance reference, not a
 time-resolved pulsed-compression trajectory benchmark and not a substitute for
 Slough Fig. 5 parity.
 
+The Romero et al. Nature Communications 2018 FRC topology-inference paper is
+tracked only as metadata in
+`validation/reference_data/full_fidelity_public_artifacts/frc_reference_papers_manifest.json`.
+Its user-provided open-access PDF checksum is recorded from ignored internal
+sorting storage. It is topology-inference evidence for the FRC workstream, not
+Steinhauer rotating-BVP closure and not Slough Fig. 5 trajectory data.
+
 ## Type-checking non-regression gate
 
 The Python CI preflight runs a MyPy expansion guard before strict MyPy:

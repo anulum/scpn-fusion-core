@@ -495,6 +495,12 @@ SI-compatible units, and exposes `c2u_positive_heating_reference_status()`.
 This C-2U table is public FRC performance evidence only; it is not Slough
 Fig. 5 trajectory parity and not a time-resolved pulsed-compression benchmark.
 
+Romero et al., Nature Communications 9, 691 (2018), is recorded in the FRC
+paper-acquisition manifest as metadata-only topology-inference evidence. The
+ignored internal PDF checksum is preserved for traceability, but the paper does
+not provide the Steinhauer rotating-BVP closure or the Slough 2011 Fig. 5
+time-resolved compression trajectories required to close B.8 or B.11.
+
 **Key files:** `core/pulsed_compression.py`,
 `core/public_frc_reference.py`,
 `scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs`,

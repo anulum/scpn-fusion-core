@@ -2,6 +2,30 @@
   "dataset_root": "validation/reference_data",
   "datasets": [
     {
+      "citation": "Baltz et al., Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017), DOI:10.1038/s41598-017-06645-7.",
+      "file_count": 1,
+      "id": "c2u_positive_heating_reference",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "C-2U positive-net-heating supplementary shot table from Baltz et al. Scientific Reports 7, 6425 (2017).",
+      "source_type": "reference_dataset_subset",
+      "total_bytes": 2573
+    },
+    {
+      "citation": "Baltz et al., Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017), DOI:10.1038/s41598-017-06645-7.",
+      "file_count": 1,
+      "id": "c2u_positive_heating_reference_metadata",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "Repository-maintained metadata for the C-2U positive-net-heating supplementary shot table.",
+      "source_type": "published_reference_metadata",
+      "total_bytes": 1613
+    },
+    {
       "file_count": 1,
       "id": "diiid_disruption_calibration",
       "license": "synthetic-v1",
@@ -72,6 +96,17 @@
       "total_bytes": 381655
     },
     {
+      "file_count": 1,
+      "id": "frc_public_reference_notes",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "FRC public-reference notes.",
+      "source_type": "documentation",
+      "total_bytes": 1293
+    },
+    {
       "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs.",
       "file_count": 17,
       "id": "full_fidelity_public_artifacts",
@@ -81,7 +116,7 @@
       "license_redistributable": true,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact",
-      "total_bytes": 498764
+      "total_bytes": 500061
     },
     {
       "file_count": 3,
@@ -153,7 +188,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 14524
+      "total_bytes": 14901
     },
     {
       "citation": "Slough, Votroubek, and Pihl, Nuclear Fusion 51, 053008 (2011), DOI:10.1088/0029-5515/51/5/053008.",
@@ -230,7 +265,7 @@
       "total_bytes": 3182
     }
   ],
-  "file_count": 74,
+  "file_count": 77,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -239,8 +274,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "README.md",
-      "sha256": "05afb40947ee6e119c2a15d93ca65db37d6ccd1dae640464e6f8f89d241f4d85",
-      "size_bytes": 3446,
+      "sha256": "64f10848680e64636679a00eb24242838142057c9cb51052c0f0b9ee09f7edc4",
+      "size_bytes": 3823,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation"
     },
@@ -589,6 +624,44 @@
       "source_type": "documentation"
     },
     {
+      "dataset_id": "frc_public_reference_notes",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "frc_public/README.md",
+      "sha256": "7a0a9d2f83920592274f40072117e8ae634ae0894b902e710dedc6d5f846221d",
+      "size_bytes": 1293,
+      "source": "FRC public-reference notes.",
+      "source_type": "documentation"
+    },
+    {
+      "citation": "Baltz et al., Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017), DOI:10.1038/s41598-017-06645-7.",
+      "dataset_id": "c2u_positive_heating_reference",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "frc_public/c2u_optometrist_positive_heating_shots.csv",
+      "sha256": "d1168f63d66ba4a47eda52d1a7c8c39191c3af589ce35351881b5c3c42eb4262",
+      "size_bytes": 2573,
+      "source": "C-2U positive-net-heating supplementary shot table from Baltz et al. Scientific Reports 7, 6425 (2017).",
+      "source_type": "reference_dataset_subset"
+    },
+    {
+      "citation": "Baltz et al., Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017), DOI:10.1038/s41598-017-06645-7.",
+      "dataset_id": "c2u_positive_heating_reference_metadata",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "frc_public/c2u_optometrist_positive_heating_shots.metadata.json",
+      "sha256": "747e20464f1e60b1f3cd8810f9b7afbc8078d9482d2c089389c997943cdcc792",
+      "size_bytes": 1613,
+      "source": "Repository-maintained metadata for the C-2U positive-net-heating supplementary shot table.",
+      "source_type": "published_reference_metadata"
+    },
+    {
       "dataset_id": "full_fidelity_reference_metadata",
       "license": "AGPL-3.0-or-later",
       "license_attribution_required": true,
@@ -686,8 +759,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/frc_reference_papers_manifest.json",
-      "sha256": "5b12b027842f684f2eab9c176d0e9ccc5ef86ed4bc72cbe24697044ecb854844",
-      "size_bytes": 2772,
+      "sha256": "14b17ddc2207aed9cbf260f54c390d3f60376956a6e27a240d6610bd1b88e333",
+      "size_bytes": 4069,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
     },
@@ -1228,7 +1301,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-06-14T06:14:24.482809+00:00",
+  "generated_at_utc": "2026-06-14T06:21:04.891246+00:00",
   "license_registry": [
     {
       "attribution_required": true,
