@@ -42,10 +42,13 @@ def load_iter_dataset(data_path: str | Path) -> tuple[np.ndarray, np.ndarray]:
     path = Path(data_path).expanduser()
     if path.is_dir():
         x_path, y_path = default_iter_dataset_paths(path)
-        return np.load(x_path), np.load(y_path, mmap_mode="r")
+        return (
+            np.load(x_path, allow_pickle=False),
+            np.load(y_path, mmap_mode="r", allow_pickle=False),
+        )
 
     if path.suffix == ".npz":
-        data = np.load(path, mmap_mode="r")
+        data = np.load(path, mmap_mode="r", allow_pickle=False)
         return data["X"], data["Y"]
 
     raise ValueError("--data must point to an .npz file or a directory containing iter_X.npy and iter_Y.npy")
