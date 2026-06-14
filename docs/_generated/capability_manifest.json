@@ -10,6 +10,7 @@
       "docs/COMPACT_REACTOR_FINDINGS.md",
       "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
       "docs/FUTURE_APPLICATIONS.md",
+      "docs/IEC_61508_ROADMAP.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
@@ -33,10 +34,6 @@
       "docs/physics/mrti.md",
       "docs/physics/pulsed_compression.md",
       "docs/physics/tilt_mode_frc.md",
-      "docs/promotions/HN_SHOW.md",
-      "docs/promotions/REDDIT_COMPILERS.md",
-      "docs/promotions/REDDIT_PROGRAMMING.md",
-      "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
       "docs/releases/v3.9.10.md",
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
@@ -57,6 +54,7 @@
       "docs/rfc/GPHY-04_RFC.md",
       "docs/rfc/GPHY-05_RFC.md",
       "docs/rfc/GPHY-06_RFC.md",
+      "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md"
     ],
     "python_classes": [
@@ -90,7 +88,7 @@
       },
       {
         "name": "AdamOptimizer",
-        "path": "src/scpn_fusion/core/fno_training.py"
+        "path": "src/scpn_fusion/core/_surrogate_utils.py"
       },
       {
         "name": "AdaptiveKnmConfig",
@@ -139,6 +137,14 @@
       {
         "name": "ArtifactValidationError",
         "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "AuroraParityCase",
+        "path": "src/scpn_fusion/core/impurity_transport.py"
+      },
+      {
+        "name": "AuroraParityImpuritySolver",
+        "path": "src/scpn_fusion/core/impurity_transport.py"
       },
       {
         "name": "AuroraStrahlArtifact",
@@ -1085,6 +1091,10 @@
         "path": "src/scpn_fusion/core/lh_transition.py"
       },
       {
+        "name": "MastIngestor",
+        "path": "src/scpn_fusion/io/mast_ingestor.py"
+      },
+      {
         "name": "MaxwellEvolutionConfig",
         "path": "src/scpn_fusion/core/gk_maxwell_evolution.py"
       },
@@ -1479,6 +1489,14 @@
       {
         "name": "RFHeatingSystem",
         "path": "src/scpn_fusion/core/rf_heating.py"
+      },
+      {
+        "name": "RMFPhaseLockConfig",
+        "path": "src/scpn_fusion/control/rmf_phase_lock.py"
+      },
+      {
+        "name": "RMFPhaseLockController",
+        "path": "src/scpn_fusion/control/rmf_phase_lock.py"
       },
       {
         "name": "RMPSuppression",
@@ -2223,6 +2241,7 @@
       "src/scpn_fusion/control/nmpc_controller.py",
       "src/scpn_fusion/control/realtime_efit.py",
       "src/scpn_fusion/control/replay_pipeline.py",
+      "src/scpn_fusion/control/rmf_phase_lock.py",
       "src/scpn_fusion/control/runaway_electron_model.py",
       "src/scpn_fusion/control/rust_flight_sim_wrapper.py",
       "src/scpn_fusion/control/rwm_feedback.py",
@@ -2252,6 +2271,7 @@
       "src/scpn_fusion/core/_neural_transport_runtime.py",
       "src/scpn_fusion/core/_neural_transport_types.py",
       "src/scpn_fusion/core/_rust_compat.py",
+      "src/scpn_fusion/core/_surrogate_utils.py",
       "src/scpn_fusion/core/_tglf_interface_benchmark.py",
       "src/scpn_fusion/core/_tglf_interface_reference.py",
       "src/scpn_fusion/core/_tglf_interface_runtime.py",
@@ -2405,6 +2425,7 @@
       "src/scpn_fusion/io/imas_connector_transport.py",
       "src/scpn_fusion/io/imas_history_payloads.py",
       "src/scpn_fusion/io/logging_config.py",
+      "src/scpn_fusion/io/mast_ingestor.py",
       "src/scpn_fusion/io/safe_loaders.py",
       "src/scpn_fusion/io/tokamak_archive.py",
       "src/scpn_fusion/io/tokamak_archive_profiles.py",
@@ -2497,15 +2518,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 56,
+    "capability_documentation_pages": 54,
     "github_workflows": 12,
     "optional_extras": 12,
     "public_api_exports": 2,
-    "public_documentation_pages": 56,
-    "python_capability_classes": 527,
-    "python_capability_source_modules": 270,
+    "public_documentation_pages": 54,
+    "python_capability_classes": 532,
+    "python_capability_source_modules": 273,
     "rust_workspace_crates": 13,
-    "test_files": 408
+    "test_files": 414
   },
   "documentation": {
     "public_pages": [
@@ -2517,6 +2538,7 @@
       "docs/COMPACT_REACTOR_FINDINGS.md",
       "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
       "docs/FUTURE_APPLICATIONS.md",
+      "docs/IEC_61508_ROADMAP.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
@@ -2540,10 +2562,6 @@
       "docs/physics/mrti.md",
       "docs/physics/pulsed_compression.md",
       "docs/physics/tilt_mode_frc.md",
-      "docs/promotions/HN_SHOW.md",
-      "docs/promotions/REDDIT_COMPILERS.md",
-      "docs/promotions/REDDIT_PROGRAMMING.md",
-      "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
       "docs/releases/v3.9.10.md",
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
@@ -2564,6 +2582,7 @@
       "docs/rfc/GPHY-04_RFC.md",
       "docs/rfc/GPHY-05_RFC.md",
       "docs/rfc/GPHY-06_RFC.md",
+      "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md"
     ]
   },
@@ -2667,6 +2686,7 @@
       "tests/test_check_test_module_linkage.py",
       "tests/test_checkpoint.py",
       "tests/test_ci_rmse_gate.py",
+      "tests/test_claim_boundary_regressions.py",
       "tests/test_claim_range_guard.py",
       "tests/test_claims_audit.py",
       "tests/test_cli_launcher.py",
@@ -2810,6 +2830,7 @@
       "tests/test_gs_residual_gate.py",
       "tests/test_gs_transport_coupling.py",
       "tests/test_gs_transport_surrogate.py",
+      "tests/test_gs_transport_surrogate_training.py",
       "tests/test_gym_tokamak_env.py",
       "tests/test_gyrokinetic_transport.py",
       "tests/test_h_infinity_closed_loop.py",
@@ -2845,6 +2866,7 @@
       "tests/test_integrated_transport_solver_runtime_physics.py",
       "tests/test_integrated_transport_solver_runtime_utils.py",
       "tests/test_ipb98y2_benchmark.py",
+      "tests/test_iter_surrogate_tool.py",
       "tests/test_jacobi_sor_stencil_parity.py",
       "tests/test_jax_equilibrium_solver.py",
       "tests/test_jax_gk_solver.py",
@@ -2864,6 +2886,7 @@
       "tests/test_logging_config.py",
       "tests/test_lyapunov_guard.py",
       "tests/test_marfe.py",
+      "tests/test_mast_validation_tools.py",
       "tests/test_mc_dropout_uncertainty.py",
       "tests/test_mesh_convergence_study.py",
       "tests/test_mhd_sawtooth.py",
@@ -2899,6 +2922,7 @@
       "tests/test_onboard_diiid_raw_disruption_shots.py",
       "tests/test_orbit_following.py",
       "tests/test_packaging_contract.py",
+      "tests/test_parser_input_hardening.py",
       "tests/test_pedestal.py",
       "tests/test_pellet_injection.py",
       "tests/test_phase0_physics_fixes.py",
@@ -3021,6 +3045,7 @@
       "tests/test_tools_run_python_preflight.py",
       "tests/test_traceable_runtime_parity_cli.py",
       "tests/test_training_tool_npz_hardening.py",
+      "tests/test_transport_physics_consistency.py",
       "tests/test_transport_power_balance_benchmark.py",
       "tests/test_transport_uncertainty_envelope_benchmark.py",
       "tests/test_turbulence_oracle.py",

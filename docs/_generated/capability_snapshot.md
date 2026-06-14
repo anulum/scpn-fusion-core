@@ -3,28 +3,17 @@
 
 ### SCPN Fusion Core Capability Inventory
 
-
-## Snapshot purpose
-
-This is a generated static inventory for surface-level capability counts. It is intended as quick orientation only and must be read with benchmark and validation artifacts for performance or fidelity claims.
-
-## Interpretation
-
-These counts provide quick orientation, not proof obligations. For any claim
-about quality, reproduceability, or physics agreement, use the linked report set
-and the explicit benchmark command set.
-
 | Surface | Current inventory |
 |---|---:|
 | Package version | 3.9.10 |
 | Public API exports | 2 |
-| Python capability source modules | 270 |
-| Python capability classes | 527 |
-| Capability documentation pages | 56 |
+| Python capability source modules | 273 |
+| Python capability classes | 532 |
+| Capability documentation pages | 54 |
 | Rust workspace crates | 13 |
 | Optional extras | 12 |
-| Python test files | 408 |
-| Public documentation pages | 56 |
+| Python test files | 414 |
+| Public documentation pages | 54 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

@@ -121,13 +121,13 @@ scaling evidence, and native comparisons.
 |---|---:|
 | Package version | 3.9.10 |
 | Public API exports | 2 |
-| Python capability source modules | 270 |
-| Python capability classes | 527 |
-| Capability documentation pages | 56 |
+| Python capability source modules | 273 |
+| Python capability classes | 532 |
+| Capability documentation pages | 54 |
 | Rust workspace crates | 13 |
 | Optional extras | 12 |
-| Python test files | 408 |
-| Public documentation pages | 56 |
+| Python test files | 414 |
+| Public documentation pages | 54 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
