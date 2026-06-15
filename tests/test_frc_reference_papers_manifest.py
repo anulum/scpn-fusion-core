@@ -34,27 +34,52 @@ def test_frc_reference_manifest_preserves_open_blockers() -> None:
     steinhauer = papers["steinhauer_2011_review_field_reversed_configurations"]
     slough = papers["slough_2011_merging_compression_frc_plasmoids"]
 
+    # Steinhauer Fig. 3 rotating-BVP closure is still blocked behind the AIP
+    # HTTP 403. The only local artifacts are publisher-probe HTML landing pages
+    # that record the block — never a redistributable PDF or digitised figure.
     assert steinhauer["download_status"] == "blocked_by_publisher_http_403"
-    assert steinhauer["local_artifacts"] == []
+    steinhauer_artifacts = steinhauer["local_artifacts"]
+    assert steinhauer_artifacts, "expected the 403 publisher-probe provenance"
+    assert all(
+        artifact["content_type_detected"] == "HTML document"
+        for artifact in steinhauer_artifacts
+    ), "Steinhauer artifacts must stay publisher-probe HTML, never reference data"
     assert "Steinhauer" in str(steinhauer["notes"])
 
-    assert slough["download_status"] == "publisher_served_landing_or_javascript_not_pdf"
+    # Slough 2011 Fig. 5 trajectory is still blocked: the publisher served a
+    # landing / bot-validation page, not a PDF, so no machine-readable figure
+    # was acquired. The status wording drifts across probe runs, so assert the
+    # invariant ("not a PDF") rather than the exact landing-page reason.
+    assert str(slough["download_status"]).endswith("not_pdf")
     assert "No machine-readable Figure 5 trajectory" in str(slough["notes"])
     assert "B.11 remains blocked" in str(slough["notes"])
 
 
-def test_romero_2018_topology_pdf_is_metadata_only_public_evidence() -> None:
+def test_romero_2018_topology_pdf_is_open_access_public_evidence_only() -> None:
     papers = _papers_by_key()
 
     romero = papers["romero_2018_frc_topology_alfvenic_transients"]
 
     assert romero["doi"] == "10.1038/s41467-018-03110-5"
-    assert romero["download_status"] == "internal_open_access_pdf_metadata_recorded"
+    # The open-access CC-BY PDF was downloaded and its provenance recorded.
+    assert romero["download_status"] == "downloaded_open_access_pdf"
     assert romero["redistribution_license"] == "CC-BY-4.0"
-    assert romero["local_artifacts"] == []
+
+    # The single local artifact is the open-access PDF, and its checksum/size
+    # match the dedicated internal_pdf provenance fields.
+    artifacts = romero["local_artifacts"]
+    assert len(artifacts) == 1
+    pdf = artifacts[0]
+    assert pdf["content_type_detected"] == "PDF document"
+    assert pdf["sha256"] == romero["internal_pdf_sha256"]
+    assert pdf["size_bytes"] == romero["internal_pdf_size_bytes"]
+
     assert romero["internal_pdf_sha256"] == (
         "63073de674e0ff09d4c4a150975653e2d943dce3615679634e112e5244569abc"
     )
     assert romero["internal_pdf_size_bytes"] == 4_588_529
+
+    # Fail-closed claim boundary: topology-inference evidence only, NOT the
+    # Steinhauer rotating-BVP closure nor the Slough 2011 Fig. 5 trajectory.
     assert "not Steinhauer rotating-BVP closure" in str(romero["claim_boundary"])
     assert "not Slough 2011 Fig. 5 trajectory data" in str(romero["claim_boundary"])
