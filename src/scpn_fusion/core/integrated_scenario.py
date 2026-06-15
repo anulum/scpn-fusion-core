@@ -290,8 +290,17 @@ class IntegratedScenarioSimulator:
             },
             "coils": [],
             "grid": {"nr": self.nr},
-            "physics": {"transport_model": "gyro_bohm"},
+            "physics": {
+                "transport_model": "gyro_bohm",
+                "plasma_current_target": self.config.Ip_MA,
+                "vacuum_permeability": 1.0,
+            },
             "control": {"P_aux": self.config.P_aux_MW},
+            "solver": {
+                "max_iterations": 500,
+                "convergence_threshold": 1.0e-4,
+                "relaxation_factor": 0.1,
+            },
         }
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".json") as f:
             json.dump(cfg_dict, f)
