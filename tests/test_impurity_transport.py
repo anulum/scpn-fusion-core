@@ -56,24 +56,27 @@ def test_tungsten_cooling_curve_peak_order_of_magnitude():
     assert 800.0 < te_eV[int(np.argmax(cooling))] < 2500.0
 
 
-def test_light_impurity_cooling_curve_peak_order_of_magnitude():
-    """Pin the coronal-order peak of the C/Ne/Ar cooling curves.
+def test_light_impurity_cooling_curve_peaks_match_verified_data():
+    """Pin the C/Ne/Ar cooling-curve peaks to their verified source values.
 
-    Coronal Lz for these light/medium impurities peaks at order 1e-31 W m^3
-    (argon ~1e-31 confirmed against the cooling-rate literature; carbon ~2e-31 and
-    neon ~9e-32 in Post & Jensen / ADAS). Guards against the prefactor drifting
-    back an order of magnitude low.
+    Carbon and neon are the OpenADAS adf11 *96 coronal cooling rates computed by
+    tools/compute_coronal_lz_from_adas.py (5.84e-32 W m^3 near 7 eV, 5.74e-32 near
+    30 eV); argon is the Mavrin 2018 coronal value (1.65e-31 near 310 eV). All sit
+    in the coronal 1e-31 band; guards against the prefactor drifting an order of
+    magnitude low (the prior bug) or to the unverified Post & Jensen ~2e-31.
     """
     te_eV = np.logspace(0.0, 3.5, 400)  # 1 eV - ~3 keV
     for element in ("C", "Ne", "Ar"):
         peak = float(np.max(CoolingCurve(element).L_z(te_eV)))
         assert 3e-32 < peak < 3e-31, f"{element} peak {peak:.2e} outside coronal band"
 
-    # Argon radiates in the Mavrin 2018 high-Te validity range: pin its peak to
-    # the verified ~1.65e-31 W m^3 near ~310 eV.
-    ar = CoolingCurve("Ar").L_z(te_eV)
-    assert float(np.max(ar)) == pytest.approx(1.65e-31, rel=1e-9)
-    assert 200.0 < te_eV[int(np.argmax(ar))] < 450.0
+    # Peak magnitudes (evaluated at the peak temperature) and locations.
+    assert float(CoolingCurve("C").L_z(np.array([7.0]))[0]) == pytest.approx(5.84e-32, rel=1e-9)
+    assert float(CoolingCurve("Ne").L_z(np.array([30.0]))[0]) == pytest.approx(5.74e-32, rel=1e-9)
+    assert float(CoolingCurve("Ar").L_z(np.array([310.0]))[0]) == pytest.approx(1.65e-31, rel=1e-9)
+    assert 5.0 < te_eV[int(np.argmax(CoolingCurve("C").L_z(te_eV)))] < 10.0
+    assert 20.0 < te_eV[int(np.argmax(CoolingCurve("Ne").L_z(te_eV)))] < 45.0
+    assert 200.0 < te_eV[int(np.argmax(CoolingCurve("Ar").L_z(te_eV)))] < 450.0
 
 
 def test_cooling_curve_returns_zero_for_nonpositive_temperatures_without_warning():

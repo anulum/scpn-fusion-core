@@ -588,15 +588,15 @@ class CoolingCurve:
             L += 3e-33 * np.exp(-(((log_Te - np.log(50.0)) / 1.0) ** 2))
             L[~valid] = 0.0
             return np.asarray(L)
-        # Coronal-equilibrium peak cooling rates for these light/medium impurities
-        # are of order 1e-31 W m^3, the same order as the tungsten peak above. The
-        # previous 1e-32 prefactor was an order of magnitude low. Carbon and neon
-        # peak at low Te (~10 and ~30-50 eV) where the Mavrin 2018 coronal fits
-        # are invalid (they diverge below ~100 eV), so their peaks are kept as
-        # order-of-magnitude parametric Gaussians pending low-Te (Post & Jensen)
-        # data: carbon ~2e-31 near 10 eV, neon ~9e-32 near 50 eV.
+        # Carbon and neon coronal cooling rates computed from the OpenADAS adf11
+        # *96 dataset: line (PLT) + recombination/continuum (PRB) power summed over
+        # the coronal charge-state balance. Carbon peaks at 5.84e-32 W m^3 near
+        # 7 eV and neon at 5.74e-32 W m^3 near 30 eV, both line-radiation
+        # dominated. These ADAS96 values are below the older Post & Jensen 1977
+        # estimate (~2e-31). See tools/compute_coronal_lz_from_adas.py and
+        # validation/reference_data/openadas_coronal_lz_manifest.json.
         if self.element == "C":
-            L = 1e-31 * np.exp(-(((log_Te - np.log(10.0)) / 0.5) ** 2))
+            L = 5.84e-32 * np.exp(-(((log_Te - np.log(7.0)) / 0.5) ** 2))
             L[~valid] = 0.0
             return np.asarray(L)
         if self.element == "Ar":
@@ -606,7 +606,7 @@ class CoolingCurve:
             L[~valid] = 0.0
             return np.asarray(L)
         if self.element == "Ne":
-            L = 1e-31 * np.exp(-(((log_Te - np.log(50.0)) / 1.0) ** 2))
+            L = 5.74e-32 * np.exp(-(((log_Te - np.log(30.0)) / 0.85) ** 2))
             L[~valid] = 0.0
             return np.asarray(L)
         return np.zeros_like(Te)

@@ -1,0 +1,23 @@
+{
+  "schema": "scpn-fusion-core.openadas_coronal_lz_manifest.v1",
+  "description": "Provenance for the OpenADAS adf11 atomic data used to compute the carbon and neon coronal-equilibrium radiated-power cooling rates that parametrise CoolingCurve.",
+  "source": "OpenADAS (open.adas.ac.uk), adf11 GCR project, 1996 (*96) dataset",
+  "license_note": "OpenADAS atomic data is freely available for non-commercial academic use; the raw .dat files are not redistributed in this repository. Re-download from the URLs below.",
+  "method": "Coronal ionization balance at the lowest tabulated density (n_{q+1}/n_q = SCD(q->q+1)/ACD(q+1->q)); Lz = sum_q f_q*(PLT_q + PRB_q), converted W cm^3 -> W m^3. See tools/compute_coronal_lz_from_adas.py.",
+  "local_path": "data/external/openadas_adf11/ (gitignored)",
+  "files": [
+    {"name": "plt96_c.dat",  "url": "https://open.adas.ac.uk/download/adf11/plt96/plt96_c.dat",  "sha256": "ede5fa2ee3bb475826f2fe615b0f9bc10642b4eb773bcb18feafd2802f613b9f"},
+    {"name": "prb96_c.dat",  "url": "https://open.adas.ac.uk/download/adf11/prb96/prb96_c.dat",  "sha256": "d9b4259012f41a5b42654393ce6b88151d8cbfe367d7852d7cfad5a80c28d727"},
+    {"name": "scd96_c.dat",  "url": "https://open.adas.ac.uk/download/adf11/scd96/scd96_c.dat",  "sha256": "2a4baffa5f1a4408f3f8eae1e2cfa93320a1d025f0a204338d7cc3762d5e2e77"},
+    {"name": "acd96_c.dat",  "url": "https://open.adas.ac.uk/download/adf11/acd96/acd96_c.dat",  "sha256": "3bc7f3ece917e15d64125e17fe3b49df8ab9641ca0bb0b0c6c1af88e544eef76"},
+    {"name": "plt96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/plt96/plt96_ne.dat", "sha256": "8a82016fc4c3bb6f310e06841407f9f1149ae0bca81097bb063d391f5b8bc638"},
+    {"name": "prb96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/prb96/prb96_ne.dat", "sha256": "ab27b473347509a34688cda3faa1c7a1bfa4c819b5c80b3c55a3ef2a9639dbe6"},
+    {"name": "scd96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/scd96/scd96_ne.dat", "sha256": "a856ce25fa869dcf1c91fe97c049fda41767caa130d6b7ff21179b26149eb753"},
+    {"name": "acd96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/acd96/acd96_ne.dat", "sha256": "03882064965382206189b37455d3d09c92fecfdb58418f73900032794c5961d3"}
+  ],
+  "computed_coronal_peaks": {
+    "C":  {"lz_peak_w_m3": 5.844e-32, "te_peak_eV": 7.0,  "line_fraction_at_peak": 0.998},
+    "Ne": {"lz_peak_w_m3": 5.741e-32, "te_peak_eV": 30.0, "line_fraction_at_peak": 0.988}
+  },
+  "notes": "Peak magnitudes are dominated by line radiation (PLT), so they are robust to the recombination/continuum (PRB) charge-state indexing. The ADAS96 values (~5.8e-32) are below the older Post & Jensen 1977 estimate (~2e-31)."
+}
