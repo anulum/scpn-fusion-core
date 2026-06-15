@@ -84,10 +84,15 @@ class MastIngestor:
         store = fs.get_mapper(url)
 
         ds = xr.open_zarr(store, group="summary", consolidated=True)
+        time = np.asarray(ds.time.values, dtype=np.float64)
+        if "line_average_n_e" in ds:
+            density = np.asarray(ds.line_average_n_e.values, dtype=np.float64)
+        else:
+            density = np.full(time.shape, np.nan, dtype=np.float64)
         return {
-            "time": ds.time.values,
-            "ip": ds.ip.values,
-            "density": ds.line_average_n_e.values,
+            "time": time,
+            "ip": np.asarray(ds.ip.values, dtype=np.float64),
+            "density": density,
         }
 
     def load_magnetic_probes(
