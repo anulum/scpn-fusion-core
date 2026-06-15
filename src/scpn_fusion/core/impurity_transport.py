@@ -600,9 +600,12 @@ class CoolingCurve:
             L[~valid] = 0.0
             return np.asarray(L)
         if self.element == "Ar":
-            # Argon radiates in the high-Te range where the Mavrin 2018 coronal
-            # fit applies: Lz peaks at ~1.65e-31 W m^3 near 310 eV.
-            L = 1.65e-31 * np.exp(-(((log_Te - np.log(310.0)) / 1.0) ** 2))
+            # Argon coronal Lz is bimodal. The global peak from the OpenADAS adf11
+            # *89 computation is 1.98e-31 W m^3 near 20 eV (L-shell line emission);
+            # there is a weaker high-Te feature near 300 eV (Mavrin 2018 coronal
+            # fit ~1.65e-31, valid above ~100 eV). The single Gaussian tracks the
+            # dominant low-Te peak relevant to edge/divertor radiation.
+            L = 1.98e-31 * np.exp(-(((log_Te - np.log(20.0)) / 0.6) ** 2))
             L[~valid] = 0.0
             return np.asarray(L)
         if self.element == "Ne":

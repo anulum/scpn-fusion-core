@@ -36,8 +36,15 @@ FloatArray = NDArray[np.float64]
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ADF11_DIR = REPO_ROOT / "data" / "external" / "openadas_adf11"
 
-# Nuclear charge of each supported element.
-NUCLEAR_CHARGE = {"c": 6, "ne": 10}
+# Supported elements: symbol -> (nuclear charge, adf11 dataset year code). Carbon
+# and neon use the 1996 low-Z dataset; argon and tungsten are only available in
+# the older 1989 dataset.
+ELEMENTS = {
+    "c": (6, "96"),
+    "ne": (10, "96"),
+    "ar": (18, "89"),
+    "w": (74, "89"),
+}
 
 _FLOAT = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
 _Z1 = re.compile(r"Z1=\s*(\d+)")
@@ -87,24 +94,28 @@ def parse_adf11(path: Path) -> tuple[FloatArray, FloatArray, dict[int, FloatArra
 
 
 def coronal_cooling_rate(element: str) -> tuple[FloatArray, FloatArray]:
-    """Return ``(Te_eV, Lz_W_m3)`` coronal cooling rate for ``element`` (``c``/``ne``)."""
+    """Return ``(Te_eV, Lz_W_m3)`` coronal cooling rate for a supported element."""
 
-    charge = NUCLEAR_CHARGE[element]
-    _, log_te, plt = parse_adf11(ADF11_DIR / f"plt96_{element}.dat")
-    _, _, prb = parse_adf11(ADF11_DIR / f"prb96_{element}.dat")
-    _, _, scd = parse_adf11(ADF11_DIR / f"scd96_{element}.dat")
-    _, _, acd = parse_adf11(ADF11_DIR / f"acd96_{element}.dat")
+    charge, year = ELEMENTS[element]
+    _, log_te, plt = parse_adf11(ADF11_DIR / f"plt{year}_{element}.dat")
+    _, _, prb = parse_adf11(ADF11_DIR / f"prb{year}_{element}.dat")
+    _, _, scd = parse_adf11(ADF11_DIR / f"scd{year}_{element}.dat")
+    _, _, acd = parse_adf11(ADF11_DIR / f"acd{year}_{element}.dat")
 
     te_eV = 10.0**log_te
     coronal_ne_index = 0  # lowest tabulated density is the coronal limit
     cooling = np.zeros_like(te_eV)
     for it in range(te_eV.size):
-        # Coronal ionization balance: n_{q+1}/n_q = SCD(q->q+1) / ACD(q+1->q).
-        abundance = np.ones(charge + 1, dtype=np.float64)
+        # Coronal ionization balance accumulated in log space (robust for the 74
+        # tungsten charge states): n_{q+1}/n_q = SCD(q->q+1) / ACD(q+1->q).
+        log_abundance = np.zeros(charge + 1, dtype=np.float64)
         for q in range(charge):
-            ionization = 10.0 ** scd[q + 1][it, coronal_ne_index]
-            recombination = 10.0 ** acd[q + 1][it, coronal_ne_index]
-            abundance[q + 1] = abundance[q] * ionization / recombination
+            log_abundance[q + 1] = (
+                log_abundance[q]
+                + scd[q + 1][it, coronal_ne_index]
+                - acd[q + 1][it, coronal_ne_index]
+            )
+        abundance = 10.0 ** (log_abundance - log_abundance.max())
         abundance /= abundance.sum()
 
         line = sum(
@@ -118,7 +129,7 @@ def coronal_cooling_rate(element: str) -> tuple[FloatArray, FloatArray]:
 
 
 def main() -> None:
-    for element in NUCLEAR_CHARGE:
+    for element in ELEMENTS:
         te_eV, cooling = coronal_cooling_rate(element)
         peak = int(np.argmax(cooling))
         print(

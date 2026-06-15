@@ -1,9 +1,9 @@
 {
-  "schema": "scpn-fusion-core.openadas_coronal_lz_manifest.v1",
-  "description": "Provenance for the OpenADAS adf11 atomic data used to compute the carbon and neon coronal-equilibrium radiated-power cooling rates that parametrise CoolingCurve.",
-  "source": "OpenADAS (open.adas.ac.uk), adf11 GCR project, 1996 (*96) dataset",
+  "schema": "scpn-fusion-core.openadas_coronal_lz_manifest.v2",
+  "description": "Provenance for the OpenADAS adf11 atomic data used to compute the carbon, neon, argon, and tungsten coronal-equilibrium radiated-power cooling rates that parametrise CoolingCurve.",
+  "source": "OpenADAS (open.adas.ac.uk), adf11 GCR project; carbon/neon from the 1996 (*96) dataset, argon/tungsten from the 1989 (*89) dataset",
   "license_note": "OpenADAS atomic data is freely available for non-commercial academic use; the raw .dat files are not redistributed in this repository. Re-download from the URLs below.",
-  "method": "Coronal ionization balance at the lowest tabulated density (n_{q+1}/n_q = SCD(q->q+1)/ACD(q+1->q)); Lz = sum_q f_q*(PLT_q + PRB_q), converted W cm^3 -> W m^3. See tools/compute_coronal_lz_from_adas.py.",
+  "method": "Coronal ionization balance at the lowest tabulated density (n_{q+1}/n_q = SCD(q->q+1)/ACD(q+1->q), accumulated in log space); Lz = sum_q f_q*(PLT_q + PRB_q), converted W cm^3 -> W m^3. See tools/compute_coronal_lz_from_adas.py.",
   "local_path": "data/external/openadas_adf11/ (gitignored)",
   "files": [
     {"name": "plt96_c.dat",  "url": "https://open.adas.ac.uk/download/adf11/plt96/plt96_c.dat",  "sha256": "ede5fa2ee3bb475826f2fe615b0f9bc10642b4eb773bcb18feafd2802f613b9f"},
@@ -13,11 +13,21 @@
     {"name": "plt96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/plt96/plt96_ne.dat", "sha256": "8a82016fc4c3bb6f310e06841407f9f1149ae0bca81097bb063d391f5b8bc638"},
     {"name": "prb96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/prb96/prb96_ne.dat", "sha256": "ab27b473347509a34688cda3faa1c7a1bfa4c819b5c80b3c55a3ef2a9639dbe6"},
     {"name": "scd96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/scd96/scd96_ne.dat", "sha256": "a856ce25fa869dcf1c91fe97c049fda41767caa130d6b7ff21179b26149eb753"},
-    {"name": "acd96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/acd96/acd96_ne.dat", "sha256": "03882064965382206189b37455d3d09c92fecfdb58418f73900032794c5961d3"}
+    {"name": "acd96_ne.dat", "url": "https://open.adas.ac.uk/download/adf11/acd96/acd96_ne.dat", "sha256": "03882064965382206189b37455d3d09c92fecfdb58418f73900032794c5961d3"},
+    {"name": "plt89_ar.dat", "url": "https://open.adas.ac.uk/download/adf11/plt89/plt89_ar.dat", "sha256": "3296aba27cd9eb3181284650462ea348b35ba5033f58a5ca4cde09b72a94abdf"},
+    {"name": "prb89_ar.dat", "url": "https://open.adas.ac.uk/download/adf11/prb89/prb89_ar.dat", "sha256": "ed2b90b60f7e0edab93d2206b0b49064dd6563c7c34c14b553b1b875fd15c8c5"},
+    {"name": "scd89_ar.dat", "url": "https://open.adas.ac.uk/download/adf11/scd89/scd89_ar.dat", "sha256": "442da9e74d40065a8d54e473c7d4a660e0d66eba2e08082110a8594ce119f0fc"},
+    {"name": "acd89_ar.dat", "url": "https://open.adas.ac.uk/download/adf11/acd89/acd89_ar.dat", "sha256": "2b19dbb75a16c5f23f929b67fd92c1d0b6faef17a76892d17958f83d2f020258"},
+    {"name": "plt89_w.dat",  "url": "https://open.adas.ac.uk/download/adf11/plt89/plt89_w.dat",  "sha256": "3350a74fce05adbc25b9ce82c94bf93754210a889c82e8ea01d857356990beee"},
+    {"name": "prb89_w.dat",  "url": "https://open.adas.ac.uk/download/adf11/prb89/prb89_w.dat",  "sha256": "e6a5dd2e809fcbf0b4826297ac79d8965587b1c811edcfaaff19658f3f8d4a75"},
+    {"name": "scd89_w.dat",  "url": "https://open.adas.ac.uk/download/adf11/scd89/scd89_w.dat",  "sha256": "73bc8a174056e1dd99320e9e20e79b3b7b9a92ca22b0f3ccf1f95bf03dc68500"},
+    {"name": "acd89_w.dat",  "url": "https://open.adas.ac.uk/download/adf11/acd89/acd89_w.dat",  "sha256": "48ac2d6bca61b51e35c2a0ecacc392574d48f4be9b36b7cf3101ed92b88a08a7"}
   ],
   "computed_coronal_peaks": {
-    "C":  {"lz_peak_w_m3": 5.844e-32, "te_peak_eV": 7.0,  "line_fraction_at_peak": 0.998},
-    "Ne": {"lz_peak_w_m3": 5.741e-32, "te_peak_eV": 30.0, "line_fraction_at_peak": 0.988}
+    "C":  {"lz_peak_w_m3": 5.844e-32, "te_peak_eV": 7.0,    "line_fraction_at_peak": 0.998, "used_in_cooling_curve": true},
+    "Ne": {"lz_peak_w_m3": 5.741e-32, "te_peak_eV": 30.0,   "line_fraction_at_peak": 0.988, "used_in_cooling_curve": true},
+    "Ar": {"lz_peak_w_m3": 1.981e-31, "te_peak_eV": 19.9,   "used_in_cooling_curve": true, "note": "global low-Te peak; a weaker high-Te feature near 300 eV is the Mavrin 2018 ~1.65e-31 value."},
+    "W":  {"lz_peak_w_m3": 2.584e-31, "te_peak_eV": 1640.9, "used_in_cooling_curve": false, "note": "cross-check only; the cooling curve keeps the cited Putterich 2010 value (~1e-31). Tungsten Lz spans ~1e-31 (Putterich) to ~4.7e-31 (Mavrin 2018) across atomic-data sources; the ~1640 eV peak location is consistent."}
   },
-  "notes": "Peak magnitudes are dominated by line radiation (PLT), so they are robust to the recombination/continuum (PRB) charge-state indexing. The ADAS96 values (~5.8e-32) are below the older Post & Jensen 1977 estimate (~2e-31)."
+  "notes": "Peak magnitudes for C/Ne/Ar are dominated by line radiation (PLT), so they are robust to the recombination/continuum (PRB) charge-state indexing. The ADAS96 C/Ne values (~5.8e-32) are below the older Post & Jensen 1977 estimate (~2e-31)."
 }

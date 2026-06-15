@@ -64,16 +64,17 @@
   assertions and recalibrated the burn-through critical-impurity-fraction test to
   compare tungsten and carbon at a core temperature. The peaks remain parametric
   fits.
-- Refined the argon cooling-curve peak to the Mavrin 2018 coronal value
-  (~1.65e-31 W m^3 near 310 eV), the verified high-Te branch.
-- Replaced the carbon and neon cooling-curve peaks with values computed from the
-  OpenADAS adf11 *96 dataset (coronal charge-state balance of the line and
-  recombination/continuum power): carbon 5.84e-32 W m^3 near 7 eV, neon
-  5.74e-32 W m^3 near 30 eV (both line-radiation dominated). These supersede the
-  earlier order-of-magnitude estimate and the older Post & Jensen ~2e-31. Added
-  `tools/compute_coronal_lz_from_adas.py` and a provenance manifest
-  (`validation/reference_data/openadas_coronal_lz_manifest.json`, with source
-  URLs and SHA-256 checksums) and pinned the peaks in tests.
+- Replaced the carbon, neon, and argon cooling-curve peaks with values computed
+  from the OpenADAS adf11 dataset (coronal charge-state balance of the line and
+  recombination/continuum power): carbon 5.84e-32 W m^3 near 7 eV and neon
+  5.74e-32 W m^3 near 30 eV (adf11 *96), and argon 1.98e-31 W m^3 near 20 eV
+  (adf11 *89 — its global low-Te peak, which the high-Te-only Mavrin 2018 fit had
+  missed). Tungsten keeps the cited Putterich 2010 value; the ADAS *89 cross-check
+  (2.58e-31 near 1640 eV) confirms the peak location. Added
+  `tools/compute_coronal_lz_from_adas.py` (parser + coronal balance for C/Ne/Ar/W)
+  and a provenance manifest
+  (`validation/reference_data/openadas_coronal_lz_manifest.json`, with source URLs
+  and SHA-256 checksums) and pinned the peaks in tests.
 
 ### Repository hygiene
 
