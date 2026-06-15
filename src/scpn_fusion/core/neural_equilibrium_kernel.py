@@ -217,7 +217,9 @@ class NeuralEquilibriumKernel:
                     default=1.0,
                 ),
                 self._feature("simag", physics, target, equilibrium, keys=("simag", "psi_axis")),
-                self._feature("sibry", physics, target, equilibrium, keys=("sibry", "psi_boundary")),
+                self._feature(
+                    "sibry", physics, target, equilibrium, keys=("sibry", "psi_boundary")
+                ),
                 self._feature(
                     "kappa",
                     physics,

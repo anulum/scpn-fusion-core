@@ -465,8 +465,6 @@ class FusionKernel(
         np.savez(filename, R=self.R, Z=self.Z, Psi=self.Psi, J_phi=self.J_phi)
         logger.info("Saved: %s", filename)
 
-
-
     # ── phase synchronisation ─────────────────────────────────────────
 
     def phase_sync_step(
@@ -528,7 +526,6 @@ class FusionKernel(
             "stable": bool(lam < 0.0),
         }
 
-
     # ── FRC bridge ────────────────────────────────────────────────────
 
     def initialize_from_frc(self, frc_state: Any, kappa: float | None = None) -> None:
@@ -573,7 +570,7 @@ class FusionKernel(
         # Axial Gaussian fall-off
         # Characteristic length z_scale = a * kappa
         z_scale = max(a * kappa, 1e-6)
-        axial_envelope = np.exp(-(dZ_2d / z_scale) ** 2)
+        axial_envelope = np.exp(-((dZ_2d / z_scale) ** 2))
 
         # Radial interpolation
         # frc_state.rho is distance from O-point (rho=0).
@@ -595,7 +592,10 @@ class FusionKernel(
         target_cfg["frc_separatrix_radius_m"] = a
         target_cfg["frc_radial_support_m"] = float(rho[-1])
 
-        logger.info("Initialized 2D grid from 1D FRC (Ip=%.3f MA, kappa=%.2f)", I_total / 1e6, kappa)
+        logger.info(
+            "Initialized 2D grid from 1D FRC (Ip=%.3f MA, kappa=%.2f)", I_total / 1e6, kappa
+        )
+
 
 if __name__ == "__main__":
     import sys

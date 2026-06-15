@@ -21,6 +21,7 @@ coordinate ``rho in [0, 1]`` as
 so a midpoint-style Riemann sum over the cached ``dV`` array converges to
 ``V_torus`` as the grid refines.
 """
+
 from __future__ import annotations
 
 import logging
@@ -60,9 +61,7 @@ class _VolumeOnlyRuntime(TransportSolverRuntimePhysicsMixin):
         self.cfg = cfg
 
 
-def _analytic_elongated_torus_volume(
-    *, r_min: float, r_max: float, kappa: float
-) -> float:
+def _analytic_elongated_torus_volume(*, r_min: float, r_max: float, kappa: float) -> float:
     """Return ``V = 2 * pi^2 * R_0 * a^2 * kappa`` for the given bounds."""
     r0 = 0.5 * (r_min + r_max)
     a = 0.5 * (r_max - r_min)
@@ -158,7 +157,9 @@ def test_elongation_falls_back_to_unity_when_missing_with_warning(
 ) -> None:
     """Missing kappa is recoverable, but the user must see a warning."""
     host = _VolumeOnlyRuntime(kappa=None)
-    with caplog.at_level(logging.WARNING, logger="scpn_fusion.core.integrated_transport_solver_runtime_physics"):
+    with caplog.at_level(
+        logging.WARNING, logger="scpn_fusion.core.integrated_transport_solver_runtime_physics"
+    ):
         kappa = _extract_elongation(host.cfg)
     assert kappa == 1.0
     assert any("kappa" in rec.message for rec in caplog.records)

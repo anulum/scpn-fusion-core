@@ -118,9 +118,7 @@ def coronal_cooling_rate(element: str) -> tuple[FloatArray, FloatArray]:
         abundance = 10.0 ** (log_abundance - log_abundance.max())
         abundance /= abundance.sum()
 
-        line = sum(
-            abundance[q] * 10.0 ** plt[q + 1][it, coronal_ne_index] for q in range(charge)
-        )
+        line = sum(abundance[q] * 10.0 ** plt[q + 1][it, coronal_ne_index] for q in range(charge))
         continuum = sum(
             abundance[q] * 10.0 ** prb[q][it, coronal_ne_index] for q in range(1, charge + 1)
         )

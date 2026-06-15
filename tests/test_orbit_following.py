@@ -103,11 +103,61 @@ def test_grad_b_drift_matches_analytic_speed():
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [
-        ({"m_amu": 0.0, "Z": 2, "E_keV": 3500.0, "pitch_angle": 0.0, "R0_init": 6.2, "Z0_init": 0.0}, "m_amu"),
-        ({"m_amu": 4.0, "Z": 0, "E_keV": 3500.0, "pitch_angle": 0.0, "R0_init": 6.2, "Z0_init": 0.0}, "Z"),
-        ({"m_amu": 4.0, "Z": 2, "E_keV": -1.0, "pitch_angle": 0.0, "R0_init": 6.2, "Z0_init": 0.0}, "E_keV"),
-        ({"m_amu": 4.0, "Z": 2, "E_keV": 3500.0, "pitch_angle": 4.0, "R0_init": 6.2, "Z0_init": 0.0}, "pitch_angle"),
-        ({"m_amu": 4.0, "Z": 2, "E_keV": 3500.0, "pitch_angle": 0.0, "R0_init": 0.0, "Z0_init": 0.0}, "R0_init"),
+        (
+            {
+                "m_amu": 0.0,
+                "Z": 2,
+                "E_keV": 3500.0,
+                "pitch_angle": 0.0,
+                "R0_init": 6.2,
+                "Z0_init": 0.0,
+            },
+            "m_amu",
+        ),
+        (
+            {
+                "m_amu": 4.0,
+                "Z": 0,
+                "E_keV": 3500.0,
+                "pitch_angle": 0.0,
+                "R0_init": 6.2,
+                "Z0_init": 0.0,
+            },
+            "Z",
+        ),
+        (
+            {
+                "m_amu": 4.0,
+                "Z": 2,
+                "E_keV": -1.0,
+                "pitch_angle": 0.0,
+                "R0_init": 6.2,
+                "Z0_init": 0.0,
+            },
+            "E_keV",
+        ),
+        (
+            {
+                "m_amu": 4.0,
+                "Z": 2,
+                "E_keV": 3500.0,
+                "pitch_angle": 4.0,
+                "R0_init": 6.2,
+                "Z0_init": 0.0,
+            },
+            "pitch_angle",
+        ),
+        (
+            {
+                "m_amu": 4.0,
+                "Z": 2,
+                "E_keV": 3500.0,
+                "pitch_angle": 0.0,
+                "R0_init": 0.0,
+                "Z0_init": 0.0,
+            },
+            "R0_init",
+        ),
     ],
 )
 def test_guiding_center_rejects_unphysical_inputs(kwargs, match):

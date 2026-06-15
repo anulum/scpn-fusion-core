@@ -41,8 +41,7 @@ def test_frc_reference_manifest_preserves_open_blockers() -> None:
     steinhauer_artifacts = steinhauer["local_artifacts"]
     assert steinhauer_artifacts, "expected the 403 publisher-probe provenance"
     assert all(
-        artifact["content_type_detected"] == "HTML document"
-        for artifact in steinhauer_artifacts
+        artifact["content_type_detected"] == "HTML document" for artifact in steinhauer_artifacts
     ), "Steinhauer artifacts must stay publisher-probe HTML, never reference data"
     assert "Steinhauer" in str(steinhauer["notes"])
 

@@ -29,11 +29,8 @@ from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equi
 
 logger = logging.getLogger(__name__)
 
-def compute_local_jacobian(
-    nominal_features: np.ndarray,
-    grid_size: int,
-    eps: float = 1e-4
-):
+
+def compute_local_jacobian(nominal_features: np.ndarray, grid_size: int, eps: float = 1e-4):
     logger.info("Computing FRC Jacobian around nominal point...")
     rho_grid = np.linspace(0.0, 0.5, grid_size)
 
@@ -48,7 +45,7 @@ def compute_local_jacobian(
         theta_dot=theta_dot * 1000.0,
         R_s=r_s,
         B_ext=b_ext,
-        delta=delta
+        delta=delta,
     )
 
     nom_state = solve_frc_equilibrium(nom_inputs, rho_grid, solver="rust", tolerance=1e-10)
@@ -81,7 +78,7 @@ def compute_local_jacobian(
             theta_dot=X_perturbed[3] * 1000.0,
             R_s=X_perturbed[4],
             B_ext=X_perturbed[5],
-            delta=X_perturbed[6]
+            delta=X_perturbed[6],
         )
 
         pert_state = solve_frc_equilibrium(pert_inputs, rho_grid, solver="rust", tolerance=1e-10)
@@ -91,6 +88,7 @@ def compute_local_jacobian(
         J[:, i] = (Y_pert - Y_nom) / perturbation
 
     return Y_nom, J
+
 
 def main():
     parser = argparse.ArgumentParser(description="Extract FRC local Jacobian surrogate")
@@ -102,31 +100,28 @@ def main():
     t_start = time.perf_counter()
 
     # Define standard high-density, high-field FRC operating point
-    X_nom = np.array([
-        3.0,   # n0 = 3e20 m^-3
-        10.0,  # T_i = 10 keV
-        5.0,   # T_e = 5 keV
-        0.0,   # theta_dot = 0 krad/s
-        0.2,   # R_s = 0.2 m
-        5.0,   # B_ext = 5.0 T
-        0.02   # delta = 0.02 m
-    ])
+    X_nom = np.array(
+        [
+            3.0,  # n0 = 3e20 m^-3
+            10.0,  # T_i = 10 keV
+            5.0,  # T_e = 5 keV
+            0.0,  # theta_dot = 0 krad/s
+            0.2,  # R_s = 0.2 m
+            5.0,  # B_ext = 5.0 T
+            0.02,  # delta = 0.02 m
+        ]
+    )
 
     Y_nom, Jacobian = compute_local_jacobian(X_nom, args.grid)
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    np.savez(
-        out_path,
-        grid_size=np.array([args.grid]),
-        x_nom=X_nom,
-        y_nom=Y_nom,
-        jacobian=Jacobian
-    )
+    np.savez(out_path, grid_size=np.array([args.grid]), x_nom=X_nom, y_nom=Y_nom, jacobian=Jacobian)
 
     t_total = time.perf_counter() - t_start
     logger.info("Jacobian extraction complete in %.3f s. Saved to %s", t_total, out_path)
+
 
 if __name__ == "__main__":
     main()

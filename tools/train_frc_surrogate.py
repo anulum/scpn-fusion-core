@@ -41,6 +41,7 @@ PCA_COMPONENTS_TARGET = 10
 
 # ── Model Definition ─────────────────────────────────────────────────
 
+
 def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
     dims = [input_dim] + hidden_sizes + [output_dim]
     params = []
@@ -48,11 +49,11 @@ def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
         key, subkey = random.split(key)
         fan_in, fan_out = dims[i], dims[i + 1]
         std = jnp.sqrt(2.0 / fan_in)
-        params.append({
-            "W": random.normal(subkey, (fan_in, fan_out)) * std,
-            "b": jnp.zeros(fan_out)
-        })
+        params.append(
+            {"W": random.normal(subkey, (fan_in, fan_out)) * std, "b": jnp.zeros(fan_out)}
+        )
     return params
+
 
 def model_forward(params, x):
     h = x
@@ -62,9 +63,11 @@ def model_forward(params, x):
             h = jax.nn.relu(h)
     return h
 
+
 def mse_loss(params, x_batch, y_batch):
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
     return jnp.mean((preds - y_batch) ** 2)
+
 
 @jit
 def update_step(params, m, v, x_batch, y_batch, lr, t):
@@ -80,7 +83,9 @@ def update_step(params, m, v, x_batch, y_batch, lr, t):
     )
     return new_params, m, v, loss
 
+
 # ── Data Generation ──────────────────────────────────────────────────
+
 
 def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
     logger.info("Generating %d FRC samples...", n_samples)
@@ -96,7 +101,9 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
     while valid_count < n_samples and attempts < n_samples * 10:
         attempts += 1
         if valid_count > 0 and valid_count % 50 == 0:
-            logger.info("Generated %d / %d samples (attempts: %d)", valid_count, n_samples, attempts)
+            logger.info(
+                "Generated %d / %d samples (attempts: %d)", valid_count, n_samples, attempts
+            )
 
         n0 = rng.uniform(1e20, 5e20)
         t_i = rng.uniform(5000, 15000)
@@ -107,20 +114,14 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
         delta = rng.uniform(0.01, 0.05)
 
         inputs = RigidRotorFRCInputs(
-            n0=n0,
-            T_i_eV=t_i,
-            T_e_eV=t_e,
-            theta_dot=theta_dot,
-            R_s=r_s,
-            B_ext=b_ext,
-            delta=delta
+            n0=n0, T_i_eV=t_i, T_e_eV=t_e, theta_dot=theta_dot, R_s=r_s, B_ext=b_ext, delta=delta
         )
 
         try:
             state = solve_frc_equilibrium(inputs, rho_grid, solver="rust", tolerance=1e-8)
             if not state.converged or not np.all(np.isfinite(state.B_z)):
                 continue
-            features = [n0/1e20, t_i/1000, t_e/1000, theta_dot/1000, r_s, b_ext, delta]
+            features = [n0 / 1e20, t_i / 1000, t_e / 1000, theta_dot / 1000, r_s, b_ext, delta]
             X.append(features)
 
             # Predict magnetic field B_z profile
@@ -133,6 +134,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
 
 
 # ── Training Entry Point ─────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="Train FRC surrogate")
@@ -202,6 +204,7 @@ def main():
 
     t_total = time.perf_counter() - t_start
     logger.info("Retraining complete in %.2f s. Saved to %s", t_total, out_path)
+
 
 if __name__ == "__main__":
     main()

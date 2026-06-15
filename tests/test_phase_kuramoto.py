@@ -298,7 +298,6 @@ class TestUPDESystem:
 # ── FusionKernel.phase_sync_step (integration smoke test) ────────────
 
 
-
 class TestFusionKernelPhaseSync:
     """Smoke test that phase_sync_step can be called on a FusionKernel."""
 

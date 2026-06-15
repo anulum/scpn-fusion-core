@@ -13,20 +13,18 @@ from scpn_fusion.core.gs_transport_surrogate_training import (
     _generate_gs_transport_pairs,
 )
 
+
 def test_gs_transport_training_smoke(tmp_path):
     """Verify that the training loop runs end-to-end with minimal samples."""
     save_path = tmp_path / "test_weights.npz"
     history = train_gs_transport_surrogate(
-        n_samples=5,
-        epochs=2,
-        save_path=save_path,
-        seed=42,
-        patience=5
+        n_samples=5, epochs=2, save_path=save_path, seed=42, patience=5
     )
     assert history["epochs_completed"] == 2
     assert save_path.exists()
     assert "train_loss" in history
     assert "val_loss" in history
+
 
 def test_gs_transport_data_gen_consistency():
     """Verify that generated pairs have expected shapes and metadata consistency."""
@@ -38,6 +36,7 @@ def test_gs_transport_data_gen_consistency():
         assert "Ip" in m
         assert "kappa" in m
         assert "T0" in m
+
 
 def test_mlp_surrogate_io(tmp_path):
     """Verify MLP weight save/load round-trip."""

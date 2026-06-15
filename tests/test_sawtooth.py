@@ -93,9 +93,7 @@ def test_thermal_energy_conservation():
 
     # Kadomtsev reconnection conserves thermal energy and particle content inside
     # the mixing radius to machine precision.
-    assert np.isclose(
-        inner_thermal_energy(n, T), inner_thermal_energy(n_new, T_new), rtol=1e-9
-    )
+    assert np.isclose(inner_thermal_energy(n, T), inner_thermal_energy(n_new, T_new), rtol=1e-9)
     assert np.isclose(inner_particles(n), inner_particles(n_new), rtol=1e-9)
 
     # The region outside the mixing radius is untouched by the crash.

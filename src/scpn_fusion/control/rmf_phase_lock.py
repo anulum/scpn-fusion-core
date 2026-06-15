@@ -25,15 +25,17 @@ logger = logging.getLogger(__name__)
 
 # ── RMF Phase-Lock Configuration ─────────────────────────────────────
 
+
 @dataclass
 class RMFPhaseLockConfig:
     """Configuration for the RMF phase-lock loop."""
+
     f_rmf_nom_hz: float = 1.0e6  # 1 MHz nominal RMF frequency
-    f_sampling_hz: float = 10.0e6 # simulation sampling frequency
-    k_p: float = 0.5             # Phase detector gain
-    k_d: float = 0.01            # Frequency damping
-    n_neurons: int = 128         # Population size for stochastic PLL
-    bits: int = 16               # reserved fixed-point width for future export
+    f_sampling_hz: float = 10.0e6  # simulation sampling frequency
+    k_p: float = 0.5  # Phase detector gain
+    k_d: float = 0.01  # Frequency damping
+    n_neurons: int = 128  # Population size for stochastic PLL
+    bits: int = 16  # reserved fixed-point width for future export
 
 
 def _wrapped_phase_delta(delta: float) -> float:
@@ -46,11 +48,7 @@ class RMFPhaseLockController:
     Software RMF phase-lock controller for JAX horizon simulations.
     """
 
-    def __init__(
-        self,
-        config: RMFPhaseLockConfig | None = None,
-        seed: int = 42
-    ) -> None:
+    def __init__(self, config: RMFPhaseLockConfig | None = None, seed: int = 42) -> None:
         self.cfg = RMFPhaseLockConfig() if config is None else config
         self.dt = 1.0 / self.cfg.f_sampling_hz
         self.omega_nom = 2.0 * np.pi * self.cfg.f_rmf_nom_hz
@@ -66,7 +64,7 @@ class RMFPhaseLockController:
             "t": [],
             "phi_ant": [],
             "phi_plasma": [],
-            "omega": []
+            "omega": [],
         }
 
     def step(self, plasma_phi: float) -> float:
@@ -115,6 +113,7 @@ class RMFPhaseLockController:
         raise NotImplementedError(
             "RMF FPGA export is not implemented; step_jax_horizon is software simulation evidence only"
         )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

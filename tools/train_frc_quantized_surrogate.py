@@ -69,7 +69,7 @@ def compute_quantized_jacobian(
         theta_dot=theta_dot * 1000.0,
         R_s=r_s,
         B_ext=b_ext,
-        delta=delta
+        delta=delta,
     )
 
     nom_state = solve_frc_equilibrium(nom_inputs, rho_grid, solver="rust", tolerance=1e-10)
@@ -93,7 +93,7 @@ def compute_quantized_jacobian(
             theta_dot=X_perturbed[3] * 1000.0,
             R_s=X_perturbed[4],
             B_ext=X_perturbed[5],
-            delta=X_perturbed[6]
+            delta=X_perturbed[6],
         )
 
         pert_state = solve_frc_equilibrium(pert_inputs, rho_grid, solver="rust", tolerance=1e-10)
@@ -145,12 +145,13 @@ def main() -> None:
         jacobian_quantized=J_q,
         scale_y=np.array([s_y]),
         scale_j=np.array([s_j]),
-        bits=np.array([args.bits])
+        bits=np.array([args.bits]),
     )
 
     t_total = time.perf_counter() - t_start
     logger.info("Quantized extraction complete in %.3f s. Saved to %s", t_total, out_path)
     logger.info("Quantized surrogate saved for offline inspection; FPGA timing is not claimed.")
+
 
 if __name__ == "__main__":
     main()

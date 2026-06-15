@@ -37,19 +37,14 @@ def test_critical_and_dreicer_field_absolute_values() -> None:
     ne_20, ln_lambda, te_keV = 1.0, 15.0, 10.0
     e_c = critical_field(ne_20, ln_lambda)
     expected = (
-        (ne_20 * 1e20)
-        * E_CHARGE**3
-        * ln_lambda
-        / (4.0 * np.pi * EPS_0**2 * M_E * C_LIGHT**2)
+        (ne_20 * 1e20) * E_CHARGE**3 * ln_lambda / (4.0 * np.pi * EPS_0**2 * M_E * C_LIGHT**2)
     )
     assert e_c == pytest.approx(expected, rel=1e-12)
     assert 0.05 < e_c < 0.15  # ITER-relevant magnitude
     assert critical_field(5.0, ln_lambda) == pytest.approx(5.0 * e_c, rel=1e-12)
 
     e_d = dreicer_field(ne_20, te_keV, ln_lambda)
-    assert e_d / e_c == pytest.approx(
-        M_E * C_LIGHT**2 / (te_keV * 1e3 * E_CHARGE), rel=1e-12
-    )
+    assert e_d / e_c == pytest.approx(M_E * C_LIGHT**2 / (te_keV * 1e3 * E_CHARGE), rel=1e-12)
 
 
 def test_zero_epar():

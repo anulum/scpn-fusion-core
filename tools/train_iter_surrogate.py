@@ -51,7 +51,9 @@ def load_iter_dataset(data_path: str | Path) -> tuple[np.ndarray, np.ndarray]:
         data = np.load(path, mmap_mode="r", allow_pickle=False)
         return data["X"], data["Y"]
 
-    raise ValueError("--data must point to an .npz file or a directory containing iter_X.npy and iter_Y.npy")
+    raise ValueError(
+        "--data must point to an .npz file or a directory containing iter_X.npy and iter_Y.npy"
+    )
 
 
 def inspect_iter_dataset(
@@ -90,7 +92,6 @@ def write_iter_dataset_report(path: Path, report: dict[str, Any]) -> None:
     path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-
 class FastNumPyPCA:
     def __init__(self, n_components: int = 20):
         self.n_components = n_components
@@ -118,8 +119,8 @@ class FastNumPyPCA:
         vals = vals[idx]
         vecs = vecs[:, idx]
 
-        top_vals = vals[:self.n_components]
-        top_vecs = vecs[:, :self.n_components]
+        top_vals = vals[: self.n_components]
+        top_vecs = vecs[:, : self.n_components]
 
         total_var = np.sum(np.maximum(vals, 0.0))
         self.explained_variance_ratio_ = np.maximum(top_vals, 0.0) / total_var
@@ -133,7 +134,6 @@ class FastNumPyPCA:
 
         logger.info("  PCA complete.")
         return Z
-
 
 
 # ── MLP Hyperparameters ──────────────────────────────────────────────
@@ -156,10 +156,9 @@ def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
         key, subkey = random.split(key)
         fan_in, fan_out = dims[i], dims[i + 1]
         std = jnp.sqrt(2.0 / fan_in)
-        params.append({
-            "W": random.normal(subkey, (fan_in, fan_out)) * std,
-            "b": jnp.zeros(fan_out)
-        })
+        params.append(
+            {"W": random.normal(subkey, (fan_in, fan_out)) * std, "b": jnp.zeros(fan_out)}
+        )
     return params
 
 
@@ -252,9 +251,9 @@ def generate_iter_data(n_samples: int, config_path: str | Path, seed: int = 42):
                 psi_ax,
                 psi_x,
                 1.7,  # kappa
-                0.33, # delta_up
-                0.33, # delta_low
-                3.0   # q95
+                0.33,  # delta_up
+                0.33,  # delta_low
+                3.0,  # q95
             ]
 
             X.append(features)
@@ -276,7 +275,11 @@ def main():
     parser.add_argument("--samples", type=int, default=1000, help="Number of samples to generate")
     parser.add_argument("--epochs", type=int, default=EPOCHS, help="Training epochs")
     parser.add_argument("--out", default="weights/neural_equilibrium_iter_v1.npz", help="Save path")
-    parser.add_argument("--report", default="validation/reports/iter_surrogate_training_report.json", help="Dataset evidence report path")
+    parser.add_argument(
+        "--report",
+        default="validation/reports/iter_surrogate_training_report.json",
+        help="Dataset evidence report path",
+    )
     parser.add_argument("--min-full-fidelity-samples", type=int, default=50_000)
     parser.add_argument("--strict-full-fidelity", action="store_true")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
@@ -325,7 +328,6 @@ def main():
     x_std = np.where(x_std < 1e-10, 1.0, x_std)
     X_norm = (X_raw - x_mean) / x_std
 
-
     # 4. Train MLP
     # Normalise Latent Variables for training stability
     z_mean = Y_latent.mean(axis=0)
@@ -355,7 +357,6 @@ def main():
     # 5. Save weights
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-
 
     payload = {
         "n_components": np.array([n_comp]),

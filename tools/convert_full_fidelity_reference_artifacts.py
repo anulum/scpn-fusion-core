@@ -135,7 +135,9 @@ def _write_json_artifact(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _as_time_radius_profile(values: NDArray[Any], *, time_count: int, radius_count: int) -> NDArray[np.float64]:
+def _as_time_radius_profile(
+    values: NDArray[Any], *, time_count: int, radius_count: int
+) -> NDArray[np.float64]:
     """Return Aurora profile data as time x radius without changing values."""
     profile = np.asarray(values, dtype=float)
     if profile.shape == (time_count, radius_count):
@@ -230,12 +232,8 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
     kinetic_profiles = namelist["kin_profs"]
     kinetic_profiles["Te"]["rhop"] = profile_rhop
     kinetic_profiles["ne"]["rhop"] = profile_rhop
-    kinetic_profiles["ne"]["vals"] = (
-        (1.0e14 - 0.4e14) * (1.0 - profile_rhop**2.0) ** 0.5 + 0.4e14
-    )
-    kinetic_profiles["Te"]["vals"] = (
-        (5.0e3 - 100.0) * (1.0 - profile_rhop**2.0) ** 1.5 + 100.0
-    )
+    kinetic_profiles["ne"]["vals"] = (1.0e14 - 0.4e14) * (1.0 - profile_rhop**2.0) ** 0.5 + 0.4e14
+    kinetic_profiles["Te"]["vals"] = (5.0e3 - 100.0) * (1.0 - profile_rhop**2.0) ** 1.5 + 100.0
     namelist.update(
         {
             "K": 10,
@@ -307,7 +305,11 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
     line_rad_t_z_r = line_rad_raw
     if line_rad_t_z_r.shape[1] < charge_state.size:
         pad = np.zeros(
-            (line_rad_t_z_r.shape[0], charge_state.size - line_rad_t_z_r.shape[1], line_rad_t_z_r.shape[2]),
+            (
+                line_rad_t_z_r.shape[0],
+                charge_state.size - line_rad_t_z_r.shape[1],
+                line_rad_t_z_r.shape[2],
+            ),
             dtype=float,
         )
         line_rad_t_z_r = np.concatenate([pad, line_rad_t_z_r], axis=1)
@@ -338,12 +340,8 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
         ionisation_source_t_r_z,
         recombination_sink_t_r_z,
     )
-    diffusion_m2_s_r_z = np.tile(
-        (diffusion_cm2_s * 1.0e-4)[:, np.newaxis], (1, charge_state.size)
-    )
-    convection_m_s_r_z = np.tile(
-        (convection_cm_s * 1.0e-2)[:, np.newaxis], (1, charge_state.size)
-    )
+    diffusion_m2_s_r_z = np.tile((diffusion_cm2_s * 1.0e-4)[:, np.newaxis], (1, charge_state.size))
+    convection_m_s_r_z = np.tile((convection_cm_s * 1.0e-2)[:, np.newaxis], (1, charge_state.size))
     parity_case = AuroraParityCase(
         element="Ar",
         charge_states=charge_state,
@@ -419,8 +417,7 @@ def _convert_aurora_transport(manifest: dict[str, Any], *, write: bool) -> dict[
         "metadata_schema": "full-fidelity-public-output-artifact-metadata.v1",
         "missing_required_observables": missing,
         "provenance_url": (
-            "https://github.com/fsciortino/Aurora/tree/"
-            f"{commit or 'master'}/examples"
+            f"https://github.com/fsciortino/Aurora/tree/{commit or 'master'}/examples"
         ),
         "redistribution_license": "MIT",
         "reference_family": "Aurora",

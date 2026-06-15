@@ -242,15 +242,23 @@ def _fill_equilibrium_state(
     dBz_dr = np.gradient(B_z, rho, edge_order=2)
     separatrix_bz_gradient_T_m = float(np.interp(inputs.R_s, rho, dBz_dr))
     separatrix_expected_bz_gradient_T_m = float(-inputs.B_ext / delta)
-    separatrix_gradient_relative_error = abs(separatrix_bz_gradient_T_m - separatrix_expected_bz_gradient_T_m) / max(abs(separatrix_expected_bz_gradient_T_m), tolerance)
+    separatrix_gradient_relative_error = abs(
+        separatrix_bz_gradient_T_m - separatrix_expected_bz_gradient_T_m
+    ) / max(abs(separatrix_expected_bz_gradient_T_m), tolerance)
     separatrix_current_density_A_m2 = float(np.interp(inputs.R_s, rho, J_theta))
     separatrix_expected_current_density_A_m2 = float(inputs.B_ext / (MU_0 * delta))
-    separatrix_current_density_relative_error = abs(separatrix_current_density_A_m2 - separatrix_expected_current_density_A_m2) / max(abs(separatrix_expected_current_density_A_m2), tolerance)
+    separatrix_current_density_relative_error = abs(
+        separatrix_current_density_A_m2 - separatrix_expected_current_density_A_m2
+    ) / max(abs(separatrix_expected_current_density_A_m2), tolerance)
     sheet_current_integral_A_m = float(trapezoid(J_theta, rho))
     expected_sheet_current_integral_A_m = float((B_z[0] - B_z[-1]) / MU_0)
-    sheet_current_integral_relative_error = abs(sheet_current_integral_A_m - expected_sheet_current_integral_A_m) / max(abs(expected_sheet_current_integral_A_m), tolerance)
+    sheet_current_integral_relative_error = abs(
+        sheet_current_integral_A_m - expected_sheet_current_integral_A_m
+    ) / max(abs(expected_sheet_current_integral_A_m), tolerance)
     ampere_residual = _ampere_current_closure_residual(rho, B_z, J_theta)
-    ampere_scale = max(tolerance, float(np.max(np.abs(dBz_dr))), float(MU_0 * np.max(np.abs(J_theta))))
+    ampere_scale = max(
+        tolerance, float(np.max(np.abs(dBz_dr))), float(MU_0 * np.max(np.abs(J_theta)))
+    )
     ampere_residual_linf = float(np.max(np.abs(ampere_residual)) / ampere_scale)
     ampere_residual_l2 = float(np.sqrt(np.mean((ampere_residual / ampere_scale) ** 2)))
     psi_axis_Wb = float(psi[0])
@@ -262,15 +270,23 @@ def _fill_equilibrium_state(
     psi_normalized_axis_error = abs(float(psi_normalized[0]))
     psi_normalized_separatrix = float(np.interp(inputs.R_s, rho, psi_normalized))
     psi_normalized_separatrix_error = abs(psi_normalized_separatrix - 1.0)
-    psi_normalized_residual = _psi_normalized_closure_residual(psi, psi_axis_Wb, psi_separatrix_Wb, psi_normalized)
+    psi_normalized_residual = _psi_normalized_closure_residual(
+        psi, psi_axis_Wb, psi_separatrix_Wb, psi_normalized
+    )
     psi_normalized_residual_linf = float(np.max(np.abs(psi_normalized_residual)))
-    psi_normalized_monotonic_passed = _psi_normalized_monotonic_passed(rho, psi_normalized, inputs.R_s, tolerance)
-    psi_normalized_bounds_passed = _psi_normalized_bounds_passed(rho, psi_normalized, inputs.R_s, tolerance)
+    psi_normalized_monotonic_passed = _psi_normalized_monotonic_passed(
+        rho, psi_normalized, inputs.R_s, tolerance
+    )
+    psi_normalized_bounds_passed = _psi_normalized_bounds_passed(
+        rho, psi_normalized, inputs.R_s, tolerance
+    )
     flux_derivative_residual = _flux_derivative_closure_residual(rho, psi, B_z)
     dpsi_dr = np.gradient(psi, rho, edge_order=2)
     flux_scale = max(tolerance, float(np.max(np.abs(rho * B_z))), float(np.max(np.abs(dpsi_dr))))
     flux_derivative_residual_linf = float(np.max(np.abs(flux_derivative_residual)) / flux_scale)
-    flux_derivative_residual_l2 = float(np.sqrt(np.mean((flux_derivative_residual / flux_scale) ** 2)))
+    flux_derivative_residual_l2 = float(
+        np.sqrt(np.mean((flux_derivative_residual / flux_scale) ** 2))
+    )
     r_null = _zero_crossing_radius(rho, B_z)
     separatrix_radius_error = abs(r_null - inputs.R_s)
     separatrix_index = int(np.argmin(np.abs(rho - r_null)))
@@ -282,31 +298,65 @@ def _fill_equilibrium_state(
     density_m3 = p / thermal_energy_j
     density_peak_m3 = float(np.max(density_m3))
     central_density_residual_m3 = density_peak_m3 - inputs.n0
-    central_density_relative_error = abs(central_density_residual_m3) / max(density_peak_m3, inputs.n0, tolerance)
+    central_density_relative_error = abs(central_density_residual_m3) / max(
+        density_peak_m3, inputs.n0, tolerance
+    )
     beta = p / max(external_magnetic_pressure, tolerance)
     beta_peak = float(np.max(beta))
     beta_r_clip, beta_clip = _clip_to_separatrix(rho, beta, inputs.R_s)
-    beta_separatrix_average = float(trapezoid(beta_clip * 2.0 * np.pi * beta_r_clip, beta_r_clip) / (np.pi * inputs.R_s**2))
+    beta_separatrix_average = float(
+        trapezoid(beta_clip * 2.0 * np.pi * beta_r_clip, beta_r_clip) / (np.pi * inputs.R_s**2)
+    )
     density_r_clip, density_clip = _clip_to_separatrix(rho, density_m3, inputs.R_s)
-    particle_line_density_m1 = float(trapezoid(density_clip * 2.0 * np.pi * density_r_clip, density_r_clip))
+    particle_line_density_m1 = float(
+        trapezoid(density_clip * 2.0 * np.pi * density_r_clip, density_r_clip)
+    )
     pressure_r_clip, pressure_clip = _clip_to_separatrix(rho, p, inputs.R_s)
-    separatrix_pressure_energy_J_m = float(trapezoid(pressure_clip * 2.0 * np.pi * pressure_r_clip, pressure_r_clip))
+    separatrix_pressure_energy_J_m = float(
+        trapezoid(pressure_clip * 2.0 * np.pi * pressure_r_clip, pressure_r_clip)
+    )
     magnetic_deficit = external_magnetic_pressure - B_z**2 / (2.0 * MU_0)
     deficit_r_clip, deficit_clip = _clip_to_separatrix(rho, magnetic_deficit, inputs.R_s)
-    separatrix_magnetic_deficit_energy_J_m = float(trapezoid(deficit_clip * 2.0 * np.pi * deficit_r_clip, deficit_r_clip))
-    separatrix_energy_closure_relative_error = abs(separatrix_pressure_energy_J_m - separatrix_magnetic_deficit_energy_J_m) / max(abs(separatrix_pressure_energy_J_m), abs(separatrix_magnetic_deficit_energy_J_m), tolerance)
+    separatrix_magnetic_deficit_energy_J_m = float(
+        trapezoid(deficit_clip * 2.0 * np.pi * deficit_r_clip, deficit_r_clip)
+    )
+    separatrix_energy_closure_relative_error = abs(
+        separatrix_pressure_energy_J_m - separatrix_magnetic_deficit_energy_J_m
+    ) / max(
+        abs(separatrix_pressure_energy_J_m), abs(separatrix_magnetic_deficit_energy_J_m), tolerance
+    )
     pressure_balance_residual = _pressure_balance_residual(p, B_z, inputs.B_ext)
-    pressure_balance_residual_linf = float(np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance))
-    pressure_balance_residual_l2 = float(np.sqrt(np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2)))
+    pressure_balance_residual_linf = float(
+        np.max(np.abs(pressure_balance_residual)) / max(external_magnetic_pressure, tolerance)
+    )
+    pressure_balance_residual_l2 = float(
+        np.sqrt(
+            np.mean((pressure_balance_residual / max(external_magnetic_pressure, tolerance)) ** 2)
+        )
+    )
 
     pressure_gradient_analytic = _pressure_gradient_from_steinhauer(B_z, dBz_dr_analytic)
-    pressure_gradient_residual = _pressure_gradient_closure_residual(rho, p, pressure_gradient_analytic)
+    pressure_gradient_residual = _pressure_gradient_closure_residual(
+        rho, p, pressure_gradient_analytic
+    )
     finite_pressure_gradient = np.gradient(p, rho, edge_order=2)
-    pressure_gradient_scale = max(tolerance, float(np.max(np.abs(finite_pressure_gradient))), float(np.max(np.abs(pressure_gradient_analytic))))
-    pressure_gradient_residual_linf = float(np.max(np.abs(pressure_gradient_residual)) / pressure_gradient_scale)
-    pressure_gradient_residual_l2 = float(np.sqrt(np.mean((pressure_gradient_residual / pressure_gradient_scale) ** 2)))
+    pressure_gradient_scale = max(
+        tolerance,
+        float(np.max(np.abs(finite_pressure_gradient))),
+        float(np.max(np.abs(pressure_gradient_analytic))),
+    )
+    pressure_gradient_residual_linf = float(
+        np.max(np.abs(pressure_gradient_residual)) / pressure_gradient_scale
+    )
+    pressure_gradient_residual_l2 = float(
+        np.sqrt(np.mean((pressure_gradient_residual / pressure_gradient_scale) ** 2))
+    )
     force_residual = _radial_force_balance_residual(rho, B_z, J_theta, p)
-    residual_scale = max(tolerance, float(np.max(np.abs(np.gradient(p, rho, edge_order=2)))), float(np.max(np.abs(J_theta * B_z))))
+    residual_scale = max(
+        tolerance,
+        float(np.max(np.abs(np.gradient(p, rho, edge_order=2)))),
+        float(np.max(np.abs(J_theta * B_z))),
+    )
     force_balance_residual_linf = float(np.max(np.abs(force_residual)) / residual_scale)
     force_balance_residual_l2 = float(np.sqrt(np.mean((force_residual / residual_scale) ** 2)))
 
@@ -403,7 +453,9 @@ def solve_frc_equilibrium(
 ) -> FRCEquilibriumState:
     _validate_inputs(inputs, tolerance)
     rho = _validate_grid(rho_grid, inputs.R_s)
-    delta = inputs.delta if inputs.delta is not None else ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
+    delta = (
+        inputs.delta if inputs.delta is not None else ion_gyroradius_m(inputs.T_i_eV, inputs.B_ext)
+    )
 
     if inputs.theta_dot != 0.0:
         raise NotImplementedError(
@@ -414,15 +466,20 @@ def solve_frc_equilibrium(
 
     argument = (rho**2 - inputs.R_s**2) / (2.0 * inputs.R_s * delta)
     B_z = -inputs.B_ext * np.tanh(argument)
-    J_theta = _toroidal_current_density_from_steinhauer(rho, argument, inputs.B_ext, inputs.R_s, delta)
+    J_theta = _toroidal_current_density_from_steinhauer(
+        rho, argument, inputs.B_ext, inputs.R_s, delta
+    )
     psi = _cylindrical_flux_from_steinhauer(argument, inputs.B_ext, inputs.R_s, delta)
     external_magnetic_pressure = inputs.B_ext**2 / (2.0 * MU_0)
     p = np.maximum(external_magnetic_pressure - B_z**2 / (2.0 * MU_0), 0.0)
     residual = float(np.max(np.abs(B_z - (-inputs.B_ext * np.tanh(argument)))))
 
-    dBz_dr_analytic = _axial_field_derivative_from_steinhauer(rho, argument, inputs.B_ext, inputs.R_s, delta)
-    return _fill_equilibrium_state(inputs, rho, psi, B_z, J_theta, p, tolerance, residual, delta, dBz_dr_analytic)
-
+    dBz_dr_analytic = _axial_field_derivative_from_steinhauer(
+        rho, argument, inputs.B_ext, inputs.R_s, delta
+    )
+    return _fill_equilibrium_state(
+        inputs, rho, psi, B_z, J_theta, p, tolerance, residual, delta, dBz_dr_analytic
+    )
 
 
 def frc_no_rotation_jax_observables(

@@ -860,7 +860,10 @@ def _finite_metric(comparison: dict[str, Any], metric: str) -> float | None:
 
 
 def _monotone_nonincreasing(values: list[float]) -> bool:
-    return bool(values and all(values[idx] <= values[idx - 1] * (1.0 + 1.0e-9) for idx in range(1, len(values))))
+    return bool(
+        values
+        and all(values[idx] <= values[idx - 1] * (1.0 + 1.0e-9) for idx in range(1, len(values)))
+    )
 
 
 def _grid_convergence_ladder_evidence(
@@ -974,9 +977,7 @@ def _case_has_ready_vacuum_sidecar(case: dict[str, Any]) -> bool:
     nrmse = vacuum.get("nrmse")
     nrmse_limit = thresholds.get("nrmse") if isinstance(thresholds, dict) else None
     max_error = vacuum.get("max_abs_error_wb")
-    max_error_limit = (
-        thresholds.get("max_abs_error_wb") if isinstance(thresholds, dict) else None
-    )
+    max_error_limit = thresholds.get("max_abs_error_wb") if isinstance(thresholds, dict) else None
     numeric_ready = all(
         isinstance(value, int | float) and np.isfinite(float(value))
         for value in (nrmse, nrmse_limit, max_error, max_error_limit)
@@ -1075,9 +1076,7 @@ def _strict_free_boundary_parity_evidence(
     threshold_ready = bool(cases) and failed_count == 0 and native_ready
     grid_convergence = grid_convergence or _grid_convergence_evidence(cases)
     grid_ready = bool(grid_convergence["grid_convergence_ready"])
-    sidecar_ready = bool(cases) and all(
-        bool(row["coil_vacuum_sidecar_ready"]) for row in case_rows
-    )
+    sidecar_ready = bool(cases) and all(bool(row["coil_vacuum_sidecar_ready"]) for row in case_rows)
     reference_output_ready = bool(cases) and all(
         bool(row["same_case_public_reference_output_ready"]) for row in case_rows
     )

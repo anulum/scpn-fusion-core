@@ -163,10 +163,14 @@ def load_local_npz_shot(cache_dir: Path, shot_id: int) -> ShotTrace | None:
                 disruption_idx = idx
                 break
 
-        magnetic_keys = [key for key in data.files if key.startswith("mag_") and key.endswith("_field")]
+        magnetic_keys = [
+            key for key in data.files if key.startswith("mag_") and key.endswith("_field")
+        ]
         if not magnetic_keys:
             return None
-        magnetic_trace_t = _resample_to_summary_time(np.asarray(data[magnetic_keys[0]], dtype=np.float64), len(time_s))
+        magnetic_trace_t = _resample_to_summary_time(
+            np.asarray(data[magnetic_keys[0]], dtype=np.float64), len(time_s)
+        )
 
         return ShotTrace(
             time_s=time_s,
@@ -358,7 +362,9 @@ def classify_full_fidelity_status(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", type=Path, default=resolve_mast_cache_dir())
-    parser.add_argument("--train-shots", nargs="+", type=int, default=[30471, 30470, 30469, 30468, 30467])
+    parser.add_argument(
+        "--train-shots", nargs="+", type=int, default=[30471, 30470, 30469, 30468, 30467]
+    )
     parser.add_argument("--val-shots", nargs="+", type=int, default=[30466, 30465, 30463, 30462])
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--seed", type=int, default=1729)
@@ -369,7 +375,9 @@ def main() -> None:
         action="store_true",
         help="Enable FAIR MAST S3/Zarr fallback when local NPZ shots are absent.",
     )
-    parser.add_argument("--out", type=Path, default=Path("validation/reports/mast_snn_local_validation.json"))
+    parser.add_argument(
+        "--out", type=Path, default=Path("validation/reports/mast_snn_local_validation.json")
+    )
     args = parser.parse_args()
 
     ingestor: MastIngestor | None = None

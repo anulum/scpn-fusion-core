@@ -18,7 +18,11 @@ from scpn_fusion.core.neural_equilibrium import (
     NeuralEquilibriumAccelerator,
     iter_surrogate_artifact_status,
 )
-from tools.train_iter_surrogate import default_iter_dataset_paths, inspect_iter_dataset, load_iter_dataset
+from tools.train_iter_surrogate import (
+    default_iter_dataset_paths,
+    inspect_iter_dataset,
+    load_iter_dataset,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

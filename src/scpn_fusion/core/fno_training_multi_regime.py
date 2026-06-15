@@ -49,9 +49,6 @@ SPARC_REGIMES: Dict[str, Dict[str, Tuple[float, float]]] = {
 }
 
 
-
-
-
 def _sample_regime_params(
     rng: np.random.Generator,
     regime: str,

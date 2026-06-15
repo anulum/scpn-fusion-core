@@ -24,7 +24,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 from .hil_demo_runner import HILDemoRunner  # noqa: F401

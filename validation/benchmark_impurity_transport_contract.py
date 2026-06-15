@@ -182,7 +182,10 @@ def _relative_error(candidate: FloatArray, reference: FloatArray) -> float:
 def _load_impurity_reference_case() -> dict[str, Any]:
     """Load the accepted impurity reference-case row from the public manifest."""
     manifest = json.loads(REFERENCE_CASES.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or manifest.get("schema") != "full-fidelity-reference-cases.v1":
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema") != "full-fidelity-reference-cases.v1"
+    ):
         raise ValueError("full-fidelity reference manifest schema mismatch")
     surfaces = manifest.get("surfaces")
     if not isinstance(surfaces, dict):
@@ -199,7 +202,9 @@ def _load_impurity_reference_case() -> dict[str, Any]:
     return case
 
 
-def _load_reference_npz(case: dict[str, Any]) -> tuple[Path | None, dict[str, FloatArray], list[str]]:
+def _load_reference_npz(
+    case: dict[str, Any],
+) -> tuple[Path | None, dict[str, FloatArray], list[str]]:
     """Load a manifest-declared Aurora/STRAHL reference NPZ fail-closed."""
     artifact = case.get("artifact_path")
     if not isinstance(artifact, str) or not artifact:
@@ -360,7 +365,11 @@ def _same_case_threshold_checks(
         metric = contract.get("metric")
         comparator = contract.get("comparator")
         check.update({"observable": observable, "metric": metric, "comparator": comparator})
-        if not isinstance(observable, str) or observable not in candidate or observable not in reference:
+        if (
+            not isinstance(observable, str)
+            or observable not in candidate
+            or observable not in reference
+        ):
             check["reason"] = "missing_observable"
             checks.append(check)
             continue
@@ -457,7 +466,9 @@ def _aurora_same_case_comparison() -> dict[str, Any]:
         "threshold_checks_ready": checks_ready,
         "thresholds_passed": thresholds_passed,
         "native_density_shape": [int(axis) for axis in density.shape],
-        "reference_density_shape": [int(axis) for axis in reference["charge_state_density_r_t"].shape],
+        "reference_density_shape": [
+            int(axis) for axis in reference["charge_state_density_r_t"].shape
+        ],
         "native_total_density_closure": density_closure,
         "native_coordinate_match": bool(
             np.array_equal(candidate["time_s"], reference["time_s"])
@@ -539,15 +550,11 @@ def _native_impurity_transport_evidence(
         "source_sink_row_sum_abs_max": row_sum_abs_max,
         "inventory_conserved": bool(artifact_validation["inventory_conserved"]),
         "charge_state_radial_transport_operator_ready": radial_operator_ready,
-        "aurora_strahl_same_case_comparison_ready": bool(
-            same_case_comparison["comparison_ready"]
-        ),
+        "aurora_strahl_same_case_comparison_ready": bool(same_case_comparison["comparison_ready"]),
         "aurora_strahl_same_case_threshold_ready": bool(
             same_case_comparison["threshold_checks_ready"]
         ),
-        "aurora_strahl_same_case_threshold_passed": bool(
-            same_case_comparison["thresholds_passed"]
-        ),
+        "aurora_strahl_same_case_threshold_passed": bool(same_case_comparison["thresholds_passed"]),
         "operator_terms_present": {
             "trace_radial_transport": True,
             "edge_source_particle_conservation": True,
@@ -556,12 +563,8 @@ def _native_impurity_transport_evidence(
             "line_radiation_power": True,
             "total_impurity_inventory_closure": True,
             "charge_state_resolved_radial_transport": radial_operator_ready,
-            "external_adas_transport_coefficients": bool(
-                external_coefficients_ready
-            ),
-            "aurora_effective_source_recycling_closure": bool(
-                effective_closure_ready
-            ),
+            "external_adas_transport_coefficients": bool(external_coefficients_ready),
+            "aurora_effective_source_recycling_closure": bool(effective_closure_ready),
             "same_case_aurora_strahl_transport_output": bool(
                 same_case_comparison["comparison_ready"]
             ),
@@ -693,9 +696,7 @@ def run_benchmark() -> dict[str, Any]:
         ),
         "native_impurity_transport_evidence_fail_closed": bool(
             native_impurity_transport_evidence["native_artifact_ready"]
-            and native_impurity_transport_evidence[
-                "charge_state_radial_transport_operator_ready"
-            ]
+            and native_impurity_transport_evidence["charge_state_radial_transport_operator_ready"]
             and native_impurity_transport_evidence["aurora_strahl_same_case_threshold_ready"]
             and bool(native_impurity_transport_evidence["blocking_requirements"])
         ),
@@ -710,9 +711,7 @@ def run_benchmark() -> dict[str, Any]:
         "charge_state_radial_density_conservation": bool(
             source_sink_budget_evidence["radial_total_density_conserved"]
         ),
-        "charge_state_radial_transport_operator_budget": bool(
-            radial_budget_diagnostic["passed"]
-        ),
+        "charge_state_radial_transport_operator_budget": bool(radial_budget_diagnostic["passed"]),
     }
 
     return {

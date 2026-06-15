@@ -26,7 +26,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 5.73249924601987,
+        "elapsed_s": 3.3380074040032923,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -77,7 +77,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.3443520939908922,
+          "elapsed_s": 0.6474566359975142,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -87,7 +87,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 5.73249924601987,
+          "elapsed_s": 3.3380074040032923,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -252,7 +252,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 14.423417757963762,
+        "elapsed_s": 6.533174636002514,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -303,7 +303,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 4.499544572085142,
+          "elapsed_s": 1.5727656210074201,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -313,7 +313,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 14.423417757963762,
+          "elapsed_s": 6.533174636002514,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -578,7 +578,7 @@
   "reference_output_ready": true,
   "report_generation_mode": "tracked_report_fallback",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "843f57cc1d98e8583602986540beb2074ab4e80c7f02324845e4551b628f0015",
+  "sha256": "77f2ea2757bfea4bd7ef1c59d2f6c4d594249caf7b646cbd776778d7f8db347b",
   "source_cache_available": true,
   "status": "accepted_public_freegs_same_case_free_boundary_parity",
   "strict_free_boundary_parity_evidence": {

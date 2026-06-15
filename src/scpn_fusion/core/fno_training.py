@@ -44,12 +44,6 @@ DEFAULT_SPARC_WEIGHTS_PATH = REPO_ROOT / "weights" / "fno_turbulence_sparc.npz"
 DEFAULT_GS_TRANSPORT_WEIGHTS_PATH = REPO_ROOT / "weights" / "gs_transport_surrogate.npz"
 
 
-
-
-
-
-
-
 class MultiLayerFNO:
     """
     Multi-layer FNO model:
@@ -169,9 +163,6 @@ class MultiLayerFNO:
                         "skip_b": np.array(data[f"layer{i}_skip_b"], dtype=np.float64),
                     }
                 )
-
-
-
 
 
 def _generate_training_pairs(

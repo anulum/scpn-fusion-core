@@ -90,9 +90,7 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert all(row["axis_points_inside_grid"] for row in containment["cases"])
     assert strict["blocking_requirements"] == []
     assert all(row["coil_vacuum_sidecar_ready"] is True for row in strict["cases"])
-    assert all(
-        row["same_case_public_reference_output_ready"] is True for row in strict["cases"]
-    )
+    assert all(row["same_case_public_reference_output_ready"] is True for row in strict["cases"])
     assert all(row["machine_class"] for row in strict["cases"])
     for case in artifact["cases"]:
         vacuum = case["vacuum_green_function_comparison"]
@@ -124,9 +122,7 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
             solve["status"]
             == "external_backend_solved_native_same_case_profile_source_compared_fail_closed"
         )
-    assert all(
-        check["passed"] for case in strict["cases"] for check in case["threshold_checks"]
-    )
+    assert all(check["passed"] for case in strict["cases"] for check in case["threshold_checks"])
 
 
 def test_native_profile_reconstruction_uses_freegs_r_z_orientation() -> None:

@@ -21,7 +21,11 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from scpn_fusion.io.safe_loaders import checked_np_load
-from ._surrogate_utils import AdamOptimizer as _AdamOptimizer, gelu as _gelu, relative_l2 as _relative_l2
+from ._surrogate_utils import (
+    AdamOptimizer as _AdamOptimizer,
+    gelu as _gelu,
+    relative_l2 as _relative_l2,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,15 +47,6 @@ _GS_TRANSPORT_MOCK_CONFIG_TEMPLATE: Dict[str, object] = {
         "relaxation_factor": 0.1,
     },
 }
-
-
-
-
-
-
-
-
-
 
 
 def _generate_gs_transport_pairs(

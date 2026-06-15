@@ -403,20 +403,9 @@ class SlowingDown:
         te_j = Te_keV * 1e3 * ELEMENTARY_CHARGE_C
         m_f = fast_ion_amu * ATOMIC_MASS_KG
         n_e = ne_20 * 1e20
-        numerator = (
-            3.0
-            * 2.0 ** 1.5
-            * math.pi ** 1.5
-            * VACUUM_PERMITTIVITY**2
-            * m_f
-            * te_j**1.5
-        )
+        numerator = 3.0 * 2.0**1.5 * math.pi**1.5 * VACUUM_PERMITTIVITY**2 * m_f * te_j**1.5
         denominator = (
-            math.sqrt(ELECTRON_MASS_KG)
-            * n_e
-            * fast_ion_Z**2
-            * ELEMENTARY_CHARGE_C**4
-            * ln_lambda
+            math.sqrt(ELECTRON_MASS_KG) * n_e * fast_ion_Z**2 * ELEMENTARY_CHARGE_C**4 * ln_lambda
         )
         return float(numerator / denominator)
 

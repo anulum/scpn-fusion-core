@@ -285,9 +285,7 @@ def test_track_pulsed_compression_uses_trapezoidal_interval_integration() -> Non
         )
 
     assert len(coupled) == len(states) - 1
-    np.testing.assert_array_equal(
-        coupled[-1].amplitudes_m, reference.state().amplitudes_m
-    )
+    np.testing.assert_array_equal(coupled[-1].amplitudes_m, reference.state().amplitudes_m)
     np.testing.assert_array_equal(
         coupled[-1].growth_rates_s_inv, reference.state().growth_rates_s_inv
     )

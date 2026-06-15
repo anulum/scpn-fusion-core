@@ -520,9 +520,7 @@ def run_campaign() -> dict[str, Any]:
         "impurity_aurora_strahl_same_case_threshold_passed": bool(
             impurity_operator["aurora_strahl_same_case_threshold_passed"]
         ),
-        "impurity_aurora_strahl_same_case_comparison_status": str(
-            impurity_same_case["status"]
-        ),
+        "impurity_aurora_strahl_same_case_comparison_status": str(impurity_same_case["status"]),
         "impurity_source_sink_budget_evidence_ready": bool(
             impurity_source_sink_budget["all_budget_terms_finite"]
             and impurity_source_sink_budget["source_sink_transfer_conservative"]

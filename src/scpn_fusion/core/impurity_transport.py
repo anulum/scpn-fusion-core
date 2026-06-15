@@ -350,7 +350,9 @@ class AuroraParityImpuritySolver:
                 grad = (density[iface, charge_idx] - density[iface - 1, charge_idx]) / dr
                 D_face = 0.5 * (D[iface] + D[iface - 1])
                 V_face = 0.5 * (V[iface] + V[iface - 1])
-                upwind = density[iface - 1, charge_idx] if V_face >= 0.0 else density[iface, charge_idx]
+                upwind = (
+                    density[iface - 1, charge_idx] if V_face >= 0.0 else density[iface, charge_idx]
+                )
                 flux[iface] = -D_face * grad + V_face * upwind
             updated[:, charge_idx] -= (
                 dt_s * (edges[1:] * flux[1:] - edges[:-1] * flux[:-1]) / annulus
@@ -418,7 +420,9 @@ class AuroraParityImpuritySolver:
             density = reference[step].copy()
         return closure
 
-    def radial_transport_budget_diagnostic(self, density_r_z: np.ndarray, dt_s: float) -> dict[str, float | bool]:
+    def radial_transport_budget_diagnostic(
+        self, density_r_z: np.ndarray, dt_s: float
+    ) -> dict[str, float | bool]:
         """Return finite-volume radial-operator conservation diagnostics.
 
         The radial operator uses zero-flux boundary conditions.  This diagnostic
@@ -453,9 +457,7 @@ class AuroraParityImpuritySolver:
         source_sink_history: list[np.ndarray] = []
         line_power_by_charge: list[np.ndarray] = []
         line_power: list[float] = []
-        inventory_history: list[float] = [
-            self._finite_volume_inventory(np.sum(density, axis=1))
-        ]
+        inventory_history: list[float] = [self._finite_volume_inventory(np.sum(density, axis=1))]
         final_ion, final_rec = self._rate_tables(0, density)
         source_sink_history.append(_source_sink_transfer_matrix(final_ion, final_rec))
         line_density = self._line_radiation_density(0, density)
@@ -480,15 +482,15 @@ class AuroraParityImpuritySolver:
             line_density = self._line_radiation_density(step, density)
             line_power_by_charge.append(line_density)
             line_power.append(self._line_power_total(line_density))
-            inventory_history.append(
-                self._finite_volume_inventory(np.sum(density, axis=1))
-            )
+            inventory_history.append(self._finite_volume_inventory(np.sum(density, axis=1)))
 
         density_t_r_z = np.stack(density_history, axis=0)
         total_t_r = np.sum(density_t_r_z, axis=2)
         initial_inventory = float(inventory_history[0])
         final_inventory = float(inventory_history[-1])
-        conservation_error = abs(final_inventory - initial_inventory) / max(abs(initial_inventory), 1.0)
+        conservation_error = abs(final_inventory - initial_inventory) / max(
+            abs(initial_inventory), 1.0
+        )
         return AuroraStrahlArtifact(
             coordinates={
                 "time_s": [float(v) for v in self.time_s],

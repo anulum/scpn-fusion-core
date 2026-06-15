@@ -562,7 +562,12 @@ def pulsed_compression_trajectory_diagnostics(
 
 def slough_fig5_acceptance_status() -> dict[str, Any]:
     """Return the current acceptance status for the Slough 2011 Figure 5 comparison."""
-    ref_path = Path(__file__).resolve().parents[3] / "validation" / "reference_data" / "slough_2011_fig5.json"
+    ref_path = (
+        Path(__file__).resolve().parents[3]
+        / "validation"
+        / "reference_data"
+        / "slough_2011_fig5.json"
+    )
 
     if not ref_path.exists():
         return {
@@ -602,11 +607,7 @@ def slough_fig5_acceptance_status() -> dict[str, Any]:
             "claim_boundary": "Digitised sidecar is present; no trajectory parity pass is claimed until a simulation comparison is run.",
         }
     except Exception as e:
-        return {
-            "case": "slough_2011_fig5",
-            "status": "error",
-            "error": str(e)
-        }
+        return {"case": "slough_2011_fig5", "status": "error", "error": str(e)}
 
 
 def _validate_coil(coil: CoilGeometry) -> CoilGeometry:

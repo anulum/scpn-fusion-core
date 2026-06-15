@@ -148,7 +148,10 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert evidence["operator_terms_present"]["external_adas_transport_coefficients"] is True
     assert evidence["operator_terms_present"]["aurora_effective_source_recycling_closure"] is True
     assert evidence["operator_terms_present"]["same_case_aurora_strahl_transport_output"] is True
-    assert evidence["operator_terms_present"]["time_resolved_same_case_source_sink_matrix_parity"] is True
+    assert (
+        evidence["operator_terms_present"]["time_resolved_same_case_source_sink_matrix_parity"]
+        is True
+    )
     same_case = evidence["same_case_aurora_strahl_comparison"]
     assert same_case["schema"] == "aurora-strahl-native-same-case-comparison.v1"
     assert same_case["status"] == "accepted_native_aurora_effective_transport_closure_thresholds"
@@ -173,10 +176,7 @@ def test_impurity_benchmark_exports_fail_closed_transport_operator_evidence() ->
     assert all(check["passed"] for check in same_case["checks"])
     budget = evidence["source_sink_budget_evidence"]
     assert budget["schema"] == "native-impurity-source-sink-budget-evidence.v1"
-    assert (
-        budget["status"]
-        == "accepted_native_same_case_source_sink_budget_parity"
-    )
+    assert budget["status"] == "accepted_native_same_case_source_sink_budget_parity"
     assert budget["budget_terms"] == [
         "source_sink_matrix_t_r_z_z",
         "ionisation_source_matrix",

@@ -103,7 +103,9 @@ def iter_surrogate_artifact_status(
         structural = {}
 
     grid_shape_raw = structural.get("grid_shape", ())
-    grid_shape = tuple(int(value) for value in grid_shape_raw) if isinstance(grid_shape_raw, list) else ()
+    grid_shape = (
+        tuple(int(value) for value in grid_shape_raw) if isinstance(grid_shape_raw, list) else ()
+    )
 
     return {
         "status": str(report.get("status", "blocked_missing_iter_surrogate_validation_report")),
@@ -115,9 +117,7 @@ def iter_surrogate_artifact_status(
         "grid_shape": grid_shape,
         "pca_components": int(structural.get("pca_components", 0)),
         "high_fidelity_gpu_retraining_complete": high_fidelity_report_path.exists(),
-        "required_high_fidelity_report": str(
-            high_fidelity_report_path.relative_to(REPO_ROOT)
-        ),
+        "required_high_fidelity_report": str(high_fidelity_report_path.relative_to(REPO_ROOT)),
         "claim_boundary": ITER_SURROGATE_CLAIM_BOUNDARY,
     }
 
@@ -624,8 +624,7 @@ class NeuralEquilibriumAccelerator:
             features = features[np.newaxis, :]
         if features.ndim != 2:
             raise ValueError(
-                "Neural-equilibrium features must have shape (n_features,) or "
-                "(batch, n_features)."
+                "Neural-equilibrium features must have shape (n_features,) or (batch, n_features)."
             )
         if features.shape[1] != self.cfg.n_input_features:
             raise ValueError(

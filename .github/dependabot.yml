@@ -15,6 +15,12 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    ignore:
+      # Dependabot's GitHub Actions updater currently fails with unknown_error
+      # on these pinned action refs; keep them under manual review until the
+      # updater can resolve them without failing the whole scheduled run.
+      - dependency-name: "dtolnay/rust-toolchain"
+      - dependency-name: "taiki-e/install-action"
   - package-ecosystem: "pip"
     directory: "/"
     schedule:

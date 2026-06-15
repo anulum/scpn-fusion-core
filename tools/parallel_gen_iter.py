@@ -104,9 +104,18 @@ def generate_chunk(n_samples: int, config_path: str, seed: int, allow_boundary_x
                 rejected_boundary_xpoints += 1
                 continue
             features = [
-                ip / 1e6, 5.3, fk.R[ir], fk.Z[iz],
-                1.0, 1.0, psi_ax, psi_x,
-                1.7, 0.33, 0.33, 3.0
+                ip / 1e6,
+                5.3,
+                fk.R[ir],
+                fk.Z[iz],
+                1.0,
+                1.0,
+                psi_ax,
+                psi_x,
+                1.7,
+                0.33,
+                0.33,
+                3.0,
             ]
             X.append(features)
             Y.append(fk.Psi.ravel())
@@ -114,6 +123,7 @@ def generate_chunk(n_samples: int, config_path: str, seed: int, allow_boundary_x
             failed_solves += 1
             continue
     return np.array(X), np.array(Y), rejected_boundary_xpoints, failed_solves
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -145,7 +155,9 @@ def main():
         n = samples_per_worker + (1 if i < remainder else 0)
         tasks.append((n, args.config, 42 + i, args.allow_boundary_xpoints))
 
-    logger.info(f"Starting parallel generation of {args.samples} samples on {args.workers} workers...")
+    logger.info(
+        f"Starting parallel generation of {args.samples} samples on {args.workers} workers..."
+    )
     t0 = time.perf_counter()
 
     with mp.Pool(args.workers) as pool:
@@ -163,7 +175,9 @@ def main():
     rejected_boundary = sum(int(r[2]) for r in results)
     failed_solves = sum(int(r[3]) for r in results)
     avg_s = t_total / len(X) if len(X) else float("inf")
-    logger.info(f"Generated {len(X)} valid samples in {t_total:.1f}s ({avg_s:.2f}s/sample avg across all workers)")
+    logger.info(
+        f"Generated {len(X)} valid samples in {t_total:.1f}s ({avg_s:.2f}s/sample avg across all workers)"
+    )
 
     report_path = Path(args.report) if args.report else Path(args.out).with_suffix(".report.json")
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -187,6 +201,7 @@ def main():
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     np.savez(args.out, X=X, Y=Y)
     logger.info(f"Saved dataset to {args.out}")
+
 
 if __name__ == "__main__":
     main()

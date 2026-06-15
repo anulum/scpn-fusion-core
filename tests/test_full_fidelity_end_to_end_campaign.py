@@ -174,14 +174,10 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert lanes["free_boundary_equilibrium_strict_parity"]["reference_cases_ready"] is True
     assert lanes["free_boundary_equilibrium_strict_parity"]["next_required_evidence"] == []
     for lane in lanes.values():
-        assert (
-            lane["status"].startswith("blocked_")
-            or lane["lane"]
-            in {
-                "aurora_strahl_grade_impurities",
-                "free_boundary_equilibrium_strict_parity",
-            }
-        )
+        assert lane["status"].startswith("blocked_") or lane["lane"] in {
+            "aurora_strahl_grade_impurities",
+            "free_boundary_equilibrium_strict_parity",
+        }
         if lane["lane"] != "free_boundary_equilibrium_strict_parity":
             assert lane["next_required_evidence"]
 

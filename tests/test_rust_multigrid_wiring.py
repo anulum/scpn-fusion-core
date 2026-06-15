@@ -111,9 +111,7 @@ def test_rust_multigrid_converges_where_python_sor_stalls(tmp_path: Path):
     fk_mg = FusionKernel(str(mg_path))
     r_mg = fk_mg.solve_equilibrium()
 
-    assert r_mg["converged"], (
-        f"Rust multigrid did not converge: residual={r_mg['residual']:.2e}"
-    )
+    assert r_mg["converged"], f"Rust multigrid did not converge: residual={r_mg['residual']:.2e}"
     assert r_mg["residual"] <= r_sor["residual"], (
         f"Rust multigrid residual ({r_mg['residual']:.2e}) is worse than "
         f"SOR ({r_sor['residual']:.2e}) on the same config"

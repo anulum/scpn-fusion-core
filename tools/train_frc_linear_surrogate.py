@@ -30,6 +30,7 @@ PCA_COMPONENTS_TARGET = 10
 
 # ── Data Generation ──────────────────────────────────────────────────
 
+
 def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
     logger.info("Generating %d FRC samples...", n_samples)
     X = []
@@ -43,7 +44,9 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
     while valid_count < n_samples and attempts < n_samples * 10:
         attempts += 1
         if valid_count > 0 and valid_count % 50 == 0:
-            logger.info("Generated %d / %d samples (attempts: %d)", valid_count, n_samples, attempts)
+            logger.info(
+                "Generated %d / %d samples (attempts: %d)", valid_count, n_samples, attempts
+            )
 
         n0 = rng.uniform(1e20, 5e20)
         t_i = rng.uniform(5000, 15000)
@@ -54,15 +57,14 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
         delta = rng.uniform(0.01, 0.05)
 
         inputs = RigidRotorFRCInputs(
-            n0=n0, T_i_eV=t_i, T_e_eV=t_e, theta_dot=theta_dot,
-            R_s=r_s, B_ext=b_ext, delta=delta
+            n0=n0, T_i_eV=t_i, T_e_eV=t_e, theta_dot=theta_dot, R_s=r_s, B_ext=b_ext, delta=delta
         )
 
         try:
             state = solve_frc_equilibrium(inputs, rho_grid, solver="rust", tolerance=1e-8)
             if not state.converged or not np.all(np.isfinite(state.B_z)):
                 continue
-            features = [n0/1e20, t_i/1000, t_e/1000, theta_dot/1000, r_s, b_ext, delta]
+            features = [n0 / 1e20, t_i / 1000, t_e / 1000, theta_dot / 1000, r_s, b_ext, delta]
             X.append(features)
             Y.append(state.B_z)
             valid_count += 1
@@ -71,7 +73,9 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
 
     return np.array(X), np.array(Y)
 
+
 # ── Training Entry Point ─────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="Train FRC linear surrogate")
@@ -123,7 +127,7 @@ def main():
 
     # Evaluate
     Y_pred_latent = X_norm @ W_linear + b_linear
-    mse = np.mean((Y_pred_latent - Y_latent)**2)
+    mse = np.mean((Y_pred_latent - Y_latent) ** 2)
     logger.info("Linear Mapping MSE on Latent Space: %.6f", mse)
 
     # Save weights
@@ -139,11 +143,12 @@ def main():
         input_mean=x_mean,
         input_std=x_std,
         w_linear=W_linear,
-        b_linear=b_linear
+        b_linear=b_linear,
     )
 
     t_total = time.perf_counter() - t_start
     logger.info("Linear surrogate training complete in %.2f s. Saved to %s", t_total, out_path)
+
 
 if __name__ == "__main__":
     main()

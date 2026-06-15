@@ -299,12 +299,8 @@ def _freegs_reconstruction_reference_evidence() -> dict[str, Any]:
         case_rows.append(
             {
                 "case_id": str(case.get("case_id", "")),
-                "coil_count": int(vacuum.get("coil_count", 0))
-                if isinstance(vacuum, dict)
-                else 0,
-                "coil_vacuum_sidecar_ready": bool(
-                    case.get("coil_vacuum_sidecar_ready") is True
-                ),
+                "coil_count": int(vacuum.get("coil_count", 0)) if isinstance(vacuum, dict) else 0,
+                "coil_vacuum_sidecar_ready": bool(case.get("coil_vacuum_sidecar_ready") is True),
                 "example_path": str(case.get("example_path", "")),
                 "example_sha256": str(case.get("example_sha256", "")),
                 "external_psi_shape": case.get("external_psi_shape", []),

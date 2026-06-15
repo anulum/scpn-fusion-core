@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, Optional, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
 from scpn_fusion.neurocore_compat import (
     SC_NEUROCORE_AVAILABLE,
@@ -35,12 +36,12 @@ TARGET_Z = 0.0
 def _resolve_fusion_kernel() -> Any:
     """Resolve FusionKernel lazily to keep pool-only paths dependency-light."""
     try:
-        from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel # type: ignore
+        from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel  # type: ignore
 
         return _FusionKernel
     except Exception:
         try:
-            from scpn_fusion.core.fusion_kernel import FusionKernel as _FusionKernel # type: ignore
+            from scpn_fusion.core.fusion_kernel import FusionKernel as _FusionKernel  # type: ignore
 
             return _FusionKernel
         except Exception as exc:  # pragma: no cover - import-guard path
