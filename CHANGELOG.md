@@ -37,6 +37,17 @@
   one; the benchmark report schema advances to
   `scpn-fusion-core.tilt_mode_frc_benchmark.v5`.
 
+### Fixed
+
+- Corrected the Spitzer resistivity coefficient in `spitzer_resistivity_ohm_m`
+  (Python and Rust) from `1.65e-9` to the NRL Plasma Formulary transverse value
+  `1.03e-4 * Z * lnLambda / T_e[eV]^(3/2)` ohm-metre (the formulary tabulates
+  `eta_perp = 1.03e-2` ohm-cm), the branch carried by the azimuthal FRC current.
+  The previous coefficient under-stated the resistivity by about five orders of
+  magnitude. Added absolute-value regression assertions, refreshed the pulsed
+  compression and Hall-MHD flux-evolution benchmark reports, and corrected the
+  resistivity formula in the physics documentation.
+
 ## [3.9.10] - 2026-06-05
 
 - Bumped package, Rust/PyO3 package metadata, README badge, generated capability snapshot, release readiness, and release notes to 3.9.10.

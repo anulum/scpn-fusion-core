@@ -40,9 +40,11 @@ with finite-axis handling at `r = 0`.
 
 ## Resistivity
 
-The Spitzer term uses the NRL-style temperature scaling:
+The Spitzer term uses the NRL Plasma Formulary transverse resistivity
+($\eta_\perp = 1.03\times10^{-2}\,Z\ln\Lambda\,T_e^{-3/2}\;\Omega\,\mathrm{cm}$),
+the branch carried by the azimuthal FRC current crossing the axial field:
 
-$$\eta_{\rm Spitzer}=1.65\times 10^{-9}
+$$\eta_{\rm Spitzer}=1.03\times 10^{-4}
 \frac{Z_{\rm eff}\ln\Lambda}{T_e[\mathrm{eV}]^{3/2}}\;\Omega\,\mathrm{m}.
 $$
 

@@ -274,9 +274,11 @@ field ramp supplies the circular-loop Faraday drive:
 
 $$E_\theta(r,t)=-\frac{r}{2}\frac{dB_{\rm ext}}{dt}.$$
 
-Spitzer resistivity uses the NRL-style scaling:
+Spitzer resistivity uses the NRL Plasma Formulary transverse resistivity
+($\eta_\perp = 1.03\times10^{-2}\,Z\ln\Lambda\,T_e^{-3/2}\;\Omega\,\mathrm{cm}$),
+the branch carried by the azimuthal FRC current crossing the axial field:
 
-$$\eta_{\rm Spitzer}=1.65\times10^{-9}
+$$\eta_{\rm Spitzer}=1.03\times10^{-4}
 \frac{Z_{\rm eff}\ln\Lambda}{T_e[\mathrm{eV}]^{3/2}}\;\Omega\mathrm{m}.$$
 
 The default step treats damping implicitly and the Ono source explicitly:

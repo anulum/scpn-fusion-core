@@ -2,7 +2,7 @@
   "claim_boundary": "Local non-isolated axisymmetric Ono Eq. 8 Hall-MHD flux-carrier regression evidence. Full 2D two-fluid Hall-MHD, Gkeyll/BOUT++ parity, and Ono figure reproduction remain blocked.",
   "environment": {
     "isolated": false,
-    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "python": "3.12.3"
   },
@@ -19,14 +19,14 @@
       "final_energy_proxy_J_m": 590.1829613008822,
       "final_time_s": 2.5599999999999857e-06,
       "language": "python",
-      "mean_seconds": 0.052804608200000006,
+      "mean_seconds": 0.0514608994,
       "n_grid": 64,
       "samples_seconds": [
-        0.053225653000000005,
-        0.050457012,
-        0.056144439000000004,
-        0.050623400000000006,
-        0.053572537
+        0.051341021,
+        0.051743015,
+        0.050929231000000005,
+        0.050943498000000004,
+        0.052347732
       ],
       "source_residual_linf": 4.368526449849507e-14,
       "steps": 256
@@ -37,14 +37,14 @@
       "final_energy_proxy_J_m": 589.1624393369948,
       "final_time_s": 2.5599999999999857e-06,
       "language": "python",
-      "mean_seconds": 0.062038290200000006,
+      "mean_seconds": 0.055774242200000004,
       "n_grid": 256,
       "samples_seconds": [
-        0.060769501000000004,
-        0.06705074100000001,
-        0.058986128000000006,
-        0.066508647,
-        0.056876434000000003
+        0.05615821,
+        0.056207508,
+        0.055177394000000005,
+        0.054435152,
+        0.056892947000000006
       ],
       "source_residual_linf": 4.019651077545334e-14,
       "steps": 256
@@ -55,14 +55,14 @@
       "final_energy_proxy_J_m": 589.1002151081527,
       "final_time_s": 2.5599999999999857e-06,
       "language": "python",
-      "mean_seconds": 0.06898899700000001,
+      "mean_seconds": 0.07050648040000002,
       "n_grid": 1024,
       "samples_seconds": [
-        0.066402741,
-        0.066912187,
-        0.06472997500000001,
-        0.078185847,
-        0.068714235
+        0.071257217,
+        0.06720328,
+        0.064726348,
+        0.079390002,
+        0.069955555
       ],
       "source_residual_linf": 5.020771723575372e-14,
       "steps": 256

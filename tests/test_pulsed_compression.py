@@ -244,6 +244,10 @@ def test_spitzer_resistivity_scaling_and_blocked_reference_status() -> None:
     hot = float(spitzer_resistivity_ohm_m(400.0)[()])
 
     assert cold / hot == pytest.approx((400.0 / 100.0) ** 1.5, rel=1.0e-14)
+    # NRL formulary transverse Spitzer resistivity: 1.03e-4 * Z * lnLambda / T^1.5 ohm-m.
+    assert float(spitzer_resistivity_ohm_m(100.0, Z_eff=1.0, ln_lambda=17.0)[()]) == pytest.approx(
+        1.03e-4 * 1.0 * 17.0 / 100.0**1.5, rel=1.0e-14
+    )
     assert (
         slough_fig5_acceptance_status()["status"]
         == "blocked_reconstructed_reference_not_public_digitised"

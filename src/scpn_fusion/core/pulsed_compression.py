@@ -278,20 +278,31 @@ def thermal_pressure_pa(density_m3: float, T_i_eV: float, T_e_eV: float) -> floa
     return float(density * (ion_temperature + electron_temperature) * ELEMENTARY_CHARGE_C)
 
 
+# NRL Plasma Formulary transverse Spitzer resistivity, eta_perp =
+# 1.03e-2 * Z * lnLambda * T_e[eV]^-3/2 ohm-cm = 1.03e-4 ohm-m. The perpendicular
+# branch is the relevant one for the azimuthal FRC current, which flows across
+# the axial confining field. (Verified: https://w3.pppl.gov/~hammett/hpf/hpf.pdf)
+SPITZER_PERP_COEFFICIENT_OHM_M = 1.03e-4
+
+
 def spitzer_resistivity_ohm_m(
     T_e_eV: FloatArray | float,
     *,
     Z_eff: float = 1.0,
     ln_lambda: float = 17.0,
 ) -> FloatArray:
-    """Return NRL-formulary Spitzer resistivity in ohm metre."""
+    """Return the NRL-formulary transverse Spitzer resistivity in ohm metre.
+
+    Implements ``eta_perp = 1.03e-4 * Z_eff * lnLambda / T_e[eV]^(3/2)`` ohm
+    metre, the perpendicular branch carried by the azimuthal FRC current.
+    """
 
     temperature = np.asarray(T_e_eV, dtype=np.float64)
     if not np.all(np.isfinite(temperature)) or np.any(temperature <= 0.0):
         raise ValueError("T_e_eV must contain positive finite values")
     z_eff = _require_positive("Z_eff", Z_eff)
     coulomb_log = _require_positive("ln_lambda", ln_lambda)
-    return 1.65e-9 * z_eff * coulomb_log / np.power(temperature, 1.5)
+    return SPITZER_PERP_COEFFICIENT_OHM_M * z_eff * coulomb_log / np.power(temperature, 1.5)
 
 
 def adiabatic_temperature_update_eV(

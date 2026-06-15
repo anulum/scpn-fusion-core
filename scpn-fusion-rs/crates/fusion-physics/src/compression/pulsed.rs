@@ -220,11 +220,17 @@ pub fn plasma_volume_m3(r_s_m: f64, plasma_length_m: f64) -> Result<f64, String>
     Ok(std::f64::consts::PI * radius * radius * length)
 }
 
+/// NRL Plasma Formulary transverse Spitzer resistivity, eta_perp =
+/// 1.03e-2 * Z * lnLambda * T_e[eV]^-3/2 ohm-cm = 1.03e-4 ohm-m. The
+/// perpendicular branch is the relevant one for the azimuthal FRC current, which
+/// flows across the axial confining field. (Verified: hpf.pdf / NRL formulary.)
+pub const SPITZER_PERP_COEFFICIENT_OHM_M: f64 = 1.03e-4;
+
 pub fn spitzer_resistivity_ohm_m(t_e_ev: f64, z_eff: f64, ln_lambda: f64) -> Result<f64, String> {
     let temperature = require_positive("t_e_ev", t_e_ev)?;
     let charge = require_positive("z_eff", z_eff)?;
     let coulomb_log = require_positive("ln_lambda", ln_lambda)?;
-    Ok(1.65e-9 * charge * coulomb_log / temperature.powf(1.5))
+    Ok(SPITZER_PERP_COEFFICIENT_OHM_M * charge * coulomb_log / temperature.powf(1.5))
 }
 
 pub fn adiabatic_temperature_update_ev(
@@ -843,6 +849,9 @@ mod tests {
         let cold = spitzer_resistivity_ohm_m(100.0, 1.0, 17.0).unwrap();
         let hot = spitzer_resistivity_ohm_m(400.0, 1.0, 17.0).unwrap();
         assert!((cold / hot - 8.0).abs() < 1.0e-12);
+        // NRL formulary transverse Spitzer resistivity: 1.03e-4 * Z * lnLambda / T^1.5 ohm-m.
+        let expected = 1.03e-4 * 17.0 / 100.0_f64.powf(1.5);
+        assert!((cold - expected).abs() / expected < 1.0e-12);
         assert!(coil_field_t(&coil(), f64::INFINITY).is_err());
         assert!(run_pulsed_compression(state(), &config(), 1.0, 1.0e-8, 0).is_err());
         assert!(run_coil_circuit(&coil(), 20_001.0, 1.0e-9, 1, 0.0).is_err());
