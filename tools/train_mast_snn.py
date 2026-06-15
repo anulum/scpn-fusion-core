@@ -387,54 +387,62 @@ def main() -> None:
         except ImportError:
             ingestor = None
 
-    weights, train_available_count = adapt_weights_from_sources(
-        args.cache_dir,
-        args.train_shots,
-        ingestor=ingestor,
-        n_neurons=64,
-        seed=args.seed,
-        epochs=args.epochs,
-    )
-    report = evaluate_lead_times_from_sources(
-        args.cache_dir,
-        args.val_shots,
-        ingestor=ingestor,
-        weights=weights,
-    )
-    detected = [row["lead_time_ms"] for row in report if row.get("status") == "detected"]
-    status = classify_full_fidelity_status(
-        train_available_count=train_available_count,
-        validation_report=report,
-        min_train_shots=args.min_train_shots,
-        min_validation_shots=args.min_validation_shots,
-    )
-    payload = {
-        "status": status,
-        "accepted_full_fidelity_ready": False,
-        "claim_boundary": (
-            "MAST SNN reports are local disruption-detection diagnostics only. "
-            "Full-fidelity claims require same-case magnetic-geometry validation, "
-            "shot provenance review, and independent acceptance gates beyond local "
-            "train and detected-validation counts."
-        ),
-        "cache_dir": str(args.cache_dir),
-        "fair_mast_enabled": bool(args.enable_fair_mast and ingestor is not None),
-        "train_shots": args.train_shots,
-        "val_shots": args.val_shots,
-        "train_available_count": train_available_count,
-        "detected_validation_count": len(detected),
-        "local_count_gate_passed": (
-            train_available_count >= args.min_train_shots
-            and len(detected) >= args.min_validation_shots
-        ),
-        "epochs": args.epochs,
-        "seed": args.seed,
-        "average_lead_time_ms": float(np.mean(detected)) if detected else None,
-        "shots": report,
-    }
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"Wrote local MAST validation report to {args.out}")
+    try:
+        weights, train_available_count = adapt_weights_from_sources(
+            args.cache_dir,
+            args.train_shots,
+            ingestor=ingestor,
+            n_neurons=64,
+            seed=args.seed,
+            epochs=args.epochs,
+        )
+        report = evaluate_lead_times_from_sources(
+            args.cache_dir,
+            args.val_shots,
+            ingestor=ingestor,
+            weights=weights,
+        )
+        detected = [row["lead_time_ms"] for row in report if row.get("status") == "detected"]
+        validation_available_count = sum(1 for row in report if row.get("status") != "unavailable")
+        status = classify_full_fidelity_status(
+            train_available_count=train_available_count,
+            validation_report=report,
+            min_train_shots=args.min_train_shots,
+            min_validation_shots=args.min_validation_shots,
+        )
+        payload = {
+            "status": status,
+            "accepted_full_fidelity_ready": False,
+            "claim_boundary": (
+                "MAST SNN reports are local disruption-detection diagnostics only. "
+                "Full-fidelity claims require same-case magnetic-geometry validation, "
+                "shot provenance review, and independent acceptance gates beyond local "
+                "train and detected-validation counts."
+            ),
+            "cache_dir": str(args.cache_dir),
+            "fair_mast_enabled": bool(args.enable_fair_mast and ingestor is not None),
+            "train_shots": args.train_shots,
+            "val_shots": args.val_shots,
+            "min_train_shots": args.min_train_shots,
+            "min_validation_shots": args.min_validation_shots,
+            "train_available_count": train_available_count,
+            "validation_available_count": validation_available_count,
+            "detected_validation_count": len(detected),
+            "local_count_gate_passed": (
+                train_available_count >= args.min_train_shots
+                and len(detected) >= args.min_validation_shots
+            ),
+            "epochs": args.epochs,
+            "seed": args.seed,
+            "average_lead_time_ms": float(np.mean(detected)) if detected else None,
+            "shots": report,
+        }
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        print(f"Wrote local MAST validation report to {args.out}")
+    finally:
+        if ingestor is not None:
+            ingestor.close()
 
 
 if __name__ == "__main__":

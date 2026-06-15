@@ -41,6 +41,18 @@ class _FakeFileSystem:
         return url
 
 
+class _ClosableFakeFileSystem(_FakeFileSystem):
+    def __init__(self) -> None:
+        self.connector_closed = False
+        connector = types.SimpleNamespace(_close=lambda: setattr(self, "connector_closed", True))
+        session = types.SimpleNamespace(_connector=connector)
+        endpoint = types.SimpleNamespace(http_session=session)
+        self.fs = types.SimpleNamespace(
+            loop=object(),
+            s3=types.SimpleNamespace(_endpoint=endpoint),
+        )
+
+
 def test_load_shot_summary_uses_nan_density_when_missing(monkeypatch, tmp_path: Path) -> None:
     """MAST shots without line-average density remain usable."""
 
@@ -56,6 +68,20 @@ def test_load_shot_summary_uses_nan_density_when_missing(monkeypatch, tmp_path: 
     np.testing.assert_allclose(summary["time"], [0.0, 1.0, 2.0])
     np.testing.assert_allclose(summary["ip"], [1.0, 2.0, 3.0])
     assert np.isnan(summary["density"]).all()
+
+
+def test_mast_ingestor_closes_retained_filesystems(monkeypatch, tmp_path: Path) -> None:
+    """FAIR-MAST sessions are closed explicitly before interpreter teardown."""
+
+    fs = _ClosableFakeFileSystem()
+    monkeypatch.setattr(mast_ingestor.fsspec, "filesystem", lambda *args, **kwargs: fs)
+
+    ingestor = MastIngestor(cache_dir=tmp_path)
+    assert ingestor._filesystem() is fs
+
+    ingestor.close()
+
+    assert fs.connector_closed
 
 
 def test_evict_shot_cache_removes_hashed_simplecache_entries(monkeypatch, tmp_path: Path) -> None:

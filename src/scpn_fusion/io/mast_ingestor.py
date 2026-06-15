@@ -17,8 +17,9 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import weakref
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -70,17 +71,55 @@ class MastIngestor:
 
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self._filesystems: list[Any] = []
+
+    def _filesystem(self) -> Any:
+        """Create a cache filesystem and retain it for explicit cleanup."""
+        fs = fsspec.filesystem(
+            "simplecache",
+            cache_storage=str(self.cache_dir),
+            target_protocol="s3",
+            target_options={
+                "anon": True,
+                "endpoint_url": self.ENDPOINT_URL,
+                "skip_instance_cache": True,
+            },
+        )
+        self._filesystems.append(fs)
+        return fs
+
+    def close(self) -> None:
+        """Close retained FAIR MAST S3 sessions before interpreter teardown."""
+        loops: list[Any] = []
+        while self._filesystems:
+            fs = self._filesystems.pop()
+            inner = getattr(fs, "fs", fs)
+            loop = getattr(inner, "loop", None)
+            if loop is not None:
+                loops.append(loop)
+            for client in (getattr(inner, "s3", None), getattr(inner, "_s3", None)):
+                try:
+                    client._endpoint.http_session._connector._close()
+                except AttributeError:
+                    pass
+
+        registry = getattr(weakref.finalize, "_registry", {})
+        for finalizer, info in list(registry.items()):
+            args = getattr(info, "args", ())
+            func = getattr(info, "func", None)
+            if (
+                len(args) >= 2
+                and args[0] in loops
+                and getattr(func, "__module__", "") == "s3fs.core"
+                and getattr(func, "__name__", "") == "close_session"
+            ):
+                finalizer.detach()
 
     def load_shot_summary(self, shot_id: int) -> Dict[str, NDArray[np.float64]]:
         """Load plasma current and time-series for a specific shot."""
         url = f"s3://{self.BUCKET_NAME}/level2/shots/{shot_id}.zarr"
 
-        fs = fsspec.filesystem(
-            "simplecache",
-            cache_storage=str(self.cache_dir),
-            target_protocol="s3",
-            target_options={"anon": True, "endpoint_url": self.ENDPOINT_URL},
-        )
+        fs = self._filesystem()
         store = fs.get_mapper(url)
 
         ds = xr.open_zarr(store, group="summary", consolidated=True)
@@ -101,12 +140,7 @@ class MastIngestor:
         """Load raw magnetic probe signals."""
         url = f"s3://{self.BUCKET_NAME}/level2/shots/{shot_id}.zarr"
 
-        fs = fsspec.filesystem(
-            "simplecache",
-            cache_storage=str(self.cache_dir),
-            target_protocol="s3",
-            target_options={"anon": True, "endpoint_url": self.ENDPOINT_URL},
-        )
+        fs = self._filesystem()
         store = fs.get_mapper(url)
 
         ds = xr.open_zarr(store, group="magnetics", consolidated=True)
