@@ -124,12 +124,24 @@ class BreedingBlanket:
         A = np.zeros((N, N))
         b = np.zeros(N)
 
-        # Effective removal
+        # Effective removal = absorption minus the net (n,2n) multiplication source.
         Sigma_removal = (
             self.Sigma_capture_Li6
             + self.Sigma_parasitic
             - (self.Sigma_multiply * (self.multiplier_gain - 1.0))
         )
+
+        # A breeding blanket must be subcritical: a non-positive net removal makes
+        # the diffusion problem supercritical (the flux grows away from the wall
+        # and the breeding ratio comes out unphysically negative). This happens
+        # when the Li-6 enrichment is too low for the configured Be multiplier.
+        if Sigma_removal <= 0.0:
+            raise ValueError(
+                "Supercritical blanket: net removal "
+                f"{Sigma_removal:.4f} <= 0 (Li-6 enrichment {self.li6_enrichment:.3f} "
+                "too low for the configured multiplier); increase enrichment or "
+                "reduce the multiplier."
+            )
 
         dr = self.dr
 

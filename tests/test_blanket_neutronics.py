@@ -207,3 +207,18 @@ def test_cad_surface_loading_smoke() -> None:
     assert report.face_loading_w_m2.shape == (4,)
     assert np.all(np.isfinite(report.face_loading_w_m2))
     assert report.peak_loading_w_m2 >= report.mean_loading_w_m2 >= 0.0
+
+
+def test_solve_transport_rejects_supercritical_low_enrichment() -> None:
+    # Net removal = absorption - net (n,2n) source; it goes negative
+    # (supercritical) below ~0.29 Li-6 enrichment with the default Be multiplier,
+    # which would otherwise yield an unphysical negative breeding ratio.
+    blanket = BreedingBlanket(thickness_cm=100.0, li6_enrichment=0.07)
+    with pytest.raises(ValueError, match="Supercritical blanket"):
+        blanket.solve_transport()
+
+
+def test_solve_transport_breeding_ratio_positive_for_enriched_blanket() -> None:
+    blanket = BreedingBlanket(thickness_cm=100.0, li6_enrichment=0.9)
+    tbr, _ = blanket.calculate_tbr(blanket.solve_transport())
+    assert 1.0 < tbr < 3.0  # self-sufficient, with a sanity upper bound

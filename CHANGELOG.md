@@ -80,6 +80,13 @@
   sum, across the NumPy, JAX, and Rust paths (the thermal term was a factor of
   3/2 low). Added a regression test pinning `energy_J = integral (B^2/2mu0 +
   3/2 p) dV`.
+- Made `BreedingBlanket.solve_transport` fail closed when the net removal
+  cross-section is non-positive (a supercritical blanket). With the default Be
+  multiplier this happens below ~0.29 Li-6 enrichment, where the 1-D diffusion
+  flux grows away from the wall and the breeding ratio came out unphysically
+  negative; the model now raises instead of returning a negative TBR. Added
+  regression tests for the supercritical guard and a positive enriched-blanket
+  breeding ratio.
 
 ### Repository hygiene
 
