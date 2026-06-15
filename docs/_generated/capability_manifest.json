@@ -2535,7 +2535,7 @@
     "python_capability_classes": 534,
     "python_capability_source_modules": 274,
     "rust_workspace_crates": 13,
-    "test_files": 417
+    "test_files": 418
   },
   "documentation": {
     "public_pages": [
@@ -2898,6 +2898,7 @@
       "tests/test_logging_config.py",
       "tests/test_lyapunov_guard.py",
       "tests/test_marfe.py",
+      "tests/test_mast_ingestor_acquisition.py",
       "tests/test_mast_validation_tools.py",
       "tests/test_mc_dropout_uncertainty.py",
       "tests/test_mesh_convergence_study.py",

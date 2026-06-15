@@ -116,7 +116,7 @@
       "license_redistributable": true,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact",
-      "total_bytes": 500061
+      "total_bytes": 507071
     },
     {
       "file_count": 3,
@@ -168,6 +168,18 @@
       "total_bytes": 381655
     },
     {
+      "citation": "OpenADAS adf11 GCR project data tables from open.adas.ac.uk; manifest records public URLs, checksums, and derived CoolingCurve parameters.",
+      "file_count": 1,
+      "id": "openadas_coronal_lz_manifest",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "Repository-maintained OpenADAS adf11 provenance and derived coronal-equilibrium cooling-rate summary; raw OpenADAS files are not redistributed.",
+      "source_type": "published_reference_metadata",
+      "total_bytes": 4790
+    },
+    {
       "citation": "ITER Physics Basis, Nucl. Fusion (public literature summary).",
       "file_count": 3,
       "id": "published_reference_metadata",
@@ -188,7 +200,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 14901
+      "total_bytes": 15580
     },
     {
       "citation": "Slough, Votroubek, and Pihl, Nuclear Fusion 51, 053008 (2011), DOI:10.1088/0029-5515/51/5/053008.",
@@ -265,7 +277,7 @@
       "total_bytes": 3182
     }
   ],
-  "file_count": 77,
+  "file_count": 78,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -274,8 +286,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "README.md",
-      "sha256": "64f10848680e64636679a00eb24242838142057c9cb51052c0f0b9ee09f7edc4",
-      "size_bytes": 3823,
+      "sha256": "a5e6a9aa4099c64c67701ff44935d482611cf0a0970c754a6fdc5e30f9193aa8",
+      "size_bytes": 3981,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation"
     },
@@ -759,8 +771,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/frc_reference_papers_manifest.json",
-      "sha256": "14b17ddc2207aed9cbf260f54c390d3f60376956a6e27a240d6610bd1b88e333",
-      "size_bytes": 4069,
+      "sha256": "431c32f141ecf4fe77d587af21fa182b1b2e409b2851a3595e2eddcea354f085",
+      "size_bytes": 11076,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
     },
@@ -798,8 +810,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json",
-      "sha256": "843f57cc1d98e8583602986540beb2074ab4e80c7f02324845e4551b628f0015",
-      "size_bytes": 18989,
+      "sha256": "77f2ea2757bfea4bd7ef1c59d2f6c4d594249caf7b646cbd776778d7f8db347b",
+      "size_bytes": 18992,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
     },
@@ -811,7 +823,7 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
-      "sha256": "cb287fee272a3e010c508a8e328958449f4d83048043e17ee53f646354ce28f9",
+      "sha256": "0697d82b9dacde4dd15a5b6bf5960eacd1ef9bba94307fc2e080f398c2d1846f",
       "size_bytes": 1166,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
@@ -1063,14 +1075,27 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
+      "citation": "OpenADAS adf11 GCR project data tables from open.adas.ac.uk; manifest records public URLs, checksums, and derived CoolingCurve parameters.",
+      "dataset_id": "openadas_coronal_lz_manifest",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "openadas_coronal_lz_manifest.json",
+      "sha256": "4a9b2a1d95b0cee7f0653f14ddd5add6846567e3d46faad691e8e7d8a7e54929",
+      "size_bytes": 4790,
+      "source": "Repository-maintained OpenADAS adf11 provenance and derived coronal-equilibrium cooling-rate summary; raw OpenADAS files are not redistributed.",
+      "source_type": "published_reference_metadata"
+    },
+    {
       "dataset_id": "reference_data_metadata",
       "license": "AGPL-3.0-or-later",
       "license_attribution_required": true,
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "1b4287255ee55fc104caf056297b879d0b68895376691fde0431e801b8eda7d2",
-      "size_bytes": 11078,
+      "sha256": "401e0452bf6457961c9980a2b8df1ebd9ede24ecf9221b5e34670aaa40234264",
+      "size_bytes": 11599,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -1301,7 +1326,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-06-14T06:21:04.891246+00:00",
+  "generated_at_utc": "2026-06-15T23:49:03.221291+00:00",
   "license_registry": [
     {
       "attribution_required": true,

@@ -74,6 +74,14 @@
       "citation": "QLKNN public benchmark publication (summary values only)."
     },
     {
+      "id": "openadas_coronal_lz_manifest",
+      "glob": "openadas_coronal_lz_manifest.json",
+      "source_type": "published_reference_metadata",
+      "source": "Repository-maintained OpenADAS adf11 provenance and derived coronal-equilibrium cooling-rate summary; raw OpenADAS files are not redistributed.",
+      "license": "citation-required",
+      "citation": "OpenADAS adf11 GCR project data tables from open.adas.ac.uk; manifest records public URLs, checksums, and derived CoolingCurve parameters."
+    },
+    {
       "id": "slough_2011_fig5_reconstructed_sidecar",
       "glob": "slough_2011_fig5.json",
       "source_type": "reconstructed_operational_sidecar",
