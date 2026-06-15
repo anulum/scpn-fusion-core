@@ -63,8 +63,12 @@
   threshold by an order of magnitude. Added coronal-band peak regression
   assertions and recalibrated the burn-through critical-impurity-fraction test to
   compare tungsten and carbon at a core temperature. The peaks remain parametric
-  fits; exact per-element ADAS/Mavrin magnitudes and locations are a future
-  refinement.
+  fits.
+- Refined the argon cooling-curve peak to the Mavrin 2018 coronal value
+  (~1.65e-31 W m^3 near 310 eV), the verified high-Te branch. The Mavrin fits
+  diverge below ~100 eV, so the carbon (~10 eV) and neon (~30-50 eV) low-Te peaks
+  cannot be taken from Mavrin and stay at the order-of-magnitude correction
+  pending low-Te (Post & Jensen) data.
 
 ### Repository hygiene
 

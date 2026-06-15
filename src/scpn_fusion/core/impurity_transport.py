@@ -589,18 +589,20 @@ class CoolingCurve:
             L[~valid] = 0.0
             return np.asarray(L)
         # Coronal-equilibrium peak cooling rates for these light/medium impurities
-        # are of order 1e-31 W m^3, the same order as the tungsten peak above
-        # (argon ~1e-31 confirmed against the coronal cooling-rate literature;
-        # carbon ~2e-31 and neon ~9e-32 in Post & Jensen 1977 / ADAS). The
-        # previous 1e-32 prefactor was an order of magnitude low. These remain
-        # parametric Gaussian fits in log Te; exact per-element ADAS/Mavrin peak
-        # magnitudes and locations are a separate refinement.
+        # are of order 1e-31 W m^3, the same order as the tungsten peak above. The
+        # previous 1e-32 prefactor was an order of magnitude low. Carbon and neon
+        # peak at low Te (~10 and ~30-50 eV) where the Mavrin 2018 coronal fits
+        # are invalid (they diverge below ~100 eV), so their peaks are kept as
+        # order-of-magnitude parametric Gaussians pending low-Te (Post & Jensen)
+        # data: carbon ~2e-31 near 10 eV, neon ~9e-32 near 50 eV.
         if self.element == "C":
             L = 1e-31 * np.exp(-(((log_Te - np.log(10.0)) / 0.5) ** 2))
             L[~valid] = 0.0
             return np.asarray(L)
         if self.element == "Ar":
-            L = 1e-31 * np.exp(-(((log_Te - np.log(200.0)) / 1.0) ** 2))
+            # Argon radiates in the high-Te range where the Mavrin 2018 coronal
+            # fit applies: Lz peaks at ~1.65e-31 W m^3 near 310 eV.
+            L = 1.65e-31 * np.exp(-(((log_Te - np.log(310.0)) / 1.0) ** 2))
             L[~valid] = 0.0
             return np.asarray(L)
         if self.element == "Ne":

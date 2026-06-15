@@ -69,6 +69,12 @@ def test_light_impurity_cooling_curve_peak_order_of_magnitude():
         peak = float(np.max(CoolingCurve(element).L_z(te_eV)))
         assert 3e-32 < peak < 3e-31, f"{element} peak {peak:.2e} outside coronal band"
 
+    # Argon radiates in the Mavrin 2018 high-Te validity range: pin its peak to
+    # the verified ~1.65e-31 W m^3 near ~310 eV.
+    ar = CoolingCurve("Ar").L_z(te_eV)
+    assert float(np.max(ar)) == pytest.approx(1.65e-31, rel=1e-9)
+    assert 200.0 < te_eV[int(np.argmax(ar))] < 450.0
+
 
 def test_cooling_curve_returns_zero_for_nonpositive_temperatures_without_warning():
     curve = CoolingCurve("W")
