@@ -22,7 +22,7 @@ edition = "2021"
 
 [workspace.dependencies]
 ndarray = "0.16"
-nalgebra = "0.33"
+nalgebra = "0.35"
 rayon = "1.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
