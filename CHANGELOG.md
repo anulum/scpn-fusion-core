@@ -65,6 +65,9 @@
   These recompute the outputs from verified primitives and add order-of-magnitude
   bounds, the class of check that would have caught the Spitzer and heat-capacity
   errors above.
+- Added absolute-value assertions for the IPB98(y,2) confinement time at the ITER
+  baseline (~3.6 s near 87 MW) and the tungsten cooling-curve peak (~1e-31 W m^3
+  near 1.5 keV), which previously had only monotonicity and ordering tests.
 
 ## [3.9.10] - 2026-06-05
 

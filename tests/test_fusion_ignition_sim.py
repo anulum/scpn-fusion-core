@@ -26,6 +26,34 @@ def test_iter98y2_tau_e_power_degradation():
         tau_prev = tau
 
 
+def test_iter98y2_tau_e_matches_iter_reference_point():
+    """Pin the absolute IPB98(y,2) confinement time at the ITER baseline.
+
+    For 15 MA, 5.3 T, n_e20 = 1.0, R = 6.2, a = 2.0, kappa = 1.7, M = 2.5 near
+    the 87 MW H-mode loss power, tau_E ~ 3.6 s (ITER design point ~3.7 s). The
+    power-degradation test only checks monotonicity, so a wrong 0.0562 prefactor
+    would pass it.
+    """
+    model = DynamicBurnModel(R0=6.2, a=2.0, B_t=5.3, I_p=15.0, kappa=1.7, n_e20=1.0)
+    p_loss = 87.0
+    n_e19 = model.n_e20 * 10.0
+    eps = model.a / model.R0
+    expected = (
+        0.0562
+        * model.I_p**0.93
+        * model.B_t**0.15
+        * n_e19**0.41
+        * p_loss ** (-0.69)
+        * model.R0**1.97
+        * eps**0.58
+        * model.kappa**0.78
+        * model.M_eff**0.19
+    )
+    assert model.iter98y2_tau_e(p_loss) == pytest.approx(expected, rel=1.0e-12)
+    # ITER energy confinement time is a few seconds.
+    assert 3.0 < model.iter98y2_tau_e(p_loss) < 4.2
+
+
 def test_bosch_hale_dt_positivity():
     """Reactivity must be positive for T in [1, 100] keV."""
     for t in np.linspace(1.0, 100.0, 20):

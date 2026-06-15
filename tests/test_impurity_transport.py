@@ -42,6 +42,20 @@ def test_cooling_curves():
     assert L_W_core > 1e-32
 
 
+def test_tungsten_cooling_curve_peak_order_of_magnitude():
+    """Pin the absolute peak of the tungsten cooling curve.
+
+    Putterich et al. 2010: tungsten coronal Lz peaks at ~1e-31 W m^3 near
+    ~1.5 keV. The other ``test_cooling_curves`` checks only an ordering, so a
+    wrong peak magnitude would pass it.
+    """
+    te_eV = np.logspace(1.0, 4.0, 400)  # 10 eV - 10 keV
+    cooling = CoolingCurve("W").L_z(te_eV)
+    peak = float(np.max(cooling))
+    assert 3e-32 < peak < 3e-31
+    assert 800.0 < te_eV[int(np.argmax(cooling))] < 2500.0
+
+
 def test_cooling_curve_returns_zero_for_nonpositive_temperatures_without_warning():
     curve = CoolingCurve("W")
 
