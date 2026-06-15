@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
 from scpn_fusion.core.uncertainty import _dt_reactivity
@@ -84,6 +85,50 @@ def test_simulate_returns_q_and_power():
     assert "Q" in result
     assert "P_fus_MW" in result
     assert result["Q_final"] >= 0.0
+
+
+def test_simulate_absolute_power_balance_matches_first_principles():
+    """Pin the absolute fusion power, radiated power, and Q at the first step.
+
+    Recompute the headline 0-D outputs from verified primitives (Bosch-Hale
+    reactivity, the 5.35e-37 bremsstrahlung coefficient, the 17.6 MeV D-T yield)
+    so a wrong coefficient or unit conversion is caught, not only the qualitative
+    Q >= 0 behaviour. Order-of-magnitude bounds guard against gross errors of the
+    kind that scaling-only tests miss.
+    """
+    model = DynamicBurnModel()  # default n_e20 = 1.0, Z_eff = 1.65
+    t0_keV = 15.0
+    result = model.simulate(
+        P_aux_mw=50.0,
+        T_initial_keV=t0_keV,
+        f_he_initial=0.0,  # no helium dilution -> n_d = n_t = n_e / 2
+        duration_s=0.1,
+        dt_s=0.1,
+        warn_on_temperature_cap=False,
+    )
+
+    n_e = model.n_e20 * 1e20
+    volume = model.V_plasma
+    n_d = n_t = 0.5 * n_e
+    sigmav = float(model.bosch_hale_dt(t0_keV))
+
+    # Fusion power = n_d n_t <sigma v> * 17.6 MeV * V; this is also the D-T
+    # neutron source rate n_d n_t <sigma v> V times the per-reaction energy.
+    expected_p_fus_w = n_d * n_t * sigmav * 17.6e6 * 1.602e-19 * volume
+    assert result["P_fus_MW"][0] == pytest.approx(expected_p_fus_w / 1e6, rel=1e-10)
+
+    # Radiated power = bremsstrahlung (5.35e-37) + impurity-line closure.
+    p_brems_w = 5.35e-37 * model.Z_eff * n_e**2 * np.sqrt(t0_keV) * volume
+    p_line_w = 1e-37 * (model.Z_eff - 1.0) * n_e**2 * volume
+    assert result["P_rad_MW"][0] == pytest.approx((p_brems_w + p_line_w) / 1e6, rel=1e-10)
+
+    # Q = P_fus / P_aux, capped at 15 to suppress 0-D burn artefacts.
+    assert result["Q"][0] == pytest.approx(min(expected_p_fus_w / 50e6, 15.0), rel=1e-10)
+
+    # Order-of-magnitude sanity for an ITER-scale 1e20 m^-3, 15 keV core:
+    # fusion power is GW-scale and radiated power is tens of MW.
+    assert 1e8 < expected_p_fus_w < 1e10
+    assert 1e6 < p_brems_w + p_line_w < 1e8
 
 
 def test_simulate_stored_energy_uses_total_heat_capacity():

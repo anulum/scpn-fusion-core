@@ -14,7 +14,13 @@ from numpy.typing import NDArray
 import pytest
 
 from scpn_fusion.core import RigidRotorFRCInputs, solve_frc_equilibrium
-from scpn_fusion.core.frc_rigid_rotor import ELEMENTARY_CHARGE_C, MU_0, FRCEquilibriumState
+from scpn_fusion.core.frc_rigid_rotor import (
+    ATOMIC_MASS_KG,
+    DEUTERIUM_MASS_AMU,
+    ELEMENTARY_CHARGE_C,
+    MU_0,
+    FRCEquilibriumState,
+)
 from scpn_fusion.core.pulsed_compression import (
     CoilGeometry,
     PulsedCompressionConfig,
@@ -88,6 +94,23 @@ def test_tilt_growth_matches_belova_alfven_time_scaling() -> None:
     )
     assert growth == pytest.approx(expected, rel=1.0e-14)
     assert growth > 0.0
+
+
+def test_alfven_speed_matches_first_principles_absolute_value() -> None:
+    """Pin the absolute Alfven speed V_A = B / sqrt(mu0 rho_m).
+
+    The growth-scaling tests recompute V_A on both sides, so a wrong mu0 or ion
+    mass would cancel and pass. This recomputes V_A from constants and adds an
+    order-of-magnitude bound.
+    """
+    eq = _equilibrium()
+    b_ref = float(np.max(np.abs(eq.B_z)))
+    rho_m = eq.density_peak_m3 * DEUTERIUM_MASS_AMU * ATOMIC_MASS_KG
+    expected_va = b_ref / np.sqrt(MU_0 * rho_m)
+
+    assert alfven_speed_m_s(eq) == pytest.approx(expected_va, rel=1.0e-12)
+    # A few-tesla, ~1e21 m^-3 deuterium FRC core sits at ~10^6 m/s.
+    assert 1.0e6 < alfven_speed_m_s(eq) < 1.0e8
 
 
 def test_tilt_growth_decreases_with_elongation() -> None:

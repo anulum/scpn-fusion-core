@@ -57,6 +57,15 @@
   dynamics (an ITER-class plasma now equilibrates below the 25 keV cap rather
   than running away).
 
+### Repository hygiene
+
+- Added absolute-value regression assertions to physics surfaces that previously
+  had only scaling or positivity tests: the ignition fusion power, radiated
+  (bremsstrahlung) power, and Q at first principles, and the FRC Alfven speed.
+  These recompute the outputs from verified primitives and add order-of-magnitude
+  bounds, the class of check that would have caught the Spitzer and heat-capacity
+  errors above.
+
 ## [3.9.10] - 2026-06-05
 
 - Bumped package, Rust/PyO3 package metadata, README badge, generated capability snapshot, release readiness, and release notes to 3.9.10.
