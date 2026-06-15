@@ -75,6 +75,11 @@
   and a provenance manifest
   (`validation/reference_data/openadas_coronal_lz_manifest.json`, with source URLs
   and SHA-256 checksums) and pinned the peaks in tests.
+- Corrected the FRC rigid-rotor stored-energy diagnostic to use the plasma
+  internal energy density `(3/2) p` rather than `p` in the magnetic-plus-thermal
+  sum, across the NumPy, JAX, and Rust paths (the thermal term was a factor of
+  3/2 low). Added a regression test pinning `energy_J = integral (B^2/2mu0 +
+  3/2 p) dV`.
 
 ### Repository hygiene
 

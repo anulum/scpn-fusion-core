@@ -311,7 +311,9 @@ def _fill_equilibrium_state(
     force_balance_residual_l2 = float(np.sqrt(np.mean((force_residual / residual_scale) ** 2)))
 
     magnetic_energy_density = B_z**2 / (2.0 * MU_0)
-    total_energy_density = magnetic_energy_density + p
+    # Stored energy density = magnetic field energy + plasma internal energy. For
+    # an ideal plasma the internal energy density is (3/2) p, not p.
+    total_energy_density = magnetic_energy_density + 1.5 * p
     energy_J_per_m = float(trapezoid(total_energy_density * 2.0 * np.pi * rho, rho))
 
     pressure_integral = float(trapezoid(p * 2.0 * np.pi * rho, rho))
@@ -498,7 +500,8 @@ def frc_no_rotation_jax_observables(
     density = pressure / thermal_energy_j
     beta = pressure / external_pressure
     magnetic_energy_density = b_z * b_z / (2.0 * mu0)
-    energy_integrand = (magnetic_energy_density + pressure) * 2.0 * pi * rho
+    # Internal energy density is (3/2) p (see the NumPy path).
+    energy_integrand = (magnetic_energy_density + 1.5 * pressure) * 2.0 * pi * rho
     energy_j_per_m = jnp.trapezoid(energy_integrand, rho)
     pressure_integrand = pressure * 2.0 * pi * rho
     pressure_balance_ratio = jnp.trapezoid(pressure_integrand, rho) / (

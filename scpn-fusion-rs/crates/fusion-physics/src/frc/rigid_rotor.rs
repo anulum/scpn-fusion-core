@@ -342,11 +342,13 @@ fn build_equilibrium_state(
                 .max(separatrix_magnetic_deficit_energy_j_m.abs())
                 .max(tolerance);
 
+    // Stored energy density = magnetic field energy + plasma internal energy; the
+    // internal energy density is (3/2) p, not p.
     let energy_integrand = Array1::from_iter(
         p.iter()
             .zip(b_z.iter())
             .zip(rho.iter())
-            .map(|((pr, b), r)| (pr + b * b / (2.0 * MU_0)) * 2.0 * std::f64::consts::PI * r),
+            .map(|((pr, b), r)| (1.5 * pr + b * b / (2.0 * MU_0)) * 2.0 * std::f64::consts::PI * r),
     );
     let energy_j = trapezoid(&rho, &energy_integrand);
     let pressure_integrand = Array1::from_iter(

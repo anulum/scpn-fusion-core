@@ -357,6 +357,15 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     state = solve_frc_equilibrium(inputs, rho)
 
     assert state.energy_J > 0.0
+    # Stored energy density is the magnetic field energy plus the plasma internal
+    # energy (3/2) p, not the pressure p; pin the factor of 3/2 on the thermal part.
+    expected_energy_J = float(
+        np.trapz(
+            (state.B_z**2 / (2.0 * MU_0) + 1.5 * state.p) * 2.0 * np.pi * rho,
+            rho,
+        )
+    )
+    assert state.energy_J == pytest.approx(expected_energy_J, rel=1.0e-12)
     assert state.pressure_balance_ratio > 0.0
     assert state.pressure_balance_residual.shape == rho.shape
     assert state.pressure_balance_residual_linf <= 1.0e-12
