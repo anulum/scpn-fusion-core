@@ -21,7 +21,7 @@ license = "AGPL-3.0-or-later"
 edition = "2021"
 
 [workspace.dependencies]
-ndarray = "0.16"
+ndarray = "0.17"
 nalgebra = "0.33"
 rayon = "1.10"
 serde = { version = "1.0", features = ["derive"] }

@@ -21,7 +21,7 @@ cargo-fuzz = true
 [dependencies]
 fusion-core = { path = "../crates/fusion-core" }
 libfuzzer-sys = "0.4"
-ndarray = "0.16"
+ndarray = "0.17"
 
 [[bin]]
 name = "mpi_domain"
