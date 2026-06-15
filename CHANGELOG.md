@@ -47,6 +47,15 @@
   magnitude. Added absolute-value regression assertions, refreshed the pulsed
   compression and Hall-MHD flux-evolution benchmark reports, and corrected the
   resistivity formula in the physics documentation.
+- Corrected the plasma thermal energy in the `DynamicBurnModel` ignition burn to
+  the total electron+ion heat capacity `W = 3 n_e T V` (it used the electron-only
+  `1.5 n_e T V`, half the correct value, which doubled the heating rate and halved
+  the transport loss relative to the IPB98(y,2) tau_E definition). This matches
+  `FusionBurnPhysics` and the Rust ignition kernel, which already use `3 n_e T`.
+  Added a stored-energy regression test pinning the factor of three, and
+  recalibrated the temperature-cap and helium-ash tests to the corrected
+  dynamics (an ITER-class plasma now equilibrates below the 25 keV cap rather
+  than running away).
 
 ## [3.9.10] - 2026-06-05
 

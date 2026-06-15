@@ -201,8 +201,12 @@ class TestDynamicBurnModel:
         assert 10.0 < P_thr < 200.0  # ITER ~ 50-100 MW
 
     def test_he_ash_accumulates(self):
+        # Needs enough fusion for production to beat ash removal: with the correct
+        # total (electron+ion) heat capacity, P_aux=50 MW only reaches ~5.5 keV
+        # where ash is pumped out faster than it is bred. 100 MW reaches ~8.6 keV
+        # (Q~4) where helium genuinely accumulates above the 2% seed.
         model = DynamicBurnModel()
-        result = model.simulate(P_aux_mw=50.0, duration_s=50.0)
+        result = model.simulate(P_aux_mw=100.0, duration_s=50.0)
         assert result["f_he_final"] > 0.02  # started at 2%, should increase
 
     def test_bosch_hale_reactivity(self):

@@ -86,6 +86,29 @@ def test_simulate_returns_q_and_power():
     assert result["Q_final"] >= 0.0
 
 
+def test_simulate_stored_energy_uses_total_heat_capacity():
+    """Stored energy uses the total electron+ion heat capacity W = 3 n_e T V.
+
+    An electron-only 1.5 n_e T would halve the heat capacity. ``W_MJ[i]`` is the
+    end-of-step energy and ``T_keV[i+1]`` is the temperature recovered from it, so
+    the invariant ``W_MJ[i] = 3 n_e T_keV[i+1] V`` pins the factor of 3.
+    """
+    model = DynamicBurnModel()
+    result = model.simulate(
+        P_aux_mw=0.0,
+        T_initial_keV=8.0,
+        duration_s=0.5,
+        dt_s=0.05,
+        warn_on_temperature_cap=False,
+    )
+
+    n_e = model.n_e20 * 1e20
+    w_mj = np.asarray(result["W_MJ"])[:-1]
+    t_next_keV = np.asarray(result["T_keV"])[1:]
+    expected_w_mj = 3.0 * n_e * t_next_keV * 1e3 * 1.602e-19 * model.V_plasma / 1e6
+    np.testing.assert_allclose(w_mj, expected_w_mj, rtol=1e-9)
+
+
 def test_alpha_deposition_remains_nonnegative_for_coarse_burn_timestep():
     """Alpha slowing-down deposition must preserve non-negative deposited power."""
     model = DynamicBurnModel()

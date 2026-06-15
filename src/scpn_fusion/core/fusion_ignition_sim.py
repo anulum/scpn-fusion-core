@@ -392,7 +392,12 @@ class DynamicBurnModel:
         # State variables
         T = float(T_initial_keV)
         f_he = float(f_he_initial)
-        W_thermal = 1.5 * n_e * T * 1e3 * 1.602e-19 * self.V_plasma  # J
+        # Total plasma thermal energy W = (3/2)(n_e T_e + n_i T_i) = 3 n_e T for a
+        # quasineutral D-T plasma with T_e = T_i (electron + ion heat capacity),
+        # consistent with the IPB98(y,2) tau_E definition, FusionBurnPhysics, and
+        # the Rust ignition kernel. An electron-only 1.5 n_e T halves the heat
+        # capacity and overstates the heating rate.
+        W_thermal = 3.0 * n_e * T * 1e3 * 1.602e-19 * self.V_plasma  # J
 
         # Delayed alpha heating from collisional slowing down.
         # The deposited channel follows dP_dep/dt = (P_born - P_dep) / tau_s.
@@ -458,8 +463,8 @@ class DynamicBurnModel:
             dW = (P_alpha_dep + P_aux_mw * 1e6 - P_loss) * dt_s
             W_thermal = max(W_thermal + dW, 1e3)
 
-            # Temperature from stored energy
-            T = W_thermal / (1.5 * n_e * 1e3 * 1.602e-19 * self.V_plasma)
+            # Temperature from stored energy (total electron + ion heat capacity)
+            T = W_thermal / (3.0 * n_e * 1e3 * 1.602e-19 * self.V_plasma)
             if t_cap_keV < T:
                 temperature_cap_events += 1
                 if enforce_temperature_limit:

@@ -165,7 +165,12 @@ class TestQScanLimits:
         )
 
     def test_temperature_warning_emitted(self):
-        """Warning emitted when temperature hits cap."""
+        """Warning emitted when temperature hits cap.
+
+        With the correct total electron+ion heat capacity an ITER-class plasma
+        equilibrates well below the 25 keV cap, so the clamp mechanism is
+        exercised by initialising above the cap rather than via runaway heating.
+        """
         model = DynamicBurnModel(
             R0=6.2,
             a=2.0,
@@ -175,7 +180,7 @@ class TestQScanLimits:
         )
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            model.simulate(P_aux_mw=70.0, duration_s=50.0, dt_s=0.05)
+            model.simulate(P_aux_mw=70.0, T_initial_keV=30.0, duration_s=2.0, dt_s=0.05)
             temp_warnings = [x for x in w if "physical limit" in str(x.message)]
             assert len(temp_warnings) > 0
 
@@ -190,7 +195,8 @@ class TestQScanLimits:
         )
         result = model.simulate(
             P_aux_mw=70.0,
-            duration_s=50.0,
+            T_initial_keV=30.0,
+            duration_s=2.0,
             dt_s=0.05,
             warn_on_temperature_cap=False,
         )
@@ -214,7 +220,8 @@ class TestQScanLimits:
         with pytest.raises(BurnPhysicsError, match="exceeds 25.0 keV"):
             model.simulate(
                 P_aux_mw=70.0,
-                duration_s=50.0,
+                T_initial_keV=30.0,
+                duration_s=2.0,
                 dt_s=0.05,
                 enforce_temperature_limit=True,
                 warn_on_temperature_cap=False,
@@ -232,7 +239,8 @@ class TestQScanLimits:
         with pytest.raises(BurnPhysicsError, match="cap events exceeded limit"):
             model.simulate(
                 P_aux_mw=70.0,
-                duration_s=50.0,
+                T_initial_keV=30.0,
+                duration_s=2.0,
                 dt_s=0.05,
                 max_temperature_clamp_events=0,
                 warn_on_temperature_cap=False,
