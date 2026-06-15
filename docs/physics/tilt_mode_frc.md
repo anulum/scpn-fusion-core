@@ -78,9 +78,15 @@ The adapter also integrates the diagnostic growth exposure along the supplied
 trajectory:
 
 ```text
-G(t) = integral gamma_tilt dt
+G(t) = integral gamma_tilt dt   (trapezoidal: G += 0.5*(gamma_start+gamma_end)*dt)
 amplification = exp(G)
 ```
+
+The cumulative integral is accumulated with the trapezoidal rule from the
+interval-endpoint tilt growth rates. This is second-order accurate in the
+sampling interval for the time-varying compression drivers, is exact for a
+growth rate that varies linearly across the interval, and reduces to a single
+`gamma*dt` term for a constant growth rate.
 
 `FRCTiltModeTrajectoryPoint` reports `cumulative_growth_integral`,
 `perturbation_amplification`, and `amplification_overflow_limited`. If the

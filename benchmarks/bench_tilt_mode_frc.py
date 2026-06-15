@@ -199,17 +199,22 @@ def build_report(cases: Iterable[int] = (1_000, 10_000, 100_000)) -> dict[str, A
     rows.extend(_criterion_rows())
     rows.append({"language": "external_reference", **belova_table1_acceptance_status()})
     return {
-        "schema": "scpn-fusion-core.tilt_mode_frc_benchmark.v4",
+        "schema": "scpn-fusion-core.tilt_mode_frc_benchmark.v5",
         "claim_boundary": (
             "Local non-isolated FRC tilt diagnostic regression evidence. "
             "The accepted surface is an MHD Alfvén-time diagnostic with conservative "
             "fail-closed status plus self-similar FUS-C.6 trajectory projection, "
-            "not Belova Table I or hybrid eigenvalue parity."
+            "not Belova Table I or hybrid eigenvalue parity. The cumulative growth "
+            "integral is accumulated with the trapezoidal rule over each trajectory "
+            "interval."
         ),
         "physics_contract": {
             "name": "MIF/FRC n=1 tilt diagnostic",
             "mhd_growth_scaling": "gamma = C*V_A/(E*R_s)",
-            "trajectory_growth_integral": "G(t)=integral(gamma_tilt dt)",
+            "trajectory_growth_integral": (
+                "G(t)=integral(gamma_tilt dt), trapezoidal from interval-endpoint "
+                "growth rates: G += 0.5*(gamma(start)+gamma(end))*dt"
+            ),
             "rigid_body_threshold": "s/E thresholds are diagnostic only",
             "fus_c6_projection": "s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)",
             "not_claimed": "full Belova hybrid eigenvalue solver or Table I same-case parity",

@@ -29,6 +29,13 @@
   mixing volume is invariant. Removed the unused per-crash energy bookkeeping in
   `SawtoothCycler.step` and added an inner-region energy/particle conservation
   regression test.
+- Hardened the FRC n=1 tilt-mode FUS-C.6 trajectory cumulative growth integral
+  to second-order trapezoidal accumulation from the interval-endpoint growth
+  rates (`G += 0.5*(gamma_start+gamma_end)*dt`) across Python, Rust, benchmarks,
+  and documentation, replacing the first-order endpoint rectangle. The integral
+  is now exact for a linearly varying growth rate and unchanged for a constant
+  one; the benchmark report schema advances to
+  `scpn-fusion-core.tilt_mode_frc_benchmark.v5`.
 
 ## [3.9.10] - 2026-06-05
 

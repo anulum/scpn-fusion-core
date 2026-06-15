@@ -172,6 +172,12 @@ def tilt_mode_trajectory_from_pulsed_compression(
     Steinhauer ``s`` number with the self-similar gyroradius scaling
     ``s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)`` and by recomputing the
     Alfvén-time growth rate from the instantaneous radius, density, and field.
+
+    The cumulative growth integral is accumulated with the trapezoidal rule from
+    the interval-endpoint growth rates, ``+= 0.5*(gamma(start)+gamma(end))*dt``,
+    which is second-order accurate in the sampling interval for the time-varying
+    compression drivers and reduces to a single ``gamma*dt`` term when the growth
+    rate is constant across the interval.
     """
 
     if len(states) == 0:
@@ -191,6 +197,7 @@ def tilt_mode_trajectory_from_pulsed_compression(
 
     points: list[FRCTiltModeTrajectoryPoint] = []
     previous_t: float | None = None
+    previous_growth_rate: float | None = None
     cumulative_growth_integral = 0.0
     for state in states:
         t_s = _state_finite(state, "t_s")
@@ -219,8 +226,14 @@ def tilt_mode_trajectory_from_pulsed_compression(
             mhd_coefficient=coefficient,
             ion_mass_amu=mass_amu,
         )
-        if previous_t is not None:
-            cumulative_growth_integral += report.growth_rate_s_inv * (t_s - previous_t)
+        if previous_t is not None and previous_growth_rate is not None:
+            # Trapezoidal cumulative growth exponent from the interval-endpoint
+            # tilt growth rates: second-order accurate in dt for the time-varying
+            # compression drivers, against a first-order endpoint rectangle, and
+            # exact for a growth rate that varies linearly across the interval.
+            cumulative_growth_integral += (
+                0.5 * (previous_growth_rate + report.growth_rate_s_inv) * (t_s - previous_t)
+            )
         amplification_overflow_limited = cumulative_growth_integral > FLOAT64_LOG_MAX
         perturbation_amplification = float(np.exp(min(cumulative_growth_integral, FLOAT64_LOG_MAX)))
         points.append(
@@ -237,6 +250,7 @@ def tilt_mode_trajectory_from_pulsed_compression(
             )
         )
         previous_t = t_s
+        previous_growth_rate = report.growth_rate_s_inv
     return tuple(points)
 
 

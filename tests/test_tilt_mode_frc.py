@@ -155,10 +155,12 @@ def test_tilt_trajectory_tracks_pulsed_compression_projection() -> None:
     assert trajectory[1].report.s_parameter == pytest.approx(expected_s, rel=1.0e-14)
     assert trajectory[-1].report.growth_rate_s_inv > 0.0
     assert trajectory[0].cumulative_growth_integral == pytest.approx(0.0)
-    assert trajectory[1].cumulative_growth_integral == pytest.approx(
-        trajectory[1].report.growth_rate_s_inv * (states[1].t_s - states[0].t_s),
-        rel=1.0e-14,
+    trapezoidal = (
+        0.5
+        * (trajectory[0].report.growth_rate_s_inv + trajectory[1].report.growth_rate_s_inv)
+        * (states[1].t_s - states[0].t_s)
     )
+    assert trajectory[1].cumulative_growth_integral == pytest.approx(trapezoidal, rel=1.0e-14)
     assert trajectory[-1].cumulative_growth_integral >= trajectory[1].cumulative_growth_integral
     assert np.isfinite(trajectory[-1].perturbation_amplification)
     assert trajectory[-1].perturbation_amplification >= 1.0
@@ -181,6 +183,62 @@ def test_tilt_trajectory_growth_integral_limits_extreme_amplification() -> None:
     assert np.isfinite(trajectory[-1].perturbation_amplification)
     assert trajectory[-1].perturbation_amplification > 1.0e300
     assert trajectory[-1].amplification_overflow_limited is True
+
+
+def test_tilt_trajectory_constant_growth_reduces_to_gamma_dt() -> None:
+    eq = _equilibrium()
+    # Identical drivers -> constant growth rate -> cumulative = gamma * (t - t0).
+    states = tuple(
+        SimpleNamespace(t_s=t, R_s_m=0.2, T_i_eV=10_000.0, density_m3=3.0e21, B_ext_T=5.0)
+        for t in (0.0, 1.0e-8, 3.0e-8, 6.0e-8)
+    )
+
+    trajectory = tilt_mode_trajectory_from_pulsed_compression(states, eq, elongation=4.0)
+
+    gamma = trajectory[0].report.growth_rate_s_inv
+    for point in trajectory:
+        assert point.cumulative_growth_integral == pytest.approx(
+            gamma * (point.t_s - states[0].t_s), rel=1.0e-12, abs=0.0
+        )
+
+
+def test_tilt_trajectory_trapezoidal_exact_for_linear_growth_rate() -> None:
+    eq = _equilibrium()
+
+    def build(n: int) -> tuple[SimpleNamespace, ...]:
+        # B linear in t (radius and density fixed) -> growth rate linear in t.
+        return tuple(
+            SimpleNamespace(
+                t_s=float(t),
+                R_s_m=0.2,
+                T_i_eV=10_000.0,
+                density_m3=3.0e21,
+                B_ext_T=4.0 + 6.0e6 * float(t),
+            )
+            for t in np.linspace(0.0, 1.0e-6, n)
+        )
+
+    coarse = tilt_mode_trajectory_from_pulsed_compression(build(3), eq, elongation=4.0)
+    fine = tilt_mode_trajectory_from_pulsed_compression(build(201), eq, elongation=4.0)
+
+    # The trapezoidal rule integrates a linear integrand exactly, so a coarse and
+    # a fine sampling of the same linear-growth trajectory agree to machine
+    # precision.
+    assert coarse[-1].cumulative_growth_integral == pytest.approx(
+        fine[-1].cumulative_growth_integral, rel=1.0e-12
+    )
+
+    # A first-order endpoint rectangle over the coarse grid differs materially.
+    coarse_states = build(3)
+    rectangle = sum(
+        coarse[index].report.growth_rate_s_inv
+        * (coarse_states[index].t_s - coarse_states[index - 1].t_s)
+        for index in range(1, len(coarse_states))
+    )
+    relative_gap = abs(rectangle - coarse[-1].cumulative_growth_integral) / (
+        coarse[-1].cumulative_growth_integral
+    )
+    assert relative_gap > 1.0e-3
 
 
 def test_external_acceptance_and_claim_boundary_are_explicit() -> None:

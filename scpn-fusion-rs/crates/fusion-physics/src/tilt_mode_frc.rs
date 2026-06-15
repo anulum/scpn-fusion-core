@@ -183,6 +183,7 @@ pub fn tilt_mode_trajectory_from_pulsed_compression(
     require_positive("reference.elongation", reference.elongation)?;
     require_positive("reference.ion_mass_amu", reference.ion_mass_amu)?;
     let mut previous_t = None;
+    let mut previous_growth_rate: Option<f64> = None;
     let mut cumulative_growth_integral = 0.0_f64;
     let mut points = Vec::with_capacity(states.len());
     for state in states {
@@ -204,11 +205,17 @@ pub fn tilt_mode_trajectory_from_pulsed_compression(
             reference.ion_mass_amu,
             FrcTiltModeThresholds::default(),
         )?;
-        if let Some(t_s) = previous_t {
-            cumulative_growth_integral += report.growth_rate_s_inv * (state.t_s - t_s);
+        if let (Some(t_s), Some(previous_growth)) = (previous_t, previous_growth_rate) {
+            // Trapezoidal cumulative growth exponent from the interval-endpoint
+            // tilt growth rates: second-order accurate in dt for the time-varying
+            // compression drivers, exact for a growth rate that varies linearly
+            // across the interval, and reducing to gamma*dt for a constant rate.
+            cumulative_growth_integral +=
+                0.5 * (previous_growth + report.growth_rate_s_inv) * (state.t_s - t_s);
         }
         let amplification_overflow_limited = cumulative_growth_integral > FLOAT64_LOG_MAX;
         let perturbation_amplification = cumulative_growth_integral.min(FLOAT64_LOG_MAX).exp();
+        let growth_rate_s_inv = report.growth_rate_s_inv;
         points.push(FrcTiltModeTrajectoryPoint {
             t_s: state.t_s,
             r_s_m: state.r_s_m,
@@ -221,6 +228,7 @@ pub fn tilt_mode_trajectory_from_pulsed_compression(
             amplification_overflow_limited,
         });
         previous_t = Some(state.t_s);
+        previous_growth_rate = Some(growth_rate_s_inv);
     }
     Ok(points)
 }
@@ -304,12 +312,10 @@ mod tests {
         assert_eq!(trajectory.len(), 2);
         assert!((trajectory[1].report.s_parameter - expected_s).abs() / expected_s < 1.0e-14);
         assert_eq!(trajectory[0].cumulative_growth_integral, 0.0);
-        assert!(
-            (trajectory[1].cumulative_growth_integral
-                - trajectory[1].report.growth_rate_s_inv * (states[1].t_s - states[0].t_s))
-                .abs()
-                < 1.0e-12
-        );
+        let trapezoidal = 0.5
+            * (trajectory[0].report.growth_rate_s_inv + trajectory[1].report.growth_rate_s_inv)
+            * (states[1].t_s - states[0].t_s);
+        assert!((trajectory[1].cumulative_growth_integral - trapezoidal).abs() < 1.0e-12);
         assert!(trajectory[1].perturbation_amplification.is_finite());
         assert!(trajectory[1].perturbation_amplification >= 1.0);
         assert!(!trajectory[1].amplification_overflow_limited);
@@ -340,6 +346,68 @@ mod tests {
         assert!(trajectory[1].perturbation_amplification.is_finite());
         assert!(trajectory[1].perturbation_amplification > 1.0e300);
         assert!(trajectory[1].amplification_overflow_limited);
+    }
+
+    #[test]
+    fn tilt_trajectory_constant_growth_reduces_to_gamma_dt() {
+        let reference = FrcTiltCompressionReference {
+            s_parameter: 8.0,
+            r_s_m: 0.2,
+            b_reference_t: 5.0,
+            t_i_ev: 10_000.0,
+            elongation: 4.0,
+            ion_mass_amu: DEUTERIUM_MASS_AMU,
+        };
+        // Identical drivers -> constant growth rate -> cumulative = gamma*(t-t0).
+        let states = vec![
+            compression_state(0.0, 0.2, 5.0, 10_000.0),
+            compression_state(1.0e-8, 0.2, 5.0, 10_000.0),
+            compression_state(3.0e-8, 0.2, 5.0, 10_000.0),
+        ];
+        let trajectory = tilt_mode_trajectory_from_pulsed_compression(&states, reference).unwrap();
+        let gamma = trajectory[0].report.growth_rate_s_inv;
+        for point in &trajectory {
+            let expected = gamma * (point.t_s - states[0].t_s);
+            assert!(
+                (point.cumulative_growth_integral - expected).abs() <= 1.0e-12 * expected.max(1.0)
+            );
+        }
+    }
+
+    #[test]
+    fn tilt_trajectory_trapezoidal_exact_for_linear_growth_rate() {
+        let reference = FrcTiltCompressionReference {
+            s_parameter: 8.0,
+            r_s_m: 0.2,
+            b_reference_t: 4.0,
+            t_i_ev: 10_000.0,
+            elongation: 4.0,
+            ion_mass_amu: DEUTERIUM_MASS_AMU,
+        };
+        // B linear in t (radius/density fixed) -> growth rate linear in t. The
+        // trapezoidal rule integrates a linear integrand exactly, so coarse and
+        // fine samplings agree to machine precision and both differ from the
+        // first-order endpoint rectangle sum.
+        let build = |n: usize| -> Vec<PulsedCompressionState> {
+            (0..n)
+                .map(|i| {
+                    let t = 1.0e-6 * i as f64 / (n - 1) as f64;
+                    compression_state(t, 0.2, 4.0 + 6.0e6 * t, 10_000.0)
+                })
+                .collect()
+        };
+        let coarse = tilt_mode_trajectory_from_pulsed_compression(&build(3), reference).unwrap();
+        let fine = tilt_mode_trajectory_from_pulsed_compression(&build(201), reference).unwrap();
+        let coarse_cum = coarse.last().unwrap().cumulative_growth_integral;
+        let fine_cum = fine.last().unwrap().cumulative_growth_integral;
+        assert!((coarse_cum - fine_cum).abs() / fine_cum < 1.0e-12);
+
+        let states = build(3);
+        let mut rectangle = 0.0;
+        for i in 1..states.len() {
+            rectangle += coarse[i].report.growth_rate_s_inv * (states[i].t_s - states[i - 1].t_s);
+        }
+        assert!((rectangle - coarse_cum).abs() / coarse_cum > 1.0e-3);
     }
 
     #[test]
