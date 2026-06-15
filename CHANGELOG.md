@@ -87,6 +87,9 @@
 - Added absolute-value assertions for the IPB98(y,2) confinement time at the ITER
   baseline (~3.6 s near 87 MW) and the tungsten cooling-curve peak (~1e-31 W m^3
   near 1.5 keV), which previously had only monotonicity and ordering tests.
+- Added absolute-value assertions for the runaway-electron Connor-Hastie critical
+  field (~0.08 V/m per 1e20 m^-3) and the Dreicer/critical ratio (m_e c^2 / T_e),
+  which previously were exercised only relatively (E_par versus E_c).
 
 ## [3.9.10] - 2026-06-05
 

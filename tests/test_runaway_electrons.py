@@ -11,15 +11,45 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core.runaway_electrons import (
+    C_LIGHT,
+    E_CHARGE,
+    EPS_0,
+    M_E,
     RunawayEvolution,
     RunawayMitigationAssessment,
     RunawayParams,
     avalanche_growth_rate,
     critical_field,
     dream_fluid_density_balance,
+    dreicer_field,
     dreicer_generation_rate,
     hot_tail_seed,
 )
+
+
+def test_critical_and_dreicer_field_absolute_values() -> None:
+    """Pin the Connor-Hastie critical field and the Dreicer/critical relation.
+
+    The other tests use ``critical_field`` only relatively (E_par vs E_c), so a
+    wrong prefactor would pass. ``E_c`` is ~0.08 V/m per 1e20 m^-3 and the
+    Dreicer/critical ratio is exactly ``m_e c^2 / T_e``.
+    """
+    ne_20, ln_lambda, te_keV = 1.0, 15.0, 10.0
+    e_c = critical_field(ne_20, ln_lambda)
+    expected = (
+        (ne_20 * 1e20)
+        * E_CHARGE**3
+        * ln_lambda
+        / (4.0 * np.pi * EPS_0**2 * M_E * C_LIGHT**2)
+    )
+    assert e_c == pytest.approx(expected, rel=1e-12)
+    assert 0.05 < e_c < 0.15  # ITER-relevant magnitude
+    assert critical_field(5.0, ln_lambda) == pytest.approx(5.0 * e_c, rel=1e-12)
+
+    e_d = dreicer_field(ne_20, te_keV, ln_lambda)
+    assert e_d / e_c == pytest.approx(
+        M_E * C_LIGHT**2 / (te_keV * 1e3 * E_CHARGE), rel=1e-12
+    )
 
 
 def test_zero_epar():
