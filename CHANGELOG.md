@@ -56,6 +56,15 @@
   recalibrated the temperature-cap and helium-ash tests to the corrected
   dynamics (an ITER-class plasma now equilibrates below the 25 keV cap rather
   than running away).
+- Corrected the carbon, neon, and argon impurity cooling-curve peak magnitudes in
+  `CoolingCurve` from `1e-32` to the coronal order `1e-31 W m^3` (argon ~1e-31
+  confirmed against the cooling-rate literature; tungsten already used `1e-31`).
+  The previous prefactor under-stated impurity radiated power and the MARFE
+  threshold by an order of magnitude. Added coronal-band peak regression
+  assertions and recalibrated the burn-through critical-impurity-fraction test to
+  compare tungsten and carbon at a core temperature. The peaks remain parametric
+  fits; exact per-element ADAS/Mavrin magnitudes and locations are a future
+  refinement.
 
 ### Repository hygiene
 

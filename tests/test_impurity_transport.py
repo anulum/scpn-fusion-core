@@ -56,6 +56,20 @@ def test_tungsten_cooling_curve_peak_order_of_magnitude():
     assert 800.0 < te_eV[int(np.argmax(cooling))] < 2500.0
 
 
+def test_light_impurity_cooling_curve_peak_order_of_magnitude():
+    """Pin the coronal-order peak of the C/Ne/Ar cooling curves.
+
+    Coronal Lz for these light/medium impurities peaks at order 1e-31 W m^3
+    (argon ~1e-31 confirmed against the cooling-rate literature; carbon ~2e-31 and
+    neon ~9e-32 in Post & Jensen / ADAS). Guards against the prefactor drifting
+    back an order of magnitude low.
+    """
+    te_eV = np.logspace(0.0, 3.5, 400)  # 1 eV - ~3 keV
+    for element in ("C", "Ne", "Ar"):
+        peak = float(np.max(CoolingCurve(element).L_z(te_eV)))
+        assert 3e-32 < peak < 3e-31, f"{element} peak {peak:.2e} outside coronal band"
+
+
 def test_cooling_curve_returns_zero_for_nonpositive_temperatures_without_warning():
     curve = CoolingCurve("W")
 

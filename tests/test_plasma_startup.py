@@ -65,8 +65,13 @@ def test_burn_through():
 def test_critical_impurity_fraction():
     bt = BurnThrough(R0=6.2, a=2.0, B0=5.3, V_loop=15.0)
 
-    f_crit_C = bt.critical_impurity_fraction(Te_eV=10.0, ne_19=0.1, Ip_kA=100.0, impurity="C")
-    f_crit_W = bt.critical_impurity_fraction(Te_eV=50.0, ne_19=0.1, Ip_kA=100.0, impurity="W")
+    # Compare at a core temperature (~1.5 keV): tungsten radiates at its Lz peak
+    # while carbon is fully stripped, so a far smaller tungsten fraction quenches
+    # the plasma. (The previous comparison used carbon at its 10 eV peak versus
+    # tungsten at 50 eV, far below the tungsten peak, which only favoured tungsten
+    # because the carbon cooling rate was an order of magnitude too low.)
+    f_crit_C = bt.critical_impurity_fraction(Te_eV=1500.0, ne_19=0.1, Ip_kA=100.0, impurity="C")
+    f_crit_W = bt.critical_impurity_fraction(Te_eV=1500.0, ne_19=0.1, Ip_kA=100.0, impurity="W")
 
     # W should be much lower than C
     assert f_crit_W < f_crit_C
