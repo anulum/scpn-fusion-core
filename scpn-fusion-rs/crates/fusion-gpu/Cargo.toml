@@ -14,7 +14,7 @@ pollster = "0.4"
 log = "0.4"
 
 [dev-dependencies]
-ndarray = "0.16"
+ndarray = "0.17"
 criterion = { workspace = true }
 
 [[bench]]
