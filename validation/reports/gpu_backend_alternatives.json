@@ -8,7 +8,7 @@
     "spdx_license": "AGPL-3.0-or-later"
   },
   "benchmark_id": "gpu_backend_alternatives",
-  "generated_at_utc": "2026-06-01T20:36:40.498244+00:00",
+  "generated_at_utc": "2026-06-16T23:47:57.821570+00:00",
   "lanes": [
     {
       "command": [
@@ -20,32 +20,32 @@
         "gpu_sor_bench"
       ],
       "criterion_timings": {
-        "cpu_sor_solve_129x129_20iter": "time:   [2.2020 ms 2.3545 ms 2.5163 ms]",
-        "cpu_sor_solve_33x33_20iter": "time:   [118.60 \u00b5s 123.24 \u00b5s 127.83 \u00b5s]",
-        "cpu_sor_solve_65x65_20iter": "time:   [466.99 \u00b5s 490.65 \u00b5s 516.72 \u00b5s]",
-        "gpu_sor_solve_full_129x129_20iter": "time:   [1.9710 ms 2.0289 ms 2.0877 ms]",
-        "gpu_sor_solve_full_33x33_20iter": "time:   [2.0806 ms 2.1627 ms 2.2482 ms]",
-        "gpu_sor_solve_full_65x65_20iter": "time:   [2.4200 ms 2.5852 ms 2.7623 ms]"
+        "cpu_sor_solve_129x129_20iter": "time:   [1.3451 ms 1.3942 ms 1.4515 ms]",
+        "cpu_sor_solve_33x33_20iter": "time:   [109.50 \u00b5s 113.42 \u00b5s 117.84 \u00b5s]",
+        "cpu_sor_solve_65x65_20iter": "time:   [360.26 \u00b5s 382.96 \u00b5s 410.02 \u00b5s]",
+        "gpu_sor_solve_full_129x129_20iter": "time:   [99.586 ms 103.33 ms 107.15 ms]",
+        "gpu_sor_solve_full_33x33_20iter": "time:   [104.01 ms 107.52 ms 111.09 ms]",
+        "gpu_sor_solve_full_65x65_20iter": "time:   [103.32 ms 106.70 ms 110.18 ms]"
       },
-      "elapsed_s": 189.664077,
+      "elapsed_s": 81.371486,
       "exit_code": 0,
-      "fusion_gpu_adapter": "NVIDIA GeForce GTX 1060 6GB (Vulkan, DiscreteGpu)",
+      "fusion_gpu_adapter": "AMD Radeon RX 6600 XT (RADV NAVI23) (Vulkan, DiscreteGpu)",
       "fusion_gpu_adapter_physical": true,
       "fusion_gpu_available": true,
       "lane": "wgpu_physical",
       "nvidia_smi_exit_code": 0,
-      "output_sha256": "4aa9fb4b060644e0c1f24fbdd15224f44774f82260d213caf0c6049143ad8f52",
+      "output_sha256": "c69e731d25044579d454bca695a7df2f5912f46a06d4e6902769d56a8f68c8b9",
       "physical_vulkan_device_present": true,
       "status": "passed",
       "timed_out": false,
       "vulkan_devices": [
         {
-          "deviceName": "Intel(R) Graphics (RKL GT1)",
-          "deviceType": "PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU",
-          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.1",
-          "driverName": "Intel open-source Mesa driver",
+          "deviceName": "AMD Radeon RX 6600 XT (RADV NAVI23)",
+          "deviceType": "PHYSICAL_DEVICE_TYPE_DISCRETE_GPU",
+          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.2",
+          "driverName": "radv",
           "slot": "GPU0",
-          "vendorID": "0x8086"
+          "vendorID": "0x1002"
         },
         {
           "deviceName": "NVIDIA GeForce GTX 1060 6GB",
@@ -58,7 +58,7 @@
         {
           "deviceName": "AMD Radeon RX 6600 XT (RADV NAVI23)",
           "deviceType": "PHYSICAL_DEVICE_TYPE_DISCRETE_GPU",
-          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.1",
+          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.2",
           "driverName": "radv",
           "slot": "GPU2",
           "vendorID": "0x1002"
@@ -66,7 +66,7 @@
         {
           "deviceName": "AMD Radeon RX 6600 XT (RADV NAVI23)",
           "deviceType": "PHYSICAL_DEVICE_TYPE_DISCRETE_GPU",
-          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.1",
+          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.2",
           "driverName": "radv",
           "slot": "GPU3",
           "vendorID": "0x1002"
@@ -74,7 +74,7 @@
         {
           "deviceName": "AMD Radeon RX 6600 XT (RADV NAVI23)",
           "deviceType": "PHYSICAL_DEVICE_TYPE_DISCRETE_GPU",
-          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.1",
+          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.2",
           "driverName": "radv",
           "slot": "GPU4",
           "vendorID": "0x1002"
@@ -82,23 +82,23 @@
         {
           "deviceName": "AMD Radeon RX 6600 XT (RADV NAVI23)",
           "deviceType": "PHYSICAL_DEVICE_TYPE_DISCRETE_GPU",
-          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.1",
+          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.2",
           "driverName": "radv",
           "slot": "GPU5",
           "vendorID": "0x1002"
         },
         {
-          "deviceName": "AMD Radeon RX 6600 XT (RADV NAVI23)",
-          "deviceType": "PHYSICAL_DEVICE_TYPE_DISCRETE_GPU",
-          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.1",
-          "driverName": "radv",
+          "deviceName": "Intel(R) Graphics (RKL GT1)",
+          "deviceType": "PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU",
+          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.2",
+          "driverName": "Intel open-source Mesa driver",
           "slot": "GPU6",
-          "vendorID": "0x1002"
+          "vendorID": "0x8086"
         },
         {
           "deviceName": "llvmpipe (LLVM 20.1.2, 256 bits)",
           "deviceType": "PHYSICAL_DEVICE_TYPE_CPU",
-          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.1 (LLVM 20.1.2)",
+          "driverInfo": "Mesa 25.2.8-0ubuntu0.24.04.2 (LLVM 20.1.2)",
           "driverName": "llvmpipe",
           "slot": "GPU7",
           "vendorID": "0x10005"
@@ -108,23 +108,23 @@
     },
     {
       "cuda_device_present": true,
-      "elapsed_s": 0.000685,
+      "elapsed_s": 0.000922,
       "jax_devices": [
         "cuda:0"
       ],
-      "jax_version_or_error": "0.6.2",
+      "jax_version_or_error": "0.7.1",
       "lane": "cuda_jax",
-      "max_s": 0.000323,
-      "median_s": 0.000215,
-      "min_s": 0.000134,
-      "repeats": 3,
-      "result_l2_norm": 108.400383796532,
-      "result_sha256": "981894544f3fdb73390ea6b23d4eaaf457e2fc74d702aab235e16625f9439718",
-      "size": 128,
+      "max_s": 0.000222,
+      "median_s": 0.000203,
+      "min_s": 0.000131,
+      "repeats": 5,
+      "result_l2_norm": 243.056601754196,
+      "result_sha256": "5572368b6af1edafdf98ec4eca1c58d4b918d617a35c95d1d3c77d3dba108ac8",
+      "size": 256,
       "status": "passed"
     }
   ],
-  "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+  "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
   "probe_only": false,
   "publishable_gpu_throughput": true,
   "python": "3.12.3",

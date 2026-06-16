@@ -1182,8 +1182,8 @@
   "cpu_benchmark_rows": [
     {
       "case_id": "local_cpu_64x32_4x2",
-      "cells_per_second": 2911696.628057509,
-      "elapsed_s": 0.18006271496415138,
+      "cells_per_second": 20858073.777478345,
+      "elapsed_s": 0.025135973992291838,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1208,8 +1208,8 @@
     },
     {
       "case_id": "local_cpu_64x32_8x1",
-      "cells_per_second": 5826379.299769564,
-      "elapsed_s": 0.08998521603643894,
+      "cells_per_second": 30866302.065380406,
+      "elapsed_s": 0.01698577299248427,
       "free_energy_relative_error": 1.665332948749444e-16,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -1234,8 +1234,8 @@
     },
     {
       "case_id": "local_cpu_64x32_2x4",
-      "cells_per_second": 9938514.37993096,
-      "elapsed_s": 0.052753156051039696,
+      "cells_per_second": 25598853.788834285,
+      "elapsed_s": 0.020480917009990662,
       "free_energy_relative_error": 0.0,
       "global_free_energy": 174762.83333365122,
       "global_inventory": 262144.0,
@@ -2782,16 +2782,16 @@
   },
   "gpu_rank_tile_evidence": {
     "blocking_reason": "Single-GPU rank-tile reductions passed locally; multi-GPU readiness requires at least two visible CUDA devices and scaling rows.",
-    "cells_per_second": 319181.11194772454,
+    "cells_per_second": 348674.65229307907,
     "device_count": 1,
-    "elapsed_s": 0.1732433340512216,
+    "elapsed_s": 0.1585891020076815,
     "free_energy_relative_error": 0.0,
     "gpu_rank_tile_execution_ready": true,
     "inventory_relative_error": 4.64717682771065e-15,
     "multi_gpu_runtime_ready": false,
     "owned_phase_cells": 55296,
     "parallel_moment_relative_error": 3.1533100119165687e-15,
-    "preloaded_nvrtc": ".venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+    "preloaded_nvrtc": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
     "rank_count": 8,
     "rank_rows": [
       {
@@ -3202,7 +3202,7 @@
   "hardware_metadata": {
     "cpu_count": 12,
     "machine": "x86_64",
-    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "python_version": "3.12.3"
   },
@@ -3215,8 +3215,8 @@
     "rows": [
       {
         "case_id": "large_cpu_96x48_6x4",
-        "cells_per_second": 2243776.614497448,
-        "elapsed_s": 4.205937408842146,
+        "cells_per_second": 23213885.491091106,
+        "elapsed_s": 0.4065318579960149,
         "free_energy_relative_error": 7.401486438689479e-16,
         "global_free_energy": 3145728.166666682,
         "global_inventory": 4718591.999999999,
@@ -3247,8 +3247,8 @@
   "local_multiprocess_cpu_evidence": {
     "blocking_reason": "This is local CPU process isolation over rank tiles. It is not MPI or multi-GPU execution and does not satisfy the cluster scaling gate.",
     "case_id": "local_multiprocess_cpu_32x16_4x2",
-    "cells_per_second": 278344.13405637647,
-    "elapsed_s": 0.47089909203350544,
+    "cells_per_second": 3395663.5037389775,
+    "elapsed_s": 0.03859981999266893,
     "free_energy_relative_error": 1.1102358897082595e-16,
     "global_shape": [
       32,
@@ -3284,7 +3284,7 @@
           4
         ],
         "parallel_moment": -5.037679605773919,
-        "pid": 540385,
+        "pid": 1682903,
         "rank": 0
       },
       {
@@ -3306,7 +3306,7 @@
           4
         ],
         "parallel_moment": -1.4054627214277193,
-        "pid": 540385,
+        "pid": 1682907,
         "rank": 1
       },
       {
@@ -3328,7 +3328,7 @@
           4
         ],
         "parallel_moment": -1.0210466960824318,
-        "pid": 540389,
+        "pid": 1682909,
         "rank": 2
       },
       {
@@ -3350,7 +3350,7 @@
           4
         ],
         "parallel_moment": -4.938189902013417,
-        "pid": 540392,
+        "pid": 1682910,
         "rank": 3
       },
       {
@@ -3372,7 +3372,7 @@
           4
         ],
         "parallel_moment": 5.071609935932594,
-        "pid": 540387,
+        "pid": 1682903,
         "rank": 4
       },
       {
@@ -3394,7 +3394,7 @@
           4
         ],
         "parallel_moment": 1.5695633589283906,
-        "pid": 540389,
+        "pid": 1682907,
         "rank": 5
       },
       {
@@ -3416,7 +3416,7 @@
           4
         ],
         "parallel_moment": 0.8525123869158655,
-        "pid": 540387,
+        "pid": 1682909,
         "rank": 6
       },
       {
@@ -3438,7 +3438,7 @@
           4
         ],
         "parallel_moment": 4.886031853634489,
-        "pid": 540392,
+        "pid": 1682903,
         "rank": 7
       }
     ],
@@ -3459,24 +3459,140 @@
     "accepted distributed run manifests with reproducibility fields and checksums"
   ],
   "mpi_runtime_evidence": {
-    "blocking_reason": "mpi_runtime_timeout_after_30.0_s",
+    "blocking_reason": "MPI rank-tile execution passed locally. Cluster scaling and multi-GPU runtime evidence are still required for production-scale readiness.",
     "command": [
       "/usr/bin/mpiexec",
       "-n",
       "4",
-      ".venv/bin/python",
-      "validation/mpi_production_decomposition_runner.py",
+      "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python",
+      "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/mpi_production_decomposition_runner.py",
       "--output",
-      "/tmp/scpn_mpi_decomposition_fdly6wfp/mpi_result.json"
+      "/tmp/scpn_mpi_decomposition_0sujf9q_/mpi_result.json"
     ],
-    "elapsed_s": 30.061406078049913,
-    "mpi_runtime_execution_ready": false,
+    "decomposition_invariant_pass": true,
+    "elapsed_s": 3.872911865997594,
+    "free_energy_relative_error": 1.4818613523657498e-16,
+    "global_shape": [
+      16,
+      8,
+      4,
+      4,
+      3
+    ],
+    "halo_exchange_pass": true,
+    "inventory_relative_error": 2.023262710473885e-16,
+    "max_halo_linf_error": 0.0,
+    "min_halo_verified_fraction": 1.0,
+    "mpi_runtime_execution_ready": true,
+    "parallel_moment_relative_error": 0.0,
+    "radial_parts": 2,
     "rank_count": 4,
-    "returncode": null,
+    "rank_rows": [
+      {
+        "corner_neighbour_ranks": {
+          "radial_lower_toroidal_lower": null,
+          "radial_lower_toroidal_upper": null,
+          "radial_upper_toroidal_lower": null,
+          "radial_upper_toroidal_upper": 3
+        },
+        "halo_linf_error": 0.0,
+        "halo_verified_fraction": 1.0,
+        "neighbour_ranks": {
+          "radial_lower": null,
+          "radial_upper": 2,
+          "toroidal_lower": null,
+          "toroidal_upper": 1
+        },
+        "owned_shape": [
+          8,
+          4,
+          4,
+          4,
+          3
+        ],
+        "rank": 0
+      },
+      {
+        "corner_neighbour_ranks": {
+          "radial_lower_toroidal_lower": null,
+          "radial_lower_toroidal_upper": null,
+          "radial_upper_toroidal_lower": 2,
+          "radial_upper_toroidal_upper": null
+        },
+        "halo_linf_error": 0.0,
+        "halo_verified_fraction": 1.0,
+        "neighbour_ranks": {
+          "radial_lower": null,
+          "radial_upper": 3,
+          "toroidal_lower": 0,
+          "toroidal_upper": null
+        },
+        "owned_shape": [
+          8,
+          4,
+          4,
+          4,
+          3
+        ],
+        "rank": 1
+      },
+      {
+        "corner_neighbour_ranks": {
+          "radial_lower_toroidal_lower": null,
+          "radial_lower_toroidal_upper": 1,
+          "radial_upper_toroidal_lower": null,
+          "radial_upper_toroidal_upper": null
+        },
+        "halo_linf_error": 0.0,
+        "halo_verified_fraction": 1.0,
+        "neighbour_ranks": {
+          "radial_lower": 0,
+          "radial_upper": null,
+          "toroidal_lower": null,
+          "toroidal_upper": 3
+        },
+        "owned_shape": [
+          8,
+          4,
+          4,
+          4,
+          3
+        ],
+        "rank": 2
+      },
+      {
+        "corner_neighbour_ranks": {
+          "radial_lower_toroidal_lower": 0,
+          "radial_lower_toroidal_upper": null,
+          "radial_upper_toroidal_lower": null,
+          "radial_upper_toroidal_upper": null
+        },
+        "halo_linf_error": 0.0,
+        "halo_verified_fraction": 1.0,
+        "neighbour_ranks": {
+          "radial_lower": 1,
+          "radial_upper": null,
+          "toroidal_lower": 2,
+          "toroidal_upper": null
+        },
+        "owned_shape": [
+          8,
+          4,
+          4,
+          4,
+          3
+        ],
+        "rank": 3
+      }
+    ],
+    "reconstruction_linf_error": 0.0,
+    "returncode": 0,
     "schema": "production-decomposition-mpi-runtime-evidence.v1",
-    "status": "blocked_mpi_runtime_execution_timeout"
+    "status": "accepted_local_mpi_rank_tile_execution",
+    "topology": "radial_toroidal_2d",
+    "toroidal_parts": 2
   },
-  "mpi_runtime_execution_pass": false,
+  "mpi_runtime_execution_pass": true,
   "parallel_moment_invariant_pass": true,
   "production_scale_ready": false,
   "reciprocal_neighbour_graph_evidence": {
@@ -6411,7 +6527,7 @@
   "runtime_dependency_evidence": {
     "numpy_contract_pass": true,
     "optional_runtime_dependency_ready": true,
-    "python_executable": ".venv/bin/python",
+    "python_executable": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python",
     "rows": [
       {
         "distribution": "cupy-cuda12x",
@@ -6460,7 +6576,7 @@
     "shape_rows": [
       {
         "case_id": "local_cpu_64x32_4x2",
-        "cells_per_second": 2911696.628057509,
+        "cells_per_second": 20858073.777478345,
         "free_energy_relative_deviation_from_reference": 0.0,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6471,7 +6587,7 @@
       },
       {
         "case_id": "local_cpu_64x32_8x1",
-        "cells_per_second": 5826379.299769564,
+        "cells_per_second": 30866302.065380406,
         "free_energy_relative_deviation_from_reference": 3.3306658974988877e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,
@@ -6482,7 +6598,7 @@
       },
       {
         "case_id": "local_cpu_64x32_2x4",
-        "cells_per_second": 9938514.37993096,
+        "cells_per_second": 25598853.788834285,
         "free_energy_relative_deviation_from_reference": 1.6653329487494438e-16,
         "inventory_relative_deviation_from_reference": 0.0,
         "owned_phase_cells": 524288,

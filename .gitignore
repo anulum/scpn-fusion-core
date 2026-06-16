@@ -19,6 +19,7 @@ build/
 
 # Virtual environments
 .venv/
+.cache/
 .pip-cache/
 venv/
 env/

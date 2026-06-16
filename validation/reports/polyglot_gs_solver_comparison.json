@@ -25,13 +25,13 @@
   },
   "hardware": {
     "cpu_model": "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz",
-    "go": "go version go1.26.2 linux/amd64",
+    "go": "go version go1.24.0 linux/amd64",
     "julia": "julia version 1.12.6",
-    "lean": "Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)",
+    "lean": "Lean (version 4.31.0, x86_64-unknown-linux-gnu, commit 68218e876d2a38b1985b8590fff244a83c321783, Release)",
     "machine": "x86_64",
-    "os": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "os": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
-    "rust": "rustc 1.95.0 (59807616e 2026-04-14)"
+    "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)"
   },
   "parity": {
     "by_language": {
@@ -49,7 +49,7 @@
         "max_abs_error_interior": 1.3877787807814457e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 1.7904871381681672e-16,
+        "relative_l2_interior": 1.7906252983703998e-16,
         "vertical_symmetry_abs_max": 0.0
       },
       "Julia": {
@@ -66,7 +66,7 @@
         "max_abs_error_interior": 1.3877787807814457e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 9.018854179614561e-17,
+        "relative_l2_interior": 8.983124920046824e-17,
         "vertical_symmetry_abs_max": 0.0
       },
       "Lean": {
@@ -83,7 +83,7 @@
         "max_abs_error_interior": 4.85722573273506e-16,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 1.1233193438119962e-14,
+        "relative_l2_interior": 1.1233083104582504e-14,
         "vertical_symmetry_abs_max": 0.0
       },
       "Rust": {
@@ -100,7 +100,7 @@
         "max_abs_error_interior": 4.163336342344337e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 5.91196632650529e-16,
+        "relative_l2_interior": 5.906398378511105e-16,
         "vertical_symmetry_abs_max": 0.0
       }
     },
@@ -125,7 +125,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.004863932001171634
+      "wall_time_s": 0.007884488004492596
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -142,7 +142,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 3.8565967400209047
+      "wall_time_s": 5.462642664002487
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -159,7 +159,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0023499449889641255
+      "wall_time_s": 0.003616000001784414
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -176,7 +176,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0013449540128931403
+      "wall_time_s": 0.004898338986095041
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -193,7 +193,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 1.3821006630023476
+      "wall_time_s": 9.135552210995229
     }
   ]
 }

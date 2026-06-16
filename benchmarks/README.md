@@ -67,6 +67,21 @@ The local CLI benchmark includes process start-up and compilation-cache checks
 for language CLI paths. Use long-lived processes or cloud GPU/CPU runners for
 throughput comparisons.
 
+## Rust Multigrid Scaling Validation
+
+`python validation/benchmark_rust_multigrid_scaling.py` runs the native Rust
+geometric multigrid V-cycle on 33x33, 65x65, and 129x129 fixed-boundary
+Grad-Shafranov grids. The report records residual history, contraction, cycles,
+and single-run local timings.
+
+| File | Contents |
+|------|----------|
+| `validation/reports/rust_multigrid_scaling.json` | Machine-readable convergence/scaling evidence and environment metadata |
+| `validation/reports/rust_multigrid_scaling.md` | Human-readable convergence/scaling report |
+
+This validation is not an isolated release-performance claim. Use Criterion or
+dedicated pinned-core runners before citing multigrid speedups.
+
 ## Criterion Benchmarks
 
 Three benchmark suites are defined in the Rust workspace:
@@ -95,7 +110,9 @@ comparisons. Rust benches used the release profile with fat LTO.
 
 These are full-order Rust equilibrium component timings. They are separate
 from the reduced-order Rust flight-simulator kernel measured by
-`validation/verify_10khz_rust.py`.
+`validation/verify_10khz_rust.py`. The 33x33 multigrid Criterion result is
+slower than the SOR result on this local low-grid case, so it must not be cited
+as a speedup claim.
 
 ## Comparing Results
 

@@ -9,7 +9,7 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Halo-face integrity pass: `True`
 - Local decomposed execution pass: `True`
 - Local multiprocess CPU execution pass: `True`
-- MPI runtime execution pass: `False`
+- MPI runtime execution pass: `True`
 - GPU rank-tile execution pass: `True`
 - Halo exchange pass: `True`
 - Decomposition invariant pass: `True`
@@ -31,7 +31,7 @@ Deterministic radial/toroidal decomposition contract for production-scale 5D non
 - Status: `accepted_optional_runtime_dependencies`
 - Optional runtime dependency ready: `True`
 - NumPy contract pass: `True`
-- Python executable: `.venv/bin/python`
+- Python executable: `/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python`
 
 | Module | Distribution | Required specifier | Importable | Version |
 |---|---|---|:---:|---|
@@ -317,9 +317,9 @@ Required distributed-run fields:
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 1.800627e-01 | 2.911697e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_8x1 | 8 | 524288 | 8.998522e-02 | 5.826379e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
-| local_cpu_64x32_2x4 | 8 | 524288 | 5.275316e-02 | 9.938514e+06 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
+| local_cpu_64x32_4x2 | 8 | 524288 | 2.513597e-02 | 2.085807e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_8x1 | 8 | 524288 | 1.698577e-02 | 3.086630e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 1.665333e-16 |
+| local_cpu_64x32_2x4 | 8 | 524288 | 2.048092e-02 | 2.559885e+07 | `True` | `True` | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 |
 
 ## Local multiprocess CPU rank execution
 
@@ -331,8 +331,8 @@ Required distributed-run fields:
 - Unique worker process count: `4`
 - Rank count: `8`
 - Owned phase cells: `131072`
-- Elapsed s: `4.708991e-01`
-- Cells/s: `2.783441e+05`
+- Elapsed s: `3.859982e-02`
+- Cells/s: `3.395664e+06`
 - Reconstruction L_inf error: `0.000000e+00`
 - Inventory relative error: `6.983344e-15`
 - Free-energy relative error: `1.110236e-16`
@@ -342,22 +342,38 @@ Required distributed-run fields:
 
 | Rank | PID | Owned shape | Halo shape |
 |---:|---:|---|---|
-| 0 | 540385 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
-| 1 | 540385 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
-| 2 | 540389 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
-| 3 | 540392 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
-| 4 | 540387 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
-| 5 | 540389 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
-| 6 | 540387 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
-| 7 | 540392 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+| 0 | 1682903 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+| 1 | 1682907 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+| 2 | 1682909 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 3 | 1682910 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 4 | 1682903 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 5 | 1682907 | `[8, 8, 8, 8, 4]` | `[10, 9, 8, 8, 4]` |
+| 6 | 1682909 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
+| 7 | 1682903 | `[8, 8, 8, 8, 4]` | `[9, 9, 8, 8, 4]` |
 
 ## MPI runtime rank execution
 
 - Schema: `production-decomposition-mpi-runtime-evidence.v1`
-- Status: `blocked_mpi_runtime_execution_timeout`
-- MPI runtime execution ready: `False`
+- Status: `accepted_local_mpi_rank_tile_execution`
+- MPI runtime execution ready: `True`
 - Rank count: `4`
-- Blocking reason: mpi_runtime_timeout_after_30.0_s
+- Blocking reason: MPI rank-tile execution passed locally. Cluster scaling and multi-GPU runtime evidence are still required for production-scale readiness.
+- Elapsed s: `3.872912e+00`
+- Topology: `radial_toroidal_2d`
+- Radial parts: `2`
+- Toroidal parts: `2`
+- Minimum halo verified fraction: `1.000000e+00`
+- Reconstruction L_inf error: `0.000000e+00`
+- Inventory relative error: `2.023263e-16`
+- Free-energy relative error: `1.481861e-16`
+- Parallel-moment relative error: `0.000000e+00`
+
+| Rank | Owned shape | Face neighbours | Corner neighbours | Halo verified fraction | Halo L_inf |
+|---:|---|---|---|---:|---:|
+| 0 | `[8, 4, 4, 4, 3]` | `{"radial_lower": null, "radial_upper": 2, "toroidal_lower": null, "toroidal_upper": 1}` | `{"radial_lower_toroidal_lower": null, "radial_lower_toroidal_upper": null, "radial_upper_toroidal_lower": null, "radial_upper_toroidal_upper": 3}` | 1.000000e+00 | 0.000000e+00 |
+| 1 | `[8, 4, 4, 4, 3]` | `{"radial_lower": null, "radial_upper": 3, "toroidal_lower": 0, "toroidal_upper": null}` | `{"radial_lower_toroidal_lower": null, "radial_lower_toroidal_upper": null, "radial_upper_toroidal_lower": 2, "radial_upper_toroidal_upper": null}` | 1.000000e+00 | 0.000000e+00 |
+| 2 | `[8, 4, 4, 4, 3]` | `{"radial_lower": 0, "radial_upper": null, "toroidal_lower": null, "toroidal_upper": 3}` | `{"radial_lower_toroidal_lower": null, "radial_lower_toroidal_upper": 1, "radial_upper_toroidal_lower": null, "radial_upper_toroidal_upper": null}` | 1.000000e+00 | 0.000000e+00 |
+| 3 | `[8, 4, 4, 4, 3]` | `{"radial_lower": 1, "radial_upper": null, "toroidal_lower": 2, "toroidal_upper": null}` | `{"radial_lower_toroidal_lower": 0, "radial_lower_toroidal_upper": null, "radial_upper_toroidal_lower": null, "radial_upper_toroidal_upper": null}` | 1.000000e+00 | 0.000000e+00 |
 
 ## GPU rank-tile execution
 
@@ -369,8 +385,8 @@ Required distributed-run fields:
 - Device count: `1`
 - Rank count: `8`
 - Owned phase cells: `55296`
-- Elapsed s: `1.732433e-01`
-- Cells/s: `3.191811e+05`
+- Elapsed s: `1.585891e-01`
+- Cells/s: `3.486747e+05`
 - Inventory relative error: `4.647177e-15`
 - Free-energy relative error: `0.000000e+00`
 - Parallel-moment relative error: `3.153310e-15`
@@ -397,7 +413,7 @@ Required distributed-run fields:
 
 | Case | Ranks | Owned phase cells | Elapsed s | Cells/s | Local execution | Halo | Reconstruction L_inf | Inventory rel | Free-energy rel |
 |---|---:|---:|---:|---:|:---:|:---:|---:|---:|---:|
-| large_cpu_96x48_6x4 | 24 | 9437184 | 4.205937e+00 | 2.243777e+06 | `True` | `True` | 0.000000e+00 | 1.973730e-16 | 7.401486e-16 |
+| large_cpu_96x48_6x4 | 24 | 9437184 | 4.065319e-01 | 2.321389e+07 | `True` | `True` | 0.000000e+00 | 1.973730e-16 | 7.401486e-16 |
 
 ## Same-physics decomposition-shape convergence
 
@@ -412,9 +428,9 @@ Required distributed-run fields:
 
 | Case | Ranks | Owned phase cells | Cells/s | Inventory rel dev | Free-energy rel dev | Parallel-moment rel dev | Reconstruction L_inf | Pass |
 |---|---:|---:|---:|---:|---:|---:|---:|:---:|
-| local_cpu_64x32_4x2 | 8 | 524288 | 2.911697e+06 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_8x1 | 8 | 524288 | 5.826379e+06 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
-| local_cpu_64x32_2x4 | 8 | 524288 | 9.938514e+06 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_4x2 | 8 | 524288 | 2.085807e+07 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_8x1 | 8 | 524288 | 3.086630e+07 | 0.000000e+00 | 3.330666e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
+| local_cpu_64x32_2x4 | 8 | 524288 | 2.559885e+07 | 0.000000e+00 | 1.665333e-16 | 0.000000e+00 | 0.000000e+00 | `True` |
 
 ## Reproducible commands
 

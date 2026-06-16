@@ -1,0 +1,82 @@
+{
+  "benchmark_context": "single-run local workstation; not CPU-isolated; not a production speedup claim",
+  "checks": [
+    {
+      "grid": 33,
+      "passed": true
+    },
+    {
+      "grid": 65,
+      "passed": true
+    },
+    {
+      "grid": 129,
+      "passed": true
+    }
+  ],
+  "claim_boundary": "convergence instrumentation and local non-isolated scaling evidence only",
+  "command": [
+    "cargo",
+    "run",
+    "--quiet",
+    "-p",
+    "fusion-math",
+    "--example",
+    "multigrid_scaling"
+  ],
+  "environment": {
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "cargo_target_dir": "/tmp/scpn-fusion-rs-target",
+    "cpu_model": "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz",
+    "kernel": "6.17.0-35-generic",
+    "load_average": "12.53 11.81 8.09 8/6434 1624497",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)"
+  },
+  "generated_at_utc": "2026-06-16T23:34:32+00:00",
+  "rows": [
+    {
+      "contraction_factor": 8.520544270140817e-09,
+      "converged": true,
+      "cycles": 19,
+      "final_residual": 8.520544270140817e-09,
+      "grid": 33,
+      "initial_residual": 1,
+      "points": 1089,
+      "wall_time_ms": 64.876918
+    },
+    {
+      "contraction_factor": 7.762878340145107e-09,
+      "converged": true,
+      "cycles": 20,
+      "final_residual": 7.762878340145107e-09,
+      "grid": 65,
+      "initial_residual": 1,
+      "points": 4225,
+      "wall_time_ms": 285.687762
+    },
+    {
+      "contraction_factor": 4.988578439224511e-09,
+      "converged": true,
+      "cycles": 21,
+      "final_residual": 4.988578439224511e-09,
+      "grid": 129,
+      "initial_residual": 1,
+      "points": 16641,
+      "wall_time_ms": 1457.5525069999999
+    }
+  ],
+  "rust_example_header": {
+    "config": {
+      "coarse_iters": 50,
+      "min_grid_size": 5,
+      "omega": 1.8,
+      "post_smooth": 3,
+      "pre_smooth": 3
+    },
+    "schema": "rust-multigrid-scaling.v1"
+  },
+  "schema": "rust-multigrid-scaling-report.v1",
+  "status": "passed",
+  "stderr": "{\"note\":\"timings are single-run local measurements; use Criterion or isolated runners for release claims\"}"
+}

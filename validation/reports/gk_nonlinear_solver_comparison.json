@@ -48,18 +48,18 @@
       },
       "jax": {
         "backend": "jax",
-        "chi_e": 3.385913883788609e-11,
-        "chi_i": 6.771827767577217e-11,
+        "chi_e": 3.385913883788604e-11,
+        "chi_i": 6.771827767577208e-11,
         "converged": true,
-        "elapsed_s": 11.773385099018924,
-        "phi_rms_final": 0.001732037973500738
+        "elapsed_s": 10.502119667013176,
+        "phi_rms_final": 0.0017320379735007382
       },
       "numpy": {
         "backend": "numpy",
         "chi_e": 3.3859138816625626e-11,
         "chi_i": 6.771827763325125e-11,
         "converged": true,
-        "elapsed_s": 0.11570986302103847,
+        "elapsed_s": 0.05532793598831631,
         "phi_rms_final": 0.0017090879429649377
       }
     },
@@ -110,11 +110,11 @@
       },
       "jax": {
         "backend": "jax",
-        "chi_e": 3.385913755833297e-11,
-        "chi_i": 6.771827511666593e-11,
+        "chi_e": 3.3859137558332954e-11,
+        "chi_i": 6.771827511666591e-11,
         "converged": true,
-        "elapsed_s": 4.604101945064031,
-        "phi_rms_final": 0.001732043766867551
+        "elapsed_s": 2.9065063270099927,
+        "phi_rms_final": 0.0017320437668675512
       },
       "moment_residuals": {
         "density_max_abs": 1.6740958540805346e-22,
@@ -126,7 +126,7 @@
         "chi_e": 3.385913753707139e-11,
         "chi_i": 6.771827507414278e-11,
         "converged": true,
-        "elapsed_s": 0.15274989197496325,
+        "elapsed_s": 0.18346982801449485,
         "phi_rms_final": 0.0017090936596847984
       }
     },
@@ -177,11 +177,11 @@
       },
       "jax": {
         "backend": "jax",
-        "chi_e": -6.507130425745713e-07,
+        "chi_e": -6.507130425745715e-07,
         "chi_i": 6.13856908241856e-07,
         "converged": true,
-        "elapsed_s": 4.285303478012793,
-        "phi_rms_final": 0.003170643533260236
+        "elapsed_s": 3.0718725110054947,
+        "phi_rms_final": 0.0031706435332602366
       },
       "maxwell_closure": {
         "ampere_parallel_linf_residual": 0.0,
@@ -201,12 +201,12 @@
         "chi_e": -6.506028914055627e-07,
         "chi_i": 6.137781281071752e-07,
         "converged": true,
-        "elapsed_s": 0.21503378089983016,
+        "elapsed_s": 0.11349076998885721,
         "phi_rms_final": 0.0031464402521369787
       }
     }
   },
   "jax_available": true,
-  "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+  "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
   "python": "3.12.3"
 }

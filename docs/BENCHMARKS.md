@@ -233,19 +233,17 @@ checksum. Missing or incomplete rows remain blocked.
 
 The optional runtime dependency contract pins base NumPy below 2 and gates MPI/GPU lanes through `mpi4py>=4.1`, `cupy-cuda12x>=13.6,<14.0`, and `nvidia-cuda-nvrtc-cu12>=12.0,<13.0` so accelerator setup does not destabilise the base test environment.
 
-Latest local large-grid CPU decomposition evidence is tracked in [`validation/reports/production_decomposition_contract.md`](../validation/reports/production_decomposition_contract.md): `large_cpu_96x48_6x4` executed `9,437,184` 5D phase cells over `24` local rank tiles in `1.557183 s` (`6.060419e6` cells/s) with zero reconstruction error and invariant relative errors below `1e-12`. This is single-process CPU evidence only; it does not satisfy the distributed MPI or multi-GPU scaling requirement.
+Latest local large-grid CPU decomposition evidence is tracked in [`validation/reports/production_decomposition_contract.md`](../validation/reports/production_decomposition_contract.md): `large_cpu_96x48_6x4` executed `9,437,184` 5D phase cells over `24` local rank tiles in `0.406532 s` (`2.321389e7` cells/s) with zero reconstruction error and invariant relative errors below `1e-12`. This is single-process CPU evidence only; it does not satisfy the distributed MPI or multi-GPU scaling requirement.
 
-## UpCloud L4 Native Solver Benchmark Bundle (2026-05-25)
+## Local CPU/GPU Native Solver Benchmark Bundle
 
-Fresh GPU-host run:
+Fresh local GPU-host run:
 
-- Provider/zone: UpCloud `fi-hel2`
-- GPU: NVIDIA L4, driver `595.71.05`, `23034 MiB`
-- CPU: `8x AMD EPYC 9575F 64-Core Processor`
-- RAM: `62 GiB`
-- OS: Linux `6.8.0-117-generic` x86_64
-- Evidence bundle: [`validation/reports/upcloud_l4_native_solver_benchmarks.md`](../validation/reports/upcloud_l4_native_solver_benchmarks.md)
-- Machine-readable bundle: [`validation/reports/upcloud_l4_native_solver_benchmarks.json`](../validation/reports/upcloud_l4_native_solver_benchmarks.json)
+- WGPU adapter: AMD Radeon RX 6600 XT (RADV NAVI23), Vulkan, `DiscreteGpu`
+- CUDA/JAX device: `cuda:0` (NVIDIA GeForce GTX 1060 6GB visible via CUDA)
+- Evidence bundle: [`validation/reports/gpu_backend_alternatives.md`](../validation/reports/gpu_backend_alternatives.md)
+- Machine-readable bundle: [`validation/reports/gpu_backend_alternatives.json`](../validation/reports/gpu_backend_alternatives.json)
+- Historical cloud bundle: [`validation/reports/upcloud_l4_native_solver_benchmarks.md`](../validation/reports/upcloud_l4_native_solver_benchmarks.md)
 
 ### Rust CPU/GPU Grad-Shafranov SOR, apples-to-apples
 
@@ -259,9 +257,9 @@ GPU timings, including upload, synchronised compute, and download.
 
 | Grid | CPU SOR median | GPU SOR `solve_full` median | Status |
 |---|---:|---:|---|
-| `33x33` | `45.215 us` | `965.68 us` | CPU faster; GPU launch/readback dominated |
-| `65x65` | `177.11 us` | `965.96 us` | CPU faster; GPU launch/readback dominated |
-| `129x129` | `709.97 us` | `984.41 us` | Near crossover, but CPU still faster |
+| `33x33` | `113.42 us` | `107.52 ms` | CPU faster; GPU launch/readback dominated |
+| `65x65` | `382.96 us` | `106.70 ms` | CPU faster; GPU launch/readback dominated |
+| `129x129` | `1.3942 ms` | `103.33 ms` | CPU faster; GPU launch/readback dominated |
 
 This benchmark is the official tracked GPU baseline. It does **not** support a
 GPU speedup claim at these grid sizes; it shows the workload is too small to
@@ -296,7 +294,14 @@ The report writes `validation/reports/gpu_backend_alternatives.json` and
 only when the Vulkan/WGPU device is physical. A CUDA/JAX lane is publishable
 only when JAX reports a CUDA device and the deterministic kernel result carries
 a SHA-256 checksum. The two lanes are never merged into a generic GPU result.
-The 2026-06-01 JarvisLabs L4 cloud report is tracked in [`validation/reports/gpu_backend_alternatives_jarvis_l4.md`](../validation/reports/gpu_backend_alternatives_jarvis_l4.md). It reports CUDA/JAX `passed` on `cuda:0` with median `8.9e-05 s` for the deterministic `256x256` JAX workload and WGPU `blocked_cpu_adapter` because Vulkan/WGPU exposed only `llvmpipe`, not the physical NVIDIA L4.
+The current local `gpu_backend_alternatives` report passes both physical WGPU
+and CUDA/JAX lanes. The CUDA/JAX deterministic `256x256` workload median is
+`2.03e-04 s` with result checksum recorded in the machine-readable report. The
+2026-06-01 JarvisLabs L4 cloud report remains tracked in
+[`validation/reports/gpu_backend_alternatives_jarvis_l4.md`](../validation/reports/gpu_backend_alternatives_jarvis_l4.md);
+it reported CUDA/JAX `passed` on `cuda:0` with median `8.9e-05 s` and WGPU
+`blocked_cpu_adapter` because Vulkan/WGPU exposed only `llvmpipe`, not the
+physical NVIDIA L4.
 
 ### Native Rust solver kernels
 
@@ -403,9 +408,9 @@ CUDA-enabled JAX was installed and detected one `CudaDevice(id=0)`.
 
 | Case | NumPy elapsed | JAX/CUDA elapsed | Converged |
 |---|---:|---:|---:|
-| `krook` | `0.020947 s` | `4.051154 s` | true |
-| `sugama` | `0.022762 s` | `1.648905 s` | true |
-| `sugama_electromagnetic_kinetic` | `0.045141 s` | `1.662950 s` | true |
+| `krook` | `0.055328 s` | `10.502120 s` | true |
+| `sugama` | `0.183470 s` | `2.906506 s` | true |
+| `sugama_electromagnetic_kinetic` | `0.113491 s` | `3.071873 s` | true |
 
 The CUDA-JAX rows are currently slower because this benchmark is tiny and
 includes compilation/dispatch overhead. A separate warm JIT timing loop is
@@ -1143,15 +1148,18 @@ blocked rather than inferred.
 
 **Multigrid V-cycle (wired into kernel, selectable via `set_solver_method("multigrid")`):**
 
-| Grid | Solver | V-cycles | Residual | Time (projected) |
-|------|--------|---------|----------|-----------------|
-| 33x33 | Multigrid | 5–8 | < 1e-8 | ~2 ms |
-| 65x65 | Multigrid | 8–12 | < 1e-6 | ~15 ms |
-| 128x128 | Multigrid | 10–15 | < 1e-4 | ~95 ms |
+| Grid | Solver | Validation status | Report |
+|------|--------|-------------------|--------|
+| 33x33 | Multigrid | residual history and contraction recorded | `validation/reports/rust_multigrid_scaling.md` |
+| 65x65 | Multigrid | residual history and contraction recorded | `validation/reports/rust_multigrid_scaling.md` |
+| 129x129 | Multigrid | residual history and contraction recorded | `validation/reports/rust_multigrid_scaling.md` |
 
 > **Note:** The multigrid path is now available from Python via
-> `kernel.set_solver_method("multigrid")`. Run `validation/benchmark_solvers.py`
-> to compare SOR vs multigrid end-to-end on your hardware.
+> `kernel.set_solver_method("multigrid")`. Run
+> `validation/benchmark_rust_multigrid_scaling.py` for the Rust V-cycle
+> convergence/scaling report and `validation/benchmark_solvers.py` to compare
+> SOR vs multigrid end-to-end on your hardware. Local single-run scaling reports
+> are not isolated release-performance claims.
 
 ## Inverse Reconstruction Performance
 
@@ -1532,7 +1540,7 @@ See `SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md` Section 28 for full details.
 | Target | Backend | Expected Speedup | Priority | Status |
 |--------|---------|-----------------|----------|--------|
 | SOR red-black sweep | wgpu compute shader | 20–50× (65×65), 100–200× (256×256) | P0 | Targeted |
-| Multigrid V-cycle | wgpu + host orchestration | 10–30× | P1 | Targeted |
+| Multigrid V-cycle | wgpu + host orchestration | target pending isolated evidence | P1 | Targeted |
 | Vacuum field (elliptic integrals) | rayon (CPU) → wgpu | 5–10× | P2 | rayon done |
 | MLP batch inference | wgpu or cuBLAS | 2–5× (small H) | P3 | Targeted |
 | FNO turbulence (FFT) | cuFFT / wgpu FFT | 50–100× (64×64) | P3 | Targeted |

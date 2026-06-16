@@ -219,7 +219,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 |--------|-------|-----------------|
 | Rust PID kernel latency | **0.52 us P50** | `validation/verify_10khz_rust.py` |
 | Closed-loop HIL latency | **10.5 us P50** | `python validation/collect_results.py` |
-| Rust full-order GS solve | **413 us** SOR / **845 us** multigrid (33x33) | `cargo bench -p fusion-core --bench picard_bench` |
+| Rust full-order GS solve | **413 us** SOR / **845 us** multigrid (33x33 local Criterion; multigrid is slower in this low-grid case) | `cargo bench -p fusion-core --bench picard_bench` |
 | Rust vacuum field solve | **140 us** (33x33) / **489 us** (65x65) | `cargo bench -p fusion-core --bench vacuum_bench` |
 | QLKNN-10D transport surrogate | test rel_L2 = **0.094** | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence surrogate | val rel_L2 = **0.055** | `weights/fno_turbulence_jax.metrics.json` |
@@ -770,7 +770,7 @@ All numbers are internal measurements. Reproduce with `cargo bench` and
 |--------|-------|--------|
 | SOR step @ 65x65 | us-range | `sor_bench.rs` |
 | GMRES(30) @ 65x65 | ~45 iters | `gmres_bench.rs` |
-| Multigrid V(3,3) @ 129x129 | ~10 cycles | `multigrid_bench.rs` |
+| Rust multigrid V-cycle scaling | local convergence/scaling report; not a production speedup claim | `validation/reports/rust_multigrid_scaling.md` |
 | Rust flight sim | 0.3 us/step | `verify_10khz_rust.py` |
 | Full equilibrium (Python) | ~5 s | `profile_kernel.py` |
 | Neural transport MLP | ~5 us/point | `neural_transport_bench.rs` |

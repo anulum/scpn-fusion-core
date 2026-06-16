@@ -12,8 +12,9 @@
 //! - **Prolongation**: bilinear interpolation from coarse to fine
 //! - **Smoother**: Red-Black SOR (from [`crate::sor`])
 //!
-//! The multigrid method achieves O(N) convergence versus O(N²) for plain SOR,
-//! making it ~10-50× faster for large grids (256×256+).
+//! This module exposes convergence diagnostics for the geometric V-cycle. Public
+//! speedup claims must be tied to tracked benchmark reports for the exact
+//! kernel wiring and hardware under discussion.
 //!
 //! # Grid Size Requirements
 //!
@@ -62,6 +63,8 @@ pub struct MultigridResult {
     pub residual: f64,
     /// Whether convergence was achieved.
     pub converged: bool,
+    /// Initial residual followed by one residual measurement after each V-cycle.
+    pub residual_history: Vec<f64>,
 }
 
 /// Full-weighting restriction: fine grid → coarse grid.
@@ -290,16 +293,19 @@ pub fn multigrid_solve(
     tol: f64,
 ) -> MultigridResult {
     let mut residual = sor_residual(psi, source, grid);
+    let mut residual_history = vec![residual];
 
     for cycle in 1..=max_cycles {
         v_cycle(psi, source, grid, config);
         residual = sor_residual(psi, source, grid);
+        residual_history.push(residual);
 
         if residual < tol {
             return MultigridResult {
                 cycles: cycle,
                 residual,
                 converged: true,
+                residual_history,
             };
         }
     }
@@ -308,6 +314,7 @@ pub fn multigrid_solve(
         cycles: max_cycles,
         residual,
         converged: residual < tol,
+        residual_history,
     }
 }
 
@@ -386,6 +393,48 @@ mod tests {
             "Multigrid should reduce residual: {} -> {}",
             res_before,
             result.residual
+        );
+    }
+
+    #[test]
+    fn test_multigrid_reports_initial_and_per_cycle_residuals() {
+        let grid = Grid2D::new(33, 33, 1.0, 9.0, -5.0, 5.0);
+        let source = Array2::from_elem((33, 33), -1.0);
+        let mut psi = Array2::zeros((33, 33));
+        let initial_residual = sor_residual(&psi, &source, &grid);
+
+        let result = multigrid_solve(
+            &mut psi,
+            &source,
+            &grid,
+            &MultigridConfig::default(),
+            6,
+            1e-15,
+        );
+
+        assert_eq!(
+            result.residual_history.len(),
+            result.cycles + 1,
+            "history must include the initial residual plus one value per cycle"
+        );
+        assert_eq!(result.residual_history[0], initial_residual);
+        assert_eq!(
+            *result.residual_history.last().unwrap(),
+            result.residual,
+            "final history entry must match the reported final residual"
+        );
+        assert!(
+            result
+                .residual_history
+                .iter()
+                .all(|value| value.is_finite()),
+            "residual history must be finite: {:?}",
+            result.residual_history
+        );
+        assert!(
+            result.residual_history.last().unwrap() < result.residual_history.first().unwrap(),
+            "multigrid should reduce residual over the reported history: {:?}",
+            result.residual_history
         );
     }
 
