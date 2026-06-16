@@ -512,7 +512,7 @@ dependencies = [
  "fusion-math",
  "fusion-types",
  "ndarray",
- "rand 0.8.6",
+ "rand 0.9.3",
  "rand_distr",
  "serde",
 ]
@@ -537,7 +537,7 @@ dependencies = [
  "fusion-math",
  "fusion-types",
  "ndarray",
- "rand 0.8.6",
+ "rand 0.9.3",
  "rand_distr",
 ]
 
@@ -589,7 +589,7 @@ dependencies = [
  "ndarray",
  "ndarray-npy",
  "proptest",
- "rand 0.8.6",
+ "rand 0.9.3",
  "serde",
  "serde_json",
 ]
@@ -615,7 +615,7 @@ dependencies = [
  "ndarray",
  "ndarray-npy",
  "num-complex",
- "rand 0.8.6",
+ "rand 0.9.3",
  "rand_distr",
  "rayon",
  "serde_json",
@@ -1741,7 +1741,7 @@ dependencies = [
  "num-complex",
  "numpy",
  "pyo3",
- "rand 0.8.6",
+ "rand 0.9.3",
 ]
 
 [[package]]
