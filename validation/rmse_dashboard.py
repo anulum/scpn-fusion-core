@@ -273,26 +273,23 @@ def estimate_beta_n_from_burn(
 
         beta_N = 100 * beta_t * a * B_t / I_p
 
-    A profile-peaking correction factor (``PROFILE_PEAKING_FACTOR``) is
-    applied to account for the volume-averaged 0-D model underestimating
-    peak pressure.  The factor was calibrated as the geometric mean of
-    the per-machine corrections for ITER (target 1.8) and SPARC
-    (target 1.0):
+    A profile/normalization correction factor (``PROFILE_PEAKING_FACTOR``)
+    is applied to account for the volume-averaged 0-D model underestimating
+    peak pressure.  The factor is calibrated as the least-squares scalar
+    that maps the current total electron+ion heat-capacity burn model to
+    ITER (target 1.8) and SPARC (target 1.0):
 
-        c_ITER  = 1.8 / beta_n_raw_ITER  = 1.488
-        c_SPARC = 1.0 / beta_n_raw_SPARC = 1.404
-        PROFILE_PEAKING_FACTOR = sqrt(c_ITER * c_SPARC) ~= 1.446
+        PROFILE_PEAKING_FACTOR ~= 2.961
 
-    Physically this corresponds to a peaked pressure profile
-    p(rho) ~ (1 - rho^2)^alpha with alpha ~ 1.2, peaking factor ~ 2.2,
-    which is typical of standard H-mode scenarios (ITER, SPARC).
+    This is a regression guard calibration for the reduced-order dashboard,
+    not a publication-grade beta_N validation claim.
 
     Falls back to the legacy ``FusionBurnPhysics`` path if the dynamic
     model fails.
     """
-    # Profile peaking correction: geometric mean calibration against
-    # ITER (beta_N = 1.8) and SPARC (beta_N = 1.0) targets.
-    PROFILE_PEAKING_FACTOR = 1.446
+    # Least-squares calibration against ITER (beta_N = 1.8) and SPARC
+    # (beta_N = 1.0) after the DynamicBurnModel total heat-capacity correction.
+    PROFILE_PEAKING_FACTOR = 2.9611884960342465
 
     r_m = float(reference["R_m"])
     a_m = float(reference["a_m"])
@@ -565,7 +562,7 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     lines.append("## Notes")
     lines.append("")
     lines.append(
-        "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy with a profile-peaking correction factor (1.446), calibrated against ITER and SPARC targets."
+        "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy with a profile/normalization correction factor (2.961), calibrated against ITER and SPARC targets as a reduced-order regression guard."
     )
     lines.append(
         "- Use this report for trend tracking; not as a replacement for full transport/MHD validation."
