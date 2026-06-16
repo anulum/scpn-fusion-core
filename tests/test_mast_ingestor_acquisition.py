@@ -57,11 +57,18 @@ def test_load_shot_summary_uses_nan_density_when_missing(monkeypatch, tmp_path: 
     """MAST shots without line-average density remain usable."""
 
     monkeypatch.setattr(
-        mast_ingestor.fsspec, "filesystem", lambda *args, **kwargs: _FakeFileSystem()
+        mast_ingestor,
+        "fsspec",
+        types.SimpleNamespace(filesystem=lambda *args, **kwargs: _FakeFileSystem()),
+        raising=False,
     )
     monkeypatch.setattr(
-        mast_ingestor.xr, "open_zarr", lambda *args, **kwargs: _FakeSummaryDataset()
+        mast_ingestor,
+        "xr",
+        types.SimpleNamespace(open_zarr=lambda *args, **kwargs: _FakeSummaryDataset()),
+        raising=False,
     )
+    monkeypatch.setattr(mast_ingestor, "_HAS_FAIR_MAST_STACK", True)
 
     summary = MastIngestor(cache_dir=tmp_path).load_shot_summary(30447)
 
@@ -74,7 +81,13 @@ def test_mast_ingestor_closes_retained_filesystems(monkeypatch, tmp_path: Path) 
     """FAIR-MAST sessions are closed explicitly before interpreter teardown."""
 
     fs = _ClosableFakeFileSystem()
-    monkeypatch.setattr(mast_ingestor.fsspec, "filesystem", lambda *args, **kwargs: fs)
+    monkeypatch.setattr(
+        mast_ingestor,
+        "fsspec",
+        types.SimpleNamespace(filesystem=lambda *args, **kwargs: fs),
+        raising=False,
+    )
+    monkeypatch.setattr(mast_ingestor, "_HAS_FAIR_MAST_STACK", True)
 
     ingestor = MastIngestor(cache_dir=tmp_path)
     assert ingestor._filesystem() is fs
