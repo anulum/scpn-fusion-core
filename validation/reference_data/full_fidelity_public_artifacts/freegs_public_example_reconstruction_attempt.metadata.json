@@ -16,7 +16,7 @@
   "missing_required_observables": [],
   "redistribution_license": "FreeGS LGPL-3.0-or-later",
   "reference_family": "FreeGS",
-  "sha256": "77f2ea2757bfea4bd7ef1c59d2f6c4d594249caf7b646cbd776778d7f8db347b",
+  "sha256": "351261e594f7be343a49377e2ba17c8f13fc354cdc994f8b0b33c649ab08e7d4",
   "solver_output_comparison_ready": true,
   "solver_output_comparison_status": "accepted_public_freegs_same_case_free_boundary_parity",
   "surface": "free_boundary_equilibrium"

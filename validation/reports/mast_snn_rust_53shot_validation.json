@@ -1,0 +1,200 @@
+{
+  "status": "blocked_local_mast_snn_not_physics_validation",
+  "accepted_full_fidelity_ready": false,
+  "claim_boundary": "Rust MAST SNN reports are local disruption-detection diagnostics only. Full-fidelity claims require same-case magnetic-geometry validation, shot provenance review, and independent acceptance gates beyond local train and detected-validation counts.",
+  "cache_dir": "../data/mast_snn_rust_cache",
+  "rust_runtime_backend": "fusion-ml::mast_snn",
+  "train_shots": [
+    29878,
+    29879,
+    29880,
+    29881,
+    29882,
+    29883,
+    29884,
+    30335,
+    30336,
+    30337,
+    30338,
+    30417,
+    30418,
+    30419,
+    30420,
+    30421,
+    30422,
+    30423,
+    30424,
+    30425,
+    30426,
+    30427,
+    30428,
+    30430,
+    30439,
+    30440,
+    30441,
+    30443,
+    30444,
+    30445,
+    30447,
+    30448,
+    30449,
+    30450,
+    30451,
+    30454,
+    30455
+  ],
+  "val_shots": [
+    30456,
+    30457,
+    30458,
+    30459,
+    30460,
+    30461,
+    30462,
+    30463,
+    30464,
+    30465,
+    30466,
+    30467,
+    30468,
+    30469,
+    30470,
+    30471
+  ],
+  "min_train_shots": 37,
+  "min_validation_shots": 1,
+  "train_available_count": 37,
+  "validation_available_count": 16,
+  "detected_validation_count": 15,
+  "local_count_gate_passed": true,
+  "epochs": 5,
+  "seed": 1729,
+  "average_lead_time_ms": 83.45000000000007,
+  "shots": [
+    {
+      "shot_id": 30456,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30456.npz",
+      "disruption_time_s": 0.22184975242614768,
+      "alarm_time_s": 0.21834975242614774,
+      "lead_time_ms": 3.4999999999999476
+    },
+    {
+      "shot_id": 30457,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30457.npz",
+      "disruption_time_s": 0.2015997524261477,
+      "alarm_time_s": 0.11784975242614762,
+      "lead_time_ms": 83.75000000000007
+    },
+    {
+      "shot_id": 30458,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30458.npz",
+      "disruption_time_s": 0.19754966640472438,
+      "alarm_time_s": 0.11804966640472428,
+      "lead_time_ms": 79.5000000000001
+    },
+    {
+      "shot_id": 30459,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30459.npz",
+      "disruption_time_s": 0.21079971313476586,
+      "alarm_time_s": 0.10979971313476578,
+      "lead_time_ms": 101.00000000000009
+    },
+    {
+      "shot_id": 30460,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30460.npz",
+      "disruption_time_s": 0.21099974632263208,
+      "alarm_time_s": 0.11249974632263199,
+      "lead_time_ms": 98.50000000000009
+    },
+    {
+      "shot_id": 30461,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30461.npz",
+      "disruption_time_s": 0.22039969348907495,
+      "alarm_time_s": 0.11864969348907486,
+      "lead_time_ms": 101.75000000000009
+    },
+    {
+      "shot_id": 30462,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30462.npz",
+      "disruption_time_s": 0.2039497327804568,
+      "alarm_time_s": 0.1176997327804567,
+      "lead_time_ms": 86.2500000000001
+    },
+    {
+      "shot_id": 30463,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30463.npz",
+      "disruption_time_s": 0.2135497131347659,
+      "alarm_time_s": 0.11279971313476578,
+      "lead_time_ms": 100.75000000000011
+    },
+    {
+      "shot_id": 30464,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30464.npz",
+      "disruption_time_s": 0.20584972667694112,
+      "alarm_time_s": 0.11184972667694107,
+      "lead_time_ms": 94.00000000000006
+    },
+    {
+      "shot_id": 30465,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30465.npz",
+      "disruption_time_s": 0.20059972667694115,
+      "alarm_time_s": 0.11559972667694107,
+      "lead_time_ms": 85.00000000000007
+    },
+    {
+      "shot_id": 30466,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30466.npz",
+      "disruption_time_s": 0.19579966640472435,
+      "alarm_time_s": 0.11529966640472428,
+      "lead_time_ms": 80.50000000000007
+    },
+    {
+      "shot_id": 30467,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30467.npz",
+      "disruption_time_s": 0.21214971923828152,
+      "alarm_time_s": 0.1156497192382814,
+      "lead_time_ms": 96.50000000000011
+    },
+    {
+      "shot_id": 30468,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30468.npz",
+      "disruption_time_s": 0.18589976596832297,
+      "alarm_time_s": 0.11314976596832291,
+      "lead_time_ms": 72.75000000000007
+    },
+    {
+      "shot_id": 30469,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30469.npz",
+      "disruption_time_s": 0.20234975242614772,
+      "alarm_time_s": 0.11984975242614762,
+      "lead_time_ms": 82.5000000000001
+    },
+    {
+      "shot_id": 30470,
+      "status": "detected",
+      "source": "local_npz:mast_shot_30470.npz",
+      "disruption_time_s": 0.17964976596832297,
+      "alarm_time_s": 0.09414976596832289,
+      "lead_time_ms": 85.50000000000007
+    },
+    {
+      "shot_id": 30471,
+      "status": "no_detection",
+      "source": "local_npz:mast_shot_30471.npz"
+    }
+  ]
+}

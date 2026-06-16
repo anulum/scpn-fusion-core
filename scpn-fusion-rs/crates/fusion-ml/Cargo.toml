@@ -21,3 +21,7 @@ proptest = { workspace = true }
 [[bench]]
 name = "neural_transport_bench"
 harness = false
+
+[[bin]]
+name = "mast_snn_validation"
+path = "src/bin/mast_snn_validation.rs"

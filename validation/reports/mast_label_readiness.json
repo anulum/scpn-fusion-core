@@ -1,0 +1,12 @@
+{
+  "claim_boundary": "MAST disruption detector FPR/AUC claims require independently sourced disruptive and non_disruptive labels. Current-collapse proxies, neighboring shot heuristics, and model predictions are not accepted labels.",
+  "disruptive_count": 0,
+  "errors": [
+    "label manifest not found: /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/reference_data/mast/independent_labels.json"
+  ],
+  "manifest_path": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/reference_data/mast/independent_labels.json",
+  "manifest_version": null,
+  "non_disruptive_count": 0,
+  "shot_count": 0,
+  "status": "blocked_invalid_or_missing_independent_labels"
+}

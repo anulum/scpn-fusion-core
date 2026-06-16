@@ -1,0 +1,18 @@
+{
+  "already_present_count": 0,
+  "cache_dir": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/data/mast_snn_rust_cache",
+  "claim_boundary": "This downloader only accepts MAST shots named by an independently validated disruptive/non_disruptive label manifest. It does not infer labels from current collapse, neighboring controls, or model output.",
+  "created_utc": "2026-06-16T03:23:30.279773+00:00",
+  "downloaded_count": 0,
+  "errors": [
+    "label manifest not found: /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/reference_data/mast/independent_labels.json"
+  ],
+  "failed_count": 0,
+  "label_readiness_report": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/reports/mast_label_readiness.json",
+  "manifest_path": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/reference_data/mast/independent_labels.json",
+  "results": [],
+  "schema": "scpn-fusion-core.mast-labelled-shot-downloads.v1",
+  "status": "blocked_invalid_or_missing_independent_labels",
+  "target_count": 0,
+  "target_shots": []
+}

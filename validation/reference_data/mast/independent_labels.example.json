@@ -1,0 +1,26 @@
+{
+  "manifest_version": "mast-independent-disruption-labels-v1",
+  "dataset": "FAIR-MAST Level-2 bounded disruption panel",
+  "label_authority": "REPLACE_WITH_INDEPENDENT_SOURCE_AUTHORITY",
+  "shots": [
+    {
+      "shot_id": 30456,
+      "label": "disruptive",
+      "disruption_time_s": 0.2218,
+      "source_type": "facility_log",
+      "source_reference": "REPLACE_WITH_FACILITY_LOG_TABLE_DOI_URL_OR_FILE",
+      "labeled_by": "REPLACE_WITH_LABEL_CURATOR",
+      "labeled_at_utc": "2026-06-16T00:00:00Z",
+      "review_status": "accepted"
+    },
+    {
+      "shot_id": 30420,
+      "label": "non_disruptive",
+      "source_type": "published_table",
+      "source_reference": "REPLACE_WITH_FACILITY_LOG_TABLE_DOI_URL_OR_FILE",
+      "labeled_by": "REPLACE_WITH_LABEL_CURATOR",
+      "labeled_at_utc": "2026-06-16T00:00:00Z",
+      "review_status": "accepted"
+    }
+  ]
+}

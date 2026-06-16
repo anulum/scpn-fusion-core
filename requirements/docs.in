@@ -32,3 +32,4 @@ pillow>=12.2.0
 idna>=3.15
 requests>=2.33.0
 urllib3>=2.7.0
+tornado>=6.5.7

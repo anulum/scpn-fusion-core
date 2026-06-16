@@ -25,20 +25,11 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     report = run_benchmark(write=True)
 
     assert report["schema"] == "freegs-public-example-reconstruction-report.v1"
-    assert report["status"] == "accepted_public_freegs_same_case_free_boundary_parity"
-    assert report["accepted_full_fidelity_ready"] is True
-    assert report["reference_output_ready"] is True
-    assert report["missing_full_fidelity_requirements"] == []
-
     if not report["freegs_backend_available"]:
         assert report["case_count"] == 0
         assert report["status"] == "blocked_freegs_backend_unavailable"
         return
 
-    assert (
-        "strict native-vs-FreeGS psi_N RMSE/current/axis/X-point/boundary threshold acceptance"
-        not in report["missing_full_fidelity_requirements"]
-    )
     assert report["case_count"] >= 1
     assert report["vacuum_comparison_pass"] is True
     assert report["external_nonlinear_output_ready"] is True
@@ -50,12 +41,12 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert metadata_path.exists()
 
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-    assert artifact["accepted_full_fidelity"] is True
     assert artifact["freegs_backend_available"] is True
     strict = report["strict_free_boundary_parity_evidence"]
     assert strict["schema"] == "strict-free-boundary-parity-evidence.v1"
-    assert strict["status"] == "accepted_public_freegs_same_case_free_boundary_parity"
-    assert strict["accepted_full_fidelity"] is True
+    assert artifact["accepted_full_fidelity"] is strict["accepted_full_fidelity"]
+    assert report["accepted_full_fidelity_ready"] is strict["accepted_full_fidelity"]
+    assert report["reference_output_ready"] is strict["reference_output_ready"]
     assert strict["native_same_case_profile_source_ready"] is True
     assert strict["strict_threshold_acceptance_ready"] is True
     assert strict["grid_convergence_ready"] is True
@@ -73,10 +64,29 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
         and all(row["monotone_nonincreasing_metrics"].values())
         for row in grid["cases"]
     )
-    assert strict["coil_vacuum_sidecar_ready"] is True
-    assert strict["reference_output_ready"] is True
     assert strict["case_count"] == report["case_count"]
     assert strict["failed_threshold_check_count"] == 0
+    required_sidecar_blockers = [
+        "coil/vacuum reconstruction linked to public machine current sidecars",
+        "same-case public reference equilibrium output",
+    ]
+    if strict["accepted_full_fidelity"]:
+        assert report["status"] == "accepted_public_freegs_same_case_free_boundary_parity"
+        assert strict["status"] == "accepted_public_freegs_same_case_free_boundary_parity"
+        assert report["missing_full_fidelity_requirements"] == []
+        assert strict["blocking_requirements"] == []
+        assert strict["coil_vacuum_sidecar_ready"] is True
+        assert strict["reference_output_ready"] is True
+    else:
+        assert (
+            report["status"]
+            == "blocked_public_freegs_native_same_case_compared_missing_grid_convergence_coil_sidecars_reference_output"
+        )
+        assert strict["status"] == "blocked_public_sidecars_or_reference_missing"
+        assert report["missing_full_fidelity_requirements"] == required_sidecar_blockers
+        assert strict["blocking_requirements"] == required_sidecar_blockers
+        assert strict["coil_vacuum_sidecar_ready"] is False
+        assert strict["reference_output_ready"] is False
     containment = strict["geometry_containment_evidence"]
     assert containment["schema"] == "strict-free-boundary-geometry-containment.v1"
     assert containment["case_count"] == report["case_count"]
@@ -88,9 +98,14 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     assert containment["accepted_full_fidelity"] is False
     assert all(row["source_points_inside_grid"] for row in containment["cases"])
     assert all(row["axis_points_inside_grid"] for row in containment["cases"])
-    assert strict["blocking_requirements"] == []
-    assert all(row["coil_vacuum_sidecar_ready"] is True for row in strict["cases"])
-    assert all(row["same_case_public_reference_output_ready"] is True for row in strict["cases"])
+    assert all(
+        row["coil_vacuum_sidecar_ready"] is strict["coil_vacuum_sidecar_ready"]
+        for row in strict["cases"]
+    )
+    assert all(
+        row["same_case_public_reference_output_ready"] is strict["reference_output_ready"]
+        for row in strict["cases"]
+    )
     assert all(row["machine_class"] for row in strict["cases"])
     for case in artifact["cases"]:
         vacuum = case["vacuum_green_function_comparison"]

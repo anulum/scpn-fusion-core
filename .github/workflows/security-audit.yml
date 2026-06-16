@@ -105,6 +105,11 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - name: Install pinned Snyk CLI
+        if: env.SNYK_TOKEN != ''
+        uses: snyk/actions/setup@8e119fbb6c251787721d34ba683ed48eba792766
+        with:
+          snyk-version: 1.1301.1
       - name: Run Snyk when token is configured
         run: |
           if [ -z "${SNYK_TOKEN}" ]; then
@@ -112,7 +117,6 @@ jobs:
             exit 0
           fi
           mkdir -p artifacts
-          npm install -g snyk@1.1301.1
           snyk test --all-projects --severity-threshold=high --json-file-output=artifacts/snyk.json
       - name: Upload Snyk audit artifact
         if: always()
