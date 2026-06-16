@@ -10,7 +10,7 @@
 The script intentionally avoids downloading the whole FAIR-MAST archive. It
 loads only the groups used by the current disruption benchmark lane: ``summary``
 and ``magnetics``. fsspec's simplecache stores downloaded chunks under the
-canonical SAS cache directory.
+repository-local cache directory by default.
 """
 
 from __future__ import annotations
@@ -27,8 +27,6 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_CACHE_DIR = Path("/home/anulum/remote_data_sas/DATASETS/SCPN-CONTROL/mast/cache")
-DEFAULT_RUN_DIR = Path("/home/anulum/remote_data_sas/DATASETS/SCPN-CONTROL/mast/runs")
 DEFAULT_ENDPOINT_URL = "https://s3.echo.stfc.ac.uk"
 
 
@@ -38,6 +36,10 @@ def utc_now() -> str:
 
 def repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
+
+
+DEFAULT_CACHE_DIR = repo_root() / "data" / "mast_cache"
+DEFAULT_RUN_DIR = repo_root() / "data" / "mast_runs"
 
 
 def load_catalog(endpoint_url: str) -> list[int]:

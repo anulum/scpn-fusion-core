@@ -2,7 +2,7 @@
   "status": "blocked_local_mast_snn_not_physics_validation",
   "accepted_full_fidelity_ready": false,
   "claim_boundary": "MAST SNN reports are local disruption-detection diagnostics only. Full-fidelity claims require same-case magnetic-geometry validation, shot provenance review, and independent acceptance gates beyond local train and detected-validation counts.",
-  "cache_dir": "/home/anulum/remote_data_sas/DATASETS/SCPN-CONTROL/mast/cache",
+  "cache_dir": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/data/mast_cache",
   "fair_mast_enabled": true,
   "train_shots": [
     29878,

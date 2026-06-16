@@ -19,6 +19,7 @@ build/
 
 # Virtual environments
 .venv/
+.pip-cache/
 venv/
 env/
 
@@ -49,6 +50,7 @@ benchmarks/results/
 *.gif
 *.png
 data/mast_cache/
+data/mast_runs/
 !docs/**/*.png
 !weights/pretrained_mlp_itpa.npz
 !weights/pretrained_fno_eurofusion_jet.npz

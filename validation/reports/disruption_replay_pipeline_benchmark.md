@@ -1,6 +1,6 @@
 # Disruption Replay Pipeline Benchmark
 
-- Disruption directory: `/media/anulum/724AA8E84AA8AA75/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/reference_data/diiid/disruption_shots`
+- Disruption directory: `/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/reference_data/diiid/disruption_shots`
 - Deterministic replay pass: `YES`
 - Enabled flags pass: `YES`
 - Disabled flags pass: `YES`

@@ -26,7 +26,7 @@ from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
-# 1. Resolve NTFS-hosted external libraries path
+# 1. Resolve repository-hosted external libraries path
 _EXTERNAL_ROOT = Path(__file__).resolve().parents[3] / "external"
 if _EXTERNAL_ROOT.exists() and str(_EXTERNAL_ROOT) not in sys.path:
     sys.path.insert(0, str(_EXTERNAL_ROOT))
@@ -63,7 +63,7 @@ class MastIngestor:
         if not _HAS_FAIR_MAST_STACK:
             raise ImportError(
                 "MAST ingestion requires zarr, s3fs, and xarray. "
-                "Ensure NTFS external/ directory is present."
+                "Ensure the repository external/ directory or project environment is present."
             )
 
         if cache_dir is None:
