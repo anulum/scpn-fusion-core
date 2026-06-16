@@ -116,7 +116,7 @@
       "license_redistributable": true,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact",
-      "total_bytes": 507071
+      "total_bytes": 507069
     },
     {
       "file_count": 3,
@@ -168,6 +168,17 @@
       "total_bytes": 381655
     },
     {
+      "file_count": 1,
+      "id": "mast_independent_label_template",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Repository-maintained template for independently sourced MAST disruptive and non-disruptive label manifests.",
+      "source_type": "documentation",
+      "total_bytes": 874
+    },
+    {
       "citation": "OpenADAS adf11 GCR project data tables from open.adas.ac.uk; manifest records public URLs, checksums, and derived CoolingCurve parameters.",
       "file_count": 1,
       "id": "openadas_coronal_lz_manifest",
@@ -200,7 +211,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 15580
+      "total_bytes": 15880
     },
     {
       "citation": "Slough, Votroubek, and Pihl, Nuclear Fusion 51, 053008 (2011), DOI:10.1088/0029-5515/51/5/053008.",
@@ -277,7 +288,7 @@
       "total_bytes": 3182
     }
   ],
-  "file_count": 78,
+  "file_count": 79,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -810,8 +821,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json",
-      "sha256": "77f2ea2757bfea4bd7ef1c59d2f6c4d594249caf7b646cbd776778d7f8db347b",
-      "size_bytes": 18992,
+      "sha256": "351261e594f7be343a49377e2ba17c8f13fc354cdc994f8b0b33c649ab08e7d4",
+      "size_bytes": 18990,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
     },
@@ -823,7 +834,7 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
-      "sha256": "0697d82b9dacde4dd15a5b6bf5960eacd1ef9bba94307fc2e080f398c2d1846f",
+      "sha256": "02b3a3d63167f4f3e33677b45d525c55c3b6c597fd42cbadd5d24386c3eca02d",
       "size_bytes": 1166,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
@@ -1075,6 +1086,18 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
+      "dataset_id": "mast_independent_label_template",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "mast/independent_labels.example.json",
+      "sha256": "50f5774da29fabfda0fb82fe36804ecb869a4cfb5be12e750e0a788516494294",
+      "size_bytes": 874,
+      "source": "Repository-maintained template for independently sourced MAST disruptive and non-disruptive label manifests.",
+      "source_type": "documentation"
+    },
+    {
       "citation": "OpenADAS adf11 GCR project data tables from open.adas.ac.uk; manifest records public URLs, checksums, and derived CoolingCurve parameters.",
       "dataset_id": "openadas_coronal_lz_manifest",
       "license": "citation-required",
@@ -1094,8 +1117,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "401e0452bf6457961c9980a2b8df1ebd9ede24ecf9221b5e34670aaa40234264",
-      "size_bytes": 11599,
+      "sha256": "7070e670744be1ea21a35a6c86103597082849c9597421cfe55593e8960538f1",
+      "size_bytes": 11899,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -1326,7 +1349,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-06-15T23:49:03.221291+00:00",
+  "generated_at_utc": "2026-06-16T09:23:25.600655+00:00",
   "license_registry": [
     {
       "attribution_required": true,

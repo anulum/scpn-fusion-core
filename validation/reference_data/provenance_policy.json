@@ -150,6 +150,13 @@
       "license": "AGPL-3.0-or-later"
     },
     {
+      "id": "mast_independent_label_template",
+      "glob": "mast/*.example.json",
+      "source_type": "documentation",
+      "source": "Repository-maintained template for independently sourced MAST disruptive and non-disruptive label manifests.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
       "id": "diiid_disruption_shots",
       "glob": "diiid/disruption_shots/*.npz",
       "source_type": "synthetic_generated",
