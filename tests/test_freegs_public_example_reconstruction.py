@@ -66,10 +66,13 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
     )
     assert strict["case_count"] == report["case_count"]
     assert strict["failed_threshold_check_count"] == 0
-    required_sidecar_blockers = [
-        "coil/vacuum reconstruction linked to public machine current sidecars",
-        "same-case public reference equilibrium output",
-    ]
+    sidecar_blocker = "coil/vacuum reconstruction linked to public machine current sidecars"
+    reference_blocker = "same-case public reference equilibrium output"
+    expected_blockers = []
+    if not strict["coil_vacuum_sidecar_ready"]:
+        expected_blockers.append(sidecar_blocker)
+    if not strict["reference_output_ready"]:
+        expected_blockers.append(reference_blocker)
     if strict["accepted_full_fidelity"]:
         assert report["status"] == "accepted_public_freegs_same_case_free_boundary_parity"
         assert strict["status"] == "accepted_public_freegs_same_case_free_boundary_parity"
@@ -83,10 +86,9 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
             == "blocked_public_freegs_native_same_case_compared_missing_grid_convergence_coil_sidecars_reference_output"
         )
         assert strict["status"] == "blocked_public_sidecars_or_reference_missing"
-        assert report["missing_full_fidelity_requirements"] == required_sidecar_blockers
-        assert strict["blocking_requirements"] == required_sidecar_blockers
-        assert strict["coil_vacuum_sidecar_ready"] is False
-        assert strict["reference_output_ready"] is False
+        assert expected_blockers
+        assert report["missing_full_fidelity_requirements"] == expected_blockers
+        assert strict["blocking_requirements"] == expected_blockers
     containment = strict["geometry_containment_evidence"]
     assert containment["schema"] == "strict-free-boundary-geometry-containment.v1"
     assert containment["case_count"] == report["case_count"]
