@@ -17,9 +17,7 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MANIFEST = (
-    REPO_ROOT / "validation" / "reference_data" / "mast" / "independent_labels.json"
-)
+DEFAULT_MANIFEST = REPO_ROOT / "validation" / "reference_data" / "mast" / "independent_labels.json"
 DEFAULT_REPORT = REPO_ROOT / "validation" / "reports" / "mast_label_readiness.json"
 MANIFEST_VERSION = "mast-independent-disruption-labels-v1"
 LABELS = {"disruptive", "non_disruptive"}
@@ -186,7 +184,9 @@ def main(argv: list[str] | None = None) -> int:
     report = build_report(manifest_path, errors, payload)
     if args.write_report:
         report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        report_path.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
     if errors:
         print(f"MAST label manifest validation FAILED ({len(errors)} issue(s))")
