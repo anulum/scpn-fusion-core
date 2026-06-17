@@ -12,8 +12,11 @@ import hashlib
 from typing import Any, Optional
 
 import numpy as np
+from numpy.typing import NDArray
 
-from scpn_fusion.control._free_boundary_supervisory_types import FloatArray
+from scpn_fusion.control._free_boundary_supervisory_types import BoolArray, FloatArray
+
+IntArray = NDArray[np.int64]
 
 
 def build_free_boundary_simulation_summary(
@@ -34,31 +37,31 @@ def build_free_boundary_simulation_summary(
     uncertainty_arr: FloatArray,
     actuator_bias_hat_arr: FloatArray,
     actuator_bias_true_arr: FloatArray,
-    intervention_arr: np.ndarray,
-    saturation_arr: np.ndarray,
-    failsafe_arr: np.ndarray,
-    degraded_arr: np.ndarray,
-    diagnostic_dropout_arr: np.ndarray,
-    actuator_dropout_arr: np.ndarray,
-    fallback_arr: np.ndarray,
-    invariant_arr: np.ndarray,
-    physics_guard_arr: np.ndarray,
-    q95_guard_arr: np.ndarray,
-    beta_guard_arr: np.ndarray,
-    risk_guard_arr: np.ndarray,
+    intervention_arr: IntArray,
+    saturation_arr: IntArray,
+    failsafe_arr: IntArray,
+    degraded_arr: IntArray,
+    diagnostic_dropout_arr: IntArray,
+    actuator_dropout_arr: IntArray,
+    fallback_arr: IntArray,
+    invariant_arr: IntArray,
+    physics_guard_arr: IntArray,
+    q95_guard_arr: IntArray,
+    beta_guard_arr: IntArray,
+    risk_guard_arr: IntArray,
     q95_arr: FloatArray,
     beta_n_arr: FloatArray,
     disruption_risk_arr: FloatArray,
     q95_margin_arr: FloatArray,
     beta_margin_arr: FloatArray,
     risk_margin_arr: FloatArray,
-    alert_level_arr: np.ndarray,
-    requested_alert_level_arr: np.ndarray,
-    alert_transition_arr: np.ndarray,
-    recovery_transition_arr: np.ndarray,
+    alert_level_arr: IntArray,
+    requested_alert_level_arr: IntArray,
+    alert_transition_arr: IntArray,
+    recovery_transition_arr: IntArray,
     risk_arr: FloatArray,
     target_ip_arr: FloatArray,
-    stabilized: np.ndarray,
+    stabilized: BoolArray,
     times_arr: FloatArray,
     plot_saved: bool,
     plot_error: Optional[str],

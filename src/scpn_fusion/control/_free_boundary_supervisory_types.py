@@ -18,6 +18,7 @@ from scpn_fusion.control.disruption_risk_runtime import predict_disruption_risk
 
 
 FloatArray = NDArray[np.float64]
+BoolArray = NDArray[np.bool_]
 
 DEFAULT_TARGET_VECTOR = np.array([6.0, 0.0, 5.0, -3.5], dtype=np.float64)
 SUPERVISORY_DISRUPTION_RISK_BIAS = 2.5
@@ -54,7 +55,7 @@ def _normalize_bounds(bounds: tuple[float, float], name: str) -> tuple[float, fl
 
 
 def _normalize_vector(
-    values: Optional[np.ndarray | tuple[float, ...] | list[float]],
+    values: Optional[FloatArray | tuple[float, ...] | list[float]],
     *,
     length: int,
     default: float = 0.0,
@@ -71,11 +72,11 @@ def _normalize_vector(
 
 
 def _normalize_mask(
-    values: Optional[np.ndarray | tuple[float, ...] | list[float]],
+    values: Optional[FloatArray | tuple[float, ...] | list[float]],
     *,
     length: int,
     name: str,
-) -> NDArray[np.bool_]:
+) -> BoolArray:
     if values is None:
         return np.zeros(length, dtype=bool)
     arr = np.asarray(values, dtype=np.float64).reshape(-1)
@@ -185,15 +186,15 @@ def _build_margin_signal_scalar(
 
 def estimate_free_boundary_safety_margins(
     *,
-    corrected_state: np.ndarray,
-    target_state: np.ndarray,
-    bias_hat: np.ndarray,
-    coil_currents: np.ndarray,
+    corrected_state: FloatArray,
+    target_state: FloatArray,
+    bias_hat: FloatArray,
+    coil_currents: FloatArray,
     target_ip_ma: float,
     q95_floor: float,
     beta_n_ceiling: float,
     disruption_risk_ceiling: float,
-    risk_signal_history: Optional[np.ndarray | list[float]] = None,
+    risk_signal_history: Optional[FloatArray | list[float]] = None,
 ) -> FreeBoundarySafetyMargins:
     """Estimate safety guard margins from geometry, coil currents, and target current."""
 

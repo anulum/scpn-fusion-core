@@ -30,8 +30,8 @@ class FreeBoundarySupervisoryController:
         surrogate: NeuralSurrogate,
         target: FreeBoundaryTarget,
         *,
-        state_gains: np.ndarray | tuple[float, ...] = (1.8, 2.1, 1.4, 1.7),
-        bias_rejection_gains: np.ndarray | tuple[float, ...] = (0.7, 0.8, 0.55, 0.65),
+        state_gains: FloatArray | tuple[float, ...] = (1.8, 2.1, 1.4, 1.7),
+        bias_rejection_gains: FloatArray | tuple[float, ...] = (0.7, 0.8, 0.55, 0.65),
         innovation_damping: float = 0.18,
         actuator_compensation_gain: float = 0.85,
     ) -> None:

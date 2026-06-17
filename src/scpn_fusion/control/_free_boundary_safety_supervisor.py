@@ -13,6 +13,7 @@ from typing import Optional
 import numpy as np
 
 from scpn_fusion.control._free_boundary_supervisory_types import (
+    FloatArray,
     FreeBoundarySafetyMargins,
     SafetyFilterResult,
     SUPERVISORY_ALERT_LEVEL_NAMES,
@@ -193,14 +194,14 @@ class FreeBoundarySafetySupervisor:
 
     def filter_action(
         self,
-        proposed_action: np.ndarray,
+        proposed_action: FloatArray,
         *,
-        corrected_state: np.ndarray,
-        target_state: np.ndarray,
-        bias_hat: np.ndarray,
-        coil_currents: np.ndarray,
+        corrected_state: FloatArray,
+        target_state: FloatArray,
+        bias_hat: FloatArray,
+        coil_currents: FloatArray,
         target_ip_ma: float,
-        predicted_next_state: Optional[np.ndarray] = None,
+        predicted_next_state: Optional[FloatArray] = None,
         safety_margins: Optional[FreeBoundarySafetyMargins] = None,
         diagnostic_dropout_active: bool = False,
         actuator_dropout_active: bool = False,

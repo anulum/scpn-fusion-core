@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Added selected free-boundary supervisory-control helper modules and the
+  stellarator control contract surface to the configured mypy strict cohort,
+  with explicit float, integer, and boolean array contracts for replay traces.
 - Added multi-backend compatibility, GK nonlinear type, TGLF helper, and
   neural-transport helper modules to the configured mypy strict cohort, with
   typed optional-backend probes and explicit float-array profile gradients.
