@@ -59,10 +59,17 @@ def test_digital_twin_latency_campaign_reports_cpu_rust_gpu_boundaries() -> None
 
 
 def test_host_snapshot_records_taskset_isolation_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("SCPN_BENCHMARK_ISOLATION_METHOD", "taskset_affinity_operator_reserved_cores")
+    monkeypatch.setenv(
+        "SCPN_BENCHMARK_ISOLATION_METHOD", "taskset_affinity_operator_reserved_cores"
+    )
     monkeypatch.setenv("SCPN_BENCHMARK_CPUSET", "10,11")
-    monkeypatch.setenv("SCPN_BENCHMARK_COMMAND", "taskset -c 10,11 python validation/scpn_end_to_end_latency.py --strict")
-    monkeypatch.setenv("SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS", "none_intentionally_started_by_this_task")
+    monkeypatch.setenv(
+        "SCPN_BENCHMARK_COMMAND",
+        "taskset -c 10,11 python validation/scpn_end_to_end_latency.py --strict",
+    )
+    monkeypatch.setenv(
+        "SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS", "none_intentionally_started_by_this_task"
+    )
     monkeypatch.setenv("SCPN_BENCHMARK_CLAIM_BOUNDARY", "Taskset affinity benchmark evidence.")
 
     snapshot = scpn_end_to_end_latency._host_snapshot()
@@ -104,7 +111,9 @@ def test_actuator_scaling_reaches_more_than_two_hundred_channels() -> None:
     row_256 = rows[256]
     assert row_256["cpu"]["status"] == "measured"
     assert row_256["cpu"]["safe_output_rate"] == 1.0
-    assert row_256["rust"]["status"].startswith("blocked_") or row_256["rust"]["status"] == "measured"
+    assert (
+        row_256["rust"]["status"].startswith("blocked_") or row_256["rust"]["status"] == "measured"
+    )
     assert row_256["gpu"]["status"].startswith("blocked_") or row_256["gpu"]["status"] == "measured"
 
 

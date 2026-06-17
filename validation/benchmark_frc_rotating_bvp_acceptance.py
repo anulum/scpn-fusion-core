@@ -29,7 +29,10 @@ REPORT_DIR = ROOT / "validation" / "reports"
 JSON_REPORT = REPORT_DIR / "frc_rotating_bvp_acceptance.json"
 MD_REPORT = REPORT_DIR / "frc_rotating_bvp_acceptance.md"
 REFERENCE_MANIFEST = (
-    ROOT / "validation" / "reference_data" / "full_fidelity_public_artifacts"
+    ROOT
+    / "validation"
+    / "reference_data"
+    / "full_fidelity_public_artifacts"
     / "frc_reference_papers_manifest.json"
 )
 
@@ -208,7 +211,7 @@ def build_report(*, run_rust: bool = True) -> dict[str, Any]:
     )
     return {
         "schema": "frc-rotating-bvp-acceptance.v1",
-        "generated_at_utc": dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat(),
+        "generated_at_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "status": (
             "blocked_rotating_bvp_reference_missing_fail_closed_contract_passed"
             if fail_closed_passed

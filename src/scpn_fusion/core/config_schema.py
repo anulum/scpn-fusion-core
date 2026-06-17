@@ -10,6 +10,8 @@ Strict schema validation for reactor configurations using Pydantic.
 Prevents late-stage simulation failures by catching malformed configs early.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator

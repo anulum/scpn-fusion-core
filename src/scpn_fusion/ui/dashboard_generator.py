@@ -22,7 +22,9 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 try:
-    FusionKernel: Any | None = importlib.import_module("scpn_fusion.core.fusion_kernel").FusionKernel
+    FusionKernel: Any | None = importlib.import_module(
+        "scpn_fusion.core.fusion_kernel"
+    ).FusionKernel
 except (AttributeError, ImportError):
     FusionKernel = None
 

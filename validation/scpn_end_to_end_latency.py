@@ -512,9 +512,7 @@ def _run_gpu_digital_twin_latency(*, steps: int, actuator_count: int = 2) -> dic
                 dtype=cp.float64,
             )
             last_beta = 2.0
-            stage_samples = {
-                key: np.zeros(steps, dtype=np.float64) for key in _PIPELINE_STAGE_KEYS
-            }
+            stage_samples = {key: np.zeros(steps, dtype=np.float64) for key in _PIPELINE_STAGE_KEYS}
             loop_ms = np.zeros(steps, dtype=np.float64)
             checksum = 0.0
             fallback_count = 0
@@ -722,7 +720,9 @@ def _validate_snapshot(snapshot: dict[str, float]) -> tuple[dict[str, float], bo
     return cleaned, fallback, reason
 
 
-def _features_from_snapshot(snapshot: dict[str, float], last_snapshot: dict[str, float]) -> FloatArray:
+def _features_from_snapshot(
+    snapshot: dict[str, float], last_snapshot: dict[str, float]
+) -> FloatArray:
     """Assemble bounded controller features from current and previous sensors.
 
     Parameters
@@ -921,7 +921,9 @@ def _run_digital_twin_case(case_name: str, *, steps: int) -> dict[str, Any]:
         if case_name == "stale_input" and k % 7 == 0:
             fallback = True
             reason = "stale_snapshot_safe_mode"
-        if case_name == "out_of_distribution_input" and (cleaned["beta_n"] > 4.0 or cleaned["q95"] < 0.5):
+        if case_name == "out_of_distribution_input" and (
+            cleaned["beta_n"] > 4.0 or cleaned["q95"] < 0.5
+        ):
             fallback = True
             reason = "ood_snapshot_safe_mode"
         stage_samples["input_validation"][k] = (time.perf_counter() - t0) * 1e3
@@ -979,7 +981,9 @@ def _run_digital_twin_case(case_name: str, *, steps: int) -> dict[str, Any]:
         "p95_loop_ms": _pctl(loop_ms, 95),
         "p99_loop_ms": _pctl(loop_ms, 99),
         "stages": {key: _summary(values) for key, values in stage_samples.items()},
-        "passes_semantics": bool(safe_outputs == steps and (case_name == "nominal" or fallback_count > 0)),
+        "passes_semantics": bool(
+            safe_outputs == steps and (case_name == "nominal" or fallback_count > 0)
+        ),
     }
 
 
@@ -1678,7 +1682,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         ]
     )
     for name, rec in hil["scenarios"].items():
-        reasons = ", ".join(f"{key}:{value}" for key, value in sorted(rec["fallback_reasons"].items()))
+        reasons = ", ".join(
+            f"{key}:{value}" for key, value in sorted(rec["fallback_reasons"].items())
+        )
         lines.append(
             f"| {name} | {rec['fallback_count']} | {rec['safe_output_rate']:.3f} | "
             f"{rec['latency']['p95_us']:.6f} | {'YES' if rec['passes_semantics'] else 'NO'} | "

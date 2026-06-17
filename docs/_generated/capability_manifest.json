@@ -14,7 +14,6 @@
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
-      "docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md",
       "docs/PERFORMANCE_METRIC_TAXONOMY.md",
       "docs/PHYSICS_METHODS_COMPLETE.md",
       "docs/PHYSICS_VALIDATION_STATUS.md",
@@ -343,6 +342,10 @@
         "path": "src/scpn_fusion/engineering/thermal_hydraulics.py"
       },
       {
+        "name": "CoolantProperties",
+        "path": "src/scpn_fusion/engineering/thermal_hydraulics.py"
+      },
+      {
         "name": "CoolingCurve",
         "path": "src/scpn_fusion/core/impurity_transport.py"
       },
@@ -447,12 +450,28 @@
         "path": "src/scpn_fusion/core/config_schema.py"
       },
       {
+        "name": "DirectEnergyConversionChannel",
+        "path": "src/scpn_fusion/core/direct_energy_conversion.py"
+      },
+      {
+        "name": "DirectEnergyConversionFault",
+        "path": "src/scpn_fusion/core/direct_energy_conversion.py"
+      },
+      {
+        "name": "DirectEnergyConversionReport",
+        "path": "src/scpn_fusion/core/direct_energy_conversion.py"
+      },
+      {
         "name": "DirectorInterface",
         "path": "src/scpn_fusion/control/director_interface.py"
       },
       {
         "name": "DisruptionConfig",
         "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "DisruptionLoad",
+        "path": "src/scpn_fusion/core/disruption_structural_response.py"
       },
       {
         "name": "DisruptionMitigationReport",
@@ -1415,6 +1434,14 @@
         "path": "src/scpn_fusion/scpn/artifact.py"
       },
       {
+        "name": "PlantPerformance",
+        "path": "src/scpn_fusion/engineering/balance_of_plant.py"
+      },
+      {
+        "name": "PlantPowerBreakdown",
+        "path": "src/scpn_fusion/engineering/balance_of_plant.py"
+      },
+      {
         "name": "Plasma2D",
         "path": "src/scpn_fusion/control/tokamak_digital_twin.py"
       },
@@ -1471,6 +1498,10 @@
         "path": "src/scpn_fusion/core/pulsed_compression.py"
       },
       {
+        "name": "PumpingPowerResult",
+        "path": "src/scpn_fusion/engineering/thermal_hydraulics.py"
+      },
+      {
         "name": "QLKNNSurrogate",
         "path": "src/scpn_fusion/core/neural_turbulence.py"
       },
@@ -1485,6 +1516,18 @@
       {
         "name": "QuaLiKizSolver",
         "path": "src/scpn_fusion/core/gk_qualikiz.py"
+      },
+      {
+        "name": "QuenchReport",
+        "path": "src/scpn_fusion/core/hts_quench.py"
+      },
+      {
+        "name": "QuenchScenario",
+        "path": "src/scpn_fusion/core/hts_quench.py"
+      },
+      {
+        "name": "REBCOConductor",
+        "path": "src/scpn_fusion/core/hts_quench.py"
       },
       {
         "name": "REBeamPhase",
@@ -1873,6 +1916,14 @@
       {
         "name": "StochasticPetriNet",
         "path": "src/scpn_fusion/scpn/structure.py"
+      },
+      {
+        "name": "StructuralMember",
+        "path": "src/scpn_fusion/core/disruption_structural_response.py"
+      },
+      {
+        "name": "StructuralResponseReport",
+        "path": "src/scpn_fusion/core/disruption_structural_response.py"
       },
       {
         "name": "StructuredUncertainty",
@@ -2294,7 +2345,9 @@
       "src/scpn_fusion/core/config_schema.py",
       "src/scpn_fusion/core/current_diffusion.py",
       "src/scpn_fusion/core/current_drive.py",
+      "src/scpn_fusion/core/direct_energy_conversion.py",
       "src/scpn_fusion/core/disruption_sequence.py",
+      "src/scpn_fusion/core/disruption_structural_response.py",
       "src/scpn_fusion/core/divertor_thermal_sim.py",
       "src/scpn_fusion/core/elm_model.py",
       "src/scpn_fusion/core/eped_pedestal.py",
@@ -2348,6 +2401,7 @@
       "src/scpn_fusion/core/heat_ml_shadow_surrogate.py",
       "src/scpn_fusion/core/heating_neutronics_contracts.py",
       "src/scpn_fusion/core/hpc_bridge.py",
+      "src/scpn_fusion/core/hts_quench.py",
       "src/scpn_fusion/core/imas_adapter.py",
       "src/scpn_fusion/core/impurity_transport.py",
       "src/scpn_fusion/core/integrated_scenario.py",
@@ -2527,15 +2581,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 54,
+    "capability_documentation_pages": 53,
     "github_workflows": 12,
     "optional_extras": 12,
     "public_api_exports": 2,
-    "public_documentation_pages": 54,
-    "python_capability_classes": 534,
-    "python_capability_source_modules": 274,
+    "public_documentation_pages": 53,
+    "python_capability_classes": 547,
+    "python_capability_source_modules": 277,
     "rust_workspace_crates": 13,
-    "test_files": 420
+    "test_files": 425
   },
   "documentation": {
     "public_pages": [
@@ -2551,7 +2605,6 @@
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
-      "docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md",
       "docs/PERFORMANCE_METRIC_TAXONOMY.md",
       "docs/PHYSICS_METHODS_COMPLETE.md",
       "docs/PHYSICS_VALIDATION_STATUS.md",
@@ -2768,6 +2821,7 @@
       "tests/test_frc_rigid_rotor.py",
       "tests/test_frc_rigid_rotor_property.py",
       "tests/test_frc_rigid_rotor_rust_parity.py",
+      "tests/test_frc_rotating_bvp_acceptance_report.py",
       "tests/test_frc_to_gs_bridge.py",
       "tests/test_free_boundary_public_machine_metadata_inventory.py",
       "tests/test_free_boundary_supervisory_control.py",
@@ -2856,6 +2910,7 @@
       "tests/test_hardening_module_linkage.py",
       "tests/test_heating_neutronics_contracts.py",
       "tests/test_heating_neutronics_q10.py",
+      "tests/test_high_beta_negative_triangularity_campaign.py",
       "tests/test_hil_demo_runner.py",
       "tests/test_hil_harness.py",
       "tests/test_hpc_bridge.py",
@@ -3025,6 +3080,8 @@
       "tests/test_stellarator_control_replay_benchmark.py",
       "tests/test_stellarator_geometry.py",
       "tests/test_stress_campaign.py",
+      "tests/test_subsystem_fault_hardening_campaign.py",
+      "tests/test_subsystem_fault_models.py",
       "tests/test_sweep_disruption_threshold_tool.py",
       "tests/test_sync_metadata.py",
       "tests/test_synthetic_sensors.py",
@@ -3079,6 +3136,7 @@
       "tests/test_vmec_lite.py",
       "tests/test_volt_second_manager.py",
       "tests/test_wdm_engine.py",
+      "tests/test_whole_plant_fault_tolerant_scenario.py",
       "tests/test_ws_phase_stream.py"
     ]
   },

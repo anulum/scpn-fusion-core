@@ -35,9 +35,10 @@ def test_campaign_passes_and_preserves_claim_boundaries() -> None:
     assert report["acceptance"]["passes_thresholds"] is True
     assert report["acceptance"]["failure_reasons"] == []
     assert "hardware_beta_40_operation" in report["acceptance"]["blocked_claims"]
-    assert "experimental_negative_triangularity_elm_free_operation" in report["acceptance"][
-        "blocked_claims"
-    ]
+    assert (
+        "experimental_negative_triangularity_elm_free_operation"
+        in report["acceptance"]["blocked_claims"]
+    )
 
     components = report["components"]
     assert components["geometry"]["passes_geometry_contract"] is True

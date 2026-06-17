@@ -39,7 +39,9 @@ def test_frc_rotating_bvp_acceptance_report_is_fail_closed_and_cross_surface() -
     assert report["schema"] == "frc-rotating-bvp-acceptance.v1"
     assert report["accepted_full_fidelity_rotating_bvp"] is False
     assert report["status"] == "blocked_rotating_bvp_reference_missing_fail_closed_contract_passed"
-    assert report["python_status"]["status"] == "blocked_missing_verified_steinhauer_rotating_closure"
+    assert (
+        report["python_status"]["status"] == "blocked_missing_verified_steinhauer_rotating_closure"
+    )
     assert report["python_no_rotation_contract"]["passed"] is True
     assert report["python_nonzero_rotation_contract"]["passed"] is True
     assert report["steinhauer_reference_gate"]["passed"] is True

@@ -649,7 +649,9 @@ def _hil_measurement_for_step(
     serialized_bytes = 0
 
     t0 = time.perf_counter_ns()
-    measurement = np.asarray([sensor.read_adc(float(value)) for value in true_state], dtype=np.float64)
+    measurement = np.asarray(
+        [sensor.read_adc(float(value)) for value in true_state], dtype=np.float64
+    )
     if scenario == "sensor_dropout" and step_index % 8 == 0:
         measurement[1] = np.nan
     elif scenario == "noisy_sensor":
@@ -672,7 +674,9 @@ def _hil_measurement_for_step(
     stage_us["input_validation"] = (time.perf_counter_ns() - t0) / 1e3
 
     t0 = time.perf_counter_ns()
-    estimated_state = estimator @ previous_state + (np.eye(previous_state.size) - estimator) @ measurement
+    estimated_state = (
+        estimator @ previous_state + (np.eye(previous_state.size) - estimator) @ measurement
+    )
     estimated_state = np.clip(estimated_state, -1.5, 1.5)
     stage_us["state_estimation"] = (time.perf_counter_ns() - t0) / 1e3
 

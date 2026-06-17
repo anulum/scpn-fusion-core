@@ -207,7 +207,9 @@ def _vertical_summary(scenario: NegativeTriangularityScenario) -> dict[str, Any]
         damping_s_inv=scenario.vertical_damping_s_inv,
         wall_time_s=0.015,
     )
-    report = vertical_replay.run_benchmark(machine_profile=profile)["vertical_control_replay_benchmark"]
+    report = vertical_replay.run_benchmark(machine_profile=profile)[
+        "vertical_control_replay_benchmark"
+    ]
     return {
         "profile_id": profile.profile_id,
         "passes_thresholds": bool(report["passes_thresholds"]),
@@ -376,11 +378,15 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "high_beta_negative_triangularity_campaign.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "high_beta_negative_triangularity_campaign.json"
+        ),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "high_beta_negative_triangularity_campaign.md"),
+        default=str(
+            ROOT / "validation" / "reports" / "high_beta_negative_triangularity_campaign.md"
+        ),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)

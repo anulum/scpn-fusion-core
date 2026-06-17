@@ -125,7 +125,9 @@ class NeuroSymbolicControllerBackendMixin:
         np.clip(out, 0.0, 1.0, out=out)
         return out
 
-    def _oracle_step(self: _BackendControllerState, marking: FloatArray) -> Tuple[FloatArray, FloatArray]:
+    def _oracle_step(
+        self: _BackendControllerState, marking: FloatArray
+    ) -> Tuple[FloatArray, FloatArray]:
         """Float-path Petri step."""
         a = self._dense_activations(marking)
         if self._firing_mode == "fractional":
@@ -140,7 +142,9 @@ class NeuroSymbolicControllerBackendMixin:
         m2 = self._marking_update(marking, f_timed, self._tmp_marking_oracle)
         return f_timed, m2
 
-    def _sc_step(self: _BackendControllerState, marking: FloatArray, k: int) -> Tuple[FloatArray, FloatArray]:
+    def _sc_step(
+        self: _BackendControllerState, marking: FloatArray, k: int
+    ) -> Tuple[FloatArray, FloatArray]:
         """Deterministic stochastic path with optional bit-flip fault injection."""
         a = self._dense_activations(marking)
 

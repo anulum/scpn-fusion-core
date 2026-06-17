@@ -81,8 +81,7 @@ def run_campaign() -> dict[str, Any]:
         _lane(
             "direct_energy_conversion_fault",
             evidence_source=(
-                "scpn_fusion.core.direct_energy_conversion."
-                "evaluate_direct_energy_conversion_fault"
+                "scpn_fusion.core.direct_energy_conversion.evaluate_direct_energy_conversion_fault"
             ),
             response_time_s=float(dec["fail_closed_time_ms"]) * 1.0e-3,
             report=dec,
