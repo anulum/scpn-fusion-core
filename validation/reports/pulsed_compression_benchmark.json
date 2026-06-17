@@ -23,16 +23,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 62540468166971.88,
-      "mean_seconds": 0.0135624732,
+      "mean_seconds": 0.014541784800000002,
       "min_radius_m": 0.08408251898081921,
       "radial_turning_point_count": 0,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.014137333,
-        0.012836625,
-        0.01397744,
-        0.012736109,
-        0.014124859
+        0.015397417000000002,
+        0.013953080000000001,
+        0.01393601,
+        0.013674545000000001,
+        0.015747872
       ],
       "steps": 64
     },
@@ -52,16 +52,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 1012714361851950.1,
-      "mean_seconds": 0.05665570960000001,
+      "mean_seconds": 0.0642022818,
       "min_radius_m": 0.008413881844687323,
       "radial_turning_point_count": 2,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.075397929,
-        0.052809801,
-        0.052143072000000006,
-        0.051908776000000004,
-        0.051018970000000004
+        0.081346688,
+        0.057655138,
+        0.06342489600000001,
+        0.057607043000000004,
+        0.060977644000000004
       ],
       "steps": 256
     },
@@ -81,16 +81,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 1021469279693650.5,
-      "mean_seconds": 0.213799119,
+      "mean_seconds": 0.24001110780000004,
       "min_radius_m": 0.008383014351505654,
       "radial_turning_point_count": 11,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.212313611,
-        0.213037694,
-        0.21119985600000002,
-        0.221020456,
-        0.211423978
+        0.24117691300000002,
+        0.235729243,
+        0.24606767300000001,
+        0.235838345,
+        0.24124336500000002
       ],
       "steps": 1024
     },
@@ -113,16 +113,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 62540468166971.88,
-      "mean_seconds": 0.013932273800000002,
+      "mean_seconds": 0.018267113,
       "min_radius_m": 0.08404106355092787,
       "radial_turning_point_count": 0,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.013992688000000001,
-        0.013521924000000001,
-        0.014486797000000001,
-        0.013471795000000002,
-        0.014188165
+        0.016473212,
+        0.018892948,
+        0.018631096,
+        0.018395695,
+        0.018942614
       ],
       "steps": 64
     },
@@ -145,16 +145,16 @@
       "flux_update_residual_abs_max": 0.0,
       "language": "python",
       "max_abs_radial_acceleration_m_s2": 1012275958583706.2,
-      "mean_seconds": 0.059422288200000006,
+      "mean_seconds": 0.0646420946,
       "min_radius_m": 0.008415420525134651,
       "radial_turning_point_count": 2,
       "radius_floor_contact_count": 0,
       "samples_seconds": [
-        0.060816459,
-        0.057116121000000006,
-        0.058195654000000006,
-        0.055625133,
-        0.065358074
+        0.067360773,
+        0.06437543300000001,
+        0.062793122,
+        0.060561539000000005,
+        0.068119606
       ],
       "steps": 256
     },
@@ -223,6 +223,6 @@
   "source_checksums": {
     "benchmarks/bench_pulsed_compression.py": "63b6a91320e3818b4df6bfe12c9b0126ac3d19bb72ac1853e5b4b2726e4b799e",
     "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "e451ca10de3042dfc28ba79fc17215db97810681684ae835a4af5d0de4729e9e",
-    "src/scpn_fusion/core/pulsed_compression.py": "3a2c3f447f002dc0b1ccd53fdea0b37592f8e6cad0808063108f21ce08332e8d"
+    "src/scpn_fusion/core/pulsed_compression.py": "e0e3e3c46c8b56f4bb1ca725124bc3b9900b516cac5b3fb5d994738407f7002c"
   }
 }

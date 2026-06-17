@@ -7,6 +7,8 @@
 # SCPN Fusion Core — Pulsed Compression Tests
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import cast
 
 import numpy as np
@@ -252,6 +254,34 @@ def test_spitzer_resistivity_scaling_and_blocked_reference_status() -> None:
         slough_fig5_acceptance_status()["status"]
         == "blocked_reconstructed_reference_not_public_digitised"
     )
+
+
+def test_slough_digitised_sidecar_remains_blocked_until_checksum_and_parity(
+    tmp_path: Path,
+) -> None:
+    sidecar = tmp_path / "slough_digitised.json"
+    sidecar.write_text(
+        json.dumps(
+            {
+                "source": "synthetic-public-digitised-fixture",
+                "method": "digitised from public plot",
+                "fidelity": "public-digitised",
+                "scenario": "Slough_2011_Nuclear_Fusion_Fig5",
+                "trajectory": [
+                    {"t_us": 0.0, "R_s_m": 0.2, "B_ext_T": 1.0, "T_i_eV": 100.0},
+                    {"t_us": 1.0, "R_s_m": 0.1, "B_ext_T": 2.0, "T_i_eV": 200.0},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status = slough_fig5_acceptance_status(reference_path=sidecar)
+
+    assert status["status"] == "blocked_public_digitised_reference_validation_missing"
+    assert status["checksum_verified"] is False
+    assert status["same_case_parity_passed"] is False
+    assert status["n_points"] == 2
 
 
 def test_pulsed_compression_inputs_fail_closed() -> None:

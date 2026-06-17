@@ -1865,8 +1865,9 @@ harness asserts the trajectory gates before emitting estimates.
 
 This is not a production throughput claim and not external Slough Fig. 5
 parity. The Slough row remains blocked until a public digitised trajectory with
-compatible radius, temperature, field, current, provenance, and checksum data
-is available.
+compatible radius, temperature, field, current, provenance, checksum data, and
+same-case simulation parity is available. Digitised sidecar presence alone is a
+blocked state, not acceptance.
 
 The C-2U positive-net-heating supplementary table is available as public FRC
 performance context under `validation/reference_data/frc_public/`. It is not

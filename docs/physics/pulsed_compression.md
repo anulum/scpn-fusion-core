@@ -167,8 +167,10 @@ internal MIF lane. It is wired to the existing Ono flux carrier and records
 the discrete flux-source/damping budget at every step in Python and Rust.
 
 It does not claim Slough 2011 Fig. 5 parity yet. That acceptance row is
-blocked until a public digitised reference trajectory exists with provenance
-and checksums. The tracked benchmark report records this explicitly.
+blocked until a public digitised reference trajectory exists with provenance,
+checksums, and same-case pulsed-compression parity. Reconstructed operational
+sidecars and digitised-looking sidecars without checksum/parity evidence remain
+explicit blocked states. The tracked benchmark report records this boundary.
 
 The public C-2U positive-net-heating table from Baltz et al., Scientific
 Reports 7, 6425 (2017), is tracked separately under

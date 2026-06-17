@@ -511,9 +511,13 @@ MRTI, tilt, and Faraday consumers a single fail-closed trajectory-quality
 contract instead of endpoint-only checks.
 
 The public acceptance boundary is fail-closed: the helper
-`slough_fig5_acceptance_status()` reports `blocked_missing_public_reference`
-until a redistributable, digitised reference trajectory is available. The
-tracked benchmark report includes that blocked row instead of inventing
+`slough_fig5_acceptance_status()` reports
+`blocked_missing_public_digitised_reference` when no redistributable digitised
+trajectory is available, `blocked_reconstructed_reference_not_public_digitised`
+for the current reconstructed operational sidecar, and
+`blocked_public_digitised_reference_validation_missing` for digitised-looking
+sidecars that still lack checksum verification and same-case trajectory parity.
+The tracked benchmark report includes the blocked row instead of inventing
 external parity.
 
 The repository also carries a separate public C-2U performance reference table

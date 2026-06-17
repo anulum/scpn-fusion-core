@@ -560,9 +560,9 @@ def pulsed_compression_trajectory_diagnostics(
     )
 
 
-def slough_fig5_acceptance_status() -> dict[str, Any]:
+def slough_fig5_acceptance_status(reference_path: Path | None = None) -> dict[str, Any]:
     """Return the current acceptance status for the Slough 2011 Figure 5 comparison."""
-    ref_path = (
+    ref_path = reference_path or (
         Path(__file__).resolve().parents[3]
         / "validation"
         / "reference_data"
@@ -597,14 +597,31 @@ def slough_fig5_acceptance_status() -> dict[str, Any]:
                 ),
             }
 
+        trajectory = ref_data.get("trajectory", [])
+        checksum = ref_data.get("sha256") or ref_data.get("checksum_sha256")
+        parity_report = ref_data.get("same_case_parity_report")
+        checksum_verified = isinstance(checksum, str) and len(checksum) == 64
+        same_case_parity_passed = (
+            isinstance(parity_report, dict)
+            and parity_report.get("status") == "passed"
+            and parity_report.get("same_case") is True
+        )
         return {
             "case": "slough_2011_fig5",
-            "status": "reference_available_validation_pending",
+            "status": "blocked_public_digitised_reference_validation_missing",
             "source": ref_data.get("source"),
             "scenario": ref_data.get("scenario"),
-            "n_points": len(ref_data.get("trajectory", [])),
-            "checksum_verified": False,
-            "claim_boundary": "Digitised sidecar is present; no trajectory parity pass is claimed until a simulation comparison is run.",
+            "n_points": len(trajectory) if isinstance(trajectory, list) else 0,
+            "checksum_verified": checksum_verified,
+            "same_case_parity_passed": same_case_parity_passed,
+            "required_artifact": (
+                "checksum-verified public digitised Slough Fig. 5 trajectory plus "
+                "same-case pulsed-compression simulation parity report"
+            ),
+            "claim_boundary": (
+                "Digitised sidecar presence is not acceptance; Slough trajectory "
+                "parity remains blocked until checksum and same-case validation pass."
+            ),
         }
     except Exception as e:
         return {"case": "slough_2011_fig5", "status": "error", "error": str(e)}
