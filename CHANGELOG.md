@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Added multi-backend compatibility, GK nonlinear type, TGLF helper, and
+  neural-transport helper modules to the configured mypy strict cohort, with
+  typed optional-backend probes and explicit float-array profile gradients.
 - Added the AMR patch solver and Pydantic reactor-configuration schema to the
   configured mypy strict cohort, with boolean refinement masks and explicit
   validator/config payload typing.

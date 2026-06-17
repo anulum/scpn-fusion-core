@@ -20,6 +20,8 @@ from scpn_fusion.core._tglf_interface_types import (
     TGLF_REF_DIR,
 )
 
+FloatArray = NDArray[np.float64]
+
 
 class TGLFBenchmark:
     """Compare local transport coefficients against TGLF reference data."""
@@ -29,9 +31,9 @@ class TGLFBenchmark:
 
     def compare(
         self,
-        our_chi_i: NDArray,
-        our_chi_e: NDArray,
-        rho_grid: NDArray,
+        our_chi_i: FloatArray,
+        our_chi_e: FloatArray,
+        rho_grid: FloatArray,
         tglf_outputs: list[TGLFOutput],
     ) -> TGLFComparisonResult:
         """Compare local chi profiles against TGLF outputs."""

@@ -37,6 +37,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from importlib.util import find_spec
 from enum import IntEnum
 from typing import Any, Callable
 
@@ -90,12 +91,7 @@ def _probe_mojo() -> bool:
     """Check if Mojo interop is available."""
     if os.environ.get("SCPN_DISABLE_MOJO", "").strip().lower() in ("1", "true", "yes"):
         return False
-    try:
-        import scpn_fusion_mojo  # noqa: F401  # type: ignore[import-not-found]
-
-        return True
-    except ImportError:
-        return False
+    return find_spec("scpn_fusion_mojo") is not None
 
 
 def _probe_julia() -> bool:

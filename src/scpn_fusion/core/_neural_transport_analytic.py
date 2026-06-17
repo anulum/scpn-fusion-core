@@ -204,7 +204,7 @@ def reduced_gyrokinetic_profile_model(
     def norm_grad(x: FloatArray) -> FloatArray:
         dx = np.gradient(x, rho)
         safe_x = np.maximum(np.abs(x), 1e-6)
-        return -r_major * dx / safe_x
+        return np.asarray(-r_major * dx / safe_x, dtype=np.float64)
 
     grad_te_raw = norm_grad(te)
     grad_ti_raw = norm_grad(ti)
