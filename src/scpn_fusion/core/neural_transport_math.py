@@ -19,16 +19,19 @@ FloatArray = NDArray[np.float64]
 
 
 def _relu(x: FloatArray) -> FloatArray:
-    return np.maximum(0.0, x)
+    return np.asarray(np.maximum(0.0, x), dtype=np.float64)
 
 
 def _softplus(x: FloatArray) -> FloatArray:
-    return np.log1p(np.exp(np.clip(x, -20.0, 20.0)))
+    return np.asarray(np.log1p(np.exp(np.clip(x, -20.0, 20.0))), dtype=np.float64)
 
 
 def _gelu(x: FloatArray) -> FloatArray:
     """Gaussian Error Linear Unit (matches JAX/PyTorch training)."""
-    return x * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x**3)))
+    return np.asarray(
+        x * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x**3))),
+        dtype=np.float64,
+    )
 
 
 def _mlp_forward(x: FloatArray, weights: Any) -> FloatArray:
@@ -63,7 +66,7 @@ def _mlp_forward(x: FloatArray, weights: Any) -> FloatArray:
         else:
             out = out * chi_gb[..., np.newaxis]
 
-    return out
+    return np.asarray(out, dtype=np.float64)
 
 
 def _compute_nustar(
@@ -83,7 +86,7 @@ def _compute_nustar(
     ne_m3 = ne_19 * 1e19
     te_ev = te_kev * 1e3
     eps = max(rho * a_minor / r_major, 1e-4)
-    return (
+    return float(
         6.921e-18 * ne_m3 * q * r_major * z_eff**2 * ln_lambda / (max(te_ev, 1.0) ** 2 * eps**1.5)
     )
 

@@ -7,6 +7,8 @@
   `lyapunov_guard`, `plasma_knm`, `realtime_monitor`, `upde`, and
   `ws_phase_stream`) with explicit snapshot/container types and optional
   dependency import boundaries.
+- Added the shared surrogate utility and neural-transport math kernels to the
+  configured mypy strict cohort with explicit NumPy return contracts.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,

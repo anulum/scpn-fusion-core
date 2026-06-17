@@ -133,6 +133,8 @@ files = [
     "src/scpn_fusion/core/stability_mhd.py",
     "src/scpn_fusion/core/integrated_transport_solver.py",
     "src/scpn_fusion/core/tglf_interface.py",
+    "src/scpn_fusion/core/_surrogate_utils.py",
+    "src/scpn_fusion/core/neural_transport_math.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",

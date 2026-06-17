@@ -21,7 +21,10 @@ FloatArray: TypeAlias = NDArray[np.float64]
 
 def gelu(x: FloatArray) -> FloatArray:
     """Gaussian Error Linear Unit activation."""
-    return 0.5 * x * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x**3)))
+    return np.asarray(
+        0.5 * x * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x**3))),
+        dtype=np.float64,
+    )
 
 
 def relative_l2(y_pred: FloatArray, y_true: FloatArray) -> float:
