@@ -530,7 +530,7 @@ required before any CUDA throughput claim.
 |---|---|---|
 | Free-boundary coil/vacuum benchmark | PASS | `validation/reports/free_boundary_benchmark.json` |
 | Solov'ev manufactured-source FreeGS fallback | PASS | `artifacts/freegs_benchmark.json` on the GPU host |
-| Strict FreeGS backend comparison | FAIL | FreeGS 0.8.2 scalar-derivative compatibility was patched in the benchmark harness; the benchmark now reaches FreeGS solve setup but still fails with no O-points or Picard non-convergence in all five configured cases |
+| Legacy raw GEQDSK strict FreeGS backend comparison | FAIL | FreeGS 0.8.2 scalar-derivative compatibility was patched in the benchmark harness; this older raw-GEQDSK benchmark now reaches FreeGS solve setup but still fails with no O-points or Picard non-convergence in all five configured cases. This is separate from the accepted public FreeGS strict-parity gate below. |
 | EFIT/GEQDSK raw profile-source gate | FAIL | `0/18` rows under `psi_N RMSE <= 0.05`; worst `jet/jet_lmode_2MA.geqdsk` at `10.626997` |
 | Public operator-source gate | PASS | `8/8` public rows under `psi_N RMSE <= 1e-6` |
 | Adapted profile-source gate | PASS | `4/4` accepted adapter rows under `psi_N RMSE <= 0.05` |
@@ -538,10 +538,11 @@ required before any CUDA throughput claim.
 | GEQDSK debug trace coverage | PASS | Every benchmark row records `attribute`, `normalise`, `solve`, `residual`, `classify`, and `blockers` stages plus first-blocker aggregate counts |
 | Native operator/current closure | PASS | radial convergence order `2.000000`, worst radial current closure `8.31e-16` |
 
-The raw profile-source and strict FreeGS failures are open benchmark blockers.
-Accepted named-adapter rows are no longer counted as unresolved profile-source
-blockers, but they remain blocked on free-boundary coil/vacuum reconstruction.
-These are not CI or harness failures and must not be hidden by fallback rows.
+The raw profile-source and legacy raw-GEQDSK FreeGS failures remain open
+benchmark blockers for that older GEQDSK path. Accepted named-adapter rows are
+no longer counted as unresolved profile-source blockers, and the public FreeGS
+same-case strict-parity gate is accepted separately below. These are not CI or
+harness failures and must not be hidden by fallback rows.
 
 ### Full-fidelity public source acquisition
 

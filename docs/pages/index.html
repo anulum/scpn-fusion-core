@@ -414,14 +414,14 @@
         <div>
           <h2>Current acceptance status</h2>
           <ul class="status-list">
-            <li><strong>Local contracts:</strong> ready across the six production-parity lanes.</li>
-            <li><strong>Reference parity:</strong> not yet accepted; external same-case evidence is missing.</li>
-            <li><strong>Full-fidelity claim:</strong> intentionally blocked until public reference artefacts and thresholds pass.</li>
+            <li><strong>Accepted lanes:</strong> one public Aurora reference artefact and the public FreeGS strict-parity lane are accepted.</li>
+            <li><strong>Blocked lanes:</strong> GK, full electromagnetic parity, DREAM, SAS dataset readiness, and distributed scaling still need external evidence.</li>
+            <li><strong>Full-fidelity claim:</strong> the integrated campaign remains <code>not_full_fidelity</code>.</li>
           </ul>
         </div>
         <p class="truth">
-          This page is deliberately evidence-bounded. The project does not claim GENE/CGYRO/GS2,
-          DREAM, Aurora/STRAHL, or strict FreeGS production parity until the published gates pass.
+          This page is deliberately evidence-bounded. Accepted lane results do not promote the whole
+          solver stack to completed production full-fidelity parity.
         </p>
       </aside>
     </section>
@@ -457,8 +457,8 @@
       <div class="section-title">
         <h2 id="lanes-title">Six financing lanes</h2>
         <p>
-          Funding converts blocked rows into same-case solver-output comparisons, thresholded reports,
-          reproducible commands, and hardware-specific scaling evidence.
+          Funding converts the remaining blocked rows into same-case solver-output comparisons,
+          thresholded reports, reproducible commands, and hardware-specific scaling evidence.
         </p>
       </div>
       <table class="lane-table">
@@ -491,14 +491,14 @@
             <td>PETSc-backed DREAM execution, compiled interface output, momentum-pitch-radius comparison, and loss/operator thresholds.</td>
           </tr>
           <tr>
-            <td><strong>Aurora/STRAHL-grade impurities</strong><br><span class="pill">blocked</span></td>
-            <td>Aurora/Open-ADAS atomic artifact and native charge-state source/sink contracts.</td>
-            <td>Radial transport outputs, line-radiation histories, ionisation/recombination matrices, inventory closure, and same-case native comparison.</td>
+            <td><strong>Aurora/STRAHL-grade impurities</strong><br><span class="pill">partially accepted</span></td>
+            <td>Accepted Aurora reference artefact plus native effective transport/source-sink closure thresholds.</td>
+            <td>Independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay.</td>
           </tr>
           <tr>
-            <td><strong>Free-boundary strict parity</strong><br><span class="pill">blocked</span></td>
-            <td>Public FreeGS example output, vacuum comparison, geometry containment, and native profile-source metrics.</td>
-            <td>Strict psi/current/axis/X-point/boundary thresholds, grid convergence, and public coil/vacuum reconstruction sidecars.</td>
+            <td><strong>Free-boundary strict parity</strong><br><span class="pill">accepted</span></td>
+            <td>Public FreeGS same-case output, native profile-source comparison, strict thresholds, geometry containment, grid convergence, and coil/vacuum sidecars all pass.</td>
+            <td>Extend beyond the accepted public FreeGS lane to additional public machines and facility-authorised cases.</td>
           </tr>
         </tbody>
       </table>

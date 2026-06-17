@@ -37,7 +37,7 @@ SCPN Fusion Core uses a deliberate dual-licensing model:
 Commercial licensing contact:
 [protoscience@anulum.li](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License).
 
-**Financing the full-fidelity parity campaign:** the public GitHub Pages landing page is [anulum.github.io/scpn-fusion-core](https://anulum.github.io/scpn-fusion-core/). It separates current evidence from blocked GENE/CGYRO/GS2, DREAM, Aurora/STRAHL, FreeGS, and production-scale GPU/cluster validation work.
+**Financing the full-fidelity parity campaign:** the public GitHub Pages landing page is [anulum.github.io/scpn-fusion-core](https://anulum.github.io/scpn-fusion-core/). It separates current evidence from blocked GENE/CGYRO/GS2, DREAM, full electromagnetic, production-scale GPU/cluster validation, and hardware-evidence work while preserving the accepted Aurora artefact and public FreeGS strict-parity lane boundaries.
 
 ## At a Glance
 
@@ -50,7 +50,7 @@ that partial research kernels are already full production reference solvers.
 | What does it build? | Neuro-symbolic plasma-control loops, native solver kernels, validation reports, and benchmark artefacts. |
 | Who is it for? | Fusion-control researchers, validation engineers, accelerator teams, formal-methods contributors, and investors evaluating reproducible fusion software infrastructure. |
 | What is validated today? | Local controller contracts, reduced-order replay lanes, selected Grad-Shafranov/operator-source checks, native kernel benchmarks, formal proof slices, and fail-closed benchmark gates. |
-| What remains blocked? | Full GENE/CGYRO/GS2 nonlinear turbulence parity, full Vlasov-Maxwell parity, DREAM kinetic parity, Aurora/STRAHL transport parity, strict FreeGS/free-boundary parity, and production MPI/multi-GPU scaling. |
+| What remains blocked? | Full GENE/CGYRO/GS2 nonlinear turbulence parity, full Vlasov-Maxwell parity, DREAM kinetic parity, independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay, and production MPI/multi-GPU scaling. |
 | How should readers judge claims? | Follow the linked reports, commands, checksums, thresholds, and accepted/blocked row status. |
 | Is it safety certified? | No. The repository publishes an [IEC 61508 functional-safety roadmap](docs/IEC_61508_ROADMAP.md) for selected control surfaces, but it does not claim IEC 61508 or SIL certification. |
 
@@ -218,7 +218,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | Metric | Value | Reproducibility |
 |--------|-------|-----------------|
 | Rust PID kernel latency | **0.52 us P50** | `validation/verify_10khz_rust.py` |
-| Closed-loop HIL latency | **10.5 us P50** | `python validation/collect_results.py` |
+| Closed-loop HIL latency | **24.5 us P50** legacy collect-results row | `RESULTS.md`; re-run with `python validation/collect_results.py` |
 | Taskset-affinity CPU sensor-to-control latency | **0.053408 ms P95** on logical CPUs 10,11; not shielded cpuset evidence | `validation/reports/scpn_end_to_end_latency.md` records the exact command |
 | Simulated 256-actuator HIL scaffold | **232.522 us P95** host ADC/DAC loop; not physical HIL rig timing | `python validation/scpn_end_to_end_latency.py --strict` |
 | Whole-plant fault scenario campaign | **7/7 measured reduced-order lanes pass**; **2 subsystem lanes blocked** (DEC, REBCO/HTS quench); not plant-certified fault tolerance | `python validation/whole_plant_fault_tolerant_scenario.py --strict` |
@@ -327,21 +327,12 @@ partial-screening drag, and bremsstrahlung loss channels; DREAM same-case
 source-budget parity remains blocked until compiled `iface/dreami` output is
 available.
 The Aurora execution lane runs a cached Aurora/Open-ADAS atomic-data path and
-exports normalized argon charge-state fractions, but remains blocked for full
-Aurora/STRAHL parity until public radial transport output, source/sink matrices,
-radiation observables, and native same-case comparisons are present. The native
-artifact gate validates charge-state density, conservative source-sink transfer
-matrices, per-charge line-radiation power, and total impurity inventory history
-as local contracts only. The impurity benchmark now also publishes fail-closed
-native transport-operator evidence: trace radial transport, edge-source
-conservation, neoclassical pinch, charge-state source/sink matrices, line
-radiation, and inventory closure are local evidence, while charge-state
-resolved radial transport parity, external ADAS transport coefficients,
-same-case Aurora/STRAHL outputs, and quantitative thresholds remain blocked.
-It also publishes native-only source/sink budget evidence for conservative
-charge-state transfer matrices, ionisation/recombination source budgets,
-line-radiation power, and inventory history; Aurora/STRAHL same-case
-source-budget parity remains blocked.
+exports normalized argon charge-state fractions. The current accepted scope is
+bounded: Aurora/Open-ADAS artefact conversion, finite-volume radial-transport
+budget diagnostics, native same-case effective source/recycling closure, and
+time-resolved source-sink matrix parity pass the tracked thresholds.
+Independent mechanistic Aurora/STRAHL recycling validation remains blocked
+before broader transport-parity language is allowed.
 The nonlinear GK lane now indexes public GS2 nonlinear decks, CGYRO nonlinear
 decks, CGYRO regression precision outputs, and GENE/GS2/CGYRO public web-source
 hashes in
