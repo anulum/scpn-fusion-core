@@ -33,6 +33,9 @@
   header surfaces to the configured mypy strict cohort with typed dynamic
   solver-factory and Tornado patch boundaries; neutralised dashboard footer
   identity wording.
+- Added remaining tokamak archive, structured logging, and MAST ingestor IO
+  surfaces to the configured mypy strict cohort with typed optional FAIR-MAST
+  dependency and retained-session cleanup boundaries.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,

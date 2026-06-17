@@ -14,12 +14,13 @@ via the S3/Zarr stack.
 
 from __future__ import annotations
 
+import importlib
 import logging
 import os
 import sys
 import weakref
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -33,12 +34,13 @@ if _EXTERNAL_ROOT.exists() and str(_EXTERNAL_ROOT) not in sys.path:
 
 # 2. Delayed imports to handle external lib requirement
 try:
-    import fsspec
-    import xarray as xr
-    import zarr as _zarr  # noqa: F401
-
+    fsspec: Any | None = importlib.import_module("fsspec")
+    xr: Any | None = importlib.import_module("xarray")
+    importlib.import_module("zarr")
     _HAS_FAIR_MAST_STACK = True
 except ImportError:
+    fsspec = None
+    xr = None
     _HAS_FAIR_MAST_STACK = False
     logger.debug("FAIR MAST stack (zarr, s3fs, xarray) not available.")
 
@@ -75,6 +77,8 @@ class MastIngestor:
 
     def _filesystem(self) -> Any:
         """Create a cache filesystem and retain it for explicit cleanup."""
+        if fsspec is None:
+            raise ImportError("MAST ingestion requires fsspec.")
         fs = fsspec.filesystem(
             "simplecache",
             cache_storage=str(self.cache_dir),
@@ -98,6 +102,8 @@ class MastIngestor:
             if loop is not None:
                 loops.append(loop)
             for client in (getattr(inner, "s3", None), getattr(inner, "_s3", None)):
+                if client is None:
+                    continue
                 try:
                     client._endpoint.http_session._connector._close()
                 except AttributeError:
@@ -105,7 +111,7 @@ class MastIngestor:
 
         registry = getattr(weakref.finalize, "_registry", {})
         for finalizer, info in list(registry.items()):
-            args = getattr(info, "args", ())
+            args = cast(tuple[Any, ...], getattr(info, "args", ()))
             func = getattr(info, "func", None)
             if (
                 len(args) >= 2
@@ -115,8 +121,10 @@ class MastIngestor:
             ):
                 finalizer.detach()
 
-    def load_shot_summary(self, shot_id: int) -> Dict[str, NDArray[np.float64]]:
+    def load_shot_summary(self, shot_id: int) -> dict[str, NDArray[np.float64]]:
         """Load plasma current and time-series for a specific shot."""
+        if xr is None:
+            raise ImportError("MAST ingestion requires xarray.")
         url = f"s3://{self.BUCKET_NAME}/level2/shots/{shot_id}.zarr"
 
         fs = self._filesystem()
@@ -135,9 +143,11 @@ class MastIngestor:
         }
 
     def load_magnetic_probes(
-        self, shot_id: int, probe_ids: Optional[List[str]] = None
-    ) -> Dict[str, NDArray[np.float64]]:
+        self, shot_id: int, probe_ids: Optional[list[str]] = None
+    ) -> dict[str, NDArray[np.float64]]:
         """Load raw magnetic probe signals."""
+        if xr is None:
+            raise ImportError("MAST ingestion requires xarray.")
         url = f"s3://{self.BUCKET_NAME}/level2/shots/{shot_id}.zarr"
 
         fs = self._filesystem()
@@ -148,10 +158,10 @@ class MastIngestor:
         if probe_ids is None:
             probe_ids = list(ds.data_vars)[:10]
 
-        out = {"time": ds.time.values}
+        out: dict[str, NDArray[np.float64]] = {"time": np.asarray(ds.time.values, dtype=np.float64)}
         for pid in probe_ids:
             if pid in ds.data_vars:
-                out[pid] = ds[pid].values
+                out[pid] = np.asarray(ds[pid].values, dtype=np.float64)
 
         return out
 
