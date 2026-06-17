@@ -370,6 +370,49 @@ Reduced-order predictive-horizon timing:
 The forecast rows measure reduced-order rollout timing only. They are not
 validated plasma-instability prediction horizons.
 
+### Whole-plant fault-tolerant scenario campaign
+
+Tracked campaign target:
+
+```bash
+python validation/whole_plant_fault_tolerant_scenario.py --strict
+```
+
+Tracked report:
+[`validation/reports/whole_plant_fault_tolerant_scenario.md`](../validation/reports/whole_plant_fault_tolerant_scenario.md)
+
+The 2026-06-17 report consolidates currently separate reduced-order fault
+surfaces into one scenario matrix. It reuses the free-boundary fail-safe
+dropout replay, disruption-policy recovery replay, fault-detection and
+reconfigurable-control utilities, divertor thermal simulation, wall transient
+model, and coolant-loop model. The report is a software campaign only: it is
+not plant hardware, physical HIL, certified fault tolerance, REBCO/HTS quench
+protection, or direct-energy-conversion fault evidence.
+
+| Scenario | Status | Response | Evidence boundary |
+|---|---|---:|---|
+| vertical_excursion_vde | measured reduced-order pass | `0.150 s` | task14 fail-safe dropout replay |
+| disruption_risk_spike | measured reduced-order pass | `0.100 s` | task13 disruption-policy recovery replay |
+| sensor_dropout_noise | measured reduced-order pass | `0.250 s` | task14 diagnostics plus FDI monitor |
+| actuator_saturation_dropout | measured reduced-order pass | `0.420 s` | task14 actuator dropout plus reconfigurable controller |
+| controller_failover | measured reduced-order pass | `0.420 s` | reconfigurable controller, one actuator loss |
+| cooling_thermal_limit | measured reduced-order pass | n/a | 180 MW coolant loop, 0.30 m equivalent diameter |
+| shielding_wall_load_warning | measured reduced-order pass | n/a | TEMHD shielding plus 18 MJ/24 m2 wall transient |
+| direct_energy_conversion_fault | blocked | n/a | no subsystem model in repository |
+| rebco_quench_fault | blocked | n/a | no REBCO/HTS quench dynamics model in repository |
+
+Key measured diagnostics:
+
+| Diagnostic | Value | Gate |
+|---|---:|---:|
+| first FDI sensor detection | `0.250 s` | `<= 0.300 s` |
+| actuator failover application | `0.420 s` | `<= 0.450 s` |
+| fault-controller max command L1 | `0.879` | `<= 3.250` |
+| surface heat flux | `16.270 MW/m2` | `<= 45.000 MW/m2` |
+| coolant pump power | `0.230 MW` | `<= 1.000 MW` |
+| disruption wall delta-T | `950.148 K` | `<= 1050.000 K` |
+| ELM cycles to fatigue | `1869515` | `>= 1000` |
+
 | Benchmark | Median |
 |---|---:|
 | `picard_gs_solve/sor_33x33` | `194.08 us` |
