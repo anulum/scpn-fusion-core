@@ -41,6 +41,8 @@
   contracts.
 - Added the SCPN optional Rust runtime-backend probe to the configured mypy
   strict cohort.
+- Added SCPN controller backend and feature mixins to the configured mypy
+  strict cohort with structural protocols for controller-owned runtime state.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,

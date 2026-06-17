@@ -9,19 +9,62 @@
 
 from __future__ import annotations
 
-from typing import Dict, Mapping, Sequence, Tuple
+from typing import Dict, Mapping, Protocol, Sequence, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
+BoolArray = NDArray[np.bool_]
+
+
+class _FeatureControllerState(Protocol):
+    _axis_count: int
+    _empty: FloatArray
+    _tmp_obs_vals: FloatArray
+    _axis_obs_keys: list[str]
+    _axis_targets: FloatArray
+    _axis_scales: FloatArray
+    _tmp_feature_err: FloatArray
+    _tmp_feature_pos: FloatArray
+    _tmp_feature_neg: FloatArray
+    _axis_pos_keys: list[str]
+    _axis_neg_keys: list[str]
+    _passthrough_sources: list[str]
+    _inj_count: int
+    _tmp_inj_values: FloatArray
+    _inj_source_axis_idx: IntArray
+    _inj_source_axis_pos: BoolArray
+    _inj_passthrough_pairs: list[Tuple[int, str]]
+    _inj_scales: FloatArray
+    _inj_offsets: FloatArray
+    _inj_has_clamp: bool
+    _inj_clamp_idx: IntArray
+    _inj_place_ids: IntArray
+    _action_names: list[str]
+    _action_count: int
+    _tmp_actions: FloatArray
+    _action_pos_idx: IntArray
+    _action_neg_idx: IntArray
+    _action_gains: FloatArray
+    _prev_actions: FloatArray
+    _action_max_delta: FloatArray
+    _action_abs_max: FloatArray
+    _sc_bitflip_rate: float
+
+    def _compute_feature_components_vector(
+        self, obs_vector: Sequence[float] | FloatArray
+    ) -> Tuple[FloatArray, FloatArray]: ...
+
+    def _decode_actions_vector(self, marking: FloatArray) -> FloatArray: ...
 
 
 class NeuroSymbolicControllerFeaturesMixin:
     """Feature engineering and action decode mixin for controllers."""
 
     def _compute_feature_components(
-        self, obs_map: Mapping[str, float]
+        self: _FeatureControllerState, obs_map: Mapping[str, float]
     ) -> Tuple[FloatArray, FloatArray]:
         if self._axis_count == 0:
             return self._empty, self._empty
@@ -34,7 +77,7 @@ class NeuroSymbolicControllerFeaturesMixin:
         return self._compute_feature_components_vector(obs_vals)
 
     def _compute_feature_components_vector(
-        self, obs_vector: Sequence[float] | FloatArray
+        self: _FeatureControllerState, obs_vector: Sequence[float] | FloatArray
     ) -> Tuple[FloatArray, FloatArray]:
         if self._axis_count == 0:
             return self._empty, self._empty
@@ -51,7 +94,10 @@ class NeuroSymbolicControllerFeaturesMixin:
         return self._tmp_feature_pos, self._tmp_feature_neg
 
     def _build_feature_dict(
-        self, obs_map: Mapping[str, float], pos_vals: FloatArray, neg_vals: FloatArray
+        self: _FeatureControllerState,
+        obs_map: Mapping[str, float],
+        pos_vals: FloatArray,
+        neg_vals: FloatArray,
     ) -> Dict[str, float]:
         feats: Dict[str, float] = {}
         for i, key in enumerate(self._axis_pos_keys):
@@ -65,7 +111,7 @@ class NeuroSymbolicControllerFeaturesMixin:
         return feats
 
     def _inject_places(
-        self,
+        self: _FeatureControllerState,
         marking: FloatArray,
         obs_map: Mapping[str, float],
         pos_vals: FloatArray,
@@ -97,13 +143,13 @@ class NeuroSymbolicControllerFeaturesMixin:
             values[self._inj_clamp_idx] = np.clip(values[self._inj_clamp_idx], 0.0, 1.0)
         marking[self._inj_place_ids] = values
 
-    def _decode_actions(self, marking: FloatArray) -> Dict[str, float]:
+    def _decode_actions(self: _FeatureControllerState, marking: FloatArray) -> Dict[str, float]:
         actions = self._decode_actions_vector(marking)
         if actions.size == 0:
             return {}
         return {name: float(actions[i]) for i, name in enumerate(self._action_names)}
 
-    def _decode_actions_vector(self, marking: FloatArray) -> FloatArray:
+    def _decode_actions_vector(self: _FeatureControllerState, marking: FloatArray) -> FloatArray:
         if self._action_count == 0:
             return self._empty
 
@@ -118,7 +164,9 @@ class NeuroSymbolicControllerFeaturesMixin:
         np.clip(raw, -self._action_abs_max, self._action_abs_max, out=self._prev_actions)
         return self._prev_actions
 
-    def _apply_bit_flip_faults(self, values: FloatArray, rng: np.random.Generator) -> FloatArray:
+    def _apply_bit_flip_faults(
+        self: _FeatureControllerState, values: FloatArray, rng: np.random.Generator
+    ) -> FloatArray:
         """Inject bounded deterministic bit-flip faults into float vectors."""
         out = np.asarray(values, dtype=np.float64).copy()
         if self._sc_bitflip_rate <= 0.0 or out.size == 0:

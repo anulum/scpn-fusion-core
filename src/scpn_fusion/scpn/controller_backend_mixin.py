@@ -9,12 +9,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any, Literal, Protocol, Tuple, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .contracts import _seed64
 from scpn_fusion.fallback_telemetry import record_fallback_event
+
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
 
 
 def _controller_module() -> Any:
@@ -23,10 +27,56 @@ def _controller_module() -> Any:
     return controller_mod
 
 
+class _BackendControllerState(Protocol):
+    _runtime_backend: Literal["numpy", "rust"] | str
+    _W_in: FloatArray
+    _W_out: FloatArray
+    _W_in_t: FloatArray
+    _tmp_activations: FloatArray
+    _tmp_consumption: FloatArray
+    _tmp_production: FloatArray
+    _tmp_marking_oracle: FloatArray
+    _tmp_marking_sc: FloatArray
+    _firing_mode: str
+    _margins: FloatArray
+    _thresholds: FloatArray
+    _oracle_pending: FloatArray
+    _oracle_cursor: int
+    _sc_pending: FloatArray
+    _sc_cursor: int
+    _sc_binary_margin: float
+    _sc_n_passes: int
+    _sc_antithetic: bool
+    _sc_bitflip_rate: float
+    seed_base: int
+    _tmp_sc_counts: IntArray
+    _nT: int
+    _sc_antithetic_chunk_size: int
+    _max_delay_ticks: int
+    _delay_immediate_idx: IntArray
+    _delay_delayed_idx: IntArray
+    _delay_delayed_offsets: IntArray
+    _tmp_delay_slots: IntArray
+
+    def _apply_bit_flip_faults(
+        self, values: FloatArray, rng: np.random.Generator
+    ) -> FloatArray: ...
+
+    def _dense_activations(self, marking: FloatArray) -> FloatArray: ...
+
+    def _marking_update(
+        self, marking: FloatArray, firing: FloatArray, out: FloatArray
+    ) -> FloatArray: ...
+
+    def _apply_transition_timing(
+        self, desired_firing: FloatArray, pending: FloatArray, cursor: int
+    ) -> Tuple[FloatArray, int]: ...
+
+
 class NeuroSymbolicControllerBackendMixin:
     """Backend dispatch mixin for controller numeric kernels."""
 
-    def _dense_activations(self, marking: np.ndarray) -> np.ndarray:
+    def _dense_activations(self: _BackendControllerState, marking: FloatArray) -> FloatArray:
         controller_mod = _controller_module()
         if self._runtime_backend == "rust" and controller_mod._HAS_RUST_SCPN_RUNTIME:
             try:
@@ -34,7 +84,7 @@ class NeuroSymbolicControllerBackendMixin:
                 if rust_dense_activations is None:
                     raise RuntimeError("Rust runtime reports availability without dense kernel.")
                 out = rust_dense_activations(self._W_in, marking)
-                return np.asarray(out, dtype=np.float64)
+                return cast(FloatArray, np.asarray(out, dtype=np.float64))
             except Exception as exc:  # pragma: no cover - depends on Rust runtime failures
                 record_fallback_event(
                     "scpn_controller",
@@ -46,11 +96,11 @@ class NeuroSymbolicControllerBackendMixin:
         return self._tmp_activations
 
     def _marking_update(
-        self,
-        marking: np.ndarray,
-        firing: np.ndarray,
-        out: np.ndarray,
-    ) -> np.ndarray:
+        self: _BackendControllerState,
+        marking: FloatArray,
+        firing: FloatArray,
+        out: FloatArray,
+    ) -> FloatArray:
         controller_mod = _controller_module()
         if self._runtime_backend == "rust" and controller_mod._HAS_RUST_SCPN_RUNTIME:
             try:
@@ -75,7 +125,7 @@ class NeuroSymbolicControllerBackendMixin:
         np.clip(out, 0.0, 1.0, out=out)
         return out
 
-    def _oracle_step(self, marking: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _oracle_step(self: _BackendControllerState, marking: FloatArray) -> Tuple[FloatArray, FloatArray]:
         """Float-path Petri step."""
         a = self._dense_activations(marking)
         if self._firing_mode == "fractional":
@@ -90,7 +140,7 @@ class NeuroSymbolicControllerBackendMixin:
         m2 = self._marking_update(marking, f_timed, self._tmp_marking_oracle)
         return f_timed, m2
 
-    def _sc_step(self, marking: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
+    def _sc_step(self: _BackendControllerState, marking: FloatArray, k: int) -> Tuple[FloatArray, FloatArray]:
         """Deterministic stochastic path with optional bit-flip fault injection."""
         a = self._dense_activations(marking)
 
@@ -214,11 +264,11 @@ class NeuroSymbolicControllerBackendMixin:
         return f_timed, m2
 
     def _apply_transition_timing(
-        self,
-        desired_firing: np.ndarray,
-        pending: np.ndarray,
+        self: _BackendControllerState,
+        desired_firing: FloatArray,
+        pending: FloatArray,
         cursor: int,
-    ) -> Tuple[np.ndarray, int]:
+    ) -> Tuple[FloatArray, int]:
         desired = np.asarray(np.clip(desired_firing, 0.0, 1.0), dtype=np.float64)
         if self._max_delay_ticks <= 0:
             return desired, cursor
