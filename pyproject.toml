@@ -139,6 +139,7 @@ files = [
     # nuclear/
     "src/scpn_fusion/nuclear/__init__.py",
     "src/scpn_fusion/nuclear/blanket_neutronics.py",
+    "src/scpn_fusion/nuclear/nuclear_wall_interaction.py",
     "src/scpn_fusion/nuclear/pwi_erosion.py",
     "src/scpn_fusion/nuclear/temhd_peltier.py",
     # core/

@@ -14,15 +14,25 @@ high-throughput engineering workflow checks rather than full fidelity safety
 certification.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, cast
+
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy.typing import NDArray
+
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.engineering.cad_raytrace import CADLoadReport, estimate_surface_loading
 
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
+AshPoisoningHistory = dict[str, list[float]]
+MaterialProperties = dict[str, float]
+
 # Neutron damage thresholds (DPA limit before replacement)
-MATERIALS = {
+MATERIALS: dict[str, MaterialProperties] = {
     "Tungsten (W)": {"dpa_limit": 50.0, "sigma_dpa": 1000},  # Divertor armor
     "Eurofer (Steel)": {"dpa_limit": 150.0, "sigma_dpa": 500},  # Structural blanket
     "Beryllium (Be)": {"dpa_limit": 10.0, "sigma_dpa": 200},  # First wall (old design)
@@ -42,34 +52,34 @@ class NuclearEngineeringLab(FusionBurnPhysics):
     3. Material Damage (DPA).
     """
 
-    def __init__(self, config_path):
-        super().__init__(config_path)
+    def __init__(self, config_path: str) -> None:
+        cast(Any, super()).__init__(config_path)
 
-    def _build_neutron_source_map(self):
-        idx_max = np.argmax(self.Psi)
+    def _build_neutron_source_map(self) -> FloatArray:
+        idx_max = int(np.argmax(self.Psi))
         iz_ax, ir_ax = np.unravel_index(idx_max, self.Psi.shape)
-        psi_axis = self.Psi[iz_ax, ir_ax]
+        psi_axis = float(self.Psi[iz_ax, ir_ax])
         xp, psi_x = self.find_x_point(self.Psi)
         _ = xp
-        psi_edge = psi_x
+        psi_edge = float(psi_x)
         if abs(psi_edge - psi_axis) < 1.0:
-            psi_edge = np.min(self.Psi)
+            psi_edge = float(np.min(self.Psi))
 
-        psi_norm = (self.Psi - psi_axis) / (psi_edge - psi_axis)
-        psi_norm = np.clip(psi_norm, 0, 1)
+        psi_norm = np.asarray((self.Psi - psi_axis) / (psi_edge - psi_axis), dtype=np.float64)
+        psi_norm = np.clip(psi_norm, 0.0, 1.0)
         mask = psi_norm < 1.0
 
         s_peak = 1e18
-        source_map = np.zeros_like(self.Psi)
+        source_map = np.zeros_like(self.Psi, dtype=np.float64)
         source_map[mask] = s_peak * (1.0 - psi_norm[mask]) ** 2
         return source_map
 
-    def generate_first_wall(self):
+    def generate_first_wall(self) -> tuple[FloatArray, FloatArray]:
         """
         Defines the geometry of the reactor wall (Vacuum Vessel).
         Approximated as a D-shaped contour surrounding the plasma.
         """
-        theta = np.linspace(0, 2 * np.pi, 200)
+        theta = np.linspace(0.0, 2.0 * np.pi, 200, dtype=np.float64)
         # Wall Parameters
         R0, a, kappa, delta = 5.0, 3.0, 1.9, 0.4
 
@@ -77,14 +87,14 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         R_wall = R0 + a * np.cos(theta + np.arcsin(delta) * np.sin(theta))
         Z_wall = kappa * a * np.sin(theta)
 
-        return R_wall, Z_wall
+        return np.asarray(R_wall, dtype=np.float64), np.asarray(Z_wall, dtype=np.float64)
 
     def simulate_ash_poisoning(
         self,
         burn_time_sec: int = 1000,
         tau_He_ratio: float = 5.0,
         pumping_efficiency: float = 1.0,
-    ):
+    ) -> AshPoisoningHistory:
         """
         Simulates the drop in fusion power due to Helium buildup.
         tau_He_ratio: Ratio of Helium particle confinement to Energy confinement (tau_He / tau_E).
@@ -108,7 +118,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         f_He = 0.0  # Helium fraction
         dt = 1.0  # Second
 
-        history = {"time": [], "P_fus": [], "f_He": [], "Q": []}
+        history: AshPoisoningHistory = {"time": [], "P_fus": [], "f_He": [], "Q": []}
 
         # Volume (Approximation)
         Vol = 800.0  # m^3
@@ -130,7 +140,8 @@ class NuclearEngineeringLab(FusionBurnPhysics):
 
             # B. Reaction Rate
             T_keV = 20.0  # Keep temp constant for this isolation study
-            sigmav = self.bosch_hale_dt(T_keV)
+            bosch_hale_dt = cast(Callable[[float], float], self.bosch_hale_dt)
+            sigmav = float(bosch_hale_dt(T_keV))
 
             # Reaction rate per volume
             R_fus = n_D * n_T * sigmav
@@ -150,28 +161,28 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             E_fus = 17.6 * 1.602e-13
             P_fus_MW = (R_fus * E_fus * Vol) / 1e6
 
-            history["time"].append(t)
+            history["time"].append(float(t))
             history["P_fus"].append(P_fus_MW)
             history["f_He"].append(f_He)
 
         return history
 
-    def calculate_neutron_wall_loading(self):
+    def calculate_neutron_wall_loading(self) -> tuple[FloatArray, FloatArray, FloatArray]:
         """
         Ray-Tracing calculation of 14.1 MeV neutrons hitting the wall.
         """
         print("[Nuclear] Calculating Neutron Wall Loading (NWL)...")
 
-        Source_Map = self._build_neutron_source_map()
+        source_map = self._build_neutron_source_map()
 
         Rw, Zw = self.generate_first_wall()
-        wall_flux = np.zeros(len(Rw))
+        wall_flux = np.zeros(len(Rw), dtype=np.float64)
 
         # Line-of-sight ray tracing (downsampled)
         step = 4
         RR_sub = self.RR[::step, ::step]
         ZZ_sub = self.ZZ[::step, ::step]
-        S_sub = Source_Map[::step, ::step]
+        S_sub = source_map[::step, ::step]
         dV = (self.dR * step) * (self.dZ * step) * 2 * np.pi * RR_sub
 
         # Flatten sources
@@ -196,7 +207,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
                 dx, dz = Rw[i + 1] - Rw[i], Zw[i + 1] - Zw[i]
             else:
                 dx, dz = Rw[0] - Rw[i], Zw[0] - Zw[i]
-            normal = np.array([-dz, dx])
+            normal = np.array([-dz, dx], dtype=np.float64)
             normal /= np.linalg.norm(normal)
 
             # Vector from source to target
@@ -222,16 +233,16 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             flux_contrib = (src_S * toroidal_correction * cos_theta) / (4.0 * np.pi * dist_sq)
 
             # Sum up
-            wall_flux[i] = np.sum(flux_contrib)
+            wall_flux[i] = float(np.sum(flux_contrib))
 
         return Rw, Zw, wall_flux
 
     def calculate_cad_wall_loading(
         self,
-        vertices,
-        faces,
-        source_points_xyz=None,
-        source_strength_w=None,
+        vertices: FloatArray,
+        faces: IntArray,
+        source_points_xyz: FloatArray | None = None,
+        source_strength_w: FloatArray | None = None,
     ) -> CADLoadReport:
         """
         Reduced CAD loading estimate on imported STEP/STL meshes.
@@ -259,7 +270,12 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             np.asarray(source_strength_w, dtype=np.float64),
         )
 
-    def calculate_sputtering_yield(self, material_name, E_inc_eV=100.0, angle_deg=45.0):
+    def calculate_sputtering_yield(
+        self,
+        material_name: str,
+        E_inc_eV: float = 100.0,
+        angle_deg: float = 45.0,
+    ) -> float:
         """
         Roth-Bohdansky Sputtering Yield (Y).
         Y = Q * (1 - (E_th/E)^(2/3)) * (1 - E_th/E)^2
@@ -272,7 +288,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             raise ValueError("angle_deg must be finite and in [0, 89.5).")
 
         # Roth-Bohdansky D-on-target parameters (Roth et al., NIMB 257 33, 2007).
-        props = {
+        props: dict[str, dict[str, float]] = {
             "Tungsten (W)": {"E_th": 200.0, "Q": 0.004},
             "Beryllium (Be)": {"E_th": 10.0, "Q": 0.03},
             "Eurofer (Steel)": {"E_th": 30.0, "Q": 0.015},
@@ -296,7 +312,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
 
         return float(np.clip(Y, 0.0, 5.0))
 
-    def analyze_materials(self, wall_flux):
+    def analyze_materials(self, wall_flux: FloatArray) -> tuple[dict[str, float], FloatArray]:
         """
         Calculates lifespan using Sputtering + DPA.
         """
@@ -308,7 +324,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
 
         print(f"[Nuclear] Wall Loading: Peak={peak_load:.2f} MW/m2, Avg={avg_load:.2f} MW/m2")
 
-        results = {}
+        results: dict[str, float] = {}
         # Particle Flux estimate (D/T/He ions)
         # Gamma_i ~ 1e23 ions/m2/s (High flux)
         Gamma_ion = 1e23
@@ -328,13 +344,13 @@ class NuclearEngineeringLab(FusionBurnPhysics):
 
             # Limited by the worst mechanism
             lifespan = min(life_dpa, life_erosion)
-            results[mat_name] = lifespan
+            results[mat_name] = float(lifespan)
 
         return results, MW_m2
 
 
 def run_nuclear_sim(
-    config_path: Optional[str] = None,
+    config_path: str | None = None,
     *,
     save_plot: bool = True,
     output_path: str = "Nuclear_Engineering_Report.png",
@@ -372,7 +388,7 @@ def run_nuclear_sim(
     lifespans, mw_load = lab.analyze_materials(neutron_flux)
 
     plot_saved = False
-    plot_error: Optional[str] = None
+    plot_error: str | None = None
     if save_plot:
         try:
             fig = plt.figure(figsize=(15, 10))
