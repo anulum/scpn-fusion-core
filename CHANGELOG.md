@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Added selected CODAC, HIL, replay, flight-simulation, gain-scheduled, and
+  fault-tolerant control surfaces to the configured mypy strict cohort, with
+  typed actuator/sensor array contracts and numeric action validation.
 - Added the free-boundary estimator, plotting helper, and supervisory facade
   to the configured mypy strict cohort, sharing the typed supervisory array
   contracts across the public import surface.

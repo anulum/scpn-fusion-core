@@ -171,14 +171,17 @@ class CODACInterface:
         out: dict[str, float] = {}
         for action_key, suffix in _OUTPUT_KEY_MAP.items():
             pv = f"{prefix}:{suffix}"
-            out[pv] = float(action.get(action_key, 0.0))  # type: ignore[arg-type]
+            raw = action.get(action_key, 0.0)
+            if not isinstance(raw, (int, float)):
+                raise TypeError(f"Control action {action_key!r} must be numeric.")
+            out[pv] = float(raw)
         return out
 
     def run_cycle(self, pv_values: Mapping[str, float]) -> dict[str, float]:
         """Single control cycle: pack -> step -> unpack."""
         self._cycle_timer.start_cycle()
         obs = self.pack_observation(pv_values)
-        action = self.controller.step(obs, self._step_k)  # type: ignore[union-attr]
+        action = self.controller.step(obs, self._step_k)
         self._step_k += 1
         result = self.unpack_action(action)
         self._cycle_timer.end_cycle()

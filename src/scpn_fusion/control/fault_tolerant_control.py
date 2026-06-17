@@ -14,6 +14,9 @@ from enum import Enum, auto
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class FaultType(Enum):
@@ -57,7 +60,7 @@ class FDIMonitor:
         self.faulted_sensors: set[int] = set()
 
     def update(
-        self, y_measured: np.ndarray, y_predicted: np.ndarray, t: float
+        self, y_measured: FloatArray, y_predicted: FloatArray, t: float
     ) -> list[FaultReport]:
         """Compare measurements to predictions; flag sensors exceeding threshold_sigma for n_alert consecutive steps."""
         nu = y_measured - y_predicted
@@ -97,7 +100,7 @@ class FDIMonitor:
 class ReconfigurableController:
     """Adjusts control allocation based on detected faults."""
 
-    def __init__(self, base_controller: Any, jacobian: np.ndarray, n_coils: int, n_sensors: int):
+    def __init__(self, base_controller: Any, jacobian: FloatArray, n_coils: int, n_sensors: int):
         self.base_controller = base_controller
         self.nominal_jacobian = jacobian.copy()
         self.current_jacobian = jacobian.copy()
@@ -113,7 +116,7 @@ class ReconfigurableController:
 
         self.K = self._compute_gain()
 
-    def _compute_gain(self) -> np.ndarray:
+    def _compute_gain(self) -> FloatArray:
         """Tikhonov pseudoinverse with faulted-coil rows zeroed."""
         J = self.current_jacobian
         J_T_W = J.T @ self.W
@@ -180,7 +183,7 @@ class ReconfigurableController:
         self.W[row_idx, row_idx] = weight
         self.K = self._compute_gain()
 
-    def step(self, error: np.ndarray, dt: float) -> np.ndarray:
+    def step(self, error: FloatArray, dt: float) -> FloatArray:
         """Compute coil current corrections, compensating stuck-actuator offsets."""
         adjusted_error = error.copy()
         for c_idx, val in self.stuck_values.items():
@@ -204,7 +207,7 @@ class ReconfigurableController:
         min_required_rank = 2
         return bool(rank >= min_required_rank)
 
-    def graceful_shutdown(self) -> np.ndarray:
+    def graceful_shutdown(self) -> FloatArray:
         """Return zero-current command vector for safe ramp-down."""
         return np.zeros(self.n_coils)
 
@@ -220,7 +223,7 @@ class FaultInjector:
         self.fault_type = fault_type
         self.severity = severity
 
-    def inject(self, t: float, signals: np.ndarray) -> np.ndarray:
+    def inject(self, t: float, signals: FloatArray) -> FloatArray:
         """Return a copied signal vector with the configured fault applied after fault_time."""
         if t < self.fault_time:
             return signals

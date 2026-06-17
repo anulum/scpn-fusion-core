@@ -14,6 +14,9 @@ from enum import Enum, auto
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class OperatingRegime(Enum):
@@ -32,10 +35,10 @@ class RegimeController:
     """PID gains and setpoint for one operating regime."""
 
     regime: OperatingRegime
-    Kp: np.ndarray
-    Ki: np.ndarray
-    Kd: np.ndarray
-    x_ref: np.ndarray
+    Kp: FloatArray
+    Ki: FloatArray
+    Kd: FloatArray
+    x_ref: FloatArray
     constraints: dict[str, Any]
 
 
@@ -53,7 +56,7 @@ class RegimeDetector:
         self.history_len = 5
 
     def detect(
-        self, state: np.ndarray, dstate_dt: np.ndarray, tau_E: float, p_disrupt: float
+        self, state: FloatArray, dstate_dt: FloatArray, tau_E: float, p_disrupt: float
     ) -> OperatingRegime:
         """Classify regime from dIp/dt, confinement time, and disruption probability. Uses hysteresis buffer."""
         dIp_dt = dstate_dt[0]
@@ -102,11 +105,11 @@ class GainScheduledController:
 
     def step(
         self,
-        x: np.ndarray,
+        x: FloatArray,
         t: float,
         dt: float,
         detected_regime: OperatingRegime,
-    ) -> np.ndarray:
+    ) -> FloatArray:
         """PID step with bumpless gain interpolation during regime transitions."""
         if detected_regime != self.current_regime:
             self.prev_regime = self.current_regime
@@ -146,7 +149,7 @@ class ScenarioWaveform:
     """Piecewise-linear time-series for a single actuator channel."""
 
     def __init__(
-        self, name: str, times: np.ndarray, values: np.ndarray, interp_kind: str = "linear"
+        self, name: str, times: FloatArray, values: FloatArray, interp_kind: str = "linear"
     ):
         self.name = name
         self.times = times
