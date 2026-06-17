@@ -16,7 +16,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
-![Version](https://img.shields.io/badge/Version-3.9.10-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-3.9.11-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
@@ -99,17 +99,23 @@ facades and evidence-bounded validation reports.
 
 ## Current Release Snapshot
 
-Version `3.9.10` is a documentation, release-readiness, and FUS-C evidence
-traceability update. The package now presents the recent FUS-C.6 pulsed
-compression trajectory diagnostics, FUS-C.7 Faraday flux and trajectory-quality
-gates, and FUS-C.4 MRTI acceleration coupling as current local contract
-evidence across Python, Rust, benchmarks, and public method documentation.
+Version `3.9.11` is a documentation, security-lock, and repository-hygiene
+release. It improves the public reader path across README, project overview,
+onboarding, API orientation, notebook index, Sphinx entry points, GitHub Pages,
+and release notes so technical evaluators can understand what the software is,
+where it is useful, what commercial value it can create, and where the evidence
+boundary remains.
+
+The release also updates the hashed documentation dependency lock to
+`bleach==6.4.0`, matching the build lane and addressing the open Dependabot
+bleach alerts once the branch is pushed and GitHub rescans the manifests.
 
 This release does not promote the solver to completed end-to-end full-fidelity
-parity. The full GENE/CGYRO/GS2, DREAM, Aurora/STRAHL, FreeGS, electromagnetic,
-and distributed GPU/cluster lanes remain accepted only when their tracked rows
-carry same-case external outputs, provenance, checksums, thresholds, grid or
-scaling evidence, and native comparisons.
+parity. GENE/CGYRO/GS2 nonlinear turbulence parity, full electromagnetic
+parity, DREAM kinetic parity, independent mechanistic Aurora/STRAHL recycling
+validation, and production MPI/multi-GPU scaling remain accepted only when
+their tracked rows carry same-case external outputs, provenance, checksums,
+thresholds, grid or scaling evidence, and native comparisons.
 
 <!-- capability-snapshot:start -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
@@ -119,15 +125,15 @@ scaling evidence, and native comparisons.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.10 |
+| Package version | 3.9.11 |
 | Public API exports | 2 |
 | Python capability source modules | 277 |
 | Python capability classes | 547 |
-| Capability documentation pages | 53 |
+| Capability documentation pages | 54 |
 | Rust workspace crates | 13 |
 | Optional extras | 12 |
 | Python test files | 425 |
-| Public documentation pages | 53 |
+| Public documentation pages | 54 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -832,7 +838,7 @@ Validation artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {3.9.10}
+  version = {3.9.11}
 }
 ```
 

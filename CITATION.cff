@@ -12,7 +12,7 @@ authors:
   - family-names: "Sotek"
     given-names: "Miroslav"
     orcid: "https://orcid.org/0009-0009-3560-0851"
-version: "3.9.10"
+version: "3.9.11"
 date-released: "2026-06-02"
 license: "AGPL-3.0-or-later"
 repository-code: "https://github.com/anulum/scpn-fusion-core"

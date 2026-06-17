@@ -35,6 +35,23 @@ MPI/multi-GPU evidence remains blocked.
 3. Review inverse and transport benchmarks to connect solver outputs to validation reports.
 4. Treat HTML exports as tutorials; use tracked validation reports for public benchmark claims.
 
+## How notebooks fit the product story
+
+The notebooks are the fastest way to see the project’s potential without
+reading the whole codebase. They show how a control idea, a physics model, and a
+reportable artifact connect. They are also deliberately bounded: a notebook can
+teach the workflow, but it does not by itself certify solver parity, plant
+safety, or market readiness.
+
+Use notebooks for:
+
+- learning the control-first architecture,
+- demonstrating a reproducible local workflow,
+- preparing a benchmark or validation report,
+- onboarding collaborators before they run heavier campaigns.
+
+Use `validation/reports/` for accepted, blocked, or diagnostic claim state.
+
 ## Notebook roles
 
 | Notebook family | Role | Claim status |

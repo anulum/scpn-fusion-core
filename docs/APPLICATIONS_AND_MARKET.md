@@ -26,6 +26,21 @@ and a reference-code-backed evidence package.
 | Education and onboarding | Teach control-first fusion simulation architecture | Clear examples and bounded claims |
 | Formal-methods research | Expand machine-checked safety boundaries | More Lean/TLA-style proofs tied to implementation contracts |
 
+## What buyers can value before plant deployment
+
+The near-term product is not a certified controller. It is a validation and
+control-development platform that can reduce engineering ambiguity before
+expensive facility time is used. The strongest commercial value propositions
+are:
+
+| Value proposition | Why it matters |
+|---|---|
+| Faster controller iteration | Teams can test logic, replay faults, and compare runtime behavior before committing to plant-specific integration. |
+| Evidence-backed funding decisions | Blocked rows show exactly which reference runs, licenses, hardware, or datasets are missing. |
+| Accelerator budget clarity | CPU, Rust, CUDA, MPI, and hardware metadata can be separated from unsupported performance prose. |
+| Safer collaboration boundary | Public artifacts can be audited while proprietary facility data remains outside the repository. |
+| Training and onboarding | New contributors can learn fusion control software through reproducible examples instead of informal demos. |
+
 ## Differentiation
 
 - Control-first architecture rather than physics-only architecture.

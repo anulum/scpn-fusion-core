@@ -5,12 +5,18 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.9.10 (Current)
+v3.9.11 (Current)
+-------------------
+
+- Documentation, security-lock, and repository-hygiene release that improves the README, project overview, onboarding, API overview, notebook index, Sphinx entry points, GitHub Pages, changelog, and release notes.
+- Documentation dependency lock now resolves bleach to 6.4.0, matching the build lane and addressing the open bleach alerts after GitHub rescans the pushed manifests.
+- Keeps full-fidelity parity fail-closed for external nonlinear GK, electromagnetic, DREAM, Aurora/STRAHL, FreeGS/free-boundary, and distributed GPU/cluster lanes until same-case artifacts and thresholds exist.
+- Release readiness remains pending until the remote CI run for the release commit is green.
+
+v3.9.10
 -------------------
 
 - Documentation, release-readiness, and FUS-C evidence traceability release that makes the current FUS-C.4, FUS-C.6, and FUS-C.7 local-contract hardening easier to find from README, onboarding, API, benchmark, release, and notebook surfaces.
-- Keeps full-fidelity parity fail-closed for external nonlinear GK, electromagnetic, DREAM, Aurora/STRAHL, FreeGS/free-boundary, and distributed GPU/cluster lanes until same-case artifacts and thresholds exist.
-- Release readiness remains pending until the remote CI run for the release commit is green.
 
 v3.9.9
 ------------------

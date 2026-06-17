@@ -37,6 +37,22 @@ destination:
 - Confirm contract behavior through validation reports before changing public claims.
 - Keep a direct note in changelog and docs whenever a public-facing contract changes.
 
+## Public interface map
+
+The API surface is deliberately split by responsibility. Controller-facing code
+should normally enter through `scpn_fusion.control` or `scpn_fusion.scpn`.
+Physics-kernel work should enter through `scpn_fusion.core`. Evidence work
+should enter through `validation/` scripts and report schemas before changing
+README or market-facing text.
+
+| Work type | API surface | Evidence surface |
+|---|---|---|
+| Control loop or replay | `scpn_fusion.control`, `scpn_fusion.scpn` | Replay reports, latency reports, controller tests |
+| Equilibrium or transport | `scpn_fusion.core` | GS, GEQDSK, transport, and benchmark reports |
+| Data interchange | `scpn_fusion.io` | Provenance records, checksums, source licenses |
+| Hardware or acceleration | `scpn_fusion.hpc`, `scpn-fusion-rs/` | CPU/GPU/MPI metadata and benchmark artifacts |
+| Tutorial/demo | `examples/`, `docs/notebooks/` | Linked validation reports when public claims are made |
+
 ## How to choose an API surface
 
 | Goal | Start with | Why |

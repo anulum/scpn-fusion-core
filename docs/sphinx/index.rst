@@ -6,13 +6,11 @@ SCPN-Fusion-Core
 
 .. rubric:: Version |release|
 
-SCPN-Fusion-Core is a dual-language (Python + Rust) open-source framework
-that treats AI and digital twins as first-class architectural primitives
-for tokamak plasma control.  It compiles plasma control logic -- expressed
-as stochastic Petri nets -- into spiking neural network controllers that
-run at sub-millisecond latency, backed by a Grad-Shafranov equilibrium
-solver, 1.5D radial transport, and AI surrogates for turbulence, disruption
-prediction, and real-time digital twins.
+SCPN-Fusion-Core is an open-source Python and Rust framework for
+control-first tokamak simulation.  It helps teams express plasma-control logic
+as stochastic Petri nets, compile that logic into spiking-neural controllers,
+run it against physics-informed plant models, and publish reproducible
+validation evidence without hiding blocked full-fidelity gates.
 
 **What makes it different:** Most fusion codes are physics-first (solve
 equations, then bolt on control).  SCPN-Fusion-Core is **control-first**
@@ -39,6 +37,15 @@ native physics-kernel laboratory, and a reproducible validation/reporting
 surface.  The public reports distinguish validated local contracts from blocked
 full-fidelity parity rows.  Use the project overview, onboarding guide, and
 benchmark taxonomy before treating any number as a production claim.
+
+What Readers Can Do Today
+-------------------------
+
+- Prototype controller and replay logic against local physics-informed models.
+- Inspect native Python and Rust solver kernels and benchmark reports.
+- Learn fusion-control architecture through quickstarts and notebook exports.
+- Prepare same-case reference-solver campaigns with explicit blockers.
+- Evaluate the funding and hardware needed for stronger parity evidence.
 
 Licensing Model
 ---------------

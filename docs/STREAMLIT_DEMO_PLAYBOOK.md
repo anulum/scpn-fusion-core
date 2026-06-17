@@ -28,7 +28,7 @@ This document defines the reviewable demo sequence for public walkthroughs.
 Use it when generating externally visible media so that claims remain tied to
 reproducible launch commands and active benchmark artifacts.
 
-This playbook standardizes a public demo run for SCPN Fusion Core v3.9.10.
+This playbook standardizes a public demo run for SCPN Fusion Core v3.9.11.
 
 ## Goal
 

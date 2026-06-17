@@ -70,6 +70,18 @@ Petri-net and SNN control contracts, native physics kernels, Rust acceleration,
 formal proof slices, notebooks, benchmark reports, and fail-closed external
 reference gates.
 
+## 3a. Choose your reader track
+
+Different readers should not start in the same place:
+
+| Reader | First path | Outcome |
+|---|---|---|
+| New user | `README.md` -> `docs/PROJECT_OVERVIEW.md` -> `docs/sphinx/quickstart.rst` | Understand the product and run a smoke command. |
+| Contributor | `docs/ONBOARDING.md` -> `docs/API_OVERVIEW.md` -> relevant tests | Know where code, docs, and evidence must change together. |
+| Fusion-domain reviewer | `docs/BENCHMARKS.md` -> `validation/reports/` | Verify claim boundaries before citing numbers. |
+| Investor or buyer | `docs/APPLICATIONS_AND_MARKET.md` -> GitHub Pages -> release notes | Understand current value, blockers, and funding targets. |
+| Security/release reviewer | `docs/RELEASE_READINESS.md` -> workflows -> dependency locks | Verify hygiene, dependency state, and release gates. |
+
 ## 4. Learn the repository by surface
 
 | Surface | Entry point |

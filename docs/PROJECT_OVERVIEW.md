@@ -36,6 +36,26 @@ near real plant hardware?
 - Teaching the software architecture of control-first fusion simulation.
 - Preparing reference-code parity campaigns against established solvers.
 
+## Plain-language summary
+
+SCPN Fusion Core is software for asking whether a fusion-plasma control idea can
+survive contact with physics models, reproducible benchmarks, and explicit
+safety boundaries. It is not plant-control certification and it is not a
+replacement for the established high-fidelity solver ecosystem. Its current
+strength is the connective tissue: controller definitions, solver kernels,
+native acceleration, replay metadata, validation reports, benchmark commands,
+and documentation that says which claims are accepted and which remain blocked.
+
+That makes the project useful for three kinds of work today:
+
+- control researchers can prototype and stress controller logic before facility
+  integration,
+- validation engineers can turn solver comparisons into auditable evidence
+  packages,
+- technical buyers and funders can see which missing artifacts, hardware, and
+  reference runs would move the project from local contracts toward stronger
+  parity claims.
+
 ## What a reviewer should understand first
 
 SCPN Fusion Core is valuable because it turns fusion-control research into an

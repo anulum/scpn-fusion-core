@@ -1,4 +1,4 @@
-# v3.9.10 Release Acceptance
+# v3.9.11 Release Acceptance
 
 
 ## Evidence and governance meaning
@@ -13,7 +13,7 @@ evidence requirement was silently dropped.
 
 This checklist is the operational gate for release publication. It tracks required checks and references for traceable, repeatable release decisions.
 
-Release Version: `v3.9.10`
+Release Version: `v3.9.11`
 Readiness State: `ready`
 
 This file is a tracked, non-sensitive release gate artifact. It records the
@@ -41,7 +41,7 @@ preflight checks so claim state changes are evidence-backed.
 
 ## Release evidence links
 
-- `docs/releases/v3.9.10.md`
+- `docs/releases/v3.9.11.md`
 - `CHANGELOG.md`
 - `README.md`
 - `docs/PROJECT_OVERVIEW.md`

@@ -167,6 +167,14 @@
   field (~0.08 V/m per 1e20 m^-3) and the Dreicer/critical ratio (m_e c^2 / T_e),
   which previously were exercised only relatively (E_par versus E_c).
 
+## [3.9.11] - 2026-06-18
+
+- Bumped package, Rust/PyO3 package metadata, README badge, generated capability snapshot, release readiness, and release notes to 3.9.11.
+- Improved the public documentation path across README, project overview, onboarding, API overview, notebook index, Sphinx entry points, GitHub Pages, changelog, and release notes so new readers can understand what the software is for, where it has value, and where claims remain blocked.
+- Reframed applications and market context around control iteration, validation packaging, accelerator-budget clarity, collaboration boundaries, and financing targets without promoting blocked full-fidelity parity gates.
+- Updated the hashed documentation dependency lock to `bleach==6.4.0`, matching the build lane and addressing the open bleach security alerts after GitHub rescans the pushed manifests.
+- Added the `docs/releases/v3.9.11.md` release note to describe the documentation, security-lock, and repository-hygiene release boundary and verification commands.
+
 ## [3.9.10] - 2026-06-05
 
 - Bumped package, Rust/PyO3 package metadata, README badge, generated capability snapshot, release readiness, and release notes to 3.9.10.
