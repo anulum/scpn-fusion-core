@@ -10,8 +10,9 @@ Strict schema validation for reactor configurations using Pydantic.
 Prevents late-stage simulation failures by catching malformed configs early.
 """
 
-from typing import List, Optional, Tuple
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 # All sub-models use extra='allow' so that extension fields (solver_method,
 # fail_on_diverge, anderson_depth, profiles, etc.) pass through validation
@@ -30,7 +31,7 @@ class Dimensions(BaseModel):
 
     @field_validator("R_max")
     @classmethod
-    def r_max_greater_than_min(cls, v: float, info):
+    def r_max_greater_than_min(cls, v: float, info: ValidationInfo) -> float:
         """Reject domains whose maximum major radius is not above the minimum."""
         if "R_min" in info.data and v <= info.data["R_min"]:
             raise ValueError("R_max must be greater than R_min")
@@ -54,7 +55,7 @@ class PhysicsParams(BaseModel):
     plasma_current_target: float = Field(default=5.0)
     vacuum_permeability: float = Field(default=1.25663706e-6, ge=0)
     beta_scale: float = Field(default=1.0, ge=0)
-    pedestal_mode: Optional[str] = "analytic"
+    pedestal_mode: str | None = "analytic"
     confinement_scaling: str = "IPB98y2"
 
 
@@ -73,21 +74,21 @@ class ReactorConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     reactor_name: str = "Unnamed-Reactor"
-    grid_resolution: Tuple[int, int] = Field(default=(129, 129))
+    grid_resolution: tuple[int, int] = Field(default=(129, 129))
     dimensions: Dimensions
-    coils: List[Coil] = Field(default_factory=list)
+    coils: list[Coil] = Field(default_factory=list)
     physics: PhysicsParams = Field(default_factory=PhysicsParams)
     solver: SolverParams = Field(default_factory=SolverParams)
 
     @field_validator("grid_resolution")
     @classmethod
-    def check_resolution(cls, v: Tuple[int, int]):
+    def check_resolution(cls, v: tuple[int, int]) -> tuple[int, int]:
         """Reject grids that are too small for finite-difference stencils."""
         if v[0] < 4 or v[1] < 4:
             raise ValueError("Grid resolution must be at least 4x4")
         return v
 
 
-def validate_config(config_dict: dict) -> ReactorConfig:
+def validate_config(config_dict: dict[str, Any]) -> ReactorConfig:
     """Validate a raw configuration dictionary and return a validated ReactorConfig."""
     return ReactorConfig.model_validate(config_dict)

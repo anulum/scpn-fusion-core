@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Added the AMR patch solver and Pydantic reactor-configuration schema to the
+  configured mypy strict cohort, with boolean refinement masks and explicit
+  validator/config payload typing.
 - Added selected core helper and edge-physics modules to the configured mypy
   strict cohort, with explicit NumPy array aliases and typed confinement,
   IMAS, startup, MARFE, ELM, checkpoint, pedestal, and tokamak-config

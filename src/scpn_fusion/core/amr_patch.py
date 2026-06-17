@@ -15,6 +15,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
+BoolArray = NDArray[np.bool_]
 
 # Refinement ratio between levels
 REFINE_FACTOR = 2
@@ -84,7 +85,7 @@ def flag_refinement_cells(
     dr: float,
     dz: float,
     threshold: float | None = None,
-) -> FloatArray:
+) -> BoolArray:
     """Return boolean mask of cells where |grad psi| exceeds ``threshold``.
 
     If ``threshold`` is None, uses the 90th percentile of |grad psi|.
@@ -96,7 +97,7 @@ def flag_refinement_cells(
 
 
 def _find_patch_bounds(
-    flagged: FloatArray,
+    flagged: BoolArray,
     R: FloatArray,
     Z: FloatArray,
     pad_cells: int = 2,
@@ -322,7 +323,8 @@ def solve_amr(
             iterations=refine_smooth_iters,
         )
 
-        correction = restrict(fine_psi, sub_psi.shape) - sub_psi
+        coarse_shape = (int(sub_psi.shape[0]), int(sub_psi.shape[1]))
+        correction = restrict(fine_psi, coarse_shape) - sub_psi
         psi_out[j_lo : j_hi + 1, i_lo : i_hi + 1] += correction
 
         patches.append(
