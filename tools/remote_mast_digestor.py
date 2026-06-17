@@ -95,6 +95,7 @@ def build_digest_report(
     results: list[MastDigestResult | None],
     elapsed_s: float,
 ) -> dict[str, object]:
+    """Summarise remote MAST digest completeness without promoting validation claims."""
     valid_results = [result for result in results if result is not None]
     processed_shots = [int(result["shot_id"]) for result in valid_results]
     processed_set = set(processed_shots)
@@ -122,6 +123,7 @@ def build_digest_report(
 
 
 def main() -> None:
+    """Run bounded remote MAST digestion and write the digest report."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--workers", type=int, default=6)
     parser.add_argument("--shots", nargs="+", type=int)

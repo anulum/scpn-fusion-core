@@ -32,6 +32,7 @@ PCA_COMPONENTS_TARGET = 10
 
 
 def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
+    """Generate finite no-rotation FRC profiles for linear surrogate fitting."""
     logger.info("Generating %d FRC samples...", n_samples)
     X = []
     Y = []
@@ -78,6 +79,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
 
 
 def main():
+    """Train and save the no-rotation FRC linear surrogate."""
     parser = argparse.ArgumentParser(description="Train FRC linear surrogate")
     parser.add_argument("--samples", type=int, default=500, help="Number of samples to generate")
     parser.add_argument("--grid", type=int, default=256, help="Grid size for FRC")

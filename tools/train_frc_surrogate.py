@@ -43,6 +43,7 @@ PCA_COMPONENTS_TARGET = 10
 
 
 def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
+    """Initialise MLP parameters with He-style scaling for hidden layers."""
     dims = [input_dim] + hidden_sizes + [output_dim]
     params = []
     for i in range(len(dims) - 1):
@@ -56,6 +57,7 @@ def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
 
 
 def model_forward(params, x):
+    """Evaluate the FRC surrogate MLP for one normalised feature vector."""
     h = x
     for i, p in enumerate(params):
         h = jnp.dot(h, p["W"]) + p["b"]
@@ -65,12 +67,14 @@ def model_forward(params, x):
 
 
 def mse_loss(params, x_batch, y_batch):
+    """Return mean-squared latent-profile loss for a batch."""
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
     return jnp.mean((preds - y_batch) ** 2)
 
 
 @jit
 def update_step(params, m, v, x_batch, y_batch, lr, t):
+    """Apply one clipped Adam update to the surrogate parameters."""
     b1, b2, eps = 0.9, 0.999, 1e-8
     loss, grads = value_and_grad(mse_loss)(params, x_batch, y_batch)
     grads = jax.tree_util.tree_map(lambda g: jnp.clip(g, -GRAD_CLIP, GRAD_CLIP), grads)
@@ -88,6 +92,7 @@ def update_step(params, m, v, x_batch, y_batch, lr, t):
 
 
 def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
+    """Generate finite no-rotation FRC profiles for MLP surrogate training."""
     logger.info("Generating %d FRC samples...", n_samples)
     X = []
     Y = []
@@ -137,6 +142,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
 
 
 def main():
+    """Train and save the JAX MLP no-rotation FRC surrogate."""
     parser = argparse.ArgumentParser(description="Train FRC surrogate")
     parser.add_argument("--samples", type=int, default=500, help="Number of samples to generate")
     parser.add_argument("--grid", type=int, default=256, help="Grid size for FRC")

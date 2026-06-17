@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def compute_local_jacobian(nominal_features: np.ndarray, grid_size: int, eps: float = 1e-4):
+    """Compute a finite-difference local FRC Jacobian around nominal features."""
     logger.info("Computing FRC Jacobian around nominal point...")
     rho_grid = np.linspace(0.0, 0.5, grid_size)
 
@@ -91,6 +92,7 @@ def compute_local_jacobian(nominal_features: np.ndarray, grid_size: int, eps: fl
 
 
 def main():
+    """Extract and save the no-rotation FRC local Jacobian surrogate."""
     parser = argparse.ArgumentParser(description="Extract FRC local Jacobian surrogate")
     parser.add_argument("--grid", type=int, default=256, help="Grid size for FRC")
     parser.add_argument("--out", default="weights/frc_jacobian_surrogate_v1.npz", help="Save path")

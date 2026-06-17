@@ -134,6 +134,7 @@ def _write_markdown(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    """Run the Rust multigrid scaling example and persist local evidence."""
     command = [
         "cargo",
         "run",

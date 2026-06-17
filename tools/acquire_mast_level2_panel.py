@@ -31,10 +31,12 @@ DEFAULT_ENDPOINT_URL = "https://s3.echo.stfc.ac.uk"
 
 
 def utc_now() -> str:
+    """Return an ISO-8601 UTC timestamp for acquisition reports."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def repo_root() -> Path:
+    """Return the repository root that owns this acquisition script."""
     return Path(__file__).resolve().parents[1]
 
 
@@ -43,6 +45,7 @@ DEFAULT_RUN_DIR = repo_root() / "data" / "mast_runs"
 
 
 def load_catalog(endpoint_url: str) -> list[int]:
+    """List available FAIR-MAST Level-2 shot identifiers from the S3 endpoint."""
     root = repo_root()
     sys.path.insert(0, str(root / "external"))
 
@@ -84,6 +87,7 @@ def evict_shot_cache(shot_id: int, cache_dir: Path, endpoint_url: str) -> dict[s
 
 
 def select_targets(catalog: list[int], recent_count: int) -> list[int]:
+    """Select the bounded benchmark panel from known candidates and recent shots."""
     catalog_set = set(catalog)
     core = [30419, 30420, 30421, 30422, 30423, 30424, 29881, 29882, 30335, 30336]
     neighbors: list[int] = []
@@ -99,6 +103,7 @@ def select_targets(catalog: list[int], recent_count: int) -> list[int]:
 
 
 def write_report(path: Path, report: dict[str, Any]) -> None:
+    """Atomically write the acquisition report JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -106,6 +111,7 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
 
 
 def acquire_one(shot_id: int, cache_dir: Path, timeout_s: int) -> dict[str, Any]:
+    """Acquire summary and magnetic-probe groups for one shot in a subprocess."""
     root = repo_root()
     code = (
         "import json, sys; "
@@ -151,6 +157,7 @@ def acquire_one(shot_id: int, cache_dir: Path, timeout_s: int) -> dict[str, Any]
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for bounded Level-2 acquisition."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
     parser.add_argument("--run-dir", type=Path, default=DEFAULT_RUN_DIR)
@@ -172,6 +179,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Run the bounded FAIR-MAST Level-2 acquisition workflow."""
     args = parse_args()
     cache_dir = args.cache_dir.expanduser().resolve()
     run_dir = args.run_dir.expanduser().resolve()

@@ -127,6 +127,7 @@ def coronal_cooling_rate(element: str) -> tuple[FloatArray, FloatArray]:
 
 
 def main() -> None:
+    """Print peak coronal cooling rates for every supported OpenADAS element."""
     for element in ELEMENTS:
         te_eV, cooling = coronal_cooling_rate(element)
         peak = int(np.argmax(cooling))

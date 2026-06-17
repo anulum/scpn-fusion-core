@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — MAST SNN Validation Tool
+"""Run local MAST SNN validation against cached FAIR-MAST shot traces."""
 
 from __future__ import annotations
 
@@ -61,9 +62,11 @@ class HardwareSNN:
         self.v = np.zeros(n_neurons, dtype=np.float64)
 
     def reset(self) -> None:
+        """Reset membrane voltages to the resting state."""
         self.v = np.zeros(self.n_neurons, dtype=np.float64)
 
     def step(self, signal: float) -> float:
+        """Advance one detector tick and return the normalised spike fraction."""
         current = signal * self.weights * 10.0 + 0.01
         self.v += self.alpha * (-self.v + current)
         spikes = self.v >= self.threshold
@@ -360,6 +363,7 @@ def classify_full_fidelity_status(
 
 
 def main() -> None:
+    """Run local training/validation and write the MAST SNN report."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-dir", type=Path, default=resolve_mast_cache_dir())
     parser.add_argument(

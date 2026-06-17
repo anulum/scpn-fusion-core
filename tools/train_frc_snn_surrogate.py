@@ -41,6 +41,7 @@ STEPS = 10  # Number of spiking timesteps per control cycle
 
 @jit
 def spike_function(v):
+    """Return the hard spike indicator used in the surrogate-gradient path."""
     return (v >= 1.0).astype(jnp.float32)
 
 
@@ -88,6 +89,7 @@ def model_forward_snn(params, x):
 
 
 def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
+    """Generate no-rotation FRC training samples for the software SNN surrogate."""
     logger.info("Generating %d FRC samples for SNN training...", n_samples)
     X, Y = [], []
     rng = np.random.default_rng(seed)
@@ -124,6 +126,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
 
 
 def main():
+    """Train the experimental no-rotation FRC software SNN surrogate."""
     parser = argparse.ArgumentParser(description="Train experimental FRC SNN surrogate")
     parser.add_argument("--samples", type=int, default=200)
     parser.add_argument("--grid", type=int, default=64)

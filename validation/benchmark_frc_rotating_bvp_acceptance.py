@@ -299,6 +299,7 @@ def _write_markdown(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    """Run the rotating-BVP acceptance report generator."""
     report = build_report(run_rust=True)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_REPORT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -126,6 +126,7 @@ def generate_chunk(n_samples: int, config_path: str, seed: int, allow_boundary_x
 
 
 def main():
+    """Generate ITER surrogate data chunks with bounded worker policy."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--samples", type=int, default=1000)

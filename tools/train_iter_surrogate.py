@@ -93,6 +93,8 @@ def write_iter_dataset_report(path: Path, report: dict[str, Any]) -> None:
 
 
 class FastNumPyPCA:
+    """Memory-aware NumPy PCA using the sample Gram matrix."""
+
     def __init__(self, n_components: int = 20):
         self.n_components = n_components
         self.mean_ = None
@@ -100,6 +102,7 @@ class FastNumPyPCA:
         self.explained_variance_ratio_ = None
 
     def fit_transform(self, X: np.ndarray):
+        """Fit PCA components and return projected samples."""
         logger.info("Fitting PCA using NumPy (Gram Matrix Method)...")
         # X is (N, D) = (10000, 16384)
         self.mean_ = X.mean(axis=0)
@@ -269,6 +272,7 @@ def generate_iter_data(n_samples: int, config_path: str | Path, seed: int = 42):
 
 
 def main():
+    """Train or evaluate the ITER equilibrium surrogate workflow."""
     parser = argparse.ArgumentParser(description="Train ITER surrogate")
     parser.add_argument("--config", help="Path to ITER config JSON (required if generating data)")
     parser.add_argument("--data", help="Path to existing .npz dataset")

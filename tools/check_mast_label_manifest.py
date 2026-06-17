@@ -161,6 +161,7 @@ def build_report(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Validate the configured label manifest and optionally write a report."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)

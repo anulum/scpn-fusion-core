@@ -50,6 +50,7 @@ def compute_quantized_jacobian(
     eps: float = 1e-4,
     bits: int = 16,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]:
+    """Compute and quantise the local no-rotation FRC Jacobian surrogate."""
     if grid_size <= 1:
         raise ValueError("grid_size must be greater than 1.")
     if not np.isfinite(eps) or eps <= 0.0:
@@ -119,6 +120,7 @@ def compute_quantized_jacobian(
 
 
 def main() -> None:
+    """Extract and save the fixed-point no-rotation FRC Jacobian surrogate."""
     parser = argparse.ArgumentParser(description="Extract quantized FRC surrogate")
     parser.add_argument("--grid", type=int, default=128, help="Grid size for FRC")
     parser.add_argument("--out", default="weights/frc_quantized_surrogate_v1.npz", help="Save path")

@@ -123,6 +123,7 @@ def materialise_shot(ingestor: MastIngestor, cache_dir: Path, shot_id: int) -> d
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
+    """Write a deterministic JSON payload to disk."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -134,6 +135,7 @@ def build_blocked_report(
     errors: list[str],
     payload: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    """Build the fail-closed report emitted when independent labels are invalid."""
     shot_ids = _manifest_shot_ids(payload) if payload is not None else []
     return {
         "schema": "scpn-fusion-core.mast-labelled-shot-downloads.v1",
@@ -158,6 +160,7 @@ def build_blocked_report(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Download labelled FAIR-MAST shots after manifest validation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
