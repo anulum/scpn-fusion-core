@@ -23,6 +23,9 @@
 - Added the nuclear wall-interaction façade to the configured mypy strict
   cohort with typed ash-history, wall-load, CAD-load, and material-lifespan
   contracts.
+- Added the HPC native bridge and compatibility import path to the configured
+  mypy strict cohort with explicit ctypes-library, buffer, context-manager, and
+  neural-surrogate fallback contracts.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,

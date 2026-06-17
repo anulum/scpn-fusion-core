@@ -22,7 +22,8 @@ import shutil
 import stat
 import subprocess
 from pathlib import Path
-from typing import Optional
+from types import TracebackType
+from typing import Any, Optional
 
 from numpy.typing import NDArray
 
@@ -32,13 +33,7 @@ _CPP_ALLOWED_COMPILERS = frozenset({"g++", "g++.exe", "clang++", "clang++.exe"})
 _SHA256_HEX_LEN = 64
 
 
-try:
-    from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
-except ImportError:
-    NeuralEquilibriumKernel = None
-
-
-def _as_contiguous_f64(array: NDArray[np.floating]) -> NDArray[np.float64]:
+def _as_contiguous_f64(array: NDArray[np.floating[Any]]) -> NDArray[np.float64]:
     """Return ``array`` as C-contiguous ``float64`` with minimal copying."""
     if isinstance(array, np.ndarray) and array.dtype == np.float64 and array.flags.c_contiguous:
         return array
@@ -46,7 +41,7 @@ def _as_contiguous_f64(array: NDArray[np.floating]) -> NDArray[np.float64]:
 
 
 def _require_c_contiguous_f64(
-    array: NDArray[np.floating],
+    array: NDArray[np.floating[Any]],
     expected_shape: tuple[int, int],
     name: str,
 ) -> NDArray[np.float64]:
@@ -227,7 +222,7 @@ class HPCBridge:
     """
 
     def __init__(self, lib_path: Optional[str] = None) -> None:
-        self.lib = None
+        self.lib: Any | None = None
         self.solver_ptr = None
         self.loaded: bool = False
         self.load_error: Optional[str] = None
@@ -301,10 +296,17 @@ class HPCBridge:
     def __enter__(self) -> "HPCBridge":
         return self
 
-    def __exit__(self, *exc) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.close()
 
-    def _setup_signatures(self):
+    def _setup_signatures(self) -> None:
+        if self.lib is None:
+            return
         # void* create_solver(int nr, int nz, double rmin, double rmax, double zmin, double zmax)
         self.lib.create_solver.argtypes = [
             ctypes.c_int,
@@ -379,6 +381,8 @@ class HPCBridge:
             raise ValueError("nr and nz must be >= 2.")
         if r_range[0] >= r_range[1] or z_range[0] >= z_range[1]:
             raise ValueError("r_range/z_range must have min < max.")
+        if self.lib is None:
+            return
         self.nr = nr
         self.nz = nz
         self.solver_ptr = self.lib.create_solver(
@@ -430,6 +434,8 @@ class HPCBridge:
             return None
         j_input, expected_shape = prepared
         psi_target = _require_c_contiguous_f64(psi_out, expected_shape, "psi_out")
+        if self.lib is None:
+            return None
 
         self.lib.run_step(
             self.solver_ptr,
@@ -447,7 +453,9 @@ class HPCBridge:
         Run the O(1) Neural Equilibrium Surrogate.
         Requires NeuralEquilibriumKernel (JAX/NPZ weights).
         """
-        if NeuralEquilibriumKernel is None:
+        try:
+            from scpn_fusion.core.neural_equilibrium_kernel import NeuralEquilibriumKernel
+        except ImportError:
             logger.warning("NeuralEquilibriumKernel not available (ImportError).")
             return None
 
@@ -459,7 +467,10 @@ class HPCBridge:
 
             kernel = NeuralEquilibriumKernel(config_path)
             res = kernel.solve_equilibrium()
-            return res.get("Psi")
+            psi = res.get("Psi")
+            if psi is None:
+                return None
+            return np.asarray(psi, dtype=np.float64)
         except Exception as exc:
             logger.error("Neural surrogate inference failed: %s", exc)
             return None
@@ -508,6 +519,8 @@ class HPCBridge:
             return None
         j_input, expected_shape = prepared
         psi_target = _require_c_contiguous_f64(psi_out, expected_shape, "psi_out")
+        if self.lib is None:
+            return None
         max_iters, tol_safe, omega_safe = _sanitize_convergence_params(
             max_iterations, tolerance, omega
         )
@@ -647,4 +660,5 @@ if __name__ == "__main__":
 
         # Run
         Psi = bridge.solve(J, iterations=500)
-        print(f"Max Flux: {np.max(Psi)}")
+        if Psi is not None:
+            print(f"Max Flux: {np.max(Psi)}")

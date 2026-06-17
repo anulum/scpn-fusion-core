@@ -136,6 +136,9 @@ files = [
     # diagnostics/
     "src/scpn_fusion/diagnostics/__init__.py",
     "src/scpn_fusion/diagnostics/forward.py",
+    # hpc/
+    "src/scpn_fusion/hpc/__init__.py",
+    "src/scpn_fusion/hpc/hpc_bridge.py",
     # nuclear/
     "src/scpn_fusion/nuclear/__init__.py",
     "src/scpn_fusion/nuclear/blanket_neutronics.py",
@@ -147,6 +150,7 @@ files = [
     "src/scpn_fusion/core/stability_mhd.py",
     "src/scpn_fusion/core/integrated_transport_solver.py",
     "src/scpn_fusion/core/tglf_interface.py",
+    "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "src/scpn_fusion/core/neural_transport_math.py",
     # control/
