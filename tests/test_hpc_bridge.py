@@ -9,6 +9,11 @@
 
 from __future__ import annotations
 
+import ctypes as ctypes_mod
+import hashlib as hashlib_mod
+import platform as platform_mod
+import shutil as shutil_mod
+import subprocess as subprocess_mod
 from pathlib import Path
 from typing import Any
 
@@ -108,6 +113,18 @@ def _make_bridge(nr: int = 2, nz: int = 3) -> HPCBridge:
     return bridge
 
 
+def _dummy_lib(bridge: HPCBridge) -> _DummyLib:
+    lib = bridge.lib
+    assert isinstance(lib, _DummyLib)
+    return lib
+
+
+def _delete_lib(bridge: HPCBridge) -> _DummyDeleteLib:
+    lib = bridge.lib
+    assert isinstance(lib, _DummyDeleteLib)
+    return lib
+
+
 def test_as_contiguous_f64_reuses_float64_c_contiguous() -> None:
     arr = np.zeros((3, 2), dtype=np.float64)
     out = _as_contiguous_f64(arr)
@@ -156,9 +173,10 @@ def test_solve_runs_and_returns_expected_shape() -> None:
     assert out is not None
     assert out.shape == (3, 2)
     assert np.allclose(out, 0.5 * j_phi)
-    assert bridge.lib.called
-    assert bridge.lib.last_size == 6
-    assert bridge.lib.last_iterations == 17
+    lib = _dummy_lib(bridge)
+    assert lib.called
+    assert lib.last_size == 6
+    assert lib.last_iterations == 17
 
 
 def test_solve_into_reuses_output_buffer() -> None:
@@ -168,9 +186,10 @@ def test_solve_into_reuses_output_buffer() -> None:
     out = bridge.solve_into(j_phi, out_buf, iterations=5)
 
     assert out is out_buf
-    assert bridge.lib.last_psi_ref is out_buf
+    lib = _dummy_lib(bridge)
+    assert lib.last_psi_ref is out_buf
     assert np.allclose(out_buf, 0.5 * j_phi)
-    assert bridge.lib.last_iterations == 5
+    assert lib.last_iterations == 5
 
 
 def test_solve_into_rejects_noncontiguous_output() -> None:
@@ -207,10 +226,13 @@ def test_solve_until_converged_uses_native_api() -> None:
     assert np.allclose(psi, 0.25 * j_phi)
     assert iters == 7
     assert abs(delta - 2.5e-4) < 1e-12
-    assert bridge.lib.called_converged
-    assert bridge.lib.last_max_iterations == 200
-    assert abs(bridge.lib.last_omega - 1.7) < 1e-12
-    assert abs(bridge.lib.last_tolerance - 1e-5) < 1e-12
+    lib = _dummy_lib(bridge)
+    assert lib.called_converged
+    assert lib.last_max_iterations == 200
+    assert lib.last_omega is not None
+    assert lib.last_tolerance is not None
+    assert abs(lib.last_omega - 1.7) < 1e-12
+    assert abs(lib.last_tolerance - 1e-5) < 1e-12
 
 
 def test_solve_until_converged_into_reuses_output_buffer() -> None:
@@ -228,36 +250,39 @@ def test_solve_until_converged_into_reuses_output_buffer() -> None:
     iters, delta = out
     assert iters == 7
     assert abs(delta - 2.5e-4) < 1e-12
-    assert bridge.lib.last_psi_ref is out_buf
+    lib = _dummy_lib(bridge)
+    assert lib.last_psi_ref is out_buf
     assert np.allclose(out_buf, 0.25 * j_phi)
-    assert bridge.lib.last_max_iterations == 33
+    assert lib.last_max_iterations == 33
 
 
-@pytest.mark.parametrize(
-    ("kwargs", "match"),
-    [
+def test_solve_until_converged_into_rejects_invalid_convergence_params() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out_buf = np.empty((3, 2), dtype=np.float64)
+    cases: tuple[tuple[dict[str, float | int], str], ...] = (
         ({"max_iterations": 0}, "max_iterations"),
         ({"tolerance": float("nan")}, "tolerance"),
         ({"tolerance": -1.0e-3}, "tolerance"),
         ({"omega": float("inf")}, "omega"),
         ({"omega": 0.0}, "omega"),
         ({"omega": 2.0}, "omega"),
-    ],
-)
-def test_solve_until_converged_into_rejects_invalid_convergence_params(
-    kwargs: dict[str, float | int], match: str
-) -> None:
-    bridge = _make_bridge(nr=2, nz=3)
-    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
-    out_buf = np.empty((3, 2), dtype=np.float64)
-    params: dict[str, float | int] = {
-        "max_iterations": 32,
-        "tolerance": 1e-7,
-        "omega": 1.6,
-    }
-    params.update(kwargs)
-    with pytest.raises(ValueError, match=match):
-        bridge.solve_until_converged_into(j_phi, out_buf, **params)
+    )
+    for kwargs, match in cases:
+        params: dict[str, float | int] = {
+            "max_iterations": 32,
+            "tolerance": 1e-7,
+            "omega": 1.6,
+        }
+        params.update(kwargs)
+        with pytest.raises(ValueError, match=match):
+            bridge.solve_until_converged_into(
+                j_phi,
+                out_buf,
+                max_iterations=int(params["max_iterations"]),
+                tolerance=float(params["tolerance"]),
+                omega=float(params["omega"]),
+            )
 
 
 def test_solve_until_converged_falls_back_without_native_api() -> None:
@@ -284,27 +309,27 @@ def test_solve_until_converged_into_fallback_without_native_api() -> None:
     assert iters == 9
     assert np.isnan(delta)
     assert np.allclose(out_buf, 0.5 * j_phi)
-    assert bridge.lib.last_iterations == 9
+    assert _dummy_lib(bridge).last_iterations == 9
 
 
 def test_set_boundary_dirichlet_calls_native_symbol() -> None:
     bridge = _make_bridge(nr=2, nz=3)
     bridge.set_boundary_dirichlet(1.25)
-    assert bridge.lib.boundary_value == 1.25
+    assert _dummy_lib(bridge).boundary_value == 1.25
 
 
 def test_set_boundary_dirichlet_noop_without_support() -> None:
     bridge = _make_bridge(nr=2, nz=3)
     bridge._has_boundary_api = False
     bridge.set_boundary_dirichlet(0.5)
-    assert bridge.lib.boundary_value is None
+    assert _dummy_lib(bridge).boundary_value is None
 
 
 def test_close_releases_solver_pointer() -> None:
     bridge = _make_bridge()
     bridge.close()
     assert bridge.solver_ptr is None
-    assert bridge.lib.destroyed == 12345
+    assert _dummy_lib(bridge).destroyed == 12345
 
 
 def test_close_supports_delete_solver_alias() -> None:
@@ -315,17 +340,17 @@ def test_close_supports_delete_solver_alias() -> None:
     bridge._destroy_symbol = "delete_solver"
     bridge.close()
     assert bridge.solver_ptr is None
-    assert bridge.lib.deleted == 999
+    assert _delete_lib(bridge).deleted == 999
 
 
 def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = "/tmp/scpn_solver_override.so"
 
-    def _raise_cdll(_path: str):
+    def _raise_cdll(_path: str) -> None:
         raise OSError("no library")
 
     monkeypatch.setenv("SCPN_SOLVER_LIB", expected)
-    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _raise_cdll)
+    monkeypatch.setattr(ctypes_mod, "CDLL", _raise_cdll)
     bridge = HPCBridge()
     assert bridge.lib_path == expected
     assert not bridge.loaded
@@ -334,12 +359,12 @@ def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None
 def test_init_rejects_relative_env_override_before_cdll(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
 
-    def _fake_cdll(path: str):
+    def _fake_cdll(path: str) -> None:
         calls.append(path)
         raise AssertionError("relative override must not reach ctypes")
 
     monkeypatch.setenv("SCPN_SOLVER_LIB", "libscpn_solver.so")
-    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+    monkeypatch.setattr(ctypes_mod, "CDLL", _fake_cdll)
 
     bridge = HPCBridge()
 
@@ -352,12 +377,12 @@ def test_init_rejects_relative_env_override_before_cdll(monkeypatch: pytest.Monk
 def test_init_rejects_relative_lib_path_before_cdll(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
 
-    def _fake_cdll(path: str):
+    def _fake_cdll(path: str) -> None:
         calls.append(path)
         raise AssertionError("relative lib_path must not reach ctypes")
 
     monkeypatch.delenv("SCPN_SOLVER_LIB", raising=False)
-    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+    monkeypatch.setattr(ctypes_mod, "CDLL", _fake_cdll)
 
     bridge = HPCBridge("libscpn_solver.so")
 
@@ -368,12 +393,12 @@ def test_init_rejects_relative_lib_path_before_cdll(monkeypatch: pytest.MonkeyPa
 
 
 def test_init_uses_package_local_default_without_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _raise_cdll(_path: str):
+    def _raise_cdll(_path: str) -> None:
         raise OSError("no library")
 
     monkeypatch.delenv("SCPN_SOLVER_LIB", raising=False)
-    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
-    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _raise_cdll)
+    monkeypatch.setattr(platform_mod, "system", lambda: "Linux")
+    monkeypatch.setattr(ctypes_mod, "CDLL", _raise_cdll)
 
     bridge = HPCBridge()
     expected = str(Path(hpc_mod.__file__).resolve().parent / "libscpn_solver.so")
@@ -413,9 +438,9 @@ def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.M
     compiler.write_text("#!/bin/sh\n", encoding="utf-8")
     compiler.chmod(0o755)
     monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
-    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
-    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
-    monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
+    monkeypatch.setattr(platform_mod, "system", lambda: "Linux")
+    monkeypatch.setattr(shutil_mod, "which", lambda name, path=None: str(compiler))
+    monkeypatch.setattr(subprocess_mod, "run", _fake_run)
 
     out = hpc_mod.compile_cpp()
     assert out is not None
@@ -456,9 +481,9 @@ def test_compile_cpp_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     compiler.write_text("#!/bin/sh\n", encoding="utf-8")
     compiler.chmod(0o755)
     monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
-    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Windows")
-    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
-    monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
+    monkeypatch.setattr(platform_mod, "system", lambda: "Windows")
+    monkeypatch.setattr(shutil_mod, "which", lambda name, path=None: str(compiler))
+    monkeypatch.setattr(subprocess_mod, "run", _fake_run)
 
     out = hpc_mod.compile_cpp()
     assert out is not None
@@ -479,7 +504,7 @@ def test_compile_cpp_rejects_unapproved_compiler(
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
     monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
     monkeypatch.setattr(
-        hpc_mod.shutil,
+        shutil_mod,
         "which",
         lambda name, path=None: "/tmp/attacker-compiler",
     )
@@ -501,7 +526,7 @@ def test_compile_cpp_rejects_symlinked_source(
     compiler = tmp_path / "g++"
     compiler.write_text("#!/bin/sh\n", encoding="utf-8")
     compiler.chmod(0o755)
-    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
+    monkeypatch.setattr(shutil_mod, "which", lambda name, path=None: str(compiler))
 
     assert hpc_mod.compile_cpp() is None
 
@@ -521,8 +546,8 @@ def test_compile_cpp_handles_build_failure(tmp_path: Path, monkeypatch: pytest.M
     compiler = tmp_path / "g++"
     compiler.write_text("#!/bin/sh\n", encoding="utf-8")
     compiler.chmod(0o755)
-    monkeypatch.setattr(hpc_mod.shutil, "which", lambda name, path=None: str(compiler))
-    monkeypatch.setattr(hpc_mod.subprocess, "run", _fail_run)
+    monkeypatch.setattr(shutil_mod, "which", lambda name, path=None: str(compiler))
+    monkeypatch.setattr(subprocess_mod, "run", _fail_run)
 
     assert hpc_mod.compile_cpp() is None
 
@@ -533,7 +558,7 @@ def test_context_manager_protocol() -> None:
         assert b is bridge
         assert b.solver_ptr is not None
     assert bridge.solver_ptr is None
-    assert bridge.lib.destroyed == 12345
+    assert _dummy_lib(bridge).destroyed == 12345
 
 
 def test_solve_rejects_empty_input() -> None:
@@ -572,14 +597,14 @@ def test_close_noop_when_no_solver_ptr() -> None:
     bridge = _make_bridge()
     bridge.solver_ptr = None
     bridge.close()
-    assert bridge.lib.destroyed is None
+    assert _dummy_lib(bridge).destroyed is None
 
 
 def test_close_noop_when_not_loaded() -> None:
     bridge = _make_bridge()
     bridge.loaded = False
     bridge.close()
-    assert bridge.lib.destroyed is None
+    assert _dummy_lib(bridge).destroyed is None
 
 
 def test_init_rejects_env_library_without_trust_manifest(
@@ -589,14 +614,14 @@ def test_init_rejects_env_library_without_trust_manifest(
     lib.write_bytes(b"native payload")
     calls: list[str] = []
 
-    def _fake_cdll(path: str):
+    def _fake_cdll(path: str) -> None:
         calls.append(path)
         raise AssertionError("unsigned library must not be loaded")
 
     monkeypatch.setenv("SCPN_SOLVER_LIB", str(lib))
     monkeypatch.delenv("SCPN_SOLVER_LIB_SHA256", raising=False)
     monkeypatch.delenv("SCPN_SOLVER_TRUST_MANIFEST", raising=False)
-    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+    monkeypatch.setattr(ctypes_mod, "CDLL", _fake_cdll)
 
     bridge = HPCBridge()
 
@@ -612,7 +637,7 @@ def test_init_loads_env_library_when_sha256_matches(
     lib = tmp_path / "libscpn_solver.so"
     payload = b"native payload"
     lib.write_bytes(payload)
-    digest = hpc_mod.hashlib.sha256(payload).hexdigest()
+    digest = hashlib_mod.sha256(payload).hexdigest()
     calls: list[str] = []
 
     class _NativeFunction:
@@ -630,14 +655,14 @@ def test_init_loads_env_library_when_sha256_matches(
             self.set_boundary_dirichlet = _NativeFunction()
             self.destroy_solver = _NativeFunction()
 
-    def _fake_cdll(path: str):
+    def _fake_cdll(path: str) -> _LoadedLib:
         calls.append(path)
         return _LoadedLib()
 
     monkeypatch.setenv("SCPN_SOLVER_LIB", str(lib))
     monkeypatch.setenv("SCPN_SOLVER_LIB_SHA256", digest)
     monkeypatch.delenv("SCPN_SOLVER_TRUST_MANIFEST", raising=False)
-    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+    monkeypatch.setattr(ctypes_mod, "CDLL", _fake_cdll)
 
     bridge = HPCBridge()
 

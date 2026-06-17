@@ -252,7 +252,7 @@ class HPCBridge:
 
     def __init__(self, lib_path: Optional[str] = None) -> None:
         self.lib: Any | None = None
-        self.solver_ptr = None
+        self.solver_ptr: int | None = None
         self.loaded: bool = False
         self.load_error: Optional[str] = None
         self.close_error: Optional[str] = None

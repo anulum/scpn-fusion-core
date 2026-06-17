@@ -155,6 +155,7 @@ files = [
     # hpc/
     "src/scpn_fusion/hpc/__init__.py",
     "src/scpn_fusion/hpc/hpc_bridge.py",
+    "tests/test_hpc_bridge.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",
