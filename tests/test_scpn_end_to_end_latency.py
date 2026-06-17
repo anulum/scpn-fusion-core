@@ -49,6 +49,10 @@ def test_digital_twin_latency_campaign_reports_cpu_rust_gpu_boundaries() -> None
     assert out["cpu"]["p99_loop_ms"] >= out["cpu"]["p95_loop_ms"]
     assert out["gpu"]["status"].startswith("blocked_") or out["gpu"]["status"] == "measured"
     assert out["rust"]["status"].startswith("blocked_") or out["rust"]["status"] == "measured"
+    assert out["hil"]["status"] == "measured_simulated_hil"
+    assert out["hil"]["hardware_status"] == "simulated_host_adc_dac_loop"
+    assert out["hil"]["passes_thresholds"] is True
+    assert out["hil"]["actuator_count"] == 256
 
 
 def test_digital_twin_degraded_modes_fail_closed_with_safe_outputs() -> None:
@@ -125,6 +129,7 @@ def test_render_markdown_contains_latency_sections() -> None:
     text = scpn_end_to_end_latency.render_markdown(report)
     assert "# SCPN End-to-End Latency Benchmark" in text
     assert "Digital-Twin Sensor-to-Control Path" in text
+    assert "Simulated HIL Sensor-to-Actuator Scaffold" in text
     assert "Actuator-Count Scaling" in text
     assert "Predictive-Horizon Timing" in text
     assert "Degraded Modes" in text
@@ -158,3 +163,4 @@ def test_cli_writes_reports_and_strict_passes(tmp_path: Path) -> None:
     assert "digital_twin_control_latency" in payload
     assert "actuator_count_scaling" in payload
     assert "predictive_horizon" in payload
+    assert payload["digital_twin_control_latency"]["hil"]["status"] == "measured_simulated_hil"

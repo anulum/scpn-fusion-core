@@ -45,6 +45,7 @@ from scpn_fusion.scpn.compiler import FusionCompiler
 from scpn_fusion.scpn.contracts import ControlScales, ControlTargets
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
+from scpn_fusion.control.hil_harness import run_sensor_to_actuator_hil_latency_campaign
 
 
 FloatArray: TypeAlias = NDArray[np.float64]
@@ -1274,12 +1275,18 @@ def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
         + (1 if rust_lane.get("status") == "measured" else 0)
         + (1 if gpu_lane.get("status") == "measured" else 0)
     )
+    hil_lane = run_sensor_to_actuator_hil_latency_campaign(
+        n_steps=max(32, min(steps, 160)),
+        actuator_count=256,
+        rng_seed=2026,
+    )
     return {
         "schema": "scpn-fusion-core.digital_twin_control_latency.v1",
         "measurement_context": {
             "claim_boundary": (
-                "Python CPU and Rust rows are local non-isolated wall-clock "
-                "measurements. GPU and HIL rows remain blocked unless status is measured."
+                "Python CPU and Rust rows are local non-isolated wall-clock measurements. "
+                "GPU rows are accelerator measurements only when status is measured. "
+                "HIL rows are simulated host ADC/DAC timing unless hardware_status names a physical rig."
             ),
             "accelerator_isolation_note": (
                 "CUDA device was operator-reserved for this benchmark run; CPU host "
@@ -1301,21 +1308,20 @@ def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
         },
         "gpu": gpu_lane,
         "rust": rust_lane,
-        "hil": {
-            "status": "blocked_not_measured",
-            "reason": "No hardware-in-the-loop sensor/actuator rig was exercised by this local benchmark.",
-        },
+        "hil": hil_lane,
         "passes_thresholds": bool(
             nominal["p95_loop_ms"] <= 2.0
             and nominal["p99_loop_ms"] <= 5.0
             and degraded_semantics_pass
             and measured_lane_count >= 2
+            and hil_lane["passes_thresholds"]
         ),
         "thresholds": {
             "max_cpu_nominal_p95_loop_ms": 2.0,
             "max_cpu_nominal_p99_loop_ms": 5.0,
             "min_measured_lanes": 2,
             "degraded_modes_require_safe_outputs": True,
+            "hil_simulated_scaffold_required": True,
         },
     }
 
@@ -1541,6 +1547,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     cpu = twin["cpu"]
     rust = twin["rust"]
     gpu = twin["gpu"]
+    hil = twin["hil"]
     lines.extend(
         [
             "## Digital-Twin Sensor-to-Control Path",
@@ -1568,6 +1575,34 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"{_fmt_optional_ms(gpu.get('p99_loop_ms'))} | "
                 f"{gpu.get('reason', gpu.get('claim_boundary', 'measured accelerator lane'))} |"
             ),
+            "",
+            "### Simulated HIL Sensor-to-Actuator Scaffold",
+            "",
+            hil["claim_boundary"],
+            "",
+            "| Status | Hardware status | Actuators | p50 [us] | p95 [us] | p99 [us] | Pass |",
+            "|--------|-----------------|-----------|----------|----------|----------|------|",
+            (
+                f"| {hil['status']} | {hil['hardware_status']} | {hil['actuator_count']} | "
+                f"{hil['nominal_latency']['p50_us']:.6f} | "
+                f"{hil['nominal_latency']['p95_us']:.6f} | "
+                f"{hil['nominal_latency']['p99_us']:.6f} | "
+                f"{'YES' if hil['passes_thresholds'] else 'NO'} |"
+            ),
+            "",
+            "| Scenario | Fallbacks | Safe output rate | p95 [us] | Pass | Reasons |",
+            "|----------|-----------|------------------|----------|------|---------|",
+        ]
+    )
+    for name, rec in hil["scenarios"].items():
+        reasons = ", ".join(f"{key}:{value}" for key, value in sorted(rec["fallback_reasons"].items()))
+        lines.append(
+            f"| {name} | {rec['fallback_count']} | {rec['safe_output_rate']:.3f} | "
+            f"{rec['latency']['p95_us']:.6f} | {'YES' if rec['passes_semantics'] else 'NO'} | "
+            f"{reasons or 'none'} |"
+        )
+    lines.extend(
+        [
             "",
             "### CPU Pipeline Stages",
             "",

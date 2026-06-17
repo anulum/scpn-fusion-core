@@ -24,6 +24,25 @@ It is separate from the full-fidelity equilibrium and transport acceptance paths
 and is only intended as an execution-profile evidence bundle for control timing
 and fault-tolerant behaviour.
 
+## Current simulated sensor-to-actuator evidence
+
+The tracked end-to-end latency report now includes a host-side simulated
+ADC/DAC scaffold for the sensor-to-actuator path:
+
+```bash
+python validation/scpn_end_to_end_latency.py --strict
+```
+
+Tracked report:
+[`validation/reports/scpn_end_to_end_latency.md`](../validation/reports/scpn_end_to_end_latency.md)
+
+Current local row: `simulated_host_adc_dac_loop`, 256 actuator channels,
+nominal p95 `203.927000 us`, p99 `270.075290 us`, with fail-closed degraded
+rows for sensor dropout, noisy sensor, actuator saturation, and non-finite
+controller output. This is a measured software scaffold only. It is not a
+physical HIL rig, FPGA bitstream, plant CODAC, or actuator hardware timing
+claim.
+
 ## 1. Target Platform
 
 - **FPGA**: Xilinx Alveo U250 (UltraScale+ XCU250)
