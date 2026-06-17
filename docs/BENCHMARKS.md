@@ -683,9 +683,10 @@ The free-boundary public machine-metadata inventory is tracked in
 It indexes cached FreeGSNKE machine configuration metadata for active coils,
 passive structures, limiter/wall contours, and magnetic probes, with checksums
 and guarded geometry summaries, plus FreeGS example-script checksums. This is a
-reconstruction input inventory only; strict parity remains blocked until those
-metadata are linked to same-case public equilibria, native coil/vacuum
-reconstruction outputs, and FreeGS/FreeGSNKE solver-output comparisons.
+reconstruction input inventory only. It is not strict parity by itself, but it
+now feeds the accepted strict gate once linked to same-case public equilibria,
+native coil/vacuum reconstruction outputs, and FreeGS/FreeGSNKE solver-output
+comparisons.
 
 The FreeGS public-example reconstruction attempt is tracked in
 [`validation/reports/freegs_public_example_reconstruction.md`](../validation/reports/freegs_public_example_reconstruction.md).
