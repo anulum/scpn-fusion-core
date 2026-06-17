@@ -27,6 +27,7 @@ Clients receive JSON frames every tick::
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import logging
 import os
@@ -161,7 +162,7 @@ class PhaseStreamServer:
                 "Exposed phase-stream WebSocket bindings require SCPN_PHASE_STREAM_TOKEN."
             )
         try:
-            import websockets  # noqa: F811
+            websockets: Any = importlib.import_module("websockets")
         except ImportError as exc:
             raise ImportError("pip install websockets") from exc
 

@@ -299,14 +299,6 @@ module = ["omas", "omas.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["h5py", "h5py.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["websockets", "websockets.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
 module = [
     "scpn_fusion.control.h_infinity_controller",
     "scpn_fusion.control.fokker_planck_re",

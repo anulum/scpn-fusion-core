@@ -25,6 +25,7 @@ Usage::
 
 from __future__ import annotations
 
+import importlib
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -281,7 +282,7 @@ class RealtimeMonitor:
         Requires h5py (``pip install h5py``).
         """
         try:
-            import h5py
+            h5py: Any = importlib.import_module("h5py")
         except ImportError as exc:
             raise ImportError("pip install h5py") from exc
 
