@@ -1,0 +1,119 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "campaign_id": "high_beta_negative_triangularity_campaign",
+  "schema_version": "1.0.0",
+  "scenario": {
+    "scenario_id": "compact_negative_triangularity_high_beta_reduced_order_v1",
+    "major_radius_m": 1.8,
+    "minor_radius_m": 1.2,
+    "elongation_kappa": 2.2,
+    "triangularity_delta": -0.3,
+    "target_beta_fraction": 0.4,
+    "plasma_current_MA": 8.0,
+    "toroidal_field_T": 6.0,
+    "q95": 5.5,
+    "edge_alpha": 0.8,
+    "edge_current_A_m2": 150000.0,
+    "edge_shear": 2.3,
+    "p_sol_MW": 50.0,
+    "divertor_expansion_factor": 45.0,
+    "liquid_metal_flow_m_s": 8.0,
+    "vertical_growth_rate_s_inv": 28.0,
+    "vertical_actuator_gain_m_s2": 150.0,
+    "vertical_damping_s_inv": 9.5
+  },
+  "scenario_checksum_sha256": "36b39b4f1160507f5506523ee6550ac294e83cd92748ef4c54d41f363e1d4121",
+  "components": {
+    "geometry": {
+      "aspect_ratio": 1.5,
+      "major_radius_m": 1.8,
+      "minor_radius_m": 1.2,
+      "elongation_kappa": 2.2,
+      "triangularity_delta": -0.3,
+      "target_beta_fraction": 0.4,
+      "plasma_current_MA": 8.0,
+      "toroidal_field_T": 6.0,
+      "passes_geometry_contract": true,
+      "claim_boundary": "Reduced-order scenario target only; this is not hardware evidence of beta-40 operation or external same-case parity."
+    },
+    "edge_elm": {
+      "q95": 5.5,
+      "edge_alpha": 0.8,
+      "edge_current_A_m2": 150000.0,
+      "edge_shear": 2.3,
+      "peeling_ballooning_margin": 0.219516206062216,
+      "peeling_ballooning_unstable": false,
+      "bounded_crash_stress_case": {
+        "pedestal_energy_loss_MJ": 0.48,
+        "duration_ms": 0.25,
+        "peak_heat_flux_MW_m2": 240.0
+      },
+      "passes_edge_contract": true,
+      "claim_boundary": "The edge lane is a reduced peeling-ballooning stability screen plus a bounded ELM crash stress case, not an experimental ELM-free demonstration."
+    },
+    "divertor": {
+      "p_sol_MW": 50.0,
+      "expansion_factor": 45.0,
+      "liquid_metal": {
+        "flow_velocity_m_s": 8.0,
+        "surface_temperature_c": 692.6816325539222,
+        "surface_heat_flux_w_m2": 11780448.976617666,
+        "shielding_fraction": 0.9746108205820846,
+        "pressure_loss_pa": 180885.43819998312,
+        "hartmann_number": 536.6563145999495,
+        "evaporation_rate_kg_m2_s": 1.8463694663307397e-06,
+        "stability_index": 0.48974092225225785,
+        "is_stable": true
+      },
+      "tungsten_reference": {
+        "surface_temperature_c": 46499.48689442483,
+        "status": "MELTED"
+      },
+      "passes_divertor_contract": true,
+      "claim_boundary": "Reduced TEMHD divertor response only; no material lifetime, erosion, or hardware first-wall qualification is implied."
+    },
+    "vertical_control": {
+      "profile_id": "negative_triangularity_compact",
+      "passes_thresholds": true,
+      "release_gate_status": "blocked_pending_multi_profile_release_gate",
+      "max_p95_abs_z_m": 0.005839741210909641,
+      "trace_integrity": {
+        "state_trace_checksum_sha256": "d97f48fa0426e442a16196196496d27762147aced9b4596d9f7f4f7bd0370e0a",
+        "command_trace_checksum_sha256": "0629630e9613dd4baf40b06e62388ef4ce82503e697a3d9d0c4496e5b36c5ba7",
+        "disturbance_trace_checksum_sha256": "1f48dbe53042b559643c4f24714dde8c9cbe088b0edd042a34d20514db734dc9",
+        "controller_trace_count": 4,
+        "samples_per_trace": 240
+      },
+      "plant_contract": {
+        "contract_id": "rzip_vertical_state_space_v1",
+        "source_module": "scpn_fusion.control.rzip_model",
+        "deterministic_state_trajectory_pass": true
+      },
+      "claim_boundary": "Reduced-order vertical replay evidence only; release gate remains bounded by the underlying replay contract and is not a full PCS hardware result."
+    },
+    "free_boundary_disruption_policy": {
+      "passes_thresholds": true,
+      "peak_alert_level": 3,
+      "final_alert_level": 1,
+      "max_disruption_risk": 0.23601850162300017,
+      "late_mean_disruption_risk": 0.20657693125791196,
+      "p95_axis_error_m": 0.0548292804986531,
+      "p95_xpoint_error_m": 0.05577234571613475,
+      "failure_reasons": [],
+      "claim_boundary": "Free-boundary disruption-policy recovery uses the deterministic Task 13 acceptance plant, not external machine hardware."
+    }
+  },
+  "component_checksum_sha256": "88b69b47ac8b667eda2f8b052a56dba5fa45f1e6403bf3f98d85a5bafad27c7f",
+  "acceptance": {
+    "passes_thresholds": true,
+    "failure_reasons": [],
+    "accepted_claim": "Reduced-order integrated scenario contract across geometry, edge, divertor, vertical replay, and free-boundary disruption-policy recovery.",
+    "blocked_claims": [
+      "hardware_beta_40_operation",
+      "experimental_negative_triangularity_elm_free_operation",
+      "external_same_case_free_boundary_parity_for_this_scenario",
+      "plant_certified_fault_tolerance"
+    ]
+  },
+  "generated_at_utc": "2026-06-17T16:55:57.703271+00:00"
+}

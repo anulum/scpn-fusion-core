@@ -1106,6 +1106,35 @@ is still limited to deterministic reduced-order RZIP replay. The JSON also
 keeps `full_pcs_production_grade_ready == false`; this lane is not a full PCS
 production-control claim.
 
+### High-Beta Negative-Triangularity Integrated Campaign
+
+`validation/high_beta_negative_triangularity_campaign.py` composes existing
+bounded validation lanes into one compact negative-triangularity scenario
+report. The scenario links compact spherical-tokamak-like geometry
+(`A = 1.5`), negative triangularity (`delta = -0.3`), elongation
+(`kappa = 2.2`), a high-beta target posture, reduced peeling-ballooning edge
+screening, TEMHD divertor response, vertical replay, and free-boundary
+disruption-policy recovery.
+
+This is a reduced-order integrated scenario contract. It is not hardware
+evidence of beta-40 operation, an experimental ELM-free demonstration, an
+external same-case free-boundary parity result, or plant-certified fault
+tolerance. Those blocked claims remain explicit in the generated report.
+
+| Contract | Acceptance evidence | Command |
+|----------|---------------------|---------|
+| Geometry | Aspect ratio, elongation, negative triangularity, plasma-current, field, and beta target are recorded with a scenario checksum | `python validation/high_beta_negative_triangularity_campaign.py --strict` |
+| Edge/ELM | Peeling-ballooning margin must remain positive and the bounded crash stress case must stay labelled as a reduced model | same |
+| Divertor | Liquid-metal TEMHD stability index and surface heat flux must remain within the reduced contract thresholds | same |
+| Vertical control | Embedded compact negative-triangularity vertical replay must pass deterministic reduced-order replay thresholds | same |
+| Disruption policy | Embedded free-boundary disruption-policy recovery must pass Task 13 thresholds | same |
+| Claim boundary | JSON and Markdown reports must retain blocked rows for hardware beta-40 operation, experimental ELM-free operation, same-case external parity, and certified fault tolerance | same |
+
+Tracked reports:
+[`validation/reports/high_beta_negative_triangularity_campaign.json`](../validation/reports/high_beta_negative_triangularity_campaign.json)
+and
+[`validation/reports/high_beta_negative_triangularity_campaign.md`](../validation/reports/high_beta_negative_triangularity_campaign.md).
+
 ### GPU Phase 1 Readiness Gate
 
 The GPU Phase 1 gate verifies the Rust/wgpu SOR implementation surfaces and
