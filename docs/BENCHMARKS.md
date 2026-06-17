@@ -385,9 +385,11 @@ The 2026-06-17 report consolidates currently separate reduced-order fault
 surfaces into one scenario matrix. It reuses the free-boundary fail-safe
 dropout replay, disruption-policy recovery replay, fault-detection and
 reconfigurable-control utilities, divertor thermal simulation, wall transient
-model, and coolant-loop model. The report is a software campaign only: it is
-not plant hardware, physical HIL, certified fault tolerance, REBCO/HTS quench
-protection, or direct-energy-conversion fault evidence.
+model, coolant-loop model, and the reduced-order REBCO/HTS quench,
+direct-energy-conversion, and disruption structural-response screens. The
+report is a software campaign only: it is not plant hardware, physical HIL,
+certified fault tolerance, certified REBCO/HTS quench protection, validated
+direct-energy conversion, finite-element analysis, or plant qualification.
 
 | Scenario | Status | Response | Evidence boundary |
 |---|---|---:|---|
@@ -398,8 +400,9 @@ protection, or direct-energy-conversion fault evidence.
 | controller_failover | measured reduced-order pass | `0.420 s` | reconfigurable controller, one actuator loss |
 | cooling_thermal_limit | measured reduced-order pass | n/a | 180 MW coolant loop, 0.30 m equivalent diameter |
 | shielding_wall_load_warning | measured reduced-order pass | n/a | TEMHD shielding plus 18 MJ/24 m2 wall transient |
-| direct_energy_conversion_fault | blocked | n/a | no subsystem model in repository |
-| rebco_quench_fault | blocked | n/a | no REBCO/HTS quench dynamics model in repository |
+| direct_energy_conversion_fault | measured reduced-order pass | `0.008 s` | reduced DEC fail-closed/dump-load screen |
+| rebco_quench_fault | measured reduced-order pass | `0.045 s` | reduced REBCO/HTS quench and dump-timescale screen |
+| disruption_structural_shock_strain | measured reduced-order pass | n/a | reduced structural shock, strain, stress, and displacement screen |
 
 Key measured diagnostics:
 
@@ -408,6 +411,12 @@ Key measured diagnostics:
 | first FDI sensor detection | `0.250 s` | `<= 0.300 s` |
 | actuator failover application | `0.420 s` | `<= 0.450 s` |
 | fault-controller max command L1 | `0.879` | `<= 3.250` |
+| DEC fail-closed time | `7.900 ms` | reduced-order software boundary only |
+| DEC isolated energy | `0.0394 MJ` | `<= 0.1600 MJ` |
+| REBCO hotspot temperature | `20.00 K` | `<= 120.00 K` |
+| REBCO terminal voltage | `810.0 V` | `<= 1200.0 V` |
+| structural equivalent stress | `61.22 MPa` | stress margin `5.66` |
+| structural displacement | `0.920 mm` | `< 10.000 mm` |
 | surface heat flux | `16.270 MW/m2` | `<= 45.000 MW/m2` |
 | coolant pump power | `0.230 MW` | `<= 1.000 MW` |
 | disruption wall delta-T | `950.148 K` | `<= 1050.000 K` |

@@ -1,10 +1,10 @@
 {
   "schema": "scpn-fusion-core.whole_plant_fault_tolerant_scenario.v1",
   "seed": 42,
-  "campaign_status": "partial_available_evidence_blocked_subsystems",
+  "campaign_status": "available_reduced_order_evidence_no_hardware_claim",
   "passes_available_evidence": true,
   "full_whole_plant_claim_ready": false,
-  "claim_boundary": "Reduced-order software campaign only. This is not plant hardware, physical HIL, certified fault tolerance, REBCO quench protection, or direct-energy-conversion fault evidence.",
+  "claim_boundary": "Reduced-order software campaign only. This is not plant hardware, physical HIL, certified fault tolerance, certified REBCO quench protection, validated direct-energy conversion, finite-element analysis, or plant qualification.",
   "scenario_rows": [
     {
       "scenario_id": "vertical_excursion_vde",
@@ -64,23 +64,31 @@
     },
     {
       "scenario_id": "direct_energy_conversion_fault",
-      "status": "blocked_no_subsystem_model",
-      "evidence_source": "none",
-      "response_time_s": null,
-      "passes_thresholds": false,
-      "summary": "No direct-energy-conversion subsystem model exists in this repository."
+      "status": "measured_reduced_order",
+      "evidence_source": "scpn_fusion.core.direct_energy_conversion",
+      "response_time_s": 0.0079,
+      "passes_thresholds": true,
+      "summary": "fail-closed 7.90 ms; isolated energy 0.0394 MJ"
     },
     {
       "scenario_id": "rebco_quench_fault",
-      "status": "blocked_no_subsystem_model",
-      "evidence_source": "none",
+      "status": "measured_reduced_order",
+      "evidence_source": "scpn_fusion.core.hts_quench",
+      "response_time_s": 0.045000000000000005,
+      "passes_thresholds": true,
+      "summary": "hotspot 20.00 K; terminal 810.0 V"
+    },
+    {
+      "scenario_id": "disruption_structural_shock_strain",
+      "status": "measured_reduced_order",
+      "evidence_source": "scpn_fusion.core.disruption_structural_response",
       "response_time_s": null,
-      "passes_thresholds": false,
-      "summary": "No REBCO/HTS quench dynamics subsystem model exists in this repository."
+      "passes_thresholds": true,
+      "summary": "stress margin 5.66; strain margin 7.76; displacement 0.920 mm"
     }
   ],
-  "measured_lane_count": 7,
-  "blocked_lane_count": 2,
+  "measured_lane_count": 10,
+  "blocked_lane_count": 0,
   "measured_lanes": {
     "task13_disruption_policy": {
       "scenario": {
@@ -96,7 +104,7 @@
       "policy_closed_loop": {
         "config_path": "task13_dummy.json",
         "steps": 104,
-        "runtime_seconds": 0.03021363099105656,
+        "runtime_seconds": 0.03892536199418828,
         "final_target_ip_ma": 7.0,
         "final_r_axis": 6.0,
         "final_z_axis": -5.551115123125783e-17,
@@ -186,7 +194,7 @@
         "summary": {
           "config_path": "task14_dummy.json",
           "steps": 96,
-          "runtime_seconds": 0.028538967977510765,
+          "runtime_seconds": 0.038053296972066164,
           "final_target_ip_ma": 7.0,
           "final_r_axis": 6.0,
           "final_z_axis": -5.551115123125783e-17,
@@ -329,27 +337,54 @@
       },
       "failure_reasons": [],
       "passes_thresholds": true
+    },
+    "direct_energy_conversion": {
+      "status": "reduced_order_dec_fault_boundary",
+      "nominal_electric_power_mw": 9.072,
+      "degraded_electric_power_mw": 3.1751999999999994,
+      "isolated_energy_mj": 0.03941784000000001,
+      "bus_overvoltage_fraction": 0.00038011525619596753,
+      "peak_dump_power_mw": 144.0,
+      "fail_closed_time_ms": 7.9,
+      "passes_thresholds": true,
+      "failure_reasons": [],
+      "claim_boundary": "Reduced-order direct-energy-conversion fault boundary only; not a validated DEC subsystem, power-electronics design, or hardware interlock."
+    },
+    "rebco_quench": {
+      "status": "reduced_order_quench_screen",
+      "current_sharing_margin_k": 25.0,
+      "current_margin_fraction": 0.35714285714285715,
+      "detection_voltage_v": 0.002255625,
+      "detection_time_s": 0.045000000000000005,
+      "dump_time_constant_s": 4.0,
+      "current_after_1s_a": 14018.414095285289,
+      "peak_terminal_voltage_v": 810.0,
+      "normal_zone_length_m": 0.10025,
+      "joule_energy_j": 83.02955625,
+      "cooling_energy_j": 86.01450000000001,
+      "hotspot_temperature_k": 20.0,
+      "strain_proxy_percent": 0.16,
+      "passes_thresholds": true,
+      "failure_reasons": [],
+      "claim_boundary": "Reduced-order REBCO/HTS quench screen only; not a certified magnet protection design, hardware quench detector, or conductor qualification."
+    },
+    "disruption_structural_response": {
+      "status": "reduced_order_structural_shock_screen",
+      "peak_line_force_mn_per_m": 2.9700000000000006,
+      "bending_stress_mpa": 67.1049749113179,
+      "hoop_stress_mpa": 52.80000000000001,
+      "equivalent_stress_mpa": 61.219073682399184,
+      "peak_strain": 0.0003222056509599957,
+      "displacement_mm": 0.9197502043766164,
+      "stress_margin": 5.662723164763194,
+      "strain_margin": 7.759019720949569,
+      "passes_thresholds": true,
+      "failure_reasons": [],
+      "claim_boundary": "Reduced-order structural shock screen only; not finite-element analysis, vessel certification, or component stress qualification."
     }
   },
-  "blocked_subsystems": [
-    {
-      "scenario_id": "direct_energy_conversion_fault",
-      "status": "blocked_no_subsystem_model",
-      "evidence_source": "none",
-      "response_time_s": null,
-      "passes_thresholds": false,
-      "summary": "No direct-energy-conversion subsystem model exists in this repository."
-    },
-    {
-      "scenario_id": "rebco_quench_fault",
-      "status": "blocked_no_subsystem_model",
-      "evidence_source": "none",
-      "response_time_s": null,
-      "passes_thresholds": false,
-      "summary": "No REBCO/HTS quench dynamics subsystem model exists in this repository."
-    }
-  ],
-  "trace_checksum": "e373a0c9fdc889b84853141062af48bcd478b97192b6c48c76b53bbe1f8b22fa",
-  "generated_at_utc": "2026-06-17T18:08:04.265427+00:00",
-  "runtime_seconds": 0.0961630090023391
+  "blocked_subsystems": [],
+  "trace_checksum": "4b0f4d2e1714a2dc5abb8c039c895e42c9de525a9e9511a7581f0514d126734a",
+  "generated_at_utc": "2026-06-17T21:27:01.724756+00:00",
+  "runtime_seconds": 0.12759829801507294
 }

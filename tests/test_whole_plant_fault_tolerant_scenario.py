@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,7 @@ SPEC = importlib.util.spec_from_file_location(
 )
 assert SPEC and SPEC.loader
 whole_plant_fault_tolerant_scenario = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = whole_plant_fault_tolerant_scenario
 SPEC.loader.exec_module(whole_plant_fault_tolerant_scenario)
 
 
@@ -34,8 +36,8 @@ def test_campaign_passes_available_reduced_order_evidence() -> None:
     assert report["schema"] == "scpn-fusion-core.whole_plant_fault_tolerant_scenario.v1"
     assert report["passes_available_evidence"] is True
     assert report["full_whole_plant_claim_ready"] is False
-    assert report["measured_lane_count"] == 7
-    assert report["blocked_lane_count"] == 2
+    assert report["measured_lane_count"] == 10
+    assert report["blocked_lane_count"] == 0
     assert "Reduced-order software campaign only" in report["claim_boundary"]
 
     measured_ids = {
@@ -46,14 +48,15 @@ def test_campaign_passes_available_reduced_order_evidence() -> None:
         "controller_failover",
         "cooling_thermal_limit",
         "shielding_wall_load_warning",
+        "direct_energy_conversion_fault",
+        "rebco_quench_fault",
+        "disruption_structural_shock_strain",
     }
     for scenario_id in measured_ids:
         assert rows[scenario_id]["status"] == "measured_reduced_order"
         assert rows[scenario_id]["passes_thresholds"] is True
 
-    for scenario_id in ("direct_energy_conversion_fault", "rebco_quench_fault"):
-        assert rows[scenario_id]["status"] == "blocked_no_subsystem_model"
-        assert rows[scenario_id]["passes_thresholds"] is False
+    assert report["blocked_subsystems"] == []
 
 
 def test_campaign_trace_checksum_is_deterministic_for_seed() -> None:
@@ -77,9 +80,11 @@ def test_markdown_contains_scenario_and_blocked_subsystems() -> None:
     assert "Scenario Matrix" in text
     assert "Fault Controller" in text
     assert "Thermal And Wall Loads" in text
+    assert "Subsystem Fault Lanes" in text
     assert "Blocked Subsystems" in text
     assert "direct_energy_conversion_fault" in text
     assert "rebco_quench_fault" in text
+    assert "None at the reduced-order software-model layer" in text
 
 
 def test_cli_writes_json_and_markdown(tmp_path: Path) -> None:

@@ -221,7 +221,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | Closed-loop HIL latency | **24.5 us P50** legacy collect-results row | `RESULTS.md`; re-run with `python validation/collect_results.py` |
 | Taskset-affinity CPU sensor-to-control latency | **0.053408 ms P95** on logical CPUs 10,11; not shielded cpuset evidence | `validation/reports/scpn_end_to_end_latency.md` records the exact command |
 | Simulated 256-actuator HIL scaffold | **232.522 us P95** host ADC/DAC loop; not physical HIL rig timing | `python validation/scpn_end_to_end_latency.py --strict` |
-| Whole-plant fault scenario campaign | **7/7 measured reduced-order lanes pass**; **2 subsystem lanes blocked** (DEC, REBCO/HTS quench); not plant-certified fault tolerance | `python validation/whole_plant_fault_tolerant_scenario.py --strict` |
+| Whole-plant fault scenario campaign | **10/10 measured reduced-order lanes pass**; DEC, REBCO/HTS quench, and disruption structural-shock screens now have software evidence; not plant hardware, HIL, FEA-grade, or certified fault tolerance | `python validation/whole_plant_fault_tolerant_scenario.py --strict` |
 | Rust full-order GS solve | **413 us** SOR / **845 us** multigrid (33x33 local Criterion; multigrid is slower in this low-grid case) | `cargo bench -p fusion-core --bench picard_bench` |
 | Rust vacuum field solve | **140 us** (33x33) / **489 us** (65x65) | `cargo bench -p fusion-core --bench vacuum_bench` |
 | QLKNN-10D transport surrogate | test rel_L2 = **0.094** | `weights/neural_transport_qlknn.metrics.json` |

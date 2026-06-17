@@ -10,7 +10,7 @@
 
 This campaign consolidates existing SCPN Fusion Core safety and fault lanes into
 one evidence surface. It intentionally distinguishes measured reduced-order
-software evidence from blocked physical plant subsystems.
+software evidence from plant hardware, HIL, and certification claims.
 """
 
 from __future__ import annotations
@@ -38,7 +38,14 @@ from scpn_fusion.control.fault_tolerant_control import (  # noqa: E402
     FaultType,
     ReconfigurableController,
 )
+from scpn_fusion.core.direct_energy_conversion import (  # noqa: E402
+    evaluate_direct_energy_conversion_fault,
+)
 from scpn_fusion.core.divertor_thermal_sim import DivertorLab  # noqa: E402
+from scpn_fusion.core.disruption_structural_response import (  # noqa: E402
+    evaluate_disruption_structural_response,
+)
+from scpn_fusion.core.hts_quench import evaluate_rebco_quench  # noqa: E402
 from scpn_fusion.core.plasma_wall_interaction import TransientThermalLoad, WallThermalModel  # noqa: E402
 from scpn_fusion.engineering.thermal_hydraulics import CoolantLoop  # noqa: E402
 from task13_free_boundary_disruption_policy_recovery import (  # type: ignore[import-not-found] # noqa: E402
@@ -261,8 +268,8 @@ def run_campaign(*, seed: int = 42) -> dict[str, Any]:
     Returns
     -------
     dict[str, Any]
-        Scenario rows, measured-lane diagnostics, blocked-subsystem rows, and
-        available-evidence gate status.
+        Scenario rows, measured-lane diagnostics, residual blocked-subsystem
+        rows, and available-evidence gate status.
     """
     seed_i = _require_int("seed", seed, 0)
     task13 = run_task13_campaign(seed=seed_i, shot_length=104, control_dt_s=0.05)[
@@ -273,6 +280,9 @@ def run_campaign(*, seed: int = 42) -> dict[str, Any]:
     ]
     fault_control = _run_fault_controller_lane(seed_i + 211)
     thermal_wall = _run_thermal_wall_lane()
+    dec_fault = evaluate_direct_energy_conversion_fault().to_dict()
+    rebco_quench = evaluate_rebco_quench().to_dict()
+    structural_response = evaluate_disruption_structural_response().to_dict()
 
     task13_closed = task13["policy_closed_loop"]
     task14_summary = task14["faulted_replay"]["summary"]
@@ -356,19 +366,37 @@ def run_campaign(*, seed: int = 42) -> dict[str, Any]:
         ),
         _scenario_row(
             "direct_energy_conversion_fault",
-            status="blocked_no_subsystem_model",
-            evidence_source="none",
-            response_time_s=None,
-            pass_status=False,
-            summary="No direct-energy-conversion subsystem model exists in this repository.",
+            status="measured_reduced_order",
+            evidence_source="scpn_fusion.core.direct_energy_conversion",
+            response_time_s=float(dec_fault["fail_closed_time_ms"]) * 1.0e-3,
+            pass_status=bool(dec_fault["passes_thresholds"]),
+            summary=(
+                f"fail-closed {dec_fault['fail_closed_time_ms']:.2f} ms; "
+                f"isolated energy {dec_fault['isolated_energy_mj']:.4f} MJ"
+            ),
         ),
         _scenario_row(
             "rebco_quench_fault",
-            status="blocked_no_subsystem_model",
-            evidence_source="none",
+            status="measured_reduced_order",
+            evidence_source="scpn_fusion.core.hts_quench",
+            response_time_s=float(rebco_quench["detection_time_s"]),
+            pass_status=bool(rebco_quench["passes_thresholds"]),
+            summary=(
+                f"hotspot {rebco_quench['hotspot_temperature_k']:.2f} K; "
+                f"terminal {rebco_quench['peak_terminal_voltage_v']:.1f} V"
+            ),
+        ),
+        _scenario_row(
+            "disruption_structural_shock_strain",
+            status="measured_reduced_order",
+            evidence_source="scpn_fusion.core.disruption_structural_response",
             response_time_s=None,
-            pass_status=False,
-            summary="No REBCO/HTS quench dynamics subsystem model exists in this repository.",
+            pass_status=bool(structural_response["passes_thresholds"]),
+            summary=(
+                f"stress margin {structural_response['stress_margin']:.2f}; "
+                f"strain margin {structural_response['strain_margin']:.2f}; "
+                f"displacement {structural_response['displacement_mm']:.3f} mm"
+            ),
         ),
     ]
     measured_rows = [row for row in rows if row["status"] == "measured_reduced_order"]
@@ -377,13 +405,14 @@ def run_campaign(*, seed: int = 42) -> dict[str, Any]:
     payload = {
         "schema": "scpn-fusion-core.whole_plant_fault_tolerant_scenario.v1",
         "seed": seed_i,
-        "campaign_status": "partial_available_evidence_blocked_subsystems",
+        "campaign_status": "available_reduced_order_evidence_no_hardware_claim",
         "passes_available_evidence": available_evidence_pass,
         "full_whole_plant_claim_ready": False,
         "claim_boundary": (
             "Reduced-order software campaign only. This is not plant hardware, "
-            "physical HIL, certified fault tolerance, REBCO quench protection, "
-            "or direct-energy-conversion fault evidence."
+            "physical HIL, certified fault tolerance, certified REBCO quench "
+            "protection, validated direct-energy conversion, finite-element "
+            "analysis, or plant qualification."
         ),
         "scenario_rows": rows,
         "measured_lane_count": len(measured_rows),
@@ -393,6 +422,9 @@ def run_campaign(*, seed: int = 42) -> dict[str, Any]:
             "task14_failsafe_dropout": task14,
             "fault_controller": fault_control,
             "thermal_wall": thermal_wall,
+            "direct_energy_conversion": dec_fault,
+            "rebco_quench": rebco_quench,
+            "disruption_structural_response": structural_response,
         },
         "blocked_subsystems": blocked_rows,
     }
@@ -401,6 +433,9 @@ def run_campaign(*, seed: int = 42) -> dict[str, Any]:
             "scenario_rows": rows,
             "fault_controller": fault_control,
             "thermal_wall": thermal_wall,
+            "direct_energy_conversion": dec_fault,
+            "rebco_quench": rebco_quench,
+            "disruption_structural_response": structural_response,
             "task13_signature": task13_closed["replay_signature"],
             "task14_signature": task14_summary["replay_signature"],
         }
@@ -465,6 +500,9 @@ def render_markdown(report: dict[str, Any]) -> str:
 
     fault = report["measured_lanes"]["fault_controller"]
     thermal = report["measured_lanes"]["thermal_wall"]
+    dec = report["measured_lanes"]["direct_energy_conversion"]
+    rebco = report["measured_lanes"]["rebco_quench"]
+    structural = report["measured_lanes"]["disruption_structural_response"]
     first_detection = (
         "n/a"
         if fault["first_sensor_detection_s"] is None
@@ -490,12 +528,27 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Disruption delta-T: `{thermal['disruption_delta_t_k']:.3f} K`",
             f"- ELM cycles to fatigue: `{thermal['elm_cycles_to_fatigue']}`",
             "",
+            "## Subsystem Fault Lanes",
+            "",
+            f"- DEC fail-closed time: `{dec['fail_closed_time_ms']:.3f} ms`",
+            f"- DEC isolated energy: `{dec['isolated_energy_mj']:.4f} MJ`",
+            f"- REBCO quench detection time: `{rebco['detection_time_s']:.3f} s`",
+            f"- REBCO hotspot temperature: `{rebco['hotspot_temperature_k']:.2f} K`",
+            f"- Structural equivalent stress: `{structural['equivalent_stress_mpa']:.2f} MPa`",
+            f"- Structural displacement: `{structural['displacement_mm']:.3f} mm`",
+            "",
             "## Blocked Subsystems",
             "",
         ]
     )
-    for row in report["blocked_subsystems"]:
-        lines.append(f"- `{row['scenario_id']}`: `{row['status']}` — {row['summary']}")
+    if report["blocked_subsystems"]:
+        for row in report["blocked_subsystems"]:
+            lines.append(f"- `{row['scenario_id']}`: `{row['status']}` — {row['summary']}")
+    else:
+        lines.append(
+            "- None at the reduced-order software-model layer; hardware, HIL, "
+            "certification, and FEA-grade claims remain blocked by the claim boundary."
+        )
     return "\n".join(lines)
 
 

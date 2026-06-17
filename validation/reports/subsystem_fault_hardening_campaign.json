@@ -1,0 +1,86 @@
+{
+  "schema": "scpn-fusion-core.subsystem_fault_hardening.v1",
+  "campaign_status": "reduced_order_software_evidence_no_hardware_claim",
+  "passes_available_evidence": true,
+  "full_fidelity_claim_ready": false,
+  "claim_boundary": "Reduced-order software campaign only. This is not certified quench protection, validated direct-energy conversion, finite-element analysis, hardware-in-the-loop evidence, or plant qualification.",
+  "scenario_rows": [
+    {
+      "scenario_id": "rebco_quench_fault",
+      "status": "measured_reduced_order",
+      "evidence_source": "scpn_fusion.core.hts_quench.evaluate_rebco_quench",
+      "response_time_s": 0.045000000000000005,
+      "passes_thresholds": true,
+      "summary": "hotspot 20.00 K; terminal 810.0 V; detection 0.0023 V",
+      "claim_boundary": "Reduced-order REBCO/HTS quench screen only; not a certified magnet protection design, hardware quench detector, or conductor qualification."
+    },
+    {
+      "scenario_id": "direct_energy_conversion_fault",
+      "status": "measured_reduced_order",
+      "evidence_source": "scpn_fusion.core.direct_energy_conversion.evaluate_direct_energy_conversion_fault",
+      "response_time_s": 0.0079,
+      "passes_thresholds": true,
+      "summary": "fail-closed 7.90 ms; isolated energy 0.0394 MJ; bus overvoltage 0.0004",
+      "claim_boundary": "Reduced-order direct-energy-conversion fault boundary only; not a validated DEC subsystem, power-electronics design, or hardware interlock."
+    },
+    {
+      "scenario_id": "disruption_structural_shock_strain",
+      "status": "measured_reduced_order",
+      "evidence_source": "scpn_fusion.core.disruption_structural_response.evaluate_disruption_structural_response",
+      "response_time_s": null,
+      "passes_thresholds": true,
+      "summary": "equivalent stress 61.22 MPa; stress margin 5.66; strain margin 7.76",
+      "claim_boundary": "Reduced-order structural shock screen only; not finite-element analysis, vessel certification, or component stress qualification."
+    }
+  ],
+  "measured_lane_count": 3,
+  "diagnostics": {
+    "rebco_quench": {
+      "status": "reduced_order_quench_screen",
+      "current_sharing_margin_k": 25.0,
+      "current_margin_fraction": 0.35714285714285715,
+      "detection_voltage_v": 0.002255625,
+      "detection_time_s": 0.045000000000000005,
+      "dump_time_constant_s": 4.0,
+      "current_after_1s_a": 14018.414095285289,
+      "peak_terminal_voltage_v": 810.0,
+      "normal_zone_length_m": 0.10025,
+      "joule_energy_j": 83.02955625,
+      "cooling_energy_j": 86.01450000000001,
+      "hotspot_temperature_k": 20.0,
+      "strain_proxy_percent": 0.16,
+      "passes_thresholds": true,
+      "failure_reasons": [],
+      "claim_boundary": "Reduced-order REBCO/HTS quench screen only; not a certified magnet protection design, hardware quench detector, or conductor qualification."
+    },
+    "direct_energy_conversion": {
+      "status": "reduced_order_dec_fault_boundary",
+      "nominal_electric_power_mw": 9.072,
+      "degraded_electric_power_mw": 3.1751999999999994,
+      "isolated_energy_mj": 0.03941784000000001,
+      "bus_overvoltage_fraction": 0.00038011525619596753,
+      "peak_dump_power_mw": 144.0,
+      "fail_closed_time_ms": 7.9,
+      "passes_thresholds": true,
+      "failure_reasons": [],
+      "claim_boundary": "Reduced-order direct-energy-conversion fault boundary only; not a validated DEC subsystem, power-electronics design, or hardware interlock."
+    },
+    "disruption_structural_response": {
+      "status": "reduced_order_structural_shock_screen",
+      "peak_line_force_mn_per_m": 2.9700000000000006,
+      "bending_stress_mpa": 67.1049749113179,
+      "hoop_stress_mpa": 52.80000000000001,
+      "equivalent_stress_mpa": 61.219073682399184,
+      "peak_strain": 0.0003222056509599957,
+      "displacement_mm": 0.9197502043766164,
+      "stress_margin": 5.662723164763194,
+      "strain_margin": 7.759019720949569,
+      "passes_thresholds": true,
+      "failure_reasons": [],
+      "claim_boundary": "Reduced-order structural shock screen only; not finite-element analysis, vessel certification, or component stress qualification."
+    }
+  },
+  "trace_checksum": "02ea136ca10bc12444e253390fa92e0501a16759e66407282a719d2236a91a16",
+  "generated_at_utc": "2026-06-17T21:27:01.484344+00:00",
+  "runtime_seconds": 0.00018888601334765553
+}

@@ -403,6 +403,38 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "VesselModel": (".vessel_model", "VesselModel"),
     # Tokamak machine presets (ITER, SPARC, DIII-D, JET)
     "TokamakConfig": (".tokamak_config", "TokamakConfig"),
+    # Fault hardening — reduced-order REBCO, DEC, and disruption structural screens
+    "REBCOConductor": (".hts_quench", "REBCOConductor"),
+    "QuenchScenario": (".hts_quench", "QuenchScenario"),
+    "QuenchReport": (".hts_quench", "QuenchReport"),
+    "current_sharing_temperature_k": (".hts_quench", "current_sharing_temperature_k"),
+    "evaluate_rebco_quench": (".hts_quench", "evaluate_rebco_quench"),
+    "DirectEnergyConversionChannel": (
+        ".direct_energy_conversion",
+        "DirectEnergyConversionChannel",
+    ),
+    "DirectEnergyConversionFault": (
+        ".direct_energy_conversion",
+        "DirectEnergyConversionFault",
+    ),
+    "DirectEnergyConversionReport": (
+        ".direct_energy_conversion",
+        "DirectEnergyConversionReport",
+    ),
+    "evaluate_direct_energy_conversion_fault": (
+        ".direct_energy_conversion",
+        "evaluate_direct_energy_conversion_fault",
+    ),
+    "StructuralMember": (".disruption_structural_response", "StructuralMember"),
+    "DisruptionLoad": (".disruption_structural_response", "DisruptionLoad"),
+    "StructuralResponseReport": (
+        ".disruption_structural_response",
+        "StructuralResponseReport",
+    ),
+    "evaluate_disruption_structural_response": (
+        ".disruption_structural_response",
+        "evaluate_disruption_structural_response",
+    ),
     # IMAS/OMAS adapter
     "EquilibriumIDS": (".imas_adapter", "EquilibriumIDS"),
     # Ballooning MHD stability
