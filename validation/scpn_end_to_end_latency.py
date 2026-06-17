@@ -78,6 +78,8 @@ _PIPELINE_STAGE_KEYS = (
     "fallback_policy",
     "output_serialization",
 )
+_ACTUATOR_SCALING_COUNTS = (2, 16, 64, 128, 256)
+_PREDICTIVE_HORIZON_MS = (50, 100)
 
 
 def _build_scpn_controller() -> NeuroSymbolicController:
@@ -233,6 +235,47 @@ def _summary(values: FloatArray) -> dict[str, float]:
     }
 
 
+def _actuator_weights(actuator_count: int) -> FloatArray:
+    """Return deterministic actuator fanout weights.
+
+    Parameters
+    ----------
+    actuator_count
+        Number of actuator channels in the command vector.
+
+    Returns
+    -------
+    numpy.ndarray
+        Positive weights used to fan out the two logical controller actions.
+    """
+    count = int(actuator_count)
+    if count < 1:
+        raise ValueError("actuator_count must be >= 1.")
+    phase = np.arange(count, dtype=np.float64) / float(count)
+    return 0.35 + 0.65 * (0.5 + 0.5 * np.sin(2.0 * np.pi * phase))
+
+
+def _expand_actuator_command(command: FloatArray, actuator_count: int) -> FloatArray:
+    """Fan out a two-channel controller command to a physical actuator vector.
+
+    Parameters
+    ----------
+    command
+        Two-channel logical controller command.
+    actuator_count
+        Number of physical actuator channels to emit.
+
+    Returns
+    -------
+    numpy.ndarray
+        Bounded actuator vector with ``actuator_count`` entries.
+    """
+    if command.shape != (2,):
+        raise ValueError("command must contain exactly two logical channels.")
+    repeated = np.resize(command, int(actuator_count))
+    return np.clip(repeated * _actuator_weights(actuator_count), -1.0, 1.0)
+
+
 def _host_snapshot() -> dict[str, Any]:
     """Collect non-secret host metadata needed to bound local benchmark claims.
 
@@ -265,7 +308,7 @@ def _host_snapshot() -> dict[str, Any]:
     }
 
 
-def _run_gpu_digital_twin_latency(*, steps: int) -> dict[str, Any]:
+def _run_gpu_digital_twin_latency(*, steps: int, actuator_count: int = 2) -> dict[str, Any]:
     """Measure the same sensor-to-control contract on a CUDA/CuPy device.
 
     Returns
@@ -287,6 +330,8 @@ def _run_gpu_digital_twin_latency(*, steps: int) -> dict[str, Any]:
             "--gpu-only",
             "--steps",
             str(steps),
+            "--actuators",
+            str(actuator_count),
         ]
         proc = subprocess.run(
             cmd,
@@ -385,6 +430,10 @@ def _run_gpu_digital_twin_latency(*, steps: int) -> dict[str, Any]:
         with device:
             cp.cuda.runtime.deviceSynchronize()
             state = cp.asarray([0.50, 0.52, 0.55, 0.0], dtype=cp.float64)
+            actuator_weights = cp.asarray(
+                _actuator_weights(actuator_count),
+                dtype=cp.float64,
+            )
             coupling = cp.asarray(
                 [
                     [0.92, 0.04, -0.02, 0.00],
@@ -467,7 +516,8 @@ def _run_gpu_digital_twin_latency(*, steps: int) -> dict[str, Any]:
                 stage_samples["controller_decision"][k] = (time.perf_counter() - t0) * 1e3
 
                 t0 = time.perf_counter()
-                safe_command = cp.clip(command, -1.0, 1.0)
+                expanded_command = cp.resize(command, actuator_count) * actuator_weights
+                safe_command = cp.clip(expanded_command, -1.0, 1.0)
                 cp.cuda.runtime.deviceSynchronize()
                 safe_host = cp.asnumpy(safe_command)
                 if not np.all(np.isfinite(safe_host)):
@@ -478,8 +528,7 @@ def _run_gpu_digital_twin_latency(*, steps: int) -> dict[str, Any]:
                 t0 = time.perf_counter()
                 payload = {
                     "step": k,
-                    "vertical_command": float(safe_host[0]),
-                    "heating_command": float(safe_host[1]),
+                    "commands": [float(value) for value in safe_host.tolist()],
                     "fallback": False,
                 }
                 encoded = json.dumps(payload, separators=(",", ":"), sort_keys=True)
@@ -508,6 +557,7 @@ def _run_gpu_digital_twin_latency(*, steps: int) -> dict[str, Any]:
         "preloaded_cuda_libraries": preload,
         "device_name": str(cp.cuda.runtime.getDeviceProperties(0).get("name", b"unknown")),
         "steps": steps,
+        "actuator_count": actuator_count,
         "fallback_count": int(fallback_count),
         "checksum": float(checksum),
         "p50_loop_ms": _pctl(loop_ms, 50),
@@ -865,13 +915,155 @@ def _run_digital_twin_case(case_name: str, *, steps: int) -> dict[str, Any]:
     }
 
 
-def _run_rust_digital_twin_latency(*, steps: int) -> dict[str, Any]:
+def _run_actuator_scaling_cpu_case(*, actuator_count: int, steps: int) -> dict[str, Any]:
+    """Measure CPU sensor-to-control timing while fanning out many actuators.
+
+    Parameters
+    ----------
+    actuator_count
+        Number of actuator channels to serialise each control step.
+    steps
+        Number of measured samples.
+
+    Returns
+    -------
+    dict[str, Any]
+        Latency percentiles and serialised-output size metadata.
+    """
+    state = np.array([0.50, 0.52, 0.55, 0.0], dtype=np.float64)
+    last_snapshot = {
+        "ip_ma": 1.2,
+        "beta_n": 2.0,
+        "q95": 4.2,
+        "density_1e19": 6.5,
+        "z_m": 0.0,
+    }
+    loop_ms = np.zeros(steps, dtype=np.float64)
+    serialisation_ms = np.zeros(steps, dtype=np.float64)
+    payload_bytes = np.zeros(steps, dtype=np.float64)
+    checksum = 0.0
+    safe_outputs = 0
+    for k in range(steps):
+        loop_start = time.perf_counter()
+        snapshot = _snapshot_for_case("nominal", k, last_snapshot)
+        cleaned, fallback, reason = _validate_snapshot(snapshot)
+        features = _features_from_snapshot(cleaned, last_snapshot)
+        state = _digital_twin_update(state, features)
+        command = _controller_decision(state, features)
+        safe_command, fallback, reason = _apply_fallback_policy(
+            command,
+            fallback_in=fallback,
+            reason_in=reason,
+        )
+        if fallback:
+            safe_command = np.zeros(2, dtype=np.float64)
+        actuator_vector = _expand_actuator_command(safe_command, actuator_count)
+        if np.all(np.isfinite(actuator_vector)) and np.all(np.abs(actuator_vector) <= 1.0):
+            safe_outputs += 1
+
+        t0 = time.perf_counter()
+        payload = {
+            "step": k,
+            "commands": [float(value) for value in actuator_vector],
+            "fallback": fallback,
+        }
+        encoded = json.dumps(payload, separators=(",", ":"), sort_keys=True)
+        serialisation_ms[k] = (time.perf_counter() - t0) * 1e3
+        payload_bytes[k] = float(len(encoded))
+        checksum += float(np.sum(actuator_vector)) + payload_bytes[k] * 1e-6
+        last_snapshot = cleaned
+        loop_ms[k] = (time.perf_counter() - loop_start) * 1e3
+    return {
+        "status": "measured",
+        "backend": "python_numpy_cpu",
+        "actuator_count": int(actuator_count),
+        "steps": int(steps),
+        "safe_output_rate": float(safe_outputs / max(steps, 1)),
+        "mean_payload_bytes": float(np.mean(payload_bytes)),
+        "checksum": float(checksum),
+        "p50_loop_ms": _pctl(loop_ms, 50),
+        "p95_loop_ms": _pctl(loop_ms, 95),
+        "p99_loop_ms": _pctl(loop_ms, 99),
+        "serialization": _summary(serialisation_ms),
+    }
+
+
+def _run_predictive_horizon_case(*, horizon_ms: int, steps: int) -> dict[str, Any]:
+    """Measure reduced-order forecast timing for a fixed predictive horizon.
+
+    Parameters
+    ----------
+    horizon_ms
+        Forecast horizon in milliseconds at 1 ms rollout resolution.
+    steps
+        Number of measured forecast calls.
+
+    Returns
+    -------
+    dict[str, Any]
+        Forecast latency percentiles and real-time factor metadata.
+    """
+    horizon_steps = int(horizon_ms)
+    if horizon_steps < 1:
+        raise ValueError("horizon_ms must be >= 1.")
+    state0 = np.array([0.50, 0.52, 0.55, 0.0], dtype=np.float64)
+    loop_ms = np.zeros(steps, dtype=np.float64)
+    checksum = 0.0
+    for k in range(steps):
+        state = state0 + np.array(
+            [
+                0.01 * math.sin(0.02 * k),
+                0.01 * math.cos(0.017 * k),
+                0.005 * math.sin(0.011 * k),
+                0.002 * math.cos(0.031 * k),
+            ],
+            dtype=np.float64,
+        )
+        t0 = time.perf_counter()
+        for h in range(horizon_steps):
+            phase = 0.013 * float(k + h)
+            features = np.array(
+                [
+                    0.60 + 0.02 * math.sin(phase),
+                    0.50 + 0.03 * math.sin(0.7 * phase),
+                    0.52 - 0.01 * math.cos(0.5 * phase),
+                    0.54 + 0.01 * math.sin(0.3 * phase),
+                    0.06 * math.sin(1.3 * phase),
+                    0.02 * math.cos(0.9 * phase),
+                ],
+                dtype=np.float64,
+            )
+            state = _digital_twin_update(state, features)
+            command = _controller_decision(state, features)
+            state[3] += 0.002 * float(command[0])
+            state[0] += 0.001 * float(command[1])
+        loop_ms[k] = (time.perf_counter() - t0) * 1e3
+        checksum += float(np.sum(state))
+    p95 = _pctl(loop_ms, 95)
+    return {
+        "status": "measured",
+        "backend": "python_numpy_cpu",
+        "horizon_ms": int(horizon_ms),
+        "rollout_dt_ms": 1,
+        "steps": int(steps),
+        "checksum": float(checksum),
+        "p50_forecast_ms": _pctl(loop_ms, 50),
+        "p95_forecast_ms": p95,
+        "p99_forecast_ms": _pctl(loop_ms, 99),
+        "p95_real_time_factor": float(horizon_ms / max(p95, 1.0e-9)),
+        "passes_realtime": bool(p95 <= float(horizon_ms)),
+    }
+
+
+def _run_rust_digital_twin_latency(*, steps: int, actuator_count: int = 2) -> dict[str, Any]:
     """Run the native Rust digital-twin latency benchmark when Cargo is available.
 
     Parameters
     ----------
     steps
         Number of measured Rust samples.
+    actuator_count
+        Number of actuator channels emitted and serialised by the Rust path.
 
     Returns
     -------
@@ -897,6 +1089,8 @@ def _run_rust_digital_twin_latency(*, steps: int) -> dict[str, Any]:
         "--",
         "--steps",
         str(steps),
+        "--actuators",
+        str(actuator_count),
         "--json",
     ]
     started = time.perf_counter()
@@ -960,6 +1154,96 @@ def shutil_which(executable: str) -> str | None:
         if path.is_file() and os.access(path, os.X_OK):
             return str(path)
     return None
+
+
+def run_actuator_scaling_campaign(*, steps: int = 160) -> dict[str, Any]:
+    """Measure actuator-count scaling for CPU, Rust, and CUDA lanes.
+
+    Parameters
+    ----------
+    steps
+        Number of samples per actuator-count row.
+
+    Returns
+    -------
+    dict[str, Any]
+        Scaling rows through the `>200` actuator target surface.
+    """
+    steps = int(steps)
+    if steps < 32:
+        raise ValueError("steps must be >= 32.")
+    rows: list[dict[str, Any]] = []
+    for count in _ACTUATOR_SCALING_COUNTS:
+        cpu = _run_actuator_scaling_cpu_case(actuator_count=count, steps=steps)
+        rust = _run_rust_digital_twin_latency(steps=steps, actuator_count=count)
+        gpu = _run_gpu_digital_twin_latency(steps=steps, actuator_count=count)
+        rows.append(
+            {
+                "actuator_count": count,
+                "cpu": cpu,
+                "rust": rust,
+                "gpu": gpu,
+                "measured_lane_count": int(
+                    1
+                    + (1 if rust.get("status") == "measured" else 0)
+                    + (1 if gpu.get("status") == "measured" else 0)
+                ),
+            }
+        )
+    row_256 = next(row for row in rows if row["actuator_count"] == 256)
+    return {
+        "schema": "scpn-fusion-core.digital_twin_actuator_scaling.v1",
+        "actuator_counts": list(_ACTUATOR_SCALING_COUNTS),
+        "rows": rows,
+        "passes_thresholds": bool(
+            row_256["cpu"]["safe_output_rate"] == 1.0
+            and row_256["cpu"]["p95_loop_ms"] <= 2.0
+            and row_256["rust"].get("status") == "measured"
+            and float(row_256["rust"].get("p95_loop_ms", float("inf"))) <= 2.0
+        ),
+        "thresholds": {
+            "required_actuator_count": 256,
+            "max_cpu_256_p95_loop_ms": 2.0,
+            "max_rust_256_p95_loop_ms": 2.0,
+            "gpu_row_required": False,
+        },
+        "claim_boundary": (
+            "Actuator-count scaling measures command fanout and output serialisation "
+            "for the reduced-order local benchmark. It is not actuator hardware timing."
+        ),
+    }
+
+
+def run_predictive_horizon_campaign(*, steps: int = 160) -> dict[str, Any]:
+    """Measure 50 ms and 100 ms reduced-order forecast horizon timing.
+
+    Parameters
+    ----------
+    steps
+        Number of forecast calls per horizon row.
+
+    Returns
+    -------
+    dict[str, Any]
+        Forecast timing rows and real-time-factor gates.
+    """
+    rows = [
+        _run_predictive_horizon_case(horizon_ms=horizon, steps=steps)
+        for horizon in _PREDICTIVE_HORIZON_MS
+    ]
+    return {
+        "schema": "scpn-fusion-core.digital_twin_predictive_horizon.v1",
+        "rows": rows,
+        "passes_thresholds": bool(all(row["passes_realtime"] for row in rows)),
+        "thresholds": {
+            "required_horizons_ms": list(_PREDICTIVE_HORIZON_MS),
+            "forecast_must_run_faster_than_horizon": True,
+        },
+        "claim_boundary": (
+            "Forecast timing is a reduced-order local digital-twin rollout. It is "
+            "not a validated 50-100 ms plasma-instability prediction horizon."
+        ),
+    }
 
 
 def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
@@ -1223,12 +1507,18 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
     """Build and return the end-to-end latency report payload."""
     t0 = time.perf_counter()
     campaign = run_campaign(**kwargs)
-    digital_twin = run_digital_twin_latency_campaign(steps=int(kwargs.get("steps", 320)))
+    steps = int(kwargs.get("steps", 320))
+    digital_twin = run_digital_twin_latency_campaign(steps=steps)
+    scaling_steps = max(32, min(steps, 160))
+    actuator_scaling = run_actuator_scaling_campaign(steps=scaling_steps)
+    predictive_horizon = run_predictive_horizon_campaign(steps=scaling_steps)
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runtime_seconds": float(time.perf_counter() - t0),
         "scpn_end_to_end_latency": campaign,
         "digital_twin_control_latency": digital_twin,
+        "actuator_count_scaling": actuator_scaling,
+        "predictive_horizon": predictive_horizon,
     }
 
 
@@ -1307,6 +1597,43 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{'YES' if rec['passes_semantics'] else 'NO'} | {reasons or 'none'} |"
         )
     lines.append("")
+    scaling = report["actuator_count_scaling"]
+    lines.extend(
+        [
+            "## Actuator-Count Scaling",
+            "",
+            scaling["claim_boundary"],
+            "",
+            "| Actuators | CPU p95 [ms] | Rust p95 [ms] | CUDA p95 [ms] | Measured lanes |",
+            "|-----------|--------------|---------------|---------------|----------------|",
+        ]
+    )
+    for row in scaling["rows"]:
+        lines.append(
+            f"| {row['actuator_count']} | "
+            f"{_fmt_optional_ms(row['cpu'].get('p95_loop_ms'))} | "
+            f"{_fmt_optional_ms(row['rust'].get('p95_loop_ms'))} | "
+            f"{_fmt_optional_ms(row['gpu'].get('p95_loop_ms'))} | "
+            f"{row['measured_lane_count']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Predictive-Horizon Timing",
+            "",
+            report["predictive_horizon"]["claim_boundary"],
+            "",
+            "| Horizon [ms] | p50 forecast [ms] | p95 forecast [ms] | p99 forecast [ms] | p95 real-time factor | Pass |",
+            "|--------------|-------------------|-------------------|-------------------|----------------------|------|",
+        ]
+    )
+    for row in report["predictive_horizon"]["rows"]:
+        lines.append(
+            f"| {row['horizon_ms']} | {row['p50_forecast_ms']:.6f} | "
+            f"{row['p95_forecast_ms']:.6f} | {row['p99_forecast_ms']:.6f} | "
+            f"{row['p95_real_time_factor']:.3f} | {'YES' if row['passes_realtime'] else 'NO'} |"
+        )
+    lines.append("")
     for mode in ("surrogate", "full"):
         lines.extend(
             [
@@ -1358,12 +1685,18 @@ def main(argv: list[str] | None = None) -> int:
         "--output-md",
         default=str(ROOT / "validation" / "reports" / "scpn_end_to_end_latency.md"),
     )
+    parser.add_argument("--actuators", type=int, default=2, help=argparse.SUPPRESS)
     parser.add_argument("--gpu-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
 
     if args.gpu_only:
-        print(json.dumps(_run_gpu_digital_twin_latency(steps=args.steps), sort_keys=True))
+        print(
+            json.dumps(
+                _run_gpu_digital_twin_latency(steps=args.steps, actuator_count=args.actuators),
+                sort_keys=True,
+            )
+        )
         return 0
 
     report = generate_report(seed=args.seed, steps=args.steps)
@@ -1384,7 +1717,14 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     twin = report["digital_twin_control_latency"]
-    if args.strict and (not g["passes_thresholds"] or not twin["passes_thresholds"]):
+    scaling = report["actuator_count_scaling"]
+    horizon = report["predictive_horizon"]
+    if args.strict and (
+        not g["passes_thresholds"]
+        or not twin["passes_thresholds"]
+        or not scaling["passes_thresholds"]
+        or not horizon["passes_thresholds"]
+    ):
         return 2
     return 0
 

@@ -73,6 +73,29 @@ def test_digital_twin_cpu_stage_schema_is_complete() -> None:
         assert rec["p99_ms"] >= rec["p95_ms"]
 
 
+def test_actuator_scaling_reaches_more_than_two_hundred_channels() -> None:
+    out = scpn_end_to_end_latency.run_actuator_scaling_campaign(steps=64)
+    assert out["schema"] == "scpn-fusion-core.digital_twin_actuator_scaling.v1"
+    rows = {row["actuator_count"]: row for row in out["rows"]}
+    assert 256 in rows
+    row_256 = rows[256]
+    assert row_256["cpu"]["status"] == "measured"
+    assert row_256["cpu"]["safe_output_rate"] == 1.0
+    assert row_256["rust"]["status"].startswith("blocked_") or row_256["rust"]["status"] == "measured"
+    assert row_256["gpu"]["status"].startswith("blocked_") or row_256["gpu"]["status"] == "measured"
+
+
+def test_predictive_horizon_campaign_covers_competitor_range() -> None:
+    out = scpn_end_to_end_latency.run_predictive_horizon_campaign(steps=64)
+    assert out["schema"] == "scpn-fusion-core.digital_twin_predictive_horizon.v1"
+    rows = {row["horizon_ms"]: row for row in out["rows"]}
+    assert set(rows) == {50, 100}
+    for row in rows.values():
+        assert row["p95_forecast_ms"] > 0.0
+        assert row["p95_real_time_factor"] > 1.0
+        assert row["passes_realtime"] is True
+
+
 def test_campaign_has_deterministic_rmse_for_seed() -> None:
     a = scpn_end_to_end_latency.run_campaign(seed=42, steps=180)
     b = scpn_end_to_end_latency.run_campaign(seed=42, steps=180)
@@ -102,6 +125,8 @@ def test_render_markdown_contains_latency_sections() -> None:
     text = scpn_end_to_end_latency.render_markdown(report)
     assert "# SCPN End-to-End Latency Benchmark" in text
     assert "Digital-Twin Sensor-to-Control Path" in text
+    assert "Actuator-Count Scaling" in text
+    assert "Predictive-Horizon Timing" in text
     assert "Degraded Modes" in text
     assert "Python CPU" in text
     assert "Rust native" in text
@@ -131,3 +156,5 @@ def test_cli_writes_reports_and_strict_passes(tmp_path: Path) -> None:
     payload = json.loads(out_json.read_text(encoding="utf-8"))
     assert "scpn_end_to_end_latency" in payload
     assert "digital_twin_control_latency" in payload
+    assert "actuator_count_scaling" in payload
+    assert "predictive_horizon" in payload

@@ -551,7 +551,9 @@ sensor-to-control path, use `validation/scpn_end_to_end_latency.py`. The
 tracked 2026-06-17 local run reports Python CPU and Rust native
 sensor-to-control p50/p95/p99 latency, CUDA GPU p50/p95/p99 latency on the
 operator-reserved NVIDIA GeForce GTX 1060 6GB device, host-load metadata, and
-degraded-mode fallback counts; see
+degraded-mode fallback counts. It also reports actuator fanout through `256`
+channels and reduced-order predictive-horizon timing at `50 ms` and `100 ms`;
+see
 `validation/reports/scpn_end_to_end_latency.md`.
 
 Rust full-order equilibrium benchmarks are tracked separately from the

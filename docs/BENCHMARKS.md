@@ -328,15 +328,35 @@ Current local non-isolated sensor-to-control rows:
 
 | Lane | Status | p50 loop | p95 loop | p99 loop | Boundary |
 |---|---|---:|---:|---:|---|
-| Python CPU | measured | `0.033269 ms` | `0.038555 ms` | `0.046308 ms` | local wall-clock regression evidence |
-| Rust native | measured | `0.019566 ms` | `0.019960 ms` | `0.025563 ms` | local release binary |
-| CUDA GPU | measured | `0.665243 ms` | `0.847707 ms` | `1.005122 ms` | operator-reserved NVIDIA GeForce GTX 1060 6GB; local CuPy/CUDA path |
+| Python CPU | measured | `0.034026 ms` | `0.046184 ms` | `0.058611 ms` | local wall-clock regression evidence |
+| Rust native | measured | `0.019957 ms` | `0.022279 ms` | `0.026322 ms` | local release binary |
+| CUDA GPU | measured | `0.735895 ms` | `1.019303 ms` | `1.280550 ms` | operator-reserved NVIDIA GeForce GTX 1060 6GB; local CuPy/CUDA path |
 
 These rows are not hardware-in-the-loop timing claims and are not
 isolated-core production throughput claims. The CUDA row measures the same
 reduced-order sensor-to-control contract with host snapshot assembly and output
 serialisation included; it is not a claim about full-order plant simulation
 or actuator hardware timing.
+
+Actuator-count scaling through the competitor-relevant `>200` channel surface:
+
+| Actuators | CPU p95 | Rust p95 | CUDA p95 | Measured lanes |
+|---:|---:|---:|---:|---:|
+| `2` | `0.084140 ms` | `0.029088 ms` | `1.079834 ms` | `3` |
+| `16` | `0.131076 ms` | `0.023659 ms` | `1.136501 ms` | `3` |
+| `64` | `0.136059 ms` | `0.044102 ms` | `1.148275 ms` | `3` |
+| `128` | `0.126704 ms` | `0.034328 ms` | `1.214223 ms` | `3` |
+| `256` | `0.356137 ms` | `0.052569 ms` | `1.064266 ms` | `3` |
+
+Reduced-order predictive-horizon timing:
+
+| Horizon | p95 forecast | p95 real-time factor | Status |
+|---:|---:|---:|---|
+| `50 ms` | `0.672888 ms` | `74.307x` | pass |
+| `100 ms` | `1.628676 ms` | `61.400x` | pass |
+
+The forecast rows measure reduced-order rollout timing only. They are not
+validated plasma-instability prediction horizons.
 
 | Benchmark | Median |
 |---|---:|

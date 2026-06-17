@@ -39,8 +39,9 @@ impl StageSamples {
     }
 }
 
-fn parse_steps() -> Result<usize, String> {
+fn parse_args() -> Result<(usize, usize), String> {
     let mut steps = 320_usize;
+    let mut actuators = 2_usize;
     let mut args = env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -52,9 +53,17 @@ fn parse_steps() -> Result<usize, String> {
                     .parse::<usize>()
                     .map_err(|e| format!("invalid --steps value {raw:?}: {e}"))?;
             }
+            "--actuators" => {
+                let raw = args
+                    .next()
+                    .ok_or_else(|| "--actuators requires a positive integer".to_string())?;
+                actuators = raw
+                    .parse::<usize>()
+                    .map_err(|e| format!("invalid --actuators value {raw:?}: {e}"))?;
+            }
             "--json" => {}
             "--help" | "-h" => {
-                println!("usage: digital_twin_latency [--steps N] [--json]");
+                println!("usage: digital_twin_latency [--steps N] [--actuators N] [--json]");
                 std::process::exit(0);
             }
             other => return Err(format!("unknown argument: {other}")),
@@ -63,7 +72,10 @@ fn parse_steps() -> Result<usize, String> {
     if steps < 32 {
         return Err("steps must be >= 32".to_string());
     }
-    Ok(steps)
+    if actuators < 1 {
+        return Err("actuators must be >= 1".to_string());
+    }
+    Ok((steps, actuators))
 }
 
 fn pct(values: &[f64], pct: f64) -> f64 {
@@ -93,13 +105,19 @@ fn json_stage(name: &str, values: &[f64]) -> String {
 }
 
 fn main() -> Result<(), String> {
-    let steps = parse_steps()?;
+    let (steps, actuator_count) = parse_args()?;
     let mut plasma = Plasma2D::new();
     let mut controller = SimpleMLP::new(GRID).map_err(|e| e.to_string())?;
-    let mut actuator = ActuatorDelayLine::new(1, 1, 0.5).map_err(|e| e.to_string())?;
+    let mut actuator = ActuatorDelayLine::new(actuator_count, 1, 0.5).map_err(|e| e.to_string())?;
     let mut samples = StageSamples::new(steps);
     let mut fallback_count = 0_usize;
     let mut checksum = 0.0_f64;
+    let weights: Vec<f64> = (0..actuator_count)
+        .map(|i| {
+            let phase = i as f64 / actuator_count.max(1) as f64;
+            0.35 + 0.65 * (0.5 + 0.5 * (2.0 * std::f64::consts::PI * phase).sin())
+        })
+        .collect();
 
     for k in 0..steps {
         let loop_start = Instant::now();
@@ -139,17 +157,18 @@ fn main() -> Result<(), String> {
             fallback_count += 1;
             0.0
         };
-        let applied = actuator
-            .push(Array1::from_vec(vec![safe_action]))
-            .map_err(|e| e.to_string())?;
+        let command = Array1::from_vec(weights.iter().map(|w| safe_action * *w).collect());
+        let applied = actuator.push(command).map_err(|e| e.to_string())?;
         samples.fallback_ms.push(t0.elapsed().as_secs_f64() * 1.0e3);
 
         let t0 = Instant::now();
-        let serialised = format!(
-            "{{\"step\":{k},\"action\":{:.9},\"applied\":{:.9},\"avg_temp\":{:.9}}}",
-            safe_action, applied[0], avg
-        );
-        checksum += serialised.len() as f64 * 1.0e-6 + safe_action + applied[0];
+        let actions = applied
+            .iter()
+            .map(|value| format!("{value:.9}"))
+            .collect::<Vec<_>>()
+            .join(",");
+        let serialised = format!("{{\"step\":{k},\"actions\":[{actions}],\"avg_temp\":{avg:.9}}}");
+        checksum += serialised.len() as f64 * 1.0e-6 + applied.sum();
         samples
             .serialization_ms
             .push(t0.elapsed().as_secs_f64() * 1.0e3);
@@ -160,10 +179,11 @@ fn main() -> Result<(), String> {
     }
 
     println!(
-        "{{\"status\":\"measured\",\"backend\":\"rust_release\",\"steps\":{},\
+        "{{\"status\":\"measured\",\"backend\":\"rust_release\",\"steps\":{},\"actuator_count\":{},\
          \"p50_loop_ms\":{:.9},\"p95_loop_ms\":{:.9},\"p99_loop_ms\":{:.9},\
          \"fallback_count\":{},\"checksum\":{:.9},\"stages\":{{{},{},{},{},{},{}}}}}",
         steps,
+        actuator_count,
         pct(&samples.loop_ms, 50.0),
         pct(&samples.loop_ms, 95.0),
         pct(&samples.loop_ms, 99.0),
