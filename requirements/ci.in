@@ -10,12 +10,14 @@ pytest>=7.0
 pytest-cov>=5.0
 hypothesis>=6.0
 mypy>=1.10
+types-psutil>=7.2.2.20260518
 ruff>=0.8
 bandit>=1.7
 pre-commit>=3.0
 jax[cpu]
 gymnasium
 jsonschema>=4.26.0
+tornado>=6.5.7
 
 # Dependabot security floors for CI transitive tooling.
 Pygments>=2.20.0
