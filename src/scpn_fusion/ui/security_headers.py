@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, cast
 
 SECURITY_HEADERS: Mapping[str, str] = {
     "Content-Security-Policy": (
@@ -39,7 +39,8 @@ def _header_install_wrapper(
         for name, value in headers.items():
             self.set_header(name, value)
 
-    _set_default_headers._scpn_security_headers = True
+    wrapped = cast(Any, _set_default_headers)
+    wrapped._scpn_security_headers = True
     return _set_default_headers
 
 
@@ -53,7 +54,8 @@ def install_tornado_security_headers(headers: Mapping[str, str] = SECURITY_HEADE
     current = tornado.web.RequestHandler.set_default_headers
     if getattr(current, "_scpn_security_headers", False):
         return True
-    tornado.web.RequestHandler.set_default_headers = _header_install_wrapper(current, headers)
+    request_handler = cast(Any, tornado.web.RequestHandler)
+    request_handler.set_default_headers = _header_install_wrapper(current, headers)
     return True
 
 

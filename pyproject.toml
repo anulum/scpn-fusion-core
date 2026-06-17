@@ -142,6 +142,12 @@ files = [
     # hpc/
     "src/scpn_fusion/hpc/__init__.py",
     "src/scpn_fusion/hpc/hpc_bridge.py",
+    # ui/
+    "src/scpn_fusion/ui/__init__.py",
+    "src/scpn_fusion/ui/app.py",
+    "src/scpn_fusion/ui/dashboard_generator.py",
+    "src/scpn_fusion/ui/dashboard_launcher.py",
+    "src/scpn_fusion/ui/security_headers.py",
     # nuclear/
     "src/scpn_fusion/nuclear/__init__.py",
     "src/scpn_fusion/nuclear/blanket_neutronics.py",

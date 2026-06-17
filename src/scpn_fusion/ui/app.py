@@ -17,18 +17,21 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
+import importlib
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from scpn_fusion.ui.security_headers import install_tornado_security_headers
 
 install_tornado_security_headers()
 
 try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:  # pragma: no cover - platform fallback
-    from scpn_fusion.core.fusion_kernel import FusionKernel
-from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
+    FusionKernel: Any = importlib.import_module("scpn_fusion.core._rust_compat").FusionKernel
+except (AttributeError, ImportError):  # pragma: no cover - platform fallback
+    FusionKernel = importlib.import_module("scpn_fusion.core.fusion_kernel").FusionKernel
+FusionBurnPhysics: Any = importlib.import_module(
+    "scpn_fusion.core.fusion_ignition_sim"
+).FusionBurnPhysics
 from scpn_fusion.nuclear.nuclear_wall_interaction import NuclearEngineeringLab
 from scpn_fusion.engineering.balance_of_plant import PowerPlantModel
 
@@ -91,7 +94,12 @@ def main() -> None:
                     ax.contour(kernel.RR, kernel.ZZ, kernel.Psi, levels=20, colors="black")
                     im = ax.imshow(
                         kernel.J_phi,
-                        extent=[kernel.R[0], kernel.R[-1], kernel.Z[0], kernel.Z[-1]],
+                        extent=(
+                            float(kernel.R[0]),
+                            float(kernel.R[-1]),
+                            float(kernel.Z[0]),
+                            float(kernel.Z[-1]),
+                        ),
                         origin="lower",
                         cmap="hot",
                         alpha=0.6,
@@ -282,8 +290,9 @@ def main() -> None:
                     ax2.set_title("Toroidal Mode Structure")
                     ax2.legend(fontsize=9)
                     ax2.grid(True, alpha=0.3)
-                    ax2.tight_layout()
-                    st.pyplot(ax2.figure)
+                    fig2.tight_layout()
+                    st.pyplot(fig2)
+                    plt.close(fig2)
 
                     st.subheader("Disruption Risk Score (Sliding Window)")
                     window_size = 50
@@ -366,7 +375,7 @@ def main() -> None:
                     st.table(rows)
 
     st.sidebar.markdown("---")
-    st.sidebar.info("Developed by SCPN AI Agent (2026)")
+    st.sidebar.info("SCPN Fusion Core dashboard (2026)")
 
 
 if __name__ == "__main__":

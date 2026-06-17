@@ -29,6 +29,10 @@
 - Added synthetic sensors, tomography, and diagnostics-demo runtime surfaces to
   the configured mypy strict cohort with typed NumPy geometry, measurement, and
   factory fallback contracts.
+- Added Streamlit UI, dashboard launcher, dashboard generator, and security
+  header surfaces to the configured mypy strict cohort with typed dynamic
+  solver-factory and Tornado patch boundaries; neutralised dashboard footer
+  identity wording.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,

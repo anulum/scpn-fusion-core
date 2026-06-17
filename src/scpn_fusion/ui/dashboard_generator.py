@@ -12,6 +12,7 @@ The generator produces high-level geometry diagnostics derived from a solved
 
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 from typing import Any
 
@@ -21,9 +22,9 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 try:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
-except ImportError:
-    FusionKernel = None  # type: ignore[assignment]
+    FusionKernel: Any | None = importlib.import_module("scpn_fusion.core.fusion_kernel").FusionKernel
+except (AttributeError, ImportError):
+    FusionKernel = None
 
 logger = logging.getLogger(__name__)
 
