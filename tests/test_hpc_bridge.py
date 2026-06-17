@@ -331,6 +331,42 @@ def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None
     assert not bridge.loaded
 
 
+def test_init_rejects_relative_env_override_before_cdll(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def _fake_cdll(path: str):
+        calls.append(path)
+        raise AssertionError("relative override must not reach ctypes")
+
+    monkeypatch.setenv("SCPN_SOLVER_LIB", "libscpn_solver.so")
+    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+
+    bridge = HPCBridge()
+
+    assert not bridge.loaded
+    assert bridge.load_error is not None
+    assert "absolute path" in bridge.load_error
+    assert calls == []
+
+
+def test_init_rejects_relative_lib_path_before_cdll(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def _fake_cdll(path: str):
+        calls.append(path)
+        raise AssertionError("relative lib_path must not reach ctypes")
+
+    monkeypatch.delenv("SCPN_SOLVER_LIB", raising=False)
+    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+
+    bridge = HPCBridge("libscpn_solver.so")
+
+    assert not bridge.loaded
+    assert bridge.load_error is not None
+    assert "absolute path" in bridge.load_error
+    assert calls == []
+
+
 def test_init_uses_package_local_default_without_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
     def _raise_cdll(_path: str):
         raise OSError("no library")

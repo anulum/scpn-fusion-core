@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 _CPP_BUILD_TIMEOUT_SECONDS = 300.0
 _CPP_ALLOWED_COMPILERS = frozenset({"g++", "g++.exe", "clang++", "clang++.exe"})
 _SHA256_HEX_LEN = 64
+_SOLVER_LIB_ENV = "SCPN_SOLVER_LIB"
 
 
 def _as_contiguous_f64(array: NDArray[np.floating[Any]]) -> NDArray[np.float64]:
@@ -198,6 +199,34 @@ def _verify_native_library_trust(path: Path) -> str:
     return digest
 
 
+def _require_explicit_library_path(path: str | os.PathLike[str]) -> Path:
+    """Validate an explicit native-library override before ``ctypes`` loading."""
+    lib_path = Path(path).expanduser()
+    if not lib_path.is_absolute():
+        raise ValueError(f"{_SOLVER_LIB_ENV}/lib_path must be an absolute path")
+    if lib_path.is_symlink():
+        raise ValueError(f"explicit native solver library must not be a symlink: {lib_path}")
+    resolved = lib_path.resolve(strict=False)
+    if not resolved.exists():
+        raise ValueError(f"explicit native solver library does not exist: {resolved}")
+    if not resolved.is_file():
+        raise ValueError(f"explicit native solver library must be a regular file: {resolved}")
+    return resolved
+
+
+def _default_library_path(lib_name: str) -> Path:
+    """Return a package-local native-library path without consulting cwd."""
+    here = Path(__file__).resolve().parent
+    candidates = (
+        here / lib_name,
+        here / "bin" / lib_name,
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate.resolve()
+    return (here / lib_name).resolve()
+
+
 def _write_sha256_sidecar(path: Path) -> None:
     path.with_suffix(path.suffix + ".sha256").write_text(
         f"{_sha256_file(path)}  {path.name}\n",
@@ -234,27 +263,26 @@ class HPCBridge:
         self._has_boundary_api: bool = False
 
         lib_name = "scpn_solver.dll" if platform.system() == "Windows" else "libscpn_solver.so"
-        env_path = os.environ.get("SCPN_SOLVER_LIB")
+        env_path = os.environ.get(_SOLVER_LIB_ENV)
+        explicit_override = lib_path is not None or bool(env_path)
         if lib_path is None and env_path:
             lib_path = env_path
 
-        if lib_path is None:
-            here = Path(__file__).resolve().parent
-            candidates = [
-                here / lib_name,
-                here / "bin" / lib_name,
-            ]
-            for c in candidates:
-                if c.exists():
-                    lib_path = str(c)
-                    break
-            if lib_path is None:
-                lib_path = str(here / lib_name)
+        try:
+            if explicit_override:
+                resolved_lib_path = _require_explicit_library_path(str(lib_path))
+            else:
+                resolved_lib_path = _default_library_path(lib_name)
+        except ValueError as exc:
+            self.lib_path = str(lib_path)
+            self.load_error = str(exc)
+            logger.warning("Refusing native C++ accelerator override: %s", exc)
+            return
 
-        self.lib_path = str(lib_path)
+        self.lib_path = str(resolved_lib_path)
 
         try:
-            lib_file = Path(self.lib_path)
+            lib_file = resolved_lib_path
             if lib_file.exists():
                 self.lib_sha256 = _verify_native_library_trust(lib_file)
             self.lib = ctypes.CDLL(self.lib_path)

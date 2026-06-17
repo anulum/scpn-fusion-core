@@ -87,6 +87,16 @@ bridge for interfacing with external HPC solvers:
 - ``ctypes``-based Python bindings for calling compiled C++ from Python
 - Shared-memory data exchange to avoid serialisation overhead
 
+Native library loading is fail-closed. By default, ``HPCBridge`` only attempts
+package-local solver libraries under ``scpn_fusion/hpc`` or
+``scpn_fusion/hpc/bin``. External libraries must be provided through an
+absolute ``SCPN_SOLVER_LIB`` path or explicit ``lib_path`` argument, must be a
+regular file, and must carry trust metadata through ``SCPN_SOLVER_LIB_SHA256``,
+``SCPN_SOLVER_TRUST_MANIFEST``, or a ``.sha256`` sidecar before ``ctypes`` is
+allowed to load them. Relative paths are rejected so the process current
+directory and dynamic-loader search path cannot silently select a native
+solver.
+
 This bridge is primarily used for prototyping custom solver kernels
 before porting them to Rust.
 
