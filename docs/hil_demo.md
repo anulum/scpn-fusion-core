@@ -37,7 +37,7 @@ Tracked report:
 [`validation/reports/scpn_end_to_end_latency.md`](../validation/reports/scpn_end_to_end_latency.md)
 
 Current local row: `simulated_host_adc_dac_loop`, 256 actuator channels,
-nominal p95 `203.927000 us`, p99 `270.075290 us`, with fail-closed degraded
+nominal p95 `232.522000 us`, p99 `294.771870 us`, with fail-closed degraded
 rows for sensor dropout, noisy sensor, actuator saturation, and non-finite
 controller output. This is a measured software scaffold only. It is not a
 physical HIL rig, FPGA bitstream, plant CODAC, or actuator hardware timing

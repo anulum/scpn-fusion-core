@@ -219,7 +219,8 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 |--------|-------|-----------------|
 | Rust PID kernel latency | **0.52 us P50** | `validation/verify_10khz_rust.py` |
 | Closed-loop HIL latency | **10.5 us P50** | `python validation/collect_results.py` |
-| Simulated 256-actuator HIL scaffold | **203.927 us P95** host ADC/DAC loop; not physical HIL rig timing | `python validation/scpn_end_to_end_latency.py --strict` |
+| Taskset-affinity CPU sensor-to-control latency | **0.053408 ms P95** on logical CPUs 10,11; not shielded cpuset evidence | `validation/reports/scpn_end_to_end_latency.md` records the exact command |
+| Simulated 256-actuator HIL scaffold | **232.522 us P95** host ADC/DAC loop; not physical HIL rig timing | `python validation/scpn_end_to_end_latency.py --strict` |
 | Rust full-order GS solve | **413 us** SOR / **845 us** multigrid (33x33 local Criterion; multigrid is slower in this low-grid case) | `cargo bench -p fusion-core --bench picard_bench` |
 | Rust vacuum field solve | **140 us** (33x33) / **489 us** (65x65) | `cargo bench -p fusion-core --bench vacuum_bench` |
 | QLKNN-10D transport surrogate | test rel_L2 = **0.094** | `weights/neural_transport_qlknn.metrics.json` |
@@ -241,6 +242,10 @@ full-mode p95 0.047 ms; full definitions:
 The 256-actuator HIL scaffold row is a measured host-side simulated ADC/DAC
 contract, not a physical rig, FPGA bitstream, CODAC, or actuator-hardware
 timing claim.
+The current sensor-to-control timing artifact records a taskset-affinity run on
+logical CPUs `10,11`, including command, affinity, host load before/after, CPU
+governor/frequency context, and concurrent-heavy-job note. It is not a shielded
+cpuset or dedicated-runner claim.
 
 Full numbers: [`RESULTS.md`](RESULTS.md) — re-run `python validation/collect_results.py` to reproduce.
 

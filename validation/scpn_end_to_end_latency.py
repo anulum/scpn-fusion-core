@@ -236,6 +236,64 @@ def _summary(values: FloatArray) -> dict[str, float]:
     }
 
 
+def _read_sysfs_value(path: Path) -> str | None:
+    """Read a single sysfs text value when it is available.
+
+    Parameters
+    ----------
+    path
+        Kernel sysfs file to read.
+
+    Returns
+    -------
+    str | None
+        Stripped text content, or ``None`` when the value is unavailable.
+    """
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+
+
+def _cpu_frequency_snapshot() -> dict[str, Any]:
+    """Collect CPU governor and frequency metadata from Linux sysfs.
+
+    Returns
+    -------
+    dict[str, Any]
+        Governor names and frequency ranges observed across online CPUs.
+    """
+    cpu_dirs = sorted(Path("/sys/devices/system/cpu").glob("cpu[0-9]*"))
+    governors: set[str] = set()
+    current_khz: list[int] = []
+    min_khz: list[int] = []
+    max_khz: list[int] = []
+    for cpu_dir in cpu_dirs:
+        cpufreq = cpu_dir / "cpufreq"
+        governor = _read_sysfs_value(cpufreq / "scaling_governor")
+        if governor:
+            governors.add(governor)
+        for path, bucket in (
+            (cpufreq / "scaling_cur_freq", current_khz),
+            (cpufreq / "scaling_min_freq", min_khz),
+            (cpufreq / "scaling_max_freq", max_khz),
+        ):
+            value = _read_sysfs_value(path)
+            if value is None:
+                continue
+            try:
+                bucket.append(int(value))
+            except ValueError:
+                continue
+    return {
+        "governors": sorted(governors),
+        "current_khz_min": min(current_khz) if current_khz else None,
+        "current_khz_max": max(current_khz) if current_khz else None,
+        "scaling_min_khz_min": min(min_khz) if min_khz else None,
+        "scaling_max_khz_max": max(max_khz) if max_khz else None,
+    }
+
+
 def _actuator_weights(actuator_count: int) -> FloatArray:
     """Return deterministic actuator fanout weights.
 
@@ -291,6 +349,14 @@ def _host_snapshot() -> dict[str, Any]:
     loadavg: tuple[float, ...] | None = None
     if hasattr(os, "getloadavg"):
         loadavg = tuple(float(v) for v in os.getloadavg())
+    isolation = os.environ.get("SCPN_BENCHMARK_ISOLATION_METHOD", "non_isolated_local_workstation")
+    boundary = os.environ.get(
+        "SCPN_BENCHMARK_CLAIM_BOUNDARY",
+        (
+            "Local wall-clock regression evidence only; not an isolated-core or "
+            "hardware-in-the-loop latency claim."
+        ),
+    )
     return {
         "platform": platform.platform(),
         "python_version": platform.python_version(),
@@ -299,13 +365,14 @@ def _host_snapshot() -> dict[str, Any]:
         "cpu_count": os.cpu_count(),
         "affinity_cpus": affinity,
         "affinity_cpu_count": len(affinity) if affinity is not None else None,
+        "reserved_cpu_set": os.environ.get("SCPN_BENCHMARK_CPUSET"),
         "loadavg_1_5_15": list(loadavg) if loadavg is not None else None,
         "numpy_version": np.__version__,
-        "isolation": "non_isolated_local_workstation",
-        "claim_boundary": (
-            "Local wall-clock regression evidence only; not an isolated-core or "
-            "hardware-in-the-loop latency claim."
-        ),
+        "cpu_frequency": _cpu_frequency_snapshot(),
+        "isolation": isolation,
+        "benchmark_command": os.environ.get("SCPN_BENCHMARK_COMMAND"),
+        "concurrent_heavy_jobs": os.environ.get("SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS"),
+        "claim_boundary": boundary,
     }
 
 
@@ -1284,16 +1351,22 @@ def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
         "schema": "scpn-fusion-core.digital_twin_control_latency.v1",
         "measurement_context": {
             "claim_boundary": (
-                "Python CPU and Rust rows are local non-isolated wall-clock measurements. "
+                host_before["claim_boundary"]
+                if host_before.get("isolation") != "non_isolated_local_workstation"
+                else "Python CPU and Rust rows are local non-isolated wall-clock measurements. "
                 "GPU rows are accelerator measurements only when status is measured. "
                 "HIL rows are simulated host ADC/DAC timing unless hardware_status names a physical rig."
             ),
             "accelerator_isolation_note": (
                 "CUDA device was operator-reserved for this benchmark run; CPU host "
-                "process remains a local non-isolated workstation measurement."
+                "process isolation is recorded in host_before/host_after."
             ),
             "warmup_policy": "No samples discarded; deterministic synthetic stream is measured from cold local process state.",
             "sample_count_per_case": steps,
+            "benchmark_command": host_before.get("benchmark_command"),
+            "cpu_isolation_method": host_before.get("isolation"),
+            "reserved_cpu_set": host_before.get("reserved_cpu_set"),
+            "concurrent_heavy_jobs": host_before.get("concurrent_heavy_jobs"),
             "host_before": host_before,
             "host_after": host_after,
         },
@@ -1559,7 +1632,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             (
                 f"| Python CPU | {cpu['status']} | {cpu['p50_loop_ms']:.6f} | "
                 f"{cpu['p95_loop_ms']:.6f} | {cpu['p99_loop_ms']:.6f} | "
-                "local non-isolated wall-clock |"
+                f"{twin['measurement_context'].get('cpu_isolation_method', 'unknown')} |"
             ),
             (
                 f"| Rust native | {rust.get('status', 'unknown')} | "
@@ -1575,6 +1648,16 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"{_fmt_optional_ms(gpu.get('p99_loop_ms'))} | "
                 f"{gpu.get('reason', gpu.get('claim_boundary', 'measured accelerator lane'))} |"
             ),
+            "",
+            "### Measurement Metadata",
+            "",
+            f"- Command: `{twin['measurement_context'].get('benchmark_command') or 'not_recorded'}`",
+            f"- CPU isolation method: `{twin['measurement_context'].get('cpu_isolation_method')}`",
+            f"- Reserved CPU set: `{twin['measurement_context'].get('reserved_cpu_set') or 'not_recorded'}`",
+            f"- Host load before: `{twin['measurement_context']['host_before'].get('loadavg_1_5_15')}`",
+            f"- Host load after: `{twin['measurement_context']['host_after'].get('loadavg_1_5_15')}`",
+            f"- CPU governors: `{twin['measurement_context']['host_before']['cpu_frequency'].get('governors')}`",
+            f"- Concurrent heavy jobs: `{twin['measurement_context'].get('concurrent_heavy_jobs') or 'not_recorded'}`",
             "",
             "### Simulated HIL Sensor-to-Actuator Scaffold",
             "",

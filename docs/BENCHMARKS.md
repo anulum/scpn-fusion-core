@@ -326,44 +326,46 @@ diagnostic, non-finite value, actuator saturation, and controller fallback. It
 also records a simulated host ADC/DAC sensor-to-actuator scaffold for 256
 actuator channels.
 
-Current local non-isolated sensor-to-control rows:
+Current taskset-affinity sensor-to-control rows:
 
 | Lane | Status | p50 loop | p95 loop | p99 loop | Boundary |
 |---|---|---:|---:|---:|---|
-| Python CPU | measured | `0.034983 ms` | `0.041437 ms` | `0.061708 ms` | local wall-clock regression evidence |
-| Rust native | measured | `0.020350 ms` | `0.025929 ms` | `0.029981 ms` | local release binary |
-| CUDA GPU | measured | `0.784985 ms` | `1.374682 ms` | `3.878414 ms` | operator-reserved NVIDIA GeForce GTX 1060 6GB; local CuPy/CUDA path |
+| Python CPU | measured | `0.034281 ms` | `0.053408 ms` | `0.062749 ms` | `taskset_affinity_operator_reserved_cores` on CPUs `10,11` |
+| Rust native | measured | `0.019581 ms` | `0.020284 ms` | `0.024611 ms` | inherited taskset affinity in local release binary |
+| CUDA GPU | measured | `0.710571 ms` | `0.840560 ms` | `1.011992 ms` | operator-reserved NVIDIA GeForce GTX 1060 6GB; local CuPy/CUDA path |
 
-These rows are not hardware-in-the-loop timing claims and are not
-isolated-core production throughput claims. The CUDA row measures the same
-reduced-order sensor-to-control contract with host snapshot assembly and output
-serialisation included; it is not a claim about full-order plant simulation
-or actuator hardware timing. The simulated HIL scaffold is a host-side ADC/DAC
-timing contract, not a physical HIL rig, FPGA bitstream, plant CODAC, or
-actuator hardware timing claim.
+These rows were measured with `taskset -c 10,11` and the report records the
+exact command, affinity, host load before/after, CPU governor/frequency
+snapshot, runtime versions, and concurrent-heavy-job note. This is stronger
+than the previous loaded-host run, but it is not a shielded cpuset or dedicated
+runner claim. The CUDA row measures the same reduced-order sensor-to-control
+contract with host snapshot assembly and output serialisation included; it is
+not a claim about full-order plant simulation or actuator hardware timing. The
+simulated HIL scaffold is a host-side ADC/DAC timing contract, not a physical
+HIL rig, FPGA bitstream, plant CODAC, or actuator hardware timing claim.
 
 Simulated HIL sensor-to-actuator scaffold:
 
 | Hardware status | Actuators | p50 | p95 | p99 | Status |
 |---|---:|---:|---:|---:|---|
-| simulated_host_adc_dac_loop | `256` | `166.574500 us` | `203.927000 us` | `270.075290 us` | pass |
+| simulated_host_adc_dac_loop | `256` | `167.140500 us` | `232.522000 us` | `294.771870 us` | pass |
 
 Actuator-count scaling through the competitor-relevant `>200` channel surface:
 
 | Actuators | CPU p95 | Rust p95 | CUDA p95 | Measured lanes |
 |---:|---:|---:|---:|---:|
-| `2` | `0.082381 ms` | `0.031709 ms` | `0.945895 ms` | `3` |
-| `16` | `0.067500 ms` | `0.022876 ms` | `0.877984 ms` | `3` |
-| `64` | `0.104616 ms` | `0.029172 ms` | `0.918282 ms` | `3` |
-| `128` | `0.140701 ms` | `0.050461 ms` | `0.997855 ms` | `3` |
-| `256` | `0.194781 ms` | `0.047782 ms` | `1.078829 ms` | `3` |
+| `2` | `0.070917 ms` | `0.021200 ms` | `0.859985 ms` | `3` |
+| `16` | `0.083223 ms` | `0.023589 ms` | `0.848174 ms` | `3` |
+| `64` | `0.114598 ms` | `0.038520 ms` | `1.046033 ms` | `3` |
+| `128` | `0.133026 ms` | `0.052389 ms` | `0.873599 ms` | `3` |
+| `256` | `0.219528 ms` | `0.059727 ms` | `0.885944 ms` | `3` |
 
 Reduced-order predictive-horizon timing:
 
 | Horizon | p95 forecast | p95 real-time factor | Status |
 |---:|---:|---:|---|
-| `50 ms` | `0.785309 ms` | `63.669x` | pass |
-| `100 ms` | `1.658421 ms` | `60.298x` | pass |
+| `50 ms` | `0.538453 ms` | `92.859x` | pass |
+| `100 ms` | `0.925584 ms` | `108.040x` | pass |
 
 The forecast rows measure reduced-order rollout timing only. They are not
 validated plasma-instability prediction horizons.

@@ -15,6 +15,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "scpn_end_to_end_latency.py"
 SPEC = importlib.util.spec_from_file_location("scpn_end_to_end_latency", MODULE_PATH)
@@ -43,7 +45,8 @@ def test_campaign_returns_expected_structure_and_passes_smoke() -> None:
 def test_digital_twin_latency_campaign_reports_cpu_rust_gpu_boundaries() -> None:
     out = scpn_end_to_end_latency.run_digital_twin_latency_campaign(steps=64)
     assert out["schema"] == "scpn-fusion-core.digital_twin_control_latency.v1"
-    assert out["measurement_context"]["host_before"]["isolation"] == "non_isolated_local_workstation"
+    assert "isolation" in out["measurement_context"]["host_before"]
+    assert "cpu_frequency" in out["measurement_context"]["host_before"]
     assert out["cpu"]["status"] == "measured"
     assert out["cpu"]["p95_loop_ms"] > 0.0
     assert out["cpu"]["p99_loop_ms"] >= out["cpu"]["p95_loop_ms"]
@@ -53,6 +56,22 @@ def test_digital_twin_latency_campaign_reports_cpu_rust_gpu_boundaries() -> None
     assert out["hil"]["hardware_status"] == "simulated_host_adc_dac_loop"
     assert out["hil"]["passes_thresholds"] is True
     assert out["hil"]["actuator_count"] == 256
+
+
+def test_host_snapshot_records_taskset_isolation_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SCPN_BENCHMARK_ISOLATION_METHOD", "taskset_affinity_operator_reserved_cores")
+    monkeypatch.setenv("SCPN_BENCHMARK_CPUSET", "10,11")
+    monkeypatch.setenv("SCPN_BENCHMARK_COMMAND", "taskset -c 10,11 python validation/scpn_end_to_end_latency.py --strict")
+    monkeypatch.setenv("SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS", "none_intentionally_started_by_this_task")
+    monkeypatch.setenv("SCPN_BENCHMARK_CLAIM_BOUNDARY", "Taskset affinity benchmark evidence.")
+
+    snapshot = scpn_end_to_end_latency._host_snapshot()
+
+    assert snapshot["isolation"] == "taskset_affinity_operator_reserved_cores"
+    assert snapshot["reserved_cpu_set"] == "10,11"
+    assert snapshot["benchmark_command"].startswith("taskset -c 10,11")
+    assert snapshot["concurrent_heavy_jobs"] == "none_intentionally_started_by_this_task"
+    assert snapshot["claim_boundary"] == "Taskset affinity benchmark evidence."
 
 
 def test_digital_twin_degraded_modes_fail_closed_with_safe_outputs() -> None:
