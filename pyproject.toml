@@ -188,6 +188,10 @@ files = [
     "src/scpn_fusion/engineering/balance_of_plant.py",
     "src/scpn_fusion/engineering/cad_raytrace.py",
     "src/scpn_fusion/engineering/thermal_hydraulics.py",
+    # Runtime compatibility strict cohort
+    "src/scpn_fusion/exceptions.py",
+    "src/scpn_fusion/fallback_telemetry.py",
+    "src/scpn_fusion/neurocore_compat.py",
 ]
 
 [[tool.mypy.overrides]]

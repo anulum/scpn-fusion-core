@@ -81,7 +81,7 @@ def pack_bitstream(bitstream: NDArray[Any]) -> UInt64Array:
         bits = np.pad(bits, (0, pad), mode="constant")
     words_bits = bits.reshape(n_words, 64).astype(np.uint64)
     shifts = np.arange(64, dtype=np.uint64).reshape(1, 64)
-    return np.sum(words_bits << shifts, axis=1, dtype=np.uint64)
+    return np.asarray(np.sum(words_bits << shifts, axis=1, dtype=np.uint64), dtype=np.uint64)
 
 
 def vec_and(a_packed: UInt64Array, b_packed: UInt64Array) -> UInt64Array:

@@ -15,6 +15,9 @@
 - Added the engineering thermal-hydraulics, balance-of-plant, and CAD raytrace
   package surfaces to the configured mypy strict cohort with explicit coolant
   and plant-performance result contracts.
+- Added runtime compatibility, fallback telemetry, and exception hierarchy
+  surfaces to the configured mypy strict cohort with an explicit packed
+  stochastic-bitstream return contract.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,
