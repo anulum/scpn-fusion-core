@@ -183,6 +183,11 @@ files = [
     "src/scpn_fusion/phase/realtime_monitor.py",
     "src/scpn_fusion/phase/upde.py",
     "src/scpn_fusion/phase/ws_phase_stream.py",
+    # Engineering strict cohort
+    "src/scpn_fusion/engineering/__init__.py",
+    "src/scpn_fusion/engineering/balance_of_plant.py",
+    "src/scpn_fusion/engineering/cad_raytrace.py",
+    "src/scpn_fusion/engineering/thermal_hydraulics.py",
 ]
 
 [[tool.mypy.overrides]]

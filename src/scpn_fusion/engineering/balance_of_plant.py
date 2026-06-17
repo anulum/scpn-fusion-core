@@ -7,9 +7,35 @@
 # SCPN Fusion Core — Balance Of Plant
 """Balance-of-plant performance model for conversion efficiency and parasitic loads."""
 
+from __future__ import annotations
+
+from typing import Any, TypedDict
+
 import matplotlib.pyplot as plt
 
 from scpn_fusion.engineering.thermal_hydraulics import CoolantLoop
+
+
+class PlantPowerBreakdown(TypedDict):
+    """Parasitic-load breakdown for balance-of-plant accounting."""
+
+    Cryo: float
+    Pumps: float
+    Heating_Plug: float
+    Misc: float
+
+
+class PlantPerformance(TypedDict):
+    """Balance-of-plant scalar performance metrics."""
+
+    P_fusion: float
+    P_thermal: float
+    P_gross: float
+    P_recirc: float
+    P_net: float
+    Q_plasma: float
+    Q_eng: float
+    breakdown: PlantPowerBreakdown
 
 
 class PowerPlantModel:
@@ -19,7 +45,7 @@ class PowerPlantModel:
     Includes parasitic loads (Magnets, Heating, Pumping).
     """
 
-    def __init__(self, coolant_type="water"):
+    def __init__(self, coolant_type: str = "water") -> None:
         # Efficiency Parameters
         self.eta_thermal = 0.35  # Rankine Cycle efficiency (Steam turbines)
         self.eta_direct = 0.60  # Direct Conversion (if advanced fuels) - unlikely for DT
@@ -32,7 +58,11 @@ class PowerPlantModel:
         # Thermal Hydraulics
         self.coolant = CoolantLoop(coolant_type)
 
-    def calculate_plant_performance(self, P_fusion_MW, P_aux_absorbed_MW):
+    def calculate_plant_performance(
+        self,
+        P_fusion_MW: float,
+        P_aux_absorbed_MW: float,
+    ) -> PlantPerformance:
         """
         Takes Plasma Physics output and computes Electrical Output.
         P_fusion: Total fusion power (Alpha + Neutrons).
@@ -54,7 +84,7 @@ class PowerPlantModel:
         # 3. Parasitic Consumption (Recirculating Power)
         # Physics-based pumping power
         pump_res = self.coolant.calculate_pumping_power(P_thermal_total)
-        P_pump = pump_res["P_pump_MW"]
+        P_pump = float(pump_res["P_pump_MW"])
 
         # Power needed to drive the Aux Heating systems (Efficiency loss)
         P_aux_wall_plug = P_aux_absorbed_MW / self.eta_heating
@@ -85,7 +115,7 @@ class PowerPlantModel:
             },
         }
 
-    def plot_sankey_diagram(self, metrics):
+    def plot_sankey_diagram(self, metrics: PlantPerformance) -> Any:
         """
         Simple visualization of power flow (Text-based or simple bar for now).
         """

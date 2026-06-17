@@ -12,6 +12,9 @@
 - Expanded the configured mypy strict cohort to the split IMAS/tokamak IO
   helpers with typed lazy connector boundaries, live-payload trace coercion,
   and optional OMAS import handling.
+- Added the engineering thermal-hydraulics, balance-of-plant, and CAD raytrace
+  package surfaces to the configured mypy strict cohort with explicit coolant
+  and plant-performance result contracts.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,

@@ -7,10 +7,32 @@
 # SCPN Fusion Core — Thermal Hydraulics
 """Thermal-hydraulic helper utilities for flow resistance and pump power."""
 
+from __future__ import annotations
+
+from typing import TypedDict
+
 import numpy as np
 
 
-def churchill_friction_factor(Re, epsilon_d=1e-4):
+class CoolantProperties(TypedDict):
+    """Thermophysical coolant properties used by the lumped loop model."""
+
+    rho: float
+    mu: float
+    cp: float
+
+
+class PumpingPowerResult(TypedDict):
+    """Computed coolant-loop pumping-power diagnostics."""
+
+    mdot_kg_s: float
+    velocity_m_s: float
+    Re: float
+    dP_Pa: float
+    P_pump_MW: float
+
+
+def churchill_friction_factor(Re: float, epsilon_d: float = 1e-4) -> float:
     """
     Churchill Correlation for Darcy Friction Factor (f).
     Valid for all flow regimes (laminar, transition, turbulent).
@@ -18,13 +40,13 @@ def churchill_friction_factor(Re, epsilon_d=1e-4):
     if Re <= 0.0:
         raise ValueError("Reynolds number must be positive.")
     if Re < 1e-3:
-        return 64.0 / 1e-3  # Limit
+        return float(64.0 / 1e-3)  # Limit
 
     A = (2.457 * np.log(1.0 / ((7.0 / Re) ** 0.9 + 0.27 * epsilon_d))) ** 16
     B = (37530.0 / Re) ** 16
 
     f = 8.0 * ((8.0 / Re) ** 12 + 1.0 / (A + B) ** 1.5) ** (1.0 / 12.0)
-    return f
+    return float(f)
 
 
 class CoolantLoop:
@@ -33,16 +55,22 @@ class CoolantLoop:
     Supports Water, Helium, and Liquid Metal (LiPb).
     """
 
-    def __init__(self, coolant_type="water"):
+    def __init__(self, coolant_type: str = "water") -> None:
         # Properties at 300C (Approx)
-        props = {
+        props: dict[str, CoolantProperties] = {
             "water": {"rho": 700.0, "mu": 1e-4, "cp": 5000.0},
             "helium": {"rho": 5.0, "mu": 3e-5, "cp": 5190.0},
             "lipb": {"rho": 9000.0, "mu": 1e-3, "cp": 190.0},
         }
         self.p = props.get(coolant_type, props["water"])
 
-    def calculate_pumping_power(self, Q_thermal_MW, delta_T=50.0, L=100.0, D=0.05):
+    def calculate_pumping_power(
+        self,
+        Q_thermal_MW: float,
+        delta_T: float = 50.0,
+        L: float = 100.0,
+        D: float = 0.05,
+    ) -> PumpingPowerResult:
         """
         Estimates pumping power needed to exhaust Q_thermal.
         Q_thermal: MW
@@ -60,25 +88,25 @@ class CoolantLoop:
             raise ValueError("D must be > 0.")
 
         # 1. Mass flow rate (mdot = Q / (cp * dT))
-        mdot = (Q_thermal_MW * 1e6) / (self.p["cp"] * delta_T)
+        mdot = float((Q_thermal_MW * 1e6) / (self.p["cp"] * delta_T))
 
         # 2. Velocity (v = mdot / (rho * Area))
-        area = np.pi * (D / 2) ** 2
-        v = mdot / (self.p["rho"] * area)
+        area = float(np.pi * (D / 2) ** 2)
+        v = float(mdot / (self.p["rho"] * area))
 
         # 3. Reynolds Number
-        Re = (self.p["rho"] * v * D) / self.p["mu"]
+        Re = float((self.p["rho"] * v * D) / self.p["mu"])
 
         # 4. Friction Factor (Churchill)
         f = churchill_friction_factor(Re)
 
         # 5. Pressure Drop (Darcy-Weisbach)
-        dP = f * (L / D) * (self.p["rho"] * v**2 / 2.0)
+        dP = float(f * (L / D) * (self.p["rho"] * v**2 / 2.0))
 
         # 6. Pumping Power (W)
         eta_pump = 0.8
-        vol_flow = mdot / self.p["rho"]
-        P_pump_W = (dP * vol_flow) / eta_pump
+        vol_flow = float(mdot / self.p["rho"])
+        P_pump_W = float((dP * vol_flow) / eta_pump)
 
         return {
             "mdot_kg_s": mdot,
