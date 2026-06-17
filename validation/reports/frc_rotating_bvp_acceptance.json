@@ -1,0 +1,87 @@
+{
+  "accepted_full_fidelity_rotating_bvp": false,
+  "environment": {
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)"
+  },
+  "fail_closed_contract_passed": true,
+  "generated_at_utc": "2026-06-16T23:59:55+00:00",
+  "missing_requirements": [
+    "Steinhauer 2011 Section II.B plus Figure 3 closure",
+    "machine-readable Steinhauer rotating-BVP reference profile",
+    "Python/Rust rotating-BVP parity after verified closure lands",
+    "same-case rotating-BVP benchmark evidence before any acceleration claim"
+  ],
+  "python_no_rotation_contract": {
+    "converged": true,
+    "field_reversal_passed": true,
+    "force_balance_residual_linf": 0.002231959071284168,
+    "grid_points": 401,
+    "model": "steinhauer_2011_no_rotation_analytical",
+    "passed": true,
+    "pressure_balance_residual_linf": 0.0,
+    "residual": 0.0,
+    "s_parameter": 21.077903657204907,
+    "separatrix_radius_error_m": 0.0,
+    "validation_passed": true
+  },
+  "python_nonzero_rotation_contract": {
+    "exception_type": "NotImplementedError",
+    "message": "rotating rigid-rotor BVP support is fail-closed pending the verified FUS-C.1 derivation; only the theta_dot == 0 Steinhauer analytical limit is certified for production use.",
+    "passed": true
+  },
+  "python_status": {
+    "accepted_contract": "steinhauer_2011_no_rotation_analytical",
+    "claim_boundary": "The certified production contract is the Steinhauer 2011 no-rotation analytical FRC equilibrium. The rotating rigid-rotor BVP remains fail-closed until the Steinhauer Section II.B closure and Figure 3 reference are verified; C-2U performance and topology references are context only, not a rotating-BVP solver certification.",
+    "non_closing_references": [
+      "Romero 2018",
+      "Baltz 2017 C-2U positive-net-heating table",
+      "Slough 2011 Fig. 5"
+    ],
+    "required_reference": "Steinhauer 2011 Section II.B plus Figure 3 closure",
+    "rotating_bvp_implemented": false,
+    "solver_action": "raise_not_implemented_for_nonzero_theta_dot",
+    "status": "blocked_missing_verified_steinhauer_rotating_closure"
+  },
+  "rust_status": {
+    "accepted_contract": "steinhauer_2011_no_rotation_analytical",
+    "command": [
+      "cargo",
+      "run",
+      "--quiet",
+      "-p",
+      "fusion-physics",
+      "--example",
+      "frc_rotating_bvp_status"
+    ],
+    "no_rotation_converged": true,
+    "no_rotation_residual": 0,
+    "non_closing_references": [
+      "Romero 2018",
+      "Baltz 2017 C-2U positive-net-heating table",
+      "Slough 2011 Fig. 5"
+    ],
+    "nonzero_rotation_fail_closed": true,
+    "passed": true,
+    "required_reference": "Steinhauer 2011 Section II.B plus Figure 3 closure",
+    "rotating_bvp_implemented": false,
+    "schema": "frc-rotating-bvp-rust-status.v1",
+    "solver_action": "raise_not_implemented_for_nonzero_theta_dot",
+    "status": "blocked_missing_verified_steinhauer_rotating_closure",
+    "stderr": ""
+  },
+  "schema": "frc-rotating-bvp-acceptance.v1",
+  "status": "blocked_rotating_bvp_reference_missing_fail_closed_contract_passed",
+  "steinhauer_reference_gate": {
+    "artifact_count": 2,
+    "citation": "L. C. Steinhauer, Review of field-reversed configurations, Physics of Plasmas 18, 070501 (2011).",
+    "doi": "10.1063/1.3613680",
+    "download_status": "blocked_by_publisher_http_403",
+    "has_verified_pdf_payload": false,
+    "notes": "AIP publisher article and PDF endpoints returned HTTP 403 HTML payloads, not a PDF. The accepted no-rotation FRC implementation still needs verified Steinhauer Section II.B/Fig. 3 closure before rotating BVP promotion.",
+    "passed": true,
+    "reference_key": "steinhauer_2011_review_field_reversed_configurations"
+  }
+}

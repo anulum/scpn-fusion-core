@@ -113,7 +113,11 @@ The implemented axial field is:
    B_z(r) = -B_{\rm ext}\tanh\left(\frac{r^2 - R_s^2}{2 R_s \delta}\right)
 
 Rotating rigid-rotor cases fail closed with ``NotImplementedError`` until the
-dedicated FRC BVP task is implemented and validated.
+dedicated FRC BVP task is implemented and validated. The executable acceptance
+gate ``validation/benchmark_frc_rotating_bvp_acceptance.py`` records the
+current Python/Rust fail-closed status and the missing Steinhauer Section
+II.B/Figure 3 reference gate in
+``validation/reports/frc_rotating_bvp_acceptance.md``.
 
 The accepted MIF-facing flux coordinate is the separatrix-normalised
 ``psi_N = (psi - psi_axis) / (psi_sep - psi_axis)`` derived from the same

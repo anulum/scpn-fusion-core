@@ -114,7 +114,10 @@ The unresolved rotating-BVP lane also exposes
 no-rotation contract, and require Steinhauer 2011 Section II.B plus Figure 3
 closure before nonzero `theta_dot` can be certified. Romero 2018 topology
 evidence, the Baltz 2017 C-2U performance table, and Slough 2011 Fig. 5 are
-listed as non-closing context references.
+listed as non-closing context references. The executable gate
+`validation/benchmark_frc_rotating_bvp_acceptance.py` records this boundary in
+`validation/reports/frc_rotating_bvp_acceptance.md` and
+`validation/reports/frc_rotating_bvp_acceptance.json`.
 
 The reported quality-of-equilibrium parameter follows Steinhauer Eq. 27:
 
@@ -255,7 +258,8 @@ rotating BVP.
 
 **Validation:** `tests/test_frc_rigid_rotor.py`, `tests/test_frc_rigid_rotor_property.py`, `tests/test_frc_rigid_rotor_rust_parity.py`,
 `examples/03_frc_rigid_rotor_quickstart.py`,
-`benchmarks/bench_frc_rigid_rotor.py`.
+`benchmarks/bench_frc_rigid_rotor.py`,
+`validation/benchmark_frc_rotating_bvp_acceptance.py`.
 
 ---
 

@@ -172,6 +172,10 @@ Accepted:
   reports the accepted no-rotation contract, the fail-closed solver action for
   nonzero `theta_dot`, and the exact external Steinhauer Section II.B/Figure 3
   reference gate that must be satisfied before rotating-BVP certification.
+- Executable rotating-BVP acceptance evidence in
+  `validation/reports/frc_rotating_bvp_acceptance.md`, generated from the
+  Python and Rust fail-closed surfaces plus the Steinhauer reference-manifest
+  gate.
 - Cross-surface parity tests for the exposed Python and Rust/PyO3 paths,
   including a deterministic 16-case MIF/FRC no-rotation parameter cohort that
   spans accepted field, separatrix-radius, grid, and layer-thickness scales.
@@ -235,6 +239,13 @@ Run the Python/Rust benchmark and regenerate the tracked JSON report:
 
 ```bash
 PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
+```
+
+Run the rotating-BVP acceptance gate and regenerate the tracked JSON/Markdown
+reports:
+
+```bash
+PYTHONPATH=src python validation/benchmark_frc_rotating_bvp_acceptance.py
 ```
 
 Run focused Python tests:
