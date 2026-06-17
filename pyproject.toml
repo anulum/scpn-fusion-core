@@ -161,6 +161,17 @@ files = [
     "src/scpn_fusion/control/shape_controller.py",
     "src/scpn_fusion/core/mhd_sawtooth.py",
     "src/scpn_fusion/core/divertor_thermal_sim.py",
+    # Phase dynamics strict cohort
+    "src/scpn_fusion/phase/__init__.py",
+    "src/scpn_fusion/phase/adaptive_knm.py",
+    "src/scpn_fusion/phase/gk_upde_bridge.py",
+    "src/scpn_fusion/phase/knm.py",
+    "src/scpn_fusion/phase/kuramoto.py",
+    "src/scpn_fusion/phase/lyapunov_guard.py",
+    "src/scpn_fusion/phase/plasma_knm.py",
+    "src/scpn_fusion/phase/realtime_monitor.py",
+    "src/scpn_fusion/phase/upde.py",
+    "src/scpn_fusion/phase/ws_phase_stream.py",
 ]
 
 [[tool.mypy.overrides]]
@@ -189,6 +200,14 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["omas", "omas.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["h5py", "h5py.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["websockets", "websockets.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

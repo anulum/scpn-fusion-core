@@ -67,7 +67,7 @@ class PhaseStreamServer:
     tick_interval_s: float = 0.001
     auth_token: str | None = None
     max_command_messages_per_second: int = 20
-    _clients: set = field(default_factory=set, init=False, repr=False)
+    _clients: set[Any] = field(default_factory=set, init=False, repr=False)
     _running: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:

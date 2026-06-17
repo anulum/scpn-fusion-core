@@ -27,6 +27,7 @@ the Frontiers submission.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -151,7 +152,7 @@ class AdaptiveKnmEngine:
         return self._K_current.copy()
 
     @property
-    def adaptation_summary(self) -> dict:
+    def adaptation_summary(self) -> dict[str, Any]:
         """Snapshot of engine state for dashboard export."""
         diff = self._K_current - self._baseline
         return {

@@ -27,6 +27,7 @@ from __future__ import annotations
 import logging
 from collections import deque
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -49,7 +50,8 @@ class LyapunovVerdict:
     @property
     def score(self) -> float:
         """Stability score ∈ [0, 1].  1 = fully stable (λ ≪ 0)."""
-        return float(np.clip(1.0 / (1.0 + np.exp(10.0 * self.lambda_exp)), 0.0, 1.0))
+        exponent = float(np.clip(10.0 * self.lambda_exp, -700.0, 700.0))
+        return float(np.clip(1.0 / (1.0 + np.exp(exponent)), 0.0, 1.0))
 
 
 class LyapunovGuard:
@@ -139,7 +141,7 @@ class LyapunovGuard:
             consecutive_violations=0 if approved else 1,
         )
 
-    def to_director_ai_dict(self, verdict: LyapunovVerdict) -> dict:
+    def to_director_ai_dict(self, verdict: LyapunovVerdict) -> dict[str, Any]:
         """Export verdict in DIRECTOR_AI AuditLogger format."""
         return {
             "query": "lyapunov_stability_check",

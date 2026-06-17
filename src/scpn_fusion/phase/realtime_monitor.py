@@ -28,6 +28,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -54,7 +55,7 @@ class TrajectoryRecorder:
     latency_us: list[float] = field(default_factory=list)
     Psi_global: list[float] = field(default_factory=list)
 
-    def record(self, snap: dict) -> None:
+    def record(self, snap: dict[str, Any]) -> None:
         """Append one validated monitor snapshot to in-memory trace buffers.
 
         Required fields are normalised and retained as lists for fast post-run
@@ -188,7 +189,7 @@ class RealtimeMonitor:
         q95: float = 3.0,
         disruption_risk: float = 0.0,
         mirnov_rms: float = 0.0,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Advance one UPDE step and return dashboard snapshot."""
         t0 = time.perf_counter_ns()
 

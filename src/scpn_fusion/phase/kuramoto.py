@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -134,7 +134,7 @@ def kuramoto_sakaguchi_step(
     psi_driver: float | None = None,
     psi_mode: str = "external",
     wrap: bool = True,
-) -> dict:
+) -> dict[str, Any]:
     """Single Euler step of mean-field Kuramoto-Sakaguchi + global driver.
 
     dθ_i/dt = ω_i + K·R·sin(ψ_r − θ_i − α) + ζ·sin(Ψ − θ_i)
