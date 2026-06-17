@@ -122,6 +122,7 @@ files = [
     "src/scpn_fusion/scpn/artifact_schema.py",
     "src/scpn_fusion/scpn/artifact_validation.py",
     "src/scpn_fusion/scpn/compiler.py",
+    "src/scpn_fusion/scpn/controller_runtime_backend.py",
     "src/scpn_fusion/scpn/safety_interlocks.py",
     "src/scpn_fusion/scpn/__init__.py",
     # io/
