@@ -13,8 +13,13 @@ from typing import Any, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from numpy.typing import NDArray
 
 from scpn_fusion.diagnostics.forward import ForwardDiagnosticChannels, generate_forward_channels
+
+FloatArray = NDArray[np.float64]
+Chord = tuple[FloatArray, FloatArray]
 
 
 class SensorSuite:
@@ -45,22 +50,22 @@ class SensorSuite:
         # Fan geometry looking from top port
         self.bolo_chords = self._generate_bolo_chords()
 
-    def _generate_sensor_positions(self):
+    def _generate_sensor_positions(self) -> tuple[FloatArray, FloatArray]:
         # Place 20 magnetic probes around the wall
         theta = np.linspace(0, 2 * np.pi, 20)
         R0, a, kappa = 6.0, 3.0, 1.8
         R_s = R0 + (a + 0.5) * np.cos(theta)
         Z_s = (a + 0.5) * kappa * np.sin(theta)
-        return R_s, Z_s
+        return np.asarray(R_s, dtype=np.float64), np.asarray(Z_s, dtype=np.float64)
 
-    def _generate_bolo_chords(self):
+    def _generate_bolo_chords(self) -> list[Chord]:
         # 16 Chords fanning out from a top port (R=6, Z=5)
         # Watching the Divertor region (R=4..8, Z=-4)
         origin = np.array([6.0, 5.0])
         targets_R = np.linspace(3.0, 9.0, 16)
         targets_Z = np.full(16, -4.0)
 
-        chords = []
+        chords: list[Chord] = []
         for i in range(16):
             target = np.array([targets_R[i], targets_Z[i]])
             chords.append((origin, target))
@@ -72,13 +77,13 @@ class SensorSuite:
             return float(self._rng.normal(0.0, sigma))
         return float(np.random.normal(0.0, sigma))
 
-    def measure_magnetics(self):
+    def measure_magnetics(self) -> FloatArray:
         """
         Returns Flux Psi at sensor locations.
         Interpolates from Kernel grid.
         """
         # Map R,Z to grid indices
-        measurements = []
+        measurements: list[float] = []
         for i in range(len(self.wall_R)):
             r, z = self.wall_R[i], self.wall_Z[i]
 
@@ -109,11 +114,11 @@ class SensorSuite:
 
             # Add Sensor Noise
             val += self._noise(0.01)
-            measurements.append(val)
+            measurements.append(float(val))
 
-        return np.array(measurements)
+        return np.asarray(measurements, dtype=np.float64)
 
-    def measure_b_field(self):
+    def measure_b_field(self) -> tuple[FloatArray, FloatArray]:
         """
         Calculates local B_field (Br, Bz) at sensor locations using Biot-Savart.
         Harden with toroidal filament integration.
@@ -153,12 +158,12 @@ class SensorSuite:
 
         return Br, Bz
 
-    def measure_bolometer(self, emission_profile):
+    def measure_bolometer(self, emission_profile: FloatArray) -> FloatArray:
         """
         Integrates emission along chords.
         Signal = Integral( E(l) * dl )
         """
-        signals = []
+        signals: list[float] = []
 
         # Grid coordinates
         RR = self.kernel.RR
@@ -182,21 +187,21 @@ class SensorSuite:
 
                 if 0 <= ir < self.kernel.NR and 0 <= iz < self.kernel.NZ:
                     val = emission_profile[iz, ir]
-                    integral += val * dl
+                    integral += float(val) * float(dl)
 
             # Add Noise (Photon shot noise)
             integral += self._noise(0.05 * integral if integral > 0 else 0.001)
             signals.append(integral)
 
-        return np.array(signals)
+        return np.asarray(signals, dtype=np.float64)
 
-    def measure_interferometer(self, density_profile_19):
+    def measure_interferometer(self, density_profile_19: FloatArray) -> FloatArray:
         """
         Simulates Multi-Chord Interferometer.
         Measures Phase Shift phi = lambda * r_e * Integral(n_e dl).
         Harden with Phase Wrapping (modulo 2pi) and Refraction noise.
         """
-        signals_phase = []
+        signals_phase: list[float] = []
         lambda_laser = 10.6e-6  # CO2 laser (10.6 um)
         r_e = 2.817e-15  # Classical electron radius
 
@@ -226,7 +231,7 @@ class SensorSuite:
 
                 if 0 <= ir < self.kernel.NR - 1 and 0 <= iz < self.kernel.NZ - 1:
                     ne_val = density_profile_19[iz, ir] * 1e19
-                    integral_ne += ne_val * dl
+                    integral_ne += float(ne_val) * float(dl)
 
                     # Simple refraction heuristic: proportional to density
                     if ne_val > 1e20:
@@ -246,16 +251,16 @@ class SensorSuite:
 
             signals_phase.append(phi_wrapped)
 
-        return np.array(signals_phase)
+        return np.asarray(signals_phase, dtype=np.float64)
 
     def measure_forward_channels(
         self,
-        electron_density_m3,
-        neutron_source_m3_s,
+        electron_density_m3: FloatArray,
+        neutron_source_m3_s: FloatArray,
         *,
-        detector_efficiency=0.12,
-        solid_angle_fraction=1.0e-4,
-        laser_wavelength_m=1.064e-6,
+        detector_efficiency: float = 0.12,
+        solid_angle_fraction: float = 1.0e-4,
+        laser_wavelength_m: float = 1.064e-6,
     ) -> ForwardDiagnosticChannels:
         """
         Generate deterministic forward-model raw channels.
@@ -273,7 +278,7 @@ class SensorSuite:
             laser_wavelength_m=float(laser_wavelength_m),
         )
 
-    def visualize_setup(self):
+    def visualize_setup(self) -> Figure:
         """Plot diagnostic geometry and return a Matplotlib figure."""
         fig, ax = plt.subplots()
         ax.set_title("Diagnostics Geometry")

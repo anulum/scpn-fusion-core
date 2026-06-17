@@ -10,27 +10,28 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import inspect
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Mapping, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.diagnostics.synthetic_sensors import SensorSuite
 from scpn_fusion.diagnostics.tomography import PlasmaTomography
 
+try:
+    FusionKernel: Any = importlib.import_module("scpn_fusion.core._rust_compat").FusionKernel
+except (AttributeError, ImportError):
+    FusionKernel = importlib.import_module("scpn_fusion.core.fusion_kernel").FusionKernel
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = ROOT / "validation" / "iter_validated_config.json"
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "diagnostics_demo"
 
 
 def _build_sensor_suite(
-    sensor_factory: Callable[[Any], Any],
+    sensor_factory: Callable[..., Any],
     kernel: Any,
     *,
     seed: int,
@@ -38,7 +39,7 @@ def _build_sensor_suite(
 ) -> Any:
     """Instantiate sensor suite, passing scoped RNG/seed when supported."""
     try:
-        params = inspect.signature(sensor_factory).parameters
+        params: Mapping[str, inspect.Parameter] = inspect.signature(sensor_factory).parameters
     except (TypeError, ValueError):
         params = {}
 
@@ -63,10 +64,10 @@ def run_diag_demo(
     seed: int = 42,
     save_figures: bool = True,
     verbose: bool = True,
-    kernel_factory: Callable[[str], Any] = FusionKernel,
-    sensor_factory: Callable[[Any], Any] = SensorSuite,
-    tomography_factory: Callable[[Any], Any] = PlasmaTomography,
-) -> Dict[str, Any]:
+    kernel_factory: Callable[..., Any] = FusionKernel,
+    sensor_factory: Callable[..., Any] = SensorSuite,
+    tomography_factory: Callable[..., Any] = PlasmaTomography,
+) -> dict[str, Any]:
     """
     Run synthetic diagnostics + tomography and return deterministic summary.
     """

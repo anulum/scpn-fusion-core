@@ -136,6 +136,9 @@ files = [
     # diagnostics/
     "src/scpn_fusion/diagnostics/__init__.py",
     "src/scpn_fusion/diagnostics/forward.py",
+    "src/scpn_fusion/diagnostics/run_diagnostics.py",
+    "src/scpn_fusion/diagnostics/synthetic_sensors.py",
+    "src/scpn_fusion/diagnostics/tomography.py",
     # hpc/
     "src/scpn_fusion/hpc/__init__.py",
     "src/scpn_fusion/hpc/hpc_bridge.py",

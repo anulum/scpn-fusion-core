@@ -13,11 +13,15 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+from numpy.typing import NDArray
 
 try:
     from scipy.optimize import lsq_linear
 except Exception:  # pragma: no cover - optional dependency path
     lsq_linear = None
+
+FloatArray = NDArray[np.float64]
 
 
 class PlasmaTomography:
@@ -54,7 +58,7 @@ class PlasmaTomography:
         if self.verbose:
             print(message)
 
-    def _build_geometry_matrix(self) -> np.ndarray:
+    def _build_geometry_matrix(self) -> FloatArray:
         self._log("[Tomography] Building Geometry Matrix A...")
         n_chords = len(self.sensors.bolo_chords)
         A = np.zeros((n_chords, self.n_pixels), dtype=np.float64)
@@ -78,7 +82,7 @@ class PlasmaTomography:
 
         return A
 
-    def reconstruct(self, signals: np.ndarray, method: str = "auto") -> np.ndarray:
+    def reconstruct(self, signals: FloatArray, method: str = "auto") -> FloatArray:
         """
         Solve inversion problem Ax=b with regularization.
         Supports 'lsq_linear' (SciPy), 'ridge' (Phillips-Twomey), and 'sart' (Iterative).
@@ -111,8 +115,8 @@ class PlasmaTomography:
             # Precompute weights for SART
             v = np.sum(self.A, axis=0)  # Column sums
             h = np.sum(self.A, axis=1)  # Row sums
-            v = np.where(v > 0, 1.0 / v, 0.0)
-            h = np.where(h > 0, 1.0 / h, 0.0)
+            v = np.divide(1.0, v, out=np.zeros_like(v), where=v > 0.0)
+            h = np.divide(1.0, h, out=np.zeros_like(h), where=h > 0.0)
 
             for _ in range(n_iters):
                 # Back-projection of error
@@ -147,9 +151,9 @@ class PlasmaTomography:
 
     def plot_reconstruction(
         self,
-        ground_truth: np.ndarray,
-        reconstruction: np.ndarray,
-    ):
+        ground_truth: FloatArray,
+        reconstruction: FloatArray,
+    ) -> Figure:
         """Plot and return a two-panel ghost ground-truth vs reconstruction figure."""
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
