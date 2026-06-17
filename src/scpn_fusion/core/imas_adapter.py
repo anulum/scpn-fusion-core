@@ -65,7 +65,7 @@ def from_kernel(kernel: Any, time: float = 0.0) -> EquilibriumIDS:
     )
 
 
-def to_kernel_arrays(ids: EquilibriumIDS) -> dict:
+def to_kernel_arrays(ids: EquilibriumIDS) -> dict[str, FloatArray | float]:
     """Convert EquilibriumIDS to arrays compatible with FusionKernel init."""
     return {
         "R": ids.r.copy(),
@@ -84,7 +84,7 @@ def to_omas(ids: EquilibriumIDS) -> Any:
     Returns None if omas is not installed.
     """
     try:
-        from omas import ODS  # type: ignore[import-untyped]
+        from omas import ODS
     except ImportError:
         return None
 

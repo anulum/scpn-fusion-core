@@ -207,8 +207,7 @@ def q_from_psi(rho: FloatArray, psi: FloatArray, R0: float, a: float, B0: float)
     else:
         q[0] = q[1]
 
-    q = np.abs(q)
-    return cast(FloatArray, q)
+    return np.abs(q)
 
 
 def resistive_diffusion_time(a: float, eta: float) -> float:
@@ -247,7 +246,7 @@ def _as_profile(
     if not np.all(valid_values):
         suffix = "finite values or np.inf" if allow_infinite else "finite values"
         raise ValueError(f"{name} must contain {suffix}")
-    return cast(FloatArray, profile)
+    return profile
 
 
 def _call_tau(tau_psi_fn: TauCallable, time_s: float, rho: FloatArray) -> FloatArray | float:

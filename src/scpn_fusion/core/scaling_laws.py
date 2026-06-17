@@ -164,7 +164,7 @@ def _validate_ipb98y2_coefficients(raw: Any) -> dict[str, Any]:
 
 def load_ipb98y2_coefficients(
     path: Optional[str | Path] = None,
-) -> dict:
+) -> dict[str, Any]:
     """Load IPB98(y,2) coefficients from the JSON reference file.
 
     Parameters
@@ -232,7 +232,7 @@ def ipb98y2_tau_e(
     epsilon: float,
     M: float = 2.5,
     *,
-    coefficients: Optional[dict] = None,
+    coefficients: Optional[dict[str, Any]] = None,
     enforce_training_domain: bool = False,
     warn_if_extrapolated: bool = False,
 ) -> float:
@@ -333,7 +333,7 @@ def ipb98y2_tau_e_with_metadata(
     epsilon: float,
     M: float = 2.5,
     *,
-    coefficients: Optional[dict] = None,
+    coefficients: Optional[dict[str, Any]] = None,
     enforce_training_domain: bool = False,
     warn_if_extrapolated: bool = False,
 ) -> tuple[float, dict[str, Any]]:
@@ -369,7 +369,7 @@ def ipb98y2_with_uncertainty(
     epsilon: float,
     M: float = 2.5,
     *,
-    coefficients: Optional[dict] = None,
+    coefficients: Optional[dict[str, Any]] = None,
 ) -> tuple[float, float]:
     """Evaluate IPB98(y,2) with log-linear error propagation.
 

@@ -11,7 +11,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, Protocol, cast
 
 import numpy as np
 
@@ -19,6 +20,15 @@ from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
 from scpn_fusion.nuclear.blanket_neutronics import BreedingBlanket
 
 _TBR_EQUIVALENCE_SCALE = 1.45
+
+
+class _DesignMetricsProvider(Protocol):
+    """Typed subset of the design explorer used by Task-6 candidate scoring."""
+
+    def evaluate_design(
+        self, major_radius_m: float, b_t: float, ip_ma: float
+    ) -> Mapping[str, float]:
+        """Return numeric design metrics needed by the candidate scorer."""
 
 
 def require_int(name: str, value: Any, minimum: int) -> int:
@@ -246,7 +256,7 @@ def quick_candidate(
         rf_power_mw=rf_power_mw,
         nbi_power_mw=nbi_power_mw,
     )
-    design = explorer.evaluate_design(major_radius_m, b_t, ip_ma)
+    design = cast(_DesignMetricsProvider, explorer).evaluate_design(major_radius_m, b_t, ip_ma)
 
     heating_weight = 0.56 * heating["rf_absorption_eff"] + 0.44 * heating["nbi_absorption_eff"]
     q_aries = aries_at_q_proxy(

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Added selected core helper and edge-physics modules to the configured mypy
+  strict cohort, with explicit NumPy array aliases and typed confinement,
+  IMAS, startup, MARFE, ELM, checkpoint, pedestal, and tokamak-config
+  contracts.
 - Expanded the configured global mypy strict cohort to the phase dynamics
   package (`adaptive_knm`, `gk_upde_bridge`, `knm`, `kuramoto`,
   `lyapunov_guard`, `plasma_knm`, `realtime_monitor`, `upde`, and

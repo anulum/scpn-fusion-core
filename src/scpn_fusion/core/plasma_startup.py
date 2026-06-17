@@ -12,10 +12,14 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import TypeAlias
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.impurity_transport import CoolingCurve
+
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
 class PaschenBreakdown:
@@ -49,7 +53,7 @@ class PaschenBreakdown:
         V_req = self.breakdown_voltage(p_Pa, connection_length_m)
         return V_loop > V_req
 
-    def paschen_curve(self, p_range: np.ndarray, connection_length_m: float = 100.0) -> np.ndarray:
+    def paschen_curve(self, p_range: FloatArray, connection_length_m: float = 100.0) -> FloatArray:
         """Evaluate a Paschen curve for an array of pressures."""
         return np.array([self.breakdown_voltage(p, connection_length_m) for p in p_range])
 
@@ -66,8 +70,8 @@ class PaschenBreakdown:
 class AvalancheResult:
     """Avalanche trajectory outputs."""
 
-    ne_trace: np.ndarray
-    Te_trace: np.ndarray
+    ne_trace: FloatArray
+    Te_trace: FloatArray
     time_to_full_ionization_ms: float
 
 
@@ -140,7 +144,7 @@ class TownsendAvalanche:
 class BurnThroughResult:
     """Burn-through integration outputs."""
 
-    Te_trace: np.ndarray
+    Te_trace: FloatArray
     success: bool
     time_to_burn_through_ms: float
 

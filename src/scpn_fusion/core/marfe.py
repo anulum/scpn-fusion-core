@@ -10,10 +10,14 @@
 from __future__ import annotations
 
 import math
+from typing import TypeAlias
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.impurity_transport import CoolingCurve
+
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
 class RadiationCondensation:
@@ -85,7 +89,7 @@ class MARFEFrontModel:
         self.T = np.ones(self.n_s) * 100.0  # start hot
         self.curve = CoolingCurve(impurity)
 
-    def step(self, dt: float, ne_20: float) -> np.ndarray:
+    def step(self, dt: float, ne_20: float) -> FloatArray:
         """Advance the parallel temperature profile by one implicit step."""
         import scipy.linalg
 
@@ -130,7 +134,7 @@ class MARFEFrontModel:
         self.T = np.maximum(self.T, 1.0)
         return self.T
 
-    def equilibrium(self, ne_20: float) -> np.ndarray:
+    def equilibrium(self, ne_20: float) -> FloatArray:
         """Relax the front model toward a steady temperature profile."""
         for _ in range(1000):
             self.step(1e-4, ne_20)
@@ -213,7 +217,7 @@ class MARFEStabilityDiagram:
         self.Ip_MA = float(Ip_MA)
         self.f_imp = float(f_imp)
 
-    def scan_density_power(self, ne_range: np.ndarray, P_SOL_range: np.ndarray) -> np.ndarray:
+    def scan_density_power(self, ne_range: FloatArray, P_SOL_range: FloatArray) -> FloatArray:
         """Classify density-power grid points as MARFE-stable or unstable."""
         ne_arr = np.asarray(ne_range, dtype=float)
         psol_arr = np.asarray(P_SOL_range, dtype=float)

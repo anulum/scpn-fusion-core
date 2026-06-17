@@ -10,8 +10,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TypeAlias
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray: TypeAlias = NDArray[np.float64]
 
 
 def _require_positive(name: str, value: float) -> float:
@@ -123,8 +127,8 @@ class ELMCrashModel:
         return ELMCrashResult(delta_W_MJ, T_ped_post, n_ped_post, peak_heat_flux, duration_ms)
 
     def apply_to_profiles(
-        self, rho: np.ndarray, Te: np.ndarray, ne: np.ndarray, rho_ped: float
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, rho: FloatArray, Te: FloatArray, ne: FloatArray, rho_ped: float
+    ) -> tuple[FloatArray, FloatArray]:
         """Apply the crash drop factor to profile samples outside the pedestal top."""
         Te_new = Te.copy()
         ne_new = ne.copy()
@@ -162,7 +166,7 @@ class RMPSuppression:
         self.n_toroidal = n_toroidal
 
     def chirikov_parameter(
-        self, q_profile: np.ndarray, rho: np.ndarray, delta_B_r: float, B0: float, R0: float
+        self, q_profile: FloatArray, rho: FloatArray, delta_B_r: float, B0: float, R0: float
     ) -> float:
         """
         σ_Chir = sum (w_mn / dr_mn)
