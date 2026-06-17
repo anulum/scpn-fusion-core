@@ -57,6 +57,7 @@ dev = [
     "ruff>=0.8",
     "bandit>=1.7",
     "pre-commit>=3.0",
+    "types-psutil>=7.2.2.20260518",
 ]
 fuzz = [
     "atheris>=2.3",
@@ -109,6 +110,9 @@ ignore_missing_imports = false
 # currently gated typed surface and is expanded incrementally as modules are
 # brought to strict-clean status.
 files = [
+    # Top-level package entrypoints
+    "src/scpn_fusion/__init__.py",
+    "src/scpn_fusion/cli.py",
     # scpn/ (existing)
     "src/scpn_fusion/scpn/contracts.py",
     "src/scpn_fusion/scpn/controller.py",
