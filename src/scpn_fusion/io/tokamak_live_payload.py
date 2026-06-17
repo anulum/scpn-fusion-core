@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -27,7 +28,12 @@ def to_scalar(value: Any) -> float:
     return float(finite[-1])
 
 
-def to_trace(value: Any, points: int, *, resample_1d: Any) -> NDArray[np.float64]:
+def to_trace(
+    value: Any,
+    points: int,
+    *,
+    resample_1d: Callable[[NDArray[np.float64], int], Any],
+) -> NDArray[np.float64]:
     """Convert payload to finite 1-D trace and resample to requested points."""
     arr = np.asarray(value, dtype=np.float64)
     if arr.ndim == 0:
@@ -37,4 +43,4 @@ def to_trace(value: Any, points: int, *, resample_1d: Any) -> NDArray[np.float64
     arr = arr[np.isfinite(arr)]
     if arr.size < 2:
         raise ValueError("Trace payload must contain at least 2 finite values.")
-    return resample_1d(arr, points)
+    return np.asarray(resample_1d(arr, points), dtype=np.float64)

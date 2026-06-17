@@ -127,9 +127,9 @@ def state_to_imas_core_transport(
             current = nested
         current[parts[-1]] = value
 
-    for key, setter in [
-        ("chi_e", lambda v: _set_nested(transport_1d, "electrons.energy.d", v)),
-        ("d_e", lambda v: _set_nested(transport_1d, "electrons.particles.d", v)),
+    for key, path in [
+        ("chi_e", "electrons.energy.d"),
+        ("d_e", "electrons.particles.d"),
     ]:
         val = state.get(key)
         if val is not None:
@@ -141,7 +141,7 @@ def state_to_imas_core_transport(
             )
             if len(vals) != len(rho):
                 raise ValueError(f"state.{key} length must match state.rho_norm.")
-            setter(vals)
+            _set_nested(transport_1d, path, vals)
 
     chi_i_raw = state.get("chi_i")
     if chi_i_raw is not None:

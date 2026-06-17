@@ -21,7 +21,7 @@ REQUIRED_IDS_PULSE_KEYS = (
 )
 
 
-def _connector():
+def _connector() -> Any:
     # Local import keeps this module acyclic with ``imas_connector``.
     """Return lazily imported canonical IMAS converter module."""
     from scpn_fusion.io import imas_connector

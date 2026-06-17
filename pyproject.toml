@@ -119,6 +119,15 @@ files = [
     # io/
     "src/scpn_fusion/io/__init__.py",
     "src/scpn_fusion/io/imas_connector.py",
+    "src/scpn_fusion/io/imas_connector_common.py",
+    "src/scpn_fusion/io/imas_connector_digital_twin.py",
+    "src/scpn_fusion/io/imas_connector_equilibrium.py",
+    "src/scpn_fusion/io/imas_connector_omas.py",
+    "src/scpn_fusion/io/imas_connector_storage.py",
+    "src/scpn_fusion/io/imas_connector_transport.py",
+    "src/scpn_fusion/io/imas_history_payloads.py",
+    "src/scpn_fusion/io/safe_loaders.py",
+    "src/scpn_fusion/io/tokamak_live_payload.py",
     "src/scpn_fusion/io/tokamak_archive.py",
     # diagnostics/
     "src/scpn_fusion/diagnostics/__init__.py",

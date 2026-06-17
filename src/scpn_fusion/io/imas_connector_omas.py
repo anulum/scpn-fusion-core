@@ -14,7 +14,7 @@ from typing import Any, Mapping
 import numpy as np
 
 try:
-    import omas  # type: ignore[import-untyped]
+    import omas
 
     HAS_OMAS = True
 except ImportError:

@@ -9,6 +9,9 @@
   dependency import boundaries.
 - Added the shared surrogate utility and neural-transport math kernels to the
   configured mypy strict cohort with explicit NumPy return contracts.
+- Expanded the configured mypy strict cohort to the split IMAS/tokamak IO
+  helpers with typed lazy connector boundaries, live-payload trace coercion,
+  and optional OMAS import handling.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,
