@@ -43,6 +43,10 @@
   strict cohort.
 - Added SCPN controller backend and feature mixins to the configured mypy
   strict cohort with structural protocols for controller-owned runtime state.
+- Added selected core physics surfaces (`runaway_electrons`, `mrti`,
+  `vessel_model`, `ntm_dynamics`, and `locked_mode`) to the configured mypy
+  strict cohort with typed NumPy return contracts, and documented the public
+  no-rotation FRC equilibrium solver entrypoint.
 - Replaced the heuristic alpha-particle slowing-down helpers in `orbit_following`
   with the Spitzer / NRL Plasma Formulary fast-ion drag model: electron-ion
   Coulomb logarithm, critical velocity, electron-drag slowing-down time,

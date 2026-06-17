@@ -12,6 +12,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 MU_0 = 4.0 * np.pi * 1e-7
 
@@ -36,7 +39,7 @@ def eccd_stabilization_factor(d_cd: float, w: float) -> float:
 
 
 def find_rational_surfaces(
-    q: np.ndarray, rho: np.ndarray, a: float, m_max: int = 5, n_max: int = 3
+    q: FloatArray, rho: FloatArray, a: float, m_max: int = 5, n_max: int = 3
 ) -> list[RationalSurface]:
     """Locate radii where q(rho) = m/n."""
     surfaces = []
@@ -151,7 +154,7 @@ class NTMIslandDynamics:
         w_d: float = 1e-3,
         w_pol: float = 5e-4,
         d_cd: float = 0.05,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[FloatArray, FloatArray]:
         """Integrate w(t) using RK4."""
         t_start, t_end = t_span
         n_steps = int(np.ceil((t_end - t_start) / dt))

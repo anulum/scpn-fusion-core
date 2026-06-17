@@ -451,6 +451,14 @@ def solve_frc_equilibrium(
     tolerance: float = 1e-10,
     max_iter: int = 200,
 ) -> FRCEquilibriumState:
+    """Solve the fail-closed Steinhauer no-rotation rigid-rotor FRC equilibrium.
+
+    The accepted production path covers the analytical ``theta_dot == 0`` limit
+    on a finite, strictly increasing radial grid that starts at the magnetic
+    axis and extends beyond the requested separatrix radius. Rotating
+    ``theta_dot != 0`` equilibria intentionally raise ``NotImplementedError``
+    until the full BVP derivation and reference parity gate are verified.
+    """
     _validate_inputs(inputs, tolerance)
     rho = _validate_grid(rho_grid, inputs.R_s)
     delta = (

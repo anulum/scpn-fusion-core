@@ -44,7 +44,7 @@ def _as_float_array(
     array = np.asarray(values, dtype=np.float64)
     if not np.all(np.isfinite(array)):
         raise ValueError(f"{name} must contain only finite values")
-    return cast(FloatArray, array)
+    return array
 
 
 def _require_finite(name: str, value: float) -> float:

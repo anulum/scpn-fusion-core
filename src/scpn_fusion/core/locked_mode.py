@@ -13,6 +13,9 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class ErrorFieldSpectrum:
@@ -112,7 +115,7 @@ class ResonantFieldAmplification:
 class RotationEvolution:
     """Frozen state captured from rotation-evolution solve."""
 
-    omega_trace: np.ndarray
+    omega_trace: FloatArray
     locked: bool
     lock_time: float
 
@@ -232,7 +235,7 @@ class ModeLocking:
 class IslandGrowth:
     """Store island-growth history and overlap diagnostics."""
 
-    w_trace: np.ndarray
+    w_trace: FloatArray
     overlap_time: float
     stochastic: bool
 

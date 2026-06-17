@@ -18,9 +18,11 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.special import ellipe, ellipk
 
 logger = logging.getLogger(__name__)
+FloatArray = NDArray[np.float64]
 
 # ─── Physical constants (CODATA 2018) ───────────────────────────────
 _MU0 = 4.0 * np.pi * 1e-7  # H/m
@@ -103,7 +105,7 @@ class VesselModel:
         m = prefactor * ((2.0 - k2) * K_val - 2.0 * E_val) / np.sqrt(k2)
         return float(m)
 
-    def step(self, dt: float, dphi_ext_dt: np.ndarray) -> np.ndarray:
+    def step(self, dt: float, dphi_ext_dt: FloatArray) -> FloatArray:
         """Advance eddy currents by one time step.
 
         M * dI/dt + R * I = -dPhi_ext/dt.
@@ -114,13 +116,14 @@ class VesselModel:
         ----------
         dt : float
             Time step [s].
-        dphi_ext_dt : np.ndarray
+        dphi_ext_dt : FloatArray
             Rate of change of external poloidal flux through each element [Wb/s].
             Length must match n_elements.
 
         Returns
         -------
-        np.ndarray — Updated eddy currents [A].
+        FloatArray
+            Updated eddy currents [A].
         """
         if dt <= 0:
             return self.I
@@ -134,17 +137,18 @@ class VesselModel:
         self.I = np.linalg.solve(lhs, rhs)
         return self.I
 
-    def psi_vessel(self, R: np.ndarray, Z: np.ndarray) -> np.ndarray:
+    def psi_vessel(self, R: FloatArray, Z: FloatArray) -> FloatArray:
         """Compute poloidal flux contribution from vessel currents.
 
         Parameters
         ----------
-        R, Z : np.ndarray
+        R, Z : FloatArray
             Observation points (can be grid or arrays).
 
         Returns
         -------
-        np.ndarray — Flux contribution [Wb/rad].
+        FloatArray
+            Flux contribution [Wb/rad].
         """
         out_shape = R.shape
         R_flat = R.flatten()

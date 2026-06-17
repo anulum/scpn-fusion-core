@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 E_CHARGE = 1.602176634e-19  # C
@@ -276,7 +279,7 @@ class RunawayEvolution:
         E_par_profile: Callable[[float], float],
         t_span: tuple[float, float],
         dt: float,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[FloatArray, FloatArray]:
         """Integrate runaway density over a profile-driven E∥(t) history."""
         if not isinstance(t_span, tuple) or len(t_span) != 2:
             raise ValueError("t_span must be a (t_start, t_end) tuple.")

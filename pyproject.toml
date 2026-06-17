@@ -175,6 +175,11 @@ files = [
     "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "src/scpn_fusion/core/neural_transport_math.py",
+    "src/scpn_fusion/core/runaway_electrons.py",
+    "src/scpn_fusion/core/mrti.py",
+    "src/scpn_fusion/core/vessel_model.py",
+    "src/scpn_fusion/core/ntm_dynamics.py",
+    "src/scpn_fusion/core/locked_mode.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",
