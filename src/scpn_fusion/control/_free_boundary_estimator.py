@@ -12,6 +12,7 @@ import numpy as np
 
 from scpn_fusion.control.fusion_sota_mpc import NeuralSurrogate
 from scpn_fusion.control._free_boundary_supervisory_types import (
+    FloatArray,
     FreeBoundaryEstimate,
     _require_positive_finite,
 )
@@ -53,7 +54,7 @@ class FreeBoundaryStateEstimator:
         self.corrected_state = np.zeros(4, dtype=np.float64)
         self._initialized = False
 
-    def reset(self, initial_state: np.ndarray | list[float] | tuple[float, ...]) -> None:
+    def reset(self, initial_state: FloatArray | list[float] | tuple[float, ...]) -> None:
         """Initialise the observer from a finite four-component geometry state."""
 
         state = np.asarray(initial_state, dtype=np.float64).reshape(-1)
@@ -68,9 +69,9 @@ class FreeBoundaryStateEstimator:
 
     def step(
         self,
-        measurement: np.ndarray,
-        applied_action: np.ndarray,
-        measured_actuator_action: np.ndarray | None = None,
+        measurement: FloatArray,
+        applied_action: FloatArray,
+        measured_actuator_action: FloatArray | None = None,
     ) -> FreeBoundaryEstimate:
         """Assimilate one measurement and return corrected geometry plus bias estimates."""
 

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Added the free-boundary estimator, plotting helper, and supervisory facade
+  to the configured mypy strict cohort, sharing the typed supervisory array
+  contracts across the public import surface.
 - Added selected free-boundary supervisory-control helper modules and the
   stellarator control contract surface to the configured mypy strict cohort,
   with explicit float, integer, and boolean array contracts for replay traces.
