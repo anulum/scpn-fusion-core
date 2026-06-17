@@ -15,9 +15,6 @@ from pathlib import Path
 import subprocess
 import sys
 
-import pytest
-
-
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "scpn_end_to_end_latency.py"
 SPEC = importlib.util.spec_from_file_location("scpn_end_to_end_latency", MODULE_PATH)
@@ -43,6 +40,39 @@ def test_campaign_returns_expected_structure_and_passes_smoke() -> None:
             assert rec["p95_physics_ms"] >= 0.0
 
 
+def test_digital_twin_latency_campaign_reports_cpu_rust_gpu_boundaries() -> None:
+    out = scpn_end_to_end_latency.run_digital_twin_latency_campaign(steps=64)
+    assert out["schema"] == "scpn-fusion-core.digital_twin_control_latency.v1"
+    assert out["measurement_context"]["host_before"]["isolation"] == "non_isolated_local_workstation"
+    assert out["cpu"]["status"] == "measured"
+    assert out["cpu"]["p95_loop_ms"] > 0.0
+    assert out["cpu"]["p99_loop_ms"] >= out["cpu"]["p95_loop_ms"]
+    assert out["gpu"]["status"].startswith("blocked_") or out["gpu"]["status"] == "measured"
+    assert out["rust"]["status"].startswith("blocked_") or out["rust"]["status"] == "measured"
+
+
+def test_digital_twin_degraded_modes_fail_closed_with_safe_outputs() -> None:
+    out = scpn_end_to_end_latency.run_digital_twin_latency_campaign(steps=64)
+    degraded = out["cpu"]["degraded_modes"]
+    for case in scpn_end_to_end_latency._DEGRADED_MODE_CASES:
+        rec = degraded[case]
+        assert rec["safe_output_rate"] == 1.0
+        assert rec["passes_semantics"] is True
+        if case != "nominal":
+            assert rec["fallback_count"] > 0
+
+
+def test_digital_twin_cpu_stage_schema_is_complete() -> None:
+    out = scpn_end_to_end_latency.run_digital_twin_latency_campaign(steps=64)
+    stages = out["cpu"]["stages"]
+    assert set(stages) == set(scpn_end_to_end_latency._PIPELINE_STAGE_KEYS)
+    for rec in stages.values():
+        assert set(rec) == {"p50_ms", "p95_ms", "p99_ms"}
+        assert rec["p50_ms"] >= 0.0
+        assert rec["p95_ms"] >= rec["p50_ms"]
+        assert rec["p99_ms"] >= rec["p95_ms"]
+
+
 def test_campaign_has_deterministic_rmse_for_seed() -> None:
     a = scpn_end_to_end_latency.run_campaign(seed=42, steps=180)
     b = scpn_end_to_end_latency.run_campaign(seed=42, steps=180)
@@ -57,16 +87,24 @@ def test_full_mode_ratio_is_finite_and_positive() -> None:
     assert ratio > 0.0
 
 
-@pytest.mark.parametrize("steps", [0, 8, 31])
-def test_campaign_rejects_invalid_steps(steps: int) -> None:
-    with pytest.raises(ValueError, match="steps"):
-        scpn_end_to_end_latency.run_campaign(seed=42, steps=steps)
+def test_campaign_rejects_invalid_steps() -> None:
+    for steps in (0, 8, 31):
+        try:
+            scpn_end_to_end_latency.run_campaign(seed=42, steps=steps)
+        except ValueError as exc:
+            assert "steps" in str(exc)
+        else:
+            raise AssertionError(f"steps={steps} should be rejected")
 
 
 def test_render_markdown_contains_latency_sections() -> None:
     report = scpn_end_to_end_latency.generate_report(seed=11, steps=120)
     text = scpn_end_to_end_latency.render_markdown(report)
     assert "# SCPN End-to-End Latency Benchmark" in text
+    assert "Digital-Twin Sensor-to-Control Path" in text
+    assert "Degraded Modes" in text
+    assert "Python CPU" in text
+    assert "Rust native" in text
     assert "Surrogate Physics Mode" in text
     assert "Full Physics Mode" in text
     assert "p95 loop [ms]" in text
@@ -92,3 +130,4 @@ def test_cli_writes_reports_and_strict_passes(tmp_path: Path) -> None:
     assert out_md.exists()
     payload = json.loads(out_json.read_text(encoding="utf-8"))
     assert "scpn_end_to_end_latency" in payload
+    assert "digital_twin_control_latency" in payload

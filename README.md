@@ -546,10 +546,12 @@ for the same work".
 | NMPC-JAX | Python/JAX NMPC lane | 45,450 us | 49,773 us | 0% |
 | Nengo-SNN | Python/Nengo SNN lane | 23,573 us | 24,736 us | 0% |
 
-For same-harness controller-loop timings with explicit surrogate versus full
-physics modes, use `validation/scpn_end_to_end_latency.py`. Latest local run
-on 2026-05-24 passed with PID p95 latency 0.012 ms in surrogate mode and
-0.047 ms in full mode; see
+For same-harness controller-loop timings and the measured digital-twin
+sensor-to-control path, use `validation/scpn_end_to_end_latency.py`. The
+tracked 2026-06-17 local run reports Python CPU and Rust native
+sensor-to-control p50/p95/p99 latency, CUDA GPU p50/p95/p99 latency on the
+operator-reserved NVIDIA GeForce GTX 1060 6GB device, host-load metadata, and
+degraded-mode fallback counts; see
 `validation/reports/scpn_end_to_end_latency.md`.
 
 Rust full-order equilibrium benchmarks are tracked separately from the

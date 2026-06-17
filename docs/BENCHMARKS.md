@@ -305,6 +305,39 @@ physical NVIDIA L4.
 
 ### Native Rust solver kernels
 
+### Digital-twin control latency
+
+Tracked benchmark target:
+
+```bash
+python validation/scpn_end_to_end_latency.py --strict
+```
+
+Tracked report:
+[`validation/reports/scpn_end_to_end_latency.md`](../validation/reports/scpn_end_to_end_latency.md)
+
+The 2026-06-17 report separates controller-loop timing from the end-to-end
+digital-twin sensor-to-control path. The digital-twin section records validated
+input snapshot handling, feature assembly, reduced-order twin update,
+controller decision, fallback-policy evaluation, and output serialisation.
+The same report carries host-load metadata, CPU affinity, runtime versions, and
+degraded-mode rows for stale input, out-of-distribution input, missing
+diagnostic, non-finite value, actuator saturation, and controller fallback.
+
+Current local non-isolated sensor-to-control rows:
+
+| Lane | Status | p50 loop | p95 loop | p99 loop | Boundary |
+|---|---|---:|---:|---:|---|
+| Python CPU | measured | `0.033269 ms` | `0.038555 ms` | `0.046308 ms` | local wall-clock regression evidence |
+| Rust native | measured | `0.019566 ms` | `0.019960 ms` | `0.025563 ms` | local release binary |
+| CUDA GPU | measured | `0.665243 ms` | `0.847707 ms` | `1.005122 ms` | operator-reserved NVIDIA GeForce GTX 1060 6GB; local CuPy/CUDA path |
+
+These rows are not hardware-in-the-loop timing claims and are not
+isolated-core production throughput claims. The CUDA row measures the same
+reduced-order sensor-to-control contract with host snapshot assembly and output
+serialisation included; it is not a claim about full-order plant simulation
+or actuator hardware timing.
+
 | Benchmark | Median |
 |---|---:|
 | `picard_gs_solve/sor_33x33` | `194.08 us` |

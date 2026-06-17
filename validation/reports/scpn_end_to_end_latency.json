@@ -1,91 +1,676 @@
 {
-  "generated_at_utc": "2026-06-13T20:54:49.358157+00:00",
-  "runtime_seconds": 0.5717729090247303,
+  "generated_at_utc": "2026-06-17T17:15:09.150307+00:00",
+  "runtime_seconds": 2.624501013022382,
   "scpn_end_to_end_latency": {
     "seed": 42,
     "steps": 320,
     "modes": {
       "surrogate": {
         "SNN": {
-          "runtime_backend": "rust",
+          "runtime_backend": "numpy",
           "rmse": 0.07458332825575847,
-          "p50_loop_ms": 0.26078696828335524,
-          "p95_loop_ms": 0.7609175518155104,
-          "p99_loop_ms": 3.639670277480036,
-          "p95_sensor_ms": 0.015187636017799377,
-          "p95_controller_ms": 0.7235245313495399,
-          "p95_actuator_ms": 0.023882777895778425,
-          "p95_physics_ms": 0.0019419821910560166
+          "p50_loop_ms": 0.22308650659397244,
+          "p95_loop_ms": 0.343356330995448,
+          "p99_loop_ms": 0.7874900865135718,
+          "p95_sensor_ms": 0.007032754365354778,
+          "p95_controller_ms": 0.3221894599846565,
+          "p95_actuator_ms": 0.010368814400862906,
+          "p95_physics_ms": 0.0005962894647382201
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13663350372195604,
-          "p50_loop_ms": 0.0164274824783206,
-          "p95_loop_ms": 0.03482300089672208,
-          "p99_loop_ms": 0.07595410803332925,
-          "p95_sensor_ms": 0.010703504085540775,
-          "p95_controller_ms": 0.012828398030251266,
-          "p95_actuator_ms": 0.009214540477842096,
-          "p95_physics_ms": 0.0007668160833418371
+          "p50_loop_ms": 0.008817994967103004,
+          "p95_loop_ms": 0.012219243217259652,
+          "p99_loop_ms": 0.016761725419200957,
+          "p95_sensor_ms": 0.0034663229598663778,
+          "p95_controller_ms": 0.00416336406487972,
+          "p95_actuator_ms": 0.0032486481359228496,
+          "p95_physics_ms": 0.00021279265638440866
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05115337472048825,
-          "p50_loop_ms": 0.1402029301971197,
-          "p95_loop_ms": 0.2284983638674021,
-          "p99_loop_ms": 0.5780387902632362,
-          "p95_sensor_ms": 0.014346942771226171,
-          "p95_controller_ms": 0.17675475683063277,
-          "p95_actuator_ms": 0.038485508412122726,
-          "p95_physics_ms": 0.0015072524547576904
+          "p50_loop_ms": 0.05541800055652857,
+          "p95_loop_ms": 0.08087345922831446,
+          "p99_loop_ms": 0.09317740361439064,
+          "p95_sensor_ms": 0.0039174992707557985,
+          "p95_controller_ms": 0.06957795558264479,
+          "p95_actuator_ms": 0.00625163520453498,
+          "p95_physics_ms": 0.00027609203243628144
         }
       },
       "full": {
         "SNN": {
-          "runtime_backend": "rust",
+          "runtime_backend": "numpy",
           "rmse": 0.07443897829335305,
-          "p50_loop_ms": 0.21213502623140812,
-          "p95_loop_ms": 0.4550228593870999,
-          "p99_loop_ms": 0.8809176436625423,
-          "p95_sensor_ms": 0.011730846017599113,
-          "p95_controller_ms": 0.368325342424214,
-          "p95_actuator_ms": 0.013400125317275526,
-          "p95_physics_ms": 0.025048328097909703
+          "p50_loop_ms": 0.15547899238299578,
+          "p95_loop_ms": 0.20919379021506757,
+          "p99_loop_ms": 0.2565846862853505,
+          "p95_sensor_ms": 0.006500411836896093,
+          "p95_controller_ms": 0.18564734637038793,
+          "p95_actuator_ms": 0.006814052176196128,
+          "p95_physics_ms": 0.009327854786533864
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13817093429586896,
-          "p50_loop_ms": 0.02165685873478651,
-          "p95_loop_ms": 0.04609077004715801,
-          "p99_loop_ms": 1.0075303167104734,
-          "p95_sensor_ms": 0.011864362750202419,
-          "p95_controller_ms": 0.010826776269823313,
-          "p95_actuator_ms": 0.00685853883624077,
-          "p95_physics_ms": 0.018128217197954655
+          "p50_loop_ms": 0.013131008017808199,
+          "p95_loop_ms": 0.023084896383807063,
+          "p99_loop_ms": 0.025921387714333832,
+          "p95_sensor_ms": 0.005342099757399411,
+          "p95_controller_ms": 0.005629655788652601,
+          "p95_actuator_ms": 0.004589214222505689,
+          "p95_physics_ms": 0.007589090091641993
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05258547371664243,
-          "p50_loop_ms": 0.12229685671627522,
-          "p95_loop_ms": 0.2598693943582478,
-          "p99_loop_ms": 1.6085330746136628,
-          "p95_sensor_ms": 0.0154070556163788,
-          "p95_controller_ms": 0.16536129405722025,
-          "p95_actuator_ms": 0.031029514502733994,
-          "p95_physics_ms": 0.0402899109758437
+          "p50_loop_ms": 0.064902487793006,
+          "p95_loop_ms": 0.09222736844094472,
+          "p99_loop_ms": 0.10520701325731352,
+          "p95_sensor_ms": 0.0041564577259123325,
+          "p95_controller_ms": 0.07176446088124068,
+          "p95_actuator_ms": 0.007451949932146821,
+          "p95_physics_ms": 0.007789296796545388
         }
       }
     },
-    "snn_runtime_backend": "rust",
-    "threshold_profile": "accelerated",
+    "snn_runtime_backend": "numpy",
+    "threshold_profile": "numpy_fallback",
     "ratios": {
-      "snn_full_to_surrogate_p95_ratio": 0.5979923295256347
+      "snn_full_to_surrogate_p95_ratio": 0.6092614911412276
     },
     "thresholds": {
-      "max_snn_p95_loop_ms_surrogate": 8.0,
-      "max_snn_p95_loop_ms_full": 12.0,
+      "max_snn_p95_loop_ms_surrogate": 10.0,
+      "max_snn_p95_loop_ms_full": 14.0,
       "max_snn_full_to_surrogate_ratio": 8.0
     },
     "passes_thresholds": true
+  },
+  "digital_twin_control_latency": {
+    "schema": "scpn-fusion-core.digital_twin_control_latency.v1",
+    "measurement_context": {
+      "claim_boundary": "Python CPU and Rust rows are local non-isolated wall-clock measurements. GPU and HIL rows remain blocked unless status is measured.",
+      "accelerator_isolation_note": "CUDA device was operator-reserved for this benchmark run; CPU host process remains a local non-isolated workstation measurement.",
+      "warmup_policy": "No samples discarded; deterministic synthetic stream is measured from cold local process state.",
+      "sample_count_per_case": 320,
+      "host_before": {
+        "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+        "python_version": "3.12.3",
+        "processor": "x86_64",
+        "machine": "x86_64",
+        "cpu_count": 12,
+        "affinity_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "affinity_cpu_count": 12,
+        "loadavg_1_5_15": [
+          3.21533203125,
+          4.27587890625,
+          5.06396484375
+        ],
+        "numpy_version": "1.26.4",
+        "isolation": "non_isolated_local_workstation",
+        "claim_boundary": "Local wall-clock regression evidence only; not an isolated-core or hardware-in-the-loop latency claim."
+      },
+      "host_after": {
+        "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+        "python_version": "3.12.3",
+        "processor": "x86_64",
+        "machine": "x86_64",
+        "cpu_count": 12,
+        "affinity_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "affinity_cpu_count": 12,
+        "loadavg_1_5_15": [
+          3.21533203125,
+          4.27587890625,
+          5.06396484375
+        ],
+        "numpy_version": "1.26.4",
+        "isolation": "non_isolated_local_workstation",
+        "claim_boundary": "Local wall-clock regression evidence only; not an isolated-core or hardware-in-the-loop latency claim."
+      }
+    },
+    "cpu": {
+      "status": "measured",
+      "backend": "python_numpy_cpu",
+      "p50_loop_ms": 0.033268501283600926,
+      "p95_loop_ms": 0.03855504182865843,
+      "p99_loop_ms": 0.04630783194443211,
+      "stages": {
+        "input_validation": {
+          "p50_ms": 0.0011164956958964467,
+          "p95_ms": 0.0012411881471052766,
+          "p99_ms": 0.004204199067316955
+        },
+        "feature_assembly": {
+          "p50_ms": 0.0011115043889731169,
+          "p95_ms": 0.0013994707842357457,
+          "p99_ms": 0.0022822231403552004
+        },
+        "digital_twin_update": {
+          "p50_ms": 0.007239505066536367,
+          "p95_ms": 0.00806600437499583,
+          "p99_ms": 0.012726949353236707
+        },
+        "controller_decision": {
+          "p50_ms": 0.0013940007193014026,
+          "p95_ms": 0.0015308673027902844,
+          "p99_ms": 0.002049233880825341
+        },
+        "fallback_policy": {
+          "p50_ms": 0.013026496162638068,
+          "p95_ms": 0.014223685138858855,
+          "p99_ms": 0.017562659340910614
+        },
+        "output_serialization": {
+          "p50_ms": 0.007624505087733269,
+          "p95_ms": 0.008765399979893118,
+          "p99_ms": 0.01080445945262909
+        }
+      },
+      "degraded_modes": {
+        "nominal": {
+          "case": "nominal",
+          "steps": 320,
+          "fallback_count": 0,
+          "fallback_rate": 0.0,
+          "safe_output_rate": 1.0,
+          "fallback_reasons": {},
+          "checksum": -77.13915732179238,
+          "p50_loop_ms": 0.033268501283600926,
+          "p95_loop_ms": 0.03855504182865843,
+          "p99_loop_ms": 0.04630783194443211,
+          "stages": {
+            "input_validation": {
+              "p50_ms": 0.0011164956958964467,
+              "p95_ms": 0.0012411881471052766,
+              "p99_ms": 0.004204199067316955
+            },
+            "feature_assembly": {
+              "p50_ms": 0.0011115043889731169,
+              "p95_ms": 0.0013994707842357457,
+              "p99_ms": 0.0022822231403552004
+            },
+            "digital_twin_update": {
+              "p50_ms": 0.007239505066536367,
+              "p95_ms": 0.00806600437499583,
+              "p99_ms": 0.012726949353236707
+            },
+            "controller_decision": {
+              "p50_ms": 0.0013940007193014026,
+              "p95_ms": 0.0015308673027902844,
+              "p99_ms": 0.002049233880825341
+            },
+            "fallback_policy": {
+              "p50_ms": 0.013026496162638068,
+              "p95_ms": 0.014223685138858855,
+              "p99_ms": 0.017562659340910614
+            },
+            "output_serialization": {
+              "p50_ms": 0.007624505087733269,
+              "p95_ms": 0.008765399979893118,
+              "p99_ms": 0.01080445945262909
+            }
+          },
+          "passes_semantics": true
+        },
+        "stale_input": {
+          "case": "stale_input",
+          "steps": 320,
+          "fallback_count": 46,
+          "fallback_rate": 0.14375,
+          "safe_output_rate": 1.0,
+          "fallback_reasons": {
+            "stale_snapshot_safe_mode": 46
+          },
+          "checksum": -77.13784328915892,
+          "p50_loop_ms": 0.03389400080777705,
+          "p95_loop_ms": 0.039574806578457355,
+          "p99_loop_ms": 0.04455739865079522,
+          "stages": {
+            "input_validation": {
+              "p50_ms": 0.0011500087566673756,
+              "p95_ms": 0.0012833639630116522,
+              "p99_ms": 0.0014212305541150274
+            },
+            "feature_assembly": {
+              "p50_ms": 0.001124004484154284,
+              "p95_ms": 0.001312293170485646,
+              "p99_ms": 0.001601977273821831
+            },
+            "digital_twin_update": {
+              "p50_ms": 0.007312482921406627,
+              "p95_ms": 0.008182966848835349,
+              "p99_ms": 0.011108540347777309
+            },
+            "controller_decision": {
+              "p50_ms": 0.0014195102266967297,
+              "p95_ms": 0.00154914305312559,
+              "p99_ms": 0.0020180735737085347
+            },
+            "fallback_policy": {
+              "p50_ms": 0.013127515558153391,
+              "p95_ms": 0.01500221114838496,
+              "p99_ms": 0.02005801536142826
+            },
+            "output_serialization": {
+              "p50_ms": 0.0077599979704245925,
+              "p95_ms": 0.00877569545991719,
+              "p99_ms": 0.011786929389927538
+            }
+          },
+          "passes_semantics": true
+        },
+        "out_of_distribution_input": {
+          "case": "out_of_distribution_input",
+          "steps": 320,
+          "fallback_count": 30,
+          "fallback_rate": 0.09375,
+          "safe_output_rate": 1.0,
+          "fallback_reasons": {
+            "ood_snapshot_safe_mode": 30
+          },
+          "checksum": -101.45274425888707,
+          "p50_loop_ms": 0.034657990909181535,
+          "p95_loop_ms": 0.04377043223939837,
+          "p99_loop_ms": 0.06963620777241886,
+          "stages": {
+            "input_validation": {
+              "p50_ms": 0.001166015863418579,
+              "p95_ms": 0.0014313554856926203,
+              "p99_ms": 0.002203163749072701
+            },
+            "feature_assembly": {
+              "p50_ms": 0.0011619995348155499,
+              "p95_ms": 0.0015281519154086713,
+              "p99_ms": 0.0026021728990599513
+            },
+            "digital_twin_update": {
+              "p50_ms": 0.0075194984674453735,
+              "p95_ms": 0.009500444866716862,
+              "p99_ms": 0.017249132506549362
+            },
+            "controller_decision": {
+              "p50_ms": 0.0014500110410153866,
+              "p95_ms": 0.00165920500876382,
+              "p99_ms": 0.002980602730531246
+            },
+            "fallback_policy": {
+              "p50_ms": 0.013500495697371662,
+              "p95_ms": 0.016556955233681954,
+              "p99_ms": 0.028353416710160676
+            },
+            "output_serialization": {
+              "p50_ms": 0.007896000170148909,
+              "p95_ms": 0.01067513221642003,
+              "p99_ms": 0.01639925962081179
+            }
+          },
+          "passes_semantics": true
+        },
+        "missing_diagnostic": {
+          "case": "missing_diagnostic",
+          "steps": 320,
+          "fallback_count": 64,
+          "fallback_rate": 0.2,
+          "safe_output_rate": 1.0,
+          "fallback_reasons": {
+            "missing_q95_defaulted": 64
+          },
+          "checksum": -77.18063967996703,
+          "p50_loop_ms": 0.03576699236873537,
+          "p95_loop_ms": 0.05102938011987137,
+          "p99_loop_ms": 0.0658446189481765,
+          "stages": {
+            "input_validation": {
+              "p50_ms": 0.0012090022210031748,
+              "p95_ms": 0.0016449383110739293,
+              "p99_ms": 0.002210486854892224
+            },
+            "feature_assembly": {
+              "p50_ms": 0.001191991032101214,
+              "p95_ms": 0.001772286486811936,
+              "p99_ms": 0.002408779982943088
+            },
+            "digital_twin_update": {
+              "p50_ms": 0.007688999176025391,
+              "p95_ms": 0.011744209041353315,
+              "p99_ms": 0.014805783575866371
+            },
+            "controller_decision": {
+              "p50_ms": 0.0014550023479387164,
+              "p95_ms": 0.001901345967780799,
+              "p99_ms": 0.002661248145159334
+            },
+            "fallback_policy": {
+              "p50_ms": 0.013844502973370254,
+              "p95_ms": 0.021739682415500287,
+              "p99_ms": 0.027084587782155722
+            },
+            "output_serialization": {
+              "p50_ms": 0.008215502020902932,
+              "p95_ms": 0.011640400043688715,
+              "p99_ms": 0.015570410760119557
+            }
+          },
+          "passes_semantics": true
+        },
+        "non_finite_value": {
+          "case": "non_finite_value",
+          "steps": 320,
+          "fallback_count": 25,
+          "fallback_rate": 0.078125,
+          "safe_output_rate": 1.0,
+          "fallback_reasons": {
+            "non_finite_input_replaced": 25
+          },
+          "checksum": -77.12985039555913,
+          "p50_loop_ms": 0.03595549787860364,
+          "p95_loop_ms": 0.049244593537878245,
+          "p99_loop_ms": 0.06641813146416099,
+          "stages": {
+            "input_validation": {
+              "p50_ms": 0.0011760130291804671,
+              "p95_ms": 0.0015429410268552606,
+              "p99_ms": 0.002118600823450834
+            },
+            "feature_assembly": {
+              "p50_ms": 0.0011939846444875002,
+              "p95_ms": 0.001765394699759782,
+              "p99_ms": 0.002280573826283217
+            },
+            "digital_twin_update": {
+              "p50_ms": 0.007797498255968094,
+              "p95_ms": 0.010802783071994785,
+              "p99_ms": 0.015130983956623822
+            },
+            "controller_decision": {
+              "p50_ms": 0.0014629913493990898,
+              "p95_ms": 0.0017933416529558603,
+              "p99_ms": 0.002413799520581961
+            },
+            "fallback_policy": {
+              "p50_ms": 0.013872995623387396,
+              "p95_ms": 0.01921679358929396,
+              "p99_ms": 0.027535884291864942
+            },
+            "output_serialization": {
+              "p50_ms": 0.008235510904341936,
+              "p95_ms": 0.011336004536133261,
+              "p99_ms": 0.016267336905002594
+            }
+          },
+          "passes_semantics": true
+        },
+        "actuator_saturation": {
+          "case": "actuator_saturation",
+          "steps": 320,
+          "fallback_count": 36,
+          "fallback_rate": 0.1125,
+          "safe_output_rate": 1.0,
+          "fallback_reasons": {
+            "actuator_saturation_clamped": 36
+          },
+          "checksum": -114.9819217229597,
+          "p50_loop_ms": 0.034281008993275464,
+          "p95_loop_ms": 0.04104534891666845,
+          "p99_loop_ms": 0.046389789786189795,
+          "stages": {
+            "input_validation": {
+              "p50_ms": 0.001138483639806509,
+              "p95_ms": 0.0012601420166902244,
+              "p99_ms": 0.0016993415192700927
+            },
+            "feature_assembly": {
+              "p50_ms": 0.0011605152394622564,
+              "p95_ms": 0.0013867844245396557,
+              "p99_ms": 0.0016520210192538798
+            },
+            "digital_twin_update": {
+              "p50_ms": 0.007405993528664112,
+              "p95_ms": 0.008363615779671818,
+              "p99_ms": 0.012120152532588692
+            },
+            "controller_decision": {
+              "p50_ms": 0.0014085089787840843,
+              "p95_ms": 0.00153705186676234,
+              "p99_ms": 0.002079283003695309
+            },
+            "fallback_policy": {
+              "p50_ms": 0.013262484571896493,
+              "p95_ms": 0.015213599544949833,
+              "p99_ms": 0.019730666826944798
+            },
+            "output_serialization": {
+              "p50_ms": 0.007892493158578873,
+              "p95_ms": 0.009168607357423753,
+              "p99_ms": 0.013123751559760423
+            }
+          },
+          "passes_semantics": true
+        },
+        "controller_fallback": {
+          "case": "controller_fallback",
+          "steps": 320,
+          "fallback_count": 32,
+          "fallback_rate": 0.1,
+          "safe_output_rate": 1.0,
+          "fallback_reasons": {
+            "controller_non_finite_or_bad_shape": 32
+          },
+          "checksum": -69.53482551334567,
+          "p50_loop_ms": 0.033984004403464496,
+          "p95_loop_ms": 0.04089301510248333,
+          "p99_loop_ms": 0.05113789724418894,
+          "stages": {
+            "input_validation": {
+              "p50_ms": 0.0011390075087547302,
+              "p95_ms": 0.0013073949958197773,
+              "p99_ms": 0.0017458089860156178
+            },
+            "feature_assembly": {
+              "p50_ms": 0.0011369993444532156,
+              "p95_ms": 0.00141614000312984,
+              "p99_ms": 0.002147530321963132
+            },
+            "digital_twin_update": {
+              "p50_ms": 0.007419002940878272,
+              "p95_ms": 0.008783934754319489,
+              "p99_ms": 0.01271649147383869
+            },
+            "controller_decision": {
+              "p50_ms": 0.0014909892342984676,
+              "p95_ms": 0.002149987267330289,
+              "p99_ms": 0.0026251070084981625
+            },
+            "fallback_policy": {
+              "p50_ms": 0.013166500139050186,
+              "p95_ms": 0.01600927207618952,
+              "p99_ms": 0.01927873701788485
+            },
+            "output_serialization": {
+              "p50_ms": 0.007818991434760392,
+              "p95_ms": 0.009322793630417438,
+              "p99_ms": 0.012483725149650127
+            }
+          },
+          "passes_semantics": true
+        }
+      }
+    },
+    "gpu": {
+      "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+      "backend": "cupy_cuda",
+      "checksum": -77.13918132179239,
+      "claim_boundary": "Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation.",
+      "cuda_runtime_version": 12090,
+      "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
+      "fallback_count": 0,
+      "p50_loop_ms": 0.6652434967691079,
+      "p95_loop_ms": 0.8477069291984664,
+      "p99_loop_ms": 1.00512206699932,
+      "preloaded_cuda_libraries": [
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
+      ],
+      "stages": {
+        "controller_decision": {
+          "p50_ms": 0.18263602396473289,
+          "p95_ms": 0.27217775204917416,
+          "p99_ms": 0.3786957552074455
+        },
+        "digital_twin_update": {
+          "p50_ms": 0.35447451227810234,
+          "p95_ms": 0.45814951299689716,
+          "p99_ms": 0.5679020230309106
+        },
+        "fallback_policy": {
+          "p50_ms": 0.05574249371420592,
+          "p95_ms": 0.06915173289598898,
+          "p99_ms": 0.13682798424270004
+        },
+        "feature_assembly": {
+          "p50_ms": 0.04322400491219014,
+          "p95_ms": 0.05484466382768008,
+          "p99_ms": 0.12135509052313864
+        },
+        "input_validation": {
+          "p50_ms": 0.00542248017154634,
+          "p95_ms": 0.0077249962487258034,
+          "p99_ms": 0.011238658044021578
+        },
+        "output_serialization": {
+          "p50_ms": 0.013269978808239102,
+          "p95_ms": 0.01736743288347498,
+          "p99_ms": 0.02520720212487505
+        }
+      },
+      "status": "measured",
+      "steps": 320,
+      "visible_device_count": 1,
+      "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 320",
+      "ld_library_path_source": "project_venv_nvidia_wheels"
+    },
+    "rust": {
+      "status": "measured",
+      "backend": "rust_release",
+      "steps": 320,
+      "p50_loop_ms": 0.019566,
+      "p95_loop_ms": 0.01995955,
+      "p99_loop_ms": 0.02556251,
+      "fallback_count": 0,
+      "checksum": -120.745844279,
+      "stages": {
+        "input_validation": {
+          "p50_ms": 1.7e-05,
+          "p95_ms": 1.9e-05,
+          "p99_ms": 2e-05
+        },
+        "feature_assembly": {
+          "p50_ms": 6e-05,
+          "p95_ms": 7.41e-05,
+          "p99_ms": 0.00011686
+        },
+        "digital_twin_update": {
+          "p50_ms": 0.017467,
+          "p95_ms": 0.0178274,
+          "p99_ms": 0.02246903
+        },
+        "controller_decision": {
+          "p50_ms": 0.001582,
+          "p95_ms": 0.0016302,
+          "p99_ms": 0.00219332
+        },
+        "fallback_policy": {
+          "p50_ms": 5.4e-05,
+          "p95_ms": 6.205e-05,
+          "p99_ms": 8.205e-05
+        },
+        "output_serialization": {
+          "p50_ms": 0.000241,
+          "p95_ms": 0.000275,
+          "p99_ms": 0.00033305
+        }
+      },
+      "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 320 --json",
+      "runtime_seconds": 0.06625110600725748
+    },
+    "hil": {
+      "status": "blocked_not_measured",
+      "reason": "No hardware-in-the-loop sensor/actuator rig was exercised by this local benchmark."
+    },
+    "passes_thresholds": true,
+    "thresholds": {
+      "max_cpu_nominal_p95_loop_ms": 2.0,
+      "max_cpu_nominal_p99_loop_ms": 5.0,
+      "min_measured_lanes": 2,
+      "degraded_modes_require_safe_outputs": true
+    }
   }
 }
