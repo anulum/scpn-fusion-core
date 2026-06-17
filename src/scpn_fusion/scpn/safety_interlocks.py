@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Dict, Mapping
 
 import numpy as np
+import numpy.typing as npt
 
 from .contracts import (
     DEFAULT_SAFETY_CONTRACTS,
@@ -129,7 +130,7 @@ def safety_tokens_from_state(
 
 def evaluate_transition_enablement(
     net: StochasticPetriNet,
-    marking: np.ndarray,
+    marking: npt.NDArray[np.float64],
 ) -> Dict[str, bool]:
     """Return deterministic transition enablement with inhibitor semantics."""
     if not net.is_compiled or net.W_in is None:
@@ -182,7 +183,7 @@ class SafetyInterlockRuntime:
         self.last_tokens: Dict[str, float] = {k: 0.0 for k in SAFETY_CHANNELS}
 
     @property
-    def marking(self) -> np.ndarray:
+    def marking(self) -> npt.NDArray[np.float64]:
         """Return a copy of the current safety marking state."""
         return self._marking.copy()
 

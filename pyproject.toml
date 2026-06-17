@@ -118,7 +118,11 @@ files = [
     "src/scpn_fusion/scpn/controller.py",
     "src/scpn_fusion/scpn/structure.py",
     "src/scpn_fusion/scpn/artifact.py",
+    "src/scpn_fusion/scpn/artifact_codec.py",
+    "src/scpn_fusion/scpn/artifact_schema.py",
+    "src/scpn_fusion/scpn/artifact_validation.py",
     "src/scpn_fusion/scpn/compiler.py",
+    "src/scpn_fusion/scpn/safety_interlocks.py",
     "src/scpn_fusion/scpn/__init__.py",
     # io/
     "src/scpn_fusion/io/__init__.py",
