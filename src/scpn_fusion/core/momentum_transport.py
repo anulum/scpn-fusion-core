@@ -11,14 +11,15 @@ from __future__ import annotations
 
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 def nbi_torque(
-    P_nbi_profile: np.ndarray, R0: float, v_beam: float, theta_inj_deg: float
-) -> np.ndarray:
-    """
-    Torque deposition from NBI [N m / m^3].
-    """
+    P_nbi_profile: FloatArray, R0: float, v_beam: float, theta_inj_deg: float
+) -> FloatArray:
+    """Return the NBI torque deposition profile [N m / m^3]."""
     if v_beam <= 0.0:
         return np.zeros_like(P_nbi_profile)
 
@@ -28,22 +29,22 @@ def nbi_torque(
 
 
 def intrinsic_rotation_torque(
-    grad_Ti: np.ndarray, grad_ne: np.ndarray, R0: float, a: float
-) -> np.ndarray:
-    """
-    Residual stress model torque (Rice scaling heuristic).
-    T_intr ~ grad_Ti
+    grad_Ti: FloatArray, grad_ne: FloatArray, R0: float, a: float
+) -> FloatArray:
+    """Return the residual-stress (Rice scaling) intrinsic rotation torque.
+
+    The residual stress scales with the ion temperature gradient, T_intr ~ grad_Ti.
     """
     # Rice scaling: residual stress ∝ ∇T_i
     return -1e-3 * grad_Ti
 
 
 def exb_shearing_rate(
-    omega_phi: np.ndarray, B_theta: np.ndarray, B0: float, R0: float, rho: np.ndarray, a: float
-) -> np.ndarray:
-    """
-    ExB shearing rate [rad/s].
-    omega_ExB = (R B_theta / B) * d/dr (E_r / (R B_theta))
+    omega_phi: FloatArray, B_theta: FloatArray, B0: float, R0: float, rho: FloatArray, a: float
+) -> FloatArray:
+    """Return the ExB shearing rate [rad/s].
+
+    omega_ExB = (R B_theta / B) d/dr (E_r / (R B_theta)).
     """
     # Assuming core is rotation dominated: E_r ≈ v_phi * B_theta = (R0 * omega_phi) * B_theta
     # So E_r / (R0 B_theta) ≈ omega_phi
@@ -61,10 +62,10 @@ def exb_shearing_rate(
     return np.asarray(np.abs(rate))
 
 
-def turbulence_suppression_factor(omega_ExB: np.ndarray, gamma_max: np.ndarray) -> np.ndarray:
-    """
-    Reduction factor on anomalous transport.
-    F = 1 / (1 + (omega_ExB / gamma_max)^2)
+def turbulence_suppression_factor(omega_ExB: FloatArray, gamma_max: FloatArray) -> FloatArray:
+    """Return the reduction factor on anomalous transport.
+
+    F = 1 / (1 + (omega_ExB / gamma_max)^2).
     """
     # Guard against zero gamma
     gamma_safe = np.maximum(gamma_max, 1e-6)
@@ -72,19 +73,19 @@ def turbulence_suppression_factor(omega_ExB: np.ndarray, gamma_max: np.ndarray) 
 
 
 def radial_electric_field(
-    ne: np.ndarray,
-    Ti_keV: np.ndarray,
-    omega_phi: np.ndarray,
-    B_theta: np.ndarray,
+    ne: FloatArray,
+    Ti_keV: FloatArray,
+    omega_phi: FloatArray,
+    B_theta: FloatArray,
     B0: float,
     R0: float,
-    rho: np.ndarray,
+    rho: FloatArray,
     a: float,
-    v_theta: np.ndarray | None = None,
-) -> np.ndarray:
-    """
-    E_r [V/m] from radial force balance (neoclassical).
-    E_r = (1/Z_i e n_i) dp_i/dr + v_φ B_θ - v_θ B_φ.
+    v_theta: FloatArray | None = None,
+) -> FloatArray:
+    """Return E_r [V/m] from the neoclassical radial force balance.
+
+    E_r = (1/Z_i e n_i) dp_i/dr + v_phi B_theta - v_theta B_phi.
     """
     if v_theta is None:
         v_theta_arr = np.zeros_like(omega_phi, dtype=float)
@@ -113,7 +114,7 @@ class RotationDiagnostics:
     """Diagnostics for toroidal rotation and RWM stabilisation margin."""
 
     @staticmethod
-    def mach_number(omega_phi: np.ndarray, Ti_keV: np.ndarray, R0: float) -> np.ndarray:
+    def mach_number(omega_phi: FloatArray, Ti_keV: FloatArray, R0: float) -> FloatArray:
         """Return toroidal Mach number from angular rotation and ion temperature."""
         v_phi = omega_phi * R0
         e_charge = 1.602e-19
@@ -123,7 +124,7 @@ class RotationDiagnostics:
         return np.asarray(np.abs(v_phi) / np.maximum(c_s, 1e-3))
 
     @staticmethod
-    def rwm_stabilization_criterion(omega_phi: np.ndarray, tau_wall: float) -> bool:
+    def rwm_stabilization_criterion(omega_phi: FloatArray, tau_wall: float) -> bool:
         """Return whether core rotation satisfies the wall-time stabilisation rule."""
         omega = np.asarray(omega_phi, dtype=float)
         if omega.ndim != 1 or omega.size == 0 or not np.all(np.isfinite(omega)):
@@ -139,7 +140,7 @@ class RotationDiagnostics:
 class MomentumTransportSolver:
     """Implicit radial angular-momentum transport solver."""
 
-    def __init__(self, rho: np.ndarray, R0: float, a: float, B0: float, prandtl: float = 0.7):
+    def __init__(self, rho: FloatArray, R0: float, a: float, B0: float, prandtl: float = 0.7):
         """Initialise geometry, magnetic field, transport grid, and rotation state."""
         self.rho = np.asarray(rho, dtype=float)
         self.R0 = R0
@@ -166,18 +167,17 @@ class MomentumTransportSolver:
     def step(
         self,
         dt: float,
-        chi_i: np.ndarray,
-        ne: np.ndarray,
-        Ti_keV: np.ndarray,
-        T_nbi: np.ndarray,
-        T_intrinsic: np.ndarray,
-    ) -> np.ndarray:
-        """
-        Advance rotation profile.
-        rho_m = n_i m_i
-        d(rho_m R^2 omega)/dt + 1/r d/dr(r Pi_phi) = T_tot
-        Pi_phi = -chi_phi d(rho_m R^2 omega)/dr + V * ...
-        Assuming V_pinch = 0 for simplicity.
+        chi_i: FloatArray,
+        ne: FloatArray,
+        Ti_keV: FloatArray,
+        T_nbi: FloatArray,
+        T_intrinsic: FloatArray,
+    ) -> FloatArray:
+        """Advance the rotation profile by one implicit time step.
+
+        Solves d(rho_m R^2 omega)/dt + (1/r) d/dr(r Pi_phi) = T_tot with momentum
+        density rho_m = n_i m_i and flux Pi_phi = -chi_phi d(rho_m R^2 omega)/dr,
+        assuming zero pinch velocity.
         """
         import scipy.linalg
 
@@ -242,11 +242,11 @@ class MomentumTransportSolver:
     def _require_profile(
         self,
         name: str,
-        value: np.ndarray,
+        value: FloatArray,
         *,
         non_negative: bool = False,
         positive: bool = False,
-    ) -> np.ndarray:
+    ) -> FloatArray:
         arr = np.asarray(value, dtype=float)
         if arr.shape != (self.nr,) or not np.all(np.isfinite(arr)):
             raise ValueError(f"{name} must be a finite profile with shape ({self.nr},)")
