@@ -204,6 +204,9 @@ files = [
     "src/scpn_fusion/core/public_frc_reference.py",
     "src/scpn_fusion/core/scaling_laws.py",
     "src/scpn_fusion/core/tokamak_config.py",
+    "src/scpn_fusion/core/sol_model.py",
+    "src/scpn_fusion/core/pedestal.py",
+    "src/scpn_fusion/core/sawtooth.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",

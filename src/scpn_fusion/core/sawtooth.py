@@ -12,7 +12,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.integrate import trapezoid
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -29,11 +32,11 @@ class SawtoothEvent:
 class SawtoothMonitor:
     """Monitors the q-profile for Porcelli-like sawtooth trigger conditions."""
 
-    def __init__(self, rho: np.ndarray, s_crit: float = 0.1):
+    def __init__(self, rho: FloatArray, s_crit: float = 0.1):
         self.rho = rho
         self.s_crit = s_crit
 
-    def find_q1_radius(self, q: np.ndarray) -> float | None:
+    def find_q1_radius(self, q: FloatArray) -> float | None:
         """Find the normalized radius where q=1."""
         if q[0] >= 1.0 or np.min(q) >= 1.0:
             return None
@@ -54,7 +57,7 @@ class SawtoothMonitor:
         rho_1 = r1 + frac * (r2 - r1)
         return float(rho_1)
 
-    def check_trigger(self, q: np.ndarray, shear: np.ndarray) -> bool:
+    def check_trigger(self, q: FloatArray, shear: FloatArray) -> bool:
         """Porcelli-like trigger based on shear at q=1."""
         rho_1 = self.find_q1_radius(q)
         if rho_1 is None:
@@ -78,8 +81,8 @@ class SawtoothMonitor:
 
 
 def kadomtsev_crash(
-    rho: np.ndarray, T: np.ndarray, n: np.ndarray, q: np.ndarray, R0: float, a: float
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float]:
+    rho: FloatArray, T: FloatArray, n: FloatArray, q: FloatArray, R0: float, a: float
+) -> tuple[FloatArray, FloatArray, FloatArray, float, float]:
     """Apply Kadomtsev reconnection inside the q=1 mixing radius.
 
     Returns ``(T_new, n_new, q_new, rho_1, rho_mix)``. The mixing flattens the
@@ -121,7 +124,7 @@ def kadomtsev_crash(
 
     rho_inner = rho[:idx_mix]
 
-    def volume_average(prof: np.ndarray) -> float:
+    def volume_average(prof: FloatArray) -> float:
         prof_inner = prof[:idx_mix]
         vol_int = trapezoid(prof_inner * rho_inner, rho_inner)
         vol_tot = trapezoid(rho_inner, rho_inner)
@@ -156,7 +159,7 @@ def kadomtsev_crash(
 class SawtoothCycler:
     """Tracks and triggers sawtooth crashes."""
 
-    def __init__(self, rho: np.ndarray, R0: float, a: float, s_crit: float = 0.1):
+    def __init__(self, rho: FloatArray, R0: float, a: float, s_crit: float = 0.1):
         self.rho = rho
         self.R0 = R0
         self.a = a
@@ -164,7 +167,7 @@ class SawtoothCycler:
         self.time = 0.0
 
     def step(
-        self, dt: float, q: np.ndarray, shear: np.ndarray, T: np.ndarray, n: np.ndarray
+        self, dt: float, q: FloatArray, shear: FloatArray, T: FloatArray, n: FloatArray
     ) -> SawtoothEvent | None:
         """Advance by dt; trigger Kadomtsev crash if shear at q=1 exceeds s_crit."""
         self.time += dt

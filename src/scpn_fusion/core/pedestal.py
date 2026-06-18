@@ -17,6 +17,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass(frozen=True)
@@ -53,14 +56,14 @@ class PedestalProfile:
     def __init__(self, params: PedestalParams) -> None:
         self.p = params
 
-    def mtanh(self, y: np.ndarray) -> np.ndarray:
+    def mtanh(self, y: FloatArray) -> FloatArray:
         """Core mtanh function: ((1+ay)e^y - e^-y) / (e^y + e^-y)."""
         exp_y = np.exp(np.clip(y, -20, 20))
         exp_ny = np.exp(np.clip(-y, -20, 20))
-        result: np.ndarray = ((1.0 + self.p.a * y) * exp_y - exp_ny) / (exp_y + exp_ny)
+        result: FloatArray = ((1.0 + self.p.a * y) * exp_y - exp_ny) / (exp_y + exp_ny)
         return result
 
-    def evaluate(self, rho: np.ndarray) -> np.ndarray:
+    def evaluate(self, rho: FloatArray) -> FloatArray:
         """Evaluate the pedestal profile at given radial points.
 
         f(x) = (f_ped + f_sep)/2 + (f_ped - f_sep)/2 * mtanh((x_ped - x)/delta)
@@ -68,7 +71,8 @@ class PedestalProfile:
         y = (self.p.x_ped - rho) / self.p.delta
         mid = (self.p.f_ped + self.p.f_sep) / 2.0
         half_width = (self.p.f_ped - self.p.f_sep) / 2.0
-        return mid + half_width * self.mtanh(y)
+        result: FloatArray = mid + half_width * self.mtanh(y)
+        return result
 
 
 def pedestal_width_eped1(beta_p_ped: float, delta_psi: float = 0.0) -> float:
