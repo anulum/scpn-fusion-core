@@ -10,6 +10,9 @@
 from __future__ import annotations
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 E_CHARGE = 1.602176634e-19
 M_E = 9.1093837e-31
@@ -26,7 +29,7 @@ class ECCDSource:
         self.sigma_rho = sigma_rho
         self.eta_cd = eta_cd
 
-    def P_absorbed(self, rho: np.ndarray) -> np.ndarray:
+    def P_absorbed(self, rho: FloatArray) -> FloatArray:
         """Absorbed power density profile [W/m^3]."""
         if self.sigma_rho <= 0.0:
             return np.zeros_like(rho)
@@ -38,7 +41,7 @@ class ECCDSource:
         )
         return np.asarray(P_dens)
 
-    def j_cd(self, rho: np.ndarray, ne_19: np.ndarray, Te_keV: np.ndarray) -> np.ndarray:
+    def j_cd(self, rho: FloatArray, ne_19: FloatArray, Te_keV: FloatArray) -> FloatArray:
         """Driven current density profile [A/m^2]."""
         p_abs = self.P_absorbed(rho)
         denom = np.maximum(ne_19 * Te_keV, 1e-3)
@@ -60,7 +63,7 @@ class NBISource:
         self.rho_tangency = rho_tangency
         self.sigma_rho = sigma_rho
 
-    def P_heating(self, rho: np.ndarray) -> np.ndarray:
+    def P_heating(self, rho: FloatArray) -> FloatArray:
         """Heating power deposition profile [W/m^3]."""
         if self.sigma_rho <= 0.0:
             return np.zeros_like(rho)
@@ -73,8 +76,8 @@ class NBISource:
         return np.asarray(P_dens)
 
     def j_cd(
-        self, rho: np.ndarray, ne_19: np.ndarray, Te_keV: np.ndarray, Ti_keV: np.ndarray
-    ) -> np.ndarray:
+        self, rho: FloatArray, ne_19: FloatArray, Te_keV: FloatArray, Ti_keV: FloatArray
+    ) -> FloatArray:
         """Driven current density profile [A/m^2]."""
         p_heat = self.P_heating(rho)
 
@@ -116,7 +119,7 @@ class LHCDSource:
         self.sigma_rho = sigma_rho
         self.eta_cd = eta_cd
 
-    def P_absorbed(self, rho: np.ndarray) -> np.ndarray:
+    def P_absorbed(self, rho: FloatArray) -> FloatArray:
         """Absorbed power density profile [W/m^3], Gaussian in rho."""
         if self.sigma_rho <= 0.0:
             return np.zeros_like(rho)
@@ -128,7 +131,7 @@ class LHCDSource:
         )
         return np.asarray(P_dens)
 
-    def j_cd(self, rho: np.ndarray, ne_19: np.ndarray, Te_keV: np.ndarray) -> np.ndarray:
+    def j_cd(self, rho: FloatArray, ne_19: FloatArray, Te_keV: FloatArray) -> FloatArray:
         """Driven current density [A/m^2]. j_cd = eta_cd * P_abs / (ne * Te)."""
         p_abs = self.P_absorbed(rho)
         denom = np.maximum(ne_19 * Te_keV, 1e-3)
@@ -147,8 +150,8 @@ class CurrentDriveMix:
         self.sources.append(source)
 
     def total_j_cd(
-        self, rho: np.ndarray, ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray
-    ) -> np.ndarray:
+        self, rho: FloatArray, ne: FloatArray, Te: FloatArray, Ti: FloatArray
+    ) -> FloatArray:
         """Sum driven current density [A/m^2] from all registered sources."""
         j_tot = np.zeros_like(rho)
         for src in self.sources:
@@ -158,7 +161,7 @@ class CurrentDriveMix:
                 j_tot += src.j_cd(rho, ne, Te)
         return j_tot
 
-    def total_heating_power(self, rho: np.ndarray) -> np.ndarray:
+    def total_heating_power(self, rho: FloatArray) -> FloatArray:
         """Sum heating power density [W/m^3] from all registered sources."""
         p_tot = np.zeros_like(rho)
         for src in self.sources:
@@ -170,22 +173,17 @@ class CurrentDriveMix:
 
     def total_driven_current(
         self,
-        rho: np.ndarray,
-        ne: np.ndarray,
-        Te: np.ndarray,
-        Ti: np.ndarray,
+        rho: FloatArray,
+        ne: FloatArray,
+        Te: FloatArray,
+        Ti: FloatArray,
         *,
-        elongation: float | np.ndarray = 1.0,
+        elongation: float | FloatArray = 1.0,
     ) -> float:
         """Integrate total driven current [A] over circular or elongated area."""
         j_tot = self.total_j_cd(rho, ne, Te, Ti)
         drho = rho[1] - rho[0] if len(rho) > 1 else 0.0
-        if np.isscalar(elongation):
-            kappa = float(elongation)
-            if not np.isfinite(kappa) or kappa <= 0.0:
-                raise ValueError("elongation must be finite and positive")
-            dA = 2.0 * np.pi * kappa * rho * self.a**2 * drho
-        else:
+        if isinstance(elongation, np.ndarray):
             kappa_profile = np.asarray(elongation, dtype=float)
             if kappa_profile.shape != rho.shape or np.any(~np.isfinite(kappa_profile)):
                 raise ValueError("elongation profile must match rho and be finite")
@@ -193,4 +191,9 @@ class CurrentDriveMix:
                 raise ValueError("elongation must be positive")
             area = np.pi * self.a**2 * kappa_profile * rho**2
             dA = np.gradient(area, rho) * drho
+        else:
+            kappa = float(elongation)
+            if not np.isfinite(kappa) or kappa <= 0.0:
+                raise ValueError("elongation must be finite and positive")
+            dA = 2.0 * np.pi * kappa * rho * self.a**2 * drho
         return float(np.sum(j_tot * dA))

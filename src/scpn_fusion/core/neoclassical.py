@@ -15,6 +15,9 @@ scaling, and the Sauter bootstrap current model for general axisymmetry.
 from __future__ import annotations
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 # ─── Physical constants (CODATA 2018) ───────────────────────────────
 _E_CHARGE = 1.602176634e-19  # C
@@ -151,29 +154,29 @@ def banana_plateau_chi(
 
 
 def sauter_bootstrap(
-    rho: np.ndarray,
-    Te: np.ndarray,
-    Ti: np.ndarray,
-    ne: np.ndarray,
-    q: np.ndarray,
+    rho: FloatArray,
+    Te: FloatArray,
+    Ti: FloatArray,
+    ne: FloatArray,
+    q: FloatArray,
     R0: float,
     a: float,
     B0: float = 5.3,
     z_eff: float = 1.5,
-) -> np.ndarray:
+) -> FloatArray:
     """Compute the Sauter bootstrap current density profile.
 
     Reference: Sauter, O. et al., Phys. Plasmas 6, 2834 (1999).
 
     Parameters
     ----------
-    rho : np.ndarray
+    rho : FloatArray
         Normalised radial grid.
-    Te, Ti : np.ndarray
+    Te, Ti : FloatArray
         Electron and ion temperatures [keV].
-    ne : np.ndarray
+    ne : FloatArray
         Electron density [10^19 m^-3].
-    q : np.ndarray
+    q : FloatArray
         Safety factor profile.
     R0, a : float
         Major and minor radii [m].
@@ -184,7 +187,7 @@ def sauter_bootstrap(
 
     Returns
     -------
-    np.ndarray — Bootstrap current density [A/m^2].
+    FloatArray — Bootstrap current density [A/m^2].
     """
     rho = _require_radial_grid(rho)
     n = len(rho)
@@ -246,7 +249,7 @@ def sauter_bootstrap(
     return j_bs
 
 
-def _require_radial_grid(rho: np.ndarray) -> np.ndarray:
+def _require_radial_grid(rho: FloatArray) -> FloatArray:
     arr = np.asarray(rho, dtype=float)
     if arr.ndim != 1 or arr.size < 3:
         raise ValueError("rho must be a one-dimensional grid with at least three points")
@@ -259,12 +262,12 @@ def _require_radial_grid(rho: np.ndarray) -> np.ndarray:
 
 def _require_matching_profile(
     name: str,
-    value: np.ndarray,
+    value: FloatArray,
     n: int,
     *,
     non_negative: bool = False,
     positive: bool = False,
-) -> np.ndarray:
+) -> FloatArray:
     arr = np.asarray(value, dtype=float)
     if arr.shape != (n,) or not np.all(np.isfinite(arr)):
         raise ValueError(f"{name} must be a finite profile with shape ({n},)")
