@@ -11,6 +11,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 _ELEMENTARY_CHARGE = 1.602176634e-19
 _ATOMIC_MASS_KG = 1.66053906660e-27
@@ -27,15 +30,13 @@ class AlfvenGap:
 
 
 class AlfvenContinuum:
-    """
-    Shear Alfven wave continuum and gap structure.
-    """
+    """Shear Alfven wave continuum and gap structure."""
 
     def __init__(
         self,
-        rho: np.ndarray,
-        q: np.ndarray,
-        ne: np.ndarray,
+        rho: FloatArray,
+        q: FloatArray,
+        ne: FloatArray,
         B0: float,
         R0: float,
         m_i_amu: float = 2.5,
@@ -76,17 +77,13 @@ class AlfvenContinuum:
         """Interpolate local Alfven speed at the requested normalised radius."""
         return float(np.interp(rho_eval, self.rho, self.v_A))
 
-    def continuum(self, m: int, n: int) -> np.ndarray:
-        """
-        omega_A(rho) = |n*q - m| / (q*R0) * v_A
-        """
+    def continuum(self, m: int, n: int) -> FloatArray:
+        """Continuum frequency omega_A(rho) = |n*q - m| / (q*R0) * v_A."""
         k_par = np.abs(n * self.q - m) / np.maximum(self.q * self.R0, 1e-6)
         return np.asarray(k_par * self.v_A)
 
     def find_gaps(self, n: int) -> list[AlfvenGap]:
-        """
-        Locate TAE gaps where q = (2m+1)/(2n).
-        """
+        """Locate TAE gaps where q = (2m+1)/(2n)."""
         gaps = []
         for m in range(1, 10):
             q_gap = (2.0 * m + 1.0) / (2.0 * n)
@@ -186,9 +183,7 @@ class FastParticleDrive:
         return float(p_fast / p_mag)
 
     def resonance_function(self, v_fast: float, v_A: float) -> float:
-        """
-        F(v_f / v_A) peaking near 1 or 1/3 (for sidebands).
-        """
+        """Resonance function F(v_f / v_A) peaking near 1 or 1/3 (for sidebands)."""
         if not np.isfinite(v_fast) or v_fast <= 0.0:
             raise ValueError("v_fast must be finite and > 0.")
         if not np.isfinite(v_A) or v_A <= 0.0:
@@ -201,9 +196,7 @@ class FastParticleDrive:
         return float(f_main + f_side)
 
     def growth_rate(self, tae: TAEMode, beta_fast: float) -> float:
-        """
-        gamma_fast / omega = beta_f * q^2 * F
-        """
+        """Drive ratio gamma_fast / omega = beta_f * q^2 * F."""
         omega = tae.frequency()
         F = self.resonance_function(self.v_fast, tae.v_A)
         return float(omega * beta_fast * tae.q**2 * F)
@@ -363,8 +356,8 @@ def rsae_frequency(
     Te_keV: float = 10.0,
     m_i_amu: float = 2.5,
 ) -> float:
-    """
-    RSAE frequency.
+    """Return the RSAE frequency.
+
     omega_RSAE = omega_BAE + |n q_min - m| v_A / (q_min R0)
     """
     q_minimum = _require_positive("q_min", q_min)

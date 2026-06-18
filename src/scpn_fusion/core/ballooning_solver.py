@@ -12,24 +12,25 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.integrate import solve_ivp
 
 from scpn_fusion.core.stability_mhd import QProfile
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
 class BallooningEigenResult:
     """Result of solving the ballooning equation for a single (s, alpha) pair."""
 
-    theta: np.ndarray
-    xi: np.ndarray
+    theta: FloatArray
+    xi: FloatArray
     is_stable: bool
 
 
 class BallooningEquation:
-    """
-    Second-order ODE for ideal MHD ballooning stability in the s-alpha model.
-    """
+    """Second-order ODE for ideal MHD ballooning stability in the s-alpha model."""
 
     def __init__(self, s: float, alpha: float, theta_max: float = 20 * np.pi, n_theta: int = 2001):
         self.s = s
@@ -49,13 +50,13 @@ class BallooningEquation:
         )
 
     def solve(self) -> BallooningEigenResult:
-        """
-        Solve the boundary-value problem via shooting method.
+        """Solve the boundary-value problem via shooting method.
+
         The mode is unstable if the solution xi does not cross zero (oscillate).
         If it crosses zero, it is stable (oscillatory decay).
         """
 
-        def eqs(t: float, y: np.ndarray) -> list[float]:
+        def eqs(t: float, y: FloatArray) -> list[float]:
             u1, u2 = y
             du1 = u2 / self.f(t)
             du2 = -self.g(t) * u1
@@ -65,7 +66,7 @@ class BallooningEquation:
             terminal = True
             direction = -1
 
-            def __call__(self, t: float, y: np.ndarray) -> float:
+            def __call__(self, t: float, y: FloatArray) -> float:
                 return float(y[0])
 
         t_span = (0.0, self.theta_max)
@@ -94,8 +95,8 @@ class BallooningEquation:
 def find_marginal_stability(
     s: float, alpha_min: float = 0.0, alpha_max: float = 2.0, tol: float = 1e-3
 ) -> float:
-    """
-    Binary search for alpha_crit at fixed shear s.
+    """Binary search for alpha_crit at fixed shear s.
+
     Returns the critical alpha (first stability boundary).
     """
     amin = alpha_min
@@ -135,11 +136,9 @@ def find_marginal_stability(
 
 
 def compute_stability_diagram(
-    s_range: np.ndarray, alpha_min: float = 0.0, alpha_max: float = 2.0
-) -> np.ndarray:
-    """
-    Compute alpha_crit(s) for an array of shear values.
-    """
+    s_range: FloatArray, alpha_min: float = 0.0, alpha_max: float = 2.0
+) -> FloatArray:
+    """Compute alpha_crit(s) for an array of shear values."""
     alpha_crit = np.zeros_like(s_range)
     for i, s in enumerate(s_range):
         alpha_crit[i] = find_marginal_stability(s, alpha_min, alpha_max)
@@ -147,13 +146,11 @@ def compute_stability_diagram(
 
 
 class BallooningStabilityAnalysis:
-    """
-    Performs ballooning stability analysis given a QProfile.
-    """
+    """Ballooning stability analysis driven by a QProfile."""
 
-    def analyze(self, q_profile: QProfile) -> np.ndarray:
-        """
-        Extracts (s, alpha) at each radial point and returns per-radius stability margin.
+    def analyze(self, q_profile: QProfile) -> FloatArray:
+        """Extract (s, alpha) at each radial point and return per-radius stability margin.
+
         Positive margin means stable.
         margin = alpha_crit(s) - alpha_actual
         """
