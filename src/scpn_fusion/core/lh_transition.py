@@ -12,16 +12,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
 class PredatorPreyResult:
     """Time traces and classified confinement regime from a predator-prey run."""
 
-    epsilon_trace: np.ndarray
-    V_ZF_trace: np.ndarray
-    p_trace: np.ndarray
-    time: np.ndarray
+    epsilon_trace: FloatArray
+    V_ZF_trace: FloatArray
+    p_trace: FloatArray
+    time: FloatArray
     regime: str
 
 
@@ -70,7 +73,7 @@ class PredatorPreyModel:
         C = 1e-4
         return tau_E0 / (1.0 + C * max(0.0, epsilon))
 
-    def step(self, state: np.ndarray, dt: float, Q_heating: float) -> np.ndarray:
+    def step(self, state: FloatArray, dt: float, Q_heating: float) -> FloatArray:
         """Advance turbulence, zonal-flow, and edge-pressure state by one step."""
         # state = [epsilon, V_ZF, p_edge]
         state = np.asarray(state, dtype=float)
@@ -110,7 +113,7 @@ class PredatorPreyModel:
     ) -> PredatorPreyResult:
         """Integrate the predator-prey model and classify the resulting regime."""
         n_steps = int((t_span[1] - t_span[0]) / dt)
-        t_arr = np.linspace(t_span[0], t_span[1], n_steps)
+        t_arr = np.linspace(t_span[0], t_span[1], n_steps).astype(np.float64)
 
         state = np.array([1e4, 1.0, 1.0])  # L-mode initial state with small V_ZF seed
 
@@ -143,7 +146,7 @@ class LHTrigger:
         """Bind a predator-prey model used for threshold scans."""
         self.model = model
 
-    def find_threshold(self, Q_range: np.ndarray) -> float:
+    def find_threshold(self, Q_range: FloatArray) -> float:
         """Find Q at which L->H bifurcation occurs."""
         for Q in Q_range:
             res = self.model.evolve(Q, (0.0, 1.0), 0.001)
@@ -157,9 +160,7 @@ class MartinThreshold:
 
     @staticmethod
     def power_threshold_MW(ne_19: float, B_T: float, S_m2: float) -> float:
-        """
-        P_LH [MW] = 0.0488 * ne^0.717 * B^0.803 * S^0.941
-        """
+        """Return the Martin P_LH = 0.0488 ne^0.717 B^0.803 S^0.941 [MW]."""
         if ne_19 <= 0 or B_T <= 0 or S_m2 <= 0:
             return 0.0
         return float(0.0488 * (ne_19**0.717) * (B_T**0.803) * (S_m2**0.941))
@@ -186,8 +187,8 @@ class IPhaseDetector:
         if not np.isfinite(self.min_absolute_std) or self.min_absolute_std < 0.0:
             raise ValueError("min_absolute_std must be finite and >= 0.")
 
-    def detect(self, epsilon_trace: np.ndarray) -> bool:
-        """True if limit cycle oscillations detected."""
+    def detect(self, epsilon_trace: FloatArray) -> bool:
+        """Return True if limit-cycle oscillations are detected in the trace."""
         arr = np.asarray(epsilon_trace, dtype=float).reshape(-1)
         if arr.size < self.window_size:
             return False
