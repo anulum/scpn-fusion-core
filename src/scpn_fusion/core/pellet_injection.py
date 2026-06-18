@@ -12,6 +12,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -30,7 +33,7 @@ class PelletResult:
     """Result of a pellet trajectory simulation."""
 
     penetration_depth: float
-    deposition_profile: np.ndarray
+    deposition_profile: FloatArray
     total_particles: float
     drift_displacement: float
 
@@ -44,9 +47,7 @@ class PelletInjectionCommand:
 
 
 def ngs_ablation_rate(r_p: float, ne: float, Te_eV: float, M_p: float) -> float:
-    """
-    Parks & Turnbull (1978) NGS ablation rate [atoms/s].
-    """
+    """Compute the Parks & Turnbull (1978) NGS ablation rate [atoms/s]."""
     if r_p <= 0.0 or Te_eV <= 0.0:
         return 0.0
 
@@ -75,7 +76,7 @@ class PelletTrajectory:
         volume_m3 = (4.0 / 3.0) * np.pi * (params.r_p_mm * 1e-3) ** 3
         self.N_initial = volume_m3 * self.n_solid
 
-    def simulate(self, rho: np.ndarray, ne: np.ndarray, Te_eV: np.ndarray) -> PelletResult:
+    def simulate(self, rho: FloatArray, ne: FloatArray, Te_eV: FloatArray) -> PelletResult:
         """Simulate radial penetration and deposition on the given profiles."""
         N_p = self.N_initial
         r_p_m = self.params.r_p_mm * 1e-3
@@ -99,7 +100,7 @@ class PelletTrajectory:
 
         while N_p > 0 and current_rho > 0.0:
             # Interpolate plasma parameters
-            idx = np.searchsorted(rho, current_rho)
+            idx = int(np.searchsorted(rho, current_rho))
             if idx == 0:
                 n_local = ne[0]
                 T_local = Te_eV[0]
@@ -196,7 +197,7 @@ class PelletFuelingController:
         return float(f)
 
     def step(
-        self, ne_profile: np.ndarray, Te_profile: np.ndarray, dt: float, V_plasma: float
+        self, ne_profile: FloatArray, Te_profile: FloatArray, dt: float, V_plasma: float
     ) -> PelletInjectionCommand | None:
         """
         Advance one controller step and return a pellet command when triggered.
@@ -214,7 +215,7 @@ class PelletFuelingController:
         """
         self.time += dt
 
-        current_density = np.mean(ne_profile)
+        current_density = float(np.mean(ne_profile))
 
         if current_density < self.target_density * 0.95:
             # Need fueling
@@ -231,9 +232,7 @@ class PelletFuelingController:
 def pellet_pacing_elm_control(
     f_pellet_Hz: float, f_elm_natural_Hz: float, w_elm_natural_MJ: float
 ) -> tuple[float, float]:
-    """
-    Returns (f_ELM, delta_W_ELM).
-    """
+    """Return the paced ELM frequency and per-ELM energy (f_ELM, delta_W_ELM)."""
     if f_pellet_Hz > 1.5 * f_elm_natural_Hz:
         f_elm = f_pellet_Hz
         w_elm = w_elm_natural_MJ * (f_elm_natural_Hz / f_pellet_Hz)
