@@ -13,17 +13,20 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.sawtooth import SawtoothCycler
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
 class CoupledResult:
     """Time-series result container from coupled island-width evolution."""
 
-    w1_trace: np.ndarray
-    w2_trace: np.ndarray
-    chirikov_trace: np.ndarray
+    w1_trace: FloatArray
+    w2_trace: FloatArray
+    chirikov_trace: FloatArray
     overlap_time: float
     disruption: bool
 
@@ -33,7 +36,7 @@ class ChirikovOverlap:
 
     @staticmethod
     def parameter(w1: float, w2: float, delta_r: float) -> float:
-        """Return the Chirikov overlap parameter :math:`\\Sigma` for two islands."""
+        r"""Return the Chirikov overlap parameter :math:`\Sigma` for two islands."""
         if delta_r <= 0.0:
             return float("inf")
         return (w1 + w2) / (2.0 * delta_r)
@@ -313,7 +316,7 @@ class TearingModeStabilityMap:
     ):
         self.coupled = CoupledTearingModes(mode1, mode2, r_s1, r_s2, a, R0, B0)
 
-    def scan_beta_li(self, beta_N_range: np.ndarray, li_range: np.ndarray) -> np.ndarray:
+    def scan_beta_li(self, beta_N_range: FloatArray, li_range: FloatArray) -> FloatArray:
         """Scan disruption risk across beta and internal inductance grids."""
         beta_arr = np.asarray(beta_N_range, dtype=float)
         li_arr = np.asarray(li_range, dtype=float)

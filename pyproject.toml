@@ -209,6 +209,8 @@ files = [
     "src/scpn_fusion/core/sawtooth.py",
     "src/scpn_fusion/core/neoclassical.py",
     "src/scpn_fusion/core/current_drive.py",
+    "src/scpn_fusion/core/orbit_following.py",
+    "src/scpn_fusion/core/tearing_mode_coupling.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",

@@ -29,6 +29,10 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
+BField = Callable[[float, float], tuple[float, float, float]]
 
 # Physical constants (SI, CODATA 2018).
 ELEMENTARY_CHARGE_C = 1.602176634e-19
@@ -50,7 +54,7 @@ class EnsembleResult:
     """Summary metrics from a Monte-Carlo orbit-following ensemble."""
 
     loss_fraction: float
-    heating_profile: np.ndarray
+    heating_profile: FloatArray
     current_drive: float
     n_passing: int
     n_trapped: int
@@ -99,7 +103,7 @@ class GuidingCenterOrbit:
         self.mu = -1.0
         self.v_perp_0 = v_perp
 
-    def _eom(self, state: np.ndarray, B_field: Callable) -> np.ndarray:
+    def _eom(self, state: FloatArray, B_field: BField) -> FloatArray:
         R, Z, phi, v_par = state
 
         B_R, B_Z, B_phi = B_field(R, Z)
@@ -143,7 +147,7 @@ class GuidingCenterOrbit:
 
         return np.array([dR_dt, dZ_dt, dphi_dt, dv_par_dt])
 
-    def step(self, B_field: Callable, dt: float) -> tuple[float, float, float, float]:
+    def step(self, B_field: BField, dt: float) -> tuple[float, float, float, float]:
         """Advance one RK4 step and return the updated phase-space state."""
         if not math.isfinite(dt) or dt <= 0.0:
             raise ValueError("dt must be a positive finite time step.")
@@ -165,9 +169,9 @@ class OrbitClassifier:
 
     @staticmethod
     def classify(
-        orbit_R: np.ndarray,
-        orbit_Z: np.ndarray,
-        v_par: np.ndarray,
+        orbit_R: FloatArray,
+        orbit_Z: FloatArray,
+        v_par: FloatArray,
         R_wall: float,
         Z_wall_upper: float,
     ) -> str:
@@ -236,7 +240,7 @@ class MonteCarloEnsemble:
             )
             self.particles.append(particle)
 
-    def follow(self, B_field: Callable, n_steps: int = 100, dt: float = 1e-7) -> EnsembleResult:
+    def follow(self, B_field: BField, n_steps: int = 100, dt: float = 1e-7) -> EnsembleResult:
         """Integrate every particle and return aggregate loss statistics.
 
         Parameters
