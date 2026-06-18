@@ -9,14 +9,22 @@
 
 from __future__ import annotations
 
-import numpy as np
+from typing import TYPE_CHECKING
+
 import matplotlib.pyplot as plt
+import numpy as np
+from numpy.typing import NDArray
 from scipy.integrate import odeint
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
+if TYPE_CHECKING:
     from scpn_fusion.core.fusion_kernel import FusionKernel
+else:
+    try:
+        from scpn_fusion.core._rust_compat import FusionKernel
+    except ImportError:
+        from scpn_fusion.core.fusion_kernel import FusionKernel
+
+FloatArray = NDArray[np.float64]
 
 
 def _require_finite_float(
@@ -46,13 +54,13 @@ def _require_int(name: str, value: int, minimum: int) -> int:
 
 
 class RFHeatingSystem:
-    """
-    Simulates Ion Cyclotron Resonance Heating (ICRH).
-    Uses Ray-Tracing to track EM waves launching from the antenna
-    and absorbing at the resonance layer.
+    """Simulate Ion Cyclotron Resonance Heating (ICRH).
+
+    Uses ray-tracing to track EM waves launched from the antenna and absorbed
+    at the resonance layer.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         self.kernel = FusionKernel(config_path)
         self.kernel.solve_equilibrium()  # Get B-field map
 
@@ -62,10 +70,8 @@ class RFHeatingSystem:
         self.freq = 50e6  # 50 MHz (Standard ICRH freq)
         self.omega_wave = 2 * np.pi * self.freq
 
-    def get_plasma_params(self, R, Z):
-        """
-        Returns B_mod, density, and derivatives at (R,Z).
-        """
+    def get_plasma_params(self, R: float, Z: float) -> tuple[float, float, float, float]:
+        """Return B_mod, density, and density derivatives at (R, Z)."""
         R = _require_finite_float("R", R)
         Z = _require_finite_float("Z", Z)
 
@@ -101,12 +107,12 @@ class RFHeatingSystem:
         dn_dR = -n_e * (R - R0) / 1.0
         dn_dZ = -n_e * Z / 1.0
 
-        return B_mod, n_e, dn_dR, dn_dZ
+        return float(B_mod), float(n_e), float(dn_dR), float(dn_dZ)
 
-    def dispersion_relation(self, R, Z, k_R, k_Z):
-        """
-        Calculates the local dispersion D(w, k) = 0.
-        Harden with Warm Plasma thermal corrections for ICRH.
+    def dispersion_relation(self, R: float, Z: float, k_R: float, k_Z: float) -> float:
+        """Calculate the local dispersion relation D(omega, k) = 0.
+
+        Includes warm-plasma thermal (finite-Larmor-radius) corrections for ICRH.
         """
         k_R = _require_finite_float("k_R", k_R)
         k_Z = _require_finite_float("k_Z", k_Z)
@@ -134,13 +140,12 @@ class RFHeatingSystem:
         # Dispersion: D = k^2 * v_A^2 * flr_correction - omega^2
         D = k_sq * v_A**2 * flr_correction - self.omega_wave**2
 
-        return D
+        return float(D)
 
-    def ray_equations(self, state, t):
-        """
-        Hamiltonian Ray Tracing equations.
-        dr/dt = dD/dk
-        dk/dt = -dD/dr
+    def ray_equations(self, state: FloatArray, t: float) -> list[float]:
+        """Evaluate the Hamiltonian ray-tracing equations.
+
+        dr/dt = dD/dk and dk/dt = -dD/dr for the local dispersion relation D.
         """
         arr = np.asarray(state, dtype=float)
         if arr.shape != (4,):
@@ -181,7 +186,7 @@ class RFHeatingSystem:
 
         return [dR_dt, dZ_dt, dkR_dt, dkZ_dt]
 
-    def trace_rays(self, n_rays=10):
+    def trace_rays(self, n_rays: int = 10) -> tuple[list[FloatArray], float]:
         """Trace ICRH rays from an outboard antenna and return trajectories.
 
         Parameters
@@ -204,7 +209,7 @@ class RFHeatingSystem:
         R_ant = 9.0
         Z_ant_spread = np.linspace(-1.0, 1.0, n_rays)
 
-        trajectories = []
+        trajectories: list[FloatArray] = []
 
         for i in range(n_rays):
             # Initial condition: Launch inward (kR < 0)
@@ -214,7 +219,7 @@ class RFHeatingSystem:
             t_span = np.linspace(0, 0.5, 100)  # Short time (normalized)
 
             # Solve ODE
-            sol = odeint(self.ray_equations, init_state, t_span)
+            sol = np.asarray(odeint(self.ray_equations, init_state, t_span), dtype=np.float64)
 
             # Check Resonance
             # Resonance condition: omega = omega_ci = qB/m
@@ -229,7 +234,7 @@ class RFHeatingSystem:
         print(f"Resonance Field B_res: {B_res:.2f} Tesla")
         return trajectories, B_res
 
-    def plot_heating(self, trajectories, B_res):
+    def plot_heating(self, trajectories: list[FloatArray], B_res: float) -> None:
         """Render and persist a diagnostic plot of ray paths and resonance layer."""
         fig, ax = plt.subplots(figsize=(8, 8))
 
@@ -270,7 +275,12 @@ class RFHeatingSystem:
         plt.savefig("RF_Heating_Rays.png")
         print("Saved: RF_Heating_Rays.png")
 
-    def compute_power_deposition(self, trajectories, P_rf_mw=20.0, n_radial_bins=50):
+    def compute_power_deposition(
+        self,
+        trajectories: list[FloatArray],
+        P_rf_mw: float = 20.0,
+        n_radial_bins: int = 50,
+    ) -> tuple[FloatArray, FloatArray, float]:
         """Compute radial power deposition profile from ray absorption.
 
         Uses cyclotron damping: the imaginary part of the wave vector causes
@@ -303,7 +313,7 @@ class RFHeatingSystem:
         # Ion thermal speed
         v_thi = np.sqrt(2.0 * T_ion_keV * 1e3 * 1.602e-19 / self.m_D)
 
-        rho_bins = np.linspace(0.0, 1.0, n_radial_bins)
+        rho_bins = np.linspace(0.0, 1.0, n_radial_bins).astype(np.float64)
         P_dep = np.zeros(n_radial_bins)
         total_absorbed = 0.0
         P_per_ray = P_rf_mw / max(len(trajectories), 1)
@@ -405,7 +415,7 @@ class ECRHHeatingSystem:
         T_e_keV: float = 20.0,
         n_e: float = 1e20,
         launch_angle_deg: float = 0.0,
-    ) -> tuple[np.ndarray, np.ndarray, float]:
+    ) -> tuple[FloatArray, FloatArray, float]:
         """Compute ECRH power deposition profile.
 
         Uses Gaussian deposition centred at the resonance layer with width
@@ -442,7 +452,7 @@ class ECRHHeatingSystem:
         # Doppler width in rho: delta_rho ~ v_the / (omega * a)
         delta_rho = max(v_the / (self.omega * a) * 50.0 * (1.0 + 0.35 * abs(np.sin(theta))), 0.02)
 
-        rho_bins = np.linspace(0.0, 1.0, n_radial_bins)
+        rho_bins = np.linspace(0.0, 1.0, n_radial_bins).astype(np.float64)
         P_dep = np.zeros(n_radial_bins)
 
         # Gaussian deposition profile centred at rho_res
