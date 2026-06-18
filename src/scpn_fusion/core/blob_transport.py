@@ -12,6 +12,9 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class BlobDynamics:
@@ -30,25 +33,25 @@ class BlobDynamics:
         self.rho_s = self.c_s / (self.e_charge * self.B0 / self.mi)
 
     def critical_size(self, L_parallel: float) -> float:
-        """delta_b* [m]"""
+        """Return the critical blob size delta_b* [m]."""
         if L_parallel <= 0.0:
             return float("inf")
         return float(2.0 * self.rho_s * (L_parallel / (self.R0 * self.rho_s)) ** 0.2)
 
     def max_velocity(self, L_parallel: float) -> float:
-        """v_b at delta_b*"""
+        """Return the maximum blob velocity v_b at delta_b* [m/s]."""
         delta_star = self.critical_size(L_parallel)
         return self.sheath_velocity(delta_star)
 
     def sheath_velocity(self, delta_b: float) -> float:
-        """v_b in sheath-connected regime (small blobs)"""
+        """Return v_b in the sheath-connected regime (small blobs)."""
         if delta_b <= 0.0:
             return 0.0
         # Sheath-connected regime: v_b ~ delta_b^{-1/2} — Krasheninnikov (2001)
         return 2.0 * self.c_s * self.rho_s / (self.R0 * math.sqrt(delta_b / self.R0 + 1e-6))
 
     def inertial_velocity(self, delta_b: float) -> float:
-        """v_b in inertia-limited regime (large blobs)"""
+        """Return v_b in the inertia-limited regime (large blobs)."""
         # v_b prop delta_b^1/2
         return self.c_s * math.sqrt(2.0 * delta_b / self.R0)
 
@@ -70,10 +73,10 @@ class BlobDynamics:
 class BlobPopulation:
     """Generated blob sizes, amplitudes, velocities, and event birth times."""
 
-    sizes: np.ndarray
-    amplitudes: np.ndarray
-    velocities: np.ndarray
-    birth_times: np.ndarray
+    sizes: FloatArray
+    amplitudes: FloatArray
+    velocities: FloatArray
+    birth_times: FloatArray
 
 
 class BlobEnsemble:
@@ -138,13 +141,13 @@ class SOLBlobProfile:
 
     @staticmethod
     def radial_density(
-        r: np.ndarray,
+        r: FloatArray,
         Gamma_blob: float,
         D_perp: float,
         lambda_n: float,
         *,
         n_sep: float = 1.0e19,
-    ) -> np.ndarray:
+    ) -> FloatArray:
         """Return normalised radial density profile with blob transport broadening."""
         r_arr = np.asarray(r, dtype=float)
         gamma = float(Gamma_blob)
@@ -217,7 +220,7 @@ class BlobDetector:
     """Detect transient blob events and conditional-average their waveforms."""
 
     def detect_blobs(
-        self, signal: np.ndarray, dt: float = 1e-6, threshold: float = 2.5
+        self, signal: FloatArray, dt: float = 1e-6, threshold: float = 2.5
     ) -> list[BlobEvent]:
         """Return threshold-crossing blob events from a one-dimensional signal."""
         mean_sig = np.mean(signal)
@@ -245,13 +248,13 @@ class BlobDetector:
                 dur = (i - start) * dt
                 # Size estimate based on typical velocity
                 size = dur * 1000.0
-                events.append(BlobEvent(start, i, peak * std_sig, dur, size))
+                events.append(BlobEvent(start, i, float(peak * std_sig), dur, size))
 
         return events
 
     def conditional_average(
-        self, signal: np.ndarray, events: list[BlobEvent], window: int = 50
-    ) -> np.ndarray:
+        self, signal: FloatArray, events: list[BlobEvent], window: int = 50
+    ) -> FloatArray:
         """Return event-centred conditional average over a symmetric sample window."""
         if not events:
             return np.zeros(2 * window + 1)
