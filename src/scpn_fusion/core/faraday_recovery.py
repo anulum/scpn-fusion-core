@@ -22,10 +22,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from .pulsed_compression import PulsedCompressionState
 
 FloatArray: TypeAlias = NDArray[np.float64]
 
@@ -130,7 +133,6 @@ def faraday_trajectory_from_pulsed_compression(
     integrator's finite-difference path because the compression state stores
     field values, not an independent field-rate sidecar.
     """
-
     if len(states) < 2:
         raise ValueError("pulsed-compression trajectory must contain at least two states")
     samples = []
@@ -153,7 +155,6 @@ def faraday_trajectory_from_pulsed_compression(
 
 def compression_work_from_pulsed_compression(states: Sequence[object]) -> float:
     """Return final compression work from a FUS-C.6 trajectory sidecar."""
-
     if len(states) < 2:
         raise ValueError("pulsed-compression trajectory must contain at least two states")
     return _require_positive(
@@ -166,7 +167,6 @@ def compression_flux_budget_from_pulsed_compression(
     states: Sequence[object],
 ) -> FaradayCompressionFluxBudget:
     """Return aggregate FUS-C.6 flux-budget evidence for Faraday reporting."""
-
     if len(states) < 2:
         raise ValueError("pulsed-compression trajectory must contain at least two states")
     post_initial_states = states[1:]
@@ -228,10 +228,11 @@ def compression_trajectory_diagnostics_from_pulsed_compression(
     radius_floor_m: float | None = None,
 ) -> FaradayCompressionTrajectoryDiagnostics:
     """Return aggregate FUS-C.6 trajectory-quality evidence for Faraday reporting."""
-
     from .pulsed_compression import pulsed_compression_trajectory_diagnostics
 
-    diagnostics = pulsed_compression_trajectory_diagnostics(states, radius_floor_m=radius_floor_m)
+    diagnostics = pulsed_compression_trajectory_diagnostics(
+        cast("Sequence[PulsedCompressionState]", states), radius_floor_m=radius_floor_m
+    )
     return FaradayCompressionTrajectoryDiagnostics(
         monotonic_time=diagnostics.monotonic_time,
         min_radius_m=diagnostics.min_radius_m,
@@ -247,13 +248,11 @@ def faraday_trajectory_from_voltage_driven_compression(
     result: object,
 ) -> tuple[FaradayRecoveryTrajectoryPoint, ...]:
     """Return Faraday trajectory samples from an FUS-C.6 voltage-driven result."""
-
     return faraday_trajectory_from_pulsed_compression(_sequence_attr(result, "compression"))
 
 
 def compression_work_from_voltage_driven_compression(result: object) -> float:
     """Return final plasma compression work from an FUS-C.6 voltage-driven result."""
-
     return compression_work_from_pulsed_compression(_sequence_attr(result, "compression"))
 
 
@@ -261,7 +260,6 @@ def compression_flux_budget_from_voltage_driven_compression(
     result: object,
 ) -> FaradayCompressionFluxBudget:
     """Return aggregate FUS-C.6 flux-budget evidence from a voltage-driven result."""
-
     return compression_flux_budget_from_pulsed_compression(_sequence_attr(result, "compression"))
 
 
@@ -271,7 +269,6 @@ def compression_trajectory_diagnostics_from_voltage_driven_compression(
     radius_floor_m: float | None = None,
 ) -> FaradayCompressionTrajectoryDiagnostics:
     """Return aggregate FUS-C.6 trajectory-quality evidence from a voltage-driven result."""
-
     return compression_trajectory_diagnostics_from_pulsed_compression(
         _sequence_attr(result, "compression"),
         radius_floor_m=radius_floor_m,
@@ -280,7 +277,6 @@ def compression_trajectory_diagnostics_from_voltage_driven_compression(
 
 def coil_source_work_from_voltage_driven_compression(result: object) -> float:
     """Return final positive coil-source work from an FUS-C.6 voltage-driven result."""
-
     coil_circuit = _sequence_attr(result, "coil_circuit")
     if len(coil_circuit) < 2:
         raise ValueError("voltage-driven coil circuit must contain at least two samples")
@@ -314,7 +310,6 @@ def _require_positive_int(name: str, value: int) -> int:
 
 def magnetic_flux_wb(separatrix_radius_m: float, b_ext_t: float) -> float:
     """Return linked magnetic flux ``B_ext*pi*R_s^2`` in weber per turn."""
-
     radius = _require_positive("separatrix_radius_m", separatrix_radius_m)
     b_ext = _require_finite("b_ext_t", b_ext_t)
     return float(b_ext * np.pi * radius * radius)
@@ -328,7 +323,6 @@ def faraday_back_emf_from_values(
     N_turns: int,
 ) -> float:
     """Return closed-form recovery-coil back-EMF in volts."""
-
     turns = _require_positive_int("N_turns", N_turns)
     radius = _require_positive("separatrix_radius_m", separatrix_radius_m)
     b_ext = _require_finite("b_ext_t", b_ext_t)
@@ -350,7 +344,6 @@ def faraday_back_emf(
     finite_difference_dt_s: float = 1.0e-9,
 ) -> float:
     """Return closed-form back-EMF from callable radius and field histories."""
-
     time_s = _require_finite("t", t)
     dt = _require_positive("finite_difference_dt_s", finite_difference_dt_s)
     radius = _require_positive("R_s_t(t)", R_s_t(time_s))
@@ -385,7 +378,6 @@ def integrated_recovery_energy(
     supplied by FUS-C.6, the energy-budget gate is reported as blocked instead
     of being inferred from synthetic data.
     """
-
     turns = _require_positive_int("N_turns", N_turns)
     resistance = _require_positive("coil_resistance_ohm", coil_resistance_ohm)
     tolerance = _require_positive("budget_tolerance", budget_tolerance)
