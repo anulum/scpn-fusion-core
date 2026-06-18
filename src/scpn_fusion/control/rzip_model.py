@@ -71,11 +71,13 @@ class RZIPModel:
     def build_state_space(self) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
         """Build continuous-time state-space matrices for vertical motion.
 
-        Returns:
+        Returns
+        -------
             A, B, C, D matrices with order
             ``x = [Z, dZ/dt, I_1, ..., I_n]`` and output ``y = Z``.
 
-        Raises:
+        Raises
+        ------
             numpy.linalg.LinAlgError: Implicitly handled to fall back to a stable
                 zero inverse matrix when circuit coupling is ill-conditioned.
         """
@@ -147,7 +149,8 @@ class RZIPModel:
     def vertical_growth_rate(self) -> float:
         """Return the maximum real eigenvalue of the open-loop model.
 
-        Returns:
+        Returns
+        -------
             float: Open-loop vertical growth rate (s^-1).
         """
         A, _, _, _ = self.build_state_space()
@@ -157,7 +160,8 @@ class RZIPModel:
     def vertical_growth_time(self) -> float:
         """Return the open-loop vertical growth time in milliseconds.
 
-        Returns:
+        Returns
+        -------
             float: ``inf`` for non-growing or damped cases.
         """
         gamma = self.vertical_growth_rate()
@@ -171,7 +175,8 @@ class RZIPModel:
         The proxy is currently aligned to the model ``n_index`` value to keep a
         transparent interpretation in lightweight sanity checks.
 
-        Returns:
+        Returns
+        -------
             float: Stability margin surrogate.
         """
         # Distance from marginality (n_index = 0 typically)
@@ -191,7 +196,8 @@ class VerticalStabilityAnalysis:
             Z: Vertical coordinates.
             R0: Magnetic-axis major radius.
 
-        Returns:
+        Returns
+        -------
             Signed vertical stability index based on on-axis ``dBz/dR``.
         """
         psi_arr = np.asarray(psi, dtype=float)
@@ -245,7 +251,8 @@ class VerticalStabilityAnalysis:
             n_index: Vertical stability index.
             tau_wall: Resistive wall time constant.
 
-        Returns:
+        Returns
+        -------
             The same ``n_index`` in the current lightweight contract.
         """
         return n_index
@@ -262,11 +269,13 @@ class VerticalStabilityAnalysis:
             tau_wall: Resistive wall time constant in seconds.
             tau_controller: Controller lag in seconds.
 
-        Returns:
+        Returns
+        -------
             Minimum dimensionless gain proxy required by the deterministic
             control-contract model.
 
-        Raises:
+        Raises
+        ------
             ValueError: If any argument is non-finite or non-positive.
         """
         gamma_f = float(gamma)
@@ -319,7 +328,8 @@ class RZIPController:
             dZ_measured: Latest measured vertical displacement.
             dt: Sample period in seconds.
 
-        Returns:
+        Returns
+        -------
             Estimated coil voltages that damp observed displacement and derivative.
         """
         if dt > 0:
@@ -343,7 +353,8 @@ class RZIPController:
     def closed_loop_eigenvalues(self) -> ComplexArray:
         """Return eigenvalues of the controller-closed RZIP state matrix.
 
-        Returns:
+        Returns
+        -------
             Complex eigenvalues used by stability smoke tests.
         """
         A, B, C, D = self.rzip.build_state_space()

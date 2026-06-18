@@ -5,9 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Shared Surrogate Training Utilities
-"""
-Shared helpers for surrogate training (optimizers, activations, metrics).
-"""
+"""Shared helpers for surrogate training (optimizers, activations, metrics)."""
 
 from __future__ import annotations
 

@@ -33,8 +33,8 @@ class PumpingPowerResult(TypedDict):
 
 
 def churchill_friction_factor(Re: float, epsilon_d: float = 1e-4) -> float:
-    """
-    Churchill Correlation for Darcy Friction Factor (f).
+    """Churchill Correlation for Darcy Friction Factor (f).
+
     Valid for all flow regimes (laminar, transition, turbulent).
     """
     if Re <= 0.0:
@@ -50,8 +50,8 @@ def churchill_friction_factor(Re: float, epsilon_d: float = 1e-4) -> float:
 
 
 class CoolantLoop:
-    """
-    Calculates pressure drop and pumping power for reactor cooling.
+    """Calculate pressure drop and pumping power for reactor cooling.
+
     Supports Water, Helium, and Liquid Metal (LiPb).
     """
 
@@ -71,12 +71,12 @@ class CoolantLoop:
         L: float = 100.0,
         D: float = 0.05,
     ) -> PumpingPowerResult:
-        """
-        Estimates pumping power needed to exhaust Q_thermal.
+        """Estimate pumping power needed to exhaust Q_thermal.
+
         Q_thermal: MW
         delta_T: Temperature rise (K)
         L: Total pipe length (m)
-        D: Pipe diameter (m)
+        D: Pipe diameter (m).
         """
         if Q_thermal_MW < 0.0:
             raise ValueError("Q_thermal_MW must be non-negative.")

@@ -25,11 +25,11 @@ class SuperTwistingSMC:
         self.v = 0.0
 
     def sliding_surface(self, e: float, de_dt: float) -> float:
-        """s = e + c * de/dt."""
+        """S = e + c * de/dt."""
         return e + self.c * de_dt
 
     def step(self, e: float, de_dt: float, dt: float) -> float:
-        """u = -alpha * abs(s)^0.5 * sign(s) + v, v_dot = -beta * sign(s)."""
+        """U = -alpha * abs(s)^0.5 * sign(s) + v, v_dot = -beta * sign(s)."""
         s = self.sliding_surface(e, de_dt)
 
         if dt > 0:

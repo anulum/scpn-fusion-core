@@ -107,7 +107,6 @@ class FreeBoundarySafetySupervisor:
 
     def reset(self) -> None:
         """Clear fallback latches and alert-recovery state before a new shot."""
-
         self._fallback_steps_remaining = 0
         self._alert_level = 0
         self._alert_recovery_steps = 0
@@ -207,7 +206,6 @@ class FreeBoundarySafetySupervisor:
         actuator_dropout_active: bool = False,
     ) -> SafetyFilterResult:
         """Apply current, geometry, plasma-physics, and degraded-mode guards to an action."""
-
         action = np.asarray(proposed_action, dtype=np.float64).reshape(-1)
         corrected = np.asarray(corrected_state, dtype=np.float64).reshape(-1)
         target = np.asarray(target_state, dtype=np.float64).reshape(-1)

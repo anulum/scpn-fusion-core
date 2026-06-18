@@ -39,8 +39,8 @@ class PlantPerformance(TypedDict):
 
 
 class PowerPlantModel:
-    """
-    SCPN Balance of Plant (BOP) Simulator.
+    """SCPN Balance of Plant (BOP) Simulator.
+
     Calculates the conversion of Fusion Energy to Grid Electricity.
     Includes parasitic loads (Magnets, Heating, Pumping).
     """
@@ -63,8 +63,8 @@ class PowerPlantModel:
         P_fusion_MW: float,
         P_aux_absorbed_MW: float,
     ) -> PlantPerformance:
-        """
-        Takes Plasma Physics output and computes Electrical Output.
+        """Convert plasma physics output into electrical output.
+
         P_fusion: Total fusion power (Alpha + Neutrons).
         P_aux_absorbed: Power absorbed by plasma (heating).
         """
@@ -116,9 +116,7 @@ class PowerPlantModel:
         }
 
     def plot_sankey_diagram(self, metrics: PlantPerformance) -> Any:
-        """
-        Simple visualization of power flow (Text-based or simple bar for now).
-        """
+        """Visualise power flow as a text-based or simple bar summary."""
         labels = ["Fusion Power", "Thermal Total", "Gross Elec", "Recirculating", "NET TO GRID"]
         values = [
             metrics["P_fusion"],

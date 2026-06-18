@@ -25,7 +25,6 @@ def plot_free_boundary_control(
     output_path: str,
 ) -> tuple[bool, Optional[str]]:
     """Render axis, X-point, and coil-command histories to a plot file."""
-
     try:
         import matplotlib.pyplot as plt
     except Exception as exc:

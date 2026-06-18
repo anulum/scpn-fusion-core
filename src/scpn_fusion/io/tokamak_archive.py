@@ -273,7 +273,8 @@ def poll_mdsplus_feed(
     """
     Poll live MDSplus feed snapshots with deterministic merge + compatibility metadata.
 
-    Notes:
+    Notes
+    -----
     - This function performs immediate poll iterations without sleeping to keep
       CI/runtime deterministic. `poll_interval_ms` is recorded as intent.
     - If all live polls fail or are empty and `fallback_to_reference=True`,

@@ -17,9 +17,7 @@ from numpy.typing import NDArray
 
 
 class TEMHD_Stabilizer:
-    """
-    Implicit 1D heat solver for TEMHD-stabilized liquid-metal divertors.
-    """
+    """Implicit 1D heat solver for TEMHD-stabilized liquid-metal divertors."""
 
     def __init__(self, layer_thickness_mm: float = 5.0, B_field: float = 10.0):
         self.L = float(layer_thickness_mm) / 1000.0
@@ -89,7 +87,8 @@ class TEMHD_Stabilizer:
             heat_flux_MW_m2: Incoming wall heat flux in MW/m².
             dt: Time step in seconds.
 
-        Returns:
+        Returns
+        -------
             A tuple ``(surface_temperature_K, effective_thermal_conductivity)``.
         """
         dt = float(dt)
@@ -141,9 +140,7 @@ def run_temhd_experiment(
     output_path: str = "TEMHD_Corrected.png",
     verbose: bool = True,
 ) -> dict[str, Any]:
-    """
-    Run deterministic TEMHD flux-ramp experiment and return summary metrics.
-    """
+    """Run deterministic TEMHD flux-ramp experiment and return summary metrics."""
     f_lo = float(flux_min_MW_m2)
     f_hi = float(flux_max_MW_m2)
     if not np.isfinite(f_lo) or not np.isfinite(f_hi) or f_lo >= f_hi:

@@ -77,7 +77,6 @@ def mrti_growth_rate(
     stabilization for the supplied mode. ``k`` is in ``m^-1``, ``a_eff`` is in
     ``m s^-2``, ``B_perp`` is in tesla, and ``rho_kg_m3`` is in ``kg m^-3``.
     """
-
     k_modes = _as_float_array("k", k)
     if np.any(k_modes < 0.0):
         raise ValueError("k must be non-negative")
@@ -102,7 +101,6 @@ def effective_acceleration_from_radius_rate(
     future pulsed-compression trajectories; it does not replay or replace the
     missing full Hall-MHD compression solver.
     """
-
     t = _as_float_array("time_s", time_s)
     velocity = _as_float_array("d_radius_dt_m_s", d_radius_dt_m_s)
     if t.ndim != 1 or velocity.ndim != 1:
@@ -145,7 +143,6 @@ def effective_acceleration_from_pulsed_compression(
     ``a_eff`` for the analytical MRTI growth-rate contract. Set it explicitly
     to ``+1`` when the caller's MRTI normal follows the outward radius.
     """
-
     if len(states) < 2:
         raise ValueError("at least two pulsed-compression states are required")
     projection = _require_finite("radial_projection_sign", radial_projection_sign)
@@ -258,18 +255,15 @@ class MRTISpectrumTracker:
     @property
     def k_modes_m_inv(self) -> FloatArray:
         """Return a copy of the tracked mode spectrum in ``m^-1``."""
-
         return self._k_modes_m_inv.copy()
 
     @property
     def amplitudes_m(self) -> FloatArray:
         """Return a copy of current perturbation amplitudes in metres."""
-
         return self._amplitudes_m.copy()
 
     def saturation_threshold_breached(self, threshold_m: float | None = None) -> bool:
         """Return whether the maximum perturbation amplitude crossed threshold."""
-
         threshold = (
             self._saturation_threshold_m
             if threshold_m is None
@@ -279,7 +273,6 @@ class MRTISpectrumTracker:
 
     def state(self) -> MRTISpectrumState:
         """Return an immutable snapshot of the current spectrum state."""
-
         fastest_index = int(np.argmax(self._growth_rates_s_inv))
         most_amplified_index = int(np.argmax(self._log_amplitudes))
         max_amplitude = float(np.max(self._amplitudes_m))
@@ -308,7 +301,6 @@ class MRTISpectrumTracker:
         acceleration or field varies across the interval, as during a
         pulsed-compression trajectory.
         """
-
         return self.step_interval(dt_s, a_eff_m_s2, a_eff_m_s2, B_perp_t, B_perp_t)
 
     def step_interval(
@@ -335,7 +327,6 @@ class MRTISpectrumTracker:
         interval. With equal start and end drivers this reduces exactly to the
         frozen-coefficient :meth:`step`.
         """
-
         dt = _require_positive("dt_s", dt_s)
         gamma_start = mrti_growth_rate(
             self._k_modes_m_inv, a_eff_start_m_s2, B_perp_start_t, self._rho_kg_m3
@@ -375,7 +366,6 @@ def track_mrti_from_pulsed_compression(
     MRTI state per trajectory interval and raises on malformed trajectories
     instead of inventing coupled evidence.
     """
-
     if len(states) < 2:
         raise ValueError("at least two pulsed-compression states are required")
     field_scale = _require_finite("b_perp_scale", b_perp_scale)

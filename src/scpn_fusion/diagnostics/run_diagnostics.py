@@ -68,9 +68,7 @@ def run_diag_demo(
     sensor_factory: Callable[..., Any] = SensorSuite,
     tomography_factory: Callable[..., Any] = PlasmaTomography,
 ) -> dict[str, Any]:
-    """
-    Run synthetic diagnostics + tomography and return deterministic summary.
-    """
+    """Run synthetic diagnostics + tomography and return deterministic summary."""
     cfg = Path(config_path)
     out_dir = Path(output_dir)
     seed_int = int(seed)

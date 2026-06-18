@@ -53,7 +53,6 @@ class FreeBoundarySupervisoryController:
 
     def propose_action(self, estimate: FreeBoundaryEstimate) -> FloatArray:
         """Return coil-current corrections from the latest free-boundary estimate."""
-
         error = self.target.as_vector() - estimate.corrected_state
         desired_delta = (
             self.state_gains * error
@@ -69,7 +68,6 @@ class FreeBoundarySupervisoryController:
 
 def extract_free_boundary_state(kernel: Any) -> FloatArray:
     """Extract magnetic-axis and X-point coordinates from a solved kernel state."""
-
     psi = np.asarray(kernel.Psi, dtype=np.float64)
     idx_max = int(np.argmax(psi))
     iz, ir = np.unravel_index(idx_max, psi.shape)

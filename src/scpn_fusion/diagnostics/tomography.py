@@ -25,9 +25,7 @@ FloatArray = NDArray[np.float64]
 
 
 class PlasmaTomography:
-    """
-    Reconstruct 2D emissivity profile from line-integrated chord signals.
-    """
+    """Reconstruct 2D emissivity profile from line-integrated chord signals."""
 
     def __init__(
         self,
@@ -83,8 +81,8 @@ class PlasmaTomography:
         return A
 
     def reconstruct(self, signals: FloatArray, method: str = "auto") -> FloatArray:
-        """
-        Solve inversion problem Ax=b with regularization.
+        """Solve inversion problem Ax=b with regularization.
+
         Supports 'lsq_linear' (SciPy), 'ridge' (Phillips-Twomey), and 'sart' (Iterative).
         """
         b = np.asarray(signals, dtype=np.float64).reshape(-1)

@@ -17,8 +17,8 @@ from typing import Any, Dict
 
 
 class FusionJSONFormatter(logging.Formatter):
-    """
-    JSON Formatter for SCPN Fusion Core.
+    """JSON Formatter for SCPN Fusion Core.
+
     Encodes log records as structured machine-readable JSON.
     """
 

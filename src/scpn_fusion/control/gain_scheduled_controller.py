@@ -157,6 +157,7 @@ class ScenarioWaveform:
         self.interp_kind = interp_kind
 
     def __call__(self, t: float) -> float:
+        """Return the linearly interpolated scheduled gain at time ``t``."""
         return float(np.interp(t, self.times, self.values))
 
 

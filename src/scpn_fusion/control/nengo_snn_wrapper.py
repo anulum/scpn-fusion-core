@@ -38,7 +38,7 @@ FloatArray: TypeAlias = NDArray[np.float64]
 
 
 def nengo_available() -> bool:
-    """Always True — no external dependency required."""
+    """Return True; the NumPy fallback needs no external dependency."""
     return True
 
 

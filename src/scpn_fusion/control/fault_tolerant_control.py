@@ -197,7 +197,7 @@ class ReconfigurableController:
         return np.asarray(delta_u)
 
     def controllability_check(self) -> bool:
-        """True if enough healthy coils remain for minimum-rank controllability."""
+        """Return True if enough healthy coils remain for minimum-rank controllability."""
         if len(self.faulted_coils) > self.n_coils // 2:
             return False
 

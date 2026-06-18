@@ -12,7 +12,8 @@ Generates EPICS .db and OPC-UA XML nodeset files for binding a
 NeuroSymbolicController to the ITER Plant Instrumentation & Control
 (I&C) infrastructure.  Does NOT require pyepics or any EPICS runtime.
 
-References:
+References
+----------
     ITER CODAC Handbook v7.0, §3.2 (PV naming conventions)
     IEC 62541 (OPC Unified Architecture)
 """
@@ -150,12 +151,10 @@ class CODACInterface:
 
     def define_input_channels(self) -> list[EPICSChannel]:
         """Return the configured EPICS input process-variable definitions."""
-
         return list(self._input_channels)
 
     def define_output_channels(self) -> list[EPICSChannel]:
         """Return the configured EPICS output process-variable definitions."""
-
         return list(self._output_channels)
 
     def pack_observation(self, pv_values: Mapping[str, float]) -> ControlObservation:
@@ -256,7 +255,6 @@ class CycleTimer:
 
     def start_cycle(self) -> None:
         """Mark the start timestamp for one controller cycle."""
-
         self._start_ns = time.perf_counter_ns()
 
     def end_cycle(self) -> float:
@@ -265,5 +263,5 @@ class CycleTimer:
         return (self._elapsed_ns - self.budget_ns) / 1e6
 
     def check_overrun(self) -> bool:
-        """True if last cycle exceeded its budget."""
+        """Return True if the last cycle exceeded its budget."""
         return self._elapsed_ns > self.budget_ns

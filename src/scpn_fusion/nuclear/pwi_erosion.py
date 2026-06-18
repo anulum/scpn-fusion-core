@@ -21,9 +21,7 @@ import numpy as np
 
 
 class SputteringPhysics:
-    """
-    Simulates plasma-wall interaction sputtering and macroscopic erosion.
-    """
+    """Simulates plasma-wall interaction sputtering and macroscopic erosion."""
 
     def __init__(self, material: str = "Tungsten", redeposition_factor: float = 0.95):
         self.material = str(material)
@@ -40,9 +38,7 @@ class SputteringPhysics:
         self.redeposition_factor = float(np.clip(redeposition_factor, 0.0, 0.999))
 
     def calculate_yield(self, E_ion_eV: float, angle_deg: float = 45.0) -> float:
-        """
-        Calculate sputtering yield (ejected atoms / incident ion).
-        """
+        """Calculate sputtering yield (ejected atoms / incident ion)."""
         E = float(E_ion_eV)
         if not np.isfinite(E):
             raise ValueError("E_ion_eV must be finite.")
@@ -70,9 +66,7 @@ class SputteringPhysics:
         T_ion_eV: float,
         angle_deg: float = 45.0,
     ) -> dict[str, float]:
-        """
-        Calculate erosion metrics and net impurity source.
-        """
+        """Calculate erosion metrics and net impurity source."""
         flux = float(flux_particles_m2_s)
         temp = float(T_ion_eV)
         if not np.isfinite(flux) or flux < 0.0:
@@ -112,9 +106,7 @@ def run_pwi_demo(
     output_path: str = "PWI_Erosion_Result.png",
     verbose: bool = True,
 ) -> dict[str, Any]:
-    """
-    Run deterministic PWI erosion scan and return summary.
-    """
+    """Run deterministic PWI erosion scan and return summary."""
     t_lo = float(temp_min_eV)
     t_hi = float(temp_max_eV)
     if not np.isfinite(t_lo) or not np.isfinite(t_hi) or t_lo >= t_hi:

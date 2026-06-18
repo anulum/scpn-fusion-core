@@ -50,8 +50,8 @@ class DreamFluidBalance:
 
 
 def dreicer_field(ne_20: float, Te_keV: float, coulomb_log: float = 15.0) -> float:
-    """
-    Dreicer field E_D = n_e e^3 lnΛ / (4π ε₀² T_e).
+    """Dreicer field E_D = n_e e^3 lnΛ / (4π ε₀² T_e).
+
     Connor & Hastie, Nucl. Fusion 15, 415 (1975).
     """
     n_e = ne_20 * 1e20
@@ -60,8 +60,8 @@ def dreicer_field(ne_20: float, Te_keV: float, coulomb_log: float = 15.0) -> flo
 
 
 def critical_field(ne_20: float, coulomb_log: float = 15.0) -> float:
-    """
-    Critical field E_c = n_e e^3 lnΛ / (4π ε₀² m_e c²).
+    """Critical field E_c = n_e e^3 lnΛ / (4π ε₀² m_e c²).
+
     Rosenbluth & Putvinski, Nucl. Fusion 37, 1355 (1997).
     E_D / E_c = m_e c² / T_e ≈ 51 at T_e = 10 keV.
     """
@@ -70,8 +70,8 @@ def critical_field(ne_20: float, coulomb_log: float = 15.0) -> float:
 
 
 def dreicer_generation_rate(params: RunawayParams, coulomb_log: float = 15.0) -> float:
-    """
-    Primary (seed) runaway electrons generation rate [m^-3 s^-1].
+    """Primary (seed) runaway electrons generation rate [m^-3 s^-1].
+
     Connor & Hastie (1975).
     """
     if params.E_par <= 0.0 or params.Te_keV <= 0.0 or params.ne_20 <= 0.0:
@@ -108,8 +108,8 @@ def dreicer_generation_rate(params: RunawayParams, coulomb_log: float = 15.0) ->
 
 
 def avalanche_growth_rate(params: RunawayParams, n_RE: float, coulomb_log: float = 15.0) -> float:
-    """
-    Avalanche multiplication rate [m^-3 s^-1].
+    """Avalanche multiplication rate [m^-3 s^-1].
+
     Rosenbluth & Putvinski, Nucl. Fusion 37, 1355 (1997), Eq. 66.
     dn_RE/dt = n_RE (E/E_c - 1) / τ_c where τ_c already includes lnΛ.
     """
@@ -136,8 +136,8 @@ def hot_tail_seed(
     vc_vte_ref: float = 4.0,
     quench_exponent: float = 0.2,
 ) -> float:
-    """
-    Seed RE density from thermal quench hot-tail mechanism [m^-3].
+    """Seed RE density from thermal quench hot-tail mechanism [m^-3].
+
     Smith, H.M. et al., Phys. Plasmas 15, 072502 (2008).
     Faster TQ → lower v_c/v_te → more seed electrons.
     """
@@ -331,9 +331,7 @@ class RunawayMitigationAssessment:
     def required_density_for_suppression(
         E_par: float, Z_eff: float, coulomb_log: float = 15.0
     ) -> float:
-        """
-        Density [10^20 m^-3] needed to make E_c > E_par.
-        """
+        """Density [10^20 m^-3] needed to make E_c > E_par."""
         e_par = float(E_par)
         z_eff = float(Z_eff)
         ln_lambda = float(coulomb_log)

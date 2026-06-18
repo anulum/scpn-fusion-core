@@ -102,6 +102,32 @@ def _is_public_name(name: str) -> bool:
     return not name.startswith("_")
 
 
+def _is_overload(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """Return whether ``node`` is a ``typing.overload`` signature stub.
+
+    Overload stubs intentionally carry no docstring (the concrete
+    implementation documents the contract), so they are excluded from the
+    coverage audit to stay aligned with ruff's ``D418`` rule.
+
+    Parameters
+    ----------
+    node : ast.FunctionDef or ast.AsyncFunctionDef
+        Function definition whose decorators are inspected.
+
+    Returns
+    -------
+    bool
+        ``True`` when any decorator is named ``overload`` (bare or attribute
+        access such as ``typing.overload``).
+    """
+    for decorator in node.decorator_list:
+        if isinstance(decorator, ast.Name) and decorator.id == "overload":
+            return True
+        if isinstance(decorator, ast.Attribute) and decorator.attr == "overload":
+            return True
+    return False
+
+
 def _issue(path: Path, root: Path, node: ast.AST, kind: str, qualname: str) -> DocstringIssue:
     """Build a normalised issue record for ``node``."""
     return DocstringIssue(
@@ -129,12 +155,20 @@ def collect_docstring_issues(root: Path, included_roots: Sequence[str]) -> list[
                     issues.append(_issue(path, root, node, "class", node.name))
                 for child in node.body:
                     if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                        if _is_public_name(child.name) and not _has_docstring(child):
+                        if (
+                            _is_public_name(child.name)
+                            and not _is_overload(child)
+                            and not _has_docstring(child)
+                        ):
                             issues.append(
                                 _issue(path, root, child, "method", f"{node.name}.{child.name}")
                             )
             elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if _is_public_name(node.name) and not _has_docstring(node):
+                if (
+                    _is_public_name(node.name)
+                    and not _is_overload(node)
+                    and not _has_docstring(node)
+                ):
                     issues.append(_issue(path, root, node, "function", node.name))
     return sorted(
         issues,

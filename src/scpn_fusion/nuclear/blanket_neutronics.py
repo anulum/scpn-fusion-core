@@ -64,8 +64,8 @@ def _require_int(name: str, value: int, minimum: int) -> int:
 
 
 class BreedingBlanket:
-    """
-    1D Cylindrical Neutronics Transport Code for TBR calculation.
+    """1D Cylindrical Neutronics Transport Code for TBR calculation.
+
     Simulates neutron attenuation in a blanket annulus (r_inner to r_outer).
     """
 
@@ -100,9 +100,9 @@ class BreedingBlanket:
     def solve_transport(
         self, incident_flux: float = 1e14, rear_albedo: float = 0.0
     ) -> NDArray[np.float64]:
-        """
-        Solves steady-state cylindrical diffusion-reaction equation for neutron flux Phi(r).
-        -D * (1/r * d/dr(r * dPhi/dr)) + Sigma_rem * Phi = 0
+        """Solve steady-state cylindrical diffusion-reaction equation for neutron flux Phi(r).
+
+        -D * (1/r * d/dr(r * dPhi/dr)) + Sigma_rem * Phi = 0.
         """
         incident_flux = float(incident_flux)
         if (not np.isfinite(incident_flux)) or incident_flux <= 0.0:
@@ -178,9 +178,9 @@ class BreedingBlanket:
         return phi  # type: ignore[return-value,unused-ignore]
 
     def calculate_tbr(self, phi: NDArray[np.float64]) -> tuple[float, NDArray[np.float64]]:
-        """
-        Integrates Tritium production over the blanket volume (Cylindrical).
-        TBR = (Rate of Tritium Production) / (Rate of Incoming Neutrons)
+        """Integrate Tritium production over the blanket volume (Cylindrical).
+
+        TBR = (Rate of Tritium Production) / (Rate of Incoming Neutrons).
         """
         # Production Rate density: R(r) = Sigma_Li6 * Phi(r)
         production_rate = self.Sigma_capture_Li6 * phi

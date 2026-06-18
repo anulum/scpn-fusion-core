@@ -34,6 +34,7 @@ class ScenarioWaveform:
     interp_kind: str = "linear"
 
     def __call__(self, t: float) -> float:
+        """Return the linearly interpolated scheduled value at time ``t``."""
         return float(np.interp(t, self.times, self.values))
 
 
@@ -82,7 +83,7 @@ class FeedforwardController:
         self.feedback = feedback
 
     def step(self, x: FloatArray, t: float, dt: float) -> FloatArray:
-        """u = u_ff(t) + u_fb(x_err)."""
+        """U = u_ff(t) + u_fb(x_err)."""
         ff_dict = self.schedule.evaluate(t)
 
         u_ff = np.zeros(3)
@@ -160,7 +161,8 @@ class ScenarioOptimizer:
 def iter_15ma_baseline() -> ScenarioSchedule:
     """Return the ITER-like 15 MA baseline feedforward schedule.
 
-    Returns:
+    Returns
+    -------
         ScenarioSchedule: Time/actuator profile covering ramp-up, flat-top,
         and current ramp-down phases.
     """
@@ -183,7 +185,8 @@ def iter_15ma_baseline() -> ScenarioSchedule:
 def nstx_u_1ma_standard() -> ScenarioSchedule:
     """Return the NSTX-U-like 1 MA standard feedforward schedule.
 
-    Returns:
+    Returns
+    -------
         ScenarioSchedule: Compact pulse with actuator commands matched to
         a short disrpution-free 1 MA operating window.
     """

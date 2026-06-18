@@ -41,7 +41,8 @@ Secondary (avalanche) generation:
 
 with E_c the critical (Connor-Hastie) field for runaway sustainment.
 
-References:
+References
+----------
     Connor, J.W. & Hastie, R.J., Nucl. Fusion 15, 415 (1975).
     Rosenbluth, M.N. & Putvinski, S.V., Nucl. Fusion 37, 1355 (1997).
 """

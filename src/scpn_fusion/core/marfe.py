@@ -37,9 +37,7 @@ class RadiationCondensation:
         return float((L_plus - L_minus) / (2.0 * dT))
 
     def growth_rate(self, Te_eV: float, k_par: float, kappa_par: float) -> float:
-        """
-        gamma = -(kappa_par * k_par^2 + n^2 * dL/dT) / (n * c_v)
-        """
+        """Gamma = -(kappa_par * k_par^2 + n^2 * dL/dT) / (n * c_v)."""
         ne = self.ne_20 * 1e20
         n_imp = ne * self.f_imp
 
@@ -60,9 +58,9 @@ class RadiationCondensation:
         return self.growth_rate(Te_eV, k_par, kappa_par) > 0.0
 
     def critical_density(self, Te_eV: float, k_par: float, kappa_par: float) -> float:
-        """
-        n_crit where gamma = 0.
-        n^2 f_imp dL/dT = -kappa_par k_par^2
+        """n_crit where gamma = 0.
+
+        n^2 f_imp dL/dT = -kappa_par k_par^2.
         """
         dL_dT = self._dL_dT(Te_eV)
         if dL_dT >= 0.0:

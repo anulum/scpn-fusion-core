@@ -25,8 +25,8 @@ _Q_RECOVERY_RATE = 0.05  # exponential relaxation rate toward equilibrium q-prof
 
 
 class ReducedMHD:
-    """
-    Simulates the internal m=1, n=1 Kink Mode (Sawtooth Instability).
+    """Simulate the internal m=1, n=1 Kink Mode (Sawtooth Instability).
+
     Solves Reduced MHD equations in cylindrical geometry.
     Demonstrates Magnetic Reconnection (Kadomtsev Model).
     """
@@ -51,7 +51,7 @@ class ReducedMHD:
         self.psi_11[:] = 1e-4 * self.r * (1 - self.r) * (1 + 1j)
 
     def laplacian(self, f: ComplexArray, m: int = 1) -> ComplexArray:
-        """Radial Laplacian: 1/r d/dr (r df/dr) - m^2/r^2 f"""
+        """Radial Laplacian: 1/r d/dr (r df/dr) - m^2/r^2 f."""
         # Finite difference
         d2f = np.zeros_like(f)
         d2f[1:-1] = (f[2:] - 2 * f[1:-1] + f[:-2]) / self.dr**2
@@ -69,11 +69,11 @@ class ReducedMHD:
         return res
 
     def step(self, dt: float = 0.01) -> tuple[float, bool]:
-        """
-        Time integration (Semi-Implicit)
+        """Time integration (Semi-Implicit).
+
         Equations:
         1. d(W_11)/dt = [J_eq, psi_11] + [J_11, psi_eq] + Dissipation
-        2. d(psi_11)/dt = B_parallel * phi_11 + eta * J_11
+        2. d(psi_11)/dt = B_parallel * phi_11 + eta * J_11.
         """
         # Linear growth drive: γ ~ (1/q - 1)
         growth_drive = 1.0 / self.q - 1.0
@@ -112,8 +112,8 @@ class ReducedMHD:
         return float(amplitude), crash
 
     def solve_poisson(self, U: ComplexArray) -> ComplexArray:
-        """
-        Solves Del^2 phi = U for phi using the Thomas Algorithm (O(N)).
+        """Solve Del^2 phi = U for phi using the Thomas Algorithm (O(N)).
+
         Optimized for tridiagonal Laplacian in cylindrical coordinates.
         """
         N = self.nr

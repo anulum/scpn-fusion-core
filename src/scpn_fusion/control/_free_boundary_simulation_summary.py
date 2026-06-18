@@ -68,7 +68,6 @@ def build_free_boundary_simulation_summary(
     return_trace: bool,
 ) -> dict[str, Any]:
     """Build scalar metrics, replay signature, and optional trace data for one shot."""
-
     trace_hash = hashlib.sha256()
     for arr in (
         true_arr,

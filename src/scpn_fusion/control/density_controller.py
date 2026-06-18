@@ -37,12 +37,11 @@ class ParticleTransportModel:
 
     def set_transport(self, D: FloatArray, V_pinch: FloatArray) -> None:
         """Set radial diffusivity and pinch-velocity profiles used by transport stepping."""
-
         self.D = D
         self.V_pinch = V_pinch
 
     def gas_puff_source(self, rate: float, penetration_depth: float = 0.03) -> FloatArray:
-        """rate in particles/s. Source localised at edge."""
+        """Rate in particles/s. Source localised at edge."""
         # Edge-localised exponential neutral-screening profile.
         decay = np.exp(-(1.0 - self.rho) / penetration_depth)
         decay /= np.sum(decay * self.V_prime * self.drho) + 1e-10
@@ -76,7 +75,7 @@ class ParticleTransportModel:
         return np.asarray(rate * dep)
 
     def cryopump_sink(self, pump_speed: float, ne_edge: float) -> FloatArray:
-        """Extracts particles from the edge."""
+        """Extract particles from the edge."""
         # This is a rate, not a profile shape itself, but we'll return the sink profile
         sink = np.zeros(self.n_rho)
         sink[-1] = pump_speed * ne_edge / (self.V_prime[-1] * self.drho + 1e-10)
@@ -84,12 +83,10 @@ class ParticleTransportModel:
 
     def recycling_source(self, outflux: float, recycling_coeff: float = 0.97) -> FloatArray:
         """Return the edge-localised recycled-particle source from an outgoing flux."""
-
         return self.gas_puff_source(outflux * recycling_coeff, penetration_depth=0.02)
 
     def step(self, ne: FloatArray, sources: FloatArray, dt: float) -> FloatArray:
         """Advance the density profile by one CFL-limited explicit transport step."""
-
         # Explicit forward-Euler diffusion: CFL requires dt < drho^2 / (2 * D_max)
         D_max = np.max(self.D)
         if D_max > 0.0:
@@ -156,14 +153,12 @@ class DensityController:
 
     def set_target(self, ne_target: FloatArray) -> None:
         """Set the target radial electron-density profile."""
-
         self.ne_target = np.asarray(ne_target, dtype=np.float64)
 
     def set_constraints(
         self, n_GW: float, gas_max: float, pellet_freq_max: float, pump_max: float
     ) -> None:
         """Set density and actuator limits used by command allocation."""
-
         self.n_GW = n_GW
         self.gas_max = gas_max
         self.pellet_freq_max = pellet_freq_max
@@ -171,7 +166,6 @@ class DensityController:
 
     def greenwald_fraction(self, ne: FloatArray, I_p_MA: float, a: float) -> float:
         """Return volume-averaged density normalised to the Greenwald density."""
-
         vol = np.sum(self.model.V_prime * self.model.drho)
         N_tot = np.sum(ne * self.model.V_prime * self.model.drho)
         n_avg = N_tot / vol
@@ -181,7 +175,6 @@ class DensityController:
 
     def step(self, ne_measured: FloatArray) -> ActuatorCommand:
         """Compute one fuelling or pumping command from the measured density profile."""
-
         vol = np.sum(self.model.V_prime * self.model.drho)
         N_meas = np.sum(ne_measured * self.model.V_prime * self.model.drho)
         N_targ = np.sum(self.ne_target * self.model.V_prime * self.model.drho)
@@ -253,7 +246,6 @@ class KalmanDensityEstimator:
 
     def set_transport(self, diffusivity_m2_s: FloatArray, pinch_velocity_m_s: FloatArray) -> None:
         """Set estimator transport coefficients and validate their radial shape."""
-
         D: FloatArray = np.asarray(diffusivity_m2_s, dtype=np.float64)
         V: FloatArray = np.asarray(pinch_velocity_m_s, dtype=np.float64)
         if D.shape != (self.n_rho,) or V.shape != (self.n_rho,):
@@ -267,7 +259,6 @@ class KalmanDensityEstimator:
 
     def measurement_matrix(self, chord_angles: FloatArray) -> FloatArray:
         """Build the line-integrated chord response matrix for the configured channels."""
-
         # Mock Abel transform matrix
         C: FloatArray = np.zeros((self.n_chords, self.n_rho), dtype=np.float64)
         for i in range(self.n_chords):
@@ -280,7 +271,6 @@ class KalmanDensityEstimator:
 
     def predict(self, ne: FloatArray, dt: float) -> FloatArray:
         """Predict the next density profile and covariance using transport dynamics."""
-
         dt = float(dt)
         if not math.isfinite(dt) or dt < 0.0:
             raise ValueError("dt must be finite and non-negative")
@@ -331,7 +321,6 @@ class KalmanDensityEstimator:
         self, ne_pred: FloatArray, measurements: FloatArray, chord_angles: FloatArray
     ) -> FloatArray:
         """Assimilate chord measurements into the predicted density profile."""
-
         C = self.measurement_matrix(chord_angles)
 
         # K = P C^T (C P C^T + R)^-1
@@ -365,7 +354,6 @@ class FuelingOptimizer:
         self, ne_current: FloatArray, ne_target: FloatArray, n_pellets: int, time_horizon: float
     ) -> PelletSchedule:
         """Return an evenly spaced pellet schedule for the requested launch count."""
-
         # Evenly spaced open-loop launch baseline.
         if n_pellets <= 0:
             return PelletSchedule([], [], [])

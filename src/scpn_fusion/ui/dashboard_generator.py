@@ -38,7 +38,8 @@ class DashboardGenerator:
     equilibrium object. It deliberately avoids solving physics itself and only
     renders diagnostics based on already computed equilibrium fields.
 
-    Attributes:
+    Attributes
+    ----------
         kernel: A solved equilibrium kernel exposing `RR`, `ZZ`, `Psi`, `cfg`, `R`,
             `Z`, `NR`, `NZ`, `dR`, and `dZ`.
     """
@@ -49,7 +50,8 @@ class DashboardGenerator:
         Args:
             kernel: Object exposing the equilibrium fields used by the plotting path.
 
-        Raises:
+        Raises
+        ------
             ValueError: If the object does not expose the required field layout.
         """
         required = {"RR", "ZZ", "Psi", "cfg", "R", "Z", "NR", "NZ", "dR", "dZ"}
@@ -71,7 +73,8 @@ class DashboardGenerator:
             n_lines: Number of seeded trajectories.
             n_transits: Iteration count per trajectory.
 
-        Returns:
+        Returns
+        -------
             Matplotlib `Figure` object containing the generated topology view.
         """
         if n_lines <= 0:
@@ -143,7 +146,8 @@ class DashboardGenerator:
             r: Radial coordinate in meters.
             z: Vertical coordinate in meters.
 
-        Returns:
+        Returns
+        -------
             Interpolated (nearest neighbour) flux value.
         """
         ir = int((r - self.kernel.R[0]) / self.kernel.dR)

@@ -38,6 +38,7 @@ class MagneticConfiguration:
     reference: str
 
     def __post_init__(self) -> None:
+        """Validate device geometry metadata after construction."""
         _require_non_empty("name", self.name)
         _require_non_empty("device_class", self.device_class)
         _require_non_empty("coordinate_system", self.coordinate_system)
@@ -69,6 +70,7 @@ class ActuatorChannel:
     failure_mode: str = "none"
 
     def __post_init__(self) -> None:
+        """Validate actuator bounds, slew rate, and latency after construction."""
         _require_non_empty("name", self.name)
         _require_non_empty("unit", self.unit)
         min_value = _require_finite("min_value", self.min_value)
@@ -117,6 +119,7 @@ class ActuatorSet:
     channels: tuple[ActuatorChannel, ...]
 
     def __post_init__(self) -> None:
+        """Validate that actuator channel names are present and unique."""
         if not self.channels:
             raise ValueError("ActuatorSet requires at least one channel.")
         names = [channel.name for channel in self.channels]
@@ -146,6 +149,7 @@ class DiagnosticChannel:
     provenance: str
 
     def __post_init__(self) -> None:
+        """Validate diagnostic value, unit, sigma, and provenance after construction."""
         _require_non_empty("name", self.name)
         _require_non_empty("unit", self.unit)
         _require_non_empty("provenance", self.provenance)
@@ -174,6 +178,7 @@ class DiagnosticFrame:
     channels: tuple[DiagnosticChannel, ...]
 
     def __post_init__(self) -> None:
+        """Validate frame step, time, and unique channel names after construction."""
         if int(self.step) < 0:
             raise ValueError("step must be >= 0.")
         time_s = _require_finite("time_s", self.time_s)
@@ -207,6 +212,7 @@ class ControlObjective:
     constraints: Mapping[str, float]
 
     def __post_init__(self) -> None:
+        """Validate objective targets, weights, and constraints after construction."""
         if not self.target_metrics:
             raise ValueError("target_metrics must not be empty.")
         for group_name, group in (
@@ -242,6 +248,7 @@ class ReplayScenario:
     fault_schedule: Mapping[int, Mapping[str, str]]
 
     def __post_init__(self) -> None:
+        """Validate replay scenario timing, faults, and actuator references."""
         _require_non_empty("name", self.name)
         if int(self.steps) < 2:
             raise ValueError("steps must be >= 2.")

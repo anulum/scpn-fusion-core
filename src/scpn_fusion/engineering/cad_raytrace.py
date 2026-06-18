@@ -85,8 +85,8 @@ def _parse_binary_stl(path: Path) -> tuple[FloatArray, IntArray]:
 
 
 def load_cad_mesh(path: str | Path) -> tuple[FloatArray, IntArray]:
-    """
-    Load CAD mesh from STL/STEP using trimesh when available.
+    """Load CAD mesh from STL/STEP using trimesh when available.
+
     Falls back to ASCII STL parser when trimesh is not available.
     """
     mesh_path = Path(path)
@@ -137,8 +137,8 @@ def _segment_intersects_triangle(
     *,
     epsilon: float,
 ) -> bool:
-    """
-    Segment-triangle intersection using Moller-Trumbore parameterization.
+    """Segment-triangle intersection using Moller-Trumbore parameterization.
+
     Returns True only when the intersection lies strictly inside (p0, p1).
     """
     d = p1 - p0
@@ -194,9 +194,7 @@ def estimate_surface_loading(
     occlusion_broadphase: bool = True,
     occlusion_epsilon: float = 1e-9,
 ) -> CADLoadReport:
-    """
-    Compute reduced line-of-sight heat loading on CAD triangles.
-    """
+    """Compute reduced line-of-sight heat loading on CAD triangles."""
     vertices = np.asarray(vertices, dtype=np.float64)
     faces = np.asarray(faces, dtype=np.int64)
     src = np.asarray(source_points_xyz, dtype=np.float64)

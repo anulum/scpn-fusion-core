@@ -54,9 +54,7 @@ def default_mast_cache_dir() -> Path:
 
 
 class MastIngestor:
-    """
-    Ingests real plasma data from the MAST (Mega Ampere Spherical Tokamak).
-    """
+    """Ingests real plasma data from the MAST (Mega Ampere Spherical Tokamak)."""
 
     ENDPOINT_URL = "https://s3.echo.stfc.ac.uk"
     BUCKET_NAME = "mast"

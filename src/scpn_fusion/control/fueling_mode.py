@@ -193,9 +193,7 @@ def run_fueling_mode(
     steps: int = 3000,
     dt_s: float = 1e-3,
 ) -> dict[str, Any]:
-    """
-    Run deterministic fueling simulation and return summary metrics.
-    """
+    """Run deterministic fuelling simulation and return summary metrics."""
     result = simulate_iter_density_control(
         target_density=target_density,
         initial_density=initial_density,

@@ -22,9 +22,7 @@ FloatArray = NDArray[np.float64]
 
 
 class RWMPhysics:
-    """
-    Resistive Wall Mode (RWM) growth rate model.
-    """
+    """Resistive Wall Mode (RWM) growth rate model."""
 
     def __init__(self, beta_n: float, beta_n_nowall: float, beta_n_wall: float, tau_wall: float):
         """Initialize normalized-beta limits and the resistive-wall time constant."""
@@ -36,7 +34,8 @@ class RWMPhysics:
     def is_unstable(self) -> bool:
         """Return whether the current normalized beta is between nowall and wall limits.
 
-        Returns:
+        Returns
+        -------
             True when ``beta_n_nowall < beta_n < beta_n_wall``.
         """
         return self.beta_n_nowall < self.beta_n < self.beta_n_wall
@@ -47,7 +46,8 @@ class RWMPhysics:
         The model returns a large sentinel value for ideal-kink conditions and
         zero for already-stable cases.
 
-        Returns:
+        Returns
+        -------
             float: Estimated wall-mode growth rate in hertz-equivalent units.
         """
         if self.tau_wall <= 0.0:
@@ -69,9 +69,7 @@ class RWMPhysics:
 
 
 class RWMFeedbackController:
-    """
-    Sensor-coil feedback for RWM stabilization.
-    """
+    """Sensor-coil feedback for RWM stabilization."""
 
     def __init__(
         self,
@@ -99,7 +97,8 @@ class RWMFeedbackController:
             B_r_sensors: Radial magnetic perturbation samples at each sensor.
             dt: Sample interval in seconds.
 
-        Returns:
+        Returns
+        -------
             Current commands for each control coil.
         """
         if dt <= 0.0:
@@ -127,7 +126,8 @@ class RWMFeedbackController:
         Args:
             rwm: Physics state object that provides open-loop growth.
 
-        Returns:
+        Returns
+        -------
             Effective growth rate after feedback injection.
         """
         gamma_wall = rwm.growth_rate()
@@ -142,14 +142,12 @@ class RWMFeedbackController:
         return gamma_wall - stabilization
 
     def is_stabilized(self, rwm: RWMPhysics) -> bool:
-        """True if the effective growth rate is < 0."""
+        """Return True if the effective growth rate is < 0."""
         return self.effective_growth_rate(rwm) < 0.0
 
 
 class RWMStabilityAnalysis:
-    """
-    Analyze stability window and required gains.
-    """
+    """Analyse stability window and required gains."""
 
     @staticmethod
     def required_feedback_gain(
@@ -170,11 +168,13 @@ class RWMStabilityAnalysis:
             tau_controller: Controller lag in seconds.
             M_coil: Effective coil coupling factor.
 
-        Returns:
+        Returns
+        -------
             Minimum ``G_p`` that makes ``gamma_eff < 0`` under this control
             contract.
 
-        Raises:
+        Raises
+        ------
             ValueError: Through the underlying :class:`RWMPhysics` calculations
                 if input parameters are invalid.
         """

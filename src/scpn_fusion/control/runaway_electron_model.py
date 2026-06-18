@@ -230,10 +230,12 @@ class RunawayElectronModel:
             dt_s: Fixed step size in seconds.
             seed_re_fraction: Initial runaway fraction, constrained to `(0, 1]`.
 
-        Returns:
+        Returns
+        -------
             RunawayElectronResult with time-series fields and summary observables.
 
-        Raises:
+        Raises
+        ------
             ValueError: If inputs are non-finite or violate the documented domain.
         """
         plasma_current_ma = _as_positive_float("plasma_current_ma", plasma_current_ma)

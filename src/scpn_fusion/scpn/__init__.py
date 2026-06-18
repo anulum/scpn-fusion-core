@@ -5,9 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Neuro-Symbolic Logic Compiler
-"""
-SCPN Neuro-Symbolic Logic Compiler
-===================================
+"""SCPN Neuro-Symbolic Logic Compiler.
 
 Translates Stochastic Petri Nets into sc_neurocore matrix operations.
 

@@ -171,9 +171,7 @@ class DreamKineticArtifact:
 
 
 class FokkerPlanckSolver:
-    """
-    Solves the 1D kinetic equation for runaway electrons.
-    """
+    """Solves the 1D kinetic equation for runaway electrons."""
 
     def __init__(self, np_grid: int = 200, p_max: float = 100.0):
         if isinstance(np_grid, bool) or int(np_grid) < 16:

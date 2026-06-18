@@ -56,7 +56,6 @@ class FreeBoundaryStateEstimator:
 
     def reset(self, initial_state: FloatArray | list[float] | tuple[float, ...]) -> None:
         """Initialise the observer from a finite four-component geometry state."""
-
         state = np.asarray(initial_state, dtype=np.float64).reshape(-1)
         if state.size != 4 or not np.all(np.isfinite(state)):
             raise ValueError("initial_state must be a finite 4-vector.")
@@ -74,7 +73,6 @@ class FreeBoundaryStateEstimator:
         measured_actuator_action: FloatArray | None = None,
     ) -> FreeBoundaryEstimate:
         """Assimilate one measurement and return corrected geometry plus bias estimates."""
-
         meas = np.asarray(measurement, dtype=np.float64).reshape(-1)
         action = np.asarray(applied_action, dtype=np.float64).reshape(-1)
         measured_action = (

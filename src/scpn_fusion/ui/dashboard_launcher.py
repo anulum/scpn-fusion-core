@@ -51,7 +51,8 @@ def _build_streamlit_command() -> list[str]:
 def main() -> int:
     """Execute Streamlit in a process with hardened temporary defaults.
 
-    Returns:
+    Returns
+    -------
         The subprocess exit code from Streamlit.
     """
     cmd = _build_streamlit_command()

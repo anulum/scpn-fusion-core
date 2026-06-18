@@ -23,8 +23,8 @@ Chord = tuple[FloatArray, FloatArray]
 
 
 class SensorSuite:
-    """
-    Simulates physical diagnostics installed on the tokamak wall.
+    """Simulate physical diagnostics installed on the tokamak wall.
+
     1. Magnetic Loops (Measure Flux Psi).
     2. Bolometer Cameras (Measure Line-Integrated Radiation).
     """
@@ -78,8 +78,8 @@ class SensorSuite:
         return float(np.random.normal(0.0, sigma))
 
     def measure_magnetics(self) -> FloatArray:
-        """
-        Returns Flux Psi at sensor locations.
+        """Return Flux Psi at sensor locations.
+
         Interpolates from Kernel grid.
         """
         # Map R,Z to grid indices
@@ -119,8 +119,8 @@ class SensorSuite:
         return np.asarray(measurements, dtype=np.float64)
 
     def measure_b_field(self) -> tuple[FloatArray, FloatArray]:
-        """
-        Calculates local B_field (Br, Bz) at sensor locations using Biot-Savart.
+        """Compute local B_field (Br, Bz) at sensor locations using Biot-Savart.
+
         Harden with toroidal filament integration.
         """
         mu0 = 4.0 * np.pi * 1e-7
@@ -159,9 +159,9 @@ class SensorSuite:
         return Br, Bz
 
     def measure_bolometer(self, emission_profile: FloatArray) -> FloatArray:
-        """
-        Integrates emission along chords.
-        Signal = Integral( E(l) * dl )
+        """Integrate emission along chords.
+
+        Signal = Integral( E(l) * dl ).
         """
         signals: list[float] = []
 
@@ -196,8 +196,8 @@ class SensorSuite:
         return np.asarray(signals, dtype=np.float64)
 
     def measure_interferometer(self, density_profile_19: FloatArray) -> FloatArray:
-        """
-        Simulates Multi-Chord Interferometer.
+        """Simulate Multi-Chord Interferometer.
+
         Measures Phase Shift phi = lambda * r_e * Integral(n_e dl).
         Harden with Phase Wrapping (modulo 2pi) and Refraction noise.
         """
@@ -262,9 +262,7 @@ class SensorSuite:
         solid_angle_fraction: float = 1.0e-4,
         laser_wavelength_m: float = 1.064e-6,
     ) -> ForwardDiagnosticChannels:
-        """
-        Generate deterministic forward-model raw channels.
-        """
+        """Generate deterministic forward-model raw channels."""
         chords = [(tuple(start), tuple(end)) for start, end in self.bolo_chords]
         return generate_forward_channels(
             electron_density_m3=np.asarray(electron_density_m3, dtype=np.float64),

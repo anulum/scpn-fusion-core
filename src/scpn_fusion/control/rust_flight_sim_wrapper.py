@@ -26,10 +26,12 @@ def run() -> None:
     It writes a machine-readable execution envelope as structured log entries
     so downstream wrappers can parse reproducible latency fields.
 
-    Returns:
+    Returns
+    -------
         None.
 
-    Raises:
+    Raises
+    ------
         SystemExit: If ``scpn_fusion_rs`` cannot be imported.
     """
     try:

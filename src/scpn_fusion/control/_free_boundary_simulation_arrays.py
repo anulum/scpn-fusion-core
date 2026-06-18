@@ -24,7 +24,6 @@ def build_free_boundary_history_arrays(
     steps: int,
 ) -> dict[str, FloatArray | IntArray | BoolArray]:
     """Convert shot history lists into typed arrays and derived stabilisation flags."""
-
     arrays: dict[str, FloatArray | IntArray | BoolArray] = {
         "times_arr": np.asarray(histories["times"], dtype=np.float64),
         "true_arr": np.asarray(histories["true_states"], dtype=np.float64),

@@ -34,9 +34,7 @@ class AlphaHeating:
     def power_density(
         self, ne_20: FloatArray, Te_keV: FloatArray, Ti_keV: FloatArray
     ) -> FloatArray:
-        """
-        p_alpha [MW/m^3] for 50:50 DT mixture.
-        """
+        """p_alpha [MW/m^3] for 50:50 DT mixture."""
         # ne in m^-3
         ne_m3 = ne_20 * 1e20
         # nD = nT = ne / 2
@@ -52,9 +50,7 @@ class AlphaHeating:
     def power(
         self, ne_20: FloatArray, Te_keV: FloatArray, Ti_keV: FloatArray, rho: FloatArray
     ) -> float:
-        """
-        P_alpha [MW] integrated over volume.
-        """
+        """P_alpha [MW] integrated over volume."""
         p_dens = self.power_density(ne_20, Te_keV, Ti_keV)
 
         # dV = 4 pi^2 R0 a^2 kappa rho drho
@@ -78,8 +74,8 @@ class BurnStabilityAnalysis:
         self.alpha_heating = alpha_heating
 
     def reactivity_exponent(self, Ti_keV: float) -> float:
-        """
-        d(ln <sigma v>) / d(ln T)
+        """Reactivity exponent d(ln <sigma v>) / d(ln T).
+
         Evaluated via finite difference.
         """
         if Ti_keV <= 0.1:
@@ -100,7 +96,7 @@ class BurnStabilityAnalysis:
         return float(d_ln_sv / d_ln_T)
 
     def is_thermally_stable(self, Ti_keV: float) -> bool:
-        """True if exponent < 2"""
+        """Return True if the reactivity exponent < 2."""
         return self.reactivity_exponent(Ti_keV) < 2.0
 
     def stability_boundary_keV(self) -> float:
@@ -147,7 +143,6 @@ class BurnController:
 
     def step(self, Q_meas: float, T_meas_keV: float, P_alpha_MW: float, dt: float) -> float:
         """Return the bounded auxiliary-heating command for one burn-control interval."""
-
         # Emergency cooling
         if T_meas_keV > 30.0:
             self.last_P_aux = 0.0
@@ -189,8 +184,8 @@ class SubignitedBurnPoint:
     def find_operating_point(
         self, ne_20: float, P_aux_MW: float, tau_E_s: float
     ) -> list[BurnPoint]:
-        """
-        Solve P_alpha(T) + P_aux = P_loss(T)
+        """Solve P_alpha(T) + P_aux = P_loss(T).
+
         P_loss = 3 n T V / tau_E
         We just scan T to find intersections.
         """

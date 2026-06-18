@@ -49,10 +49,10 @@ def _resolve_config_path(config_filename: str = "iter_config.json") -> str:
     Args:
         config_filename: Name of the JSON configuration file.
 
-    Returns:
+    Returns
+    -------
         A string path that can be passed to simulation classes.
     """
-
     repo_candidate = Path(__file__).resolve().parents[1] / config_filename
     if repo_candidate.exists():
         return str(repo_candidate)

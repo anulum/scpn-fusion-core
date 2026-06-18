@@ -5,8 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — MHD Stability: Seven-Criterion Suite
-"""
-MHD stability analysis suite — seven criteria:
+"""MHD stability analysis suite — seven criteria.
 
 1. **Mercier** — interchange stability (D_M >= 0)
 2. **Ballooning** — first-stability boundary (Connor-Hastie-Taylor)

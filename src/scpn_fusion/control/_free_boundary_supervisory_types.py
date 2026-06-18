@@ -98,7 +98,6 @@ class FreeBoundaryTarget:
 
     def as_vector(self) -> FloatArray:
         """Return the target coordinates in controller state-vector order."""
-
         return np.array(
             [self.r_axis_m, self.z_axis_m, self.x_point_r_m, self.x_point_z_m],
             dtype=np.float64,
@@ -197,7 +196,6 @@ def estimate_free_boundary_safety_margins(
     risk_signal_history: Optional[FloatArray | list[float]] = None,
 ) -> FreeBoundarySafetyMargins:
     """Estimate safety guard margins from geometry, coil currents, and target current."""
-
     corrected = np.asarray(corrected_state, dtype=np.float64).reshape(-1)
     target = np.asarray(target_state, dtype=np.float64).reshape(-1)
     bias = np.asarray(bias_hat, dtype=np.float64).reshape(-1)

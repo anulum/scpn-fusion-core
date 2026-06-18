@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class DivertorLab:
-    """
-    Simulates Heat Exhaust in a Compact Fusion Reactor.
+    """Simulate Heat Exhaust in a Compact Fusion Reactor.
+
     Compares Solid Tungsten vs. Liquid Lithium Vapor Shielding.
     """
 
@@ -40,8 +40,8 @@ class DivertorLab:
     def solve_2point_transport(
         self, expansion_factor: float = 10.0, f_rad: float = 0.5
     ) -> tuple[float, float]:
-        """
-        Two-Point Model (2PM) for SOL Transport.
+        """Two-Point Model (2PM) for SOL Transport.
+
         Balances upstream pressure with target flux constraints.
         T_u = (7/2 * L_c * q_par / kappa0)^(2/7)
         n_u determines if we are in sheath-limited or conduction-limited regime.
@@ -71,9 +71,7 @@ class DivertorLab:
         return float(T_u_eV), float(T_t_eV)
 
     def calculate_heat_load(self, expansion_factor: float = 10.0) -> float:
-        """
-        Calculates Peak Heat Flux using 2-Point Model Physics.
-        """
+        """Calculate Peak Heat Flux using 2-Point Model Physics."""
         T_u, T_t = self.solve_2point_transport(expansion_factor, f_rad=0.0)  # Unmitigated
 
         print(f"Parallel Heat Flux: {self.q_parallel / 1e9:.1f} GW/m2")
@@ -84,9 +82,9 @@ class DivertorLab:
         return float(self.q_target_solid)
 
     def simulate_tungsten(self) -> tuple[float, str]:
-        """
-        1D Thermal limit of Tungsten Monoblock.
-        Simple conduction model: T_surf = q * d / k + T_coolant
+        """1D Thermal limit of Tungsten Monoblock.
+
+        Simple conduction model: T_surf = q * d / k + T_coolant.
         """
         k_W = 100.0  # W/(m·K)
         d_block = 0.01  # 1 cm to cooling channel
@@ -212,9 +210,7 @@ class DivertorLab:
         }
 
     def estimate_evaporation_rate(self, surface_temp_c: float, flow_velocity_m_s: float) -> float:
-        """
-        Velocity-dependent lithium evaporation estimate [kg m^-2 s^-1].
-        """
+        """Velocity-dependent lithium evaporation estimate [kg m^-2 s^-1]."""
         t_c = float(surface_temp_c)
         v = max(float(flow_velocity_m_s), 1e-6)
         thermal_drive = np.exp(np.clip((t_c - 500.0) / 260.0, -8.0, 8.0))
@@ -224,9 +220,7 @@ class DivertorLab:
     def simulate_temhd_liquid_metal(
         self, flow_velocity_m_s: float, expansion_factor: float = 15.0
     ) -> dict[str, object]:
-        """
-        Reduced TEMHD divertor state including MHD pressure loss and evaporation.
-        """
+        """Reduced TEMHD divertor state including MHD pressure loss and evaporation."""
         self.calculate_heat_load(expansion_factor=expansion_factor)
         t_li_c, q_surface_w_m2, shielding = self.simulate_lithium_vapor()
         mhd = self.calculate_mhd_pressure_loss(flow_velocity_m_s)

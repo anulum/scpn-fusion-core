@@ -63,6 +63,7 @@ class KnmSpec:
     layer_names: Sequence[str] | None = None
 
     def __post_init__(self) -> None:
+        """Validate that the coupling matrix K is square (L, L)."""
         K = np.asarray(self.K, dtype=np.float64)
         if K.ndim != 2 or K.shape[0] != K.shape[1]:
             raise ValueError("K must be square (L, L)")

@@ -5,9 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — GK → UPDE Phase Dynamics Bridge
-"""
-Bridge between gyrokinetic transport fluxes and the 8-layer UPDE
-Kuramoto phase dynamics system.
+"""Bridge gyrokinetic transport fluxes into the 8-layer UPDE Kuramoto phase dynamics system.
 
 Maps GK-computed growth rates and diffusivities into adaptive K_nm
 coupling modulation for layers P0 (microturbulence), P1 (zonal flows),

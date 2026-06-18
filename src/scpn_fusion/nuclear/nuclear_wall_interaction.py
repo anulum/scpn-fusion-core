@@ -45,8 +45,8 @@ def default_iter_config_path() -> str:
 
 
 class NuclearEngineeringLab(FusionBurnPhysics):
-    """
-    Simulates the nuclear interaction between Plasma and the Reactor Vessel.
+    """Simulate the nuclear interaction between Plasma and the Reactor Vessel.
+
     1. Helium Ash accumulation.
     2. Neutron Flux distribution on the First Wall.
     3. Material Damage (DPA).
@@ -75,8 +75,8 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         return source_map
 
     def generate_first_wall(self) -> tuple[FloatArray, FloatArray]:
-        """
-        Defines the geometry of the reactor wall (Vacuum Vessel).
+        """Define the geometry of the reactor wall (Vacuum Vessel).
+
         Approximated as a D-shaped contour surrounding the plasma.
         """
         theta = np.linspace(0.0, 2.0 * np.pi, 200, dtype=np.float64)
@@ -95,8 +95,8 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         tau_He_ratio: float = 5.0,
         pumping_efficiency: float = 1.0,
     ) -> AshPoisoningHistory:
-        """
-        Simulates the drop in fusion power due to Helium buildup.
+        """Simulate the drop in fusion power due to Helium buildup.
+
         tau_He_ratio: Ratio of Helium particle confinement to Energy confinement (tau_He / tau_E).
         If ratio > 10, the reactor chokes.
         """
@@ -168,9 +168,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         return history
 
     def calculate_neutron_wall_loading(self) -> tuple[FloatArray, FloatArray, FloatArray]:
-        """
-        Ray-Tracing calculation of 14.1 MeV neutrons hitting the wall.
-        """
+        """Ray-Tracing calculation of 14.1 MeV neutrons hitting the wall."""
         print("[Nuclear] Calculating Neutron Wall Loading (NWL)...")
 
         source_map = self._build_neutron_source_map()
@@ -244,9 +242,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         source_points_xyz: FloatArray | None = None,
         source_strength_w: FloatArray | None = None,
     ) -> CADLoadReport:
-        """
-        Reduced CAD loading estimate on imported STEP/STL meshes.
-        """
+        """Reduced CAD loading estimate on imported STEP/STL meshes."""
         self.solve_equilibrium()
         if source_points_xyz is None or source_strength_w is None:
             source_map = self._build_neutron_source_map()
@@ -276,9 +272,9 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         E_inc_eV: float = 100.0,
         angle_deg: float = 45.0,
     ) -> float:
-        """
-        Roth-Bohdansky Sputtering Yield (Y).
-        Y = Q * (1 - (E_th/E)^(2/3)) * (1 - E_th/E)^2
+        """Roth-Bohdansky Sputtering Yield (Y).
+
+        Y = Q * (1 - (E_th/E)^(2/3)) * (1 - E_th/E)^2.
         """
         E_inc_eV = float(E_inc_eV)
         angle_deg = float(angle_deg)
@@ -313,9 +309,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         return float(np.clip(Y, 0.0, 5.0))
 
     def analyze_materials(self, wall_flux: FloatArray) -> tuple[dict[str, float], FloatArray]:
-        """
-        Calculates lifespan using Sputtering + DPA.
-        """
+        """Calculate lifespan using Sputtering + DPA."""
         # Convert Flux (n/m2/s) to MW/m2 (14 MeV per neutron)
         MW_m2 = wall_flux * 14.1 * 1.602e-13 / 1e6
 
@@ -367,7 +361,8 @@ def run_nuclear_sim(
         verbose: Emit human-readable progress and summary text.
         lab_factory: Factory used to create the analysis engine, exposed for tests.
 
-    Returns:
+    Returns
+    -------
         Mapping with final ash fraction, wall-load metrics, lifespan range, and
         plot status used by callers and benchmark harnesses.
     """

@@ -319,9 +319,11 @@ class HPCBridge:
             self.solver_ptr = None
 
     def __del__(self) -> None:
+        """Release the native solver handle on garbage collection."""
         self.close()
 
     def __enter__(self) -> "HPCBridge":
+        """Enter the context manager and return this bridge."""
         return self
 
     def __exit__(
@@ -330,6 +332,7 @@ class HPCBridge:
         exc: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
+        """Release the native solver handle on context exit."""
         self.close()
 
     def _setup_signatures(self) -> None:
@@ -477,8 +480,8 @@ class HPCBridge:
     def solve_neural(
         self, config_path: Optional[str | Path] = None
     ) -> Optional[NDArray[np.float64]]:
-        """
-        Run the O(1) Neural Equilibrium Surrogate.
+        """Run the O(1) Neural Equilibrium Surrogate.
+
         Requires NeuralEquilibriumKernel (JAX/NPZ weights).
         """
         try:

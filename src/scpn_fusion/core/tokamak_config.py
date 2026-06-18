@@ -50,7 +50,7 @@ class TokamakConfig:
 
     @classmethod
     def iter(cls) -> TokamakConfig:
-        """ITER baseline H-mode. ITER Research Plan (2018)."""
+        """Return the ITER baseline H-mode configuration (ITER Research Plan, 2018)."""
         return cls(
             name="ITER",
             R0=6.2,

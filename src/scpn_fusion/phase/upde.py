@@ -5,9 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Multi-Layer UPDE Engine (Paper 27)
-"""
-Unified Phase Dynamics Equation — multi-layer evolution parameterised
-by the Knm coupling matrix from Paper 27.
+"""Unified Phase Dynamics Equation — multi-layer evolution parameterised by the Knm coupling matrix from Paper 27.
 
 Per-layer equation:
     dθ_{m,i}/dt = ω_{m,i}

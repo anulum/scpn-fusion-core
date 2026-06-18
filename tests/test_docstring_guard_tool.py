@@ -63,6 +63,40 @@ def test_collect_docstring_issues_accepts_documented_public_api(tmp_path: Path) 
     assert guard.collect_docstring_issues(tmp_path, ("src",)) == []
 
 
+def test_collect_docstring_issues_skips_overload_stubs(tmp_path: Path) -> None:
+    """``typing.overload`` signature stubs are excluded, matching ruff D418."""
+    src = tmp_path / "src" / "pkg"
+    src.mkdir(parents=True)
+    (src / "overloaded.py").write_text(
+        '"""Module docs."""\n\n'
+        "from typing import overload\n\n"
+        "@overload\n"
+        "def widen(value: int) -> int: ...\n\n"
+        "@overload\n"
+        "def widen(value: str) -> str: ...\n\n"
+        'def widen(value):\n    """Widen a value while preserving its type."""\n    return value\n',
+        encoding="utf-8",
+    )
+
+    assert guard.collect_docstring_issues(tmp_path, ("src",)) == []
+
+
+def test_collect_docstring_issues_skips_attribute_overload_stubs(tmp_path: Path) -> None:
+    """Attribute-style ``typing.overload`` decorators are also excluded."""
+    src = tmp_path / "src" / "pkg"
+    src.mkdir(parents=True)
+    (src / "attr_overloaded.py").write_text(
+        '"""Module docs."""\n\n'
+        "import typing\n\n"
+        "@typing.overload\n"
+        "def widen(value: int) -> int: ...\n\n"
+        'def widen(value):\n    """Widen a value while preserving its type."""\n    return value\n',
+        encoding="utf-8",
+    )
+
+    assert guard.collect_docstring_issues(tmp_path, ("src",)) == []
+
+
 def test_main_fails_when_issue_count_exceeds_baseline(
     tmp_path: Path,
     monkeypatch,

@@ -25,9 +25,7 @@ def _require_positive(name: str, value: float) -> float:
 
 
 class PeelingBallooningBoundary:
-    """
-    Evaluates stability against peeling-ballooning modes.
-    """
+    """Evaluates stability against peeling-ballooning modes."""
 
     def __init__(self, q95: float, kappa: float, delta: float, a: float, R0: float):
         self.q95 = q95
@@ -37,9 +35,7 @@ class PeelingBallooningBoundary:
         self.R0 = R0
 
     def peeling_limit(self, j_edge: float, n_mode: int = 10) -> float:
-        """
-        Critical edge current density limit for peeling stability.
-        """
+        """Critical edge current density limit for peeling stability."""
         if n_mode < 1:
             raise ValueError("n_mode must be >= 1")
         q95 = _require_positive("q95", self.q95)
@@ -53,9 +49,7 @@ class PeelingBallooningBoundary:
         return float(j_crit)
 
     def ballooning_limit(self, s_edge: float) -> float:
-        """
-        Critical alpha (pressure gradient) at edge.
-        """
+        """Critical alpha (pressure gradient) at edge."""
         # alpha_crit ~ s_edge
         # With shaping, kappa and delta increase the limit
         # Sauter et al., Phys. Plasmas 6, 2834 (1999): F_shape uses δ²
@@ -63,9 +57,7 @@ class PeelingBallooningBoundary:
         return float(alpha_crit)
 
     def is_unstable(self, alpha_edge: float, j_edge: float, s_edge: float) -> bool:
-        """
-        Combined criterion for peeling-ballooning.
-        """
+        """Return whether the edge is peeling-ballooning unstable."""
         j_crit = self.peeling_limit(j_edge)
         a_crit = self.ballooning_limit(s_edge)
 
@@ -77,9 +69,7 @@ class PeelingBallooningBoundary:
         return (j_norm**2 + a_norm**2 + coupling) > 1.0
 
     def stability_margin(self, alpha_edge: float, j_edge: float, s_edge: float) -> float:
-        """
-        Distance to boundary (positive = stable).
-        """
+        """Distance to boundary (positive = stable)."""
         j_crit = self.peeling_limit(j_edge)
         a_crit = self.ballooning_limit(s_edge)
 
@@ -102,9 +92,7 @@ class ELMCrashResult:
 
 
 class ELMCrashModel:
-    """
-    Applies the Type I ELM crash to pedestal profiles.
-    """
+    """Applies the Type I ELM crash to pedestal profiles."""
 
     def __init__(self, f_elm_fraction: float = 0.08):
         self.f_elm_fraction = f_elm_fraction
@@ -156,9 +144,7 @@ class ELMEvent:
 
 
 class RMPSuppression:
-    """
-    Resonant Magnetic Perturbation effects on ELMs.
-    """
+    """Resonant Magnetic Perturbation effects on ELMs."""
 
     def __init__(self, n_coils: int = 3, I_rmp_kA: float = 90.0, n_toroidal: int = 3):
         self.n_coils = n_coils
@@ -168,9 +154,9 @@ class RMPSuppression:
     def chirikov_parameter(
         self, q_profile: FloatArray, rho: FloatArray, delta_B_r: float, B0: float, R0: float
     ) -> float:
-        """
-        σ_Chir = sum (w_mn / dr_mn)
-        w_mn = 4 * sqrt(R0 * q' * delta_B_r / (n * B0))
+        """σ_Chir = sum (w_mn / dr_mn).
+
+        w_mn = 4 * sqrt(R0 * q' * delta_B_r / (n * B0)).
         """
         q_profile = np.asarray(q_profile, dtype=float)
         rho = np.asarray(rho, dtype=float)
@@ -244,9 +230,7 @@ def elm_power_balance_frequency(P_SOL_MW: float, W_ped_MJ: float, f_elm_fraction
 
 
 class ELMCycler:
-    """
-    Tracks pedestal state and triggers ELM events.
-    """
+    """Tracks pedestal state and triggers ELM events."""
 
     def __init__(self, pb_boundary: PeelingBallooningBoundary, crash_model: ELMCrashModel):
         self.pb = pb_boundary

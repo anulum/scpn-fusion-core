@@ -170,7 +170,7 @@ def _load_gyro_bohm_coefficient_cached() -> float:
 
 
 def _load_gyro_bohm_coefficient_cached_with_contract() -> tuple[float, dict[str, Any]]:
-    """Cached c_gB loader with provenance contract."""
+    """Return the cached c_gB coefficient with its provenance contract."""
     global _gyro_bohm_cache  # noqa: PLW0603
     global _gyro_bohm_cache_contract  # noqa: PLW0603
     if _gyro_bohm_cache is None or _gyro_bohm_cache_contract is None:
@@ -503,8 +503,8 @@ class TransportSolver(
     TransportSolverRuntimeMixin,
     FusionKernel,
 ):
-    """
-    1.5D Integrated Transport Code.
+    """1.5D Integrated Transport Code.
+
     Solves Heat and Particle diffusion equations on flux surfaces,
     coupled self-consistently with the 2D Grad-Shafranov equilibrium.
 

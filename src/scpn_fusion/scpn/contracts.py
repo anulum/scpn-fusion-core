@@ -270,6 +270,7 @@ class PhysicsInvariant:
     comparator: str  # "gt" | "lt" | "gte" | "lte"
 
     def __post_init__(self) -> None:
+        """Validate that the comparator is one of the supported operators."""
         if self.comparator not in _VALID_COMPARATORS:
             raise ValueError(
                 f"Invalid comparator {self.comparator!r}; must be one of {_VALID_COMPARATORS}"

@@ -72,6 +72,7 @@ class PhaseStreamServer:
     _running: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
+        """Resolve the auth token from the environment when not provided."""
         if self.auth_token is None:
             token = os.environ.get("SCPN_PHASE_STREAM_TOKEN")
             self.auth_token = token if token else None

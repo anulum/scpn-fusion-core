@@ -190,7 +190,7 @@ class NTMController:
         self.eccd_power_request = 0.0
 
     def step(self, w: float, rho_rs: float, max_power: float = 20.0) -> float:
-        """Returns requested ECCD power in MW."""
+        """Return requested ECCD power in MW."""
         if not self.active and w > self.w_onset:
             self.active = True
             self.target_rho = rho_rs

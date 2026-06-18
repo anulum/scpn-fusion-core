@@ -329,6 +329,11 @@ target-version = "py310"
 exclude = ["notebooks", "validation/reference_data", "weights"]
 
 [tool.ruff.lint]
+# NumPy-convention docstring (`D`) rules are enforced separately on the strict
+# mypy cohort via `tools/run_ruff_docstrings.py` (wired into the preflight gate),
+# so the cohort is the single source of truth for both typing and docstrings.
+# They are intentionally kept out of the global `select` until every src module
+# has graduated into the cohort.
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 ignore = [
   "E501",

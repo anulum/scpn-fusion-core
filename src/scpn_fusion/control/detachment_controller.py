@@ -45,8 +45,8 @@ class RadiationFrontModel:
         return temps.get(impurity, 10.0)
 
     def front_position(self, P_SOL_MW: float, n_u_19: float, seeding_rate: float) -> float:
-        """
-        Location of the radiation front: 0 = target, 1 = X-point.
+        """Locate the radiation front: 0 = target, 1 = X-point.
+
         Higher seeding -> moves towards X-point.
         Higher P_SOL -> pushes front back to target.
         """
@@ -61,8 +61,8 @@ class RadiationFrontModel:
         return float(np.clip(rho_front, 0.0, 1.0))
 
     def degree_of_detachment(self, T_target_eV: float, n_target: float, n_u: float) -> float:
-        """
-        DOD = Gamma_t_attached / Gamma_t_actual
+        """DOD = Gamma_t_attached / Gamma_t_actual.
+
         We approximate this via T_target using the classic two-point rollover.
         """
         if T_target_eV > 5.0:
@@ -107,7 +107,6 @@ class DetachmentController:
         dt: float,
     ) -> float:
         """Return one impurity-seeding command from divertor diagnostics."""
-
         self.state = self._determine_state(T_t_measured, rho_front)
 
         # If X-point MARFE imminent, hard drop seeding
@@ -179,7 +178,6 @@ class DetachmentBifurcation:
         self, seeding_range: FloatArray, P_SOL_MW: float, n_u_19: float
     ) -> list[DetachmentPoint]:
         """Evaluate steady-state detachment points over a seeding-rate grid."""
-
         return [self._steady_state_target(sr, P_SOL_MW, n_u_19) for sr in seeding_range]
 
     def find_rollover_point(self, P_SOL_MW: float, n_u_19: float) -> float:
@@ -205,7 +203,6 @@ class MultiImpuritySeeding:
 
     def step(self, diagnostics: dict[str, float], dt: float) -> dict[str, float]:
         """Return per-impurity seeding rates for one control interval."""
-
         T_t = diagnostics.get("T_target_eV", 20.0)
         n_t = diagnostics.get("n_target_19", 10.0)
         P_rad = diagnostics.get("P_rad_MW", 10.0)

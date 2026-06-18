@@ -110,6 +110,7 @@ class QuantumEntropySource:
     seed: int = 1337
 
     def __post_init__(self) -> None:
+        """Seed the deterministic random generator from the configured seed."""
         self._rng = np.random.default_rng(int(self.seed))
 
     def random(self) -> float:
