@@ -241,6 +241,7 @@ files = [
     "src/scpn_fusion/core/fusion_kernel_free_boundary_mixin.py",
     "src/scpn_fusion/core/fusion_kernel.py",
     "src/scpn_fusion/core/fusion_kernel_free_boundary.py",
+    "src/scpn_fusion/core/_rust_compat.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",

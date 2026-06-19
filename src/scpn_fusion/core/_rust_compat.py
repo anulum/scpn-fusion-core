@@ -4,9 +4,10 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""
-Backward compatibility layer: imports from Rust (scpn_fusion_rs) if available,
-falls back to pure-Python implementations.
+"""Backward-compatibility layer for the optional Rust acceleration backend.
+
+Imports from ``scpn_fusion_rs`` when available, falling back to pure-Python
+implementations otherwise.
 
 Usage:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
@@ -14,14 +15,20 @@ Usage:
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 from collections import deque
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional, cast
+
 import numpy as np
+from numpy.typing import NDArray
+
 from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
+
+FloatArray = NDArray[np.float64]
 
 try:
     from scpn_fusion_rs import (
@@ -39,7 +46,7 @@ except ImportError:
     _RUST_AVAILABLE = False
 
 
-def _require_monotonic_axis(name: str, values: np.ndarray, expected_len: int) -> np.ndarray:
+def _require_monotonic_axis(name: str, values: FloatArray, expected_len: int) -> FloatArray:
     arr = np.asarray(values, dtype=np.float64)
     if arr.ndim != 1 or arr.size != int(expected_len):
         raise ValueError(f"{name} must be 1-D with length {expected_len}, got shape {arr.shape}")
@@ -53,12 +60,12 @@ def _require_monotonic_axis(name: str, values: np.ndarray, expected_len: int) ->
 
 def _require_state_grid(
     name: str,
-    values: np.ndarray,
+    values: FloatArray,
     *,
     nz: int,
     nr: int,
     require_finite: bool,
-) -> np.ndarray:
+) -> FloatArray:
     arr = np.asarray(values, dtype=np.float64)
     expected = (int(nz), int(nr))
     if arr.ndim != 2 or tuple(arr.shape) != expected:
@@ -68,21 +75,20 @@ def _require_state_grid(
     return arr
 
 
-def _rust_available():
+def _rust_available() -> bool:
     """Check if the Rust backend is loadable."""
     return _RUST_AVAILABLE
 
 
 class RustAcceleratedKernel:
-    """
-    Drop-in wrapper around Rust PyFusionKernel that mirrors the Python
-    FusionKernel attribute interface (.Psi, .R, .Z, .RR, .ZZ, .cfg, etc.).
+    """Drop-in wrapper around the Rust PyFusionKernel.
 
-    Delegates equilibrium solve to Rust for ~20x speedup while keeping
-    all attribute accesses compatible with downstream code.
+    Mirrors the Python FusionKernel attribute interface (.Psi, .R, .Z, .RR, .ZZ,
+    .cfg, etc.) and delegates the equilibrium solve to Rust for ~20x speedup while
+    keeping all attribute accesses compatible with downstream code.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str | Path) -> None:
         self._config_path = str(config_path)
         self.state_sync_failures = 0
         self.last_state_sync_error: Optional[str] = None
@@ -105,14 +111,14 @@ class RustAcceleratedKernel:
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
 
         # Initialize and validate state from Rust arrays.
-        self.Psi = np.zeros((self.NZ, self.NR), dtype=np.float64)
-        self.J_phi = np.zeros((self.NZ, self.NR), dtype=np.float64)
-        self.B_R = np.zeros((self.NZ, self.NR), dtype=np.float64)
-        self.B_Z = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self.Psi: FloatArray = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self.J_phi: FloatArray = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self.B_R: FloatArray = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self.B_Z: FloatArray = np.zeros((self.NZ, self.NR), dtype=np.float64)
         self._sync_state_from_rust(context="init", require_finite=True)
         self.compute_b_field()
 
-    def solve_equilibrium(self):
+    def solve_equilibrium(self) -> Any:
         """Solve Grad-Shafranov equilibrium via Rust backend."""
         result = self._rust.solve_equilibrium()
 
@@ -124,7 +130,7 @@ class RustAcceleratedKernel:
 
         return result
 
-    def compute_b_field(self):
+    def compute_b_field(self) -> None:
         """Compute magnetic field components from Psi gradient."""
         if tuple(self.Psi.shape) != (self.NZ, self.NR):
             raise ValueError(
@@ -164,10 +170,10 @@ class RustAcceleratedKernel:
         self.Psi = psi
         self.J_phi = j_phi
 
-    def find_x_point(self, Psi):
-        """
-        Locate the null point (B=0) using local minimization.
-        Matches Python FusionKernel.find_x_point() interface.
+    def find_x_point(self, Psi: FloatArray) -> tuple[tuple[float, float], float]:
+        """Locate the null point (B=0) using local minimisation.
+
+        Matches the Python ``FusionKernel.find_x_point()`` interface.
         """
         # Psi is indexed (Z, R): axis-0 = Z, axis-1 = R
         dPsi_dZ, dPsi_dR = np.gradient(Psi, self.dZ, self.dR)
@@ -177,17 +183,16 @@ class RustAcceleratedKernel:
 
         if np.any(mask_divertor):
             masked_B = np.where(mask_divertor, B_mag, 1e9)
-            idx_min = np.argmin(masked_B)
+            idx_min = int(np.argmin(masked_B))
             iz, ir = np.unravel_index(idx_min, Psi.shape)
-            return (self.R[ir], self.Z[iz]), Psi[iz, ir]
-        else:
-            return (0, 0), np.min(Psi)
+            return (float(self.R[ir]), float(self.Z[iz])), float(Psi[iz, ir])
+        return (0.0, 0.0), float(np.min(Psi))
 
-    def calculate_thermodynamics(self, p_aux_mw):
+    def calculate_thermodynamics(self, p_aux_mw: float) -> Any:
         """Calculate thermodynamics via Rust backend."""
         return self._rust.calculate_thermodynamics(p_aux_mw)
 
-    def calculate_vacuum_field(self):
+    def calculate_vacuum_field(self) -> FloatArray:
         """Compute vacuum field with Python reference implementation."""
         from scpn_fusion.core.fusion_kernel import FusionKernel as _PyFusionKernel
 
@@ -200,9 +205,9 @@ class RustAcceleratedKernel:
 
     def solver_method(self) -> str:
         """Get current solver method name."""
-        return self._rust.solver_method()
+        return str(self._rust.solver_method())
 
-    def save_results(self, filename="equilibrium_nonlinear.npz"):
+    def save_results(self, filename: str = "equilibrium_nonlinear.npz") -> None:
         """Save current state to .npz file."""
         np.savez(filename, R=self.R, Z=self.Z, Psi=self.Psi, J_phi=self.J_phi)
 
@@ -217,7 +222,7 @@ else:
 # Re-export Rust-only helpers (with compatibility shims where needed)
 if _RUST_AVAILABLE:
 
-    def rust_shafranov_bv(*args, **kwargs):
+    def rust_shafranov_bv(*args: Any, **kwargs: Any) -> Any:
         """Compatibility wrapper for legacy config-path invocation.
 
         Supported call forms:
@@ -234,30 +239,30 @@ if _RUST_AVAILABLE:
     rust_solve_coil_currents = solve_coil_currents
     rust_measure_magnetics = measure_magnetics
 
-    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None):
+    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None) -> Any:
         """Rust tearing mode with optional deterministic seed compatibility."""
         if seed is None:
             return simulate_tearing_mode(int(steps))
 
-        from scpn_fusion.control.disruption_predictor import (
+        from scpn_fusion.control.disruption_risk_runtime import (
             simulate_tearing_mode as _py_tearing,
         )
 
         rng = np.random.default_rng(seed=int(seed))
-        return _py_tearing(steps=int(steps), rng=rng)
+        return cast("Any", _py_tearing)(steps=int(steps), rng=rng)
 
 else:
 
-    def rust_shafranov_bv(*args, **kwargs):
+    def rust_shafranov_bv(*args: Any, **kwargs: Any) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
-    def rust_solve_coil_currents(*args, **kwargs):
+    def rust_solve_coil_currents(*args: Any, **kwargs: Any) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
-    def rust_measure_magnetics(*args, **kwargs):
+    def rust_measure_magnetics(*args: Any, **kwargs: Any) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
-    def rust_simulate_tearing_mode(*args, **kwargs):
+    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
 
@@ -293,7 +298,7 @@ class RustSnnPool:
     ):
         self._backend = "rust"
         if _RUST_AVAILABLE:
-            from scpn_fusion_rs import PySnnPool  # type: ignore[import-untyped]
+            from scpn_fusion_rs import PySnnPool
 
             self._inner = PySnnPool(n_neurons, gain, window_size)
             return
@@ -310,17 +315,17 @@ class RustSnnPool:
 
     def step(self, error: float) -> float:
         """Process *error* through SNN pool and return scalar control output."""
-        return self._inner.step(error)
+        return float(self._inner.step(error))
 
     @property
     def n_neurons(self) -> int:
         """Number of neurons in the active pool backend."""
-        return self._inner.n_neurons
+        return int(self._inner.n_neurons)
 
     @property
     def gain(self) -> float:
         """Controller gain used by the active pool backend."""
-        return self._inner.gain
+        return float(self._inner.gain)
 
     @property
     def backend(self) -> str:
@@ -362,7 +367,7 @@ class RustSnnController:
     ):
         self._backend = "rust"
         if _RUST_AVAILABLE:
-            from scpn_fusion_rs import PySnnController  # type: ignore[import-untyped]
+            from scpn_fusion_rs import PySnnController
 
             self._inner = PySnnController(target_r, target_z)
             return
@@ -378,17 +383,18 @@ class RustSnnController:
 
     def step(self, measured_r: float, measured_z: float) -> tuple[float, float]:
         """Process measured (R, Z) position and return (ctrl_R, ctrl_Z)."""
-        return self._inner.step(measured_r, measured_z)
+        ctrl_r, ctrl_z = self._inner.step(measured_r, measured_z)
+        return float(ctrl_r), float(ctrl_z)
 
     @property
     def target_r(self) -> float:
         """Target major-radius position passed to the active backend."""
-        return self._inner.target_r
+        return float(self._inner.target_r)
 
     @property
     def target_z(self) -> float:
         """Target vertical position passed to the active backend."""
-        return self._inner.target_z
+        return float(self._inner.target_z)
 
     @property
     def backend(self) -> str:
@@ -436,7 +442,7 @@ class _NumpySnnPoolFallback:
         self._v_threshold = 0.35
         self._v_reset = 0.0
 
-    def _step_pop(self, v: np.ndarray, rng: np.random.Generator, input_current: float) -> int:
+    def _step_pop(self, v: FloatArray, rng: np.random.Generator, input_current: float) -> int:
         noise = rng.normal(0.0, self._noise_std, size=v.shape)
         v += self._alpha * (-v + float(input_current) + noise)
         fired = v >= self._v_threshold
@@ -484,8 +490,8 @@ class _NumpySnnControllerFallback:
 
 
 def rust_multigrid_vcycle(
-    source: np.ndarray,
-    psi_bc: np.ndarray,
+    source: FloatArray,
+    psi_bc: FloatArray,
     r_min: float,
     r_max: float,
     z_min: float,
@@ -494,7 +500,7 @@ def rust_multigrid_vcycle(
     nz: int,
     tol: float = 1e-6,
     max_cycles: int = 500,
-) -> tuple[np.ndarray, float, int, bool] | None:
+) -> tuple[FloatArray, float, int, bool] | None:
     """Call Rust multigrid V-cycle if available, else return None.
 
     Returns
@@ -505,9 +511,10 @@ def rust_multigrid_vcycle(
         logger.warning("scpn_fusion_rs not installed — falling back to Python multigrid.")
         return None
     try:
-        from scpn_fusion_rs import multigrid_vcycle as _rust_mg  # type: ignore
+        from scpn_fusion_rs import multigrid_vcycle as _rust_mg
 
-        return _rust_mg(source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol, max_cycles)
+        result = _rust_mg(source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol, max_cycles)
+        return cast("tuple[FloatArray, float, int, bool]", result)
     except ImportError:
         logger.warning("Rust multigrid_vcycle not exposed via PyO3 — falling back to Python.")
         return None
