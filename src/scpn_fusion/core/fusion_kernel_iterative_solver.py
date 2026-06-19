@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 
 from scpn_fusion.core.fusion_kernel_numerics import (
@@ -19,6 +21,20 @@ from scpn_fusion.core.fusion_kernel_numerics import (
 
 class FusionKernelIterativeSolverMixin:
     """Mixin providing Jacobi, SOR, and multigrid sub-solvers for GS solves."""
+
+    if TYPE_CHECKING:
+        # State and methods supplied by the host FusionKernel this mixin extends.
+        Psi: FloatArray
+        J_phi: FloatArray
+        RR: FloatArray
+        ZZ: FloatArray
+        dR: float
+        dZ: float
+        cfg: dict[str, Any]
+        hpc: Any
+
+        def calculate_vacuum_field(self) -> FloatArray:
+            """Return the vacuum poloidal flux (provided by the host FusionKernel)."""
 
     # ── elliptic sub-solvers ──────────────────────────────────────────
 
@@ -348,7 +364,7 @@ class FusionKernelIterativeSolverMixin:
         dZ_c = dZ * 2.0
 
         # 4. Solve coarse-grid correction: L*[e] = r
-        e_coarse = np.zeros((nz_c, nr_c))
+        e_coarse: FloatArray = np.zeros((nz_c, nr_c))
         e_coarse = self._multigrid_vcycle(
             e_coarse,
             r_coarse,
@@ -479,6 +495,7 @@ class FusionKernelIterativeSolverMixin:
         if self.hpc.is_available():
             Psi_acc = self.hpc.solve(self.J_phi, iterations=50)
             if Psi_acc is not None:
+                Psi_acc = np.asarray(Psi_acc, dtype=np.float64)
                 self._apply_boundary_conditions(Psi_acc, Psi_bc)
                 return Psi_acc
 
