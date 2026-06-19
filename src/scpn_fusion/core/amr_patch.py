@@ -61,12 +61,12 @@ class AMRPatch:
     @property
     def r_grid(self) -> FloatArray:
         """One-dimensional radial coordinates for this patch."""
-        return np.linspace(self.r_lo, self.r_hi, self.nr)
+        return np.linspace(self.r_lo, self.r_hi, self.nr).astype(np.float64)
 
     @property
     def z_grid(self) -> FloatArray:
         """One-dimensional vertical coordinates for this patch."""
-        return np.linspace(self.z_lo, self.z_hi, self.nz)
+        return np.linspace(self.z_lo, self.z_hi, self.nz).astype(np.float64)
 
 
 def gradient_magnitude(psi: FloatArray, dr: float, dz: float) -> FloatArray:
@@ -313,7 +313,7 @@ def solve_amr(
         fine_dr = dr / REFINE_FACTOR
         fine_dz = dz / REFINE_FACTOR
 
-        fine_R = np.linspace(r_lo, r_hi, fine_nr)
+        fine_R = np.linspace(r_lo, r_hi, fine_nr).astype(np.float64)
         fine_psi = _jacobi_smooth(
             fine_psi,
             fine_src,
