@@ -15,13 +15,17 @@ but exposes a compatible interface for non-axisymmetric ``n != 0`` shaping.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import logging
 from typing import Iterable
 
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
 
 
 @dataclass(frozen=True)
@@ -34,6 +38,24 @@ class FourierMode3D:
     r_sin: float = 0.0
     z_cos: float = 0.0
     z_sin: float = 0.0
+
+
+def _replace_mode_component(mode: FourierMode3D, component: str, value: float) -> FourierMode3D:
+    """Return a copy of ``mode`` with one float shaping coefficient replaced.
+
+    Only the float harmonic amplitudes are perturbable; the integer ``m``/``n``
+    indices are preserved. Dispatching by name keeps the update statically typed
+    (a ``**dict`` splat would let a float reach the int fields).
+    """
+    if component == "r_cos":
+        return replace(mode, r_cos=value)
+    if component == "r_sin":
+        return replace(mode, r_sin=value)
+    if component == "z_cos":
+        return replace(mode, z_cos=value)
+    if component == "z_sin":
+        return replace(mode, z_sin=value)
+    raise ValueError(f"Unknown perturbable mode component: {component!r}.")
 
 
 class VMECStyleEquilibrium3D:
@@ -68,7 +90,7 @@ class VMECStyleEquilibrium3D:
     @classmethod
     def from_axisymmetric_lcfs(
         cls,
-        lcfs_points: np.ndarray,
+        lcfs_points: FloatArray,
         *,
         r_axis: float,
         z_axis: float,
@@ -127,6 +149,14 @@ class VMECStyleEquilibrium3D:
             ],
         }
 
+    @staticmethod
+    def _payload_float(payload: dict[str, object], key: str, default: float | None = None) -> float:
+        """Coerce a VMEC-like payload entry to float, validating its type."""
+        value = payload[key] if default is None else payload.get(key, default)
+        if not isinstance(value, (int, float)):
+            raise ValueError(f"VMEC payload field {key!r} must be numeric.")
+        return float(value)
+
     @classmethod
     def from_vmec_like_dict(cls, payload: dict[str, object]) -> "VMECStyleEquilibrium3D":
         """Rebuild reduced equilibrium from VMEC-like boundary payload."""
@@ -148,33 +178,37 @@ class VMECStyleEquilibrium3D:
                 )
 
         return cls(
-            r_axis=float(payload["r_axis"]),
-            z_axis=float(payload["z_axis"]),
-            a_minor=float(payload["a_minor"]),
-            kappa=float(payload.get("kappa", 1.0)),
-            triangularity=float(payload.get("triangularity", 0.0)),
-            nfp=int(payload.get("nfp", 1)),
+            r_axis=cls._payload_float(payload, "r_axis"),
+            z_axis=cls._payload_float(payload, "z_axis"),
+            a_minor=cls._payload_float(payload, "a_minor"),
+            kappa=cls._payload_float(payload, "kappa", 1.0),
+            triangularity=cls._payload_float(payload, "triangularity", 0.0),
+            nfp=int(cls._payload_float(payload, "nfp", 1)),
             modes=modes,
         )
 
     @staticmethod
     def _broadcast(
-        rho: float | np.ndarray,
-        theta: float | np.ndarray,
-        phi: float | np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        rho: float | FloatArray,
+        theta: float | FloatArray,
+        phi: float | FloatArray,
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         rho_arr = np.asarray(rho, dtype=float)
         theta_arr = np.asarray(theta, dtype=float)
         phi_arr = np.asarray(phi, dtype=float)
         rho_b, theta_b, phi_b = np.broadcast_arrays(rho_arr, theta_arr, phi_arr)
-        return rho_b, theta_b, phi_b
+        return (
+            np.asarray(rho_b, dtype=np.float64),
+            np.asarray(theta_b, dtype=np.float64),
+            np.asarray(phi_b, dtype=np.float64),
+        )
 
     def flux_to_cylindrical(
         self,
-        rho: float | np.ndarray,
-        theta: float | np.ndarray,
-        phi: float | np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        rho: float | FloatArray,
+        theta: float | FloatArray,
+        phi: float | FloatArray,
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Map native flux coordinates ``(rho, theta, phi)`` to ``(R, Z, phi)``."""
         rho_b, theta_b, phi_b = self._broadcast(rho, theta, phi)
         rho_b = np.clip(rho_b, 0.0, 1.25)
@@ -199,10 +233,10 @@ class VMECStyleEquilibrium3D:
 
     def flux_to_cartesian(
         self,
-        rho: float | np.ndarray,
-        theta: float | np.ndarray,
-        phi: float | np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        rho: float | FloatArray,
+        theta: float | FloatArray,
+        phi: float | FloatArray,
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Map native flux coordinates ``(rho, theta, phi)`` to ``(x, y, z)``."""
         r_val, z_val, phi_val = self.flux_to_cylindrical(rho, theta, phi)
         x_val = r_val * np.cos(phi_val)
@@ -215,7 +249,7 @@ class VMECStyleEquilibrium3D:
         rho: float = 1.0,
         resolution_toroidal: int = 60,
         resolution_poloidal: int = 60,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[FloatArray, IntArray]:
         """Sample a triangulated flux surface from native 3D coordinates."""
         if resolution_toroidal < 3:
             raise ValueError("resolution_toroidal must be >= 3.")
@@ -308,19 +342,19 @@ class ForceBalance3D:
         self.pressure_exp = float(pressure_exp)
         self.current_exp = float(current_exp)
 
-    def _pressure_profile(self, rho: np.ndarray) -> np.ndarray:
+    def _pressure_profile(self, rho: FloatArray) -> FloatArray:
         """p(rho) = p0 * (1 - rho^2)^alpha, clamped to [0, 1]."""
         rho_c = np.clip(rho, 0.0, 1.0)
         return self.p0 * (1.0 - rho_c**2) ** self.pressure_exp
 
-    def _current_profile(self, rho: np.ndarray) -> np.ndarray:
+    def _current_profile(self, rho: FloatArray) -> FloatArray:
         """J_phi(rho) = j0 * (1 - rho^2)^beta."""
         rho_c = np.clip(rho, 0.0, 1.0)
         return self.j0 * (1.0 - rho_c**2) ** self.current_exp
 
     def _magnetic_field(
-        self, R: np.ndarray, Z: np.ndarray, rho: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self, R: FloatArray, Z: FloatArray, rho: FloatArray
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Approximate (B_R, B_Z, B_phi) at given points.
 
         Toroidal field: B_phi = B0 * R0 / R.
@@ -397,29 +431,18 @@ class ForceBalance3D:
     ) -> float:
         """Finite-difference gradient of residual w.r.t. a mode coefficient."""
         mode = self.eq.modes[mode_idx]
-        orig_val = getattr(mode, component)
+        orig_val = float(getattr(mode, component))
 
         # Perturb +epsilon
-        kwargs = {
-            "m": mode.m,
-            "n": mode.n,
-            "r_cos": mode.r_cos,
-            "r_sin": mode.r_sin,
-            "z_cos": mode.z_cos,
-            "z_sin": mode.z_sin,
-        }
-        kwargs[component] = orig_val + epsilon
-        self.eq.modes[mode_idx] = FourierMode3D(**kwargs)
+        self.eq.modes[mode_idx] = _replace_mode_component(mode, component, orig_val + epsilon)
         res_plus = self.compute_force_residual(n_rho, n_theta, n_phi)
 
         # Perturb -epsilon
-        kwargs[component] = orig_val - epsilon
-        self.eq.modes[mode_idx] = FourierMode3D(**kwargs)
+        self.eq.modes[mode_idx] = _replace_mode_component(mode, component, orig_val - epsilon)
         res_minus = self.compute_force_residual(n_rho, n_theta, n_phi)
 
         # Restore
-        kwargs[component] = orig_val
-        self.eq.modes[mode_idx] = FourierMode3D(**kwargs)
+        self.eq.modes[mode_idx] = mode
 
         return (res_plus - res_minus) / (2.0 * epsilon)
 
@@ -477,16 +500,8 @@ class ForceBalance3D:
                 saved = list(self.eq.modes)
                 for idx, comp, g in gradients:
                     mode = self.eq.modes[idx]
-                    kwargs = {
-                        "m": mode.m,
-                        "n": mode.n,
-                        "r_cos": mode.r_cos,
-                        "r_sin": mode.r_sin,
-                        "z_cos": mode.z_cos,
-                        "z_sin": mode.z_sin,
-                    }
-                    kwargs[comp] = kwargs[comp] - step * g
-                    self.eq.modes[idx] = FourierMode3D(**kwargs)
+                    new_val = float(getattr(mode, comp)) - step * g
+                    self.eq.modes[idx] = _replace_mode_component(mode, comp, new_val)
 
                 trial_residual = self.compute_force_residual(n_rho, n_theta, n_phi)
                 if trial_residual <= current_residual - armijo_c * step * grad_norm_sq:
