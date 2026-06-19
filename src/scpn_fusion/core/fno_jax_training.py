@@ -9,17 +9,22 @@
 
 from __future__ import annotations
 
+import logging
+import time
+from pathlib import Path
+from typing import Any, cast
+
 import jax
 import jax.numpy as jnp
-from jax import jit, vmap, value_and_grad, random
 import numpy as np
+from jax import jit, random, value_and_grad, vmap
+from numpy.typing import NDArray
+
 from scpn_fusion.io.safe_loaders import checked_np_load
-from pathlib import Path
-import time
-import logging
-from typing import Any
 
 logger = logging.getLogger(__name__)
+
+Params = dict[str, jax.Array]
 
 # ── FNO Hyperparameters ──────────────────────────────────────────────
 MODES = 16
@@ -31,11 +36,11 @@ EPOCHS = 50
 # ── Model Definition ─────────────────────────────────────────────────
 
 
-def init_fno_params(key, modes, width):
+def init_fno_params(key: jax.Array, modes: int, width: int) -> Params:
     """Initialise deterministic FNO parameter tensors from a JAX random key."""
     k1, k2, k3, k4 = random.split(key, 4)
 
-    def xavier(k, shape):
+    def xavier(k: jax.Array, shape: tuple[int, ...]) -> jax.Array:
         return random.normal(k, shape) * jnp.sqrt(2.0 / (shape[0] + shape[1]))
 
     params = {
@@ -50,7 +55,13 @@ def init_fno_params(key, modes, width):
 
 
 @jit
-def fno_layer(x, w_real, w_imag, linear, b):
+def fno_layer(
+    x: jax.Array,
+    w_real: jax.Array,
+    w_imag: jax.Array,
+    linear: jax.Array,
+    b: jax.Array,
+) -> jax.Array:
     """Apply one spectral-convolution FNO layer followed by GELU activation."""
     # x: (grid, grid, width)
     x_ft = jnp.fft.rfft2(x, axes=(0, 1))
@@ -71,7 +82,7 @@ def fno_layer(x, w_real, w_imag, linear, b):
     return jax.nn.gelu(jnp.dot(x, linear) + b + x_out)
 
 
-def model_forward(params, x):
+def model_forward(params: Params, x: jax.Array) -> jax.Array:
     """Run scalar FNO regression for a single two-dimensional input field."""
     # x: (grid, grid, 1)
     x = jnp.repeat(x, WIDTH, axis=-1)
@@ -86,14 +97,22 @@ def model_forward(params, x):
 # ── Training Loop (Adam) ─────────────────────────────────────────────
 
 
-def mse_loss(params, x_batch, y_batch):
+def mse_loss(params: Params, x_batch: jax.Array, y_batch: jax.Array) -> jax.Array:
     """Compute mean-squared scalar regression loss for a batch of fields."""
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
     return jnp.mean((preds - y_batch) ** 2)
 
 
 @jit
-def update_step(params, m, v, x_batch, y_batch, lr, t):
+def update_step(
+    params: Params,
+    m: Params,
+    v: Params,
+    x_batch: jax.Array,
+    y_batch: jax.Array,
+    lr: float,
+    t: int,
+) -> tuple[Params, Params, Params, jax.Array]:
     """Perform one clipped Adam optimisation step for the JAX FNO parameters."""
     b1, b2, eps = 0.9, 0.999, 1e-8
     loss, grads = value_and_grad(mse_loss)(params, x_batch, y_batch)
@@ -116,7 +135,7 @@ def update_step(params, m, v, x_batch, y_batch, lr, t):
 # ── Data Generation (Physics-Informed GENE-like) ──────────────────────
 
 
-def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
+def load_gene_binary(file_path: str) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
     """Load validated real-data arrays for FNO training from an `.npz` artifact.
 
     Expected schema:
@@ -154,12 +173,11 @@ def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     return x_np, y_np
 
 
-def generate_gene_like_field(grid_size, regime, key):
-    """
-    Generates a turbulent field with GENE-like structures (Blobs/Streamers).
+def generate_gene_like_field(grid_size: int, regime: str, key: jax.Array) -> jax.Array:
+    """Generate a turbulent field with GENE-like structures (blobs/streamers).
 
-    NOTE: As of v3.8.2, this is a physics-informed synthetic generator modeling
-    GENE spectral character. It is not the direct output of a GENE binary run.
+    As of v3.8.2 this is a physics-informed synthetic generator modelling GENE
+    spectral character. It is not the direct output of a GENE binary run.
     """
     k = jnp.fft.fftfreq(grid_size)
     kx, ky = jnp.meshgrid(k, k)
@@ -232,7 +250,7 @@ def train_fno_jax(
             regime = ["ITG", "TEM", "ETG"][i % 3]
             field = generate_gene_like_field(grid_size, regime, subkey)
             gamma = 0.35 if regime == "ITG" else (0.25 if regime == "TEM" else 0.15)
-            gamma *= 0.9 + 0.2 * random.uniform(subkey)
+            gamma = gamma * (0.9 + 0.2 * float(random.uniform(subkey)))
             x_list.append(field * gamma)
             y_list.append(gamma)
 
@@ -279,7 +297,7 @@ def train_fno_jax(
     logger.info("Training complete. Saving JAX-FNO weights...")
     out = Path(save_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(out, **{k: np.asarray(v) for k, v in params.items()})
+    np.savez(out, allow_pickle=False, **{k: np.asarray(v) for k, v in params.items()})
     return {
         "data_source": data_source,
         "n_samples": n_samples_eff,
@@ -289,7 +307,7 @@ def train_fno_jax(
     }
 
 
-def fno_predict_jit(params, x):
+def fno_predict_jit(params: Params, x: jax.Array) -> jax.Array:
     """JIT-compiled single-sample FNO inference.
 
     Parameters
@@ -303,10 +321,10 @@ def fno_predict_jit(params, x):
     -------
     float — predicted scalar output.
     """
-    return jit(model_forward)(params, x)
+    return cast(jax.Array, jit(model_forward)(params, x))
 
 
-def load_fno_params(path="weights/fno_turbulence_jax.npz"):
+def load_fno_params(path: str = "weights/fno_turbulence_jax.npz") -> Params:
     """Load FNO params from .npz into JAX arrays."""
     with checked_np_load(path, allow_pickle=False) as data:
         return {k: jnp.asarray(data[k]) for k in data.files}
