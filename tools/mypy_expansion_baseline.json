@@ -5,6 +5,10 @@
       "sc_neurocore.*"
     ],
     [
+      "torch",
+      "torch.*"
+    ],
+    [
       "scpn_fusion_rs"
     ],
     [
