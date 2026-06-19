@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -62,8 +63,8 @@ class OnlineLearner:
         self.buffer: list[TrainingSample] = []
         self.generation: int = 0
         self._best_val_loss: float = float("inf")
-        self._weights_backup: dict | None = None
-        self.retrain_history: list[dict] = []
+        self._weights_backup: dict[str, Any] | None = None
+        self.retrain_history: list[dict[str, Any]] = []
 
     def add_sample(self, input_10d: NDArray[np.float64], target_3d: NDArray[np.float64]) -> None:
         """Validate and append one 10D GK training sample to the buffer."""
@@ -88,8 +89,8 @@ class OnlineLearner:
 
     def try_retrain(
         self,
-        current_weights: dict | None = None,
-    ) -> dict | None:
+        current_weights: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
         """Attempt retraining if buffer is full.
 
         Parameters
