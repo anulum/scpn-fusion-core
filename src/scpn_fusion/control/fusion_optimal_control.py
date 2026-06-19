@@ -15,9 +15,13 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
+FloatArray = NDArray[np.float64]
+
+FusionKernel: type[Any]
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -37,9 +41,7 @@ def _normalize_bounds(bounds: Tuple[float, float], name: str) -> Tuple[float, fl
 
 
 class OptimalController:
-    """
-    MIMO controller using response-matrix inversion with bounded actuation.
-    """
+    """MIMO controller using response-matrix inversion with bounded actuation."""
 
     def __init__(
         self,
@@ -51,6 +53,7 @@ class OptimalController:
         coil_current_limits: Tuple[float, float] = (-40.0, 40.0),
         current_target_limits: Tuple[float, float] = (5.0, 16.0),
     ) -> None:
+        """Build the kernel, response matrix, actuation bounds, and telemetry buffers."""
         self.kernel = kernel_factory(config_file)
         self.verbose = bool(verbose)
         self.n_coils = len(self.kernel.cfg["coils"])
@@ -79,9 +82,7 @@ class OptimalController:
             logger.info(message)
 
     def identify_system(self, perturbation: float = 0.5) -> None:
-        """
-        Perturb each coil and measure plasma-axis response to build Jacobian.
-        """
+        """Perturb each coil and measure plasma-axis response to build the Jacobian."""
         self._log("[OptControl] Identifying System Response Matrix...")
         self.kernel.solve_equilibrium()
         base_r, base_z = self.get_plasma_pos()
@@ -113,8 +114,8 @@ class OptimalController:
         self._log("[OptControl] System Identification Complete.")
 
     def get_shafranov_shift(self) -> float:
-        """
-        Calculates the Shafranov Shift (Delta R).
+        """Calculate the Shafranov shift Delta R.
+
         Delta R ~ (a^2 / 2R) * (beta_p + li/2)
         """
         dims = self.kernel.cfg.get("dimensions")
@@ -139,9 +140,9 @@ class OptimalController:
         return float(shift)
 
     def _estimate_internal_inductance(self) -> float:
-        """
-        Estimate li from the radial current-density profile on the magnetic axis plane.
-        Falls back to validated configured li when profile inference is unavailable.
+        """Estimate li from the radial current-density profile on the axis plane.
+
+        Falls back to the configured li when profile inference is unavailable.
         """
         cfg_li = float(self.kernel.cfg.get("physics", {}).get("internal_inductance", 0.8))
         if not np.isfinite(cfg_li) or cfg_li < 0.0:
@@ -174,10 +175,10 @@ class OptimalController:
         shape_factor = max(numerator / denominator, 1.0)
         return float(cfg_li * shape_factor)
 
-    def get_plasma_pos(self) -> np.ndarray:
-        """
-        Return current magnetic-axis position [R, Z].
-        Harden with Shafranov Shift correction for high-beta states.
+    def get_plasma_pos(self) -> FloatArray:
+        """Return current magnetic-axis position [R, Z].
+
+        Applies a Shafranov-shift correction for high-beta states.
         """
         idx_max = int(np.argmax(self.kernel.Psi))
         iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
@@ -192,14 +193,14 @@ class OptimalController:
 
     def compute_optimal_correction(
         self,
-        current_pos: np.ndarray,
-        target_pos: np.ndarray,
+        current_pos: FloatArray,
+        target_pos: FloatArray,
         regularization_lambda: float = 0.05,
         *,
         regularization_limit: float | None = None,
-    ) -> np.ndarray:
-        """
-        Solve Error = J * Delta_I using Tikhonov-regularized (damped) SVD.
+    ) -> FloatArray:
+        """Solve Error = J * Delta_I using Tikhonov-regularised (damped) SVD.
+
         Provides smoother control than hard-cutoff SVD near singularities.
         """
         # Accept regularization_limit as alias for regularization_lambda
@@ -221,7 +222,7 @@ class OptimalController:
         delta_currents = np.asarray(j_inv @ error, dtype=np.float64)
         return np.clip(delta_currents, -self.correction_limit, self.correction_limit)
 
-    def _apply_corrections(self, delta_currents: np.ndarray, gain: float) -> None:
+    def _apply_corrections(self, delta_currents: FloatArray, gain: float) -> None:
         lo, hi = self.coil_current_limits
         g = float(gain)
         for i in range(self.n_coils):
@@ -376,9 +377,7 @@ def run_optimal_control(
     coil_current_limits: Tuple[float, float] = (-40.0, 40.0),
     current_target_limits: Tuple[float, float] = (5.0, 16.0),
 ) -> Dict[str, Any]:
-    """
-    Run bounded optimal-control shot and return deterministic summary.
-    """
+    """Run bounded optimal-control shot and return deterministic summary."""
     seed_int = int(seed)
     if config_file is None:
         repo_root = Path(__file__).resolve().parents[3]
