@@ -16,9 +16,13 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
+FloatArray = NDArray[np.float64]
+
+FusionKernel: type[Any]
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -37,11 +41,10 @@ def _normalize_bounds(bounds: Tuple[float, float], name: str) -> Tuple[float, fl
 
 
 class NeuralSurrogate:
-    """
-    Linearized surrogate model around current operating point.
-    """
+    """Linearised surrogate model around the current operating point."""
 
     def __init__(self, n_coils: int, n_state: int, verbose: bool = True) -> None:
+        """Initialise the identity state matrix and zero coil-response matrix."""
         self.verbose = bool(verbose)
         self.A = np.eye(int(n_state), dtype=np.float64)
         self.B = np.zeros((int(n_state), int(n_coils)), dtype=np.float64)
@@ -70,7 +73,7 @@ class NeuralSurrogate:
         kernel.solve_equilibrium()
         self._log("[SOTA] Surrogate Training Complete.")
 
-    def get_state(self, kernel: Any) -> np.ndarray:
+    def get_state(self, kernel: Any) -> FloatArray:
         """Extract magnetic-axis and X-point state coordinates from a kernel snapshot."""
         idx_max = int(np.argmax(kernel.Psi))
         iz, ir = np.unravel_index(idx_max, kernel.Psi.shape)
@@ -79,7 +82,7 @@ class NeuralSurrogate:
         xp_pos, _ = kernel.find_x_point(kernel.Psi)
         return np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])], dtype=np.float64)
 
-    def predict(self, current_state: np.ndarray, action_delta: np.ndarray) -> np.ndarray:
+    def predict(self, current_state: FloatArray, action_delta: FloatArray) -> FloatArray:
         """Predict the next surrogate state after one coil-current delta vector."""
         return np.asarray(current_state, dtype=np.float64) + (
             self.B @ np.asarray(action_delta, dtype=np.float64)
@@ -87,14 +90,12 @@ class NeuralSurrogate:
 
 
 class ModelPredictiveController:
-    """
-    Gradient-based MPC planner over surrogate dynamics.
-    """
+    """Gradient-based MPC planner over surrogate dynamics."""
 
     def __init__(
         self,
         surrogate: NeuralSurrogate,
-        target_state: np.ndarray,
+        target_state: FloatArray,
         *,
         prediction_horizon: int = PREDICTION_HORIZON,
         learning_rate: float = 0.5,
@@ -102,6 +103,7 @@ class ModelPredictiveController:
         action_limit: float = 2.0,
         action_regularization: float = 0.1,
     ) -> None:
+        """Validate horizon/rate/limit knobs and store the target state."""
         self.model = surrogate
         self.target = np.asarray(target_state, dtype=np.float64).reshape(-1)
         horizon = int(prediction_horizon)
@@ -125,19 +127,19 @@ class ModelPredictiveController:
         self.action_limit = action_limit
         self.action_regularization = action_regularization
 
-    def plan_trajectory(self, current_state: np.ndarray) -> np.ndarray:
+    def plan_trajectory(self, current_state: FloatArray) -> FloatArray:
         """Optimize the finite-horizon action sequence and return the first action."""
         n_coils = int(self.model.B.shape[1])
-        planned_actions = np.zeros((self.horizon, n_coils), dtype=np.float64)
+        planned_actions: FloatArray = np.zeros((self.horizon, n_coils), dtype=np.float64)
         state0 = np.asarray(current_state, dtype=np.float64).reshape(-1)
 
         for _ in range(self.iterations):
-            temp_state = state0.copy()
+            temp_state: FloatArray = state0.copy()
             grads = np.zeros_like(planned_actions)
             for t in range(self.horizon):
                 next_state = self.model.predict(temp_state, planned_actions[t])
                 error = next_state - self.target
-                grad_step = self.model.B.T @ error
+                grad_step: FloatArray = self.model.B.T @ error
                 grad_step += self.action_regularization * planned_actions[t]
                 grads[t] = grad_step
                 temp_state = next_state
@@ -148,11 +150,11 @@ class ModelPredictiveController:
 
 
 def _plot_telemetry(
-    h_r: np.ndarray,
-    h_z: np.ndarray,
-    h_xr: np.ndarray,
-    h_xz: np.ndarray,
-    target_vec: np.ndarray,
+    h_r: FloatArray,
+    h_z: FloatArray,
+    h_xr: FloatArray,
+    h_xz: FloatArray,
+    target_vec: FloatArray,
     output_path: str,
 ) -> Tuple[bool, Optional[str]]:
     try:
@@ -185,7 +187,7 @@ def run_sota_simulation(
     config_file: Optional[str] = None,
     shot_length: int = SHOT_LENGTH,
     prediction_horizon: int = PREDICTION_HORIZON,
-    target_vector: Optional[np.ndarray] = None,
+    target_vector: Optional[FloatArray] = None,
     disturbance_start_step: int = 20,
     disturbance_per_step_ma: float = 0.1,
     current_target_bounds: Tuple[float, float] = (5.0, 16.0),
