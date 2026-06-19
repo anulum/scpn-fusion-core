@@ -219,6 +219,7 @@ files = [
     "src/scpn_fusion/core/rf_heating.py",
     "src/scpn_fusion/core/momentum_transport.py",
     "src/scpn_fusion/core/faraday_recovery.py",
+    "src/scpn_fusion/core/uncertainty.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",

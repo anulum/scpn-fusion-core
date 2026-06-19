@@ -25,9 +25,12 @@ from __future__ import annotations
 
 import numpy as np
 from dataclasses import dataclass, field
+from numpy.typing import NDArray
 from typing import Optional
 
 from scpn_fusion.core.scaling_laws import load_ipb98y2_coefficients
+
+FloatArray = NDArray[np.float64]
 
 
 _SAFE_LOG_MAX = 700.0
@@ -144,14 +147,14 @@ class UQResult:
     Q_sigma: float
 
     # Percentiles [5%, 25%, 50%, 75%, 95%]
-    tau_E_percentiles: np.ndarray = field(default_factory=lambda: np.zeros(5))
-    P_fusion_percentiles: np.ndarray = field(default_factory=lambda: np.zeros(5))
-    Q_percentiles: np.ndarray = field(default_factory=lambda: np.zeros(5))
+    tau_E_percentiles: FloatArray = field(default_factory=lambda: np.zeros(5))
+    P_fusion_percentiles: FloatArray = field(default_factory=lambda: np.zeros(5))
+    Q_percentiles: FloatArray = field(default_factory=lambda: np.zeros(5))
 
     n_samples: int = 0
 
 
-def ipb98_tau_e(scenario: PlasmaScenario, params: Optional[dict] = None) -> float:
+def ipb98_tau_e(scenario: PlasmaScenario, params: Optional[dict[str, float]] = None) -> float:
     """
     Compute IPB98(y,2) confinement time for given plasma parameters.
 
@@ -202,7 +205,7 @@ def ipb98_tau_e(scenario: PlasmaScenario, params: Optional[dict] = None) -> floa
     return _safe_exp_from_log(float(log_tau), name="ipb98_tau_e")
 
 
-def _dt_reactivity(Ti_keV):
+def _dt_reactivity(Ti_keV: float | FloatArray) -> float | FloatArray:
     """D-T fusion reactivity <sigma v> [m^3/s].
 
     Bosch & Hale, Nuclear Fusion 32 (1992) 611, Table IV.
@@ -228,14 +231,12 @@ bosch_hale_reactivity = _dt_reactivity
 
 
 def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:
-    """
-    Estimate fusion power from cross-section integrated thermal reactivity.
-    P_fus = n_D * n_T * <sigma v> * V * E_fusion
+    """Estimate fusion power from cross-section-integrated thermal reactivity.
 
-    Includes alpha self-heating iteration: in a burning plasma, 20% of
-    fusion energy (3.5 MeV alphas out of 17.6 MeV total) heats the
-    plasma, raising Ti and thus reactivity.  Three fixed-point iterations
-    converge for ITER-class Q~10 scenarios.
+    P_fus = n_D n_T <sigma v> V E_fusion. Includes alpha self-heating iteration:
+    in a burning plasma 20% of the fusion energy (3.5 MeV alphas out of 17.6 MeV
+    total) heats the plasma, raising Ti and thus reactivity. Three fixed-point
+    iterations converge for ITER-class Q~10 scenarios.
     """
     scenario = _validate_scenario(scenario)
     tau_E = _require_positive_finite("tau_E", tau_E)
@@ -252,7 +253,7 @@ def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:
         W_MJ = P_tot * tau_E
         Ti = (W_MJ * 1e6) / (3.0 * ne * k_B_keV * V)
         Ti = float(np.clip(Ti, 0.5, 100.0))
-        sv = _dt_reactivity(Ti)
+        sv = float(_dt_reactivity(Ti))
         return (0.25 * ne**2 * sv * V * E_fus_J) / 1e6
 
     pfus_0 = _pfus_at_Ptotal(scenario.P_heat)
