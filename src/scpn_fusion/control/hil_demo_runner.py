@@ -12,6 +12,9 @@ from __future__ import annotations
 import time
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 class HILDemoRunner:
@@ -20,14 +23,17 @@ class HILDemoRunner:
     CLOCK_HZ = 250_000_000
     Q16_SCALE = 65536.0
 
-    def __init__(self, n_neurons: int = 8, n_inputs: int = 4, n_outputs: int = 4):
+    def __init__(self, n_neurons: int = 8, n_inputs: int = 4, n_outputs: int = 4) -> None:
+        """Allocate the register file, TMR copies, and weight matrices for the demo."""
         self.n_neurons = n_neurons
         self.n_inputs = n_inputs
         self.n_outputs = n_outputs
         self.registers = np.zeros(512, dtype=np.uint32)
-        self.tmr_copies = [np.zeros(n_neurons, dtype=np.float64) for _ in range(3)]
-        self.weights: np.ndarray = np.zeros((n_neurons, n_inputs), dtype=np.float64)
-        self.output_weights: np.ndarray = np.zeros((n_outputs, n_neurons), dtype=np.float64)
+        self.tmr_copies: list[FloatArray] = [
+            np.zeros(n_neurons, dtype=np.float64) for _ in range(3)
+        ]
+        self.weights: FloatArray = np.zeros((n_neurons, n_inputs), dtype=np.float64)
+        self.output_weights: FloatArray = np.zeros((n_outputs, n_neurons), dtype=np.float64)
         self.tmr_mismatches = 0
         self.total_steps = 0
         self.latency_cycles: list[int] = []
@@ -54,8 +60,8 @@ class HILDemoRunner:
             self.output_weights = ow[: self.n_outputs, : self.n_neurons]
 
     def _lif_step(
-        self, state: np.ndarray, inputs: np.ndarray, dt_s: float = 0.001
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, state: FloatArray, inputs: FloatArray, dt_s: float = 0.001
+    ) -> tuple[FloatArray, FloatArray]:
         tau = 0.02
         threshold = 1.0
         reset = 0.0
@@ -65,7 +71,7 @@ class HILDemoRunner:
         state = np.where(spikes > 0, reset, state)
         return state, spikes
 
-    def _tmr_vote(self) -> np.ndarray:
+    def _tmr_vote(self) -> FloatArray:
         """Majority vote across TMR copies; median is robust for analog values."""
         stacked = np.stack(self.tmr_copies, axis=0)
         voted = np.median(stacked, axis=0)
@@ -74,9 +80,9 @@ class HILDemoRunner:
                 self.tmr_mismatches += 1
                 self.tmr_copies[i] = voted.copy()
                 break
-        return voted
+        return np.asarray(voted, dtype=np.float64)
 
-    def step(self, inputs: np.ndarray) -> np.ndarray:
+    def step(self, inputs: FloatArray) -> FloatArray:
         """Execute one SNN inference step through simulated register pipeline."""
         t0 = time.perf_counter_ns()
         inp = np.asarray(inputs[: self.n_inputs], dtype=np.float64)
@@ -101,7 +107,7 @@ class HILDemoRunner:
         self.latency_cycles.append(cycles)
         self.registers[0x200 // 4] = np.uint32(cycles)
         self.total_steps += 1
-        return output
+        return np.asarray(output, dtype=np.float64)
 
     def inject_bitflip(self, neuron_idx: int = 0, bit_idx: int = 15) -> None:
         """Inject a single-bit fault into one TMR copy."""
@@ -112,7 +118,7 @@ class HILDemoRunner:
         if np.isfinite(new_val):
             self.tmr_copies[0][neuron_idx] = new_val
 
-    def run_episode(self, n_steps: int = 1000, inject_faults: bool = False) -> dict:
+    def run_episode(self, n_steps: int = 1000, inject_faults: bool = False) -> dict[str, float]:
         """Run a deterministic input episode and return the HIL telemetry report."""
         rng = np.random.default_rng(42)
         for t in range(n_steps):
@@ -122,7 +128,7 @@ class HILDemoRunner:
             self.step(inputs)
         return self.report()
 
-    def report(self) -> dict:
+    def report(self) -> dict[str, float]:
         """Return aggregate latency and TMR-fault telemetry for executed steps."""
         lat = np.array(self.latency_cycles) if self.latency_cycles else np.array([0])
         return {
