@@ -17,6 +17,9 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 _RUST_CHANG_HINTON_DEFAULTS: dict[str, float] = {
     "R0": 6.2,
@@ -39,9 +42,9 @@ def require_positive_finite_scalar(name: str, value: Any) -> float:
     return parsed
 
 
-def coerce_matching_1d_profiles(**profiles: Any) -> dict[str, np.ndarray]:
+def coerce_matching_1d_profiles(**profiles: Any) -> dict[str, FloatArray]:
     """Coerce profile-like inputs to matching 1-D float64 arrays."""
-    out: dict[str, np.ndarray] = {}
+    out: dict[str, FloatArray] = {}
     expected_shape: tuple[int, ...] | None = None
     for name, values in profiles.items():
         arr = np.asarray(values, dtype=np.float64)
