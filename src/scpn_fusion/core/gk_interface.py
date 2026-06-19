@@ -164,6 +164,6 @@ class GKSolverBase(abc.ABC):
         """Return True if the solver binary/library is installed."""
 
     def run_from_params(self, params: GKLocalParams, *, timeout_s: float = 30.0) -> GKOutput:
-        """Convenience: prepare + run in one call."""
+        """Prepare the input deck and run the solver in a single call."""
         input_path = self.prepare_input(params)
         return self.run(input_path, timeout_s=timeout_s)

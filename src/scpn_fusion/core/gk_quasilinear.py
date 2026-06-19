@@ -5,17 +5,15 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Quasilinear Transport Flux Model
-"""
-Quasilinear flux model converting linear eigenvalues to transport
-coefficients.
+"""Convert linear eigenvalues to quasilinear transport coefficients.
 
-Implements the mixing-length saturation rule and velocity-space
-weighted quasilinear fluxes.  The output is chi_i, chi_e, D_e in
-physical units [m^2/s].
+Implements the mixing-length saturation rule and velocity-space weighted
+quasilinear fluxes. The output is chi_i, chi_e, D_e in physical units [m^2/s].
 
-References:
-  - Bourdelle et al., Phys. Plasmas 14 (2007) 112501 — QuaLiKiz
-  - Staebler et al., Phys. Plasmas 14 (2007) 055909 — TGLF saturation
+References
+----------
+- Bourdelle et al., Phys. Plasmas 14 (2007) 112501 — QuaLiKiz
+- Staebler et al., Phys. Plasmas 14 (2007) 055909 — TGLF saturation
 """
 
 from __future__ import annotations
