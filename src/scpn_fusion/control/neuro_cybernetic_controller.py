@@ -28,6 +28,8 @@ from scpn_fusion.neurocore_compat import (
 
 logger = logging.getLogger(__name__)
 
+FloatArray = NDArray[np.float64]
+
 SHOT_DURATION = 100
 TARGET_R = 6.2
 TARGET_Z = 0.0
@@ -36,7 +38,7 @@ TARGET_Z = 0.0
 def _resolve_fusion_kernel() -> Any:
     """Resolve FusionKernel lazily to keep pool-only paths dependency-light."""
     try:
-        from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel  # type: ignore
+        from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel
 
         return _FusionKernel
     except Exception:
@@ -52,8 +54,7 @@ def _resolve_fusion_kernel() -> Any:
 
 
 class SpikingControllerPool:
-    """
-    Push-pull spiking control population with deterministic compatibility path.
+    """Push-pull spiking control population with deterministic compatibility path.
 
     Preferred backend is ``sc-neurocore``. If unavailable, a reduced NumPy LIF
     population is used so controller workflows remain executable in CI.
@@ -72,6 +73,7 @@ class SpikingControllerPool:
         tau_mem_s: float = 15.0e-3,
         noise_std: float = 0.02,
     ) -> None:
+        """Configure population size, gains, and the spiking/NumPy backend."""
         n_neurons = int(n_neurons)
         if n_neurons < 1:
             raise ValueError("n_neurons must be >= 1.")
@@ -151,7 +153,7 @@ class SpikingControllerPool:
 
     def _step_numpy_population(
         self,
-        v: np.ndarray,
+        v: FloatArray,
         rng: np.random.Generator,
         input_current: float,
     ) -> int:
@@ -195,9 +197,7 @@ class SpikingControllerPool:
 
 
 class NeuroCyberneticController:
-    """
-    Replaces PID loops with push-pull spiking populations.
-    """
+    """Replace PID loops with push-pull spiking populations."""
 
     def __init__(
         self,
@@ -207,6 +207,7 @@ class NeuroCyberneticController:
         shot_duration: int = SHOT_DURATION,
         kernel_factory: Optional[Callable[[str], Any]] = None,
     ) -> None:
+        """Load the kernel configuration and build the spiking controller pools."""
         if int(shot_duration) <= 0:
             raise ValueError("shot_duration must be > 0")
         fusion_kernel_cls = (

@@ -5,8 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Bio-Holonomic Controller
-"""
-Bio-Holonomic Controller.
+"""Bio-holonomic controller bridging SCPN L4/L5 adapters to bio-resonant feedback.
 
 Integrates SCPN Layer 4 (Cellular/Tissue) and Layer 5 (Organismal/Psychoemotional)
 adapters from `sc-neurocore` to drive bio-resonant feedback control. This
@@ -44,8 +43,7 @@ class BioTelemetrySnapshot:
 
 
 class BioHolonomicController:
-    """
-    Biological Feedback Controller mapping L4/L5 states to clinical actions.
+    """Biological feedback controller mapping L4/L5 states to clinical actions.
 
     Rather than mitigating plasma disruptions, this controller mitigates
     biological decoherence by tracking autonomic tone and triggering
@@ -53,6 +51,7 @@ class BioHolonomicController:
     """
 
     def __init__(self, dt_s: float = 0.01, seed: int = 42) -> None:
+        """Initialise the timestep and the native L4/L5 holonomic adapters."""
         self.dt_s = dt_s
         if not SC_NEUROCORE_HOLONOMIC_AVAILABLE:
             raise RuntimeError(
@@ -65,9 +64,7 @@ class BioHolonomicController:
         self.l5_adapter = L5_OrganismalAdapter(L5_HolonomicParameters(), seed=seed + 1)
 
     def step(self, telemetry: BioTelemetrySnapshot) -> Dict[str, Any]:
-        """
-        Advances the bio-controller one tick using incoming telemetry.
-        """
+        """Advance the bio-controller one tick using incoming telemetry."""
         # 1. Modulate L4 (Cellular/Tissue) based on empirical EEG coherence
         # Higher global coherence drives stronger low-level cellular synchronization
         self.l4_adapter.params.k_coupling = 0.3 * (1.0 + telemetry.eeg_coherence_r)
