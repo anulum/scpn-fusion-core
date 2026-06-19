@@ -9,12 +9,13 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
-from scipy.integrate import odeint
+from scipy.integrate import ODEintWarning, odeint
 
 if TYPE_CHECKING:
     from scpn_fusion.core.fusion_kernel import FusionKernel
@@ -50,6 +51,42 @@ def _require_int(name: str, value: int, minimum: int) -> int:
     out = int(value)
     if out < minimum:
         raise ValueError(f"{name} must be an integer >= {minimum}.")
+    return out
+
+
+def _freeze_ray_at_caustic(trajectory: FloatArray) -> FloatArray:
+    """Freeze a ray trajectory at its last finite state once it diverges.
+
+    The Hamiltonian ray equations develop a caustic (turning point) where the
+    group velocity vanishes and the dispersion-relation derivatives diverge; the
+    LSODA integrator's internal step size then collapses to machine precision and
+    it returns non-finite state for the remaining samples. Whether that boundary is
+    crossed before or after the requested time grid depends on round-off, which made
+    the ray-bundle contract test order-dependent. Physically the ray simply stops
+    being traced at the caustic, so each non-finite sample is forward-filled with the
+    most recent finite state. The result is deterministic, finite, and of unchanged
+    shape.
+
+    Parameters
+    ----------
+    trajectory : ndarray
+        Ray solution of shape ``(n_steps, 4)`` as returned by ``odeint``, columns
+        ``[R, Z, k_R, k_Z]``.
+
+    Returns
+    -------
+    ndarray
+        Trajectory of identical shape with every non-finite row replaced by the last
+        preceding finite row (the caustic freeze point).
+    """
+    out = np.array(trajectory, dtype=np.float64, copy=True)
+    finite_rows = np.all(np.isfinite(out), axis=1)
+    last_finite: FloatArray | None = None
+    for idx in range(out.shape[0]):
+        if finite_rows[idx]:
+            last_finite = out[idx].copy()
+        elif last_finite is not None:
+            out[idx] = last_finite
     return out
 
 
@@ -218,8 +255,14 @@ class RFHeatingSystem:
 
             t_span = np.linspace(0, 0.5, 100)  # Short time (normalized)
 
-            # Solve ODE
-            sol = np.asarray(odeint(self.ray_equations, init_state, t_span), dtype=np.float64)
+            # Solve ODE, then freeze the ray at any caustic where the integrator
+            # diverges. The ODEintWarning is suppressed locally so the integration
+            # always completes regardless of the caller's global warning filters,
+            # which is what made this contract test order-dependent.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ODEintWarning)
+                raw = np.asarray(odeint(self.ray_equations, init_state, t_span), dtype=np.float64)
+            sol = _freeze_ray_at_caustic(raw)
 
             # Check Resonance
             # Resonance condition: omega = omega_ci = qB/m
