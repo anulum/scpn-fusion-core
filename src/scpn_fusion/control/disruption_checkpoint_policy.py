@@ -25,7 +25,7 @@ FloatArray = NDArray[np.float64]
 try:
     import torch
 except (ImportError, OSError):  # pragma: no cover - optional dependency path
-    torch = None  # type: ignore[assignment]
+    torch = None  # type: ignore[assignment, unused-ignore]
 
 _DISRUPTION_STRICT_NO_FALLBACK_ENV = "SCPN_DISRUPTION_DISABLE_FALLBACK"
 _CHECKPOINT_SHA256_ALLOWLIST_ENV = "SCPN_DISRUPTION_CHECKPOINT_SHA256_ALLOWLIST"

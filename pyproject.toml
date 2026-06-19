@@ -353,6 +353,11 @@ module = ["sc_neurocore", "sc_neurocore.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+# torch is an optional runtime backend, absent from the CI type-check environment.
+module = ["torch", "torch.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = ["scpn_fusion_rs"]
 ignore_missing_imports = true
 

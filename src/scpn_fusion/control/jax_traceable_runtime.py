@@ -34,7 +34,7 @@ try:
 
     _HAS_TORCH = True
 except Exception:
-    torch = None  # type: ignore[assignment]
+    torch = None  # type: ignore[assignment, unused-ignore]
     _HAS_TORCH = False
 
 

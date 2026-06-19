@@ -137,13 +137,17 @@ class VelocityGrid:
             raise ValueError("n_lambda must be at least 3 for pitch-angle stencils")
 
         # Gauss-Legendre on [0, E_max] for energy (E_max ~ 6 T)
-        e_nodes, e_weights = np.polynomial.legendre.leggauss(self.n_energy)
+        e_nodes, e_weights = np.polynomial.legendre.leggauss(  # type: ignore[no-untyped-call, unused-ignore]
+            self.n_energy
+        )
         self.E_max = 6.0
         self.energy = 0.5 * self.E_max * (e_nodes + 1.0)  # map [-1,1] → [0, E_max]
         self.energy_weights = 0.5 * self.E_max * e_weights
 
         # Gauss-Legendre on [0, 1] for lambda
-        l_nodes, l_weights = np.polynomial.legendre.leggauss(self.n_lambda)
+        l_nodes, l_weights = np.polynomial.legendre.leggauss(  # type: ignore[no-untyped-call, unused-ignore]
+            self.n_lambda
+        )
         self.lam = 0.5 * (l_nodes + 1.0)
         self.lambda_weights = 0.5 * l_weights
 
