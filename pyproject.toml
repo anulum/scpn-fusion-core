@@ -244,6 +244,7 @@ files = [
     "src/scpn_fusion/core/_rust_compat.py",
     "src/scpn_fusion/core/fusion_kernel_solver_runtime.py",
     "src/scpn_fusion/core/fusion_kernel_iterative_solver.py",
+    "src/scpn_fusion/core/fusion_kernel_newton_solver.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",

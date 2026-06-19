@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -33,6 +33,53 @@ logger = logging.getLogger(__name__)
 
 class FusionKernelNewtonSolverMixin:
     """Mixin providing Newton-Kantorovich equilibrium dispatch for FusionKernel."""
+
+    if TYPE_CHECKING:
+        # State and methods supplied by the host FusionKernel (base class + the
+        # iterative-solver mixin) that this Newton dispatch builds upon.
+        Psi: FloatArray
+        J_phi: FloatArray
+        RR: FloatArray
+        cfg: dict[str, Any]
+
+        def find_x_point(self, Psi: FloatArray) -> tuple[tuple[float, float], float]:
+            """Locate the X-point flux (provided by the host FusionKernel)."""
+
+        def calculate_vacuum_field(self) -> FloatArray:
+            """Return the vacuum poloidal flux (provided by the host FusionKernel)."""
+
+        def compute_b_field(self) -> None:
+            """Recompute the magnetic field (provided by the host FusionKernel)."""
+
+        def _find_magnetic_axis(self) -> tuple[int, int, float]:
+            """Locate the magnetic axis (provided by the host FusionKernel)."""
+
+        def update_plasma_source_nonlinear(
+            self, Psi_axis: float, Psi_boundary: float
+        ) -> FloatArray:
+            """Update the nonlinear plasma source (provided by the host FusionKernel)."""
+
+        def _elliptic_solve(self, Source: FloatArray, Psi_bc: FloatArray) -> FloatArray:
+            """Solve the elliptic GS update (provided by the iterative-solver mixin)."""
+
+        def _seed_plasma(self, mu0: float) -> None:
+            """Seed the initial plasma current (provided by the iterative-solver mixin)."""
+
+        def _apply_boundary_conditions(self, Psi: FloatArray, Psi_bc: FloatArray) -> None:
+            """Enforce flux boundary conditions (provided by the iterative-solver mixin)."""
+
+        def _prepare_initial_flux(
+            self, preserve_initial_state: bool, boundary_flux: FloatArray | None
+        ) -> FloatArray:
+            """Prepare the initial flux map (provided by the iterative-solver mixin)."""
+
+        def _anderson_step(
+            self,
+            psi_history: list[FloatArray],
+            res_history: list[FloatArray],
+            m: int = 5,
+        ) -> FloatArray:
+            """Apply Anderson acceleration (provided by the iterative-solver mixin)."""
 
     # ── Newton-Kantorovich equilibrium solver ────────────────────────
 
@@ -177,7 +224,7 @@ class FusionKernelNewtonSolverMixin:
                 dJ_dpsi = self._compute_profile_jacobian(Psi_axis, Psi_boundary, mu0)
                 diag_term = -mu0 * self.RR * dJ_dpsi  # the source derivative
 
-                def matvec(v_flat: np.ndarray) -> np.ndarray:
+                def matvec(v_flat: FloatArray) -> FloatArray:
                     v2d = np.zeros((NZ, NR_grid))
                     v2d[1:-1, 1:-1] = v_flat.reshape(NZ - 2, NR_grid - 2)
                     Lv = self._apply_gs_operator(v2d)
