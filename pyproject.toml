@@ -235,6 +235,10 @@ files = [
     "src/scpn_fusion/core/disruption_sequence.py",
     "src/scpn_fusion/core/fno_training_multi_regime.py",
     "src/scpn_fusion/core/fno_jax_training.py",
+    "src/scpn_fusion/core/fusion_kernel_numerics.py",
+    "src/scpn_fusion/core/fusion_kernel_coilset_config.py",
+    "src/scpn_fusion/core/fusion_kernel_newton_runtime.py",
+    "src/scpn_fusion/core/fusion_kernel_free_boundary_mixin.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",
