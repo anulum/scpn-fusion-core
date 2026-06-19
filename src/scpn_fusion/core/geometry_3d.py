@@ -15,17 +15,24 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3D
 from scpn_fusion.core.fieldline_3d import FieldLineTrace3D, FieldLineTracer3D
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
+if TYPE_CHECKING:
     from scpn_fusion.core.fusion_kernel import FusionKernel
+else:
+    try:
+        from scpn_fusion.core._rust_compat import FusionKernel
+    except ImportError:
+        from scpn_fusion.core.fusion_kernel import FusionKernel
+
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
 
 
 class Reactor3DBuilder:
@@ -40,6 +47,7 @@ class Reactor3DBuilder:
         solve_equilibrium: bool = True,
     ) -> None:
         self.equilibrium_3d = equilibrium_3d
+        self.kernel: Optional[FusionKernel]
 
         if kernel is not None:
             self.kernel = kernel
@@ -63,7 +71,9 @@ class Reactor3DBuilder:
 
     def _inside_domain(self, r_val: float, z_val: float) -> bool:
         kernel = self._require_kernel()
-        return kernel.R[0] <= r_val <= kernel.R[-1] and kernel.Z[0] <= z_val <= kernel.Z[-1]
+        return bool(
+            kernel.R[0] <= r_val <= kernel.R[-1] and kernel.Z[0] <= z_val <= kernel.Z[-1]
+        )
 
     def _sample_psi_bilinear(self, r_val: float, z_val: float) -> float:
         kernel = self._require_kernel()
@@ -113,7 +123,7 @@ class Reactor3DBuilder:
         resolution_poloidal: int,
         r_ax: float,
         z_ax: float,
-    ) -> np.ndarray:
+    ) -> FloatArray:
         """Build a conservative elliptical boundary fallback inside the domain."""
         kernel = self._require_kernel()
         r_margin = min(r_ax - float(kernel.R[0]), float(kernel.R[-1]) - r_ax)
@@ -127,19 +137,20 @@ class Reactor3DBuilder:
         points[:, 1] = z_ax + semi_z * np.sin(thetas)
         return points
 
-    def _trace_lcfs(self, resolution_poloidal: int, radial_steps: int) -> np.ndarray:
+    def _trace_lcfs(self, resolution_poloidal: int, radial_steps: int) -> FloatArray:
         if resolution_poloidal < 8:
             raise ValueError("resolution_poloidal must be >= 8.")
         if radial_steps < 16:
             raise ValueError("radial_steps must be >= 16.")
 
+        kernel = self._require_kernel()
         r_ax, z_ax, psi_axis, psi_boundary = self._axis_and_boundary_flux()
 
         max_radius = 1.05 * max(
-            abs(self.kernel.R[-1] - r_ax),
-            abs(self.kernel.R[0] - r_ax),
-            abs(self.kernel.Z[-1] - z_ax),
-            abs(self.kernel.Z[0] - z_ax),
+            abs(kernel.R[-1] - r_ax),
+            abs(kernel.R[0] - r_ax),
+            abs(kernel.Z[-1] - z_ax),
+            abs(kernel.Z[0] - z_ax),
         )
 
         points: list[list[float]] = []
@@ -212,16 +223,15 @@ class Reactor3DBuilder:
         resolution_toroidal: int = 60,
         resolution_poloidal: int = 60,
         radial_steps: int = 512,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[FloatArray, IntArray]:
         """Generate a triangulated toroidal surface mesh.
 
         Returns
         -------
-        tuple[np.ndarray, np.ndarray]
+        tuple[numpy.ndarray, numpy.ndarray]
             ``(vertices, faces)``, where vertices are shaped ``(N, 3)`` and
             faces are shaped ``(M, 3)`` with zero-based indices.
         """
-
         if resolution_toroidal < 3:
             raise ValueError("resolution_toroidal must be >= 3.")
 
@@ -403,7 +413,7 @@ class Reactor3DBuilder:
         radial_coupling_scale: float = 0.0,
         nfp: int = 1,
         toroidal_modes: Optional[list[FourierMode3D]] = None,
-    ) -> tuple[FieldLineTrace3D, dict[float, np.ndarray]]:
+    ) -> tuple[FieldLineTrace3D, dict[float, FloatArray]]:
         """Trace one field line and return Poincare map in (R, Z)."""
         tracer = self.create_fieldline_tracer(
             rotational_transform=rotational_transform,
@@ -426,8 +436,8 @@ class Reactor3DBuilder:
 
     def export_obj(
         self,
-        vertices: np.ndarray,
-        faces: np.ndarray,
+        vertices: FloatArray,
+        faces: IntArray,
         filename: str | Path = "plasma.obj",
     ) -> Path:
         """Write a triangular plasma mesh to Wavefront OBJ format."""
@@ -445,8 +455,8 @@ class Reactor3DBuilder:
 
     def export_preview_png(
         self,
-        vertices: np.ndarray,
-        faces: np.ndarray,
+        vertices: FloatArray,
+        faces: IntArray,
         filename: str | Path = "plasma_preview.png",
         *,
         dpi: int = 140,
