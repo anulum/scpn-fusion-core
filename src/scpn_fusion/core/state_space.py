@@ -5,22 +5,27 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Unified State Space
-"""
-Defines the standard FusionState object shared across solvers and controllers.
+"""Define the standard FusionState object shared across solvers and controllers.
+
 Reduces data copying overhead and ensures state consistency.
 """
 
 from __future__ import annotations
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
 import numpy as np
-from typing import Dict
+from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from scpn_fusion.core.fusion_kernel import FusionKernel
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
 class FusionState:
-    """
-    Unified plasma state representation.
-    """
+    """Unified plasma state representation."""
 
     # Magnetic Axis (m)
     r_axis: float = 0.0
@@ -37,7 +42,7 @@ class FusionState:
     x_point_z: float = 0.0
 
     # Instabilities (Resistive MHD Island Widths)
-    island_widths: Dict[float, float] = field(default_factory=dict)
+    island_widths: dict[float, float] = field(default_factory=dict)
 
     # Bootstrap fraction
     f_bs: float = 0.0
@@ -46,14 +51,14 @@ class FusionState:
     time_s: float = 0.0
 
     def compute_bootstrap_fraction(self, epsilon: float = 0.32) -> float:
-        """
-        Estimates the bootstrap current fraction using Sauter-like scaling.
-        f_bs ~ 0.4 * beta_p * sqrt(epsilon)
+        """Estimate the bootstrap current fraction using Sauter-like scaling.
+
+        Uses ``f_bs ~ 0.4 * beta_p * sqrt(epsilon)``.
         """
         self.f_bs = float(np.clip(0.4 * self.beta_p * np.sqrt(epsilon), 0.0, 0.9))
         return self.f_bs
 
-    def to_vector(self) -> np.ndarray:
+    def to_vector(self) -> FloatArray:
         """Convert scalar features to a vector for ML/MPC use."""
         return np.array(
             [self.r_axis, self.z_axis, self.x_point_r, self.x_point_z, self.ip_ma, self.q95],
@@ -61,7 +66,7 @@ class FusionState:
         )
 
     @classmethod
-    def from_kernel(cls, kernel: any, time_s: float = 0.0) -> FusionState:
+    def from_kernel(cls, kernel: FusionKernel, time_s: float = 0.0) -> FusionState:
         """Construct state from a Physics Kernel instance."""
         # Find axis
         idx_max = int(np.argmax(kernel.Psi))
