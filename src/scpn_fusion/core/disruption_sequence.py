@@ -13,9 +13,12 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.special import ellipe
 
 from scpn_fusion.core.runaway_electrons import RunawayEvolution, RunawayParams, hot_tail_seed
+
+FloatArray = NDArray[np.float64]
 
 
 def _require_positive(name: str, value: float) -> float:
@@ -53,8 +56,8 @@ class CQResult:
     """Current-quench timescale and time traces for plasma current and electric field."""
 
     cq_duration_ms: float
-    Ip_trace: np.ndarray
-    E_par_trace: np.ndarray
+    Ip_trace: FloatArray
+    E_par_trace: FloatArray
 
 
 @dataclass
@@ -101,14 +104,14 @@ class ThermalQuench:
         self.B0 = B0
 
     def rechester_rosenbluth_chi(self, dBr_over_B: float, v_e: float) -> float:
-        """
-        Stochastic heat transport chi [m^2/s].
-        chi_stoch = v_e * pi * q * R0 * (delta B_r / B)^2
+        """Return the Rechester-Rosenbluth stochastic heat transport chi [m^2/s].
+
+        Uses ``chi_stoch = v_e * pi * q * R0 * (delta B_r / B)^2``.
         """
         return v_e * math.pi * self.q * self.R0 * (dBr_over_B**2)
 
     def quench_timescale(self, dBr_over_B: float, Te_pre_keV: float) -> float:
-        """tau_TQ [s]"""
+        """Return the thermal-quench timescale tau_TQ [s]."""
         if dBr_over_B <= 0.0:
             return float("inf")
 
@@ -126,7 +129,7 @@ class ThermalQuench:
     def heat_deposition(
         self, W_th_MJ: float, A_wall_m2: float, peaking_factor: float = 3.0
     ) -> float:
-        """Peak heat flux [MJ/m^2]"""
+        """Return the peak heat flux [MJ/m^2]."""
         if A_wall_m2 <= 0.0:
             return float("inf")
         return (W_th_MJ / A_wall_m2) * peaking_factor
@@ -158,14 +161,14 @@ class CurrentQuench:
         self.kappa = kappa
 
     def resistivity_post_tq(self, Te_eV: float, Z_eff: float) -> float:
-        """Spitzer resistivity [Ohm m]"""
+        """Return the post-TQ Spitzer resistivity [Ohm m]."""
         ln_Lambda = 10.0  # Typically lower in cold plasma
         # eta = 1.65e-9 * Z_eff * ln_Lambda / (Te_keV^1.5)
         Te_keV = max(Te_eV / 1000.0, 1e-6)
         return float(1.65e-9 * Z_eff * ln_Lambda / (Te_keV**1.5))
 
     def cq_timescale(self, Te_eV: float, Z_eff: float) -> float:
-        """tau_CQ = L / R_p [ms]"""
+        """Return the current-quench timescale tau_CQ = L / R_p [ms]."""
         eta = self.resistivity_post_tq(Te_eV, Z_eff)
         # R_p = eta * 2 R0 / (a^2 kappa) — toroidal resistance
         R_p = eta * 2.0 * self.R0 / (self.a**2 * self.kappa)
@@ -202,13 +205,13 @@ class REBeamPhase:
         self.re = re_evolution
 
     def beam_current(self, n_RE: float, v_par: float, A_beam: float) -> float:
-        """I_RE [MA]"""
+        """Return the runaway beam current I_RE [MA]."""
         e_charge = 1.602e-19
         I_A = n_RE * e_charge * v_par * A_beam
         return I_A / 1e6
 
     def beam_energy(self, n_RE: float, E_max_MeV: float, V_beam: float) -> float:
-        """W_RE [MJ]"""
+        """Return the runaway beam stored energy W_RE [MJ]."""
         e_charge = 1.602e-19
         E_avg_J = (E_max_MeV / 2.0) * 1e6 * e_charge
         W_J = n_RE * V_beam * E_avg_J
@@ -239,12 +242,12 @@ class HaloCurrentModel:
         return min(max(f_halo, 0.1), 0.6)
 
     def toroidal_peaking_factor(self, n_mode: int = 1) -> float:
-        """TPF for n=1 asymmetry"""
+        """Return the toroidal peaking factor (TPF) for n=1 asymmetry."""
         if n_mode < 1:
             raise ValueError("n_mode must be >= 1")
-        base_asymmetry = 1.45 / (n_mode**0.55)
+        base_asymmetry = 1.45 / (float(n_mode) ** 0.55)
         elongation_drive = 0.18 * max(self.kappa - 1.0, 0.0)
-        return min(2.8, max(1.05, 1.0 + base_asymmetry + elongation_drive))
+        return float(min(2.8, max(1.05, 1.0 + base_asymmetry + elongation_drive)))
 
     def vertical_force(self, f_halo: float, tpf: float) -> float:
         """Vertical vessel load from toroidal halo-current asymmetry."""
@@ -256,12 +259,12 @@ class HaloCurrentModel:
         return F_N / 1e6
 
     def sideways_force(self, f_halo: float, tpf: float) -> float:
-        """F_sideways [MN]"""
+        """Return the sideways vessel force F_sideways [MN]."""
         # Roughly comparable to vertical force for n=1
         return self.vertical_force(f_halo, tpf) * 0.5
 
     def iter_limit_check(self, f_halo: float, tpf: float) -> bool:
-        """f_halo * TPF < 0.75"""
+        """Return whether f_halo * TPF < 0.75 (ITER halo-load limit)."""
         return (f_halo * tpf) < 0.75
 
 
@@ -330,7 +333,7 @@ class DisruptionSequence:
 
         # Evolve REs using E_par from CQ
         for E_p in cq_res.E_par_trace:
-            n_RE = re_model.step(dt, n_RE, E_p)
+            n_RE = re_model.step(dt, n_RE, float(E_p))
 
         re_phase = REBeamPhase(re_model)
         A_beam = math.pi * (self.config.a / 2) ** 2 * self.config.kappa  # beam cross section
