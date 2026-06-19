@@ -65,7 +65,7 @@ class QuaLiKizSolver(GKSolverBase):
     def is_available(self) -> bool:
         """Return whether the QuaLiKiz Python interface can be imported."""
         try:
-            import qualikiz_tools  # type: ignore[import-not-found]  # noqa: F401
+            import qualikiz_tools  # noqa: F401
 
             return True
         except ImportError:

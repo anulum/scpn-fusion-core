@@ -10,12 +10,18 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from scpn_fusion.core.tglf_interface import TGLFComparisonResult
+
+FloatArray = NDArray[np.float64]
 
 
-def _resolve_runtime_transport_profiles(transport_solver: Any) -> tuple[np.ndarray, np.ndarray]:
+def _resolve_runtime_transport_profiles(transport_solver: Any) -> tuple[FloatArray, FloatArray]:
     """Resolve public transport profiles, falling back only when absent."""
     ts = transport_solver
     n = len(ts.rho)
@@ -28,7 +34,7 @@ def validate_against_tglf(
     transport_solver: Any,
     tglf_binary_path: str | Path,
     rho_indices: list[int] | None = None,
-):
+) -> TGLFComparisonResult:
     """Run TGLF on multiple flux surfaces and compare against our transport."""
     from scpn_fusion.core import tglf_interface as tglf
 
