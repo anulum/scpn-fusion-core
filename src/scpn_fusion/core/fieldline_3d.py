@@ -13,18 +13,21 @@ from dataclasses import dataclass
 from typing import Callable, Iterable
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.equilibrium_3d import VMECStyleEquilibrium3D
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass(frozen=True)
 class FieldLineTrace3D:
     """Sampled field-line trajectory in native and Cartesian coordinates."""
 
-    rho: np.ndarray
-    theta: np.ndarray
-    phi: np.ndarray
-    xyz: np.ndarray
+    rho: FloatArray
+    theta: FloatArray
+    phi: FloatArray
+    xyz: FloatArray
 
 
 @dataclass(frozen=True)
@@ -32,8 +35,8 @@ class PoincareSection3D:
     """Poincare section points for one toroidal cut plane."""
 
     phi_plane: float
-    xyz: np.ndarray
-    rz: np.ndarray
+    xyz: FloatArray
+    rz: FloatArray
 
 
 @dataclass(frozen=True)
@@ -222,7 +225,7 @@ class FieldLineTracer3D:
         r_scale = float(np.std(r_centered)) + 1e-12
         z_scale = float(np.std(z_centered)) + 1e-12
 
-        def _mode_amp(values: np.ndarray, n: int, scale: float) -> float:
+        def _mode_amp(values: FloatArray, n: int, scale: float) -> float:
             cos_term = float(np.mean(values * np.cos(float(n) * phi)))
             sin_term = float(np.mean(values * np.sin(float(n) * phi)))
             return float(np.hypot(cos_term, sin_term) / scale)
