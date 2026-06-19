@@ -72,7 +72,7 @@ class FusionBurnPhysics(FusionKernel):
 
         # Safety: if boundary close to axis (limiter case), use min of flux map
         if abs(Psi_boundary - Psi_axis) < 1.0:
-            Psi_boundary = np.min(self.Psi)
+            Psi_boundary = float(np.min(self.Psi))
 
         Psi_norm = (self.Psi - Psi_axis) / (Psi_boundary - Psi_axis)
         Psi_norm = np.clip(Psi_norm, 0, 1)

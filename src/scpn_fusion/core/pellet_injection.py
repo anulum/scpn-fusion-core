@@ -145,8 +145,8 @@ class PelletTrajectory:
         drift_m = (
             0.1
             * self.a
-            * np.sqrt(n_dep / max(n_e_avg, 1e-3))
-            * (T_avg / max(self.B0**2, 1e-3))
+            * np.sqrt(n_dep / max(float(n_e_avg), 1e-3))
+            * (T_avg / max(float(self.B0) ** 2, 1e-3))
             / 1000.0
         )
 
