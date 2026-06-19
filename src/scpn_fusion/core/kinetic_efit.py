@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.control.realtime_efit import (
     MagneticDiagnostics,
@@ -20,11 +21,11 @@ from scpn_fusion.control.realtime_efit import (
     ReconstructionResult,
 )
 
+FloatArray = NDArray[np.float64]
+
 
 class FastIonPressure:
-    """
-    Anisotropic fast ion pressure model.
-    """
+    """Anisotropic fast ion pressure model."""
 
     def __init__(self, E_fast_keV: float, n_fast_frac: float, anisotropy_sigma: float = 0.0):
         if not np.isfinite(E_fast_keV) or float(E_fast_keV) <= 0.0:
@@ -37,7 +38,7 @@ class FastIonPressure:
         self.n_fast_frac = n_fast_frac
         self.sigma = anisotropy_sigma  # sigma = 1 - p_par / p_perp
 
-    def p_perp(self, rho: np.ndarray, ne_19: np.ndarray) -> np.ndarray:
+    def p_perp(self, rho: FloatArray, ne_19: FloatArray) -> FloatArray:
         """Return perpendicular pressure from fast-ion energy fraction.
 
         Parameters
@@ -54,11 +55,11 @@ class FastIonPressure:
         p_fast_Pa = (2.0 / 3.0) * n_fast * (self.E_fast_keV * 1e3 * 1.602e-19)
         return p_fast_Pa * 3.0 / (3.0 - self.sigma)
 
-    def p_par(self, rho: np.ndarray, ne_19: np.ndarray) -> np.ndarray:
+    def p_par(self, rho: FloatArray, ne_19: FloatArray) -> FloatArray:
         """Return parallel pressure from the anisotropic model."""
         return self.p_perp(rho, ne_19) * (1.0 - self.sigma)
 
-    def p_isotropic_equivalent(self, rho: np.ndarray, ne_19: np.ndarray) -> np.ndarray:
+    def p_isotropic_equivalent(self, rho: FloatArray, ne_19: FloatArray) -> FloatArray:
         """Return isotropic-equivalent pressure used for equilibrium coupling."""
         p_perp = self.p_perp(rho, ne_19)
         p_par = self.p_par(rho, ne_19)
@@ -79,12 +80,12 @@ class KineticConstraints:
 class KineticReconstructionResult(ReconstructionResult):
     """Reconstruction result carrying thermal/kinetic pressure consistency metrics."""
 
-    p_kinetic: np.ndarray
-    p_equilibrium: np.ndarray
+    p_kinetic: FloatArray
+    p_equilibrium: FloatArray
     pressure_consistency: float
-    q_profile: np.ndarray
+    q_profile: FloatArray
     beta_fast: float
-    sigma_anisotropy: np.ndarray
+    sigma_anisotropy: FloatArray
 
 
 def mse_pitch_angle(B_R: float, B_Z: float, B_phi: float, v_beam: float, R: float) -> float:
@@ -121,8 +122,8 @@ class KineticEFIT(RealtimeEFIT):
         diagnostics: MagneticDiagnostics,
         kinetic: KineticConstraints,
         fast_ions: FastIonPressure,
-        R_grid: np.ndarray,
-        Z_grid: np.ndarray,
+        R_grid: FloatArray,
+        Z_grid: FloatArray,
     ):
         super().__init__(diagnostics, R_grid, Z_grid)
         self.kinetic = kinetic
@@ -133,7 +134,7 @@ class KineticEFIT(RealtimeEFIT):
         # 1. Base magnetic reconstruction
         res_mag = super().reconstruct(measurements)
 
-        rho_1d = np.linspace(0, 1, 50)
+        rho_1d = np.linspace(0.0, 1.0, 50).astype(np.float64)
         ne_prof = self._build_profile_from_points(self.kinetic.ne_points, rho_1d, default_core=5.0)
         te_prof = self._build_profile_from_points(self.kinetic.Te_points, rho_1d, default_core=10.0)
         ti_prof = self._build_profile_from_points(self.kinetic.Ti_points, rho_1d, default_core=10.0)
@@ -177,8 +178,8 @@ class KineticEFIT(RealtimeEFIT):
         )
 
     def _build_profile_from_points(
-        self, points: list[tuple[float, float, float]], rho_grid: np.ndarray, default_core: float
-    ) -> np.ndarray:
+        self, points: list[tuple[float, float, float]], rho_grid: FloatArray, default_core: float
+    ) -> FloatArray:
         """Build a monotone-ish radial profile from sparse kinetic-point constraints."""
         core = float(default_core)
         if points:
@@ -202,10 +203,13 @@ class KineticEFIT(RealtimeEFIT):
                 else:
                     interp = np.full_like(rho_grid, values_arr[0], dtype=float)
                 edge_scale = np.clip(1.0 - rho_grid**2, 0.05, 1.0)
-                return np.maximum(interp * edge_scale / max(edge_scale[0], 1e-9), 0.0)
-        return np.maximum(core * (1.0 - rho_grid**2), 0.0)
+                return np.asarray(
+                    np.maximum(interp * edge_scale / max(edge_scale[0], 1e-9), 0.0),
+                    dtype=np.float64,
+                )
+        return np.asarray(np.maximum(core * (1.0 - rho_grid**2), 0.0), dtype=np.float64)
 
-    def _q_profile_from_mse(self, rho_grid: np.ndarray) -> np.ndarray:
+    def _q_profile_from_mse(self, rho_grid: FloatArray) -> FloatArray:
         """Reconstruct a bounded q-profile from sparse MSE pitch constraints."""
         base_q = 1.5 + 2.0 * rho_grid**2
         if not self.kinetic.mse_points:
@@ -238,4 +242,4 @@ class KineticEFIT(RealtimeEFIT):
         # Blend measurement-driven anchor with monotone edge trend to keep q(1)~3.
         w_edge = rho_grid**2
         q_prof = (1.0 - w_edge) * q_anchor + w_edge * 3.0
-        return np.clip(q_prof, 0.7, 6.0)
+        return np.asarray(np.clip(q_prof, 0.7, 6.0), dtype=np.float64)
