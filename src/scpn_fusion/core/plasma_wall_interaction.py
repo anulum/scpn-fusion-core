@@ -114,9 +114,7 @@ def _threshold_energy_eV(projectile: _Species, target: _TargetMaterial) -> float
 
 
 class SputteringYield:
-    """
-    Physical sputtering yield [atoms/ion] based on Eckstein fits.
-    """
+    """Physical sputtering yield [atoms/ion] based on Eckstein fits."""
 
     def __init__(self, target: str = "W", projectile: str = "D"):
         self.target_material = _normalize_target(target)
