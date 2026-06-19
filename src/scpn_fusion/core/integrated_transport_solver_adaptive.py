@@ -104,7 +104,7 @@ class AdaptiveTimeController:
         solver.Ti = T_half
         solver.Te = T_half.copy()
 
-        return error
+        return float(error)
 
     def adapt_dt(self, error: float) -> None:
         """Adjust dt using a PI controller.
