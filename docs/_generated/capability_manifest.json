@@ -2590,7 +2590,7 @@
     "python_capability_classes": 547,
     "python_capability_source_modules": 277,
     "rust_workspace_crates": 13,
-    "test_files": 425
+    "test_files": 426
   },
   "documentation": {
     "public_pages": [
@@ -3044,6 +3044,7 @@
       "tests/test_rmse_dashboard.py",
       "tests/test_run_diagnostics.py",
       "tests/test_run_real_data_strict_gate.py",
+      "tests/test_run_ruff_docstrings.py",
       "tests/test_runaway_dream_contract.py",
       "tests/test_runaway_electron_model_module.py",
       "tests/test_runaway_electrons.py",
