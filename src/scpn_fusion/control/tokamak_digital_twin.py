@@ -8,12 +8,16 @@
 """Two-dimensional tokamak digital-twin runtime and neural policy model."""
 
 import logging
-from typing import Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+
+FloatArray = NDArray[np.float64]
+BoolArray = NDArray[np.bool_]
 
 from scpn_fusion.io.imas_connector import (
     digital_twin_history_to_ids,
@@ -43,9 +47,10 @@ def _resolve_rng(seed: int, rng: Optional[np.random.Generator]) -> np.random.Gen
 class TokamakTopoloy:
     """Magnetic geometry: q-profile and island evolution via Modified Rutherford Equation."""
 
-    def __init__(self, size=GRID_SIZE):
+    def __init__(self, size: int = GRID_SIZE) -> None:
+        """Build the normalised radius map, mask, and seed the q-profile."""
         self.size = size
-        y, x = np.ogrid[-size / 2 : size / 2, -size / 2 : size / 2]
+        y, x = np.ogrid[-size / 2 : size / 2, -size / 2 : size / 2]  # type: ignore[misc]
         self.r_map = np.sqrt(x**2 + y**2) / (size / 2)
         self.mask = self.r_map <= 1.0
 
@@ -57,7 +62,7 @@ class TokamakTopoloy:
         self.island_widths = {res: 0.01 for res in self.resonances}
         self.eta = 1e-5
 
-    def step_island_evolution(self, dt=0.1):
+    def step_island_evolution(self, dt: float = 0.1) -> None:
         """Evolve island widths via MRE with neoclassical bootstrap drive."""
         beta_p = 0.6
         w_crit = 0.05
@@ -67,13 +72,13 @@ class TokamakTopoloy:
             dw_dt = self.eta * (delta_prime + f_bs)
             self.island_widths[res] = max(0.001, self.island_widths[res] + dw_dt * dt)
 
-    def update_q_profile(self, current_drive_action):
+    def update_q_profile(self, current_drive_action: float) -> None:
         """Update parabolic q(r) = q0 + (qa-q0)*r^2 with current drive modulation."""
         mod_q0 = self.q0 - (0.2 * current_drive_action)
         mod_qa = self.qa + (0.5 * current_drive_action)
-        self.q_map = mod_q0 + (mod_qa - mod_q0) * (self.r_map**2)
+        self.q_map = np.asarray(mod_q0 + (mod_qa - mod_q0) * (self.r_map**2), dtype=np.float64)
 
-    def get_rational_surfaces(self):
+    def get_rational_surfaces(self) -> BoolArray:
         """Boolean map of rational-surface islands from current MRE widths."""
         danger_map = np.zeros((self.size, self.size), dtype=bool)
         for res in self.resonances:
@@ -86,13 +91,18 @@ class TokamakTopoloy:
 class Plasma2D:
     """2D diffusion-reaction model on a poloidal cross-section."""
 
-    def __init__(self, topology, gyro_surrogate=None):
+    def __init__(
+        self,
+        topology: TokamakTopoloy,
+        gyro_surrogate: Optional[Callable[..., Any]] = None,
+    ) -> None:
+        """Store the magnetic topology, temperature field, and optional surrogate."""
         self.topo = topology
-        self.T = np.zeros((GRID_SIZE, GRID_SIZE))
-        self.T_core_hist = []
+        self.T: FloatArray = np.zeros((GRID_SIZE, GRID_SIZE))
+        self.T_core_hist: list[float] = []
         self._gyro_surrogate = gyro_surrogate
 
-    def step(self, action):
+    def step(self, action: float) -> tuple[FloatArray, float]:
         """Evolve plasma one timestep with current drive action in [-1, 1]."""
         self.topo.update_q_profile(action)
         self.topo.step_island_evolution()
@@ -142,8 +152,8 @@ class Plasma2D:
         self.T[~self.topo.mask] = 0.0
         self.T = np.clip(self.T, 0, 100.0)
 
-        core_temp = self.T[center, center]
-        avg_temp = np.mean(self.T[self.topo.mask])
+        core_temp = float(self.T[center, center])
+        avg_temp = float(np.mean(self.T[self.topo.mask]))
         self.T_core_hist.append(core_temp)
         return self.T.flatten(), avg_temp
 
@@ -159,20 +169,21 @@ class SimpleNeuralNet:
         *,
         rng: np.random.Generator,
     ) -> None:
+        """Initialise the two-layer weight matrices with scaled normal samples."""
         self.W1 = rng.standard_normal((input_size, hidden_size)) * np.sqrt(1 / input_size)
         self.b1 = np.zeros((1, hidden_size))
         self.W2 = rng.standard_normal((hidden_size, output_size)) * np.sqrt(1 / hidden_size)
         self.b2 = np.zeros((1, output_size))
 
-    def forward(self, x):
+    def forward(self, x: FloatArray) -> FloatArray:
         """Evaluate the policy network for a batch of state vectors."""
         self.z1 = np.dot(x, self.W1) + self.b1
         self.a1 = np.tanh(self.z1)
         self.z2 = np.dot(self.a1, self.W2) + self.b2
         self.out = np.tanh(self.z2)
-        return self.out
+        return np.asarray(self.out, dtype=np.float64)
 
-    def train_step(self, x, target_action, advantage):
+    def train_step(self, x: FloatArray, target_action: Any, advantage: float) -> float:
         """REINFORCE-like policy gradient step."""
         pred = self.forward(x)
         grad_out = -(advantage)
@@ -190,21 +201,21 @@ class SimpleNeuralNet:
         self.b1 -= LEARNING_RATE * d_b1
         self.W2 -= LEARNING_RATE * d_W2
         self.b2 -= LEARNING_RATE * d_b2
-        return np.mean(np.abs(grad_out))
+        return float(np.mean(np.abs(grad_out)))
 
 
 def run_digital_twin(
-    time_steps=TIME_STEPS,
-    seed=42,
-    save_plot=True,
-    output_path="Tokamak_Digital_Twin.png",
-    verbose=True,
-    gyro_surrogate=None,
+    time_steps: int = TIME_STEPS,
+    seed: int = 42,
+    save_plot: bool = True,
+    output_path: str = "Tokamak_Digital_Twin.png",
+    verbose: bool = True,
+    gyro_surrogate: Optional[Callable[..., Any]] = None,
     chaos_monkey: bool = False,
     sensor_dropout_prob: float = 0.0,
     sensor_noise_std: float = 0.0,
     rng: Optional[np.random.Generator] = None,
-):
+) -> dict[str, Any]:
     """Run digital-twin control simulation, return summary dict."""
     steps = int(time_steps)
     if steps < 1:
@@ -230,8 +241,8 @@ def run_digital_twin(
     state_dim = GRID_SIZE
     brain = SimpleNeuralNet(state_dim, HIDDEN_SIZE, 1, rng=local_rng)
 
-    history_rewards = []
-    history_actions = []
+    history_rewards: list[float] = []
+    history_actions: list[float] = []
     sensor_dropouts_total = 0
 
     if verbose:
@@ -239,7 +250,9 @@ def run_digital_twin(
 
     for t in range(steps):
         midplane_idx = GRID_SIZE // 2
-        state_vector = np.asarray(plasma.T[midplane_idx, :], dtype=float).reshape(1, -1).copy()
+        state_vector: FloatArray = (
+            np.asarray(plasma.T[midplane_idx, :], dtype=float).reshape(1, -1).copy()
+        )
         if chaos_monkey:
             if sensor_noise_std > 0.0:
                 state_vector += local_rng.normal(0.0, sensor_noise_std, size=state_vector.shape)
@@ -258,11 +271,11 @@ def run_digital_twin(
         _, avg_temp = plasma.step(action)
 
         islands_area = np.sum(topo.get_rational_surfaces())
-        reward = avg_temp - (islands_area * 0.05)
+        reward = float(avg_temp - (islands_area * 0.05))
 
-        baseline = np.mean(history_rewards[-50:]) if len(history_rewards) > 50 else 0
+        baseline = np.mean(history_rewards[-50:]) if len(history_rewards) > 50 else 0.0
         # Derivative-free policy gradient estimator
-        advantage = (reward - baseline) * noise
+        advantage = float((reward - baseline) * noise)
 
         loss = brain.train_step(state_vector, None, advantage)
 
@@ -359,11 +372,9 @@ def run_digital_twin_ids(
     machine: str = "ITER",
     shot: int = 0,
     run: int = 0,
-    **kwargs,
-):
-    """
-    Run digital twin and return IDS-like equilibrium payload.
-    """
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Run digital twin and return IDS-like equilibrium payload."""
     summary = run_digital_twin(**kwargs)
     return digital_twin_summary_to_ids(
         summary,
@@ -380,11 +391,9 @@ def run_digital_twin_ids_history(
     shot: int = 0,
     run: int = 0,
     seed: int = 42,
-    **kwargs,
-):
-    """
-    Run digital twin at multiple horizons and return IDS-like payload sequence.
-    """
+    **kwargs: Any,
+) -> list[dict[str, Any]]:
+    """Run digital twin at multiple horizons and return IDS-like payload sequence."""
     if "time_steps" in kwargs:
         raise ValueError("time_steps is controlled by history_steps in history mode.")
     if "seed" in kwargs:
@@ -417,11 +426,9 @@ def run_digital_twin_ids_pulse(
     shot: int = 0,
     run: int = 0,
     seed: int = 42,
-    **kwargs,
-):
-    """
-    Run digital twin at multiple horizons and return pulse-style IDS container.
-    """
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Run digital twin at multiple horizons and return pulse-style IDS container."""
     if "time_steps" in kwargs:
         raise ValueError("time_steps is controlled by history_steps in pulse mode.")
     if "seed" in kwargs:
@@ -444,7 +451,7 @@ def _run_digital_twin_history_snapshots(
     *,
     history_steps: Sequence[int],
     seed: int,
-    **kwargs,
+    **kwargs: Any,
 ) -> list[dict[str, object]]:
     if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(
         history_steps, Sequence
