@@ -7,22 +7,22 @@
 # SCPN Fusion Core — Compact Reactor Optimizer
 """Reduced compact-reactor design-space search and reporting utilities."""
 
-import numpy as np
+from __future__ import annotations
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class CompactReactorArchitect:
-    """
-    Optimizes Fusion Reactor Geometry for MINIMUM SIZE.
-    """
+    """Optimise compact fusion reactor geometry for minimum size."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.J_crit_base = 1500.0  # MA/m2
         self.B_max_coil = 30.0  # Tesla
         self.lambda_shield = 0.10
         self.fluence_limit = 5e22
 
-    def plasma_physics_model(self, R, a, B0):
+    def plasma_physics_model(self, R: float, a: float, B0: float) -> tuple[float, float, float]:
         """Estimate fusion power, plasma current, and volume for a compact tokamak design."""
         if R <= 0 or a <= 0 or B0 <= 0:
             raise ValueError("R, a, and B0 must be > 0 for plasma_physics_model.")
@@ -33,12 +33,12 @@ class CompactReactorArchitect:
         pressure = beta_limit * (B0**2 / (2 * 1.25e-6))
         p_fus_density = 0.25 * (pressure / 1e6) ** 2
         P_fusion = p_fus_density * Vol
-        return P_fusion, I_p, Vol
+        return float(P_fusion), float(I_p), float(Vol)
 
-    def radial_build_constraints(self, R, a, B0):
+    def radial_build_constraints(self, R: float, a: float, B0: float) -> tuple[bool, float]:
         """Check simple inboard radial-build and high-field coil feasibility constraints."""
         if R <= 0 or a <= 0 or B0 <= 0:
-            return False, 0
+            return False, 0.0
         d_shield = 0.10
         gap = 0.02
         d_coil = 0.2
@@ -50,10 +50,10 @@ class CompactReactorArchitect:
         Area_coil = np.pi * (R_post**2 - (R_post - d_coil) ** 2)
         J_real = I_total_MA / (Area_coil + 1e-9)
         J_limit = self.J_crit_base * (20.0 / B_coil)
-        magnet_ok = (J_real < J_limit) and (B_coil < self.B_max_coil)
-        return magnet_ok, B_coil
+        magnet_ok = bool((J_real < J_limit) and (B_coil < self.B_max_coil))
+        return magnet_ok, float(B_coil)
 
-    def visualize_space(self, designs, label=""):
+    def visualize_space(self, designs: list[dict[str, float]], label: str = "") -> None:
         """Write a scatter plot of feasible compact-reactor designs for review."""
         if not designs:
             return
@@ -68,10 +68,11 @@ class CompactReactorArchitect:
         plt.title(f"Compact Fusion Design Space - {label}")
         plt.savefig(f"Compact_Space_{label}.png")
 
-    def calculate_economics(self, d):
-        """
-        Calculates Cost of Electricity (CoE) [$/MWh].
-        Sheffield model: CoE ~ (C_cap * F_cap + C_om) / (8760 * P_net * f_avail)
+    def calculate_economics(self, d: dict[str, float]) -> tuple[float, float]:
+        """Calculate the cost of electricity (CoE) in $/MWh.
+
+        Uses the Sheffield model
+        ``CoE ~ (C_cap * F_cap + C_om) / (8760 * P_net * f_avail)``.
         """
         P_fus = d["P_fus"]
         R = d["R"]
@@ -106,9 +107,9 @@ class CompactReactorArchitect:
 
         coe = (annual_cap + annual_om) / (8760.0 * p_net_mw * f_avail)
 
-        return coe, total_cap_m_usd
+        return float(coe), float(total_cap_m_usd)
 
-    def report_design(self, d):
+    def report_design(self, d: dict[str, float]) -> None:
         """Print the engineering and economic summary for a selected reactor design."""
         coe, cap = self.calculate_economics(d)
         print("\n=== MINIMUM VIABLE REACTOR FOUND ===")
@@ -121,15 +122,17 @@ class CompactReactorArchitect:
         print("Technology:    REBCO HTS, TEMHD Liquid Divertor, Detached Mode")
         print("====================================")
 
-    def find_minimum_reactor(self, target_power_MW=1.0, use_temhd=True):
+    def find_minimum_reactor(
+        self, target_power_MW: float = 1.0, use_temhd: bool = True
+    ) -> None:
         """Search grid candidates and report the smallest design meeting the power target."""
         label = "TEMHD" if use_temhd else "Solid"
         print(f"--- SCPN COMPACT OPTIMIZER (Target: >{target_power_MW} MW, {label}, Detached) ---")
         best_R = 999.0
-        best_design = None
-        radii = np.linspace(0.3, 5.0, 100)
-        fields = np.linspace(5.0, 20.0, 30)
-        valid_designs = []
+        best_design: dict[str, float] | None = None
+        radii = [float(r) for r in np.linspace(0.3, 5.0, 100)]
+        fields = [float(b) for b in np.linspace(5.0, 20.0, 30)]
+        valid_designs: list[dict[str, float]] = []
         max_div_load = 100.0 if use_temhd else 10.0
         for R in radii:
             for B0 in fields:
