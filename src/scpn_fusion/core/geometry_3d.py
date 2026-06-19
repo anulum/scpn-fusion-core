@@ -71,9 +71,7 @@ class Reactor3DBuilder:
 
     def _inside_domain(self, r_val: float, z_val: float) -> bool:
         kernel = self._require_kernel()
-        return bool(
-            kernel.R[0] <= r_val <= kernel.R[-1] and kernel.Z[0] <= z_val <= kernel.Z[-1]
-        )
+        return bool(kernel.R[0] <= r_val <= kernel.R[-1] and kernel.Z[0] <= z_val <= kernel.Z[-1])
 
     def _sample_psi_bilinear(self, r_val: float, z_val: float) -> float:
         kernel = self._require_kernel()

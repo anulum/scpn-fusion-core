@@ -52,8 +52,7 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
     return_uncertainty: Literal[False] = False,
-) -> tuple[float, float]:
-    ...
+) -> tuple[float, float]: ...
 
 
 @overload
@@ -64,8 +63,7 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
     return_uncertainty: Literal[True],
-) -> tuple[float, float, dict[str, float]]:
-    ...
+) -> tuple[float, float, dict[str, float]]: ...
 
 
 def mcnp_lite_tbr(

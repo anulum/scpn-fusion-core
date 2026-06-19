@@ -122,9 +122,7 @@ class CompactReactorArchitect:
         print("Technology:    REBCO HTS, TEMHD Liquid Divertor, Detached Mode")
         print("====================================")
 
-    def find_minimum_reactor(
-        self, target_power_MW: float = 1.0, use_temhd: bool = True
-    ) -> None:
+    def find_minimum_reactor(self, target_power_MW: float = 1.0, use_temhd: bool = True) -> None:
         """Search grid candidates and report the smallest design meeting the power target."""
         label = "TEMHD" if use_temhd else "Solid"
         print(f"--- SCPN COMPACT OPTIMIZER (Target: >{target_power_MW} MW, {label}, Detached) ---")

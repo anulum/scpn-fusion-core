@@ -58,9 +58,7 @@ def cohort_source_files(pyproject: Path = PYPROJECT) -> list[str]:
         files = data["tool"]["mypy"]["files"]
     except (KeyError, TypeError) as exc:  # pragma: no cover - config contract
         raise SystemExit(f"[run_ruff_docstrings] missing [tool.mypy].files in {pyproject}") from exc
-    cohort = sorted(
-        {f for f in files if f.startswith("src/") and f.endswith(".py")}
-    )
+    cohort = sorted({f for f in files if f.startswith("src/") and f.endswith(".py")})
     if not cohort:
         raise SystemExit("[run_ruff_docstrings] empty src cohort; refusing to run a no-op gate.")
     return cohort
