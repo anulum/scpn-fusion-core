@@ -113,7 +113,6 @@ def generate_emulated_stream(
     seed: int = 42,
 ) -> list[TelemetryPacket]:
     """Generate deterministic machine telemetry packets for runtime replay tests."""
-
     machine_key = _normalize_machine(machine)
 
     rng = np.random.default_rng(int(seed))
@@ -166,7 +165,6 @@ class RealtimeTwinHook:
 
     def ingest(self, packet: TelemetryPacket) -> None:
         """Append a telemetry packet while retaining only the configured ring buffer."""
-
         self.buffer.append(packet)
         if len(self.buffer) > self.max_buffer:
             self.buffer = self.buffer[-self.max_buffer :]
@@ -181,7 +179,6 @@ class RealtimeTwinHook:
 
     def scenario_plan(self, *, horizon: int = 24) -> dict[str, float | bool]:
         """Project near-term risk and return an SNN-derived mitigation plan summary."""
-
         if not self.buffer:
             raise RuntimeError("No telemetry packets ingested.")
         horizon = int(horizon)
@@ -292,9 +289,7 @@ def run_realtime_twin_session(
     chaos_dropout_prob: float = 0.0,
     chaos_noise_std: float = 0.0,
 ) -> dict[str, Any]:
-    """
-    Run deterministic digital-twin ingest+planning session and return summary.
-    """
+    """Run deterministic digital-twin ingest+planning session and return summary."""
     machine_key = _normalize_machine(machine)
     samples = int(samples)
     if samples < 32:

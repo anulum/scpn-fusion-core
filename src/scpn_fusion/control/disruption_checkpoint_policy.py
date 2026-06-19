@@ -15,14 +15,17 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.control.disruption_risk_runtime import _require_int
 from scpn_fusion.fallback_telemetry import record_fallback_event, snapshot_fallback_telemetry
 
+FloatArray = NDArray[np.float64]
+
 try:
     import torch
 except (ImportError, OSError):  # pragma: no cover - optional dependency path
-    torch = None
+    torch = None  # type: ignore[assignment]
 
 _DISRUPTION_STRICT_NO_FALLBACK_ENV = "SCPN_DISRUPTION_DISABLE_FALLBACK"
 _CHECKPOINT_SHA256_ALLOWLIST_ENV = "SCPN_DISRUPTION_CHECKPOINT_SHA256_ALLOWLIST"
@@ -37,7 +40,6 @@ def _repo_root() -> Path:
 
 def default_model_path(default_model_filename: str) -> Path:
     """Return the repository-local artifact path for a default disruption model."""
-
     return _repo_root() / "artifacts" / default_model_filename
 
 
@@ -72,7 +74,7 @@ def _record_recovery_event(
     )
 
 
-def _prepare_signal_window(signal: Any, seq_len: Any) -> np.ndarray:
+def _prepare_signal_window(signal: Any, seq_len: Any) -> FloatArray:
     seq_len_i = _normalize_seq_len(seq_len)
     flat = np.asarray(signal, dtype=float).reshape(-1)
     if flat.size >= seq_len_i:

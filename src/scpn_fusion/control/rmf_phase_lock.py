@@ -44,9 +44,7 @@ def _wrapped_phase_delta(delta: float) -> float:
 
 
 class RMFPhaseLockController:
-    """
-    Software RMF phase-lock controller for JAX horizon simulations.
-    """
+    """Software RMF phase-lock controller for JAX horizon simulations."""
 
     def __init__(self, config: RMFPhaseLockConfig | None = None, seed: int = 42) -> None:
         self.cfg = RMFPhaseLockConfig() if config is None else config
