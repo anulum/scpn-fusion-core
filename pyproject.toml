@@ -204,6 +204,7 @@ files = [
     "src/scpn_fusion/control/gym_tokamak_env.py",
     "src/scpn_fusion/control/jax_traceable_runtime.py",
     "src/scpn_fusion/control/fusion_control_room.py",
+    "src/scpn_fusion/control/federated_disruption.py",
     "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "src/scpn_fusion/core/neural_transport_math.py",
