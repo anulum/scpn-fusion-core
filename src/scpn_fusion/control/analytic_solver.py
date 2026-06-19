@@ -15,10 +15,14 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 import numpy as np
+from numpy.typing import NDArray
 from scpn_fusion.fallback_telemetry import record_fallback_event
 
 logger = logging.getLogger(__name__)
 
+FloatArray = NDArray[np.float64]
+
+FusionKernel: type[Any]
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -32,9 +36,7 @@ except ImportError:
 
 
 class AnalyticEquilibriumSolver:
-    """
-    Analytic vertical-field target and least-norm coil-current solve.
-    """
+    """Analytic vertical-field target and least-norm coil-current solve."""
 
     def __init__(
         self,
@@ -43,6 +45,7 @@ class AnalyticEquilibriumSolver:
         kernel_factory: Callable[[str], Any] = FusionKernel,
         verbose: bool = True,
     ) -> None:
+        """Instantiate the kernel from the config and record verbosity."""
         self.kernel = kernel_factory(str(config_path))
         self.config_path = str(config_path)
         self.verbose = bool(verbose)
@@ -60,9 +63,7 @@ class AnalyticEquilibriumSolver:
         beta_p: float = 0.5,
         li: float = 0.8,
     ) -> float:
-        """
-        Shafranov radial-force balance vertical field estimate.
-        """
+        """Estimate the vertical field from Shafranov radial-force balance."""
         R_geo = float(R_geo)
         a_min = float(a_min)
         Ip_MA = float(Ip_MA)
@@ -88,10 +89,8 @@ class AnalyticEquilibriumSolver:
         target_R: float,
         *,
         target_Z: float = 0.0,
-    ) -> np.ndarray:
-        """
-        Compute dBz/dI per coil at target location using kernel vacuum-field map.
-        """
+    ) -> FloatArray:
+        """Compute dBz/dI per coil at target location using kernel vacuum-field map."""
         coils = self.kernel.cfg.get("coils", [])
         n_coils = len(coils)
         if n_coils == 0:
@@ -139,10 +138,8 @@ class AnalyticEquilibriumSolver:
         *,
         target_Z: float = 0.0,
         ridge_lambda: float = 0.0,
-    ) -> np.ndarray:
-        """
-        Solve least-norm coil currents for desired vertical field target.
-        """
+    ) -> FloatArray:
+        """Solve least-norm coil currents for desired vertical field target."""
         eff = self.compute_coil_efficiencies(target_R, target_Z=target_Z)
         target_Bv = float(target_Bv)
         ridge_lambda = max(float(ridge_lambda), 0.0)
@@ -161,9 +158,8 @@ class AnalyticEquilibriumSolver:
             self._log(f"  {name}: {float(val):.6f} MA")
         return np.asarray(currents, dtype=np.float64)
 
-    def apply_currents(self, currents: np.ndarray) -> None:
+    def apply_currents(self, currents: FloatArray) -> None:
         """Write a coil-current vector into the solver kernel configuration."""
-
         arr = np.asarray(currents, dtype=np.float64).reshape(-1)
         coils = self.kernel.cfg.get("coils", [])
         if arr.size != len(coils):
@@ -173,11 +169,10 @@ class AnalyticEquilibriumSolver:
 
     def apply_and_save(
         self,
-        currents: np.ndarray,
+        currents: FloatArray,
         output_path: Optional[str] = None,
     ) -> str:
         """Apply coil currents and persist the resulting kernel configuration."""
-
         self.apply_currents(currents)
         if output_path is None:
             repo_root = Path(__file__).resolve().parents[3]
@@ -244,9 +239,7 @@ def run_analytic_solver(
     verbose: bool = True,
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> Dict[str, Any]:
-    """
-    Run analytic equilibrium solve and return deterministic summary.
-    """
+    """Run analytic equilibrium solve and return deterministic summary."""
     repo_root = Path(__file__).resolve().parents[3]
     config_source = "explicit"
     fallback_used = False
