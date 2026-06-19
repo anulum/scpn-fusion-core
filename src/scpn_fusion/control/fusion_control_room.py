@@ -16,9 +16,14 @@ from typing import Any, Callable, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
+from matplotlib.patches import Rectangle
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
+FloatArray = NDArray[np.float64]
+
+FusionKernel: type[Any] | None
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -43,9 +48,7 @@ _KERNEL_SOLVE_EXCEPTIONS = (RuntimeError, ValueError, TypeError, FloatingPointEr
 
 
 class TokamakPhysicsEngine:
-    """
-    Reduced Grad-Shafranov geometry model with optional kernel-Psi ingestion.
-    """
+    """Reduced Grad-Shafranov geometry model with optional kernel-Psi ingestion."""
 
     def __init__(
         self,
@@ -54,6 +57,7 @@ class TokamakPhysicsEngine:
         seed: int = 42,
         kernel: Optional[Any] = None,
     ) -> None:
+        """Initialise the geometry grid, RNG, and optional kernel handle."""
         size = int(size)
         if size < 16:
             raise ValueError("size must be >= 16.")
@@ -64,7 +68,7 @@ class TokamakPhysicsEngine:
         self.R = np.linspace(1.0, 5.0, self.size)
         self.Z = np.linspace(-3.0, 3.0, self.size)
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
-        self.density = np.zeros((self.size, self.size), dtype=np.float64)
+        self.density: FloatArray = np.zeros((self.size, self.size), dtype=np.float64)
 
         # Plasma Parameters (ITER-like)
         self.R0 = 3.0
@@ -76,7 +80,7 @@ class TokamakPhysicsEngine:
         self.z_pos = 0.0
         self.v_drift = 0.0
 
-    def _kernel_psi(self) -> Optional[np.ndarray]:
+    def _kernel_psi(self) -> Optional[FloatArray]:
         if self.kernel is None or not hasattr(self.kernel, "Psi"):
             return None
         psi = np.asarray(self.kernel.Psi, dtype=np.float64)
@@ -84,10 +88,11 @@ class TokamakPhysicsEngine:
             return None
         return psi
 
-    def solve_flux_surfaces(self) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Return `(density, psi)` from kernel state when available, otherwise
-        from analytic Miller-parameterized geometry.
+    def solve_flux_surfaces(self) -> tuple[FloatArray, FloatArray]:
+        """Return ``(density, psi)`` from kernel state or analytic geometry.
+
+        Uses the kernel ``Psi`` field when available, otherwise an analytic
+        Miller-parameterized geometry.
         """
         psi_kernel = self._kernel_psi()
         if psi_kernel is not None:
@@ -105,15 +110,13 @@ class TokamakPhysicsEngine:
             psi = np.clip(psi, 0.0, None)
 
         core_term = np.maximum(1.0 - psi, 0.0)
-        self.density = np.where(psi < 1.0, core_term**1.5, 0.0)
+        self.density = np.asarray(np.where(psi < 1.0, core_term**1.5, 0.0), dtype=np.float64)
         noise = self.rng.normal(0.0, 0.05, size=self.density.shape) * self.density
-        self.density = np.clip(self.density + noise, 0.0, None)
-        return self.density, psi
+        self.density = np.asarray(np.clip(self.density + noise, 0.0, None), dtype=np.float64)
+        return self.density, np.asarray(psi, dtype=np.float64)
 
     def step_dynamics(self, coil_action_top: float, coil_action_bottom: float) -> float:
-        """
-        Reduced vertical-displacement dynamics.
-        """
+        """Advance the reduced vertical-displacement dynamics by one step."""
         instability_growth = 0.1
         control_force = (float(coil_action_bottom) - float(coil_action_top)) * 0.2
         disturbance = float(self.rng.normal(0.0, 0.01))
@@ -131,6 +134,7 @@ class DiagnosticSystem:
     """Noisy vertical-position probe."""
 
     def __init__(self, rng: np.random.Generator) -> None:
+        """Store the random generator used to inject measurement noise."""
         self._rng = rng
 
     def measure_position(self, true_z: float) -> float:
@@ -139,12 +143,13 @@ class DiagnosticSystem:
 
 
 class KalmanObserver:
-    """
-    Linear Kalman Filter for robust plasma position state estimation.
-    Harden state estimation against sensor noise and dropout.
+    """Linear Kalman filter for plasma vertical-position estimation.
+
+    Hardens the state estimate against sensor noise and measurement dropout.
     """
 
     def __init__(self, dt: float = 0.1):
+        """Initialise the state vector, covariances, and linear drift model."""
         # State: [z, v_z]
         self.x = np.array([0.0, 0.0])
         self.P = np.eye(2) * 0.1
@@ -181,6 +186,7 @@ class NeuralController:
     """Hardened PID control policy for vertical stabilization."""
 
     def __init__(self, dt: float = 0.1) -> None:
+        """Initialise PID gains, derivative filter, and anti-windup limit."""
         self.dt = dt
         self.integral_error = 0.0
         self.prev_error = 0.0
@@ -244,12 +250,12 @@ def _render_outputs(
     ax_plasma = fig.add_subplot(gs[:, 0])
     ax_plasma.set_facecolor("black")
     ax_plasma.set_title("Tokamak Cross-Section (Live)", color="white")
-    extent = [
+    extent: tuple[float, float, float, float] = (
         float(frames[0]["r_min"]),
         float(frames[0]["r_max"]),
         float(frames[0]["z_min"]),
         float(frames[0]["z_max"]),
-    ]
+    )
     im = ax_plasma.imshow(
         np.asarray(frames[0]["density"]),
         extent=extent,
@@ -281,7 +287,7 @@ def _render_outputs(
 
     (top_marker,) = ax_plasma.plot(3.0, 2.9, "s", color="red", markersize=20, alpha=0.3)
     (bot_marker,) = ax_plasma.plot(3.0, -2.9, "s", color="blue", markersize=20, alpha=0.3)
-    wall = plt.Rectangle(
+    wall = Rectangle(
         (extent[0], extent[2] + 0.2),
         extent[1] - extent[0],
         (extent[3] - extent[2]) - 0.4,
@@ -291,7 +297,7 @@ def _render_outputs(
     )
     ax_plasma.add_patch(wall)
 
-    def update(frame_idx: int):
+    def update(frame_idx: int) -> tuple[Any, ...]:
         rec = frames[frame_idx]
         im.set_data(np.asarray(rec["density"]))
         line_z.set_data(range(frame_idx + 1), history_z[: frame_idx + 1])
@@ -359,9 +365,7 @@ def run_control_room(
     config_file: Optional[str] = None,
     allow_kernel_fallback: bool = True,
 ) -> dict[str, Any]:
-    """
-    Run the control-room loop and return deterministic summary metrics.
-    """
+    """Run the control-room loop and return deterministic summary metrics."""
     steps = int(sim_duration)
     if steps < 1:
         raise ValueError("sim_duration must be >= 1.")
