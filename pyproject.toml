@@ -230,6 +230,7 @@ files = [
     "src/scpn_fusion/core/geometry_3d.py",
     "src/scpn_fusion/core/equilibrium_3d.py",
     "src/scpn_fusion/core/compact_reactor_optimizer.py",
+    "src/scpn_fusion/core/frc_rigid_rotor.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",
