@@ -22,7 +22,7 @@ import numpy as np
 
 
 try:
-    import optuna
+    import optuna  # type: ignore[import-not-found]
 
     HAS_OPTUNA = True
 except ImportError:
@@ -105,7 +105,7 @@ def _format_pid_action(env: Any, command: float) -> Any:
 
     action_space = getattr(env, "action_space", None)
     shape = getattr(action_space, "shape", None)
-    if shape in (None, ()):
+    if shape is None or tuple(shape) == ():
         return command
     if tuple(shape) == (1,):
         return np.asarray([command], dtype=float)

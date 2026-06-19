@@ -200,6 +200,7 @@ files = [
     "src/scpn_fusion/control/digital_twin_ingest.py",
     "src/scpn_fusion/control/disruption_checkpoint_policy.py",
     "src/scpn_fusion/control/rmf_phase_lock.py",
+    "src/scpn_fusion/control/controller_tuning.py",
     "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "src/scpn_fusion/core/neural_transport_math.py",
