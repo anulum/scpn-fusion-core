@@ -12,6 +12,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.special import ellipe, ellipk
 
 from scpn_fusion.core.fusion_kernel_coilset_config import (
@@ -110,7 +111,7 @@ def _as_finite_points(value: Any, *, name: str) -> FloatArray:
     return arr
 
 
-def _points_inside_polygon(points: FloatArray, polygon: FloatArray) -> np.ndarray:
+def _points_inside_polygon(points: FloatArray, polygon: FloatArray) -> NDArray[np.bool_]:
     """Return point-in-polygon containment mask for finite ``(R, Z)`` contours."""
     pts = _as_finite_points(points, name="points")
     poly = _as_finite_points(polygon, name="polygon")
@@ -399,7 +400,7 @@ def reconstruct_coil_currents_from_magnetic_probes(
         b_probe_directions=b_probe_directions,
     )
 
-    targets: list[np.ndarray] = []
+    targets: list[FloatArray] = []
     if flux_points is not None:
         if flux_measurements is None:
             raise ValueError("flux_measurements must be provided with flux_points.")
@@ -426,7 +427,7 @@ def reconstruct_coil_currents_from_magnetic_probes(
     if target.shape != (response.shape[0],):
         raise ValueError("measurement vector length must match response rows.")
 
-    weights = np.ones(response.shape[0], dtype=np.float64)
+    weights: FloatArray = np.ones(response.shape[0], dtype=np.float64)
     if measurement_sigma is not None:
         sigma = _as_finite_vector(
             measurement_sigma, name="measurement_sigma", length=response.shape[0]
@@ -560,8 +561,8 @@ def optimize_coil_currents(
 
 def interp_psi(kernel: Any, R_pt: float, Z_pt: float) -> float:
     """Interpolate the kernel flux grid at an arbitrary cylindrical point."""
-    ir = np.searchsorted(kernel.R, R_pt) - 1
-    iz = np.searchsorted(kernel.Z, Z_pt) - 1
+    ir = int(np.searchsorted(kernel.R, R_pt)) - 1
+    iz = int(np.searchsorted(kernel.Z, Z_pt)) - 1
     ir = max(0, min(ir, kernel.NR - 2))
     iz = max(0, min(iz, kernel.NZ - 2))
 
