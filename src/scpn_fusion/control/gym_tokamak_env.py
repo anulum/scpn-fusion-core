@@ -21,13 +21,16 @@ from typing import Any, Dict, Optional, Tuple
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+from numpy.typing import NDArray
 
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
+
+FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
 
-class TokamakEnv(gym.Env):
+class TokamakEnv(gym.Env[FloatArray, FloatArray]):
     """
     Gymnasium environment wrapping the SCPN Tokamak Flight Simulator.
 
@@ -80,7 +83,7 @@ class TokamakEnv(gym.Env):
         self.current_step = 0
         self.state = None
 
-    def _get_obs(self) -> np.ndarray:
+    def _get_obs(self) -> FloatArray:
         kernel = self.controller.kernel
 
         # Measure state (similar to tokamak_flight_sim.py)
@@ -110,7 +113,7 @@ class TokamakEnv(gym.Env):
         self,
         seed: Optional[int] = None,
         options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> Tuple[FloatArray, Dict[str, Any]]:
         """Reset the simulator and return the initial observation and info mapping."""
         super().reset(seed=seed)
 
@@ -126,7 +129,7 @@ class TokamakEnv(gym.Env):
         obs = self._get_obs()
         return obs, {}
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: FloatArray) -> Tuple[FloatArray, float, bool, bool, Dict[str, Any]]:
         """Advance the simulator by one normalised action and return Gymnasium outputs."""
         # Map normalized [-1, 1] to physical deltas
         scaled_action = action * self._action_scale
@@ -173,7 +176,7 @@ class TokamakEnv(gym.Env):
 
         return obs, float(reward), terminated, truncated, {"disrupted": disrupted}
 
-    def render(self):
+    def render(self) -> None:
         """Render the current environment state for human mode."""
         if self.render_mode == "human":
             # For now, just log state. In future, trigger visualize_flight.
@@ -188,7 +191,7 @@ class TokamakEnv(gym.Env):
 
 
 # Registration
-def register():
+def register() -> None:
     """Register the Tokamak-v0 Gymnasium environment."""
     gym.envs.registration.register(
         id="Tokamak-v0",
