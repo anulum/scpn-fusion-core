@@ -289,6 +289,10 @@ def test_main_runs_default_checks_in_order(monkeypatch):
             ["python-test", "tools/run_mypy_strict.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
+        (
+            ["python-test", "tools/run_ruff_docstrings.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
     ]
 
 
@@ -369,6 +373,10 @@ def test_main_honors_skip_flags(monkeypatch):
         ),
         (
             ["python-test", "tools/run_mypy_strict.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            ["python-test", "tools/run_ruff_docstrings.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]
@@ -456,6 +464,10 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
                 "validation/benchmark_sparc_geqdsk_rmse.py",
                 "--strict-backend",
             ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            ["python-test", "tools/run_ruff_docstrings.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]
@@ -554,6 +566,10 @@ def test_main_enables_freegs_strict_backend_check_when_requested(monkeypatch):
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
+        (
+            ["python-test", "tools/run_ruff_docstrings.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
     ]
 
 
@@ -638,6 +654,10 @@ def test_main_skips_freegs_strict_backend_when_unavailable(monkeypatch):
                 "validation/benchmark_sparc_geqdsk_rmse.py",
                 "--strict-backend",
             ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            ["python-test", "tools/run_ruff_docstrings.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]
@@ -726,6 +746,10 @@ def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
                 "validation/benchmark_sparc_geqdsk_rmse.py",
                 "--strict-backend",
             ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            ["python-test", "tools/run_ruff_docstrings.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]

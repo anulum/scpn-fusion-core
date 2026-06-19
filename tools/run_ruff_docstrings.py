@@ -21,9 +21,13 @@ import argparse
 import os
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 from typing import Sequence
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 compatibility.
+    import tomli as tomllib  # type: ignore[no-redef]
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
