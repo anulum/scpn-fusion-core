@@ -25,8 +25,11 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.gk_interface import GKLocalParams, GKOutput, GKSolverBase
+
+FloatArray = NDArray[np.float64]
 
 _logger = logging.getLogger(__name__)
 
@@ -132,9 +135,9 @@ def parse_tglf_output(run_dir: Path) -> GKOutput:
         except (ValueError, IndexError) as exc:
             _logger.warning("TGLF transport parse error: %s", exc)
 
-    gamma = np.empty(0)
-    omega_r = np.empty(0)
-    k_y = np.empty(0)
+    gamma: FloatArray = np.empty(0)
+    omega_r: FloatArray = np.empty(0)
+    k_y: FloatArray = np.empty(0)
 
     if eigenvalue_file.exists():
         try:
@@ -160,7 +163,7 @@ def parse_tglf_output(run_dir: Path) -> GKOutput:
     )
 
 
-def _classify_dominant_mode(gamma: np.ndarray, omega_r: np.ndarray) -> str:
+def _classify_dominant_mode(gamma: FloatArray, omega_r: FloatArray) -> str:
     """Identify dominant instability from growth rate spectrum."""
     if len(gamma) == 0 or np.all(gamma <= 0):
         return "stable"

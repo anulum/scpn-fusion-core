@@ -5,15 +5,16 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Native TGLF-Equivalent Transport Model
-"""
-Native TGLF-equivalent quasilinear transport model with SAT0/SAT1/SAT2
-spectral saturation, E×B shear quench, multi-scale ITG-ETG coupling,
-and trapped-particle damping.  No external binary.
+"""Native TGLF-equivalent quasilinear transport model without an external binary.
 
-References:
-  - Staebler et al., Phys. Plasmas 14 (2007) 055909 — SAT0/SAT1
-  - Staebler et al., Phys. Plasmas 24 (2017) 055906 — SAT2
-  - Maeyama et al., Phys. Rev. Lett. 114 (2015) 255002 — cross-scale
+Implements SAT0/SAT1/SAT2 spectral saturation, E×B shear quench, multi-scale
+ITG-ETG coupling, and trapped-particle damping.
+
+References
+----------
+- Staebler et al., Phys. Plasmas 14 (2007) 055909 — SAT0/SAT1
+- Staebler et al., Phys. Plasmas 24 (2017) 055906 — SAT2
+- Maeyama et al., Phys. Rev. Lett. 114 (2015) 255002 — cross-scale
   - Waltz et al., Phys. Plasmas 4 (1997) 2482 — E×B shear quench
   - Connor et al., Nucl. Fusion 14 (1974) 185 — trapped-particle modes
 """
