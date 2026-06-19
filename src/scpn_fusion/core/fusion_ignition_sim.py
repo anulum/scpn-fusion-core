@@ -10,13 +10,18 @@
 from __future__ import annotations
 
 import warnings
+from typing import cast
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from numpy.typing import NDArray
+
 from .fusion_kernel import FusionKernel
 from .uncertainty import _dt_reactivity
 
 from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
+
+FloatArray = NDArray[np.float64]
 
 
 class BurnPhysicsError(RuntimeError, _FusionCoreError):
@@ -24,22 +29,30 @@ class BurnPhysicsError(RuntimeError, _FusionCoreError):
 
 
 class FusionBurnPhysics(FusionKernel):
-    """
-    Extends the Grad-Shafranov Solver with Thermonuclear Physics.
-    Calculates Fusion Power, Alpha Heating, and Q-Factor.
+    """Extend the Grad-Shafranov solver with thermonuclear burn physics.
+
+    Computes fusion power, alpha heating, and the Q factor from the magnetic
+    equilibrium.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         super().__init__(config_path)
 
-    def bosch_hale_dt(self, T_keV):
-        """D-T <sigma v> [m^3/s]. Bosch & Hale, NF 32 (1992) 611."""
+    def bosch_hale_dt(self, T_keV: float | FloatArray) -> float | FloatArray:
+        """D-T <sigma v> [m^3/s]. Bosch & Hale, NF 32 (1992) 611.
+
+        Accepts a scalar temperature or a temperature profile array, matching the
+        flux-grid usage in :meth:`calculate_thermodynamics`.
+        """
         return _dt_reactivity(T_keV)
 
-    def calculate_thermodynamics(self, P_aux_MW=50.0):
-        """
-        Maps Magnetic Equilibrium -> Thermodynamics -> Fusion Power.
-        P_aux_MW: External Heating Power (NBI/ECRH) in MegaWatts.
+    def calculate_thermodynamics(self, P_aux_MW: float = 50.0) -> dict[str, float]:
+        """Map the magnetic equilibrium to thermodynamics and fusion power.
+
+        Parameters
+        ----------
+        P_aux_MW : float
+            External heating power (NBI/ECRH) in megawatts.
         """
         P_aux_MW = float(P_aux_MW)
         if not np.isfinite(P_aux_MW) or P_aux_MW < 0.0:
@@ -131,21 +144,21 @@ class FusionBurnPhysics(FusionKernel):
         net_heating = P_alpha + (P_aux_MW * 1e6) - P_loss
 
         # Q Factor
-        Q = P_fusion_total / (P_aux_MW * 1e6) if P_aux_MW > 0 else 0
+        Q = P_fusion_total / (P_aux_MW * 1e6) if P_aux_MW > 0 else 0.0
 
         return {
-            "P_fusion_MW": P_fusion_total / 1e6,
-            "P_alpha_MW": P_alpha / 1e6,
-            "P_loss_MW": P_loss / 1e6,
-            "P_aux_MW": P_aux_MW,
-            "Net_MW": net_heating / 1e6,
-            "Q": Q,
-            "T_peak": T_peak_keV,
-            "W_MJ": W_thermal / 1e6,
+            "P_fusion_MW": float(P_fusion_total / 1e6),
+            "P_alpha_MW": float(P_alpha / 1e6),
+            "P_loss_MW": float(P_loss / 1e6),
+            "P_aux_MW": float(P_aux_MW),
+            "Net_MW": float(net_heating / 1e6),
+            "Q": float(Q),
+            "T_peak": float(T_peak_keV),
+            "W_MJ": float(W_thermal / 1e6),
         }
 
 
-def run_ignition_experiment():
+def run_ignition_experiment() -> None:
     """Run the standalone auxiliary-power ignition scan and write its plot."""
     print("--- SCPN IGNITION EXPERIMENT: The Road to Q > 10 ---")
 
@@ -293,10 +306,10 @@ class DynamicBurnModel:
     @staticmethod
     def bosch_hale_dt(T_keV: float) -> float:
         """D-T <sigma v> [m^3/s]. Bosch & Hale, NF 32 (1992) 611."""
-        return _dt_reactivity(T_keV)
+        return float(_dt_reactivity(T_keV))
 
     def iter98y2_tau_e(self, P_loss_mw: float) -> float:
-        """ITER IPB98(y,2) energy confinement scaling (s).
+        """Compute the ITER IPB98(y,2) energy confinement scaling (s).
 
         tau_E = 0.0562 * I_p^0.93 * B_t^0.15 * n_e19^0.41 * P^-0.69 *
                 R^1.97 * (a/R)^0.58 * kappa^0.78 * M^0.19
@@ -341,7 +354,7 @@ class DynamicBurnModel:
         max_temperature_clamp_events: int | None = None,
         warn_on_temperature_cap: bool = True,
         emit_repeated_temperature_warnings: bool = False,
-    ) -> dict:
+    ) -> dict[str, object]:
         """Run dynamic burn simulation.
 
         Parameters
@@ -407,7 +420,7 @@ class DynamicBurnModel:
         T_hist = []
         Q_hist = []
         P_fus_hist = []
-        P_alpha_hist = []
+        P_alpha_hist: list[float] = []
         P_loss_hist = []
         P_rad_hist = []
         f_he_hist = []
@@ -545,7 +558,7 @@ class DynamicBurnModel:
         B_t: float = 5.3,
         I_p: float = 15.0,
         kappa: float = 1.7,
-    ) -> dict:
+    ) -> dict[str, object]:
         """Scan auxiliary power to find Q>=10 operating point.
 
         Returns the scan results including the optimal P_aux for Q=10.
@@ -554,7 +567,7 @@ class DynamicBurnModel:
         # in units of 10^20 m^-3
         n_greenwald = I_p / (np.pi * a**2)
 
-        results = []
+        results: list[dict[str, float | bool]] = []
         for n_e20 in [0.8, 1.0, 1.2]:
             # Skip densities above 1.2x Greenwald limit
             if n_e20 > 1.2 * n_greenwald:
@@ -565,7 +578,7 @@ class DynamicBurnModel:
                 )
                 continue
 
-            for P_aux in np.arange(10.0, 80.0, 5.0):
+            for P_aux in [float(x) for x in np.arange(10.0, 80.0, 5.0)]:
                 model = DynamicBurnModel(R0=R0, a=a, B_t=B_t, I_p=I_p, kappa=kappa, n_e20=n_e20)
                 sim = model.simulate(
                     P_aux_mw=P_aux,
@@ -577,12 +590,12 @@ class DynamicBurnModel:
                     {
                         "n_e20": n_e20,
                         "P_aux_MW": P_aux,
-                        "Q_final": sim["Q_final"],
-                        "Q_peak": sim["Q_peak"],
-                        "T_final_keV": sim["T_final_keV"],
-                        "P_fus_final_MW": sim["P_fus_final_MW"],
-                        "f_he_final": sim["f_he_final"],
-                        "ignition": sim["ignition"],
+                        "Q_final": cast(float, sim["Q_final"]),
+                        "Q_peak": cast(float, sim["Q_peak"]),
+                        "T_final_keV": cast(float, sim["T_final_keV"]),
+                        "P_fus_final_MW": cast(float, sim["P_fus_final_MW"]),
+                        "f_he_final": cast(float, sim["f_he_final"]),
+                        "ignition": cast(bool, sim["ignition"]),
                     }
                 )
 
