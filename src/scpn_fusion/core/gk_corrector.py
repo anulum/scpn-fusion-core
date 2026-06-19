@@ -5,13 +5,11 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — GK Correction Layer
-"""
-Error quantification and correction for surrogate transport models
-validated against GK spot-checks.
+"""Quantify and correct surrogate transport-model error against GK spot-checks.
 
 Compares surrogate vs GK fluxes at spot-check surfaces and applies
-multiplicative, additive, or full-replacement corrections interpolated
-to the full radial grid.  Temporal smoothing prevents discontinuities.
+multiplicative, additive, or full-replacement corrections interpolated to the
+full radial grid. Temporal smoothing prevents discontinuities.
 """
 
 from __future__ import annotations

@@ -12,9 +12,10 @@ Velocity-space discretisation uses (energy, lambda) coordinates with
 Gauss-Legendre quadrature.  The collision operator implements a linearised
 Sugama-style diagonal pitch-angle and energy-diffusion closure.
 
-References:
-  - Sugama & Watanabe, Phys. Plasmas 13 (2006) 012501
-  - Abel et al., Rep. Prog. Phys. 76 (2013) 116201, §4.4
+References
+----------
+- Sugama & Watanabe, Phys. Plasmas 13 (2006) 012501
+- Abel et al., Rep. Prog. Phys. 76 (2013) 116201, §4.4
 """
 
 from __future__ import annotations
@@ -60,6 +61,7 @@ class GKSpecies:
     is_adiabatic: bool = False
 
     def __post_init__(self) -> None:
+        """Validate species mass and temperature after initialisation."""
         _require_positive_finite("mass_amu", self.mass_amu)
         _require_positive_finite("temperature_keV", self.temperature_keV)
         _require_positive_finite("density_19", self.density_19)
@@ -128,6 +130,7 @@ class VelocityGrid:
     n_lambda: int = 24
 
     def __post_init__(self) -> None:
+        """Validate the velocity-grid quadrature resolution after initialisation."""
         if self.n_energy < 2:
             raise ValueError("n_energy must be at least 2 for Gauss-Legendre quadrature")
         if self.n_lambda < 3:

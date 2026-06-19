@@ -5,11 +5,10 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Out-of-Distribution Detector for GK Surrogates
-"""
-Detect when surrogate transport model inputs fall outside the
-training distribution, triggering escalation to a full GK solver.
+"""Detect when surrogate transport inputs fall outside the training distribution.
 
-Three independent methods, any of which can flag OOD:
+Triggers escalation to a full GK solver. Three independent methods, any of
+which can flag OOD:
   1. Mahalanobis distance (multivariate Gaussian assumption)
   2. Ensemble disagreement (variance across K models)
   3. Input range checks (hard + soft bounds from training data)
@@ -21,6 +20,7 @@ Reference calibration: QLKNN-10D training distribution
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -61,7 +61,7 @@ class OODResult:
     is_ood: bool
     confidence: float  # 0.0 = clearly in-distribution, 1.0 = clearly OOD
     method: str  # "mahalanobis" / "ensemble" / "range" / "combined"
-    details: dict
+    details: dict[str, Any]
 
 
 def _to_input_vector(

@@ -5,12 +5,11 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Miller Flux-Tube Geometry
-"""
-Miller parameterisation of local magnetic equilibrium geometry for
-flux-tube gyrokinetic calculations.
+"""Miller parameterisation of local magnetic equilibrium geometry.
 
-Computes metric coefficients, field-line curvature, and the Jacobian
-on a ballooning-angle grid from (R0, a, kappa, delta, q, s_hat, ...).
+Computes metric coefficients, field-line curvature, and the Jacobian on a
+ballooning-angle grid from (R0, a, kappa, delta, q, s_hat, ...) for flux-tube
+gyrokinetic calculations.
 
 Reference: Miller et al., Phys. Plasmas 5 (1998) 973.
 """
@@ -90,7 +89,9 @@ def miller_geometry(
         raise ValueError("delta must be finite with |delta| < 1")
 
     r = rho * a
-    theta = np.linspace(-n_period * np.pi, n_period * np.pi, n_theta * n_period, endpoint=False)
+    theta = np.linspace(
+        -n_period * np.pi, n_period * np.pi, n_theta * n_period, endpoint=False
+    ).astype(np.float64)
 
     # Miller et al. Eq. (1)-(2): flux surface shape
     delta_angle = np.arcsin(delta)

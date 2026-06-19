@@ -17,10 +17,11 @@ The eigenvalue problem is cast as a standard eigenproblem A x = omega x
 via the response-matrix formulation, solved with scipy sparse or dense
 eigensolvers.
 
-References:
-  - Dimits et al., Phys. Plasmas 7 (2000) 969 — Cyclone Base Case
-  - Jenko et al., Phys. Plasmas 7 (2000) 1904 — ETG
-  - Kotschenreuther et al., Comp. Phys. Comm. 88 (1995) 128 — GS2 method
+References
+----------
+- Dimits et al., Phys. Plasmas 7 (2000) 969 — Cyclone Base Case
+- Jenko et al., Phys. Plasmas 7 (2000) 1904 — ETG
+- Kotschenreuther et al., Comp. Phys. Comm. 88 (1995) 128 — GS2 method
 """
 
 from __future__ import annotations
@@ -114,8 +115,11 @@ def _drift_frequency(
     omega_D = k_y * (2 E / B) * (kappa_n * (1 - lambda*B/B0) + kappa_g * sign(v_∥))
     In normalised units (v_th/R scale).
     """
-    xi_sq = np.maximum(1.0 - lam * B_ratio, 0.0)
-    return k_y * 2.0 * energy_norm * (geom.kappa_n * xi_sq + geom.kappa_g * np.sqrt(xi_sq))
+    xi_sq: NDArray[np.float64] = np.maximum(1.0 - lam * B_ratio, 0.0)
+    drift: NDArray[np.float64] = (
+        k_y * 2.0 * energy_norm * (geom.kappa_n * xi_sq + geom.kappa_g * np.sqrt(xi_sq))
+    )
+    return drift
 
 
 def _parallel_streaming_matrix(

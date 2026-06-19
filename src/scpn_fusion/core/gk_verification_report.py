@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -71,7 +72,7 @@ class VerificationReport:
         """Append one aggregate correction-factor magnitude."""
         self.correction_factors.append(factor)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serialisable verification summary dictionary."""
         return {
             "total_steps": self.total_steps,
