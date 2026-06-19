@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def compute_gs_residual(kernel: Any, Source: FloatArray) -> FloatArray:
     """Compute the GS residual r = L*[psi] - Source on interior points."""
-    Psi = kernel.Psi
+    Psi = np.asarray(kernel.Psi, dtype=np.float64)
     dR2 = kernel.dR**2
     dZ2 = kernel.dZ**2
 
@@ -142,9 +142,12 @@ def solve_via_rust_multigrid(
         prior_method = kernel.cfg["solver"].get("solver_method", "rust_multigrid")
         kernel.cfg["solver"]["solver_method"] = "sor"
         try:
-            return kernel.solve_equilibrium(
-                preserve_initial_state=preserve_initial_state,
-                boundary_flux=boundary_flux,
+            return cast(
+                "dict[str, Any]",
+                kernel.solve_equilibrium(
+                    preserve_initial_state=preserve_initial_state,
+                    boundary_flux=boundary_flux,
+                ),
             )
         finally:
             kernel.cfg["solver"]["solver_method"] = prior_method
@@ -154,7 +157,7 @@ def solve_via_rust_multigrid(
         prior_method = kernel.cfg["solver"].get("solver_method", "rust_multigrid")
         kernel.cfg["solver"]["solver_method"] = "sor"
         try:
-            return kernel.solve_equilibrium()
+            return cast("dict[str, Any]", kernel.solve_equilibrium())
         finally:
             kernel.cfg["solver"]["solver_method"] = prior_method
 
@@ -204,7 +207,7 @@ def solve_newton_linear_system(
     *,
     kernel: Any,
     J_op: Any,
-    rhs: np.ndarray,
+    rhs: FloatArray,
     diag_term: FloatArray,
     n_interior: int,
     nz: int,
@@ -213,7 +216,7 @@ def solve_newton_linear_system(
     ilu_drop_tol: float,
     ilu_fill_factor: float,
     iter_idx: int,
-) -> tuple[np.ndarray, int]:
+) -> tuple[FloatArray, int]:
     """Solve ``J * delta = rhs`` with optional GMRES preconditioning."""
     from scipy.sparse.linalg import LinearOperator, gmres
 
