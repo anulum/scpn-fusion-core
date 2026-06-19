@@ -202,6 +202,7 @@ files = [
     "src/scpn_fusion/control/rmf_phase_lock.py",
     "src/scpn_fusion/control/controller_tuning.py",
     "src/scpn_fusion/control/gym_tokamak_env.py",
+    "src/scpn_fusion/control/jax_traceable_runtime.py",
     "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "src/scpn_fusion/core/neural_transport_math.py",

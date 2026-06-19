@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -20,7 +21,7 @@ try:
     import jax.numpy as jnp
 
     # Enable float64 for high-precision control analysis
-    jax.config.update("jax_enable_x64", True)
+    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
 
     _HAS_JAX = True
 except Exception:
@@ -173,13 +174,13 @@ def _simulate_jax(
     gain = jnp.asarray(spec.gain, dtype=jnp.float64)
     limit = jnp.asarray(spec.command_limit, dtype=jnp.float64)
 
-    def _step(state, u):
+    def _step(state: Any, u: Any) -> tuple[Any, Any]:
         u_clip = jnp.clip(u, -limit, limit)
         next_state = state + alpha * ((gain * u_clip) - state)
         return next_state, next_state
 
     @jax.jit
-    def _rollout(x0, u):
+    def _rollout(x0: Any, u: Any) -> Any:
         _, hist = jax.lax.scan(_step, x0, u)
         return hist
 
@@ -232,8 +233,8 @@ if _HAS_TORCH:
         _torchscript_rollout_batch = torch.jit.script(_torchscript_rollout_batch)
 
 else:
-    _torchscript_rollout = None
-    _torchscript_rollout_batch = None
+    _torchscript_rollout = None  # type: ignore[assignment]
+    _torchscript_rollout_batch = None  # type: ignore[assignment]
 
 
 def _simulate_torchscript(
@@ -283,13 +284,13 @@ def _simulate_jax_batch(
     gain = jnp.asarray(spec.gain, dtype=jnp.float64)
     limit = jnp.asarray(spec.command_limit, dtype=jnp.float64)
 
-    def _step(state, u_t):
+    def _step(state: Any, u_t: Any) -> tuple[Any, Any]:
         u_clip = jnp.clip(u_t, -limit, limit)
         next_state = state + alpha * ((gain * u_clip) - state)
         return next_state, next_state
 
     @jax.jit
-    def _rollout_batch(batch_x0, batch_u):
+    def _rollout_batch(batch_x0: Any, batch_u: Any) -> Any:
         _, hist_tb = jax.lax.scan(_step, batch_x0, jnp.swapaxes(batch_u, 0, 1))
         return jnp.swapaxes(hist_tb, 0, 1)
 
@@ -325,8 +326,7 @@ def run_traceable_control_loop(
     spec: TraceableRuntimeSpec | None = None,
     backend: str = "auto",
 ) -> TraceableRuntimeResult:
-    """
-    Run a reduced control loop suitable for optional JAX tracing/JIT.
+    """Run a reduced control loop suitable for optional JAX tracing/JIT.
 
     `backend` can be `auto`, `numpy`, `jax`, or `torchscript`.
     """
@@ -368,8 +368,7 @@ def run_traceable_control_batch(
     spec: TraceableRuntimeSpec | None = None,
     backend: str = "auto",
 ) -> TraceableRuntimeBatchResult:
-    """
-    Run batched reduced control loops with optional JAX/TorchScript backends.
+    """Run batched reduced control loops with optional JAX/TorchScript backends.
 
     `commands` shape: (batch, steps)
     """
@@ -422,9 +421,7 @@ def validate_traceable_backend_parity(
     atol: float = 1e-8,
     backends: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, TraceableBackendParityReport]:
-    """
-    Compare available compiled backends to NumPy for single and batch rollouts.
-    """
+    """Compare available compiled backends to NumPy for single and batch rollouts."""
     if steps <= 0:
         raise ValueError("steps must be > 0.")
     if batch <= 0:
