@@ -210,6 +210,7 @@ files = [
     "src/scpn_fusion/control/neuro_cybernetic_controller.py",
     "src/scpn_fusion/control/analytic_solver.py",
     "src/scpn_fusion/control/fusion_optimal_control.py",
+    "src/scpn_fusion/control/nmpc_controller.py",
     "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "src/scpn_fusion/core/neural_transport_math.py",

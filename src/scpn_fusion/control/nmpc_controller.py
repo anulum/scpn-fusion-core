@@ -14,6 +14,9 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -21,24 +24,24 @@ class NMPCConfig:
     """Weights, bounds, slew limits, and solver knobs for nonlinear MPC."""
 
     horizon: int = 20
-    Q: np.ndarray = dataclasses.field(default_factory=lambda: np.eye(6))
-    R: np.ndarray = dataclasses.field(default_factory=lambda: np.eye(3))
-    P: np.ndarray | None = None
+    Q: FloatArray = dataclasses.field(default_factory=lambda: np.eye(6))
+    R: FloatArray = dataclasses.field(default_factory=lambda: np.eye(3))
+    P: FloatArray | None = None
 
     # State bounds [Ip, beta_N, q95, li, T_axis, n_bar]
-    x_min: np.ndarray = dataclasses.field(
+    x_min: FloatArray = dataclasses.field(
         default_factory=lambda: np.array([0.1, 0.0, 2.0, 0.5, 0.5, 0.1])
     )
-    x_max: np.ndarray = dataclasses.field(
+    x_max: FloatArray = dataclasses.field(
         default_factory=lambda: np.array([17.0, 3.5, 10.0, 1.5, 50.0, 12.0])
     )
 
     # Input bounds [P_aux, I_p_ref, n_gas_puff]
-    u_min: np.ndarray = dataclasses.field(default_factory=lambda: np.array([0.0, 0.1, 0.0]))
-    u_max: np.ndarray = dataclasses.field(default_factory=lambda: np.array([73.0, 17.0, 10.0]))
+    u_min: FloatArray = dataclasses.field(default_factory=lambda: np.array([0.0, 0.1, 0.0]))
+    u_max: FloatArray = dataclasses.field(default_factory=lambda: np.array([73.0, 17.0, 10.0]))
 
     # Slew rate bounds
-    du_max: np.ndarray = dataclasses.field(default_factory=lambda: np.array([5.0, 0.5, 2.0]))
+    du_max: FloatArray = dataclasses.field(default_factory=lambda: np.array([5.0, 0.5, 2.0]))
 
     max_sqp_iter: int = 10
     tol: float = 1e-4
@@ -48,8 +51,9 @@ class NonlinearMPC:
     """Projected-gradient nonlinear MPC using finite-difference linearisation."""
 
     def __init__(
-        self, plant_model: Callable[[np.ndarray, np.ndarray], np.ndarray], config: NMPCConfig
-    ):
+        self, plant_model: Callable[[FloatArray, FloatArray], FloatArray], config: NMPCConfig
+    ) -> None:
+        """Bind the plant model and preallocate the input/state trajectories."""
         self.plant_model = plant_model
         self.config = config
 
@@ -63,7 +67,7 @@ class NonlinearMPC:
 
         self.infeasibility_count = 0
 
-    def _linearize(self, x0: np.ndarray, u0: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _linearize(self, x0: FloatArray, u0: FloatArray) -> tuple[FloatArray, FloatArray]:
         """Compute Jacobians A, B via finite differences."""
         A = np.zeros((self.nx, self.nx))
         B = np.zeros((self.nx, self.nu))
@@ -86,20 +90,22 @@ class NonlinearMPC:
 
         return A, B
 
-    def _compute_terminal_cost(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
+    def _compute_terminal_cost(self, A: FloatArray, B: FloatArray) -> FloatArray:
         """Solve DARE for terminal cost P."""
         try:
             import scipy.linalg
 
             P = scipy.linalg.solve_discrete_are(A, B, self.config.Q, self.config.R)
-            return np.asarray(P)
-        except (ImportError, Exception):
-            return np.asarray(self.config.Q * 10.0)
+            return np.asarray(P, dtype=np.float64)
+        except (ImportError, np.linalg.LinAlgError, ValueError):
+            # scipy absent, or DARE unsolvable (non-stabilisable / singular pair):
+            # fall back to a scaled state-weight terminal cost.
+            return np.asarray(self.config.Q * 10.0, dtype=np.float64)
 
-    def _solve_qp(self, x0: np.ndarray, u_prev: np.ndarray, x_ref: np.ndarray) -> np.ndarray:
-        """
-        Solve constrained QP for the linearized system using projected gradient descent.
-        Decision variables: Delta_U = [du_0, ..., du_{N-1}] where u_k = u_bar_k + du_k
+    def _solve_qp(self, x0: FloatArray, u_prev: FloatArray, x_ref: FloatArray) -> FloatArray:
+        """Solve the constrained QP for the linearised system via projected gradient descent.
+
+        Decision variables: Delta_U = [du_0, ..., du_{N-1}] where u_k = u_bar_k + du_k.
         """
         # For simplicity and robustness in standard Python, we use a basic PGD
         # on the condensed formulation where x is eliminated.
@@ -170,11 +176,11 @@ class NonlinearMPC:
 
         return dU
 
-    def linearize(self, x0: np.ndarray, u0: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def linearize(self, x0: FloatArray, u0: FloatArray) -> tuple[FloatArray, FloatArray]:
         """Return finite-difference state and input Jacobians around ``(x0, u0)``."""
         return self._linearize(x0, u0)
 
-    def step(self, x: np.ndarray, x_ref: np.ndarray, u_prev: np.ndarray) -> np.ndarray:
+    def step(self, x: FloatArray, x_ref: FloatArray, u_prev: FloatArray) -> FloatArray:
         """Solve one receding-horizon control update and return the first input."""
         # Warm start
         self.u_traj[:-1] = self.u_traj[1:]
