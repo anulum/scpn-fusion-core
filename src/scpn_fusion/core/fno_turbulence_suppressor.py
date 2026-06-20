@@ -21,7 +21,10 @@ from typing import Any, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 from scpn_fusion.io.safe_loaders import checked_np_load
+
+FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +32,8 @@ try:
     import jax
     import jax.numpy as jnp
 
-    try:
-        from .fno_jax_training import fno_layer, model_forward
-    except ImportError:
-        from fno_jax_training import fno_layer, model_forward
+    from .fno_jax_training import fno_layer, model_forward
+
     _HAS_JAX = True
 except ImportError:
     _HAS_JAX = False
@@ -52,7 +53,7 @@ def _env_enabled(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _compat_suppression_from_field(field: np.ndarray) -> float:
+def _compat_suppression_from_field(field: FloatArray) -> float:
     """Deterministic reduced-order suppression estimate from field statistics."""
     finite = np.nan_to_num(np.asarray(field, dtype=np.float64), nan=0.0, posinf=0.0, neginf=0.0)
     rms = float(np.sqrt(np.mean(finite**2)))
@@ -64,9 +65,7 @@ def _compat_suppression_from_field(field: np.ndarray) -> float:
 
 
 class SpectralTurbulenceGenerator:
-    """
-    Generates synthetic ITG turbulence with Fourier-space drift-wave dynamics.
-    """
+    """Generate synthetic ITG turbulence with Fourier-space drift-wave dynamics."""
 
     def __init__(
         self,
@@ -87,7 +86,7 @@ class SpectralTurbulenceGenerator:
         self.field_k = np.fft.fft2(self.field)
         self.zonal_flow = 0.0  # Predator state
 
-    def step(self, dt: float = 0.01, damping: float = 0.0) -> np.ndarray:
+    def step(self, dt: float = 0.01, damping: float = 0.0) -> FloatArray:
         """Advance one deterministic spectral turbulence step and return the field."""
         kx = np.fft.fftfreq(self.size) * self.size
         ky = np.fft.fftfreq(self.size) * self.size
@@ -99,7 +98,7 @@ class SpectralTurbulenceGenerator:
         # 1. Update ZF based on turbulence intensity (Reynolds stress proxy)
         turb_intensity = np.mean(self.field**2)
         dzf_dt = 5.0 * turb_intensity - 0.5 * self.zonal_flow
-        self.zonal_flow += dzf_dt * dt
+        self.zonal_flow = float(self.zonal_flow + dzf_dt * dt)
         self.zonal_flow = max(0.0, self.zonal_flow)
 
         # 2. Add ZF shearing to damping
@@ -137,7 +136,7 @@ class FNO_Controller:
         allow_legacy: bool = False,
     ) -> None:
         self.weights_path = Path(weights_path) if weights_path else DEFAULT_JAX_WEIGHTS
-        self.params = {}
+        self.params: dict[str, Any] = {}
         self.loaded_weights = False
         self.legacy_enabled = bool(allow_legacy) or _env_enabled(LEGACY_ENABLE_ENV)
         self.backend = "compat_reduced_order"
@@ -170,7 +169,7 @@ class FNO_Controller:
         self.loaded_weights = True
 
     @staticmethod
-    def _postprocess_prediction(field: np.ndarray, suppression: float) -> np.ndarray:
+    def _postprocess_prediction(field: FloatArray, suppression: float) -> FloatArray:
         pred_field = np.asarray(field, dtype=np.float64) * (
             1.0 - float(np.clip(suppression, 0.0, 0.98))
         )
@@ -179,7 +178,7 @@ class FNO_Controller:
         out = np.fft.ifft2(field_k).real
         return np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
 
-    def predict_and_suppress(self, field: np.ndarray) -> Tuple[float, np.ndarray]:
+    def predict_and_suppress(self, field: FloatArray) -> Tuple[float, FloatArray]:
         """Predict a bounded suppression command and postprocessed field response."""
         field_np = np.asarray(field, dtype=np.float64)
         if field_np.shape != (GRID_SIZE, GRID_SIZE):
