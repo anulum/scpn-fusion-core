@@ -11,9 +11,11 @@ Re-implements the response-matrix formulation from gk_eigenvalue.py using
 jax.numpy, jax.vmap (batch over k_y), and jax.grad (transport stiffness
 d(chi_i)/d(R_L_Ti)).  Falls back to NumPy solver when JAX is unavailable.
 
-References:
+References
+----------
   - Dimits et al., Phys. Plasmas 7 (2000) 969 — Cyclone Base Case
   - Kotschenreuther et al., Comp. Phys. Comm. 88 (1995) 128
+
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ import logging
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.gk_eigenvalue import EigenMode, LinearGKResult
 from scpn_fusion.core.gk_geometry import circular_geometry
@@ -187,7 +190,7 @@ def _build_response_matrix_single_ky(
 
 def _solve_eigenvalue_from_matrix(
     full_real: Any, full_imag: Any
-) -> tuple[float, float, str, np.ndarray | None]:
+) -> tuple[float, float, str, NDArray[np.float64] | None]:
     """Extract most unstable eigenmode from the response matrix (NumPy)."""
     full_matrix = np.asarray(full_real) + 1j * np.asarray(full_imag)
 
