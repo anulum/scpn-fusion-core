@@ -300,6 +300,7 @@ files = [
     "src/scpn_fusion/core/jax_equilibrium_solver.py",
     "src/scpn_fusion/core/jax_gk_nonlinear.py",
     "src/scpn_fusion/core/pretrained_surrogates.py",
+    "src/scpn_fusion/core/gs_transport_surrogate_training.py",
     "src/scpn_fusion/core/gpu_runtime.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",

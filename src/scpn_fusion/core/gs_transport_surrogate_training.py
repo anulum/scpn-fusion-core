@@ -20,12 +20,16 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import numpy as np
+from numpy.typing import NDArray
+
 from scpn_fusion.io.safe_loaders import checked_np_load
 from ._surrogate_utils import (
     AdamOptimizer as _AdamOptimizer,
     gelu as _gelu,
     relative_l2 as _relative_l2,
 )
+
+FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +57,14 @@ def _generate_gs_transport_pairs(
     n_samples: int = 5000,
     grid_size: int = 50,
     seed: int = 20260218,
-) -> Tuple[np.ndarray, np.ndarray, List[Dict[str, object]]]:
+) -> Tuple[FloatArray, FloatArray, List[Dict[str, object]]]:
     """Generate training data using TransportSolver as a physics oracle."""
     from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
     rng = np.random.default_rng(seed)
 
-    x_list: List[np.ndarray] = []
-    y_list: List[np.ndarray] = []
+    x_list: List[FloatArray] = []
+    y_list: List[FloatArray] = []
     metadata: List[Dict[str, object]] = []
 
     for i in range(n_samples):
@@ -118,11 +122,11 @@ def _generate_gs_transport_pairs(
                 solver.Te = T0 * (1 - solver.rho**2)
                 solver.ne = n_e20 * 10.0 * (1 - solver.rho**2) ** 0.5
 
-            Ti_initial = solver.Ti.copy()
+            Ti_initial = np.asarray(solver.Ti, dtype=np.float64)
             for _ in range(5):
                 solver.update_transport_model(P_aux)
                 solver.evolve_profiles(dt=0.1, P_aux=P_aux)
-            Ti_final = solver.Ti.copy()
+            Ti_final = np.asarray(solver.Ti, dtype=np.float64)
 
             if not (np.all(np.isfinite(Ti_initial)) and np.all(np.isfinite(Ti_final))):
                 continue
@@ -168,24 +172,24 @@ class MLPSurrogate:
         self.hidden_dim = hidden_dim
         rng = np.random.default_rng(seed)
 
-        def _xavier(fan_in: int, fan_out: int) -> np.ndarray:
+        def _xavier(fan_in: int, fan_out: int) -> FloatArray:
             limit = np.sqrt(6.0 / (fan_in + fan_out))
             return rng.uniform(-limit, limit, size=(fan_in, fan_out)).astype(np.float64)
 
         self.W1 = _xavier(input_dim, hidden_dim)
-        self.b1 = np.zeros(hidden_dim, dtype=np.float64)
+        self.b1: FloatArray = np.zeros(hidden_dim, dtype=np.float64)
         self.W2 = _xavier(hidden_dim, hidden_dim)
-        self.b2 = np.zeros(hidden_dim, dtype=np.float64)
+        self.b2: FloatArray = np.zeros(hidden_dim, dtype=np.float64)
         self.W3 = _xavier(hidden_dim, input_dim)
-        self.b3 = np.zeros(input_dim, dtype=np.float64)
+        self.b3: FloatArray = np.zeros(input_dim, dtype=np.float64)
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: FloatArray) -> FloatArray:
         """Evaluate the MLP transport surrogate for one or more profiles."""
         h = _gelu(x @ self.W1 + self.b1)
         h = _gelu(h @ self.W2 + self.b2)
         return h @ self.W3 + self.b3
 
-    def _params_dict(self) -> Dict[str, np.ndarray]:
+    def _params_dict(self) -> Dict[str, FloatArray]:
         return {
             "W1": self.W1,
             "b1": self.b1,
@@ -199,7 +203,16 @@ class MLPSurrogate:
         """Save all MLP parameter arrays to an ``.npz`` weight file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(path, **self._params_dict())
+        params = self._params_dict()
+        np.savez(
+            path,
+            W1=params["W1"],
+            b1=params["b1"],
+            W2=params["W2"],
+            b2=params["b2"],
+            W3=params["W3"],
+            b3=params["b3"],
+        )
 
     def load_weights(self, path: str | Path) -> None:
         """Load MLP parameter arrays from an ``.npz`` weight file."""
