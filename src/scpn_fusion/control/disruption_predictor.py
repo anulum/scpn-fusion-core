@@ -67,9 +67,9 @@ try:
     import torch.nn as nn
     import torch.optim as optim
 except (ImportError, OSError):  # pragma: no cover - optional dependency path
-    torch = None
-    nn = None
-    optim = None
+    torch = None  # type: ignore[assignment, unused-ignore]
+    nn = None  # type: ignore[assignment, unused-ignore]
+    optim = None  # type: ignore[assignment, unused-ignore]
 
 DEFAULT_SEQ_LEN = 100
 DEFAULT_MODEL_FILENAME = "disruption_model.pth"
@@ -89,8 +89,11 @@ _INFERENCE_FALLBACK_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, 
 
 if torch is not None:
 
-    class DisruptionTransformer(nn.Module):
-        def __init__(self, seq_len=DEFAULT_SEQ_LEN):
+    class DisruptionTransformer(nn.Module):  # type: ignore[misc, unused-ignore]
+        """Transformer encoder that scores tearing-mode disruption risk from a signal window."""
+
+        def __init__(self, seq_len: int = DEFAULT_SEQ_LEN) -> None:
+            """Build the embedding, positional encoder, transformer stack, and classifier head."""
             super().__init__()
             self.seq_len = _normalize_seq_len(seq_len)
             self.embedding = nn.Linear(1, 32)
@@ -105,7 +108,8 @@ if torch is not None:
             self.classifier = nn.Linear(32, 1)
             self.sigmoid = nn.Sigmoid()
 
-        def forward(self, src):
+        def forward(self, src: "torch.Tensor") -> Any:
+            """Run the encoder and return the sigmoid disruption probability per batch row."""
             if src.ndim != 3:
                 raise ValueError(
                     f"Input tensor must have shape [batch, seq, 1]; got rank {src.ndim}."
@@ -126,20 +130,22 @@ if torch is not None:
 else:  # pragma: no cover - only used without torch installed
 
     class DisruptionTransformer:  # type: ignore[no-redef]
-        def __init__(self):
+        """Placeholder raised when torch is unavailable for the disruption transformer."""
+
+        def __init__(self) -> None:
+            """Reject instantiation because torch is not installed."""
             raise RuntimeError("Torch is required for DisruptionTransformer.")
 
 
 def train_predictor(
-    seq_len=DEFAULT_SEQ_LEN,
-    n_shots=500,
-    epochs=50,
-    model_path=None,
-    seed=42,
-    save_plot=True,
-):
+    seq_len: int = DEFAULT_SEQ_LEN,
+    n_shots: int = 500,
+    epochs: int = 50,
+    model_path: str | Path | None = None,
+    seed: int = 42,
+    save_plot: bool = True,
+) -> tuple[Any, dict[str, Any]]:
     """Train and persist a disruption transformer on synthetic tearing-mode shots."""
-
     if torch is None or optim is None:
         raise RuntimeError("Torch is required for train_predictor().")
 
@@ -230,15 +236,14 @@ def train_predictor(
 
 
 def load_or_train_predictor(
-    model_path=None,
-    seq_len=DEFAULT_SEQ_LEN,
-    force_retrain=False,
-    train_kwargs=None,
-    train_if_missing=True,
-    allow_fallback=True,
-):
+    model_path: str | Path | None = None,
+    seq_len: int = DEFAULT_SEQ_LEN,
+    force_retrain: bool = False,
+    train_kwargs: dict[str, Any] | None = None,
+    train_if_missing: bool = True,
+    allow_fallback: bool = True,
+) -> tuple[Any, dict[str, Any]]:
     """Load a validated checkpoint or train/recover according to fallback policy."""
-
     recovery_allowed = _resolve_allow_fallback(bool(allow_fallback))
     if torch is None:
         if not recovery_allowed:
@@ -347,17 +352,15 @@ def load_or_train_predictor(
 
 
 def predict_disruption_risk_safe(
-    signal,
-    toroidal_observables=None,
+    signal: Any,
+    toroidal_observables: Any = None,
     *,
-    model_path=None,
-    seq_len=DEFAULT_SEQ_LEN,
-    train_if_missing=False,
+    model_path: str | Path | None = None,
+    seq_len: int = DEFAULT_SEQ_LEN,
+    train_if_missing: bool = False,
     allow_fallback: bool = True,
 ) -> tuple[float, dict[str, Any]]:
-    """
-    Predict disruption risk with checkpoint path if available, else deterministic
-    compatibility estimator.
+    """Predict disruption risk via the checkpoint path, else a compatibility estimator.
 
     Returns
     -------
@@ -368,6 +371,7 @@ def predict_disruption_risk_safe(
         If ``False``, this API raises on missing/broken checkpoints or inference
         failures instead of returning compatibility risk from
         ``predict_disruption_risk``.
+
     """
     recovery_allowed = _resolve_allow_fallback(bool(allow_fallback))
     base_risk = float(np.clip(predict_disruption_risk(signal, toroidal_observables), 0.0, 1.0))
