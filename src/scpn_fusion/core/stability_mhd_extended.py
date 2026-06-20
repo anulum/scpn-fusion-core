@@ -5,8 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — MHD Stability: Extended Criteria
-"""
-Extended MHD stability criteria: Troyon, NTM, RWM, peeling-ballooning.
+"""Extended MHD stability criteria: Troyon, NTM, RWM, peeling-ballooning.
 
 Separated from stability_mhd.py for module-size compliance.
 All result dataclasses remain in stability_mhd.py.
@@ -17,6 +16,7 @@ References
 - La Haye, Phys. Plasmas 13:055501 (2006)
 - Snyder et al., Phys. Plasmas 9:2037 (2002)
 - Snyder et al., Nucl. Fusion 51:103016 (2011)
+
 """
 
 from __future__ import annotations
@@ -83,12 +83,18 @@ def troyon_beta_limit(
 
     Parameters
     ----------
-    beta_t : float — total toroidal beta (dimensionless, e.g. 0.025)
-    Ip_MA : float — plasma current [MA]
-    a : float — minor radius [m]
-    B0 : float — toroidal magnetic field on axis [T]
-    g_nowall : float — Troyon coefficient without wall (default 2.8)
-    g_wall : float — Troyon coefficient with ideal wall (default 3.5)
+    beta_t : float
+        Total toroidal beta (dimensionless, e.g. 0.025).
+    Ip_MA : float
+        Plasma current [MA].
+    a : float
+        Minor radius [m].
+    B0 : float
+        Toroidal magnetic field on axis [T].
+    g_nowall : float
+        Troyon coefficient without wall (default 2.8).
+    g_wall : float
+        Troyon coefficient with ideal wall (default 3.5).
 
     Returns
     -------
@@ -97,6 +103,7 @@ def troyon_beta_limit(
     References
     ----------
     Troyon et al., Plasma Phys. Control. Fusion 26:209 (1984)
+
     """
     for name, value in {"beta_t": beta_t, "Ip_MA": Ip_MA, "a": a, "B0": B0}.items():
         val = float(value)
@@ -166,11 +173,16 @@ def ntm_stability(
     Parameters
     ----------
     qp : QProfile
-    j_bs : array — bootstrap current density [A/m^2]
-    j_total : array — total current density [A/m^2]
-    a : float — minor radius [m]
-    r_s_delta_prime : float — classical tearing stability index
-        (negative = classically stable, default -2.0)
+        Safety-factor profile providing the rational-surface locations.
+    j_bs : array
+        Bootstrap current density [A/m^2].
+    j_total : array
+        Total current density [A/m^2].
+    a : float
+        Minor radius [m].
+    r_s_delta_prime : float
+        Classical tearing stability index
+        (negative = classically stable, default -2.0).
 
     Returns
     -------
@@ -180,6 +192,7 @@ def ntm_stability(
     ----------
     La Haye, Phys. Plasmas 13:055501 (2006)
     Sauter et al., Phys. Plasmas 4:1654 (1997)
+
     """
     _validate_qp_basic(qp)
     j_bs = np.asarray(j_bs, dtype=np.float64)
@@ -237,13 +250,17 @@ def rwm_stability(
 
     Parameters
     ----------
-    beta_N : float — normalised beta [% m T / MA]
-    g_nowall : float — Troyon no-wall limit (default 2.8)
-    g_wall : float — Troyon ideal-wall limit (default 3.5)
+    beta_N : float
+        Normalised beta [% m T / MA].
+    g_nowall : float
+        Troyon no-wall limit (default 2.8).
+    g_wall : float
+        Troyon ideal-wall limit (default 3.5).
 
     Returns
     -------
     RWMResult
+
     """
     beta_n = float(beta_N)
     g_nw = float(g_nowall)
@@ -295,14 +312,22 @@ def peeling_ballooning_stability(
 
     Parameters
     ----------
-    qp : QProfile — pre-computed safety-factor profile
-    j_edge : float — edge parallel current density [A/m^2]
-    p_ped_Pa : float — pedestal-top pressure [Pa]
-    R0 : float — major radius [m]
-    a : float — minor radius [m]
-    B0 : float — toroidal field on axis [T]
-    kappa : float — elongation (default 1.7)
-    delta : float — triangularity (default 0.3)
+    qp : QProfile
+        Pre-computed safety-factor profile.
+    j_edge : float
+        Edge parallel current density [A/m^2].
+    p_ped_Pa : float
+        Pedestal-top pressure [Pa].
+    R0 : float
+        Major radius [m].
+    a : float
+        Minor radius [m].
+    B0 : float
+        Toroidal field on axis [T].
+    kappa : float
+        Elongation (default 1.7).
+    delta : float
+        Triangularity (default 0.3).
 
     Returns
     -------
@@ -312,6 +337,7 @@ def peeling_ballooning_stability(
     ----------
     Snyder et al., Phys. Plasmas 9:2037 (2002)
     Snyder et al., Nucl. Fusion 51:103016 (2011)
+
     """
     _validate_qp_basic(qp)
     edge_current = float(j_edge)

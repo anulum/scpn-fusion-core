@@ -5,9 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Stellarator Geometry
-"""
-Stellarator flux-surface geometry in Boozer coordinates, neoclassical
-transport, and ISS04 confinement scaling.
+"""Stellarator Boozer-coordinate geometry, neoclassical transport, and ISS04 scaling.
 
 Provides a W7-X preset and general stellarator configuration for
 equilibrium and transport calculations without assuming axisymmetry.
@@ -18,6 +16,7 @@ References
 - Yamada et al., Nucl. Fusion 45 (2005) 1684.  (ISS04 scaling)
 - Nemov et al., Phys. Plasmas 6 (1999) 4622.  (effective ripple)
 - Beidler et al., Nucl. Fusion 51 (2011) 076001. (W7-X neoclassical)
+
 """
 
 from __future__ import annotations
@@ -53,6 +52,7 @@ class StellaratorConfig:
         Helical mirror ratio epsilon_h = delta_B / B0.
     helical_excursion : float
         Helical axis excursion amplitude [m].
+
     """
 
     N_fp: int = 5
@@ -66,6 +66,7 @@ class StellaratorConfig:
     name: str = "custom"
 
     def __post_init__(self) -> None:
+        """Validate field-period count and the positive device dimensions."""
         if not isinstance(self.N_fp, int) or self.N_fp < 1:
             raise ValueError("N_fp must be an integer >= 1.")
         for field_name in ("R0", "a", "B0"):
@@ -129,8 +130,10 @@ def iota_profile(
     Parameters
     ----------
     config : StellaratorConfig
+        Stellarator device geometry and rotational-transform profile parameters.
     s : float or array
         Normalised toroidal flux label, s in [0, 1].
+
     """
     s_arr = np.asarray(s, dtype=float)
     if not np.all(np.isfinite(s_arr)) or np.any(s_arr < 0.0) or np.any(s_arr > 1.0):
@@ -149,6 +152,7 @@ def stellarator_flux_surface(
     Parameters
     ----------
     config : StellaratorConfig
+        Stellarator device geometry and rotational-transform profile parameters.
     s : float
         Normalised toroidal flux, s in (0, 1].
     n_theta, n_phi : int
@@ -162,6 +166,7 @@ def stellarator_flux_surface(
         Vertical position [m].
     B : ndarray, shape (n_theta, n_phi)
         Magnetic field magnitude [T].
+
     """
     s = _require_flux_label("s", s)
     n_theta = _require_grid_resolution("n_theta", n_theta)
@@ -205,6 +210,7 @@ def effective_ripple(config: StellaratorConfig, s: float) -> float:
     Parameters
     ----------
     config : StellaratorConfig
+        Stellarator device geometry and rotational-transform profile parameters.
     s : float
         Normalised toroidal flux, s in (0, 1].
 
@@ -212,6 +218,7 @@ def effective_ripple(config: StellaratorConfig, s: float) -> float:
     -------
     float
         Effective ripple epsilon_eff (dimensionless, 0 < eps_eff < 1).
+
     """
     s = _require_flux_label("s", s)
     if config.mirror_ratio == 0.0 and config.helical_excursion == 0.0:
@@ -255,6 +262,7 @@ def iss04_scaling(
     Parameters
     ----------
     config : StellaratorConfig
+        Stellarator device geometry and rotational-transform profile parameters.
     n_e : float
         Line-averaged electron density [10^19 m^-3].
     P_heat : float
@@ -264,6 +272,7 @@ def iss04_scaling(
     -------
     float
         Predicted energy confinement time [s].
+
     """
     n_e = require_positive_float("n_e", n_e)
     P_heat = require_positive_float("P_heat", P_heat)
@@ -300,6 +309,7 @@ def stellarator_neoclassical_chi(
     Parameters
     ----------
     config : StellaratorConfig
+        Stellarator device geometry and rotational-transform profile parameters.
     s : float
         Normalised toroidal flux, s in (0, 1].
     T_keV : float
@@ -311,6 +321,7 @@ def stellarator_neoclassical_chi(
     -------
     float
         Neoclassical chi [m^2/s].
+
     """
     s = require_positive_float("s", s)
     T_keV = require_positive_float("T_keV", T_keV)

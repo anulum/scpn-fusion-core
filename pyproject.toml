@@ -293,6 +293,8 @@ files = [
     "src/scpn_fusion/core/fusion_kernel_iterative_solver.py",
     "src/scpn_fusion/core/fusion_kernel_newton_solver.py",
     "src/scpn_fusion/core/pulsed_compression.py",
+    "src/scpn_fusion/core/stability_mhd_extended.py",
+    "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",
     "src/scpn_fusion/core/hall_mhd_pulsed.py",
     "src/scpn_fusion/core/neural_equilibrium_kernel.py",
