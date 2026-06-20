@@ -7,10 +7,15 @@
 # SCPN Fusion Core — Stability Analyzer
 """Reduced-order equilibrium force and MHD stability diagnostics."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+FusionKernel: type[Any]
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -18,21 +23,22 @@ except ImportError:
 
 
 class StabilityAnalyzer:
-    """
-    Performs Linear Stability Analysis (Eigenvalue analysis)
-    of the plasma rigid-body motion (n=0 mode).
+    """Linear eigenvalue stability analysis of plasma rigid-body motion.
+
+    Analyses the n=0 mode (radial and vertical displacement) via a
+    force-balance stiffness matrix.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         self.kernel = FusionKernel(config_path)
         # Pre-calculate vacuum field once
         self.Psi_vac = self.kernel.calculate_vacuum_field()
 
-    def get_vacuum_field_at(self, R, Z):
-        """
-        Interpolates Bz and Br from vacuum coils at position (R,Z).
-        Bz = 1/R * dPsi/dR
-        Br = -1/R * dPsi/dZ
+    def get_vacuum_field_at(self, R: float, Z: float) -> tuple[float, float, float]:
+        """Interpolate vacuum-field components and decay index at position (R, Z).
+
+        Returns ``(Bz, Br, n_index)`` where ``Bz = 1/R dPsi/dR``,
+        ``Br = -1/R dPsi/dZ`` and ``n_index`` is the field decay index.
         """
         r = float(R)
         z = float(Z)
@@ -70,11 +76,11 @@ class StabilityAnalyzer:
 
         return Bz, Br, n_index
 
-    def calculate_forces(self, R, Z, Ip):
-        """
-        Calculates radial and vertical forces acting on the plasma ring.
-        F_R = F_Hoop + F_Lorentz_R
-        F_Z = F_Lorentz_Z
+    def calculate_forces(self, R: float, Z: float, Ip: float) -> tuple[float, float, float]:
+        """Compute radial and vertical forces acting on the plasma ring.
+
+        Returns ``(F_R, F_Z, n_index)`` where ``F_R = F_hoop + F_Lorentz_R``
+        and ``F_Z = F_Lorentz_Z``.
         """
         r = float(R)
         z = float(Z)
@@ -117,7 +123,7 @@ class StabilityAnalyzer:
 
         return F_total_R, F_total_Z, n_idx
 
-    def analyze_stability(self, R_target=6.2, Z_target=0.0):
+    def analyze_stability(self, R_target: float = 6.2, Z_target: float = 0.0) -> None:
         """Run force-balance linearization and print eigenvalue stability summary."""
         print("--- EIGENVALUE STABILITY ANALYSIS ---")
         print(f"Checking Point: R={R_target}m, Z={Z_target}m")
@@ -183,8 +189,8 @@ class StabilityAnalyzer:
         a: float = 2.0,
         B0: float = 5.3,
         Ip_MA: float = 15.0,
-        transport_solver=None,
-    ) -> dict:
+        transport_solver: Any = None,
+    ) -> dict[str, Any]:
         """Run Mercier and ballooning stability analysis.
 
         Uses either profiles from *transport_solver* (if provided) or
@@ -234,7 +240,7 @@ class StabilityAnalyzer:
 
         return {"q_profile": qp, "mercier": mr, "ballooning": br}
 
-    def plot_stability_landscape(self, R0, Z0):
+    def plot_stability_landscape(self, R0: float, Z0: float) -> None:
         """Generate and persist a radial-force contour landscape around (R0, Z0)."""
         # Scan grid around target
         r_min = max(1e-3, R0 - 2)
