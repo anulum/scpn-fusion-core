@@ -5,8 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Full-Chain Uncertainty Propagation
-"""
-Full-chain Monte Carlo uncertainty propagation:
+"""Full-chain Monte Carlo uncertainty propagation.
+
 equilibrium → transport → fusion power → gain → normalised beta.
 
 Extends the base IPB98 UQ in ``uncertainty.py`` by additionally perturbing
@@ -22,8 +22,11 @@ References
 from __future__ import annotations
 
 import numpy as np
+from numpy.typing import NDArray
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
+
+FloatArray = NDArray[np.float64]
 
 from scpn_fusion.core.uncertainty import (
     IPB98_CENTRAL,
@@ -65,10 +68,10 @@ class TransportUncertainty:
 
 @dataclass
 class FullChainUQResult:
-    """Extended uncertainty-quantified prediction covering the full
-    equilibrium -> transport -> fusion power chain.
+    """Extended uncertainty-quantified prediction over the full chain.
 
-    All ``*_bands`` fields are length-3 arrays: [5th, 50th, 95th] percentiles.
+    Covers the equilibrium -> transport -> fusion power chain. All ``*_bands``
+    fields are length-3 arrays: [5th, 50th, 95th] percentiles.
     """
 
     tau_E: float
@@ -79,20 +82,20 @@ class FullChainUQResult:
     P_fusion_sigma: float
     Q_sigma: float
 
-    psi_nrmse_bands: np.ndarray = field(default_factory=lambda: np.zeros(3))
-    tau_E_bands: np.ndarray = field(default_factory=lambda: np.zeros(3))
-    P_fusion_bands: np.ndarray = field(default_factory=lambda: np.zeros(3))
-    Q_bands: np.ndarray = field(default_factory=lambda: np.zeros(3))
-    beta_N_bands: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    psi_nrmse_bands: FloatArray = field(default_factory=lambda: np.zeros(3))
+    tau_E_bands: FloatArray = field(default_factory=lambda: np.zeros(3))
+    P_fusion_bands: FloatArray = field(default_factory=lambda: np.zeros(3))
+    Q_bands: FloatArray = field(default_factory=lambda: np.zeros(3))
+    beta_N_bands: FloatArray = field(default_factory=lambda: np.zeros(3))
 
-    tau_E_percentiles: np.ndarray = field(default_factory=lambda: np.zeros(5))
-    P_fusion_percentiles: np.ndarray = field(default_factory=lambda: np.zeros(5))
-    Q_percentiles: np.ndarray = field(default_factory=lambda: np.zeros(5))
+    tau_E_percentiles: FloatArray = field(default_factory=lambda: np.zeros(5))
+    P_fusion_percentiles: FloatArray = field(default_factory=lambda: np.zeros(5))
+    Q_percentiles: FloatArray = field(default_factory=lambda: np.zeros(5))
 
     n_samples: int = 0
 
 
-def _build_ipb98_covariance() -> np.ndarray:
+def _build_ipb98_covariance() -> FloatArray:
     """Build covariance matrix for correlated IPB98 coefficient sampling."""
     keys = [
         "C",
@@ -133,10 +136,10 @@ def quantify_full_chain(
     boundary_sigma: float = 0.02,
 ) -> FullChainUQResult:
     """
-    Full-chain Monte Carlo uncertainty propagation:
-    equilibrium -> transport -> fusion power -> gain.
+    Full-chain Monte Carlo uncertainty propagation.
 
-    Extends :func:`quantify_uncertainty` by additionally perturbing the
+    Propagates equilibrium -> transport -> fusion power -> gain. Extends
+    :func:`quantify_uncertainty` by additionally perturbing the
     gyro-Bohm transport coefficient, EPED pedestal height, and equilibrium
     boundary shape, then computing normalised beta as an extra observable.
 
@@ -289,7 +292,7 @@ def quantify_full_chain(
     )
 
 
-def summarize_uq(result: FullChainUQResult) -> dict:
+def summarize_uq(result: FullChainUQResult) -> dict[str, Any]:
     """
     Convert a FullChainUQResult to a plain dict suitable for ``json.dumps()``.
 
@@ -300,7 +303,7 @@ def summarize_uq(result: FullChainUQResult) -> dict:
     def _round(x: float, sig: int = 6) -> float:
         return float(f"{x:.{sig}g}")
 
-    def _arr(a: np.ndarray) -> list:
+    def _arr(a: FloatArray) -> list[float]:
         return [_round(float(v)) for v in a]
 
     return {
