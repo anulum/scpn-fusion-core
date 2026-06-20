@@ -27,6 +27,9 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 try:
     import jax
@@ -60,11 +63,11 @@ def has_jax_gpu() -> bool:
 
 
 def _thomas_solve_np(
-    a: np.ndarray,
-    b: np.ndarray,
-    c: np.ndarray,
-    d: np.ndarray,
-) -> np.ndarray:
+    a: FloatArray,
+    b: FloatArray,
+    c: FloatArray,
+    d: FloatArray,
+) -> FloatArray:
     """Thomas algorithm (NumPy). Same semantics as TransportSolver._thomas_solve."""
     n = len(d)
     cp = np.empty(n - 1)
@@ -92,11 +95,11 @@ def _thomas_solve_np(
 
 
 def _diffusion_rhs_np(
-    T: np.ndarray,
-    chi: np.ndarray,
-    rho: np.ndarray,
+    T: FloatArray,
+    chi: FloatArray,
+    rho: FloatArray,
     drho: float,
-) -> np.ndarray:
+) -> FloatArray:
     """L_h(T) = (1/r) d/dr(r chi dT/dr) via central differences."""
     n = len(T)
     Lh = np.zeros(n)
@@ -131,7 +134,9 @@ if _HAS_JAX:
         n = d.shape[0]
 
         # Forward sweep
-        def fwd_step(carry: tuple, i: jnp.ndarray) -> tuple:
+        def fwd_step(
+            carry: tuple[Any, Any], i: jnp.ndarray
+        ) -> tuple[tuple[Any, Any], tuple[Any, Any]]:
             """Forward Thomas sweep step building running cp/dp coefficients."""
             cp_prev, dp_prev = carry
             # Use where to handle i==0 (no previous cp/dp)
@@ -149,7 +154,7 @@ if _HAS_JAX:
         dp_all: jnp.ndarray = stacked[1]
 
         # Back substitution
-        def bwd_step(x_next: jnp.ndarray, i: jnp.ndarray) -> tuple:
+        def bwd_step(x_next: jnp.ndarray, i: jnp.ndarray) -> tuple[Any, Any]:
             """Backward Thomas sweep step solving x[i] from previously solved x[i+1]."""
             x_i = dp_all[i] - cp_all[i] * x_next
             return x_i, x_i
@@ -246,13 +251,13 @@ if _HAS_JAX:
 
 
 def thomas_solve(
-    a: np.ndarray,
-    b: np.ndarray,
-    c: np.ndarray,
-    d: np.ndarray,
+    a: FloatArray,
+    b: FloatArray,
+    c: FloatArray,
+    d: FloatArray,
     *,
     use_jax: bool = True,
-) -> np.ndarray:
+) -> FloatArray:
     """Tridiagonal solve with automatic JAX/GPU dispatch.
 
     Parameters
@@ -276,13 +281,13 @@ def thomas_solve(
 
 
 def diffusion_rhs(
-    T: np.ndarray,
-    chi: np.ndarray,
-    rho: np.ndarray,
+    T: FloatArray,
+    chi: FloatArray,
+    rho: FloatArray,
     drho: float,
     *,
     use_jax: bool = True,
-) -> np.ndarray:
+) -> FloatArray:
     """Cylindrical diffusion operator L_h(T) with JAX/GPU dispatch."""
     if use_jax and _HAS_JAX:
         return np.asarray(
@@ -297,16 +302,16 @@ def diffusion_rhs(
 
 
 def crank_nicolson_step(
-    T: np.ndarray,
-    chi: np.ndarray,
-    source: np.ndarray,
-    rho: np.ndarray,
+    T: FloatArray,
+    chi: FloatArray,
+    source: FloatArray,
+    rho: FloatArray,
     drho: float,
     dt: float,
     T_edge: float = 0.1,
     *,
     use_jax: bool = True,
-) -> np.ndarray:
+) -> FloatArray:
     """Single Crank-Nicolson transport step with JAX/GPU dispatch.
 
     Parameters
@@ -359,14 +364,14 @@ def crank_nicolson_step(
 
 
 def batched_crank_nicolson(
-    T_batch: np.ndarray,
-    chi: np.ndarray,
-    source: np.ndarray,
-    rho: np.ndarray,
+    T_batch: FloatArray,
+    chi: FloatArray,
+    source: FloatArray,
+    rho: FloatArray,
     drho: float,
     dt: float,
     T_edge: float = 0.1,
-) -> np.ndarray:
+) -> FloatArray:
     """Batched transport step via jax.vmap for ensemble/sensitivity runs.
 
     Parameters
