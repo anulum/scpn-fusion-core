@@ -7,18 +7,23 @@
 # SCPN Fusion Core — Lazarus Bridge
 """Bridge harness between plasma-equilibrium outputs and Opentrons protocol synthesis."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 # Add Opentrons API (Mock if not available)
 try:
-    from opentrons import protocol_api, simulate
+    from opentrons import protocol_api, simulate  # type: ignore[import-not-found]
 
     OPENTRONS_AVAILABLE = True
 except ImportError:
     OPENTRONS_AVAILABLE = False
     print("[Lazarus] Opentrons API not found. Using Biological Simulation Mode.")
 
+FusionKernel: type[Any]
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
@@ -41,14 +46,14 @@ class LazarusBridge:
     3. Generate Opentrons Protocol to mix Reagents (TERT/SIRT6) in specific ratios derived from plasma shape.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         self.kernel = FusionKernel(config_path)
-        self.regeneration_log = []
+        self.regeneration_log: list[Any] = []
 
-    def calculate_bio_resonance(self):
-        """
-        Maps Plasma Geometry to Biological Efficacy.
-        Metric = (Elongation / 1.618) * (Triangularity / 0.3) * confinement_time
+    def calculate_bio_resonance(self) -> float:
+        """Map plasma geometry to a biological-efficacy resonance metric.
+
+        Metric = (elongation / 1.618) * (triangularity / 0.3) * confinement_time.
         """
         # Get Shape
         xp_pos, _ = self.kernel.find_x_point(self.kernel.Psi)
@@ -62,10 +67,8 @@ class LazarusBridge:
         resonance = (elongation / phi) * (triangularity / 0.3)
         return resonance
 
-    def generate_protocol(self, resonance_score):
-        """
-        Creates an Opentrons Python Protocol based on the physics state.
-        """
+    def generate_protocol(self, resonance_score: float) -> str:
+        """Create an Opentrons Python protocol from the current physics state."""
         # Formula: Volume = Base_Vol * Resonance
         tert_vol = 5.0 * resonance_score
         sirt_vol = 5.0 * (1.0 / resonance_score)  # Inverse relationship
@@ -100,7 +103,7 @@ def run(protocol: protocol_api.ProtocolContext):
 """
         return protocol_script
 
-    def run_bridge_simulation(self):
+    def run_bridge_simulation(self) -> None:
         """Run end-to-end bridge scenario from plasma equilibrium to protocol output."""
         print("--- LAZARUS BRIDGE: PLASMA -> BIO CONVERGENCE ---")
 
@@ -136,7 +139,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
         self.visualize_bridge(resonance)
 
-    def visualize_bridge(self, score):
+    def visualize_bridge(self, score: float) -> None:
         """Save a symbolic bridge visualization for the current resonance score."""
         fig, ax = plt.subplots(figsize=(6, 6))
 
