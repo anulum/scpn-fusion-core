@@ -14,6 +14,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -44,9 +47,9 @@ class ShapeParams:
 class ReconstructionResult:
     """EFIT reconstruction output: psi field, source coefficients, and shape."""
 
-    psi: np.ndarray
-    p_prime_coeffs: np.ndarray
-    ff_prime_coeffs: np.ndarray
+    psi: FloatArray
+    p_prime_coeffs: FloatArray
+    ff_prime_coeffs: FloatArray
     shape: ShapeParams
     chi_squared: float
     n_iterations: int
@@ -56,12 +59,15 @@ class ReconstructionResult:
 class DiagnosticResponse:
     """Forward model: psi field → synthetic flux-loop and B-probe signals."""
 
-    def __init__(self, diagnostics: MagneticDiagnostics, R_grid: np.ndarray, Z_grid: np.ndarray):
+    def __init__(
+        self, diagnostics: MagneticDiagnostics, R_grid: FloatArray, Z_grid: FloatArray
+    ) -> None:
+        """Store the sensor layout and the R/Z reconstruction grids."""
         self.diagnostics = diagnostics
         self.R = R_grid
         self.Z = Z_grid
 
-    def simulate_measurements(self, psi: np.ndarray, coil_currents: np.ndarray) -> dict[str, Any]:
+    def simulate_measurements(self, psi: FloatArray, coil_currents: FloatArray) -> dict[str, Any]:
         """Generate synthetic measurements from a given psi field."""
         from scipy.interpolate import RegularGridInterpolator
 
@@ -109,11 +115,12 @@ class RealtimeEFIT:
     def __init__(
         self,
         diagnostics: MagneticDiagnostics,
-        R_grid: np.ndarray,
-        Z_grid: np.ndarray,
+        R_grid: FloatArray,
+        Z_grid: FloatArray,
         n_p_modes: int = 3,
         n_ff_modes: int = 3,
-    ):
+    ) -> None:
+        """Validate the grids and diagnostics and build the forward response model."""
         self.diagnostics = diagnostics
         self.R = self._validate_grid("R_grid", R_grid)
         self.Z = self._validate_grid("Z_grid", Z_grid)
@@ -128,7 +135,7 @@ class RealtimeEFIT:
         self.response = DiagnosticResponse(diagnostics, self.R, self.Z)
 
     @staticmethod
-    def _validate_grid(name: str, grid: np.ndarray) -> np.ndarray:
+    def _validate_grid(name: str, grid: FloatArray) -> FloatArray:
         values = np.asarray(grid, dtype=float)
         if values.ndim != 1 or len(values) < 3:
             raise ValueError(f"{name} must be a one-dimensional grid with at least 3 points.")
@@ -153,7 +160,7 @@ class RealtimeEFIT:
         if not (np.isfinite(r) and np.isfinite(z)):
             raise ValueError(f"{label} coordinates must be finite.")
 
-    def _validate_psi(self, psi: np.ndarray) -> np.ndarray:
+    def _validate_psi(self, psi: FloatArray) -> FloatArray:
         field = np.asarray(psi, dtype=float)
         if field.shape != (self.nR, self.nZ):
             raise ValueError(f"psi must have shape {(self.nR, self.nZ)}.")
@@ -161,7 +168,7 @@ class RealtimeEFIT:
             raise ValueError("psi must contain only finite values.")
         return field
 
-    def _validate_measurements(self, measurements: dict[str, Any]) -> dict[str, np.ndarray | float]:
+    def _validate_measurements(self, measurements: dict[str, Any]) -> dict[str, FloatArray | float]:
         flux = np.asarray(measurements.get("flux_loops", []), dtype=float)
         probes = np.asarray(measurements.get("b_probes", []), dtype=float)
         coils = np.asarray(measurements.get("coil_currents", []), dtype=float)
@@ -179,7 +186,7 @@ class RealtimeEFIT:
             raise ValueError("Ip and coil_currents must be finite, with Ip positive.")
         return {"flux_loops": flux, "b_probes": probes, "coil_currents": coils, "Ip": ip}
 
-    def _solve_gs_with_sources(self, p_coeffs: np.ndarray, ff_coeffs: np.ndarray) -> np.ndarray:
+    def _solve_gs_with_sources(self, p_coeffs: FloatArray, ff_coeffs: FloatArray) -> FloatArray:
         """Solov'ev-like proxy for the GS solution."""
         R2, Z2 = np.meshgrid(self.R, self.Z, indexing="ij")
 
@@ -190,10 +197,10 @@ class RealtimeEFIT:
         base_psi[base_psi < 0] = 0.0
 
         amp = p_coeffs[0] + ff_coeffs[0] if len(p_coeffs) > 0 and len(ff_coeffs) > 0 else 1.0
-        return np.asarray(base_psi * amp)
+        return np.asarray(base_psi * amp, dtype=np.float64)
 
     def reconstruct(self, measurements: dict[str, Any]) -> ReconstructionResult:
-        """Main EFIT loop."""
+        """Run the EFIT reconstruction loop and return the equilibrium result."""
         t0 = time.perf_counter()
         validated = self._validate_measurements(measurements)
 
@@ -236,7 +243,7 @@ class RealtimeEFIT:
             wall_time_ms=(t1 - t0) * 1000.0,
         )
 
-    def find_lcfs(self, psi: np.ndarray) -> np.ndarray:
+    def find_lcfs(self, psi: FloatArray) -> FloatArray:
         """Return ordered (R,Z) points on the last closed flux surface."""
         field = self._validate_psi(psi)
         psi_min = float(np.min(field))
@@ -262,7 +269,7 @@ class RealtimeEFIT:
         angles = np.arctan2(points[:, 1] - centre[1], points[:, 0] - centre[0])
         return points[np.argsort(angles)]
 
-    def find_xpoint(self, psi: np.ndarray) -> tuple[float, float] | None:
+    def find_xpoint(self, psi: FloatArray) -> tuple[float, float] | None:
         """Locate magnetic nulls (dpsi/dR=0, dpsi/dZ=0)."""
         field = self._validate_psi(psi)
         dR = float(np.mean(np.diff(self.R)))
@@ -275,7 +282,7 @@ class RealtimeEFIT:
         i, j = np.unravel_index(int(np.nanargmin(grad_norm)), grad_norm.shape)
         return (float(self.R[i]), float(self.Z[j]))
 
-    def compute_shape_params(self, psi: np.ndarray) -> ShapeParams:
+    def compute_shape_params(self, psi: FloatArray) -> ShapeParams:
         """Extract macroscopic shape descriptors (R0, a, kappa, delta, q95, li) from psi."""
         field = self._validate_psi(psi)
         lcfs = self.find_lcfs(field)
@@ -314,7 +321,7 @@ class RealtimeEFIT:
         )
 
     @staticmethod
-    def _profile_extent(coords: np.ndarray, profile: np.ndarray) -> tuple[float, float]:
+    def _profile_extent(coords: FloatArray, profile: FloatArray) -> tuple[float, float]:
         peak = float(np.max(profile))
         if peak <= 0.0:
             raise ValueError("psi profile must contain positive closed-flux support.")
