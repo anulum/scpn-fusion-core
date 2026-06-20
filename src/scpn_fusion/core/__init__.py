@@ -8,6 +8,7 @@
 
 from typing import Any
 
+FusionKernel: type[Any]
 try:
     from ._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
@@ -65,10 +66,9 @@ from .stability_mhd import (
     mercier_stability,
     ballooning_stability,
     kruskal_shafranov_stability,
-    troyon_beta_limit,
-    ntm_stability,
     run_full_stability_check,
 )
+from .stability_mhd_extended import ntm_stability, troyon_beta_limit
 
 # Additional modules available via lazy import to avoid circular deps
 _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
