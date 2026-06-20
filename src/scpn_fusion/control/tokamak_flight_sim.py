@@ -50,6 +50,7 @@ class FirstOrderActuator:
         Number of timesteps of measurement delay. Default 0.
     rng_seed : int or None
         Random seed for reproducible noise (None = random).
+
     """
 
     def __init__(
@@ -64,6 +65,7 @@ class FirstOrderActuator:
         delay_steps: int = 0,
         rng_seed: Optional[int] = None,
     ) -> None:
+        """Validate the actuator constants and initialise the delay buffer."""
         tau_s = float(tau_s)
         dt_s = float(dt_s)
         if not np.isfinite(tau_s) or tau_s <= 0.0:
@@ -113,8 +115,8 @@ class FirstOrderActuator:
 
 
 class IsoFluxController:
-    """
-    Simulates the Plasma Control System (PCS).
+    """Simulate the Plasma Control System (PCS).
+
     Uses PID loops to adjust Coil Currents to maintain plasma shape.
     """
 
@@ -129,9 +131,10 @@ class IsoFluxController:
         heating_beta_max: float = 5.0,
         control_dt_s: float = 0.05,
     ) -> None:
+        """Build the kernel, control gains, actuators, and telemetry history."""
         self.kernel = kernel_factory(config_file)
         self.verbose = bool(verbose)
-        self.history = {
+        self.history: dict[str, list[Any]] = {
             "t": [],
             "Ip": [],
             "R_axis": [],
@@ -219,8 +222,7 @@ class IsoFluxController:
         save_plot: bool = True,
         output_path: str = "Tokamak_Flight_Report.png",
     ) -> Dict[str, Any]:
-        """
-        Run a simulated tokamak shot.
+        """Run a simulated tokamak shot.
 
         Parameters
         ----------
@@ -230,6 +232,7 @@ class IsoFluxController:
             Whether to generate a summary plot.
         output_path : str
             Filename for the plot.
+
         """
         steps = int(shot_duration)
         if steps < 1:
