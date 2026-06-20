@@ -17,11 +17,13 @@ Pure-NumPy training for a multi-layer Fourier Neural Operator turbulence model (
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, cast
 
 import logging
 
 import numpy as np
+from numpy.typing import NDArray
+
 from scpn_fusion.io.safe_loaders import checked_np_load
 from ._surrogate_utils import AdamOptimizer, gelu, relative_l2
 from scpn_fusion.core.fno_training_multi_regime import (
@@ -36,6 +38,8 @@ from scpn_fusion.core.gs_transport_surrogate_training import (
     train_gs_transport_surrogate,
 )
 
+FloatArray = NDArray[np.float64]
+
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -46,7 +50,8 @@ DEFAULT_GS_TRANSPORT_WEIGHTS_PATH = REPO_ROOT / "weights" / "gs_transport_surrog
 
 class MultiLayerFNO:
     """
-    Multi-layer FNO model:
+    Multi-layer FNO model.
+
     Input [N,N] -> Lift (1->width) -> 4x FNO layers -> Project (width->1) -> [N,N].
 
     Training routine updates the project head with Adam while keeping the spectral
@@ -66,12 +71,12 @@ class MultiLayerFNO:
         self.n_layers = int(n_layers)
         self.rng = np.random.default_rng(seed)
 
-        self.lift_w = self.rng.normal(0.0, 0.1, size=(self.width,))
-        self.lift_b = np.zeros((self.width,), dtype=np.float64)
-        self.project_w = self.rng.normal(0.0, 0.1, size=(self.width,))
+        self.lift_w: FloatArray = self.rng.normal(0.0, 0.1, size=(self.width,))
+        self.lift_b: FloatArray = np.zeros((self.width,), dtype=np.float64)
+        self.project_w: FloatArray = self.rng.normal(0.0, 0.1, size=(self.width,))
         self.project_b = 0.0
 
-        self.layers: List[Dict[str, np.ndarray]] = []
+        self.layers: List[Dict[str, FloatArray]] = []
         for _ in range(self.n_layers):
             self.layers.append(
                 {
@@ -83,7 +88,7 @@ class MultiLayerFNO:
                 }
             )
 
-    def _spectral_convolution(self, h: np.ndarray, layer: Dict[str, np.ndarray]) -> np.ndarray:
+    def _spectral_convolution(self, h: FloatArray, layer: Dict[str, FloatArray]) -> FloatArray:
         n = h.shape[0]
         modes = min(self.modes, n)
         out = np.zeros_like(h)
@@ -97,7 +102,7 @@ class MultiLayerFNO:
 
         return out
 
-    def _forward_hidden(self, x_field: np.ndarray) -> np.ndarray:
+    def _forward_hidden(self, x_field: FloatArray) -> FloatArray:
         h = x_field[:, :, None] * self.lift_w[None, None, :] + self.lift_b[None, None, :]
         for layer in self.layers:
             spectral = self._spectral_convolution(h, layer)
@@ -105,15 +110,17 @@ class MultiLayerFNO:
                 np.tensordot(h, layer["skip_w"], axes=([2], [0])) + layer["skip_b"][None, None, :]
             )
             h = gelu(spectral + pointwise)
-        return h
+        return np.asarray(h, dtype=np.float64)
 
-    def forward_with_hidden(self, x_field: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def forward_with_hidden(self, x_field: FloatArray) -> Tuple[FloatArray, FloatArray]:
         """Return the projected field and final hidden representation."""
         h = self._forward_hidden(x_field)
-        y = np.tensordot(h, self.project_w, axes=([2], [0])) + self.project_b
+        y = np.asarray(
+            np.tensordot(h, self.project_w, axes=([2], [0])) + self.project_b, dtype=np.float64
+        )
         return y, h
 
-    def forward(self, x_field: np.ndarray) -> np.ndarray:
+    def forward(self, x_field: FloatArray) -> FloatArray:
         """Evaluate the FNO field-to-field surrogate for one input field."""
         y, _ = self.forward_with_hidden(x_field)
         return y
@@ -123,7 +130,7 @@ class MultiLayerFNO:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        payload: Dict[str, np.ndarray] = {
+        payload: Dict[str, FloatArray] = {
             "version": np.array([2], dtype=np.int32),
             "modes": np.array([self.modes], dtype=np.int32),
             "width": np.array([self.width], dtype=np.int32),
@@ -139,7 +146,10 @@ class MultiLayerFNO:
             payload[f"layer{i}_skip_w"] = layer["skip_w"].astype(np.float64)
             payload[f"layer{i}_skip_b"] = layer["skip_b"].astype(np.float64)
 
-        np.savez(path, **payload)
+        # numpy's savez stub types **kwds against its keyword-only allow_pickle: bool
+        # parameter, so a dynamically-keyed payload mapping cannot be expressed without
+        # this suppression; the runtime call is the documented dict-unpacking form.
+        np.savez(path, **payload)  # type: ignore[arg-type, unused-ignore]
 
     def load_weights(self, path: str | Path) -> None:
         """Load FNO architecture metadata and NumPy weights from ``path``."""
@@ -170,7 +180,7 @@ def _generate_training_pairs(
     grid_size: int,
     seed: int,
     damping: float = 0.18,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[FloatArray, FloatArray]:
     rng = np.random.default_rng(seed)
     x = np.empty((n_samples, grid_size, grid_size), dtype=np.float64)
     y = np.empty_like(x)
@@ -206,7 +216,7 @@ def _generate_training_pairs(
 
 
 def _evaluate_loss(
-    model: MultiLayerFNO, x: np.ndarray, y: np.ndarray, max_samples: int = 16
+    model: MultiLayerFNO, x: FloatArray, y: FloatArray, max_samples: int = 16
 ) -> float:
     n = min(max_samples, len(x))
     if n == 0:
@@ -235,7 +245,6 @@ def train_fno(
 
     Returns a history dictionary with loss curves and saved model metadata.
     """
-
     x, y = _generate_training_pairs(n_samples=n_samples, grid_size=64, seed=seed)
     split = max(1, int(0.9 * n_samples))
     x_train, y_train = x[:split], y[:split]
@@ -315,12 +324,12 @@ def train_fno(
     model.project_b = best_project_b
     model.save_weights(save_path)
 
+    train_loss_hist = cast("list[float]", history["train_loss"])
+    val_loss_hist = cast("list[float]", history["val_loss"])
     history["saved_path"] = str(Path(save_path))
-    history["epochs_completed"] = len(history["train_loss"])  # type: ignore[arg-type]
-    history["final_train_loss"] = (
-        float(history["train_loss"][-1]) if history["train_loss"] else None
-    )
-    history["final_val_loss"] = float(history["val_loss"][-1]) if history["val_loss"] else None
+    history["epochs_completed"] = len(train_loss_hist)
+    history["final_train_loss"] = float(train_loss_hist[-1]) if train_loss_hist else None
+    history["final_val_loss"] = float(val_loss_hist[-1]) if val_loss_hist else None
     return history
 
 
@@ -396,5 +405,6 @@ if __name__ == "__main__":
         print(f"Regime distribution: {summary['regime_counts']}")
         if "regime_val_losses" in summary:
             print("Per-regime validation:")
-            for r, s in summary["regime_val_losses"].items():  # type: ignore[union-attr]
+            regime_val_losses = cast("dict[str, dict[str, float]]", summary["regime_val_losses"])
+            for r, s in regime_val_losses.items():
                 print(f"  {r}: {s['mean']:.4f} (n={s['n']})")

@@ -304,6 +304,7 @@ files = [
     "src/scpn_fusion/core/jax_neural_equilibrium.py",
     "src/scpn_fusion/core/quasi_3d_contracts.py",
     "src/scpn_fusion/core/heat_ml_shadow_surrogate.py",
+    "src/scpn_fusion/core/fno_training.py",
     "src/scpn_fusion/core/gpu_runtime.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",
