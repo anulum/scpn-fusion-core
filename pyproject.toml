@@ -316,6 +316,7 @@ files = [
     "src/scpn_fusion/core/jax_solvers.py",
     "src/scpn_fusion/core/gyrokinetic_transport.py",
     "src/scpn_fusion/core/hall_mhd_discovery.py",
+    "src/scpn_fusion/core/jax_transport_solver.py",
     "src/scpn_fusion/core/gpu_runtime.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",

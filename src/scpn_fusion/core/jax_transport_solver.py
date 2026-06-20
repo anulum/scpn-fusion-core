@@ -5,10 +5,14 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — JAX Differentiable Transport
-"""
-JAX-traceable 1.5D transport solver.
+"""JAX-traceable 1.5D transport solver.
+
 Enables jax.grad through the transport evolution step.
 """
+
+from __future__ import annotations
+
+from typing import Any, cast
 
 import jax
 import jax.numpy as jnp
@@ -78,7 +82,7 @@ def transport_step_jax(
     """
     drho = rho[1] - rho[0]
 
-    def evolve(T, chi, S):
+    def evolve(T: jnp.ndarray, chi: jnp.ndarray, S: jnp.ndarray) -> jnp.ndarray:
         # Cylindrical-like divergence in rho: (1/rho) * d/drho (rho * n * chi * dT/drho)
         # Reduced-order 1.5D closure: d/drho (D * dT/drho)
         grad_T = jnp.gradient(T, drho)
@@ -111,10 +115,12 @@ def simulate_scenario_jax(
     p_aux_mw: jnp.ndarray,  # Time-series of heating
     rho: jnp.ndarray,
     dt: float,
-):
+) -> Any:
     """Rollout a transport simulation in JAX."""
 
-    def body_fn(carry, p_now):
+    def body_fn(
+        carry: tuple[Any, Any], p_now: jnp.ndarray
+    ) -> tuple[tuple[Any, Any], tuple[Any, Any]]:
         te, ti = carry
         # Simple heating model: uniform distribution for now
         s_heat = p_now * 1e6 / (jnp.sum(ne) * 1.6e-16)  # Mock scaling
@@ -136,9 +142,12 @@ def transport_step_checked(
     rho: jnp.ndarray,
     dt: float,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
-    """Validated wrapper around ``transport_step_jax``."""
+    """Validate the transport inputs, then run ``transport_step_jax``."""
     _validate_transport_inputs(te, ti, ne, chi_e, chi_i, s_heat_e, s_heat_i, rho, dt)
-    return transport_step_jax(te, ti, ne, chi_e, chi_i, s_heat_e, s_heat_i, rho, dt)
+    return cast(
+        "tuple[jnp.ndarray, jnp.ndarray]",
+        transport_step_jax(te, ti, ne, chi_e, chi_i, s_heat_e, s_heat_i, rho, dt),
+    )
 
 
 if __name__ == "__main__":
@@ -155,7 +164,8 @@ if __name__ == "__main__":
     print("JAX Transport Step OK. Core Te:", new_te[0])
 
     # Gradient test
-    def cost(p):
+    def cost(p: jnp.ndarray) -> Any:
+        """Return the final average electron temperature for heating series ``p``."""
         hist_te, _ = simulate_scenario_jax(te, ti, ne, chi, chi, p, rho, 0.01)
         return jnp.mean(hist_te[-1])  # Final average Te
 
