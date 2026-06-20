@@ -11,18 +11,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import time
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 try:
     import torch
 except Exception:  # pragma: no cover - optional dependency path
-    torch = None  # type: ignore[assignment]
+    torch = None  # type: ignore[assignment, unused-ignore]
 
 try:
     import jax
 
-    jax.config.update("jax_enable_x64", True)
+    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
     import jax.numpy as jnp
 except Exception:  # pragma: no cover - optional dependency path
     jax = None  # type: ignore[assignment]
@@ -73,7 +77,7 @@ class GPURuntimeBridge:
             raise ValueError(f"{name} must be >= {minimum}.")
         return v
 
-    def _gpu_sim_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
+    def _gpu_sim_multigrid(self, field: FloatArray, iterations: int = 4) -> FloatArray:
         u = field.astype(np.float64, copy=True)
         iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
         for _ in range(iterations):
@@ -86,7 +90,7 @@ class GPURuntimeBridge:
             )
         return u
 
-    def _cpu_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
+    def _cpu_multigrid(self, field: FloatArray, iterations: int = 4) -> FloatArray:
         u = field.astype(np.float64, copy=True)
         n0, n1 = u.shape
         iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
@@ -100,15 +104,15 @@ class GPURuntimeBridge:
             u = next_u
         return u
 
-    def _gpu_sim_snn(self, features: np.ndarray) -> np.ndarray:
+    def _gpu_sim_snn(self, features: FloatArray) -> FloatArray:
         h = np.tanh(features @ self.w1)
-        return np.tanh(h @ self.w2)
+        return np.asarray(np.tanh(h @ self.w2), dtype=np.float64)
 
     @staticmethod
     def _torch_available() -> bool:
         return torch is not None
 
-    def _torch_fallback_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
+    def _torch_fallback_multigrid(self, field: FloatArray, iterations: int = 4) -> FloatArray:
         if torch is None:
             raise RuntimeError(
                 "PyTorch compatibility backend requested but torch is not installed."
@@ -125,14 +129,14 @@ class GPURuntimeBridge:
             )
         return np.asarray(u.detach().cpu().numpy(), dtype=np.float64)
 
-    def _jax_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
+    def _jax_multigrid(self, field: FloatArray, iterations: int = 4) -> FloatArray:
         if jax is None:
             raise RuntimeError("JAX backend requested but jax is not installed.")
         iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
         u = jnp.asarray(field, dtype=jnp.float64)
 
         @jax.jit
-        def _step(u: jnp.ndarray) -> jnp.ndarray:
+        def _step(u: Any) -> Any:
             return 0.2 * (
                 u
                 + jnp.roll(u, 1, axis=0)
@@ -155,7 +159,7 @@ class GPURuntimeBridge:
             backends.append("jax")
         return tuple(backends)
 
-    def _cpu_snn(self, features: np.ndarray) -> np.ndarray:
+    def _cpu_snn(self, features: FloatArray) -> FloatArray:
         out = np.zeros((features.shape[0], self.w2.shape[1]), dtype=np.float64)
         for b in range(features.shape[0]):
             hidden = np.zeros(self.w1.shape[1], dtype=np.float64)
@@ -253,12 +257,12 @@ class GPURuntimeBridge:
 
     @staticmethod
     def _inject_faults(
-        field: np.ndarray,
+        field: FloatArray,
         *,
         rng: np.random.Generator,
         sensor_noise_std: float,
         bit_flips_per_run: int,
-    ) -> np.ndarray:
+    ) -> FloatArray:
         noisy = np.asarray(field, dtype=np.float64).copy()
         noisy += rng.normal(0.0, sensor_noise_std, size=noisy.shape)
         n = noisy.size
