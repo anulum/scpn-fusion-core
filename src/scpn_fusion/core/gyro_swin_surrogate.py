@@ -19,14 +19,17 @@ from dataclasses import dataclass
 import time
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass(frozen=True)
 class TurbulenceDataset:
     """Synthetic core-turbulence dataset bundle."""
 
-    features: np.ndarray
-    chi_i: np.ndarray
+    features: FloatArray
+    chi_i: FloatArray
 
 
 @dataclass(frozen=True)
@@ -38,7 +41,7 @@ class SpeedBenchmark:
     speedup: float
 
 
-def _as_2d(features: np.ndarray) -> np.ndarray:
+def _as_2d(features: FloatArray) -> FloatArray:
     x = np.asarray(features, dtype=np.float64)
     if x.ndim == 1:
         x = x.reshape(1, -1)
@@ -47,9 +50,8 @@ def _as_2d(features: np.ndarray) -> np.ndarray:
     return x
 
 
-def synthetic_core_turbulence_target(features: np.ndarray) -> np.ndarray:
-    """Reference synthetic turbulence law used as the CI benchmark target."""
-
+def synthetic_core_turbulence_target(features: FloatArray) -> FloatArray:
+    """Compute the reference synthetic turbulence law used as the CI benchmark target."""
     x = _as_2d(features)
     rho, q, s_hat, beta_e, grad_ti, grad_te, coll, kappa, delta, shear = x.T
 
@@ -64,12 +66,11 @@ def synthetic_core_turbulence_target(features: np.ndarray) -> np.ndarray:
         * shape_factor
         * shear_suppression
     )
-    return np.maximum(chi_i, 1e-6)
+    return np.asarray(np.maximum(chi_i, 1e-6), dtype=np.float64)
 
 
 def generate_synthetic_gyrokinetic_dataset(seed: int, samples: int) -> TurbulenceDataset:
     """Generate deterministic synthetic "JET/ITPA-like" core turbulence samples."""
-
     if samples < 8:
         raise ValueError("samples must be >= 8")
     rng = np.random.default_rng(seed)
@@ -99,9 +100,9 @@ class GyroSwinLikeSurrogate:
         rng = np.random.default_rng(seed)
         self._omega = rng.normal(0.0, 0.65, size=(10, self.hidden_dim))
         self._phase = rng.uniform(-np.pi, np.pi, size=self.hidden_dim)
-        self._weights: np.ndarray | None = None
+        self._weights: FloatArray | None = None
 
-    def _feature_map(self, features: np.ndarray) -> np.ndarray:
+    def _feature_map(self, features: FloatArray) -> FloatArray:
         x = _as_2d(features)
         rho, q, s_hat, beta_e, grad_ti, grad_te, coll, kappa, delta, shear = x.T
         z = x @ self._omega + self._phase
@@ -120,7 +121,7 @@ class GyroSwinLikeSurrogate:
         )
         return np.column_stack([np.ones(x.shape[0]), x, physics_terms, rff])
 
-    def fit(self, features: np.ndarray, targets: np.ndarray) -> None:
+    def fit(self, features: FloatArray, targets: FloatArray) -> None:
         """Fit random-feature ridge weights to turbulence targets."""
         phi = self._feature_map(features)
         y = np.asarray(targets, dtype=np.float64).reshape(-1)
@@ -128,24 +129,23 @@ class GyroSwinLikeSurrogate:
             raise ValueError("feature/target rows must match")
         lhs = phi.T @ phi + self.ridge * np.eye(phi.shape[1], dtype=np.float64)
         rhs = phi.T @ y
-        self._weights = np.linalg.solve(lhs, rhs)
+        self._weights = np.asarray(np.linalg.solve(lhs, rhs), dtype=np.float64)
 
-    def predict(self, features: np.ndarray) -> np.ndarray:
+    def predict(self, features: FloatArray) -> FloatArray:
         """Predict non-negative ion heat diffusivity for feature rows."""
         if self._weights is None:
             raise RuntimeError("Surrogate is not fit. Call fit() first.")
         phi = self._feature_map(features)
         out = phi @ self._weights
-        return np.maximum(out, 1e-6)
+        return np.asarray(np.maximum(out, 1e-6), dtype=np.float64)
 
 
-def gene_proxy_predict(features: np.ndarray, iterations: int = 800) -> np.ndarray:
+def gene_proxy_predict(features: FloatArray, iterations: int = 800) -> FloatArray:
     """Slow "GENE-like" reference proxy for speed benchmarking.
 
     The proxy intentionally performs per-sample iterative updates to emulate
     heavier solver cost, while remaining deterministic and bounded for CI.
     """
-
     x = _as_2d(features)
     base = synthetic_core_turbulence_target(x)
     out = np.empty(x.shape[0], dtype=np.float64)
@@ -167,7 +167,7 @@ def gene_proxy_predict(features: np.ndarray, iterations: int = 800) -> np.ndarra
     return out
 
 
-def rmse_percent(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+def rmse_percent(y_true: FloatArray, y_pred: FloatArray) -> float:
     """Return RMSE as a percentage of mean absolute reference value."""
     y_t = np.asarray(y_true, dtype=np.float64).reshape(-1)
     y_p = np.asarray(y_pred, dtype=np.float64).reshape(-1)
@@ -179,13 +179,12 @@ def rmse_percent(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 
 def benchmark_speedup(
-    features: np.ndarray,
+    features: FloatArray,
     surrogate: GyroSwinLikeSurrogate,
     min_baseline_s: float = 0.15,
     min_surrogate_s: float = 0.02,
 ) -> SpeedBenchmark:
     """Measure per-sample speedup of surrogate vs slow baseline proxy."""
-
     x = _as_2d(features)
 
     baseline_loops = 1
