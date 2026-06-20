@@ -17,13 +17,13 @@ from scpn_fusion.core.stability_analyzer import StabilityAnalyzer
 
 
 class ForceBalanceSolver:
-    """
-    Automatic Newton-Raphson Solver to find Coil Currents that result in
-    ZERO Radial Force on the plasma at the target Radius.
-    This guarantees static equilibrium at R_target.
+    """Newton-Raphson solver for PF-coil currents giving zero radial force.
+
+    Finds coil currents that result in zero radial force on the plasma at the
+    target radius, guaranteeing static equilibrium at ``R_target``.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         self.config_path = config_path
         self.analyzer = StabilityAnalyzer(config_path)
         self._control_indices = (2, 3)
@@ -44,13 +44,13 @@ class ForceBalanceSolver:
 
     def solve_for_equilibrium(
         self,
-        target_R=6.2,
-        target_Z=0.0,
+        target_R: float = 6.2,
+        target_Z: float = 0.0,
         *,
         max_iterations: int = 10,
         jacobian_floor: float = 1e-12,
     ) -> dict[str, float | int | bool]:
-        """Iteratively adjust paired PF currents until radial force is balanced."""
+        """Adjust paired PF currents iteratively until radial force is balanced."""
         self._validate_kernel_config()
         if int(max_iterations) < 1:
             raise ValueError("max_iterations must be >= 1.")
@@ -150,7 +150,7 @@ class ForceBalanceSolver:
             "pf4_current_ma": float(self.analyzer.kernel.cfg["coils"][i_pf4]["current"]),
         }
 
-    def save_config(self, output_path: str | Path | None = None):
+    def save_config(self, output_path: str | Path | None = None) -> None:
         """Write the current balanced kernel configuration to disk."""
         # Save to validation folder by default.
         repo_root = Path(__file__).resolve().parents[3]
