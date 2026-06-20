@@ -7,9 +7,14 @@
 # SCPN Fusion Core — Sandpile Fusion Reactor
 """Toy SOC/turbulence sandpile model and HJB-style control demo contracts."""
 
+from __future__ import annotations
+
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+
+IntArray = NDArray[np.int_]
 
 L = 100  # System size (Radial points from Core to Edge)
 Z_CRIT_BASE = 4.0  # Base Critical Gradient (Stability threshold)
@@ -18,37 +23,37 @@ TIME_STEPS = 5000  # Total simulation time
 
 
 class TokamakSandpile:
-    """
-    Implements a modified Bak-Tang-Wiesenfeld (BTW) sandpile model
-    to simulate self-organized criticality (SOC) in plasma turbulence.
+    """Model self-organized criticality in plasma turbulence.
 
-    Reference: 'Running Sandpile' models for L-H transition.
+    Implements a modified Bak-Tang-Wiesenfeld (BTW) sandpile model to simulate
+    self-organized criticality (SOC). Reference: 'Running Sandpile' models for
+    the L-H transition.
     """
 
-    def __init__(self, size=L):
+    def __init__(self, size: int = L) -> None:
         if isinstance(size, bool) or int(size) < 3:
             raise ValueError("size must be an integer >= 3.")
         self.size = int(size)
-        self.Z = np.zeros(self.size, dtype=int)  # Local gradients (slope)
-        self.h = np.zeros(self.size, dtype=int)  # Height (Temperature/Density)
-        self.avalanche_history = []
-        self.confinement_history = []
+        self.Z: IntArray = np.zeros(self.size, dtype=int)  # Local gradients (slope)
+        self.h: IntArray = np.zeros(self.size, dtype=int)  # Height (Temperature/Density)
+        self.avalanche_history: list[int] = []
+        self.confinement_history: list[float] = []
         self.edge_loss_events = 0
         self.last_edge_loss_events = 0
 
         # Magnetic Control (Z_crit modification)
         self.control_profile = np.zeros(size)
 
-    def drive(self):
-        """Adds energy (sand) to the core."""
+    def drive(self) -> None:
+        """Add energy (sand) to the core."""
         # Core heating: Add grain to center
         self.Z[0] += 1
 
-    def relax(self, suppression_strength=0.0):
-        """
-        The Avalanche Step.
-        If slope > critical, redistribute energy.
-        suppression_strength: 0.0 to 1.0 (Effect of HJB control)
+    def relax(self, suppression_strength: float = 0.0) -> int:
+        """Run one avalanche relaxation step.
+
+        If a local slope exceeds the critical gradient, redistribute energy.
+        ``suppression_strength`` is 0.0 to 1.0 (effect of HJB control).
         """
         suppression_strength = float(suppression_strength)
         if not np.isfinite(suppression_strength):
@@ -93,27 +98,26 @@ class TokamakSandpile:
         self.last_edge_loss_events = edge_loss_events
         return avalanche_size
 
-    def calculate_profile(self):
-        """Reconstructs the Height profile (Temperature) from gradients."""
+    def calculate_profile(self) -> IntArray:
+        """Reconstruct the height profile (temperature) from gradients."""
         # H[i] = Sum(Z[j]) for j from i to End
         # We integrate backwards from edge (0) to core
-        self.h = np.cumsum(self.Z[::-1])[::-1]
+        self.h = np.asarray(np.cumsum(self.Z[::-1])[::-1], dtype=np.int_)
         return self.h
 
 
 class HJB_Avalanche_Controller:
-    """
-    A heuristic closed-loop controller for avalanche suppression.
-    Observed State: Current Avalanche Size.
-    Action: Increase/Decrease Magnetic Shear (Z_crit).
-    Reward: Maximize Core Height (Confinement) - Action Cost.
+    """Heuristic closed-loop controller for avalanche suppression.
+
+    Observed state: current avalanche size. Action: increase/decrease magnetic
+    shear (Z_crit). Reward: maximise core height (confinement) minus action cost.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.shear = 0.0
         self.alpha = 0.1  # Learning rate / Reaction speed
 
-    def act(self, last_avalanche_size, current_core_temp):
+    def act(self, last_avalanche_size: int, current_core_temp: float) -> float:
         """Return a bounded suppression action from the latest avalanche size.
 
         Parameters
@@ -146,11 +150,11 @@ class HJB_Avalanche_Controller:
 
         # Smooth transition
         self.shear += self.alpha * (target_shear - self.shear)
-        self.shear = np.clip(self.shear, 0.0, 1.0)
+        self.shear = float(np.clip(self.shear, 0.0, 1.0))
         return self.shear
 
 
-def run_sandpile_simulation():
+def run_sandpile_simulation() -> None:
     """Run the sandpile control demonstration and write a PNG diagnostic report."""
     print("--- SCPN FUSION: Self-Organized Criticality (Sandpile) Model ---")
 
@@ -159,9 +163,9 @@ def run_sandpile_simulation():
 
     # Storage for Visualization
     history_map = np.zeros((TIME_STEPS, L))
-    history_avalanches = []
-    history_control = []
-    history_core_E = []
+    history_avalanches: list[int] = []
+    history_control: list[float] = []
+    history_core_E: list[int] = []
 
     print(f"Simulating {TIME_STEPS} transport steps...")
 
@@ -169,7 +173,7 @@ def run_sandpile_simulation():
         reactor.drive()
 
         last_av = history_avalanches[-1] if len(history_avalanches) > 0 else 0
-        core_temp = reactor.h[0] if t > 0 else 0
+        core_temp = float(reactor.h[0]) if t > 0 else 0.0
 
         action_shear = controller.act(last_av, core_temp)
 
