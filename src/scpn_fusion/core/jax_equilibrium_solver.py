@@ -27,6 +27,7 @@ Reference: Grad & Rubin (1958), Shafranov (1966), Lao et al. (1985).
 from __future__ import annotations
 
 from functools import partial
+from typing import Any, cast
 
 import jax
 import jax.numpy as jnp
@@ -142,7 +143,7 @@ def greens_psi(R: jnp.ndarray, Z: jnp.ndarray, Rc: float, Zc: float, I: float) -
     E_val = _ellipe_approx(k2)
     prefactor = _MU0_NORM * I / (2.0 * jnp.pi)
     psi = prefactor * jnp.sqrt(R_safe * Rc) * ((2.0 / k - k) * K_val - (2.0 / k) * E_val)
-    return jnp.where(jnp.isfinite(psi), psi, 0.0)
+    return cast(jnp.ndarray, jnp.where(jnp.isfinite(psi), psi, 0.0))
 
 
 @jit
@@ -164,7 +165,7 @@ def vacuum_field(
     R2d = R_grid[jnp.newaxis, :]  # (1, NR)
     Z2d = Z_grid[:, jnp.newaxis]  # (NZ, 1)
 
-    def single_coil(carry, coil):
+    def single_coil(carry: jnp.ndarray, coil: jnp.ndarray) -> tuple[jnp.ndarray, None]:
         psi_acc = carry
         rc, zc, ic = coil
         psi_acc = psi_acc + greens_psi(R2d, Z2d, rc, zc, ic)
@@ -183,7 +184,11 @@ def vacuum_field(
 
 @jit
 def _plasma_source(
-    psi: jnp.ndarray, R_grid: jnp.ndarray, Ip: float, psi_axis: float, psi_boundary: float
+    psi: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Ip: float,
+    psi_axis: jnp.ndarray,
+    psi_boundary: jnp.ndarray,
 ) -> jnp.ndarray:
     """Toroidal current density source Jφ for Picard iteration.
 
@@ -204,7 +209,7 @@ def _plasma_source(
 
 
 @jit
-def _boundary_flux_level(psi: jnp.ndarray) -> float:
+def _boundary_flux_level(psi: jnp.ndarray) -> jnp.ndarray:
     """Mean wall flux level for free-boundary source normalization."""
     boundary_total = (
         jnp.sum(psi[0, :]) + jnp.sum(psi[-1, :]) + jnp.sum(psi[1:-1, 0]) + jnp.sum(psi[1:-1, -1])
@@ -214,7 +219,7 @@ def _boundary_flux_level(psi: jnp.ndarray) -> float:
 
 
 @jit
-def _interior_axis_flux(psi: jnp.ndarray) -> float:
+def _interior_axis_flux(psi: jnp.ndarray) -> jnp.ndarray:
     """Interior axis flux value compatible with positive or negative psi conventions."""
     center = psi[1:-1, 1:-1]
     neighbor_max = jnp.maximum(
@@ -326,13 +331,13 @@ def solve_equilibrium_jax(
     psi_vac = vacuum_field(R_grid, Z_grid, coil_R, coil_Z, coil_I)
     psi = psi_vac.copy()
 
-    def picard_body(carry, _):
+    def picard_body(carry: jnp.ndarray, _: Any) -> tuple[jnp.ndarray, None]:
         psi_curr = carry
         psi_axis = _interior_axis_flux(psi_curr)
         psi_bnd = _boundary_flux_level(psi_vac)
         src = _plasma_source(psi_curr, R_grid, Ip, psi_axis, psi_bnd)
 
-        def sor_body(p, __):
+        def sor_body(p: jnp.ndarray, __: Any) -> tuple[jnp.ndarray, None]:
             return _sor_step(p, src, R_grid, dR, dZ, sor_omega, psi_vac), None
 
         psi_relaxed, _ = jax.lax.scan(sor_body, psi_curr, None, length=sor_per_picard)
@@ -341,14 +346,16 @@ def solve_equilibrium_jax(
         return psi_new, None
 
     psi_final, _ = jax.lax.scan(picard_body, psi, None, length=max_picard)
-    return psi_final
+    return cast(jnp.ndarray, psi_final)
 
 
 # ── Axis finding ──────────────────────────────────────────────────
 
 
 @jit
-def find_axis(psi: jnp.ndarray, R_grid: jnp.ndarray, Z_grid: jnp.ndarray) -> tuple[float, float]:
+def find_axis(
+    psi: jnp.ndarray, R_grid: jnp.ndarray, Z_grid: jnp.ndarray
+) -> tuple[jnp.ndarray, jnp.ndarray]:
     """Find the interior magnetic axis by flux extremum relative to wall flux.
 
     Free-boundary PF coils can make the computational wall flux larger than
@@ -418,7 +425,7 @@ def axis_position_loss(
     Ip: float,
     target_R: float,
     target_Z: float,
-) -> float:
+) -> jnp.ndarray:
     """Squared distance from magnetic axis to target position.
 
     Differentiable w.r.t. coil_I. Use ``jax.grad(axis_position_loss)``
@@ -426,7 +433,7 @@ def axis_position_loss(
     """
     psi = solve_equilibrium_jax(R_grid, Z_grid, coil_R, coil_Z, coil_I, Ip)
     R_ax, Z_ax = find_axis(psi, R_grid, Z_grid)
-    return (R_ax - target_R) ** 2 + (Z_ax - target_Z) ** 2
+    return cast(jnp.ndarray, (R_ax - target_R) ** 2 + (Z_ax - target_Z) ** 2)
 
 
 def optimize_coil_currents(
@@ -490,15 +497,15 @@ def axis_sensitivity(
     dZ_dI : (N_coils,) sensitivity of Z_axis to each coil current
     """
 
-    def R_fn(I):
+    def R_fn(I: jnp.ndarray) -> jnp.ndarray:
         psi = solve_equilibrium_jax(R_grid, Z_grid, coil_R, coil_Z, I, Ip)
         R_ax, _ = find_axis(psi, R_grid, Z_grid)
-        return R_ax
+        return cast(jnp.ndarray, R_ax)
 
-    def Z_fn(I):
+    def Z_fn(I: jnp.ndarray) -> jnp.ndarray:
         psi = solve_equilibrium_jax(R_grid, Z_grid, coil_R, coil_Z, I, Ip)
         _, Z_ax = find_axis(psi, R_grid, Z_grid)
-        return Z_ax
+        return cast(jnp.ndarray, Z_ax)
 
     dR_dI = jax.grad(R_fn)(coil_I)
     dZ_dI = jax.grad(Z_fn)(coil_I)
