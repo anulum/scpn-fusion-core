@@ -13,6 +13,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
+ComplexArray = NDArray[np.complex128]
 
 
 @dataclass
@@ -28,7 +32,8 @@ class UncertaintyBlock:
 class StructuredUncertainty:
     """Validated collection of structured uncertainty blocks."""
 
-    def __init__(self, blocks: list[UncertaintyBlock]):
+    def __init__(self, blocks: list[UncertaintyBlock]) -> None:
+        """Validate each uncertainty block's size, bound, and family, then store them."""
         for block in blocks:
             if block.size < 1:
                 raise ValueError("uncertainty block size must be at least 1")
@@ -47,9 +52,9 @@ class StructuredUncertainty:
         return sum(b.size for b in self.blocks)
 
 
-def compute_mu_upper_bound(M: np.ndarray, delta_structure: list[tuple[int, str]]) -> float:
-    """
-    Compute upper bound on structured singular value mu using D-scaling.
+def compute_mu_upper_bound(M: NDArray[Any], delta_structure: list[tuple[int, str]]) -> float:
+    """Compute an upper bound on the structured singular value mu via D-scaling.
+
     min_D sigma_max(D M D^-1)
     """
     matrix = np.asarray(M, dtype=complex)
@@ -61,7 +66,7 @@ def compute_mu_upper_bound(M: np.ndarray, delta_structure: list[tuple[int, str]]
     if not delta_structure:
         return float(np.max(np.linalg.svd(matrix)[1]))
 
-    def apply_D(d_vec: np.ndarray) -> np.ndarray:
+    def apply_D(d_vec: FloatArray) -> ComplexArray:
         D = np.zeros((n, n), dtype=complex)
         idx = 0
         for d_idx, (size, btype) in enumerate(delta_structure):
@@ -108,8 +113,8 @@ def compute_mu_upper_bound(M: np.ndarray, delta_structure: list[tuple[int, str]]
 
 
 def _validate_plant_ss(
-    plant_ss: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    plant_ss: tuple[FloatArray, FloatArray, FloatArray, FloatArray],
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
     A, B, C, D_mat = (np.asarray(mat, dtype=float) for mat in plant_ss)
     if A.ndim != 2 or A.shape[0] != A.shape[1]:
         raise ValueError("A must be a square state matrix")
@@ -126,27 +131,25 @@ def _validate_plant_ss(
 
 
 def _regularised_output_feedback_gain(
-    A: np.ndarray,
-    B: np.ndarray,
-    C: np.ndarray,
+    A: FloatArray,
+    B: FloatArray,
+    C: FloatArray,
     *,
     regularisation: float,
-) -> np.ndarray:
+) -> FloatArray:
     n_inputs = B.shape[1]
     gram = B.T @ B + regularisation * np.eye(n_inputs)
     desired_output_map = A @ np.linalg.pinv(C)
-    return np.linalg.solve(gram, B.T @ desired_output_map)
+    return np.asarray(np.linalg.solve(gram, B.T @ desired_output_map), dtype=np.float64)
 
 
 def dk_iteration(
-    plant_ss: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+    plant_ss: tuple[FloatArray, FloatArray, FloatArray, FloatArray],
     uncertainty: StructuredUncertainty,
     n_iter: int = 5,
     gamma_bisect_tol: float = 0.01,
-) -> tuple[Any, float, np.ndarray]:
-    """
-    D-K iteration proxy using regularised output-feedback synthesis and D-scaling.
-    """
+) -> tuple[Any, float, FloatArray]:
+    """Run the D-K iteration proxy via regularised output-feedback synthesis and D-scaling."""
     if n_iter < 1:
         raise ValueError("n_iter must be at least 1")
     if gamma_bisect_tol <= 0.0 or not np.isfinite(gamma_bisect_tol):
@@ -158,7 +161,7 @@ def dk_iteration(
         raise ValueError("uncertainty total size must match the plant state dimension")
 
     max_bound = max((block.bound for block in uncertainty.blocks), default=0.0)
-    K_controller = np.zeros((B.shape[1], C.shape[0]))
+    K_controller: FloatArray = np.zeros((B.shape[1], C.shape[0]))
     mu_peak = float("inf")
 
     for idx in range(n_iter):
@@ -185,20 +188,19 @@ def dk_iteration(
 
 
 class MuSynthesisController:
-    """
-    Structured robust controller using D-K iteration.
-    """
+    """Structured robust controller using D-K iteration."""
 
     def __init__(
         self,
-        plant_ss: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+        plant_ss: tuple[FloatArray, FloatArray, FloatArray, FloatArray],
         uncertainty: StructuredUncertainty,
-    ):
+    ) -> None:
+        """Store the plant state-space and uncertainty structure for later synthesis."""
         self.plant_ss = plant_ss
         self.uncertainty = uncertainty
-        self.K: np.ndarray | None = None
+        self.K: FloatArray | None = None
         self.mu_peak = float("inf")
-        self.D_scalings: np.ndarray | None = None
+        self.D_scalings: FloatArray | None = None
 
         # Integral channel suppresses steady output bias after synthesis.
         self.integral_error = 0.0
@@ -210,7 +212,7 @@ class MuSynthesisController:
         self.mu_peak = mu
         self.D_scalings = D_s
 
-    def step(self, x: np.ndarray, dt: float) -> np.ndarray:
+    def step(self, x: FloatArray, dt: float) -> FloatArray:
         """Apply synthesised output-feedback controller."""
         if self.K is None:
             raise RuntimeError("Controller not synthesised yet")
@@ -232,7 +234,7 @@ class MuSynthesisController:
         return np.asarray(u)
 
     def robustness_margin(self) -> float:
-        """1 / mu_peak"""
+        """Return the robustness margin 1 / mu_peak."""
         if self.mu_peak <= 0.0:
             return float("inf")
         return 1.0 / self.mu_peak
