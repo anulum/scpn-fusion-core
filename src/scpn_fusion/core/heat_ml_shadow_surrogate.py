@@ -13,17 +13,20 @@ from dataclasses import dataclass
 import time
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass(frozen=True)
 class ShadowDataset:
     """Synthetic magnetic-shadow training features and target fractions."""
 
-    features: np.ndarray
-    shadow_fraction: np.ndarray
+    features: FloatArray
+    shadow_fraction: FloatArray
 
 
-def _as_2d(features: np.ndarray) -> np.ndarray:
+def _as_2d(features: FloatArray) -> FloatArray:
     x = np.asarray(features, dtype=np.float64)
     if x.ndim == 1:
         x = x.reshape(1, -1)
@@ -32,9 +35,8 @@ def _as_2d(features: np.ndarray) -> np.ndarray:
     return x
 
 
-def synthetic_shadow_reference(features: np.ndarray) -> np.ndarray:
+def synthetic_shadow_reference(features: FloatArray) -> FloatArray:
     """Synthetic reference law for divertor magnetic-shadow fraction."""
-
     x = _as_2d(features)
     r, b_pol, p_sol, fx, kappa, delta, xpt_z = x.T
 
@@ -45,7 +47,7 @@ def synthetic_shadow_reference(features: np.ndarray) -> np.ndarray:
     shaping_bonus = 0.06 * delta
 
     shadow = field_term + geometry_term + xpt_term + shaping_bonus - power_penalty
-    return np.clip(shadow, 0.03, 0.82)
+    return np.asarray(np.clip(shadow, 0.03, 0.82), dtype=np.float64)
 
 
 def generate_shadow_dataset(seed: int, samples: int) -> ShadowDataset:
@@ -69,9 +71,9 @@ class HeatMLShadowSurrogate:
 
     def __init__(self, ridge: float = 1e-4) -> None:
         self.ridge = float(max(ridge, 1e-10))
-        self._weights: np.ndarray | None = None
+        self._weights: FloatArray | None = None
 
-    def _feature_map(self, features: np.ndarray) -> np.ndarray:
+    def _feature_map(self, features: FloatArray) -> FloatArray:
         x = _as_2d(features)
         r, b_pol, p_sol, fx, kappa, delta, xpt_z = x.T
         phi = np.column_stack(
@@ -89,7 +91,7 @@ class HeatMLShadowSurrogate:
         )
         return phi
 
-    def fit(self, features: np.ndarray, target: np.ndarray) -> None:
+    def fit(self, features: FloatArray, target: FloatArray) -> None:
         """Fit ridge-regularised polynomial weights to shadow fractions."""
         phi = self._feature_map(features)
         y = np.asarray(target, dtype=np.float64).reshape(-1)
@@ -97,26 +99,26 @@ class HeatMLShadowSurrogate:
             raise ValueError("features and target row count mismatch")
         lhs = phi.T @ phi + self.ridge * np.eye(phi.shape[1], dtype=np.float64)
         rhs = phi.T @ y
-        self._weights = np.linalg.solve(lhs, rhs)
+        self._weights = np.asarray(np.linalg.solve(lhs, rhs), dtype=np.float64)
 
     def fit_synthetic(self, seed: int = 42, samples: int = 2048) -> None:
         """Fit the surrogate on a deterministic synthetic reference dataset."""
         ds = generate_shadow_dataset(seed=seed, samples=samples)
         self.fit(ds.features, ds.shadow_fraction)
 
-    def predict_shadow_fraction(self, features: np.ndarray) -> np.ndarray:
+    def predict_shadow_fraction(self, features: FloatArray) -> FloatArray:
         """Predict clipped magnetic-shadow fractions for divertor feature rows."""
         if self._weights is None:
             raise RuntimeError("Model is not fit. Call fit() first.")
         phi = self._feature_map(features)
         out = phi @ self._weights
-        return np.clip(out, 0.0, 0.85)
+        return np.asarray(np.clip(out, 0.0, 0.85), dtype=np.float64)
 
     def predict_divertor_flux(
         self,
-        q_div_baseline_w_m2: np.ndarray | float,
-        features: np.ndarray,
-    ) -> np.ndarray:
+        q_div_baseline_w_m2: FloatArray | float,
+        features: FloatArray,
+    ) -> FloatArray:
         """Apply predicted magnetic-shadow attenuation to baseline divertor flux."""
         q = np.asarray(q_div_baseline_w_m2, dtype=np.float64)
         shadow = self.predict_shadow_fraction(features)
@@ -125,7 +127,7 @@ class HeatMLShadowSurrogate:
         return np.maximum(q * atten, 1e-6)
 
 
-def rmse_percent(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+def rmse_percent(y_true: FloatArray, y_pred: FloatArray) -> float:
     """Return RMSE as a percentage of mean absolute reference magnitude."""
     yt = np.asarray(y_true, dtype=np.float64).reshape(-1)
     yp = np.asarray(y_pred, dtype=np.float64).reshape(-1)
