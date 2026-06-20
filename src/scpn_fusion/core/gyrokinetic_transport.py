@@ -26,6 +26,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 # Physical constants
 # m_p = 1.67262192369e-27  kg
@@ -52,10 +55,10 @@ class GyrokineticsParams:
 class SpectrumResult:
     """Computed instability spectrum."""
 
-    k_y: np.ndarray
-    gamma_linear: np.ndarray
-    omega_r: np.ndarray
-    mode_type: np.ndarray  # 0: stable, 1: ITG, 2: TEM, 3: ETG
+    k_y: FloatArray
+    gamma_linear: FloatArray
+    omega_r: FloatArray
+    mode_type: FloatArray  # 0: stable, 1: ITG, 2: TEM, 3: ETG
 
 
 @dataclass
@@ -145,18 +148,22 @@ def solve_dispersion(
 def compute_spectrum(
     params: GyrokineticsParams, n_modes: int = 16, include_etg: bool = False
 ) -> SpectrumResult:
-    """
-    Scan perpendicular wavenumber space and compute a quasilinear spectrum.
+    """Scan perpendicular wavenumber space and compute a quasilinear spectrum.
 
-    Args:
-        params: Gyrokinetic local parameters describing gradients and dimensionless
-            equilibrium state.
-        n_modes: Number of spectral samples per branch (ion/electron blocks).
-        include_etg: When ``True``, append electron-scale ETG branch samples.
+    Parameters
+    ----------
+    params : GyrokineticsParams
+        Gyrokinetic local parameters describing gradients and dimensionless
+        equilibrium state.
+    n_modes : int
+        Number of spectral samples per branch (ion/electron blocks).
+    include_etg : bool
+        When ``True``, append electron-scale ETG branch samples.
 
-    Returns:
-        SpectrumResult with sampled ``k_y`` grid, linear growth rates, real
-        frequencies, and mode labels.
+    Returns
+    -------
+    SpectrumResult
+        Sampled ``k_y`` grid, linear growth rates, real frequencies, and mode labels.
     """
     k_y_list = []
     gamma_list = []
@@ -196,16 +203,20 @@ def compute_spectrum(
 
 
 def quasilinear_fluxes(params: GyrokineticsParams, spectrum: SpectrumResult) -> TransportFluxes:
-    """
-    Apply a saturation model and return effective transport diffusivities.
+    """Apply a saturation model and return effective transport diffusivities.
 
-    Args:
-        params: Gyrokinetic parameters used to evaluate branch-dependent scaling.
-        spectrum: Precomputed linear response from :func:`compute_spectrum`.
+    Parameters
+    ----------
+    params : GyrokineticsParams
+        Gyrokinetic parameters used to evaluate branch-dependent scaling.
+    spectrum : SpectrumResult
+        Precomputed linear response from :func:`compute_spectrum`.
 
-    Returns:
-        TransportFluxes containing normalized effective ``chi_i``, ``chi_e``,
-        and electron particle diffusivity ``D_e``.
+    Returns
+    -------
+    TransportFluxes
+        Normalized effective ``chi_i``, ``chi_e`` and electron particle
+        diffusivity ``D_e``.
     """
     # gamma_max = c_s / (q R) => normalized gamma_max = 1 / q
     gamma_max = 1.0 / max(params.q, 0.1)
@@ -273,9 +284,7 @@ def quasilinear_fluxes(params: GyrokineticsParams, spectrum: SpectrumResult) -> 
 
 
 class GyrokineticTransportModel:
-    """
-    Drop-in replacement for Gyro-Bohm transport scaling.
-    """
+    """Drop-in replacement for Gyro-Bohm transport scaling."""
 
     def __init__(self, n_modes: int = 16, include_etg: bool = False):
         """Initialize the transport model with scan resolution and branch toggles."""
@@ -331,13 +340,18 @@ class GyrokineticTransportModel:
         spectral scan, then converts the dimensionless quasilinear fluxes to
         physical diffusivity units via a gyro-Bohm scaling.
 
-        Args:
-            rho: Radial coordinate in ``[0, 1]``.
-            profiles: Local profile dictionary with keys such as ``R0``, ``a``,
-                ``q``, ``s_hat``, ``Te``, ``Ti``, ``ne`` and derivatives.
+        Parameters
+        ----------
+        rho : float
+            Radial coordinate in ``[0, 1]``.
+        profiles : dict
+            Local profile dictionary with keys such as ``R0``, ``a``, ``q``,
+            ``s_hat``, ``Te``, ``Ti``, ``ne`` and derivatives.
 
-        Returns:
-            Tuple ``(chi_i, chi_e, D_e)`` in SI-like diffusion units.
+        Returns
+        -------
+        tuple
+            ``(chi_i, chi_e, D_e)`` in SI-like diffusion units.
         """
         if rho <= 0.05:
             # Axis boundary
@@ -413,18 +427,23 @@ class GyrokineticTransportModel:
         return chi_i_phys, chi_e_phys, D_e_phys
 
     def evaluate_profile(
-        self, rho: np.ndarray, profiles: dict[str, np.ndarray]
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self, rho: FloatArray, profiles: dict[str, FloatArray]
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """
         Evaluate transport profiles over an entire flux-surface grid.
 
-        Args:
-            rho: 1D array of normalized radius coordinates (``rho_tor``).
-            profiles: Radial profile dictionary where each key maps to an array
-                aligned with ``rho``.
+        Parameters
+        ----------
+        rho : FloatArray
+            1D array of normalized radius coordinates (``rho_tor``).
+        profiles : dict
+            Radial profile dictionary where each key maps to an array aligned
+            with ``rho``.
 
-        Returns:
-            Tuple of arrays ``(chi_i_profile, chi_e_profile, D_e_profile)``.
+        Returns
+        -------
+        tuple
+            Arrays ``(chi_i_profile, chi_e_profile, D_e_profile)``.
         """
         nr = len(rho)
         chi_i = np.zeros(nr)
