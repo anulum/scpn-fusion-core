@@ -816,7 +816,8 @@ jobs:
           source .venv/bin/activate
           pytest tests/test_boris_pyo3_bridge.py tests/test_snn_pyo3_bridge.py \
                  tests/test_rust_python_parity.py tests/test_rust_compat_wrapper.py \
-                 tests/test_rust_multigrid_wiring.py -v --tb=short
+                 tests/test_rust_multigrid_wiring.py \
+                 tests/test_frc_rigid_rotor_rust_parity.py -v --tb=short
       - name: Run new binding tests
         run: |
           source .venv/bin/activate
