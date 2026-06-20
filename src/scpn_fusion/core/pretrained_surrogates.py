@@ -21,8 +21,9 @@ import numpy as np
 from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
+from scpn_fusion.core._surrogate_utils import AdamOptimizer
 from scpn_fusion.core.eqdsk import read_geqdsk
-from scpn_fusion.core.fno_training import AdamOptimizer, MultiLayerFNO
+from scpn_fusion.core.fno_training import MultiLayerFNO
 
 
 logger = logging.getLogger(__name__)
@@ -148,7 +149,7 @@ class PretrainedMLPSurrogate:
         h = np.tanh(x_norm @ self.w1 + self.b1[None, :])
         y_norm = h @ self.w2 + self.b2
         y = y_norm * self.target_std + self.target_mean
-        return np.maximum(y.reshape(-1), 1e-6)
+        return np.asarray(np.maximum(y.reshape(-1), 1e-6), dtype=np.float64)
 
 
 def _load_itpa_training_data(csv_path: Path = DEFAULT_ITPA_CSV) -> tuple[FloatArray, FloatArray]:
