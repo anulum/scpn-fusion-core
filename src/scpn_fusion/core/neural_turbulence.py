@@ -10,10 +10,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
+from numpy.typing import NDArray
+
 from scpn_fusion.io.safe_loaders import checked_np_load
+
+FloatArray = NDArray[np.float64]
 
 _E_CHARGE = 1.602176634e-19
 _M_ELECTRON = 9.1093837015e-31
@@ -22,13 +26,13 @@ _LN_LAMBDA = 17.0
 
 
 def electron_collisionality_star(
-    ne_19: np.ndarray,
-    Te_keV: np.ndarray,
-    q: np.ndarray,
+    ne_19: FloatArray,
+    Te_keV: FloatArray,
+    q: FloatArray,
     R0: float,
-    epsilon: np.ndarray,
-    z_eff: float | np.ndarray = 1.5,
-) -> np.ndarray:
+    epsilon: FloatArray,
+    z_eff: float | FloatArray = 1.5,
+) -> FloatArray:
     """Electron banana-regime collisionality for QLKNN-class feature vectors."""
     ne_19 = np.asarray(ne_19, dtype=float)
     Te_keV = np.asarray(Te_keV, dtype=float)
@@ -60,13 +64,12 @@ def electron_collisionality_star(
 
 
 class QLKNNSurrogate:
-    """
-    Pure NumPy inference for a QLKNN-like neural network.
-    Predicts turbulent fluxes [Q_i, Q_e, Gamma_e] from 10 parameters.
-    van de Plassche et al., Phys. Plasmas 27, 022310 (2020).
+    """Pure-NumPy inference for a QLKNN-like neural network.
 
-    Default construction auto-trains on a Jenko et al. (2001) critical gradient
-    model so predictions are physically meaningful out of the box.
+    Predicts turbulent fluxes [Q_i, Q_e, Gamma_e] from 10 parameters
+    (van de Plassche et al., Phys. Plasmas 27, 022310 (2020)). Default
+    construction auto-trains on a Jenko et al. (2001) critical gradient model so
+    predictions are physically meaningful out of the box.
     """
 
     def __init__(
@@ -81,8 +84,8 @@ class QLKNNSurrogate:
         self.hidden_layers = hidden_layers
         self.activation = activation
 
-        self.weights: list[np.ndarray] = []
-        self.biases: list[np.ndarray] = []
+        self.weights: list[FloatArray] = []
+        self.biases: list[FloatArray] = []
 
         rng = np.random.RandomState(42) if pretrained else np.random.RandomState()
 
@@ -98,7 +101,7 @@ class QLKNNSurrogate:
         if pretrained:
             self._pretrain(rng)
 
-    def _activate(self, x: np.ndarray) -> np.ndarray:
+    def _activate(self, x: FloatArray) -> FloatArray:
         if self.activation == "elu":
             out = np.asarray(x, dtype=float).copy()
             neg = out <= 0.0
@@ -110,7 +113,7 @@ class QLKNNSurrogate:
             return np.asarray(np.tanh(x))
         return x
 
-    def _activate_deriv(self, x: np.ndarray) -> np.ndarray:
+    def _activate_deriv(self, x: FloatArray) -> FloatArray:
         if self.activation == "elu":
             deriv = np.ones_like(x, dtype=float)
             neg = x <= 0.0
@@ -132,7 +135,7 @@ class QLKNNSurrogate:
 
         for _ in range(100):
             activations = [X_train]
-            pre_acts: list[np.ndarray] = []
+            pre_acts: list[FloatArray] = []
             out = X_train
             for i in range(len(self.weights) - 1):
                 z = out @ self.weights[i] + self.biases[i]
@@ -158,11 +161,8 @@ class QLKNNSurrogate:
                     delta = (delta @ self.weights[i].T) * self._activate_deriv(pre_acts[i - 1])
                     np.clip(delta, -1e6, 1e6, out=delta)
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
-        """
-        x shape: (batch_size, 10)
-        returns shape: (batch_size, 3)
-        """
+    def forward(self, x: FloatArray) -> FloatArray:
+        """Evaluate the network: input ``x`` of shape (batch, 10) to fluxes (batch, 3)."""
         if x.ndim == 1:
             x = x.reshape(1, -1)
 
@@ -193,7 +193,7 @@ class TransportInputNormalizer:
     """Profile transformer that computes QLKNN features from physical profiles."""
 
     @staticmethod
-    def _as_valid_profile(name: str, values: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
+    def _as_valid_profile(name: str, values: FloatArray, shape: tuple[int, ...]) -> FloatArray:
         arr = np.asarray(values, dtype=float)
         if arr.shape != shape:
             raise ValueError("Te, Ti, ne, q, and r profiles must have the same shape")
@@ -203,18 +203,16 @@ class TransportInputNormalizer:
 
     @staticmethod
     def from_profiles(
-        Te: np.ndarray,
-        Ti: np.ndarray,
-        ne: np.ndarray,
-        q: np.ndarray,
+        Te: FloatArray,
+        Ti: FloatArray,
+        ne: FloatArray,
+        q: FloatArray,
         R0: float,
         a: float,
         B0: float,
-        r: np.ndarray,
-    ) -> np.ndarray:
-        """
-        Convert physical profiles into the 10 dimensionless QLKNN inputs.
-        """
+        r: FloatArray,
+    ) -> FloatArray:
+        """Convert physical profiles into the 10 dimensionless QLKNN inputs."""
         r = np.asarray(r, dtype=float)
         if r.ndim != 1 or r.size < 2:
             raise ValueError("r profile must be a one-dimensional array with at least two points")
@@ -234,7 +232,7 @@ class TransportInputNormalizer:
         if np.any(q <= 0.0):
             raise ValueError("q profile values must be positive")
 
-        edge_order = 2 if r.size > 2 else 1
+        edge_order: Literal[1, 2] = 2 if r.size > 2 else 1
         grad_Te = np.gradient(Te, r, edge_order=edge_order)
         grad_Ti = np.gradient(Ti, r, edge_order=edge_order)
         grad_ne = np.gradient(ne, r, edge_order=edge_order)
@@ -279,7 +277,7 @@ class TrainingDataGenerator:
     @staticmethod
     def generate_parameter_scan(
         n_samples: int, rng: np.random.RandomState | None = None
-    ) -> np.ndarray:
+    ) -> FloatArray:
         """Uniform random sampling in 10D QLKNN parameter space."""
         if rng is None:
             rng = np.random.RandomState()
@@ -305,9 +303,9 @@ class TrainingDataGenerator:
         return X
 
     @staticmethod
-    def generate_analytic_targets(inputs: np.ndarray) -> np.ndarray:
-        """
-        Compute flux targets from a critical-gradient quasilinear closure.
+    def generate_analytic_targets(inputs: FloatArray) -> FloatArray:
+        """Compute flux targets from a critical-gradient quasilinear closure.
+
         Returns [Q_i, Q_e, Gamma_e] in gyro-Bohm units.
         """
         inputs = np.asarray(inputs, dtype=float)
@@ -364,7 +362,7 @@ class TrainingDataGenerator:
 class NeuralTransportTrainer:
     """Trainer for the QLKNN surrogate network using NumPy backpropagation."""
 
-    def _activate_deriv(self, x: np.ndarray, activation: str) -> np.ndarray:
+    def _activate_deriv(self, x: FloatArray, activation: str) -> FloatArray:
         if activation == "elu":
             deriv = np.ones_like(x, dtype=float)
             neg = x <= 0.0
@@ -378,20 +376,20 @@ class NeuralTransportTrainer:
 
     def train(
         self,
-        X: np.ndarray,
-        y: np.ndarray,
+        X: FloatArray,
+        y: FloatArray,
         epochs: int = 200,
         lr: float = 1e-3,
         val_frac: float = 0.2,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Train a fresh QLKNN surrogate and return training/validation loss history.
 
         Parameters
         ----------
-        X : np.ndarray
+        X : FloatArray
             Training features.
-        y : np.ndarray
+        y : FloatArray
             Target values of shape (N, 3).
         epochs : int
             Number of optimization epochs.
@@ -461,9 +459,9 @@ class NeuralTransportTrainer:
 class TransportFluxes:
     """Container for dimensional transport fluxes returned by `compute_fluxes`."""
 
-    Q_i_W_m2: np.ndarray
-    Q_e_W_m2: np.ndarray
-    Gamma_e_inv_m2_s: np.ndarray
+    Q_i_W_m2: FloatArray
+    Q_e_W_m2: FloatArray
+    Gamma_e_inv_m2_s: FloatArray
 
 
 class QLKNNTransportModel:
@@ -475,21 +473,21 @@ class QLKNNTransportModel:
 
     def compute_fluxes(
         self,
-        Te: np.ndarray,
-        Ti: np.ndarray,
-        ne: np.ndarray,
-        q: np.ndarray,
+        Te: FloatArray,
+        Ti: FloatArray,
+        ne: FloatArray,
+        q: FloatArray,
         R0: float,
         a: float,
         B0: float,
-        r: np.ndarray,
+        r: FloatArray,
     ) -> TransportFluxes:
         """
         Compute ion/electron heat and electron particle flux profiles from profiles.
 
         Parameters
         ----------
-        Te, Ti, ne, q, r : np.ndarray
+        Te, Ti, ne, q, r : FloatArray
             1-D physical profiles in keV, keV, 10^19 m^-3, unitless, and radius [m].
         R0, a, B0 : float
             Major radius, minor radius, and on-axis toroidal field.
