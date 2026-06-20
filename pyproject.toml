@@ -226,6 +226,7 @@ files = [
     "src/scpn_fusion/core/runaway_electrons.py",
     "src/scpn_fusion/core/mrti.py",
     "src/scpn_fusion/core/vessel_model.py",
+    "src/scpn_fusion/core/vmec_lite.py",
     "src/scpn_fusion/core/ntm_dynamics.py",
     "src/scpn_fusion/core/locked_mode.py",
     "src/scpn_fusion/core/_neural_transport_types.py",

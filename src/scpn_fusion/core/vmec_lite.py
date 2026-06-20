@@ -12,19 +12,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
 class VMECResult:
     """Container for a reduced-order VMEC-like equilibrium state."""
 
-    R_mn: np.ndarray
-    Z_mn: np.ndarray
-    B_mn: np.ndarray
+    R_mn: FloatArray
+    Z_mn: FloatArray
+    B_mn: FloatArray
     force_residual: float
     iterations: int
     converged: bool
-    residual_history: np.ndarray
+    residual_history: FloatArray
 
 
 class SpectralBasis:
@@ -50,8 +53,8 @@ class SpectralBasis:
         self.n_modes = len(self.mn_modes)
 
     def evaluate(
-        self, coeffs_mn: np.ndarray, theta: np.ndarray, zeta: np.ndarray, is_sin: bool = False
-    ) -> np.ndarray:
+        self, coeffs_mn: FloatArray, theta: FloatArray, zeta: FloatArray, is_sin: bool = False
+    ) -> FloatArray:
         """Evaluate a Fourier series on (theta, zeta)."""
         coeffs_mn = np.asarray(coeffs_mn, dtype=float)
         theta = np.asarray(theta, dtype=float)
@@ -127,7 +130,7 @@ class VMECLiteSolver:
             raise ValueError("boundary must define a finite positive R(0,0) major-radius mode.")
         self._boundary_configured = True
 
-    def set_profiles(self, pressure: np.ndarray, iota: np.ndarray) -> None:
+    def set_profiles(self, pressure: FloatArray, iota: FloatArray) -> None:
         """Set pressure and rotational-transform profiles on the solver radial grid."""
         pressure = np.asarray(pressure, dtype=float)
         iota = np.asarray(iota, dtype=float)
@@ -163,6 +166,7 @@ class VMECLiteSolver:
     def solve(self, max_iter: int = 100, tol: float = 1e-4) -> VMECResult:
         """
         Spectral steepest-descent equilibrium solver.
+
         Hirshman & Whitson, Phys. Fluids 26, 3553 (1983).
 
         Radial tension (finite-difference Laplacian) regularises the spectral
@@ -190,7 +194,7 @@ class VMECLiteSolver:
         q_profile = 1.0 / np.maximum(np.abs(self.iota), 0.01)
         R_00_bound = max(abs(self.R_mn[-1, idx_00]), 1e-3) if idx_00 >= 0 else 1.0
 
-        def _forces() -> tuple[np.ndarray, np.ndarray, float]:
+        def _forces() -> tuple[FloatArray, FloatArray, float]:
             f_r = np.zeros_like(self.R_mn)
             f_z = np.zeros_like(self.Z_mn)
 
@@ -284,7 +288,7 @@ class StellaratorBoundary:
     """Preset helpers for representative stellarator boundaries."""
 
     @staticmethod
-    def w7x_standard() -> tuple[dict, dict]:
+    def w7x_standard() -> tuple[dict[tuple[int, int], float], dict[tuple[int, int], float]]:
         """Return a compact W7-X-like spectral boundary pair."""
         # N_fp = 5
         b_R = {(0, 0): 5.5, (1, 0): 0.5, (1, 1): 0.1, (0, 1): 0.2}
