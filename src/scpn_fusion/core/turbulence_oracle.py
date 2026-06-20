@@ -7,9 +7,15 @@
 # SCPN Fusion Core — Turbulence Oracle
 """Turbulence oracle for reduced-order edge-chaos forecasting."""
 
+from __future__ import annotations
+
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from scipy.sparse import rand
+
+FloatArray = NDArray[np.float64]
+ComplexArray = NDArray[np.complex128]
 
 GRID = 64
 L = 10.0
@@ -27,7 +33,7 @@ class DriftWavePhysics:
     Pass ``seed`` for reproducible stochastic initial conditions.
     """
 
-    def __init__(self, N=GRID, seed=None):
+    def __init__(self, N: int = GRID, seed: int | None = None) -> None:
         self.N = N
         self.k = np.fft.fftfreq(N, d=L / (2 * np.pi * N))
         self.kx, self.ky = np.meshgrid(self.k, self.k)
@@ -51,8 +57,8 @@ class DriftWavePhysics:
         self.phi_k = np.fft.fft2(phi_noise) * self.mask
         self.n_k = np.fft.fft2(n_noise) * self.mask
 
-    def bracket(self, A_k, B_k):
-        """Calculates Poisson Bracket [A, B] with de-aliasing"""
+    def bracket(self, A_k: ComplexArray, B_k: ComplexArray) -> ComplexArray:
+        """Compute the Poisson bracket [A, B] with 2/3-rule de-aliasing."""
         # Derivatives in spectral space
         dxA = np.fft.ifft2(1j * self.kx * A_k)
         dyA = np.fft.ifft2(1j * self.ky * A_k)
@@ -63,23 +69,24 @@ class DriftWavePhysics:
         nonlin = dxA * dyB - dyA * dxB
 
         # Back to spectral + De-aliasing
-        return np.fft.fft2(nonlin) * self.mask
+        return np.asarray(np.fft.fft2(nonlin) * self.mask, dtype=np.complex128)
 
     @staticmethod
-    def spectral_dissipation_multiplier(k2):
+    def spectral_dissipation_multiplier(k2: FloatArray) -> FloatArray:
         """Return the Hasegawa-Wakatani fourth-order hyperviscous multiplier."""
+        return np.asarray(
+            NU * np.asarray(k2, dtype=np.float64) ** (HYPERVISCOSITY_ORDER // 2), dtype=np.float64
+        )
 
-        return NU * np.asarray(k2, dtype=np.float64) ** (HYPERVISCOSITY_ORDER // 2)
-
-    def step(self):
-        """Runge-Kutta 4th Order Step with Stability Clamp"""
+    def step(self) -> tuple[FloatArray, FloatArray]:
+        """Advance one RK4 time step and return the real-space (phi, n) fields."""
         p = self.phi_k
         n = self.n_k
 
         # Reduced time step for stability
         local_dt = 0.01
 
-        def rhs(p_in, n_in):
+        def rhs(p_in: ComplexArray, n_in: ComplexArray) -> tuple[ComplexArray, ComplexArray]:
             # Enforce mask
             p_in *= self.mask
             n_in *= self.mask
@@ -110,7 +117,10 @@ class DriftWavePhysics:
 
             dn_dt = -brack_phi_n + coupling - KAPPA * (1j * self.ky * p_in) - dissip_n
 
-            return dp_dt, dn_dt
+            return (
+                np.asarray(dp_dt, dtype=np.complex128),
+                np.asarray(dn_dt, dtype=np.complex128),
+            )
 
         # RK4 Integration
         k1_p, k1_n = rhs(p, n)
@@ -133,27 +143,34 @@ class DriftWavePhysics:
 
 
 class OracleESN:
-    """
-    Echo State Network (Reservoir Computing).
-    Specialized for predicting chaotic time series.
-    Pass ``seed`` for reproducible reservoir construction.
+    """Echo State Network (reservoir computing) for chaotic time-series forecasting.
+
+    Specialised for predicting chaotic time series. Pass ``seed`` for
+    reproducible reservoir construction.
     """
 
-    def __init__(self, input_dim, reservoir_size=500, spectral_radius=0.95, seed=None):
+    def __init__(
+        self,
+        input_dim: int,
+        reservoir_size: int = 500,
+        spectral_radius: float = 0.95,
+        seed: int | None = None,
+    ) -> None:
+        random_state: int | None
         if seed is None:
             self.W_in = np.random.uniform(-1, 1, (reservoir_size, input_dim))
             random_state = None
 
-            def reservoir_values(size):
-                return np.random.uniform(-1, 1, size)
+            def reservoir_values(size: int) -> FloatArray:
+                return np.asarray(np.random.uniform(-1, 1, size), dtype=np.float64)
 
         else:
             rng = np.random.default_rng(seed)
             self.W_in = rng.uniform(-1, 1, (reservoir_size, input_dim))
             random_state = seed
 
-            def reservoir_values(size):
-                return rng.uniform(-1, 1, size)
+            def reservoir_values(size: int) -> FloatArray:
+                return np.asarray(rng.uniform(-1, 1, size), dtype=np.float64)
 
         # Sparse Reservoir
         self.W_res = rand(
@@ -172,10 +189,10 @@ class OracleESN:
             self.W_res *= spectral_radius / radius
 
         self.state = np.zeros(reservoir_size)
-        self.W_out = None  # Trained later
+        self.W_out: FloatArray | None = None  # Trained later
 
-    def train(self, inputs, targets):
-        """Ridge Regression training"""
+    def train(self, inputs: FloatArray, targets: FloatArray) -> None:
+        """Train the readout weights by ridge regression on harvested states."""
         print(f"[Oracle] Training on {len(inputs)} chaotic states...")
         states = []
 
@@ -194,8 +211,10 @@ class OracleESN:
 
         print("[Oracle] Mental Model Formed.")
 
-    def predict(self, u_current, steps=50):
+    def predict(self, u_current: FloatArray, steps: int = 50) -> FloatArray:
         """Generate closed-loop ESN predictions from an initial state."""
+        if self.W_out is None:
+            raise RuntimeError("Oracle is not trained. Call train() first.")
         predictions = []
         curr = u_current
 
@@ -208,10 +227,10 @@ class OracleESN:
             predictions.append(pred)
             curr = pred  # Feed prediction back
 
-        return np.array(predictions)
+        return np.asarray(predictions, dtype=np.float64)
 
 
-def run_turbulence_oracle():
+def run_turbulence_oracle() -> None:
     """Run an end-to-end Drift-Wave + ESN prediction and save diagnostic plot."""
     print("--- SCPN TURBULENCE ORACLE: PREDICTING CHAOS ---")
 
