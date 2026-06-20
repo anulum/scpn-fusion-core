@@ -32,6 +32,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+FloatArray = NDArray[np.float64]
+
 try:
     import jax
     import jax.numpy as jnp
@@ -54,13 +56,13 @@ def has_jax() -> bool:
 
 
 def _jacobi_gs_step_np(
-    psi: NDArray,
-    source: NDArray,
-    R_interior: NDArray,
+    psi: FloatArray,
+    source: FloatArray,
+    R_interior: FloatArray,
     dR: float,
     dZ: float,
     omega_j: float,
-) -> NDArray:
+) -> FloatArray:
     """Single damped Jacobi step for GS* with toroidal 1/R stencil (NumPy)."""
     dR2 = dR * dR
     dZ2 = dZ * dZ
@@ -84,20 +86,20 @@ def _jacobi_gs_step_np(
 
 
 def _compute_source_np(
-    psi: NDArray,
-    R_grid: NDArray,
+    psi: FloatArray,
+    R_grid: FloatArray,
     mu0: float,
     Ip_target: float,
     beta_mix: float,
     dR: float,
     dZ: float,
-) -> NDArray:
+) -> FloatArray:
     """Compute GS RHS = -μ₀ R J_φ from L-mode profiles (NumPy)."""
-    psi_axis = np.max(psi[1:-1, 1:-1])
+    psi_axis = float(np.max(psi[1:-1, 1:-1]))
     psi_bdry = 0.0  # Dirichlet ψ=0 on boundary
     denom = psi_bdry - psi_axis
     if abs(denom) < 1e-9:
-        denom = np.sign(denom) * 1e-9 if denom != 0 else 1e-9
+        denom = float(np.sign(denom)) * 1e-9 if denom != 0 else 1e-9
 
     psi_norm = (psi - psi_axis) / denom
     psi_norm = np.clip(psi_norm, 0.0, 1.0)
@@ -114,7 +116,7 @@ def _compute_source_np(
     scale = Ip_target / max(abs(I_current), 1e-9)
     J_phi = J_raw * scale
 
-    result: NDArray = -mu0 * R_grid * J_phi
+    result: FloatArray = -mu0 * R_grid * J_phi
     return result
 
 
@@ -132,7 +134,7 @@ def gs_solve_np(
     alpha: float = 0.1,
     omega_j: float = 0.667,
     beta_mix: float = 0.5,
-) -> NDArray:
+) -> FloatArray:
     """Fixed-boundary GS solve via Picard iteration (NumPy reference backend).
 
     Returns psi on the (NZ, NR) grid with zero Dirichlet boundary.
@@ -161,17 +163,17 @@ def gs_solve_np(
             psi_elliptic = _jacobi_gs_step_np(psi_elliptic, source, R_interior, dR, dZ, omega_j)
         psi = (1.0 - alpha) * psi + alpha * psi_elliptic
 
-    result: NDArray = psi
+    result: FloatArray = psi
     return result
 
 
 def _validate_operator_inputs_np(
-    psi: NDArray,
+    psi: FloatArray,
     R_min: float,
     R_max: float,
     Z_min: float,
     Z_max: float,
-) -> tuple[NDArray, int, int, float, float, NDArray]:
+) -> tuple[FloatArray, int, int, float, float, FloatArray]:
     """Validate a flux grid before applying the native GS operator."""
     psi_arr = np.asarray(psi, dtype=float)
     if psi_arr.ndim != 2:
@@ -188,17 +190,17 @@ def _validate_operator_inputs_np(
 
     dR = (R_max - R_min) / (NR - 1)
     dZ = (Z_max - Z_min) / (NZ - 1)
-    R = np.linspace(R_min, R_max, NR)
-    return psi_arr, NR, NZ, dR, dZ, R
+    R = np.linspace(R_min, R_max, NR).astype(np.float64)
+    return np.asarray(psi_arr, dtype=np.float64), NR, NZ, dR, dZ, R
 
 
 def gs_delta_star_np(
-    psi: NDArray,
+    psi: FloatArray,
     R_min: float,
     R_max: float,
     Z_min: float,
     Z_max: float,
-) -> NDArray:
+) -> FloatArray:
     r"""Evaluate the native cylindrical Grad-Shafranov operator ``Delta* psi``.
 
     The centered finite-difference operator is
@@ -217,13 +219,13 @@ def gs_delta_star_np(
 
 
 def gs_toroidal_current_density_np(
-    psi: NDArray,
+    psi: FloatArray,
     R_min: float,
     R_max: float,
     Z_min: float,
     Z_max: float,
     mu0: float = 4e-7 * np.pi,
-) -> NDArray:
+) -> FloatArray:
     r"""Return ``J_phi`` implied by ``Delta*psi = -mu0 R J_phi``."""
     if not (np.isfinite(mu0) and mu0 > 0.0):
         raise ValueError("mu0 must be finite and positive")
@@ -235,7 +237,7 @@ def gs_toroidal_current_density_np(
 
 
 def gs_total_toroidal_current_np(
-    psi: NDArray,
+    psi: FloatArray,
     R_min: float,
     R_max: float,
     Z_min: float,
@@ -249,7 +251,7 @@ def gs_total_toroidal_current_np(
 
 
 def gs_equation_residual_np(
-    psi: NDArray,
+    psi: FloatArray,
     R_min: float,
     R_max: float,
     Z_min: float,
@@ -442,7 +444,7 @@ def jax_gs_solve(
     beta_mix: float = 0.5,
     *,
     use_jax: bool = True,
-) -> NDArray:
+) -> FloatArray:
     """Fixed-boundary Grad-Shafranov equilibrium solve.
 
     Picard iteration with damped Jacobi inner sweeps. With ``use_jax=True``,
@@ -522,8 +524,8 @@ def jax_gs_solve(
 
 
 def jax_gs_solve_from_grid(
-    R_grid: NDArray,
-    psi_init: NDArray,
+    R_grid: FloatArray,
+    psi_init: FloatArray,
     dR: float,
     dZ: float,
     Ip_target: float = 1e6,
@@ -533,7 +535,7 @@ def jax_gs_solve_from_grid(
     alpha: float = 0.1,
     omega_j: float = 0.667,
     beta_mix: float = 0.5,
-) -> NDArray:
+) -> FloatArray:
     """GS solve on a pre-existing grid. JAX-only, differentiable.
 
     Parameters
