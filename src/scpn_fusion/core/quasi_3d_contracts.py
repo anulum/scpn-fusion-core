@@ -235,10 +235,10 @@ def hall_mhd_zonal_ratio(
     state = np.random.get_state()
     try:
         np.random.seed(int(seed))
-        sim = HallMHD(N=grid_n)  # type: ignore[no-untyped-call]
+        sim = HallMHD(N=grid_n)
         ratios: list[float] = []
         for _ in range(steps_n):
-            e_tot, e_zonal = sim.step()  # type: ignore[no-untyped-call]
+            e_tot, e_zonal = sim.step()
             denom = max(float(e_tot), 1e-12)
             ratios.append(float(e_zonal) / denom)
     finally:

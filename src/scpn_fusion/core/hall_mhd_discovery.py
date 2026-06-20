@@ -16,9 +16,15 @@ local benchmark tasks can exercise a full discovery-style simulation path:
 * automated visual output for inspection.
 """
 
+from __future__ import annotations
+
 import numpy as np
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft2, ifft2
+
+FloatArray = NDArray[np.float64]
+ComplexArray = NDArray[np.complex128]
 
 GRID = 64
 L = 2 * np.pi
@@ -26,11 +32,11 @@ DT = 0.005
 STEPS = 2000
 
 
-def spitzer_resistivity(T_e_eV, Z_eff=1.0, ln_lambda=17.0):
-    """Spitzer resistivity [Ohm*m]. eta = 1.65e-9 * Z_eff * ln_lambda / T_e^1.5"""
+def spitzer_resistivity(T_e_eV: float, Z_eff: float = 1.0, ln_lambda: float = 17.0) -> float:
+    """Spitzer resistivity [Ohm*m]. eta = 1.65e-9 * Z_eff * ln_lambda / T_e^1.5."""
     if T_e_eV <= 0:
         return 1e-4
-    return 1.65e-9 * Z_eff * ln_lambda / (T_e_eV**1.5)
+    return float(1.65e-9 * Z_eff * ln_lambda / (T_e_eV**1.5))
 
 
 class HallMHD:
@@ -40,7 +46,7 @@ class HallMHD:
     U (vorticity), J (current density).
     """
 
-    def __init__(self, N=GRID, eta=None, nu=None):
+    def __init__(self, N: int = GRID, eta: float | None = None, nu: float | None = None) -> None:
         self.N = N
         k = np.fft.fftfreq(N, d=L / (2 * np.pi * N))
         self.kx, self.ky = np.meshgrid(k, k)
@@ -53,8 +59,12 @@ class HallMHD:
 
         # Init Random Fields
         noise = 1e-3
-        self.phi_k = fft2(np.random.randn(N, N) * noise) * self.mask
-        self.psi_k = fft2(np.random.randn(N, N) * noise) * self.mask
+        self.phi_k: ComplexArray = np.asarray(
+            fft2(np.random.randn(N, N) * noise) * self.mask, dtype=np.complex128
+        )
+        self.psi_k: ComplexArray = np.asarray(
+            fft2(np.random.randn(N, N) * noise) * self.mask, dtype=np.complex128
+        )
 
         # Physics Constants
         self.rho_s = 0.1  # Larmor radius (Hall scale)
@@ -65,19 +75,24 @@ class HallMHD:
         self.eta = 1e-4  # Resistivity
         if eta is not None:
             self.eta = eta
-        self.energy_history = []
+        self.energy_history: list[float] = []
 
-    def poisson_bracket(self, A_k, B_k):
+    def poisson_bracket(self, A_k: ComplexArray, B_k: ComplexArray) -> ComplexArray:
         """Compute the 2D Poisson bracket ``[A, B]`` in spectral space.
 
-        The bracket uses FFT-domain derivatives and returns the transformed commutator
-        ``dxA * dyB - dyA * dxB``.
+        The bracket uses FFT-domain derivatives and returns the transformed
+        commutator ``dxA * dyB - dyA * dxB``.
 
-        Args:
-            A_k: Real- or complex-valued spectral field ``A(kx, ky)``.
-            B_k: Real- or complex-valued spectral field ``B(kx, ky)``.
+        Parameters
+        ----------
+        A_k : ComplexArray
+            Real- or complex-valued spectral field ``A(kx, ky)``.
+        B_k : ComplexArray
+            Real- or complex-valued spectral field ``B(kx, ky)``.
 
-        Returns:
+        Returns
+        -------
+        ComplexArray
             Fourier representation of the Poisson bracket ``[A, B]``.
         """
         # [A, B] = dxA dyB - dyA dxB
@@ -85,14 +100,13 @@ class HallMHD:
         dyA = ifft2(1j * self.ky * A_k)
         dxB = ifft2(1j * self.kx * B_k)
         dyB = ifft2(1j * self.ky * B_k)
-        return fft2(dxA * dyB - dyA * dxB) * self.mask
+        return np.asarray(fft2(dxA * dyB - dyA * dxB) * self.mask, dtype=np.complex128)
 
-    def dynamics(self, phi, psi):
-        """
-        Reduced MHD Equations:
-        d(U)/dt = [phi, U] + [J, psi] + nu*del^4 U
-        d(psi)/dt = [phi, psi] + rho_s^2 [J, psi] - eta*J
-        where U = del^2 phi, J = del^2 psi
+    def dynamics(self, phi: ComplexArray, psi: ComplexArray) -> tuple[ComplexArray, ComplexArray]:
+        """Evaluate the reduced Hall-MHD right-hand side for (phi, psi).
+
+        d(U)/dt = [phi, U] + [J, psi] + nu*del^4 U; d(psi)/dt = [phi, psi] +
+        rho_s^2 [J, psi] - eta*J, where U = del^2 phi and J = del^2 psi.
         """
         # Derivatives
         U = -self.k2 * phi
@@ -120,16 +134,21 @@ class HallMHD:
         dphi_dt = -dU_dt / self.k2
         dphi_dt[0, 0] = 0.0
 
-        return dphi_dt, dpsi_dt
+        return (
+            np.asarray(dphi_dt, dtype=np.complex128),
+            np.asarray(dpsi_dt, dtype=np.complex128),
+        )
 
-    def step(self):
+    def step(self) -> tuple[float, float]:
         """Advance one reduced Hall-MHD pseudo-time step (RK2).
 
-        Returns:
+        Returns
+        -------
+        tuple
             ``(total_energy, zonal_energy)`` for the post-step state in spectral
-            coordinates. ``total_energy`` is the total potential energy proxy from
-            spectral coefficients; ``zonal_energy`` accumulates non-zero ky=0
-            modes as a zonal-flow metric.
+            coordinates. ``total_energy`` is the total potential energy proxy
+            from spectral coefficients; ``zonal_energy`` accumulates non-zero
+            ky=0 modes as a zonal-flow metric.
         """
         # RK2 Time stepping
         dp1, ds1 = self.dynamics(self.phi_k, self.psi_k)
@@ -146,16 +165,22 @@ class HallMHD:
         # These are the flows that kill turbulence
         # Filter where ky=0 and kx!=0
         zonal_mask = (np.abs(self.ky) < 1e-9) & (np.abs(self.kx) > 1e-9)
-        zonal_energy = np.sum(np.abs(self.phi_k[zonal_mask]) ** 2)
+        zonal_energy = float(np.sum(np.abs(self.phi_k[zonal_mask]) ** 2))
 
-        total_energy = np.sum(np.abs(self.phi_k) ** 2)
+        total_energy = float(np.sum(np.abs(self.phi_k) ** 2))
         self.energy_history.append(total_energy)
 
         return total_energy, zonal_energy
 
-    def parameter_sweep(self, eta_range, nu_range, n_steps=5, sim_steps=200):
-        """Run grid of simulations varying eta and nu. Returns dict with growth rates."""
-        results = {"eta": [], "nu": [], "growth_rate": []}
+    def parameter_sweep(
+        self,
+        eta_range: tuple[float, float],
+        nu_range: tuple[float, float],
+        n_steps: int = 5,
+        sim_steps: int = 200,
+    ) -> dict[str, list[float]]:
+        """Run a grid of simulations varying eta and nu, returning growth rates."""
+        results: dict[str, list[float]] = {"eta": [], "nu": [], "growth_rate": []}
         for eta_val in np.linspace(eta_range[0], eta_range[1], n_steps):
             for nu_val in np.linspace(nu_range[0], nu_range[1], n_steps):
                 sim = HallMHD(self.N, eta=eta_val, nu=nu_val)
@@ -171,8 +196,13 @@ class HallMHD:
                 results["growth_rate"].append(growth)
         return results
 
-    def find_tearing_threshold(self, eta_range=(1e-6, 1e-2), n_bisect=10, sim_steps=500):
-        """Bisection search for marginal tearing stability threshold."""
+    def find_tearing_threshold(
+        self,
+        eta_range: tuple[float, float] = (1e-6, 1e-2),
+        n_bisect: int = 10,
+        sim_steps: int = 500,
+    ) -> dict[str, float]:
+        """Bisection search for the marginal tearing stability threshold."""
         lo, hi = eta_range
         for _ in range(n_bisect):
             mid = np.sqrt(lo * hi)  # geometric mean
@@ -188,16 +218,14 @@ class HallMHD:
                 hi = mid
             else:
                 lo = mid
-        return {"threshold_eta": np.sqrt(lo * hi), "lo": lo, "hi": hi}
+        return {"threshold_eta": float(np.sqrt(lo * hi)), "lo": lo, "hi": hi}
 
 
-def run_discovery_sim():
+def run_discovery_sim() -> None:
     """Run the standalone Hall-MHD discovery demo and emit figure artifacts.
 
-    Side effects:
-        - prints periodic progress snapshots,
-        - writes ``Hall_MHD_Discovery.png``,
-        - writes ``Hall_MHD_Structure.png``.
+    Writes ``Hall_MHD_Discovery.png`` and ``Hall_MHD_Structure.png`` and prints
+    periodic progress snapshots.
     """
     print("--- SCPN HALL-MHD: ZONAL FLOW DISCOVERY ---")
     print("Searching for spontaneous H-Mode transition...")
