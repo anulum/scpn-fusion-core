@@ -27,8 +27,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
+
+from scpn_fusion.io.safe_loaders import checked_np_load
+
+FloatArray = NDArray[np.float64]
 
 try:
     import jax
@@ -90,12 +93,12 @@ def load_weights_as_jax(
 
 
 def numpy_weights_to_jax(
-    weights: list[NDArray],
-    biases: list[NDArray],
-    pca_mean: NDArray,
-    pca_components: NDArray,
-    input_mean: NDArray,
-    input_std: NDArray,
+    weights: list[FloatArray],
+    biases: list[FloatArray],
+    pca_mean: FloatArray,
+    pca_components: FloatArray,
+    input_mean: FloatArray,
+    input_std: FloatArray,
 ) -> tuple[JAXWeights, JAXPCAParams, JAXNormParams]:
     """Convert NumPy weight arrays to JAX-compatible tuples."""
     if not _HAS_JAX:
@@ -168,9 +171,9 @@ if _HAS_JAX:
 
 
 def jax_mlp_forward(
-    x: NDArray,
+    x: FloatArray,
     mlp_weights: JAXWeights,
-) -> NDArray:
+) -> FloatArray:
     """MLP forward pass with JAX acceleration.
 
     Parameters
@@ -186,9 +189,9 @@ def jax_mlp_forward(
 
 
 def jax_pca_inverse(
-    coeffs: NDArray,
+    coeffs: FloatArray,
     pca_params: JAXPCAParams,
-) -> NDArray:
+) -> FloatArray:
     """PCA inverse transform with JAX acceleration."""
     if not _HAS_JAX:
         raise RuntimeError("JAX not available")
@@ -202,12 +205,12 @@ def jax_pca_inverse(
 
 
 def jax_neural_eq_predict(
-    features: NDArray,
+    features: FloatArray,
     mlp_weights: JAXWeights,
     pca_params: JAXPCAParams,
     norm_params: JAXNormParams,
     grid_shape: tuple[int, int] = (129, 129),
-) -> NDArray:
+) -> FloatArray:
     """Predict psi(R,Z) from input features using JAX-accelerated pipeline.
 
     Parameters
@@ -244,12 +247,12 @@ def jax_neural_eq_predict(
 
 
 def jax_neural_eq_predict_batched(
-    features_batch: NDArray,
+    features_batch: FloatArray,
     mlp_weights: JAXWeights,
     pca_params: JAXPCAParams,
     norm_params: JAXNormParams,
     grid_shape: tuple[int, int] = (129, 129),
-) -> NDArray:
+) -> FloatArray:
     """Batched equilibrium prediction via jax.vmap.
 
     Parameters
