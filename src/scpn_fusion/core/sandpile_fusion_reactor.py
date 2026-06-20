@@ -198,7 +198,7 @@ def run_sandpile_simulation() -> None:
         aspect="auto",
         cmap="magma",
         origin="lower",
-        norm=LogNorm(vmin=1, vmax=np.max(history_map)),
+        norm=LogNorm(vmin=1, vmax=float(np.max(history_map))),
     )
     ax1.set_title("Turbulence Evolution (Gradients)")
     ax1.set_xlabel("Time Step")
