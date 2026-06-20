@@ -323,6 +323,7 @@ files = [
     "src/scpn_fusion/core/force_balance.py",
     "src/scpn_fusion/core/fno_turbulence_suppressor.py",
     "src/scpn_fusion/core/lazarus_bridge.py",
+    "src/scpn_fusion/core/vibrana_bridge.py",
     "src/scpn_fusion/core/gpu_runtime.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",

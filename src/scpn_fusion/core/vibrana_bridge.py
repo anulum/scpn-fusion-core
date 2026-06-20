@@ -7,16 +7,23 @@
 # SCPN Fusion Core — Vibrana Bridge
 """Bridge that maps tokamak control dynamics into VIBRANA sonification settings."""
 
+from __future__ import annotations
+
 import sys
 import os
+from typing import Any
+
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 # Add VIBRANA path
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../CCW_Standalone"))
 )
 try:
-    from ccw_sota_engine import (
+    from ccw_sota_engine import (  # type: ignore[import-not-found]
         CCWStateOfTheArtEngine,
         CCWConfiguration,
         BiometricData,
@@ -53,7 +60,7 @@ class VibranaFusionBridge:
     Unstable Plasma = Chaotic, Dissonant Screeching (Lorenz Attractor).
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         if not VIBRANA_AVAILABLE:
             raise ImportError("VIBRANA Engine not available.")
 
@@ -68,10 +75,10 @@ class VibranaFusionBridge:
         )
         self.engine = CCWStateOfTheArtEngine(self.audio_config)
 
-    def map_physics_to_audio(self, t, Ip, err_R, err_Z, psi_matrix):
-        """
-        The Transduction Function: Physics -> Acoustics
-        """
+    def map_physics_to_audio(
+        self, t: int, Ip: float, err_R: float, err_Z: float, psi_matrix: FloatArray
+    ) -> dict[str, float]:
+        """Transduce plasma physics state into audio control parameters."""
         # 1. Pitch (Carrier) driven by Current
         # 5MA -> 200Hz, 15MA -> 600Hz
         carrier_freq = 200.0 + (Ip * 20.0)
@@ -105,13 +112,14 @@ class VibranaFusionBridge:
 
         return {"Carrier": carrier_freq, "Chaos": chaos_level, "Beat": beat_freq}
 
-    def run_sonification_session(self, duration_steps=100):
+    def run_sonification_session(self, duration_steps: int = 100) -> None:
         """Execute an autonomous sonification run and collect audio-control telemetry."""
         print("--- VIBRANA FUSION BRIDGE: SONIFICATION INITIATED ---")
         print("Listen to the Plasma...")
 
         self.nc.kernel.solve_equilibrium()
         self.nc.initialize_brains(use_quantum=True)
+        assert self.nc.brain_R is not None and self.nc.brain_Z is not None  # set above
 
         audio_log = []
 
@@ -161,7 +169,7 @@ class VibranaFusionBridge:
 
         self.visualize_soundscape(audio_log)
 
-    def visualize_soundscape(self, log):
+    def visualize_soundscape(self, log: list[dict[str, Any]]) -> None:
         """Generate and save a 2-panel summary of sonification dynamics."""
         import matplotlib.pyplot as plt
 
