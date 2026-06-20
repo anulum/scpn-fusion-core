@@ -11,19 +11,19 @@ from __future__ import annotations
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 from scpn_fusion.nuclear.pwi_erosion import SputteringPhysics
 
 
 class WholeDeviceModel:
-    """
-    SCPN WDM: Coupled Multi-Physics Simulation.
-    Loops: Equilibrium <-> Transport <-> Wall <-> Radiation
+    """Coupled multi-physics whole-device model.
+
+    Loops equilibrium <-> transport <-> wall <-> radiation.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         self.transport = TransportSolver(config_path)
         self.pwi = SputteringPhysics("Tungsten")
 
@@ -43,11 +43,11 @@ class WholeDeviceModel:
             raise ValueError(f"{name} must be finite and > 0.")
         return out
 
-    def thomas_fermi_pressure(self, n_e_m3, T_eV):
-        """
-        Hardened Thomas-Fermi Equation of State (EOS) heuristic.
-        Accounts for electron degeneracy pressure in the WDM regime.
-        P_total = P_ideal + P_deg
+    def thomas_fermi_pressure(self, n_e_m3: float, T_eV: float) -> float:
+        """Compute the hardened Thomas-Fermi equation-of-state pressure.
+
+        Accounts for electron degeneracy pressure in the WDM regime:
+        ``P_total = P_ideal + P_deg``.
         """
         n_e = self._require_finite_positive("n_e_m3", n_e_m3)
         t_ev = self._require_finite_non_negative("T_eV", T_eV)
@@ -59,11 +59,11 @@ class WholeDeviceModel:
 
         return float(p_ideal + p_deg)
 
-    def calculate_redeposition_fraction(self, T_edge_eV, B_field_T):
-        """
-        Estimates the fraction of sputtered atoms that are promptly redeposited.
-        Redeposition fraction f_redep ~ 1 - (lambda_ion / rho_L)
-        For heavy impurities (W) in high B-field, redeposition can exceed 90%.
+    def calculate_redeposition_fraction(self, T_edge_eV: float, B_field_T: float) -> float:
+        """Estimate the prompt-redeposition fraction of sputtered atoms.
+
+        ``f_redep ~ 1 - (lambda_ion / rho_L)``; for heavy impurities (W) in a
+        high B-field, redeposition can exceed 90%.
         """
         # Ionization mean free path lambda_ion ~ v_thermal / (n_e * <sigma_v>_ion)
         # Larmor radius rho_L = m*v / qB
@@ -76,7 +76,7 @@ class WholeDeviceModel:
         f_redep = 0.95 * (1.0 - np.exp(-(b_field / 5.0) * (n_e_edge / 1e19)))
         return float(np.clip(f_redep, 0.0, 0.99))
 
-    def run_discharge(self, duration_sec=10.0) -> list[dict[str, float | str]]:
+    def run_discharge(self, duration_sec: float = 10.0) -> list[dict[str, float | str]]:
         """Run the whole-device discharge timeline and collect time-series state."""
         duration_sec = self._require_finite_positive("duration_sec", duration_sec)
         print(f"--- SCPN WDM: WHOLE DEVICE SIMULATION ({duration_sec}s) ---")
@@ -122,11 +122,11 @@ class WholeDeviceModel:
             if core_t < 0.5:
                 status = "COLLAPSE"
 
-            state = {
+            state: dict[str, float | str] = {
                 "time": t * dt,
                 "Te_core": core_t,
-                "W_impurity": np.sum(self.transport.n_impurity),
-                "P_rad": np.max(self.transport.n_impurity) * 100,  # Approx metric
+                "W_impurity": float(np.sum(self.transport.n_impurity)),
+                "P_rad": float(np.max(self.transport.n_impurity) * 100),  # Approx metric
                 "status": status,
             }
             history.append(state)
@@ -141,7 +141,7 @@ class WholeDeviceModel:
         self.plot_results(history)
         return history
 
-    def plot_results(self, history):
+    def plot_results(self, history: list[dict[str, float | str]]) -> None:
         """Plot discharge evolution and export WDM summary figure."""
         if len(history) == 0:
             raise ValueError("history must not be empty.")
