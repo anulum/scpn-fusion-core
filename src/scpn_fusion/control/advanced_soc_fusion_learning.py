@@ -14,8 +14,11 @@ from typing import Any, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+
+FloatArray = NDArray[np.float64]
 
 L = 60
 TIME_STEPS = 10000
@@ -41,9 +44,7 @@ def _normalize_bounds(bounds: Tuple[float, float], name: str) -> Tuple[float, fl
 
 
 class CoupledSandpileReactor:
-    """
-    Predator-prey sandpile approximation for turbulence/flow coupling.
-    """
+    """Predator-prey sandpile approximation for turbulence/flow coupling."""
 
     def __init__(
         self,
@@ -57,6 +58,7 @@ class CoupledSandpileReactor:
         flow_bounds: Tuple[float, float] = (0.0, 5.0),
         energy_per_topple_mj: float = 0.05,  # Physical calibration
     ) -> None:
+        """Validate the sandpile parameters and allocate the height/flow state."""
         size = int(size)
         if size < 8:
             raise ValueError("size must be >= 8.")
@@ -81,18 +83,16 @@ class CoupledSandpileReactor:
         self.max_sub_steps = max_sub_steps
         self.flow_bounds = _normalize_bounds(flow_bounds, "flow_bounds")
 
-        self.Z = np.zeros(self.size, dtype=np.float64)
-        self.h = np.zeros(self.size, dtype=np.float64)
+        self.Z: FloatArray = np.zeros(self.size, dtype=np.float64)
+        self.h: FloatArray = np.zeros(self.size, dtype=np.float64)
         self.flow = 0.0
 
     def drive(self, amount: float = 1.0) -> None:
         """Inject edge drive into the sandpile state with non-negative magnitude."""
-
         self.Z[0] += max(float(amount), 0.0)
 
     def step_physics(self, external_shear: float) -> tuple[int, float, float]:
         """Advance one avalanche-relaxation step and return turbulence and flow diagnostics."""
-
         eff_shear = float(self.flow + float(external_shear))
         current_z_crit = float(self.z_crit_base + self.shear_efficiency * eff_shear)
         total_topple = 0
@@ -117,7 +117,6 @@ class CoupledSandpileReactor:
 
     def get_profile_energy(self) -> float:
         """Return the core-side cumulative profile energy proxy."""
-
         self.h = np.cumsum(self.Z[::-1])[::-1]
         return float(self.h[0] if self.h.size else 0.0)
 
@@ -127,9 +126,7 @@ class CoupledSandpileReactor:
 
 
 class FusionAIAgent:
-    """
-    Tabular Q-learning controller on discretized turbulence/flow states.
-    """
+    """Tabular Q-learning controller on discretized turbulence/flow states."""
 
     def __init__(
         self,
@@ -142,6 +139,7 @@ class FusionAIAgent:
         n_actions: int = N_ACTIONS,
         entropy_beta: float = 0.05,
     ) -> None:
+        """Validate the learning rates and allocate the Q-table."""
         alpha = float(alpha)
         if not np.isfinite(alpha) or alpha < 0.0 or alpha > 1.0:
             raise ValueError("alpha must be finite and in [0, 1].")
@@ -175,7 +173,6 @@ class FusionAIAgent:
 
     def discretize_state(self, turb: float, flow: float) -> tuple[int, int]:
         """Map continuous turbulence and flow diagnostics to Q-table state indices."""
-
         s_turb = min(int(np.log1p(max(float(turb), 0.0))), self.n_states_turb - 1)
         s_flow = min(int(max(float(flow), 0.0)), self.n_states_flow - 1)
         return s_turb, s_flow
@@ -186,7 +183,6 @@ class FusionAIAgent:
         rng: np.random.Generator,
     ) -> int:
         """Choose an epsilon-greedy shear-control action for the current discrete state."""
-
         if float(rng.random()) < self.epsilon:
             return int(rng.integers(self.n_actions))
 
@@ -200,8 +196,8 @@ class FusionAIAgent:
         new_state: tuple[int, int],
         reward: float,
     ) -> float:
-        """
-        Soft-Q learning update with entropy regularization.
+        """Apply a soft-Q learning update with entropy regularisation.
+
         Q(s,a) = R + gamma * [ max Q(s',a') + beta * Entropy ]
         """
         old_q = float(self.q_table[state][int(action)])
@@ -212,7 +208,7 @@ class FusionAIAgent:
         # Entropy regularisation (soft-Q)
         probs = np.exp(future_qs - max_future_q)
         probs /= np.sum(probs)
-        entropy = -np.sum(probs * np.log(probs + 1e-9))
+        entropy = float(-np.sum(probs * np.log(probs + 1e-9)))
 
         target = float(reward) + self.gamma * (max_future_q + self.entropy_beta * entropy)
         new_q = old_q + self.alpha * (target - old_q)
@@ -227,11 +223,11 @@ class FusionAI_Agent(FusionAIAgent):
 
 
 def _plot_learning(
-    h_turb: np.ndarray,
-    h_flow: np.ndarray,
-    h_temp: np.ndarray,
-    h_shear_ctrl: np.ndarray,
-    q_table: np.ndarray,
+    h_turb: FloatArray,
+    h_flow: FloatArray,
+    h_temp: FloatArray,
+    h_shear_ctrl: FloatArray,
+    q_table: FloatArray,
     output_path: str,
 ) -> tuple[bool, Optional[str]]:
     try:
@@ -299,9 +295,7 @@ def run_advanced_learning_sim(
     output_path: str = "Advanced_SOC_Learning.png",
     verbose: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Run deterministic SOC+Q-learning control simulation and return summary metrics.
-    """
+    """Run deterministic SOC+Q-learning control simulation and return summary metrics."""
     steps = int(time_steps)
     if steps < 1:
         raise ValueError("time_steps must be >= 1.")
