@@ -94,7 +94,6 @@ def alfven_speed_m_s(
     ion_mass_amu: float = DEUTERIUM_MASS_AMU,
 ) -> float:
     """Return ``V_A = B_ref / sqrt(mu0*rho_m)`` for the FRC peak-density state."""
-
     field = float(np.max(np.abs(eq.B_z)))
     return _alfven_speed_from_values(
         b_reference_t=field,
@@ -105,7 +104,6 @@ def alfven_speed_m_s(
 
 def axial_half_length_m(eq: FRCEquilibriumState, elongation: float) -> float:
     """Return the prolate FRC axial half-length used for the Alfvén time."""
-
     return _axial_half_length_from_values(eq.target_separatrix_radius_m, elongation)
 
 
@@ -122,7 +120,6 @@ def frc_tilt_growth_rate(
     ``n_modes`` is validated for API compatibility with the future eigenvalue
     solver surface, but this accepted diagnostic is the n=1 MHD scaling only.
     """
-
     if isinstance(n_modes, bool) or n_modes < 1:
         raise ValueError("n_modes must be a positive integer")
     coefficient = _require_positive("mhd_coefficient", mhd_coefficient)
@@ -133,13 +130,11 @@ def frc_tilt_growth_rate(
 
 def s_parameter(eq: FRCEquilibriumState, mass_amu: float = DEUTERIUM_MASS_AMU) -> float:
     """Return the Steinhauer ``s`` parameter carried by the FRC equilibrium."""
-
     return float(frc_s_parameter(eq, mass_amu=mass_amu))
 
 
 def s_over_elongation(eq: FRCEquilibriumState, elongation: float) -> float:
     """Return the dimensionless ``s / E`` rigid-body stability diagnostic."""
-
     return float(s_parameter(eq) / _require_positive("elongation", elongation))
 
 
@@ -149,7 +144,6 @@ def rigid_body_flr_regime(
     thresholds: FRCTiltModeThresholds | None = None,
 ) -> tuple[str, bool]:
     """Classify the rigid-body FLR threshold regime without claiming parity."""
-
     ratio = s_over_elongation(eq, elongation)
     thresholds = FRCTiltModeThresholds() if thresholds is None else thresholds
     return _rigid_body_flr_regime_from_ratio(ratio, thresholds)
@@ -179,7 +173,6 @@ def tilt_mode_trajectory_from_pulsed_compression(
     compression drivers and reduces to a single ``gamma*dt`` term when the growth
     rate is constant across the interval.
     """
-
     if len(states) == 0:
         raise ValueError("states must contain at least one compression state")
 
@@ -277,7 +270,6 @@ def tilt_mode_report(
     ion_mass_amu: float = DEUTERIUM_MASS_AMU,
 ) -> FRCTiltModeReport:
     """Return a fail-closed FRC n=1 tilt-mode diagnostic report."""
-
     field = float(np.max(np.abs(eq.B_z)))
     thresholds = FRCTiltModeThresholds() if thresholds is None else thresholds
     return _tilt_mode_report_from_values(
@@ -304,7 +296,6 @@ def tilt_mode_stable(
     validated and exposed because downstream safety guards use it as a
     diagnostic floor, not as an acceptance proof.
     """
-
     _require_positive("s_threshold", s_threshold)
     report = tilt_mode_report(eq, elongation)
     return (False, report.growth_rate_s_inv)
@@ -312,7 +303,6 @@ def tilt_mode_stable(
 
 def belova_table1_acceptance_status() -> dict[str, str]:
     """Return the current fail-closed status for Belova Table I parity."""
-
     return {
         "case": "belova_2001_table1_tilt_stability",
         "status": "blocked_missing_public_digitised_reference",
@@ -325,7 +315,6 @@ def belova_table1_acceptance_status() -> dict[str, str]:
 
 def claim_boundary() -> dict[str, str]:
     """Return the public claim boundary for this FUS-C.5 surface."""
-
     return {
         "accepted": "MHD Alfvén-time tilt-growth diagnostic with conservative fail-closed status",
         "not_accepted": "full Belova hybrid eigenvalue solver or Table I same-case parity",

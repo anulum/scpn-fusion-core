@@ -138,7 +138,6 @@ class PulsedCompressionTrajectoryDiagnostics:
 
 def coil_field_t(coil: CoilGeometry, coil_current_a: float) -> float:
     """Return ``B_ext = mu0*N*I/L`` for the uniform-solenoid approximation."""
-
     checked = _validate_coil(coil)
     current = _require_finite("coil_current_a", coil_current_a)
     return float(MU_0 * checked.N_turns * current / checked.L_coil_m)
@@ -148,7 +147,6 @@ def initial_coil_circuit_state(
     coil: CoilGeometry, initial_current_A: float = 0.0
 ) -> CoilCircuitState:
     """Return an initial lumped R-L coil-circuit state."""
-
     checked = _validate_coil(coil)
     current = _require_finite("initial_current_A", initial_current_A)
     return CoilCircuitState(
@@ -170,7 +168,6 @@ def step_coil_circuit(
     dt_s: float,
 ) -> CoilCircuitState:
     """Advance the exact constant-voltage solution of ``L dI/dt + R I = V``."""
-
     checked = _validate_coil(coil)
     _validate_circuit_state(state)
     voltage = _require_bank_voltage(checked, drive_voltage_V)
@@ -221,7 +218,6 @@ def run_coil_circuit(
     initial_current_A: float = 0.0,
 ) -> tuple[CoilCircuitState, ...]:
     """Run a bank-limited lumped R-L coil-current trajectory."""
-
     if n_steps <= 0:
         raise ValueError("n_steps must be positive")
     dt = _require_positive("dt_s", dt_s)
@@ -235,7 +231,6 @@ def run_coil_circuit(
 
 def coil_current_interpolator(states: tuple[CoilCircuitState, ...]) -> ScalarCallable:
     """Return a finite piecewise-linear current interpolator for circuit states."""
-
     if len(states) < 2:
         raise ValueError("at least two coil-circuit states are required")
     time_s = np.asarray([state.t_s for state in states], dtype=np.float64)
@@ -256,14 +251,12 @@ def coil_current_interpolator(states: tuple[CoilCircuitState, ...]) -> ScalarCal
 
 def magnetic_pressure_pa(B_ext_T: float) -> float:
     """Return external magnetic pressure in pascal."""
-
     field = _require_finite("B_ext_T", B_ext_T)
     return float(field * field / (2.0 * MU_0))
 
 
 def plasma_volume_m3(R_s_m: float, plasma_length_m: float) -> float:
     """Return cylindrical FRC volume for the supplied separatrix radius."""
-
     radius = _require_positive("R_s_m", R_s_m)
     length = _require_positive("plasma_length_m", plasma_length_m)
     return float(np.pi * radius * radius * length)
@@ -271,7 +264,6 @@ def plasma_volume_m3(R_s_m: float, plasma_length_m: float) -> float:
 
 def thermal_pressure_pa(density_m3: float, T_i_eV: float, T_e_eV: float) -> float:
     """Return ion-plus-electron scalar pressure in pascal."""
-
     density = _require_positive("density_m3", density_m3)
     ion_temperature = _require_positive("T_i_eV", T_i_eV)
     electron_temperature = _require_positive("T_e_eV", T_e_eV)
@@ -296,7 +288,6 @@ def spitzer_resistivity_ohm_m(
     Implements ``eta_perp = 1.03e-4 * Z_eff * lnLambda / T_e[eV]^(3/2)`` ohm
     metre, the perpendicular branch carried by the azimuthal FRC current.
     """
-
     temperature = np.asarray(T_e_eV, dtype=np.float64)
     if not np.all(np.isfinite(temperature)) or np.any(temperature <= 0.0):
         raise ValueError("T_e_eV must contain positive finite values")
@@ -312,7 +303,6 @@ def adiabatic_temperature_update_eV(
     gamma: float = 5.0 / 3.0,
 ) -> float:
     """Return temperature after ideal adiabatic compression."""
-
     temperature = _require_positive("temperature_eV", temperature_eV)
     old_volume = _require_positive("old_volume_m3", old_volume_m3)
     new_volume = _require_positive("new_volume_m3", new_volume_m3)
@@ -324,7 +314,6 @@ def adiabatic_temperature_update_eV(
 
 def initial_pulsed_compression_state(config: PulsedCompressionConfig) -> PulsedCompressionState:
     """Construct the initial compression state from the accepted FRC equilibrium."""
-
     cfg = _validate_config(config)
     radius = float(cfg.equilibrium.target_separatrix_radius_m)
     density = float(cfg.equilibrium.density_peak_m3)
@@ -366,7 +355,6 @@ def step_pulsed_compression(
     dt_s: float,
 ) -> PulsedCompressionState:
     """Advance one pressure-driven pulsed-compression step."""
-
     cfg = _validate_config(config)
     dt = _require_positive("dt_s", dt_s)
     _validate_state(state, cfg)
@@ -466,7 +454,6 @@ def run_pulsed_compression(
     n_steps: int,
 ) -> tuple[PulsedCompressionState, ...]:
     """Run a supplied-current pulsed-compression trajectory."""
-
     if n_steps <= 0:
         raise ValueError("n_steps must be positive")
     states = [initial]
@@ -493,7 +480,6 @@ def run_voltage_driven_pulsed_compression(
     ``coil_current_t`` contract and raises when the requested voltage exceeds
     the configured bank limit.
     """
-
     cfg = _validate_config(config)
     if n_steps <= 0:
         raise ValueError("n_steps must be positive")
@@ -524,7 +510,6 @@ def pulsed_compression_trajectory_diagnostics(
     radius_floor_m: float | None = None,
 ) -> PulsedCompressionTrajectoryDiagnostics:
     """Return fail-closed aggregate diagnostics for a compression trajectory."""
-
     if len(states) < 2:
         raise ValueError("at least two pulsed-compression states are required")
     time_s = np.asarray([state.t_s for state in states], dtype=np.float64)

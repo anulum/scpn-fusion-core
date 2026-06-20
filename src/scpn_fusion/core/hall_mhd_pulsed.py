@@ -78,7 +78,6 @@ def spitzer_resistivity_ohm_m(
     ln_lambda: float = 17.0,
 ) -> FloatArray:
     """Return NRL-style Spitzer resistivity ``1.65e-9 Z lnLambda / T_e^1.5``."""
-
     temperature = np.asarray(temperature_eV, dtype=np.float64)
     if np.any(~np.isfinite(temperature)) or np.any(temperature <= 0.0):
         raise ValueError("temperature_eV must be positive and finite")
@@ -95,7 +94,6 @@ def faraday_e_theta_from_b_ramp(
     derivative_dt_s: float = 1.0e-9,
 ) -> FloatArray:
     """Return circular-loop Faraday drive ``E_theta = -r/2 dB_ext/dt``."""
-
     rho = _validate_grid(rho_m)
     dt = _require_positive("derivative_dt_s", derivative_dt_s)
     time = _require_non_negative("t_s", t_s)
@@ -109,7 +107,6 @@ def faraday_e_theta_from_b_ramp(
 
 def axial_field_from_flux(rho_m: FloatArray, psi: FloatArray) -> FloatArray:
     """Return axisymmetric ``B_z = (1/r) dpsi/dr`` with finite-axis handling."""
-
     rho = _validate_grid(rho_m)
     flux = _validate_profile("psi", psi, rho.size)
     dpsi_dr = np.gradient(flux, rho, edge_order=2)
@@ -121,7 +118,6 @@ def axial_field_from_flux(rho_m: FloatArray, psi: FloatArray) -> FloatArray:
 
 def initial_hall_mhd_pulsed_state(config: HallMHDPulsedConfig) -> HallMHDPulsedState:
     """Construct the initial Hall-MHD carrier state from an FRC equilibrium."""
-
     cfg = _validate_config(config)
     rho = cfg.equilibrium.rho
     psi = np.asarray(cfg.equilibrium.psi, dtype=np.float64).copy()
@@ -150,7 +146,6 @@ def step_hall_mhd_pulsed(
     dt_s: float,
 ) -> HallMHDPulsedState:
     """Advance one accepted axisymmetric Ono Eq. 8 carrier step."""
-
     cfg = _validate_config(config)
     dt = _require_positive("dt_s", dt_s)
     _validate_state(state, cfg)
@@ -189,7 +184,6 @@ def run_hall_mhd_pulsed(
     n_steps: int,
 ) -> tuple[HallMHDPulsedState, ...]:
     """Run a supplied-current Hall-MHD carrier trajectory."""
-
     if isinstance(n_steps, bool) or n_steps <= 0:
         raise ValueError("n_steps must be positive")
     states = [initial]
@@ -202,7 +196,6 @@ def run_hall_mhd_pulsed(
 
 def gkeyll_small_hall_acceptance_status() -> dict[str, str]:
     """Return the current fail-closed status for 2D external-code parity."""
-
     return {
         "case": "gkeyll_axisymmetric_small_hall",
         "status": "blocked_missing_public_same_case_reference",
@@ -212,7 +205,6 @@ def gkeyll_small_hall_acceptance_status() -> dict[str, str]:
 
 def ono_fig4_acceptance_status() -> dict[str, str]:
     """Return the current fail-closed status for Ono figure reproduction."""
-
     return {
         "case": "ono_1997_fig4_flux_decay",
         "status": "blocked_missing_public_digitised_reference",

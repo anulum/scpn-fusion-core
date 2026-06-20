@@ -5,8 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Neural Equilibrium Kernel Runtime
-"""
-Drop-in kernel wrapper around the neural equilibrium accelerator.
+"""Drop-in kernel wrapper around the neural equilibrium accelerator.
 
 This module isolates runtime/orchestration concerns from training code and
 keeps the runtime feature contract aligned with the trained 12-feature model.
@@ -48,8 +47,7 @@ def _first_finite_number(
 
 
 class NeuralEquilibriumKernel:
-    """
-    Drop-in replacement for FusionKernel using the neural surrogate.
+    """Drop-in replacement for FusionKernel using the neural surrogate.
 
     Enables ~1000x faster control loops by bypassing the Picard iteration.
     Satisfies the attribute and method interface expected by
@@ -89,6 +87,7 @@ class NeuralEquilibriumKernel:
         config_path: str | Path,
         weights_path: str | Path | None = None,
     ) -> None:
+        """Load the kernel configuration and optional pretrained weights."""
         # Delayed import avoids circular imports when re-exporting from
         # scpn_fusion.core.neural_equilibrium.
         from .neural_equilibrium import DEFAULT_WEIGHTS_PATH, NeuralEquilibriumAccelerator
