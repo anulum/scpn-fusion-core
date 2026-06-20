@@ -36,7 +36,7 @@ _logger = logging.getLogger(__name__)
 try:
     import jax
 
-    jax.config.update("jax_enable_x64", True)
+    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
     import jax.numpy as jnp
 
     _HAS_JAX = True
@@ -321,7 +321,7 @@ class JaxNonlinearGKSolver:
             return dfdt
 
         if _HAS_JAX:
-            rhs_ckpt = jax.checkpoint(rhs_full)
+            rhs_ckpt = jax.checkpoint(rhs_full)  # type: ignore[attr-defined]
         else:
             rhs_ckpt = rhs_full
 
