@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -26,6 +29,7 @@ class ImpuritySpecies:
     source_decay_width_rho: float = 0.05
 
     def __post_init__(self) -> None:
+        """Validate impurity-species fields after dataclass construction."""
         if self.Z_nucleus < 1:
             raise ValueError("Z_nucleus must be positive")
         if not np.isfinite(self.mass_amu) or self.mass_amu <= 0.0:
@@ -40,12 +44,13 @@ class ImpuritySpecies:
 class AdasChargeStateCoefficients:
     """ADAS-style charge-state coefficient tables for native CR contracts."""
 
-    charge_states: np.ndarray
-    ionisation_m3_s: np.ndarray
-    recombination_m3_s: np.ndarray
-    line_radiation_w_m3: np.ndarray
+    charge_states: FloatArray
+    ionisation_m3_s: FloatArray
+    recombination_m3_s: FloatArray
+    line_radiation_w_m3: FloatArray
 
     def __post_init__(self) -> None:
+        """Validate ADAS charge-state coefficient tables after construction."""
         charge = np.asarray(self.charge_states, dtype=np.float64)
         ion = np.asarray(self.ionisation_m3_s, dtype=np.float64)
         rec = np.asarray(self.recombination_m3_s, dtype=np.float64)
@@ -218,21 +223,22 @@ class AuroraParityCase:
     """Native Aurora-compatible impurity-transport parity input contract."""
 
     element: str
-    charge_states: np.ndarray
-    radius_m: np.ndarray
-    time_s: np.ndarray
-    ne_t_r: np.ndarray
-    Te_t_r: np.ndarray
-    initial_charge_state_density_rz: np.ndarray
-    diffusion_m2_s_r_z: np.ndarray
-    convection_m_s_r_z: np.ndarray
+    charge_states: FloatArray
+    radius_m: FloatArray
+    time_s: FloatArray
+    ne_t_r: FloatArray
+    Te_t_r: FloatArray
+    initial_charge_state_density_rz: FloatArray
+    diffusion_m2_s_r_z: FloatArray
+    convection_m_s_r_z: FloatArray
     major_radius_m: float
-    ionisation_m3_s_t_r_z: np.ndarray | None = None
-    recombination_m3_s_t_r_z: np.ndarray | None = None
-    line_radiation_w_m3_t_r_z: np.ndarray | None = None
-    effective_source_m3_s_t_r_z: np.ndarray | None = None
+    ionisation_m3_s_t_r_z: FloatArray | None = None
+    recombination_m3_s_t_r_z: FloatArray | None = None
+    line_radiation_w_m3_t_r_z: FloatArray | None = None
+    effective_source_m3_s_t_r_z: FloatArray | None = None
 
     def __post_init__(self) -> None:
+        """Validate the charge-state artifact axes and fields after construction."""
         charge = _strict_axis("charge_state", np.asarray(self.charge_states, dtype=np.float64))
         radius = _strict_axis("radius_m", np.asarray(self.radius_m, dtype=np.float64))
         time = _strict_axis("time_s", np.asarray(self.time_s, dtype=np.float64))
@@ -307,7 +313,7 @@ class AuroraParityImpuritySolver:
         self.radius_m = np.asarray(case.radius_m, dtype=np.float64)
         self.time_s = np.asarray(case.time_s, dtype=np.float64)
 
-    def _rate_tables(self, time_idx: int, density: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _rate_tables(self, time_idx: int, density: FloatArray) -> tuple[FloatArray, FloatArray]:
         if self.case.ionisation_m3_s_t_r_z is not None:
             ion_coeff = np.asarray(self.case.ionisation_m3_s_t_r_z[time_idx], dtype=np.float64)
         else:
@@ -336,7 +342,7 @@ class AuroraParityImpuritySolver:
             te_charge,
         )
 
-    def _radial_transport_step(self, density: np.ndarray, dt_s: float) -> np.ndarray:
+    def _radial_transport_step(self, density: FloatArray, dt_s: float) -> FloatArray:
         radius = self.radius_m
         edges = self._radial_edges()
         annulus = 0.5 * (edges[1:] ** 2 - edges[:-1] ** 2)
@@ -359,7 +365,7 @@ class AuroraParityImpuritySolver:
             )
         return np.maximum(updated, 0.0)
 
-    def _radial_edges(self) -> np.ndarray:
+    def _radial_edges(self) -> FloatArray:
         radius = self.radius_m
         edges = np.empty(radius.size + 1, dtype=np.float64)
         edges[1:-1] = 0.5 * (radius[:-1] + radius[1:])
@@ -367,15 +373,15 @@ class AuroraParityImpuritySolver:
         edges[-1] = radius[-1] + 0.5 * (radius[-1] - radius[-2])
         return edges
 
-    def _finite_volume_inventory(self, total_density_r: np.ndarray) -> float:
+    def _finite_volume_inventory(self, total_density_r: FloatArray) -> float:
         edges = self._radial_edges()
         annulus = np.pi * (edges[1:] ** 2 - edges[:-1] ** 2)
         volume = 2.0 * np.pi * self.case.major_radius_m * annulus
         return float(np.sum(np.asarray(total_density_r, dtype=np.float64) * volume))
 
     def _advance_transport_and_cr(
-        self, density: np.ndarray, step: int, dt_s: float
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self, density: FloatArray, step: int, dt_s: float
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Advance native radial transport and neighbouring CR transfer once."""
         advanced = self._radial_transport_step(density, dt_s)
         ionisation, recombination = self._rate_tables(step, advanced)
@@ -392,7 +398,7 @@ class AuroraParityImpuritySolver:
             advanced[:, charge_idx + 1] += dt_s * (ion_flux - rec_flux)
         return np.maximum(advanced, 0.0), ionisation, recombination
 
-    def derive_effective_source_closure(self, reference_density_t_r_z: np.ndarray) -> np.ndarray:
+    def derive_effective_source_closure(self, reference_density_t_r_z: FloatArray) -> FloatArray:
         """Derive the same-case effective source/recycling residual.
 
         The returned array is a diagnostic closure, not a mechanistic Aurora or
@@ -421,7 +427,7 @@ class AuroraParityImpuritySolver:
         return closure
 
     def radial_transport_budget_diagnostic(
-        self, density_r_z: np.ndarray, dt_s: float
+        self, density_r_z: FloatArray, dt_s: float
     ) -> dict[str, float | bool]:
         """Return finite-volume radial-operator conservation diagnostics.
 
@@ -454,8 +460,8 @@ class AuroraParityImpuritySolver:
         """Return Aurora-style observables for the native parity contract."""
         density = np.asarray(self.case.initial_charge_state_density_rz, dtype=np.float64).copy()
         density_history = [density.copy()]
-        source_sink_history: list[np.ndarray] = []
-        line_power_by_charge: list[np.ndarray] = []
+        source_sink_history: list[FloatArray] = []
+        line_power_by_charge: list[FloatArray] = []
         line_power: list[float] = []
         inventory_history: list[float] = [self._finite_volume_inventory(np.sum(density, axis=1))]
         final_ion, final_rec = self._rate_tables(0, density)
@@ -549,7 +555,7 @@ class AuroraParityImpuritySolver:
             },
         )
 
-    def _line_radiation_density(self, time_idx: int, density: np.ndarray) -> np.ndarray:
+    def _line_radiation_density(self, time_idx: int, density: FloatArray) -> FloatArray:
         if self.case.line_radiation_w_m3_t_r_z is not None:
             coeff = np.asarray(self.case.line_radiation_w_m3_t_r_z[time_idx], dtype=np.float64)
         else:
@@ -557,7 +563,7 @@ class AuroraParityImpuritySolver:
         ne = np.asarray(self.case.ne_t_r[time_idx], dtype=np.float64)
         return ne[:, np.newaxis] * density * coeff
 
-    def _line_power_total(self, line_density_r_z: np.ndarray) -> float:
+    def _line_power_total(self, line_density_r_z: FloatArray) -> float:
         if self.case.line_radiation_w_m3_t_r_z is not None:
             return float(np.sum(line_density_r_z))
         return _volume_integral(
@@ -568,14 +574,12 @@ class AuroraParityImpuritySolver:
 
 
 class CoolingCurve:
-    """
-    Parametric cooling rate L_Z(Te) [W m^3].
-    """
+    """Parametric cooling rate L_Z(Te) [W m^3]."""
 
     def __init__(self, element: str):
         self.element = element
 
-    def L_z(self, Te_eV: np.ndarray) -> np.ndarray:
+    def L_z(self, Te_eV: FloatArray) -> FloatArray:
         """Evaluate the element cooling curve for electron temperatures."""
         Te = np.asarray(Te_eV, dtype=float)
         valid = np.isfinite(Te) & (Te > 0.0)
@@ -619,8 +623,8 @@ class CoolingCurve:
 
 def adas_style_charge_state_coefficients(
     element: str,
-    charge_states: np.ndarray | list[int] | tuple[int, ...],
-    Te_eV: np.ndarray,
+    charge_states: FloatArray | list[int] | tuple[int, ...],
+    Te_eV: FloatArray,
 ) -> AdasChargeStateCoefficients:
     """Return finite ADAS-style CR coefficients on a charge-state axis.
 
@@ -661,7 +665,7 @@ def adas_style_charge_state_coefficients(
     )
 
 
-def _strict_axis(name: str, values: np.ndarray, *, min_length: int = 2) -> np.ndarray:
+def _strict_axis(name: str, values: FloatArray, *, min_length: int = 2) -> FloatArray:
     axis = np.asarray(values, dtype=np.float64)
     if axis.ndim != 1 or axis.size < min_length:
         raise ValueError(f"{name} must be a 1D axis with at least {min_length} points")
@@ -670,17 +674,17 @@ def _strict_axis(name: str, values: np.ndarray, *, min_length: int = 2) -> np.nd
     return axis
 
 
-def _volume_integral(profile: np.ndarray, radius_m: np.ndarray, R0: float) -> float:
+def _volume_integral(profile: FloatArray, radius_m: FloatArray, R0: float) -> float:
     trapz: Any = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
     vol_element = 4.0 * np.pi**2 * R0 * radius_m
     return float(trapz(profile * vol_element, radius_m))
 
 
 def collisional_radiative_source_sink_matrices(
-    charge_state_density_rz: np.ndarray,
-    ne: np.ndarray,
+    charge_state_density_rz: FloatArray,
+    ne: FloatArray,
     coeffs: AdasChargeStateCoefficients,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[FloatArray, FloatArray]:
     """Return finite ionisation and recombination transfer matrices."""
     density = np.asarray(charge_state_density_rz, dtype=np.float64)
     ne_arr = np.asarray(ne, dtype=np.float64)
@@ -705,11 +709,11 @@ def collisional_radiative_source_sink_matrices(
 
 
 def advance_charge_state_collisional_radiative(
-    charge_state_density_rz: np.ndarray,
-    ne: np.ndarray,
+    charge_state_density_rz: FloatArray,
+    ne: FloatArray,
     coeffs: AdasChargeStateCoefficients,
     dt: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Advance one conservative charge-state CR step.
 
     Transfers are pairwise between neighbouring charge states and limited by
@@ -730,7 +734,7 @@ def advance_charge_state_collisional_radiative(
     return np.maximum(updated, 0.0), ionisation, recombination
 
 
-def _source_sink_transfer_matrix(ionisation: np.ndarray, recombination: np.ndarray) -> np.ndarray:
+def _source_sink_transfer_matrix(ionisation: FloatArray, recombination: FloatArray) -> FloatArray:
     """Return conservative charge-state transfer matrix with from-charge rows."""
     ion = np.asarray(ionisation, dtype=np.float64)
     rec = np.asarray(recombination, dtype=np.float64)
@@ -756,12 +760,12 @@ def _source_sink_transfer_matrix(ionisation: np.ndarray, recombination: np.ndarr
 def build_aurora_strahl_charge_state_artifact(
     *,
     element: str,
-    charge_states: np.ndarray | list[int] | tuple[int, ...],
-    radius_m: np.ndarray,
-    time_s: np.ndarray,
-    ne_t_r: np.ndarray,
-    Te_t_r: np.ndarray,
-    initial_charge_state_density_rz: np.ndarray,
+    charge_states: FloatArray | list[int] | tuple[int, ...],
+    radius_m: FloatArray,
+    time_s: FloatArray,
+    ne_t_r: FloatArray,
+    Te_t_r: FloatArray,
+    initial_charge_state_density_rz: FloatArray,
     major_radius_m: float,
 ) -> AuroraStrahlArtifact:
     """Simulate and export an Aurora/STRAHL-style charge-state artifact."""
@@ -789,9 +793,9 @@ def build_aurora_strahl_charge_state_artifact(
         raise ValueError("initial_charge_state_density_rz must be finite and non-negative")
 
     density_history = [density.copy()]
-    line_power_by_charge: list[np.ndarray] = []
+    line_power_by_charge: list[FloatArray] = []
     line_power: list[float] = []
-    source_sink_history: list[np.ndarray] = []
+    source_sink_history: list[FloatArray] = []
     inventory_history: list[float] = [
         _volume_integral(np.sum(density, axis=1), radius_axis, major_radius_m)
     ]
@@ -899,17 +903,17 @@ def build_aurora_strahl_charge_state_artifact(
 
 def neoclassical_impurity_pinch(
     Z: int,
-    ne: np.ndarray,
-    Te_eV: np.ndarray,
-    Ti_eV: np.ndarray,
-    q: np.ndarray,
-    rho: np.ndarray,
+    ne: FloatArray,
+    Te_eV: FloatArray,
+    Ti_eV: FloatArray,
+    q: FloatArray,
+    rho: FloatArray,
     R0: float,
     a: float,
-    epsilon: np.ndarray,
-) -> np.ndarray:
-    """
-    V_neo [m/s] (negative = inward).
+    epsilon: FloatArray,
+) -> FloatArray:
+    """V_neo [m/s] (negative = inward).
+
     Hirshman & Sigmar, Nucl. Fusion 21, 1079 (1981).
     V_neo = -D_neo [Z/L_n + (Z/2 - H_Z)/L_Ti]
     with inverse scale lengths 1/L_x = -d ln(x)/dr.
@@ -955,16 +959,14 @@ def neoclassical_impurity_pinch(
 
 
 def total_radiated_power(
-    ne: np.ndarray,
-    n_impurity: dict[str, np.ndarray],
-    Te_eV: np.ndarray,
-    rho: np.ndarray,
+    ne: FloatArray,
+    n_impurity: dict[str, FloatArray],
+    Te_eV: FloatArray,
+    rho: FloatArray,
     R0: float,
     a: float,
 ) -> float:
-    """
-    P_rad in MW.
-    """
+    """P_rad in MW."""
     p_rad_density = np.zeros_like(rho)
 
     for element, n_Z in n_impurity.items():
@@ -981,7 +983,7 @@ def total_radiated_power(
     return float(P_rad_W / 1e6)
 
 
-def tungsten_accumulation_diagnostic(n_W: np.ndarray, ne: np.ndarray) -> dict[str, Any]:
+def tungsten_accumulation_diagnostic(n_W: FloatArray, ne: FloatArray) -> dict[str, Any]:
     """Return core/edge tungsten concentration and accumulation danger level."""
     c_W_core = float(n_W[0] / max(ne[0], 1e-6))
     c_W_edge = float(n_W[-1] / max(ne[-1], 1e-6))
@@ -1006,7 +1008,7 @@ def tungsten_accumulation_diagnostic(n_W: np.ndarray, ne: np.ndarray) -> dict[st
 class ImpurityTransportSolver:
     """Implicit radial impurity transport solver for multiple species."""
 
-    def __init__(self, rho: np.ndarray, R0: float, a: float, species: list[ImpuritySpecies]):
+    def __init__(self, rho: FloatArray, R0: float, a: float, species: list[ImpuritySpecies]):
         """Initialize geometry, species inventory, and radial impurity state."""
         self.rho = np.asarray(rho, dtype=float)
         self.R0 = R0
@@ -1032,19 +1034,21 @@ class ImpurityTransportSolver:
             raise ValueError("rho grid must be uniformly spaced for the banded transport solve")
         self.drho = float(drho[0])
 
-        self.n_z = {s.element: np.zeros(self.nr) for s in species}
+        self.n_z: dict[str, FloatArray] = {
+            s.element: np.zeros(self.nr, dtype=np.float64) for s in species
+        }
 
     def step(
         self,
         dt: float,
-        ne: np.ndarray,
-        Te_eV: np.ndarray,
-        Ti_eV: np.ndarray,
+        ne: FloatArray,
+        Te_eV: FloatArray,
+        Ti_eV: FloatArray,
         D_anom: float,
-        V_pinch: dict[str, np.ndarray],
-    ) -> dict[str, np.ndarray]:
-        """
-        1D Transport advance for each species.
+        V_pinch: dict[str, FloatArray],
+    ) -> dict[str, FloatArray]:
+        """Advance the 1D impurity transport one step for each species.
+
         Uses simple upwind/centered differences.
         """
         import scipy.linalg
@@ -1111,7 +1115,7 @@ class ImpurityTransportSolver:
 
         return self.n_z
 
-    def _edge_source_density(self, species: ImpuritySpecies) -> np.ndarray:
+    def _edge_source_density(self, species: ImpuritySpecies) -> FloatArray:
         """Return a volume-normalised edge source density [m^-3 s^-1]."""
         if species.source_rate == 0.0:
             return np.zeros(self.nr)
