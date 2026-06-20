@@ -11,8 +11,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from .neural_equilibrium import TrainingResult
 
 
 def train_on_sparc(
@@ -20,7 +24,7 @@ def train_on_sparc(
     save_path: str | Path | None = None,
     n_perturbations: int = 25,
     seed: int = 42,
-):
+) -> "TrainingResult":
     """
     Train neural equilibrium on SPARC GEQDSK files and save weights.
 
@@ -89,7 +93,13 @@ def run_training_cli() -> int:
     test_eq = read_geqdsk(next(sparc_dir.glob("*.geqdsk")))
     kappa_cli = 1.7
     q95_cli = 3.0
-    if hasattr(test_eq, "rbbbs") and test_eq.rbbbs is not None and len(test_eq.rbbbs) > 3:
+    if (
+        hasattr(test_eq, "rbbbs")
+        and test_eq.rbbbs is not None
+        and len(test_eq.rbbbs) > 3
+        and hasattr(test_eq, "zbbbs")
+        and test_eq.zbbbs is not None
+    ):
         r_span = test_eq.rbbbs.max() - test_eq.rbbbs.min()
         kappa_cli = (test_eq.zbbbs.max() - test_eq.zbbbs.min()) / max(r_span, 0.01)
     if hasattr(test_eq, "qpsi") and test_eq.qpsi is not None and len(test_eq.qpsi) > 0:
