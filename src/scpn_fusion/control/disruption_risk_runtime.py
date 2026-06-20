@@ -10,7 +10,10 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Optional
+from numpy.typing import NDArray
+from typing import Any, Optional
+
+FloatArray = NDArray[np.float64]
 
 
 DEFAULT_DISRUPTION_RISK_BIAS = -4.0
@@ -42,18 +45,23 @@ def _require_int(name: str, value: object, minimum: int | None = None) -> int:
 
 
 def simulate_tearing_mode(
-    steps=1000,
+    steps: int = 1000,
     *,
     rng: Optional[np.random.Generator] = None,
     beta_p: float = 0.8,
     w_crit: float = 0.05,
-):
-    """
-    Generates synthetic shot data.
-    Returns:
-        signal (array): Magnetic sensor data (dB/dt)
-        label (int): 1 if disrupted, 0 if safe
-        time_to_disruption (array): Time remaining (or -1 if safe)
+) -> tuple[FloatArray, int, int]:
+    """Generate synthetic tearing-mode shot data.
+
+    Returns
+    -------
+    signal : array
+        Magnetic sensor data (dB/dt).
+    label : int
+        1 if disrupted, 0 if safe.
+    time_to_disruption : int
+        Time remaining (or -1 if safe).
+
     """
     steps = _require_int("steps", steps, 1)
     dt = 0.01
@@ -96,9 +104,10 @@ def simulate_tearing_mode(
     return np.array(w_history), 0, -1
 
 
-def build_disruption_feature_vector(signal, toroidal_observables=None):
-    """
-    Build a compact feature vector for control-oriented disruption scoring.
+def build_disruption_feature_vector(
+    signal: Any, toroidal_observables: dict[str, float] | None = None
+) -> FloatArray:
+    """Build a compact feature vector for control-oriented disruption scoring.
 
     Feature layout:
       [mean, std, max, slope, energy, last,
@@ -133,7 +142,7 @@ def build_disruption_feature_vector(signal, toroidal_observables=None):
     )
 
 
-def _compute_disruption_logit_from_features(features: np.ndarray) -> float:
+def _compute_disruption_logit_from_features(features: FloatArray) -> float:
     mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread = features
     thermal_term = (
         DISRUPTION_RISK_LINEAR_WEIGHTS["max_val"] * max_val
@@ -168,9 +177,10 @@ def apply_disruption_logit_bias(risk: float, bias_delta: float) -> float:
     return float(1.0 / (1.0 + np.exp(-logit)))
 
 
-def predict_disruption_risk(signal, toroidal_observables=None, bias_delta: float = 0.0):
-    """
-    Lightweight deterministic disruption risk estimator (0..1) for control loops.
+def predict_disruption_risk(
+    signal: Any, toroidal_observables: dict[str, float] | None = None, bias_delta: float = 0.0
+) -> float:
+    """Estimate a deterministic disruption risk (0..1) for control loops.
 
     This supplements the Transformer pathway by explicitly consuming toroidal
     asymmetry observables from 3D diagnostics.
@@ -184,7 +194,7 @@ def predict_disruption_risk(signal, toroidal_observables=None, bias_delta: float
     return float(1.0 / (1.0 + np.exp(-logits)))
 
 
-def apply_bit_flip_fault(value, bit_index):
+def apply_bit_flip_fault(value: float, bit_index: int) -> float:
     """Inject a deterministic single-bit fault into a float."""
     if isinstance(bit_index, bool) or not isinstance(bit_index, (int, np.integer)):
         raise ValueError("bit_index must be an integer in [0, 63].")
@@ -197,23 +207,23 @@ def apply_bit_flip_fault(value, bit_index):
     return float(out if np.isfinite(out) else value)
 
 
-def _synthetic_control_signal(rng, length):
+def _synthetic_control_signal(rng: np.random.Generator, length: int) -> FloatArray:
     t = np.linspace(0.0, 1.0, int(length), dtype=float)
     base = 0.7 + 0.15 * np.sin(2.0 * np.pi * 3.0 * t) + 0.05 * np.cos(2.0 * np.pi * 7.0 * t)
     ramp = np.where(t > 0.65, (t - 0.65) * 0.9, 0.0)
     noise = rng.normal(0.0, 0.01, size=t.shape)
-    return np.clip(base + ramp + noise, 0.01, None)
+    return np.asarray(np.clip(base + ramp + noise, 0.01, None), dtype=np.float64)
 
 
 def _normalize_fault_campaign_inputs(
-    seed,
-    episodes,
-    window,
-    noise_std,
-    bit_flip_interval,
-    recovery_window,
-    recovery_epsilon,
-):
+    seed: int,
+    episodes: int,
+    window: int,
+    noise_std: float,
+    bit_flip_interval: int,
+    recovery_window: int,
+    recovery_epsilon: float,
+) -> tuple[int, int, int, float, int, int, float]:
     seed_i = _require_int("seed", seed, 0)
     episodes_i = _require_int("episodes", episodes, 1)
     window_i = _require_int("window", window, 16)
@@ -246,7 +256,7 @@ def run_fault_noise_campaign(
     bit_flip_interval: int = 7,
     recovery_window: int = 4,
     recovery_epsilon: float = 0.05,
-) -> dict[str, float | int | bool]:
+) -> dict[str, Any]:
     """Run deterministic robustness campaign with injected noise and bit flips."""
     (
         seed_i,
@@ -393,7 +403,8 @@ def run_fault_noise_campaign(
 class HybridAnomalyDetector:
     """Hybrid detector combining learned risk and deterministic smoothing."""
 
-    def __init__(self, threshold=0.50, ema=0.05):
+    def __init__(self, threshold: float = 0.50, ema: float = 0.05) -> None:
+        """Validate the alarm threshold and EMA rate and reset the running statistics."""
         threshold_f = float(threshold)
         ema_f = float(ema)
         if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
@@ -406,9 +417,10 @@ class HybridAnomalyDetector:
         self.var = 1.0
         self.initialized = False
 
-    def score(self, signal, toroidal_observables=None) -> dict[str, float | bool]:
+    def score(
+        self, signal: Any, toroidal_observables: dict[str, float] | None = None
+    ) -> dict[str, float | bool]:
         """Return fused supervised and anomaly-smoothed disruption-risk scores."""
-
         supervised = float(predict_disruption_risk(signal, toroidal_observables))
 
         if self.initialized:

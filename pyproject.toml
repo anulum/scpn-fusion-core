@@ -217,6 +217,7 @@ files = [
     "src/scpn_fusion/control/realtime_efit.py",
     "src/scpn_fusion/control/mu_synthesis.py",
     "src/scpn_fusion/control/advanced_soc_fusion_learning.py",
+    "src/scpn_fusion/control/disruption_risk_runtime.py",
     "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "src/scpn_fusion/core/neural_transport_math.py",
