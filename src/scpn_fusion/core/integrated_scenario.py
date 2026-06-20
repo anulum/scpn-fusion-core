@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.integrate import trapezoid
 
 from scpn_fusion.core.current_diffusion import CurrentDiffusionSolver
@@ -30,6 +31,8 @@ from scpn_fusion.core.ntm_dynamics import NTMController
 from scpn_fusion.core.ntm_dynamics import NTMIslandDynamics, find_rational_surfaces
 from scpn_fusion.core.sawtooth import SawtoothCycler
 from scpn_fusion.core.sol_model import TwoPointSOL, peak_target_heat_flux
+
+FloatArray = NDArray[np.float64]
 
 
 @dataclass
@@ -110,15 +113,15 @@ class ScenarioState:
     """
 
     time: float
-    rho: np.ndarray
-    Te: np.ndarray
-    Ti: np.ndarray
-    ne: np.ndarray
-    q: np.ndarray
-    psi: np.ndarray
-    j_total: np.ndarray
-    j_bs: np.ndarray
-    j_cd: np.ndarray
+    rho: FloatArray
+    Te: FloatArray
+    Ti: FloatArray
+    ne: FloatArray
+    q: FloatArray
+    psi: FloatArray
+    j_total: FloatArray
+    j_bs: FloatArray
+    j_cd: FloatArray
 
     Ip_MA: float
     beta_N: float
@@ -142,11 +145,11 @@ class ScenarioState:
 def iter_baseline_scenario() -> ScenarioConfig:
     """Return a conservative baseline preset for integrated evolution tests.
 
-    Returns:
+    Returns
+    -------
         A fully-populated :class:`ScenarioConfig` with default duration and active
         coupling modules enabled.
     """
-
     return ScenarioConfig(
         R0=6.2,
         a=2.0,
@@ -167,11 +170,11 @@ def iter_baseline_scenario() -> ScenarioConfig:
 def iter_hybrid_scenario() -> ScenarioConfig:
     """Return a hybrid transport preset.
 
-    Returns:
+    Returns
+    -------
         A profile with transport-focused defaults and a shorter explicit scenario
         contract than the baseline.
     """
-
     return ScenarioConfig(
         R0=6.2,
         a=2.0,
@@ -188,11 +191,11 @@ def iter_hybrid_scenario() -> ScenarioConfig:
 def nstx_u_scenario() -> ScenarioConfig:
     """Return an NSTX-U-style compact scenario preset.
 
-    Returns:
+    Returns
+    -------
         A geometry-scaled :class:`ScenarioConfig` suitable for compact device
         regression and benchmark comparisons.
     """
-
     return ScenarioConfig(
         R0=0.93,
         a=0.58,
@@ -224,13 +227,12 @@ class IntegratedScenarioSimulator:
             config: Complete scenario specification used to seed all coupled
                 components.
         """
-
         self.config = config
         self.time = config.t_start
 
         # Initialize internal models
         self.nr = 50
-        self.rho = np.linspace(0, 1, self.nr)
+        self.rho = np.linspace(0, 1, self.nr, dtype=np.float64)
 
         # Current Drive
         self.cd_mix = CurrentDriveMix(a=self.config.a)
@@ -266,11 +268,11 @@ class IntegratedScenarioSimulator:
     def _setup_transport_solver(self) -> TransportSolver:
         """Create and configure a temporary transport solver for this scenario.
 
-        Returns:
+        Returns
+        -------
             A configured :class:`TransportSolver` instance tied to this scenario grid
             and control power settings.
         """
-
         # Create a temporary config for TransportSolver
         cfg_dict = {
             "reactor_name": "IntegratedScenario",
@@ -309,27 +311,28 @@ class IntegratedScenarioSimulator:
         solver = TransportSolver(temp_path)
 
         # Initialize profiles in solver
-        solver.Te = np.ones(self.nr) * 1.0  # keV
-        solver.Ti = np.ones(self.nr) * 1.0
-        solver.ne = np.ones(self.nr) * 5.0  # 10^19 m^-3
+        solver.Te = np.full(self.nr, 1.0, dtype=np.float64)  # keV
+        solver.Ti = np.full(self.nr, 1.0, dtype=np.float64)
+        solver.ne = np.full(self.nr, 5.0, dtype=np.float64)  # 10^19 m^-3
 
         return solver
 
-    def initialize(self, profiles: dict | None = None) -> ScenarioState:
+    def initialize(self, profiles: dict[str, FloatArray] | None = None) -> ScenarioState:
         """Initialize the coupled simulation state.
 
         Args:
             profiles: Optional override map for profile fields. Supported keys are
                 ``"Te"``, ``"Ti"``, ``"ne"``, and ``"psi"``.
 
-        Returns:
+        Returns
+        -------
             Initialised :class:`ScenarioState` at ``self.time == t_start``.
 
-        Raises:
+        Raises
+        ------
             ValueError: If overridden profile values are incompatible with solver
                 expectations (shape, length, or non-finite values).
         """
-
         self.ts_solver = self._setup_transport_solver()
         if profiles:
             if "Te" in profiles:
@@ -339,28 +342,30 @@ class IntegratedScenarioSimulator:
             if "ne" in profiles:
                 self.ts_solver.ne = profiles["ne"]
             if "psi" in profiles:
-                self.cd_solver.psi = profiles["psi"]
+                self.cd_solver.psi = profiles["psi"].reshape(-1)
 
         return self._build_state()
 
     def _build_state(self) -> ScenarioState:
         """Construct a fresh :class:`ScenarioState` from live solver variables.
 
-        Returns:
+        Returns
+        -------
             The computed state snapshot with transport profiles, current decomposition,
             global stability flags, and safety metrics.
         """
-
         from scpn_fusion.core.current_diffusion import q_from_psi
+
+        te = np.asarray(self.ts_solver.Te, dtype=np.float64)
+        ti = np.asarray(self.ts_solver.Ti, dtype=np.float64)
+        ne = np.asarray(self.ts_solver.ne, dtype=np.float64)
 
         q_prof = q_from_psi(
             self.rho, self.cd_solver.psi, self.config.R0, self.config.a, self.config.B0
         )
 
         j_bs = self._bootstrap_current_density(q_prof)
-        j_cd = self.cd_mix.total_j_cd(
-            self.rho, self.ts_solver.ne, self.ts_solver.Te, self.ts_solver.Ti
-        )
+        j_cd = self.cd_mix.total_j_cd(self.rho, ne, te, ti)
         j_ohmic = self._ohmic_current_density()
 
         # Compute macroscopic quantities
@@ -377,7 +382,7 @@ class IntegratedScenarioSimulator:
 
         P_loss = self.config.P_aux_MW  # steady state assumption
         tau_E = (W_th / 1e6) / max(P_loss, 1.0)
-        beta_N = self._normalised_beta(energy_dens)
+        beta_N = self._normalised_beta(np.asarray(energy_dens, dtype=np.float64))
         li = self._internal_inductance_proxy(j_ohmic + j_bs + j_cd)
 
         T_t, q_peak, detached = 0.0, 0.0, False
@@ -398,9 +403,9 @@ class IntegratedScenarioSimulator:
         return ScenarioState(
             time=self.time,
             rho=self.rho.copy(),
-            Te=self.ts_solver.Te.copy(),
-            Ti=self.ts_solver.Ti.copy(),
-            ne=self.ts_solver.ne.copy(),
+            Te=te.copy(),
+            Ti=ti.copy(),
+            ne=ne.copy(),
             q=q_prof.copy(),
             psi=self.cd_solver.psi.copy(),
             j_total=j_ohmic + j_bs + j_cd,
@@ -425,17 +430,21 @@ class IntegratedScenarioSimulator:
     def step(self) -> ScenarioState:
         """Advance one integration step and return the updated state.
 
-        Returns:
+        Returns
+        -------
             The new :class:`ScenarioState` after one time increment.
 
-        Raises:
+        Raises
+        ------
             ValueError: If required solver state is incomplete or un-initialised.
         """
-
         dt = self.config.dt
 
-        # 1. Transport solver clock advance; profile evolution remains owned by TransportSolver.
-        self.ts_solver.time = self.time
+        # Profile evolution remains owned by TransportSolver; coerce its profiles to
+        # float64 for the strictly-typed current-drive/diffusion/sawtooth interfaces.
+        te = np.asarray(self.ts_solver.Te, dtype=np.float64)
+        ti = np.asarray(self.ts_solver.Ti, dtype=np.float64)
+        ne = np.asarray(self.ts_solver.ne, dtype=np.float64)
 
         # 2. Current drive and bootstrap
         from scpn_fusion.core.current_diffusion import q_from_psi
@@ -443,13 +452,11 @@ class IntegratedScenarioSimulator:
         q_prof = q_from_psi(
             self.rho, self.cd_solver.psi, self.config.R0, self.config.a, self.config.B0
         )
-        j_cd = self.cd_mix.total_j_cd(
-            self.rho, self.ts_solver.ne, self.ts_solver.Te, self.ts_solver.Ti
-        )
+        j_cd = self.cd_mix.total_j_cd(self.rho, ne, te, ti)
         j_bs = self._bootstrap_current_density(q_prof)
 
         # 3. Current diffusion
-        self.cd_solver.step(dt, self.ts_solver.Te, self.ts_solver.ne, 1.5, j_bs, j_cd)
+        self.cd_solver.step(dt, te, ne, 1.5, j_bs, j_cd)
 
         q_prof = q_from_psi(
             self.rho, self.cd_solver.psi, self.config.R0, self.config.a, self.config.B0
@@ -458,7 +465,7 @@ class IntegratedScenarioSimulator:
         # 4. Sawteeth
         if self.config.include_sawteeth:
             shear = np.gradient(q_prof, self.rho) * (self.rho / np.maximum(q_prof, 1e-3))
-            event = self.sawtooth.step(dt, q_prof, shear, self.ts_solver.Te, self.ts_solver.ne)
+            event = self.sawtooth.step(dt, q_prof, shear, te, ne)
             if event:
                 self.n_crashes += 1
                 self.last_crash_time = event.crash_time
@@ -476,7 +483,7 @@ class IntegratedScenarioSimulator:
         self._last_states.append(out)
         return out
 
-    def _update_ntm_dynamics(self, q_prof: np.ndarray, j_bs: np.ndarray, j_cd: np.ndarray) -> None:
+    def _update_ntm_dynamics(self, q_prof: FloatArray, j_bs: FloatArray, j_cd: FloatArray) -> None:
         """Advance tearing mode islands for supported NTM rational surfaces.
 
         The helper selects 2/1 and 3/2 resonances and updates stored island widths.
@@ -486,7 +493,6 @@ class IntegratedScenarioSimulator:
             j_bs: Bootstrap current profile on ``rho``.
             j_cd: Current-drive current profile on ``rho``.
         """
-
         surfaces = find_rational_surfaces(
             q=np.asarray(q_prof, dtype=float), rho=self.rho, a=self.config.a, m_max=3, n_max=2
         )
@@ -541,34 +547,34 @@ class IntegratedScenarioSimulator:
             )
             self.ntm_widths[key] = float(np.clip(w_arr[-1], 1e-6, 0.5 * self.config.a))
 
-    def _bootstrap_current_density(self, q_prof: np.ndarray) -> np.ndarray:
+    def _bootstrap_current_density(self, q_prof: FloatArray) -> FloatArray:
         """Compute bootstrap current density via the configured neoclassical model.
 
         Args:
             q_prof: Safety-factor profile used by the Sauter bootstrap closure.
 
-        Returns:
+        Returns
+        -------
             Bootstrap current profile on ``rho`` in ``A/m^2``.
         """
-
         return sauter_bootstrap(
             self.rho,
-            self.ts_solver.Te,
-            self.ts_solver.Ti,
-            self.ts_solver.ne,
+            np.asarray(self.ts_solver.Te, dtype=np.float64),
+            np.asarray(self.ts_solver.Ti, dtype=np.float64),
+            np.asarray(self.ts_solver.ne, dtype=np.float64),
             q_prof,
             self.config.R0,
             self.config.a,
             self.config.B0,
         )
 
-    def _ohmic_current_density(self) -> np.ndarray:
+    def _ohmic_current_density(self) -> FloatArray:
         """Return the Ohmic current profile implied by plasma geometry and current.
 
-        Returns:
+        Returns
+        -------
             A normalized current profile on ``rho`` in ``A/m^2``.
         """
-
         shape = np.maximum(1.0 - self.rho**2, 0.0)
         area_element = 2.0 * np.pi * self.config.kappa * self.config.a**2 * self.rho
         norm = float(trapezoid(shape * area_element, self.rho))
@@ -576,35 +582,36 @@ class IntegratedScenarioSimulator:
             raise ValueError("invalid plasma cross-section for ohmic current normalisation")
         return np.asarray(shape * (self.config.Ip_MA * 1e6) / norm)
 
-    def _normalised_beta(self, energy_dens: np.ndarray) -> float:
+    def _normalised_beta(self, energy_dens: FloatArray) -> float:
         """Compute a normalised-beta proxy from thermal energy density.
 
         Args:
             energy_dens: Profile of thermal energy density on ``rho``.
 
-        Returns:
+        Returns
+        -------
             Estimated normalised beta.
         """
-
         pressure = (2.0 / 3.0) * np.asarray(energy_dens, dtype=float)
         pressure_avg = 2.0 * float(trapezoid(pressure * self.rho, self.rho))
         beta_t = 2.0 * np.pi * 4e-7 * pressure_avg / max(self.config.B0**2, 1e-12)
         return float(100.0 * beta_t * self.config.a * self.config.B0 / max(self.config.Ip_MA, 1e-9))
 
-    def _internal_inductance_proxy(self, j_total: np.ndarray) -> float:
+    def _internal_inductance_proxy(self, j_total: FloatArray) -> float:
         """Compute a bounded internal-inductance proxy from total current profile.
 
         Args:
             j_total: Total toroidal current density profile on ``rho``.
 
-        Returns:
+        Returns
+        -------
             Dimensionless internal-inductance-like quantity in ``[0, 10]``.
 
-        Raises:
+        Raises
+        ------
             ValueError: If ``j_total`` shape is incompatible or contains non-finite
                 values.
         """
-
         j_prof = np.asarray(j_total, dtype=float)
         if j_prof.ndim != 1 or j_prof.size != self.rho.size:
             raise ValueError("j_total must be a 1D profile matching rho grid size.")
@@ -637,10 +644,10 @@ class IntegratedScenarioSimulator:
     def run(self) -> list[ScenarioState]:
         """Run the full integrated trajectory from start to end time.
 
-        Returns:
+        Returns
+        -------
             Sequence of :class:`ScenarioState` snapshots, one per time step.
         """
-
         if not hasattr(self, "ts_solver"):
             self.initialize()
         states = []
@@ -656,10 +663,10 @@ class IntegratedScenarioSimulator:
         Args:
             path: Target output path. ``.json`` extension is required.
 
-        Raises:
+        Raises
+        ------
             ValueError: If the provided path is not a JSON file.
         """
-
         path = Path(path)
         if path.suffix.lower() != ".json":
             raise ValueError("Scenario output path must use .json extension.")
