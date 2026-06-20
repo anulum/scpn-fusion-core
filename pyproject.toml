@@ -312,6 +312,7 @@ files = [
     "src/scpn_fusion/core/jax_gs_solver.py",
     "src/scpn_fusion/core/turbulence_oracle.py",
     "src/scpn_fusion/core/neural_turbulence.py",
+    "src/scpn_fusion/core/neural_equilibrium.py",
     "src/scpn_fusion/core/gpu_runtime.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",

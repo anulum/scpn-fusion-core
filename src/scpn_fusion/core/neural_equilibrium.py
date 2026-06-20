@@ -33,8 +33,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
+
+from scpn_fusion.io.safe_loaders import checked_np_load
+
+FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
@@ -130,8 +133,8 @@ class SimpleMLP:
 
     def __init__(self, layer_sizes: list[int], seed: int = 42) -> None:
         self.rng = np.random.default_rng(seed)
-        self.weights: list[NDArray] = []
-        self.biases: list[NDArray] = []
+        self.weights: list[FloatArray] = []
+        self.biases: list[FloatArray] = []
         for i in range(len(layer_sizes) - 1):
             fan_in = layer_sizes[i]
             # He initialisation
@@ -139,18 +142,18 @@ class SimpleMLP:
             self.weights.append(self.rng.normal(0, scale, (layer_sizes[i], layer_sizes[i + 1])))
             self.biases.append(np.zeros(layer_sizes[i + 1]))
 
-    def forward(self, x: NDArray) -> NDArray:
+    def forward(self, x: FloatArray) -> FloatArray:
         """
         Compute a forward pass through all MLP layers.
 
         Parameters
         ----------
-        x : NDArray
+        x : FloatArray
             Input feature batch with shape (batch, n_features).
 
         Returns
         -------
-        NDArray
+        FloatArray
             Predicted latent coefficients.
         """
         h = x
@@ -160,18 +163,18 @@ class SimpleMLP:
                 h = np.maximum(0, h)  # ReLU
         return h
 
-    def predict(self, x: NDArray) -> NDArray:
+    def predict(self, x: FloatArray) -> FloatArray:
         """
         Alias for :meth:`forward`.
 
         Parameters
         ----------
-        x : NDArray
+        x : FloatArray
             Input feature batch.
 
         Returns
         -------
-        NDArray
+        FloatArray
             Network output with shape (batch, n_outputs).
         """
         return self.forward(x)
@@ -185,17 +188,17 @@ class MinimalPCA:
 
     def __init__(self, n_components: int = 20) -> None:
         self.n_components = n_components
-        self.mean_: NDArray | None = None
-        self.components_: NDArray | None = None
-        self.explained_variance_ratio_: NDArray | None = None
+        self.mean_: FloatArray | None = None
+        self.components_: FloatArray | None = None
+        self.explained_variance_ratio_: FloatArray | None = None
 
-    def fit(self, X: NDArray) -> "MinimalPCA":
+    def fit(self, X: FloatArray) -> "MinimalPCA":
         """
         Fit principal-component basis on centred data.
 
         Parameters
         ----------
-        X : NDArray
+        X : FloatArray
             Data matrix where rows are samples and columns are flattened coordinates.
         """
         self.mean_ = X.mean(axis=0)
@@ -206,39 +209,39 @@ class MinimalPCA:
         self.explained_variance_ratio_ = S[: self.n_components] ** 2 / max(total_var, 1e-15)
         return self
 
-    def transform(self, X: NDArray) -> NDArray:
+    def transform(self, X: FloatArray) -> FloatArray:
         """
         Project samples into PCA coefficient space.
 
         Parameters
         ----------
-        X : NDArray
+        X : FloatArray
             Input matrix with the same feature dimension as fitted data.
         """
         if self.mean_ is None or self.components_ is None:
             raise RuntimeError("PCA model not fitted before transform().")
         return (X - self.mean_) @ self.components_.T
 
-    def inverse_transform(self, Z: NDArray) -> NDArray:
+    def inverse_transform(self, Z: FloatArray) -> FloatArray:
         """
         Reconstruct flattened fields from PCA coefficients.
 
         Parameters
         ----------
-        Z : NDArray
+        Z : FloatArray
             Coefficient matrix.
         """
         if self.mean_ is None or self.components_ is None:
             raise RuntimeError("PCA model not fitted before inverse_transform().")
         return Z @ self.components_ + self.mean_
 
-    def fit_transform(self, X: NDArray) -> NDArray:
+    def fit_transform(self, X: FloatArray) -> FloatArray:
         """
         Fit PCA model and immediately transform the training matrix.
 
         Parameters
         ----------
-        X : NDArray
+        X : FloatArray
             Data matrix to fit and project.
         """
         self.fit(X)
@@ -261,13 +264,13 @@ class NeuralEquilibriumAccelerator:
         self.pca = MinimalPCA(n_components=self.cfg.n_components)
         self.mlp: SimpleMLP | None = None
         self.is_trained = False
-        self._input_mean: NDArray | None = None
-        self._input_std: NDArray | None = None
+        self._input_mean: FloatArray | None = None
+        self._input_std: FloatArray | None = None
         self._psi_normalized: bool = False
 
     # ── GS residual loss ───────────────────────────────────────────
 
-    def _gs_residual_loss(self, psi_pred_flat: NDArray, grid_shape: tuple[int, int]) -> float:
+    def _gs_residual_loss(self, psi_pred_flat: FloatArray, grid_shape: tuple[int, int]) -> float:
         """GS residual loss: penalizes Laplacian of predicted psi."""
         nh, nw = grid_shape
         psi = psi_pred_flat.reshape(nh, nw)
@@ -279,7 +282,7 @@ class NeuralEquilibriumAccelerator:
 
     # ── Evaluation ────────────────────────────────────────────────
 
-    def evaluate_surrogate(self, X_test: NDArray, Y_test_raw: NDArray) -> dict[str, float]:
+    def evaluate_surrogate(self, X_test: FloatArray, Y_test_raw: FloatArray) -> dict[str, float]:
         """Evaluate on test set. Returns dict with mse, max_error, gs_residual."""
         if not self.is_trained:
             raise RuntimeError("Not trained")
@@ -328,8 +331,8 @@ class NeuralEquilibriumAccelerator:
         rng = np.random.default_rng(seed)
         t0 = time.perf_counter()
 
-        X_features: list[NDArray] = []
-        Y_psi: list[NDArray] = []
+        X_features: list[FloatArray] = []
+        Y_psi: list[FloatArray] = []
 
         # Target grid: use the first file's grid as reference
         first_eq = read_geqdsk(geqdsk_paths[0])
@@ -355,7 +358,13 @@ class NeuralEquilibriumAccelerator:
             delta_upper = 0.3  # default upper triangularity
             delta_lower = 0.3  # default lower triangularity
             q95 = 3.0  # default safety factor at 95% flux
-            if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+            if (
+                hasattr(eq, "rbbbs")
+                and eq.rbbbs is not None
+                and len(eq.rbbbs) > 3
+                and hasattr(eq, "zbbbs")
+                and eq.zbbbs is not None
+            ):
                 r_span = eq.rbbbs.max() - eq.rbbbs.min()
                 kappa = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
             if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
@@ -427,6 +436,7 @@ class NeuralEquilibriumAccelerator:
 
         # PCA on flattened psi
         Y_compressed = self.pca.fit_transform(Y)
+        assert self.pca.explained_variance_ratio_ is not None  # set by fit_transform
         explained = float(np.sum(self.pca.explained_variance_ratio_))
         logger.info(
             "PCA: %d → %d components, %.2f%% variance retained",
@@ -601,18 +611,18 @@ class NeuralEquilibriumAccelerator:
 
     # ── Inference ────────────────────────────────────────────────────
 
-    def predict(self, features: NDArray) -> NDArray:
+    def predict(self, features: FloatArray) -> FloatArray:
         """
         Predict ψ(R,Z) from input features.
 
         Parameters
         ----------
-        features : NDArray
+        features : FloatArray
             Shape (n_features,) or (batch, n_features).
 
         Returns
         -------
-        NDArray
+        FloatArray
             Shape (nh, nw) or (batch, nh, nw).
         """
         if not self.is_trained:
@@ -679,7 +689,7 @@ class NeuralEquilibriumAccelerator:
         if self._input_mean is None or self._input_std is None:
             raise RuntimeError("Input normalization statistics are unavailable.")
 
-        payload: dict[str, NDArray] = {
+        payload: dict[str, FloatArray] = {
             "n_components": np.array([self.cfg.n_components]),
             "grid_nh": np.array([self.cfg.grid_shape[0]]),
             "grid_nw": np.array([self.cfg.grid_shape[1]]),
@@ -695,7 +705,10 @@ class NeuralEquilibriumAccelerator:
             payload[f"w{i}"] = w
             payload[f"b{i}"] = b
 
-        np.savez(path, **payload)
+        # numpy's savez stub types **kwds against its keyword-only allow_pickle: bool
+        # parameter, so a dynamically-keyed payload mapping cannot be expressed without
+        # this suppression; unused under the CI-pinned numpy 1.26.4 stubs.
+        np.savez(path, **payload)  # type: ignore[arg-type, unused-ignore]
         logger.info("Saved neural equilibrium weights to %s", path)
 
     def load_weights(self, path: str | Path = DEFAULT_WEIGHTS_PATH) -> None:
@@ -739,7 +752,7 @@ class NeuralEquilibriumAccelerator:
 
     # ── Convenience ──────────────────────────────────────────────────
 
-    def benchmark(self, features: NDArray, n_runs: int = 100) -> dict[str, float]:
+    def benchmark(self, features: FloatArray, n_runs: int = 100) -> dict[str, float]:
         """Time inference over n_runs and return stats."""
         times = []
         for _ in range(n_runs):
