@@ -12,7 +12,7 @@ from __future__ import annotations
 import contextlib
 import io
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -235,10 +235,10 @@ def hall_mhd_zonal_ratio(
     state = np.random.get_state()
     try:
         np.random.seed(int(seed))
-        sim = HallMHD(N=grid_n)
+        sim = HallMHD(N=grid_n)  # type: ignore[no-untyped-call]
         ratios: list[float] = []
         for _ in range(steps_n):
-            e_tot, e_zonal = sim.step()
+            e_tot, e_zonal = sim.step()  # type: ignore[no-untyped-call]
             denom = max(float(e_tot), 1e-12)
             ratios.append(float(e_zonal) / denom)
     finally:
@@ -389,7 +389,7 @@ def build_divertor_profiles(
             expansion_factor=22.0,
         )
 
-    q_base = float(divertor_state["surface_heat_flux_w_m2"])
+    q_base = float(cast(float, divertor_state["surface_heat_flux_w_m2"]))
     angles = np.linspace(0.0, 2.0 * np.pi, int(toroidal_points), endpoint=False)
     jet_reference = np.asarray(reference_profile_w_m2, dtype=np.float64)
     if jet_reference.shape != angles.shape:
@@ -413,19 +413,19 @@ def build_divertor_profiles(
     raw_arr = np.asarray(predicted_raw, dtype=np.float64)
     cool_arr = np.asarray(predicted_cool, dtype=np.float64)
     ref_arr = np.asarray(jet_reference, dtype=np.float64)
-    cooling_gain_pct = float(
-        100.0 * (np.mean(raw_arr) - np.mean(cool_arr)) / max(np.mean(raw_arr), 1e-12)
-    )
+    mean_raw_arr = float(np.mean(raw_arr))
+    mean_cool_arr = float(np.mean(cool_arr))
+    cooling_gain_pct = 100.0 * (mean_raw_arr - mean_cool_arr) / max(mean_raw_arr, 1e-12)
     return {
         "reference_profile_w_m2": ref_arr,
         "predicted_profile_w_m2": cool_arr,
         "cooling_gain_pct": cooling_gain_pct,
         "two_fluid_diag": two_fluid_diag,
         "divertor_state": {
-            "hartmann_number": float(divertor_state["hartmann_number"]),
-            "stability_index": float(divertor_state["stability_index"]),
-            "surface_temperature_c": float(divertor_state["surface_temperature_c"]),
-            "surface_heat_flux_w_m2": float(divertor_state["surface_heat_flux_w_m2"]),
+            "hartmann_number": float(cast(float, divertor_state["hartmann_number"])),
+            "stability_index": float(cast(float, divertor_state["stability_index"])),
+            "surface_temperature_c": float(cast(float, divertor_state["surface_temperature_c"])),
+            "surface_heat_flux_w_m2": float(cast(float, divertor_state["surface_heat_flux_w_m2"])),
         },
     }
 
