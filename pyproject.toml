@@ -133,6 +133,7 @@ files = [
     # Top-level package entrypoints
     "src/scpn_fusion/__init__.py",
     "src/scpn_fusion/cli.py",
+    "src/scpn_fusion/_data_paths.py",
     # scpn/ (existing)
     "src/scpn_fusion/scpn/contracts.py",
     "src/scpn_fusion/scpn/controller.py",

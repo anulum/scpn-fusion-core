@@ -32,6 +32,7 @@ from typing import Any, Optional
 import warnings
 
 import numpy as np
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
@@ -39,11 +40,7 @@ logger = logging.getLogger(__name__)
 # ── Default coefficient path ──────────────────────────────────────────
 
 _DEFAULT_COEFF_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "validation"
-    / "reference_data"
-    / "itpa"
-    / "ipb98y2_coefficients.json"
+    data_root() / "validation" / "reference_data" / "itpa" / "ipb98y2_coefficients.json"
 )
 
 _REQUIRED_EXPONENT_KEYS = (
