@@ -178,6 +178,7 @@ files = [
     "src/scpn_fusion/hpc/hpc_bridge.py",
     "tests/test_hpc_bridge.py",
     "tests/test_blanket_neutronics.py",
+    "tests/test_turbulence_oracle.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",
