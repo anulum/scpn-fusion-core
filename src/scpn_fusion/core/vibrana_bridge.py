@@ -30,7 +30,7 @@ try:
         AttractorType,
     )
 
-    VIBRANA_AVAILABLE = True
+    VIBRANA_AVAILABLE = True  # pragma: no cover - optional CCW/VIBRANA audio engine
 except ImportError:
     VIBRANA_AVAILABLE = False
     print("[Warning] CCW_Standalone not found. VIBRANA Bridge disabled.")
