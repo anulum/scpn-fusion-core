@@ -67,7 +67,7 @@ def test_spiking_pool_is_deterministic_for_same_seed() -> None:
         gain=2.0,
         tau_window=8,
         seed=19,
-        use_quantum=False,
+        use_stochastic_entropy=False,
     )
     p1 = SpikingControllerPool(**kwargs)
     p2 = SpikingControllerPool(**kwargs)
@@ -82,14 +82,14 @@ def test_spiking_pool_push_pull_sign_response() -> None:
         gain=3.0,
         tau_window=6,
         seed=31,
-        use_quantum=False,
+        use_stochastic_entropy=False,
     )
     neg_pool = SpikingControllerPool(
         n_neurons=20,
         gain=3.0,
         tau_window=6,
         seed=31,
-        use_quantum=False,
+        use_stochastic_entropy=False,
     )
 
     pos = [pos_pool.step(0.2) for _ in range(32)]
@@ -122,7 +122,7 @@ def test_spiking_pool_rejects_invalid_constructor_inputs(
         "gain": 1.0,
         "tau_window": 4,
         "seed": 11,
-        "use_quantum": False,
+        "use_stochastic_entropy": False,
     }
     params.update(kwargs)
     with pytest.raises(ValueError, match=match):
@@ -134,7 +134,7 @@ def test_run_neuro_cybernetic_control_returns_finite_summary_without_plot() -> N
         config_file="dummy.json",
         shot_duration=14,
         seed=101,
-        quantum=False,
+        stochastic=False,
         save_plot=False,
         verbose=False,
         kernel_factory=_DummyKernel,
@@ -170,7 +170,7 @@ def test_run_neuro_cybernetic_control_is_deterministic_for_seed() -> None:
         config_file="dummy.json",
         shot_duration=12,
         seed=77,
-        quantum=False,
+        stochastic=False,
         save_plot=False,
         verbose=False,
         kernel_factory=_DummyKernel,

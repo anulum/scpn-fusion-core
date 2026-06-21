@@ -52,8 +52,8 @@ class _DummyNeuroController:
         self.brain_R: Optional[_DummyBrain] = None
         self.brain_Z: Optional[_DummyBrain] = None
 
-    def initialize_brains(self, use_quantum: bool = False) -> None:
-        del use_quantum
+    def initialize_brains(self, use_stochastic_entropy: bool = False) -> None:
+        del use_stochastic_entropy
         self.brain_R = _DummyBrain()
         self.brain_Z = _DummyBrain()
 

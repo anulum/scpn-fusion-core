@@ -163,7 +163,7 @@ class DirectorInterface:
         self,
         duration: int = 100,
         *,
-        use_quantum: bool = True,
+        use_stochastic_entropy: bool = True,
         glitch_start_step: int = 50,
         glitch_std: float = 500.0,
         rng_seed: int = 42,
@@ -189,7 +189,7 @@ class DirectorInterface:
             logger.info("Director backend: %s", self.director_backend)
 
         self.nc.kernel.solve_equilibrium()
-        self.nc.initialize_brains(use_quantum=bool(use_quantum))
+        self.nc.initialize_brains(use_stochastic_entropy=bool(use_stochastic_entropy))
 
         current_target_ip = 5.0
         self.log = []

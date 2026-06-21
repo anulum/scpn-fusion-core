@@ -112,11 +112,6 @@ MODE_SPECS: dict[str, ModeSpec] = {
     "q-control": ModeSpec(
         "scpn_fusion.core.quantum_bridge", "experimental", "Quantum control bridge"
     ),
-    "neuro-quantum": ModeSpec(
-        "scpn_fusion.control.neuro_cybernetic_controller",
-        "experimental",
-        "Neuro-quantum control bridge",
-    ),
     "director": ModeSpec(
         "scpn_fusion.control.director_interface", "experimental", "Director interface"
     ),

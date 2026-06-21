@@ -14,7 +14,7 @@ This module provides the minimal runtime surface consumed by fusion control:
 - ``RNG``
 - ``generate_bernoulli_bitstream``
 - ``pack_bitstream``, ``vec_and``, ``vec_popcount``
-- ``QuantumEntropySource``
+- ``StochasticEntropySource``
 
 The API is intentionally aligned with the historical optional dependency so
 existing SCPN/control code can run without requiring external package fetches.
@@ -103,10 +103,9 @@ def vec_popcount(packed: UInt64Array) -> int:
 
 
 @dataclass
-class QuantumEntropySource:
+class StochasticEntropySource:
     """Compatibility entropy source used by the cybernetic controller path."""
 
-    n_qubits: int = 4
     seed: int = 1337
 
     def __post_init__(self) -> None:
@@ -137,7 +136,7 @@ class StochasticLIFNeuron:
         resistance: float = 1.0,
         refractory_period: int = 0,
         seed: int = 0,
-        entropy_source: Optional[QuantumEntropySource] = None,
+        entropy_source: Optional[StochasticEntropySource] = None,
     ) -> None:
         self.v_rest = float(v_rest)
         self.v_reset = float(v_reset)

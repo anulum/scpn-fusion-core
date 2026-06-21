@@ -22,7 +22,7 @@ from numpy.typing import NDArray
 from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
 from scpn_fusion.neurocore_compat import (
     SC_NEUROCORE_AVAILABLE,
-    QuantumEntropySource,
+    StochasticEntropySource,
     StochasticLIFNeuron,
 )
 
@@ -65,7 +65,7 @@ class SpikingControllerPool:
         n_neurons: int = 20,
         gain: float = 1.0,
         tau_window: int = 10,
-        use_quantum: bool = False,
+        use_stochastic_entropy: bool = False,
         *,
         seed: int = 42,
         allow_numpy_fallback: bool = True,
@@ -96,7 +96,7 @@ class SpikingControllerPool:
         self.n_neurons = n_neurons
         self.gain = gain
         self.window_size = tau_window
-        self.use_quantum = bool(use_quantum)
+        self.use_stochastic_entropy = bool(use_stochastic_entropy)
         self._i_scale = 5.0
         self._i_bias = 0.1
         self.last_rate_pos = 0.0
@@ -111,8 +111,8 @@ class SpikingControllerPool:
         if SC_NEUROCORE_AVAILABLE:
             self.backend = "sc_neurocore"
             self.q_source = (
-                QuantumEntropySource(n_qubits=4)
-                if self.use_quantum and QuantumEntropySource is not None
+                StochasticEntropySource()
+                if self.use_stochastic_entropy and StochasticEntropySource is not None
                 else None
             )
             self.pop_pos = [
@@ -241,20 +241,20 @@ class NeuroCyberneticController:
         allowed = self.safety_runtime.update_from_state(state)
         return allowed
 
-    def initialize_brains(self, use_quantum: bool = False) -> None:
+    def initialize_brains(self, use_stochastic_entropy: bool = False) -> None:
         """Initialise radial and vertical spiking controller populations."""
         self.brain_R = SpikingControllerPool(
             n_neurons=50,
             gain=10.0,
             tau_window=20,
-            use_quantum=use_quantum,
+            use_stochastic_entropy=use_stochastic_entropy,
             seed=self.seed + 1,
         )
         self.brain_Z = SpikingControllerPool(
             n_neurons=50,
             gain=20.0,
             tau_window=20,
-            use_quantum=use_quantum,
+            use_stochastic_entropy=use_stochastic_entropy,
             seed=self.seed + 2,
         )
 
@@ -266,7 +266,7 @@ class NeuroCyberneticController:
         output_path: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Run a classical spiking-control shot and return telemetry metrics."""
-        self.initialize_brains(use_quantum=False)
+        self.initialize_brains(use_stochastic_entropy=False)
         return self._execute_simulation(
             "Neuro-Cybernetic (Classical SNN)",
             mode="classical",
@@ -275,18 +275,18 @@ class NeuroCyberneticController:
             output_path=output_path,
         )
 
-    def run_quantum_shot(
+    def run_stochastic_shot(
         self,
         *,
         save_plot: bool = True,
         verbose: bool = True,
         output_path: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Run a quantum-entropy-enabled spiking-control shot when available."""
-        self.initialize_brains(use_quantum=True)
+        """Run a stochastic-entropy spiking-control shot."""
+        self.initialize_brains(use_stochastic_entropy=True)
         return self._execute_simulation(
-            "Quantum-Neuro Hybrid (QNN)",
-            mode="quantum",
+            "Stochastic Spiking Controller",
+            mode="stochastic",
             save_plot=save_plot,
             verbose=verbose,
             output_path=output_path,
@@ -485,7 +485,7 @@ def run_neuro_cybernetic_control(
     config_file: str,
     shot_duration: int = SHOT_DURATION,
     seed: int = 42,
-    quantum: bool = False,
+    stochastic: bool = False,
     save_plot: bool = False,
     verbose: bool = False,
     output_path: Optional[str] = None,
@@ -498,8 +498,8 @@ def run_neuro_cybernetic_control(
         shot_duration=shot_duration,
         kernel_factory=kernel_factory,
     )
-    if quantum:
-        return controller.run_quantum_shot(
+    if stochastic:
+        return controller.run_stochastic_shot(
             save_plot=save_plot, verbose=verbose, output_path=output_path
         )
     return controller.run_shot(save_plot=save_plot, verbose=verbose, output_path=output_path)
@@ -509,7 +509,7 @@ if __name__ == "__main__":
     repo_root = Path(__file__).resolve().parents[3]
     cfg = repo_root / "iter_config.json"
     nc = NeuroCyberneticController(str(cfg))
-    if len(sys.argv) > 1 and sys.argv[1] == "quantum":
-        nc.run_quantum_shot()
+    if len(sys.argv) > 1 and sys.argv[1] == "stochastic":
+        nc.run_stochastic_shot()
     else:
         nc.run_shot()
