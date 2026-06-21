@@ -2590,7 +2590,7 @@
     "python_capability_classes": 547,
     "python_capability_source_modules": 277,
     "rust_workspace_crates": 13,
-    "test_files": 426
+    "test_files": 427
   },
   "documentation": {
     "public_pages": [
@@ -2774,6 +2774,7 @@
       "tests/test_current_drive.py",
       "tests/test_dashboard_generator.py",
       "tests/test_dashboard_launcher.py",
+      "tests/test_data_paths.py",
       "tests/test_density_controller.py",
       "tests/test_deprecated_default_lane_guard.py",
       "tests/test_detachment_controller.py",
