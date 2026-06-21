@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 try:
     from opentrons import protocol_api, simulate  # type: ignore[import-not-found]
 
-    OPENTRONS_AVAILABLE = True
+    OPENTRONS_AVAILABLE = True  # pragma: no cover - optional opentrons robotics engine
 except ImportError:
     OPENTRONS_AVAILABLE = False
     print("[Lazarus] Opentrons API not found. Using Biological Simulation Mode.")

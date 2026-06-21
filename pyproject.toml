@@ -182,6 +182,7 @@ files = [
     "tests/test_faraday_recovery.py",
     "tests/test_sandpile_fusion_reactor.py",
     "tests/test_global_design_scanner.py",
+    "tests/test_lazarus_bridge.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",
