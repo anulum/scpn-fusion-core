@@ -190,8 +190,10 @@ class BreedingBlanket:
         integrand = production_rate * 2.0 * np.pi * self.r
 
         if hasattr(np, "trapezoid"):
-            total_production = np.trapezoid(integrand, self.r)
-        else:  # pragma: no cover - legacy NumPy compatibility path
+            total_production = np.trapezoid(
+                integrand, self.r
+            )  # pragma: no cover - numpy>=2.0 trapezoid path
+        else:
             total_production = np.trapz(integrand, self.r)  # type: ignore[attr-defined,unused-ignore]
 
         # Incoming Current (per unit length)
@@ -578,8 +580,10 @@ class MultiGroupBlanket:
         total_prod = prod_g1 + prod_g2 + prod_g3
 
         if hasattr(np, "trapezoid"):
-            total_tritium = float(np.trapezoid(total_prod * 2.0 * np.pi * self.r, self.r))
-        else:  # pragma: no cover - legacy NumPy compatibility path
+            total_tritium = float(
+                np.trapezoid(total_prod * 2.0 * np.pi * self.r, self.r)
+            )  # pragma: no cover - numpy>=2.0 trapezoid path
+        else:
             edge = np.diff(self.r)
             total_integrand = total_prod * 2.0 * np.pi * self.r
             total_tritium = float(np.sum(0.5 * (total_integrand[1:] + total_integrand[:-1]) * edge))
@@ -592,10 +596,16 @@ class MultiGroupBlanket:
         # Per-group TBR breakdown (with same correction factors as total)
         corr = port_coverage_factor * streaming_factor
         if hasattr(np, "trapezoid"):
-            tbr_g1_raw = float(np.trapezoid(prod_g1 * 2.0 * np.pi * self.r, self.r))
-            tbr_g2_raw = float(np.trapezoid(prod_g2 * 2.0 * np.pi * self.r, self.r))
-            tbr_g3_raw = float(np.trapezoid(prod_g3 * 2.0 * np.pi * self.r, self.r))
-        else:  # pragma: no cover - legacy NumPy compatibility path
+            tbr_g1_raw = float(
+                np.trapezoid(prod_g1 * 2.0 * np.pi * self.r, self.r)
+            )  # pragma: no cover - numpy>=2.0 trapezoid path
+            tbr_g2_raw = float(
+                np.trapezoid(prod_g2 * 2.0 * np.pi * self.r, self.r)
+            )  # pragma: no cover - numpy>=2.0 trapezoid path
+            tbr_g3_raw = float(
+                np.trapezoid(prod_g3 * 2.0 * np.pi * self.r, self.r)
+            )  # pragma: no cover - numpy>=2.0 trapezoid path
+        else:
             edge = np.diff(self.r)
             g1 = prod_g1 * 2.0 * np.pi * self.r
             g2 = prod_g2 * 2.0 * np.pi * self.r
