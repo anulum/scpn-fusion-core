@@ -167,9 +167,7 @@ class TestRunPWIDemo:
         assert saved == ["PWI_Erosion_Result.png"]
         assert result["plot_saved"] is True
 
-    def test_records_plot_error_on_render_failure(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_records_plot_error_on_render_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A rendering failure is caught and reported without aborting the scan."""
         import matplotlib.pyplot as plt
 
