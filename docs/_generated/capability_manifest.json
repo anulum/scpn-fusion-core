@@ -747,6 +747,10 @@
         "path": "src/scpn_fusion/control/_free_boundary_supervisory_types.py"
       },
       {
+        "name": "FreeBoundaryHistoryArrays",
+        "path": "src/scpn_fusion/control/_free_boundary_simulation_arrays.py"
+      },
+      {
         "name": "FreeBoundarySafetyMargins",
         "path": "src/scpn_fusion/control/_free_boundary_supervisory_types.py"
       },
@@ -2593,7 +2597,7 @@
     "optional_extras": 12,
     "public_api_exports": 2,
     "public_documentation_pages": 54,
-    "python_capability_classes": 548,
+    "python_capability_classes": 549,
     "python_capability_source_modules": 279,
     "rust_workspace_crates": 13,
     "test_files": 429
