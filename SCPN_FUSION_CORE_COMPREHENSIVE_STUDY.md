@@ -198,7 +198,7 @@ SCPN-Fusion-Core represents the application of SCPN's computational methodology 
 
 3. **Phase Dynamics**: The Kuramoto-type oscillator formalism used in SCPN's UPDE has a direct physical analogue in plasma physics: the phase dynamics of tearing mode magnetic islands, sawtooth oscillations, and edge-localized modes are all fundamentally oscillatory phenomena amenable to coupled-oscillator modeling.
 
-4. **Bridge Modules**: SCPN-Fusion-Core includes explicit bridge modules (Lazarus Bridge, Vibrana Bridge, Director Interface) that connect the fusion simulation to the broader SCPN ecosystem, enabling the plasma state to modulate SCPN layer parameters and vice versa.
+4. **Bridge Modules**: SCPN-Fusion-Core includes the Director Interface supervisory bridge that connects the fusion simulation to the broader SCPN ecosystem, enabling the plasma state to modulate SCPN layer parameters and vice versa.
 
 ### 3.3 The Broader SCPN Ecosystem
 
@@ -543,9 +543,7 @@ The complete source tree contains the following modules:
 **UI (1 module)**:
 - `app.py` — Streamlit interactive dashboard (139 lines)
 
-**SCPN Bridges (3 modules)**:
-- `lazarus_bridge.py` — Connects fusion state to SCPN Layer 3 (biological)
-- `vibrana_bridge.py` — Connects fusion state to SCPN Layer 7 (symbolic)
+**Design tools (1 module)**:
 - `global_design_scanner.py` — Multi-reactor parametric design space scan
 
 ---
@@ -2152,7 +2150,7 @@ pub const M_TRITIUM: f64 = 5.0073567446e-27;   // Tritium mass (kg)
 pub const E_FUSION_DT: f64 = 17.6 * 1.602e-13; // D-T fusion energy (J)
 pub const ALPHA_FRACTION: f64 = 0.2;            // Alpha energy fraction
 pub const K_BOLTZMANN: f64 = 1.380649e-23;      // Boltzmann constant
-pub const PHI_GOLDEN: f64 = 1.618033988749895;  // Golden ratio (Lazarus bridge)
+pub const PHI_GOLDEN: f64 = 1.618033988749895;  // Golden ratio
 ```
 
 **Configuration** (`config.rs`): Serde-deserializable structs that map directly to the JSON config format:
@@ -2566,7 +2564,7 @@ This ensures graceful fallback: if the `_rust_compat` module itself has issues (
 
 ### 19.3 Bridge Modules
 
-The SCPN bridge modules (`lazarus_bridge.py`, `vibrana_bridge.py`, `director_interface.py`, `neuro_cybernetic_controller.py`) additionally import the `RUST_BACKEND` flag to log which backend is active:
+The SCPN bridge modules (`director_interface.py`, `neuro_cybernetic_controller.py`) additionally import the `RUST_BACKEND` flag to log which backend is active:
 
 ```python
 from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
@@ -4224,8 +4222,6 @@ The plasma is waiting.
 | run_diagnostics.py | diagnostics/ | 63 | Demo pipeline |
 | hpc_bridge.py | hpc/ | ~100 | C++ acceleration bridge |
 | app.py | ui/ | 139 | Streamlit dashboard |
-| lazarus_bridge.py | core/ | ~80 | SCPN Layer 3 bridge |
-| vibrana_bridge.py | core/ | ~80 | SCPN Layer 7 bridge |
 | global_design_scanner.py | core/ | ~250 | Parametric design scan |
 | rf_heating.py | core/ | ~150 | RF wave deposition |
 | wdm_engine.py | core/ | ~300 | Whole device model |

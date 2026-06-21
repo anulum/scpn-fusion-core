@@ -26,7 +26,7 @@ edge physics.
 | Scenario | `scenario_simulator`, `compact_reactor_optimizer`, `global_design_scanner`, `plasma_startup` | 5 |
 | Geometry & 3D | `equilibrium_3d`, `fieldline_3d`, `geometry_3d`, `vmec_lite` | 4 |
 | UQ & config | `uncertainty`, `config_schema`, `state_space`, `gpu_runtime`, `quantum_bridge` | 8 |
-| Remaining | turbulence oracle, WDM engine, heating/neutronics contracts, RF heating, sandpile reactor, Lazarus/Vibrana bridges, etc. | 38 |
+| Remaining | turbulence oracle, WDM engine, heating/neutronics contracts, RF heating, sandpile reactor, etc. | 36 |
 
 ### `control/` — 54 files
 

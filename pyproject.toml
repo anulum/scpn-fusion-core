@@ -182,8 +182,6 @@ files = [
     "tests/test_faraday_recovery.py",
     "tests/test_sandpile_fusion_reactor.py",
     "tests/test_global_design_scanner.py",
-    "tests/test_lazarus_bridge.py",
-    "tests/test_vibrana_bridge.py",
     "tests/test_divertor_thermal_sim.py",
     "tests/test_pwi_erosion.py",
     "tests/test_mhd_sawtooth.py",
@@ -379,8 +377,6 @@ files = [
     "src/scpn_fusion/core/__init__.py",
     "src/scpn_fusion/core/force_balance.py",
     "src/scpn_fusion/core/fno_turbulence_suppressor.py",
-    "src/scpn_fusion/core/lazarus_bridge.py",
-    "src/scpn_fusion/core/vibrana_bridge.py",
     "src/scpn_fusion/core/wdm_engine.py",
     "src/scpn_fusion/core/global_design_scanner.py",
     "src/scpn_fusion/core/tglf_surrogate_bridge.py",
@@ -550,8 +546,6 @@ ignore = [
 "src/scpn_fusion/core/force_balance.py" = ["F401"]
 "src/scpn_fusion/core/current_diffusion.py" = ["F841"]
 "src/scpn_fusion/core/global_design_scanner.py" = ["F401"]
-"src/scpn_fusion/core/lazarus_bridge.py" = ["F401"]
-"src/scpn_fusion/core/vibrana_bridge.py" = ["F401"]
 "src/scpn_fusion/core/wdm_engine.py" = ["F401"]
 # Forward reference to TransportSolver (circular import guard)
 "src/scpn_fusion/core/integrated_transport_solver_adaptive.py" = ["F821"]

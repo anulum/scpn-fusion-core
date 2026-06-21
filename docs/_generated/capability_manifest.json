@@ -1047,10 +1047,6 @@
         "path": "src/scpn_fusion/control/safe_rl_controller.py"
       },
       {
-        "name": "LazarusBridge",
-        "path": "src/scpn_fusion/core/lazarus_bridge.py"
-      },
-      {
         "name": "LearnerConfig",
         "path": "src/scpn_fusion/core/gk_online_learner.py"
       },
@@ -2227,10 +2223,6 @@
         "path": "src/scpn_fusion/core/vessel_model.py"
       },
       {
-        "name": "VibranaFusionBridge",
-        "path": "src/scpn_fusion/core/vibrana_bridge.py"
-      },
-      {
         "name": "VoltSecondOptimizer",
         "path": "src/scpn_fusion/control/volt_second_manager.py"
       },
@@ -2437,7 +2429,6 @@
       "src/scpn_fusion/core/jax_solvers.py",
       "src/scpn_fusion/core/jax_transport_solver.py",
       "src/scpn_fusion/core/kinetic_efit.py",
-      "src/scpn_fusion/core/lazarus_bridge.py",
       "src/scpn_fusion/core/lh_transition.py",
       "src/scpn_fusion/core/locked_mode.py",
       "src/scpn_fusion/core/marfe.py",
@@ -2483,7 +2474,6 @@
       "src/scpn_fusion/core/uncertainty.py",
       "src/scpn_fusion/core/uncertainty_full_chain.py",
       "src/scpn_fusion/core/vessel_model.py",
-      "src/scpn_fusion/core/vibrana_bridge.py",
       "src/scpn_fusion/core/vmec_lite.py",
       "src/scpn_fusion/core/wdm_engine.py",
       "src/scpn_fusion/diagnostics/forward.py",
@@ -2602,10 +2592,10 @@
     "optional_extras": 12,
     "public_api_exports": 2,
     "public_documentation_pages": 54,
-    "python_capability_classes": 550,
-    "python_capability_source_modules": 280,
+    "python_capability_classes": 548,
+    "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
-    "test_files": 430
+    "test_files": 428
   },
   "documentation": {
     "public_pages": [
@@ -2971,7 +2961,6 @@
       "tests/test_knm.py",
       "tests/test_kuramoto.py",
       "tests/test_kuramoto_edge_paths.py",
-      "tests/test_lazarus_bridge.py",
       "tests/test_lazy_imports_all.py",
       "tests/test_lh_transition.py",
       "tests/test_locked_mode.py",
@@ -3156,7 +3145,6 @@
       "tests/test_version_metadata.py",
       "tests/test_vertical_control_replay_benchmark.py",
       "tests/test_vessel_model.py",
-      "tests/test_vibrana_bridge.py",
       "tests/test_vmec_lite.py",
       "tests/test_volt_second_manager.py",
       "tests/test_wdm_engine.py",
