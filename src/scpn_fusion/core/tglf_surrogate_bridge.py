@@ -57,9 +57,13 @@ def train_surrogate_from_tglf(
     dataset: list[dict[str, Any]],
     output_path: str | Path,
 ) -> None:
-    """Placeholder for surrogate training logic from collected TGLF data."""
-    print(f"[TGLF] Training surrogate from {len(dataset)} samples...")
-    print(f"[TGLF] Surrogate weights saved to {output_path}")
+    """Train a regression surrogate from collected TGLF data.
+
+    Not yet implemented: this entry point reserves the training contract but does
+    not fit or persist any weights. See the FUSION TODO TGLF-surrogate item.
+    """
+    print(f"[TGLF] Surrogate training requested for {len(dataset)} samples.")
+    print(f"[TGLF] Not implemented: no weights written to {output_path}.")
 
 
 __all__ = ["TGLFDatasetGenerator", "train_surrogate_from_tglf"]
