@@ -611,7 +611,9 @@ class DynamicBurnModel:
         q_values = [r["Q_final"] for r in results]
         best_idx = int(np.argmax(q_values))
 
-        if results[best_idx]["Q_final"] > 15.0:
+        if (
+            results[best_idx]["Q_final"] > 15.0
+        ):  # pragma: no cover - defensive: simulate caps Q_final at 15
             warnings.warn(
                 f"Best Q={results[best_idx]['Q_final']:.1f} exceeds 15; "
                 "likely a 0-D model artifact.",
