@@ -23,7 +23,7 @@ class TransportSolverInitializationMixin(TransportSolverState):
 
         self.external_profile_mode = True
         self.nr = 50
-        self.rho = np.linspace(0, 1, self.nr)
+        self.rho = np.linspace(0, 1, self.nr, dtype=np.float64)
         self.drho = 1.0 / (self.nr - 1)
 
         self.multi_ion: bool = multi_ion

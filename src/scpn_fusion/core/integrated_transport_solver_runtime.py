@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scpn_fusion.core._integrated_transport_solver_base import FloatArray
 from scpn_fusion.core.integrated_transport_solver_adaptive import (
     AdaptiveTimeController,  # re-export for backward compatibility
 )
@@ -41,13 +42,13 @@ class TransportSolverRuntimeMixin(
     kernels to helper implementations in the corresponding runtime utility module.
     """
 
-    D_n: np.ndarray
-    chi_e: np.ndarray
-    chi_i: np.ndarray
-    n_impurity: np.ndarray
+    D_n: FloatArray
+    chi_e: FloatArray
+    chi_i: FloatArray
+    n_impurity: FloatArray
 
     @staticmethod
-    def _thomas_solve(a, b, c, d):
+    def _thomas_solve(a: FloatArray, b: FloatArray, c: FloatArray, d: FloatArray) -> FloatArray:
         """O(n) tridiagonal solver (Thomas algorithm).
 
         Solves  A x = d  where A is tridiagonal with sub-diagonal *a*,
@@ -66,7 +67,7 @@ class TransportSolverRuntimeMixin(
         """
         return _thomas_solve_impl(a, b, c, d)
 
-    def _explicit_diffusion_rhs(self, T, chi):
+    def _explicit_diffusion_rhs(self, T: FloatArray, chi: FloatArray) -> FloatArray:
         """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr).
 
         Uses half-grid diffusivities and central differences on the
@@ -79,7 +80,9 @@ class TransportSolverRuntimeMixin(
             chi=np.asarray(chi, dtype=np.float64),
         )
 
-    def _build_cn_tridiag(self, chi, dt):
+    def _build_cn_tridiag(
+        self, chi: FloatArray, dt: float
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Build tridiagonal coefficients for the Crank-Nicolson LHS.
 
         The implicit system is:
@@ -97,12 +100,12 @@ class TransportSolverRuntimeMixin(
 
     @staticmethod
     def _sanitize_with_fallback(
-        arr: np.ndarray,
-        reference: np.ndarray,
+        arr: FloatArray,
+        reference: FloatArray,
         *,
         floor: float | None = None,
         ceil: float | None = None,
-    ) -> tuple[np.ndarray, int]:
+    ) -> tuple[FloatArray, int]:
         """Replace non-finite entries and enforce optional lower/upper bounds."""
         return _sanitize_with_fallback_impl(
             np.asarray(arr, dtype=np.float64),

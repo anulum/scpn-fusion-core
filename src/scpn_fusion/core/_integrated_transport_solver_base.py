@@ -30,6 +30,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
+BoolArray = NDArray[np.bool_]
 
 
 class TransportSolverState:
@@ -52,12 +53,17 @@ class TransportSolverState:
     Ti: FloatArray
     ne: FloatArray
     n_impurity: FloatArray
+    n_D: FloatArray
+    n_T: FloatArray
+    n_He: FloatArray
+    T_edge_keV: float
 
     # Species, pedestal and auxiliary-heating configuration.
     multi_ion: bool
     D_species: float
     tau_He_factor: float
     pedestal_model: Any
+    neoclassical_params: dict[str, Any] | None
     aux_heating_profile_width: float
     aux_heating_electron_fraction: float
 
@@ -123,6 +129,28 @@ class TransportSolverState:
     @staticmethod
     def _thomas_solve(a: FloatArray, b: FloatArray, c: FloatArray, d: FloatArray) -> FloatArray:
         """Solve a tridiagonal system via the Thomas algorithm."""
+        raise NotImplementedError
+
+    def _get_neural_transport_model(self) -> Any:
+        """Return the lazily-constructed neural transport surrogate model."""
+        raise NotImplementedError
+
+    def _select_neural_ood_indices(
+        self,
+        max_abs_z_profile: FloatArray,
+        *,
+        sigma_threshold: float,
+        max_points: int,
+    ) -> tuple[BoolArray, list[int]]:
+        """Select out-of-distribution radial indices for the neural surrogate."""
+        raise NotImplementedError
+
+    def _summarize_coarse_transport_channels(
+        self,
+        chi_e_profile: FloatArray,
+        chi_i_profile: FloatArray,
+    ) -> tuple[str, dict[str, int], dict[str, float]]:
+        """Summarise coarse transport-channel diagnostics for logging."""
         raise NotImplementedError
 
 

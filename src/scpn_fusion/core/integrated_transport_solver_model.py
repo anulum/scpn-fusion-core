@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 
+from scpn_fusion.core._integrated_transport_solver_base import BoolArray, FloatArray
 from scpn_fusion.fallback_telemetry import record_fallback_event
 
 from scpn_fusion.core._integrated_transport_solver_model_backend import (
@@ -33,10 +34,10 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
     """
 
     neoclassical_params: dict[str, Any] | None
-    D_n: np.ndarray
-    chi_e: np.ndarray
-    chi_i: np.ndarray
-    n_impurity: np.ndarray
+    D_n: FloatArray
+    chi_e: FloatArray
+    chi_i: FloatArray
+    n_impurity: FloatArray
     _neural_transport_model: Any
 
     def _get_neural_transport_model(self) -> Any:
@@ -54,8 +55,8 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
 
     def _summarize_coarse_transport_channels(
         self,
-        chi_e_profile: np.ndarray,
-        chi_i_profile: np.ndarray,
+        chi_e_profile: FloatArray,
+        chi_i_profile: FloatArray,
     ) -> tuple[str, dict[str, int], dict[str, float]]:
         """Build an honest coarse channel summary from aggregate transport profiles."""
         chi_e_profile = np.asarray(chi_e_profile, dtype=np.float64)
@@ -81,11 +82,11 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
 
     def _select_neural_ood_indices(
         self,
-        max_abs_z_profile: np.ndarray,
+        max_abs_z_profile: FloatArray,
         *,
         sigma_threshold: float,
         max_points: int,
-    ) -> tuple[np.ndarray, list[int]]:
+    ) -> tuple[BoolArray, list[int]]:
         """Pick the highest-severity interior OOD points for TGLF escalation."""
         sigma = float(sigma_threshold)
         if not np.isfinite(sigma) or sigma <= 0.0:
@@ -112,7 +113,7 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
 
     def _resolve_transport_closure_inputs(
         self,
-    ) -> tuple[np.ndarray, np.ndarray, float, float, float, str]:
+    ) -> tuple[FloatArray, FloatArray, float, float, float, str]:
         """Resolve geometry and magnetic profiles for the reduced transport closure."""
         if self.neoclassical_params is not None:
             q_profile = np.asarray(
@@ -236,7 +237,7 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
             "q_profile": q_profile,
         }
 
-    def chang_hinton_chi_profile(self) -> np.ndarray:
+    def chang_hinton_chi_profile(self) -> FloatArray:
         """Backward-compatible Chang-Hinton profile helper."""
         solver_mod = _solver_module()
         rho = np.asarray(self.rho, dtype=np.float64)
@@ -267,8 +268,11 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         if q_profile.shape != rho.shape:
             q_profile = np.linspace(1.0, 3.0, len(rho), dtype=np.float64)
 
-        return solver_mod.chang_hinton_chi_profile(
-            rho, t_i, n_e, q_profile, R0, a, B0, A_ion=A_ion, Z_eff=Z_eff
+        return np.asarray(
+            solver_mod.chang_hinton_chi_profile(
+                rho, t_i, n_e, q_profile, R0, a, B0, A_ion=A_ion, Z_eff=Z_eff
+            ),
+            dtype=np.float64,
         )
 
     def inject_impurities(self, flux_from_wall_per_sec: float, dt: float) -> None:
@@ -306,7 +310,7 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         sum_nz = ne_safe + n_imp_m3 * z_imp
         self._Z_eff = float(np.clip(np.mean(sum_nz2 / np.maximum(sum_nz, 1e10)), 1.0, 10.0))
 
-    def calculate_bootstrap_current_simple(self, R0: float, B_pol: np.ndarray) -> np.ndarray:
+    def calculate_bootstrap_current_simple(self, R0: float, B_pol: FloatArray) -> FloatArray:
         """Calibrated-heuristic Sauter bootstrap current density [A/m^2]."""
         a = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0
         r = self.rho * a
@@ -331,9 +335,9 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         j_bs *= 1.4
         j_bs[0] = 0
         j_bs[-1] = 0
-        return j_bs
+        return np.asarray(j_bs, dtype=np.float64)
 
-    def calculate_bootstrap_current(self, R0: float, B_pol: np.ndarray) -> np.ndarray:
+    def calculate_bootstrap_current(self, R0: float, B_pol: FloatArray) -> FloatArray:
         """Calculate bootstrap current with the full Sauter kernel."""
         solver_mod = _solver_module()
         params = self.neoclassical_params if self.neoclassical_params is not None else {}
@@ -341,19 +345,22 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         if q_profile.shape != self.rho.shape:
             q_profile = 1.0 + 2.0 * self.rho**2
         a_default = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0
-        return solver_mod.calculate_sauter_bootstrap_current_full(
-            self.rho,
-            self.Te,
-            self.Ti,
-            self.ne,
-            q_profile,
-            R0,
-            params.get("a", a_default),
-            params.get("B0", 5.3),
-            params.get("Z_eff", getattr(self, "_Z_eff", 1.5)),
+        return np.asarray(
+            solver_mod.calculate_sauter_bootstrap_current_full(
+                self.rho,
+                self.Te,
+                self.Ti,
+                self.ne,
+                q_profile,
+                R0,
+                params.get("a", a_default),
+                params.get("B0", 5.3),
+                params.get("Z_eff", getattr(self, "_Z_eff", 1.5)),
+            ),
+            dtype=np.float64,
         )
 
-    def _gyro_bohm_chi(self) -> np.ndarray:
+    def _gyro_bohm_chi(self) -> FloatArray:
         """Gyro-Bohm anomalous transport diffusivity [m^2/s]."""
         solver_mod = _solver_module()
         if self.neoclassical_params is None:

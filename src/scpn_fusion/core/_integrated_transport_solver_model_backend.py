@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
+from scpn_fusion.core._integrated_transport_solver_base import FloatArray
 from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
 from scpn_fusion.core._integrated_transport_solver_model_common import _solver_module
 from scpn_fusion.core.neural_transport import reduced_gyrokinetic_profile_model
@@ -24,16 +25,16 @@ class TransportSolverBackendMixin(TransportSolverState):
         self,
         *,
         transport_backend: str,
-        chi_base: np.ndarray,
+        chi_base: FloatArray,
         chi_base_source: str,
-        chi_gb_reference: np.ndarray | None,
-        q_profile: np.ndarray,
-        s_hat_profile: np.ndarray,
+        chi_gb_reference: FloatArray | None,
+        q_profile: FloatArray,
+        s_hat_profile: FloatArray,
         r_major: float,
         a_minor: float,
         b_toroidal: float,
         q_profile_source: str,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Return electron, ion, and particle diffusivity profiles for the backend."""
         solver_mod = _solver_module()
         transport_backend_key = transport_backend.strip().lower()

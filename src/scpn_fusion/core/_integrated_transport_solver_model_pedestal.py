@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
+from scpn_fusion.core._integrated_transport_solver_base import FloatArray, TransportSolverState
 from scpn_fusion.core._integrated_transport_solver_model_common import _solver_module
 from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 from scpn_fusion.fallback_telemetry import record_fallback_event
@@ -24,10 +24,10 @@ class TransportSolverPedestalMixin(TransportSolverState):
         self,
         *,
         P_aux: float,
-        chi_turb_e: np.ndarray,
-        chi_turb_i: np.ndarray,
-        d_turb: np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        chi_turb_e: FloatArray,
+        chi_turb_i: FloatArray,
+        d_turb: FloatArray,
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Modify turbulent diffusivity profiles for H-mode pedestal conditions."""
         solver_mod = _solver_module()
         is_h_mode = P_aux > 30.0

@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import logging
 
 import numpy as np
@@ -42,7 +44,7 @@ class TransportSolverCouplingMixin(TransportSolverState):
         _, psi_x = self.find_x_point(self.Psi)
         psi_edge = psi_x
         if abs(psi_edge - psi_axis) < 1.0:
-            psi_edge = np.min(self.Psi)
+            psi_edge = float(np.min(self.Psi))
 
         denom = psi_edge - psi_axis
         if abs(denom) < 1e-9:
@@ -119,7 +121,7 @@ class TransportSolverCouplingMixin(TransportSolverState):
         *,
         enforce_numerical_recovery: bool = False,
         max_numerical_recoveries: int | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Run self-consistent GS <-> transport iteration."""
         psi_residuals: list[float] = []
         converged = False
@@ -201,7 +203,7 @@ class TransportSolverCouplingMixin(TransportSolverState):
         *,
         enforce_numerical_recovery: bool = False,
         max_numerical_recoveries: int | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Run transport evolution until approximate steady state."""
         if self_consistent:
             return self.run_self_consistent(

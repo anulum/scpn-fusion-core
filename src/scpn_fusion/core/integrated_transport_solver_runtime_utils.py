@@ -16,14 +16,15 @@ isolation.
 from __future__ import annotations
 
 import numpy as np
+from scpn_fusion.core._integrated_transport_solver_base import FloatArray
 
 
 def thomas_solve(
-    a: np.ndarray,
-    b: np.ndarray,
-    c: np.ndarray,
-    d: np.ndarray,
-) -> np.ndarray:
+    a: FloatArray,
+    b: FloatArray,
+    c: FloatArray,
+    d: FloatArray,
+) -> FloatArray:
     """O(n) tridiagonal solver (Thomas algorithm)."""
     n = len(d)
     cp = np.empty(n - 1)
@@ -60,11 +61,11 @@ def thomas_solve(
 
 def explicit_diffusion_rhs(
     *,
-    rho: np.ndarray,
+    rho: FloatArray,
     drho: float,
-    T: np.ndarray,
-    chi: np.ndarray,
-) -> np.ndarray:
+    T: FloatArray,
+    chi: FloatArray,
+) -> FloatArray:
     """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr)."""
     n = len(T)
     Lh = np.zeros(n)
@@ -91,7 +92,7 @@ class _CNGridCache:
 
     __slots__ = ("geo_ip", "geo_im", "_key")
 
-    def __init__(self, rho: np.ndarray, drho: float) -> None:
+    def __init__(self, rho: FloatArray, drho: float) -> None:
         """Cache geometry factors for one radial grid resolution."""
         n = len(rho)
         r = rho[1 : n - 1]
@@ -102,7 +103,7 @@ class _CNGridCache:
         self.geo_im = r_im * inv_r_dr2
         self._key = (n, drho)
 
-    def matches(self, rho: np.ndarray, drho: float) -> bool:
+    def matches(self, rho: FloatArray, drho: float) -> bool:
         """Report whether the cache is valid for the provided grid."""
         return self._key == (len(rho), drho)
 
@@ -112,11 +113,11 @@ _cn_grid_cache: _CNGridCache | None = None
 
 def build_cn_tridiag(
     *,
-    rho: np.ndarray,
+    rho: FloatArray,
     drho: float,
-    chi: np.ndarray,
+    chi: FloatArray,
     dt: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Build tridiagonal coefficients for Crank-Nicolson LHS."""
     global _cn_grid_cache  # noqa: PLW0603
     if _cn_grid_cache is None or not _cn_grid_cache.matches(rho, drho):
@@ -141,12 +142,12 @@ def build_cn_tridiag(
 
 
 def sanitize_with_fallback(
-    arr: np.ndarray,
-    reference: np.ndarray,
+    arr: FloatArray,
+    reference: FloatArray,
     *,
     floor: float | None = None,
     ceil: float | None = None,
-) -> tuple[np.ndarray, int]:
+) -> tuple[FloatArray, int]:
     """Replace non-finite entries and enforce optional lower/upper bounds."""
     out = np.asarray(arr, dtype=np.float64).copy()
     ref = np.asarray(reference, dtype=np.float64)

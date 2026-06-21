@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 
+from scpn_fusion.core._integrated_transport_solver_base import FloatArray
 from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
 from scpn_fusion.core.uncertainty import _dt_reactivity
 
@@ -87,7 +88,7 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
     adaptation with explicit fallback metadata for downstream observability.
     """
 
-    def _rho_volume_element(self) -> np.ndarray:
+    def _rho_volume_element(self) -> FloatArray:
         """Toroidal volume element per radial cell, including plasma elongation.
 
         The plasma boundary is modelled as a torus of major radius ``R_0`` with
@@ -108,7 +109,7 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
         block, while ``kappa`` is resolved via :func:`_extract_elongation`
         (preferred key: ``cfg["physics"]["kappa"]``).
         """
-        cached: np.ndarray | None = getattr(self, "_dV_cache", None)
+        cached: FloatArray | None = getattr(self, "_dV_cache", None)
         if cached is not None:
             return cached
 
@@ -135,7 +136,7 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
         self._dV_cache = d_v
         return d_v
 
-    def _compute_aux_heating_sources(self, P_aux_MW: float) -> tuple[np.ndarray, np.ndarray]:
+    def _compute_aux_heating_sources(self, P_aux_MW: float) -> tuple[FloatArray, FloatArray]:
         """Return ion/electron auxiliary-heating sources in keV/s."""
         if (not np.isfinite(P_aux_MW)) or P_aux_MW <= 0.0:
             zeros = np.zeros(self.nr, dtype=np.float64)
@@ -203,15 +204,15 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
         return s_heat_i, s_heat_e
 
     @staticmethod
-    def _bosch_hale_sigmav(T_keV: np.ndarray) -> np.ndarray:
+    def _bosch_hale_sigmav(T_keV: FloatArray) -> FloatArray:
         """D-T <sigma v> [m^3/s]. Bosch & Hale, NF 32 (1992) 611."""
         T_raw = np.asarray(T_keV, dtype=np.float64)
         T = np.nan_to_num(T_raw, nan=0.2, posinf=200.0, neginf=0.2)
         T = np.clip(T, 0.2, 200.0)
-        return _dt_reactivity(T)
+        return np.asarray(_dt_reactivity(T), dtype=np.float64)
 
     @staticmethod
-    def _tungsten_radiation_rate(Te_keV: np.ndarray) -> np.ndarray:
+    def _tungsten_radiation_rate(Te_keV: FloatArray) -> FloatArray:
         """Coronal-equilibrium tungsten radiation rate coefficient [W*m^3]."""
         te_raw = np.asarray(Te_keV, dtype=np.float64)
         Te = np.nan_to_num(te_raw, nan=0.01, posinf=1e3, neginf=0.01)
@@ -233,8 +234,8 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
 
     @staticmethod
     def _bremsstrahlung_power_density(
-        ne_1e19: np.ndarray, Te_keV: np.ndarray, Z_eff: float
-    ) -> np.ndarray:
+        ne_1e19: FloatArray, Te_keV: FloatArray, Z_eff: float
+    ) -> FloatArray:
         """Bremsstrahlung power density [W/m^3]."""
         ne_raw = np.asarray(ne_1e19, dtype=np.float64)
         te_raw = np.asarray(Te_keV, dtype=np.float64)
@@ -246,9 +247,17 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
         z_eff = float(np.clip(z_eff, 1.0e-6, 100.0))
         ne_m3 = ne_safe * 1e19
         p_brem = 5.35e-37 * z_eff * ne_m3**2 * np.sqrt(te_safe)
-        return np.nan_to_num(p_brem, nan=0.0, posinf=np.finfo(np.float64).max, neginf=0.0)
+        return np.asarray(
+            np.nan_to_num(
+                np.asarray(p_brem, dtype=np.float64),
+                nan=0.0,
+                posinf=float(np.finfo(np.float64).max),
+                neginf=0.0,
+            ),
+            dtype=np.float64,
+        )
 
-    def _evolve_species(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
+    def _evolve_species(self, dt: float) -> tuple[FloatArray, FloatArray]:
         """Evolve D/T/He-ash species densities by one time-step."""
         if not self.multi_ion or self.n_D is None:
             return np.zeros(self.nr), np.zeros(self.nr)
