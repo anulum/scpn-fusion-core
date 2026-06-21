@@ -7,28 +7,31 @@
 # SCPN Fusion Core — Global Design Scanner
 """Monte Carlo reactor-design scans with heat-exhaust and magnet constraints."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 from scpn_fusion.core.heat_ml_shadow_surrogate import HeatMLShadowSurrogate
 
 
 class GlobalDesignExplorer:
-    """
-    Monte Carlo Design Space Explorer.
-    Searches for the Pareto Frontier of Fusion Reactors.
-    Objectives: Maximize Q, Minimize Radius (Cost), Minimize Wall Load.
+    """Monte Carlo design-space explorer for the fusion-reactor Pareto frontier.
+
+    Objectives: maximise Q, minimise radius (cost) and minimise wall load.
     """
 
     def __init__(
         self,
-        base_config_path,
+        base_config_path: str,
         *,
-        divertor_flux_cap_mw_m2=45.0,
-        zeff_cap=0.4,
-        hts_peak_cap_t=21.0,
-    ):
+        divertor_flux_cap_mw_m2: float = 45.0,
+        zeff_cap: float = 0.4,
+        hts_peak_cap_t: float = 21.0,
+    ) -> None:
         self.base_config_path = base_config_path
         self.heat_ml_shadow = HeatMLShadowSurrogate()
         self.heat_ml_shadow.fit_synthetic(seed=42, samples=1536)
@@ -57,10 +60,8 @@ class GlobalDesignExplorer:
             raise ValueError(f"{name} must be finite with max > min.")
         return lo, hi
 
-    def evaluate_design(self, R_maj, B_field, I_plasma):
-        """
-        Runs a full-stack simulation for a specific design point.
-        """
+    def evaluate_design(self, R_maj: float, B_field: float, I_plasma: float) -> dict[str, Any]:
+        """Run a full-stack simulation for a specific design point."""
         R_maj = self._require_finite_positive("R_maj", R_maj)
         B_field = self._require_finite_positive("B_field", B_field)
         I_plasma = self._require_finite_positive("I_plasma", I_plasma)
@@ -176,14 +177,14 @@ class GlobalDesignExplorer:
 
     def run_scan(
         self,
-        n_samples=2000,
+        n_samples: int = 2000,
         *,
-        r_bounds=(2.0, 9.0),
-        b_bounds=(4.0, 12.0),
-        i_bounds=(5.0, 25.0),
-        seed=None,
-        q95_min=3.0,
-    ):
+        r_bounds: tuple[float, float] = (2.0, 9.0),
+        b_bounds: tuple[float, float] = (4.0, 12.0),
+        i_bounds: tuple[float, float] = (5.0, 25.0),
+        seed: int | None = None,
+        q95_min: float = 3.0,
+    ) -> pd.DataFrame:
         """Sample the global reactor design space and return valid design metrics."""
         if isinstance(n_samples, bool) or int(n_samples) < 1:
             raise ValueError("n_samples must be an integer >= 1.")
@@ -243,7 +244,7 @@ class GlobalDesignExplorer:
         print(f"Valid Designs Found: {len(df)}")
         return df
 
-    def run_compact_scan(self, n_samples=2000, seed=42):
+    def run_compact_scan(self, n_samples: int = 2000, seed: int = 42) -> pd.DataFrame:
         """Run the compact-reactor search envelope with deterministic sampling."""
         return self.run_scan(
             n_samples=n_samples,
@@ -254,7 +255,7 @@ class GlobalDesignExplorer:
             q95_min=1.2,
         )
 
-    def analyze_pareto(self, df):
+    def analyze_pareto(self, df: pd.DataFrame) -> None:
         """Print and plot the viable Pareto region for a design-scan dataframe."""
         # Filter: Viable Reactors
         # Q > 2 (Pilot Goal), Wall Load < 5.0 + active engineering constraints.
