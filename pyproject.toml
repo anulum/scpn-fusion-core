@@ -188,6 +188,7 @@ files = [
     "tests/test_pwi_erosion.py",
     "tests/test_mhd_sawtooth.py",
     "tests/test_hall_mhd_discovery.py",
+    "tests/test_controller_tuning.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",

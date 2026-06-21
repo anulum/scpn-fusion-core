@@ -24,7 +24,7 @@ import numpy as np
 try:
     import optuna  # type: ignore[import-not-found]
 
-    HAS_OPTUNA = True
+    HAS_OPTUNA = True  # pragma: no cover - optional optuna hyperparameter engine
 except ImportError:
     HAS_OPTUNA = False
 
