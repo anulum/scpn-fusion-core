@@ -239,6 +239,7 @@ files = [
     "src/scpn_fusion/control/mu_synthesis.py",
     "src/scpn_fusion/control/advanced_soc_fusion_learning.py",
     "src/scpn_fusion/control/disruption_risk_runtime.py",
+    "src/scpn_fusion/control/spi_mitigation.py",
     "src/scpn_fusion/control/tokamak_flight_sim.py",
     "src/scpn_fusion/control/torax_hybrid_loop.py",
     "src/scpn_fusion/core/hpc_bridge.py",

@@ -10,18 +10,19 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any, Literal, Optional, overload
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
+_SPIHistory = tuple[list[float], list[float], list[float]]
+_SPIHistoryDiag = tuple[list[float], list[float], list[float], dict[str, float]]
+
 
 class ShatteredPelletInjection:
-    """
-    Reduced SPI mitigation model for thermal/current quench campaigns.
-    """
+    """Reduced SPI mitigation model for thermal/current quench campaigns."""
 
     def __init__(self, Plasma_Energy_MJ: float = 300.0, Plasma_Current_MA: float = 15.0):
         w_mj = float(Plasma_Energy_MJ)
@@ -134,6 +135,32 @@ class ShatteredPelletInjection:
         tau = 0.02 * (2.0 / zeff) * ((te / 0.1) ** 0.25)
         return float(np.clip(tau, 0.002, 0.05))
 
+    @overload
+    def trigger_mitigation(
+        self,
+        neon_quantity_mol: float = ...,
+        argon_quantity_mol: float = ...,
+        xenon_quantity_mol: float = ...,
+        return_diagnostics: Literal[False] = ...,
+        *,
+        duration_s: float = ...,
+        dt_s: float = ...,
+        verbose: bool = ...,
+    ) -> _SPIHistory: ...
+
+    @overload
+    def trigger_mitigation(
+        self,
+        neon_quantity_mol: float = ...,
+        argon_quantity_mol: float = ...,
+        xenon_quantity_mol: float = ...,
+        *,
+        return_diagnostics: Literal[True],
+        duration_s: float = ...,
+        dt_s: float = ...,
+        verbose: bool = ...,
+    ) -> _SPIHistoryDiag: ...
+
     def trigger_mitigation(
         self,
         neon_quantity_mol: float = 0.1,
@@ -144,7 +171,7 @@ class ShatteredPelletInjection:
         duration_s: float = 0.05,
         dt_s: float = 1e-5,
         verbose: bool = True,
-    ):
+    ) -> _SPIHistory | _SPIHistoryDiag:
         """Run the thermal/current quench mitigation time history."""
         neon = self._require_non_negative("neon_quantity_mol", neon_quantity_mol)
         argon = self._require_non_negative("argon_quantity_mol", argon_quantity_mol)
@@ -269,9 +296,7 @@ def run_spi_mitigation(
     output_path: str = "SPI_Mitigation_Result.png",
     verbose: bool = True,
 ) -> dict[str, Any]:
-    """
-    Run SPI mitigation simulation and return deterministic summary metrics.
-    """
+    """Run SPI mitigation simulation and return deterministic summary metrics."""
     spi = ShatteredPelletInjection(
         Plasma_Energy_MJ=plasma_energy_mj,
         Plasma_Current_MA=plasma_current_ma,
