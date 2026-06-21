@@ -12,13 +12,14 @@ from typing import Any, cast
 
 import numpy as np
 
+from scpn_fusion.control._free_boundary_tracking_base import _FreeBoundaryTrackingState
 from scpn_fusion.control._free_boundary_tracking_types import (
     FloatArray,
     _ObservationSnapshot,
 )
 
 
-class _FreeBoundaryTrackingRuntimeMixin:
+class _FreeBoundaryTrackingRuntimeMixin(_FreeBoundaryTrackingState):
     def _sync_config_currents(self) -> None:
         coils_cfg = self.kernel.cfg.setdefault("coils", [])
         while len(coils_cfg) < self.n_coils:
@@ -65,7 +66,7 @@ class _FreeBoundaryTrackingRuntimeMixin:
     def _apply_measurement_latency(self, measurement: FloatArray, *, record: bool) -> FloatArray:
         measured = np.asarray(measurement, dtype=np.float64).reshape(-1)
         if (not record) or self.measurement_latency_steps < 1:
-            return cast(FloatArray, measured.copy())
+            return measured.copy()
         self._measurement_latency_buffer.append(measured.copy())
         max_buffer = self.measurement_latency_steps + 1
         while len(self._measurement_latency_buffer) > max_buffer:
@@ -87,7 +88,7 @@ class _FreeBoundaryTrackingRuntimeMixin:
             if update_state:
                 self.objective_rate_estimate = np.zeros_like(self.target_vector, dtype=np.float64)
                 self._last_delayed_measurement = delayed.copy()
-            return cast(FloatArray, delayed.copy())
+            return delayed.copy()
         if self._last_delayed_measurement is None:
             delta = np.zeros_like(delayed, dtype=np.float64)
         else:
@@ -98,11 +99,11 @@ class _FreeBoundaryTrackingRuntimeMixin:
         if (not allow_compensation) or self.latency_compensation_gain <= 0.0:
             if update_state:
                 self.objective_rate_estimate = np.zeros_like(self.target_vector, dtype=np.float64)
-            return cast(FloatArray, delayed.copy())
+            return delayed.copy()
         if not latency_projection_ready:
             if update_state:
                 self.objective_rate_estimate = np.zeros_like(self.target_vector, dtype=np.float64)
-            return cast(FloatArray, delayed.copy())
+            return delayed.copy()
         if not update_state:
             predicted = delayed + prediction_horizon * delta
             return cast(FloatArray, np.asarray(predicted, dtype=np.float64))

@@ -13,6 +13,7 @@ from typing import Any, cast
 
 import numpy as np
 
+from scpn_fusion.control._free_boundary_tracking_base import _FreeBoundaryTrackingState
 from scpn_fusion.control._free_boundary_tracking_types import (
     FloatArray,
     _ActuatorSnapshot,
@@ -24,7 +25,7 @@ from scpn_fusion.control.tokamak_flight_sim import FirstOrderActuator
 logger = logging.getLogger(__name__)
 
 
-class _FreeBoundaryTrackingConfigMixin:
+class _FreeBoundaryTrackingConfigMixin(_FreeBoundaryTrackingState):
     def _log(self, message: str) -> None:
         if self.verbose:
             logger.info(message)
@@ -198,7 +199,7 @@ class _FreeBoundaryTrackingConfigMixin:
             raise ValueError(
                 "free_boundary_tracking.fallback_currents must respect CoilSet.current_limits."
             )
-        return cast(FloatArray, values.copy())
+        return values.copy()
 
     def _build_coil_actuators(self) -> list[FirstOrderActuator]:
         actuators: list[FirstOrderActuator] = []
@@ -285,7 +286,7 @@ class _FreeBoundaryTrackingConfigMixin:
     def _resolve_measurement_vector(self, raw_value: Any, *, name: str) -> FloatArray:
         vector = np.zeros_like(self.target_vector, dtype=np.float64)
         if raw_value is None:
-            return cast(FloatArray, vector)
+            return vector
         if not isinstance(raw_value, dict):
             raise ValueError(
                 f"{name} must be a mapping of objective block names to finite scalars or vectors."

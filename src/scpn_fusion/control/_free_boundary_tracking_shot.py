@@ -13,11 +13,12 @@ from typing import Any, Callable
 
 import numpy as np
 
+from scpn_fusion.control._free_boundary_tracking_base import _FreeBoundaryTrackingState
 from scpn_fusion.control._free_boundary_tracking_types import FloatArray
 from scpn_fusion.core.fusion_kernel import CoilSet
 
 
-class _FreeBoundaryTrackingShotMixin:
+class _FreeBoundaryTrackingShotMixin(_FreeBoundaryTrackingState):
     def run_tracking_shot(
         self,
         *,
@@ -481,7 +482,9 @@ class _FreeBoundaryTrackingShotMixin:
 
         return z if found_rz else None
 
-    def _map_ekf_to_observation(self, observation: FloatArray, x_ekf: np.ndarray) -> FloatArray:
+    def _map_ekf_to_observation(
+        self, observation: FloatArray, x_ekf: np.ndarray[Any, Any]
+    ) -> FloatArray:
         """Inject EKF estimate [R, Z] back into observation vector."""
         refined = observation.copy()
         for block in self.objective_blocks:

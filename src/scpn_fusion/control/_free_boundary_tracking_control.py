@@ -12,10 +12,11 @@ from typing import Any, cast
 
 import numpy as np
 
+from scpn_fusion.control._free_boundary_tracking_base import _FreeBoundaryTrackingState
 from scpn_fusion.control._free_boundary_tracking_types import FloatArray, _ActuatorSnapshot
 
 
-class _FreeBoundaryTrackingControlMixin:
+class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
     def identify_response_matrix(self, perturbation: float | None = None) -> FloatArray:
         p = self.identification_perturbation if perturbation is None else float(perturbation)
         if not np.isfinite(p) or p <= 0.0:
@@ -101,7 +102,7 @@ class _FreeBoundaryTrackingControlMixin:
                 raise ValueError(f"Unknown objective block {block.name!r}.")
             if relevant and all(objective_checks.get(key, False) for key in relevant):
                 mask[block.start : block.stop] = 0.0
-        return cast(FloatArray, mask)
+        return mask
 
     def _build_coil_penalties(self, delta_hint: FloatArray) -> FloatArray:
         headrooms = np.ones(self.n_coils, dtype=np.float64)
@@ -127,7 +128,7 @@ class _FreeBoundaryTrackingControlMixin:
                 penalties[idx] = 1.0
                 continue
             penalties[idx] = float(np.sqrt(max(reference_headroom / float(headrooms[idx]), 1.0)))
-        return cast(FloatArray, penalties)
+        return penalties
 
     def compute_correction(
         self,
@@ -212,7 +213,7 @@ class _FreeBoundaryTrackingControlMixin:
             fallback_active,
         )
 
-    def evaluate_objectives(self, observation: np.ndarray) -> dict[str, Any]:
+    def evaluate_objectives(self, observation: np.ndarray[Any, Any]) -> dict[str, Any]:
         obs = np.asarray(observation, dtype=np.float64).reshape(-1)
         error = self.target_vector - obs
         metrics: dict[str, Any] = {
