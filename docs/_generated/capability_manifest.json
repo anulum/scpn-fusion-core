@@ -2687,7 +2687,9 @@
       "snn",
       "ui"
     ],
-    "shipped_package_data": []
+    "shipped_package_data": [
+      "py.typed"
+    ]
   },
   "project": {
     "license": {
