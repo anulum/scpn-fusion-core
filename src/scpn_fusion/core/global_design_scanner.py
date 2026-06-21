@@ -170,8 +170,12 @@ class GlobalDesignExplorer:
         for key in finite_keys:
             val = float(out[key])
             if not np.isfinite(val):
-                raise RuntimeError(f"Non-finite design metric generated: {key}")
-        if float(out["Q"]) < 0.0 or float(out["P_fus"]) < 0.0:
+                raise RuntimeError(  # pragma: no cover - defensive: scaling surrogate yields finite metrics
+                    f"Non-finite design metric generated: {key}"
+                )
+        if (
+            float(out["Q"]) < 0.0 or float(out["P_fus"]) < 0.0
+        ):  # pragma: no cover - defensive: physical metrics are non-negative
             raise RuntimeError("Non-physical negative fusion performance generated.")
         return out
 
