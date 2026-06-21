@@ -252,7 +252,6 @@ files = [
     "src/scpn_fusion/control/fusion_control_room.py",
     "src/scpn_fusion/control/federated_disruption.py",
     "src/scpn_fusion/control/tokamak_digital_twin.py",
-    "src/scpn_fusion/control/bio_holonomic_controller.py",
     "src/scpn_fusion/control/neuro_cybernetic_controller.py",
     "src/scpn_fusion/control/analytic_solver.py",
     "src/scpn_fusion/control/fusion_optimal_control.py",

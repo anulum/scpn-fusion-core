@@ -78,8 +78,6 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # RZIP — rigid plasma + vessel response
     "RZIPModel": (".rzip_model", "RZIPModel"),
     "RZIPController": (".rzip_model", "RZIPController"),
-    # Bio-holonomic controller — SCPN L4/L5 bridge
-    "BioHolonomicController": (".bio_holonomic_controller", "BioHolonomicController"),
 }
 
 
@@ -98,7 +96,6 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "AlphaHeating",
     "AnalyticEquilibriumSolver",
-    "BioHolonomicController",
     "BurnController",
     "CoilSet",
     "ConstrainedGymTokamakEnv",
