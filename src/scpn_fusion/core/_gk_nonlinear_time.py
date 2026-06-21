@@ -12,6 +12,7 @@ import logging
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core._gk_nonlinear_base import NonlinearGKSolverState
 from scpn_fusion.core._gk_nonlinear_types import (
     NonlinearGKFieldEnergyDiagnostics,
     NonlinearGKInvariantDiagnostics,
@@ -24,7 +25,7 @@ from scpn_fusion.core._gk_nonlinear_types import (
 _logger = logging.getLogger(__name__)
 
 
-class NonlinearGKTimeMixin:
+class NonlinearGKTimeMixin(NonlinearGKSolverState):
     """Time integration and diagnostics for :class:`NonlinearGKSolver`."""
 
     def _rk4_step(self, state: NonlinearGKState, dt: float) -> NonlinearGKState:

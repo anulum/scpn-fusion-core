@@ -10,10 +10,11 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core._gk_nonlinear_base import NonlinearGKSolverState
 from scpn_fusion.core._gk_nonlinear_types import NonlinearGKState
 
 
-class NonlinearGKOperatorsMixin:
+class NonlinearGKOperatorsMixin(NonlinearGKSolverState):
     """Physics operators used by the nonlinear GK time stepper."""
 
     def field_solve(self, f: NDArray[np.complex128]) -> NDArray[np.complex128]:

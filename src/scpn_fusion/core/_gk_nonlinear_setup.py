@@ -10,6 +10,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core._gk_nonlinear_base import NonlinearGKSolverState
 from scpn_fusion.core._gk_nonlinear_types import (
     NonlinearGKPhaseSpaceContract,
     NonlinearGKState,
@@ -20,7 +21,7 @@ from scpn_fusion.core.gk_geometry import circular_geometry
 from scpn_fusion.core.gk_species import deuterium_ion, electron
 
 
-class NonlinearGKSetupMixin:
+class NonlinearGKSetupMixin(NonlinearGKSolverState):
     """Setup helpers used by :class:`NonlinearGKSolver`."""
 
     def phase_space_contract(self) -> NonlinearGKPhaseSpaceContract:
@@ -84,18 +85,18 @@ class NonlinearGKSetupMixin:
 
     def _setup_grids(self) -> None:
         c = self.cfg
-        self.kx = 2 * np.pi * np.fft.fftfreq(c.n_kx, d=c.Lx / c.n_kx)
-        self.ky = 2 * np.pi * np.fft.fftfreq(c.n_ky, d=c.Ly / c.n_ky)
+        self.kx = (2 * np.pi * np.fft.fftfreq(c.n_kx, d=c.Lx / c.n_kx)).astype(np.float64)
+        self.ky = (2 * np.pi * np.fft.fftfreq(c.n_ky, d=c.Ly / c.n_ky)).astype(np.float64)
         self.kx_grid = self.kx[:, None, None]
         self.ky_grid = self.ky[None, :, None]
         self.kperp2 = self.kx[:, None] ** 2 + self.ky[None, :] ** 2
 
-        self.theta = np.linspace(-np.pi, np.pi, c.n_theta, endpoint=False)
+        self.theta = np.linspace(-np.pi, np.pi, c.n_theta, endpoint=False, dtype=np.float64)
         self.dtheta = self.theta[1] - self.theta[0]
 
-        self.vpar = np.linspace(-c.vpar_max, c.vpar_max, c.n_vpar)
+        self.vpar = np.linspace(-c.vpar_max, c.vpar_max, c.n_vpar, dtype=np.float64)
         self.dvpar = self.vpar[1] - self.vpar[0] if c.n_vpar > 1 else 1.0
-        self.mu = np.linspace(0, c.mu_max, c.n_mu)
+        self.mu = np.linspace(0, c.mu_max, c.n_mu, dtype=np.float64)
         self.dmu = self.mu[1] - self.mu[0] if c.n_mu > 1 else 1.0
 
         if c.dealiasing == "2/3":
