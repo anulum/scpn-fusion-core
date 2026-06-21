@@ -95,8 +95,28 @@ full = [
 ]
 
 [tool.setuptools]
-packages = ["scpn_fusion", "validation"]
 package-dir = {"" = "src", "validation" = "validation"}
+
+# Discover every scpn_fusion subpackage (core/, control/, io/, …) plus the
+# validation package; the previous explicit ``packages`` list named only the
+# top-level packages, so the built wheel shipped scpn_fusion/*.py but none of
+# the subpackages, leaving it non-importable for downstream consumers.
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["scpn_fusion*", "validation*"]
+
+# Ship the reference datasets the package loads at import/runtime (e.g. the IPB98
+# scaling coefficients read at module import in core/scaling_laws) so the wheel is
+# usable, not just importable.
+[tool.setuptools.package-data]
+validation = [
+    "**/*.json",
+    "**/*.npz",
+    "**/*.geqdsk",
+    "**/*.eqdsk",
+    "**/*.csv",
+]
+scpn_fusion = ["py.typed"]
 
 [project.scripts]
 scpn-fusion = "scpn_fusion.cli:main"
