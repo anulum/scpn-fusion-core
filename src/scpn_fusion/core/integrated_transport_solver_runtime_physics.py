@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 
+from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
 from scpn_fusion.core.uncertainty import _dt_reactivity
 
 _logger = logging.getLogger(__name__)
@@ -78,7 +79,7 @@ def _extract_elongation(cfg: dict[str, Any]) -> float:
     return 1.0
 
 
-class TransportSolverRuntimePhysicsMixin:
+class TransportSolverRuntimePhysicsMixin(TransportSolverState):
     """Physics-kernel mixin for transport source terms and source diagnostics.
 
     Implemented kernels include heating source reconstruction, auxiliary-power

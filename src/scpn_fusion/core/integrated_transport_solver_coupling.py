@@ -13,6 +13,7 @@ import logging
 
 import numpy as np
 
+from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
 from scpn_fusion.core.integrated_transport_solver_adaptive import AdaptiveTimeController
 
 _logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def _physics_error_type() -> type[RuntimeError]:
     return PhysicsError
 
 
-class TransportSolverCouplingMixin:
+class TransportSolverCouplingMixin(TransportSolverState):
     """GS/transports coupling mixin for profile projection and closure loops.
 
     The mixin projects reduced transport state to 2-D fields, computes basic

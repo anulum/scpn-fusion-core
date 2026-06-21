@@ -2159,6 +2159,10 @@
         "path": "src/scpn_fusion/core/integrated_transport_solver_runtime_physics.py"
       },
       {
+        "name": "TransportSolverState",
+        "path": "src/scpn_fusion/core/_integrated_transport_solver_base.py"
+      },
+      {
         "name": "TransportUncertainty",
         "path": "src/scpn_fusion/core/uncertainty_full_chain.py"
       },
@@ -2332,6 +2336,7 @@
       "src/scpn_fusion/core/_gk_nonlinear_setup.py",
       "src/scpn_fusion/core/_gk_nonlinear_time.py",
       "src/scpn_fusion/core/_gk_nonlinear_types.py",
+      "src/scpn_fusion/core/_integrated_transport_solver_base.py",
       "src/scpn_fusion/core/_integrated_transport_solver_init.py",
       "src/scpn_fusion/core/_integrated_transport_solver_model_backend.py",
       "src/scpn_fusion/core/_integrated_transport_solver_model_common.py",
@@ -2597,10 +2602,10 @@
     "optional_extras": 12,
     "public_api_exports": 2,
     "public_documentation_pages": 54,
-    "python_capability_classes": 549,
-    "python_capability_source_modules": 279,
+    "python_capability_classes": 550,
+    "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 429
+    "test_files": 430
   },
   "documentation": {
     "public_pages": [
@@ -2947,6 +2952,7 @@
       "tests/test_integrated_transport_runtime_physics_hardening.py",
       "tests/test_integrated_transport_solver.py",
       "tests/test_integrated_transport_solver_adaptive.py",
+      "tests/test_integrated_transport_solver_base.py",
       "tests/test_integrated_transport_solver_contracts.py",
       "tests/test_integrated_transport_solver_runtime.py",
       "tests/test_integrated_transport_solver_runtime_physics.py",

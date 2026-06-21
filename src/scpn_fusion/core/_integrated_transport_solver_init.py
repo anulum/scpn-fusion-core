@@ -11,10 +11,11 @@ from typing import Any
 
 import numpy as np
 
+from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
 from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 
 
-class TransportSolverInitializationMixin:
+class TransportSolverInitializationMixin(TransportSolverState):
     """Initialize mutable profiles, contracts, and backend configuration."""
 
     def _initialize_transport_solver_state(self, *, multi_ion: bool) -> None:
