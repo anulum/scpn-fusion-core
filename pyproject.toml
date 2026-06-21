@@ -184,6 +184,7 @@ files = [
     "tests/test_global_design_scanner.py",
     "tests/test_lazarus_bridge.py",
     "tests/test_vibrana_bridge.py",
+    "tests/test_divertor_thermal_sim.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",
