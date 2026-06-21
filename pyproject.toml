@@ -180,6 +180,7 @@ files = [
     "tests/test_blanket_neutronics.py",
     "tests/test_turbulence_oracle.py",
     "tests/test_faraday_recovery.py",
+    "tests/test_sandpile_fusion_reactor.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",
