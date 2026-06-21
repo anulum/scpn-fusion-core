@@ -211,7 +211,9 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             # Vector from source to target
             vec_r = wx - src_r
             vec_z = wz - src_z
-            dist_sq = vec_r**2 + vec_z**2
+            # Floor the squared distance so a source element coincident with a
+            # wall segment cannot divide by zero in the unit-vector and 1/r^2 terms.
+            dist_sq = np.maximum(vec_r**2 + vec_z**2, 1e-12)
             dist = np.sqrt(dist_sq)
 
             # Toroidal View-Factor Correction (P1.1)
