@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -556,7 +556,7 @@ def local_decomposed_phase_execution(
     )
     return LocalDecomposedExecutionResult(
         rank_count=len(local_tiles),
-        global_shape=state.shape,
+        global_shape=cast("tuple[int, int, int, int, int]", state.shape),
         local_inventory=local_inventory,
         global_inventory=global_inventory,
         inventory_relative_error=inventory_relative_error,
@@ -632,7 +632,7 @@ def local_multiprocess_rank_tile_execution(
         rank_count=len(local_tiles),
         worker_count=worker_count,
         unique_worker_process_count=len({int(row["pid"]) for row in rank_rows}),
-        global_shape=state.shape,
+        global_shape=cast("tuple[int, int, int, int, int]", state.shape),
         local_inventory=local_inventory,
         global_inventory=global_inventory,
         inventory_relative_error=inventory_relative_error,

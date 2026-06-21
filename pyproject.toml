@@ -348,6 +348,7 @@ files = [
     "src/scpn_fusion/core/wdm_engine.py",
     "src/scpn_fusion/core/global_design_scanner.py",
     "src/scpn_fusion/core/tglf_surrogate_bridge.py",
+    "src/scpn_fusion/core/gk_domain_decomposition.py",
     "src/scpn_fusion/core/gpu_runtime.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",
