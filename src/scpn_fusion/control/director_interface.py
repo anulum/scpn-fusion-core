@@ -20,13 +20,14 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 try:
-    from director_module import DirectorModule
+    from director_module import DirectorModule  # type: ignore[import-not-found]
 
     DIRECTOR_AVAILABLE = True
 except ImportError:  # pragma: no cover - optional dependency path
     DIRECTOR_AVAILABLE = False
     DirectorModule = None
 
+FusionKernel: type[Any]
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
@@ -134,9 +135,7 @@ class DirectorInterface:
         err_z: float,
         brain_activity: list[float],
     ) -> str:
-        """
-        Translate physical telemetry into a semantic prompt for the Director.
-        """
+        """Translate physical telemetry into a semantic prompt for the Director."""
         ip = float(ip)
         err_r = float(err_r)
         err_z = float(err_z)
@@ -173,7 +172,6 @@ class DirectorInterface:
         verbose: bool = True,
     ) -> dict[str, Any]:
         """Run a supervised neuro-cybernetic control mission and return summary metrics."""
-
         duration = int(duration)
         if duration < 1:
             raise ValueError("duration must be >= 1.")
@@ -280,7 +278,6 @@ class DirectorInterface:
 
     def visualize(self, output_path: str = "Director_Interface_Result.png") -> str:
         """Render mission current-target and radial-error histories to a plot file."""
-
         t = [x["t"] for x in self.log]
         ip = [x["Ip"] for x in self.log]
         err = [x["Err_R"] for x in self.log]

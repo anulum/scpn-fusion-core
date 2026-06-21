@@ -42,6 +42,7 @@ from scpn_fusion.control._free_boundary_supervisory_types import (
     estimate_free_boundary_safety_margins,
 )
 
+FusionKernel: type[Any]
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -64,18 +65,20 @@ def run_free_boundary_supervisory_simulation(
     disturbance_recovery_per_step_ma: float = 0.0,
     diagnostic_dropout_step: Optional[int] = None,
     diagnostic_dropout_duration_steps: int = 0,
-    diagnostic_dropout_mask: Optional[np.ndarray | tuple[float, ...] | list[float]] = None,
+    diagnostic_dropout_mask: Optional[
+        np.ndarray[Any, Any] | tuple[float, ...] | list[float]
+    ] = None,
     coil_kick_step: int = 24,
-    coil_kick_vector: Optional[np.ndarray | tuple[float, ...] | list[float]] = None,
+    coil_kick_vector: Optional[np.ndarray[Any, Any] | tuple[float, ...] | list[float]] = None,
     sensor_bias_step: int = 30,
-    sensor_bias_vector: Optional[np.ndarray | tuple[float, ...] | list[float]] = None,
+    sensor_bias_vector: Optional[np.ndarray[Any, Any] | tuple[float, ...] | list[float]] = None,
     sensor_bias_clear_step: Optional[int] = None,
     actuator_bias_step: Optional[int] = None,
-    actuator_bias_vector: Optional[np.ndarray | tuple[float, ...] | list[float]] = None,
+    actuator_bias_vector: Optional[np.ndarray[Any, Any] | tuple[float, ...] | list[float]] = None,
     actuator_bias_clear_step: Optional[int] = None,
     actuator_dropout_step: Optional[int] = None,
     actuator_dropout_duration_steps: int = 0,
-    actuator_dropout_mask: Optional[np.ndarray | tuple[float, ...] | list[float]] = None,
+    actuator_dropout_mask: Optional[np.ndarray[Any, Any] | tuple[float, ...] | list[float]] = None,
     measurement_noise_std: float = 0.0015,
     current_target_bounds: tuple[float, float] = (7.0, 10.0),
     coil_current_limits: tuple[float, float] = (-1.5, 1.5),
@@ -107,7 +110,6 @@ def run_free_boundary_supervisory_simulation(
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> dict[str, Any]:
     """Run a closed-loop free-boundary shot with estimator, controller, and safety layer."""
-
     steps = _require_positive_int("shot_length", shot_length)
     dt_s = _require_positive_finite("control_dt_s", control_dt_s)
     disturbance_start = _require_nonnegative_int("disturbance_start_step", disturbance_start_step)
@@ -229,14 +231,14 @@ def run_free_boundary_supervisory_simulation(
         length=4,
         name="diagnostic_dropout_mask",
     )
-    sensor_bias = np.zeros(4, dtype=np.float64)
+    sensor_bias: FloatArray = np.zeros(4, dtype=np.float64)
     bias_step_vector = _normalize_vector(
         sensor_bias_vector,
         length=4,
         default=0.0,
         name="sensor_bias_vector",
     )
-    actuator_bias = np.zeros(n_coils, dtype=np.float64)
+    actuator_bias: FloatArray = np.zeros(n_coils, dtype=np.float64)
     actuator_bias_step_vector = _normalize_vector(
         actuator_bias_vector,
         length=n_coils,
@@ -254,8 +256,8 @@ def run_free_boundary_supervisory_simulation(
     physics_cfg["plasma_current_target"] = target_ip_ma
 
     target_vec = target_obj.as_vector()
-    last_action = np.zeros(n_coils, dtype=np.float64)
-    last_applied_action = np.zeros(n_coils, dtype=np.float64)
+    last_action: FloatArray = np.zeros(n_coils, dtype=np.float64)
+    last_applied_action: FloatArray = np.zeros(n_coils, dtype=np.float64)
 
     times: list[float] = []
     measured_states: list[FloatArray] = []
