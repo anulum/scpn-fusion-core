@@ -1291,6 +1291,10 @@
         "path": "src/scpn_fusion/core/gk_nonlinear.py"
       },
       {
+        "name": "NonlinearGKSolverState",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_base.py"
+      },
+      {
         "name": "NonlinearGKState",
         "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
       },
@@ -2318,6 +2322,7 @@
       "src/scpn_fusion/control/tokamak_flight_sim.py",
       "src/scpn_fusion/control/torax_hybrid_loop.py",
       "src/scpn_fusion/control/volt_second_manager.py",
+      "src/scpn_fusion/core/_gk_nonlinear_base.py",
       "src/scpn_fusion/core/_gk_nonlinear_operators.py",
       "src/scpn_fusion/core/_gk_nonlinear_setup.py",
       "src/scpn_fusion/core/_gk_nonlinear_time.py",
@@ -2587,8 +2592,8 @@
     "optional_extras": 12,
     "public_api_exports": 2,
     "public_documentation_pages": 54,
-    "python_capability_classes": 547,
-    "python_capability_source_modules": 277,
+    "python_capability_classes": 548,
+    "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
     "test_files": 427
   },
