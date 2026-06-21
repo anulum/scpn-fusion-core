@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Faraday Recovery Tests
+"""Tests for Faraday back-EMF recovery energy and compression-sidecar evidence."""
+
 from __future__ import annotations
 
 from dataclasses import replace
@@ -40,6 +42,7 @@ from scpn_fusion.core.pulsed_compression import PulsedCompressionConfig
 
 
 def test_constant_radius_and_field_have_zero_back_emf() -> None:
+    """Constant radius and field produce zero Faraday back-EMF."""
     emf = faraday_back_emf(
         lambda _t: 0.20,
         lambda _t: 20.0,
@@ -53,6 +56,7 @@ def test_constant_radius_and_field_have_zero_back_emf() -> None:
 
 
 def test_closed_form_constant_field_radial_expansion() -> None:
+    """Recovery energy matches the closed form for constant-field radial expansion."""
     emf = faraday_back_emf_from_values(
         separatrix_radius_m=0.20,
         b_ext_t=20.0,
@@ -66,6 +70,7 @@ def test_closed_form_constant_field_radial_expansion() -> None:
 
 
 def test_callable_finite_difference_matches_linear_history() -> None:
+    """Callable-history finite differencing matches a linear radius history."""
     radius_0 = 0.18
     speed = -2.0e4
     field_0 = 19.0
@@ -91,6 +96,7 @@ def test_callable_finite_difference_matches_linear_history() -> None:
 
 
 def test_integrated_recovery_energy_matches_analytical_linear_radius_case() -> None:
+    """Integrated recovery energy matches the analytical linear-radius case."""
     turns = 6
     resistance = 0.08
     b_ext = 20.0
@@ -129,6 +135,7 @@ def test_integrated_recovery_energy_matches_analytical_linear_radius_case() -> N
 
 
 def test_faraday_recovery_flags_inconsistent_derivative_sidecars() -> None:
+    """Inconsistent derivative sidecars are flagged."""
     trajectory = [
         FaradayRecoveryTrajectoryPoint(
             t_s=float(t),
@@ -154,6 +161,7 @@ def test_faraday_recovery_flags_inconsistent_derivative_sidecars() -> None:
 
 
 def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> None:
+    """A supplied work term yields a recovery budget."""
     trajectory = [
         FaradayRecoveryTrajectoryPoint(
             t_s=0.0, separatrix_radius_m=0.20, b_ext_t=20.0, d_radius_dt_m_s=0.0, d_b_ext_dt_t_s=0.0
@@ -177,6 +185,7 @@ def test_integrated_recovery_energy_reports_budget_when_work_is_supplied() -> No
 
 
 def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
+    """The pulsed-compression work sidecar is evaluated into the report."""
     b_ext = 5.0
     t_i = 10_000.0
     t_e = 5_000.0
@@ -255,6 +264,7 @@ def test_faraday_recovery_evaluates_pulsed_compression_work_sidecar() -> None:
 
 
 def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
+    """The voltage-driven source sidecars are evaluated into the report."""
     b_ext = 5.0
     t_i = 10_000.0
     t_e = 5_000.0
@@ -340,6 +350,7 @@ def test_faraday_recovery_evaluates_voltage_driven_source_sidecars() -> None:
 
 
 def test_faraday_recovery_propagates_failed_compression_flux_budget() -> None:
+    """A failed compression flux budget propagates into the report."""
     b_ext = 5.0
     t_i = 10_000.0
     t_e = 5_000.0
@@ -404,6 +415,7 @@ def test_faraday_recovery_propagates_failed_compression_flux_budget() -> None:
 
 
 def test_faraday_recovery_inputs_fail_closed() -> None:
+    """Invalid Faraday recovery inputs fail closed with a ValueError."""
     with pytest.raises(ValueError, match="positive integer"):
         faraday_back_emf_from_values(0.2, 20.0, 1.0, 0.0, 0)
     with pytest.raises(ValueError, match="positive"):
@@ -434,3 +446,182 @@ def test_faraday_recovery_inputs_fail_closed() -> None:
         faraday_trajectory_from_voltage_driven_compression(object())
     with pytest.raises(ValueError, match="at least two samples"):
         coil_source_work_from_voltage_driven_compression({"coil_circuit": []})
+
+
+# --- branch / error-path coverage for compression-sidecar adapters ---
+
+from types import SimpleNamespace  # noqa: E402
+
+from scpn_fusion.core.faraday_recovery import (  # noqa: E402
+    _coerce_point,
+    _require_finite,
+    _require_positive_int,
+    _sequence_attr,
+    _state_attr,
+    _state_str_attr,
+)
+
+
+def test_compression_sidecars_reject_too_short_trajectory() -> None:
+    """Compression-work and flux-budget adapters require at least two states."""
+    one = [SimpleNamespace(compression_work_J=1.0)]
+    with pytest.raises(ValueError, match="at least two states"):
+        compression_work_from_pulsed_compression(one)
+    with pytest.raises(ValueError, match="at least two states"):
+        compression_flux_budget_from_pulsed_compression(one)
+
+
+def test_require_finite_and_positive_int_reject_bad_values() -> None:
+    """The scalar validators reject non-finite and non-positive-integer inputs."""
+    with pytest.raises(ValueError, match="must be finite"):
+        _require_finite("x", float("nan"))
+    with pytest.raises(ValueError, match="positive integer"):
+        _require_positive_int("n", 0)
+    with pytest.raises(ValueError, match="positive integer"):
+        _require_positive_int("n", 2.5)  # type: ignore[arg-type]
+
+
+def test_coerce_point_accepts_mapping_and_object() -> None:
+    """_coerce_point builds a trajectory point from a mapping or an attribute object."""
+    mapping = {"t_s": 0.0, "separatrix_radius_m": 0.5, "b_ext_t": 1.0}
+    from_map = _coerce_point(mapping)
+    assert from_map.separatrix_radius_m == 0.5
+
+    obj = SimpleNamespace(t_s=1.0, separatrix_radius_m=0.4, b_ext_t=2.0)
+    from_obj = _coerce_point(obj)
+    assert from_obj.b_ext_t == 2.0
+
+    passthrough = _coerce_point(from_map)
+    assert passthrough is from_map
+
+
+def test_state_attr_resolves_object_mapping_and_nested_paths() -> None:
+    """_state_attr reads flat/nested attributes from objects and mappings."""
+    assert _state_attr({"compression_work_j": 3.0}, "compression_work_j") == 3.0
+    nested_obj = SimpleNamespace(budget=SimpleNamespace(work=4.0))
+    assert _state_attr(nested_obj, "budget.work") == 4.0
+    nested_map = {"budget": {"work": 5.0}}
+    assert _state_attr(nested_map, "budget.work") == 5.0
+    nested_map_obj = {"budget": SimpleNamespace(work=6.0)}
+    assert _state_attr(nested_map_obj, "budget.work") == 6.0
+    with pytest.raises(ValueError, match="missing required field"):
+        _state_attr(SimpleNamespace(), "absent")
+
+
+def test_state_str_attr_resolves_strings_and_rejects_missing() -> None:
+    """_state_str_attr reads non-empty string fields from objects/mappings/nests."""
+    assert _state_str_attr({"label": "ok"}, "label") == "ok"
+    assert _state_str_attr(SimpleNamespace(label="obj"), "label") == "obj"
+    nested_obj = SimpleNamespace(meta=SimpleNamespace(name="deep"))
+    assert _state_str_attr(nested_obj, "meta.name") == "deep"
+    nested_map = {"meta": {"name": "dmap"}}
+    assert _state_str_attr(nested_map, "meta.name") == "dmap"
+    nested_map_obj = {"meta": SimpleNamespace(name="dmo")}
+    assert _state_str_attr(nested_map_obj, "meta.name") == "dmo"
+    with pytest.raises(ValueError, match="missing required field"):
+        _state_str_attr(SimpleNamespace(), "absent")
+
+
+def test_sequence_attr_resolves_sequences_and_rejects_non_sequences() -> None:
+    """_sequence_attr returns sequence fields and rejects scalars / missing names."""
+    assert list(_sequence_attr(SimpleNamespace(states=[1, 2]), "states")) == [1, 2]
+    assert list(_sequence_attr({"states": (3, 4)}, "states")) == [3, 4]
+    with pytest.raises(ValueError, match="must be a sequence"):
+        _sequence_attr(SimpleNamespace(states=5), "states")
+    with pytest.raises(ValueError, match="must be a sequence"):
+        _sequence_attr({"states": 6}, "states")
+    with pytest.raises(ValueError, match="missing required field"):
+        _sequence_attr(SimpleNamespace(), "absent")
+
+
+from scpn_fusion.core.faraday_recovery import (  # noqa: E402
+    FaradayCompressionFluxBudget,
+    FaradayCompressionTrajectoryDiagnostics,
+    _array_from_points,
+    _evaluate_compression_flux_budget,
+    _optional_finite,
+    _trajectory_derivative,
+    _validate_compression_trajectory_diagnostics,
+)
+
+
+def _budget(claim: str = "passed", coupling: str = "coupled") -> FaradayCompressionFluxBudget:
+    """Build a FaradayCompressionFluxBudget with finite checksums and given statuses."""
+    return FaradayCompressionFluxBudget(
+        source_increment_checksum=1.0,
+        damping_decrement_checksum=1.0,
+        update_residual_abs_max=0.0,
+        budget_claim_status=claim,
+        coupling_status=coupling,
+    )
+
+
+def _diagnostics(**overrides: object) -> FaradayCompressionTrajectoryDiagnostics:
+    """Build a valid FaradayCompressionTrajectoryDiagnostics with optional overrides."""
+    base: dict[str, object] = {
+        "monotonic_time": True,
+        "min_radius_m": 0.1,
+        "max_abs_radial_acceleration_m_s2": 1.0,
+        "radius_floor_contact_count": 0,
+        "radial_turning_point_count": 0,
+        "compression_ratio": 2.0,
+        "all_flux_budgets_passed": True,
+    }
+    base.update(overrides)
+    return FaradayCompressionTrajectoryDiagnostics(**base)  # type: ignore[arg-type]
+
+
+def test_evaluate_compression_flux_budget_requires_non_empty_statuses() -> None:
+    """Empty claim/coupling statuses are rejected by the flux-budget evaluator."""
+    with pytest.raises(ValueError, match="budget_claim_status must be non-empty"):
+        _evaluate_compression_flux_budget(_budget(claim=""))
+    with pytest.raises(ValueError, match="coupling_status must be non-empty"):
+        _evaluate_compression_flux_budget(_budget(coupling=""))
+
+
+def test_validate_compression_trajectory_diagnostics_rejects_negative_counters() -> None:
+    """Negative acceleration/contact/turning-point counters are rejected."""
+    with pytest.raises(ValueError, match="must be non-negative"):
+        _validate_compression_trajectory_diagnostics(
+            _diagnostics(max_abs_radial_acceleration_m_s2=-1.0)
+        )
+    with pytest.raises(ValueError, match="radius_floor_contact_count must be non-negative"):
+        _validate_compression_trajectory_diagnostics(_diagnostics(radius_floor_contact_count=-1))
+    with pytest.raises(ValueError, match="radial_turning_point_count must be non-negative"):
+        _validate_compression_trajectory_diagnostics(_diagnostics(radial_turning_point_count=-1))
+
+
+def test_optional_finite_returns_value_when_present() -> None:
+    """_optional_finite validates and returns a present finite value."""
+    assert _optional_finite("x", 2.0) == 2.0
+    assert _optional_finite("x", None) is None
+
+
+def test_array_and_derivative_helpers_reject_non_finite_samples() -> None:
+    """Non-finite trajectory samples are rejected by the array/derivative helpers."""
+    nan_pt = FaradayRecoveryTrajectoryPoint(t_s=float("nan"), separatrix_radius_m=0.5, b_ext_t=1.0)
+    with pytest.raises(ValueError, match="t_s samples must be finite"):
+        _array_from_points([nan_pt], "t_s")
+
+    supplied = [
+        FaradayRecoveryTrajectoryPoint(
+            t_s=0.0, separatrix_radius_m=0.5, b_ext_t=1.0, d_radius_dt_m_s=float("nan")
+        ),
+        FaradayRecoveryTrajectoryPoint(
+            t_s=1.0, separatrix_radius_m=0.6, b_ext_t=1.0, d_radius_dt_m_s=float("nan")
+        ),
+    ]
+    time_s = np.asarray([0.0, 1.0], dtype=np.float64)
+    values = np.asarray([0.5, 0.6], dtype=np.float64)
+    with pytest.raises(ValueError, match="d_radius_dt_m_s samples must be finite"):
+        _trajectory_derivative(supplied, "d_radius_dt_m_s", time_s, values)
+
+
+def test_integrated_recovery_energy_rejects_non_positive_radius() -> None:
+    """A directly-supplied trajectory point with non-positive radius is rejected."""
+    pts = [
+        FaradayRecoveryTrajectoryPoint(t_s=0.0, separatrix_radius_m=0.5, b_ext_t=1.0),
+        FaradayRecoveryTrajectoryPoint(t_s=1.0, separatrix_radius_m=-0.5, b_ext_t=1.0),
+    ]
+    with pytest.raises(ValueError, match="separatrix radii must be positive"):
+        integrated_recovery_energy(pts, N_turns=1, coil_resistance_ohm=1.0)

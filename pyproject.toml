@@ -179,6 +179,7 @@ files = [
     "tests/test_hpc_bridge.py",
     "tests/test_blanket_neutronics.py",
     "tests/test_turbulence_oracle.py",
+    "tests/test_faraday_recovery.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",
@@ -563,6 +564,7 @@ omit = [
 exclude_lines = [
     "pragma: no cover",
     "if __name__",
+    "if TYPE_CHECKING:",
     "raise NotImplementedError",
     "except ImportError",
     "if HAS_JAX",
