@@ -45,6 +45,16 @@ def test_imas_fuzz_harness_rejects_deeply_invalid_json_seed() -> None:
     harness.TestOneInput(b'{"ids_properties": {"homogeneous_time": 1}, "time_slice": "bad"}')
 
 
+def test_snn_artifact_fuzz_harness_rejects_invalid_artifact_seed() -> None:
+    harness = _load_harness("fuzz_snn_artifact")
+    harness.TestOneInput(b'{"meta": {"artifact_version": 1}, "topology": {"places": []}}')
+
+
+def test_snn_artifact_fuzz_harness_rejects_non_utf8_seed() -> None:
+    harness = _load_harness("fuzz_snn_artifact")
+    harness.TestOneInput(b"\xff\xfe\x00\x01not-a-controller")
+
+
 def test_checked_npz_loader_rejects_oversized_disruption_archive(tmp_path: Path) -> None:
     from scpn_fusion.io.tokamak_disruption_archive import load_disruption_shot
     from scpn_fusion.io.safe_loaders import MAX_NPZ_BYTES

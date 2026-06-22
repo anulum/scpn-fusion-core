@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Added an Atheris fuzz harness for the compiled spiking-controller artifact
+  loader, exercising the UTF-8/JSON parse, raw-schema validation, weight parsing,
+  and zlib/base64 compact packed-weight decode boundaries, with entrypoint smoke
+  tests over malformed and non-UTF-8 seeds.
 - Added a bandit static-analysis gate to the pre-commit hook set and triaged the
   existing findings: subprocess list-argv calls (used to orchestrate the external
   physics codes, native builds, git, and the dashboard) are skipped at the policy
