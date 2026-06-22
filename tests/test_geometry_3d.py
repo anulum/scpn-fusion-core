@@ -7,6 +7,9 @@
 # SCPN Fusion Core — Geometry 3D Tests
 """Unit tests for 3D flux-surface mesh generation."""
 
+from pathlib import Path
+from typing import Any, cast
+
 import numpy as np
 import pytest
 
@@ -15,6 +18,8 @@ from scpn_fusion.core.geometry_3d import Reactor3DBuilder
 
 
 class _DummyKernel:
+    """Synthetic kernel with a smooth flux map for mesh generation."""
+
     def __init__(self) -> None:
         self.NR = 81
         self.NZ = 81
@@ -39,20 +44,24 @@ class _DummyKernel:
     def solve_equilibrium(self) -> None:
         self.solve_calls += 1
 
-    def find_x_point(self, psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, psi: np.ndarray[Any, Any]) -> tuple[tuple[float, float], float]:
         _ = psi
         # Boundary level intersects all rays in this synthetic setup.
         return (2.894, 0.0), 0.2
 
 
 class _SparseBoundaryKernel(_DummyKernel):
-    def find_x_point(self, psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    """Kernel whose boundary flux yields sparse contour crossings."""
+
+    def find_x_point(self, psi: np.ndarray[Any, Any]) -> tuple[tuple[float, float], float]:
         _ = psi
         # Force a sparse/non-crossing contour for some angles to exercise fallback.
         return (2.894, 0.0), -0.5
 
 
 class _EdgeAxisKernel(_DummyKernel):
+    """Kernel with the magnetic axis near the inboard edge."""
+
     def __init__(self) -> None:
         super().__init__()
         # Move magnetic axis near the inboard boundary so many rays immediately
@@ -60,14 +69,15 @@ class _EdgeAxisKernel(_DummyKernel):
         radius2 = (self.RR - 1.08) ** 2 + self.ZZ**2
         self.Psi = 1.0 - radius2
 
-    def find_x_point(self, psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, psi: np.ndarray[Any, Any]) -> tuple[tuple[float, float], float]:
         _ = psi
         return (1.45, 0.0), 0.2
 
 
 def test_geometry_mesh_generation_shapes() -> None:
+    """Mesh generation returns vertex and face arrays of the expected shape."""
     kernel = _DummyKernel()
-    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
 
     vertices, faces = builder.generate_plasma_surface(
         resolution_toroidal=12,
@@ -91,9 +101,10 @@ def test_geometry_mesh_generation_shapes() -> None:
     assert int(faces.min()) >= 0
 
 
-def test_geometry_export_obj(tmp_path) -> None:
+def test_geometry_export_obj(tmp_path: Path) -> None:
+    """OBJ export writes a mesh file to disk."""
     kernel = _DummyKernel()
-    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
     vertices, faces = builder.generate_plasma_surface(
         resolution_toroidal=10,
         resolution_poloidal=16,
@@ -110,9 +121,10 @@ def test_geometry_export_obj(tmp_path) -> None:
     assert sum(1 for line in text if line.startswith("f ")) == len(faces)
 
 
-def test_geometry_export_preview_png(tmp_path) -> None:
+def test_geometry_export_preview_png(tmp_path: Path) -> None:
+    """PNG preview export writes a preview image."""
     kernel = _DummyKernel()
-    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
     vertices, faces = builder.generate_plasma_surface(
         resolution_toroidal=10,
         resolution_poloidal=16,
@@ -125,17 +137,19 @@ def test_geometry_export_preview_png(tmp_path) -> None:
 
 
 def test_geometry_constructor_solve_flag() -> None:
+    """The solve_equilibrium flag controls whether the kernel is solved."""
     kernel = _DummyKernel()
-    Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
     assert kernel.solve_calls == 0
 
-    Reactor3DBuilder(kernel=kernel, solve_equilibrium=True)
+    Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=True)
     assert kernel.solve_calls == 1
 
 
 def test_geometry_lcfs_sparse_crossings_fallback() -> None:
+    """Sparse contour crossings fall back to an ellipse."""
     kernel = _SparseBoundaryKernel()
-    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
 
     n_tor = 12
     n_pol = 12
@@ -151,8 +165,9 @@ def test_geometry_lcfs_sparse_crossings_fallback() -> None:
 
 
 def test_generate_coil_mesh_placeholders() -> None:
+    """Coil-mesh generation returns placeholder coil geometries."""
     kernel = _DummyKernel()
-    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
     coils = builder.generate_coil_meshes(n_toroidal_samples=36)
     assert len(coils) == 2
     assert coils[0]["name"] == "PF1"
@@ -161,19 +176,21 @@ def test_generate_coil_mesh_placeholders() -> None:
     verts = coils[0]["vertices_xyz"]
     assert isinstance(verts, np.ndarray)
     assert verts.shape == (36, 3)
-    assert float(coils[0]["centerline_length_m"]) > 0.0
+    assert cast(float, coils[0]["centerline_length_m"]) > 0.0
 
 
 def test_generate_coil_mesh_rejects_too_few_samples() -> None:
+    """Too few toroidal samples are rejected."""
     kernel = _DummyKernel()
-    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
     with pytest.raises(ValueError, match="n_toroidal_samples"):
         builder.generate_coil_meshes(n_toroidal_samples=8)
 
 
 def test_geometry_lcfs_low_point_edge_case_fallback() -> None:
+    """An edge-axis kernel triggers the low-point fallback."""
     kernel = _EdgeAxisKernel()
-    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
 
     n_pol = 24
     lcfs = builder._trace_lcfs(resolution_poloidal=n_pol, radial_steps=64)
@@ -186,6 +203,7 @@ def test_geometry_lcfs_low_point_edge_case_fallback() -> None:
 
 
 def test_build_stellarator_w7x_like_equilibrium_nonaxisymmetric() -> None:
+    """The W7-X-like build yields a non-axisymmetric equilibrium."""
     base_eq = VMECStyleEquilibrium3D(
         r_axis=2.0,
         z_axis=0.0,
@@ -209,3 +227,93 @@ def test_build_stellarator_w7x_like_equilibrium_nonaxisymmetric() -> None:
     phi = np.array([0.0, 0.6], dtype=float)
     r_val, _, _ = eq.flux_to_cylindrical(rho, theta, phi)
     assert abs(float(r_val[0] - r_val[1])) > 1e-4
+
+
+def test_geometry_main_cli_exports_mesh(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The CLI entry point builds and exports an OBJ mesh and PNG preview."""
+    import matplotlib.pyplot as plt
+
+    import scpn_fusion.core.geometry_3d as geometry_3d
+
+    monkeypatch.setattr(geometry_3d, "FusionKernel", lambda _config: _DummyKernel())
+    monkeypatch.setattr(plt, "savefig", lambda *a, **k: None)
+    monkeypatch.setattr(plt, "close", lambda *a, **k: None)
+
+    obj_path = tmp_path / "mesh.obj"
+    png_path = tmp_path / "preview.png"
+    code = geometry_3d.main(
+        [
+            "--config",
+            "ignored.json",
+            "--output",
+            str(obj_path),
+            "--toroidal",
+            "10",
+            "--poloidal",
+            "14",
+            "--radial-steps",
+            "64",
+            "--preview-png",
+            str(png_path),
+        ]
+    )
+    assert code == 0
+    assert obj_path.exists()
+
+
+def test_generate_plasma_surface_rejects_low_toroidal_resolution() -> None:
+    """A toroidal resolution below three is rejected."""
+    builder = Reactor3DBuilder(kernel=cast(Any, _DummyKernel()), solve_equilibrium=False)
+    with pytest.raises(ValueError, match="resolution_toroidal"):
+        builder.generate_plasma_surface(resolution_toroidal=2)
+
+
+def test_build_vmec_like_rejects_low_resolutions() -> None:
+    """Sub-minimum LCFS or radial resolutions are rejected by the VMEC build."""
+    builder = Reactor3DBuilder(kernel=cast(Any, _DummyKernel()), solve_equilibrium=False)
+    with pytest.raises(ValueError, match="lcfs_resolution"):
+        builder.build_vmec_like_equilibrium(lcfs_resolution=4)
+    with pytest.raises(ValueError, match="radial_steps"):
+        builder.build_vmec_like_equilibrium(lcfs_resolution=16, radial_steps=8)
+
+
+def test_generate_coil_meshes_rejects_too_few_samples() -> None:
+    """Too few toroidal coil samples are rejected."""
+    builder = Reactor3DBuilder(kernel=cast(Any, _DummyKernel()), solve_equilibrium=False)
+    with pytest.raises(ValueError, match="n_toroidal_samples"):
+        builder.generate_coil_meshes(n_toroidal_samples=4)
+
+
+def test_generate_coil_meshes_rejects_invalid_coil_radius() -> None:
+    """A coil with a non-positive major radius is rejected."""
+    kernel = _DummyKernel()
+    kernel.cfg = {"coils": [{"name": "BAD", "r": -1.0, "z": 0.0}]}
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
+    with pytest.raises(ValueError, match="invalid major radius"):
+        builder.generate_coil_meshes()
+
+
+def test_sample_psi_outside_domain_rejected() -> None:
+    """Sampling the flux map outside the kernel domain is rejected."""
+    builder = Reactor3DBuilder(kernel=cast(Any, _DummyKernel()), solve_equilibrium=False)
+    with pytest.raises(ValueError, match="outside kernel domain"):
+        builder._sample_psi_bilinear(100.0, 100.0)
+
+
+def test_kernel_required_operation_without_kernel() -> None:
+    """A kernel-backed operation on an equilibrium-only builder raises."""
+    eq = VMECStyleEquilibrium3D(
+        r_axis=2.0, z_axis=0.0, a_minor=0.5, kappa=1.6, triangularity=0.2, nfp=1
+    )
+    builder = Reactor3DBuilder(equilibrium_3d=eq, solve_equilibrium=False)
+    with pytest.raises(RuntimeError, match="requires a 2D kernel-backed builder"):
+        builder._sample_psi_bilinear(2.0, 0.0)
+
+
+def test_generate_coil_meshes_rejects_invalid_vertical_position() -> None:
+    """A coil with a non-finite vertical position is rejected."""
+    kernel = _DummyKernel()
+    kernel.cfg = {"coils": [{"name": "BAD_Z", "r": 2.0, "z": float("nan")}]}
+    builder = Reactor3DBuilder(kernel=cast(Any, kernel), solve_equilibrium=False)
+    with pytest.raises(ValueError, match="invalid vertical position"):
+        builder.generate_coil_meshes()
