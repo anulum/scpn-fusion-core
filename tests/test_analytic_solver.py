@@ -18,6 +18,7 @@ from scpn_fusion.control import analytic_solver as analytic_solver_mod
 from scpn_fusion.control.analytic_solver import (
     AnalyticEquilibriumSolver,
     run_analytic_solver,
+    shafranov_bv,
 )
 
 
@@ -64,6 +65,54 @@ def test_calculate_required_bv_returns_finite_expected_sign() -> None:
     bv = solver.calculate_required_Bv(6.2, 2.0, 15.0, beta_p=0.5, li=0.8)
     assert np.isfinite(bv)
     assert bv < 0.0
+
+
+def test_calculate_required_bv_delegates_to_free_function_bit_exact() -> None:
+    """The solver method delegates to the free function with no value drift."""
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    for r_geo, a_min, ip_ma, beta_p, li in [
+        (6.2, 2.0, 15.0, 0.5, 0.8),
+        (1.7, 0.5, 1.0, 0.3, 1.1),
+        (3.0, 1.0, 8.0, 0.9, 0.6),
+    ]:
+        method_bv = solver.calculate_required_Bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
+        assert method_bv == shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
+
+
+def test_shafranov_bv_matches_force_balance_closed_form() -> None:
+    """The free function reproduces the Shafranov radial-force-balance expression."""
+    r_geo, a_min, ip_ma, beta_p, li = 6.2, 2.0, 15.0, 0.5, 0.8
+    mu0 = 4.0 * np.pi * 1e-7
+    expected = -((mu0 * ip_ma * 1e6) / (4.0 * np.pi * r_geo)) * (
+        np.log(8.0 * r_geo / a_min) + beta_p + li / 2.0 - 1.5
+    )
+    assert shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li) == pytest.approx(
+        expected, rel=1e-15
+    )
+
+
+def test_shafranov_bv_shaping_parameters_increase_field_magnitude() -> None:
+    """Larger beta_p or li raises (term_log + term_physics) and |B_v|."""
+    base = shafranov_bv(6.2, 2.0, 15.0, beta_p=0.5, li=0.8)
+    assert abs(shafranov_bv(6.2, 2.0, 15.0, beta_p=0.9, li=0.8)) > abs(base)
+    assert abs(shafranov_bv(6.2, 2.0, 15.0, beta_p=0.5, li=1.2)) > abs(base)
+
+
+@pytest.mark.parametrize(
+    ("r_geo", "a_min", "ip_ma"),
+    [
+        (0.0, 2.0, 15.0),
+        (-1.0, 2.0, 15.0),
+        (6.2, 0.0, 15.0),
+        (6.2, -2.0, 15.0),
+        (6.2, 2.0, 0.0),
+        (6.2, 2.0, -15.0),
+    ],
+)
+def test_shafranov_bv_rejects_nonpositive_inputs(r_geo: float, a_min: float, ip_ma: float) -> None:
+    """The canonical domain requires r_geo, a_min and ip_ma strictly positive."""
+    with pytest.raises(ValueError, match="must be > 0"):
+        shafranov_bv(r_geo, a_min, ip_ma)
 
 
 def test_solve_coil_currents_hits_target_bv_projection() -> None:

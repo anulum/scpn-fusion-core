@@ -621,9 +621,27 @@ impl PyPlantModel {
 // ─── Control systems ───
 
 /// Shafranov equilibrium calculator.
+///
+/// Returns ``(bv_required, term_log, term_physics)``. ``bv_required`` is the
+/// canonical dispatch output, bit-exact with the NumPy tier
+/// (``scpn_fusion.control.analytic_solver.shafranov_bv``); the other two are
+/// diagnostic terms of the force-balance formula.
 #[pyfunction]
-fn shafranov_bv(r_geo: f64, a_min: f64, ip_ma: f64) -> PyResult<(f64, f64, f64)> {
-    let result = fusion_control::analytic::shafranov_bv(r_geo, a_min, ip_ma)
+#[pyo3(signature = (
+    r_geo,
+    a_min,
+    ip_ma,
+    beta_p = fusion_control::analytic::BETA_P,
+    li = fusion_control::analytic::LI,
+))]
+fn shafranov_bv(
+    r_geo: f64,
+    a_min: f64,
+    ip_ma: f64,
+    beta_p: f64,
+    li: f64,
+) -> PyResult<(f64, f64, f64)> {
+    let result = fusion_control::analytic::shafranov_bv(r_geo, a_min, ip_ma, beta_p, li)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
     Ok((result.bv_required, result.term_log, result.term_physics))
 }

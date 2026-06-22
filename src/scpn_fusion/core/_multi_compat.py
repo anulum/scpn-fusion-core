@@ -409,26 +409,72 @@ def _bootstrap_kernel_classes() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _bootstrap_existing_backends() -> None:
-    """Register kernels that already have Rust + Python implementations.
+def _numpy_shafranov_bv(
+    r_geo: float,
+    a_min: float,
+    ip_ma: float,
+    *,
+    beta_p: float = 0.5,
+    li: float = 0.8,
+) -> float:
+    """NumPy-tier provider for the ``shafranov_bv`` kernel.
 
-    Called lazily on first dispatch if the _rust_compat module is loadable.
-    This bridges the existing two-tier system into the new multi-tier
-    dispatcher without modifying _rust_compat.py.
+    The import is deferred to call time so registration neither pulls in the
+    control package nor forms an import cycle with this dispatcher.
     """
+    from scpn_fusion.control.analytic_solver import shafranov_bv
+
+    return shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
+
+
+def _rust_shafranov_bv(
+    r_geo: float,
+    a_min: float,
+    ip_ma: float,
+    *,
+    beta_p: float = 0.5,
+    li: float = 0.8,
+) -> float:
+    """Rust-tier provider for the ``shafranov_bv`` kernel.
+
+    Returns the canonical vertical field :math:`B_v` [T] (the Rust pyfunction
+    also returns the two diagnostic force-balance terms, which are dropped here
+    so the tier is bit-exact interchangeable with :func:`_numpy_shafranov_bv`).
+    """
+    from scpn_fusion_rs import shafranov_bv as _rs_shafranov_bv
+
+    bv, _term_log, _term_physics = _rs_shafranov_bv(r_geo, a_min, ip_ma, beta_p, li)
+    return float(bv)
+
+
+def _bootstrap_existing_backends() -> None:
+    """Register the function-kernels that have Rust and/or NumPy implementations.
+
+    Tier providers import their backend lazily, so a tier can be registered even
+    when its backend is absent — the availability probe in :func:`dispatch`
+    selects the fastest *available* tier at call time. This bridges the existing
+    implementations into the multi-tier dispatcher without an import cycle.
+    """
+    # shafranov_bv — canonical contract reconciled (A2 kernel #1). Both tiers are
+    # bit-exact for the returned Bv, so registration is unconditional and the
+    # NumPy tier guarantees `dispatch("shafranov_bv")` resolves without Rust.
+    register_kernel("shafranov_bv", BackendTier.RUST, _rust_shafranov_bv)
+    register_kernel("shafranov_bv", BackendTier.NUMPY, _numpy_shafranov_bv)
+
+    # Remaining function-kernels register the Rust tier only; their NumPy tiers
+    # are reconciled in later A2 kernels (solve_coil_currents, multigrid_vcycle,
+    # measure_magnetics, simulate_tearing_mode).
     try:
         from scpn_fusion.core._rust_compat import _RUST_AVAILABLE
 
         if _RUST_AVAILABLE:
             from scpn_fusion.core._rust_compat import (
-                rust_shafranov_bv,
                 rust_solve_coil_currents,
                 rust_measure_magnetics,
                 rust_simulate_tearing_mode,
                 rust_multigrid_vcycle,
             )
 
-            register_kernel("shafranov_bv", BackendTier.RUST, rust_shafranov_bv)
             register_kernel("solve_coil_currents", BackendTier.RUST, rust_solve_coil_currents)
             register_kernel("measure_magnetics", BackendTier.RUST, rust_measure_magnetics)
             register_kernel(

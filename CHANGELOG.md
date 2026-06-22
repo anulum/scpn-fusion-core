@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+- Reconciled the `shafranov_bv` function-kernel into a single canonical contract
+  across the Rust and NumPy tiers. The vertical-field force-balance physics now
+  lives in one place — a free function `analytic_solver.shafranov_bv(r_geo,
+  a_min, ip_ma, *, beta_p, li)` that `AnalyticEquilibriumSolver.calculate_required_Bv`
+  delegates to — and the Rust `analytic::shafranov_bv` gained matching `beta_p`/`li`
+  parameters and the same strictly-positive domain on the plasma current, so both
+  backends return a bit-exact vertical field. Registered both tiers in
+  `_multi_compat` (the NumPy tier is unconditional, so `dispatch("shafranov_bv")`
+  resolves without the Rust extension), and replaced a mislabelled parity test
+  (it exercised the config-path vacuum-field overload, not the scalar formula)
+  and a no-op seeded one with a genuine bit-exact scalar parity check.
 - Made `_multi_compat` the canonical fastest-first dispatcher for the stateful
   equilibrium kernel: added a kernel-class (factory) registry with lazily-loaded
   tiers, registered the Rust (`RustAcceleratedKernel`) and NumPy (`FusionKernel`)

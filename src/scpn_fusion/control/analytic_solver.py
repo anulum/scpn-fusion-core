@@ -35,6 +35,74 @@ except ImportError:
         ) from exc
 
 
+def shafranov_bv(
+    r_geo: float,
+    a_min: float,
+    ip_ma: float,
+    *,
+    beta_p: float = 0.5,
+    li: float = 0.8,
+) -> float:
+    """Required vertical field from the Shafranov radial-force balance.
+
+    Canonical free-function reference for the ``shafranov_bv`` dispatch kernel
+    (:mod:`scpn_fusion.core._multi_compat`). The Rust tier
+    (``scpn_fusion_rs.shafranov_bv``) and this NumPy tier are bit-exact
+    interchangeable for the returned field. :meth:`AnalyticEquilibriumSolver.calculate_required_Bv`
+    delegates here so the physics lives in exactly one place.
+
+    Parameters
+    ----------
+    r_geo : float
+        Plasma geometric major radius :math:`R_0` [m]; must be strictly positive.
+    a_min : float
+        Plasma minor radius :math:`a` [m]; must be strictly positive.
+    ip_ma : float
+        Plasma current :math:`I_p` [MA]; must be strictly positive.
+    beta_p : float, optional
+        Poloidal beta :math:`\\beta_p`, by default 0.5.
+    li : float, optional
+        Internal inductance :math:`l_i`, by default 0.8.
+
+    Returns
+    -------
+    float
+        Required vertical field :math:`B_v` [T], negative for positive
+        :math:`I_p` (field points downward).
+
+    Raises
+    ------
+    ValueError
+        If ``r_geo``, ``a_min`` or ``ip_ma`` are not strictly positive.
+
+    Notes
+    -----
+    From radial force balance of a large-aspect-ratio tokamak [1]_:
+
+    .. math::
+
+        B_v = -\\frac{\\mu_0 I_p}{4\\pi R_0}
+        \\left[\\ln\\!\\frac{8 R_0}{a} + \\beta_p + \\frac{l_i}{2} - \\frac{3}{2}\\right]
+
+    References
+    ----------
+    .. [1] J. Wesson, *Tokamaks*, 4th ed., Oxford University Press, 2011, §3.6.
+    """
+    r = float(r_geo)
+    a = float(a_min)
+    ip = float(ip_ma)
+    beta = float(beta_p)
+    inductance = float(li)
+    if r <= 0.0 or a <= 0.0 or ip <= 0.0:
+        raise ValueError("r_geo, a_min and ip_ma must be > 0.")
+
+    mu0 = 4.0 * np.pi * 1e-7
+    ip_amp = ip * 1e6
+    term_log = float(np.log(8.0 * r / a))
+    term_physics = beta + (inductance / 2.0) - 1.5
+    return float(-((mu0 * ip_amp) / (4.0 * np.pi * r)) * (term_log + term_physics))
+
+
 class AnalyticEquilibriumSolver:
     """Analytic vertical-field target and least-norm coil-current solve."""
 
@@ -65,24 +133,14 @@ class AnalyticEquilibriumSolver:
     ) -> float:
         """Estimate the vertical field from Shafranov radial-force balance."""
         R_geo = float(R_geo)
-        a_min = float(a_min)
         Ip_MA = float(Ip_MA)
-        beta_p = float(beta_p)
-        li = float(li)
-        if R_geo <= 0.0 or a_min <= 0.0 or Ip_MA <= 0.0:
-            raise ValueError("R_geo, a_min and Ip_MA must be > 0.")
-
-        mu0 = 4.0 * np.pi * 1e-7
-        Ip = Ip_MA * 1e6
-        term_log = np.log(8.0 * R_geo / a_min)
-        term_physics = beta_p + (li / 2.0) - 1.5
-        Bv = -((mu0 * Ip) / (4.0 * np.pi * R_geo)) * (term_log + term_physics)
+        Bv = shafranov_bv(R_geo, a_min, Ip_MA, beta_p=beta_p, li=li)
 
         self._log("--- SHAFRANOV EQUILIBRIUM CHECK ---")
         self._log(f"Target Radius: {R_geo:.3f} m")
         self._log(f"Plasma Current: {Ip_MA:.3f} MA")
         self._log(f"Required Vertical Field (Bv): {Bv:.6f} Tesla")
-        return float(Bv)
+        return Bv
 
     def compute_coil_efficiencies(
         self,

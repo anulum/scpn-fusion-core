@@ -159,3 +159,55 @@ def test_rust_equilibrium_loader_returns_the_rust_kernel_class() -> None:
     from scpn_fusion.core._rust_compat import RustAcceleratedKernel
 
     assert multi._load_rust_equilibrium_kernel() is RustAcceleratedKernel
+
+
+def test_shafranov_bv_bootstrap_registers_both_tiers() -> None:
+    """The function bootstrap registers Rust and NumPy tiers for shafranov_bv."""
+    tiers = multi.registered_kernels().get("shafranov_bv")
+    assert tiers is not None
+    names = {tier.rstrip("*") for tier in tiers}
+    assert "numpy" in names
+    assert "rust" in names
+
+
+def test_numpy_shafranov_bv_provider_matches_reference() -> None:
+    """The NumPy-tier provider returns the canonical free-function value."""
+    from scpn_fusion.control.analytic_solver import shafranov_bv as reference
+
+    assert multi._numpy_shafranov_bv(6.2, 2.0, 15.0) == reference(6.2, 2.0, 15.0)
+    assert multi._numpy_shafranov_bv(1.7, 0.5, 1.0, beta_p=0.3, li=1.1) == reference(
+        1.7, 0.5, 1.0, beta_p=0.3, li=1.1
+    )
+
+
+def test_shafranov_bv_dispatch_resolves_to_numpy_without_rust(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With Rust unavailable, dispatch("shafranov_bv") falls to the NumPy tier."""
+    from scpn_fusion.control.analytic_solver import shafranov_bv as reference
+
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.RUST, False)
+    with multi._registry_lock:
+        multi._dispatch_cache.pop("shafranov_bv", None)
+    try:
+        impl = multi.dispatch("shafranov_bv")
+        assert multi.dispatch_tier("shafranov_bv") == "numpy"
+        assert impl(6.2, 2.0, 15.0) == reference(6.2, 2.0, 15.0)
+        assert impl(6.2, 2.0, 15.0, beta_p=0.9, li=1.2) == reference(
+            6.2, 2.0, 15.0, beta_p=0.9, li=1.2
+        )
+    finally:
+        with multi._registry_lock:
+            multi._dispatch_cache.pop("shafranov_bv", None)
+
+
+def test_rust_shafranov_bv_provider_matches_reference() -> None:
+    """When Rust is built, its tier provider is bit-exact with the NumPy tier."""
+    pytest.importorskip("scpn_fusion_rs")
+    from scpn_fusion.control.analytic_solver import shafranov_bv as reference
+
+    assert multi._rust_shafranov_bv(6.2, 2.0, 15.0) == reference(6.2, 2.0, 15.0)
+    assert multi._rust_shafranov_bv(3.0, 1.0, 8.0, beta_p=0.9, li=0.6) == reference(
+        3.0, 1.0, 8.0, beta_p=0.9, li=0.6
+    )

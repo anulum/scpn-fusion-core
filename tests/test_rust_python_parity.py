@@ -459,9 +459,13 @@ class TestVacuumFieldParity:
         not _HAS_RUST_SHAFRANOV,
         reason="Rust shafranov_bv not exposed via PyO3",
     )
-    def test_shafranov_bv_parity(self, tmp_path: Path) -> None:
-        """Compare the Rust shafranov_bv() against the Python vacuum
-        field computation for the Solov'ev problem.
+    def test_rust_shafranov_config_path_vacuum_field_parity(self, tmp_path: Path) -> None:
+        """Config-path ``rust_shafranov_bv(cfg)`` returns the vacuum-field map.
+
+        This exercises the compatibility overload (it delegates to
+        ``FusionKernel.calculate_vacuum_field`` for a config path), NOT the
+        scalar Shafranov B_v formula — that is covered by
+        :meth:`test_shafranov_bv_scalar_parity`.
         """
         from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
         from scpn_fusion.core._rust_compat import rust_shafranov_bv
@@ -480,8 +484,42 @@ class TestVacuumFieldParity:
             psi_vac_rs,
             rtol=1e-3,
             atol=1e-8,
-            err_msg=f"shafranov_bv parity failed: max rel diff = {_max_rel_diff(psi_vac_py, psi_vac_rs):.6e}",
+            err_msg=f"vacuum-field parity failed: max rel diff = {_max_rel_diff(psi_vac_py, psi_vac_rs):.6e}",
         )
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_SHAFRANOV,
+        reason="Rust shafranov_bv not exposed via PyO3",
+    )
+    def test_shafranov_bv_scalar_parity(self) -> None:
+        """The scalar Shafranov B_v is bit-exact between the Rust and NumPy tiers.
+
+        Both backends evaluate the identical force-balance formula with the same
+        constants, so the canonical dispatch output (``bv_required``) must agree
+        to the last bit across plasma geometries and shaping parameters.
+        """
+        from scpn_fusion.control.analytic_solver import shafranov_bv as py_shafranov_bv
+
+        # (R0, a, Ip_MA, beta_p, li): ITER-like, Solov'ev test problem, and
+        # off-default shaping to exercise the beta_p/li parametrisation.
+        cases = [
+            (6.2, 2.0, 15.0, 0.5, 0.8),
+            (1.7, 0.5, 1.0, 0.5, 0.8),
+            (3.0, 1.0, 8.0, 0.9, 0.6),
+            (6.2, 2.0, 15.0, 0.3, 1.2),
+        ]
+        for r_geo, a_min, ip_ma, beta_p, li in cases:
+            bv_rs = _rust_shafranov_bv(r_geo, a_min, ip_ma, beta_p, li)[0]
+            bv_py = py_shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
+            assert bv_rs == bv_py, (
+                f"Shafranov Bv parity broken at "
+                f"{(r_geo, a_min, ip_ma, beta_p, li)}: rust={bv_rs!r} numpy={bv_py!r}"
+            )
+
+        # The pyfunction's defaults (sourced from the Rust BETA_P/LI constants)
+        # must match the NumPy free-function defaults.
+        bv_default = _rust_shafranov_bv(6.2, 2.0, 15.0)[0]
+        assert bv_default == py_shafranov_bv(6.2, 2.0, 15.0)
 
 
 # ── 4. Transport Solver Parity ──────────────────────────────────────
