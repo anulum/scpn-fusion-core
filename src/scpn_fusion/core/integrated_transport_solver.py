@@ -29,10 +29,9 @@ from typing import Any, cast
 from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
 from scpn_fusion.io.safe_loaders import checked_json_load
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel  # type: ignore[assignment]
+# `_rust_compat` resolves FusionKernel through the canonical multi-backend
+# dispatcher (Rust when available, NumPy otherwise) and always imports cleanly.
+from scpn_fusion.core._rust_compat import FusionKernel
 
 from scpn_fusion.core.integrated_transport_solver_adaptive import (
     AdaptiveTimeController,  # re-export for backward compatibility

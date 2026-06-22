@@ -91,3 +91,71 @@ def test_dispatch_fallback_survives_telemetry_failure(
     multi.register_kernel(kernel_name, multi.BackendTier.NUMPY, lambda: "numpy")
 
     assert multi.dispatch(kernel_name)() == "numpy"
+
+
+def _clear_kernel_class(name: str) -> None:
+    with multi._class_registry_lock:
+        multi._class_registry.pop(name, None)
+        multi._class_dispatch_cache.pop(name, None)
+
+
+@pytest.fixture
+def class_kernel_name(request: pytest.FixtureRequest) -> Iterator[str]:
+    name = f"testcls_{request.node.name}"
+    _clear_kernel_class(name)
+    yield name
+    _clear_kernel_class(name)
+
+
+class _NumpyKernelStub:
+    pass
+
+
+class _MojoKernelStub:
+    pass
+
+
+def test_register_and_dispatch_kernel_class(class_kernel_name: str) -> None:
+    multi.register_kernel_class(
+        class_kernel_name, multi.BackendTier.NUMPY, lambda: _NumpyKernelStub
+    )
+    assert multi.dispatch_kernel_class(class_kernel_name) is _NumpyKernelStub
+    # Second call hits the dispatch cache.
+    assert multi.dispatch_kernel_class(class_kernel_name) is _NumpyKernelStub
+
+
+def test_dispatch_kernel_class_prefers_available_lower_tier(class_kernel_name: str) -> None:
+    multi.register_kernel_class(class_kernel_name, multi.BackendTier.MOJO, lambda: _MojoKernelStub)
+    multi.register_kernel_class(
+        class_kernel_name, multi.BackendTier.NUMPY, lambda: _NumpyKernelStub
+    )
+    # MOJO is unavailable in CI, so dispatch falls back to the NumPy tier.
+    assert multi.dispatch_kernel_class(class_kernel_name) is _NumpyKernelStub
+
+
+def test_dispatch_kernel_class_raises_for_unregistered() -> None:
+    with pytest.raises(KeyError, match="No kernel class registered"):
+        multi.dispatch_kernel_class("testcls_missing_kernel_class")
+
+
+def test_dispatch_kernel_class_raises_when_all_unavailable(class_kernel_name: str) -> None:
+    multi.register_kernel_class(class_kernel_name, multi.BackendTier.MOJO, lambda: _MojoKernelStub)
+    with pytest.raises(RuntimeError, match="All registered backends"):
+        multi.dispatch_kernel_class(class_kernel_name)
+
+
+def test_equilibrium_kernel_class_dispatches_to_python_without_rust() -> None:
+    cls = multi.dispatch_kernel_class("equilibrium_kernel")
+    assert isinstance(cls, type)
+    tiers = [multi._TIER_NAMES[t] for t, _ in multi._class_registry["equilibrium_kernel"]]
+    assert tiers == ["rust", "numpy"]
+    if not multi.is_available(multi.BackendTier.RUST):
+        from scpn_fusion.core.fusion_kernel import FusionKernel
+
+        assert cls is FusionKernel
+
+
+def test_rust_equilibrium_loader_returns_the_rust_kernel_class() -> None:
+    from scpn_fusion.core._rust_compat import RustAcceleratedKernel
+
+    assert multi._load_rust_equilibrium_kernel() is RustAcceleratedKernel

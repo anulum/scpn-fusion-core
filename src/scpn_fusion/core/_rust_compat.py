@@ -19,7 +19,7 @@ import logging
 import os
 from collections import deque
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -212,26 +212,29 @@ class RustAcceleratedKernel:
         np.savez(filename, R=self.R, Z=self.Z, Psi=self.Psi, J_phi=self.J_phi)
 
 
-if _RUST_AVAILABLE:
-    FusionKernel = RustAcceleratedKernel
-    RUST_BACKEND = True
+RUST_BACKEND = _RUST_AVAILABLE
+
+if TYPE_CHECKING:
+    # Static type: the pure-Python kernel. ``RustAcceleratedKernel`` is a drop-in
+    # for it (identical attribute/method interface), so the dispatched class -
+    # Rust when available, NumPy otherwise - is interchangeable for typed callers.
+    from scpn_fusion.core.fusion_kernel import FusionKernel as FusionKernel
 else:
-    RUST_BACKEND = False
 
     def __getattr__(name: str) -> Any:
-        """Resolve the pure-Python ``FusionKernel`` fallback when Rust is absent.
+        """Resolve ``FusionKernel`` through the canonical multi-backend dispatcher.
 
-        Without the Rust extension the ``FusionKernel`` alias has no eager binding
-        (``RustAcceleratedKernel`` is unavailable). PEP 562 module ``__getattr__``
-        supplies the pure-Python ``core.fusion_kernel.FusionKernel`` lazily, so
-        ``from scpn_fusion.core._rust_compat import FusionKernel`` succeeds in both
-        backends without importing ``fusion_kernel`` at module load (avoiding the
-        import cycle the per-method lazy imports already guard against).
+        ``_multi_compat`` is the single fastest-first authority; this module is its
+        Rust-tier provider (it supplies ``RustAcceleratedKernel``). The alias is
+        resolved lazily here so the dispatcher stays canonical for the consumers
+        that ``from scpn_fusion.core._rust_compat import FusionKernel``, while the
+        ``_multi_compat`` import is deferred to first access — avoiding the import
+        cycle at module load.
         """
         if name == "FusionKernel":
-            from scpn_fusion.core.fusion_kernel import FusionKernel as _PyFusionKernel
+            from scpn_fusion.core._multi_compat import dispatch_kernel_class
 
-            return _PyFusionKernel
+            return dispatch_kernel_class("equilibrium_kernel")
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

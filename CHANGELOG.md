@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Made `_multi_compat` the canonical fastest-first dispatcher for the stateful
+  equilibrium kernel: added a kernel-class (factory) registry with lazily-loaded
+  tiers, registered the Rust (`RustAcceleratedKernel`) and NumPy (`FusionKernel`)
+  backends, and routed the `_rust_compat.FusionKernel` alias through it. Removed
+  the now-redundant per-consumer Rust-or-Python import fallbacks in
+  `integrated_transport_solver` and `neuro_cybernetic_controller`.
 - Fixed `from scpn_fusion.core._rust_compat import FusionKernel` raising
   `ImportError` when the Rust extension is absent: a PEP 562 module `__getattr__`
   now resolves the pure-Python `FusionKernel` fallback lazily, so the alias is

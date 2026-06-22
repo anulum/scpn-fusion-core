@@ -306,6 +306,105 @@ def registered_kernels() -> dict[str, list[str]]:
 
 
 # ---------------------------------------------------------------------------
+# Kernel-class (factory) registry — for stateful backends such as the
+# equilibrium solver, where the unit of dispatch is a class, not a function.
+# ---------------------------------------------------------------------------
+
+_class_registry_lock = threading.Lock()
+_class_registry: dict[str, list[tuple[BackendTier, Callable[[], type]]]] = {}
+_class_dispatch_cache: dict[str, tuple[BackendTier, type]] = {}
+
+
+def register_kernel_class(
+    name: str,
+    tier: BackendTier,
+    loader: Callable[[], type],
+) -> None:
+    """Register a lazily-loaded kernel class for a backend tier.
+
+    Parameters
+    ----------
+    name : str
+        Kernel-class identifier (e.g. ``"equilibrium_kernel"``).
+    tier : BackendTier
+        Backend tier this class belongs to.
+    loader : callable
+        Zero-argument thunk returning the class. Deferring the import into the
+        thunk keeps registration free of the heavy backend imports and avoids
+        the import cycle between this module and the tier providers.
+    """
+    with _class_registry_lock:
+        entries = _class_registry.setdefault(name, [])
+        entries.append((tier, loader))
+        entries.sort(key=lambda x: x[0])
+        _class_dispatch_cache.pop(name, None)
+
+
+def dispatch_kernel_class(name: str) -> type:
+    """Return the fastest available registered class for *name*.
+
+    Raises
+    ------
+    KeyError
+        If no class is registered for *name*.
+    RuntimeError
+        If every registered tier is unavailable.
+    """
+    _ensure_probed()
+    cached = _class_dispatch_cache.get(name)
+    if cached is not None:
+        return cached[1]
+    with _class_registry_lock:
+        cached = _class_dispatch_cache.get(name)
+        if cached is not None:
+            return cached[1]
+        entries = _class_registry.get(name)
+        if not entries:
+            raise KeyError(f"No kernel class registered for {name!r}")
+        for tier, loader in entries:
+            if _availability.get(tier, False):
+                cls = loader()
+                _class_dispatch_cache[name] = (tier, cls)
+                if tier != entries[0][0]:
+                    _record_fallback_event_safe(
+                        kernel=name,
+                        selected_tier=_TIER_NAMES[tier],
+                        fastest_tier=_TIER_NAMES[entries[0][0]],
+                    )
+                return cls
+        available_tiers = [_TIER_NAMES[t] for t, _ in entries]
+        raise RuntimeError(
+            f"All registered backends for kernel class {name!r} are unavailable. "
+            f"Registered tiers: {available_tiers}"
+        )
+
+
+def _load_rust_equilibrium_kernel() -> type:
+    """Load the Rust-accelerated equilibrium kernel class."""
+    from scpn_fusion.core._rust_compat import RustAcceleratedKernel
+
+    return RustAcceleratedKernel
+
+
+def _load_numpy_equilibrium_kernel() -> type:
+    """Load the pure-Python equilibrium kernel class."""
+    from scpn_fusion.core.fusion_kernel import FusionKernel
+
+    return FusionKernel
+
+
+def _bootstrap_kernel_classes() -> None:
+    """Register the stateful kernel classes with their backend tiers.
+
+    The equilibrium kernel dispatches Rust → NumPy: ``RustAcceleratedKernel`` is
+    a drop-in for ``FusionKernel`` (same attribute/method interface), so the
+    fastest available class is interchangeable for callers.
+    """
+    register_kernel_class("equilibrium_kernel", BackendTier.RUST, _load_rust_equilibrium_kernel)
+    register_kernel_class("equilibrium_kernel", BackendTier.NUMPY, _load_numpy_equilibrium_kernel)
+
+
+# ---------------------------------------------------------------------------
 # Convenience: pre-register existing Rust and NumPy fallbacks
 # ---------------------------------------------------------------------------
 
@@ -345,3 +444,4 @@ def _bootstrap_existing_backends() -> None:
 
 # Run bootstrap on import
 _bootstrap_existing_backends()
+_bootstrap_kernel_classes()

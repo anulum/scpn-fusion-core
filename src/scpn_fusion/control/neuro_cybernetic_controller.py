@@ -36,21 +36,16 @@ TARGET_Z = 0.0
 
 
 def _resolve_fusion_kernel() -> Any:
-    """Resolve FusionKernel lazily to keep pool-only paths dependency-light."""
+    """Resolve FusionKernel lazily via the canonical multi-backend dispatcher."""
     try:
         from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel
 
         return _FusionKernel
-    except Exception:
-        try:
-            from scpn_fusion.core.fusion_kernel import FusionKernel as _FusionKernel  # type: ignore
-
-            return _FusionKernel
-        except Exception as exc:  # pragma: no cover - import-guard path
-            raise ImportError(
-                "Unable to import FusionKernel. Run with PYTHONPATH=src "
-                "or use `python -m scpn_fusion.control.neuro_cybernetic_controller`."
-            ) from exc
+    except Exception as exc:  # pragma: no cover - import-guard path
+        raise ImportError(
+            "Unable to import FusionKernel. Run with PYTHONPATH=src "
+            "or use `python -m scpn_fusion.control.neuro_cybernetic_controller`."
+        ) from exc
 
 
 class SpikingControllerPool:
