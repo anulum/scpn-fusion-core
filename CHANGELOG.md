@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- Fixed a sign error in the geometric multigrid V-cycle coarse-grid correction.
+  The error satisfies `L*[e] = Source - L*[Psi] = -(L*[Psi] - Source)`, so the
+  coarse right-hand side is the negated residual; the V-cycle was restricting the
+  raw residual, which inverts every correction (`Psi <- Psi - e`) and makes the
+  iteration diverge instead of converge. On a fixed-source Grad-Shafranov solve
+  the residual now collapses by orders of magnitude within a handful of cycles
+  rather than growing. Added a V-cycle convergence regression test. (Drift fix
+  upstreamed from SCPN-CONTROL's validated solver.)
 - Reconciled the `measure_magnetics` function-kernel into a single canonical
   contract across the Rust and NumPy tiers and corrected two divergences in the
   Rust magnetic-probe diagnostic. The Rust `SensorSuite` now places probes on an

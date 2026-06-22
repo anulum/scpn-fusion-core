@@ -351,23 +351,27 @@ class FusionKernelIterativeSolverMixin:
         # 1. Pre-smooth
         Psi = self._mg_smooth(Psi.copy(), Source, R_grid, dR, dZ, omega, pre_smooth)
 
-        # 2. Compute residual
-        residual = self._mg_residual(Psi, Source, R_grid, dR, dZ)
+        # 2. Compute the defect (negative residual). The error e satisfies
+        #    L*[e] = Source - L*[Psi] = -(L*[Psi] - Source), so the coarse-grid
+        #    right-hand side is the *negated* residual. Restricting the raw
+        #    residual instead solves L*[e] = +r, which inverts every correction
+        #    (Psi <- Psi - e) and stalls/diverges the solve.
+        defect = -self._mg_residual(Psi, Source, R_grid, dR, dZ)
 
-        # 3. Restrict residual and R-grid to coarse level
-        r_coarse = self._restrict_full_weight(residual)
+        # 3. Restrict the defect and R-grid to the coarse level
+        d_coarse = self._restrict_full_weight(defect)
         R_coarse = self._restrict_full_weight(R_grid)
-        nz_c, nr_c = r_coarse.shape
+        nz_c, nr_c = d_coarse.shape
 
         # Coarse grid spacings (doubled)
         dR_c = dR * 2.0
         dZ_c = dZ * 2.0
 
-        # 4. Solve coarse-grid correction: L*[e] = r
+        # 4. Solve the coarse-grid correction: L*[e] = defect
         e_coarse: FloatArray = np.zeros((nz_c, nr_c))
         e_coarse = self._multigrid_vcycle(
             e_coarse,
-            r_coarse,
+            d_coarse,
             R_coarse,
             dR_c,
             dZ_c,
