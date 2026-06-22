@@ -316,56 +316,38 @@ class TestMultigridSolverParity:
         not _HAS_RUST_MG,
         reason="Rust multigrid_vcycle not exposed via PyO3",
     )
-    def test_multigrid_vcycle_parity(self, tmp_path: Path) -> None:
-        """Run the multigrid V-cycle through both Python and Rust on
-        the same 65x65 Solov'ev input (R0=1.7, a=0.5, B0=2.0, Ip=1.0 MA).
-        Assert relative tolerance < 1e-3.
+    def test_multigrid_solve_parity(self) -> None:
+        """The full multigrid solve agrees between the NumPy and Rust tiers.
+
+        Both relax the identical toroidal GS* operator from the same source and
+        boundary to the same fixed point, so the converged flux maps agree to a
+        tight tolerance (effectively bit-exact on this 65x65 Solov'ev grid).
         """
-        from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
+        from scpn_fusion.core.multigrid_solve import multigrid_solve as py_multigrid_solve
 
-        cfg_path = _make_config(tmp_path, solver_method="multigrid")
-        py_kernel = PyFusionKernel(str(cfg_path))
+        _R, _Z, RR, ZZ, _dR, _dZ = _build_grid()
+        source = _solovev_source(RR, ZZ)
+        psi_bc = np.zeros((NZ, NR))
 
-        R, Z, RR, ZZ, dR, dZ = _build_grid()
-        np.random.seed(123)
-        Psi_init = np.zeros((NZ, NR))
-        Source = _solovev_source(RR, ZZ)
-
-        # --- Python V-cycle ---
-        psi_py = py_kernel._multigrid_vcycle(
-            Psi_init.copy(),
-            Source,
-            RR,
-            dR,
-            dZ,
-            omega=1.6,
+        psi_py, _res_py, _nc_py, conv_py = py_multigrid_solve(
+            source, psi_bc, R_MIN, R_MAX, Z_MIN, Z_MAX, NR, NZ, tol=1e-6, max_cycles=500
         )
-
-        # --- Rust V-cycle ---
-        psi_rs, residual, n_cycles, converged = rust_multigrid_vcycle(
-            Source,
-            Psi_init.copy(),
-            R_MIN,
-            R_MAX,
-            Z_MIN,
-            Z_MAX,
-            NR,
-            NZ,
-            tol=1e-6,
-            max_cycles=500,
+        psi_rs, _res_rs, _nc_rs, conv_rs = rust_multigrid_vcycle(
+            source, psi_bc.copy(), R_MIN, R_MAX, Z_MIN, Z_MAX, NR, NZ, tol=1e-6, max_cycles=500
         )
+        psi_rs = np.asarray(psi_rs)
 
-        # --- Compare ---
+        assert conv_py and conv_rs, f"both tiers must converge: py={conv_py}, rust={conv_rs}"
         assert psi_py.shape == psi_rs.shape
-        assert np.all(np.isfinite(psi_py)), "Python multigrid produced NaN"
+        assert np.all(np.isfinite(psi_py)), "NumPy multigrid produced NaN"
         assert np.all(np.isfinite(psi_rs)), "Rust multigrid produced NaN"
 
         np.testing.assert_allclose(
             psi_py,
             psi_rs,
-            rtol=1e-3,
-            atol=1e-6,
-            err_msg=f"Multigrid parity failed: max rel diff = {_max_rel_diff(psi_py, psi_rs):.6e}",
+            rtol=1e-6,
+            atol=1e-9,
+            err_msg=f"multigrid solve parity failed: max abs diff = {np.max(np.abs(psi_py - psi_rs)):.3e}",
         )
 
     @pytest.mark.xfail(

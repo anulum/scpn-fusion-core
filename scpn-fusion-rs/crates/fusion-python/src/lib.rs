@@ -683,6 +683,50 @@ fn measure_magnetics<'py>(
     ndarray::Array1::from_vec(measurements).into_pyarray(py)
 }
 
+// ─── Equilibrium solvers ───
+
+/// Standalone geometric multigrid solve of the Grad-Shafranov GS* operator.
+///
+/// Relaxes `L*[psi] = source` on an `nr x nz` R-Z grid starting from the
+/// boundary-valued `psi_bc`, returning `(psi, residual, n_cycles, converged)`.
+/// `residual` is the final L-infinity residual. Algorithm-parity with the NumPy
+/// tier (`scpn_fusion.core.multigrid_solve.multigrid_solve`): both relax the
+/// identical toroidal GS* operator to the same fixed point within tolerance.
+#[pyfunction]
+#[pyo3(signature = (source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol = 1e-6, max_cycles = 500))]
+#[allow(clippy::too_many_arguments)]
+fn multigrid_vcycle<'py>(
+    py: Python<'py>,
+    source: PyReadonlyArray2<'py, f64>,
+    psi_bc: PyReadonlyArray2<'py, f64>,
+    r_min: f64,
+    r_max: f64,
+    z_min: f64,
+    z_max: f64,
+    nr: usize,
+    nz: usize,
+    tol: f64,
+    max_cycles: usize,
+) -> (Bound<'py, PyArray2<f64>>, f64, usize, bool) {
+    let grid = Grid2D::new(nr, nz, r_min, r_max, z_min, z_max);
+    let source_arr: Array2<f64> = source.as_array().to_owned();
+    let mut psi: Array2<f64> = psi_bc.as_array().to_owned();
+    let result = fusion_math::multigrid::multigrid_solve(
+        &mut psi,
+        &source_arr,
+        &grid,
+        &fusion_math::multigrid::MultigridConfig::default(),
+        max_cycles,
+        tol,
+    );
+    (
+        psi.into_pyarray(py),
+        result.residual,
+        result.cycles,
+        result.converged,
+    )
+}
+
 // ─── SCPN runtime kernels ───
 
 /// Dense activation kernel for SCPN controller path.
@@ -2322,6 +2366,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;
+    m.add_function(wrap_pyfunction!(multigrid_vcycle, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_dense_activations, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_marking_update, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_sample_firing, m)?)?;

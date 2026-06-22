@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+- Reconciled the `multigrid_solve` function-kernel into a canonical fastest-first
+  dispatch with both backend tiers. Extracted the geometric multigrid V-cycle and
+  its smoother/residual/restriction/prolongation operators into a free-function
+  module `core/multigrid_solve.py` (the iterative-solver mixin now delegates to
+  them) plus a `multigrid_solve(source, psi_bc, bounds, nr, nz, *, tol, max_cycles)`
+  full-solve loop, and exposed the Rust solver as a `scpn_fusion_rs.multigrid_vcycle`
+  pyfunction wrapping `fusion_math::multigrid::multigrid_solve`. Both tiers relax
+  the identical toroidal GS* operator with the same Red-Black smoother and grid
+  transfers and return `(psi, residual, n_cycles, converged)` (L-infinity residual);
+  on the standard grids the converged flux maps agree to machine precision. Added
+  a full-solve parity test (replacing one that compared a single Python V-cycle to
+  a full Rust solve and had been skipped because the Rust binding was missing).
 - Fixed a sign error in the geometric multigrid V-cycle coarse-grid correction.
   The error satisfies `L*[e] = Source - L*[Psi] = -(L*[Psi] - Source)`, so the
   coarse right-hand side is the negated residual; the V-cycle was restricting the

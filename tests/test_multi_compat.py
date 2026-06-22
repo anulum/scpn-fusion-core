@@ -339,3 +339,79 @@ def test_rust_measure_magnetics_provider_matches_reference() -> None:
         rtol=1e-9,
         atol=1e-9,
     )
+
+
+def _multigrid_problem() -> tuple:
+    nr = nz = 33
+    r_min, r_max, z_min, z_max = 1.2, 2.2, -0.5, 0.5
+    rr, zz = np.meshgrid(np.linspace(r_min, r_max, nr), np.linspace(z_min, z_max, nz))
+    source = -rr * np.exp(-((rr - 1.7) ** 2 + zz**2) / 0.05)
+    psi_bc = np.zeros((nz, nr))
+    return source, psi_bc, r_min, r_max, z_min, z_max, nr, nz
+
+
+def test_multigrid_solve_bootstrap_registers_both_tiers() -> None:
+    """The function bootstrap registers Rust and NumPy tiers for multigrid_solve."""
+    tiers = multi.registered_kernels().get("multigrid_solve")
+    assert tiers is not None
+    names = {tier.rstrip("*") for tier in tiers}
+    assert "numpy" in names
+    assert "rust" in names
+
+
+def test_numpy_multigrid_solve_provider_matches_reference() -> None:
+    """The NumPy-tier provider returns the canonical free-function solve."""
+    from scpn_fusion.core.multigrid_solve import multigrid_solve as reference
+
+    source, psi_bc, r_min, r_max, z_min, z_max, nr, nz = _multigrid_problem()
+    psi_p, res_p, nc_p, conv_p = multi._numpy_multigrid_solve(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=1e-6, max_cycles=200
+    )
+    psi_r, res_r, nc_r, conv_r = reference(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=1e-6, max_cycles=200
+    )
+    np.testing.assert_array_equal(psi_p, psi_r)
+    assert (res_p, nc_p, conv_p) == (res_r, nc_r, conv_r)
+
+
+def test_multigrid_solve_dispatch_resolves_to_numpy_without_rust(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With Rust unavailable, dispatch falls to the NumPy multigrid tier."""
+    from scpn_fusion.core.multigrid_solve import multigrid_solve as reference
+
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.RUST, False)
+    with multi._registry_lock:
+        multi._dispatch_cache.pop("multigrid_solve", None)
+    try:
+        impl = multi.dispatch("multigrid_solve")
+        assert multi.dispatch_tier("multigrid_solve") == "numpy"
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz = _multigrid_problem()
+        psi, _res, _nc, conv = impl(
+            source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=1e-6, max_cycles=200
+        )
+        expected = reference(
+            source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=1e-6, max_cycles=200
+        )
+        assert conv is True
+        np.testing.assert_array_equal(psi, expected[0])
+    finally:
+        with multi._registry_lock:
+            multi._dispatch_cache.pop("multigrid_solve", None)
+
+
+def test_rust_multigrid_solve_provider_matches_reference() -> None:
+    """When Rust is built, its multigrid tier converges to the same flux map."""
+    pytest.importorskip("scpn_fusion_rs")
+    from scpn_fusion.core.multigrid_solve import multigrid_solve as reference
+
+    source, psi_bc, r_min, r_max, z_min, z_max, nr, nz = _multigrid_problem()
+    psi_rs, _res_rs, _nc_rs, conv_rs = multi._rust_multigrid_solve(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=1e-6, max_cycles=200
+    )
+    psi_py, _res_py, _nc_py, conv_py = reference(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=1e-6, max_cycles=200
+    )
+    assert conv_rs and conv_py
+    np.testing.assert_allclose(psi_rs, psi_py, rtol=1e-6, atol=1e-9)

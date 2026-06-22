@@ -17,6 +17,14 @@ from scpn_fusion.core.fusion_kernel_numerics import (
     FloatArray,
     sanitize_numeric_array as _sanitize_numeric_array,
 )
+from scpn_fusion.core.multigrid_solve import (
+    mg_residual as _mg_residual_free,
+    mg_smooth as _mg_smooth_free,
+    multigrid_vcycle as _multigrid_vcycle_free,
+    prolongate_bilinear as _prolongate_bilinear_free,
+    restrict_full_weight as _restrict_full_weight_free,
+    validate_sor_omega as _validate_sor_omega_free,
+)
 
 
 class FusionKernelIterativeSolverMixin:
@@ -41,10 +49,7 @@ class FusionKernelIterativeSolverMixin:
     @staticmethod
     def _validate_sor_omega(omega: float) -> float:
         """Validate the SOR relaxation factor for elliptic GS solves."""
-        omega_value = float(omega)
-        if not np.isfinite(omega_value) or omega_value < 1.0 or omega_value >= 2.0:
-            raise ValueError("omega must be finite and satisfy 1.0 <= omega < 2.0")
-        return omega_value
+        return _validate_sor_omega_free(omega)
 
     def _jacobi_step(self, Psi: FloatArray, Source: FloatArray) -> FloatArray:
         """Perform one cylindrical Jacobi iteration on the interior grid.
@@ -159,81 +164,13 @@ class FusionKernelIterativeSolverMixin:
 
     @staticmethod
     def _restrict_full_weight(fine: FloatArray) -> FloatArray:
-        """Full-weighting restriction operator (fine → coarse).
-
-        Standard 9-point stencil:
-            coarse[i,j] = 1/16 * (4*fine[2i,2j]
-                          + 2*(fine[2i-1,2j] + fine[2i+1,2j]
-                               + fine[2i,2j-1] + fine[2i,2j+1])
-                          + (fine[2i-1,2j-1] + fine[2i-1,2j+1]
-                             + fine[2i+1,2j-1] + fine[2i+1,2j+1]))
-        """
-        nz_f, nr_f = fine.shape
-        nz_c = (nz_f + 1) // 2
-        nr_c = (nr_f + 1) // 2
-        coarse = np.zeros((nz_c, nr_c))
-
-        # Interior: vectorised 9-point stencil via even-index slicing
-        coarse[1:-1, 1:-1] = (
-            4.0 * fine[2:-2:2, 2:-2:2]
-            + 2.0
-            * (
-                fine[1:-3:2, 2:-2:2]
-                + fine[3:-1:2, 2:-2:2]
-                + fine[2:-2:2, 1:-3:2]
-                + fine[2:-2:2, 3:-1:2]
-            )
-            + (
-                fine[1:-3:2, 1:-3:2]
-                + fine[1:-3:2, 3:-1:2]
-                + fine[3:-1:2, 1:-3:2]
-                + fine[3:-1:2, 3:-1:2]
-            )
-        ) / 16.0
-
-        # Boundary: inject directly
-        coarse[0, :] = fine[0, ::2][:nr_c]
-        coarse[-1, :] = fine[-1, ::2][:nr_c]
-        coarse[:, 0] = fine[::2, 0][:nz_c]
-        coarse[:, -1] = fine[::2, -1][:nz_c]
-
-        return coarse
+        """Full-weighting restriction operator (fine → coarse, 9-point stencil)."""
+        return _restrict_full_weight_free(fine)
 
     @staticmethod
     def _prolongate_bilinear(coarse: FloatArray, nz_f: int, nr_f: int) -> FloatArray:
-        """Bilinear prolongation operator (coarse → fine).
-
-        Direct injection at coincident points, linear interpolation elsewhere.
-        """
-        nz_c, nr_c = coarse.shape
-        fine = np.zeros((nz_f, nr_f))
-
-        # Coincident points (even rows, even cols)
-        nz_used = min(nz_c, (nz_f + 1) // 2)
-        nr_used = min(nr_c, (nr_f + 1) // 2)
-        fine[: 2 * nz_used - 1 : 2, : 2 * nr_used - 1 : 2] = coarse[:nz_used, :nr_used]
-
-        # Horizontal midpoints (even rows, odd cols)
-        h_end = min(2 * (nr_c - 1), nr_f - 1)
-        fine[: 2 * nz_used - 1 : 2, 1:h_end:2] = (
-            0.5 * (coarse[:nz_used, :-1] + coarse[:nz_used, 1:])[:, : (h_end - 1) // 2 + 1]
-        )
-
-        # Vertical midpoints (odd rows, even cols)
-        v_end = min(2 * (nz_c - 1), nz_f - 1)
-        fine[1:v_end:2, : 2 * nr_used - 1 : 2] = (
-            0.5 * (coarse[:-1, :nr_used] + coarse[1:, :nr_used])[: ((v_end - 1) // 2 + 1), :]
-        )
-
-        # Centre points (odd rows, odd cols)
-        fine[1:v_end:2, 1:h_end:2] = (
-            0.25
-            * (coarse[:-1, :-1] + coarse[1:, :-1] + coarse[:-1, 1:] + coarse[1:, 1:])[
-                : ((v_end - 1) // 2 + 1), : (h_end - 1) // 2 + 1
-            ]
-        )
-
-        return fine
+        """Bilinear prolongation operator (coarse → fine)."""
+        return _prolongate_bilinear_free(coarse, nz_f, nr_f)
 
     def _mg_smooth(
         self,
@@ -245,40 +182,8 @@ class FusionKernelIterativeSolverMixin:
         omega: float,
         n_sweeps: int,
     ) -> FloatArray:
-        """Red-Black SOR smoother with toroidal 1/R stencil for multigrid.
-
-        Works on arbitrary grid sizes (not just the root grid).
-        """
-        omega = self._validate_sor_omega(omega)
-        NZ, NR = Psi.shape
-        dR2 = dR**2
-        dZ2 = dZ**2
-
-        R_int = R_grid[1:-1, 1:-1]
-        R_safe = np.maximum(R_int, 1e-10)
-        a_E = 1.0 / dR2 - 1.0 / (2.0 * R_safe * dR)
-        a_W = 1.0 / dR2 + 1.0 / (2.0 * R_safe * dR)
-        a_NS = 1.0 / dZ2
-        a_C = 2.0 / dR2 + 2.0 / dZ2
-
-        ii, jj = np.mgrid[1 : NZ - 1, 1 : NR - 1]
-
-        for _ in range(n_sweeps):
-            for parity in (0, 1):
-                mask = ((ii + jj) % 2) == parity
-                gs_update = (
-                    a_E[mask] * Psi[1:-1, 2:][mask]
-                    + a_W[mask] * Psi[1:-1, 0:-2][mask]
-                    + a_NS * Psi[0:-2, 1:-1][mask]
-                    + a_NS * Psi[2:, 1:-1][mask]
-                    - Source[1:-1, 1:-1][mask]
-                ) / a_C
-                old_vals = Psi[1:-1, 1:-1][mask]
-                interior = Psi[1:-1, 1:-1]
-                interior[mask] = (1.0 - omega) * old_vals + omega * gs_update
-                Psi[1:-1, 1:-1] = interior
-
-        return Psi
+        """Red-Black SOR smoother with the toroidal 1/R stencil for multigrid."""
+        return _mg_smooth_free(Psi, Source, R_grid, dR, dZ, omega, n_sweeps)
 
     def _mg_residual(
         self,
@@ -288,22 +193,8 @@ class FusionKernelIterativeSolverMixin:
         dR: float,
         dZ: float,
     ) -> FloatArray:
-        """Compute GS* residual r = L*[Psi] - Source on given grid."""
-        NZ, NR = Psi.shape
-        dR2 = dR**2
-        dZ2 = dZ**2
-
-        residual = np.zeros_like(Psi)
-        R_int = R_grid[1:-1, 1:-1]
-        R_safe = np.maximum(R_int, 1e-10)
-
-        d2R = (Psi[1:-1, 2:] - 2.0 * Psi[1:-1, 1:-1] + Psi[1:-1, 0:-2]) / dR2
-        d1R = (Psi[1:-1, 2:] - Psi[1:-1, 0:-2]) / (2.0 * dR)
-        d2Z = (Psi[2:, 1:-1] - 2.0 * Psi[1:-1, 1:-1] + Psi[0:-2, 1:-1]) / dZ2
-
-        Lpsi = d2R - d1R / R_safe + d2Z
-        residual[1:-1, 1:-1] = Lpsi - Source[1:-1, 1:-1]
-        return residual
+        """Compute the GS* residual r = L*[Psi] - Source on the given grid."""
+        return _mg_residual_free(Psi, Source, R_grid, dR, dZ)
 
     def _multigrid_vcycle(
         self,
@@ -342,53 +233,17 @@ class FusionKernelIterativeSolverMixin:
         FloatArray
             Improved solution estimate.
         """
-        NZ, NR = Psi.shape
-
-        # Base case: grid too coarse — solve directly with many SOR sweeps
-        if min_grid >= NZ or min_grid >= NR:
-            return self._mg_smooth(Psi.copy(), Source, R_grid, dR, dZ, omega, n_sweeps=50)
-
-        # 1. Pre-smooth
-        Psi = self._mg_smooth(Psi.copy(), Source, R_grid, dR, dZ, omega, pre_smooth)
-
-        # 2. Compute the defect (negative residual). The error e satisfies
-        #    L*[e] = Source - L*[Psi] = -(L*[Psi] - Source), so the coarse-grid
-        #    right-hand side is the *negated* residual. Restricting the raw
-        #    residual instead solves L*[e] = +r, which inverts every correction
-        #    (Psi <- Psi - e) and stalls/diverges the solve.
-        defect = -self._mg_residual(Psi, Source, R_grid, dR, dZ)
-
-        # 3. Restrict the defect and R-grid to the coarse level
-        d_coarse = self._restrict_full_weight(defect)
-        R_coarse = self._restrict_full_weight(R_grid)
-        nz_c, nr_c = d_coarse.shape
-
-        # Coarse grid spacings (doubled)
-        dR_c = dR * 2.0
-        dZ_c = dZ * 2.0
-
-        # 4. Solve the coarse-grid correction: L*[e] = defect
-        e_coarse: FloatArray = np.zeros((nz_c, nr_c))
-        e_coarse = self._multigrid_vcycle(
-            e_coarse,
-            d_coarse,
-            R_coarse,
-            dR_c,
-            dZ_c,
+        return _multigrid_vcycle_free(
+            Psi,
+            Source,
+            R_grid,
+            dR,
+            dZ,
             omega=omega,
             pre_smooth=pre_smooth,
             post_smooth=post_smooth,
             min_grid=min_grid,
         )
-
-        # 5. Prolongate correction and apply
-        correction = self._prolongate_bilinear(e_coarse, NZ, NR)
-        Psi = Psi + correction
-
-        # 6. Post-smooth
-        Psi = self._mg_smooth(Psi, Source, R_grid, dR, dZ, omega, post_smooth)
-
-        return Psi
 
     def _anderson_step(
         self,

@@ -521,6 +521,62 @@ def _rust_measure_magnetics(
     return np.asarray(measurements, dtype=np.float64)
 
 
+def _numpy_multigrid_solve(
+    source: Any,
+    psi_bc: Any,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+    nr: int,
+    nz: int,
+    *,
+    tol: float = 1e-6,
+    max_cycles: int = 500,
+) -> Any:
+    """NumPy-tier provider for the ``multigrid_solve`` kernel.
+
+    Returns ``(psi, residual, n_cycles, converged)`` from the free-function
+    geometric multigrid solve.
+    """
+    from scpn_fusion.core.multigrid_solve import multigrid_solve
+
+    return multigrid_solve(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=tol, max_cycles=max_cycles
+    )
+
+
+def _rust_multigrid_solve(
+    source: Any,
+    psi_bc: Any,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+    nr: int,
+    nz: int,
+    *,
+    tol: float = 1e-6,
+    max_cycles: int = 500,
+) -> Any:
+    """Rust-tier provider for the ``multigrid_solve`` kernel.
+
+    Normalises the Rust result into ``(psi: float64 array, residual, n_cycles,
+    converged)`` so the tier is type-compatible with :func:`_numpy_multigrid_solve`.
+    """
+    import numpy as np
+
+    from scpn_fusion.core._rust_compat import rust_multigrid_vcycle
+
+    result = rust_multigrid_vcycle(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=tol, max_cycles=max_cycles
+    )
+    if result is None:
+        raise RuntimeError("Rust multigrid backend is unavailable.")
+    psi, residual, n_cycles, converged = result
+    return np.asarray(psi, dtype=np.float64), float(residual), int(n_cycles), bool(converged)
+
+
 def _bootstrap_existing_backends() -> None:
     """Register the function-kernels that have Rust and/or NumPy implementations.
 
@@ -549,10 +605,16 @@ def _bootstrap_existing_backends() -> None:
     register_kernel("measure_magnetics", BackendTier.RUST, _rust_measure_magnetics)
     register_kernel("measure_magnetics", BackendTier.NUMPY, _numpy_measure_magnetics)
 
+    # multigrid_solve — canonical contract reconciled (A2 kernel #3). Both tiers
+    # relax the identical toroidal GS* operator with the same Red-Black smoother
+    # and grid transfers, converging to the same fixed point (agreement is
+    # effectively bit-exact on the standard grids). The NumPy tier resolves
+    # dispatch without Rust.
+    register_kernel("multigrid_solve", BackendTier.RUST, _rust_multigrid_solve)
+    register_kernel("multigrid_solve", BackendTier.NUMPY, _numpy_multigrid_solve)
+
     # Remaining function-kernels register the Rust tier only; their NumPy tiers
-    # are reconciled in later A2 kernels (simulate_tearing_mode; multigrid_vcycle
-    # is deferred — no Rust pyfunction exists and the Python V-cycle is not a
-    # convergent standalone solver).
+    # are reconciled in later A2 kernels (simulate_tearing_mode).
     try:
         from scpn_fusion.core._rust_compat import _RUST_AVAILABLE
 
