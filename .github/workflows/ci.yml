@@ -937,9 +937,9 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
       - name: Install cargo-audit
-        run: cargo install cargo-audit
+        run: cargo install cargo-audit --locked
       - name: Run security audit
-        run: cargo audit
+        run: cargo audit --deny warnings
 
   rust-benchmarks:
     name: Rust Benchmarks

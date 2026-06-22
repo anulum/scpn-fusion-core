@@ -1,11 +1,11 @@
 # Minimal runtime dependencies (smoke-install "minimal" profile)
 # Regenerate: uv pip compile requirements/minimal.in --generate-hashes --universal -o requirements/minimal.txt
-click>=8.1
+click>=8.1,<9
 numpy<2.0
-matplotlib
-scipy
-pydantic>=2.0
-pandas>=1.5
+matplotlib>=3.5,<4
+scipy>=1.10,<2
+pydantic>=2.0,<3
+pandas>=1.5,<4
 
 # Dependabot security floor for runtime plotting/image transitive tooling.
 pillow>=12.2.0

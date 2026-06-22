@@ -13,6 +13,6 @@ Pygments>=2.20.0
 idna>=3.15
 pillow>=12.2.0
 pytest>=9.0.3
-requests>=2.33.0
+requests>=2.33.0,<3
 urllib3>=2.7.0
 tornado>=6.5.7

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — cargo-audit configuration
+#
+# `cargo audit --deny warnings` is used in CI so that unmaintained, yanked, and
+# unsound advisories fail the build alongside vulnerabilities. The single ignore
+# below is a transitive, unmaintained-only advisory with no upstream fix path
+# available to this workspace; every other warning class remains a hard failure.
+
+[advisories]
+# RUSTSEC-2024-0436 — `paste` (proc-macro helper) is no longer maintained. It is
+# pulled in transitively only, via `nalgebra`/`simba` and `wgpu-hal`/`metal`;
+# neither exposes a way to drop it without a major upstream change. It is an
+# unmaintained notice, not a vulnerability. Re-audit when nalgebra/wgpu remove it.
+ignore = ["RUSTSEC-2024-0436"]

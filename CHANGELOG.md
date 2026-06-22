@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- Constrained the runtime dependency declarations with upper version bounds
+  (`click`, `matplotlib`, `scipy`, `pydantic`, `pandas`, `requests`) in the
+  project metadata and the minimal, CI, documentation, and full requirement
+  inputs, so the abstract specification matches the pinned lock files.
+- Hardened the Rust dependency audit to fail on unmaintained, yanked, and
+  unsound advisories (`cargo audit --deny warnings`) in both the CI and the
+  scheduled security-audit workflows, with a single documented transitive
+  exception recorded in `scpn-fusion-rs/.cargo/audit.toml`.
 - Added selected CODAC, HIL, replay, flight-simulation, gain-scheduled, and
   fault-tolerant control surfaces to the configured mypy strict cohort, with
   typed actuator/sensor array contracts and numeric action validation.
