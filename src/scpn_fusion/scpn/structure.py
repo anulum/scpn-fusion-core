@@ -452,7 +452,7 @@ class StochasticPetriNet:
 
         _W_in = self.W_in
         _W_out = self.W_out
-        if _W_in is None or _W_out is None:
+        if _W_in is None or _W_out is None:  # pragma: no cover - defensive: set by compile()
             raise RuntimeError("Net must be compiled before verification.")
         W_in_dense: npt.NDArray[np.float64] = (
             _W_in.toarray() if hasattr(_W_in, "toarray") else np.asarray(_W_in)
@@ -480,7 +480,11 @@ class StochasticPetriNet:
                 max_seen = max(max_seen, float(np.max(marking)))
                 min_seen = min(min_seen, float(np.min(marking)))
 
-                if np.any(marking < -1e-9) or np.any(marking > 1.0 + 1e-9):
+                if np.any(
+                    marking < -1e-9
+                ) or np.any(  # pragma: no cover - defensive: post-clip marking stays in [0, 1]
+                    marking > 1.0 + 1e-9
+                ):
                     bounded = False
 
         return {
@@ -509,7 +513,7 @@ class StochasticPetriNet:
 
         _W_in = self.W_in
         _W_out = self.W_out
-        if _W_in is None or _W_out is None:
+        if _W_in is None or _W_out is None:  # pragma: no cover - defensive: set by compile()
             raise RuntimeError("Net must be compiled before verification.")
         W_in_dense: npt.NDArray[np.float64] = (
             _W_in.toarray() if hasattr(_W_in, "toarray") else np.asarray(_W_in)

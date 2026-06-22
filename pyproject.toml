@@ -190,6 +190,7 @@ files = [
     "tests/test_nuclear_wall_interaction.py",
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",
+    "tests/test_structure.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",
