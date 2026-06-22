@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Added a bandit static-analysis gate to the pre-commit hook set and triaged the
+  existing findings: subprocess list-argv calls (used to orchestrate the external
+  physics codes, native builds, git, and the dashboard) are skipped at the policy
+  level while the dangerous shell variant stays flagged, and the remaining XML,
+  pickle, partial-path, and confirmation-token findings carry inline justifications.
 - Constrained the runtime dependency declarations with upper version bounds
   (`click`, `matplotlib`, `scipy`, `pydantic`, `pandas`, `requests`) in the
   project metadata and the minimal, CI, documentation, and full requirement

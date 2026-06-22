@@ -61,7 +61,7 @@ def _resolve_git_sha() -> str:
 
     try:
         repo_root = Path(__file__).resolve().parents[3]
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B607  # git from PATH by design; fixed argv, no shell
             ["git", "rev-parse", "--short", "HEAD"],
             cwd=repo_root,
             check=True,

@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 import logging
-import pickle
+import pickle  # nosec B403  # locally-produced torch checkpoints only
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path

@@ -21,7 +21,7 @@ References
 from __future__ import annotations
 
 import time
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec B405  # XML is generated here, never parsed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping

@@ -24,7 +24,7 @@ import click
 LOGGER = logging.getLogger("scpn_fusion.cli")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODE_TIMEOUT_SECONDS = 1800.0
-EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"
+EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"  # nosec B105  # confirmation token
 
 
 @dataclass(frozen=True)

@@ -35,6 +35,12 @@ repos:
         entry: python tools/check_packaging_contract.py
         language: system
         pass_filenames: false
+      - id: bandit
+        name: bandit security scan
+        entry: bandit -r src/scpn_fusion -c pyproject.toml -q
+        language: system
+        pass_filenames: false
+        files: ^src/scpn_fusion/.*\.py$
       - id: cargo-fmt-check
         name: cargo fmt --check
         entry: bash -c "cd scpn-fusion-rs && cargo fmt --all --check"

@@ -561,7 +561,12 @@ ignore = [
 "validation/benchmark_vs_freegs.py" = ["F401"]
 
 [tool.bandit]
-skips = ["B101", "B311"]
+# B101 (assert) and B311 (non-crypto random) are intentional throughout the
+# scientific code. B404/B603 cover importing and calling subprocess with a list
+# argv and shell disabled — the deliberate pattern for orchestrating external
+# physics codes (GENE/GS2/CGYRO/TGLF), native builds, git, and the dashboard;
+# the genuinely dangerous shell=True variant is still caught by B602.
+skips = ["B101", "B311", "B404", "B603"]
 exclude_dirs = ["tests", "notebooks", "validation"]
 
 [tool.coverage.run]
