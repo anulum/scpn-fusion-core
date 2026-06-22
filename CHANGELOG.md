@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Bounded the first-order actuator delay line to a fixed-length ring buffer
+  (`deque(maxlen=delay_steps + 1)`), removing unbounded memory growth across a
+  shot while keeping the delayed-measurement behaviour identical, and routed the
+  free-boundary tracking actuator-buffer rewrites through a new
+  `FirstOrderActuator.set_delay_buffer` that owns the bound.
 - Added an Atheris fuzz harness for the compiled spiking-controller artifact
   loader, exercising the UTF-8/JSON parse, raw-schema validation, weight parsing,
   and zlib/base64 compact packed-weight decode boundaries, with entrypoint smoke

@@ -286,6 +286,34 @@ def test_first_order_actuator_measurement_without_noise() -> None:
     assert np.isfinite(act.get_measurement())
 
 
+def test_first_order_actuator_enforces_rate_limit() -> None:
+    """A command exceeding the per-step slew budget is rate-limited to max_du."""
+    act = FirstOrderActuator(tau_s=0.001, dt_s=1.0, u_min=-10.0, u_max=10.0, rate_limit=0.1)
+    out = act.step(10.0)
+    assert out == pytest.approx(0.1)  # max_du = rate_limit * dt_s
+
+
+def test_first_order_actuator_set_delay_buffer_is_bounded() -> None:
+    """set_delay_buffer keeps the delay line bounded regardless of input length."""
+    act = FirstOrderActuator(
+        tau_s=0.05, dt_s=0.05, u_min=-1.0, u_max=1.0, rate_limit=10.0, delay_steps=2
+    )
+    act.set_delay_buffer([1.0] * 50)
+    assert len(act._delay_buffer) == act.delay_steps + 1
+    assert act.get_measurement() == 1.0
+
+
+def test_first_order_actuator_delay_buffer_stays_bounded() -> None:
+    """The actuator delay buffer stays length-bounded across a long shot."""
+    act = FirstOrderActuator(
+        tau_s=0.05, dt_s=0.05, u_min=-1.0, u_max=1.0, rate_limit=10.0, delay_steps=3
+    )
+    for _ in range(5000):
+        act.step(0.5)
+    assert len(act._delay_buffer) <= act.delay_steps + 1
+    assert np.isfinite(act.get_measurement())
+
+
 def test_run_flight_sim_resolves_default_config(monkeypatch: pytest.MonkeyPatch) -> None:
     """A null config path is resolved to the default ITER configuration."""
     seen: list[str] = []

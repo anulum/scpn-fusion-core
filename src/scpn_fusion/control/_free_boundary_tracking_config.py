@@ -213,8 +213,8 @@ class _FreeBoundaryTrackingConfigMixin(_FreeBoundaryTrackingState):
                 rate_limit=float(self.coil_slew_limits[idx]),
             )
             actuator.state = float(self.coils.currents[idx])
-            actuator._delay_buffer = [float(self.coils.currents[idx])] * max(
-                actuator.delay_steps, 1
+            actuator.set_delay_buffer(
+                [float(self.coils.currents[idx])] * max(actuator.delay_steps, 1)
             )
             actuators.append(actuator)
         return actuators
@@ -233,13 +233,13 @@ class _FreeBoundaryTrackingConfigMixin(_FreeBoundaryTrackingState):
             raise ValueError("actuator snapshot count must match the number of coils.")
         for actuator, snapshot in zip(self._coil_actuators, snapshots):
             actuator.state = float(snapshot.state)
-            actuator._delay_buffer = [float(v) for v in snapshot.delay_buffer]
+            actuator.set_delay_buffer(float(v) for v in snapshot.delay_buffer)
 
     def _sync_actuators_from_coils(self) -> None:
         for idx, actuator in enumerate(self._coil_actuators):
             current = float(self.coils.currents[idx])
             actuator.state = current
-            actuator._delay_buffer = [current] * max(actuator.delay_steps, 1)
+            actuator.set_delay_buffer([current] * max(actuator.delay_steps, 1))
 
     def _build_target_vector(self) -> tuple[FloatArray, tuple[_ObjectiveBlock, ...]]:
         values: list[float] = []

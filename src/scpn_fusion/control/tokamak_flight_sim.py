@@ -10,6 +10,8 @@
 from __future__ import annotations
 
 import logging
+from collections import deque
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
@@ -81,7 +83,11 @@ class FirstOrderActuator:
         self.delay_steps = int(delay_steps)
         self._rng = np.random.default_rng(rng_seed)
         self.state = 0.0
-        self._delay_buffer: list[float] = [0.0] * max(self.delay_steps, 1)
+        # Bounded ring buffer: holding delay_steps + 1 samples is sufficient for
+        # the tail-indexed delayed read and keeps memory flat across a long shot.
+        self._delay_buffer: deque[float] = deque(
+            [0.0] * max(self.delay_steps, 1), maxlen=self.delay_steps + 1
+        )
 
     def step(self, command: float) -> float:
         """Apply command through actuator dynamics with rate limiting."""
@@ -112,6 +118,10 @@ class FirstOrderActuator:
             noise = float(self._rng.normal(0.0, self.sensor_noise_std))
             return delayed + noise
         return delayed
+
+    def set_delay_buffer(self, values: Iterable[float]) -> None:
+        """Replace the delay line with *values*, keeping it length-bounded."""
+        self._delay_buffer = deque(values, maxlen=self.delay_steps + 1)
 
 
 class IsoFluxController:
