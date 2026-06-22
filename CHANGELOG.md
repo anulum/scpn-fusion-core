@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Corrected the geometric multigrid V-cycle smoother to relax with a near-unity
+  Red-Black Gauss-Seidel factor (omega 1.0) rather than the over-relaxed
+  standalone-SOR factor (1.8); over-relaxation is a poor smoother and roughly
+  tripled the cycle count. The grid-independent cycle count drops from ~20 to
+  ~6-7 (33-257 grids), and the kernel no longer propagates its outer SOR omega
+  into the multigrid smoother.
 - Bounded the first-order actuator delay line to a fixed-length ring buffer
   (`deque(maxlen=delay_steps + 1)`), removing unbounded memory growth across a
   shot while keeping the delayed-measurement behaviour identical, and routed the

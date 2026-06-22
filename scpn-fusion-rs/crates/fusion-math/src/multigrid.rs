@@ -34,7 +34,15 @@ pub struct MultigridConfig {
     pub pre_smooth: usize,
     /// Number of post-smoothing SOR sweeps (default: 3)
     pub post_smooth: usize,
-    /// SOR relaxation parameter (default: 1.8)
+    /// Relaxation factor for the Red-Black smoother sweeps (default: 1.0).
+    ///
+    /// This is the multigrid *smoother* omega, whose job is to damp the
+    /// high-frequency error the coarse grids cannot represent; near-unity
+    /// Red-Black Gauss-Seidel (omega ~ 1.0) has the best smoothing factor here.
+    /// It is deliberately NOT the over-relaxed omega (~1.8) that minimises a
+    /// *standalone* SOR solve: over-relaxation is a poor smoother and roughly
+    /// triples the V-cycle count (measured 6-7 cycles at omega 1.0 versus 19-21
+    /// at omega 1.8, grid-independent on 33-257 grids).
     pub omega: f64,
     /// Number of coarsest-level SOR sweeps (default: 50)
     pub coarse_iters: usize,
@@ -47,7 +55,7 @@ impl Default for MultigridConfig {
         MultigridConfig {
             pre_smooth: 3,
             post_smooth: 3,
-            omega: 1.8,
+            omega: 1.0,
             coarse_iters: 50,
             min_grid_size: 5,
         }
@@ -343,8 +351,44 @@ mod tests {
             result.residual, result.cycles
         );
         assert!(
-            result.cycles < 20,
-            "Should converge in fewer than 20 cycles"
+            result.cycles < 12,
+            "Should converge in fewer than 12 cycles, got {}",
+            result.cycles
+        );
+    }
+
+    #[test]
+    fn test_multigrid_cycle_count_is_grid_independent_and_small() {
+        // A correct geometric V-cycle converges in O(10) cycles independent of
+        // grid size. The near-unity smoother omega keeps this at ~6-7 cycles on
+        // 33-129; a regression to an over-relaxed smoother omega (~1.8) would
+        // push it to ~20 and break the grid-independence bound below.
+        let mut counts = Vec::new();
+        for n in [33_usize, 65, 129] {
+            let grid = Grid2D::new(n, n, 1.0, 9.0, -5.0, 5.0);
+            let mut psi = Array2::zeros((n, n));
+            let source = Array2::from_elem((n, n), -1.0);
+            let result = multigrid_solve(
+                &mut psi,
+                &source,
+                &grid,
+                &MultigridConfig::default(),
+                40,
+                1e-8,
+            );
+            assert!(result.converged, "n={n} must converge");
+            assert!(
+                result.cycles < 12,
+                "n={n} took {} cycles (smoother regression?)",
+                result.cycles
+            );
+            counts.push(result.cycles);
+        }
+        let max = *counts.iter().max().unwrap();
+        let min = *counts.iter().min().unwrap();
+        assert!(
+            max - min <= 2,
+            "cycle count not grid-independent: {counts:?}"
         );
     }
 

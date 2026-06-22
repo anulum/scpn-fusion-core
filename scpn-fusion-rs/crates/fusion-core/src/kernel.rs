@@ -619,10 +619,11 @@ impl FusionKernel {
                     }
                 }
                 SolverMethod::PicardMultigrid => {
-                    let mg_cfg = MultigridConfig {
-                        omega: inner_omega,
-                        ..MultigridConfig::default()
-                    };
+                    // The multigrid smoother keeps its own near-unity omega (a good
+                    // high-frequency smoother); the over-relaxed outer SOR omega
+                    // (`inner_omega`) is a poor smoother and roughly triples the
+                    // V-cycle count, so it is not propagated into the smoother here.
+                    let mg_cfg = MultigridConfig::default();
                     if inner_sweeps > 1 {
                         let mg_result = multigrid_solve(
                             &mut psi_new,
