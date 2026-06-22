@@ -77,6 +77,18 @@ except ImportError:
     _rust_shafranov_bv = cast(Any, None)
     _HAS_RUST_SHAFRANOV = False
 
+_HAS_RUST_COIL = False
+_rust_solve_coil_currents: Any = None
+try:
+    from scpn_fusion_rs import solve_coil_currents as _rust_solve_coil_currents_import
+
+    _rust_solve_coil_currents = _rust_solve_coil_currents_import
+
+    _HAS_RUST_COIL = True
+except ImportError:
+    _rust_solve_coil_currents = cast(Any, None)
+    _HAS_RUST_COIL = False
+
 _HAS_RUST_TEARING = False
 _rust_tearing: Any = None
 try:
@@ -520,6 +532,46 @@ class TestVacuumFieldParity:
         # must match the NumPy free-function defaults.
         bv_default = _rust_shafranov_bv(6.2, 2.0, 15.0)[0]
         assert bv_default == py_shafranov_bv(6.2, 2.0, 15.0)
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_COIL,
+        reason="Rust solve_coil_currents not exposed via PyO3",
+    )
+    def test_solve_coil_currents_scalar_parity(self) -> None:
+        """Coil currents are tolerance-aware equivalent across the Rust/NumPy tiers.
+
+        Both backends use the identical direct minimum-norm/ridge closed form, but
+        the Green's-norm reduction (Σg²) is not bit-reproducible across a
+        sequential Rust sum and NumPy's ``dot``, so parity is asserted to a tight
+        relative tolerance rather than bit-for-bit. (Contrast ``shafranov_bv``,
+        which has no reduction and is bit-exact.)
+        """
+        from scpn_fusion.control.analytic_solver import solve_coil_currents as py_solve
+
+        # (green_func, target_bv, ridge_lambda)
+        cases = [
+            ([0.01, 0.02, 0.015, 0.005, 0.01], -0.05, 0.0),
+            ([1.0, 1.0], 1.0, 0.0),
+            ([0.01, 0.02, 0.015, 0.005, 0.01], -0.05, 1e-3),
+            ([0.2, -0.1, 0.05], 0.3, 5e-2),
+            ([0.3, 0.1], -0.04, 0.0),
+        ]
+        for green, target, ridge in cases:
+            currents_rs = np.asarray(
+                _rust_solve_coil_currents(list(green), target, ridge), dtype=np.float64
+            )
+            currents_py = py_solve(green, target, ridge_lambda=ridge)
+            np.testing.assert_allclose(
+                currents_rs,
+                currents_py,
+                rtol=1e-12,
+                atol=1e-15,
+                err_msg=f"coil-current parity broken at {(green, target, ridge)}",
+            )
+
+        # The pyfunction's ridge default (0.0) matches the NumPy free-function default.
+        default_rs = np.asarray(_rust_solve_coil_currents([0.3, 0.1], -0.04), dtype=np.float64)
+        np.testing.assert_allclose(default_rs, py_solve([0.3, 0.1], -0.04), rtol=1e-12, atol=1e-15)
 
 
 # ── 4. Transport Solver Parity ──────────────────────────────────────

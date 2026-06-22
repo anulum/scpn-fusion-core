@@ -647,9 +647,18 @@ fn shafranov_bv(
 }
 
 /// Minimum-norm coil current solver.
+///
+/// `ridge_lambda` (default 0.0) adds Tikhonov regularisation; the result is
+/// bit-exact with the NumPy tier
+/// (`scpn_fusion.control.analytic_solver.solve_coil_currents`).
 #[pyfunction]
-fn solve_coil_currents(green_func: Vec<f64>, target_bv: f64) -> PyResult<Vec<f64>> {
-    fusion_control::analytic::solve_coil_currents(&green_func, target_bv)
+#[pyo3(signature = (green_func, target_bv, ridge_lambda = 0.0))]
+fn solve_coil_currents(
+    green_func: Vec<f64>,
+    target_bv: f64,
+    ridge_lambda: f64,
+) -> PyResult<Vec<f64>> {
+    fusion_control::analytic::solve_coil_currents(&green_func, target_bv, ridge_lambda)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
 }
 

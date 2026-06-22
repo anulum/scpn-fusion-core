@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+- Reconciled the `solve_coil_currents` function-kernel into a single canonical
+  contract across the Rust and NumPy tiers. The minimum-norm/ridge linear solve
+  is extracted into a free function `analytic_solver.solve_coil_currents(green_func,
+  target_bv, *, ridge_lambda)` that `AnalyticEquilibriumSolver.solve_coil_currents`
+  delegates to, and the Rust `analytic::solve_coil_currents` gains a matching
+  `ridge_lambda` parameter so both tiers share the direct closed form
+  `I_i = g_i·target / (Σg² + λ)`. Registered both tiers in `_multi_compat` (NumPy
+  unconditional). Cross-backend agreement is tolerance-aware rather than bit-exact
+  because the Green's-norm reduction is summed sequentially in Rust but via
+  `numpy.dot` in NumPy; the parity test asserts a tight relative tolerance.
 - Reconciled the `shafranov_bv` function-kernel into a single canonical contract
   across the Rust and NumPy tiers. The vertical-field force-balance physics now
   lives in one place — a free function `analytic_solver.shafranov_bv(r_geo,

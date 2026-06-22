@@ -447,6 +447,41 @@ def _rust_shafranov_bv(
     return float(bv)
 
 
+def _numpy_solve_coil_currents(
+    green_func: Any,
+    target_bv: float,
+    *,
+    ridge_lambda: float = 0.0,
+) -> Any:
+    """NumPy-tier provider for the ``solve_coil_currents`` kernel."""
+    from scpn_fusion.control.analytic_solver import solve_coil_currents
+
+    return solve_coil_currents(green_func, target_bv, ridge_lambda=ridge_lambda)
+
+
+def _rust_solve_coil_currents(
+    green_func: Any,
+    target_bv: float,
+    *,
+    ridge_lambda: float = 0.0,
+) -> Any:
+    """Rust-tier provider for the ``solve_coil_currents`` kernel.
+
+    Wraps the Rust list result back into a float64 array so the tier is
+    type-compatible with :func:`_numpy_solve_coil_currents`.
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import solve_coil_currents as _rs_solve_coil_currents
+
+    coils = _rs_solve_coil_currents(
+        np.asarray(green_func, dtype=np.float64).tolist(),
+        float(target_bv),
+        float(ridge_lambda),
+    )
+    return np.asarray(coils, dtype=np.float64)
+
+
 def _bootstrap_existing_backends() -> None:
     """Register the function-kernels that have Rust and/or NumPy implementations.
 
@@ -461,21 +496,26 @@ def _bootstrap_existing_backends() -> None:
     register_kernel("shafranov_bv", BackendTier.RUST, _rust_shafranov_bv)
     register_kernel("shafranov_bv", BackendTier.NUMPY, _numpy_shafranov_bv)
 
+    # solve_coil_currents — canonical contract reconciled (A2 kernel #2). Both
+    # tiers share the direct minimum-norm/ridge formula (tolerance-aware across
+    # the Green's-norm reduction), and the NumPy tier resolves dispatch without
+    # Rust.
+    register_kernel("solve_coil_currents", BackendTier.RUST, _rust_solve_coil_currents)
+    register_kernel("solve_coil_currents", BackendTier.NUMPY, _numpy_solve_coil_currents)
+
     # Remaining function-kernels register the Rust tier only; their NumPy tiers
-    # are reconciled in later A2 kernels (solve_coil_currents, multigrid_vcycle,
-    # measure_magnetics, simulate_tearing_mode).
+    # are reconciled in later A2 kernels (multigrid_vcycle, measure_magnetics,
+    # simulate_tearing_mode).
     try:
         from scpn_fusion.core._rust_compat import _RUST_AVAILABLE
 
         if _RUST_AVAILABLE:
             from scpn_fusion.core._rust_compat import (
-                rust_solve_coil_currents,
                 rust_measure_magnetics,
                 rust_simulate_tearing_mode,
                 rust_multigrid_vcycle,
             )
 
-            register_kernel("solve_coil_currents", BackendTier.RUST, rust_solve_coil_currents)
             register_kernel("measure_magnetics", BackendTier.RUST, rust_measure_magnetics)
             register_kernel(
                 "simulate_tearing_mode",

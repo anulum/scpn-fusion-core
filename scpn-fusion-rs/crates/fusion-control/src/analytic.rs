@@ -92,9 +92,21 @@ pub fn shafranov_bv(
 ///
 /// `green_func`: Bz contribution per coil per MA [T/MA].
 /// `target_bv`: required vertical field [T].
+/// `ridge_lambda`: Tikhonov regularisation added to `G·Gᵀ`; negative values are
+/// clamped to zero (plain minimum norm).
 ///
-/// Returns minimum-norm coil currents [MA].
-pub fn solve_coil_currents(green_func: &[f64], target_bv: f64) -> FusionResult<Vec<f64>> {
+/// Returns minimum-norm coil currents [MA]. Canonical contract shared with the
+/// NumPy tier (`scpn_fusion.control.analytic_solver.solve_coil_currents`): the
+/// direct closed form `Iᵢ = gᵢ·target_bv / (Σgⱼ² + λ)`, including the
+/// `(Σg² + λ).max(1e-12)` ridge floor and the small-norm rejection in the
+/// unregularised case. Agreement with the NumPy tier is tolerance-aware (not
+/// bit-exact): the `Σg²` reduction is summed sequentially here but via `numpy.dot`
+/// in NumPy, which can differ by a unit in the last place.
+pub fn solve_coil_currents(
+    green_func: &[f64],
+    target_bv: f64,
+    ridge_lambda: f64,
+) -> FusionResult<Vec<f64>> {
     if green_func.is_empty() {
         return Err(FusionError::ConfigError(
             "analytic green_func must be non-empty".to_string(),
@@ -110,18 +122,28 @@ pub fn solve_coil_currents(green_func: &[f64], target_bv: f64) -> FusionResult<V
             "analytic target_bv must be finite".to_string(),
         ));
     }
-
-    // Minimum-norm solution for underdetermined G·I = target_bv
-    // I = G^T · (G·G^T)^{-1} · target_bv
-    let ggt: f64 = green_func.iter().map(|g| g * g).sum();
-
-    if ggt.abs() < 1e-20 {
+    if !ridge_lambda.is_finite() {
         return Err(FusionError::ConfigError(
-            "analytic green_func norm is too small for a stable solve".to_string(),
+            "analytic ridge_lambda must be finite".to_string(),
         ));
     }
 
-    let scale = target_bv / ggt;
+    // Minimum-norm solution for underdetermined G·I = target_bv
+    // I = Gᵀ · (G·Gᵀ + λ)^{-1} · target_bv
+    let lam = ridge_lambda.max(0.0);
+    let ggt: f64 = green_func.iter().map(|g| g * g).sum();
+    let denom = if lam > 0.0 {
+        (ggt + lam).max(1e-12)
+    } else {
+        if ggt < 1e-20 {
+            return Err(FusionError::ConfigError(
+                "analytic green_func norm is too small for a stable solve".to_string(),
+            ));
+        }
+        ggt
+    };
+
+    let scale = target_bv / denom;
     Ok(green_func.iter().map(|g| g * scale).collect())
 }
 
@@ -161,7 +183,8 @@ mod tests {
     fn test_coil_currents_solve() {
         let green = vec![0.01, 0.02, 0.015, 0.005, 0.01];
         let target_bv = -0.05; // Tesla
-        let currents = solve_coil_currents(&green, target_bv).expect("valid coil solve inputs");
+        let currents =
+            solve_coil_currents(&green, target_bv, 0.0).expect("valid coil solve inputs");
         // Verify: sum(G_i * I_i) ≈ target_bv
         let bv_check: f64 = green.iter().zip(&currents).map(|(g, i)| g * i).sum();
         assert!(
@@ -171,10 +194,29 @@ mod tests {
     }
 
     #[test]
+    fn test_coil_currents_ridge_shrinks_currents() {
+        // Ridge regularisation increases the denominator, so |I| shrinks and the
+        // projected field undershoots the target relative to the plain solve.
+        let green = vec![0.01, 0.02, 0.015, 0.005, 0.01];
+        let target_bv = -0.05;
+        let plain = solve_coil_currents(&green, target_bv, 0.0).expect("valid plain solve");
+        let ridged = solve_coil_currents(&green, target_bv, 1e-3).expect("valid ridge solve");
+        let norm = |v: &[f64]| v.iter().map(|x| x * x).sum::<f64>().sqrt();
+        assert!(
+            norm(&ridged) < norm(&plain),
+            "ridge should shrink the current norm"
+        );
+        // Negative ridge clamps to zero, reproducing the plain solve bit-for-bit.
+        let clamped = solve_coil_currents(&green, target_bv, -5.0).expect("clamped ridge solve");
+        assert_eq!(clamped, plain);
+    }
+
+    #[test]
     fn test_coil_currents_minimum_norm() {
         let green = vec![1.0, 1.0];
         let target_bv = 1.0;
-        let currents = solve_coil_currents(&green, target_bv).expect("valid coil solve inputs");
+        let currents =
+            solve_coil_currents(&green, target_bv, 0.0).expect("valid coil solve inputs");
         // Minimum norm: both currents should be 0.5
         assert!(
             (currents[0] - 0.5).abs() < 1e-10,
@@ -198,10 +240,13 @@ mod tests {
         // Non-finite shaping parameters are rejected.
         assert!(shafranov_bv(6.2, 2.0, 15.0, f64::NAN, LI).is_err());
         assert!(shafranov_bv(6.2, 2.0, 15.0, BETA_P, f64::INFINITY).is_err());
-        assert!(solve_coil_currents(&[], -0.05).is_err());
-        assert!(solve_coil_currents(&[0.0, 0.0], -0.05).is_err());
-        assert!(solve_coil_currents(&[0.01, f64::NAN], -0.05).is_err());
-        assert!(solve_coil_currents(&[0.01, 0.02], f64::INFINITY).is_err());
+        assert!(solve_coil_currents(&[], -0.05, 0.0).is_err());
+        assert!(solve_coil_currents(&[0.0, 0.0], -0.05, 0.0).is_err());
+        assert!(solve_coil_currents(&[0.01, f64::NAN], -0.05, 0.0).is_err());
+        assert!(solve_coil_currents(&[0.01, 0.02], f64::INFINITY, 0.0).is_err());
+        assert!(solve_coil_currents(&[0.01, 0.02], -0.05, f64::NAN).is_err());
+        // A zero-norm Green's vector is solvable once a positive ridge is present.
+        assert!(solve_coil_currents(&[0.0, 0.0], -0.05, 1e-6).is_ok());
     }
 
     #[test]

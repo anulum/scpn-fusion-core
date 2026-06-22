@@ -19,6 +19,7 @@ from scpn_fusion.control.analytic_solver import (
     AnalyticEquilibriumSolver,
     run_analytic_solver,
     shafranov_bv,
+    solve_coil_currents,
 )
 
 
@@ -129,6 +130,57 @@ def test_solve_coil_currents_hits_target_bv_projection() -> None:
         dtype=np.float64,
     )
     np.testing.assert_allclose(applied, currents, rtol=0.0, atol=0.0)
+
+
+def test_solve_coil_currents_free_function_minimum_norm() -> None:
+    """A uniform Green's vector splits the target field evenly (minimum norm)."""
+    np.testing.assert_allclose(
+        solve_coil_currents([1.0, 1.0], 1.0), [0.5, 0.5], rtol=0.0, atol=1e-15
+    )
+
+
+def test_solve_coil_currents_free_function_projection_hits_target() -> None:
+    """The recovered currents reproduce the target field under G·I."""
+    green = np.array([0.01, 0.02, 0.015, 0.005, 0.01], dtype=np.float64)
+    currents = solve_coil_currents(green, -0.05)
+    assert float(np.dot(green, currents)) == pytest.approx(-0.05, rel=1e-12)
+
+
+def test_solve_coil_currents_ridge_shrinks_norm_and_clamps_negative() -> None:
+    """Positive ridge shrinks the current norm; negative ridge clamps to zero."""
+    green = np.array([0.01, 0.02, 0.015, 0.005, 0.01], dtype=np.float64)
+    plain = solve_coil_currents(green, -0.05, ridge_lambda=0.0)
+    ridged = solve_coil_currents(green, -0.05, ridge_lambda=1e-3)
+    assert float(np.linalg.norm(ridged)) < float(np.linalg.norm(plain))
+    np.testing.assert_array_equal(solve_coil_currents(green, -0.05, ridge_lambda=-5.0), plain)
+
+
+def test_solve_coil_currents_method_delegates_to_free_function() -> None:
+    """The solver method routes the linear solve through the free function."""
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    eff = solver.compute_coil_efficiencies(6.2, target_Z=0.0)
+    method_currents = solver.solve_coil_currents(-0.02, 6.2, target_Z=0.0)
+    np.testing.assert_array_equal(method_currents, solve_coil_currents(eff, -0.02))
+
+
+@pytest.mark.parametrize(
+    ("green", "target", "ridge"),
+    [
+        ([], -0.05, 0.0),
+        ([0.01, float("nan")], -0.05, 0.0),
+        ([0.01, 0.02], float("inf"), 0.0),
+        ([0.01, 0.02], -0.05, float("nan")),
+        ([0.0, 0.0], -0.05, 0.0),
+    ],
+)
+def test_solve_coil_currents_rejects_invalid_inputs(
+    green: list[float], target: float, ridge: float
+) -> None:
+    """Empty/non-finite Green's vectors, non-finite targets/ridge, and a
+    zero-norm unregularised solve are all rejected.
+    """
+    with pytest.raises(ValueError):
+        solve_coil_currents(green, target, ridge_lambda=ridge)
 
 
 def test_run_analytic_solver_returns_deterministic_summary_without_write() -> None:

@@ -12,6 +12,7 @@ import sys
 import types
 from collections.abc import Iterator
 
+import numpy as np
 import pytest
 
 from scpn_fusion.core import _multi_compat as multi
@@ -210,4 +211,70 @@ def test_rust_shafranov_bv_provider_matches_reference() -> None:
     assert multi._rust_shafranov_bv(6.2, 2.0, 15.0) == reference(6.2, 2.0, 15.0)
     assert multi._rust_shafranov_bv(3.0, 1.0, 8.0, beta_p=0.9, li=0.6) == reference(
         3.0, 1.0, 8.0, beta_p=0.9, li=0.6
+    )
+
+
+def test_solve_coil_currents_bootstrap_registers_both_tiers() -> None:
+    """The function bootstrap registers Rust and NumPy tiers for solve_coil_currents."""
+    tiers = multi.registered_kernels().get("solve_coil_currents")
+    assert tiers is not None
+    names = {tier.rstrip("*") for tier in tiers}
+    assert "numpy" in names
+    assert "rust" in names
+
+
+def test_numpy_solve_coil_currents_provider_matches_reference() -> None:
+    """The NumPy-tier provider returns the canonical free-function currents."""
+    from scpn_fusion.control.analytic_solver import solve_coil_currents as reference
+
+    green = [0.01, 0.02, 0.015]
+    np.testing.assert_array_equal(
+        multi._numpy_solve_coil_currents(green, -0.05), reference(green, -0.05)
+    )
+    np.testing.assert_array_equal(
+        multi._numpy_solve_coil_currents(green, -0.05, ridge_lambda=1e-3),
+        reference(green, -0.05, ridge_lambda=1e-3),
+    )
+
+
+def test_solve_coil_currents_dispatch_resolves_to_numpy_without_rust(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With Rust unavailable, dispatch falls to the NumPy coil-current tier."""
+    from scpn_fusion.control.analytic_solver import solve_coil_currents as reference
+
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.RUST, False)
+    with multi._registry_lock:
+        multi._dispatch_cache.pop("solve_coil_currents", None)
+    try:
+        impl = multi.dispatch("solve_coil_currents")
+        assert multi.dispatch_tier("solve_coil_currents") == "numpy"
+        np.testing.assert_array_equal(impl([0.01, 0.02], -0.03), reference([0.01, 0.02], -0.03))
+    finally:
+        with multi._registry_lock:
+            multi._dispatch_cache.pop("solve_coil_currents", None)
+
+
+def test_rust_solve_coil_currents_provider_matches_reference() -> None:
+    """When Rust is built, its tier is tolerance-aware equivalent to the NumPy tier.
+
+    The Green's-norm reduction is not bit-reproducible across the backends, so a
+    tight relative tolerance is used rather than exact equality.
+    """
+    pytest.importorskip("scpn_fusion_rs")
+    from scpn_fusion.control.analytic_solver import solve_coil_currents as reference
+
+    green = [0.01, 0.02, 0.015, 0.005, 0.01]
+    np.testing.assert_allclose(
+        multi._rust_solve_coil_currents(green, -0.05),
+        reference(green, -0.05),
+        rtol=1e-12,
+        atol=1e-15,
+    )
+    np.testing.assert_allclose(
+        multi._rust_solve_coil_currents(green, -0.05, ridge_lambda=1e-3),
+        reference(green, -0.05, ridge_lambda=1e-3),
+        rtol=1e-12,
+        atol=1e-15,
     )
