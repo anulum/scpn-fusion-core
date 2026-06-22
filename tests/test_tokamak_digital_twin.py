@@ -9,11 +9,15 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
 
 from scpn_fusion.control.tokamak_digital_twin import (
+    _resolve_rng,
     run_digital_twin,
+    run_digital_twin_ids,
     run_digital_twin_ids_history,
     run_digital_twin_ids_pulse,
 )
@@ -28,6 +32,7 @@ from scpn_fusion.io.imas_connector import (
 
 
 def test_run_digital_twin_returns_finite_summary_without_plot() -> None:
+    """The twin run returns a finite, complete summary without plotting."""
     summary = run_digital_twin(
         time_steps=24,
         seed=123,
@@ -61,7 +66,8 @@ def test_run_digital_twin_returns_finite_summary_without_plot() -> None:
 
 
 def test_run_digital_twin_chaos_monkey_is_deterministic_for_fixed_seed() -> None:
-    kwargs = dict(
+    """Chaos-monkey runs replay identically for a fixed seed."""
+    kwargs: dict[str, Any] = dict(
         time_steps=20,
         seed=77,
         save_plot=False,
@@ -76,6 +82,7 @@ def test_run_digital_twin_chaos_monkey_is_deterministic_for_fixed_seed() -> None
 
 
 def test_run_digital_twin_chaos_monkey_full_dropout_counts_all_channels() -> None:
+    """Full sensor dropout counts every channel at every step."""
     steps = 7
     summary = run_digital_twin(
         time_steps=steps,
@@ -101,8 +108,9 @@ def test_run_digital_twin_chaos_monkey_full_dropout_counts_all_channels() -> Non
     ],
 )
 def test_run_digital_twin_rejects_invalid_chaos_monkey_controls(
-    kwargs: dict[str, object], msg: str
+    kwargs: dict[str, Any], msg: str
 ) -> None:
+    """Out-of-range chaos-monkey controls are rejected."""
     with pytest.raises(ValueError, match=msg):
         run_digital_twin(
             time_steps=4,
@@ -115,6 +123,7 @@ def test_run_digital_twin_rejects_invalid_chaos_monkey_controls(
 
 
 def test_run_digital_twin_is_deterministic_for_fixed_seed() -> None:
+    """A fixed seed reproduces the run summary."""
     a = run_digital_twin(time_steps=20, seed=77, save_plot=False, verbose=False)
     b = run_digital_twin(time_steps=20, seed=77, save_plot=False, verbose=False)
     assert a["final_avg_temp"] == b["final_avg_temp"]
@@ -125,6 +134,7 @@ def test_run_digital_twin_is_deterministic_for_fixed_seed() -> None:
 
 
 def test_ids_roundtrip_preserves_core_digital_twin_fields() -> None:
+    """The IMAS round-trip preserves the core twin fields."""
     summary = run_digital_twin(time_steps=18, seed=5, save_plot=False, verbose=False)
     ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
     recovered = ids_to_digital_twin_summary(ids_payload)
@@ -139,6 +149,7 @@ def test_ids_roundtrip_preserves_core_digital_twin_fields() -> None:
 def test_ids_to_digital_twin_summary_rejects_invalid_time_slice_time(
     bad_time_s: float,
 ) -> None:
+    """An invalid time-slice time is rejected on IDS ingest."""
     summary = run_digital_twin(time_steps=12, seed=3, save_plot=False, verbose=False)
     ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
     ids_payload["time_slice"]["time_s"] = bad_time_s
@@ -159,8 +170,9 @@ def test_digital_twin_summary_to_ids_rejects_invalid_metadata(
     patch: dict[str, object],
     msg: str,
 ) -> None:
+    """Invalid IDS metadata is rejected on export."""
     summary = run_digital_twin(time_steps=12, seed=31, save_plot=False, verbose=False)
-    kwargs: dict[str, object] = {"machine": "ITER", "shot": 1, "run": 2}
+    kwargs: dict[str, Any] = {"machine": "ITER", "shot": 1, "run": 2}
     kwargs.update(patch)
     with pytest.raises(ValueError, match=msg):
         digital_twin_summary_to_ids(summary, **kwargs)
@@ -180,6 +192,7 @@ def test_digital_twin_summary_to_ids_rejects_invalid_summary_fields(
     summary_patch: dict[str, object],
     msg: str,
 ) -> None:
+    """Invalid summary fields are rejected on IDS export."""
     summary = run_digital_twin(time_steps=12, seed=32, save_plot=False, verbose=False)
     summary.update(summary_patch)
     with pytest.raises(ValueError, match=msg):
@@ -187,6 +200,7 @@ def test_digital_twin_summary_to_ids_rejects_invalid_summary_fields(
 
 
 def test_ids_to_digital_twin_summary_rejects_non_ms_time_slice_time() -> None:
+    """A non-millisecond time-slice time is rejected."""
     summary = run_digital_twin(time_steps=12, seed=33, save_plot=False, verbose=False)
     ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
     ids_payload["time_slice"]["time_s"] = 0.0125
@@ -208,6 +222,7 @@ def test_ids_to_digital_twin_summary_rejects_invalid_field_types(
     value: object,
     msg: str,
 ) -> None:
+    """Invalid IDS field types are rejected on ingest."""
     summary = run_digital_twin(time_steps=14, seed=34, save_plot=False, verbose=False)
     ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
     node: dict[str, object] = ids_payload
@@ -221,7 +236,12 @@ def test_ids_to_digital_twin_summary_rejects_invalid_field_types(
 
 
 def test_run_digital_twin_supports_deterministic_gyro_surrogate() -> None:
-    def surrogate(temp_map: np.ndarray, q_map: np.ndarray, danger: np.ndarray) -> np.ndarray:
+    """An injected gyro surrogate drives a deterministic run."""
+
+    def surrogate(
+        temp_map: np.ndarray[Any, Any], q_map: np.ndarray[Any, Any], danger: np.ndarray[Any, Any]
+    ) -> np.ndarray[Any, Any]:
+        """Deterministic gyro-surrogate stub used for the run."""
         _ = q_map
         return np.where(danger, 1.35, 0.95 + 0.0005 * temp_map)
 
@@ -245,7 +265,12 @@ def test_run_digital_twin_supports_deterministic_gyro_surrogate() -> None:
 
 
 def test_run_digital_twin_validates_gyro_surrogate_shape() -> None:
-    def bad_surrogate(temp_map: np.ndarray, q_map: np.ndarray, danger: np.ndarray) -> np.ndarray:
+    """A wrong-shape gyro surrogate output is rejected."""
+
+    def bad_surrogate(
+        temp_map: np.ndarray[Any, Any], q_map: np.ndarray[Any, Any], danger: np.ndarray[Any, Any]
+    ) -> np.ndarray[Any, Any]:
+        """Wrong-shape gyro-surrogate stub used for the validation test."""
         _ = q_map
         _ = danger
         return np.ones((temp_map.shape[0],), dtype=float)
@@ -261,6 +286,7 @@ def test_run_digital_twin_validates_gyro_surrogate_shape() -> None:
 
 
 def test_run_digital_twin_does_not_mutate_global_numpy_rng_state() -> None:
+    """The run leaves the global numpy RNG state untouched."""
     np.random.seed(4321)
     state = np.random.get_state()
 
@@ -273,6 +299,7 @@ def test_run_digital_twin_does_not_mutate_global_numpy_rng_state() -> None:
 
 
 def test_run_digital_twin_accepts_injected_rng_and_replays_deterministically() -> None:
+    """An injected RNG reproduces the run deterministically."""
     a = run_digital_twin(
         time_steps=20,
         seed=1,
@@ -293,11 +320,13 @@ def test_run_digital_twin_accepts_injected_rng_and_replays_deterministically() -
 
 
 def test_run_digital_twin_rejects_invalid_time_steps() -> None:
+    """A non-positive time-step count is rejected."""
     with pytest.raises(ValueError, match="time_steps"):
         run_digital_twin(time_steps=0, seed=2, save_plot=False, verbose=False)
 
 
 def test_run_digital_twin_ids_history_returns_valid_sequence() -> None:
+    """The IDS history entry point returns a valid sequence."""
     payloads = run_digital_twin_ids_history(
         [6, 12, 18],
         machine="ITER",
@@ -318,7 +347,8 @@ def test_run_digital_twin_ids_history_returns_valid_sequence() -> None:
 
 
 def test_run_digital_twin_ids_history_is_deterministic() -> None:
-    kwargs = dict(
+    """The IDS history is deterministic for a fixed seed."""
+    kwargs: dict[str, Any] = dict(
         history_steps=[5, 10],
         machine="ITER",
         shot=1,
@@ -333,6 +363,7 @@ def test_run_digital_twin_ids_history_is_deterministic() -> None:
 
 
 def test_run_digital_twin_ids_pulse_returns_valid_container() -> None:
+    """The IDS pulse entry point returns a valid container."""
     pulse = run_digital_twin_ids_pulse(
         [6, 12, 18],
         machine="ITER",
@@ -353,7 +384,8 @@ def test_run_digital_twin_ids_pulse_returns_valid_container() -> None:
 
 
 def test_run_digital_twin_ids_pulse_is_deterministic() -> None:
-    kwargs = dict(
+    """The IDS pulse is deterministic for a fixed seed."""
+    kwargs: dict[str, Any] = dict(
         history_steps=[5, 10],
         machine="ITER",
         shot=1,
@@ -369,8 +401,9 @@ def test_run_digital_twin_ids_pulse_is_deterministic() -> None:
 
 @pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])
 def test_run_digital_twin_ids_history_rejects_invalid_history_steps(
-    history_steps: list[float | int],
+    history_steps: list[Any],
 ) -> None:
+    """Invalid history-step requests are rejected by the history runner."""
     with pytest.raises(ValueError, match="history_steps"):
         run_digital_twin_ids_history(
             history_steps,
@@ -384,8 +417,9 @@ def test_run_digital_twin_ids_history_rejects_invalid_history_steps(
 
 @pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])
 def test_run_digital_twin_ids_pulse_rejects_invalid_history_steps(
-    history_steps: list[float | int],
+    history_steps: list[Any],
 ) -> None:
+    """Invalid history-step requests are rejected by the pulse runner."""
     with pytest.raises(ValueError, match="history_steps"):
         run_digital_twin_ids_pulse(
             history_steps,
@@ -395,3 +429,67 @@ def test_run_digital_twin_ids_pulse_rejects_invalid_history_steps(
             save_plot=False,
             verbose=False,
         )
+
+
+def test_resolve_rng_rejects_non_generator() -> None:
+    """A non-Generator rng argument is rejected."""
+    with pytest.raises(TypeError, match="numpy.random.Generator"):
+        _resolve_rng(seed=1, rng="not-a-generator")  # type: ignore[arg-type]
+
+
+def test_run_digital_twin_renders_plot(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The verbose plotting path renders the digital-twin diagnostic and reports it saved."""
+    import matplotlib.pyplot as plt
+
+    saved: list[str] = []
+    monkeypatch.setattr(plt, "savefig", lambda path, *a, **k: saved.append(str(path)))
+    monkeypatch.setattr(plt, "show", lambda *a, **k: None)
+    monkeypatch.setattr(plt, "close", lambda *a, **k: None)
+
+    summary = run_digital_twin(time_steps=60, seed=5, save_plot=True, verbose=True)
+
+    assert summary["plot_saved"] is True
+    assert saved
+
+
+def test_run_digital_twin_ids_returns_equilibrium_payload() -> None:
+    """The base IDS runner returns an equilibrium-style payload."""
+    payload = run_digital_twin_ids(machine="ITER", shot=1, run=2, time_steps=12, seed=4)
+    assert isinstance(payload, dict)
+
+
+def test_run_digital_twin_ids_history_rejects_time_steps_kwarg() -> None:
+    """History mode forbids an explicit time_steps override."""
+    with pytest.raises(ValueError, match="time_steps is controlled"):
+        run_digital_twin_ids_history([10, 20], time_steps=5)
+
+
+def test_run_digital_twin_ids_history_rejects_non_sequence_steps() -> None:
+    """A non-sequence history-steps argument is rejected."""
+    with pytest.raises(ValueError, match="sequence of positive integers"):
+        run_digital_twin_ids_history(5)  # type: ignore[arg-type]
+
+
+def test_run_digital_twin_ids_pulse_rejects_time_steps_kwarg() -> None:
+    """Pulse mode forbids an explicit time_steps override."""
+    with pytest.raises(ValueError, match="time_steps is controlled"):
+        run_digital_twin_ids_pulse([10, 20], time_steps=5)
+
+
+def test_run_digital_twin_ids_pulse_rejects_non_sequence_steps() -> None:
+    """A non-sequence history-steps argument is rejected by the pulse runner."""
+    with pytest.raises(ValueError, match="sequence of positive integers"):
+        run_digital_twin_ids_pulse(5)  # type: ignore[arg-type]
+
+
+def test_run_digital_twin_records_plot_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A rendering failure is caught and reported in the summary, not raised."""
+    import matplotlib.pyplot as plt
+
+    def _boom(*_a: object, **_k: object) -> None:
+        raise RuntimeError("backend unavailable")
+
+    monkeypatch.setattr(plt, "savefig", _boom)
+    summary = run_digital_twin(time_steps=40, seed=6, save_plot=True, verbose=True)
+    assert summary["plot_saved"] is False
+    assert summary["plot_error"]

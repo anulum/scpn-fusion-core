@@ -191,6 +191,7 @@ files = [
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",
     "tests/test_structure.py",
+    "tests/test_tokamak_digital_twin.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
     "src/scpn_fusion/ui/app.py",

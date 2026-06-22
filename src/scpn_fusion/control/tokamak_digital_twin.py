@@ -396,7 +396,7 @@ def run_digital_twin_ids_history(
     """Run digital twin at multiple horizons and return IDS-like payload sequence."""
     if "time_steps" in kwargs:
         raise ValueError("time_steps is controlled by history_steps in history mode.")
-    if "seed" in kwargs:
+    if "seed" in kwargs:  # pragma: no cover - defensive: seed is an explicit keyword-only parameter
         raise ValueError("seed is controlled by the seed argument in history mode.")
     if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(
         history_steps, Sequence
@@ -431,7 +431,7 @@ def run_digital_twin_ids_pulse(
     """Run digital twin at multiple horizons and return pulse-style IDS container."""
     if "time_steps" in kwargs:
         raise ValueError("time_steps is controlled by history_steps in pulse mode.")
-    if "seed" in kwargs:
+    if "seed" in kwargs:  # pragma: no cover - defensive: seed is an explicit keyword-only parameter
         raise ValueError("seed is controlled by the seed argument in pulse mode.")
 
     snapshots = _run_digital_twin_history_snapshots(
