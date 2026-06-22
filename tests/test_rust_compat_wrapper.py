@@ -192,3 +192,22 @@ def test_rust_snn_controller_strict_mode_raises_without_extension(
     monkeypatch.setattr(_rust_compat, "_RUST_AVAILABLE", False)
     with pytest.raises(ImportError, match="allow_numpy_fallback=False"):
         _rust_compat.RustSnnController(allow_numpy_fallback=False)
+
+
+def test_fusion_kernel_alias_resolves_in_both_backends() -> None:
+    """``from _rust_compat import FusionKernel`` resolves with or without Rust."""
+    from scpn_fusion.core._rust_compat import FusionKernel
+
+    assert isinstance(FusionKernel, type)
+    if not _rust_compat.RUST_BACKEND:
+        from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
+
+        assert FusionKernel is PyFusionKernel
+
+
+def test_module_getattr_rejects_unknown_attribute_without_rust() -> None:
+    """The lazy module ``__getattr__`` fallback serves only ``FusionKernel``."""
+    if _rust_compat.RUST_BACKEND:
+        pytest.skip("module __getattr__ fallback is only defined when Rust is absent")
+    with pytest.raises(AttributeError, match="nonexistent_symbol"):
+        _rust_compat.nonexistent_symbol

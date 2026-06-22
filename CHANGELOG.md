@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Fixed `from scpn_fusion.core._rust_compat import FusionKernel` raising
+  `ImportError` when the Rust extension is absent: a PEP 562 module `__getattr__`
+  now resolves the pure-Python `FusionKernel` fallback lazily, so the alias is
+  importable in both backends without an eager `fusion_kernel` import cycle.
 - Corrected the geometric multigrid V-cycle smoother to relax with a near-unity
   Red-Black Gauss-Seidel factor (omega 1.0) rather than the over-relaxed
   standalone-SOR factor (1.8); over-relaxation is a poor smoother and roughly

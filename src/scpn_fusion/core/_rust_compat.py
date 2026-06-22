@@ -218,6 +218,22 @@ if _RUST_AVAILABLE:
 else:
     RUST_BACKEND = False
 
+    def __getattr__(name: str) -> Any:
+        """Resolve the pure-Python ``FusionKernel`` fallback when Rust is absent.
+
+        Without the Rust extension the ``FusionKernel`` alias has no eager binding
+        (``RustAcceleratedKernel`` is unavailable). PEP 562 module ``__getattr__``
+        supplies the pure-Python ``core.fusion_kernel.FusionKernel`` lazily, so
+        ``from scpn_fusion.core._rust_compat import FusionKernel`` succeeds in both
+        backends without importing ``fusion_kernel`` at module load (avoiding the
+        import cycle the per-method lazy imports already guard against).
+        """
+        if name == "FusionKernel":
+            from scpn_fusion.core.fusion_kernel import FusionKernel as _PyFusionKernel
+
+            return _PyFusionKernel
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 # Re-export Rust-only helpers (with compatibility shims where needed)
 if _RUST_AVAILABLE:
