@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
 
@@ -23,7 +25,7 @@ class _DummyKernel:
     """Lightweight deterministic stand-in for FusionKernel in CI tests."""
 
     def __init__(self, _config_file: str) -> None:
-        self.cfg = {
+        self.cfg: dict[str, Any] = {
             "physics": {"plasma_current_target": 5.0},
             "coils": [{"current": 0.0} for _ in range(5)],
         }
@@ -51,11 +53,12 @@ class _DummyKernel:
         self.Psi.fill(-1.0)
         self.Psi[iz, ir] = 1.0 + 0.001 * float(self.cfg["physics"]["plasma_current_target"])
 
-    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, _psi: np.ndarray[Any, Any]) -> tuple[tuple[float, float], float]:
         return (float(self.R[-2]), float(self.Z[1])), 0.0
 
 
 def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
+    """The flight sim returns a finite, complete summary without plotting."""
     summary = run_flight_sim(
         config_file="dummy.json",
         shot_duration=18,
@@ -96,7 +99,8 @@ def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
 
 
 def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
-    kwargs = dict(
+    """A fixed seed reproduces the flight-sim summary."""
+    kwargs: dict[str, Any] = dict(
         config_file="dummy.json",
         shot_duration=14,
         seed=77,
@@ -118,6 +122,7 @@ def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
 
 
 def test_run_flight_sim_does_not_mutate_global_numpy_rng_state() -> None:
+    """The run leaves the global numpy RNG state untouched."""
     np.random.seed(2468)
     state = np.random.get_state()
 
@@ -137,6 +142,7 @@ def test_run_flight_sim_does_not_mutate_global_numpy_rng_state() -> None:
 
 
 def test_run_flight_sim_rejects_invalid_shot_duration() -> None:
+    """A non-positive shot duration is rejected."""
     with pytest.raises(ValueError, match="shot_duration"):
         run_flight_sim(
             config_file="dummy.json",
@@ -149,6 +155,7 @@ def test_run_flight_sim_rejects_invalid_shot_duration() -> None:
 
 
 def test_first_order_actuator_rejects_invalid_params() -> None:
+    """Invalid actuator constants are rejected."""
     with pytest.raises(ValueError, match="tau_s"):
         FirstOrderActuator(tau_s=0.0, dt_s=0.05)
     with pytest.raises(ValueError, match="dt_s"):
@@ -156,6 +163,7 @@ def test_first_order_actuator_rejects_invalid_params() -> None:
 
 
 def test_isoflux_controller_rejects_invalid_control_dt() -> None:
+    """A non-positive control timestep is rejected."""
     with pytest.raises(ValueError, match="control_dt_s"):
         IsoFluxController(
             config_file="dummy.json",
@@ -166,6 +174,7 @@ def test_isoflux_controller_rejects_invalid_control_dt() -> None:
 
 
 def test_isoflux_controller_rejects_invalid_heating_and_limit_controls() -> None:
+    """Invalid heating-lag or current-limit controls are rejected."""
     with pytest.raises(ValueError, match="heating_actuator_tau_s"):
         IsoFluxController(
             config_file="dummy.json",
@@ -190,6 +199,7 @@ def test_isoflux_controller_rejects_invalid_heating_and_limit_controls() -> None
 
 
 def test_run_flight_sim_heating_tau_controls_actuator_lag() -> None:
+    """A larger heating time constant increases actuator lag."""
     fast = run_flight_sim(
         config_file="dummy.json",
         shot_duration=18,
@@ -209,3 +219,113 @@ def test_run_flight_sim_heating_tau_controls_actuator_lag() -> None:
         kernel_factory=_DummyKernel,
     )
     assert fast["mean_abs_heating_actuator_lag"] < slow["mean_abs_heating_actuator_lag"]
+
+
+def test_first_order_actuator_measurement_includes_noise() -> None:
+    """A non-zero sensor-noise actuator returns a finite noisy measurement."""
+    act = FirstOrderActuator(
+        tau_s=0.05,
+        dt_s=0.05,
+        u_min=-1.0,
+        u_max=1.0,
+        rate_limit=10.0,
+        sensor_noise_std=0.1,
+        delay_steps=1,
+    )
+    act.step(0.5)
+    measurement = act.get_measurement()
+    assert np.isfinite(measurement)
+
+
+def test_run_flight_sim_renders_plot(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The verbose plotting path renders the flight report and marks it saved."""
+    import matplotlib.pyplot as plt
+
+    saved: list[str] = []
+    monkeypatch.setattr(plt, "savefig", lambda path, *a, **k: saved.append(str(path)))
+    monkeypatch.setattr(plt, "show", lambda *a, **k: None)
+    monkeypatch.setattr(plt, "close", lambda *a, **k: None)
+
+    summary = run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=24,
+        seed=5,
+        save_plot=True,
+        verbose=True,
+        kernel_factory=_DummyKernel,
+    )
+    assert summary["plot_saved"] is True
+    assert saved
+
+
+def test_run_flight_sim_records_plot_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A flight-report render failure is caught and reported, not raised."""
+    import matplotlib.pyplot as plt
+
+    def _boom(*_a: object, **_k: object) -> None:
+        raise RuntimeError("backend down")
+
+    monkeypatch.setattr(plt, "savefig", _boom)
+    summary = run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=24,
+        seed=5,
+        save_plot=True,
+        verbose=True,
+        kernel_factory=_DummyKernel,
+    )
+    assert summary["plot_saved"] is False
+
+
+def test_first_order_actuator_measurement_without_noise() -> None:
+    """A noiseless actuator returns its delayed measurement unchanged."""
+    act = FirstOrderActuator(
+        tau_s=0.05, dt_s=0.05, u_min=-1.0, u_max=1.0, rate_limit=10.0, sensor_noise_std=0.0
+    )
+    act.step(0.5)
+    assert np.isfinite(act.get_measurement())
+
+
+def test_run_flight_sim_resolves_default_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A null config path is resolved to the default ITER configuration."""
+    seen: list[str] = []
+
+    def _factory(config_path: str) -> Any:
+        seen.append(config_path)
+        return _DummyKernel(config_path)
+
+    run_flight_sim(
+        config_file=None,
+        shot_duration=12,
+        seed=1,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_factory,
+    )
+    assert seen and "iter_config" in seen[0]
+
+
+class _LimiterKernel(_DummyKernel):
+    """Kernel stub that never forms a divertor X-point, to exercise the limited-plasma panel."""
+
+    def find_x_point(self, _psi: np.ndarray[Any, Any]) -> tuple[tuple[float, float], float]:
+        """Report a limiter (origin) X-point, i.e. no divertor."""
+        return (0.0, 0.0), 0.0
+
+
+def test_run_flight_sim_renders_limited_plasma_panel(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A never-diverted plasma renders the limited-plasma fallback panel."""
+    import matplotlib.pyplot as plt
+
+    saved: list[str] = []
+    monkeypatch.setattr(plt, "savefig", lambda path, *a, **k: saved.append(str(path)))
+    monkeypatch.setattr(plt, "close", lambda *a, **k: None)
+    summary = run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=18,
+        seed=2,
+        save_plot=True,
+        verbose=False,
+        kernel_factory=_LimiterKernel,
+    )
+    assert summary["plot_saved"] is True

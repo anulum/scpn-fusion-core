@@ -393,7 +393,9 @@ class IsoFluxController:
         """Render the flight trajectory report plot when plotting is available."""
         try:
             import matplotlib.pyplot as plt
-        except Exception as exc:
+        except (
+            Exception
+        ) as exc:  # pragma: no cover - defensive: matplotlib is present in the runtime
             return False, f"matplotlib unavailable: {exc}"
         try:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
