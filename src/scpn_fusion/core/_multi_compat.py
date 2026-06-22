@@ -482,6 +482,45 @@ def _rust_solve_coil_currents(
     return np.asarray(coils, dtype=np.float64)
 
 
+def _numpy_measure_magnetics(
+    psi: Any,
+    nr: int,
+    nz: int,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+) -> Any:
+    """NumPy-tier provider for the ``measure_magnetics`` kernel."""
+    from scpn_fusion.diagnostics.synthetic_sensors import measure_magnetics
+
+    return measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)
+
+
+def _rust_measure_magnetics(
+    psi: Any,
+    nr: int,
+    nz: int,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+) -> Any:
+    """Rust-tier provider for the ``measure_magnetics`` kernel.
+
+    Normalises the Rust result into a float64 array so the tier is
+    type-compatible with :func:`_numpy_measure_magnetics`.
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import measure_magnetics as _rs_measure_magnetics
+
+    measurements = _rs_measure_magnetics(
+        np.asarray(psi, dtype=np.float64), nr, nz, r_min, r_max, z_min, z_max
+    )
+    return np.asarray(measurements, dtype=np.float64)
+
+
 def _bootstrap_existing_backends() -> None:
     """Register the function-kernels that have Rust and/or NumPy implementations.
 
@@ -503,27 +542,28 @@ def _bootstrap_existing_backends() -> None:
     register_kernel("solve_coil_currents", BackendTier.RUST, _rust_solve_coil_currents)
     register_kernel("solve_coil_currents", BackendTier.NUMPY, _numpy_solve_coil_currents)
 
+    # measure_magnetics — canonical contract reconciled (A2 kernel #4). Both tiers
+    # evaluate the same noise-free bilinear stencil at the same probe positions
+    # (tolerance-aware across the trig/position rounding), and the NumPy tier
+    # resolves dispatch without Rust.
+    register_kernel("measure_magnetics", BackendTier.RUST, _rust_measure_magnetics)
+    register_kernel("measure_magnetics", BackendTier.NUMPY, _numpy_measure_magnetics)
+
     # Remaining function-kernels register the Rust tier only; their NumPy tiers
-    # are reconciled in later A2 kernels (multigrid_vcycle, measure_magnetics,
-    # simulate_tearing_mode).
+    # are reconciled in later A2 kernels (simulate_tearing_mode; multigrid_vcycle
+    # is deferred — no Rust pyfunction exists and the Python V-cycle is not a
+    # convergent standalone solver).
     try:
         from scpn_fusion.core._rust_compat import _RUST_AVAILABLE
 
         if _RUST_AVAILABLE:
-            from scpn_fusion.core._rust_compat import (
-                rust_measure_magnetics,
-                rust_simulate_tearing_mode,
-                rust_multigrid_vcycle,
-            )
+            from scpn_fusion.core._rust_compat import rust_simulate_tearing_mode
 
-            register_kernel("measure_magnetics", BackendTier.RUST, rust_measure_magnetics)
             register_kernel(
                 "simulate_tearing_mode",
                 BackendTier.RUST,
                 rust_simulate_tearing_mode,
             )
-            if rust_multigrid_vcycle is not None:
-                register_kernel("multigrid_vcycle", BackendTier.RUST, rust_multigrid_vcycle)
     except ImportError as exc:
         logger.debug("Rust compatibility module not importable during bootstrap: %s", exc)
 

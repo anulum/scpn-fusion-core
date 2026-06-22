@@ -278,3 +278,64 @@ def test_rust_solve_coil_currents_provider_matches_reference() -> None:
         rtol=1e-12,
         atol=1e-15,
     )
+
+
+def test_measure_magnetics_bootstrap_registers_both_tiers() -> None:
+    """The function bootstrap registers Rust and NumPy tiers for measure_magnetics."""
+    tiers = multi.registered_kernels().get("measure_magnetics")
+    assert tiers is not None
+    names = {tier.rstrip("*") for tier in tiers}
+    assert "numpy" in names
+    assert "rust" in names
+
+
+def test_numpy_measure_magnetics_provider_matches_reference() -> None:
+    """The NumPy-tier provider returns the canonical free-function measurements."""
+    from scpn_fusion.diagnostics.synthetic_sensors import measure_magnetics as reference
+
+    psi = np.full((33, 33), 1.5, dtype=np.float64)
+    np.testing.assert_array_equal(
+        multi._numpy_measure_magnetics(psi, 33, 33, 3.0, 9.0, -3.5, 3.5),
+        reference(psi, 33, 33, 3.0, 9.0, -3.5, 3.5),
+    )
+
+
+def test_measure_magnetics_dispatch_resolves_to_numpy_without_rust(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With Rust unavailable, dispatch falls to the NumPy magnetics tier."""
+    from scpn_fusion.diagnostics.synthetic_sensors import measure_magnetics as reference
+
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.RUST, False)
+    with multi._registry_lock:
+        multi._dispatch_cache.pop("measure_magnetics", None)
+    try:
+        impl = multi.dispatch("measure_magnetics")
+        assert multi.dispatch_tier("measure_magnetics") == "numpy"
+        psi = np.full((33, 33), 0.7, dtype=np.float64)
+        np.testing.assert_array_equal(
+            impl(psi, 33, 33, 3.0, 9.0, -3.5, 3.5),
+            reference(psi, 33, 33, 3.0, 9.0, -3.5, 3.5),
+        )
+    finally:
+        with multi._registry_lock:
+            multi._dispatch_cache.pop("measure_magnetics", None)
+
+
+def test_rust_measure_magnetics_provider_matches_reference() -> None:
+    """When Rust is built, its magnetics tier is tolerance-aware equivalent."""
+    pytest.importorskip("scpn_fusion_rs")
+    from scpn_fusion.diagnostics.synthetic_sensors import measure_magnetics as reference
+
+    nr = nz = 65
+    r_axis = np.linspace(3.0, 9.0, nr)
+    z_axis = np.linspace(-5.0, 5.0, nz)
+    rr, zz = np.meshgrid(r_axis, z_axis)
+    psi = np.asarray(np.exp(-((rr - 6.0) ** 2 + zz**2) / 8.0), dtype=np.float64)
+    np.testing.assert_allclose(
+        multi._rust_measure_magnetics(psi, nr, nz, 3.0, 9.0, -5.0, 5.0),
+        reference(psi, nr, nz, 3.0, 9.0, -5.0, 5.0),
+        rtol=1e-9,
+        atol=1e-9,
+    )

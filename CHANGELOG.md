@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+- Reconciled the `measure_magnetics` function-kernel into a single canonical
+  contract across the Rust and NumPy tiers and corrected two divergences in the
+  Rust magnetic-probe diagnostic. The Rust `SensorSuite` now places probes on an
+  endpoint-inclusive `linspace(0, 2*pi, N)` (matching the NumPy tier) instead of
+  `2*pi*i/N`, and interpolates the flux bilinearly instead of nearest-neighbour.
+  The deterministic noise-free measurement is extracted into a free function
+  `synthetic_sensors.measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)`
+  that `SensorSuite.measure_magnetics` delegates to before adding the simulated
+  sensor noise; the Rust measurement kernel is likewise noise-free, with additive
+  noise left to the simulation callers. Registered both tiers in `_multi_compat`
+  (NumPy unconditional); cross-backend agreement is tolerance-aware (probe-trig
+  and bilinear-weight rounding).
 - Reconciled the `solve_coil_currents` function-kernel into a single canonical
   contract across the Rust and NumPy tiers. The minimum-norm/ridge linear solve
   is extracted into a free function `analytic_solver.solve_coil_currents(green_func,

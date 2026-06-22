@@ -89,6 +89,18 @@ except ImportError:
     _rust_solve_coil_currents = cast(Any, None)
     _HAS_RUST_COIL = False
 
+_HAS_RUST_MAGNETICS = False
+_rust_measure_magnetics: Any = None
+try:
+    from scpn_fusion_rs import measure_magnetics as _rust_measure_magnetics_import
+
+    _rust_measure_magnetics = _rust_measure_magnetics_import
+
+    _HAS_RUST_MAGNETICS = True
+except ImportError:
+    _rust_measure_magnetics = cast(Any, None)
+    _HAS_RUST_MAGNETICS = False
+
 _HAS_RUST_TEARING = False
 _rust_tearing: Any = None
 try:
@@ -905,3 +917,45 @@ class TestTopologyParity:
         # Psi absolute value at the X-point can differ between independent
         # equilibrium solves (different flux normalization). Position
         # agreement (checked above) is the meaningful parity test.
+
+
+class TestMagneticsParity:
+    """Compare the Rust and NumPy magnetic-probe measurement tiers."""
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_MAGNETICS,
+        reason="Rust measure_magnetics not exposed via PyO3",
+    )
+    def test_measure_magnetics_parity(self) -> None:
+        """Noise-free bilinear flux at the probes agrees across the two tiers.
+
+        The probe positions (trig) and bilinear weights round slightly
+        differently between Rust and NumPy, so parity is tolerance-aware.
+        """
+        from scpn_fusion.diagnostics.synthetic_sensors import (
+            measure_magnetics as py_measure_magnetics,
+        )
+
+        rng = np.random.default_rng(4242)
+        nr, nz = 65, 65
+        r_min, r_max, z_min, z_max = 3.0, 9.0, -5.0, 5.0
+        r_axis = np.linspace(r_min, r_max, nr)
+        z_axis = np.linspace(z_min, z_max, nz)
+        rr, zz = np.meshgrid(r_axis, z_axis)
+        # Smooth flux so probes that round into adjacent cells stay close.
+        psi = np.exp(-((rr - 6.0) ** 2 + zz**2) / 8.0) + 0.05 * rng.standard_normal((nz, nr))
+        psi = np.asarray(psi, dtype=np.float64)
+
+        meas_py = py_measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)
+        meas_rs = np.asarray(
+            _rust_measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max), dtype=np.float64
+        )
+
+        assert meas_py.shape == meas_rs.shape
+        np.testing.assert_allclose(
+            meas_py,
+            meas_rs,
+            rtol=1e-9,
+            atol=1e-9,
+            err_msg=f"magnetics parity failed: max abs diff = {np.max(np.abs(meas_py - meas_rs)):.3e}",
+        )
