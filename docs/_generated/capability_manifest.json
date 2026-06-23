@@ -2426,6 +2426,7 @@
       "src/scpn_fusion/core/mhd_sawtooth.py",
       "src/scpn_fusion/core/momentum_transport.py",
       "src/scpn_fusion/core/mrti.py",
+      "src/scpn_fusion/core/multigrid_solve.py",
       "src/scpn_fusion/core/neoclassical.py",
       "src/scpn_fusion/core/neural_equilibrium.py",
       "src/scpn_fusion/core/neural_equilibrium_kernel.py",
@@ -2584,9 +2585,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 54,
     "python_capability_classes": 546,
-    "python_capability_source_modules": 277,
+    "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
-    "test_files": 428
+    "test_files": 429
   },
   "documentation": {
     "public_pages": [
@@ -2970,6 +2971,7 @@
       "tests/test_multi_ion_transport.py",
       "tests/test_multi_ion_transport_conservation_benchmark.py",
       "tests/test_multi_machine_validation_physics_contracts.py",
+      "tests/test_multigrid_solve.py",
       "tests/test_mypy_expansion_guard.py",
       "tests/test_nengo_snn_wrapper.py",
       "tests/test_neoclassical.py",
