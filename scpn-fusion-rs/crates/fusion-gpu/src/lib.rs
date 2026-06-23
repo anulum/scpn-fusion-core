@@ -79,7 +79,7 @@ impl GpuGsSolver {
             compatible_surface: None,
             force_fallback_adapter: false,
         }))
-        .ok_or_else(|| FusionError::ConfigError("No suitable GPU adapter found".to_string()))?;
+        .map_err(|e| FusionError::ConfigError(format!("No suitable GPU adapter found: {e}")))?;
         let adapter_info = adapter.get_info();
         if !adapter_device_type_accepted(adapter_info.device_type) {
             return Err(FusionError::ConfigError(format!(
@@ -94,9 +94,10 @@ impl GpuGsSolver {
                 label: Some("fusion-gpu"),
                 required_features: wgpu::Features::empty(),
                 required_limits: wgpu::Limits::default(),
+                experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 memory_hints: wgpu::MemoryHints::Performance,
+                trace: wgpu::Trace::Off,
             },
-            None,
         ))
         .map_err(|e| FusionError::ConfigError(format!("GPU device request failed: {e}")))?;
 
@@ -213,8 +214,8 @@ impl GpuGsSolver {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("gs_pipeline_layout"),
-            bind_group_layouts: &[&bind_group_layout],
-            push_constant_ranges: &[],
+            bind_group_layouts: &[Some(&bind_group_layout)],
+            immediate_size: 0,
         });
 
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
@@ -436,7 +437,9 @@ impl GpuGsSolver {
         }
 
         // Wait for GPU to finish
-        self.device.poll(wgpu::Maintain::Wait);
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .map_err(|e| FusionError::ConfigError(format!("GPU poll failed: {e}")))?;
         Ok(())
     }
 
@@ -457,7 +460,9 @@ impl GpuGsSolver {
         buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
             let _ = tx.send(result);
         });
-        self.device.poll(wgpu::Maintain::Wait);
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .map_err(|e| FusionError::ConfigError(format!("GPU poll failed: {e}")))?;
 
         rx.recv()
             .map_err(|e| FusionError::ConfigError(format!("GPU download channel error: {e}")))?
@@ -635,7 +640,7 @@ impl GpuGsSolver {
 /// Check if a GPU adapter is available without creating a full solver.
 pub fn gpu_available() -> bool {
     let instance = wgpu::Instance::default();
-    let Some(adapter) =
+    let Ok(adapter) =
         pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: None,
@@ -654,7 +659,8 @@ pub fn gpu_info() -> Option<String> {
         power_preference: wgpu::PowerPreference::HighPerformance,
         compatible_surface: None,
         force_fallback_adapter: false,
-    }))?;
+    }))
+    .ok()?;
     let info = adapter.get_info();
     Some(format!(
         "{} ({:?}, {:?})",
