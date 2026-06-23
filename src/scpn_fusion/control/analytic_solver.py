@@ -44,7 +44,7 @@ def shafranov_bv(
     beta_p: float = 0.5,
     li: float = 0.8,
 ) -> float:
-    """Required vertical field from the Shafranov radial-force balance.
+    r"""Return the required vertical field from the Shafranov radial-force balance.
 
     Canonical free-function reference for the ``shafranov_bv`` dispatch kernel
     (:mod:`scpn_fusion.core._multi_compat`). The Rust tier
@@ -61,7 +61,7 @@ def shafranov_bv(
     ip_ma : float
         Plasma current :math:`I_p` [MA]; must be strictly positive.
     beta_p : float, optional
-        Poloidal beta :math:`\\beta_p`, by default 0.5.
+        Poloidal beta :math:`\beta_p`, by default 0.5.
     li : float, optional
         Internal inductance :math:`l_i`, by default 0.8.
 
@@ -82,8 +82,8 @@ def shafranov_bv(
 
     .. math::
 
-        B_v = -\\frac{\\mu_0 I_p}{4\\pi R_0}
-        \\left[\\ln\\!\\frac{8 R_0}{a} + \\beta_p + \\frac{l_i}{2} - \\frac{3}{2}\\right]
+        B_v = -\frac{\mu_0 I_p}{4\pi R_0}
+        \left[\ln\!\frac{8 R_0}{a} + \beta_p + \frac{l_i}{2} - \frac{3}{2}\right]
 
     References
     ----------
