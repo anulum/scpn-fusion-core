@@ -134,3 +134,54 @@ def test_marfe_stability_diagram_rejects_invalid_inputs():
     diag = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W")
     with pytest.raises(ValueError, match="one-dimensional"):
         diag.scan_density_power(np.zeros((2, 2)), np.array([10.0, 20.0]))
+
+
+def test_greenwald_limit_inf_for_nonpositive_minor_radius() -> None:
+    assert DensityLimitPredictor.greenwald_limit(15.0, 0.0) == float("inf")
+
+
+def test_radiation_condensation_critical_density_inf_on_rising_cooling_curve() -> None:
+    rc = RadiationCondensation("Ne", 1.0, 1e-4)
+    vals = [rc.critical_density(te, 1.0, 1.0) for te in (2.0, 5.0, 10.0, 20.0)]
+    assert any(v == float("inf") for v in vals)
+
+
+def test_marfe_stability_diagram_rejects_nonpositive_geometry() -> None:
+    for kw, match in (
+        ({"R0": 0.0, "a": 2.0, "q95": 3.0, "impurity": "Ne"}, "R0"),
+        ({"R0": 6.2, "a": 0.0, "q95": 3.0, "impurity": "Ne"}, "a must be"),
+        ({"R0": 6.2, "a": 2.0, "q95": 0.0, "impurity": "Ne"}, "q95"),
+        ({"R0": 6.2, "a": 2.0, "q95": 3.0, "impurity": "Ne", "Ip_MA": 0.0}, "Ip_MA"),
+        ({"R0": 6.2, "a": 2.0, "q95": 3.0, "impurity": "Ne", "f_imp": 0.0}, "f_imp"),
+    ):
+        with pytest.raises(ValueError, match=match):
+            MARFEStabilityDiagram(**kw)
+
+
+def test_marfe_limit_requires_all_or_none_optional_args() -> None:
+    pred = DensityLimitPredictor()
+    import inspect
+    sig = inspect.signature(pred.marfe_limit)
+    req = [p for p in list(sig.parameters) if sig.parameters[p].default is inspect._empty]
+    base = {p: 1.0 for p in req}
+    with pytest.raises(ValueError, match="must be supplied together"):
+        pred.marfe_limit(**base, Te_eV=100.0)
+
+
+def test_marfe_front_is_marfe_evaluates_state() -> None:
+    front = MARFEFrontModel(L_par=20.0, kappa_par=2000.0, q_perp=5.0, impurity="Ne", f_imp=1e-3)
+    front.equilibrium(ne_20=0.5)
+    assert isinstance(front.is_marfe(), bool)
+
+
+def test_marfe_scan_density_power_validates_inputs() -> None:
+    diag = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="Ne")
+    psol = np.linspace(1.0, 10.0, 4)
+    with pytest.raises(ValueError, match="one-dimensional"):
+        diag.scan_density_power(np.ones((2, 2)), psol)
+    with pytest.raises(ValueError, match="must not be empty"):
+        diag.scan_density_power(np.array([]), psol)
+    with pytest.raises(ValueError, match="must be finite"):
+        diag.scan_density_power(np.array([0.1, np.inf, 0.5]), psol)
+    with pytest.raises(ValueError, match=r">= 0"):
+        diag.scan_density_power(np.array([-0.1, 0.5]), psol)

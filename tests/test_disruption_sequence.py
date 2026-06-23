@@ -199,3 +199,32 @@ def test_disruption_sequence_mitigated():
 
     # Mitigation should change the evolution
     assert res_mit.cq_result.cq_duration_ms != res_unmit.cq_result.cq_duration_ms
+
+
+def test_require_positive_rejects_nonpositive_and_nonfinite() -> None:
+    from scpn_fusion.core.disruption_sequence import _require_positive
+    for bad in (0.0, -1.0, float("inf"), float("nan")):
+        with pytest.raises(ValueError, match="finite and positive"):
+            _require_positive("x", bad)
+
+
+def test_thermal_quench_returns_inf_for_degenerate_inputs() -> None:
+    tq = ThermalQuench(W_th_MJ=100.0, a=2.0, R0=6.2, q=3.0, B0=5.3)
+    assert tq.quench_timescale(0.0, 5.0) == float("inf")
+    assert tq.heat_deposition(100.0, 0.0) == float("inf")
+
+
+def test_current_quench_induced_field_scales_with_dip_dt() -> None:
+    cq = CurrentQuench(Ip_MA=15.0, L_plasma_uH=10.0, R0=6.2, a=2.0)
+    e1 = cq.induced_electric_field(1.0e8)
+    assert e1 > 0.0
+    assert cq.induced_electric_field(2.0e8) == pytest.approx(2.0 * e1)
+
+
+def test_re_beam_termination_heat_load_inf_for_zero_area() -> None:
+    from scpn_fusion.core.disruption_sequence import REBeamPhase
+    import inspect
+    sig = inspect.signature(REBeamPhase.__init__)
+    kwargs = {p: 1.0 for p in list(sig.parameters)[1:] if sig.parameters[p].default is inspect._empty}
+    re = REBeamPhase(**kwargs) if kwargs else REBeamPhase()
+    assert re.termination_heat_load(50.0, 0.0) == float("inf")

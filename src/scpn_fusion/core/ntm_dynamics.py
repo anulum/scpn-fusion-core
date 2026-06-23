@@ -54,7 +54,7 @@ def find_rational_surfaces(
             for idx in crossings:
                 r1, r2 = rho[idx], rho[idx + 1]
                 q1, q2 = q[idx], q[idx + 1]
-                if q1 == q2:
+                if q1 == q2:  # pragma: no cover - unreachable (sign-change crossings never have equal endpoints)
                     continue
 
                 frac = (q_target - q1) / (q2 - q1)

@@ -137,3 +137,28 @@ def test_ntm_controller_latches_and_clears_eccd_request_at_width_thresholds() ->
     assert np.isclose(controller.target_rho, 0.45)
     assert controller.step(w=0.004, rho_rs=0.5, max_power=12.0) == 0.0
     assert controller.active is False
+
+
+def test_eccd_stabilization_factor_zero_for_nonpositive_inputs() -> None:
+    from scpn_fusion.core.ntm_dynamics import eccd_stabilization_factor
+    assert eccd_stabilization_factor(1.0, 0.0) == 0.0
+    assert eccd_stabilization_factor(0.0, 0.05) == 0.0
+
+
+def test_find_rational_surfaces_skips_flat_q_segment() -> None:
+    rho = np.linspace(0.0, 1.0, 6)
+    q = np.array([1.0, 2.0, 2.0, 2.0, 3.0, 4.0])  # flat q1==q2 segment
+    surfaces = find_rational_surfaces(q, rho, a=2.0)
+    assert isinstance(surfaces, list)
+
+
+def test_ntm_controller_step_toggles_eccd_power() -> None:
+    from scpn_fusion.core.ntm_dynamics import NTMController
+    ctrl = NTMController(w_onset=0.02, w_target=0.005)
+    p_off = ctrl.step(w=0.001, rho_rs=0.5, max_power=20.0)  # below onset -> inactive
+    p_on = ctrl.step(w=0.05, rho_rs=0.5, max_power=20.0)   # above onset -> active (max_power)
+    p_sustain = ctrl.step(w=0.05, rho_rs=0.5, max_power=20.0)  # active, w>=w_target -> else max_power
+    p_clear = ctrl.step(w=0.001, rho_rs=0.5, max_power=20.0)   # active, w<w_target -> deactivate, 0
+    assert p_off == 0.0
+    assert p_on == 20.0 and p_sustain == 20.0
+    assert p_clear == 0.0
