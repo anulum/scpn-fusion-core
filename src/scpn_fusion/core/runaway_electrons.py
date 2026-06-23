@@ -100,7 +100,7 @@ def dreicer_generation_rate(params: RunawayParams, coulomb_log: float = 15.0) ->
     exponent = -E_D / (4.0 * params.E_par) - np.sqrt((1.0 + Z) * E_D / params.E_par)
 
     # Avoid overflow/underflow
-    if exponent < -500:
+    if exponent < -500:  # pragma: no cover - defensive (the E_par/E_D < 1e-4 early return shadows this underflow)
         return 0.0
 
     rate = C_D * n_e * nu_ee * (E_ratio) ** (-h_z) * np.exp(exponent)
@@ -168,7 +168,7 @@ def hot_tail_seed(
 
     n_e = ne * 1e20
     exponent = -(v_c_v_te**2)
-    if exponent < -500:
+    if exponent < -500:  # pragma: no cover - defensive (np.exp underflow guard for extreme v_c/v_te)
         return 0.0
 
     n_seed = n_e * v_c_v_te**3 * np.exp(exponent) * ratio**1.5
@@ -294,7 +294,7 @@ class RunawayEvolution:
             raise ValueError("n_RE_0 must be finite and >= 0.")
 
         n_steps = int(np.ceil((t_end - t_start) / dt_s))
-        if n_steps < 1:
+        if n_steps < 1:  # pragma: no cover - unreachable (t_end > t_start and dt > 0 already validated)
             raise ValueError("integration requires at least one time step.")
 
         t_arr = np.linspace(t_start, t_end, n_steps + 1)
