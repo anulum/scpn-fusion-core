@@ -577,6 +577,42 @@ def _rust_multigrid_solve(
     return np.asarray(psi, dtype=np.float64), float(residual), int(n_cycles), bool(converged)
 
 
+def _numpy_simulate_tearing_mode(
+    steps: int = 1000,
+    *,
+    seed: int | None = None,
+    beta_p: float = 0.8,
+    w_crit: float = 0.05,
+) -> Any:
+    """NumPy-tier provider for the ``simulate_tearing_mode`` kernel."""
+    import numpy as np
+
+    from scpn_fusion.control.disruption_risk_runtime import simulate_tearing_mode
+
+    rng = np.random.default_rng(seed) if seed is not None else None
+    return simulate_tearing_mode(steps, rng=rng, beta_p=beta_p, w_crit=w_crit)
+
+
+def _rust_simulate_tearing_mode(
+    steps: int = 1000,
+    *,
+    seed: int | None = None,
+    beta_p: float = 0.8,
+    w_crit: float = 0.05,
+) -> Any:
+    """Rust-tier provider for the ``simulate_tearing_mode`` kernel.
+
+    Normalises the Rust ``(signal, label, ttd)`` tuple so the signal is a float64
+    array, type-compatible with :func:`_numpy_simulate_tearing_mode`.
+    """
+    import numpy as np
+
+    from scpn_fusion.core._rust_compat import rust_simulate_tearing_mode
+
+    signal, label, ttd = rust_simulate_tearing_mode(steps, seed, beta_p, w_crit)
+    return np.asarray(signal, dtype=np.float64), int(label), int(ttd)
+
+
 def _bootstrap_existing_backends() -> None:
     """Register the function-kernels that have Rust and/or NumPy implementations.
 
@@ -613,21 +649,13 @@ def _bootstrap_existing_backends() -> None:
     register_kernel("multigrid_solve", BackendTier.RUST, _rust_multigrid_solve)
     register_kernel("multigrid_solve", BackendTier.NUMPY, _numpy_multigrid_solve)
 
-    # Remaining function-kernels register the Rust tier only; their NumPy tiers
-    # are reconciled in later A2 kernels (simulate_tearing_mode).
-    try:
-        from scpn_fusion.core._rust_compat import _RUST_AVAILABLE
-
-        if _RUST_AVAILABLE:
-            from scpn_fusion.core._rust_compat import rust_simulate_tearing_mode
-
-            register_kernel(
-                "simulate_tearing_mode",
-                BackendTier.RUST,
-                rust_simulate_tearing_mode,
-            )
-    except ImportError as exc:
-        logger.debug("Rust compatibility module not importable during bootstrap: %s", exc)
+    # simulate_tearing_mode — canonical contract reconciled (A2 kernel #5). Both
+    # tiers run the full Modified Rutherford physics (bootstrap drive, Gaussian
+    # process noise, island seeding); the deterministic per-step increment is
+    # bit-exact and the stochastic trajectory is statistically equivalent across
+    # independent RNG streams. The NumPy tier resolves dispatch without Rust.
+    register_kernel("simulate_tearing_mode", BackendTier.RUST, _rust_simulate_tearing_mode)
+    register_kernel("simulate_tearing_mode", BackendTier.NUMPY, _numpy_simulate_tearing_mode)
 
 
 # Run bootstrap on import

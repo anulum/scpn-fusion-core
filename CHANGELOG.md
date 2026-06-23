@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+- Reconciled the `simulate_tearing_mode` function-kernel and brought the Rust
+  tearing-mode model to full Modified Rutherford fidelity. The Rust port had
+  dropped the bootstrap-current drive `beta_p·w/(w² + w_crit²)` (so it was not the
+  Modified Rutherford Equation), used uniform instead of Gaussian process noise,
+  a saturation width of 10 instead of 12, no post-trigger island seeding, and
+  labelled a triggered-but-non-disrupting shot as disruptive — diverging from the
+  NumPy model in both physics and label semantics. The Rust simulator now runs the
+  full physics with a seedable RNG and `beta_p`/`w_crit` parameters, and labels a
+  shot disruptive only on an actual island-width threshold crossing. The
+  deterministic per-step increment is extracted as `rutherford_island_growth` in
+  both tiers and is bit-exact; the stochastic trajectories are statistically
+  equivalent (matching disruption rate and island-growth distribution). Registered
+  both tiers in `_multi_compat`, replaced the placeholder parity test (its seeded
+  path silently ran the Python implementation, so it never compared the backends)
+  with a bit-exact deterministic-step parity test and a statistical-trajectory
+  parity test, and corrected the Rust disruption-risk linear weights to match the
+  NumPy `DISRUPTION_RISK_LINEAR_WEIGHTS`.
+
 - Reconciled the `multigrid_solve` function-kernel into a canonical fastest-first
   dispatch with both backend tiers. Extracted the geometric multigrid V-cycle and
   its smoother/residual/restriction/prolongation operators into a free-function

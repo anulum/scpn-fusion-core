@@ -103,14 +103,20 @@ except ImportError:
 
 _HAS_RUST_TEARING = False
 _rust_tearing: Any = None
+_rust_rutherford: Any = None
 try:
-    from scpn_fusion_rs import simulate_tearing_mode as _rust_tearing_import
+    from scpn_fusion_rs import (
+        rutherford_island_growth as _rust_rutherford_import,
+        simulate_tearing_mode as _rust_tearing_import,
+    )
 
     _rust_tearing = _rust_tearing_import
+    _rust_rutherford = _rust_rutherford_import
 
     _HAS_RUST_TEARING = True
 except ImportError:
     _rust_tearing = cast(Any, None)
+    _rust_rutherford = cast(Any, None)
     _HAS_RUST_TEARING = False
 
 _HAS_RUST_SCPN_RUNTIME = False
@@ -578,42 +584,67 @@ class TestTransportSolverParity:
 
     @pytest.mark.skipif(
         not _HAS_RUST_TEARING,
+        reason="Rust rutherford_island_growth not exposed via PyO3",
+    )
+    def test_rutherford_island_growth_parity(self) -> None:
+        """The deterministic Modified Rutherford step is bit-exact across tiers.
+
+        The tearing-mode simulator is stochastic (independent RNG streams), so its
+        trajectories cannot be bit-compared; its deterministic physics core — the
+        per-step island-width increment — can, and must be identical.
+        """
+        from scpn_fusion.control.disruption_risk_runtime import (
+            rutherford_island_growth as py_step,
+        )
+
+        for w in (0.01, 0.05, 0.2, 0.5, 1.0, 3.0, 7.5):
+            for delta_prime in (-0.5, -0.1):
+                for beta_p in (0.8, 0.0, 0.3):
+                    for w_crit in (0.05, 0.1):
+                        rs = _rust_rutherford(w, delta_prime, beta_p, w_crit, 0.01)
+                        py = py_step(w, delta_prime, beta_p, w_crit, 0.01)
+                        assert rs == py, (
+                            f"Rutherford step parity broken at "
+                            f"{(w, delta_prime, beta_p, w_crit)}: rust={rs!r} numpy={py!r}"
+                        )
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_TEARING,
         reason="Rust simulate_tearing_mode not exposed via PyO3",
     )
-    def test_tearing_mode_parity(self) -> None:
-        """Compare the Rust and Python tearing mode simulators.
-        Both should produce statistically equivalent disruption physics
-        when given the same RNG seed.
+    def test_tearing_mode_statistical_parity(self) -> None:
+        """The stochastic tearing trajectories are statistically equivalent.
+
+        Both tiers run the identical Modified Rutherford physics over independent
+        RNG streams, so per-shot trajectories differ but their distributions agree:
+        the saturating bootstrap drive gives the same (near-zero) disruption rate
+        and the same island-growth statistics.
         """
-        from scpn_fusion.control.disruption_predictor import (
+        from scpn_fusion.control.disruption_risk_runtime import (
             simulate_tearing_mode as py_tearing,
         )
         from scpn_fusion.core._rust_compat import rust_simulate_tearing_mode
 
-        steps = 500
+        n_shots = 300
+        seed_rng = np.random.default_rng(20260623)
+        seeds = seed_rng.integers(0, 1_000_000_000, n_shots)
 
-        rng_py = np.random.default_rng(seed=2026)
-        signal_py, label_py, ttd_py = py_tearing(steps=steps, rng=rng_py)
+        rs_labels, rs_maxw, py_labels, py_maxw = [], [], [], []
+        for s in seeds:
+            sig_rs, lbl_rs, _ = rust_simulate_tearing_mode(steps=1000, seed=int(s))
+            sig_rs = np.asarray(sig_rs)
+            sig_py, lbl_py, _ = py_tearing(steps=1000, rng=np.random.default_rng(int(s)))
+            assert np.all(np.isfinite(sig_rs)) and np.all(np.isfinite(sig_py))
+            rs_labels.append(lbl_rs)
+            py_labels.append(lbl_py)
+            rs_maxw.append(float(np.max(sig_rs)))
+            py_maxw.append(float(np.max(sig_py)))
 
-        signal_rs, label_rs, ttd_rs = rust_simulate_tearing_mode(steps=steps, seed=2026)
-        signal_rs = np.asarray(signal_rs)
-
-        assert np.all(np.isfinite(signal_py)), "Python tearing mode produced NaN"
-        assert np.all(np.isfinite(signal_rs)), "Rust tearing mode produced NaN"
-
-        assert label_py == label_rs, (
-            f"Disruption label mismatch: Python={label_py}, Rust={label_rs}"
-        )
-
-        min_len = min(len(signal_py), len(signal_rs))
-        if min_len > 0:
-            np.testing.assert_allclose(
-                signal_py[:min_len],
-                signal_rs[:min_len],
-                rtol=1e-3,
-                atol=1e-4,
-                err_msg=f"Tearing mode parity failed: max rel diff = {_max_rel_diff(signal_py[:min_len], signal_rs[:min_len]):.6e}",
-            )
+        # Same disruption rate (both ~0 for the saturating drive) and matching
+        # island-growth distribution (mean / spread of the per-shot peak width).
+        assert abs(np.mean(rs_labels) - np.mean(py_labels)) < 0.05
+        assert abs(np.mean(rs_maxw) - np.mean(py_maxw)) < 0.15
+        assert abs(np.std(rs_maxw) - np.std(py_maxw)) < 0.15
 
     @pytest.mark.skipif(
         not _HAS_RUST_TRANSPORT_SOLVER,

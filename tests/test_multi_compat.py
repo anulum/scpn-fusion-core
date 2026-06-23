@@ -415,3 +415,50 @@ def test_rust_multigrid_solve_provider_matches_reference() -> None:
     )
     assert conv_rs and conv_py
     np.testing.assert_allclose(psi_rs, psi_py, rtol=1e-6, atol=1e-9)
+
+
+def test_simulate_tearing_mode_bootstrap_registers_both_tiers() -> None:
+    """The function bootstrap registers Rust and NumPy tiers for simulate_tearing_mode."""
+    tiers = multi.registered_kernels().get("simulate_tearing_mode")
+    assert tiers is not None
+    names = {tier.rstrip("*") for tier in tiers}
+    assert "numpy" in names
+    assert "rust" in names
+
+
+def test_numpy_simulate_tearing_mode_provider_is_seed_reproducible() -> None:
+    """The NumPy-tier provider is deterministic for a given seed."""
+    sig1, lbl1, ttd1 = multi._numpy_simulate_tearing_mode(500, seed=2026)
+    sig2, lbl2, ttd2 = multi._numpy_simulate_tearing_mode(500, seed=2026)
+    np.testing.assert_array_equal(sig1, sig2)
+    assert (lbl1, ttd1) == (lbl2, ttd2)
+    assert np.all(np.isfinite(sig1))
+
+
+def test_simulate_tearing_mode_dispatch_resolves_to_numpy_without_rust(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With Rust unavailable, dispatch falls to the NumPy tearing-mode tier."""
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.RUST, False)
+    with multi._registry_lock:
+        multi._dispatch_cache.pop("simulate_tearing_mode", None)
+    try:
+        impl = multi.dispatch("simulate_tearing_mode")
+        assert multi.dispatch_tier("simulate_tearing_mode") == "numpy"
+        sig, label, _ttd = impl(1000, seed=7)
+        assert sig.shape[0] > 0
+        assert label in (0, 1)
+    finally:
+        with multi._registry_lock:
+            multi._dispatch_cache.pop("simulate_tearing_mode", None)
+
+
+def test_rust_simulate_tearing_mode_provider_is_seed_reproducible() -> None:
+    """When Rust is built, its tearing-mode tier is reproducible for a seed."""
+    pytest.importorskip("scpn_fusion_rs")
+    sig1, lbl1, ttd1 = multi._rust_simulate_tearing_mode(500, seed=2026)
+    sig2, lbl2, ttd2 = multi._rust_simulate_tearing_mode(500, seed=2026)
+    np.testing.assert_array_equal(sig1, sig2)
+    assert (lbl1, ttd1) == (lbl2, ttd2)
+    assert np.all(np.isfinite(sig1))

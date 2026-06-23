@@ -258,17 +258,14 @@ if _RUST_AVAILABLE:
     rust_solve_coil_currents = solve_coil_currents
     rust_measure_magnetics = measure_magnetics
 
-    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None) -> Any:
-        """Rust tearing mode with optional deterministic seed compatibility."""
-        if seed is None:
-            return simulate_tearing_mode(int(steps))
-
-        from scpn_fusion.control.disruption_risk_runtime import (
-            simulate_tearing_mode as _py_tearing,
-        )
-
-        rng = np.random.default_rng(seed=int(seed))
-        return cast("Any", _py_tearing)(steps=int(steps), rng=rng)
+    def rust_simulate_tearing_mode(
+        steps: int,
+        seed: Optional[int] = None,
+        beta_p: float = 0.8,
+        w_crit: float = 0.05,
+    ) -> Any:
+        """Rust full-fidelity tearing-mode shot; ``seed`` makes it reproducible."""
+        return simulate_tearing_mode(int(steps), seed, float(beta_p), float(w_crit))
 
 else:
 
@@ -281,7 +278,12 @@ else:
     def rust_measure_magnetics(*args: Any, **kwargs: Any) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
-    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None) -> Any:
+    def rust_simulate_tearing_mode(
+        steps: int,
+        seed: Optional[int] = None,
+        beta_p: float = 0.8,
+        w_crit: float = 0.05,
+    ) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
 

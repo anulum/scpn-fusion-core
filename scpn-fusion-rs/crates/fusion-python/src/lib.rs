@@ -891,11 +891,37 @@ fn scpn_sample_firing<'py>(
 
 // ─── ML ───
 
-/// Simulate a tearing mode plasma shot.
+/// Simulate a tearing mode plasma shot (full Modified Rutherford physics).
+///
+/// `seed` makes the trajectory reproducible; `beta_p`/`w_crit` parametrise the
+/// bootstrap drive. Returns `(signal, label, time_to_disruption)`. The
+/// deterministic per-step physics is bit-exact with the NumPy tier
+/// (`scpn_fusion.control.disruption_risk_runtime.simulate_tearing_mode`); the
+/// stochastic trajectory is statistically equivalent (independent RNG streams).
 #[pyfunction]
-fn simulate_tearing_mode(steps: usize) -> (Vec<f64>, u8, i64) {
-    let shot = fusion_ml::disruption::simulate_tearing_mode(steps);
+#[pyo3(signature = (
+    steps,
+    seed = None,
+    beta_p = fusion_ml::disruption::DEFAULT_BETA_P,
+    w_crit = fusion_ml::disruption::DEFAULT_W_CRIT,
+))]
+fn simulate_tearing_mode(
+    steps: usize,
+    seed: Option<u64>,
+    beta_p: f64,
+    w_crit: f64,
+) -> (Vec<f64>, u8, i64) {
+    let shot = fusion_ml::disruption::simulate_tearing_mode(steps, seed, beta_p, w_crit);
     (shot.signal, shot.label, shot.time_to_disruption)
+}
+
+/// Deterministic Modified Rutherford island-width increment for one step.
+///
+/// `dw = (delta_prime + beta_p·w/(w² + w_crit²))·(1 - w/w_sat)·dt`. Bit-exact
+/// with the NumPy tier's `rutherford_island_growth`.
+#[pyfunction]
+fn rutherford_island_growth(w: f64, delta_prime: f64, beta_p: f64, w_crit: f64, dt: f64) -> f64 {
+    fusion_ml::disruption::rutherford_island_growth(w, delta_prime, beta_p, w_crit, dt)
 }
 
 // ─── Particle / Boris integrator ───
@@ -2371,6 +2397,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(scpn_marking_update, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_sample_firing, m)?)?;
     m.add_function(wrap_pyfunction!(simulate_tearing_mode, m)?)?;
+    m.add_function(wrap_pyfunction!(rutherford_island_growth, m)?)?;
     // Particle / Boris integrator bridge
     m.add_class::<PyParticle>()?;
     m.add_class::<PyPopulationSummary>()?;
