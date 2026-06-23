@@ -41,3 +41,18 @@ def test_data_root_matches_installed_validation_when_importable() -> None:
         pytest.skip("validation package not importable in this layout")
     validation_dir = Path(spec.origin).resolve().parent
     assert validation_dir.parent == data_root() or (data_root() / "validation").is_dir()
+
+
+def test_reference_data_root_resolves_under_data_root() -> None:
+    """The tokamak-archive reference-data root must track the layout-independent
+    :func:`data_root` resolver so it is reachable from an installed wheel."""
+    from scpn_fusion.io.tokamak_archive_profiles import default_reference_data_root
+
+    assert default_reference_data_root() == data_root() / "validation" / "reference_data"
+
+
+def test_diagnostics_default_config_resolves_under_data_root() -> None:
+    """The diagnostics demo config must resolve via :func:`data_root` (wheel-safe)."""
+    from scpn_fusion.diagnostics.run_diagnostics import DEFAULT_CONFIG_PATH
+
+    assert data_root() / "validation" / "iter_validated_config.json" == DEFAULT_CONFIG_PATH

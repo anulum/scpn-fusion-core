@@ -18,6 +18,7 @@ from typing import Any, Callable, Mapping, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.diagnostics.synthetic_sensors import SensorSuite
 from scpn_fusion.diagnostics.tomography import PlasmaTomography
 
@@ -26,7 +27,7 @@ try:
 except (AttributeError, ImportError):
     FusionKernel = importlib.import_module("scpn_fusion.core.fusion_kernel").FusionKernel
 ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG_PATH = ROOT / "validation" / "iter_validated_config.json"
+DEFAULT_CONFIG_PATH = data_root() / "validation" / "iter_validated_config.json"
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "diagnostics_demo"
 
 
