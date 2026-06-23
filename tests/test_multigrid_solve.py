@@ -121,3 +121,10 @@ def test_restrict_and_prolongate_shape_contract() -> None:
 def test_validate_sor_omega_rejects_out_of_range(omega: float) -> None:
     with pytest.raises(ValueError, match="omega"):
         validate_sor_omega(omega)
+
+
+def test_residual_linf_is_zero_when_interior_is_empty() -> None:
+    """A grid with no interior points has no residual to measure."""
+    psi = np.zeros((2, 2), dtype=np.float64)
+    r_grid = np.array([[1.0, 2.0], [1.0, 2.0]], dtype=np.float64)
+    assert residual_linf(psi, psi, r_grid, 1.0, 1.0) == 0.0

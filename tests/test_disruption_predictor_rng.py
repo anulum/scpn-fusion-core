@@ -16,7 +16,12 @@ from scpn_fusion.control.disruption_predictor import (
     run_anomaly_alarm_campaign,
     simulate_tearing_mode,
 )
-from scpn_fusion.control.disruption_risk_runtime import rutherford_island_growth
+from scpn_fusion.control.disruption_risk_runtime import (
+    _require_int,
+    predict_disruption_risk,
+    run_anomaly_alarm_campaign as _run_anomaly_alarm_campaign,
+    rutherford_island_growth,
+)
 
 
 def test_simulate_tearing_mode_is_deterministic_with_seeded_rng() -> None:
@@ -95,3 +100,48 @@ def test_rutherford_island_growth_bootstrap_adds_to_bare_drive() -> None:
 def test_simulate_tearing_mode_rejects_invalid_shaping(beta_p: float, w_crit: float) -> None:
     with pytest.raises(ValueError, match="beta_p|w_crit"):
         simulate_tearing_mode(steps=10, beta_p=beta_p, w_crit=w_crit)
+
+
+def test_require_int_rejects_non_integer_without_minimum() -> None:
+    """Without a minimum, a non-integer value raises the plain message."""
+    with pytest.raises(ValueError, match="must be an integer\\."):
+        _require_int("widget", 1.5)
+    assert _require_int("widget", 7) == 7
+
+
+def test_simulate_tearing_mode_seeds_island_on_a_triggered_shot() -> None:
+    """A triggered shot re-seeds a collapsed island to the seed width.
+
+    With the bootstrap drive disabled (beta_p=0) the island width decays to its
+    floor during the stable phase, so when the tearing trigger fires the post-
+    trigger branch re-seeds it to 0.15 — the only way the width can exceed 0.1
+    for this configuration. seed 0 is a disruptive shot.
+    """
+    sig, _label, _ttd = simulate_tearing_mode(
+        steps=1000, rng=np.random.default_rng(0), beta_p=0.0, w_crit=0.05
+    )
+    assert float(np.max(sig)) >= 0.15 - 1e-9
+
+
+def test_simulate_tearing_mode_labels_disruption_on_threshold_crossing() -> None:
+    """A strong bootstrap drive grows the island past 8.0 and flags a disruption."""
+    sig, label, ttd = simulate_tearing_mode(
+        steps=3000, rng=np.random.default_rng(1), beta_p=5.0, w_crit=0.05
+    )
+    assert label == 1
+    assert float(np.max(sig)) > 8.0
+    assert isinstance(ttd, (int, np.integer))
+
+
+@pytest.mark.parametrize("bias", [float("inf"), float("-inf"), float("nan")])
+def test_predict_disruption_risk_rejects_non_finite_bias(bias: float) -> None:
+    with pytest.raises(ValueError, match="bias_delta must be finite"):
+        predict_disruption_risk(np.linspace(0.0, 1.0, 32), bias_delta=bias)
+
+
+def test_anomaly_campaign_counts_true_and_false_positive_alarms() -> None:
+    """A low alarm threshold exercises both the true- and false-positive branches."""
+    result = _run_anomaly_alarm_campaign(seed=0, episodes=128, window=64, threshold=0.02)
+    assert result["true_positive_rate"] > 0.0
+    assert result["false_positive_rate"] > 0.0
+    assert result["p95_alarm_latency_steps"] >= 0
