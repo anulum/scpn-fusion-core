@@ -158,3 +158,28 @@ class TestMeasureMagneticsFreeFunction:
         )
         assert clean.shape == (N_MAGNETIC_PROBES,)
         assert np.all(np.isfinite(clean))
+
+
+def test_measure_interferometer_applies_refraction_at_high_density() -> None:
+    ss = SensorSuite(_MockKernel(), seed=1)
+    phases = ss.measure_interferometer(np.full((_MockKernel.NZ, _MockKernel.NR), 50.0))
+    assert phases.shape[0] > 0
+    assert np.all(np.isfinite(phases))
+
+
+def test_measure_forward_channels_returns_channels() -> None:
+    ss = SensorSuite(_MockKernel(), seed=1)
+    ch = ss.measure_forward_channels(
+        electron_density_m3=np.full((_MockKernel.NZ, _MockKernel.NR), 1.0e20),
+        neutron_source_m3_s=np.full((_MockKernel.NZ, _MockKernel.NR), 1.0e18),
+    )
+    assert ch is not None
+
+
+def test_visualize_setup_returns_figure() -> None:
+    import matplotlib.pyplot as plt
+
+    ss = SensorSuite(_MockKernel(), seed=1)
+    fig = ss.visualize_setup()
+    assert hasattr(fig, "savefig")
+    plt.close(fig)
