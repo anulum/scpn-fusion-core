@@ -585,4 +585,8 @@ exclude_lines = [
     "if HAS_JAX",
     "if HAS_FREEGS",
     "if HAS_OMAS",
+    # Structurally unexecutable stub bodies (Protocol/abstract/overload declarations).
+    "^\\s*\\.\\.\\.\\s*$",
+    "@(typing\\.)?overload",
+    "@(abc\\.)?abstractmethod",
 ]

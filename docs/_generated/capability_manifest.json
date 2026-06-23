@@ -2587,7 +2587,7 @@
     "python_capability_classes": 546,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
-    "test_files": 429
+    "test_files": 430
   },
   "documentation": {
     "public_pages": [
@@ -2779,6 +2779,7 @@
       "tests/test_diiid_jet_validation.py",
       "tests/test_director_interface.py",
       "tests/test_director_interface_hardened.py",
+      "tests/test_disruption_checkpoint_policy.py",
       "tests/test_disruption_contract_primitives.py",
       "tests/test_disruption_contracts.py",
       "tests/test_disruption_model_checkpoint.py",
