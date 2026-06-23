@@ -194,3 +194,46 @@ def test_transition_controller_hmode_threshold_and_ramp_are_configurable() -> No
     q_slow_ramp = slow.step(epsilon_measured=9.0e4, Q_current=10.0, dt=0.1)
     q_fast_ramp = fast.step(epsilon_measured=9.0e4, Q_current=10.0, dt=0.1)
     assert q_fast_ramp > q_slow_ramp
+
+
+def test_predator_prey_turbulence_drive_validation() -> None:
+    model = PredatorPreyModel()
+    with pytest.raises(ValueError, match="p_edge"):
+        model.turbulence_drive(-1.0, 10.0)
+    with pytest.raises(ValueError, match="Q_heating"):
+        model.turbulence_drive(1.0, -1.0)
+
+
+def test_martin_threshold_zero_for_nonpositive_inputs() -> None:
+    from scpn_fusion.core.lh_transition import MartinThreshold
+    assert MartinThreshold.power_threshold_MW(0.0, 5.0, 100.0) == 0.0
+    assert MartinThreshold.power_threshold_MW(5.0, 5.0, 100.0) > 0.0
+
+
+def test_lh_transition_controller_validation() -> None:
+    from scpn_fusion.core.lh_transition import LHTransitionController, PredatorPreyModel
+    with pytest.raises(ValueError, match="Q_target"):
+        LHTransitionController(PredatorPreyModel(), Q_target=-1.0)
+    with pytest.raises(ValueError, match="epsilon_hmode_threshold"):
+        LHTransitionController(PredatorPreyModel(), Q_target=10.0, epsilon_hmode_threshold=0.0)
+    with pytest.raises(ValueError, match="q_ramp_rate"):
+        LHTransitionController(PredatorPreyModel(), Q_target=10.0, q_ramp_rate=0.0)
+    ctrl = LHTransitionController(PredatorPreyModel(), Q_target=10.0)
+    with pytest.raises(ValueError, match="epsilon_measured"):
+        ctrl.step(-1.0, 1.0, 0.01)
+    with pytest.raises(ValueError, match="Q_current"):
+        ctrl.step(0.1, -1.0, 0.01)
+
+
+def test_lh_trigger_find_threshold_returns_power() -> None:
+    from scpn_fusion.core.lh_transition import LHTrigger, PredatorPreyModel
+    trig = LHTrigger(PredatorPreyModel())
+    q = trig.find_threshold(np.linspace(0.1, 50.0, 40))
+    assert q > 0.0
+
+
+def test_lh_controller_step_rejects_bad_dt() -> None:
+    from scpn_fusion.core.lh_transition import LHTransitionController, PredatorPreyModel
+    ctrl = LHTransitionController(PredatorPreyModel(), Q_target=10.0)
+    with pytest.raises(ValueError, match="dt must be finite"):
+        ctrl.step(0.1, 1.0, 0.0)

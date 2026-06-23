@@ -123,3 +123,21 @@ def test_domain_violation_helper_is_zero_inside_and_fractional_outside_domain() 
     assert _normalized_domain_violation(5.0, lower=0.0, upper=10.0) == 0.0
     assert _normalized_domain_violation(15.0, lower=0.0, upper=10.0) == pytest.approx(0.5)
     assert _normalized_domain_violation(-2.0, lower=0.0, upper=10.0) == pytest.approx(0.2)
+
+
+def test_eped_require_positive_finite_rejects_bad_inputs() -> None:
+    from scpn_fusion.core.eped_pedestal import _require_positive_finite
+    with pytest.raises(ValueError, match="finite and > 0"):
+        _require_positive_finite("x", True)
+    with pytest.raises(ValueError, match="finite and > 0"):
+        _require_positive_finite("x", "not-a-number")
+    with pytest.raises(ValueError, match="finite and > 0"):
+        _require_positive_finite("x", float("inf"))
+
+
+def test_eped_predict_low_kappa_shear_branch() -> None:
+    from scpn_fusion.core.eped_pedestal import EpedPedestalModel
+    model = EpedPedestalModel(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, kappa=0.5)
+    result = model.predict(n_ped_1e19=8.0, domain_mode="warn")
+    assert result.p_ped_kPa >= 0.0
+

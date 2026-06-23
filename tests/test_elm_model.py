@@ -139,3 +139,61 @@ def test_elm_cycler():
     )
     assert ev2 is not None
     assert ev2.delta_W_MJ == 10.0
+
+
+def test_elm_require_positive_rejects_bad_values() -> None:
+    from scpn_fusion.core.elm_model import _require_positive
+    for bad in (0.0, -1.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="finite and positive"):
+            _require_positive("x", bad)
+
+
+def test_rmp_chirikov_parameter_validates_profiles() -> None:
+    from scpn_fusion.core.elm_model import RMPSuppression
+    rmp = RMPSuppression()
+    rho = np.linspace(0.0, 1.0, 5)
+    q = np.linspace(1.0, 3.0, 5)
+    with pytest.raises(ValueError, match="equal length"):
+        rmp.chirikov_parameter(q[:4], rho, delta_B_r=1e-3, B0=5.3, R0=6.2)
+    with pytest.raises(ValueError, match="at least three"):
+        rmp.chirikov_parameter(q[:2], rho[:2], delta_B_r=1e-3, B0=5.3, R0=6.2)
+    with pytest.raises(ValueError, match="finite"):
+        rmp.chirikov_parameter(np.array([1.0, np.nan, 3.0]), rho[:3], delta_B_r=1e-3, B0=5.3, R0=6.2)
+    with pytest.raises(ValueError, match="monotonic"):
+        rmp.chirikov_parameter(np.array([3.0, 2.0, 1.0]), rho[:3], delta_B_r=1e-3, B0=5.3, R0=6.2)
+
+
+def test_rmp_chirikov_returns_zero_for_degenerate_cases() -> None:
+    from scpn_fusion.core.elm_model import RMPSuppression
+    rho = np.linspace(0.0, 1.0, 5)
+    rmp = RMPSuppression()
+    q = np.linspace(1.0, 3.0, 5)
+    # Non-positive perturbation field -> zero Chirikov parameter.
+    assert rmp.chirikov_parameter(q, rho, delta_B_r=0.0, B0=5.3, R0=6.2) == 0.0
+    # Extremely narrow q-range: floor(n*q_max) < ceil(n*q_min) -> no resonances.
+    q_narrow = np.array([2.40, 2.43, 2.46])
+    assert rmp.chirikov_parameter(q_narrow, rho[:3], delta_B_r=1e-3, B0=5.3, R0=6.2) == 0.0
+
+
+def test_rmp_density_pump_out_and_transport_enhancement() -> None:
+    from scpn_fusion.core.elm_model import RMPSuppression
+    rmp = RMPSuppression()
+    assert rmp.density_pump_out(2.0) >= 0.0
+    assert rmp.density_pump_out(0.5) >= 0.0
+    assert rmp.pedestal_transport_enhancement(2.0) >= 1.0
+    assert rmp.pedestal_transport_enhancement(0.5) == 1.0
+
+
+def test_elm_power_balance_frequency() -> None:
+    from scpn_fusion.core.elm_model import elm_power_balance_frequency
+    assert elm_power_balance_frequency(10.0, 0.5, 0.08) > 0.0
+    assert elm_power_balance_frequency(10.0, 0.0, 0.08) == 0.0
+
+
+def test_rmp_chirikov_single_resonance_branch() -> None:
+    from scpn_fusion.core.elm_model import RMPSuppression
+    rmp = RMPSuppression()  # n_toroidal = 3
+    # q in [2.9, 3.1] yields a single rational surface (m = 9) -> the <2-widths branch.
+    q = np.array([2.9, 3.0, 3.1])
+    rho = np.linspace(0.0, 1.0, 3)
+    assert rmp.chirikov_parameter(q, rho, delta_B_r=1e-3, B0=5.3, R0=6.2) >= 0.0
