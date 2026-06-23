@@ -14,6 +14,7 @@ from scpn_fusion.control.gain_scheduled_controller import (
     OperatingRegime,
     RegimeController,
     RegimeDetector,
+    ScenarioSchedule,
     ScenarioWaveform,
     iter_baseline_schedule,
 )
@@ -104,3 +105,38 @@ def test_iter_baseline_schedule():
 
     val_455 = sched.evaluate(455.0)
     assert val_455["Ip"] == 6.0
+
+
+def test_detector_classifies_ramp_down_on_steep_negative_current_slope() -> None:
+    detector = RegimeDetector()
+    reg = detector.detect(np.zeros(2), np.array([-1.0e9, 0.0]), tau_E=1.0, p_disrupt=0.0)
+    assert reg == OperatingRegime.RAMP_DOWN
+
+
+def test_gain_scheduled_step_resets_integral_when_entering_disruption_mitigation() -> None:
+    def _ctrl(regime: OperatingRegime) -> RegimeController:
+        return RegimeController(
+            regime, Kp=np.ones(1), Ki=np.ones(1), Kd=np.zeros(1), x_ref=np.ones(1), constraints={}
+        )
+
+    gsc = GainScheduledController(
+        {
+            OperatingRegime.RAMP_UP: _ctrl(OperatingRegime.RAMP_UP),
+            OperatingRegime.DISRUPTION_MITIGATION: _ctrl(OperatingRegime.DISRUPTION_MITIGATION),
+        }
+    )
+    gsc.current_regime = OperatingRegime.RAMP_UP
+    gsc.integral_error = np.full(1, 9.0)
+    u = gsc.step(np.zeros(1), 1.0, 0.1, OperatingRegime.DISRUPTION_MITIGATION)
+    assert gsc.current_regime == OperatingRegime.DISRUPTION_MITIGATION
+    assert np.all(np.isfinite(u))
+
+
+def test_scenario_schedule_duration_is_zero_when_empty() -> None:
+    assert ScenarioSchedule({}).duration() == 0.0
+
+
+def test_scenario_schedule_validate_flags_non_monotonic_times() -> None:
+    wf = ScenarioWaveform("ip", np.array([0.0, 1.0, 0.5]), np.array([0.0, 1.0, 2.0]))
+    errors = ScenarioSchedule({"ip": wf}).validate()
+    assert any("non-monotonic" in e for e in errors)
