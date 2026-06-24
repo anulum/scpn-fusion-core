@@ -118,3 +118,14 @@ def test_coerce_profiles_1d_reports_missing_and_misaligned_profile_payloads() ->
     }
     with pytest.raises(ValueError, match="electron_temp_keV length must match"):
         _coerce_profiles_1d(payload, name="state.profiles_1d")
+
+
+def test_coerce_finite_real_sequence_rejects_oversized_input():
+    from scpn_fusion.io.imas_connector_common import (
+        MAX_IDS_SEQUENCE_LENGTH,
+        _coerce_finite_real_sequence,
+    )
+
+    # The length guard fires before any element is parsed.
+    with pytest.raises(ValueError, match="exceeds safety limit"):
+        _coerce_finite_real_sequence("x", range(MAX_IDS_SEQUENCE_LENGTH + 1))

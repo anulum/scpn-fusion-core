@@ -196,3 +196,8 @@ def test_miller_kappa_shear_enters_radial_metric_derivatives():
     expected_jacobian = 2.0 * 0.5 * 2.0 * (1.0 + 0.5)
     assert sheared.jacobian[upper_midplane] == pytest.approx(expected_jacobian, rel=1e-12)
     assert sheared.jacobian[upper_midplane] != pytest.approx(base.jacobian[upper_midplane])
+
+
+def test_miller_geometry_rejects_extreme_triangularity():
+    with pytest.raises(ValueError, match=r"delta must be finite with \|delta\| < 1"):
+        miller_geometry(R0=6.2, a=2.0, rho=0.5, delta=1.0)

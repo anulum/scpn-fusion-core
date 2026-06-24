@@ -43,3 +43,8 @@ def test_calculate_pumping_power_rejects_invalid_inputs(kwargs: dict, match: str
     loop = CoolantLoop("water")
     with pytest.raises(ValueError, match=match):
         loop.calculate_pumping_power(**kwargs)
+
+
+def test_churchill_friction_factor_low_reynolds_limit():
+    # Re below the 1e-3 floor returns the clamped laminar value 64 / 1e-3.
+    assert churchill_friction_factor(Re=5e-4) == pytest.approx(64.0 / 1e-3)
