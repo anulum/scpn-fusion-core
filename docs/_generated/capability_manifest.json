@@ -2588,7 +2588,7 @@
     "python_capability_classes": 546,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
-    "test_files": 431
+    "test_files": 433
   },
   "documentation": {
     "public_pages": [
@@ -2920,6 +2920,7 @@
       "tests/test_high_beta_negative_triangularity_campaign.py",
       "tests/test_hil_demo_runner.py",
       "tests/test_hil_harness.py",
+      "tests/test_honest_validated_coverage.py",
       "tests/test_hpc_bridge.py",
       "tests/test_hybrid_accuracy_benchmark_contract.py",
       "tests/test_hypothesis_physics_models.py",
@@ -3090,6 +3091,7 @@
       "tests/test_stellarator_geometry.py",
       "tests/test_stress_campaign.py",
       "tests/test_structure.py",
+      "tests/test_studio_exactness.py",
       "tests/test_studio_manifest.py",
       "tests/test_subsystem_fault_hardening_campaign.py",
       "tests/test_subsystem_fault_models.py",

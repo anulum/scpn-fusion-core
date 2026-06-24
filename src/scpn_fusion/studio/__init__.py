@@ -14,6 +14,14 @@ that the Hub ingests for federation. See :mod:`scpn_fusion.studio.manifest` and
 
 from __future__ import annotations
 
+from .exactness import (
+    ComparisonResult,
+    ExactnessClass,
+    ReproVerdict,
+    compare_bit_exact,
+    compare_tolerance,
+    reproduce,
+)
 from .federation import (
     build_architecture_map_extension,
     build_federation_document,
@@ -25,10 +33,16 @@ from .verbs import FUSION_VERBS, STUDIO_ID, evidence_schemas
 __all__ = [
     "FUSION_VERBS",
     "STUDIO_ID",
+    "ComparisonResult",
+    "ExactnessClass",
+    "ReproVerdict",
     "build_architecture_map_extension",
     "build_federation_document",
     "build_manifest",
+    "compare_bit_exact",
+    "compare_tolerance",
     "declared_surface",
     "evidence_schemas",
+    "reproduce",
     "write_federation_document",
 ]

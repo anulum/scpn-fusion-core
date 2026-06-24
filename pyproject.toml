@@ -481,6 +481,7 @@ files = [
     "src/scpn_fusion/neurocore_compat.py",
     # studio/ (SCPN-STUDIO federation surface, schema A)
     "src/scpn_fusion/studio/__init__.py",
+    "src/scpn_fusion/studio/exactness.py",
     "src/scpn_fusion/studio/federation.py",
     "src/scpn_fusion/studio/manifest.py",
     "src/scpn_fusion/studio/verbs.py",
