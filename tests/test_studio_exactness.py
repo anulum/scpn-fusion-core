@@ -12,10 +12,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+import hashlib
+
 from scpn_fusion.studio.exactness import (
     ComparisonResult,
     ExactnessClass,
     ReproVerdict,
+    canonical_value_digest,
     compare_bit_exact,
     compare_tolerance,
     reproduce,
@@ -146,6 +149,26 @@ def test_reproduce_tolerance_requires_both_values() -> None:
     """A tolerance dispatch without both values is an error."""
     with pytest.raises(ValueError, match="requires recomputed_value"):
         reproduce(ExactnessClass.TOLERANCE, recomputed_value=1.0)
+
+
+def test_canonical_value_digest_is_sha256_of_raw_float64_bytes() -> None:
+    """The value digest is sha256 over the little-endian float64 byte image, not a decimal repr."""
+    arr = np.array([1e-6, 2.0, 3.5], dtype=np.float64)
+    expected = "sha256:" + hashlib.sha256(arr.astype("<f8").tobytes()).hexdigest()
+    assert canonical_value_digest(arr) == expected
+
+
+def test_canonical_value_digest_is_reproducible_and_distinguishing() -> None:
+    """Equal values digest equally; any change in the values changes the digest (tamper-evident)."""
+    a = np.array([1.0, 2.0, 3.0])
+    assert canonical_value_digest(a) == canonical_value_digest(np.array([1.0, 2.0, 3.0]))
+    assert canonical_value_digest(a) != canonical_value_digest(np.array([1.0, 2.0, 3.0001]))
+
+
+def test_canonical_value_digest_handles_scalars() -> None:
+    """A scalar reference value digests like a 0-d array of the same byte image."""
+    assert canonical_value_digest(0.5).startswith("sha256:")
+    assert canonical_value_digest(0.5) != canonical_value_digest(0.6)
 
 
 def test_exactness_class_and_verdict_wire_values() -> None:

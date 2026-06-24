@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+import hashlib
 
 import numpy as np
 from numpy.typing import NDArray
@@ -178,6 +179,33 @@ def compare_tolerance(
     return ComparisonResult(ReproVerdict.DRIFT, f"beyond tolerance (rtol={rtol:g}, atol={atol:g})")
 
 
+def canonical_value_digest(value: NDArray[np.float64] | float) -> str:
+    """Return a language-independent content digest of a committed reference value series.
+
+    For a ``tolerance`` or ``stochastic`` claim, large reference arrays do not belong inline in
+    the signed envelope; the envelope carries only this digest, and the values live in a side
+    artifact. The verifier fetches the side artifact, recomputes this digest, and checks it equals
+    the signed one BEFORE the tolerance compare — so the fetched values are tamper-evident.
+
+    The digest is taken over the raw IEEE-754 ``float64`` little-endian bytes, NOT a decimal string
+    representation, so the producer (Python) and consumer (browser/JS) agree byte-for-byte
+    regardless of float formatting — it sidesteps the ``json.dumps(1e-6)='1e-06'`` vs JS
+    ``'0.000001'`` divergence entirely (you digest the bytes, not a language-dependent repr).
+
+    Parameters
+    ----------
+    value
+        The committed reference value(s) (scalar or array).
+
+    Returns
+    -------
+    str
+        A ``sha256:<hex>`` digest of the canonical little-endian ``float64`` byte image.
+    """
+    arr = np.ascontiguousarray(np.asarray(value, dtype="<f8"))
+    return "sha256:" + hashlib.sha256(arr.tobytes()).hexdigest()
+
+
 def reproduce(
     exactness_class: ExactnessClass | None,
     *,
@@ -238,6 +266,7 @@ __all__ = [
     "ComparisonResult",
     "ExactnessClass",
     "ReproVerdict",
+    "canonical_value_digest",
     "compare_bit_exact",
     "compare_tolerance",
     "reproduce",
