@@ -66,6 +66,9 @@ rust = [
     "maturin>=1.7,<2.0",
 ]
 snn = []  # pure-numpy LIF+NEF engine, no external deps
+studio = [
+    "scpn-studio-platform>=0.8,<0.9",
+]
 benchmark = [
     "freegs>=0.6",
 ]
@@ -141,6 +144,7 @@ validation = ["reference_data/tglf_training_data.npz"]
 [project.scripts]
 scpn-fusion = "scpn_fusion.cli:main"
 scpn-dashboard = "scpn_fusion.ui.dashboard_launcher:main"
+scpn-emit-studio-manifest = "scpn_fusion.studio.federation:main"
 
 [tool.mypy]
 strict = true
@@ -475,6 +479,11 @@ files = [
     "src/scpn_fusion/exceptions.py",
     "src/scpn_fusion/fallback_telemetry.py",
     "src/scpn_fusion/neurocore_compat.py",
+    # studio/ (SCPN-STUDIO federation surface, schema A)
+    "src/scpn_fusion/studio/__init__.py",
+    "src/scpn_fusion/studio/federation.py",
+    "src/scpn_fusion/studio/manifest.py",
+    "src/scpn_fusion/studio/verbs.py",
 ]
 
 [[tool.mypy.overrides]]
@@ -509,6 +518,13 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["omas", "omas.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# scpn-studio-platform is the optional [studio] federation SDK, absent from the
+# base CI type-check environment (only the studio-conformance job installs it).
+module = ["scpn_studio_platform", "scpn_studio_platform.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [[tool.mypy.overrides]]
 module = [

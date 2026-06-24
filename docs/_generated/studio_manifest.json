@@ -1,0 +1,461 @@
+{
+  "architecture_map": {
+    "backends": [
+      {
+        "dispatch_order": 1,
+        "language": "Rust",
+        "name": "rust",
+        "role": "hot kernels (13-crate scpn-fusion-rs workspace, PyO3)",
+        "status": "runtime-active"
+      },
+      {
+        "dispatch_order": 2,
+        "language": "Mojo",
+        "name": "mojo",
+        "role": "vectorised kernels (probed via scpn_fusion_mojo)",
+        "status": "declared"
+      },
+      {
+        "dispatch_order": 3,
+        "language": "Julia",
+        "name": "julia",
+        "role": "Grad-Shafranov / linear-algebra path (juliacall)",
+        "status": "build-available"
+      },
+      {
+        "dispatch_order": 4,
+        "language": "Go",
+        "name": "go",
+        "role": "concurrent solver path (cgo)",
+        "status": "build-available"
+      },
+      {
+        "dispatch_order": 5,
+        "language": "Python",
+        "name": "jax",
+        "role": "GPU/traceable equilibrium, gyrokinetic and transport solvers",
+        "status": "build-available"
+      },
+      {
+        "dispatch_order": 6,
+        "language": "Python",
+        "name": "python",
+        "role": "guaranteed numerical floor (NumPy/SciPy)",
+        "status": "runtime-active"
+      }
+    ],
+    "boundaries": {
+      "bounded": [
+        "neural transport / equilibrium surrogates (trained-regime only)",
+        "reduced-order structural and heat-load screens (not finite-element analysis)",
+        "quasi-3D field-line and stellarator extensions"
+      ],
+      "closed": [
+        "live tokamak / machine control (all execution is simulated)",
+        "reactor certification or component qualification"
+      ],
+      "executed": [
+        "free-boundary Grad-Shafranov equilibrium",
+        "integrated multi-ion transport",
+        "linear/nonlinear gyrokinetics with external-code parity",
+        "MHD stability analysis",
+        "closed-loop control in the flight simulator",
+        "disruption forecasting + mitigation surrogates",
+        "experimental validation against ITER/SPARC/DIII-D/JET/MAST references",
+        "bounded-claim evidence ledger"
+      ],
+      "feasibility_only": [
+        "GPU real-time deployment",
+        "hardware-in-the-loop on physical actuators",
+        "full 3D MHD"
+      ]
+    },
+    "capabilities": [
+      {
+        "domain": "Equilibrium",
+        "name": "equilibrium-solver",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Equilibrium",
+        "name": "equilibrium-reconstruction",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Transport",
+        "name": "integrated-transport",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Transport",
+        "name": "gyrokinetic-suite",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Stability",
+        "name": "mhd-stability",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Control",
+        "name": "plasma-control",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Disruption",
+        "name": "disruption-prediction",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Disruption",
+        "name": "disruption-mitigation",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Provenance",
+        "name": "evidence-ledger",
+        "status": "wired",
+        "tier": "core"
+      },
+      {
+        "domain": "Transport",
+        "name": "neural-surrogates",
+        "status": "wired",
+        "tier": "extended"
+      },
+      {
+        "domain": "Engineering",
+        "name": "heating-neutronics",
+        "status": "wired",
+        "tier": "extended"
+      },
+      {
+        "domain": "Performance",
+        "name": "gpu-acceleration",
+        "status": "build-available",
+        "tier": "extended"
+      }
+    ],
+    "cross_repo": [
+      {
+        "adapter": "phase.plasma_knm",
+        "sibling": "scpn-quantum-control",
+        "wire_format": "FRC equilibrium / plasma K_nm -> KuramotoProblem (pulsed-shot surrogate)"
+      },
+      {
+        "adapter": "campaigns.fusion_coupled_merge_trigger",
+        "sibling": "scpn-mif-core",
+        "wire_format": "pulsed-compression seam -> Faraday-recovery merge trigger"
+      },
+      {
+        "adapter": "control.tokamak_flight_sim",
+        "sibling": "scpn-control",
+        "wire_format": "shared controller interfaces / replay benchmarks"
+      },
+      {
+        "adapter": "phase.ws_phase_stream",
+        "sibling": "scpn-phase-orchestrator",
+        "wire_format": "plasma phase stream -> UPDE orchestrator advance/hold/rollback"
+      },
+      {
+        "adapter": "control.director_interface",
+        "sibling": "director-ai",
+        "wire_format": "streaming-halt disruption guard over the control loop"
+      }
+    ],
+    "interfaces": [
+      {
+        "entry": "scpn-fusion = scpn_fusion.cli:main",
+        "kind": "cli"
+      },
+      {
+        "entry": "scpn-dashboard = scpn_fusion.ui.dashboard_launcher:main",
+        "kind": "cli"
+      },
+      {
+        "entry": "scpn-emit-studio-manifest = scpn_fusion.studio.federation:main",
+        "kind": "cli"
+      },
+      {
+        "entry": "scpn_fusion",
+        "kind": "library"
+      },
+      {
+        "entry": "docs/_generated/studio_manifest.json",
+        "kind": "studio_feed"
+      }
+    ],
+    "pipeline_stages": [
+      {
+        "inputs": [
+          "machine config:json (geometry, coils, profiles, limits)"
+        ],
+        "outputs": [
+          "TokamakConfig (validated, frozen)"
+        ],
+        "processing_model": "schema validation + physical-bound checks",
+        "stage": "configuration"
+      },
+      {
+        "inputs": [
+          "TokamakConfig",
+          "diagnostics (optional, for reconstruction)"
+        ],
+        "outputs": [
+          "Psi(R,Z)",
+          "q-profile",
+          "flux surfaces",
+          "magnetic axis / X-point"
+        ],
+        "processing_model": "free-boundary Grad-Shafranov (Picard/Newton/multigrid) or EFIT/kinetic-EFIT/neural reconstruction; FRC rigid-rotor branch",
+        "stage": "equilibrium"
+      },
+      {
+        "inputs": [
+          "equilibrium",
+          "heating/fuelling sources",
+          "boundary conditions"
+        ],
+        "outputs": [
+          "Ti/Te/ne profiles",
+          "confinement time",
+          "conservation diagnostics"
+        ],
+        "processing_model": "Crank-Nicolson implicit diffusion; multi-ion + neoclassical/turbulent + gyrokinetic/neural transport closures",
+        "stage": "transport"
+      },
+      {
+        "inputs": [
+          "equilibrium",
+          "profiles"
+        ],
+        "outputs": [
+          "MHD growth rates",
+          "gyrokinetic spectra",
+          "GENE/CGYRO/GS2/TGLF parity"
+        ],
+        "processing_model": "ballooning/tearing/sawtooth analysis; linear+nonlinear GK",
+        "stage": "stability"
+      },
+      {
+        "inputs": [
+          "state estimate",
+          "targets",
+          "actuator limits"
+        ],
+        "outputs": [
+          "actuator commands",
+          "closed-loop trajectory",
+          "control-replay pack"
+        ],
+        "processing_model": "flight-simulator MPC / H-infinity / shape+vertical+burn control (simulated, fail-closed safety interlocks)",
+        "stage": "control"
+      },
+      {
+        "inputs": [
+          "plasma features",
+          "profiles"
+        ],
+        "outputs": [
+          "disruption probability",
+          "mitigation trigger",
+          "calibration"
+        ],
+        "processing_model": "ML disruption forecasting + SPI/pellet mitigation surrogate",
+        "stage": "disruption"
+      },
+      {
+        "inputs": [
+          "observables",
+          "provenance"
+        ],
+        "outputs": [
+          "claim-classified, artefact-backed evidence packs"
+        ],
+        "processing_model": "bounded-claim ledger with experimental-parity boundaries",
+        "stage": "evidence"
+      }
+    ],
+    "version": "architecture-map.v2",
+    "wire_formats": [
+      {
+        "name": "GEQDSK",
+        "schema_ref": "scpn_fusion.core.eqdsk (free-boundary equilibrium G-EQDSK exchange)"
+      },
+      {
+        "name": "IMAS-IDS",
+        "schema_ref": "scpn_fusion.io.imas_connector (ITER IMAS interface data structures)"
+      },
+      {
+        "name": "studio-evidence",
+        "schema_ref": "studio.*.v1 (9 evidence schemas from the bounded-claim ledger)"
+      },
+      {
+        "name": "KuramotoProblem",
+        "schema_ref": "scpn_fusion.phase.plasma_knm (plasma-native K/omega -> quantum bridge)"
+      }
+    ]
+  },
+  "schema_a": {
+    "content_digest": "sha256:a50c57523043009f83886dddc1ef64335f771e23d9675643a865f1755e28855f",
+    "contract_era": "v1",
+    "enumeration": "language-agnostic",
+    "evidence_types": [
+      "studio.equilibrium-reconstruction.v1",
+      "studio.transport-solution.v1",
+      "studio.gyrokinetic-parity.v1",
+      "studio.mhd-stability.v1",
+      "studio.physics-validation.v1",
+      "studio.solver-benchmark.v1",
+      "studio.evidence-replay.v1",
+      "studio.control-replay.v1",
+      "studio.disruption-forecast.v1"
+    ],
+    "platform_sdk": ">=0.8,<0.9",
+    "protocol_version": "1",
+    "studio": "scpn-fusion-core",
+    "studio_version": "3.9.11",
+    "transport_profile": "local-first",
+    "verbs": [
+      {
+        "backends": [
+          "rust",
+          "jax",
+          "python"
+        ],
+        "fidelity": "first-principles",
+        "produces": [
+          "studio.equilibrium-reconstruction.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "read-only",
+        "timing": {
+          "class": "batch"
+        },
+        "verb": "reconstruct"
+      },
+      {
+        "backends": [
+          "rust",
+          "jax",
+          "python"
+        ],
+        "fidelity": "first-principles",
+        "produces": [
+          "studio.transport-solution.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "simulated",
+        "timing": {
+          "class": "batch"
+        },
+        "verb": "simulate"
+      },
+      {
+        "backends": [
+          "rust",
+          "python"
+        ],
+        "fidelity": "analytic",
+        "produces": [
+          "studio.gyrokinetic-parity.v1",
+          "studio.mhd-stability.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "read-only",
+        "timing": {
+          "class": "batch"
+        },
+        "verb": "analyse"
+      },
+      {
+        "backends": [
+          "python"
+        ],
+        "fidelity": "analytic",
+        "produces": [
+          "studio.physics-validation.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "read-only",
+        "timing": {
+          "class": "batch"
+        },
+        "verb": "validate"
+      },
+      {
+        "backends": [
+          "rust",
+          "julia",
+          "go",
+          "python"
+        ],
+        "fidelity": "analytic",
+        "produces": [
+          "studio.solver-benchmark.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "simulated",
+        "timing": {
+          "class": "batch"
+        },
+        "verb": "benchmark"
+      },
+      {
+        "backends": [
+          "python"
+        ],
+        "fidelity": "analytic",
+        "produces": [
+          "studio.evidence-replay.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "read-only",
+        "timing": {
+          "class": "batch"
+        },
+        "verb": "replay"
+      },
+      {
+        "backends": [
+          "rust",
+          "python"
+        ],
+        "fidelity": "reduced-order",
+        "produces": [
+          "studio.control-replay.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "simulated",
+        "timing": {
+          "class": "realtime",
+          "deadline_us": 100.0
+        },
+        "verb": "control"
+      },
+      {
+        "backends": [
+          "python"
+        ],
+        "fidelity": "ml-surrogate",
+        "produces": [
+          "studio.disruption-forecast.v1"
+        ],
+        "safety_tier": "research",
+        "side_effect": "read-only",
+        "timing": {
+          "class": "batch"
+        },
+        "verb": "predict"
+      }
+    ]
+  }
+}

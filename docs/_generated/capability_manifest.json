@@ -2582,13 +2582,13 @@
   "counts": {
     "capability_documentation_pages": 55,
     "github_workflows": 12,
-    "optional_extras": 12,
+    "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 55,
     "python_capability_classes": 546,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
-    "test_files": 430
+    "test_files": 431
   },
   "documentation": {
     "public_pages": [
@@ -2684,6 +2684,7 @@
       "rl",
       "rust",
       "snn",
+      "studio",
       "ui"
     ],
     "shipped_package_data": [
@@ -3089,6 +3090,7 @@
       "tests/test_stellarator_geometry.py",
       "tests/test_stress_campaign.py",
       "tests/test_structure.py",
+      "tests/test_studio_manifest.py",
       "tests/test_subsystem_fault_hardening_campaign.py",
       "tests/test_subsystem_fault_models.py",
       "tests/test_sweep_disruption_threshold_tool.py",
