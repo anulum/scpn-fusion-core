@@ -203,6 +203,7 @@ def test_disruption_sequence_mitigated():
 
 def test_require_positive_rejects_nonpositive_and_nonfinite() -> None:
     from scpn_fusion.core.disruption_sequence import _require_positive
+
     for bad in (0.0, -1.0, float("inf"), float("nan")):
         with pytest.raises(ValueError, match="finite and positive"):
             _require_positive("x", bad)
@@ -224,7 +225,10 @@ def test_current_quench_induced_field_scales_with_dip_dt() -> None:
 def test_re_beam_termination_heat_load_inf_for_zero_area() -> None:
     from scpn_fusion.core.disruption_sequence import REBeamPhase
     import inspect
+
     sig = inspect.signature(REBeamPhase.__init__)
-    kwargs = {p: 1.0 for p in list(sig.parameters)[1:] if sig.parameters[p].default is inspect._empty}
+    kwargs = {
+        p: 1.0 for p in list(sig.parameters)[1:] if sig.parameters[p].default is inspect._empty
+    }
     re = REBeamPhase(**kwargs) if kwargs else REBeamPhase()
     assert re.termination_heat_load(50.0, 0.0) == float("inf")

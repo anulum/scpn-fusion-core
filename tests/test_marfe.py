@@ -161,6 +161,7 @@ def test_marfe_stability_diagram_rejects_nonpositive_geometry() -> None:
 def test_marfe_limit_requires_all_or_none_optional_args() -> None:
     pred = DensityLimitPredictor()
     import inspect
+
     sig = inspect.signature(pred.marfe_limit)
     req = [p for p in list(sig.parameters) if sig.parameters[p].default is inspect._empty]
     base = {p: 1.0 for p in req}

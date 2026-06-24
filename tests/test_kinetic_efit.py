@@ -164,6 +164,7 @@ def test_ti_points_affect_kinetic_pressure_level():
 
 def test_fast_ion_pressure_constructor_validation() -> None:
     from scpn_fusion.core.kinetic_efit import FastIonPressure
+
     with pytest.raises(ValueError, match="E_fast_keV"):
         FastIonPressure(E_fast_keV=0.0, n_fast_frac=0.05)
     with pytest.raises(ValueError, match="n_fast_frac"):
@@ -172,6 +173,7 @@ def test_fast_ion_pressure_constructor_validation() -> None:
 
 def test_mse_pitch_angle_validates_inputs() -> None:
     from scpn_fusion.core.kinetic_efit import mse_pitch_angle
+
     with pytest.raises(ValueError, match="must be finite"):
         mse_pitch_angle(float("nan"), 0.1, 5.0, 1e6, 6.2)
     with pytest.raises(ValueError, match="v_beam"):

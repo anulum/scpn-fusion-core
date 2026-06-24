@@ -336,8 +336,13 @@ def test_alfven_alpha_loss_estimate_validation() -> None:
 
 def test_rsae_frequency_rejects_zero_toroidal_mode() -> None:
     import inspect
+
     sig = inspect.signature(rsae_frequency)
-    args = {p: (0 if p == "n" else 1.5) for p in sig.parameters if sig.parameters[p].default is inspect._empty}
+    args = {
+        p: (0 if p == "n" else 1.5)
+        for p in sig.parameters
+        if sig.parameters[p].default is inspect._empty
+    }
     with pytest.raises(ValueError, match="nonzero"):
         rsae_frequency(**args)
 

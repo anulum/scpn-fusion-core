@@ -206,12 +206,14 @@ def test_predator_prey_turbulence_drive_validation() -> None:
 
 def test_martin_threshold_zero_for_nonpositive_inputs() -> None:
     from scpn_fusion.core.lh_transition import MartinThreshold
+
     assert MartinThreshold.power_threshold_MW(0.0, 5.0, 100.0) == 0.0
     assert MartinThreshold.power_threshold_MW(5.0, 5.0, 100.0) > 0.0
 
 
 def test_lh_transition_controller_validation() -> None:
     from scpn_fusion.core.lh_transition import LHTransitionController, PredatorPreyModel
+
     with pytest.raises(ValueError, match="Q_target"):
         LHTransitionController(PredatorPreyModel(), Q_target=-1.0)
     with pytest.raises(ValueError, match="epsilon_hmode_threshold"):
@@ -227,6 +229,7 @@ def test_lh_transition_controller_validation() -> None:
 
 def test_lh_trigger_find_threshold_returns_power() -> None:
     from scpn_fusion.core.lh_transition import LHTrigger, PredatorPreyModel
+
     trig = LHTrigger(PredatorPreyModel())
     q = trig.find_threshold(np.linspace(0.1, 50.0, 40))
     assert q > 0.0
@@ -234,6 +237,7 @@ def test_lh_trigger_find_threshold_returns_power() -> None:
 
 def test_lh_controller_step_rejects_bad_dt() -> None:
     from scpn_fusion.core.lh_transition import LHTransitionController, PredatorPreyModel
+
     ctrl = LHTransitionController(PredatorPreyModel(), Q_target=10.0)
     with pytest.raises(ValueError, match="dt must be finite"):
         ctrl.step(0.1, 1.0, 0.0)
