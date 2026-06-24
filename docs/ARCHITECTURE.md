@@ -301,11 +301,11 @@ The runtime activation/marking/sampling kernels have a Rust fast-path
 - **`lyapunov_guard.py`**, **`realtime_monitor.py`**, **`ws_phase_stream.py`**: stability
   guardrail, tick-by-tick dashboard hook, and a WebSocket streaming server.
 
-> Wiring note: `phase/kuramoto.py` and `phase/upde.py` carry a **guarded** Rust-acceleration
-> import (`try: from scpn_fusion_rs import kuramoto_step / upde_tick … except ImportError`). The
-> corresponding PyO3 exports are **not present in the current bindings**, so the import falls back
-> cleanly and the **NumPy reference path is the one that runs today**. The Rust hook is dormant,
-> not a failure.
+> Wiring note: the phase engine (`phase/kuramoto.py`, `phase/upde.py`) runs on a **NumPy reference
+> implementation — the canonical and only execution path**. There is no Rust acceleration tier for
+> the Kuramoto/UPDE kernels: the Rust workspace does not implement `kuramoto_step` / `upde_tick`, and
+> the earlier guarded import + dead dispatch branches that implied one have been removed (a Rust phase
+> tier is a tracked forward optimisation, not a current path).
 
 ---
 
