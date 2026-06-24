@@ -241,3 +241,23 @@ def test_lh_controller_step_rejects_bad_dt() -> None:
     ctrl = LHTransitionController(PredatorPreyModel(), Q_target=10.0)
     with pytest.raises(ValueError, match="dt must be finite"):
         ctrl.step(0.1, 1.0, 0.0)
+
+
+def test_find_threshold_returns_first_h_mode_power():
+    # The default predator-prey parameters never reach H-mode; this tuned set
+    # produces a genuine L->H bifurcation, so the trigger returns the lowest
+    # scanned heating power whose run is classified H_MODE.
+    model = PredatorPreyModel(
+        gamma_L=200.0,
+        alpha1=1e-4,
+        alpha2=1e-6,
+        alpha3=1e-4,
+        gamma_damp=0.01,
+        p0=10.0,
+        drive_gain=10.0,
+    )
+    trigger = LHTrigger(model)
+    threshold = trigger.find_threshold(np.array([0.1, 0.5, 1.0, 2.0, 5.0]))
+    assert threshold == pytest.approx(1.0)
+    # The returned power is itself an H-mode point.
+    assert model.evolve(threshold, (0.0, 1.0), 0.001).regime == "H_MODE"

@@ -205,3 +205,16 @@ def test_rmp_chirikov_single_resonance_branch() -> None:
     q = np.array([2.9, 3.0, 3.1])
     rho = np.linspace(0.0, 1.0, 3)
     assert rmp.chirikov_parameter(q, rho, delta_B_r=1e-3, B0=5.3, R0=6.2) >= 0.0
+
+
+def test_chirikov_skips_zero_shear_resonant_surface():
+    # A q-profile that flattens to q=3 at the edge places the q=3/1 resonant
+    # surface at rho=1, where the one-sided gradient is exactly zero. That
+    # surface carries no magnetic shear and is skipped; only the q=2 surface
+    # contributes, so the Chirikov parameter stays finite and non-negative.
+    rmp = RMPSuppression(n_toroidal=1)
+    rho = np.linspace(0.0, 1.0, 6)
+    q_profile = np.array([1.5, 2.0, 2.5, 3.0, 3.0, 3.0])
+    sigma = rmp.chirikov_parameter(q_profile, rho, delta_B_r=1e-3, B0=2.0, R0=3.0)
+    assert np.isfinite(sigma)
+    assert sigma >= 0.0
