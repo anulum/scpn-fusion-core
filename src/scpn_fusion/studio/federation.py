@@ -234,12 +234,12 @@ def _cross_repo() -> list[dict[str, str]]:
         {
             "sibling": "scpn-quantum-control",
             "adapter": "phase.plasma_knm",
-            "wire_format": "FRC equilibrium / plasma K_nm -> KuramotoProblem (pulsed-shot surrogate)",
+            "wire_format": "plasma K_nm coupling (layer-model) -> KuramotoProblem interface",
         },
         {
             "sibling": "scpn-mif-core",
-            "adapter": "campaigns.fusion_coupled_merge_trigger",
-            "wire_format": "pulsed-compression seam -> Faraday-recovery merge trigger",
+            "adapter": "core.pulsed_compression / core.faraday_recovery",
+            "wire_format": "pulsed-compression + Faraday-recovery output -> MIF merge-trigger (consumer-side seam)",
         },
         {
             "sibling": "scpn-control",

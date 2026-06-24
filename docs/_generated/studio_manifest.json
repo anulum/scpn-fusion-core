@@ -148,12 +148,12 @@
       {
         "adapter": "phase.plasma_knm",
         "sibling": "scpn-quantum-control",
-        "wire_format": "FRC equilibrium / plasma K_nm -> KuramotoProblem (pulsed-shot surrogate)"
+        "wire_format": "plasma K_nm coupling (layer-model) -> KuramotoProblem interface"
       },
       {
-        "adapter": "campaigns.fusion_coupled_merge_trigger",
+        "adapter": "core.pulsed_compression / core.faraday_recovery",
         "sibling": "scpn-mif-core",
-        "wire_format": "pulsed-compression seam -> Faraday-recovery merge trigger"
+        "wire_format": "pulsed-compression + Faraday-recovery output -> MIF merge-trigger (consumer-side seam)"
       },
       {
         "adapter": "control.tokamak_flight_sim",
