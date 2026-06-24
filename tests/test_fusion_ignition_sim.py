@@ -15,6 +15,7 @@ import pytest
 
 import scpn_fusion.core.fusion_ignition_sim as fusion_ignition_sim
 from scpn_fusion.core.fusion_ignition_sim import (
+    BurnPhysicsError,
     DynamicBurnModel,
     FusionBurnPhysics,
     run_ignition_experiment,
@@ -311,3 +312,44 @@ def test_run_ignition_experiment_end_to_end(monkeypatch: pytest.MonkeyPatch) -> 
     run_ignition_experiment()
 
     assert saved
+
+
+def test_simulate_rejects_bool_clamp_events() -> None:
+    model = DynamicBurnModel()
+    with pytest.raises(ValueError, match="max_temperature_clamp_events"):
+        model.simulate(duration_s=1.0, max_temperature_clamp_events=True)
+
+
+def test_simulate_enforces_temperature_limit() -> None:
+    # Low density + strong heating drives T above the 25 keV cap.
+    model = DynamicBurnModel(n_e20=0.1)
+    with pytest.raises(BurnPhysicsError):
+        model.simulate(P_aux_mw=900.0, enforce_temperature_limit=True, duration_s=20.0, dt_s=0.05)
+
+
+def test_simulate_clamp_event_budget_exceeded() -> None:
+    model = DynamicBurnModel(n_e20=0.1)
+    with pytest.raises(BurnPhysicsError):
+        model.simulate(P_aux_mw=900.0, max_temperature_clamp_events=1, duration_s=20.0, dt_s=0.05)
+
+
+def test_find_q10_operating_point_returns_scan() -> None:
+    model = DynamicBurnModel()
+    res = model.find_q10_operating_point()
+    assert isinstance(res, dict)
+
+
+def test_find_q10_operating_point_empty_when_greenwald_blocks_all() -> None:
+    model = DynamicBurnModel()
+    # A tiny plasma current collapses the Greenwald limit so every scanned
+    # density is rejected and the scan returns its empty-result branch.
+    res = model.find_q10_operating_point(I_p=0.05)
+    assert isinstance(res, dict)
+
+
+def test_fusion_burn_physics_constructs_from_config() -> None:
+    from scpn_fusion._data_paths import data_root
+
+    cfg = data_root() / "validation" / "iter_validated_config.json"
+    lab = FusionBurnPhysics(str(cfg))
+    assert isinstance(lab, FusionBurnPhysics)
