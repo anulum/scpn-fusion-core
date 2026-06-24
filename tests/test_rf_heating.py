@@ -13,6 +13,10 @@ Resonance at B = omega*m_e / (n*q_e) where n = harmonic.
 
 from __future__ import annotations
 
+import matplotlib
+
+matplotlib.use("Agg")  # headless rendering for plot_heating
+
 import numpy as np
 import pytest
 
@@ -168,6 +172,7 @@ class _FakeKernel:
         self.B_R = np.zeros((nz, nr))
         self.B_Z = np.zeros((nz, nr))
         self.Psi = np.zeros((nz, nr))
+        self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
 
     def solve_equilibrium(self):
         return None
@@ -289,3 +294,120 @@ class TestECRHEdgeCases:
         ecrh = ECRHHeatingSystem()
         rho, P_dep, eff = ecrh.compute_deposition(n_radial_bins=8)
         assert len(rho) == 8
+
+
+class TestFreezeRayAtCaustic:
+    def test_forward_fills_non_finite_rows(self):
+        from scpn_fusion.core.rf_heating import _freeze_ray_at_caustic
+
+        trajectory = np.array(
+            [
+                [1.0, 2.0, 3.0, 4.0],
+                [np.nan, 0.0, 0.0, 0.0],  # caustic -> filled with the preceding finite row
+                [5.0, 6.0, 7.0, 8.0],
+                [np.inf, 0.0, 0.0, 0.0],  # filled with row 2
+            ]
+        )
+        out = _freeze_ray_at_caustic(trajectory)
+        assert out.shape == trajectory.shape
+        assert np.all(np.isfinite(out))
+        assert np.allclose(out[0], [1.0, 2.0, 3.0, 4.0])
+        assert np.allclose(out[1], [1.0, 2.0, 3.0, 4.0])
+        assert np.allclose(out[2], [5.0, 6.0, 7.0, 8.0])
+        assert np.allclose(out[3], [5.0, 6.0, 7.0, 8.0])
+
+    def test_leading_non_finite_row_is_left_untouched(self):
+        # With no preceding finite state the freeze cannot fill, so a leading
+        # non-finite row is passed through (the ``last_finite is None`` branch).
+        from scpn_fusion.core.rf_heating import _freeze_ray_at_caustic
+
+        trajectory = np.array(
+            [
+                [np.nan, 0.0, 0.0, 0.0],
+                [1.0, 2.0, 3.0, 4.0],
+            ]
+        )
+        out = _freeze_ray_at_caustic(trajectory)
+        assert not np.isfinite(out[0]).all()
+        assert np.allclose(out[1], [1.0, 2.0, 3.0, 4.0])
+
+
+class TestICRHPowerDeposition:
+    def test_power_deposition_along_inward_rays(self, icrh_system):
+        # Synthetic inboard-sweeping rays (R: 9 m -> 4 m) cross the ICRH
+        # resonance layer near R ~ 5 m with physical step sizes, so the
+        # absorption and radial-binning paths run without the coordinate
+        # blow-up that the raw Hamiltonian ray integrator can produce.
+        rays = []
+        for z0 in (-0.5, 0.5):
+            r = np.linspace(9.0, 4.0, 50)
+            z = np.full(50, z0)
+            k = np.full(50, -10.0)
+            rays.append(np.column_stack([r, z, k, np.zeros(50)]).astype(np.float64))
+
+        rho, P_dep, eff = icrh_system.compute_power_deposition(rays, P_rf_mw=20.0, n_radial_bins=40)
+        assert rho.shape == (40,)
+        assert P_dep.shape == (40,)
+        assert np.all(np.isfinite(P_dep))
+        assert np.all(P_dep >= 0.0)
+        assert eff > 0.0  # rays cross the resonance layer -> some absorption
+        assert eff <= 1.0
+
+    def test_resonant_ray_exhausts_power_and_skips_zero_steps(self, icrh_system):
+        # Build one synthetic ray pinned at the ICRH resonance major radius so
+        # cyclotron damping is near-total. A duplicated leading sample exercises
+        # the zero-length-step skip; the long resonant path drains the ray below
+        # the 1e-6 MW cut-off, exercising the power-exhaustion early exit.
+        b_res = icrh_system.omega_wave * icrh_system.m_D / icrh_system.q_D
+        res_R = (5.3 * 6.2) / b_res
+        samples = [
+            [res_R, 0.0, -10.0, 0.0],
+            [res_R, 0.0, -10.0, 0.0],  # identical -> ds < 1e-12 -> skipped
+        ]
+        for z in np.linspace(0.0, 10.0, 80):
+            samples.append([res_R, float(z), -10.0, 0.0])
+        ray = np.array(samples, dtype=np.float64)
+
+        rho, P_dep, eff = icrh_system.compute_power_deposition(
+            [ray], P_rf_mw=1e-5, n_radial_bins=40
+        )
+        assert np.all(np.isfinite(P_dep))
+        assert eff > 0.0  # power absorbed at the resonance layer
+        assert eff <= 1.0
+
+    def test_power_deposition_handles_empty_trajectory_list(self, icrh_system):
+        rho, P_dep, eff = icrh_system.compute_power_deposition([], n_radial_bins=16)
+        assert rho.shape == (16,)
+        assert np.allclose(P_dep, 0.0)
+        assert eff == 0.0
+
+
+class TestICRHPlotHeating:
+    def test_plot_heating_writes_png_and_marks_resonance(self, icrh_system, tmp_path, monkeypatch):
+        import matplotlib.pyplot as plt
+
+        monkeypatch.chdir(tmp_path)
+        b_res = icrh_system.omega_wave * icrh_system.m_D / icrh_system.q_D
+        r_res = (5.3 * 6.2) / b_res
+        # One ray reaches the resonance layer (fires the energy-dump marker), the
+        # other stays at the antenna radius (no marker) — covering both branches.
+        absorbing = np.column_stack(
+            [
+                np.linspace(9.0, r_res, 20),
+                np.linspace(1.0, 0.0, 20),
+                np.full(20, -10.0),
+                np.zeros(20),
+            ]
+        ).astype(np.float64)
+        passing = np.column_stack(
+            [
+                np.full(20, 9.0),
+                np.linspace(-1.0, 1.0, 20),
+                np.full(20, -10.0),
+                np.zeros(20),
+            ]
+        ).astype(np.float64)
+
+        icrh_system.plot_heating([absorbing, passing], b_res)
+        plt.close("all")
+        assert (tmp_path / "RF_Heating_Rays.png").exists()
