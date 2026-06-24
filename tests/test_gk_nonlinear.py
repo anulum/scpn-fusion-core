@@ -1314,3 +1314,21 @@ class TestJaxFallback:
         assert diagnostics.passes
         assert abs(diagnostics.exb_free_energy_production) <= 1e-8
         assert diagnostics.dealiased_high_k_max_abs <= 1e-12
+
+
+def test_to_reference_artifact_requires_a_final_state() -> None:
+    """Serialising a reference artifact without a saved 5D state must fail loudly.
+
+    The parity artifact keeps the full species/kx/ky/theta/vpar/mu grid; with no
+    ``final_state`` there is nothing to serialise, so the runtime refuses rather
+    than emit a hollow artifact that external GENE/CGYRO/GS2 comparisons could
+    silently treat as valid.
+    """
+    import pytest
+
+    from scpn_fusion.core._gk_nonlinear_types import NonlinearGKResult
+
+    result = NonlinearGKResult(chi_i=0.3, chi_e=0.2)
+    assert result.final_state is None
+    with pytest.raises(ValueError, match="require a final 5D state"):
+        result.to_reference_artifact()

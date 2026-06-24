@@ -159,3 +159,29 @@ def test_cn_boundary_conditions(solver: TransportSolver):
     assert abs(solver.Ti[0] - solver.Ti[1]) < 1e-12, "Core Neumann BC violated"
     # Dirichlet: T[-1] == 0.1
     assert abs(solver.Ti[-1] - 0.1) < 1e-12, "Edge Dirichlet BC violated"
+
+
+def test_cn_conservation_error_reported_as_inf_on_degenerate_volume(
+    solver: TransportSolver,
+) -> None:
+    """A non-finite volume element must surface as an ``inf`` conservation error.
+
+    If the radial volume element degenerates to ``inf`` the raw energy balance
+    ``dW_actual - dW_source`` evaluates to ``nan`` (``inf - inf``).  The runtime
+    rewrites that to ``+inf`` so the downstream ``> 0.01`` gate fails closed —
+    ``nan > 0.01`` is ``False`` and would silently pass an unphysical step.
+    """
+    n = solver.rho.size
+    # Shadow the bound method with a degenerate volume element.
+    solver._rho_volume_element = lambda: np.full(n, np.inf)  # type: ignore[method-assign]
+
+    # The degenerate inf volume deliberately produces inf/nan in the energy
+    # balance; that is the condition under test, so silence the expected
+    # numpy invalid-value warnings rather than let them clutter the run.
+    with np.errstate(invalid="ignore"):
+        solver.evolve_profiles(dt=0.1, P_aux=10.0, enforce_conservation=False)
+        assert solver._last_conservation_error == float("inf")
+
+        # With enforcement on, the same degenerate step must fail closed.
+        with pytest.raises(Exception, match="Energy conservation violated"):
+            solver.evolve_profiles(dt=0.1, P_aux=10.0, enforce_conservation=True)
