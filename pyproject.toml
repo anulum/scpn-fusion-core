@@ -95,7 +95,7 @@ full = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src", "validation" = "validation"}
+package-dir = {"" = "src", "validation" = "validation", "weights" = "weights"}
 
 # Discover every scpn_fusion subpackage (core/, control/, io/, …) plus the
 # validation package; the previous explicit ``packages`` list named only the
@@ -103,7 +103,7 @@ package-dir = {"" = "src", "validation" = "validation"}
 # the subpackages, leaving it non-importable for downstream consumers.
 [tool.setuptools.packages.find]
 where = ["src", "."]
-include = ["scpn_fusion*", "validation*"]
+include = ["scpn_fusion*", "validation*", "weights"]
 
 # Ship the reference datasets the package loads at import/runtime (e.g. the IPB98
 # scaling coefficients read at module import in core/scaling_laws) so the wheel is
@@ -116,7 +116,27 @@ validation = [
     "**/*.eqdsk",
     "**/*.csv",
 ]
+# Ship only the small runtime surrogate weights the library loads by default (~12 MB
+# total). Large training-only checkpoints — the 302 MB legacy ``fno_turbulence_jax.npz``
+# (opt-in via SCPN_ENABLE_LEGACY_FNO) and the variant/augmented artifacts — are
+# deliberately excluded to keep the wheel within a sane distribution size.
+weights = [
+    "neural_transport_qlknn.npz",
+    "neural_transport_qlknn.metrics.json",
+    "neural_equilibrium_sparc.npz",
+    "neural_equilibrium_iter_v1.npz",
+    "pretrained_mlp_itpa.npz",
+    "pretrained_fno_eurofusion_jet.npz",
+    "pretrained_surrogates_manifest.json",
+]
 scpn_fusion = ["py.typed"]
+
+# Exclude large training-only datasets from the wheel. The 157 MB TGLF training
+# corpus is consumed solely by tools/generate_tglf_dataset.py (a source-tree
+# training utility) and is never loaded by the installed library, so shipping it
+# would push the wheel past the PyPI size limit for no runtime benefit.
+[tool.setuptools.exclude-package-data]
+validation = ["reference_data/tglf_training_data.npz"]
 
 [project.scripts]
 scpn-fusion = "scpn_fusion.cli:main"

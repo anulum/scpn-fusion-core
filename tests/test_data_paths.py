@@ -56,3 +56,20 @@ def test_diagnostics_default_config_resolves_under_data_root() -> None:
     from scpn_fusion.diagnostics.run_diagnostics import DEFAULT_CONFIG_PATH
 
     assert data_root() / "validation" / "iter_validated_config.json" == DEFAULT_CONFIG_PATH
+
+
+def test_runtime_weight_paths_resolve_under_data_root() -> None:
+    """The default surrogate-weight constants must track :func:`data_root` so the
+    bundled QLKNN / neural-equilibrium / pretrained heads ship and load from a wheel."""
+    from scpn_fusion.core.neural_equilibrium import (
+        DEFAULT_WEIGHTS_PATH,
+        ITER_SURROGATE_WEIGHTS_PATH,
+    )
+    from scpn_fusion.core.pretrained_surrogates import DEFAULT_WEIGHTS_DIR
+
+    weights_root = data_root() / "weights"
+    assert weights_root == DEFAULT_WEIGHTS_DIR
+    assert weights_root / "neural_equilibrium_sparc.npz" == DEFAULT_WEIGHTS_PATH
+    assert weights_root / "neural_equilibrium_iter_v1.npz" == ITER_SURROGATE_WEIGHTS_PATH
+    # The shipped runtime surrogates must exist in the active layout.
+    assert DEFAULT_WEIGHTS_PATH.is_file()
