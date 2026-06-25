@@ -125,7 +125,7 @@ jobs:
       contents: read
     needs: [ci-chain-guard]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Validate token format assumptions
         run: python tools/github_token_format_guard.py
 
@@ -136,7 +136,7 @@ jobs:
       contents: read
     needs: [ci-chain-guard]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install Lean toolchain
         run: |
           curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
@@ -177,7 +177,7 @@ jobs:
             profile: full
             allow_failure: false
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
@@ -235,7 +235,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python ${{ matrix.python-version }}
@@ -371,7 +371,7 @@ jobs:
       contents: read
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python 3.12
@@ -407,7 +407,7 @@ jobs:
       contents: read
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python 3.12
@@ -457,7 +457,7 @@ jobs:
       contents: read
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python 3.12
@@ -506,7 +506,7 @@ jobs:
       contents: read
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python
@@ -561,7 +561,7 @@ jobs:
       contents: read
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python
@@ -703,7 +703,7 @@ jobs:
       contents: read
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python
@@ -750,7 +750,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
         with:
@@ -781,7 +781,7 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
       - name: Set up Python 3.12
@@ -834,7 +834,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
       - name: Cache cargo
@@ -886,7 +886,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install Rust nightly toolchain
         uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # nightly
         with:
@@ -935,7 +935,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - name: Run security audit
@@ -951,7 +951,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
       - name: Cache cargo
@@ -996,7 +996,7 @@ jobs:
       contents: read
     needs: [python-tests, rust-tests, rust-python-interop]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python 3.12
@@ -1044,7 +1044,7 @@ jobs:
     needs: [python-tests]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python 3.12
@@ -1071,7 +1071,7 @@ jobs:
       contents: read
     needs: [ci-chain-guard]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           lfs: true
       - name: Set up Python 3.12
