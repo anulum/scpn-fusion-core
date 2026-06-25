@@ -14,8 +14,11 @@ import pytest
 from scpn_fusion.diagnostics.forward import (
     ForwardDiagnosticChannels,
     bolometer_power_density,
+    cxrs_ion_diagnostics,
+    generate_forward_channels,
     ece_radiometer_temperature,
     soft_xray_brightness,
+    thomson_scattering_voltage,
 )
 
 
@@ -165,3 +168,111 @@ def test_sxr_bolo_domain_bounds() -> None:
     # With enforce_domain_bounds, should raise
     with pytest.raises(ValueError, match="outside"):
         soft_xray_brightness(ne, te, r, z, out_of_bounds_chord, enforce_domain_bounds=True)
+
+
+_CHORDS = [((1.2, 0.0), (2.8, 0.0))]
+
+
+def test_cxrs_ion_diagnostics_weights_signals_along_beam() -> None:
+    r, z, te, ne = _make_grid()
+    ti_map = np.full_like(te, 4.0)
+    vphi_map = np.full_like(te, 120.0)
+    ti_out, vphi_out = cxrs_ion_diagnostics(
+        ti_map, vphi_map, r, z, _CHORDS, beam_r_center=2.0, beam_width=0.5
+    )
+    assert ti_out.shape == (1,) and vphi_out.shape == (1,)
+    assert ti_out[0] == pytest.approx(4.0, rel=1e-6)
+    assert vphi_out[0] == pytest.approx(120.0, rel=1e-6)
+
+
+def test_cxrs_zero_weight_outside_beam_returns_zero() -> None:
+    r, z, te, ne = _make_grid()
+    ti_out, _ = cxrs_ion_diagnostics(
+        np.full_like(te, 4.0), np.full_like(te, 0.0), r, z, _CHORDS, beam_r_center=99.0
+    )
+    assert ti_out[0] == 0.0
+
+
+def test_thomson_scattering_voltage_happy_path() -> None:
+    r, z, te, ne = _make_grid()
+    out = thomson_scattering_voltage(ne, te, r, z, [(2.0, 0.0), (2.5, 0.2)])
+    assert out.shape == (2,)
+    assert np.all(np.isfinite(out)) and np.all(out >= 0.0)
+
+
+def test_ece_rejects_non_finite_observation_and_channel() -> None:
+    r, z, te, _ = _make_grid()
+    with pytest.raises(ValueError, match="z_observation must be finite"):
+        ece_radiometer_temperature(te, r, z, [2.0], z_observation=float("nan"))
+    with pytest.raises(ValueError, match="channel_r_positions"):
+        ece_radiometer_temperature(te, r, z, [float("inf")])
+
+
+def test_soft_xray_rejects_invalid_zeff_and_filter() -> None:
+    r, z, te, ne = _make_grid()
+    with pytest.raises(ValueError, match="z_eff must be finite and >= 1.0"):
+        soft_xray_brightness(ne, te, r, z, _CHORDS, z_eff=0.5)
+    with pytest.raises(ValueError, match="filter_energy_kev"):
+        soft_xray_brightness(ne, te, r, z, _CHORDS, filter_energy_kev=0.0)
+
+
+def test_bolometer_rejects_negative_impurity_fraction() -> None:
+    r, z, te, ne = _make_grid()
+    with pytest.raises(ValueError, match="impurity_fraction"):
+        bolometer_power_density(ne, te, r, z, _CHORDS, impurity_fraction=-0.1)
+
+
+@pytest.mark.parametrize(
+    ("source", "match"),
+    [
+        (np.zeros(0), "non-empty 2D"),
+        (np.zeros(5), "non-empty 2D"),
+        (np.full((33, 33), np.inf), "must be finite"),
+    ],
+)
+def test_generate_forward_channels_rejects_bad_neutron_source(source, match: str) -> None:
+    r, z, te, ne = _make_grid()
+    with pytest.raises(ValueError, match=match):
+        generate_forward_channels(
+            electron_density_m3=ne,
+            electron_temp_keV=te,
+            neutron_source_m3_s=source,
+            r_grid=r,
+            z_grid=z,
+            interferometer_chords=_CHORDS,
+            volume_element_m3=0.01,
+        )
+
+
+def test_generate_forward_channels_happy_path_returns_all_channels() -> None:
+    r, z, te, ne = _make_grid()
+    sn = 1.0e18 * np.exp(-((np.meshgrid(r, z)[0] - 2.0) ** 2))
+    ch = generate_forward_channels(
+        electron_density_m3=ne,
+        electron_temp_keV=te,
+        neutron_source_m3_s=sn,
+        r_grid=r,
+        z_grid=z,
+        interferometer_chords=_CHORDS,
+        volume_element_m3=0.01,
+    )
+    assert ch.neutron_count_rate_hz >= 0.0
+    assert np.all(np.isfinite(ch.interferometer_phase_rad))
+
+
+def test_diagnostic_rejects_field_with_wrong_shape() -> None:
+    r, z, te, ne = _make_grid()
+    with pytest.raises(ValueError, match="field shape"):
+        soft_xray_brightness(ne[:, :-1], te, r, z, _CHORDS)
+
+
+def test_diagnostic_rejects_grid_with_too_few_points() -> None:
+    r, z, te, ne = _make_grid()
+    with pytest.raises(ValueError, match="must be 1D with at least 2 points"):
+        soft_xray_brightness(ne, te, np.array([1.0]), z, _CHORDS)
+
+
+def test_thomson_rejects_sample_point_outside_domain_bounds() -> None:
+    r, z, te, ne = _make_grid()
+    with pytest.raises(ValueError, match="outside diagnostic domain bounds"):
+        thomson_scattering_voltage(ne, te, r, z, [(99.0, 0.0)], enforce_domain_bounds=True)

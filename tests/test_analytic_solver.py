@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import json
+import logging
 from typing import TypedDict
 from pathlib import Path
 import numpy as np
@@ -18,6 +20,8 @@ from scpn_fusion.control import analytic_solver as analytic_solver_mod
 from scpn_fusion.control.analytic_solver import (
     AnalyticEquilibriumSolver,
     run_analytic_solver,
+    shafranov_bv,
+    solve_coil_currents,
 )
 
 
@@ -66,6 +70,54 @@ def test_calculate_required_bv_returns_finite_expected_sign() -> None:
     assert bv < 0.0
 
 
+def test_calculate_required_bv_delegates_to_free_function_bit_exact() -> None:
+    """The solver method delegates to the free function with no value drift."""
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    for r_geo, a_min, ip_ma, beta_p, li in [
+        (6.2, 2.0, 15.0, 0.5, 0.8),
+        (1.7, 0.5, 1.0, 0.3, 1.1),
+        (3.0, 1.0, 8.0, 0.9, 0.6),
+    ]:
+        method_bv = solver.calculate_required_Bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
+        assert method_bv == shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
+
+
+def test_shafranov_bv_matches_force_balance_closed_form() -> None:
+    """The free function reproduces the Shafranov radial-force-balance expression."""
+    r_geo, a_min, ip_ma, beta_p, li = 6.2, 2.0, 15.0, 0.5, 0.8
+    mu0 = 4.0 * np.pi * 1e-7
+    expected = -((mu0 * ip_ma * 1e6) / (4.0 * np.pi * r_geo)) * (
+        np.log(8.0 * r_geo / a_min) + beta_p + li / 2.0 - 1.5
+    )
+    assert shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li) == pytest.approx(
+        expected, rel=1e-15
+    )
+
+
+def test_shafranov_bv_shaping_parameters_increase_field_magnitude() -> None:
+    """Larger beta_p or li raises (term_log + term_physics) and |B_v|."""
+    base = shafranov_bv(6.2, 2.0, 15.0, beta_p=0.5, li=0.8)
+    assert abs(shafranov_bv(6.2, 2.0, 15.0, beta_p=0.9, li=0.8)) > abs(base)
+    assert abs(shafranov_bv(6.2, 2.0, 15.0, beta_p=0.5, li=1.2)) > abs(base)
+
+
+@pytest.mark.parametrize(
+    ("r_geo", "a_min", "ip_ma"),
+    [
+        (0.0, 2.0, 15.0),
+        (-1.0, 2.0, 15.0),
+        (6.2, 0.0, 15.0),
+        (6.2, -2.0, 15.0),
+        (6.2, 2.0, 0.0),
+        (6.2, 2.0, -15.0),
+    ],
+)
+def test_shafranov_bv_rejects_nonpositive_inputs(r_geo: float, a_min: float, ip_ma: float) -> None:
+    """The canonical domain requires r_geo, a_min and ip_ma strictly positive."""
+    with pytest.raises(ValueError, match="must be > 0"):
+        shafranov_bv(r_geo, a_min, ip_ma)
+
+
 def test_solve_coil_currents_hits_target_bv_projection() -> None:
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     target_bv = -0.02
@@ -80,6 +132,179 @@ def test_solve_coil_currents_hits_target_bv_projection() -> None:
         dtype=np.float64,
     )
     np.testing.assert_allclose(applied, currents, rtol=0.0, atol=0.0)
+
+
+def test_solve_coil_currents_free_function_minimum_norm() -> None:
+    """A uniform Green's vector splits the target field evenly (minimum norm)."""
+    np.testing.assert_allclose(
+        solve_coil_currents([1.0, 1.0], 1.0), [0.5, 0.5], rtol=0.0, atol=1e-15
+    )
+
+
+def test_solve_coil_currents_free_function_projection_hits_target() -> None:
+    """The recovered currents reproduce the target field under G·I."""
+    green = np.array([0.01, 0.02, 0.015, 0.005, 0.01], dtype=np.float64)
+    currents = solve_coil_currents(green, -0.05)
+    assert float(np.dot(green, currents)) == pytest.approx(-0.05, rel=1e-12)
+
+
+def test_solve_coil_currents_ridge_shrinks_norm_and_clamps_negative() -> None:
+    """Positive ridge shrinks the current norm; negative ridge clamps to zero."""
+    green = np.array([0.01, 0.02, 0.015, 0.005, 0.01], dtype=np.float64)
+    plain = solve_coil_currents(green, -0.05, ridge_lambda=0.0)
+    ridged = solve_coil_currents(green, -0.05, ridge_lambda=1e-3)
+    assert float(np.linalg.norm(ridged)) < float(np.linalg.norm(plain))
+    np.testing.assert_array_equal(solve_coil_currents(green, -0.05, ridge_lambda=-5.0), plain)
+
+
+def test_solve_coil_currents_method_delegates_to_free_function() -> None:
+    """The solver method routes the linear solve through the free function."""
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    eff = solver.compute_coil_efficiencies(6.2, target_Z=0.0)
+    method_currents = solver.solve_coil_currents(-0.02, 6.2, target_Z=0.0)
+    np.testing.assert_array_equal(method_currents, solve_coil_currents(eff, -0.02))
+
+
+class _EmptyCoilKernel(_DummyKernel):
+    """Kernel whose configuration declares no coils."""
+
+    def __init__(self, _config_path: str) -> None:
+        super().__init__(_config_path)
+        self.cfg = {"coils": []}
+
+
+class _ZeroSpacingKernel(_DummyKernel):
+    """Kernel whose grid spacing collapses to zero (degenerate R axis)."""
+
+    def __init__(self, _config_path: str) -> None:
+        super().__init__(_config_path)
+        self.R = np.full(51, 6.0)  # all-equal axis -> dR == 0
+        self.dR = 0.0
+
+
+def test_log_emits_through_logger_only_when_verbose(caplog) -> None:
+    """The solver logs at INFO under verbose=True and stays silent otherwise."""
+    verbose = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=True)
+    with caplog.at_level(logging.INFO, logger="scpn_fusion.control.analytic_solver"):
+        verbose.calculate_required_Bv(6.2, 2.0, 15.0)
+    assert any("SHAFRANOV EQUILIBRIUM CHECK" in rec.message for rec in caplog.records)
+
+    caplog.clear()
+    quiet = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    with caplog.at_level(logging.INFO, logger="scpn_fusion.control.analytic_solver"):
+        quiet.calculate_required_Bv(6.2, 2.0, 15.0)
+    assert caplog.records == []
+
+
+def test_compute_coil_efficiencies_rejects_empty_coil_config() -> None:
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_EmptyCoilKernel, verbose=False)
+    with pytest.raises(ValueError, match="no coils"):
+        solver.compute_coil_efficiencies(6.2)
+
+
+@pytest.mark.parametrize("target_r", [0.0, -3.0])
+def test_compute_coil_efficiencies_rejects_nonpositive_target_r(target_r: float) -> None:
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    with pytest.raises(ValueError, match="target_R must be > 0"):
+        solver.compute_coil_efficiencies(target_r)
+
+
+def test_compute_coil_efficiencies_rejects_nonpositive_grid_spacing() -> None:
+    solver = AnalyticEquilibriumSolver(
+        "dummy.json", kernel_factory=_ZeroSpacingKernel, verbose=False
+    )
+    with pytest.raises(ValueError, match="dR must be > 0"):
+        solver.compute_coil_efficiencies(6.0)
+
+
+def test_apply_currents_rejects_length_mismatch() -> None:
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    with pytest.raises(ValueError, match="length mismatch"):
+        solver.apply_currents(np.zeros(3))  # kernel has 4 coils
+
+
+def test_apply_and_save_writes_kernel_config(tmp_path) -> None:
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    currents = np.array([0.1, -0.2, 0.3, -0.4], dtype=np.float64)
+    out = tmp_path / "nested" / "iter_analytic_config.json"
+    written = solver.apply_and_save(currents, output_path=str(out))
+
+    assert written == str(out)
+    assert out.exists()
+    saved = json.loads(out.read_text(encoding="utf-8"))
+    np.testing.assert_allclose([c["current"] for c in saved["coils"]], currents, rtol=0.0, atol=0.0)
+
+
+def test_apply_and_save_defaults_to_validation_output(tmp_path, monkeypatch) -> None:
+    """With no output_path the config lands under <repo>/validation."""
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    monkeypatch.setattr(
+        analytic_solver_mod.Path, "resolve", lambda self: tmp_path / "a" / "b" / "c" / "d"
+    )
+    written = solver.apply_and_save(np.zeros(4))
+    assert written.endswith("validation/iter_analytic_config.json")
+    assert Path(written).exists()
+
+
+def test_resolve_default_config_prefers_validation_fallback_when_calibration_missing(
+    tmp_path,
+) -> None:
+    """When the preferred config is absent the validation fallback is used + flagged."""
+    (tmp_path / "validation").mkdir()
+    fallback = tmp_path / "validation" / "iter_validated_config.json"
+    fallback.write_text("{}", encoding="utf-8")
+
+    path, source, used = analytic_solver_mod._resolve_default_config_path(tmp_path)
+    assert path == str(fallback)
+    assert source == "validation_fallback_default"
+    assert used is True
+
+
+def test_resolve_default_config_raises_when_nothing_present(tmp_path) -> None:
+    with pytest.raises(FileNotFoundError, match="No default analytic config"):
+        analytic_solver_mod._resolve_default_config_path(tmp_path)
+
+
+def test_run_analytic_solver_resolves_default_config_and_saves(tmp_path, monkeypatch) -> None:
+    """config_path=None resolves the default config; save_config writes the result."""
+    cfg = tmp_path / "iter.json"
+    cfg.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        analytic_solver_mod,
+        "_resolve_default_config_path",
+        lambda repo_root, **_kw: (str(cfg), "preferred_default", False),
+    )
+    out = tmp_path / "out.json"
+    summary = run_analytic_solver(
+        config_path=None,
+        kernel_factory=_DummyKernel,
+        save_config=True,
+        output_config_path=str(out),
+        verbose=False,
+    )
+    assert summary["config_source"] == "preferred_default"
+    assert summary["output_config_path"] == str(out)
+    assert out.exists()
+
+
+@pytest.mark.parametrize(
+    ("green", "target", "ridge"),
+    [
+        ([], -0.05, 0.0),
+        ([0.01, float("nan")], -0.05, 0.0),
+        ([0.01, 0.02], float("inf"), 0.0),
+        ([0.01, 0.02], -0.05, float("nan")),
+        ([0.0, 0.0], -0.05, 0.0),
+    ],
+)
+def test_solve_coil_currents_rejects_invalid_inputs(
+    green: list[float], target: float, ridge: float
+) -> None:
+    """Empty/non-finite Green's vectors, non-finite targets/ridge, and a
+    zero-norm unregularised solve are all rejected.
+    """
+    with pytest.raises(ValueError):
+        solve_coil_currents(green, target, ridge_lambda=ridge)
 
 
 def test_run_analytic_solver_returns_deterministic_summary_without_write() -> None:

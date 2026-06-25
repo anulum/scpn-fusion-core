@@ -370,3 +370,16 @@ def test_main_returns_non_integer_system_exit_as_failure(monkeypatch: pytest.Mon
 
     monkeypatch.setattr(cli_mod, "cli", _Boom())
     assert cli_mod.main() == 1
+
+
+def test_main_returns_zero_on_clean_invocation(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A CLI invocation that completes without raising yields a 0 exit code."""
+
+    class _Clean:
+        @staticmethod
+        def main(*args: object, **kwargs: object) -> None:
+            _ = (args, kwargs)
+            return None
+
+    monkeypatch.setattr(cli_mod, "cli", _Clean())
+    assert cli_mod.main() == 0

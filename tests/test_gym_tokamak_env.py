@@ -12,7 +12,22 @@ import pytest
 
 gym = pytest.importorskip("gymnasium")
 from gymnasium.utils.env_checker import check_env
-from scpn_fusion.control.gym_tokamak_env import register
+from scpn_fusion.control.gym_tokamak_env import TokamakEnv, register
+
+
+class _AxisKernel:
+    """Kernel stand-in that exposes ``find_magnetic_axis`` (the preferred path)."""
+
+    Psi = np.zeros((4, 4), dtype=np.float64)
+    R = np.linspace(4.0, 8.0, 4, dtype=np.float64)
+    Z = np.linspace(-2.0, 2.0, 4, dtype=np.float64)
+    cfg = {"physics": {"plasma_current_target": 15.0, "beta_scale": 2.0}}
+
+    def find_magnetic_axis(self) -> tuple[float, float, float]:
+        return 6.2, 0.1, 0.5
+
+    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], None]:
+        return (5.0, -3.0), None
 
 
 def test_env_registration():
@@ -70,3 +85,21 @@ def test_disruption_penalty():
 
     assert reward < -5.0  # Should include the -10 penalty
     assert terminated or info["disrupted"]
+
+
+def test_get_obs_prefers_find_magnetic_axis_when_kernel_exposes_it():
+    """When the kernel exposes ``find_magnetic_axis`` the observation uses it directly.
+
+    The default ITER kernel lacks the method, so the env normally falls back to the
+    grid-argmax estimate; injecting a kernel that provides it exercises the preferred
+    branch and the axis coordinates flow straight into the observation.
+    """
+    env = TokamakEnv(max_steps=5)
+    env.controller.kernel = _AxisKernel()
+    obs = env._get_obs()
+
+    assert obs[0] == pytest.approx(6.2)  # curr_R from find_magnetic_axis
+    assert obs[1] == pytest.approx(0.1)  # curr_Z from find_magnetic_axis
+    assert obs[2] == pytest.approx(15.0)  # plasma_current_target from cfg
+    assert obs[6] == pytest.approx(5.0)  # x-point R
+    assert obs[7] == pytest.approx(-3.0)  # x-point Z

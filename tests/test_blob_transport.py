@@ -140,3 +140,48 @@ def test_blob_detector():
     avg = det.conditional_average(sig, events, window=20)
     assert len(avg) == 41
     assert avg[20] > 1.0  # Center of average is the spike
+
+
+def test_blob_dynamics_degenerate_guards() -> None:
+    dyn = BlobDynamics(R0=6.2, B0=5.3, Te_eV=20.0, Ti_eV=20.0, mi_amu=2.0)
+    assert dyn.critical_size(0.0) == float("inf")
+    assert dyn.sheath_velocity(0.0) == 0.0
+
+
+def test_sol_blob_profile_radial_density_validation() -> None:
+    prof = SOLBlobProfile()
+    r = np.linspace(0.0, 0.1, 8)
+    good = dict(Gamma_blob=1.0e21, D_perp=1.0, lambda_n=0.02, n_sep=1.0e19)
+    with pytest.raises(ValueError, match="one-dimensional"):
+        prof.radial_density(np.ones((2, 2)), **good)
+    with pytest.raises(ValueError, match="finite values"):
+        prof.radial_density(np.array([0.0, np.inf, 0.1]), **good)
+    with pytest.raises(ValueError, match="Gamma_blob"):
+        prof.radial_density(r, **{**good, "Gamma_blob": -1.0})
+    with pytest.raises(ValueError, match="D_perp"):
+        prof.radial_density(r, **{**good, "D_perp": 0.0})
+    with pytest.raises(ValueError, match="lambda_n"):
+        prof.radial_density(r, **{**good, "lambda_n": 0.0})
+    with pytest.raises(ValueError, match="n_sep"):
+        prof.radial_density(r, **{**good, "n_sep": 0.0})
+
+
+def test_sol_blob_profile_wall_flux_validation() -> None:
+    prof = SOLBlobProfile()
+    good = dict(r_wall=0.05, Gamma_blob=1.0e21, lambda_n=0.02, n_sep=1.0e19, D_perp=1.0)
+    for bad, match in [
+        ({"r_wall": -1.0}, "r_wall"),
+        ({"Gamma_blob": -1.0}, "Gamma_blob"),
+        ({"lambda_n": 0.0}, "lambda_n"),
+        ({"n_sep": 0.0}, "n_sep"),
+        ({"D_perp": 0.0}, "D_perp"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            prof.wall_flux(**{**good, **bad})
+
+
+def test_blob_detector_handles_flat_signal_and_no_events() -> None:
+    det = BlobDetector()
+    flat = np.ones(200)
+    assert det.detect_blobs(flat) == []
+    assert det.conditional_average(np.random.default_rng(0).normal(size=200), []).shape == (101,)

@@ -95,7 +95,9 @@ class AlfvenContinuum:
             for idx in crossings:
                 r1, r2 = self.rho[idx], self.rho[idx + 1]
                 q1, q2 = self.q[idx], self.q[idx + 1]
-                if q1 == q2:
+                if (
+                    q1 == q2
+                ):  # pragma: no cover - unreachable (sign-change crossings never have equal endpoints)
                     continue
 
                 frac = (q_gap - q1) / (q2 - q1)
@@ -277,7 +279,9 @@ class AlfvenStabilityAnalysis:
             v_A = self.continuum.alfven_speed(gap.rho_location)
             resonance = self.fast_params.resonance_function(self.fast_params.v_fast, v_A)
             coeff = q_gap**2 * resonance
-            if coeff <= 0.0:
+            if (
+                coeff <= 0.0
+            ):  # pragma: no cover - defensive (q_gap^2 * positive resonance is always > 0)
                 continue
             # From gamma_drive = omega*beta_f*q^2*F and gamma_damp = 0.01*omega:
             # beta_crit = 0.01 / (q^2 F).

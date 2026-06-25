@@ -15,6 +15,7 @@ Reference values from:
 
 from __future__ import annotations
 
+import copy
 import numpy as np
 import pytest
 
@@ -22,6 +23,7 @@ from scpn_fusion.core.scaling_laws import (
     assess_ipb98y2_domain,
     compute_h_factor,
     ipb98y2_tau_e,
+    ipb98y2_tau_e_with_metadata,
     ipb98y2_with_uncertainty,
     load_ipb98y2_coefficients,
 )
@@ -170,3 +172,126 @@ def test_scalar_validators_preserve_numeric_metadata_and_reject_invalid_values()
         _require_positive_finite("Ip", -1.0)
     with pytest.raises(ValueError, match="exponent"):
         _require_finite_number("exponent", float("nan"))
+
+
+from scpn_fusion.core import scaling_laws as _sl
+
+_VALID_EXP_KEYS = ("Ip_MA", "BT_T", "ne19_1e19m3", "Ploss_MW", "R_m", "kappa", "epsilon", "M_AMU")
+
+
+def _valid_raw() -> dict:
+    return {"C": 0.0562, "exponents": {k: 1.0 for k in _VALID_EXP_KEYS}}
+
+
+@pytest.mark.parametrize(
+    ("mutate", "match"),
+    [
+        (lambda d: "not-a-dict", "must be a JSON object"),
+        (lambda d: d.pop("C"), "missing required key 'C'"),
+        (lambda d: d.update(C=0.0), "C must be > 0"),
+        (lambda d: d.update(exponents="x"), "exponents' must be an object"),
+        (lambda d: d["exponents"].pop("kappa"), "missing exponent key 'kappa'"),
+    ],
+)
+def test_validate_ipb98y2_coefficients_rejects_malformed(mutate, match: str) -> None:
+    raw = _valid_raw()
+    result = mutate(raw)
+    payload = result if isinstance(result, str) else raw
+    with pytest.raises(ValueError, match=match):
+        _sl._validate_ipb98y2_coefficients(payload)
+
+
+def test_validate_ipb98y2_coefficients_rejects_negative_uncertainty() -> None:
+    raw = _valid_raw()
+    raw["uncertainties_1sigma"] = {"Ip_MA": -0.1}
+    with pytest.raises(ValueError, match="must be >= 0"):
+        _sl._validate_ipb98y2_coefficients(raw)
+
+
+def test_tau_e_with_metadata_returns_time_and_domain() -> None:
+    tau, meta = ipb98y2_tau_e_with_metadata(
+        Ip=15.0, BT=5.3, ne19=10.0, Ploss=120.0, R=6.2, kappa=1.7, epsilon=0.32, M=2.5
+    )
+    assert tau > 0.0
+    assert meta["tau_e_s"] == pytest.approx(tau)
+    assert "in_training_domain" in meta
+
+
+def test_assess_domain_flags_low_and_high_extrapolation() -> None:
+    meta = assess_ipb98y2_domain(
+        Ip=0.1, BT=5.3, ne19=10.0, Ploss=120.0, R=99.0, kappa=1.7, epsilon=0.32, M=2.5
+    )
+    assert not meta["in_training_domain"]
+    assert "Ip" in meta["extrapolated_dimensions"]
+    assert "R" in meta["extrapolated_dimensions"]
+
+
+def test_tau_e_enforce_training_domain_rejects_extrapolation() -> None:
+    with pytest.raises(ValueError, match="outside training domain"):
+        ipb98y2_tau_e(
+            Ip=0.1,
+            BT=5.3,
+            ne19=10.0,
+            Ploss=120.0,
+            R=6.2,
+            kappa=1.7,
+            epsilon=0.32,
+            M=2.5,
+            enforce_training_domain=True,
+        )
+
+
+def test_with_uncertainty_floors_to_error_on_extreme_exponent_uncertainty() -> None:
+    coeffs = copy.deepcopy(load_ipb98y2_coefficients())
+    for k in coeffs["exponent_uncertainties"]:
+        coeffs["exponent_uncertainties"][k] = 1.0e200  # overflow path -> var_ln_tau = inf
+    with pytest.raises(ValueError):
+        ipb98y2_with_uncertainty(
+            Ip=15.0,
+            BT=5.3,
+            ne19=10.0,
+            Ploss=120.0,
+            R=6.2,
+            kappa=1.7,
+            epsilon=0.32,
+            coefficients=coeffs,
+        )
+
+
+def test_require_finite_number_rejects_non_numeric_value() -> None:
+    with pytest.raises(ValueError, match="C must be numeric"):
+        _sl._validate_ipb98y2_coefficients(
+            {"C": "abc", "exponents": {k: 1.0 for k in _VALID_EXP_KEYS}}
+        )
+
+
+def test_validate_rejects_negative_sigma_lnc() -> None:
+    raw = _valid_raw()
+    raw["sigma_lnC"] = -0.1
+    with pytest.raises(ValueError, match="sigma_lnC must be >= 0"):
+        _sl._validate_ipb98y2_coefficients(raw)
+    ok = _valid_raw()
+    ok["sigma_lnC"] = 0.12
+    assert _sl._validate_ipb98y2_coefficients(ok)["sigma_lnC"] == 0.12
+
+
+def test_validate_rejects_non_object_uncertainties() -> None:
+    raw = _valid_raw()
+    raw["uncertainties_1sigma"] = "not-an-object"
+    with pytest.raises(ValueError, match="must be an object"):
+        _sl._validate_ipb98y2_coefficients(raw)
+
+
+def test_tau_e_warns_on_extrapolation_when_requested() -> None:
+    with pytest.warns(UserWarning, match="extrapolation beyond training domain"):
+        ipb98y2_tau_e(
+            Ip=0.1,
+            BT=5.3,
+            ne19=10.0,
+            Ploss=120.0,
+            R=6.2,
+            kappa=1.7,
+            epsilon=0.32,
+            M=2.5,
+            warn_if_extrapolated=True,
+        )

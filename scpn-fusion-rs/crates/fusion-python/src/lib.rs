@@ -621,17 +621,44 @@ impl PyPlantModel {
 // ─── Control systems ───
 
 /// Shafranov equilibrium calculator.
+///
+/// Returns ``(bv_required, term_log, term_physics)``. ``bv_required`` is the
+/// canonical dispatch output, bit-exact with the NumPy tier
+/// (``scpn_fusion.control.analytic_solver.shafranov_bv``); the other two are
+/// diagnostic terms of the force-balance formula.
 #[pyfunction]
-fn shafranov_bv(r_geo: f64, a_min: f64, ip_ma: f64) -> PyResult<(f64, f64, f64)> {
-    let result = fusion_control::analytic::shafranov_bv(r_geo, a_min, ip_ma)
+#[pyo3(signature = (
+    r_geo,
+    a_min,
+    ip_ma,
+    beta_p = fusion_control::analytic::BETA_P,
+    li = fusion_control::analytic::LI,
+))]
+fn shafranov_bv(
+    r_geo: f64,
+    a_min: f64,
+    ip_ma: f64,
+    beta_p: f64,
+    li: f64,
+) -> PyResult<(f64, f64, f64)> {
+    let result = fusion_control::analytic::shafranov_bv(r_geo, a_min, ip_ma, beta_p, li)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
     Ok((result.bv_required, result.term_log, result.term_physics))
 }
 
 /// Minimum-norm coil current solver.
+///
+/// `ridge_lambda` (default 0.0) adds Tikhonov regularisation; the result is
+/// bit-exact with the NumPy tier
+/// (`scpn_fusion.control.analytic_solver.solve_coil_currents`).
 #[pyfunction]
-fn solve_coil_currents(green_func: Vec<f64>, target_bv: f64) -> PyResult<Vec<f64>> {
-    fusion_control::analytic::solve_coil_currents(&green_func, target_bv)
+#[pyo3(signature = (green_func, target_bv, ridge_lambda = 0.0))]
+fn solve_coil_currents(
+    green_func: Vec<f64>,
+    target_bv: f64,
+    ridge_lambda: f64,
+) -> PyResult<Vec<f64>> {
+    fusion_control::analytic::solve_coil_currents(&green_func, target_bv, ridge_lambda)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
 }
 
@@ -654,6 +681,50 @@ fn measure_magnetics<'py>(
     let suite = fusion_diagnostics::sensors::SensorSuite::new(nr, nz, r_min, r_max, z_min, z_max);
     let measurements = suite.measure_magnetics(&psi_arr);
     ndarray::Array1::from_vec(measurements).into_pyarray(py)
+}
+
+// ─── Equilibrium solvers ───
+
+/// Standalone geometric multigrid solve of the Grad-Shafranov GS* operator.
+///
+/// Relaxes `L*[psi] = source` on an `nr x nz` R-Z grid starting from the
+/// boundary-valued `psi_bc`, returning `(psi, residual, n_cycles, converged)`.
+/// `residual` is the final L-infinity residual. Algorithm-parity with the NumPy
+/// tier (`scpn_fusion.core.multigrid_solve.multigrid_solve`): both relax the
+/// identical toroidal GS* operator to the same fixed point within tolerance.
+#[pyfunction]
+#[pyo3(signature = (source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol = 1e-6, max_cycles = 500))]
+#[allow(clippy::too_many_arguments)]
+fn multigrid_vcycle<'py>(
+    py: Python<'py>,
+    source: PyReadonlyArray2<'py, f64>,
+    psi_bc: PyReadonlyArray2<'py, f64>,
+    r_min: f64,
+    r_max: f64,
+    z_min: f64,
+    z_max: f64,
+    nr: usize,
+    nz: usize,
+    tol: f64,
+    max_cycles: usize,
+) -> (Bound<'py, PyArray2<f64>>, f64, usize, bool) {
+    let grid = Grid2D::new(nr, nz, r_min, r_max, z_min, z_max);
+    let source_arr: Array2<f64> = source.as_array().to_owned();
+    let mut psi: Array2<f64> = psi_bc.as_array().to_owned();
+    let result = fusion_math::multigrid::multigrid_solve(
+        &mut psi,
+        &source_arr,
+        &grid,
+        &fusion_math::multigrid::MultigridConfig::default(),
+        max_cycles,
+        tol,
+    );
+    (
+        psi.into_pyarray(py),
+        result.residual,
+        result.cycles,
+        result.converged,
+    )
 }
 
 // ─── SCPN runtime kernels ───
@@ -820,11 +891,37 @@ fn scpn_sample_firing<'py>(
 
 // ─── ML ───
 
-/// Simulate a tearing mode plasma shot.
+/// Simulate a tearing mode plasma shot (full Modified Rutherford physics).
+///
+/// `seed` makes the trajectory reproducible; `beta_p`/`w_crit` parametrise the
+/// bootstrap drive. Returns `(signal, label, time_to_disruption)`. The
+/// deterministic per-step physics is bit-exact with the NumPy tier
+/// (`scpn_fusion.control.disruption_risk_runtime.simulate_tearing_mode`); the
+/// stochastic trajectory is statistically equivalent (independent RNG streams).
 #[pyfunction]
-fn simulate_tearing_mode(steps: usize) -> (Vec<f64>, u8, i64) {
-    let shot = fusion_ml::disruption::simulate_tearing_mode(steps);
+#[pyo3(signature = (
+    steps,
+    seed = None,
+    beta_p = fusion_ml::disruption::DEFAULT_BETA_P,
+    w_crit = fusion_ml::disruption::DEFAULT_W_CRIT,
+))]
+fn simulate_tearing_mode(
+    steps: usize,
+    seed: Option<u64>,
+    beta_p: f64,
+    w_crit: f64,
+) -> (Vec<f64>, u8, i64) {
+    let shot = fusion_ml::disruption::simulate_tearing_mode(steps, seed, beta_p, w_crit);
     (shot.signal, shot.label, shot.time_to_disruption)
+}
+
+/// Deterministic Modified Rutherford island-width increment for one step.
+///
+/// `dw = (delta_prime + beta_p·w/(w² + w_crit²))·(1 - w/w_sat)·dt`. Bit-exact
+/// with the NumPy tier's `rutherford_island_growth`.
+#[pyfunction]
+fn rutherford_island_growth(w: f64, delta_prime: f64, beta_p: f64, w_crit: f64, dt: f64) -> f64 {
+    fusion_ml::disruption::rutherford_island_growth(w, delta_prime, beta_p, w_crit, dt)
 }
 
 // ─── Particle / Boris integrator ───
@@ -2295,10 +2392,12 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;
+    m.add_function(wrap_pyfunction!(multigrid_vcycle, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_dense_activations, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_marking_update, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_sample_firing, m)?)?;
     m.add_function(wrap_pyfunction!(simulate_tearing_mode, m)?)?;
+    m.add_function(wrap_pyfunction!(rutherford_island_growth, m)?)?;
     // Particle / Boris integrator bridge
     m.add_class::<PyParticle>()?;
     m.add_class::<PyPopulationSummary>()?;

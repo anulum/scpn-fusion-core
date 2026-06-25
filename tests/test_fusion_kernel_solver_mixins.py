@@ -36,6 +36,31 @@ def test_numeric_helpers_are_stable_on_non_finite_inputs() -> None:
     assert stable_rms(sanitized) >= 0.0
 
 
+def test_stable_rms_on_empty_array_returns_zero() -> None:
+    """An empty input has no magnitude, so the RMS is exactly zero (size-guard branch)."""
+    assert stable_rms(np.array([], dtype=np.float64)) == 0.0
+
+
+def test_stable_rms_on_all_zero_array_returns_zero() -> None:
+    """A non-empty all-zero input has max_abs == 0.0, so RMS short-circuits to zero."""
+    assert stable_rms(np.zeros(8, dtype=np.float64)) == 0.0
+
+
+def test_stable_rms_matches_naive_rms_for_moderate_magnitudes() -> None:
+    """For values that do not overflow, the scaled RMS equals the textbook definition."""
+    arr = np.array([3.0, -4.0, 0.0, 5.0, -12.0], dtype=np.float64)
+    naive = float(np.sqrt(np.mean(arr * arr)))
+    assert stable_rms(arr) == pytest.approx(naive, rel=1e-12)
+
+
+def test_stable_rms_survives_overflow_prone_magnitudes() -> None:
+    """Squaring 1e200 directly overflows float64; the scaled form stays finite and correct."""
+    arr = np.array([1.0e200, -1.0e200], dtype=np.float64)
+    result = stable_rms(arr)
+    assert np.isfinite(result)
+    assert result == pytest.approx(1.0e200, rel=1e-12)
+
+
 class _IterativeKernelStub(FusionKernelIterativeSolverMixin):
     def __init__(self) -> None:
         self.dR = 0.25
@@ -107,3 +132,46 @@ def test_multigrid_smoother_preserves_exact_discrete_grad_shafranov_fixed_point(
     )
 
     assert np.max(np.abs(updated - psi)) < 1e-12
+
+
+class _LargeIterativeKernelStub(FusionKernelIterativeSolverMixin):
+    """65x65 grid stub for full multigrid V-cycle convergence tests."""
+
+    def __init__(self) -> None:
+        nr = nz = 65
+        r = np.linspace(1.2, 2.2, nr)
+        z = np.linspace(-0.5, 0.5, nz)
+        self.dR = float(r[1] - r[0])
+        self.dZ = float(z[1] - z[0])
+        self.RR, self.ZZ = np.meshgrid(r, z)
+
+
+def test_multigrid_vcycle_iteration_converges_on_fixed_source() -> None:
+    """Iterating the V-cycle on a fixed source drives the GS residual down.
+
+    Guards the coarse-grid defect sign: the error solves L*[e] = -(L*[Psi] -
+    Source), so the coarse right-hand side must be the *negated* residual.
+    Restricting the raw residual inverts every correction (Psi <- Psi - e) and the
+    iteration diverges (residual grows) instead of converging.
+    """
+    kernel = _LargeIterativeKernelStub()
+    r_grid = kernel.RR
+    source = -r_grid * np.exp(-((r_grid - 1.7) ** 2 + kernel.ZZ**2) / 0.05)
+    psi = np.zeros_like(r_grid)
+
+    def residual_rms(field: np.ndarray) -> float:
+        interior = kernel._mg_residual(field, source, r_grid, kernel.dR, kernel.dZ)[1:-1, 1:-1]
+        return float(np.sqrt(np.mean(interior**2)))
+
+    initial = residual_rms(psi)
+    for _ in range(8):
+        psi = kernel._multigrid_vcycle(psi, source, r_grid, kernel.dR, kernel.dZ, omega=1.0)
+        # Re-apply the homogeneous Dirichlet boundary the source was posed with.
+        psi[0, :] = 0.0
+        psi[-1, :] = 0.0
+        psi[:, 0] = 0.0
+        psi[:, -1] = 0.0
+
+    final = residual_rms(psi)
+    assert np.all(np.isfinite(psi))
+    assert final < initial * 1e-4, f"V-cycle did not converge: {initial:.3e} -> {final:.3e}"

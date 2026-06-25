@@ -221,20 +221,24 @@ if TYPE_CHECKING:
     from scpn_fusion.core.fusion_kernel import FusionKernel as FusionKernel
 else:
 
-    def __getattr__(name: str) -> Any:
+    def _resolve_fusion_kernel_class() -> type[Any]:
         """Resolve ``FusionKernel`` through the canonical multi-backend dispatcher.
 
         ``_multi_compat`` is the single fastest-first authority; this module is its
         Rust-tier provider (it supplies ``RustAcceleratedKernel``). The alias is
-        resolved lazily here so the dispatcher stays canonical for the consumers
-        that ``from scpn_fusion.core._rust_compat import FusionKernel``, while the
-        ``_multi_compat`` import is deferred to first access — avoiding the import
-        cycle at module load.
+        bound after ``RustAcceleratedKernel`` is defined so consumers that import
+        ``FusionKernel`` directly do not depend on module ``__getattr__`` semantics.
         """
-        if name == "FusionKernel":
-            from scpn_fusion.core._multi_compat import dispatch_kernel_class
+        from scpn_fusion.core._multi_compat import dispatch_kernel_class
 
-            return dispatch_kernel_class("equilibrium_kernel")
+        return cast(type[Any], dispatch_kernel_class("equilibrium_kernel"))
+
+    FusionKernel = _resolve_fusion_kernel_class()
+
+    def __getattr__(name: str) -> Any:
+        """Reject unknown compatibility symbols with a precise module error."""
+        if name == "FusionKernel":
+            return FusionKernel
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -258,17 +262,14 @@ if _RUST_AVAILABLE:
     rust_solve_coil_currents = solve_coil_currents
     rust_measure_magnetics = measure_magnetics
 
-    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None) -> Any:
-        """Rust tearing mode with optional deterministic seed compatibility."""
-        if seed is None:
-            return simulate_tearing_mode(int(steps))
-
-        from scpn_fusion.control.disruption_risk_runtime import (
-            simulate_tearing_mode as _py_tearing,
-        )
-
-        rng = np.random.default_rng(seed=int(seed))
-        return cast("Any", _py_tearing)(steps=int(steps), rng=rng)
+    def rust_simulate_tearing_mode(
+        steps: int,
+        seed: Optional[int] = None,
+        beta_p: float = 0.8,
+        w_crit: float = 0.05,
+    ) -> Any:
+        """Rust full-fidelity tearing-mode shot; ``seed`` makes it reproducible."""
+        return simulate_tearing_mode(int(steps), seed, float(beta_p), float(w_crit))
 
 else:
 
@@ -281,7 +282,12 @@ else:
     def rust_measure_magnetics(*args: Any, **kwargs: Any) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
-    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None) -> Any:
+    def rust_simulate_tearing_mode(
+        steps: int,
+        seed: Optional[int] = None,
+        beta_p: float = 0.8,
+        w_crit: float = 0.05,
+    ) -> Any:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
 

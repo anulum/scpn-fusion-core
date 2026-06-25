@@ -50,7 +50,12 @@ def default_mast_cache_dir() -> Path:
     override = os.environ.get("SCPN_MAST_CACHE_DIR")
     if override:
         return Path(override).expanduser()
-    return Path(__file__).resolve().parents[3] / "data" / "mast_cache"
+    # User cache directory (XDG_CACHE_HOME or ~/.cache): a writable location that
+    # works for both a source checkout and an installed wheel, where the package
+    # directory under site-packages is read-only.
+    xdg_cache = os.environ.get("XDG_CACHE_HOME", "").strip()
+    cache_base = Path(xdg_cache).expanduser() if xdg_cache else Path.home() / ".cache"
+    return cache_base / "scpn-fusion" / "mast_cache"
 
 
 class MastIngestor:

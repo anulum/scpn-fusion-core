@@ -194,3 +194,70 @@ def test_transition_controller_hmode_threshold_and_ramp_are_configurable() -> No
     q_slow_ramp = slow.step(epsilon_measured=9.0e4, Q_current=10.0, dt=0.1)
     q_fast_ramp = fast.step(epsilon_measured=9.0e4, Q_current=10.0, dt=0.1)
     assert q_fast_ramp > q_slow_ramp
+
+
+def test_predator_prey_turbulence_drive_validation() -> None:
+    model = PredatorPreyModel()
+    with pytest.raises(ValueError, match="p_edge"):
+        model.turbulence_drive(-1.0, 10.0)
+    with pytest.raises(ValueError, match="Q_heating"):
+        model.turbulence_drive(1.0, -1.0)
+
+
+def test_martin_threshold_zero_for_nonpositive_inputs() -> None:
+    from scpn_fusion.core.lh_transition import MartinThreshold
+
+    assert MartinThreshold.power_threshold_MW(0.0, 5.0, 100.0) == 0.0
+    assert MartinThreshold.power_threshold_MW(5.0, 5.0, 100.0) > 0.0
+
+
+def test_lh_transition_controller_validation() -> None:
+    from scpn_fusion.core.lh_transition import LHTransitionController, PredatorPreyModel
+
+    with pytest.raises(ValueError, match="Q_target"):
+        LHTransitionController(PredatorPreyModel(), Q_target=-1.0)
+    with pytest.raises(ValueError, match="epsilon_hmode_threshold"):
+        LHTransitionController(PredatorPreyModel(), Q_target=10.0, epsilon_hmode_threshold=0.0)
+    with pytest.raises(ValueError, match="q_ramp_rate"):
+        LHTransitionController(PredatorPreyModel(), Q_target=10.0, q_ramp_rate=0.0)
+    ctrl = LHTransitionController(PredatorPreyModel(), Q_target=10.0)
+    with pytest.raises(ValueError, match="epsilon_measured"):
+        ctrl.step(-1.0, 1.0, 0.01)
+    with pytest.raises(ValueError, match="Q_current"):
+        ctrl.step(0.1, -1.0, 0.01)
+
+
+def test_lh_trigger_find_threshold_returns_power() -> None:
+    from scpn_fusion.core.lh_transition import LHTrigger, PredatorPreyModel
+
+    trig = LHTrigger(PredatorPreyModel())
+    q = trig.find_threshold(np.linspace(0.1, 50.0, 40))
+    assert q > 0.0
+
+
+def test_lh_controller_step_rejects_bad_dt() -> None:
+    from scpn_fusion.core.lh_transition import LHTransitionController, PredatorPreyModel
+
+    ctrl = LHTransitionController(PredatorPreyModel(), Q_target=10.0)
+    with pytest.raises(ValueError, match="dt must be finite"):
+        ctrl.step(0.1, 1.0, 0.0)
+
+
+def test_find_threshold_returns_first_h_mode_power():
+    # The default predator-prey parameters never reach H-mode; this tuned set
+    # produces a genuine L->H bifurcation, so the trigger returns the lowest
+    # scanned heating power whose run is classified H_MODE.
+    model = PredatorPreyModel(
+        gamma_L=200.0,
+        alpha1=1e-4,
+        alpha2=1e-6,
+        alpha3=1e-4,
+        gamma_damp=0.01,
+        p0=10.0,
+        drive_gain=10.0,
+    )
+    trigger = LHTrigger(model)
+    threshold = trigger.find_threshold(np.array([0.1, 0.5, 1.0, 2.0, 5.0]))
+    assert threshold == pytest.approx(1.0)
+    # The returned power is itself an H-mode point.
+    assert model.evolve(threshold, (0.0, 1.0), 0.001).regime == "H_MODE"

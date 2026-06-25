@@ -99,3 +99,10 @@ def test_run_quantum_suite_rejects_non_positive_timeout(tmp_path: Path) -> None:
     _write_dummy_scripts(lab)
     with pytest.raises(ValueError, match="script_timeout_seconds must be finite and > 0."):
         qb.run_quantum_suite(base_path=lab, script_timeout_seconds=0.0)
+
+
+def test_resolve_quantum_lab_path_defaults_to_repo_sibling():
+    from scpn_fusion.core.quantum_bridge import _resolve_quantum_lab_path
+
+    resolved = _resolve_quantum_lab_path()
+    assert resolved.name == "QUANTUM_LAB"

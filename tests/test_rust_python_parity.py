@@ -77,16 +77,46 @@ except ImportError:
     _rust_shafranov_bv = cast(Any, None)
     _HAS_RUST_SHAFRANOV = False
 
+_HAS_RUST_COIL = False
+_rust_solve_coil_currents: Any = None
+try:
+    from scpn_fusion_rs import solve_coil_currents as _rust_solve_coil_currents_import
+
+    _rust_solve_coil_currents = _rust_solve_coil_currents_import
+
+    _HAS_RUST_COIL = True
+except ImportError:
+    _rust_solve_coil_currents = cast(Any, None)
+    _HAS_RUST_COIL = False
+
+_HAS_RUST_MAGNETICS = False
+_rust_measure_magnetics: Any = None
+try:
+    from scpn_fusion_rs import measure_magnetics as _rust_measure_magnetics_import
+
+    _rust_measure_magnetics = _rust_measure_magnetics_import
+
+    _HAS_RUST_MAGNETICS = True
+except ImportError:
+    _rust_measure_magnetics = cast(Any, None)
+    _HAS_RUST_MAGNETICS = False
+
 _HAS_RUST_TEARING = False
 _rust_tearing: Any = None
+_rust_rutherford: Any = None
 try:
-    from scpn_fusion_rs import simulate_tearing_mode as _rust_tearing_import
+    from scpn_fusion_rs import (
+        rutherford_island_growth as _rust_rutherford_import,
+        simulate_tearing_mode as _rust_tearing_import,
+    )
 
     _rust_tearing = _rust_tearing_import
+    _rust_rutherford = _rust_rutherford_import
 
     _HAS_RUST_TEARING = True
 except ImportError:
     _rust_tearing = cast(Any, None)
+    _rust_rutherford = cast(Any, None)
     _HAS_RUST_TEARING = False
 
 _HAS_RUST_SCPN_RUNTIME = False
@@ -292,56 +322,38 @@ class TestMultigridSolverParity:
         not _HAS_RUST_MG,
         reason="Rust multigrid_vcycle not exposed via PyO3",
     )
-    def test_multigrid_vcycle_parity(self, tmp_path: Path) -> None:
-        """Run the multigrid V-cycle through both Python and Rust on
-        the same 65x65 Solov'ev input (R0=1.7, a=0.5, B0=2.0, Ip=1.0 MA).
-        Assert relative tolerance < 1e-3.
+    def test_multigrid_solve_parity(self) -> None:
+        """The full multigrid solve agrees between the NumPy and Rust tiers.
+
+        Both relax the identical toroidal GS* operator from the same source and
+        boundary to the same fixed point, so the converged flux maps agree to a
+        tight tolerance (effectively bit-exact on this 65x65 Solov'ev grid).
         """
-        from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
+        from scpn_fusion.core.multigrid_solve import multigrid_solve as py_multigrid_solve
 
-        cfg_path = _make_config(tmp_path, solver_method="multigrid")
-        py_kernel = PyFusionKernel(str(cfg_path))
+        _R, _Z, RR, ZZ, _dR, _dZ = _build_grid()
+        source = _solovev_source(RR, ZZ)
+        psi_bc = np.zeros((NZ, NR))
 
-        R, Z, RR, ZZ, dR, dZ = _build_grid()
-        np.random.seed(123)
-        Psi_init = np.zeros((NZ, NR))
-        Source = _solovev_source(RR, ZZ)
-
-        # --- Python V-cycle ---
-        psi_py = py_kernel._multigrid_vcycle(
-            Psi_init.copy(),
-            Source,
-            RR,
-            dR,
-            dZ,
-            omega=1.6,
+        psi_py, _res_py, _nc_py, conv_py = py_multigrid_solve(
+            source, psi_bc, R_MIN, R_MAX, Z_MIN, Z_MAX, NR, NZ, tol=1e-6, max_cycles=500
         )
-
-        # --- Rust V-cycle ---
-        psi_rs, residual, n_cycles, converged = rust_multigrid_vcycle(
-            Source,
-            Psi_init.copy(),
-            R_MIN,
-            R_MAX,
-            Z_MIN,
-            Z_MAX,
-            NR,
-            NZ,
-            tol=1e-6,
-            max_cycles=500,
+        psi_rs, _res_rs, _nc_rs, conv_rs = rust_multigrid_vcycle(
+            source, psi_bc.copy(), R_MIN, R_MAX, Z_MIN, Z_MAX, NR, NZ, tol=1e-6, max_cycles=500
         )
+        psi_rs = np.asarray(psi_rs)
 
-        # --- Compare ---
+        assert conv_py and conv_rs, f"both tiers must converge: py={conv_py}, rust={conv_rs}"
         assert psi_py.shape == psi_rs.shape
-        assert np.all(np.isfinite(psi_py)), "Python multigrid produced NaN"
+        assert np.all(np.isfinite(psi_py)), "NumPy multigrid produced NaN"
         assert np.all(np.isfinite(psi_rs)), "Rust multigrid produced NaN"
 
         np.testing.assert_allclose(
             psi_py,
             psi_rs,
-            rtol=1e-3,
-            atol=1e-6,
-            err_msg=f"Multigrid parity failed: max rel diff = {_max_rel_diff(psi_py, psi_rs):.6e}",
+            rtol=1e-6,
+            atol=1e-9,
+            err_msg=f"multigrid solve parity failed: max abs diff = {np.max(np.abs(psi_py - psi_rs)):.3e}",
         )
 
     @pytest.mark.xfail(
@@ -459,9 +471,13 @@ class TestVacuumFieldParity:
         not _HAS_RUST_SHAFRANOV,
         reason="Rust shafranov_bv not exposed via PyO3",
     )
-    def test_shafranov_bv_parity(self, tmp_path: Path) -> None:
-        """Compare the Rust shafranov_bv() against the Python vacuum
-        field computation for the Solov'ev problem.
+    def test_rust_shafranov_config_path_vacuum_field_parity(self, tmp_path: Path) -> None:
+        """Config-path ``rust_shafranov_bv(cfg)`` returns the vacuum-field map.
+
+        This exercises the compatibility overload (it delegates to
+        ``FusionKernel.calculate_vacuum_field`` for a config path), NOT the
+        scalar Shafranov B_v formula — that is covered by
+        :meth:`test_shafranov_bv_scalar_parity`.
         """
         from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
         from scpn_fusion.core._rust_compat import rust_shafranov_bv
@@ -480,8 +496,82 @@ class TestVacuumFieldParity:
             psi_vac_rs,
             rtol=1e-3,
             atol=1e-8,
-            err_msg=f"shafranov_bv parity failed: max rel diff = {_max_rel_diff(psi_vac_py, psi_vac_rs):.6e}",
+            err_msg=f"vacuum-field parity failed: max rel diff = {_max_rel_diff(psi_vac_py, psi_vac_rs):.6e}",
         )
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_SHAFRANOV,
+        reason="Rust shafranov_bv not exposed via PyO3",
+    )
+    def test_shafranov_bv_scalar_parity(self) -> None:
+        """The scalar Shafranov B_v is bit-exact between the Rust and NumPy tiers.
+
+        Both backends evaluate the identical force-balance formula with the same
+        constants, so the canonical dispatch output (``bv_required``) must agree
+        to the last bit across plasma geometries and shaping parameters.
+        """
+        from scpn_fusion.control.analytic_solver import shafranov_bv as py_shafranov_bv
+
+        # (R0, a, Ip_MA, beta_p, li): ITER-like, Solov'ev test problem, and
+        # off-default shaping to exercise the beta_p/li parametrisation.
+        cases = [
+            (6.2, 2.0, 15.0, 0.5, 0.8),
+            (1.7, 0.5, 1.0, 0.5, 0.8),
+            (3.0, 1.0, 8.0, 0.9, 0.6),
+            (6.2, 2.0, 15.0, 0.3, 1.2),
+        ]
+        for r_geo, a_min, ip_ma, beta_p, li in cases:
+            bv_rs = _rust_shafranov_bv(r_geo, a_min, ip_ma, beta_p, li)[0]
+            bv_py = py_shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
+            assert bv_rs == bv_py, (
+                f"Shafranov Bv parity broken at "
+                f"{(r_geo, a_min, ip_ma, beta_p, li)}: rust={bv_rs!r} numpy={bv_py!r}"
+            )
+
+        # The pyfunction's defaults (sourced from the Rust BETA_P/LI constants)
+        # must match the NumPy free-function defaults.
+        bv_default = _rust_shafranov_bv(6.2, 2.0, 15.0)[0]
+        assert bv_default == py_shafranov_bv(6.2, 2.0, 15.0)
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_COIL,
+        reason="Rust solve_coil_currents not exposed via PyO3",
+    )
+    def test_solve_coil_currents_scalar_parity(self) -> None:
+        """Coil currents are tolerance-aware equivalent across the Rust/NumPy tiers.
+
+        Both backends use the identical direct minimum-norm/ridge closed form, but
+        the Green's-norm reduction (Σg²) is not bit-reproducible across a
+        sequential Rust sum and NumPy's ``dot``, so parity is asserted to a tight
+        relative tolerance rather than bit-for-bit. (Contrast ``shafranov_bv``,
+        which has no reduction and is bit-exact.)
+        """
+        from scpn_fusion.control.analytic_solver import solve_coil_currents as py_solve
+
+        # (green_func, target_bv, ridge_lambda)
+        cases = [
+            ([0.01, 0.02, 0.015, 0.005, 0.01], -0.05, 0.0),
+            ([1.0, 1.0], 1.0, 0.0),
+            ([0.01, 0.02, 0.015, 0.005, 0.01], -0.05, 1e-3),
+            ([0.2, -0.1, 0.05], 0.3, 5e-2),
+            ([0.3, 0.1], -0.04, 0.0),
+        ]
+        for green, target, ridge in cases:
+            currents_rs = np.asarray(
+                _rust_solve_coil_currents(list(green), target, ridge), dtype=np.float64
+            )
+            currents_py = py_solve(green, target, ridge_lambda=ridge)
+            np.testing.assert_allclose(
+                currents_rs,
+                currents_py,
+                rtol=1e-12,
+                atol=1e-15,
+                err_msg=f"coil-current parity broken at {(green, target, ridge)}",
+            )
+
+        # The pyfunction's ridge default (0.0) matches the NumPy free-function default.
+        default_rs = np.asarray(_rust_solve_coil_currents([0.3, 0.1], -0.04), dtype=np.float64)
+        np.testing.assert_allclose(default_rs, py_solve([0.3, 0.1], -0.04), rtol=1e-12, atol=1e-15)
 
 
 # ── 4. Transport Solver Parity ──────────────────────────────────────
@@ -494,42 +584,67 @@ class TestTransportSolverParity:
 
     @pytest.mark.skipif(
         not _HAS_RUST_TEARING,
+        reason="Rust rutherford_island_growth not exposed via PyO3",
+    )
+    def test_rutherford_island_growth_parity(self) -> None:
+        """The deterministic Modified Rutherford step is bit-exact across tiers.
+
+        The tearing-mode simulator is stochastic (independent RNG streams), so its
+        trajectories cannot be bit-compared; its deterministic physics core — the
+        per-step island-width increment — can, and must be identical.
+        """
+        from scpn_fusion.control.disruption_risk_runtime import (
+            rutherford_island_growth as py_step,
+        )
+
+        for w in (0.01, 0.05, 0.2, 0.5, 1.0, 3.0, 7.5):
+            for delta_prime in (-0.5, -0.1):
+                for beta_p in (0.8, 0.0, 0.3):
+                    for w_crit in (0.05, 0.1):
+                        rs = _rust_rutherford(w, delta_prime, beta_p, w_crit, 0.01)
+                        py = py_step(w, delta_prime, beta_p, w_crit, 0.01)
+                        assert rs == py, (
+                            f"Rutherford step parity broken at "
+                            f"{(w, delta_prime, beta_p, w_crit)}: rust={rs!r} numpy={py!r}"
+                        )
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_TEARING,
         reason="Rust simulate_tearing_mode not exposed via PyO3",
     )
-    def test_tearing_mode_parity(self) -> None:
-        """Compare the Rust and Python tearing mode simulators.
-        Both should produce statistically equivalent disruption physics
-        when given the same RNG seed.
+    def test_tearing_mode_statistical_parity(self) -> None:
+        """The stochastic tearing trajectories are statistically equivalent.
+
+        Both tiers run the identical Modified Rutherford physics over independent
+        RNG streams, so per-shot trajectories differ but their distributions agree:
+        the saturating bootstrap drive gives the same (near-zero) disruption rate
+        and the same island-growth statistics.
         """
-        from scpn_fusion.control.disruption_predictor import (
+        from scpn_fusion.control.disruption_risk_runtime import (
             simulate_tearing_mode as py_tearing,
         )
         from scpn_fusion.core._rust_compat import rust_simulate_tearing_mode
 
-        steps = 500
+        n_shots = 300
+        seed_rng = np.random.default_rng(20260623)
+        seeds = seed_rng.integers(0, 1_000_000_000, n_shots)
 
-        rng_py = np.random.default_rng(seed=2026)
-        signal_py, label_py, ttd_py = py_tearing(steps=steps, rng=rng_py)
+        rs_labels, rs_maxw, py_labels, py_maxw = [], [], [], []
+        for s in seeds:
+            sig_rs, lbl_rs, _ = rust_simulate_tearing_mode(steps=1000, seed=int(s))
+            sig_rs = np.asarray(sig_rs)
+            sig_py, lbl_py, _ = py_tearing(steps=1000, rng=np.random.default_rng(int(s)))
+            assert np.all(np.isfinite(sig_rs)) and np.all(np.isfinite(sig_py))
+            rs_labels.append(lbl_rs)
+            py_labels.append(lbl_py)
+            rs_maxw.append(float(np.max(sig_rs)))
+            py_maxw.append(float(np.max(sig_py)))
 
-        signal_rs, label_rs, ttd_rs = rust_simulate_tearing_mode(steps=steps, seed=2026)
-        signal_rs = np.asarray(signal_rs)
-
-        assert np.all(np.isfinite(signal_py)), "Python tearing mode produced NaN"
-        assert np.all(np.isfinite(signal_rs)), "Rust tearing mode produced NaN"
-
-        assert label_py == label_rs, (
-            f"Disruption label mismatch: Python={label_py}, Rust={label_rs}"
-        )
-
-        min_len = min(len(signal_py), len(signal_rs))
-        if min_len > 0:
-            np.testing.assert_allclose(
-                signal_py[:min_len],
-                signal_rs[:min_len],
-                rtol=1e-3,
-                atol=1e-4,
-                err_msg=f"Tearing mode parity failed: max rel diff = {_max_rel_diff(signal_py[:min_len], signal_rs[:min_len]):.6e}",
-            )
+        # Same disruption rate (both ~0 for the saturating drive) and matching
+        # island-growth distribution (mean / spread of the per-shot peak width).
+        assert abs(np.mean(rs_labels) - np.mean(py_labels)) < 0.05
+        assert abs(np.mean(rs_maxw) - np.mean(py_maxw)) < 0.15
+        assert abs(np.std(rs_maxw) - np.std(py_maxw)) < 0.15
 
     @pytest.mark.skipif(
         not _HAS_RUST_TRANSPORT_SOLVER,
@@ -815,3 +930,45 @@ class TestTopologyParity:
         # Psi absolute value at the X-point can differ between independent
         # equilibrium solves (different flux normalization). Position
         # agreement (checked above) is the meaningful parity test.
+
+
+class TestMagneticsParity:
+    """Compare the Rust and NumPy magnetic-probe measurement tiers."""
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_MAGNETICS,
+        reason="Rust measure_magnetics not exposed via PyO3",
+    )
+    def test_measure_magnetics_parity(self) -> None:
+        """Noise-free bilinear flux at the probes agrees across the two tiers.
+
+        The probe positions (trig) and bilinear weights round slightly
+        differently between Rust and NumPy, so parity is tolerance-aware.
+        """
+        from scpn_fusion.diagnostics.synthetic_sensors import (
+            measure_magnetics as py_measure_magnetics,
+        )
+
+        rng = np.random.default_rng(4242)
+        nr, nz = 65, 65
+        r_min, r_max, z_min, z_max = 3.0, 9.0, -5.0, 5.0
+        r_axis = np.linspace(r_min, r_max, nr)
+        z_axis = np.linspace(z_min, z_max, nz)
+        rr, zz = np.meshgrid(r_axis, z_axis)
+        # Smooth flux so probes that round into adjacent cells stay close.
+        psi = np.exp(-((rr - 6.0) ** 2 + zz**2) / 8.0) + 0.05 * rng.standard_normal((nz, nr))
+        psi = np.asarray(psi, dtype=np.float64)
+
+        meas_py = py_measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)
+        meas_rs = np.asarray(
+            _rust_measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max), dtype=np.float64
+        )
+
+        assert meas_py.shape == meas_rs.shape
+        np.testing.assert_allclose(
+            meas_py,
+            meas_rs,
+            rtol=1e-9,
+            atol=1e-9,
+            err_msg=f"magnetics parity failed: max abs diff = {np.max(np.abs(meas_py - meas_rs)):.3e}",
+        )

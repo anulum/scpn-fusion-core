@@ -17,6 +17,7 @@ from scpn_fusion.control.federated_disruption import (
     N_FEATURES,
     FederatedConfig,
     FederatedServer,
+    MachineClient,
     _init_mlp_weights,
     create_machine_clients,
     differential_privacy_clip,
@@ -266,3 +267,27 @@ def test_sigmoid_clips_extreme_logits_and_bce_penalizes_confident_errors() -> No
     assert np.isfinite(correct)
     assert np.isfinite(wrong)
     assert wrong > correct
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"n_rounds": 0}, "n_rounds"),
+        ({"local_epochs": 0}, "local_epochs"),
+        ({"learning_rate": 0.0}, "learning_rate"),
+        ({"aggregation": "bad"}, "aggregation"),
+        ({"mu_proximal": -1.0}, "mu_proximal"),
+        ({"min_clients": 0}, "min_clients"),
+        ({"machines": ["Nonexistent"]}, "Unknown machine"),
+    ],
+)
+def test_federated_config_rejects_invalid_fields(kwargs: dict, match: str) -> None:
+    with pytest.raises(ValueError, match=match):
+        FederatedConfig(**kwargs)
+
+
+def test_machine_client_rejects_unknown_machine() -> None:
+    arr = np.zeros((2, N_FEATURES), dtype=np.float64)
+    y = np.zeros(2, dtype=np.float64)
+    with pytest.raises(ValueError, match="Unknown machine"):
+        MachineClient("Nonexistent", arr, y, arr, y)

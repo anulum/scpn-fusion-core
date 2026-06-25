@@ -98,6 +98,21 @@ def test_mcnp_lite_tbr_uncertainty_mode_bounds_proxy() -> None:
     assert uncertainty["tbr_p95_low"] <= tbr_proxy <= uncertainty["tbr_p95_high"]
 
 
+def test_mcnp_lite_tbr_point_estimate_mode_returns_two_tuple() -> None:
+    """Without uncertainty the proxy returns just (tbr_proxy, factor)."""
+    result = mcnp_lite_tbr(
+        base_tbr=0.96,
+        li6_enrichment=0.92,
+        be_multiplier_fraction=0.70,
+        reflector_albedo=0.60,
+        return_uncertainty=False,
+    )
+    assert len(result) == 2
+    tbr_proxy, factor = result
+    assert tbr_proxy > 0.0
+    assert factor > 0.0
+
+
 def test_run_real_shot_replay_reports_impurity_cocktail_fields() -> None:
     agent = FusionAIAgent(epsilon=0.05)
     shot_data = _build_replay_shot()
