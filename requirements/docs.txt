@@ -1894,9 +1894,9 @@ sphinx==8.2.3 \
     #   sphinx-autodoc-typehints
     #   sphinx-basic-ng
     #   sphinx-copybutton
-sphinx-autodoc-typehints==3.0.1 \
-    --hash=sha256:4b64b676a14b5b79cefb6628a6dc8070e320d4963e8ff640a2f3e9390ae9045a \
-    --hash=sha256:b9b40dd15dee54f6f810c924f863f9cf1c54f9f3265c495140ea01be7f44fa55
+sphinx-autodoc-typehints==3.5.2 \
+    --hash=sha256:0accd043619f53c86705958e323b419e41667917045ac9215d7be1b493648d8c \
+    --hash=sha256:5fcd4a3eb7aa89424c1e2e32bedca66edc38367569c9169a80f4b3e934171fdb
     # via -r requirements/docs.in
 sphinx-basic-ng==1.0.0b2 \
     --hash=sha256:9ec55a47c90c8c002b5960c57492ec3021f5193cb26cebc2dc4ea226848651c9 \
