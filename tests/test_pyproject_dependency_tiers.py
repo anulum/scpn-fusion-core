@@ -57,7 +57,12 @@ def test_full_lock_source_covers_declared_heavy_extras() -> None:
     pyproject = PYPROJECT.read_text(encoding="utf-8")
     full_requirements = FULL_REQUIREMENTS_IN.read_text(encoding="utf-8")
 
-    for dependency in ("streamlit", "freegs>=0.6", "omas>=0.70", "maturin>=1.7,<2.0"):
+    for dependency in (
+        "streamlit",
+        "freegs>=0.6",
+        "omas>=0.70",
+        "maturin>=1.14.1,<2.0",
+    ):
         assert dependency in pyproject
         assert dependency in full_requirements
 
