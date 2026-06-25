@@ -41,3 +41,34 @@ def test_compute_nustar_increases_with_density() -> None:
     high = _compute_nustar(te_kev=5.0, ne_19=8.0, q=1.6, rho=0.5)
     assert low > 0.0
     assert high > low
+
+
+def test_mlp_forward_gated_log_transform_and_gyrobohm_scaling() -> None:
+    w = MLPWeights(
+        layers_w=[np.zeros((10, 6)), np.zeros((6, 4))],
+        layers_b=[np.zeros(6), np.zeros(4)],
+        input_mean=np.zeros(10),
+        input_std=np.ones(10),
+        output_scale=np.ones(3),
+        gated=True,
+        log_transform=True,
+        gb_scale=True,
+    )
+    out = _mlp_forward(np.ones((4, 10), dtype=np.float64), w)
+    assert out.shape == (4, 3)
+    assert np.all(np.isfinite(out))
+
+
+def test_mlp_forward_scalar_gyrobohm_path_for_single_sample() -> None:
+    w = MLPWeights(
+        layers_w=[np.zeros((10, 6)), np.zeros((6, 4))],
+        layers_b=[np.zeros(6), np.zeros(4)],
+        input_mean=np.zeros(10),
+        input_std=np.ones(10),
+        output_scale=np.ones(3),
+        gated=True,
+        gb_scale=True,
+    )
+    out = _mlp_forward(np.ones(10, dtype=np.float64), w)  # 1D input -> scalar chi_gb
+    assert out.shape == (3,)
+    assert np.all(np.isfinite(out))

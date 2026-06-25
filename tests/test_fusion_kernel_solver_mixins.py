@@ -36,6 +36,31 @@ def test_numeric_helpers_are_stable_on_non_finite_inputs() -> None:
     assert stable_rms(sanitized) >= 0.0
 
 
+def test_stable_rms_on_empty_array_returns_zero() -> None:
+    """An empty input has no magnitude, so the RMS is exactly zero (size-guard branch)."""
+    assert stable_rms(np.array([], dtype=np.float64)) == 0.0
+
+
+def test_stable_rms_on_all_zero_array_returns_zero() -> None:
+    """A non-empty all-zero input has max_abs == 0.0, so RMS short-circuits to zero."""
+    assert stable_rms(np.zeros(8, dtype=np.float64)) == 0.0
+
+
+def test_stable_rms_matches_naive_rms_for_moderate_magnitudes() -> None:
+    """For values that do not overflow, the scaled RMS equals the textbook definition."""
+    arr = np.array([3.0, -4.0, 0.0, 5.0, -12.0], dtype=np.float64)
+    naive = float(np.sqrt(np.mean(arr * arr)))
+    assert stable_rms(arr) == pytest.approx(naive, rel=1e-12)
+
+
+def test_stable_rms_survives_overflow_prone_magnitudes() -> None:
+    """Squaring 1e200 directly overflows float64; the scaled form stays finite and correct."""
+    arr = np.array([1.0e200, -1.0e200], dtype=np.float64)
+    result = stable_rms(arr)
+    assert np.isfinite(result)
+    assert result == pytest.approx(1.0e200, rel=1e-12)
+
+
 class _IterativeKernelStub(FusionKernelIterativeSolverMixin):
     def __init__(self) -> None:
         self.dR = 0.25

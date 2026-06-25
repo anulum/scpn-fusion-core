@@ -22,10 +22,21 @@ from tools.train_mast_snn import (
 )
 
 
-def test_default_mast_cache_dir_stays_under_repo_data() -> None:
-    cache_dir = default_mast_cache_dir()
+def test_default_mast_cache_dir_uses_user_cache(monkeypatch) -> None:
+    # Without overrides the cache resolves under the user cache directory, a
+    # writable location valid for both a source checkout and an installed wheel
+    # (the package directory under site-packages is read-only).
+    monkeypatch.delenv("SCPN_MAST_CACHE_DIR", raising=False)
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
 
-    assert cache_dir == Path.cwd() / "data" / "mast_cache"
+    assert default_mast_cache_dir() == Path.home() / ".cache" / "scpn-fusion" / "mast_cache"
+
+
+def test_default_mast_cache_dir_respects_xdg_cache_home(monkeypatch, tmp_path) -> None:
+    monkeypatch.delenv("SCPN_MAST_CACHE_DIR", raising=False)
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+    assert default_mast_cache_dir() == tmp_path / "scpn-fusion" / "mast_cache"
 
 
 def test_environment_override_controls_mast_cache_dir(monkeypatch, tmp_path) -> None:

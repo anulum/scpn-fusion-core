@@ -5,6 +5,7 @@
       "docs/3d_gaps.md",
       "docs/API_OVERVIEW.md",
       "docs/APPLICATIONS_AND_MARKET.md",
+      "docs/ARCHITECTURE.md",
       "docs/BENCHMARKS.md",
       "docs/BENCHMARK_FIGURES.md",
       "docs/COMPACT_REACTOR_FINDINGS.md",
@@ -2579,21 +2580,22 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 54,
+    "capability_documentation_pages": 55,
     "github_workflows": 12,
-    "optional_extras": 12,
+    "optional_extras": 13,
     "public_api_exports": 2,
-    "public_documentation_pages": 54,
+    "public_documentation_pages": 55,
     "python_capability_classes": 546,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
-    "test_files": 429
+    "test_files": 433
   },
   "documentation": {
     "public_pages": [
       "docs/3d_gaps.md",
       "docs/API_OVERVIEW.md",
       "docs/APPLICATIONS_AND_MARKET.md",
+      "docs/ARCHITECTURE.md",
       "docs/BENCHMARKS.md",
       "docs/BENCHMARK_FIGURES.md",
       "docs/COMPACT_REACTOR_FINDINGS.md",
@@ -2682,6 +2684,7 @@
       "rl",
       "rust",
       "snn",
+      "studio",
       "ui"
     ],
     "shipped_package_data": [
@@ -2779,6 +2782,7 @@
       "tests/test_diiid_jet_validation.py",
       "tests/test_director_interface.py",
       "tests/test_director_interface_hardened.py",
+      "tests/test_disruption_checkpoint_policy.py",
       "tests/test_disruption_contract_primitives.py",
       "tests/test_disruption_contracts.py",
       "tests/test_disruption_model_checkpoint.py",
@@ -2916,6 +2920,7 @@
       "tests/test_high_beta_negative_triangularity_campaign.py",
       "tests/test_hil_demo_runner.py",
       "tests/test_hil_harness.py",
+      "tests/test_honest_validated_coverage.py",
       "tests/test_hpc_bridge.py",
       "tests/test_hybrid_accuracy_benchmark_contract.py",
       "tests/test_hypothesis_physics_models.py",
@@ -3086,6 +3091,8 @@
       "tests/test_stellarator_geometry.py",
       "tests/test_stress_campaign.py",
       "tests/test_structure.py",
+      "tests/test_studio_exactness.py",
+      "tests/test_studio_manifest.py",
       "tests/test_subsystem_fault_hardening_campaign.py",
       "tests/test_subsystem_fault_models.py",
       "tests/test_sweep_disruption_threshold_tool.py",

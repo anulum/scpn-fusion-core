@@ -21,6 +21,7 @@ import numpy as np
 from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.core._surrogate_utils import AdamOptimizer
 from scpn_fusion.core.eqdsk import read_geqdsk
 from scpn_fusion.core.fno_training import MultiLayerFNO
@@ -28,9 +29,9 @@ from scpn_fusion.core.fno_training import MultiLayerFNO
 
 logger = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_ITPA_CSV = REPO_ROOT / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
-DEFAULT_JET_DIR = REPO_ROOT / "validation" / "reference_data" / "jet"
-DEFAULT_WEIGHTS_DIR = REPO_ROOT / "weights"
+DEFAULT_ITPA_CSV = data_root() / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
+DEFAULT_JET_DIR = data_root() / "validation" / "reference_data" / "jet"
+DEFAULT_WEIGHTS_DIR = data_root() / "weights"
 DEFAULT_MLP_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_mlp_itpa.npz"
 DEFAULT_FNO_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_fno_eurofusion_jet.npz"
 DEFAULT_MANIFEST_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_surrogates_manifest.json"

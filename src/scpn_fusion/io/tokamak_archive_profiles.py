@@ -18,6 +18,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.core.eqdsk import read_geqdsk
 
 
@@ -33,7 +34,7 @@ def default_reference_data_root() -> Path:
     env = os.environ.get(_DATA_ROOT_ENV, "").strip()
     if env:
         return Path(env).expanduser()
-    return Path(__file__).resolve().parents[3] / "validation" / "reference_data"
+    return data_root() / "validation" / "reference_data"
 
 
 def default_diiid_dir() -> Path:

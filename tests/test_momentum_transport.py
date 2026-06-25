@@ -192,3 +192,50 @@ def test_intrinsic_rotation_torque_tracks_ion_temperature_gradient_direction() -
     np.testing.assert_allclose(flat, 0.0)
     assert np.all(inward_hotter > 0.0)
     assert np.all(outward_hotter < 0.0)
+
+
+def test_nbi_torque_zero_for_nonpositive_beam_velocity() -> None:
+    prof = np.ones(10)
+    np.testing.assert_array_equal(nbi_torque(prof, R0=6.2, v_beam=0.0, theta_inj_deg=0.0), 0.0)
+
+
+@pytest.mark.parametrize(
+    ("rho", "match"),
+    [
+        (np.array([0.0, 1.0]), "at least three"),
+        (np.array([0.0, 0.5, 0.4, 1.0]), "strictly increasing"),
+        (np.array([0.1, 0.5, 1.0]), "interval"),
+        (np.array([0.0, 0.3, 0.7, 1.0]), "uniformly spaced"),
+    ],
+)
+def test_momentum_solver_rejects_bad_rho_grid(rho, match: str) -> None:
+    with pytest.raises(ValueError, match=match):
+        MomentumTransportSolver(rho=rho, R0=6.2, a=2.0, B0=5.3)
+
+
+def test_momentum_solver_rejects_nonpositive_scalars() -> None:
+    rho = np.linspace(0.0, 1.0, 5)
+    with pytest.raises(ValueError, match="R0"):
+        MomentumTransportSolver(rho=rho, R0=0.0, a=2.0, B0=5.3)
+
+
+def _momentum_solver():
+    sol = MomentumTransportSolver(rho=np.linspace(0.0, 1.0, 5), R0=6.2, a=2.0, B0=5.3)
+    sol.omega_phi = np.zeros(5)
+    return sol
+
+
+def test_momentum_step_rejects_nonpositive_and_negative_profiles() -> None:
+    sol = _momentum_solver()
+    good = np.ones(5)
+    with pytest.raises(ValueError, match="ne must be positive"):
+        sol.step(0.01, chi_i=good, ne=np.zeros(5), Ti_keV=good, T_nbi=good, T_intrinsic=good)
+    with pytest.raises(ValueError, match="chi_i must be non-negative"):
+        sol.step(0.01, chi_i=-good, ne=good, Ti_keV=good, T_nbi=good, T_intrinsic=good)
+
+
+def test_momentum_step_rejects_wrong_shape_profile() -> None:
+    sol = _momentum_solver()
+    good = np.ones(5)
+    with pytest.raises(ValueError, match=r"finite profile with shape"):
+        sol.step(0.01, chi_i=np.ones(3), ne=good, Ti_keV=good, T_nbi=good, T_intrinsic=good)

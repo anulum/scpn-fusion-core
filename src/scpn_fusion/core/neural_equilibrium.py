@@ -35,6 +35,7 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.io.safe_loaders import checked_np_load
 
 FloatArray = NDArray[np.float64]
@@ -42,8 +43,8 @@ FloatArray = NDArray[np.float64]
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_WEIGHTS_PATH = REPO_ROOT / "weights" / "neural_equilibrium_sparc.npz"
-ITER_SURROGATE_WEIGHTS_PATH = REPO_ROOT / "weights" / "neural_equilibrium_iter_v1.npz"
+DEFAULT_WEIGHTS_PATH = data_root() / "weights" / "neural_equilibrium_sparc.npz"
+ITER_SURROGATE_WEIGHTS_PATH = data_root() / "weights" / "neural_equilibrium_iter_v1.npz"
 ITER_SURROGATE_VALIDATION_REPORT = (
     REPO_ROOT / "validation" / "reports" / "iter_surrogate_weight_validation.json"
 )

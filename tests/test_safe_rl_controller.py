@@ -95,3 +95,10 @@ def test_mock_training_loop():
 
     assert ppo.trained
     assert ppo.lambdas[0] > 0.0
+
+
+def test_lagrangian_ppo_predict_samples_action():
+    env = ConstrainedGymTokamakEnv(MockEnv(), default_safety_constraints())
+    ppo = LagrangianPPO(env)
+    action = ppo.predict(np.array([10.0, 2.0, 3.0]))
+    assert np.asarray(action).shape == (1,)

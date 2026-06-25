@@ -221,20 +221,24 @@ if TYPE_CHECKING:
     from scpn_fusion.core.fusion_kernel import FusionKernel as FusionKernel
 else:
 
-    def __getattr__(name: str) -> Any:
+    def _resolve_fusion_kernel_class() -> type[Any]:
         """Resolve ``FusionKernel`` through the canonical multi-backend dispatcher.
 
         ``_multi_compat`` is the single fastest-first authority; this module is its
         Rust-tier provider (it supplies ``RustAcceleratedKernel``). The alias is
-        resolved lazily here so the dispatcher stays canonical for the consumers
-        that ``from scpn_fusion.core._rust_compat import FusionKernel``, while the
-        ``_multi_compat`` import is deferred to first access — avoiding the import
-        cycle at module load.
+        bound after ``RustAcceleratedKernel`` is defined so consumers that import
+        ``FusionKernel`` directly do not depend on module ``__getattr__`` semantics.
         """
-        if name == "FusionKernel":
-            from scpn_fusion.core._multi_compat import dispatch_kernel_class
+        from scpn_fusion.core._multi_compat import dispatch_kernel_class
 
-            return dispatch_kernel_class("equilibrium_kernel")
+        return cast(type[Any], dispatch_kernel_class("equilibrium_kernel"))
+
+    FusionKernel = _resolve_fusion_kernel_class()
+
+    def __getattr__(name: str) -> Any:
+        """Reject unknown compatibility symbols with a precise module error."""
+        if name == "FusionKernel":
+            return FusionKernel
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

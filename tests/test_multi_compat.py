@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import builtins
 import sys
 import types
 from collections.abc import Iterator
@@ -35,6 +36,21 @@ def kernel_name(request: pytest.FixtureRequest) -> Iterator[str]:
 def test_numpy_backend_is_always_available() -> None:
     assert multi.available_backends()["numpy"] is True
     assert multi.is_available(multi.BackendTier.NUMPY) is True
+
+
+def test_jax_probe_treats_broken_optional_import_as_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_import = builtins.__import__
+
+    def fake_import(name: str, *args: object, **kwargs: object) -> object:
+        if name == "jax":
+            raise ValueError("numpy dtype ABI mismatch")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    assert multi._probe_jax() is False
 
 
 def test_dispatch_selects_registered_numpy_kernel(kernel_name: str) -> None:

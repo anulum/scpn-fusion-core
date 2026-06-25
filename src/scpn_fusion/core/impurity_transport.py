@@ -1127,7 +1127,11 @@ class ImpurityTransportSolver:
         vol_element = 4.0 * np.pi**2 * self.R0 * self.a**2 * self.rho
         _trapz: Any = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
         profile_volume = float(_trapz(profile * vol_element, self.rho))
-        if profile_volume <= 0.0 or not np.isfinite(profile_volume):
+        if (  # pragma: no cover - unreachable: the constructor pins rho[-1]==1, so
+            # profile[edge]==exp(0)==1 and vol_element[edge]>0 keep the trapezoidal
+            # normalisation strictly positive for every admissible grid.
+            profile_volume <= 0.0 or not np.isfinite(profile_volume)
+        ):
             raise ValueError("edge source profile has zero normalisation")
 
         edge_area = 4.0 * np.pi**2 * self.R0 * self.a

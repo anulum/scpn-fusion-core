@@ -130,3 +130,73 @@ def test_sensor_fault_out_of_range_rejected():
 
     with pytest.raises(IndexError, match="out of range"):
         ctrl.handle_sensor_fault(5, FaultType.SENSOR_DROPOUT)
+
+
+def _ctrl() -> ReconfigurableController:
+    return ReconfigurableController(None, np.eye(3), n_coils=3, n_sensors=3)
+
+
+def test_handle_actuator_fault_is_idempotent_per_coil() -> None:
+    ctrl = _ctrl()
+    ctrl.handle_actuator_fault(1, FaultType.OPEN_CIRCUIT_ACTUATOR)
+    ctrl.handle_actuator_fault(1, FaultType.OPEN_CIRCUIT_ACTUATOR)  # early return
+    assert ctrl.faulted_coils == {1}
+
+
+def test_handle_actuator_fault_records_stuck_value() -> None:
+    ctrl = _ctrl()
+    ctrl.handle_actuator_fault(0, FaultType.STUCK_ACTUATOR, stuck_val=5.0)
+    assert ctrl.stuck_values[0] == 5.0
+
+
+def test_compute_gain_falls_back_to_zero_on_singular_inverse(monkeypatch) -> None:
+    ctrl = _ctrl()
+
+    def _raise(_: object) -> object:
+        raise np.linalg.LinAlgError("singular")
+
+    monkeypatch.setattr(np.linalg, "inv", _raise)
+    ctrl.handle_actuator_fault(0, FaultType.OPEN_CIRCUIT_ACTUATOR)
+    assert np.allclose(ctrl.K, 0.0)
+
+
+def test_handle_sensor_fault_rejects_out_of_range_index() -> None:
+    ctrl = _ctrl()
+    with pytest.raises(IndexError, match="out of range"):
+        ctrl.handle_sensor_fault(3, FaultType.SENSOR_DROPOUT)
+
+
+def test_handle_sensor_fault_is_idempotent_per_sensor() -> None:
+    ctrl = _ctrl()
+    ctrl.handle_sensor_fault(0, FaultType.SENSOR_DROPOUT)
+    ctrl.handle_sensor_fault(0, FaultType.SENSOR_DROPOUT)  # early return
+    assert ctrl.faulted_sensors == {0}
+
+
+def test_handle_sensor_fault_guards_unmappable_weight_row() -> None:
+    ctrl = _ctrl()
+    ctrl.W = np.eye(2)  # weight space smaller than the sensor index space
+    with pytest.raises(IndexError, match="cannot be mapped"):
+        ctrl.handle_sensor_fault(2, FaultType.SENSOR_DROPOUT)
+
+
+def test_handle_sensor_fault_downweights_unknown_sensor_mode() -> None:
+    ctrl = _ctrl()
+    ctrl.handle_sensor_fault(1, FaultType.OPEN_CIRCUIT_ACTUATOR)  # not a sensor class
+    assert ctrl.W[1, 1] == 0.5
+
+
+def test_fault_injector_zeroes_signal_on_dropout() -> None:
+    injector = FaultInjector(
+        fault_time=1.0, component_index=2, fault_type=FaultType.SENSOR_DROPOUT, severity=1.0
+    )
+    corrupted = injector.inject(2.0, np.ones(4))
+    assert corrupted[2] == 0.0
+
+
+def test_step_compensates_for_stuck_actuator_offset() -> None:
+    ctrl = _ctrl()
+    ctrl.handle_actuator_fault(0, FaultType.STUCK_ACTUATOR, stuck_val=2.0)
+    delta_u = ctrl.step(np.array([0.1, 0.2, 0.3]), dt=0.01)
+    assert delta_u.shape == (3,)
+    assert np.all(np.isfinite(delta_u))
