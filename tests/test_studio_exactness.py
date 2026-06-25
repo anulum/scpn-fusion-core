@@ -9,12 +9,16 @@
 
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
 import pytest
 
-import hashlib
+# exactness.py imports the exactness axis from the platform SDK at module level, so the
+# studio extra must be installed; the studio-conformance CI job provides it, the base job skips.
+pytest.importorskip("scpn_studio_platform", reason="studio extra not installed")
 
-from scpn_fusion.studio.exactness import (
+from scpn_fusion.studio.exactness import (  # noqa: E402
     ComparisonResult,
     ExactnessClass,
     ReproVerdict,
@@ -178,3 +182,21 @@ def test_exactness_class_and_verdict_wire_values() -> None:
     assert ExactnessClass.STOCHASTIC == "stochastic"
     assert ReproVerdict.WITHIN_TOLERANCE == "within-tolerance"
     assert ComparisonResult(ReproVerdict.MATCH, "x").reproduced is True
+
+
+def test_axis_enums_are_the_platform_sdk_single_source() -> None:
+    """ExactnessClass/ReproVerdict are re-exported from the SDK, not a FUSION duplicate."""
+    from scpn_studio_platform import exactness as sdk_exactness
+
+    assert ExactnessClass is sdk_exactness.ExactnessClass
+    assert ReproVerdict is sdk_exactness.ReproVerdict
+
+
+def test_parse_exactness_class_is_forward_tolerant() -> None:
+    """The re-exported parser maps known classes and degrades an unknown one, not raising."""
+    from scpn_fusion.studio.exactness import parse_exactness_class
+
+    assert parse_exactness_class("tolerance") is ExactnessClass.TOLERANCE
+    unknown = parse_exactness_class("some-future-class")
+    assert unknown is not ExactnessClass.TOLERANCE
+    assert "some-future-class" in repr(unknown)

@@ -21,6 +21,7 @@ from .exactness import (
     canonical_value_digest,
     compare_bit_exact,
     compare_tolerance,
+    parse_exactness_class,
     reproduce,
 )
 from .federation import (
@@ -45,6 +46,7 @@ __all__ = [
     "compare_tolerance",
     "declared_surface",
     "evidence_schemas",
+    "parse_exactness_class",
     "reproduce",
     "write_federation_document",
 ]

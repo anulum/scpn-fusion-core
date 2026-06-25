@@ -33,28 +33,20 @@ bit-exact regression). The browser ``@anulum/verify`` lib mirrors this verdict-f
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
 import hashlib
 
 import numpy as np
 from numpy.typing import NDArray
 
-
-class ExactnessClass(StrEnum):
-    """How a claim's reproduction is to be compared. Declared per claim; never defaulted."""
-
-    BIT_EXACT = "bit-exact"
-    TOLERANCE = "tolerance"
-    STOCHASTIC = "stochastic"
-
-
-class ReproVerdict(StrEnum):
-    """The verdict of comparing a recomputed value against a committed claim."""
-
-    MATCH = "match"  # bit-exact digest equality held
-    WITHIN_TOLERANCE = "within-tolerance"  # float recompute inside the declared band
-    DRIFT = "drift"  # recompute disagrees beyond the rule — LOUD, tamper-evident
-    UNVERIFIABLE = "unverifiable"  # no exactness class declared — cannot compare honestly
+# The axis (the exactness-class + verdict vocabulary and the dependency-free bit-exact
+# digest compare) is owned by the platform SDK — single source, no N² divergence. FUSION
+# re-exports it and adds the numpy tolerance/stochastic numerics behind the shared enums.
+from scpn_studio_platform.exactness import (
+    ExactnessClass,
+    ReproVerdict,
+    compare_bit_exact as _sdk_compare_bit_exact,
+    parse_exactness_class,
+)
 
 
 @dataclass(frozen=True)
@@ -83,7 +75,12 @@ class ComparisonResult:
 
 
 def compare_bit_exact(recomputed_digest: str, committed_digest: str) -> ComparisonResult:
-    """Compare two content digests for a bit-exact claim.
+    """Compare two content digests for a bit-exact claim, wrapping the SDK verdict.
+
+    The actual digest comparison is delegated to the platform SDK's dependency-free
+    :func:`scpn_studio_platform.exactness.compare_bit_exact` (the single source for the axis);
+    this wrapper adds FUSION's :class:`ComparisonResult` rationale so the bit-exact and the
+    numpy tolerance paths return one consistent type.
 
     Parameters
     ----------
@@ -97,10 +94,11 @@ def compare_bit_exact(recomputed_digest: str, committed_digest: str) -> Comparis
     ComparisonResult
         ``MATCH`` on exact digest equality, else ``DRIFT`` (loud, tamper-evident).
     """
-    if recomputed_digest == committed_digest:
-        return ComparisonResult(ReproVerdict.MATCH, "bit-exact digest equality")
+    verdict = _sdk_compare_bit_exact(recomputed_digest, committed_digest)
+    if verdict is ReproVerdict.MATCH:
+        return ComparisonResult(verdict, "bit-exact digest equality")
     return ComparisonResult(
-        ReproVerdict.DRIFT,
+        verdict,
         f"bit-exact digest mismatch: {recomputed_digest!r} != {committed_digest!r}",
     )
 
@@ -269,5 +267,6 @@ __all__ = [
     "canonical_value_digest",
     "compare_bit_exact",
     "compare_tolerance",
+    "parse_exactness_class",
     "reproduce",
 ]
