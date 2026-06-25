@@ -1086,7 +1086,7 @@ jobs:
         # The [studio] extra is optional, so the base test job skips the schema-A
         # tests; this job installs the SDK so the federation contract is genuinely
         # gated (validate_studio_manifest must admit the manifest) rather than skipped.
-        run: pip install "scpn-studio-platform>=0.8,<0.9"
+        run: pip install "scpn-studio-platform>=0.10,<0.11"
       - name: Studio schema-A federation tests
         run: pytest tests/test_studio_manifest.py -v
       - name: Studio manifest drift guard

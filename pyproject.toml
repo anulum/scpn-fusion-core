@@ -67,7 +67,7 @@ rust = [
 ]
 snn = []  # pure-numpy LIF+NEF engine, no external deps
 studio = [
-    "scpn-studio-platform>=0.9,<0.11",
+    "scpn-studio-platform>=0.10,<0.11",
 ]
 benchmark = [
     "freegs>=0.6",

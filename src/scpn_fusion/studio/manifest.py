@@ -32,7 +32,7 @@ from scpn_studio_platform.manifest import (
 
 from .verbs import FUSION_VERBS, STUDIO_ID, evidence_schemas
 
-PLATFORM_SDK_RANGE = ">=0.8,<0.9"
+PLATFORM_SDK_RANGE = ">=0.10,<0.11"
 """The platform SDK SemVer range the studio builds on (matches the ``studio`` extra)."""
 
 PROTOCOL_VERSION = "1"

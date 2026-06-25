@@ -319,7 +319,7 @@
       "studio.control-replay.v1",
       "studio.disruption-forecast.v1"
     ],
-    "platform_sdk": ">=0.8,<0.9",
+    "platform_sdk": ">=0.10,<0.11",
     "protocol_version": "1",
     "studio": "scpn-fusion-core",
     "studio_version": "3.9.11",

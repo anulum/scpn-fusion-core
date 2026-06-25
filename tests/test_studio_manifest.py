@@ -26,7 +26,7 @@ def test_manifest_builds_with_studio_identity() -> None:
     assert len(data["verbs"]) == len(verbs.FUSION_VERBS) == 8
     assert data["content_digest"].startswith("sha256:")
     assert data["contract_era"] == "v1"
-    assert data["platform_sdk"] == ">=0.8,<0.9"
+    assert data["platform_sdk"] == ">=0.10,<0.11"
     assert data["transport_profile"] == "local-first"
 
 
