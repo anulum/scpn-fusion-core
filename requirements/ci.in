@@ -14,12 +14,16 @@ types-psutil>=7.2.2.20260518
 ruff>=0.8
 bandit>=1.7
 pre-commit>=3.0
+virtualenv>=21.5.1,<22
+python-discovery>=1.4.2
 jax[cpu]
 gymnasium
 jsonschema>=4.26.0
 tornado>=6.5.7
 
 # Dependabot security floors for CI transitive tooling.
+farama-notifications>=0.0.6
+platformdirs>=4.10.0
 Pygments>=2.20.0
 pillow>=12.2.0
 pytest>=9.0.3

@@ -1,11 +1,11 @@
 # Full install dependencies (smoke-install "full" profile)
 # Regenerate: uv pip compile requirements/full.in --generate-hashes --universal -o requirements/full.txt
 -r ci.in
-streamlit
+streamlit>=1.58.0,<2
 nengo>=4.0
 freegs>=0.6
 omas>=0.70
-maturin>=1.7,<2.0
+maturin>=1.14.1,<2.0
 
 # Dependabot security floors for optional full-profile transitive tooling.
 GitPython>=3.1.50
@@ -14,5 +14,6 @@ idna>=3.15
 pillow>=12.2.0
 pytest>=9.0.3
 requests>=2.33.0,<3
+setuptools>=82.0.1
 urllib3>=2.7.0
 tornado>=6.5.7
