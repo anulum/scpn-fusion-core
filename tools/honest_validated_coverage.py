@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+
 try:
     from enum import StrEnum
 except ImportError:  # pragma: no cover - exercised by the Python 3.10 CI lane
@@ -37,6 +38,7 @@ except ImportError:  # pragma: no cover - exercised by the Python 3.10 CI lane
 
     class StrEnum(str, Enum):
         """Python 3.10-compatible subset of :class:`enum.StrEnum`."""
+
 
 import json
 from pathlib import Path
