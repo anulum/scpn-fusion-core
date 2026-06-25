@@ -24,6 +24,7 @@ tornado>=6.5.7
 # Dependabot security floors for CI transitive tooling.
 farama-notifications>=0.0.6
 platformdirs>=4.10.0
+tzdata>=2026.2
 Pygments>=2.20.0
 pillow>=12.2.0
 pytest>=9.0.3
