@@ -44,6 +44,59 @@ def _require_int(name: str, value: object, minimum: int | None = None) -> int:
     return parsed
 
 
+TEARING_DT = 0.01
+TEARING_SATURATION_WIDTH = 12.0
+TEARING_DISRUPTION_WIDTH = 8.0
+TEARING_NOISE_STD = 0.02
+TEARING_DELTA_PRIME_STABLE = -0.5
+TEARING_DELTA_PRIME_UNSTABLE = -0.1
+TEARING_SAFE_SENTINEL = 9999
+
+
+def rutherford_island_growth(
+    w: float,
+    delta_prime: float,
+    beta_p: float,
+    w_crit: float,
+    dt: float = TEARING_DT,
+) -> float:
+    r"""Deterministic Modified Rutherford island-width increment for one step.
+
+    Canonical free-function reference for the deterministic core of the
+    ``simulate_tearing_mode`` dispatch kernel; bit-exact with the Rust tier.
+
+    Parameters
+    ----------
+    w : float
+        Current magnetic-island width.
+    delta_prime : float
+        Tearing stability index :math:`\Delta'`.
+    beta_p : float
+        Poloidal beta scaling the bootstrap drive.
+    w_crit : float
+        Critical island width regularising the bootstrap term [units of ``w``].
+    dt : float, optional
+        Time step, by default :data:`TEARING_DT`.
+
+    Returns
+    -------
+    float
+        The island-width increment :math:`\mathrm{d}w` for this step.
+
+    Notes
+    -----
+    Modified Rutherford Equation with the bootstrap-current drive:
+
+    .. math::
+
+        \frac{\mathrm{d}w}{\mathrm{d}t} =
+        \left(\Delta' + \beta_p \frac{w}{w^2 + w_\mathrm{crit}^2}\right)
+        \left(1 - \frac{w}{w_\mathrm{sat}}\right)
+    """
+    f_bs = beta_p * (w / (w**2 + w_crit**2))
+    return (delta_prime + f_bs) * (1.0 - w / TEARING_SATURATION_WIDTH) * dt
+
+
 def simulate_tearing_mode(
     steps: int = 1000,
     *,
@@ -64,7 +117,6 @@ def simulate_tearing_mode(
 
     """
     steps = _require_int("steps", steps, 1)
-    dt = 0.01
     w = 0.01  # Island width
     local_rng = rng if rng is not None else np.random.default_rng()
     beta_p_f = float(beta_p)
@@ -75,30 +127,25 @@ def simulate_tearing_mode(
         raise ValueError("w_crit must be finite and > 0.")
 
     is_disruptive = float(local_rng.random()) > 0.5
-    trigger_time = int(local_rng.integers(200, 800)) if is_disruptive else 9999
+    trigger_time = int(local_rng.integers(200, 800)) if is_disruptive else TEARING_SAFE_SENTINEL
 
-    delta_prime = -0.5
+    delta_prime = TEARING_DELTA_PRIME_STABLE
     w_history = []
 
     for t in range(steps):
         if t > trigger_time:
-            delta_prime = -0.1
+            delta_prime = TEARING_DELTA_PRIME_UNSTABLE
             if w < 0.1:
                 w = 0.15  # seed island
 
-        # Modified Rutherford Equation: dw/dt = Delta' + Delta'_BS
-        # Delta'_BS = beta_p * w / (w^2 + w_crit^2)
-        f_bs = beta_p_f * (w / (w**2 + w_crit_f**2))
-
-        dw = (delta_prime + f_bs) * (1.0 - w / 12.0) * dt
-        w += dw
-        w += float(local_rng.normal(0.0, 0.02))
+        w += rutherford_island_growth(w, delta_prime, beta_p_f, w_crit_f)
+        w += float(local_rng.normal(0.0, TEARING_NOISE_STD))
         w = max(w, 0.001)
 
         w_history.append(w)
 
         # Mode lock → disruption
-        if w > 8.0:
+        if w > TEARING_DISRUPTION_WIDTH:
             return np.array(w_history), 1, (t - trigger_time)
 
     return np.array(w_history), 0, -1

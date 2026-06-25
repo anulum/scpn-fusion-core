@@ -21,6 +21,97 @@ from scpn_fusion.diagnostics.forward import ForwardDiagnosticChannels, generate_
 FloatArray = NDArray[np.float64]
 Chord = tuple[FloatArray, FloatArray]
 
+# Magnetic-probe wall geometry (shared with the Rust tier's SensorSuite constants).
+N_MAGNETIC_PROBES = 20
+WALL_MAJOR_RADIUS = 6.0
+WALL_MINOR_RADIUS = 3.0
+WALL_ELONGATION = 1.8
+WALL_OFFSET = 0.5
+
+
+def magnetic_probe_positions() -> tuple[FloatArray, FloatArray]:
+    """Return the (R, Z) positions of the magnetic probes on the D-shaped wall.
+
+    Returns
+    -------
+    wall_R, wall_Z : numpy.ndarray
+        Probe coordinates [m], ``N_MAGNETIC_PROBES`` points spread over the wall
+        ellipse (``theta`` endpoint-inclusive ``linspace(0, 2*pi, N)``).
+    """
+    theta = np.linspace(0.0, 2.0 * np.pi, N_MAGNETIC_PROBES)
+    wall_radius = WALL_MINOR_RADIUS + WALL_OFFSET
+    wall_r = WALL_MAJOR_RADIUS + wall_radius * np.cos(theta)
+    wall_z = wall_radius * WALL_ELONGATION * np.sin(theta)
+    return np.asarray(wall_r, dtype=np.float64), np.asarray(wall_z, dtype=np.float64)
+
+
+def measure_magnetics(
+    psi: FloatArray,
+    nr: int,
+    nz: int,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+) -> FloatArray:
+    """Bilinearly interpolate the poloidal flux at the magnetic-probe positions.
+
+    Canonical free-function reference for the ``measure_magnetics`` dispatch
+    kernel (:mod:`scpn_fusion.core._multi_compat`). It is the deterministic,
+    noise-free measurement; sensor noise is an additive simulation concern added
+    by :meth:`SensorSuite.measure_magnetics`. The Rust tier
+    (``scpn_fusion_rs.measure_magnetics``) evaluates the same bilinear stencil at
+    the same probe positions, so the two tiers agree to a tight tolerance.
+
+    Parameters
+    ----------
+    psi : FloatArray
+        Poloidal flux on the grid, shape ``(nz, nr)``.
+    nr, nz : int
+        Grid dimensions.
+    r_min, r_max, z_min, z_max : float
+        Grid extent [m].
+
+    Returns
+    -------
+    FloatArray
+        Flux at each probe, length ``N_MAGNETIC_PROBES``.
+
+    Raises
+    ------
+    ValueError
+        If ``psi`` does not have shape ``(nz, nr)``.
+    """
+    psi_arr = np.asarray(psi, dtype=np.float64)
+    if psi_arr.shape != (nz, nr):
+        raise ValueError(f"psi must have shape (nz, nr) = ({nz}, {nr}); got {psi_arr.shape}.")
+    dr = (r_max - r_min) / (nr - 1) if nr > 1 else 1.0
+    dz = (z_max - z_min) / (nz - 1) if nz > 1 else 1.0
+
+    wall_r, wall_z = magnetic_probe_positions()
+    measurements = np.empty(wall_r.size, dtype=np.float64)
+    for i in range(wall_r.size):
+        r = float(wall_r[i])
+        z = float(wall_z[i])
+        ir = int((r - r_min) / dr)
+        iz = int((z - z_min) / dz)
+        if 0 <= ir < nr - 1 and 0 <= iz < nz - 1:
+            wr = (r - (r_min + ir * dr)) / dr
+            wz = (z - (z_min + iz * dz)) / dz
+            v00 = psi_arr[iz, ir]
+            v10 = psi_arr[iz, ir + 1]
+            v01 = psi_arr[iz + 1, ir]
+            v11 = psi_arr[iz + 1, ir + 1]
+            measurements[i] = (
+                (1.0 - wr) * (1.0 - wz) * v00
+                + wr * (1.0 - wz) * v10
+                + (1.0 - wr) * wz * v01
+                + wr * wz * v11
+            )
+        else:
+            measurements[i] = psi_arr[int(np.clip(iz, 0, nz - 1)), int(np.clip(ir, 0, nr - 1))]
+    return measurements
+
 
 class SensorSuite:
     """Simulate physical diagnostics installed on the tokamak wall.
@@ -51,12 +142,8 @@ class SensorSuite:
         self.bolo_chords = self._generate_bolo_chords()
 
     def _generate_sensor_positions(self) -> tuple[FloatArray, FloatArray]:
-        # Place 20 magnetic probes around the wall
-        theta = np.linspace(0, 2 * np.pi, 20)
-        R0, a, kappa = 6.0, 3.0, 1.8
-        R_s = R0 + (a + 0.5) * np.cos(theta)
-        Z_s = (a + 0.5) * kappa * np.sin(theta)
-        return np.asarray(R_s, dtype=np.float64), np.asarray(Z_s, dtype=np.float64)
+        # Place the magnetic probes around the D-shaped wall.
+        return magnetic_probe_positions()
 
     def _generate_bolo_chords(self) -> list[Chord]:
         # 16 Chords fanning out from a top port (R=6, Z=5)
@@ -78,45 +165,25 @@ class SensorSuite:
         return float(np.random.normal(0.0, sigma))
 
     def measure_magnetics(self) -> FloatArray:
-        """Return Flux Psi at sensor locations.
+        """Return flux Psi at the probe locations (bilinear interp + sensor noise).
 
-        Interpolates from Kernel grid.
+        The deterministic bilinear measurement is delegated to the free function
+        :func:`measure_magnetics`; this method adds the simulated Gaussian sensor
+        noise on top.
         """
-        # Map R,Z to grid indices
-        measurements: list[float] = []
-        for i in range(len(self.wall_R)):
-            r, z = self.wall_R[i], self.wall_Z[i]
-
-            # Bilinear Interpolation for higher accuracy
-            ir = int((r - self.kernel.R[0]) / self.kernel.dR)
-            iz = int((z - self.kernel.Z[0]) / self.kernel.dZ)
-
-            if 0 <= ir < self.kernel.NR - 1 and 0 <= iz < self.kernel.NZ - 1:
-                # Interpolation weights
-                wr = (r - self.kernel.R[ir]) / self.kernel.dR
-                wz = (z - self.kernel.Z[iz]) / self.kernel.dZ
-
-                v00 = self.kernel.Psi[iz, ir]
-                v10 = self.kernel.Psi[iz, ir + 1]
-                v01 = self.kernel.Psi[iz + 1, ir]
-                v11 = self.kernel.Psi[iz + 1, ir + 1]
-
-                val = (
-                    (1 - wr) * (1 - wz) * v00
-                    + wr * (1 - wz) * v10
-                    + (1 - wr) * wz * v01
-                    + wr * wz * v11
-                )
-            else:
-                val = self.kernel.Psi[
-                    np.clip(iz, 0, self.kernel.NZ - 1), np.clip(ir, 0, self.kernel.NR - 1)
-                ]
-
-            # Add Sensor Noise
-            val += self._noise(0.01)
-            measurements.append(float(val))
-
-        return np.asarray(measurements, dtype=np.float64)
+        clean = measure_magnetics(
+            np.asarray(self.kernel.Psi, dtype=np.float64),
+            int(self.kernel.NR),
+            int(self.kernel.NZ),
+            float(self.kernel.R[0]),
+            float(self.kernel.R[-1]),
+            float(self.kernel.Z[0]),
+            float(self.kernel.Z[-1]),
+        )
+        return np.asarray(
+            [float(v) + self._noise(0.01) for v in clean],
+            dtype=np.float64,
+        )
 
     def measure_b_field(self) -> tuple[FloatArray, FloatArray]:
         """Compute local B_field (Br, Bz) at sensor locations using Biot-Savart.

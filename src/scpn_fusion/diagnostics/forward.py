@@ -273,7 +273,7 @@ def thomson_scattering_voltage(
         ne_local = max(float(ne[iz, ir]), 0.0)
         te_local = max(float(te[iz, ir]), 0.0)
         out[i] = gain * ne_local * (1.0 + temp_sensitivity * te_local) + baseline
-    if not np.all(np.isfinite(out)):
+    if not np.all(np.isfinite(out)):  # pragma: no cover - unreachable (see TODO)
         raise ValueError("thomson_scattering_voltage produced non-finite values.")
     return out
 

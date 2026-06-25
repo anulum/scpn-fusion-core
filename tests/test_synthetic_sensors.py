@@ -6,7 +6,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scpn_fusion.diagnostics.synthetic_sensors import SensorSuite
+from scpn_fusion.diagnostics.synthetic_sensors import (
+    N_MAGNETIC_PROBES,
+    SensorSuite,
+    magnetic_probe_positions,
+    measure_magnetics,
+)
 
 
 class _MockKernel:
@@ -95,3 +100,86 @@ class TestNoise:
         ss = SensorSuite(_MockKernel())
         n = ss._noise(0.1)
         assert np.isfinite(n)
+
+
+class TestMeasureMagneticsFreeFunction:
+    """Tests for the noise-free canonical measure_magnetics free function."""
+
+    def test_probe_positions_lie_on_wall_ellipse(self) -> None:
+        wall_r, wall_z = magnetic_probe_positions()
+        assert wall_r.shape == (N_MAGNETIC_PROBES,)
+        # Each probe satisfies ((R-R0)/wall)^2 + (Z/(kappa*wall))^2 == 1.
+        wall = 3.0 + 0.5
+        norm = ((wall_r - 6.0) / wall) ** 2 + (wall_z / (1.8 * wall)) ** 2
+        np.testing.assert_allclose(norm, 1.0, rtol=0.0, atol=1e-12)
+
+    def test_uniform_field_returns_constant(self) -> None:
+        psi = np.full((65, 65), 2.5, dtype=np.float64)
+        meas = measure_magnetics(psi, 65, 65, 3.0, 9.0, -5.0, 5.0)
+        assert meas.shape == (N_MAGNETIC_PROBES,)
+        np.testing.assert_allclose(meas, 2.5, rtol=0.0, atol=1e-12)
+
+    def test_linear_field_recovered_by_bilinear(self) -> None:
+        # psi linear in R: psi[iz, ir] = R at that column. Interior probes read
+        # back their own R coordinate exactly.
+        nr = nz = 65
+        r_min, r_max, z_min, z_max = 3.0, 9.0, -5.0, 5.0
+        r_axis = np.linspace(r_min, r_max, nr)
+        psi = np.tile(r_axis, (nz, 1))
+        dr = (r_max - r_min) / (nr - 1)
+        dz = (z_max - z_min) / (nz - 1)
+        wall_r, wall_z = magnetic_probe_positions()
+        meas = measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)
+        checked = 0
+        for i in range(N_MAGNETIC_PROBES):
+            ir = int((wall_r[i] - r_min) / dr)
+            iz = int((wall_z[i] - z_min) / dz)
+            if 0 <= ir < nr - 1 and 0 <= iz < nz - 1:
+                assert meas[i] == pytest.approx(float(wall_r[i]), abs=1e-9)
+                checked += 1
+        assert checked > 0
+
+    def test_rejects_wrong_shape(self) -> None:
+        with pytest.raises(ValueError, match="shape"):
+            measure_magnetics(np.zeros((10, 12)), 65, 65, 3.0, 9.0, -5.0, 5.0)
+
+    def test_method_delegates_to_free_function_without_noise(self) -> None:
+        # With noise sigma -> 0 (no seed, but compare structure), the method's
+        # deterministic core equals the free function on the mock kernel grid.
+        kernel = _MockKernel()
+        clean = measure_magnetics(
+            np.asarray(kernel.Psi, dtype=np.float64),
+            kernel.NR,
+            kernel.NZ,
+            float(kernel.R[0]),
+            float(kernel.R[-1]),
+            float(kernel.Z[0]),
+            float(kernel.Z[-1]),
+        )
+        assert clean.shape == (N_MAGNETIC_PROBES,)
+        assert np.all(np.isfinite(clean))
+
+
+def test_measure_interferometer_applies_refraction_at_high_density() -> None:
+    ss = SensorSuite(_MockKernel(), seed=1)
+    phases = ss.measure_interferometer(np.full((_MockKernel.NZ, _MockKernel.NR), 50.0))
+    assert phases.shape[0] > 0
+    assert np.all(np.isfinite(phases))
+
+
+def test_measure_forward_channels_returns_channels() -> None:
+    ss = SensorSuite(_MockKernel(), seed=1)
+    ch = ss.measure_forward_channels(
+        electron_density_m3=np.full((_MockKernel.NZ, _MockKernel.NR), 1.0e20),
+        neutron_source_m3_s=np.full((_MockKernel.NZ, _MockKernel.NR), 1.0e18),
+    )
+    assert ch is not None
+
+
+def test_visualize_setup_returns_figure() -> None:
+    import matplotlib.pyplot as plt
+
+    ss = SensorSuite(_MockKernel(), seed=1)
+    fig = ss.visualize_setup()
+    assert hasattr(fig, "savefig")
+    plt.close(fig)

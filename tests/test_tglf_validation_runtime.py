@@ -66,3 +66,22 @@ def test_validate_against_tglf_prefers_public_transport_profiles(monkeypatch) ->
     expected_e = np.interp(result.rho_points, np.linspace(0.0, 1.0, 9), np.linspace(1.2, 2.0, 9))
     np.testing.assert_allclose(result.our_chi_i, expected_i)
     np.testing.assert_allclose(result.our_chi_e, expected_e)
+
+
+def test_validate_against_tglf_defaults_rho_indices_when_none(monkeypatch) -> None:
+    """With ``rho_indices=None`` the runtime samples its own interior surfaces.
+
+    For ``n == 9`` the default ``[n//5, n//4, n//3, n//2, 2*n//3] == [1, 2, 3, 4, 6]``
+    all satisfy ``1 <= i < n - 1``, so five surfaces survive the interior filter.
+    """
+
+    def _stub_run(deck, _path):
+        return tglf_mod.TGLFOutput(rho=deck.rho, chi_i=1.0, chi_e=0.5, gamma_max=0.1)
+
+    monkeypatch.setattr(tglf_mod, "run_tglf_binary", _stub_run)
+    result = validate_against_tglf(
+        _DummyTransport(),
+        tglf_binary_path="C:/fake/tglf",
+        rho_indices=None,
+    )
+    assert len(result.rho_points) == 5

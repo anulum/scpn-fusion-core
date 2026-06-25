@@ -58,7 +58,9 @@ class ErrorFieldSpectrum:
         if not np.isfinite(delta_R_mm) or not np.isfinite(delta_Z_mm):
             raise ValueError("coil misalignment values must be finite")
         shift_mag = math.sqrt(delta_R_mm**2 + delta_Z_mm**2) / 1000.0
-        if shift_mag < 0.0:
+        if (
+            shift_mag < 0.0
+        ):  # pragma: no cover - unreachable (magnitude is a Euclidean norm, always >= 0)
             raise ValueError("coil misalignment magnitude must be non-negative")
         # Geometry-normalised shift coupling.
         rel_shift = shift_mag / self.R0

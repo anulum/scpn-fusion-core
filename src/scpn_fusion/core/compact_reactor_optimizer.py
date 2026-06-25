@@ -97,7 +97,8 @@ class CompactReactorArchitect:
         # 2. CoE Calculation
         f_avail = 0.75  # High availability goal
         p_net_mw = P_fus * 0.4 * 0.9  # Thermal efficiency * recirculating power
-        if p_net_mw <= 0:
+        if p_net_mw <= 0:  # pragma: no cover - unreachable: P_fus is already validated > 0 above,
+            # so p_net_mw = P_fus * 0.36 is strictly positive; kept as a defensive invariant.
             raise ValueError("Computed net electric power must be > 0.")
 
         # Annualized capital cost (10% fixed charge rate)

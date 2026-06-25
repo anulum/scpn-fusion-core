@@ -98,3 +98,34 @@ def test_multi_impurity_seeding():
     assert "N2" in rates
     assert "Ne" in rates
     assert rates["N2"] > 0.0
+
+
+def test_radiation_temperature_falls_back_for_unknown_impurity():
+    model = RadiationFrontModel("Xe", R0=6.2, a=2.0, q95=3.0)
+    assert model.radiation_temperature("Ar") == 100.0
+    assert model.radiation_temperature("Xe") == 10.0  # unknown -> default
+
+
+def test_front_position_pins_to_xpoint_without_exhaust_power():
+    model = RadiationFrontModel("N2", R0=6.2, a=2.0, q95=3.0)
+    assert model.front_position(P_SOL_MW=0.0, n_u_19=4.0, seeding_rate=1.0) == 1.0
+    assert model.front_position(P_SOL_MW=-5.0, n_u_19=4.0, seeding_rate=1.0) == 1.0
+
+
+def test_degree_of_detachment_caps_at_near_zero_target_temperature():
+    model = RadiationFrontModel("N2", R0=6.2, a=2.0, q95=3.0)
+    assert model.degree_of_detachment(0.05, 1.0, 1.0) == 10.0
+
+
+def test_multi_impurity_seeding_zeroes_unconfigured_impurity():
+    c_N2 = DetachmentController(impurity="N2")
+    multi = MultiImpuritySeeding(["N2", "Ne"], {"N2": c_N2})  # Ne has no controller
+    rates = multi.step({"T_target_eV": 8.0, "rho_front": 0.1}, dt=0.01)
+    assert rates["Ne"] == 0.0
+    assert "N2" in rates
+
+
+def test_controller_reports_attached_state_above_temperature_threshold():
+    ctrl = DetachmentController(impurity="N2")
+    ctrl.step(T_t_measured=50.0, n_t_measured=5.0, P_rad_measured=2.0, rho_front=0.1, dt=0.01)
+    assert ctrl.state == DetachmentState.ATTACHED

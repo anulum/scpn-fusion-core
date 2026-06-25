@@ -35,6 +35,12 @@ repos:
         entry: python tools/check_packaging_contract.py
         language: system
         pass_filenames: false
+      - id: capability-manifest
+        name: capability manifest freshness guard
+        entry: bash -c "PYTHONPATH=src python tools/capability_manifest.py --check"
+        language: system
+        pass_filenames: false
+        files: ^(src/|tests/|docs/|scpn-fusion-rs/|\.github/|pyproject\.toml|README\.md)
       - id: bandit
         name: bandit security scan
         entry: bandit -r src/scpn_fusion -c pyproject.toml -q

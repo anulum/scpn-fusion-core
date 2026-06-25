@@ -125,7 +125,8 @@ def _probe_jax() -> bool:
         import jax  # noqa: F401
 
         return True
-    except ImportError:
+    except Exception as exc:
+        logger.debug("JAX backend probe failed; treating JAX as unavailable: %s", exc)
         return False
 
 
@@ -409,37 +410,253 @@ def _bootstrap_kernel_classes() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _bootstrap_existing_backends() -> None:
-    """Register kernels that already have Rust + Python implementations.
+def _numpy_shafranov_bv(
+    r_geo: float,
+    a_min: float,
+    ip_ma: float,
+    *,
+    beta_p: float = 0.5,
+    li: float = 0.8,
+) -> float:
+    """NumPy-tier provider for the ``shafranov_bv`` kernel.
 
-    Called lazily on first dispatch if the _rust_compat module is loadable.
-    This bridges the existing two-tier system into the new multi-tier
-    dispatcher without modifying _rust_compat.py.
+    The import is deferred to call time so registration neither pulls in the
+    control package nor forms an import cycle with this dispatcher.
     """
-    try:
-        from scpn_fusion.core._rust_compat import _RUST_AVAILABLE
+    from scpn_fusion.control.analytic_solver import shafranov_bv
 
-        if _RUST_AVAILABLE:
-            from scpn_fusion.core._rust_compat import (
-                rust_shafranov_bv,
-                rust_solve_coil_currents,
-                rust_measure_magnetics,
-                rust_simulate_tearing_mode,
-                rust_multigrid_vcycle,
-            )
+    return shafranov_bv(r_geo, a_min, ip_ma, beta_p=beta_p, li=li)
 
-            register_kernel("shafranov_bv", BackendTier.RUST, rust_shafranov_bv)
-            register_kernel("solve_coil_currents", BackendTier.RUST, rust_solve_coil_currents)
-            register_kernel("measure_magnetics", BackendTier.RUST, rust_measure_magnetics)
-            register_kernel(
-                "simulate_tearing_mode",
-                BackendTier.RUST,
-                rust_simulate_tearing_mode,
-            )
-            if rust_multigrid_vcycle is not None:
-                register_kernel("multigrid_vcycle", BackendTier.RUST, rust_multigrid_vcycle)
-    except ImportError as exc:
-        logger.debug("Rust compatibility module not importable during bootstrap: %s", exc)
+
+def _rust_shafranov_bv(
+    r_geo: float,
+    a_min: float,
+    ip_ma: float,
+    *,
+    beta_p: float = 0.5,
+    li: float = 0.8,
+) -> float:
+    """Rust-tier provider for the ``shafranov_bv`` kernel.
+
+    Returns the canonical vertical field :math:`B_v` [T] (the Rust pyfunction
+    also returns the two diagnostic force-balance terms, which are dropped here
+    so the tier is bit-exact interchangeable with :func:`_numpy_shafranov_bv`).
+    """
+    from scpn_fusion_rs import shafranov_bv as _rs_shafranov_bv
+
+    bv, _term_log, _term_physics = _rs_shafranov_bv(r_geo, a_min, ip_ma, beta_p, li)
+    return float(bv)
+
+
+def _numpy_solve_coil_currents(
+    green_func: Any,
+    target_bv: float,
+    *,
+    ridge_lambda: float = 0.0,
+) -> Any:
+    """NumPy-tier provider for the ``solve_coil_currents`` kernel."""
+    from scpn_fusion.control.analytic_solver import solve_coil_currents
+
+    return solve_coil_currents(green_func, target_bv, ridge_lambda=ridge_lambda)
+
+
+def _rust_solve_coil_currents(
+    green_func: Any,
+    target_bv: float,
+    *,
+    ridge_lambda: float = 0.0,
+) -> Any:
+    """Rust-tier provider for the ``solve_coil_currents`` kernel.
+
+    Wraps the Rust list result back into a float64 array so the tier is
+    type-compatible with :func:`_numpy_solve_coil_currents`.
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import solve_coil_currents as _rs_solve_coil_currents
+
+    coils = _rs_solve_coil_currents(
+        np.asarray(green_func, dtype=np.float64).tolist(),
+        float(target_bv),
+        float(ridge_lambda),
+    )
+    return np.asarray(coils, dtype=np.float64)
+
+
+def _numpy_measure_magnetics(
+    psi: Any,
+    nr: int,
+    nz: int,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+) -> Any:
+    """NumPy-tier provider for the ``measure_magnetics`` kernel."""
+    from scpn_fusion.diagnostics.synthetic_sensors import measure_magnetics
+
+    return measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)
+
+
+def _rust_measure_magnetics(
+    psi: Any,
+    nr: int,
+    nz: int,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+) -> Any:
+    """Rust-tier provider for the ``measure_magnetics`` kernel.
+
+    Normalises the Rust result into a float64 array so the tier is
+    type-compatible with :func:`_numpy_measure_magnetics`.
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import measure_magnetics as _rs_measure_magnetics
+
+    measurements = _rs_measure_magnetics(
+        np.asarray(psi, dtype=np.float64), nr, nz, r_min, r_max, z_min, z_max
+    )
+    return np.asarray(measurements, dtype=np.float64)
+
+
+def _numpy_multigrid_solve(
+    source: Any,
+    psi_bc: Any,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+    nr: int,
+    nz: int,
+    *,
+    tol: float = 1e-6,
+    max_cycles: int = 500,
+) -> Any:
+    """NumPy-tier provider for the ``multigrid_solve`` kernel.
+
+    Returns ``(psi, residual, n_cycles, converged)`` from the free-function
+    geometric multigrid solve.
+    """
+    from scpn_fusion.core.multigrid_solve import multigrid_solve
+
+    return multigrid_solve(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=tol, max_cycles=max_cycles
+    )
+
+
+def _rust_multigrid_solve(
+    source: Any,
+    psi_bc: Any,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+    nr: int,
+    nz: int,
+    *,
+    tol: float = 1e-6,
+    max_cycles: int = 500,
+) -> Any:
+    """Rust-tier provider for the ``multigrid_solve`` kernel.
+
+    Normalises the Rust result into ``(psi: float64 array, residual, n_cycles,
+    converged)`` so the tier is type-compatible with :func:`_numpy_multigrid_solve`.
+    """
+    import numpy as np
+
+    from scpn_fusion.core._rust_compat import rust_multigrid_vcycle
+
+    result = rust_multigrid_vcycle(
+        source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=tol, max_cycles=max_cycles
+    )
+    if result is None:
+        raise RuntimeError("Rust multigrid backend is unavailable.")
+    psi, residual, n_cycles, converged = result
+    return np.asarray(psi, dtype=np.float64), float(residual), int(n_cycles), bool(converged)
+
+
+def _numpy_simulate_tearing_mode(
+    steps: int = 1000,
+    *,
+    seed: int | None = None,
+    beta_p: float = 0.8,
+    w_crit: float = 0.05,
+) -> Any:
+    """NumPy-tier provider for the ``simulate_tearing_mode`` kernel."""
+    import numpy as np
+
+    from scpn_fusion.control.disruption_risk_runtime import simulate_tearing_mode
+
+    rng = np.random.default_rng(seed) if seed is not None else None
+    return simulate_tearing_mode(steps, rng=rng, beta_p=beta_p, w_crit=w_crit)
+
+
+def _rust_simulate_tearing_mode(
+    steps: int = 1000,
+    *,
+    seed: int | None = None,
+    beta_p: float = 0.8,
+    w_crit: float = 0.05,
+) -> Any:
+    """Rust-tier provider for the ``simulate_tearing_mode`` kernel.
+
+    Normalises the Rust ``(signal, label, ttd)`` tuple so the signal is a float64
+    array, type-compatible with :func:`_numpy_simulate_tearing_mode`.
+    """
+    import numpy as np
+
+    from scpn_fusion.core._rust_compat import rust_simulate_tearing_mode
+
+    signal, label, ttd = rust_simulate_tearing_mode(steps, seed, beta_p, w_crit)
+    return np.asarray(signal, dtype=np.float64), int(label), int(ttd)
+
+
+def _bootstrap_existing_backends() -> None:
+    """Register the function-kernels that have Rust and/or NumPy implementations.
+
+    Tier providers import their backend lazily, so a tier can be registered even
+    when its backend is absent — the availability probe in :func:`dispatch`
+    selects the fastest *available* tier at call time. This bridges the existing
+    implementations into the multi-tier dispatcher without an import cycle.
+    """
+    # shafranov_bv — canonical contract reconciled (A2 kernel #1). Both tiers are
+    # bit-exact for the returned Bv, so registration is unconditional and the
+    # NumPy tier guarantees `dispatch("shafranov_bv")` resolves without Rust.
+    register_kernel("shafranov_bv", BackendTier.RUST, _rust_shafranov_bv)
+    register_kernel("shafranov_bv", BackendTier.NUMPY, _numpy_shafranov_bv)
+
+    # solve_coil_currents — canonical contract reconciled (A2 kernel #2). Both
+    # tiers share the direct minimum-norm/ridge formula (tolerance-aware across
+    # the Green's-norm reduction), and the NumPy tier resolves dispatch without
+    # Rust.
+    register_kernel("solve_coil_currents", BackendTier.RUST, _rust_solve_coil_currents)
+    register_kernel("solve_coil_currents", BackendTier.NUMPY, _numpy_solve_coil_currents)
+
+    # measure_magnetics — canonical contract reconciled (A2 kernel #4). Both tiers
+    # evaluate the same noise-free bilinear stencil at the same probe positions
+    # (tolerance-aware across the trig/position rounding), and the NumPy tier
+    # resolves dispatch without Rust.
+    register_kernel("measure_magnetics", BackendTier.RUST, _rust_measure_magnetics)
+    register_kernel("measure_magnetics", BackendTier.NUMPY, _numpy_measure_magnetics)
+
+    # multigrid_solve — canonical contract reconciled (A2 kernel #3). Both tiers
+    # relax the identical toroidal GS* operator with the same Red-Black smoother
+    # and grid transfers, converging to the same fixed point (agreement is
+    # effectively bit-exact on the standard grids). The NumPy tier resolves
+    # dispatch without Rust.
+    register_kernel("multigrid_solve", BackendTier.RUST, _rust_multigrid_solve)
+    register_kernel("multigrid_solve", BackendTier.NUMPY, _numpy_multigrid_solve)
+
+    # simulate_tearing_mode — canonical contract reconciled (A2 kernel #5). Both
+    # tiers run the full Modified Rutherford physics (bootstrap drive, Gaussian
+    # process noise, island seeding); the deterministic per-step increment is
+    # bit-exact and the stochastic trajectory is statistically equivalent across
+    # independent RNG streams. The NumPy tier resolves dispatch without Rust.
+    register_kernel("simulate_tearing_mode", BackendTier.RUST, _rust_simulate_tearing_mode)
+    register_kernel("simulate_tearing_mode", BackendTier.NUMPY, _numpy_simulate_tearing_mode)
 
 
 # Run bootstrap on import

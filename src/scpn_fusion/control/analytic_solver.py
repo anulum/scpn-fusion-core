@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
@@ -33,6 +34,144 @@ except ImportError:
             "Unable to import FusionKernel. Run with PYTHONPATH=src "
             "or use `python -m scpn_fusion.control.analytic_solver`."
         ) from exc
+
+
+def shafranov_bv(
+    r_geo: float,
+    a_min: float,
+    ip_ma: float,
+    *,
+    beta_p: float = 0.5,
+    li: float = 0.8,
+) -> float:
+    r"""Return the required vertical field from the Shafranov radial-force balance.
+
+    Canonical free-function reference for the ``shafranov_bv`` dispatch kernel
+    (:mod:`scpn_fusion.core._multi_compat`). The Rust tier
+    (``scpn_fusion_rs.shafranov_bv``) and this NumPy tier are bit-exact
+    interchangeable for the returned field. :meth:`AnalyticEquilibriumSolver.calculate_required_Bv`
+    delegates here so the physics lives in exactly one place.
+
+    Parameters
+    ----------
+    r_geo : float
+        Plasma geometric major radius :math:`R_0` [m]; must be strictly positive.
+    a_min : float
+        Plasma minor radius :math:`a` [m]; must be strictly positive.
+    ip_ma : float
+        Plasma current :math:`I_p` [MA]; must be strictly positive.
+    beta_p : float, optional
+        Poloidal beta :math:`\beta_p`, by default 0.5.
+    li : float, optional
+        Internal inductance :math:`l_i`, by default 0.8.
+
+    Returns
+    -------
+    float
+        Required vertical field :math:`B_v` [T], negative for positive
+        :math:`I_p` (field points downward).
+
+    Raises
+    ------
+    ValueError
+        If ``r_geo``, ``a_min`` or ``ip_ma`` are not strictly positive.
+
+    Notes
+    -----
+    From radial force balance of a large-aspect-ratio tokamak [1]_:
+
+    .. math::
+
+        B_v = -\frac{\mu_0 I_p}{4\pi R_0}
+        \left[\ln\!\frac{8 R_0}{a} + \beta_p + \frac{l_i}{2} - \frac{3}{2}\right]
+
+    References
+    ----------
+    .. [1] J. Wesson, *Tokamaks*, 4th ed., Oxford University Press, 2011, §3.6.
+    """
+    r = float(r_geo)
+    a = float(a_min)
+    ip = float(ip_ma)
+    beta = float(beta_p)
+    inductance = float(li)
+    if r <= 0.0 or a <= 0.0 or ip <= 0.0:
+        raise ValueError("r_geo, a_min and ip_ma must be > 0.")
+
+    mu0 = 4.0 * np.pi * 1e-7
+    ip_amp = ip * 1e6
+    term_log = float(np.log(8.0 * r / a))
+    term_physics = beta + (inductance / 2.0) - 1.5
+    return float(-((mu0 * ip_amp) / (4.0 * np.pi * r)) * (term_log + term_physics))
+
+
+def solve_coil_currents(
+    green_func: FloatArray | Sequence[float],
+    target_bv: float,
+    *,
+    ridge_lambda: float = 0.0,
+) -> FloatArray:
+    r"""Least-norm coil currents for a desired vertical field.
+
+    Canonical free-function reference for the ``solve_coil_currents`` dispatch
+    kernel (:mod:`scpn_fusion.core._multi_compat`); numerically equivalent to the
+    Rust tier (``scpn_fusion_rs.solve_coil_currents``) for both the plain
+    minimum-norm and the ridge-regularised solve. The agreement is tolerance-aware
+    (not bit-exact): the Green's-norm reduction :math:`\sum_j g_j^2` is summed
+    sequentially in Rust but via ``numpy.dot`` here, which can differ by a unit in
+    the last place. :meth:`AnalyticEquilibriumSolver.solve_coil_currents` computes
+    the per-coil efficiencies and then delegates the linear solve here.
+
+    Parameters
+    ----------
+    green_func : array_like
+        Per-coil vertical-field efficiency :math:`\partial B_z/\partial I`
+        [T/MA]; must be non-empty and finite.
+    target_bv : float
+        Required vertical field :math:`B_v` [T]; must be finite.
+    ridge_lambda : float, optional
+        Tikhonov regularisation added to :math:`G G^\top`, by default 0.0 (plain
+        minimum norm). Negative values are clamped to zero.
+
+    Returns
+    -------
+    numpy.ndarray
+        Minimum-norm coil currents [MA] satisfying :math:`G \cdot I \approx B_v`.
+
+    Raises
+    ------
+    ValueError
+        If ``green_func`` is empty or non-finite, if ``target_bv`` is non-finite,
+        or if the unregularised Green's norm is too small for a stable solve.
+
+    Notes
+    -----
+    For the underdetermined :math:`1 \times N` system :math:`G I = B_v` the
+    minimum-norm solution is :math:`I = G^\top (G G^\top + \lambda)^{-1} B_v`,
+    which for a row vector reduces to
+    :math:`I_i = g_i B_v / (\sum_j g_j^2 + \lambda)`. The direct form (rather than
+    a pseudo-inverse) is used so the field is bit-identical to the Rust tier.
+    """
+    eff = np.asarray(green_func, dtype=np.float64).reshape(-1)
+    if eff.size == 0:
+        raise ValueError("green_func must be non-empty.")
+    if not np.all(np.isfinite(eff)):
+        raise ValueError("green_func must contain only finite values.")
+    target = float(target_bv)
+    if not np.isfinite(target):
+        raise ValueError("target_bv must be finite.")
+    lam_raw = float(ridge_lambda)
+    if not np.isfinite(lam_raw):
+        raise ValueError("ridge_lambda must be finite.")
+
+    lam = max(lam_raw, 0.0)
+    gg = float(np.dot(eff, eff))
+    if lam > 0.0:
+        denom = max(gg + lam, 1e-12)
+    else:
+        if gg < 1e-20:
+            raise ValueError("green_func norm is too small for a stable solve.")
+        denom = gg
+    return np.asarray(eff * (target / denom), dtype=np.float64)
 
 
 class AnalyticEquilibriumSolver:
@@ -65,24 +204,14 @@ class AnalyticEquilibriumSolver:
     ) -> float:
         """Estimate the vertical field from Shafranov radial-force balance."""
         R_geo = float(R_geo)
-        a_min = float(a_min)
         Ip_MA = float(Ip_MA)
-        beta_p = float(beta_p)
-        li = float(li)
-        if R_geo <= 0.0 or a_min <= 0.0 or Ip_MA <= 0.0:
-            raise ValueError("R_geo, a_min and Ip_MA must be > 0.")
-
-        mu0 = 4.0 * np.pi * 1e-7
-        Ip = Ip_MA * 1e6
-        term_log = np.log(8.0 * R_geo / a_min)
-        term_physics = beta_p + (li / 2.0) - 1.5
-        Bv = -((mu0 * Ip) / (4.0 * np.pi * R_geo)) * (term_log + term_physics)
+        Bv = shafranov_bv(R_geo, a_min, Ip_MA, beta_p=beta_p, li=li)
 
         self._log("--- SHAFRANOV EQUILIBRIUM CHECK ---")
         self._log(f"Target Radius: {R_geo:.3f} m")
         self._log(f"Plasma Current: {Ip_MA:.3f} MA")
         self._log(f"Required Vertical Field (Bv): {Bv:.6f} Tesla")
-        return float(Bv)
+        return Bv
 
     def compute_coil_efficiencies(
         self,
@@ -141,22 +270,13 @@ class AnalyticEquilibriumSolver:
     ) -> FloatArray:
         """Solve least-norm coil currents for desired vertical field target."""
         eff = self.compute_coil_efficiencies(target_R, target_Z=target_Z)
-        target_Bv = float(target_Bv)
-        ridge_lambda = max(float(ridge_lambda), 0.0)
-
-        g = eff.reshape(1, -1)
-        if ridge_lambda > 0.0:
-            gg = float(np.dot(eff, eff))
-            denom = max(gg + ridge_lambda, 1e-12)
-            currents = (eff * target_Bv) / denom
-        else:
-            currents = np.linalg.pinv(g).dot(np.array([target_Bv], dtype=np.float64)).reshape(-1)
+        currents = solve_coil_currents(eff, target_Bv, ridge_lambda=ridge_lambda)
 
         self._log("\n--- ANALYTIC SOLUTION (Least Norm) ---")
         for i, val in enumerate(currents):
             name = str(self.kernel.cfg["coils"][i].get("name", f"coil_{i}"))
             self._log(f"  {name}: {float(val):.6f} MA")
-        return np.asarray(currents, dtype=np.float64)
+        return currents
 
     def apply_currents(self, currents: FloatArray) -> None:
         """Write a coil-current vector into the solver kernel configuration."""

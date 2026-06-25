@@ -552,3 +552,100 @@ class TestLQRController:
             get_flight_sim_lqr_controller(position_sensitivity=0.0)
         with pytest.raises(ValueError):
             get_flight_sim_lqr_controller(actuator_tau=-1.0)
+
+
+def _hinf2() -> HInfinityController:
+    return HInfinityController(np.eye(2), np.eye(2), np.eye(2), np.eye(2), np.eye(2))
+
+
+def test_constructor_auto_transposes_vector_inputs() -> None:
+    ctrl = HInfinityController(
+        -np.eye(2), np.ones((1, 2)), np.ones((1, 2)), np.ones((2, 1)), np.ones((2, 1))
+    )
+    assert ctrl.B1.shape[0] == 2 and ctrl.B2.shape[0] == 2
+    assert ctrl.C1.shape[1] == 2 and ctrl.C2.shape[1] == 2
+
+
+def test_constructor_rejects_mismatched_output_columns() -> None:
+    with pytest.raises(ValueError, match="column count must match A"):
+        HInfinityController(np.eye(2), np.ones((2, 1)), np.ones((2, 1)), np.ones((1, 3)), np.eye(2))
+
+
+def test_make_feedthrough_builds_default_identity_when_unset() -> None:
+    mat = HInfinityController._make_feedthrough(None, 3, 2, "D12")
+    assert mat.shape == (3, 2)
+    np.testing.assert_array_equal(mat[:2, :2], np.eye(2))
+
+
+def test_make_feedthrough_rejects_wrong_shape() -> None:
+    with pytest.raises(ValueError, match=r"D12 must have shape \(2, 2\)"):
+        HInfinityController._make_feedthrough(np.ones((3, 3)), 2, 2, "D12")
+
+
+def test_make_feedthrough_accepts_explicit_value() -> None:
+    mat = HInfinityController._make_feedthrough(np.eye(2), 2, 2, "D21")
+    np.testing.assert_array_equal(mat, np.eye(2))
+
+
+@pytest.mark.parametrize("gamma", [0.5, 1.0, float("inf"), float("nan")])
+def test_synthesize_rejects_non_admissible_gamma(gamma: float) -> None:
+    with pytest.raises(ValueError, match="gamma must be finite and > 1.0"):
+        _hinf2()._synthesize(gamma)
+
+
+def test_gain_margin_zero_for_unstable_closed_loop() -> None:
+    ctrl = _hinf2()
+    ctrl.A = np.eye(2)
+    ctrl.B2 = np.eye(2)
+    ctrl.F = np.zeros((2, 2))
+    assert ctrl.gain_margin_db == 0.0
+
+
+def test_gain_margin_infinite_for_open_loop_stable_plant() -> None:
+    ctrl = _hinf2()
+    ctrl.A = -2.0 * np.eye(2)
+    ctrl.B2 = np.eye(2)
+    ctrl.F = np.zeros((2, 2))
+    assert ctrl.gain_margin_db == float("inf")
+
+
+def test_gain_margin_finite_for_stabilised_unstable_plant() -> None:
+    ctrl = _hinf2()
+    ctrl.A = np.diag([1.0, -1.0])
+    ctrl.B2 = np.eye(2)
+    ctrl.F = np.diag([-3.0, 0.0])
+    margin = ctrl.gain_margin_db
+    assert np.isfinite(margin) and margin > 0.0
+
+
+def test_phase_margin_returns_zero_without_gain_crossover() -> None:
+    ctrl = _hinf2()
+    ctrl.A = np.eye(2)
+    ctrl.B2 = np.eye(2)
+    ctrl.F = np.full((2, 2), 1.0e6)  # loop gain never drops to unity
+    assert ctrl.phase_margin_deg == 0.0
+
+
+def test_synthesize_rejects_non_finite_riccati_gains(monkeypatch) -> None:
+    """A finite-but-non-finite-gain Riccati result is rejected by the gain guard."""
+    ctrl = _hinf2()  # construct with the real solver first
+
+    def _bad_are(*_args, **_kwargs):
+        return np.full((2, 2), np.inf)
+
+    monkeypatch.setattr("scpn_fusion.control.h_infinity_controller.solve_continuous_are", _bad_are)
+    with pytest.raises(ValueError, match="non-finite gains"):
+        ctrl._synthesize(2.0)
+
+
+def test_gamma_search_skips_infeasible_riccati(monkeypatch) -> None:
+    """The bisection search swallows Riccati failures and keeps narrowing gamma."""
+
+    def _raise_are(*_args, **_kwargs):
+        raise np.linalg.LinAlgError("infeasible")
+
+    monkeypatch.setattr(
+        "scpn_fusion.control.h_infinity_controller.solve_continuous_are", _raise_are
+    )
+    with pytest.raises(np.linalg.LinAlgError):
+        HInfinityController(np.eye(2), np.eye(2), np.eye(2), np.eye(2), np.eye(2))

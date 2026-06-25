@@ -78,3 +78,13 @@ class TestLQRController:
             get_flight_sim_lqr_controller(position_sensitivity=0.0)
         with pytest.raises(ValueError):
             get_flight_sim_lqr_controller(actuator_tau=-1.0)
+
+
+def test_flight_sim_v2_rejects_nonpositive_actuator_tau() -> None:
+    with pytest.raises(ValueError, match="actuator_tau must be > 0"):
+        get_flight_sim_controller_v2(actuator_tau=-1.0)
+
+
+def test_flight_sim_lqr_rejects_nonpositive_sample_dt() -> None:
+    with pytest.raises(ValueError, match="sample_dt must be > 0"):
+        get_flight_sim_lqr_controller(sample_dt=0.0)

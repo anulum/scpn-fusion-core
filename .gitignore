@@ -74,6 +74,7 @@ artifacts/_tmp_*.csv
 artifacts/*_local*.json
 artifacts/*_local*.md
 artifacts/packaging_contract_summary.json
+artifacts/mypy_expansion_guard_summary.json
 artifacts/real_data_roadmap_progress.json
 artifacts/real_data_roadmap_progress.md
 artifacts/real_data_roadmap_non_regression_summary.json

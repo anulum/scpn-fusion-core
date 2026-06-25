@@ -281,3 +281,76 @@ def test_critical_beta_fast_matches_mode_local_formula() -> None:
         if coeff > 0.0:
             manual = min(manual, 0.01 / coeff)
     assert beta_crit == pytest.approx(manual)
+
+
+def test_alfven_continuum_rejects_nonpositive_geometry() -> None:
+    rho = np.linspace(0.0, 1.0, 5)
+    q = np.linspace(1.0, 3.0, 5)
+    ne = np.ones(5)
+    for kw, match in [
+        ({"B0": 0.0, "R0": 6.2}, "B0"),
+        ({"B0": 5.3, "R0": 0.0}, "R0"),
+        ({"B0": 5.3, "R0": 6.2, "a": 0.0}, "a must be"),
+        ({"B0": 5.3, "R0": 6.2, "kappa": 0.0}, "kappa"),
+        ({"B0": 5.3, "R0": 6.2, "gap_width_scale": 0.0}, "gap_width_scale"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            AlfvenContinuum(rho, q, ne, **kw)
+
+
+def test_fast_particle_resonance_rejects_nonpositive_velocities() -> None:
+    drive = FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.01, m_fast_amu=4.0)
+    with pytest.raises(ValueError, match="v_fast"):
+        drive.resonance_function(0.0, 1.0e6)
+    with pytest.raises(ValueError, match="v_A"):
+        drive.resonance_function(1.0e6, 0.0)
+
+
+def _alfven_analysis():
+    rho = np.linspace(0.0, 1.0, 5)
+    q = np.linspace(1.0, 3.0, 5)
+    ne = np.ones(5)
+    cont = AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2)
+    drive = FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.01, m_fast_amu=4.0)
+    return cont, AlfvenStabilityAnalysis(cont, drive)
+
+
+def test_alfven_find_gaps_and_critical_beta_reject_nonpositive_n() -> None:
+    cont, analysis = _alfven_analysis()
+    assert cont.continuum(1, 1).shape == cont.q.shape
+    with pytest.raises(ValueError, match="positive integer"):
+        analysis.critical_beta_fast(0)
+    # a valid mode reaches the beta-crit accumulation path
+    assert analysis.critical_beta_fast(1) >= 0.0
+
+
+def test_alfven_alpha_loss_estimate_validation() -> None:
+    _, analysis = _alfven_analysis()
+    with pytest.raises(ValueError, match="tau_sd"):
+        analysis.alpha_particle_loss_estimate(0.1, tau_sd=0.0)
+    with pytest.raises(ValueError, match="nonlinear_saturation"):
+        analysis.alpha_particle_loss_estimate(0.1, nonlinear_saturation=0.0)
+    with pytest.raises(ValueError, match="transport_threshold"):
+        analysis.alpha_particle_loss_estimate(0.1, transport_threshold=0.0)
+
+
+def test_rsae_frequency_rejects_zero_toroidal_mode() -> None:
+    import inspect
+
+    sig = inspect.signature(rsae_frequency)
+    args = {
+        p: (0 if p == "n" else 1.5)
+        for p in sig.parameters
+        if sig.parameters[p].default is inspect._empty
+    }
+    with pytest.raises(ValueError, match="nonzero"):
+        rsae_frequency(**args)
+
+
+def test_alfven_critical_beta_infinite_without_rational_gaps() -> None:
+    rho = np.linspace(0.0, 1.0, 5)
+    q = np.full(5, 2.0)  # flat q: no rational gaps
+    ne = np.ones(5)
+    cont = AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2)
+    drive = FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.01, m_fast_amu=4.0)
+    assert AlfvenStabilityAnalysis(cont, drive).critical_beta_fast(2) == float("inf")

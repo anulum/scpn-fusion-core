@@ -160,3 +160,57 @@ def test_ti_points_affect_kinetic_pressure_level():
     res_hot = KineticEFIT(diag, kin_hot, fi, R, Z).reconstruct(mock_measurements(diag))
 
     assert float(np.mean(res_hot.p_kinetic)) > float(np.mean(res_cold.p_kinetic))
+
+
+def test_fast_ion_pressure_constructor_validation() -> None:
+    from scpn_fusion.core.kinetic_efit import FastIonPressure
+
+    with pytest.raises(ValueError, match="E_fast_keV"):
+        FastIonPressure(E_fast_keV=0.0, n_fast_frac=0.05)
+    with pytest.raises(ValueError, match="n_fast_frac"):
+        FastIonPressure(E_fast_keV=80.0, n_fast_frac=1.5)
+
+
+def test_mse_pitch_angle_validates_inputs() -> None:
+    from scpn_fusion.core.kinetic_efit import mse_pitch_angle
+
+    with pytest.raises(ValueError, match="must be finite"):
+        mse_pitch_angle(float("nan"), 0.1, 5.0, 1e6, 6.2)
+    with pytest.raises(ValueError, match="v_beam"):
+        mse_pitch_angle(0.1, 0.1, 5.0, 0.0, 6.2)
+
+
+def test_kinetic_efit_reconstruct_interpolates_rich_constraints() -> None:
+    diag = mock_diagnostics()
+    fi = FastIonPressure(100.0, 0.1, 0.0)
+    R = np.linspace(4, 8, 33)
+    Z = np.linspace(-3, 3, 33)
+    # >=2 distinct rho samples (exercise the interp branch) + a non-finite point (skip branch).
+    kin = KineticConstraints(
+        Te_points=[(5.0, 0.0, 8.0), (6.5, 0.0, 12.0), (np.nan, 0.0, 9.0)],
+        ne_points=[(5.0, 0.0, 4.0), (6.5, 0.0, 6.0), (np.inf, 0.0, 5.0)],
+        Ti_points=[(5.0, 0.0, 7.0), (6.5, 0.0, 11.0)],
+        mse_points=[(5.0, 0.0, 4.0), (6.8, 0.0, 6.0), (np.nan, 0.0, 5.0)],
+    )
+    kefit = KineticEFIT(diag, kin, fi, R, Z)
+    res = kefit.reconstruct(mock_measurements(diag))
+    assert res is not None
+    assert np.all(np.isfinite(res.p_kinetic))
+
+
+def test_kinetic_efit_reconstruct_falls_back_on_all_nonfinite_points() -> None:
+    diag = mock_diagnostics()
+    fi = FastIonPressure(100.0, 0.1, 0.0)
+    R = np.linspace(4, 8, 33)
+    Z = np.linspace(-3, 3, 33)
+    # Every constraint point is non-finite -> profiles fall back to defaults, q -> base.
+    kin = KineticConstraints(
+        Te_points=[(np.nan, 0.0, 8.0)],
+        ne_points=[(np.nan, 0.0, 4.0)],
+        Ti_points=[(np.nan, 0.0, 7.0)],
+        mse_points=[(np.nan, 0.0, 4.0)],
+    )
+    kefit = KineticEFIT(diag, kin, fi, R, Z)
+    res = kefit.reconstruct(mock_measurements(diag))
+    assert res is not None
+    assert np.all(np.isfinite(res.p_kinetic))

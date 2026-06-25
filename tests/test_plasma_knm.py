@@ -368,3 +368,10 @@ class TestConstants:
 
     def test_layer_names_unique(self):
         assert len(set(PLASMA_LAYER_NAMES)) == 8
+
+
+def test_build_knm_plasma_supports_sixteen_layers():
+    spec = build_knm_plasma(L=16)
+    assert spec.K.shape == (16, 16)
+    assert spec.L == 16
+    assert len(spec.layer_names) == 16

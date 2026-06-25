@@ -206,6 +206,27 @@ def test_list_synthetic_shots_empty_dir(tmp_path: Path) -> None:
     assert list_synthetic_shots(synthetic_dir=empty) == []
 
 
+def test_load_synthetic_shot_missing_keys_raises(tmp_path: Path) -> None:
+    """An NPZ that omits a required key must raise, naming the missing key(s)."""
+    incomplete = tmp_path / "incomplete_shot.npz"
+    zeros = np.zeros(1000, dtype=np.float64)
+    # Write every documented key except ``machine`` and ``beta_N`` so the
+    # missing-key guard reports both an array key and a scalar key.
+    np.savez_compressed(
+        incomplete,
+        time_s=zeros,
+        Ip_MA=zeros,
+        BT_T=zeros,
+        ne_1e19=zeros,
+        Te_keV=zeros,
+        Ti_keV=zeros,
+        q95=zeros,
+        disruption_label=np.bool_(False),
+    )
+    with pytest.raises(ValueError, match="missing keys"):
+        load_synthetic_shot(incomplete)
+
+
 def test_profiles_are_parabolic(tmp_path: Path) -> None:
     """ne/Te profiles should be monotonically non-increasing (core > edge)."""
     generate_synthetic_shot_database(output_dir=tmp_path, n_shots=10, seed=77)

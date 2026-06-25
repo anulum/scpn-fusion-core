@@ -560,3 +560,69 @@ def test_run_free_boundary_supervisory_simulation_rejects_invalid_inputs(
             kernel_factory=_DivertedDummyKernel,
             **kwargs,
         )
+
+
+_HISTORY_KEYS = (
+    "times",
+    "true_states",
+    "measured_states",
+    "estimated_states",
+    "action_hist",
+    "applied_action_hist",
+    "axis_error_hist",
+    "xpoint_error_hist",
+    "bias_norm_hist",
+    "uncertainty_hist",
+    "actuator_bias_hat_hist",
+    "actuator_bias_true_hist",
+    "intervention_hist",
+    "saturation_hist",
+    "failsafe_hist",
+    "degraded_hist",
+    "diagnostic_dropout_hist",
+    "actuator_dropout_hist",
+    "fallback_hist",
+    "invariant_hist",
+    "physics_guard_hist",
+    "q95_guard_hist",
+    "beta_guard_hist",
+    "risk_guard_hist",
+    "q95_hist",
+    "beta_n_hist",
+    "disruption_risk_hist",
+    "q95_margin_hist",
+    "beta_margin_hist",
+    "risk_margin_hist",
+    "alert_level_hist",
+    "requested_alert_level_hist",
+    "alert_transition_hist",
+    "recovery_transition_hist",
+    "risk_score_hist",
+    "target_ip_hist",
+)
+
+
+def _full_history(n: int) -> dict[str, list[float]]:
+    """Return a complete, zero-filled supervisory history of length ``n``."""
+    return {key: [0.0] * n for key in _HISTORY_KEYS}
+
+
+def test_history_arrays_stabilized_empty_when_history_not_past_warmup() -> None:
+    """A history no longer than the warm-up window yields an empty stabilisation mask.
+
+    ``warmup = max(steps // 3, 1)``; with ``steps == 6`` the warm-up is 2 samples, so a
+    single-sample history (``size 1 <= 2``) takes the else branch and returns a length-0
+    boolean array rather than slicing past the warm-up.
+    """
+    arrays = simulation_arrays.build_free_boundary_history_arrays(_full_history(1), steps=6)
+    assert arrays["stabilized"].dtype == np.bool_
+    assert arrays["stabilized"].size == 0
+
+
+def test_history_arrays_stabilized_flags_quiescent_tail() -> None:
+    """Past the warm-up window, small axis/x-point errors mark the shot as stabilised."""
+    history = _full_history(9)  # axis/x-point errors are all 0.0 -> below thresholds
+    arrays = simulation_arrays.build_free_boundary_history_arrays(history, steps=6)
+    # steps=6 -> warmup=2, so the tail is the final 7 samples, all stabilised.
+    assert arrays["stabilized"].shape == (7,)
+    assert bool(np.all(arrays["stabilized"]))

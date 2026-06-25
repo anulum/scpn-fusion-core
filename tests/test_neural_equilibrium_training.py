@@ -10,6 +10,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 from scpn_fusion.core.neural_equilibrium_training import run_training_cli, train_on_sparc
 
 
@@ -62,3 +65,63 @@ def test_run_training_cli_returns_1_when_data_missing(monkeypatch, tmp_path: Pat
 
     monkeypatch.setattr(ne_mod, "REPO_ROOT", tmp_path)
     assert run_training_cli() == 1
+
+
+class _CliAccel:
+    """Stand-in accelerator covering the CLI's load/predict/benchmark calls."""
+
+    def load_weights(self, path: str) -> None:
+        self.loaded = path
+
+    def predict(self, features: np.ndarray) -> np.ndarray:
+        return np.full((4, 4), 0.9)
+
+    def benchmark(self, features: np.ndarray) -> dict[str, float]:
+        return {"mean_ms": 0.5, "median_ms": 0.4}
+
+
+class _FakeEquilibrium:
+    """GEQDSK stand-in exposing every attribute the CLI validation reads."""
+
+    rbbbs = np.array([1.0, 1.2, 1.4, 1.6, 1.8])
+    zbbbs = np.array([-0.5, -0.2, 0.0, 0.2, 0.5])
+    qpsi = np.array([1.0, 2.0, 3.0, 4.0])
+    current = 1.0e6
+    bcentr = 5.3
+    rmaxis = 1.85
+    zmaxis = 0.0
+    simag = 0.1
+    sibry = 0.2
+    psirz = np.full((8, 8), 1.0)
+
+
+def test_train_on_sparc_defaults_raise_without_files(monkeypatch, tmp_path: Path) -> None:
+    import scpn_fusion.core.neural_equilibrium as ne_mod
+
+    # save_path=None -> DEFAULT_WEIGHTS_PATH; sparc_dir=None -> REPO_ROOT default,
+    # which has no GEQDSK/EQDSK files, so the loader raises.
+    monkeypatch.setattr(ne_mod, "DEFAULT_WEIGHTS_PATH", tmp_path / "weights.npz")
+    monkeypatch.setattr(ne_mod, "REPO_ROOT", tmp_path)
+    with pytest.raises(FileNotFoundError, match="No GEQDSK/EQDSK files"):
+        train_on_sparc()
+
+
+def test_run_training_cli_full_path(monkeypatch, tmp_path: Path, capsys) -> None:
+    import scpn_fusion.core.eqdsk as eqdsk_mod
+    import scpn_fusion.core.neural_equilibrium as ne_mod
+    import scpn_fusion.core.neural_equilibrium_training as net_mod
+
+    sparc_dir = tmp_path / "validation" / "reference_data" / "sparc"
+    sparc_dir.mkdir(parents=True)
+    (sparc_dir / "shot.geqdsk").write_text("stub", encoding="utf-8")
+
+    monkeypatch.setattr(ne_mod, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(ne_mod, "NeuralEquilibriumAccelerator", _CliAccel)
+    monkeypatch.setattr(net_mod, "train_on_sparc", lambda _dir: _DummyTrainingResult())
+    monkeypatch.setattr(eqdsk_mod, "read_geqdsk", lambda _path: _FakeEquilibrium())
+
+    assert run_training_cli() == 0
+    out = capsys.readouterr().out
+    assert "Training Neural Equilibrium" in out
+    assert "Validation relative L2" in out
+    assert "Inference:" in out

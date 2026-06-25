@@ -21,6 +21,7 @@ import importlib
 from pathlib import Path
 from typing import Any, Final
 
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.ui.security_headers import install_tornado_security_headers
 
 install_tornado_security_headers()
@@ -190,9 +191,8 @@ def main() -> None:
     with tab5:
         st.header("DIII-D Shot Replay & Disruption Analysis")
 
-        project_root = Path(__file__).resolve().parents[2]
         disruption_dir = (
-            project_root / "validation" / "reference_data" / "diiid" / "disruption_shots"
+            data_root() / "validation" / "reference_data" / "diiid" / "disruption_shots"
         )
         npz_files = sorted(disruption_dir.glob("*.npz")) if disruption_dir.is_dir() else []
 

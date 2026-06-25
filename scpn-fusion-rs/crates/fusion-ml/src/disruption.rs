@@ -11,7 +11,9 @@
 //! Tearing mode simulator (modified Rutherford) + tiny Transformer classifier.
 
 use ndarray::{Array1, Array2, Axis};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use rand_distr::{Distribution, Normal};
 
 /// Time step for tearing mode simulation. Python: 0.01.
 const DT: f64 = 0.01;
@@ -22,17 +24,29 @@ const W_INIT: f64 = 0.01;
 /// Stable delta-prime. Python: -0.5.
 const DELTA_PRIME_STABLE: f64 = -0.5;
 
-/// Unstable delta-prime (post trigger). Python: 0.5.
-const DELTA_PRIME_UNSTABLE: f64 = 0.5;
+/// Unstable delta-prime (post trigger). Python: -0.1.
+const DELTA_PRIME_UNSTABLE: f64 = -0.1;
 
-/// Saturation width. Python: 10.0.
-const W_SAT: f64 = 10.0;
+/// Saturation width. Python: 12.0.
+const W_SAT: f64 = 12.0;
 
 /// Disruption threshold. Python: 8.0.
 const W_DISRUPTION: f64 = 8.0;
 
-/// Measurement noise σ. Python: 0.05.
-const NOISE_STD: f64 = 0.05;
+/// Island-width Gaussian process-noise σ. Python: 0.02.
+const NOISE_STD: f64 = 0.02;
+
+/// Default poloidal beta scaling the bootstrap drive. Python: 0.8.
+pub const DEFAULT_BETA_P: f64 = 0.8;
+
+/// Default critical island width regularising the bootstrap term. Python: 0.05.
+pub const DEFAULT_W_CRIT: f64 = 0.05;
+
+/// Island width seeded post-trigger when below 0.1. Python: 0.15.
+const SEED_ISLAND_WIDTH: f64 = 0.15;
+
+/// Trigger-time sentinel for a non-disruptive shot. Python: 9999.
+const SAFE_SENTINEL: usize = 9999;
 
 /// Fixed sequence length for transformer input. Python: 100.
 const SEQ_LEN: usize = 100;
@@ -59,33 +73,72 @@ pub struct TearingModeShot {
     pub time_to_disruption: i64,
 }
 
-/// Simulate a single plasma shot with tearing mode physics.
-pub fn simulate_tearing_mode(steps: usize) -> TearingModeShot {
-    let mut rng = rand::thread_rng();
+/// Island-width floor. Python: 0.001.
+const W_FLOOR: f64 = 0.001;
+
+/// Deterministic Modified Rutherford island-width increment for one step.
+///
+/// Canonical contract shared with the NumPy tier
+/// (`scpn_fusion.control.disruption_risk_runtime.rutherford_island_growth`):
+/// `dw = (delta_prime + beta_p·w/(w² + w_crit²))·(1 - w/w_sat)·dt`, bit-exact
+/// across both backends. The bootstrap-current drive `beta_p·w/(w² + w_crit²)`
+/// is what makes the island grow unstably; omitting it is not the Modified
+/// Rutherford Equation.
+pub fn rutherford_island_growth(
+    w: f64,
+    delta_prime: f64,
+    beta_p: f64,
+    w_crit: f64,
+    dt: f64,
+) -> f64 {
+    let f_bs = beta_p * (w / (w * w + w_crit * w_crit));
+    (delta_prime + f_bs) * (1.0 - w / W_SAT) * dt
+}
+
+/// Simulate a single plasma shot with tearing-mode physics.
+///
+/// `seed` makes the stochastic trajectory reproducible within this backend;
+/// `beta_p`/`w_crit` parametrise the bootstrap drive. The deterministic per-step
+/// physics matches the NumPy tier bit-for-bit (see [`rutherford_island_growth`]);
+/// the trajectory is statistically equivalent (independent RNG streams).
+pub fn simulate_tearing_mode(
+    steps: usize,
+    seed: Option<u64>,
+    beta_p: f64,
+    w_crit: f64,
+) -> TearingModeShot {
+    let mut rng = match seed {
+        Some(s) => StdRng::seed_from_u64(s),
+        None => StdRng::from_entropy(),
+    };
+    let noise = Normal::new(0.0, NOISE_STD).expect("NOISE_STD is a valid Gaussian sigma");
+
     let mut w = W_INIT;
-    let is_disruptive = rng.gen_bool(0.5);
+    let is_disruptive = rng.gen::<f64>() > 0.5;
     let trigger_time = if is_disruptive {
         rng.gen_range(200..800)
     } else {
-        steps + 1 // never triggers
+        SAFE_SENTINEL
     };
 
+    let mut delta_prime = DELTA_PRIME_STABLE;
     let mut signal = Vec::with_capacity(steps);
 
     for t in 0..steps {
-        let delta_prime = if t > trigger_time {
-            DELTA_PRIME_UNSTABLE
-        } else {
-            DELTA_PRIME_STABLE
-        };
+        if t > trigger_time {
+            delta_prime = DELTA_PRIME_UNSTABLE;
+            if w < 0.1 {
+                w = SEED_ISLAND_WIDTH; // seed island
+            }
+        }
 
-        let dw = delta_prime * (1.0 - w / W_SAT) * DT;
-        w += dw;
-        w += rng.gen::<f64>() * NOISE_STD * 2.0 - NOISE_STD; // approximate Gaussian
-        w = w.max(W_INIT);
+        w += rutherford_island_growth(w, delta_prime, beta_p, w_crit, DT);
+        w += noise.sample(&mut rng);
+        w = w.max(W_FLOOR);
 
         signal.push(w);
 
+        // Mode lock → disruption
         if w > W_DISRUPTION {
             return TearingModeShot {
                 signal,
@@ -95,9 +148,12 @@ pub fn simulate_tearing_mode(steps: usize) -> TearingModeShot {
         }
     }
 
+    // Matches the NumPy tier: the label is 1 only if the island actually crossed
+    // the disruption threshold (handled in-loop above); a shot that merely had a
+    // tearing trigger but never disrupted within `steps` is labelled safe.
     TearingModeShot {
         signal,
-        label: if is_disruptive { 1 } else { 0 },
+        label: 0,
         time_to_disruption: -1,
     }
 }
@@ -208,19 +264,19 @@ impl HybridAnomalyDetector {
         toroidal: Option<ToroidalAsymmetryObservables>,
     ) -> (f64, f64, f64, bool) {
         let features = build_disruption_feature_vector(signal, toroidal);
-        let supervised = logistic(
-            -4.0 + 0.55 * features[2]
-                + 0.35 * features[1]
-                + 0.10 * features[4]
-                + 0.25 * features[3]
-                + 1.10 * features[6]
-                + 0.70 * features[7]
-                + 0.45 * features[8]
-                + 0.50 * features[9]
-                + 0.15 * features[10]
-                + 0.15 * features[0]
-                + 0.20 * features[5],
-        );
+        // Linear disruption-risk logit; weights match the NumPy tier's
+        // DISRUPTION_RISK_LINEAR_WEIGHTS (disruption_risk_runtime.py), grouped as
+        // thermal + toroidal-asymmetry + state terms. features = [mean, std,
+        // max_val, slope, energy, last, n1, n2, n3, asym, spread].
+        let thermal =
+            0.03 * features[2] + 0.55 * features[1] + 0.005 * features[4] + 0.50 * features[3];
+        let asymmetry = 1.10 * features[6]
+            + 0.70 * features[7]
+            + 0.45 * features[8]
+            + 0.50 * features[9]
+            + 0.15 * features[10];
+        let state = 0.02 * features[0] + 0.02 * features[5];
+        let supervised = logistic(-4.0 + thermal + asymmetry + state);
 
         let unsupervised = if self.initialized {
             let z = (supervised - self.mean).abs() / (self.var + 1e-9).sqrt();
@@ -492,24 +548,63 @@ mod tests {
 
     #[test]
     fn test_simulate_produces_signal() {
-        let shot = simulate_tearing_mode(1000);
+        let shot = simulate_tearing_mode(1000, None, DEFAULT_BETA_P, DEFAULT_W_CRIT);
         assert!(!shot.signal.is_empty());
         assert!(shot.label == 0 || shot.label == 1);
     }
 
     #[test]
-    fn test_simulate_labels_distribution() {
-        // Over many shots, expect roughly 50% disruptive
+    fn test_simulate_island_grows_and_rarely_disrupts() {
+        // The Modified Rutherford drive balances delta_prime near w ~ 8, so the
+        // island grows above its seed width but rarely crosses the disruption
+        // threshold within 1000 steps — matching the NumPy tier (label is 1 only
+        // on an actual w > 8 crossing, which is rare for these parameters).
         let mut n_disruptive = 0;
+        let mut grew = 0;
         for _ in 0..100 {
-            let shot = simulate_tearing_mode(1000);
+            let shot = simulate_tearing_mode(1000, None, DEFAULT_BETA_P, DEFAULT_W_CRIT);
+            assert!(shot.label == 0 || shot.label == 1);
+            assert!(shot.signal.iter().all(|w| w.is_finite()));
             if shot.label == 1 {
                 n_disruptive += 1;
             }
+            let max_w = shot.signal.iter().copied().fold(0.0_f64, f64::max);
+            if max_w > 5.0 * W_INIT {
+                grew += 1;
+            }
         }
         assert!(
-            n_disruptive > 10 && n_disruptive < 90,
-            "Expected ~50% disruptive: {n_disruptive}/100"
+            n_disruptive < 20,
+            "saturating drive should rarely disrupt: {n_disruptive}/100"
+        );
+        assert!(
+            grew > 50,
+            "the bootstrap drive should grow the island: {grew}/100"
+        );
+    }
+
+    #[test]
+    fn test_simulate_is_reproducible_with_seed() {
+        let a = simulate_tearing_mode(500, Some(2026), DEFAULT_BETA_P, DEFAULT_W_CRIT);
+        let b = simulate_tearing_mode(500, Some(2026), DEFAULT_BETA_P, DEFAULT_W_CRIT);
+        assert_eq!(a.signal, b.signal);
+        assert_eq!(a.label, b.label);
+        assert_eq!(a.time_to_disruption, b.time_to_disruption);
+    }
+
+    #[test]
+    fn test_rutherford_island_growth_includes_bootstrap_drive() {
+        // The bootstrap term beta_p·w/(w²+w_crit²) adds to delta_prime, so a
+        // positive beta_p raises dw above the bare-delta_prime increment.
+        let w = 0.2;
+        let delta_prime = -0.1;
+        let bare = delta_prime * (1.0 - w / W_SAT) * DT;
+        let with_bootstrap = rutherford_island_growth(w, delta_prime, 0.8, 0.05, DT);
+        assert!(with_bootstrap > bare);
+        // Zero bootstrap recovers the bare delta_prime increment exactly.
+        assert_eq!(
+            rutherford_island_growth(w, delta_prime, 0.0, 0.05, DT),
+            bare
         );
     }
 

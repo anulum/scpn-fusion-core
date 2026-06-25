@@ -31,14 +31,6 @@ from numpy.typing import NDArray
 logger = logging.getLogger(__name__)
 FloatArray = NDArray[np.float64]
 
-# Rust fast-path (sub-ms for N > 1000)
-try:
-    from scpn_fusion_rs import kuramoto_step as _rust_step  # pragma: no cover
-
-    RUST_KURAMOTO = True  # pragma: no cover
-except ImportError:
-    RUST_KURAMOTO = False
-
 
 def wrap_phase(x: FloatArray) -> FloatArray:
     """Map phases to (-π, π]."""
@@ -139,31 +131,12 @@ def kuramoto_sakaguchi_step(
 
     dθ_i/dt = ω_i + K·R·sin(ψ_r − θ_i − α) + ζ·sin(Ψ − θ_i)
 
-    Uses Rust backend when available (rayon-parallelised, sub-ms for N>1000).
+    NumPy reference implementation (the canonical and only execution path).
     """
     th = np.asarray(theta, dtype=np.float64).ravel()
     om = np.asarray(omega, dtype=np.float64).ravel()
 
-    # Resolve Ψ before dispatching (Rust kernel needs resolved value)
     Psi = GlobalPsiDriver(mode=psi_mode).resolve(th, psi_driver)
-
-    if RUST_KURAMOTO and wrap and alpha == 0.0:
-        th1, R, psi_r, psi_g = _rust_step(
-            th,
-            om,
-            dt,
-            K,
-            0.0,
-            zeta,
-            Psi,
-        )
-        return {
-            "theta1": th1,
-            "dtheta": th1 - th,  # approximate (post-wrap)
-            "R": R,
-            "Psi_r": psi_r,
-            "Psi": psi_g,
-        }
 
     R, psi_r = order_parameter(th)
 
