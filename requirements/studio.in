@@ -1,0 +1,3 @@
+# Studio federation conformance dependency
+# Regenerate: uv pip compile requirements/studio.in --generate-hashes --python-version 3.12 --python-platform linux -o requirements/studio.txt
+scpn-studio-platform==0.10.0
