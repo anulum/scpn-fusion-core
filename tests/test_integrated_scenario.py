@@ -231,3 +231,28 @@ def test_internal_inductance_rejects_nonfinite_or_wrong_shape() -> None:
     bad[0] = np.nan
     with pytest.raises(ValueError, match="finite"):
         sim._internal_inductance_proxy(bad)
+
+
+def test_integrated_scenario_branch_guards(tmp_path) -> None:
+    cfg = ScenarioConfig(R0=3.0, a=1.0, B0=5.0, kappa=1.5, delta=0.3, Ip_MA=5.0, P_aux_MW=20.0)
+    sim = IntegratedScenarioSimulator(cfg)
+    sim.initialize()
+    n = len(sim.rho)
+    # psi override branch in initialize()
+    sim.initialize({"psi": np.zeros(n)})
+    # flat q-profile -> no rational surfaces -> NTM update early return
+    sim._update_ntm_dynamics(np.full(n, 2.0), np.zeros(n), np.zeros(n))
+    # zero current -> internal-inductance proxy short-circuits to 0
+    assert sim._internal_inductance_proxy(np.zeros(n)) == 0.0
+    # non-json output path is rejected
+    with pytest.raises(ValueError, match="json"):
+        sim.to_json(tmp_path / "scenario.txt")
+
+
+def test_ohmic_current_density_rejects_degenerate_cross_section() -> None:
+    cfg = ScenarioConfig(R0=3.0, a=1.0, B0=5.0, kappa=1.5, delta=0.3, Ip_MA=5.0, P_aux_MW=20.0)
+    sim = IntegratedScenarioSimulator(cfg)
+    sim.initialize()
+    sim.rho = np.zeros_like(sim.rho)  # degenerate grid -> zero area normalisation
+    with pytest.raises(ValueError, match="cross-section"):
+        sim._ohmic_current_density()

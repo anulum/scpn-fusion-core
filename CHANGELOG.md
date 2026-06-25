@@ -2,6 +2,77 @@
 
 ## [Unreleased]
 
+- Reconciled the `simulate_tearing_mode` function-kernel and brought the Rust
+  tearing-mode model to full Modified Rutherford fidelity. The Rust port had
+  dropped the bootstrap-current drive `beta_p·w/(w² + w_crit²)` (so it was not the
+  Modified Rutherford Equation), used uniform instead of Gaussian process noise,
+  a saturation width of 10 instead of 12, no post-trigger island seeding, and
+  labelled a triggered-but-non-disrupting shot as disruptive — diverging from the
+  NumPy model in both physics and label semantics. The Rust simulator now runs the
+  full physics with a seedable RNG and `beta_p`/`w_crit` parameters, and labels a
+  shot disruptive only on an actual island-width threshold crossing. The
+  deterministic per-step increment is extracted as `rutherford_island_growth` in
+  both tiers and is bit-exact; the stochastic trajectories are statistically
+  equivalent (matching disruption rate and island-growth distribution). Registered
+  both tiers in `_multi_compat`, replaced the placeholder parity test (its seeded
+  path silently ran the Python implementation, so it never compared the backends)
+  with a bit-exact deterministic-step parity test and a statistical-trajectory
+  parity test, and corrected the Rust disruption-risk linear weights to match the
+  NumPy `DISRUPTION_RISK_LINEAR_WEIGHTS`.
+
+- Reconciled the `multigrid_solve` function-kernel into a canonical fastest-first
+  dispatch with both backend tiers. Extracted the geometric multigrid V-cycle and
+  its smoother/residual/restriction/prolongation operators into a free-function
+  module `core/multigrid_solve.py` (the iterative-solver mixin now delegates to
+  them) plus a `multigrid_solve(source, psi_bc, bounds, nr, nz, *, tol, max_cycles)`
+  full-solve loop, and exposed the Rust solver as a `scpn_fusion_rs.multigrid_vcycle`
+  pyfunction wrapping `fusion_math::multigrid::multigrid_solve`. Both tiers relax
+  the identical toroidal GS* operator with the same Red-Black smoother and grid
+  transfers and return `(psi, residual, n_cycles, converged)` (L-infinity residual);
+  on the standard grids the converged flux maps agree to machine precision. Added
+  a full-solve parity test (replacing one that compared a single Python V-cycle to
+  a full Rust solve and had been skipped because the Rust binding was missing).
+- Fixed a sign error in the geometric multigrid V-cycle coarse-grid correction.
+  The error satisfies `L*[e] = Source - L*[Psi] = -(L*[Psi] - Source)`, so the
+  coarse right-hand side is the negated residual; the V-cycle was restricting the
+  raw residual, which inverts every correction (`Psi <- Psi - e`) and makes the
+  iteration diverge instead of converge. On a fixed-source Grad-Shafranov solve
+  the residual now collapses by orders of magnitude within a handful of cycles
+  rather than growing. Added a V-cycle convergence regression test. (Drift fix
+  upstreamed from SCPN-CONTROL's validated solver.)
+- Reconciled the `measure_magnetics` function-kernel into a single canonical
+  contract across the Rust and NumPy tiers and corrected two divergences in the
+  Rust magnetic-probe diagnostic. The Rust `SensorSuite` now places probes on an
+  endpoint-inclusive `linspace(0, 2*pi, N)` (matching the NumPy tier) instead of
+  `2*pi*i/N`, and interpolates the flux bilinearly instead of nearest-neighbour.
+  The deterministic noise-free measurement is extracted into a free function
+  `synthetic_sensors.measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)`
+  that `SensorSuite.measure_magnetics` delegates to before adding the simulated
+  sensor noise; the Rust measurement kernel is likewise noise-free, with additive
+  noise left to the simulation callers. Registered both tiers in `_multi_compat`
+  (NumPy unconditional); cross-backend agreement is tolerance-aware (probe-trig
+  and bilinear-weight rounding).
+- Reconciled the `solve_coil_currents` function-kernel into a single canonical
+  contract across the Rust and NumPy tiers. The minimum-norm/ridge linear solve
+  is extracted into a free function `analytic_solver.solve_coil_currents(green_func,
+  target_bv, *, ridge_lambda)` that `AnalyticEquilibriumSolver.solve_coil_currents`
+  delegates to, and the Rust `analytic::solve_coil_currents` gains a matching
+  `ridge_lambda` parameter so both tiers share the direct closed form
+  `I_i = g_i·target / (Σg² + λ)`. Registered both tiers in `_multi_compat` (NumPy
+  unconditional). Cross-backend agreement is tolerance-aware rather than bit-exact
+  because the Green's-norm reduction is summed sequentially in Rust but via
+  `numpy.dot` in NumPy; the parity test asserts a tight relative tolerance.
+- Reconciled the `shafranov_bv` function-kernel into a single canonical contract
+  across the Rust and NumPy tiers. The vertical-field force-balance physics now
+  lives in one place — a free function `analytic_solver.shafranov_bv(r_geo,
+  a_min, ip_ma, *, beta_p, li)` that `AnalyticEquilibriumSolver.calculate_required_Bv`
+  delegates to — and the Rust `analytic::shafranov_bv` gained matching `beta_p`/`li`
+  parameters and the same strictly-positive domain on the plasma current, so both
+  backends return a bit-exact vertical field. Registered both tiers in
+  `_multi_compat` (the NumPy tier is unconditional, so `dispatch("shafranov_bv")`
+  resolves without the Rust extension), and replaced a mislabelled parity test
+  (it exercised the config-path vacuum-field overload, not the scalar formula)
+  and a no-op seeded one with a genuine bit-exact scalar parity check.
 - Made `_multi_compat` the canonical fastest-first dispatcher for the stateful
   equilibrium kernel: added a kernel-class (factory) registry with lazily-loaded
   tiers, registered the Rust (`RustAcceleratedKernel`) and NumPy (`FusionKernel`)

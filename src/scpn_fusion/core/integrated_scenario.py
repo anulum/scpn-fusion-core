@@ -634,7 +634,9 @@ class IntegratedScenarioSimulator:
         minor_r = np.maximum(rho * self.config.a, 1e-9)
         b_pol = (4e-7 * np.pi) * current_enclosed / (2.0 * np.pi * minor_r)
         b_edge = float(b_pol[-1])
-        if not np.isfinite(b_edge) or b_edge <= 0.0:
+        # pragma: defensive — current_enclosed = |cumulative| >= 0, so b_pol >= 0; a zero
+        # edge field implies zero total current, already short-circuited above.
+        if not np.isfinite(b_edge) or b_edge <= 0.0:  # pragma: no cover - unreachable (see above)
             return 0.0
 
         num = 2.0 * float(trapezoid((b_pol**2) * rho, rho))

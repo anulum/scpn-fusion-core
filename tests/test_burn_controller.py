@@ -118,3 +118,43 @@ def test_subignited_burn_point():
     # but finding any physically valid equilibrium point is sufficient.
     pts.sort(key=lambda p: p.Te_keV)
     assert pts[-1].P_alpha_MW > 0.0
+
+
+import pytest
+
+from scpn_fusion.control import burn_controller as burn_controller_mod
+
+
+def test_reactivity_exponent_clamps_for_low_temperature():
+    """Below 0.1 keV the finite-difference exponent is clamped to the cap."""
+    analysis = BurnStabilityAnalysis(AlphaHeating(R0=6.2, a=2.0))
+    assert analysis.reactivity_exponent(0.05) == 10.0
+
+
+def test_reactivity_exponent_clamps_when_reactivity_underflows(monkeypatch):
+    """A non-positive reactivity sample falls back to the capped exponent."""
+    analysis = BurnStabilityAnalysis(AlphaHeating(R0=6.2, a=2.0))
+    monkeypatch.setattr(
+        burn_controller_mod, "_bosch_hale_reactivity", lambda arr: np.zeros_like(arr)
+    )
+    assert analysis.reactivity_exponent(20.0) == 10.0
+
+
+def test_reactivity_exponent_is_positive_for_relevant_regime():
+    """In the 10-30 keV burn regime D-T reactivity rises with temperature."""
+    analysis = BurnStabilityAnalysis(AlphaHeating(R0=6.2, a=2.0))
+    assert analysis.reactivity_exponent(15.0) > 0.0
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"Q_target": 0.0}, "Q_target must be positive"),
+        ({"Q_target": -5.0}, "Q_target must be positive"),
+        ({"P_aux_max_MW": 0.0}, "P_aux_max_MW must be positive"),
+        ({"P_aux_max_MW": -1.0}, "P_aux_max_MW must be positive"),
+    ],
+)
+def test_burn_controller_rejects_nonpositive_limits(kwargs, match):
+    with pytest.raises(ValueError, match=match):
+        BurnController(**kwargs)

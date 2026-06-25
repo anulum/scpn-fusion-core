@@ -175,3 +175,85 @@ def test_disruption_chain():
     assert res_disrupt.disruption
     assert res_disrupt.lock_time > 0.0
     assert res_disrupt.warning_time_ms > 0.0
+
+
+def test_error_field_spectrum_constructor_validation() -> None:
+    for kw, match in [
+        ({"B0": 0.0, "R0": 5.0}, "B0"),
+        ({"B0": 5.0, "R0": 5.0, "n_corrections": -1}, "n_corrections"),
+        ({"B0": 5.0, "R0": 0.0}, "R0"),
+        ({"B0": 5.0, "R0": 5.0, "alignment_sensitivity_21": 0.0}, "alignment_sensitivity_21"),
+        ({"B0": 5.0, "R0": 5.0, "alignment_sensitivity_32": 0.0}, "alignment_sensitivity_32"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            ErrorFieldSpectrum(**kw)
+
+
+def test_resonant_field_amplification_diverges_above_no_wall_limit() -> None:
+    rfa = ResonantFieldAmplification(beta_N=3.0, beta_N_nowall=2.5)
+    assert rfa.amplification_factor() == float("inf")
+
+
+def test_error_field_set_coil_misalignment_rejects_nonfinite() -> None:
+    spec = ErrorFieldSpectrum(B0=5.0, R0=5.0)
+    with pytest.raises(ValueError, match="must be finite"):
+        spec.set_coil_misalignment(float("nan"), 0.0)
+
+
+def test_error_field_b_mn_and_corrected_b_mn_branches() -> None:
+    spec = ErrorFieldSpectrum(B0=5.0, R0=5.0)
+    assert spec.B_mn(2, 1) >= 0.0
+    # (7, 5) is absent from the harmonic table -> B_raw == 0 -> corrected returns 0.0
+    assert spec.corrected_B_mn(7, 5, 1.0) == 0.0
+    with pytest.raises(ValueError, match="mode numbers"):
+        spec.corrected_B_mn(0, 1, 1.0)
+
+
+def test_mode_locking_constructor_validation() -> None:
+    base = dict(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4)
+    for bad, match in [
+        ({"n_e19": 0.0}, "n_e19"),
+        ({"kappa": 0.0}, "kappa"),
+        ({"inertia_factor": 0.0}, "inertia_factor"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            ModeLocking(**{**base, **bad})
+
+
+def test_mode_locking_em_torque_validation() -> None:
+    ml = ModeLocking(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4)
+    with pytest.raises(ValueError, match="B_res"):
+        ml.em_torque(-1.0, 0.5, 2, 1)
+    with pytest.raises(ValueError, match="r_s"):
+        ml.em_torque(0.01, 0.0, 2, 1)
+    with pytest.raises(ValueError, match="mode numbers"):
+        ml.em_torque(0.01, 0.5, 0, 1)
+
+
+def test_locked_corrected_bmn_rejects_negative_correction() -> None:
+    spec = ErrorFieldSpectrum(B0=5.0, R0=5.0)
+    with pytest.raises(ValueError, match="I_correction"):
+        spec.corrected_B_mn(2, 1, -1.0)
+
+
+def test_mode_locking_geometry_items_validation() -> None:
+    base = dict(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4)
+    for bad, match in [({"R0": 0.0}, "R0"), ({"a": 0.0}, "a"), ({"Ip_MA": 0.0}, "Ip")]:
+        with pytest.raises(ValueError, match=match):
+            ModeLocking(**{**base, **bad})
+
+
+def test_mode_locking_evolve_rotation_validates_inputs() -> None:
+    ml = ModeLocking(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4)
+    with pytest.raises(ValueError, match="tau_visc"):
+        ml.evolve_rotation(0.01, 0.5, 0.0, 0.1, 10)
+    with pytest.raises(ValueError, match="dt must be finite"):
+        ml.evolve_rotation(0.01, 0.5, 1.0, 0.0, 10)
+
+
+def test_error_field_to_disruption_chain_runs() -> None:
+    chain = ErrorFieldToDisruptionChain(
+        {"R0": 6.2, "a": 2.0, "B0": 5.3, "Ip_MA": 15.0, "beta_N": 2.0, "beta_N_nowall": 2.8}
+    )
+    result = chain.run(B_err_n1=5.0e-3, omega_phi_0=1.0e3)
+    assert result.lock_time >= 0.0 or result.lock_time == -1.0

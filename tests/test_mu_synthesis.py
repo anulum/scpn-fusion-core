@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.mu_synthesis import (
     MuSynthesisController,
@@ -109,3 +110,84 @@ def test_mu_controller_uses_output_feedback_and_validates_state():
         ctrl.step(np.array([1.0]), 0.1)
     with np.testing.assert_raises(ValueError):
         ctrl.step(np.array([1.0, 0.0]), 0.0)
+
+
+def _plant2():
+    return (np.eye(2), np.eye(2), np.eye(2), np.zeros((2, 2)))
+
+
+def _unc2():
+    return StructuredUncertainty([UncertaintyBlock("u", 2, 0.1, "full")])
+
+
+def test_compute_mu_upper_bound_requires_square_matrix() -> None:
+    with pytest.raises(ValueError, match="M must be a square"):
+        compute_mu_upper_bound(np.zeros((2, 3), dtype=complex), [(2, "full")])
+
+
+def test_compute_mu_upper_bound_requires_matching_structure_size() -> None:
+    with pytest.raises(ValueError, match="Delta structure size must match"):
+        compute_mu_upper_bound(np.eye(2, dtype=complex), [(3, "full")])
+
+
+def test_compute_mu_upper_bound_empty_structure_returns_spectral_norm() -> None:
+    M = np.array([[2.0, 10.0], [0.0, 2.0]], dtype=complex)
+    val = compute_mu_upper_bound(M, [])
+    assert val == pytest.approx(float(np.max(np.linalg.svd(M)[1])))
+
+
+@pytest.mark.parametrize(
+    ("plant", "match"),
+    [
+        ((np.zeros((2, 3)), np.eye(2), np.eye(2), np.zeros((2, 2))), "A must be a square"),
+        ((np.eye(2), np.zeros((3, 2)), np.eye(2), np.zeros((2, 2))), "B must have shape"),
+        ((np.eye(2), np.eye(2), np.zeros((2, 3)), np.zeros((2, 2))), "C must have shape"),
+        ((np.eye(2), np.eye(2), np.eye(2), np.zeros((3, 3))), "D must have shape"),
+        ((np.full((2, 2), np.inf), np.eye(2), np.eye(2), np.zeros((2, 2))), "must be finite"),
+    ],
+)
+def test_dk_iteration_rejects_malformed_plant(plant, match: str) -> None:
+    with pytest.raises(ValueError, match=match):
+        dk_iteration(plant, _unc2(), n_iter=1)
+
+
+def test_dk_iteration_rejects_non_positive_iteration_count() -> None:
+    with pytest.raises(ValueError, match="n_iter must be at least 1"):
+        dk_iteration(_plant2(), _unc2(), n_iter=0)
+
+
+def test_dk_iteration_rejects_non_positive_bisection_tolerance() -> None:
+    with pytest.raises(ValueError, match="gamma_bisect_tol must be finite and positive"):
+        dk_iteration(_plant2(), _unc2(), n_iter=1, gamma_bisect_tol=0.0)
+
+
+def test_dk_iteration_rejects_mismatched_uncertainty_size() -> None:
+    unc = StructuredUncertainty([UncertaintyBlock("u", 3, 0.1, "full")])  # size 3 != 2 states
+    with pytest.raises(ValueError, match="uncertainty total size must match"):
+        dk_iteration(_plant2(), unc, n_iter=1)
+
+
+def test_controller_step_requires_synthesis_first() -> None:
+    ctrl = MuSynthesisController(_plant2(), _unc2())
+    with pytest.raises(RuntimeError, match="not synthesised"):
+        ctrl.step(np.zeros(2), dt=0.01)
+
+
+def test_controller_step_validates_state_shape() -> None:
+    ctrl = MuSynthesisController(_plant2(), _unc2())
+    ctrl.synthesize(n_dk_iter=2)
+    with pytest.raises(ValueError, match="state vector must have shape"):
+        ctrl.step(np.zeros(5), dt=0.01)
+
+
+def test_robustness_margin_is_infinite_for_non_positive_mu_peak() -> None:
+    ctrl = MuSynthesisController(_plant2(), _unc2())
+    ctrl.mu_peak = 0.0
+    assert ctrl.robustness_margin() == float("inf")
+
+
+def test_controller_step_rejects_non_finite_state() -> None:
+    ctrl = MuSynthesisController(_plant2(), _unc2())
+    ctrl.synthesize(n_dk_iter=2)
+    with pytest.raises(ValueError, match="state vector must be finite"):
+        ctrl.step(np.array([np.nan, 0.0]), dt=0.01)

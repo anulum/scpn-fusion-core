@@ -295,3 +295,114 @@ def test_dreicer_field_exceeds_critical_field_by_thermal_energy_ratio() -> None:
 
     assert e_d > e_c > 0.0
     assert 40.0 < e_d / e_c < 60.0
+
+
+def test_dreicer_generation_rate_zero_for_nonpositive_drive() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=1.0, E_par=0.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    assert dreicer_generation_rate(params) == 0.0
+
+
+def test_hot_tail_seed_rejects_nonpositive_inputs() -> None:
+    base = dict(Te_pre_keV=5.0, Te_post_keV=0.1, ne_20=1.0, quench_time_ms=1.0)
+    for bad, match in [
+        ({"Te_pre_keV": 0.0}, "Te_pre_keV"),
+        ({"Te_post_keV": 0.0}, "Te_post_keV"),
+        ({"ne_20": 0.0}, "ne_20"),
+        ({"quench_time_ms": 0.0}, "quench_time_ms"),
+        ({"vc_vte_ref": 0.0}, "vc_vte_ref"),
+        ({"quench_exponent": 0.0}, "quench_exponent"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            hot_tail_seed(**{**base, **bad})
+
+
+def test_hot_tail_seed_zero_when_no_cooling() -> None:
+    # Te_post >= Te_pre -> no hot-tail seed.
+    assert hot_tail_seed(Te_pre_keV=5.0, Te_post_keV=5.0, ne_20=1.0, quench_time_ms=1.0) == 0.0
+
+
+def test_runaway_evolution_step_validates_timestep() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=1.0, E_par=10.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    ev = RunawayEvolution(params)
+    with pytest.raises(ValueError, match="dt must be finite"):
+        ev.step(0.0, 1.0e15, 10.0)
+
+
+def test_runaway_current_fraction_is_bounded() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=1.0, E_par=10.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    ev = RunawayEvolution(params)
+    frac = ev.current_fraction(1.0e15, 15.0)
+    assert frac >= 0.0
+
+
+def test_runaway_mitigation_required_density_validation() -> None:
+    mit = RunawayMitigationAssessment()
+    # E_par <= 0 yields zero required density (no drive, no runaways).
+    assert mit.required_density_for_suppression(0.0, 1.5) == 0.0
+    with pytest.raises(ValueError, match="Z_eff"):
+        mit.required_density_for_suppression(10.0, 0.0)
+    with pytest.raises(ValueError, match="coulomb_log"):
+        mit.required_density_for_suppression(10.0, 1.5, coulomb_log=0.0)
+
+
+def test_dream_fluid_density_balance_validation() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=1.0, E_par=10.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    for kw, match in [
+        ({"n_RE": -1.0}, "n_RE must be finite"),
+        ({"n_RE": 1.0, "max_runaway_fraction": 0.0}, "max_runaway_fraction"),
+        ({"n_RE": 1.0, "loss_time_s": 0.0}, "loss_time_s"),
+        ({"n_RE": 1.0e25, "max_runaway_fraction": 1.0}, "exceeds the configured"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            dream_fluid_density_balance(params, **kw)
+
+
+def test_runaway_evolution_evolve_validates_span() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=1.0, E_par=10.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    ev = RunawayEvolution(params)
+    efield = lambda t: 10.0  # noqa: E731
+    with pytest.raises(ValueError, match="t_span must be a"):
+        ev.evolve(0.0, efield, [0.0, 1.0], 0.1)
+    with pytest.raises(ValueError, match="dt must be finite"):
+        ev.evolve(0.0, efield, (0.0, 1.0), 0.0)
+    with pytest.raises(ValueError, match="t_end > t_start"):
+        ev.evolve(0.0, efield, (1.0, 0.0), 0.1)
+    with pytest.raises(ValueError, match="n_RE_0"):
+        ev.evolve(-1.0, efield, (0.0, 1.0), 0.1)
+
+
+def test_runaway_maximum_re_energy_validation() -> None:
+    mit = RunawayMitigationAssessment()
+    base = dict(B0=5.3, R0=6.2, ne_20=1.0, Z_eff=1.5, pitch_angle_rad=0.1)
+    for bad, match in [
+        ({"B0": 0.0}, "B0"),
+        ({"R0": 0.0}, "R0"),
+        ({"ne_20": 0.0}, "ne_20"),
+        ({"Z_eff": 0.0}, "Z_eff"),
+        ({"pitch_angle_rad": 0.0}, "pitch_angle"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            mit.maximum_re_energy(**{**base, **bad})
+
+
+def test_dream_balance_rejects_zero_electron_density() -> None:
+    params = RunawayParams(ne_20=0.0, Te_keV=1.0, E_par=10.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    with pytest.raises(ValueError, match="electron density"):
+        dream_fluid_density_balance(params, n_RE=1.0)
+
+
+def test_wall_heat_load_validation() -> None:
+    mit = RunawayMitigationAssessment()
+    base = dict(n_RE=1.0e15, E_max_MeV=10.0, A_wet=1.0)
+    for bad, match in [
+        ({"n_RE": -1.0}, "n_RE"),
+        ({"E_max_MeV": 0.0}, "E_max_MeV"),
+        ({"volume": 0.0}, "volume"),
+    ]:
+        with pytest.raises(ValueError, match=match):
+            mit.wall_heat_load(**{**base, **bad})
+
+
+def test_wall_heat_load_infinite_for_zero_wetted_area() -> None:
+    mit = RunawayMitigationAssessment()
+    assert mit.wall_heat_load(n_RE=1.0e15, E_max_MeV=10.0, A_wet=0.0) == float("inf")

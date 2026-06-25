@@ -75,3 +75,18 @@ def test_power_scan():
 
     assert res_high_p.T_upstream_eV > res_low_p.T_upstream_eV
     assert res_high_p.T_target_eV > res_low_p.T_target_eV
+
+
+def test_eich_width_floors_for_nonpositive_inputs() -> None:
+    assert eich_heat_flux_width(0.0, 6.2, 0.5, 0.3) == 1.0
+    assert eich_heat_flux_width(10.0, 6.2, 0.0, 0.3) == 1.0
+
+
+def test_peak_target_heat_flux_zero_for_nonpositive_lambda() -> None:
+    assert peak_target_heat_flux(10.0, 6.2, 0.0) == 0.0
+
+
+def test_two_point_sol_clamps_target_temperature_at_zero_density() -> None:
+    res = TwoPointSOL(R0=6.2, a=2.0, q95=3.5, B_pol=0.5).solve(P_SOL_MW=10.0, n_u_19=0.0)
+    assert np.isfinite(res.T_target_eV)
+    assert res.T_target_eV > 0.0

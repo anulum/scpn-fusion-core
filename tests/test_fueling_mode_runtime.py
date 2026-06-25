@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from scpn_fusion.control.fueling_mode import run_fueling_mode
+from scpn_fusion.control.fueling_mode import IcePelletFuelingController, run_fueling_mode
 
 
 def test_run_fueling_mode_returns_expected_summary() -> None:
@@ -81,3 +81,9 @@ def test_ice_pellet_controller_command_changes_direction_across_target() -> None
     assert above_error < 0.0
     assert below_command > 0.0
     assert above_command < below_command
+
+
+@pytest.mark.parametrize("td", [0.0, -1.0, float("inf"), float("nan")])
+def test_ice_pellet_controller_rejects_invalid_target_density(td: float) -> None:
+    with pytest.raises(ValueError, match="target_density"):
+        IcePelletFuelingController(target_density=td)

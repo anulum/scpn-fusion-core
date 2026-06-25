@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
+import pytest
+
 from scpn_fusion.control.codac_interface import (
     CODACConfig,
     CODACInterface,
@@ -166,3 +168,12 @@ def test_cycle_timer_jitter_within_budget():
     jitter_ms = timer.end_cycle()
     assert jitter_ms < 0.0  # well under 1 s budget
     assert timer.check_overrun() is False
+
+
+def test_unpack_action_rejects_non_numeric_value() -> None:
+    from scpn_fusion.control.codac_interface import _OUTPUT_KEY_MAP
+
+    iface = CODACInterface(CODACConfig(), controller=None)
+    key = next(iter(_OUTPUT_KEY_MAP))
+    with pytest.raises(TypeError, match="must be numeric"):
+        iface.unpack_action({key: "not-a-number"})

@@ -61,10 +61,11 @@ def compute_mu_upper_bound(M: NDArray[Any], delta_structure: list[tuple[int, str
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError("M must be a square matrix")
     n = matrix.shape[0]
+    if not delta_structure:
+        # No structure -> mu equals the unstructured spectral norm (max singular value).
+        return float(np.max(np.linalg.svd(matrix)[1]))
     if sum(size for size, _ in delta_structure) != n:
         raise ValueError("Delta structure size must match M")
-    if not delta_structure:
-        return float(np.max(np.linalg.svd(matrix)[1]))
 
     def apply_D(d_vec: FloatArray) -> ComplexArray:
         D = np.zeros((n, n), dtype=complex)

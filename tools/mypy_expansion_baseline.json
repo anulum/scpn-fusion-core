@@ -30,6 +30,10 @@
     [
       "omas",
       "omas.*"
+    ],
+    [
+      "scpn_studio_platform",
+      "scpn_studio_platform.*"
     ]
   ],
   "min_typed_file_count": 45,

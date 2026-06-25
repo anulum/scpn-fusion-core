@@ -313,7 +313,9 @@ def ipb98y2_tau_e(
         * M ** exp["M_AMU"]
     )
     tau_f = float(tau)
-    if not np.isfinite(tau_f) or tau_f <= 0:
+    if (
+        not np.isfinite(tau_f) or tau_f <= 0
+    ):  # pragma: no cover - defensive: inputs validated > 0 (tau stays positive) and numeric overflow raises OverflowError before this guard
         raise ValueError(
             f"Computed IPB98(y,2) confinement time is invalid (tau={tau_f!r}) for supplied inputs."
         )
@@ -442,7 +444,9 @@ def ipb98y2_with_uncertainty(
         if val > 0 and key in exp_unc:
             log_val = abs(float(np.log(val)))
             sigma_alpha = abs(float(exp_unc[key]))
-            if not np.isfinite(log_val) or not np.isfinite(sigma_alpha):
+            if (
+                not np.isfinite(log_val) or not np.isfinite(sigma_alpha)
+            ):  # pragma: no cover - defensive: coefficient validation rejects non-finite uncertainties and inputs are validated finite/positive
                 var_ln_tau = float("inf")
                 break
 

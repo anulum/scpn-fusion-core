@@ -99,3 +99,15 @@ def test_subsystem_models_reject_invalid_physical_inputs() -> None:
 
     with pytest.raises(ValueError, match="wall_thickness_m"):
         evaluate_disruption_structural_response(member=StructuralMember(wall_thickness_m=0.0))
+
+
+def test_disruption_structural_response_rejects_non_finite_geometry() -> None:
+    """A non-finite section dimension must fail the finiteness guard before the <= 0 check."""
+    with pytest.raises(ValueError, match="radius_m must be finite"):
+        evaluate_disruption_structural_response(member=StructuralMember(radius_m=float("inf")))
+
+
+def test_disruption_structural_response_rejects_nan_load() -> None:
+    """A NaN load magnitude must be caught by the finiteness guard on the load side."""
+    with pytest.raises(ValueError, match="halo_current_ma must be finite"):
+        evaluate_disruption_structural_response(load=DisruptionLoad(halo_current_ma=float("nan")))

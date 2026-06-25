@@ -6,7 +6,33 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scpn_fusion.core.neural_transport_math import _relu, _softplus, _gelu, _compute_nustar
+from types import SimpleNamespace
+
+from scpn_fusion.core.neural_transport_math import (
+    _compute_nustar,
+    _gelu,
+    _mlp_forward,
+    _relu,
+    _softplus,
+)
+
+
+def _mlp_weights(*, gated, log_transform, gb_scale, n_layers, n_in, n_hidden, n_out_raw):
+    """Build a deterministic duck-typed MLP weight bundle for _mlp_forward."""
+    dims = [n_in] + [n_hidden] * (n_layers - 1) + [n_out_raw]
+    layers_w = [np.full((dims[i], dims[i + 1]), 0.1) for i in range(n_layers)]
+    layers_b = [np.zeros(dims[i + 1]) for i in range(n_layers)]
+    return SimpleNamespace(
+        input_mean=np.zeros(n_in),
+        input_std=np.ones(n_in),
+        n_layers=n_layers,
+        layers_w=layers_w,
+        layers_b=layers_b,
+        gated=gated,
+        output_scale=1.0,
+        log_transform=log_transform,
+        gb_scale=gb_scale,
+    )
 
 
 class TestActivations:
@@ -70,3 +96,51 @@ class TestComputeNustar:
             z_eff=2.0,
         )
         assert nu > 0
+
+
+class TestMlpForward:
+    def test_gated_with_log_transform_and_gyrobohm_batched(self):
+        weights = _mlp_weights(
+            gated=True,
+            log_transform=True,
+            gb_scale=True,
+            n_layers=2,
+            n_in=4,
+            n_hidden=5,
+            n_out_raw=6,
+        )
+        x = np.tile(np.array([1.0, 2.0, 0.5, 0.3]), (7, 1))  # te = column 1 -> array gyro-Bohm
+        out = _mlp_forward(x, weights)
+        assert out.shape == (7, 3)  # gated collapses to the three flux channels
+        assert np.all(np.isfinite(out))
+        assert np.all(out >= 0.0)
+
+    def test_scalar_input_uses_scalar_gyrobohm(self):
+        weights = _mlp_weights(
+            gated=True,
+            log_transform=False,
+            gb_scale=True,
+            n_layers=2,
+            n_in=4,
+            n_hidden=5,
+            n_out_raw=6,
+        )
+        x = np.array([1.0, 2.0, 0.5, 0.3])  # 1D -> scalar te -> chi_gb.ndim == 0 branch
+        out = _mlp_forward(x, weights)
+        assert out.shape == (3,)
+        assert np.all(np.isfinite(out))
+
+    def test_ungated_plain_softplus_output(self):
+        weights = _mlp_weights(
+            gated=False,
+            log_transform=False,
+            gb_scale=False,
+            n_layers=3,
+            n_in=4,
+            n_hidden=5,
+            n_out_raw=2,
+        )
+        x = np.tile(np.array([1.0, 2.0, 0.5, 0.3]), (4, 1))
+        out = _mlp_forward(x, weights)
+        assert out.shape == (4, 2)
+        assert np.all(out >= 0.0)

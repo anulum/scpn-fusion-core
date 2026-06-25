@@ -34,14 +34,6 @@ from scpn_fusion.phase.kuramoto import (
     wrap_phase,
 )
 
-# Try to import Rust UPDE fast-path
-try:
-    from scpn_fusion_rs import upde_tick as _rust_upde_tick  # pragma: no cover
-
-    HAS_RUST_UPDE = True  # pragma: no cover
-except ImportError:
-    HAS_RUST_UPDE = False
-
 FloatArray = NDArray[np.float64]
 
 
@@ -114,41 +106,8 @@ class UPDESystem:
             np.zeros(L) if self.spec.zeta is None else np.asarray(self.spec.zeta, dtype=np.float64)
         )
 
-        # Attempt Rust fast-path if L > 1 and all layers have same N
-        if HAS_RUST_UPDE and L > 0:
-            n_per = len(theta_layers[0])
-            if all(len(t) == n_per for t in theta_layers):
-                theta_flat = np.concatenate(theta_layers).astype(np.float64)
-                omega_flat = np.concatenate(omega_layers).astype(np.float64)
-
-                res = _rust_upde_tick(
-                    theta_flat,
-                    omega_flat,
-                    K.ravel() * g,
-                    alpha.ravel(),
-                    zeta,
-                    L,
-                    n_per,
-                    self.dt,
-                    Psi_global,
-                    float(pac_gamma),
-                )
-
-                # Reshape theta1 back to layers
-                theta1_flat = np.asarray(res.theta_flat)
-                theta1_rust = [theta1_flat[m * n_per : (m + 1) * n_per] for m in range(L)]
-
-                return {
-                    "theta1": theta1_rust,
-                    "R_layer": np.asarray(res.r_layer),
-                    "Psi_layer": np.asarray(res.v_layer),  # Rust v_layer is psi_layer
-                    "R_global": res.r_global,
-                    "Psi_global": Psi_global,
-                    "V_layer": np.array([lyapunov_v(theta1_rust[m], Psi_global) for m in range(L)]),
-                    "V_global": lyapunov_v(theta1_flat, Psi_global),
-                }
-
-        # Python fallback (supports non-uniform N)
+        # NumPy reference path (the canonical and only execution path; supports
+        # non-uniform per-layer N).
         theta1: list[FloatArray] = []
         dtheta_all: list[FloatArray] = []
 

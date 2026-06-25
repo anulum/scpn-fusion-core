@@ -164,3 +164,32 @@ def test_total_driven_current_rejects_invalid_elongation() -> None:
 
     with pytest.raises(ValueError, match="elongation"):
         mix.total_driven_current(rho, profile, profile, profile, elongation=np.ones(19))
+
+
+def test_sources_return_zero_power_for_nonpositive_sigma() -> None:
+    rho = np.linspace(0.0, 1.0, 10)
+    np.testing.assert_array_equal(ECCDSource(1.0, 0.5, 0.0).P_absorbed(rho), 0.0)
+    np.testing.assert_array_equal(NBISource(1.0, 100.0, 0.5, sigma_rho=0.0).P_heating(rho), 0.0)
+    np.testing.assert_array_equal(LHCDSource(1.0, 0.5, 0.0).P_absorbed(rho), 0.0)
+
+
+def test_current_drive_mix_sums_non_nbi_source_branches() -> None:
+    mix = CurrentDriveMix(a=1.0)
+    mix.add_source(ECCDSource(1.0, 0.5, 0.1))  # non-NBI (else) branch
+    mix.add_source(NBISource(1.0, 100.0, 0.5))  # NBI (if) branch
+    rho = np.linspace(0.01, 1.0, 20)
+    ne = np.full(20, 5.0)
+    j = mix.total_j_cd(rho, ne, np.full(20, 5.0), np.full(20, 5.0))
+    p = mix.total_heating_power(rho)
+    assert np.all(np.isfinite(j)) and np.all(np.isfinite(p))
+
+
+def test_total_driven_current_rejects_nonpositive_elongation_profile() -> None:
+    mix = CurrentDriveMix(a=1.0)
+    mix.add_source(ECCDSource(1.0, 0.5, 0.1))
+    rho = np.linspace(0.01, 1.0, 5)
+    ones = np.ones(5)
+    with pytest.raises(ValueError, match="elongation must be positive"):
+        mix.total_driven_current(
+            rho, ones, ones, ones, elongation=np.array([1.0, 1.0, -1.0, 1.0, 1.0])
+        )

@@ -12,6 +12,7 @@ ndarray = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 rand = { workspace = true }
+rand_distr = { workspace = true }
 ndarray-npy = { workspace = true }
 
 [dev-dependencies]

@@ -45,8 +45,9 @@ const BOLO_R_MAX: f64 = 9.0;
 /// Ray march samples for bolometer. Python: 50.
 const BOLO_SAMPLES: usize = 50;
 
-/// Magnetic probe noise σ. Python: 0.01.
-const MAG_NOISE: f64 = 0.01;
+/// Standard magnetic-probe sensor-noise σ (Python: 0.01). The measurement kernel
+/// is noise-free; simulation callers layer additive noise with this σ on top.
+pub const MAG_NOISE: f64 = 0.01;
 
 /// Bolometer noise fraction. Python: 0.05.
 const BOLO_NOISE_FRAC: f64 = 0.05;
@@ -83,12 +84,14 @@ impl SensorSuite {
         let dr = (r_max - r_min) / (nr - 1) as f64;
         let dz = (z_max - z_min) / (nz - 1) as f64;
 
-        // Generate magnetic probe positions on D-shaped wall
+        // Generate magnetic probe positions on the D-shaped wall. theta is an
+        // endpoint-inclusive linspace(0, 2*pi, N_PROBES) to match the NumPy tier
+        // (`scpn_fusion.diagnostics.synthetic_sensors.magnetic_probe_positions`).
         let mut probe_r = Vec::with_capacity(N_PROBES);
         let mut probe_z = Vec::with_capacity(N_PROBES);
         let wall_radius = A_MINOR + WALL_OFFSET;
         for i in 0..N_PROBES {
-            let theta = 2.0 * PI * i as f64 / N_PROBES as f64;
+            let theta = 2.0 * PI * i as f64 / (N_PROBES - 1) as f64;
             probe_r.push(R0 + wall_radius * theta.cos());
             probe_z.push(wall_radius * KAPPA * theta.sin());
         }
@@ -126,14 +129,40 @@ impl SensorSuite {
     }
 
     /// Measure magnetic flux at probe positions. Returns array of length N_PROBES.
+    ///
+    /// Deterministic, noise-free bilinear interpolation of `psi` at the probe
+    /// positions — the canonical `measure_magnetics` dispatch contract, evaluated
+    /// with the same stencil as the NumPy tier
+    /// (`scpn_fusion.diagnostics.synthetic_sensors.measure_magnetics`), so the two
+    /// agree to a tight tolerance. Sensor noise is an additive simulation concern
+    /// layered on top by the callers, not part of the measurement kernel.
     pub fn measure_magnetics(&self, psi: &Array2<f64>) -> Vec<f64> {
-        let mut rng = rand::thread_rng();
-        let noise_dist = Normal::new(0.0, MAG_NOISE).unwrap();
-
+        let nr = self.nr as i64;
+        let nz = self.nz as i64;
         let mut measurements = Vec::with_capacity(self.probe_r.len());
         for i in 0..self.probe_r.len() {
-            let (ir, iz) = self.to_grid(self.probe_r[i], self.probe_z[i]);
-            let val = psi[[iz, ir]] + noise_dist.sample(&mut rng);
+            let r = self.probe_r[i];
+            let z = self.probe_z[i];
+            let ir = ((r - self.r_min) / self.dr) as i64;
+            let iz = ((z - self.z_min) / self.dz) as i64;
+            let val = if ir >= 0 && ir < nr - 1 && iz >= 0 && iz < nz - 1 {
+                let iru = ir as usize;
+                let izu = iz as usize;
+                let wr = (r - (self.r_min + ir as f64 * self.dr)) / self.dr;
+                let wz = (z - (self.z_min + iz as f64 * self.dz)) / self.dz;
+                let v00 = psi[[izu, iru]];
+                let v10 = psi[[izu, iru + 1]];
+                let v01 = psi[[izu + 1, iru]];
+                let v11 = psi[[izu + 1, iru + 1]];
+                (1.0 - wr) * (1.0 - wz) * v00
+                    + wr * (1.0 - wz) * v10
+                    + (1.0 - wr) * wz * v01
+                    + wr * wz * v11
+            } else {
+                let irc = ir.clamp(0, nr - 1) as usize;
+                let izc = iz.clamp(0, nz - 1) as usize;
+                psi[[izc, irc]]
+            };
             measurements.push(val);
         }
         measurements
@@ -221,13 +250,43 @@ mod tests {
         let psi = Array2::from_elem((65, 65), 1.0);
         let meas = suite.measure_magnetics(&psi);
         assert_eq!(meas.len(), N_PROBES);
-        // All measurements should be close to 1.0 (uniform psi + small noise)
+        // Noise-free bilinear interpolation of a uniform field returns it exactly.
         for &v in &meas {
             assert!(
-                (v - 1.0).abs() < 0.1,
-                "Magnetic measurement too far from 1.0: {v}"
+                (v - 1.0).abs() < 1e-12,
+                "Magnetic measurement should equal the uniform field: {v}"
             );
         }
+    }
+
+    #[test]
+    fn test_magnetics_bilinear_interpolates_linear_field() {
+        // A field linear in R is reproduced exactly by bilinear interpolation, so
+        // each probe reads back psi at its own R coordinate.
+        let suite = make_suite();
+        let mut psi = Array2::zeros((65, 65));
+        let dr = (9.0 - 3.0) / 64.0;
+        for iz in 0..65 {
+            for ir in 0..65 {
+                psi[[iz, ir]] = 3.0 + ir as f64 * dr; // = R at that column
+            }
+        }
+        let dz = 10.0 / 64.0;
+        let meas = suite.measure_magnetics(&psi);
+        let mut interior_checked = 0;
+        for (i, &v) in meas.iter().enumerate() {
+            let r = suite.probe_r[i];
+            let z = suite.probe_z[i];
+            // Only interior probes interpolate; out-of-grid probes clamp. Mirror
+            // the bilinear branch condition on both axes.
+            let ir = ((r - 3.0) / dr) as i64;
+            let iz = ((z + 5.0) / dz) as i64;
+            if (0..64).contains(&ir) && (0..64).contains(&iz) {
+                assert!((v - r).abs() < 1e-9, "probe {i}: got {v}, want {r}");
+                interior_checked += 1;
+            }
+        }
+        assert!(interior_checked > 0, "no interior probes were exercised");
     }
 
     #[test]

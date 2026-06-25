@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
@@ -71,9 +72,7 @@ class NeuralTransportModel:
         self.is_neural: bool = False
 
         if weights_path is None:
-            weights_path = (
-                Path(__file__).resolve().parents[3] / "weights" / "neural_transport_qlknn.npz"
-            )
+            weights_path = data_root() / "weights" / "neural_transport_qlknn.npz"
 
         self.weights_path: Optional[Path] = None
         self.weights_checksum: Optional[str] = None

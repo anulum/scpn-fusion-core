@@ -58,8 +58,15 @@ def test_reconstruction_solovev():
     assert np.isclose(res.shape.R0, 6.2)
     assert np.isclose(res.shape.a, 2.0)
     assert res.shape.Ip_reconstructed == 15.0e6
-    assert res.wall_time_ms < 100.0
+    # The real-time property is the bounded, small iteration count (deterministic).
+    # wall_time_ms is wall-clock and therefore load-sensitive — it can spike by
+    # orders of magnitude under CI/host contention even though a single
+    # reconstruction is well under a millisecond in isolation — so assert only a
+    # generous ceiling that still catches a catastrophic algorithmic regression
+    # (e.g. an accidental full equilibrium solve in the inner loop).
     assert res.n_iterations > 0
+    assert res.n_iterations <= 64
+    assert res.wall_time_ms < 5000.0
 
 
 def test_lcfs_boundary_points_follow_flux_geometry():

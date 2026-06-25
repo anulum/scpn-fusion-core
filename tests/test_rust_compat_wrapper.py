@@ -205,6 +205,12 @@ def test_fusion_kernel_alias_resolves_in_both_backends() -> None:
         assert FusionKernel is PyFusionKernel
 
 
+def test_fusion_kernel_alias_is_bound_module_attribute() -> None:
+    """Consumers can import ``FusionKernel`` without relying on module getattr."""
+    assert "FusionKernel" in vars(_rust_compat)
+    assert isinstance(_rust_compat.FusionKernel, type)
+
+
 def test_module_getattr_rejects_unknown_attribute_without_rust() -> None:
     """The lazy module ``__getattr__`` fallback serves only ``FusionKernel``."""
     if _rust_compat.RUST_BACKEND:
