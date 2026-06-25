@@ -125,7 +125,8 @@ def _probe_jax() -> bool:
         import jax  # noqa: F401
 
         return True
-    except ImportError:
+    except Exception as exc:
+        logger.debug("JAX backend probe failed; treating JAX as unavailable: %s", exc)
         return False
 
 
