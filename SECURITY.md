@@ -4,7 +4,8 @@
 
 | Version | Supported          | Notes |
 |---------|--------------------|-------|
-| 3.9.11  | :white_check_mark: | Current stable - documentation, security-lock, and repository-hygiene wave |
+| 3.10.0  | :white_check_mark: | Current stable - runtime, Studio federation, documentation, and CI/LFS publishing wave |
+| 3.9.11  | :white_check_mark: | Previous stable - documentation, security-lock, and repository-hygiene wave |
 | 3.9.10  | :white_check_mark: | Previous stable - documentation, release-evidence, and CI hygiene wave |
 | 3.9.9   | :white_check_mark: | Previous stable - physics hardening and release-evidence wave |
 | 3.9.4   | :white_check_mark: | Previous stable - hardening/governance wave |
@@ -48,7 +49,7 @@ configuration. Security concerns are primarily:
 
 ## Hardening Measures in Place
 
-### Input Validation (v1.0.2 — v3.9.11)
+### Input Validation (v1.0.2 — v3.10.0)
 Over 30 hardening commits add runtime guards across all physics and control
 modules: array shape/dtype checks, non-finite rejection, range clamping,
 and constructor parameter validation. See the git log for commits prefixed
