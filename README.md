@@ -129,7 +129,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Python capability source modules | 278 |
 | Python capability classes | 547 |
 | Capability documentation pages | 56 |
-| Rust workspace crates | 13 |
+| Rust workspace crates | 12 |
 | Optional extras | 13 |
 | Python test files | 434 |
 | Public documentation pages | 56 |
@@ -191,7 +191,7 @@ before plant deployment.
 | **Nuclear** | 5 | Blanket neutronics, PWI erosion, wall interaction |
 | **SCPN Compiler** | 12 | Petri net structure, compiler, contracts, safety interlocks, artifact packaging |
 | **I/O** | 15 | IMAS/OMAS adapter, GEQDSK, tokamak archive, logging |
-| **Rust Backend** | 11 crates | GS kernel (0.52 us), transport, control, ML inference, PyO3 bindings |
+| **Rust Backend** | 12 crates | GS kernel (0.52 us), transport, control, ML inference, PyO3 bindings |
 
 The generated capability inventory above is the source of truth for public
 package, test, documentation, workflow, and Rust workspace counts.
@@ -595,7 +595,7 @@ scpn-fusion-core/
 |   +-- engineering/       (4)    # Balance of plant, thermal hydraulics
 |   +-- hpc/               (2)    # HPC bridge, C library interface
 |   +-- ui/                (4)    # Streamlit dashboard
-+-- scpn-fusion-rs/               # Rust workspace (11 crates)
++-- scpn-fusion-rs/               # Rust workspace (12 crates)
 |   +-- crates/
 |       +-- fusion-types/         # Shared data types
 |       +-- fusion-math/          # Linear algebra, FFT
@@ -813,7 +813,7 @@ module returns structured errors.
 | Python lines of code | 65,664 |
 | Test functions | 3,815 |
 | Validation scripts | 74 |
-| Rust crates | 11 |
+| Rust crates | 12 |
 | CI jobs | 24 |
 | Internal readiness entries | 115 (local-only governance queue) |
 

@@ -10,7 +10,7 @@
 | Python capability source modules | 278 |
 | Python capability classes | 547 |
 | Capability documentation pages | 56 |
-| Rust workspace crates | 13 |
+| Rust workspace crates | 12 |
 | Optional extras | 13 |
 | Python test files | 434 |
 | Public documentation pages | 56 |

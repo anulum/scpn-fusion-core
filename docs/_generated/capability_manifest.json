@@ -2575,10 +2575,6 @@
         "path": "scpn-fusion-rs/crates/fusion-types"
       },
       {
-        "name": "scpn-fusion-fuzz",
-        "path": "scpn-fusion-rs/fuzz"
-      },
-      {
         "name": "scpn-fusion-rs",
         "path": "scpn-fusion-rs/crates/fusion-python"
       }
@@ -2592,7 +2588,7 @@
     "public_documentation_pages": 56,
     "python_capability_classes": 547,
     "python_capability_source_modules": 278,
-    "rust_workspace_crates": 13,
+    "rust_workspace_crates": 12,
     "test_files": 434
   },
   "documentation": {

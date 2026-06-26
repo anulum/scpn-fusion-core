@@ -62,7 +62,6 @@ DEFAULT_RUST_WORKSPACE = Path("scpn-fusion-rs")
 
 def _default_labels() -> dict[str, str]:
     """Return stable public labels for README and docs snapshots."""
-
     return {
         "version": "Package version",
         "public_api_exports": "Public API exports",
@@ -117,7 +116,6 @@ class CapabilityPaths:
 
 def load_config(repo: Path, config_path: Path | None = None) -> CapabilityManifestConfig:
     """Load repository capability manifest configuration."""
-
     repo = repo.resolve()
     raw: dict[str, Any] = {}
     path = repo / (config_path or DEFAULT_CONFIG)
@@ -168,7 +166,6 @@ def _configured_paths(
     default: tuple[Path, ...],
 ) -> tuple[Path, ...]:
     """Read a path or list of paths from TOML."""
-
     raw = paths.get(key, [item.as_posix() for item in default])
     if isinstance(raw, str):
         return (Path(raw),)
@@ -179,7 +176,6 @@ def _configured_paths(
 
 def capability_paths(repo: Path, config: CapabilityManifestConfig) -> CapabilityPaths:
     """Return canonical manifest scan roots."""
-
     return CapabilityPaths(
         repo=repo,
         pyproject=repo / "pyproject.toml",
@@ -197,7 +193,6 @@ def build_capability_manifest(
     repo: Path, config: CapabilityManifestConfig | None = None
 ) -> dict[str, Any]:
     """Build a deterministic capability manifest for public surfaces."""
-
     repo = repo.resolve()
     config = config or load_config(repo)
     paths = capability_paths(repo, config)
@@ -278,7 +273,6 @@ def build_capability_manifest(
 
 def render_markdown_snapshot(manifest: dict[str, Any]) -> str:
     """Render a compact public snapshot for README and PyPI reuse."""
-
     counts = manifest["counts"]
     project = manifest["project"]
     labels = manifest.get("labels", _default_labels())
@@ -331,7 +325,6 @@ def refresh_readme_block(
     config: CapabilityManifestConfig,
 ) -> Path:
     """Refresh the README block bounded by configured markers."""
-
     readme_path = repo / config.readme_path
     text = readme_path.read_text(encoding="utf-8")
     start = config.readme_marker_start
@@ -352,7 +345,6 @@ def write_outputs(
     markdown_output: Path,
 ) -> tuple[Path, Path]:
     """Write deterministic JSON and Markdown outputs."""
-
     json_output.parent.mkdir(parents=True, exist_ok=True)
     markdown_output.parent.mkdir(parents=True, exist_ok=True)
     json_output.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -369,7 +361,6 @@ def refresh_outputs(
     update_readme: bool = True,
 ) -> tuple[Path, Path, Path | None]:
     """Regenerate JSON, Markdown, and optionally the README snapshot."""
-
     manifest = build_capability_manifest(repo, config)
     json_path, markdown_path = write_outputs(
         manifest,
@@ -388,7 +379,6 @@ def refresh_outputs(
 
 def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
     """Validate a capability manifest payload."""
-
     errors: list[str] = []
     if payload.get("schema_version") != CAPABILITY_MANIFEST_SCHEMA_VERSION:
         errors.append("schema_version mismatch")
@@ -437,7 +427,6 @@ def assert_outputs_current(
     check_readme: bool = True,
 ) -> None:
     """Raise if tracked generated outputs drift from current sources."""
-
     config = config or load_config(repo)
     manifest = build_capability_manifest(repo, config)
     expected_json = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
@@ -533,15 +522,40 @@ def _rust_workspace_crates(root: Path, *, repo: Path) -> list[dict[str, str]]:
     if not root.exists():
         return []
     crates: list[dict[str, str]] = []
-    for manifest in sorted(root.rglob("Cargo.toml")):
-        if manifest == root / "Cargo.toml":
-            continue
+    for manifest in _rust_workspace_member_manifests(root):
         payload = tomllib.loads(manifest.read_text(encoding="utf-8"))
         package = payload.get("package", {})
         name = package.get("name")
         if isinstance(name, str) and name:
             crates.append({"name": name, "path": _rel(manifest.parent, repo)})
     return sorted(crates, key=lambda row: (row["name"], row["path"]))
+
+
+def _rust_workspace_member_manifests(root: Path) -> list[Path]:
+    """Return Cargo manifests declared as workspace members."""
+    workspace_manifest = root / "Cargo.toml"
+    if not workspace_manifest.exists():
+        return []
+
+    payload = tomllib.loads(workspace_manifest.read_text(encoding="utf-8"))
+    workspace = payload.get("workspace", {})
+    members = workspace.get("members") if isinstance(workspace, dict) else None
+    if not isinstance(members, list):
+        return [
+            manifest
+            for manifest in sorted(root.rglob("Cargo.toml"))
+            if manifest != workspace_manifest
+        ]
+
+    manifests: set[Path] = set()
+    for member in members:
+        if not isinstance(member, str):
+            continue
+        for candidate in root.glob(member):
+            manifest = candidate / "Cargo.toml" if candidate.is_dir() else candidate
+            if manifest.exists() and manifest.name == "Cargo.toml":
+                manifests.add(manifest)
+    return sorted(manifests)
 
 
 def _project_extras(pyproject: dict[str, Any]) -> list[str]:

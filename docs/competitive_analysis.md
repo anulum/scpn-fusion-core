@@ -173,7 +173,7 @@ Y = implemented and tested. N = not present. P = partial.
 | RWM (resistive wall mode) | Y | N | N | N | N | N |
 | Peeling-ballooning (ELM boundary) | Y | N | Y | N | N | N |
 | **Infrastructure** | | | | | | |
-| Rust native backend | Y (11 crates) | N | N | N | N | N |
+| Rust native backend | Y (12 crates) | N | N | N | N | N |
 | GPU acceleration (JAX XLA) | Y | Y | Y (Julia) | N | N | N |
 | GPU compute shader (wgpu) | Y | N | N | N | N | N |
 | JAX autodifferentiation | Y | Y | Y (Julia AD) | N | N | N |
@@ -218,7 +218,7 @@ Y = implemented and tested. N = not present. P = partial.
 |--------|-------|
 | Python modules (src/) | 277 |
 | Lines of Python (src/) | 73,552 |
-| Rust crates | 11 |
+| Rust crates | 12 |
 | Test files | 382 |
 | Individual test functions | 3,817 |
 | Validation scripts | 74 |
@@ -264,7 +264,7 @@ from repeated GS solves, with supervisory bounded recovery, disturbance
    GK three-path) + control (PID + H-inf + NMPC + SNN + burn + RZIP + EKF) +
    disruption (prediction + SPI + ELM/RMP + RE + halo + pellet) + MHD (7
    criteria) + digital twin + HIL + deterministic replay -- 234 modules,
-   62K lines, 11 Rust crates.
+   62K lines, 12 Rust crates.
 
 ---
 

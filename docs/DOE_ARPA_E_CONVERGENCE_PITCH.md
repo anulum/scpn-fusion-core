@@ -501,7 +501,7 @@ This preserves the computational efficiency of SCPN-FC for real-time control whi
 | Digital twin | Real-time | No | No | No | No | No | No |
 | GPU acceleration | wgpu (portable) | OpenACC (NVIDIA) | No | No | No | JAX/XLA | No |
 | MPI parallelism | 2D domain decomp | No | Yes | Yes | No | No | No |
-| Rust backend | 11 crates | No | No | No | No | No | No |
+| Rust backend | 12 crates | No | No | No | No | No | No |
 | Compact reactor optimizer | MVR-0.96 | No | Limited | No | No | No | No |
 | GEQDSK validation | 8 SPARC files | Standard | Yes | Yes | Yes | No | Yes |
 | Open-source | Yes | No | No | No | Yes | Yes | Yes |
