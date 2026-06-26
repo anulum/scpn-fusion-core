@@ -49,3 +49,15 @@ def data_root() -> Path:
         return Path(spec.origin).resolve().parent.parent
 
     return source_candidate
+
+
+def default_iter_config_path() -> Path:
+    """Return the bundled ITER reference configuration path.
+
+    Returns
+    -------
+    Path
+        Absolute path to the default ITER-format JSON configuration bundled
+        under the ``validation`` package data tree.
+    """
+    return data_root() / "validation" / "iter_config.json"

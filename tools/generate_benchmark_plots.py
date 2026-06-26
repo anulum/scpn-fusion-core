@@ -40,6 +40,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 ASSETS_DIR = REPO_ROOT / "docs" / "assets"
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
+from scpn_fusion._data_paths import default_iter_config_path
+
 # Dark theme matching repo aesthetic
 DARK_BG = "#00050a"
 DARK_FG = "#e0e8f0"
@@ -261,7 +263,7 @@ def plot_snn_trajectory(output: Path, quick: bool = False) -> None:
     from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
     from scpn_fusion.control.nengo_snn_wrapper import NengoSNNController, NengoSNNConfig
 
-    config_path = REPO_ROOT / "iter_config.json"
+    config_path = default_iter_config_path()
     dt = 0.01
     shot_duration = 10 if quick else 30
     steps = int(shot_duration / dt)

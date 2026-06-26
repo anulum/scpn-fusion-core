@@ -13,12 +13,12 @@ import logging
 import math
 import sys
 from collections import deque
-from pathlib import Path
 from typing import Any, Callable, Dict, Optional, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
 from scpn_fusion.neurocore_compat import (
     SC_NEUROCORE_AVAILABLE,
@@ -501,8 +501,7 @@ def run_neuro_cybernetic_control(
 
 
 if __name__ == "__main__":
-    repo_root = Path(__file__).resolve().parents[3]
-    cfg = repo_root / "iter_config.json"
+    cfg = default_iter_config_path()
     nc = NeuroCyberneticController(str(cfg))
     if len(sys.argv) > 1 and sys.argv[1] == "stochastic":
         nc.run_stochastic_shot()

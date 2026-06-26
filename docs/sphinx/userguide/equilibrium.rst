@@ -248,6 +248,12 @@ The solver reads its parameters from a JSON configuration file:
        }
    }
 
+Packaged defaults resolve through
+``scpn_fusion._data_paths.default_iter_config_path()``. In source checkouts and
+installed wheels this points to ``validation/iter_config.json``, so CLI,
+dashboard, benchmark, and Python default paths do not depend on a repository-root
+config file.
+
 GEQDSK I/O
 -----------
 

@@ -19,6 +19,7 @@ from numpy.typing import NDArray
 from .fusion_kernel import FusionKernel
 from .uncertainty import _dt_reactivity
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
 
 FloatArray = NDArray[np.float64]
@@ -162,8 +163,7 @@ def run_ignition_experiment() -> None:
     """Run the standalone auxiliary-power ignition scan and write its plot."""
     print("--- SCPN IGNITION EXPERIMENT: The Road to Q > 10 ---")
 
-    config_path = "03_CODE/SCPN-Fusion-Core/iter_config.json"
-    sim = FusionBurnPhysics(config_path)
+    sim = FusionBurnPhysics(str(default_iter_config_path()))
 
     # Simulation: Power Ramp Up
     # We increase Auxiliary Heating and measure the response

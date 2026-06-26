@@ -10,12 +10,13 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+
+from scpn_fusion._data_paths import default_iter_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -380,8 +381,7 @@ def run_optimal_control(
     """Run bounded optimal-control shot and return deterministic summary."""
     seed_int = int(seed)
     if config_file is None:
-        repo_root = Path(__file__).resolve().parents[3]
-        config_file = str(repo_root / "iter_config.json")
+        config_file = str(default_iter_config_path())
 
     pilot = OptimalController(
         str(config_file),

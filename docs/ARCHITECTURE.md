@@ -328,8 +328,10 @@ The runtime activation/marking/sampling kernels have a Rust fast-path
   `rust` (maturin), `snn`, `benchmark` (freegs), `full-physics` (freegs+omas), `gpu`, `mpi`, `full`.
 
 Cross-cutting infrastructure: `_data_paths.data_root()` (install-layout-independent data
-resolution), `fallback_telemetry` (budget-gated fallback accounting), `neurocore_compat`
-(embedded LIF neuron + entropy, no external neuromorphic dependency).
+resolution), `_data_paths.default_iter_config_path()` (bundled `validation/iter_config.json`
+for CLI, dashboard, benchmark, and wheel defaults), `fallback_telemetry` (budget-gated
+fallback accounting), `neurocore_compat` (embedded LIF neuron + entropy, no external
+neuromorphic dependency).
 
 ---
 

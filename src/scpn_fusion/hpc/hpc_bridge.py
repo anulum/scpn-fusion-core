@@ -27,6 +27,8 @@ from typing import Any, Optional
 
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import default_iter_config_path
+
 logger = logging.getLogger(__name__)
 _CPP_BUILD_TIMEOUT_SECONDS = 300.0
 _CPP_ALLOWED_COMPILERS = frozenset({"g++", "g++.exe", "clang++", "clang++.exe"})
@@ -491,10 +493,8 @@ class HPCBridge:
             return None
 
         try:
-            # Note: NeuralEquilibriumKernel needs a config for grid sizing
-            # default to iter_config.json in root if not provided
             if config_path is None:
-                config_path = Path(__file__).resolve().parents[3] / "iter_config.json"
+                config_path = default_iter_config_path()
 
             kernel = NeuralEquilibriumKernel(config_path)
             res = kernel.solve_equilibrium()

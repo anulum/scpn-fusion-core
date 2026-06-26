@@ -23,6 +23,7 @@ import sys
 
 sys.path.insert(0, str(ROOT / "src"))
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
 
@@ -62,7 +63,7 @@ def run_benchmark(
     electron_fraction: float = 0.5,
 ) -> dict[str, Any]:
     """Run auxiliary-heating source reconstruction at multiple power points."""
-    cfg = config_path or str(ROOT / "iter_config.json")
+    cfg = config_path or str(default_iter_config_path())
     powers = powers_mw or [10.0, 30.0, 50.0, 100.0]
     threshold = 1e-6
 
@@ -130,7 +131,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run transport power-balance benchmark.")
     parser.add_argument(
         "--config",
-        default=str(ROOT / "iter_config.json"),
+        default=str(default_iter_config_path()),
         help="Path to transport config JSON.",
     )
     parser.add_argument(

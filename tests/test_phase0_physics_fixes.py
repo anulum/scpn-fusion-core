@@ -19,6 +19,7 @@ import warnings
 import numpy as np
 import pytest
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.nuclear.blanket_neutronics import (
     BreedingBlanket,
     MultiGroupBlanket,
@@ -337,10 +338,9 @@ class TestEnergyConservation:
     @pytest.fixture()
     def solver(self):
         """Create a TransportSolver with equilibrium solved."""
-        from pathlib import Path
         from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
-        config = str(Path(__file__).resolve().parents[1] / "iter_config.json")
+        config = str(default_iter_config_path())
         ts = TransportSolver(config)
         ts.solve_equilibrium()
         return ts

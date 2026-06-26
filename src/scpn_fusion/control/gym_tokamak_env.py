@@ -15,7 +15,6 @@ Ray Rllib, or other Gymnasium-compatible libraries.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import gymnasium as gym
@@ -23,6 +22,7 @@ import numpy as np
 from gymnasium import spaces
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 
 FloatArray = NDArray[np.float64]
@@ -53,9 +53,7 @@ class TokamakEnv(gym.Env[FloatArray, FloatArray]):
         super().__init__()
 
         if config_file is None:
-            # Default to bundled iter_config.json
-            repo_root = Path(__file__).resolve().parents[3]
-            config_file = str(repo_root / "iter_config.json")
+            config_file = str(default_iter_config_path())
         self.config_file = config_file
         self.max_steps = max_steps
         self.control_dt_s = control_dt_s

@@ -10,12 +10,13 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 import re
 from typing import Any, Callable, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+from scpn_fusion._data_paths import default_iter_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -301,7 +302,6 @@ class DirectorInterface:
 
 
 if __name__ == "__main__":
-    repo_root = Path(__file__).resolve().parents[3]
-    cfg = repo_root / "iter_config.json"
+    cfg = default_iter_config_path()
     di = DirectorInterface(str(cfg))
     di.run_directed_mission()

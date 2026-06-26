@@ -10,6 +10,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "benchmark_transport_power_balance.py"
@@ -18,11 +20,12 @@ if SPEC is None or SPEC.loader is None:  # pragma: no cover - import contract gu
     raise RuntimeError(f"Failed to load module at {MODULE_PATH}")
 transport_power_balance = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(transport_power_balance)
+CONFIG_PATH = str(transport_power_balance.default_iter_config_path())
 
 
 def test_run_benchmark_passes_thresholds_smoke() -> None:
     report = transport_power_balance.run_benchmark(
-        config_path=str(ROOT / "iter_config.json"),
+        config_path=CONFIG_PATH,
         powers_mw=[20.0, 50.0],
     )
     g = report["transport_power_balance_benchmark"]
@@ -33,7 +36,7 @@ def test_run_benchmark_passes_thresholds_smoke() -> None:
 
 def test_render_markdown_contains_required_sections() -> None:
     report = transport_power_balance.run_benchmark(
-        config_path=str(ROOT / "iter_config.json"),
+        config_path=CONFIG_PATH,
         powers_mw=[30.0],
     )
     text = transport_power_balance.render_markdown(report)
@@ -42,7 +45,7 @@ def test_render_markdown_contains_required_sections() -> None:
     assert "| Mode | P_aux [MW] |" in text
 
 
-def test_main_writes_reports(tmp_path: Path, monkeypatch) -> None:
+def test_main_writes_reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     out_json = tmp_path / "transport_power_balance_benchmark.json"
     out_md = tmp_path / "transport_power_balance_benchmark.md"
     monkeypatch.setattr(
@@ -51,7 +54,7 @@ def test_main_writes_reports(tmp_path: Path, monkeypatch) -> None:
         [
             "benchmark_transport_power_balance.py",
             "--config",
-            str(ROOT / "iter_config.json"),
+            CONFIG_PATH,
             "--output-json",
             str(out_json),
             "--output-md",

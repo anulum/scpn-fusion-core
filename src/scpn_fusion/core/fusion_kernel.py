@@ -28,6 +28,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.special import ellipe, ellipk
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.core.config_schema import validate_config
 from scpn_fusion.core.fusion_kernel_free_boundary_mixin import FusionKernelFreeBoundaryMixin
 from scpn_fusion.core.fusion_kernel_iterative_solver import FusionKernelIterativeSolverMixin
@@ -601,7 +602,7 @@ if __name__ == "__main__":
     import sys
 
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
-    config_file = sys.argv[1] if len(sys.argv) > 1 else "iter_config.json"
+    config_file = sys.argv[1] if len(sys.argv) > 1 else str(default_iter_config_path())
     fk = FusionKernel(config_file)
     fk.solve_equilibrium()
     fk.save_results("final_state_nonlinear.npz")

@@ -32,6 +32,7 @@ import numpy as np
 repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root / "src"))
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 from scpn_fusion.control.h_infinity_controller import get_radial_robust_controller
 
@@ -300,7 +301,7 @@ def run_comparison(
 ) -> dict[str, ControllerMetrics]:
     """Run all available controllers on identical scenarios."""
     if config_path is None:
-        config_path = repo_root / "iter_config.json"
+        config_path = default_iter_config_path()
 
     if not CONTROLLERS:
         raise RuntimeError("No controllers are available for comparison.")

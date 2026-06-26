@@ -26,6 +26,8 @@ from pathlib import Path
 
 import numpy as np
 
+from scpn_fusion._data_paths import default_iter_config_path
+
 BASE = Path(__file__).resolve().parent.parent
 
 
@@ -33,7 +35,7 @@ def find_config() -> str:
     """Locate a suitable config file for benchmarking."""
     candidates = [
         BASE / "validation" / "iter_validated_config.json",
-        BASE / "iter_config.json",
+        default_iter_config_path(),
     ]
     for p in candidates:
         if p.exists():

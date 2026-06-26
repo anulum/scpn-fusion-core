@@ -23,11 +23,11 @@ estimator can compensate that latency without replacing the full kernel.
 from __future__ import annotations
 
 from collections import deque
-from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.control._free_boundary_tracking_config import (
     _FreeBoundaryTrackingConfigMixin,
 )
@@ -308,8 +308,7 @@ def run_free_boundary_tracking(
     True
     """
     if config_file is None:
-        repo_root = Path(__file__).resolve().parents[3]
-        config_file = str(repo_root / "iter_config.json")
+        config_file = str(default_iter_config_path())
 
     controller = FreeBoundaryTrackingController(
         str(config_file),

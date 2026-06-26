@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any, Callable, Optional
 
 import matplotlib.pyplot as plt
@@ -18,6 +17,8 @@ import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.patches import Rectangle
 from numpy.typing import NDArray
+
+from scpn_fusion._data_paths import default_iter_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -381,7 +382,7 @@ def run_control_room(
         cfg = (
             str(config_file)
             if config_file is not None
-            else str(Path(__file__).resolve().parents[3] / "iter_config.json")
+            else str(default_iter_config_path())
         )
         try:
             kernel = kernel_factory(cfg) if kernel_factory is not None else None

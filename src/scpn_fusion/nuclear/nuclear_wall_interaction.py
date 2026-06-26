@@ -16,13 +16,13 @@ certification.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any, Callable, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import default_iter_config_path as _default_iter_config_path
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.engineering.cad_raytrace import CADLoadReport, estimate_surface_loading
 
@@ -40,8 +40,8 @@ MATERIALS: dict[str, MaterialProperties] = {
 
 
 def default_iter_config_path() -> str:
-    """Resolve repository-local default ITER configuration path."""
-    return str(Path(__file__).resolve().parents[3] / "iter_config.json")
+    """Resolve the bundled default ITER configuration path."""
+    return str(_default_iter_config_path())
 
 
 class NuclearEngineeringLab(FusionBurnPhysics):
@@ -357,7 +357,7 @@ def run_nuclear_sim(
 
     Args:
         config_path: Path to an ITER-format JSON configuration. When ``None``,
-            ``iter_config.json`` is resolved from the repository root.
+            the bundled validation ``iter_config.json`` is used.
         save_plot: Whether to generate and save the plotting summary.
         output_path: Plot output path if ``save_plot`` is true.
         verbose: Emit human-readable progress and summary text.

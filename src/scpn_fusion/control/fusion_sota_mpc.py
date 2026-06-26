@@ -11,12 +11,13 @@ from __future__ import annotations
 
 import logging
 import time
-from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+
+from scpn_fusion._data_paths import default_iter_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -200,8 +201,7 @@ def run_sota_simulation(
 ) -> Dict[str, Any]:
     """Run the surrogate MPC simulation and return bounded telemetry metrics."""
     if config_file is None:
-        repo_root = Path(__file__).resolve().parents[3]
-        config_file = str(repo_root / "iter_config.json")
+        config_file = str(default_iter_config_path())
 
     lo_ip, hi_ip = _normalize_bounds(current_target_bounds, "current_target_bounds")
     lo_i, hi_i = _normalize_bounds(coil_current_limits, "coil_current_limits")

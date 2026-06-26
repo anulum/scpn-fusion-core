@@ -21,6 +21,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
+from scpn_fusion._data_paths import default_iter_config_path
+
 try:
     FusionKernel: Any | None = importlib.import_module(
         "scpn_fusion.core.fusion_kernel"
@@ -181,8 +183,8 @@ def run_dashboard(config_path: str | Path) -> None:
 
 
 def _default_config_path() -> str:
-    """Resolve repository-root default config path."""
-    return str(Path(__file__).resolve().parents[3] / "iter_config.json")
+    """Resolve the bundled default ITER configuration path."""
+    return str(default_iter_config_path())
 
 
 if __name__ == "__main__":

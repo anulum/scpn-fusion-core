@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from scpn_fusion._data_paths import data_root
+from scpn_fusion._data_paths import data_root, default_iter_config_path
 
 
 def test_data_root_contains_validation_reference_data() -> None:
@@ -27,6 +27,18 @@ def test_data_root_resolves_ipb98_coefficients() -> None:
     """The canonical IPB98 coefficient file (loaded at import) must be reachable."""
     coeff = data_root() / "validation" / "reference_data" / "itpa" / "ipb98y2_coefficients.json"
     assert coeff.is_file()
+
+
+def test_default_iter_config_path_resolves_packaged_validation_config() -> None:
+    """The default ITER config must be bundled below the validation package."""
+    config_path = default_iter_config_path()
+    assert config_path == data_root() / "validation" / "iter_config.json"
+    assert config_path.is_file()
+
+
+def test_default_iter_config_no_longer_depends_on_repo_root_file() -> None:
+    """Runtime defaults must not depend on a repository-root config file."""
+    assert not (data_root() / "iter_config.json").exists()
 
 
 def test_data_root_returns_absolute_path() -> None:

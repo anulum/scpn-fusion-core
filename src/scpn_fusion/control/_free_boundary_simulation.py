@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import logging
 import time
-from pathlib import Path
 from typing import Any, Callable, Optional
 
 import numpy as np
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.control.fusion_sota_mpc import NeuralSurrogate
 from scpn_fusion.control._free_boundary_control_geometry import (
     FreeBoundarySupervisoryController,
@@ -169,8 +169,7 @@ def run_free_boundary_supervisory_simulation(
     _require_positive_finite("coil_delta_limit", coil_delta_limit)
 
     if config_file is None:
-        repo_root = Path(__file__).resolve().parents[3]
-        config_file = str(repo_root / "iter_config.json")
+        config_file = str(default_iter_config_path())
 
     rng = np.random.default_rng(int(rng_seed))
     kernel = kernel_factory(str(config_file))

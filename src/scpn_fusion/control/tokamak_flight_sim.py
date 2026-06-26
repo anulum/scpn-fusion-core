@@ -12,10 +12,11 @@ from __future__ import annotations
 import logging
 from collections import deque
 from collections.abc import Iterable
-from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
+
+from scpn_fusion._data_paths import default_iter_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -475,8 +476,7 @@ def run_flight_sim(
     """Run deterministic tokamak flight-sim control loop and return summary."""
     seed_int = int(seed)
     if config_file is None:
-        repo_root = Path(__file__).resolve().parents[3]
-        config_file = str(repo_root / "iter_config.json")
+        config_file = str(default_iter_config_path())
 
     sim = IsoFluxController(
         config_file=str(config_file),

@@ -21,7 +21,7 @@ import importlib
 from pathlib import Path
 from typing import Any, Final
 
-from scpn_fusion._data_paths import data_root
+from scpn_fusion._data_paths import data_root, default_iter_config_path
 from scpn_fusion.ui.security_headers import install_tornado_security_headers
 
 install_tornado_security_headers()
@@ -44,8 +44,9 @@ APP_SUBTITLE: Final[str] = "Digital Twin & Engineering Suite"
 def _resolve_config_path(config_filename: str = "iter_config.json") -> str:
     """Return the best-effort path to the reactor configuration file.
 
-    The lookup first checks the repository layout used by packaged distribution and
-    falls back to the working directory for local development.
+    The default ITER configuration resolves through package data. Custom
+    filenames first check the active data root, then fall back to the working
+    directory for local development.
 
     Args:
         config_filename: Name of the JSON configuration file.
@@ -54,9 +55,12 @@ def _resolve_config_path(config_filename: str = "iter_config.json") -> str:
     -------
         A string path that can be passed to simulation classes.
     """
-    repo_candidate = Path(__file__).resolve().parents[1] / config_filename
-    if repo_candidate.exists():
-        return str(repo_candidate)
+    if config_filename == "iter_config.json":
+        return str(default_iter_config_path())
+
+    data_candidate = data_root() / "validation" / config_filename
+    if data_candidate.exists():
+        return str(data_candidate)
 
     return str(Path.cwd() / config_filename)
 

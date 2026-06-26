@@ -49,6 +49,7 @@ import numpy as np
 repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root / "src"))
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 from scpn_fusion.control.h_infinity_controller import (
     get_flight_sim_controller_v2,
@@ -548,7 +549,7 @@ def run_campaign(
     shot_duration : int
         Simulated shot duration in seconds.
     config_path : Path or str or None
-        Path to ITER config JSON; defaults to ``repo_root / "iter_config.json"``.
+        Path to ITER config JSON; defaults to the bundled validation config.
     noise_level : float
         Noise amplitude for perturbations.
     delay_ms : float
@@ -573,7 +574,7 @@ def run_campaign(
         raise ValueError("delay_ms must be finite and >= 0.")
 
     if config_path is None:
-        config_path = repo_root / "iter_config.json"
+        config_path = default_iter_config_path()
 
     print("=== 1000-Shot Stress-Test Campaign ===")
     print(f"Episodes: {n_episodes} | Shot duration: {shot_duration}s")
@@ -769,7 +770,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Path to the FusionKernel / IsoFlux config JSON consumed by each "
-            "controller episode. Defaults to repo_root/iter_config.json when omitted."
+            "controller episode. Defaults to the bundled validation config when omitted."
         ),
     )
     parser.add_argument(

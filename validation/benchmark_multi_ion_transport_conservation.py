@@ -25,6 +25,7 @@ import sys
 
 sys.path.insert(0, str(ROOT / "src"))
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
 
@@ -50,7 +51,7 @@ def run_benchmark(
     p_aux_mw: float = 30.0,
 ) -> dict[str, Any]:
     """Run multi-ion transport conservation contract and return pass metrics."""
-    cfg_path = Path(config_path) if config_path is not None else ROOT / "iter_config.json"
+    cfg_path = Path(config_path) if config_path is not None else default_iter_config_path()
     solver = TransportSolver(str(cfg_path), multi_ion=True)
     solver.Ti = 5.0 * (1.0 - solver.rho**2)
     solver.Te = solver.Ti.copy()
@@ -187,7 +188,7 @@ def main() -> int:
     Returns ``0`` on pass, ``1`` on failure, and ``2`` for strict-mode failure.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "iter_config.json"))
+    parser.add_argument("--config", default=str(default_iter_config_path()))
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--dt-s", type=float, default=0.1)
     parser.add_argument("--p-aux-mw", type=float, default=30.0)

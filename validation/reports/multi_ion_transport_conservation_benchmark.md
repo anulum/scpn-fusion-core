@@ -1,6 +1,6 @@
 # Multi-Ion Transport Conservation Benchmark
 
-- Config: `iter_config.json`
+- Config: `validation/iter_config.json`
 - Steps: `30` at dt=`0.100` s, P_aux=`30.0` MW
 - Finite pass: `YES`
 - Positivity pass: `YES`

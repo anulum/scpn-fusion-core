@@ -14,6 +14,7 @@ from pathlib import Path
 # Add src to path
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
+from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
 from scpn_fusion.control.fusion_optimal_control import OptimalController
 
@@ -103,7 +104,7 @@ class TestFullPulseScenario(unittest.TestCase):
         """Verify optimal controller keeps position during ramp."""
         print("\n[Integration] Optimal Control Position Stability")
 
-        config_path = str(Path(__file__).resolve().parents[1] / "iter_config.json")
+        config_path = str(default_iter_config_path())
 
         try:
             # Must identify system to build response matrix
