@@ -15,7 +15,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = ROOT / "tools" / "check_lfs_hygiene.py"
-REQUIRED_NPZ = "validation/reference_data/diiid/disruption_shots/shot_154406_hybrid.npz"
+REQUIRED_NPZ = "weights/fno_turbulence_jax.npz"
 
 
 def _load_module():
@@ -33,7 +33,7 @@ def _prepare_required_file(tmp_path: Path) -> Path:
     artifact.parent.mkdir(parents=True)
     artifact.write_bytes(b"PK\x03\x04synthetic-npz")
     (tmp_path / ".gitattributes").write_text(
-        "validation/reference_data/**/*.npz filter=lfs diff=lfs merge=lfs -text\n",
+        "weights/fno_turbulence_jax.npz filter=lfs diff=lfs merge=lfs -text\n",
         encoding="utf-8",
     )
     return artifact

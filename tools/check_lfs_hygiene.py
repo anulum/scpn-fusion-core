@@ -10,8 +10,8 @@
 Guard repository binary hygiene for large model/data artifacts.
 
 Checks:
-1. Tracked ``.npz/.npy`` artifacts under model/data directories must resolve to
-   ``filter=lfs`` via git attributes.
+1. Large training-only binary artifacts must resolve to ``filter=lfs`` via git
+   attributes.
 2. Any tracked binary file above the size threshold must use ``filter=lfs``.
 """
 
@@ -27,12 +27,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 _BINARY_EXTENSIONS = (".npz", ".npy", ".pt", ".pth", ".onnx", ".bin", ".pkl")
 _LFS_REQUIRED_GLOBS = (
-    "weights/*.npz",
+    "weights/fno_turbulence_jax.npz",
+    "weights/neural_equilibrium_augmented.npz",
+    "weights/neural_transport_qlknn_B8_wide.npz",
+    "weights/neural_transport_qlknn_run11.npz",
     "weights/*.npy",
     "weights/*.pt",
     "weights/*.pth",
     "weights/*.onnx",
-    "validation/reference_data/**/*.npz",
     "validation/reference_data/**/*.npy",
     "training_logs/**/*.npz",
     "training_logs/**/*.npy",
@@ -99,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--max-nonlfs-bytes",
         type=int,
-        default=5 * 1024 * 1024,
+        default=10 * 1024 * 1024,
         help="Fail if tracked binary file exceeds this size and is not LFS-managed.",
     )
     args = parser.parse_args(argv)

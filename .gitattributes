@@ -6,15 +6,22 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Git LFS Tracking Rules
 
-# Model weights and surrogate checkpoints
-weights/*.npz filter=lfs diff=lfs merge=lfs -text
+# Model weights and surrogate checkpoints.
+#
+# Runtime weights shipped in the wheel are intentionally normal Git blobs so
+# CI and trusted publishing do not depend on GitHub LFS quota. Keep only large
+# training-only checkpoints in LFS.
+weights/fno_turbulence_jax.npz filter=lfs diff=lfs merge=lfs -text
+weights/neural_equilibrium_augmented.npz filter=lfs diff=lfs merge=lfs -text
+weights/neural_transport_qlknn_B8_wide.npz filter=lfs diff=lfs merge=lfs -text
+weights/neural_transport_qlknn_run11.npz filter=lfs diff=lfs merge=lfs -text
 weights/*.npy filter=lfs diff=lfs merge=lfs -text
 weights/*.pt filter=lfs diff=lfs merge=lfs -text
 weights/*.pth filter=lfs diff=lfs merge=lfs -text
 weights/*.onnx filter=lfs diff=lfs merge=lfs -text
 
-# Validation reference binary bundles
-validation/reference_data/**/*.npz filter=lfs diff=lfs merge=lfs -text
+# Validation reference binary bundles shipped with the package are small and
+# must be available without LFS during CI and PyPI trusted publishing.
 validation/reference_data/**/*.npy filter=lfs diff=lfs merge=lfs -text
 
 # Training artifacts
