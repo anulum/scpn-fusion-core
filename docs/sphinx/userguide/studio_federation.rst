@@ -25,7 +25,10 @@ The public package is ``scpn_fusion.studio``. It exposes three contracts:
 ``exactness``
    Compares reproduced claim values using the declared exactness class:
    bit-exact digest equality, tolerance-aware float comparison, or a
-   caller-reduced stochastic comparison.
+   caller-reduced stochastic comparison. The exactness-class and verdict wire
+   vocabulary is re-exported from the Studio Platform SDK so Hub, Studio, and
+   FUSION share one wire contract; FUSION only owns the NumPy tolerance
+   comparator behind that shared axis.
 
 Command-line workflow
 =====================
