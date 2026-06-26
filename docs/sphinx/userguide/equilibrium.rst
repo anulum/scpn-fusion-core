@@ -155,6 +155,8 @@ cross-surface report is created with ``python benchmarks/bench_frc_rigid_rotor.p
 and stored at ``validation/reports/frc_rigid_rotor_benchmark.json``.  The report
 includes grid-convergence rows plus a deterministic 16-case MIF/FRC
 no-rotation parameter cohort across Python, Rust ``fusion-physics``, and PyO3.
+The Criterion benchmark uses the same ``65``/``129``/``257``/``513`` radial-grid
+ladder as the tracked report.
 Go, Julia, and Lean
 rows remain explicit ``not_applicable_no_frc_surface`` rows until those
 languages expose equivalent solver logic; wrappers are not treated as parity.

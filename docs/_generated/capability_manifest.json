@@ -2589,7 +2589,7 @@
     "python_capability_classes": 547,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 12,
-    "test_files": 434
+    "test_files": 435
   },
   "documentation": {
     "public_pages": [
@@ -2824,6 +2824,7 @@
       "tests/test_formal_safety_contract_replay_benchmark.py",
       "tests/test_forward_diagnostics_extended.py",
       "tests/test_forward_diagnostics_guards.py",
+      "tests/test_frc_benchmark_grid_contract.py",
       "tests/test_frc_reference_papers_manifest.py",
       "tests/test_frc_rigid_rotor.py",
       "tests/test_frc_rigid_rotor_property.py",

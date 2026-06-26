@@ -274,6 +274,10 @@ cd scpn-fusion-rs
 cargo bench -p fusion-physics --bench frc_rigid_rotor_bench
 ```
 
+The Criterion grid ladder is intentionally `65`, `129`, `257`, and `513`
+points so it stays aligned with the tracked cross-surface report in
+`validation/reports/frc_rigid_rotor_benchmark.json`.
+
 ## Evidence interpretation
 
 The benchmark report compares scalar diagnostics and weighted numerical

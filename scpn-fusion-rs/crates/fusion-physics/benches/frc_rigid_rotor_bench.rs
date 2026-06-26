@@ -14,7 +14,7 @@ use std::hint::black_box;
 pub fn bench_rigid_rotor(c: &mut Criterion) {
     let mut group = c.benchmark_group("frc_rigid_rotor");
 
-    for size in [64, 256, 1024].iter() {
+    for size in [65_usize, 129, 257, 513].iter() {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &n| {
             let inputs = RigidRotorFrcInputs {
                 n0: 1e20,

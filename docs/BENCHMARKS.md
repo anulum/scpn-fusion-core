@@ -106,6 +106,11 @@ recorded as `not_applicable_no_frc_surface` until those languages expose
 equivalent solver logic. Nonzero-rotation FRC cases remain fail-closed and are
 not benchmarked as accepted physics.
 
+The Rust Criterion benchmark `frc_rigid_rotor_bench` uses the same
+`65`/`129`/`257`/`513` radial-grid ladder as the tracked cross-surface report;
+`64`/`256`/`1024` power-of-two grids are not accepted FRC report evidence for
+this lane.
+
 ## MIF/FRC Faraday recovery benchmark
 
 The FUS-C.7 recovery lane is benchmarked separately from external Slough
