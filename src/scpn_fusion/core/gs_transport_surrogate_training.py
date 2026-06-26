@@ -22,6 +22,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import default_artifact_path
 from scpn_fusion.io.safe_loaders import checked_np_load
 from ._surrogate_utils import (
     AdamOptimizer as _AdamOptimizer,
@@ -33,8 +34,7 @@ FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_GS_TRANSPORT_WEIGHTS_PATH = REPO_ROOT / "weights" / "gs_transport_surrogate.npz"
+DEFAULT_GS_TRANSPORT_WEIGHTS_PATH = default_artifact_path("weights", "gs_transport_surrogate.npz")
 
 # MOCK_CONFIG template matching FusionKernel / TransportSolver expectations.
 _GS_TRANSPORT_MOCK_CONFIG_TEMPLATE: Dict[str, object] = {

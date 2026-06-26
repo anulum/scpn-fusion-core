@@ -10,10 +10,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-TGLF_REF_DIR = REPO_ROOT / "validation" / "tglf_reference"
+from scpn_fusion._data_paths import data_root
+
+TGLF_REF_DIR = data_root() / "validation" / "tglf_reference"
 _TGLF_RETRY_BACKOFF_SECONDS = 1.0
 _TGLF_MAX_RETRIES_LIMIT = 10
 _TGLF_MAX_PARSED_VECTOR_LENGTH = 2048

@@ -42,7 +42,6 @@ from scpn_fusion.core._tglf_interface_runtime import (
     write_tglf_input_file,
 )
 from scpn_fusion.core._tglf_interface_types import (
-    REPO_ROOT,
     TGLFComparisonResult,
     TGLFInputDeck,
     TGLFOutput,
@@ -66,7 +65,6 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "REFERENCE_CASES",
-    "REPO_ROOT",
     "TGLFBenchmark",
     "TGLFComparisonResult",
     "TGLFDatasetGenerator",

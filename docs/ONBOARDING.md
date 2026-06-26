@@ -41,6 +41,21 @@ Optional accelerator and distributed lanes require additional packages such as
 Rust, maturin, mpi4py, CuPy, CUDA runtime libraries, or external reference
 solvers. Those are optional unless you are running the corresponding benchmark.
 
+## 1a. Data and generated-artifact locations
+
+Runtime reference data and small bundled surrogate weights resolve through the
+installed package data tree. Generated outputs do not write into the package or
+source checkout by default.
+
+- Bundled read-only data: `scpn_fusion._data_paths.data_root()`
+- Generated checkpoints, demo plots, and training artefacts:
+  `scpn_fusion._data_paths.artifact_root()`
+- Override generated outputs with `SCPN_ARTIFACT_DIR=/path/to/writable/artifacts`
+
+This split matters for wheels and read-only deployments: inference can load
+bundled validation data, while training and demo helpers write to a user-writable
+artefact tree unless an explicit output path is supplied.
+
 ## 2. Run the first local commands
 
 ```bash

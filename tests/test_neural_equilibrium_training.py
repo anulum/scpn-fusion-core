@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Tests for Neural Equilibrium Training Runtime
+"""Tests for neural-equilibrium training defaults and CLI wiring."""
 
 from __future__ import annotations
 
@@ -47,6 +48,7 @@ class _DummyAccel:
 
 
 def test_train_on_sparc_with_stub_accelerator(monkeypatch, tmp_path: Path) -> None:
+    """An explicit SPARC directory and save path route through the accelerator."""
     import scpn_fusion.core.neural_equilibrium as ne_mod
 
     sparc_dir = tmp_path / "sparc"
@@ -61,9 +63,10 @@ def test_train_on_sparc_with_stub_accelerator(monkeypatch, tmp_path: Path) -> No
 
 
 def test_run_training_cli_returns_1_when_data_missing(monkeypatch, tmp_path: Path) -> None:
-    import scpn_fusion.core.neural_equilibrium as ne_mod
+    """The CLI exits non-zero when the default SPARC reference tree is absent."""
+    import scpn_fusion.core.neural_equilibrium_training as net_mod
 
-    monkeypatch.setattr(ne_mod, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(net_mod, "data_root", lambda: tmp_path)
     assert run_training_cli() == 1
 
 
@@ -96,17 +99,17 @@ class _FakeEquilibrium:
 
 
 def test_train_on_sparc_defaults_raise_without_files(monkeypatch, tmp_path: Path) -> None:
-    import scpn_fusion.core.neural_equilibrium as ne_mod
+    """Default training inputs fail before writing when no GEQDSK files exist."""
+    import scpn_fusion.core.neural_equilibrium_training as net_mod
 
-    # save_path=None -> DEFAULT_WEIGHTS_PATH; sparc_dir=None -> REPO_ROOT default,
-    # which has no GEQDSK/EQDSK files, so the loader raises.
-    monkeypatch.setattr(ne_mod, "DEFAULT_WEIGHTS_PATH", tmp_path / "weights.npz")
-    monkeypatch.setattr(ne_mod, "REPO_ROOT", tmp_path)
+    monkeypatch.setenv("SCPN_ARTIFACT_DIR", str(tmp_path / "artifacts"))
+    monkeypatch.setattr(net_mod, "data_root", lambda: tmp_path)
     with pytest.raises(FileNotFoundError, match="No GEQDSK/EQDSK files"):
         train_on_sparc()
 
 
 def test_run_training_cli_full_path(monkeypatch, tmp_path: Path, capsys) -> None:
+    """The CLI trains, reloads, validates, and benchmarks through public calls."""
     import scpn_fusion.core.eqdsk as eqdsk_mod
     import scpn_fusion.core.neural_equilibrium as ne_mod
     import scpn_fusion.core.neural_equilibrium_training as net_mod
@@ -115,7 +118,7 @@ def test_run_training_cli_full_path(monkeypatch, tmp_path: Path, capsys) -> None
     sparc_dir.mkdir(parents=True)
     (sparc_dir / "shot.geqdsk").write_text("stub", encoding="utf-8")
 
-    monkeypatch.setattr(ne_mod, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(net_mod, "data_root", lambda: tmp_path)
     monkeypatch.setattr(ne_mod, "NeuralEquilibriumAccelerator", _CliAccel)
     monkeypatch.setattr(net_mod, "train_on_sparc", lambda _dir: _DummyTrainingResult())
     monkeypatch.setattr(eqdsk_mod, "read_geqdsk", lambda _path: _FakeEquilibrium())

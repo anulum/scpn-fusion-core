@@ -13,9 +13,9 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 
+from scpn_fusion._data_paths import data_root
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-REFERENCE_ROOT = REPO_ROOT / "validation" / "reference_data"
+REFERENCE_ROOT = data_root() / "validation" / "reference_data"
 C2U_REFERENCE_CSV = REFERENCE_ROOT / "frc_public" / "c2u_optometrist_positive_heating_shots.csv"
 C2U_REFERENCE_METADATA = (
     REFERENCE_ROOT / "frc_public" / "c2u_optometrist_positive_heating_shots.metadata.json"

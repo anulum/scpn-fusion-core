@@ -21,20 +21,23 @@ import numpy as np
 from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
-from scpn_fusion._data_paths import data_root
+from scpn_fusion._data_paths import artifact_root, data_root, default_artifact_path
 from scpn_fusion.core._surrogate_utils import AdamOptimizer
 from scpn_fusion.core.eqdsk import read_geqdsk
 from scpn_fusion.core.fno_training import MultiLayerFNO
 
 
 logger = logging.getLogger(__name__)
-REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_ITPA_CSV = data_root() / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
 DEFAULT_JET_DIR = data_root() / "validation" / "reference_data" / "jet"
 DEFAULT_WEIGHTS_DIR = data_root() / "weights"
 DEFAULT_MLP_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_mlp_itpa.npz"
 DEFAULT_FNO_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_fno_eurofusion_jet.npz"
 DEFAULT_MANIFEST_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_surrogates_manifest.json"
+DEFAULT_BUNDLE_WEIGHTS_DIR = default_artifact_path("weights")
+DEFAULT_BUNDLE_MLP_PATH = DEFAULT_BUNDLE_WEIGHTS_DIR / "pretrained_mlp_itpa.npz"
+DEFAULT_BUNDLE_FNO_PATH = DEFAULT_BUNDLE_WEIGHTS_DIR / "pretrained_fno_eurofusion_jet.npz"
+DEFAULT_BUNDLE_MANIFEST_PATH = DEFAULT_BUNDLE_WEIGHTS_DIR / "pretrained_surrogates_manifest.json"
 
 
 FloatArray = NDArray[np.float64]
@@ -101,12 +104,15 @@ def get_pretrained_surrogate_coverage(manifest: dict[str, Any] | None = None) ->
     return merged
 
 
-def _as_repo_relative(path: Path) -> str:
+def _as_known_relative(path: Path) -> str:
     p = Path(path)
-    try:
-        return str(p.resolve().relative_to(REPO_ROOT.resolve()).as_posix())
-    except Exception:
-        return str(p.as_posix())
+    resolved = p.resolve()
+    for root in (data_root(), artifact_root()):
+        try:
+            return str(resolved.relative_to(root.resolve()).as_posix())
+        except ValueError:
+            continue
+    return str(p.as_posix())
 
 
 @dataclass(frozen=True)
@@ -428,7 +434,9 @@ def evaluate_pretrained_fno(
     }
 
 
-def save_pretrained_mlp(model: PretrainedMLPSurrogate, path: Path = DEFAULT_MLP_PATH) -> None:
+def save_pretrained_mlp(
+    model: PretrainedMLPSurrogate, path: Path = DEFAULT_BUNDLE_MLP_PATH
+) -> None:
     """Persist a pretrained MLP surrogate to a compressed NumPy archive.
 
     Parameters
@@ -547,10 +555,10 @@ def bundle_pretrained_surrogates(
     fno_epochs: int = 24,
     fno_batch_size: int = 8,
     fno_augment_per_file: int = 12,
-    weights_dir: Path = DEFAULT_WEIGHTS_DIR,
-    manifest_path: Path = DEFAULT_MANIFEST_PATH,
-    mlp_path: Path = DEFAULT_MLP_PATH,
-    fno_path: Path = DEFAULT_FNO_PATH,
+    weights_dir: Path = DEFAULT_BUNDLE_WEIGHTS_DIR,
+    manifest_path: Path = DEFAULT_BUNDLE_MANIFEST_PATH,
+    mlp_path: Path = DEFAULT_BUNDLE_MLP_PATH,
+    fno_path: Path = DEFAULT_BUNDLE_FNO_PATH,
 ) -> dict[str, Any]:
     """Train (optionally), serialize, and bundle pretrained surrogates.
 
@@ -646,12 +654,12 @@ def bundle_pretrained_surrogates(
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "version": "task2-pretrained-v1",
         "artifacts": {
-            "mlp_itpa": _as_repo_relative(mlp_path),
-            "fno_eurofusion_jet": _as_repo_relative(fno_path),
+            "mlp_itpa": _as_known_relative(mlp_path),
+            "fno_eurofusion_jet": _as_known_relative(fno_path),
         },
         "datasets": {
-            "itpa": _as_repo_relative(itpa_csv_path),
-            "eurofusion_proxy_jet": _as_repo_relative(jet_dir),
+            "itpa": _as_known_relative(itpa_csv_path),
+            "eurofusion_proxy_jet": _as_known_relative(jet_dir),
         },
         "config": {
             "seed": int(seed),

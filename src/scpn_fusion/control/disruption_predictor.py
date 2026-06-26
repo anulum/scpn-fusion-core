@@ -16,12 +16,12 @@ import numpy as np
 from pathlib import Path
 from typing import Any
 
+from scpn_fusion._data_paths import default_artifact_path
 from scpn_fusion.control.disruption_checkpoint_policy import (
     _augment_with_fallback_telemetry,
     _normalize_seq_len,
     _prepare_signal_window,
     _record_recovery_event,
-    _repo_root,
     _resolve_allow_fallback,
     _safe_torch_checkpoint_load,
     _validated_checkpoint_state_dict,
@@ -211,7 +211,7 @@ def train_predictor(
     torch.save({"state_dict": model.state_dict(), "seq_len": int(seq_len)}, model_path)
     logger.info("Saved model: %s", model_path)
 
-    plot_path = _repo_root() / "artifacts" / "Disruption_AI_Result.png"
+    plot_path = default_artifact_path("Disruption_AI_Result.png")
     if save_plot:
         plot_path.parent.mkdir(parents=True, exist_ok=True)
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))

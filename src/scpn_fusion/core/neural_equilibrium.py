@@ -42,14 +42,13 @@ FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_WEIGHTS_PATH = data_root() / "weights" / "neural_equilibrium_sparc.npz"
 ITER_SURROGATE_WEIGHTS_PATH = data_root() / "weights" / "neural_equilibrium_iter_v1.npz"
 ITER_SURROGATE_VALIDATION_REPORT = (
-    REPO_ROOT / "validation" / "reports" / "iter_surrogate_weight_validation.json"
+    data_root() / "validation" / "reports" / "iter_surrogate_weight_validation.json"
 )
 ITER_SURROGATE_HIGH_FIDELITY_REPORT = (
-    REPO_ROOT / "validation" / "reports" / "iter_surrogate_training_report.json"
+    data_root() / "validation" / "reports" / "iter_surrogate_training_report.json"
 )
 ITER_SURROGATE_CLAIM_BOUNDARY = (
     "The committed ITER 6.2 m surrogate artifact is a standard runtime-loadable "
@@ -121,7 +120,7 @@ def iter_surrogate_artifact_status(
         "grid_shape": grid_shape,
         "pca_components": int(structural.get("pca_components", 0)),
         "high_fidelity_gpu_retraining_complete": high_fidelity_report_path.exists(),
-        "required_high_fidelity_report": str(high_fidelity_report_path.relative_to(REPO_ROOT)),
+        "required_high_fidelity_report": str(high_fidelity_report_path.relative_to(data_root())),
         "claim_boundary": ITER_SURROGATE_CLAIM_BOUNDARY,
     }
 

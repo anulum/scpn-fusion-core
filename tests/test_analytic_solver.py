@@ -64,6 +64,7 @@ class _DummyKernel:
 
 
 def test_calculate_required_bv_returns_finite_expected_sign() -> None:
+    """The ITER-like Shafranov estimate is finite and directed downward."""
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     bv = solver.calculate_required_Bv(6.2, 2.0, 15.0, beta_p=0.5, li=0.8)
     assert np.isfinite(bv)
@@ -119,6 +120,7 @@ def test_shafranov_bv_rejects_nonpositive_inputs(r_geo: float, a_min: float, ip_
 
 
 def test_solve_coil_currents_hits_target_bv_projection() -> None:
+    """The solver current vector reproduces the target vertical field."""
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     target_bv = -0.02
     currents = solver.solve_coil_currents(target_bv, 6.2, target_Z=0.0)
@@ -197,6 +199,7 @@ def test_log_emits_through_logger_only_when_verbose(caplog) -> None:
 
 
 def test_compute_coil_efficiencies_rejects_empty_coil_config() -> None:
+    """A kernel with no coils cannot form a control-efficiency vector."""
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_EmptyCoilKernel, verbose=False)
     with pytest.raises(ValueError, match="no coils"):
         solver.compute_coil_efficiencies(6.2)
@@ -204,12 +207,14 @@ def test_compute_coil_efficiencies_rejects_empty_coil_config() -> None:
 
 @pytest.mark.parametrize("target_r", [0.0, -3.0])
 def test_compute_coil_efficiencies_rejects_nonpositive_target_r(target_r: float) -> None:
+    """The efficiency calculation rejects non-positive target radii."""
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     with pytest.raises(ValueError, match="target_R must be > 0"):
         solver.compute_coil_efficiencies(target_r)
 
 
 def test_compute_coil_efficiencies_rejects_nonpositive_grid_spacing() -> None:
+    """Degenerate kernel grids fail before finite-difference evaluation."""
     solver = AnalyticEquilibriumSolver(
         "dummy.json", kernel_factory=_ZeroSpacingKernel, verbose=False
     )
@@ -218,12 +223,14 @@ def test_compute_coil_efficiencies_rejects_nonpositive_grid_spacing() -> None:
 
 
 def test_apply_currents_rejects_length_mismatch() -> None:
+    """Current vectors must match the configured coil count exactly."""
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     with pytest.raises(ValueError, match="length mismatch"):
         solver.apply_currents(np.zeros(3))  # kernel has 4 coils
 
 
 def test_apply_and_save_writes_kernel_config(tmp_path) -> None:
+    """Explicit output paths receive the updated kernel configuration."""
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     currents = np.array([0.1, -0.2, 0.3, -0.4], dtype=np.float64)
     out = tmp_path / "nested" / "iter_analytic_config.json"
@@ -235,14 +242,14 @@ def test_apply_and_save_writes_kernel_config(tmp_path) -> None:
     np.testing.assert_allclose([c["current"] for c in saved["coils"]], currents, rtol=0.0, atol=0.0)
 
 
-def test_apply_and_save_defaults_to_validation_output(tmp_path, monkeypatch) -> None:
-    """With no output_path the config lands under <repo>/validation."""
+def test_apply_and_save_defaults_to_artifact_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With no output_path the config lands under the writable artifact root."""
     solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
-    monkeypatch.setattr(
-        analytic_solver_mod.Path, "resolve", lambda self: tmp_path / "a" / "b" / "c" / "d"
-    )
+    monkeypatch.setenv("SCPN_ARTIFACT_DIR", str(tmp_path))
     written = solver.apply_and_save(np.zeros(4))
-    assert written.endswith("validation/iter_analytic_config.json")
+    assert Path(written) == tmp_path / "validation" / "iter_analytic_config.json"
     assert Path(written).exists()
 
 
@@ -261,6 +268,7 @@ def test_resolve_default_config_prefers_validation_fallback_when_calibration_mis
 
 
 def test_resolve_default_config_raises_when_nothing_present(tmp_path) -> None:
+    """The default resolver fails closed when neither candidate config exists."""
     with pytest.raises(FileNotFoundError, match="No default analytic config"):
         analytic_solver_mod._resolve_default_config_path(tmp_path)
 
@@ -300,14 +308,17 @@ def test_run_analytic_solver_resolves_default_config_and_saves(tmp_path, monkeyp
 def test_solve_coil_currents_rejects_invalid_inputs(
     green: list[float], target: float, ridge: float
 ) -> None:
-    """Empty/non-finite Green's vectors, non-finite targets/ridge, and a
-    zero-norm unregularised solve are all rejected.
+    """Invalid Green's vectors, targets, and ridge values are rejected.
+
+    Empty/non-finite Green's vectors, non-finite targets/ridge, and a zero-norm
+    unregularised solve are all fail-closed branches.
     """
     with pytest.raises(ValueError):
         solve_coil_currents(green, target, ridge_lambda=ridge)
 
 
 def test_run_analytic_solver_returns_deterministic_summary_without_write() -> None:
+    """Repeated no-write analytic solves return identical scalar summaries."""
     kwargs = dict(
         config_path="dummy.json",
         target_r=6.2,
@@ -350,6 +361,7 @@ def test_run_analytic_solver_returns_deterministic_summary_without_write() -> No
 
 
 def test_resolve_default_config_prefers_calibration_config(tmp_path) -> None:
+    """A calibration config wins over the validation fallback when present."""
     calibration = tmp_path / "calibration"
     validation = tmp_path / "validation"
     calibration.mkdir(parents=True, exist_ok=True)
@@ -364,6 +376,7 @@ def test_resolve_default_config_prefers_calibration_config(tmp_path) -> None:
 
 
 def test_resolve_default_config_can_disable_validation_fallback(tmp_path) -> None:
+    """Callers can disable the validation fallback for stricter deployments."""
     validation = tmp_path / "validation"
     validation.mkdir(parents=True, exist_ok=True)
     (validation / "iter_validated_config.json").write_text("{}", encoding="utf-8")

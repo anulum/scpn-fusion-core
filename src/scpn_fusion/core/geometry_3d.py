@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import data_root
 from scpn_fusion.core.equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3D
 from scpn_fusion.core.fieldline_3d import FieldLineTrace3D, FieldLineTracer3D
 
@@ -502,8 +503,7 @@ class Reactor3DBuilder:
 
 
 def _default_config_path() -> Path:
-    repo_root = Path(__file__).resolve().parents[3]
-    return repo_root / "validation" / "iter_validated_config.json"
+    return data_root() / "validation" / "iter_validated_config.json"
 
 
 def main(argv: Optional[list[str]] = None) -> int:

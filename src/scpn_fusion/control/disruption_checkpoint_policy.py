@@ -17,6 +17,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import default_artifact_path
 from scpn_fusion.control.disruption_risk_runtime import _require_int
 from scpn_fusion.fallback_telemetry import record_fallback_event, snapshot_fallback_telemetry
 
@@ -34,13 +35,9 @@ _MAX_CHECKPOINT_BYTES = 128 * 1024 * 1024
 _ALLOWED_CHECKPOINT_SUFFIXES = {".pth", ".pt", ".ckpt"}
 
 
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
 def default_model_path(default_model_filename: str) -> Path:
-    """Return the repository-local artifact path for a default disruption model."""
-    return _repo_root() / "artifacts" / default_model_filename
+    """Return the writable default artifact path for a disruption checkpoint."""
+    return default_artifact_path(default_model_filename)
 
 
 def _normalize_seq_len(seq_len: Any) -> int:

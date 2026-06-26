@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 from numpy.typing import NDArray
+from scpn_fusion._data_paths import data_root, default_artifact_path
 from scpn_fusion.fallback_telemetry import record_fallback_event
 
 logger = logging.getLogger(__name__)
@@ -295,8 +296,7 @@ class AnalyticEquilibriumSolver:
         """Apply coil currents and persist the resulting kernel configuration."""
         self.apply_currents(currents)
         if output_path is None:
-            repo_root = Path(__file__).resolve().parents[3]
-            out_path = repo_root / "validation" / "iter_analytic_config.json"
+            out_path = default_artifact_path("validation", "iter_analytic_config.json")
         else:
             out_path = Path(output_path)
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -360,7 +360,7 @@ def run_analytic_solver(
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> Dict[str, Any]:
     """Run analytic equilibrium solve and return deterministic summary."""
-    repo_root = Path(__file__).resolve().parents[3]
+    repo_root = data_root()
     config_source = "explicit"
     fallback_used = False
     if config_path is None:

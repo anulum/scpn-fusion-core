@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from scpn_fusion._data_paths import data_root, default_artifact_path
+
 if TYPE_CHECKING:
     from .neural_equilibrium import TrainingResult
 
@@ -30,17 +32,13 @@ def train_on_sparc(
 
     Returns the TrainingResult object produced by NeuralEquilibriumAccelerator.
     """
-    from .neural_equilibrium import (
-        DEFAULT_WEIGHTS_PATH,
-        REPO_ROOT,
-        NeuralEquilibriumAccelerator,
-    )
+    from .neural_equilibrium import NeuralEquilibriumAccelerator
 
     if save_path is None:
-        save_path = DEFAULT_WEIGHTS_PATH
+        save_path = default_artifact_path("weights", "neural_equilibrium_sparc.npz")
 
     if sparc_dir is None:
-        sparc_dir = REPO_ROOT / "validation" / "reference_data" / "sparc"
+        sparc_dir = data_root() / "validation" / "reference_data" / "sparc"
     sparc_dir = Path(sparc_dir)
 
     files = sorted(sparc_dir.glob("*.geqdsk")) + sorted(sparc_dir.glob("*.eqdsk"))
@@ -60,11 +58,11 @@ def train_on_sparc(
 
 def run_training_cli() -> int:
     """CLI entrypoint retained for `python neural_equilibrium.py` compatibility."""
-    from .neural_equilibrium import NeuralEquilibriumAccelerator, REPO_ROOT
+    from .neural_equilibrium import NeuralEquilibriumAccelerator
 
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
 
-    sparc_dir = REPO_ROOT / "validation" / "reference_data" / "sparc"
+    sparc_dir = data_root() / "validation" / "reference_data" / "sparc"
     if not sparc_dir.exists():
         print(f"SPARC data not found at {sparc_dir}")
         return 1

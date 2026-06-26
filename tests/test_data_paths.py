@@ -9,12 +9,18 @@
 
 from __future__ import annotations
 
+import importlib
 import importlib.util
 from pathlib import Path
 
 import pytest
 
-from scpn_fusion._data_paths import data_root, default_iter_config_path
+from scpn_fusion._data_paths import (
+    artifact_root,
+    data_root,
+    default_artifact_path,
+    default_iter_config_path,
+)
 
 
 def test_data_root_contains_validation_reference_data() -> None:
@@ -56,8 +62,10 @@ def test_data_root_matches_installed_validation_when_importable() -> None:
 
 
 def test_reference_data_root_resolves_under_data_root() -> None:
-    """The tokamak-archive reference-data root must track the layout-independent
-    :func:`data_root` resolver so it is reachable from an installed wheel."""
+    """The tokamak-archive reference root tracks the installed data root.
+
+    The resolver must stay reachable from an installed wheel.
+    """
     from scpn_fusion.io.tokamak_archive_profiles import default_reference_data_root
 
     assert default_reference_data_root() == data_root() / "validation" / "reference_data"
@@ -71,8 +79,11 @@ def test_diagnostics_default_config_resolves_under_data_root() -> None:
 
 
 def test_runtime_weight_paths_resolve_under_data_root() -> None:
-    """The default surrogate-weight constants must track :func:`data_root` so the
-    bundled QLKNN / neural-equilibrium / pretrained heads ship and load from a wheel."""
+    """Default surrogate-weight constants track :func:`data_root`.
+
+    Bundled QLKNN, neural-equilibrium, and pretrained heads must load from a
+    wheel without writing generated files into package data.
+    """
     from scpn_fusion.core.neural_equilibrium import (
         DEFAULT_WEIGHTS_PATH,
         ITER_SURROGATE_WEIGHTS_PATH,
@@ -85,3 +96,69 @@ def test_runtime_weight_paths_resolve_under_data_root() -> None:
     assert weights_root / "neural_equilibrium_iter_v1.npz" == ITER_SURROGATE_WEIGHTS_PATH
     # The shipped runtime surrogates must exist in the active layout.
     assert DEFAULT_WEIGHTS_PATH.is_file()
+
+
+def test_artifact_root_uses_xdg_cache_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Generated artifacts default to a user-writable cache tree."""
+    monkeypatch.delenv("SCPN_ARTIFACT_DIR", raising=False)
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+    root = artifact_root()
+
+    assert root == tmp_path / "scpn-fusion" / "artifacts"
+    assert root.is_absolute()
+    assert data_root() not in root.parents
+
+
+def test_artifact_root_respects_environment_override(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Operators can route generated artifacts to an explicit writable tree."""
+    override = tmp_path / "fusion-artifacts"
+    monkeypatch.setenv("SCPN_ARTIFACT_DIR", str(override))
+
+    assert artifact_root() == override
+    assert default_artifact_path("weights", "demo.npz") == override / "weights" / "demo.npz"
+
+
+def test_training_output_defaults_resolve_under_artifact_root(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Training/demo defaults must not write into bundled wheel data."""
+    monkeypatch.setenv("SCPN_ARTIFACT_DIR", str(tmp_path))
+
+    import scpn_fusion.control.disruption_checkpoint_policy as checkpoint_policy
+    import scpn_fusion.core.fno_training as fno_training
+    import scpn_fusion.core.gs_transport_surrogate_training as gs_training
+    import scpn_fusion.core.pretrained_surrogates as pretrained_surrogates
+
+    checkpoint_policy = importlib.reload(checkpoint_policy)
+    gs_training = importlib.reload(gs_training)
+    fno_training = importlib.reload(fno_training)
+    pretrained_surrogates = importlib.reload(pretrained_surrogates)
+
+    weights_root = artifact_root() / "weights"
+    assert weights_root / "fno_turbulence.npz" == fno_training.DEFAULT_WEIGHTS_PATH
+    assert weights_root / "fno_turbulence_sparc.npz" == fno_training.DEFAULT_SPARC_WEIGHTS_PATH
+    assert (
+        weights_root / "gs_transport_surrogate.npz"
+        == fno_training.DEFAULT_GS_TRANSPORT_WEIGHTS_PATH
+    )
+    assert weights_root / "gs_transport_surrogate.npz" == (
+        gs_training.DEFAULT_GS_TRANSPORT_WEIGHTS_PATH
+    )
+    assert weights_root == pretrained_surrogates.DEFAULT_BUNDLE_WEIGHTS_DIR
+    assert artifact_root() / "disruptor.pth" == checkpoint_policy.default_model_path(
+        "disruptor.pth"
+    )
+
+
+def test_reference_defaults_resolve_under_bundled_data_root() -> None:
+    """Reference readers must keep using bundled validation data in a wheel."""
+    from scpn_fusion.core._tglf_interface_types import TGLF_REF_DIR
+    from scpn_fusion.core.geometry_3d import _default_config_path
+    from scpn_fusion.core.public_frc_reference import REFERENCE_ROOT
+
+    assert data_root() / "validation" / "tglf_reference" == TGLF_REF_DIR
+    assert data_root() / "validation" / "reference_data" == REFERENCE_ROOT
+    assert data_root() / "validation" / "iter_validated_config.json" == _default_config_path()

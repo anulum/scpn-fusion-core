@@ -19,6 +19,7 @@ install, and a built wheel alike.
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 
 
@@ -49,6 +50,54 @@ def data_root() -> Path:
         return Path(spec.origin).resolve().parent.parent
 
     return source_candidate
+
+
+def artifact_root() -> Path:
+    """Return the writable default root for generated SCPN Fusion artifacts.
+
+    Resolution order:
+
+    1. ``SCPN_ARTIFACT_DIR`` when set, for explicit operator control in CI,
+       notebooks, and production deployments.
+    2. ``XDG_CACHE_HOME/scpn-fusion/artifacts`` on Linux-style systems.
+    3. ``~/.cache/scpn-fusion/artifacts`` when ``XDG_CACHE_HOME`` is unset.
+
+    Returns
+    -------
+    Path
+        Absolute directory path intended for generated checkpoints, reports,
+        plots, and training outputs. The directory is not created until a caller
+        writes a concrete artifact below it.
+    """
+    override = os.environ.get("SCPN_ARTIFACT_DIR", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+
+    xdg_cache = os.environ.get("XDG_CACHE_HOME", "").strip()
+    cache_root = Path(xdg_cache).expanduser() if xdg_cache else Path.home() / ".cache"
+    return (cache_root / "scpn-fusion" / "artifacts").resolve()
+
+
+def default_artifact_path(*parts: str) -> Path:
+    """Return a generated-artifact path below :func:`artifact_root`.
+
+    Parameters
+    ----------
+    *parts
+        Relative path components below the artifact root. Empty components are
+        ignored so callers can compose optional subdirectories without producing
+        malformed paths.
+
+    Returns
+    -------
+    Path
+        Absolute writable default path for a generated artifact.
+    """
+    path = artifact_root()
+    for part in parts:
+        if part:
+            path /= part
+    return path
 
 
 def default_iter_config_path() -> Path:

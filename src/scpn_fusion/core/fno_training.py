@@ -24,6 +24,7 @@ import logging
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion._data_paths import default_artifact_path
 from scpn_fusion.io.safe_loaders import checked_np_load
 from ._surrogate_utils import AdamOptimizer, gelu, relative_l2
 from scpn_fusion.core.fno_training_multi_regime import (
@@ -42,10 +43,9 @@ FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_WEIGHTS_PATH = REPO_ROOT / "weights" / "fno_turbulence.npz"
-DEFAULT_SPARC_WEIGHTS_PATH = REPO_ROOT / "weights" / "fno_turbulence_sparc.npz"
-DEFAULT_GS_TRANSPORT_WEIGHTS_PATH = REPO_ROOT / "weights" / "gs_transport_surrogate.npz"
+DEFAULT_WEIGHTS_PATH = default_artifact_path("weights", "fno_turbulence.npz")
+DEFAULT_SPARC_WEIGHTS_PATH = default_artifact_path("weights", "fno_turbulence_sparc.npz")
+DEFAULT_GS_TRANSPORT_WEIGHTS_PATH = default_artifact_path("weights", "gs_transport_surrogate.npz")
 
 
 class MultiLayerFNO:
