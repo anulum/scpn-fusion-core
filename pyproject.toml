@@ -211,6 +211,7 @@ files = [
     "tests/test_mhd_sawtooth.py",
     "tests/test_hall_mhd_discovery.py",
     "tests/test_controller_tuning.py",
+    "tests/test_rmf_phase_lock.py",
     "tests/test_nuclear_wall_interaction.py",
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",

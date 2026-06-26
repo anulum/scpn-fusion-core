@@ -1549,6 +1549,10 @@
         "path": "src/scpn_fusion/control/rmf_phase_lock.py"
       },
       {
+        "name": "RMFPhaseLockSummary",
+        "path": "src/scpn_fusion/control/rmf_phase_lock.py"
+      },
+      {
         "name": "RMPSuppression",
         "path": "src/scpn_fusion/core/elm_model.py"
       },
@@ -2586,10 +2590,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 56,
-    "python_capability_classes": 546,
+    "python_capability_classes": 547,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 13,
-    "test_files": 433
+    "test_files": 434
   },
   "documentation": {
     "public_pages": [
@@ -3050,6 +3054,7 @@
       "tests/test_release_delta_guard.py",
       "tests/test_replay_pipeline.py",
       "tests/test_rf_heating.py",
+      "tests/test_rmf_phase_lock.py",
       "tests/test_rmse_dashboard.py",
       "tests/test_run_diagnostics.py",
       "tests/test_run_real_data_strict_gate.py",

@@ -128,6 +128,30 @@ enabling:
 - **What-if analysis** -- exploring alternative control strategies
   without risking the physical device
 
+RMF Phase-Lock Diagnostic
+---------------------------
+
+The ``rmf_phase_lock`` module provides a deterministic rotating magnetic
+field (RMF) phase-lock controller for software-horizon diagnostics. The
+Python controller mirrors the Rust ``fusion-physics`` RMF lane's
+fail-closed safety envelope:
+
+- non-finite plasma phase inputs do not advance controller state,
+- phase-error excursions above ``max_phase_error_rad`` increment
+  ``safety_violations`` and hold the antenna phase,
+- observed frequency jumps clamp to ``min_freq_hz`` and ``max_freq_hz``,
+- ``n_neurons > 0`` routes the control error through the deterministic
+  spiking phase detector used by the native lane.
+
+Run the module directly for a machine-readable local diagnostic::
+
+    python -m scpn_fusion.control.rmf_phase_lock --horizon 10000 --json
+
+The JSON output includes cycle count, final antenna phase, final RMF
+frequency, mean absolute phase error, and safety-violation count. FPGA
+export remains fail-closed until a real RTL generator and timing proof
+exist; the command reports software simulation evidence only.
+
 Integrated Control Room
 -------------------------
 
@@ -216,6 +240,7 @@ Related Modules
 - :mod:`scpn_fusion.control.disruption_predictor` -- ML disruption warning
 - :mod:`scpn_fusion.control.spi_mitigation` -- shattered pellet injection
 - :mod:`scpn_fusion.control.tokamak_digital_twin` -- digital twin
+- :mod:`scpn_fusion.control.rmf_phase_lock` -- RMF phase-lock diagnostic
 - :mod:`scpn_fusion.control.fusion_control_room` -- integrated control room
 - :mod:`scpn_fusion.control.neuro_cybernetic_controller` -- SNN controller
 - :mod:`scpn_fusion.scpn.safety_interlocks` -- inhibitor-arc safety runtime
