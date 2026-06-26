@@ -56,6 +56,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         cast(Any, super()).__init__(config_path)
 
     def _build_neutron_source_map(self) -> FloatArray:
+        """Build a bounded volumetric neutron-source proxy from normalized flux."""
         idx_max = int(np.argmax(self.Psi))
         iz_ax, ir_ax = np.unravel_index(idx_max, self.Psi.shape)
         psi_axis = float(self.Psi[iz_ax, ir_ax])
@@ -65,7 +66,11 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         if abs(psi_edge - psi_axis) < 1.0:
             psi_edge = float(np.min(self.Psi))
 
-        psi_norm = np.asarray((self.Psi - psi_axis) / (psi_edge - psi_axis), dtype=np.float64)
+        denom = psi_edge - psi_axis
+        if not np.isfinite(denom) or abs(denom) <= 1e-12:
+            return np.zeros_like(self.Psi, dtype=np.float64)
+
+        psi_norm = np.asarray((self.Psi - psi_axis) / denom, dtype=np.float64)
         psi_norm = np.clip(psi_norm, 0.0, 1.0)
         mask = psi_norm < 1.0
 
@@ -168,7 +173,14 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         return history
 
     def calculate_neutron_wall_loading(self) -> tuple[FloatArray, FloatArray, FloatArray]:
-        """Ray-Tracing calculation of 14.1 MeV neutrons hitting the wall."""
+        """Ray-trace 14.1 MeV neutron emission onto the generated first wall.
+
+        Returns
+        -------
+        tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+            Radial wall coordinates, vertical wall coordinates, and finite
+            non-negative neutron wall flux in ``n/m^2/s``.
+        """
         print("[Nuclear] Calculating Neutron Wall Loading (NWL)...")
 
         source_map = self._build_neutron_source_map()
@@ -189,7 +201,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         src_S = S_sub.flatten() * dV.flatten()
 
         # Filter only active plasma points
-        active_idx = src_S > 0
+        active_idx = np.isfinite(src_S) & np.isfinite(src_r) & np.isfinite(src_z) & (src_S > 0)
         src_r = src_r[active_idx]
         src_z = src_z[active_idx]
         src_S = src_S[active_idx]
@@ -198,7 +210,9 @@ class NuclearEngineeringLab(FusionBurnPhysics):
 
         for i in range(len(Rw)):
             # Target point
-            wx, wz = Rw[i], Zw[i]
+            wx, wz = float(Rw[i]), float(Zw[i])
+            if not np.isfinite(wx) or not np.isfinite(wz):
+                continue
 
             # Normal vector of wall (approx)
             if i < len(Rw) - 1:
@@ -206,7 +220,10 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             else:
                 dx, dz = Rw[0] - Rw[i], Zw[0] - Zw[i]
             normal = np.array([-dz, dx], dtype=np.float64)
-            normal /= np.linalg.norm(normal)
+            normal_norm = float(np.linalg.norm(normal))
+            if not np.isfinite(normal_norm) or normal_norm <= 1e-12:
+                continue
+            normal /= normal_norm
 
             # Vector from source to target
             vec_r = wx - src_r
@@ -221,7 +238,8 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             # The flux at (wx, wz) scales with 1/dist but also depends on
             # the toroidal integral. For large R, it approaches spherical 1/r2.
             # For small R, the "inner" wall sees more flux due to curvature.
-            toroidal_correction = src_r / wx  # Flux enhancement on inner wall
+            wall_radius = max(abs(wx), 1e-6)
+            toroidal_correction = src_r / wall_radius  # Flux enhancement on inner wall
 
             # Cosine incidence (Dot product with normal)
             # normal is [nr, nz], vec is [vec_r, vec_z]

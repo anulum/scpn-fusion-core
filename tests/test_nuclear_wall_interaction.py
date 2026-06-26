@@ -226,6 +226,24 @@ class TestCalculateNeutronWallLoading:
         _Rw, _Zw, wall_flux = lab.calculate_neutron_wall_loading()
         assert np.all(np.isfinite(wall_flux))
 
+    def test_degenerate_wall_geometry_stays_finite(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Degenerate contour segments and zero-radius wall points fail closed."""
+        lab = _bare_lab()
+
+        def _degenerate_wall() -> tuple[
+            np.ndarray[Any, np.dtype[np.float64]], np.ndarray[Any, np.dtype[np.float64]]
+        ]:
+            r_wall = np.array([5.0, 5.0, 0.0, np.nan, 2.0, 5.0, 5.0], dtype=np.float64)
+            z_wall = np.array([0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 0.0], dtype=np.float64)
+            return r_wall, z_wall
+
+        monkeypatch.setattr(lab, "generate_first_wall", _degenerate_wall)
+
+        _Rw, _Zw, wall_flux = lab.calculate_neutron_wall_loading()
+
+        assert np.all(np.isfinite(wall_flux))
+        assert np.all(wall_flux >= 0.0)
+
 
 class TestCalculateCadWallLoading:
     """Reduced CAD-mesh surface loading."""

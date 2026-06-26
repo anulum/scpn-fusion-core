@@ -1084,6 +1084,20 @@ The energetic-particle drive from NBI or alpha particles is estimated via the cr
 
 ## 15. Neutronics
 
+### 15.0 First-wall neutron loading
+
+`nuclear/nuclear_wall_interaction.py::NuclearEngineeringLab.calculate_neutron_wall_loading`
+maps the reduced D-T source proxy onto the generated first-wall contour with a
+line-of-sight 14.1 MeV neutron view factor. The implementation filters
+non-finite source cells, floors coincident source/wall distances, skips
+zero-length or non-finite wall segments, and floors the toroidal-radius
+denominator so degenerate bare-lab or imported wall geometries fail closed to
+finite non-negative segment flux instead of producing `NaN` or `inf` loads.
+
+**Validation:** `tests/test_nuclear_wall_interaction.py` covers nominal wall
+loading, coincident source/wall cells, degenerate wall contours, and module
+line coverage for the wall-interaction façade.
+
 ### 15.1 Single-group blanket
 
 1D cylindrical diffusion-reaction for neutron flux $\Phi(r)$:
