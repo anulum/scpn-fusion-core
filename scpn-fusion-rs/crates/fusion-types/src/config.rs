@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn test_load_iter_config() {
-        let cfg = ReactorConfig::from_file(&config_path("iter_config.json")).unwrap();
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_config.json")).unwrap();
         assert_eq!(cfg.reactor_name, "ITER-Like-Demo");
         assert_eq!(cfg.grid_resolution, [128, 128]);
         assert_eq!(cfg.coils.len(), 7);
@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn test_load_all_six_configs() {
         let configs = [
-            "iter_config.json",
+            "validation/iter_config.json",
             "validation/iter_validated_config.json",
             "validation/iter_genetic_config.json",
             "validation/iter_analytic_config.json",
@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn test_roundtrip_serialization() {
-        let cfg = ReactorConfig::from_file(&config_path("iter_config.json")).unwrap();
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_config.json")).unwrap();
         let json = serde_json::to_string_pretty(&cfg).unwrap();
         let cfg2: ReactorConfig = serde_json::from_str(&json).unwrap();
         assert_eq!(cfg.reactor_name, cfg2.reactor_name);

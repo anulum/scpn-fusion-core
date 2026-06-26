@@ -666,7 +666,7 @@ mod tests {
 
     #[test]
     fn test_vacuum_field_not_nan() {
-        let cfg = ReactorConfig::from_file(&config_path("iter_config.json")).unwrap();
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_config.json")).unwrap();
         let grid = cfg.create_grid();
         let psi_vac = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability)
             .expect("valid vacuum-field inputs");

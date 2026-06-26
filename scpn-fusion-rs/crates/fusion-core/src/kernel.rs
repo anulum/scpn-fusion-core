@@ -1077,7 +1077,7 @@ mod tests {
 
     #[test]
     fn test_kernel_creation() {
-        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let kernel = FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         assert_eq!(kernel.grid().nr, 128);
         assert_eq!(kernel.grid().nz, 128);
         assert_eq!(kernel.config().coils.len(), 7);
@@ -1088,7 +1088,8 @@ mod tests {
 
     #[test]
     fn test_solver_method_default_and_setter() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         assert_eq!(kernel.solver_method(), SolverMethod::PicardSor);
         kernel.set_solver_method(SolverMethod::PicardMultigrid);
         assert_eq!(kernel.solver_method(), SolverMethod::PicardMultigrid);
@@ -1311,7 +1312,8 @@ mod tests {
 
     #[test]
     fn test_full_equilibrium_iter_config() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let result = kernel.solve_equilibrium().unwrap();
 
         // Solver should complete without NaN regardless of convergence
@@ -1335,7 +1337,8 @@ mod tests {
 
     #[test]
     fn test_b_field_computed_after_solve() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.solve_equilibrium().unwrap();
 
         assert!(kernel.state().b_r.is_some(), "B_R should be computed");
@@ -1364,7 +1367,7 @@ mod tests {
 
     #[test]
     fn test_sample_psi_rejects_non_finite_probe_coordinates() {
-        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let kernel = FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         assert!(kernel.sample_psi_at(f64::NAN, 0.0).is_err());
         assert!(kernel.sample_psi_at(6.2, f64::INFINITY).is_err());
         assert!(kernel
@@ -1374,7 +1377,8 @@ mod tests {
 
     #[test]
     fn test_sample_psi_rejects_non_finite_axis_coordinates() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.r[10] = f64::NAN;
         let err = kernel
             .sample_psi_at(6.2, 0.0)
@@ -1389,7 +1393,7 @@ mod tests {
 
     #[test]
     fn test_sample_psi_rejects_out_of_domain_probe_coordinates() {
-        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let kernel = FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let r_min = kernel.grid().r[0].min(kernel.grid().r[kernel.grid().nr - 1]);
         let r_max = kernel.grid().r[0].max(kernel.grid().r[kernel.grid().nr - 1]);
         let z_min = kernel.grid().z[0].min(kernel.grid().z[kernel.grid().nz - 1]);
@@ -1406,7 +1410,7 @@ mod tests {
 
     #[test]
     fn test_sample_psi_probe_errors_include_probe_index() {
-        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let kernel = FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let r_max = kernel.grid().r[0].max(kernel.grid().r[kernel.grid().nr - 1]);
         let err = kernel
             .sample_psi_at_probes(&[(6.2, 0.0), (r_max + 1.0e-6, 0.1)])
@@ -1421,7 +1425,7 @@ mod tests {
 
     #[test]
     fn test_sample_psi_rejects_empty_probe_list() {
-        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let kernel = FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let err = kernel
             .sample_psi_at_probes(&[])
             .expect_err("empty probe list must error");
@@ -1435,7 +1439,8 @@ mod tests {
 
     #[test]
     fn test_sample_psi_rejects_state_shape_mismatch() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.state.psi = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
         let err = kernel
             .sample_psi_at(6.2, 0.0)
@@ -1450,7 +1455,8 @@ mod tests {
 
     #[test]
     fn test_sample_psi_rejects_grid_axis_length_mismatch() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.nr -= 1;
         kernel.state.psi = Array2::zeros((kernel.grid().nz, kernel.grid().nr));
         let err = kernel
@@ -1466,7 +1472,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_shape_guard() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let bad_shape = Array2::zeros((8, 8));
         let err = kernel
             .set_particle_current_feedback(bad_shape, 0.4)
@@ -1481,7 +1488,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_set_and_clear() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         kernel
             .set_particle_current_feedback(feedback, 1.0)
@@ -1495,7 +1503,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_invalid_coupling() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         for coupling in [f64::NAN, -0.2, 1.2] {
             let err = kernel
@@ -1512,7 +1521,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_non_finite_map() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let mut feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         feedback[[0, 0]] = f64::NAN;
         let err = kernel
@@ -1528,7 +1538,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_invalid_grid_spacing() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         kernel.grid.dr = 0.0;
         let err = kernel
@@ -1541,7 +1552,8 @@ mod tests {
             other => panic!("Unexpected error: {other:?}"),
         }
 
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         kernel.grid.dz = -kernel.grid.dz.abs();
         let err = kernel
@@ -1557,7 +1569,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_grid_axis_length_mismatch() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.nr -= 1;
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         let err = kernel
@@ -1573,7 +1586,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_grid_mesh_shape_mismatch() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.rr = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         let err = kernel
@@ -1589,7 +1603,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_non_finite_grid_axes() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.r[7] = f64::NAN;
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         let err = kernel
@@ -1606,7 +1621,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_non_finite_grid_mesh() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.zz[[0, 0]] = f64::INFINITY;
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         let err = kernel
@@ -1623,7 +1639,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_empty_grid_dimensions() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.nz = 0;
         let feedback = Array2::zeros((0, kernel.grid().nr));
         let err = kernel
@@ -1639,7 +1656,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_non_finite_plasma_current_target() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         kernel.config.physics.plasma_current_target = f64::NAN;
         let err = kernel
@@ -1655,7 +1673,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_rejects_zero_integral_with_full_coupling() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let zero_feedback = Array2::zeros((kernel.grid().nz, kernel.grid().nr));
         let err = kernel
             .set_particle_current_feedback(zero_feedback.clone(), 1.0)
@@ -1674,7 +1693,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_from_population_builds_summary() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let particles = vec![ChargedParticle {
             x_m: 6.1,
             y_m: 0.0,
@@ -1698,7 +1718,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_from_population_rejects_invalid_threshold() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let particles = vec![ChargedParticle {
             x_m: 6.1,
             y_m: 0.0,
@@ -1724,7 +1745,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_from_population_rejects_empty_population() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let err = kernel
             .set_particle_feedback_from_population(&[], 0.2, 0.5)
             .expect_err("empty particle population must error");
@@ -1738,7 +1760,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_from_population_rejects_out_of_domain_full_coupling() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let particles = vec![ChargedParticle {
             x_m: 100.0,
             y_m: 0.0,
@@ -1764,7 +1787,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_from_population_wraps_deposition_errors() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.dr = 0.0;
         let particles = vec![ChargedParticle {
             x_m: 6.1,
@@ -1791,7 +1815,8 @@ mod tests {
 
     #[test]
     fn test_particle_feedback_from_population_wraps_setup_config_errors() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.config.physics.plasma_current_target = f64::NAN;
         let particles = vec![ChargedParticle {
             x_m: 6.1,
@@ -1818,7 +1843,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_invalid_runtime_controls() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.config.solver.max_iterations = 0;
         let err = kernel
             .solve_equilibrium()
@@ -1830,7 +1856,8 @@ mod tests {
             other => panic!("Unexpected error: {other:?}"),
         }
 
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.config.solver.convergence_threshold = 0.0;
         let err = kernel
             .solve_equilibrium()
@@ -1842,7 +1869,8 @@ mod tests {
             other => panic!("Unexpected error: {other:?}"),
         }
 
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.config.solver.sor_omega = 0.5;
         let err = kernel
             .solve_equilibrium()
@@ -1855,7 +1883,8 @@ mod tests {
             other => panic!("Unexpected error: {other:?}"),
         }
 
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.dr = 0.0;
         let err = kernel
             .solve_equilibrium()
@@ -1867,7 +1896,8 @@ mod tests {
             other => panic!("Unexpected error: {other:?}"),
         }
 
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.dz = -kernel.grid.dz.abs();
         let err = kernel
             .solve_equilibrium()
@@ -1882,7 +1912,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_grid_axis_length_mismatch() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.nr -= 1;
         let err = kernel
             .solve_equilibrium()
@@ -1897,7 +1928,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_grid_mesh_shape_mismatch() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.rr = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
         let err = kernel
             .solve_equilibrium()
@@ -1912,7 +1944,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_non_finite_grid_axes() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.r[3] = f64::NAN;
         let err = kernel
             .solve_equilibrium()
@@ -1928,7 +1961,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_non_finite_grid_mesh() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.grid.rr[[0, 0]] = f64::INFINITY;
         let err = kernel
             .solve_equilibrium()
@@ -1944,7 +1978,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_state_j_phi_shape_mismatch() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.state.j_phi = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
         let err = kernel
             .solve_equilibrium()
@@ -1960,7 +1995,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_external_profile_mode_without_params() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.external_profile_mode = true;
         kernel.profile_params_p = None;
         kernel.profile_params_ff = None;
@@ -1977,7 +2013,8 @@ mod tests {
 
     #[test]
     fn test_solve_equilibrium_rejects_invalid_external_profile_params() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let bad_p = ProfileParams {
             ped_top: 0.9,
             ped_width: 0.0,
@@ -1998,7 +2035,8 @@ mod tests {
 
     #[test]
     fn test_solve_with_profiles_restores_profile_state_on_error() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         kernel.config.solver.max_iterations = 0;
         assert!(!kernel.external_profile_mode);
         assert!(kernel.profile_params_p.is_none());
@@ -2021,7 +2059,8 @@ mod tests {
 
     #[test]
     fn test_solve_with_profiles_restores_previous_external_profile_state() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let prev_p = ProfileParams {
             ped_top: 0.85,
             ped_width: 0.07,
@@ -2066,7 +2105,8 @@ mod tests {
 
     #[test]
     fn test_solve_with_profiles_rejects_invalid_params_without_state_mutation() {
-        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_config.json")).unwrap();
         let prev_p = ProfileParams {
             ped_top: 0.85,
             ped_width: 0.07,
