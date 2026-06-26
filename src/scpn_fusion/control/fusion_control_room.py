@@ -379,11 +379,7 @@ def run_control_room(
     if kernel_factory is not None or (config_file is not None and FusionKernel is not None):
         if kernel_factory is None and FusionKernel is not None:
             kernel_factory = FusionKernel
-        cfg = (
-            str(config_file)
-            if config_file is not None
-            else str(default_iter_config_path())
-        )
+        cfg = str(config_file) if config_file is not None else str(default_iter_config_path())
         try:
             kernel = kernel_factory(cfg) if kernel_factory is not None else None
             if kernel is not None:
