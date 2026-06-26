@@ -99,8 +99,8 @@ def build_knm_paper27(
 ) -> KnmSpec:
     """Build the canonical Paper 27 Knm with exponential distance decay.
 
-    K[i,j] = K_base · exp(−K_alpha · |i − j|),  diag(K) kept for
-    intra-layer sync (unlike the inter-oscillator Knm which zeros diag).
+    ``K[i, j] = K_base * exp(-K_alpha * abs(i - j))``; ``diag(K)`` is kept for
+    intra-layer sync, unlike the inter-oscillator Knm which zeros the diagonal.
 
     K_base=0.45 and K_alpha=0.3 from Paper 27 §3.2, Eq. 12.
     Calibration anchors from Paper 27, Table 2.

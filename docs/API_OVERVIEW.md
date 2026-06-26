@@ -24,6 +24,9 @@ Important surfaces:
 | Nuclear | `scpn_fusion.nuclear` | Blanket, neutronics, and wall-interaction utilities |
 | HPC | `scpn_fusion.hpc` | Optional distributed and accelerator integration surfaces |
 | I/O | `scpn_fusion.io` | IMAS/OMAS and archive adapters |
+| Phase | `scpn_fusion.phase` | Kuramoto, UPDE, K_nm, and phase-stream bridge surfaces |
+| Studio federation | `scpn_fusion.studio` | Schema-A manifest, exactness comparator, architecture-map extension, and Studio manifest emitter |
+| UI | `scpn_fusion.ui` | Streamlit dashboard launcher, dashboard generator, and security-header helpers |
 
 Generated Sphinx API pages live under `docs/sphinx/api/`.
 
@@ -61,6 +64,7 @@ README or market-facing text.
 | Run or inspect physics kernels | `scpn_fusion.core` | Core modules hold equilibrium, transport, gyrokinetic, electromagnetic, MIF/FRC, and validation helpers. |
 | Connect external evidence | `validation/`, `scpn_fusion.io` | Validation scripts and I/O adapters carry provenance, schema, checksum, and pass/blocked status. |
 | Accelerate or compare kernels | `scpn-fusion-rs/` | Rust crates implement selected native surfaces and benchmark contracts. |
+| Federate with Studio/Hub | `scpn_fusion.studio`, `scpn-emit-studio-manifest` | Emits `docs/_generated/studio_manifest.json`, schema-A verbs, evidence schemas, content digest, and architecture-map metadata. |
 | Build demos or onboarding material | `examples/`, `docs/notebooks/` | Notebook flows are tutorials; they must link to reports for public claims. |
 
 ## Command-line entry point
@@ -70,10 +74,30 @@ scpn-fusion --help
 scpn-fusion kernel
 scpn-fusion flight
 scpn-fusion neuro-control
+scpn-emit-studio-manifest --check
 ```
 
 CLI modes are useful for demos and smoke tests. Scientific claims should point
 to validation reports, not only CLI output.
+
+## Studio federation surface
+
+The optional `studio` extra adds the `scpn_studio_platform` SDK and activates
+the `scpn_fusion.studio` package. The package publishes:
+
+- `scpn_fusion.studio.manifest.build_manifest()` for the schema-A capability
+  manifest,
+- `scpn_fusion.studio.federation.build_federation_document()` for the schema-A
+  plus architecture-map JSON document,
+- `scpn_fusion.studio.exactness.reproduce()` for bit-exact, tolerance, and
+  reduced-stochastic claim comparison,
+- `scpn-emit-studio-manifest` for writing and drift-checking
+  `docs/_generated/studio_manifest.json`.
+
+The Studio manifest is a federation contract and documentation artifact. It
+does not turn simulated or blocked physics rows into accepted evidence; it
+describes the verbs, evidence schemas, interfaces, backend matrix, and
+boundaries the Hub can ingest.
 
 ## Rust workspace
 

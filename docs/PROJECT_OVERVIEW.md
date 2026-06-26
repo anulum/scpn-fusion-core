@@ -22,6 +22,9 @@ near real plant hardware?
   kernels plus polyglot solver surfaces where equivalent logic is maintained.
 - Evidence surfaces: tracked validation reports, JSON schemas, benchmark
   bundles, notebooks, Sphinx docs, and fail-closed acceptance gates.
+- Studio federation surface: schema-A capability manifests, Studio evidence
+  schemas, exactness-class reproduction comparators, and architecture-map
+  extensions for Hub ingestion.
 - Safety-assurance surface: an IEC 61508-aligned roadmap for selected
   controller, replay, interlock, and telemetry surfaces. The repository does
   not claim IEC 61508 or SIL certification today.
@@ -33,6 +36,8 @@ near real plant hardware?
   blocked or diagnostic-only rows.
 - Benchmarking native kernels and accelerator paths before larger cloud or
   cluster runs.
+- Publishing machine-readable Studio federation documents that describe
+  capabilities, evidence schemas, backend dispatch, and honest boundaries.
 - Teaching the software architecture of control-first fusion simulation.
 - Preparing reference-code parity campaigns against established solvers.
 

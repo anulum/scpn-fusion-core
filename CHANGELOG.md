@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-06-26
+
 - Reconciled the `simulate_tearing_mode` function-kernel and brought the Rust
   tearing-mode model to full Modified Rutherford fidelity. The Rust port had
   dropped the bootstrap-current drive `beta_p·w/(w² + w_crit²)` (so it was not the

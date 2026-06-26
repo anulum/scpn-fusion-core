@@ -16,7 +16,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
-![Version](https://img.shields.io/badge/Version-3.9.11-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-3.10.0-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
@@ -99,16 +99,15 @@ facades and evidence-bounded validation reports.
 
 ## Current Release Snapshot
 
-Version `3.9.11` is a documentation, security-lock, and repository-hygiene
-release. It improves the public reader path across README, project overview,
-onboarding, API orientation, notebook index, Sphinx entry points, GitHub Pages,
-and release notes so technical evaluators can understand what the software is,
-where it is useful, what commercial value it can create, and where the evidence
-boundary remains.
+Version `3.10.0` is a runtime, documentation, and federation-surface release.
+It publishes the Studio federation manifest path, the exactness-class
+reproduction comparator, the architecture-map extension, and refreshed
+multi-backend parity surfaces alongside the existing control and physics stack.
 
-The release also updates the hashed documentation dependency lock to
-`bleach==6.4.0`, matching the build lane and addressing the open Dependabot
-bleach alerts once the branch is pushed and GitHub rescans the manifests.
+The release also documents the new public API entry points in the Sphinx API
+reference, adds a Studio federation guide and tutorial, refreshes generated
+capability and Studio manifests, and keeps the dependency/security maintenance
+from the 2026-06-25 green-CI pass.
 
 This release does not promote the solver to completed end-to-end full-fidelity
 parity. GENE/CGYRO/GS2 nonlinear turbulence parity, full electromagnetic
@@ -125,15 +124,15 @@ thresholds, grid or scaling evidence, and native comparisons.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.11 |
+| Package version | 3.10.0 |
 | Public API exports | 2 |
 | Python capability source modules | 278 |
 | Python capability classes | 546 |
-| Capability documentation pages | 55 |
+| Capability documentation pages | 56 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
 | Python test files | 433 |
-| Public documentation pages | 55 |
+| Public documentation pages | 56 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -173,6 +172,7 @@ before plant deployment.
 | Understand the product and evidence boundary | [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) |
 | Install and run the first commands | [`docs/ONBOARDING.md`](docs/ONBOARDING.md) |
 | Find public APIs and extension points | [`docs/API_OVERVIEW.md`](docs/API_OVERVIEW.md) |
+| Emit the Studio federation manifest | [`docs/sphinx/userguide/studio_federation.rst`](docs/sphinx/userguide/studio_federation.rst) |
 | Understand applications and market value | [`docs/APPLICATIONS_AND_MARKET.md`](docs/APPLICATIONS_AND_MARKET.md) |
 | Reproduce benchmark claims | [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`RESULTS.md`](RESULTS.md) |
 | Track full-fidelity blockers | [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md) |
@@ -838,7 +838,7 @@ Validation artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {3.9.11}
+  version = {3.10.0}
 }
 ```
 

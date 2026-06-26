@@ -91,6 +91,7 @@ Different readers should not start in the same place:
 | Control | `docs/sphinx/userguide/control.rst` |
 | Hardware-in-the-loop | `docs/sphinx/userguide/hil.rst` |
 | Validation | `docs/sphinx/userguide/validation.rst` |
+| Studio federation | `docs/sphinx/userguide/studio_federation.rst` |
 | Benchmarks | `docs/BENCHMARKS.md` |
 | Notebooks | `docs/notebooks/README.md` |
 | API map | `docs/API_OVERVIEW.md` |
@@ -119,6 +120,7 @@ report that states pass, fail, blocked, or diagnostic-only status.
 | Equilibrium | Improve a GEQDSK or FreeGS comparison row | Source provenance, convention metadata, RMSE/current/axis metrics |
 | Gyrokinetics | Add a same-deck external output candidate | License, checksum, deck hash, converted JSON/NPZ artifact, blocked/accepted status |
 | Runtime | Harden a native, Rust, MPI, CUDA, or HIL surface | Fixed command, hardware metadata, timeout, benchmark report |
+| Studio federation | Add or validate a Studio evidence schema or verb | Manifest drift check, schema-A conformance, architecture-map boundary text |
 | Formal methods | Extend Lean proofs toward executable contracts | Lean build, theorem boundary, linked implementation contract |
 | Documentation | Improve a public guide or evidence map | Clear scope, no unsupported claims, links to reports |
 

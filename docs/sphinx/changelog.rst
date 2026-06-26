@@ -5,13 +5,20 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.9.11 (Current)
+v3.10.0 (Current)
+-------------------
+
+- Runtime-hardening, Studio-federation, generated-manifest, strict-typing, and documentation-alignment release.
+- Adds the ``scpn_fusion.studio`` federation API, ``scpn-emit-studio-manifest`` CLI, generated Studio manifest, and Studio user guide/tutorial.
+- Expands Sphinx API navigation for Studio, phase bridges, and UI helpers while keeping full-fidelity solver parity gates fail-closed.
+- Carries the 2026-06-25 maintenance pass with green CI, clean dependency/security alerts, and refreshed generated surfaces before tagging.
+
+v3.9.11
 -------------------
 
 - Documentation, security-lock, and repository-hygiene release that improves the README, project overview, onboarding, API overview, notebook index, Sphinx entry points, GitHub Pages, changelog, and release notes.
 - Documentation dependency lock now resolves bleach to 6.4.0, matching the build lane and addressing the open bleach alerts after GitHub rescans the pushed manifests.
 - Keeps full-fidelity parity fail-closed for external nonlinear GK, electromagnetic, DREAM, Aurora/STRAHL, FreeGS/free-boundary, and distributed GPU/cluster lanes until same-case artifacts and thresholds exist.
-- Release readiness remains pending until the remote CI run for the release commit is green.
 
 v3.9.10
 -------------------

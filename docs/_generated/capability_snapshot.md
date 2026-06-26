@@ -5,15 +5,15 @@
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.11 |
+| Package version | 3.10.0 |
 | Public API exports | 2 |
 | Python capability source modules | 278 |
 | Python capability classes | 546 |
-| Capability documentation pages | 55 |
+| Capability documentation pages | 56 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
 | Python test files | 433 |
-| Public documentation pages | 55 |
+| Public documentation pages | 56 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

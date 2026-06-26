@@ -310,16 +310,6 @@ Rust Compatibility Layer
 Research Bridges
 ------------------
 
-.. automodule:: scpn_fusion.core.lazarus_bridge
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: scpn_fusion.core.vibrana_bridge
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. automodule:: scpn_fusion.core.quantum_bridge
    :members:
    :undoc-members:

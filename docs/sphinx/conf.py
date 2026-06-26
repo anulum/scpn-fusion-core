@@ -136,6 +136,8 @@ autodoc_mock_imports = [
     "plotly",
     "maturin",
     "pyo3",
+    "scpn_studio_platform",
+    "scpn_studio_platform.manifest",
 ]
 
 # ---------------------------------------------------------------------------

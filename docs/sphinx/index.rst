@@ -120,6 +120,7 @@ Public Documentation Hubs
    tutorials/realtime_reconstruction
    tutorials/fault_tolerant_operations
    tutorials/scenario_design
+   tutorials/studio_manifest_federation
 
 .. toctree::
    :maxdepth: 2
@@ -134,6 +135,7 @@ Public Documentation Hubs
    userguide/scpn_compiler
    userguide/hpc
    userguide/validation
+   userguide/studio_federation
 
 .. toctree::
    :maxdepth: 2
@@ -145,6 +147,9 @@ Public Documentation Hubs
    api/diagnostics
    api/engineering
    api/scpn
+   api/studio
+   api/phase
+   api/ui
    api/hpc
    api/io
 
