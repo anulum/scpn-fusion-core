@@ -97,6 +97,9 @@ RUST (0) → MOJO (1) → JULIA (2) → GO (3) → JAX (4) → NUMPY (5)
 winner, and records a `fallback_telemetry` event when a non-fastest tier is selected.
 `register_kernel_class` / `dispatch_kernel_class` do the same for stateful backends (the
 equilibrium kernel), using lazy loader thunks to break import cycles.
+Rust-only extension symbols without a NumPy floor are resolved through
+`dispatch_rust_symbol(name)`, which is the single production import boundary for optional
+`scpn_fusion_rs` callables such as SCPN runtime kernels and `PyRustFlightSim`.
 
 **Currently registered tiers (verified):**
 
@@ -286,8 +289,8 @@ control spec
 ```
 
 The runtime activation/marking/sampling kernels have a Rust fast-path
-(`scpn_dense_activations` / `scpn_marking_update` / `scpn_sample_firing`, imported by
-`controller_runtime_backend`) with a NumPy floor.
+(`scpn_dense_activations` / `scpn_marking_update` / `scpn_sample_firing`, resolved through
+`core/_multi_compat.py`) with a NumPy floor.
 
 ### 7.2 Phase-synchronisation engine (`phase/`)
 - **`kuramoto.py`**: Kuramoto-Sakaguchi mean-field step with an exogenous global driver Ψ;
