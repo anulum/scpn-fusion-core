@@ -116,6 +116,13 @@ All six dispatched kernels have a **NumPy floor** — the package runs with no R
 present. The `MOJO`/`JULIA`/`GO` tiers exist in the enum as a forward-looking chain but have no
 registered providers today.
 
+The dispatcher proof surface is tracked by
+`validation/reports/dispatcher_kernel_tiers_benchmark.json`, generated with
+`PYTHONPATH=src python benchmarks/bench_dispatcher_kernel_tiers.py`. The report records the
+selected tier and timing row for each A2 function kernel, then forces the Rust tier unavailable
+and requires `fallback_telemetry_validation` to emit one `multi_backend` fallback event per
+kernel while selecting the NumPy floor.
+
 ### 3.2 Rust acceleration layer (`scpn-fusion-rs/`, 12 crates)
 
 | Crate | Responsibility | Backs (Python) |
