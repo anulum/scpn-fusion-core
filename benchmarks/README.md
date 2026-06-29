@@ -82,6 +82,20 @@ and single-run local timings.
 This validation is not an isolated release-performance claim. Use Criterion or
 dedicated pinned-core runners before citing multigrid speedups.
 
+## Dispatcher Kernel-Tier Benchmark
+
+`PYTHONPATH=src python benchmarks/bench_dispatcher_kernel_tiers.py` runs the
+five canonical A2 dispatcher kernels through `core/_multi_compat.py` and writes:
+
+| File | Contents |
+|------|----------|
+| `validation/reports/dispatcher_kernel_tiers_benchmark.json` | Selected tier, local timing row, output checksum, NumPy-floor proof, and `fallback_telemetry_validation` for each dispatch kernel |
+
+The timing rows are local non-isolated regression evidence. The accepted
+contract is the tier proof: every kernel keeps Rust and NumPy registered, every
+kernel resolves through the dispatcher, and forced Rust unavailability records
+one `multi_backend` fallback telemetry event per kernel while selecting NumPy.
+
 ## Criterion Benchmarks
 
 Three benchmark suites are defined in the Rust workspace:

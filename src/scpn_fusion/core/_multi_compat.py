@@ -37,9 +37,10 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from importlib import import_module
 from importlib.util import find_spec
 from enum import IntEnum
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +173,7 @@ _registry: dict[str, list[tuple[BackendTier, Callable[..., Any]]]] = {}
 
 # Tracks which tier was selected for each kernel on first dispatch
 _dispatch_cache: dict[str, tuple[BackendTier, Callable[..., Any]]] = {}
+_rust_symbol_cache: dict[str, tuple[int, Callable[..., object]]] = {}
 
 
 def _record_fallback_event_safe(
@@ -277,6 +279,48 @@ def dispatch(name: str) -> Callable[..., Any]:
             f"All registered backends for {name!r} are unavailable. "
             f"Registered tiers: {available_tiers}"
         )
+
+
+def dispatch_rust_symbol(symbol_name: str) -> Callable[..., object]:
+    """Resolve a callable symbol from the Rust PyO3 extension.
+
+    This helper is the single import boundary for production code that needs a
+    Rust-only symbol with no NumPy fallback. It keeps optional-extension loading
+    behind the same backend-dispatch module used by function and class kernels,
+    while preserving the extension's native ``ImportError`` and
+    ``AttributeError`` failure contracts for CLI and probe callers.
+
+    Parameters
+    ----------
+    symbol_name : str
+        Name of the callable exported by ``scpn_fusion_rs``.
+
+    Returns
+    -------
+    callable
+        The requested Rust extension callable.
+
+    Raises
+    ------
+    ImportError
+        If the optional Rust extension is unavailable.
+    AttributeError
+        If the extension does not export ``symbol_name``.
+    TypeError
+        If the exported symbol is present but is not callable.
+    """
+    module = import_module("scpn_fusion_rs")
+    module_id = id(module)
+    cached = _rust_symbol_cache.get(symbol_name)
+    if cached is not None and cached[0] == module_id:
+        return cached[1]
+
+    symbol = getattr(module, symbol_name)
+    if not callable(symbol):
+        raise TypeError(f"Rust symbol {symbol_name!r} is not callable.")
+    callable_symbol = cast(Callable[..., object], symbol)
+    _rust_symbol_cache[symbol_name] = (module_id, callable_symbol)
+    return callable_symbol
 
 
 def dispatch_tier(name: str) -> str:

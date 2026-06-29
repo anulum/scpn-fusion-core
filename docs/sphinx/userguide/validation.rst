@@ -45,7 +45,7 @@ Validation Datasets
        :math:`I_p` up to :math:`8.7\,\text{MA}`)
    * - ITPA H-mode
      - Verdoolaege et al., NF 61 (2021)
-     - 20-row confinement dataset from 10 tokamaks
+     - 53-shot confinement dataset from 24 tokamaks
        (JET, DIII-D, C-Mod, ASDEX-U, ...)
    * - ITER baseline
      - ITER Physics Basis
@@ -72,7 +72,7 @@ the IPB98(y,2) scaling law (ITER Physics Basis, Nuclear Fusion 39, 1999):
             \; P_\text{loss}^{-0.69} \; R^{1.97} \; \kappa^{0.78}
             \; \varepsilon^{0.58} \; M^{0.19}
 
-Validated accuracy against the ITPA H-mode database (20-shot subset):
+Validated accuracy against the ITPA H-mode database (53 shots, 24 machines):
 
 .. list-table::
    :header-rows: 1
@@ -101,7 +101,7 @@ Validated accuracy against the ITPA H-mode database (20-shot subset):
 
    The ``13.5%`` value reported for the neural transport MLP is a
    surrogate-fit metric and is **not** the same as full physics-transport
-   validation on the 20-shot ITPA lane.
+   validation on the 53-shot ITPA lane.
 
 SPARC Equilibrium Topology Validation
 ---------------------------------------
