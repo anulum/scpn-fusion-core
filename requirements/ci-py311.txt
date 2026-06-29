@@ -288,9 +288,9 @@ hypothesis==6.151.9 \
     --hash=sha256:2f284428dda6c3c48c580de0e18470ff9c7f5ef628a647ee8002f38c3f9097ca \
     --hash=sha256:7b7220585c67759b1b1ef839b1e6e9e3d82ed468cfc1ece43c67184848d7edd9
     # via -r requirements/ci.in
-identify==2.6.17 \
-    --hash=sha256:be5f8412d5ed4b20f2bd41a65f920990bdccaa6a4a18a08f1eefdcd0bdd885f0 \
-    --hash=sha256:f816b0b596b204c9fdf076ded172322f2723cf958d02f9c3587504834c8ff04d
+identify==2.6.19 \
+    --hash=sha256:20e6a87f786f768c092a721ad107fc9df0eb89347be9396cadf3f4abbd1fb78a \
+    --hash=sha256:6be5020c38fcb07da56c53733538a3081ea5aa70d36a156f83044bfbf9173842
     # via pre-commit
 iniconfig==2.3.0 \
     --hash=sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730 \
