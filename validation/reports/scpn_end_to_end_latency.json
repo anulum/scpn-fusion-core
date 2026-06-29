@@ -1,104 +1,118 @@
 {
-  "generated_at_utc": "2026-06-17T17:52:57.038434+00:00",
-  "runtime_seconds": 13.794108567992225,
+  "schema": "scpn-fusion-core.end_to_end_latency_report.v1",
+  "status": "accepted_local_reduced_order_latency_report",
+  "passes_thresholds": true,
+  "claim_boundary": "Local reduced-order control latency evidence; not physical HIL, FPGA, plant CODAC, or actuator hardware timing.",
+  "physical_hil_ready": false,
+  "fpga_timing_ready": false,
+  "codac_timing_ready": false,
+  "actuator_hardware_timing_ready": false,
+  "generated_at_utc": "2026-06-29T21:05:14.232207+00:00",
+  "runtime_seconds": 63.12741592194652,
   "scpn_end_to_end_latency": {
     "seed": 42,
     "steps": 320,
     "modes": {
       "surrogate": {
         "SNN": {
-          "runtime_backend": "numpy",
+          "runtime_backend": "rust",
           "rmse": 0.07458332825575847,
-          "p50_loop_ms": 0.1470239949412644,
-          "p95_loop_ms": 0.25491261039860547,
-          "p99_loop_ms": 0.2819526946404949,
-          "p95_sensor_ms": 0.0058891455410048366,
-          "p95_controller_ms": 0.23580998094985264,
-          "p95_actuator_ms": 0.00710961758159101,
-          "p95_physics_ms": 0.00048444635467603814
+          "p50_loop_ms": 0.2129129716195166,
+          "p95_loop_ms": 0.40212259627878716,
+          "p99_loop_ms": 2.4099298031069374,
+          "p95_sensor_ms": 0.01165857829619199,
+          "p95_controller_ms": 0.36472722422331577,
+          "p95_actuator_ms": 0.013818286242894828,
+          "p95_physics_ms": 0.0010627496521919968
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13663350372195604,
-          "p50_loop_ms": 0.008828501449897885,
-          "p95_loop_ms": 0.009763499838300051,
-          "p99_loop_ms": 0.01544665137771517,
-          "p95_sensor_ms": 0.00284807465504855,
-          "p95_controller_ms": 0.0034279146348126237,
-          "p95_actuator_ms": 0.0027169895474798977,
-          "p95_physics_ms": 0.00016521807992830878
+          "p50_loop_ms": 0.019754021195694804,
+          "p95_loop_ms": 0.03890161169692874,
+          "p99_loop_ms": 0.05752221040893347,
+          "p95_sensor_ms": 0.0126664963318035,
+          "p95_controller_ms": 0.013784578186459845,
+          "p95_actuator_ms": 0.010935025056824088,
+          "p95_physics_ms": 0.001041192444972694
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05115337472048825,
-          "p50_loop_ms": 0.055338503443636,
-          "p95_loop_ms": 0.06779369723517448,
-          "p99_loop_ms": 0.09081743250135332,
-          "p95_sensor_ms": 0.003191051655448973,
-          "p95_controller_ms": 0.05730991688324141,
-          "p95_actuator_ms": 0.005488195165526123,
-          "p95_physics_ms": 0.000266259303316474
+          "p50_loop_ms": 0.11745200026780367,
+          "p95_loop_ms": 0.20664695475716158,
+          "p99_loop_ms": 0.3268706455128269,
+          "p95_sensor_ms": 0.015067300410009931,
+          "p95_controller_ms": 0.1597593101905659,
+          "p95_actuator_ms": 0.03099007590208203,
+          "p95_physics_ms": 0.0011963449651375413
         }
       },
       "full": {
         "SNN": {
-          "runtime_backend": "numpy",
+          "runtime_backend": "rust",
           "rmse": 0.07443897829335305,
-          "p50_loop_ms": 0.15557999722659588,
-          "p95_loop_ms": 0.18808126042131337,
-          "p99_loop_ms": 0.2298679164960049,
-          "p95_sensor_ms": 0.004273056401871145,
-          "p95_controller_ms": 0.16978228231891992,
-          "p95_actuator_ms": 0.004820851609110832,
-          "p95_physics_ms": 0.007094537431839855
+          "p50_loop_ms": 0.23221448645927012,
+          "p95_loop_ms": 0.32703020551707596,
+          "p99_loop_ms": 0.8052674465579912,
+          "p95_sensor_ms": 0.012684485409408808,
+          "p95_controller_ms": 0.28343066514935344,
+          "p95_actuator_ms": 0.013578534708358347,
+          "p95_physics_ms": 0.02294928417541087
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13817093429586896,
-          "p50_loop_ms": 0.012414006050676107,
-          "p95_loop_ms": 0.015783349226694558,
-          "p99_loop_ms": 0.021353100601118058,
-          "p95_sensor_ms": 0.0032230484066531066,
-          "p95_controller_ms": 0.003439406282268465,
-          "p95_actuator_ms": 0.0029252434615045786,
-          "p95_physics_ms": 0.00420044962083921
+          "p50_loop_ms": 0.01785348285920918,
+          "p95_loop_ms": 0.03554653376340867,
+          "p99_loop_ms": 0.0378755759447813,
+          "p95_sensor_ms": 0.008219416486099364,
+          "p95_controller_ms": 0.008823815733194353,
+          "p95_actuator_ms": 0.006871126242913307,
+          "p95_physics_ms": 0.011097665992565453
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05258547371664243,
-          "p50_loop_ms": 0.06083751213736832,
-          "p95_loop_ms": 0.07049538107821718,
-          "p99_loop_ms": 0.08820026618195698,
-          "p95_sensor_ms": 0.003404413291718811,
-          "p95_controller_ms": 0.05656510911649093,
-          "p95_actuator_ms": 0.004726216138806195,
-          "p95_physics_ms": 0.005281358608044685
+          "p50_loop_ms": 0.0876345147844404,
+          "p95_loop_ms": 0.1590164436493069,
+          "p99_loop_ms": 0.17207603494171053,
+          "p95_sensor_ms": 0.008496802183799446,
+          "p95_controller_ms": 0.12239077186677605,
+          "p95_actuator_ms": 0.014298324822448194,
+          "p95_physics_ms": 0.013898563338443639
         }
       }
     },
-    "snn_runtime_backend": "numpy",
-    "threshold_profile": "numpy_fallback",
+    "snn_runtime_backend": "rust",
+    "threshold_profile": "accelerated",
     "ratios": {
-      "snn_full_to_surrogate_p95_ratio": 0.7378264265828659
+      "snn_full_to_surrogate_p95_ratio": 0.8132599573945591
     },
     "thresholds": {
-      "max_snn_p95_loop_ms_surrogate": 10.0,
-      "max_snn_p95_loop_ms_full": 14.0,
+      "max_snn_p95_loop_ms_surrogate": 8.0,
+      "max_snn_p95_loop_ms_full": 12.0,
       "max_snn_full_to_surrogate_ratio": 8.0
     },
     "passes_thresholds": true
   },
   "digital_twin_control_latency": {
     "schema": "scpn-fusion-core.digital_twin_control_latency.v1",
+    "claim_boundary": "Reduced-order sensor-to-control benchmark with a host-side simulated HIL scaffold. This section does not certify physical HIL, FPGA, plant CODAC, or actuator hardware timing.",
+    "simulated_hil_scaffold_ready": true,
+    "physical_hil_ready": false,
+    "fpga_timing_ready": false,
+    "codac_timing_ready": false,
+    "actuator_hardware_timing_ready": false,
     "measurement_context": {
-      "claim_boundary": "Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.",
+      "claim_boundary": "Python CPU and Rust rows are local non-isolated wall-clock measurements. GPU rows are accelerator measurements only when status is measured. HIL rows are simulated host ADC/DAC timing unless hardware_status names a physical rig.",
       "accelerator_isolation_note": "CUDA device was operator-reserved for this benchmark run; CPU host process isolation is recorded in host_before/host_after.",
       "warmup_policy": "No samples discarded; deterministic synthetic stream is measured from cold local process state.",
       "sample_count_per_case": 320,
-      "benchmark_command": "taskset -c 10,11 env SCPN_BENCHMARK_ISOLATION_METHOD=taskset_affinity_operator_reserved_cores SCPN_BENCHMARK_CPUSET=10,11 SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS=none_intentionally_started_by_this_task SCPN_BENCHMARK_CLAIM_BOUNDARY='Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.' .venv/bin/python validation/scpn_end_to_end_latency.py --steps 320 --strict",
-      "cpu_isolation_method": "taskset_affinity_operator_reserved_cores",
-      "reserved_cpu_set": "10,11",
-      "concurrent_heavy_jobs": "none_intentionally_started_by_this_task",
+      "benchmark_command": null,
+      "cpu_isolation_method": "non_isolated_local_workstation",
+      "reserved_cpu_set": null,
+      "concurrent_heavy_jobs": null,
       "host_before": {
         "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
         "python_version": "3.12.3",
@@ -106,30 +120,40 @@
         "machine": "x86_64",
         "cpu_count": 12,
         "affinity_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
           10,
           11
         ],
-        "affinity_cpu_count": 2,
-        "reserved_cpu_set": "10,11",
+        "affinity_cpu_count": 12,
+        "reserved_cpu_set": null,
         "loadavg_1_5_15": [
-          7.2265625,
-          5.3642578125,
-          4.83251953125
+          27.81103515625,
+          26.12939453125,
+          25.36279296875
         ],
         "numpy_version": "1.26.4",
         "cpu_frequency": {
           "governors": [
             "powersave"
           ],
-          "current_khz_min": 4212432,
-          "current_khz_max": 4522927,
+          "current_khz_min": 3599427,
+          "current_khz_max": 3600000,
           "scaling_min_khz_min": 800000,
           "scaling_max_khz_max": 4900000
         },
-        "isolation": "taskset_affinity_operator_reserved_cores",
-        "benchmark_command": "taskset -c 10,11 env SCPN_BENCHMARK_ISOLATION_METHOD=taskset_affinity_operator_reserved_cores SCPN_BENCHMARK_CPUSET=10,11 SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS=none_intentionally_started_by_this_task SCPN_BENCHMARK_CLAIM_BOUNDARY='Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.' .venv/bin/python validation/scpn_end_to_end_latency.py --steps 320 --strict",
-        "concurrent_heavy_jobs": "none_intentionally_started_by_this_task",
-        "claim_boundary": "Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped."
+        "isolation": "non_isolated_local_workstation",
+        "benchmark_command": null,
+        "concurrent_heavy_jobs": null,
+        "claim_boundary": "Local wall-clock regression evidence only; not an isolated-core or hardware-in-the-loop latency claim."
       },
       "host_after": {
         "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
@@ -138,68 +162,78 @@
         "machine": "x86_64",
         "cpu_count": 12,
         "affinity_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
           10,
           11
         ],
-        "affinity_cpu_count": 2,
-        "reserved_cpu_set": "10,11",
+        "affinity_cpu_count": 12,
+        "reserved_cpu_set": null,
         "loadavg_1_5_15": [
-          7.2265625,
-          5.3642578125,
-          4.83251953125
+          27.81103515625,
+          26.12939453125,
+          25.36279296875
         ],
         "numpy_version": "1.26.4",
         "cpu_frequency": {
           "governors": [
             "powersave"
           ],
-          "current_khz_min": 800000,
-          "current_khz_max": 4610798,
+          "current_khz_min": 3599770,
+          "current_khz_max": 3600107,
           "scaling_min_khz_min": 800000,
           "scaling_max_khz_max": 4900000
         },
-        "isolation": "taskset_affinity_operator_reserved_cores",
-        "benchmark_command": "taskset -c 10,11 env SCPN_BENCHMARK_ISOLATION_METHOD=taskset_affinity_operator_reserved_cores SCPN_BENCHMARK_CPUSET=10,11 SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS=none_intentionally_started_by_this_task SCPN_BENCHMARK_CLAIM_BOUNDARY='Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.' .venv/bin/python validation/scpn_end_to_end_latency.py --steps 320 --strict",
-        "concurrent_heavy_jobs": "none_intentionally_started_by_this_task",
-        "claim_boundary": "Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped."
+        "isolation": "non_isolated_local_workstation",
+        "benchmark_command": null,
+        "concurrent_heavy_jobs": null,
+        "claim_boundary": "Local wall-clock regression evidence only; not an isolated-core or hardware-in-the-loop latency claim."
       }
     },
     "cpu": {
       "status": "measured",
       "backend": "python_numpy_cpu",
-      "p50_loop_ms": 0.034280994441360235,
-      "p95_loop_ms": 0.05340759671526032,
-      "p99_loop_ms": 0.06274917017435655,
+      "p50_loop_ms": 0.049953494453802705,
+      "p95_loop_ms": 0.1347599318251014,
+      "p99_loop_ms": 0.15415024536196142,
       "stages": {
         "input_validation": {
-          "p50_ms": 0.0010655203368514776,
-          "p95_ms": 0.0015174300642684102,
-          "p99_ms": 0.0020625130855478346
+          "p50_ms": 0.0014955003280192614,
+          "p95_ms": 0.003270141314715147,
+          "p99_ms": 0.004040655912831426
         },
         "feature_assembly": {
-          "p50_ms": 0.0011375086614862084,
-          "p95_ms": 0.001938795321621001,
-          "p99_ms": 0.002616002748254687
+          "p50_ms": 0.0017780112102627754,
+          "p95_ms": 0.005225656786933542,
+          "p99_ms": 0.007960108923725784
         },
         "digital_twin_update": {
-          "p50_ms": 0.007461494533345103,
-          "p95_ms": 0.012752639304380864,
-          "p99_ms": 0.015234184975270184
+          "p50_ms": 0.010415504220873117,
+          "p95_ms": 0.028516343445517126,
+          "p99_ms": 0.03504174237605185
         },
         "controller_decision": {
-          "p50_ms": 0.001438005710951984,
-          "p95_ms": 0.00217187189264223,
-          "p99_ms": 0.0027116682031191885
+          "p50_ms": 0.0018855207599699497,
+          "p95_ms": 0.005237350706011057,
+          "p99_ms": 0.006340437685139477
         },
         "fallback_policy": {
-          "p50_ms": 0.013327007764019072,
-          "p95_ms": 0.02171938976971433,
-          "p99_ms": 0.02408360072877258
+          "p50_ms": 0.019286497263237834,
+          "p95_ms": 0.055997102754190564,
+          "p99_ms": 0.06268481956794858
         },
         "output_serialization": {
-          "p50_ms": 0.007921509677544236,
-          "p95_ms": 0.01340460585197434,
-          "p99_ms": 0.01618449576199055
+          "p50_ms": 0.011622993042692542,
+          "p95_ms": 0.03074663109146059,
+          "p99_ms": 0.03716998500749469
         }
       },
       "degraded_modes": {
@@ -211,39 +245,39 @@
           "safe_output_rate": 1.0,
           "fallback_reasons": {},
           "checksum": -77.13915732179238,
-          "p50_loop_ms": 0.034280994441360235,
-          "p95_loop_ms": 0.05340759671526032,
-          "p99_loop_ms": 0.06274917017435655,
+          "p50_loop_ms": 0.049953494453802705,
+          "p95_loop_ms": 0.1347599318251014,
+          "p99_loop_ms": 0.15415024536196142,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0010655203368514776,
-              "p95_ms": 0.0015174300642684102,
-              "p99_ms": 0.0020625130855478346
+              "p50_ms": 0.0014955003280192614,
+              "p95_ms": 0.003270141314715147,
+              "p99_ms": 0.004040655912831426
             },
             "feature_assembly": {
-              "p50_ms": 0.0011375086614862084,
-              "p95_ms": 0.001938795321621001,
-              "p99_ms": 0.002616002748254687
+              "p50_ms": 0.0017780112102627754,
+              "p95_ms": 0.005225656786933542,
+              "p99_ms": 0.007960108923725784
             },
             "digital_twin_update": {
-              "p50_ms": 0.007461494533345103,
-              "p95_ms": 0.012752639304380864,
-              "p99_ms": 0.015234184975270184
+              "p50_ms": 0.010415504220873117,
+              "p95_ms": 0.028516343445517126,
+              "p99_ms": 0.03504174237605185
             },
             "controller_decision": {
-              "p50_ms": 0.001438005710951984,
-              "p95_ms": 0.00217187189264223,
-              "p99_ms": 0.0027116682031191885
+              "p50_ms": 0.0018855207599699497,
+              "p95_ms": 0.005237350706011057,
+              "p99_ms": 0.006340437685139477
             },
             "fallback_policy": {
-              "p50_ms": 0.013327007764019072,
-              "p95_ms": 0.02171938976971433,
-              "p99_ms": 0.02408360072877258
+              "p50_ms": 0.019286497263237834,
+              "p95_ms": 0.055997102754190564,
+              "p99_ms": 0.06268481956794858
             },
             "output_serialization": {
-              "p50_ms": 0.007921509677544236,
-              "p95_ms": 0.01340460585197434,
-              "p99_ms": 0.01618449576199055
+              "p50_ms": 0.011622993042692542,
+              "p95_ms": 0.03074663109146059,
+              "p99_ms": 0.03716998500749469
             }
           },
           "passes_semantics": true
@@ -258,39 +292,39 @@
             "stale_snapshot_safe_mode": 46
           },
           "checksum": -77.13784328915892,
-          "p50_loop_ms": 0.033947493648156524,
-          "p95_loop_ms": 0.0513018501806073,
-          "p99_loop_ms": 0.06417687895009294,
+          "p50_loop_ms": 0.08811947191134095,
+          "p95_loop_ms": 0.13136997586116195,
+          "p99_loop_ms": 0.3311394271440808,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.001108492142520845,
-              "p95_ms": 0.0013560100342147065,
-              "p99_ms": 0.0019035232253372674
+              "p50_ms": 0.0024765031412243843,
+              "p95_ms": 0.003975501749664545,
+              "p99_ms": 0.009051252854987982
             },
             "feature_assembly": {
-              "p50_ms": 0.0011074880603700876,
-              "p95_ms": 0.0016784615581855187,
-              "p99_ms": 0.0024177337763831024
+              "p50_ms": 0.0029415241442620754,
+              "p95_ms": 0.0062535254983231425,
+              "p99_ms": 0.007636909140273929
             },
             "digital_twin_update": {
-              "p50_ms": 0.007297509000636637,
-              "p95_ms": 0.011120631825178874,
-              "p99_ms": 0.01441980799427256
+              "p50_ms": 0.018834485672414303,
+              "p95_ms": 0.030122019234113395,
+              "p99_ms": 0.03797868965193629
             },
             "controller_decision": {
-              "p50_ms": 0.0014225079212337732,
-              "p95_ms": 0.002043343556579203,
-              "p99_ms": 0.0025160162476822734
+              "p50_ms": 0.003258493961766362,
+              "p95_ms": 0.00526348885614425,
+              "p99_ms": 0.006947986548766495
             },
             "fallback_policy": {
-              "p50_ms": 0.013120996300131083,
-              "p95_ms": 0.019335988326929513,
-              "p99_ms": 0.02527585718780756
+              "p50_ms": 0.03426251350902021,
+              "p95_ms": 0.05478068778757006,
+              "p99_ms": 0.0643804529681802
             },
             "output_serialization": {
-              "p50_ms": 0.007885493687354028,
-              "p95_ms": 0.012226300896145405,
-              "p99_ms": 0.015603424690198153
+              "p50_ms": 0.019791012164205313,
+              "p95_ms": 0.03214676398783922,
+              "p99_ms": 0.07799927378073344
             }
           },
           "passes_semantics": true
@@ -305,39 +339,39 @@
             "ood_snapshot_safe_mode": 30
           },
           "checksum": -101.45274425888707,
-          "p50_loop_ms": 0.033051008358597755,
-          "p95_loop_ms": 0.04374616983113812,
-          "p99_loop_ms": 0.06320115411654115,
+          "p50_loop_ms": 0.04878398613072932,
+          "p95_loop_ms": 0.0896550714969635,
+          "p99_loop_ms": 0.11213932302780451,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.001086998963728547,
-              "p95_ms": 0.0014117933460511272,
-              "p99_ms": 0.0019217180670239031
+              "p50_ms": 0.0015050172805786133,
+              "p95_ms": 0.0028514186851680283,
+              "p99_ms": 0.007389981183223434
             },
             "feature_assembly": {
-              "p50_ms": 0.0011024967534467578,
-              "p95_ms": 0.0015659999917261305,
-              "p99_ms": 0.0022839472512714565
+              "p50_ms": 0.001619482645764947,
+              "p95_ms": 0.0034559954656288036,
+              "p99_ms": 0.0045341154327616096
             },
             "digital_twin_update": {
-              "p50_ms": 0.00713950430508703,
-              "p95_ms": 0.011732484563253822,
-              "p99_ms": 0.014686990471091123
+              "p50_ms": 0.010161515092477202,
+              "p95_ms": 0.020995899103581905,
+              "p99_ms": 0.02559040556661785
             },
             "controller_decision": {
-              "p50_ms": 0.0013929966371506453,
-              "p95_ms": 0.0016434001736342916,
-              "p99_ms": 0.0024370092432945967
+              "p50_ms": 0.001855980372056365,
+              "p95_ms": 0.0035290664527565245,
+              "p99_ms": 0.005568764754571024
             },
             "fallback_policy": {
-              "p50_ms": 0.012842996511608362,
-              "p95_ms": 0.017989659681916247,
-              "p99_ms": 0.024684875388629735
+              "p50_ms": 0.018590508261695504,
+              "p95_ms": 0.03723550762515516,
+              "p99_ms": 0.045583536848425865
             },
             "output_serialization": {
-              "p50_ms": 0.007633003406226635,
-              "p95_ms": 0.01047069090418518,
-              "p99_ms": 0.014999959676060826
+              "p50_ms": 0.011006020940840244,
+              "p95_ms": 0.020796252647414807,
+              "p99_ms": 0.03323733340948822
             }
           },
           "passes_semantics": true
@@ -352,39 +386,39 @@
             "missing_q95_defaulted": 64
           },
           "checksum": -77.18063967996703,
-          "p50_loop_ms": 0.032928495784290135,
-          "p95_loop_ms": 0.04051213181810454,
-          "p99_loop_ms": 0.06332426215521993,
+          "p50_loop_ms": 0.04834550782106817,
+          "p95_loop_ms": 0.12119210732635112,
+          "p99_loop_ms": 0.14184679312165827,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0010600051609799266,
-              "p95_ms": 0.0013630909961648285,
-              "p99_ms": 0.002059413527604193
+              "p50_ms": 0.0015425030142068863,
+              "p95_ms": 0.0034931465052068238,
+              "p99_ms": 0.004841216723434627
             },
             "feature_assembly": {
-              "p50_ms": 0.001080014044418931,
-              "p95_ms": 0.0013435463188216092,
-              "p99_ms": 0.002175045374315233
+              "p50_ms": 0.0015755067579448223,
+              "p95_ms": 0.005002462421543896,
+              "p99_ms": 0.006093717529438436
             },
             "digital_twin_update": {
-              "p50_ms": 0.007130991434678435,
-              "p95_ms": 0.008288596291095022,
-              "p99_ms": 0.013930545537732542
+              "p50_ms": 0.01023148070089519,
+              "p95_ms": 0.026508449809625745,
+              "p99_ms": 0.02999972435645759
             },
             "controller_decision": {
-              "p50_ms": 0.0013800017768517137,
-              "p95_ms": 0.0015328478184528658,
-              "p99_ms": 0.0025884638307616115
+              "p50_ms": 0.0018205028027296066,
+              "p95_ms": 0.004648248432204127,
+              "p99_ms": 0.006411994108930232
             },
             "fallback_policy": {
-              "p50_ms": 0.012764998245984316,
-              "p95_ms": 0.014460581587627532,
-              "p99_ms": 0.025083018408622593
+              "p50_ms": 0.018611463019624352,
+              "p95_ms": 0.052364711882546544,
+              "p99_ms": 0.061994359712116434
             },
             "output_serialization": {
-              "p50_ms": 0.007565002306364477,
-              "p95_ms": 0.010587548604235055,
-              "p99_ms": 0.015992590342648327
+              "p50_ms": 0.01116449129767716,
+              "p95_ms": 0.02717648167163134,
+              "p99_ms": 0.031807494815438986
             }
           },
           "passes_semantics": true
@@ -399,39 +433,39 @@
             "non_finite_input_replaced": 25
           },
           "checksum": -77.12985039555913,
-          "p50_loop_ms": 0.03351250779815018,
-          "p95_loop_ms": 0.0431481472332962,
-          "p99_loop_ms": 0.062457945314235985,
+          "p50_loop_ms": 0.06991100963205099,
+          "p95_loop_ms": 0.11858935467898847,
+          "p99_loop_ms": 0.18354982661549007,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0010759977158159018,
-              "p95_ms": 0.0013182463590055704,
-              "p99_ms": 0.001844771031755954
+              "p50_ms": 0.0018869759514927864,
+              "p95_ms": 0.0029882357921451343,
+              "p99_ms": 0.004739026189781725
             },
             "feature_assembly": {
-              "p50_ms": 0.00112448469735682,
-              "p95_ms": 0.0014858436770737173,
-              "p99_ms": 0.0024815404321998358
+              "p50_ms": 0.0023459724616259336,
+              "p95_ms": 0.004735263064503671,
+              "p99_ms": 0.007197408122010531
             },
             "digital_twin_update": {
-              "p50_ms": 0.0072085094870999455,
-              "p95_ms": 0.008539190457668157,
-              "p99_ms": 0.013942628575023264
+              "p50_ms": 0.014622986782342196,
+              "p95_ms": 0.028484198264777667,
+              "p99_ms": 0.036942134611308575
             },
             "controller_decision": {
-              "p50_ms": 0.0014155084500089288,
-              "p95_ms": 0.0015887417248450222,
-              "p99_ms": 0.0024639739422127604
+              "p50_ms": 0.0023065076675266027,
+              "p95_ms": 0.004484690725803376,
+              "p99_ms": 0.007069457788020374
             },
             "fallback_policy": {
-              "p50_ms": 0.013034004950895905,
-              "p95_ms": 0.01849335094448179,
-              "p99_ms": 0.024259635247290134
+              "p50_ms": 0.025020010070875287,
+              "p95_ms": 0.04816919390577823,
+              "p99_ms": 0.06473930028732866
             },
             "output_serialization": {
-              "p50_ms": 0.007743990863673389,
-              "p95_ms": 0.010274257510900503,
-              "p99_ms": 0.014599009591620415
+              "p50_ms": 0.015235476894304156,
+              "p95_ms": 0.026922885444946587,
+              "p99_ms": 0.0378497363999486
             }
           },
           "passes_semantics": true
@@ -446,39 +480,39 @@
             "actuator_saturation_clamped": 36
           },
           "checksum": -114.9819217229597,
-          "p50_loop_ms": 0.033029005862772465,
-          "p95_loop_ms": 0.045659746683668366,
-          "p99_loop_ms": 0.06485683785285801,
+          "p50_loop_ms": 0.0791260099504143,
+          "p95_loop_ms": 0.11457855871412904,
+          "p99_loop_ms": 0.1347586011979729,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0010640069376677275,
-              "p95_ms": 0.0013433687854558242,
-              "p99_ms": 0.0019616671488620345
+              "p50_ms": 0.0020310108084231615,
+              "p95_ms": 0.0031637027859687805,
+              "p99_ms": 0.00390990637242794
             },
             "feature_assembly": {
-              "p50_ms": 0.0010960065992549062,
-              "p95_ms": 0.001640933624003083,
-              "p99_ms": 0.0025591856683604424
+              "p50_ms": 0.002645509084686637,
+              "p95_ms": 0.004555642954073846,
+              "p99_ms": 0.005978645640425384
             },
             "digital_twin_update": {
-              "p50_ms": 0.0071260001277551055,
-              "p95_ms": 0.009617222531232985,
-              "p99_ms": 0.0139445107197389
+              "p50_ms": 0.016918493201956153,
+              "p95_ms": 0.026609667111188177,
+              "p99_ms": 0.0319789326749742
             },
             "controller_decision": {
-              "p50_ms": 0.0013949902495369315,
-              "p95_ms": 0.0016046906239353127,
-              "p99_ms": 0.002388172142673284
+              "p50_ms": 0.002792512532323599,
+              "p95_ms": 0.004824000643566252,
+              "p99_ms": 0.005676868022419512
             },
             "fallback_policy": {
-              "p50_ms": 0.01283749588765204,
-              "p95_ms": 0.019246047304477543,
-              "p99_ms": 0.0259022373938933
+              "p50_ms": 0.030801485991105437,
+              "p95_ms": 0.04789358645211905,
+              "p99_ms": 0.05686122283805162
             },
             "output_serialization": {
-              "p50_ms": 0.007633483619429171,
-              "p95_ms": 0.011409456783439966,
-              "p99_ms": 0.016081889043562114
+              "p50_ms": 0.017983518773689866,
+              "p95_ms": 0.027210492407903086,
+              "p99_ms": 0.03503990592435003
             }
           },
           "passes_semantics": true
@@ -493,39 +527,39 @@
             "controller_non_finite_or_bad_shape": 32
           },
           "checksum": -69.53482551334567,
-          "p50_loop_ms": 0.033789488952606916,
-          "p95_loop_ms": 0.04503564705373722,
-          "p99_loop_ms": 0.06290502846240997,
+          "p50_loop_ms": 0.06768450839444995,
+          "p95_loop_ms": 0.13236968079581857,
+          "p99_loop_ms": 0.1556934940163046,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0010840012691915035,
-              "p95_ms": 0.0012954362318851058,
-              "p99_ms": 0.0019329070346429944
+              "p50_ms": 0.0017535057850182056,
+              "p95_ms": 0.00332221097778529,
+              "p99_ms": 0.004314475809223951
             },
             "feature_assembly": {
-              "p50_ms": 0.0011160154826939106,
-              "p95_ms": 0.0016830876120366156,
-              "p99_ms": 0.0025452018599025905
+              "p50_ms": 0.002180488081648946,
+              "p95_ms": 0.004645541775971652,
+              "p99_ms": 0.006642808439210057
             },
             "digital_twin_update": {
-              "p50_ms": 0.007322494639083743,
-              "p95_ms": 0.010149089212063714,
-              "p99_ms": 0.014452971518039705
+              "p50_ms": 0.013046985259279609,
+              "p95_ms": 0.028095100424252468,
+              "p99_ms": 0.03843608312308788
             },
             "controller_decision": {
-              "p50_ms": 0.0014999968698248267,
-              "p95_ms": 0.0022920445189811294,
-              "p99_ms": 0.002669565728865564
+              "p50_ms": 0.0026739726308733225,
+              "p95_ms": 0.0058297853684052825,
+              "p99_ms": 0.007581317913718523
             },
             "fallback_policy": {
-              "p50_ms": 0.013174008927308023,
-              "p95_ms": 0.01744463661452757,
-              "p99_ms": 0.024757471110206097
+              "p50_ms": 0.023354979930445552,
+              "p95_ms": 0.052544308709912016,
+              "p99_ms": 0.06067841954063624
             },
             "output_serialization": {
-              "p50_ms": 0.007766488124616444,
-              "p95_ms": 0.01100299559766427,
-              "p99_ms": 0.015072255628183484
+              "p50_ms": 0.014317018212750554,
+              "p95_ms": 0.02862635301426053,
+              "p99_ms": 0.036609261878766126
             }
           },
           "passes_semantics": true
@@ -541,9 +575,9 @@
       "cuda_runtime_version": 12090,
       "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
       "fallback_count": 0,
-      "p50_loop_ms": 0.7105709955794737,
-      "p95_loop_ms": 0.8405597036471594,
-      "p99_loop_ms": 1.0119916012627073,
+      "p50_loop_ms": 2.481406496372074,
+      "p95_loop_ms": 8.575208747060975,
+      "p99_loop_ms": 16.88649786345195,
       "preloaded_cuda_libraries": [
         "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
         "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
@@ -590,34 +624,34 @@
       ],
       "stages": {
         "controller_decision": {
-          "p50_ms": 0.18689899297896773,
-          "p95_ms": 0.2327456997591071,
-          "p99_ms": 0.3043307061307132
+          "p50_ms": 0.4959859943483025,
+          "p95_ms": 1.7646769672865081,
+          "p99_ms": 5.308588717598468
         },
         "digital_twin_update": {
-          "p50_ms": 0.36429498868528754,
-          "p95_ms": 0.4575293482048438,
-          "p99_ms": 0.5734333596774378
+          "p50_ms": 1.2068859941791743,
+          "p95_ms": 4.5639100280823195,
+          "p99_ms": 9.419440604979174
         },
         "fallback_policy": {
-          "p50_ms": 0.0869725045049563,
-          "p95_ms": 0.10785349586512896,
-          "p99_ms": 0.13592214265372604
+          "p50_ms": 0.3172444994561374,
+          "p95_ms": 1.087810134049505,
+          "p99_ms": 3.575558676966472
         },
         "feature_assembly": {
-          "p50_ms": 0.04396300937514752,
-          "p95_ms": 0.05474311619764194,
-          "p99_ms": 0.06062837550416589
+          "p50_ms": 0.1561639946885407,
+          "p95_ms": 0.7641169446287677,
+          "p99_ms": 1.475742008769885
         },
         "input_validation": {
-          "p50_ms": 0.005512003554031253,
-          "p95_ms": 0.007911257853265857,
-          "p99_ms": 0.011458194931037726
+          "p50_ms": 0.024649518309161067,
+          "p95_ms": 0.09168183605652304,
+          "p99_ms": 0.130936314817518
         },
         "output_serialization": {
-          "p50_ms": 0.01449900446459651,
-          "p95_ms": 0.020569433399941776,
-          "p99_ms": 0.02561339817475528
+          "p50_ms": 0.08267798693850636,
+          "p95_ms": 0.283348181983456,
+          "p99_ms": 0.674690481391736
         }
       },
       "status": "measured",
@@ -631,45 +665,45 @@
       "backend": "rust_release",
       "steps": 320,
       "actuator_count": 2,
-      "p50_loop_ms": 0.0195805,
-      "p95_loop_ms": 0.0202837,
-      "p99_loop_ms": 0.02461054,
+      "p50_loop_ms": 0.052549,
+      "p95_loop_ms": 0.11589315,
+      "p99_loop_ms": 1.81167997,
       "fallback_count": 0,
-      "checksum": 96.361355212,
+      "checksum": 89.229300657,
       "stages": {
         "input_validation": {
-          "p50_ms": 1.9e-05,
-          "p95_ms": 2e-05,
-          "p99_ms": 2.381e-05
+          "p50_ms": 3.1e-05,
+          "p95_ms": 0.0002671,
+          "p99_ms": 0.00064247
         },
         "feature_assembly": {
-          "p50_ms": 5.8e-05,
-          "p95_ms": 6.72e-05,
-          "p99_ms": 0.00010205
+          "p50_ms": 0.000154,
+          "p95_ms": 0.0006121,
+          "p99_ms": 0.00107189
         },
         "digital_twin_update": {
-          "p50_ms": 0.017363,
-          "p95_ms": 0.01774675,
-          "p99_ms": 0.0220268
+          "p50_ms": 0.042623,
+          "p95_ms": 0.09817575,
+          "p99_ms": 1.78737904
         },
         "controller_decision": {
-          "p50_ms": 0.001566,
-          "p95_ms": 0.0016313,
-          "p99_ms": 0.00245091
+          "p50_ms": 0.0057485,
+          "p95_ms": 0.01134055,
+          "p99_ms": 0.02087881
         },
         "fallback_policy": {
-          "p50_ms": 6.2e-05,
-          "p95_ms": 6.705e-05,
-          "p99_ms": 0.0001061
+          "p50_ms": 0.000175,
+          "p95_ms": 0.00095245,
+          "p99_ms": 0.00275395
         },
         "output_serialization": {
-          "p50_ms": 0.000373,
-          "p95_ms": 0.00044105,
-          "p99_ms": 0.00065558
+          "p50_ms": 0.0011745,
+          "p95_ms": 0.00349455,
+          "p99_ms": 0.01166075
         }
       },
       "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 320 --actuators 2 --json",
-      "runtime_seconds": 0.06609650401514955
+      "runtime_seconds": 1.208308659028262
     },
     "hil": {
       "schema": "scpn-fusion-core.simulated_hil_sensor_to_actuator_latency.v1",
@@ -691,61 +725,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5653.26875,
           "latency": {
-            "p50_us": 167.14049999999997,
-            "p95_us": 232.52199999999965,
-            "p99_us": 294.77187,
-            "max_us": 306.357,
-            "mean_us": 175.93355624999998
+            "p50_us": 216.51350000000002,
+            "p95_us": 395.1659999999999,
+            "p99_us": 500.4341899999998,
+            "max_us": 948.3770000000001,
+            "mean_us": 249.82004375000002
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 32.576,
-              "p95_us": 51.410499999999985,
-              "p99_us": 62.87591999999998,
-              "max_us": 68.645,
-              "mean_us": 34.7855875
+              "p50_us": 45.201,
+              "p95_us": 100.81914999999998,
+              "p99_us": 130.37033,
+              "max_us": 135.642,
+              "mean_us": 54.001793750000004
             },
             "input_validation": {
-              "p50_us": 6.0329999999999995,
-              "p95_us": 9.497599999999991,
-              "p99_us": 12.336849999999998,
-              "max_us": 19.707,
-              "mean_us": 6.542175
+              "p50_us": 9.846,
+              "p95_us": 27.88684999999998,
+              "p99_us": 39.177779999999984,
+              "max_us": 45.463,
+              "mean_us": 12.3281625
             },
             "state_estimation": {
-              "p50_us": 8.4435,
-              "p95_us": 12.877149999999986,
-              "p99_us": 17.18016,
-              "max_us": 30.287,
-              "mean_us": 9.134625
+              "p50_us": 12.541,
+              "p95_us": 30.67019999999997,
+              "p99_us": 44.64749999999995,
+              "max_us": 676.966,
+              "mean_us": 19.35253125
             },
             "controller_step": {
-              "p50_us": 1.6015000000000001,
-              "p95_us": 2.2539999999999987,
-              "p99_us": 2.7017099999999985,
-              "max_us": 5.571,
-              "mean_us": 1.6806437500000002
+              "p50_us": 2.2104999999999997,
+              "p95_us": 7.041449999999999,
+              "p99_us": 14.162809999999983,
+              "max_us": 24.057,
+              "mean_us": 3.12095
             },
             "actuator_guard": {
-              "p50_us": 9.2735,
-              "p95_us": 15.432599999999995,
-              "p99_us": 19.698159999999987,
-              "max_us": 53.693,
-              "mean_us": 10.16025
+              "p50_us": 12.931000000000001,
+              "p95_us": 32.416899999999984,
+              "p99_us": 40.84208999999999,
+              "max_us": 249.076,
+              "mean_us": 17.24465
             },
             "dac_write": {
-              "p50_us": 10.472,
-              "p95_us": 16.807449999999996,
-              "p99_us": 19.164189999999998,
-              "max_us": 26.221,
-              "mean_us": 11.14590625
+              "p50_us": 13.379000000000001,
+              "p95_us": 31.411099999999994,
+              "p99_us": 37.337929999999986,
+              "max_us": 50.66,
+              "mean_us": 15.8532625
             },
             "output_serialization": {
-              "p50_us": 98.50550000000001,
-              "p95_us": 135.26284999999987,
-              "p99_us": 169.83979,
-              "max_us": 177.788,
-              "mean_us": 102.48436875
+              "p50_us": 116.751,
+              "p95_us": 185.67424999999997,
+              "p99_us": 199.11256,
+              "max_us": 209.376,
+              "mean_us": 127.91869375000002
             }
           },
           "passes_semantics": true
@@ -763,61 +797,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5651.79375,
           "latency": {
-            "p50_us": 176.05899999999997,
-            "p95_us": 266.35069999999996,
-            "p99_us": 301.78204999999997,
-            "max_us": 333.215,
-            "mean_us": 188.2566375
+            "p50_us": 380.9975,
+            "p95_us": 440.4654499999999,
+            "p99_us": 473.1116099999999,
+            "max_us": 813.493,
+            "mean_us": 359.3509125
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 35.1775,
-              "p95_us": 56.25224999999993,
-              "p99_us": 63.01569999999999,
-              "max_us": 70.131,
-              "mean_us": 37.80605625
+              "p50_us": 74.684,
+              "p95_us": 96.50824999999996,
+              "p99_us": 121.10443999999995,
+              "max_us": 470.151,
+              "mean_us": 75.22443125
             },
             "input_validation": {
-              "p50_us": 6.817,
-              "p95_us": 12.885749999999991,
-              "p99_us": 14.874629999999998,
-              "max_us": 17.767,
-              "mean_us": 7.812268750000001
+              "p50_us": 15.1785,
+              "p95_us": 26.345199999999952,
+              "p99_us": 37.56492,
+              "max_us": 41.882,
+              "mean_us": 16.233349999999998
             },
             "state_estimation": {
-              "p50_us": 9.006,
-              "p95_us": 15.6426,
-              "p99_us": 17.099959999999996,
-              "max_us": 18.701,
-              "mean_us": 9.81668125
+              "p50_us": 19.081,
+              "p95_us": 28.031749999999988,
+              "p99_us": 37.22832,
+              "max_us": 44.917,
+              "mean_us": 19.59215625
             },
             "controller_step": {
-              "p50_us": 1.6635,
-              "p95_us": 2.7732499999999978,
-              "p99_us": 3.2226799999999995,
-              "max_us": 3.64,
-              "mean_us": 1.8009124999999997
+              "p50_us": 3.4515000000000002,
+              "p95_us": 5.033599999999997,
+              "p99_us": 6.40438,
+              "max_us": 8.279,
+              "mean_us": 3.511087500000001
             },
             "actuator_guard": {
-              "p50_us": 9.889,
-              "p95_us": 17.686349999999994,
-              "p99_us": 20.0539,
-              "max_us": 21.577,
-              "mean_us": 10.886012500000001
+              "p50_us": 21.253999999999998,
+              "p95_us": 32.708549999999995,
+              "p99_us": 49.64273999999995,
+              "max_us": 59.794,
+              "mean_us": 21.738981250000002
             },
             "dac_write": {
-              "p50_us": 10.937000000000001,
-              "p95_us": 19.008649999999992,
-              "p99_us": 20.37739,
-              "max_us": 20.988,
-              "mean_us": 11.95925
+              "p50_us": 22.8995,
+              "p95_us": 30.299799999999987,
+              "p99_us": 37.90967999999998,
+              "max_us": 41.346,
+              "mean_us": 22.526231250000002
             },
             "output_serialization": {
-              "p50_us": 101.463,
-              "p95_us": 154.01704999999995,
-              "p99_us": 189.5056099999999,
-              "max_us": 208.624,
-              "mean_us": 108.17545625000002
+              "p50_us": 216.3105,
+              "p95_us": 236.08795,
+              "p99_us": 252.27563,
+              "max_us": 264.346,
+              "mean_us": 200.52467499999997
             }
           },
           "passes_semantics": true
@@ -835,61 +869,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5665.4375,
           "latency": {
-            "p50_us": 172.5105,
-            "p95_us": 226.72595,
-            "p99_us": 254.2514199999999,
-            "max_us": 288.934,
-            "mean_us": 178.32743125
+            "p50_us": 412.81600000000003,
+            "p95_us": 456.9016,
+            "p99_us": 500.8630399999999,
+            "max_us": 632.799,
+            "mean_us": 415.16861874999995
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 35.7465,
-              "p95_us": 47.6582499999999,
-              "p99_us": 63.13545,
-              "max_us": 65.965,
-              "mean_us": 37.62140624999999
+              "p50_us": 89.167,
+              "p95_us": 109.58614999999995,
+              "p99_us": 122.84839,
+              "max_us": 153.611,
+              "mean_us": 91.23003750000001
             },
             "input_validation": {
-              "p50_us": 6.516,
-              "p95_us": 11.459499999999991,
-              "p99_us": 13.69357,
-              "max_us": 15.31,
-              "mean_us": 7.036881249999999
+              "p50_us": 17.6785,
+              "p95_us": 26.237849999999995,
+              "p99_us": 39.29648999999997,
+              "max_us": 46.415,
+              "mean_us": 18.73
             },
             "state_estimation": {
-              "p50_us": 8.555,
-              "p95_us": 11.72739999999999,
-              "p99_us": 16.721239999999995,
-              "max_us": 17.909,
-              "mean_us": 9.0416875
+              "p50_us": 21.2105,
+              "p95_us": 29.95799999999999,
+              "p99_us": 37.317539999999994,
+              "max_us": 59.284,
+              "mean_us": 22.23173125
             },
             "controller_step": {
-              "p50_us": 1.6,
-              "p95_us": 2.355849999999998,
-              "p99_us": 4.158979999999995,
-              "max_us": 8.939,
-              "mean_us": 1.72913125
+              "p50_us": 3.8994999999999997,
+              "p95_us": 6.020649999999998,
+              "p99_us": 8.146549999999996,
+              "max_us": 9.627,
+              "mean_us": 4.227918750000001
             },
             "actuator_guard": {
-              "p50_us": 9.4785,
-              "p95_us": 13.056299999999965,
-              "p99_us": 16.59423,
-              "max_us": 17.439,
-              "mean_us": 9.973693749999999
+              "p50_us": 23.8415,
+              "p95_us": 31.978599999999997,
+              "p99_us": 42.06306,
+              "max_us": 61.14,
+              "mean_us": 25.11005
             },
             "dac_write": {
-              "p50_us": 10.524000000000001,
-              "p95_us": 11.947349999999984,
-              "p99_us": 17.69889,
-              "max_us": 20.309,
-              "mean_us": 10.8777375
+              "p50_us": 24.817999999999998,
+              "p95_us": 30.011899999999997,
+              "p99_us": 36.08671,
+              "max_us": 40.036,
+              "mean_us": 25.211425000000002
             },
             "output_serialization": {
-              "p50_us": 97.995,
-              "p95_us": 129.9809499999998,
-              "p99_us": 152.19676,
-              "max_us": 167.811,
-              "mean_us": 102.04689375
+              "p50_us": 228.02949999999998,
+              "p95_us": 242.14614999999998,
+              "p99_us": 249.80374999999998,
+              "max_us": 264.265,
+              "mean_us": 228.42745624999998
             }
           },
           "passes_semantics": true
@@ -907,61 +941,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5194.175,
           "latency": {
-            "p50_us": 166.6545,
-            "p95_us": 198.92009999999982,
-            "p99_us": 258.80497,
-            "max_us": 281.016,
-            "mean_us": 167.4944125
+            "p50_us": 367.96299999999997,
+            "p95_us": 393.38855,
+            "p99_us": 404.73607,
+            "max_us": 461.039,
+            "mean_us": 307.61280625
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 33.2965,
-              "p95_us": 44.75914999999997,
-              "p99_us": 56.14116,
-              "max_us": 61.394,
-              "mean_us": 34.92249375
+              "p50_us": 72.289,
+              "p95_us": 80.43995,
+              "p99_us": 96.29725999999998,
+              "max_us": 163.62,
+              "mean_us": 63.95475624999999
             },
             "input_validation": {
-              "p50_us": 6.2155000000000005,
-              "p95_us": 10.419849999999997,
-              "p99_us": 12.688559999999997,
-              "max_us": 14.49,
-              "mean_us": 6.732456250000001
+              "p50_us": 13.663,
+              "p95_us": 16.361849999999997,
+              "p99_us": 21.495899999999995,
+              "max_us": 39.462,
+              "mean_us": 12.458493749999999
             },
             "state_estimation": {
-              "p50_us": 8.516,
-              "p95_us": 13.100399999999988,
-              "p99_us": 15.75068,
-              "max_us": 16.838,
-              "mean_us": 9.160231249999999
+              "p50_us": 17.591,
+              "p95_us": 20.798999999999996,
+              "p99_us": 27.418619999999994,
+              "max_us": 62.554,
+              "mean_us": 16.3367625
             },
             "controller_step": {
-              "p50_us": 1.6905000000000001,
-              "p95_us": 6.094399999999995,
-              "p99_us": 9.332259999999996,
-              "max_us": 12.361,
-              "mean_us": 2.3512375
+              "p50_us": 3.444,
+              "p95_us": 11.47604999999999,
+              "p99_us": 13.86892,
+              "max_us": 34.802,
+              "mean_us": 4.1134812499999995
             },
             "actuator_guard": {
-              "p50_us": 9.4275,
-              "p95_us": 15.513299999999997,
-              "p99_us": 18.302819999999997,
-              "max_us": 24.046,
-              "mean_us": 10.1367375
+              "p50_us": 19.642,
+              "p95_us": 23.412049999999997,
+              "p99_us": 26.601319999999998,
+              "max_us": 37.525,
+              "mean_us": 17.883993750000002
             },
             "dac_write": {
-              "p50_us": 10.471,
-              "p95_us": 13.79934999999996,
-              "p99_us": 18.871919999999996,
-              "max_us": 20.811,
-              "mean_us": 10.95729375
+              "p50_us": 22.060000000000002,
+              "p95_us": 26.340149999999973,
+              "p99_us": 29.840149999999998,
+              "max_us": 30.934,
+              "mean_us": 19.7762625
             },
             "output_serialization": {
-              "p50_us": 97.109,
-              "p95_us": 118.64014999999989,
-              "p99_us": 150.91881999999998,
-              "max_us": 156.031,
-              "mean_us": 93.2339625
+              "p50_us": 218.836,
+              "p95_us": 232.3382,
+              "p99_us": 234.15944,
+              "max_us": 237.419,
+              "mean_us": 173.08905625
             }
           },
           "passes_semantics": true
@@ -979,72 +1013,72 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5228.26875,
           "latency": {
-            "p50_us": 165.574,
-            "p95_us": 223.60944999999984,
-            "p99_us": 277.2402499999999,
-            "max_us": 312.89799999999997,
-            "mean_us": 167.27339999999998
+            "p50_us": 230.1975,
+            "p95_us": 398.43584999999996,
+            "p99_us": 454.82318,
+            "max_us": 486.762,
+            "mean_us": 255.81765000000001
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 32.8945,
-              "p95_us": 47.80329999999999,
-              "p99_us": 55.92983999999999,
-              "max_us": 58.492,
-              "mean_us": 34.6769125
+              "p50_us": 45.839,
+              "p95_us": 98.77399999999999,
+              "p99_us": 157.1257399999999,
+              "max_us": 183.321,
+              "mean_us": 57.93090000000001
             },
             "input_validation": {
-              "p50_us": 6.112,
-              "p95_us": 10.246449999999985,
-              "p99_us": 13.261579999999988,
-              "max_us": 16.912,
-              "mean_us": 6.89211875
+              "p50_us": 10.6965,
+              "p95_us": 23.356599999999986,
+              "p99_us": 29.233929999999997,
+              "max_us": 34.921,
+              "mean_us": 12.367518749999999
             },
             "state_estimation": {
-              "p50_us": 8.3345,
-              "p95_us": 12.734549999999983,
-              "p99_us": 15.41515,
-              "max_us": 15.435,
-              "mean_us": 8.9780125
+              "p50_us": 12.6425,
+              "p95_us": 27.809949999999986,
+              "p99_us": 33.10171,
+              "max_us": 35.277,
+              "mean_us": 15.12738125
             },
             "controller_step": {
-              "p50_us": 1.6475,
-              "p95_us": 2.7745499999999987,
-              "p99_us": 3.02705,
-              "max_us": 3.15,
-              "mean_us": 1.7674875
+              "p50_us": 2.4859999999999998,
+              "p95_us": 5.451349999999995,
+              "p99_us": 6.543929999999999,
+              "max_us": 7.175,
+              "mean_us": 2.9181125000000003
             },
             "actuator_guard": {
-              "p50_us": 9.378499999999999,
-              "p95_us": 15.292549999999995,
-              "p99_us": 17.138499999999997,
-              "max_us": 17.577,
-              "mean_us": 9.79853125
+              "p50_us": 13.783000000000001,
+              "p95_us": 30.221949999999975,
+              "p99_us": 43.91882999999999,
+              "max_us": 50.544,
+              "mean_us": 17.18164375
             },
             "dac_write": {
-              "p50_us": 10.3285,
-              "p95_us": 17.853449999999995,
-              "p99_us": 19.56704,
-              "max_us": 20.357,
-              "mean_us": 11.26815
+              "p50_us": 14.155000000000001,
+              "p95_us": 30.804699999999997,
+              "p99_us": 38.78190999999999,
+              "max_us": 43.166,
+              "mean_us": 18.012237499999998
             },
             "output_serialization": {
-              "p50_us": 96.572,
-              "p95_us": 120.8092,
-              "p99_us": 170.80450999999988,
-              "max_us": 208.75,
-              "mean_us": 93.8921875
+              "p50_us": 123.1995,
+              "p95_us": 193.76554999999996,
+              "p99_us": 232.54631999999984,
+              "max_us": 275.085,
+              "mean_us": 132.27985625000002
             }
           },
           "passes_semantics": true
         }
       },
       "nominal_latency": {
-        "p50_us": 167.14049999999997,
-        "p95_us": 232.52199999999965,
-        "p99_us": 294.77187,
-        "max_us": 306.357,
-        "mean_us": 175.93355624999998
+        "p50_us": 216.51350000000002,
+        "p95_us": 395.1659999999999,
+        "p99_us": 500.4341899999998,
+        "max_us": 948.3770000000001,
+        "mean_us": 249.82004375000002
       },
       "passes_thresholds": true,
       "thresholds": {
@@ -1061,7 +1095,8 @@
       "max_cpu_nominal_p99_loop_ms": 5.0,
       "min_measured_lanes": 2,
       "degraded_modes_require_safe_outputs": true,
-      "hil_simulated_scaffold_required": true
+      "hil_simulated_scaffold_required": true,
+      "hil_wall_clock_threshold_required_for_report_acceptance": false
     }
   },
   "actuator_count_scaling": {
@@ -1084,13 +1119,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 83.40625,
           "checksum": -26.255194601786645,
-          "p50_loop_ms": 0.053469513659365475,
-          "p95_loop_ms": 0.07091709267115211,
-          "p99_loop_ms": 0.10010201338445766,
+          "p50_loop_ms": 0.0938030134420842,
+          "p95_loop_ms": 0.19326055189594626,
+          "p99_loop_ms": 0.2389834244968368,
           "serialization": {
-            "p50_ms": 0.008377493941225111,
-            "p95_ms": 0.012137940211687232,
-            "p99_ms": 0.015457368863280859
+            "p50_ms": 0.013771001249551773,
+            "p95_ms": 0.027639421750791364,
+            "p99_ms": 0.03861416247673331
           }
         },
         "rust": {
@@ -1098,45 +1133,45 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 2,
-          "p50_loop_ms": 0.019743,
-          "p95_loop_ms": 0.02119995,
-          "p99_loop_ms": 0.03712939,
+          "p50_loop_ms": 0.031085,
+          "p95_loop_ms": 0.1432191,
+          "p99_loop_ms": 0.49590082,
           "fallback_count": 0,
-          "checksum": -55.875667834,
+          "checksum": -65.725321887,
           "stages": {
             "input_validation": {
-              "p50_ms": 2e-05,
-              "p95_ms": 2.1e-05,
-              "p99_ms": 2.551e-05
+              "p50_ms": 2.7e-05,
+              "p95_ms": 0.000109,
+              "p99_ms": 0.00052532
             },
             "feature_assembly": {
-              "p50_ms": 6e-05,
-              "p95_ms": 0.0001071,
-              "p99_ms": 0.00014653
+              "p50_ms": 8.5e-05,
+              "p95_ms": 0.00047575,
+              "p99_ms": 0.00085755
             },
             "digital_twin_update": {
-              "p50_ms": 0.0174545,
-              "p95_ms": 0.0184822,
-              "p99_ms": 0.03191165
+              "p50_ms": 0.0265065,
+              "p95_ms": 0.11191905,
+              "p99_ms": 0.31979143
             },
             "controller_decision": {
-              "p50_ms": 0.001576,
-              "p95_ms": 0.0019985,
-              "p99_ms": 0.00242548
+              "p50_ms": 0.0034545,
+              "p95_ms": 0.01334305,
+              "p99_ms": 0.02989118
             },
             "fallback_policy": {
-              "p50_ms": 6.1e-05,
-              "p95_ms": 7.645e-05,
-              "p99_ms": 0.00014853
+              "p50_ms": 9.4e-05,
+              "p95_ms": 0.00061715,
+              "p99_ms": 0.00122124
             },
             "output_serialization": {
-              "p50_ms": 0.0003855,
-              "p95_ms": 0.00056395,
-              "p99_ms": 0.00084118
+              "p50_ms": 0.000744,
+              "p95_ms": 0.0033082,
+              "p99_ms": 0.00704705
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 2 --json",
-          "runtime_seconds": 0.06511188199510798
+          "runtime_seconds": 0.7819814839749597
         },
         "gpu": {
           "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
@@ -1147,9 +1182,9 @@
           "cuda_runtime_version": 12090,
           "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
           "fallback_count": 0,
-          "p50_loop_ms": 0.6989170069573447,
-          "p95_loop_ms": 0.8599849519669075,
-          "p99_loop_ms": 1.0189968731719998,
+          "p50_loop_ms": 0.8907404844649136,
+          "p95_loop_ms": 1.3132683612639082,
+          "p99_loop_ms": 1.6361312550725409,
           "preloaded_cuda_libraries": [
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
@@ -1196,34 +1231,34 @@
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.18271798035129905,
-              "p95_ms": 0.22868788946652782,
-              "p99_ms": 0.31018805224448437
+              "p50_ms": 0.22882450139150023,
+              "p95_ms": 0.33032034698408086,
+              "p99_ms": 0.4133506317157297
             },
             "digital_twin_update": {
-              "p50_ms": 0.3589609987102449,
-              "p95_ms": 0.4660066028009168,
-              "p99_ms": 0.5273582934751174
+              "p50_ms": 0.4508924903348088,
+              "p95_ms": 0.6796411180403082,
+              "p99_ms": 1.019406205159612
             },
             "fallback_policy": {
-              "p50_ms": 0.08710450492799282,
-              "p95_ms": 0.11839650978799907,
-              "p99_ms": 0.15173258812865228
+              "p50_ms": 0.10967301204800606,
+              "p95_ms": 0.19020557811018077,
+              "p99_ms": 0.27794311405159533
             },
             "feature_assembly": {
-              "p50_ms": 0.04396498843561858,
-              "p95_ms": 0.05331548891263079,
-              "p99_ms": 0.06964642438106236
+              "p50_ms": 0.05214050179347396,
+              "p95_ms": 0.08048139570746565,
+              "p99_ms": 0.12545110424980516
             },
             "input_validation": {
-              "p50_ms": 0.005529000191017985,
-              "p95_ms": 0.008405101834796352,
-              "p99_ms": 0.013912929280195383
+              "p50_ms": 0.007253984222188592,
+              "p95_ms": 0.013507687253877514,
+              "p99_ms": 0.020473616896197186
             },
             "output_serialization": {
-              "p50_ms": 0.014378500054590404,
-              "p95_ms": 0.022375163098331517,
-              "p99_ms": 0.0323827259126119
+              "p50_ms": 0.019881495973095298,
+              "p95_ms": 0.04392786941025403,
+              "p99_ms": 0.06353300472255795
             }
           },
           "status": "measured",
@@ -1244,13 +1279,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 377.24375,
           "checksum": -210.087957814293,
-          "p50_loop_ms": 0.060230508097447455,
-          "p95_loop_ms": 0.08322277135448529,
-          "p99_loop_ms": 0.103524238220416,
+          "p50_loop_ms": 0.06575701991096139,
+          "p95_loop_ms": 0.1048582955263555,
+          "p99_loop_ms": 0.16509576002135862,
           "serialization": {
-            "p50_ms": 0.013953002053312957,
-            "p95_ms": 0.02044319990091025,
-            "p99_ms": 0.025332226359751076
+            "p50_ms": 0.015234487364068627,
+            "p95_ms": 0.021170027321204536,
+            "p99_ms": 0.032875459291972206
           }
         },
         "rust": {
@@ -1258,45 +1293,45 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 16,
-          "p50_loop_ms": 0.0211495,
-          "p95_loop_ms": 0.02358895,
-          "p99_loop_ms": 0.02939503,
+          "p50_loop_ms": 0.0254435,
+          "p95_loop_ms": 0.0349798,
+          "p99_loop_ms": 0.05890939,
           "fallback_count": 0,
-          "checksum": 323.551080891,
+          "checksum": -212.194236825,
           "stages": {
             "input_validation": {
-              "p50_ms": 1.9e-05,
-              "p95_ms": 2.1e-05,
-              "p99_ms": 2.592e-05
+              "p50_ms": 2.2e-05,
+              "p95_ms": 2.61e-05,
+              "p99_ms": 0.00018788
             },
             "feature_assembly": {
-              "p50_ms": 5.8e-05,
-              "p95_ms": 8.915e-05,
-              "p99_ms": 0.00012241
+              "p50_ms": 6.6e-05,
+              "p95_ms": 0.00011715,
+              "p99_ms": 0.00024016
             },
             "digital_twin_update": {
-              "p50_ms": 0.017554,
-              "p95_ms": 0.01944715,
-              "p99_ms": 0.02524822
+              "p50_ms": 0.020568,
+              "p95_ms": 0.02826605,
+              "p99_ms": 0.04733104
             },
             "controller_decision": {
-              "p50_ms": 0.001612,
-              "p95_ms": 0.00187805,
-              "p99_ms": 0.00230522
+              "p50_ms": 0.002343,
+              "p95_ms": 0.00444585,
+              "p99_ms": 0.00622173
             },
             "fallback_policy": {
-              "p50_ms": 8.8e-05,
-              "p95_ms": 9.905e-05,
-              "p99_ms": 0.00020391
+              "p50_ms": 0.0001015,
+              "p95_ms": 0.0003759,
+              "p99_ms": 0.00095584
             },
             "output_serialization": {
-              "p50_ms": 0.001648,
-              "p95_ms": 0.00190335,
-              "p99_ms": 0.00219726
+              "p50_ms": 0.0019615,
+              "p95_ms": 0.0033935,
+              "p99_ms": 0.0040902
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 16 --json",
-          "runtime_seconds": 0.063871393998852
+          "runtime_seconds": 0.10007934499299154
         },
         "gpu": {
           "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
@@ -1307,9 +1342,9 @@
           "cuda_runtime_version": 12090,
           "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
           "fallback_count": 0,
-          "p50_loop_ms": 0.7161590037867427,
-          "p95_loop_ms": 0.8481744094751773,
-          "p99_loop_ms": 1.039201701059937,
+          "p50_loop_ms": 1.2110660027246922,
+          "p95_loop_ms": 5.021439291886051,
+          "p99_loop_ms": 7.339485741686074,
           "preloaded_cuda_libraries": [
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
@@ -1356,34 +1391,34 @@
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.18457049736753106,
-              "p95_ms": 0.2326533576706424,
-              "p99_ms": 0.29345523274969293
+              "p50_ms": 0.29381748754531145,
+              "p95_ms": 1.1014812684152255,
+              "p99_ms": 2.4070548376766965
             },
             "digital_twin_update": {
-              "p50_ms": 0.3650875005405396,
-              "p95_ms": 0.4668936162488535,
-              "p99_ms": 0.5852967809187248
+              "p50_ms": 0.5912030173931271,
+              "p95_ms": 2.766310475999485,
+              "p99_ms": 4.125869435374624
             },
             "fallback_policy": {
-              "p50_ms": 0.08739001350477338,
-              "p95_ms": 0.104708106664475,
-              "p99_ms": 0.12900887173600495
+              "p50_ms": 0.1563105033710599,
+              "p95_ms": 0.5624348064884543,
+              "p99_ms": 0.9235669544432299
             },
             "feature_assembly": {
-              "p50_ms": 0.044290514779277146,
-              "p95_ms": 0.05425719282357022,
-              "p99_ms": 0.060178457351867096
+              "p50_ms": 0.07274450035765767,
+              "p95_ms": 0.3003089426783844,
+              "p99_ms": 1.0425317630870252
             },
             "input_validation": {
-              "p50_ms": 0.005679510650224984,
-              "p95_ms": 0.006829759513493627,
-              "p99_ms": 0.010223879071418196
+              "p50_ms": 0.010905496310442686,
+              "p95_ms": 0.057479145471006625,
+              "p99_ms": 0.1556806510780002
             },
             "output_serialization": {
-              "p50_ms": 0.020482504623942077,
-              "p95_ms": 0.027588242664933198,
-              "p99_ms": 0.03093687235377729
+              "p50_ms": 0.043400475988164544,
+              "p95_ms": 0.17077785742003457,
+              "p99_ms": 0.33287885831668956
             }
           },
           "status": "measured",
@@ -1404,13 +1439,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 1384.8,
           "checksum": -840.3716992571722,
-          "p50_loop_ms": 0.08283949864562601,
-          "p95_loop_ms": 0.11459769593784576,
-          "p99_loop_ms": 0.17695139249553893,
+          "p50_loop_ms": 0.1085809781216085,
+          "p95_loop_ms": 0.24694268940947947,
+          "p99_loop_ms": 0.2958021522499619,
           "serialization": {
-            "p50_ms": 0.03215701144654304,
-            "p95_ms": 0.0413068599300459,
-            "p99_ms": 0.062731031794101
+            "p50_ms": 0.03902247408404946,
+            "p95_ms": 0.07358494331128894,
+            "p99_ms": 0.07979238056577742
           }
         },
         "rust": {
@@ -1418,45 +1453,45 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 64,
-          "p50_loop_ms": 0.0257845,
-          "p95_loop_ms": 0.03852015,
-          "p99_loop_ms": 0.04755212,
+          "p50_loop_ms": 0.0294215,
+          "p95_loop_ms": 0.1181858,
+          "p99_loop_ms": 0.17592469,
           "fallback_count": 0,
-          "checksum": 117.481213811,
+          "checksum": 75.076566355,
           "stages": {
             "input_validation": {
-              "p50_ms": 2e-05,
-              "p95_ms": 2.905e-05,
-              "p99_ms": 4.079e-05
+              "p50_ms": 2.3e-05,
+              "p95_ms": 0.00026215,
+              "p99_ms": 0.00039302
             },
             "feature_assembly": {
-              "p50_ms": 5.9e-05,
-              "p95_ms": 0.0001203,
-              "p99_ms": 0.00015746
+              "p50_ms": 6.8e-05,
+              "p95_ms": 0.00061215,
+              "p99_ms": 0.00101391
             },
             "digital_twin_update": {
-              "p50_ms": 0.01766,
-              "p95_ms": 0.0250005,
-              "p99_ms": 0.03341836
+              "p50_ms": 0.0205005,
+              "p95_ms": 0.08575065,
+              "p99_ms": 0.13184831
             },
             "controller_decision": {
-              "p50_ms": 0.0016085,
-              "p95_ms": 0.0028245,
-              "p99_ms": 0.0029271
+              "p50_ms": 0.001871,
+              "p95_ms": 0.0103344,
+              "p99_ms": 0.02052122
             },
             "fallback_policy": {
-              "p50_ms": 0.000185,
-              "p95_ms": 0.00034915,
-              "p99_ms": 0.00049704
+              "p50_ms": 0.000207,
+              "p95_ms": 0.0013946,
+              "p99_ms": 0.00255219
             },
             "output_serialization": {
-              "p50_ms": 0.005939,
-              "p95_ms": 0.0110196,
-              "p99_ms": 0.01173021
+              "p50_ms": 0.0065045,
+              "p95_ms": 0.0207598,
+              "p99_ms": 0.0246704
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 64 --json",
-          "runtime_seconds": 0.06985897800768726
+          "runtime_seconds": 0.1396213440457359
         },
         "gpu": {
           "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
@@ -1467,9 +1502,9 @@
           "cuda_runtime_version": 12090,
           "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
           "fallback_count": 0,
-          "p50_loop_ms": 0.7371774991042912,
-          "p95_loop_ms": 1.0460334102390327,
-          "p99_loop_ms": 1.2660365711781194,
+          "p50_loop_ms": 1.3851540279574692,
+          "p95_loop_ms": 3.753955944557672,
+          "p99_loop_ms": 5.935773461242194,
           "preloaded_cuda_libraries": [
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
@@ -1516,34 +1551,34 @@
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.18497751443646848,
-              "p95_ms": 0.28255744255147863,
-              "p99_ms": 0.3400647567468695
+              "p50_ms": 0.3012454544659704,
+              "p95_ms": 0.8018128894036634,
+              "p99_ms": 1.5879649744601882
             },
             "digital_twin_update": {
-              "p50_ms": 0.362781502190046,
-              "p95_ms": 0.5152529120096005,
-              "p99_ms": 0.6975763684022237
+              "p50_ms": 0.6625469832215458,
+              "p95_ms": 1.6034652973758055,
+              "p99_ms": 2.121500132489018
             },
             "fallback_policy": {
-              "p50_ms": 0.08828150748740882,
-              "p95_ms": 0.12421894643921397,
-              "p99_ms": 0.1603401568718254
+              "p50_ms": 0.17917549121193588,
+              "p95_ms": 0.6441303878091276,
+              "p99_ms": 0.7868281082483007
             },
             "feature_assembly": {
-              "p50_ms": 0.04507049743551761,
-              "p95_ms": 0.06411335343727842,
-              "p99_ms": 0.07770086085656656
+              "p50_ms": 0.08275150321424007,
+              "p95_ms": 0.24605648650322032,
+              "p99_ms": 0.3624987049261106
             },
             "input_validation": {
-              "p50_ms": 0.00572997669223696,
-              "p95_ms": 0.010191647743340582,
-              "p99_ms": 0.013324249302968383
+              "p50_ms": 0.014311488484963775,
+              "p95_ms": 0.046494015259668224,
+              "p99_ms": 0.06647125992458312
             },
             "output_serialization": {
-              "p50_ms": 0.04222799907438457,
-              "p95_ms": 0.07214426004793494,
-              "p99_ms": 0.07817184115992859
+              "p50_ms": 0.08989448542706668,
+              "p95_ms": 0.2431781031191346,
+              "p99_ms": 0.3581513947574422
             }
           },
           "status": "measured",
@@ -1564,13 +1599,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 2729.10625,
           "checksum": -1680.7498775143451,
-          "p50_loop_ms": 0.11295999865978956,
-          "p95_loop_ms": 0.13302640436450014,
-          "p99_loop_ms": 0.19348929665284212,
+          "p50_loop_ms": 0.269070005742833,
+          "p95_loop_ms": 1.2928125332109626,
+          "p99_loop_ms": 2.2422350285341954,
           "serialization": {
-            "p50_ms": 0.055894997785799205,
-            "p95_ms": 0.0645078020170331,
-            "p99_ms": 0.09105296194320543
+            "p50_ms": 0.11031198664568365,
+            "p95_ms": 0.2589006384368983,
+            "p99_ms": 0.5883306253235768
           }
         },
         "rust": {
@@ -1578,45 +1613,45 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 128,
-          "p50_loop_ms": 0.033766,
-          "p95_loop_ms": 0.052389,
-          "p99_loop_ms": 0.05699725,
+          "p50_loop_ms": 0.068272,
+          "p95_loop_ms": 0.4749494,
+          "p99_loop_ms": 0.97171591,
           "fallback_count": 0,
-          "checksum": 11.13673444,
+          "checksum": -1442.006149458,
           "stages": {
             "input_validation": {
-              "p50_ms": 2.1e-05,
-              "p95_ms": 3.1e-05,
-              "p99_ms": 0.00011596
+              "p50_ms": 3.1e-05,
+              "p95_ms": 0.00021285,
+              "p99_ms": 0.00061516
             },
             "feature_assembly": {
-              "p50_ms": 7.6e-05,
-              "p95_ms": 0.00016705,
-              "p99_ms": 0.00023943
+              "p50_ms": 0.0001895,
+              "p95_ms": 0.0012296,
+              "p99_ms": 0.00459768
             },
             "digital_twin_update": {
-              "p50_ms": 0.018498,
-              "p95_ms": 0.0268566,
-              "p99_ms": 0.03037676
+              "p50_ms": 0.037459,
+              "p95_ms": 0.1140633,
+              "p99_ms": 0.66084983
             },
             "controller_decision": {
-              "p50_ms": 0.001825,
-              "p95_ms": 0.00328345,
-              "p99_ms": 0.00358504
+              "p50_ms": 0.0057775,
+              "p95_ms": 0.01552805,
+              "p99_ms": 0.03061891
             },
             "fallback_policy": {
-              "p50_ms": 0.0003015,
-              "p95_ms": 0.00065925,
-              "p99_ms": 0.00097064
+              "p50_ms": 0.000955,
+              "p95_ms": 0.00436775,
+              "p99_ms": 0.08742445
             },
             "output_serialization": {
-              "p50_ms": 0.0122655,
-              "p95_ms": 0.02142245,
-              "p99_ms": 0.02655312
+              "p50_ms": 0.0236965,
+              "p95_ms": 0.0484108,
+              "p99_ms": 0.17679276
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 128 --json",
-          "runtime_seconds": 0.0675519710057415
+          "runtime_seconds": 0.3051104730111547
         },
         "gpu": {
           "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
@@ -1627,9 +1662,9 @@
           "cuda_runtime_version": 12090,
           "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
           "fallback_count": 0,
-          "p50_loop_ms": 0.7707670010859147,
-          "p95_loop_ms": 0.8735989176784636,
-          "p99_loop_ms": 1.0646829087636434,
+          "p50_loop_ms": 0.9035884868353605,
+          "p95_loop_ms": 1.5630206384230403,
+          "p99_loop_ms": 1.8936299555934961,
           "preloaded_cuda_libraries": [
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
@@ -1676,34 +1711,34 @@
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.1885055098682642,
-              "p95_ms": 0.22500824125017957,
-              "p99_ms": 0.2750136743998154
+              "p50_ms": 0.21686998661607504,
+              "p95_ms": 0.3738920291652903,
+              "p99_ms": 0.4801422945456578
             },
             "digital_twin_update": {
-              "p50_ms": 0.3698284999700263,
-              "p95_ms": 0.4281811925466172,
-              "p99_ms": 0.5583078428753651
+              "p50_ms": 0.43354948866181076,
+              "p95_ms": 0.7718464505160221,
+              "p99_ms": 1.0564783186418933
             },
             "fallback_policy": {
-              "p50_ms": 0.09035950643010437,
-              "p95_ms": 0.11257494334131479,
-              "p99_ms": 0.1294643638539128
+              "p50_ms": 0.10387648944742978,
+              "p95_ms": 0.20451991003938017,
+              "p99_ms": 0.3320161113515495
             },
             "feature_assembly": {
-              "p50_ms": 0.04571799945551902,
-              "p95_ms": 0.05473066121339795,
-              "p99_ms": 0.06367792695527895
+              "p50_ms": 0.050979520892724395,
+              "p95_ms": 0.11213466641493136,
+              "p99_ms": 0.1427092810627073
             },
             "input_validation": {
-              "p50_ms": 0.0059515004977583885,
-              "p95_ms": 0.007293038652278481,
-              "p99_ms": 0.013962642988190055
+              "p50_ms": 0.007084483513608575,
+              "p95_ms": 0.021207163808867318,
+              "p99_ms": 0.03432865370996293
             },
             "output_serialization": {
-              "p50_ms": 0.06453150126617402,
-              "p95_ms": 0.07524302927777171,
-              "p99_ms": 0.09686184173915532
+              "p50_ms": 0.07481002830900252,
+              "p95_ms": 0.14633813698310402,
+              "p99_ms": 0.20527349901385603
             }
           },
           "status": "measured",
@@ -1724,13 +1759,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5417.33125,
           "checksum": -3361.506296028688,
-          "p50_loop_ms": 0.1733384997351095,
-          "p95_loop_ms": 0.21952793176751556,
-          "p99_loop_ms": 0.30098855524556706,
+          "p50_loop_ms": 0.38011401193216443,
+          "p95_loop_ms": 0.49306752334814496,
+          "p99_loop_ms": 0.5657787993550301,
           "serialization": {
-            "p50_ms": 0.1036595058394596,
-            "p95_ms": 0.13309170462889594,
-            "p99_ms": 0.17654698342084874
+            "p50_ms": 0.2363259845878929,
+            "p95_ms": 0.2858503663446753,
+            "p99_ms": 0.3286132356151938
           }
         },
         "rust": {
@@ -1738,45 +1773,45 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 256,
-          "p50_loop_ms": 0.0424685,
-          "p95_loop_ms": 0.0597265,
-          "p99_loop_ms": 0.07267403,
+          "p50_loop_ms": 0.046527,
+          "p95_loop_ms": 0.0526672,
+          "p99_loop_ms": 0.05820828,
           "fallback_count": 0,
-          "checksum": -2562.039149761,
+          "checksum": 2570.826959759,
           "stages": {
             "input_validation": {
-              "p50_ms": 2e-05,
-              "p95_ms": 2.205e-05,
-              "p99_ms": 2.841e-05
+              "p50_ms": 2.2e-05,
+              "p95_ms": 2.4e-05,
+              "p99_ms": 7.084e-05
             },
             "feature_assembly": {
-              "p50_ms": 6.8e-05,
-              "p95_ms": 0.00013105,
-              "p99_ms": 0.00015664
+              "p50_ms": 7.75e-05,
+              "p95_ms": 0.00013805,
+              "p99_ms": 0.00023815
             },
             "digital_twin_update": {
-              "p50_ms": 0.017576,
-              "p95_ms": 0.023572,
-              "p99_ms": 0.02744964
+              "p50_ms": 0.0196505,
+              "p95_ms": 0.02145335,
+              "p99_ms": 0.02914756
             },
             "controller_decision": {
-              "p50_ms": 0.001614,
-              "p95_ms": 0.00269615,
-              "p99_ms": 0.00302271
+              "p50_ms": 0.0018125,
+              "p95_ms": 0.0021739,
+              "p99_ms": 0.00262176
             },
             "fallback_policy": {
-              "p50_ms": 0.0005455,
-              "p95_ms": 0.00090505,
-              "p99_ms": 0.00115997
+              "p50_ms": 0.000605,
+              "p95_ms": 0.00070955,
+              "p99_ms": 0.00091706
             },
             "output_serialization": {
-              "p50_ms": 0.0224495,
-              "p95_ms": 0.0365251,
-              "p99_ms": 0.04218468
+              "p50_ms": 0.0241675,
+              "p95_ms": 0.02671225,
+              "p99_ms": 0.03196091
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 256 --json",
-          "runtime_seconds": 0.06726079699001275
+          "runtime_seconds": 0.1367638249648735
         },
         "gpu": {
           "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
@@ -1787,9 +1822,9 @@
           "cuda_runtime_version": 12090,
           "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
           "fallback_count": 0,
-          "p50_loop_ms": 0.8049599855439737,
-          "p95_loop_ms": 0.8859442459652199,
-          "p99_loop_ms": 0.9878448507515711,
+          "p50_loop_ms": 3.303520003100857,
+          "p95_loop_ms": 15.660110773751493,
+          "p99_loop_ms": 22.998140711570155,
           "preloaded_cuda_libraries": [
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
             "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
@@ -1836,34 +1871,34 @@
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.18472450028639287,
-              "p95_ms": 0.20416754268808285,
-              "p99_ms": 0.2684070073883049
+              "p50_ms": 0.5413669859990478,
+              "p95_ms": 4.42234181100502,
+              "p99_ms": 8.751908709527918
             },
             "digital_twin_update": {
-              "p50_ms": 0.361695492756553,
-              "p95_ms": 0.40426160849165166,
-              "p99_ms": 0.46891206118743867
+              "p50_ms": 1.4307884848676622,
+              "p95_ms": 5.935677909292257,
+              "p99_ms": 13.058804695028812
             },
             "fallback_policy": {
-              "p50_ms": 0.08998249541036785,
-              "p95_ms": 0.10602055845083667,
-              "p99_ms": 0.13621196150779719
+              "p50_ms": 0.36566201015375555,
+              "p95_ms": 1.9657480006571832,
+              "p99_ms": 6.980532766319804
             },
             "feature_assembly": {
-              "p50_ms": 0.04513449675869197,
-              "p95_ms": 0.050100249063689255,
-              "p99_ms": 0.06036415201378985
+              "p50_ms": 0.21586447837762535,
+              "p95_ms": 1.4884243224514624,
+              "p99_ms": 4.024771020049221
             },
             "input_validation": {
-              "p50_ms": 0.006001500878483057,
-              "p95_ms": 0.006896107515785843,
-              "p99_ms": 0.010124692926183334
+              "p50_ms": 0.03227096749469638,
+              "p95_ms": 0.1238303229911247,
+              "p99_ms": 0.2616174973081796
             },
             "output_serialization": {
-              "p50_ms": 0.10873199789784849,
-              "p95_ms": 0.12043041060678661,
-              "p99_ms": 0.1351971810800023
+              "p50_ms": 0.3355689987074584,
+              "p95_ms": 1.0688572336221112,
+              "p99_ms": 2.5482723471941355
             }
           },
           "status": "measured",
@@ -1894,10 +1929,10 @@
         "rollout_dt_ms": 1,
         "steps": 160,
         "checksum": 459.8698653658816,
-        "p50_forecast_ms": 0.4048575065098703,
-        "p95_forecast_ms": 0.5384526986745186,
-        "p99_forecast_ms": 0.6328402302460743,
-        "p95_real_time_factor": 92.85866729442054,
+        "p50_forecast_ms": 1.192322000861168,
+        "p95_forecast_ms": 2.871308894827953,
+        "p99_forecast_ms": 9.86054273671469,
+        "p95_real_time_factor": 17.413661097231397,
         "passes_realtime": true
       },
       {
@@ -1907,10 +1942,10 @@
         "rollout_dt_ms": 1,
         "steps": 160,
         "checksum": 476.642622919422,
-        "p50_forecast_ms": 0.7945985125843436,
-        "p95_forecast_ms": 0.9255835087969899,
-        "p99_forecast_ms": 1.0222718722070567,
-        "p95_real_time_factor": 108.03995430944222,
+        "p50_forecast_ms": 2.405478968285024,
+        "p95_forecast_ms": 5.3502345312153885,
+        "p99_forecast_ms": 6.316376075847073,
+        "p95_real_time_factor": 18.69076942637942,
         "passes_realtime": true
       }
     ],

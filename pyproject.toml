@@ -219,6 +219,8 @@ files = [
     "tests/test_transport_uncertainty_envelope_benchmark.py",
     "validation/vertical_control_replay_benchmark.py",
     "tests/test_vertical_control_replay_benchmark.py",
+    "validation/scpn_end_to_end_latency.py",
+    "tests/test_scpn_end_to_end_latency.py",
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",
     "tests/test_structure.py",
