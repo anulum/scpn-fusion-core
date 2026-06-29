@@ -40,7 +40,7 @@ The central innovation is **control-first architecture**: plasma control policie
 - **Real-time digital twin** with RL-trained MLP controllers and chaos-monkey fault injection for resilience testing
 - **GPU-accelerated** Red-Black SOR via wgpu compute shaders (cross-platform: Vulkan/Metal/D3D12/WebGPU)
 - **MPI-ready** 2D domain decomposition with halo exchange primitives for exascale deployment
-- **Validated against real experiments:** 8 SPARC GEQDSK files, ITER/DIII-D/JET confinement scaling, 20-shot ITPA database
+- **Validated against real experiments:** 8 SPARC GEQDSK files, ITER/DIII-D/JET confinement scaling, 53-shot ITPA database
 - **Fully open-source** under AGPL-3.0, with Apache-compatible commercial licensing
 
 This proposal requests $7.5M over 3 years to transition SCPN-Fusion-Core from a validated research prototype to a production-grade digital twin platform for SPARC, compact reactor design optimization, and DOE leadership computing facility deployment.

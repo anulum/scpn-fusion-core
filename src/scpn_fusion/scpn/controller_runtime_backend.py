@@ -9,10 +9,12 @@
 
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable, Optional, cast
 
 import numpy as np
 from numpy.typing import NDArray
+
+from scpn_fusion.core import _multi_compat
 
 
 FloatArray = NDArray[np.float64]
@@ -30,15 +32,18 @@ def probe_rust_runtime_bindings() -> tuple[
     update_fn: Optional[Callable[[FloatArray, FloatArray, FloatArray, FloatArray], object]] = None
     sample_fn: Optional[Callable[[FloatArray, int, int, bool], object]] = None
     try:
-        from scpn_fusion_rs import (  # type: ignore[import-not-found,unused-ignore]
-            scpn_dense_activations as _dense_impl,
-            scpn_marking_update as _update_impl,
-            scpn_sample_firing as _sample_impl,
+        dense_fn = cast(
+            Callable[[FloatArray, FloatArray], object],
+            _multi_compat.dispatch_rust_symbol("scpn_dense_activations"),
         )
-
-        dense_fn = _dense_impl
-        update_fn = _update_impl
-        sample_fn = _sample_impl
+        update_fn = cast(
+            Callable[[FloatArray, FloatArray, FloatArray, FloatArray], object],
+            _multi_compat.dispatch_rust_symbol("scpn_marking_update"),
+        )
+        sample_fn = cast(
+            Callable[[FloatArray, int, int, bool], object],
+            _multi_compat.dispatch_rust_symbol("scpn_sample_firing"),
+        )
         has_runtime = True
     except Exception:
         has_runtime = False
