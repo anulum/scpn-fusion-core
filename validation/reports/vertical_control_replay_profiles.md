@@ -2,6 +2,8 @@
 
 ## Profile suite
 
+- Schema: `vertical-control-replay-benchmark.v1`
+- Status: `accepted_reduced_order_replay_release_gate`
 - Schema version: `1.0.0`
 - Profiles: `compact_tokamak, diii_d_like, iter_like`
 - Overall pass: `YES`

@@ -22,8 +22,11 @@ Missing data is reported as a blocked row, never as a pass.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,9 +53,75 @@ def _load_json(path: Path) -> dict[str, Any]:
     return data
 
 
+def _sha256_json(payload: Any) -> str:
+    """Return the canonical SHA-256 digest for a JSON-serialisable payload."""
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _sha256_file(path: Path) -> str | None:
+    """Return the SHA-256 digest for `path`, or None when the file is absent."""
+    resolved = path if path.is_absolute() else ROOT / path
+    if not resolved.exists():
+        return None
+    return hashlib.sha256(resolved.read_bytes()).hexdigest()
+
+
+def _source_commit() -> str:
+    """Return the current Git commit, falling back to `unknown` outside Git."""
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            check=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+    return proc.stdout.strip() or "unknown"
+
+
 def _require_bool(data: dict[str, Any], key: str) -> bool:
     """Return a strict boolean field, treating missing/non-boolean as False."""
     return bool(data.get(key) is True)
+
+
+def _source_record(artifact_id: str, path: Path, payload: dict[str, Any]) -> dict[str, Any]:
+    """Build provenance and checksum metadata for an input report artifact."""
+    return {
+        "artifact_id": artifact_id,
+        "path": _rel(path),
+        "payload_sha256": _sha256_json(payload),
+        "file_sha256": _sha256_file(path),
+        "schema": payload.get("schema"),
+        "status": payload.get("status"),
+    }
+
+
+def _source_checksums(
+    freegs_report: dict[str, Any],
+    machine_metadata_report: dict[str, Any],
+    *,
+    freegs_report_path: Path,
+    machine_metadata_report_path: Path,
+) -> dict[str, str | None]:
+    """Return stable input payload and file checksum fields."""
+    return {
+        "freegs_public_example_reconstruction_payload_sha256": _sha256_json(freegs_report),
+        "freegs_public_example_reconstruction_file_sha256": _sha256_file(freegs_report_path),
+        "free_boundary_public_machine_metadata_inventory_payload_sha256": _sha256_json(
+            machine_metadata_report
+        ),
+        "free_boundary_public_machine_metadata_inventory_file_sha256": _sha256_file(
+            machine_metadata_report_path
+        ),
+    }
 
 
 def _threshold_case_rows(strict: dict[str, Any]) -> list[dict[str, Any]]:
@@ -200,6 +269,34 @@ def evaluate_strict_parity(
         "coil_vacuum_sidecars": sidecar_ready,
         "machine_metadata": machine_metadata_ready,
     }
+    checks = {
+        "external_nonlinear_output_ready": external_ready,
+        "native_same_case_profile_source_ready": native_ready,
+        "strict_threshold_acceptance_ready": threshold_ready,
+        "geometry_containment_ready": geometry_ready,
+        "boundary_containment_metric_ready": boundary_metric_ready,
+        "grid_convergence_ready": grid_ready,
+        "coil_vacuum_sidecar_ready": sidecar_ready,
+        "machine_metadata_ready": machine_metadata_ready,
+        "same_case_public_reference_output_ready": machine_reference_ready,
+    }
+    threshold_cases = _threshold_case_rows(strict)
+    grid_cases = _grid_case_rows(strict)
+    source_checksums = _source_checksums(
+        freegs_report,
+        machine_metadata_report,
+        freegs_report_path=freegs_report_path,
+        machine_metadata_report_path=machine_metadata_report_path,
+    )
+    machine_metadata = {
+        "schema": machine_metadata_report.get("schema"),
+        "status": machine_metadata_report.get("status"),
+        "machine_config_count": int(machine_metadata_report.get("machine_config_count", 0)),
+        "machines": machine_metadata_report.get("machines", []),
+        "missing_full_fidelity_requirements": machine_metadata_report.get(
+            "missing_full_fidelity_requirements", []
+        ),
+    }
 
     return {
         "schema": "free-boundary-strict-parity-benchmark.v1",
@@ -213,38 +310,46 @@ def evaluate_strict_parity(
             "freegs_public_example_reconstruction": _rel(freegs_report_path),
             "free_boundary_public_machine_metadata_inventory": _rel(machine_metadata_report_path),
         },
-        "checks": {
-            "external_nonlinear_output_ready": external_ready,
-            "native_same_case_profile_source_ready": native_ready,
-            "strict_threshold_acceptance_ready": threshold_ready,
-            "geometry_containment_ready": geometry_ready,
-            "boundary_containment_metric_ready": boundary_metric_ready,
-            "grid_convergence_ready": grid_ready,
-            "coil_vacuum_sidecar_ready": sidecar_ready,
-            "machine_metadata_ready": machine_metadata_ready,
-            "same_case_public_reference_output_ready": machine_reference_ready,
+        "source_checksums": source_checksums,
+        "provenance": {
+            "generator": "validation/benchmark_free_boundary_strict_parity.py",
+            "source_commit": _source_commit(),
+            "python_version": sys.version.split()[0],
+            "input_reports": [
+                _source_record(
+                    "freegs_public_example_reconstruction",
+                    freegs_report_path,
+                    freegs_report,
+                ),
+                _source_record(
+                    "free_boundary_public_machine_metadata_inventory",
+                    machine_metadata_report_path,
+                    machine_metadata_report,
+                ),
+            ],
         },
+        "checks": checks,
         "acceptance_contract": acceptance_contract,
         "acceptance_matrix": acceptance_matrix,
+        "evidence_checksums": {
+            "acceptance_contract_sha256": _sha256_json(acceptance_contract),
+            "acceptance_matrix_sha256": _sha256_json(acceptance_matrix),
+            "checks_sha256": _sha256_json(checks),
+            "threshold_cases_sha256": _sha256_json(threshold_cases),
+            "grid_convergence_cases_sha256": _sha256_json(grid_cases),
+            "machine_metadata_sha256": _sha256_json(machine_metadata),
+        },
         "blockers": blockers,
         "case_count": int(freegs_report.get("case_count", 0)),
         "failed_threshold_check_count": int(strict.get("failed_threshold_check_count", 0)),
-        "threshold_cases": _threshold_case_rows(strict),
+        "threshold_cases": threshold_cases,
         "grid_convergence": {
             "schema": grid.get("schema"),
             "status": grid.get("status"),
             "required_resolution_count": int(grid.get("required_resolution_count", 0)),
-            "cases": _grid_case_rows(strict),
+            "cases": grid_cases,
         },
-        "machine_metadata": {
-            "schema": machine_metadata_report.get("schema"),
-            "status": machine_metadata_report.get("status"),
-            "machine_config_count": int(machine_metadata_report.get("machine_config_count", 0)),
-            "machines": machine_metadata_report.get("machines", []),
-            "missing_full_fidelity_requirements": machine_metadata_report.get(
-                "missing_full_fidelity_requirements", []
-            ),
-        },
+        "machine_metadata": machine_metadata,
     }
 
 
@@ -334,6 +439,23 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Status: `{metadata['status']}`")
     lines.append(f"- Machine config count: `{metadata['machine_config_count']}`")
     lines.append(f"- Machines: `{', '.join(str(v) for v in metadata['machines'])}`")
+    lines.extend(["", "## Provenance and checksums", ""])
+    provenance = report["provenance"]
+    lines.append(f"- Generator: `{provenance['generator']}`")
+    lines.append(f"- Source commit: `{provenance['source_commit']}`")
+    lines.append(f"- Python version: `{provenance['python_version']}`")
+    lines.extend(["", "| Input report | Payload SHA-256 | File SHA-256 |", "| --- | --- | --- |"])
+    for source in provenance["input_reports"]:
+        lines.append(
+            "| {path} | `{payload}` | `{file}` |".format(
+                path=source["path"],
+                payload=source["payload_sha256"],
+                file=source["file_sha256"],
+            )
+        )
+    lines.extend(["", "| Evidence section | SHA-256 |", "| --- | --- |"])
+    for key, value in report["evidence_checksums"].items():
+        lines.append(f"| `{key}` | `{value}` |")
     return "\n".join(lines) + "\n"
 
 
