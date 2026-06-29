@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import csv
 import importlib.util
 import json
 import re
@@ -37,6 +38,30 @@ def _load_tool() -> Any:
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def _public_readme_text_without_generated_inventory() -> str:
+    """Return README text outside the generated capability inventory block."""
+    tool = _load_tool()
+    config = tool.load_config(_repo_root())
+    readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
+    before, rest = readme.split(config.readme_marker_start, maxsplit=1)
+    _block, after = rest.split(config.readme_marker_end, maxsplit=1)
+    return before + after
+
+
+def _itpa_hmode_counts() -> tuple[int, int]:
+    """Return live ITPA H-mode shot and machine counts from the bundled CSV."""
+    csv_path = _repo_root() / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
+    machines: set[str] = set()
+    shot_count = 0
+    with csv_path.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            shot_count += 1
+            machine = row["machine"].strip()
+            assert machine
+            machines.add(machine)
+    return shot_count, len(machines)
 
 
 def test_manifest_scans_fusion_core_capability_surfaces() -> None:
@@ -107,12 +132,7 @@ def test_readme_snapshot_matches_generated_markdown() -> None:
 
 def test_readme_does_not_shadow_generated_inventory_with_manual_counts() -> None:
     """Verify README prose does not duplicate generated inventory counts."""
-    tool = _load_tool()
-    config = tool.load_config(_repo_root())
-    readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
-    before, rest = readme.split(config.readme_marker_start, maxsplit=1)
-    _block, after = rest.split(config.readme_marker_end, maxsplit=1)
-    public_text = before + after
+    public_text = _public_readme_text_without_generated_inventory()
 
     stale_patterns = [
         r"\b\d[\d,]*\s+Python modules\b",
@@ -124,6 +144,79 @@ def test_readme_does_not_shadow_generated_inventory_with_manual_counts() -> None
 
     for pattern in stale_patterns:
         assert re.search(pattern, public_text) is None, pattern
+
+
+def test_public_docs_do_not_carry_known_stale_inventory_counts() -> None:
+    """Verify public docs do not retain manual inventory counts outside generated output."""
+    checked_docs = {
+        "README.md": _public_readme_text_without_generated_inventory(),
+        "docs/ARCHITECTURE.md": (_repo_root() / "docs" / "ARCHITECTURE.md").read_text(
+            encoding="utf-8"
+        ),
+    }
+    stale_tokens = (
+        "Architecture (234 modules)",
+        "Python package (234 source files)",
+        "3,817 test functions",
+        "263 hardening tasks",
+        "| Python source files | 236 |",
+        "| Python lines of code | 65,664 |",
+        "| Test functions | 3,815 |",
+        "| Validation scripts | 74 |",
+        "| CI jobs | 24 |",
+        "(≈294 modules)",
+        "validation/reports/ (137 JSON+MD)",
+        "Module counts by subpackage",
+        "### 6.4 Control (`control/`, 71 modules)",
+    )
+
+    for doc_name, text in checked_docs.items():
+        for token in stale_tokens:
+            assert token not in text, f"{token!r} remains in {doc_name}"
+
+
+def test_public_docs_match_itpa_hmode_dataset_counts() -> None:
+    """Verify public ITPA H-mode count claims match the bundled dataset."""
+    shot_count, machine_count = _itpa_hmode_counts()
+    assert (shot_count, machine_count) == (53, 24)
+
+    readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
+    benchmarks = (_repo_root() / "docs" / "BENCHMARKS.md").read_text(encoding="utf-8")
+    validation_status = (_repo_root() / "docs" / "PHYSICS_VALIDATION_STATUS.md").read_text(
+        encoding="utf-8"
+    )
+    sphinx_validation = (
+        _repo_root() / "docs" / "sphinx" / "userguide" / "validation.rst"
+    ).read_text(encoding="utf-8")
+    sphinx_notebooks = (_repo_root() / "docs" / "sphinx" / "notebooks.rst").read_text(
+        encoding="utf-8"
+    )
+
+    assert f"{shot_count} shots / {machine_count} machines" in readme
+    assert f"{shot_count} shots from {machine_count} machines" in readme
+    assert (
+        f"ITPA H-mode confinement database ({shot_count} shots, {machine_count} machines)"
+        in benchmarks
+    )
+    assert f"{shot_count} shots across {machine_count} machines" in validation_status
+    assert f"{shot_count} shots, {machine_count} machines" in sphinx_validation
+    assert f"{shot_count} shots, {machine_count} machines" in sphinx_notebooks
+
+    stale_count_claims = (
+        "20 entries, 10 machines",
+        "20-shot subset",
+        "20 entries",
+        "10 machines",
+        "20 machines",
+    )
+    for doc_name, text in {
+        "docs/BENCHMARKS.md": benchmarks,
+        "docs/PHYSICS_VALIDATION_STATUS.md": validation_status,
+        "docs/sphinx/userguide/validation.rst": sphinx_validation,
+        "docs/sphinx/notebooks.rst": sphinx_notebooks,
+    }.items():
+        for token in stale_count_claims:
+            assert token not in text, f"{token!r} remains in {doc_name}"
 
 
 def test_readme_exposes_monthly_and_all_time_download_badges() -> None:

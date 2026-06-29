@@ -12,6 +12,12 @@ from validation.benchmark_free_boundary_strict_parity import (
 )
 
 
+def _assert_sha256(value: object) -> None:
+    assert isinstance(value, str)
+    assert len(value) == 64
+    assert all(ch in "0123456789abcdef" for ch in value)
+
+
 def _passing_freegs_report() -> dict[str, Any]:
     return {
         "case_count": 1,
@@ -89,6 +95,17 @@ def test_strict_parity_blocks_current_tracked_reports() -> None:
     assert report["acceptance_matrix"]["grid_convergence_ladder"] is True
     assert report["acceptance_matrix"]["coil_vacuum_sidecars"] is True
     assert report["acceptance_matrix"]["same_case_reference_output"] is True
+    assert report["source_checksums"]
+    assert (
+        report["provenance"]["generator"] == "validation/benchmark_free_boundary_strict_parity.py"
+    )
+    assert report["provenance"]["source_commit"]
+    assert len(report["provenance"]["input_reports"]) == 2
+    for source in report["provenance"]["input_reports"]:
+        _assert_sha256(source["payload_sha256"])
+        _assert_sha256(source["file_sha256"])
+    for digest in report["evidence_checksums"].values():
+        _assert_sha256(digest)
 
 
 def test_strict_parity_accepts_only_complete_contract() -> None:
@@ -107,6 +124,19 @@ def test_strict_parity_accepts_only_complete_contract() -> None:
     assert report["checks"]["grid_convergence_ready"] is True
     assert report["acceptance_matrix"]["strict_threshold_metrics"] is True
     assert report["acceptance_contract"]["gate_semantics"] == "fail_closed"
+    _assert_sha256(
+        report["source_checksums"]["freegs_public_example_reconstruction_payload_sha256"]
+    )
+    _assert_sha256(
+        report["source_checksums"]["free_boundary_public_machine_metadata_inventory_payload_sha256"]
+    )
+    assert report["provenance"]["input_reports"][0]["artifact_id"] == (
+        "freegs_public_example_reconstruction"
+    )
+    assert report["provenance"]["input_reports"][1]["artifact_id"] == (
+        "free_boundary_public_machine_metadata_inventory"
+    )
+    _assert_sha256(report["evidence_checksums"]["acceptance_matrix_sha256"])
 
 
 def test_strict_parity_markdown_exposes_blockers() -> None:
@@ -130,3 +160,5 @@ def test_strict_parity_markdown_exposes_blockers() -> None:
     assert "public_external_coil_vacuum_sidecars_missing" in markdown
     assert "Accepted full fidelity: `False`" in markdown
     assert "## Acceptance matrix" in markdown
+    assert "## Provenance and checksums" in markdown
+    assert "`acceptance_matrix_sha256`" in markdown
