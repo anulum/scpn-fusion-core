@@ -221,6 +221,8 @@ files = [
     "tests/test_vertical_control_replay_benchmark.py",
     "validation/scpn_end_to_end_latency.py",
     "tests/test_scpn_end_to_end_latency.py",
+    "validation/benchmark_free_boundary_strict_parity.py",
+    "tests/test_benchmark_free_boundary_strict_parity.py",
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",
     "tests/test_structure.py",
