@@ -58,6 +58,30 @@ Published reports must retain blocker statuses when external artefacts are
 missing. Do not substitute synthetic, reduced-order, or partial diagnostic
 outputs for accepted full-fidelity parity evidence.
 
+## Dispatcher kernel-tier benchmark
+
+The canonical fastest-first dispatcher lane is benchmarked separately from
+solver physics parity:
+
+```bash
+PYTHONPATH=src python benchmarks/bench_dispatcher_kernel_tiers.py
+```
+
+Tracked report:
+[`validation/reports/dispatcher_kernel_tiers_benchmark.json`](../validation/reports/dispatcher_kernel_tiers_benchmark.json)
+
+The report covers the five A2 function kernels registered in
+`core/_multi_compat.py`: `shafranov_bv`, `solve_coil_currents`,
+`measure_magnetics`, `multigrid_solve`, and `simulate_tearing_mode`. Each row
+records registered tiers, selected tier, local wall-clock timing, output shape,
+and checksum. These timings are local non-isolated regression evidence, not
+release throughput claims.
+
+The accepted gate is structural: every kernel must keep a Rust tier and a NumPy
+floor, every kernel must resolve through the dispatcher, and
+`fallback_telemetry_validation` must force Rust unavailable, select NumPy for
+each kernel, and record one `multi_backend` fallback event per kernel.
+
 ## FRC rigid-rotor no-rotation analytical benchmark
 
 The accepted FRC analytical lane is benchmarked separately from Grad-Shafranov,
@@ -775,7 +799,7 @@ threshold checks.
 
 ### IPB98(y,2) Confinement Scaling
 
-Validation against the ITPA H-mode confinement database (20 entries, 10 machines):
+Validation against the ITPA H-mode confinement database (53 shots, 24 machines):
 
 | Machine | Shots | τ_E measured (s) | τ_E predicted (s) | Error (%) |
 |---------|-------|-----------------|-------------------|-----------|

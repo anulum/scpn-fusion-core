@@ -13,19 +13,21 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable, Mapping
+import importlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 
-import sys
-
-sys.path.insert(0, str(ROOT / "validation"))
-
-from validate_real_shots import THRESHOLDS, validate_transport
+_VALIDATE_REAL_SHOTS = importlib.import_module("validation.validate_real_shots")
+THRESHOLDS = cast(Mapping[str, float], _VALIDATE_REAL_SHOTS.THRESHOLDS)
+_validate_transport = cast(
+    Callable[[Path], dict[str, Any]], _VALIDATE_REAL_SHOTS.validate_transport
+)
 
 
 CONTRACT_THRESHOLDS = {
@@ -33,6 +35,9 @@ CONTRACT_THRESHOLDS = {
     "max_abs_relative_error_p95": 2.5,
     "max_zscore_p95": 4.0,
 }
+SCHEMA = "transport-uncertainty-envelope-benchmark.v1"
+STATUS_ACCEPTED = "accepted_transport_uncertainty_envelope"
+STATUS_BLOCKED = "blocked_transport_uncertainty_envelope_thresholds"
 
 
 def _render_path(path: Path) -> str:
@@ -44,7 +49,7 @@ def _render_path(path: Path) -> str:
 
 def run_benchmark(*, itpa_csv: Path) -> dict[str, Any]:
     """Run uncertainty-envelope validation against ITPA reference shots."""
-    transport = validate_transport(itpa_csv)
+    transport = _validate_transport(itpa_csv)
     envelope = transport.get("uncertainty_envelope", {})
 
     required_fields = (
@@ -84,6 +89,9 @@ def run_benchmark(*, itpa_csv: Path) -> dict[str, Any]:
     )
 
     return {
+        "schema": SCHEMA,
+        "status": STATUS_ACCEPTED if passes else STATUS_BLOCKED,
+        "passes_thresholds": passes,
         "transport_uncertainty_envelope_benchmark": {
             "itpa_csv": _render_path(itpa_csv),
             "n_shots": int(transport.get("n_shots", 0)),
@@ -100,7 +108,7 @@ def run_benchmark(*, itpa_csv: Path) -> dict[str, Any]:
                 "within_2sigma_fraction": transport.get("within_2sigma_fraction"),
                 "uncertainty_envelope": envelope,
             },
-        }
+        },
     }
 
 
@@ -112,6 +120,8 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# Transport Uncertainty Envelope Benchmark",
         "",
+        f"- Schema: `{report['schema']}`",
+        f"- Status: `{report['status']}`",
         f"- ITPA CSV: `{g['itpa_csv']}`",
         f"- Shots: `{g['n_shots']}`",
         f"- Transport pass: `{'YES' if g['transport_pass'] else 'NO'}`",
@@ -168,7 +178,7 @@ def main() -> int:
     out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    out_json.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     out_md.write_text(render_markdown(report), encoding="utf-8")
 
     g = report["transport_uncertainty_envelope_benchmark"]

@@ -33,6 +33,9 @@ def test_run_benchmark_passes_contracts() -> None:
     itpa_csv = ROOT / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
     report = benchmark_transport_uncertainty_envelope.run_benchmark(itpa_csv=itpa_csv)
     g = report["transport_uncertainty_envelope_benchmark"]
+    assert report["schema"] == "transport-uncertainty-envelope-benchmark.v1"
+    assert report["status"] == "accepted_transport_uncertainty_envelope"
+    assert report["passes_thresholds"] is True
     assert g["passes_thresholds"] is True
     assert g["transport_pass"] is True
     assert g["envelope_fields_pass"] is True
@@ -46,6 +49,8 @@ def test_render_markdown_contains_sections() -> None:
     report = benchmark_transport_uncertainty_envelope.run_benchmark(itpa_csv=itpa_csv)
     text = benchmark_transport_uncertainty_envelope.render_markdown(report)
     assert "# Transport Uncertainty Envelope Benchmark" in text
+    assert "Schema: `transport-uncertainty-envelope-benchmark.v1`" in text
+    assert "Status: `accepted_transport_uncertainty_envelope`" in text
     assert "Envelope fields pass" in text
     assert "| Metric | Value | Threshold |" in text
 
@@ -70,4 +75,7 @@ def test_cli_writes_reports_and_strict_passes(tmp_path: Path) -> None:
     assert out_json.exists()
     assert out_md.exists()
     payload = json.loads(out_json.read_text(encoding="utf-8"))
+    assert payload["schema"] == "transport-uncertainty-envelope-benchmark.v1"
+    assert payload["status"] == "accepted_transport_uncertainty_envelope"
+    assert payload["passes_thresholds"] is True
     assert "transport_uncertainty_envelope_benchmark" in payload
