@@ -4,7 +4,7 @@ click>=8.1,<9
 # Documentation CI runs on Python 3.12 and remains on the reviewed NumPy 1.x lane.
 # Dependabot security-update resolution may use newer Python interpreters where
 # current JAX wheels require NumPy 2.1+.
-numpy<2.0; python_version < "3.14"
+numpy<3.0; python_version < "3.14"
 numpy>=2.1.0; python_version >= "3.14"
 matplotlib>=3.5,<4
 scipy>=1.10,<2
