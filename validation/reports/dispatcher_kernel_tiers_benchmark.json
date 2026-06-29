@@ -1,0 +1,235 @@
+{
+  "benchmark": "dispatcher_kernel_tiers",
+  "benchmark_evidence": {
+    "classification": "local_non_isolated_regression",
+    "command": "PYTHONPATH=src python benchmarks/bench_dispatcher_kernel_tiers.py",
+    "host_load_average": [
+      28.8203125,
+      26.50244140625,
+      22.77880859375
+    ],
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "timing_note": "Wall-clock timings are local workstation regression evidence only; tier selection and fallback telemetry are the accepted contract."
+  },
+  "fallback_telemetry_validation": {
+    "expected_selected_tier": "numpy",
+    "fallback_event_count": 5,
+    "forced_unavailable_tier": "rust",
+    "passes": true,
+    "rows": [
+      {
+        "kernel": "shafranov_bv",
+        "output_checksum": -0.6316557225413556,
+        "passes": true,
+        "registered_tiers": [
+          "rust",
+          "numpy"
+        ],
+        "selected_provider": "_numpy_shafranov_bv",
+        "selected_tier": "numpy"
+      },
+      {
+        "kernel": "solve_coil_currents",
+        "output_checksum": -1.3043478260869565,
+        "passes": true,
+        "registered_tiers": [
+          "rust",
+          "numpy"
+        ],
+        "selected_provider": "_numpy_solve_coil_currents",
+        "selected_tier": "numpy"
+      },
+      {
+        "kernel": "measure_magnetics",
+        "output_checksum": 13.999999999999996,
+        "passes": true,
+        "registered_tiers": [
+          "rust",
+          "numpy"
+        ],
+        "selected_provider": "_numpy_measure_magnetics",
+        "selected_tier": "numpy"
+      },
+      {
+        "kernel": "multigrid_solve",
+        "output_checksum": 22.46587229431361,
+        "passes": true,
+        "registered_tiers": [
+          "rust",
+          "numpy"
+        ],
+        "selected_provider": "_numpy_multigrid_solve",
+        "selected_tier": "numpy"
+      },
+      {
+        "kernel": "simulate_tearing_mode",
+        "output_checksum": 268.1900081374737,
+        "passes": true,
+        "registered_tiers": [
+          "rust",
+          "numpy"
+        ],
+        "selected_provider": "_numpy_simulate_tearing_mode",
+        "selected_tier": "numpy"
+      }
+    ],
+    "snapshot": {
+      "domain_counts": {
+        "multi_backend": 5
+      },
+      "recent_events": [
+        {
+          "context": {
+            "fastest_tier": "rust",
+            "kernel": "shafranov_bv",
+            "selected_tier": "numpy"
+          },
+          "domain": "multi_backend",
+          "domain_count": 1,
+          "domain_limit": null,
+          "reason": "shafranov_bv_fallback_to_numpy",
+          "timestamp_utc": "2026-06-27T18:39:59.574700+00:00",
+          "total_count": 1,
+          "total_limit": null
+        },
+        {
+          "context": {
+            "fastest_tier": "rust",
+            "kernel": "solve_coil_currents",
+            "selected_tier": "numpy"
+          },
+          "domain": "multi_backend",
+          "domain_count": 2,
+          "domain_limit": null,
+          "reason": "solve_coil_currents_fallback_to_numpy",
+          "timestamp_utc": "2026-06-27T18:39:59.593664+00:00",
+          "total_count": 2,
+          "total_limit": null
+        },
+        {
+          "context": {
+            "fastest_tier": "rust",
+            "kernel": "measure_magnetics",
+            "selected_tier": "numpy"
+          },
+          "domain": "multi_backend",
+          "domain_count": 3,
+          "domain_limit": null,
+          "reason": "measure_magnetics_fallback_to_numpy",
+          "timestamp_utc": "2026-06-27T18:39:59.594053+00:00",
+          "total_count": 3,
+          "total_limit": null
+        },
+        {
+          "context": {
+            "fastest_tier": "rust",
+            "kernel": "multigrid_solve",
+            "selected_tier": "numpy"
+          },
+          "domain": "multi_backend",
+          "domain_count": 4,
+          "domain_limit": null,
+          "reason": "multigrid_solve_fallback_to_numpy",
+          "timestamp_utc": "2026-06-27T18:39:59.598814+00:00",
+          "total_count": 4,
+          "total_limit": null
+        },
+        {
+          "context": {
+            "fastest_tier": "rust",
+            "kernel": "simulate_tearing_mode",
+            "selected_tier": "numpy"
+          },
+          "domain": "multi_backend",
+          "domain_count": 5,
+          "domain_limit": null,
+          "reason": "simulate_tearing_mode_fallback_to_numpy",
+          "timestamp_utc": "2026-06-27T18:39:59.617894+00:00",
+          "total_count": 5,
+          "total_limit": null
+        }
+      ],
+      "total_count": 5
+    }
+  },
+  "gate": {
+    "all_numpy_floor_passed": true,
+    "fallback_telemetry_validation_passed": true,
+    "kernel_count": 5,
+    "passes": true
+  },
+  "kernels": [
+    {
+      "kernel": "shafranov_bv",
+      "output_checksum": -0.6316557225413556,
+      "output_shape": "float",
+      "passes": true,
+      "registered_tiers": [
+        "rust",
+        "numpy"
+      ],
+      "repeats": 3,
+      "selected_provider": "_rust_shafranov_bv",
+      "selected_tier": "rust",
+      "wall_time_s_min": 1.0310031939297915e-06
+    },
+    {
+      "kernel": "solve_coil_currents",
+      "output_checksum": -1.3043478260869565,
+      "output_shape": "ndarray(3,)",
+      "passes": true,
+      "registered_tiers": [
+        "rust",
+        "numpy"
+      ],
+      "repeats": 3,
+      "selected_provider": "_rust_solve_coil_currents",
+      "selected_tier": "rust",
+      "wall_time_s_min": 2.487999154254794e-06
+    },
+    {
+      "kernel": "measure_magnetics",
+      "output_checksum": 13.999999999999996,
+      "output_shape": "ndarray(20,)",
+      "passes": true,
+      "registered_tiers": [
+        "rust",
+        "numpy"
+      ],
+      "repeats": 3,
+      "selected_provider": "_rust_measure_magnetics",
+      "selected_tier": "rust",
+      "wall_time_s_min": 3.114022547379136e-06
+    },
+    {
+      "kernel": "multigrid_solve",
+      "output_checksum": 22.46587229431359,
+      "output_shape": "tuple[ndarray(33, 33),float,int,bool]",
+      "passes": true,
+      "registered_tiers": [
+        "rust",
+        "numpy"
+      ],
+      "repeats": 3,
+      "selected_provider": "_rust_multigrid_solve",
+      "selected_tier": "rust",
+      "wall_time_s_min": 0.0003642090014182031
+    },
+    {
+      "kernel": "simulate_tearing_mode",
+      "output_checksum": 281.6770616307467,
+      "output_shape": "tuple[ndarray(256,),int,int]",
+      "passes": true,
+      "registered_tiers": [
+        "rust",
+        "numpy"
+      ],
+      "repeats": 3,
+      "selected_provider": "_rust_simulate_tearing_mode",
+      "selected_tier": "rust",
+      "wall_time_s_min": 2.3878004867583513e-05
+    }
+  ],
+  "schema": "scpn-fusion-core.dispatcher-kernel-tiers-benchmark.v1"
+}

@@ -35,11 +35,11 @@ by CFS, designed to achieve Q > 2 in D-T plasmas.
 ### ITPA H-Mode Confinement Database
 
 Curated subset of the International Tokamak Physics Activity (ITPA) global
-H-mode confinement database, covering 18 tokamaks worldwide.
+H-mode confinement database, covering 53 shots across 24 tokamaks.
 
 | File | Description |
 |------|-------------|
-| `hmode_confinement.csv` | Machine parameters and measured τ_E for 20 entries |
+| `hmode_confinement.csv` | Machine parameters and measured τ_E for 53 shots |
 | `ipb98y2_coefficients.json` | IPB98(y,2) scaling law coefficients and uncertainties |
 
 **Source:** Verdoolaege et al., Nuclear Fusion 61 (2021) 076006

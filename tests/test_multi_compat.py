@@ -9,14 +9,19 @@
 from __future__ import annotations
 
 import builtins
+import ctypes
 import sys
 import types
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping, Sequence
+from pathlib import Path
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 from scpn_fusion.core import _multi_compat as multi
+
+FloatArray = NDArray[np.float64]
 
 
 def _clear_kernel(name: str) -> None:
@@ -38,15 +43,44 @@ def test_numpy_backend_is_always_available() -> None:
     assert multi.is_available(multi.BackendTier.NUMPY) is True
 
 
+def test_ensure_probed_returns_when_parallel_probe_completes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _ProbeLock:
+        def __enter__(self) -> None:
+            multi._probed = True
+
+        def __exit__(
+            self,
+            _exc_type: object,
+            _exc: object,
+            _traceback: object,
+        ) -> None:
+            return None
+
+    monkeypatch.setattr(multi, "_probed", False)
+    monkeypatch.setattr(multi, "_probe_lock", _ProbeLock())
+
+    multi._ensure_probed()
+
+    assert multi._probed is True
+
+
 def test_jax_probe_treats_broken_optional_import_as_unavailable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     real_import = builtins.__import__
 
-    def fake_import(name: str, *args: object, **kwargs: object) -> object:
+    def fake_import(
+        name: str,
+        globals_: Mapping[str, object] | None = None,
+        locals_: Mapping[str, object] | None = None,
+        fromlist: Sequence[str] = (),
+        level: int = 0,
+    ) -> object:
         if name == "jax":
             raise ValueError("numpy dtype ABI mismatch")
-        return real_import(name, *args, **kwargs)
+        return real_import(name, globals_, locals_, fromlist, level)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
@@ -62,8 +96,53 @@ def test_dispatch_selects_registered_numpy_kernel(kernel_name: str) -> None:
     selected = multi.dispatch(kernel_name)
 
     assert selected(4) == 5
+    assert multi.dispatch(kernel_name) is selected
     assert multi.dispatch_tier(kernel_name) == "numpy"
     assert multi.registered_kernels()[kernel_name] == ["numpy*"]
+
+
+def test_dispatch_tier_populates_cache_for_registered_kernel(kernel_name: str) -> None:
+    def numpy_impl(value: int) -> int:
+        return value * 2
+
+    multi.register_kernel(kernel_name, multi.BackendTier.NUMPY, numpy_impl)
+
+    assert multi.dispatch_tier(kernel_name) == "numpy"
+    assert multi._dispatch_cache[kernel_name][1] is numpy_impl
+
+
+def test_dispatch_returns_cache_populated_while_waiting_for_lock(
+    kernel_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def numpy_impl() -> str:
+        return "numpy"
+
+    class _RegistryLock:
+        def __enter__(self) -> None:
+            multi._dispatch_cache[kernel_name] = (multi.BackendTier.NUMPY, numpy_impl)
+
+        def __exit__(
+            self,
+            _exc_type: object,
+            _exc: object,
+            _traceback: object,
+        ) -> None:
+            return None
+
+    monkeypatch.setattr(multi, "_registry_lock", _RegistryLock())
+
+    assert multi.dispatch(kernel_name) is numpy_impl
+
+
+def test_dispatch_tier_rejects_dispatch_without_cache_population(
+    kernel_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(multi, "dispatch", lambda _name: None)
+
+    with pytest.raises(RuntimeError, match="dispatch_tier failed"):
+        multi.dispatch_tier(kernel_name)
 
 
 def test_dispatch_falls_back_to_available_lower_tier(kernel_name: str) -> None:
@@ -86,6 +165,98 @@ def test_dispatch_raises_for_unregistered_kernel() -> None:
         multi.dispatch("test_missing_kernel")
 
 
+def test_dispatch_rust_symbol_resolves_from_extension_module(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_extension = types.ModuleType("scpn_fusion_rs")
+
+    def rust_symbol() -> str:
+        return "rust-symbol"
+
+    fake_extension.__dict__["rust_symbol"] = rust_symbol
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_extension)
+
+    resolved = multi.dispatch_rust_symbol("rust_symbol")
+
+    assert resolved is rust_symbol
+    assert resolved() == "rust-symbol"
+
+
+def test_dispatch_rust_symbol_uses_cache_for_same_extension_module(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_extension = types.ModuleType("scpn_fusion_rs")
+
+    def rust_symbol() -> str:
+        return "cached-rust-symbol"
+
+    fake_extension.__dict__["rust_symbol"] = rust_symbol
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_extension)
+    multi._rust_symbol_cache.pop("rust_symbol", None)
+
+    resolved = multi.dispatch_rust_symbol("rust_symbol")
+
+    assert multi.dispatch_rust_symbol("rust_symbol") is resolved
+
+
+def test_dispatch_rust_symbol_refreshes_cache_when_module_changes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first_extension = types.ModuleType("scpn_fusion_rs")
+    second_extension = types.ModuleType("scpn_fusion_rs")
+
+    def first_symbol() -> str:
+        return "first"
+
+    def second_symbol() -> str:
+        return "second"
+
+    first_extension.__dict__["rust_symbol"] = first_symbol
+    second_extension.__dict__["rust_symbol"] = second_symbol
+    multi._rust_symbol_cache.pop("rust_symbol", None)
+
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", first_extension)
+    assert multi.dispatch_rust_symbol("rust_symbol") is first_symbol
+
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", second_extension)
+    assert multi.dispatch_rust_symbol("rust_symbol") is second_symbol
+
+
+def test_dispatch_rust_symbol_rejects_missing_symbol(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_extension = types.ModuleType("scpn_fusion_rs")
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_extension)
+
+    with pytest.raises(AttributeError, match="missing_symbol"):
+        multi.dispatch_rust_symbol("missing_symbol")
+
+
+def test_dispatch_rust_symbol_rejects_non_callable_symbol(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_extension = types.ModuleType("scpn_fusion_rs")
+    fake_extension.__dict__["rust_symbol"] = 42
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_extension)
+
+    with pytest.raises(TypeError, match="not callable"):
+        multi.dispatch_rust_symbol("rust_symbol")
+
+
+def test_a4_production_surfaces_use_dispatcher_for_rust_symbols() -> None:
+    production_files = [
+        Path("src/scpn_fusion/phase/kuramoto.py"),
+        Path("src/scpn_fusion/phase/upde.py"),
+        Path("src/scpn_fusion/scpn/controller_runtime_backend.py"),
+        Path("src/scpn_fusion/control/rust_flight_sim_wrapper.py"),
+    ]
+
+    for path in production_files:
+        source = path.read_text(encoding="utf-8")
+        assert "import scpn_fusion_rs" not in source
+        assert "from scpn_fusion_rs import" not in source
+
+
 def test_dispatch_raises_when_all_registered_tiers_are_unavailable(kernel_name: str) -> None:
     multi.register_kernel(kernel_name, multi.BackendTier.MOJO, lambda: None)
 
@@ -93,15 +264,41 @@ def test_dispatch_raises_when_all_registered_tiers_are_unavailable(kernel_name: 
         multi.dispatch(kernel_name)
 
 
+def test_optional_backend_probes_respect_disable_flags(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SCPN_DISABLE_MOJO", "true")
+    monkeypatch.setenv("SCPN_DISABLE_JULIA", "1")
+    monkeypatch.setenv("SCPN_DISABLE_GO", "yes")
+
+    assert multi._probe_mojo() is False
+    assert multi._probe_julia() is False
+    assert multi._probe_go() is False
+
+
+def test_julia_probe_accepts_importable_juliacall(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_juliacall = types.ModuleType("juliacall")
+    fake_juliacall.__dict__["Main"] = object()
+    monkeypatch.delenv("SCPN_DISABLE_JULIA", raising=False)
+    monkeypatch.setitem(sys.modules, "juliacall", fake_juliacall)
+
+    assert multi._probe_julia() is True
+
+
+def test_go_probe_accepts_loadable_shared_library(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SCPN_DISABLE_GO", raising=False)
+    monkeypatch.setattr(ctypes, "CDLL", lambda _path: object())
+
+    assert multi._probe_go() is True
+
+
 def test_dispatch_fallback_survives_telemetry_failure(
     kernel_name: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     fake_mod = types.ModuleType("scpn_fusion.fallback_telemetry")
 
-    def _raise(*_args, **_kwargs):
+    def _raise(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("telemetry unavailable")
 
-    fake_mod.record_fallback_event = _raise
+    fake_mod.__dict__["record_fallback_event"] = _raise
     monkeypatch.setitem(sys.modules, "scpn_fusion.fallback_telemetry", fake_mod)
 
     multi.register_kernel(kernel_name, multi.BackendTier.MOJO, lambda: "mojo")
@@ -161,6 +358,30 @@ def test_dispatch_kernel_class_raises_when_all_unavailable(class_kernel_name: st
         multi.dispatch_kernel_class(class_kernel_name)
 
 
+def test_dispatch_kernel_class_returns_cache_populated_while_waiting_for_lock(
+    class_kernel_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _ClassRegistryLock:
+        def __enter__(self) -> None:
+            multi._class_dispatch_cache[class_kernel_name] = (
+                multi.BackendTier.NUMPY,
+                _NumpyKernelStub,
+            )
+
+        def __exit__(
+            self,
+            _exc_type: object,
+            _exc: object,
+            _traceback: object,
+        ) -> None:
+            return None
+
+    monkeypatch.setattr(multi, "_class_registry_lock", _ClassRegistryLock())
+
+    assert multi.dispatch_kernel_class(class_kernel_name) is _NumpyKernelStub
+
+
 def test_equilibrium_kernel_class_dispatches_to_python_without_rust() -> None:
     cls = multi.dispatch_kernel_class("equilibrium_kernel")
     assert isinstance(cls, type)
@@ -176,6 +397,12 @@ def test_rust_equilibrium_loader_returns_the_rust_kernel_class() -> None:
     from scpn_fusion.core._rust_compat import RustAcceleratedKernel
 
     assert multi._load_rust_equilibrium_kernel() is RustAcceleratedKernel
+
+
+def test_numpy_equilibrium_loader_returns_the_python_kernel_class() -> None:
+    from scpn_fusion.core.fusion_kernel import FusionKernel
+
+    assert multi._load_numpy_equilibrium_kernel() is FusionKernel
 
 
 def test_shafranov_bv_bootstrap_registers_both_tiers() -> None:
@@ -357,7 +584,7 @@ def test_rust_measure_magnetics_provider_matches_reference() -> None:
     )
 
 
-def _multigrid_problem() -> tuple:
+def _multigrid_problem() -> tuple[FloatArray, FloatArray, float, float, float, float, int, int]:
     nr = nz = 33
     r_min, r_max, z_min, z_max = 1.2, 2.2, -0.5, 0.5
     rr, zz = np.meshgrid(np.linspace(r_min, r_max, nr), np.linspace(z_min, z_max, nz))
@@ -431,6 +658,22 @@ def test_rust_multigrid_solve_provider_matches_reference() -> None:
     )
     assert conv_rs and conv_py
     np.testing.assert_allclose(psi_rs, psi_py, rtol=1e-6, atol=1e-9)
+
+
+def test_rust_multigrid_solve_rejects_unavailable_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scpn_fusion.core._rust_compat as rust_compat
+
+    source, psi_bc, r_min, r_max, z_min, z_max, nr, nz = _multigrid_problem()
+    monkeypatch.setattr(
+        rust_compat,
+        "rust_multigrid_vcycle",
+        lambda *_args, **_kwargs: None,
+    )
+
+    with pytest.raises(RuntimeError, match="unavailable"):
+        multi._rust_multigrid_solve(source, psi_bc, r_min, r_max, z_min, z_max, nr, nz)
 
 
 def test_simulate_tearing_mode_bootstrap_registers_both_tiers() -> None:
