@@ -30,10 +30,16 @@ JSONSCHEMA: Any = importlib.import_module("jsonschema")
 
 
 def test_run_benchmark_is_deterministic_and_reports_limits() -> None:
+    """Verify the single-profile report is deterministic and claim-scoped."""
     first = vertical_control_replay_benchmark.run_benchmark()
     second = vertical_control_replay_benchmark.run_benchmark()
 
     assert first == second
+    assert first["schema"] == "vertical-control-replay-benchmark.v1"
+    assert first["status"] == "blocked_pending_multi_profile_release_gate"
+    assert first["passes_thresholds"] is True
+    assert first["claim_boundary"] == "deterministic_reduced_order_RZIP_replay_not_full_PCS"
+    assert first["full_pcs_production_grade_ready"] is False
     bench = first["vertical_control_replay_benchmark"]
     assert bench["schema_version"] == "1.0.0"
     assert bench["deterministic_replay_pass"] is True
@@ -83,6 +89,7 @@ def test_run_benchmark_is_deterministic_and_reports_limits() -> None:
 
 
 def test_controller_results_include_replay_metrics_and_uncertainty() -> None:
+    """Verify every replay lane reports threshold, actuator, and UQ metrics."""
     report = vertical_control_replay_benchmark.run_benchmark()
     bench = report["vertical_control_replay_benchmark"]
 
@@ -121,6 +128,7 @@ def test_controller_results_include_replay_metrics_and_uncertainty() -> None:
 
 
 def test_fairness_report_proves_shared_inputs_and_controller_reset() -> None:
+    """Verify replay fairness evidence uses shared inputs and reset controllers."""
     report = vertical_control_replay_benchmark.run_benchmark()
     bench = report["vertical_control_replay_benchmark"]
     fairness = bench["fairness_report"]
@@ -137,6 +145,7 @@ def test_fairness_report_proves_shared_inputs_and_controller_reset() -> None:
 
 
 def test_rzip_plant_contract_is_deterministic_and_wired_to_replay() -> None:
+    """Verify the RZIP plant contract contributes deterministic replay metadata."""
     report = vertical_control_replay_benchmark.run_benchmark()
     bench = report["vertical_control_replay_benchmark"]
     contract = bench["plant_contract"]
@@ -157,6 +166,7 @@ def test_rzip_plant_contract_is_deterministic_and_wired_to_replay() -> None:
 
 
 def test_replay_checksums_change_when_scenario_changes() -> None:
+    """Verify replay checksums are sensitive to scenario changes."""
     baseline = vertical_control_replay_benchmark.run_benchmark()
     changed = vertical_control_replay_benchmark.run_benchmark(
         scenario=vertical_control_replay_benchmark.ReplayScenario(disturbance_accel_m_per_s2=0.24)
@@ -175,6 +185,7 @@ def test_replay_checksums_change_when_scenario_changes() -> None:
 
 
 def test_invalid_contract_values_are_rejected() -> None:
+    """Verify invalid scenario, actuator, and profile contracts fail fast."""
     scenario = vertical_control_replay_benchmark.ReplayScenario(n_steps=2)
     with pytest.raises(ValueError, match="n_steps"):
         vertical_control_replay_benchmark.run_benchmark(scenario=scenario)
@@ -189,6 +200,7 @@ def test_invalid_contract_values_are_rejected() -> None:
 
 
 def test_machine_profiles_are_available_and_change_replay_contract() -> None:
+    """Verify committed machine profiles are present and alter provenance."""
     profiles = vertical_control_replay_benchmark.machine_profiles()
     assert set(profiles) == {"iter_like", "diii_d_like", "compact_tokamak"}
     assert all(profile.provenance for profile in profiles.values())
@@ -211,6 +223,7 @@ def test_machine_profiles_are_available_and_change_replay_contract() -> None:
 
 
 def test_json_schema_contains_required_contract_keys() -> None:
+    """Verify the committed schema requires the vertical replay contract keys."""
     schema_path = ROOT / "schemas" / "vertical_control_replay_benchmark.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     assert schema["title"] == "SCPN Fusion Core Vertical Control Replay Benchmark"
@@ -242,6 +255,7 @@ def test_json_schema_contains_required_contract_keys() -> None:
 
 
 def test_report_validates_against_committed_json_schema() -> None:
+    """Verify the generated single-profile report validates against the schema."""
     schema_path = ROOT / "schemas" / "vertical_control_replay_benchmark.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     report = vertical_control_replay_benchmark.run_benchmark()
@@ -251,6 +265,7 @@ def test_report_validates_against_committed_json_schema() -> None:
 
 
 def test_cli_writes_json_and_markdown_reports(tmp_path: Path) -> None:
+    """Verify the CLI writes single-profile JSON and Markdown reports."""
     out_json = tmp_path / "vertical_control_replay_benchmark.json"
     out_md = tmp_path / "vertical_control_replay_benchmark.md"
     proc = subprocess.run(
@@ -270,11 +285,18 @@ def test_cli_writes_json_and_markdown_reports(tmp_path: Path) -> None:
 
     assert proc.returncode == 0, proc.stderr
     payload = json.loads(out_json.read_text(encoding="utf-8"))
+    assert payload["schema"] == "vertical-control-replay-benchmark.v1"
+    assert payload["status"] == "blocked_pending_multi_profile_release_gate"
+    assert payload["passes_thresholds"] is True
+    assert payload["full_pcs_production_grade_ready"] is False
     assert payload["vertical_control_replay_benchmark"]["passes_thresholds"] is True
-    assert "# Vertical Control Replay Benchmark" in out_md.read_text(encoding="utf-8")
+    markdown = out_md.read_text(encoding="utf-8")
+    assert "# Vertical Control Replay Benchmark" in markdown
+    assert "- Full PCS production-grade ready: `NO`" in markdown
 
 
 def test_cli_all_profiles_writes_multi_profile_report(tmp_path: Path) -> None:
+    """Verify the CLI writes reduced-order profile-suite reports."""
     out_json = tmp_path / "vertical_control_replay_profiles.json"
     out_md = tmp_path / "vertical_control_replay_profiles.md"
     proc = subprocess.run(
@@ -295,12 +317,21 @@ def test_cli_all_profiles_writes_multi_profile_report(tmp_path: Path) -> None:
 
     assert proc.returncode == 0, proc.stderr
     payload = json.loads(out_json.read_text(encoding="utf-8"))
+    assert payload["schema"] == "vertical-control-replay-benchmark.v1"
+    assert payload["status"] == "accepted_reduced_order_replay_release_gate"
+    assert payload["passes_thresholds"] is True
+    assert payload["claim_boundary"] == "deterministic_reduced_order_RZIP_replay_not_full_PCS"
+    assert payload["full_pcs_production_grade_ready"] is False
     suite = payload["vertical_control_replay_profile_suite"]
     assert suite["profile_ids"] == ["compact_tokamak", "diii_d_like", "iter_like"]
     assert suite["all_profiles_pass"] is True
     assert suite["release_gate"]["status"] == "accepted_reduced_order_replay_release_gate"
     assert suite["release_gate"]["reduced_order_release_gate_ready"] is True
     assert suite["release_gate"]["full_pcs_production_grade_ready"] is False
+    assert payload["full_pcs_production_grade_ready"] is False
     assert suite["release_gate"]["blockers"] == []
     assert set(suite["reports"]) == set(suite["profile_ids"])
-    assert "## Profile suite" in out_md.read_text(encoding="utf-8")
+    markdown = out_md.read_text(encoding="utf-8")
+    assert "## Profile suite" in markdown
+    assert "- Status: `accepted_reduced_order_replay_release_gate`" in markdown
+    assert "- Full PCS production-grade ready: `NO`" in markdown
