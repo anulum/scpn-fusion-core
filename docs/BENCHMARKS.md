@@ -799,7 +799,7 @@ threshold checks.
 
 ### IPB98(y,2) Confinement Scaling
 
-Validation against the ITPA H-mode confinement database (20 entries, 10 machines):
+Validation against the ITPA H-mode confinement database (53 shots, 24 machines):
 
 | Machine | Shots | τ_E measured (s) | τ_E predicted (s) | Error (%) |
 |---------|-------|-----------------|-------------------|-----------|

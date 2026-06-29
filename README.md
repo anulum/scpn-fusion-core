@@ -181,17 +181,17 @@ before plant deployment.
 
 ## Capability Surface
 
-| Layer | Modules | Capability |
-|-------|---------|-----------|
-| **Core Physics** | 118 | Grad-Shafranov, transport (1.5D + QLKNN + FNO), GK three-path (native + 5 external codes), MHD stability (7 criteria), neoclassical, disruption chain, ELM/MARFE/L-H transition, runaway electrons, pellet injection, plasma-wall interaction, 3D equilibrium |
-| **Control** | 54 | PID, H-infinity, NMPC-JAX, SNN (Petri net compiler), gain-scheduled, fault-tolerant, safe RL (PPO), free-boundary tracking, burn control, RZIP, RWM feedback, mu-synthesis, detachment, density, volt-second management, state estimation (EKF) |
-| **Phase Dynamics** | 10 | Kuramoto UPDE solver, adaptive K_nm coupling, GK-to-UPDE bridge, plasma K_nm, Lyapunov guard, real-time monitoring, WebSocket streaming |
-| **Diagnostics** | 5 | Synthetic sensors, tomographic inversion, forward models |
-| **Engineering** | 4 | Balance of plant, CAD raytrace, thermal hydraulics |
-| **Nuclear** | 5 | Blanket neutronics, PWI erosion, wall interaction |
-| **SCPN Compiler** | 12 | Petri net structure, compiler, contracts, safety interlocks, artifact packaging |
-| **I/O** | 15 | IMAS/OMAS adapter, GEQDSK, tokamak archive, logging |
-| **Rust Backend** | 12 crates | GS kernel (0.52 us), transport, control, ML inference, PyO3 bindings |
+| Layer | Capability |
+|-------|-----------|
+| **Core Physics** | Grad-Shafranov, transport (1.5D + QLKNN + FNO), GK three-path (native + 5 external codes), MHD stability (7 criteria), neoclassical, disruption chain, ELM/MARFE/L-H transition, runaway electrons, pellet injection, plasma-wall interaction, 3D equilibrium |
+| **Control** | PID, H-infinity, NMPC-JAX, SNN (Petri net compiler), gain-scheduled, fault-tolerant, safe RL (PPO), free-boundary tracking, burn control, RZIP, RWM feedback, mu-synthesis, detachment, density, volt-second management, state estimation (EKF) |
+| **Phase Dynamics** | Kuramoto UPDE solver, adaptive K_nm coupling, GK-to-UPDE bridge, plasma K_nm, Lyapunov guard, real-time monitoring, WebSocket streaming |
+| **Diagnostics** | Synthetic sensors, tomographic inversion, forward models |
+| **Engineering** | Balance of plant, CAD raytrace, thermal hydraulics |
+| **Nuclear** | Blanket neutronics, PWI erosion, wall interaction |
+| **SCPN Compiler** | Petri net structure, compiler, contracts, safety interlocks, artifact packaging |
+| **I/O** | IMAS/OMAS adapter, GEQDSK, tokamak archive, logging |
+| **Rust Backend** | GS kernel (0.52 us), transport, control, ML inference, PyO3 bindings |
 
 The generated capability inventory above is the source of truth for public
 package, test, documentation, workflow, and Rust workspace counts.
@@ -580,22 +580,22 @@ part of production release acceptance criteria.
 ---
 
 <details>
-<summary><strong>Architecture (234 modules)</strong></summary>
+<summary><strong>Architecture</strong></summary>
 
 ```
 scpn-fusion-core/
-+-- src/scpn_fusion/              # Python package (234 source files)
-|   +-- core/           (118)    # Plasma physics: GS, transport, GK, MHD, disruptions
-|   +-- control/         (54)    # Controllers: PID, H-inf, NMPC, SNN, RL, free-boundary
-|   +-- phase/           (10)    # SCPN dynamics: Kuramoto, UPDE, adaptive K_nm
-|   +-- scpn/            (12)    # Neuro-symbolic compiler, contracts, interlocks
-|   +-- io/              (15)    # IMAS, GEQDSK, archive, logging
-|   +-- diagnostics/      (5)    # Synthetic sensors, tomography
-|   +-- nuclear/           (5)    # Blanket neutronics, PWI, erosion
-|   +-- engineering/       (4)    # Balance of plant, thermal hydraulics
-|   +-- hpc/               (2)    # HPC bridge, C library interface
-|   +-- ui/                (4)    # Streamlit dashboard
-+-- scpn-fusion-rs/               # Rust workspace (12 crates)
++-- src/scpn_fusion/              # Python package
+|   +-- core/                     # Plasma physics: GS, transport, GK, MHD, disruptions
+|   +-- control/                  # Controllers: PID, H-inf, NMPC, SNN, RL, free-boundary
+|   +-- phase/                    # SCPN dynamics: Kuramoto, UPDE, adaptive K_nm
+|   +-- scpn/                     # Neuro-symbolic compiler, contracts, interlocks
+|   +-- io/                       # IMAS, GEQDSK, archive, logging
+|   +-- diagnostics/              # Synthetic sensors, tomography
+|   +-- nuclear/                  # Blanket neutronics, PWI, erosion
+|   +-- engineering/              # Balance of plant, thermal hydraulics
+|   +-- hpc/                      # HPC bridge, C library interface
+|   +-- ui/                       # Streamlit dashboard
++-- scpn-fusion-rs/               # Rust workspace
 |   +-- crates/
 |       +-- fusion-types/         # Shared data types
 |       +-- fusion-math/          # Linear algebra, FFT
@@ -604,9 +604,9 @@ scpn-fusion-core/
 |       +-- fusion-control/       # PID, MPC, disruption
 |       +-- fusion-ml/            # Inference engine
 |       +-- fusion-python/        # PyO3 bindings
-+-- tests/               (382)    # 3,817 test functions (Hypothesis property tests)
-+-- validation/           (74)    # Benchmark pipeline + reference data
-+-- examples/             (16)    # 10 Jupyter notebooks + 6 scripts
++-- tests/                        # Pytest and Hypothesis property tests
++-- validation/                   # Benchmark pipeline + reference data
++-- examples/                     # Jupyter notebooks and runnable scripts
 ```
 
 </details>
@@ -653,7 +653,7 @@ cargo bench                      # Criterion benchmarks
 </details>
 
 <details>
-<summary><strong>Physics Modules (118 core)</strong></summary>
+<summary><strong>Physics Modules</strong></summary>
 
 ### Equilibrium & Stability
 | Module | Physics |
@@ -712,7 +712,7 @@ cargo bench                      # Criterion benchmarks
 </details>
 
 <details>
-<summary><strong>Control Modules (54)</strong></summary>
+<summary><strong>Control Modules</strong></summary>
 
 | Category | Modules |
 |----------|---------|
@@ -804,18 +804,10 @@ All numbers are internal measurements. Reproduce with `cargo bench` and
 <details>
 <summary><strong>Code Health & Hardening</strong></summary>
 
-263 hardening tasks across 8 waves (S2-S4, H5-H8). Every production-path
-module returns structured errors.
-
-| Metric | Value |
-|--------|-------|
-| Python source files | 236 |
-| Python lines of code | 65,664 |
-| Test functions | 3,815 |
-| Validation scripts | 74 |
-| Rust crates | 12 |
-| CI jobs | 24 |
-| Internal readiness entries | 115 (local-only governance queue) |
+Every production-path module returns structured errors. Public capability,
+test, workflow, documentation, and Rust workspace counts are generated from
+`tools/capability_manifest.py` and published in the capability inventory near
+the top of this README plus `docs/_generated/capability_snapshot.md`.
 
 Validation artifacts:
 - Claims evidence map and release readiness checks are generated by repository tools.

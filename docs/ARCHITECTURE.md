@@ -42,9 +42,11 @@ mathematics, so the same model is not re-implemented elsewhere.
 
 ## 2. Architecture at a glance
 
-The package is `src/scpn_fusion/` (≈294 modules) plus a Rust workspace `scpn-fusion-rs/`
-(12 crates) and a validation/evidence tree. It is organised as **physics/control lanes over a
-multi-backend dispatch floor**, with a self-auditing validation layer.
+The package is `src/scpn_fusion/` plus a Rust workspace `scpn-fusion-rs/`
+and a validation/evidence tree. It is organised as **physics/control lanes over a
+multi-backend dispatch floor**, with a self-auditing validation layer. The
+generated capability manifest is the count source of truth for package, Rust,
+test, documentation, and workflow surfaces.
 
 ```
                             ┌──────────────────────────── ENTRY POINTS ───────────────────────────┐
@@ -68,13 +70,14 @@ multi-backend dispatch floor**, with a self-auditing validation layer.
                             └──────────────────────────────────┬──────────────────────────────────┘
                                                                │
                             ┌──────────────────── EVIDENCE / VALIDATION LAYER ─────────────────────┐
-                            │  validation/*.py benchmarks  ·  validation/reports/ (137 JSON+MD)     │
+                            │  validation/*.py benchmarks  ·  validation/reports/ evidence          │
                             │  release preflight gate  ·  claims/evidence guards  ·  Lean proofs    │
                             └─────────────────────────────────────────────────────────────────────┘
 ```
 
-Module counts by subpackage (source-tree inventory): `core` 155, `control` 71, `io` 18,
-`scpn` 13, `phase` 10, root 6, `diagnostics` 5, `nuclear` 5, `ui` 5, `engineering` 4, `hpc` 2.
+The committed generated inventory lives in `docs/_generated/capability_manifest.json`
+and `docs/_generated/capability_snapshot.md`; this document keeps only the qualitative
+subsystem map.
 
 ---
 
@@ -241,7 +244,7 @@ The repository can ingest the following external formats:
 - **Edge/pedestal** (`sol_model` two-point + Eich, `eped_pedestal` reduced-order, `elm_model`,
   `divertor_thermal_sim`, `marfe`, `lh_transition`, `scaling_laws` IPB98(y,2)).
 
-### 6.4 Control (`control/`, 71 modules)
+### 6.4 Control (`control/`)
 - **Classical / optimal**: H-infinity (`h_infinity_controller`), μ-synthesis (`mu_synthesis`),
   constrained NMPC (`nmpc_controller`, `fusion_nmpc_jax`), super-twisting sliding-mode
   (`sliding_mode_vertical`), gain-scheduled PID (`gain_scheduled_controller`), fault-tolerant

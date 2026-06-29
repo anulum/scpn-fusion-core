@@ -108,14 +108,14 @@ P_loss 0.5-220 MW, R 0.45-8.5 m, kappa 1.0-3.0, eps 0.08-0.9, M 1.0-3.0 AMU.
 
 ### ITPA Dataset
 
-- 53 shots across 20 machines (ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U,
-  NSTX, MAST, KSTAR, EAST, SPARC, ARC, and 8 others).
+- 53 shots across 24 machines (ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U,
+  NSTX, MAST, KSTAR, EAST, SPARC, ARC, and 12 others).
 - Source: `validation/reference_data/itpa/hmode_confinement.csv`
 - Provenance: mixed (real ITPA published data + synthetic DIII-D disruption profiles).
 
 ### Gyro-Bohm Calibration
 
-- c_gB = 2.58 +/- 2.19 (fitted to 20-shot subset).
+- c_gB = 2.58 +/- 2.19 (fitted to the bundled 53-shot subset).
 - Transport model: gyro-Bohm + Chang-Hinton neoclassical.
 - RMSE: 0.27 s (59.8% relative) — higher uncertainty than IPB98 fit.
 
