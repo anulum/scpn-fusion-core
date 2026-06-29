@@ -81,6 +81,13 @@ _PIPELINE_STAGE_KEYS = (
 )
 _ACTUATOR_SCALING_COUNTS = (2, 16, 64, 128, 256)
 _PREDICTIVE_HORIZON_MS = (50, 100)
+REPORT_SCHEMA = "scpn-fusion-core.end_to_end_latency_report.v1"
+REPORT_CLAIM_BOUNDARY = (
+    "Local reduced-order control latency evidence; not physical HIL, FPGA, "
+    "plant CODAC, or actuator hardware timing."
+)
+REPORT_STATUS_ACCEPTED = "accepted_local_reduced_order_latency_report"
+REPORT_STATUS_BLOCKED = "blocked_local_reduced_order_latency_report"
 
 
 def _build_scpn_controller() -> NeuroSymbolicController:
@@ -311,7 +318,7 @@ def _actuator_weights(actuator_count: int) -> FloatArray:
     if count < 1:
         raise ValueError("actuator_count must be >= 1.")
     phase = np.arange(count, dtype=np.float64) / float(count)
-    return 0.35 + 0.65 * (0.5 + 0.5 * np.sin(2.0 * np.pi * phase))
+    return np.asarray(0.35 + 0.65 * (0.5 + 0.5 * np.sin(2.0 * np.pi * phase)))
 
 
 def _expand_actuator_command(command: FloatArray, actuator_count: int) -> FloatArray:
@@ -1351,8 +1358,23 @@ def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
         actuator_count=256,
         rng_seed=2026,
     )
+    simulated_hil_scaffold_ready = bool(
+        hil_lane["status"] == "measured_simulated_hil"
+        and hil_lane["hardware_status"] == "simulated_host_adc_dac_loop"
+        and hil_lane["actuator_count"] == 256
+        and all(bool(row["passes_semantics"]) for row in hil_lane["scenarios"].values())
+    )
     return {
         "schema": "scpn-fusion-core.digital_twin_control_latency.v1",
+        "claim_boundary": (
+            "Reduced-order sensor-to-control benchmark with a host-side simulated HIL scaffold. "
+            "This section does not certify physical HIL, FPGA, plant CODAC, or actuator hardware timing."
+        ),
+        "simulated_hil_scaffold_ready": simulated_hil_scaffold_ready,
+        "physical_hil_ready": False,
+        "fpga_timing_ready": False,
+        "codac_timing_ready": False,
+        "actuator_hardware_timing_ready": False,
         "measurement_context": {
             "claim_boundary": (
                 host_before["claim_boundary"]
@@ -1391,7 +1413,7 @@ def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
             and nominal["p99_loop_ms"] <= 5.0
             and degraded_semantics_pass
             and measured_lane_count >= 2
-            and hil_lane["passes_thresholds"]
+            and simulated_hil_scaffold_ready
         ),
         "thresholds": {
             "max_cpu_nominal_p95_loop_ms": 2.0,
@@ -1399,6 +1421,7 @@ def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
             "min_measured_lanes": 2,
             "degraded_modes_require_safe_outputs": True,
             "hil_simulated_scaffold_required": True,
+            "hil_wall_clock_threshold_required_for_report_acceptance": False,
         },
     }
 
@@ -1595,7 +1618,21 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
     scaling_steps = max(32, min(steps, 160))
     actuator_scaling = run_actuator_scaling_campaign(steps=scaling_steps)
     predictive_horizon = run_predictive_horizon_campaign(steps=scaling_steps)
+    passes = bool(
+        campaign["passes_thresholds"]
+        and digital_twin["passes_thresholds"]
+        and actuator_scaling["passes_thresholds"]
+        and predictive_horizon["passes_thresholds"]
+    )
     return {
+        "schema": REPORT_SCHEMA,
+        "status": REPORT_STATUS_ACCEPTED if passes else REPORT_STATUS_BLOCKED,
+        "passes_thresholds": passes,
+        "claim_boundary": REPORT_CLAIM_BOUNDARY,
+        "physical_hil_ready": False,
+        "fpga_timing_ready": False,
+        "codac_timing_ready": False,
+        "actuator_hardware_timing_ready": False,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runtime_seconds": float(time.perf_counter() - t0),
         "scpn_end_to_end_latency": campaign,
@@ -1611,6 +1648,14 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# SCPN End-to-End Latency Benchmark",
         "",
+        f"- Schema: `{report['schema']}`",
+        f"- Status: `{report['status']}`",
+        f"- Claim boundary: `{report['claim_boundary']}`",
+        f"- Physical HIL ready: `{'YES' if report['physical_hil_ready'] else 'NO'}`",
+        f"- FPGA timing ready: `{'YES' if report['fpga_timing_ready'] else 'NO'}`",
+        f"- CODAC timing ready: `{'YES' if report['codac_timing_ready'] else 'NO'}`",
+        f"- Actuator hardware timing ready: "
+        f"`{'YES' if report['actuator_hardware_timing_ready'] else 'NO'}`",
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Runtime: `{report['runtime_seconds']:.3f} s`",
         f"- Steps: `{g['steps']}`",
@@ -1628,6 +1673,8 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "## Digital-Twin Sensor-to-Control Path",
+            "",
+            twin["claim_boundary"],
             "",
             twin["measurement_context"]["claim_boundary"],
             "",
@@ -1829,7 +1876,7 @@ def main(argv: list[str] | None = None) -> int:
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    out_md.write_text(render_markdown(report), encoding="utf-8")
+    out_md.write_text(render_markdown(report).rstrip() + "\n", encoding="utf-8")
 
     g = report["scpn_end_to_end_latency"]
     print("SCPN end-to-end latency benchmark complete.")
@@ -1844,7 +1891,14 @@ def main(argv: list[str] | None = None) -> int:
     scaling = report["actuator_count_scaling"]
     horizon = report["predictive_horizon"]
     if args.strict and (
-        not g["passes_thresholds"]
+        not report["passes_thresholds"]
+        or report["physical_hil_ready"]
+        or report["fpga_timing_ready"]
+        or report["codac_timing_ready"]
+        or report["actuator_hardware_timing_ready"]
+        or report["status"] != REPORT_STATUS_ACCEPTED
+        or report["claim_boundary"] != REPORT_CLAIM_BOUNDARY
+        or not g["passes_thresholds"]
         or not twin["passes_thresholds"]
         or not scaling["passes_thresholds"]
         or not horizon["passes_thresholds"]

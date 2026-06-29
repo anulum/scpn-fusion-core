@@ -1,5 +1,11 @@
 {
+  "schema": "vertical-control-replay-benchmark.v1",
+  "status": "accepted_reduced_order_replay_release_gate",
+  "passes_thresholds": true,
+  "claim_boundary": "deterministic_reduced_order_RZIP_replay_not_full_PCS",
+  "full_pcs_production_grade_ready": false,
   "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "benchmark_id": "vertical_control_replay_profile_suite",
   "vertical_control_replay_profile_suite": {
     "schema_version": "1.0.0",
     "profile_ids": [
@@ -452,10 +458,10 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "c539af5b25c493e5d600b4b7f0cb753daf1d9f78",
+          "source_commit": "645f13617e2729b3fe709091ff5f28f2aca5eac9",
           "python_version": "3.12.3",
-          "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
-          "numpy_version": "2.2.6",
+          "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+          "numpy_version": "1.26.4",
           "schema": "schemas/vertical_control_replay_benchmark.schema.json",
           "schema_version": "1.0.0",
           "scenario_checksum_sha256": "3cc5cf2c053434c9d1eaa1335f91b108fc3193a771d9c26d041e45e34c1ac7a5",
@@ -930,10 +936,10 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "c539af5b25c493e5d600b4b7f0cb753daf1d9f78",
+          "source_commit": "645f13617e2729b3fe709091ff5f28f2aca5eac9",
           "python_version": "3.12.3",
-          "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
-          "numpy_version": "2.2.6",
+          "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+          "numpy_version": "1.26.4",
           "schema": "schemas/vertical_control_replay_benchmark.schema.json",
           "schema_version": "1.0.0",
           "scenario_checksum_sha256": "3ca76ce06bce7f6be8f1a37e86e00a0a8cd8c227425c04da78d4f74bc29d9b75",
@@ -1408,10 +1414,10 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "c539af5b25c493e5d600b4b7f0cb753daf1d9f78",
+          "source_commit": "645f13617e2729b3fe709091ff5f28f2aca5eac9",
           "python_version": "3.12.3",
-          "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
-          "numpy_version": "2.2.6",
+          "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+          "numpy_version": "1.26.4",
           "schema": "schemas/vertical_control_replay_benchmark.schema.json",
           "schema_version": "1.0.0",
           "scenario_checksum_sha256": "58fba05fb68c93be4543467e58914df0042f967951c6291a54904d406dfb05ea",

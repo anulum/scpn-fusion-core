@@ -12,11 +12,37 @@ extension is importable, parses latency-oriented CLI flags, executes one shot,
 and prints a deterministic summary of timing and disruption outcomes.
 """
 
+import argparse
 import logging
 import sys
-import argparse
+from typing import Protocol, cast
+
+from scpn_fusion.core import _multi_compat
 
 logger = logging.getLogger(__name__)
+
+
+class _FlightSimReport(Protocol):
+    """Structured report returned by the Rust flight simulator."""
+
+    steps: int
+    wall_time_ms: float
+    mean_abs_r_error: float
+    disrupted: bool
+
+
+class _FlightSim(Protocol):
+    """Runtime protocol implemented by the Rust flight simulator instance."""
+
+    def run_shot(self, duration: float, *, deterministic: bool = False) -> _FlightSimReport:
+        """Run a single simulated tokamak shot and return latency metrics."""
+
+
+class _FlightSimFactory(Protocol):
+    """Constructor protocol for the Rust flight simulator class."""
+
+    def __call__(self, r_target: float, z_target: float, hz: float) -> _FlightSim:
+        """Create a Rust flight simulator bound to one target and control rate."""
 
 
 def run() -> None:
@@ -35,8 +61,11 @@ def run() -> None:
         SystemExit: If ``scpn_fusion_rs`` cannot be imported.
     """
     try:
-        import scpn_fusion_rs
-    except ImportError:
+        flight_sim_cls = cast(
+            _FlightSimFactory,
+            _multi_compat.dispatch_rust_symbol("PyRustFlightSim"),
+        )
+    except (AttributeError, ImportError):
         logger.error("scpn_fusion_rs extension not found. Build with cargo first.")
         sys.exit(1)
 
@@ -51,7 +80,7 @@ def run() -> None:
     logger.info("--- Initiating Rust-Native Flight Sim (%.0f Hz) ---", args.hz)
     if args.deterministic:
         logger.info("  [HARDENED] Deterministic timing enabled (Busy-wait mode)")
-    sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, args.hz)
+    sim = flight_sim_cls(6.2, 0.0, args.hz)
     report = sim.run_shot(args.duration, deterministic=args.deterministic)
 
     logger.info("Shot Complete:")

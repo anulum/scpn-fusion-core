@@ -5,11 +5,35 @@
   "title": "SCPN Fusion Core Vertical Control Replay Benchmark",
   "type": "object",
   "required": [
+    "schema",
+    "status",
+    "passes_thresholds",
+    "claim_boundary",
+    "full_pcs_production_grade_ready",
     "SPDX-License-Identifier",
     "benchmark_id",
     "vertical_control_replay_benchmark"
   ],
   "properties": {
+    "schema": {
+      "const": "vertical-control-replay-benchmark.v1"
+    },
+    "status": {
+      "enum": [
+        "blocked_pending_multi_profile_release_gate",
+        "accepted_reduced_order_replay_release_gate",
+        "blocked_vertical_replay_release_gate"
+      ]
+    },
+    "passes_thresholds": {
+      "type": "boolean"
+    },
+    "claim_boundary": {
+      "const": "deterministic_reduced_order_RZIP_replay_not_full_PCS"
+    },
+    "full_pcs_production_grade_ready": {
+      "const": false
+    },
     "SPDX-License-Identifier": {
       "const": "AGPL-3.0-or-later"
     },

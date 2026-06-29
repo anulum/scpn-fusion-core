@@ -42,9 +42,11 @@ mathematics, so the same model is not re-implemented elsewhere.
 
 ## 2. Architecture at a glance
 
-The package is `src/scpn_fusion/` (≈294 modules) plus a Rust workspace `scpn-fusion-rs/`
-(12 crates) and a validation/evidence tree. It is organised as **physics/control lanes over a
-multi-backend dispatch floor**, with a self-auditing validation layer.
+The package is `src/scpn_fusion/` plus a Rust workspace `scpn-fusion-rs/`
+and a validation/evidence tree. It is organised as **physics/control lanes over a
+multi-backend dispatch floor**, with a self-auditing validation layer. The
+generated capability manifest is the count source of truth for package, Rust,
+test, documentation, and workflow surfaces.
 
 ```
                             ┌──────────────────────────── ENTRY POINTS ───────────────────────────┐
@@ -68,13 +70,14 @@ multi-backend dispatch floor**, with a self-auditing validation layer.
                             └──────────────────────────────────┬──────────────────────────────────┘
                                                                │
                             ┌──────────────────── EVIDENCE / VALIDATION LAYER ─────────────────────┐
-                            │  validation/*.py benchmarks  ·  validation/reports/ (137 JSON+MD)     │
+                            │  validation/*.py benchmarks  ·  validation/reports/ evidence          │
                             │  release preflight gate  ·  claims/evidence guards  ·  Lean proofs    │
                             └─────────────────────────────────────────────────────────────────────┘
 ```
 
-Module counts by subpackage (source-tree inventory): `core` 155, `control` 71, `io` 18,
-`scpn` 13, `phase` 10, root 6, `diagnostics` 5, `nuclear` 5, `ui` 5, `engineering` 4, `hpc` 2.
+The committed generated inventory lives in `docs/_generated/capability_manifest.json`
+and `docs/_generated/capability_snapshot.md`; this document keeps only the qualitative
+subsystem map.
 
 ---
 
@@ -97,6 +100,9 @@ RUST (0) → MOJO (1) → JULIA (2) → GO (3) → JAX (4) → NUMPY (5)
 winner, and records a `fallback_telemetry` event when a non-fastest tier is selected.
 `register_kernel_class` / `dispatch_kernel_class` do the same for stateful backends (the
 equilibrium kernel), using lazy loader thunks to break import cycles.
+Rust-only extension symbols without a NumPy floor are resolved through
+`dispatch_rust_symbol(name)`, which is the single production import boundary for optional
+`scpn_fusion_rs` callables such as SCPN runtime kernels and `PyRustFlightSim`.
 
 **Currently registered tiers (verified):**
 
@@ -112,6 +118,13 @@ equilibrium kernel), using lazy loader thunks to break import cycles.
 All six dispatched kernels have a **NumPy floor** — the package runs with no Rust extension
 present. The `MOJO`/`JULIA`/`GO` tiers exist in the enum as a forward-looking chain but have no
 registered providers today.
+
+The dispatcher proof surface is tracked by
+`validation/reports/dispatcher_kernel_tiers_benchmark.json`, generated with
+`PYTHONPATH=src python benchmarks/bench_dispatcher_kernel_tiers.py`. The report records the
+selected tier and timing row for each A2 function kernel, then forces the Rust tier unavailable
+and requires `fallback_telemetry_validation` to emit one `multi_backend` fallback event per
+kernel while selecting the NumPy floor.
 
 ### 3.2 Rust acceleration layer (`scpn-fusion-rs/`, 12 crates)
 
@@ -231,7 +244,7 @@ The repository can ingest the following external formats:
 - **Edge/pedestal** (`sol_model` two-point + Eich, `eped_pedestal` reduced-order, `elm_model`,
   `divertor_thermal_sim`, `marfe`, `lh_transition`, `scaling_laws` IPB98(y,2)).
 
-### 6.4 Control (`control/`, 71 modules)
+### 6.4 Control (`control/`)
 - **Classical / optimal**: H-infinity (`h_infinity_controller`), μ-synthesis (`mu_synthesis`),
   constrained NMPC (`nmpc_controller`, `fusion_nmpc_jax`), super-twisting sliding-mode
   (`sliding_mode_vertical`), gain-scheduled PID (`gain_scheduled_controller`), fault-tolerant
@@ -286,8 +299,8 @@ control spec
 ```
 
 The runtime activation/marking/sampling kernels have a Rust fast-path
-(`scpn_dense_activations` / `scpn_marking_update` / `scpn_sample_firing`, imported by
-`controller_runtime_backend`) with a NumPy floor.
+(`scpn_dense_activations` / `scpn_marking_update` / `scpn_sample_firing`, resolved through
+`core/_multi_compat.py`) with a NumPy floor.
 
 ### 7.2 Phase-synchronisation engine (`phase/`)
 - **`kuramoto.py`**: Kuramoto-Sakaguchi mean-field step with an exogenous global driver Ψ;
