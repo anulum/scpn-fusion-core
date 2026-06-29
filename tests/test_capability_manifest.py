@@ -182,9 +182,9 @@ def test_public_docs_match_itpa_hmode_dataset_counts() -> None:
 
     readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
     benchmarks = (_repo_root() / "docs" / "BENCHMARKS.md").read_text(encoding="utf-8")
-    validation_status = (
-        _repo_root() / "docs" / "PHYSICS_VALIDATION_STATUS.md"
-    ).read_text(encoding="utf-8")
+    validation_status = (_repo_root() / "docs" / "PHYSICS_VALIDATION_STATUS.md").read_text(
+        encoding="utf-8"
+    )
     sphinx_validation = (
         _repo_root() / "docs" / "sphinx" / "userguide" / "validation.rst"
     ).read_text(encoding="utf-8")
