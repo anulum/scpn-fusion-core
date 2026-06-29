@@ -462,7 +462,7 @@ and hardware-specific timing evidence exist.
 | Native GK solver | Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence | N | N | N | N |
 | External GK coupling (5 codes) | **Y** | TGLF only | TGLF only | N | N |
 | Neuro-symbolic SNN compiler | **Y** | N | N | N | N |
-| Real-time control (<1 us) | **Y** (0.52 us Rust) | N | N | N | N |
+| Rust PID kernel latency | **Y** (0.52 us P50 kernel metric; not a full PCS or HIL-loop timing claim) | N | N | N | N |
 | H-infinity robust control | **Y** | N | N | N | N |
 | Free-boundary tracking | Direct kernel + supervisor; not EFIT/LiUQE-grade inverse reconstruction | N | N | N | N |
 | Disruption chain (TQ+CQ+RE+halo) | Reduced chain with 0D runaway rates | N | N | N | Y |
@@ -472,7 +472,7 @@ and hardware-specific timing evidence exist.
 | Impurity transport (neoclassical) | Trace radial transport with source conservation, neoclassical pinch, charge-state artifact/source-sink contract, fail-closed native transport evidence, and native-only source/sink budget diagnostics; no public Aurora/STRAHL collisional-operator parity or same-case transport thresholds | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |
 | MHD stability (7 criteria) | **Y** | N | N | N | N |
-| Digital twin + HIL testing | **Y** | N | N | N | N |
+| Digital twin + simulated HIL scaffold | **Y** (software/simulated HIL evidence; no physical HIL rig timing claim) | N | N | N | N |
 | Deterministic replay (RZIP reduced-order scaffold) | **Y** | N | N | N | N |
 | SCPN phase dynamics (Kuramoto/UPDE) | **Y** | N | N | N | N |
 | JAX autodiff transport | **Y** | Y | N | N | N |
