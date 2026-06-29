@@ -1,32 +1,41 @@
 # SCPN End-to-End Latency Benchmark
 
-- Generated: `2026-06-17T17:52:57.038434+00:00`
-- Runtime: `13.794 s`
+- Schema: `scpn-fusion-core.end_to_end_latency_report.v1`
+- Status: `accepted_local_reduced_order_latency_report`
+- Claim boundary: `Local reduced-order control latency evidence; not physical HIL, FPGA, plant CODAC, or actuator hardware timing.`
+- Physical HIL ready: `NO`
+- FPGA timing ready: `NO`
+- CODAC timing ready: `NO`
+- Actuator hardware timing ready: `NO`
+- Generated: `2026-06-29T21:05:14.232207+00:00`
+- Runtime: `63.127 s`
 - Steps: `320`
-- SNN runtime backend: `numpy`
-- Threshold profile: `numpy_fallback`
+- SNN runtime backend: `rust`
+- Threshold profile: `accelerated`
 - Overall pass: `YES`
-- SNN full/surrogate p95 ratio: `0.738`
+- SNN full/surrogate p95 ratio: `0.813`
 
 ## Digital-Twin Sensor-to-Control Path
 
-Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.
+Reduced-order sensor-to-control benchmark with a host-side simulated HIL scaffold. This section does not certify physical HIL, FPGA, plant CODAC, or actuator hardware timing.
+
+Python CPU and Rust rows are local non-isolated wall-clock measurements. GPU rows are accelerator measurements only when status is measured. HIL rows are simulated host ADC/DAC timing unless hardware_status names a physical rig.
 
 | Lane | Status | p50 loop [ms] | p95 loop [ms] | p99 loop [ms] | Boundary |
 |------|--------|---------------|---------------|---------------|----------|
-| Python CPU | measured | 0.034281 | 0.053408 | 0.062749 | taskset_affinity_operator_reserved_cores |
-| Rust native | measured | 0.019581 | 0.020284 | 0.024611 | local release binary when measured |
-| GPU | measured | 0.710571 | 0.840560 | 1.011992 | Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation. |
+| Python CPU | measured | 0.049953 | 0.134760 | 0.154150 | non_isolated_local_workstation |
+| Rust native | measured | 0.052549 | 0.115893 | 1.811680 | local release binary when measured |
+| GPU | measured | 2.481406 | 8.575209 | 16.886498 | Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation. |
 
 ### Measurement Metadata
 
-- Command: `taskset -c 10,11 env SCPN_BENCHMARK_ISOLATION_METHOD=taskset_affinity_operator_reserved_cores SCPN_BENCHMARK_CPUSET=10,11 SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS=none_intentionally_started_by_this_task SCPN_BENCHMARK_CLAIM_BOUNDARY='Taskset-affinity benchmark evidence on operator-reserved logical CPUs 10,11; not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.' .venv/bin/python validation/scpn_end_to_end_latency.py --steps 320 --strict`
-- CPU isolation method: `taskset_affinity_operator_reserved_cores`
-- Reserved CPU set: `10,11`
-- Host load before: `[7.2265625, 5.3642578125, 4.83251953125]`
-- Host load after: `[7.2265625, 5.3642578125, 4.83251953125]`
+- Command: `not_recorded`
+- CPU isolation method: `non_isolated_local_workstation`
+- Reserved CPU set: `not_recorded`
+- Host load before: `[27.81103515625, 26.12939453125, 25.36279296875]`
+- Host load after: `[27.81103515625, 26.12939453125, 25.36279296875]`
 - CPU governors: `['powersave']`
-- Concurrent heavy jobs: `none_intentionally_started_by_this_task`
+- Concurrent heavy jobs: `not_recorded`
 
 ### Simulated HIL Sensor-to-Actuator Scaffold
 
@@ -34,26 +43,26 @@ Measured host-side simulated ADC/DAC sensor-to-actuator scaffold; not a physical
 
 | Status | Hardware status | Actuators | p50 [us] | p95 [us] | p99 [us] | Pass |
 |--------|-----------------|-----------|----------|----------|----------|------|
-| measured_simulated_hil | simulated_host_adc_dac_loop | 256 | 167.140500 | 232.522000 | 294.771870 | YES |
+| measured_simulated_hil | simulated_host_adc_dac_loop | 256 | 216.513500 | 395.166000 | 500.434190 | YES |
 
 | Scenario | Fallbacks | Safe output rate | p95 [us] | Pass | Reasons |
 |----------|-----------|------------------|----------|------|---------|
-| nominal | 0 | 1.000 | 232.522000 | YES | none |
-| sensor_dropout | 20 | 1.000 | 266.350700 | YES | invalid_sensor_sample_replaced:20 |
-| noisy_sensor | 27 | 1.000 | 226.725950 | YES | noisy_sensor_envelope_safe_mode:27 |
-| actuator_saturation | 18 | 1.000 | 198.920100 | YES | actuator_saturation_clamped:18 |
-| controller_nonfinite | 16 | 1.000 | 223.609450 | YES | controller_nonfinite_fail_closed:16 |
+| nominal | 0 | 1.000 | 395.166000 | YES | none |
+| sensor_dropout | 20 | 1.000 | 440.465450 | YES | invalid_sensor_sample_replaced:20 |
+| noisy_sensor | 27 | 1.000 | 456.901600 | YES | noisy_sensor_envelope_safe_mode:27 |
+| actuator_saturation | 18 | 1.000 | 393.388550 | YES | actuator_saturation_clamped:18 |
+| controller_nonfinite | 16 | 1.000 | 398.435850 | YES | controller_nonfinite_fail_closed:16 |
 
 ### CPU Pipeline Stages
 
 | Stage | p50 [ms] | p95 [ms] | p99 [ms] |
 |-------|----------|----------|----------|
-| input_validation | 0.001066 | 0.001517 | 0.002063 |
-| feature_assembly | 0.001138 | 0.001939 | 0.002616 |
-| digital_twin_update | 0.007461 | 0.012753 | 0.015234 |
-| controller_decision | 0.001438 | 0.002172 | 0.002712 |
-| fallback_policy | 0.013327 | 0.021719 | 0.024084 |
-| output_serialization | 0.007922 | 0.013405 | 0.016184 |
+| input_validation | 0.001496 | 0.003270 | 0.004041 |
+| feature_assembly | 0.001778 | 0.005226 | 0.007960 |
+| digital_twin_update | 0.010416 | 0.028516 | 0.035042 |
+| controller_decision | 0.001886 | 0.005237 | 0.006340 |
+| fallback_policy | 0.019286 | 0.055997 | 0.062685 |
+| output_serialization | 0.011623 | 0.030747 | 0.037170 |
 
 ### Degraded Modes
 
@@ -73,11 +82,11 @@ Actuator-count scaling measures command fanout and output serialisation for the 
 
 | Actuators | CPU p95 [ms] | Rust p95 [ms] | CUDA p95 [ms] | Measured lanes |
 |-----------|--------------|---------------|---------------|----------------|
-| 2 | 0.070917 | 0.021200 | 0.859985 | 3 |
-| 16 | 0.083223 | 0.023589 | 0.848174 | 3 |
-| 64 | 0.114598 | 0.038520 | 1.046033 | 3 |
-| 128 | 0.133026 | 0.052389 | 0.873599 | 3 |
-| 256 | 0.219528 | 0.059727 | 0.885944 | 3 |
+| 2 | 0.193261 | 0.143219 | 1.313268 | 3 |
+| 16 | 0.104858 | 0.034980 | 5.021439 | 3 |
+| 64 | 0.246943 | 0.118186 | 3.753956 | 3 |
+| 128 | 1.292813 | 0.474949 | 1.563021 | 3 |
+| 256 | 0.493068 | 0.052667 | 15.660111 | 3 |
 
 ## Predictive-Horizon Timing
 
@@ -85,21 +94,21 @@ Forecast timing is a reduced-order local digital-twin rollout. It is not a valid
 
 | Horizon [ms] | p50 forecast [ms] | p95 forecast [ms] | p99 forecast [ms] | p95 real-time factor | Pass |
 |--------------|-------------------|-------------------|-------------------|----------------------|------|
-| 50 | 0.404858 | 0.538453 | 0.632840 | 92.859 | YES |
-| 100 | 0.794599 | 0.925584 | 1.022272 | 108.040 | YES |
+| 50 | 1.192322 | 2.871309 | 9.860543 | 17.414 | YES |
+| 100 | 2.405479 | 5.350235 | 6.316376 | 18.691 | YES |
 
 ## Surrogate Physics Mode
 
 | Controller | RMSE | p95 loop [ms] | p95 sensor [ms] | p95 controller [ms] | p95 actuator [ms] | p95 physics [ms] |
 |------------|------|---------------|------------------|---------------------|-------------------|------------------|
-| SNN | 0.074583 | 0.254913 | 0.005889 | 0.235810 | 0.007110 | 0.000484 |
-| PID | 0.136634 | 0.009763 | 0.002848 | 0.003428 | 0.002717 | 0.000165 |
-| MPC-lite | 0.051153 | 0.067794 | 0.003191 | 0.057310 | 0.005488 | 0.000266 |
+| SNN | 0.074583 | 0.402123 | 0.011659 | 0.364727 | 0.013818 | 0.001063 |
+| PID | 0.136634 | 0.038902 | 0.012666 | 0.013785 | 0.010935 | 0.001041 |
+| MPC-lite | 0.051153 | 0.206647 | 0.015067 | 0.159759 | 0.030990 | 0.001196 |
 
 ## Full Physics Mode
 
 | Controller | RMSE | p95 loop [ms] | p95 sensor [ms] | p95 controller [ms] | p95 actuator [ms] | p95 physics [ms] |
 |------------|------|---------------|------------------|---------------------|-------------------|------------------|
-| SNN | 0.074439 | 0.188081 | 0.004273 | 0.169782 | 0.004821 | 0.007095 |
-| PID | 0.138171 | 0.015783 | 0.003223 | 0.003439 | 0.002925 | 0.004200 |
-| MPC-lite | 0.052585 | 0.070495 | 0.003404 | 0.056565 | 0.004726 | 0.005281 |
+| SNN | 0.074439 | 0.327030 | 0.012684 | 0.283431 | 0.013579 | 0.022949 |
+| PID | 0.138171 | 0.035547 | 0.008219 | 0.008824 | 0.006871 | 0.011098 |
+| MPC-lite | 0.052585 | 0.159016 | 0.008497 | 0.122391 | 0.014298 | 0.013899 |
