@@ -215,6 +215,8 @@ files = [
     "tests/test_nuclear_wall_interaction.py",
     "benchmarks/bench_dispatcher_kernel_tiers.py",
     "tests/test_dispatcher_kernel_tier_benchmark.py",
+    "validation/benchmark_transport_uncertainty_envelope.py",
+    "tests/test_transport_uncertainty_envelope_benchmark.py",
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",
     "tests/test_structure.py",

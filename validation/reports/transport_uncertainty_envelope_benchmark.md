@@ -1,5 +1,7 @@
 # Transport Uncertainty Envelope Benchmark
 
+- Schema: `transport-uncertainty-envelope-benchmark.v1`
+- Status: `accepted_transport_uncertainty_envelope`
 - ITPA CSV: `validation/reference_data/itpa/hmode_confinement.csv`
 - Shots: `53`
 - Transport pass: `YES`
