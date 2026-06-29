@@ -29,6 +29,8 @@ from scpn_fusion.core.vessel_model import VesselElement, VesselModel  # noqa: E4
 
 SCHEMA_PATH = "schemas/vertical_control_replay_benchmark.schema.json"
 SCHEMA_VERSION = "1.0.0"
+REPORT_SCHEMA = "vertical-control-replay-benchmark.v1"
+CLAIM_BOUNDARY = "deterministic_reduced_order_RZIP_replay_not_full_PCS"
 PRIMARY_CONTROLLER_IDS = ("pid", "super_twisting", "sliding_mode_vertical")
 DIAGNOSTIC_CONTROLLER_IDS = ("no_control",)
 CONTROLLER_IDS = PRIMARY_CONTROLLER_IDS + DIAGNOSTIC_CONTROLLER_IDS
@@ -160,6 +162,7 @@ class SlidingModeVerticalController:
     _smc: SuperTwistingSMC | None = None
 
     def __post_init__(self) -> None:
+        """Initialise the wrapped super-twisting controller when omitted."""
         if self._smc is None:
             self._smc = SuperTwistingSMC(alpha=0.95, beta=28.0, c=0.12, u_max=0.45)
 
@@ -193,6 +196,7 @@ class RZIPVerticalPlantContract:
     source_module: str = "scpn_fusion.control.rzip_model"
 
     def __post_init__(self) -> None:
+        """Build and fingerprint the deterministic RZIP state-space contract."""
         model = self._build_model()
         object.__setattr__(self, "_rzip_model", model)
         matrices = model.build_state_space()
@@ -327,7 +331,6 @@ class RZIPVerticalPlantContract:
 
 def machine_profiles() -> dict[str, MachineProfile]:
     """Return committed geometry-neutral profile contracts for replay coverage."""
-
     return {
         "iter_like": MachineProfile(),
         "diii_d_like": MachineProfile(
@@ -771,7 +774,7 @@ def _single_profile_release_gate(bench: dict[str, Any]) -> dict[str, Any]:
     )
     return {
         "gate_id": "vertical_control_replay_release_gate",
-        "claim_boundary": "deterministic_reduced_order_RZIP_replay_not_full_PCS",
+        "claim_boundary": CLAIM_BOUNDARY,
         "status": "blocked_pending_multi_profile_release_gate",
         "single_profile_contract_ready": reduced_order_ready,
         "reduced_order_release_gate_ready": False,
@@ -820,7 +823,7 @@ def _profile_suite_release_gate(
     ready = not blockers
     return {
         "gate_id": "vertical_control_replay_release_gate",
-        "claim_boundary": "deterministic_reduced_order_RZIP_replay_not_full_PCS",
+        "claim_boundary": CLAIM_BOUNDARY,
         "status": "accepted_reduced_order_replay_release_gate"
         if ready
         else "blocked_vertical_replay_release_gate",
@@ -828,6 +831,21 @@ def _profile_suite_release_gate(
         "full_pcs_production_grade_ready": False,
         "checks": checks,
         "blockers": blockers,
+    }
+
+
+def _report_wrapper(
+    *, benchmark_id: str, release_gate: dict[str, Any], passes: bool
+) -> dict[str, Any]:
+    """Return the common root-level claim wrapper for vertical replay reports."""
+    return {
+        "schema": REPORT_SCHEMA,
+        "status": str(release_gate["status"]),
+        "passes_thresholds": bool(passes),
+        "claim_boundary": str(release_gate["claim_boundary"]),
+        "full_pcs_production_grade_ready": False,
+        "SPDX-License-Identifier": "AGPL-3.0-or-later",
+        "benchmark_id": benchmark_id,
     }
 
 
@@ -839,7 +857,6 @@ def run_benchmark(
     thresholds: BenchmarkThresholds | None = None,
 ) -> dict[str, Any]:
     """Run the deterministic vertical-control replay benchmark."""
-
     machine_profile = machine_profile or machine_profiles()["iter_like"]
     _validate_machine_profile(machine_profile)
     scenario = scenario or _scenario_from_profile(machine_profile)
@@ -911,7 +928,7 @@ def run_benchmark(
     }
     fairness_report = _build_fairness_report(first, second, scenario=scenario)
 
-    bench = {
+    bench: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "scenario": asdict(scenario),
         "machine_profile": asdict(machine_profile),
@@ -951,15 +968,17 @@ def run_benchmark(
     }
     bench["release_gate"] = _single_profile_release_gate(bench)
     return {
-        "SPDX-License-Identifier": "AGPL-3.0-or-later",
-        "benchmark_id": "vertical_control_replay_benchmark",
+        **_report_wrapper(
+            benchmark_id="vertical_control_replay_benchmark",
+            release_gate=bench["release_gate"],
+            passes=bool(bench["passes_thresholds"]),
+        ),
         "vertical_control_replay_benchmark": bench,
     }
 
 
 def run_profile_suite() -> dict[str, Any]:
     """Run the vertical-control replay benchmark across committed profiles."""
-
     profiles = machine_profiles()
     profile_ids = sorted(profiles)
     reports = {
@@ -969,16 +988,18 @@ def run_profile_suite() -> dict[str, Any]:
         for profile_id in profile_ids
     }
     release_gate = _profile_suite_release_gate(reports, profile_ids)
+    all_profiles_pass = all(bool(report["passes_thresholds"]) for report in reports.values())
     return {
-        "SPDX-License-Identifier": "AGPL-3.0-or-later",
-        "benchmark_id": "vertical_control_replay_profile_suite",
+        **_report_wrapper(
+            benchmark_id="vertical_control_replay_profile_suite",
+            release_gate=release_gate,
+            passes=all_profiles_pass,
+        ),
         "vertical_control_replay_profile_suite": {
             "schema_version": SCHEMA_VERSION,
             "profile_ids": profile_ids,
             "reports": reports,
-            "all_profiles_pass": all(
-                bool(report["passes_thresholds"]) for report in reports.values()
-            ),
+            "all_profiles_pass": all_profiles_pass,
             "trace_integrity": {
                 "profile_trace_checksum_sha256": _sha256_json(
                     {
@@ -995,15 +1016,18 @@ def run_profile_suite() -> dict[str, Any]:
 
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a compact benchmark report for operator review."""
-
     bench = report["vertical_control_replay_benchmark"]
     lines = [
         "# Vertical Control Replay Benchmark",
         "",
+        f"- Schema: `{report['schema']}`",
+        f"- Status: `{report['status']}`",
         f"- Schema version: `{bench['schema_version']}`",
         f"- Deterministic replay pass: `{'YES' if bench['deterministic_replay_pass'] else 'NO'}`",
         f"- Overall pass: `{'YES' if bench['passes_thresholds'] else 'NO'}`",
         f"- Release gate status: `{bench['release_gate']['status']}`",
+        f"- Full PCS production-grade ready: "
+        f"`{'YES' if report['full_pcs_production_grade_ready'] else 'NO'}`",
         f"- Steps: `{bench['scenario']['n_steps']}`",
         f"- dt: `{bench['scenario']['dt_s']:.6f} s`",
         f"- State trace checksum: `{bench['trace_integrity']['state_trace_checksum_sha256']}`",
@@ -1045,7 +1069,6 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             f"- Cases: `{bench['uncertainty_report']['n_scenarios']}`",
             f"- Max uncertain |z|: `{bench['uncertainty_report']['max_uncertain_abs_z_m']:.6f} m`",
-            "",
         ]
     )
     return "\n".join(lines)
@@ -1053,13 +1076,14 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 def render_profile_suite_markdown(report: dict[str, Any]) -> str:
     """Render a compact multi-profile benchmark report."""
-
     suite = report["vertical_control_replay_profile_suite"]
     lines = [
         "# Vertical Control Replay Benchmark",
         "",
         "## Profile suite",
         "",
+        f"- Schema: `{report['schema']}`",
+        f"- Status: `{report['status']}`",
         f"- Schema version: `{suite['schema_version']}`",
         f"- Profiles: `{', '.join(suite['profile_ids'])}`",
         f"- Overall pass: `{'YES' if suite['all_profiles_pass'] else 'NO'}`",
@@ -1111,7 +1135,8 @@ def main(argv: list[str] | None = None) -> int:
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
     out_md.write_text(
-        render_profile_suite_markdown(report) if args.all_profiles else render_markdown(report),
+        (render_profile_suite_markdown(report) if args.all_profiles else render_markdown(report))
+        + "\n",
         encoding="utf-8",
     )
 

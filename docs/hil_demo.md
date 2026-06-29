@@ -48,7 +48,9 @@ claim.
 - **FPGA**: Xilinx Alveo U250 (UltraScale+ XCU250)
 - **Interface**: PCIe Gen3 x16 or AXI-Lite over JTAG (development)
 - **Clock**: 250 MHz fabric clock
-- **Estimated inference latency**: < 10 us per control step
+- **Estimated inference latency target**: < 10 us per control step (planning
+  estimate only; not measured physical HIL, FPGA, CODAC, or actuator-hardware
+  timing evidence)
 
 ## 2. Register Map
 
