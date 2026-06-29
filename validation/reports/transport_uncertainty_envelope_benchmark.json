@@ -1,4 +1,7 @@
 {
+  "schema": "transport-uncertainty-envelope-benchmark.v1",
+  "status": "accepted_transport_uncertainty_envelope",
+  "passes_thresholds": true,
   "transport_uncertainty_envelope_benchmark": {
     "itpa_csv": "validation/reference_data/itpa/hmode_confinement.csv",
     "n_shots": 53,
