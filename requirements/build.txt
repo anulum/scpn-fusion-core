@@ -350,9 +350,9 @@ cryptography==49.0.0 \
     # via
     #   -r requirements/build.in
     #   secretstorage
-cyclonedx-bom==7.2.2 \
-    --hash=sha256:c3cfb62762090c73dbc6937a6da8847de99e949097bc32362a33c55a3a6e5589 \
-    --hash=sha256:dc7b994d41a83dc24caa511462dbf9fa6ede51b962f42533a58d0a8261d98e56
+cyclonedx-bom==7.3.0 \
+    --hash=sha256:73d7d76b3a28ebadc50eabf424cbcf128785a74b8a59ce7893da2e29cfaab585 \
+    --hash=sha256:d54080d65731980945de38e52009a5e5711f4a3c31377a3d13af96eaca5fcf3d
     # via -r requirements/build.in
 cyclonedx-python-lib==11.6.0 \
     --hash=sha256:7fb85a4371fa3a203e5be577ac22b7e9a7157f8b0058b7448731474d6dea7bf0 \
@@ -1214,9 +1214,9 @@ pyproject-hooks==1.2.0 \
     --hash=sha256:1e859bd5c40fae9448642dd871adf459e5e2084186e8d2c2a79a824c970da1f8 \
     --hash=sha256:9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913
     # via build
-pytest==9.0.3 \
-    --hash=sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9 \
-    --hash=sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c
+pytest==9.1.1 \
+    --hash=sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313 \
+    --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
     # via -r requirements/build.in
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
