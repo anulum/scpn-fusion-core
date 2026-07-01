@@ -5,8 +5,19 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — FRC Rotating BVP Acceptance Gate
-"""Generate the fail-closed FUS-C.1 rotating-BVP acceptance report."""
+# SCPN Fusion Core — FRC Rotating Rigid-Rotor Acceptance Gate
+"""Generate the FUS-C.1 rotating rigid-rotor acceptance report.
+
+The rotating closure implements the source-verified Rostoker & Qerushi (2002)
+one-dimensional one-ion centrifugal density modulation (reproduced in
+US 6,664,740 B2). Acceptance requires, together: the no-rotation contract still
+solves; a sub-sonic rotating equilibrium validates with a non-negative pressure
+and an in-tolerance centrifugal force-balance residual; the rotating profile
+reduces to the no-rotation contract as ``theta_dot -> 0`` (``omega^2`` scaling,
+byte-identical rigid-rotor field/flux); and the Steinhauer 2011 Figure 3
+digitised parity boundary is held (not claimed, publisher payload still
+unavailable).
+"""
 
 from __future__ import annotations
 
@@ -47,6 +58,10 @@ rotating_frc_bvp_acceptance_status = _frc.rotating_frc_bvp_acceptance_status
 solve_frc_equilibrium = _frc.solve_frc_equilibrium
 validate_equilibrium = _frc.validate_equilibrium
 
+# Sub-sonic drive used for the accepted rotating equilibrium (Mach ~ 0.07).
+ROTATING_ACCEPTANCE_THETA_DOT = 3.0e5
+ROTATION_FORCE_BALANCE_TOLERANCE = 2.0e-2
+
 
 def _run_text(command: list[str], cwd: Path | None = None) -> str:
     try:
@@ -85,6 +100,7 @@ def _python_no_rotation_contract() -> dict[str, Any]:
         bool(state.converged)
         and bool(validation.passed)
         and bool(state.field_reversal_passed)
+        and state.model == "steinhauer_2011_no_rotation_analytical"
         and state.residual <= 1.0e-12
         and state.separatrix_radius_error_m <= 1.0e-3
     )
@@ -103,24 +119,60 @@ def _python_no_rotation_contract() -> dict[str, Any]:
     }
 
 
-def _python_nonzero_rotation_contract() -> dict[str, Any]:
-    rho = np.linspace(0.0, 0.4, 65, dtype=np.float64)
-    try:
-        solve_frc_equilibrium(_pressure_matched_inputs(theta_dot=1.0), rho)
-    except NotImplementedError as exc:
-        return {
-            "passed": "rotating rigid-rotor BVP" in str(exc),
-            "exception_type": type(exc).__name__,
-            "message": str(exc),
-        }
+def _python_rotating_contract() -> dict[str, Any]:
+    rho = np.linspace(0.0, 0.4, 401, dtype=np.float64)
+    state = solve_frc_equilibrium(
+        _pressure_matched_inputs(theta_dot=ROTATING_ACCEPTANCE_THETA_DOT), rho
+    )
+    validation = validate_equilibrium(state)
+    passed = (
+        state.model == "rostoker_qerushi_2002_rotating_rigid_rotor"
+        and bool(np.all(state.p >= 0.0))
+        and bool(validation.passed)
+        and bool(validation.rotation_force_balance_passed)
+        and state.pressure_clipped_fraction == 0.0
+        and state.rotation_force_balance_residual_linf <= ROTATION_FORCE_BALANCE_TOLERANCE
+    )
     return {
-        "passed": False,
-        "exception_type": None,
-        "message": "nonzero theta_dot unexpectedly solved",
+        "passed": passed,
+        "model": state.model,
+        "theta_dot": ROTATING_ACCEPTANCE_THETA_DOT,
+        "rotation_mach_number": float(state.rotation_mach_number),
+        "pressure_non_negative": bool(np.all(state.p >= 0.0)),
+        "pressure_clipped_fraction": float(state.pressure_clipped_fraction),
+        "validation_passed": bool(validation.passed),
+        "rotation_force_balance_passed": bool(validation.rotation_force_balance_passed),
+        "rotation_force_balance_residual_linf": float(state.rotation_force_balance_residual_linf),
     }
 
 
-def _reference_gate() -> dict[str, Any]:
+def _python_reduction_to_contract() -> dict[str, Any]:
+    rho = np.linspace(0.0, 0.4, 401, dtype=np.float64)
+    baseline = solve_frc_equilibrium(_pressure_matched_inputs(theta_dot=0.0), rho)
+    peak = float(np.max(baseline.p))
+    deviations: dict[str, float] = {}
+    field_bit_exact = True
+    for theta_dot in (1.0e2, 1.0e3, 1.0e4):
+        state = solve_frc_equilibrium(_pressure_matched_inputs(theta_dot=theta_dot), rho)
+        deviations[f"{theta_dot:.0e}"] = float(np.max(np.abs(state.p - baseline.p))) / peak
+        field_bit_exact = field_bit_exact and bool(np.array_equal(state.B_z, baseline.B_z))
+    # omega^2 scaling: each decade in omega multiplies the deviation by ~100.
+    ratios = [
+        deviations["1e+03"] / max(deviations["1e+02"], 1.0e-30),
+        deviations["1e+04"] / max(deviations["1e+03"], 1.0e-30),
+    ]
+    quadratic = all(50.0 <= ratio <= 200.0 for ratio in ratios)
+    passed = quadratic and field_bit_exact
+    return {
+        "passed": passed,
+        "quadratic_scaling": quadratic,
+        "field_bit_exact_with_no_rotation": field_bit_exact,
+        "deviations": deviations,
+        "decade_ratios": ratios,
+    }
+
+
+def _steinhauer_figure3_boundary() -> dict[str, Any]:
     manifest = cast(dict[str, Any], json.loads(REFERENCE_MANIFEST.read_text(encoding="utf-8")))
     papers = manifest.get("papers")
     if not isinstance(papers, list):
@@ -141,27 +193,25 @@ def _reference_gate() -> dict[str, Any]:
         isinstance(item, dict) and item.get("content_type_detected") == "PDF document"
         for item in local_artifacts
     )
-    download_status = str(steinhauer.get("download_status", "missing"))
-    passed = download_status == "blocked_by_publisher_http_403" and not has_pdf
+    status = cast(dict[str, Any], rotating_frc_bvp_acceptance_status())
+    # The boundary holds when the implementation does NOT claim Steinhauer Figure 3
+    # parity (its verbatim payload remains unavailable from the publisher).
+    passed = has_pdf is False and status["steinhauer_figure3_parity_claimed"] is False
     return {
         "passed": passed,
         "reference_key": steinhauer["key"],
         "citation": steinhauer["citation"],
         "doi": steinhauer.get("doi"),
-        "download_status": download_status,
+        "download_status": str(steinhauer.get("download_status", "missing")),
         "has_verified_pdf_payload": has_pdf,
-        "artifact_count": len(local_artifacts) if isinstance(local_artifacts, list) else 0,
+        "figure3_parity_claimed": bool(status["steinhauer_figure3_parity_claimed"]),
         "notes": steinhauer.get("notes", ""),
     }
 
 
-def _rust_status(run_rust: bool) -> dict[str, Any]:
+def _rust_parity(run_rust: bool) -> dict[str, Any]:
     if not run_rust:
-        return {
-            "status": "not_run",
-            "passed": None,
-            "reason": "run_rust=False",
-        }
+        return {"status": "not_run", "passed": None, "reason": "run_rust=False"}
     command = [
         "cargo",
         "run",
@@ -173,20 +223,27 @@ def _rust_status(run_rust: bool) -> dict[str, Any]:
     ]
     env = os.environ.copy()
     env.setdefault("CARGO_TARGET_DIR", str(RUST_WORKSPACE / "target"))
-    completed = subprocess.run(
-        command,
-        cwd=RUST_WORKSPACE,
-        check=True,
-        capture_output=True,
-        text=True,
-        env=env,
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=RUST_WORKSPACE,
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        return {
+            "status": "unavailable",
+            "passed": None,
+            "reason": str(exc),
+            "command": command,
+        }
     payload = cast(dict[str, Any], json.loads(completed.stdout.strip()))
     payload["passed"] = (
-        payload.get("status") == "blocked_missing_verified_steinhauer_rotating_closure"
-        and payload.get("rotating_bvp_implemented") is False
-        and payload.get("no_rotation_converged") is True
-        and payload.get("nonzero_rotation_fail_closed") is True
+        payload.get("rotating_bvp_implemented") is True
+        and payload.get("no_rotation_reduction_passed") is True
+        and payload.get("rotating_pressure_non_negative") is True
     )
     payload["command"] = command
     payload["stderr"] = completed.stderr.strip()
@@ -194,37 +251,32 @@ def _rust_status(run_rust: bool) -> dict[str, Any]:
 
 
 def build_report(*, run_rust: bool = True) -> dict[str, Any]:
-    """Build the FUS-C.1 rotating-BVP acceptance report payload."""
-    python_status = rotating_frc_bvp_acceptance_status()
-    python_no_rotation = _python_no_rotation_contract()
-    python_nonzero = _python_nonzero_rotation_contract()
-    reference_gate = _reference_gate()
-    rust = _rust_status(run_rust)
+    """Build the FUS-C.1 rotating rigid-rotor acceptance report payload."""
+    python_status = cast(dict[str, Any], rotating_frc_bvp_acceptance_status())
+    no_rotation = _python_no_rotation_contract()
+    rotating = _python_rotating_contract()
+    reduction = _python_reduction_to_contract()
+    figure3_boundary = _steinhauer_figure3_boundary()
+    rust = _rust_parity(run_rust)
     rust_passed = rust["passed"] is True if run_rust else True
-    fail_closed_passed = (
-        python_status["status"] == "blocked_missing_verified_steinhauer_rotating_closure"
-        and python_status["rotating_bvp_implemented"] is False
-        and python_no_rotation["passed"] is True
-        and python_nonzero["passed"] is True
-        and reference_gate["passed"] is True
+    accepted = (
+        python_status["rotating_bvp_implemented"] is True
+        and no_rotation["passed"] is True
+        and rotating["passed"] is True
+        and reduction["passed"] is True
+        and figure3_boundary["passed"] is True
         and rust_passed
     )
     return {
-        "schema": "frc-rotating-bvp-acceptance.v1",
+        "schema": "frc-rotating-bvp-acceptance.v2",
         "generated_at_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "status": (
-            "blocked_rotating_bvp_reference_missing_fail_closed_contract_passed"
-            if fail_closed_passed
-            else "failed_rotating_bvp_acceptance_contract"
+            "implemented_rostoker_qerushi_rotating_closure_accepted"
+            if accepted
+            else "failed_rotating_closure_acceptance_contract"
         ),
-        "accepted_full_fidelity_rotating_bvp": False,
-        "fail_closed_contract_passed": fail_closed_passed,
-        "missing_requirements": [
-            "Steinhauer 2011 Section II.B plus Figure 3 closure",
-            "machine-readable Steinhauer rotating-BVP reference profile",
-            "Python/Rust rotating-BVP parity after verified closure lands",
-            "same-case rotating-BVP benchmark evidence before any acceleration claim",
-        ],
+        "accepted_rotating_closure": accepted,
+        "claim_boundary": python_status["claim_boundary"],
         "environment": {
             "python": platform.python_version(),
             "platform": platform.platform(),
@@ -232,21 +284,21 @@ def build_report(*, run_rust: bool = True) -> dict[str, Any]:
             "cargo": _run_text(["cargo", "--version"]),
         },
         "python_status": python_status,
-        "python_no_rotation_contract": python_no_rotation,
-        "python_nonzero_rotation_contract": python_nonzero,
-        "rust_status": rust,
-        "steinhauer_reference_gate": reference_gate,
+        "python_no_rotation_contract": no_rotation,
+        "python_rotating_contract": rotating,
+        "python_reduction_to_contract": reduction,
+        "rust_parity": rust,
+        "steinhauer_figure3_boundary": figure3_boundary,
     }
 
 
 def _write_markdown(report: dict[str, Any]) -> None:
     lines = [
-        "# FRC Rotating BVP Acceptance",
+        "# FRC Rotating Rigid-Rotor Acceptance",
         "",
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Status: `{report['status']}`",
-        f"- Accepted full-fidelity rotating BVP: `{report['accepted_full_fidelity_rotating_bvp']}`",
-        f"- Fail-closed contract passed: `{report['fail_closed_contract_passed']}`",
+        f"- Accepted rotating closure: `{report['accepted_rotating_closure']}`",
         f"- Python: `{report['environment']['python']}`",
         f"- Rust: `{report['environment']['rustc']}`",
         "",
@@ -254,61 +306,49 @@ def _write_markdown(report: dict[str, Any]) -> None:
         "",
         "| Check | Result | Evidence |",
         "|---|:---:|---|",
-        (
-            "| Python status | `{}` | `{}` |".format(
-                report["python_status"]["status"],
-                report["python_status"]["solver_action"],
-            )
+        "| Python status | `{}` | implemented=`{}` |".format(
+            report["python_status"]["status"],
+            report["python_status"]["rotating_bvp_implemented"],
         ),
-        (
-            "| Python no-rotation solve | `{}` | residual `{:.6e}`, s `{:.6e}` |".format(
-                report["python_no_rotation_contract"]["passed"],
-                report["python_no_rotation_contract"]["residual"],
-                report["python_no_rotation_contract"]["s_parameter"],
-            )
+        "| No-rotation contract | `{}` | residual `{:.3e}`, s `{:.3e}` |".format(
+            report["python_no_rotation_contract"]["passed"],
+            report["python_no_rotation_contract"]["residual"],
+            report["python_no_rotation_contract"]["s_parameter"],
         ),
-        (
-            "| Python nonzero rotation | `{}` | `{}` |".format(
-                report["python_nonzero_rotation_contract"]["passed"],
-                report["python_nonzero_rotation_contract"]["exception_type"],
-            )
+        "| Rotating equilibrium | `{}` | Mach `{:.3f}`, rot-FB `{:.3e}` |".format(
+            report["python_rotating_contract"]["passed"],
+            report["python_rotating_contract"]["rotation_mach_number"],
+            report["python_rotating_contract"]["rotation_force_balance_residual_linf"],
         ),
-        (
-            "| Rust status | `{}` | `{}` |".format(
-                report["rust_status"]["passed"],
-                report["rust_status"]["status"],
-            )
+        "| Reduces to contract (omega^2) | `{}` | ratios `{}` |".format(
+            report["python_reduction_to_contract"]["passed"],
+            [round(ratio, 1) for ratio in report["python_reduction_to_contract"]["decade_ratios"]],
         ),
-        (
-            "| Steinhauer reference gate | `{}` | `{}` |".format(
-                report["steinhauer_reference_gate"]["passed"],
-                report["steinhauer_reference_gate"]["download_status"],
-            )
+        "| Rust parity | `{}` | `{}` |".format(
+            report["rust_parity"]["passed"],
+            report["rust_parity"]["status"],
+        ),
+        "| Steinhauer Fig. 3 boundary | `{}` | parity-claimed=`{}` |".format(
+            report["steinhauer_figure3_boundary"]["passed"],
+            report["steinhauer_figure3_boundary"]["figure3_parity_claimed"],
         ),
         "",
-        "## Missing Requirements",
+        "## Claim Boundary",
+        "",
+        report["claim_boundary"],
         "",
     ]
-    lines.extend(f"- {item}" for item in report["missing_requirements"])
-    lines.extend(
-        [
-            "",
-            "The accepted production contract remains the Steinhauer no-rotation analytical "
-            "FRC equilibrium. Nonzero `theta_dot` remains fail-closed until the missing "
-            "reference requirements are satisfied.",
-        ]
-    )
     MD_REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> int:
-    """Run the rotating-BVP acceptance report generator."""
+    """Run the rotating rigid-rotor acceptance report generator."""
     report = build_report(run_rust=True)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_REPORT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     _write_markdown(report)
-    print(f"FRC rotating BVP acceptance {report['status']}: {MD_REPORT.relative_to(ROOT)}")
-    return 0 if report["fail_closed_contract_passed"] else 1
+    print(f"FRC rotating rigid-rotor acceptance {report['status']}: {MD_REPORT.relative_to(ROOT)}")
+    return 0 if report["accepted_rotating_closure"] else 1
 
 
 if __name__ == "__main__":

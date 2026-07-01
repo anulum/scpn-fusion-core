@@ -101,23 +101,32 @@ PyO3 parity, and the tracked benchmark report.
 
 The solver validates a one-dimensional, strictly increasing radial grid,
 requires the grid to start at the magnetic axis and extend outside the
-separatrix radius, derives `delta = rho_i` from the deuterium thermal ion
-gyroradius when no layer thickness is supplied, and rejects rotating cases
-until the BVP implementation is added. The validation report now compares the
+separatrix radius, and derives `delta = rho_i` from the deuterium thermal ion
+gyroradius when no layer thickness is supplied. For `theta_dot == 0` it returns
+the accepted magnetostatic contract; for nonzero `theta_dot` it applies the
+rotating rigid-rotor closure described below. The validation report compares the
 interpolated zero-crossing against the configured `R_s` and requires the axial
 field sign to reverse between the last inner sample and the first outer sample.
 
-The unresolved rotating-BVP lane also exposes
-`rotating_frc_bvp_acceptance_status()` in Python and
-`rotating_frc_bvp_acceptance_status()` in Rust. Both surfaces report
-`blocked_missing_verified_steinhauer_rotating_closure`, name the accepted
-no-rotation contract, and require Steinhauer 2011 Section II.B plus Figure 3
-closure before nonzero `theta_dot` can be certified. Romero 2018 topology
-evidence, the Baltz 2017 C-2U performance table, and Slough 2011 Fig. 5 are
-listed as non-closing context references. The executable gate
-`validation/benchmark_frc_rotating_bvp_acceptance.py` records this boundary in
-`validation/reports/frc_rotating_bvp_acceptance.md` and
-`validation/reports/frc_rotating_bvp_acceptance.json`.
+The rotating rigid-rotor lane implements the source-verified Rostoker & Qerushi
+(2002) one-dimensional one-ion closure: the equilibrium pressure inherits the
+centrifugal density factor
+$\exp[\tfrac12 m_i\dot\theta^2 r^2 / ((T_i+T_e)e)]$ on top of the diamagnetic
+FRC profile, so it is non-negative, redistributes pressure outward under
+rotation, and reduces to the no-rotation contract as $\dot\theta\to0$ (with the
+pressure deviation scaling as $\dot\theta^2$). The centrifugal force-balance
+residual $d/dr[p+B_z^2/2\mu_0]-\rho\dot\theta^2 r$ is reported as the
+fixed-field consistency diagnostic and gates validation for sub-sonic drive.
+`rotating_frc_bvp_acceptance_status()` reports
+`implemented_rostoker_qerushi_1d_rotating_closure` and records that verbatim
+Steinhauer 2011 Figure 3 digitised parity is not claimed (Romero 2018 topology,
+the Baltz 2017 C-2U performance table, and Slough 2011 Fig. 5 remain non-closing
+context references). The executable gate
+`validation/benchmark_frc_rotating_bvp_acceptance.py` records the acceptance
+contract in `validation/reports/frc_rotating_bvp_acceptance.md` and
+`validation/reports/frc_rotating_bvp_acceptance.json`. The Rust
+`rotating_frc_bvp_acceptance_status()` surface mirrors the Python status; its
+rotating-solve parity is tracked as remaining work.
 
 The reported quality-of-equilibrium parameter follows Steinhauer Eq. 27:
 

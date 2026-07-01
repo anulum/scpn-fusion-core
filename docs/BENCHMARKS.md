@@ -99,13 +99,17 @@ The tracked report is local regression evidence unless its
 timing rows record command, CPU affinity, and host-load context, but they are
 not isolated-core production throughput claims.
 
-Rotating rigid-rotor BVP acceptance is not benchmarked because nonzero
-`theta_dot` remains fail-closed. Python and Rust expose a structured
-`rotating_frc_bvp_acceptance_status()` row that reports
-`blocked_missing_verified_steinhauer_rotating_closure` until the Steinhauer
-Section II.B/Figure 3 closure is verified. The benchmark table must not promote
-C-2U performance or topology references into rotating-BVP throughput or parity
-claims.
+The rotating rigid-rotor closure (nonzero `theta_dot`) implements the
+source-verified Rostoker & Qerushi (2002) one-dimensional one-ion centrifugal
+density modulation. Python exposes it through `solve_frc_equilibrium`; the Rust
+parity surface currently mirrors the no-rotation contract and its rotating
+parity is tracked as remaining work. The structured
+`rotating_frc_bvp_acceptance_status()` row reports
+`implemented_rostoker_qerushi_1d_rotating_closure`, records that the closure
+reduces bit-exactly to the no-rotation contract at `theta_dot == 0`, and states
+that verbatim Steinhauer 2011 Figure 3 digitised parity is not claimed. The
+benchmark table must not promote C-2U performance or topology references into
+rotating throughput or figure-parity claims.
 
 The report compares Python NumPy, Rust `fusion-physics`, and optional PyO3
 surfaces on `65`, `129`, `257`, and `513` point radial grids using null radius,

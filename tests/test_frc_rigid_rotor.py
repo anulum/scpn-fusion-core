@@ -79,19 +79,21 @@ def test_inputs_are_immutable() -> None:
         inputs.__setattr__("R_s", 0.3)
 
 
-def test_rotating_bvp_acceptance_status_is_fail_closed_and_reference_bound() -> None:
+def test_rotating_bvp_acceptance_status_is_implemented_and_reference_bound() -> None:
     status = rotating_frc_bvp_acceptance_status()
     public_status = public_rotating_frc_bvp_acceptance_status()
 
     assert status == public_status
-    assert status["status"] == "blocked_missing_verified_steinhauer_rotating_closure"
+    assert status["status"] == "implemented_rostoker_qerushi_1d_rotating_closure"
     assert status["accepted_contract"] == "steinhauer_2011_no_rotation_analytical"
-    assert status["rotating_bvp_implemented"] is False
-    assert status["solver_action"] == "raise_not_implemented_for_nonzero_theta_dot"
-    assert status["required_reference"] == "Steinhauer 2011 Section II.B plus Figure 3 closure"
+    assert status["rotating_bvp_implemented"] is True
+    assert status["reduces_to_no_rotation_contract"] is True
+    assert status["steinhauer_figure3_parity_claimed"] is False
+    assert "Rostoker & Qerushi 2002" in cast(str, status["required_reference"])
     assert "Romero 2018" in status["non_closing_references"]
     assert "Slough 2011 Fig. 5" in status["non_closing_references"]
-    assert "not a rotating-BVP solver certification" in status["claim_boundary"]
+    assert "reducing bit-exactly" in cast(str, status["claim_boundary"])
+    assert "NOT claimed" in cast(str, status["claim_boundary"])
 
 
 def test_no_rotation_limit_matches_steinhauer_field() -> None:
@@ -302,7 +304,7 @@ def test_no_rotation_scalar_diagnostics_converge_with_grid_refinement() -> None:
         assert fine_error < medium_error or fine_error <= exact_tolerance
 
 
-def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
+def test_input_validation_rejects_bad_grid() -> None:
     inputs = _inputs()
 
     with pytest.raises(ValueError, match="strictly increasing"):
@@ -317,23 +319,73 @@ def test_input_validation_rejects_bad_grid_and_rotating_bvp() -> None:
     with pytest.raises(ValueError, match="outside the separatrix"):
         solve_frc_equilibrium(inputs, np.linspace(0.0, inputs.R_s, 8))
 
-    with pytest.raises(NotImplementedError, match="rotating"):
-        solve_frc_equilibrium(_inputs(theta_dot=1.0), np.linspace(0.0, 0.4, 32))
 
+@pytest.mark.parametrize("theta_dot", [1.0e2, 1.0e3, 1.0e4])
+def test_rotating_equilibrium_reduces_to_contract_quadratically(theta_dot: float) -> None:
+    """The rotating closure must converge to the no-rotation contract as omega -> 0.
 
-@pytest.mark.parametrize("theta_dot", [1.0e-6, 1.0, -2.5, 5.0e5])
-def test_rotating_bvp_is_fail_closed_for_all_nonzero_rotation(theta_dot: float) -> None:
-    """Every non-zero rotation rate must fail closed until the verified FUS-C.1 BVP lands.
-
-    The previous prototype rotating solver was removed: it never converged (the
-    exponential-in-psi source overflowed even at the theta_dot -> 0 limit) and its
-    closure was inconsistent with the cited Steinhauer Eq. 6 pressure function.
-    Until the verified rotating derivation is implemented, the public solver must
-    reject rotation rather than return an unvalidated equilibrium.
+    The centrifugal density factor is ``exp[(1/2) m_i omega^2 r^2 / (T_i + T_e)]``,
+    so the pressure deviation from the no-rotation profile scales as ``omega^2``.
     """
-    inputs = _inputs(theta_dot=theta_dot)
-    with pytest.raises(NotImplementedError, match="rotating"):
-        solve_frc_equilibrium(inputs, np.linspace(0.0, 0.4, 64))
+    rho: FloatArray = np.linspace(0.0, 0.4, 401)
+    baseline = solve_frc_equilibrium(_inputs(theta_dot=0.0), rho)
+    rotating = solve_frc_equilibrium(_inputs(theta_dot=theta_dot), rho)
+
+    assert rotating.model == "rostoker_qerushi_2002_rotating_rigid_rotor"
+    assert bool(np.all(rotating.p >= 0.0))
+    peak = float(np.max(baseline.p))
+    deviation = float(np.max(np.abs(rotating.p - baseline.p))) / peak
+    # omega^2 scaling: a decade in omega must raise the deviation by ~two decades.
+    expected = 2.8e-14 * theta_dot**2
+    assert deviation == pytest.approx(expected, rel=0.25)
+    # Field, flux and current are the shared rigid-rotor ansatz, byte-unchanged.
+    assert np.array_equal(rotating.B_z, baseline.B_z)
+    assert np.array_equal(rotating.psi, baseline.psi)
+    assert np.array_equal(rotating.J_theta, baseline.J_theta)
+
+
+@pytest.mark.parametrize("theta_dot", [3.0e5, -5.0e5])
+def test_rotating_equilibrium_is_valid_and_redistributes_outward(theta_dot: float) -> None:
+    """A sub-sonic rotating equilibrium validates and pushes pressure outward.
+
+    The centrifugal factor grows with radius, so under rotation the pressure
+    outside the field null is enhanced relative to the inner region compared with
+    the no-rotation profile, while the rotating force-balance residual stays
+    within tolerance for sub-sonic drive.
+    """
+    rho: FloatArray = np.linspace(0.0, 0.4, 401)
+    baseline = solve_frc_equilibrium(_inputs(theta_dot=0.0), rho)
+    state = solve_frc_equilibrium(_inputs(theta_dot=theta_dot), rho)
+
+    report = validate_equilibrium(state)
+    assert report.theta_dot == theta_dot
+    assert report.passed is True
+    assert report.rotation_force_balance_passed is True
+    assert state.rotation_mach_number < 0.2
+    assert state.pressure_clipped_fraction == 0.0
+    assert bool(np.all(state.p >= 0.0))
+    # Sign of rotation must not matter (centrifugal term is even in omega).
+    mirror = solve_frc_equilibrium(_inputs(theta_dot=-theta_dot), rho)
+    assert np.allclose(state.p, mirror.p, rtol=0.0, atol=1e-9)
+    # Outward redistribution: the outer-to-inner pressure ratio rises under rotation.
+    outer = rho > state.R_null
+    inner = (rho > 0.0) & (rho < state.R_null)
+    ratio_static = float(np.mean(baseline.p[outer])) / float(np.mean(baseline.p[inner]))
+    ratio_rot = float(np.mean(state.p[outer])) / float(np.mean(state.p[inner]))
+    assert ratio_rot > ratio_static
+
+
+def test_rotating_equilibrium_flags_supersonic_drive() -> None:
+    """Strongly super-sonic rotation must trip the fixed-field validity guard."""
+    rho: FloatArray = np.linspace(0.0, 0.4, 401)
+    # Force-balance consistency degrades well before the exponent cap; validation
+    # must report the rotating momentum residual as failing at transonic drive.
+    state = solve_frc_equilibrium(_inputs(theta_dot=2.0e6), rho)
+    assert state.rotation_mach_number > 0.4
+    assert validate_equilibrium(state).rotation_force_balance_passed is False
+
+    with pytest.raises(ValueError, match="validity cap"):
+        solve_frc_equilibrium(_inputs(theta_dot=2.0e8), rho)
 
 
 def test_no_rotation_path_is_unaffected_by_rotating_removal() -> None:

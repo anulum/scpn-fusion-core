@@ -26,20 +26,36 @@ from tools import train_frc_quantized_surrogate
 from tools.train_frc_snn_surrogate import export_to_verilog
 
 
-def test_rotating_frc_public_solver_fails_closed() -> None:
+def test_rotating_frc_solver_is_bounded_to_verified_closure() -> None:
+    """The rotating solver implements the Rostoker & Qerushi closure without
+    claiming Steinhauer Figure 3 parity, and it reduces to the no-rotation
+    contract at ``theta_dot == 0``."""
     inputs = RigidRotorFRCInputs(
         n0=1.0e20,
         T_i_eV=10_000.0,
         T_e_eV=5_000.0,
-        theta_dot=1.0,
+        theta_dot=3.0e5,
         R_s=0.2,
         B_ext=5.0,
         delta=0.02,
     )
-    rho = np.linspace(0.0, 0.4, 32)
+    rho = np.linspace(0.0, 0.4, 129)
 
-    with pytest.raises(NotImplementedError, match="rotating rigid-rotor BVP"):
-        solve_frc_equilibrium(inputs, rho)
+    rotating = solve_frc_equilibrium(inputs, rho)
+    assert rotating.model == "rostoker_qerushi_2002_rotating_rigid_rotor"
+    assert bool(np.all(rotating.p >= 0.0))
+
+    from scpn_fusion.core.frc_rigid_rotor import rotating_frc_bvp_acceptance_status
+
+    status = rotating_frc_bvp_acceptance_status()
+    assert status["rotating_bvp_implemented"] is True
+    assert status["steinhauer_figure3_parity_claimed"] is False
+
+    from dataclasses import replace
+
+    baseline = solve_frc_equilibrium(replace(inputs, theta_dot=0.0), rho)
+    assert baseline.model == "steinhauer_2011_no_rotation_analytical"
+    assert np.array_equal(rotating.B_z, baseline.B_z)
 
 
 def test_slough_sidecar_presence_is_not_acceptance_pass() -> None:
