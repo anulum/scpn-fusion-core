@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — source/config header compliance
 """
 Figure: 2D tokamak equilibrium contour plot (SPARC-like parameters).
 
@@ -18,7 +25,6 @@ from style import apply_style, figsize, SINGLE_COL, COLORS
 
 apply_style()
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch
 
 
 def _solovev_equilibrium(R, Z, R0=1.85, a=0.57, kappa=1.97, delta=0.54,
@@ -84,12 +90,12 @@ def main():
 
     # Separatrix level: use a contour slightly above the X-point value
     # Find approximate X-point (saddle point near bottom)
-    z_region = Z < -0.5 * kappa * a
+    z_region = -0.5 * kappa * a > Z
     if np.any(z_region):
         psi_bottom = psi[z_region[np.newaxis, :].flatten() if False else
-                         (ZZ < -0.5 * kappa * a)]
+                         (-0.5 * kappa * a > ZZ)]
         # Use gradient-based search in the lower region
-        lower_mask = (ZZ < -0.3 * kappa * a) & (np.abs(RR - R0) < 0.5 * a)
+        lower_mask = (-0.3 * kappa * a > ZZ) & (np.abs(RR - R0) < 0.5 * a)
         psi_lower = np.where(lower_mask, psi, -np.inf)
         idx_xpt = np.unravel_index(np.argmax(psi_lower), psi.shape)
         R_xpt = RR[idx_xpt]

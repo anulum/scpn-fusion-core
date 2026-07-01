@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-# ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — Python Solver Comparison Benchmark
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# ──────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — source/config header compliance
 """
 Time FusionKernel with SOR, Newton-Kantorovich, and (optionally)
 Rust multigrid on 33x33 and 65x65 grids. Outputs markdown table.
@@ -19,7 +22,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import numpy as np
 import json
 import tempfile
 import os

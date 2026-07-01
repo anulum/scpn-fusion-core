@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — source/config header compliance
 """
 Shared matplotlib style configuration for SCPN-Fusion-Core paper figures.
 
@@ -6,7 +13,6 @@ All figure scripts import this module for consistent appearance.
 """
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 
 # ---------------------------------------------------------------------------

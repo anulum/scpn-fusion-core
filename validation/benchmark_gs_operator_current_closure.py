@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — source/config header compliance
 """Benchmark the native Grad-Shafranov operator/current closure contract.
 
 This benchmark uses manufactured flux fields with an analytic cylindrical

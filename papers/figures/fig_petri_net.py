@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — source/config header compliance
 """
 Figure: 8-place, 4-transition Petri net for vertical stability control.
 
@@ -12,7 +19,6 @@ Output: fig_petri_net.pdf / .png
 
 import sys
 import os
-import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
 from style import apply_style, figsize, DOUBLE_COL, COLORS
