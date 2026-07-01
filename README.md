@@ -718,7 +718,7 @@ cargo bench                      # Criterion benchmarks
 |----------|---------|
 | **Classical** | PID (Rust 0.52 us), H-infinity (Riccati synthesis), gain-scheduled, sliding-mode vertical |
 | **Optimal** | NMPC-JAX (SQP), MPC (gradient trajectory), optimal control |
-| **Learning** | Safe RL (Lagrangian PPO), PPO 500K (beats MPC+PID), controller tuning (Bayesian) |
+| **Learning** | Safe RL (Lagrangian PPO scaffold), controller tuning (Bayesian); no public PPO-vs-MPC/PID victory curve is claimed |
 | **Neuro-symbolic** | SNN compiler, cybernetic controller, Nengo SNN wrapper |
 | **Disruption** | Predictor (ML), SPI mitigation, checkpoint policy, disruption contracts |
 | **Free-boundary** | Direct kernel tracking + supervisor rejection + EKF latency compensation |
@@ -782,7 +782,7 @@ All numbers are internal measurements. Reproduce with `cargo bench` and
 | SOR step @ 65x65 | us-range | `sor_bench.rs` |
 | GMRES(30) @ 65x65 | ~45 iters | `gmres_bench.rs` |
 | Rust multigrid V-cycle scaling | local convergence/scaling report; not a production speedup claim | `validation/reports/rust_multigrid_scaling.md` |
-| Rust flight sim | 0.3 us/step | `verify_10khz_rust.py` |
+| Rust flight sim | Internal regression only; public latency claims are metric-scoped | `docs/PERFORMANCE_METRIC_TAXONOMY.md` |
 | Full equilibrium (Python) | ~5 s | `profile_kernel.py` |
 | Neural transport MLP | ~5 us/point | `neural_transport_bench.rs` |
 | JAX GS solve (33x33) | ~50 ms | `jax_gs_solver.py` |

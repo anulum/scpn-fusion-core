@@ -175,6 +175,37 @@ def test_public_docs_do_not_carry_known_stale_inventory_counts() -> None:
             assert token not in text, f"{token!r} remains in {doc_name}"
 
 
+def test_public_docs_do_not_carry_unbacked_performance_claims() -> None:
+    """Verify public benchmark prose does not assert unbacked performance claims."""
+    checked_docs = {
+        "README.md": _public_readme_text_without_generated_inventory(),
+        "docs/BENCHMARKS.md": (_repo_root() / "docs" / "BENCHMARKS.md").read_text(
+            encoding="utf-8"
+        ),
+        "docs/BENCHMARK_FIGURES.md": (
+            _repo_root() / "docs" / "BENCHMARK_FIGURES.md"
+        ).read_text(encoding="utf-8"),
+        "docs/competitive_analysis.md": (
+            _repo_root() / "docs" / "competitive_analysis.md"
+        ).read_text(encoding="utf-8"),
+    }
+    unbacked_claim_tokens = (
+        "PPO 500K (beats MPC+PID)",
+        "**10–30 kHz (Verified)**",
+        "0.3 us/step",
+        "SCPN Rust (10kHz)   █ 0.3 us",
+        "**0.3 μs**",
+        "**0.39 ms mean**",
+        "CI verified",
+        "P-EFIT-class speed (0.39 ms)",
+        "Y (0.39 ms CPU)",
+    )
+
+    for doc_name, text in checked_docs.items():
+        for token in unbacked_claim_tokens:
+            assert token not in text, f"{token!r} remains in {doc_name}"
+
+
 def test_public_docs_match_itpa_hmode_dataset_counts() -> None:
     """Verify public ITPA H-mode count claims match the bundled dataset."""
     shot_count, machine_count = _itpa_hmode_counts()

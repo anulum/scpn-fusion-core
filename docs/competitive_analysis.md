@@ -108,13 +108,14 @@ solver uses the response-matrix formulation with Miller geometry
 | FreeGS | Variable | Picard + multigrid | ~seconds | FreeGS GitHub |
 | FreeGSNKE | Variable | Newton-Krylov | Faster than FreeGS | FreeGSNKE 2024 |
 | **SCPN v3.10.0 (Rust)** | 65x65 | Picard + SOR | **~100 ms** | Measured |
-| **SCPN v3.10.0 (Neural)** | 129x129 | PCA + MLP surrogate | **0.39 ms mean** | CI verified |
+| **SCPN v3.10.0 (Neural)** | 129x129 | PCA + MLP surrogate | Latency not public-claimed in this release | Tracked surrogate artifact |
 | **SCPN v3.10.0 (Multigrid)** | 65x65 | V-cycle | **~15 ms** | Projected |
 
-The Neural Equilibrium Kernel achieves P-EFIT-class speed (0.39 ms) on CPU only,
-without requiring CUDA or GPU hardware. Trained on 18 GEQDSK files across SPARC,
-DIII-D, and JET (1818 samples), with per-file rel_L2 < 0.001 for all machines
-including negative-triangularity and snowflake divertor configurations.
+The neural-equilibrium surface is shipped as a scenario-scanning surrogate
+artifact, but this comparison does not claim P-EFIT-class CPU latency until a
+tracked inference-latency report is generated. High-fidelity retraining,
+cross-machine validation, and public latency evidence remain separate release
+gates.
 
 ---
 
@@ -127,7 +128,7 @@ Y = implemented and tested. N = not present. P = partial.
 | **Equilibrium** | | | | | | |
 | Fixed-boundary GS | Y | Y (spectral) | Y | Y (Picard) | N | N |
 | Free-boundary GS | Y (Green's + coil opt) | P | Y | Y | N | N |
-| Neural equilibrium | Y (0.39 ms CPU) | N | N | N | N | N |
+| Neural equilibrium | Y (standard surrogate; no public latency claim) | N | N | N | N | N |
 | JAX-differentiable GS | Y | Y | Y (Julia AD) | N | N | N |
 | GEQDSK I/O | Y (read + validate) | N | Y | Y (read + write) | N | N |
 | **Transport** | | | | | | |

@@ -768,8 +768,8 @@ threshold checks.
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
 |--------|------------------------|---------------|-------|---------|
-| **Control loop freq** | **10–30 kHz (Verified)** | 100 Hz | 50 Hz | 4–10 kHz (physics loops) |
-| **Step compute time** | **0.3 μs** | 10 ms | ~1 ms | 100–250 μs |
+| **Control loop freq** | Metric-scoped controller-loop evidence; not physical HIL, FPGA, CODAC, or actuator-hardware timing | 100 Hz | 50 Hz | 4–10 kHz (physics loops) |
+| **Step compute time** | See `control.closed_loop_step_us` and `control.pid_kernel_step_us` in the taxonomy | 10 ms | ~1 ms | 100–250 μs |
 | **Equilibrium solver** | Picard + SOR / Multigrid | Jacobi + Picard | JAX autodiff | rtEFIT |
 | **Turbulence model** | JAX-FNO (synthetic-data surrogate) | FNO (Legacy) | QLKNN | N/A |
 | **Language** | Rust + Python | Python | Python/JAX | C / Fortran |
