@@ -336,7 +336,6 @@ def _write_markdown(report: dict[str, Any]) -> None:
         "## Claim Boundary",
         "",
         report["claim_boundary"],
-        "",
     ]
     MD_REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
