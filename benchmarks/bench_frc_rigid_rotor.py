@@ -322,6 +322,69 @@ def _python_parameter_case_metrics() -> list[MetricRow]:
     return rows
 
 
+_ROTATING_THETA_DOT = 3.0e5
+
+
+def _rotating_closure_metrics() -> MetricRow:
+    """Measure the rotating rigid-rotor closure timing and Python/PyO3 parity.
+
+    The rotating solve reuses the no-rotation rigid-rotor field and adds the
+    verified centrifugal density factor, so its cost is the no-rotation solve
+    plus an O(N) exponential. Wall-clock timings are local regression evidence.
+    """
+    from dataclasses import replace
+
+    rotating = replace(_inputs(), theta_dot=_ROTATING_THETA_DOT)
+    rows: list[MetricRow] = []
+    pyo3_pressure_max_abs_delta = 0.0
+    for grid_points in _GRIDS:
+        rho = _rho(grid_points)
+        elapsed: list[float] = []
+        state: Any = None
+        for _ in range(_REPEATS):
+            start = time.perf_counter()
+            state = solve_frc_equilibrium(rotating, rho)
+            elapsed.append(time.perf_counter() - start)
+        rows.append(
+            {
+                "grid_points": grid_points,
+                "median_solve_s": float(np.median(elapsed)),
+                "rotation_mach_number": float(state.rotation_mach_number),
+                "rotation_force_balance_residual_linf": float(
+                    state.rotation_force_balance_residual_linf
+                ),
+                "pressure_non_negative": bool(np.all(state.p >= 0.0)),
+                "pressure_checksum": _checksum(state.p),
+            }
+        )
+        if HAS_PYO3:
+            rust_state = scpn_fusion_rs.py_solve_frc_equilibrium(
+                rho,
+                rotating.n0,
+                rotating.T_i_eV,
+                rotating.T_e_eV,
+                rotating.theta_dot,
+                rotating.R_s,
+                rotating.B_ext,
+                rotating.delta,
+                1.0e-10,
+            )
+            pyo3_pressure_max_abs_delta = max(
+                pyo3_pressure_max_abs_delta,
+                float(np.max(np.abs(np.asarray(rust_state["p"], dtype=np.float64) - state.p))),
+            )
+    return {
+        "theta_dot_rad_s": _ROTATING_THETA_DOT,
+        "model": "rostoker_qerushi_2002_rotating_rigid_rotor",
+        "reference": "Rostoker & Qerushi 2002 Phys. Plasmas 9 3057; US 6,664,740 B2",
+        "python_numpy": {"status": "available", "repeats": _REPEATS, "metrics": rows},
+        "python_pyo3": {
+            "status": "available" if HAS_PYO3 else "unavailable",
+            "pressure_max_abs_delta": pyo3_pressure_max_abs_delta if HAS_PYO3 else None,
+        },
+    }
+
+
 def _rust_metrics() -> tuple[str, list[MetricRow] | None, list[MetricRow] | None]:
     command = [
         "cargo",
@@ -512,9 +575,11 @@ def main() -> None:
         "contract": "Steinhauer no-rotation FRC analytical equilibrium",
         "benchmark_evidence": _benchmark_evidence(),
         "scope": (
-            "Accepted no-rotation MIF/FRC analytical contract only; rotating rigid-rotor "
-            "BVP parity remains fail-closed until the finite-temperature rotation model lands."
+            "No-rotation MIF/FRC analytical contract plus the Rostoker & Qerushi (2002) "
+            "rotating rigid-rotor centrifugal closure; verbatim Steinhauer Figure 3 parity "
+            "is not claimed."
         ),
+        "rotating_closure": _rotating_closure_metrics(),
         "local_timing_notice": (
             "Wall-clock timings are local workstation regression evidence only unless paired "
             "with isolated-core benchmark metadata."

@@ -18,9 +18,9 @@
       11
     ],
     "host_load_average": [
-      9.6962890625,
-      8.62060546875,
-      10.08740234375
+      10.6259765625,
+      7.6884765625,
+      9.12744140625
     ],
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
@@ -106,7 +106,7 @@
           "sheet_current_integral_relative_error": 0.0003062993705964507,
           "target_separatrix_radius_m": 0.16,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.0016874900029506534
+          "wall_time_s": 0.0011800939682871103
         },
         {
           "ampere_residual_l2": 0.008882950409229257,
@@ -172,7 +172,7 @@
           "sheet_current_integral_relative_error": 4.9137677471529955e-09,
           "target_separatrix_radius_m": 0.18,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0022346629993990064
+          "wall_time_s": 0.0008779469644650817
         },
         {
           "ampere_residual_l2": 0.0020528660119077573,
@@ -238,7 +238,7 @@
           "sheet_current_integral_relative_error": 3.3631523931595123e-09,
           "target_separatrix_radius_m": 0.19,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0015771350008435547
+          "wall_time_s": 0.0010437299497425556
         },
         {
           "ampere_residual_l2": 0.0004696773892694998,
@@ -304,7 +304,7 @@
           "sheet_current_integral_relative_error": 1.6891027477181405e-09,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0013227760064182803
+          "wall_time_s": 0.001129333977587521
         },
         {
           "ampere_residual_l2": 0.024623889587939256,
@@ -370,7 +370,7 @@
           "sheet_current_integral_relative_error": 1.166520812929732e-05,
           "target_separatrix_radius_m": 0.21,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.001376474989228882
+          "wall_time_s": 0.0012539989547803998
         },
         {
           "ampere_residual_l2": 0.006240527939090971,
@@ -436,7 +436,7 @@
           "sheet_current_integral_relative_error": 7.3819967560298e-08,
           "target_separatrix_radius_m": 0.22,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0015695439942646772
+          "wall_time_s": 0.0016477819299325347
         },
         {
           "ampere_residual_l2": 0.0015029804389461048,
@@ -502,7 +502,7 @@
           "sheet_current_integral_relative_error": 2.6846353323235407e-08,
           "target_separatrix_radius_m": 0.23,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0013562879903474823
+          "wall_time_s": 0.0009802370332181454
         },
         {
           "ampere_residual_l2": 0.0003572533342788455,
@@ -568,7 +568,7 @@
           "sheet_current_integral_relative_error": 9.198729570269393e-09,
           "target_separatrix_radius_m": 0.24,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.001814300994738005
+          "wall_time_s": 0.0013168910518288612
         },
         {
           "ampere_residual_l2": 0.01983459113924601,
@@ -634,7 +634,7 @@
           "sheet_current_integral_relative_error": 3.248827325518595e-07,
           "target_separatrix_radius_m": 0.25,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.0011876670032506809
+          "wall_time_s": 0.0008808160200715065
         },
         {
           "ampere_residual_l2": 0.005096970221933055,
@@ -700,7 +700,7 @@
           "sheet_current_integral_relative_error": 2.427027274349291e-07,
           "target_separatrix_radius_m": 0.26,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0010263699950883165
+          "wall_time_s": 0.0008507529273629189
         },
         {
           "ampere_residual_l2": 0.0012500411138569856,
@@ -766,7 +766,7 @@
           "sheet_current_integral_relative_error": 7.432943008376543e-08,
           "target_separatrix_radius_m": 0.27,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000733164997654967
+          "wall_time_s": 0.0008093989454209805
         },
         {
           "ampere_residual_l2": 0.00030234517901560386,
@@ -832,7 +832,7 @@
           "sheet_current_integral_relative_error": 2.2203946101636113e-08,
           "target_separatrix_radius_m": 0.28,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0007774010009597987
+          "wall_time_s": 0.000928938970901072
         },
         {
           "ampere_residual_l2": 0.0938478922036601,
@@ -898,7 +898,7 @@
           "sheet_current_integral_relative_error": 0.09667586169104347,
           "target_separatrix_radius_m": 0.17,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.0007434359868057072
+          "wall_time_s": 0.000992499990388751
         },
         {
           "ampere_residual_l2": 0.057155556827034076,
@@ -964,7 +964,7 @@
           "sheet_current_integral_relative_error": 0.04078989435229292,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.0007450900011463091
+          "wall_time_s": 0.001039125956594944
         },
         {
           "ampere_residual_l2": 0.029982844003435583,
@@ -1030,7 +1030,7 @@
           "sheet_current_integral_relative_error": 0.008446022320494444,
           "target_separatrix_radius_m": 0.24,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.0010738270066212863
+          "wall_time_s": 0.0008871440077200532
         },
         {
           "ampere_residual_l2": 0.012896168731827777,
@@ -1096,7 +1096,7 @@
           "sheet_current_integral_relative_error": 0.0004555799692137511,
           "target_separatrix_radius_m": 0.28,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.0015073429967742413
+          "wall_time_s": 0.0011434480547904968
         }
       ],
       "status": "available"
@@ -1175,7 +1175,7 @@
           "sheet_current_integral_relative_error": 0.0003062993705966635,
           "target_separatrix_radius_m": 0.16,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 6.152399873826653e-05
+          "wall_time_s": 6.358698010444641e-05
         },
         {
           "ampere_residual_l2": 0.008882950409229264,
@@ -1241,7 +1241,7 @@
           "sheet_current_integral_relative_error": 4.9137679272049205e-09,
           "target_separatrix_radius_m": 0.18,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 6.775499787181616e-05
+          "wall_time_s": 4.024791996926069e-05
         },
         {
           "ampere_residual_l2": 0.0020528660119077486,
@@ -1307,7 +1307,7 @@
           "sheet_current_integral_relative_error": 3.363152549205194e-09,
           "target_separatrix_radius_m": 0.19,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 8.115700620692223e-05
+          "wall_time_s": 4.5918975956737995e-05
         },
         {
           "ampere_residual_l2": 0.00046967738926948903,
@@ -1373,7 +1373,7 @@
           "sheet_current_integral_relative_error": 1.68910247234121e-09,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.00010632199700921774
+          "wall_time_s": 8.06769821792841e-05
         },
         {
           "ampere_residual_l2": 0.024623889587939277,
@@ -1439,7 +1439,7 @@
           "sheet_current_integral_relative_error": 1.1665208129050928e-05,
           "target_separatrix_radius_m": 0.21,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 4.83170006191358e-05
+          "wall_time_s": 3.105506766587496e-05
         },
         {
           "ampere_residual_l2": 0.006240527939090956,
@@ -1505,7 +1505,7 @@
           "sheet_current_integral_relative_error": 7.381996778322897e-08,
           "target_separatrix_radius_m": 0.22,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 8.00059933681041e-05
+          "wall_time_s": 3.3343094401061535e-05
         },
         {
           "ampere_residual_l2": 0.0015029804389461198,
@@ -1571,7 +1571,7 @@
           "sheet_current_integral_relative_error": 2.6846352916134515e-08,
           "target_separatrix_radius_m": 0.23,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 7.852099952287972e-05
+          "wall_time_s": 5.6404038332402706e-05
         },
         {
           "ampere_residual_l2": 0.0003572533342788334,
@@ -1637,7 +1637,7 @@
           "sheet_current_integral_relative_error": 9.198729570269393e-09,
           "target_separatrix_radius_m": 0.24,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.00012468500062823296
+          "wall_time_s": 8.251005783677101e-05
         },
         {
           "ampere_residual_l2": 0.019834591139245957,
@@ -1703,7 +1703,7 @@
           "sheet_current_integral_relative_error": 3.248827330720771e-07,
           "target_separatrix_radius_m": 0.25,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 5.489699833560735e-05
+          "wall_time_s": 2.8366921469569206e-05
         },
         {
           "ampere_residual_l2": 0.005096970221933039,
@@ -1769,7 +1769,7 @@
           "sheet_current_integral_relative_error": 2.427027275963823e-07,
           "target_separatrix_radius_m": 0.26,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 6.380600098054856e-05
+          "wall_time_s": 3.21089755743742e-05
         },
         {
           "ampere_residual_l2": 0.0012500411138569771,
@@ -1835,7 +1835,7 @@
           "sheet_current_integral_relative_error": 7.432943038585265e-08,
           "target_separatrix_radius_m": 0.27,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 7.315800758078694e-05
+          "wall_time_s": 4.3446896597743034e-05
         },
         {
           "ampere_residual_l2": 0.00030234517901559123,
@@ -1901,7 +1901,7 @@
           "sheet_current_integral_relative_error": 2.2203946527325113e-08,
           "target_separatrix_radius_m": 0.28,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.00010523600212763995
+          "wall_time_s": 8.630496449768543e-05
         },
         {
           "ampere_residual_l2": 0.0938478922036601,
@@ -1967,7 +1967,7 @@
           "sheet_current_integral_relative_error": 0.09667586169104347,
           "target_separatrix_radius_m": 0.17,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 6.572599522769451e-05
+          "wall_time_s": 2.7594040147960186e-05
         },
         {
           "ampere_residual_l2": 0.05715555682703408,
@@ -2033,7 +2033,7 @@
           "sheet_current_integral_relative_error": 0.040789894352292334,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.00013207198935560882
+          "wall_time_s": 3.101595211774111e-05
         },
         {
           "ampere_residual_l2": 0.029982844003435583,
@@ -2099,7 +2099,7 @@
           "sheet_current_integral_relative_error": 0.008446022320494264,
           "target_separatrix_radius_m": 0.24,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 7.882599311415106e-05
+          "wall_time_s": 4.250206984579563e-05
         },
         {
           "ampere_residual_l2": 0.012896168731827772,
@@ -2165,7 +2165,7 @@
           "sheet_current_integral_relative_error": 0.0004555799692133122,
           "target_separatrix_radius_m": 0.28,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 8.831100421957672e-05
+          "wall_time_s": 5.5511947721242905e-05
         }
       ],
       "same_row_count": true,
@@ -2246,7 +2246,7 @@
           "sheet_current_integral_relative_error": 0.0003062993705966635,
           "target_separatrix_radius_m": 0.16,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.000308165
+          "wall_time_s": 0.000196437
         },
         {
           "ampere_residual_l2": 0.008882950409229264,
@@ -2312,7 +2312,7 @@
           "sheet_current_integral_relative_error": 4.9137679272049205e-09,
           "target_separatrix_radius_m": 0.18,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000426753
+          "wall_time_s": 0.000335079
         },
         {
           "ampere_residual_l2": 0.0020528660119077486,
@@ -2378,7 +2378,7 @@
           "sheet_current_integral_relative_error": 3.363152549205194e-09,
           "target_separatrix_radius_m": 0.19,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000808907
+          "wall_time_s": 0.000467008
         },
         {
           "ampere_residual_l2": 0.00046967738926948903,
@@ -2444,7 +2444,7 @@
           "sheet_current_integral_relative_error": 1.68910247234121e-09,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.00144429
+          "wall_time_s": 0.000857268
         },
         {
           "ampere_residual_l2": 0.024623889587939277,
@@ -2510,7 +2510,7 @@
           "sheet_current_integral_relative_error": 1.1665208129050928e-05,
           "target_separatrix_radius_m": 0.21,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000285812
+          "wall_time_s": 0.000168807
         },
         {
           "ampere_residual_l2": 0.006240527939090956,
@@ -2576,7 +2576,7 @@
           "sheet_current_integral_relative_error": 7.381996778322897e-08,
           "target_separatrix_radius_m": 0.22,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000434443
+          "wall_time_s": 0.000264862
         },
         {
           "ampere_residual_l2": 0.0015029804389461198,
@@ -2642,7 +2642,7 @@
           "sheet_current_integral_relative_error": 2.6846352916134515e-08,
           "target_separatrix_radius_m": 0.23,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000770073
+          "wall_time_s": 0.000466215
         },
         {
           "ampere_residual_l2": 0.0003572533342788334,
@@ -2708,7 +2708,7 @@
           "sheet_current_integral_relative_error": 9.198729570269393e-09,
           "target_separatrix_radius_m": 0.24,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.001470279
+          "wall_time_s": 0.000854354
         },
         {
           "ampere_residual_l2": 0.019834591139245957,
@@ -2774,7 +2774,7 @@
           "sheet_current_integral_relative_error": 3.248827330720771e-07,
           "target_separatrix_radius_m": 0.25,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.000289101
+          "wall_time_s": 0.000168765
         },
         {
           "ampere_residual_l2": 0.005096970221933039,
@@ -2840,7 +2840,7 @@
           "sheet_current_integral_relative_error": 2.427027275963823e-07,
           "target_separatrix_radius_m": 0.26,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000460196
+          "wall_time_s": 0.000260816
         },
         {
           "ampere_residual_l2": 0.0012500411138569771,
@@ -2906,7 +2906,7 @@
           "sheet_current_integral_relative_error": 7.432943038585265e-08,
           "target_separatrix_radius_m": 0.27,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000788627
+          "wall_time_s": 0.000525952
         },
         {
           "ampere_residual_l2": 0.00030234517901559123,
@@ -2972,7 +2972,7 @@
           "sheet_current_integral_relative_error": 2.2203946527325113e-08,
           "target_separatrix_radius_m": 0.28,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.00145213
+          "wall_time_s": 0.001050031
         },
         {
           "ampere_residual_l2": 0.0938478922036601,
@@ -3038,7 +3038,7 @@
           "sheet_current_integral_relative_error": 0.09667586169104347,
           "target_separatrix_radius_m": 0.17,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.000275251
+          "wall_time_s": 0.000257669
         },
         {
           "ampere_residual_l2": 0.05715555682703408,
@@ -3104,7 +3104,7 @@
           "sheet_current_integral_relative_error": 0.040789894352292334,
           "target_separatrix_radius_m": 0.2,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.00043945
+          "wall_time_s": 0.000263528
         },
         {
           "ampere_residual_l2": 0.029982844003435583,
@@ -3170,7 +3170,7 @@
           "sheet_current_integral_relative_error": 0.008446022320494264,
           "target_separatrix_radius_m": 0.24,
           "thermal_pressure_ratio": 1.0,
-          "wall_time_s": 0.000763767
+          "wall_time_s": 0.000442971
         },
         {
           "ampere_residual_l2": 0.012896168731827772,
@@ -3236,7 +3236,7 @@
           "sheet_current_integral_relative_error": 0.0004555799692133122,
           "target_separatrix_radius_m": 0.28,
           "thermal_pressure_ratio": 1.0000000000000002,
-          "wall_time_s": 0.00140858
+          "wall_time_s": 0.000834584
         }
       ],
       "same_row_count": true,
@@ -3335,7 +3335,7 @@
         "sheet_current_integral_relative_error": 7.381996735966012e-08,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.0015807210002094507
+        "wall_time_s": 0.0008025820134207606
       },
       {
         "ampere_residual_l2": 0.0015987531922256348,
@@ -3401,7 +3401,7 @@
         "sheet_current_integral_relative_error": 1.8467935741538702e-08,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.0011113319924334064
+        "wall_time_s": 0.0008315070299431682
       },
       {
         "ampere_residual_l2": 0.0004019050440062579,
@@ -3467,7 +3467,7 @@
         "sheet_current_integral_relative_error": 4.617828516334012e-09,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.0011266030051046982
+        "wall_time_s": 0.0008581959409639239
       },
       {
         "ampere_residual_l2": 0.00010063264669714505,
@@ -3533,7 +3533,7 @@
         "sheet_current_integral_relative_error": 1.1545097672656562e-09,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.002237338005215861
+        "wall_time_s": 0.0011474270140752196
       }
     ],
     "repeats": 5,
@@ -3613,7 +3613,7 @@
         "sheet_current_integral_relative_error": 7.38199677107764e-08,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 7.061699579935521e-05
+        "wall_time_s": 3.062502946704626e-05
       },
       {
         "ampere_residual_l2": 0.0015987531922256042,
@@ -3679,7 +3679,7 @@
         "sheet_current_integral_relative_error": 1.8467936209693743e-08,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 6.73930044285953e-05
+        "wall_time_s": 6.077205762267113e-05
       },
       {
         "ampere_residual_l2": 0.00040190504400622654,
@@ -3745,7 +3745,7 @@
         "sheet_current_integral_relative_error": 4.617828282256493e-09,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.00011180900037288666
+        "wall_time_s": 5.9674959629774094e-05
       },
       {
         "ampere_residual_l2": 0.00010063264669712907,
@@ -3811,11 +3811,58 @@
         "sheet_current_integral_relative_error": 1.1545097672656562e-09,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.00016689399490132928
+        "wall_time_s": 0.00011831300798803568
       }
     ],
     "same_row_count": true,
     "status": "available"
+  },
+  "rotating_closure": {
+    "model": "rostoker_qerushi_2002_rotating_rigid_rotor",
+    "python_numpy": {
+      "metrics": [
+        {
+          "grid_points": 65,
+          "median_solve_s": 0.00080747005995363,
+          "pressure_checksum": 64719503.151871674,
+          "pressure_non_negative": true,
+          "rotation_force_balance_residual_linf": 0.07032010348260212,
+          "rotation_mach_number": 0.07077904618825863
+        },
+        {
+          "grid_points": 129,
+          "median_solve_s": 0.0007956039626151323,
+          "pressure_checksum": 129438103.18306285,
+          "pressure_non_negative": true,
+          "rotation_force_balance_residual_linf": 0.019119980612514693,
+          "rotation_mach_number": 0.07077904618825863
+        },
+        {
+          "grid_points": 257,
+          "median_solve_s": 0.000886716996319592,
+          "pressure_checksum": 258875303.24522448,
+          "pressure_non_negative": true,
+          "rotation_force_balance_residual_linf": 0.0032237781846486276,
+          "rotation_mach_number": 0.07077904618825863
+        },
+        {
+          "grid_points": 513,
+          "median_solve_s": 0.001016188063658774,
+          "pressure_checksum": 517749703.3695476,
+          "pressure_non_negative": true,
+          "rotation_force_balance_residual_linf": 0.0022386164313956945,
+          "rotation_mach_number": 0.07077904618825863
+        }
+      ],
+      "repeats": 5,
+      "status": "available"
+    },
+    "python_pyo3": {
+      "pressure_max_abs_delta": 5.633311206398872e-09,
+      "status": "available"
+    },
+    "reference": "Rostoker & Qerushi 2002 Phys. Plasmas 9 3057; US 6,664,740 B2",
+    "theta_dot_rad_s": 300000.0
   },
   "rust_fusion_physics": {
     "all_field_reversal_passed": true,
@@ -3891,7 +3938,7 @@
         "sheet_current_integral_relative_error": 7.38199677107764e-08,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.000714398
+        "wall_time_s": 0.000544956
       },
       {
         "ampere_residual_l2": 0.0015987531922256042,
@@ -3957,7 +4004,7 @@
         "sheet_current_integral_relative_error": 1.8467936209693743e-08,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.000846736
+        "wall_time_s": 0.000494389
       },
       {
         "ampere_residual_l2": 0.00040190504400622654,
@@ -4023,7 +4070,7 @@
         "sheet_current_integral_relative_error": 4.617828282256493e-09,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.001365068
+        "wall_time_s": 0.001082493
       },
       {
         "ampere_residual_l2": 0.00010063264669712907,
@@ -4089,12 +4136,12 @@
         "sheet_current_integral_relative_error": 1.1545097672656562e-09,
         "target_separatrix_radius_m": 0.2,
         "thermal_pressure_ratio": 1.0000000000000002,
-        "wall_time_s": 0.002674638
+        "wall_time_s": 0.001959805
       }
     ],
     "same_row_count": true,
     "status": "available"
   },
   "schema_version": 2,
-  "scope": "Accepted no-rotation MIF/FRC analytical contract only; rotating rigid-rotor BVP parity remains fail-closed until the finite-temperature rotation model lands."
+  "scope": "No-rotation MIF/FRC analytical contract plus the Rostoker & Qerushi (2002) rotating rigid-rotor centrifugal closure; verbatim Steinhauer Figure 3 parity is not claimed."
 }
