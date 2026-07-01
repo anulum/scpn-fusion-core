@@ -101,9 +101,9 @@ not isolated-core production throughput claims.
 
 The rotating rigid-rotor closure (nonzero `theta_dot`) implements the
 source-verified Rostoker & Qerushi (2002) one-dimensional one-ion centrifugal
-density modulation. Python exposes it through `solve_frc_equilibrium`; the Rust
-parity surface currently mirrors the no-rotation contract and its rotating
-parity is tracked as remaining work. The structured
+density modulation. Both the Python `solve_frc_equilibrium` and the Rust
+`fusion-physics` surface implement it, with PyO3 rotating parity verified in the
+acceptance gate. The structured
 `rotating_frc_bvp_acceptance_status()` row reports
 `implemented_rostoker_qerushi_1d_rotating_closure`, records that the closure
 reduces bit-exactly to the no-rotation contract at `theta_dot == 0`, and states

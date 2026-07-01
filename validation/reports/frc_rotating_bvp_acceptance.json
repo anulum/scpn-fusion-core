@@ -7,7 +7,7 @@
     "python": "3.12.3",
     "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)"
   },
-  "generated_at_utc": "2026-07-01T11:44:36+00:00",
+  "generated_at_utc": "2026-07-01T13:33:13+00:00",
   "python_no_rotation_contract": {
     "converged": true,
     "field_reversal_passed": true,
@@ -63,9 +63,38 @@
     "steinhauer_figure3_parity_claimed": false
   },
   "rust_parity": {
-    "passed": null,
-    "reason": "run_rust=False",
-    "status": "not_run"
+    "accepted_contract": "steinhauer_2011_no_rotation_analytical",
+    "command": [
+      "cargo",
+      "run",
+      "--quiet",
+      "-p",
+      "fusion-physics",
+      "--example",
+      "frc_rotating_bvp_status"
+    ],
+    "no_rotation_converged": true,
+    "no_rotation_reduction_passed": true,
+    "no_rotation_residual": 0,
+    "non_closing_references": [
+      "Romero 2018",
+      "Baltz 2017 C-2U positive-net-heating table",
+      "Slough 2011 Fig. 5"
+    ],
+    "passed": true,
+    "reduces_to_no_rotation_contract": true,
+    "required_reference": "Rostoker & Qerushi 2002 Phys. Plasmas 9 3057 (one space dimension, one ion); US 6,664,740 B2 rigid-rotor density closure",
+    "rotating_bvp_implemented": true,
+    "rotating_closure_reference": "Rostoker & Qerushi 2002; US 6,664,740 B2 rigid-rotor density closure n_j = n_j(0) exp[(m_j omega_j^2 r^2/2 - e_j phi + e_j omega_j psi)/T_j]",
+    "rotating_model": "rostoker_qerushi_2002_rotating_rigid_rotor",
+    "rotating_pressure_non_negative": true,
+    "rotation_force_balance_residual_linf": 0.019119980612514697,
+    "rotation_mach_number": 0.07077904618825863,
+    "schema": "frc-rotating-bvp-rust-status.v2",
+    "solver_action": "solve_outer_anchored_centrifugal_force_balance_for_nonzero_theta_dot",
+    "status": "implemented_rostoker_qerushi_1d_rotating_closure",
+    "stderr": "",
+    "steinhauer_figure3_parity_claimed": false
   },
   "schema": "frc-rotating-bvp-acceptance.v2",
   "status": "implemented_rostoker_qerushi_rotating_closure_accepted",

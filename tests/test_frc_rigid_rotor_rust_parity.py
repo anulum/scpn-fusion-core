@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 import sys
 from pathlib import Path
 from typing import Any, TypeAlias, TypeVar, cast
@@ -419,15 +420,28 @@ def test_rust_energy_invariants_match_python_for_generated_no_rotation_decks(
     )
 
 
-def test_rust_frc_rejects_rotating_bvp_until_implemented() -> None:
+def test_rust_frc_rejects_supersonic_rotating_drive() -> None:
     inputs, rho = _case(0.02, 65, 5.0, 0.20)
-    with pytest.raises(ValueError, match="rotating rigid-rotor BVP"):
+    # Sub-sonic rotation solves; strongly super-sonic drive trips the validity cap.
+    solved = scpn_fusion_rs.py_solve_frc_equilibrium(
+        rho,
+        inputs.n0,
+        inputs.T_i_eV,
+        inputs.T_e_eV,
+        3.0e5,
+        inputs.R_s,
+        inputs.B_ext,
+        inputs.delta,
+        1.0e-10,
+    )
+    assert solved["model"] == "rostoker_qerushi_2002_rotating_rigid_rotor"
+    with pytest.raises(ValueError, match="validity cap"):
         scpn_fusion_rs.py_solve_frc_equilibrium(
             rho,
             inputs.n0,
             inputs.T_i_eV,
             inputs.T_e_eV,
-            1.0,
+            2.0e8,
             inputs.R_s,
             inputs.B_ext,
             inputs.delta,
@@ -435,17 +449,65 @@ def test_rust_frc_rejects_rotating_bvp_until_implemented() -> None:
         )
 
 
-def test_rust_rotating_bvp_status_matches_python_fail_closed_boundary() -> None:
+def test_rust_rotating_bvp_status_matches_python_implemented_boundary() -> None:
     if not HAS_ROTATING_STATUS:
         pytest.skip("local Rust extension has not been rebuilt with rotating BVP status binding")
 
-    status = scpn_fusion_rs.py_rotating_frc_bvp_acceptance_status()
+    from scpn_fusion.core.frc_rigid_rotor import rotating_frc_bvp_acceptance_status
 
-    assert status["status"] == "blocked_missing_verified_steinhauer_rotating_closure"
-    assert status["accepted_contract"] == "steinhauer_2011_no_rotation_analytical"
-    assert status["rotating_bvp_implemented"] is False
-    assert status["solver_action"] == "raise_not_implemented_for_nonzero_theta_dot"
-    assert status["required_reference"] == "Steinhauer 2011 Section II.B plus Figure 3 closure"
-    assert "Romero 2018" in status["non_closing_references"]
-    assert "Slough 2011 Fig. 5" in status["non_closing_references"]
-    assert "not a rotating-BVP solver certification" in status["claim_boundary"]
+    rust_status = scpn_fusion_rs.py_rotating_frc_bvp_acceptance_status()
+    python_status = rotating_frc_bvp_acceptance_status()
+
+    assert rust_status["status"] == "implemented_rostoker_qerushi_1d_rotating_closure"
+    assert rust_status["status"] == python_status["status"]
+    assert rust_status["accepted_contract"] == python_status["accepted_contract"]
+    assert rust_status["rotating_bvp_implemented"] is True
+    assert rust_status["reduces_to_no_rotation_contract"] is True
+    assert rust_status["steinhauer_figure3_parity_claimed"] is False
+    assert rust_status["required_reference"] == python_status["required_reference"]
+    assert "Romero 2018" in rust_status["non_closing_references"]
+    assert "Slough 2011 Fig. 5" in rust_status["non_closing_references"]
+    assert "reducing bit-exactly" in rust_status["claim_boundary"]
+    assert "NOT claimed" in rust_status["claim_boundary"]
+
+
+def test_rust_rotating_frc_matches_python_reference() -> None:
+    """A sub-sonic rotating equilibrium matches between Python and Rust surfaces."""
+    for delta, grid_points, b_ext, r_s in _parity_cases()[:6]:
+        base_inputs, rho = _case(delta, grid_points, b_ext, r_s)
+        theta_dot = 3.0e5
+        inputs = replace(base_inputs, theta_dot=theta_dot)
+        python_state = solve_frc_equilibrium(inputs, rho)
+        rust_state = scpn_fusion_rs.py_solve_frc_equilibrium(
+            rho,
+            inputs.n0,
+            inputs.T_i_eV,
+            inputs.T_e_eV,
+            inputs.theta_dot,
+            inputs.R_s,
+            inputs.B_ext,
+            inputs.delta,
+            1.0e-10,
+        )
+
+        assert rust_state["model"] == python_state.model
+        assert rust_state["model"] == "rostoker_qerushi_2002_rotating_rigid_rotor"
+        assert float(rust_state["theta_dot"]) == pytest.approx(theta_dot, rel=0.0, abs=0.0)
+        np.testing.assert_allclose(rust_state["p"], python_state.p, rtol=1.0e-12, atol=1.0e-6)
+        np.testing.assert_allclose(
+            rust_state["centrifugal_source_Pa_m"],
+            python_state.centrifugal_source_Pa_m,
+            rtol=1.0e-12,
+            atol=1.0e-6,
+        )
+        np.testing.assert_allclose(
+            rust_state["rotation_force_balance_residual"],
+            python_state.rotation_force_balance_residual,
+            rtol=1.0e-10,
+            atol=1.0e-3,
+        )
+        assert float(rust_state["rotation_mach_number"]) == pytest.approx(
+            python_state.rotation_mach_number, rel=1.0e-12
+        )
+        assert float(rust_state["pressure_clipped_fraction"]) == 0.0
+        assert bool(np.all(np.asarray(rust_state["p"]) >= 0.0))

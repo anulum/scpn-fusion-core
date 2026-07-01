@@ -1823,8 +1823,20 @@ fn py_rotating_frc_bvp_acceptance_status<'py>(
     out.set_item("status", status.status)?;
     out.set_item("accepted_contract", status.accepted_contract)?;
     out.set_item("rotating_bvp_implemented", status.rotating_bvp_implemented)?;
+    out.set_item(
+        "rotating_closure_reference",
+        status.rotating_closure_reference,
+    )?;
     out.set_item("solver_action", status.solver_action)?;
     out.set_item("required_reference", status.required_reference)?;
+    out.set_item(
+        "reduces_to_no_rotation_contract",
+        status.reduces_to_no_rotation_contract,
+    )?;
+    out.set_item(
+        "steinhauer_figure3_parity_claimed",
+        status.steinhauer_figure3_parity_claimed,
+    )?;
     out.set_item("non_closing_references", status.non_closing_references)?;
     out.set_item("claim_boundary", status.claim_boundary)?;
     Ok(out)
@@ -2041,6 +2053,30 @@ fn py_solve_rotating_frc_equilibrium<'py>(
     )?;
     out.set_item("force_balance_residual_l2", state.force_balance_residual_l2)?;
     out.set_item("model", state.model)?;
+    out.set_item("theta_dot", state.theta_dot)?;
+    out.set_item("rotation_reference", state.rotation_reference)?;
+    out.set_item(
+        "centrifugal_source_Pa_m",
+        numpy::IntoPyArray::into_pyarray(state.centrifugal_source_pa_m, py),
+    )?;
+    out.set_item(
+        "rotation_force_balance_residual",
+        numpy::IntoPyArray::into_pyarray(state.rotation_force_balance_residual, py),
+    )?;
+    out.set_item(
+        "rotation_force_balance_residual_linf",
+        state.rotation_force_balance_residual_linf,
+    )?;
+    out.set_item(
+        "rotation_force_balance_residual_l2",
+        state.rotation_force_balance_residual_l2,
+    )?;
+    out.set_item("rotation_mach_number", state.rotation_mach_number)?;
+    out.set_item(
+        "rotation_pressure_peak_radius_m",
+        state.rotation_pressure_peak_radius_m,
+    )?;
+    out.set_item("pressure_clipped_fraction", state.pressure_clipped_fraction)?;
     Ok(out)
 }
 
@@ -2236,6 +2272,30 @@ fn py_solve_frc_equilibrium<'py>(
     )?;
     out.set_item("force_balance_residual_l2", state.force_balance_residual_l2)?;
     out.set_item("model", state.model)?;
+    out.set_item("theta_dot", state.theta_dot)?;
+    out.set_item("rotation_reference", state.rotation_reference)?;
+    out.set_item(
+        "centrifugal_source_Pa_m",
+        numpy::IntoPyArray::into_pyarray(state.centrifugal_source_pa_m, py),
+    )?;
+    out.set_item(
+        "rotation_force_balance_residual",
+        numpy::IntoPyArray::into_pyarray(state.rotation_force_balance_residual, py),
+    )?;
+    out.set_item(
+        "rotation_force_balance_residual_linf",
+        state.rotation_force_balance_residual_linf,
+    )?;
+    out.set_item(
+        "rotation_force_balance_residual_l2",
+        state.rotation_force_balance_residual_l2,
+    )?;
+    out.set_item("rotation_mach_number", state.rotation_mach_number)?;
+    out.set_item(
+        "rotation_pressure_peak_radius_m",
+        state.rotation_pressure_peak_radius_m,
+    )?;
+    out.set_item("pressure_clipped_fraction", state.pressure_clipped_fraction)?;
     Ok(out)
 }
 

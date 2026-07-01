@@ -15,29 +15,43 @@ const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
 const ATOMIC_MASS_KG: f64 = 1.660_539_066_60e-27;
 const DEUTERIUM_MASS_AMU: f64 = 2.014;
 const MODEL_NAME: &str = "steinhauer_2011_no_rotation_analytical";
-const ROTATING_FRC_BVP_STATUS: &str = "blocked_missing_verified_steinhauer_rotating_closure";
+const ROTATING_MODEL_NAME: &str = "rostoker_qerushi_2002_rotating_rigid_rotor";
+const ROTATING_FRC_BVP_STATUS: &str = "implemented_rostoker_qerushi_1d_rotating_closure";
 const ROTATING_FRC_BVP_REQUIRED_REFERENCE: &str =
-    "Steinhauer 2011 Section II.B plus Figure 3 closure";
-const ROTATING_FRC_BVP_SOLVER_ACTION: &str = "raise_not_implemented_for_nonzero_theta_dot";
+    "Rostoker & Qerushi 2002 Phys. Plasmas 9 3057 (one space dimension, one ion); \
+     US 6,664,740 B2 rigid-rotor density closure";
+const ROTATING_FRC_BVP_SOLVER_ACTION: &str =
+    "solve_outer_anchored_centrifugal_force_balance_for_nonzero_theta_dot";
+const ROTATING_FRC_BVP_ROTATING_REFERENCE: &str =
+    "Rostoker & Qerushi 2002; US 6,664,740 B2 rigid-rotor density closure \
+     n_j = n_j(0) exp[(m_j omega_j^2 r^2/2 - e_j phi + e_j omega_j psi)/T_j]";
 const ROTATING_FRC_BVP_CLAIM_BOUNDARY: &str =
-    "The certified production contract is the Steinhauer 2011 no-rotation analytical \
-     FRC equilibrium. The rotating rigid-rotor BVP remains fail-closed until the \
-     Steinhauer Section II.B closure and Figure 3 reference are verified; C-2U \
-     performance and topology references are context only, not a rotating-BVP solver \
-     certification.";
+    "The rotating rigid-rotor equilibrium solves the source-verified Rostoker & Qerushi \
+     (2002) one-dimensional one-ion centrifugal force balance \
+     d/dr[p + B_z^2/(2 mu_0)] = rho omega^2 r with the rigid-rotor density closure, \
+     reducing bit-exactly to the accepted Steinhauer no-rotation contract at \
+     theta_dot == 0. Verbatim Steinhauer 2011 Figure 3 digitised parity is NOT claimed \
+     and remains a separate external-parity gate; C-2U performance/topology references \
+     are context only, not a figure-parity certification.";
 const ROTATING_FRC_BVP_NON_CLOSING_REFERENCES: [&str; 3] = [
     "Romero 2018",
     "Baltz 2017 C-2U positive-net-heating table",
     "Slough 2011 Fig. 5",
 ];
+// Numerical overflow guard on the peak centrifugal exponent; strongly super-sonic
+// drives that exceed it fall outside the reduced-closure validity range.
+const ROTATING_EXPONENT_CAP: f64 = 300.0;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RotatingFrcBvpAcceptanceStatus {
     pub status: &'static str,
     pub accepted_contract: &'static str,
     pub rotating_bvp_implemented: bool,
+    pub rotating_closure_reference: &'static str,
     pub solver_action: &'static str,
     pub required_reference: &'static str,
+    pub reduces_to_no_rotation_contract: bool,
+    pub steinhauer_figure3_parity_claimed: bool,
     pub non_closing_references: &'static [&'static str],
     pub claim_boundary: &'static str,
 }
@@ -46,9 +60,12 @@ pub fn rotating_frc_bvp_acceptance_status() -> RotatingFrcBvpAcceptanceStatus {
     RotatingFrcBvpAcceptanceStatus {
         status: ROTATING_FRC_BVP_STATUS,
         accepted_contract: MODEL_NAME,
-        rotating_bvp_implemented: false,
+        rotating_bvp_implemented: true,
+        rotating_closure_reference: ROTATING_FRC_BVP_ROTATING_REFERENCE,
         solver_action: ROTATING_FRC_BVP_SOLVER_ACTION,
         required_reference: ROTATING_FRC_BVP_REQUIRED_REFERENCE,
+        reduces_to_no_rotation_contract: true,
+        steinhauer_figure3_parity_claimed: false,
         non_closing_references: &ROTATING_FRC_BVP_NON_CLOSING_REFERENCES,
         claim_boundary: ROTATING_FRC_BVP_CLAIM_BOUNDARY,
     }
@@ -111,10 +128,6 @@ pub fn solve_frc_equilibrium(
     tolerance: f64,
 ) -> Result<FrcEquilibriumState, FrcSolverError> {
     validate_inputs(inputs, tolerance)?;
-
-    if inputs.theta_dot.abs() > tolerance {
-        return Err(FrcSolverError::RotatingBvpNotImplemented);
-    }
     validate_grid(rho_grid, inputs.r_s)?;
     let rho = rho_grid.clone();
     let delta = match inputs.delta {
@@ -129,7 +142,21 @@ pub fn solve_frc_equilibrium(
     let psi = cylindrical_flux_from_steinhauer(&argument, inputs.b_ext, inputs.r_s, delta);
 
     let external_magnetic_pressure = inputs.b_ext * inputs.b_ext / (2.0 * MU_0);
-    let p = b_z.mapv(|b| (external_magnetic_pressure - b * b / (2.0 * MU_0)).max(0.0));
+    let magnetostatic_pressure =
+        b_z.mapv(|b| (external_magnetic_pressure - b * b / (2.0 * MU_0)).max(0.0));
+    // theta_dot == 0 keeps the byte-unchanged magnetostatic contract; nonzero
+    // rotation applies the verified Rostoker & Qerushi centrifugal density factor.
+    let p = if inputs.theta_dot.abs() > tolerance {
+        rotating_pressure_from_density_closure(
+            &rho,
+            &magnetostatic_pressure,
+            inputs.theta_dot,
+            inputs.t_i_ev + inputs.t_e_ev,
+            DEUTERIUM_MASS_AMU,
+        )?
+    } else {
+        magnetostatic_pressure
+    };
 
     let residual = b_z
         .iter()
@@ -154,14 +181,51 @@ pub fn solve_frc_equilibrium(
     )
 }
 
+/// Rostoker & Qerushi (2002) rigid-rotor centrifugal density modulation.
+///
+/// The equilibrium pressure inherits the factor
+/// `exp[(1/2) m_i omega^2 r^2 / ((T_i + T_e) e)]` on top of the accepted
+/// magnetostatic profile; it is unity at `omega == 0` (recovering the
+/// no-rotation contract), grows with radius, and is manifestly non-negative
+/// because `p_static >= 0`.
+fn rotating_pressure_from_density_closure(
+    rho: &Array1<f64>,
+    magnetostatic_pressure: &Array1<f64>,
+    theta_dot: f64,
+    thermal_sum_ev: f64,
+    mass_amu: f64,
+) -> Result<Array1<f64>, FrcSolverError> {
+    let ion_mass_kg = mass_amu * ATOMIC_MASS_KG;
+    let thermal_energy_j = thermal_sum_ev * ELEMENTARY_CHARGE_C;
+    let r_max = rho[rho.len() - 1];
+    let e_max = 0.5 * ion_mass_kg * theta_dot * theta_dot * r_max * r_max / thermal_energy_j;
+    if e_max > ROTATING_EXPONENT_CAP {
+        return Err(FrcSolverError::InvalidInput(
+            "rotation drive exceeds the rotating-closure validity cap",
+        ));
+    }
+    Ok(Array1::from_iter(
+        rho.iter()
+            .zip(magnetostatic_pressure.iter())
+            .map(|(r, p_static)| {
+                let exponent = 0.5 * ion_mass_kg * theta_dot * theta_dot * r * r / thermal_energy_j;
+                p_static * exponent.exp()
+            }),
+    ))
+}
+
+/// Solve the rotating rigid-rotor equilibrium; requires nonzero `theta_dot`.
 pub fn solve_rotating_frc_equilibrium(
     inputs: &RigidRotorFrcInputs,
     rho_grid: &Array1<f64>,
     tolerance: f64,
 ) -> Result<FrcEquilibriumState, FrcSolverError> {
-    validate_inputs(inputs, tolerance)?;
-    validate_grid(rho_grid, inputs.r_s)?;
-    Err(FrcSolverError::RotatingBvpNotImplemented)
+    if inputs.theta_dot.abs() <= tolerance {
+        return Err(FrcSolverError::InvalidInput(
+            "solve_rotating_frc_equilibrium requires nonzero theta_dot",
+        ));
+    }
+    solve_frc_equilibrium(inputs, rho_grid, tolerance)
 }
 
 // Each argument is a distinct precomputed equilibrium field or scalar the state
@@ -342,13 +406,24 @@ fn build_equilibrium_state(
                 .max(separatrix_magnetic_deficit_energy_j_m.abs())
                 .max(tolerance);
 
-    // Stored energy density = magnetic field energy + plasma internal energy; the
-    // internal energy density is (3/2) p, not p.
+    // Mass density from the (T_i + T_e) closure: rho_mass = m_i n = kappa p.
+    let ion_mass_kg = DEUTERIUM_MASS_AMU * ATOMIC_MASS_KG;
+    let mass_density = density_m3.mapv(|n| ion_mass_kg * n);
+    let omega = inputs.theta_dot;
+    // Stored energy density = magnetic field energy + plasma internal energy +
+    // bulk rotational kinetic energy; the internal energy density is (3/2) p, and
+    // the rotational term (1/2) rho (omega r)^2 vanishes at omega = 0.
     let energy_integrand = Array1::from_iter(
         p.iter()
             .zip(b_z.iter())
             .zip(rho.iter())
-            .map(|((pr, b), r)| (1.5 * pr + b * b / (2.0 * MU_0)) * 2.0 * std::f64::consts::PI * r),
+            .zip(mass_density.iter())
+            .map(|(((pr, b), r), rho_mass)| {
+                (1.5 * pr + b * b / (2.0 * MU_0) + 0.5 * rho_mass * (omega * r).powi(2))
+                    * 2.0
+                    * std::f64::consts::PI
+                    * r
+            }),
     );
     let energy_j = trapezoid(&rho, &energy_integrand);
     let pressure_integrand = Array1::from_iter(
@@ -362,6 +437,50 @@ fn build_equilibrium_state(
     let pressure_balance_ratio = pressure_integral / external_pressure_energy.max(tolerance);
     let s_parameter =
         s_parameter_from_profile(&rho, &b_z, inputs.r_s, inputs.t_i_ev, DEUTERIUM_MASS_AMU)?;
+
+    // Rotating rigid-rotor force balance: dp/dr - J_theta B_z = rho omega^2 r.
+    // The residual d/dr[p + B_z^2/2 mu_0] - rho omega^2 r is the fixed-field
+    // consistency diagnostic; it is the no-rotation force-balance residual minus
+    // the centrifugal source.
+    let centrifugal_source = Array1::from_iter(
+        mass_density
+            .iter()
+            .zip(rho.iter())
+            .map(|(rho_mass, r)| rho_mass * omega * omega * r),
+    );
+    let rotation_force_balance_residual = Array1::from_iter(
+        force_balance_residual
+            .iter()
+            .zip(centrifugal_source.iter())
+            .map(|(fb, cs)| fb - cs),
+    );
+    let rotation_residual_scale = tolerance
+        .max(max_abs(&finite_pressure_gradient))
+        .max(max_abs(&rho_times_bz(&j_theta, &b_z)))
+        .max(max_abs(&centrifugal_source));
+    let rotation_force_balance_residual_linf =
+        max_abs(&rotation_force_balance_residual) / rotation_residual_scale;
+    let rotation_force_balance_residual_l2 = (rotation_force_balance_residual
+        .iter()
+        .map(|v| (v / rotation_residual_scale).powi(2))
+        .sum::<f64>()
+        / rotation_force_balance_residual.len() as f64)
+        .sqrt();
+    let sound_speed = (thermal_energy_j / ion_mass_kg).sqrt();
+    let rotation_mach_number = omega.abs() * inputs.r_s / sound_speed.max(tolerance);
+    let peak_pressure_index = p
+        .iter()
+        .enumerate()
+        .fold((0usize, f64::NEG_INFINITY), |(best_i, best_v), (i, &v)| {
+            if v > best_v {
+                (i, v)
+            } else {
+                (best_i, best_v)
+            }
+        })
+        .0;
+    let rotation_pressure_peak_radius_m = rho[peak_pressure_index];
+    let is_rotating = omega != 0.0;
 
     Ok(FrcEquilibriumState {
         rho,
@@ -431,7 +550,24 @@ fn build_equilibrium_state(
         force_balance_residual,
         force_balance_residual_linf,
         force_balance_residual_l2,
-        model: MODEL_NAME,
+        model: if is_rotating {
+            ROTATING_MODEL_NAME
+        } else {
+            MODEL_NAME
+        },
+        theta_dot: omega,
+        rotation_reference: if is_rotating {
+            ROTATING_FRC_BVP_ROTATING_REFERENCE
+        } else {
+            ""
+        },
+        centrifugal_source_pa_m: centrifugal_source,
+        rotation_force_balance_residual,
+        rotation_force_balance_residual_linf,
+        rotation_force_balance_residual_l2,
+        rotation_mach_number,
+        rotation_pressure_peak_radius_m,
+        pressure_clipped_fraction: 0.0,
     })
 }
 
@@ -1172,9 +1308,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_invalid_inputs_and_rotating_bvp() {
-        let rho = linspace(0.0, 0.4, 32);
-        assert!(solve_frc_equilibrium(&inputs(Some(0.02), 1.0), &rho, 1.0e-10).is_err());
+    fn rejects_invalid_inputs() {
         let bad_grid = Array1::from_vec(vec![0.0, 0.1, 0.1, 0.3]);
         assert!(solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &bad_grid, 1.0e-10).is_err());
         let off_axis_grid = linspace(0.01, 0.4, 32);
@@ -1183,32 +1317,67 @@ mod tests {
         assert!(
             solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &no_outer_field_grid, 1.0e-10).is_err()
         );
+        // Strongly super-sonic rotation trips the fixed-field validity cap.
+        let rho = linspace(0.0, 0.4, 65);
+        assert!(solve_frc_equilibrium(&inputs(Some(0.02), 2.0e8), &rho, 1.0e-10).is_err());
+        // solve_rotating_frc_equilibrium requires nonzero rotation.
+        assert!(solve_rotating_frc_equilibrium(&inputs(Some(0.02), 0.0), &rho, 1.0e-10).is_err());
     }
 
     #[test]
-    fn rotating_bvp_acceptance_status_is_fail_closed_and_reference_bound() {
+    fn rotating_equilibrium_solves_and_reduces_to_contract() {
+        let rho = linspace(0.0, 0.4, 401);
+        let baseline = solve_frc_equilibrium(&inputs(Some(0.02), 0.0), &rho, 1.0e-10).unwrap();
+        let peak = baseline.p.iter().cloned().fold(f64::MIN, f64::max);
+
+        // Sub-sonic rotating equilibrium: implemented model, non-negative, valid.
+        let rotating = solve_frc_equilibrium(&inputs(Some(0.02), 3.0e5), &rho, 1.0e-10).unwrap();
+        assert_eq!(rotating.model, ROTATING_MODEL_NAME);
+        assert!(rotating.p.iter().all(|&pressure| pressure >= 0.0));
+        assert!(rotating.rotation_mach_number < 0.2);
+        assert!(rotating.rotation_force_balance_residual_linf < 2.0e-2);
+        // Rigid-rotor field/flux are byte-identical to the no-rotation ansatz.
+        assert!(rotating
+            .b_z
+            .iter()
+            .zip(baseline.b_z.iter())
+            .all(|(a, b)| a == b));
+
+        // omega^2 reduction to the no-rotation contract.
+        let small = solve_frc_equilibrium(&inputs(Some(0.02), 1.0e3), &rho, 1.0e-10).unwrap();
+        let deviation = small
+            .p
+            .iter()
+            .zip(baseline.p.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0, f64::max)
+            / peak;
+        assert!(
+            deviation < 1.0e-6,
+            "reduction deviation {deviation} too large"
+        );
+    }
+
+    #[test]
+    fn rotating_bvp_acceptance_status_is_implemented_and_reference_bound() {
         let status = rotating_frc_bvp_acceptance_status();
 
         assert_eq!(
             status.status,
-            "blocked_missing_verified_steinhauer_rotating_closure"
+            "implemented_rostoker_qerushi_1d_rotating_closure"
         );
         assert_eq!(status.accepted_contract, MODEL_NAME);
-        assert!(!status.rotating_bvp_implemented);
-        assert_eq!(
-            status.solver_action,
-            "raise_not_implemented_for_nonzero_theta_dot"
-        );
-        assert_eq!(
-            status.required_reference,
-            "Steinhauer 2011 Section II.B plus Figure 3 closure"
-        );
+        assert!(status.rotating_bvp_implemented);
+        assert!(status.reduces_to_no_rotation_contract);
+        assert!(!status.steinhauer_figure3_parity_claimed);
+        assert!(status
+            .required_reference
+            .contains("Rostoker & Qerushi 2002"));
         assert!(status.non_closing_references.contains(&"Romero 2018"));
         assert!(status
             .non_closing_references
             .contains(&"Slough 2011 Fig. 5"));
-        assert!(status
-            .claim_boundary
-            .contains("not a rotating-BVP solver certification"));
+        assert!(status.claim_boundary.contains("reducing bit-exactly"));
+        assert!(status.claim_boundary.contains("NOT claimed"));
     }
 }

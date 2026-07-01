@@ -1,6 +1,6 @@
 # FRC Rotating Rigid-Rotor Acceptance
 
-- Generated: `2026-07-01T11:44:36+00:00`
+- Generated: `2026-07-01T13:33:13+00:00`
 - Status: `implemented_rostoker_qerushi_rotating_closure_accepted`
 - Accepted rotating closure: `True`
 - Python: `3.12.3`
@@ -14,7 +14,7 @@
 | No-rotation contract | `True` | residual `0.000e+00`, s `2.108e+01` |
 | Rotating equilibrium | `True` | Mach `0.071`, rot-FB `2.157e-03` |
 | Reduces to contract (omega^2) | `True` | ratios `[100.0, 100.0]` |
-| Rust parity | `None` | `not_run` |
+| Rust parity | `True` | `implemented_rostoker_qerushi_1d_rotating_closure` |
 | Steinhauer Fig. 3 boundary | `True` | parity-claimed=`False` |
 
 ## Claim Boundary

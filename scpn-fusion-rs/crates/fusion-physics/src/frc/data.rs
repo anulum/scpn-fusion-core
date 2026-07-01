@@ -94,6 +94,18 @@ pub struct FrcEquilibriumState {
     pub force_balance_residual_linf: f64,
     pub force_balance_residual_l2: f64,
     pub model: &'static str,
+    // Rotating rigid-rotor (Rostoker & Qerushi 2002) diagnostics. For
+    // `theta_dot == 0` these carry the trivial no-rotation values so the accepted
+    // contract is byte-unchanged.
+    pub theta_dot: f64,
+    pub rotation_reference: &'static str,
+    pub centrifugal_source_pa_m: Array1<f64>,
+    pub rotation_force_balance_residual: Array1<f64>,
+    pub rotation_force_balance_residual_linf: f64,
+    pub rotation_force_balance_residual_l2: f64,
+    pub rotation_mach_number: f64,
+    pub rotation_pressure_peak_radius_m: f64,
+    pub pressure_clipped_fraction: f64,
 }
 
 /// Strict solver errors for invalid input or unimplemented physics.

@@ -124,9 +124,10 @@ the Baltz 2017 C-2U performance table, and Slough 2011 Fig. 5 remain non-closing
 context references). The executable gate
 `validation/benchmark_frc_rotating_bvp_acceptance.py` records the acceptance
 contract in `validation/reports/frc_rotating_bvp_acceptance.md` and
-`validation/reports/frc_rotating_bvp_acceptance.json`. The Rust
-`rotating_frc_bvp_acceptance_status()` surface mirrors the Python status; its
-rotating-solve parity is tracked as remaining work.
+`validation/reports/frc_rotating_bvp_acceptance.json`. The Rust `fusion-physics`
+surface implements the same closure; PyO3 parity between the Python and Rust
+rotating solves (pressure, centrifugal source, force-balance residual, Mach
+number) is verified in the acceptance gate.
 
 The reported quality-of-equilibrium parameter follows Steinhauer Eq. 27:
 

@@ -4,11 +4,11 @@
 // © Code 2020–2026 Miroslav Šotek. All rights reserved.
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
-// SCPN Fusion Core — FRC Rotating BVP Status Probe
+// SCPN Fusion Core — FRC Rotating Rigid-Rotor Status Probe
 
 use fusion_physics::frc::{
     rotating_frc_bvp_acceptance_status, solve_frc_equilibrium, solve_rotating_frc_equilibrium,
-    FrcSolverError, RigidRotorFrcInputs,
+    RigidRotorFrcInputs,
 };
 use ndarray::Array1;
 
@@ -41,42 +41,74 @@ fn main() {
         delta: Some(0.02),
     };
     let rotating_inputs = RigidRotorFrcInputs {
-        theta_dot: 1.0,
+        theta_dot: 3.0e5,
+        ..base_inputs
+    };
+    let small_rotation_inputs = RigidRotorFrcInputs {
+        theta_dot: 1.0e3,
         ..base_inputs
     };
 
     let status = rotating_frc_bvp_acceptance_status();
-    let no_rotation = solve_frc_equilibrium(&base_inputs, &rho, 1.0e-10);
-    let rotating = solve_rotating_frc_equilibrium(&rotating_inputs, &rho, 1.0e-10);
-    let rotating_fail_closed = matches!(rotating, Err(FrcSolverError::RotatingBvpNotImplemented));
-    let no_rotation_converged = no_rotation
-        .as_ref()
-        .map(|state| state.converged && state.field_reversal_passed)
-        .unwrap_or(false);
-    let no_rotation_residual = no_rotation
-        .as_ref()
-        .map(|state| state.residual)
-        .unwrap_or(f64::NAN);
+    let no_rotation =
+        solve_frc_equilibrium(&base_inputs, &rho, 1.0e-10).expect("no-rotation solve failed");
+    let rotating = solve_rotating_frc_equilibrium(&rotating_inputs, &rho, 1.0e-10)
+        .expect("rotating solve failed");
+    let small_rotation = solve_rotating_frc_equilibrium(&small_rotation_inputs, &rho, 1.0e-10)
+        .expect("small-rotation solve failed");
+
+    let no_rotation_converged = no_rotation.converged && no_rotation.field_reversal_passed;
+    let rotating_pressure_non_negative = rotating.p.iter().all(|&pressure| pressure >= 0.0);
+    // Reduction: at small omega the rotating pressure returns to the no-rotation
+    // contract and the rigid-rotor field is byte-identical.
+    let peak = no_rotation.p.iter().cloned().fold(f64::MIN, f64::max);
+    let reduction_deviation = small_rotation
+        .p
+        .iter()
+        .zip(no_rotation.p.iter())
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0, f64::max)
+        / peak;
+    let field_bit_exact = small_rotation
+        .b_z
+        .iter()
+        .zip(no_rotation.b_z.iter())
+        .all(|(a, b)| a == b);
+    let no_rotation_reduction_passed = reduction_deviation < 1.0e-4 && field_bit_exact;
 
     println!(
-        "{{\"schema\":\"frc-rotating-bvp-rust-status.v1\",\
+        "{{\"schema\":\"frc-rotating-bvp-rust-status.v2\",\
          \"status\":{},\
          \"accepted_contract\":{},\
          \"rotating_bvp_implemented\":{},\
+         \"rotating_closure_reference\":{},\
          \"solver_action\":{},\
          \"required_reference\":{},\
+         \"reduces_to_no_rotation_contract\":{},\
+         \"steinhauer_figure3_parity_claimed\":{},\
          \"non_closing_references\":{},\
+         \"rotating_model\":{},\
+         \"rotation_mach_number\":{},\
+         \"rotation_force_balance_residual_linf\":{},\
          \"no_rotation_converged\":{},\
          \"no_rotation_residual\":{},\
-         \"nonzero_rotation_fail_closed\":{}}}",
+         \"rotating_pressure_non_negative\":{},\
+         \"no_rotation_reduction_passed\":{}}}",
         json_string(status.status),
         json_string(status.accepted_contract),
         status.rotating_bvp_implemented,
+        json_string(status.rotating_closure_reference),
         json_string(status.solver_action),
         json_string(status.required_reference),
+        status.reduces_to_no_rotation_contract,
+        status.steinhauer_figure3_parity_claimed,
         json_string_array(status.non_closing_references),
+        json_string(rotating.model),
+        rotating.rotation_mach_number,
+        rotating.rotation_force_balance_residual_linf,
         no_rotation_converged,
-        no_rotation_residual,
-        rotating_fail_closed
+        no_rotation.residual,
+        rotating_pressure_non_negative,
+        no_rotation_reduction_passed
     );
 }
