@@ -230,6 +230,7 @@ files = [
     "tests/test_scpn_end_to_end_latency.py",
     "validation/benchmark_free_boundary_strict_parity.py",
     "tests/test_benchmark_free_boundary_strict_parity.py",
+    "tests/test_free_boundary_plotting.py",
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",
     "tests/test_structure.py",

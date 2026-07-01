@@ -2589,7 +2589,7 @@
     "python_capability_classes": 547,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 12,
-    "test_files": 436
+    "test_files": 438
   },
   "documentation": {
     "public_pages": [
@@ -2832,6 +2832,7 @@
       "tests/test_frc_rigid_rotor_rust_parity.py",
       "tests/test_frc_rotating_bvp_acceptance_report.py",
       "tests/test_frc_to_gs_bridge.py",
+      "tests/test_free_boundary_plotting.py",
       "tests/test_free_boundary_public_machine_metadata_inventory.py",
       "tests/test_free_boundary_supervisory_control.py",
       "tests/test_free_boundary_tracking.py",
@@ -3085,6 +3086,7 @@
       "tests/test_sliding_mode_vertical.py",
       "tests/test_snn_pyo3_bridge.py",
       "tests/test_sol_model.py",
+      "tests/test_spdx_header_guard.py",
       "tests/test_spi_ablation.py",
       "tests/test_spi_mitigation.py",
       "tests/test_spi_mitigation_runtime.py",

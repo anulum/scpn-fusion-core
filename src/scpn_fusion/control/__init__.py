@@ -7,10 +7,9 @@
 # SCPN Fusion Core — Control Module
 """Control-system public facade with lazy exports for optional subsystems."""
 
-from typing import Any
+from __future__ import annotations
 
-from .fusion_sota_mpc import run_sota_simulation, ModelPredictiveController
-from .fusion_nmpc_jax import get_nmpc_controller, NonlinearMPC
+from typing import Any
 
 # Lazy imports to avoid circular dependency chains
 # (gpu_runtime -> disruption_predictor -> control.__init__)
@@ -70,6 +69,12 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "DetachmentController": (".detachment_controller", "DetachmentController"),
     # Phase 6 — Density control (fueling + pumping)
     "DensityController": (".density_controller", "DensityController"),
+    # Baseline SOTA MPC. This imports Matplotlib and kernel backends.
+    "ModelPredictiveController": (".fusion_sota_mpc", "ModelPredictiveController"),
+    "run_sota_simulation": (".fusion_sota_mpc", "run_sota_simulation"),
+    # JAX-backed NMPC. Keep lazy so unrelated control modules do not require JAX.
+    "NonlinearMPC": (".fusion_nmpc_jax", "NonlinearMPC"),
+    "get_nmpc_controller": (".fusion_nmpc_jax", "get_nmpc_controller"),
     # NMPC — SQP-based nonlinear MPC
     "NMPCConfig": (".nmpc_controller", "NMPCConfig"),
     # Burn control — DT alpha heating + power balance
@@ -82,6 +87,23 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
 
 
 def __getattr__(name: str) -> Any:
+    """Load optional control exports on first attribute access.
+
+    Parameters
+    ----------
+    name : str
+        Public facade attribute requested by the import machinery.
+
+    Returns
+    -------
+    Any
+        Exported class or function loaded from its owning module.
+
+    Raises
+    ------
+    AttributeError
+        If ``name`` is not part of the lazy facade contract.
+    """
     if name in _LAZY_IMPORTS:
         module_path, attr = _LAZY_IMPORTS[name]
         import importlib
