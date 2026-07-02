@@ -22,6 +22,7 @@ from numpy.typing import NDArray
 import scpn_fusion.control.free_boundary_tracking as tracking_api
 from scpn_fusion.control._free_boundary_tracking_types import _ObjectiveBlock
 from scpn_fusion.control.free_boundary_tracking import FreeBoundaryTrackingController
+from scpn_fusion.control.state_estimator import ExtendedKalmanFilter
 from scpn_fusion.core.fusion_kernel import CoilSet
 
 FloatArray = NDArray[np.float64]
@@ -107,6 +108,19 @@ class _KernelWithoutCoilBuilder:
 
     def __init__(self, _config_file: str) -> None:
         self.cfg = {}
+
+
+class _KernelWithoutSolver:
+    """Kernel stand-in that can build coils but cannot solve free-boundary state."""
+
+    cfg: dict[str, Any]
+
+    def __init__(self, _config_file: str) -> None:
+        self.cfg = {}
+
+    def build_coilset_from_config(self) -> CoilSet:
+        """Return a valid coil set so constructor setup can finish."""
+        return _coilset()
 
 
 def _copy_array(array: FloatArray | None) -> FloatArray | None:
@@ -208,6 +222,7 @@ def _controller(
     control_dt_s: float | None = None,
     coil_slew_limits: float | list[float] | None = None,
     hold_steps_after_reject: int | None = None,
+    state_estimator: ExtendedKalmanFilter | None = None,
 ) -> FreeBoundaryTrackingController:
     """Construct the production controller against a deterministic kernel."""
     return FreeBoundaryTrackingController(
@@ -217,6 +232,7 @@ def _controller(
         control_dt_s=control_dt_s,
         coil_slew_limits=coil_slew_limits,
         hold_steps_after_reject=hold_steps_after_reject,
+        state_estimator=state_estimator,
     )
 
 
@@ -412,6 +428,98 @@ def test_run_free_boundary_tracking_resolves_default_config_path(
     )
 
     assert summary["config_path"] == str(default_path)
+
+
+def test_runtime_latency_prediction_can_project_without_state_update() -> None:
+    """Latency compensation can project a delayed vector without mutating estimator state."""
+    controller = _controller(
+        {
+            "free_boundary_tracking": {
+                "measurement_latency_steps": 2,
+                "latency_compensation_gain": 1.0,
+            }
+        }
+    )
+    delayed = np.ones_like(controller.target_vector, dtype=np.float64)
+    controller._last_delayed_measurement = np.zeros_like(delayed, dtype=np.float64)
+
+    predicted = controller._predict_current_objectives(
+        delayed,
+        allow_compensation=True,
+        update_state=False,
+    )
+
+    assert np.allclose(predicted, 2.0 * delayed)
+    assert controller._last_delayed_measurement is not None
+    assert np.allclose(controller._last_delayed_measurement, np.zeros_like(delayed))
+
+
+def test_runtime_observation_uses_optional_ekf_refinement() -> None:
+    """Observation snapshots can refine measured X-point coordinates through EKF state."""
+    estimator = ExtendedKalmanFilter(
+        x0=np.array([3.5, -0.5, 0.0, 0.0, 0.0, 0.0], dtype=np.float64),
+        P0=np.eye(6, dtype=np.float64),
+        Q=np.eye(6, dtype=np.float64) * 1.0e-4,
+        R_cov=np.eye(4, dtype=np.float64) * 1.0e-3,
+    )
+    controller = _controller(state_estimator=estimator)
+
+    snapshot = controller._observe_snapshot()
+
+    assert np.allclose(snapshot.measured[2:4], estimator.estimate()[:2])
+    assert snapshot.effective.shape == controller.target_vector.shape
+
+
+def test_runtime_rejects_invalid_command_and_missing_solver() -> None:
+    """Runtime actuator and solver guard rails fail closed on malformed inputs."""
+    controller = _controller()
+    with pytest.raises(ValueError, match="gain"):
+        controller._command_currents(np.ones(controller.n_coils, dtype=np.float64), gain=0.0)
+    with pytest.raises(ValueError, match="commanded currents"):
+        controller._apply_commanded_currents(np.array([0.0], dtype=np.float64))
+
+    solverless = FreeBoundaryTrackingController(
+        "config.json",
+        kernel_factory=_KernelWithoutSolver,
+        verbose=False,
+    )
+    with pytest.raises(AttributeError, match="solve"):
+        solverless._solve_free_boundary_state()
+
+
+@pytest.mark.parametrize(
+    ("block", "coil_attr", "match"),
+    (
+        (_ObjectiveBlock("shape_flux", 0, 2), "target_flux_points", "shape-flux"),
+        (_ObjectiveBlock("x_point_flux", 0, 1), "x_point_target", "x_point_flux"),
+        (
+            _ObjectiveBlock("divertor_flux", 0, 1),
+            "divertor_strike_points",
+            "divertor-flux",
+        ),
+    ),
+)
+def test_runtime_observation_rejects_missing_objective_geometry(
+    block: _ObjectiveBlock,
+    coil_attr: str,
+    match: str,
+) -> None:
+    """Observation fails closed when objective geometry is missing at runtime."""
+    controller = _controller()
+    setattr(controller.coils, coil_attr, None)
+    controller.objective_blocks = (block,)
+
+    with pytest.raises(ValueError, match=match):
+        controller._observe_true_objectives()
+
+
+def test_runtime_observation_rejects_unknown_objective_block() -> None:
+    """Runtime observation rejects corrupted objective-block names."""
+    controller = _controller()
+    controller.objective_blocks = (_ObjectiveBlock("unknown_objective", 0, 1),)
+
+    with pytest.raises(ValueError, match="Unknown objective block"):
+        controller._observe_true_objectives()
 
 
 def test_controller_rejects_x_point_flux_without_target() -> None:
