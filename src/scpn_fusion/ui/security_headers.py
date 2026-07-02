@@ -12,6 +12,8 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any, cast
 
+HeaderItems = tuple[tuple[str, str], ...]
+
 SECURITY_HEADERS: Mapping[str, str] = {
     "Content-Security-Policy": (
         "default-src 'self'; "
@@ -30,13 +32,45 @@ SECURITY_HEADERS: Mapping[str, str] = {
 }
 
 
+def _normalise_header_items(headers: Mapping[str, str]) -> HeaderItems:
+    """Validate and freeze a security-header mapping.
+
+    Parameters
+    ----------
+    headers : Mapping[str, str]
+        Header names and values that should be added to each Tornado response.
+
+    Returns
+    -------
+    tuple of tuple of str
+        Immutable header name/value pairs captured at install time.
+
+    Raises
+    ------
+    ValueError
+        If the mapping is empty or contains blank names or values.
+    """
+    items = tuple(headers.items())
+    if not items:
+        raise ValueError("security headers must not be empty.")
+    for name, value in items:
+        if not name.strip():
+            raise ValueError("security header names must be non-empty.")
+        if not value.strip():
+            raise ValueError(f"security header {name!r} must have a non-empty value.")
+    return items
+
+
 def _header_install_wrapper(
     original: Callable[[Any], None],
     headers: Mapping[str, str],
 ) -> Callable[[Any], None]:
+    """Wrap Tornado's default-header hook with a frozen security policy."""
+    header_items = _normalise_header_items(headers)
+
     def _set_default_headers(self: Any) -> None:
         original(self)
-        for name, value in headers.items():
+        for name, value in header_items:
             self.set_header(name, value)
 
     wrapped = cast(Any, _set_default_headers)
@@ -45,7 +79,24 @@ def _header_install_wrapper(
 
 
 def install_tornado_security_headers(headers: Mapping[str, str] = SECURITY_HEADERS) -> bool:
-    """Patch Tornado request handlers so Streamlit responses carry security headers."""
+    """Patch Tornado request handlers so Streamlit responses carry security headers.
+
+    Parameters
+    ----------
+    headers : Mapping[str, str]
+        Non-empty security header policy installed on Tornado responses.
+
+    Returns
+    -------
+    bool
+        ``True`` when Tornado is present and the hook is installed or already
+        installed. ``False`` when Tornado is not importable.
+
+    Raises
+    ------
+    ValueError
+        If ``headers`` is empty or contains blank names or values.
+    """
     try:
         import tornado.web
     except ImportError:
