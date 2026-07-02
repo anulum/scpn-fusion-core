@@ -92,13 +92,17 @@ class _ConfigKernel:
         if self._coilset.x_point_target is None:
             return (4.0, -1.0), 0.0
         target = np.asarray(self._coilset.x_point_target, dtype=np.float64).reshape(2)
-        flux = 0.0 if self._coilset.x_point_flux_target is None else self._coilset.x_point_flux_target
+        flux = (
+            0.0 if self._coilset.x_point_flux_target is None else self._coilset.x_point_flux_target
+        )
         return (float(target[0]), float(target[1])), float(flux)
 
     def _interp_psi(self, r_pt: float, z_pt: float) -> float:
         """Return the configured X-point flux at any requested point."""
         del r_pt, z_pt
-        return 0.0 if self._coilset.x_point_flux_target is None else self._coilset.x_point_flux_target
+        return (
+            0.0 if self._coilset.x_point_flux_target is None else self._coilset.x_point_flux_target
+        )
 
 
 class _KernelWithoutCoilBuilder:
@@ -396,13 +400,9 @@ def test_controller_rejects_malformed_coil_sets() -> None:
     with pytest.raises(ValueError, match="at least one external coil"):
         _controller(coilset=_empty_coilset())
     with pytest.raises(ValueError, match="current_limits must match"):
-        _controller(
-            coilset=_coilset_with_current_limits(np.array([1.0], dtype=np.float64))
-        )
+        _controller(coilset=_coilset_with_current_limits(np.array([1.0], dtype=np.float64)))
     with pytest.raises(ValueError, match="current_limits must be finite"):
-        _controller(
-            coilset=_coilset_with_current_limits(np.array([1.0, np.inf], dtype=np.float64))
-        )
+        _controller(coilset=_coilset_with_current_limits(np.array([1.0, np.inf], dtype=np.float64)))
     with pytest.raises(ValueError, match="explicit target values"):
         _controller(coilset=_coilset_without_targets())
 
@@ -559,9 +559,7 @@ def test_control_penalties_handle_unbounded_coil_headroom() -> None:
     """Coil penalty weighting leaves unbounded current limits unpenalized."""
     controller = _controller(coilset=_coilset_with_current_limits(None))
 
-    penalties = controller._build_coil_penalties(
-        np.array([1.0, -1.0], dtype=np.float64)
-    )
+    penalties = controller._build_coil_penalties(np.array([1.0, -1.0], dtype=np.float64))
 
     assert penalties.tolist() == [1.0, 1.0]
 
@@ -583,9 +581,7 @@ def test_control_correction_and_fallback_guards() -> None:
 
 def test_control_objective_metrics_cover_divertor_max_abs_check() -> None:
     """Divertor max-abs tolerance contributes to objective convergence checks."""
-    controller = _controller(
-        {"free_boundary": {"objective_tolerances": {"divertor_max_abs": 0.1}}}
-    )
+    controller = _controller({"free_boundary": {"objective_tolerances": {"divertor_max_abs": 0.1}}})
 
     metrics = controller.evaluate_objectives(controller.target_vector.copy())
 

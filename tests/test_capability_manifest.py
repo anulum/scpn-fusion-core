@@ -179,12 +179,10 @@ def test_public_docs_do_not_carry_unbacked_performance_claims() -> None:
     """Verify public benchmark prose does not assert unbacked performance claims."""
     checked_docs = {
         "README.md": _public_readme_text_without_generated_inventory(),
-        "docs/BENCHMARKS.md": (_repo_root() / "docs" / "BENCHMARKS.md").read_text(
+        "docs/BENCHMARKS.md": (_repo_root() / "docs" / "BENCHMARKS.md").read_text(encoding="utf-8"),
+        "docs/BENCHMARK_FIGURES.md": (_repo_root() / "docs" / "BENCHMARK_FIGURES.md").read_text(
             encoding="utf-8"
         ),
-        "docs/BENCHMARK_FIGURES.md": (
-            _repo_root() / "docs" / "BENCHMARK_FIGURES.md"
-        ).read_text(encoding="utf-8"),
         "docs/competitive_analysis.md": (
             _repo_root() / "docs" / "competitive_analysis.md"
         ).read_text(encoding="utf-8"),

@@ -222,9 +222,7 @@ def _ramp_analytic_log_mode0() -> float:
     """Return the analytic cumulative growth exponent for mode zero."""
     a0, s, total_t = _ramp_a0_s_t()
     k = 1.0
-    return math.sqrt(k) * (2.0 / (3.0 * s)) * (
-        math.pow(a0 + s * total_t, 1.5) - math.pow(a0, 1.5)
-    )
+    return math.sqrt(k) * (2.0 / (3.0 * s)) * (math.pow(a0 + s * total_t, 1.5) - math.pow(a0, 1.5))
 
 
 def test_step_interval_trapezoidal_is_second_order_on_acceleration_ramp() -> None:

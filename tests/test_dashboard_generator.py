@@ -182,7 +182,9 @@ def test_get_psi_clamps_coordinates_to_grid_bounds() -> None:
     assert generator._get_psi(r=-100.0, z=100.0) == pytest.approx(float(kernel.Psi[-1, 0]))
 
 
-def test_load_fusion_kernel_returns_none_on_missing_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_load_fusion_kernel_returns_none_on_missing_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The optional FusionKernel shim fails closed when the core import is absent."""
 
     def _raise_import_error(_module_name: str) -> object:
