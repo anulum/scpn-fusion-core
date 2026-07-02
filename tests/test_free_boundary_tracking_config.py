@@ -605,6 +605,17 @@ def test_control_tolerance_regression_skips_missing_metric_values() -> None:
     assert regressions == {}
 
 
+def test_shot_holds_after_degenerate_response_and_stops_when_converged() -> None:
+    """Shot execution arms reject hold and honors convergence early-stop."""
+    controller = _controller(hold_steps_after_reject=2)
+
+    summary = controller.run_tracking_shot(shot_steps=3, stop_on_convergence=True)
+
+    assert summary["steps"] == 1
+    assert summary["response_degenerate_count"] == 1
+    assert controller.history["supervisor_hold_steps_remaining"] == [2]
+
+
 def test_controller_rejects_x_point_flux_without_target() -> None:
     """An X-point flux target requires the corresponding X-point location."""
     with pytest.raises(ValueError, match="x_point_flux_target requires x_point_target"):
