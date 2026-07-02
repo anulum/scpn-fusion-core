@@ -242,6 +242,7 @@ files = [
     "tests/test_logging_config.py",
     "tests/test_tokamak_live_payload.py",
     "tests/test_tokamak_disruption_archive.py",
+    "tests/test_imas_connector_storage.py",
     "tests/test_geometry_3d.py",
     # ui/
     "src/scpn_fusion/ui/__init__.py",
