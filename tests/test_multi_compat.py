@@ -25,6 +25,7 @@ FloatArray = NDArray[np.float64]
 
 
 def _clear_kernel(name: str) -> None:
+    """Remove a test function-kernel registration and dispatch cache entry."""
     with multi._registry_lock:
         multi._registry.pop(name, None)
         multi._dispatch_cache.pop(name, None)
@@ -32,13 +33,23 @@ def _clear_kernel(name: str) -> None:
 
 @pytest.fixture
 def kernel_name(request: pytest.FixtureRequest) -> Iterator[str]:
+    """Provide an isolated function-kernel name for dispatcher tests."""
     name = f"test_{request.node.name}"
     _clear_kernel(name)
     yield name
     _clear_kernel(name)
 
 
+@pytest.fixture(autouse=True)
+def _clear_rust_symbol_cache_between_tests() -> Iterator[None]:
+    """Prevent extension-module id reuse from leaking cached Rust symbols."""
+    multi._rust_symbol_cache.clear()
+    yield
+    multi._rust_symbol_cache.clear()
+
+
 def test_numpy_backend_is_always_available() -> None:
+    """NumPy remains the guaranteed fallback backend tier."""
     assert multi.available_backends()["numpy"] is True
     assert multi.is_available(multi.BackendTier.NUMPY) is True
 
@@ -46,6 +57,8 @@ def test_numpy_backend_is_always_available() -> None:
 def test_ensure_probed_returns_when_parallel_probe_completes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """The probe guard exits when another thread completes probing under lock."""
+
     class _ProbeLock:
         def __enter__(self) -> None:
             multi._probed = True
@@ -69,6 +82,7 @@ def test_ensure_probed_returns_when_parallel_probe_completes(
 def test_jax_probe_treats_broken_optional_import_as_unavailable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """A broken JAX import is treated as an unavailable optional backend."""
     real_import = builtins.__import__
 
     def fake_import(
@@ -87,7 +101,30 @@ def test_jax_probe_treats_broken_optional_import_as_unavailable(
     assert multi._probe_jax() is False
 
 
+def test_jax_probe_accepts_importable_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An importable JAX module marks the optional backend as available."""
+    real_import = builtins.__import__
+    fake_jax = types.ModuleType("jax")
+
+    def fake_import(
+        name: str,
+        globals_: Mapping[str, object] | None = None,
+        locals_: Mapping[str, object] | None = None,
+        fromlist: Sequence[str] = (),
+        level: int = 0,
+    ) -> object:
+        if name == "jax":
+            return fake_jax
+        return real_import(name, globals_, locals_, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    assert multi._probe_jax() is True
+
+
 def test_dispatch_selects_registered_numpy_kernel(kernel_name: str) -> None:
+    """Dispatch selects and caches a registered NumPy-tier kernel."""
+
     def numpy_impl(value: int) -> int:
         return value + 1
 
@@ -102,6 +139,8 @@ def test_dispatch_selects_registered_numpy_kernel(kernel_name: str) -> None:
 
 
 def test_dispatch_tier_populates_cache_for_registered_kernel(kernel_name: str) -> None:
+    """Requesting the selected tier populates the dispatch cache."""
+
     def numpy_impl(value: int) -> int:
         return value * 2
 
@@ -115,6 +154,8 @@ def test_dispatch_returns_cache_populated_while_waiting_for_lock(
     kernel_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Dispatch rechecks the cache after acquiring the registry lock."""
+
     def numpy_impl() -> str:
         return "numpy"
 
@@ -139,6 +180,7 @@ def test_dispatch_tier_rejects_dispatch_without_cache_population(
     kernel_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Dispatch-tier lookup fails closed if dispatch never records a cache entry."""
     monkeypatch.setattr(multi, "dispatch", lambda _name: None)
 
     with pytest.raises(RuntimeError, match="dispatch_tier failed"):
@@ -146,6 +188,8 @@ def test_dispatch_tier_rejects_dispatch_without_cache_population(
 
 
 def test_dispatch_falls_back_to_available_lower_tier(kernel_name: str) -> None:
+    """Dispatch falls back from an unavailable fast tier to NumPy."""
+
     def unavailable_impl() -> str:
         return "unavailable"
 
@@ -161,6 +205,7 @@ def test_dispatch_falls_back_to_available_lower_tier(kernel_name: str) -> None:
 
 
 def test_dispatch_raises_for_unregistered_kernel() -> None:
+    """Dispatch rejects unknown kernel names."""
     with pytest.raises(KeyError, match="No implementations registered"):
         multi.dispatch("test_missing_kernel")
 
@@ -168,6 +213,7 @@ def test_dispatch_raises_for_unregistered_kernel() -> None:
 def test_dispatch_rust_symbol_resolves_from_extension_module(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Rust symbol dispatch resolves callables from the extension module."""
     fake_extension = types.ModuleType("scpn_fusion_rs")
 
     def rust_symbol() -> str:
@@ -185,6 +231,7 @@ def test_dispatch_rust_symbol_resolves_from_extension_module(
 def test_dispatch_rust_symbol_uses_cache_for_same_extension_module(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Rust symbol dispatch reuses cache entries for the same module object."""
     fake_extension = types.ModuleType("scpn_fusion_rs")
 
     def rust_symbol() -> str:
@@ -202,6 +249,7 @@ def test_dispatch_rust_symbol_uses_cache_for_same_extension_module(
 def test_dispatch_rust_symbol_refreshes_cache_when_module_changes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Rust symbol dispatch refreshes cached callables when the module changes."""
     first_extension = types.ModuleType("scpn_fusion_rs")
     second_extension = types.ModuleType("scpn_fusion_rs")
 
@@ -225,6 +273,7 @@ def test_dispatch_rust_symbol_refreshes_cache_when_module_changes(
 def test_dispatch_rust_symbol_rejects_missing_symbol(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Rust symbol dispatch preserves missing-symbol errors."""
     fake_extension = types.ModuleType("scpn_fusion_rs")
     monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_extension)
 
@@ -235,6 +284,7 @@ def test_dispatch_rust_symbol_rejects_missing_symbol(
 def test_dispatch_rust_symbol_rejects_non_callable_symbol(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Rust symbol dispatch rejects exported non-callable objects."""
     fake_extension = types.ModuleType("scpn_fusion_rs")
     fake_extension.__dict__["rust_symbol"] = 42
     monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_extension)
@@ -244,6 +294,7 @@ def test_dispatch_rust_symbol_rejects_non_callable_symbol(
 
 
 def test_a4_production_surfaces_use_dispatcher_for_rust_symbols() -> None:
+    """Production Rust-only surfaces import through the dispatcher boundary."""
     production_files = [
         Path("src/scpn_fusion/phase/kuramoto.py"),
         Path("src/scpn_fusion/phase/upde.py"),
@@ -258,6 +309,7 @@ def test_a4_production_surfaces_use_dispatcher_for_rust_symbols() -> None:
 
 
 def test_dispatch_raises_when_all_registered_tiers_are_unavailable(kernel_name: str) -> None:
+    """Dispatch rejects kernels whose registered tiers are all unavailable."""
     multi.register_kernel(kernel_name, multi.BackendTier.MOJO, lambda: None)
 
     with pytest.raises(RuntimeError, match="All registered backends"):
@@ -265,6 +317,7 @@ def test_dispatch_raises_when_all_registered_tiers_are_unavailable(kernel_name: 
 
 
 def test_optional_backend_probes_respect_disable_flags(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Optional backend probes honor environment disable flags."""
     monkeypatch.setenv("SCPN_DISABLE_MOJO", "true")
     monkeypatch.setenv("SCPN_DISABLE_JULIA", "1")
     monkeypatch.setenv("SCPN_DISABLE_GO", "yes")
@@ -275,6 +328,7 @@ def test_optional_backend_probes_respect_disable_flags(monkeypatch: pytest.Monke
 
 
 def test_julia_probe_accepts_importable_juliacall(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The Julia probe succeeds when juliacall is importable."""
     fake_juliacall = types.ModuleType("juliacall")
     fake_juliacall.__dict__["Main"] = object()
     monkeypatch.delenv("SCPN_DISABLE_JULIA", raising=False)
@@ -284,6 +338,7 @@ def test_julia_probe_accepts_importable_juliacall(monkeypatch: pytest.MonkeyPatc
 
 
 def test_go_probe_accepts_loadable_shared_library(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The Go probe succeeds when the shared library can be loaded."""
     monkeypatch.delenv("SCPN_DISABLE_GO", raising=False)
     monkeypatch.setattr(ctypes, "CDLL", lambda _path: object())
 
@@ -293,6 +348,7 @@ def test_go_probe_accepts_loadable_shared_library(monkeypatch: pytest.MonkeyPatc
 def test_dispatch_fallback_survives_telemetry_failure(
     kernel_name: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Fallback telemetry failures do not block dispatch fallback."""
     fake_mod = types.ModuleType("scpn_fusion.fallback_telemetry")
 
     def _raise(*_args: object, **_kwargs: object) -> None:
@@ -308,6 +364,7 @@ def test_dispatch_fallback_survives_telemetry_failure(
 
 
 def _clear_kernel_class(name: str) -> None:
+    """Remove a test kernel-class registration and dispatch cache entry."""
     with multi._class_registry_lock:
         multi._class_registry.pop(name, None)
         multi._class_dispatch_cache.pop(name, None)
@@ -315,6 +372,7 @@ def _clear_kernel_class(name: str) -> None:
 
 @pytest.fixture
 def class_kernel_name(request: pytest.FixtureRequest) -> Iterator[str]:
+    """Provide an isolated kernel-class name for dispatcher tests."""
     name = f"testcls_{request.node.name}"
     _clear_kernel_class(name)
     yield name
@@ -322,14 +380,19 @@ def class_kernel_name(request: pytest.FixtureRequest) -> Iterator[str]:
 
 
 class _NumpyKernelStub:
+    """Dummy NumPy-tier kernel class for class-dispatch tests."""
+
     pass
 
 
 class _MojoKernelStub:
+    """Dummy unavailable Mojo-tier kernel class for class-dispatch tests."""
+
     pass
 
 
 def test_register_and_dispatch_kernel_class(class_kernel_name: str) -> None:
+    """Kernel-class registration dispatches and caches the NumPy class."""
     multi.register_kernel_class(
         class_kernel_name, multi.BackendTier.NUMPY, lambda: _NumpyKernelStub
     )
@@ -339,6 +402,7 @@ def test_register_and_dispatch_kernel_class(class_kernel_name: str) -> None:
 
 
 def test_dispatch_kernel_class_prefers_available_lower_tier(class_kernel_name: str) -> None:
+    """Kernel-class dispatch falls back to an available lower tier."""
     multi.register_kernel_class(class_kernel_name, multi.BackendTier.MOJO, lambda: _MojoKernelStub)
     multi.register_kernel_class(
         class_kernel_name, multi.BackendTier.NUMPY, lambda: _NumpyKernelStub
@@ -348,11 +412,13 @@ def test_dispatch_kernel_class_prefers_available_lower_tier(class_kernel_name: s
 
 
 def test_dispatch_kernel_class_raises_for_unregistered() -> None:
+    """Kernel-class dispatch rejects unknown class names."""
     with pytest.raises(KeyError, match="No kernel class registered"):
         multi.dispatch_kernel_class("testcls_missing_kernel_class")
 
 
 def test_dispatch_kernel_class_raises_when_all_unavailable(class_kernel_name: str) -> None:
+    """Kernel-class dispatch rejects registrations with no available tier."""
     multi.register_kernel_class(class_kernel_name, multi.BackendTier.MOJO, lambda: _MojoKernelStub)
     with pytest.raises(RuntimeError, match="All registered backends"):
         multi.dispatch_kernel_class(class_kernel_name)
@@ -362,6 +428,8 @@ def test_dispatch_kernel_class_returns_cache_populated_while_waiting_for_lock(
     class_kernel_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Kernel-class dispatch rechecks the cache after acquiring the lock."""
+
     class _ClassRegistryLock:
         def __enter__(self) -> None:
             multi._class_dispatch_cache[class_kernel_name] = (
@@ -383,6 +451,7 @@ def test_dispatch_kernel_class_returns_cache_populated_while_waiting_for_lock(
 
 
 def test_equilibrium_kernel_class_dispatches_to_python_without_rust() -> None:
+    """The equilibrium kernel class falls back to Python when Rust is unavailable."""
     cls = multi.dispatch_kernel_class("equilibrium_kernel")
     assert isinstance(cls, type)
     tiers = [multi._TIER_NAMES[t] for t, _ in multi._class_registry["equilibrium_kernel"]]
@@ -394,12 +463,14 @@ def test_equilibrium_kernel_class_dispatches_to_python_without_rust() -> None:
 
 
 def test_rust_equilibrium_loader_returns_the_rust_kernel_class() -> None:
+    """The Rust equilibrium loader returns the Rust-accelerated class."""
     from scpn_fusion.core._rust_compat import RustAcceleratedKernel
 
     assert multi._load_rust_equilibrium_kernel() is RustAcceleratedKernel
 
 
 def test_numpy_equilibrium_loader_returns_the_python_kernel_class() -> None:
+    """The NumPy equilibrium loader returns the pure-Python kernel class."""
     from scpn_fusion.core.fusion_kernel import FusionKernel
 
     assert multi._load_numpy_equilibrium_kernel() is FusionKernel
@@ -585,6 +656,7 @@ def test_rust_measure_magnetics_provider_matches_reference() -> None:
 
 
 def _multigrid_problem() -> tuple[FloatArray, FloatArray, float, float, float, float, int, int]:
+    """Return a deterministic multigrid fixture for dispatcher provider tests."""
     nr = nz = 33
     r_min, r_max, z_min, z_max = 1.2, 2.2, -0.5, 0.5
     rr, zz = np.meshgrid(np.linspace(r_min, r_max, nr), np.linspace(z_min, z_max, nz))
