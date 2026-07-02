@@ -1,0 +1,308 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Free-Boundary Tracking Configuration Tests
+"""Configuration-contract tests for free-boundary tracking control."""
+
+from __future__ import annotations
+
+import copy
+import logging
+from collections.abc import Callable
+from typing import Any
+
+import numpy as np
+import pytest
+from numpy.typing import NDArray
+
+from scpn_fusion.control._free_boundary_tracking_types import _ObjectiveBlock
+from scpn_fusion.control.free_boundary_tracking import FreeBoundaryTrackingController
+from scpn_fusion.core.fusion_kernel import CoilSet
+
+FloatArray = NDArray[np.float64]
+
+
+class _ConfigKernel:
+    """Free-boundary kernel stand-in backed by a supplied coil set and config."""
+
+    cfg: dict[str, Any]
+    R: FloatArray
+    Z: FloatArray
+    RR: FloatArray
+    ZZ: FloatArray
+    Psi: FloatArray
+
+    def __init__(self, _config_file: str, cfg: dict[str, Any], coilset: CoilSet) -> None:
+        self.cfg = copy.deepcopy(cfg)
+        self._coilset = _copy_coilset(coilset)
+        self.R = np.linspace(3.0, 5.0, 4, dtype=np.float64)
+        self.Z = np.linspace(-2.0, 1.0, 4, dtype=np.float64)
+        self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
+        self.Psi = np.zeros((self.Z.size, self.R.size), dtype=np.float64)
+
+    def build_coilset_from_config(self) -> CoilSet:
+        """Return an isolated copy of the configured coil set."""
+        return _copy_coilset(self._coilset)
+
+    def solve(
+        self,
+        *,
+        boundary_variant: str | None = None,
+        coils: CoilSet | None = None,
+        max_outer_iter: int = 20,
+        tol: float = 1e-4,
+        optimize_shape: bool = False,
+    ) -> dict[str, float | bool | str]:
+        """Accept the production free-boundary solve call shape."""
+        del coils, max_outer_iter, tol, optimize_shape
+        return {
+            "boundary_variant": "free_boundary" if boundary_variant is None else boundary_variant,
+            "converged": True,
+            "outer_iterations": 1,
+            "final_diff": 0.0,
+        }
+
+    def _sample_flux_at_points(self, points: FloatArray) -> FloatArray:
+        """Return target fluxes for the configured diagnostic point set."""
+        pts = np.asarray(points, dtype=np.float64)
+        if (
+            self._coilset.target_flux_points is not None
+            and self._coilset.target_flux_values is not None
+            and pts.shape == self._coilset.target_flux_points.shape
+            and np.allclose(pts, self._coilset.target_flux_points)
+        ):
+            return np.asarray(self._coilset.target_flux_values.copy(), dtype=np.float64)
+        if (
+            self._coilset.divertor_strike_points is not None
+            and self._coilset.divertor_flux_values is not None
+            and pts.shape == self._coilset.divertor_strike_points.shape
+            and np.allclose(pts, self._coilset.divertor_strike_points)
+        ):
+            return np.asarray(self._coilset.divertor_flux_values.copy(), dtype=np.float64)
+        raise ValueError("unexpected diagnostic points")
+
+    def find_x_point(self, _psi: FloatArray) -> tuple[tuple[float, float], float]:
+        """Return the configured X-point target as the current X-point."""
+        if self._coilset.x_point_target is None:
+            return (4.0, -1.0), 0.0
+        target = np.asarray(self._coilset.x_point_target, dtype=np.float64).reshape(2)
+        flux = 0.0 if self._coilset.x_point_flux_target is None else self._coilset.x_point_flux_target
+        return (float(target[0]), float(target[1])), float(flux)
+
+    def _interp_psi(self, r_pt: float, z_pt: float) -> float:
+        """Return the configured X-point flux at any requested point."""
+        del r_pt, z_pt
+        return 0.0 if self._coilset.x_point_flux_target is None else self._coilset.x_point_flux_target
+
+
+def _copy_array(array: FloatArray | None) -> FloatArray | None:
+    """Return a copied ``float64`` array or ``None``."""
+    if array is None:
+        return None
+    return np.asarray(array, dtype=np.float64).copy()
+
+
+def _copy_coilset(coilset: CoilSet) -> CoilSet:
+    """Return a deep-enough copy of a ``CoilSet`` for controller tests."""
+    return CoilSet(
+        positions=list(coilset.positions),
+        currents=np.asarray(coilset.currents, dtype=np.float64).copy(),
+        turns=list(coilset.turns),
+        current_limits=_copy_array(coilset.current_limits),
+        target_flux_points=_copy_array(coilset.target_flux_points),
+        target_flux_values=_copy_array(coilset.target_flux_values),
+        x_point_target=_copy_array(coilset.x_point_target),
+        x_point_flux_target=coilset.x_point_flux_target,
+        divertor_strike_points=_copy_array(coilset.divertor_strike_points),
+        divertor_flux_values=_copy_array(coilset.divertor_flux_values),
+    )
+
+
+def _coilset(
+    *,
+    x_point_target: FloatArray | None | bool = True,
+    x_point_flux_target: float | None = 0.30,
+) -> CoilSet:
+    """Return a representative free-boundary tracking coil set."""
+    resolved_x_point: FloatArray | None
+    if x_point_target is True:
+        resolved_x_point = np.array([4.0, -1.0], dtype=np.float64)
+    elif x_point_target is False:
+        resolved_x_point = None
+    else:
+        resolved_x_point = x_point_target
+    return CoilSet(
+        positions=[(3.2, 2.0), (4.8, -2.0)],
+        currents=np.array([0.1, -0.1], dtype=np.float64),
+        turns=[12, 12],
+        current_limits=np.array([1.0, 1.5], dtype=np.float64),
+        target_flux_points=np.array([[3.6, 0.0], [4.2, 0.2]], dtype=np.float64),
+        target_flux_values=np.array([0.10, 0.20], dtype=np.float64),
+        x_point_target=resolved_x_point,
+        x_point_flux_target=x_point_flux_target,
+        divertor_strike_points=np.array([[3.1, -2.4]], dtype=np.float64),
+        divertor_flux_values=np.array([0.40], dtype=np.float64),
+    )
+
+
+def _factory(
+    cfg: dict[str, Any] | None = None,
+    *,
+    coilset: CoilSet | None = None,
+) -> Callable[[str], _ConfigKernel]:
+    """Return a kernel factory compatible with ``FreeBoundaryTrackingController``."""
+    resolved_cfg: dict[str, Any] = {} if cfg is None else cfg
+    resolved_coilset = _coilset() if coilset is None else coilset
+
+    def _build(config_file: str) -> _ConfigKernel:
+        return _ConfigKernel(config_file, resolved_cfg, resolved_coilset)
+
+    return _build
+
+
+def _controller(
+    cfg: dict[str, Any] | None = None,
+    *,
+    coilset: CoilSet | None = None,
+    control_dt_s: float | None = None,
+    coil_slew_limits: float | list[float] | None = None,
+    hold_steps_after_reject: int | None = None,
+) -> FreeBoundaryTrackingController:
+    """Construct the production controller against a deterministic kernel."""
+    return FreeBoundaryTrackingController(
+        "config.json",
+        kernel_factory=_factory(cfg, coilset=coilset),
+        verbose=False,
+        control_dt_s=control_dt_s,
+        coil_slew_limits=coil_slew_limits,
+        hold_steps_after_reject=hold_steps_after_reject,
+    )
+
+
+def test_controller_accepts_vector_slew_limits_and_broadcast_measurement_bias() -> None:
+    """Vector slew limits and single-entry block vectors resolve to controller state."""
+    controller = _controller(
+        {
+            "free_boundary": {
+                "objective_tolerances": {
+                    "shape_rms": 0.25,
+                    "shape_max_abs": 0.40,
+                    "x_point_position": 0.05,
+                    "x_point_flux": 0.02,
+                    "divertor_rms": 0.10,
+                }
+            },
+            "free_boundary_tracking": {
+                "coil_slew_limits": [0.2, 0.3],
+                "measurement_bias": {"shape_flux": [0.05]},
+                "supervisor_limits": {"shape_rms": 1.0},
+            },
+        }
+    )
+
+    assert controller.coil_slew_limits.tolist() == [0.2, 0.3]
+    assert controller.measurement_bias_vector[:2].tolist() == [0.05, 0.05]
+    assert controller.control_objective_weights[:2].tolist() == [4.0, 4.0]
+    assert controller.control_objective_weights[2:4].tolist() == [20.0, 20.0]
+    assert controller.control_objective_weights[4] == 50.0
+    assert controller.control_objective_weights[5] == 10.0
+
+
+def test_controller_logs_when_verbose(caplog: pytest.LogCaptureFixture) -> None:
+    """Verbose controller logging emits through the tracking configuration logger."""
+    controller = FreeBoundaryTrackingController(
+        "config.json",
+        kernel_factory=_factory(),
+        verbose=True,
+    )
+
+    with caplog.at_level(logging.INFO, logger="scpn_fusion.control._free_boundary_tracking_config"):
+        controller._log("tracking config log")
+
+    assert "tracking config log" in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("cfg", "match"),
+    (
+        ({"free_boundary": {"objective_tolerances": ["shape_rms"]}}, "objective_tolerances"),
+        ({"free_boundary": {"objective_tolerances": {"bad_key": 0.1}}}, "Unknown"),
+        ({"free_boundary": {"objective_tolerances": {"shape_rms": -0.1}}}, "shape_rms"),
+        ({"free_boundary_tracking": {"observer_max_abs": float("nan")}}, "finite or infinity"),
+        ({"free_boundary_tracking": {"observer_gain": -0.1}}, "observer_gain"),
+        ({"free_boundary_tracking": {"observer_forgetting": 1.1}}, "observer_forgetting"),
+        ({"free_boundary_tracking": {"supervisor_limits": ["shape_rms"]}}, "supervisor_limits"),
+        (
+            {"free_boundary_tracking": {"supervisor_limits": {"bad_key": 1.0}}},
+            "Unknown",
+        ),
+        (
+            {"free_boundary_tracking": {"supervisor_limits": {"shape_rms": -1.0}}},
+            "shape_rms",
+        ),
+        ({"free_boundary_tracking": {"fallback_currents": [0.1]}}, "fallback_currents"),
+        (
+            {"free_boundary_tracking": {"fallback_currents": [0.1, float("nan")]}},
+            "fallback_currents",
+        ),
+        ({"free_boundary_tracking": {"fallback_currents": [2.0, 0.0]}}, "fallback_currents"),
+        ({"free_boundary_tracking": {"measurement_bias": ["shape_flux"]}}, "measurement_bias"),
+        (
+            {"free_boundary_tracking": {"measurement_bias": {"bad_key": 0.1}}},
+            "Unknown",
+        ),
+        (
+            {"free_boundary_tracking": {"measurement_bias": {"shape_flux": [0.1, 0.2, 0.3]}}},
+            "shape_flux",
+        ),
+        (
+            {"free_boundary_tracking": {"measurement_bias": {"shape_flux": [0.1, float("inf")]}}},
+            "finite",
+        ),
+    ),
+)
+def test_controller_rejects_invalid_tracking_configuration(
+    cfg: dict[str, Any],
+    match: str,
+) -> None:
+    """Invalid tracking configuration is rejected during controller construction."""
+    with pytest.raises(ValueError, match=match):
+        _controller(cfg)
+
+
+def test_controller_rejects_invalid_constructor_overrides() -> None:
+    """Invalid explicit constructor overrides fail before a control shot starts."""
+    with pytest.raises(ValueError, match="control_dt_s"):
+        _controller(control_dt_s=0.0)
+    with pytest.raises(ValueError, match="hold_steps_after_reject"):
+        _controller(hold_steps_after_reject=-1)
+    with pytest.raises(ValueError, match="coil_slew_limits"):
+        _controller(coil_slew_limits=[0.2])
+    with pytest.raises(ValueError, match="coil_slew_limits"):
+        _controller(coil_slew_limits=[0.2, 0.0])
+
+
+def test_controller_rejects_x_point_flux_without_target() -> None:
+    """An X-point flux target requires the corresponding X-point location."""
+    with pytest.raises(ValueError, match="x_point_flux_target requires x_point_target"):
+        _controller(coilset=_coilset(x_point_target=False, x_point_flux_target=0.2))
+
+
+def test_actuator_restore_rejects_wrong_snapshot_count() -> None:
+    """Actuator snapshots must match the controller coil count."""
+    controller = _controller()
+
+    with pytest.raises(ValueError, match="snapshot count"):
+        controller._restore_actuator_states(())
+
+
+def test_control_weight_builder_rejects_unknown_objective_block() -> None:
+    """Defensive objective-block validation rejects corrupted controller state."""
+    controller = _controller()
+    controller.objective_blocks = (_ObjectiveBlock("unknown_objective", 0, 1),)
+
+    with pytest.raises(ValueError, match="Unknown objective block"):
+        controller._build_control_objective_weights()

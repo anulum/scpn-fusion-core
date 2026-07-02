@@ -233,6 +233,7 @@ files = [
     "validation/benchmark_free_boundary_strict_parity.py",
     "tests/test_benchmark_free_boundary_strict_parity.py",
     "tests/test_free_boundary_plotting.py",
+    "tests/test_free_boundary_tracking_config.py",
     "tests/test_fusion_control_room.py",
     "tests/test_fusion_ignition_sim.py",
     "tests/test_structure.py",
