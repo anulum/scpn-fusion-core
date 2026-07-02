@@ -207,9 +207,9 @@ farama-notifications==0.0.6 \
     # via
     #   -r requirements/ci.in
     #   gymnasium
-filelock==3.25.2 \
-    --hash=sha256:b64ece2b38f4ca29dd3e810287aa8c48182bbecd1ae6e9ae126c9b35f1382694 \
-    --hash=sha256:ca8afb0da15f229774c9ad1b455ed96e85a81373065fb10446672f64444ddf70
+filelock==3.29.4 \
+    --hash=sha256:10cdb3656fc44541cdf30652a93fb10ec6b05325620eb316bd26893e4201538a \
+    --hash=sha256:dac1648087d5115554850d113e7dd8c83ab2d38e3435dde2d4f163847e57b767
     # via
     #   python-discovery
     #   virtualenv
