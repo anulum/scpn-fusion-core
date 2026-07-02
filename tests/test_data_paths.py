@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 
 import pytest
 
+import scpn_fusion._data_paths as data_paths
 from scpn_fusion._data_paths import (
     artifact_root,
     data_root,
@@ -59,6 +61,43 @@ def test_data_root_matches_installed_validation_when_importable() -> None:
         pytest.skip("validation package not importable in this layout")
     validation_dir = Path(spec.origin).resolve().parent
     assert validation_dir.parent == data_root() or (data_root() / "validation").is_dir()
+
+
+def test_data_root_uses_installed_validation_package_when_checkout_root_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Wheel-style installs resolve through the sibling ``validation`` package."""
+    fake_module = tmp_path / "wheel" / "site-packages" / "scpn_fusion" / "_data_paths.py"
+    validation_init = tmp_path / "wheel" / "site-packages" / "validation" / "__init__.py"
+    validation_init.parent.mkdir(parents=True)
+    validation_init.write_text('"""Synthetic validation package."""\n', encoding="utf-8")
+    spec = ModuleSpec("validation", loader=None, origin=str(validation_init))
+
+    monkeypatch.setattr(data_paths, "__file__", str(fake_module))
+    monkeypatch.setattr(
+        "scpn_fusion._data_paths.importlib.util.find_spec",
+        lambda _name: spec,
+    )
+
+    assert data_root() == validation_init.parent.parent
+
+
+def test_data_root_falls_back_to_source_candidate_without_validation_spec(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The resolver still returns a stable absolute root if package discovery fails."""
+    fake_module = tmp_path / "wheel" / "site-packages" / "scpn_fusion" / "_data_paths.py"
+    expected_root = fake_module.resolve().parents[2]
+
+    monkeypatch.setattr(data_paths, "__file__", str(fake_module))
+    monkeypatch.setattr(
+        "scpn_fusion._data_paths.importlib.util.find_spec",
+        lambda _name: None,
+    )
+
+    assert data_root() == expected_root
 
 
 def test_reference_data_root_resolves_under_data_root() -> None:
