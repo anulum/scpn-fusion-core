@@ -522,6 +522,89 @@ def test_runtime_observation_rejects_unknown_objective_block() -> None:
         controller._observe_true_objectives()
 
 
+def test_control_identification_handles_zero_perturbation_headroom() -> None:
+    """Response identification marks a coil column zero when limits block perturbation."""
+    controller = _controller()
+    controller.coil_current_limits[:] = 0.0
+
+    response = controller.identify_response_matrix(perturbation=0.25)
+
+    assert np.allclose(response, np.zeros_like(response))
+    assert controller.response_degenerate is True
+
+
+def test_control_response_diagnostics_handle_empty_matrix() -> None:
+    """Response diagnostics classify empty response spectra as degenerate."""
+    controller = _controller()
+    controller.response_matrix = np.empty((controller.target_vector.size, 0), dtype=np.float64)
+
+    controller._update_response_diagnostics()
+
+    assert controller.response_rank == 0
+    assert controller.response_condition_number == np.inf
+    assert controller.response_max_singular_value == 0.0
+    assert controller.response_degenerate is True
+
+
+def test_control_activation_mask_rejects_unknown_objective_block() -> None:
+    """Control-row masking rejects corrupted objective block names."""
+    controller = _controller()
+    controller.objective_blocks = (_ObjectiveBlock("unknown_objective", 0, 1),)
+
+    with pytest.raises(ValueError, match="Unknown objective block"):
+        controller._build_control_activation_mask({"objective_checks": {}})
+
+
+def test_control_penalties_handle_unbounded_coil_headroom() -> None:
+    """Coil penalty weighting leaves unbounded current limits unpenalized."""
+    controller = _controller(coilset=_coilset_with_current_limits(None))
+
+    penalties = controller._build_coil_penalties(
+        np.array([1.0, -1.0], dtype=np.float64)
+    )
+
+    assert penalties.tolist() == [1.0, 1.0]
+
+
+def test_control_correction_and_fallback_guards() -> None:
+    """Correction and fallback helpers fail closed on malformed state."""
+    controller = _controller()
+    with pytest.raises(ValueError, match="observation"):
+        controller.compute_correction(np.array([0.0], dtype=np.float64))
+    with pytest.raises(ValueError, match="fallback currents"):
+        controller._apply_fallback_currents()
+
+    controller.n_coils = 0
+    controller._coil_actuators = []
+    controller.fallback_currents = np.array([], dtype=np.float64)
+
+    assert controller._apply_fallback_currents() == 0.0
+
+
+def test_control_objective_metrics_cover_divertor_max_abs_check() -> None:
+    """Divertor max-abs tolerance contributes to objective convergence checks."""
+    controller = _controller(
+        {"free_boundary": {"objective_tolerances": {"divertor_max_abs": 0.1}}}
+    )
+
+    metrics = controller.evaluate_objectives(controller.target_vector.copy())
+
+    assert metrics["objective_checks"]["divertor_max_abs"] is True
+
+
+def test_control_tolerance_regression_skips_missing_metric_values() -> None:
+    """Tolerance-regression detection ignores metrics absent from either side."""
+    regressions = FreeBoundaryTrackingController._detect_tolerance_regressions(
+        {
+            "objective_tolerances": {"shape_rms": 0.1},
+            "shape_rms": None,
+        },
+        {"shape_rms": 0.2},
+    )
+
+    assert regressions == {}
+
+
 def test_controller_rejects_x_point_flux_without_target() -> None:
     """An X-point flux target requires the corresponding X-point location."""
     with pytest.raises(ValueError, match="x_point_flux_target requires x_point_target"):
