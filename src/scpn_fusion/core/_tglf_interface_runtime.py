@@ -116,6 +116,7 @@ def run_tglf_binary(
 
     last_exc = None
     for attempt in range(max_retries + 1):
+        last_exc = None
         try:
             write_tglf_input_file(deck, work_dir)
             result = subprocess.run(
@@ -157,10 +158,7 @@ def run_tglf_binary(
 
                 shutil.rmtree(work_dir, ignore_errors=True)
 
-    if last_exc:
-        logger.error("TGLF execution failed after %d attempts.", max_retries + 1)
-        return TGLFOutput(rho=deck.rho)
-
+    logger.error("TGLF execution failed after %d attempts.", max_retries + 1)
     return TGLFOutput(rho=deck.rho)
 
 
