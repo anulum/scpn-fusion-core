@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 class TGLFDatasetGenerator:
     """Automated generation of TGLF datasets for surrogate training."""
 
-    def __init__(self, tglf_binary_path: str | Path):
+    def __init__(self, tglf_binary_path: str | Path) -> None:
+        """Store the TGLF executable path used by sampled dataset runs."""
         self.tglf_path = Path(tglf_binary_path)
 
     def generate_random_dataset(self, n_samples: int = 100) -> list[dict[str, Any]]:
