@@ -59,6 +59,13 @@ class TestConstruction:
         with pytest.raises(ValueError, match="delay_ticks"):
             net.add_transition("t2", delay_ticks=-1)
 
+    def test_duplicate_transition_rejected(self) -> None:
+        """Re-adding an existing transition name is rejected."""
+        net = StochasticPetriNet()
+        net.add_transition("t1")
+        with pytest.raises(ValueError, match="already exists"):
+            net.add_transition("t1")
+
 
 class TestArcContracts:
     """Arc-direction and weight validation."""
@@ -104,6 +111,22 @@ class TestArcContracts:
         with pytest.raises(ValueError, match="inhibitor arc weight"):
             net.add_arc("p1", "t1", weight=0.0, inhibitor=True)
 
+    def test_inhibitor_arc_requires_explicit_compile_opt_in(self) -> None:
+        """A valid inhibitor arc is negative and requires compile opt-in."""
+        net = StochasticPetriNet()
+        net.add_place("p1")
+        net.add_place("p2")
+        net.add_transition("t1")
+        net.add_arc("p1", "t1", weight=0.25, inhibitor=True)
+        net.add_arc("t1", "p2")
+
+        with pytest.raises(ValueError, match="Negative input arc weights"):
+            net.compile()
+
+        net.compile(allow_inhibitor=True)
+        assert net.W_in is not None
+        assert net.W_in.toarray()[0, 0] == -0.25
+
 
 class TestCompile:
     """Compilation and strict topology validation."""
@@ -123,6 +146,91 @@ class TestCompile:
         net.add_arc("t1", "p1")
         with pytest.raises(ValueError, match="Topology validation failed"):
             net.compile(strict_validation=True)
+
+    def test_strict_validation_reports_all_issue_classes(self) -> None:
+        """Strict validation includes dead transitions, cycles, and overflow."""
+        net = StochasticPetriNet()
+        net.add_place("cycle_a", initial_tokens=0.0)
+        net.add_place("cycle_b", initial_tokens=0.0)
+        net.add_place("overflow_a", initial_tokens=1.0)
+        net.add_place("overflow_b", initial_tokens=1.0)
+        net.add_transition("a_to_b")
+        net.add_transition("b_to_a")
+        net.add_transition("overflow_t")
+        net.add_transition("dead_t")
+        net.add_arc("cycle_a", "a_to_b")
+        net.add_arc("a_to_b", "cycle_b")
+        net.add_arc("cycle_b", "b_to_a")
+        net.add_arc("b_to_a", "cycle_a")
+        net.add_arc("overflow_a", "overflow_t", weight=0.7)
+        net.add_arc("overflow_b", "overflow_t", weight=0.4)
+        net.add_arc("overflow_t", "overflow_a")
+
+        with pytest.raises(ValueError) as exc_info:
+            net.compile(strict_validation=True)
+
+        message = str(exc_info.value)
+        assert "dead_transitions=['dead_t']" in message
+        assert "unseeded_place_cycles=[['cycle_a', 'cycle_b']]" in message
+        assert "input_weight_overflow_transitions=['overflow_t']" in message
+        assert net.last_validation_report is not None
+
+    def test_compile_rejects_corrupt_inhibitor_output_arc(self) -> None:
+        """Defensively reject impossible inhibitor metadata on output arcs."""
+        net = StochasticPetriNet()
+        net.add_place("p1")
+        net.add_transition("t1")
+        net.add_arc("p1", "t1")
+        net.add_arc("t1", "p1")
+        net._arcs[-1] = ("t1", "p1", -1.0, True)
+
+        with pytest.raises(ValueError, match="only valid on Place->Transition"):
+            net.compile(allow_inhibitor=True)
+
+
+class TestAccessorsAndSummary:
+    """Accessor and textual summary contracts."""
+
+    def test_validation_report_and_delay_accessors(self) -> None:
+        """Access validation reports and delay vectors through public accessors."""
+        net = StochasticPetriNet()
+        assert net.last_validation_report is None
+        net.add_place("p1", initial_tokens=1.0)
+        net.add_place("p2", initial_tokens=0.0)
+        net.add_transition("t1", threshold=0.75, delay_ticks=4)
+        net.add_arc("p1", "t1")
+        net.add_arc("t1", "p2")
+
+        net.compile(validate_topology=True)
+
+        assert net.last_validation_report == {
+            "dead_places": [],
+            "dead_transitions": [],
+            "unseeded_place_cycles": [],
+            "input_weight_overflow_transitions": [],
+        }
+        assert net.get_initial_marking().tolist() == [1.0, 0.0]
+        assert net.get_thresholds().tolist() == [0.75]
+        assert net.get_delay_ticks().tolist() == [4]
+
+    def test_summary_includes_nodes_arcs_and_sparse_shapes(self) -> None:
+        """The human summary includes topology and compiled matrix metadata."""
+        text = _net().summary()
+
+        assert "StochasticPetriNet" in text
+        assert "P=2  T=1" in text
+        assert "p1" in text
+        assert "t1" in text
+        assert "W_in  (nT=1, nP=2)  nnz=1" in text
+        assert "W_out (nP=2, nT=1)  nnz=1" in text
+
+    def test_summary_rejects_corrupt_compiled_state(self) -> None:
+        """Summary fails closed when compiled matrices are unexpectedly absent."""
+        net = _net()
+        net.W_in = None
+
+        with pytest.raises(RuntimeError, match="missing sparse matrices"):
+            net.summary()
 
 
 class TestVerification:
