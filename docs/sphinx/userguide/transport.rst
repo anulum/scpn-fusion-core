@@ -200,6 +200,9 @@ Warm Dense Matter EOS
 The ``wdm_engine`` module provides a reduced equation-of-state model
 for warm dense matter conditions relevant to inertial confinement
 scenarios and pellet ablation physics.
+The discharge driver validates finite positive inputs, couples the transport
+state to tungsten wall erosion, stops on radiative collapse, and writes the
+standard ``WDM_Simulation_Result.png`` summary plot for review.
 
 Related Modules
 ----------------

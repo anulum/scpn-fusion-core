@@ -215,6 +215,7 @@ files = [
     "tests/test_faraday_recovery.py",
     "tests/test_sandpile_fusion_reactor.py",
     "tests/test_global_design_scanner.py",
+    "tests/test_wdm_engine.py",
     "tests/test_divertor_thermal_sim.py",
     "tests/test_pwi_erosion.py",
     "tests/test_mhd_sawtooth.py",
