@@ -15,7 +15,7 @@ license = "AGPL-3.0-or-later"
 [dependencies]
 fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }
-wgpu = "29"
+wgpu = "30"
 bytemuck = { version = "1", features = ["derive"] }
 pollster = "0.4"
 log = "0.4"
