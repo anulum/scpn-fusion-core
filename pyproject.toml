@@ -243,6 +243,7 @@ files = [
     "src/scpn_fusion/ui/dashboard_generator.py",
     "src/scpn_fusion/ui/dashboard_launcher.py",
     "src/scpn_fusion/ui/security_headers.py",
+    "tests/test_dashboard_generator.py",
     "tests/test_security_headers.py",
     # nuclear/
     "src/scpn_fusion/nuclear/__init__.py",
