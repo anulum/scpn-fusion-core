@@ -12,12 +12,14 @@ from __future__ import annotations
 import copy
 import logging
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pytest
 from numpy.typing import NDArray
 
+import scpn_fusion.control.free_boundary_tracking as tracking_api
 from scpn_fusion.control._free_boundary_tracking_types import _ObjectiveBlock
 from scpn_fusion.control.free_boundary_tracking import FreeBoundaryTrackingController
 from scpn_fusion.core.fusion_kernel import CoilSet
@@ -98,6 +100,15 @@ class _ConfigKernel:
         return 0.0 if self._coilset.x_point_flux_target is None else self._coilset.x_point_flux_target
 
 
+class _KernelWithoutCoilBuilder:
+    """Kernel stand-in that lacks the required coil-set builder hook."""
+
+    cfg: dict[str, Any]
+
+    def __init__(self, _config_file: str) -> None:
+        self.cfg = {}
+
+
 def _copy_array(array: FloatArray | None) -> FloatArray | None:
     """Return a copied ``float64`` array or ``None``."""
     if array is None:
@@ -145,6 +156,33 @@ def _coilset(
         x_point_flux_target=x_point_flux_target,
         divertor_strike_points=np.array([[3.1, -2.4]], dtype=np.float64),
         divertor_flux_values=np.array([0.40], dtype=np.float64),
+    )
+
+
+def _coilset_with_current_limits(current_limits: FloatArray | None) -> CoilSet:
+    """Return a representative coil set with explicit current limits."""
+    coilset = _coilset()
+    coilset.current_limits = current_limits
+    return coilset
+
+
+def _empty_coilset() -> CoilSet:
+    """Return an intentionally empty coil set for constructor guard coverage."""
+    return CoilSet(
+        positions=[],
+        currents=np.array([], dtype=np.float64),
+        turns=[],
+        current_limits=None,
+    )
+
+
+def _coilset_without_targets() -> CoilSet:
+    """Return a valid coil set without explicit tracking objectives."""
+    return CoilSet(
+        positions=[(3.2, 2.0), (4.8, -2.0)],
+        currents=np.array([0.1, -0.1], dtype=np.float64),
+        turns=[12, 12],
+        current_limits=np.array([1.0, 1.5], dtype=np.float64),
     )
 
 
@@ -275,6 +313,48 @@ def test_controller_rejects_invalid_tracking_configuration(
 
 def test_controller_rejects_invalid_constructor_overrides() -> None:
     """Invalid explicit constructor overrides fail before a control shot starts."""
+    with pytest.raises(ValueError, match="identification_perturbation"):
+        FreeBoundaryTrackingController(
+            "config.json",
+            kernel_factory=_factory(),
+            verbose=False,
+            identification_perturbation=0.0,
+        )
+    with pytest.raises(ValueError, match="correction_limit"):
+        FreeBoundaryTrackingController(
+            "config.json",
+            kernel_factory=_factory(),
+            verbose=False,
+            correction_limit=0.0,
+        )
+    with pytest.raises(ValueError, match="response_regularization"):
+        FreeBoundaryTrackingController(
+            "config.json",
+            kernel_factory=_factory(),
+            verbose=False,
+            response_regularization=-1.0,
+        )
+    with pytest.raises(ValueError, match="response_refresh_steps"):
+        FreeBoundaryTrackingController(
+            "config.json",
+            kernel_factory=_factory(),
+            verbose=False,
+            response_refresh_steps=0,
+        )
+    with pytest.raises(ValueError, match="solve_max_outer_iter"):
+        FreeBoundaryTrackingController(
+            "config.json",
+            kernel_factory=_factory(),
+            verbose=False,
+            solve_max_outer_iter=0,
+        )
+    with pytest.raises(ValueError, match="solve_tol"):
+        FreeBoundaryTrackingController(
+            "config.json",
+            kernel_factory=_factory(),
+            verbose=False,
+            solve_tol=0.0,
+        )
     with pytest.raises(ValueError, match="control_dt_s"):
         _controller(control_dt_s=0.0)
     with pytest.raises(ValueError, match="hold_steps_after_reject"):
@@ -283,6 +363,55 @@ def test_controller_rejects_invalid_constructor_overrides() -> None:
         _controller(coil_slew_limits=[0.2])
     with pytest.raises(ValueError, match="coil_slew_limits"):
         _controller(coil_slew_limits=[0.2, 0.0])
+
+
+def test_controller_requires_kernel_coil_builder() -> None:
+    """The production controller rejects kernels without the coil builder hook."""
+    with pytest.raises(TypeError, match="build_coilset_from_config"):
+        FreeBoundaryTrackingController(
+            "config.json",
+            kernel_factory=_KernelWithoutCoilBuilder,
+            verbose=False,
+        )
+
+
+def test_controller_rejects_malformed_coil_sets() -> None:
+    """Coil-set cardinality and limit validation fail during construction."""
+    with pytest.raises(ValueError, match="at least one external coil"):
+        _controller(coilset=_empty_coilset())
+    with pytest.raises(ValueError, match="current_limits must match"):
+        _controller(
+            coilset=_coilset_with_current_limits(np.array([1.0], dtype=np.float64))
+        )
+    with pytest.raises(ValueError, match="current_limits must be finite"):
+        _controller(
+            coilset=_coilset_with_current_limits(np.array([1.0, np.inf], dtype=np.float64))
+        )
+    with pytest.raises(ValueError, match="explicit target values"):
+        _controller(coilset=_coilset_without_targets())
+
+
+def test_controller_accepts_missing_coil_current_limits() -> None:
+    """Absent current limits are represented as unbounded finite-control state."""
+    controller = _controller(coilset=_coilset_with_current_limits(None))
+
+    assert controller.coil_current_limits.tolist() == [np.inf, np.inf]
+
+
+def test_run_free_boundary_tracking_resolves_default_config_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The public wrapper resolves the packaged ITER config when omitted."""
+    default_path = Path("default_iter_config.json")
+    monkeypatch.setattr(tracking_api, "default_iter_config_path", lambda: default_path)
+
+    summary = tracking_api.run_free_boundary_tracking(
+        kernel_factory=_factory(),
+        shot_steps=1,
+        verbose=False,
+    )
+
+    assert summary["config_path"] == str(default_path)
 
 
 def test_controller_rejects_x_point_flux_without_target() -> None:
