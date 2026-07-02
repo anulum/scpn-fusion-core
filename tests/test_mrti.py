@@ -35,6 +35,7 @@ from scpn_fusion.core.pulsed_compression import (
 
 
 def test_mrti_growth_rate_hydrodynamic_limit() -> None:
+    """MRTI growth reduces to ``sqrt(k a)`` with no magnetic tension."""
     k_modes: NDArray[np.float64] = np.array([1.0, 4.0, 16.0], dtype=np.float64)
     acceleration = 2.5e6
 
@@ -44,6 +45,7 @@ def test_mrti_growth_rate_hydrodynamic_limit() -> None:
 
 
 def test_mrti_growth_rate_magnetic_tension_stabilizes_short_modes() -> None:
+    """Magnetic tension clips stabilized short-wavelength modes to zero growth."""
     density = 1.2e-3
     b_perp = 1.0e-3
     acceleration = 8.0e6
@@ -58,6 +60,7 @@ def test_mrti_growth_rate_magnetic_tension_stabilizes_short_modes() -> None:
 
 
 def test_spectrum_tracker_matches_constant_acceleration_exponential() -> None:
+    """Constant-driver tracking matches the analytical exponential update."""
     tracker = MRTISpectrumTracker(k_modes_m_inv=[2.0, 8.0], initial_perturbation_m=2.0e-9)
     dt = 2.5e-7
     steps = 12
@@ -78,6 +81,7 @@ def test_spectrum_tracker_matches_constant_acceleration_exponential() -> None:
 
 
 def test_spectrum_tracker_keeps_extreme_growth_finite_in_log_space() -> None:
+    """Extreme growth remains finite in amplitude space while preserving log evidence."""
     tracker = MRTISpectrumTracker(k_modes_m_inv=[1.0, 4.0], initial_perturbation_m=1.0e-9)
 
     state = tracker.step(1.0, 1.0e8)
@@ -91,6 +95,7 @@ def test_spectrum_tracker_keeps_extreme_growth_finite_in_log_space() -> None:
 
 
 def test_spectrum_tracker_records_first_saturation_breach() -> None:
+    """The tracker records the first time that amplitudes breach saturation."""
     tracker = MRTISpectrumTracker(
         k_modes_m_inv=[10.0, 40.0],
         initial_perturbation_m=1.0e-8,
@@ -105,6 +110,7 @@ def test_spectrum_tracker_records_first_saturation_breach() -> None:
 
 
 def test_effective_acceleration_from_radius_rate_recovers_linear_ramp() -> None:
+    """Finite differences recover a linear radial-speed ramp."""
     time_s: NDArray[np.float64] = np.linspace(0.0, 1.0e-6, 9, dtype=np.float64)
     acceleration = -3.25e11
     speed = 5.0e4 + acceleration * time_s
@@ -115,6 +121,7 @@ def test_effective_acceleration_from_radius_rate_recovers_linear_ramp() -> None:
 
 
 def test_pulsed_compression_trajectory_drives_mrti_tracker() -> None:
+    """A real pulsed-compression trajectory supplies finite MRTI driver states."""
     b_ext = 5.0
     t_i = 10_000.0
     t_e = 5_000.0
@@ -167,6 +174,7 @@ def test_pulsed_compression_trajectory_drives_mrti_tracker() -> None:
 
 
 def test_step_interval_constant_drivers_match_frozen_step() -> None:
+    """Interval integration reduces exactly to frozen stepping for constant drivers."""
     dt = 2.5e-7
     acceleration = 4.0e6
     field = 8.0e-4
@@ -186,10 +194,12 @@ def test_step_interval_constant_drivers_match_frozen_step() -> None:
 
 
 def _ramp_a0_s_t() -> tuple[float, float, float]:
+    """Return the acceleration ramp parameters used by convergence tests."""
     return 1.0e6, 1.0e12, 1.0e-6
 
 
 def _ramp_cumulative_log_mode0(n_steps: int, *, use_interval: bool) -> float:
+    """Return the cumulative log amplitude for mode zero on a linear ramp."""
     a0, s, total_t = _ramp_a0_s_t()
     tracker = MRTISpectrumTracker(
         k_modes_m_inv=[1.0, 2.0],
@@ -209,12 +219,16 @@ def _ramp_cumulative_log_mode0(n_steps: int, *, use_interval: bool) -> float:
 
 
 def _ramp_analytic_log_mode0() -> float:
+    """Return the analytic cumulative growth exponent for mode zero."""
     a0, s, total_t = _ramp_a0_s_t()
     k = 1.0
-    return math.sqrt(k) * (2.0 / (3.0 * s)) * ((a0 + s * total_t) ** 1.5 - a0**1.5)
+    return math.sqrt(k) * (2.0 / (3.0 * s)) * (
+        math.pow(a0 + s * total_t, 1.5) - math.pow(a0, 1.5)
+    )
 
 
 def test_step_interval_trapezoidal_is_second_order_on_acceleration_ramp() -> None:
+    """Trapezoidal interval integration converges as second order on a ramp."""
     analytic = _ramp_analytic_log_mode0()
 
     err_trap_50 = abs(_ramp_cumulative_log_mode0(50, use_interval=True) - analytic)
@@ -230,6 +244,7 @@ def test_step_interval_trapezoidal_is_second_order_on_acceleration_ramp() -> Non
 
 
 def test_most_amplified_mode_tracks_cumulative_not_instantaneous_peak() -> None:
+    """Most-amplified mode reports cumulative amplitude, not instantaneous gamma."""
     # Interval 1 (constant) drives only the long-wavelength mode: choose a field
     # whose Alfven speed stabilises k = 300 while k = 100 stays unstable.
     field_va_unit = math.sqrt(MRTI_MU_0 * 1.0e-3 * 1.0)  # v_A^2 = B^2/(mu0 rho) = 1.0
@@ -254,6 +269,8 @@ def test_most_amplified_mode_tracks_cumulative_not_instantaneous_peak() -> None:
 
 @dataclass(frozen=True)
 class _StubCompressionState:
+    """Minimal pulsed-compression state for MRTI adapter contract tests."""
+
     t_s: float
     R_s_m: float
     dR_s_dt_m_s: float
@@ -261,7 +278,17 @@ class _StubCompressionState:
     B_ext_T: float
 
 
+def _stub_compression_states() -> list[_StubCompressionState]:
+    """Return a valid three-sample pulsed-compression trajectory."""
+    return [
+        _StubCompressionState(0.0, 0.20, -1.0e4, -1.0, 4.0),
+        _StubCompressionState(1.0e-7, 0.19, -2.0e4, -4.0, 4.5),
+        _StubCompressionState(2.0e-7, 0.18, -3.0e4, -7.0, 5.0),
+    ]
+
+
 def test_track_pulsed_compression_uses_trapezoidal_interval_integration() -> None:
+    """Trajectory coupling delegates each interval to trapezoidal tracker updates."""
     states = [
         _StubCompressionState(0.0, 0.20, 0.0, 0.0, 4.0),
         _StubCompressionState(1.0e-7, 0.19, -1.0e5, -1.0e12, 4.5),
@@ -292,6 +319,7 @@ def test_track_pulsed_compression_uses_trapezoidal_interval_integration() -> Non
 
 
 def test_mrti_inputs_fail_closed() -> None:
+    """Public MRTI inputs reject malformed scalar and coarse-grid contracts."""
     with pytest.raises(ValueError, match="non-negative"):
         mrti_growth_rate([-1.0], 1.0)
     with pytest.raises(ValueError, match="positive"):
@@ -305,3 +333,145 @@ def test_mrti_inputs_fail_closed() -> None:
     with pytest.raises(ValueError, match="at least 2"):
         MRTISpectrumTracker(k_max_m_inv=10.0, n_modes=1)
     assert isclose(float(mrti_growth_rate(4.0, 9.0)[()]), 6.0)
+
+
+def test_growth_rate_rejects_non_finite_inputs() -> None:
+    """Growth-rate validation rejects non-finite modes and drivers."""
+    with pytest.raises(ValueError, match="finite values"):
+        mrti_growth_rate([math.nan], 1.0)
+    with pytest.raises(ValueError, match="a_eff must be finite"):
+        mrti_growth_rate([1.0], math.inf)
+    with pytest.raises(ValueError, match="B_perp must be finite"):
+        mrti_growth_rate([1.0], 1.0, B_perp=math.nan)
+
+
+def test_effective_acceleration_from_radius_rate_validates_grid_contracts() -> None:
+    """Radius-rate acceleration rejects malformed grids before estimating gradients."""
+    two_dimensional: NDArray[np.float64] = np.array([[0.0, 1.0]], dtype=np.float64)
+    with pytest.raises(ValueError, match="one-dimensional"):
+        effective_acceleration_from_radius_rate(two_dimensional, two_dimensional)
+    with pytest.raises(ValueError, match="identical shape"):
+        effective_acceleration_from_radius_rate([0.0, 1.0], [1.0])
+    with pytest.raises(ValueError, match="at least two samples"):
+        effective_acceleration_from_radius_rate([0.0], [1.0])
+    with pytest.raises(ValueError, match="cannot exceed"):
+        effective_acceleration_from_radius_rate([0.0, 1.0], [1.0, 2.0], smoothing_window=3)
+
+
+def test_effective_acceleration_from_radius_rate_returns_unsmoothed_gradient() -> None:
+    """The default radius-rate adapter returns the raw finite-difference gradient."""
+    time_s: NDArray[np.float64] = np.array([0.0, 0.5, 1.0], dtype=np.float64)
+    speed_m_s: NDArray[np.float64] = np.array([1.0, 2.0, 5.0], dtype=np.float64)
+
+    acceleration = effective_acceleration_from_radius_rate(time_s, speed_m_s)
+
+    np.testing.assert_allclose(
+        acceleration,
+        np.gradient(speed_m_s, time_s, edge_order=2),
+        rtol=0.0,
+        atol=0.0,
+    )
+
+
+def test_effective_acceleration_from_pulsed_compression_smooths_projection() -> None:
+    """Pulsed-compression acceleration smoothing is applied before projection."""
+    acceleration = effective_acceleration_from_pulsed_compression(
+        _stub_compression_states(),
+        smoothing_window=3,
+    )
+
+    np.testing.assert_allclose(acceleration, [2.0, 4.0, 6.0], rtol=0.0, atol=1.0e-15)
+
+
+def test_effective_acceleration_from_pulsed_compression_rejects_bad_projection() -> None:
+    """Pulsed-compression coupling rejects a zero radial projection sign."""
+    with pytest.raises(ValueError, match="non-zero"):
+        effective_acceleration_from_pulsed_compression(
+            _stub_compression_states(),
+            radial_projection_sign=0.0,
+        )
+
+
+def test_effective_acceleration_from_pulsed_compression_validates_states() -> None:
+    """Pulsed-compression coupling rejects invalid trajectory samples."""
+    states = _stub_compression_states()
+    states[1] = _StubCompressionState(1.0e-7, 0.0, -2.0e4, -4.0, 4.5)
+    with pytest.raises(ValueError, match="radii must be positive"):
+        effective_acceleration_from_pulsed_compression(states)
+
+    states = _stub_compression_states()
+    states[1] = _StubCompressionState(0.0, 0.19, -2.0e4, -4.0, 4.5)
+    with pytest.raises(ValueError, match="time_s must be finite and strictly increasing"):
+        effective_acceleration_from_pulsed_compression(states)
+
+    states = _stub_compression_states()
+    states[1] = _StubCompressionState(1.0e-7, 0.19, math.nan, -4.0, 4.5)
+    with pytest.raises(ValueError, match="speeds must be finite"):
+        effective_acceleration_from_pulsed_compression(states)
+
+    states = _stub_compression_states()
+    states[1] = _StubCompressionState(1.0e-7, 0.19, -2.0e4, math.inf, 4.5)
+    with pytest.raises(ValueError, match="radial accelerations must be finite"):
+        effective_acceleration_from_pulsed_compression(states)
+
+    states = _stub_compression_states()
+    states[1] = _StubCompressionState(1.0e-7, 0.19, -2.0e4, -4.0, math.nan)
+    with pytest.raises(ValueError, match="fields must be finite"):
+        effective_acceleration_from_pulsed_compression(states)
+
+
+def test_effective_acceleration_from_pulsed_compression_validates_smoothing() -> None:
+    """Pulsed-compression smoothing windows must be positive odd in-range values."""
+    with pytest.raises(ValueError, match="positive odd"):
+        effective_acceleration_from_pulsed_compression(
+            _stub_compression_states(),
+            smoothing_window=2,
+        )
+    with pytest.raises(ValueError, match="cannot exceed"):
+        effective_acceleration_from_pulsed_compression(
+            _stub_compression_states(),
+            smoothing_window=5,
+        )
+
+
+def test_spectrum_tracker_validates_mode_configuration() -> None:
+    """Tracker construction rejects ambiguous or malformed mode spectra."""
+    with pytest.raises(ValueError, match="k_max_m_inv is required"):
+        MRTISpectrumTracker()
+    with pytest.raises(ValueError, match="one-dimensional"):
+        MRTISpectrumTracker(k_modes_m_inv=np.array([[1.0, 2.0]], dtype=np.float64))
+    with pytest.raises(ValueError, match="at least two MRTI modes"):
+        MRTISpectrumTracker(k_modes_m_inv=[1.0])
+    with pytest.raises(ValueError, match="non-negative"):
+        MRTISpectrumTracker(k_modes_m_inv=[-1.0, 2.0])
+    with pytest.raises(ValueError, match="strictly increasing"):
+        MRTISpectrumTracker(k_modes_m_inv=[2.0, 2.0])
+
+
+def test_spectrum_tracker_properties_return_defensive_copies() -> None:
+    """Mode and amplitude properties expose copies instead of mutable internals."""
+    tracker = MRTISpectrumTracker(k_modes_m_inv=[1.0, 2.0], initial_perturbation_m=3.0e-9)
+
+    modes = tracker.k_modes_m_inv
+    amplitudes = tracker.amplitudes_m
+    modes[0] = 99.0
+    amplitudes[0] = 99.0
+
+    np.testing.assert_array_equal(tracker.k_modes_m_inv, np.array([1.0, 2.0], dtype=np.float64))
+    np.testing.assert_array_equal(
+        tracker.amplitudes_m,
+        np.array([3.0e-9, 3.0e-9], dtype=np.float64),
+    )
+
+
+def test_track_mrti_from_pulsed_compression_validates_coupling_inputs() -> None:
+    """Trajectory tracking rejects incomplete trajectories and negative field scaling."""
+    tracker = MRTISpectrumTracker(k_modes_m_inv=[1.0, 2.0])
+    with pytest.raises(ValueError, match="at least two pulsed-compression states"):
+        track_mrti_from_pulsed_compression(_stub_compression_states()[:1], tracker)
+    with pytest.raises(ValueError, match="b_perp_scale must be non-negative"):
+        track_mrti_from_pulsed_compression(
+            _stub_compression_states(),
+            tracker,
+            b_perp_scale=-1.0,
+        )
