@@ -12,12 +12,17 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 import pytest
 
 from scpn_fusion.core.neural_equilibrium_training import run_training_cli, train_on_sparc
 
+FloatArray = NDArray[np.float64]
+
 
 class _DummyTrainingResult:
+    """Training-result stand-in for accelerator wiring tests."""
+
     def __init__(self) -> None:
         self.n_samples = 1
         self.n_components = 1
@@ -31,6 +36,8 @@ class _DummyTrainingResult:
 
 
 class _DummyAccel:
+    """Accelerator stand-in that records training and save calls."""
+
     def __init__(self) -> None:
         self.saved_path: Path | None = None
         self.files_seen: list[Path] = []
@@ -47,7 +54,9 @@ class _DummyAccel:
         self.saved_path = Path(path)
 
 
-def test_train_on_sparc_with_stub_accelerator(monkeypatch, tmp_path: Path) -> None:
+def test_train_on_sparc_with_stub_accelerator(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """An explicit SPARC directory and save path route through the accelerator."""
     import scpn_fusion.core.neural_equilibrium as ne_mod
 
@@ -62,7 +71,9 @@ def test_train_on_sparc_with_stub_accelerator(monkeypatch, tmp_path: Path) -> No
     assert result.weights_path == str(save_path)
 
 
-def test_run_training_cli_returns_1_when_data_missing(monkeypatch, tmp_path: Path) -> None:
+def test_run_training_cli_returns_1_when_data_missing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """The CLI exits non-zero when the default SPARC reference tree is absent."""
     import scpn_fusion.core.neural_equilibrium_training as net_mod
 
@@ -73,32 +84,36 @@ def test_run_training_cli_returns_1_when_data_missing(monkeypatch, tmp_path: Pat
 class _CliAccel:
     """Stand-in accelerator covering the CLI's load/predict/benchmark calls."""
 
+    loaded: str
+
     def load_weights(self, path: str) -> None:
         self.loaded = path
 
-    def predict(self, features: np.ndarray) -> np.ndarray:
+    def predict(self, features: FloatArray) -> FloatArray:
         return np.full((4, 4), 0.9)
 
-    def benchmark(self, features: np.ndarray) -> dict[str, float]:
+    def benchmark(self, features: FloatArray) -> dict[str, float]:
         return {"mean_ms": 0.5, "median_ms": 0.4}
 
 
 class _FakeEquilibrium:
     """GEQDSK stand-in exposing every attribute the CLI validation reads."""
 
-    rbbbs = np.array([1.0, 1.2, 1.4, 1.6, 1.8])
-    zbbbs = np.array([-0.5, -0.2, 0.0, 0.2, 0.5])
-    qpsi = np.array([1.0, 2.0, 3.0, 4.0])
+    rbbbs: FloatArray = np.array([1.0, 1.2, 1.4, 1.6, 1.8], dtype=np.float64)
+    zbbbs: FloatArray = np.array([-0.5, -0.2, 0.0, 0.2, 0.5], dtype=np.float64)
+    qpsi: FloatArray = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
     current = 1.0e6
     bcentr = 5.3
     rmaxis = 1.85
     zmaxis = 0.0
     simag = 0.1
     sibry = 0.2
-    psirz = np.full((8, 8), 1.0)
+    psirz: FloatArray = np.full((8, 8), 1.0, dtype=np.float64)
 
 
-def test_train_on_sparc_defaults_raise_without_files(monkeypatch, tmp_path: Path) -> None:
+def test_train_on_sparc_defaults_raise_without_files(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Default training inputs fail before writing when no GEQDSK files exist."""
     import scpn_fusion.core.neural_equilibrium_training as net_mod
 
@@ -108,7 +123,9 @@ def test_train_on_sparc_defaults_raise_without_files(monkeypatch, tmp_path: Path
         train_on_sparc()
 
 
-def test_run_training_cli_full_path(monkeypatch, tmp_path: Path, capsys) -> None:
+def test_run_training_cli_full_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """The CLI trains, reloads, validates, and benchmarks through public calls."""
     import scpn_fusion.core.eqdsk as eqdsk_mod
     import scpn_fusion.core.neural_equilibrium as ne_mod
@@ -120,8 +137,16 @@ def test_run_training_cli_full_path(monkeypatch, tmp_path: Path, capsys) -> None
 
     monkeypatch.setattr(net_mod, "data_root", lambda: tmp_path)
     monkeypatch.setattr(ne_mod, "NeuralEquilibriumAccelerator", _CliAccel)
-    monkeypatch.setattr(net_mod, "train_on_sparc", lambda _dir: _DummyTrainingResult())
-    monkeypatch.setattr(eqdsk_mod, "read_geqdsk", lambda _path: _FakeEquilibrium())
+    monkeypatch.setattr(
+        net_mod,
+        "train_on_sparc",
+        lambda _dir: _DummyTrainingResult(),
+    )
+    monkeypatch.setattr(
+        eqdsk_mod,
+        "read_geqdsk",
+        lambda _path: _FakeEquilibrium(),
+    )
 
     assert run_training_cli() == 0
     out = capsys.readouterr().out
