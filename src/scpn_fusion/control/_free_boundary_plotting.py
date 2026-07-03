@@ -90,10 +90,7 @@ def plot_free_boundary_control(
         target_vector = target.as_vector()
         if not np.all(np.isfinite(target_vector)):
             raise ValueError("target coordinates must be finite.")
-        if (
-            state_history.shape[0] != time.shape[0]
-            or action_history.shape[0] != time.shape[0]
-        ):
+        if state_history.shape[0] != time.shape[0] or action_history.shape[0] != time.shape[0]:
             raise ValueError("time_axis, states, and actions must have matching row counts.")
         destination = _normalise_output_path(output_path)
     except ValueError as exc:

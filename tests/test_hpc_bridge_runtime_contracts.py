@@ -439,10 +439,7 @@ def test_solve_until_converged_into_returns_none_without_prepared_inputs() -> No
     """Return ``None`` when convergence inputs cannot be prepared."""
     bridge = _bridge_with_native_state(lib=_BaseSignatureLib(), loaded=True, solver_ptr=None)
     psi_out = np.zeros((3, 2), dtype=np.float64)
-    assert (
-        bridge.solve_until_converged_into(np.zeros((3, 2), dtype=np.float64), psi_out)
-        is None
-    )
+    assert bridge.solve_until_converged_into(np.zeros((3, 2), dtype=np.float64), psi_out) is None
 
 
 def test_neural_solver_degrades_when_import_fails(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -527,9 +524,7 @@ def test_neural_solver_returns_none_when_inference_raises(
     assert _new_bridge().solve_neural("config.json") is None
 
 
-def test_compile_cpp_handles_timeout(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_compile_cpp_handles_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Return ``None`` when the trusted native build exceeds its timeout."""
     _prepare_native_build_tree(tmp_path, monkeypatch)
 
