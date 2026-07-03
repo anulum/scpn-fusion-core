@@ -42,10 +42,7 @@ def _tracked_source_config_files() -> tuple[Path, ...]:
         rel_path = Path(line.strip())
         if not rel_path.name:
             continue
-        if (
-            rel_path.suffix in SOURCE_HEADER_SUFFIXES
-            or rel_path.name in SOURCE_HEADER_FILENAMES
-        ):
+        if rel_path.suffix in SOURCE_HEADER_SUFFIXES or rel_path.name in SOURCE_HEADER_FILENAMES:
             paths.append(rel_path)
     return tuple(paths)
 
