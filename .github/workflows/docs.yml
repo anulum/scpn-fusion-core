@@ -256,6 +256,7 @@ jobs:
         with:
           name: ${{ env.PAGES_ARTIFACT_NAME }}
           path: site/
+          include-hidden-files: true
 
       - name: Deploy to Pages
         id: deployment
