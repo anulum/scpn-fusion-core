@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-07-03
+
+- Restored the GitHub Pages publish lane by preserving the `.nojekyll` marker
+  in the uploaded Pages artifact, keeping generated API documentation available
+  after the v3.10.0 publication.
+- Carried the post-push CI maintenance pass through a green `main` state after
+  the CodeQL upload-sarif Dependabot update, with CI, CodeQL, Scorecard, SBOM,
+  pre-commit, and documentation workflows validated.
+- Closed incompatible or failing Dependabot update branches instead of promoting
+  unsafe drift, leaving no open pull requests and no open Dependabot,
+  code-scanning, or secret-scanning alerts before tagging.
+- Re-audited tracked Python requirement inputs and the local release virtualenv
+  with `pip-audit`; both the tracked dependency sets and the local environment
+  report no known vulnerabilities at release time.
+
 ## [3.10.0] - 2026-06-26
 
 - Reconciled the `simulate_tearing_mode` function-kernel and brought the Rust

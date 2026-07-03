@@ -322,7 +322,7 @@
     "platform_sdk": ">=0.10,<0.11",
     "protocol_version": "1",
     "studio": "scpn-fusion-core",
-    "studio_version": "3.10.0",
+    "studio_version": "3.10.1",
     "transport_profile": "local-first",
     "verbs": [
       {

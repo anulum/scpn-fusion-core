@@ -16,7 +16,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
-![Version](https://img.shields.io/badge/Version-3.10.0-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-3.10.1-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
@@ -99,15 +99,16 @@ facades and evidence-bounded validation reports.
 
 ## Current Release Snapshot
 
-Version `3.10.0` is a runtime, documentation, and federation-surface release.
-It publishes the Studio federation manifest path, the exactness-class
-reproduction comparator, the architecture-map extension, and refreshed
-multi-backend parity surfaces alongside the existing control and physics stack.
+Version `3.10.1` is a CI publication, dependency-maintenance, and release-surface
+alignment patch. It preserves the GitHub Pages `.nojekyll` marker in the
+uploaded artifact, carries the safe CodeQL upload-sarif maintenance update, and
+publishes the green post-push state after pull-request and security-alert
+triage.
 
-The release also documents the new public API entry points in the Sphinx API
-reference, adds a Studio federation guide and tutorial, refreshes generated
-capability and Studio manifests, and keeps the dependency/security maintenance
-from the 2026-06-25 green-CI pass.
+The release keeps the Studio federation manifest path, exactness-class
+reproduction comparator, architecture-map extension, refreshed multi-backend
+parity surfaces, and Sphinx API documentation from v3.10.0 while aligning the
+generated capability and Studio manifests with the patch version.
 
 This release does not promote the solver to completed end-to-end full-fidelity
 parity. GENE/CGYRO/GS2 nonlinear turbulence parity, full electromagnetic
@@ -124,15 +125,15 @@ thresholds, grid or scaling evidence, and native comparisons.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.10.0 |
+| Package version | 3.10.1 |
 | Public API exports | 2 |
 | Python capability source modules | 278 |
 | Python capability classes | 547 |
-| Capability documentation pages | 56 |
+| Capability documentation pages | 57 |
 | Rust workspace crates | 12 |
 | Optional extras | 13 |
 | Python test files | 447 |
-| Public documentation pages | 56 |
+| Public documentation pages | 57 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

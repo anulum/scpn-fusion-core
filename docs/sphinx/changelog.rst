@@ -5,7 +5,15 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.10.0 (Current)
+v3.10.1 (Current)
+-------------------
+
+- Patch release for GitHub Pages publication hardening, pull-request triage, and dependency-maintenance release alignment.
+- Preserves the ``.nojekyll`` marker in the Pages artifact and carries the safe CodeQL upload-sarif maintenance update.
+- Publishes a green post-push ``main`` state with no open pull requests and no open Dependabot, code-scanning, or secret-scanning alerts before tagging.
+- Keeps full-fidelity solver parity gates fail-closed; no blocked claim is promoted by this patch release.
+
+v3.10.0
 -------------------
 
 - Runtime-hardening, Studio-federation, generated-manifest, strict-typing, and documentation-alignment release.
