@@ -1,0 +1,59 @@
+{
+  "claim_boundary": "Comparison against a really-executed TORAX basic_config run; the reduced 1.5D solver and TORAX differ by design and by the open solver-stability finding below. Metrics are recorded divergence, not equivalence.",
+  "divergence_metrics": {
+    "core_te_ratio_fine_over_torax": 0.03569827674924581,
+    "normalised_te_shape_rel_l2_fine": 0.8473401292429413
+  },
+  "environment": {
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "our_solver": {
+    "coarse_run": {
+      "dt_s": 0.5,
+      "final_core_ti_kev": 1.004519855398678,
+      "finite": true,
+      "limit_cycle_detected": true,
+      "peak_core_ti_kev": 22.526922609838753,
+      "steps": 44
+    },
+    "config": "validation/iter_config.json",
+    "fine_run": {
+      "dt_s": 0.1,
+      "final_core_ti_kev": 0.826470819668264,
+      "finite": true,
+      "limit_cycle_detected": true,
+      "peak_core_ti_kev": 5.547636306413034,
+      "steps": 80
+    },
+    "p_aux_mw": 50.0
+  },
+  "passes_thresholds": true,
+  "physics_equivalence_claimed": false,
+  "reference": {
+    "artifact": "validation/reference_data/torax/torax_basic_config_profiles.json",
+    "final_time_s": 5.0,
+    "profile_checksum_sha256": "2c0f08ed350a69c1abd57a80f2d5db56a8bd9e4d3c3bb7d494787f21e2931299",
+    "provenance": {
+      "code": "TORAX",
+      "code_url": "https://github.com/google-deepmind/torax",
+      "config_name": "basic_config",
+      "config_sha256": "99397a3242dd414d9120b00de1f6bc3c60834574a12c0d0950390b9c81044f79",
+      "generated_at_utc": "2026-07-04T10:39:47+00:00",
+      "licence": "Apache-2.0",
+      "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "sim_error": "SimError.NO_ERROR",
+      "torax_version": "1.4.3"
+    },
+    "torax_core_te_kev": 23.15156066141833
+  },
+  "schema": "scpn-fusion-core.torax-real-parity.v1",
+  "solver_stability_findings": {
+    "disposition": "open correctness row: root-cause the source/diffusion splitting dt-dependence before any TORAX equivalence threshold is set",
+    "limit_cycle_at_coarse_dt": true,
+    "sawtooth_model_present_in_lane": false,
+    "steady_state_dt_dependence": "final core Ti 0.83 keV at dt=0.1 s vs peak 22.53 keV at dt=0.5 s on the same config and heating"
+  },
+  "status": "real_torax_reference_acquired_divergence_documented"
+}
