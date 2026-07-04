@@ -109,15 +109,19 @@ Rust-only extension symbols without a NumPy floor are resolved through
 | Kernel | Rust tier | NumPy tier | Notes |
 |---|---|---|---|
 | `equilibrium_kernel` (class) | `RustAcceleratedKernel` | `FusionKernel` | drop-in swap; Grad-Shafranov solve |
+| `hall_mhd_discovery` (class) | `PyHallMHD` | `HallMHD` | reconciled reduced Hall-MHD; statistically equivalent seeded trajectories |
 | `shafranov_bv` | ✓ | ✓ | bit-exact parity |
 | `solve_coil_currents` | ✓ | ✓ | tolerance-aware (ridge) |
 | `measure_magnetics` | ✓ | ✓ | tolerance-aware (bilinear + probe θ) |
 | `multigrid_solve` | ✓ | ✓ | machine-precision parity |
 | `simulate_tearing_mode` | ✓ | ✓ | deterministic-step bit-exact + statistical trajectory |
 
-All six dispatched kernels have a **NumPy floor** — the package runs with no Rust extension
-present. The `MOJO`/`JULIA`/`GO` tiers exist in the enum as a forward-looking chain but have no
-registered providers today.
+All dispatched kernels have a **NumPy floor** — the package runs with no Rust extension
+present. In addition, `diagnostics.PlasmaTomography.reconstruct` prefers the Rust
+Tikhonov-NNLS backend (`PyTomography`, resolved through `dispatch_rust_symbol`) for its
+`auto` method and degrades to SciPy `lsq_linear` then SART; the backends share the same
+endpoint-inclusive geometry matrix and convex objective. The `MOJO`/`JULIA`/`GO` tiers
+exist in the enum as a forward-looking chain but have no registered providers today.
 
 The dispatcher proof surface is tracked by
 `validation/reports/dispatcher_kernel_tiers_benchmark.json`, generated with
@@ -144,12 +148,20 @@ kernel while selecting the NumPy floor.
 | `fusion-gpu` | wgpu compute: Red-Black SOR + multigrid V-cycle GS solver | `PyGpuSolver` (feature-gated `gpu`) |
 
 The PyO3 surface (`fusion-python/src/lib.rs`) is the complete Rust→Python API. Most exports are
-consumed either through the dispatcher (the six kernels above + the equilibrium class) or by
-direct import in a small number of performance-critical sites (the SCPN runtime kernels, the
-Rust flight simulator). A subset of physics classes (`PyHallMHD`, `PyDriftWave`,
-`PyFokkerPlanckSolver`, `PyReducedMHD`, `PyFnoController`, `PyMpcController`, `PyTomography`,
-`PyPlasma2D`) and the GPU solver (`PyGpuSolver`) are **built and tested but not yet wired to a
-Python consumer** — they are available as a forward capability surface.
+consumed either through the dispatcher (the function kernels above, the equilibrium and
+Hall-MHD classes, and the tomography solver path) or by direct import in a small number of
+performance-critical sites (the SCPN runtime kernels, the Rust flight simulator). The
+remaining exports are an explicit **library-only capability surface** — built and tested but
+deliberately not on a production dispatch path, each for a stated reason:
+`py_advance_boris`/`PyParticle` (uniform-field full-orbit pusher; the production
+`orbit_following` lane is a guiding-centre integrator in spatially varying fields, so the
+two are not interchangeable), `PyDriftWave` and `PyReducedMHD` (no Python twin implements
+the same reduced model), and `PyFokkerPlanckSolver`, `PyFnoController`, `PyMpcController`,
+`PyPlasma2D`, `PyInverseSolver`, `PyPlantModel` (Python counterparts exist but the pairs
+have not been contract-reconciled; wiring them without a parity contract would overstate
+equivalence). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
+the default extension. Reconciliation of these pairs is tracked internally and follows the
+same pattern used for the Hall-MHD and tomography lanes.
 
 ### 3.3 JAX research tier
 
