@@ -18,6 +18,8 @@ local benchmark tasks can exercise a full discovery-style simulation path:
 
 from __future__ import annotations
 
+from typing import Protocol, Sequence, cast
+
 import numpy as np
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
@@ -32,6 +34,62 @@ DT = 0.005
 STEPS = 2000
 
 
+class HallMHDSimulator(Protocol):
+    """Sim-loop protocol shared by the NumPy and Rust Hall-MHD backends."""
+
+    def step(self) -> tuple[float, float]:
+        """Advance one step, returning ``(total_energy, zonal_energy)``."""
+        ...
+
+    @property
+    def energy_history(self) -> Sequence[float]:
+        """Per-step total-energy history."""
+        ...
+
+
+def create_hall_mhd(
+    N: int = GRID,
+    eta: float | None = None,
+    nu: float | None = None,
+    *,
+    seed: int | None = None,
+    background_amplitude: float = 0.0,
+) -> HallMHDSimulator:
+    """Return the fastest available Hall-MHD discovery simulator.
+
+    Dispatches Rust → NumPy through the class-kernel registry. Both tiers
+    implement the same reconciled reduced Hall-MHD model; trajectories are
+    statistically equivalent (language-native seeded RNG streams), and the
+    returned object satisfies the :class:`HallMHDSimulator` sim-loop protocol.
+
+    Parameters
+    ----------
+    N : int
+        Grid size per dimension.
+    eta : float, optional
+        Resistivity; backend default ``1e-4`` when omitted.
+    nu : float, optional
+        Hyper-viscosity; backend default ``1e-4`` when omitted.
+    seed : int, optional
+        Per-backend deterministic RNG seed for reproducible replay.
+    background_amplitude : float
+        Static current-sheet amplitude ``A`` in ``psi_0 = A cos(x)``; zero
+        keeps the unforced decay sandbox.
+
+    Returns
+    -------
+    HallMHDSimulator
+        The fastest available backend instance.
+    """
+    from scpn_fusion.core._multi_compat import dispatch_kernel_class
+
+    simulator_cls = dispatch_kernel_class("hall_mhd_discovery")
+    return cast(
+        HallMHDSimulator,
+        simulator_cls(N, eta, nu, seed=seed, background_amplitude=background_amplitude),
+    )
+
+
 def spitzer_resistivity(T_e_eV: float, Z_eff: float = 1.0, ln_lambda: float = 17.0) -> float:
     """Spitzer resistivity [Ohm*m]. eta = 1.65e-9 * Z_eff * ln_lambda / T_e^1.5."""
     if T_e_eV <= 0:
@@ -44,9 +102,24 @@ class HallMHD:
 
     Fields: phi (stream function), psi (magnetic flux),
     U (vorticity), J (current density).
+
+    An optional static background flux ``psi_0 = background_amplitude * cos(x)``
+    (a doubly-periodic current sheet) provides the classic reduced tearing-mode
+    drive: perturbations grow by reconnection at the resonant surfaces while
+    the background is treated as externally sustained (only the perturbation is
+    resistively dissipated). With ``background_amplitude = 0`` the model is the
+    unforced decaying discovery sandbox.
     """
 
-    def __init__(self, N: int = GRID, eta: float | None = None, nu: float | None = None) -> None:
+    def __init__(
+        self,
+        N: int = GRID,
+        eta: float | None = None,
+        nu: float | None = None,
+        *,
+        seed: int | None = None,
+        background_amplitude: float = 0.0,
+    ) -> None:
         self.N = N
         k = np.fft.fftfreq(N, d=L / (2 * np.pi * N))
         self.kx, self.ky = np.meshgrid(k, k)
@@ -57,19 +130,29 @@ class HallMHD:
         kmax = np.max(k)
         self.mask = np.where(self.k2 < (2 / 3 * kmax) ** 2, 1.0, 0.0)
 
-        # Init Random Fields
+        # Init Random Fields (seedable for per-backend deterministic replay)
         noise = 1e-3
+        rng = np.random.default_rng(seed)
         self.phi_k: ComplexArray = np.asarray(
-            fft2(np.random.randn(N, N) * noise) * self.mask, dtype=np.complex128
+            fft2(rng.standard_normal((N, N)) * noise) * self.mask, dtype=np.complex128
         )
         self.psi_k: ComplexArray = np.asarray(
-            fft2(np.random.randn(N, N) * noise) * self.mask, dtype=np.complex128
+            fft2(rng.standard_normal((N, N)) * noise) * self.mask, dtype=np.complex128
+        )
+
+        # Static background flux psi_0 = A cos(x): the tearing-mode drive.
+        self.background_amplitude = float(background_amplitude)
+        x = np.linspace(0.0, L, N, endpoint=False)
+        xx, _ = np.meshgrid(x, x)
+        self.psi0_k: ComplexArray = np.asarray(
+            fft2(self.background_amplitude * np.cos(xx)) * self.mask,
+            dtype=np.complex128,
         )
 
         # Physics Constants
         self.rho_s = 0.1  # Larmor radius (Hall scale)
         self.beta = 0.01  # Plasma Beta
-        self.nu = 1e-4  # Viscosity
+        self.nu = 1e-4  # Hyper-viscosity
         if nu is not None:
             self.nu = nu
         self.eta = 1e-4  # Resistivity
@@ -105,30 +188,34 @@ class HallMHD:
     def dynamics(self, phi: ComplexArray, psi: ComplexArray) -> tuple[ComplexArray, ComplexArray]:
         """Evaluate the reduced Hall-MHD right-hand side for (phi, psi).
 
-        d(U)/dt = [phi, U] + [J, psi] + nu*del^4 U; d(psi)/dt = [phi, psi] +
-        rho_s^2 [J, psi] - eta*J, where U = del^2 phi and J = del^2 psi.
+        dU/dt = -[phi, U] + beta*[J_tot, psi_tot] - nu*k^4*U and
+        dpsi/dt = -[phi, psi_tot] + rho_s^2*[J_tot, psi_tot] - eta*k^2*psi,
+        where U = del^2 phi, psi_tot = psi_0 + psi includes the optional static
+        background current sheet, J_tot = del^2 psi_tot, and only the
+        perturbation psi is resistively dissipated (the background is treated
+        as externally sustained).
         """
-        # Derivatives
+        # Derivatives (totals include the optional tearing background)
+        psi_tot = psi + self.psi0_k
         U = -self.k2 * phi
-        J = -self.k2 * psi
+        J_tot = -self.k2 * psi_tot
 
         # Nonlinear terms
         comm_phi_U = self.poisson_bracket(phi, U)
-        comm_J_psi = self.poisson_bracket(J, psi)
-        comm_phi_psi = self.poisson_bracket(phi, psi)
+        comm_J_psi = self.poisson_bracket(J_tot, psi_tot)
+        comm_phi_psi = self.poisson_bracket(phi, psi_tot)
 
         # Hall term (makes it Hall-MHD)
         comm_J_psi_hall = comm_J_psi * (self.rho_s**2)
 
         # Vorticity Equation
-        # dU/dt = -[phi, U] + beta * [J, psi] + dissipation
+        # dU/dt = -[phi, U] + beta * [J_tot, psi_tot] - nu*k^4*U
         dU_dt = -comm_phi_U + (self.beta * comm_J_psi) - (self.nu * self.k2**2 * U)
 
         # Ohm's Law (Magnetic Flux)
-        # dpsi/dt = -[phi, psi] + Hall_Term - eta*J
-        dpsi_dt = (
-            -comm_phi_psi + comm_J_psi_hall + (self.eta * self.k2 * psi)
-        )  # + eta*J means -eta*del2psi
+        # dpsi/dt = -[phi, psi_tot] + Hall_Term + eta*del^2 psi
+        # (resistive dissipation of the perturbation: eta*del^2 -> -eta*k^2)
+        dpsi_dt = -comm_phi_psi + comm_J_psi_hall - (self.eta * self.k2 * psi)
 
         # Invert Vorticity to get dphi/dt
         dphi_dt = -dU_dt / self.k2
@@ -178,21 +265,37 @@ class HallMHD:
         nu_range: tuple[float, float],
         n_steps: int = 5,
         sim_steps: int = 200,
+        *,
+        seed: int | None = 0,
+        background_amplitude: float = 1.0,
     ) -> dict[str, list[float]]:
-        """Run a grid of simulations varying eta and nu, returning growth rates."""
+        """Run a grid of driven simulations varying eta and nu, returning growth rates.
+
+        Each grid point evolves a fresh current-sheet-driven simulation (see the
+        class docstring) from a seeded initial condition, so the sweep is
+        reproducible per backend. The growth rate is the mean log-slope of the
+        late-time energy history.
+        """
         results: dict[str, list[float]] = {"eta": [], "nu": [], "growth_rate": []}
         for eta_val in np.linspace(eta_range[0], eta_range[1], n_steps):
             for nu_val in np.linspace(nu_range[0], nu_range[1], n_steps):
-                sim = HallMHD(self.N, eta=eta_val, nu=nu_val)
+                sim = create_hall_mhd(
+                    self.N,
+                    eta=float(eta_val),
+                    nu=float(nu_val),
+                    seed=seed,
+                    background_amplitude=background_amplitude,
+                )
                 for _ in range(sim_steps):
                     sim.step()
-                if len(sim.energy_history) > 10:
-                    e = np.array(sim.energy_history[-10:])
-                    growth = np.mean(np.diff(np.log(np.maximum(e, 1e-30))))
+                history = np.asarray(sim.energy_history, dtype=np.float64)
+                if history.size > 10:
+                    e = history[-10:]
+                    growth = float(np.mean(np.diff(np.log(np.maximum(e, 1e-30)))))
                 else:
                     growth = 0.0
-                results["eta"].append(eta_val)
-                results["nu"].append(nu_val)
+                results["eta"].append(float(eta_val))
+                results["nu"].append(float(nu_val))
                 results["growth_rate"].append(growth)
         return results
 
@@ -201,23 +304,40 @@ class HallMHD:
         eta_range: tuple[float, float] = (1e-6, 1e-2),
         n_bisect: int = 10,
         sim_steps: int = 500,
+        *,
+        seed: int | None = 0,
+        background_amplitude: float = 1.0,
     ) -> dict[str, float]:
-        """Bisection search for the marginal tearing stability threshold."""
+        """Bisection search for the marginal resistivity of the driven sheet.
+
+        With the static current-sheet drive enabled, perturbation growth is
+        sustained at low resistivity and suppressed once resistive dissipation
+        of the perturbation dominates; the bisection brackets the empirical
+        marginal ``eta`` where the late-time log-slope of the energy history
+        changes sign in this box. This is an empirical sandbox threshold, not a
+        literature-parity tearing growth-rate claim.
+        """
         lo, hi = eta_range
         for _ in range(n_bisect):
-            mid = np.sqrt(lo * hi)  # geometric mean
-            sim = HallMHD(self.N, eta=mid)
+            mid = float(np.sqrt(lo * hi))  # geometric mean
+            sim = create_hall_mhd(
+                self.N,
+                eta=mid,
+                seed=seed,
+                background_amplitude=background_amplitude,
+            )
             for _ in range(sim_steps):
                 sim.step()
-            if len(sim.energy_history) > 20:
-                e = np.array(sim.energy_history[-20:])
-                growth = np.mean(np.diff(np.log(np.maximum(e, 1e-30))))
+            history = np.asarray(sim.energy_history, dtype=np.float64)
+            if history.size > 20:
+                e = history[-20:]
+                growth = float(np.mean(np.diff(np.log(np.maximum(e, 1e-30)))))
             else:
                 growth = 0.0
             if growth > 0:
-                hi = mid
+                lo = mid  # still growing: marginal eta lies above mid
             else:
-                lo = mid
+                hi = mid  # decaying: marginal eta lies below mid
         return {"threshold_eta": float(np.sqrt(lo * hi)), "lo": lo, "hi": hi}
 
 

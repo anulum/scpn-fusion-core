@@ -55,16 +55,28 @@ class TestPyHallMHD:
     def test_energy_history_grows(self):
         mhd = scpn_fusion_rs.PyHallMHD(32)
         mhd.run(50)
-        hist = mhd.energy_history()
+        hist = mhd.energy_history
         assert isinstance(hist, np.ndarray)
         assert len(hist) == 50
 
     def test_zonal_history_grows(self):
         mhd = scpn_fusion_rs.PyHallMHD(32)
         mhd.run(50)
-        hist = mhd.zonal_history()
+        hist = mhd.zonal_history
         assert isinstance(hist, np.ndarray)
         assert len(hist) == 50
+
+    def test_seeded_construction_is_deterministic(self):
+        first = scpn_fusion_rs.PyHallMHD(16, None, None, 42, 0.0)
+        second = scpn_fusion_rs.PyHallMHD(16, None, None, 42, 0.0)
+        for _ in range(5):
+            assert first.step() == second.step()
+
+    def test_physics_parameters_exposed(self):
+        mhd = scpn_fusion_rs.PyHallMHD(16, 2e-4, 3e-4, 1, 1.0)
+        assert mhd.eta == 2e-4
+        assert mhd.nu == 3e-4
+        assert mhd.grid_size == 16
 
 
 # ── WP-PY2: FNO Controller ──────────────────────────────────────────

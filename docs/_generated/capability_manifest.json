@@ -934,6 +934,10 @@
         "path": "src/scpn_fusion/core/hall_mhd_pulsed.py"
       },
       {
+        "name": "HallMHDSimulator",
+        "path": "src/scpn_fusion/core/hall_mhd_discovery.py"
+      },
+      {
         "name": "HaloCurrentModel",
         "path": "src/scpn_fusion/control/halo_re_physics.py"
       },
@@ -2587,7 +2591,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 57,
-    "python_capability_classes": 547,
+    "python_capability_classes": 548,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 12,
     "test_files": 447

@@ -1187,10 +1187,22 @@ struct PyHallMHD {
 #[pymethods]
 impl PyHallMHD {
     #[new]
-    #[pyo3(signature = (n=64))]
-    fn new(n: usize) -> Self {
+    #[pyo3(signature = (n=64, eta=None, nu=None, seed=None, background_amplitude=0.0))]
+    fn new(
+        n: usize,
+        eta: Option<f64>,
+        nu: Option<f64>,
+        seed: Option<u64>,
+        background_amplitude: f64,
+    ) -> Self {
         Self {
-            inner: HallMHD::new(n),
+            inner: HallMHD::configure(
+                n,
+                eta.unwrap_or(1.0e-4),
+                nu.unwrap_or(1.0e-4),
+                seed,
+                background_amplitude,
+            ),
         }
     }
 
@@ -1202,10 +1214,12 @@ impl PyHallMHD {
         self.inner.run(n_steps)
     }
 
+    #[getter]
     fn energy_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
         Array1::from_vec(self.inner.energy_history.clone()).into_pyarray(py)
     }
 
+    #[getter]
     fn zonal_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
         Array1::from_vec(self.inner.zonal_history.clone()).into_pyarray(py)
     }
@@ -1213,6 +1227,16 @@ impl PyHallMHD {
     #[getter]
     fn grid_size(&self) -> usize {
         self.inner.n
+    }
+
+    #[getter]
+    fn eta(&self) -> f64 {
+        self.inner.eta
+    }
+
+    #[getter]
+    fn nu(&self) -> f64 {
+        self.inner.nu
     }
 }
 

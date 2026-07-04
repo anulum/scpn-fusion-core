@@ -350,6 +350,22 @@ def registered_kernels() -> dict[str, list[str]]:
         return result
 
 
+def registered_kernel_classes() -> dict[str, list[str]]:
+    """Return all registered kernel classes and their available tiers.
+
+    Mirrors :func:`registered_kernels` for the stateful class registry: each
+    tier name carries a ``*`` suffix when its backend probe reports available.
+    """
+    _ensure_probed()
+    with _class_registry_lock:
+        result: dict[str, list[str]] = {}
+        for name, entries in sorted(_class_registry.items()):
+            result[name] = [
+                f"{_TIER_NAMES[t]}{'*' if _availability.get(t, False) else ''}" for t, _ in entries
+            ]
+        return result
+
+
 # ---------------------------------------------------------------------------
 # Kernel-class (factory) registry — for stateful backends such as the
 # equilibrium solver, where the unit of dispatch is a class, not a function.
@@ -438,15 +454,42 @@ def _load_numpy_equilibrium_kernel() -> type:
     return FusionKernel
 
 
+def _load_rust_hall_mhd() -> type:
+    """Load the Rust reduced Hall-MHD discovery simulator class."""
+    module = import_module("scpn_fusion_rs")
+    simulator = module.PyHallMHD
+    if not isinstance(simulator, type):
+        raise TypeError("scpn_fusion_rs.PyHallMHD is not a class")
+    return simulator
+
+
+def _load_numpy_hall_mhd() -> type:
+    """Load the pure-Python reduced Hall-MHD discovery simulator class."""
+    from scpn_fusion.core.hall_mhd_discovery import HallMHD
+
+    return HallMHD
+
+
 def _bootstrap_kernel_classes() -> None:
     """Register the stateful kernel classes with their backend tiers.
 
     The equilibrium kernel dispatches Rust → NumPy: ``RustAcceleratedKernel`` is
     a drop-in for ``FusionKernel`` (same attribute/method interface), so the
     fastest available class is interchangeable for callers.
+
+    The Hall-MHD discovery simulator dispatches Rust → NumPy on the shared
+    sim-loop protocol (``(n, eta, nu, *, seed, background_amplitude)``
+    construction, ``step() -> (total_energy, zonal_energy)``, ``run``, and the
+    ``energy_history`` sequence). Both tiers implement the same reconciled
+    reduced Hall-MHD model (hyper-viscous ``-nu k^4 U``, resistive
+    ``-eta k^2 psi``, optional static current-sheet drive); trajectories are
+    statistically equivalent, not bit-exact, because the seeded RNG streams
+    are language-native.
     """
     register_kernel_class("equilibrium_kernel", BackendTier.RUST, _load_rust_equilibrium_kernel)
     register_kernel_class("equilibrium_kernel", BackendTier.NUMPY, _load_numpy_equilibrium_kernel)
+    register_kernel_class("hall_mhd_discovery", BackendTier.RUST, _load_rust_hall_mhd)
+    register_kernel_class("hall_mhd_discovery", BackendTier.NUMPY, _load_numpy_hall_mhd)
 
 
 # ---------------------------------------------------------------------------

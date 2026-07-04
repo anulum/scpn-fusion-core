@@ -13,7 +13,8 @@
 use fusion_math::fft::{fft2, ifft2};
 use ndarray::Array2;
 use num_complex::Complex64;
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use rand_distr::StandardNormal;
 
 /// Default grid size. Python: GRID=64.
@@ -53,6 +54,14 @@ pub struct HallMHD {
     k2: Array2<f64>,
     /// De-aliasing mask.
     mask: Array2<f64>,
+    /// Resistivity η (dissipates magnetic flux as -η·k²·ψ).
+    pub eta: f64,
+    /// Hyper-viscosity ν (dissipates vorticity as -ν·k⁴·U).
+    pub nu: f64,
+    /// Static background flux ψ₀ = A·cos(x) (spectral): the tearing drive.
+    psi0_k: Array2<Complex64>,
+    /// Background current-sheet amplitude A (0 = unforced decay sandbox).
+    pub background_amplitude: f64,
     /// Total energy history.
     pub energy_history: Vec<f64>,
     /// Zonal flow energy history.
@@ -60,8 +69,30 @@ pub struct HallMHD {
 }
 
 impl HallMHD {
+    /// Construct with the default resistivity/viscosity (η = ν = 1e-4).
     pub fn new(n: usize) -> Self {
-        let mut rng = rand::thread_rng();
+        Self::with_physics(n, RESISTIVITY, VISCOSITY)
+    }
+
+    /// Construct with explicit resistivity η and hyper-viscosity ν.
+    pub fn with_physics(n: usize, eta: f64, nu: f64) -> Self {
+        Self::configure(n, eta, nu, None, 0.0)
+    }
+
+    /// Full constructor: explicit physics, optional RNG seed for
+    /// per-backend deterministic replay, and an optional static
+    /// current-sheet background ψ₀ = A·cos(x) providing the tearing drive.
+    pub fn configure(
+        n: usize,
+        eta: f64,
+        nu: f64,
+        seed: Option<u64>,
+        background_amplitude: f64,
+    ) -> Self {
+        let mut rng: Box<dyn rand::RngCore> = match seed {
+            Some(value) => Box::new(StdRng::seed_from_u64(value)),
+            None => Box::new(rand::thread_rng()),
+        };
 
         let kx = Array2::from_shape_fn((n, n), |(_, j)| {
             if j <= n / 2 {
@@ -112,19 +143,41 @@ impl HallMHD {
             }
         });
 
-        // Initial noise
-        let phi_k = Array2::from_shape_fn((n, n), |_| {
+        // Initial noise, de-aliased at init exactly like the Python reference:
+        // super-cutoff modes must start (and stay) zero, otherwise the k^4
+        // hyper-viscosity at corner wavenumbers exceeds the explicit RK2
+        // stability limit and the unforced run diverges.
+        let mut phi_k = Array2::from_shape_fn((n, n), |_| {
             Complex64::new(
                 rng.sample::<f64, _>(StandardNormal) * 1e-3,
                 rng.sample::<f64, _>(StandardNormal) * 1e-3,
             )
         });
-        let psi_k = Array2::from_shape_fn((n, n), |_| {
+        let mut psi_k = Array2::from_shape_fn((n, n), |_| {
             Complex64::new(
                 rng.sample::<f64, _>(StandardNormal) * 1e-3,
                 rng.sample::<f64, _>(StandardNormal) * 1e-3,
             )
         });
+        for i in 0..n {
+            for j in 0..n {
+                let mask_value = Complex64::new(mask[[i, j]], 0.0);
+                phi_k[[i, j]] *= mask_value;
+                psi_k[[i, j]] *= mask_value;
+            }
+        }
+
+        // Static background flux psi_0 = A cos(x) (spectral, de-aliased).
+        let two_pi = 2.0 * std::f64::consts::PI;
+        let psi0_real = Array2::from_shape_fn((n, n), |(_, j)| {
+            background_amplitude * (two_pi * j as f64 / n as f64).cos()
+        });
+        let mut psi0_k = fft2(&psi0_real);
+        for i in 0..n {
+            for j in 0..n {
+                psi0_k[[i, j]] *= Complex64::new(mask[[i, j]], 0.0);
+            }
+        }
 
         HallMHD {
             n,
@@ -134,6 +187,10 @@ impl HallMHD {
             ky,
             k2,
             mask,
+            eta,
+            nu,
+            psi0_k,
+            background_amplitude,
             energy_history: Vec::new(),
             zonal_history: Vec::new(),
         }
@@ -182,6 +239,10 @@ impl HallMHD {
     }
 
     /// Compute RHS of reduced Hall-MHD equations.
+    ///
+    /// The totals `psi_tot = psi_0 + psi` include the optional static
+    /// current-sheet background; only the perturbation `psi` is resistively
+    /// dissipated (the background is treated as externally sustained).
     fn dynamics(
         &self,
         phi_k: &Array2<Complex64>,
@@ -189,24 +250,26 @@ impl HallMHD {
     ) -> (Array2<Complex64>, Array2<Complex64>) {
         let n = self.n;
 
-        // Derived: vorticity U = -k²φ, current density J = -k²ψ
+        // Totals including the tearing background; U = -k²φ, J_tot = -k²ψ_tot
+        let psi_tot = Array2::from_shape_fn((n, n), |(i, j)| psi_k[[i, j]] + self.psi0_k[[i, j]]);
         let u_k = Array2::from_shape_fn((n, n), |(i, j)| {
             -Complex64::new(self.k2[[i, j]], 0.0) * phi_k[[i, j]]
         });
         let j_k = Array2::from_shape_fn((n, n), |(i, j)| {
-            -Complex64::new(self.k2[[i, j]], 0.0) * psi_k[[i, j]]
+            -Complex64::new(self.k2[[i, j]], 0.0) * psi_tot[[i, j]]
         });
 
         // Nonlinear terms
         let bracket_phi_u = self.poisson_bracket(phi_k, &u_k);
-        let bracket_j_psi = self.poisson_bracket(&j_k, psi_k);
-        let bracket_phi_psi = self.poisson_bracket(phi_k, psi_k);
+        let bracket_j_psi = self.poisson_bracket(&j_k, &psi_tot);
+        let bracket_phi_psi = self.poisson_bracket(phi_k, &psi_tot);
 
-        // dU/dt = -[φ,U] + β[J,ψ] - ν·k²·U
+        // dU/dt = -[φ,U] + β[J,ψ] - ν·k⁴·U (hyper-viscosity, matching the
+        // pseudo-spectral Python reference model)
         let du_k = Array2::from_shape_fn((n, n), |(i, j)| {
             let k2v = self.k2[[i, j]];
             -bracket_phi_u[[i, j]] + Complex64::new(BETA, 0.0) * bracket_j_psi[[i, j]]
-                - Complex64::new(VISCOSITY * k2v, 0.0) * u_k[[i, j]]
+                - Complex64::new(self.nu * k2v * k2v, 0.0) * u_k[[i, j]]
         });
 
         // dφ/dt = -dU/dt / k²
@@ -219,11 +282,11 @@ impl HallMHD {
             }
         });
 
-        // dψ/dt = -[φ,ψ] + ρ_s²·[J,ψ] - η·k²·ψ
+        // dψ/dt = -[φ,ψ] + ρ_s²·[J,ψ] - η·k²·ψ (resistive dissipation η∇²ψ)
         let dpsi_k = Array2::from_shape_fn((n, n), |(i, j)| {
             let k2v = self.k2[[i, j]];
             -bracket_phi_psi[[i, j]] + Complex64::new(RHO_S * RHO_S, 0.0) * bracket_j_psi[[i, j]]
-                - Complex64::new(RESISTIVITY * k2v, 0.0) * psi_k[[i, j]]
+                - Complex64::new(self.eta * k2v, 0.0) * psi_k[[i, j]]
         });
 
         (dphi_k, dpsi_k)
