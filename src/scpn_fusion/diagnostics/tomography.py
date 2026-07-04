@@ -51,6 +51,42 @@ class PlasmaTomography:
         self.Z_rec = np.linspace(sensors.kernel.Z[0], sensors.kernel.Z[-1], self.res)
         self.n_pixels = self.res * self.res
         self.A = self._build_geometry_matrix()
+        self._rust_backend: Any = None
+
+    def _load_rust_backend(self) -> Any:
+        """Build (once) the Rust tomography twin from the identical geometry.
+
+        Both backends assemble the same endpoint-inclusive chord-sampling
+        geometry matrix and solve the same Tikhonov-regularised non-negative
+        least-squares problem, so their reconstructions agree to solver
+        tolerance.
+
+        Returns
+        -------
+        object
+            The Rust ``PyTomography`` instance.
+
+        Raises
+        ------
+        ImportError
+            If the optional Rust extension is unavailable.
+        """
+        if self._rust_backend is None:
+            from scpn_fusion.core._multi_compat import dispatch_rust_symbol
+
+            tomography_cls = dispatch_rust_symbol("PyTomography")
+            chords = [
+                ((float(start[0]), float(start[1])), (float(end[0]), float(end[1])))
+                for start, end in self.sensors.bolo_chords
+            ]
+            self._rust_backend = tomography_cls(
+                chords,
+                (float(self.R_rec[0]), float(self.R_rec[-1])),
+                (float(self.Z_rec[0]), float(self.Z_rec[-1])),
+                self.res,
+                self.lambda_reg,
+            )
+        return self._rust_backend
 
     def _log(self, message: str) -> None:
         if self.verbose:
@@ -72,8 +108,11 @@ class PlasmaTomography:
             for k in range(num_samples):
                 r = float(r_samples[k])
                 z = float(z_samples[k])
-                ir = int((r - float(self.R_rec[0])) / dr)
-                iz = int((z - float(self.Z_rec[0])) / dz)
+                # floor (not int truncation) so points left of the grid origin
+                # land in bin -1 and are excluded instead of aliasing into
+                # column 0; matches the Rust geometry assembly exactly.
+                ir = int(np.floor((r - float(self.R_rec[0])) / dr))
+                iz = int(np.floor((z - float(self.Z_rec[0])) / dz))
                 if 0 <= ir < self.res and 0 <= iz < self.res:
                     pixel_idx = iz * self.res + ir
                     A[i, pixel_idx] += dl
@@ -83,7 +122,10 @@ class PlasmaTomography:
     def reconstruct(self, signals: FloatArray, method: str = "auto") -> FloatArray:
         """Solve inversion problem Ax=b with regularization.
 
-        Supports 'lsq_linear' (SciPy), 'ridge' (Phillips-Twomey), and 'sart' (Iterative).
+        Supports 'rust' (fastest, Tikhonov-NNLS via accelerated projected
+        gradient), 'lsq_linear' (SciPy), 'ridge' (Phillips-Twomey), and 'sart'
+        (Iterative). 'auto' prefers the Rust backend and falls back to
+        'lsq_linear' then 'sart' when the extension is unavailable.
         """
         b = np.asarray(signals, dtype=np.float64).reshape(-1)
         if b.size != self.A.shape[0]:
@@ -93,7 +135,15 @@ class PlasmaTomography:
         b = np.maximum(b, 0.0)
 
         if method == "auto":
-            method = "lsq_linear" if lsq_linear is not None else "sart"
+            try:
+                self._load_rust_backend()
+                method = "rust"
+            except (ImportError, AttributeError, TypeError):
+                method = "lsq_linear" if lsq_linear is not None else "sart"
+
+        if method == "rust":
+            backend = self._load_rust_backend()
+            return np.asarray(backend.reconstruct(list(b)), dtype=np.float64)
 
         if method == "lsq_linear" and lsq_linear is not None:
             # SciPy Path

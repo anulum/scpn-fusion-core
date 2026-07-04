@@ -1321,19 +1321,31 @@ struct PyTomography {
 #[pymethods]
 impl PyTomography {
     #[new]
+    #[pyo3(signature = (chords, r_range, z_range, res, lambda_reg=0.1))]
     fn new(
         chords: Vec<((f64, f64), (f64, f64))>,
         r_range: (f64, f64),
         z_range: (f64, f64),
         res: usize,
+        lambda_reg: f64,
     ) -> Self {
         Self {
-            inner: PlasmaTomography::new(&chords, r_range, z_range, res),
+            inner: PlasmaTomography::with_lambda(&chords, r_range, z_range, res, lambda_reg),
         }
     }
 
     fn reconstruct<'py>(&self, py: Python<'py>, signals: Vec<f64>) -> Bound<'py, PyArray2<f64>> {
         self.inner.reconstruct_2d(&signals).into_pyarray(py)
+    }
+
+    #[getter]
+    fn lambda_reg(&self) -> f64 {
+        self.inner.lambda_reg
+    }
+
+    #[getter]
+    fn res(&self) -> usize {
+        self.inner.res
     }
 }
 

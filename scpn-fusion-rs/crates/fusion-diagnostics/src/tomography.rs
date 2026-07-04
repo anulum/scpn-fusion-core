@@ -38,6 +38,8 @@ pub struct PlasmaTomography {
     pub r_grid: Array1<f64>,
     /// Z coordinates of reconstruction grid.
     pub z_grid: Array1<f64>,
+    /// Tikhonov regularisation weight λ.
+    pub lambda_reg: f64,
 }
 
 impl PlasmaTomography {
@@ -47,6 +49,21 @@ impl PlasmaTomography {
     /// `r_range`: (R_min, R_max) of reconstruction domain.
     /// `z_range`: (Z_min, Z_max) of reconstruction domain.
     pub fn new(chords: &[Chord], r_range: (f64, f64), z_range: (f64, f64), res: usize) -> Self {
+        Self::with_lambda(chords, r_range, z_range, res, LAMBDA_REG)
+    }
+
+    /// Build tomography with an explicit Tikhonov regularisation weight.
+    ///
+    /// Chord sampling matches the Python reference exactly: `RAY_SAMPLES`
+    /// points inclusive of both endpoints (`t = k / (RAY_SAMPLES - 1)`), so
+    /// the geometry matrices of the two backends agree row for row.
+    pub fn with_lambda(
+        chords: &[Chord],
+        r_range: (f64, f64),
+        z_range: (f64, f64),
+        res: usize,
+        lambda_reg: f64,
+    ) -> Self {
         let r_grid = Array1::linspace(r_range.0, r_range.1, res);
         let z_grid = Array1::linspace(z_range.0, z_range.1, res);
         let dr = r_grid[1] - r_grid[0];
@@ -63,7 +80,7 @@ impl PlasmaTomography {
             let dl = length / RAY_SAMPLES as f64;
 
             for k in 0..RAY_SAMPLES {
-                let t = k as f64 / RAY_SAMPLES as f64;
+                let t = k as f64 / (RAY_SAMPLES - 1) as f64;
                 let r = sr + t * (er - sr);
                 let z = sz + t * (ez - sz);
 
@@ -82,6 +99,7 @@ impl PlasmaTomography {
             geometry,
             r_grid,
             z_grid,
+            lambda_reg,
         }
     }
 
@@ -117,7 +135,7 @@ impl PlasmaTomography {
 
         // Lipschitz constant: ||A^T A||_2 + λ ≤ ||A||_F^2 + λ
         let a_frob_sq: f64 = self.geometry.iter().map(|v| v * v).sum();
-        let lipschitz = a_frob_sq + LAMBDA_REG;
+        let lipschitz = a_frob_sq + self.lambda_reg;
         let step = 1.0 / (lipschitz + 1e-10);
 
         // Projected gradient descent (accelerated with Nesterov momentum)
@@ -128,7 +146,7 @@ impl PlasmaTomography {
             let momentum = k as f64 / (k as f64 + 3.0);
             let y = &x + &(&(&x - &x_prev) * momentum);
             // gradient at y: (A^T A + λI) y - A^T b
-            let grad = ata.dot(&y) + &y * LAMBDA_REG - &atb;
+            let grad = ata.dot(&y) + &y * self.lambda_reg - &atb;
             x_prev = x.clone();
             x = (&y - &(&grad * step)).mapv(|v| v.max(0.0));
         }

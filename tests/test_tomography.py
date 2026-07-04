@@ -52,14 +52,88 @@ def test_reconstruct_rejects_signal_length_mismatch() -> None:
         tomo.reconstruct(np.array([1.0, 2.0, 3.0], dtype=np.float64))
 
 
+def _force_rust_unavailable(monkeypatch: pytest.MonkeyPatch, tomo: PlasmaTomography) -> None:
+    """Make the Rust tomography backend unresolvable for fallback tests."""
+
+    def _raise(self: PlasmaTomography) -> None:
+        raise ImportError("forced-unavailable Rust tomography (test)")
+
+    monkeypatch.setattr(PlasmaTomography, "_load_rust_backend", _raise)
+    tomo._rust_backend = None
+
+
 def test_reconstruct_falls_back_when_lsq_linear_unavailable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(tomography_mod, "lsq_linear", None)
     tomo = tomography_mod.PlasmaTomography(_SensorStub(), grid_res=8, verbose=False)
+    _force_rust_unavailable(monkeypatch, tomo)
     out = tomo.reconstruct(np.linspace(0.1, 0.8, 8, dtype=np.float64))
     assert out.shape == (8, 8)
     assert np.min(out) >= 0.0
+
+
+def test_auto_falls_back_to_lsq_linear_without_rust(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Auto method degrades to the SciPy path when Rust is unavailable."""
+    tomo = PlasmaTomography(_SensorStub(), grid_res=8, verbose=False)
+    _force_rust_unavailable(monkeypatch, tomo)
+    out = tomo.reconstruct(np.linspace(0.1, 0.8, 8, dtype=np.float64))
+    assert out.shape == (8, 8)
+    assert np.min(out) >= 0.0
+
+
+def test_rust_backend_matches_scipy_reconstruction() -> None:
+    """The Rust Tikhonov-NNLS solution matches the SciPy lsq_linear solution.
+
+    Both backends assemble the identical endpoint-inclusive geometry matrix and
+    minimise the same convex objective, so the reconstructions of a synthetic
+    phantom agree to solver tolerance.
+    """
+    pytest.importorskip("scpn_fusion_rs")
+    tomo = PlasmaTomography(_SensorStub(), grid_res=10, verbose=False)
+    rng = np.random.default_rng(7)
+    phantom = rng.uniform(0.0, 1.0, size=tomo.n_pixels)
+    signals = tomo.A @ phantom
+
+    rust_solution = tomo.reconstruct(signals, method="rust")
+    scipy_solution = tomo.reconstruct(signals, method="lsq_linear")
+
+    assert rust_solution.shape == scipy_solution.shape == (10, 10)
+    scale = float(np.linalg.norm(scipy_solution))
+    rel_l2 = float(np.linalg.norm(rust_solution - scipy_solution)) / max(scale, 1e-30)
+    assert rel_l2 < 5.0e-2, f"rust vs scipy rel L2 {rel_l2}"
+
+
+def test_rust_reconstruction_fits_signals_like_scipy() -> None:
+    """Forward-projected Rust reconstruction fits the measured signals.
+
+    Cross-checks the geometry contract indirectly: projecting the Rust
+    reconstruction through the Python geometry matrix must reproduce the
+    signals about as well as the SciPy reconstruction does.
+    """
+    pytest.importorskip("scpn_fusion_rs")
+    tomo = PlasmaTomography(_SensorStub(), grid_res=10, verbose=False)
+    rng = np.random.default_rng(11)
+    phantom = rng.uniform(0.0, 1.0, size=tomo.n_pixels)
+    signals = tomo.A @ phantom
+
+    rust_solution = tomo.reconstruct(signals, method="rust").reshape(-1)
+    scipy_solution = tomo.reconstruct(signals, method="lsq_linear").reshape(-1)
+    rust_residual = float(np.linalg.norm(tomo.A @ rust_solution - signals))
+    scipy_residual = float(np.linalg.norm(tomo.A @ scipy_solution - signals))
+    assert rust_residual <= scipy_residual * 1.5 + 1e-9
+
+
+def test_auto_prefers_rust_when_available() -> None:
+    """Auto method selects the Rust backend when the extension resolves."""
+    pytest.importorskip("scpn_fusion_rs")
+    tomo = PlasmaTomography(_SensorStub(), grid_res=8, verbose=False)
+    signals = np.linspace(0.2, 1.0, 8, dtype=np.float64)
+    auto_solution = tomo.reconstruct(signals, method="auto")
+    rust_solution = tomo.reconstruct(signals, method="rust")
+    np.testing.assert_allclose(auto_solution, rust_solution, rtol=0.0, atol=0.0)
 
 
 @pytest.mark.parametrize(

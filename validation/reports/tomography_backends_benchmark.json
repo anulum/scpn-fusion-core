@@ -1,0 +1,36 @@
+{
+  "backends": {
+    "lsq_linear": {
+      "median_solve_s": 5.379313900950365,
+      "non_negative": true,
+      "status": "available"
+    },
+    "rust": {
+      "median_solve_s": 0.09907168091740459,
+      "non_negative": true,
+      "status": "available"
+    },
+    "sart": {
+      "median_solve_s": 0.0012047919444739819,
+      "non_negative": true,
+      "status": "available"
+    }
+  },
+  "benchmark_evidence": {
+    "classification": "local_non_isolated_regression",
+    "host": "aaarthuus",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "chords": 16,
+  "cross_backend_agreement": {
+    "rust_vs_lsq_linear_rel_l2": 0.04456317386819896,
+    "sart_vs_lsq_linear_rel_l2": 0.6570867236207459
+  },
+  "grid_res": 20,
+  "problem_contract": "identical endpoint-inclusive geometry matrix and Tikhonov-NNLS objective min ||Ax-b||^2 + lambda ||x||^2, x >= 0, per backend",
+  "repeats": 3,
+  "rust_over_lsq_linear_speedup": 54.29719018732571,
+  "schema": "scpn-fusion-core.tomography-backends-benchmark.v1",
+  "seed": 2026
+}
