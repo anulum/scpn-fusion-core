@@ -300,6 +300,7 @@ def test_a4_production_surfaces_use_dispatcher_for_rust_symbols() -> None:
         Path("src/scpn_fusion/phase/upde.py"),
         Path("src/scpn_fusion/scpn/controller_runtime_backend.py"),
         Path("src/scpn_fusion/control/rust_flight_sim_wrapper.py"),
+        Path("src/scpn_fusion/core/integrated_transport_solver.py"),
     ]
 
     for path in production_files:

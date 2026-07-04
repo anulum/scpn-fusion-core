@@ -66,11 +66,11 @@ __all__ = [
 _rust_transport_available = False
 _PyTransportSolver: Any = None
 try:
-    import scpn_fusion_rs
+    from scpn_fusion.core._multi_compat import dispatch_rust_symbol
 
-    _PyTransportSolver = scpn_fusion_rs.PyTransportSolver
+    _PyTransportSolver = dispatch_rust_symbol("PyTransportSolver")
     _rust_transport_available = True
-except ImportError as exc:
+except (ImportError, AttributeError, TypeError) as exc:
     _logger.debug("Rust transport bindings unavailable; using Python transport kernels: %s", exc)
 
 _RUST_TRANSPORT_FALLBACK_EXCEPTIONS = (
