@@ -9,11 +9,11 @@
 | Public API exports | 2 |
 | Python capability source modules | 279 |
 | Python capability classes | 548 |
-| Capability documentation pages | 58 |
+| Capability documentation pages | 59 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 453 |
-| Public documentation pages | 58 |
+| Python test files | 455 |
+| Public documentation pages | 59 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

@@ -129,11 +129,11 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Public API exports | 2 |
 | Python capability source modules | 279 |
 | Python capability classes | 548 |
-| Capability documentation pages | 58 |
+| Capability documentation pages | 59 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 453 |
-| Public documentation pages | 58 |
+| Python test files | 455 |
+| Public documentation pages | 59 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -457,7 +457,7 @@ and hardware-specific timing evidence exist.
 
 | Capability | SCPN Fusion Core | TORAX | FUSE | FreeGS | DREAM |
 |-----------|:---:|:---:|:---:|:---:|:---:|
-| Free-boundary GS solve | Public GEQDSK operator-source gate passes; FreeGSNKE public machine metadata is indexed; FreeGS public-example vacuum convention passes; profile-source/free-boundary reconstruction gate remains open; not EFIT-grade inverse reconstruction | N | N | Y | N |
+| Free-boundary GS solve | Public GEQDSK operator-source gate passes; FreeGSNKE public machine metadata is indexed; FreeGS public-example vacuum convention passes; profile-source/free-boundary reconstruction gate remains open with the per-file blocker attribution published in [docs/PSI_GATE_ATTRIBUTION.md](docs/PSI_GATE_ATTRIBUTION.md); solver credibility is established independently by the Solov'ev analytic suite (`validation/validate_grad_shafranov_solovev.py`); not EFIT-grade inverse reconstruction | N | N | Y | N |
 | 1.5D coupled transport | **Y** | Y | Y | N | N |
 | Neural transport surrogate | **Y** (QLKNN-10D) | N | N | N | N |
 | Native GK solver | Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence | N | N | N | N |

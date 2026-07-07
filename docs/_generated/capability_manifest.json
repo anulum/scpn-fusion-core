@@ -19,6 +19,7 @@
       "docs/PHYSICS_METHODS_COMPLETE.md",
       "docs/PHYSICS_VALIDATION_STATUS.md",
       "docs/PROJECT_OVERVIEW.md",
+      "docs/PSI_GATE_ATTRIBUTION.md",
       "docs/RELEASE_READINESS.md",
       "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
@@ -2592,15 +2593,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 58,
+    "capability_documentation_pages": 59,
     "github_workflows": 12,
     "optional_extras": 13,
     "public_api_exports": 2,
-    "public_documentation_pages": 58,
+    "public_documentation_pages": 59,
     "python_capability_classes": 548,
     "python_capability_source_modules": 279,
     "rust_workspace_crates": 13,
-    "test_files": 453
+    "test_files": 455
   },
   "documentation": {
     "public_pages": [
@@ -2621,6 +2622,7 @@
       "docs/PHYSICS_METHODS_COMPLETE.md",
       "docs/PHYSICS_VALIDATION_STATUS.md",
       "docs/PROJECT_OVERVIEW.md",
+      "docs/PSI_GATE_ATTRIBUTION.md",
       "docs/RELEASE_READINESS.md",
       "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
@@ -2923,6 +2925,7 @@
       "tests/test_gneu_03_fueling_mode.py",
       "tests/test_gpu_jax_backend.py",
       "tests/test_gpu_phase1_readiness.py",
+      "tests/test_grad_shafranov_solovev.py",
       "tests/test_gs_convergence.py",
       "tests/test_gs_operator_current_closure_benchmark.py",
       "tests/test_gs_residual_gate.py",
@@ -3047,6 +3050,7 @@
       "tests/test_polyglot_gs_benchmark.py",
       "tests/test_polyglot_gs_solver_contract.py",
       "tests/test_pretrained_surrogates.py",
+      "tests/test_psi_gate_attribution.py",
       "tests/test_psi_pointwise_rmse.py",
       "tests/test_psi_pointwise_rmse_cli.py",
       "tests/test_pulsed_compression.py",

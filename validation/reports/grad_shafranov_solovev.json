@@ -1,0 +1,107 @@
+{
+  "generated_utc": "2026-07-07T16:55:44Z",
+  "geometry": {
+    "a": 0.5,
+    "c1": 1.0,
+    "c2": 0.5,
+    "r0": 1.7,
+    "r_max": 2.45,
+    "r_min": 0.95,
+    "z_max": 0.75,
+    "z_min": -0.75
+  },
+  "min_order": 1.8,
+  "multigrid_fastest_record": {
+    "converged": true,
+    "cycles": 9,
+    "meets_analytic_tolerance": true,
+    "nrmse": 1.1939207089956168e-06,
+    "residual": 2.3515767111348396e-10,
+    "resolution": 97,
+    "tier": "rust"
+  },
+  "multigrid_numpy_record": {
+    "converged": true,
+    "cycles": 9,
+    "meets_analytic_tolerance": true,
+    "nrmse": 1.1939207107421718e-06,
+    "residual": 2.3357138445589953e-10,
+    "resolution": 97,
+    "tier": "numpy"
+  },
+  "multigrid_passed": true,
+  "operator_error_finest": 6.103516149469357e-05,
+  "operator_error_gate": 0.0005,
+  "operator_order": 1.9999999264443657,
+  "operator_passed": true,
+  "operator_records": [
+    {
+      "error": 0.0005493164065981659,
+      "mesh_spacing": 0.04687500000000001,
+      "resolution": 33
+    },
+    {
+      "error": 0.000244140626144862,
+      "mesh_spacing": 0.03125000000000001,
+      "resolution": 49
+    },
+    {
+      "error": 0.0001373291027597645,
+      "mesh_spacing": 0.023437500000000003,
+      "resolution": 65
+    },
+    {
+      "error": 6.103516149469357e-05,
+      "mesh_spacing": 0.015625000000000003,
+      "resolution": 97
+    }
+  ],
+  "passed": true,
+  "payload_sha256": "30ffca75cbe5ebc020ec859e80240262e93ce3bb8c004b7564c342a5274dc56b",
+  "reconstruction_nrmse_finest": 1.193922964848295e-06,
+  "reconstruction_nrmse_gate": 0.0001,
+  "reconstruction_order": 2.0187321658535966,
+  "reconstruction_passed": true,
+  "reconstruction_records": [
+    {
+      "converged": true,
+      "iterations": 651,
+      "mesh_spacing": 0.04687500000000001,
+      "nrmse": 1.0969371872753468e-05,
+      "residual_inf": 1.9185986133152255e-10,
+      "resolution": 33
+    },
+    {
+      "converged": true,
+      "iterations": 1451,
+      "mesh_spacing": 0.03125000000000001,
+      "nrmse": 4.825336500437407e-06,
+      "residual_inf": 4.4233239293589577e-10,
+      "resolution": 49
+    },
+    {
+      "converged": true,
+      "iterations": 2551,
+      "mesh_spacing": 0.023437500000000003,
+      "nrmse": 2.7002680111123482e-06,
+      "residual_inf": 7.162048731856885e-10,
+      "resolution": 65
+    },
+    {
+      "converged": true,
+      "iterations": 5701,
+      "mesh_spacing": 0.015625000000000003,
+      "nrmse": 1.193922964848295e-06,
+      "residual_inf": 9.70349134377102e-10,
+      "resolution": 97
+    }
+  ],
+  "resolutions": [
+    33,
+    49,
+    65,
+    97
+  ],
+  "schema_version": "scpn-fusion-core.grad-shafranov-solovev-validation.v1",
+  "target_id": "local-grad-shafranov-solovev"
+}

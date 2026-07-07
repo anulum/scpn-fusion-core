@@ -78,6 +78,8 @@ The threshold appears empirically set without a convergence study.
 | `tools/check_freegs_strict_artifact.py` | Strict artifact validator |
 | `.github/workflows/freegs-strict.yml` | Manual-dispatch strict lane |
 | `artifacts/freegs_benchmark.json` | Latest results (Solov'ev mode) |
+| `validation/validate_grad_shafranov_solovev.py` | Solov'ev exact-equilibrium suite: operator truncation, SOR, and dispatched multigrid all converge at second order to the analytic field (`validation/reports/grad_shafranov_solovev.json`) |
+| [`docs/PSI_GATE_ATTRIBUTION.md`](PSI_GATE_ATTRIBUTION.md) | Per-file attribution of the intentionally failing 18-file ψ_N reconstruction gate (generated, drift-checked) |
 
 ---
 

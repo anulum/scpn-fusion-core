@@ -63,6 +63,7 @@ def _build_release_checks(
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
     skip_safety_traceability: bool,
+    skip_psi_gate_attribution: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -179,6 +180,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/generate_safety_traceability.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_psi_gate_attribution:
+        checks.append(
+            (
+                "Psi gate attribution drift check",
+                [
+                    sys.executable,
+                    "tools/generate_psi_gate_attribution.py",
                     "--check",
                 ],
             )
@@ -497,6 +509,7 @@ def _build_checks(
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
     skip_safety_traceability: bool,
+    skip_psi_gate_attribution: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -538,6 +551,7 @@ def _build_checks(
                 skip_claim_range_guard=skip_claim_range_guard,
                 skip_claims_map=skip_claims_map,
                 skip_safety_traceability=skip_safety_traceability,
+                skip_psi_gate_attribution=skip_psi_gate_attribution,
                 skip_capability_manifest=skip_capability_manifest,
                 skip_readiness_register=skip_readiness_register,
                 skip_readiness_scope_reports=skip_readiness_scope_reports,
@@ -657,6 +671,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-safety-traceability",
         action="store_true",
         help="Skip tools/generate_safety_traceability.py --check",
+    )
+    parser.add_argument(
+        "--skip-psi-gate-attribution",
+        action="store_true",
+        help="Skip tools/generate_psi_gate_attribution.py --check",
     )
     parser.add_argument(
         "--skip-capability-manifest",
@@ -851,6 +870,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_claim_range_guard=args.skip_claim_range_guard,
         skip_claims_map=args.skip_claims_map,
         skip_safety_traceability=args.skip_safety_traceability,
+        skip_psi_gate_attribution=args.skip_psi_gate_attribution,
         skip_capability_manifest=args.skip_capability_manifest,
         skip_readiness_register=args.skip_readiness_register,
         skip_readiness_scope_reports=args.skip_readiness_scope_reports,

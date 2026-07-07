@@ -204,7 +204,7 @@
     {
       "id": "readme_free_boundary_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Free-boundary GS solve \\| Public GEQDSK operator-source gate passes; FreeGSNKE public machine metadata is indexed; FreeGS public-example vacuum convention passes; profile-source/free-boundary reconstruction gate remains open; not EFIT-grade inverse reconstruction",
+      "source_pattern": "Free\\-boundary GS solve \\| Public GEQDSK operator\\-source gate passes; FreeGSNKE public machine metadata is indexed; FreeGS public\\-example vacuum convention passes; profile\\-source/free\\-boundary reconstruction gate remains open with the per\\-file blocker attribution published in \\[docs/PSI_GATE_ATTRIBUTION\\.md\\]\\(docs/PSI_GATE_ATTRIBUTION\\.md\\); solver credibility is established independently by the Solov'ev analytic suite \\(`validation/validate_grad_shafranov_solovev\\.py`\\); not EFIT\\-grade inverse reconstruction",
       "evidence_files": [
         "README.md"
       ],
