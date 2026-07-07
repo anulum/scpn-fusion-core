@@ -185,3 +185,36 @@ def test_cn_conservation_error_reported_as_inf_on_degenerate_volume(
         # With enforcement on, the same degenerate step must fail closed.
         with pytest.raises(Exception, match="Energy conservation violated"):
             solver.evolve_profiles(dt=0.1, P_aux=10.0, enforce_conservation=True)
+
+
+def test_steady_state_is_dt_independent_and_cycle_free(tmp_path: Path) -> None:
+    """BACKLOG 3 regression: the discrete fixed point must not depend on dt.
+
+    The 2026-07-04 real-TORAX comparison found a dt-dependent steady state
+    and a period-2 crash-rebuild cycle driven by four numerical defects
+    (explicit CFL-violating impurity diffusion, missing impurity sink,
+    explicit stiff radiation sink, identity boundary rows leaking dt-scaled
+    sources). After the fixes, coarse and fine time steps must relax to the
+    same steady state with no alternation in the tail, and the impurity
+    content must stay bounded.
+    """
+    cfg = tmp_path / "cfg.json"
+    cfg.write_text(json.dumps(MOCK_CONFIG), encoding="utf-8")
+
+    finals: dict[float, float] = {}
+    for dt, steps in ((0.5, 240), (0.1, 1200)):
+        run = TransportSolver(str(cfg))
+        run.Ti = 5.0 * (1 - run.rho**2)
+        run.Te = run.Ti.copy()
+        run.ne = 5.0 * (1 - run.rho**2) ** 0.5
+        core: list[float] = []
+        for _ in range(steps):
+            _, core_ti = run.evolve_profiles(dt, 30.0)
+            core.append(core_ti)
+        tail = np.asarray(core[-8:], dtype=np.float64)
+        assert float(np.max(np.abs(np.diff(tail)))) < 0.05, f"tail alternation at dt={dt}: {tail}"
+        assert float(np.max(run.n_impurity)) < 10.0, "impurity content unbounded"
+        finals[dt] = core[-1]
+
+    ratio = finals[0.5] / max(finals[0.1], 1e-30)
+    assert 0.95 < ratio < 1.05, f"steady state depends on dt: {finals}"

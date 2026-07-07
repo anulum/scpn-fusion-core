@@ -242,13 +242,26 @@ class TransportSolverRuntimeMixin(
             cooling_factor = 5.0
             S_rad_i = cooling_factor * self.ne * self.n_impurity * np.sqrt(self.Te + 0.1)
 
-        net_source_i = S_heat_i - S_rad_i
-        net_source_i, n_src_i = self._sanitize_with_fallback(
-            net_source_i,
-            np.zeros_like(net_source_i),
+        # The radiation sink is stiff once impurities accumulate; treating
+        # it explicitly made the update map dt-dependent and drove a
+        # period-2 crash-rebuild cycle at transport time steps. Patankar
+        # linearisation moves it to the implicit diagonal (nu = S_rad/T_old,
+        # nu >= 0), which is unconditionally stable, keeps T positive, and
+        # leaves the fixed point (L T + S_heat - S_rad(T) = 0) independent
+        # of dt. Heating stays explicit.
+        heat_source_i, n_src_i = self._sanitize_with_fallback(
+            S_heat_i,
+            np.zeros_like(S_heat_i),
         )
         self._last_numerical_recovery_count += n_src_i
         self._record_recovery("cn.ion_net_source", n_src_i)
+        nu_rad_i, n_nu_i = self._sanitize_with_fallback(
+            S_rad_i / np.maximum(Ti_old, 0.01),
+            np.zeros_like(S_rad_i),
+            floor=0.0,
+        )
+        self._last_numerical_recovery_count += n_nu_i
+        self._record_recovery("cn.ion_rad_sink", n_nu_i)
 
         Lh_explicit = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
         Lh_explicit, n_lh_i = self._sanitize_with_fallback(
@@ -257,12 +270,26 @@ class TransportSolverRuntimeMixin(
         )
         self._last_numerical_recovery_count += n_lh_i
         self._record_recovery("cn.ion_diffusion_rhs", n_lh_i)
-        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * net_source_i
+        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * heat_source_i
         rhs, n_rhs_i = self._sanitize_with_fallback(rhs, Ti_old, floor=0.01, ceil=1e3)
         self._last_numerical_recovery_count += n_rhs_i
         self._record_recovery("cn.ion_rhs", n_rhs_i)
         a, b, c = self._build_cn_tridiag(self.chi_i, dt)
-        new_Ti = self._thomas_solve(a, b, c, rhs)
+        b_sink = b + dt * nu_rad_i
+        # Fold the boundary conditions into the system before solving. The
+        # builder's identity boundary rows otherwise leave rhs boundary
+        # entries carrying dt-scaled source terms, and the neighbouring
+        # interior nodes feel those inflated ghost values through the
+        # off-diagonal coupling — which made the discrete fixed point
+        # depend on dt (the second driver of the dt-dependence found by
+        # the real-TORAX comparison lane).
+        b_sink[0] = 1.0
+        c[0] = -1.0
+        rhs[0] = 0.0  # Neumann at core: T0 - T1 = 0
+        b_sink[-1] = 1.0
+        a[-1] = 0.0
+        rhs[-1] = 0.1  # Dirichlet at edge
+        new_Ti = self._thomas_solve(a, b_sink, c, rhs)
 
         new_Ti[0] = new_Ti[1]  # Neumann at core
         new_Ti[-1] = 0.1  # Dirichlet at edge
@@ -287,13 +314,23 @@ class TransportSolverRuntimeMixin(
             tau_eq = np.clip(tau_eq, 0.001, 1.0)
             S_equil = (self.Ti - Te_old) / tau_eq
 
-            net_source_e = S_heat_e - S_rad_e - S_brem_e + S_equil
-            net_source_e, n_src_e = self._sanitize_with_fallback(
-                net_source_e,
-                np.zeros_like(net_source_e),
+            # Electron sinks (line radiation + bremsstrahlung) get the same
+            # implicit Patankar treatment as the ion radiation sink; the
+            # heating and equilibration exchange stay explicit.
+            explicit_source_e = S_heat_e + S_equil
+            explicit_source_e, n_src_e = self._sanitize_with_fallback(
+                explicit_source_e,
+                np.zeros_like(explicit_source_e),
             )
             self._last_numerical_recovery_count += n_src_e
             self._record_recovery("cn.electron_net_source", n_src_e)
+            nu_rad_e, n_nu_e = self._sanitize_with_fallback(
+                (S_rad_e + S_brem_e) / np.maximum(Te_old, 0.01),
+                np.zeros_like(S_rad_e),
+                floor=0.0,
+            )
+            self._last_numerical_recovery_count += n_nu_e
+            self._record_recovery("cn.electron_rad_sink", n_nu_e)
 
             Lh_explicit_e = self._explicit_diffusion_rhs(Te_old, self.chi_e)
             Lh_explicit_e, n_lh_e = self._sanitize_with_fallback(
@@ -302,12 +339,20 @@ class TransportSolverRuntimeMixin(
             )
             self._last_numerical_recovery_count += n_lh_e
             self._record_recovery("cn.electron_diffusion_rhs", n_lh_e)
-            rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * net_source_e
+            rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * explicit_source_e
             rhs_e, n_rhs_e = self._sanitize_with_fallback(rhs_e, Te_old, floor=0.01, ceil=1e3)
             self._last_numerical_recovery_count += n_rhs_e
             self._record_recovery("cn.electron_rhs", n_rhs_e)
             a_e, b_e, c_e = self._build_cn_tridiag(self.chi_e, dt)
-            new_Te = self._thomas_solve(a_e, b_e, c_e, rhs_e)
+            b_e_sink = b_e + dt * nu_rad_e
+            # Same boundary-condition folding as the ion solve.
+            b_e_sink[0] = 1.0
+            c_e[0] = -1.0
+            rhs_e[0] = 0.0
+            b_e_sink[-1] = 1.0
+            a_e[-1] = 0.0
+            rhs_e[-1] = self.T_edge_keV
+            new_Te = self._thomas_solve(a_e, b_e_sink, c_e, rhs_e)
 
             new_Te[0] = new_Te[1]
             new_Te[-1] = self.T_edge_keV  # EPED boundary condition
@@ -338,17 +383,37 @@ class TransportSolverRuntimeMixin(
             e_keV_J = 1.602176634e-16
         dV = self._rho_volume_element()
 
-        # Total thermal energy: ions + electrons (Te = Ti in single-ion mode)
+        # Scheme-consistency energy check over the interior nodes. The two
+        # boundary nodes are Neumann/Dirichlet-pinned after the solve and
+        # exchange energy with the boundary, so they are excluded. The
+        # discrete Crank-Nicolson identity
+        # (T_new - T_old)/dt = 0.5*(L T_old + L T_new) + S_heat - nu*T_new
+        # must hold on the interior, so the bookkeeping now includes the
+        # diffusion term (previously omitted, which made the reported
+        # "error" just the diffusive boundary loss) and evaluates the
+        # implicit sink with the updated temperatures.
+        inner = slice(1, -1)
+        Lh_new_i = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
+        Lh_cn_i = 0.5 * (Lh_explicit + Lh_new_i)
+        net_source_i_eff = heat_source_i - nu_rad_i * self.Ti
+        weight = self.ne * 1e19 * e_keV_J * dV
         if self.multi_ion:
-            W_before = 1.5 * np.sum(self.ne * 1e19 * (Ti_old + Te_old) * e_keV_J * dV)
-            W_after = 1.5 * np.sum(self.ne * 1e19 * (self.Ti + self.Te) * e_keV_J * dV)
+            Lh_new_e = self._explicit_diffusion_rhs(self.Te, self.chi_e)
+            Lh_cn_e = 0.5 * (Lh_explicit_e + Lh_new_e)
+            net_source_e_eff = explicit_source_e - nu_rad_e * self.Te
+            W_before = 1.5 * np.sum((weight * (Ti_old + Te_old))[inner])
+            W_after = 1.5 * np.sum((weight * (self.Ti + self.Te))[inner])
             dW_source = (
-                dt * 1.5 * np.sum(self.ne * 1e19 * (net_source_i + net_source_e) * e_keV_J * dV)
+                dt
+                * 1.5
+                * np.sum(
+                    (weight * (net_source_i_eff + Lh_cn_i + net_source_e_eff + Lh_cn_e))[inner]
+                )
             )
         else:
-            W_before = 1.5 * np.sum(self.ne * 1e19 * Ti_old * e_keV_J * dV)
-            W_after = 1.5 * np.sum(self.ne * 1e19 * self.Ti * e_keV_J * dV)
-            dW_source = dt * 1.5 * np.sum(self.ne * 1e19 * net_source_i * e_keV_J * dV)
+            W_before = 1.5 * np.sum((weight * Ti_old)[inner])
+            W_after = 1.5 * np.sum((weight * self.Ti)[inner])
+            dW_source = dt * 1.5 * np.sum((weight * (net_source_i_eff + Lh_cn_i))[inner])
 
         dW_actual = W_after - W_before
         self._last_conservation_error = abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)

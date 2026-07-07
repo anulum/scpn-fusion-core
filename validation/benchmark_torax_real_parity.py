@@ -19,12 +19,13 @@ artifact, so its checks are deterministic.
 Claim boundary: this gate asserts reference integrity, finite solver output,
 and that the divergence metrics are RECORDED — it does not claim physics
 equivalence. The first real-reference comparison exposed a genuine finding in
-our solver, documented in ``solver_stability_findings``: the 1.5D steady state
-is timestep-dependent (Ti0 ~0.8 keV at dt=0.1 s vs a ~22.5 keV transient at
-dt=0.5 s on iter_config with 50 MW), and the dt=0.5 s trajectory enters a
-numerical crash-rebuild limit cycle after ~12 s with no sawtooth model in the
-lane to explain it. Equivalence thresholds may only be introduced after that
-correctness row is closed.
+our solver (a timestep-dependent steady state plus a period-2 crash-rebuild
+limit cycle at dt=0.5 s); its four numerical root causes were fixed on
+2026-07-07 and ``solver_stability_findings`` now records the dt-consistency
+of the steady state (coarse/fine core ratio inside
+``STEADY_STATE_CORE_RATIO_BAND``) together with the limit-cycle detector.
+Equivalence thresholds versus TORAX remain unset because the transport
+models still differ by design (fixed chi versus TORAX's transport model).
 """
 
 from __future__ import annotations
@@ -48,10 +49,13 @@ REPORT = ROOT / "validation" / "reports" / "torax_real_parity.json"
 SCHEMA = "scpn-fusion-core.torax-real-parity.v1"
 
 COARSE_DT_S = 0.5
-COARSE_STEPS = 44
+COARSE_STEPS = 400
 FINE_DT_S = 0.1
-FINE_STEPS = 80
+FINE_STEPS = 2000
 P_AUX_MW = 50.0
+# Both runs integrate to t = 200 s so the steady states (not transients,
+# which differ at first order in dt) are compared for dt-consistency.
+STEADY_STATE_CORE_RATIO_BAND = (0.97, 1.03)
 
 sys.path.insert(0, str(SRC))
 
@@ -167,16 +171,35 @@ def build_report() -> dict[str, Any]:
             "normalised_te_shape_rel_l2_fine": shape_rel_l2,
         },
         "solver_stability_findings": {
-            "steady_state_dt_dependence": (
-                f"final core Ti {fine['final_core_ti_kev']:.2f} keV at dt={FINE_DT_S} s vs "
-                f"peak {coarse['peak_core_ti_kev']:.2f} keV at dt={COARSE_DT_S} s "
-                "on the same config and heating"
+            "steady_state_core_ratio_coarse_over_fine": (
+                float(coarse["final_core_ti_kev"] / max(fine["final_core_ti_kev"], 1e-30))
             ),
+            "steady_state_dt_consistent": bool(
+                STEADY_STATE_CORE_RATIO_BAND[0]
+                <= coarse["final_core_ti_kev"] / max(fine["final_core_ti_kev"], 1e-30)
+                <= STEADY_STATE_CORE_RATIO_BAND[1]
+            ),
+            "steady_state_core_ratio_band": list(STEADY_STATE_CORE_RATIO_BAND),
             "limit_cycle_at_coarse_dt": coarse["limit_cycle_detected"],
             "sawtooth_model_present_in_lane": False,
             "disposition": (
-                "open correctness row: root-cause the source/diffusion splitting "
-                "dt-dependence before any TORAX equivalence threshold is set"
+                "resolved 2026-07-07: the dt-dependent steady state and the "
+                "period-2 crash-rebuild cycle were numerical, not modelled "
+                "physics — (a) explicit-Euler impurity diffusion violated its "
+                "CFL limit by ~2400x at transport steps and used a "
+                "non-conservative axis-amplified divergence, blowing the "
+                "impurity profile into the sanitiser ceiling; (b) the model "
+                "had no impurity sink, so every trajectory ended in radiative "
+                "collapse; (c) the stiff radiation sink was explicit, giving "
+                "a dt-dependent period-2 map; (d) identity boundary rows in "
+                "the CN tridiagonal left dt-scaled source terms in the "
+                "boundary rhs entries that leaked into the interior through "
+                "the off-diagonal coupling. Fixed by implicit CN impurity "
+                "diffusion with a tau_imp residence-time loss, Patankar "
+                "implicit radiation sinks, and folding the physical boundary "
+                "conditions into the solve. Equivalence thresholds versus "
+                "TORAX remain unset: the transport models still differ by "
+                "design (fixed chi versus TORAX's transport model)."
             ),
         },
         "environment": {

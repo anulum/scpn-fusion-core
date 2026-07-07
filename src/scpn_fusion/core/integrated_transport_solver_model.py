@@ -290,18 +290,48 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         self.n_impurity = np.maximum(0, new_imp)
 
     def _evolve_impurity(self, dt: float) -> None:
-        """Autonomous impurity evolution with edge source and diffusion."""
+        """Autonomous impurity evolution: edge source, implicit diffusion, loss.
+
+        The continuity model is ``dn/dt = (1/rho) d/drho(rho D dn/drho)
+        + S_edge - n/tau_imp``. The diffusion step is Crank-Nicolson on the
+        shared cylindrical operator (the same tridiagonal machinery as the
+        temperature solve) and the residence-time loss is backward-Euler on
+        the diagonal, so the update is unconditionally stable and positive
+        at transport time steps and its fixed point is independent of dt.
+
+        Two defects of the previous form are removed: (a) explicit-Euler
+        diffusion violated its CFL limit (``dt <= drho^2/(2 D) ~ 2e-4 s``)
+        by orders of magnitude at transport steps of 0.1-1 s and used a
+        non-conservative divergence with a bare ``1/rho`` axis
+        amplification, blowing the profile into the sanitiser ceiling and
+        driving the radiative limit cycle documented by the real-TORAX
+        comparison lane; (b) the model had no impurity sink at all, so the
+        content grew without bound and every trajectory ended in radiative
+        collapse regardless of the numerics.
+        """
         edge_source_rate = 0.01
         self.n_impurity[-1] += edge_source_rate * dt
 
-        d_imp = 1.0
-        grad = np.gradient(self.n_impurity, self.drho)
-        flux = -d_imp * grad
-        div = np.gradient(flux, self.drho) / (self.rho + 1e-6)
-        self.n_impurity += (-div) * dt
+        tau_imp = float(getattr(self, "impurity_confinement_time_s", 2.0))
+        d_imp = np.ones_like(self.n_impurity)
+        lh_explicit = self._explicit_diffusion_rhs(self.n_impurity, d_imp)
+        rhs = self.n_impurity + 0.5 * dt * lh_explicit
+        a, b, c = self._build_cn_tridiag(d_imp, dt)
+        b_loss = b + dt / max(tau_imp, 1e-3)
+        # Fold the boundary conditions into the system (Neumann axis,
+        # Dirichlet source-loaded edge) so the fixed point is dt-independent.
+        edge_value = float(self.n_impurity[-1]) / (1.0 + dt / max(tau_imp, 1e-3))
+        b_loss[0] = 1.0
+        c[0] = -1.0
+        rhs[0] = 0.0
+        b_loss[-1] = 1.0
+        a[-1] = 0.0
+        rhs[-1] = edge_value
+        new_impurity = self._thomas_solve(a, b_loss, c, rhs)
 
-        self.n_impurity[0] = self.n_impurity[1]
-        self.n_impurity = np.maximum(0.0, self.n_impurity)
+        new_impurity[0] = new_impurity[1]
+        new_impurity[-1] = edge_value
+        self.n_impurity = np.maximum(0.0, np.asarray(new_impurity, dtype=np.float64))
 
         z_imp = 6.0
         ne_safe = np.maximum(self.ne, 0.1) * 1e19

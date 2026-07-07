@@ -96,9 +96,9 @@ def test_build_report_records_divergence_and_findings(monkeypatch: pytest.Monkey
         return {
             "dt_s": dt,
             "steps": steps,
-            "final_core_ti_kev": 1.0 if dt < 0.2 else 8.7,
-            "peak_core_ti_kev": 22.5,
-            "limit_cycle_detected": dt >= 0.2,
+            "final_core_ti_kev": 1.63 if dt < 0.2 else 1.62,
+            "peak_core_ti_kev": 2.1,
+            "limit_cycle_detected": False,
             "finite": True,
             "te_kev": te,
             "rho_norm": rho,
@@ -115,5 +115,10 @@ def test_build_report_records_divergence_and_findings(monkeypatch: pytest.Monkey
     assert len(report["reference"]["profile_checksum_sha256"]) == 64
     assert "core_te_ratio_fine_over_torax" in report["divergence_metrics"]
     findings = report["solver_stability_findings"]
-    assert findings["limit_cycle_at_coarse_dt"] is True
+    assert findings["limit_cycle_at_coarse_dt"] is False
+    assert findings["steady_state_dt_consistent"] is True
+    assert findings["steady_state_core_ratio_coarse_over_fine"] == pytest.approx(
+        1.62 / 1.63, rel=1e-9
+    )
     assert findings["sawtooth_model_present_in_lane"] is False
+    assert "resolved 2026-07-07" in findings["disposition"]

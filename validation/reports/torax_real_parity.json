@@ -1,8 +1,8 @@
 {
   "claim_boundary": "Comparison against a really-executed TORAX basic_config run; the reduced 1.5D solver and TORAX differ by design and by the open solver-stability finding below. Metrics are recorded divergence, not equivalence.",
   "divergence_metrics": {
-    "core_te_ratio_fine_over_torax": 0.03569827674924581,
-    "normalised_te_shape_rel_l2_fine": 0.8473401292429413
+    "core_te_ratio_fine_over_torax": 0.07051624437296891,
+    "normalised_te_shape_rel_l2_fine": 0.019039382801497768
   },
   "environment": {
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
@@ -11,20 +11,20 @@
   "our_solver": {
     "coarse_run": {
       "dt_s": 0.5,
-      "final_core_ti_kev": 1.004519855398678,
+      "final_core_ti_kev": 1.622893508967075,
       "finite": true,
-      "limit_cycle_detected": true,
-      "peak_core_ti_kev": 22.526922609838753,
-      "steps": 44
+      "limit_cycle_detected": false,
+      "peak_core_ti_kev": 2.0976805402912966,
+      "steps": 400
     },
     "config": "validation/iter_config.json",
     "fine_run": {
       "dt_s": 0.1,
-      "final_core_ti_kev": 0.826470819668264,
+      "final_core_ti_kev": 1.6325611092161887,
       "finite": true,
-      "limit_cycle_detected": true,
-      "peak_core_ti_kev": 5.547636306413034,
-      "steps": 80
+      "limit_cycle_detected": false,
+      "peak_core_ti_kev": 1.7121399592419464,
+      "steps": 2000
     },
     "p_aux_mw": 50.0
   },
@@ -50,10 +50,15 @@
   },
   "schema": "scpn-fusion-core.torax-real-parity.v1",
   "solver_stability_findings": {
-    "disposition": "open correctness row: root-cause the source/diffusion splitting dt-dependence before any TORAX equivalence threshold is set",
-    "limit_cycle_at_coarse_dt": true,
+    "disposition": "resolved 2026-07-07: the dt-dependent steady state and the period-2 crash-rebuild cycle were numerical, not modelled physics \u2014 (a) explicit-Euler impurity diffusion violated its CFL limit by ~2400x at transport steps and used a non-conservative axis-amplified divergence, blowing the impurity profile into the sanitiser ceiling; (b) the model had no impurity sink, so every trajectory ended in radiative collapse; (c) the stiff radiation sink was explicit, giving a dt-dependent period-2 map; (d) identity boundary rows in the CN tridiagonal left dt-scaled source terms in the boundary rhs entries that leaked into the interior through the off-diagonal coupling. Fixed by implicit CN impurity diffusion with a tau_imp residence-time loss, Patankar implicit radiation sinks, and folding the physical boundary conditions into the solve. Equivalence thresholds versus TORAX remain unset: the transport models still differ by design (fixed chi versus TORAX's transport model).",
+    "limit_cycle_at_coarse_dt": false,
     "sawtooth_model_present_in_lane": false,
-    "steady_state_dt_dependence": "final core Ti 0.83 keV at dt=0.1 s vs peak 22.53 keV at dt=0.5 s on the same config and heating"
+    "steady_state_core_ratio_band": [
+      0.97,
+      1.03
+    ],
+    "steady_state_core_ratio_coarse_over_fine": 0.994078261331513,
+    "steady_state_dt_consistent": true
   },
   "status": "real_torax_reference_acquired_divergence_documented"
 }
