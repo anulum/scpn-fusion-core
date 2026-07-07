@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from scpn_fusion.control.fusion_sota_mpc import NeuralSurrogate
+from scpn_fusion.control.neural_surrogate_mpc import NeuralSurrogate
 from scpn_fusion.control._free_boundary_supervisory_types import (
     FloatArray,
     FreeBoundaryEstimate,

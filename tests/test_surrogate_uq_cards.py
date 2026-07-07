@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Surrogate UQ Cards Tests
-"""Tests for the per-surrogate UQ-card generator and guard (T-4 / SOTA-6)."""
+"""Tests for the per-surrogate UQ-card generator and guard (master-plan T-4)."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ class TestCommittedManifest:
         } <= ids
 
     def test_deprecated_fno_stays_scoped(self) -> None:
-        """SOTA-6 acceptance: the deprecated FNO lane stays scoped."""
+        """Acceptance: the deprecated FNO lane stays scoped."""
         module = _load_module()
         _, cards = module.load_manifest(MANIFEST)
         fno = next(card for card in cards if card.card_id == "fno_turbulence_suppressor")

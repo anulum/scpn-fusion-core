@@ -15,7 +15,7 @@ from typing import Any, Callable, Optional
 import numpy as np
 
 from scpn_fusion._data_paths import default_iter_config_path
-from scpn_fusion.control.fusion_sota_mpc import NeuralSurrogate
+from scpn_fusion.control.neural_surrogate_mpc import NeuralSurrogate
 from scpn_fusion.control._free_boundary_control_geometry import (
     FreeBoundarySupervisoryController,
     extract_free_boundary_state,

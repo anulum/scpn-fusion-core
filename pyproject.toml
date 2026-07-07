@@ -325,7 +325,7 @@ files = [
     "src/scpn_fusion/control/fusion_optimal_control.py",
     "src/scpn_fusion/control/nmpc_controller.py",
     "src/scpn_fusion/control/hil_demo_runner.py",
-    "src/scpn_fusion/control/fusion_sota_mpc.py",
+    "src/scpn_fusion/control/neural_surrogate_mpc.py",
     "src/scpn_fusion/control/disruption_predictor.py",
     "src/scpn_fusion/control/realtime_efit.py",
     "src/scpn_fusion/control/mu_synthesis.py",

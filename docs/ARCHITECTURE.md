@@ -14,7 +14,7 @@ models behind each subsystem, and the multi-backend acceleration layer. It is wr
 **sibling repositories** (`scpn-control`, `scpn-quantum-control`, `scpn-mif-core`) and for
 **SCPN STUDIO** verb/contract design that consume this repository's surfaces.
 
-Every claim here is grounded in the source tree. Capability *maturity* (state-of-the-art
+Every claim here is grounded in the source tree. Capability *maturity* (production-grade
 positioning, fidelity, what is reduced-order vs full-fidelity, and what is fail-closed) is
 governed by the dedicated evidence artifacts — see [Evidence and validation](#evidence-and-validation)
 — not by this map. Where a model is reduced-order or a path is dormant, this document says so.
@@ -290,7 +290,7 @@ The repository can ingest the following external formats:
   constrained NMPC (`nmpc_controller`, `fusion_nmpc_jax`), super-twisting sliding-mode
   (`sliding_mode_vertical`), gain-scheduled PID (`gain_scheduled_controller`), fault-tolerant
   reconfiguration (`fault_tolerant_control`), SVD/MPC trajectory control (`fusion_optimal_control`,
-  `fusion_sota_mpc`), RWM feedback, shape control, density control (with EKF estimator),
+  `neural_surrogate_mpc`), RWM feedback, shape control, density control (with EKF estimator),
   burn control (Bosch-Hale alpha heating).
 - **Disruption**: Transformer predictor (`disruption_predictor`, torch, with checkpoint-trust
   policy + analytical fallback), deterministic linear-risk + tearing physics
@@ -403,7 +403,7 @@ Self-auditing is a first-class architectural layer, not an afterthought:
   honest, and several physics lanes are **fail-closed** (they refuse to emit a parity claim until a
   redistributable reference exists).
 
-This document maps *what exists and how it is wired*. For *how well-validated and how state-of-the-art*
+This document maps *what exists and how it is wired*. For *how well-validated and how mature relative to the published field*
 each component is, consult the evidence artifacts: `docs/BENCHMARKS.md`,
 `docs/PHYSICS_VALIDATION_STATUS.md`, `docs/PHYSICS_METHODS_COMPLETE.md`, `docs/formal_verification.md`,
 `docs/competitive_analysis.md`, and the per-report files under `validation/reports/`.

@@ -64,7 +64,7 @@ _mpc_available = False
 _snn_available = False
 
 try:
-    from scpn_fusion.control.fusion_sota_mpc import (
+    from scpn_fusion.control.neural_surrogate_mpc import (
         ModelPredictiveController as _ModelPredictiveController,
         NeuralSurrogate as _NeuralSurrogate,
     )

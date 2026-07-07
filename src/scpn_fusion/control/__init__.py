@@ -69,9 +69,9 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "DetachmentController": (".detachment_controller", "DetachmentController"),
     # Phase 6 — Density control (fueling + pumping)
     "DensityController": (".density_controller", "DensityController"),
-    # Baseline SOTA MPC. This imports Matplotlib and kernel backends.
-    "ModelPredictiveController": (".fusion_sota_mpc", "ModelPredictiveController"),
-    "run_sota_simulation": (".fusion_sota_mpc", "run_sota_simulation"),
+    # Baseline neural-surrogate MPC. This imports Matplotlib and kernel backends.
+    "ModelPredictiveController": (".neural_surrogate_mpc", "ModelPredictiveController"),
+    "run_mpc_simulation": (".neural_surrogate_mpc", "run_mpc_simulation"),
     # JAX-backed NMPC. Keep lazy so unrelated control modules do not require JAX.
     "NonlinearMPC": (".fusion_nmpc_jax", "NonlinearMPC"),
     "get_nmpc_controller": (".fusion_nmpc_jax", "get_nmpc_controller"),
@@ -152,7 +152,7 @@ __all__ = [
     "RegimeDetector",
     "run_analytic_solver",
     "run_optimal_control",
-    "run_sota_simulation",
+    "run_mpc_simulation",
     "RunawayElectronModel",
     "RWMFeedbackController",
     "RWMPhysics",

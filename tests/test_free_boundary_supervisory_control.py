@@ -29,7 +29,7 @@ from scpn_fusion.control.free_boundary_supervisory_control import (
     extract_free_boundary_state,
     run_free_boundary_supervisory_simulation,
 )
-from scpn_fusion.control.fusion_sota_mpc import NeuralSurrogate
+from scpn_fusion.control.neural_surrogate_mpc import NeuralSurrogate
 
 
 def test_split_modules_preserve_public_supervisory_api() -> None:

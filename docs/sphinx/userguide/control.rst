@@ -3,7 +3,7 @@ Control Systems
 ==============================
 
 SCPN-Fusion-Core provides a comprehensive suite of plasma control
-algorithms, from classical PID to state-of-the-art model-predictive
+algorithms, from classical PID to model-predictive
 control (MPC) and spiking neural network (SNN) controllers.  The
 control-first architecture is the central innovation of the framework.
 
@@ -53,7 +53,7 @@ Two MPC implementations are provided:
    function with linear constraints.  Suitable for smooth reference
    tracking with bounded actuator inputs.
 
-**State-of-the-Art MPC** (``fusion_sota_mpc.py``)
+**Neural-surrogate MPC** (``neural_surrogate_mpc.py``)
    A ``ModelPredictiveController`` class with neural surrogate plant
    models (``NeuralSurrogate``), supporting:
 
@@ -236,7 +236,7 @@ Related Modules
 
 - :mod:`scpn_fusion.control.tokamak_flight_sim` -- flight simulator
 - :mod:`scpn_fusion.control.fusion_optimal_control` -- gradient MPC
-- :mod:`scpn_fusion.control.fusion_sota_mpc` -- neural surrogate MPC
+- :mod:`scpn_fusion.control.neural_surrogate_mpc` -- neural surrogate MPC
 - :mod:`scpn_fusion.control.disruption_predictor` -- ML disruption warning
 - :mod:`scpn_fusion.control.spi_mitigation` -- shattered pellet injection
 - :mod:`scpn_fusion.control.tokamak_digital_twin` -- digital twin

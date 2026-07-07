@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Fusion SOTA MPC Tests
-"""Deterministic tests for fusion_sota_mpc runtime/controller paths."""
+# SCPN Fusion Core — Neural-Surrogate MPC Tests
+"""Deterministic tests for neural_surrogate_mpc runtime/controller paths."""
 
 from __future__ import annotations
 
@@ -13,15 +13,15 @@ import numpy as np
 import pytest
 from typing import Any, cast
 
-from scpn_fusion.control.fusion_sota_mpc import (
+from scpn_fusion.control.neural_surrogate_mpc import (
     ModelPredictiveController,
     NeuralSurrogate,
-    run_sota_simulation,
+    run_mpc_simulation,
 )
 
 
 class _DummyKernel:
-    """Deterministic stand-in for FusionKernel used by SOTA MPC tests."""
+    """Deterministic stand-in for FusionKernel used by the neural-surrogate MPC tests."""
 
     def __init__(self, _config_file: str) -> None:
         self.cfg: dict[str, Any] = {
@@ -63,8 +63,8 @@ class _DummyKernel:
         return self._xp, 0.0
 
 
-def test_run_sota_simulation_returns_finite_bounded_summary() -> None:
-    summary = run_sota_simulation(
+def test_run_mpc_simulation_returns_finite_bounded_summary() -> None:
+    summary = run_mpc_simulation(
         config_file="dummy.json",
         shot_length=22,
         prediction_horizon=6,
@@ -105,7 +105,7 @@ def test_run_sota_simulation_returns_finite_bounded_summary() -> None:
     assert 7.0 <= summary["final_target_ip_ma"] <= 9.0
 
 
-def test_run_sota_simulation_is_deterministic_for_fixed_inputs() -> None:
+def test_run_mpc_simulation_is_deterministic_for_fixed_inputs() -> None:
     kwargs = dict(
         config_file="dummy.json",
         shot_length=18,
@@ -119,8 +119,8 @@ def test_run_sota_simulation_is_deterministic_for_fixed_inputs() -> None:
         verbose=False,
         kernel_factory=_DummyKernel,
     )
-    a = run_sota_simulation(**kwargs)
-    b = run_sota_simulation(**kwargs)
+    a = run_mpc_simulation(**kwargs)
+    b = run_mpc_simulation(**kwargs)
     for key in (
         "final_target_ip_ma",
         "final_r_axis",
@@ -158,11 +158,11 @@ def test_mpc_plan_is_clipped_to_action_limit() -> None:
         ({"disturbance_start_step": -1}, "disturbance_start_step"),
     ],
 )
-def test_run_sota_simulation_rejects_invalid_runtime_inputs(
+def test_run_mpc_simulation_rejects_invalid_runtime_inputs(
     kwargs: dict[str, int], match: str
 ) -> None:
     with pytest.raises(ValueError, match=match):
-        run_sota_simulation(
+        run_mpc_simulation(
             config_file="dummy.json",
             save_plot=False,
             verbose=False,

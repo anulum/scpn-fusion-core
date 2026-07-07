@@ -44,10 +44,10 @@ Model-Predictive Control (Optimal)
    :undoc-members:
    :show-inheritance:
 
-State-of-the-Art MPC
+Neural-Surrogate MPC
 -----------------------
 
-.. automodule:: scpn_fusion.control.fusion_sota_mpc
+.. automodule:: scpn_fusion.control.neural_surrogate_mpc
    :members:
    :undoc-members:
    :show-inheritance:

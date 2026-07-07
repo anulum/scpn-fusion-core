@@ -522,7 +522,7 @@ The complete source tree contains the following modules:
 
 **Control (7 modules)**:
 - `tokamak_flight_sim.py` — PID-based IsoFlux controller (142 lines)
-- `fusion_sota_mpc.py` — Model Predictive Control with neural surrogate (233 lines)
+- `neural_surrogate_mpc.py` — Model Predictive Control with neural surrogate (233 lines)
 - `fusion_optimal_control.py` — Variational optimal control
 - `analytic_solver.py` — Shafranov-Biot-Savart analytic solutions
 - `disruption_predictor.py` — Transformer-based disruption AI (140 lines)
@@ -1233,9 +1233,9 @@ The "flight simulator" runs a 50-step scenario designed to test the controller a
 
 The simulation logs the magnetic axis trajectory, coil current evolution, and control error at each step, providing a complete diagnostic record of the controller's performance.
 
-### 10.3 Model Predictive Control (fusion_sota_mpc.py)
+### 10.3 Model Predictive Control (neural_surrogate_mpc.py)
 
-The MPC controller represents state-of-the-art plasma control practice, implementing the same algorithmic principles used in the ITER Plasma Control System (PCS) design by the CREATE consortium and the RAPTOR real-time transport code developed at EPFL.
+The MPC controller implements the same algorithmic principles used in the ITER Plasma Control System (PCS) design by the CREATE consortium and the RAPTOR real-time transport code developed at EPFL.
 
 #### 10.3.1 Linear System Identification
 
@@ -3948,7 +3948,7 @@ SCPN-Fusion-Core makes the following concrete contributions to the fusion simula
 
 ### 31.3 Control
 
-7. **Three-Tier Control System**: PID (classical) → MPC (state-of-the-art) → SNN (neuromorphic), enabling comparative studies across controller paradigms.
+7. **Three-Tier Control System**: PID (classical) → MPC (model-predictive) → SNN (neuromorphic), enabling comparative studies across controller paradigms.
 
 8. **Spiking Neural Network Controller**: LIF-population-based control with rate coding, implemented in both Python and Rust with full unit test coverage. Novel in the fusion context.
 
@@ -4211,7 +4211,7 @@ The plasma is waiting.
 | nuclear_wall_interaction.py | nuclear/ | 282 | Neutron loading, DPA, ash |
 | balance_of_plant.py | engineering/ | 113 | Power conversion model |
 | tokamak_flight_sim.py | control/ | 142 | PID IsoFlux controller |
-| fusion_sota_mpc.py | control/ | 233 | MPC with neural surrogate |
+| neural_surrogate_mpc.py | control/ | 233 | MPC with neural surrogate |
 | fusion_optimal_control.py | control/ | ~180 | Variational optimal control |
 | analytic_solver.py | control/ | ~200 | Shafranov-Biot-Savart |
 | disruption_predictor.py | control/ | 140 | Transformer disruption AI |

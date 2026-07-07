@@ -299,6 +299,6 @@ Related Modules
 
 - :mod:`scpn_fusion.control.scenario_scheduler` -- waveforms, schedules
 - :mod:`scpn_fusion.control.gain_scheduled_controller` -- gain scheduling
-- :mod:`scpn_fusion.control.fusion_sota_mpc` -- MPC for fine control
+- :mod:`scpn_fusion.control.neural_surrogate_mpc` -- MPC for fine control
 - :doc:`realtime_reconstruction` -- EFIT provides state feedback
 - :doc:`fault_tolerant_operations` -- when actuators fail mid-scenario

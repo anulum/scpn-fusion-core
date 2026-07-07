@@ -36,7 +36,7 @@ Real-time plasma control: classical, robust, optimal, neural, and RL.
 |---------|-------------|-------|
 | Classical | PID, LQR, fusion control room | 4 |
 | Robust | H-infinity, mu-synthesis, RWM feedback | 3 |
-| Optimal | `fusion_optimal_control`, `fusion_sota_mpc`, `fusion_nmpc_jax` | 3 |
+| Optimal | `fusion_optimal_control`, `neural_surrogate_mpc`, `fusion_nmpc_jax` | 3 |
 | Neural / SNN | `neuro_cybernetic_controller`, `nengo_snn_wrapper`, SNN compiler target | 3 |
 | RL | `gym_tokamak_env`, advanced SOC fusion learning | 2 |
 | Free-boundary | free-boundary tracking, state estimator (EKF), volt-second manager | 3 |

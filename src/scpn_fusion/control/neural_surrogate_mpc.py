@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Fusion Sota MPC
+# SCPN Fusion Core — Neural-Surrogate MPC
 """Surrogate-assisted model predictive control for tokamak trajectory tracking."""
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ class NeuralSurrogate:
 
     def train_on_kernel(self, kernel: Any, perturbation: float = 1.0) -> None:
         """Estimate the linear coil-response matrix by perturbing the supplied kernel."""
-        self._log("[SOTA] Training Neural Surrogate on Physics Kernel...")
+        self._log("[MPC] Training Neural Surrogate on Physics Kernel...")
         kernel.solve_equilibrium()
         base_state = self.get_state(kernel)
         p = float(perturbation)
@@ -72,7 +72,7 @@ class NeuralSurrogate:
             kernel.cfg["coils"][i]["current"] = old_i
 
         kernel.solve_equilibrium()
-        self._log("[SOTA] Surrogate Training Complete.")
+        self._log("[MPC] Surrogate Training Complete.")
 
     def get_state(self, kernel: Any) -> FloatArray:
         """Extract magnetic-axis and X-point state coordinates from a kernel snapshot."""
@@ -184,7 +184,7 @@ def _plot_telemetry(
         return False, str(exc)
 
 
-def run_sota_simulation(
+def run_mpc_simulation(
     config_file: Optional[str] = None,
     shot_length: int = SHOT_LENGTH,
     prediction_horizon: int = PREDICTION_HORIZON,
@@ -195,7 +195,7 @@ def run_sota_simulation(
     action_limit: float = 2.0,
     coil_current_limits: Tuple[float, float] = (-40.0, 40.0),
     save_plot: bool = True,
-    output_path: str = "SOTA_MPC_Results.png",
+    output_path: str = "Neural_MPC_Results.png",
     verbose: bool = True,
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> Dict[str, Any]:
@@ -218,7 +218,7 @@ def run_sota_simulation(
         target_vec = np.asarray(target_vector, dtype=np.float64).reshape(4)
 
     if verbose:
-        logger.info("--- SCPN FUSION SOTA: Neural-MPC Hybrid Control ---")
+        logger.info("--- SCPN FUSION: Neural-MPC Hybrid Control ---")
 
     kernel = kernel_factory(str(config_file))
     surrogate = NeuralSurrogate(
@@ -311,7 +311,7 @@ def run_sota_simulation(
             output_path,
         )
         if verbose and plot_saved:
-            logger.info("SOTA Analysis saved: %s", output_path)
+            logger.info("Neural-MPC analysis saved: %s", output_path)
 
     return {
         "config_path": str(config_file),
@@ -338,4 +338,4 @@ def run_sota_simulation(
 
 
 if __name__ == "__main__":
-    run_sota_simulation()
+    run_mpc_simulation()

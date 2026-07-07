@@ -7,7 +7,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 """Generate docs/SURROGATE_UQ_CARDS.md from validation/surrogate_uq_cards.json.
 
-Per-surrogate UQ cards (SOTA-6 / master-plan T-4): training provenance,
+Per-surrogate UQ cards (master-plan T-4): training provenance,
 calibration evidence, OOD mechanism and thresholds, fallback behaviour, and
 retraining provenance for every surrogate lane on a public surface. Every
 anchor (``path`` or ``path::symbol``) is verified against the repository

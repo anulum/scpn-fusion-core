@@ -7,7 +7,7 @@
 // SCPN Fusion Core — MPC
 //! Model Predictive Control for tokamak shape control.
 //!
-//! Port of `fusion_sota_mpc.py`.
+//! Port of `neural_surrogate_mpc.py`.
 //! Linear surrogate + gradient descent over prediction horizon.
 
 use fusion_types::error::{FusionError, FusionResult};

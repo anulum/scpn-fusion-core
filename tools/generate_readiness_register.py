@@ -410,7 +410,7 @@ def _is_marker_suppressed(
             return True
 
     # Deep-audit planning docs that *list* marker counts are meta-reports.
-    return bool(rel_path.startswith("docs/internal/DEEP_AUDIT_AND_SOTA_PLAN"))
+    return bool(rel_path.startswith("docs/internal/DEEP_AUDIT_AND_"))
 
 
 def _count_nontrivial_loc(text: str) -> int:
