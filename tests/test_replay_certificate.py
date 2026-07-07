@@ -64,28 +64,35 @@ def test_fastest_tier_episode_is_bit_identical_across_runs() -> None:
     assert module.run_episode("fastest") == module.run_episode("fastest")
 
 
-def test_committed_numpy_floor_hashes_reproduce_here() -> None:
-    """The ASSERTED cross-machine contract: the NumPy floor replays the
-    committed certificate bit-identically for the pinned numpy wheel.
+def test_committed_hashes_reproduce_per_the_environment_conditional_claim() -> None:
+    """Cross-machine claim as revised by the first two-machine comparison.
 
-    When this test runs on a different machine class (e.g. the CI runner)
-    a pass IS the cross-machine bit-identical evidence for the floor.
+    On the generating machine class (environment matches the certificate)
+    the full NumPy-floor hash map must reproduce. On any other machine the
+    asserted invariant is the transcendental-free ``disruption_indicator``
+    component — the first CI comparison (run 28841804121) proved that
+    components exercising vectorised np.exp/np.sin round differently
+    across CPU microarchitectures even with an identical numpy wheel.
     """
     module = _load_module()
-    committed = json.loads(CERTIFICATE.read_text(encoding="utf-8"))
-    assert module.run_episode("numpy") == committed["numpy_floor"]["component_hashes"]
+    result = module.verify_certificate(CERTIFICATE)
+    if result["environment_matches"]:
+        assert result["numpy_floor_bit_identical"] is True
+    else:
+        assert result["numpy_component_matches"]["disruption_indicator"] is True
 
 
 def test_verify_reports_fastest_tier_without_asserting_cross_machine() -> None:
     """verify_certificate records the fastest-tier comparison as evidence.
 
     Cross-machine bit-identity of the accelerated tier is deliberately NOT
-    asserted (platform libm may differ); the field must exist either way.
+    asserted (platform libm may differ); the fields must exist either way.
     """
     module = _load_module()
     result = module.verify_certificate(CERTIFICATE)
-    assert result["numpy_floor_bit_identical"] is True
+    assert "numpy_floor_bit_identical" in result
     assert "fastest_tier_bit_identical" in result
+    assert "environment_matches" in result
     assert result["verifier_environment"]["numpy"]
 
 

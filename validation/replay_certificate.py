@@ -15,18 +15,22 @@ trajectory is hashed (SHA-256 over canonical little-endian float64 bytes)
 and the certificate carries the component hashes, a combined hash, and an
 environment manifest.
 
-Claim boundary, by tier:
+Claim boundary (revised after the first real two-machine comparison,
+CI run 28841804121 on 2026-07-07):
 
-- ``numpy_floor`` hashes are the ASSERTED cross-run contract: the episode
-  runs on the pinned NumPy floor, whose binary wheels make results
-  bit-identical for the same numpy version and architecture. Verifying a
-  committed certificate on a second machine (e.g. the CI runner class)
-  extends the evidence to cross-machine.
-- ``fastest_tier`` hashes are RECORDED evidence for the machine that
-  generated the certificate. Cross-machine bit-identity of the Rust tier
-  is NOT asserted (transcendental functions route through the platform
-  libm, which may differ between toolchains); same-machine cross-run
-  identity is asserted by the test lane.
+- Same-machine, cross-run bit-identity is the ASSERTED contract for both
+  tiers (double-run verified at generation and by the test lane).
+- Cross-machine bit-identity is ENVIRONMENT-CONDITIONAL, not universal:
+  the first CI comparison against this rig's certificate showed that
+  components exercising vectorised transcendentals (np.exp in the
+  equilibrium source, np.sin in the phase step) diverge across CPU
+  microarchitectures — numpy dispatches SIMD kernels at runtime, so an
+  identical wheel can round differently on different hardware. The
+  ``disruption_indicator`` component (scalar-RNG arithmetic, no vectorised
+  transcendentals) DID reproduce bit-identically across machines and is
+  the asserted cross-machine invariant.
+- ``fastest_tier`` hashes are RECORDED evidence for the generating
+  machine only (platform libm differences apply on top).
 """
 
 from __future__ import annotations
@@ -191,7 +195,12 @@ def build_certificate() -> dict[str, Any]:
         "numpy_floor": {
             "component_hashes": numpy_first,
             "combined_hash": _combined_hash(numpy_first),
-            "claim": "asserted cross-run; cross-machine for identical numpy wheel + arch",
+            "claim": (
+                "asserted same-machine cross-run; cross-machine only for "
+                "components without vectorised transcendentals "
+                "(disruption_indicator) - numpy runtime SIMD dispatch rounds "
+                "exp/sin differently across CPU microarchitectures"
+            ),
         },
         "fastest_tier": {
             "component_hashes": fastest_first,
@@ -212,18 +221,30 @@ def verify_certificate(path: Path) -> dict[str, Any]:
         raise ValueError(f"unexpected certificate schema: {committed.get('schema')!r}")
 
     numpy_now = run_episode("numpy")
-    numpy_match = numpy_now == committed["numpy_floor"]["component_hashes"]
+    committed_numpy = committed["numpy_floor"]["component_hashes"]
+    numpy_match = numpy_now == committed_numpy
 
     fastest_now = run_episode("fastest")
     fastest_match = fastest_now == committed["fastest_tier"]["component_hashes"]
 
+    verifier_env = _environment_manifest()
+    certificate_env = committed["environment"]
+    environment_matches = all(
+        verifier_env.get(key) == certificate_env.get(key)
+        for key in ("python", "numpy", "platform", "machine")
+    )
+
     return {
         "numpy_floor_bit_identical": numpy_match,
+        "numpy_component_matches": {
+            name: numpy_now.get(name) == committed_numpy.get(name) for name in committed_numpy
+        },
         "fastest_tier_bit_identical": fastest_match,
         "numpy_component_hashes": numpy_now,
         "fastest_component_hashes": fastest_now,
-        "verifier_environment": _environment_manifest(),
-        "certificate_environment": committed["environment"],
+        "environment_matches": environment_matches,
+        "verifier_environment": verifier_env,
+        "certificate_environment": certificate_env,
     }
 
 
@@ -237,7 +258,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.verify:
         result = verify_certificate(args.output)
         print(json.dumps(result, indent=2, sort_keys=True))
-        return 0 if result["numpy_floor_bit_identical"] else 1
+        if result["environment_matches"]:
+            return 0 if result["numpy_floor_bit_identical"] else 1
+        # Different machine class: only the transcendental-free component is
+        # the asserted cross-machine invariant.
+        return 0 if result["numpy_component_matches"].get("disruption_indicator") else 1
 
     certificate = build_certificate()
     args.output.parent.mkdir(parents=True, exist_ok=True)

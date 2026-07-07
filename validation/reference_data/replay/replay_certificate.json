@@ -21,7 +21,7 @@
     }
   },
   "numpy_floor": {
-    "claim": "asserted cross-run; cross-machine for identical numpy wheel + arch",
+    "claim": "asserted same-machine cross-run; cross-machine only for components without vectorised transcendentals (disruption_indicator) - numpy runtime SIMD dispatch rounds exp/sin differently across CPU microarchitectures",
     "combined_hash": "6ec70a74375eedcc39a0ccc4915433550e8f1b3df02daf9afd7688e67e118001",
     "component_hashes": {
       "disruption_indicator": "7d4637e5511d1e4e56bb66ee7634d150c64ec716711baa8e9cccce920090f23c",
