@@ -162,3 +162,8 @@ validation/reports/*_local_smoke.json
 # Internal agent coordination and task-governance support - never commit
 .coordination/
 external/
+CLAUDE.md
+.claude/
+.env
+node_modules/
+TODO.md
