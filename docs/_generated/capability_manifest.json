@@ -2396,6 +2396,7 @@
       "src/scpn_fusion/core/gk_ood_detector.py",
       "src/scpn_fusion/core/gk_qualikiz.py",
       "src/scpn_fusion/core/gk_quasilinear.py",
+      "src/scpn_fusion/core/gk_registry.py",
       "src/scpn_fusion/core/gk_scheduler.py",
       "src/scpn_fusion/core/gk_species.py",
       "src/scpn_fusion/core/gk_tglf.py",
@@ -2592,9 +2593,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 57,
     "python_capability_classes": 548,
-    "python_capability_source_modules": 278,
+    "python_capability_source_modules": 279,
     "rust_workspace_crates": 12,
-    "test_files": 448
+    "test_files": 449
   },
   "documentation": {
     "public_pages": [
@@ -2899,6 +2900,7 @@
       "tests/test_gk_public_reference_deck_inventory.py",
       "tests/test_gk_qualikiz.py",
       "tests/test_gk_quasilinear.py",
+      "tests/test_gk_registry.py",
       "tests/test_gk_scheduler.py",
       "tests/test_gk_species.py",
       "tests/test_gk_tglf.py",

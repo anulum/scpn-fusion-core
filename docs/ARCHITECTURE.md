@@ -244,7 +244,16 @@ The repository can ingest the following external formats:
   geometry. **Output:** evolved profiles, χ_e/χ_i/D, bootstrap current.
 - **Gyrokinetics** (`gk_*`): linear eigenvalue solver (Miller geometry, Sugama collisions,
   response matrix), quasilinear saturation, TGLF subprocess interface, nonlinear δf (Rust/JAX),
-  domain decomposition, online learner + spot-check scheduler. Seven `GKSolverBase` subclasses.
+  domain decomposition, online learner + spot-check scheduler. The six `GKSolverBase`
+  implementations (TGLF external, TGLF native, CGYRO, GS2, GENE, QuaLiKiz) are discoverable
+  through the string-keyed **`gk_registry`** (`create_gk_solver` / `available_gk_solvers` /
+  `resolve_tglf_solver`, exported from `core`); the canonical TGLF path resolves to the GACODE
+  binary when on PATH and to the native quasilinear model otherwise. Three deliberately
+  distinct TGLF roles (not duplicates): `gk_tglf` wraps the external binary (GKSolverBase
+  deck contract), `gk_tglf_native` is the always-available quasilinear model, and
+  `tglf_interface` is the TransportSolver comparison framework (JSON references, benchmark
+  tables) used by the `tglf_live` pipeline backend. `gk_nonlinear.NonlinearGKSolver` is
+  config-driven 5D δf and intentionally outside the deck-file registry.
 - **Supporting:** `impurity_transport` (ADAS charge-states), `momentum_transport` (E×B shear),
   `current_diffusion`, `current_drive` (ECCD/NBI), `blob_transport`.
 
@@ -256,8 +265,10 @@ The repository can ingest the following external formats:
 - **Disruption physics** (`disruption_sequence`, `runaway_electrons`): reduced TQ/CQ/RE/halo
   sequence; DREAM-style runaway (Dreicer/Connor-Hastie, Rosenbluth-Putvinski avalanche, hot-tail).
 - **FRC / magneto-inertial** (`frc_rigid_rotor`, `tilt_mode_frc`, `pulsed_compression`,
-  `faraday_recovery`, `hall_mhd_pulsed`): rigid-rotor equilibrium (Steinhauer no-rotation limit;
-  the **rotating BVP is fail-closed / not implemented** pending verified reference), tilt-mode
+  `faraday_recovery`, `hall_mhd_pulsed`): rigid-rotor equilibrium (Steinhauer no-rotation limit; the
+  **rotating BVP is implemented** against the source-verified Rostoker & Qerushi (2002)
+  one-ion rigid-rotor closure with Python/Rust parity — verbatim Steinhauer Fig. 3 digitised
+  parity remains a separate external gate), tilt-mode
   diagnostics, pulsed-compression dynamics, Faraday back-EMF recovery.
 - **Edge/pedestal** (`sol_model` two-point + Eich, `eped_pedestal` reduced-order, `elm_model`,
   `divertor_thermal_sim`, `marfe`, `lh_transition`, `scaling_laws` IPB98(y,2)).

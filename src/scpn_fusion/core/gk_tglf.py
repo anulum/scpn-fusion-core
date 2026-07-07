@@ -107,6 +107,11 @@ def parse_tglf_output(run_dir: Path) -> GKOutput:
     Expects ``out.tglf.run`` with growth rates and ``out.tglf.transport``
     with quasilinear fluxes.  If files are missing, returns a zero-flux
     unconverged result.
+
+    Not to be confused with ``tglf_interface.parse_tglf_output``, which
+    parses JSON reference payloads for the TransportSolver comparison
+    framework; this function parses the real GACODE ``out.tglf.*`` files
+    produced by the external binary.
     """
     transport_file = run_dir / "out.tglf.transport"
     eigenvalue_file = run_dir / "out.tglf.eigenvalue_spectrum"

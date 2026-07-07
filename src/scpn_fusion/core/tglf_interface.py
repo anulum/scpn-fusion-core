@@ -226,6 +226,11 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
     """Parse TGLF output files from a directory.
 
     Expects JSON files with keys: rho, chi_i, chi_e, gamma_max, q_i, q_e.
+
+    Not to be confused with ``gk_tglf.parse_tglf_output``, which parses
+    the real GACODE ``out.tglf.*`` files produced by the external binary;
+    this function parses the JSON reference payloads consumed by the
+    TransportSolver comparison framework.
     """
     output_dir = Path(output_dir)
     results = []

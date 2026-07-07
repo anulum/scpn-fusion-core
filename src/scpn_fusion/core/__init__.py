@@ -380,6 +380,11 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "GKSolverBase": (".gk_interface", "GKSolverBase"),
     "GKLocalParams": (".gk_interface", "GKLocalParams"),
     "GKOutput": (".gk_interface", "GKOutput"),
+    # GK — string-keyed solver registry (canonical discovery/factory surface)
+    "create_gk_solver": (".gk_registry", "create_gk_solver"),
+    "available_gk_solvers": (".gk_registry", "available_gk_solvers"),
+    "registered_gk_solvers": (".gk_registry", "registered_gk_solvers"),
+    "resolve_tglf_solver": (".gk_registry", "resolve_tglf_solver"),
     # GK — native linear eigenvalue solver
     "LinearGKResult": (".gk_eigenvalue", "LinearGKResult"),
     # GK — quasilinear flux model
