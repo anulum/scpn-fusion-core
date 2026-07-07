@@ -7,25 +7,27 @@
     "python": "3.12.3"
   },
   "checks": {
+    "avalanche_ratio_within_band_0p60_1p00": true,
     "cross_code_ratios_recorded": true,
+    "dreicer_ratio_within_band_0p85_1p15": true,
     "our_rates_finite_and_positive": true,
     "reference_n_re_monotonic_growth": true,
     "reference_provenance_complete": true,
     "reference_series_finite": true
   },
-  "claim_boundary": "integrity + finiteness + recorded cross-code ratios only; physics equivalence NOT claimed",
+  "claim_boundary": "integrity + finiteness + recorded ratios + measured per-rate equivalence bands; full trajectory equivalence NOT claimed (closed-form reduced balance versus DREAM's self-consistent fluid system)",
   "rate_model_findings": {
-    "avalanche_overestimate": "our avalanche_growth_rate cites Rosenbluth-Putvinski Eq. 66 but omits the geometric factor sqrt(pi/(3(Z+5)))/lnLambda; lnLambda*sqrt(3(Z+5)/pi) = 35.9 at this scenario versus the measured ratio 31.9 - the missing factor explains the discrepancy to within the difference between our fixed lnLambda=15 and DREAM's computed Coulomb logarithm and effective critical momentum",
-    "disposition": "correctness row tracked in TODO BACKLOG 3; equivalence thresholds are deliberately NOT asserted until the rate models are reconciled against the open-access DREAM paper (arXiv:2103.16457) with source-verified formulas",
-    "dreicer_underestimate": "our Connor-Hastie rate is 5.5x LOW versus DREAM's CONNOR_HASTIE implementation at the same state; suspects: fixed lnLambda=15 versus computed, and the prefactor/exponent variant of the fit"
+    "avalanche_residual": "measured ratio 0.755: the compact Rosenbluth-Putvinski form sits systematically below DREAM's matched-formula effective critical momentum (model-family difference, not an error); band 0.60-1.00",
+    "dreicer_residual": "measured ratio 0.969: same corrected Connor-Hastie formula; residual from threshold handling and Coulomb-logarithm detail; band 0.85-1.15",
+    "history": "2026-07-07 initial comparison: avalanche 32x HIGH (missing 1/(lnLambda sqrt(5+Z_eff)) factor), Dreicer 5.4x LOW (C_D=0.35, malformed exponent, fixed lnLambda=15). Both reconciled same day against DREAM ConnorHastie.cpp (commit a08edc0d) and Hesslow et al. NF 59 084004 (2019), arXiv:1904.00602; BACKLOG 3 row closed"
   },
   "rates": {
-    "avalanche_ratio_ours_over_dream": 31.917873815578456,
+    "avalanche_ratio_ours_over_dream": 0.7546967533927458,
     "dream_gamma_ava_s": 109.58244706695966,
     "dream_gamma_dreicer_m3_s": 2.1037018524177688e+20,
-    "dreicer_ratio_ours_over_dream": 0.18175852546721313,
-    "ours_avalanche_exponential_s": 3497.638717885524,
-    "ours_dreicer_m3_s": 3.823657467180985e+19
+    "dreicer_ratio_ours_over_dream": 0.9691046702835416,
+    "ours_avalanche_exponential_s": 82.70151703026687,
+    "ours_dreicer_m3_s": 2.0387072900621976e+20
   },
   "reference": {
     "artifact": "validation/reference_data/dream/dream_fluid_runaway_reference.json",

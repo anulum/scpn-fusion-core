@@ -330,6 +330,8 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "RunawayParams": (".runaway_electrons", "RunawayParams"),
     "dreicer_field": (".runaway_electrons", "dreicer_field"),
     "critical_field": (".runaway_electrons", "critical_field"),
+    "coulomb_logarithm_thermal": (".runaway_electrons", "coulomb_logarithm_thermal"),
+    "coulomb_logarithm_relativistic": (".runaway_electrons", "coulomb_logarithm_relativistic"),
     # Phase 5 — Alfven eigenmodes (TAE/RSAE)
     "AlfvenContinuum": (".alfven_eigenmodes", "AlfvenContinuum"),
     "AlfvenStabilityAnalysis": (".alfven_eigenmodes", "AlfvenStabilityAnalysis"),

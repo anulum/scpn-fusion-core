@@ -102,17 +102,20 @@ def test_build_report_records_ratios_and_findings() -> None:
     ):
         assert np.isfinite(rates[key]), key
 
-    # The measured discrepancies are findings, not tolerances: the gate must
-    # keep recording them until the rate models are reconciled at source.
-    assert "avalanche_overestimate" in report["rate_model_findings"]
-    assert "dreicer_underestimate" in report["rate_model_findings"]
+    # The reconciliation history and per-rate residuals stay recorded so the
+    # 2026-07-07 findings remain auditable after the fix.
+    assert "history" in report["rate_model_findings"]
+    assert "avalanche_residual" in report["rate_model_findings"]
+    assert "dreicer_residual" in report["rate_model_findings"]
     assert "NOT claimed" in report["claim_boundary"]
 
 
-def test_gate_asserts_no_equivalence_thresholds() -> None:
-    """No check in the gate asserts a physics-equivalence tolerance."""
+def test_gate_enforces_measured_equivalence_bands() -> None:
+    """The reconciled rates sit inside the measured per-rate bands."""
     module = _load_module()
     report = module.build_report()
-    for name in report["checks"]:
-        assert "equivalence" not in name
-        assert "tolerance" not in name
+    rates = report["rates"]
+    assert 0.85 <= rates["dreicer_ratio_ours_over_dream"] <= 1.15
+    assert 0.60 <= rates["avalanche_ratio_ours_over_dream"] <= 1.00
+    assert report["checks"]["dreicer_ratio_within_band_0p85_1p15"] is True
+    assert report["checks"]["avalanche_ratio_within_band_0p60_1p00"] is True

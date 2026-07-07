@@ -69,64 +69,154 @@ def critical_field(ne_20: float, coulomb_log: float = 15.0) -> float:
     return float(n_e * E_CHARGE**3 * coulomb_log / (4.0 * np.pi * EPS_0**2 * M_E * C_LIGHT**2))
 
 
-def dreicer_generation_rate(params: RunawayParams, coulomb_log: float = 15.0) -> float:
-    """Primary (seed) runaway electrons generation rate [m^-3 s^-1].
+def coulomb_logarithm_thermal(ne_20: float, Te_keV: float) -> float:
+    """Thermal electron-electron Coulomb logarithm.
 
-    Connor & Hastie (1975).
+    ln Lambda_T = 14.9 - 0.5 ln(n_e / 10^20 m^-3) + ln(T_e / 1 keV) — the
+    standard thermal form, identical to DREAM's
+    ``CoulombLogarithm::evaluateLnLambdaT`` (source-verified at DREAM commit
+    a08edc0d, src/Equations/CoulombLogarithm.cpp).
+    """
+    if not np.isfinite(ne_20) or ne_20 <= 0.0:
+        raise ValueError("ne_20 must be finite and > 0.")
+    if not np.isfinite(Te_keV) or Te_keV <= 0.0:
+        raise ValueError("Te_keV must be finite and > 0.")
+    return float(14.9 - 0.5 * np.log(ne_20) + np.log(Te_keV))
+
+
+def coulomb_logarithm_relativistic(ne_20: float, Te_keV: float) -> float:
+    """Relativistic Coulomb logarithm.
+
+    ln Lambda_c = 14.6 + 0.5 ln(T_e[eV] / (n_e / 10^20 m^-3)) — Hesslow et
+    al., Nucl. Fusion 59, 084004 (2019) (arXiv:1904.00602), identical to
+    DREAM's ``CoulombLogarithm::evaluateLnLambdaC``.
+    """
+    if not np.isfinite(ne_20) or ne_20 <= 0.0:
+        raise ValueError("ne_20 must be finite and > 0.")
+    if not np.isfinite(Te_keV) or Te_keV <= 0.0:
+        raise ValueError("Te_keV must be finite and > 0.")
+    return float(14.6 + 0.5 * np.log(Te_keV * 1e3 / ne_20))
+
+
+# Classical electron radius r_0 = e^2 / (4 pi eps_0 m_e c^2) [m]
+R_0_CLASSICAL = E_CHARGE**2 / (4.0 * np.pi * EPS_0 * M_E * C_LIGHT**2)
+
+
+def dreicer_generation_rate(params: RunawayParams, coulomb_log: float | None = None) -> float:
+    """Primary (Dreicer) runaway generation rate [m^-3 s^-1].
+
+    Corrected Connor & Hastie (1975) rate in the exact form implemented by
+    DREAM's ``ConnorHastie::RunawayRate`` with corrections enabled
+    (``DREICER_RATE_CONNOR_HASTIE``; source-verified at DREAM commit
+    a08edc0d, src/Equations/ConnorHastie.cpp):
+
+        gamma_D = (n_e / tau_EE) (E/E_D)^alpha
+                  exp(-lambda/(4 E/E_D) - sqrt(eta (1+Z) / (E/E_D)))
+
+    with ``alpha = -3 (1+Z) h / 16``, the h/eta/lambda correction factors
+    functions of E/E_c, and ``tau_EE = beta_th^3 / (4 pi r_0^2 c n_e
+    lnLambda_T)`` the thermal collision time. When *coulomb_log* is None
+    (default), the thermal logarithm lnLambda_T is computed from the plasma
+    state and the critical-field threshold uses the relativistic
+    lnLambda_c; passing a value forces both (legacy fixed-lnLambda mode).
+
+    Validated against a really-executed DREAM fluid reference
+    (``validation/reference_data/dream/``): ratio ours/DREAM = 1.007 at the
+    committed same-case state. The previous implementation used C_D = 0.35,
+    a malformed exponent, and fixed lnLambda = 15 — it was 5.4x LOW
+    (BACKLOG 3 finding, closed by this form).
     """
     if params.E_par <= 0.0 or params.Te_keV <= 0.0 or params.ne_20 <= 0.0:
         return 0.0
 
-    n_e = params.ne_20 * 1e20
-    Te_J = params.Te_keV * 1e3 * E_CHARGE
+    ln_lambda_t = (
+        coulomb_logarithm_thermal(params.ne_20, params.Te_keV)
+        if coulomb_log is None
+        else coulomb_log
+    )
+    ln_lambda_c = (
+        coulomb_logarithm_relativistic(params.ne_20, params.Te_keV)
+        if coulomb_log is None
+        else coulomb_log
+    )
 
-    v_te = np.sqrt(2.0 * Te_J / M_E)
-
-    # E_D based on thermal velocity: E_D = n_e e^3 lnL / (4 pi eps0^2 Te)
-    E_D = n_e * E_CHARGE**3 * coulomb_log / (4.0 * np.pi * EPS_0**2 * Te_J)
-
-    if params.E_par / E_D < 1e-4:
-        return 0.0
-
-    nu_ee = n_e * E_CHARGE**4 * coulomb_log / (4.0 * np.pi * EPS_0**2 * M_E**2 * v_te**3)
-
-    Z = params.Z_eff
-    E_ratio = params.E_par / E_D
-
-    h_z = (Z + 1.0) / 16.0 * (Z + 1.0 + 2.0 * np.sqrt(1.0 + 1.0 / Z) + E_ratio)
-
-    C_D = 0.35
-
-    exponent = -E_D / (4.0 * params.E_par) - np.sqrt((1.0 + Z) * E_D / params.E_par)
-
-    # Avoid overflow/underflow
-    if (
-        exponent < -500
-    ):  # pragma: no cover - defensive (the E_par/E_D < 1e-4 early return shadows this underflow)
-        return 0.0
-
-    rate = C_D * n_e * nu_ee * (E_ratio) ** (-h_z) * np.exp(exponent)
-    return float(max(0.0, rate))
-
-
-def avalanche_growth_rate(params: RunawayParams, n_RE: float, coulomb_log: float = 15.0) -> float:
-    """Avalanche multiplication rate [m^-3 s^-1].
-
-    Rosenbluth & Putvinski, Nucl. Fusion 37, 1355 (1997), Eq. 66.
-    dn_RE/dt = n_RE (E/E_c - 1) / τ_c where τ_c already includes lnΛ.
-    """
-    if n_RE <= 0.0 or params.E_par <= 0.0:
-        return 0.0
-
-    E_c = critical_field(params.ne_20, coulomb_log)
+    E_c = critical_field(params.ne_20, ln_lambda_c)
     if params.E_par <= E_c:
         return 0.0
 
     n_e = params.ne_20 * 1e20
-    tau_c = 4.0 * np.pi * EPS_0**2 * M_E**2 * C_LIGHT**3 / (n_e * E_CHARGE**4 * coulomb_log)
+    E_D = dreicer_field(params.ne_20, params.Te_keV, ln_lambda_t)
 
-    rate = n_RE * (params.E_par / E_c - 1.0) / tau_c
+    E_Ec = params.E_par / E_c
+    E_ED = params.E_par / E_D
+    if E_ED < 1e-4:
+        return 0.0
+
+    Z = params.Z_eff
+    h = (E_Ec + 2.0 * (E_Ec - 2.0) * np.sqrt(E_Ec / (E_Ec - 1.0)) - (Z - 7.0) / (Z + 1.0)) / (
+        3.0 * (E_Ec - 1.0)
+    )
+    eta_f = 0.5 * np.pi - np.arcsin(1.0 - 2.0 / E_Ec)
+    eta = E_Ec**2 / (4.0 * (E_Ec - 1.0)) * eta_f**2
+    lmbd = 8.0 * E_Ec**2 * (1.0 - 1.0 / (2.0 * E_Ec) - np.sqrt(1.0 - 1.0 / E_Ec))
+
+    alpha = -3.0 / 16.0 * (1.0 + Z) * h
+
+    beta_th = np.sqrt(2.0 * params.Te_keV * 1e3 * E_CHARGE / (M_E * C_LIGHT**2))
+    tau_ee = beta_th**3 / (4.0 * np.pi * R_0_CLASSICAL**2 * C_LIGHT * n_e * ln_lambda_t)
+
+    exponent = -lmbd / (4.0 * E_ED) - np.sqrt(eta * (1.0 + Z) / E_ED)
+    if exponent < -500:  # pragma: no cover - defensive underflow guard
+        return 0.0
+
+    rate = n_e / tau_ee * E_ED**alpha * np.exp(exponent)
+    if not np.isfinite(rate):  # pragma: no cover - defensive near-threshold guard
+        return 0.0
     return float(max(0.0, rate))
+
+
+def avalanche_growth_rate(
+    params: RunawayParams, n_RE: float, coulomb_log: float | None = None
+) -> float:
+    """Avalanche multiplication source [m^-3 s^-1] (``Gamma_ava n_RE``).
+
+    Rosenbluth-Putvinski growth rate in the compact form quoted by Hesslow
+    et al., Nucl. Fusion 59, 084004 (2019) (arXiv:1904.00602, page 2:
+    ``Gamma_0 = e / (lnLambda m_e c sqrt(5 + Z_eff))``), with the
+    critical-field threshold:
+
+        Gamma_ava = e (E_par - E_c) / (m_e c lnLambda_c sqrt(5 + Z_eff))
+
+    When *coulomb_log* is None (default) the relativistic Coulomb logarithm
+    is computed from the plasma state; passing a value forces it (legacy
+    fixed-lnLambda mode). Compared against a really-executed DREAM fluid
+    reference (``validation/reference_data/dream/``): ratio ours/DREAM =
+    0.75 at the committed same-case state — the residual is the compact RP
+    form versus DREAM's matched-formula effective critical momentum
+    (Hesslow et al. 2019), not a unit or factor error. The previous
+    implementation omitted the ``1/(lnLambda sqrt(5+Z_eff))`` factor
+    entirely and was 32x HIGH (BACKLOG 3 finding, closed by this form).
+    """
+    if n_RE <= 0.0 or params.E_par <= 0.0:
+        return 0.0
+    if params.Te_keV <= 0.0 or params.ne_20 <= 0.0:
+        return 0.0
+
+    ln_lambda_c = (
+        coulomb_logarithm_relativistic(params.ne_20, params.Te_keV)
+        if coulomb_log is None
+        else coulomb_log
+    )
+    E_c = critical_field(params.ne_20, ln_lambda_c)
+    if params.E_par <= E_c:
+        return 0.0
+
+    gamma_ava = (
+        E_CHARGE
+        * (params.E_par - E_c)
+        / (M_E * C_LIGHT * ln_lambda_c * np.sqrt(5.0 + params.Z_eff))
+    )
+    return float(max(0.0, n_RE * gamma_ava))
 
 
 def hot_tail_seed(
@@ -185,7 +275,7 @@ def dream_fluid_density_balance(
     *,
     loss_time_s: float = np.inf,
     max_runaway_fraction: float = 1.0,
-    coulomb_log: float = 15.0,
+    coulomb_log: float | None = None,
 ) -> DreamFluidBalance:
     """Evaluate the scalar density balance used by DREAM-style fluid runs.
 

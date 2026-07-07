@@ -18,16 +18,20 @@ this lane runs everywhere against the committed artifact, so its checks are
 deterministic.
 
 Claim boundary: this gate asserts reference integrity, finite rate output,
-and that the cross-code rate ratios are RECORDED — it does not claim physics
-equivalence. The first real-reference comparison exposed two genuine findings
-in ``scpn_fusion.core.runaway_electrons`` (documented in
-``rate_model_findings``): the avalanche exponential rate is ~32x DREAM's
-Rosenbluth-Putvinski fluid rate at the same state — consistent with the
-missing RP geometric factor ``sqrt(pi/(3(Z+5)))/lnLambda`` (= 1/35.9 at
-Z=1, lnLambda=15) — and the Dreicer rate is ~5.4x LOW versus DREAM's
-Connor-Hastie implementation (fixed lnLambda=15 versus DREAM's computed
-Coulomb logarithm, and a differing prefactor variant). Equivalence
-thresholds may only be introduced after that correctness row is closed.
+recorded cross-code ratios, AND measured equivalence bands for the two
+closed-form rates. History: the first real-reference comparison (2026-07-07)
+exposed two genuine defects in ``scpn_fusion.core.runaway_electrons`` — the
+avalanche rate was 32x HIGH (missing ``1/(lnLambda sqrt(5+Z_eff))``) and the
+Dreicer rate 5.4x LOW (C_D=0.35, malformed exponent, fixed lnLambda). Both
+were reconciled the same day against source-verified formulas (DREAM
+ConnorHastie.cpp at commit a08edc0d; Hesslow et al. NF 59 084004 (2019),
+arXiv:1904.00602). Post-fix measured ratios: Dreicer 0.969 (band 0.85-1.15,
+same corrected Connor-Hastie formula, residual = threshold/lnLambda detail),
+avalanche 0.755 (band 0.60-1.00; the compact Rosenbluth-Putvinski form is
+systematically below DREAM's matched-formula effective critical momentum —
+a model-family difference, not an error). Full trajectory equivalence is
+NOT claimed: DREAM evolves a self-consistent fluid system, our lane is the
+closed-form reduced balance.
 """
 
 from __future__ import annotations
@@ -118,10 +122,11 @@ def build_report() -> dict[str, Any]:
         "cross_code_ratios_recorded": bool(
             np.isfinite(dreicer_ratio) and np.isfinite(avalanche_ratio)
         ),
+        # Measured equivalence bands (see module docstring for the measured
+        # post-fix ratios and why the avalanche band sits below unity).
+        "dreicer_ratio_within_band_0p85_1p15": bool(0.85 <= dreicer_ratio <= 1.15),
+        "avalanche_ratio_within_band_0p60_1p00": bool(0.60 <= avalanche_ratio <= 1.00),
     }
-
-    z_eff = float(scenario["Z_eff"])
-    rp_geometric_factor = float(15.0 * np.sqrt(3.0 * (z_eff + 5.0) / np.pi))
 
     return {
         "schema": SCHEMA,
@@ -143,31 +148,31 @@ def build_report() -> dict[str, Any]:
         "checks": checks,
         "all_checks_passed": bool(all(checks.values())),
         "rate_model_findings": {
-            "avalanche_overestimate": (
-                "our avalanche_growth_rate cites Rosenbluth-Putvinski Eq. 66 "
-                "but omits the geometric factor sqrt(pi/(3(Z+5)))/lnLambda; "
-                f"lnLambda*sqrt(3(Z+5)/pi) = {rp_geometric_factor:.1f} at this "
-                f"scenario versus the measured ratio {avalanche_ratio:.1f} - "
-                "the missing factor explains the discrepancy to within the "
-                "difference between our fixed lnLambda=15 and DREAM's computed "
-                "Coulomb logarithm and effective critical momentum"
+            "history": (
+                "2026-07-07 initial comparison: avalanche 32x HIGH (missing "
+                "1/(lnLambda sqrt(5+Z_eff)) factor), Dreicer 5.4x LOW "
+                "(C_D=0.35, malformed exponent, fixed lnLambda=15). Both "
+                "reconciled same day against DREAM ConnorHastie.cpp (commit "
+                "a08edc0d) and Hesslow et al. NF 59 084004 (2019), "
+                "arXiv:1904.00602; BACKLOG 3 row closed"
             ),
-            "dreicer_underestimate": (
-                f"our Connor-Hastie rate is {1.0 / dreicer_ratio:.1f}x LOW "
-                "versus DREAM's CONNOR_HASTIE implementation at the same "
-                "state; suspects: fixed lnLambda=15 versus computed, and the "
-                "prefactor/exponent variant of the fit"
+            "avalanche_residual": (
+                f"measured ratio {avalanche_ratio:.3f}: the compact "
+                "Rosenbluth-Putvinski form sits systematically below DREAM's "
+                "matched-formula effective critical momentum (model-family "
+                "difference, not an error); band 0.60-1.00"
             ),
-            "disposition": (
-                "correctness row tracked in TODO BACKLOG 3; equivalence "
-                "thresholds are deliberately NOT asserted until the rate "
-                "models are reconciled against the open-access DREAM paper "
-                "(arXiv:2103.16457) with source-verified formulas"
+            "dreicer_residual": (
+                f"measured ratio {dreicer_ratio:.3f}: same corrected "
+                "Connor-Hastie formula; residual from threshold handling and "
+                "Coulomb-logarithm detail; band 0.85-1.15"
             ),
         },
         "claim_boundary": (
-            "integrity + finiteness + recorded cross-code ratios only; "
-            "physics equivalence NOT claimed"
+            "integrity + finiteness + recorded ratios + measured per-rate "
+            "equivalence bands; full trajectory equivalence NOT claimed "
+            "(closed-form reduced balance versus DREAM's self-consistent "
+            "fluid system)"
         ),
         "benchmark_evidence": {
             "classification": "local_non_isolated_regression",
