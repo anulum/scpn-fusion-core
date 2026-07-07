@@ -201,9 +201,10 @@ def test_backend_physics_invariant_parity() -> None:
     """
     from scpn_fusion.core import _multi_compat as multi
 
-    rust_cls = multi._load_rust_hall_mhd()
-    numpy_cls = multi._load_numpy_hall_mhd()
-    for backend_cls in (rust_cls, numpy_cls):
+    backends = [multi._load_numpy_hall_mhd()]
+    if multi.is_available(multi.BackendTier.RUST):
+        backends.append(multi._load_rust_hall_mhd())
+    for backend_cls in backends:
         sim = backend_cls(16, None, None, seed=3, background_amplitude=0.0)
         energies = [sim.step() for _ in range(40)]
         totals = np.asarray([e for e, _ in energies])
