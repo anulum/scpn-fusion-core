@@ -229,7 +229,7 @@ def main() -> int:
     out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    out_json.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     out_md.write_text(render_markdown(report), encoding="utf-8")
 
     g = report["multi_ion_transport_conservation_benchmark"]
