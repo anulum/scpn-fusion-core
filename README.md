@@ -132,7 +132,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 57 |
 | Rust workspace crates | 12 |
 | Optional extras | 13 |
-| Python test files | 447 |
+| Python test files | 448 |
 | Public documentation pages | 57 |
 | GitHub Actions workflows | 12 |
 

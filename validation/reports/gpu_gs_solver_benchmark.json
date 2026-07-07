@@ -1,0 +1,45 @@
+{
+  "benchmark_evidence": {
+    "classification": "local_non_isolated_regression",
+    "host": "aaarthuus",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "gpu_adapter": "NVIDIA GeForce GTX 1060 6GB (Vulkan, DiscreteGpu)",
+  "gpu_available": true,
+  "grids": [
+    {
+      "gpu_median_s": 0.050970292068086565,
+      "gpu_over_numpy_speedup": 11.841026890540476,
+      "gpu_vs_numpy_rel_l2": 5.550986253416596e-06,
+      "grid": "129x129",
+      "n": 129,
+      "numpy_median_s": 0.6035405989969149,
+      "sweeps": 200
+    },
+    {
+      "gpu_median_s": 0.0965072320541367,
+      "gpu_over_numpy_speedup": 38.7624774998863,
+      "gpu_vs_numpy_rel_l2": 6.484837134989408e-06,
+      "grid": "257x257",
+      "n": 257,
+      "numpy_median_s": 3.74085941107478,
+      "sweeps": 200
+    },
+    {
+      "gpu_median_s": 0.6628234030213207,
+      "gpu_over_numpy_speedup": 28.442272797120253,
+      "gpu_vs_numpy_rel_l2": 5.4040668826376765e-06,
+      "grid": "513x513",
+      "n": 513,
+      "numpy_median_s": 18.852204045047984,
+      "sweeps": 200
+    }
+  ],
+  "kernel": "gs_rb_sor_smooth",
+  "omega": 1.3,
+  "problem_contract": "identical fixed-sweep Red-Black SOR of the toroidal GS* operator d2/dR2 - (1/R) d/dR + d2/dZ2 on a seeded Gaussian-source problem; GPU tier computes in f32, so cross-tier agreement is f32-bounded",
+  "repeats": 3,
+  "schema": "scpn-fusion-core.gpu-gs-solver-benchmark.v1",
+  "seed": 2026
+}

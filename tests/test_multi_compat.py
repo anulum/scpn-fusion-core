@@ -794,3 +794,129 @@ def test_rust_simulate_tearing_mode_provider_is_seed_reproducible() -> None:
     np.testing.assert_array_equal(sig1, sig2)
     assert (lbl1, ttd1) == (lbl2, ttd2)
     assert np.all(np.isfinite(sig1))
+
+
+def test_gpu_probe_disabled_by_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SCPN_DISABLE_GPU short-circuits the GPU probe to unavailable."""
+    monkeypatch.setenv("SCPN_DISABLE_GPU", "1")
+    assert multi._probe_gpu() is False
+
+
+def test_gpu_probe_without_gpu_feature_symbol_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An extension built without --features gpu reports the tier unavailable."""
+    monkeypatch.delenv("SCPN_DISABLE_GPU", raising=False)
+    fake_ext = types.ModuleType("scpn_fusion_rs")
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_ext)
+    assert multi._probe_gpu() is False
+
+
+def test_gpu_probe_delegates_to_extension_adapter_probe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With the gpu feature built, availability follows py_gpu_available()."""
+    monkeypatch.delenv("SCPN_DISABLE_GPU", raising=False)
+    fake_ext = types.ModuleType("scpn_fusion_rs")
+    fake_ext.py_gpu_available = lambda: True  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "scpn_fusion_rs", fake_ext)
+    assert multi._probe_gpu() is True
+    fake_ext.py_gpu_available = lambda: False  # type: ignore[attr-defined]
+    assert multi._probe_gpu() is False
+
+
+def test_gpu_probe_treats_broken_extension_import_as_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A raising extension import degrades the GPU tier to unavailable."""
+    monkeypatch.delenv("SCPN_DISABLE_GPU", raising=False)
+    real_import = builtins.__import__
+
+    def fake_import(
+        name: str,
+        globals_: Mapping[str, object] | None = None,
+        locals_: Mapping[str, object] | None = None,
+        fromlist: Sequence[str] = (),
+        level: int = 0,
+    ) -> object:
+        if name == "scpn_fusion_rs":
+            raise ImportError("extension not built")
+        return real_import(name, globals_, locals_, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    monkeypatch.delitem(sys.modules, "scpn_fusion_rs", raising=False)
+    assert multi._probe_gpu() is False
+
+
+def test_gs_rb_sor_smooth_registered_with_gpu_and_numpy_tiers() -> None:
+    """The W-2 smoother kernel carries GPU and NumPy tier registrations."""
+    kernels = multi.registered_kernels()
+    assert "gs_rb_sor_smooth" in kernels
+    tier_names = [name.rstrip("*") for name in kernels["gs_rb_sor_smooth"]]
+    assert tier_names == ["gpu", "numpy"]
+    assert "numpy*" in kernels["gs_rb_sor_smooth"]
+
+
+def _smooth_problem(n: int) -> tuple[FloatArray, FloatArray]:
+    """Build a small seeded GS* smoothing problem for tier tests."""
+    rng = np.random.default_rng(2026)
+    r_axis = np.linspace(4.0, 8.0, n)
+    z_axis = np.linspace(-4.0, 4.0, n)
+    r_grid, z_grid = np.meshgrid(r_axis, z_axis)
+    source = -np.exp(-((r_grid - 6.0) ** 2 + z_grid**2) / 0.5)
+    psi0 = rng.normal(0.0, 1e-3, size=(n, n))
+    psi0[0, :] = psi0[-1, :] = psi0[:, 0] = psi0[:, -1] = 0.0
+    return psi0, source
+
+
+def test_numpy_gs_rb_sor_smooth_reduces_residual_and_preserves_boundary() -> None:
+    """The NumPy smoother tier contracts the GS* residual on a seeded problem."""
+    from scpn_fusion.core.multigrid_solve import mg_residual
+
+    n = 33
+    psi0, source = _smooth_problem(n)
+    psi0_copy = psi0.copy()
+    smoothed = multi._numpy_gs_rb_sor_smooth(
+        psi0, source, 4.0, 8.0, -4.0, 4.0, omega=1.3, n_sweeps=100
+    )
+
+    np.testing.assert_array_equal(psi0, psi0_copy)  # input not mutated
+    np.testing.assert_array_equal(smoothed[0, :], 0.0)
+    np.testing.assert_array_equal(smoothed[-1, :], 0.0)
+    np.testing.assert_array_equal(smoothed[:, 0], 0.0)
+    np.testing.assert_array_equal(smoothed[:, -1], 0.0)
+
+    r_axis = np.linspace(4.0, 8.0, n)
+    z_axis = np.linspace(-4.0, 4.0, n)
+    r_grid, _ = np.meshgrid(r_axis, z_axis)
+    dr = 4.0 / (n - 1)
+    dz = 8.0 / (n - 1)
+    res_before = float(np.max(np.abs(mg_residual(psi0, source, r_grid, dr, dz))))
+    res_after = float(np.max(np.abs(mg_residual(smoothed, source, r_grid, dr, dz))))
+    assert res_after < 0.5 * res_before
+
+
+def test_gpu_gs_rb_sor_smooth_matches_numpy_tier() -> None:
+    """The GPU tier agrees with the float64 reference to f32 round-off."""
+    if not multi.is_available(multi.BackendTier.GPU):
+        pytest.skip("GPU tier unavailable (extension without --features gpu or no adapter)")
+
+    n = 65
+    psi0, source = _smooth_problem(n)
+    reference = multi._numpy_gs_rb_sor_smooth(
+        psi0, source, 4.0, 8.0, -4.0, 4.0, omega=1.3, n_sweeps=50
+    )
+    gpu_result = multi._gpu_gs_rb_sor_smooth(
+        psi0, source, 4.0, 8.0, -4.0, 4.0, omega=1.3, n_sweeps=50
+    )
+
+    assert gpu_result.shape == reference.shape
+    rel_l2 = float(np.linalg.norm(gpu_result - reference)) / max(
+        float(np.linalg.norm(reference)), 1e-30
+    )
+    assert rel_l2 < 1e-4
+
+    key = (n, n, 4.0, 8.0, -4.0, 4.0)
+    assert key in multi._gpu_gs_solver_cache  # geometry-keyed device reuse
+    again = multi._gpu_gs_rb_sor_smooth(psi0, source, 4.0, 8.0, -4.0, 4.0, omega=1.3, n_sweeps=50)
+    np.testing.assert_allclose(again, gpu_result, rtol=0.0, atol=0.0)

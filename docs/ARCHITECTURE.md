@@ -92,7 +92,7 @@ when present.
 A `BackendTier` priority enum orders accelerators fastest→slowest:
 
 ```
-RUST (0) → MOJO (1) → JULIA (2) → GO (3) → JAX (4) → NUMPY (5)
+RUST (0) → GPU (1) → MOJO (2) → JULIA (3) → GO (4) → JAX (5) → NUMPY (6)
 ```
 
 `register_kernel(name, tier, provider)` registers a provider for a kernel at a tier;
@@ -115,6 +115,7 @@ Rust-only extension symbols without a NumPy floor are resolved through
 | `measure_magnetics` | ✓ | ✓ | tolerance-aware (bilinear + probe θ) |
 | `multigrid_solve` | ✓ | ✓ | machine-precision parity |
 | `simulate_tearing_mode` | ✓ | ✓ | deterministic-step bit-exact + statistical trajectory |
+| `gs_rb_sor_smooth` | GPU tier (`PyGpuSolver`, wgpu f32) | ✓ (`mg_smooth`, f64) | fixed-sweep Red-Black SOR of the toroidal GS* operator; f32-bounded agreement (rel L2 ~5e-6); GPU tier exists only when the extension is built with `--features gpu` AND a physical adapter passes the runtime probe |
 
 All dispatched kernels have a **NumPy floor** — the package runs with no Rust extension
 present. In addition, `diagnostics.PlasmaTomography.reconstruct` prefers the Rust
@@ -128,7 +129,10 @@ The dispatcher proof surface is tracked by
 `PYTHONPATH=src python benchmarks/bench_dispatcher_kernel_tiers.py`. The report records the
 selected tier and timing row for each A2 function kernel, then forces the Rust tier unavailable
 and requires `fallback_telemetry_validation` to emit one `multi_backend` fallback event per
-kernel while selecting the NumPy floor.
+kernel while selecting the NumPy floor. The GPU smoother tier is benchmarked by
+`validation/reports/gpu_gs_solver_benchmark.json` (`benchmarks/bench_gpu_gs_solver.py`):
+on a discrete adapter the wgpu tier runs the identical 200-sweep workload 11.8x
+(129x129), 38.8x (257x257) and 28.4x (513x513) faster than the NumPy floor.
 
 ### 3.2 Rust acceleration layer (`scpn-fusion-rs/`, 12 crates)
 
@@ -160,7 +164,9 @@ the same reduced model), and `PyFokkerPlanckSolver`, `PyFnoController`, `PyMpcCo
 `PyPlasma2D`, `PyInverseSolver`, `PyPlantModel` (Python counterparts exist but the pairs
 have not been contract-reconciled; wiring them without a parity contract would overstate
 equivalence). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
-the default extension. Reconciliation of these pairs is tracked internally and follows the
+the default extension; when built with `--features gpu` on a machine with a physical
+adapter, it backs the `gs_rb_sor_smooth` dispatcher kernel (GPU tier, W-2) with the
+NumPy `mg_smooth` floor. Reconciliation of these pairs is tracked internally and follows the
 same pattern used for the Hall-MHD and tomography lanes.
 
 ### 3.3 JAX research tier

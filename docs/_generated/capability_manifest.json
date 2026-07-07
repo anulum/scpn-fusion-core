@@ -2594,7 +2594,7 @@
     "python_capability_classes": 548,
     "python_capability_source_modules": 278,
     "rust_workspace_crates": 12,
-    "test_files": 447
+    "test_files": 448
   },
   "documentation": {
     "public_pages": [
@@ -3150,6 +3150,7 @@
       "tests/test_tomography.py",
       "tests/test_tools_run_mypy_strict.py",
       "tests/test_tools_run_python_preflight.py",
+      "tests/test_torax_real_parity.py",
       "tests/test_traceable_runtime_parity_cli.py",
       "tests/test_training_tool_npz_hardening.py",
       "tests/test_transport_physics_consistency.py",

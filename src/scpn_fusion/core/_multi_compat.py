@@ -9,7 +9,7 @@
 
 Probes available acceleration backends in priority order:
 
-    Rust (PyO3) → Mojo → Julia (juliacall) → Go (cgo) → JAX → NumPy
+    Rust (PyO3) → GPU (wgpu) → Mojo → Julia (juliacall) → Go (cgo) → JAX → NumPy
 
 Each backend tier is detected once at import time. Individual compute
 kernels register themselves via :func:`register_kernel` and callers use
@@ -50,18 +50,28 @@ logger = logging.getLogger(__name__)
 
 
 class BackendTier(IntEnum):
-    """Acceleration backend tiers, ordered fastest → slowest."""
+    """Acceleration backend tiers, ordered fastest → slowest.
+
+    Ordering is *relative within each kernel's registered tiers*: a kernel
+    only dispatches across the tiers actually registered for it. GPU sits
+    after RUST because wgpu dispatch overhead (one submit per Red-Black
+    colour per sweep plus PCIe transfers) dominates at production
+    equilibrium grid sizes; per-kernel benchmarks decide where GPU is
+    registered at all (see ``validation/reports/gpu_gs_solver_benchmark.json``).
+    """
 
     RUST = 0
-    MOJO = 1
-    JULIA = 2
-    GO = 3
-    JAX = 4
-    NUMPY = 5
+    GPU = 1
+    MOJO = 2
+    JULIA = 3
+    GO = 4
+    JAX = 5
+    NUMPY = 6
 
 
 _TIER_NAMES: dict[BackendTier, str] = {
     BackendTier.RUST: "rust",
+    BackendTier.GPU: "gpu",
     BackendTier.MOJO: "mojo",
     BackendTier.JULIA: "julia",
     BackendTier.GO: "go",
@@ -85,6 +95,28 @@ def _probe_rust() -> bool:
 
         return True
     except ImportError:
+        return False
+
+
+def _probe_gpu() -> bool:
+    """Check if the wgpu compute tier is available.
+
+    True only when the Rust extension was built with ``--features gpu``
+    (which exports ``py_gpu_available``) AND a physical GPU adapter is
+    accepted by the runtime probe (CPU/software adapters are rejected by
+    the Rust side unless ``SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER=1``).
+    """
+    if os.environ.get("SCPN_DISABLE_GPU", "").strip().lower() in ("1", "true", "yes"):
+        return False
+    try:
+        import scpn_fusion_rs
+
+        probe = getattr(scpn_fusion_rs, "py_gpu_available", None)
+        if probe is None:
+            return False
+        return bool(probe())
+    except Exception as exc:
+        logger.debug("GPU backend probe failed; treating GPU as unavailable: %s", exc)
         return False
 
 
@@ -140,6 +172,7 @@ def _ensure_probed() -> None:
         if _probed:
             return
         _availability[BackendTier.RUST] = _probe_rust()
+        _availability[BackendTier.GPU] = _probe_gpu()
         _availability[BackendTier.MOJO] = _probe_mojo()
         _availability[BackendTier.JULIA] = _probe_julia()
         _availability[BackendTier.GO] = _probe_go()
@@ -701,6 +734,84 @@ def _rust_simulate_tearing_mode(
     return np.asarray(signal, dtype=np.float64), int(label), int(ttd)
 
 
+# Cache of GPU GS solver instances keyed by grid geometry. Device and
+# pipeline construction costs ~10^2 ms, so re-solves on the same grid must
+# not pay it again; the cache holds one wgpu device per distinct geometry.
+_gpu_gs_solver_cache: dict[tuple[int, int, float, float, float, float], Any] = {}
+
+
+def _numpy_gs_rb_sor_smooth(
+    psi: Any,
+    source: Any,
+    r_left: float,
+    r_right: float,
+    z_bottom: float,
+    z_top: float,
+    *,
+    omega: float = 1.3,
+    n_sweeps: int = 50,
+) -> Any:
+    """NumPy-tier provider for the ``gs_rb_sor_smooth`` kernel.
+
+    Runs ``n_sweeps`` Red-Black SOR sweeps of the toroidal GS* stencil on a
+    copy of *psi* (Dirichlet boundary preserved) and returns the smoothed
+    float64 array.
+    """
+    import numpy as np
+
+    from scpn_fusion.core.multigrid_solve import mg_smooth
+
+    psi_arr = np.array(psi, dtype=np.float64, copy=True)
+    source_arr = np.asarray(source, dtype=np.float64)
+    nz, nr = psi_arr.shape
+    r_axis = np.linspace(r_left, r_right, nr)
+    z_axis = np.linspace(z_bottom, z_top, nz)
+    r_grid, _ = np.meshgrid(r_axis, z_axis)
+    dr = (r_right - r_left) / (nr - 1)
+    dz = (z_top - z_bottom) / (nz - 1)
+    return mg_smooth(psi_arr, source_arr, r_grid, dr, dz, omega, n_sweeps)
+
+
+def _gpu_gs_rb_sor_smooth(
+    psi: Any,
+    source: Any,
+    r_left: float,
+    r_right: float,
+    z_bottom: float,
+    z_top: float,
+    *,
+    omega: float = 1.3,
+    n_sweeps: int = 50,
+) -> Any:
+    """GPU-tier provider for the ``gs_rb_sor_smooth`` kernel.
+
+    Identical Red-Black SOR sweeps of the same toroidal GS* stencil executed
+    as wgpu compute shaders in f32 (see ``fusion-gpu/src/gs_solver.wgsl``).
+    The result is returned as float64 for tier interchangeability; agreement
+    with the NumPy tier is bounded by f32 round-off, not by the algorithm.
+    The wgpu device is cached per grid geometry.
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import PyGpuSolver
+
+    psi_arr = np.asarray(psi, dtype=np.float64)
+    source_arr = np.asarray(source, dtype=np.float64)
+    nz, nr = psi_arr.shape
+    key = (nr, nz, float(r_left), float(r_right), float(z_bottom), float(z_top))
+    solver = _gpu_gs_solver_cache.get(key)
+    if solver is None:
+        solver = PyGpuSolver(nr, nz, r_left, r_right, z_bottom, z_top)
+        _gpu_gs_solver_cache[key] = solver
+    flat = solver.solve(
+        psi_arr.astype(np.float32).ravel().tolist(),
+        source_arr.astype(np.float32).ravel().tolist(),
+        int(n_sweeps),
+        float(omega),
+    )
+    return np.asarray(flat, dtype=np.float64).reshape(nz, nr)
+
+
 def _bootstrap_existing_backends() -> None:
     """Register the function-kernels that have Rust and/or NumPy implementations.
 
@@ -744,6 +855,16 @@ def _bootstrap_existing_backends() -> None:
     # independent RNG streams. The NumPy tier resolves dispatch without Rust.
     register_kernel("simulate_tearing_mode", BackendTier.RUST, _rust_simulate_tearing_mode)
     register_kernel("simulate_tearing_mode", BackendTier.NUMPY, _numpy_simulate_tearing_mode)
+
+    # gs_rb_sor_smooth — fixed-sweep Red-Black SOR smoothing of the toroidal
+    # GS* operator (W-2 kernel). The GPU tier runs the identical stencil as
+    # wgpu compute shaders in f32; the NumPy tier is the float64 reference
+    # (`multigrid_solve.mg_smooth`). Agreement is f32-round-off bounded, not
+    # bit-exact. The GPU tier only exists when the extension is built with
+    # `--features gpu` AND a physical adapter is present; the NumPy tier
+    # guarantees dispatch resolves everywhere.
+    register_kernel("gs_rb_sor_smooth", BackendTier.GPU, _gpu_gs_rb_sor_smooth)
+    register_kernel("gs_rb_sor_smooth", BackendTier.NUMPY, _numpy_gs_rb_sor_smooth)
 
 
 # Run bootstrap on import
