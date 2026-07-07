@@ -305,6 +305,14 @@
       "source_type": "synthetic_generated",
       "source": "Deterministic replay certificate generated in-repo by validation/replay_certificate.py: SHA-256 hashes of a seeded control episode plus the generating-environment manifest.",
       "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "eped1_digitised_reference",
+      "glob": "eped/*.json",
+      "source_type": "digitised_published_figure",
+      "source": "EPED1 pedestal predictions and DIII-D measurements digitised visually from the General Atomics public APS-DPP presentation https://fusion.gat.com/pubs-ext/APS11/Snydervgs.pdf (fetched and read in-session 2026-07-07); digitisation uncertainty embedded in the artifact.",
+      "license": "citation-required",
+      "citation": "Snyder P. B. et al., A first-principles predictive model of the pedestal height and width: development, testing and ITER optimization with the EPED model, Nucl. Fusion 51, 103016 (2011); Snyder P. B. et al., Phys. Plasmas 16, 056118 (2009)."
     }
   ]
 }

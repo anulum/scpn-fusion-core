@@ -1,0 +1,64 @@
+{
+  "schema": "scpn-fusion-core.eped1-digitised-reference.v1",
+  "source": {
+    "title": "The EPED Pedestal Model: Extensions, Experimental Tests, and Application to ELM-suppressed Regimes",
+    "author": "P. B. Snyder, M. Beurskens, R. J. Groebner, J. W. Hughes, R. Nazikian, D. Orlov, T. H. Osborne, O. Schmitz, M. R. Wade, J. Candy, L. Frassinetti, J. R. Walk, H. R. Wilson, X. Q. Xu",
+    "venue": "APS Division of Plasma Physics annual meeting presentation (General Atomics public preprint; title page states 53rd APS-DPP, Chicago, 8-12 November 2010; slide footers state PB Snyder/APS-DPP/2011)",
+    "url": "https://fusion.gat.com/pubs-ext/APS11/Snydervgs.pdf",
+    "retrieved_utc": "2026-07-07",
+    "verification": "PDF fetched and slides read in-session; values digitised visually from the named slides",
+    "citations": [
+      "Snyder P. B. et al., Nucl. Fusion 51, 103016 (2011)",
+      "Snyder P. B. et al., Phys. Plasmas 16, 056118 (2009)",
+      "Snyder P. B. et al., Phys. Plasmas 9, 2037 (2002)"
+    ]
+  },
+  "digitisation_uncertainty": {
+    "p_ped_kPa": 1.0,
+    "Delta_psiN": 0.005,
+    "note": "Values read visually from figure markers; treat comparisons within these bands as indistinguishable."
+  },
+  "validation_statistics": {
+    "slide": "2011: DIII-D Upgrade to Thomson System Allows More Precise Height & Width Comparison",
+    "cases": 24,
+    "shots": 14,
+    "height_ratio_pred_over_obs": { "mean": 0.98, "std": 0.15, "corr": 0.96 },
+    "width_ratio_pred_over_obs": { "mean": 0.94, "std": 0.13, "corr": 0.91 },
+    "pprime_ratio_pred_over_obs": { "mean": 1.05, "std": 0.16, "corr": 0.95 }
+  },
+  "diiid_ip_scan": {
+    "slide": "Interaction of P-B and KBM Constraints Predicts Pedestal Height and Width Changes in Ip Scan",
+    "machine_inputs": {
+      "B0_T": 2.1,
+      "kappa": 1.74,
+      "delta": 0.3,
+      "R0_m": null,
+      "a_m": null,
+      "n_ped_1e19": null,
+      "note": "Only Bt, kappa, delta and the Ip values are stated on the slide. R0, a, and n_ped are NOT published there; any benchmark against these rows must declare its assumed geometry and scan the density."
+    },
+    "cases": [
+      {
+        "Ip_MA": 0.5,
+        "eped1_p_ped_kPa": 4.5,
+        "eped1_Delta_psiN": 0.065,
+        "measured_p_ped_kPa": 4.0,
+        "measured_Delta_psiN": 0.058
+      },
+      {
+        "Ip_MA": 1.0,
+        "eped1_p_ped_kPa": 13.0,
+        "eped1_Delta_psiN": 0.056,
+        "measured_p_ped_kPa": 12.5,
+        "measured_Delta_psiN": 0.054
+      },
+      {
+        "Ip_MA": 1.5,
+        "eped1_p_ped_kPa": 12.0,
+        "eped1_Delta_psiN": 0.038,
+        "measured_p_ped_kPa": 12.5,
+        "measured_Delta_psiN": 0.032
+      }
+    ]
+  }
+}

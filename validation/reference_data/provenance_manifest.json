@@ -223,7 +223,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 17572
+      "total_bytes": 18292
     },
     {
       "file_count": 1,
@@ -234,7 +234,7 @@
       "license_redistributable": true,
       "source": "Deterministic replay certificate generated in-repo by validation/replay_certificate.py: SHA-256 hashes of a seeded control episode plus the generating-environment manifest.",
       "source_type": "synthetic_generated",
-      "total_bytes": 1474
+      "total_bytes": 1619
     },
     {
       "citation": "Slough, Votroubek, and Pihl, Nuclear Fusion 51, 053008 (2011), DOI:10.1088/0029-5515/51/5/053008.",
@@ -1165,8 +1165,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "18530c1af845ab3fd86e6371b45d9931dd815988f753907c5032f6340e32ab51",
-      "size_bytes": 13587,
+      "sha256": "af0534eed831935ce35b88246976501d65fe7a1cc24899ac45ebfaf18b2080b1",
+      "size_bytes": 14307,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -1190,8 +1190,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "replay/replay_certificate.json",
-      "sha256": "e4e2d75da5df9b0b1af961dec06b769d250bd199d94a9162321f8b08e25d9ba4",
-      "size_bytes": 1474,
+      "sha256": "53077844ac669a8a976fd4cbf5b8838fd85393af7a1ee241318ee499354198ca",
+      "size_bytes": 1619,
       "source": "Deterministic replay certificate generated in-repo by validation/replay_certificate.py: SHA-256 hashes of a seeded control episode plus the generating-environment manifest.",
       "source_type": "synthetic_generated"
     },
@@ -1422,7 +1422,7 @@
       "source_type": "derived_reference_artifact"
     }
   ],
-  "generated_at_utc": "2026-07-07T03:53:05.407881+00:00",
+  "generated_at_utc": "2026-07-07T17:21:21.409029+00:00",
   "license_registry": [
     {
       "attribution_required": true,

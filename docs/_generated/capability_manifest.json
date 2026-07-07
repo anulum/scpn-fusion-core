@@ -1344,6 +1344,18 @@
         "path": "src/scpn_fusion/core/orbit_following.py"
       },
       {
+        "name": "PBKBMCandidate",
+        "path": "src/scpn_fusion/core/eped_pb_kbm.py"
+      },
+      {
+        "name": "PBKBMPedestalModel",
+        "path": "src/scpn_fusion/core/eped_pb_kbm.py"
+      },
+      {
+        "name": "PBKBMPedestalResult",
+        "path": "src/scpn_fusion/core/eped_pb_kbm.py"
+      },
+      {
         "name": "PackedWeights",
         "path": "src/scpn_fusion/scpn/artifact.py"
       },
@@ -2362,6 +2374,7 @@
       "src/scpn_fusion/core/disruption_structural_response.py",
       "src/scpn_fusion/core/divertor_thermal_sim.py",
       "src/scpn_fusion/core/elm_model.py",
+      "src/scpn_fusion/core/eped_pb_kbm.py",
       "src/scpn_fusion/core/eped_pedestal.py",
       "src/scpn_fusion/core/eqdsk.py",
       "src/scpn_fusion/core/equilibrium_3d.py",
@@ -2598,10 +2611,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 59,
-    "python_capability_classes": 548,
-    "python_capability_source_modules": 279,
+    "python_capability_classes": 551,
+    "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 455
+    "test_files": 457
   },
   "documentation": {
     "public_pages": [
@@ -2818,7 +2831,9 @@
       "tests/test_elm_model.py",
       "tests/test_elm_model_full.py",
       "tests/test_eped_domain_contract_benchmark.py",
+      "tests/test_eped_pb_kbm.py",
       "tests/test_eped_pedestal.py",
+      "tests/test_eped_pedestal_tiers_benchmark.py",
       "tests/test_eqdsk.py",
       "tests/test_equilibrium_3d.py",
       "tests/test_examples_minimal.py",

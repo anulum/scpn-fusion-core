@@ -1,0 +1,277 @@
+{
+  "assumed_geometry": {
+    "R0_m": 1.67,
+    "a_m": 0.67
+  },
+  "assumption_note": "Only Bt, kappa, delta and the Ip values are stated on the slide. R0, a, and n_ped are NOT published there; any benchmark against these rows must declare its assumed geometry and scan the density.",
+  "blockers": [
+    "shaped_geometry_miller_ballooning_required_for_second_stability_access",
+    "n_ped_and_geometry_not_published_on_reference_slide"
+  ],
+  "density_scan_1e19": [
+    4.0,
+    6.0,
+    8.0
+  ],
+  "digitisation_uncertainty": {
+    "Delta_psiN": 0.005,
+    "note": "Values read visually from figure markers; treat comparisons within these bands as indistinguishable.",
+    "p_ped_kPa": 1.0
+  },
+  "eped1_validation_statistics": {
+    "cases": 24,
+    "height_ratio_pred_over_obs": {
+      "corr": 0.96,
+      "mean": 0.98,
+      "std": 0.15
+    },
+    "pprime_ratio_pred_over_obs": {
+      "corr": 0.95,
+      "mean": 1.05,
+      "std": 0.16
+    },
+    "shots": 14,
+    "slide": "2011: DIII-D Upgrade to Thomson System Allows More Precise Height & Width Comparison",
+    "width_ratio_pred_over_obs": {
+      "corr": 0.91,
+      "mean": 0.94,
+      "std": 0.13
+    }
+  },
+  "reference_citations": [
+    "Snyder P. B. et al., Nucl. Fusion 51, 103016 (2011)",
+    "Snyder P. B. et al., Phys. Plasmas 16, 056118 (2009)",
+    "Snyder P. B. et al., Phys. Plasmas 9, 2037 (2002)"
+  ],
+  "reference_source_url": "https://fusion.gat.com/pubs-ext/APS11/Snydervgs.pdf",
+  "rows": [
+    {
+      "Ip_MA": 0.5,
+      "fast_tier": {
+        "best_Delta_psiN": 0.0326082023220288,
+        "best_p_ped_kPa": 2.5634826144,
+        "height_ratio_to_eped1": 0.5696628032,
+        "height_ratio_to_measured": 0.6408706536,
+        "predictions": [
+          {
+            "Delta_psiN": 0.0241534553366869,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 4.0,
+            "p_ped_kPa": 1.2817413072
+          },
+          {
+            "Delta_psiN": 0.02860361332697744,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 6.0,
+            "p_ped_kPa": 1.9226119607999999
+          },
+          {
+            "Delta_psiN": 0.0326082023220288,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 8.0,
+            "p_ped_kPa": 2.5634826144
+          }
+        ],
+        "verdict": "divergent"
+      },
+      "pb_kbm_tier": {
+        "best_Delta_psiN": 0.05800049249653253,
+        "best_p_ped_kPa": 2.5634826144,
+        "collapsed_to_scan_floor": true,
+        "height_ratio_to_eped1": 0.5696628032,
+        "height_ratio_to_measured": 0.6408706536,
+        "predictions": [
+          {
+            "Delta_psiN": 0.041012541556457616,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 1.0610595703124996,
+            "converged": 0.0,
+            "n_ped_1e19": 4.0,
+            "p_ped_kPa": 1.2817413072,
+            "pb_boundary_radius": 85.3354651432509
+          },
+          {
+            "Delta_psiN": 0.050229899934005895,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 1.0610595703124996,
+            "converged": 0.0,
+            "n_ped_1e19": 6.0,
+            "p_ped_kPa": 1.9226119607999999,
+            "pb_boundary_radius": 94.34754145198896
+          },
+          {
+            "Delta_psiN": 0.05800049249653253,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 1.0610595703124996,
+            "converged": 0.0,
+            "n_ped_1e19": 8.0,
+            "p_ped_kPa": 2.5634826144,
+            "pb_boundary_radius": 100.83694851360757
+          }
+        ],
+        "verdict": "collapsed_salpha_first_stability"
+      },
+      "reference": {
+        "eped1_Delta_psiN": 0.065,
+        "eped1_p_ped_kPa": 4.5,
+        "measured_Delta_psiN": 0.058,
+        "measured_p_ped_kPa": 4.0
+      }
+    },
+    {
+      "Ip_MA": 1.0,
+      "fast_tier": {
+        "best_Delta_psiN": 0.018728494183362494,
+        "best_p_ped_kPa": 2.5634826144,
+        "height_ratio_to_eped1": 0.19719097033846153,
+        "height_ratio_to_measured": 0.205078609152,
+        "predictions": [
+          {
+            "Delta_psiN": 0.013872517206373301,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 4.0,
+            "p_ped_kPa": 1.2817413072
+          },
+          {
+            "Delta_psiN": 0.01642846178783513,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 6.0,
+            "p_ped_kPa": 1.9226119607999999
+          },
+          {
+            "Delta_psiN": 0.018728494183362494,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 8.0,
+            "p_ped_kPa": 2.5634826144
+          }
+        ],
+        "verdict": "divergent"
+      },
+      "pb_kbm_tier": {
+        "best_Delta_psiN": 0.029000246248266266,
+        "best_p_ped_kPa": 2.5634826144,
+        "collapsed_to_scan_floor": true,
+        "height_ratio_to_eped1": 0.19719097033846153,
+        "height_ratio_to_measured": 0.205078609152,
+        "predictions": [
+          {
+            "Delta_psiN": 0.020506270778228808,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 0.9498779296874998,
+            "converged": 0.0,
+            "n_ped_1e19": 4.0,
+            "p_ped_kPa": 1.2817413072,
+            "pb_boundary_radius": 11.788099035552358
+          },
+          {
+            "Delta_psiN": 0.025114949967002947,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 0.9498779296874998,
+            "converged": 0.0,
+            "n_ped_1e19": 6.0,
+            "p_ped_kPa": 1.9226119607999999,
+            "pb_boundary_radius": 14.042201453387415
+          },
+          {
+            "Delta_psiN": 0.029000246248266266,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 0.9498779296874998,
+            "converged": 0.0,
+            "n_ped_1e19": 8.0,
+            "p_ped_kPa": 2.5634826144,
+            "pb_boundary_radius": 14.98930607812157
+          }
+        ],
+        "verdict": "collapsed_salpha_first_stability"
+      },
+      "reference": {
+        "eped1_Delta_psiN": 0.056,
+        "eped1_p_ped_kPa": 13.0,
+        "measured_Delta_psiN": 0.054,
+        "measured_p_ped_kPa": 12.5
+      }
+    },
+    {
+      "Ip_MA": 1.5,
+      "fast_tier": {
+        "best_Delta_psiN": 0.013540348839264613,
+        "best_p_ped_kPa": 2.5634826144,
+        "height_ratio_to_eped1": 0.21362355119999998,
+        "height_ratio_to_measured": 0.205078609152,
+        "predictions": [
+          {
+            "Delta_psiN": 0.010029568870510805,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 4.0,
+            "p_ped_kPa": 1.2817413072
+          },
+          {
+            "Delta_psiN": 0.011877468702071514,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 6.0,
+            "p_ped_kPa": 1.9226119607999999
+          },
+          {
+            "Delta_psiN": 0.013540348839264613,
+            "T_ped_keV": 0.1,
+            "n_ped_1e19": 8.0,
+            "p_ped_kPa": 2.5634826144
+          }
+        ],
+        "verdict": "divergent"
+      },
+      "pb_kbm_tier": {
+        "best_Delta_psiN": 0.019333497498844176,
+        "best_p_ped_kPa": 2.5634826144,
+        "collapsed_to_scan_floor": true,
+        "height_ratio_to_eped1": 0.21362355119999998,
+        "height_ratio_to_measured": 0.205078609152,
+        "predictions": [
+          {
+            "Delta_psiN": 0.013670847185485873,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 0.8441894531249998,
+            "converged": 0.0,
+            "n_ped_1e19": 4.0,
+            "p_ped_kPa": 1.2817413072,
+            "pb_boundary_radius": 4.174177166476081
+          },
+          {
+            "Delta_psiN": 0.016743299978001964,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 0.8441894531249998,
+            "converged": 0.0,
+            "n_ped_1e19": 6.0,
+            "p_ped_kPa": 1.9226119607999999,
+            "pb_boundary_radius": 5.027549629020274
+          },
+          {
+            "Delta_psiN": 0.019333497498844176,
+            "T_ped_keV": 0.1,
+            "alpha_crit": 0.8441894531249998,
+            "converged": 0.0,
+            "n_ped_1e19": 8.0,
+            "p_ped_kPa": 2.5634826144,
+            "pb_boundary_radius": 5.496745301482619
+          }
+        ],
+        "verdict": "collapsed_salpha_first_stability"
+      },
+      "reference": {
+        "eped1_Delta_psiN": 0.038,
+        "eped1_p_ped_kPa": 12.0,
+        "measured_Delta_psiN": 0.032,
+        "measured_p_ped_kPa": 12.5
+      }
+    }
+  ],
+  "schema": "scpn-fusion-core.eped-pedestal-tiers-benchmark.v1",
+  "status": "documented_divergence_no_parity_claim",
+  "summary": {
+    "cases": 3,
+    "fast_tier_height_ratio_max": 0.5696628032,
+    "fast_tier_height_ratio_min": 0.19719097033846153,
+    "fast_tier_underpredicts_all_cases": true,
+    "pb_kbm_collapsed_all_cases": true
+  }
+}
