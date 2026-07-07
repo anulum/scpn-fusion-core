@@ -1,0 +1,251 @@
+{
+  "schema": "scpn-fusion-core.surrogate-uq-cards.v1",
+  "scope_note": "One card per surrogate lane that appears on a public surface. Statuses: promoted (usable, evidence-linked), deprecated_scoped (kept only behind the deprecation guard), fail_closed_stub (public stub, no trained model), retrain_blocked (usable weights exist, retraining blocked on a named decision). Every anchor is verified against the tree by the generator; a removed model, guard, or evidence artifact breaks the drift check.",
+  "cards": [
+    {
+      "id": "qlknn10d_neural_transport",
+      "description": "QLKNN-10D-style neural transport surrogate with gyro-Bohm scaling: MLP flux prediction over 10 local parameters, used by the integrated transport lane.",
+      "status": "promoted",
+      "model_artifacts": [
+        "src/scpn_fusion/core/_neural_transport_runtime.py::NeuralTransportModel",
+        "tools/download_qlknn10d.py"
+      ],
+      "training_provenance": {
+        "summary": "Weights derive from the published QLKNN-10D dataset lineage (van de Plassche et al., Phys. Plasmas 27, 022310 (2020)); the repository downloads published weights and does not retrain them locally.",
+        "anchors": [
+          "validation/reference_data/qlknn10d_published_benchmarks.json",
+          "validation/validate_transport_qlknn.py"
+        ]
+      },
+      "calibration": {
+        "summary": "Uncertainty envelope benchmark propagates surrogate spread through the transport lane and gates envelope statistics; QLKNN validation compares against published benchmark rows.",
+        "anchors": [
+          "validation/benchmark_transport_uncertainty_envelope.py",
+          "validation/reports/transport_uncertainty_envelope_benchmark.json"
+        ]
+      },
+      "ood": {
+        "mechanism": "Per-input z-score against training-domain statistics; batch masks at 3-sigma (soft, reported fraction) and 5-sigma (hard flag) exposed in the runtime diagnostics.",
+        "thresholds": { "soft_sigma": 3.0, "hard_sigma": 5.0 },
+        "anchors": [
+          "src/scpn_fusion/core/_neural_transport_runtime.py::NeuralTransportModel"
+        ]
+      },
+      "fallback": {
+        "summary": "Analytic critical-gradient transport model; the runtime reports backend=analytic_fallback whenever weights are absent or rejected, so the lane never silently returns neural output without loaded weights.",
+        "anchors": [
+          "src/scpn_fusion/core/_neural_transport_analytic.py"
+        ]
+      },
+      "retraining": {
+        "summary": "No in-repo retraining; weights refresh means re-downloading published artifacts via the download tool with checksum verification.",
+        "anchors": [
+          "tools/download_qlknn10d.py"
+        ]
+      },
+      "gaps": [
+        "OOD thresholds are z-score heuristics, not validated against a held-out OOD set.",
+        "No conformal or ensemble calibration of per-channel flux uncertainties."
+      ]
+    },
+    {
+      "id": "disruption_risk_predictor",
+      "description": "Disruption risk lane: transformer-based predictor (torch-gated) plus the hybrid anomaly detector runtime used by replay and threshold campaigns.",
+      "status": "promoted",
+      "model_artifacts": [
+        "src/scpn_fusion/control/disruption_predictor.py::DisruptionTransformer",
+        "src/scpn_fusion/control/disruption_risk_runtime.py::HybridAnomalyDetector"
+      ],
+      "training_provenance": {
+        "summary": "Shot-level manifests with leakage-guarded train/validation/holdout splits over the labelled DIII-D shot inventory; the split guard runs in preflight.",
+        "anchors": [
+          "validation/reference_data/diiid/disruption_shot_splits.json",
+          "tools/check_disruption_shot_splits.py",
+          "tools/generate_disruption_shot_manifest.py"
+        ]
+      },
+      "calibration": {
+        "summary": "Risk-calibration artifact regenerated and drift-checked from the labelled shots; the hard operational gate binds the false-positive rate.",
+        "anchors": [
+          "validation/reference_data/diiid/disruption_risk_calibration.json",
+          "tools/generate_disruption_risk_calibration.py",
+          "tools/ci_rmse_gate.py"
+        ]
+      },
+      "ood": {
+        "mechanism": "No explicit feature-space OOD detector; the operational guards are the calibrated risk thresholds, the leakage-guarded splits, and the hard disruption false-positive-rate gate in CI.",
+        "thresholds": { "disruption_fpr_max": 0.15 },
+        "anchors": [
+          "tools/ci_rmse_gate.py"
+        ]
+      },
+      "fallback": {
+        "summary": "Mitigation triggering is contract-based and independent of the ML lane: critical physics-invariant violations (including non-finite observables) trigger mitigation regardless of predictor output.",
+        "anchors": [
+          "src/scpn_fusion/scpn/contracts.py::should_trigger_mitigation"
+        ]
+      },
+      "retraining": {
+        "summary": "Retraining reuses the manifested shot splits; transfer/generalisation behaviour is benchmarked in the disruption transfer campaign.",
+        "anchors": [
+          "validation/reference_data/diiid/disruption_shots_manifest.json"
+        ]
+      },
+      "gaps": [
+        "No feature-space OOD detector on diagnostic inputs; detection relies on threshold calibration.",
+        "Torch-gated predictor lane lacks per-prediction uncertainty output (point risk only)."
+      ]
+    },
+    {
+      "id": "itpa_pretrained_mlp",
+      "description": "Pretrained ITPA confinement MLP surrogate shipped with coverage metadata for the confinement-time lane.",
+      "status": "promoted",
+      "model_artifacts": [
+        "src/scpn_fusion/core/pretrained_surrogates.py::PretrainedMLPSurrogate"
+      ],
+      "training_provenance": {
+        "summary": "Trained on the bundled ITPA H-mode confinement rows; coverage manifest records the training domain.",
+        "anchors": [
+          "src/scpn_fusion/core/pretrained_surrogates.py::get_pretrained_surrogate_coverage"
+        ]
+      },
+      "calibration": {
+        "summary": "Benchmarked against the ITPA rows in the pretrained-surrogates benchmark report.",
+        "anchors": [
+          "validation/task2_pretrained_surrogates_benchmark.py",
+          "validation/reports/task2_pretrained_surrogates_benchmark.json"
+        ]
+      },
+      "ood": {
+        "mechanism": "Coverage-manifest domain bounds; queries outside the recorded training coverage are flagged by the coverage metadata rather than a learned detector.",
+        "thresholds": {},
+        "anchors": [
+          "src/scpn_fusion/core/pretrained_surrogates.py::get_pretrained_surrogate_coverage"
+        ]
+      },
+      "fallback": {
+        "summary": "The physics lane retains the IPB98(y,2) scaling as the non-surrogate confinement path; the surrogate is additive, not a replacement.",
+        "anchors": [
+          "tools/ci_rmse_gate.py"
+        ]
+      },
+      "retraining": {
+        "summary": "Deterministic in-repo retraining from the bundled ITPA CSV via the training entry point.",
+        "anchors": [
+          "src/scpn_fusion/core/pretrained_surrogates.py::save_pretrained_mlp"
+        ]
+      },
+      "gaps": [
+        "Coverage bounds are descriptive; no quantitative extrapolation penalty is applied by the MLP lane itself."
+      ]
+    },
+    {
+      "id": "fno_turbulence_suppressor",
+      "description": "Legacy FNO turbulence-suppression lane.",
+      "status": "deprecated_scoped",
+      "model_artifacts": [
+        "src/scpn_fusion/core/fno_turbulence_suppressor.py"
+      ],
+      "training_provenance": {
+        "summary": "Legacy JET-image FNO training path retained for reproducibility of historical results only.",
+        "anchors": [
+          "src/scpn_fusion/core/fno_training.py"
+        ]
+      },
+      "calibration": {
+        "summary": "None current; the lane is deprecated and excluded from promoted claims.",
+        "anchors": []
+      },
+      "ood": {
+        "mechanism": "None; the deprecation guard prevents the lane from becoming a default or public release path.",
+        "thresholds": {},
+        "anchors": [
+          "tools/deprecated_default_lane_guard.py"
+        ]
+      },
+      "fallback": {
+        "summary": "Not applicable — the lane is not on any default path; the guard enforces this in preflight.",
+        "anchors": [
+          "tools/deprecated_default_lane_guard.py"
+        ]
+      },
+      "retraining": {
+        "summary": "External retraining request export exists for a potential supervised refresh; no local retraining.",
+        "anchors": [
+          "tools/export_fno_external_retrain_request.py"
+        ]
+      },
+      "gaps": [
+        "Deprecated by policy; stays scoped behind tools/deprecated_default_lane_guard.py."
+      ]
+    },
+    {
+      "id": "tglf_surrogate_bridge",
+      "description": "TGLF surrogate bridge: dataset generation scaffolding for a future TGLF-trained transport surrogate.",
+      "status": "fail_closed_stub",
+      "model_artifacts": [
+        "src/scpn_fusion/core/tglf_surrogate_bridge.py::train_surrogate_from_tglf"
+      ],
+      "training_provenance": {
+        "summary": "Dataset generator exists; no trained weights are shipped, and no surrogate claim is made.",
+        "anchors": [
+          "src/scpn_fusion/core/tglf_surrogate_bridge.py::TGLFDatasetGenerator",
+          "tools/generate_tglf_dataset.py"
+        ]
+      },
+      "calibration": { "summary": "Not applicable until a real fit lands (master-plan F-7).", "anchors": [] },
+      "ood": { "mechanism": "Not applicable — no model.", "thresholds": {}, "anchors": [] },
+      "fallback": {
+        "summary": "The canonical TGLF path resolves through the GK registry (external binary preferred, native fallback); the bridge is not on that path.",
+        "anchors": [
+          "src/scpn_fusion/core/gk_registry.py::resolve_tglf_solver"
+        ]
+      },
+      "retraining": { "summary": "Not applicable — nothing trained yet.", "anchors": [] },
+      "gaps": [
+        "Real TGLF-trained fit pending (master-plan F-7); the lane stays fail-closed until then."
+      ]
+    },
+    {
+      "id": "iter_gpu_surrogate",
+      "description": "ITER equilibrium surrogate with validated shipped weights; the B.7 GPU retrain remains blocked.",
+      "status": "retrain_blocked",
+      "model_artifacts": [
+        "tools/train_iter_surrogate.py"
+      ],
+      "training_provenance": {
+        "summary": "Shipped weights validated against the recorded weight-validation report; provenance of the original training run is embedded there.",
+        "anchors": [
+          "validation/reports/iter_surrogate_weight_validation.json"
+        ]
+      },
+      "calibration": {
+        "summary": "Weight-validation report records the acceptance checks for the shipped artifact.",
+        "anchors": [
+          "validation/reports/iter_surrogate_weight_validation.json"
+        ]
+      },
+      "ood": {
+        "mechanism": "None beyond the training-domain description in the validation report.",
+        "thresholds": {},
+        "anchors": []
+      },
+      "fallback": {
+        "summary": "The production equilibrium path is the multigrid/SOR solver stack; the surrogate is not a default lane.",
+        "anchors": [
+          "src/scpn_fusion/core/multigrid_solve.py"
+        ]
+      },
+      "retraining": {
+        "summary": "B.7 GPU retrain is blocked on the compute-budget decision (CEO); the external retrain request export documents the required job.",
+        "anchors": [
+          "tools/gpu_fno_retrain.sh",
+          "tools/export_fno_external_retrain_request.py"
+        ]
+      },
+      "gaps": [
+        "B.7 retrain blocked on compute budget (CEO decision); no OOD detector; no uncertainty output."
+      ]
+    }
+  ]
+}

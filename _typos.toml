@@ -33,6 +33,7 @@ kstar = "kstar"
 scpn = "scpn"
 freegs = "freegs"
 torax = "torax"
+fpr = "fpr"
 
 [files]
 extend-exclude = [

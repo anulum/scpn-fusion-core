@@ -24,6 +24,7 @@
       "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
+      "docs/SURROGATE_UQ_CARDS.md",
       "docs/VALIDATION_AGAINST_ITER.md",
       "docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md",
       "docs/competitive_analysis.md",
@@ -2606,15 +2607,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 59,
+    "capability_documentation_pages": 60,
     "github_workflows": 12,
     "optional_extras": 13,
     "public_api_exports": 2,
-    "public_documentation_pages": 59,
+    "public_documentation_pages": 60,
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 457
+    "test_files": 458
   },
   "documentation": {
     "public_pages": [
@@ -2640,6 +2641,7 @@
       "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
+      "docs/SURROGATE_UQ_CARDS.md",
       "docs/VALIDATION_AGAINST_ITER.md",
       "docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md",
       "docs/competitive_analysis.md",
@@ -3145,6 +3147,7 @@
       "tests/test_studio_manifest.py",
       "tests/test_subsystem_fault_hardening_campaign.py",
       "tests/test_subsystem_fault_models.py",
+      "tests/test_surrogate_uq_cards.py",
       "tests/test_sweep_disruption_threshold_tool.py",
       "tests/test_sync_metadata.py",
       "tests/test_synthetic_sensors.py",

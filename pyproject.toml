@@ -242,6 +242,7 @@ files = [
     "tests/test_eped_pb_kbm.py",
     "validation/benchmark_eped_pedestal_tiers.py",
     "tests/test_eped_pedestal_tiers_benchmark.py",
+    "tests/test_surrogate_uq_cards.py",
     "tests/test_free_boundary_plotting.py",
     "tests/test_free_boundary_tracking_config.py",
     "tests/test_fusion_control_room.py",

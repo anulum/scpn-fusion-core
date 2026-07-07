@@ -129,11 +129,11 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Public API exports | 2 |
 | Python capability source modules | 280 |
 | Python capability classes | 551 |
-| Capability documentation pages | 59 |
+| Capability documentation pages | 60 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 457 |
-| Public documentation pages | 59 |
+| Python test files | 458 |
+| Public documentation pages | 60 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -160,6 +160,10 @@ It combines four surfaces that are usually split across separate tools:
 - **Safety-assurance roadmap:** an explicit
   [IEC 61508 functional-safety roadmap](docs/IEC_61508_ROADMAP.md) for future
   assessment of selected controller, replay, interlock, and telemetry surfaces.
+- **Surrogate UQ cards:** per-surrogate uncertainty/OOD documentation
+  ([docs/SURROGATE_UQ_CARDS.md](docs/SURROGATE_UQ_CARDS.md)) — training
+  provenance, calibration evidence, OOD thresholds, and fallback behaviour for
+  every surrogate lane on a public surface, drift-checked in preflight.
 
 The intended users are fusion-control researchers, simulation engineers,
 validation teams, accelerator/GPU engineers, formal-methods contributors, and

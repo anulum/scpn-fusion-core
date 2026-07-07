@@ -64,6 +64,7 @@ def _build_release_checks(
     skip_claims_map: bool,
     skip_safety_traceability: bool,
     skip_psi_gate_attribution: bool,
+    skip_surrogate_uq_cards: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -191,6 +192,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/generate_psi_gate_attribution.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_surrogate_uq_cards:
+        checks.append(
+            (
+                "Surrogate UQ cards drift check",
+                [
+                    sys.executable,
+                    "tools/generate_surrogate_uq_cards.py",
                     "--check",
                 ],
             )
@@ -510,6 +522,7 @@ def _build_checks(
     skip_claims_map: bool,
     skip_safety_traceability: bool,
     skip_psi_gate_attribution: bool,
+    skip_surrogate_uq_cards: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -552,6 +565,7 @@ def _build_checks(
                 skip_claims_map=skip_claims_map,
                 skip_safety_traceability=skip_safety_traceability,
                 skip_psi_gate_attribution=skip_psi_gate_attribution,
+                skip_surrogate_uq_cards=skip_surrogate_uq_cards,
                 skip_capability_manifest=skip_capability_manifest,
                 skip_readiness_register=skip_readiness_register,
                 skip_readiness_scope_reports=skip_readiness_scope_reports,
@@ -676,6 +690,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-psi-gate-attribution",
         action="store_true",
         help="Skip tools/generate_psi_gate_attribution.py --check",
+    )
+    parser.add_argument(
+        "--skip-surrogate-uq-cards",
+        action="store_true",
+        help="Skip tools/generate_surrogate_uq_cards.py --check",
     )
     parser.add_argument(
         "--skip-capability-manifest",
@@ -871,6 +890,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_claims_map=args.skip_claims_map,
         skip_safety_traceability=args.skip_safety_traceability,
         skip_psi_gate_attribution=args.skip_psi_gate_attribution,
+        skip_surrogate_uq_cards=args.skip_surrogate_uq_cards,
         skip_capability_manifest=args.skip_capability_manifest,
         skip_readiness_register=args.skip_readiness_register,
         skip_readiness_scope_reports=args.skip_readiness_scope_reports,
