@@ -1,0 +1,33 @@
+{
+  "environment": {
+    "fastest_tier_selection": {
+      "multigrid_solve": "rust",
+      "simulate_tearing_mode": "rust",
+      "upde_run": "rust"
+    },
+    "machine": "x86_64",
+    "numpy": "1.26.4",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "episode_seed": 2026,
+  "fastest_tier": {
+    "claim": "recorded for the generating machine (same-machine cross-run asserted by tests); cross-machine NOT asserted (platform libm)",
+    "combined_hash": "89f8564568533ecd2348f378d7e83f67684207b1846e52fbe1479045ec7d4e61",
+    "component_hashes": {
+      "disruption_indicator": "7fe9c24d055270a331ba51c9b9381e87ff393d256d95cb53dc8a918d21a498bd",
+      "equilibrium_multigrid": "43b283b0039cfe9b0e04c4dbf5b1e0ee3e3ab27134abfd20181ca56fe349b93f",
+      "phase_control_upde": "dada7bc74580d90337036371e3235d91e969a3ffdf6b991758c1f24053025245"
+    }
+  },
+  "numpy_floor": {
+    "claim": "asserted cross-run; cross-machine for identical numpy wheel + arch",
+    "combined_hash": "6ec70a74375eedcc39a0ccc4915433550e8f1b3df02daf9afd7688e67e118001",
+    "component_hashes": {
+      "disruption_indicator": "7d4637e5511d1e4e56bb66ee7634d150c64ec716711baa8e9cccce920090f23c",
+      "equilibrium_multigrid": "6058dc1c3bf0ab73a11147d395291c8cdd226adb486e65b924fd615c46569581",
+      "phase_control_upde": "aa5f7bf25518a5c26e553d29dcf37354a4651cbf62574afbe5cc2dd2cb46cb17"
+    }
+  },
+  "schema": "scpn-fusion-core.replay-certificate.v1"
+}

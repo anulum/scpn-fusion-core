@@ -2599,7 +2599,7 @@
     "python_capability_classes": 548,
     "python_capability_source_modules": 279,
     "rust_workspace_crates": 13,
-    "test_files": 451
+    "test_files": 452
   },
   "documentation": {
     "public_pages": [
@@ -3071,6 +3071,7 @@
       "tests/test_reference_data_provenance_manifest.py",
       "tests/test_release_checksums_tools.py",
       "tests/test_release_delta_guard.py",
+      "tests/test_replay_certificate.py",
       "tests/test_replay_pipeline.py",
       "tests/test_rf_heating.py",
       "tests/test_rmf_phase_lock.py",
