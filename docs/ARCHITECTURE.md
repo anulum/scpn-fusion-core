@@ -115,6 +115,8 @@ Rust-only extension symbols without a NumPy floor are resolved through
 | `measure_magnetics` | ✓ | ✓ | tolerance-aware (bilinear + probe θ) |
 | `multigrid_solve` | ✓ | ✓ | machine-precision parity |
 | `simulate_tearing_mode` | ✓ | ✓ | deterministic-step bit-exact + statistical trajectory |
+| `kuramoto_step` | ✓ (`fusion-phase`) | ✓ | deterministic; agreement bounded by fp summation order (measured rel L2 ~1e-16) |
+| `upde_tick` / `upde_run` | ✓ (`fusion-phase`) | ✓ | flat multi-layer contract (non-uniform N); `upde_run` batches the whole loop behind one boundary crossing |
 | `gs_rb_sor_smooth` | GPU tier (`PyGpuSolver`, wgpu f32) | ✓ (`mg_smooth`, f64) | fixed-sweep Red-Black SOR of the toroidal GS* operator; f32-bounded agreement (rel L2 ~5e-6); GPU tier exists only when the extension is built with `--features gpu` AND a physical adapter passes the runtime probe |
 
 All dispatched kernels have a **NumPy floor** — the package runs with no Rust extension
@@ -134,7 +136,7 @@ kernel while selecting the NumPy floor. The GPU smoother tier is benchmarked by
 on a discrete adapter the wgpu tier runs the identical 200-sweep workload 11.8x
 (129x129), 38.8x (257x257) and 28.4x (513x513) faster than the NumPy floor.
 
-### 3.2 Rust acceleration layer (`scpn-fusion-rs/`, 12 crates)
+### 3.2 Rust acceleration layer (`scpn-fusion-rs/`, 13 crates)
 
 | Crate | Responsibility | Backs (Python) |
 |---|---|---|
@@ -142,6 +144,7 @@ on a discrete adapter the wgpu tier runs the identical 200-sweep workload 11.8x
 | `fusion-math` | FFT, multigrid, GMRES, SOR, Chebyshev, tridiagonal, interpolation, AMR, IGA, symplectic | `multigrid_vcycle` |
 | `fusion-core` | Grad-Shafranov kernel, equilibrium, current diffusion, transport, X-point, inversion, particles | `PyFusionKernel`, `PyTransportSolver`, `PyInverseSolver`, particle/Boris fns |
 | `fusion-polyglot` | standalone native GS reference solver | (Rust-only) |
+| `fusion-phase` | Kuramoto-Sakaguchi step + multi-layer UPDE tick/run (SCPN phase lane) | `py_kuramoto_step`, `py_upde_tick`, `py_upde_run` |
 | `fusion-physics` | Fokker-Planck, FNO, nonlinear GK, Hall-MHD, drift-wave, reduced-MHD sawtooth, FRC, MRTI, Faraday, compression | `PyFokkerPlanckSolver`, `PyFnoController`, `PyHallMHD`, `PyDriftWave`, `PyReducedMHD`, `PyNonlinearGKSolver`, FRC fns |
 | `fusion-nuclear` | neutronics, TEMHD, sputtering, wall interaction, divertor, BOP | `PyBreedingBlanket` |
 | `fusion-engineering` | plant design, magnets, tritium, blanket lifetime, economics | `PyPlantModel` |

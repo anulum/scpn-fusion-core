@@ -734,6 +734,230 @@ def _rust_simulate_tearing_mode(
     return np.asarray(signal, dtype=np.float64), int(label), int(ttd)
 
 
+def _numpy_kuramoto_step(
+    theta: Any,
+    omega: Any,
+    *,
+    dt: float,
+    K: float,
+    alpha: float = 0.0,
+    zeta: float = 0.0,
+    psi: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """NumPy-tier provider for the ``kuramoto_step`` kernel."""
+    from scpn_fusion.phase.kuramoto import _kuramoto_step_numpy
+
+    return _kuramoto_step_numpy(
+        theta, omega, dt=dt, K=K, alpha=alpha, zeta=zeta, psi=psi, wrap=wrap
+    )
+
+
+def _rust_kuramoto_step(
+    theta: Any,
+    omega: Any,
+    *,
+    dt: float,
+    K: float,
+    alpha: float = 0.0,
+    zeta: float = 0.0,
+    psi: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """Rust-tier provider for the ``kuramoto_step`` kernel.
+
+    Normalises the PyO3 dict payload so the tier is type-compatible with
+    :func:`_numpy_kuramoto_step` (float64 arrays, same keys).
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import py_kuramoto_step
+
+    result = py_kuramoto_step(
+        np.asarray(theta, dtype=np.float64).ravel(),
+        np.asarray(omega, dtype=np.float64).ravel(),
+        float(dt),
+        float(K),
+        alpha=float(alpha),
+        zeta=float(zeta),
+        psi=float(psi),
+        wrap=bool(wrap),
+    )
+    result["theta1"] = np.asarray(result["theta1"], dtype=np.float64)
+    result["dtheta"] = np.asarray(result["dtheta"], dtype=np.float64)
+    return result
+
+
+def _numpy_upde_tick(
+    theta_flat: Any,
+    omega_flat: Any,
+    offsets: Any,
+    K: Any,
+    alpha: Any,
+    zeta: Any,
+    *,
+    dt: float,
+    psi_global: float,
+    actuation_gain: float = 1.0,
+    pac_gamma: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """NumPy-tier provider for the ``upde_tick`` kernel."""
+    from scpn_fusion.phase.upde import _upde_tick_numpy
+
+    return _upde_tick_numpy(
+        theta_flat,
+        omega_flat,
+        offsets,
+        K,
+        alpha,
+        zeta,
+        dt=dt,
+        psi_global=psi_global,
+        actuation_gain=actuation_gain,
+        pac_gamma=pac_gamma,
+        wrap=wrap,
+    )
+
+
+def _rust_upde_tick(
+    theta_flat: Any,
+    omega_flat: Any,
+    offsets: Any,
+    K: Any,
+    alpha: Any,
+    zeta: Any,
+    *,
+    dt: float,
+    psi_global: float,
+    actuation_gain: float = 1.0,
+    pac_gamma: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """Rust-tier provider for the ``upde_tick`` kernel.
+
+    Normalises the PyO3 dict payload so the tier is type-compatible with
+    :func:`_numpy_upde_tick` (float64 arrays, same keys).
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import py_upde_tick
+
+    result = py_upde_tick(
+        np.asarray(theta_flat, dtype=np.float64).ravel(),
+        np.asarray(omega_flat, dtype=np.float64).ravel(),
+        [int(v) for v in np.asarray(offsets).ravel()],
+        np.ascontiguousarray(K, dtype=np.float64),
+        np.ascontiguousarray(alpha, dtype=np.float64),
+        np.asarray(zeta, dtype=np.float64).ravel(),
+        float(dt),
+        float(psi_global),
+        actuation_gain=float(actuation_gain),
+        pac_gamma=float(pac_gamma),
+        wrap=bool(wrap),
+    )
+    for key in ("theta1", "dtheta", "R_layer", "Psi_layer", "V_layer"):
+        result[key] = np.asarray(result[key], dtype=np.float64)
+    return result
+
+
+def _numpy_upde_run(
+    theta_flat: Any,
+    omega_flat: Any,
+    offsets: Any,
+    K: Any,
+    alpha: Any,
+    zeta: Any,
+    *,
+    n_steps: int,
+    dt: float,
+    psi_global: float,
+    actuation_gain: float = 1.0,
+    pac_gamma: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """NumPy-tier provider for the batched ``upde_run`` kernel."""
+    import numpy as np
+
+    from scpn_fusion.phase.upde import _upde_tick_numpy
+
+    L = int(len(offsets)) - 1
+    theta = np.array(theta_flat, dtype=np.float64, copy=True)
+    r_layer_hist = np.empty((n_steps, L))
+    r_global_hist = np.empty(n_steps)
+    v_layer_hist = np.empty((n_steps, L))
+    v_global_hist = np.empty(n_steps)
+    for step in range(n_steps):
+        out = _upde_tick_numpy(
+            theta,
+            omega_flat,
+            offsets,
+            K,
+            alpha,
+            zeta,
+            dt=dt,
+            psi_global=psi_global,
+            actuation_gain=actuation_gain,
+            pac_gamma=pac_gamma,
+            wrap=wrap,
+        )
+        theta = out["theta1"]
+        r_layer_hist[step] = out["R_layer"]
+        r_global_hist[step] = out["R_global"]
+        v_layer_hist[step] = out["V_layer"]
+        v_global_hist[step] = out["V_global"]
+    return {
+        "theta_final": theta,
+        "R_layer_hist": r_layer_hist,
+        "R_global_hist": r_global_hist,
+        "V_layer_hist": v_layer_hist,
+        "V_global_hist": v_global_hist,
+    }
+
+
+def _rust_upde_run(
+    theta_flat: Any,
+    omega_flat: Any,
+    offsets: Any,
+    K: Any,
+    alpha: Any,
+    zeta: Any,
+    *,
+    n_steps: int,
+    dt: float,
+    psi_global: float,
+    actuation_gain: float = 1.0,
+    pac_gamma: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """Rust-tier provider for the batched ``upde_run`` kernel.
+
+    The whole multi-tick loop executes in Rust (``fusion-phase``), which is
+    where the batched tier earns its speedup over per-tick dispatch.
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import py_upde_run
+
+    result = py_upde_run(
+        np.asarray(theta_flat, dtype=np.float64).ravel(),
+        np.asarray(omega_flat, dtype=np.float64).ravel(),
+        [int(v) for v in np.asarray(offsets).ravel()],
+        np.ascontiguousarray(K, dtype=np.float64),
+        np.ascontiguousarray(alpha, dtype=np.float64),
+        np.asarray(zeta, dtype=np.float64).ravel(),
+        int(n_steps),
+        float(dt),
+        float(psi_global),
+        actuation_gain=float(actuation_gain),
+        pac_gamma=float(pac_gamma),
+        wrap=bool(wrap),
+    )
+    for key in ("theta_final", "R_layer_hist", "R_global_hist", "V_layer_hist", "V_global_hist"):
+        result[key] = np.asarray(result[key], dtype=np.float64)
+    return result
+
+
 # Cache of GPU GS solver instances keyed by grid geometry. Device and
 # pipeline construction costs ~10^2 ms, so re-solves on the same grid must
 # not pay it again; the cache holds one wgpu device per distinct geometry.
@@ -865,6 +1089,19 @@ def _bootstrap_existing_backends() -> None:
     # guarantees dispatch resolves everywhere.
     register_kernel("gs_rb_sor_smooth", BackendTier.GPU, _gpu_gs_rb_sor_smooth)
     register_kernel("gs_rb_sor_smooth", BackendTier.NUMPY, _numpy_gs_rb_sor_smooth)
+
+    # kuramoto_step / upde_tick — the SCPN phase-dynamics lane (M-3 kernels).
+    # Both are deterministic (no RNG), so cross-tier agreement is bounded
+    # only by floating-point summation order (~1e-14 relative). Driver
+    # (Psi) resolution policy stays in the phase package; the kernels take
+    # the resolved value. The NumPy tier guarantees dispatch resolves
+    # everywhere.
+    register_kernel("kuramoto_step", BackendTier.RUST, _rust_kuramoto_step)
+    register_kernel("kuramoto_step", BackendTier.NUMPY, _numpy_kuramoto_step)
+    register_kernel("upde_tick", BackendTier.RUST, _rust_upde_tick)
+    register_kernel("upde_tick", BackendTier.NUMPY, _numpy_upde_tick)
+    register_kernel("upde_run", BackendTier.RUST, _rust_upde_run)
+    register_kernel("upde_run", BackendTier.NUMPY, _numpy_upde_run)
 
 
 # Run bootstrap on import

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — source/config header compliance
+[package]
+name = "fusion-phase"
+version = "0.1.0"
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+description = "Kuramoto-Sakaguchi and multi-layer UPDE phase-dynamics kernels"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+rayon = { workspace = true }
+
+[dev-dependencies]
+approx = { workspace = true }

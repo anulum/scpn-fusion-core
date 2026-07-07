@@ -21,7 +21,7 @@ K_{nm} (off-diagonal): inter-layer bidirectional causality
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -35,6 +35,79 @@ from scpn_fusion.phase.kuramoto import (
 )
 
 FloatArray = NDArray[np.float64]
+
+
+def _upde_tick_numpy(
+    theta_flat: FloatArray,
+    omega_flat: FloatArray,
+    offsets: NDArray[np.intp],
+    K: FloatArray,
+    alpha: FloatArray,
+    zeta: FloatArray,
+    *,
+    dt: float,
+    psi_global: float,
+    actuation_gain: float = 1.0,
+    pac_gamma: float = 0.0,
+    wrap: bool = True,
+) -> dict[str, Any]:
+    """NumPy tier of the flat multi-layer UPDE tick kernel.
+
+    Shares its contract with the Rust kernel (``fusion-phase``): layers are
+    delimited by *offsets* inside the flat vectors, ``K``/``alpha`` are L×L
+    (source row, target column), and *psi_global* is the already-resolved Ψ.
+    """
+    L = K.shape[0]
+    g = float(actuation_gain)
+
+    Rm = np.empty(L)
+    Psim = np.empty(L)
+    for m in range(L):
+        Rm[m], Psim[m] = order_parameter(theta_flat[offsets[m] : offsets[m + 1]])
+    R_global, Psi_r_global = order_parameter(theta_flat)
+
+    theta1 = np.empty_like(theta_flat)
+    dtheta = np.empty_like(theta_flat)
+    for m in range(L):
+        th = theta_flat[offsets[m] : offsets[m + 1]]
+        om = omega_flat[offsets[m] : offsets[m + 1]]
+
+        # Intra-layer: K_{mm} R_m sin(ψ_m − θ − α_{mm})
+        dth = om + g * K[m, m] * Rm[m] * np.sin(Psim[m] - th - alpha[m, m])
+
+        # Inter-layer: Σ_{n≠m} (1 + γ_pac (1 − R_n)) K_{nm} R_n sin(ψ_n − θ − α_{nm})
+        for n in range(L):
+            if n == m:
+                continue
+            pac_gate = 1.0 + pac_gamma * (1.0 - Rm[n])
+            dth += g * pac_gate * K[n, m] * Rm[n] * np.sin(Psim[n] - th - alpha[n, m])
+
+        # Global driver: ζ_m sin(Ψ − θ)
+        if zeta[m] != 0.0:
+            dth += zeta[m] * np.sin(psi_global - th)
+
+        th_next = th + dt * dth
+        if wrap:
+            th_next = wrap_phase(th_next)
+
+        theta1[offsets[m] : offsets[m + 1]] = th_next
+        dtheta[offsets[m] : offsets[m + 1]] = dth
+
+    V_layer = np.array(
+        [lyapunov_v(theta1[offsets[m] : offsets[m + 1]], psi_global) for m in range(L)]
+    )
+    V_global = lyapunov_v(theta1, psi_global)
+
+    return {
+        "theta1": theta1,
+        "dtheta": dtheta,
+        "R_layer": Rm,
+        "Psi_layer": Psim,
+        "R_global": R_global,
+        "Psi_r_global": Psi_r_global,
+        "V_layer": V_layer,
+        "V_global": V_global,
+    }
 
 
 @dataclass
@@ -106,57 +179,97 @@ class UPDESystem:
             np.zeros(L) if self.spec.zeta is None else np.asarray(self.spec.zeta, dtype=np.float64)
         )
 
-        # NumPy reference path (the canonical and only execution path; supports
-        # non-uniform per-layer N).
-        theta1: list[FloatArray] = []
-        dtheta_all: list[FloatArray] = []
+        # Flatten layers (supports non-uniform per-layer N) and execute the
+        # tick on the fastest available dispatcher tier (Rust fusion-phase
+        # when built, NumPy floor always). Tiers agree to floating-point
+        # summation order (~1e-14 relative).
+        from scpn_fusion.core._multi_compat import dispatch
 
-        for m in range(L):
-            th = np.asarray(theta_layers[m], dtype=np.float64).ravel()
-            om = np.asarray(omega_layers[m], dtype=np.float64).ravel()
+        theta_flat = np.concatenate([np.asarray(t, dtype=np.float64).ravel() for t in theta_layers])
+        omega_flat = np.concatenate([np.asarray(o, dtype=np.float64).ravel() for o in omega_layers])
+        offsets = np.zeros(L + 1, dtype=np.intp)
+        np.cumsum([np.asarray(t).ravel().size for t in theta_layers], out=offsets[1:])
 
-            # Intra-layer: K_{mm} R_m sin(ψ_m − θ − α_{mm})
-            dth = om + g * K[m, m] * Rm[m] * np.sin(Psim[m] - th - alpha[m, m])
-
-            # Inter-layer: Σ_{n≠m} K_{nm} R_n sin(ψ_n − θ − α_{nm})
-            for n in range(L):
-                if n == m:
-                    continue
-                pac_gate = 1.0 + pac_gamma * (1.0 - Rm[n])
-                dth += g * pac_gate * K[n, m] * Rm[n] * np.sin(Psim[n] - th - alpha[n, m])
-
-            # Global driver: ζ_m sin(Ψ − θ)
-            if zeta[m] != 0.0:
-                dth += zeta[m] * np.sin(Psi_global - th)
-
-            th_next = th + self.dt * dth
-            if self.wrap:
-                th_next = wrap_phase(th_next)
-
-            theta1.append(th_next)
-            dtheta_all.append(dth)
-
-        R_global, Psi_r_global = order_parameter(
-            np.concatenate([np.asarray(t).ravel() for t in theta_layers])
+        tick = dispatch("upde_tick")
+        out = tick(
+            theta_flat,
+            omega_flat,
+            offsets,
+            K,
+            alpha,
+            zeta,
+            dt=self.dt,
+            psi_global=Psi_global,
+            actuation_gain=g,
+            pac_gamma=pac_gamma,
+            wrap=self.wrap,
         )
 
-        # Per-layer Lyapunov V_m(t) = (1/N_m) Σ (1 − cos(θ_{m,i} − Ψ))
-        V_layer = np.array([lyapunov_v(theta1[m], Psi_global) for m in range(L)])
-        V_global = lyapunov_v(
-            np.concatenate([np.asarray(t).ravel() for t in theta1]),
-            Psi_global,
-        )
+        theta1_flat = np.asarray(out["theta1"], dtype=np.float64)
+        dtheta_flat = np.asarray(out["dtheta"], dtype=np.float64)
+        theta1 = [theta1_flat[offsets[m] : offsets[m + 1]] for m in range(L)]
+        dtheta_all = [dtheta_flat[offsets[m] : offsets[m + 1]] for m in range(L)]
 
         return {
             "theta1": theta1,
             "dtheta": dtheta_all,
-            "R_layer": Rm.copy(),
-            "Psi_layer": Psim.copy(),
-            "R_global": R_global,
+            "R_layer": np.asarray(out["R_layer"], dtype=np.float64),
+            "Psi_layer": np.asarray(out["Psi_layer"], dtype=np.float64),
+            "R_global": float(out["R_global"]),
             "Psi_global": Psi_global,
-            "V_layer": V_layer,
-            "V_global": V_global,
+            "V_layer": np.asarray(out["V_layer"], dtype=np.float64),
+            "V_global": float(out["V_global"]),
         }
+
+    def _run_batched(
+        self,
+        n_steps: int,
+        theta_layers: Sequence[FloatArray],
+        omega_layers: Sequence[FloatArray],
+        *,
+        psi_driver: float,
+        actuation_gain: float,
+        pac_gamma: float,
+        K_override: FloatArray | None,
+    ) -> dict[str, Any]:
+        """Run the constant-driver loop on the batched ``upde_run`` kernel."""
+        from scpn_fusion.core._multi_compat import dispatch
+
+        K = np.asarray(K_override if K_override is not None else self.spec.K, dtype=np.float64)
+        L = K.shape[0]
+        if len(theta_layers) != L or len(omega_layers) != L:
+            raise ValueError(f"Expected {L} layers, got {len(theta_layers)}")
+        alpha = (
+            np.zeros_like(K)
+            if self.spec.alpha is None
+            else np.asarray(self.spec.alpha, dtype=np.float64)
+        )
+        zeta = (
+            np.zeros(L) if self.spec.zeta is None else np.asarray(self.spec.zeta, dtype=np.float64)
+        )
+        theta_flat = np.concatenate([np.asarray(t, dtype=np.float64).ravel() for t in theta_layers])
+        omega_flat = np.concatenate([np.asarray(o, dtype=np.float64).ravel() for o in omega_layers])
+        offsets = np.zeros(L + 1, dtype=np.intp)
+        np.cumsum([np.asarray(t).ravel().size for t in theta_layers], out=offsets[1:])
+
+        run = dispatch("upde_run")
+        out = run(
+            theta_flat,
+            omega_flat,
+            offsets,
+            K,
+            alpha,
+            zeta,
+            n_steps=n_steps,
+            dt=self.dt,
+            psi_global=float(psi_driver),
+            actuation_gain=actuation_gain,
+            pac_gamma=pac_gamma,
+            wrap=self.wrap,
+        )
+        theta_final_flat = np.asarray(out["theta_final"], dtype=np.float64)
+        out["theta_final"] = [theta_final_flat[offsets[m] : offsets[m + 1]] for m in range(L)]
+        return cast("dict[str, Any]", out)
 
     def run(
         self,
@@ -169,13 +282,37 @@ class UPDESystem:
         pac_gamma: float = 0.0,
         K_override: FloatArray | None = None,
     ) -> dict[str, Any]:
-        """Run n_steps and return trajectory of per-layer R and global R."""
+        """Run n_steps and return trajectory of per-layer R and global R.
+
+        With ``psi_mode="external"`` (constant driver) the whole loop runs on
+        the batched ``upde_run`` dispatcher kernel — one boundary crossing
+        instead of one per tick. The mean-field mode keeps the per-step path
+        because Ψ then depends on the evolving state.
+        """
+        if self.psi_mode == "external":
+            if psi_driver is None:
+                raise ValueError("psi_driver required when psi_mode='external'")
+            out = self._run_batched(
+                n_steps,
+                theta_layers,
+                omega_layers,
+                psi_driver=float(psi_driver),
+                actuation_gain=actuation_gain,
+                pac_gamma=pac_gamma,
+                K_override=K_override,
+            )
+            return {
+                "theta_final": out["theta_final"],
+                "R_layer_hist": out["R_layer_hist"],
+                "R_global_hist": out["R_global_hist"],
+            }
+
         R_layer_hist = []
         R_global_hist = []
         current = [np.asarray(t, dtype=np.float64).copy() for t in theta_layers]
 
         for _ in range(n_steps):
-            out = self.step(
+            out_step = self.step(
                 current,
                 omega_layers,
                 psi_driver=psi_driver,
@@ -183,9 +320,9 @@ class UPDESystem:
                 pac_gamma=pac_gamma,
                 K_override=K_override,
             )
-            current = out["theta1"]
-            R_layer_hist.append(out["R_layer"].copy())
-            R_global_hist.append(out["R_global"])
+            current = out_step["theta1"]
+            R_layer_hist.append(out_step["R_layer"].copy())
+            R_global_hist.append(out_step["R_global"])
 
         return {
             "theta_final": current,
@@ -209,29 +346,49 @@ class UPDESystem:
         Returns R histories, V histories, and per-layer + global λ.
         λ < 0 ⟹ stable convergence toward Ψ.
         """
-        R_layer_hist = []
-        R_global_hist = []
-        V_layer_hist = []
-        V_global_hist = []
-        current = [np.asarray(t, dtype=np.float64).copy() for t in theta_layers]
-
-        for _ in range(n_steps):
-            out = self.step(
-                current,
+        if self.psi_mode == "external":
+            if psi_driver is None:
+                raise ValueError("psi_driver required when psi_mode='external'")
+            out_run = self._run_batched(
+                n_steps,
+                theta_layers,
                 omega_layers,
-                psi_driver=psi_driver,
+                psi_driver=float(psi_driver),
                 actuation_gain=actuation_gain,
                 pac_gamma=pac_gamma,
                 K_override=K_override,
             )
-            current = out["theta1"]
-            R_layer_hist.append(out["R_layer"].copy())
-            R_global_hist.append(out["R_global"])
-            V_layer_hist.append(out["V_layer"].copy())
-            V_global_hist.append(out["V_global"])
+            current = out_run["theta_final"]
+            R_layer_arr = np.asarray(out_run["R_layer_hist"], dtype=np.float64)
+            R_global_arr = np.asarray(out_run["R_global_hist"], dtype=np.float64)
+            V_layer_arr = np.asarray(out_run["V_layer_hist"], dtype=np.float64)
+            V_global_arr = np.asarray(out_run["V_global_hist"], dtype=np.float64)
+        else:
+            R_layer_hist = []
+            R_global_hist = []
+            V_layer_hist = []
+            V_global_hist = []
+            current = [np.asarray(t, dtype=np.float64).copy() for t in theta_layers]
 
-        V_layer_arr = np.array(V_layer_hist)  # (n_steps, L)
-        V_global_arr = np.array(V_global_hist)  # (n_steps,)
+            for _ in range(n_steps):
+                out = self.step(
+                    current,
+                    omega_layers,
+                    psi_driver=psi_driver,
+                    actuation_gain=actuation_gain,
+                    pac_gamma=pac_gamma,
+                    K_override=K_override,
+                )
+                current = out["theta1"]
+                R_layer_hist.append(out["R_layer"].copy())
+                R_global_hist.append(out["R_global"])
+                V_layer_hist.append(out["V_layer"].copy())
+                V_global_hist.append(out["V_global"])
+
+            R_layer_arr = np.array(R_layer_hist)
+            R_global_arr = np.array(R_global_hist)
+            V_layer_arr = np.array(V_layer_hist)  # (n_steps, L)
+            V_global_arr = np.array(V_global_hist)  # (n_steps,)
 
         L = V_layer_arr.shape[1]
         lambda_layer = np.array(
@@ -241,8 +398,8 @@ class UPDESystem:
 
         return {
             "theta_final": current,
-            "R_layer_hist": np.array(R_layer_hist),
-            "R_global_hist": np.array(R_global_hist),
+            "R_layer_hist": R_layer_arr,
+            "R_global_hist": R_global_arr,
             "V_layer_hist": V_layer_arr,
             "V_global_hist": V_global_arr,
             "lambda_layer": lambda_layer,

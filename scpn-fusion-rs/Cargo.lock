@@ -592,6 +592,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fusion-phase"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "fusion-types",
+ "rayon",
+]
+
+[[package]]
 name = "fusion-physics"
 version = "0.1.0"
 dependencies = [
@@ -1779,6 +1788,7 @@ dependencies = [
  "fusion-math",
  "fusion-ml",
  "fusion-nuclear",
+ "fusion-phase",
  "fusion-physics",
  "fusion-types",
  "ndarray",

@@ -2569,6 +2569,10 @@
         "path": "scpn-fusion-rs/crates/fusion-nuclear"
       },
       {
+        "name": "fusion-phase",
+        "path": "scpn-fusion-rs/crates/fusion-phase"
+      },
+      {
         "name": "fusion-physics",
         "path": "scpn-fusion-rs/crates/fusion-physics"
       },
@@ -2594,8 +2598,8 @@
     "public_documentation_pages": 57,
     "python_capability_classes": 548,
     "python_capability_source_modules": 279,
-    "rust_workspace_crates": 12,
-    "test_files": 450
+    "rust_workspace_crates": 13,
+    "test_files": 451
   },
   "documentation": {
     "public_pages": [
@@ -3030,6 +3034,7 @@
       "tests/test_phase_kuramoto.py",
       "tests/test_phase_properties.py",
       "tests/test_phase_properties_extended.py",
+      "tests/test_phase_rust_tier.py",
       "tests/test_physics.py",
       "tests/test_physics_edge_cases.py",
       "tests/test_physics_fidelity_claims.py",

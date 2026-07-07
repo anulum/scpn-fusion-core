@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -115,6 +115,45 @@ def lyapunov_exponent(v_hist: Sequence[float], dt: float) -> float:
     return float(np.log(vf / v0) / T)
 
 
+def _kuramoto_step_numpy(
+    theta: FloatArray,
+    omega: FloatArray,
+    *,
+    dt: float,
+    K: float,
+    alpha: float = 0.0,
+    zeta: float = 0.0,
+    psi: float = 0.0,
+    wrap: bool = True,
+) -> dict[str, Any]:
+    """NumPy tier of the resolved-driver Kuramoto-Sakaguchi step kernel.
+
+    *psi* is the already-resolved global driver phase Ψ — driver-resolution
+    policy stays in :func:`kuramoto_sakaguchi_step`, so this tier shares its
+    contract with the Rust kernel (``fusion-phase``).
+    """
+    th = np.asarray(theta, dtype=np.float64).ravel()
+    om = np.asarray(omega, dtype=np.float64).ravel()
+
+    R, psi_r = order_parameter(th)
+
+    dtheta = om + (K * R) * np.sin(psi_r - th - alpha)
+    if zeta != 0.0:
+        dtheta += zeta * np.sin(psi - th)
+
+    th1 = th + dt * dtheta
+    if wrap:
+        th1 = wrap_phase(th1)
+
+    return {
+        "theta1": th1,
+        "dtheta": dtheta,
+        "R": R,
+        "Psi_r": psi_r,
+        "Psi": psi,
+    }
+
+
 def kuramoto_sakaguchi_step(
     theta: FloatArray,
     omega: FloatArray,
@@ -131,27 +170,17 @@ def kuramoto_sakaguchi_step(
 
     dθ_i/dt = ω_i + K·R·sin(ψ_r − θ_i − α) + ζ·sin(Ψ − θ_i)
 
-    NumPy reference implementation (the canonical and only execution path).
+    The driver phase Ψ is resolved here (external/mean-field policy), then
+    the arithmetic executes on the fastest available ``kuramoto_step``
+    dispatcher tier (Rust ``fusion-phase`` when built, NumPy floor always).
+    Tiers agree to floating-point summation order (~1e-14 relative).
     """
+    from scpn_fusion.core._multi_compat import dispatch
+
     th = np.asarray(theta, dtype=np.float64).ravel()
     om = np.asarray(omega, dtype=np.float64).ravel()
 
     Psi = GlobalPsiDriver(mode=psi_mode).resolve(th, psi_driver)
-
-    R, psi_r = order_parameter(th)
-
-    dtheta = om + (K * R) * np.sin(psi_r - th - alpha)
-    if zeta != 0.0:
-        dtheta += zeta * np.sin(Psi - th)
-
-    th1 = th + dt * dtheta
-    if wrap:
-        th1 = wrap_phase(th1)
-
-    return {
-        "theta1": th1,
-        "dtheta": dtheta,
-        "R": R,
-        "Psi_r": psi_r,
-        "Psi": Psi,
-    }
+    step = dispatch("kuramoto_step")
+    result = step(th, om, dt=dt, K=K, alpha=alpha, zeta=zeta, psi=Psi, wrap=wrap)
+    return cast("dict[str, Any]", result)

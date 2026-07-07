@@ -12,6 +12,7 @@ members = [
     "crates/fusion-core",
     "crates/fusion-polyglot",
     "crates/fusion-physics",
+    "crates/fusion-phase",
     "crates/fusion-nuclear",
     "crates/fusion-engineering",
     "crates/fusion-control",

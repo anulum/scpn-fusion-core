@@ -26,6 +26,7 @@ fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }
 fusion-core = { path = "../fusion-core" }
 fusion-physics = { path = "../fusion-physics" }
+fusion-phase = { path = "../fusion-phase" }
 fusion-nuclear = { path = "../fusion-nuclear" }
 fusion-engineering = { path = "../fusion-engineering" }
 fusion-control = { path = "../fusion-control" }
