@@ -181,6 +181,15 @@ and GPU-capable, enabling `jax.grad` through full solves for sensitivity/optimis
 re-exported from `core/__init__` but are **not on the production dispatch path**; they are
 research/benchmark backends, not the canonical CPU floor (NumPy is).
 
+This is a deliberate disposition (master-plan W-3), not an omission: (a) JAX is an OPTIONAL
+pinned extra, and a dispatch tier must not silently change production numerics based on which
+optional dependency happens to be installed; (b) none of the JAX solvers is contract-reconciled
+against its NumPy twin (each pair would need a Hall-MHD-style reconciliation before tier
+registration); (c) their value is differentiability, not throughput — the consumers are research
+scripts and the traceable-runtime validation lane (`validation/traceable_runtime_parity.py`),
+which exercises them explicitly. The `BackendTier.JAX` enum slot stays reserved for a future
+reconciled kernel; nothing registers it today.
+
 ### 3.4 Native C++ bridge (`hpc/hpc_bridge.py`)
 
 An optional ctypes FFI to a native Grad-Shafranov solver, with HMAC+SHA256 source-trust
