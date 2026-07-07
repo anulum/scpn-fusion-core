@@ -108,6 +108,18 @@
       "total_bytes": 15343
     },
     {
+      "citation": "Snyder P. B. et al., A first-principles predictive model of the pedestal height and width: development, testing and ITER optimization with the EPED model, Nucl. Fusion 51, 103016 (2011); Snyder P. B. et al., Phys. Plasmas 16, 056118 (2009).",
+      "file_count": 1,
+      "id": "eped1_digitised_reference",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "EPED1 pedestal predictions and DIII-D measurements digitised visually from the General Atomics public APS-DPP presentation https://fusion.gat.com/pubs-ext/APS11/Snydervgs.pdf (fetched and read in-session 2026-07-07); digitisation uncertainty embedded in the artifact.",
+      "source_type": "digitised_published_figure",
+      "total_bytes": 2692
+    },
+    {
       "file_count": 1,
       "id": "frc_public_reference_notes",
       "license": "AGPL-3.0-or-later",
@@ -323,7 +335,7 @@
       "total_bytes": 2852
     }
   ],
-  "file_count": 82,
+  "file_count": 83,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -693,6 +705,19 @@
       "size_bytes": 15343,
       "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
       "source_type": "derived_reference_artifact"
+    },
+    {
+      "citation": "Snyder P. B. et al., A first-principles predictive model of the pedestal height and width: development, testing and ITER optimization with the EPED model, Nucl. Fusion 51, 103016 (2011); Snyder P. B. et al., Phys. Plasmas 16, 056118 (2009).",
+      "dataset_id": "eped1_digitised_reference",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "eped/eped1_snyder_apsdpp_diiid_ip_scan.json",
+      "sha256": "c58d7d407223294748b7e6b80d3d277b7f0668c9d02a5a3c637eca0c1fab75e9",
+      "size_bytes": 2692,
+      "source": "EPED1 pedestal predictions and DIII-D measurements digitised visually from the General Atomics public APS-DPP presentation https://fusion.gat.com/pubs-ext/APS11/Snydervgs.pdf (fetched and read in-session 2026-07-07); digitisation uncertainty embedded in the artifact.",
+      "source_type": "digitised_published_figure"
     },
     {
       "dataset_id": "frc_public_reference_notes",
@@ -1422,7 +1447,7 @@
       "source_type": "derived_reference_artifact"
     }
   ],
-  "generated_at_utc": "2026-07-07T17:21:21.409029+00:00",
+  "generated_at_utc": "2026-07-07T19:12:32.160029+00:00",
   "license_registry": [
     {
       "attribution_required": true,

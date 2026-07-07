@@ -12,16 +12,16 @@
     "passes_thresholds": true,
     "thresholds": {
       "max_quasineutral_residual": 1e-10,
-      "max_late_energy_error_p95": 2.0,
-      "min_he_ash_peak": 0.0001
+      "max_late_energy_error_p95": 1e-08,
+      "min_he_ash_peak": 1e-08
     },
     "metrics": {
       "quasineutral_residual": 0.0,
-      "late_energy_error_mean": 0.2566476330276547,
-      "late_energy_error_p95": 0.48744770251323616,
-      "he_ash_peak_1e19m3": 0.00024111368541753915,
-      "n_D_min": 0.00725114957212949,
-      "n_T_min": 0.00725114957212949,
+      "late_energy_error_mean": 2.284273258143696e-14,
+      "late_energy_error_p95": 5.1814590482549355e-14,
+      "he_ash_peak_1e19m3": 2.526389582616655e-07,
+      "n_D_min": 0.007261125201299554,
+      "n_T_min": 0.007261125201299554,
       "n_He_min": 0.0,
       "z_eff_final": 1.0
     }

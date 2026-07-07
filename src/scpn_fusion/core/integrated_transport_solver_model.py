@@ -533,6 +533,23 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
             chi_turb_i=chi_turb_i,
             d_turb=d_turb,
         )
-        self.chi_e = np.maximum(chi_base + chi_turb_e, 1e-6)
-        self.chi_i = np.maximum(chi_base + chi_turb_i, 1e-6)
-        self.D_n = np.maximum(d_turb, 0.1 * chi_base)
+        chi_e_new = np.maximum(chi_base + chi_turb_e, 1e-6)
+        chi_i_new = np.maximum(chi_base + chi_turb_i, 1e-6)
+        d_n_new = np.maximum(d_turb, 0.1 * chi_base)
+        # Optional under-relaxation of the transport coefficients (standard
+        # integrated-modelling practice for the stiff chi(grad T) coupling:
+        # the fully explicit update oscillates between transport dump and
+        # reheat at practical time steps). alpha=1 (default) keeps the
+        # previous fully explicit behaviour.
+        alpha = float(np.clip(getattr(self, "chi_relaxation_alpha", 1.0), 0.05, 1.0))
+        if alpha < 1.0 and getattr(self, "chi_i", None) is not None:
+            prev_chi_i = np.asarray(self.chi_i, dtype=np.float64)
+            prev_chi_e = np.asarray(self.chi_e, dtype=np.float64)
+            prev_d_n = np.asarray(self.D_n, dtype=np.float64)
+            if prev_chi_i.shape == chi_i_new.shape:
+                chi_i_new = alpha * chi_i_new + (1.0 - alpha) * prev_chi_i
+                chi_e_new = alpha * chi_e_new + (1.0 - alpha) * prev_chi_e
+                d_n_new = alpha * d_n_new + (1.0 - alpha) * prev_d_n
+        self.chi_e = chi_e_new
+        self.chi_i = chi_i_new
+        self.D_n = d_n_new

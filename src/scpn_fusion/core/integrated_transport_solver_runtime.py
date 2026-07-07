@@ -242,6 +242,25 @@ class TransportSolverRuntimeMixin(
             cooling_factor = 5.0
             S_rad_i = cooling_factor * self.ne * self.n_impurity * np.sqrt(self.Te + 0.1)
 
+        # Electron-ion collisional equilibration (multi-ion lane). The
+        # exchange used to be explicit and one-sided: only the electron
+        # equation carried (Ti - Te_old)/tau_eq, with tau_eq clipped down
+        # to 1 ms against transport steps of ~100 ms — a 100x-stiff
+        # explicit term that overshot by orders of magnitude (a cold
+        # 0.014 keV electron channel jumped to ~22 keV in one step) and,
+        # being one-sided, manufactured energy instead of exchanging it.
+        # Both equations now carry the exchange implicitly and
+        # symmetrically: the ion solve relaxes towards Te_old and the
+        # electron solve towards the updated Ti, each with dt*nu_eq on
+        # its own diagonal (sequential-implicit splitting).
+        if self.multi_ion:
+            # tau_eq ~ Te^1.5 / ne, calibrated to ~0.1 s at ne=1e20, Te=10 keV.
+            tau_eq = 0.01 * (Te_old**1.5) / np.maximum(self.ne / 10.0, 0.1)
+            tau_eq = np.clip(tau_eq, 0.001, 1.0)
+            nu_eq = 1.0 / tau_eq
+        else:
+            nu_eq = np.zeros_like(self.Ti)
+
         # The radiation sink is stiff once impurities accumulate; treating
         # it explicitly made the update map dt-dependent and drove a
         # period-2 crash-rebuild cycle at transport time steps. Patankar
@@ -270,12 +289,18 @@ class TransportSolverRuntimeMixin(
         )
         self._last_numerical_recovery_count += n_lh_i
         self._record_recovery("cn.ion_diffusion_rhs", n_lh_i)
-        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * heat_source_i
-        rhs, n_rhs_i = self._sanitize_with_fallback(rhs, Ti_old, floor=0.01, ceil=1e3)
+        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * heat_source_i + dt * nu_eq * Te_old
+        # Only non-finite rhs entries are replaced. Range-clamping the rhs
+        # (the old floor=0.01/ceil=1e3) silently rewrote the discrete
+        # equation wherever 0.5*dt*L(T_old) was legitimately large and
+        # negative (steep edge gradients with large chi), manufacturing
+        # energy each step and feeding the multi-ion thermal runaway;
+        # positivity is enforced on the SOLUTION below, not the equation.
+        rhs, n_rhs_i = self._sanitize_with_fallback(rhs, Ti_old)
         self._last_numerical_recovery_count += n_rhs_i
         self._record_recovery("cn.ion_rhs", n_rhs_i)
         a, b, c = self._build_cn_tridiag(self.chi_i, dt)
-        b_sink = b + dt * nu_rad_i
+        b_sink = b + dt * (nu_rad_i + nu_eq)
         # Fold the boundary conditions into the system before solving. The
         # builder's identity boundary rows otherwise leave rhs boundary
         # entries carrying dt-scaled source terms, and the neighbouring
@@ -307,17 +332,11 @@ class TransportSolverRuntimeMixin(
             # Tungsten radiation on electrons (other half)
             S_rad_e = P_rad_line_Wm3 / (ne_safe_e * e_keV_J) * 0.5
 
-            # Electron-ion coupling (collisional equilibration)
-            # tau_eq ~ 3e18 * Te^1.5 / (ne * ln_lambda)
-            # Calibrated to approx 0.1s for ne=1e20, Te=10keV
-            tau_eq = 0.01 * (Te_old**1.5) / np.maximum(self.ne / 10.0, 0.1)
-            tau_eq = np.clip(tau_eq, 0.001, 1.0)
-            S_equil = (self.Ti - Te_old) / tau_eq
-
             # Electron sinks (line radiation + bremsstrahlung) get the same
             # implicit Patankar treatment as the ion radiation sink; the
-            # heating and equilibration exchange stay explicit.
-            explicit_source_e = S_heat_e + S_equil
+            # equilibration exchange is implicit-symmetric (see nu_eq above)
+            # and relaxes towards the updated ion temperature.
+            explicit_source_e = S_heat_e + nu_eq * self.Ti
             explicit_source_e, n_src_e = self._sanitize_with_fallback(
                 explicit_source_e,
                 np.zeros_like(explicit_source_e),
@@ -340,11 +359,12 @@ class TransportSolverRuntimeMixin(
             self._last_numerical_recovery_count += n_lh_e
             self._record_recovery("cn.electron_diffusion_rhs", n_lh_e)
             rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * explicit_source_e
-            rhs_e, n_rhs_e = self._sanitize_with_fallback(rhs_e, Te_old, floor=0.01, ceil=1e3)
+            # Non-finite replacement only — see the ion rhs note above.
+            rhs_e, n_rhs_e = self._sanitize_with_fallback(rhs_e, Te_old)
             self._last_numerical_recovery_count += n_rhs_e
             self._record_recovery("cn.electron_rhs", n_rhs_e)
             a_e, b_e, c_e = self._build_cn_tridiag(self.chi_e, dt)
-            b_e_sink = b_e + dt * nu_rad_e
+            b_e_sink = b_e + dt * (nu_rad_e + nu_eq)
             # Same boundary-condition folding as the ion solve.
             b_e_sink[0] = 1.0
             c_e[0] = -1.0
@@ -395,12 +415,12 @@ class TransportSolverRuntimeMixin(
         inner = slice(1, -1)
         Lh_new_i = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
         Lh_cn_i = 0.5 * (Lh_explicit + Lh_new_i)
-        net_source_i_eff = heat_source_i - nu_rad_i * self.Ti
+        net_source_i_eff = heat_source_i + nu_eq * Te_old - (nu_rad_i + nu_eq) * self.Ti
         weight = self.ne * 1e19 * e_keV_J * dV
         if self.multi_ion:
             Lh_new_e = self._explicit_diffusion_rhs(self.Te, self.chi_e)
             Lh_cn_e = 0.5 * (Lh_explicit_e + Lh_new_e)
-            net_source_e_eff = explicit_source_e - nu_rad_e * self.Te
+            net_source_e_eff = explicit_source_e - (nu_rad_e + nu_eq) * self.Te
             W_before = 1.5 * np.sum((weight * (Ti_old + Te_old))[inner])
             W_after = 1.5 * np.sum((weight * (self.Ti + self.Te))[inner])
             dW_source = (

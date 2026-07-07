@@ -29,11 +29,22 @@ from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
 
+# Recalibrated 2026-07-07 against the honest conservation diagnostic. The
+# previous max_late_energy_error_p95=2.0 and min_he_ash_peak=1e-4 were
+# calibrated against a numerically runaway trajectory (the old diagnostic
+# omitted the diffusion term, the equilibration exchange was explicit and
+# one-sided, and range-clamping of the rhs manufactured energy — the lane
+# heated to ~200 keV and fused accordingly). With those defects fixed and
+# the transport coefficients under-relaxed (standard treatment of the stiff
+# chi(grad T) coupling), the scheme conserves to machine precision, so the
+# energy gate is now a real conservation gate, and the He-ash floor
+# reflects the physically sane ~1 keV trajectory.
 CONTRACT_THRESHOLDS = {
     "max_quasineutral_residual": 1e-10,
-    "max_late_energy_error_p95": 2.0,
-    "min_he_ash_peak": 1e-4,
+    "max_late_energy_error_p95": 1e-8,
+    "min_he_ash_peak": 1e-8,
 }
+CHI_RELAXATION_ALPHA = 0.3
 
 
 def _render_path(path: Path) -> str:
@@ -53,6 +64,7 @@ def run_benchmark(
     """Run multi-ion transport conservation contract and return pass metrics."""
     cfg_path = Path(config_path) if config_path is not None else default_iter_config_path()
     solver = TransportSolver(str(cfg_path), multi_ion=True)
+    solver.chi_relaxation_alpha = CHI_RELAXATION_ALPHA
     solver.Ti = 5.0 * (1.0 - solver.rho**2)
     solver.Te = solver.Ti.copy()
     solver.ne = 5.0 * (1.0 - solver.rho**2) ** 0.5

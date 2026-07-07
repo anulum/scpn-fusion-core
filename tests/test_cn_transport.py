@@ -96,7 +96,14 @@ def test_cn_energy_decreases_no_heating(solver: TransportSolver):
 
 
 def test_cn_heats_to_steady_state(solver: TransportSolver):
-    """50 steps at dt=0.5 with P_aux=50 MW should heat the core above 1 keV."""
+    """50 steps at dt=0.5 with P_aux=50 MW should heat the core above 1 keV.
+
+    The per-step chi refresh is under-relaxed (the standard treatment of
+    the stiff chi(grad T) coupling): fully explicit chi at dt=0.5 s
+    oscillates between transport dump and reheat, which the old rhs
+    range-clamp used to mask by manufacturing energy.
+    """
+    solver.chi_relaxation_alpha = 0.3
     for _ in range(50):
         solver.update_transport_model(50.0)
         solver.evolve_profiles(dt=0.5, P_aux=50.0)
