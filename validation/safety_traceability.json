@@ -1,0 +1,236 @@
+{
+  "schema": "scpn-fusion-core.safety-traceability.v1",
+  "language_boundary": "IEC 61508-aligned terminology only. No IEC 61508 compliance, certification, or SIL claim is made. See docs/IEC_61508_ROADMAP.md for the assessment gap analysis.",
+  "hazards": [
+    {
+      "id": "H-ACT-OVERDRIVE",
+      "description": "Actuator command exceeds the configured actuator limit, risking coil over-drive and loss of vertical control authority."
+    },
+    {
+      "id": "H-INTERLOCK-BYPASS",
+      "description": "A control action executes while its paired safety limit is violated."
+    },
+    {
+      "id": "H-STATE-OVERFLOW",
+      "description": "An internal Petri marking leaves the declared per-place capacity bounds, producing undefined controller state."
+    },
+    {
+      "id": "H-COMPILE-DRIFT",
+      "description": "The compiled SNN enables an action path that the source Petri net forbids."
+    },
+    {
+      "id": "H-INVALID-EQUILIBRIUM",
+      "description": "Control decisions are computed from an equilibrium case that failed input validation."
+    },
+    {
+      "id": "H-PHASE-DIVERGENCE",
+      "description": "A diverging phase-control trajectory continues to actuate without refusal."
+    },
+    {
+      "id": "H-MITIGATION-MISS",
+      "description": "A critical physics-invariant violation fails to trigger disruption mitigation."
+    },
+    {
+      "id": "H-AUDIT-GAP",
+      "description": "A control episode cannot be reproduced deterministically for post-event audit."
+    }
+  ],
+  "requirements": [
+    {
+      "id": "SR-1",
+      "statement": "Normalised PID actuator command magnitudes never exceed the configured actuator limit and never amplify the raw command unless saturating to that limit.",
+      "hazard_ids": ["H-ACT-OVERDRIVE"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "remain bounded by actuator limits"
+      },
+      "iec61508_alignment": "IEC 61508-3 Table A.4 formal methods language (aligned terminology only).",
+      "implementation": [
+        "scpn-fusion-rs/crates/fusion-control/src/pid.rs::PIDController"
+      ],
+      "tests": [
+        "scpn-fusion-rs/crates/fusion-control/src/pid.rs::test_pid_rejects_non_finite_gains_and_error",
+        "tests/test_scpn_pid_mpc_benchmark.py::test_campaign_meets_thresholds_smoke"
+      ],
+      "proofs": [
+        "scpn-fusion-lean/PIDBoundedOutput.lean::boundedPidCommand_respects_limit",
+        "scpn-fusion-lean/PIDBoundedOutput.lean::saturatePidMagnitude_le_limit",
+        "scpn-fusion-lean/PIDBoundedOutput.lean::boundedPidCommand_no_amplification_or_saturates"
+      ],
+      "evidence": [],
+      "gaps": [
+        "The Lean model proves saturation of normalised natural-number magnitudes; a signed physical-unit coil-current saturation proof is a declared next target (README Formal Verification section)."
+      ]
+    },
+    {
+      "id": "SR-2",
+      "statement": "Each declared safety channel inhibits its paired control transition, and combined violations disable all control actions.",
+      "hazard_ids": ["H-INTERLOCK-BYPASS"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "safety interlocks"
+      },
+      "iec61508_alignment": "IEC 61508-1 safety-function allocation language (aligned terminology only).",
+      "implementation": [
+        "src/scpn_fusion/scpn/safety_interlocks.py::SafetyInterlockRuntime",
+        "src/scpn_fusion/scpn/safety_interlocks.py::build_safety_net",
+        "src/scpn_fusion/scpn/safety_interlocks.py::evaluate_transition_enablement"
+      ],
+      "tests": [
+        "tests/test_safety_interlocks.py::test_each_safety_channel_inhibits_paired_transition",
+        "tests/test_safety_interlocks.py::test_combined_safety_violations_disable_all_control_actions",
+        "tests/test_safety_interlocks.py::test_formal_contracts_detect_inconsistent_enablement",
+        "tests/test_formal_safety_contract_replay_benchmark.py::test_vertical_limit_blocks_position_move_only",
+        "tests/test_formal_safety_contract_replay_benchmark.py::test_each_canonical_limit_blocks_only_its_contract_transition"
+      ],
+      "proofs": [],
+      "evidence": [],
+      "gaps": [
+        "Interlock-semantics preservation through Petri-to-SNN compilation is the declared M-1 Lean proof target; today the guarantee is test- and replay-based."
+      ]
+    },
+    {
+      "id": "SR-3",
+      "statement": "Petri markings stay within declared per-place capacity bounds under assignment and repeated firing updates.",
+      "hazard_ids": ["H-STATE-OVERFLOW"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "finite-capacity Petri token filters preserve per-place bounds"
+      },
+      "iec61508_alignment": "IEC 61508-3 Table A.4 formal methods language (aligned terminology only).",
+      "implementation": [
+        "src/scpn_fusion/scpn/controller.py::marking"
+      ],
+      "tests": [
+        "tests/test_controller.py::test_marking_in_unit_range",
+        "tests/test_controller.py::test_marking_bounds_200_steps"
+      ],
+      "proofs": [
+        "scpn-fusion-lean/PetriTokenBoundedness.lean::filteredMarking_is_bounded",
+        "scpn-fusion-lean/PetriTokenBoundedness.lean::boundedMarkingFiringUpdate_is_bounded",
+        "scpn-fusion-lean/PetriTokenBoundedness.lean::filteredMarking_token_sum_le_capacity_sum"
+      ],
+      "evidence": [],
+      "gaps": []
+    },
+    {
+      "id": "SR-4",
+      "statement": "Petri-to-SNN compilation introduces no action path absent from the source net: every compiled direct edge and reachable path corresponds to a Petri edge or declared topology.",
+      "hazard_ids": ["H-COMPILE-DRIFT"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "no compiled SNN direct edge or reachable path exists without a corresponding Petri edge"
+      },
+      "iec61508_alignment": "IEC 61508-3 tool-qualification and translation-integrity language (aligned terminology only).",
+      "implementation": [
+        "src/scpn_fusion/scpn/compiler.py::FusionCompiler"
+      ],
+      "tests": [
+        "tests/test_scpn_compiler.py::test_W_in_sparsity",
+        "tests/test_scpn_compiler.py::test_W_out_sparsity",
+        "tests/test_scpn_compiler.py::test_summary_raises_on_inconsistent_compiled_state"
+      ],
+      "proofs": [
+        "scpn-fusion-lean/SNNReachabilityPreservation.lean::compile_preserves_edge_list",
+        "scpn-fusion-lean/SNNReachabilityPreservation.lean::snn_no_direct_edge_without_edges",
+        "scpn-fusion-lean/SNNReachabilityPreservation.lean::petri_reachability_compose"
+      ],
+      "evidence": [],
+      "gaps": []
+    },
+    {
+      "id": "SR-5",
+      "statement": "Invalid Grad-Shafranov case descriptions fail closed: the solver propagates the validation error and performs no numerical work or state mutation.",
+      "hazard_ids": ["H-INVALID-EQUILIBRIUM"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "Grad-Shafranov validation errors are propagated exactly"
+      },
+      "iec61508_alignment": "IEC 61508-3 defensive-programming and input-validation language (aligned terminology only).",
+      "implementation": [
+        "scpn-fusion-rs/crates/fusion-core/src/kernel.rs::validate_operator_inputs"
+      ],
+      "tests": [
+        "scpn-fusion-rs/crates/fusion-core/src/kernel.rs::test_solve_equilibrium_rejects_invalid_external_profile_params",
+        "scpn-fusion-rs/crates/fusion-core/src/kernel.rs::test_solve_with_profiles_rejects_invalid_params_without_state_mutation"
+      ],
+      "proofs": [
+        "scpn-fusion-lean/SafetyProof.lean::solveGradShafranov_rejects_validation_error"
+      ],
+      "evidence": [],
+      "gaps": []
+    },
+    {
+      "id": "SR-6",
+      "statement": "The Lyapunov guard refuses phase-control actuation when the largest Lyapunov exponent estimate indicates a diverging trajectory.",
+      "hazard_ids": ["H-PHASE-DIVERGENCE"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "Lyapunov guard"
+      },
+      "iec61508_alignment": "IEC 61508-2 diagnostic-monitoring language (aligned terminology only).",
+      "implementation": [
+        "src/scpn_fusion/phase/lyapunov_guard.py::LyapunovGuard"
+      ],
+      "tests": [
+        "tests/test_lyapunov_guard.py::test_diverging_trajectory_triggers_refusal",
+        "tests/test_lyapunov_guard.py::test_stable_trajectory_stays_approved",
+        "tests/test_lyapunov_guard.py::test_check_trajectory_growing"
+      ],
+      "proofs": [],
+      "evidence": [],
+      "gaps": [
+        "The refusal logic is empirically tested; no formal proof of the divergence estimator exists yet."
+      ]
+    },
+    {
+      "id": "SR-7",
+      "statement": "Any critical physics-invariant violation (including non-finite observables) triggers the disruption-mitigation path.",
+      "hazard_ids": ["H-MITIGATION-MISS"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "disruption contracts"
+      },
+      "iec61508_alignment": "IEC 61508-1 safe-state transition language (aligned terminology only).",
+      "implementation": [
+        "src/scpn_fusion/scpn/contracts.py::should_trigger_mitigation",
+        "src/scpn_fusion/scpn/contracts.py::check_all_invariants"
+      ],
+      "tests": [
+        "tests/test_physics_invariants.py::test_critical_triggers",
+        "tests/test_physics_invariants.py::test_nan_is_critical",
+        "tests/test_physics_invariants.py::test_inf_is_critical"
+      ],
+      "proofs": [],
+      "evidence": [],
+      "gaps": [
+        "Mitigation triggering is contract- and test-based; no formal proof covers the invariant evaluator."
+      ]
+    },
+    {
+      "id": "SR-8",
+      "statement": "A full control episode replays bit-identically on the generating environment class; across differing CPU microarchitectures the asserted invariant is the transcendental-free disruption indicator component.",
+      "hazard_ids": ["H-AUDIT-GAP"],
+      "public_claim": {
+        "file": "README.md",
+        "pattern": "Identical inputs produce identical outputs across platforms"
+      },
+      "iec61508_alignment": "IEC 61508-3 audit-trail and reproducibility language (aligned terminology only).",
+      "implementation": [
+        "validation/replay_certificate.py::run_episode",
+        "validation/replay_certificate.py::verify_certificate"
+      ],
+      "tests": [
+        "tests/test_replay_certificate.py::test_numpy_floor_episode_is_bit_identical_across_runs",
+        "tests/test_replay_certificate.py::test_committed_hashes_reproduce_per_the_environment_conditional_claim"
+      ],
+      "proofs": [],
+      "evidence": [
+        "validation/reference_data/replay/replay_certificate.json"
+      ],
+      "gaps": [
+        "Cross-machine bit-identity of transcendental components is environment-conditional: numpy dispatches SIMD exp/sin kernels per CPU microarchitecture (first two-machine comparison, CI run 28841804121). Replay-invariance formalisation is the declared M-1 proof target."
+      ]
+    }
+  ]
+}

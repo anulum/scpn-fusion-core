@@ -20,6 +20,7 @@
       "docs/PHYSICS_VALIDATION_STATUS.md",
       "docs/PROJECT_OVERVIEW.md",
       "docs/RELEASE_READINESS.md",
+      "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
       "docs/VALIDATION_AGAINST_ITER.md",
@@ -2591,15 +2592,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 57,
+    "capability_documentation_pages": 58,
     "github_workflows": 12,
     "optional_extras": 13,
     "public_api_exports": 2,
-    "public_documentation_pages": 57,
+    "public_documentation_pages": 58,
     "python_capability_classes": 548,
     "python_capability_source_modules": 279,
     "rust_workspace_crates": 13,
-    "test_files": 452
+    "test_files": 453
   },
   "documentation": {
     "public_pages": [
@@ -2621,6 +2622,7 @@
       "docs/PHYSICS_VALIDATION_STATUS.md",
       "docs/PROJECT_OVERVIEW.md",
       "docs/RELEASE_READINESS.md",
+      "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
       "docs/VALIDATION_AGAINST_ITER.md",
@@ -3093,6 +3095,7 @@
       "tests/test_safe_loaders.py",
       "tests/test_safe_rl_controller.py",
       "tests/test_safety_interlocks.py",
+      "tests/test_safety_traceability.py",
       "tests/test_sandpile_fusion_reactor.py",
       "tests/test_sas_dataset_manifest.py",
       "tests/test_sawtooth.py",

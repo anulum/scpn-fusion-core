@@ -62,6 +62,7 @@ def _build_release_checks(
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
+    skip_safety_traceability: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -167,6 +168,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/generate_claims_evidence_map.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_safety_traceability:
+        checks.append(
+            (
+                "Safety traceability matrix drift check",
+                [
+                    sys.executable,
+                    "tools/generate_safety_traceability.py",
                     "--check",
                 ],
             )
@@ -484,6 +496,7 @@ def _build_checks(
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
+    skip_safety_traceability: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -524,6 +537,7 @@ def _build_checks(
                 skip_claims_audit=skip_claims_audit,
                 skip_claim_range_guard=skip_claim_range_guard,
                 skip_claims_map=skip_claims_map,
+                skip_safety_traceability=skip_safety_traceability,
                 skip_capability_manifest=skip_capability_manifest,
                 skip_readiness_register=skip_readiness_register,
                 skip_readiness_scope_reports=skip_readiness_scope_reports,
@@ -638,6 +652,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-claims-map",
         action="store_true",
         help="Skip tools/generate_claims_evidence_map.py --check",
+    )
+    parser.add_argument(
+        "--skip-safety-traceability",
+        action="store_true",
+        help="Skip tools/generate_safety_traceability.py --check",
     )
     parser.add_argument(
         "--skip-capability-manifest",
@@ -831,6 +850,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_claims_audit=args.skip_claims_audit,
         skip_claim_range_guard=args.skip_claim_range_guard,
         skip_claims_map=args.skip_claims_map,
+        skip_safety_traceability=args.skip_safety_traceability,
         skip_capability_manifest=args.skip_capability_manifest,
         skip_readiness_register=args.skip_readiness_register,
         skip_readiness_scope_reports=args.skip_readiness_scope_reports,

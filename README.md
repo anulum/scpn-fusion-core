@@ -129,11 +129,11 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Public API exports | 2 |
 | Python capability source modules | 279 |
 | Python capability classes | 548 |
-| Capability documentation pages | 57 |
+| Capability documentation pages | 58 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 452 |
-| Public documentation pages | 57 |
+| Python test files | 453 |
+| Public documentation pages | 58 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -526,6 +526,7 @@ Evidence boundary:
 | Petri token-boundedness proof | `scpn-fusion-lean/PetriTokenBoundedness.lean` |
 | Verified properties | Grad-Shafranov validation errors are propagated exactly; normalized PID magnitudes remain bounded by actuator limits and raw command magnitude, propagate actuator-limit, raw-command, and dual upper bounds, remain bounded under nested filters, preserve zero-command and at-limit boundary cases, are monotone in command and actuator limit, are idempotent under repeated saturation, take exactly the raw command or the configured limit branch, and cannot amplify a command unless saturating to the configured limit; finite Petri graph reachability paths, composed paths, direct-edge equivalence, edge-count preservation, empty-edge preservation, source/destination endpoint bounds, and full endpoint bounds are preserved and reflected by the compiled SNN edge contract; no compiled SNN direct edge or reachable path exists without a corresponding Petri edge/path or declared topology; empty Petri graphs are well-formed vacuously; well-formed Petri edges and reachable endpoints remain within the compiled SNN neuron bound; finite-capacity Petri token filters preserve per-place bounds, preserve arbitrary finite-marking length and capacity sum, do not amplify per-place tokens or aggregate token sum, keep filtered aggregate token sum below both original and filtered aggregate capacity, expose a combined original-and-capacity aggregate safety theorem, are idempotent, have stable aggregate token/capacity sums under repeated filtering, leave already bounded finite markings unchanged, and keep bounded natural-number firing updates within place capacity |
 | CI surface | `lean-safety-proofs` job in `.github/workflows/ci.yml` |
+| Safety traceability matrix | [`docs/SAFETY_TRACEABILITY_MATRIX.md`](docs/SAFETY_TRACEABILITY_MATRIX.md) — requirements linked to hazards, implementation, tests, Lean proofs, and evidence; drift-checked in preflight |
 | Narrative draft | `docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md` |
 
 This is an intentionally narrow proof boundary, not a claim that the full

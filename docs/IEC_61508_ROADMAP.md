@@ -46,7 +46,7 @@ assessment-ready in any release or deployment section.
 
 | Area | Current repository state | IEC 61508 gap |
 |---|---|---|
-| Requirements | Public docs describe control, replay, validation, and evidence boundaries. | Need controlled safety requirements with traceability to hazards and safety functions. |
+| Requirements | Public docs describe control, replay, validation, and evidence boundaries. A generated safety traceability matrix ([SAFETY_TRACEABILITY_MATRIX.md](SAFETY_TRACEABILITY_MATRIX.md)) links each safety requirement to hazards, implementation, tests, Lean proofs, and evidence, with a CI drift check. | Need independent review of requirement completeness and hazard coverage beyond the declared set. |
 | Hazard analysis | Safety interlocks and fail-closed gates exist as engineering contracts. | Need formal hazard analysis, failure-mode analysis, and allocation of safety integrity requirements. |
 | Architecture | Control compiler, runtime guards, deterministic replay, and validation reports are separated. | Need safety architecture diagrams, independence arguments, and defensive partitioning evidence. |
 | Verification | Unit, integration, fuzz, benchmark, Lean-proof, and replay checks exist for selected surfaces. | Need requirement-linked verification, coverage justification, tool qualification, and independent review. |
