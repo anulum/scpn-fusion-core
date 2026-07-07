@@ -232,17 +232,15 @@ def hall_mhd_zonal_ratio(
         ratio = float(np.clip(0.06 + 0.40 * abs(asymmetry_proxy), 0.0, 0.9))
         return {"backend": "proxy", "zonal_ratio": ratio}
 
-    state = np.random.get_state()
-    try:
-        np.random.seed(int(seed))
-        sim = HallMHD(N=grid_n)
-        ratios: list[float] = []
-        for _ in range(steps_n):
-            e_tot, e_zonal = sim.step()
-            denom = max(float(e_tot), 1e-12)
-            ratios.append(float(e_zonal) / denom)
-    finally:
-        np.random.set_state(state)
+    # HallMHD carries its own seeded Generator (default_rng), so the seed is
+    # passed explicitly - the legacy global np.random state no longer reaches
+    # it and seeding the global RNG here would leave the run nondeterministic.
+    sim = HallMHD(N=grid_n, seed=int(seed))
+    ratios: list[float] = []
+    for _ in range(steps_n):
+        e_tot, e_zonal = sim.step()
+        denom = max(float(e_tot), 1e-12)
+        ratios.append(float(e_zonal) / denom)
 
     ratio = float(np.mean(np.asarray(ratios, dtype=np.float64)))
     if not np.isfinite(ratio) or ratio <= 0.0:
