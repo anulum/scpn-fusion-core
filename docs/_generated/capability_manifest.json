@@ -2595,7 +2595,7 @@
     "python_capability_classes": 548,
     "python_capability_source_modules": 279,
     "rust_workspace_crates": 12,
-    "test_files": 449
+    "test_files": 450
   },
   "documentation": {
     "public_pages": [
@@ -2805,6 +2805,7 @@
       "tests/test_divertor_thermal_sim.py",
       "tests/test_docstring_guard_tool.py",
       "tests/test_download_mast_labelled_shots.py",
+      "tests/test_dream_fluid_parity.py",
       "tests/test_dream_reference_execution_request.py",
       "tests/test_elm_model.py",
       "tests/test_elm_model_full.py",
