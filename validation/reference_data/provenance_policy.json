@@ -282,6 +282,29 @@
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "license": "citation-required",
       "citation": "Per-file metadata sidecars identify upstream public solver repositories, source commits, checksums, and artifact-specific provenance URLs."
+    },
+    {
+      "id": "torax_reference_profiles",
+      "glob": "torax/*.json",
+      "source_type": "derived_reference_artifact",
+      "source": "Final-time profiles exported from a really-executed TORAX run (Apache-2.0, https://github.com/google-deepmind/torax) via validation/torax_reference_runner.py in the dedicated .venv-torax; the artifact embeds TORAX version, config SHA-256, and sim_error.",
+      "license": "citation-required",
+      "citation": "Citrin, J. et al., TORAX: A Fast and Differentiable Tokamak Transport Simulator in JAX, arXiv:2406.06718; https://github.com/google-deepmind/torax (Apache-2.0)."
+    },
+    {
+      "id": "dream_reference_runaway",
+      "glob": "dream/*.json",
+      "source_type": "derived_reference_artifact",
+      "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
+      "license": "citation-required",
+      "citation": "Hoppe, M., Embreus, O., Fülöp, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098."
+    },
+    {
+      "id": "replay_certificate",
+      "glob": "replay/*.json",
+      "source_type": "synthetic_generated",
+      "source": "Deterministic replay certificate generated in-repo by validation/replay_certificate.py: SHA-256 hashes of a seeded control episode plus the generating-environment manifest.",
+      "license": "AGPL-3.0-or-later"
     }
   ]
 }

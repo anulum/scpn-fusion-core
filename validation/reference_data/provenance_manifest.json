@@ -96,6 +96,18 @@
       "total_bytes": 381655
     },
     {
+      "citation": "Hoppe, M., Embreus, O., F\u00fcl\u00f6p, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098.",
+      "file_count": 1,
+      "id": "dream_reference_runaway",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
+      "source_type": "derived_reference_artifact",
+      "total_bytes": 15343
+    },
+    {
       "file_count": 1,
       "id": "frc_public_reference_notes",
       "license": "AGPL-3.0-or-later",
@@ -150,7 +162,7 @@
       "license_redistributable": true,
       "source": "ITPA reference-data notes.",
       "source_type": "documentation",
-      "total_bytes": 1389
+      "total_bytes": 1417
     },
     {
       "file_count": 5,
@@ -211,7 +223,18 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 15880
+      "total_bytes": 17572
+    },
+    {
+      "file_count": 1,
+      "id": "replay_certificate",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Deterministic replay certificate generated in-repo by validation/replay_certificate.py: SHA-256 hashes of a seeded control episode plus the generating-environment manifest.",
+      "source_type": "synthetic_generated",
+      "total_bytes": 1474
     },
     {
       "citation": "Slough, Votroubek, and Pihl, Nuclear Fusion 51, 053008 (2011), DOI:10.1088/0029-5515/51/5/053008.",
@@ -286,9 +309,21 @@
       "source": "Synthetic blind-validation references generated in-repo.",
       "source_type": "synthetic_generated",
       "total_bytes": 3182
+    },
+    {
+      "citation": "Citrin, J. et al., TORAX: A Fast and Differentiable Tokamak Transport Simulator in JAX, arXiv:2406.06718; https://github.com/google-deepmind/torax (Apache-2.0).",
+      "file_count": 1,
+      "id": "torax_reference_profiles",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "Final-time profiles exported from a really-executed TORAX run (Apache-2.0, https://github.com/google-deepmind/torax) via validation/torax_reference_runner.py in the dedicated .venv-torax; the artifact embeds TORAX version, config SHA-256, and sim_error.",
+      "source_type": "derived_reference_artifact",
+      "total_bytes": 2852
     }
   ],
-  "file_count": 79,
+  "file_count": 82,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -297,8 +332,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "README.md",
-      "sha256": "a5e6a9aa4099c64c67701ff44935d482611cf0a0970c754a6fdc5e30f9193aa8",
-      "size_bytes": 3981,
+      "sha256": "75e89f85047c8508844ab58e23cfd34b09566e07da0479c1ade9ac2ac3ff8b40",
+      "size_bytes": 3985,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation"
     },
@@ -647,6 +682,19 @@
       "source_type": "documentation"
     },
     {
+      "citation": "Hoppe, M., Embreus, O., F\u00fcl\u00f6p, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098.",
+      "dataset_id": "dream_reference_runaway",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "dream/dream_fluid_runaway_reference.json",
+      "sha256": "160d3f78dcfa7000eb1429e3880bd3e86d3c84b1f4b818212442d23aa707e88f",
+      "size_bytes": 15343,
+      "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
+      "source_type": "derived_reference_artifact"
+    },
+    {
       "dataset_id": "frc_public_reference_notes",
       "license": "AGPL-3.0-or-later",
       "license_attribution_required": true,
@@ -961,8 +1009,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "itpa/README.md",
-      "sha256": "2b98eef1e153a2f44191bf710236c1109a54a65c001e022a872197885e36e4e1",
-      "size_bytes": 1389,
+      "sha256": "ab410dbf27094c17dd05a7adba3325f0b323bcf4c1f6d382a0a1796d69f3e0fb",
+      "size_bytes": 1417,
       "source": "ITPA reference-data notes.",
       "source_type": "documentation"
     },
@@ -1117,8 +1165,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "7070e670744be1ea21a35a6c86103597082849c9597421cfe55593e8960538f1",
-      "size_bytes": 11899,
+      "sha256": "18530c1af845ab3fd86e6371b45d9931dd815988f753907c5032f6340e32ab51",
+      "size_bytes": 13587,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -1134,6 +1182,18 @@
       "size_bytes": 1354,
       "source": "Curated summary from public QLKNN benchmark paper.",
       "source_type": "published_reference_summary"
+    },
+    {
+      "dataset_id": "replay_certificate",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "replay/replay_certificate.json",
+      "sha256": "e4e2d75da5df9b0b1af961dec06b769d250bd199d94a9162321f8b08e25d9ba4",
+      "size_bytes": 1474,
+      "source": "Deterministic replay certificate generated in-repo by validation/replay_certificate.py: SHA-256 hashes of a seeded control episode plus the generating-environment manifest.",
+      "source_type": "synthetic_generated"
     },
     {
       "citation": "Slough, Votroubek, and Pihl, Nuclear Fusion 51, 053008 (2011), DOI:10.1088/0029-5515/51/5/053008.",
@@ -1347,9 +1407,22 @@
       "size_bytes": 1878,
       "source": "Public synthetic W7-X-like reduced-order replay configuration generated in-repo.",
       "source_type": "synthetic_generated"
+    },
+    {
+      "citation": "Citrin, J. et al., TORAX: A Fast and Differentiable Tokamak Transport Simulator in JAX, arXiv:2406.06718; https://github.com/google-deepmind/torax (Apache-2.0).",
+      "dataset_id": "torax_reference_profiles",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "torax/torax_basic_config_profiles.json",
+      "sha256": "48ba7964b2464462b28cac6925e461230244f0e3fe3b084c4f0b21a13902b3f1",
+      "size_bytes": 2852,
+      "source": "Final-time profiles exported from a really-executed TORAX run (Apache-2.0, https://github.com/google-deepmind/torax) via validation/torax_reference_runner.py in the dedicated .venv-torax; the artifact embeds TORAX version, config SHA-256, and sim_error.",
+      "source_type": "derived_reference_artifact"
     }
   ],
-  "generated_at_utc": "2026-06-16T09:23:25.600655+00:00",
+  "generated_at_utc": "2026-07-07T03:53:05.407881+00:00",
   "license_registry": [
     {
       "attribution_required": true,
