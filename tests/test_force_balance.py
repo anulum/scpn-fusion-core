@@ -4,9 +4,12 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+"""Tests for the PF-coil force-balance solver contract."""
+
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
@@ -15,7 +18,10 @@ from scpn_fusion.core import force_balance
 
 
 class _DummyKernel:
+    """Minimal kernel config and vacuum-field recompute surface."""
+
     def __init__(self) -> None:
+        """Create a finite five-coil equilibrium configuration."""
         self.cfg: dict[str, Any] = {
             "physics": {"plasma_current_target": 8.7},
             "coils": [
@@ -29,19 +35,23 @@ class _DummyKernel:
         self.vacuum_recompute_count = 0
 
     def calculate_vacuum_field(self) -> float:
+        """Return a deterministic marker for vacuum-field recomputes."""
         self.vacuum_recompute_count += 1
         return float(self.vacuum_recompute_count)
 
 
 class _DummyAnalyzer:
+    """Linear force model used by convergence tests."""
+
     def __init__(self, _config_path: str) -> None:
+        """Create a kernel and placeholder vacuum field."""
         self.kernel = _DummyKernel()
         self.Psi_vac = 0.0
 
     def calculate_forces(
         self, _target_r: float, _target_z: float, _ip: float
     ) -> tuple[float, float, int]:
-        # Linear force model around I=1.0 MA so Newton update converges quickly.
+        """Return radial force from a linear current residual."""
         coils = cast(list[dict[str, Any]], self.kernel.cfg["coils"])
         i_pf3 = float(coils[2]["current"])
         fr = (i_pf3 - 1.0) * 1.0e6
@@ -49,20 +59,24 @@ class _DummyAnalyzer:
 
 
 class _SingularJacobianAnalyzer:
+    """Force model whose radial force is independent of PF current."""
+
     def __init__(self, _config_path: str) -> None:
+        """Create a kernel and placeholder vacuum field."""
         self.kernel = _DummyKernel()
         self.Psi_vac = 0.0
 
     def calculate_forces(
         self, _target_r: float, _target_z: float, _ip: float
     ) -> tuple[float, float, int]:
-        # Force independent of current -> numerical Jacobian exactly zero.
+        """Return constant radial force to exercise singular-Jacobian handling."""
         return 1.0e6, 0.0, 0
 
 
 def test_solve_for_equilibrium_converges_with_dummy_analyzer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Newton updates converge on a finite linear force model."""
     monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
     solver = force_balance.ForceBalanceSolver("dummy.json")
 
@@ -85,6 +99,7 @@ def test_solve_for_equilibrium_converges_with_dummy_analyzer(
 
 
 def test_solve_for_equilibrium_handles_singular_jacobian(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Near-singular Jacobians use the conservative directional fallback."""
     monkeypatch.setattr(force_balance, "StabilityAnalyzer", _SingularJacobianAnalyzer)
     solver = force_balance.ForceBalanceSolver("dummy.json")
 
@@ -101,7 +116,8 @@ def test_solve_for_equilibrium_handles_singular_jacobian(monkeypatch: pytest.Mon
     assert summary["converged"] is False
 
 
-def test_save_config_writes_json(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_save_config_writes_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Saving writes the current balanced kernel configuration as JSON."""
     monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
     solver = force_balance.ForceBalanceSolver("dummy.json")
     out_path = tmp_path / "force_balanced.json"
@@ -114,6 +130,7 @@ def test_save_config_writes_json(tmp_path, monkeypatch: pytest.MonkeyPatch) -> N
 def test_solve_for_equilibrium_rejects_invalid_runtime_parameters(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Runtime argument validation rejects invalid iteration and target settings."""
     monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
     solver = force_balance.ForceBalanceSolver("dummy.json")
 
@@ -122,3 +139,43 @@ def test_solve_for_equilibrium_rejects_invalid_runtime_parameters(
 
     with pytest.raises(ValueError, match="jacobian_floor must be finite and > 0"):
         solver.solve_for_equilibrium(jacobian_floor=0.0)
+
+    with pytest.raises(ValueError, match="target_R and target_Z"):
+        solver.solve_for_equilibrium(target_R=float("nan"))
+
+
+def test_solve_for_equilibrium_rejects_missing_plasma_current(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Config validation requires the plasma-current target."""
+    monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
+    solver = force_balance.ForceBalanceSolver("dummy.json")
+    solver.analyzer.kernel.cfg["physics"] = {}
+
+    with pytest.raises(ValueError, match="plasma_current_target"):
+        solver.solve_for_equilibrium()
+
+
+def test_solve_for_equilibrium_rejects_incomplete_coil_list(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Config validation requires PF3/PF4 control coil entries."""
+    monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
+    solver = force_balance.ForceBalanceSolver("dummy.json")
+    solver.analyzer.kernel.cfg["coils"] = [{"current": 0.0}]
+
+    with pytest.raises(ValueError, match="at least 4 coils"):
+        solver.solve_for_equilibrium()
+
+
+def test_solve_for_equilibrium_rejects_nonfinite_control_current(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Config validation rejects non-finite PF control currents."""
+    monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
+    solver = force_balance.ForceBalanceSolver("dummy.json")
+    coils = cast(list[dict[str, Any]], solver.analyzer.kernel.cfg["coils"])
+    coils[2]["current"] = float("nan")
+
+    with pytest.raises(ValueError, match="must be finite"):
+        solver.solve_for_equilibrium()

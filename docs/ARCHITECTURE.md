@@ -246,7 +246,11 @@ The repository can ingest the following external formats:
 - **JAX equilibrium** (`jax_gs_solver`, `jax_equilibrium_solver`): differentiable fixed-boundary
   GS for sensitivity/coil optimisation.
 - **`kinetic_efit.py`**: kinetic reconstruction with anisotropic fast-ion pressure + synthetic MSE.
-- **`force_balance.py`**, **`amr_patch.py`** (X-point/pedestal refinement), **`eqdsk.py`** (I/O).
+- **`force_balance.py`**: public 2D free-boundary post-solve utility that adjusts paired PF3/PF4
+  currents with a Newton radial-force residual loop and writes a balanced equilibrium config. It is
+  consumed by validation workflows and documented as a config-balancing utility, not as the quasi-3D
+  reduced-order force residual model in `quasi_3d_contracts.py`.
+- **`amr_patch.py`** (X-point/pedestal refinement), **`eqdsk.py`** (I/O).
 - **3D:** `geometry_3d` (LCFS→toroidal mesh), `equilibrium_3d` (VMEC-style Fourier),
   `fieldline_3d` (tracing/Poincaré), `vmec_lite` (reduced-order spectral), `stellarator_geometry`.
 

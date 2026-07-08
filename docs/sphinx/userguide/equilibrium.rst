@@ -307,10 +307,16 @@ synthetic weights).
 Force Balance and 3D Geometry
 ------------------------------
 
-The ``force_balance`` module provides iterative force-balance checking
-against the GS equation.  The ``geometry_3d`` module generates 3D
-flux-surface meshes (OBJ format) from Fourier boundary parametrisations
-for visualisation and CAD integration.
+The ``force_balance`` module provides a 2D post-solve utility for adjusting
+paired PF3/PF4 coil currents until the radial force residual at the requested
+equilibrium point is below the configured tolerance.  It is the validation and
+configuration-balancing path for free-boundary Grad-Shafranov runs.  The
+quasi-3D Task-4 force residuals live separately in
+``scpn_fusion.core.quasi_3d_contracts`` because they measure reduced-order
+3D geometry and toroidal-asymmetry contracts rather than PF-coil current
+closure.  The ``geometry_3d`` module generates 3D flux-surface meshes
+(OBJ format) from Fourier boundary parametrisations for visualisation and CAD
+integration.
 
 Related Modules
 ----------------

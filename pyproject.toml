@@ -469,6 +469,7 @@ files = [
     "src/scpn_fusion/core/impurity_transport.py",
     "src/scpn_fusion/core/__init__.py",
     "src/scpn_fusion/core/force_balance.py",
+    "tests/test_force_balance.py",
     "src/scpn_fusion/core/fno_turbulence_suppressor.py",
     "src/scpn_fusion/core/wdm_engine.py",
     "src/scpn_fusion/core/global_design_scanner.py",

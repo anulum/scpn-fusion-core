@@ -32,7 +32,7 @@ where the Grad-Shafranov operator is $\Delta^* \equiv R \frac{\partial}{\partial
 
 where $\hat\psi = (\psi - \psi_{\rm axis})/(\psi_{\rm bdry} - \psi_{\rm axis})$.
 
-**Numerical method.** Nonlinear Picard iteration on a rectangular $(R,Z)$ finite-difference grid with Newton-Raphson acceleration for the coil-current equilibrium (`ForceBalanceSolver`). The Jacobian $\partial F_R / \partial I_{\rm PF}$ is evaluated by numerical perturbation, and the Newton step is clamped to $|\Delta I| \le 5$ MA for robustness. Convergence tolerance: $|F_R| < 10$ kN.
+**Numerical method.** Nonlinear Picard iteration on a rectangular $(R,Z)$ finite-difference grid with Newton-Raphson acceleration for the coil-current equilibrium (`ForceBalanceSolver`). The Jacobian $\partial F_R / \partial I_{\rm PF}$ is evaluated by numerical perturbation, and the Newton step is clamped to $|\Delta I| \le 5$ MA for robustness. Convergence tolerance: $|F_R| < 10$ kN. `ForceBalanceSolver` is the 2D PF-coil configuration-balancing utility; the quasi-3D Task-4 force residual model is a separate reduced-order geometry/asymmetry validation contract in `core/quasi_3d_contracts.py`.
 
 **Boundary conditions.** Free-boundary: vacuum Green's-function contributions from external PF coils (CS, PF1–PF6). The vacuum field $\psi_{\rm vac}$ is computed via the Biot-Savart kernel in `FusionKernel.calculate_vacuum_field()`.
 
@@ -41,7 +41,7 @@ where $\hat\psi = (\psi - \psi_{\rm axis})/(\psi_{\rm bdry} - \psi_{\rm axis})$.
 | File | Role |
 |:---|:---|
 | `core/fusion_kernel.py` | 2D GS finite-difference solver, vacuum field, X-point finder |
-| `core/force_balance.py` | Newton-Raphson coil-current solver for radial force balance |
+| `core/force_balance.py` | Newton-Raphson PF3/PF4 coil-current solver for 2D radial force-balance configs |
 | `core/analytic_solver.py` | Solov'ev analytic equilibrium (test and initialisation) |
 | `core/neural_equilibrium.py` | 12-feature PCA+MLP surrogate for real-time flux-surface prediction |
 
