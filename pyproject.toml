@@ -251,6 +251,8 @@ files = [
     "tests/test_check_test_module_linkage.py",
     "tools/claim_range_guard.py",
     "tests/test_claim_range_guard.py",
+    "tools/claims_audit.py",
+    "tests/test_claims_audit.py",
     "tools/mypy_expansion_guard.py",
     "tests/test_mypy_expansion_guard.py",
     "tools/export_zenodo_dataset.py",
