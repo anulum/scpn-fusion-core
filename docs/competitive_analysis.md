@@ -72,8 +72,9 @@ The Path C GENE/GS2/CGYRO adapters carry explicit model-fidelity metadata and
 can generate nonlinear electrostatic or electromagnetic 5D input decks for
 site-installed production solvers. The repository does not bundle those solvers
 or claim native parity with their nonlinear turbulence engines.
-Online learning via `gk_online_learner` retrains the surrogate from newly computed GK
-points, and `gk_corrector` applies delta corrections when the surrogate drifts.
+`gk_online_learner` is an explicit offline/library path for validation-approved GK samples; it does
+not mutate deployed transport weights in the live solver loop. `gk_corrector` applies delta
+corrections when a caller supplies an accepted correction model.
 
 ### 2.2 Competitive Comparison
 
@@ -293,7 +294,7 @@ The GK three-path design is central to SCPN's transport strategy:
                     (triggers B/C if surrogate OOD)     │
                          │                              │
                     gk_online_learner ◄─────────────────┘
-                    (retrains surrogate from new GK data)
+                    (offline/library retrain path only)
                          │
                     gk_corrector
                     (delta correction when surrogate drifts)
@@ -305,7 +306,8 @@ external production GK codes when available on the system. All three paths share
 the same `GKLocalParams`/`GKOutput` interface (`gk_interface.py`), including
 the `physics_model` and 5D grid metadata needed to request nonlinear
 electrostatic or electromagnetic external runs without changing transport-solver
-call sites.
+call sites. Online retraining remains an explicit validation/offline workflow until a production
+scheduler consumer is added with separate acceptance tests.
 
 ---
 

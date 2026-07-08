@@ -325,6 +325,7 @@ files = [
     "src/scpn_fusion/core/gk_gene.py",
     "src/scpn_fusion/core/gk_maxwell_evolution.py",
     "src/scpn_fusion/core/gk_online_learner.py",
+    "tests/test_gk_online_learner.py",
     "src/scpn_fusion/core/gk_tglf.py",
     "src/scpn_fusion/core/gk_tglf_native.py",
     "src/scpn_fusion/core/integrated_transport_solver_adaptive.py",

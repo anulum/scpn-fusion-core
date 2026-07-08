@@ -262,7 +262,7 @@ The repository can ingest the following external formats:
   geometry. **Output:** evolved profiles, χ_e/χ_i/D, bootstrap current.
 - **Gyrokinetics** (`gk_*`): linear eigenvalue solver (Miller geometry, Sugama collisions,
   response matrix), quasilinear saturation, TGLF subprocess interface, nonlinear δf (Rust/JAX),
-  domain decomposition, online learner + spot-check scheduler. The six `GKSolverBase`
+  domain decomposition, explicit online-learner library API, and spot-check scheduler. The six `GKSolverBase`
   implementations (TGLF external, TGLF native, CGYRO, GS2, GENE, QuaLiKiz) are discoverable
   through the string-keyed **`gk_registry`** (`create_gk_solver` / `available_gk_solvers` /
   `resolve_tglf_solver`, exported from `core`); the canonical TGLF path resolves to the GACODE
@@ -271,7 +271,9 @@ The repository can ingest the following external formats:
   deck contract), `gk_tglf_native` is the always-available quasilinear model, and
   `tglf_interface` is the TransportSolver comparison framework (JSON references, benchmark
   tables) used by the `tglf_live` pipeline backend. `gk_nonlinear.NonlinearGKSolver` is
-  config-driven 5D δf and intentionally outside the deck-file registry.
+  config-driven 5D δf and intentionally outside the deck-file registry. `gk_online_learner.py` is
+  validation/offline workflow support for supervised surrogate refreshes from accepted GK samples; no
+  live transport pipeline mutates deployed weights through it.
 - **Supporting:** `impurity_transport` (ADAS charge-states), `momentum_transport` (E×B shear),
   `current_diffusion`, `current_drive` (ECCD/NBI), `blob_transport`.
 

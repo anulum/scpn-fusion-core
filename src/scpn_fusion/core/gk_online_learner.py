@@ -115,8 +115,6 @@ class OnlineLearner:
         n = len(self.buffer)
         n_val = max(int(n * self.config.validation_fraction), 1)
         n_train = n - n_val
-        if n_train < 1:
-            raise ValueError("buffer_size and validation_fraction leave no training samples")
 
         # Shuffle and split
         rng = np.random.default_rng(self.generation)
