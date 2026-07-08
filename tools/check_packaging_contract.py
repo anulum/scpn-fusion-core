@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 try:  # Python 3.11+
-    import tomllib  # type: ignore[attr-defined]
+    import tomllib
 except ModuleNotFoundError:  # pragma: no cover - exercised on 3.9/3.10 CI lanes
     tomllib = None  # type: ignore[assignment]
 
