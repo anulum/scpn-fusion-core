@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 466
+    "test_files": 465
   },
   "documentation": {
     "public_pages": [
@@ -2771,7 +2771,6 @@
       "tests/test_benchmark_free_boundary_strict_parity.py",
       "tests/test_benchmark_regression_guard.py",
       "tests/test_benchmark_sparc_geqdsk_rmse.py",
-      "tests/test_benchmark_vs_torax.py",
       "tests/test_blanket_neutronics.py",
       "tests/test_blob_transport.py",
       "tests/test_boris_pyo3_bridge.py",

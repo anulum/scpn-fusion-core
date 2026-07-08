@@ -210,8 +210,10 @@ def run_full_reproduction(
         json_output: Destination for the machine-readable evidence report.
         markdown_output: Destination for the human-readable evidence report.
 
-    Returns:
-        The JSON-serializable evidence payload that was written to ``json_output``.
+    Returns
+    -------
+    JsonObject
+        JSON-serializable evidence payload that was written to ``json_output``.
     """
     report = build_reproduction_report()
     json_output.parent.mkdir(parents=True, exist_ok=True)

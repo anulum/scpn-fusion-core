@@ -122,3 +122,33 @@ def test_build_report_records_divergence_and_findings(monkeypatch: pytest.Monkey
     )
     assert findings["sawtooth_model_present_in_lane"] is False
     assert "resolved 2026-07-07" in findings["disposition"]
+
+
+def test_check_report_detects_current_missing_and_stale_reports(tmp_path: Path) -> None:
+    """The report drift checker accepts current payloads and rejects stale files."""
+    module = _load_module()
+    report = cast(dict[str, Any], module.build_report())
+    current = tmp_path / "torax_real_parity.json"
+    stale = tmp_path / "stale.json"
+    missing = tmp_path / "missing.json"
+    current.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    stale.write_text(json.dumps({"schema": report["schema"]}) + "\n", encoding="utf-8")
+
+    assert module.check_report(current) == []
+    assert module.check_report(stale) == ["tracked TORAX real-parity report is stale"]
+    assert module.check_report(missing) == [f"missing TORAX real-parity report: {missing}"]
+
+
+def test_main_check_mode_reports_drift(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """The CLI check mode returns non-zero for stale reports without rewriting."""
+    module = _load_module()
+    report = cast(dict[str, Any], module.build_report())
+    current = tmp_path / "current.json"
+    stale = tmp_path / "stale.json"
+    current.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    stale.write_text(json.dumps({"schema": report["schema"]}) + "\n", encoding="utf-8")
+
+    monkeypatch.setattr(module, "build_report", lambda: report)
+
+    assert module.main(["--output", str(current), "--check"]) == 0
+    assert module.main(["--output", str(stale), "--check"]) == 1

@@ -209,11 +209,40 @@ def build_report() -> dict[str, Any]:
     }
 
 
+def _report_digest(report: dict[str, Any]) -> str:
+    """Return a deterministic digest for a real-TORAX report payload."""
+    encoded = json.dumps(report, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def check_report(path: Path = REPORT) -> list[str]:
+    """Return drift errors for the tracked real-TORAX parity report."""
+    expected = build_report()
+    errors: list[str] = []
+    if not path.exists():
+        errors.append(f"missing TORAX real-parity report: {path}")
+        return errors
+    observed = cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
+    if _report_digest(observed) != _report_digest(expected):
+        errors.append("tracked TORAX real-parity report is stale")
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the real-TORAX comparison gate and write the tracked report."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=REPORT)
+    parser.add_argument("--check", action="store_true", help="Check the tracked report for drift.")
     args = parser.parse_args(argv)
+
+    if args.check:
+        errors = check_report(args.output)
+        for error in errors:
+            print(f"TORAX REAL PARITY ERROR: {error}", file=sys.stderr)
+        if errors:
+            return 1
+        print(f"TORAX real-parity report is up to date: {args.output}")
+        return 0
 
     report = build_report()
     args.output.parent.mkdir(parents=True, exist_ok=True)

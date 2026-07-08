@@ -794,7 +794,7 @@ def generate_results_md(
         ),
     )
     _lane("HIL sub-ms", hil, "sub_ms", f"P50 = {hil['p50_us']:.1f} μs" if hil else "—")
-    freegs_lane_name = "FreeGS strict-backend parity"
+    freegs_lane_name = "FreeGS/FreeGSNKE strict parity"
     if freegs and str(freegs.get("mode", "")).strip().lower() == "solovev_manufactured_source":
         freegs_lane_name = "Solov'ev manufactured-source parity"
     _lane(

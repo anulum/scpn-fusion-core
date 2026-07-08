@@ -519,8 +519,8 @@ def test_main_enables_strict_backend_checks_when_requested(
         (
             [
                 "python-test",
-                "validation/benchmark_vs_torax.py",
-                "--strict-backend",
+                "validation/benchmark_torax_real_parity.py",
+                "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -621,8 +621,8 @@ def test_main_enables_freegs_strict_backend_check_when_requested(
         (
             [
                 "python-test",
-                "validation/benchmark_vs_torax.py",
-                "--strict-backend",
+                "validation/benchmark_torax_real_parity.py",
+                "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -637,8 +637,9 @@ def test_main_enables_freegs_strict_backend_check_when_requested(
         (
             [
                 "python-test",
-                "validation/benchmark_vs_freegs.py",
-                "--strict-backend",
+                "validation/benchmark_free_boundary_strict_parity.py",
+                "--check",
+                "--strict",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -649,7 +650,7 @@ def test_main_enables_freegs_strict_backend_check_when_requested(
     ]
 
 
-def test_main_skips_freegs_strict_backend_when_unavailable(
+def test_main_skips_freegs_strict_parity_without_opt_in(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     module = _load_module()
@@ -729,8 +730,8 @@ def test_main_skips_freegs_strict_backend_when_unavailable(
         (
             [
                 "python-test",
-                "validation/benchmark_vs_torax.py",
-                "--strict-backend",
+                "validation/benchmark_torax_real_parity.py",
+                "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -749,7 +750,7 @@ def test_main_skips_freegs_strict_backend_when_unavailable(
     ]
 
 
-def test_main_skips_freegs_strict_backend_when_flagged(
+def test_main_skips_freegs_strict_parity_when_flagged(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     module = _load_module()
@@ -831,8 +832,8 @@ def test_main_skips_freegs_strict_backend_when_flagged(
         (
             [
                 "python-test",
-                "validation/benchmark_vs_torax.py",
-                "--strict-backend",
+                "validation/benchmark_torax_real_parity.py",
+                "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),

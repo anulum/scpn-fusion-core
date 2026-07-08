@@ -132,7 +132,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 61 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 466 |
+| Python test files | 465 |
 | Public documentation pages | 61 |
 | GitHub Actions workflows | 12 |
 
@@ -293,7 +293,7 @@ evidence.
 Top limitations:
 - No GENE/CGYRO-class full nonlinear 5D turbulence campaign in-loop; native nonlinear GK is a bounded NumPy/JAX research solver with explicit invariant benchmarks.
 - No full 3D nonlinear MHD stack in-loop (external coupling required for that fidelity).
-- Free-boundary equilibrium/inverse reconstruction is not yet EFIT-grade; public SPARC GEQDSK operator-source rows pass, while profile-source/free-boundary reconstruction and FreeGS strict-backend parity remain open evidence gates with row-level debug traces.
+- Free-boundary equilibrium/inverse reconstruction is not yet EFIT-grade; public SPARC GEQDSK operator-source rows pass, while profile-source/free-boundary reconstruction and FreeGS/FreeGSNKE strict-parity evidence remains tracked with row-level debug traces.
 
 Full-fidelity acceptance status for native nonlinear GK, runaway electrons, and
 impurity transport is tracked by

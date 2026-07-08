@@ -95,7 +95,6 @@ def _build_release_checks(
     skip_mypy: bool,
     enable_strict_backend_checks: bool,
     enable_freegs_strict_backend_check: bool,
-    freegs_available: bool,
 ) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = []
     if not skip_version_metadata:
@@ -441,11 +440,11 @@ def _build_release_checks(
     if enable_strict_backend_checks and not skip_torax_strict_backend:
         checks.append(
             (
-                "TORAX strict-backend benchmark",
+                "TORAX real-reference parity drift check",
                 [
                     sys.executable,
-                    "validation/benchmark_vs_torax.py",
-                    "--strict-backend",
+                    "validation/benchmark_torax_real_parity.py",
+                    "--check",
                 ],
             )
         )
@@ -464,15 +463,15 @@ def _build_release_checks(
         enable_strict_backend_checks
         and enable_freegs_strict_backend_check
         and not skip_freegs_strict_backend
-        and freegs_available
     ):
         checks.append(
             (
-                "FreeGS strict-backend benchmark",
+                "FreeGS/FreeGSNKE strict parity check",
                 [
                     sys.executable,
-                    "validation/benchmark_vs_freegs.py",
-                    "--strict-backend",
+                    "validation/benchmark_free_boundary_strict_parity.py",
+                    "--check",
+                    "--strict",
                 ],
             )
         )
@@ -591,7 +590,6 @@ def _build_checks(
     skip_research_suite: bool,
     enable_strict_backend_checks: bool,
     enable_freegs_strict_backend_check: bool,
-    freegs_available: bool,
 ) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = []
     if gate in {"release", "all"}:
@@ -636,7 +634,6 @@ def _build_checks(
                 skip_mypy=skip_mypy,
                 enable_strict_backend_checks=enable_strict_backend_checks,
                 enable_freegs_strict_backend_check=enable_freegs_strict_backend_check,
-                freegs_available=freegs_available,
             )
         )
     if gate in {"research", "all"}:
@@ -842,7 +839,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-torax-strict-backend",
         action="store_true",
-        help="Skip validation/benchmark_vs_torax.py --strict-backend",
+        help="Skip validation/benchmark_torax_real_parity.py --check",
     )
     parser.add_argument(
         "--skip-sparc-strict-backend",
@@ -852,7 +849,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-freegs-strict-backend",
         action="store_true",
-        help="Skip validation/benchmark_vs_freegs.py --strict-backend",
+        help="Skip validation/benchmark_free_boundary_strict_parity.py --check --strict",
     )
     parser.add_argument(
         "--enable-strict-backend-checks",
@@ -862,7 +859,7 @@ def main(argv: list[str] | None = None) -> int:
             in {"1", "true", "yes", "on"}
         ),
         help=(
-            "Enable strict-backend TORAX/SPARC checks "
+            "Enable canonical TORAX/SPARC strict evidence checks "
             "(also enabled by SCPN_ENABLE_STRICT_BACKEND_CHECKS=1)."
         ),
     )
@@ -874,7 +871,7 @@ def main(argv: list[str] | None = None) -> int:
             in {"1", "true", "yes", "on"}
         ),
         help=(
-            "Force strict-backend FreeGS check when strict backend checks are enabled "
+            "Force FreeGS/FreeGSNKE strict parity check when strict evidence checks are enabled "
             "(also enabled by SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1)."
         ),
     )
@@ -914,7 +911,6 @@ def main(argv: list[str] | None = None) -> int:
         help="Per-check subprocess timeout in seconds.",
     )
     args = parser.parse_args(argv)
-    freegs_available = _module_available("freegs")
     enable_freegs_strict_backend_check = bool(args.enable_freegs_strict_backend_check)
     if (
         args.enable_strict_backend_checks
@@ -922,17 +918,10 @@ def main(argv: list[str] | None = None) -> int:
         and not enable_freegs_strict_backend_check
     ):
         print(
-            "[preflight] Skipping FreeGS strict-backend benchmark: explicit opt-in "
+            "[preflight] Skipping FreeGS/FreeGSNKE strict parity check: explicit opt-in "
             "disabled (use --enable-freegs-strict-backend-check or "
             "SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1)."
         )
-    if (
-        args.enable_strict_backend_checks
-        and enable_freegs_strict_backend_check
-        and not args.skip_freegs_strict_backend
-        and not freegs_available
-    ):
-        print("[preflight] Skipping FreeGS strict-backend benchmark: freegs not installed.")
     try:
         check_timeout_seconds = _normalize_check_timeout_seconds(args.check_timeout_seconds)
     except ValueError as exc:
@@ -980,7 +969,6 @@ def main(argv: list[str] | None = None) -> int:
         skip_research_suite=args.skip_research_suite,
         enable_strict_backend_checks=args.enable_strict_backend_checks,
         enable_freegs_strict_backend_check=enable_freegs_strict_backend_check,
-        freegs_available=freegs_available,
     )
     if not checks:
         print("[preflight] No checks selected.")
