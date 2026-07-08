@@ -10,17 +10,33 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import re
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Any, Protocol, cast
 
-try:  # Python 3.11+
-    import tomllib  # type: ignore[attr-defined]
-except ModuleNotFoundError:  # pragma: no cover - exercised on 3.9/3.10 CI lanes
-    tomllib = None  # type: ignore[assignment]
+
+class _TomlLoader(Protocol):
+    """Callable protocol for stdlib TOML parsers."""
+
+    def __call__(self, data: str, /) -> dict[str, Any]:
+        """Parse TOML text into a mapping."""
+
+
+def _load_toml_loader() -> _TomlLoader | None:
+    """Return the stdlib TOML loader when available."""
+    try:
+        module = importlib.import_module("tomllib")
+    except ModuleNotFoundError:  # pragma: no cover - exercised on 3.9/3.10 CI lanes
+        return None
+    return cast(_TomlLoader, module.__dict__["loads"])
+
+
+TOML_LOADS = _load_toml_loader()
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -30,12 +46,13 @@ DEFAULT_PYPROJECT = REPO_ROOT / "pyproject.toml"
 def read_local_version(pyproject_path: Path) -> str:
     """Read project.version from pyproject.toml."""
     text = pyproject_path.read_text(encoding="utf-8")
-    if tomllib is not None:
-        data = tomllib.loads(text)
+    if TOML_LOADS is not None:
+        data = TOML_LOADS(text)
         project = data.get("project", {})
-        version = project.get("version")
-        if isinstance(version, str) and version.strip():
-            return version.strip()
+        if isinstance(project, dict):
+            version = project.get("version")
+            if isinstance(version, str) and version.strip():
+                return version.strip()
 
     in_project = False
     for line in text.splitlines():

@@ -245,6 +245,8 @@ files = [
     "tests/test_github_token_format_guard.py",
     "tools/check_packaging_contract.py",
     "tests/test_packaging_contract.py",
+    "tools/check_pypi_sync.py",
+    "tests/test_check_pypi_sync.py",
     "tools/mypy_expansion_guard.py",
     "tests/test_mypy_expansion_guard.py",
     "tools/export_zenodo_dataset.py",
