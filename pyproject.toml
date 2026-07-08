@@ -435,6 +435,7 @@ files = [
     "src/scpn_fusion/core/fusion_kernel.py",
     "src/scpn_fusion/core/fusion_kernel_free_boundary.py",
     "src/scpn_fusion/core/_rust_compat.py",
+    "tests/test_rust_compat_wrapper.py",
     "src/scpn_fusion/core/fusion_kernel_solver_runtime.py",
     "src/scpn_fusion/core/fusion_kernel_iterative_solver.py",
     "tests/test_fusion_kernel_iterative_solver_contracts.py",
