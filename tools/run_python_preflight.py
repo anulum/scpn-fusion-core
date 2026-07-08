@@ -66,6 +66,7 @@ def _build_release_checks(
     skip_psi_gate_attribution: bool,
     skip_surrogate_uq_cards: bool,
     skip_torax_imas_interchange: bool,
+    skip_torax_same_physics_config: bool,
     skip_fair_validation_packs: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
@@ -216,6 +217,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "validation/torax_imas_interchange.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_torax_same_physics_config:
+        checks.append(
+            (
+                "TORAX same-physics config drift check",
+                [
+                    sys.executable,
+                    "validation/torax_same_physics_config_study.py",
                     "--check",
                 ],
             )
@@ -549,6 +561,7 @@ def _build_checks(
     skip_psi_gate_attribution: bool,
     skip_surrogate_uq_cards: bool,
     skip_torax_imas_interchange: bool,
+    skip_torax_same_physics_config: bool,
     skip_fair_validation_packs: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
@@ -594,6 +607,7 @@ def _build_checks(
                 skip_psi_gate_attribution=skip_psi_gate_attribution,
                 skip_surrogate_uq_cards=skip_surrogate_uq_cards,
                 skip_torax_imas_interchange=skip_torax_imas_interchange,
+                skip_torax_same_physics_config=skip_torax_same_physics_config,
                 skip_fair_validation_packs=skip_fair_validation_packs,
                 skip_capability_manifest=skip_capability_manifest,
                 skip_readiness_register=skip_readiness_register,
@@ -729,6 +743,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-torax-imas-interchange",
         action="store_true",
         help="Skip validation/torax_imas_interchange.py --check",
+    )
+    parser.add_argument(
+        "--skip-torax-same-physics-config",
+        action="store_true",
+        help="Skip validation/torax_same_physics_config_study.py --check",
     )
     parser.add_argument(
         "--skip-fair-validation-packs",
@@ -931,6 +950,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_psi_gate_attribution=args.skip_psi_gate_attribution,
         skip_surrogate_uq_cards=args.skip_surrogate_uq_cards,
         skip_torax_imas_interchange=args.skip_torax_imas_interchange,
+        skip_torax_same_physics_config=args.skip_torax_same_physics_config,
         skip_fair_validation_packs=args.skip_fair_validation_packs,
         skip_capability_manifest=args.skip_capability_manifest,
         skip_readiness_register=args.skip_readiness_register,

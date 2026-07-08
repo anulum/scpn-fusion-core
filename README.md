@@ -132,7 +132,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 60 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 461 |
+| Python test files | 462 |
 | Public documentation pages | 60 |
 | GitHub Actions workflows | 12 |
 
@@ -829,6 +829,11 @@ Validation artifacts:
   [`validation/reports/torax_imas_interchange.md`](validation/reports/torax_imas_interchange.md).
   This validates data interchange only; it does not promote TORAX physics
   equivalence thresholds.
+- The TORAX/native same-physics configuration boundary is tracked at
+  [`validation/reports/torax_same_physics_config_study.md`](validation/reports/torax_same_physics_config_study.md).
+  The report proves the TORAX final profiles initialize the native transport
+  solver, then keeps threshold tightening blocked on model/source/time-trace
+  mismatches.
 - FAIR validation-pack readiness is tracked in
   [`validation/reports/fair_validation_packs.md`](validation/reports/fair_validation_packs.md);
   `tools/export_zenodo_dataset.py` exports the local pack directories and keeps

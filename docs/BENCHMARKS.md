@@ -1652,18 +1652,23 @@ materialized as an IMAS `core_profiles` IDS fixture:
 - `validation/reference_data/torax/torax_basic_config_profiles.json`
 - `validation/reference_data/torax/torax_basic_config_core_profiles_ids.json`
 - `validation/reports/torax_imas_interchange.md`
+- `validation/reports/torax_same_physics_config_study.md`
 
 Refresh or check the fixture with:
 
 ```bash
 python validation/torax_imas_interchange.py
 python validation/torax_imas_interchange.py --check
+python validation/torax_same_physics_config_study.py
+python validation/torax_same_physics_config_study.py --check
 ```
 
 This lane validates profile interchange and unit conversion (`T_e_keV` to eV,
 `n_e_m3` kept in `m^-3`, `rho_norm` to `rho_tor_norm`). It is not a TORAX
-physics-equivalence claim; threshold tightening remains blocked on the
-same-physics configuration study.
+physics-equivalence claim. The same-physics configuration study proves the TORAX
+final profiles initialize the native transport solver, then keeps threshold
+tightening blocked on the native transport-model mismatch, missing same-deck
+source/boundary controls, and missing step-by-step TORAX trace.
 Grid-convergence and production-scale evidence rows are accepted only when they
 reference the converted same-case output row for the corresponding solver
 family.

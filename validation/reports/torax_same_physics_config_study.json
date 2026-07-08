@@ -1,0 +1,120 @@
+{
+  "claim_boundary": "This study proves the TORAX final profiles can initialize the native transport solver and identifies the remaining same-physics blockers. It does not claim TORAX/native physics equivalence.",
+  "native_solver": {
+    "chi_e_mean_after_update": 15.846171732607239,
+    "chi_i_mean_after_update": 3.8849902912319,
+    "config": "validation/iter_config.json",
+    "confinement_time_at_50mw_s": 13.239033565235957,
+    "drho_mean": 0.038461538461538464,
+    "finite_after_probe": true,
+    "finite_initial_state": true,
+    "one_step_probe": {
+      "core_te_after_step_keV": 17.73437651729822,
+      "core_te_delta_keV": -5.41718414412011,
+      "core_ti_after_step_keV": 17.73437651729822,
+      "core_ti_delta_keV": -0.09380895536586564,
+      "dt_s": 0.001,
+      "energy_balance": [
+        9.831401017550661,
+        17.73437651729822
+      ],
+      "p_aux_mw": 0.0
+    },
+    "profile_count": 27,
+    "transport_model_after_update": "reduced_multichannel_analytic"
+  },
+  "passes_thresholds": true,
+  "physics_equivalence_claimed": false,
+  "profile_summaries": {
+    "T_e_keV": {
+      "checksum_sha256": "e322996f9c75f50de6354fe0a0b6ec38cec805a07c3adc7a1ef4b6aa514a248e",
+      "core": 23.15156066141833,
+      "count": 27,
+      "edge": 1.0,
+      "maximum": 23.15156066141833,
+      "minimum": 1.0
+    },
+    "T_i_keV": {
+      "checksum_sha256": "d0d63e6459942e8c50cdbf9b212bab9c95c3fc33aab5153a9a1fd80b371a3be3",
+      "core": 17.828185472664085,
+      "count": 27,
+      "edge": 1.0,
+      "maximum": 17.828185472664085,
+      "minimum": 1.0
+    },
+    "n_e_1e19_m3": {
+      "checksum_sha256": "d9c5e23d84c734b57a512236818f800d227ca1e95853f99f367ef920b4884db2",
+      "core": 11.92,
+      "count": 27,
+      "edge": 8.0,
+      "maximum": 11.92,
+      "minimum": 8.0
+    },
+    "rho_norm": {
+      "checksum_sha256": "d378ecd12f508071f2d5560d79a94832d78ede967cf61ddac29c2daa834d56b1",
+      "core": 0.0,
+      "count": 27,
+      "edge": 1.0,
+      "maximum": 1.0,
+      "minimum": 0.0
+    }
+  },
+  "reference": {
+    "artifact": "validation/reference_data/torax/torax_basic_config_profiles.json",
+    "final_time_s": 5.0,
+    "profile_checksum_sha256": "21be5f4ecdbcdfe5a5eba2a34d0bce4aa8ac34fb94f57c61c98dc5d68b61986a",
+    "provenance": {
+      "code": "TORAX",
+      "code_url": "https://github.com/google-deepmind/torax",
+      "config_name": "basic_config",
+      "config_sha256": "99397a3242dd414d9120b00de1f6bc3c60834574a12c0d0950390b9c81044f79",
+      "generated_at_utc": "2026-07-04T10:39:47+00:00",
+      "licence": "Apache-2.0",
+      "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "sim_error": "SimError.NO_ERROR",
+      "torax_version": "1.4.3"
+    }
+  },
+  "same_physics_matrix": [
+    {
+      "blocks_threshold_tightening": false,
+      "component": "radial_grid",
+      "evidence": "TORAX rho_norm copied into native solver rho grid.",
+      "status": "shared_ready"
+    },
+    {
+      "blocks_threshold_tightening": false,
+      "component": "initial_profiles",
+      "evidence": "TORAX Te, Ti, and ne copied into native solver units.",
+      "status": "shared_ready"
+    },
+    {
+      "blocks_threshold_tightening": true,
+      "component": "native_transport_model",
+      "evidence": "Native update uses reduced_multichannel_analytic; TORAX transport-model internals are not in the artifact.",
+      "status": "blocked_model_mismatch"
+    },
+    {
+      "blocks_threshold_tightening": true,
+      "component": "sources_and_boundary_conditions",
+      "evidence": "The tracked TORAX artifact contains final profiles and config SHA, not source terms, boundary controls, or a native-compatible input deck.",
+      "status": "blocked_missing_same_deck_controls"
+    },
+    {
+      "blocks_threshold_tightening": true,
+      "component": "time_integration_contract",
+      "evidence": "No redistributable TORAX step-by-step state trace is tracked for matching native one-step or trajectory thresholds.",
+      "status": "blocked_missing_same_step_trace"
+    }
+  ],
+  "same_physics_ready": false,
+  "schema": "scpn-fusion-core.torax-same-physics-config-study.v1",
+  "status": "same_initial_profile_config_ready_thresholds_blocked",
+  "threshold_blockers": [
+    "native_transport_model",
+    "sources_and_boundary_conditions",
+    "time_integration_contract"
+  ],
+  "threshold_tightening_ready": false
+}

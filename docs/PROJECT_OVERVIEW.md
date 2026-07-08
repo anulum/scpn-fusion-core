@@ -107,6 +107,8 @@ core governance pattern across the repository.
   fail-closed validation ledger with source-report checksums and lane blockers.
 - `validation/reports/torax_imas_interchange.md` for the TORAX basic-config
   IMAS `core_profiles` interchange fixture and its unit-conversion boundary.
+- `validation/reports/torax_same_physics_config_study.md` for the TORAX/native
+  initial-profile configuration study and the remaining threshold blockers.
 - `validation/reports/full_fidelity_acceptance_benchmark.md` for acceptance
   blockers.
 - `validation/reports/production_decomposition_contract.md` for decomposition

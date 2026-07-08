@@ -12,7 +12,7 @@
 | Capability documentation pages | 60 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 461 |
+| Python test files | 462 |
 | Public documentation pages | 60 |
 | GitHub Actions workflows | 12 |
 

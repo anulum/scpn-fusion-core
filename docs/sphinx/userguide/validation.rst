@@ -28,12 +28,16 @@ The primary public reports are:
 - ``validation/reports/full_fidelity_acceptance_benchmark.md``
 - ``validation/reports/full_fidelity_reference_artifact_conversion.md``
 - ``validation/reports/torax_imas_interchange.md``
+- ``validation/reports/torax_same_physics_config_study.md``
 - ``validation/reports/production_decomposition_contract.md``
 - ``validation/reports/gk_electromagnetic_fidelity.md``
 
 The TORAX IMAS interchange report validates the tracked TORAX
 ``basic_config`` profile artifact as an IMAS ``core_profiles`` fixture.  It is
 an interchange and unit-conversion gate, not a physics-equivalence threshold.
+The same-physics configuration report initializes the native transport solver
+from those final profiles and records the remaining blockers for threshold
+tightening.
 
 Validation Datasets
 --------------------

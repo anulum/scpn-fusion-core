@@ -59,13 +59,18 @@ Default outputs:
 - ``validation/reference_data/torax/torax_basic_config_core_profiles_ids.json``
 - ``validation/reports/torax_imas_interchange.json``
 - ``validation/reports/torax_imas_interchange.md``
+- ``validation/reports/torax_same_physics_config_study.json``
+- ``validation/reports/torax_same_physics_config_study.md``
 
 Check tracked fixture/report drift::
 
     python validation/torax_imas_interchange.py --check
+    python validation/torax_same_physics_config_study.py --check
 
-This workflow validates data interchange and unit conversion only.  It does
-not promote TORAX physics-equivalence thresholds.
+The interchange workflow validates data interchange and unit conversion only.
+The same-physics configuration study verifies that the TORAX final profiles can
+initialize the native transport solver, then keeps threshold tightening blocked
+on the remaining model/source/time-trace mismatches.
 
 Production Decomposition Contract
 ---------------------------------
