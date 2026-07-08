@@ -41,6 +41,31 @@ near real plant hardware?
 - Teaching the software architecture of control-first fusion simulation.
 - Preparing reference-code parity campaigns against established solvers.
 
+## Ecosystem placement
+
+SCPN Fusion Core is the physics-solver and validation-evidence repository in the
+SCPN ecosystem. It publishes solver contracts, generated capability manifests,
+backend-dispatch evidence, and validation reports that sibling repositories can
+consume without copying solver internals.
+
+The reciprocal boundary matters:
+
+- `scpn-control` owns control-grade facades, replay campaigns, plant-facing
+  safety envelopes, and HIL/CODAC/EPICS/WebSocket integration; it consumes the
+  bounded solver subset exposed here.
+- `scpn-mif-core` owns magneto-inertial workflow integration and hardware-adjacent
+  pulsed-system paths; it consumes FRC solver seams and their evidence status.
+- `scpn-quantum-control` owns quantum execution and quantum-specific benchmark
+  posture; it consumes classical phase and disruption-feature contracts.
+- `scpn-studio` owns Hub routing and user-facing workbench aggregation; it
+  consumes generated manifests, schema-A verbs, evidence schemas, and content
+  digests.
+
+See `docs/ARCHITECTURE.md` for the symmetric ecosystem matrix and the stable
+integration-surface hierarchy. This split prevents a local solver improvement
+from becoming a downstream deployment claim until the consuming repository has
+its own adapter, tests, evidence, and public boundary.
+
 ## Plain-language summary
 
 SCPN Fusion Core is software for asking whether a fusion-plasma control idea can

@@ -33,7 +33,7 @@ a distinct surface; the boundaries are explicit contracts rather than copied cod
 | **`scpn-fusion-core`** (this repo) | **Physics-solver laboratory** | Broad physics kernels, numerical formulation, external-code validation campaigns, facility-data integration, Rust + GPU solver paths, 3D / stellarator / VMEC / free-boundary internals, neural-physics training, and the Petri→SNN control-compiler internals. |
 | `scpn-control` | Control-grade integration + facade | Bounded public control APIs, NMPC / controller-loop integration, replay/campaign metadata, HIL / CODAC / EPICS / WebSocket safety boundaries, traceable claim surfaces. Ports/wraps the control-loop subset of FUSION's physics. |
 | `scpn-quantum-control` | Quantum + phase-dynamics research | Quantum disruption classifiers, Qiskit/PennyLane execution, quantum Kuramoto/UPDE variants. |
-| `scpn-mif-core` | FRC / magneto-inertial fusion | Consumes FUSION's FRC equilibrium / Faraday / compression seams (see [§10](#10-cross-repository-contracts)). |
+| `scpn-mif-core` | FRC / magneto-inertial fusion | Consumes FUSION's FRC equilibrium / Faraday / compression seams (see [§11](#11-cross-repository-contracts)). |
 | `scpn-studio` | Ecosystem hub / verb registry | Consumes per-repo "verbs" + evidence; FUSION is a physics-verb provider. |
 
 A physics model matures **in `scpn-fusion-core` first**; downstream repos wrap the subset that
@@ -413,7 +413,47 @@ each component is, consult the evidence artifacts: `docs/BENCHMARKS.md`,
 
 ---
 
-## 10. Cross-repository contracts
+## 10. Symmetric ecosystem architecture
+
+The SCPN repositories are intentionally asymmetric in implementation depth but symmetric in
+contract responsibility: each repository owns one public boundary and consumes the others through
+documented seams. `scpn-fusion-core` owns physics-solver development and evidence generation; it
+does not own downstream deployment posture, facility interlock policy, quantum execution, MIF
+system integration, or Studio routing. Those boundaries keep a solver improvement from becoming an
+unreviewed deployment claim in another repository.
+
+### 10.1 Responsibility matrix
+
+| Boundary | FUSION owns | Sibling owns | Shared contract |
+|---|---|---|---|
+| Solver-to-control | Physics kernels, solver configuration, accepted/blocked validation reports, backend dispatch telemetry | Control facade, replay campaign shape, controller safety envelope, HIL/CODAC/EPICS/WebSocket integration | Imported solver subset, deterministic replay metadata, report status, and claim boundary |
+| Solver-to-MIF | FRC equilibrium, Faraday recovery, pulsed-compression solver seams, and their evidence gates | Magneto-inertial workflow orchestration, pulsed-system kinematics, RTL/hardware-adjacent paths | FRC public symbols and validation status without duplicated solver mathematics |
+| Classical-to-quantum | Classical phase/disruption feature contracts and local evidence | Quantum circuit/model execution, quantum-specific benchmarks, hardware-provider metadata | Feature schemas, phase/replay inputs, and bounded comparison reports |
+| Solver-to-Studio | Physics verbs, capability manifest, evidence schemas, architecture-map metadata | Hub registry, user-facing routing, Studio workbench UX, cross-repo aggregation | Generated Studio manifest, schema-A verbs, content digests, and evidence links |
+
+The symmetric rule is operational: if a change alters a shared contract, this repository updates
+the FUSION side of the contract, evidence references, and public docs in the same commit. The
+sibling repository remains responsible for its facade, runtime adapter, or user workflow. Where a
+contract has not been reconciled, public docs must say that the row is blocked or diagnostic rather
+than implying downstream readiness.
+
+### 10.2 Integration surface hierarchy
+
+Consumers should prefer the narrowest stable surface that satisfies the use case:
+
+1. **Generated manifests and reports** for discovery, claim status, evidence schemas, and Studio
+   ingestion.
+2. **Public CLI modes** for reproducible runs whose command line, inputs, and outputs can be
+   recorded.
+3. **Domain subpackages** for Python integrations that need solver objects or adapters directly.
+4. **Dispatcher kernels and IO seams** for native/runtime integrations that need backend selection,
+   fallback telemetry, GEQDSK, IMAS, NPZ, or JSON contracts.
+
+Internal `_` modules, gitignored TODO/planning files, and un-reconciled native exports are not
+sibling integration contracts. A sibling may inspect them while planning, but a public dependency
+needs a documented seam, tests, and evidence references before it becomes an ecosystem contract.
+
+## 11. Cross-repository contracts
 
 What `scpn-fusion-core` provides to siblings:
 

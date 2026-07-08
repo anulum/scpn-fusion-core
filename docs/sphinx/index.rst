@@ -95,6 +95,7 @@ Public Documentation Hubs
 -------------------------
 
 - `Project overview <../PROJECT_OVERVIEW.md>`_
+- `Architecture and ecosystem contracts <../ARCHITECTURE.md>`_
 - `Architecture decisions <../ARCHITECTURE_DECISIONS.md>`_
 - `Onboarding guide <../ONBOARDING.md>`_
 - `API overview <../API_OVERVIEW.md>`_
