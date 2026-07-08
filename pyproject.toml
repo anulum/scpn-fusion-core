@@ -263,6 +263,8 @@ files = [
     "tests/test_ci_rmse_gate.py",
     "tools/check_disruption_shot_splits.py",
     "tests/test_check_disruption_shot_splits.py",
+    "tools/check_freegs_strict_artifact.py",
+    "tests/test_check_freegs_strict_artifact.py",
     "tools/mypy_expansion_guard.py",
     "tests/test_mypy_expansion_guard.py",
     "tools/export_zenodo_dataset.py",

@@ -102,8 +102,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--summary-json", default=str(DEFAULT_SUMMARY))
     args = parser.parse_args(argv)
 
-    report = _load_json(_resolve(args.report))
-    summary = evaluate(report)
+    try:
+        report = _load_json(_resolve(args.report))
+        summary = evaluate(report)
+    except ValueError as exc:
+        print(f"FreeGS strict artifact guard failed: {exc}")
+        return 1
 
     summary_path = _resolve(args.summary_json)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
