@@ -22,7 +22,7 @@ import numpy as np
 
 
 try:
-    import optuna  # type: ignore[import-not-found]
+    import optuna
 
     HAS_OPTUNA = True  # pragma: no cover - optional optuna hyperparameter engine
 except ImportError:
@@ -35,11 +35,13 @@ DEFAULT_HINF_PARAMS = {"gamma": 1.1, "bandwidth": 0.5}
 
 
 def _require_positive_int(name: str, value: int) -> None:
+    """Reject non-positive integer tuning controls."""
     if value < 1:
         raise ValueError(f"{name} must be at least 1")
 
 
 def _require_pid_environment(env: Any) -> None:
+    """Validate that a PID tuning target exposes reset and step methods."""
     missing = [name for name in ("reset", "step") if not callable(getattr(env, name, None))]
     if missing:
         joined = ", ".join(missing)
@@ -47,6 +49,7 @@ def _require_pid_environment(env: Any) -> None:
 
 
 def _reset_observation(env: Any) -> Any:
+    """Return the observation component from Gym or Gymnasium reset output."""
     result = env.reset()
     if isinstance(result, tuple):
         if not result:
@@ -56,6 +59,7 @@ def _reset_observation(env: Any) -> Any:
 
 
 def _tracking_error(obs: Any) -> float:
+    """Extract a finite scalar tracking error from the leading observation value."""
     try:
         error = float(obs[0])
     except (IndexError, TypeError, ValueError) as exc:
@@ -66,6 +70,7 @@ def _tracking_error(obs: Any) -> float:
 
 
 def _step_environment(env: Any, action: Any) -> tuple[Any, bool]:
+    """Step a Gym or Gymnasium environment and normalize its done flag."""
     result = env.step(action)
     if not isinstance(result, tuple):
         raise ValueError("environment step must return a tuple")
@@ -79,6 +84,7 @@ def _step_environment(env: Any, action: Any) -> tuple[Any, bool]:
 
 
 def _action_bounds(env: Any) -> tuple[float | None, float | None]:
+    """Return scalar action bounds when the environment exposes them."""
     action_space = getattr(env, "action_space", None)
     if action_space is None:
         return None, None
@@ -97,6 +103,7 @@ def _action_bounds(env: Any) -> tuple[float | None, float | None]:
 
 
 def _format_pid_action(env: Any, command: float) -> Any:
+    """Clip and shape a scalar PID command for the environment action space."""
     lower, upper = _action_bounds(env)
     if lower is not None or upper is not None:
         low = -np.inf if lower is None else lower
@@ -121,6 +128,7 @@ def _pid_rollout_score(
     n_episodes: int,
     max_steps: int,
 ) -> float:
+    """Score PID gains by averaged integral absolute tracking error."""
     total_iae = 0.0
 
     for _ in range(n_episodes):
