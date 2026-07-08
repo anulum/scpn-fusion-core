@@ -458,7 +458,7 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "645f13617e2729b3fe709091ff5f28f2aca5eac9",
+          "source_commit": "20e3528e759a8179d80dcf1abfdd9dcce9db3a93",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
           "numpy_version": "1.26.4",
@@ -936,7 +936,7 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "645f13617e2729b3fe709091ff5f28f2aca5eac9",
+          "source_commit": "20e3528e759a8179d80dcf1abfdd9dcce9db3a93",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
           "numpy_version": "1.26.4",
@@ -1414,7 +1414,7 @@
           "uncertainty_scale": 0.12
         },
         "provenance": {
-          "source_commit": "645f13617e2729b3fe709091ff5f28f2aca5eac9",
+          "source_commit": "20e3528e759a8179d80dcf1abfdd9dcce9db3a93",
           "python_version": "3.12.3",
           "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
           "numpy_version": "1.26.4",

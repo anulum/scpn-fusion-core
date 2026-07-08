@@ -11,8 +11,23 @@
     "claim_boundary",
     "full_pcs_production_grade_ready",
     "SPDX-License-Identifier",
-    "benchmark_id",
-    "vertical_control_replay_benchmark"
+    "benchmark_id"
+  ],
+  "oneOf": [
+    {
+      "required": ["vertical_control_replay_benchmark"],
+      "properties": {
+        "benchmark_id": {"const": "vertical_control_replay_benchmark"}
+      },
+      "not": {"required": ["vertical_control_replay_profile_suite"]}
+    },
+    {
+      "required": ["vertical_control_replay_profile_suite"],
+      "properties": {
+        "benchmark_id": {"const": "vertical_control_replay_profile_suite"}
+      },
+      "not": {"required": ["vertical_control_replay_benchmark"]}
+    }
   ],
   "properties": {
     "schema": {
@@ -38,7 +53,10 @@
       "const": "AGPL-3.0-or-later"
     },
     "benchmark_id": {
-      "const": "vertical_control_replay_benchmark"
+      "enum": [
+        "vertical_control_replay_benchmark",
+        "vertical_control_replay_profile_suite"
+      ]
     },
     "vertical_control_replay_benchmark": {
       "type": "object",
@@ -365,6 +383,52 @@
         "release_gate": {"$ref": "#/$defs/release_gate"},
         "passes_thresholds": {"type": "boolean"}
       }
+    },
+    "vertical_control_replay_profile_suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "profile_ids",
+        "reports",
+        "all_profiles_pass",
+        "trace_integrity",
+        "release_gate"
+      ],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "profile_ids": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "compact_tokamak"},
+            {"const": "diii_d_like"},
+            {"const": "iter_like"}
+          ],
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "reports": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["compact_tokamak", "diii_d_like", "iter_like"],
+          "properties": {
+            "compact_tokamak": {"$ref": "#/properties/vertical_control_replay_benchmark"},
+            "diii_d_like": {"$ref": "#/properties/vertical_control_replay_benchmark"},
+            "iter_like": {"$ref": "#/properties/vertical_control_replay_benchmark"}
+          }
+        },
+        "all_profiles_pass": {"type": "boolean"},
+        "trace_integrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profile_trace_checksum_sha256", "profile_count"],
+          "properties": {
+            "profile_trace_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "profile_count": {"const": 3}
+          }
+        },
+        "release_gate": {"$ref": "#/$defs/profile_suite_release_gate"}
+      }
     }
   },
   "$defs": {
@@ -547,6 +611,57 @@
             "fault_diagnostic_lane_ready": {"type": "boolean"},
             "deterministic_trace_checksums_ready": {"type": "boolean"},
             "multi_profile_replay_ready": {"const": false}
+          }
+        },
+        "blockers": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "profile_suite_release_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate_id",
+        "claim_boundary",
+        "status",
+        "reduced_order_release_gate_ready",
+        "full_pcs_production_grade_ready",
+        "checks",
+        "blockers"
+      ],
+      "properties": {
+        "gate_id": {"const": "vertical_control_replay_release_gate"},
+        "claim_boundary": {"const": "deterministic_reduced_order_RZIP_replay_not_full_PCS"},
+        "status": {
+          "enum": [
+            "accepted_reduced_order_replay_release_gate",
+            "blocked_vertical_replay_release_gate"
+          ]
+        },
+        "reduced_order_release_gate_ready": {"type": "boolean"},
+        "full_pcs_production_grade_ready": {"const": false},
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "strict_schema_validation_ready",
+            "multi_profile_replay_ready",
+            "deterministic_replay_ready",
+            "deterministic_trace_checksums_ready",
+            "uncertainty_envelope_ready",
+            "actuator_saturation_contract_ready",
+            "fault_diagnostic_lane_ready"
+          ],
+          "properties": {
+            "strict_schema_validation_ready": {"type": "boolean"},
+            "multi_profile_replay_ready": {"type": "boolean"},
+            "deterministic_replay_ready": {"type": "boolean"},
+            "deterministic_trace_checksums_ready": {"type": "boolean"},
+            "uncertainty_envelope_ready": {"type": "boolean"},
+            "actuator_saturation_contract_ready": {"type": "boolean"},
+            "fault_diagnostic_lane_ready": {"type": "boolean"}
           }
         },
         "blockers": {

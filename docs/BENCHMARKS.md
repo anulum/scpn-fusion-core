@@ -1255,14 +1255,18 @@ recorded in the latest strict run:
 
 - `python validation/vertical_control_replay_benchmark.py --strict`
 - `python validation/vertical_control_replay_benchmark.py --all-profiles --strict`
-- strict JSON schema validation in `tests/test_vertical_control_replay_benchmark.py`
+- strict JSON schema validation for both the single-profile and profile-suite JSON payloads in
+  `tests/test_vertical_control_replay_benchmark.py`
 - deterministic replay checksums (`deterministic_replay_pass == true` and deterministic trajectory checksums in both JSON payloads)
 - uncertainty envelope checks (`passes_thresholds == true`, `all_profiles_pass == true`)
 - explicit saturation/fault semantics (`no_control` remains diagnostic-only and fails acceptance)
 - CI provenance gate in `.github/workflows/ci.yml` `benchmark-provenance-smoke`
 - report review of generated Markdown artifacts under `validation/reports/vertical_control_replay_benchmark.md` and `validation/reports/vertical_control_replay_profiles.md`
 
-The latest profile-suite JSON now includes an explicit `release_gate` object.
+The latest single-profile JSON uses `benchmark_id == vertical_control_replay_benchmark`, and the
+latest profile-suite JSON uses `benchmark_id == vertical_control_replay_profile_suite`; both
+payloads validate against `schemas/vertical_control_replay_benchmark.schema.json`. The latest
+profile-suite JSON includes an explicit `release_gate` object.
 When it reports `accepted_reduced_order_replay_release_gate`, the accepted claim
 is still limited to deterministic reduced-order RZIP replay. The JSON also
 keeps `full_pcs_production_grade_ready == false`; this lane is not a full PCS

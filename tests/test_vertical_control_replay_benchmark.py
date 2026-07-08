@@ -190,13 +190,45 @@ def test_invalid_contract_values_are_rejected() -> None:
     with pytest.raises(ValueError, match="n_steps"):
         vertical_control_replay_benchmark.run_benchmark(scenario=scenario)
 
+    nonfinite = vertical_control_replay_benchmark.ReplayScenario(dt_s=float("nan"))
+    with pytest.raises(ValueError, match="dt_s must be finite"):
+        vertical_control_replay_benchmark.run_benchmark(scenario=nonfinite)
+
+    bad_disturbance = vertical_control_replay_benchmark.ReplayScenario(
+        disturbance_start_step=130,
+        disturbance_stop_step=60,
+    )
+    with pytest.raises(ValueError, match="disturbance steps"):
+        vertical_control_replay_benchmark.run_benchmark(scenario=bad_disturbance)
+
     limits = vertical_control_replay_benchmark.ActuatorLimits(max_abs_command=0.0)
     with pytest.raises(ValueError, match="max_abs_command"):
         vertical_control_replay_benchmark.run_benchmark(actuator_limits=limits)
 
+    bad_slew = vertical_control_replay_benchmark.ActuatorLimits(max_slew_per_step=0.0)
+    with pytest.raises(ValueError, match="max_slew_per_step"):
+        vertical_control_replay_benchmark.run_benchmark(actuator_limits=bad_slew)
+
+    blank_profile = vertical_control_replay_benchmark.MachineProfile(profile_id=" ")
+    with pytest.raises(ValueError, match="profile_id"):
+        vertical_control_replay_benchmark.run_benchmark(machine_profile=blank_profile)
+
     profile = vertical_control_replay_benchmark.MachineProfile(profile_id="bad", provenance="")
     with pytest.raises(ValueError, match="provenance"):
         vertical_control_replay_benchmark.run_benchmark(machine_profile=profile)
+
+
+def test_validation_helpers_fail_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify checksum, controller, and provenance helpers fail closed."""
+    assert not vertical_control_replay_benchmark._is_sha256("not-a-digest")
+    with pytest.raises(ValueError, match="unknown controller_id"):
+        vertical_control_replay_benchmark._controller_factory("missing")
+
+    def raise_os_error(*_args: object, **_kwargs: object) -> None:
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(vertical_control_replay_benchmark.subprocess, "run", raise_os_error)
+    assert vertical_control_replay_benchmark._source_commit() == "unknown"
 
 
 def test_machine_profiles_are_available_and_change_replay_contract() -> None:
@@ -227,6 +259,11 @@ def test_json_schema_contains_required_contract_keys() -> None:
     schema_path = ROOT / "schemas" / "vertical_control_replay_benchmark.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     assert schema["title"] == "SCPN Fusion Core Vertical Control Replay Benchmark"
+    assert len(schema["oneOf"]) == 2
+    assert schema["properties"]["benchmark_id"]["enum"] == [
+        "vertical_control_replay_benchmark",
+        "vertical_control_replay_profile_suite",
+    ]
     required = set(schema["properties"]["vertical_control_replay_benchmark"]["required"])
     assert {
         "schema_version",
@@ -252,6 +289,20 @@ def test_json_schema_contains_required_contract_keys() -> None:
         ]
         is False
     )
+    suite = schema["properties"]["vertical_control_replay_profile_suite"]
+    assert suite["additionalProperties"] is False
+    assert set(suite["required"]) == {
+        "schema_version",
+        "profile_ids",
+        "reports",
+        "all_profiles_pass",
+        "trace_integrity",
+        "release_gate",
+    }
+    assert (
+        suite["properties"]["reports"]["properties"]["iter_like"]["$ref"]
+        == "#/properties/vertical_control_replay_benchmark"
+    )
 
 
 def test_report_validates_against_committed_json_schema() -> None:
@@ -262,6 +313,57 @@ def test_report_validates_against_committed_json_schema() -> None:
 
     JSONSCHEMA.Draft202012Validator.check_schema(schema)
     JSONSCHEMA.Draft202012Validator(schema).validate(report)
+
+
+def test_profile_suite_report_validates_against_committed_json_schema() -> None:
+    """Verify the generated profile-suite report validates against the schema."""
+    schema_path = ROOT / "schemas" / "vertical_control_replay_benchmark.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    report = vertical_control_replay_benchmark.run_profile_suite()
+
+    JSONSCHEMA.Draft202012Validator.check_schema(schema)
+    JSONSCHEMA.Draft202012Validator(schema).validate(report)
+    suite = report["vertical_control_replay_profile_suite"]
+    assert suite["release_gate"]["checks"]["strict_schema_validation_ready"] is True
+
+
+def test_tracked_reports_validate_against_committed_json_schema() -> None:
+    """Verify committed vertical replay JSON reports match their schema branch."""
+    schema_path = ROOT / "schemas" / "vertical_control_replay_benchmark.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    validator = JSONSCHEMA.Draft202012Validator(schema)
+    single = json.loads(
+        (ROOT / "validation" / "reports" / "vertical_control_replay_benchmark.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    suite = json.loads(
+        (ROOT / "validation" / "reports" / "vertical_control_replay_profiles.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    validator.validate(single)
+    validator.validate(suite)
+    assert single["benchmark_id"] == "vertical_control_replay_benchmark"
+    assert suite["benchmark_id"] == "vertical_control_replay_profile_suite"
+
+
+def test_schema_rejects_mixed_single_and_profile_suite_payload() -> None:
+    """Verify the schema accepts exactly one vertical replay payload shape."""
+    schema_path = ROOT / "schemas" / "vertical_control_replay_benchmark.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    single = vertical_control_replay_benchmark.run_benchmark()
+    suite = vertical_control_replay_benchmark.run_profile_suite()
+    mixed = {
+        **suite,
+        "benchmark_id": "vertical_control_replay_profile_suite",
+        "vertical_control_replay_benchmark": single["vertical_control_replay_benchmark"],
+    }
+
+    JSONSCHEMA.Draft202012Validator.check_schema(schema)
+    with pytest.raises(JSONSCHEMA.ValidationError):
+        JSONSCHEMA.Draft202012Validator(schema).validate(mixed)
 
 
 def test_cli_writes_json_and_markdown_reports(tmp_path: Path) -> None:
@@ -335,3 +437,105 @@ def test_cli_all_profiles_writes_multi_profile_report(tmp_path: Path) -> None:
     assert "## Profile suite" in markdown
     assert "- Status: `accepted_reduced_order_replay_release_gate`" in markdown
     assert "- Full PCS production-grade ready: `NO`" in markdown
+
+
+def test_markdown_renderers_expose_review_sections() -> None:
+    """Verify direct Markdown renderers expose single and profile-suite evidence."""
+    single = vertical_control_replay_benchmark.run_benchmark()
+    suite = vertical_control_replay_benchmark.run_profile_suite()
+
+    single_markdown = vertical_control_replay_benchmark.render_markdown(single)
+    suite_markdown = vertical_control_replay_benchmark.render_profile_suite_markdown(suite)
+
+    assert "## Post-disturbance relaxation" in single_markdown
+    assert "| no_control |" in single_markdown
+    assert "## Profile suite" in suite_markdown
+    assert "| compact_tokamak |" in suite_markdown
+
+
+def test_main_writes_reports_without_subprocess(tmp_path: Path) -> None:
+    """Verify the CLI entrypoint writes both report shapes in-process."""
+    single_json = tmp_path / "single.json"
+    single_md = tmp_path / "single.md"
+    suite_json = tmp_path / "suite.json"
+    suite_md = tmp_path / "suite.md"
+
+    assert (
+        vertical_control_replay_benchmark.main(
+            [
+                "--output-json",
+                str(single_json),
+                "--output-md",
+                str(single_md),
+                "--strict",
+            ]
+        )
+        == 0
+    )
+    assert (
+        vertical_control_replay_benchmark.main(
+            [
+                "--all-profiles",
+                "--output-json",
+                str(suite_json),
+                "--output-md",
+                str(suite_md),
+                "--strict",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(single_json.read_text(encoding="utf-8"))["benchmark_id"] == (
+        "vertical_control_replay_benchmark"
+    )
+    assert json.loads(suite_json.read_text(encoding="utf-8"))["benchmark_id"] == (
+        "vertical_control_replay_profile_suite"
+    )
+    assert "Post-disturbance relaxation" in single_md.read_text(encoding="utf-8")
+    assert "Profile suite" in suite_md.read_text(encoding="utf-8")
+
+
+def test_main_strict_returns_failure_for_blocked_payloads(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Verify strict CLI mode exits non-zero when generated gates fail."""
+    failing_single = vertical_control_replay_benchmark.run_benchmark()
+    failing_suite = vertical_control_replay_benchmark.run_profile_suite()
+    failing_single["vertical_control_replay_benchmark"]["passes_thresholds"] = False
+    monkeypatch.setattr(
+        vertical_control_replay_benchmark,
+        "run_benchmark",
+        lambda: failing_single,
+    )
+    assert (
+        vertical_control_replay_benchmark.main(
+            [
+                "--output-json",
+                str(tmp_path / "single-fail.json"),
+                "--output-md",
+                str(tmp_path / "single-fail.md"),
+                "--strict",
+            ]
+        )
+        == 2
+    )
+
+    failing_suite["vertical_control_replay_profile_suite"]["all_profiles_pass"] = False
+    monkeypatch.setattr(
+        vertical_control_replay_benchmark,
+        "run_profile_suite",
+        lambda: failing_suite,
+    )
+    assert (
+        vertical_control_replay_benchmark.main(
+            [
+                "--all-profiles",
+                "--output-json",
+                str(tmp_path / "suite-fail.json"),
+                "--output-md",
+                str(tmp_path / "suite-fail.md"),
+                "--strict",
+            ]
+        )
+        == 2
+    )

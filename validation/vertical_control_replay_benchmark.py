@@ -1110,7 +1110,6 @@ def render_profile_suite_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run the vertical control replay benchmark from CLI arguments."""
     """CLI entrypoint for vertical control replay benchmark with optional profile suite."""
 
     parser = argparse.ArgumentParser(description=__doc__)
@@ -1170,4 +1169,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())  # pragma: no cover
