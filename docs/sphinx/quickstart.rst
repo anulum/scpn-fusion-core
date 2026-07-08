@@ -12,14 +12,31 @@ Choose the Right First Run
 
 Use ``scpn-fusion kernel`` when you want a fast equilibrium smoke test. Use
 ``python validation/full_fidelity_end_to_end_campaign.py`` when you want the
-current evidence-bound maturity report. Use the notebooks when you want a
-learning path, not production parity evidence.
+current evidence-bound maturity report. Use ``scpn-fusion repro --full`` when
+you need one command to refresh the checksummed evidence bundle. Use the
+notebooks when you want a learning path, not production parity evidence.
 
 The shortest sensible path is:
 
 1. run a smoke command,
 2. inspect the generated or tracked report,
 3. follow the linked evidence surface before quoting a result.
+
+
+Hero Demo and Evidence Refresh
+------------------------------
+
+For the shortest reviewable first run, execute the minimal equilibrium demo and
+then refresh the fail-closed evidence bundle::
+
+    python examples/minimal.py --grid 17 --equilibrium-iters 4
+    scpn-fusion repro --full
+
+The demo exercises a compact local equilibrium path.  The reproduction command
+refreshes ``validation/reports/full_reproduction_evidence.json`` and
+``validation/reports/full_reproduction_evidence.md``.  A healthy current run can
+still report ``not_full_fidelity``; that status means the blocker ledger is
+preserved until external same-case reference artifacts exist.
 
 
 Solve a Grad-Shafranov Equilibrium
@@ -74,6 +91,11 @@ campaign first::
 This report is intentionally conservative.  Local contracts can pass while the
 overall campaign remains ``not_full_fidelity`` until same-case public outputs
 from external reference solvers are available.
+
+To refresh the campaign, public ledger, and per-report SHA-256 evidence in one
+step::
+
+    scpn-fusion repro --full
 
 Generate an RMSE dashboard report comparing computed confinement times
 against the ITPA H-mode database and SPARC equilibrium topology::
@@ -213,6 +235,9 @@ Available Simulation Modes
    * - ``geometry``
      - 3D flux-surface geometry
      - Reduced-order
+   * - ``repro --full``
+     - Checksummed full-reproduction evidence wrapper
+     - Fail-closed evidence
 
 Tutorial Notebooks
 ------------------

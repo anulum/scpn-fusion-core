@@ -59,6 +59,25 @@ For running the test suite, linters, and building documentation::
 
 The ``[dev]`` extra installs test/type-check tooling only.
 
+Pinned Review Install
+---------------------
+
+For release review, external reproduction, or onboarding where dependency drift
+must be minimized, use the hash-pinned lock files under ``requirements/`` before
+installing the editable source tree.  The Python 3.12 minimal path is::
+
+    python -m venv .venv
+    . .venv/bin/activate
+    python -m pip install --upgrade pip
+    python -m pip install --require-hashes -r requirements/minimal.txt
+    python -m pip install --no-deps -e .
+
+Use ``requirements/docs.txt`` for documentation-only work and
+``requirements/ci-py312.txt`` for CI-equivalent Python 3.12 review.  These files
+are generated from ``requirements/*.in`` by ``tools/regenerate-requirements.sh``
+with hashes enabled; edit the ``.in`` files first, then regenerate the locked
+``.txt`` outputs.
+
 Rust Kernel Build (Optional)
 -----------------------------
 

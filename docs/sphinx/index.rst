@@ -89,6 +89,7 @@ Key Features
    :caption: Getting Started
 
    installation
+   onboarding
    quickstart
 
 Public Documentation Hubs

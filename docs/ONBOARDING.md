@@ -37,6 +37,18 @@ For development tools:
 pip install -e '.[dev]'
 ```
 
+For release review or first-run reproduction with dependency drift minimized,
+use the hash-pinned lock files before the editable install:
+
+```bash
+python -m pip install --require-hashes -r requirements/minimal.txt
+python -m pip install --no-deps -e .
+```
+
+Use `requirements/docs.txt` for documentation-only work and
+`requirements/ci-py312.txt` for CI-equivalent Python 3.12 review. Regenerate
+locked files only through `tools/regenerate-requirements.sh`.
+
 Optional accelerator and distributed lanes require additional packages such as
 Rust, maturin, mpi4py, CuPy, CUDA runtime libraries, or external reference
 solvers. Those are optional unless you are running the corresponding benchmark.
@@ -71,6 +83,9 @@ as failures to hide. The reproduction command writes
 `validation/reports/full_reproduction_evidence.json` and
 `validation/reports/full_reproduction_evidence.md` with source-report SHA-256
 checksums so reviewers can audit exactly which generated evidence was refreshed.
+The minimal example plus `scpn-fusion repro --full` is the canonical hero-demo
+path for first-time review because it pairs a compact local run with the
+checksummed evidence ledger.
 
 ## 3. Understand the product in one pass
 
