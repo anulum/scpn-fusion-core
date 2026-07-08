@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — IMAS Connector OMAS Bridge
-"""OMAS compatibility layer for equilibrium IDS payloads."""
+"""OMAS compatibility layer for supported IDS payloads."""
 
 from __future__ import annotations
 
@@ -139,8 +139,109 @@ def omas_equilibrium_to_ids(ods: Any) -> dict[str, Any]:
     return ids_dict
 
 
+def ids_to_omas_core_profiles(ids_dict: Mapping[str, Any]) -> Any:
+    """Convert an IMAS ``core_profiles`` IDS dict to an OMAS ODS."""
+    if not HAS_OMAS or omas is None:
+        raise ImportError(
+            "The 'omas' package is required for OMAS conversion. Install with: pip install omas"
+        )
+
+    ods = omas.ODS()
+    return _populate_omas_core_profiles(ods, ids_dict)
+
+
+def _populate_omas_core_profiles(ods: Any, ids_dict: Mapping[str, Any]) -> Any:
+    """Populate an ODS-like mapping with ``core_profiles`` data."""
+    props = ids_dict.get("ids_properties", {})
+    if isinstance(props, Mapping):
+        ods["core_profiles.ids_properties.homogeneous_time"] = props.get("homogeneous_time", 1)
+        ods["core_profiles.ids_properties.comment"] = props.get("comment", "")
+    else:
+        ods["core_profiles.ids_properties.homogeneous_time"] = 1
+        ods["core_profiles.ids_properties.comment"] = ""
+
+    time_arr = ids_dict.get("time", [0.0])
+    ods["core_profiles.time"] = np.asarray(time_arr, dtype=np.float64)
+
+    profiles = ids_dict.get("profiles_1d", [])
+    if not isinstance(profiles, list):
+        raise ValueError("core_profiles IDS profiles_1d must be a list.")
+    for i, profile in enumerate(profiles):
+        if not isinstance(profile, Mapping):
+            raise ValueError("core_profiles profiles_1d entries must be mappings.")
+        prefix = f"core_profiles.profiles_1d.{i}"
+        ods[f"{prefix}.time"] = float(profile.get("time", 0.0))
+        grid = profile.get("grid", {})
+        if isinstance(grid, Mapping):
+            ods[f"{prefix}.grid.rho_tor_norm"] = np.asarray(
+                grid.get("rho_tor_norm", []), dtype=np.float64
+            )
+        electrons = profile.get("electrons", {})
+        if isinstance(electrons, Mapping):
+            ods[f"{prefix}.electrons.temperature"] = np.asarray(
+                electrons.get("temperature", []), dtype=np.float64
+            )
+            ods[f"{prefix}.electrons.density"] = np.asarray(
+                electrons.get("density", []), dtype=np.float64
+            )
+    return ods
+
+
+def omas_core_profiles_to_ids(ods: Any) -> dict[str, Any]:
+    """Convert OMAS ODS ``core_profiles`` data back to an IDS dict."""
+    if not HAS_OMAS:
+        raise ImportError("The 'omas' package is required for OMAS conversion.")
+    return _omas_core_profiles_to_ids_unchecked(ods)
+
+
+def _omas_core_profiles_to_ids_unchecked(ods: Any) -> dict[str, Any]:
+    """Convert an ODS-like mapping to a ``core_profiles`` IDS dict."""
+    ids_dict: dict[str, Any] = {
+        "ids_properties": {
+            "homogeneous_time": int(ods.get("core_profiles.ids_properties.homogeneous_time", 1)),
+            "comment": str(ods.get("core_profiles.ids_properties.comment", "")),
+        }
+    }
+
+    time_val = ods.get("core_profiles.time", np.array([0.0]))
+    ids_dict["time"] = time_val.tolist() if hasattr(time_val, "tolist") else [float(time_val)]
+
+    profiles_1d: list[dict[str, Any]] = []
+    i = 0
+    while True:
+        prefix = f"core_profiles.profiles_1d.{i}"
+        rho = ods.get(f"{prefix}.grid.rho_tor_norm", None)
+        if rho is None:
+            break
+        temperature = ods.get(f"{prefix}.electrons.temperature", None)
+        density = ods.get(f"{prefix}.electrons.density", None)
+        profile = {
+            "time": float(ods.get(f"{prefix}.time", 0.0)),
+            "grid": {
+                "rho_tor_norm": np.asarray(rho, dtype=np.float64).tolist(),
+            },
+            "electrons": {
+                "temperature": (
+                    np.asarray(temperature, dtype=np.float64).tolist()
+                    if temperature is not None
+                    else []
+                ),
+                "density": (
+                    np.asarray(density, dtype=np.float64).tolist() if density is not None else []
+                ),
+            },
+        }
+        profiles_1d.append(profile)
+        i += 1
+
+    ids_dict["profiles_1d"] = profiles_1d
+    return ids_dict
+
+
 __all__ = [
     "HAS_OMAS",
     "ids_to_omas_equilibrium",
+    "ids_to_omas_core_profiles",
     "omas_equilibrium_to_ids",
+    "omas_core_profiles_to_ids",
 ]

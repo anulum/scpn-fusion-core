@@ -206,7 +206,7 @@ The repository can ingest the following external formats:
 |---|---|---|
 | **GEQDSK / EQDSK** (EFIT) | `core/eqdsk.py`, `io/tokamak_archive_profiles` | poloidal flux ψ(R,Z), 1-D profiles (fpol, pres, q, pprime, ffprime), boundary/limiter |
 | **IMAS IDS (JSON)** | `io/imas_connector*` (facade + common/equilibrium/transport/digital_twin/storage) | equilibrium, core_profiles, core_transport, summary IDS structures |
-| **OMAS** (optional) | `io/imas_connector_omas` | bridge to the ITER OMAS data structures (gated, soft import) |
+| **OMAS** (optional) | `io/imas_connector_omas` | bridge to ITER OMAS equilibrium and core-profile data structures (gated, soft import) |
 | **NPZ** | `io/tokamak_disruption_archive`, `tokamak_synthetic_archive`, weights loaders | shot time-series, disruption flags, neural weights (loaded via DoS-bounded `safe_loaders`, no pickle) |
 | **ITPA CSV** | `io/tokamak_archive` | H-mode confinement reference (Ip, BT, H98y2, κ, δ, τ_E) |
 | **MDSplus (live)** | `io/tokamak_archive.fetch_mdsplus_profiles` | live facility data (β_N, q95, τ_E, contours, toroidal modes) — optional dependency |
@@ -221,7 +221,7 @@ The repository can ingest the following external formats:
 
 | Format | Producer | Content |
 |---|---|---|
-| **IMAS IDS (JSON)** | `io/imas_connector_storage.write_ids` | serialized equilibrium/core_profiles/summary/core_transport IDS |
+| **IMAS IDS (JSON)** | `io/imas_connector_storage.write_ids`, `validation/torax_imas_interchange.py` | serialized equilibrium/core_profiles/summary/core_transport IDS, including the tracked TORAX basic-config `core_profiles` fixture |
 | **GEQDSK** | `core/eqdsk.write_geqdsk` | EFIT-format equilibrium |
 | **`.scpnctl.json`** | `scpn/artifact.save_artifact` | compiled SNN controller artifact (topology + weights + readout + packed bitstreams) |
 | **NPZ** | surrogate/training modules | neural weights, surrogate datasets |

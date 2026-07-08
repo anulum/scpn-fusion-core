@@ -1,0 +1,42 @@
+{
+  "claim_boundary": "This artifact validates deterministic TORAX profile interchange into IMAS core_profiles. It does not tighten TORAX-vs-native physics equivalence thresholds.",
+  "imas_fixture": {
+    "artifact": "validation/reference_data/torax/torax_basic_config_core_profiles_ids.json",
+    "ids_checksum_sha256": "4a40417223d8de9776cc9d479e49c526cc65e2226504322d99e213b367c67e02",
+    "ids_type": "core_profiles",
+    "profile_count": 27,
+    "unit_conversions": {
+      "electron_density": "TORAX n_e_m3 -> IMAS electrons.density m^-3",
+      "electron_temperature": "TORAX T_e_keV * 1000 -> IMAS electrons.temperature eV",
+      "radial_grid": "TORAX rho_norm -> IMAS grid.rho_tor_norm"
+    }
+  },
+  "omas_bridge": {
+    "available": true,
+    "roundtrip_checksum_sha256": "fb8dd19f04e354ce2da769b4d39daa227f46757dfa2f6911cbf8befafffc6378",
+    "roundtrip_executed": true,
+    "status": "roundtrip_passed"
+  },
+  "passes_thresholds": true,
+  "physics_equivalence_claimed": false,
+  "reference": {
+    "artifact": "validation/reference_data/torax/torax_basic_config_profiles.json",
+    "final_time_s": 5.0,
+    "profile_checksum_sha256": "21be5f4ecdbcdfe5a5eba2a34d0bce4aa8ac34fb94f57c61c98dc5d68b61986a",
+    "provenance": {
+      "code": "TORAX",
+      "code_url": "https://github.com/google-deepmind/torax",
+      "config_name": "basic_config",
+      "config_sha256": "99397a3242dd414d9120b00de1f6bc3c60834574a12c0d0950390b9c81044f79",
+      "generated_at_utc": "2026-07-04T10:39:47+00:00",
+      "licence": "Apache-2.0",
+      "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "sim_error": "SimError.NO_ERROR",
+      "torax_version": "1.4.3"
+    },
+    "schema": "scpn-fusion-core.torax-reference-profiles.v1"
+  },
+  "schema": "scpn-fusion-core.torax-imas-interchange.v1",
+  "status": "torax_core_profiles_imas_fixture_ready"
+}

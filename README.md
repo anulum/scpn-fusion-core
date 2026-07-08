@@ -132,7 +132,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 60 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 460 |
+| Python test files | 461 |
 | Public documentation pages | 60 |
 | GitHub Actions workflows | 12 |
 
@@ -822,6 +822,13 @@ Validation artifacts:
   [`validation/reports/full_fidelity_validation_ledger.md`](validation/reports/full_fidelity_validation_ledger.md);
   it is emitted by `validation/full_fidelity_end_to_end_campaign.py` and remains
   fail-closed while any production-parity lane is blocked.
+- The TORAX basic-config reference is exported as an IMAS `core_profiles`
+  fixture at
+  [`validation/reference_data/torax/torax_basic_config_core_profiles_ids.json`](validation/reference_data/torax/torax_basic_config_core_profiles_ids.json),
+  with interchange evidence in
+  [`validation/reports/torax_imas_interchange.md`](validation/reports/torax_imas_interchange.md).
+  This validates data interchange only; it does not promote TORAX physics
+  equivalence thresholds.
 - FAIR validation-pack readiness is tracked in
   [`validation/reports/fair_validation_packs.md`](validation/reports/fair_validation_packs.md);
   `tools/export_zenodo_dataset.py` exports the local pack directories and keeps

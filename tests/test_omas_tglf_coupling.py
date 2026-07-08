@@ -9,6 +9,7 @@
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -19,9 +20,12 @@ sys.path.insert(0, str(ROOT / "src"))
 from scpn_fusion.io.imas_connector import (
     HAS_OMAS,
     geqdsk_to_imas_equilibrium,
+    ids_to_omas_core_profiles,
     ids_to_omas_equilibrium,
+    omas_core_profiles_to_ids,
     omas_equilibrium_to_ids,
 )
+from scpn_fusion.io import imas_connector_omas
 from scpn_fusion.core.eqdsk import GEqdsk
 from scpn_fusion.core.tglf_interface import (
     TGLFInputDeck,
@@ -39,11 +43,11 @@ from scpn_fusion.core.tglf_interface import (
 class TestOMASConnector:
     """Test OMAS conversion functions (graceful skip if omas not installed)."""
 
-    def test_has_omas_is_boolean(self):
+    def test_has_omas_is_boolean(self) -> None:
         assert isinstance(HAS_OMAS, bool)
 
     @pytest.mark.skipif(not HAS_OMAS, reason="omas not installed")
-    def test_ids_to_omas_roundtrip(self):
+    def test_ids_to_omas_roundtrip(self) -> None:
         """If omas is installed, test full roundtrip."""
         eq = _make_test_geqdsk()
         ids_dict = geqdsk_to_imas_equilibrium(eq, time_s=0.0, shot=1, run=0)
@@ -56,7 +60,7 @@ class TestOMASConnector:
         gq = ids_back["time_slice"][0]["global_quantities"]
         assert abs(gq["ip"] - eq.current) < 1e-6
 
-    def test_ids_to_omas_raises_without_omas(self):
+    def test_ids_to_omas_raises_without_omas(self) -> None:
         """When omas is not installed, should raise ImportError."""
         if HAS_OMAS:
             pytest.skip("omas is installed, can't test missing import")
@@ -65,19 +69,46 @@ class TestOMASConnector:
         with pytest.raises(ImportError, match="omas"):
             ids_to_omas_equilibrium(ids_dict)
 
-    def test_omas_to_ids_raises_without_omas(self):
+    def test_omas_to_ids_raises_without_omas(self) -> None:
         """When omas is not installed, should raise ImportError."""
         if HAS_OMAS:
             pytest.skip("omas is installed, can't test missing import")
         with pytest.raises(ImportError, match="omas"):
             omas_equilibrium_to_ids({})
 
+    def test_core_profiles_to_omas_raises_without_omas(self) -> None:
+        """The core_profiles bridge preserves the optional OMAS dependency boundary."""
+        if HAS_OMAS:
+            pytest.skip("omas is installed, can't test missing import")
+        with pytest.raises(ImportError, match="omas"):
+            ids_to_omas_core_profiles(_make_core_profiles_ids())
+
+    def test_omas_to_core_profiles_raises_without_omas(self) -> None:
+        """The reverse core_profiles bridge also fails closed without OMAS."""
+        if HAS_OMAS:
+            pytest.skip("omas is installed, can't test missing import")
+        with pytest.raises(ImportError, match="omas"):
+            omas_core_profiles_to_ids({})
+
+    def test_core_profiles_ods_mapping_roundtrip(self) -> None:
+        """The shared core_profiles bridge maps IMAS arrays through ODS paths."""
+        ids = _make_core_profiles_ids()
+        ods = imas_connector_omas._populate_omas_core_profiles({}, ids)
+        roundtrip = imas_connector_omas._omas_core_profiles_to_ids_unchecked(ods)
+
+        assert roundtrip["ids_properties"]["homogeneous_time"] == 1
+        assert roundtrip["time"] == [5.0]
+        profile = roundtrip["profiles_1d"][0]
+        assert profile["grid"]["rho_tor_norm"] == [0.0, 0.5, 1.0]
+        assert profile["electrons"]["temperature"] == [1000.0, 700.0, 100.0]
+        assert profile["electrons"]["density"] == [1.0e20, 8.0e19, 2.0e19]
+
 
 # ── TGLF input deck writer ────────────────────────────────────────────
 
 
 class TestTGLFInputWriter:
-    def test_writes_input_file(self):
+    def test_writes_input_file(self) -> None:
         deck = TGLFInputDeck()
         with tempfile.TemporaryDirectory() as tmpdir:
             path = write_tglf_input_file(deck, tmpdir)
@@ -87,7 +118,7 @@ class TestTGLFInputWriter:
             assert "SIGN_BT" in content
             assert "Q_LOC" in content
 
-    def test_input_contains_deck_values(self):
+    def test_input_contains_deck_values(self) -> None:
         deck = TGLFInputDeck(rho=0.5, q=2.5, R_LTi=8.0, kappa=1.8)
         with tempfile.TemporaryDirectory() as tmpdir:
             path = write_tglf_input_file(deck, tmpdir)
@@ -96,7 +127,7 @@ class TestTGLFInputWriter:
             assert "RLTS_1 = 8.000000" in content
             assert "KAPPA_LOC = 1.800000" in content
 
-    def test_creates_output_dir(self):
+    def test_creates_output_dir(self) -> None:
         deck = TGLFInputDeck()
         with tempfile.TemporaryDirectory() as tmpdir:
             subdir = Path(tmpdir) / "nested" / "dir"
@@ -109,7 +140,7 @@ class TestTGLFInputWriter:
 
 
 class TestTGLFOutputParser:
-    def test_parse_key_value_output(self):
+    def test_parse_key_value_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text("CHI_I = 1.5\nCHI_E = 0.8\nGAMMA_MAX = 0.12\nOTHER = ignored\n")
@@ -119,7 +150,7 @@ class TestTGLFOutputParser:
             assert result.chi_e == pytest.approx(0.8)
             assert result.gamma_max == pytest.approx(0.12)
 
-    def test_parse_chieff_aliases(self):
+    def test_parse_chieff_aliases(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text("CHIEFF_I = 2.0\nCHIEFF_E = 1.0\n")
@@ -127,7 +158,7 @@ class TestTGLFOutputParser:
             assert result.chi_i == pytest.approx(2.0)
             assert result.chi_e == pytest.approx(1.0)
 
-    def test_parse_empty_file(self):
+    def test_parse_empty_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text("")
@@ -135,7 +166,7 @@ class TestTGLFOutputParser:
             assert result.chi_i == 0.0
             assert result.chi_e == 0.0
 
-    def test_parse_malformed_lines(self):
+    def test_parse_malformed_lines(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text("# comment\nno_equals_here\nCHI_I = notanumber\nCHI_E = 1.5\n")
@@ -143,7 +174,7 @@ class TestTGLFOutputParser:
             assert result.chi_i == 0.0  # couldn't parse
             assert result.chi_e == pytest.approx(1.5)
 
-    def test_parse_non_finite_values(self):
+    def test_parse_non_finite_values(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text("CHI_I = NaN\nCHI_E = Infinity\nGAMMA_MAX = -Infinity\n")
@@ -157,13 +188,13 @@ class TestTGLFOutputParser:
 
 
 class TestTGLFBinaryExecution:
-    def test_run_tglf_binary_not_found(self):
+    def test_run_tglf_binary_not_found(self) -> None:
         deck = TGLFInputDeck()
         with pytest.raises(FileNotFoundError, match="TGLF binary not found"):
             run_tglf_binary(deck, "/nonexistent/path/to/tglf")
 
     @pytest.mark.parametrize("timeout_s", [0.0, -1.0, float("inf"), float("nan")])
-    def test_run_tglf_binary_rejects_invalid_timeout(self, timeout_s):
+    def test_run_tglf_binary_rejects_invalid_timeout(self, timeout_s: float) -> None:
         deck = TGLFInputDeck()
         with pytest.raises(ValueError, match="timeout_s must be finite and > 0."):
             run_tglf_binary(
@@ -173,7 +204,7 @@ class TestTGLFBinaryExecution:
             )
 
     @pytest.mark.parametrize("max_retries", [-1, 11, 1.5, True])
-    def test_run_tglf_binary_rejects_invalid_max_retries(self, max_retries):
+    def test_run_tglf_binary_rejects_invalid_max_retries(self, max_retries: Any) -> None:
         deck = TGLFInputDeck()
         with pytest.raises(ValueError, match="max_retries must be an integer in \\[0, 10\\]."):
             run_tglf_binary(
@@ -187,7 +218,7 @@ class TestTGLFBinaryExecution:
 
 
 class TestTGLFBenchmark:
-    def test_compare_identical(self):
+    def test_compare_identical(self) -> None:
         benchmark = TGLFBenchmark()
         rho = np.linspace(0.1, 0.9, 7)
         chi_i = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0])
@@ -199,7 +230,7 @@ class TestTGLFBenchmark:
         assert result.rms_error_chi_i < 1e-10
         assert result.rms_error_chi_e < 1e-10
 
-    def test_compare_different(self):
+    def test_compare_different(self) -> None:
         benchmark = TGLFBenchmark()
         rho = np.linspace(0.1, 0.9, 7)
         our_chi_i = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0])
@@ -217,7 +248,7 @@ class TestTGLFBenchmark:
 
 
 class TestPyprojectConfig:
-    def test_full_physics_in_pyproject(self):
+    def test_full_physics_in_pyproject(self) -> None:
         pyproject_path = ROOT / "pyproject.toml"
         content = pyproject_path.read_text()
         assert "full-physics" in content
@@ -225,6 +256,29 @@ class TestPyprojectConfig:
 
 
 # ── Helper ─────────────────────────────────────────────────────────────
+
+
+def _make_core_profiles_ids() -> dict[str, object]:
+    """Create a minimal IMAS core_profiles payload for OMAS bridge tests."""
+    return {
+        "ids_properties": {
+            "homogeneous_time": 1,
+            "comment": "unit-test core_profiles",
+        },
+        "time": [5.0],
+        "profiles_1d": [
+            {
+                "time": 5.0,
+                "grid": {
+                    "rho_tor_norm": [0.0, 0.5, 1.0],
+                },
+                "electrons": {
+                    "temperature": [1000.0, 700.0, 100.0],
+                    "density": [1.0e20, 8.0e19, 2.0e19],
+                },
+            }
+        ],
+    }
 
 
 def _make_test_geqdsk() -> GEqdsk:

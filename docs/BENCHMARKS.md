@@ -1643,6 +1643,27 @@ Native same-case comparison artefacts must carry a matching checksum before any
 threshold can be marked ready.
 For NPZ inputs, top-level keys are separated into coordinate and observable
 metadata by the declared contracts before converted artefacts are reported.
+
+### TORAX IMAS interchange fixture
+
+The tracked TORAX 1.4.3 `basic_config` reference profile export is also
+materialized as an IMAS `core_profiles` IDS fixture:
+
+- `validation/reference_data/torax/torax_basic_config_profiles.json`
+- `validation/reference_data/torax/torax_basic_config_core_profiles_ids.json`
+- `validation/reports/torax_imas_interchange.md`
+
+Refresh or check the fixture with:
+
+```bash
+python validation/torax_imas_interchange.py
+python validation/torax_imas_interchange.py --check
+```
+
+This lane validates profile interchange and unit conversion (`T_e_keV` to eV,
+`n_e_m3` kept in `m^-3`, `rho_norm` to `rho_tor_norm`). It is not a TORAX
+physics-equivalence claim; threshold tightening remains blocked on the
+same-physics configuration study.
 Grid-convergence and production-scale evidence rows are accepted only when they
 reference the converted same-case output row for the corresponding solver
 family.

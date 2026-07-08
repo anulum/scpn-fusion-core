@@ -105,6 +105,8 @@ core governance pattern across the repository.
   campaign status.
 - `validation/reports/full_fidelity_validation_ledger.md` for the generated
   fail-closed validation ledger with source-report checksums and lane blockers.
+- `validation/reports/torax_imas_interchange.md` for the TORAX basic-config
+  IMAS `core_profiles` interchange fixture and its unit-conversion boundary.
 - `validation/reports/full_fidelity_acceptance_benchmark.md` for acceptance
   blockers.
 - `validation/reports/production_decomposition_contract.md` for decomposition

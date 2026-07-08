@@ -43,7 +43,9 @@ from scpn_fusion.io.imas_connector_equilibrium import (
 )
 from scpn_fusion.io.imas_connector_omas import (
     HAS_OMAS,
+    ids_to_omas_core_profiles,
     ids_to_omas_equilibrium,
+    omas_core_profiles_to_ids,
     omas_equilibrium_to_ids,
 )
 from scpn_fusion.io.imas_connector_storage import (
@@ -107,6 +109,8 @@ __all__ = [
     "read_ids",
     # OMAS bridge
     "HAS_OMAS",
+    "ids_to_omas_core_profiles",
     "ids_to_omas_equilibrium",
+    "omas_core_profiles_to_ids",
     "omas_equilibrium_to_ids",
 ]

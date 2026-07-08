@@ -6,10 +6,9 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 from __future__ import annotations
 
-import importlib.util
+import importlib
 from pathlib import Path
 import subprocess
-import sys
 from typing import Any
 
 import pytest
@@ -21,13 +20,7 @@ RunCall = tuple[list[str], Path, bool, float]
 
 
 def _load_module() -> Any:
-    spec = importlib.util.spec_from_file_location("run_python_preflight", SCRIPT_PATH)
-    if spec is None or spec.loader is None:
-        raise RuntimeError("Failed to load tools/run_python_preflight.py")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    return importlib.reload(importlib.import_module("tools.run_python_preflight"))
 
 
 def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -130,6 +123,14 @@ def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> N
             [
                 "python-test",
                 "tools/generate_surrogate_uq_cards.py",
+                "--check",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "validation/torax_imas_interchange.py",
                 "--check",
             ],
             SCRIPT_PATH.resolve().parents[1],
@@ -357,6 +358,7 @@ def test_main_honors_skip_flags(monkeypatch: pytest.MonkeyPatch) -> None:
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-torax-imas-interchange",
             "--skip-fair-validation-packs",
             "--skip-claim-range-guard",
             "--skip-capability-manifest",
@@ -455,6 +457,7 @@ def test_main_enables_strict_backend_checks_when_requested(
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-torax-imas-interchange",
             "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",
@@ -555,6 +558,7 @@ def test_main_enables_freegs_strict_backend_check_when_requested(
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-torax-imas-interchange",
             "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",
@@ -661,6 +665,7 @@ def test_main_skips_freegs_strict_backend_when_unavailable(
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-torax-imas-interchange",
             "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",
@@ -761,6 +766,7 @@ def test_main_skips_freegs_strict_backend_when_flagged(
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-torax-imas-interchange",
             "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",

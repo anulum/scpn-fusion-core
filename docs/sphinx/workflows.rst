@@ -47,6 +47,26 @@ The snapshot must remain blocked when same-case external solver artefacts,
 thresholds, or distributed runtime measurements are missing.  Do not replace
 those rows with synthetic or reduced-order evidence.
 
+TORAX IMAS Interchange
+----------------------
+
+Refresh the TORAX ``basic_config`` IMAS ``core_profiles`` fixture::
+
+    python validation/torax_imas_interchange.py
+
+Default outputs:
+
+- ``validation/reference_data/torax/torax_basic_config_core_profiles_ids.json``
+- ``validation/reports/torax_imas_interchange.json``
+- ``validation/reports/torax_imas_interchange.md``
+
+Check tracked fixture/report drift::
+
+    python validation/torax_imas_interchange.py --check
+
+This workflow validates data interchange and unit conversion only.  It does
+not promote TORAX physics-equivalence thresholds.
+
 Production Decomposition Contract
 ---------------------------------
 
