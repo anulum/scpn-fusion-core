@@ -395,9 +395,10 @@ Self-auditing is a first-class architectural layer, not an afterthought:
 - `validation/` holds ~30 `benchmark_*.py` scripts and **137 generated reports** (`validation/reports/`,
   JSON + Markdown pairs) covering equilibrium parity (FreeGS), transport conservation, disruption
   replay/transfer, EPED domain contracts, FRC acceptance gates, end-to-end latency, and more.
-- The **release preflight gate** (`tools/run_python_preflight.py --gate release`, the CI Python-3.12
-  lane) runs metadata/claims/packaging/manifest/typing/docstring guards plus the strict benchmarks
-  as a single sequential gate.
+- The **release preflight gate** (`tools/preflight.py --gate release`, delegating to
+  `tools/run_python_preflight.py` in the CI Python-3.12 lane) runs
+  metadata/claims/packaging/manifest/typing/docstring guards plus the strict benchmarks as a
+  single sequential gate.
 - **Lean** proofs provide machine-checkable safety lemmas for the control compiler.
 - Claims are bounded: stale-number, claim-range, and evidence-map guards keep the public surface
   honest, and several physics lanes are **fail-closed** (they refuse to emit a parity claim until a

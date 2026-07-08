@@ -234,6 +234,8 @@ files = [
     "tests/test_scpn_end_to_end_latency.py",
     "validation/benchmark_free_boundary_strict_parity.py",
     "tests/test_benchmark_free_boundary_strict_parity.py",
+    "tools/preflight.py",
+    "tests/test_preflight.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "validation/validate_grad_shafranov_solovev.py",

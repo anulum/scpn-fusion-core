@@ -2615,7 +2615,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 459
+    "test_files": 460
   },
   "documentation": {
     "public_pages": [
@@ -3067,6 +3067,7 @@
       "tests/test_plasma_wall_interaction.py",
       "tests/test_polyglot_gs_benchmark.py",
       "tests/test_polyglot_gs_solver_contract.py",
+      "tests/test_preflight.py",
       "tests/test_pretrained_surrogates.py",
       "tests/test_psi_gate_attribution.py",
       "tests/test_psi_pointwise_rmse.py",
