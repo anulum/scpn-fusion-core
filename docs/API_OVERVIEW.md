@@ -74,11 +74,14 @@ scpn-fusion --help
 scpn-fusion kernel
 scpn-fusion flight
 scpn-fusion neuro-control
+scpn-fusion repro --full
 scpn-emit-studio-manifest --check
 ```
 
 CLI modes are useful for demos and smoke tests. Scientific claims should point
-to validation reports, not only CLI output.
+to validation reports, not only CLI output. `scpn-fusion repro --full` refreshes
+the fail-closed full-fidelity campaign, public ledger, and checksummed
+full-reproduction evidence report without changing blocked lane semantics.
 
 ## Studio federation surface
 

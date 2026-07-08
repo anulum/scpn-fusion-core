@@ -132,7 +132,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 61 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 464 |
+| Python test files | 465 |
 | Public documentation pages | 61 |
 | GitHub Actions workflows | 12 |
 
@@ -181,6 +181,7 @@ before plant deployment.
 | Understand applications and market value | [`docs/APPLICATIONS_AND_MARKET.md`](docs/APPLICATIONS_AND_MARKET.md) |
 | Reproduce benchmark claims | [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`RESULTS.md`](RESULTS.md) |
 | Track full-fidelity blockers | [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md) |
+| Refresh checksummed full-reproduction evidence | [`validation/reports/full_reproduction_evidence.md`](validation/reports/full_reproduction_evidence.md) |
 | Use notebooks | [`docs/notebooks/README.md`](docs/notebooks/README.md) |
 | Read generated Sphinx docs | [`docs/sphinx/index.rst`](docs/sphinx/index.rst) |
 
@@ -207,6 +208,7 @@ package, test, documentation, workflow, and Rust workspace counts.
 pip install -e .
 scpn-fusion kernel          # Grad-Shafranov equilibrium
 scpn-fusion flight          # Tokamak flight simulator
+scpn-fusion repro --full    # fail-closed checksummed evidence report
 pytest tests/ -x -q          # release suite
 ```
 
@@ -772,6 +774,7 @@ python validation/benchmark_gk_linear.py        # GK eigenvalue benchmark
 PYTHONPATH=src python benchmarks/gk_solver_comparison.py  # nonlinear GK NumPy/JAX comparison
 python validation/benchmark_full_fidelity_acceptance.py    # fail-closed full-fidelity acceptance status
 python validation/full_fidelity_end_to_end_campaign.py     # six-lane production-parity campaign status
+scpn-fusion repro --full                                  # checksummed full reproduction evidence bundle
 python validation/benchmark_freegs_public_example_reconstruction.py  # FreeGS public-example comparison gate
 ```
 

@@ -62,11 +62,15 @@ artefact tree unless an explicit output path is supplied.
 scpn-fusion kernel
 python examples/minimal.py --grid 17 --equilibrium-iters 4
 python validation/full_fidelity_end_to_end_campaign.py
+scpn-fusion repro --full
 ```
 
 The full-fidelity campaign is expected to remain fail-closed until external
 same-case reference artifacts are present. Treat blocked rows as work items, not
-as failures to hide.
+as failures to hide. The reproduction command writes
+`validation/reports/full_reproduction_evidence.json` and
+`validation/reports/full_reproduction_evidence.md` with source-report SHA-256
+checksums so reviewers can audit exactly which generated evidence was refreshed.
 
 ## 3. Understand the product in one pass
 

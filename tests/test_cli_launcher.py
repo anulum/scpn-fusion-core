@@ -9,12 +9,15 @@
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 import subprocess
 import sys
 from types import SimpleNamespace
 
 
 from click.testing import CliRunner
+import click
 import pytest
 
 import scpn_fusion.cli as cli_mod
@@ -38,7 +41,7 @@ def test_single_mode_invokes_subprocess(monkeypatch: pytest.MonkeyPatch) -> None
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
-    monkeypatch.setattr(cli_mod.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     runner = CliRunner()
     result = runner.invoke(cli_mod.cli, ["kernel"])
 
@@ -72,7 +75,7 @@ def test_all_mode_fail_fast_stops_after_first_failure(monkeypatch: pytest.Monkey
         code = 1 if len(calls) == 1 else 0
         return subprocess.CompletedProcess(cmd, code)
 
-    monkeypatch.setattr(cli_mod.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     runner = CliRunner()
     result = runner.invoke(cli_mod.cli, ["all"])
 
@@ -104,7 +107,7 @@ def test_all_mode_continue_on_error_runs_full_plan(monkeypatch: pytest.MonkeyPat
         code = 1 if len(calls) == 1 else 0
         return subprocess.CompletedProcess(cmd, code)
 
-    monkeypatch.setattr(cli_mod.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     runner = CliRunner()
     result = runner.invoke(cli_mod.cli, ["all", "--continue-on-error"])
 
@@ -143,7 +146,7 @@ def test_run_mode_returns_timeout_code_on_timeout(monkeypatch: pytest.MonkeyPatc
         _ = (cmd, cwd, check, timeout)
         raise subprocess.TimeoutExpired(cmd=["python"], timeout=0.01)
 
-    monkeypatch.setattr(cli_mod.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     code = cli_mod._run_mode(
         "kernel",
         python_bin=sys.executable,
@@ -188,7 +191,7 @@ def test_experimental_mode_runs_with_ack(monkeypatch: pytest.MonkeyPatch) -> Non
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
-    monkeypatch.setattr(cli_mod.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     runner = CliRunner()
     result = runner.invoke(
         cli_mod.cli,
@@ -251,6 +254,75 @@ def test_list_modes_renders_lock_state(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "quantum | experimental | no | quantum" in result.output
 
 
+def test_repro_requires_full_flag() -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli_mod.cli, ["repro"])
+
+    assert result.exit_code != 0
+    assert "The repro command requires --full." in result.output
+
+
+def test_repro_rejects_unknown_argument() -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli_mod.cli, ["repro", "--unexpected"])
+
+    assert result.exit_code != 0
+    assert "Unknown repro argument: --unexpected" in result.output
+
+
+def test_repro_requires_output_paths() -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli_mod.cli, ["repro", "--full", "--evidence-json"])
+
+    assert result.exit_code != 0
+    assert "--evidence-json requires a path." in result.output
+
+
+def test_repro_requires_markdown_output_path() -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli_mod.cli, ["repro", "--full", "--evidence-md"])
+
+    assert result.exit_code != 0
+    assert "--evidence-md requires a path." in result.output
+
+
+def test_repro_runs_full_evidence_command(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    calls: list[tuple[Path, Path]] = []
+
+    def fake_run_full_reproduction(
+        *,
+        json_output: Path,
+        markdown_output: Path,
+    ) -> dict[str, object]:
+        calls.append((json_output, markdown_output))
+        return {"evidence_payload_sha256": "abc123"}
+
+    from scpn_fusion import repro as repro_mod
+
+    monkeypatch.setattr(repro_mod, "run_full_reproduction", fake_run_full_reproduction)
+    monkeypatch.setattr(cli_mod, "_system_health_check", lambda: None)
+    json_output = tmp_path / "evidence.json"
+    markdown_output = tmp_path / "evidence.md"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_mod.cli,
+        [
+            "repro",
+            "--full",
+            "--evidence-json",
+            str(json_output),
+            "--evidence-md",
+            str(markdown_output),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [(json_output, markdown_output)]
+    assert "Wrote full reproduction evidence" in result.output
+    assert "abc123" in result.output
+
+
 def test_execution_plan_unknown_mode_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         cli_mod,
@@ -307,7 +379,7 @@ def test_run_mode_dry_run_skips_subprocess(monkeypatch: pytest.MonkeyPatch) -> N
         called = True
         return subprocess.CompletedProcess(["python"], 0)
 
-    monkeypatch.setattr(cli_mod.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     code = cli_mod._run_mode(
         "kernel",
         python_bin=sys.executable,
@@ -323,7 +395,7 @@ def test_system_health_check_logs_low_resources(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    monkeypatch.setattr(cli_mod.os, "cpu_count", lambda: 1)
+    monkeypatch.setattr(os, "cpu_count", lambda: 1)
     monkeypatch.setitem(
         sys.modules,
         "psutil",
@@ -355,7 +427,7 @@ def test_main_returns_click_exception_exit_code(monkeypatch: pytest.MonkeyPatch)
         @staticmethod
         def main(*args: object, **kwargs: object) -> int:
             _ = (args, kwargs)
-            raise cli_mod.click.ClickException("boom")
+            raise click.ClickException("boom")
 
     monkeypatch.setattr(cli_mod, "cli", _Boom())
     assert cli_mod.main() == 1

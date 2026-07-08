@@ -256,6 +256,54 @@ def _run_mode(
     return int(result.returncode)
 
 
+def _parse_repro_args(script_args: Sequence[str]) -> tuple[Path, Path]:
+    """Parse arguments for ``scpn-fusion repro --full``."""
+    json_output: Path | None = None
+    markdown_output: Path | None = None
+    full = False
+    index = 0
+    while index < len(script_args):
+        arg = script_args[index]
+        if arg == "--full":
+            full = True
+            index += 1
+            continue
+        if arg == "--evidence-json":
+            if index + 1 >= len(script_args):
+                raise click.ClickException("--evidence-json requires a path.")
+            json_output = Path(script_args[index + 1])
+            index += 2
+            continue
+        if arg == "--evidence-md":
+            if index + 1 >= len(script_args):
+                raise click.ClickException("--evidence-md requires a path.")
+            markdown_output = Path(script_args[index + 1])
+            index += 2
+            continue
+        raise click.ClickException(f"Unknown repro argument: {arg}")
+    if not full:
+        raise click.ClickException("The repro command requires --full.")
+
+    from scpn_fusion import repro as repro_mod
+
+    return (
+        json_output if json_output is not None else repro_mod.DEFAULT_JSON_REPORT,
+        markdown_output if markdown_output is not None else repro_mod.DEFAULT_MARKDOWN_REPORT,
+    )
+
+
+def _run_repro(json_output: Path, markdown_output: Path) -> None:
+    """Run the full reproduction evidence command."""
+    from scpn_fusion.repro import run_full_reproduction
+
+    report = run_full_reproduction(json_output=json_output, markdown_output=markdown_output)
+    click.echo(
+        "Wrote full reproduction evidence: "
+        f"{json_output} ({report['evidence_payload_sha256']})"
+    )
+    click.echo(f"Wrote full reproduction Markdown: {markdown_output}")
+
+
 def _system_health_check() -> None:
     """Validate system resources and library versions."""
     LOGGER.info("Performing system health check...")
@@ -301,7 +349,7 @@ def _system_health_check() -> None:
 
         devices = jax.devices()
         gpu_available = any(d.platform == "gpu" for d in devices)
-    except ImportError:
+    except (AttributeError, ImportError):
         LOGGER.debug("JAX not installed; skipping accelerator device probe.")
 
     LOGGER.info(
@@ -309,7 +357,12 @@ def _system_health_check() -> None:
     )
 
 
-@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+@click.command(
+    context_settings={
+        "help_option_names": ["-h", "--help"],
+        "ignore_unknown_options": True,
+    }
+)
 @click.argument("mode", required=False, default="all")
 @click.argument("script_args", nargs=-1, type=click.UNPROCESSED)
 @click.option("--surrogate", is_flag=True, help="Unlock surrogate modes.")
@@ -362,16 +415,14 @@ def cli(
 ) -> None:
     """Unified SCPN Fusion launcher.
 
-    MODE can be a specific simulation mode (e.g. ``kernel``) or ``all``
-    to run all currently unlocked modes in sequence.
+    MODE can be a specific simulation mode (e.g. ``kernel``), ``all`` to run
+    all currently unlocked modes in sequence, or ``repro --full`` to refresh
+    checksummed full reproduction evidence.
     """
     include_surrogate = surrogate or _env_enabled("SCPN_SURROGATE")
     include_experimental = experimental or _env_enabled("SCPN_EXPERIMENTAL")
     mode_timeout_seconds = _normalize_mode_timeout_seconds(mode_timeout_seconds)
     _configure_logging(log_level)
-
-    if not skip_health_check and not dry_run and not list_modes:
-        _system_health_check()
 
     if list_modes:
         click.echo("mode | maturity | unlocked | description")
@@ -390,6 +441,13 @@ def cli(
             )
         return
 
+    if mode == "repro":
+        json_output, markdown_output = _parse_repro_args(script_args)
+        if not skip_health_check and not dry_run:
+            _system_health_check()
+        _run_repro(json_output, markdown_output)
+        return
+
     if mode == "all" and script_args:
         raise click.ClickException("Positional script arguments are not supported with mode 'all'.")
 
@@ -400,6 +458,9 @@ def cli(
         experimental_ack=experimental_ack,
     )
     LOGGER.info("Resolved execution plan: %s", ", ".join(plan))
+
+    if not skip_health_check and not dry_run:
+        _system_health_check()
 
     failures: list[str] = []
     for planned_mode in plan:
