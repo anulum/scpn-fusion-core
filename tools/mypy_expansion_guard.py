@@ -11,14 +11,24 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from pathlib import Path
-from typing import Any
+import sys
+from typing import Any, Protocol, cast
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 compatibility.
-    import tomli as tomllib
+
+class _TomlLoader(Protocol):
+    """Module protocol for the TOML loaders used by this guard."""
+
+    def loads(self, data: str, /) -> dict[str, Any]:
+        """Parse a TOML string into a table dictionary."""
+
+
+_tomllib = cast(
+    _TomlLoader,
+    importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli"),
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -49,7 +59,7 @@ def _load_json_object(path: Path) -> dict[str, Any]:
 
 
 def _load_mypy_config(pyproject_path: Path) -> dict[str, Any]:
-    payload = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    payload = _tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     tool = payload.get("tool")
     if not isinstance(tool, dict):
         raise ValueError("pyproject.toml missing [tool] table")
