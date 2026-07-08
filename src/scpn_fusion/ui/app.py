@@ -48,12 +48,15 @@ def _resolve_config_path(config_filename: str = "iter_config.json") -> str:
     filenames first check the active data root, then fall back to the working
     directory for local development.
 
-    Args:
-        config_filename: Name of the JSON configuration file.
+    Parameters
+    ----------
+    config_filename:
+        Name of the JSON configuration file.
 
     Returns
     -------
-        A string path that can be passed to simulation classes.
+    str
+        Filesystem path that can be passed to simulation classes.
     """
     if config_filename == "iter_config.json":
         return str(default_iter_config_path())
@@ -65,7 +68,7 @@ def _resolve_config_path(config_filename: str = "iter_config.json") -> str:
     return str(Path.cwd() / config_filename)
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover - exercised by Streamlit AppTest.
     """Run the dashboard and render all interactive modules."""
     st.set_page_config(page_title="SCPN Fusion Reactor", layout="wide", page_icon="⚛️")
 
