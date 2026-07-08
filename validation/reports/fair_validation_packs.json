@@ -1,0 +1,126 @@
+{
+  "schema": "scpn-fusion-core.fair-validation-packs.v1",
+  "status": "accepted_local_fair_pack_readiness",
+  "accepted_local_pack_readiness": true,
+  "doi_publication_ready": false,
+  "minimum_pack_count": 3,
+  "pack_count": 3,
+  "total_files": 15,
+  "total_bytes": 164120,
+  "output_dir": "artifacts/fair_validation_packs",
+  "publication_blockers": [
+    "owner approval for DOI publication and final data-license posture",
+    "external Zenodo upload not executed by this local export"
+  ],
+  "local_blockers": [],
+  "packs": [
+    {
+      "schema": "scpn-fusion-core.fair-validation-pack.v1",
+      "pack_id": "safety_traceability",
+      "title": "Safety Traceability Matrix Pack",
+      "description": "Requirement, hazard, implementation, proof, test, and generated matrix evidence for the control-safety traceability gate.",
+      "license": "AGPL-3.0-or-later",
+      "file_count": 4,
+      "total_bytes": 51877,
+      "files": [
+        {
+          "path": "validation/safety_traceability.json",
+          "sha256": "c6711dcba6d5c014da022f0664fef1680f02e06d8ae4430ca50649d0217c5403",
+          "size_bytes": 11002
+        },
+        {
+          "path": "docs/SAFETY_TRACEABILITY_MATRIX.md",
+          "sha256": "83938e8acaf5d83faa94932006f009b0ebd432274f23b010e1fb37dac597872a",
+          "size_bytes": 10419
+        },
+        {
+          "path": "tools/generate_safety_traceability.py",
+          "sha256": "ca7c06657f72282ff18cafdb157764e1cde37f0e280afad7b970e2ff36fd49f4",
+          "size_bytes": 15865
+        },
+        {
+          "path": "tests/test_safety_traceability.py",
+          "sha256": "cc61733201defdec8a1b5319f2b363b2f1f49d475b4b78f7f6135aabb2d8311d",
+          "size_bytes": 14591
+        }
+      ]
+    },
+    {
+      "schema": "scpn-fusion-core.fair-validation-pack.v1",
+      "pack_id": "surrogate_uq_cards",
+      "title": "Surrogate UQ and OOD Cards Pack",
+      "description": "Per-surrogate uncertainty, out-of-distribution, fallback, and retraining-boundary evidence for promoted and scoped surrogate lanes.",
+      "license": "AGPL-3.0-or-later",
+      "file_count": 4,
+      "total_bytes": 45423,
+      "files": [
+        {
+          "path": "validation/surrogate_uq_cards.json",
+          "sha256": "32d2ee59bf5b10cf7df3ef4239eb0be540f9df26f2de9cd84997bfcfbbdbc250",
+          "size_bytes": 11789
+        },
+        {
+          "path": "docs/SURROGATE_UQ_CARDS.md",
+          "sha256": "ae694cb9a60a95cad81a7932fb20006821afa645ccdac32f1c9d36307e9c92d0",
+          "size_bytes": 10593
+        },
+        {
+          "path": "tools/generate_surrogate_uq_cards.py",
+          "sha256": "a167307597bb4a431b52b8ac9e82930660b79022fff3f04a4b18b617e28ca082",
+          "size_bytes": 13805
+        },
+        {
+          "path": "tests/test_surrogate_uq_cards.py",
+          "sha256": "ec94e904f3ee64c08a861b53b468a1473ce3f8738a4baa8d557d23b049b5e798",
+          "size_bytes": 9236
+        }
+      ]
+    },
+    {
+      "schema": "scpn-fusion-core.fair-validation-pack.v1",
+      "pack_id": "inverse_equilibrium_attribution",
+      "title": "Inverse-Equilibrium Attribution Pack",
+      "description": "Solov'ev exact-suite evidence and psi reconstruction attribution documents for the inverse-equilibrium credibility boundary.",
+      "license": "AGPL-3.0-or-later",
+      "file_count": 7,
+      "total_bytes": 66820,
+      "files": [
+        {
+          "path": "validation/validate_grad_shafranov_solovev.py",
+          "sha256": "cf780cf7ce720659cb71187b286cae896fb38da44ac1599c33b5ea745aa8b9c4",
+          "size_bytes": 32014
+        },
+        {
+          "path": "validation/reports/grad_shafranov_solovev.json",
+          "sha256": "3f8a455fd6a78bfa887413059915f58850a17b2aa4e72bd6fe5496e0b2d17b99",
+          "size_bytes": 2711
+        },
+        {
+          "path": "validation/reports/grad_shafranov_solovev.md",
+          "sha256": "c5b937b3a468e690714e8a419fd566ce6c9ece3dd0b218dc5941e95fc3cf1205",
+          "size_bytes": 1386
+        },
+        {
+          "path": "docs/PSI_GATE_ATTRIBUTION.md",
+          "sha256": "23ef980108de2eb203c39915b1372de190976346885dcf40650e441de648859b",
+          "size_bytes": 6614
+        },
+        {
+          "path": "tools/generate_psi_gate_attribution.py",
+          "sha256": "d6886bee0cc625ccda6ea3bb9f8ef2d8e17e3d5ec3f1dbfd264b907cfbb82527",
+          "size_bytes": 9407
+        },
+        {
+          "path": "tests/test_grad_shafranov_solovev.py",
+          "sha256": "ea7b2ff822cd5b681ac7837fabc33b871cd3e5464cc4a5010e787343a1ca76cd",
+          "size_bytes": 8654
+        },
+        {
+          "path": "tests/test_psi_gate_attribution.py",
+          "sha256": "9edbf2ba514dbdd4953a14beb65ed8eaeed0bb099b7694942f3ea1c40a601851",
+          "size_bytes": 6034
+        }
+      ]
+    }
+  ]
+}

@@ -65,6 +65,7 @@ def _build_release_checks(
     skip_safety_traceability: bool,
     skip_psi_gate_attribution: bool,
     skip_surrogate_uq_cards: bool,
+    skip_fair_validation_packs: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -204,6 +205,18 @@ def _build_release_checks(
                     sys.executable,
                     "tools/generate_surrogate_uq_cards.py",
                     "--check",
+                ],
+            )
+        )
+    if not skip_fair_validation_packs:
+        checks.append(
+            (
+                "FAIR validation packs drift check",
+                [
+                    sys.executable,
+                    "tools/export_zenodo_dataset.py",
+                    "--check",
+                    "--no-export",
                 ],
             )
         )
@@ -523,6 +536,7 @@ def _build_checks(
     skip_safety_traceability: bool,
     skip_psi_gate_attribution: bool,
     skip_surrogate_uq_cards: bool,
+    skip_fair_validation_packs: bool,
     skip_capability_manifest: bool,
     skip_readiness_register: bool,
     skip_readiness_scope_reports: bool,
@@ -566,6 +580,7 @@ def _build_checks(
                 skip_safety_traceability=skip_safety_traceability,
                 skip_psi_gate_attribution=skip_psi_gate_attribution,
                 skip_surrogate_uq_cards=skip_surrogate_uq_cards,
+                skip_fair_validation_packs=skip_fair_validation_packs,
                 skip_capability_manifest=skip_capability_manifest,
                 skip_readiness_register=skip_readiness_register,
                 skip_readiness_scope_reports=skip_readiness_scope_reports,
@@ -695,6 +710,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-surrogate-uq-cards",
         action="store_true",
         help="Skip tools/generate_surrogate_uq_cards.py --check",
+    )
+    parser.add_argument(
+        "--skip-fair-validation-packs",
+        action="store_true",
+        help="Skip tools/export_zenodo_dataset.py --check --no-export",
     )
     parser.add_argument(
         "--skip-capability-manifest",
@@ -891,6 +911,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_safety_traceability=args.skip_safety_traceability,
         skip_psi_gate_attribution=args.skip_psi_gate_attribution,
         skip_surrogate_uq_cards=args.skip_surrogate_uq_cards,
+        skip_fair_validation_packs=args.skip_fair_validation_packs,
         skip_capability_manifest=args.skip_capability_manifest,
         skip_readiness_register=args.skip_readiness_register,
         skip_readiness_scope_reports=args.skip_readiness_scope_reports,

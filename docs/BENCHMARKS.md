@@ -43,6 +43,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Aurora/STRAHL-grade impurities | Partially accepted: Aurora/Open-ADAS argon artefact, coefficient sidecars, finite-volume radial-transport budget diagnostics, native same-case effective source/recycling closure, and time-resolved source-sink matrix parity pass density, radiation, inventory, particle-conservation, and source-sink thresholds; independent mechanistic recycling validation remains missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Accepted locally: dedicated strict-parity gate consumes the FreeGS public-example reconstruction and machine-metadata reports; same-case nonlinear output, native profile-source comparison, strict thresholds, geometry containment, grid convergence, public coil/vacuum sidecars, and same-case public reference output all pass | `python validation/benchmark_free_boundary_strict_parity.py --strict` |
 | SAS dataset readiness | Blocked: SAS now holds public or locally authorised source snapshots and reference inputs under `DATASETS/SCPN-FUSION-CORE`, but missing same-deck external parity outputs remain explicit blocked rows rather than accepted evidence | `python validation/benchmark_sas_dataset_manifest.py` |
+| FAIR validation packs | Accepted locally: three tracked evidence packs are exported with per-file SHA-256 manifests for safety traceability, surrogate UQ/OOD cards, and inverse-equilibrium attribution; DOI publication and final data-license posture remain owner-gated | `python tools/export_zenodo_dataset.py` |
 
 Source acquisition and conversion commands:
 
@@ -52,11 +53,20 @@ python tools/convert_full_fidelity_reference_artifacts.py --check
 python validation/benchmark_sas_dataset_manifest.py
 python validation/benchmark_full_fidelity_acceptance.py
 python validation/full_fidelity_end_to_end_campaign.py
+python tools/export_zenodo_dataset.py
 ```
 
 Published reports must retain blocker statuses when external artefacts are
 missing. Do not substitute synthetic, reduced-order, or partial diagnostic
 outputs for accepted full-fidelity parity evidence.
+
+The local FAIR validation-pack readiness report is tracked in
+[`validation/reports/fair_validation_packs.md`](../validation/reports/fair_validation_packs.md).
+It exports pack directories under ignored `artifacts/fair_validation_packs/`
+and records SHA-256 manifests for every included source, evidence, generated
+document, and focused test. The report accepts local pack structure only;
+external DOI minting and final data-license posture are explicit owner-gated
+publication blockers.
 
 ## Dispatcher kernel-tier benchmark
 

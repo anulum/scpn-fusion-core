@@ -86,6 +86,7 @@ artifacts/ci-run-*/
 artifacts/job_*.log
 artifacts/coverage-critical-sample.xml
 artifacts/coverage-critical-sample-summary.json
+artifacts/fair_validation_packs/
 artifacts/disruption_transfer_generalization.json
 artifacts/disruption_transfer_generalization.md
 artifacts/release_delta_guard_summary.json

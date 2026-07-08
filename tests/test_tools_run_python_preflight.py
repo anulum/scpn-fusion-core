@@ -10,13 +10,17 @@ import importlib.util
 from pathlib import Path
 import subprocess
 import sys
+from typing import Any
+
+import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "run_python_preflight.py"
+RunCall = tuple[list[str], Path, bool, float]
 
 
-def _load_module():
+def _load_module() -> Any:
     spec = importlib.util.spec_from_file_location("run_python_preflight", SCRIPT_PATH)
     if spec is None or spec.loader is None:
         raise RuntimeError("Failed to load tools/run_python_preflight.py")
@@ -26,11 +30,13 @@ def _load_module():
     return module
 
 
-def test_main_runs_default_checks_in_order(monkeypatch):
+def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -125,6 +131,15 @@ def test_main_runs_default_checks_in_order(monkeypatch):
                 "python-test",
                 "tools/generate_surrogate_uq_cards.py",
                 "--check",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/export_zenodo_dataset.py",
+                "--check",
+                "--no-export",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -320,11 +335,13 @@ def test_main_runs_default_checks_in_order(monkeypatch):
     ]
 
 
-def test_main_honors_skip_flags(monkeypatch):
+def test_main_honors_skip_flags(monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -340,6 +357,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-fair-validation-packs",
             "--skip-claim-range-guard",
             "--skip-capability-manifest",
             "--skip-readiness-register",
@@ -409,11 +427,15 @@ def test_main_honors_skip_flags(monkeypatch):
     ]
 
 
-def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
+def test_main_enables_strict_backend_checks_when_requested(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -433,6 +455,7 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",
             "--skip-readiness-scope-reports",
@@ -503,11 +526,15 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
     ]
 
 
-def test_main_enables_freegs_strict_backend_check_when_requested(monkeypatch):
+def test_main_enables_freegs_strict_backend_check_when_requested(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -528,6 +555,7 @@ def test_main_enables_freegs_strict_backend_check_when_requested(monkeypatch):
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",
             "--skip-readiness-scope-reports",
@@ -606,11 +634,15 @@ def test_main_enables_freegs_strict_backend_check_when_requested(monkeypatch):
     ]
 
 
-def test_main_skips_freegs_strict_backend_when_unavailable(monkeypatch):
+def test_main_skips_freegs_strict_backend_when_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -629,6 +661,7 @@ def test_main_skips_freegs_strict_backend_when_unavailable(monkeypatch):
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",
             "--skip-readiness-scope-reports",
@@ -699,11 +732,15 @@ def test_main_skips_freegs_strict_backend_when_unavailable(monkeypatch):
     ]
 
 
-def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
+def test_main_skips_freegs_strict_backend_when_flagged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -724,6 +761,7 @@ def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
             "--skip-safety-traceability",
             "--skip-psi-gate-attribution",
             "--skip-surrogate-uq-cards",
+            "--skip-fair-validation-packs",
             "--skip-capability-manifest",
             "--skip-readiness-register",
             "--skip-readiness-scope-reports",
@@ -794,11 +832,13 @@ def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
     ]
 
 
-def test_main_runs_research_gate(monkeypatch):
+def test_main_runs_research_gate(monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -822,12 +862,14 @@ def test_main_runs_research_gate(monkeypatch):
     ]
 
 
-def test_main_stops_at_first_failure(monkeypatch):
+def test_main_stops_at_first_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
     results = iter([17, 0, 0])
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, next(results))
 
@@ -852,11 +894,13 @@ def test_main_stops_at_first_failure(monkeypatch):
     ]
 
 
-def test_main_returns_timeout_code_on_check_timeout(monkeypatch):
+def test_main_returns_timeout_code_on_check_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module()
-    calls: list[tuple[list[str], Path, bool, float]] = []
+    calls: list[RunCall] = []
 
-    def fake_run(cmd, cwd, check, timeout):
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
         calls.append((cmd, cwd, check, timeout))
         raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
 
@@ -870,7 +914,7 @@ def test_main_returns_timeout_code_on_check_timeout(monkeypatch):
     assert calls[0][3] == module.DEFAULT_CHECK_TIMEOUT_SECONDS
 
 
-def test_main_rejects_invalid_check_timeout():
+def test_main_rejects_invalid_check_timeout() -> None:
     module = _load_module()
     try:
         module.main(["--check-timeout-seconds", "0"])

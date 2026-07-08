@@ -2615,7 +2615,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 458
+    "test_files": 459
   },
   "documentation": {
     "public_pages": [
@@ -2840,6 +2840,7 @@
       "tests/test_equilibrium_3d.py",
       "tests/test_examples_minimal.py",
       "tests/test_exceptions_hierarchy.py",
+      "tests/test_export_zenodo_dataset.py",
       "tests/test_fallback_budget_guard.py",
       "tests/test_fallback_telemetry.py",
       "tests/test_faraday_recovery.py",
