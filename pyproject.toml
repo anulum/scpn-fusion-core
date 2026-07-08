@@ -257,6 +257,8 @@ files = [
     "tests/test_generate_claims_evidence_map.py",
     "tools/run_ruff_docstrings.py",
     "tests/test_run_ruff_docstrings.py",
+    "tools/deprecated_default_lane_guard.py",
+    "tests/test_deprecated_default_lane_guard.py",
     "tools/mypy_expansion_guard.py",
     "tests/test_mypy_expansion_guard.py",
     "tools/export_zenodo_dataset.py",
