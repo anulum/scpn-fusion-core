@@ -9,11 +9,21 @@
 
 from __future__ import annotations
 
+import importlib.util
+import subprocess
+import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-import tools.run_ruff_docstrings as runner
+ROOT = Path(__file__).resolve().parents[1]
+MODULE_PATH = ROOT / "tools" / "run_ruff_docstrings.py"
+SPEC = importlib.util.spec_from_file_location("tools.run_ruff_docstrings", MODULE_PATH)
+assert SPEC and SPEC.loader
+runner = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = runner
+SPEC.loader.exec_module(runner)
 
 
 def _write_pyproject(tmp_path: Path, files: list[str]) -> Path:
@@ -79,3 +89,55 @@ def test_repository_cohort_is_non_empty() -> None:
 
     assert cohort
     assert all(f.startswith("src/") and f.endswith(".py") for f in cohort)
+
+
+def test_main_lists_cohort(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """List mode prints the resolved cohort without invoking ruff."""
+    monkeypatch.setattr(
+        runner,
+        "cohort_source_files",
+        lambda: ["src/scpn_fusion/core/a.py", "src/scpn_fusion/core/b.py"],
+    )
+
+    rc = runner.main(["--list-cohort"])
+
+    assert rc == 0
+    assert capsys.readouterr().out == (
+        "src/scpn_fusion/core/a.py\nsrc/scpn_fusion/core/b.py\n"
+    )
+
+
+def test_main_uses_sys_argv_and_returns_ruff_exit_code(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Run mode builds the ruff command, forwards extra args, and returns its code."""
+    calls: list[dict[str, Any]] = []
+
+    def fake_run(
+        cmd: list[str],
+        *,
+        cwd: Path,
+        env: dict[str, str],
+        check: bool,
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append({"cmd": cmd, "cwd": cwd, "env": env, "check": check})
+        return subprocess.CompletedProcess(cmd, 7)
+
+    monkeypatch.setattr(runner, "cohort_source_files", lambda: ["src/scpn_fusion/core/a.py"])
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(sys, "argv", ["run_ruff_docstrings.py", "--statistics"])
+
+    rc = runner.main()
+
+    assert rc == 7
+    assert calls == [
+        {
+            "cmd": runner.build_command(["src/scpn_fusion/core/a.py"], ["--statistics"]),
+            "cwd": runner.REPO_ROOT,
+            "env": calls[0]["env"],
+            "check": False,
+        }
+    ]
+    assert isinstance(calls[0]["env"], dict)
