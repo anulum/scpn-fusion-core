@@ -392,7 +392,7 @@ neuromorphic dependency).
 ## 9. Evidence and validation
 
 Self-auditing is a first-class architectural layer, not an afterthought:
-- `validation/` holds ~30 `benchmark_*.py` scripts and **137 generated reports** (`validation/reports/`,
+- `validation/` holds ~30 `benchmark_*.py` scripts and **152 generated reports** (`validation/reports/`,
   JSON + Markdown pairs) covering equilibrium parity (FreeGS), transport conservation, disruption
   replay/transfer, EPED domain contracts, FRC acceptance gates, end-to-end latency, and more.
 - The **release preflight gate** (`tools/preflight.py --gate release`, delegating to

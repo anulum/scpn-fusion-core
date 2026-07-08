@@ -15,6 +15,7 @@ metadata, checksums, thresholds, and external solver comparison evidence.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -39,6 +40,8 @@ FREEGS_PUBLIC_RECONSTRUCTION = REPORT_DIR / "freegs_public_example_reconstructio
 FREE_BOUNDARY_STRICT_PARITY = REPORT_DIR / "free_boundary_strict_parity_benchmark.json"
 JSON_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.json"
 MD_REPORT = REPORT_DIR / "full_fidelity_end_to_end_campaign.md"
+LEDGER_JSON_REPORT = REPORT_DIR / "full_fidelity_validation_ledger.json"
+LEDGER_MD_REPORT = REPORT_DIR / "full_fidelity_validation_ledger.md"
 
 from validation.benchmark_full_fidelity_acceptance import run_benchmark as run_acceptance
 from validation.benchmark_gk_electromagnetic_fidelity import (
@@ -268,6 +271,199 @@ def _acceptance_surface(report: dict[str, Any], surface: str) -> dict[str, Any]:
 
 def _report_exists(path: str) -> bool:
     return (ROOT / path).exists()
+
+
+def _sha256(path: Path) -> str:
+    """Return the SHA-256 digest for one generated report."""
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _relative_report_path(path: Path) -> str:
+    """Return a repository-relative report path."""
+    return path.relative_to(ROOT).as_posix()
+
+
+def _source_report_paths(report: dict[str, Any]) -> tuple[str, ...]:
+    """Return the generated report paths that feed the public ledger."""
+    candidates = (
+        _relative_report_path(JSON_REPORT),
+        str(report["acceptance_report"]),
+        str(report["sas_dataset_readiness_report"]),
+        str(report["public_source_download_report"]),
+        str(report["public_reference_artifact_conversion_report"]),
+        str(report["dream_reference_execution_report"]),
+        str(report["aurora_reference_execution_report"]),
+        str(report["gk_public_deck_inventory_report"]),
+        str(report["gk_external_nonlinear_parity_report"]),
+        str(report["gk_electromagnetic_fidelity_report"]),
+        str(report["production_decomposition_report"]),
+        str(report["free_boundary_machine_metadata_report"]),
+        str(report["freegs_public_example_reconstruction_report"]),
+        str(report["free_boundary_strict_parity_report"]),
+    )
+    return tuple(dict.fromkeys(candidates))
+
+
+def _source_report_record(rel_path: str) -> dict[str, Any]:
+    """Return existence, checksum, schema, and status metadata for one source report."""
+    path = ROOT / rel_path
+    record: dict[str, Any] = {
+        "path": rel_path,
+        "exists": path.is_file(),
+        "sha256": None,
+        "schema": None,
+        "status": None,
+    }
+    if not path.is_file():
+        return record
+    record["sha256"] = _sha256(path)
+    if path.suffix != ".json":
+        return record
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        record["status"] = "invalid_json"
+        record["json_error"] = str(exc)
+        return record
+    if isinstance(payload, dict):
+        record["schema"] = payload.get("schema")
+        record["status"] = payload.get("status")
+        record["acceptance_passed"] = payload.get("acceptance_passed")
+        record["accepted_full_fidelity"] = payload.get("accepted_full_fidelity")
+        record["accepted_full_fidelity_ready"] = payload.get("accepted_full_fidelity_ready")
+    return record
+
+
+def _ledger_source_row(source: dict[str, Any]) -> dict[str, Any]:
+    """Return the public-source subset carried into one ledger lane."""
+    license_id = source.get("redistribution_license")
+    return {
+        "source_id": source.get("source_id"),
+        "solver_family": source.get("solver_family"),
+        "evidence_url": source.get("evidence_url"),
+        "local_artifact_status": source.get("local_artifact_status"),
+        "raw_cache_items": list(source.get("raw_cache_items", [])),
+        "required_action": source.get("required_action"),
+        "redistribution_license": license_id if license_id else "not_declared_in_source_registry",
+        "redistribution_license_ready": bool(license_id),
+    }
+
+
+def build_public_ledger(report: dict[str, Any]) -> dict[str, Any]:
+    """Build the tracked fail-closed full-fidelity ledger from campaign rows.
+
+    Args:
+        report: Integrated campaign report returned by :func:`run_campaign`.
+
+    Returns:
+        JSON-serializable ledger payload derived from the existing producer chain.
+    """
+    ledger_rows: list[dict[str, Any]] = []
+    for lane in report["lanes"]:
+        next_evidence = list(lane["next_required_evidence"])
+        sources = [_ledger_source_row(dict(source)) for source in lane["sources"]]
+        accepted_full_fidelity_lane = bool(
+            str(lane["status"]).startswith("accepted_full_fidelity")
+            and lane["reference_cases_ready"]
+            and not next_evidence
+        )
+        ledger_rows.append(
+            {
+                "lane": lane["lane"],
+                "surface": lane["surface"],
+                "status": lane["status"],
+                "accepted_full_fidelity_lane": accepted_full_fidelity_lane,
+                "blocked_for_public_full_fidelity": not accepted_full_fidelity_lane,
+                "locally_actionable_contract_ready": lane["locally_actionable_contract_ready"],
+                "reference_cases_ready": lane["reference_cases_ready"],
+                "missing_evidence": next_evidence,
+                "missing_evidence_count": len(next_evidence),
+                "public_sources": sources,
+                "public_source_count": len(sources),
+                "public_source_licenses_ready": bool(sources)
+                and all(bool(source["redistribution_license_ready"]) for source in sources),
+            }
+        )
+
+    return {
+        "schema": "full-fidelity-validation-ledger.v1",
+        "status": report["status"],
+        "source_chain": "validation.full_fidelity_end_to_end_campaign.write_reports",
+        "campaign_report": _relative_report_path(JSON_REPORT),
+        "campaign_schema": report["schema"],
+        "acceptance_passed": report["acceptance_passed"],
+        "ledger_publication_ready": bool(report["acceptance_passed"])
+        and all(bool(row["accepted_full_fidelity_lane"]) for row in ledger_rows),
+        "blocked_lane_count": sum(
+            1 for row in ledger_rows if bool(row["blocked_for_public_full_fidelity"])
+        ),
+        "accepted_full_fidelity_lane_count": sum(
+            1 for row in ledger_rows if bool(row["accepted_full_fidelity_lane"])
+        ),
+        "source_reports": [
+            _source_report_record(rel_path) for rel_path in _source_report_paths(report)
+        ],
+        "lanes": ledger_rows,
+    }
+
+
+def render_public_ledger_markdown(ledger: dict[str, Any]) -> str:
+    """Render the tracked full-fidelity ledger as Markdown."""
+    lines = [
+        "# Full-Fidelity Validation Ledger",
+        "",
+        "This ledger is generated by `validation/full_fidelity_end_to_end_campaign.py`.",
+        "It is fail-closed: publication readiness remains false while any full-fidelity lane is blocked.",
+        "",
+        f"- Schema: `{ledger['schema']}`",
+        f"- Status: `{ledger['status']}`",
+        f"- Acceptance passed: `{ledger['acceptance_passed']}`",
+        f"- Ledger publication ready: `{ledger['ledger_publication_ready']}`",
+        f"- Blocked lane count: `{ledger['blocked_lane_count']}`",
+        f"- Accepted full-fidelity lane count: `{ledger['accepted_full_fidelity_lane_count']}`",
+        "",
+        "## Source Reports",
+        "",
+        "| Report | Exists | SHA-256 | Schema | Status |",
+        "| --- | ---: | --- | --- | --- |",
+    ]
+    for source in ledger["source_reports"]:
+        lines.append(
+            "| `{path}` | `{exists}` | `{sha}` | `{schema}` | `{status}` |".format(
+                path=source["path"],
+                exists=source["exists"],
+                sha=source["sha256"] or "missing",
+                schema=source["schema"] or "n/a",
+                status=source["status"] or "n/a",
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Lanes",
+            "",
+            "| Lane | Status | Accepted full-fidelity lane | Blocked | Missing evidence | Source licenses ready |",
+            "| --- | --- | ---: | ---: | --- | ---: |",
+        ]
+    )
+    for lane in ledger["lanes"]:
+        missing = "<br>".join(lane["missing_evidence"]) or "none"
+        lines.append(
+            "| {lane} | `{status}` | `{accepted}` | `{blocked}` | {missing} | `{licenses}` |".format(
+                lane=lane["lane"],
+                status=lane["status"],
+                accepted=lane["accepted_full_fidelity_lane"],
+                blocked=lane["blocked_for_public_full_fidelity"],
+                missing=missing,
+                licenses=lane["public_source_licenses_ready"],
+            )
+        )
+    lines.append("")
+    return "\n".join(lines)
 
 
 def run_campaign() -> dict[str, Any]:
@@ -912,6 +1108,11 @@ def write_reports(report: dict[str, Any]) -> None:
         )
     lines.append("")
     MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
+    ledger = build_public_ledger(report)
+    LEDGER_JSON_REPORT.write_text(
+        json.dumps(ledger, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    LEDGER_MD_REPORT.write_text(render_public_ledger_markdown(ledger), encoding="utf-8")
 
 
 def main() -> int:

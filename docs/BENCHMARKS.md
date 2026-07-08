@@ -1621,6 +1621,10 @@ end-to-end campaign report is
 `validation/reports/full_fidelity_end_to_end_campaign.md`; it keeps the
 GENE/CGYRO/GS2, full Maxwell/EM, production-scale decomposition, DREAM,
 Aurora/STRAHL, and free-boundary blockers in one fail-closed gate. Public
+ledger rows are generated from the same producer chain in
+`validation/reports/full_fidelity_validation_ledger.md`; the ledger records
+source-report SHA-256 checksums, source-license readiness, lane blockers, and
+keeps publication readiness false while any full-fidelity lane is blocked. Public
 source acquisition targets are declared in
 `validation/reference_data/full_fidelity_public_sources.json`. Required public
 reference artefacts and quantitative thresholds are declared in

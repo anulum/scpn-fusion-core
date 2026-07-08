@@ -40,6 +40,8 @@ Default outputs:
 
 - ``validation/reports/full_fidelity_end_to_end_campaign.json``
 - ``validation/reports/full_fidelity_end_to_end_campaign.md``
+- ``validation/reports/full_fidelity_validation_ledger.json``
+- ``validation/reports/full_fidelity_validation_ledger.md``
 
 The snapshot must remain blocked when same-case external solver artefacts,
 thresholds, or distributed runtime measurements are missing.  Do not replace

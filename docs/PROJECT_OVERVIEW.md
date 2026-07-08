@@ -103,6 +103,8 @@ core governance pattern across the repository.
 - `RESULTS.md` for summarized measured results.
 - `validation/reports/full_fidelity_end_to_end_campaign.md` for full-fidelity
   campaign status.
+- `validation/reports/full_fidelity_validation_ledger.md` for the generated
+  fail-closed validation ledger with source-report checksums and lane blockers.
 - `validation/reports/full_fidelity_acceptance_benchmark.md` for acceptance
   blockers.
 - `validation/reports/production_decomposition_contract.md` for decomposition

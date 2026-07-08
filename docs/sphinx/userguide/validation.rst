@@ -24,6 +24,7 @@ native solver-output comparisons.
 The primary public reports are:
 
 - ``validation/reports/full_fidelity_end_to_end_campaign.md``
+- ``validation/reports/full_fidelity_validation_ledger.md``
 - ``validation/reports/full_fidelity_acceptance_benchmark.md``
 - ``validation/reports/full_fidelity_reference_artifact_conversion.md``
 - ``validation/reports/production_decomposition_contract.md``
