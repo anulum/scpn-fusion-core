@@ -12,7 +12,9 @@ This document is the structural map of `scpn-fusion-core`: what the package cont
 the pieces are wired, what it consumes (inputs) and produces (outputs), the processing
 models behind each subsystem, and the multi-backend acceleration layer. It is written for
 **sibling repositories** (`scpn-control`, `scpn-quantum-control`, `scpn-mif-core`) and for
-**SCPN STUDIO** verb/contract design that consume this repository's surfaces.
+**SCPN STUDIO** verb/contract design that consume this repository's surfaces. For the
+reasoning behind the durable design choices, see
+[`docs/ARCHITECTURE_DECISIONS.md`](ARCHITECTURE_DECISIONS.md).
 
 Every claim here is grounded in the source tree. Capability *maturity* (production-grade
 positioning, fidelity, what is reduced-order vs full-fidelity, and what is fail-closed) is

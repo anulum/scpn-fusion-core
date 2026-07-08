@@ -95,6 +95,7 @@ Public Documentation Hubs
 -------------------------
 
 - `Project overview <../PROJECT_OVERVIEW.md>`_
+- `Architecture decisions <../ARCHITECTURE_DECISIONS.md>`_
 - `Onboarding guide <../ONBOARDING.md>`_
 - `API overview <../API_OVERVIEW.md>`_
 - `Applications and market context <../APPLICATIONS_AND_MARKET.md>`_

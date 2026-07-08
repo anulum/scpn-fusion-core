@@ -100,6 +100,8 @@ core governance pattern across the repository.
 ## Where to verify claims
 
 - `docs/BENCHMARKS.md` for benchmark taxonomy and commands.
+- `docs/ARCHITECTURE_DECISIONS.md` for design choices, alternatives,
+  trade-offs, and constraints.
 - `RESULTS.md` for summarized measured results.
 - `validation/reports/full_fidelity_end_to_end_campaign.md` for full-fidelity
   campaign status.
