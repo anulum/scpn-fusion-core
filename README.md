@@ -726,7 +726,7 @@ cargo bench                      # Criterion benchmarks
 |----------|---------|
 | **Classical** | PID (Rust 0.52 us), H-infinity (Riccati synthesis), gain-scheduled, sliding-mode vertical |
 | **Optimal** | NMPC-JAX (SQP), MPC (gradient trajectory), optimal control |
-| **Learning** | Safe RL (Lagrangian PPO scaffold), controller tuning (Bayesian); no public PPO-vs-MPC/PID victory curve is claimed |
+| **Learning** | Safe RL (Lagrangian PPO scaffold), controller tuning (offline/library Bayesian helper for PID and reduced H-infinity parameter search); no public PPO-vs-MPC/PID victory curve is claimed |
 | **Neuro-symbolic** | SNN compiler, cybernetic controller, Nengo SNN wrapper |
 | **Disruption** | Predictor (ML), SPI mitigation, checkpoint policy, disruption contracts |
 | **Free-boundary** | Direct kernel tracking + supervisor rejection + EKF latency compensation |

@@ -163,6 +163,21 @@ single simulation environment:
 - Real-time status dashboard (via Streamlit UI)
 - CI-safe non-plot mode for automated testing
 
+Offline Controller Tuning
+-------------------------
+
+``controller_tuning.py`` provides an offline/library helper for PID and
+reduced H-infinity parameter search. The PID path validates Gym/Gymnasium-style
+``reset``/``step`` environments, extracts a scalar tracking-error observation,
+clips scalar or one-element actions to declared bounds, and scores candidates by
+integral absolute error. The H-infinity path validates a target dictionary and
+minimises distance to requested ``gamma`` and bandwidth parameters. When Optuna
+is unavailable, both helpers return explicit default parameter dictionaries.
+
+This tuning helper is not a live controller-loop mutator, scheduler, or hardware
+deployment path. A runtime consumer must explicitly load and validate any tuned
+parameters before using them in a controller campaign.
+
 Neuro-Cybernetic Controller
 ------------------------------
 

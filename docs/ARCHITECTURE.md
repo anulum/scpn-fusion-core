@@ -303,7 +303,10 @@ The repository can ingest the following external formats:
   (`sliding_mode_vertical`), gain-scheduled PID (`gain_scheduled_controller`), fault-tolerant
   reconfiguration (`fault_tolerant_control`), SVD/MPC trajectory control (`fusion_optimal_control`,
   `neural_surrogate_mpc`), RWM feedback, shape control, density control (with EKF estimator),
-  burn control (Bosch-Hale alpha heating).
+  burn control (Bosch-Hale alpha heating). `controller_tuning.py` is an offline/library tuning
+  helper for PID gains and reduced H-infinity search parameters; it validates Gym/Gymnasium-style
+  PID environments and H-infinity target dictionaries, then returns bounded parameter dictionaries.
+  It is not a live controller-loop mutator or deployment path.
 - **Disruption**: Transformer predictor (`disruption_predictor`, torch, with checkpoint-trust
   policy + analytical fallback), deterministic linear-risk + tearing physics
   (`disruption_risk_runtime`), contracts, federated learning, Fokker-Planck RE, SPI ablation/mitigation.
