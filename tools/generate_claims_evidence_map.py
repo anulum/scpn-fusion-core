@@ -79,7 +79,9 @@ def load_manifest(path: Path) -> tuple[ClaimSpec, ...]:
     Args:
         path: Filesystem path to the claims manifest JSON file.
 
-    Returns:
+    Returns
+    -------
+    tuple[ClaimSpec, ...]
         Parsed and deduplicated claim specifications.
     """
     raw = json.loads(path.read_text(encoding="utf-8"))
@@ -126,7 +128,9 @@ def render_markdown(claims: tuple[ClaimSpec, ...], manifest_path: str) -> str:
         claims: Validated claim specifications to render.
         manifest_path: Manifest path string shown in the generated header.
 
-    Returns:
+    Returns
+    -------
+    str
         Rendered Markdown document as a single string.
     """
     lines: list[str] = [
@@ -198,7 +202,9 @@ def main(argv: list[str] | None = None) -> int:
     Args:
         argv: Optional CLI args. If omitted, reads from process arguments.
 
-    Returns:
+    Returns
+    -------
+    int
         0 on success, 1 when validation/check mode detects drift.
     """
     parser = argparse.ArgumentParser(description=__doc__)
@@ -253,5 +259,5 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())
