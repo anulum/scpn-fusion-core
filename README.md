@@ -132,7 +132,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 61 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 465 |
+| Python test files | 466 |
 | Public documentation pages | 61 |
 | GitHub Actions workflows | 12 |
 
@@ -837,6 +837,11 @@ Validation artifacts:
   The report proves the TORAX final profiles initialize the native transport
   solver, then keeps threshold tightening blocked on model/source/time-trace
   mismatches.
+- The external TORAX and FreeGS/FreeGSNKE parity score is tracked at
+  [`validation/reports/external_parity_score.md`](validation/reports/external_parity_score.md).
+  The rollup keeps the overall status blocked with reproducibility score `1.0`
+  and parity score `0.6`: FreeGS/FreeGSNKE strict parity is accepted, while
+  TORAX remains blocked on same-physics threshold evidence.
 - FAIR validation-pack readiness is tracked in
   [`validation/reports/fair_validation_packs.md`](validation/reports/fair_validation_packs.md);
   `tools/export_zenodo_dataset.py` exports the local pack directories and keeps

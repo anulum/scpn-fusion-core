@@ -42,6 +42,7 @@ same-case external reference artefacts and quantitative comparisons exist.
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Partially accepted: Aurora/Open-ADAS argon artefact, coefficient sidecars, finite-volume radial-transport budget diagnostics, native same-case effective source/recycling closure, and time-resolved source-sink matrix parity pass density, radiation, inventory, particle-conservation, and source-sink thresholds; independent mechanistic recycling validation remains missing | `python tools/run_aurora_reference_artifact.py` |
 | Free-boundary equilibrium strict parity | Accepted locally: dedicated strict-parity gate consumes the FreeGS public-example reconstruction and machine-metadata reports; same-case nonlinear output, native profile-source comparison, strict thresholds, geometry containment, grid convergence, public coil/vacuum sidecars, and same-case public reference output all pass | `python validation/benchmark_free_boundary_strict_parity.py --strict` |
+| External TORAX/FreeGS parity score | Blocked overall: the score report consumes TORAX real-reference, TORAX same-physics, TORAX IMAS, FreeGS public-example, FreeGS/FreeGSNKE strict-parity, and machine-metadata reports; reproducibility score is `1.0`, parity score is `0.6`, FreeGS/FreeGSNKE is accepted, and TORAX remains blocked on native-transport, source/boundary, and time-integration requirements | `python validation/external_parity_score.py` |
 | SAS dataset readiness | Blocked: SAS now holds public or locally authorised source snapshots and reference inputs under `DATASETS/SCPN-FUSION-CORE`, but missing same-deck external parity outputs remain explicit blocked rows rather than accepted evidence | `python validation/benchmark_sas_dataset_manifest.py` |
 | FAIR validation packs | Accepted locally: three tracked evidence packs are exported with per-file SHA-256 manifests for safety traceability, surrogate UQ/OOD cards, and inverse-equilibrium attribution; DOI publication and final data-license posture remain owner-gated | `python tools/export_zenodo_dataset.py` |
 
@@ -54,6 +55,7 @@ python validation/benchmark_sas_dataset_manifest.py
 python validation/benchmark_full_fidelity_acceptance.py
 python validation/full_fidelity_end_to_end_campaign.py
 scpn-fusion repro --full
+python validation/external_parity_score.py
 python tools/export_zenodo_dataset.py
 ```
 
@@ -68,6 +70,14 @@ refreshes the public ledger, and writes
 `validation/reports/full_reproduction_evidence.md` with SHA-256 checksums for
 each source report. The command is a reproducibility harness only: it keeps
 `full_fidelity_ready` false while the ledger publication gate is blocked.
+
+`validation/external_parity_score.py` writes
+`validation/reports/external_parity_score.json` and
+`validation/reports/external_parity_score.md`. The report is a fail-closed
+rollup over the current TORAX and FreeGS/FreeGSNKE evidence surfaces: it accepts
+the strict free-boundary lane, assigns an overall parity score of `0.6`, and
+keeps the overall status blocked until the TORAX same-physics thresholds have
+native transport-model, source/boundary, and time-integration evidence.
 
 The local FAIR validation-pack readiness report is tracked in
 [`validation/reports/fair_validation_packs.md`](../validation/reports/fair_validation_packs.md).
@@ -1686,6 +1696,9 @@ physics-equivalence claim. The same-physics configuration study proves the TORAX
 final profiles initialize the native transport solver, then keeps threshold
 tightening blocked on the native transport-model mismatch, missing same-deck
 source/boundary controls, and missing step-by-step TORAX trace.
+The external parity score rollup records this TORAX lane as
+`blocked_same_physics_thresholds` with a parity score of `0.2` while the
+FreeGS/FreeGSNKE free-boundary lane is accepted.
 Grid-convergence and production-scale evidence rows are accepted only when they
 reference the converted same-case output row for the corresponding solver
 family.

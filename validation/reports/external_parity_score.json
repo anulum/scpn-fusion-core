@@ -1,0 +1,193 @@
+{
+  "acceptance_passed": false,
+  "lanes": [
+    {
+      "blocked_requirements": [
+        "native_transport_model",
+        "sources_and_boundary_conditions",
+        "time_integration_contract"
+      ],
+      "external_code": "TORAX",
+      "lane": "torax_transport",
+      "parity_components": [
+        {
+          "component": "torax_physics_equivalence_claimed",
+          "evidence": "TORAX real-reference report does not yet claim physics equivalence.",
+          "ready": false
+        },
+        {
+          "component": "torax_same_physics_ready",
+          "evidence": "Same-physics model and controls must be ready before parity thresholds tighten.",
+          "ready": false
+        },
+        {
+          "component": "torax_threshold_tightening_ready",
+          "evidence": "TORAX/native quantitative thresholds remain blocked.",
+          "ready": false
+        },
+        {
+          "component": "torax_no_threshold_blockers",
+          "evidence": "Threshold blockers must be empty.",
+          "ready": false
+        },
+        {
+          "component": "torax_divergence_reference_passes",
+          "evidence": "Current gate records finite divergence against a real TORAX artifact.",
+          "ready": true
+        }
+      ],
+      "parity_score": 0.2,
+      "reproducibility_components": [
+        {
+          "component": "torax_reference_provenance",
+          "evidence": "TORAX real-reference report carries provenance.",
+          "ready": true
+        },
+        {
+          "component": "torax_real_metrics_recorded",
+          "evidence": "Real-reference divergence metrics are recorded.",
+          "ready": true
+        },
+        {
+          "component": "torax_imas_interchange",
+          "evidence": "TORAX profiles round through the tracked IMAS fixture.",
+          "ready": true
+        },
+        {
+          "component": "torax_radial_grid_shared",
+          "evidence": "Same-physics study marks radial grid as shared.",
+          "ready": true
+        },
+        {
+          "component": "torax_initial_profiles_shared",
+          "evidence": "Same-physics study marks initial profiles as shared.",
+          "ready": true
+        }
+      ],
+      "reproducibility_score": 1.0,
+      "status": "blocked_same_physics_thresholds"
+    },
+    {
+      "blocked_requirements": [],
+      "external_code": "FreeGS/FreeGSNKE",
+      "lane": "freegsnke_free_boundary",
+      "parity_components": [
+        {
+          "component": "free_boundary_accepted_full_fidelity",
+          "evidence": "Strict parity gate accepts the current free-boundary lane.",
+          "ready": true
+        },
+        {
+          "component": "external_nonlinear_output",
+          "evidence": "Same-case external nonlinear output is ready.",
+          "ready": true
+        },
+        {
+          "component": "native_same_case_profile_source",
+          "evidence": "Native same-case profile-source comparison is ready.",
+          "ready": true
+        },
+        {
+          "component": "strict_threshold_acceptance",
+          "evidence": "Strict threshold acceptance is ready.",
+          "ready": true
+        },
+        {
+          "component": "public_machine_metadata",
+          "evidence": "Public machine metadata is ready.",
+          "ready": true
+        }
+      ],
+      "parity_score": 1.0,
+      "reproducibility_components": [
+        {
+          "component": "freegs_public_reconstruction_report",
+          "evidence": "Public FreeGS reconstruction report links same-case output.",
+          "ready": true
+        },
+        {
+          "component": "freegsnke_machine_metadata",
+          "evidence": "FreeGSNKE machine metadata inventory is ready.",
+          "ready": true
+        },
+        {
+          "component": "freegsnke_commit_recorded",
+          "evidence": "FreeGSNKE source commit is recorded.",
+          "ready": true
+        },
+        {
+          "component": "strict_parity_source_checksums",
+          "evidence": "Strict parity report carries source report checksums.",
+          "ready": true
+        },
+        {
+          "component": "strict_parity_grid_convergence",
+          "evidence": "Strict parity report records grid-convergence readiness.",
+          "ready": true
+        }
+      ],
+      "reproducibility_score": 1.0,
+      "status": "accepted_external_parity"
+    }
+  ],
+  "parity_score": 0.6,
+  "reproducibility_score": 1.0,
+  "schema": "scpn-fusion-core.external-parity-score.v1",
+  "scoring": {
+    "claim_boundary": "Scores summarize current report readiness. They do not promote a lane whose underlying fail-closed report remains blocked.",
+    "component_weighting": "equal_component_average",
+    "lane_weighting": "equal_lane_average",
+    "scale": "0.0_to_1.0"
+  },
+  "source_reports": [
+    {
+      "file_sha256": "7def6c1167eca2e3cb21d8afc1c04986ef6bfd520b0b0029e486e94565561bd4",
+      "path": "validation/reports/torax_real_parity.json",
+      "payload_sha256": "9ef6d79b5d985dbfdd361db50dd0581a2fefbddacebf3df6e62b9d5d6ffe8a82",
+      "report_id": "torax_real_parity",
+      "schema": "scpn-fusion-core.torax-real-parity.v1",
+      "status": "real_torax_reference_acquired_divergence_documented"
+    },
+    {
+      "file_sha256": "2c9a2d0216c07dd3756bd9441a505a52c8e5bf9cb62ba8f7b45b8250d63701dd",
+      "path": "validation/reports/torax_same_physics_config_study.json",
+      "payload_sha256": "8220eaa73be0755e2fd1ea51a93c0a82714ffb58454079ba9f9ed39ee67dcf22",
+      "report_id": "torax_same_physics_config_study",
+      "schema": "scpn-fusion-core.torax-same-physics-config-study.v1",
+      "status": "same_initial_profile_config_ready_thresholds_blocked"
+    },
+    {
+      "file_sha256": "157f35c837c0dca2683525711048a373bebce2f54a05ab1524f1b028fff2a7c0",
+      "path": "validation/reports/torax_imas_interchange.json",
+      "payload_sha256": "9cbac602896c499982f265a6933a25d7ec11ab0e468e245e10654eb74ff947e5",
+      "report_id": "torax_imas_interchange",
+      "schema": "scpn-fusion-core.torax-imas-interchange.v1",
+      "status": "torax_core_profiles_imas_fixture_ready"
+    },
+    {
+      "file_sha256": "eae3b1065be4fab7b74803a05ef173369a772c3589d2e636980581f6a9c390f3",
+      "path": "validation/reports/free_boundary_strict_parity_benchmark.json",
+      "payload_sha256": "0633bfd9d0ca8d189e14b8220c2ae756fbd52b03b97657c7ede091014aa997be",
+      "report_id": "free_boundary_strict_parity",
+      "schema": "free-boundary-strict-parity-benchmark.v1",
+      "status": "accepted_full_fidelity_free_boundary_parity"
+    },
+    {
+      "file_sha256": "73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed",
+      "path": "validation/reports/freegs_public_example_reconstruction.json",
+      "payload_sha256": "39b624fba02e92e0e9d5a569d7ceb425405582ea18e2527dbb5defb3690f6928",
+      "report_id": "freegs_public_example_reconstruction",
+      "schema": "freegs-public-example-reconstruction-report.v1",
+      "status": "accepted_public_freegs_same_case_free_boundary_parity"
+    },
+    {
+      "file_sha256": "e0da36d9f1016abb0dbce77d313032d2710e325d3eb922d1908a9fb582c7e7e1",
+      "path": "validation/reports/free_boundary_public_machine_metadata_inventory.json",
+      "payload_sha256": "89dc932da5b2d2a2e48cc6179d19a1fb3ef2c320abbdae09a89ffac7c07acb48",
+      "report_id": "free_boundary_public_machine_metadata_inventory",
+      "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
+      "status": "accepted_public_machine_metadata_with_same_case_free_boundary_reference"
+    }
+  ],
+  "status": "blocked_external_parity_score"
+}

@@ -246,6 +246,8 @@ files = [
     "tests/test_torax_imas_interchange.py",
     "validation/torax_same_physics_config_study.py",
     "tests/test_torax_same_physics_config_study.py",
+    "validation/external_parity_score.py",
+    "tests/test_external_parity_score.py",
     "validation/validate_grad_shafranov_solovev.py",
     "tests/test_grad_shafranov_solovev.py",
     "tests/test_psi_gate_attribution.py",
