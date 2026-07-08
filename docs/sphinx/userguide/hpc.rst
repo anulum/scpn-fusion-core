@@ -24,7 +24,9 @@ that mirrors the Python package structure:
        Chebyshev polynomials, elliptic integrals, tridiagonal solver
    * - ``fusion-core``
      - Grad-Shafranov kernel, transport, inverse reconstruction,
-       stability, pedestal model, AMR
+       stability, pedestal model, and AMR validation utilities. Production
+       equilibrium dispatch remains on the uniform-grid solver until the AMR
+       parity lane is wired and benchmarked.
    * - ``fusion-physics``
      - MHD sawtooth, Hall-MHD, turbulence, FNO, heating, compact
        reactor optimiser, design scanner, sandpile

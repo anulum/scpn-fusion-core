@@ -132,8 +132,6 @@ def _find_patch_bounds(
                         ):
                             stack.append((nj, ni))
 
-                if not cells:
-                    continue
                 js = [c[0] for c in cells]
                 is_ = [c[1] for c in cells]
                 j_lo = max(min(js) - pad_cells, 0)
@@ -154,6 +152,38 @@ def _find_patch_bounds(
                 )
 
     return patches
+
+
+def _validate_amr_inputs(
+    psi_base: FloatArray,
+    R: FloatArray,
+    Z: FloatArray,
+    source: FloatArray,
+    smooth_iters: int,
+    refine_smooth_iters: int,
+) -> None:
+    """Validate AMR grid, source, and iteration contracts."""
+    if psi_base.ndim != 2:
+        raise ValueError("psi_base must be a 2D array")
+    if source.shape != psi_base.shape:
+        raise ValueError("source shape must match psi_base")
+    if R.ndim != 1 or Z.ndim != 1:
+        raise ValueError("R and Z must be 1D coordinate arrays")
+    if len(R) != psi_base.shape[1] or len(Z) != psi_base.shape[0]:
+        raise ValueError("R/Z lengths must match psi_base dimensions")
+    if len(R) < 2 or len(Z) < 2:
+        raise ValueError("AMR requires at least two R and Z coordinates")
+    if not (
+        np.all(np.isfinite(psi_base))
+        and np.all(np.isfinite(source))
+        and np.all(np.isfinite(R))
+        and np.all(np.isfinite(Z))
+    ):
+        raise ValueError("AMR inputs must be finite")
+    if not (np.all(np.diff(R) > 0.0) and np.all(np.diff(Z) > 0.0)):
+        raise ValueError("R and Z coordinates must be strictly increasing")
+    if smooth_iters < 0 or refine_smooth_iters < 0:
+        raise ValueError("AMR smoothing iteration counts must be non-negative")
 
 
 def prolongate(coarse: FloatArray, fine_shape: tuple[int, int]) -> FloatArray:
@@ -282,6 +312,8 @@ def solve_amr(
     patches : list[AMRPatch]
         Refined patches with their local solutions.
     """
+    _validate_amr_inputs(psi_base, R, Z, source, smooth_iters, refine_smooth_iters)
+
     nr = len(R)
     nz = len(Z)
     dr = float(R[1] - R[0]) if nr > 1 else 1.0

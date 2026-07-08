@@ -250,7 +250,11 @@ The repository can ingest the following external formats:
   currents with a Newton radial-force residual loop and writes a balanced equilibrium config. It is
   consumed by validation workflows and documented as a config-balancing utility, not as the quasi-3D
   reduced-order force residual model in `quasi_3d_contracts.py`.
-- **`amr_patch.py`** (X-point/pedestal refinement), **`eqdsk.py`** (I/O).
+- **`amr_patch.py`**: validation/offline two-level patch AMR utility for X-point and pedestal
+  refinement studies. It provides finite-input validation, gradient-threshold patch detection,
+  prolongation/restriction, and cylindrical Jacobi patch smoothing; it is not wired into the
+  production Grad-Shafranov solve or Rust dispatcher until a parity-backed AMR production lane
+  exists. **`eqdsk.py`** handles I/O.
 - **3D:** `geometry_3d` (LCFS→toroidal mesh), `equilibrium_3d` (VMEC-style Fourier),
   `fieldline_3d` (tracing/Poincaré), `vmec_lite` (reduced-order spectral), `stellarator_geometry`.
 

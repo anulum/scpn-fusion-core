@@ -1816,8 +1816,8 @@ with CPU SIMD alternate path for systems without GPU support.
 | Feature | Current State | Target | Effort | Prerequisite |
 |---------|--------------|--------|--------|-------------|
 | Uniform multigrid | Production (V-cycle, 4 grid sizes) | — | Done | — |
-| AMR (h-refinement) | Not implemented | Quadtree, error-based tagging | ~4 weeks | Multigrid |
-| AMR error estimator | Not implemented | Gradient-jump + curvature indicators | ~1 week | AMR structure |
+| AMR (h-refinement) | Python validation utility (`amr_patch.py`), offline only | Production quadtree, error-based tagging | ~4 weeks | Multigrid parity contract |
+| AMR error estimator | Gradient-threshold patch flagging, validation only | Gradient-jump + curvature indicators | ~1 week | AMR production lane |
 | 3D equilibrium (stellarator) | Not applicable (tokamak only) | VMEC-like 3D | ~3 months | — |
 | 3D transport | 1.5D radial only | Toroidal mode coupling (n=0,1,2) | ~6 weeks | 3D geometry |
 | FNO 3D turbulence | 2D proof-of-concept | 3D fftn + toroidal modes | ~4 weeks | Training data |
@@ -1830,11 +1830,15 @@ with CPU SIMD alternate path for systems without GPU support.
 | NIMROD | Block-structured | 3D MHD |
 | JOREK | Bézier elements, h-p | 3D nonlinear MHD |
 | BOUT++ | Field-aligned, block | Edge turbulence |
-| SCPN (targeted) | Quadtree, gradient-based | 2D GS + 3D extension |
+| SCPN (validation) | Two-level rectangular patch, gradient-threshold | 2D GS studies, offline only |
+| SCPN (targeted production) | Quadtree, gradient/error-based | 2D GS + 3D extension |
 
-The targeted quadtree AMR is simpler than JOREK's h-p adaptivity but
-sufficient for equilibrium and transport applications where steep gradients
-are localised near the pedestal and X-point regions.
+The current Python AMR utility is a validation/offline study surface, not a production dispatch
+path. Its focused benchmark-like evidence is the 100%-coverage AMR contract test that exercises
+finite-input validation, gradient flagging, patch creation/rejection, prolongation/restriction,
+and cylindrical Jacobi smoothing on Solovev-like grids. A production quadtree AMR benchmark must
+be added only after the Grad-Shafranov production solver and Rust/math parity lane consume the
+same refinement contract.
 
 ## Rust Full-Order Equilibrium Benchmarks
 
