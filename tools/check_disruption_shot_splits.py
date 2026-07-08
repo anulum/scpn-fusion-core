@@ -140,17 +140,21 @@ def main(argv: list[str] | None = None) -> int:
     if not manifest_path.exists():
         raise FileNotFoundError(f"Manifest file not found: {manifest_path}")
 
-    errors = validate_splits(
-        _load_json(split_path),
-        _load_json(manifest_path),
-    )
+    try:
+        split_data = _load_json(split_path)
+        manifest_data = _load_json(manifest_path)
+    except ValueError as exc:
+        print("Disruption shot split validation FAILED (1 issue)")
+        print(f" - {exc}")
+        return 1
+
+    errors = validate_splits(split_data, manifest_data)
     if errors:
         print(f"Disruption shot split validation FAILED ({len(errors)} issue(s))")
         for error in errors:
             print(f" - {error}")
         return 1
 
-    split_data = _load_json(split_path)
     print(
         "Disruption shot split validation passed: "
         f"train={len(split_data['train'])}, "
