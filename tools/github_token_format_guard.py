@@ -56,7 +56,9 @@ SUSPECT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
 def evaluate() -> list[str]:
     """Scan tracked repo files for brittle GitHub token format assumptions.
 
-    Returns:
+    Returns
+    -------
+    list[str]
         A list of findings in ``file:line: message :: code`` format.
         Empty when the repository avoids token-length/format assumptions.
     """
@@ -77,7 +79,9 @@ def evaluate() -> list[str]:
 def main() -> int:
     """Run the token format guard and return a CI-compatible exit code.
 
-    Returns:
+    Returns
+    -------
+    int
         ``0`` when no brittle token checks are found, ``1`` when suspicious
         patterns are detected.
     """
