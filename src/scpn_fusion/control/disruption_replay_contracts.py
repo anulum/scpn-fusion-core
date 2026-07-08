@@ -107,8 +107,6 @@ def run_real_shot_replay(
     risk_raw_series = np.zeros(n_steps, dtype=np.float64)
     for t in range(min(window_size, n_steps), n_steps):
         signal_window = signal_proc[t - window_size : t] if t >= window_size else signal_proc[:t]
-        if signal_window.size < 8:
-            continue
 
         toroidal = {
             "toroidal_n1_amp": float(np.clip(n1_amp[t], 0, 10)),
