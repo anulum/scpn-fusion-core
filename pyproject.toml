@@ -247,6 +247,8 @@ files = [
     "tests/test_packaging_contract.py",
     "tools/check_pypi_sync.py",
     "tests/test_check_pypi_sync.py",
+    "tools/check_test_module_linkage.py",
+    "tests/test_check_test_module_linkage.py",
     "tools/mypy_expansion_guard.py",
     "tests/test_mypy_expansion_guard.py",
     "tools/export_zenodo_dataset.py",

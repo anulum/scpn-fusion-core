@@ -57,13 +57,6 @@ def _iter_test_files(test_root: Path) -> list[Path]:
     return sorted(test_root.rglob("test_*.py"))
 
 
-def _build_test_corpus(test_root: Path) -> str:
-    parts: list[str] = []
-    for path in _iter_test_files(test_root):
-        parts.append(path.read_text(encoding="utf-8", errors="ignore"))
-    return "\n".join(parts)
-
-
 def _collect_import_targets(path: Path) -> set[str]:
     text = path.read_text(encoding="utf-8", errors="ignore")
     try:
