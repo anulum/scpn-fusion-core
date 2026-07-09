@@ -41,6 +41,11 @@ repos:
         language: system
         pass_filenames: false
         files: ^(src/|tests/|docs/|scpn-fusion-rs/|\.github/|pyproject\.toml|README\.md)
+      - id: commit-trailers
+        name: seat/authorship commit-message guard
+        entry: python tools/check_commit_trailers.py
+        language: system
+        stages: [commit-msg]
       - id: bandit
         name: bandit security scan
         entry: bandit -r src/scpn_fusion -c pyproject.toml -q

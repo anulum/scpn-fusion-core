@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 466
+    "test_files": 467
   },
   "documentation": {
     "public_pages": [
@@ -2778,6 +2778,7 @@
       "tests/test_c2u_public_frc_reference.py",
       "tests/test_cad_raytrace.py",
       "tests/test_capability_manifest.py",
+      "tests/test_check_commit_trailers.py",
       "tests/test_check_disruption_shot_splits.py",
       "tests/test_check_freegs_strict_artifact.py",
       "tests/test_check_lfs_hygiene.py",

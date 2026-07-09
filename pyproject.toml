@@ -253,6 +253,8 @@ files = [
     "tests/test_check_lfs_hygiene.py",
     "tools/github_token_format_guard.py",
     "tests/test_github_token_format_guard.py",
+    "tools/check_commit_trailers.py",
+    "tests/test_check_commit_trailers.py",
     "tools/check_packaging_contract.py",
     "tests/test_packaging_contract.py",
     "tools/check_pypi_sync.py",
