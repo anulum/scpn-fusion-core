@@ -56,6 +56,7 @@ P_AUX_MW = 50.0
 # Both runs integrate to t = 200 s so the steady states (not transients,
 # which differ at first order in dt) are compared for dt-consistency.
 STEADY_STATE_CORE_RATIO_BAND = (0.97, 1.03)
+REPORT_DIGEST_FLOAT_DECIMALS = 9
 
 sys.path.insert(0, str(SRC))
 
@@ -223,9 +224,21 @@ def build_report(*, include_runtime_environment: bool = False) -> dict[str, Any]
     }
 
 
+def _normalise_for_digest(value: Any) -> Any:
+    """Return a JSON-like value with stable diagnostic float precision."""
+    if isinstance(value, float):
+        return round(value, REPORT_DIGEST_FLOAT_DECIMALS)
+    if isinstance(value, list):
+        return [_normalise_for_digest(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalise_for_digest(item) for key, item in value.items()}
+    return value
+
+
 def _report_digest(report: dict[str, Any]) -> str:
     """Return a deterministic digest for a real-TORAX report payload."""
-    encoded = json.dumps(report, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    normalised = _normalise_for_digest(report)
+    encoded = json.dumps(normalised, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 

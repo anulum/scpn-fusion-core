@@ -165,6 +165,26 @@ def test_check_report_detects_current_missing_and_stale_reports(tmp_path: Path) 
     assert module.check_report(missing) == [f"missing TORAX real-parity report: {missing}"]
 
 
+def test_check_report_accepts_only_tiny_diagnostic_float_drift(tmp_path: Path) -> None:
+    """The drift checker tolerates runtime float noise, not material changes."""
+    module = _load_module()
+    report = cast(dict[str, Any], module.build_report())
+    current = tmp_path / "current.json"
+
+    tiny_drift = json.loads(json.dumps(report))
+    tiny_drift["our_solver"]["fine_run"]["final_core_ti_kev"] += 1e-11
+    current.write_text(json.dumps(tiny_drift, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    assert module.check_report(current) == []
+
+    material_drift = json.loads(json.dumps(report))
+    material_drift["our_solver"]["fine_run"]["final_core_ti_kev"] += 1e-5
+    current.write_text(
+        json.dumps(material_drift, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    assert module.check_report(current) == ["tracked TORAX real-parity report is stale"]
+
+
 def test_main_check_mode_reports_drift(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """The CLI check mode returns non-zero for stale reports without rewriting."""
     module = _load_module()
