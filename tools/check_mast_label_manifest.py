@@ -33,6 +33,8 @@ DISALLOWED_SOURCE_TYPES = {
     "model_prediction",
     "manual_guess",
 }
+PLACEHOLDER_VALUES = {"N/A", "TBD", "TODO", "UNKNOWN"}
+PLACEHOLDER_PREFIX = "REPLACE_WITH_"
 _MAX_JSON_BYTES = 4 * 1024 * 1024
 _MAX_SHOTS = 500_000
 
@@ -55,6 +57,14 @@ def _nonempty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def _evidence_str(value: Any) -> bool:
+    if not _nonempty_str(value):
+        return False
+    assert isinstance(value, str)
+    normalized = value.strip().upper()
+    return normalized not in PLACEHOLDER_VALUES and not normalized.startswith(PLACEHOLDER_PREFIX)
+
+
 def _valid_iso8601(value: str) -> bool:
     try:
         datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -70,7 +80,7 @@ def validate_manifest(payload: dict[str, Any]) -> list[str]:
         errors.append(f"manifest_version must be {MANIFEST_VERSION!r}.")
     if not _nonempty_str(payload.get("dataset")):
         errors.append("dataset must be a non-empty string.")
-    if not _nonempty_str(payload.get("label_authority")):
+    if not _evidence_str(payload.get("label_authority")):
         errors.append("label_authority must identify the independent source authority.")
 
     shots = payload.get("shots")
@@ -92,9 +102,10 @@ def validate_manifest(payload: dict[str, Any]) -> list[str]:
         if not _positive_int(shot_id):
             errors.append(f"{prefix}.shot_id must be a positive integer.")
             continue
+        assert isinstance(shot_id, int)
         if shot_id in seen:
             errors.append(f"{prefix}.shot_id duplicates shot {shot_id}.")
-        seen.add(int(shot_id))
+        seen.add(shot_id)
 
         label = item.get("label")
         if label not in LABELS:
@@ -109,9 +120,9 @@ def validate_manifest(payload: dict[str, Any]) -> list[str]:
             errors.append(
                 f"{prefix}.source_type must be one of {sorted(INDEPENDENT_SOURCE_TYPES)}."
             )
-        if not _nonempty_str(item.get("source_reference")):
+        if not _evidence_str(item.get("source_reference")):
             errors.append(f"{prefix}.source_reference must cite a table, log, DOI, URL, or file.")
-        if not _nonempty_str(item.get("labeled_by")):
+        if not _evidence_str(item.get("labeled_by")):
             errors.append(f"{prefix}.labeled_by must identify the label curator/source.")
         labeled_at = item.get("labeled_at_utc")
         if not _nonempty_str(labeled_at) or not _valid_iso8601(str(labeled_at)):
@@ -179,8 +190,12 @@ def main(argv: list[str] | None = None) -> int:
     if not manifest_path.exists():
         errors = [f"label manifest not found: {manifest_path}"]
     else:
-        payload = _load_json(manifest_path)
-        errors = validate_manifest(payload)
+        try:
+            payload = _load_json(manifest_path)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            errors = [str(exc)]
+        else:
+            errors = validate_manifest(payload)
 
     report = build_report(manifest_path, errors, payload)
     if args.write_report:

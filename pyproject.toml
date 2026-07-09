@@ -244,6 +244,8 @@ files = [
     "tools/benchmark_regression_guard.py",
     "tests/test_benchmark_regression_guard.py",
     "tests/test_ci_workflow_references.py",
+    "tools/check_mast_label_manifest.py",
+    "tests/test_check_mast_label_manifest.py",
     "tools/check_lfs_hygiene.py",
     "tests/test_check_lfs_hygiene.py",
     "tools/github_token_format_guard.py",
