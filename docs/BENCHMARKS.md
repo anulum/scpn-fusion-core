@@ -26,7 +26,8 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 > with `opt-level = 3` and fat LTO. Timings labelled "Python" use the pure
 > NumPy/SciPy path. "Projected" values are estimates, not measurements.
 > Community code timings are from published literature (see references below).
-> We encourage independent reproduction — see [`benchmarks/`](../benchmarks/).
+> We encourage independent reproduction — see
+> [`benchmarks/README.md`](../benchmarks/README.md).
 
 ## Current full-fidelity reproducibility status
 
