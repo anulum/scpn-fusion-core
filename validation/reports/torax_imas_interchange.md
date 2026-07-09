@@ -16,6 +16,7 @@ This artifact validates deterministic TORAX profile interchange into IMAS core_p
 
 ## OMAS Bridge
 
-- Runtime available: `True`
-- Roundtrip executed: `True`
-- Status: `roundtrip_passed`
+- Dependency checked: `False`
+- Runtime available: `None`
+- Roundtrip executed: `False`
+- Status: `not_executed_optional_roundtrip_disabled`

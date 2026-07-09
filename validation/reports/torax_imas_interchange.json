@@ -12,10 +12,10 @@
     }
   },
   "omas_bridge": {
-    "available": true,
-    "roundtrip_checksum_sha256": "fb8dd19f04e354ce2da769b4d39daa227f46757dfa2f6911cbf8befafffc6378",
-    "roundtrip_executed": true,
-    "status": "roundtrip_passed"
+    "available": null,
+    "dependency_checked": false,
+    "roundtrip_executed": false,
+    "status": "not_executed_optional_roundtrip_disabled"
   },
   "passes_thresholds": true,
   "physics_equivalence_claimed": false,

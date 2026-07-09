@@ -1686,16 +1686,20 @@ Refresh or check the fixture with:
 ```bash
 python validation/torax_imas_interchange.py
 python validation/torax_imas_interchange.py --check
+python validation/torax_imas_interchange.py --run-omas-roundtrip
 python validation/torax_same_physics_config_study.py
 python validation/torax_same_physics_config_study.py --check
 ```
 
 This lane validates profile interchange and unit conversion (`T_e_keV` to eV,
 `n_e_m3` kept in `m^-3`, `rho_norm` to `rho_tor_norm`). It is not a TORAX
-physics-equivalence claim. The same-physics configuration study proves the TORAX
-final profiles initialize the native transport solver, then keeps threshold
-tightening blocked on the native transport-model mismatch, missing same-deck
-source/boundary controls, and missing step-by-step TORAX trace.
+physics-equivalence claim. The default tracked report does not execute the
+optional OMAS roundtrip, so release drift checks stay identical on hosts with
+and without `omas`; use `--run-omas-roundtrip` for an environment-specific
+diagnostic report. The same-physics configuration study proves the TORAX final
+profiles initialize the native transport solver, then keeps threshold tightening
+blocked on the native transport-model mismatch, missing same-deck source/boundary
+controls, and missing step-by-step TORAX trace.
 The external parity score rollup records this TORAX lane as
 `blocked_same_physics_thresholds` with a parity score of `0.2` while the
 FreeGS/FreeGSNKE free-boundary lane is accepted.

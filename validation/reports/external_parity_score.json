@@ -157,9 +157,9 @@
       "status": "same_initial_profile_config_ready_thresholds_blocked"
     },
     {
-      "file_sha256": "157f35c837c0dca2683525711048a373bebce2f54a05ab1524f1b028fff2a7c0",
+      "file_sha256": "5cf1921d0acb2f6acd0692bec7183ec71f3410812f3286fef0e3dc7271a72f01",
       "path": "validation/reports/torax_imas_interchange.json",
-      "payload_sha256": "9cbac602896c499982f265a6933a25d7ec11ab0e468e245e10654eb74ff947e5",
+      "payload_sha256": "3b24dfdcfaf1092ce26f785ded6d618912cfad2c55e21953933391ed6b8864d9",
       "report_id": "torax_imas_interchange",
       "schema": "scpn-fusion-core.torax-imas-interchange.v1",
       "status": "torax_core_profiles_imas_fixture_ready"

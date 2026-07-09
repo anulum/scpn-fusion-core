@@ -67,7 +67,13 @@ Check tracked fixture/report drift::
     python validation/torax_imas_interchange.py --check
     python validation/torax_same_physics_config_study.py --check
 
+Run the optional OMAS roundtrip diagnostic when that dependency is installed::
+
+    python validation/torax_imas_interchange.py --run-omas-roundtrip
+
 The interchange workflow validates data interchange and unit conversion only.
+The tracked report leaves the optional OMAS roundtrip disabled by default so
+release drift checks do not depend on whether the host has ``omas`` installed.
 The same-physics configuration study verifies that the TORAX final profiles can
 initialize the native transport solver, then keeps threshold tightening blocked
 on the remaining model/source/time-trace mismatches.

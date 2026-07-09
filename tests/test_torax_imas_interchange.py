@@ -76,6 +76,12 @@ def test_write_and_check_artifacts_roundtrip(tmp_path: Path) -> None:
     assert report["schema"] == "scpn-fusion-core.torax-imas-interchange.v1"
     assert report["passes_thresholds"] is True
     assert report["physics_equivalence_claimed"] is False
+    assert report["omas_bridge"] == {
+        "dependency_checked": False,
+        "available": None,
+        "roundtrip_executed": False,
+        "status": "not_executed_optional_roundtrip_disabled",
+    }
     assert (
         module.check_artifacts(
             reference_path=REFERENCE,
@@ -86,6 +92,34 @@ def test_write_and_check_artifacts_roundtrip(tmp_path: Path) -> None:
         == []
     )
     assert "# TORAX IMAS Interchange" in report_md.read_text(encoding="utf-8")
+
+
+def test_check_artifacts_default_ignores_optional_omas_availability(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Default drift checks stay stable when optional OMAS availability changes."""
+    module = _load_module()
+    ids_output = tmp_path / "torax_core_profiles_ids.json"
+    report_json = tmp_path / "torax_imas_interchange.json"
+    report_md = tmp_path / "torax_imas_interchange.md"
+    monkeypatch.setattr(module, "HAS_OMAS", True)
+    module.write_artifacts(
+        reference_path=REFERENCE,
+        ids_output=ids_output,
+        report_json=report_json,
+        report_md=report_md,
+    )
+    monkeypatch.setattr(module, "HAS_OMAS", False)
+
+    errors = module.check_artifacts(
+        reference_path=REFERENCE,
+        ids_output=ids_output,
+        report_json=report_json,
+        report_md=report_md,
+    )
+
+    assert errors == []
 
 
 def test_check_artifacts_detects_stale_fixture(tmp_path: Path) -> None:
@@ -213,12 +247,32 @@ def test_omas_roundtrip_status_executes_when_dependency_available(
     monkeypatch.setattr(module, "ids_to_omas_core_profiles", lambda payload: {"ids": payload})
     monkeypatch.setattr(module, "omas_core_profiles_to_ids", lambda ods: ods["ids"])
 
-    status = module._omas_roundtrip_status(ids)
+    status = module._omas_roundtrip_status(ids, execute=True)
 
+    assert status["dependency_checked"] is True
     assert status["available"] is True
     assert status["roundtrip_executed"] is True
     assert status["status"] == "roundtrip_passed"
     assert len(status["roundtrip_checksum_sha256"]) == 64
+
+
+def test_omas_roundtrip_status_reports_missing_dependency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The optional OMAS status path reports an unavailable runtime dependency."""
+    module = _load_module()
+    reference = module.load_torax_reference(REFERENCE)
+    ids = module.build_core_profiles_ids(reference)
+    monkeypatch.setattr(module, "HAS_OMAS", False)
+
+    status = module._omas_roundtrip_status(ids, execute=True)
+
+    assert status == {
+        "dependency_checked": True,
+        "available": False,
+        "roundtrip_executed": False,
+        "status": "not_executed_optional_dependency_missing",
+    }
 
 
 def test_check_artifacts_reports_missing_and_stale_reports(tmp_path: Path) -> None:

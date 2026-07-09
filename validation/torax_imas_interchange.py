@@ -70,6 +70,7 @@ def load_torax_reference(path: Path = REFERENCE) -> dict[str, Any]:
     -------
     dict[str, Any]
         Validated TORAX reference payload.
+
     """
     payload = cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
     if payload.get("schema") != "scpn-fusion-core.torax-reference-profiles.v1":
@@ -152,10 +153,18 @@ def _validate_ids_against_reference(ids: Mapping[str, Any], reference: Mapping[s
         raise ValueError("core_profiles electron density does not match TORAX ne.")
 
 
-def _omas_roundtrip_status(ids: Mapping[str, Any]) -> dict[str, Any]:
+def _omas_roundtrip_status(ids: Mapping[str, Any], *, execute: bool) -> dict[str, Any]:
     """Run the optional OMAS roundtrip when the runtime dependency is available."""
+    if not execute:
+        return {
+            "dependency_checked": False,
+            "available": None,
+            "roundtrip_executed": False,
+            "status": "not_executed_optional_roundtrip_disabled",
+        }
     if not HAS_OMAS:
         return {
+            "dependency_checked": True,
             "available": False,
             "roundtrip_executed": False,
             "status": "not_executed_optional_dependency_missing",
@@ -163,6 +172,7 @@ def _omas_roundtrip_status(ids: Mapping[str, Any]) -> dict[str, Any]:
     ods = ids_to_omas_core_profiles(ids)
     roundtrip = omas_core_profiles_to_ids(ods)
     return {
+        "dependency_checked": True,
         "available": True,
         "roundtrip_executed": True,
         "status": "roundtrip_passed",
@@ -170,7 +180,12 @@ def _omas_roundtrip_status(ids: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_report(ids: Mapping[str, Any], reference: Mapping[str, Any]) -> dict[str, Any]:
+def build_report(
+    ids: Mapping[str, Any],
+    reference: Mapping[str, Any],
+    *,
+    run_omas_roundtrip: bool = False,
+) -> dict[str, Any]:
     """Build the TORAX IMAS interchange report payload."""
     _validate_ids_against_reference(ids, reference)
     profiles = cast(Mapping[str, Any], reference["profiles"])
@@ -203,7 +218,7 @@ def build_report(ids: Mapping[str, Any], reference: Mapping[str, Any]) -> dict[s
                 "radial_grid": "TORAX rho_norm -> IMAS grid.rho_tor_norm",
             },
         },
-        "omas_bridge": _omas_roundtrip_status(ids),
+        "omas_bridge": _omas_roundtrip_status(ids, execute=run_omas_roundtrip),
     }
 
 
@@ -230,6 +245,7 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         "",
         "## OMAS Bridge",
         "",
+        f"- Dependency checked: `{omas_status['dependency_checked']}`",
         f"- Runtime available: `{omas_status['available']}`",
         f"- Roundtrip executed: `{omas_status['roundtrip_executed']}`",
         f"- Status: `{omas_status['status']}`",
@@ -244,6 +260,7 @@ def write_artifacts(
     ids_output: Path = IDS_OUTPUT,
     report_json: Path = REPORT_JSON,
     report_md: Path = REPORT_MD,
+    run_omas_roundtrip: bool = False,
 ) -> dict[str, Any]:
     """Generate and write the IMAS fixture plus reports."""
     reference = load_torax_reference(reference_path)
@@ -253,7 +270,7 @@ def write_artifacts(
     ids_output.parent.mkdir(parents=True, exist_ok=True)
     write_ids(ids, ids_output)
     stored_ids = read_ids(ids_output)
-    report = build_report(stored_ids, reference)
+    report = build_report(stored_ids, reference, run_omas_roundtrip=run_omas_roundtrip)
 
     report_json.parent.mkdir(parents=True, exist_ok=True)
     report_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -267,11 +284,16 @@ def check_artifacts(
     ids_output: Path = IDS_OUTPUT,
     report_json: Path = REPORT_JSON,
     report_md: Path = REPORT_MD,
+    run_omas_roundtrip: bool = False,
 ) -> list[str]:
     """Return drift errors for tracked TORAX IMAS interchange artifacts."""
     reference = load_torax_reference(reference_path)
     expected_ids = build_core_profiles_ids(reference)
-    expected_report = build_report(expected_ids, reference)
+    expected_report = build_report(
+        expected_ids,
+        reference,
+        run_omas_roundtrip=run_omas_roundtrip,
+    )
     expected_md = render_markdown(expected_report)
     errors: list[str] = []
 
@@ -307,6 +329,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report-json", type=Path, default=REPORT_JSON)
     parser.add_argument("--report-md", type=Path, default=REPORT_MD)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--run-omas-roundtrip",
+        action="store_true",
+        help="Execute the optional OMAS roundtrip and embed its runtime status in the report.",
+    )
     args = parser.parse_args(argv)
 
     if args.check:
@@ -315,6 +342,7 @@ def main(argv: list[str] | None = None) -> int:
             ids_output=args.ids_output,
             report_json=args.report_json,
             report_md=args.report_md,
+            run_omas_roundtrip=args.run_omas_roundtrip,
         )
         for error in errors:
             print(f"TORAX IMAS INTERCHANGE ERROR: {error}", file=sys.stderr)
@@ -328,6 +356,7 @@ def main(argv: list[str] | None = None) -> int:
         ids_output=args.ids_output,
         report_json=args.report_json,
         report_md=args.report_md,
+        run_omas_roundtrip=args.run_omas_roundtrip,
     )
     print(json.dumps(report["imas_fixture"], indent=2, sort_keys=True))
     print(f"status: {report['status']}")
