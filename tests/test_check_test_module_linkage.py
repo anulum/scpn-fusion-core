@@ -24,6 +24,27 @@ linkage = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = linkage
 SPEC.loader.exec_module(linkage)
 
+ROUND4_AUDIT_18_MODULES = frozenset(
+    {
+        "src/scpn_fusion/io/imas_connector_equilibrium.py",
+        "src/scpn_fusion/io/imas_connector_transport.py",
+        "src/scpn_fusion/io/imas_connector_digital_twin.py",
+        "src/scpn_fusion/io/imas_history_payloads.py",
+        "src/scpn_fusion/io/_tokamak_archive_shots.py",
+        "src/scpn_fusion/io/mast_ingestor.py",
+        "src/scpn_fusion/io/logging_config.py",
+        "src/scpn_fusion/io/imas_connector.py",
+        "src/scpn_fusion/diagnostics/forward.py",
+        "src/scpn_fusion/ui/app.py",
+        "src/scpn_fusion/scpn/contracts.py",
+        "src/scpn_fusion/scpn/controller_features_mixin.py",
+        "src/scpn_fusion/scpn/artifact.py",
+        "src/scpn_fusion/scpn/controller_backend_mixin.py",
+        "src/scpn_fusion/scpn/artifact_schema.py",
+        "src/scpn_fusion/scpn/controller_runtime_backend.py",
+    }
+)
+
 
 def test_collect_unlinked_modules_returns_known_paths() -> None:
     unlinked = linkage.collect_unlinked_modules(
@@ -32,6 +53,17 @@ def test_collect_unlinked_modules_returns_known_paths() -> None:
     )
     assert isinstance(unlinked, list)
     assert "src/scpn_fusion/core/force_balance.py" not in unlinked
+
+
+def test_round4_audit_18_modules_have_live_test_linkage() -> None:
+    """The Round 4 AUDIT-18 module list has direct or composite test linkage."""
+    unlinked = set(
+        linkage.collect_unlinked_modules(
+            source_root=ROOT / "src" / "scpn_fusion",
+            test_root=ROOT / "tests",
+        )
+    )
+    assert sorted(ROUND4_AUDIT_18_MODULES & unlinked) == []
 
 
 def test_main_passes_with_repo_allowlist() -> None:
