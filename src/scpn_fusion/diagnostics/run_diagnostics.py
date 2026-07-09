@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import inspect
+import logging
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional
 
@@ -29,6 +30,7 @@ except (AttributeError, ImportError):
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = data_root() / "validation" / "iter_validated_config.json"
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "diagnostics_demo"
+logger = logging.getLogger(__name__)
 
 
 def _build_sensor_suite(
@@ -76,7 +78,7 @@ def run_diag_demo(
     rng = np.random.default_rng(seed_int)
 
     if verbose:
-        print("--- SCPN SYNTHETIC DIAGNOSTICS & TOMOGRAPHY ---")
+        logger.info("--- SCPN SYNTHETIC DIAGNOSTICS & TOMOGRAPHY ---")
 
     kernel = kernel_factory(str(cfg))
     if hasattr(kernel, "solve_equilibrium"):
@@ -98,14 +100,14 @@ def run_diag_demo(
 
     sensors = _build_sensor_suite(sensor_factory, kernel, seed=seed_int, rng=rng)
     if verbose:
-        print("Measuring Signals...")
+        logger.info("Measuring Signals...")
     mag_signals = np.asarray(sensors.measure_magnetics(), dtype=np.float64)
     bolo_signals = np.asarray(sensors.measure_bolometer(phantom), dtype=np.float64)
 
     if verbose:
-        print(f"  Magnetic Probes: {int(mag_signals.size)} channels")
-        print(f"  Bolometer Cameras: {int(bolo_signals.size)} channels")
-        print("Running Tomographic Inversion...")
+        logger.info("  Magnetic Probes: %d channels", int(mag_signals.size))
+        logger.info("  Bolometer Cameras: %d channels", int(bolo_signals.size))
+        logger.info("Running Tomographic Inversion...")
 
     tomo = tomography_factory(sensors)
     reconstruction = np.asarray(tomo.reconstruct(bolo_signals), dtype=np.float64)
@@ -136,8 +138,8 @@ def run_diag_demo(
             geom_path = str(geom_out)
             plot_saved = bool(tomo_out.exists() and geom_out.exists())
             if verbose:
-                print(f"Saved: {tomo_out}")
-                print(f"Saved: {geom_out}")
+                logger.info("Saved: %s", tomo_out)
+                logger.info("Saved: %s", geom_out)
         except Exception as exc:
             plot_error = f"{exc.__class__.__name__}: {exc}"
 
@@ -157,6 +159,7 @@ def run_diag_demo(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description="Run synthetic diagnostics and tomography demo.")
     parser.add_argument(
         "--config",

@@ -174,6 +174,6 @@ if __name__ == "__main__":
     try:
         ingestor = MastIngestor()
         data = ingestor.load_shot_summary(30421)
-        print(f"Loaded Shot 30421: {len(data['time'])} samples.")
+        logger.info("Loaded Shot 30421: %d samples.", len(data["time"]))
     except Exception as e:
-        print(f"MAST Ingestor Check Failed: {e}")
+        logger.exception("MAST Ingestor Check Failed: %s", e)

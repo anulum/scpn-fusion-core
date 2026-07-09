@@ -313,6 +313,7 @@ files = [
     "tests/test_tokamak_digital_twin.py",
     "tests/test_tokamak_flight_sim.py",
     "tests/test_logging_config.py",
+    "tests/test_subsystem_logging_contracts.py",
     "tests/test_tokamak_live_payload.py",
     "tests/test_tokamak_disruption_archive.py",
     "tests/test_imas_connector_storage.py",

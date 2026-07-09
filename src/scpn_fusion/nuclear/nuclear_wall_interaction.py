@@ -16,6 +16,7 @@ certification.
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable, cast
 
 import matplotlib.pyplot as plt
@@ -30,6 +31,7 @@ FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 AshPoisoningHistory = dict[str, list[float]]
 MaterialProperties = dict[str, float]
+logger = logging.getLogger(__name__)
 
 # Neutron damage thresholds (DPA limit before replacement)
 MATERIALS: dict[str, MaterialProperties] = {
@@ -115,7 +117,10 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         if not np.isfinite(pumping_efficiency) or not (0.0 <= pumping_efficiency <= 1.0):
             raise ValueError("pumping_efficiency must be finite and in [0, 1].")
 
-        print(f"[Nuclear] Simulating Ash Poisoning (tau_He*/tau_E = {tau_He_ratio})...")
+        logger.info(
+            "[Nuclear] Simulating Ash Poisoning (tau_He*/tau_E = %s)...",
+            tau_He_ratio,
+        )
 
         self.solve_equilibrium()
 
@@ -140,7 +145,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             n_T = 0.5 * n_fuel
 
             if n_fuel < 0:
-                print("  -> Plasma Quenched (Dilution Limit)")
+                logger.info("  -> Plasma Quenched (Dilution Limit)")
                 break
 
             # B. Reaction Rate
@@ -181,7 +186,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             Radial wall coordinates, vertical wall coordinates, and finite
             non-negative neutron wall flux in ``n/m^2/s``.
         """
-        print("[Nuclear] Calculating Neutron Wall Loading (NWL)...")
+        logger.info("[Nuclear] Calculating Neutron Wall Loading (NWL)...")
 
         source_map = self._build_neutron_source_map()
 
@@ -206,7 +211,11 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         src_z = src_z[active_idx]
         src_S = src_S[active_idx]
 
-        print(f"  Ray-tracing from {len(src_r)} plasma elements to {len(Rw)} wall segments...")
+        logger.info(
+            "  Ray-tracing from %d plasma elements to %d wall segments...",
+            len(src_r),
+            len(Rw),
+        )
 
         for i in range(len(Rw)):
             # Target point
@@ -336,7 +345,11 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         peak_load = np.max(MW_m2)
         avg_load = np.mean(MW_m2)
 
-        print(f"[Nuclear] Wall Loading: Peak={peak_load:.2f} MW/m2, Avg={avg_load:.2f} MW/m2")
+        logger.info(
+            "[Nuclear] Wall Loading: Peak=%.2f MW/m2, Avg=%.2f MW/m2",
+            peak_load,
+            avg_load,
+        )
 
         results: dict[str, float] = {}
         # Particle Flux estimate (D/T/He ions)
@@ -391,8 +404,8 @@ def run_nuclear_sim(
     config_path = str(config_path)
 
     if verbose:
-        print("--- SCPN NUCLEAR ENGINEERING: Ash & Materials ---")
-        print(f"[Nuclear] Config: {config_path}")
+        logger.info("--- SCPN NUCLEAR ENGINEERING: Ash & Materials ---")
+        logger.info("[Nuclear] Config: %s", config_path)
     lab = lab_factory(config_path)
 
     hist_good = lab.simulate_ash_poisoning(tau_He_ratio=5.0, pumping_efficiency=1.0)
@@ -459,10 +472,10 @@ def run_nuclear_sim(
 
     if verbose:
         if plot_saved:
-            print(f"\nResults saved: {output_path}")
-        print("Material Lifespan Estimates:")
+            logger.info("Results saved: %s", output_path)
+        logger.info("Material Lifespan Estimates:")
         for m, y in lifespans.items():
-            print(f"  {m}: {y:.1f} years")
+            logger.info("  %s: %.1f years", m, y)
 
     good_f_he = float(hist_good["f_He"][-1]) if hist_good["f_He"] else 0.0
     bad_f_he = float(hist_bad["f_He"][-1]) if hist_bad["f_He"] else 0.0
@@ -489,4 +502,5 @@ def run_nuclear_sim(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     run_nuclear_sim()

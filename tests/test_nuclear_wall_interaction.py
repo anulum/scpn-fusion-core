@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import numpy as np
@@ -257,10 +258,14 @@ class TestCalculateCadWallLoading:
         assert report is not None
 
 
-def test_run_nuclear_sim_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_nuclear_sim_end_to_end(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """The standalone nuclear diagnostic bundle runs and renders via an injected lab."""
     import matplotlib.pyplot as plt
 
+    caplog.set_level(logging.INFO, logger="scpn_fusion.nuclear.nuclear_wall_interaction")
     saved: list[str] = []
     monkeypatch.setattr(plt, "savefig", lambda path, *a, **k: saved.append(str(path)))
     monkeypatch.setattr(plt, "show", lambda *a, **k: None)
@@ -272,6 +277,8 @@ def test_run_nuclear_sim_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
     result = run_nuclear_sim(config_path="ignored.json", lab_factory=_factory, verbose=True)
 
     assert saved == ["Nuclear_Engineering_Report.png"]
+    assert "Nuclear" in caplog.text
+    assert "Material Lifespan Estimates" in caplog.text
     assert "peak_wall_load_mw_m2" in result or "peak_load" in result or result
 
 

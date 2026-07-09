@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pytest
 from matplotlib import pyplot as plt
@@ -151,10 +153,11 @@ def test_auto_prefers_rust_when_available() -> None:
     np.testing.assert_allclose(auto_solution, rust_solution, rtol=0.0, atol=0.0)
 
 
-def test_verbose_geometry_logs_progress(capsys: pytest.CaptureFixture[str]) -> None:
-    """Verbose construction emits geometry-build progress output."""
+def test_verbose_geometry_logs_progress(caplog: pytest.LogCaptureFixture) -> None:
+    """Verbose construction emits geometry-build progress logs."""
+    caplog.set_level(logging.INFO, logger="scpn_fusion.diagnostics.tomography")
     PlasmaTomography(_SensorStub(), grid_res=8, verbose=True)
-    assert "[Tomography] Building Geometry Matrix A..." in capsys.readouterr().out
+    assert "[Tomography] Building Geometry Matrix A..." in caplog.text
 
 
 def test_ridge_reconstruction_returns_clipped_grid() -> None:

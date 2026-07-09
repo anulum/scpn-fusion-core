@@ -692,4 +692,4 @@ if __name__ == "__main__":
         # Run
         Psi = bridge.solve(J, iterations=500)
         if Psi is not None:
-            print(f"Max Flux: {np.max(Psi)}")
+            logger.info("Max Flux: %s", np.max(Psi))

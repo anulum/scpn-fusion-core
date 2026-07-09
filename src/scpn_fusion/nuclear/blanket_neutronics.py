@@ -20,10 +20,13 @@ fast iteration, benchmarking, and regression checks in the native solver pipelin
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -339,7 +342,7 @@ def run_breeding_sim(
         raise ValueError("li6_enrichment must satisfy 0.0 <= li6_enrichment <= 1.0")
 
     if verbose:
-        print("--- SCPN FUEL CYCLE: Tritium Breeding Ratio (TBR) ---")
+        logger.info("--- SCPN FUEL CYCLE: Tritium Breeding Ratio (TBR) ---")
 
     blanket = BreedingBlanket(thickness_cm=thickness_cm, li6_enrichment=li6_enrichment)
     phi = blanket.solve_transport(incident_flux=incident_flux, rear_albedo=rear_albedo)
@@ -347,9 +350,9 @@ def run_breeding_sim(
 
     status = "SUSTAINABLE" if tbr > 1.05 else "DYING REACTOR"
     if verbose:
-        print(f"Design Thickness: {blanket.thickness} cm")
-        print(f"Calculated TBR: {tbr:.3f}")
-        print(f"Status: {status}")
+        logger.info("Design Thickness: %s cm", blanket.thickness)
+        logger.info("Calculated TBR: %.3f", tbr)
+        logger.info("Status: %s", status)
 
     plot_saved = False
     plot_error = None
@@ -374,11 +377,11 @@ def run_breeding_sim(
             plt.close(fig)
             plot_saved = True
             if verbose:
-                print(f"Saved: {output_path}")
+                logger.info("Saved: %s", output_path)
         except Exception as exc:
             plot_error = str(exc)
             if verbose:
-                print(f"Simulation completed without plot artifact: {exc}")
+                logger.info("Simulation completed without plot artifact: %s", exc)
 
     summary = {
         "thickness_cm": float(blanket.thickness),

@@ -9,11 +9,14 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+
+logger = logging.getLogger(__name__)
 
 
 class TEMHD_Stabilizer:
@@ -163,7 +166,7 @@ def run_temhd_experiment(
     res_T: list[float] = []
     res_k: list[float] = []
     if verbose:
-        print(f"{'Flux':<10} | {'T_surf':<10}")
+        logger.info("%s", f"{'Flux':<10} | {'T_surf':<10}")
     cadence = max(n_flux // 5, 1)
     for i, q in enumerate(flux_ramp):
         t_surf = 0.0
@@ -173,7 +176,7 @@ def run_temhd_experiment(
         res_T.append(float(t_surf))
         res_k.append(float(k_eff))
         if verbose and (i % cadence == 0 or i == n_flux - 1):
-            print(f"{float(q):<10.1f} | {float(t_surf):<10.1f}")
+            logger.info("%s", f"{float(q):<10.1f} | {float(t_surf):<10.1f}")
 
     t_arr = np.asarray(res_T, dtype=np.float64)
     k_arr = np.asarray(res_k, dtype=np.float64)
@@ -189,7 +192,7 @@ def run_temhd_experiment(
             plt.close(fig)
             plot_saved = True
             if verbose:
-                print(f"Saved: {output_path}")
+                logger.info("Saved: %s", output_path)
         except Exception as exc:
             plot_error = f"{exc.__class__.__name__}: {exc}"
 
@@ -210,4 +213,5 @@ def run_temhd_experiment(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     run_temhd_experiment()

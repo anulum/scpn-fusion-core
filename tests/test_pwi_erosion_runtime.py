@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pytest
 
@@ -77,3 +79,20 @@ def test_run_pwi_demo_rejects_invalid_temperature_range() -> None:
 def test_run_pwi_demo_rejects_invalid_num_points() -> None:
     with pytest.raises(ValueError, match="num_points"):
         run_pwi_demo(num_points=2, save_plot=False, verbose=False)
+
+
+def test_run_pwi_demo_verbose_path_logs_progress(caplog: pytest.LogCaptureFixture) -> None:
+    """Verbose PWI scans route tabular progress through structured logging."""
+    caplog.set_level(logging.INFO, logger="scpn_fusion.nuclear.pwi_erosion")
+
+    summary = run_pwi_demo(
+        temp_min_eV=10.0,
+        temp_max_eV=50.0,
+        num_points=5,
+        save_plot=False,
+        verbose=True,
+    )
+
+    assert summary["points"] == 5
+    assert "SPUTTERING" in caplog.text
+    assert "Erosion (mm/y)" in caplog.text

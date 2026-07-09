@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -22,6 +23,7 @@ except Exception:  # pragma: no cover - optional dependency path
     lsq_linear = None
 
 FloatArray = NDArray[np.float64]
+logger = logging.getLogger(__name__)
 
 
 class PlasmaTomography:
@@ -90,7 +92,7 @@ class PlasmaTomography:
 
     def _log(self, message: str) -> None:
         if self.verbose:
-            print(message)
+            logger.info("%s", message)
 
     def _build_geometry_matrix(self) -> FloatArray:
         self._log("[Tomography] Building Geometry Matrix A...")

@@ -9,11 +9,14 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, TypedDict
 
 import matplotlib.pyplot as plt
 
 from scpn_fusion.engineering.thermal_hydraulics import CoolantLoop
+
+logger = logging.getLogger(__name__)
 
 
 class PlantPowerBreakdown(TypedDict):
@@ -139,18 +142,19 @@ class PowerPlantModel:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     # Test Run
     plant = PowerPlantModel()
     # Scenario: 500MW Fusion, 50MW Heating
     res = plant.calculate_plant_performance(500.0, 50.0)
-    print("--- FUSION PLANT STATUS ---")
-    print(f"Fusion Power: {res['P_fusion']:.1f} MW")
-    print(f"Gross Electric: {res['P_gross']:.1f} MW")
-    print(f"House Load: {res['P_recirc']:.1f} MW")
-    print(f"NET TO GRID: {res['P_net']:.1f} MW")
-    print(f"Q_eng: {res['Q_eng']:.2f}")
+    logger.info("--- FUSION PLANT STATUS ---")
+    logger.info("Fusion Power: %.1f MW", res["P_fusion"])
+    logger.info("Gross Electric: %.1f MW", res["P_gross"])
+    logger.info("House Load: %.1f MW", res["P_recirc"])
+    logger.info("NET TO GRID: %.1f MW", res["P_net"])
+    logger.info("Q_eng: %.2f", res["Q_eng"])
 
     if res["P_net"] > 0:
-        print("SUCCESS: Reactor is commercially viable.")
+        logger.info("SUCCESS: Reactor is commercially viable.")
     else:
-        print("FAIL: Reactor consumes more than it produces.")
+        logger.info("FAIL: Reactor consumes more than it produces.")

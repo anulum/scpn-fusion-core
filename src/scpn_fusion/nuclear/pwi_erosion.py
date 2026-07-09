@@ -14,10 +14,13 @@ workflow-level guardrail checks in the native nuclear analysis stack.
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class SputteringPhysics:
@@ -122,9 +125,12 @@ def run_pwi_demo(
     yields: list[float] = []
 
     if verbose:
-        print("--- SCPN PLASMA-WALL INTERACTION: SPUTTERING ---")
-        print(f"{'T_ion (eV)':<10} | {'Impact (eV)':<12} | {'Yield':<10} | {'Erosion (mm/y)':<15}")
-        print("-" * 55)
+        logger.info("--- SCPN PLASMA-WALL INTERACTION: SPUTTERING ---")
+        logger.info(
+            "%s",
+            f"{'T_ion (eV)':<10} | {'Impact (eV)':<12} | {'Yield':<10} | {'Erosion (mm/y)':<15}",
+        )
+        logger.info("%s", "-" * 55)
 
     cadence = max(n // 5, 1)
     for i, T in enumerate(temps):
@@ -132,9 +138,10 @@ def run_pwi_demo(
         erosion_rates.append(float(res["Erosion_mm_year"]))
         yields.append(float(res["Yield"]))
         if verbose and (i % cadence == 0 or i == n - 1):
-            print(
+            logger.info(
+                "%s",
                 f"{float(T):<10.1f} | {float(res['E_impact']):<12.1f} | "
-                f"{float(res['Yield']):<10.4f} | {float(res['Erosion_mm_year']):<15.2f}"
+                f"{float(res['Yield']):<10.4f} | {float(res['Erosion_mm_year']):<15.2f}",
             )
 
     er_arr = np.asarray(erosion_rates, dtype=np.float64)
@@ -163,7 +170,7 @@ def run_pwi_demo(
             plt.close(fig)
             plot_saved = True
             if verbose:
-                print(f"Saved: {output_path}")
+                logger.info("Saved: %s", output_path)
         except Exception as exc:
             plot_error = f"{exc.__class__.__name__}: {exc}"
 
@@ -185,4 +192,5 @@ def run_pwi_demo(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     run_pwi_demo()

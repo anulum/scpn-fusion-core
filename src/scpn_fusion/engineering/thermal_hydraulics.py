@@ -9,9 +9,12 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TypedDict
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class CoolantProperties(TypedDict):
@@ -118,9 +121,10 @@ class CoolantLoop:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     loop = CoolantLoop("water")
     res = loop.calculate_pumping_power(Q_thermal_MW=500.0)
-    print("--- Thermal Hydraulics (Water) ---")
-    print(f"Mass Flow: {res['mdot_kg_s']:.1f} kg/s")
-    print(f"Pressure Drop: {res['dP_Pa'] / 1e5:.2f} bar")
-    print(f"Pumping Power: {res['P_pump_MW']:.2f} MW")
+    logger.info("--- Thermal Hydraulics (Water) ---")
+    logger.info("Mass Flow: %.1f kg/s", res["mdot_kg_s"])
+    logger.info("Pressure Drop: %.2f bar", res["dP_Pa"] / 1e5)
+    logger.info("Pumping Power: %.2f MW", res["P_pump_MW"])

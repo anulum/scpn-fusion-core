@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import numpy as np
@@ -203,11 +204,11 @@ def test_run_breeding_sim_rejects_invalid_inputs(kwargs: dict[str, Any], match: 
         run_breeding_sim(save_plot=False, verbose=False, **kwargs)
 
 
-def test_run_breeding_sim_verbose_path_runs(capsys: pytest.CaptureFixture[str]) -> None:
-    """The verbose branch emits progress output and still returns a summary."""
+def test_run_breeding_sim_verbose_path_runs(caplog: pytest.LogCaptureFixture) -> None:
+    """The verbose branch emits progress logs and still returns a summary."""
+    caplog.set_level(logging.INFO, logger="scpn_fusion.nuclear.blanket_neutronics")
     summary = run_breeding_sim(thickness_cm=80.0, li6_enrichment=0.9, save_plot=False, verbose=True)
-    captured = capsys.readouterr()
-    assert "TBR" in captured.out
+    assert "TBR" in caplog.text
     assert isinstance(summary["tbr"], float)
 
 
