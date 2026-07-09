@@ -239,6 +239,8 @@ files = [
     "tests/test_benchmark_free_boundary_strict_parity.py",
     "tools/preflight.py",
     "tests/test_preflight.py",
+    "tools/capability_manifest.py",
+    "tests/test_capability_manifest.py",
     "tools/benchmark_regression_guard.py",
     "tests/test_benchmark_regression_guard.py",
     "tests/test_ci_workflow_references.py",

@@ -31,7 +31,7 @@ def _repo_root() -> Path:
 
 def _load_tool() -> Any:
     tool_path = _repo_root() / "tools" / "capability_manifest.py"
-    spec = importlib.util.spec_from_file_location("capability_manifest", tool_path)
+    spec = importlib.util.spec_from_file_location("tools.capability_manifest", tool_path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
