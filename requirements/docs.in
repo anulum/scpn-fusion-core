@@ -12,7 +12,7 @@ pydantic>=2.0,<3
 pandas>=1.5,<4
 sphinx==8.2.3
 roman>=5.1
-furo==2024.8.6
+furo==2025.12.19
 sphinx-copybutton==0.5.2
 sphinx-autodoc-typehints==3.5.2
 # Keep the docs notebook conversion lane on the reviewed CPU JAX generation.
@@ -27,7 +27,7 @@ bleach>=6.4.0
 Pygments>=2.20.0
 jupyter-server>=2.20.0
 jupyterlab>=4.5.9
-mistune>=3.2.1
+mistune>=3.3.2
 nbconvert>=7.17.1
 notebook>=7.5.6
 pillow>=12.2.0
