@@ -29,6 +29,8 @@ from scpn_fusion.neurocore_compat import (
 logger = logging.getLogger(__name__)
 
 FloatArray = NDArray[np.float64]
+_OPTIONAL_KERNEL_IMPORT_ERRORS = (AttributeError, ImportError, OSError, RuntimeError)
+_PLOT_EXPORT_ERRORS = (AttributeError, OSError, RuntimeError, TypeError, ValueError)
 
 SHOT_DURATION = 100
 TARGET_R = 6.2
@@ -41,7 +43,7 @@ def _resolve_fusion_kernel() -> Any:
         from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel
 
         return _FusionKernel
-    except Exception as exc:  # pragma: no cover - import-guard path
+    except _OPTIONAL_KERNEL_IMPORT_ERRORS as exc:  # pragma: no cover - import-guard path
         raise ImportError(
             "Unable to import FusionKernel. Run with PYTHONPATH=src "
             "or use `python -m scpn_fusion.control.neuro_cybernetic_controller`."
@@ -318,7 +320,7 @@ class NeuroCyberneticController:
         def _mean_profile_or_zero(value: Any) -> float:
             try:
                 arr = np.asarray(value, dtype=np.float64)
-            except Exception:
+            except (OverflowError, TypeError, ValueError):
                 return 0.0
             if arr.size == 0:
                 return 0.0
@@ -401,7 +403,7 @@ class NeuroCyberneticController:
             try:
                 self.visualize(title, output_path=output_path, verbose=verbose)
                 plot_saved = True
-            except Exception as exc:
+            except _PLOT_EXPORT_ERRORS as exc:
                 plot_error = str(exc)
                 if verbose:
                     logger.warning("Plot export skipped due to error: %s", exc)

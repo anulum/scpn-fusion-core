@@ -16,6 +16,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+_OPTIONAL_BACKEND_IMPORT_ERRORS = (AttributeError, ImportError, OSError, RuntimeError)
+
 try:
     import jax
     import jax.numpy as jnp
@@ -24,7 +26,7 @@ try:
     jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
 
     _HAS_JAX = True
-except Exception:
+except _OPTIONAL_BACKEND_IMPORT_ERRORS:
     jax = None  # type: ignore[assignment]
     jnp = None  # type: ignore[assignment]
     _HAS_JAX = False
@@ -33,7 +35,7 @@ try:
     import torch
 
     _HAS_TORCH = True
-except Exception:
+except _OPTIONAL_BACKEND_IMPORT_ERRORS:
     torch = None  # type: ignore[assignment, unused-ignore]
     _HAS_TORCH = False
 
