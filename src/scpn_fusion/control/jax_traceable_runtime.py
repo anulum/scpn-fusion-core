@@ -36,7 +36,7 @@ try:
 
     _HAS_TORCH = True
 except _OPTIONAL_BACKEND_IMPORT_ERRORS:
-    torch = None  # type: ignore[assignment, unused-ignore]
+    torch = None
     _HAS_TORCH = False
 
 

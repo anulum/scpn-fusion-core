@@ -67,9 +67,9 @@ try:
     import torch.nn as nn
     import torch.optim as optim
 except (ImportError, OSError):  # pragma: no cover - optional dependency path
-    torch = None  # type: ignore[assignment, unused-ignore]
-    nn = None  # type: ignore[assignment, unused-ignore]
-    optim = None  # type: ignore[assignment, unused-ignore]
+    torch = None
+    nn = None
+    optim = None
 
 DEFAULT_SEQ_LEN = 100
 DEFAULT_MODEL_FILENAME = "disruption_model.pth"
@@ -89,7 +89,7 @@ _INFERENCE_FALLBACK_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, 
 
 if torch is not None:
 
-    class DisruptionTransformer(nn.Module):  # type: ignore[misc, unused-ignore]
+    class DisruptionTransformer(nn.Module):  # type: ignore[misc]
         """Transformer encoder that scores tearing-mode disruption risk from a signal window."""
 
         def __init__(self, seq_len: int = DEFAULT_SEQ_LEN) -> None:
