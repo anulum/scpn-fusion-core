@@ -245,6 +245,8 @@ files = [
     "tests/test_preflight.py",
     "tools/generate_release_checksums.py",
     "tests/test_generate_release_checksums.py",
+    "tools/verify_release_checksums.py",
+    "tests/test_verify_release_checksums.py",
     "tools/capability_manifest.py",
     "tests/test_capability_manifest.py",
     "tools/benchmark_regression_guard.py",

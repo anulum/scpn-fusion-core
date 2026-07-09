@@ -80,6 +80,7 @@ def verify_manifest(*, dist_dir: Path, manifest: Path) -> dict[str, Any]:
     -------
     dict[str, Any]
         Verification summary including pass/fail state and per-file metadata.
+
     """
     entries = _parse_manifest(manifest)
     failures: list[str] = []
