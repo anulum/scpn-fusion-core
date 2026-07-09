@@ -139,7 +139,10 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
       - name: Install Lean toolchain
         run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          curl --retry 5 --retry-all-errors --retry-delay 10 \
+            --connect-timeout 20 --max-time 120 -fsSL \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Build Lean safety proof surface
@@ -244,7 +247,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Lean toolchain for polyglot solver contracts
         run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          curl --retry 5 --retry-all-errors --retry-delay 10 \
+            --connect-timeout 20 --max-time 120 -fsSL \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
@@ -380,7 +386,10 @@ jobs:
           python-version: "3.12"
       - name: Install Lean toolchain for polyglot solver contracts
         run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          curl --retry 5 --retry-all-errors --retry-delay 10 \
+            --connect-timeout 20 --max-time 120 -fsSL \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
@@ -416,7 +425,10 @@ jobs:
           python-version: "3.12"
       - name: Install Lean toolchain for polyglot solver contracts
         run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          curl --retry 5 --retry-all-errors --retry-delay 10 \
+            --connect-timeout 20 --max-time 120 -fsSL \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
@@ -1005,7 +1017,10 @@ jobs:
           python-version: "3.12"
       - name: Install Lean toolchain for polyglot solver contracts
         run: |
-          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          curl --retry 5 --retry-all-errors --retry-delay 10 \
+            --connect-timeout 20 --max-time 120 -fsSL \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
