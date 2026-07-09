@@ -23,6 +23,31 @@ def _load_module() -> Any:
     return importlib.reload(importlib.import_module("tools.run_python_preflight"))
 
 
+def test_module_available_returns_false_when_discovery_raises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_module()
+
+    def broken_find_spec(_module_name: str) -> None:
+        raise ImportError("broken discovery")
+
+    monkeypatch.setattr(module.importlib.util, "find_spec", broken_find_spec)
+
+    assert module._module_available("broken.optional") is False
+
+
+def test_main_returns_zero_when_no_checks_selected(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    module = _load_module()
+    monkeypatch.setattr(module, "_build_checks", lambda **_kwargs: [])
+    monkeypatch.setattr(module.sys, "argv", ["run_python_preflight.py"])
+
+    assert module.main() == 0
+    assert capsys.readouterr().out == "[preflight] No checks selected.\n"
+
+
 def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module()
     calls: list[RunCall] = []
@@ -285,6 +310,10 @@ def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> N
                 "validation/vertical_control_replay_benchmark.py",
                 "--all-profiles",
                 "--strict",
+                "--output-json",
+                "artifacts/_tmp_vertical_control_replay_profiles.json",
+                "--output-md",
+                "artifacts/_tmp_vertical_control_replay_profiles.md",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),

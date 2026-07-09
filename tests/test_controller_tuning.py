@@ -205,6 +205,11 @@ def test_tune_hinf_validates_positive_trial_count() -> None:
 def test_tune_pid_requires_gym_like_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """The PID tuner requires a reset/step-capable environment."""
     monkeypatch.setattr(mod, "HAS_OPTUNA", True)
+    monkeypatch.setattr(
+        mod,
+        "optuna",
+        SimpleNamespace(create_study=lambda direction: _Study({})),
+    )
     with pytest.raises(TypeError, match="reset"):
         tune_pid(object(), n_trials=1)
 
@@ -287,6 +292,11 @@ def test_tune_hinf_objective_minimises_target_distance(monkeypatch: pytest.Monke
 def test_tune_hinf_rejects_non_dict_plant(monkeypatch: pytest.MonkeyPatch) -> None:
     """A non-dict plant specification is rejected when Optuna is active."""
     monkeypatch.setattr(mod, "HAS_OPTUNA", True)
+    monkeypatch.setattr(
+        mod,
+        "optuna",
+        SimpleNamespace(create_study=lambda direction: _Study({})),
+    )
     with pytest.raises(TypeError, match="dictionary"):
         tune_hinf(plant=[1, 2, 3], n_trials=1)  # type: ignore[arg-type]
 
