@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 476
+    "test_files": 477
   },
   "documentation": {
     "public_pages": [
@@ -3212,6 +3212,7 @@
       "tests/test_turbulence_oracle.py",
       "tests/test_ui_app.py",
       "tests/test_uncertainty.py",
+      "tests/test_uncertainty_full_chain_contracts.py",
       "tests/test_upde.py",
       "tests/test_uq_full_chain.py",
       "tests/test_validate_real_shots_payload.py",
