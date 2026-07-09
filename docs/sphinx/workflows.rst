@@ -47,6 +47,22 @@ The snapshot must remain blocked when same-case external solver artefacts,
 thresholds, or distributed runtime measurements are missing.  Do not replace
 those rows with synthetic or reduced-order evidence.
 
+TORAX Real-Reference Parity
+---------------------------
+
+Refresh or check the tracked TORAX real-reference divergence report::
+
+    python validation/benchmark_torax_real_parity.py
+    python validation/benchmark_torax_real_parity.py --check
+
+Run an environment-specific diagnostic report when runtime Python/platform
+metadata is needed::
+
+    python validation/benchmark_torax_real_parity.py --include-runtime-environment
+
+The default tracked report records deterministic reference and solver metrics
+only, so release drift checks stay identical across CI images and local hosts.
+
 TORAX IMAS Interchange
 ----------------------
 

@@ -5,8 +5,9 @@
     "normalised_te_shape_rel_l2_fine": 0.019039379692044476
   },
   "environment": {
-    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
-    "python": "3.12.3"
+    "platform": null,
+    "python": null,
+    "runtime_recorded": false
   },
   "our_solver": {
     "coarse_run": {

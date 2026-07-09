@@ -141,9 +141,9 @@
   },
   "source_reports": [
     {
-      "file_sha256": "7def6c1167eca2e3cb21d8afc1c04986ef6bfd520b0b0029e486e94565561bd4",
+      "file_sha256": "4a7c2f1fca279ea55967e2acac33a1d098ed4ce524ef7ecd6da2326fb4595f4c",
       "path": "validation/reports/torax_real_parity.json",
-      "payload_sha256": "9ef6d79b5d985dbfdd361db50dd0581a2fefbddacebf3df6e62b9d5d6ffe8a82",
+      "payload_sha256": "ddc3f017191168b4575d268d33929f891bc5a285dfba51b19ab9b1ec74aeb7c8",
       "report_id": "torax_real_parity",
       "schema": "scpn-fusion-core.torax-real-parity.v1",
       "status": "real_torax_reference_acquired_divergence_documented"

@@ -114,7 +114,22 @@ def _normalised_shape(values: npt.NDArray[np.float64]) -> npt.NDArray[np.float64
     return values / max(abs(core), 1e-30)
 
 
-def build_report() -> dict[str, Any]:
+def _environment_record(*, include_runtime_environment: bool) -> dict[str, Any]:
+    """Return deterministic or runtime environment metadata for the report."""
+    if not include_runtime_environment:
+        return {
+            "runtime_recorded": False,
+            "python": None,
+            "platform": None,
+        }
+    return {
+        "runtime_recorded": True,
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+    }
+
+
+def build_report(*, include_runtime_environment: bool = False) -> dict[str, Any]:
     """Build the real-TORAX comparison report payload."""
     reference = _load_reference()
     ref_profiles = reference["profiles"]
@@ -202,10 +217,9 @@ def build_report() -> dict[str, Any]:
                 "design (fixed chi versus TORAX's transport model)."
             ),
         },
-        "environment": {
-            "python": platform.python_version(),
-            "platform": platform.platform(),
-        },
+        "environment": _environment_record(
+            include_runtime_environment=include_runtime_environment,
+        ),
     }
 
 
@@ -215,9 +229,13 @@ def _report_digest(report: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def check_report(path: Path = REPORT) -> list[str]:
+def check_report(
+    path: Path = REPORT,
+    *,
+    include_runtime_environment: bool = False,
+) -> list[str]:
     """Return drift errors for the tracked real-TORAX parity report."""
-    expected = build_report()
+    expected = build_report(include_runtime_environment=include_runtime_environment)
     errors: list[str] = []
     if not path.exists():
         errors.append(f"missing TORAX real-parity report: {path}")
@@ -233,10 +251,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=REPORT)
     parser.add_argument("--check", action="store_true", help="Check the tracked report for drift.")
+    parser.add_argument(
+        "--include-runtime-environment",
+        action="store_true",
+        help="Embed the current Python and platform strings in the report.",
+    )
     args = parser.parse_args(argv)
 
     if args.check:
-        errors = check_report(args.output)
+        errors = check_report(
+            args.output,
+            include_runtime_environment=args.include_runtime_environment,
+        )
         for error in errors:
             print(f"TORAX REAL PARITY ERROR: {error}", file=sys.stderr)
         if errors:
@@ -244,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"TORAX real-parity report is up to date: {args.output}")
         return 0
 
-    report = build_report()
+    report = build_report(include_runtime_environment=args.include_runtime_environment)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(report["divergence_metrics"], indent=2, sort_keys=True))

@@ -62,6 +62,19 @@ def test_reference_integrity_check_rejects_missing_provenance(tmp_path: Path) ->
         module._load_reference()
 
 
+def test_reference_integrity_check_rejects_wrong_code(tmp_path: Path) -> None:
+    """The gate rejects a reference artifact that is not marked as TORAX."""
+    module = _load_module()
+    broken = json.loads(REFERENCE.read_text(encoding="utf-8"))
+    broken["provenance"]["code"] = "not-torax"
+    target = tmp_path / "broken_code.json"
+    target.write_text(json.dumps(broken), encoding="utf-8")
+    module.REFERENCE = target
+
+    with pytest.raises(ValueError, match="not a TORAX export"):
+        module._load_reference()
+
+
 def test_profile_checksum_is_stable_and_order_independent() -> None:
     """The checksum canonicalises key order, so it is reproducible."""
     module = _load_module()
@@ -122,6 +135,19 @@ def test_build_report_records_divergence_and_findings(monkeypatch: pytest.Monkey
     )
     assert findings["sawtooth_model_present_in_lane"] is False
     assert "resolved 2026-07-07" in findings["disposition"]
+    assert report["environment"] == {
+        "runtime_recorded": False,
+        "python": None,
+        "platform": None,
+    }
+
+    runtime_report = cast(
+        dict[str, Any],
+        module.build_report(include_runtime_environment=True),
+    )
+    assert runtime_report["environment"]["runtime_recorded"] is True
+    assert runtime_report["environment"]["python"]
+    assert runtime_report["environment"]["platform"]
 
 
 def test_check_report_detects_current_missing_and_stale_reports(tmp_path: Path) -> None:
@@ -148,7 +174,25 @@ def test_main_check_mode_reports_drift(monkeypatch: pytest.MonkeyPatch, tmp_path
     current.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     stale.write_text(json.dumps({"schema": report["schema"]}) + "\n", encoding="utf-8")
 
-    monkeypatch.setattr(module, "build_report", lambda: report)
+    monkeypatch.setattr(module, "build_report", lambda include_runtime_environment=False: report)
 
     assert module.main(["--output", str(current), "--check"]) == 0
     assert module.main(["--output", str(stale), "--check"]) == 1
+
+
+def test_main_write_mode_records_report(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The CLI write mode stores the generated report and prints its status."""
+    module = _load_module()
+    report = cast(dict[str, Any], module.build_report())
+    target = tmp_path / "nested" / "torax_real_parity.json"
+    monkeypatch.setattr(module, "build_report", lambda include_runtime_environment=False: report)
+
+    assert module.main(["--output", str(target), "--include-runtime-environment"]) == 0
+
+    stored = json.loads(target.read_text(encoding="utf-8"))
+    assert stored["schema"] == report["schema"]
+    assert "core_te_ratio_fine_over_torax" in capsys.readouterr().out
