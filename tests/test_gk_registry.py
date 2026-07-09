@@ -130,9 +130,9 @@ def test_resolve_tglf_solver_prefers_external_binary(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """With the GACODE binary on PATH, the canonical TGLF path is external."""
-    import scpn_fusion.core.gk_tglf as gk_tglf_mod
+    from scpn_fusion.core.gk_tglf import TGLFSolver
 
-    monkeypatch.setattr(gk_tglf_mod.shutil, "which", lambda _name: "/usr/bin/tglf")
+    monkeypatch.setattr(TGLFSolver, "is_available", lambda self: True)
     solver = gk_registry.resolve_tglf_solver()
     assert type(solver).__name__ == "TGLFSolver"
 
@@ -141,9 +141,9 @@ def test_resolve_tglf_solver_falls_back_to_native(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Without the binary, the canonical TGLF path is the native model."""
-    import scpn_fusion.core.gk_tglf as gk_tglf_mod
+    from scpn_fusion.core.gk_tglf import TGLFSolver
 
-    monkeypatch.setattr(gk_tglf_mod.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(TGLFSolver, "is_available", lambda self: False)
     solver = gk_registry.resolve_tglf_solver()
     assert type(solver).__name__ == "TGLFNativeSolver"
     assert solver.is_available() is True
