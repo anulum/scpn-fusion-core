@@ -33,9 +33,11 @@ class DivertorLab:
         self.lambda_q_mm = 0.63 * (B_pol ** (-1.19))
         self.lambda_q = self.lambda_q_mm / 1000.0
 
-        print("--- DIVERTOR PHYSICS ---")
-        print(f"Power to Divertor: {self.P_sol} MW")
-        print(f"Eich Width (lambda_q): {self.lambda_q_mm:.3f} mm")
+        logger.info(
+            "Divertor physics initialized: P_sol_MW=%.3f lambda_q_mm=%.3f",
+            self.P_sol,
+            self.lambda_q_mm,
+        )
 
     def solve_2point_transport(
         self, expansion_factor: float = 10.0, f_rad: float = 0.5
@@ -74,10 +76,13 @@ class DivertorLab:
         """Calculate Peak Heat Flux using 2-Point Model Physics."""
         T_u, T_t = self.solve_2point_transport(expansion_factor, f_rad=0.0)  # Unmitigated
 
-        print(f"Parallel Heat Flux: {self.q_parallel / 1e9:.1f} GW/m2")
-        print(f"Upstream Temp (T_u): {T_u:.1f} eV")
-        print(f"Target Temp (T_t): {T_t:.1f} eV")
-        print(f"Unmitigated Target Flux: {self.q_target_solid / 1e6:.1f} MW/m2")
+        logger.info(
+            "Divertor heat load: q_parallel_GW_m2=%.1f T_u_eV=%.1f T_t_eV=%.1f q_target_MW_m2=%.1f",
+            self.q_parallel / 1e9,
+            T_u,
+            T_t,
+            self.q_target_solid / 1e6,
+        )
 
         return float(self.q_target_solid)
 
@@ -246,17 +251,21 @@ class DivertorLab:
 
 def run_divertor_sim() -> None:
     """Run the standalone divertor comparison and write the diagnostic plot."""
-    print("\n--- SCPN HEAT EXHAUST: The Lithium Solution ---")
+    logger.info("SCPN heat exhaust lithium divertor comparison start")
 
     lab = DivertorLab(P_sol_MW=80.0, R_major=2.1, B_pol=2.5)  # Compact Pilot parameters
 
     q_solid = lab.calculate_heat_load(expansion_factor=15.0)
 
     Tw, status_w = lab.simulate_tungsten()
-    print(f"Tungsten Divertor: {Tw:.0f} degC -> {status_w}!")
+    logger.info("Tungsten divertor state: surface_temp_c=%.0f status=%s", Tw, status_w)
 
     Tli, q_li, shielding = lab.simulate_lithium_vapor()
-    print(f"Liquid Li Divertor: {Tli:.0f} degC (Shielding: {shielding * 100:.1f}%)")
+    logger.info(
+        "Liquid lithium divertor state: surface_temp_c=%.0f shielding_percent=%.1f",
+        Tli,
+        shielding * 100,
+    )
 
     fig, ax = plt.subplots(figsize=(8, 6))
     materials = ["Tungsten (Solid)", "Lithium (Vapor Shield)"]
@@ -279,7 +288,7 @@ def run_divertor_sim() -> None:
 
     ax.legend()
     plt.savefig("Divertor_Solution.png")
-    print("Saved: Divertor_Solution.png")
+    logger.info("Divertor comparison figure saved: Divertor_Solution.png")
 
 
 if __name__ == "__main__":

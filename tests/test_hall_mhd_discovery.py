@@ -122,7 +122,10 @@ def test_find_tearing_threshold_lowers_ceiling_when_stable(
     assert result["lo"] <= result["threshold_eta"] <= result["hi"]
 
 
-def test_run_discovery_sim_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_discovery_sim_end_to_end(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """The zonal-flow discovery demo runs and renders both diagnostics."""
     import matplotlib.pyplot as plt
 
@@ -131,10 +134,12 @@ def test_run_discovery_sim_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(plt, "savefig", lambda path, *a, **k: saved.append(str(path)))
     monkeypatch.setattr(plt, "show", lambda *a, **k: None)
 
-    hall_mhd_discovery.run_discovery_sim()
+    with caplog.at_level("INFO", logger=hall_mhd_discovery.__name__):
+        hall_mhd_discovery.run_discovery_sim()
 
     assert "Hall_MHD_Discovery.png" in saved
     assert "Hall_MHD_Structure.png" in saved
+    assert "Hall-MHD step" in caplog.text
 
 
 def test_hall_mhd_dispatch_registers_both_tiers() -> None:

@@ -17,7 +17,7 @@ Pure-NumPy training for a multi-layer Fourier Neural Operator turbulence model (
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple, cast
+from typing import Dict, List, Sequence, Tuple, cast
 
 import logging
 
@@ -360,13 +360,9 @@ def train_fno_multi_regime(
     )
 
 
-if __name__ == "__main__":
-    import sys
-
-    logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
-
-    mode = sys.argv[1] if len(sys.argv) > 1 else "multi"
-
+def _run_training_smoke_cli(argv: Sequence[str]) -> Dict[str, object]:
+    """Run the lightweight standalone training entrypoint for one mode."""
+    mode = argv[0] if argv else "multi"
     if mode == "legacy":
         summary = train_fno(
             n_samples=128,
@@ -375,9 +371,9 @@ if __name__ == "__main__":
             save_path=DEFAULT_WEIGHTS_PATH,
             patience=5,
         )
-        print("FNO legacy smoke training complete.")
-        print(f"Saved: {summary['saved_path']}")
-        print(f"Best val loss: {summary['best_val_loss']}")
+        logger.info("FNO legacy smoke training complete")
+        logger.info("Saved: %s", summary["saved_path"])
+        logger.info("Best val loss: %s", summary["best_val_loss"])
     elif mode == "gs_transport":
         summary = train_gs_transport_surrogate(
             n_samples=50,
@@ -386,11 +382,11 @@ if __name__ == "__main__":
             save_path=DEFAULT_GS_TRANSPORT_WEIGHTS_PATH,
             patience=5,
         )
-        print("\nGS-transport surrogate training complete.")
-        print(f"Saved: {summary['saved_path']}")
-        print(f"Best val MSE: {summary['best_val_loss']}")
-        print(f"Test rel L2: {summary['test_rel_l2']}")
-        print(f"Machine-class distribution: {summary['machine_class_counts']}")
+        logger.info("GS-transport surrogate training complete")
+        logger.info("Saved: %s", summary["saved_path"])
+        logger.info("Best val MSE: %s", summary["best_val_loss"])
+        logger.info("Test rel L2: %s", summary["test_rel_l2"])
+        logger.info("Machine-class distribution: %s", summary["machine_class_counts"])
     else:
         summary = train_fno_multi_regime(
             n_samples=256,
@@ -399,12 +395,20 @@ if __name__ == "__main__":
             save_path=DEFAULT_SPARC_WEIGHTS_PATH,
             patience=5,
         )
-        print("\nFNO multi-regime SPARC training complete.")
-        print(f"Saved: {summary['saved_path']}")
-        print(f"Best val loss: {summary['best_val_loss']}")
-        print(f"Regime distribution: {summary['regime_counts']}")
+        logger.info("FNO multi-regime SPARC training complete")
+        logger.info("Saved: %s", summary["saved_path"])
+        logger.info("Best val loss: %s", summary["best_val_loss"])
+        logger.info("Regime distribution: %s", summary["regime_counts"])
         if "regime_val_losses" in summary:
-            print("Per-regime validation:")
+            logger.info("Per-regime validation")
             regime_val_losses = cast("dict[str, dict[str, float]]", summary["regime_val_losses"])
             for r, s in regime_val_losses.items():
-                print(f"  {r}: {s['mean']:.4f} (n={s['n']})")
+                logger.info("Regime validation: regime=%s mean=%.4f n=%s", r, s["mean"], s["n"])
+    return summary
+
+
+if __name__ == "__main__":
+    import sys
+
+    logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
+    _run_training_smoke_cli(sys.argv[1:])

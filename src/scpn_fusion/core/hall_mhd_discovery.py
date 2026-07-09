@@ -18,12 +18,15 @@ local benchmark tasks can exercise a full discovery-style simulation path:
 
 from __future__ import annotations
 
+import logging
 from typing import Protocol, Sequence, cast
 
 import numpy as np
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft2, ifft2
+
+logger = logging.getLogger(__name__)
 
 FloatArray = NDArray[np.float64]
 ComplexArray = NDArray[np.complex128]
@@ -344,18 +347,18 @@ class HallMHD:
 def run_discovery_sim() -> None:
     """Run the standalone Hall-MHD discovery demo and emit figure artifacts.
 
-    Writes ``Hall_MHD_Discovery.png`` and ``Hall_MHD_Structure.png`` and prints
+    Writes ``Hall_MHD_Discovery.png`` and ``Hall_MHD_Structure.png`` and logs
     periodic progress snapshots.
     """
-    print("--- SCPN HALL-MHD: ZONAL FLOW DISCOVERY ---")
-    print("Searching for spontaneous H-Mode transition...")
+    logger.info("SCPN Hall-MHD zonal-flow discovery start")
+    logger.info("Searching for spontaneous H-mode transition")
 
     sim = HallMHD()
 
     history_E = []
     history_Z = []
 
-    print(f"Running {STEPS} timesteps...")
+    logger.info("Hall-MHD discovery timesteps: %d", STEPS)
 
     for t in range(STEPS):
         E_tot, E_zonal = sim.step()
@@ -364,7 +367,13 @@ def run_discovery_sim() -> None:
 
         if t % 100 == 0:
             ratio = E_zonal / E_tot if E_tot > 0 else 0
-            print(f"Step {t}: Total E={E_tot:.2e} | Zonal E={E_zonal:.2e} ({ratio * 100:.1f}%)")
+            logger.info(
+                "Hall-MHD step: step=%d total_energy=%.2e zonal_energy=%.2e zonal_percent=%.1f",
+                t,
+                E_tot,
+                E_zonal,
+                ratio * 100,
+            )
 
     # Visualize
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -376,7 +385,7 @@ def run_discovery_sim() -> None:
     ax.set_ylabel("Energy (Spectral)")
     ax.legend()
     plt.savefig("Hall_MHD_Discovery.png")
-    print("Saved: Hall_MHD_Discovery.png")
+    logger.info("Hall-MHD discovery figure saved: Hall_MHD_Discovery.png")
 
     # Final State
     phi_real = np.real(ifft2(sim.phi_k))

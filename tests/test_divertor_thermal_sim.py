@@ -118,15 +118,22 @@ def test_simulate_temhd_liquid_metal_returns_state() -> None:
     assert pressure > 0.0
 
 
-def test_run_divertor_sim_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_divertor_sim_end_to_end(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """The standalone divertor comparison runs and renders safely."""
     import matplotlib.pyplot as plt
+    import scpn_fusion.core.divertor_thermal_sim as divertor_thermal_sim
 
     monkeypatch.setattr(plt, "savefig", lambda *a, **k: None)
     monkeypatch.setattr(plt, "show", lambda *a, **k: None)
     from scpn_fusion.core.divertor_thermal_sim import run_divertor_sim
 
-    run_divertor_sim()
+    with caplog.at_level("INFO", logger=divertor_thermal_sim.__name__):
+        run_divertor_sim()
+
+    assert "Divertor comparison figure saved" in caplog.text
 
 
 def test_simulate_lithium_vapor_adaptive_relaxation_under_high_flux() -> None:

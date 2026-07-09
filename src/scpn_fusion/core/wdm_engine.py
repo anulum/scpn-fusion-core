@@ -9,12 +9,16 @@
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd  # type: ignore[import-untyped]
 
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 from scpn_fusion.nuclear.pwi_erosion import SputteringPhysics
+
+logger = logging.getLogger(__name__)
 
 
 class WholeDeviceModel:
@@ -79,7 +83,7 @@ class WholeDeviceModel:
     def run_discharge(self, duration_sec: float = 10.0) -> list[dict[str, float | str]]:
         """Run the whole-device discharge timeline and collect time-series state."""
         duration_sec = self._require_finite_positive("duration_sec", duration_sec)
-        print(f"--- SCPN WDM: WHOLE DEVICE SIMULATION ({duration_sec}s) ---")
+        logger.info("SCPN WDM whole-device simulation start: duration_s=%.3f", duration_sec)
 
         dt = 0.01
         steps = max(1, int(np.ceil(duration_sec / dt)))
@@ -88,8 +92,7 @@ class WholeDeviceModel:
 
         P_aux = 50.0  # MW
 
-        print(f"{'Time':<6} | {'Te_core':<8} | {'Impurity':<8} | {'Status'}")
-        print("-" * 50)
+        logger.info("WDM discharge columns: time_s Te_core_keV W_impurity status")
 
         for t in range(steps):
             avg_T, core_T = self.transport.evolve_profiles(dt, P_aux)
@@ -132,10 +135,16 @@ class WholeDeviceModel:
             history.append(state)
 
             if t % 50 == 0:
-                print(f"{t * dt:<6.2f} | {core_t:<8.2f} | {state['W_impurity']:<8.2e} | {status}")
+                logger.info(
+                    "WDM discharge state: time_s=%.2f Te_core_keV=%.2f W_impurity=%.2e status=%s",
+                    t * dt,
+                    core_t,
+                    state["W_impurity"],
+                    status,
+                )
 
             if status == "COLLAPSE":
-                print(f"!!! RADIATIVE COLLAPSE DETECTED AT t={t * dt:.2f}s !!!")
+                logger.warning("Radiative collapse detected: time_s=%.2f", t * dt)
                 break
 
         self.plot_results(history)
@@ -162,7 +171,7 @@ class WholeDeviceModel:
 
         plt.tight_layout()
         plt.savefig("WDM_Simulation_Result.png")
-        print("Analysis Saved: WDM_Simulation_Result.png")
+        logger.info("WDM analysis figure saved: WDM_Simulation_Result.png")
 
 
 if __name__ == "__main__":

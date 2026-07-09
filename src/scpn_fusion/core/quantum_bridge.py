@@ -9,11 +9,13 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import subprocess
 import sys
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
 
 _QUANTUM_SCRIPT_NAMES = (
     "14_quantum_plasma_simulation.py",
@@ -72,8 +74,8 @@ def run_quantum_suite(
     ValueError
         If the timeout value is invalid.
     """
-    print("--- SCPN QUANTUM FUSION BRIDGE ---")
-    print("Leveraging Quantum Hardware for Plasma Physics")
+    logger.info("SCPN quantum fusion bridge start")
+    logger.info("Executing staged Quantum Lab plasma-physics scripts")
 
     timeout_seconds = _normalize_script_timeout_seconds(script_timeout_seconds)
     lab_path = _resolve_quantum_lab_path(base_path)
@@ -87,7 +89,7 @@ def run_quantum_suite(
         raise FileNotFoundError(f"Quantum Lab missing required scripts: {missing_text}")
 
     for step_label, script_path in zip(_QUANTUM_STEP_LABELS, script_paths):
-        print(f"\n{step_label}")
+        logger.info("Quantum bridge step: %s", step_label)
         try:
             subprocess.run(
                 [sys.executable, str(script_path)],
@@ -103,7 +105,7 @@ def run_quantum_suite(
                 f"Quantum script failed: {script_path.name} (exit={exc.returncode})"
             ) from exc
 
-    print("\n--- QUANTUM INTEGRATION COMPLETE ---")
+    logger.info("Quantum bridge integration complete")
     return {
         "ok": True,
         "base_path": str(lab_path),

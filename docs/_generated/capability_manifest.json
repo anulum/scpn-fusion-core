@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 467
+    "test_files": 468
   },
   "documentation": {
     "public_pages": [
@@ -2855,6 +2855,7 @@
       "tests/test_fno_external_retrain_tools.py",
       "tests/test_fno_multi_regime.py",
       "tests/test_fno_training.py",
+      "tests/test_fno_training_cli.py",
       "tests/test_fno_training_multi_regime_split.py",
       "tests/test_fno_turbulence_suppressor.py",
       "tests/test_fokker_planck.py",

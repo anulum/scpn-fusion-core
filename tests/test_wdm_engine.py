@@ -183,27 +183,38 @@ def test_constructor_wires_transport_wall_model_and_initial_equilibrium(
     assert wdm.pwi.material == "Tungsten"
 
 
-def test_run_discharge_returns_structured_history(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_discharge_returns_structured_history(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """A stable short discharge returns typed state rows and OK status."""
     wdm = _bare_runtime_wdm()
     monkeypatch.setattr(wdm, "plot_results", _ignore_plot)
 
-    history = wdm.run_discharge(duration_sec=0.03)
+    with caplog.at_level("INFO", logger=wdm_module.__name__):
+        history = wdm.run_discharge(duration_sec=0.03)
+
     assert len(history) >= 1
     assert {"time", "Te_core", "W_impurity", "P_rad", "status"} <= set(history[0].keys())
     assert history[0]["status"] == "OK"
+    assert any("WDM discharge state" in message for message in caplog.messages)
 
 
-def test_run_discharge_stops_on_radiative_collapse(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_discharge_stops_on_radiative_collapse(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Sub-threshold core temperature marks collapse and stops the timeline."""
     wdm = _bare_runtime_wdm(transport=_CollapsingTransport())
     monkeypatch.setattr(wdm, "plot_results", _ignore_plot)
 
-    history = wdm.run_discharge(duration_sec=0.03)
+    with caplog.at_level("WARNING", logger=wdm_module.__name__):
+        history = wdm.run_discharge(duration_sec=0.03)
 
     assert len(history) == 1
     assert history[0]["Te_core"] == pytest.approx(0.4)
     assert history[0]["status"] == "COLLAPSE"
+    assert "Radiative collapse detected" in caplog.text
 
 
 def test_run_discharge_rejects_invalid_duration() -> None:
