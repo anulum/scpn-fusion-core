@@ -16,21 +16,30 @@ Usage:
 
 from __future__ import annotations
 
+import json
+import os
 import sys
+import tempfile
 import time
 from pathlib import Path
+from typing import TypedDict
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import json
-import tempfile
-import os
-
 from scpn_fusion.core.fusion_kernel import FusionKernel
-from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
+from scpn_fusion.core.neural_equilibrium_kernel import NeuralEquilibriumKernel
 
 
-def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> dict[str, object]:
+class BenchmarkRow(TypedDict):
+    """One rendered solver benchmark row."""
+
+    solver: str
+    grid: str
+    iterations: int | str
+    wall_time_ms: float | str
+
+
+def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> BenchmarkRow:
     config = {
         "reactor_name": f"bench_sor_{nr}x{nz}",
         "grid_resolution": [nr, nz],
@@ -61,7 +70,7 @@ def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> dict[str, object]:
         return {
             "solver": "SOR",
             "grid": f"{nr}x{nz}",
-            "iterations": kernel.cfg["solver"]["max_iterations"],
+            "iterations": int(kernel.cfg["solver"]["max_iterations"]),
             "wall_time_ms": dt * 1000,
         }
     finally:
@@ -69,7 +78,7 @@ def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> dict[str, object]:
             os.remove(tmp_path)
 
 
-def _benchmark_newton(nr: int, nz: int) -> dict[str, object]:
+def _benchmark_newton(nr: int, nz: int) -> BenchmarkRow:
     config = {
         "reactor_name": f"bench_newton_{nr}x{nz}",
         "grid_resolution": [nr, nz],
@@ -84,7 +93,7 @@ def _benchmark_newton(nr: int, nz: int) -> dict[str, object]:
         ],
         "solver": {
             "solver_method": "newton",
-            "max_iterations": 20, # Newton is expensive per iter
+            "max_iterations": 20,  # Newton is expensive per iter
             "convergence_threshold": 1e-6,
             "relaxation_factor": 0.5,
         },
@@ -101,7 +110,7 @@ def _benchmark_newton(nr: int, nz: int) -> dict[str, object]:
         return {
             "solver": "Newton-K",
             "grid": f"{nr}x{nz}",
-            "iterations": res.get("iterations", "?"),
+            "iterations": int(res.get("iterations", 0)),
             "wall_time_ms": dt * 1000,
         }
     finally:
@@ -109,12 +118,9 @@ def _benchmark_newton(nr: int, nz: int) -> dict[str, object]:
             os.remove(tmp_path)
 
 
-def _benchmark_neural(nr: int, nz: int) -> dict[str, object]:
-    # Neural kernel uses fixed grid (129x129 usually in weights)
-    # but the API allows it to be used as a drop-in.
+def _benchmark_neural(nr: int, nz: int) -> BenchmarkRow:
     config_path = Path(__file__).resolve().parents[1] / "iter_config.json"
     if not config_path.exists():
-        # Create a temp config if needed, or use existing one
         config_path = Path("iter_config.json")
 
     try:
@@ -128,7 +134,7 @@ def _benchmark_neural(nr: int, nz: int) -> dict[str, object]:
             "iterations": 1,
             "wall_time_ms": dt * 1000,
         }
-    except Exception as exc:
+    except (FileNotFoundError, KeyError, OSError, RuntimeError, ValueError) as exc:
         print(f"  Neural Error: {exc}")
         return {
             "solver": "Neural (MLP)",
@@ -139,7 +145,7 @@ def _benchmark_neural(nr: int, nz: int) -> dict[str, object]:
 
 
 def main() -> None:
-    results: list[dict[str, object]] = []
+    results: list[BenchmarkRow] = []
 
     for nr, nz in [(33, 33), (65, 65)]:
         print(f"\n--- Grid {nr}x{nz} ---")
@@ -155,12 +161,10 @@ def main() -> None:
     print("\n--- Neural Surrogate ---")
     r = _benchmark_neural(129, 129)
     results.append(r)
-    wt = r['wall_time_ms']
+    wt = r["wall_time_ms"]
     wt_str = f"{wt:.3f}" if isinstance(wt, float) else str(wt)
     print(f"  Neural:  {wt_str} ms  ({r['iterations']} iters)")
 
-
-    # Print markdown table
     print("\n### Python Solver Comparison\n")
     print("| Solver | Grid | Iterations | Wall Time (ms) |")
     print("|--------|------|-----------|---------------|")

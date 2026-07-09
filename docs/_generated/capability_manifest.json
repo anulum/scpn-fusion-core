@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 471
+    "test_files": 473
   },
   "documentation": {
     "public_pages": [
@@ -3075,6 +3075,7 @@
       "tests/test_plasma_startup.py",
       "tests/test_plasma_wall_interaction.py",
       "tests/test_polyglot_gs_benchmark.py",
+      "tests/test_polyglot_gs_solver_comparison_report.py",
       "tests/test_polyglot_gs_solver_contract.py",
       "tests/test_preflight.py",
       "tests/test_pretrained_surrogates.py",
@@ -3143,6 +3144,7 @@
       "tests/test_sliding_mode_vertical.py",
       "tests/test_snn_pyo3_bridge.py",
       "tests/test_sol_model.py",
+      "tests/test_solver_comparison.py",
       "tests/test_spdx_header_guard.py",
       "tests/test_spi_ablation.py",
       "tests/test_spi_mitigation.py",

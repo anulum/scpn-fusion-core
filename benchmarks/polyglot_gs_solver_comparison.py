@@ -21,11 +21,14 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO / "src"))
 
 from scpn_fusion.core.jax_gs_solver import gs_equation_residual_np, gs_solve_np
+
+FloatArray = NDArray[np.float64]
 
 _CASE_PATH = _REPO / "validation" / "polyglot" / "gs_picard_reference.toml"
 _JULIA_PROJECT = _REPO / "scpn-fusion-jl"
@@ -66,18 +69,18 @@ def _read_case(path: Path) -> dict[str, Any]:
     return values
 
 
-def _matrix_from_csv(stdout: str) -> np.ndarray:
+def _matrix_from_csv(stdout: str) -> FloatArray:
     rows = [[float(cell) for cell in row] for row in csv.reader(stdout.splitlines())]
     return np.asarray(rows, dtype=float)
 
 
-def _run_python(case: dict[str, Any]) -> tuple[np.ndarray, float]:
+def _run_python(case: dict[str, Any]) -> tuple[FloatArray, float]:
     t0 = time.perf_counter()
     psi = gs_solve_np(**case)
     return psi, time.perf_counter() - t0
 
 
-def _run_command(command: list[str], cwd: Path) -> tuple[np.ndarray, float]:
+def _run_command(command: list[str], cwd: Path) -> tuple[FloatArray, float]:
     t0 = time.perf_counter()
     completed = subprocess.run(
         command,
@@ -89,7 +92,7 @@ def _run_command(command: list[str], cwd: Path) -> tuple[np.ndarray, float]:
     return _matrix_from_csv(completed.stdout), time.perf_counter() - t0
 
 
-def _run_julia() -> tuple[np.ndarray, float]:
+def _run_julia() -> tuple[FloatArray, float]:
     return _run_command(
         [
             "julia",
@@ -102,7 +105,7 @@ def _run_julia() -> tuple[np.ndarray, float]:
     )
 
 
-def _run_go() -> tuple[np.ndarray, float]:
+def _run_go() -> tuple[FloatArray, float]:
     with tempfile.TemporaryDirectory() as build_dir:
         binary = Path(build_dir) / "gs_picard_csv"
         subprocess.run(
@@ -125,12 +128,12 @@ def _build_rust_binary() -> None:
     )
 
 
-def _run_rust() -> tuple[np.ndarray, float]:
+def _run_rust() -> tuple[FloatArray, float]:
     _build_rust_binary()
     return _run_command([str(_RUST_RELEASE_BINARY), str(_CASE_PATH)], _RUST_PROJECT)
 
 
-def _run_lean() -> tuple[np.ndarray, float]:
+def _run_lean() -> tuple[FloatArray, float]:
     return _run_command(["lake", "exe", "gs_picard_csv", str(_CASE_PATH)], _LEAN_PROJECT)
 
 
@@ -161,7 +164,7 @@ def _hardware_metadata() -> dict[str, str]:
     }
 
 
-def _boundary_abs_max(psi: np.ndarray) -> float:
+def _boundary_abs_max(psi: FloatArray) -> float:
     return float(
         max(
             np.max(np.abs(psi[0, :])),
@@ -172,23 +175,23 @@ def _boundary_abs_max(psi: np.ndarray) -> float:
     )
 
 
-def _vertical_symmetry_abs_max(psi: np.ndarray) -> float:
+def _vertical_symmetry_abs_max(psi: FloatArray) -> float:
     return float(np.max(np.abs(psi - np.flipud(psi))))
 
 
-def _axis_midplane_offset_cells(psi: np.ndarray) -> int:
+def _axis_midplane_offset_cells(psi: FloatArray) -> int:
     axis_z_index = int(np.unravel_index(np.argmax(psi), psi.shape)[0])
     midplane_index = psi.shape[0] // 2
     return abs(axis_z_index - midplane_index)
 
 
-def _axis_radial_center_offset_cells(psi: np.ndarray) -> int:
+def _axis_radial_center_offset_cells(psi: FloatArray) -> int:
     axis_r_index = int(np.unravel_index(np.argmax(psi), psi.shape)[1])
     radial_center_index = psi.shape[1] // 2
     return abs(axis_r_index - radial_center_index)
 
 
-def _axis_boundary_distance_cells(psi: np.ndarray) -> int:
+def _axis_boundary_distance_cells(psi: FloatArray) -> int:
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     return int(
         min(
@@ -200,7 +203,7 @@ def _axis_boundary_distance_cells(psi: np.ndarray) -> int:
     )
 
 
-def _axis_local_dominance_margin(psi: np.ndarray) -> float:
+def _axis_local_dominance_margin(psi: FloatArray) -> float:
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     axis_value = float(psi[axis_z_index, axis_r_index])
     neighbor_values = [
@@ -212,7 +215,7 @@ def _axis_local_dominance_margin(psi: np.ndarray) -> float:
     return axis_value - max(neighbor_values)
 
 
-def _axis_discrete_laplacian(psi: np.ndarray) -> float:
+def _axis_discrete_laplacian(psi: FloatArray) -> float:
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     return float(
         psi[axis_z_index - 1, axis_r_index]
@@ -223,11 +226,11 @@ def _axis_discrete_laplacian(psi: np.ndarray) -> float:
     )
 
 
-def _axis_flux_value(psi: np.ndarray) -> float:
+def _axis_flux_value(psi: FloatArray) -> float:
     return float(np.max(psi))
 
 
-def _midplane_radial_monotonicity_violations(psi: np.ndarray) -> int:
+def _midplane_radial_monotonicity_violations(psi: FloatArray) -> int:
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     midplane = psi[axis_z_index, :]
     violations = 0
@@ -240,7 +243,7 @@ def _midplane_radial_monotonicity_violations(psi: np.ndarray) -> int:
     return violations
 
 
-def _axis_column_vertical_monotonicity_violations(psi: np.ndarray) -> int:
+def _axis_column_vertical_monotonicity_violations(psi: FloatArray) -> int:
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     axis_column = psi[:, axis_r_index]
     violations = 0
@@ -253,11 +256,11 @@ def _axis_column_vertical_monotonicity_violations(psi: np.ndarray) -> int:
     return violations
 
 
-def _negative_flux_abs_max(psi: np.ndarray) -> float:
-    return float(max(0.0, -np.min(psi)))
+def _negative_flux_abs_max(psi: FloatArray) -> float:
+    return max(0.0, -float(np.min(psi)))
 
 
-def _gs_equation_residual_abs_max(psi: np.ndarray, case: dict[str, Any]) -> float:
+def _gs_equation_residual_abs_max(psi: FloatArray, case: dict[str, Any]) -> float:
     return gs_equation_residual_np(
         psi,
         float(case["R_min"]),
@@ -272,7 +275,7 @@ def _gs_equation_residual_abs_max(psi: np.ndarray, case: dict[str, Any]) -> floa
     )["abs_max"]
 
 
-def _gs_equation_residual_relative_max(psi: np.ndarray, case: dict[str, Any]) -> float:
+def _gs_equation_residual_relative_max(psi: FloatArray, case: dict[str, Any]) -> float:
     return gs_equation_residual_np(
         psi,
         float(case["R_min"]),
@@ -287,12 +290,12 @@ def _gs_equation_residual_relative_max(psi: np.ndarray, case: dict[str, Any]) ->
     )["relative_max"]
 
 
-def _relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:
+def _relative_l2(candidate: FloatArray, reference: FloatArray) -> float:
     denominator = float(np.linalg.norm(reference[1:-1, 1:-1])) + 1e-30
     return float(np.linalg.norm(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])) / denominator
 
 
-def _interior_max_abs_error(candidate: np.ndarray, reference: np.ndarray) -> float:
+def _interior_max_abs_error(candidate: FloatArray, reference: FloatArray) -> float:
     return float(np.max(np.abs(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])))
 
 
@@ -368,9 +371,7 @@ def main() -> None:
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
             "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(rust_psi, case),
-            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
-                rust_psi, case
-            ),
+            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(rust_psi, case),
         },
         "Lean": {
             "relative_l2_interior": _relative_l2(lean_psi, python_psi),
@@ -391,9 +392,7 @@ def main() -> None:
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
             "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(lean_psi, case),
-            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
-                lean_psi, case
-            ),
+            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(lean_psi, case),
         },
     }
 
@@ -569,7 +568,9 @@ def main() -> None:
         "|----------|----------------|---------------|",
     ]
     for row in solvers:
-        lines.append(f"| {row['language']} | `{row['implementation']}` | {row['wall_time_s']:.6f} |")
+        lines.append(
+            f"| {row['language']} | `{row['implementation']}` | {row['wall_time_s']:.6f} |"
+        )
     lines.extend(
         [
             "",
