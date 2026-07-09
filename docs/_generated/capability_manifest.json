@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 475
+    "test_files": 476
   },
   "documentation": {
     "public_pages": [
@@ -2974,6 +2974,7 @@
       "tests/test_honest_validated_coverage.py",
       "tests/test_hpc_bridge.py",
       "tests/test_hpc_bridge_runtime_contracts.py",
+      "tests/test_hts_quench.py",
       "tests/test_hybrid_accuracy_benchmark_contract.py",
       "tests/test_hypothesis_physics_models.py",
       "tests/test_hypothesis_properties.py",
