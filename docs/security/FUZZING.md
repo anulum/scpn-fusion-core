@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 ## Fuzzing scope
 
@@ -10,12 +10,12 @@ This document is the public contract for robustness against malformed input.
 Successful fuzzing builds and reviewed findings support acceptance gates where
 input-path stability and bounded resource behaviour are required.
 
-# Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
-# ORCID: 0009-0009-3560-0851
-# Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Fuzzing Guide
+<!-- Commercial license available -->
+<!-- © Concepts 1996–2026 Miroslav Šotek. All rights reserved. -->
+<!-- © Code 2020–2026 Miroslav Šotek. All rights reserved. -->
+<!-- ORCID: 0009-0009-3560-0851 -->
+<!-- Contact: www.anulum.li | protoscience@anulum.li -->
+<!-- SCPN Fusion Core — Fuzzing Guide -->
 
 # Fuzzing guide
 
