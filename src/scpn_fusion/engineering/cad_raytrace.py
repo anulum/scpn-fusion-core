@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
+from importlib import import_module
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -27,6 +29,14 @@ class CADLoadReport:
     face_loading_w_m2: FloatArray
     peak_loading_w_m2: float
     mean_loading_w_m2: float
+
+
+def _import_trimesh() -> Any | None:
+    """Return the optional trimesh module when it is importable."""
+    try:
+        return cast(Any, import_module("trimesh"))
+    except ImportError:
+        return None
 
 
 def _parse_ascii_stl(path: Path) -> tuple[FloatArray, IntArray]:
@@ -94,10 +104,7 @@ def load_cad_mesh(path: str | Path) -> tuple[FloatArray, IntArray]:
     if suffix not in {".stl", ".step", ".stp"}:
         raise ValueError("CAD mesh path must end with .stl, .step, or .stp")
 
-    try:
-        import trimesh  # type: ignore[import-not-found]
-    except Exception:
-        trimesh = None
+    trimesh = _import_trimesh()
 
     if trimesh is not None:
         mesh = trimesh.load(mesh_path, force="mesh")

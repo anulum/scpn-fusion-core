@@ -175,7 +175,7 @@ class BreedingBlanket:
         # Solve
         phi = np.linalg.solve(A, b)
 
-        return phi  # type: ignore[return-value,unused-ignore]
+        return phi
 
     def calculate_tbr(self, phi: NDArray[np.float64]) -> tuple[float, NDArray[np.float64]]:
         """Integrate Tritium production over the blanket volume (Cylindrical).
@@ -194,7 +194,7 @@ class BreedingBlanket:
                 integrand, self.r
             )  # pragma: no cover - numpy>=2.0 trapezoid path
         else:
-            total_production = np.trapz(integrand, self.r)  # type: ignore[attr-defined,unused-ignore]
+            total_production = np.trapz(integrand, self.r)
 
         # Incoming Current (per unit length)
         # Total neutrons entering cylinder surface = J_in * Area

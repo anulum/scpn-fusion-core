@@ -587,6 +587,7 @@ files = [
     "src/scpn_fusion/engineering/__init__.py",
     "src/scpn_fusion/engineering/balance_of_plant.py",
     "src/scpn_fusion/engineering/cad_raytrace.py",
+    "tests/test_cad_raytrace.py",
     "src/scpn_fusion/engineering/thermal_hydraulics.py",
     # Runtime compatibility strict cohort
     "src/scpn_fusion/exceptions.py",
