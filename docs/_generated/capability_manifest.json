@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 479
+    "test_files": 480
   },
   "documentation": {
     "public_pages": [
@@ -2752,6 +2752,7 @@
     ],
     "test_files": [
       "tests/run_all_tests.py",
+      "tests/test__integrated_transport_solver_model_common.py",
       "tests/test_adaptive_knm.py",
       "tests/test_adaptive_transport.py",
       "tests/test_advanced_soc_fusion_learning.py",

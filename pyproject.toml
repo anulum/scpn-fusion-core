@@ -340,6 +340,7 @@ files = [
     "src/scpn_fusion/core/integrated_transport_solver.py",
     "src/scpn_fusion/core/integrated_transport_solver_contracts.py",
     "src/scpn_fusion/core/_integrated_transport_solver_model_common.py",
+    "tests/test__integrated_transport_solver_model_common.py",
     "src/scpn_fusion/core/tglf_interface.py",
     "src/scpn_fusion/core/tglf_validation_runtime.py",
     "src/scpn_fusion/core/_integrated_transport_solver_base.py",
