@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 474
+    "test_files": 475
   },
   "documentation": {
     "public_pages": [
@@ -2817,6 +2817,7 @@
       "tests/test_diagnostics.py",
       "tests/test_digital_twin_ingest_runtime.py",
       "tests/test_diiid_jet_validation.py",
+      "tests/test_direct_energy_conversion.py",
       "tests/test_director_interface.py",
       "tests/test_director_interface_hardened.py",
       "tests/test_dispatcher_kernel_tier_benchmark.py",
