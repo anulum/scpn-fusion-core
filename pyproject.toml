@@ -490,6 +490,7 @@ files = [
     "tests/test_fusion_kernel_coilset_config.py",
     "src/scpn_fusion/core/fusion_kernel_newton_runtime.py",
     "src/scpn_fusion/core/fusion_kernel_free_boundary_mixin.py",
+    "tests/test_fusion_kernel_free_boundary_mixin.py",
     "src/scpn_fusion/core/fusion_kernel.py",
     "src/scpn_fusion/core/fusion_kernel_free_boundary.py",
     "src/scpn_fusion/core/_rust_compat.py",
