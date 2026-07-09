@@ -301,7 +301,11 @@ def main(argv: list[str] | None = None) -> int:
 
     thresholds_path = _resolve(args.thresholds)
     summary_path = _resolve(args.summary_json)
-    summary = evaluate(_load_json(thresholds_path))
+    try:
+        summary = evaluate(_load_json(thresholds_path))
+    except (FileNotFoundError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        print(f"Benchmark regression guard failed: {exc}")
+        return 1
 
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
