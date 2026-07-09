@@ -56,8 +56,9 @@ def test_preflight_defaults_to_process_arguments() -> None:
     assert calls == [None]
 
 
-def test_tools_directory_is_importable_for_script_execution() -> None:
+def test_repo_root_is_importable_for_script_execution() -> None:
     module = _load_module()
 
-    assert str(ROOT / "tools") in sys.path
+    assert str(ROOT) in sys.path
+    assert module.REPO_ROOT == ROOT
     assert module.TOOLS_DIR == ROOT / "tools"

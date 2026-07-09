@@ -14,10 +14,11 @@ from pathlib import Path
 
 
 TOOLS_DIR = Path(__file__).resolve().parent
-if str(TOOLS_DIR) not in sys.path:
-    sys.path.insert(0, str(TOOLS_DIR))
+REPO_ROOT = TOOLS_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from run_python_preflight import main as _run_python_preflight_main
+from tools.run_python_preflight import main as _run_python_preflight_main
 
 
 def main(argv: list[str] | None = None) -> int:

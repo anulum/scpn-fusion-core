@@ -18,15 +18,17 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
+if str(REPO_ROOT) not in sys.path:  # pragma: no cover - import bootstrap
     sys.path.insert(0, str(REPO_ROOT))
 
 from scpn_fusion.io.mast_ingestor import MastIngestor
 from tools.check_mast_label_manifest import (
     DEFAULT_MANIFEST,
     DEFAULT_REPORT,
+    _load_json,
     validate_manifest,
 )
 
@@ -43,9 +45,10 @@ def utc_now() -> str:
 def _load_manifest(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
     if not path.exists():
         return None, [f"label manifest not found: {path}"]
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        return None, [f"label manifest must contain a top-level object: {path}"]
+    try:
+        payload = _load_json(path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return None, [str(exc)]
     return payload, validate_manifest(payload)
 
 
@@ -63,7 +66,7 @@ def _manifest_shot_ids(payload: dict[str, Any]) -> list[int]:
     return shot_ids
 
 
-def _resample_to_summary_time(values: np.ndarray, n_time: int) -> np.ndarray:
+def _resample_to_summary_time(values: NDArray[np.float64], n_time: int) -> NDArray[np.float64]:
     flat = np.asarray(values, dtype=np.float64).reshape(-1)
     if len(flat) == n_time:
         return np.nan_to_num(flat, nan=0.0, posinf=0.0, neginf=0.0)
@@ -96,7 +99,7 @@ def materialise_shot(ingestor: MastIngestor, cache_dir: Path, shot_id: int) -> d
     summary = ingestor.load_shot_summary(shot_id)
     magnetics = ingestor.load_magnetic_probes(shot_id)
     time_s = np.asarray(summary["time"], dtype=np.float64)
-    arrays: dict[str, np.ndarray] = {
+    arrays: dict[str, NDArray[np.float64]] = {
         "time": time_s,
         "ip": np.asarray(summary["ip"], dtype=np.float64),
         "density": np.asarray(summary["density"], dtype=np.float64),
@@ -180,13 +183,13 @@ def main(argv: list[str] | None = None) -> int:
 
     payload, errors = _load_manifest(manifest_path)
     if errors:
-        report = build_blocked_report(
+        blocked_report = build_blocked_report(
             manifest_path=manifest_path,
             cache_dir=cache_dir,
             errors=errors,
             payload=payload,
         )
-        write_json(report_path, report)
+        write_json(report_path, blocked_report)
         print(f"MAST labelled shot download blocked: {len(errors)} label issue(s)")
         print(f"report={report_path}")
         return 1
