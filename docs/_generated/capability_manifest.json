@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 482
+    "test_files": 483
   },
   "documentation": {
     "public_pages": [
@@ -2785,6 +2785,7 @@
       "tests/test_check_lfs_hygiene.py",
       "tests/test_check_mast_label_manifest.py",
       "tests/test_check_pypi_sync.py",
+      "tests/test_check_release_readiness.py",
       "tests/test_check_test_module_linkage.py",
       "tests/test_checkpoint.py",
       "tests/test_ci_rmse_gate.py",
