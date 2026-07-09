@@ -291,6 +291,50 @@
           "pattern": "does not claim\\s+Aurora/STRAHL/JINTRAC collisional-operator parity"
         }
       ]
+    },
+    {
+      "id": "compact_reactor_findings_scope_boundary",
+      "source_file": "docs/COMPACT_REACTOR_FINDINGS.md",
+      "source_pattern": "SCPN-Fusion-Core Compact Design Study",
+      "evidence_files": [
+        "docs/COMPACT_REACTOR_FINDINGS.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "docs/COMPACT_REACTOR_FINDINGS.md",
+          "pattern": "reduced-order\\s+scanner outputs, not accepted reactor performance data"
+        },
+        {
+          "file": "docs/COMPACT_REACTOR_FINDINGS.md",
+          "pattern": "withholds\\s+claims about ignition, electric gain, plant availability"
+        },
+        {
+          "file": "docs/COMPACT_REACTOR_FINDINGS.md",
+          "pattern": "does not claim deployable modular fusion units"
+        }
+      ]
+    },
+    {
+      "id": "doe_arpa_e_pitch_scope_boundary",
+      "source_file": "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+      "source_pattern": "Positioning and claim boundary",
+      "evidence_files": [
+        "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+          "pattern": "not a present readiness, award, deployment, certification"
+        },
+        {
+          "file": "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+          "pattern": "Roadmap,\\s+budget, hiring, publication, deployment, and adoption milestones are proposal\\s+assumptions"
+        },
+        {
+          "file": "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+          "pattern": "Public headline\\s+claims stay governed by `validation/claims_manifest\\.json`"
+        }
+      ]
     }
   ]
 }

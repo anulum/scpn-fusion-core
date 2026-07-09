@@ -1,7 +1,7 @@
-# Compact Reactor Findings: The SCPN-Fusion-Core "Minimum Viable Reactor"
+# Compact Reactor Findings: SCPN-Fusion-Core Compact Design Study
 
 **Date**: 2026-01-20
-**Target**: Commercial Fusion Power and Research Reliability
+**Target**: Compact tokamak concept ranking and research reliability
 **Design ID**: MVR-0.96
 
 ---
@@ -13,19 +13,20 @@ SCPN-FUSION-CORE. It captures one reproducible scan outcome used by the internal
 engineering workflow and ties geometry, field limits, heat-flux assumptions, and
 performance claims to one documented configuration set.
 
-## Evidence scope
+## Claim boundary
 
 These findings are tied to the `global_design_scanner.py` sweep pipeline and are
-used as an internal comparison baseline. The report is informative for design
-trade studies, but it is not used as an accepted full-fidelity reactor safety
-or licensing artifact.
+used as a comparison baseline. The numeric values below are reduced-order
+scanner outputs, not accepted reactor performance data. This document withholds
+claims about ignition, electric gain, plant availability, materials
+qualification, licensing approval, and commercialization decisions.
 
 ## Operational interpretation
 
 This finding is a planning artifact, not a production license-to-operate.
-It identifies a viable geometry envelope and provides reproducible parameter
-targets that must be revalidated under full safety, materials, and hardware
-constraints before any commercialization decision.
+It identifies a candidate geometry envelope and provides reproducible parameter
+targets that require external physics, materials, controls, hardware, and safety
+evidence before any reactor-readiness claim.
 
 For engineering reuse, treat this document as input to concept ranking and
 benchmark setup, with external checks handling integration, controls, and plant
@@ -33,11 +34,18 @@ interfaces.
 
 ## 1. The Challenge of Scale
 
-Traditional fusion reactors like ITER are massive ($R \approx 6.2$m) and capital-intensive. The SCPN-Fusion-Core project aims to identify the smallest possible tokamak geometry that can achieve stable ignition and net power gain using advanced technology. Recent compact tokamak designs such as SPARC [1] and ARC [2] have demonstrated the viability of this approach.
+Traditional fusion reactors like ITER are massive ($R \approx 6.2$m) and
+capital-intensive. The SCPN-Fusion-Core design-study lane evaluates how small a
+tokamak geometry can become before the reduced-order scanner violates its
+physics and engineering constraints. Recent compact tokamak designs such as
+SPARC [1] and ARC [2] provide published context for high-field compact
+machines, but they do not validate this MVR-0.96 candidate.
 
 ## 2. The Minimum Viable Reactor (MVR)
 
-Through a multi-dimensional sweep of the design space using the `CompactReactorArchitect` optimizer, we have identified an optimal "Compact" design:
+Through a multi-dimensional sweep of the design space using the
+`CompactReactorArchitect` optimizer, the scanner identified one compact
+candidate:
 
 ### Geometry & Configuration
 *   **Major Radius (R)**: 0.965 m
@@ -48,11 +56,13 @@ Through a multi-dimensional sweep of the design space using the `CompactReactorA
 ### Magnetics & Performance
 *   **On-Axis Field ($B_0$)**: 8.1 Tesla
 *   **Peak Coil Field ($B_{max}$)**: 21.6 Tesla
-*   **Fusion Power ($P_{fusion}$)**: 5.3 MW
+*   **Fusion Power proxy ($P_{fusion}$)**: 5.3 MW reduced-order scanner output
 
 ### Core Technologies
 1.  **REBCO HTS**: High-Temperature Superconductors [3] allowing for magnetic fields $>20$T.
-2.  **TEMHD Liquid Divertor**: Thermo-Electric Magnetohydrodynamic liquid metal divertor capable of handling extremely high heat loads ($>90$ MW/m²).
+2.  **TEMHD Liquid Divertor**: Thermo-Electric Magnetohydrodynamic liquid metal
+    divertor model used for the high heat-flux planning assumption ($>90$
+    MW/m²); this document does not establish a qualified component.
 3.  **Detached Mode**: Operating in a highly-radiative detached state to protect the first wall.
 
 ---
@@ -60,10 +70,16 @@ Through a multi-dimensional sweep of the design space using the `CompactReactorA
 ## 3. Engineering Implications
 
 ### Heat Flux Management
-The MVR-0.96 produces a divertor heat load of **95.7 MW/m²**. Traditional solid divertors would fail instantly under these conditions. The use of a **liquid lithium or tin** divertor is mandatory, leveraging the TEMHD effect to drive coolant flow via the reactor's own magnetic field.
+The MVR-0.96 scanner case reports a divertor heat-load proxy of **95.7 MW/m²**.
+This value is a design-pressure signal for concept ranking. It does not
+demonstrate that a liquid lithium or tin divertor can survive the load; it marks
+that any follow-on design would need a separately verified liquid-metal divertor,
+materials, control, and safety case.
 
 ### Power Density
-The power density of this reactor is orders of magnitude higher than ITER, demonstrating the potential for decentralized, industrial-scale fusion power units that can be deployed in modular configurations.
+The scanner reports a compact, high-power-density candidate relative to large
+tokamak reference scales. Use that comparison only as a trade-study signal; the
+document does not claim deployable modular fusion units.
 
 ---
 
@@ -78,7 +94,11 @@ These findings were generated using `global_design_scanner.py`, which evaluates 
 
 ## 5. Conclusion
 
-The MVR-0.96 proves that fusion doesn't need to be giant. With advanced HTS magnets [3] and liquid metal components, a net-gain fusion reactor can fit within a single laboratory or industrial bay. The bootstrap current fraction [5] further reduces the external current drive requirements, improving the overall power balance.
+MVR-0.96 is a reduced-order compact tokamak candidate generated by the scanner.
+It does not prove reactor feasibility. The next evidence gates are full-fidelity
+equilibrium and transport checks, materials and heat-flux validation, control
+integration, neutron shielding and activation analysis, plant balance, and
+independent external review.
 
 ---
 

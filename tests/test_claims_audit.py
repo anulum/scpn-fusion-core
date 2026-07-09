@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -26,6 +27,39 @@ assert SPEC and SPEC.loader
 claims_audit = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = claims_audit
 SPEC.loader.exec_module(claims_audit)
+
+_REACTOR_CLAIM_DOCS: tuple[str, ...] = (
+    "docs/COMPACT_REACTOR_FINDINGS.md",
+    "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+)
+_REACTOR_DOC_CLAIM_IDS: tuple[str, ...] = (
+    "compact_reactor_findings_scope_boundary",
+    "doe_arpa_e_pitch_scope_boundary",
+)
+_UNBOUNDED_REACTOR_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(pattern, flags=re.IGNORECASE)
+    for pattern in (
+        r"\bstable ignition\b",
+        r"\bnet-gain fusion reactor\b",
+        r"\borders of magnitude\b",
+        r"\bproves\b",
+        r"\bonly framework\b",
+        r"\bunique\b",
+        r"\bproduction-grade\b",
+        r"\bvalidated research prototype\b",
+        r"\bgold-standard\b",
+        r"\bfully open-source\b",
+        r"\bone-click deployment\b",
+        r"\bdeployed and validated\b",
+        r"\bready for Frontier\b",
+        r"\b20x speedup over CPU\b",
+        r"\bQ > 5\b",
+    )
+)
+
+
+def _repo_text(relative_path: str) -> str:
+    return (ROOT / relative_path).read_text(encoding="utf-8")
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -43,6 +77,33 @@ def test_claims_manifest_passes_against_repo() -> None:
     claims = claims_audit.load_manifest(manifest)
     errors = claims_audit.run_audit(claims, ROOT)
     assert errors == []
+
+
+def test_reactor_claim_docs_are_manifested_and_bounded() -> None:
+    manifest = ROOT / "validation" / "claims_manifest.json"
+    claims = {claim.claim_id: claim for claim in claims_audit.load_manifest(manifest)}
+
+    for claim_id, doc_path in zip(_REACTOR_DOC_CLAIM_IDS, _REACTOR_CLAIM_DOCS, strict=True):
+        assert claims[claim_id].source_file == doc_path
+        text = _repo_text(doc_path)
+        assert "claim boundary" in text.lower()
+
+    doe_pitch = _repo_text("docs/DOE_ARPA_E_CONVERGENCE_PITCH.md")
+    assert "validation/claims_manifest.json" in doe_pitch
+    assert re.search(r"proposal\s+assumptions", doe_pitch) is not None
+
+    compact_findings = _repo_text("docs/COMPACT_REACTOR_FINDINGS.md")
+    assert re.search(r"reduced-order\s+scanner outputs", compact_findings) is not None
+    assert re.search(r"withholds\s+claims about ignition", compact_findings) is not None
+
+
+def test_reactor_claim_docs_reject_unbounded_overclaim_language() -> None:
+    for relative_path in _REACTOR_CLAIM_DOCS:
+        text = _repo_text(relative_path)
+        for pattern in _UNBOUNDED_REACTOR_CLAIM_PATTERNS:
+            assert pattern.search(text) is None, (
+                f"{relative_path} contains unbounded public-claim wording: {pattern.pattern}"
+            )
 
 
 def test_claims_audit_reports_missing_evidence_file(tmp_path: Path) -> None:

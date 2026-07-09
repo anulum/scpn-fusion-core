@@ -1,15 +1,10 @@
-# ──────────────────────────────────────────────────────────────────────
-
-## Positioning
-
-This pitch file is a technical briefing artifact for DOE/ARPA-E audiences. It links the platform’s control-first design and validation commitments to concrete milestones and execution constraints.
-
-# SCPN Fusion Core — DOE ARPA-E / FES Grant Alignment
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# Contact: www.anulum.li | protoscience@anulum.li
-# ORCID: https://orcid.org/0009-0009-3560-0851
-# License: GNU AGPL v3 | Commercial licensing available
-# ──────────────────────────────────────────────────────────────────────
+<!--
+SCPN Fusion Core — DOE ARPA-E / FES Grant Alignment
+© 1998–2026 Miroslav Šotek. All rights reserved.
+Contact: www.anulum.li | protoscience@anulum.li
+ORCID: https://orcid.org/0009-0009-3560-0851
+License: GNU AGPL v3 | Commercial licensing available
+-->
 
 # AI-Digital Twin Convergence for Fusion Energy:
 # The SCPN-Fusion-Core Framework
@@ -24,32 +19,74 @@ This pitch file is a technical briefing artifact for DOE/ARPA-E audiences. It li
 
 ---
 
+## Positioning and claim boundary
+
+This pitch file is a technical briefing artifact for DOE/ARPA-E audiences. It
+links the platform's control-first design and validation commitments to proposed
+milestones and execution constraints.
+
+This document is not a present readiness, award, deployment, certification,
+plant-performance, or commercialization claim. Numbers in this pitch fall into
+one of three categories: current repository evidence with an explicit source
+path, reduced-order design-study output, or proposed future work. Roadmap,
+budget, hiring, publication, deployment, and adoption milestones are proposal
+assumptions unless a cited validation artifact states otherwise. Public headline
+claims stay governed by `validation/claims_manifest.json` and the claim-audit
+tools.
+
 ## 1. Executive Summary
 
-Fusion energy stands at an inflection point. With ITER approaching first plasma, SPARC targeting Q > 2 by 2026, and over $6B in private capital committed to compact reactor concepts, the fusion community faces a paradox: the physics is advancing faster than the computational infrastructure to exploit it. Today's gold-standard simulation tools — EFIT, CORSICA, TRANSP, JINTRAC — were architected in the Fortran era. They solve physics with extraordinary fidelity but were never designed for the AI-native, real-time control paradigm that will define the next generation of fusion devices.
+Fusion energy programs increasingly need software that joins physics modeling,
+validation evidence, and control-loop experiments in one auditable workflow.
+ITER, SPARC, and private compact-reactor programs provide the context for this
+pitch, but this document does not claim that SCPN-Fusion-Core is a reactor
+design, plant controller, or qualified operations system.
 
-**We propose a fundamentally different approach.** SCPN-Fusion-Core is a dual-language (Python + Rust) open-source framework that treats AI and digital twins not as add-ons to physics simulation, but as first-class architectural primitives. The framework integrates a Grad-Shafranov equilibrium solver, 1.5D radial transport, Hall-MHD turbulence simulation, a Transformer-based disruption predictor, Fourier Neural Operator (FNO) turbulence surrogates, spiking neural network (SNN) controllers, and a real-time digital twin — all within a single, unified computational stack validated against 8 SPARC GEQDSK equilibria, ITER 15 MA baseline scenarios, and the ITPA H-mode confinement database spanning JET, DIII-D, ASDEX Upgrade, and Alcator C-Mod.
+SCPN-Fusion-Core is a dual-language (Python + Rust) open-source framework that
+keeps AI and digital-twin experiments inside the same repository as the physics
+solvers, validation scripts, and claim guards. The framework includes
+Grad-Shafranov equilibrium solving, 1.5D radial transport, Hall-MHD turbulence
+simulation, a Transformer-based disruption-prediction lane, Fourier Neural
+Operator (FNO) turbulence-surrogate experiments, spiking neural network (SNN)
+controllers, and digital-twin workflows. Each capability keeps its own evidence
+boundary; public validation claims require the linked report or artifact to pass.
 
-The central innovation is **control-first architecture**: plasma control policies are expressed as stochastic Petri nets, compiled through a formally verified pipeline into populations of leaky integrate-and-fire (LIF) neurons, and executed against physics-informed plant models at 1 kHz+ control loop rates. This neuro-symbolic compilation pathway — unique in the fusion software ecosystem — enables the kind of real-time, adaptive control that will be essential for disruption-free operation of burning plasma experiments.
+The central architecture is **control-first**: plasma-control policies can be
+expressed as stochastic Petri nets, compiled into populations of leaky
+integrate-and-fire (LIF) neurons, and executed against physics-informed plant
+models. Current timing claims are limited to the benchmark artifacts cited by
+the release gates; this pitch does not claim qualified burning-plasma control.
 
-**The convergence thesis is simple:** the fusion machines of the 2030s will not be operated by humans interpreting post-shot analysis. They will be operated by AI digital twins running predictive simulations faster than real-time, issuing control commands on sub-millisecond timescales, and learning from every discharge to optimize the next one. SCPN-Fusion-Core provides the software infrastructure to make that vision concrete, testable, and deployable.
+The convergence thesis is that future fusion-control software should connect
+simulation, validation, and controller testing with explicit evidence records.
+SCPN-Fusion-Core provides a research framework for making that thesis testable.
 
 **Key differentiators over existing tools:**
-- **10-50x faster equilibrium solves** than pure-Python alternatives via Rust kernels (100 ms at 65x65 vs. 30+ s)
+- **Measured Rust/Python acceleration lanes** where benchmark artifacts record
+  the same-work comparison and its scope
 - **AI-native from inception** — neural equilibrium, FNO turbulence, SNN control, and ML disruption prediction are core modules, not afterthoughts
-- **Real-time digital twin** with RL-trained MLP controllers and chaos-monkey fault injection for resilience testing
+- **Digital-twin experiments** with controller tests and fault-injection
+  campaigns, scoped to simulation unless a hardware report is cited
 - **GPU-accelerated** Red-Black SOR via wgpu compute shaders (cross-platform: Vulkan/Metal/D3D12/WebGPU)
-- **MPI-ready** 2D domain decomposition with halo exchange primitives for exascale deployment
-- **Validated against real experiments:** 8 SPARC GEQDSK files, ITER/DIII-D/JET confinement scaling, 53-shot ITPA database
-- **Fully open-source** under AGPL-3.0, with Apache-compatible commercial licensing
+- **MPI design surface** with 2D domain decomposition and halo-exchange
+  primitives; deployment/scaling claims require a separate scaling report
+- **Evidence-linked validation lanes** covering SPARC GEQDSK, ITER/DIII-D/JET
+  scaling, and ITPA artifacts where the referenced report states the pass/block
+  status
+- **AGPL-3.0 source release with a commercial licensing path**
 
-This proposal requests $7.5M over 3 years to transition SCPN-Fusion-Core from a validated research prototype to a production-grade digital twin platform for SPARC, compact reactor design optimization, and DOE leadership computing facility deployment.
+This proposal requests $7.5M over 3 years to extend SCPN-Fusion-Core from a
+research framework into a better-validated digital-twin and control-software
+platform. Any SPARC, compact-reactor, or DOE leadership-computing deployment
+claim would require a future accepted validation artifact.
 
 ---
 
 ## 2. Technical Innovation Matrix
 
 The following matrix maps each SCPN-Fusion-Core capability to specific DOE program areas and fusion science priorities.
+Readiness levels are proposal self-assessments for planning; they are not
+certification, procurement, or facility-adoption decisions.
 
 ### 2.1 ARPA-E GAMOW Alignment (Galvanizing Advances in Market-aligned fusion for an Overabundance of Watts)
 
@@ -86,7 +123,7 @@ The following matrix maps each SCPN-Fusion-Core capability to specific DOE progr
 | SCPN-Fusion-Core Capability | ASCR Priority | Contribution |
 |:----|:----|:----|
 | wgpu GPU compute shaders | Portable GPU programming models | Cross-vendor GPU acceleration without CUDA lock-in |
-| MPI 2D domain decomposition with Rayon threading | Hybrid MPI+threads on exascale nodes | Deterministic domain partitioning + halo exchange ready for Frontier/Aurora |
+| MPI 2D domain decomposition with Rayon threading | Hybrid MPI+threads on exascale nodes | Deterministic domain partitioning + halo exchange primitives; Frontier/Aurora use remains future work |
 | Rust performance + safety guarantees | Memory-safe HPC (DOE software sustainability) | No undefined behavior, no data races, zero-cost abstractions |
 | PyO3 bindings for Python interoperability | Accessible HPC (broadening the user base) | Scientists use Python; performance-critical paths run in Rust |
 
@@ -98,7 +135,10 @@ SCPN-Fusion-Core implements a four-layer AI stack that spans the full lifecycle 
 
 ### 3.1 Layer 1: Neural Equilibrium Solver
 
-**Problem:** Full Grad-Shafranov equilibrium solves require 100 ms to 2 s per iteration on production grids (65x65 to 128x128). This is too slow for inner-loop control optimization where thousands of scenario evaluations are needed per second.
+**Problem:** Full Grad-Shafranov equilibrium solves in this repository's current
+benchmark lanes run at millisecond-to-second scale depending on grid size and
+backend. That latency motivates surrogate and accelerated-solver experiments
+for scenario scanning; it is not a qualified plant-control timing claim.
 
 **Solution:** A neural surrogate (`neural_equilibrium.py`, 530 lines) trained directly on real SPARC GEQDSK data. The architecture uses a SimpleMLP with the canonical 12-dimensional equilibrium descriptor (`I_p`, `B_t`, `R_axis`, `Z_axis`, `pprime_scale`, `ffprime_scale`, `simag`, `sibry`, `kappa`, `delta_upper`, `delta_lower`, `q95`), He initialization, and ReLU activations, combined with a MinimalPCA (pure NumPy SVD, no sklearn dependency) for flux-surface geometry compression.
 
@@ -106,7 +146,8 @@ SCPN-Fusion-Core implements a four-layer AI stack that spans the full lifecycle 
 - No pickle persistence — model weights stored as `.npz` with `allow_pickle=False` for security and cross-platform reproducibility
 - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only
 - Explicit escalation to full physics solve when surrogate confidence is below threshold
-- Rust inference path in `fusion-ml/src/neural_equilibrium.rs` for sub-millisecond deployment
+- Rust inference path in `fusion-ml/src/neural_equilibrium.rs` for benchmarked
+  low-latency inference experiments
 
 **Validation:** 19 unit tests covering PCA round-trip fidelity, MLP shape invariants, save/load determinism, SPARC training integration, and benchmark timing.
 
@@ -126,13 +167,17 @@ SCPN-Fusion-Core implements a four-layer AI stack that spans the full lifecycle 
 
 ### 3.3 Layer 3: Disruption Predictor
 
-**Problem:** Disruptions threaten to deposit up to 350 MJ of thermal energy on plasma-facing components within milliseconds. ITER cannot survive more than a small number of full-current disruptions over its lifetime. Prediction windows of 30+ ms before thermal quench are essential for triggering mitigation systems.
+**Problem:** Disruptions can deposit large thermal and electromagnetic loads on
+plasma-facing components. Prediction windows before thermal quench are required
+before mitigation systems can act.
 
 **Solution:** A two-stage pipeline:
 1. **Tearing mode simulator** based on the modified Rutherford equation: island growth dw/dt = Rutherford_rate(Delta_prime, w, w_sat) with stochastic noise injection and configurable trigger thresholds (w_disruption = 8.0)
 2. **Transformer classifier** (d_model=32, n_heads=4, n_layers=2, d_ff=64) operating on fixed-length time series (SEQ_LEN=100) of island width measurements with measurement noise (sigma=0.05)
 
-**Both stages are implemented in Rust** (`fusion-ml/src/disruption.rs`) for deterministic, low-latency inference suitable for real-time deployment.
+**Both stages are implemented in Rust** (`fusion-ml/src/disruption.rs`) for
+deterministic, low-latency inference experiments. Real-time deployment remains a
+separate hardware and safety-evidence gate.
 
 **Integration with control:** When the disruption predictor confidence exceeds threshold, the SPI mitigation module is triggered automatically within the digital twin loop.
 
@@ -272,7 +317,10 @@ Benchmarks measured on AMD Ryzen 9 7950X (16C/32T, Zen 4) with 64 GB DDR5-5200, 
 
 ### 5.2 GPU Acceleration via wgpu
 
-SCPN-Fusion-Core has implemented a production GPU backend using the `wgpu` crate, targeting the WebGPU/Vulkan/Metal/D3D12 abstraction layer. This provides cross-vendor GPU portability without CUDA lock-in — a strategic advantage for DOE leadership computing facilities that deploy both NVIDIA and AMD GPUs.
+SCPN-Fusion-Core includes a GPU backend using the `wgpu` crate, targeting the
+WebGPU/Vulkan/Metal/D3D12 abstraction layer. This keeps the implementation
+portable across multiple vendor stacks, while each performance claim remains
+bounded by the benchmark artifact that generated it.
 
 **Implemented:** Red-Black SOR compute shader (`gs_solver.wgsl`) for the Grad-Shafranov inner loop:
 - Workgroup size: 16x16 threads
@@ -280,7 +328,7 @@ SCPN-Fusion-Core has implemented a production GPU backend using the `wgpu` crate
 - Boundary-skipping interior iteration
 - f32 precision with tolerance-guarded escalation to the f64 CPU reference path
 
-**Projected speedups on RTX 4090-class hardware:**
+**Roadmap speedups on RTX 4090-class hardware:**
 
 | Target | Expected Speedup | Status |
 |:----|:---:|:---:|
@@ -292,7 +340,9 @@ SCPN-Fusion-Core has implemented a production GPU backend using the `wgpu` crate
 
 ### 5.3 MPI Domain Decomposition
 
-The `fusion-core/src/mpi_domain.rs` module implements deterministic **2D Cartesian domain decomposition** with halo exchange primitives and a production distributed Grad-Shafranov solver:
+The `fusion-core/src/mpi_domain.rs` module implements deterministic **2D
+Cartesian domain decomposition** with halo exchange primitives and a distributed
+Grad-Shafranov solver experiment:
 
 ```rust
 pub struct CartesianTile {
@@ -316,9 +366,10 @@ pub struct CartesianTile {
 - **`optimal_process_grid()`**: Surface-to-volume ratio minimisation for automatic (pz, pr) factorisation
 - **`auto_distributed_gs_solve()`**: Top-level entry point that auto-detects Rayon thread count
 - Rayon-based intra-node threading (up to 32 threads on Zen 4) combined with inter-node MPI for hybrid parallelism
-- Ready for wiring to `rsmpi` crate for MPICH/OpenMPI interop on Frontier and Aurora
+- Candidate for `rsmpi` crate wiring for MPICH/OpenMPI interop on Frontier and
+  Aurora; this pitch does not claim facility deployment.
 
-**Path to 10,000+ core deployment:**
+**Roadmap path to 10,000+ core deployment:**
 
 | Scale | Nodes | Cores | Grid Size | Projected Time/Step | Target Machine |
 |:----|:---:|:---:|:----|:---:|:----|
@@ -341,7 +392,9 @@ pub struct CartesianTile {
 | Neural weights (all surrogates) | < 10 MB | Fixed |
 | Total per node budget | < 2 GB | Compatible with 64+ GB/node |
 
-The memory footprint is negligible compared to available RAM on DOE leadership nodes (512 GB+ per node on Frontier), leaving ample headroom for ensemble simulations and uncertainty quantification.
+The current per-node memory estimates are small relative to typical leadership
+node memory budgets. This is a sizing argument, not a demonstrated facility
+scaling result.
 
 ---
 
@@ -349,7 +402,9 @@ The memory footprint is negligible compared to available RAM on DOE leadership n
 
 ### 6.1 SPARC Validation (8 GEQDSK Equilibria)
 
-SCPN-Fusion-Core has been validated against 8 GEQDSK equilibrium files from the SPARCPublic dataset (CFS Energy), covering the full range of SPARC operating scenarios:
+SCPN-Fusion-Core has a SPARC GEQDSK comparison lane covering 8 files from the
+SPARCPublic dataset (CFS Energy). The table below reports that lane's current
+pass/block status; it is not an EFIT-grade inverse-reconstruction claim.
 
 | Label | Grid | B_T (T) | I_p (MA) | R_axis (m) | Axis Error R (m) | Axis Error Z (m) | q_95 | Topology Pass |
 |:----|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -362,8 +417,9 @@ SCPN-Fusion-Core has been validated against 8 GEQDSK equilibrium files from the 
 | sparc_1315 | 61x129 | -12.2 | -8.7 | 1.871 | **0.004** | **0.00003** | 3.52 | **Pass** |
 | sparc_1349 | 61x129 | -12.2 | -8.0 | 1.872 | **0.003** | **0.009** | 3.45 | In progress |
 
-**Key results:**
-- All 8 equilibria converge successfully with the Picard + Red-Black SOR solver
+**Current reported results:**
+- All 8 equilibria converge successfully in the Picard + Red-Black SOR solver
+  lane
 - Full-current SPARC shots (1305, 1310, 1315, 1349) achieve magnetic axis position errors of **2-7 mm** in R and **< 0.1 mm** in Z
 - Solver convergence typically within 72-215 iterations with residuals < 1e-4
 - Solve times: 578-2184 ms (varying with grid size and complexity)
@@ -406,7 +462,9 @@ The regression suite includes a confinement density metric (tau_E / V_plasma) th
 confinement_density = tau_E / (2 * pi^2 * R * a^2 * kappa)
 ```
 
-This test (`test_sparc_high_field_advantage`) confirms that compact high-field tokamaks achieve higher volumetric confinement than conventional large-bore designs, validating the approach underlying ARPA-E GAMOW and BETHE investments.
+This test (`test_sparc_high_field_advantage`) checks the implemented
+confinement-density comparison used by the repository. It does not validate a
+reactor or a funding-program outcome.
 
 ### 6.6 Point-Wise Psi RMSE Validation
 
@@ -425,16 +483,18 @@ Covered by 17 unit tests in `test_psi_pointwise_rmse.py`.
 
 ### 7.1 Current 3D Capabilities
 
-**Hall-MHD Spectral Turbulence (Production):**
+**Hall-MHD Spectral Turbulence (reduced-order model):**
 The `fusion-physics/src/hall_mhd.rs` module implements a reduced Hall-MHD model with spontaneous zonal flow generation on a 64x64 spectral grid. The model couples vorticity (stream function phi_k) and magnetic flux (psi_k) evolution with:
 - Larmor radius / Hall scale: rho_s = 0.1
 - De-aliasing via 2/3 rule in spectral space
 - Energy and zonal flow diagnostic histories
 - Full Rust implementation with Complex64 spectral arithmetic
 
-This is the correct reduced model for studying drift-Alfven turbulence self-organization and reconnection physics in compact tokamaks with strong Hall effects (beta = 0.01 regime relevant to SPARC and ARC).
+This reduced model supports drift-Alfven turbulence and reconnection studies in
+the repository's benchmark regime. Quantitative parity against external
+nonlinear turbulence codes remains separately gated.
 
-**VMEC-Compatible Boundary Interface (Production):**
+**VMEC-Compatible Boundary Interface:**
 The `fusion-core/src/vmec_interface.rs` module provides a deterministic interoperability layer for exchanging reduced Fourier boundary states with external VMEC-class workflows:
 
 ```rust
@@ -453,7 +513,10 @@ This interface supports stellarator geometry specification with arbitrary number
 
 ### 7.2 BOUT++ Coupling Interface
 
-SCPN-Fusion-Core includes a **production Rust implementation** (`fusion-core/src/bout_interface.rs`) for coupling with the BOUT++ framework (Dudson et al., Computer Physics Communications 180, 2009) for 3D nonlinear MHD stability analysis:
+SCPN-Fusion-Core includes a Rust implementation
+(`fusion-core/src/bout_interface.rs`) for exchanging grid and stability data
+with BOUT++-class workflows (Dudson et al., Computer Physics Communications
+180, 2009):
 
 - **`generate_bout_grid()`**: Traces flux surfaces from 2D GS equilibria via Newton iteration, computes field-aligned coordinates (ψ, θ, ζ), metric tensors (g^{xx}, g^{yy}, g^{zz}, g^{xy}), Jacobian J = R/B_p, and safety factor q(ψ)
 - **`export_bout_grid_text()`**: Text-format export compatible with BOUT++ NetCDF conversion pipeline
@@ -508,15 +571,31 @@ This preserves the computational efficiency of SCPN-FC for real-time control whi
 
 ### 8.2 Key Differentiators
 
-**1. AI-Native Architecture:** SCPN-Fusion-Core is the only framework where AI models (neural equilibrium, FNO turbulence, disruption prediction, SNN control) are core modules with first-class Rust implementations, not Python wrappers around external ML libraries. The neuro-symbolic Petri net to SNN compilation pipeline is unique in the fusion community.
+**1. AI/ML architecture:** SCPN-Fusion-Core keeps AI models (neural equilibrium,
+FNO turbulence, disruption prediction, SNN control) in the same repository as
+physics solvers, Rust implementations, and validation artifacts, rather than
+treating them only as external wrappers. The neuro-symbolic Petri-net-to-SNN
+compilation pipeline is a repository capability with its own tests and
+claim-boundary artifacts.
 
-**2. Rust Performance with Python Accessibility:** The dual-language architecture provides 10-50x performance over pure-Python alternatives while maintaining the accessibility that researchers expect. PyO3 bindings ensure seamless interoperation. Graceful degradation means every module works without Rust — pure NumPy fallback is always available.
+**2. Rust performance with Python accessibility:** The dual-language architecture
+keeps Python APIs while routing measured hot paths through Rust where benchmarks
+show a benefit. PyO3 bindings provide interoperation, and NumPy fallback paths
+preserve runnable behavior when compiled extensions are unavailable.
 
-**3. Portable GPU Acceleration:** By choosing `wgpu` (WebGPU standard) over CUDA, SCPN-FC avoids vendor lock-in that limits deployment to NVIDIA-only systems. This is strategically important as DOE facilities deploy AMD MI250/MI300 GPUs (Frontier) alongside NVIDIA A100/H100 (Perlmutter).
+**3. Portable GPU acceleration:** By choosing `wgpu` (WebGPU standard) over
+CUDA-only implementation paths, SCPN-FC keeps a route to NVIDIA, AMD, and Intel
+GPU experiments. Facility use remains contingent on future same-work benchmark
+and operations evidence.
 
-**4. Control-First Philosophy:** Most fusion codes are physics-first (solve equations, then bolt on control). SCPN-FC is control-first — the framework is designed from the ground up for real-time control loop closure at 1 kHz+ rates. Physics models are deliberately reduced-order (not gyrokinetic) to enable this.
+**4. Control-first architecture:** SCPN-FC puts controller contracts, replay
+metadata, and validation reports next to the physics models. The current
+real-time language remains benchmark-scoped; reduced-order models are used where
+full-fidelity solvers are too expensive for closed-loop experiments.
 
-**5. Open-Source with Commercial Pathway:** AGPL-3.0 licensing ensures community access while preserving the option for commercial dual-licensing for private fusion companies (CFS, TAE Technologies, Zap Energy, Type One Energy) who need proprietary deployment.
+**5. Open source with commercial pathway:** AGPL-3.0 licensing gives community
+access while preserving the option for commercial dual-licensing where a partner
+needs proprietary deployment terms.
 
 ### 8.3 Performance Comparison vs. Community Codes
 
@@ -529,10 +608,13 @@ This preserves the computational efficiency of SCPN-FC for real-time control whi
 | JINTRAC | Integrated modeling | ~10 min/shot | Fortran/Python |
 | TORAX | Integrated modeling | ~30 s (GPU) | Python/JAX |
 | GENE | Gyrokinetic | ~10^6 CPU-h | Fortran/MPI |
-| **SCPN-FC (Rust)** | **Full-stack** | **~4 s recon (65x65)** | **Rust+Python** |
-| **SCPN-FC (Python)** | **Full-stack** | **~40 s recon (65x65)** | **Python** |
+| SCPN-FC (Rust) | Repository reconstruction lane | ~4 s recon (65x65) | Rust+Python |
+| SCPN-FC (Python) | Repository reconstruction lane | ~40 s recon (65x65) | Python |
 
-SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction (Lao et al., Nuclear Fusion 25, 1611, 1985), with the gap expected to close when the multigrid solver replaces Picard+SOR as the default kernel. The GPU path is expected to approach P-EFIT performance (< 1 ms) for control-loop-sized grids.
+SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction
+(Lao et al., Nuclear Fusion 25, 1611, 1985) on the cited reconstruction lane.
+Closing that gap is roadmap work; the GPU path requires future same-work
+benchmark evidence before any P-EFIT-level comparison is claimed.
 
 ---
 
@@ -546,7 +628,7 @@ SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction 
 | Q1 | Disruption predictor validated on synthetic SPARC scenarios | Classification accuracy report | > 95% accuracy with 30+ ms warning |
 | Q2 | Digital twin operational for SPARC baseline (I_p = 8.7 MA, B = 12.2 T) | Real-time SPARC digital twin demo | Closed-loop control at 1 kHz |
 | Q2 | FNO turbulence surrogate trained on multi-regime SPARC data | `fno_turbulence_sparc.npz` weights | ITG/TEM/ETG regime discrimination > 90% |
-| Q3 | GPU SOR kernel deployed and validated | wgpu benchmark suite | 20x speedup over CPU for 65x65 grid |
+| Q3 | GPU SOR kernel evaluated | wgpu benchmark suite | Same-work speedup report over CPU for 65x65 grid |
 | Q3 | Point-wise psi RMSE < 5% on all 8 SPARC GEQDSKs | psi_pointwise_rmse.py report | Normalized RMSE < 0.05 |
 | Q4 | DIII-D and JET GEQDSK validation (5+5 shots) | Extended validation database | Axis error < 10 mm on experimental shots |
 | Q4 | Solov'ev analytic equilibrium benchmark (10 cases) | Analytic comparison report | Manufactured solution error < 1e-6 |
@@ -567,9 +649,9 @@ SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction 
 
 | Quarter | Milestone | Deliverable | Success Metric |
 |:---:|:----|:----|:----|
-| Q5 | MPI domain decomposition production-ready with rsmpi | Scaling benchmarks on 128+ cores | > 85% parallel efficiency at 128 ranks |
+| Q5 | MPI domain decomposition wired to rsmpi | Scaling benchmarks on 128+ cores | Parallel-efficiency report at 128 ranks |
 | Q5 | BOUT++ two-way coupling operational | Coupled workflow documentation | ELM stability boundaries from BOUT++ fed back to digital twin |
-| Q6 | Exascale deployment on Frontier (AMD MI250) | Frontier benchmark report | Sub-second equilibrium solve on 1024x1024 grid |
+| Q6 | Frontier (AMD MI250) benchmark attempt | Frontier benchmark report | Reported 1024x1024 equilibrium solve latency |
 | Q6 | Real-time control integration prototype | SCPN-FC controlling simulated tokamak flight | 10,000 step campaign with < 1% disruption rate |
 | Q7 | Aurora (Intel GPU) porting and validation | Aurora benchmark report | Cross-vendor GPU portability confirmed |
 | Q7 | 3D VMEC-class equilibrium solver (fixed boundary) | 3D equilibrium for W7-X geometry | Force balance residual < 1e-4 |
@@ -582,9 +664,9 @@ SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction 
 
 | Quarter | Milestone | Deliverable | Success Metric |
 |:---:|:----|:----|:----|
-| Q9 | AI-guided compact reactor design optimization | Pareto-optimal design database (> 10,000 configurations) | Identification of MVR designs with Q > 5 and R < 1.5 m |
+| Q9 | AI-guided compact reactor design optimization | Pareto-front design database (> 10,000 configurations) | Candidate designs with explicit reduced-order and external-evidence boundaries |
 | Q9 | Stellarator optimization capability | QA/QH metric predictor | Neoclassical transport within 2x of W7-X measured values |
-| Q10 | Technology transfer package for private fusion companies | API documentation, deployment guides, Docker images | Adopted by at least 2 private fusion entities |
+| Q10 | Technology-transfer package for private fusion companies | API documentation, deployment guides, Docker images | Pilot feedback from at least 2 private fusion entities |
 | Q10 | Workforce development program | Summer school curriculum, online tutorials | > 100 students/postdocs trained |
 | Q11 | ITER scenario library | 50+ ITER equilibria with transport and stability analysis | Integrated in ITER IMAS data model |
 | Q11 | Community edition release (v3.0) | Stable API, documentation, tutorial notebooks | > 500 GitHub stars, > 50 citations |
@@ -636,7 +718,10 @@ SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction 
 
 **Computing:** Leadership computing allocations are essential for exascale scaling demonstrations. NERSC Perlmutter provides NVIDIA A100 GPU access. Frontier (OLCF) provides AMD MI250X for cross-vendor GPU validation. Aurora (ALCF) provides Intel GPU testing.
 
-**Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding the validation database beyond the current 8 SPARC files. Collaboration with experimentalists at GA (DIII-D) and CCFE/EUROfusion (JET) ensures physics fidelity.
+**Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding
+the validation database beyond the current 8 SPARC files. Collaboration with
+experimentalists at GA (DIII-D) and CCFE/EUROfusion (JET) would improve physics
+fidelity.
 
 ---
 
@@ -644,11 +729,18 @@ SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction 
 
 ### 11.1 Workforce Development
 
-**Graduate training:** The project provides a unique training environment where graduate students gain simultaneous expertise in plasma physics, machine learning, high-performance computing, and systems programming (Rust). This combination of skills is precisely what the fusion workforce of the 2030s requires.
+**Graduate training:** The project provides a training environment where
+graduate students can work across plasma physics, machine learning,
+high-performance computing, and systems programming (Rust). This combination of
+skills matches the software needs described in current fusion-workforce
+planning.
 
 **Summer school:** In Year 3, we will develop and deliver a 2-week intensive course on "AI-Native Fusion Simulation" targeting 30+ participants from US universities and national laboratories. The curriculum will use SCPN-Fusion-Core tutorial notebooks as the primary teaching material.
 
-**Open-source community building:** The AGPL-3.0 license ensures that all improvements to the framework are shared with the community. We will maintain active GitHub issues, pull request reviews, and discussion forums to lower the barrier to entry for new contributors.
+**Open-source community building:** The AGPL-3.0 license requires shared
+availability for covered derivative work. The proposal includes active GitHub
+issues, pull request reviews, and discussion forums to lower the barrier to
+entry for new contributors.
 
 ### 11.2 STEM Education and Public Engagement
 
@@ -656,22 +748,37 @@ SCPN-FC is currently ~2x slower than literature EFIT timings for reconstruction 
 
 **Streamlit dashboard:** The real-time fusion dashboard (`ui/app.py`) provides an accessible visual interface that can be used for public demonstrations and classroom teaching without requiring any programming knowledge.
 
-**Docker one-click deployment:** The Docker image enables anyone to run the full simulation suite with a single command, eliminating installation barriers for students and educators.
+**Docker deployment:** The Docker image gives students and educators a
+repeatable entry point for the documented example workflows.
 
 ### 11.3 Climate Impact
 
-Fusion energy produces no greenhouse gas emissions during operation, generates no long-lived radioactive waste, and uses fuel (deuterium from seawater, tritium bred from lithium) that is virtually inexhaustible. By accelerating the development of AI-native control systems for fusion devices, this project contributes directly to the commercialization timeline for fusion energy.
+Fusion energy is pursued because it could provide high energy density with
+different fuel, emissions, and waste characteristics than fossil generation.
+This project contributes software research for control and validation workflows;
+it does not itself shorten a commercialization timeline without external program
+adoption and hardware evidence.
 
 **Specific contributions to climate goals:**
-- The compact reactor optimizer enables smaller, cheaper fusion plants that can be deployed more quickly and in more locations than conventional large-bore designs
-- Real-time disruption prediction and avoidance increases machine availability and reduces component replacement costs, improving the economic case for fusion
-- Open-source availability ensures that the tools are accessible to the global fusion community, not locked behind institutional barriers
+- The compact reactor optimizer ranks smaller reduced-order candidates for
+  follow-on external physics, engineering, and economic checks.
+- Disruption-prediction experiments can support future availability and
+  component-risk studies after they are validated on accepted machine data.
+- Open-source availability keeps the tools accessible to the global fusion
+  community rather than locked behind institutional barriers
 
 ### 11.4 Diversity, Equity, and Inclusion
 
-The open-source, Python-accessible design of SCPN-Fusion-Core deliberately lowers the barrier to entry for researchers and students from institutions that may not have access to legacy Fortran fusion codes and their associated institutional knowledge. The Docker deployment, tutorial notebooks, and comprehensive documentation ensure that a first-generation college student with a laptop can explore the same physics simulations as a researcher at a national laboratory.
+The open-source, Python-accessible design of SCPN-Fusion-Core lowers the barrier
+to entry for researchers and students from institutions that may not have access
+to legacy Fortran fusion codes and their associated institutional knowledge. The
+Docker deployment and tutorial notebooks provide a practical entry point for the
+repository's documented example workflows.
 
-We commit to actively recruiting postdoctoral researchers and graduate students from underrepresented groups in plasma physics, and to participating in DOE-sponsored diversity initiatives including the National GEM Consortium and the SULI program.
+The proposal budget reserves effort for recruiting postdoctoral researchers and
+graduate students from underrepresented groups in plasma physics and for
+participation in DOE-sponsored diversity initiatives including the National GEM
+Consortium and the SULI program.
 
 ### 11.5 Technology Transfer Pathway
 
@@ -750,7 +857,7 @@ We commit to actively recruiting postdoctoral researchers and graduate students 
 **PyPI:** [pypi.org/project/scpn-fusion](https://pypi.org/project/scpn-fusion/)
 **DOI:** Zenodo (in preparation)
 **CI/CD:** GitHub Actions (lint, security, test, benchmark, release)
-**Docker:** `docker compose up` for one-click deployment
+**Docker:** `docker compose up` for the documented container workflow
 **License:** GNU AGPL v3 (open-source) | Commercial licensing available
 
 ### Crate Architecture (Rust Workspace)
