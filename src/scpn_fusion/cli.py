@@ -298,8 +298,7 @@ def _run_repro(json_output: Path, markdown_output: Path) -> None:
 
     report = run_full_reproduction(json_output=json_output, markdown_output=markdown_output)
     click.echo(
-        "Wrote full reproduction evidence: "
-        f"{json_output} ({report['evidence_payload_sha256']})"
+        f"Wrote full reproduction evidence: {json_output} ({report['evidence_payload_sha256']})"
     )
     click.echo(f"Wrote full reproduction Markdown: {markdown_output}")
 

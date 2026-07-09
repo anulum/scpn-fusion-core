@@ -12,10 +12,11 @@ import importlib.util
 import sys
 from pathlib import Path
 from types import TracebackType
-from typing import Literal, Self
+from typing import Literal
 from urllib.request import Request
 
 import pytest
+from typing_extensions import Self
 
 
 ROOT = Path(__file__).resolve().parents[1]

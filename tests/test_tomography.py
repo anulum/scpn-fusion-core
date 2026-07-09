@@ -183,7 +183,12 @@ def test_ridge_reconstruction_uses_lstsq_when_solve_is_singular(
         assert rhs.shape == (tomo.n_pixels,)
         assert rcond is None
         solution = np.linspace(-0.5, 0.5, tomo.n_pixels, dtype=np.float64)
-        return solution, np.empty(0, dtype=np.float64), np.int32(tomo.n_pixels), np.empty(0, dtype=np.float64)
+        return (
+            solution,
+            np.empty(0, dtype=np.float64),
+            np.int32(tomo.n_pixels),
+            np.empty(0, dtype=np.float64),
+        )
 
     monkeypatch.setattr(np.linalg, "solve", raise_singular)
     monkeypatch.setattr(np.linalg, "lstsq", fallback_lstsq)

@@ -249,4 +249,6 @@ files = ["typed.py"]
     )
 
     assert rc == 0
-    assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))["overall_pass"] is True
+    assert (
+        json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))["overall_pass"] is True
+    )

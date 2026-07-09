@@ -29,8 +29,8 @@ preflight checks so claim state changes are evidence-backed.
 
 ## Checklist
 
-- [x] Release preflight (`python tools/preflight.py --gate release`)
-- [x] Research preflight (`python tools/preflight.py --gate research`)
+- [x] Release preflight (`python tools/run_python_preflight.py --gate release`)
+- [x] Research preflight (`python tools/run_python_preflight.py --gate research`)
 - [x] Claims audit, claim-range guard, and claims evidence map are up to date
 - [x] Internal readiness register regenerated in current branch
 - [x] Version metadata and release docs are consistent

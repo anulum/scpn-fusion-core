@@ -552,7 +552,9 @@ def test_rust_helper_numeric_delegates_to_imported_symbol(
         assert kwargs == {}
         return (1.0, 2.0, 3.0)
 
-    def fake_tearing(steps: int, seed: int | None, beta_p: float, w_crit: float) -> tuple[int, int | None, float, float]:
+    def fake_tearing(
+        steps: int, seed: int | None, beta_p: float, w_crit: float
+    ) -> tuple[int, int | None, float, float]:
         return steps, seed, beta_p, w_crit
 
     monkeypatch.setattr(_rust_compat, "shafranov_bv", fake_shafranov, raising=False)

@@ -24,9 +24,7 @@ TORAX_SAME_PHYSICS = REPORT_DIR / "torax_same_physics_config_study.json"
 TORAX_IMAS_INTERCHANGE = REPORT_DIR / "torax_imas_interchange.json"
 FREE_BOUNDARY_STRICT_PARITY = REPORT_DIR / "free_boundary_strict_parity_benchmark.json"
 FREEGS_PUBLIC_RECONSTRUCTION = REPORT_DIR / "freegs_public_example_reconstruction.json"
-FREE_BOUNDARY_MACHINE_METADATA = (
-    REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
-)
+FREE_BOUNDARY_MACHINE_METADATA = REPORT_DIR / "free_boundary_public_machine_metadata_inventory.json"
 DEFAULT_JSON_REPORT = REPORT_DIR / "external_parity_score.json"
 DEFAULT_MD_REPORT = REPORT_DIR / "external_parity_score.md"
 SCHEMA = "scpn-fusion-core.external-parity-score.v1"
@@ -118,7 +116,9 @@ def _torax_lane(
     reproducibility_components = [
         _component(
             "torax_reference_provenance",
-            isinstance(cast(Mapping[str, Any], real_parity.get("reference", {})).get("provenance"), Mapping),
+            isinstance(
+                cast(Mapping[str, Any], real_parity.get("reference", {})).get("provenance"), Mapping
+            ),
             "TORAX real-reference report carries provenance.",
         ),
         _component(
@@ -304,7 +304,9 @@ def build_report(
         _input_record("torax_real_parity", torax_real_parity_path, torax_real),
         _input_record("torax_same_physics_config_study", torax_same_physics_path, torax_same),
         _input_record("torax_imas_interchange", torax_imas_interchange_path, torax_imas),
-        _input_record("free_boundary_strict_parity", free_boundary_strict_parity_path, strict_parity),
+        _input_record(
+            "free_boundary_strict_parity", free_boundary_strict_parity_path, strict_parity
+        ),
         _input_record(
             "freegs_public_example_reconstruction",
             freegs_public_reconstruction_path,
@@ -413,7 +415,9 @@ def write_report(
     """Write the integrated external parity score JSON and Markdown reports."""
     report = build_report()
     json_report_path.parent.mkdir(parents=True, exist_ok=True)
-    json_report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    json_report_path.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     md_report_path.write_text(render_markdown(report), encoding="utf-8")
     return report
 

@@ -48,9 +48,7 @@ def test_main_writes_summary_json(tmp_path: Path) -> None:
     assert payload["unexpected_count"] == 0
 
 
-def test_main_reports_unexpected_modules(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_reports_unexpected_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
     source_root = tmp_path / "src" / "scpn_fusion"
     module_dir = source_root / "core"
@@ -192,8 +190,7 @@ def test_collect_unlinked_modules_detects_stem_and_text_linkage(
         encoding="utf-8",
     )
     (test_root / "test_textual.py").write_text(
-        "MODULE = 'scpn_fusion.core.corpus_linked'\n"
-        "NAME = 'test_name_linked'\n",
+        "MODULE = 'scpn_fusion.core.corpus_linked'\nNAME = 'test_name_linked'\n",
         encoding="utf-8",
     )
 

@@ -300,7 +300,9 @@ def test_main_reports_partial_download_failures(
     _write_json(manifest_path, _valid_manifest())
     monkeypatch.setattr(download_mast, "MastIngestor", FakeMastIngestor)
 
-    def fake_materialise(_ingestor: FakeMastIngestor, _cache_dir: Path, shot_id: int) -> dict[str, Any]:
+    def fake_materialise(
+        _ingestor: FakeMastIngestor, _cache_dir: Path, shot_id: int
+    ) -> dict[str, Any]:
         """Return one success and one operational failure."""
         if shot_id == 30420:
             raise RuntimeError("network unavailable")
@@ -327,9 +329,7 @@ def test_main_reports_partial_download_failures(
     assert "RuntimeError: network unavailable" in report["results"][1]["error"]
 
 
-def test_cli_resolves_repo_relative_paths(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_cli_resolves_repo_relative_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Relative manifest, cache, and report paths resolve from ``REPO_ROOT``."""
     manifest_path = tmp_path / "labels.json"
     report_path = tmp_path / "reports" / "download_report.json"
@@ -354,7 +354,9 @@ def test_cli_resolves_repo_relative_paths(
     assert report["cache_dir"] == str(tmp_path / "cache")
 
 
-def test_script_entrypoint_delegates_to_main(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_script_entrypoint_delegates_to_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Running the script entrypoint delegates to ``main``."""
     manifest_path = tmp_path / "independent_labels.json"
     report_path = tmp_path / "download_report.json"

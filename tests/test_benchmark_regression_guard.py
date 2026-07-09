@@ -294,9 +294,7 @@ def test_evaluate_fails_closed_on_benchmark_id_mismatch(tmp_path: Path) -> None:
     assert summary["reports"][0]["metrics"][0]["path"] == "__benchmark_id__"
 
 
-def test_main_resolves_repo_relative_paths(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_resolves_repo_relative_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     report = tmp_path / "reports" / "bench.json"
     thresholds = tmp_path / "thresholds.json"
     _write_json(report, {"gate": {"passes": True}})
@@ -306,9 +304,10 @@ def test_main_resolves_repo_relative_paths(
     rc = guard.main(["--thresholds", "thresholds.json", "--summary-json", "summary.json"])
 
     assert rc == 0
-    assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))[
-        "reports"
-    ][0]["path"] == "reports/bench.json"
+    assert (
+        json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))["reports"][0]["path"]
+        == "reports/bench.json"
+    )
 
 
 def test_evaluate_uses_list_indices_and_min_bounds(tmp_path: Path) -> None:
@@ -337,7 +336,9 @@ def test_evaluate_rejects_missing_and_invalid_list_indices(tmp_path: Path) -> No
     with pytest.raises(KeyError):
         guard.evaluate(_thresholds(report, metrics=[{"path": "samples.2.latency_ms", "max": 2.0}]))
     with pytest.raises(KeyError):
-        guard.evaluate(_thresholds(report, metrics=[{"path": "samples.first.latency_ms", "max": 2.0}]))
+        guard.evaluate(
+            _thresholds(report, metrics=[{"path": "samples.first.latency_ms", "max": 2.0}])
+        )
     with pytest.raises(KeyError):
         guard.evaluate(
             _thresholds(report, metrics=[{"path": "samples.0.latency_ms.value", "max": 2.0}])
@@ -468,7 +469,9 @@ def test_evaluate_rejects_non_object_report_json(tmp_path: Path) -> None:
         guard.evaluate(_thresholds(report))
 
 
-def test_main_returns_failure_for_invalid_threshold_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_main_returns_failure_for_invalid_threshold_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     summary_path = tmp_path / "summary.json"
 
     rc = guard.main(

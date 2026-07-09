@@ -72,9 +72,7 @@ def test_render_markdown_escapes_table_cells_and_empty_evidence(tmp_path: Path) 
                 source_file="docs/claim|source.md",
                 source_pattern="pattern|`value`",
                 evidence_files=[],
-                evidence_patterns=[
-                    {"file": "evidence|file.md", "pattern": "value|`present`"}
-                ],
+                evidence_patterns=[{"file": "evidence|file.md", "pattern": "value|`present`"}],
             )
         ],
     )

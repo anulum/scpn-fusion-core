@@ -85,9 +85,7 @@ def test_detects_split_overlap() -> None:
     assert any("overlap" in err for err in errors)
 
 
-def test_main_detects_missing_manifest_ids(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_detects_missing_manifest_ids(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Main reports manifest shots missing from the split buckets."""
     rc = _run_with_payloads(
         tmp_path,
@@ -123,9 +121,7 @@ def test_main_detects_duplicate_split_ids(tmp_path: Path, monkeypatch: pytest.Mo
     assert rc == 1
 
 
-def test_main_rejects_invalid_split_shapes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_rejects_invalid_split_shapes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Main rejects empty, non-list, non-integer, boolean, and non-positive split ids."""
     invalid_splits: list[object] = [
         {"train": [], "val": [11], "test": [12]},
@@ -139,9 +135,7 @@ def test_main_rejects_invalid_split_shapes(
         assert _run_with_payloads(tmp_path, payload, _valid_manifest_payload(), monkeypatch) == 1
 
 
-def test_main_rejects_oversized_split(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_rejects_oversized_split(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Main rejects split buckets that exceed the configured id-count limit."""
     monkeypatch.setattr(split_check, "_MAX_SPLIT_IDS_PER_BUCKET", 2)
     rc = _run_with_payloads(
@@ -154,9 +148,7 @@ def test_main_rejects_oversized_split(
     assert rc == 1
 
 
-def test_main_rejects_malformed_manifest(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_rejects_malformed_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Main rejects malformed manifest shapes and shot ids."""
     invalid_manifests: list[object] = [
         {"shots": []},
@@ -171,12 +163,12 @@ def test_main_rejects_malformed_manifest(
         assert _run_with_payloads(tmp_path, _valid_split_payload(), payload, monkeypatch) == 1
 
 
-def test_main_rejects_oversized_manifest(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_rejects_oversized_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Main rejects manifests that exceed the configured shot-count limit."""
     monkeypatch.setattr(split_check, "_MAX_MANIFEST_SHOTS", 2)
-    rc = _run_with_payloads(tmp_path, _valid_split_payload(), _valid_manifest_payload(), monkeypatch)
+    rc = _run_with_payloads(
+        tmp_path, _valid_split_payload(), _valid_manifest_payload(), monkeypatch
+    )
 
     assert rc == 1
 
@@ -201,9 +193,7 @@ def test_main_rejects_non_object_json(tmp_path: Path, monkeypatch: pytest.Monkey
     assert rc == 1
 
 
-def test_main_resolves_repo_relative_paths(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_resolves_repo_relative_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Main resolves relative split and manifest paths from ``REPO_ROOT``."""
     validation_dir = tmp_path / "validation"
     validation_dir.mkdir()
@@ -211,7 +201,9 @@ def test_main_resolves_repo_relative_paths(
     _write_json(validation_dir / "manifest.json", _valid_manifest_payload())
     monkeypatch.setattr(split_check, "REPO_ROOT", tmp_path)
 
-    rc = split_check.main(["--splits", "validation/splits.json", "--manifest", "validation/manifest.json"])
+    rc = split_check.main(
+        ["--splits", "validation/splits.json", "--manifest", "validation/manifest.json"]
+    )
 
     assert rc == 0
 
@@ -226,7 +218,9 @@ def test_main_reports_missing_input_files(tmp_path: Path) -> None:
         split_check.main(["--splits", str(split_file), "--manifest", str(manifest_file)])
 
     with pytest.raises(FileNotFoundError, match="Manifest file not found"):
-        split_check.main(["--splits", str(manifest_file), "--manifest", str(tmp_path / "missing.json")])
+        split_check.main(
+            ["--splits", str(manifest_file), "--manifest", str(tmp_path / "missing.json")]
+        )
 
 
 def test_script_entrypoint_exits_with_main_return_code(

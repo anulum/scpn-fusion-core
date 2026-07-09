@@ -64,7 +64,9 @@ def test_load_pyproject_rejects_non_table_tomllib_payload(
 ) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text("[project]\n", encoding="utf-8")
-    monkeypatch.setattr(check_packaging_contract, "tomllib", SimpleNamespace(loads=lambda _text: []))
+    monkeypatch.setattr(
+        check_packaging_contract, "tomllib", SimpleNamespace(loads=lambda _text: [])
+    )
 
     with pytest.raises(ValueError, match="not a table"):
         check_packaging_contract._load_pyproject(pyproject)
@@ -239,7 +241,12 @@ full = ["streamlit", "jax", "gymnasium", "nengo", "freegs", "maturin"]
     )
     monkeypatch.setattr(check_packaging_contract, "REPO_ROOT", tmp_path)
 
-    assert check_packaging_contract.main(["--pyproject", "pyproject.toml", "--summary-json", "out.json"]) == 0
+    assert (
+        check_packaging_contract.main(
+            ["--pyproject", "pyproject.toml", "--summary-json", "out.json"]
+        )
+        == 0
+    )
     assert json.loads((tmp_path / "out.json").read_text(encoding="utf-8"))["overall_pass"] is True
 
 

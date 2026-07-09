@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, cast
@@ -51,13 +52,19 @@ def _canonical_json_sha256(payload: JsonObject) -> str:
 
 def _current_commit() -> str:
     """Return the current repository commit, or ``unknown`` when Git is unavailable."""
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPO_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    git = shutil.which("git")
+    if git is None:
+        return "unknown"
+    try:
+        result = subprocess.run(
+            [git, "rev-parse", "HEAD"],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return "unknown"
     commit = result.stdout.strip()
     if result.returncode != 0 or not commit:
         return "unknown"

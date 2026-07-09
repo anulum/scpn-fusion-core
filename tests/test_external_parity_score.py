@@ -118,7 +118,10 @@ def test_main_writes_checks_and_strict_fails_on_blocked_score(tmp_path: Path) ->
     md_report = tmp_path / "score.md"
 
     assert score.main(["--report-json", str(json_report), "--report-md", str(md_report)]) == 0
-    assert score.main(["--report-json", str(json_report), "--report-md", str(md_report), "--check"]) == 0
+    assert (
+        score.main(["--report-json", str(json_report), "--report-md", str(md_report), "--check"])
+        == 0
+    )
     assert (
         score.main(
             [
@@ -132,4 +135,7 @@ def test_main_writes_checks_and_strict_fails_on_blocked_score(tmp_path: Path) ->
         == 1
     )
     json_report.write_text(json.dumps({"schema": score.SCHEMA}) + "\n", encoding="utf-8")
-    assert score.main(["--report-json", str(json_report), "--report-md", str(md_report), "--check"]) == 1
+    assert (
+        score.main(["--report-json", str(json_report), "--report-md", str(md_report), "--check"])
+        == 1
+    )

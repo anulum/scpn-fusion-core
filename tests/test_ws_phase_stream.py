@@ -15,9 +15,10 @@ import ssl
 import sys
 from pathlib import Path
 from types import TracebackType
-from typing import Any, ClassVar, Self, cast
+from typing import Any, ClassVar, cast
 
 import pytest
+from typing_extensions import Self
 
 from scpn_fusion.phase import ws_phase_stream as stream_mod
 from scpn_fusion.phase.realtime_monitor import RealtimeMonitor
@@ -197,7 +198,9 @@ def test_loopback_and_bearer_token_helpers() -> None:
     assert _bearer_token_from_headers(_HeaderlessWS()) is None
     assert _bearer_token_from_headers(_FakeWS(headers={"Authorization": "Token secret"})) is None
     assert _bearer_token_from_headers(_FakeWS(headers={"Authorization": "Bearer   "})) is None
-    assert _bearer_token_from_headers(_FakeWS(headers={"Authorization": "Bearer secret"})) == "secret"
+    assert (
+        _bearer_token_from_headers(_FakeWS(headers={"Authorization": "Bearer secret"})) == "secret"
+    )
 
 
 def test_init_and_message_auth_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -208,7 +211,9 @@ def test_init_and_message_auth_contracts(monkeypatch: pytest.MonkeyPatch) -> Non
     assert server.auth_token == "from-env"
     assert server._message_authorized({"action": "set_psi"}) is False
     monkeypatch.delenv("SCPN_PHASE_STREAM_TOKEN")
-    assert PhaseStreamServer(monitor=_make_monitor(), auth_token=None)._message_authorized({}) is True
+    assert (
+        PhaseStreamServer(monitor=_make_monitor(), auth_token=None)._message_authorized({}) is True
+    )
     with pytest.raises(ValueError, match="max_command_messages_per_second"):
         PhaseStreamServer(monitor=_make_monitor(), max_command_messages_per_second=0)
 

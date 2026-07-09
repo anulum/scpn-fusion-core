@@ -265,9 +265,7 @@ def test_cli_writes_accepted_report_for_valid_manifest(tmp_path: Path) -> None:
     assert report["non_disruptive_count"] == 1
 
 
-def test_cli_resolves_repo_relative_paths(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_cli_resolves_repo_relative_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """The CLI resolves manifest and report paths relative to ``REPO_ROOT``."""
     data_dir = tmp_path / "validation" / "reference_data" / "mast"
     data_dir.mkdir(parents=True)
@@ -328,11 +326,15 @@ def test_cli_writes_blocked_report_for_non_object_json(tmp_path: Path) -> None:
     assert "top-level object" in report["errors"][0]
 
 
-def test_script_entrypoint_delegates_to_main(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_script_entrypoint_delegates_to_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Running the script entrypoint delegates to ``main``."""
     manifest_path = tmp_path / "labels.json"
     _write_json(manifest_path, _valid_manifest())
-    monkeypatch.setattr(sys, "argv", ["check_mast_label_manifest.py", "--manifest", str(manifest_path)])
+    monkeypatch.setattr(
+        sys, "argv", ["check_mast_label_manifest.py", "--manifest", str(manifest_path)]
+    )
 
     with pytest.raises(SystemExit) as excinfo:
         runpy.run_path(str(MODULE_PATH), run_name="__main__")

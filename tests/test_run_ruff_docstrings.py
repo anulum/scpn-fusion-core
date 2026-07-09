@@ -104,9 +104,7 @@ def test_main_lists_cohort(
     rc = runner.main(["--list-cohort"])
 
     assert rc == 0
-    assert capsys.readouterr().out == (
-        "src/scpn_fusion/core/a.py\nsrc/scpn_fusion/core/b.py\n"
-    )
+    assert capsys.readouterr().out == ("src/scpn_fusion/core/a.py\nsrc/scpn_fusion/core/b.py\n")
 
 
 def test_main_uses_sys_argv_and_returns_ruff_exit_code(

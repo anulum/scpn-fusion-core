@@ -83,12 +83,17 @@ def test_check_attr_filter_parses_git_output(monkeypatch: pytest.MonkeyPatch) ->
     typed_module = cast(Any, module)
 
     def fake_run(*_args: Any, **_kwargs: Any) -> SimpleNamespace:
-        return SimpleNamespace(stdout=f"{REQUIRED_NPZ}: filter: lfs\nbad line\nx.npy: filter: unset\n")
+        return SimpleNamespace(
+            stdout=f"{REQUIRED_NPZ}: filter: lfs\nbad line\nx.npy: filter: unset\n"
+        )
 
     monkeypatch.setattr(typed_module.subprocess, "run", fake_run)
 
     assert typed_module._check_attr_filter([]) == {}
-    assert typed_module._check_attr_filter([REQUIRED_NPZ]) == {REQUIRED_NPZ: "lfs", "x.npy": "unset"}
+    assert typed_module._check_attr_filter([REQUIRED_NPZ]) == {
+        REQUIRED_NPZ: "lfs",
+        "x.npy": "unset",
+    }
 
 
 def test_index_blob_head_truncates_git_blob(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -157,7 +162,9 @@ def test_lfs_hygiene_reports_missing_required_and_oversize_binary(
         "_tracked_files",
         lambda: [REQUIRED_NPZ, "data/missing.npy", "data/big.npy"],
     )
-    monkeypatch.setattr(module, "_check_attr_filter", lambda _paths: {"data/big.npy": "unspecified"})
+    monkeypatch.setattr(
+        module, "_check_attr_filter", lambda _paths: {"data/big.npy": "unspecified"}
+    )
 
     assert typed_module.main(["--max-nonlfs-bytes", "4"]) == 1
     stderr = capsys.readouterr().err

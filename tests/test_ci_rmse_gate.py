@@ -41,7 +41,9 @@ def _artifact_dir(tmp_path: Path) -> Path:
     return artifacts
 
 
-def test_main_reports_missing_rmse_artifact(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_main_reports_missing_rmse_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Main fails when the RMSE dashboard artifact is absent."""
     monkeypatch.chdir(tmp_path)
 

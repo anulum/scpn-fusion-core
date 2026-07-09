@@ -218,16 +218,16 @@ def test_main_returns_failure_for_non_object_json(tmp_path: Path) -> None:
     assert not summary_path.exists()
 
 
-def test_main_resolves_repo_relative_paths(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_resolves_repo_relative_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Main resolves report and summary paths relative to ``REPO_ROOT``."""
     artifacts = tmp_path / "artifacts"
     artifacts.mkdir()
     _write_json(artifacts / "freegs.json", _strict_report())
     monkeypatch.setattr(checker, "REPO_ROOT", tmp_path)
 
-    rc = checker.main(["--report", "artifacts/freegs.json", "--summary-json", "artifacts/summary.json"])
+    rc = checker.main(
+        ["--report", "artifacts/freegs.json", "--summary-json", "artifacts/summary.json"]
+    )
 
     assert rc == 0
     assert (artifacts / "summary.json").exists()
