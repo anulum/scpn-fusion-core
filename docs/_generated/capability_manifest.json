@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 465
+    "test_files": 466
   },
   "documentation": {
     "public_pages": [
@@ -2786,6 +2786,7 @@
       "tests/test_check_test_module_linkage.py",
       "tests/test_checkpoint.py",
       "tests/test_ci_rmse_gate.py",
+      "tests/test_ci_workflow_references.py",
       "tests/test_claim_boundary_regressions.py",
       "tests/test_claim_range_guard.py",
       "tests/test_claims_audit.py",

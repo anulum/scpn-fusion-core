@@ -574,7 +574,7 @@ jobs:
           pip install --no-deps -e .
       - name: Generate benchmark artifacts
         run: |
-          python validation/benchmark_vs_torax.py --strict-backend
+          python validation/benchmark_torax_real_parity.py --check
           python validation/benchmark_sparc_geqdsk_rmse.py
           python validation/benchmark_vs_freegs.py --force-solovev
           python validation/benchmark_disruption_transfer_generalization.py --strict
@@ -1032,7 +1032,7 @@ jobs:
             tests/test_benchmark_free_boundary_strict_parity.py \
             tests/test_benchmark_disruption_transfer_generalization.py \
             tests/test_vertical_control_replay_benchmark.py \
-            tests/test_benchmark_vs_torax.py \
+            tests/test_torax_real_parity.py \
             tests/test_check_freegs_strict_artifact.py \
             -v --tb=short -x -m "not experimental"
 
