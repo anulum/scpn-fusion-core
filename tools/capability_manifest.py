@@ -18,17 +18,26 @@ from __future__ import annotations
 
 import argparse
 import ast
+import importlib
 import json
 import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast
 
-try:  # pragma: no cover - exercised by Python-version matrix in CI.
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover
-    import tomli as tomllib  # type: ignore[no-redef]
+
+class _TomlLoader(Protocol):
+    """Module protocol for TOML loaders used by the capability manifest."""
+
+    def loads(self, data: str, /) -> dict[str, Any]:
+        """Parse a TOML string into a dictionary."""
+
+
+tomllib = cast(
+    _TomlLoader,
+    importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli"),
+)
 
 
 CAPABILITY_MANIFEST_SCHEMA_VERSION = "capability-manifest.v1"

@@ -18,16 +18,25 @@ second hand-maintained allowlist.
 from __future__ import annotations
 
 import argparse
+import importlib
 import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Protocol, Sequence, cast
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 compatibility.
-    import tomli as tomllib  # type: ignore[no-redef]
+
+class _TomlLoader(Protocol):
+    """Module protocol for TOML loaders used by the docstring gate."""
+
+    def loads(self, data: str, /) -> dict[str, Any]:
+        """Parse a TOML string into a dictionary."""
+
+
+tomllib = cast(
+    _TomlLoader,
+    importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli"),
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -56,6 +65,7 @@ def cohort_source_files(pyproject: Path = PYPROJECT) -> list[str]:
     SystemExit
         If the cohort list is missing or empty, which would silently disable
         the gate.
+
     """
     data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
     try:
@@ -84,6 +94,7 @@ def build_command(files: Sequence[str], extra_args: Sequence[str]) -> list[str]:
     list of str
         The full ``ruff check`` command, selecting only ``D`` rules under the
         NumPy convention so the global lint ``select`` is not widened.
+
     """
     return [
         sys.executable,
@@ -113,6 +124,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     int
         ``0`` when every cohort module passes the NumPy docstring rules,
         otherwise ruff's non-zero exit code.
+
     """
     parser = argparse.ArgumentParser(add_help=False, description=__doc__)
     parser.add_argument("--list-cohort", action="store_true")

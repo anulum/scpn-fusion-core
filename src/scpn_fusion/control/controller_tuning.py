@@ -5,8 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Controller Tuning
-"""
-Automated controller gain tuning using Bayesian optimisation.
+"""Automated controller gain tuning using Bayesian optimisation.
 
 Optimises PID and H-infinity parameters against Gymnasium environments
 to minimise tracking error and maximise stability.
@@ -14,18 +13,45 @@ to minimise tracking error and maximise stability.
 
 from __future__ import annotations
 
+import importlib
 import logging
+from collections.abc import Callable
 from math import isfinite
-from typing import Any
+from typing import Any, Protocol, cast
 
 import numpy as np
 
 
+class _OptunaTrial(Protocol):
+    """Minimal Optuna trial protocol used by the tuning objectives."""
+
+    def suggest_float(self, name: str, low: float, high: float, *, log: bool = False) -> float:
+        """Suggest a floating-point hyperparameter value."""
+
+
+class _OptunaStudy(Protocol):
+    """Minimal Optuna study protocol used by the tuning helpers."""
+
+    best_params: dict[str, float]
+
+    def optimize(self, func: Callable[[_OptunaTrial], float], n_trials: int) -> None:
+        """Run the objective function for ``n_trials`` optimisation trials."""
+
+
+class _OptunaModule(Protocol):
+    """Minimal Optuna module protocol required by this optional backend."""
+
+    def create_study(self, *, direction: str) -> _OptunaStudy:
+        """Create an optimisation study with the requested direction."""
+
+
+optuna: _OptunaModule | None
 try:
-    import optuna
+    optuna = cast(_OptunaModule, importlib.import_module("optuna"))
 
     HAS_OPTUNA = True  # pragma: no cover - optional optuna hyperparameter engine
 except ImportError:
+    optuna = None
     HAS_OPTUNA = False
 
 logger = logging.getLogger(__name__)
@@ -170,22 +196,29 @@ def tune_pid(
         The tokamak control environment.
     n_trials : int
         Number of optimisation trials.
+    n_episodes : int
+        Number of rollouts averaged per PID trial.
+    max_steps : int
+        Maximum environment steps per rollout.
 
     Returns
     -------
-    dict — Tuned gains.
+    dict[str, float]
+        Tuned gains.
+
     """
     _require_positive_int("n_trials", n_trials)
     _require_positive_int("n_episodes", n_episodes)
     _require_positive_int("max_steps", max_steps)
 
-    if not HAS_OPTUNA:
+    optimizer = optuna if HAS_OPTUNA else None
+    if optimizer is None:
         logger.warning("Optuna not installed; returning default gains.")
         return dict(DEFAULT_PID_GAINS)
 
     _require_pid_environment(env)
 
-    def objective(trial: optuna.Trial) -> float:
+    def objective(trial: _OptunaTrial) -> float:
         kp = trial.suggest_float("Kp", 0.1, 10.0, log=True)
         ki = trial.suggest_float("Ki", 0.01, 1.0, log=True)
         kd = trial.suggest_float("Kd", 0.01, 1.0, log=True)
@@ -198,7 +231,7 @@ def tune_pid(
             max_steps=max_steps,
         )
 
-    study = optuna.create_study(direction="minimize")
+    study = optimizer.create_study(direction="minimize")
     study.optimize(objective, n_trials=n_trials)
 
     return dict(study.best_params)
@@ -208,7 +241,8 @@ def tune_hinf(plant: dict[str, Any], n_trials: int = 50) -> dict[str, float]:
     """Tune H-infinity parameters (gamma, bandwidth) using Optuna."""
     _require_positive_int("n_trials", n_trials)
 
-    if not HAS_OPTUNA:
+    optimizer = optuna if HAS_OPTUNA else None
+    if optimizer is None:
         return dict(DEFAULT_HINF_PARAMS)
 
     if not isinstance(plant, dict):
@@ -219,12 +253,12 @@ def tune_hinf(plant: dict[str, Any], n_trials: int = 50) -> dict[str, float]:
     if target_gamma <= 1.0 or target_bandwidth <= 0.0:
         raise ValueError("H-infinity target gamma must exceed 1 and bandwidth must be positive")
 
-    def objective(trial: optuna.Trial) -> float:
+    def objective(trial: _OptunaTrial) -> float:
         gamma = trial.suggest_float("gamma", 1.01, 2.0)
         bandwidth = trial.suggest_float("bandwidth", 0.05, 5.0, log=True)
         return float(abs(gamma - target_gamma) + abs(bandwidth - target_bandwidth))
 
-    study = optuna.create_study(direction="minimize")
+    study = optimizer.create_study(direction="minimize")
     study.optimize(objective, n_trials=n_trials)
 
     return dict(study.best_params)
