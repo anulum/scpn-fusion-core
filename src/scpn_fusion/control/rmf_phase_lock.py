@@ -18,6 +18,7 @@ import argparse
 import json
 import logging
 import importlib
+import sys
 from dataclasses import dataclass
 from typing import Sequence, TypedDict
 
@@ -293,13 +294,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         config=cfg,
     )
     if args.json:
-        print(json.dumps(summary, sort_keys=True))
+        sys.stdout.write(json.dumps(summary, sort_keys=True) + "\n")
     else:
-        print(
+        sys.stdout.write(
             "RMF software horizon evaluated: "
             f"{summary['cycles']} cycles; "
             f"final_omega_hz={summary['final_omega_hz']:.6g}; "
             f"safety_violations={summary['safety_violations']}"
+            "\n"
         )
     return 0
 

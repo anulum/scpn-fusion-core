@@ -198,15 +198,16 @@ def register() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
     # Smoke test
     register()
     env = gym.make("Tokamak-v0", max_steps=10)
     obs, info = env.reset()
-    print("Initial Obs:", obs)
+    logger.info("Initial observation: %s", obs)
     for _ in range(5):
         action = env.action_space.sample()
         obs, reward, terminated, truncated, info = env.step(action)
-        print(f"Action: {action} -> Reward: {reward:.4f}")
+        logger.info("Sampled action reward: action=%s reward=%.4f", action, reward)
         if terminated or truncated:
             break
     env.close()

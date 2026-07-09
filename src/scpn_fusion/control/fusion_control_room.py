@@ -535,7 +535,10 @@ def run_control_room(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
     summary = run_control_room()
-    print(
-        f"Control-room run complete (psi_source={summary['psi_source']}, steps={summary['steps']})."
+    logger.info(
+        "Control-room run complete: psi_source=%s steps=%s",
+        summary["psi_source"],
+        summary["steps"],
     )

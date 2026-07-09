@@ -499,6 +499,7 @@ def evaluate_predictor(
 if __name__ == "__main__":
     import argparse
 
+    logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
     parser = argparse.ArgumentParser(description="Train or load disruption Transformer predictor.")
     parser.add_argument("--seq-len", type=int, default=DEFAULT_SEQ_LEN)
     parser.add_argument("--model-path", type=str, default=None)
@@ -521,7 +522,9 @@ if __name__ == "__main__":
             "save_plot": not args.no_plot,
         },
     )
-    print(
-        f"Predictor ready | trained={meta.get('trained')} | seq_len={meta.get('seq_len')} "
-        f"| model_path={meta.get('model_path')}"
+    logger.info(
+        "Predictor ready: trained=%s seq_len=%s model_path=%s",
+        meta.get("trained"),
+        meta.get("seq_len"),
+        meta.get("model_path"),
     )
