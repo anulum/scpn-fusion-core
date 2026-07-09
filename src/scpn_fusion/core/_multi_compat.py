@@ -132,10 +132,9 @@ def _probe_julia() -> bool:
     if os.environ.get("SCPN_DISABLE_JULIA", "").strip().lower() in ("1", "true", "yes"):
         return False
     try:
-        from juliacall import Main as jl  # type: ignore[import-not-found]  # noqa: F401
-
-        return True
-    except ImportError:
+        juliacall = cast(Any, import_module("juliacall"))
+        return juliacall.Main is not None
+    except (AttributeError, ImportError):
         return False
 
 

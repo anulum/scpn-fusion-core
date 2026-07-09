@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 469
+    "test_files": 470
   },
   "documentation": {
     "public_pages": [
@@ -3053,6 +3053,7 @@
       "tests/test_nuclear_wall_interaction.py",
       "tests/test_omas_tglf_coupling.py",
       "tests/test_onboard_diiid_raw_disruption_shots.py",
+      "tests/test_optional_import_probe_contracts.py",
       "tests/test_orbit_following.py",
       "tests/test_packaging_contract.py",
       "tests/test_parser_input_hardening.py",

@@ -351,6 +351,7 @@ files = [
     "src/scpn_fusion/core/gk_registry.py",
     "tests/test_gk_registry.py",
     "src/scpn_fusion/core/gk_qualikiz.py",
+    "tests/test_optional_import_probe_contracts.py",
     "src/scpn_fusion/core/neural_transport.py",
     "src/scpn_fusion/core/quantum_bridge.py",
     "src/scpn_fusion/core/gk_scheduler.py",

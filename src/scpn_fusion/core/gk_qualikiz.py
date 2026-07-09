@@ -16,9 +16,12 @@ Reference: Bourdelle et al., Phys. Plasmas 14 (2007) 112501.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from importlib import import_module
 import logging
 import tempfile
 from pathlib import Path
+from typing import Any, cast
 
 
 from scpn_fusion.core.gk_interface import GKLocalParams, GKOutput, GKSolverBase
@@ -26,12 +29,27 @@ from scpn_fusion.core.gk_interface import GKLocalParams, GKOutput, GKSolverBase
 _logger = logging.getLogger(__name__)
 
 
+def _import_qualikiz_tools() -> Any | None:
+    """Return the optional QuaLiKiz Python module when it is importable."""
+    try:
+        return cast(Any, import_module("qualikiz_tools"))
+    except ImportError:
+        return None
+
+
+def _float_result_field(result: Mapping[str, object], key: str) -> float:
+    """Coerce a QuaLiKiz result field into a floating-point transport value."""
+    return float(cast(Any, result.get(key, 0.0)))
+
+
 def _try_qualikiz_python(params: GKLocalParams) -> GKOutput | None:
     """Try running QuaLiKiz via Python API."""
+    qualikiz_tools = _import_qualikiz_tools()
+    if qualikiz_tools is None:
+        return None
     try:
-        import qualikiz_tools  # type: ignore[import-not-found]
-
-        result = qualikiz_tools.run(
+        run_qualikiz = qualikiz_tools.run
+        raw_result = run_qualikiz(
             Rmin=params.rho,
             Rmaj=params.R0 / max(params.a, 0.01),
             q=params.q,
@@ -43,14 +61,17 @@ def _try_qualikiz_python(params: GKLocalParams) -> GKOutput | None:
             Ane=params.R_L_ne,
             Zeff=params.Z_eff,
         )
+        if not isinstance(raw_result, Mapping):
+            return None
+        result = cast(Mapping[str, object], raw_result)
         return GKOutput(
-            chi_i=float(result.get("chi_i", 0.0)),
-            chi_e=float(result.get("chi_e", 0.0)),
-            D_e=float(result.get("D_e", 0.0)),
+            chi_i=_float_result_field(result, "chi_i"),
+            chi_e=_float_result_field(result, "chi_e"),
+            D_e=_float_result_field(result, "D_e"),
             converged=True,
             dominant_mode="ITG",
         )
-    except (ImportError, AttributeError, KeyError, TypeError):
+    except (AttributeError, KeyError, TypeError, ValueError):
         return None
 
 
@@ -64,12 +85,7 @@ class QuaLiKizSolver(GKSolverBase):
 
     def is_available(self) -> bool:
         """Return whether the QuaLiKiz Python interface can be imported."""
-        try:
-            import qualikiz_tools  # noqa: F401
-
-            return True
-        except ImportError:
-            return False
+        return _import_qualikiz_tools() is not None
 
     def prepare_input(self, params: GKLocalParams) -> Path:
         """Create a QuaLiKiz work directory and cache parameters for execution."""
