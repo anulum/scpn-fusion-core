@@ -448,6 +448,7 @@ files = [
     "src/scpn_fusion/core/marfe.py",
     "src/scpn_fusion/core/plasma_startup.py",
     "src/scpn_fusion/core/public_frc_reference.py",
+    "tests/test_c2u_public_frc_reference.py",
     "src/scpn_fusion/core/scaling_laws.py",
     "src/scpn_fusion/core/tokamak_config.py",
     "src/scpn_fusion/core/sol_model.py",
