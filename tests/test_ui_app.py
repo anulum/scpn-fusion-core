@@ -10,11 +10,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
-from streamlit.testing.v1 import AppTest
 
-from scpn_fusion.ui import app as dashboard_app
+streamlit_testing = pytest.importorskip(
+    "streamlit.testing.v1",
+    reason="Streamlit UI tests require the optional ui dependency group.",
+)
+AppTest = cast(Any, streamlit_testing).AppTest
+
+from scpn_fusion.ui import app as dashboard_app  # noqa: E402
 
 
 def test_resolve_config_path_uses_packaged_iter_config(monkeypatch: pytest.MonkeyPatch) -> None:
