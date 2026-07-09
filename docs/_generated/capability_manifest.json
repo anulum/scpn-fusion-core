@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 470
+    "test_files": 471
   },
   "documentation": {
     "public_pages": [
@@ -2803,6 +2803,7 @@
       "tests/test_controller.py",
       "tests/test_controller_comparison.py",
       "tests/test_controller_runtime_backend.py",
+      "tests/test_controller_runtime_backend_probe.py",
       "tests/test_controller_tuning.py",
       "tests/test_current_diffusion.py",
       "tests/test_current_diffusion_nonadiabatic.py",

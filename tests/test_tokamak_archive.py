@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +32,12 @@ def test_load_diiid_reference_profiles_smoke() -> None:
     assert np.isfinite([r.beta_n for r in rows]).all()
 
 
+def test_load_diiid_reference_profiles_rejects_empty_directory(tmp_path: Path) -> None:
+    """Reject DIII-D reference directories with no GEQDSK files."""
+    with pytest.raises(ValueError, match="No DIII-D reference files"):
+        archive.load_diiid_reference_profiles(reference_dir=tmp_path)
+
+
 def test_load_cmod_reference_profiles_smoke() -> None:
     rows = archive.load_cmod_reference_profiles()
     assert rows
@@ -38,6 +46,21 @@ def test_load_cmod_reference_profiles_smoke() -> None:
     assert all(len(r.sensor_trace) == 96 for r in rows)
     assert any(r.disruption for r in rows)
     assert np.isfinite([r.tau_e_ms for r in rows]).all()
+
+
+def test_load_cmod_reference_profiles_rejects_missing_machine_rows(
+    tmp_path: Path,
+) -> None:
+    """Reject C-Mod CSV inputs that contain no C-Mod machine rows."""
+    csv_path = tmp_path / "itpa.csv"
+    csv_path.write_text(
+        "machine,shot,Ip_MA,BT_T,tau_E_s,H98y2,kappa,delta\n"
+        "DIII-D,170001,1.2,2.1,0.05,0.95,1.8,0.3\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="No C-Mod rows"):
+        archive.load_cmod_reference_profiles(itpa_csv_path=csv_path)
 
 
 def test_default_data_root_can_be_overridden_by_env(
@@ -74,6 +97,41 @@ def test_load_machine_profiles_live_fallback(monkeypatch: pytest.MonkeyPatch) ->
     assert meta["live_attempted"] is True
     assert meta["source"] == "reference"
     assert "live unavailable" in str(meta["live_error"])
+
+
+def test_load_machine_profiles_reports_missing_cmod_live_config() -> None:
+    """Fall back to C-Mod reference data when live host or tree is omitted."""
+    rows, meta = archive.load_machine_profiles(machine="c-mod", prefer_live=True)
+
+    assert rows
+    assert all(row.machine == "C-Mod" for row in rows)
+    assert meta["live_attempted"] is True
+    assert meta["live_error"] == "Missing host/tree for live MDSplus fetch."
+    assert meta["source"] == "reference"
+
+
+def test_load_machine_profiles_merges_live_and_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Merge live profiles over the reference set when live fetch succeeds."""
+    live = _sample_profile(shot=999001, time_ms=1234.0)
+
+    def _live_fetch(**_: object) -> list[archive.TokamakProfile]:
+        return [live]
+
+    monkeypatch.setattr(archive, "fetch_mdsplus_profiles", _live_fetch)
+
+    rows, meta = archive.load_machine_profiles(
+        machine="DIII-D",
+        prefer_live=True,
+        host="mock.local",
+        tree="EFIT01",
+        shots=[live.shot],
+    )
+
+    assert live in rows
+    assert meta["source"] == "live+reference"
+    assert meta["live_count"] == 1
 
 
 def test_fetch_mdsplus_profiles_rejects_empty_shots() -> None:
@@ -196,13 +254,25 @@ class _MockConnection:
         return _MockPayload(data_map.get(node, np.array([0.0])))
 
 
+def _install_mock_mdsplus(
+    monkeypatch: pytest.MonkeyPatch,
+    connection_type: type[_MockConnection],
+    *,
+    mds_exception: type[BaseException] | None = None,
+) -> types.ModuleType:
+    """Install a typed mock MDSplus module into ``sys.modules``."""
+    mock_module = types.ModuleType("MDSplus")
+    mock_module.__dict__["Connection"] = connection_type
+    if mds_exception is not None:
+        exception_module = types.SimpleNamespace(MdsException=mds_exception)
+        mock_module.__dict__["mdsExceptions"] = exception_module
+    monkeypatch.setitem(sys.modules, "MDSplus", mock_module)
+    return mock_module
+
+
 def test_fetch_mdsplus_profiles_with_mock(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that fetch_mdsplus_profiles works with a mocked MDSplus.Connection."""
-    import types
-
-    mock_module = types.ModuleType("MDSplus")
-    mock_module.Connection = _MockConnection
-    monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
+    _install_mock_mdsplus(monkeypatch, _MockConnection)
 
     rows = archive.fetch_mdsplus_profiles(
         machine="DIII-D",
@@ -219,8 +289,6 @@ def test_fetch_mdsplus_profiles_with_mock(monkeypatch: pytest.MonkeyPatch) -> No
 
 def test_fetch_mdsplus_profiles_partial_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that partial failures are handled with allow_partial=True."""
-    import types
-
     call_count = {"n": 0}
 
     class _FailOnSecondConnection(_MockConnection):
@@ -230,9 +298,7 @@ def test_fetch_mdsplus_profiles_partial_failure(monkeypatch: pytest.MonkeyPatch)
                 raise RuntimeError("Shot not found")
             super().openTree(tree, shot)
 
-    mock_module = types.ModuleType("MDSplus")
-    mock_module.Connection = _FailOnSecondConnection
-    monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
+    _install_mock_mdsplus(monkeypatch, _FailOnSecondConnection)
 
     rows = archive.fetch_mdsplus_profiles(
         machine="DIII-D",
@@ -245,13 +311,61 @@ def test_fetch_mdsplus_profiles_partial_failure(monkeypatch: pytest.MonkeyPatch)
     assert rows[0].shot == 170001
 
 
+def test_fetch_mdsplus_profiles_reraises_when_partial_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Propagate shot failures when partial live ingestion is disabled."""
+
+    class _FailingConnection(_MockConnection):
+        def openTree(self, tree: str, shot: int) -> None:
+            raise RuntimeError(f"shot {shot} unavailable")
+
+    _install_mock_mdsplus(monkeypatch, _FailingConnection)
+
+    with pytest.raises(RuntimeError, match="shot 170001 unavailable"):
+        archive.fetch_mdsplus_profiles(
+            machine="DIII-D",
+            host="mock.local",
+            tree="EFIT01",
+            shots=[170001],
+            allow_partial=False,
+        )
+
+
+def test_fetch_mdsplus_profiles_partial_failure_uses_mds_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Treat MDSplus-specific exceptions as recoverable partial-shot failures."""
+
+    class _MockMdsException(Exception):
+        """Fake MDSplus base exception exposed by the optional dependency."""
+
+    class _MdsExceptionConnection(_MockConnection):
+        def openTree(self, tree: str, shot: int) -> None:
+            if shot == 170002:
+                raise _MockMdsException("shot unavailable")
+            super().openTree(tree, shot)
+
+    _install_mock_mdsplus(
+        monkeypatch,
+        _MdsExceptionConnection,
+        mds_exception=_MockMdsException,
+    )
+
+    rows = archive.fetch_mdsplus_profiles(
+        machine="DIII-D",
+        host="mock.local",
+        tree="EFIT01",
+        shots=[170001, 170002],
+        allow_partial=True,
+    )
+
+    assert [row.shot for row in rows] == [170001]
+
+
 def test_poll_mdsplus_feed_with_mock(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test poll_mdsplus_feed accumulation with mocked MDSplus."""
-    import types
-
-    mock_module = types.ModuleType("MDSplus")
-    mock_module.Connection = _MockConnection
-    monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
+    _install_mock_mdsplus(monkeypatch, _MockConnection)
 
     rows, meta = archive.poll_mdsplus_feed(
         machine="DIII-D",
@@ -269,7 +383,6 @@ def test_poll_mdsplus_feed_with_mock(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_fetch_mdsplus_profiles_custom_node_map(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that custom node_map overrides work."""
-    import types
 
     class _CustomNodeConnection(_MockConnection):
         def get(self, node: str) -> _MockPayload:
@@ -277,9 +390,7 @@ def test_fetch_mdsplus_profiles_custom_node_map(monkeypatch: pytest.MonkeyPatch)
                 return _MockPayload(np.array([3.5]))
             return super().get(node)
 
-    mock_module = types.ModuleType("MDSplus")
-    mock_module.Connection = _CustomNodeConnection
-    monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
+    _install_mock_mdsplus(monkeypatch, _CustomNodeConnection)
 
     rows = archive.fetch_mdsplus_profiles(
         machine="DIII-D",
@@ -294,7 +405,6 @@ def test_fetch_mdsplus_profiles_custom_node_map(monkeypatch: pytest.MonkeyPatch)
 
 def test_fetch_mdsplus_profiles_disruption_flag(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test disruption flag parsing from MDSplus."""
-    import types
 
     class _DisruptionConnection(_MockConnection):
         def get(self, node: str) -> _MockPayload:
@@ -302,9 +412,7 @@ def test_fetch_mdsplus_profiles_disruption_flag(monkeypatch: pytest.MonkeyPatch)
                 return _MockPayload(np.array([1.0]))
             return super().get(node)
 
-    mock_module = types.ModuleType("MDSplus")
-    mock_module.Connection = _DisruptionConnection
-    monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
+    _install_mock_mdsplus(monkeypatch, _DisruptionConnection)
 
     rows = archive.fetch_mdsplus_profiles(
         machine="DIII-D",
@@ -318,11 +426,7 @@ def test_fetch_mdsplus_profiles_disruption_flag(monkeypatch: pytest.MonkeyPatch)
 
 def test_fetch_mdsplus_profiles_cmod_machine(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test C-Mod machine normalization with MDSplus mock."""
-    import types
-
-    mock_module = types.ModuleType("MDSplus")
-    mock_module.Connection = _MockConnection
-    monkeypatch.setitem(__import__("sys").modules, "MDSplus", mock_module)
+    _install_mock_mdsplus(monkeypatch, _MockConnection)
 
     rows = archive.fetch_mdsplus_profiles(
         machine="c-mod",

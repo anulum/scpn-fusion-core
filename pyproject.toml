@@ -182,6 +182,8 @@ files = [
     "src/scpn_fusion/scpn/controller_runtime_backend.py",
     "src/scpn_fusion/scpn/safety_interlocks.py",
     "src/scpn_fusion/scpn/__init__.py",
+    "tests/test_controller_runtime_backend.py",
+    "tests/test_controller_runtime_backend_probe.py",
     # io/
     "src/scpn_fusion/io/__init__.py",
     "src/scpn_fusion/io/_tokamak_archive_shots.py",
@@ -201,6 +203,7 @@ files = [
     "src/scpn_fusion/io/tokamak_archive_profiles.py",
     "src/scpn_fusion/io/tokamak_disruption_archive.py",
     "src/scpn_fusion/io/tokamak_synthetic_archive.py",
+    "tests/test_tokamak_archive.py",
     # diagnostics/
     "src/scpn_fusion/diagnostics/__init__.py",
     "src/scpn_fusion/diagnostics/forward.py",

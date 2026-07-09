@@ -45,8 +45,11 @@ def probe_rust_runtime_bindings() -> tuple[
             _multi_compat.dispatch_rust_symbol("scpn_sample_firing"),
         )
         has_runtime = True
-    except Exception:
+    except (AttributeError, ImportError, RuntimeError, TypeError):
         has_runtime = False
+        dense_fn = None
+        update_fn = None
+        sample_fn = None
     return has_runtime, dense_fn, update_fn, sample_fn
 
 

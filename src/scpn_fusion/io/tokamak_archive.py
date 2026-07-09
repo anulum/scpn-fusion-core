@@ -52,6 +52,28 @@ DEFAULT_DISRUPTION_DIR = default_disruption_dir()
 DEFAULT_ITPA_CSV = default_itpa_csv()
 DEFAULT_SYNTHETIC_DIR = default_synthetic_dir()
 
+_MDSPLUS_PROFILE_ERRORS: tuple[type[BaseException], ...] = (
+    AttributeError,
+    EOFError,
+    IndexError,
+    KeyError,
+    OSError,
+    RuntimeError,
+    TypeError,
+    ValueError,
+)
+_LIVE_PROFILE_FALLBACK_ERRORS: tuple[type[BaseException], ...] = (
+    AttributeError,
+    EOFError,
+    ImportError,
+    IndexError,
+    KeyError,
+    OSError,
+    RuntimeError,
+    TypeError,
+    ValueError,
+)
+
 __all__ = [
     "DEFAULT_DIIID_DIR",
     "DEFAULT_DISRUPTION_DIR",
@@ -90,6 +112,24 @@ DEFAULT_MDSPLUS_NODE_MAP: dict[str, str] = {
     "toroidal_n3_amp": "\\toroidal_n3_amp",
     "disruption": "\\disruption_flag",
 }
+
+
+def _optional_exception_class(candidate: Any) -> type[BaseException] | None:
+    """Return ``candidate`` when it is an exception class."""
+    if isinstance(candidate, type) and issubclass(candidate, BaseException):
+        return candidate
+    return None
+
+
+def _mdsplus_profile_errors(module: Any) -> tuple[type[BaseException], ...]:
+    """Build recoverable live-profile errors for the imported MDSplus module."""
+    dynamic_errors: list[type[BaseException]] = []
+    mds_exceptions = getattr(module, "mdsExceptions", None)
+    for name in ("MdsException", "TdiException", "TreeException", "MdsIpException"):
+        exc_type = _optional_exception_class(getattr(mds_exceptions, name, None))
+        if exc_type is not None and exc_type not in _MDSPLUS_PROFILE_ERRORS:
+            dynamic_errors.append(exc_type)
+    return (*_MDSPLUS_PROFILE_ERRORS, *dynamic_errors)
 
 
 def load_diiid_reference_profiles(
@@ -138,7 +178,7 @@ def load_cmod_reference_profiles(
             raw_shot = str(row.get("shot", "")).strip()
             try:
                 shot = int(raw_shot)
-            except Exception:
+            except ValueError:
                 shot = _stable_shot_from_text(raw_shot or "cmod")
 
             ip_ma = _coerce_finite("Ip_MA", float(row["Ip_MA"]), minimum=0.0)
@@ -196,7 +236,7 @@ def fetch_mdsplus_profiles(
         raise ValueError("shots must be non-empty.")
     try:
         import MDSplus
-    except Exception as exc:  # pragma: no cover - optional dependency path
+    except (ImportError, OSError) as exc:  # pragma: no cover - optional dependency path
         raise RuntimeError("MDSplus is not available in this environment.") from exc
 
     normalized_machine = _normalize_machine(machine)
@@ -205,6 +245,7 @@ def fetch_mdsplus_profiles(
         nodes.update(dict(node_map))
 
     out: list[TokamakProfile] = []
+    recoverable_errors = _mdsplus_profile_errors(MDSplus)
     conn = MDSplus.Connection(str(host))  # pragma: no cover - live integration path
     for shot in shots:
         try:
@@ -249,7 +290,7 @@ def fetch_mdsplus_profiles(
                     disruption=disruption,
                 )
             )
-        except Exception:
+        except recoverable_errors:
             if not allow_partial:
                 raise
             continue
@@ -307,7 +348,7 @@ def poll_mdsplus_feed(
             rec["live_count"] = int(len(live))
             for row in live:
                 merged[_profile_key(row)] = row
-        except Exception as exc:
+        except _LIVE_PROFILE_FALLBACK_ERRORS as exc:
             record_fallback_event(
                 "tokamak_archive",
                 "mdsplus_poll_error",
@@ -406,7 +447,7 @@ def load_machine_profiles(
                     sensor_points=sensor_points,
                     allow_partial=True,
                 )
-            except Exception as exc:
+            except _LIVE_PROFILE_FALLBACK_ERRORS as exc:
                 live_error = str(exc)
                 record_fallback_event(
                     "tokamak_archive",
