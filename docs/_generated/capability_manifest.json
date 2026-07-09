@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 480
+    "test_files": 481
   },
   "documentation": {
     "public_pages": [
@@ -2916,6 +2916,7 @@
       "tests/test_generate_disruption_shot_manifest.py",
       "tests/test_generate_fno_qlknn_spatial.py",
       "tests/test_generate_readiness_scope_reports.py",
+      "tests/test_generate_release_checksums.py",
       "tests/test_generate_source_p0p1_readiness.py",
       "tests/test_geometry_3d.py",
       "tests/test_github_token_format_guard.py",

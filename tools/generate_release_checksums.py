@@ -63,6 +63,7 @@ def generate_manifest(dist_dir: Path, output_file: Path) -> dict[str, Any]:
 
     Returns:
         Summary payload persisted to JSON via ``--summary-json``.
+
     """
     files = _iter_release_files(dist_dir, output_file.name)
     if not files:
@@ -95,6 +96,7 @@ def main(argv: list[str] | None = None) -> int:
 
     Returns:
         0 on success, raises on invalid paths/syntax.
+
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dist-dir", default=str(DEFAULT_DIST))
