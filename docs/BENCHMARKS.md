@@ -1261,7 +1261,8 @@ contains similarly named metric fields.
 - single-profile vertical-control replay acceptance and deterministic replay
 - vertical-control profile-suite acceptance across the configured machine profiles
 - disruption transfer-generalisation recall, false-positive rate, and transfer efficiency
-- fallback-budget guard acceptance
+- fallback-budget guard acceptance, including the current real-TORAX reference
+  parity artifact schema (`scpn-fusion-core.torax-real-parity.v1`)
 
 This is separate from benchmark publication. The guard prevents silent
 regression of already-generated benchmark artefacts; it does not convert
@@ -1678,6 +1679,7 @@ Refresh or check the tracked TORAX real-reference divergence report with:
 ```bash
 python validation/benchmark_torax_real_parity.py
 python validation/benchmark_torax_real_parity.py --check
+python validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json
 python validation/benchmark_torax_real_parity.py --include-runtime-environment
 ```
 
@@ -1685,6 +1687,10 @@ The default tracked report records deterministic reference and solver metrics
 only. Runtime Python/platform strings are disabled by default so release drift
 checks stay identical across CI images and local development hosts; use
 `--include-runtime-environment` for an environment-specific diagnostic report.
+The CI benchmark-provenance lane writes the same current-schema payload to
+`artifacts/torax_benchmark.json` so the fallback-budget guard validates the
+real-reference provenance and pass/fail contract rather than a removed legacy
+case-based TORAX artifact.
 
 ### TORAX IMAS interchange fixture
 

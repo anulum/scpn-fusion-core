@@ -1,12 +1,12 @@
 {
   "torax": {
-    "preferred_backend": "neural_transport",
+    "preferred_backend": "real_torax_reference",
     "allowed_backends": [
-      "neural_transport"
+      "real_torax_reference"
     ],
     "max_fallback_rate": 0.0,
     "min_preferred_backend_rate": 1.0,
-    "min_case_count": 3,
+    "min_case_count": 1,
     "require_backend_requirement_satisfied": true,
     "require_all_cases_pass": true
   },

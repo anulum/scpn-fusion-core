@@ -54,6 +54,7 @@ Refresh or check the tracked TORAX real-reference divergence report::
 
     python validation/benchmark_torax_real_parity.py
     python validation/benchmark_torax_real_parity.py --check
+    python validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json
 
 Run an environment-specific diagnostic report when runtime Python/platform
 metadata is needed::
@@ -62,6 +63,8 @@ metadata is needed::
 
 The default tracked report records deterministic reference and solver metrics
 only, so release drift checks stay identical across CI images and local hosts.
+The CI benchmark-provenance smoke job writes the same schema to
+``artifacts/torax_benchmark.json`` for fallback-budget validation.
 
 TORAX IMAS Interchange
 ----------------------

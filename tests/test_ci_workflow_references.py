@@ -38,4 +38,5 @@ def test_ci_workflow_uses_current_torax_gate() -> None:
     assert "validation/benchmark_vs_torax.py" not in workflow
     assert "tests/test_benchmark_vs_torax.py" not in workflow
     assert "validation/benchmark_torax_real_parity.py --check" in workflow
+    assert "validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json" in workflow
     assert "tests/test_torax_real_parity.py" in workflow

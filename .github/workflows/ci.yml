@@ -587,6 +587,7 @@ jobs:
       - name: Generate benchmark artifacts
         run: |
           python validation/benchmark_torax_real_parity.py --check
+          python validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json
           python validation/benchmark_sparc_geqdsk_rmse.py
           python validation/benchmark_vs_freegs.py --force-solovev
           python validation/benchmark_disruption_transfer_generalization.py --strict
@@ -612,12 +613,25 @@ jobs:
           vertical_md = Path("artifacts/vertical_control_replay_benchmark.md").read_text(encoding="utf-8")
           vertical_profiles_md = Path("artifacts/vertical_control_replay_profiles.md").read_text(encoding="utf-8")
 
-          torax_cases = torax.get("cases", [])
+          torax_reference = torax.get("reference", {})
+          torax_provenance = torax_reference.get("provenance", {})
           sparc_cases = sparc.get("cases", [])
           freegs_cases = freegs.get("cases", [])
           transfer_checks = transfer.get("checks", {})
-          if not torax_cases:
-              raise SystemExit("torax benchmark produced zero cases")
+          if torax.get("schema") != "scpn-fusion-core.torax-real-parity.v1":
+              raise SystemExit("torax benchmark payload is not the real-parity schema")
+          if not bool(torax.get("passes_thresholds", False)):
+              raise SystemExit("torax real-parity report did not pass integrity thresholds")
+          if bool(torax.get("physics_equivalence_claimed", True)):
+              raise SystemExit("torax real-parity report must not claim physics equivalence")
+          for key in ("code", "torax_version", "config_name", "config_sha256", "licence"):
+              if not torax_provenance.get(key):
+                  raise SystemExit(f"torax reference provenance missing key: {key}")
+          if not torax_reference.get("profile_checksum_sha256"):
+              raise SystemExit("torax reference missing profile checksum")
+          for key in ("core_te_ratio_fine_over_torax", "normalised_te_shape_rel_l2_fine"):
+              if key not in torax.get("divergence_metrics", {}):
+                  raise SystemExit(f"torax divergence metrics missing key: {key}")
           if not sparc_cases:
               raise SystemExit("sparc benchmark produced zero cases")
           if not freegs_cases:
@@ -625,10 +639,6 @@ jobs:
           if not transfer_checks:
               raise SystemExit("transfer benchmark produced zero checks")
 
-          for idx, case in enumerate(torax_cases):
-              for key in ("transport_backend", "fallback_reason", "fallback_seed"):
-                  if key not in case:
-                      raise SystemExit(f"torax case[{idx}] missing key: {key}")
           for idx, case in enumerate(sparc_cases):
               for key in ("surrogate_backend", "fallback_reason"):
                   if key not in case:
@@ -658,7 +668,7 @@ jobs:
 
           print(
               "Benchmark provenance OK: "
-              f"torax_cases={len(torax_cases)} "
+              f"torax_schema={torax.get('schema')} "
               f"sparc_cases={len(sparc_cases)} "
               f"freegs_cases={len(freegs_cases)} "
               f"transfer_pass={transfer.get('passes')}"

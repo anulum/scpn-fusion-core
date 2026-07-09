@@ -22,6 +22,7 @@ DEFAULT_SPARC = REPO_ROOT / "artifacts" / "sparc_geqdsk_rmse_benchmark.json"
 DEFAULT_FREEGS = REPO_ROOT / "artifacts" / "freegs_benchmark.json"
 DEFAULT_SUMMARY = REPO_ROOT / "artifacts" / "fallback_budget_summary.json"
 DEFAULT_TELEMETRY = REPO_ROOT / "artifacts" / "fallback_telemetry.json"
+TORAX_REAL_PARITY_SCHEMA = "scpn-fusion-core.torax-real-parity.v1"
 
 
 def _resolve(path_value: str) -> Path:
@@ -84,6 +85,44 @@ def _all_gated_cases_pass(cases: list[dict[str, Any]]) -> bool:
     return all(bool(case.get("passes", False)) for case in cases if bool(case.get("gated", True)))
 
 
+def _torax_cases(torax: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return fallback-budget rows for legacy or real-reference TORAX payloads."""
+    legacy_cases = [dict(c) for c in torax.get("cases", []) if isinstance(c, dict)]
+    if legacy_cases:
+        return legacy_cases
+
+    if torax.get("schema") != TORAX_REAL_PARITY_SCHEMA:
+        return []
+
+    reference = torax.get("reference", {})
+    reference_dict = reference if isinstance(reference, dict) else {}
+    provenance = reference_dict.get("provenance", {})
+    provenance_dict = provenance if isinstance(provenance, dict) else {}
+    metrics = torax.get("divergence_metrics", {})
+    metrics_dict = metrics if isinstance(metrics, dict) else {}
+    required_provenance = ("code", "torax_version", "config_name", "config_sha256", "licence")
+    required_metrics = ("core_te_ratio_fine_over_torax", "normalised_te_shape_rel_l2_fine")
+    reference_ready = (
+        all(bool(provenance_dict.get(key)) for key in required_provenance)
+        and bool(reference_dict.get("profile_checksum_sha256"))
+        and all(key in metrics_dict for key in required_metrics)
+    )
+    passes = (
+        bool(torax.get("passes_thresholds", False))
+        and not bool(torax.get("physics_equivalence_claimed", True))
+        and reference_ready
+    )
+    return [
+        {
+            "backend_requirement_satisfied": passes,
+            "fallback_reason": "none" if passes else "invalid_real_torax_reference_payload",
+            "gated": True,
+            "passes": passes,
+            "transport_backend": "real_torax_reference",
+        }
+    ]
+
+
 def evaluate(
     *,
     torax: dict[str, Any],
@@ -107,12 +146,13 @@ def evaluate(
     Returns:
         A structured summary containing domain-level metrics plus
         ``overall_pass`` and per-domain ``passes`` boolean flags.
+
     """
     torax_cfg = dict(thresholds.get("torax", {}))
     sparc_cfg = dict(thresholds.get("sparc", {}))
     freegs_cfg = dict(thresholds.get("freegs", {}))
 
-    torax_cases = [dict(c) for c in torax.get("cases", []) if isinstance(c, dict)]
+    torax_cases = _torax_cases(torax)
     sparc_cases = [dict(c) for c in sparc.get("cases", []) if isinstance(c, dict)]
     freegs_cases = [dict(c) for c in freegs.get("cases", []) if isinstance(c, dict)]
     if not torax_cases:
@@ -293,6 +333,7 @@ def evaluate(
     return {
         "schema": "fallback-budget-summary.v1",
         "torax": {
+            "artifact_schema": str(torax.get("schema", "legacy-cases")),
             "preferred_backend": torax_preferred,
             "observed_backends": torax_backends,
             "fallback_rate": torax_rate,
@@ -363,6 +404,7 @@ def main(argv: list[str] | None = None) -> int:
 
     Returns:
         0 if all gates pass, 1 if any gate fails.
+
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--torax", default=str(DEFAULT_TORAX))
