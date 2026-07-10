@@ -580,6 +580,7 @@ files = [
     "src/scpn_fusion/control/_free_boundary_simulation_arrays.py",
     "src/scpn_fusion/control/_free_boundary_simulation_summary.py",
     "src/scpn_fusion/control/_free_boundary_supervisory_types.py",
+    "tests/test_free_boundary_supervisory_types.py",
     "src/scpn_fusion/control/_free_boundary_tracking_types.py",
     "src/scpn_fusion/control/codac_interface.py",
     "src/scpn_fusion/control/fault_tolerant_control.py",
