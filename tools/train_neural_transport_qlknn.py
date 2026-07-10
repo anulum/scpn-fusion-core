@@ -432,18 +432,19 @@ def _train_jax(
             progress = (epoch - warmup_epochs) / max(epochs - warmup_epochs, 1)
             lr_t = lr * 0.5 * (1 + np.cos(np.pi * progress))
 
-        # Uniform shuffle (data + weights)
+        # Uniform shuffle (data + weights). Index each batch directly from the
+        # device-resident arrays through the permutation; do NOT materialise a full
+        # shuffled copy (``X_t[perm]``), which doubles the training set on-device and
+        # exhausts GPU memory once the dataset reaches tens of millions of rows.
         key, sk = random.split(key)
         perm = random.permutation(sk, n_train)
-        X_shuf = X_t[perm]
-        Y_shuf = Y_t[perm]
-        W_shuf = _sample_weights_jax[perm]
 
         epoch_loss = 0.0
         for b in range(n_batches):
-            x_b = X_shuf[b * batch_size : (b + 1) * batch_size]
-            y_b = Y_shuf[b * batch_size : (b + 1) * batch_size]
-            w_b = W_shuf[b * batch_size : (b + 1) * batch_size]
+            idx = perm[b * batch_size : (b + 1) * batch_size]
+            x_b = X_t[idx]
+            y_b = Y_t[idx]
+            w_b = _sample_weights_jax[idx]
 
             grads = grad_fn(params, x_b, y_b, w_b)
             t += 1
