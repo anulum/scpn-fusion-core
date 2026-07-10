@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 497
+    "test_files": 498
   },
   "documentation": {
     "public_pages": [
@@ -3215,6 +3215,7 @@
       "tests/test_tokamak_disruption_archive.py",
       "tests/test_tokamak_flight_sim.py",
       "tests/test_tokamak_live_payload.py",
+      "tests/test_tokamak_synthetic_archive.py",
       "tests/test_tomography.py",
       "tests/test_tools_run_mypy_strict.py",
       "tests/test_tools_run_python_preflight.py",

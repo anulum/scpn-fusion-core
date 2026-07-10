@@ -203,6 +203,7 @@ files = [
     "src/scpn_fusion/io/tokamak_archive_profiles.py",
     "src/scpn_fusion/io/tokamak_disruption_archive.py",
     "src/scpn_fusion/io/tokamak_synthetic_archive.py",
+    "tests/test_tokamak_synthetic_archive.py",
     "tests/test_tokamak_archive.py",
     # diagnostics/
     "src/scpn_fusion/diagnostics/__init__.py",
