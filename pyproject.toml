@@ -431,6 +431,7 @@ files = [
     "src/scpn_fusion/control/_free_boundary_tracking_shot.py",
     "src/scpn_fusion/control/free_boundary_tracking.py",
     "src/scpn_fusion/control/_free_boundary_simulation.py",
+    "tests/test_free_boundary_simulation.py",
     "src/scpn_fusion/control/director_interface.py",
     "src/scpn_fusion/control/spi_mitigation.py",
     "src/scpn_fusion/control/tokamak_flight_sim.py",
