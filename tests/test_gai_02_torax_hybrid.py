@@ -15,6 +15,7 @@ import sys
 
 import pytest
 
+import scpn_fusion.control.torax_hybrid_loop as torax_hybrid_loop
 from scpn_fusion.control.torax_hybrid_loop import run_nstxu_torax_hybrid_campaign
 
 pytestmark = pytest.mark.experimental
@@ -71,3 +72,15 @@ def test_run_realtime_hybrid_smoke_function() -> None:
 def test_campaign_rejects_invalid_runtime_inputs(kwargs: dict[str, int], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         run_nstxu_torax_hybrid_campaign(seed=42, **kwargs)
+
+
+def test_campaign_registers_disruption_on_sustained_high_risk(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Force the disruption predictor to sustain high risk: three consecutive
+    # steps above the 0.93 threshold must register a disruption and abort the
+    # episode, driving the avoidance rate to zero.
+    monkeypatch.setattr(torax_hybrid_loop, "_predict_disruption_risk", lambda history, obs: 0.99)
+    out = run_nstxu_torax_hybrid_campaign(seed=1, episodes=1, steps_per_episode=32)
+    assert out.disruption_avoidance_rate == 0.0
+    assert out.passes_thresholds is False
