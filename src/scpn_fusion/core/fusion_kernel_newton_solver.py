@@ -334,7 +334,14 @@ class FusionKernelNewtonSolverMixin:
         elif gs_residual_history:
             gs_final = gs_residual_history[-1]
             gs_best_out = gs_best
-        else:
+        else:  # pragma: no cover - defensive mirror of solve_equilibrium; unreachable here
+            # ``final_source`` is set on every warmup/Newton iteration and each
+            # iteration also appends to ``gs_residual_history`` before any break,
+            # while ``warmup_steps = min(15, max_iter // 2) < max_iter`` guarantees
+            # phase B always runs at least once whenever phase A did. So a set
+            # source with an empty history cannot arise in this dispatch (it can in
+            # ``solve_equilibrium``, whose structure this mirrors). Tracked: TODO
+            # NEWTON-DEADBRANCH.
             gs_final = self._compute_gs_residual_rms(final_source)
             gs_best_out = gs_final
 

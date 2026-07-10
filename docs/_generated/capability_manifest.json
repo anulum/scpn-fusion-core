@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 490
+    "test_files": 491
   },
   "documentation": {
     "public_pages": [
@@ -2901,6 +2901,7 @@
       "tests/test_fusion_kernel_free_boundary.py",
       "tests/test_fusion_kernel_free_boundary_mixin.py",
       "tests/test_fusion_kernel_iterative_solver_contracts.py",
+      "tests/test_fusion_kernel_newton_dispatch.py",
       "tests/test_fusion_kernel_newton_runtime.py",
       "tests/test_fusion_kernel_numerics.py",
       "tests/test_fusion_kernel_solver_mixins.py",
