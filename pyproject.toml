@@ -584,6 +584,7 @@ files = [
     "src/scpn_fusion/control/replay_pipeline.py",
     "src/scpn_fusion/control/free_boundary_supervisory_control.py",
     "src/scpn_fusion/control/stellarator_control_contracts.py",
+    "tests/test_stellarator_control_contracts.py",
     # Sprint 4 mypy expansion
     "src/scpn_fusion/control/fokker_planck_re.py",
     "src/scpn_fusion/control/spi_ablation.py",
