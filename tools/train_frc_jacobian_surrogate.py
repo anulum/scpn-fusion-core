@@ -24,13 +24,16 @@ import time
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
 
 logger = logging.getLogger(__name__)
 
 
-def compute_local_jacobian(nominal_features: np.ndarray, grid_size: int, eps: float = 1e-4):
+def compute_local_jacobian(
+    nominal_features: NDArray[np.float64], grid_size: int, eps: float = 1e-4
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Compute a finite-difference local FRC Jacobian around nominal features."""
     logger.info("Computing FRC Jacobian around nominal point...")
     rho_grid = np.linspace(0.0, 0.5, grid_size)
@@ -38,7 +41,7 @@ def compute_local_jacobian(nominal_features: np.ndarray, grid_size: int, eps: fl
     # 1. Unpack nominal features
     n0, t_i, t_e, theta_dot, r_s, b_ext, delta = nominal_features
 
-    # De-normalize inputs for the physics oracle
+    # De-normalise inputs for the physics oracle
     nom_inputs = RigidRotorFRCInputs(
         n0=n0 * 1e20,
         T_i_eV=t_i * 1000.0,
@@ -91,7 +94,7 @@ def compute_local_jacobian(nominal_features: np.ndarray, grid_size: int, eps: fl
     return Y_nom, J
 
 
-def main():
+def main() -> None:
     """Extract and save the no-rotation FRC local Jacobian surrogate."""
     parser = argparse.ArgumentParser(description="Extract FRC local Jacobian surrogate")
     parser.add_argument("--grid", type=int, default=256, help="Grid size for FRC")
