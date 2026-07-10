@@ -576,6 +576,7 @@ files = [
     "tests/test_free_boundary_estimator.py",
     "src/scpn_fusion/control/_free_boundary_plotting.py",
     "src/scpn_fusion/control/_free_boundary_safety_supervisor.py",
+    "tests/test_free_boundary_safety_supervisor.py",
     "src/scpn_fusion/control/_free_boundary_simulation_arrays.py",
     "src/scpn_fusion/control/_free_boundary_simulation_summary.py",
     "src/scpn_fusion/control/_free_boundary_supervisory_types.py",

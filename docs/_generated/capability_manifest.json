@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 493
+    "test_files": 494
   },
   "documentation": {
     "public_pages": [
@@ -2881,6 +2881,7 @@
       "tests/test_free_boundary_estimator.py",
       "tests/test_free_boundary_plotting.py",
       "tests/test_free_boundary_public_machine_metadata_inventory.py",
+      "tests/test_free_boundary_safety_supervisor.py",
       "tests/test_free_boundary_supervisory_control.py",
       "tests/test_free_boundary_tracking.py",
       "tests/test_free_boundary_tracking_acceptance.py",
