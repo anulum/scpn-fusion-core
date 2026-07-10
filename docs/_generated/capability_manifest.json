@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 498
+    "test_files": 499
   },
   "documentation": {
     "public_pages": [
@@ -3011,6 +3011,7 @@
       "tests/test_integrated_transport_solver_adaptive.py",
       "tests/test_integrated_transport_solver_base.py",
       "tests/test_integrated_transport_solver_contracts.py",
+      "tests/test_integrated_transport_solver_init.py",
       "tests/test_integrated_transport_solver_runtime.py",
       "tests/test_integrated_transport_solver_runtime_physics.py",
       "tests/test_integrated_transport_solver_runtime_utils.py",
