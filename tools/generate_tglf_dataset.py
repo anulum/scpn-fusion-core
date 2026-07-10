@@ -20,8 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 def generate_tglf_like_dataset(
-    output_path="validation/reference_data/tglf_training_data.npz", n_samples=10000
-):
+    output_path: str = "validation/reference_data/tglf_training_data.npz",
+    n_samples: int = 10000,
+) -> None:
     """Generate synthetic turbulence training samples in a TGLF-like style.
 
     This routine draws randomized samples from physics reference cases, perturbs
