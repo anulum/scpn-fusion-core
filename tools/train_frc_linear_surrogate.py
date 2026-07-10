@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
 from scpn_fusion.core.neural_equilibrium import MinimalPCA
@@ -31,7 +32,9 @@ PCA_COMPONENTS_TARGET = 10
 # ── Data Generation ──────────────────────────────────────────────────
 
 
-def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
+def generate_frc_data(
+    n_samples: int, grid_size: int, seed: int = 42
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Generate finite no-rotation FRC profiles for linear surrogate fitting."""
     logger.info("Generating %d FRC samples...", n_samples)
     X = []
@@ -78,7 +81,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
 # ── Training Entry Point ─────────────────────────────────────────────
 
 
-def main():
+def main() -> None:
     """Train and save the no-rotation FRC linear surrogate."""
     parser = argparse.ArgumentParser(description="Train FRC linear surrogate")
     parser.add_argument("--samples", type=int, default=500, help="Number of samples to generate")
@@ -104,6 +107,9 @@ def main():
     n_comp = min(n_valid - 1, PCA_COMPONENTS_TARGET)
     pca = MinimalPCA(n_components=n_comp)
     Y_latent = pca.fit_transform(Y_raw)
+    assert pca.mean_ is not None
+    assert pca.components_ is not None
+    assert pca.explained_variance_ratio_ is not None
     explained_var = float(np.sum(pca.explained_variance_ratio_))
     logger.info("PCA: %d components explain %.2f%% variance", n_comp, explained_var * 100)
 
@@ -121,7 +127,7 @@ def main():
     # Normal equation: W = (X^T X + alpha I)^-1 X^T Y
     # W shape will be (features + 1, n_comp)
     I = np.eye(X_bias.shape[1])
-    I[-1, -1] = 0.0  # Don't penalize the bias term
+    I[-1, -1] = 0.0  # Don't penalise the bias term
 
     W_full = np.linalg.solve(X_bias.T @ X_bias + args.l2 * I, X_bias.T @ Y_latent)
     W_linear = W_full[:-1, :]
