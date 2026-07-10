@@ -187,6 +187,7 @@ files = [
     # io/
     "src/scpn_fusion/io/__init__.py",
     "src/scpn_fusion/io/_tokamak_archive_shots.py",
+    "tests/test_tokamak_archive_shots_facade.py",
     "src/scpn_fusion/io/imas_connector.py",
     "src/scpn_fusion/io/imas_connector_common.py",
     "src/scpn_fusion/io/imas_connector_digital_twin.py",
