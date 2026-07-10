@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 489
+    "test_files": 490
   },
   "documentation": {
     "public_pages": [
@@ -2915,6 +2915,7 @@
       "tests/test_gdep_02_gpu_integration.py",
       "tests/test_gdep_03_blind_validation.py",
       "tests/test_generate_claims_evidence_map.py",
+      "tests/test_generate_disruption_profiles.py",
       "tests/test_generate_disruption_risk_calibration.py",
       "tests/test_generate_disruption_shot_manifest.py",
       "tests/test_generate_fno_qlknn_spatial.py",

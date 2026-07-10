@@ -32,6 +32,7 @@ reproducibility.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -113,7 +114,7 @@ def _save_shot(path: Path, **data: Any) -> None:
 # -------------------------------------------------------------------------
 
 
-def generate_locked_mode(rng: np.random.Generator) -> dict:
+def generate_locked_mode(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 155916 -- Locked mode disruption (~t=2.0 s).
 
     n=1 MHD mode grows via Rutherford-like saturation, locks to the
@@ -201,7 +202,7 @@ def generate_locked_mode(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_density_limit(rng: np.random.Generator) -> dict:
+def generate_density_limit(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 160409 -- Greenwald density-limit disruption (~t=2.5 s).
 
     Density ramps above n_GW = Ip/(pi*a^2), triggering a MARFE and
@@ -281,7 +282,7 @@ def generate_density_limit(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_vde(rng: np.random.Generator) -> dict:
+def generate_vde(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 161598 -- Vertical Displacement Event (~t=1.8 s).
 
     Loss of vertical position control triggers exponential growth of
@@ -365,7 +366,7 @@ def generate_vde(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_tearing(rng: np.random.Generator) -> dict:
+def generate_tearing(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 164965 -- 2/1 neoclassical tearing mode disruption (~t=2.2 s).
 
     Bootstrap-current-driven 2/1 island grows via modified Rutherford
@@ -450,7 +451,7 @@ def generate_tearing(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_beta_limit(rng: np.random.Generator) -> dict:
+def generate_beta_limit(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 166000 -- Beta-limit (Troyon limit) disruption (~t=2.0 s).
 
     beta_N is ramped above the Troyon limit (g~3.5), driving ideal MHD
@@ -529,7 +530,7 @@ def generate_beta_limit(rng: np.random.Generator) -> dict:
 # -------------------------------------------------------------------------
 
 
-def generate_hmode_safe(rng: np.random.Generator) -> dict:
+def generate_hmode_safe(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 163303 -- Standard ELMy H-mode (safe).
 
     Stationary H-mode with Type-I ELMs, well below all stability limits.
@@ -576,7 +577,7 @@ def generate_hmode_safe(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_hybrid_safe(rng: np.random.Generator) -> dict:
+def generate_hybrid_safe(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 154406 -- Hybrid scenario (safe).
 
     Elevated q_min > 1 avoids sawteeth; broad current profile gives
@@ -618,7 +619,7 @@ def generate_hybrid_safe(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_negdelta_safe(rng: np.random.Generator) -> dict:
+def generate_negdelta_safe(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 175970 -- Negative triangularity (safe).
 
     Negative triangularity plasmas have L-mode edge with H-mode-level
@@ -658,7 +659,7 @@ def generate_negdelta_safe(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_snowflake_safe(rng: np.random.Generator) -> dict:
+def generate_snowflake_safe(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 166549 -- Snowflake divertor (safe).
 
     Advanced divertor geometry with secondary X-point; good power
@@ -706,7 +707,7 @@ def generate_snowflake_safe(rng: np.random.Generator) -> dict:
     )
 
 
-def generate_highbeta_safe(rng: np.random.Generator) -> dict:
+def generate_highbeta_safe(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 176673 -- High-beta stable plasma (safe).
 
     Sustained beta_N ~ 3.0 with wall stabilisation and active RWM
@@ -762,7 +763,7 @@ def generate_highbeta_safe(rng: np.random.Generator) -> dict:
 # -------------------------------------------------------------------------
 # Shot manifest -- (filename_stem, shot_number, generator_func)
 # -------------------------------------------------------------------------
-SHOT_MANIFEST: list[tuple[str, int, callable]] = [
+SHOT_MANIFEST: list[tuple[str, int, Callable[[np.random.Generator], dict[str, Any]]]] = [
     # Disruption shots
     ("shot_155916_locked_mode", 155916, generate_locked_mode),
     ("shot_160409_density_limit", 160409, generate_density_limit),
