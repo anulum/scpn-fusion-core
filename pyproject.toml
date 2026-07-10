@@ -424,6 +424,7 @@ files = [
     "src/scpn_fusion/control/mu_synthesis.py",
     "src/scpn_fusion/control/advanced_soc_fusion_learning.py",
     "src/scpn_fusion/control/disruption_risk_runtime.py",
+    "tests/test_disruption_risk_runtime.py",
     "src/scpn_fusion/control/_free_boundary_tracking_base.py",
     "src/scpn_fusion/control/_free_boundary_tracking_config.py",
     "src/scpn_fusion/control/_free_boundary_tracking_control.py",

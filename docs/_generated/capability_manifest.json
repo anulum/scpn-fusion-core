@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 496
+    "test_files": 497
   },
   "documentation": {
     "public_pages": [
@@ -2831,6 +2831,7 @@
       "tests/test_disruption_model_checkpoint.py",
       "tests/test_disruption_predictor_rng.py",
       "tests/test_disruption_replay_contracts.py",
+      "tests/test_disruption_risk_runtime.py",
       "tests/test_disruption_sequence.py",
       "tests/test_disruption_sliding_window.py",
       "tests/test_disruption_threshold_sweep.py",
