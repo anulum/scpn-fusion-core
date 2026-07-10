@@ -600,6 +600,7 @@ files = [
     "src/scpn_fusion/control/state_estimator.py",
     "src/scpn_fusion/control/volt_second_manager.py",
     "src/scpn_fusion/control/runaway_electron_model.py",
+    "tests/test_runaway_electron_model_module.py",
     "src/scpn_fusion/control/rust_flight_sim_wrapper.py",
     "src/scpn_fusion/control/rwm_feedback.py",
     "src/scpn_fusion/control/rzip_model.py",

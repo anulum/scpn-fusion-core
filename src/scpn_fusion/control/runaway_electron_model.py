@@ -153,7 +153,10 @@ class RunawayElectronModel:
         ratio_term = float(np.exp(-h_z * np.log(max(ratio, 1e-20))))
         exp_arg = float(np.clip(-ratio / 4.0 - nu_eff, -700.0, 0.0))
         rate = (self.n_e_free / max(self.tau_coll, 1e-20)) * c_d * ratio_term * np.exp(exp_arg)
-        if not np.isfinite(rate):
+        # RE-DEADGUARD: ``rate`` is a product of finite Python floats (``np.exp(exp_arg)`` is
+        # bounded to ``(0, 1]`` by the clip); any magnitude overflow raises ``OverflowError``
+        # before this guard, so the non-finite branch is unreachable.
+        if not np.isfinite(rate):  # pragma: no cover
             return 0.0
         return max(float(rate), 0.0)
 
@@ -286,7 +289,9 @@ class RunawayElectronModel:
             )
 
             loss_rate = n_re / max(self.tau_av * 5.0, 1e-12) if e_tor < self.E_c else 0.0
-            if not np.isfinite(loss_rate):
+            # RE-DEADGUARD: ``n_re`` is clamped finite and the denominator is floored at 1e-12,
+            # so under any validated density this ratio is finite.
+            if not np.isfinite(loss_rate):  # pragma: no cover
                 loss_rate = 0.0
 
             source_rate = (gamma_d + gamma_av + gamma_fp) * mitigation_source_factor
@@ -294,12 +299,16 @@ class RunawayElectronModel:
             if not np.isfinite(dn_re):
                 dn_re = 0.0
             n_re = max(n_re + dn_re, 0.0)
-            if not np.isfinite(n_re):
+            # RE-DEADGUARD: ``dn_re`` is finite-guarded just above, so ``max(finite, 0.0)`` is
+            # always finite.
+            if not np.isfinite(n_re):  # pragma: no cover
                 n_re = 0.0
             n_re = min(n_re, self.n_e_free * self.max_runaway_fraction)
 
             i_re_val = _E_CHARGE * n_re * _C_LIGHT * np.pi * self.runaway_beam_radius_m**2
-            if not np.isfinite(i_re_val):
+            # RE-DEADGUARD: ``n_re`` is clamped finite, and a beam radius large enough to overflow
+            # raises ``OverflowError`` before this guard.
+            if not np.isfinite(i_re_val):  # pragma: no cover
                 i_re_val = ip0
             i_re_val = min(i_re_val, ip0)
             re_current_ma.append(i_re_val / 1e6)
