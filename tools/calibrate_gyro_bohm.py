@@ -49,7 +49,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from scipy.optimize import minimize_scalar
@@ -379,7 +379,7 @@ def compute_rmse(
     for s in shots:
         tau_pred = predict_tau_e(s, c_gB)
         residuals.append((tau_pred - s.tau_E_s) ** 2)
-    return np.sqrt(np.mean(residuals))
+    return float(np.sqrt(np.mean(residuals)))
 
 
 def compute_log_rmse(
@@ -395,7 +395,7 @@ def compute_log_rmse(
     for s in shots:
         tau_pred = max(predict_tau_e(s, c_gB), 1e-6)
         log_ratios.append(np.log10(tau_pred / max(s.tau_E_s, 1e-6)))
-    return np.sqrt(np.mean(np.array(log_ratios) ** 2))
+    return float(np.sqrt(np.mean(np.array(log_ratios) ** 2)))
 
 
 def objective(log_c_gB: float, shots: list[ShotRecord]) -> float:
@@ -445,7 +445,7 @@ def calibrate(
     csv_path: Optional[Path] = None,
     output_path: Optional[Path] = None,
     verbose: bool = True,
-) -> dict:
+) -> dict[str, Any]:
     """Run the full gyro-Bohm calibration.
 
     Parameters

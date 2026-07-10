@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 485
+    "test_files": 486
   },
   "documentation": {
     "public_pages": [
@@ -2778,6 +2778,7 @@
       "tests/test_burn_controller.py",
       "tests/test_c2u_public_frc_reference.py",
       "tests/test_cad_raytrace.py",
+      "tests/test_calibrate_gyro_bohm.py",
       "tests/test_capability_manifest.py",
       "tests/test_check_commit_trailers.py",
       "tests/test_check_disruption_shot_splits.py",
