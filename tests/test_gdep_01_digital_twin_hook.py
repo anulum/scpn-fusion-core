@@ -71,6 +71,23 @@ def test_realtime_hook_rejects_invalid_horizon() -> None:
         hook.scenario_plan(horizon=3)
 
 
+def test_realtime_hook_ring_buffer_trims_to_max() -> None:
+    packets = generate_emulated_stream("SPARC", seed=3, samples=70)
+    hook = RealtimeTwinHook("SPARC", max_buffer=64, seed=3)
+    for packet in packets:
+        hook.ingest(packet)
+    # The ring buffer retains only the most recent ``max_buffer`` packets.
+    assert len(hook.buffer) == 64
+    assert hook.buffer[-1] == packets[-1]
+    assert hook.buffer[0] == packets[-64]
+
+
+def test_scenario_plan_empty_buffer_raises() -> None:
+    hook = RealtimeTwinHook("SPARC", seed=1)
+    with pytest.raises(RuntimeError, match="No telemetry packets ingested"):
+        hook.scenario_plan(horizon=24)
+
+
 def test_gdep_01_campaign_passes_thresholds() -> None:
     out = gdep_01_digital_twin_hook.run_campaign(seed=42, samples_per_machine=220)
     assert out["passes_thresholds"] is True

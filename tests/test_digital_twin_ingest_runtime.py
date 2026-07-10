@@ -52,8 +52,8 @@ def test_run_realtime_twin_session_returns_finite_summary() -> None:
 
 
 def test_run_realtime_twin_session_is_deterministic_for_same_seed() -> None:
-    kwargs = dict(
-        machine="NSTX-U",
+    a = run_realtime_twin_session(
+        "NSTX-U",
         seed=42,
         samples=112,
         horizon=24,
@@ -61,8 +61,15 @@ def test_run_realtime_twin_session_is_deterministic_for_same_seed() -> None:
         chaos_dropout_prob=0.02,
         chaos_noise_std=0.005,
     )
-    a = run_realtime_twin_session(**kwargs)
-    b = run_realtime_twin_session(**kwargs)
+    b = run_realtime_twin_session(
+        "NSTX-U",
+        seed=42,
+        samples=112,
+        horizon=24,
+        plan_every=8,
+        chaos_dropout_prob=0.02,
+        chaos_noise_std=0.005,
+    )
     for key in (
         "plan_count",
         "planning_success_rate",
@@ -97,6 +104,24 @@ def test_run_realtime_twin_session_rejects_invalid_machine() -> None:
         run_realtime_twin_session("ITER", seed=1, samples=64)
 
 
+def test_run_realtime_twin_session_without_plans_returns_default_summary() -> None:
+    # A planning window wider than the run yields no plans; the session returns
+    # the conservative default summary (fail-closed thresholds).
+    summary = run_realtime_twin_session(
+        "SPARC",
+        seed=1,
+        samples=32,
+        horizon=24,
+        plan_every=64,
+    )
+    assert summary["plan_count"] == 0
+    assert summary["planning_success_rate"] == 0.0
+    assert summary["mean_risk"] == 1.0
+    assert summary["p95_latency_ms"] == 999.0
+    assert summary["passes_thresholds"] is False
+    assert summary["chaos_channels_total"] == 32 * 4
+
+
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [
@@ -114,4 +139,6 @@ def test_run_realtime_twin_session_rejects_invalid_runtime_inputs(
     kwargs: dict[str, float | int], match: str
 ) -> None:
     with pytest.raises(ValueError, match=match):
-        run_realtime_twin_session("SPARC", seed=1, **kwargs)
+        # Deliberately feeds out-of-domain runtime inputs to exercise validation;
+        # the mixed float/int mapping is not statically assignable to the typed params.
+        run_realtime_twin_session("SPARC", seed=1, **kwargs)  # type: ignore[arg-type]
