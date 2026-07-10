@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -47,6 +48,10 @@ DEFAULT_DATA_DIR = REPO_ROOT / "data" / "qlknn10d_processed"
 DEFAULT_OUTPUT = REPO_ROOT / "weights" / "neural_transport_qlknn.npz"
 
 OUTPUT_DIM = 3
+
+# Row-batch for the final full-validation metrics so the forward pass never
+# materialises the whole (up to tens-of-millions-row) validation set at once.
+_METRIC_BATCH = 65_536
 
 # Critical gradient thresholds (ITG / TEM onset)
 _CRIT_ITG = 4.0  # R/L_Ti threshold
@@ -144,6 +149,35 @@ def _chi_gb_np(te_kev: np.ndarray) -> np.ndarray:
     return rho_s**2 * cs / _R_REF
 
 
+def _save_best_checkpoint(
+    checkpoint_path: Path, params: dict[str, np.ndarray], best_val_rel: float, epoch: int
+) -> None:
+    """Atomically persist the best parameters so a later crash cannot lose them.
+
+    Writes to a temp file in the same directory then ``os.replace`` so a reader
+    (or a resumed run) never observes a partially-written checkpoint. Written on
+    every validation improvement; failures are logged, not raised, so a transient
+    I/O error never aborts an otherwise-healthy training run.
+    """
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = checkpoint_path.with_name(f"{checkpoint_path.name}.tmp{os.getpid()}")
+    try:
+        with open(tmp, "wb") as handle:
+            np.savez(
+                handle,
+                best_val_rel=np.asarray(best_val_rel, dtype=np.float64),
+                epoch=np.asarray(epoch, dtype=np.int64),
+                **params,
+            )
+        os.replace(tmp, checkpoint_path)
+    except OSError as exc:
+        logger.warning("best-checkpoint write failed at epoch %d: %s", epoch, exc)
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+
+
 def _train_jax(
     X_train: np.ndarray,
     Y_train: np.ndarray,
@@ -165,8 +199,14 @@ def _train_jax(
     X_train_raw: np.ndarray | None = None,
     residual: bool = False,
     stiff_coeffs: np.ndarray | None = None,
+    checkpoint_path: Path | None = None,
 ) -> dict:
-    """Train using JAX with Adam and cosine annealing."""
+    """Train using JAX with Adam and cosine annealing.
+
+    When ``checkpoint_path`` is given, the best parameters are persisted to disk
+    on every improvement so a converged model is never lost to a later failure
+    (e.g. an OOM in the final full-validation metrics).
+    """
     import jax
     import jax.numpy as jnp
     from jax import random, grad, jit
@@ -363,8 +403,13 @@ def _train_jax(
         return base * _stiff_coeffs_jax
 
     @jit
-    def relative_l2(params, x, y):
-        """Compute relative L2 in linear space regardless of training transform."""
+    def _rel_l2_sums(params, x, y):
+        """Return (numerator, denominator) sums of the relative-L2 metric.
+
+        Splitting out the sums lets the final full-validation metric be
+        accumulated over row-batches (``sqrt(sum(num)/sum(den))`` is exact under
+        batching) instead of a single forward pass that OOMs on large splits.
+        """
         preds = forward(params, x)
         if residual:
             y_base = _stiff_baseline_jax(x)
@@ -372,13 +417,10 @@ def _train_jax(
             y_full = y_base + y
             if gb_scale:
                 chi_gb_v = _chi_gb_jax(x[..., 1])
-                return jnp.sqrt(
-                    jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * (preds_full - y_full) ** 2)
-                    / jnp.maximum(jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * y_full**2), 1e-8)
-                )
-            return jnp.sqrt(
-                jnp.sum((preds_full - y_full) ** 2) / jnp.maximum(jnp.sum(y_full**2), 1e-8)
-            )
+                num = jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * (preds_full - y_full) ** 2)
+                den = jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * y_full**2)
+                return num, den
+            return jnp.sum((preds_full - y_full) ** 2), jnp.sum(y_full**2)
         if gb_scale:
             chi_gb_v = _chi_gb_jax(x[..., 1])
             preds_lin = preds * chi_gb_v[..., jnp.newaxis]
@@ -389,7 +431,13 @@ def _train_jax(
         else:
             preds_lin = preds
             y_lin = y
-        return jnp.sqrt(jnp.sum((preds_lin - y_lin) ** 2) / jnp.maximum(jnp.sum(y_lin**2), 1e-8))
+        return jnp.sum((preds_lin - y_lin) ** 2), jnp.sum(y_lin**2)
+
+    @jit
+    def relative_l2(params, x, y):
+        """Compute relative L2 in linear space regardless of training transform."""
+        num, den = _rel_l2_sums(params, x, y)
+        return jnp.sqrt(num / jnp.maximum(den, 1e-8))
 
     grad_fn = jit(grad(loss_fn))
 
@@ -474,6 +522,8 @@ def _train_jax(
             best_val_rel = val_rel
             best_params = {k: np.array(v) for k, v in params.items()}
             no_improve = 0
+            if checkpoint_path is not None:
+                _save_best_checkpoint(checkpoint_path, best_params, best_val_rel, epoch)
         else:
             no_improve += 1
 
@@ -490,38 +540,56 @@ def _train_jax(
             print(f"  Early stopping at epoch {epoch} (no improvement for {patience} epochs)")
             break
 
-    # Compute final metrics on full validation set (always in LINEAR space)
+    # Compute final metrics on the FULL validation set (always in LINEAR space),
+    # accumulated over row-batches. A single full-set forward pass OOMs on large
+    # validation splits (tens of millions of rows) and previously crashed the run
+    # *after* training converged but *before* the weights were saved. The metric
+    # is exact under batching: sqrt(sum(num)/sum(den)) over batches == full-set,
+    # and per-output sums accumulate the same way.
     final_params_jax = {k: jnp.array(v) for k, v in best_params.items()}
-    val_rel_l2 = float(relative_l2(final_params_jax, X_v, Y_v))
     train_rel_l2 = float(
         relative_l2(final_params_jax, X_t[: min(100000, len(X_t))], Y_t[: min(100000, len(Y_t))])
     )
 
-    # Per-output relative L2 (in linear space)
-    preds_val_raw = forward(final_params_jax, X_v)
-    if residual:
-        y_base_v = _stiff_baseline_jax(X_v)
-        preds_val_lin = jnp.maximum(0.0, y_base_v + preds_val_raw)
-        Y_v_lin = y_base_v + Y_v
-    elif gb_scale and Y_val_linear is not None:
-        chi_gb_val = jnp.array(_chi_gb_np(np.array(X_val[:, 1])))
-        preds_val_lin = preds_val_raw * chi_gb_val[:, jnp.newaxis]
-        Y_v_lin = jnp.array(Y_val_linear)
-    elif log_transform:
-        preds_val_lin = jnp.expm1(jnp.clip(preds_val_raw, 0.0, 20.0))
-        Y_v_lin = jnp.array(Y_val_linear) if Y_val_linear is not None else jnp.expm1(Y_v)
-    else:
-        preds_val_lin = preds_val_raw
-        Y_v_lin = Y_v
-    per_output_l2 = []
-    for col in range(OUTPUT_DIM):
-        l2 = float(
-            jnp.sqrt(
-                jnp.sum((preds_val_lin[:, col] - Y_v_lin[:, col]) ** 2)
-                / jnp.maximum(jnp.sum(Y_v_lin[:, col] ** 2), 1e-8)
+    n_val = int(X_v.shape[0])
+    global_num = 0.0
+    global_den = 0.0
+    col_num = np.zeros(OUTPUT_DIM)
+    col_den = np.zeros(OUTPUT_DIM)
+    for start in range(0, n_val, _METRIC_BATCH):
+        stop = min(start + _METRIC_BATCH, n_val)
+        xb = X_v[start:stop]
+        yb = Y_v[start:stop]
+        # Global relative-L2 terms (mirrors relative_l2's per-transform branches).
+        num_b, den_b = _rel_l2_sums(final_params_jax, xb, yb)
+        global_num += float(num_b)
+        global_den += float(den_b)
+        # Per-output terms in linear space (mirrors the per-column reconstruction).
+        preds_raw = forward(final_params_jax, xb)
+        if residual:
+            y_base_b = _stiff_baseline_jax(xb)
+            preds_lin = jnp.maximum(0.0, y_base_b + preds_raw)
+            y_lin = y_base_b + yb
+        elif gb_scale and Y_val_linear is not None:
+            chi_gb_b = _chi_gb_jax(xb[..., 1])
+            preds_lin = preds_raw * chi_gb_b[:, jnp.newaxis]
+            y_lin = jnp.array(Y_val_linear[start:stop])
+        elif log_transform:
+            preds_lin = jnp.expm1(jnp.clip(preds_raw, 0.0, 20.0))
+            y_lin = (
+                jnp.array(Y_val_linear[start:stop]) if Y_val_linear is not None else jnp.expm1(yb)
             )
-        )
-        per_output_l2.append(l2)
+        else:
+            preds_lin = preds_raw
+            y_lin = yb
+        diff = np.asarray(preds_lin - y_lin)
+        y_lin_np = np.asarray(y_lin)
+        col_num += np.sum(diff * diff, axis=0)
+        col_den += np.sum(y_lin_np * y_lin_np, axis=0)
+    val_rel_l2 = float(np.sqrt(global_num / max(global_den, 1e-8)))
+    per_output_l2 = [
+        float(np.sqrt(col_num[col] / max(col_den[col], 1e-8))) for col in range(OUTPUT_DIM)
+    ]
 
     return {
         "params": best_params,
@@ -950,6 +1018,7 @@ def main() -> None:
         X_train_raw=X_train,
         residual=args.residual,
         stiff_coeffs=_stiff_coeffs,
+        checkpoint_path=args.output.with_name(f"{args.output.stem}.best.npz"),
     )
 
     print(f"\nTraining complete in {result['training_time_s']:.1f}s")
