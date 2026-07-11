@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 513
+    "test_files": 514
   },
   "documentation": {
     "public_pages": [
@@ -3004,6 +3004,7 @@
       "tests/test_imas_conformance.py",
       "tests/test_imas_connector.py",
       "tests/test_imas_connector_common.py",
+      "tests/test_imas_connector_equilibrium.py",
       "tests/test_imas_connector_omas_contracts.py",
       "tests/test_imas_connector_split_modules.py",
       "tests/test_imas_connector_storage.py",

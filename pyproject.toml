@@ -194,6 +194,7 @@ files = [
     "src/scpn_fusion/io/imas_connector_common.py",
     "src/scpn_fusion/io/imas_connector_digital_twin.py",
     "src/scpn_fusion/io/imas_connector_equilibrium.py",
+    "tests/test_imas_connector_equilibrium.py",
     "src/scpn_fusion/io/imas_connector_omas.py",
     "src/scpn_fusion/io/imas_connector_storage.py",
     "src/scpn_fusion/io/imas_connector_transport.py",

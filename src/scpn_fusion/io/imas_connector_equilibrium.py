@@ -166,7 +166,9 @@ def imas_equilibrium_to_geqdsk(ids: Mapping[str, Any]) -> GEqdsk:
     validate_imas_equilibrium_payload(ids)
 
     time_slices = ids["time_slice"]
-    if not isinstance(time_slices, Sequence) or len(time_slices) == 0:
+    # RE-DEADGUARD: validate_imas_equilibrium_payload already proved time_slice is a
+    # non-empty Sequence (see the isinstance/len guards above); unreachable single-threaded.
+    if not isinstance(time_slices, Sequence) or len(time_slices) == 0:  # pragma: no cover
         raise ValueError("IMAS equilibrium must have at least one time_slice.")
 
     ts = time_slices[0]
@@ -178,7 +180,8 @@ def imas_equilibrium_to_geqdsk(ids: Mapping[str, Any]) -> GEqdsk:
     axis = gq.get("magnetic_axis", {})
     vtf = gq.get("vacuum_toroidal_field", {})
 
-    if not p2d_list:
+    # RE-DEADGUARD: validate already proved profiles_2d is a non-empty sequence; unreachable.
+    if not p2d_list:  # pragma: no cover
         raise ValueError("IMAS equilibrium must have at least one profiles_2d entry.")
     p2d = p2d_list[0]
     grid = p2d.get("grid", {})
@@ -188,9 +191,12 @@ def imas_equilibrium_to_geqdsk(ids: Mapping[str, Any]) -> GEqdsk:
 
     nw = r_grid.size
     nh = z_grid.size
-    if nw < 2 or nh < 2:
+    # RE-DEADGUARD: validate coerced dim1/dim2 with minimum_len=2, so nw, nh >= 2; unreachable.
+    if nw < 2 or nh < 2:  # pragma: no cover
         raise ValueError("IMAS profiles_2d grid must have at least 2 points per dimension.")
-    if psirz.ndim != 2 or psirz.shape != (nh, nw):
+    # RE-DEADGUARD: validate proved psi has nh rows each of nw finite columns, so the numpy
+    # array is exactly (nh, nw); the shape mismatch is unreachable after validation.
+    if psirz.ndim != 2 or psirz.shape != (nh, nw):  # pragma: no cover
         raise ValueError(
             f"IMAS profiles_2d psi shape {psirz.shape} does not match grid ({nh}, {nw})."
         )
