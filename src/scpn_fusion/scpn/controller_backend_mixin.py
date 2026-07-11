@@ -177,7 +177,11 @@ class NeuroSymbolicControllerBackendMixin:
             if use_rust_sampler:
                 try:
                     sampler = controller_mod._rust_sample_firing
-                    if sampler is None:
+                    # RE-DEADGUARD: `use_rust_sampler` above already required
+                    # `_rust_sample_firing is not None`, so this re-check only
+                    # guards a TOCTOU that cannot occur single-threaded — the
+                    # branch is defensively unreachable in practice.
+                    if sampler is None:  # pragma: no cover
                         raise RuntimeError("rust sampler unavailable")
                     sampled = sampler(
                         p_fire,
@@ -261,7 +265,11 @@ class NeuroSymbolicControllerBackendMixin:
         )
         m2 = self._marking_update(marking, f_timed, self._tmp_marking_sc)
         if self._sc_bitflip_rate > 0.0:
-            if rng is None:
+            # RE-DEADGUARD: the firing-stage bit-flip block above shares this
+            # exact `_sc_bitflip_rate > 0.0` condition and always leaves `rng`
+            # initialised, so the marking-stage re-initialisation below is
+            # defensively unreachable.
+            if rng is None:  # pragma: no cover
                 rng = np.random.default_rng(_seed64(self.seed_base, f"sc_flip:{int(k)}"))
             m2 = self._apply_bit_flip_faults(m2, rng)
 

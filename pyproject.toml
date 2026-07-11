@@ -172,6 +172,7 @@ files = [
     "src/scpn_fusion/scpn/contracts.py",
     "src/scpn_fusion/scpn/controller.py",
     "src/scpn_fusion/scpn/controller_backend_mixin.py",
+    "tests/test_controller_backend_mixin.py",
     "src/scpn_fusion/scpn/controller_features_mixin.py",
     "tests/test_controller_features_mixin.py",
     "src/scpn_fusion/scpn/structure.py",
