@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 507
+    "test_files": 508
   },
   "documentation": {
     "public_pages": [
@@ -3210,6 +3210,7 @@
       "tests/test_temhd_peltier.py",
       "tests/test_temhd_peltier_runtime.py",
       "tests/test_tglf_interface.py",
+      "tests/test_tglf_interface_benchmark.py",
       "tests/test_tglf_interface_reference.py",
       "tests/test_tglf_interface_runtime.py",
       "tests/test_tglf_surrogate_bridge.py",
