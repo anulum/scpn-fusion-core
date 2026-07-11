@@ -505,6 +505,7 @@ files = [
     "src/scpn_fusion/core/plasma_wall_interaction.py",
     "src/scpn_fusion/core/state_space.py",
     "src/scpn_fusion/core/disruption_structural_response.py",
+    "tests/test_disruption_structural_response_report.py",
     "src/scpn_fusion/core/hts_quench.py",
     "tests/test_hts_quench.py",
     "src/scpn_fusion/core/fieldline_3d.py",

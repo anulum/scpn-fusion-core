@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 504
+    "test_files": 505
   },
   "documentation": {
     "public_pages": [
@@ -2834,6 +2834,7 @@
       "tests/test_disruption_risk_runtime.py",
       "tests/test_disruption_sequence.py",
       "tests/test_disruption_sliding_window.py",
+      "tests/test_disruption_structural_response_report.py",
       "tests/test_disruption_threshold_sweep.py",
       "tests/test_disruption_toroidal_features.py",
       "tests/test_divertor_thermal_sim.py",
