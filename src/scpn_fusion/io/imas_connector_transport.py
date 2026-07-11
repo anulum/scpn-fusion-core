@@ -122,7 +122,10 @@ def state_to_imas_core_transport(
         current: dict[str, Any] = root
         for part in parts[:-1]:
             nested = current.setdefault(part, {})
-            if not isinstance(nested, dict):
+            # RE-DEADGUARD: the only callers pass the fixed paths "electrons.energy.d" and
+            # "electrons.particles.d"; every intermediate node is created here as a dict and no
+            # leaf is ever reused as an intermediate, so a non-dict node is unreachable.
+            if not isinstance(nested, dict):  # pragma: no cover
                 raise ValueError(f"Unexpected non-dict node while setting {path}: {part}")
             current = nested
         current[parts[-1]] = value
