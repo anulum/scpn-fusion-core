@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 519
+    "test_files": 520
   },
   "documentation": {
     "public_pages": [
@@ -3200,6 +3200,7 @@
       "tests/test_subsystem_fault_models.py",
       "tests/test_subsystem_logging_contracts.py",
       "tests/test_surrogate_uq_cards.py",
+      "tests/test_surrogate_utils.py",
       "tests/test_sweep_disruption_threshold_tool.py",
       "tests/test_sync_metadata.py",
       "tests/test_synthetic_sensors.py",
