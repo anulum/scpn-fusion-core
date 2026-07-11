@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 510
+    "test_files": 511
   },
   "documentation": {
     "public_pages": [
@@ -2948,6 +2948,7 @@
       "tests/test_gk_maxwell_evolution.py",
       "tests/test_gk_nonlinear.py",
       "tests/test_gk_nonlinear_base.py",
+      "tests/test_gk_nonlinear_operators.py",
       "tests/test_gk_online_learner.py",
       "tests/test_gk_ood_detector.py",
       "tests/test_gk_public_reference_deck_inventory.py",
