@@ -468,6 +468,7 @@ files = [
     "src/scpn_fusion/core/ntm_dynamics.py",
     "src/scpn_fusion/core/locked_mode.py",
     "src/scpn_fusion/core/_neural_transport_types.py",
+    "tests/test_neural_transport_types.py",
     "src/scpn_fusion/core/_neural_transport_analytic.py",
     "tests/test_neural_transport_analytic.py",
     "src/scpn_fusion/core/_neural_transport_runtime.py",

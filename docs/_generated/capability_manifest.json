@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 517
+    "test_files": 518
   },
   "documentation": {
     "public_pages": [
@@ -3076,6 +3076,7 @@
       "tests/test_neural_transport_math.py",
       "tests/test_neural_transport_math_funcs.py",
       "tests/test_neural_transport_runtime_contracts.py",
+      "tests/test_neural_transport_types.py",
       "tests/test_neural_turbulence.py",
       "tests/test_neuro_cybernetic_controller.py",
       "tests/test_neuro_symbolic_control_demo_notebook.py",
