@@ -63,7 +63,9 @@ def validate_ids_payload_sequence(payloads: Sequence[Mapping[str, Any]]) -> None
         shot = c._coerce_int(f"payloads[{idx}].shot", payload.get("shot", 0), minimum=0)
         run = c._coerce_int(f"payloads[{idx}].run", payload.get("run", 0), minimum=0)
         time_slice = payload.get("time_slice")
-        if not isinstance(time_slice, Mapping):
+        # RE-DEADGUARD: c.validate_ids_payload (called above) already proved time_slice is a
+        # mapping; unreachable single-threaded.
+        if not isinstance(time_slice, Mapping):  # pragma: no cover
             raise ValueError(f"payloads[{idx}].time_slice must be a mapping.")
         time_index = c._coerce_int(
             f"payloads[{idx}].time_slice.index",
@@ -130,7 +132,9 @@ def digital_twin_history_to_ids(
                 run=run,
             )
         time_slice = payload.get("time_slice")
-        if not isinstance(time_slice, Mapping):
+        # RE-DEADGUARD: digital_twin_state_to_ids / digital_twin_summary_to_ids always emit a
+        # time_slice mapping literal, so this never fires.
+        if not isinstance(time_slice, Mapping):  # pragma: no cover
             raise ValueError(f"history[{idx}] produced invalid IDS time_slice mapping.")
         time_ms = round(
             c._coerce_finite_real(
@@ -236,6 +240,7 @@ def ids_pulse_to_digital_twin_history(pulse: Mapping[str, Any]) -> list[dict[str
     """Convert IDS pulse payload into a sequence of digital-twin snapshots."""
     validate_ids_pulse_payload(pulse)
     slices = pulse.get("time_slices")
-    if not isinstance(slices, Sequence):
+    # RE-DEADGUARD: validate_ids_pulse_payload already proved time_slices is a sequence; unreachable.
+    if not isinstance(slices, Sequence):  # pragma: no cover
         raise ValueError("pulse.time_slices must be a sequence.")
     return ids_to_digital_twin_history(slices)

@@ -201,6 +201,7 @@ files = [
     "src/scpn_fusion/io/imas_connector_transport.py",
     "tests/test_imas_connector_transport.py",
     "src/scpn_fusion/io/imas_history_payloads.py",
+    "tests/test_imas_history_payloads.py",
     "src/scpn_fusion/io/logging_config.py",
     "src/scpn_fusion/io/mast_ingestor.py",
     "src/scpn_fusion/io/safe_loaders.py",
