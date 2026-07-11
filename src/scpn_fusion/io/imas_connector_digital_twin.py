@@ -210,13 +210,17 @@ def ids_to_digital_twin_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
     axis = equilibrium.get("axis", {})
     time_slice = payload.get("time_slice", {})
 
-    if not isinstance(axis, Mapping):
+    # RE-DEADGUARD: validate_ids_payload (called above) already proved equilibrium.axis is a
+    # mapping; unreachable single-threaded.
+    if not isinstance(axis, Mapping):  # pragma: no cover
         raise ValueError("equilibrium.axis must be a mapping.")
 
     time_s = _coerce_finite_real("time_slice.time_s", time_slice.get("time_s", 0.0), minimum=0.0)
     time_ms = time_s * 1.0e3
     rounded_ms = round(time_ms)
-    if not math.isclose(time_ms, rounded_ms, rel_tol=0.0, abs_tol=1.0e-9):
+    # RE-DEADGUARD: validate_ids_payload already enforced the integer-millisecond constraint on
+    # the same time_s; unreachable after validation.
+    if not math.isclose(time_ms, rounded_ms, rel_tol=0.0, abs_tol=1.0e-9):  # pragma: no cover
         raise ValueError("time_slice.time_s must map to an integer millisecond count.")
 
     _coerce_int("time_slice.index", time_slice.get("index", 0), minimum=0)
@@ -253,13 +257,17 @@ def ids_to_digital_twin_state(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Convert IDS payload into detailed digital-twin state with optional profiles."""
     summary = ids_to_digital_twin_summary(payload)
     equilibrium = payload.get("equilibrium", {})
-    if not isinstance(equilibrium, Mapping):
+    # RE-DEADGUARD: ids_to_digital_twin_summary validates the payload first, proving
+    # equilibrium is a mapping; unreachable single-threaded.
+    if not isinstance(equilibrium, Mapping):  # pragma: no cover
         raise ValueError("IDS equilibrium must be a mapping.")
 
     profiles = equilibrium.get("profiles_1d")
     if profiles is None:
         return summary
-    if not isinstance(profiles, Mapping):
+    # RE-DEADGUARD: when profiles_1d is present, validate_ids_payload already proved it is a
+    # mapping; unreachable after the None check above.
+    if not isinstance(profiles, Mapping):  # pragma: no cover
         raise ValueError("equilibrium.profiles_1d must be a mapping.")
 
     out = dict(summary)
