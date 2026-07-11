@@ -465,6 +465,7 @@ files = [
     "src/scpn_fusion/core/_multi_compat.py",
     "src/scpn_fusion/core/_tglf_interface_benchmark.py",
     "src/scpn_fusion/core/_tglf_interface_reference.py",
+    "tests/test_tglf_interface_reference.py",
     "src/scpn_fusion/core/_tglf_interface_runtime.py",
     "tests/test_tglf_interface_runtime.py",
     "src/scpn_fusion/core/_tglf_interface_types.py",
