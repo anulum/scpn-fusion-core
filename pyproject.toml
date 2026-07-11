@@ -372,6 +372,7 @@ files = [
     "src/scpn_fusion/core/_integrated_transport_solver_model_pedestal.py",
     "tests/test_integrated_transport_solver_model_pedestal.py",
     "src/scpn_fusion/core/integrated_transport_solver_coupling.py",
+    "tests/test_integrated_transport_solver_coupling_confinement.py",
     "src/scpn_fusion/core/integrated_transport_solver_model.py",
     "src/scpn_fusion/core/integrated_transport_solver_runtime.py",
     "src/scpn_fusion/core/integrated_transport_solver_runtime_physics.py",
