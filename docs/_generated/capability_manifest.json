@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 518
+    "test_files": 519
   },
   "documentation": {
     "public_pages": [
@@ -3186,6 +3186,7 @@
       "tests/test_spi_mitigation_runtime.py",
       "tests/test_stability_analyzer.py",
       "tests/test_stability_mhd_extended.py",
+      "tests/test_stability_mhd_validation.py",
       "tests/test_state_estimator.py",
       "tests/test_state_space.py",
       "tests/test_stellarator_control_contracts.py",
