@@ -618,6 +618,7 @@ files = [
     "tests/test_stellarator_control_contracts.py",
     # Sprint 4 mypy expansion
     "src/scpn_fusion/control/fokker_planck_re.py",
+    "tests/test_fokker_planck.py",
     "src/scpn_fusion/control/spi_ablation.py",
     "src/scpn_fusion/control/fusion_nmpc_jax.py",
     "src/scpn_fusion/control/disruption_contract_primitives.py",
