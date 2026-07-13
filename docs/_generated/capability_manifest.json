@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 525
+    "test_files": 526
   },
   "documentation": {
     "public_pages": [
@@ -2993,6 +2993,7 @@
       "tests/test_hall_mhd_pulsed.py",
       "tests/test_halo_re_physics.py",
       "tests/test_hardening_module_linkage.py",
+      "tests/test_heat_ml_shadow_surrogate.py",
       "tests/test_heating_neutronics_contracts.py",
       "tests/test_heating_neutronics_q10.py",
       "tests/test_high_beta_negative_triangularity_campaign.py",
