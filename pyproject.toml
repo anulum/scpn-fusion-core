@@ -183,6 +183,7 @@ files = [
     "src/scpn_fusion/scpn/artifact_schema.py",
     "tests/test_artifact_schema.py",
     "src/scpn_fusion/scpn/artifact_validation.py",
+    "tests/test_artifact_validation.py",
     "src/scpn_fusion/scpn/compiler.py",
     "tests/test_compiler_kernels.py",
     "src/scpn_fusion/scpn/controller_runtime_backend.py",
