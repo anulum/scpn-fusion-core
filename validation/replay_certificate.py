@@ -66,6 +66,7 @@ def _hash_array(values: FloatArray) -> str:
 def _episode_equilibrium(tier: str) -> FloatArray:
     """Seeded multigrid Grad-Shafranov solve segment."""
     from scpn_fusion.core import _multi_compat as multi
+    from scpn_fusion.core import _multi_compat_providers as providers
 
     n = 65
     rng = np.random.default_rng(EPISODE_SEED)
@@ -78,7 +79,9 @@ def _episode_equilibrium(tier: str) -> FloatArray:
         1e-3 * rng.standard_normal(n)[0]
     )  # deterministic scalar boundary offset
 
-    impl = multi._numpy_multigrid_solve if tier == "numpy" else multi.dispatch("multigrid_solve")
+    impl = (
+        providers._numpy_multigrid_solve if tier == "numpy" else multi.dispatch("multigrid_solve")
+    )
     psi, residual, n_cycles, converged = impl(
         source, psi_bc, 4.0, 8.0, -4.0, 4.0, n, n, tol=1e-8, max_cycles=200
     )
@@ -91,6 +94,7 @@ def _episode_equilibrium(tier: str) -> FloatArray:
 def _episode_phase_control(tier: str) -> FloatArray:
     """Seeded batched UPDE phase-control segment."""
     from scpn_fusion.core import _multi_compat as multi
+    from scpn_fusion.core import _multi_compat_providers as providers
 
     rng = np.random.default_rng(EPISODE_SEED + 1)
     layers, n_per = 4, 96
@@ -102,7 +106,7 @@ def _episode_phase_control(tier: str) -> FloatArray:
     alpha = np.zeros((layers, layers))
     zeta = np.full(layers, 0.4)
 
-    impl = multi._numpy_upde_run if tier == "numpy" else multi.dispatch("upde_run")
+    impl = providers._numpy_upde_run if tier == "numpy" else multi.dispatch("upde_run")
     out = impl(
         theta0,
         omega,
@@ -129,9 +133,10 @@ def _episode_phase_control(tier: str) -> FloatArray:
 def _episode_disruption_indicator(tier: str) -> FloatArray:
     """Seeded tearing-mode indicator trace segment."""
     from scpn_fusion.core import _multi_compat as multi
+    from scpn_fusion.core import _multi_compat_providers as providers
 
     impl = (
-        multi._numpy_simulate_tearing_mode
+        providers._numpy_simulate_tearing_mode
         if tier == "numpy"
         else multi.dispatch("simulate_tearing_mode")
     )

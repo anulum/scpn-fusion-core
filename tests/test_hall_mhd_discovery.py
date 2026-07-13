@@ -205,10 +205,11 @@ def test_backend_physics_invariant_parity() -> None:
     non-negative energies, a populated history, and unforced late-time decay.
     """
     from scpn_fusion.core import _multi_compat as multi
+    from scpn_fusion.core import _multi_compat_providers as providers
 
-    backends = [multi._load_numpy_hall_mhd()]
+    backends = [providers._load_numpy_hall_mhd()]
     if multi.is_available(multi.BackendTier.RUST):
-        backends.append(multi._load_rust_hall_mhd())
+        backends.append(providers._load_rust_hall_mhd())
     for backend_cls in backends:
         sim = backend_cls(16, None, None, seed=3, background_amplitude=0.0)
         energies = [sim.step() for _ in range(40)]

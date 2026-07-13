@@ -383,6 +383,7 @@ def dispatched_multigrid_reconstruction(
         Reconstruction record with the resolved tier name.
     """
     from scpn_fusion.core import _multi_compat as multi
+    from scpn_fusion.core import _multi_compat_providers as providers
 
     if tier not in ("numpy", "fastest"):
         raise ValueError("tier must be 'numpy' or 'fastest'")
@@ -393,7 +394,7 @@ def dispatched_multigrid_reconstruction(
     _enforce_dirichlet(psi_bc, psi_exact)
 
     if tier == "numpy":
-        impl = multi._numpy_multigrid_solve
+        impl = providers._numpy_multigrid_solve
         resolved = "numpy"
     else:
         impl = multi.dispatch("multigrid_solve")

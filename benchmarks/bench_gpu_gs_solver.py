@@ -45,6 +45,7 @@ sys.path.insert(0, str(SRC))
 import numpy.typing as npt  # noqa: E402
 
 from scpn_fusion.core import _multi_compat as multi  # noqa: E402
+from scpn_fusion.core import _multi_compat_providers as providers  # noqa: E402
 
 FloatArray: TypeAlias = npt.NDArray[np.float64]
 MetricRow: TypeAlias = dict[str, Any]
@@ -95,7 +96,7 @@ def build_report(
     rows: list[MetricRow] = []
     for n in grids:
         psi0, source = _problem(n)
-        numpy_row = _time_tier(multi._numpy_gs_rb_sor_smooth, psi0, source, sweeps, repeats)
+        numpy_row = _time_tier(providers._numpy_gs_rb_sor_smooth, psi0, source, sweeps, repeats)
         row: MetricRow = {
             "grid": f"{n}x{n}",
             "n": n,
@@ -103,7 +104,7 @@ def build_report(
             "numpy_median_s": numpy_row["median_solve_s"],
         }
         if gpu_available:
-            gpu_row = _time_tier(multi._gpu_gs_rb_sor_smooth, psi0, source, sweeps, repeats)
+            gpu_row = _time_tier(providers._gpu_gs_rb_sor_smooth, psi0, source, sweeps, repeats)
             ref = numpy_row["solution"]
             delta = float(np.linalg.norm(gpu_row["solution"] - ref))
             row["gpu_median_s"] = gpu_row["median_solve_s"]

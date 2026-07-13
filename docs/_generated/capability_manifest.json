@@ -2352,6 +2352,7 @@
       "src/scpn_fusion/core/_integrated_transport_solver_model_common.py",
       "src/scpn_fusion/core/_integrated_transport_solver_model_pedestal.py",
       "src/scpn_fusion/core/_multi_compat.py",
+      "src/scpn_fusion/core/_multi_compat_providers.py",
       "src/scpn_fusion/core/_neural_transport_analytic.py",
       "src/scpn_fusion/core/_neural_transport_runtime.py",
       "src/scpn_fusion/core/_neural_transport_types.py",
@@ -2624,9 +2625,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 551,
-    "python_capability_source_modules": 290,
+    "python_capability_source_modules": 291,
     "rust_workspace_crates": 13,
-    "test_files": 535
+    "test_files": 536
   },
   "documentation": {
     "public_pages": [
@@ -3084,6 +3085,7 @@
       "tests/test_mrti.py",
       "tests/test_mu_synthesis.py",
       "tests/test_multi_compat.py",
+      "tests/test_multi_compat_providers.py",
       "tests/test_multi_ion_transport.py",
       "tests/test_multi_ion_transport_conservation_benchmark.py",
       "tests/test_multi_machine_validation_physics_contracts.py",

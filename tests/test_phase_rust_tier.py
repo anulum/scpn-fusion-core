@@ -15,6 +15,7 @@ import numpy.typing as npt
 import pytest
 
 from scpn_fusion.core import _multi_compat as multi
+from scpn_fusion.core import _multi_compat_providers as providers
 from scpn_fusion.phase.kuramoto import kuramoto_sakaguchi_step
 from scpn_fusion.phase.knm import KnmSpec
 from scpn_fusion.phase.upde import UPDESystem
@@ -42,7 +43,7 @@ def test_phase_kernels_are_registered_with_rust_and_numpy_tiers() -> None:
 def test_kuramoto_numpy_tier_matches_public_step_contract() -> None:
     """The NumPy tier reproduces the public step output bit-for-bit."""
     theta, omega = _kuramoto_state(64)
-    direct = multi._numpy_kuramoto_step(
+    direct = providers._numpy_kuramoto_step(
         theta, omega, dt=1e-2, K=1.5, alpha=0.1, zeta=0.4, psi=0.2, wrap=True
     )
     assert direct["theta1"].shape == theta.shape
@@ -55,8 +56,8 @@ def test_kuramoto_rust_tier_matches_numpy_tier() -> None:
     """Rust and NumPy tiers agree to floating-point summation order."""
     theta, omega = _kuramoto_state()
     kwargs: dict[str, Any] = dict(dt=1e-2, K=2.0, alpha=0.05, zeta=0.7, psi=-0.3, wrap=True)
-    numpy_out = multi._numpy_kuramoto_step(theta, omega, **kwargs)
-    rust_out = multi._rust_kuramoto_step(theta, omega, **kwargs)
+    numpy_out = providers._numpy_kuramoto_step(theta, omega, **kwargs)
+    rust_out = providers._rust_kuramoto_step(theta, omega, **kwargs)
 
     np.testing.assert_allclose(rust_out["theta1"], numpy_out["theta1"], rtol=0.0, atol=1e-12)
     np.testing.assert_allclose(rust_out["dtheta"], numpy_out["dtheta"], rtol=0.0, atol=1e-12)
@@ -69,8 +70,8 @@ def test_kuramoto_rust_tier_respects_wrap_flag() -> None:
     """Without wrapping, both tiers leave phases unbounded identically."""
     theta, omega = _kuramoto_state(65)
     kwargs: dict[str, Any] = dict(dt=10.0, K=0.5, alpha=0.0, zeta=0.0, psi=0.0, wrap=False)
-    numpy_out = multi._numpy_kuramoto_step(theta, omega, **kwargs)
-    rust_out = multi._rust_kuramoto_step(theta, omega, **kwargs)
+    numpy_out = providers._numpy_kuramoto_step(theta, omega, **kwargs)
+    rust_out = providers._rust_kuramoto_step(theta, omega, **kwargs)
     np.testing.assert_allclose(rust_out["theta1"], numpy_out["theta1"], rtol=0.0, atol=1e-12)
     assert np.max(np.abs(numpy_out["theta1"])) > np.pi  # wrap really off
 
@@ -109,8 +110,10 @@ def test_upde_rust_tier_matches_numpy_tier_including_non_uniform_layers() -> Non
         dt=5e-3, psi_global=0.25, actuation_gain=1.1, pac_gamma=0.4, wrap=True
     )
 
-    numpy_out = multi._numpy_upde_tick(theta_flat, omega_flat, offsets, K, alpha, zeta, **kwargs)
-    rust_out = multi._rust_upde_tick(theta_flat, omega_flat, offsets, K, alpha, zeta, **kwargs)
+    numpy_out = providers._numpy_upde_tick(
+        theta_flat, omega_flat, offsets, K, alpha, zeta, **kwargs
+    )
+    rust_out = providers._rust_upde_tick(theta_flat, omega_flat, offsets, K, alpha, zeta, **kwargs)
 
     for key in ("theta1", "dtheta", "R_layer", "Psi_layer", "V_layer"):
         np.testing.assert_allclose(rust_out[key], numpy_out[key], rtol=0.0, atol=1e-12)
