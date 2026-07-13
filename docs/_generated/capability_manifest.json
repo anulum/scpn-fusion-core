@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 522
+    "test_files": 523
   },
   "documentation": {
     "public_pages": [
@@ -2760,6 +2760,7 @@
       "tests/test_amr_equilibrium.py",
       "tests/test_analytic_solver.py",
       "tests/test_artifact_codec.py",
+      "tests/test_artifact_packed_roundtrip.py",
       "tests/test_artifact_schema.py",
       "tests/test_artifact_validation.py",
       "tests/test_aurora_reference_execution_artifact.py",

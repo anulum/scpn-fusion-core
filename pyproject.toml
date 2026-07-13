@@ -178,6 +178,7 @@ files = [
     "tests/test_controller_features_mixin.py",
     "src/scpn_fusion/scpn/structure.py",
     "src/scpn_fusion/scpn/artifact.py",
+    "tests/test_artifact_packed_roundtrip.py",
     "src/scpn_fusion/scpn/artifact_codec.py",
     "src/scpn_fusion/scpn/artifact_schema.py",
     "tests/test_artifact_schema.py",
