@@ -2390,6 +2390,7 @@
       "src/scpn_fusion/core/frc_rigid_rotor.py",
       "src/scpn_fusion/core/frc_rigid_rotor_closures.py",
       "src/scpn_fusion/core/frc_rigid_rotor_contracts.py",
+      "src/scpn_fusion/core/frc_rigid_rotor_solver.py",
       "src/scpn_fusion/core/fusion_ignition_sim.py",
       "src/scpn_fusion/core/fusion_kernel.py",
       "src/scpn_fusion/core/fusion_kernel_coilset_config.py",
@@ -2616,9 +2617,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 551,
-    "python_capability_source_modules": 282,
+    "python_capability_source_modules": 283,
     "rust_workspace_crates": 13,
-    "test_files": 528
+    "test_files": 529
   },
   "documentation": {
     "public_pages": [
@@ -2889,6 +2890,7 @@
       "tests/test_frc_rigid_rotor_contracts.py",
       "tests/test_frc_rigid_rotor_property.py",
       "tests/test_frc_rigid_rotor_rust_parity.py",
+      "tests/test_frc_rigid_rotor_solver.py",
       "tests/test_frc_rotating_bvp_acceptance_report.py",
       "tests/test_frc_to_gs_bridge.py",
       "tests/test_free_boundary_estimator.py",
