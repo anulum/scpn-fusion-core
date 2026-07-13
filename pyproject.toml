@@ -539,6 +539,8 @@ files = [
     "src/scpn_fusion/core/frc_rigid_rotor.py",
     "src/scpn_fusion/core/frc_rigid_rotor_contracts.py",
     "tests/test_frc_rigid_rotor_contracts.py",
+    "src/scpn_fusion/core/frc_rigid_rotor_closures.py",
+    "tests/test_frc_rigid_rotor_closures.py",
     "src/scpn_fusion/core/fusion_ignition_sim.py",
     "src/scpn_fusion/core/disruption_sequence.py",
     "src/scpn_fusion/core/fno_training_multi_regime.py",
