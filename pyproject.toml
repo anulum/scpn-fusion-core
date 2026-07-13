@@ -170,6 +170,7 @@ files = [
     "tests/test_repro.py",
     # scpn/ (existing)
     "src/scpn_fusion/scpn/contracts.py",
+    "tests/test_feature_extraction.py",
     "src/scpn_fusion/scpn/controller.py",
     "src/scpn_fusion/scpn/controller_backend_mixin.py",
     "tests/test_controller_backend_mixin.py",

@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 521
+    "test_files": 522
   },
   "documentation": {
     "public_pages": [
@@ -2861,6 +2861,7 @@
       "tests/test_fallback_telemetry.py",
       "tests/test_faraday_recovery.py",
       "tests/test_fault_tolerant_control.py",
+      "tests/test_feature_extraction.py",
       "tests/test_federated_disruption.py",
       "tests/test_fieldline_3d.py",
       "tests/test_flight_sim_controllers.py",
