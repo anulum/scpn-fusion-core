@@ -187,6 +187,7 @@ files = [
     "tests/test_compiler_kernels.py",
     "src/scpn_fusion/scpn/controller_runtime_backend.py",
     "src/scpn_fusion/scpn/safety_interlocks.py",
+    "tests/test_safety_interlocks.py",
     "src/scpn_fusion/scpn/__init__.py",
     "tests/test_controller_runtime_backend.py",
     "tests/test_controller_runtime_backend_probe.py",

@@ -10,14 +10,18 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
-from scpn_fusion.scpn.contracts import verify_safety_contracts
+from scpn_fusion.scpn.contracts import SafetyContract, verify_safety_contracts
 from scpn_fusion.scpn.safety_interlocks import (
     CONTROL_TRANSITIONS,
     SAFETY_CHANNELS,
     SafetyInterlockRuntime,
     build_safety_net,
+    default_safety_contracts,
+    evaluate_transition_enablement,
 )
+from scpn_fusion.scpn.structure import StochasticPetriNet
 
 
 def test_safety_net_compiles_with_inhibitor_support() -> None:
@@ -76,3 +80,42 @@ def test_formal_contracts_detect_inconsistent_enablement() -> None:
         transition_enabled={"heat_ramp": True},
     )
     assert violations == ["thermal_limit inhibits heat_ramp"]
+
+
+def test_evaluate_transition_enablement_requires_compiled_net() -> None:
+    uncompiled = StochasticPetriNet()
+    assert not uncompiled.is_compiled
+    with pytest.raises(RuntimeError, match="must be compiled before evaluation"):
+        evaluate_transition_enablement(uncompiled, np.zeros(1, dtype=np.float64))
+
+
+def test_evaluate_transition_enablement_rejects_wrong_marking_shape() -> None:
+    net = build_safety_net()
+    with pytest.raises(ValueError, match=r"marking must have shape"):
+        evaluate_transition_enablement(net, np.zeros(3, dtype=np.float64))
+
+
+def test_default_safety_contracts_returns_contract_tuple() -> None:
+    contracts = default_safety_contracts()
+    assert isinstance(contracts, tuple)
+    assert len(contracts) > 0
+    assert all(isinstance(contract, SafetyContract) for contract in contracts)
+
+
+def test_runtime_compiles_an_uncompiled_net() -> None:
+    net = StochasticPetriNet()
+    net.add_place("p", initial_tokens=1.0)
+    net.add_transition("t", threshold=0.5)
+    net.add_arc("p", "t", weight=1.0)
+    assert not net.is_compiled
+
+    runtime = SafetyInterlockRuntime(net=net)
+    assert runtime.net.is_compiled
+
+
+def test_marking_property_returns_independent_copy() -> None:
+    runtime = SafetyInterlockRuntime()
+    marking = runtime.marking
+    marking[:] = 999.0
+    # Mutating the returned array must not disturb the runtime's state.
+    assert not np.array_equal(runtime.marking, marking)
