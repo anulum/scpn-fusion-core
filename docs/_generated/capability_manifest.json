@@ -2616,7 +2616,7 @@
     "python_capability_classes": 551,
     "python_capability_source_modules": 280,
     "rust_workspace_crates": 13,
-    "test_files": 523
+    "test_files": 524
   },
   "documentation": {
     "public_pages": [
@@ -2802,6 +2802,7 @@
       "tests/test_coil_optimization.py",
       "tests/test_compact_reactor_optimizer.py",
       "tests/test_compiler_git_sha.py",
+      "tests/test_compiler_kernels.py",
       "tests/test_config_schema.py",
       "tests/test_control_exception_specificity.py",
       "tests/test_control_resilience_campaign.py",
