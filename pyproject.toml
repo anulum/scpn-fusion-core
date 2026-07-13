@@ -179,6 +179,7 @@ files = [
     "src/scpn_fusion/scpn/artifact.py",
     "src/scpn_fusion/scpn/artifact_codec.py",
     "src/scpn_fusion/scpn/artifact_schema.py",
+    "tests/test_artifact_schema.py",
     "src/scpn_fusion/scpn/artifact_validation.py",
     "src/scpn_fusion/scpn/compiler.py",
     "src/scpn_fusion/scpn/controller_runtime_backend.py",
