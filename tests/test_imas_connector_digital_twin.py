@@ -69,3 +69,11 @@ class TestDigitalTwinStateToIds:
     def test_state_must_be_mapping(self) -> None:
         with pytest.raises(ValueError, match="state must be a mapping"):
             digital_twin_state_to_ids(True)  # type: ignore[arg-type]
+
+
+class TestDigitalTwinSummaryToIds:
+    """digital_twin_summary_to_ids validates the machine label."""
+
+    def test_rejects_blank_machine(self) -> None:
+        with pytest.raises(ValueError, match="machine must be a non-empty string"):
+            digital_twin_summary_to_ids(_valid_summary(), machine="   ")
