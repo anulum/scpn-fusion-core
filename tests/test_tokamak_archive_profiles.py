@@ -6,14 +6,21 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 from __future__ import annotations
 
+from pathlib import Path
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
+from scpn_fusion.io import tokamak_archive_profiles as profiles_mod
 from scpn_fusion.io.tokamak_archive_profiles import (
     _coerce_finite,
     _coerce_int,
     _normalize_machine,
+    _profile_from_geqdsk,
     _profile_key,
+    _resample_1d,
     _stable_shot_from_text,
     _synthetic_cmod_psi_contour,
     TokamakProfile,
@@ -81,3 +88,43 @@ def test_default_diiid_directory_is_anchored_under_reference_data_root(
     monkeypatch.setenv("SCPN_DATA_DIR", "/tmp/scpn_reference_data")
 
     assert default_diiid_dir().as_posix() == "/tmp/scpn_reference_data/diiid"
+
+
+def test_normalize_machine_rejects_unknown() -> None:
+    with pytest.raises(ValueError, match="Unsupported machine"):
+        _normalize_machine("tokamak")
+
+
+@pytest.mark.parametrize(
+    "vec",
+    [
+        np.zeros((2, 2), dtype=np.float64),  # not 1-D
+        np.asarray([1.0], dtype=np.float64),  # fewer than 2 values
+    ],
+)
+def test_resample_1d_rejects_non_1d_or_too_short(vec: NDArray[np.float64]) -> None:
+    with pytest.raises(ValueError, match="1D array with at least 2 values"):
+        _resample_1d(vec, 8)
+
+
+def test_profile_from_geqdsk_rejects_degenerate_psi(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A GEQDSK whose boundary and axis flux coincide cannot be normalised."""
+    eq = SimpleNamespace(
+        psirz=np.zeros((2, 4), dtype=np.float64),
+        nh=2,
+        sibry=0.5,
+        simag=0.5,
+        qpsi=np.asarray([1.0, 2.0], dtype=np.float64),
+        current=1.0e6,
+    )
+    monkeypatch.setattr(profiles_mod, "read_geqdsk", lambda _path: eq)
+    with pytest.raises(ValueError, match="Degenerate psi normalization"):
+        _profile_from_geqdsk(
+            tmp_path / "shot.geqdsk",
+            shot=1,
+            time_ms=0.0,
+            contour_points=8,
+            sensor_points=16,
+        )
