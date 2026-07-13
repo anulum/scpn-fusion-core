@@ -607,7 +607,7 @@
       },
       {
         "name": "FRCEquilibriumState",
-        "path": "src/scpn_fusion/core/frc_rigid_rotor.py"
+        "path": "src/scpn_fusion/core/frc_rigid_rotor_contracts.py"
       },
       {
         "name": "FRCTiltModeReport",
@@ -623,7 +623,7 @@
       },
       {
         "name": "FRCValidationReport",
-        "path": "src/scpn_fusion/core/frc_rigid_rotor.py"
+        "path": "src/scpn_fusion/core/frc_rigid_rotor_contracts.py"
       },
       {
         "name": "FaradayCompressionFluxBudget",
@@ -1675,7 +1675,7 @@
       },
       {
         "name": "RigidRotorFRCInputs",
-        "path": "src/scpn_fusion/core/frc_rigid_rotor.py"
+        "path": "src/scpn_fusion/core/frc_rigid_rotor_contracts.py"
       },
       {
         "name": "RotationDiagnostics",
@@ -2388,6 +2388,7 @@
       "src/scpn_fusion/core/fno_turbulence_suppressor.py",
       "src/scpn_fusion/core/force_balance.py",
       "src/scpn_fusion/core/frc_rigid_rotor.py",
+      "src/scpn_fusion/core/frc_rigid_rotor_contracts.py",
       "src/scpn_fusion/core/fusion_ignition_sim.py",
       "src/scpn_fusion/core/fusion_kernel.py",
       "src/scpn_fusion/core/fusion_kernel_coilset_config.py",
@@ -2614,9 +2615,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 551,
-    "python_capability_source_modules": 280,
+    "python_capability_source_modules": 281,
     "rust_workspace_crates": 13,
-    "test_files": 526
+    "test_files": 527
   },
   "documentation": {
     "public_pages": [
@@ -2883,6 +2884,7 @@
       "tests/test_frc_benchmark_grid_contract.py",
       "tests/test_frc_reference_papers_manifest.py",
       "tests/test_frc_rigid_rotor.py",
+      "tests/test_frc_rigid_rotor_contracts.py",
       "tests/test_frc_rigid_rotor_property.py",
       "tests/test_frc_rigid_rotor_rust_parity.py",
       "tests/test_frc_rotating_bvp_acceptance_report.py",
