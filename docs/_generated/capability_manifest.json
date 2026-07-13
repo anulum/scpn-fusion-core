@@ -111,7 +111,7 @@
       },
       {
         "name": "AdasChargeStateCoefficients",
-        "path": "src/scpn_fusion/core/impurity_transport.py"
+        "path": "src/scpn_fusion/core/impurity_transport_contracts.py"
       },
       {
         "name": "AlfvenContinuum",
@@ -147,15 +147,15 @@
       },
       {
         "name": "AuroraParityCase",
-        "path": "src/scpn_fusion/core/impurity_transport.py"
+        "path": "src/scpn_fusion/core/impurity_transport_contracts.py"
       },
       {
         "name": "AuroraParityImpuritySolver",
-        "path": "src/scpn_fusion/core/impurity_transport.py"
+        "path": "src/scpn_fusion/core/impurity_transport_aurora_parity.py"
       },
       {
         "name": "AuroraStrahlArtifact",
-        "path": "src/scpn_fusion/core/impurity_transport.py"
+        "path": "src/scpn_fusion/core/impurity_transport_contracts.py"
       },
       {
         "name": "AvalancheResult",
@@ -347,7 +347,7 @@
       },
       {
         "name": "CoolingCurve",
-        "path": "src/scpn_fusion/core/impurity_transport.py"
+        "path": "src/scpn_fusion/core/impurity_transport_cooling.py"
       },
       {
         "name": "CorrectionRecord",
@@ -975,11 +975,11 @@
       },
       {
         "name": "ImpuritySpecies",
-        "path": "src/scpn_fusion/core/impurity_transport.py"
+        "path": "src/scpn_fusion/core/impurity_transport_contracts.py"
       },
       {
         "name": "ImpurityTransportSolver",
-        "path": "src/scpn_fusion/core/impurity_transport.py"
+        "path": "src/scpn_fusion/core/impurity_transport_solver.py"
       },
       {
         "name": "InitialState",
@@ -2436,6 +2436,12 @@
       "src/scpn_fusion/core/hts_quench.py",
       "src/scpn_fusion/core/imas_adapter.py",
       "src/scpn_fusion/core/impurity_transport.py",
+      "src/scpn_fusion/core/impurity_transport_aurora_parity.py",
+      "src/scpn_fusion/core/impurity_transport_charge_state.py",
+      "src/scpn_fusion/core/impurity_transport_contracts.py",
+      "src/scpn_fusion/core/impurity_transport_cooling.py",
+      "src/scpn_fusion/core/impurity_transport_diagnostics.py",
+      "src/scpn_fusion/core/impurity_transport_solver.py",
       "src/scpn_fusion/core/integrated_scenario.py",
       "src/scpn_fusion/core/integrated_transport_solver.py",
       "src/scpn_fusion/core/integrated_transport_solver_adaptive.py",
@@ -2618,9 +2624,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 551,
-    "python_capability_source_modules": 284,
+    "python_capability_source_modules": 290,
     "rust_workspace_crates": 13,
-    "test_files": 530
+    "test_files": 535
   },
   "documentation": {
     "public_pages": [
@@ -3028,7 +3034,12 @@
       "tests/test_imas_ids_standard.py",
       "tests/test_imas_ids_state_cycle.py",
       "tests/test_impurity_aurora_strahl_contract.py",
-      "tests/test_impurity_transport.py",
+      "tests/test_impurity_transport_aurora_parity.py",
+      "tests/test_impurity_transport_charge_state.py",
+      "tests/test_impurity_transport_contracts.py",
+      "tests/test_impurity_transport_cooling.py",
+      "tests/test_impurity_transport_diagnostics.py",
+      "tests/test_impurity_transport_solver.py",
       "tests/test_integrated_scenario.py",
       "tests/test_integrated_transport_runtime_physics_hardening.py",
       "tests/test_integrated_transport_solver.py",
