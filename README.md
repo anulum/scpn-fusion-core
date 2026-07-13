@@ -127,12 +127,12 @@ thresholds, grid or scaling evidence, and native comparisons.
 |---|---:|
 | Package version | 3.10.1 |
 | Public API exports | 2 |
-| Python capability source modules | 283 |
+| Python capability source modules | 284 |
 | Python capability classes | 551 |
 | Capability documentation pages | 61 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 529 |
+| Python test files | 530 |
 | Public documentation pages | 61 |
 | GitHub Actions workflows | 12 |
 
