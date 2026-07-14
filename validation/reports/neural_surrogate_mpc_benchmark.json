@@ -1,0 +1,41 @@
+{
+  "backends": {
+    "NUMPY": {
+      "class_name": "MpcKernel",
+      "final_action_norm": 0.3116256801580065,
+      "invariants_passed": true,
+      "median_loop_s": 13.636091717984527,
+      "median_plan_us": 6818.045858992264,
+      "status": "available"
+    },
+    "RUST": {
+      "class_name": "PyMpcController",
+      "final_action_norm": 0.3116256801580065,
+      "invariants_passed": true,
+      "median_loop_s": 0.2509400330018252,
+      "median_plan_us": 125.47001650091262,
+      "status": "available"
+    }
+  },
+  "benchmark_evidence": {
+    "classification": "local_non_isolated_regression",
+    "host": "aaarthuus",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "coil_dim": 3,
+  "kernel": "neural_surrogate_mpc",
+  "model_contract": "canonical-configuration gradient-descent MPC over the linear surrogate x_{t+1} = x_t + B u_t (horizon 10, learning rate 0.5, 20 iterations, action limit 2.0, regularisation 0.1); both tiers run the identical deterministic planner and agree to round-off",
+  "physics_invariants_passed": true,
+  "plans": 2000,
+  "registered_tiers": [
+    "rust*",
+    "numpy*"
+  ],
+  "repeats": 3,
+  "rust_over_numpy_speedup": 54.34004114395468,
+  "schema": "scpn-fusion-core.neural-surrogate-mpc-benchmark.v1",
+  "seed": 2026,
+  "selected_class": "PyMpcController",
+  "state_dim": 4
+}

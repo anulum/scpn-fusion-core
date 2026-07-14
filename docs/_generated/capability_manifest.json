@@ -1166,6 +1166,14 @@
         "path": "src/scpn_fusion/core/orbit_following.py"
       },
       {
+        "name": "MpcController",
+        "path": "src/scpn_fusion/control/neural_surrogate_mpc.py"
+      },
+      {
+        "name": "MpcKernel",
+        "path": "src/scpn_fusion/control/neural_surrogate_mpc.py"
+      },
+      {
         "name": "MuSynthesisController",
         "path": "src/scpn_fusion/control/mu_synthesis.py"
       },
@@ -2649,7 +2657,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 554,
+    "python_capability_classes": 556,
     "python_capability_source_modules": 304,
     "rust_workspace_crates": 13,
     "test_files": 549

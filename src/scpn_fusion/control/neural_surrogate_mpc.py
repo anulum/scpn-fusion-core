@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Protocol, Tuple, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,6 +31,42 @@ except ImportError:
 
 PREDICTION_HORIZON = 10
 SHOT_LENGTH = 100
+
+
+class MpcController(Protocol):
+    """Planner protocol shared by the NumPy and Rust surrogate-MPC backends."""
+
+    def plan(self, state: FloatArray) -> FloatArray:
+        """Return the first optimal coil-current action for ``state``."""
+        ...
+
+
+def create_mpc_controller(b_matrix: FloatArray, target: FloatArray) -> MpcController:
+    """Return the fastest available canonical-configuration surrogate MPC.
+
+    Dispatches Rust -> NumPy through the class-kernel registry. Both tiers run
+    the identical gradient-descent planner over the linear surrogate
+    ``x_{t+1} = x_t + B u_t`` at the canonical configuration (prediction
+    horizon 10, learning rate 0.5, 20 iterations, action limit 2.0,
+    regularisation 0.1), so ``plan`` agrees to floating-point round-off. Use
+    :class:`ModelPredictiveController` directly for a non-default configuration.
+
+    Parameters
+    ----------
+    b_matrix : FloatArray
+        Control-impact matrix ``B`` of shape ``(n_state, n_coils)``.
+    target : FloatArray
+        Target state of length ``n_state``.
+
+    Returns
+    -------
+    MpcController
+        The fastest available backend instance.
+    """
+    from scpn_fusion.core._multi_compat import dispatch_kernel_class
+
+    controller_cls = dispatch_kernel_class("neural_surrogate_mpc")
+    return cast(MpcController, controller_cls(b_matrix, target))
 
 
 def _normalize_bounds(bounds: Tuple[float, float], name: str) -> Tuple[float, float]:
@@ -148,6 +184,43 @@ class ModelPredictiveController:
             planned_actions = np.clip(planned_actions, -self.action_limit, self.action_limit)
 
         return np.asarray(planned_actions[0], dtype=np.float64)
+
+
+class MpcKernel:
+    """NumPy-tier canonical-configuration surrogate MPC with the dispatch contract.
+
+    Wraps :class:`ModelPredictiveController` over a :class:`NeuralSurrogate`
+    built from the control-impact matrix ``B``, presenting the ``(b_matrix,
+    target)`` construction and ``plan(state) -> action`` contract the Rust
+    ``PyMpcController`` binding exposes natively. Obtain the fastest available
+    tier through :func:`create_mpc_controller`.
+    """
+
+    def __init__(self, b_matrix: FloatArray, target: FloatArray) -> None:
+        """Build the canonical-configuration controller from ``B`` and target."""
+        b = np.asarray(b_matrix, dtype=np.float64)
+        if b.ndim != 2 or b.shape[0] == 0 or b.shape[1] == 0:
+            raise ValueError("b_matrix must be a non-empty 2D (n_state, n_coils) array.")
+        if not np.all(np.isfinite(b)):
+            raise ValueError("b_matrix must contain only finite values.")
+        target_vec = np.asarray(target, dtype=np.float64).reshape(-1)
+        if target_vec.shape[0] != b.shape[0]:
+            raise ValueError(
+                f"target length {target_vec.shape[0]} must equal n_state {b.shape[0]}."
+            )
+        if not np.all(np.isfinite(target_vec)):
+            raise ValueError("target must contain only finite values.")
+        n_state, n_coils = int(b.shape[0]), int(b.shape[1])
+        surrogate = NeuralSurrogate(n_coils, n_state, verbose=False)
+        surrogate.B = b
+        self._controller = ModelPredictiveController(surrogate, target_vec)
+
+    def plan(self, state: FloatArray) -> FloatArray:
+        """Return the first optimal coil-current action for ``state``."""
+        state_vec = np.asarray(state, dtype=np.float64).reshape(-1)
+        if not np.all(np.isfinite(state_vec)):
+            raise ValueError("state must contain only finite values.")
+        return np.asarray(self._controller.plan_trajectory(state_vec), dtype=np.float64)
 
 
 def _plot_telemetry(

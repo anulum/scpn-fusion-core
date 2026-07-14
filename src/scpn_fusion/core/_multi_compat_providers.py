@@ -79,6 +79,22 @@ def _load_numpy_fokker_planck() -> type:
     return FokkerPlanckKernel
 
 
+def _load_rust_mpc_controller() -> type:
+    """Load the Rust canonical-configuration surrogate MPC controller class."""
+    module = import_module("scpn_fusion_rs")
+    controller = module.PyMpcController
+    if not isinstance(controller, type):
+        raise TypeError("scpn_fusion_rs.PyMpcController is not a class")
+    return controller
+
+
+def _load_numpy_mpc_controller() -> type:
+    """Load the NumPy-tier canonical-configuration surrogate MPC kernel class."""
+    from scpn_fusion.control.neural_surrogate_mpc import MpcKernel
+
+    return MpcKernel
+
+
 def _bootstrap_kernel_classes() -> None:
     """Register the stateful kernel classes with their backend tiers.
 
@@ -105,6 +121,15 @@ def _bootstrap_kernel_classes() -> None:
     deterministic and agree to floating-point summation order in bounded
     regimes; in exponentially growing regimes those round-off differences
     amplify, as for any explicit scheme.
+
+    The surrogate-MPC controller dispatches Rust -> NumPy on the shared
+    ``(b_matrix, target)`` construction and ``plan(state) -> action`` contract
+    (the NumPy tier is the
+    :class:`~scpn_fusion.control.neural_surrogate_mpc.MpcKernel` adapter over
+    ``ModelPredictiveController``; the Rust tier is ``PyMpcController``). Both
+    run the identical gradient-descent planner over the linear surrogate
+    ``x_{t+1} = x_t + B u_t`` at the canonical configuration, so ``plan``
+    agrees to floating-point round-off (bit-exact in practice).
     """
     register_kernel_class("equilibrium_kernel", BackendTier.RUST, _load_rust_equilibrium_kernel)
     register_kernel_class("equilibrium_kernel", BackendTier.NUMPY, _load_numpy_equilibrium_kernel)
@@ -112,6 +137,8 @@ def _bootstrap_kernel_classes() -> None:
     register_kernel_class("hall_mhd_discovery", BackendTier.NUMPY, _load_numpy_hall_mhd)
     register_kernel_class("fokker_planck_re", BackendTier.RUST, _load_rust_fokker_planck)
     register_kernel_class("fokker_planck_re", BackendTier.NUMPY, _load_numpy_fokker_planck)
+    register_kernel_class("neural_surrogate_mpc", BackendTier.RUST, _load_rust_mpc_controller)
+    register_kernel_class("neural_surrogate_mpc", BackendTier.NUMPY, _load_numpy_mpc_controller)
 
 
 # ---------------------------------------------------------------------------

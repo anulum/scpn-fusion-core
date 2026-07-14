@@ -14,8 +14,11 @@ import pytest
 from typing import Any, cast
 
 from scpn_fusion.control.neural_surrogate_mpc import (
+    FloatArray,
     ModelPredictiveController,
+    MpcKernel,
     NeuralSurrogate,
+    create_mpc_controller,
     run_mpc_simulation,
 )
 
@@ -198,3 +201,103 @@ def test_surrogate_rejects_invalid_perturbation() -> None:
     kernel = _DummyKernel("dummy.json")
     with pytest.raises(ValueError, match="perturbation"):
         surrogate.train_on_kernel(kernel, perturbation=0.0)
+
+
+# ── Multi-backend dispatch (Rust <-> NumPy surrogate MPC) ────────────
+
+
+def _mpc_case() -> tuple[FloatArray, FloatArray, FloatArray]:
+    """Return a deterministic ``(B, target, state)`` MPC planning case."""
+    b_matrix = np.array(
+        [[0.1, 0.0], [0.0, 0.1], [0.05, 0.05], [0.02, -0.02]],
+        dtype=np.float64,
+    )
+    target = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+    state = np.array([0.5, -0.3, 0.1, 0.0], dtype=np.float64)
+    return b_matrix, target, state
+
+
+def test_mpc_dispatch_registers_both_tiers() -> None:
+    """The class-kernel registry carries RUST and NUMPY surrogate-MPC tiers."""
+    from scpn_fusion.core import _multi_compat as multi
+
+    kernels = multi.registered_kernel_classes()
+    assert "neural_surrogate_mpc" in kernels
+    tiers = [tier.rstrip("*") for tier in kernels["neural_surrogate_mpc"]]
+    assert "rust" in tiers
+    assert "numpy" in tiers
+
+
+def test_mpc_numpy_floor_without_rust(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The factory resolves to the NumPy MPC kernel when Rust is unavailable."""
+    from scpn_fusion.core import _multi_compat as multi
+
+    b_matrix, target, state = _mpc_case()
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.RUST, False)
+    monkeypatch.delitem(multi._class_dispatch_cache, "neural_surrogate_mpc", raising=False)
+    try:
+        controller = create_mpc_controller(b_matrix, target)
+        assert isinstance(controller, MpcKernel)
+        action = controller.plan(state)
+        assert action.shape == (2,)
+        assert bool(np.all(np.isfinite(action)))
+    finally:
+        multi._class_dispatch_cache.pop("neural_surrogate_mpc", None)
+
+
+def test_create_mpc_controller_returns_plan_surface() -> None:
+    """The dispatched controller exposes the ``plan`` protocol surface."""
+    b_matrix, target, state = _mpc_case()
+    controller = create_mpc_controller(b_matrix, target)
+    assert callable(controller.plan)
+    action = controller.plan(state)
+    assert action.shape == (2,)
+    assert bool(np.all(np.abs(action) <= 2.0 + 1e-9))
+
+
+def test_mpc_kernel_matches_controller() -> None:
+    """The NumPy adapter reproduces the wrapped controller exactly."""
+    b_matrix, target, state = _mpc_case()
+    kernel = MpcKernel(b_matrix, target)
+    surrogate = NeuralSurrogate(n_coils=2, n_state=4, verbose=False)
+    surrogate.B = b_matrix.copy()
+    controller = ModelPredictiveController(surrogate, target)
+    np.testing.assert_array_equal(kernel.plan(state), controller.plan_trajectory(state))
+
+
+def test_mpc_kernel_rejects_malformed_inputs() -> None:
+    """The adapter fails closed on non-2D B, target/state mismatch, and non-finite."""
+    b_matrix, target, _ = _mpc_case()
+    with pytest.raises(ValueError, match="2D"):
+        MpcKernel(np.array([1.0, 2.0]), target)
+    with pytest.raises(ValueError, match="target length"):
+        MpcKernel(b_matrix, np.array([0.0, 0.0]))
+    with pytest.raises(ValueError, match="finite"):
+        MpcKernel(b_matrix, np.array([0.0, 0.0, np.nan, 0.0]))
+    kernel = MpcKernel(b_matrix, target)
+    with pytest.raises(ValueError, match="finite"):
+        kernel.plan(np.array([np.nan, 0.0, 0.0, 0.0]))
+
+
+def test_mpc_rust_numpy_plan_parity() -> None:
+    """Rust and NumPy tiers plan the identical action to round-off.
+
+    Both tiers run the identical gradient-descent planner over the linear
+    surrogate at the canonical configuration, so the planned action is
+    bit-exact up to floating-point round-off.
+    """
+    pytest.importorskip("scpn_fusion_rs")
+    from scpn_fusion.core import _multi_compat_providers as providers
+
+    rng = np.random.default_rng(2026)
+    numpy_cls = providers._load_numpy_mpc_controller()
+    rust_cls = providers._load_rust_mpc_controller()
+    for _ in range(5):
+        n_state, n_coils = 4, 3
+        b_matrix = rng.normal(size=(n_state, n_coils)) * 0.1
+        target = rng.normal(size=n_state)
+        state = rng.normal(size=n_state)
+        action_numpy = np.asarray(numpy_cls(b_matrix, target).plan(state), dtype=np.float64)
+        action_rust = np.asarray(rust_cls(b_matrix, target).plan(state), dtype=np.float64)
+        np.testing.assert_allclose(action_numpy, action_rust, rtol=1e-9, atol=1e-12)
