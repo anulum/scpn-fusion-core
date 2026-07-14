@@ -78,7 +78,7 @@ class TestStabilityAnalyzer:
         with pytest.raises(ValueError, match="Ip must be finite"):
             sa.calculate_forces(1.7, 0.0, float("nan"))
 
-    def test_analyze_stability_runs(self, tmp_path, monkeypatch):
+    def test_analyze_stability_runs(self, tmp_path, monkeypatch, capsys):
         cfg = _write_config(tmp_path)
         sa = StabilityAnalyzer(cfg)
         monkeypatch.setattr("matplotlib.pyplot.savefig", lambda *a, **kw: None)
@@ -103,6 +103,13 @@ class TestStabilityAnalyzer:
             ),
         )
         sa.analyze_stability(R_target=1.7, Z_target=0.0)
+        out = capsys.readouterr().out
+        # The eigenvalue analysis must emit its full report: header, per-mode
+        # eigenvalue verdicts, and a field-index stability judgement.
+        assert "EIGENVALUE STABILITY ANALYSIS" in out
+        assert "Eigenvalues (Stability)" in out
+        assert "STABLE" in out or "UNSTABLE" in out
+        assert "[PASS]" in out or "[FAIL]" in out
 
     def test_analyze_mhd_stability_default_profiles(self, tmp_path):
         cfg = _write_config(tmp_path)

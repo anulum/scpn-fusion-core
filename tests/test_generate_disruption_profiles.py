@@ -104,7 +104,11 @@ class TestGenerateAndVerify:
     def test_verify_all_passes_on_generated(self, tmp_path: Path) -> None:
         """verify_all accepts a freshly generated shot set (5 + 5)."""
         generate_all(tmp_path, verbose=False)
-        verify_all(tmp_path)  # asserts internally; no exception == pass
+        # Precondition: the full manifest was written before verification.
+        assert len(list(tmp_path.glob("*.npz"))) == len(SHOT_MANIFEST)
+        # verify_all asserts keys/shapes/dtypes/finiteness internally and raises
+        # on any defect; completing without exception is the pass contract.
+        verify_all(tmp_path)
 
 
 class TestMain:

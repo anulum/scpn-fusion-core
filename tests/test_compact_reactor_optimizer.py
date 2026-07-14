@@ -81,12 +81,16 @@ def test_feasible_design_returns_positive_bcoil() -> None:
     assert B_coil > 0
 
 
-def test_find_minimum_reactor_no_design_for_extreme_target() -> None:
+def test_find_minimum_reactor_no_design_for_extreme_target(capsys) -> None:
     arch = CompactReactorArchitect()
     arch.find_minimum_reactor(target_power_MW=1e6, use_temhd=True)
+    out = capsys.readouterr().out
+    # No grid candidate can reach 1e6 MW, so the search reports no viable design.
+    assert "No viable design found" in out
+    assert "MINIMUM VIABLE REACTOR" not in out
 
 
-def test_find_minimum_reactor_finds_design(monkeypatch) -> None:
+def test_find_minimum_reactor_finds_design(monkeypatch, capsys) -> None:
     import matplotlib.pyplot as plt
 
     monkeypatch.setattr(plt, "savefig", lambda *a, **kw: None)
@@ -98,9 +102,14 @@ def test_find_minimum_reactor_finds_design(monkeypatch) -> None:
     monkeypatch.setattr(plt, "title", lambda *a: None)
     arch = CompactReactorArchitect()
     arch.find_minimum_reactor(target_power_MW=1.0, use_temhd=True)
+    out = capsys.readouterr().out
+    # With the relaxed TEMHD divertor limit a viable design exists at 1 MW, so
+    # the report is emitted rather than the no-design message.
+    assert "MINIMUM VIABLE REACTOR" in out
+    assert "No viable design found" not in out
 
 
-def test_find_minimum_reactor_solid_divertor(monkeypatch) -> None:
+def test_find_minimum_reactor_solid_divertor(monkeypatch, capsys) -> None:
     import matplotlib.pyplot as plt
 
     monkeypatch.setattr(plt, "savefig", lambda *a, **kw: None)
@@ -112,6 +121,11 @@ def test_find_minimum_reactor_solid_divertor(monkeypatch) -> None:
     monkeypatch.setattr(plt, "title", lambda *a: None)
     arch = CompactReactorArchitect()
     arch.find_minimum_reactor(target_power_MW=1.0, use_temhd=False)
+    out = capsys.readouterr().out
+    # The solid divertor caps the heat load 10x lower than TEMHD, so no design
+    # in the grid survives the constraint at 1 MW.
+    assert "Solid" in out
+    assert "No viable design found for Solid." in out
 
 
 def test_report_design_prints(capsys) -> None:
@@ -134,4 +148,5 @@ def test_report_design_prints(capsys) -> None:
 
 def test_visualize_space_empty_designs() -> None:
     arch = CompactReactorArchitect()
-    arch.visualize_space([], label="empty")
+    # An empty design list must hit the early guard and return without plotting.
+    assert arch.visualize_space([], label="empty") is None

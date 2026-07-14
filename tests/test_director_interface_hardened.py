@@ -66,6 +66,14 @@ def test_run_directed_mission_envelope_guards() -> None:
 
 
 def test_rule_based_director_review_action_types() -> None:
-    """Ensure review_action handles basic strings."""
+    """review_action returns (approved, security_score) and gates on stability + entropy."""
     rb = _RuleBasedDirector()
-    rb.review_action("State: Stable, BrainEntropy=0.1", "Proposal: Action")
+    approved, score = rb.review_action("Stability=Stable, BrainEntropy=0.1", "Proposal: Action")
+    assert isinstance(approved, bool)
+    assert isinstance(score, float)
+    assert np.isfinite(score) and score >= 0.0
+    # Stable state with sub-threshold entropy (0.1 < 0.3) is approved.
+    assert approved is True
+    # An unstable state must be rejected regardless of entropy.
+    rejected, _ = rb.review_action("Stability=Unstable, BrainEntropy=0.1", "Proposal: Action")
+    assert rejected is False
