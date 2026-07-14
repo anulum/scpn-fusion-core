@@ -1962,6 +1962,10 @@
         "path": "src/scpn_fusion/control/sliding_mode_vertical.py"
       },
       {
+        "name": "SurrogateSampleMeta",
+        "path": "src/scpn_fusion/core/gs_transport_surrogate_training.py"
+      },
+      {
         "name": "TAEMode",
         "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
       },
@@ -2629,7 +2633,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 551,
+    "python_capability_classes": 552,
     "python_capability_source_modules": 296,
     "rust_workspace_crates": 13,
     "test_files": 541

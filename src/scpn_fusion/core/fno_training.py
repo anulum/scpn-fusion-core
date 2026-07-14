@@ -254,9 +254,11 @@ def train_fno(
     optimizer = AdamOptimizer()
     rng = np.random.default_rng(seed + 123)
 
+    train_loss_hist: list[float] = []
+    val_loss_hist: list[float] = []
     history: Dict[str, object] = {
-        "train_loss": [],
-        "val_loss": [],
+        "train_loss": train_loss_hist,
+        "val_loss": val_loss_hist,
         "best_epoch": 0,
         "best_val_loss": float("inf"),
         "trained_parameters": "project_head_only",
@@ -305,8 +307,8 @@ def train_fno(
 
         train_loss = _evaluate_loss(model, x_train, y_train)
         val_loss = _evaluate_loss(model, x_val, y_val)
-        history["train_loss"].append(train_loss)  # type: ignore[attr-defined]
-        history["val_loss"].append(val_loss)  # type: ignore[attr-defined]
+        train_loss_hist.append(train_loss)
+        val_loss_hist.append(val_loss)
 
         if val_loss < best_val:
             best_val = val_loss
@@ -324,8 +326,6 @@ def train_fno(
     model.project_b = best_project_b
     model.save_weights(save_path)
 
-    train_loss_hist = cast("list[float]", history["train_loss"])
-    val_loss_hist = cast("list[float]", history["val_loss"])
     history["saved_path"] = str(Path(save_path))
     history["epochs_completed"] = len(train_loss_hist)
     history["final_train_loss"] = float(train_loss_hist[-1]) if train_loss_hist else None

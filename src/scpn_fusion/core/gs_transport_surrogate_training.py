@@ -17,7 +17,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
@@ -31,6 +31,18 @@ from ._surrogate_utils import (
 )
 
 FloatArray = NDArray[np.float64]
+
+
+class SurrogateSampleMeta(TypedDict):
+    """Per-sample scalar plasma parameters recorded for one GS-transport pair."""
+
+    Ip: float
+    BT: float
+    kappa: float
+    n_e20: float
+    P_aux: float
+    T0: float
+
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +69,7 @@ def _generate_gs_transport_pairs(
     n_samples: int = 5000,
     grid_size: int = 50,
     seed: int = 20260218,
-) -> Tuple[FloatArray, FloatArray, List[Dict[str, object]]]:
+) -> Tuple[FloatArray, FloatArray, List[SurrogateSampleMeta]]:
     """Generate training data using TransportSolver as a physics oracle."""
     from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
@@ -65,7 +77,7 @@ def _generate_gs_transport_pairs(
 
     x_list: List[FloatArray] = []
     y_list: List[FloatArray] = []
-    metadata: List[Dict[str, object]] = []
+    metadata: List[SurrogateSampleMeta] = []
 
     for i in range(n_samples):
         if i > 0 and i % 100 == 0:
@@ -263,9 +275,11 @@ def train_gs_transport_surrogate(
     model = MLPSurrogate(input_dim=grid_size, hidden_dim=128, seed=seed)
     optimizer = _AdamOptimizer()
 
+    train_losses: list[float] = []
+    val_losses: list[float] = []
     history: Dict[str, object] = {
-        "train_loss": [],
-        "val_loss": [],
+        "train_loss": train_losses,
+        "val_loss": val_losses,
         "best_epoch": 0,
         "best_val_loss": float("inf"),
         "n_samples_generated": n_valid,
@@ -332,8 +346,8 @@ def train_gs_transport_surrogate(
         pred_val = model.forward(x_val)
         mse_val = float(np.mean((pred_val - y_val) ** 2))
 
-        history["train_loss"].append(mse_train)  # type: ignore[attr-defined]
-        history["val_loss"].append(mse_val)  # type: ignore[attr-defined]
+        train_losses.append(mse_train)
+        val_losses.append(mse_val)
 
         if mse_val < best_val:
             best_val = mse_val
@@ -369,20 +383,16 @@ def train_gs_transport_surrogate(
     model.save_weights(save_path)
 
     history["saved_path"] = str(save_path)
-    history["epochs_completed"] = len(history["train_loss"])  # type: ignore[arg-type]
-    history["final_train_loss"] = (
-        float(history["train_loss"][-1]) if history["train_loss"] else None  # type: ignore[index]
-    )
-    history["final_val_loss"] = (
-        float(history["val_loss"][-1]) if history["val_loss"] else None  # type: ignore[index]
-    )
+    history["epochs_completed"] = len(train_losses)
+    history["final_train_loss"] = float(train_losses[-1]) if train_losses else None
+    history["final_val_loss"] = float(val_losses[-1]) if val_losses else None
     history["test_mse"] = test_mse
     history["test_rel_l2"] = test_rel_l2
 
     machine_counts: Dict[str, int] = {"ITER": 0, "SPARC": 0, "DIII-D": 0, "other": 0}
     for m in meta:
-        ip = float(m["Ip"])  # type: ignore[arg-type]
-        bt = float(m["BT"])  # type: ignore[arg-type]
+        ip = m["Ip"]
+        bt = m["BT"]
         if ip > 10 and bt > 5:
             machine_counts["ITER"] += 1
         elif bt > 10:
