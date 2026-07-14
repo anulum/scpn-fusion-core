@@ -12,6 +12,7 @@ from scpn_fusion.scpn.contracts import (
     DEFAULT_PHYSICS_INVARIANTS,
     PhysicsInvariant,
     PhysicsInvariantViolation,
+    _is_satisfied,
     check_all_invariants,
     check_physics_invariant,
     should_trigger_mitigation,
@@ -30,6 +31,13 @@ class TestPhysicsInvariantDataclass:
     def test_invalid_comparator_raises(self):
         with pytest.raises(ValueError, match="Invalid comparator"):
             PhysicsInvariant(name="test", description="d", threshold=1.0, comparator="eq")
+
+    def test_is_satisfied_rejects_unknown_comparator(self):
+        # PhysicsInvariant validates the comparator at construction, so the
+        # defensive fallback in _is_satisfied is only reachable by a direct call
+        # that bypasses that validation.
+        with pytest.raises(ValueError, match="Unknown comparator"):
+            _is_satisfied("eq", 1.0, 0.5)
 
     def test_nonfinite_threshold_raises(self):
         with pytest.raises(ValueError, match="finite"):

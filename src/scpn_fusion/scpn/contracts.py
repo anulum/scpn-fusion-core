@@ -374,7 +374,7 @@ def _is_satisfied(comparator: str, value: float, threshold: float) -> bool:
         return value >= threshold
     if comparator == "lte":
         return value <= threshold
-    raise ValueError(f"Unknown comparator: {comparator!r}")  # pragma: no cover
+    raise ValueError(f"Unknown comparator: {comparator!r}")
 
 
 def check_physics_invariant(
