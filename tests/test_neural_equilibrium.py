@@ -316,6 +316,35 @@ sparc_available = SPARC_DIR.exists() and (
 
 
 @pytest.mark.skipif(not sparc_available, reason="SPARC reference data not available")
+class TestFeaturesAndPsiFromEq:
+    """Direct-call coverage of the extracted GEQDSK feature/interpolation helper."""
+
+    def test_no_interpolation_when_target_grid_matches(self):
+        from scpn_fusion.core.eqdsk import read_geqdsk
+
+        eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
+        accel = NeuralEquilibriumAccelerator(NeuralEqConfig(n_components=5))
+        feats, psi = accel._features_and_psi_from_eq(eq, eq.nh, eq.nw)
+        assert feats.shape == (12,)
+        assert np.all(np.isfinite(feats))
+        # Same grid → the raw ψ(R,Z) is returned untouched.
+        assert psi.shape == (eq.nh, eq.nw)
+        assert np.array_equal(psi, eq.psirz)
+
+    def test_interpolates_to_smaller_target_grid(self):
+        from scpn_fusion.core.eqdsk import read_geqdsk
+
+        eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
+        accel = NeuralEquilibriumAccelerator(NeuralEqConfig(n_components=5))
+        target_nh, target_nw = eq.nh - 4, eq.nw - 4
+        feats, psi = accel._features_and_psi_from_eq(eq, target_nh, target_nw)
+        assert feats.shape == (12,)
+        # Different grid → ψ is spline-interpolated onto the target shape.
+        assert psi.shape == (target_nh, target_nw)
+        assert np.all(np.isfinite(psi))
+
+
+@pytest.mark.skipif(not sparc_available, reason="SPARC reference data not available")
 class TestSPARCTraining:
     """Integration tests that train on real SPARC GEQDSK files."""
 

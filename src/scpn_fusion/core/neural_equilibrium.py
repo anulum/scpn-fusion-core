@@ -31,12 +31,16 @@ import time
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
 
 from scpn_fusion._data_paths import data_root
 from scpn_fusion.io.safe_loaders import checked_np_load
+
+if TYPE_CHECKING:
+    from scpn_fusion.core.eqdsk import GEqdsk
 
 FloatArray = NDArray[np.float64]
 
@@ -305,6 +309,63 @@ class NeuralEquilibriumAccelerator:
 
     # ── Training from SPARC GEQDSKs ─────────────────────────────────
 
+    def _features_and_psi_from_eq(
+        self, eq: GEqdsk, target_nh: int, target_nw: int
+    ) -> tuple[FloatArray, FloatArray]:
+        """Interpolate one GEQDSK to the target grid and build its feature vector.
+
+        Returns the (12-dim base feature vector, ψ(R,Z) interpolated to the
+        ``(target_nh, target_nw)`` grid). Pure and RNG-free — the per-sample
+        profile perturbations are drawn by the caller.
+        """
+        # Interpolate onto target grid if needed
+        if eq.nh != target_nh or eq.nw != target_nw:
+            from scipy.interpolate import RectBivariateSpline
+
+            spline = RectBivariateSpline(eq.z, eq.r, eq.psirz, kx=3, ky=3)
+            target_r = np.linspace(eq.rleft, eq.rleft + eq.rdim, target_nw)
+            target_z = np.linspace(eq.zmid - eq.zdim / 2, eq.zmid + eq.zdim / 2, target_nh)
+            psi_interp = spline(target_z, target_r, grid=True)
+        else:
+            psi_interp = eq.psirz
+
+        # Extract shape parameters from boundary if available
+        kappa = 1.7  # default elongation
+        delta_upper = 0.3  # default upper triangularity
+        delta_lower = 0.3  # default lower triangularity
+        q95 = 3.0  # default safety factor at 95% flux
+        if (
+            hasattr(eq, "rbbbs")
+            and eq.rbbbs is not None
+            and len(eq.rbbbs) > 3
+            and hasattr(eq, "zbbbs")
+            and eq.zbbbs is not None
+        ):
+            r_span = eq.rbbbs.max() - eq.rbbbs.min()
+            kappa = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
+        if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
+            idx_95 = int(0.95 * len(eq.qpsi))
+            q95 = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
+
+        # Base feature vector (12-dim)
+        base_features = np.array(
+            [
+                eq.current / 1e6,  # I_p in MA
+                eq.bcentr,  # B_t in T
+                eq.rmaxis,  # R_axis in m
+                eq.zmaxis,  # Z_axis in m
+                1.0,  # pprime scale factor
+                1.0,  # ffprime scale factor
+                eq.simag,  # psi at axis
+                eq.sibry,  # psi at boundary
+                kappa,  # elongation
+                delta_upper,  # upper triangularity
+                delta_lower,  # lower triangularity
+                q95,  # safety factor at 95% flux
+            ]
+        )
+        return base_features, psi_interp
+
     def train_from_geqdsk(
         self,
         geqdsk_paths: list[Path],
@@ -341,53 +402,7 @@ class NeuralEquilibriumAccelerator:
 
         for path in geqdsk_paths:
             eq = read_geqdsk(path)
-
-            # Interpolate onto target grid if needed
-            if eq.nh != target_nh or eq.nw != target_nw:
-                from scipy.interpolate import RectBivariateSpline
-
-                spline = RectBivariateSpline(eq.z, eq.r, eq.psirz, kx=3, ky=3)
-                target_r = np.linspace(eq.rleft, eq.rleft + eq.rdim, target_nw)
-                target_z = np.linspace(eq.zmid - eq.zdim / 2, eq.zmid + eq.zdim / 2, target_nh)
-                psi_interp = spline(target_z, target_r, grid=True)
-            else:
-                psi_interp = eq.psirz
-
-            # Extract shape parameters from boundary if available
-            kappa = 1.7  # default elongation
-            delta_upper = 0.3  # default upper triangularity
-            delta_lower = 0.3  # default lower triangularity
-            q95 = 3.0  # default safety factor at 95% flux
-            if (
-                hasattr(eq, "rbbbs")
-                and eq.rbbbs is not None
-                and len(eq.rbbbs) > 3
-                and hasattr(eq, "zbbbs")
-                and eq.zbbbs is not None
-            ):
-                r_span = eq.rbbbs.max() - eq.rbbbs.min()
-                kappa = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
-            if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
-                idx_95 = int(0.95 * len(eq.qpsi))
-                q95 = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
-
-            # Base feature vector (12-dim)
-            base_features = np.array(
-                [
-                    eq.current / 1e6,  # I_p in MA
-                    eq.bcentr,  # B_t in T
-                    eq.rmaxis,  # R_axis in m
-                    eq.zmaxis,  # Z_axis in m
-                    1.0,  # pprime scale factor
-                    1.0,  # ffprime scale factor
-                    eq.simag,  # psi at axis
-                    eq.sibry,  # psi at boundary
-                    kappa,  # elongation
-                    delta_upper,  # upper triangularity
-                    delta_lower,  # lower triangularity
-                    q95,  # safety factor at 95% flux
-                ]
-            )
+            base_features, psi_interp = self._features_and_psi_from_eq(eq, target_nh, target_nw)
 
             # Unperturbed sample
             X_features.append(base_features)
