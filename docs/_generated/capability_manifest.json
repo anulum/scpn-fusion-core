@@ -223,7 +223,7 @@
       },
       {
         "name": "BurnPhysicsError",
-        "path": "src/scpn_fusion/core/fusion_ignition_sim.py"
+        "path": "src/scpn_fusion/core/dynamic_burn_model.py"
       },
       {
         "name": "BurnPoint",
@@ -515,7 +515,7 @@
       },
       {
         "name": "DynamicBurnModel",
-        "path": "src/scpn_fusion/core/fusion_ignition_sim.py"
+        "path": "src/scpn_fusion/core/dynamic_burn_model.py"
       },
       {
         "name": "DynamicsMLP",
@@ -795,7 +795,7 @@
       },
       {
         "name": "FusionBurnPhysics",
-        "path": "src/scpn_fusion/core/fusion_ignition_sim.py"
+        "path": "src/scpn_fusion/core/fusion_burn_physics.py"
       },
       {
         "name": "FusionCompiler",
@@ -2386,6 +2386,7 @@
       "src/scpn_fusion/core/disruption_sequence.py",
       "src/scpn_fusion/core/disruption_structural_response.py",
       "src/scpn_fusion/core/divertor_thermal_sim.py",
+      "src/scpn_fusion/core/dynamic_burn_model.py",
       "src/scpn_fusion/core/elm_model.py",
       "src/scpn_fusion/core/eped_pb_kbm.py",
       "src/scpn_fusion/core/eped_pedestal.py",
@@ -2403,6 +2404,7 @@
       "src/scpn_fusion/core/frc_rigid_rotor_contracts.py",
       "src/scpn_fusion/core/frc_rigid_rotor_solver.py",
       "src/scpn_fusion/core/frc_rigid_rotor_validation.py",
+      "src/scpn_fusion/core/fusion_burn_physics.py",
       "src/scpn_fusion/core/fusion_ignition_sim.py",
       "src/scpn_fusion/core/fusion_kernel.py",
       "src/scpn_fusion/core/fusion_kernel_coilset_config.py",
@@ -2639,9 +2641,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 552,
-    "python_capability_source_modules": 301,
+    "python_capability_source_modules": 303,
     "rust_workspace_crates": 13,
-    "test_files": 546
+    "test_files": 548
   },
   "documentation": {
     "public_pages": [
@@ -2874,6 +2876,7 @@
       "tests/test_download_mast_labelled_shots.py",
       "tests/test_dream_fluid_parity.py",
       "tests/test_dream_reference_execution_request.py",
+      "tests/test_dynamic_burn_model.py",
       "tests/test_elm_model.py",
       "tests/test_elm_model_full.py",
       "tests/test_eped_domain_contract_benchmark.py",
@@ -2936,6 +2939,7 @@
       "tests/test_full_fidelity_public_source_downloads.py",
       "tests/test_full_fidelity_reference_artifact_conversion.py",
       "tests/test_full_validation_pipeline.py",
+      "tests/test_fusion_burn_physics.py",
       "tests/test_fusion_control_room.py",
       "tests/test_fusion_ignition_sim.py",
       "tests/test_fusion_kernel.py",
