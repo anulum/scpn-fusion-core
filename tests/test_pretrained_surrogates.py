@@ -20,10 +20,47 @@ import pytest
 import scpn_fusion.core.pretrained_surrogates as ps
 from scpn_fusion.core.pretrained_surrogates import (
     bundle_pretrained_surrogates,
-    evaluate_pretrained_fno,
-    evaluate_pretrained_mlp,
-    load_pretrained_mlp,
+    get_pretrained_surrogate_coverage,
 )
+
+
+def test_get_pretrained_surrogate_coverage_default_and_merge() -> None:
+    base = get_pretrained_surrogate_coverage()
+    assert base["coverage_percent"] > 0.0
+    # A user manifest without a coverage section falls back to the default.
+    assert get_pretrained_surrogate_coverage({"other": 1}) == base
+    assert get_pretrained_surrogate_coverage({"coverage": "bad"}) == base
+    # A valid coverage section is merged over the shipped baseline.
+    merged = get_pretrained_surrogate_coverage({"coverage": {"coverage_percent": 12.5}})
+    assert merged["coverage_percent"] == 12.5
+    assert merged["pretrained_shipped"] == base["pretrained_shipped"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "match"),
+    [
+        ("not json {", "invalid cached manifest"),
+        ("[1, 2, 3]", "expected JSON object"),
+        ('{"version": "v1"}', "missing keys"),
+        (
+            '{"version": 1, "artifacts": {}, "datasets": {}, "config": {}, '
+            '"metrics": {}, "coverage": {}}',
+            "version must be a string",
+        ),
+        (
+            '{"version": "v1", "artifacts": "bad", "datasets": {}, "config": {}, '
+            '"metrics": {}, "coverage": {}}',
+            "artifacts must be an object",
+        ),
+    ],
+)
+def test_load_cached_manifest_rejects_malformed_payloads(
+    tmp_path: Path, payload: str, match: str
+) -> None:
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(payload, encoding="utf-8")
+    with pytest.raises(ValueError, match=match):
+        ps._load_cached_manifest(manifest_path)
 
 
 def test_bundle_pretrained_surrogates_creates_artifacts(tmp_path: Path) -> None:
@@ -53,60 +90,6 @@ def test_bundle_pretrained_surrogates_creates_artifacts(tmp_path: Path) -> None:
     assert "fno" in manifest["metrics"]
     assert "coverage" in manifest
     assert manifest["coverage"]["coverage_percent"] > 0.0
-
-
-def test_pretrained_mlp_eval_and_load(tmp_path: Path) -> None:
-    mlp_path = tmp_path / "mlp_itpa_eval.npz"
-    _ = bundle_pretrained_surrogates(
-        force_retrain=True,
-        seed=12,
-        weights_dir=tmp_path,
-        manifest_path=tmp_path / "manifest.json",
-        mlp_path=mlp_path,
-        fno_path=tmp_path / "fno.npz",
-        mlp_hidden=12,
-        mlp_epochs=150,
-        fno_modes=4,
-        fno_width=6,
-        fno_epochs=1,
-        fno_batch_size=4,
-        fno_augment_per_file=1,
-    )
-    eval_out = evaluate_pretrained_mlp(model_path=mlp_path)
-    model = load_pretrained_mlp(path=mlp_path)
-    sample = np.asarray([[15.0, 5.3, 10.1, 87.0, 6.2, 2.0, 1.70, 0.33, 2.5]], dtype=np.float64)
-    pred = model.predict(sample)
-    assert pred.shape == (1,)
-    assert np.isfinite(pred[0])
-    assert np.isfinite(eval_out["rmse_pct"])
-    assert eval_out["samples"] > 0
-
-
-def test_pretrained_fno_eval_returns_finite_metrics(tmp_path: Path) -> None:
-    fno_path = tmp_path / "fno_eval.npz"
-    _ = bundle_pretrained_surrogates(
-        force_retrain=True,
-        seed=17,
-        weights_dir=tmp_path,
-        manifest_path=tmp_path / "manifest.json",
-        mlp_path=tmp_path / "mlp.npz",
-        fno_path=fno_path,
-        mlp_hidden=12,
-        mlp_epochs=120,
-        fno_modes=4,
-        fno_width=8,
-        fno_epochs=2,
-        fno_batch_size=4,
-        fno_augment_per_file=2,
-    )
-    out = evaluate_pretrained_fno(
-        fno_path=fno_path,
-        augment_per_file=1,
-        max_samples=4,
-    )
-    assert out["eval_samples"] == 4.0
-    assert np.isfinite(out["eval_relative_l2_mean"])
-    assert np.isfinite(out["eval_relative_l2_p95"])
 
 
 @pytest.mark.parametrize(

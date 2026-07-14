@@ -1495,7 +1495,7 @@
       },
       {
         "name": "PretrainedMLPSurrogate",
-        "path": "src/scpn_fusion/core/pretrained_surrogates.py"
+        "path": "src/scpn_fusion/core/pretrained_mlp_surrogate.py"
       },
       {
         "name": "PulsedCompressionConfig",
@@ -2365,6 +2365,7 @@
       "src/scpn_fusion/core/_neural_transport_analytic.py",
       "src/scpn_fusion/core/_neural_transport_runtime.py",
       "src/scpn_fusion/core/_neural_transport_types.py",
+      "src/scpn_fusion/core/_pretrained_surrogate_config.py",
       "src/scpn_fusion/core/_rust_compat.py",
       "src/scpn_fusion/core/_surrogate_utils.py",
       "src/scpn_fusion/core/_tglf_interface_benchmark.py",
@@ -2489,6 +2490,8 @@
       "src/scpn_fusion/core/pellet_injection.py",
       "src/scpn_fusion/core/plasma_startup.py",
       "src/scpn_fusion/core/plasma_wall_interaction.py",
+      "src/scpn_fusion/core/pretrained_fno_surrogate.py",
+      "src/scpn_fusion/core/pretrained_mlp_surrogate.py",
       "src/scpn_fusion/core/pretrained_surrogates.py",
       "src/scpn_fusion/core/public_frc_reference.py",
       "src/scpn_fusion/core/pulsed_compression.py",
@@ -2634,9 +2637,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 552,
-    "python_capability_source_modules": 296,
+    "python_capability_source_modules": 299,
     "rust_workspace_crates": 13,
-    "test_files": 541
+    "test_files": 544
   },
   "documentation": {
     "public_pages": [
@@ -3154,6 +3157,9 @@
       "tests/test_polyglot_gs_solver_comparison_report.py",
       "tests/test_polyglot_gs_solver_contract.py",
       "tests/test_preflight.py",
+      "tests/test_pretrained_fno_surrogate.py",
+      "tests/test_pretrained_mlp_surrogate.py",
+      "tests/test_pretrained_surrogate_config.py",
       "tests/test_pretrained_surrogates.py",
       "tests/test_psi_gate_attribution.py",
       "tests/test_psi_pointwise_rmse.py",
