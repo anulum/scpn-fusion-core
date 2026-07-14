@@ -113,15 +113,19 @@ class TestDesignScanner:
     def test_evaluate_iter_like(self):
         # ITER: R=6.2m, B=5.3T, Ip=15MA
         result = scpn_fusion_rs.py_evaluate_design(6.2, 5.3, 15.0)
-        assert isinstance(result, tuple)
-        assert len(result) >= 4
-        assert all(np.isfinite(v) for v in result)
+        assert isinstance(result, dict)
+        assert result["Model_Regime"] == "physics_scaling_surrogate"
+        assert isinstance(result["Constraint_OK"], bool)
+        for key in ("P_fus", "Q", "Wall_Load", "Div_Load", "beta_N_eff", "Cost"):
+            assert np.isfinite(float(result[key]))
 
     def test_scan_100(self):
         results = scpn_fusion_rs.py_run_design_scan(100)
         assert len(results) == 100
         for row in results:
-            assert all(np.isfinite(v) for v in row)
+            assert isinstance(row, dict)
+            for key in ("P_fus", "Q", "Wall_Load", "Cost"):
+                assert np.isfinite(float(row[key]))
 
     def test_scan_monotonic_count(self):
         r50 = scpn_fusion_rs.py_run_design_scan(50)

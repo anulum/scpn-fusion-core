@@ -113,6 +113,24 @@ def _load_numpy_fno() -> type:
     return FnoKernel
 
 
+def _load_rust_design_evaluator() -> type:
+    """Load the Rust reactor-design single-point evaluator kernel class."""
+    module = import_module("scpn_fusion_rs")
+    evaluate = module.py_evaluate_design
+    if not callable(evaluate):
+        raise TypeError("scpn_fusion_rs.py_evaluate_design is not callable")
+    from scpn_fusion.core.global_design_scanner import _DesignEvaluatorRustKernel
+
+    return _DesignEvaluatorRustKernel
+
+
+def _load_numpy_design_evaluator() -> type:
+    """Load the NumPy-tier reactor-design evaluator (full Python explorer)."""
+    from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
+
+    return GlobalDesignExplorer
+
+
 def _bootstrap_kernel_classes() -> None:
     """Register the stateful kernel classes with their backend tiers.
 
@@ -156,6 +174,19 @@ def _bootstrap_kernel_classes() -> None:
     ``MultiLayerFNO``; the Rust tier wraps ``PyFnoController.from_npz``). Both
     run the identical spectral FNO forward over the same weight archive, so the
     prediction and suppression factor agree to floating-point round-off.
+
+    The reactor-design evaluator dispatches Rust -> NumPy on the shared
+    ``evaluate_design(R_maj, B_field, I_plasma) -> dict`` contract (the NumPy
+    tier is the full :class:`~scpn_fusion.core.global_design_scanner.GlobalDesignExplorer`;
+    the Rust tier is the
+    :class:`~scpn_fusion.core.global_design_scanner._DesignEvaluatorRustKernel`
+    over ``scpn_fusion_rs.py_evaluate_design``). Both run the identical
+    physics-scaling surrogate — Troyon/H-mode ``beta_N`` shaping, Eich divertor
+    scaling, and the HEAT-ML magnetic-shadow ridge attenuation with the same
+    frozen weights and engineering-constraint caps — so ``evaluate_design``
+    agrees to floating-point round-off (~1e-15 relative across the design
+    envelope, ``Constraint_OK`` identical). The Monte Carlo ``run_scan`` driver
+    stays NumPy-only (its rejection sampler uses a language-native RNG stream).
     """
     register_kernel_class("equilibrium_kernel", BackendTier.RUST, _load_rust_equilibrium_kernel)
     register_kernel_class("equilibrium_kernel", BackendTier.NUMPY, _load_numpy_equilibrium_kernel)
@@ -167,6 +198,8 @@ def _bootstrap_kernel_classes() -> None:
     register_kernel_class("neural_surrogate_mpc", BackendTier.NUMPY, _load_numpy_mpc_controller)
     register_kernel_class("fno_turbulence", BackendTier.RUST, _load_rust_fno)
     register_kernel_class("fno_turbulence", BackendTier.NUMPY, _load_numpy_fno)
+    register_kernel_class("global_design_scan", BackendTier.RUST, _load_rust_design_evaluator)
+    register_kernel_class("global_design_scan", BackendTier.NUMPY, _load_numpy_design_evaluator)
 
 
 # ---------------------------------------------------------------------------

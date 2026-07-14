@@ -1425,33 +1425,61 @@ impl PyPlasma2D {
     }
 }
 
-#[pyfunction]
-fn py_evaluate_design(r: f64, b: f64, i_p: f64) -> (f64, f64, f64, f64, f64, f64) {
-    let d = design_scanner::evaluate_design(r, b, i_p);
-    (
-        d.r_major,
-        d.b_field,
-        d.i_plasma,
-        d.q_engineering,
-        d.p_fusion,
-        d.cost,
-    )
+/// Build a Python dict mirroring `GlobalDesignExplorer.evaluate_design` output.
+fn design_result_to_dict<'py>(
+    py: pyo3::Python<'py>,
+    d: &design_scanner::DesignResult,
+) -> pyo3::PyResult<pyo3::Bound<'py, pyo3::types::PyDict>> {
+    let out = pyo3::types::PyDict::new(py);
+    out.set_item("R", d.r_major)?;
+    out.set_item("B", d.b_field)?;
+    out.set_item("Ip", d.i_plasma)?;
+    out.set_item("Model_Regime", "physics_scaling_surrogate")?;
+    out.set_item("P_fus", d.p_fusion)?;
+    out.set_item("Q", d.q_engineering)?;
+    out.set_item("Wall_Load", d.wall_load)?;
+    out.set_item("Div_Load_Baseline", d.div_load_baseline)?;
+    out.set_item("Shadow_Fraction", d.shadow_fraction)?;
+    out.set_item("Div_Load_Optimized", d.div_load_optimized)?;
+    out.set_item("Div_Load", d.div_load_optimized)?;
+    out.set_item("B_peak_HTS_T", d.b_peak_hts_t)?;
+    out.set_item("Zeff_Est", d.zeff_est)?;
+    out.set_item("Constraint_OK", d.constraint_ok)?;
+    out.set_item("beta_N_eff", d.beta_n_eff)?;
+    out.set_item("Cost", d.cost)?;
+    Ok(out)
 }
 
 #[pyfunction]
-fn py_run_design_scan(n_samples: usize) -> Vec<(f64, f64, f64, f64, f64, f64)> {
+#[pyo3(signature = (r, b, i_p, divertor_flux_cap_mw_m2=45.0, zeff_cap=0.4, hts_peak_cap_t=21.0))]
+fn py_evaluate_design<'py>(
+    py: pyo3::Python<'py>,
+    r: f64,
+    b: f64,
+    i_p: f64,
+    divertor_flux_cap_mw_m2: f64,
+    zeff_cap: f64,
+    hts_peak_cap_t: f64,
+) -> pyo3::PyResult<pyo3::Bound<'py, pyo3::types::PyDict>> {
+    let d = design_scanner::evaluate_design_with_caps(
+        r,
+        b,
+        i_p,
+        divertor_flux_cap_mw_m2,
+        zeff_cap,
+        hts_peak_cap_t,
+    );
+    design_result_to_dict(py, &d)
+}
+
+#[pyfunction]
+fn py_run_design_scan<'py>(
+    py: pyo3::Python<'py>,
+    n_samples: usize,
+) -> pyo3::PyResult<Vec<pyo3::Bound<'py, pyo3::types::PyDict>>> {
     design_scanner::run_scan(n_samples)
-        .into_iter()
-        .map(|d| {
-            (
-                d.r_major,
-                d.b_field,
-                d.i_plasma,
-                d.q_engineering,
-                d.p_fusion,
-                d.cost,
-            )
-        })
+        .iter()
+        .map(|d| design_result_to_dict(py, d))
         .collect()
 }
 

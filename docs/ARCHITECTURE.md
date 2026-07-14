@@ -158,9 +158,9 @@ on a discrete adapter the wgpu tier runs the identical 200-sweep workload 11.8x
 
 The PyO3 surface (`fusion-python/src/lib.rs`) is the complete Rust→Python API. Most exports are
 consumed either through the dispatcher (the function kernels above, the equilibrium, Hall-MHD,
-Fokker-Planck runaway-electron (`fokker_planck_re`), FNO-turbulence (`fno_turbulence`), and
-canonical-configuration surrogate-MPC (`neural_surrogate_mpc`) class kernels, and the tomography
-solver path) or by direct import in a small number of performance-critical sites (the SCPN
+Fokker-Planck runaway-electron (`fokker_planck_re`), FNO-turbulence (`fno_turbulence`),
+canonical-configuration surrogate-MPC (`neural_surrogate_mpc`), and reactor-design evaluator
+(`global_design_scan`) class kernels, and the tomography solver path) or by direct import in a small number of performance-critical sites (the SCPN
 runtime kernels, the Rust flight simulator). The remaining exports are an explicit
 **library-only capability surface** — built and tested but deliberately not on a production
 dispatch path, each for a stated reason: `py_advance_boris`/`PyParticle` (uniform-field
@@ -173,7 +173,15 @@ spatially varying fields, so the two are not interchangeable), `PyDriftWave` and
 implementing the same model — the Rust pedestal-parameter inverse fit and 0D
 systems-engineering formulas have no direct Python analogue; the Python `RealtimeEFIT`/
 `KineticEFIT` full-grid flux reconstruction and `NuclearEngineeringLab` 2D wall-loading are
-different, higher-fidelity formulations, so there is no parity contract to wire). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
+different, higher-fidelity formulations, so there is no parity contract to wire). The
+single-point reactor-design evaluator `py_evaluate_design` is now a numerical twin of the
+Python `GlobalDesignExplorer.evaluate_design` (Troyon/H-mode `beta_N` shaping, Eich divertor
+scaling, and the HEAT-ML magnetic-shadow ridge attenuation with the same frozen weights and
+engineering-constraint caps), agreeing to ~1e-15 relative across the design envelope with
+identical `Constraint_OK`, and is dispatched Rust → NumPy through the `global_design_scan`
+class kernel; the Monte Carlo `py_run_design_scan` driver stays a Rust-only convenience (its
+rejection sampler uses a language-native RNG stream, so it is not point-for-point identical
+to the Python scan — both are valid Monte Carlo draws). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
 the default extension; when built with `--features gpu` on a machine with a physical
 adapter, it backs the `gs_rb_sor_smooth` dispatcher kernel (GPU tier, W-2) with the
 NumPy `mg_smooth` floor. Reconciliation of these pairs is tracked internally and follows the

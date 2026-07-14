@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol, cast
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -314,6 +314,106 @@ class GlobalDesignExplorer:
         plt.tight_layout()
         plt.savefig("Global_Design_Pareto.png")
         print("Analysis Saved: Global_Design_Pareto.png")
+
+
+class DesignEvaluatorKernel(Protocol):
+    """Protocol shared by the NumPy and Rust reactor-design evaluator tiers.
+
+    The single-point ``evaluate_design`` surface is the deterministic,
+    parity-verified kernel; the Monte Carlo :meth:`GlobalDesignExplorer.run_scan`
+    driver is NumPy-only (its RNG stream is language-native).
+    """
+
+    def evaluate_design(self, R_maj: float, B_field: float, I_plasma: float) -> dict[str, Any]:
+        """Return the design-metrics dict for a single reactor design point."""
+        ...
+
+
+class _DesignEvaluatorRustKernel:
+    """Rust-tier reactor design evaluator wrapping ``scpn_fusion_rs.py_evaluate_design``.
+
+    Presents the same ``evaluate_design(R_maj, B_field, I_plasma) -> dict``
+    contract as :class:`GlobalDesignExplorer`, delegating the physics-scaling
+    surrogate — Troyon/H-mode ``beta_N`` shaping, Eich divertor scaling, and the
+    frozen HEAT-ML magnetic-shadow ridge attenuation — to the parity-verified
+    Rust kernel. The engineering-constraint caps are threaded through so
+    ``Constraint_OK`` matches the Python tier for any configuration. Constructor
+    arguments mirror :class:`GlobalDesignExplorer` for a uniform dispatch
+    surface; the Rust kernel is otherwise stateless (its shadow weights are
+    compiled in). Obtain the fastest available tier through
+    :func:`create_design_evaluator`.
+    """
+
+    def __init__(
+        self,
+        base_config_path: str = "dispatch",
+        *,
+        divertor_flux_cap_mw_m2: float = 45.0,
+        zeff_cap: float = 0.4,
+        hts_peak_cap_t: float = 21.0,
+    ) -> None:
+        """Bind the Rust evaluator and validate the engineering-constraint caps."""
+        from scpn_fusion_rs import py_evaluate_design
+
+        self._evaluate = py_evaluate_design
+        self.base_config_path = base_config_path
+        self.divertor_flux_cap_mw_m2 = GlobalDesignExplorer._require_finite_positive(
+            "divertor_flux_cap_mw_m2", divertor_flux_cap_mw_m2
+        )
+        self.zeff_cap = GlobalDesignExplorer._require_finite_positive("zeff_cap", zeff_cap)
+        if self.zeff_cap > 1.0:
+            raise ValueError("zeff_cap must be <= 1.0.")
+        self.hts_peak_cap_t = GlobalDesignExplorer._require_finite_positive(
+            "hts_peak_cap_t", hts_peak_cap_t
+        )
+
+    def evaluate_design(self, R_maj: float, B_field: float, I_plasma: float) -> dict[str, Any]:
+        """Evaluate one reactor design point on the Rust parity tier."""
+        R_maj = GlobalDesignExplorer._require_finite_positive("R_maj", R_maj)
+        B_field = GlobalDesignExplorer._require_finite_positive("B_field", B_field)
+        I_plasma = GlobalDesignExplorer._require_finite_positive("I_plasma", I_plasma)
+        return dict(
+            self._evaluate(
+                R_maj,
+                B_field,
+                I_plasma,
+                self.divertor_flux_cap_mw_m2,
+                self.zeff_cap,
+                self.hts_peak_cap_t,
+            )
+        )
+
+
+def create_design_evaluator(
+    base_config_path: str = "dispatch", **kwargs: Any
+) -> DesignEvaluatorKernel:
+    """Return the fastest available single-point reactor-design evaluator.
+
+    Dispatches Rust -> NumPy through the class-kernel registry. Both tiers run
+    the identical physics-scaling surrogate (Troyon/H-mode ``beta_N`` shaping,
+    Eich divertor scaling, and the HEAT-ML magnetic-shadow ridge attenuation with
+    the same frozen weights), so ``evaluate_design`` agrees to floating-point
+    round-off (~1e-15 relative across the design envelope, ``Constraint_OK``
+    identical). The NumPy floor is the full :class:`GlobalDesignExplorer`.
+
+    Parameters
+    ----------
+    base_config_path : str
+        Base configuration path forwarded to the NumPy explorer (the scaling
+        surrogate does not read it; retained for interface parity).
+    **kwargs : Any
+        Engineering-constraint caps (``divertor_flux_cap_mw_m2``, ``zeff_cap``,
+        ``hts_peak_cap_t``) forwarded to both tiers.
+
+    Returns
+    -------
+    DesignEvaluatorKernel
+        The fastest available backend instance.
+    """
+    from scpn_fusion.core._multi_compat import dispatch_kernel_class
+
+    kernel_cls = dispatch_kernel_class("global_design_scan")
+    return cast(DesignEvaluatorKernel, kernel_cls(base_config_path, **kwargs))
 
 
 if __name__ == "__main__":
