@@ -247,16 +247,25 @@ def _max_rel_diff(a: np.ndarray, b: np.ndarray) -> float:
 class TestSORSolverParity:
     """Compare the full Picard+SOR equilibrium solve between Python and Rust."""
 
-    @pytest.mark.xfail(reason="Rust SOR uses different Jacobi seed; max rel diff ~1.9", strict=True)
     def test_sor_equilibrium_parity(self, tmp_path: Path) -> None:
         """Run the SOR-based equilibrium solver via both Python and Rust
         FusionKernel on the same 65x65 Solov'ev grid (R0=1.7, a=0.5,
         B0=2.0, Ip=1.0 MA).  The final Psi arrays must agree within
         rtol=1e-3.
+
+        Parity is asserted at the SOR fixed point: SOR converges to the unique
+        solution of the linear GS system independently of the initial guess, so
+        the two backends only provably agree once both have converged. The solve
+        is therefore run to tol=1e-8 (reached in ~2227 sweeps at omega=1.9); at
+        that fixed point the Python and Rust flux maps agree to ~2e-8 abs. A
+        shorter, non-converged budget compares sweep-order-dependent transients
+        (this is what the historical "Rust Jacobi seed; max rel diff ~1.9"
+        xfail was really measuring — a relative metric blowing up at the psi
+        zero-crossing of an unconverged state, not an algorithmic gap).
         """
         from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
 
-        cfg_path = _make_config(tmp_path, solver_method="sor", max_iter=300)
+        cfg_path = _make_config(tmp_path, solver_method="sor", max_iter=5000, tol=1e-8, omega=1.9)
 
         # --- Python path ---
         py_kernel = PyFusionKernel(str(cfg_path))
@@ -844,14 +853,17 @@ class TestBFieldParity:
     Solov'ev equilibrium (R0=1.7, a=0.5, B0=2.0, Ip=1.0 MA).
     """
 
-    @pytest.mark.xfail(reason="Depends on SOR parity (Rust Jacobi seed divergence)", strict=True)
     def test_b_field_parity(self, tmp_path: Path) -> None:
         """After equilibrium solve, B_R and B_Z should match between
         Python and Rust within rtol=1e-3.
+
+        B_R/B_Z are gradients of the flux map, so parity follows from the SOR
+        flux-map parity and likewise requires the converged fixed point (see
+        ``test_sor_equilibrium_parity``); at tol=1e-8 the fields agree to ~2e-7.
         """
         from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
 
-        cfg_path = _make_config(tmp_path, solver_method="sor", max_iter=200)
+        cfg_path = _make_config(tmp_path, solver_method="sor", max_iter=5000, tol=1e-8, omega=1.9)
 
         # --- Python ---
         py_kernel = PyFusionKernel(str(cfg_path))
