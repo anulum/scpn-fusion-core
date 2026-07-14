@@ -157,18 +157,20 @@ on a discrete adapter the wgpu tier runs the identical 200-sweep workload 11.8x
 | `fusion-gpu` | wgpu compute: Red-Black SOR + multigrid V-cycle GS solver | `PyGpuSolver` (feature-gated `gpu`) |
 
 The PyO3 surface (`fusion-python/src/lib.rs`) is the complete Rust→Python API. Most exports are
-consumed either through the dispatcher (the function kernels above, the equilibrium and
-Hall-MHD classes, and the tomography solver path) or by direct import in a small number of
-performance-critical sites (the SCPN runtime kernels, the Rust flight simulator). The
-remaining exports are an explicit **library-only capability surface** — built and tested but
-deliberately not on a production dispatch path, each for a stated reason:
-`py_advance_boris`/`PyParticle` (uniform-field full-orbit pusher; the production
-`orbit_following` lane is a guiding-centre integrator in spatially varying fields, so the
-two are not interchangeable), `PyDriftWave` and `PyReducedMHD` (no Python twin implements
-the same reduced model), and `PyFokkerPlanckSolver`, `PyFnoController`, `PyMpcController`,
-`PyPlasma2D`, `PyInverseSolver`, `PyPlantModel` (Python counterparts exist but the pairs
-have not been contract-reconciled; wiring them without a parity contract would overstate
-equivalence). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
+consumed either through the dispatcher (the function kernels above, the equilibrium, Hall-MHD,
+Fokker-Planck runaway-electron (`fokker_planck_re`), FNO-turbulence (`fno_turbulence`), and
+canonical-configuration surrogate-MPC (`neural_surrogate_mpc`) class kernels, and the tomography
+solver path) or by direct import in a small number of performance-critical sites (the SCPN
+runtime kernels, the Rust flight simulator). The remaining exports are an explicit
+**library-only capability surface** — built and tested but deliberately not on a production
+dispatch path, each for a stated reason: `py_advance_boris`/`PyParticle` (uniform-field
+full-orbit pusher; the production `orbit_following` lane is a guiding-centre integrator in
+spatially varying fields, so the two are not interchangeable), `PyDriftWave` and `PyReducedMHD`
+(no Python twin implements the same reduced model — the Python `DriftWavePhysics` and
+`ReducedMHD` classes are different formulations), `PyPlasma2D` (the Rust scalar
+`(temperature, position)` plant is not the Python `Plasma2D` 2D poloidal-field twin), and
+`PyInverseSolver`, `PyPlantModel` (Python counterparts exist but the pairs have not been
+contract-reconciled; wiring them without a parity contract would overstate equivalence). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
 the default extension; when built with `--features gpu` on a machine with a physical
 adapter, it backs the `gs_rb_sor_smooth` dispatcher kernel (GPU tier, W-2) with the
 NumPy `mg_smooth` floor. Reconciliation of these pairs is tracked internally and follows the
