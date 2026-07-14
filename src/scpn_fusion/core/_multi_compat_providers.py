@@ -63,6 +63,22 @@ def _load_numpy_hall_mhd() -> type:
     return HallMHD
 
 
+def _load_rust_fokker_planck() -> type:
+    """Load the Rust runaway-electron Fokker-Planck solver class."""
+    module = import_module("scpn_fusion_rs")
+    solver = module.PyFokkerPlanckSolver
+    if not isinstance(solver, type):
+        raise TypeError("scpn_fusion_rs.PyFokkerPlanckSolver is not a class")
+    return solver
+
+
+def _load_numpy_fokker_planck() -> type:
+    """Load the NumPy-tier runaway-electron Fokker-Planck kernel class."""
+    from scpn_fusion.control.fokker_planck_re import FokkerPlanckKernel
+
+    return FokkerPlanckKernel
+
+
 def _bootstrap_kernel_classes() -> None:
     """Register the stateful kernel classes with their backend tiers.
 
@@ -78,11 +94,24 @@ def _bootstrap_kernel_classes() -> None:
     ``-eta k^2 psi``, optional static current-sheet drive); trajectories are
     statistically equivalent, not bit-exact, because the seeded RNG streams
     are language-native.
+
+    The runaway-electron Fokker-Planck kernel dispatches Rust -> NumPy on the
+    shared ``(np_grid, p_max)`` construction and ``step(dt, e_field, n_e,
+    t_e_ev, z_eff) -> (n_re, current_re)`` contract (the NumPy tier is the
+    :class:`~scpn_fusion.control.fokker_planck_re.FokkerPlanckKernel` adapter
+    over ``FokkerPlanckSolver``; the Rust tier is ``PyFokkerPlanckSolver``).
+    Both implement the identical MUSCL-Hancock advection / central-difference
+    diffusion / operator-split source scheme, so the diagnostics are
+    deterministic and agree to floating-point summation order in bounded
+    regimes; in exponentially growing regimes those round-off differences
+    amplify, as for any explicit scheme.
     """
     register_kernel_class("equilibrium_kernel", BackendTier.RUST, _load_rust_equilibrium_kernel)
     register_kernel_class("equilibrium_kernel", BackendTier.NUMPY, _load_numpy_equilibrium_kernel)
     register_kernel_class("hall_mhd_discovery", BackendTier.RUST, _load_rust_hall_mhd)
     register_kernel_class("hall_mhd_discovery", BackendTier.NUMPY, _load_numpy_hall_mhd)
+    register_kernel_class("fokker_planck_re", BackendTier.RUST, _load_rust_fokker_planck)
+    register_kernel_class("fokker_planck_re", BackendTier.NUMPY, _load_numpy_fokker_planck)
 
 
 # ---------------------------------------------------------------------------

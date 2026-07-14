@@ -4,16 +4,16 @@
       "class_name": "HallMHD",
       "final_energy": 0.8963254315374964,
       "invariants_passed": true,
-      "median_loop_s": 2.074656267068349,
-      "median_step_us": 10373.281335341744,
+      "median_loop_s": 2.700649918988347,
+      "median_step_us": 13503.249594941735,
       "status": "available"
     },
     "RUST": {
       "class_name": "PyHallMHD",
       "final_energy": 0.00038514192509694797,
       "invariants_passed": true,
-      "median_loop_s": 0.835035776020959,
-      "median_step_us": 4175.178880104795,
+      "median_loop_s": 0.9699063299922273,
+      "median_step_us": 4849.531649961136,
       "status": "available"
     }
   },
@@ -32,7 +32,7 @@
     "numpy*"
   ],
   "repeats": 3,
-  "rust_over_numpy_speedup": 2.4845118336777414,
+  "rust_over_numpy_speedup": 2.784444059675319,
   "schema": "scpn-fusion-core.hall-mhd-discovery-benchmark.v1",
   "seed": 2026,
   "selected_class": "PyHallMHD",

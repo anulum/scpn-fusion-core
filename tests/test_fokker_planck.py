@@ -11,7 +11,9 @@ import pytest
 from scpn_fusion.control.fokker_planck_re import (
     _RE_SEED_FLOOR,
     DreamKineticArtifact,
+    FokkerPlanckKernel,
     FokkerPlanckSolver,
+    create_fokker_planck_kernel,
 )
 
 
@@ -283,3 +285,153 @@ class TestStepInputGuards:
         solver = FokkerPlanckSolver(np_grid=32, p_max=8.0)
         with pytest.raises(ValueError, match="Z_eff must be finite and > 0"):
             solver.step(dt=1.0e-5, E_field=10.0, n_e=5.0e19, T_e_eV=5000.0, Z_eff=0.0)
+
+
+# ── Multi-backend dispatch (Rust <-> NumPy Fokker-Planck kernel) ─────
+
+
+def test_fokker_planck_dispatch_registers_both_tiers() -> None:
+    """The class-kernel registry carries RUST and NUMPY Fokker-Planck tiers."""
+    from scpn_fusion.core import _multi_compat as multi
+
+    kernels = multi.registered_kernel_classes()
+    assert "fokker_planck_re" in kernels
+    tiers = [tier.rstrip("*") for tier in kernels["fokker_planck_re"]]
+    assert "rust" in tiers
+    assert "numpy" in tiers
+
+
+def test_fokker_planck_numpy_floor_without_rust(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The factory resolves to the NumPy kernel when Rust is unavailable."""
+    from scpn_fusion.core import _multi_compat as multi
+
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.RUST, False)
+    monkeypatch.delitem(multi._class_dispatch_cache, "fokker_planck_re", raising=False)
+    try:
+        kernel = create_fokker_planck_kernel(32, 8.0)
+        assert isinstance(kernel, FokkerPlanckKernel)
+        n_re, current_re = kernel.step(1.0e-5, 10.0, 5.0e19, 5000.0, 1.0)
+        assert np.isfinite(n_re) and np.isfinite(current_re)
+    finally:
+        multi._class_dispatch_cache.pop("fokker_planck_re", None)
+
+
+def test_create_fokker_planck_kernel_returns_protocol_surface() -> None:
+    """The dispatched kernel exposes the full runaway-electron kernel protocol."""
+    kernel = create_fokker_planck_kernel(32, 8.0)
+    for attr in ("step", "run", "get_f", "set_f", "get_p", "get_dp"):
+        assert callable(getattr(kernel, attr))
+    assert isinstance(kernel.time, float)
+    assert kernel.get_p().shape == (32,)
+    assert kernel.get_dp().shape == (32,)
+
+
+def test_fokker_planck_kernel_matches_solver() -> None:
+    """The NumPy adapter reproduces its wrapped solver exactly (tuple contract)."""
+    kernel = FokkerPlanckKernel(64, 10.0)
+    solver = FokkerPlanckSolver(64, 10.0)
+    seed = np.zeros(64, dtype=np.float64)
+    seed[10] = 1.0e10
+    kernel.set_f(seed.tolist())
+    solver.f = seed.copy()
+    params = (1.0e-5, 10.0, 5.0e19, 5000.0, 1.0)
+    n_re = current_re = 0.0
+    for _ in range(5):
+        n_re, current_re = kernel.step(*params)
+        state = solver.step(*params)
+    assert n_re == state.n_re
+    assert current_re == state.current_re
+    np.testing.assert_array_equal(kernel.get_f(), solver.f)
+    np.testing.assert_array_equal(kernel.get_p(), solver.p)
+    np.testing.assert_array_equal(kernel.get_dp(), solver.dp)
+    assert kernel.time == solver.time
+
+
+def test_fokker_planck_kernel_run_matches_stepwise() -> None:
+    """``run`` reproduces the same trajectory as repeated ``step`` calls."""
+    stepwise = FokkerPlanckKernel(48, 10.0)
+    batched = FokkerPlanckKernel(48, 10.0)
+    seed = np.zeros(48, dtype=np.float64)
+    seed[6] = 1.0e10
+    stepwise.set_f(seed.tolist())
+    batched.set_f(seed.tolist())
+    params = (1.0e-6, 5.0, 5.0e19, 5000.0, 1.0)
+    manual = [stepwise.step(*params) for _ in range(4)]
+    auto = batched.run(4, *params)
+    assert manual == auto
+
+
+def test_fokker_planck_kernel_set_f_rejects_wrong_shape() -> None:
+    """The adapter fails closed on a distribution of the wrong length."""
+    kernel = FokkerPlanckKernel(32, 8.0)
+    with pytest.raises(ValueError, match="shape"):
+        kernel.set_f([1.0, 2.0, 3.0])
+
+
+def test_fokker_planck_rust_numpy_step_parity() -> None:
+    """Rust and NumPy tiers agree on the evolved diagnostics.
+
+    The two backends build the momentum grid independently and implement the
+    identical MUSCL-Hancock / central-diffusion / operator-split scheme. A
+    single step is bit-tight; a bounded (unforced) trajectory over many steps
+    agrees to floating-point summation order. Parity is asserted where the
+    solution is bounded — in exponentially growing regimes round-off
+    differences amplify for any explicit scheme.
+    """
+    pytest.importorskip("scpn_fusion_rs")
+    from scpn_fusion.core import _multi_compat_providers as providers
+
+    numpy_kernel = providers._load_numpy_fokker_planck()(200, 100.0)
+    rust_kernel = providers._load_rust_fokker_planck()(200, 100.0)
+
+    np.testing.assert_allclose(numpy_kernel.get_p(), rust_kernel.get_p(), rtol=0, atol=1e-11)
+    np.testing.assert_allclose(numpy_kernel.get_dp(), rust_kernel.get_dp(), rtol=0, atol=1e-11)
+
+    seed = np.zeros(200, dtype=np.float64)
+    seed[10] = 1.0e10
+    numpy_kernel.set_f(seed.tolist())
+    rust_kernel.set_f(seed.tolist())
+    n_np, j_np = numpy_kernel.step(1.0e-5, 10.0, 5.0e19, 5000.0, 1.0)
+    n_rs, j_rs = rust_kernel.step(1.0e-5, 10.0, 5.0e19, 5000.0, 1.0)
+    assert n_np == pytest.approx(n_rs, rel=1e-9)
+    assert j_np == pytest.approx(j_rs, rel=1e-9)
+
+    stable_np = providers._load_numpy_fokker_planck()(200, 100.0)
+    stable_rs = providers._load_rust_fokker_planck()(200, 100.0)
+    p_grid = stable_np.get_p()
+    gaussian = (1.0e10 * np.exp(-((p_grid - 5.0) ** 2) / 2.0)).tolist()
+    stable_np.set_f(gaussian)
+    stable_rs.set_f(gaussian)
+    n_stable_np = j_stable_np = n_stable_rs = j_stable_rs = 0.0
+    for _ in range(50):
+        n_stable_np, j_stable_np = stable_np.step(1.0e-6, 0.0, 1.0e19, 5000.0, 1.0)
+        n_stable_rs, j_stable_rs = stable_rs.step(1.0e-6, 0.0, 1.0e19, 5000.0, 1.0)
+    assert n_stable_np == pytest.approx(n_stable_rs, rel=1e-8)
+    assert j_stable_np == pytest.approx(j_stable_rs, rel=1e-8)
+    f_np = stable_np.get_f()
+    f_rs = stable_rs.get_f()
+    np.testing.assert_allclose(f_np, f_rs, rtol=1e-6, atol=1e-6 * float(np.max(np.abs(f_np))))
+
+
+def test_fokker_planck_backend_invariant_parity() -> None:
+    """Both dispatched backends satisfy the shared physics invariants.
+
+    Diagnostics stay finite and the distribution stays non-negative across a
+    multi-step run on either tier.
+    """
+    from scpn_fusion.core import _multi_compat as multi
+    from scpn_fusion.core import _multi_compat_providers as providers
+
+    kernels = [providers._load_numpy_fokker_planck()(64, 10.0)]
+    if multi.is_available(multi.BackendTier.RUST):
+        kernels.append(providers._load_rust_fokker_planck()(64, 10.0))
+    seed = np.zeros(64, dtype=np.float64)
+    seed[10] = 1.0e10
+    for kernel in kernels:
+        kernel.set_f(seed.tolist())
+        history = kernel.run(20, 1.0e-6, 10.0, 5.0e19, 5000.0, 1.0)
+        assert len(history) == 20
+        for n_re, current_re in history:
+            assert np.isfinite(n_re) and np.isfinite(current_re)
+        assert bool(np.all(kernel.get_f() >= 0.0))

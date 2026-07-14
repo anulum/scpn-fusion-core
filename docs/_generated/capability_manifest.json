@@ -718,6 +718,10 @@
         "path": "src/scpn_fusion/control/volt_second_manager.py"
       },
       {
+        "name": "FokkerPlanckKernel",
+        "path": "src/scpn_fusion/control/fokker_planck_re.py"
+      },
+      {
         "name": "FokkerPlanckSolver",
         "path": "src/scpn_fusion/control/fokker_planck_re.py"
       },
@@ -1686,6 +1690,10 @@
         "path": "src/scpn_fusion/core/locked_mode.py"
       },
       {
+        "name": "RunawayElectronKernel",
+        "path": "src/scpn_fusion/control/fokker_planck_re.py"
+      },
+      {
         "name": "RunawayElectronModel",
         "path": "src/scpn_fusion/control/runaway_electron_model.py"
       },
@@ -2641,7 +2649,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 552,
+    "python_capability_classes": 554,
     "python_capability_source_modules": 304,
     "rust_workspace_crates": 13,
     "test_files": 549

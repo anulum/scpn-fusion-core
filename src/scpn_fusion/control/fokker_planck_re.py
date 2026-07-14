@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 import numpy as np
 from dataclasses import dataclass
-from typing import Any, Tuple, cast
+from typing import Any, Protocol, Tuple, cast
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,84 @@ _KNOCK_ON_MAX_SOURCE = 1.0e24
 _RE_SEED_FLOOR = 1.0e6
 FloatArray = NDArray[np.float64]
 FloatAxisInput = FloatArray | list[float] | tuple[float, ...]
+
+
+class RunawayElectronKernel(Protocol):
+    """Compute-kernel protocol shared by the NumPy and Rust RE solvers.
+
+    Both dispatched tiers evolve the 1D-in-momentum runaway-electron
+    distribution and expose the same ``(n_re, current_re)`` step contract plus
+    state accessors, so the fastest available tier obtained through
+    :func:`create_fokker_planck_kernel` is interchangeable for a caller.
+    """
+
+    def step(
+        self, dt: float, e_field: float, n_e: float, t_e_ev: float, z_eff: float
+    ) -> Tuple[float, float]:
+        """Advance one step, returning ``(n_re, current_re)``."""
+        ...
+
+    def run(
+        self,
+        n_steps: int,
+        dt: float,
+        e_field: float,
+        n_e: float,
+        t_e_ev: float,
+        z_eff: float,
+    ) -> list[Tuple[float, float]]:
+        """Advance ``n_steps`` and return the per-step ``(n_re, current_re)``."""
+        ...
+
+    def get_f(self) -> FloatArray:
+        """Return the current distribution function ``f(p)``."""
+        ...
+
+    def set_f(self, values: FloatAxisInput) -> None:
+        """Overwrite the distribution function ``f(p)``."""
+        ...
+
+    def get_p(self) -> FloatArray:
+        """Return the momentum grid ``p`` (normalised to ``m_e c``)."""
+        ...
+
+    def get_dp(self) -> FloatArray:
+        """Return the momentum grid spacing ``dp``."""
+        ...
+
+    @property
+    def time(self) -> float:
+        """Return the accumulated simulation time [s]."""
+        ...
+
+
+def create_fokker_planck_kernel(np_grid: int = 200, p_max: float = 100.0) -> RunawayElectronKernel:
+    """Return the fastest available runaway-electron Fokker-Planck kernel.
+
+    Dispatches Rust -> NumPy through the class-kernel registry. Both tiers
+    implement the identical MUSCL-Hancock advection / central-difference
+    diffusion / operator-split source scheme, so the ``(n_re, current_re)``
+    trajectories agree to floating-point summation order in bounded regimes
+    (in exponentially growing regimes those round-off differences amplify, as
+    for any explicit scheme). The returned object satisfies the
+    :class:`RunawayElectronKernel` protocol.
+
+    Parameters
+    ----------
+    np_grid : int
+        Number of log-spaced momentum grid points (``>= 16``).
+    p_max : float
+        Maximum momentum in units of ``m_e c`` (``> 1e-3``).
+
+    Returns
+    -------
+    RunawayElectronKernel
+        The fastest available backend instance.
+    """
+    from scpn_fusion.core._multi_compat import dispatch_kernel_class
+
+    kernel_cls = dispatch_kernel_class("fokker_planck_re")
+    return cast(RunawayElectronKernel, kernel_cls(np_grid, p_max))
 
 
 @dataclass
@@ -534,3 +612,62 @@ class FokkerPlanckSolver:
             n_re=n_re,
             current_re=j_re,
         )
+
+
+class FokkerPlanckKernel:
+    """NumPy-tier runaway-electron kernel with the dispatched tuple contract.
+
+    Wraps :class:`FokkerPlanckSolver` so its ``step`` returns the
+    ``(n_re, current_re)`` tuple shared with the Rust ``PyFokkerPlanckSolver``
+    tier, and mirrors the Rust binding's ``run`` / ``get_f`` / ``set_f`` /
+    ``get_p`` / ``get_dp`` / ``time`` accessor surface. This is the NumPy
+    backend registered under the ``fokker_planck_re`` class-kernel; obtain the
+    fastest available tier through :func:`create_fokker_planck_kernel`.
+    """
+
+    def __init__(self, np_grid: int = 200, p_max: float = 100.0) -> None:
+        """Create the wrapped solver on a log-spaced momentum grid."""
+        self._solver = FokkerPlanckSolver(np_grid, p_max)
+
+    def step(
+        self, dt: float, e_field: float, n_e: float, t_e_ev: float, z_eff: float
+    ) -> Tuple[float, float]:
+        """Advance one step and return ``(n_re, current_re)``."""
+        state = self._solver.step(dt, e_field, n_e, t_e_ev, z_eff)
+        return float(state.n_re), float(state.current_re)
+
+    def run(
+        self,
+        n_steps: int,
+        dt: float,
+        e_field: float,
+        n_e: float,
+        t_e_ev: float,
+        z_eff: float,
+    ) -> list[Tuple[float, float]]:
+        """Advance ``n_steps`` and return the per-step ``(n_re, current_re)``."""
+        return [self.step(dt, e_field, n_e, t_e_ev, z_eff) for _ in range(int(n_steps))]
+
+    def get_f(self) -> FloatArray:
+        """Return a copy of the current distribution function ``f(p)``."""
+        return np.asarray(self._solver.f, dtype=np.float64)
+
+    def set_f(self, values: FloatAxisInput) -> None:
+        """Overwrite the distribution function ``f(p)`` from an array-like."""
+        replacement = np.asarray(values, dtype=np.float64)
+        if replacement.shape != self._solver.f.shape:
+            raise ValueError(f"f must have shape {self._solver.f.shape}, got {replacement.shape}.")
+        self._solver.f = replacement
+
+    def get_p(self) -> FloatArray:
+        """Return the momentum grid ``p`` (normalised to ``m_e c``)."""
+        return np.asarray(self._solver.p, dtype=np.float64)
+
+    def get_dp(self) -> FloatArray:
+        """Return the momentum grid spacing ``dp``."""
+        return np.asarray(self._solver.dp, dtype=np.float64)
+
+    @property
+    def time(self) -> float:
+        """Return the accumulated simulation time [s]."""
+        return float(self._solver.time)
