@@ -58,11 +58,19 @@ class SeedPolicy:
 
 @dataclass
 class CompilerInfo:
-    """Compiler identity injected during artifact generation."""
+    """Compiler identity injected during artifact generation.
+
+    ``proof_system`` / ``proof_checksum`` optionally carry the Lean compiler-
+    contract proof hash (see :mod:`scpn_fusion.scpn.proof_manifest`): the digest
+    of the machine-checked theorems that certify the Petri→SNN compilation
+    preserves reachability, interlock enforcement, and replay invariance.
+    """
 
     name: str
     version: str
     git_sha: str
+    proof_system: Optional[str] = None
+    proof_checksum: Optional[str] = None
 
 
 @dataclass
@@ -274,6 +282,8 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
             name=m["compiler"]["name"],
             version=m["compiler"]["version"],
             git_sha=m["compiler"]["git_sha"],
+            proof_system=m["compiler"].get("proof_system"),
+            proof_checksum=m["compiler"].get("proof_checksum"),
         ),
         notes=m.get("notes"),
     )
@@ -469,6 +479,23 @@ def get_artifact_json_schema() -> Dict[str, Any]:
     }
 
 
+def stamp_proof_contract(
+    artifact: Artifact, lean_dir: Optional[Union[str, Path]] = None
+) -> Artifact:
+    """Stamp the compiler block with the Lean proof-contract checksum.
+
+    Sets ``meta.compiler.proof_system`` and ``meta.compiler.proof_checksum`` to the
+    digest of the machine-checked Petri→SNN contract proofs (reachability, interlock
+    enforcement, replay invariance), so the emitted ``.scpnctl.json`` records which
+    proofs certify its compilation. Returns the same artifact for chaining.
+    """
+    from scpn_fusion.scpn.proof_manifest import PROOF_SYSTEM, compute_proof_checksum
+
+    artifact.meta.compiler.proof_system = PROOF_SYSTEM
+    artifact.meta.compiler.proof_checksum = compute_proof_checksum(lean_dir)
+    return artifact
+
+
 def save_artifact(
     artifact: Artifact,
     path: Union[str, Path],
@@ -504,6 +531,16 @@ def save_artifact(
         if pw_out_d is not None:
             packed_dict["w_out_packed"] = pw_out_d
 
+    compiler_dict: Dict[str, Any] = {
+        "name": artifact.meta.compiler.name,
+        "version": artifact.meta.compiler.version,
+        "git_sha": artifact.meta.compiler.git_sha,
+    }
+    if artifact.meta.compiler.proof_system is not None:
+        compiler_dict["proof_system"] = artifact.meta.compiler.proof_system
+    if artifact.meta.compiler.proof_checksum is not None:
+        compiler_dict["proof_checksum"] = artifact.meta.compiler.proof_checksum
+
     obj: Dict[str, Any] = {
         "meta": {
             "artifact_version": artifact.meta.artifact_version,
@@ -522,11 +559,7 @@ def save_artifact(
                 "rng_family": artifact.meta.seed_policy.rng_family,
             },
             "created_utc": artifact.meta.created_utc,
-            "compiler": {
-                "name": artifact.meta.compiler.name,
-                "version": artifact.meta.compiler.version,
-                "git_sha": artifact.meta.compiler.git_sha,
-            },
+            "compiler": compiler_dict,
         },
         "topology": {
             "places": [{"id": p.id, "name": p.name} for p in artifact.topology.places],

@@ -145,10 +145,18 @@ jobs:
             -o /tmp/elan-init.sh
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Build Lean safety proof surface
+      - name: Build Lean safety + compiler-contract proof surface
         run: |
           cd scpn-fusion-lean
           lake build
+      - name: Assert proofs are complete (no sorry/admit stubs)
+        run: |
+          cd scpn-fusion-lean
+          if grep -rnE '\bsorry\b|\badmit\b|sorryAx' -- *.lean; then
+            echo "::error::Lean proofs contain a sorry/admit stub — the contract is not proven"
+            exit 1
+          fi
+          echo "All Lean proofs are complete (no sorry/admit)."
 
   smoke-install:
     name: Install Smoke (${{ matrix.os }} / ${{ matrix.profile }})

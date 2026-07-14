@@ -131,7 +131,7 @@ def validate_raw_artifact_schema(obj: Any, *, error_type: Type[Exception]) -> No
         _require_object(meta["compiler"], "meta.compiler", error_type=error_type),
         path="meta.compiler",
         required={"name", "version", "git_sha"},
-        allowed={"name", "version", "git_sha"},
+        allowed={"name", "version", "git_sha", "proof_system", "proof_checksum"},
         error_type=error_type,
     )
 

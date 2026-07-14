@@ -389,6 +389,32 @@ The runtime activation/marking/sampling kernels have a Rust fast-path
 > the earlier guarded import + dead dispatch branches that implied one have been removed (a Rust phase
 > tier is a tracked forward optimisation, not a current path).
 
+### 7.3 Machine-checked compiler contract (`scpn-fusion-lean/`)
+
+The Petri→SNN compilation is backed by Lean 4 proofs (`scpn-fusion-lean/`, toolchain pinned in
+`lean-toolchain`, built by the `lean-safety-proofs` CI lane with a no-`sorry` gate). The contract has
+two layers:
+
+- **Static graph contract** (`SNNReachabilityPreservation.lean`): every Petri adjacency edge survives
+  compilation, so reachability is preserved *and* reflected (`compile_reachability_equivalent`), edge
+  well-formedness is preserved, and the compiled net has no spurious reachable path
+  (`compile_has_no_spurious_reachable_path`).
+- **Dynamic interlock + replay contract** (`InterlockReplayInvariance.lean`): over token markings, a
+  raised interlock (a marked guard place) disables its transition and firing is a safe no-op
+  (`interlock_raised_noop`); compilation preserves enabledness and one-step behaviour
+  (`compile_preserves_enabled`, `compile_step_commutes`) and cannot weaken a raised interlock
+  (`compile_preserves_interlock_block`); replay is a pure total fold, so it is deterministic and
+  machine-independent — `compile_replay_commutes` proves compiling then replaying equals replaying then
+  compiling, `replay_append` gives the prefix/checkpoint law behind a replay certificate, and
+  `replay_keeps_guard_clear` is a safety invariant across a whole episode. Every theorem depends only on
+  the standard Lean axioms (`propext`, `Quot.sound`) — no `sorryAx`.
+
+The proof sources are hashed into a stable, source-based checksum by
+`scpn/proof_manifest.py` (`compute_proof_checksum`, `proof_contract_manifest`); `scpn/artifact.py`
+carries it into the emitted `.scpnctl.json` under `meta.compiler.{proof_system, proof_checksum}`
+(`stamp_proof_contract`), so a controller artifact records exactly which machine-checked contract
+certifies its compilation. The fields are optional and backwards compatible.
+
 ---
 
 ## 8. Entry points and public API
