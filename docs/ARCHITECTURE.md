@@ -169,8 +169,11 @@ spatially varying fields, so the two are not interchangeable), `PyDriftWave` and
 (no Python twin implements the same reduced model — the Python `DriftWavePhysics` and
 `ReducedMHD` classes are different formulations), `PyPlasma2D` (the Rust scalar
 `(temperature, position)` plant is not the Python `Plasma2D` 2D poloidal-field twin), and
-`PyInverseSolver`, `PyPlantModel` (Python counterparts exist but the pairs have not been
-contract-reconciled; wiring them without a parity contract would overstate equivalence). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
+`PyInverseSolver`, `PyPlantModel` (Rust-only reduced capabilities with no Python twin
+implementing the same model — the Rust pedestal-parameter inverse fit and 0D
+systems-engineering formulas have no direct Python analogue; the Python `RealtimeEFIT`/
+`KineticEFIT` full-grid flux reconstruction and `NuclearEngineeringLab` 2D wall-loading are
+different, higher-fidelity formulations, so there is no parity contract to wire). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
 the default extension; when built with `--features gpu` on a machine with a physical
 adapter, it backs the `gs_rb_sor_smooth` dispatcher kernel (GPU tier, W-2) with the
 NumPy `mg_smooth` floor. Reconciliation of these pairs is tracked internally and follows the
