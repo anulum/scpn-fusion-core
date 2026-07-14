@@ -2529,6 +2529,7 @@
       "src/scpn_fusion/engineering/balance_of_plant.py",
       "src/scpn_fusion/engineering/cad_raytrace.py",
       "src/scpn_fusion/engineering/thermal_hydraulics.py",
+      "src/scpn_fusion/hpc/_hpc_native_trust.py",
       "src/scpn_fusion/hpc/hpc_bridge.py",
       "src/scpn_fusion/io/_tokamak_archive_shots.py",
       "src/scpn_fusion/io/imas_connector.py",
@@ -2641,9 +2642,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 552,
-    "python_capability_source_modules": 303,
+    "python_capability_source_modules": 304,
     "rust_workspace_crates": 13,
-    "test_files": 548
+    "test_files": 549
   },
   "documentation": {
     "public_pages": [
@@ -3041,6 +3042,7 @@
       "tests/test_honest_validated_coverage.py",
       "tests/test_hpc_bridge.py",
       "tests/test_hpc_bridge_runtime_contracts.py",
+      "tests/test_hpc_native_trust.py",
       "tests/test_hts_quench.py",
       "tests/test_hybrid_accuracy_benchmark_contract.py",
       "tests/test_hypothesis_physics_models.py",
