@@ -383,11 +383,13 @@ The runtime activation/marking/sampling kernels have a Rust fast-path
 - **`lyapunov_guard.py`**, **`realtime_monitor.py`**, **`ws_phase_stream.py`**: stability
   guardrail, tick-by-tick dashboard hook, and a WebSocket streaming server.
 
-> Wiring note: the phase engine (`phase/kuramoto.py`, `phase/upde.py`) runs on a **NumPy reference
-> implementation — the canonical and only execution path**. There is no Rust acceleration tier for
-> the Kuramoto/UPDE kernels: the Rust workspace does not implement `kuramoto_step` / `upde_tick`, and
-> the earlier guarded import + dead dispatch branches that implied one have been removed (a Rust phase
-> tier is a tracked forward optimisation, not a current path).
+> Wiring note: the phase engine (`phase/kuramoto.py`, `phase/upde.py`) dispatches **Rust → NumPy**
+> through the fastest-first function-kernel registry. The `fusion-phase` crate implements the
+> Kuramoto-Sakaguchi step and the multi-layer UPDE tick/run, exported as `py_kuramoto_step` /
+> `py_upde_tick` / `py_upde_run` and registered as the `kuramoto_step` / `upde_tick` / `upde_run`
+> kernels (`_multi_compat_providers.py`, RUST + NUMPY tiers) with the NumPy reference as the floor.
+> The Rust and NumPy tiers agree to floating-point round-off (kuramoto step ~2e-16 per output
+> component). RTL export for the phase-locked loop (`rmf_phase_lock`) remains a hardware forward item.
 
 ### 7.3 Machine-checked compiler contract (`scpn-fusion-lean/`)
 
