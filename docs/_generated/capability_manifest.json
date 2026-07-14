@@ -718,6 +718,14 @@
         "path": "src/scpn_fusion/control/volt_second_manager.py"
       },
       {
+        "name": "FnoKernel",
+        "path": "src/scpn_fusion/core/fno_training.py"
+      },
+      {
+        "name": "FnoSurrogate",
+        "path": "src/scpn_fusion/core/fno_training.py"
+      },
+      {
         "name": "FokkerPlanckKernel",
         "path": "src/scpn_fusion/control/fokker_planck_re.py"
       },
@@ -2657,10 +2665,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 556,
+    "python_capability_classes": 558,
     "python_capability_source_modules": 304,
     "rust_workspace_crates": 13,
-    "test_files": 549
+    "test_files": 550
   },
   "documentation": {
     "public_pages": [
@@ -2914,6 +2922,7 @@
       "tests/test_federated_disruption.py",
       "tests/test_fieldline_3d.py",
       "tests/test_flight_sim_controllers.py",
+      "tests/test_fno_dispatch.py",
       "tests/test_fno_external_retrain_tools.py",
       "tests/test_fno_multi_regime.py",
       "tests/test_fno_training.py",

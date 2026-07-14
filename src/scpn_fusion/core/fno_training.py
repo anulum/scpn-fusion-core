@@ -17,7 +17,7 @@ Pure-NumPy training for a multi-layer Fourier Neural Operator turbulence model (
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple, cast
+from typing import Dict, List, Protocol, Sequence, Tuple, cast
 
 import logging
 
@@ -173,6 +173,104 @@ class MultiLayerFNO:
                         "skip_b": np.array(data[f"layer{i}_skip_b"], dtype=np.float64),
                     }
                 )
+
+
+class FnoSurrogate(Protocol):
+    """Surrogate protocol shared by the NumPy and Rust FNO turbulence backends."""
+
+    def predict(self, field: FloatArray) -> FloatArray:
+        """Return the field-to-field turbulence prediction for ``field``."""
+        ...
+
+    def predict_and_suppress(self, field: FloatArray) -> Tuple[float, FloatArray]:
+        """Return ``(suppression, prediction)`` for ``field``."""
+        ...
+
+
+def _fno_suppression(prediction: FloatArray) -> float:
+    """Return the mean-square-energy suppression factor for a prediction.
+
+    Matches the Rust ``FnoController::predict_and_suppress`` closure:
+    ``clamp(tanh(mean(prediction**2) * 10), 0, 1)``.
+    """
+    energy = float(np.mean(np.asarray(prediction, dtype=np.float64) ** 2))
+    return float(min(max(np.tanh(energy * 10.0), 0.0), 1.0))
+
+
+class FnoKernel:
+    """NumPy-tier FNO turbulence surrogate with the dispatched contract.
+
+    Wraps :class:`MultiLayerFNO` loaded from an ``.npz`` weight archive,
+    presenting the ``(weights_path)`` construction and ``predict`` /
+    ``predict_and_suppress`` contract the Rust ``PyFnoController`` binding
+    exposes natively. Obtain the fastest available tier through
+    :func:`create_fno_controller`.
+    """
+
+    def __init__(self, weights_path: str | Path) -> None:
+        """Load the FNO backbone from a weight archive on the NumPy tier."""
+        model = MultiLayerFNO()
+        model.load_weights(weights_path)
+        self._model = model
+
+    def predict(self, field: FloatArray) -> FloatArray:
+        """Return the field-to-field turbulence prediction for ``field``."""
+        return np.asarray(
+            self._model.forward(np.asarray(field, dtype=np.float64)), dtype=np.float64
+        )
+
+    def predict_and_suppress(self, field: FloatArray) -> Tuple[float, FloatArray]:
+        """Return ``(suppression, prediction)`` for ``field``."""
+        prediction = self.predict(field)
+        return _fno_suppression(prediction), prediction
+
+
+class _FnoRustKernel:
+    """Rust-tier FNO turbulence surrogate wrapping ``PyFnoController.from_npz``."""
+
+    def __init__(self, weights_path: str | Path) -> None:
+        """Load the FNO backbone from a weight archive on the Rust tier."""
+        from scpn_fusion_rs import PyFnoController
+
+        self._inner = PyFnoController.from_npz(str(weights_path))
+
+    def predict(self, field: FloatArray) -> FloatArray:
+        """Return the field-to-field turbulence prediction for ``field``."""
+        return np.asarray(
+            self._inner.predict(np.asarray(field, dtype=np.float64)), dtype=np.float64
+        )
+
+    def predict_and_suppress(self, field: FloatArray) -> Tuple[float, FloatArray]:
+        """Return ``(suppression, prediction)`` for ``field``."""
+        suppression, prediction = self._inner.predict_and_suppress(
+            np.asarray(field, dtype=np.float64)
+        )
+        return float(suppression), np.asarray(prediction, dtype=np.float64)
+
+
+def create_fno_controller(weights_path: str | Path) -> FnoSurrogate:
+    """Return the fastest available FNO turbulence surrogate from a weight archive.
+
+    Dispatches Rust -> NumPy through the class-kernel registry. Both tiers run
+    the identical spectral FNO forward (lift -> Fourier spectral convolution +
+    pointwise skip + GELU per layer -> project) over the same weights, so
+    ``predict`` and the suppression factor agree to floating-point round-off.
+
+    Parameters
+    ----------
+    weights_path : str | Path
+        Path to an ``.npz`` FNO weight archive (as written by
+        :meth:`MultiLayerFNO.save_weights`).
+
+    Returns
+    -------
+    FnoSurrogate
+        The fastest available backend instance.
+    """
+    from scpn_fusion.core._multi_compat import dispatch_kernel_class
+
+    kernel_cls = dispatch_kernel_class("fno_turbulence")
+    return cast(FnoSurrogate, kernel_cls(weights_path))
 
 
 def _generate_training_pairs(

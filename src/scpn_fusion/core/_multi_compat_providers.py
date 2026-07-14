@@ -95,6 +95,24 @@ def _load_numpy_mpc_controller() -> type:
     return MpcKernel
 
 
+def _load_rust_fno() -> type:
+    """Load the Rust FNO turbulence surrogate kernel class."""
+    module = import_module("scpn_fusion_rs")
+    controller = module.PyFnoController
+    if not isinstance(controller, type):
+        raise TypeError("scpn_fusion_rs.PyFnoController is not a class")
+    from scpn_fusion.core.fno_training import _FnoRustKernel
+
+    return _FnoRustKernel
+
+
+def _load_numpy_fno() -> type:
+    """Load the NumPy-tier FNO turbulence surrogate kernel class."""
+    from scpn_fusion.core.fno_training import FnoKernel
+
+    return FnoKernel
+
+
 def _bootstrap_kernel_classes() -> None:
     """Register the stateful kernel classes with their backend tiers.
 
@@ -130,6 +148,14 @@ def _bootstrap_kernel_classes() -> None:
     run the identical gradient-descent planner over the linear surrogate
     ``x_{t+1} = x_t + B u_t`` at the canonical configuration, so ``plan``
     agrees to floating-point round-off (bit-exact in practice).
+
+    The FNO turbulence surrogate dispatches Rust -> NumPy on the shared
+    ``(weights_path)`` construction and ``predict`` / ``predict_and_suppress``
+    contract (the NumPy tier is the
+    :class:`~scpn_fusion.core.fno_training.FnoKernel` adapter over
+    ``MultiLayerFNO``; the Rust tier wraps ``PyFnoController.from_npz``). Both
+    run the identical spectral FNO forward over the same weight archive, so the
+    prediction and suppression factor agree to floating-point round-off.
     """
     register_kernel_class("equilibrium_kernel", BackendTier.RUST, _load_rust_equilibrium_kernel)
     register_kernel_class("equilibrium_kernel", BackendTier.NUMPY, _load_numpy_equilibrium_kernel)
@@ -139,6 +165,8 @@ def _bootstrap_kernel_classes() -> None:
     register_kernel_class("fokker_planck_re", BackendTier.NUMPY, _load_numpy_fokker_planck)
     register_kernel_class("neural_surrogate_mpc", BackendTier.RUST, _load_rust_mpc_controller)
     register_kernel_class("neural_surrogate_mpc", BackendTier.NUMPY, _load_numpy_mpc_controller)
+    register_kernel_class("fno_turbulence", BackendTier.RUST, _load_rust_fno)
+    register_kernel_class("fno_turbulence", BackendTier.NUMPY, _load_numpy_fno)
 
 
 # ---------------------------------------------------------------------------

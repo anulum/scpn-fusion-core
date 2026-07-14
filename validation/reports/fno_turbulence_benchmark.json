@@ -1,0 +1,41 @@
+{
+  "backends": {
+    "NUMPY": {
+      "class_name": "FnoKernel",
+      "final_prediction_energy": 3.9689819814491706e-07,
+      "invariants_passed": true,
+      "median_loop_s": 6.885666707996279,
+      "median_predict_us": 137713.33415992558,
+      "status": "available"
+    },
+    "RUST": {
+      "class_name": "_FnoRustKernel",
+      "final_prediction_energy": 3.968981981449171e-07,
+      "invariants_passed": true,
+      "median_loop_s": 0.9134934640023857,
+      "median_predict_us": 18269.869280047715,
+      "status": "available"
+    }
+  },
+  "benchmark_evidence": {
+    "classification": "local_non_isolated_regression",
+    "host": "aaarthuus",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "field_seed": 7,
+  "grid": 32,
+  "kernel": "fno_turbulence",
+  "model_contract": "spectral FNO forward (lift -> Fourier spectral convolution + pointwise skip + GELU per layer -> project) over a shared weight archive; both tiers run the identical forward and agree to floating-point round-off",
+  "physics_invariants_passed": true,
+  "predicts": 50,
+  "registered_tiers": [
+    "rust*",
+    "numpy*"
+  ],
+  "repeats": 3,
+  "rust_over_numpy_speedup": 7.537729583556491,
+  "schema": "scpn-fusion-core.fno-turbulence-benchmark.v1",
+  "selected_class": "_FnoRustKernel",
+  "weight_seed": 2026
+}
