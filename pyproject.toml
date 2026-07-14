@@ -367,6 +367,10 @@ files = [
     # nuclear/
     "src/scpn_fusion/nuclear/__init__.py",
     "src/scpn_fusion/nuclear/blanket_neutronics.py",
+    "src/scpn_fusion/nuclear/_blanket_validators.py",
+    "tests/test_blanket_validators.py",
+    "src/scpn_fusion/nuclear/multigroup_blanket.py",
+    "tests/test_multigroup_blanket.py",
     "src/scpn_fusion/nuclear/nuclear_wall_interaction.py",
     "src/scpn_fusion/nuclear/pwi_erosion.py",
     "src/scpn_fusion/nuclear/temhd_peltier.py",

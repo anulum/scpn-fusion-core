@@ -1167,7 +1167,7 @@
       },
       {
         "name": "MultiGroupBlanket",
-        "path": "src/scpn_fusion/nuclear/blanket_neutronics.py"
+        "path": "src/scpn_fusion/nuclear/multigroup_blanket.py"
       },
       {
         "name": "MultiImpuritySeeding",
@@ -2545,7 +2545,9 @@
       "src/scpn_fusion/io/tokamak_disruption_archive.py",
       "src/scpn_fusion/io/tokamak_live_payload.py",
       "src/scpn_fusion/io/tokamak_synthetic_archive.py",
+      "src/scpn_fusion/nuclear/_blanket_validators.py",
       "src/scpn_fusion/nuclear/blanket_neutronics.py",
+      "src/scpn_fusion/nuclear/multigroup_blanket.py",
       "src/scpn_fusion/nuclear/nuclear_wall_interaction.py",
       "src/scpn_fusion/nuclear/pwi_erosion.py",
       "src/scpn_fusion/nuclear/temhd_peltier.py",
@@ -2637,9 +2639,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 61,
     "python_capability_classes": 552,
-    "python_capability_source_modules": 299,
+    "python_capability_source_modules": 301,
     "rust_workspace_crates": 13,
-    "test_files": 544
+    "test_files": 546
   },
   "documentation": {
     "public_pages": [
@@ -2798,6 +2800,7 @@
       "tests/test_benchmark_regression_guard.py",
       "tests/test_benchmark_sparc_geqdsk_rmse.py",
       "tests/test_blanket_neutronics.py",
+      "tests/test_blanket_validators.py",
       "tests/test_blob_transport.py",
       "tests/test_boris_pyo3_bridge.py",
       "tests/test_burn_controller.py",
@@ -3107,6 +3110,7 @@
       "tests/test_multi_ion_transport_conservation_benchmark.py",
       "tests/test_multi_machine_validation_physics_contracts.py",
       "tests/test_multigrid_solve.py",
+      "tests/test_multigroup_blanket.py",
       "tests/test_mypy_expansion_guard.py",
       "tests/test_nengo_snn_wrapper.py",
       "tests/test_neoclassical.py",
