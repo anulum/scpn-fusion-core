@@ -55,6 +55,7 @@ from scpn_fusion.core._tglf_interface_types import (
 from scpn_fusion.core.neural_transport_math import _compute_nustar
 from scpn_fusion.core.tglf_surrogate_bridge import (
     TGLFDatasetGenerator,  # noqa: F401 - re-exported for API stability
+    TGLFSurrogate,  # noqa: F401 - re-exported for API stability
     train_surrogate_from_tglf,  # noqa: F401 - re-exported for API stability
 )
 from scpn_fusion.core.tglf_validation_runtime import (
@@ -68,6 +69,7 @@ __all__ = [
     "TGLFBenchmark",
     "TGLFComparisonResult",
     "TGLFDatasetGenerator",
+    "TGLFSurrogate",
     "TGLFInputDeck",
     "TGLFOutput",
     "TGLFProfileScanResult",

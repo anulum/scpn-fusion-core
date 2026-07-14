@@ -2050,6 +2050,10 @@
         "path": "src/scpn_fusion/core/gk_tglf.py"
       },
       {
+        "name": "TGLFSurrogate",
+        "path": "src/scpn_fusion/core/tglf_surrogate_bridge.py"
+      },
+      {
         "name": "TQResult",
         "path": "src/scpn_fusion/core/disruption_sequence.py"
       },
@@ -2670,7 +2674,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 559,
+    "python_capability_classes": 560,
     "python_capability_source_modules": 305,
     "rust_workspace_crates": 13,
     "test_files": 552
