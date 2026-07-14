@@ -247,9 +247,7 @@ def _max_rel_diff(a: np.ndarray, b: np.ndarray) -> float:
 class TestSORSolverParity:
     """Compare the full Picard+SOR equilibrium solve between Python and Rust."""
 
-    @pytest.mark.xfail(
-        reason="Rust SOR uses different Jacobi seed; max rel diff ~1.9", strict=False
-    )
+    @pytest.mark.xfail(reason="Rust SOR uses different Jacobi seed; max rel diff ~1.9", strict=True)
     def test_sor_equilibrium_parity(self, tmp_path: Path) -> None:
         """Run the SOR-based equilibrium solver via both Python and Rust
         FusionKernel on the same 65x65 Solov'ev grid (R0=1.7, a=0.5,
@@ -356,10 +354,6 @@ class TestMultigridSolverParity:
             err_msg=f"multigrid solve parity failed: max abs diff = {np.max(np.abs(psi_py - psi_rs)):.3e}",
         )
 
-    @pytest.mark.xfail(
-        reason="Python multigrid restriction boundary fix (HI-02) diverges from Rust implementation",
-        strict=False,
-    )
     def test_multigrid_equilibrium_parity(self, tmp_path: Path) -> None:
         """Compare full equilibrium solve using multigrid in both backends
         on the Solov'ev problem (R0=1.7, a=0.5, B0=2.0, Ip=1.0 MA).
@@ -384,9 +378,12 @@ class TestMultigridSolverParity:
         assert np.all(np.isfinite(psi_py)), "Python multigrid equilibrium produced NaN"
         assert np.all(np.isfinite(psi_rs)), "Rust multigrid equilibrium produced NaN"
 
-        # Rust multigrid uses a different smoothing stencil than Python.
-        # A2 vacuum-field fix (v3.9.3) widens the gap further since the
-        # Rust binary was not rebuilt. Threshold 0.45 until stencil alignment.
+        # The HI-02 restriction boundary fix has landed: the top/bottom and
+        # left/right edge rows now match the Rust V-cycle to rtol=1e-3, so the
+        # boundary parity is enforced (this test previously xfailed on it). The
+        # interior still relaxes with a different smoothing stencil than Rust, so
+        # the whole-field agreement stays a loose rel-L2 / MAE guard (< 0.45 /
+        # < 0.30) until the interior stencils are aligned.
         np.testing.assert_allclose(
             psi_py[[0, -1], :],
             psi_rs[[0, -1], :],
@@ -847,7 +844,7 @@ class TestBFieldParity:
     Solov'ev equilibrium (R0=1.7, a=0.5, B0=2.0, Ip=1.0 MA).
     """
 
-    @pytest.mark.xfail(reason="Depends on SOR parity (Rust Jacobi seed divergence)", strict=False)
+    @pytest.mark.xfail(reason="Depends on SOR parity (Rust Jacobi seed divergence)", strict=True)
     def test_b_field_parity(self, tmp_path: Path) -> None:
         """After equilibrium solve, B_R and B_Z should match between
         Python and Rust within rtol=1e-3.
