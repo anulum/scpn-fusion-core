@@ -18,11 +18,6 @@ use fusion_core::ignition::calculate_thermodynamics;
 use fusion_core::inverse::{reconstruct_equilibrium, InverseConfig, JacobianMode};
 use fusion_core::kernel::FusionKernel;
 use fusion_core::source::ProfileParams;
-use fusion_engineering::blanket::neutron_wall_loading;
-use fusion_engineering::layout::{
-    aries_cost_scaling, cost_of_electricity as engineering_coe, scan_major_radius,
-};
-use fusion_engineering::tritium::tritium_breeding_ratio;
 use fusion_physics::frc::{
     rotating_frc_bvp_acceptance_status, solve_frc_equilibrium as solve_frc_equilibrium_rust,
     solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs,
@@ -48,6 +43,7 @@ use bindings::particles::{
     py_seed_alpha_particles, PyParticle, PyPopulationSummary,
 };
 use bindings::phase::{py_kuramoto_run, py_kuramoto_step, py_upde_run, py_upde_tick};
+use bindings::plant::PyPlantModel;
 use bindings::transport::{
     py_evaluate_design, py_run_design_scan, PyDriftWave, PyFokkerPlanckSolver, PyPlasma2D,
     PySpiAblationSolver, PyTransportSolver,
@@ -331,62 +327,6 @@ impl PyInverseSolver {
             iterations: result.iterations,
             residual: result.residual,
         })
-    }
-}
-
-// ─── Plant model ───
-
-#[pyclass]
-struct PyPlantModel;
-
-#[pymethods]
-impl PyPlantModel {
-    #[new]
-    fn new() -> Self {
-        Self
-    }
-
-    fn tritium_breeding_ratio(
-        &self,
-        n_li6: f64,
-        sigma_li6: f64,
-        neutron_flux: f64,
-        blanket_vol: f64,
-    ) -> f64 {
-        tritium_breeding_ratio(n_li6, sigma_li6, neutron_flux, blanket_vol)
-    }
-
-    fn wall_loading(&self, p_neutron: f64, r: f64, a: f64, kappa: f64) -> f64 {
-        neutron_wall_loading(p_neutron, r, a, kappa)
-    }
-
-    fn aries_cost_scaling(&self, c0: f64, r: f64, b: f64) -> f64 {
-        aries_cost_scaling(c0, r, b)
-    }
-
-    fn cost_of_electricity(&self, capital_annuity: f64, o_and_m: f64, p_net: f64, cf: f64) -> f64 {
-        engineering_coe(capital_annuity, o_and_m, p_net, cf)
-    }
-
-    fn scan_radius(
-        &self,
-        r_min: f64,
-        r_max: f64,
-        steps: usize,
-    ) -> Vec<(f64, f64, f64, f64, f64, f64)> {
-        scan_major_radius(r_min, r_max, steps)
-            .into_iter()
-            .map(|d| {
-                (
-                    d.r_major,
-                    d.b_field,
-                    d.p_net,
-                    d.capacity_factor,
-                    d.capital_cost,
-                    d.coe,
-                )
-            })
-            .collect()
     }
 }
 
