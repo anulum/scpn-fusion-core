@@ -23,6 +23,7 @@ from scpn_fusion.core.tglf_surrogate_bridge import (
     TGLFSurrogate,
     train_surrogate_from_tglf,
 )
+from scpn_fusion.io.safe_loaders import checked_np_load
 
 
 def _synthetic_dataset(n_samples: int = 200, *, seed: int = 7) -> list[dict[str, dict[str, float]]]:
@@ -232,11 +233,10 @@ def test_load_routes_through_size_checked_loader(
     """load() reads via the size-bounded safe loader rather than raw ``np.load``."""
     out_path = _fit_and_save(tmp_path)
     calls: list[Path] = []
-    real_loader = bridge.checked_np_load
 
     def _spy(path: str | Path, **kwargs: Any) -> Any:
         calls.append(Path(path))
-        return real_loader(path, **kwargs)
+        return checked_np_load(path, **kwargs)
 
     monkeypatch.setattr(bridge, "checked_np_load", _spy)
     loaded = TGLFSurrogate.load(out_path)
@@ -247,7 +247,8 @@ def test_load_routes_through_size_checked_loader(
 def test_load_enforces_archive_size_bound(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """An archive above the byte bound is rejected before NumPy parses it."""
     out_path = _fit_and_save(tmp_path)
-    real_loader = bridge.checked_np_load
-    monkeypatch.setattr(bridge, "checked_np_load", lambda path, **_: real_loader(path, max_bytes=8))
+    monkeypatch.setattr(
+        bridge, "checked_np_load", lambda path, **_: checked_np_load(path, max_bytes=8)
+    )
     with pytest.raises(ValueError, match="too large"):
         TGLFSurrogate.load(out_path)
