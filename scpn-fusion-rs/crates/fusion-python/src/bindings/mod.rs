@@ -12,6 +12,7 @@
 
 pub(crate) mod control;
 pub(crate) mod diagnostics;
+pub(crate) mod flight;
 #[cfg(feature = "gpu")]
 pub(crate) mod gpu;
 pub(crate) mod mhd;
