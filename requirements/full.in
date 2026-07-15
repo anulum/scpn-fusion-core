@@ -1,7 +1,7 @@
 # Full install dependencies (smoke-install "full" profile)
 # Regenerate: uv pip compile requirements/full.in --generate-hashes --universal -o requirements/full.txt
 -r ci.in
-streamlit>=1.58.0,<2
+streamlit>=1.59.2,<2
 nengo>=4.0
 freegs>=0.6
 omas>=0.70
