@@ -12,6 +12,8 @@
 
 pub(crate) mod control;
 pub(crate) mod diagnostics;
+#[cfg(feature = "gpu")]
+pub(crate) mod gpu;
 pub(crate) mod mhd;
 pub(crate) mod neural;
 pub(crate) mod nuclear;
