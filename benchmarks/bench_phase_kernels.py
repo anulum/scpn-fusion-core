@@ -80,6 +80,34 @@ def _kuramoto_workload(impl: Callable[..., Any]) -> Callable[[], FloatArray]:
     return run
 
 
+def _kuramoto_run_workload(impl: Callable[..., Any]) -> Callable[[], FloatArray]:
+    """Build the seeded batched-run Kuramoto workload for one tier.
+
+    Uses the same seeded initial state as :func:`_kuramoto_workload` so the
+    batched trajectory is identical to the per-step one; the batched tier runs
+    the whole loop in one dispatch instead of ``KURAMOTO_STEPS`` calls.
+    """
+    rng = np.random.default_rng(BENCH_SEED)
+    theta0 = rng.uniform(-np.pi, np.pi, size=KURAMOTO_N)
+    omega = rng.normal(0.0, 0.2, size=KURAMOTO_N)
+
+    def run() -> FloatArray:
+        out = impl(
+            theta0,
+            omega,
+            n_steps=KURAMOTO_STEPS,
+            dt=1e-3,
+            K=1.5,
+            alpha=0.05,
+            zeta=0.4,
+            psi=0.0,
+            wrap=True,
+        )
+        return np.asarray(out["theta_final"], dtype=np.float64)
+
+    return run
+
+
 def _upde_workload(impl: Callable[..., Any]) -> Callable[[], FloatArray]:
     """Build the seeded fixed-tick UPDE workload for one tier."""
     rng = np.random.default_rng(BENCH_SEED)
@@ -175,6 +203,14 @@ def build_report(*, repeats: int = DEFAULT_REPEATS) -> MetricRow:
             providers._numpy_kuramoto_step,
             providers._rust_kuramoto_step,
             _kuramoto_workload,
+            repeats,
+            rust_available,
+        ),
+        _bench_kernel(
+            f"kuramoto_run batched (N={KURAMOTO_N}, steps={KURAMOTO_STEPS})",
+            providers._numpy_kuramoto_run,
+            providers._rust_kuramoto_run,
+            _kuramoto_run_workload,
             repeats,
             rust_available,
         ),

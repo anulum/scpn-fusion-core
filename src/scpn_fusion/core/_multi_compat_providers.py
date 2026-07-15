@@ -465,6 +465,85 @@ def _rust_kuramoto_step(
     return result
 
 
+def _numpy_kuramoto_run(
+    theta: Any,
+    omega: Any,
+    *,
+    n_steps: int,
+    dt: float,
+    K: float,
+    alpha: float = 0.0,
+    zeta: float = 0.0,
+    psi: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """NumPy-tier provider for the batched ``kuramoto_run`` kernel.
+
+    Iterates the single-step NumPy kernel with a constant driver phase and
+    records the per-step order parameter, matching the Rust batched tier's
+    contract so the two are dispatch-interchangeable.
+    """
+    import numpy as np
+
+    from scpn_fusion.phase.kuramoto import _kuramoto_step_numpy
+
+    theta_state: Any = np.asarray(theta, dtype=np.float64).ravel().copy()
+    omega_arr = np.asarray(omega, dtype=np.float64).ravel()
+    r_hist = np.empty(int(n_steps), dtype=np.float64)
+    psi_r_hist = np.empty(int(n_steps), dtype=np.float64)
+    for step in range(int(n_steps)):
+        out = _kuramoto_step_numpy(
+            theta_state, omega_arr, dt=dt, K=K, alpha=alpha, zeta=zeta, psi=psi, wrap=wrap
+        )
+        r_hist[step] = out["R"]
+        psi_r_hist[step] = out["Psi_r"]
+        theta_state = np.asarray(out["theta1"], dtype=np.float64)
+    return {
+        "theta_final": theta_state,
+        "R_hist": r_hist,
+        "Psi_r_hist": psi_r_hist,
+        "Psi": float(psi),
+    }
+
+
+def _rust_kuramoto_run(
+    theta: Any,
+    omega: Any,
+    *,
+    n_steps: int,
+    dt: float,
+    K: float,
+    alpha: float = 0.0,
+    zeta: float = 0.0,
+    psi: float = 0.0,
+    wrap: bool = True,
+) -> Any:
+    """Rust-tier provider for the batched ``kuramoto_run`` kernel.
+
+    Normalises the PyO3 dict payload so the tier is type-compatible with
+    :func:`_numpy_kuramoto_run` (float64 arrays, same keys).
+    """
+    import numpy as np
+
+    from scpn_fusion_rs import py_kuramoto_run
+
+    result = py_kuramoto_run(
+        np.asarray(theta, dtype=np.float64).ravel(),
+        np.asarray(omega, dtype=np.float64).ravel(),
+        int(n_steps),
+        float(dt),
+        float(K),
+        alpha=float(alpha),
+        zeta=float(zeta),
+        psi=float(psi),
+        wrap=bool(wrap),
+    )
+    result["theta_final"] = np.asarray(result["theta_final"], dtype=np.float64)
+    result["R_hist"] = np.asarray(result["R_hist"], dtype=np.float64)
+    result["Psi_r_hist"] = np.asarray(result["Psi_r_hist"], dtype=np.float64)
+    return result
+
+
 def _numpy_upde_tick(
     theta_flat: Any,
     omega_flat: Any,
@@ -775,6 +854,8 @@ def _bootstrap_existing_backends() -> None:
     # everywhere.
     register_kernel("kuramoto_step", BackendTier.RUST, _rust_kuramoto_step)
     register_kernel("kuramoto_step", BackendTier.NUMPY, _numpy_kuramoto_step)
+    register_kernel("kuramoto_run", BackendTier.RUST, _rust_kuramoto_run)
+    register_kernel("kuramoto_run", BackendTier.NUMPY, _numpy_kuramoto_run)
     register_kernel("upde_tick", BackendTier.RUST, _rust_upde_tick)
     register_kernel("upde_tick", BackendTier.NUMPY, _numpy_upde_tick)
     register_kernel("upde_run", BackendTier.RUST, _rust_upde_run)

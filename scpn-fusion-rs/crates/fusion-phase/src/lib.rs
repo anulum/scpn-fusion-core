@@ -13,5 +13,8 @@
 pub mod kuramoto;
 pub mod upde;
 
-pub use kuramoto::{kuramoto_step, lyapunov_v, order_parameter, wrap_phase, KuramotoStepResult};
+pub use kuramoto::{
+    kuramoto_run, kuramoto_step, lyapunov_v, order_parameter, wrap_phase, KuramotoRunResult,
+    KuramotoStepResult,
+};
 pub use upde::{upde_run, upde_tick, UpdeRunResult, UpdeTickResult};

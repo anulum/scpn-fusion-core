@@ -33,7 +33,7 @@ def _kuramoto_state(n: int = 257) -> tuple[npt.NDArray[np.float64], npt.NDArray[
 def test_phase_kernels_are_registered_with_rust_and_numpy_tiers() -> None:
     """Both M-3 kernels carry RUST + NUMPY registrations."""
     kernels = multi.registered_kernels()
-    for name in ("kuramoto_step", "upde_tick"):
+    for name in ("kuramoto_step", "kuramoto_run", "upde_tick"):
         assert name in kernels
         tier_names = [entry.rstrip("*") for entry in kernels[name]]
         assert tier_names == ["rust", "numpy"]
@@ -74,6 +74,48 @@ def test_kuramoto_rust_tier_respects_wrap_flag() -> None:
     rust_out = providers._rust_kuramoto_step(theta, omega, **kwargs)
     np.testing.assert_allclose(rust_out["theta1"], numpy_out["theta1"], rtol=0.0, atol=1e-12)
     assert np.max(np.abs(numpy_out["theta1"])) > np.pi  # wrap really off
+
+
+def test_kuramoto_run_numpy_matches_iterated_step() -> None:
+    """The batched NumPy run equals iterating the single NumPy step."""
+    theta, omega = _kuramoto_state(128)
+    kwargs: dict[str, Any] = dict(dt=5e-3, K=1.5, alpha=0.05, zeta=0.4, psi=0.2, wrap=True)
+    n_steps = 30
+    batched = providers._numpy_kuramoto_run(theta, omega, n_steps=n_steps, **kwargs)
+
+    state = theta.copy()
+    r_first = float("nan")
+    for i in range(n_steps):
+        out = providers._numpy_kuramoto_step(state, omega, **kwargs)
+        if i == 0:
+            r_first = out["R"]
+        state = out["theta1"]
+    np.testing.assert_allclose(batched["theta_final"], state, rtol=0.0, atol=1e-12)
+    assert batched["R_hist"].shape == (n_steps,)
+    assert batched["R_hist"][0] == pytest.approx(r_first)
+
+
+@pytest.mark.skipif(not RUST_AVAILABLE, reason="Rust extension not built")
+def test_kuramoto_run_rust_matches_numpy_tier() -> None:
+    """The batched Rust run agrees with the NumPy run within the parity gate.
+
+    Uses a population above the parallel threshold so the Rust reduction runs in
+    parallel; the reordered summation must still land within the 1e-12 gate over
+    a short, stable trajectory.
+    """
+    theta, omega = _kuramoto_state(4096)
+    kwargs: dict[str, Any] = dict(
+        n_steps=40, dt=5e-3, K=1.5, alpha=0.05, zeta=0.4, psi=0.2, wrap=True
+    )
+    numpy_out = providers._numpy_kuramoto_run(theta, omega, **kwargs)
+    rust_out = providers._rust_kuramoto_run(theta, omega, **kwargs)
+    np.testing.assert_allclose(
+        rust_out["theta_final"], numpy_out["theta_final"], rtol=0.0, atol=1e-12
+    )
+    np.testing.assert_allclose(rust_out["R_hist"], numpy_out["R_hist"], rtol=0.0, atol=1e-12)
+    np.testing.assert_allclose(
+        rust_out["Psi_r_hist"], numpy_out["Psi_r_hist"], rtol=0.0, atol=1e-12
+    )
 
 
 def _upde_fixture() -> tuple[

@@ -2175,6 +2175,52 @@ fn py_kuramoto_step<'py>(
 }
 
 #[pyfunction]
+#[pyo3(signature = (theta, omega, n_steps, dt, k, alpha=0.0, zeta=0.0, psi=0.0, wrap=true))]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "PyO3 binding preserves the stable Python keyword API of the NumPy tier."
+)]
+fn py_kuramoto_run<'py>(
+    py: Python<'py>,
+    theta: PyReadonlyArray1<'py, f64>,
+    omega: PyReadonlyArray1<'py, f64>,
+    n_steps: usize,
+    dt: f64,
+    k: f64,
+    alpha: f64,
+    zeta: f64,
+    psi: f64,
+    wrap: bool,
+) -> PyResult<Bound<'py, PyDict>> {
+    let theta_slice = theta.as_slice()?;
+    let omega_slice = omega.as_slice()?;
+    let out = fusion_phase::kuramoto_run(
+        theta_slice,
+        omega_slice,
+        n_steps,
+        dt,
+        k,
+        alpha,
+        zeta,
+        psi,
+        wrap,
+    )
+    .map_err(|err| pyo3::exceptions::PyValueError::new_err(err.to_string()))?;
+    let result = PyDict::new(py);
+    result.set_item(
+        "theta_final",
+        Array1::from_vec(out.theta_final).into_pyarray(py),
+    )?;
+    result.set_item("R_hist", Array1::from_vec(out.r_hist).into_pyarray(py))?;
+    result.set_item(
+        "Psi_r_hist",
+        Array1::from_vec(out.psi_r_hist).into_pyarray(py),
+    )?;
+    result.set_item("Psi", psi)?;
+    Ok(result)
+}
+
+#[pyfunction]
 #[pyo3(signature = (theta, omega, offsets, k, alpha, zeta, dt, psi_global, actuation_gain=1.0, pac_gamma=0.0, wrap=true))]
 #[expect(
     clippy::too_many_arguments,
@@ -2712,6 +2758,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     }
     m.add_class::<PyNonlinearGKSolver>()?;
     m.add_function(wrap_pyfunction!(py_kuramoto_step, m)?)?;
+    m.add_function(wrap_pyfunction!(py_kuramoto_run, m)?)?;
     m.add_function(wrap_pyfunction!(py_upde_tick, m)?)?;
     m.add_function(wrap_pyfunction!(py_upde_run, m)?)?;
     m.add_function(wrap_pyfunction!(py_solve_frc_equilibrium, m)?)?;
