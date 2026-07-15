@@ -17,7 +17,7 @@ fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }
 wgpu = "29"
 bytemuck = { version = "1", features = ["derive"] }
-pollster = "0.4"
+pollster = "1.0"
 log = "0.4"
 
 [dev-dependencies]
