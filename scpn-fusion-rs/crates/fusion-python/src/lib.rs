@@ -30,7 +30,6 @@ use fusion_core::particles::{
 };
 use fusion_core::source::ProfileParams;
 use fusion_core::transport::{self, NeoclassicalParams, TransportSolver};
-use fusion_diagnostics::tomography::PlasmaTomography;
 use fusion_engineering::blanket::neutron_wall_loading;
 use fusion_engineering::layout::{
     aries_cost_scaling, cost_of_electricity as engineering_coe, scan_major_radius,
@@ -53,6 +52,7 @@ use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
 
 mod bindings;
+use bindings::diagnostics::PyTomography;
 use bindings::phase::{py_kuramoto_run, py_kuramoto_step, py_upde_run, py_upde_tick};
 
 // ─── Equilibrium solver ───
@@ -1313,42 +1313,6 @@ impl PyMpcController {
             .plan(&state.as_array().to_owned())
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(result.into_pyarray(py))
-    }
-}
-
-#[pyclass]
-struct PyTomography {
-    inner: PlasmaTomography,
-}
-
-#[pymethods]
-impl PyTomography {
-    #[new]
-    #[pyo3(signature = (chords, r_range, z_range, res, lambda_reg=0.1))]
-    fn new(
-        chords: Vec<((f64, f64), (f64, f64))>,
-        r_range: (f64, f64),
-        z_range: (f64, f64),
-        res: usize,
-        lambda_reg: f64,
-    ) -> Self {
-        Self {
-            inner: PlasmaTomography::with_lambda(&chords, r_range, z_range, res, lambda_reg),
-        }
-    }
-
-    fn reconstruct<'py>(&self, py: Python<'py>, signals: Vec<f64>) -> Bound<'py, PyArray2<f64>> {
-        self.inner.reconstruct_2d(&signals).into_pyarray(py)
-    }
-
-    #[getter]
-    fn lambda_reg(&self) -> f64 {
-        self.inner.lambda_reg
-    }
-
-    #[getter]
-    fn res(&self) -> usize {
-        self.inner.res
     }
 }
 

@@ -10,4 +10,5 @@
 //! responsibility of the SCPN Fusion Core Rust workspace; the crate root
 //! (`lib.rs`) declares the `#[pymodule]` and registers the exported items.
 
+pub(crate) mod diagnostics;
 pub(crate) mod phase;
