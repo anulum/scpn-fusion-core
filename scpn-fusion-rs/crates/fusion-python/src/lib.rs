@@ -18,7 +18,6 @@ use rand::{Rng, SeedableRng};
 
 use fusion_control::digital_twin::Plasma2D;
 use fusion_control::flight_sim::RustFlightSim;
-use fusion_control::mpc::{MPController, NeuralSurrogate};
 use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
 use fusion_control::spi_ablation::SpiAblationSolver;
 use fusion_core::ignition::calculate_thermodynamics;
@@ -37,7 +36,6 @@ use fusion_engineering::layout::{
 use fusion_engineering::tritium::tritium_breeding_ratio;
 use fusion_ml::neural_transport::NeuralTransportModel;
 use fusion_physics::design_scanner;
-use fusion_physics::fno::FnoController;
 use fusion_physics::fokker_planck::FokkerPlanckSolver;
 use fusion_physics::frc::{
     rotating_frc_bvp_acceptance_status, solve_frc_equilibrium as solve_frc_equilibrium_rust,
@@ -51,6 +49,7 @@ use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
 
 mod bindings;
+use bindings::control::{PyFnoController, PyMpcController};
 use bindings::diagnostics::PyTomography;
 use bindings::nuclear::PyBreedingBlanket;
 use bindings::phase::{py_kuramoto_run, py_kuramoto_step, py_upde_run, py_upde_tick};
@@ -1240,79 +1239,6 @@ impl PyHallMHD {
     #[getter]
     fn nu(&self) -> f64 {
         self.inner.nu
-    }
-}
-
-#[pyclass]
-struct PyFnoController {
-    inner: FnoController,
-}
-
-#[pymethods]
-impl PyFnoController {
-    #[new]
-    fn new() -> Self {
-        Self {
-            inner: FnoController::new(),
-        }
-    }
-
-    #[staticmethod]
-    fn from_npz(path: &str) -> PyResult<Self> {
-        let inner = FnoController::load_weights_npz(path)
-            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
-        Ok(Self { inner })
-    }
-
-    fn predict<'py>(
-        &self,
-        py: Python<'py>,
-        field: PyReadonlyArray2<'py, f64>,
-    ) -> Bound<'py, PyArray2<f64>> {
-        let out = self.inner.predict(&field.as_array().to_owned());
-        out.into_pyarray(py)
-    }
-
-    fn predict_and_suppress<'py>(
-        &self,
-        py: Python<'py>,
-        field: PyReadonlyArray2<'py, f64>,
-    ) -> (f64, Bound<'py, PyArray2<f64>>) {
-        let (suppression, prediction) = self
-            .inner
-            .predict_and_suppress(&field.as_array().to_owned());
-        (suppression, prediction.into_pyarray(py))
-    }
-}
-
-#[pyclass]
-struct PyMpcController {
-    inner: MPController,
-}
-
-#[pymethods]
-impl PyMpcController {
-    #[new]
-    fn new(
-        b_matrix: PyReadonlyArray2<'_, f64>,
-        target: PyReadonlyArray1<'_, f64>,
-    ) -> PyResult<Self> {
-        let surrogate = NeuralSurrogate::new(b_matrix.as_array().to_owned());
-        let inner = MPController::new(surrogate, target.as_array().to_owned())
-            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        Ok(Self { inner })
-    }
-
-    fn plan<'py>(
-        &self,
-        py: Python<'py>,
-        state: PyReadonlyArray1<'py, f64>,
-    ) -> PyResult<Bound<'py, PyArray1<f64>>> {
-        let result = self
-            .inner
-            .plan(&state.as_array().to_owned())
-            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        Ok(result.into_pyarray(py))
     }
 }
 
