@@ -27,6 +27,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.io.safe_loaders import checked_np_load
+
 FloatArray = NDArray[np.float64]
 
 logger = logging.getLogger(__name__)
@@ -195,8 +197,13 @@ class TGLFSurrogate:
 
     @classmethod
     def load(cls, path: str | Path) -> TGLFSurrogate:
-        """Load a fitted surrogate from a ``.npz`` archive."""
-        with np.load(path, allow_pickle=False) as archive:
+        """Load a fitted surrogate from a size-bounded ``.npz`` archive.
+
+        Uses :func:`scpn_fusion.io.safe_loaders.checked_np_load`, which enforces a
+        byte-size bound and disables pickle, so an oversized or crafted archive is
+        rejected before NumPy parses it.
+        """
+        with checked_np_load(path) as archive:
             model = cls(
                 features=tuple(str(name) for name in archive["features"]),
                 targets=tuple(str(name) for name in archive["targets"]),

@@ -25,7 +25,7 @@ confinement:
 - `no-new-privileges:true`
 - read-only root filesystem
 - bounded tmpfs mounts for `/tmp` and Streamlit state
-- custom seccomp deny profile at `docker/seccomp-scpn-fusion.json`
+- default-deny seccomp allowlist at `docker/seccomp-scpn-fusion.json`
 - default Docker AppArmor confinement
 
 For hosts that support custom AppArmor profiles, load the stricter project
@@ -49,7 +49,14 @@ security_opt:
   - apparmor:scpn-fusion
 ```
 
-The custom seccomp profile explicitly denies high-risk kernel and namespace
-operations such as module loading, mounting, keyring access, `ptrace`, BPF,
-performance counters, reboot, and namespace creation while leaving ordinary
-Python, Rust, and Streamlit runtime syscalls available.
+The seccomp profile is a default-deny allowlist (`defaultAction:
+SCMP_ACT_ERRNO`) derived from the upstream moby v27.5.1 default profile, so any
+syscall outside the curated allowlist is rejected rather than permitted. High-risk
+kernel and namespace operations — module loading, mounting, keyring and kexec
+access, BPF, performance counters, reboot, and namespace creation — are allowed
+only behind an explicit capability gate, and because the Compose profile applies
+`cap_drop: [ALL]` none of those capabilities are present, so those syscalls are
+denied at runtime. `ptrace` is removed from the allowlist entirely, so it is
+denied unconditionally. Ordinary Python, Rust, and Streamlit runtime syscalls
+remain available. Regenerate or update the profile from the pinned upstream
+source and re-run `tests/test_seccomp_profile.py`, which pins these invariants.

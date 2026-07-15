@@ -141,8 +141,9 @@ jobs:
         run: |
           curl --retry 5 --retry-all-errors --retry-delay 10 \
             --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
             -o /tmp/elan-init.sh
+          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Build Lean safety + compiler-contract proof surface
@@ -257,8 +258,9 @@ jobs:
         run: |
           curl --retry 5 --retry-all-errors --retry-delay 10 \
             --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
             -o /tmp/elan-init.sh
+          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
@@ -396,8 +398,9 @@ jobs:
         run: |
           curl --retry 5 --retry-all-errors --retry-delay 10 \
             --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
             -o /tmp/elan-init.sh
+          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
@@ -435,8 +438,9 @@ jobs:
         run: |
           curl --retry 5 --retry-all-errors --retry-delay 10 \
             --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
             -o /tmp/elan-init.sh
+          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies
@@ -1037,8 +1041,9 @@ jobs:
         run: |
           curl --retry 5 --retry-all-errors --retry-delay 10 \
             --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
             -o /tmp/elan-init.sh
+          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
           sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install dependencies

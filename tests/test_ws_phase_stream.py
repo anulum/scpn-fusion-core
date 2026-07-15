@@ -23,8 +23,10 @@ from typing_extensions import Self
 from scpn_fusion.phase import ws_phase_stream as stream_mod
 from scpn_fusion.phase.realtime_monitor import RealtimeMonitor
 from scpn_fusion.phase.ws_phase_stream import (
+    _TLS_CIPHER_SUITES,
     PhaseStreamServer,
     _bearer_token_from_headers,
+    _constant_time_eq,
     _is_loopback_host,
     _server_tls_context,
 )
@@ -134,6 +136,11 @@ class _FakeSSLContext:
         self.protocol = protocol
         self.minimum_version: object | None = None
         self.loaded: tuple[str, str] | None = None
+        self.ciphers: str | None = None
+
+    def set_ciphers(self, ciphers: str) -> None:
+        """Record the negotiated cipher allowlist."""
+        self.ciphers = ciphers
 
     def load_cert_chain(self, certfile: str, keyfile: str) -> None:
         """Record certificate and key paths."""
@@ -275,6 +282,86 @@ def test_handler_authorization_paths() -> None:
     asyncio.run(_run())
 
 
+def test_constant_time_token_comparison() -> None:
+    """Constant-time comparison accepts equal tokens and rejects mismatches."""
+    assert _constant_time_eq("secret", "secret") is True
+    assert _constant_time_eq("secret", "secre") is False
+    assert _constant_time_eq("secret", "Secret") is False
+    # Non-ASCII tokens are UTF-8 encoded before comparison, never raising.
+    assert _constant_time_eq("héslo-λ", "héslo-λ") is True
+    assert _constant_time_eq("héslo-λ", "heslo-l") is False
+
+
+def test_header_and_message_auth_use_constant_time(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Auth paths delegate to the constant-time comparison for both channels."""
+    calls: list[tuple[str, str]] = []
+
+    def _spy(candidate: str, expected: str) -> bool:
+        calls.append((candidate, expected))
+        return candidate == expected
+
+    monkeypatch.setattr(stream_mod, "_constant_time_eq", _spy)
+    server = PhaseStreamServer(monitor=_make_monitor(), auth_token="secret")
+    assert server._header_authorized(_FakeWS(headers={"Authorization": "Bearer secret"})) is True
+    assert server._header_authorized(_FakeWS(headers={})) is False  # no token, no compare
+    assert server._message_authorized({"action": "auth", "token": "secret"}) is True
+    assert server._message_authorized({"action": "auth", "token": 42}) is False  # non-str token
+    assert server._message_authorized({"action": "set_psi"}) is False  # wrong action
+    assert ("secret", "secret") in calls
+
+
+def test_command_value_bound_is_validated() -> None:
+    """A non-positive or non-finite command-value bound is rejected at init."""
+    with pytest.raises(ValueError, match="command_value_bound"):
+        PhaseStreamServer(monitor=_make_monitor(), command_value_bound=0.0)
+    with pytest.raises(ValueError, match="command_value_bound"):
+        PhaseStreamServer(monitor=_make_monitor(), command_value_bound=float("inf"))
+
+
+def test_coerce_command_value_validation() -> None:
+    """Command-value coercion accepts finite in-range numbers and rejects the rest."""
+    server = PhaseStreamServer(monitor=_make_monitor(), command_value_bound=10.0)
+    assert server._coerce_command_value({"action": "set_psi", "value": 0.5}) == pytest.approx(0.5)
+    assert server._coerce_command_value({"action": "set_psi", "value": 3}) == pytest.approx(3.0)
+    assert server._coerce_command_value({"action": "set_psi"}) is None  # missing key
+    assert server._coerce_command_value({"action": "set_psi", "value": "x"}) is None  # non-numeric
+    assert server._coerce_command_value({"action": "set_psi", "value": True}) is None  # bool
+    assert server._coerce_command_value({"action": "set_psi", "value": float("nan")}) is None
+    assert server._coerce_command_value({"action": "set_psi", "value": float("inf")}) is None
+    assert (
+        server._coerce_command_value({"action": "set_psi", "value": 25.0}) is None
+    )  # out of range
+    assert server._coerce_command_value({"action": "set_psi", "value": -25.0}) is None
+
+
+def test_handler_rejects_hostile_command_values() -> None:
+    """Malicious NaN/inf/out-of-range/missing values never mutate monitor state."""
+
+    async def _run() -> None:
+        mon = _make_monitor()
+        mon.psi_driver = 0.25
+        mon.pac_gamma = 0.75
+        server = PhaseStreamServer(monitor=mon, command_value_bound=10.0)
+        ws = _FakeWS(
+            [
+                json.dumps({"action": "set_psi", "value": float("nan")}),
+                json.dumps({"action": "set_psi"}),
+                json.dumps({"action": "set_pac_gamma", "value": 1e9}),
+                json.dumps({"action": "set_pac_gamma", "value": "boom"}),
+            ]
+        )
+        await server._handler(ws)
+        # Every hostile command was ignored; prior state is preserved unchanged.
+        assert mon.psi_driver == pytest.approx(0.25)
+        assert mon.pac_gamma == pytest.approx(0.75)
+        # A subsequent valid command still applies.
+        ok = _FakeWS([json.dumps({"action": "set_psi", "value": 1.5})])
+        await server._handler(ok)
+        assert mon.psi_driver == pytest.approx(1.5)
+
+    asyncio.run(_run())
+
+
 def test_handler_closes_rate_limited_client() -> None:
     """Handler closes clients that exceed the command rate limit."""
 
@@ -391,6 +478,8 @@ def test_tls_context_validation_and_loading(
     context = _server_tls_context(str(cert), str(key))
     context_any = cast(Any, context)
     assert context_any.minimum_version == ssl.TLSVersion.TLSv1_2
+    assert context_any.ciphers == _TLS_CIPHER_SUITES
+    assert "ECDHE" in _TLS_CIPHER_SUITES and "RSA-AES256-GCM" in _TLS_CIPHER_SUITES
     assert context_any.loaded == (str(cert), str(key))
 
 

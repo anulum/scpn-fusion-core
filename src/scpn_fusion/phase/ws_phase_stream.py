@@ -27,9 +27,11 @@ Clients receive JSON frames every tick::
 from __future__ import annotations
 
 import asyncio
+import hmac
 import importlib
 import json
 import logging
+import math
 import os
 import ssl
 import time
@@ -40,6 +42,25 @@ from typing import Any
 from scpn_fusion.phase.realtime_monitor import RealtimeMonitor
 
 logger = logging.getLogger(__name__)
+
+#: Forward-secret AEAD cipher allowlist for the TLS 1.2 handshake (TLS 1.3 suites
+#: are negotiated separately by OpenSSL and are always available).  Restricting
+#: the 1.2 suites to ECDHE + GCM/ChaCha20 removes static-RSA and CBC options.
+_TLS_CIPHER_SUITES = ":".join(
+    (
+        "ECDHE-ECDSA-AES256-GCM-SHA384",
+        "ECDHE-RSA-AES256-GCM-SHA384",
+        "ECDHE-ECDSA-CHACHA20-POLY1305",
+        "ECDHE-RSA-CHACHA20-POLY1305",
+        "ECDHE-ECDSA-AES128-GCM-SHA256",
+        "ECDHE-RSA-AES128-GCM-SHA256",
+    )
+)
+
+
+def _constant_time_eq(candidate: str, expected: str) -> bool:
+    """Compare two tokens in constant time to deny a timing side-channel."""
+    return hmac.compare_digest(candidate.encode("utf-8"), expected.encode("utf-8"))
 
 
 def _is_loopback_host(host: str) -> bool:
@@ -68,6 +89,7 @@ class PhaseStreamServer:
     tick_interval_s: float = 0.001
     auth_token: str | None = None
     max_command_messages_per_second: int = 20
+    command_value_bound: float = 1.0e3
     _clients: set[Any] = field(default_factory=set, init=False, repr=False)
     _running: bool = field(default=False, init=False, repr=False)
 
@@ -78,16 +100,49 @@ class PhaseStreamServer:
             self.auth_token = token if token else None
         if self.max_command_messages_per_second < 1:
             raise ValueError("max_command_messages_per_second must be >= 1.")
+        if self.command_value_bound <= 0.0 or not math.isfinite(self.command_value_bound):
+            raise ValueError("command_value_bound must be a positive, finite magnitude.")
 
     def _header_authorized(self, websocket: Any) -> bool:
         if self.auth_token is None:
             return True
-        return _bearer_token_from_headers(websocket) == self.auth_token
+        token = _bearer_token_from_headers(websocket)
+        if token is None:
+            return False
+        return _constant_time_eq(token, self.auth_token)
 
     def _message_authorized(self, payload: dict[str, Any]) -> bool:
         if self.auth_token is None:
             return True
-        return payload.get("action") == "auth" and payload.get("token") == self.auth_token
+        if payload.get("action") != "auth":
+            return False
+        token = payload.get("token")
+        if not isinstance(token, str):
+            return False
+        return _constant_time_eq(token, self.auth_token)
+
+    def _coerce_command_value(self, cmd: dict[str, Any]) -> float | None:
+        """Return the finite, in-range ``value`` of a numeric command, or ``None``.
+
+        Rejects a missing key, a non-numeric (including ``bool``) value, a
+        non-finite (``NaN``/``inf``) value, or a magnitude beyond
+        ``command_value_bound``.  A rejected command is logged and ignored,
+        matching the malformed-payload contract, so a hostile client cannot drive
+        the monitor into unbounded or non-finite state.
+        """
+        action = cmd.get("action")
+        if "value" not in cmd:
+            logger.warning("Ignoring %s command with no value", action)
+            return None
+        raw = cmd["value"]
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+            logger.warning("Ignoring %s command with non-numeric value", action)
+            return None
+        value = float(raw)
+        if not math.isfinite(value) or abs(value) > self.command_value_bound:
+            logger.warning("Ignoring %s command with out-of-range value", action)
+            return None
+        return value
 
     async def _close_unauthorized(self, websocket: Any) -> None:
         close = getattr(websocket, "close", None)
@@ -122,9 +177,13 @@ class PhaseStreamServer:
                         break
                     continue
                 if cmd.get("action") == "set_psi":
-                    self.monitor.psi_driver = float(cmd["value"])
+                    value = self._coerce_command_value(cmd)
+                    if value is not None:
+                        self.monitor.psi_driver = value
                 elif cmd.get("action") == "set_pac_gamma":
-                    self.monitor.pac_gamma = float(cmd["value"])
+                    value = self._coerce_command_value(cmd)
+                    if value is not None:
+                        self.monitor.pac_gamma = value
                 elif cmd.get("action") == "reset":
                     self.monitor.reset(seed=cmd.get("seed", 42))
                 elif cmd.get("action") == "stop":
@@ -195,6 +254,7 @@ def _server_tls_context(certfile: str | None, keyfile: str | None) -> ssl.SSLCon
         raise ValueError("TLS certificate and key files must exist.")
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
+    context.set_ciphers(_TLS_CIPHER_SUITES)
     context.load_cert_chain(certfile=str(cert_path), keyfile=str(key_path))
     return context
 

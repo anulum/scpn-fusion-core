@@ -2699,7 +2699,7 @@
     "python_capability_classes": 565,
     "python_capability_source_modules": 307,
     "rust_workspace_crates": 13,
-    "test_files": 555
+    "test_files": 556
   },
   "documentation": {
     "public_pages": [
@@ -3289,6 +3289,7 @@
       "tests/test_scpn_compiler.py",
       "tests/test_scpn_end_to_end_latency.py",
       "tests/test_scpn_pid_mpc_benchmark.py",
+      "tests/test_seccomp_profile.py",
       "tests/test_security_headers.py",
       "tests/test_security_runtime_policies.py",
       "tests/test_shape_controller.py",

@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 import pytest
 from scpn_fusion.core import tglf_interface as tglf
+from scpn_fusion.core import tglf_surrogate_bridge as bridge
 from scpn_fusion.core.tglf_surrogate_bridge import (
     DEFAULT_TGLF_FEATURES,
     DEFAULT_TGLF_TARGETS,
@@ -213,3 +214,40 @@ def test_predict_before_fit_raises() -> None:
     """Predicting before fitting is a runtime error."""
     with pytest.raises(RuntimeError, match="not fit"):
         TGLFSurrogate().predict(np.zeros((1, len(DEFAULT_TGLF_FEATURES))))
+
+
+def _fit_and_save(tmp_path: Path) -> Path:
+    """Fit a surrogate on synthetic data and persist it, returning the path."""
+    data = _synthetic_dataset()
+    x = np.array([[s["input"][f] for f in DEFAULT_TGLF_FEATURES] for s in data])
+    y = np.array([[s["output"][t] for t in DEFAULT_TGLF_TARGETS] for s in data])
+    out_path = tmp_path / "weights.npz"
+    TGLFSurrogate().fit(x, y).save(out_path)
+    return out_path
+
+
+def test_load_routes_through_size_checked_loader(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """load() reads via the size-bounded safe loader rather than raw ``np.load``."""
+    out_path = _fit_and_save(tmp_path)
+    calls: list[Path] = []
+    real_loader = bridge.checked_np_load
+
+    def _spy(path: str | Path, **kwargs: Any) -> Any:
+        calls.append(Path(path))
+        return real_loader(path, **kwargs)
+
+    monkeypatch.setattr(bridge, "checked_np_load", _spy)
+    loaded = TGLFSurrogate.load(out_path)
+    assert calls == [out_path]
+    assert loaded.features == DEFAULT_TGLF_FEATURES
+
+
+def test_load_enforces_archive_size_bound(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """An archive above the byte bound is rejected before NumPy parses it."""
+    out_path = _fit_and_save(tmp_path)
+    real_loader = bridge.checked_np_load
+    monkeypatch.setattr(bridge, "checked_np_load", lambda path, **_: real_loader(path, max_bytes=8))
+    with pytest.raises(ValueError, match="too large"):
+        TGLFSurrogate.load(out_path)
