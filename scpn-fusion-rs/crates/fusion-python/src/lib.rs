@@ -41,9 +41,7 @@ use fusion_physics::frc::{
     rotating_frc_bvp_acceptance_status, solve_frc_equilibrium as solve_frc_equilibrium_rust,
     solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs,
 };
-use fusion_physics::hall_mhd::HallMHD;
 use fusion_physics::rmf_control::{RmfConfig, RmfPhaseLockController};
-use fusion_physics::sawtooth::ReducedMHD;
 use fusion_physics::turbulence::DriftWavePhysics;
 use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
@@ -51,6 +49,7 @@ use fusion_types::state::Grid2D;
 mod bindings;
 use bindings::control::{PyFnoController, PyMpcController};
 use bindings::diagnostics::PyTomography;
+use bindings::mhd::{rutherford_island_growth, simulate_tearing_mode, PyHallMHD, PyReducedMHD};
 use bindings::nuclear::PyBreedingBlanket;
 use bindings::phase::{py_kuramoto_run, py_kuramoto_step, py_upde_run, py_upde_tick};
 
@@ -891,41 +890,6 @@ fn scpn_sample_firing<'py>(
     out.into_pyarray(py)
 }
 
-// ─── ML ───
-
-/// Simulate a tearing mode plasma shot (full Modified Rutherford physics).
-///
-/// `seed` makes the trajectory reproducible; `beta_p`/`w_crit` parametrise the
-/// bootstrap drive. Returns `(signal, label, time_to_disruption)`. The
-/// deterministic per-step physics is bit-exact with the NumPy tier
-/// (`scpn_fusion.control.disruption_risk_runtime.simulate_tearing_mode`); the
-/// stochastic trajectory is statistically equivalent (independent RNG streams).
-#[pyfunction]
-#[pyo3(signature = (
-    steps,
-    seed = None,
-    beta_p = fusion_ml::disruption::DEFAULT_BETA_P,
-    w_crit = fusion_ml::disruption::DEFAULT_W_CRIT,
-))]
-fn simulate_tearing_mode(
-    steps: usize,
-    seed: Option<u64>,
-    beta_p: f64,
-    w_crit: f64,
-) -> (Vec<f64>, u8, i64) {
-    let shot = fusion_ml::disruption::simulate_tearing_mode(steps, seed, beta_p, w_crit);
-    (shot.signal, shot.label, shot.time_to_disruption)
-}
-
-/// Deterministic Modified Rutherford island-width increment for one step.
-///
-/// `dw = (delta_prime + beta_p·w/(w² + w_crit²))·(1 - w/w_sat)·dt`. Bit-exact
-/// with the NumPy tier's `rutherford_island_growth`.
-#[pyfunction]
-fn rutherford_island_growth(w: f64, delta_prime: f64, beta_p: f64, w_crit: f64, dt: f64) -> f64 {
-    fusion_ml::disruption::rutherford_island_growth(w, delta_prime, beta_p, w_crit, dt)
-}
-
 // ─── Particle / Boris integrator ───
 
 /// Python-accessible charged particle.
@@ -1179,69 +1143,6 @@ impl PySnnController {
     }
 }
 
-// ─── Extended PyO3 bridges (Rust extension plan) ───
-
-#[pyclass]
-struct PyHallMHD {
-    inner: HallMHD,
-}
-
-#[pymethods]
-impl PyHallMHD {
-    #[new]
-    #[pyo3(signature = (n=64, eta=None, nu=None, seed=None, background_amplitude=0.0))]
-    fn new(
-        n: usize,
-        eta: Option<f64>,
-        nu: Option<f64>,
-        seed: Option<u64>,
-        background_amplitude: f64,
-    ) -> Self {
-        Self {
-            inner: HallMHD::configure(
-                n,
-                eta.unwrap_or(1.0e-4),
-                nu.unwrap_or(1.0e-4),
-                seed,
-                background_amplitude,
-            ),
-        }
-    }
-
-    fn step(&mut self) -> (f64, f64) {
-        self.inner.step()
-    }
-
-    fn run(&mut self, n_steps: usize) -> Vec<(f64, f64)> {
-        self.inner.run(n_steps)
-    }
-
-    #[getter]
-    fn energy_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        Array1::from_vec(self.inner.energy_history.clone()).into_pyarray(py)
-    }
-
-    #[getter]
-    fn zonal_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        Array1::from_vec(self.inner.zonal_history.clone()).into_pyarray(py)
-    }
-
-    #[getter]
-    fn grid_size(&self) -> usize {
-        self.inner.n
-    }
-
-    #[getter]
-    fn eta(&self) -> f64 {
-        self.inner.eta
-    }
-
-    #[getter]
-    fn nu(&self) -> f64 {
-        self.inner.nu
-    }
-}
-
 #[pyclass]
 struct PyPlasma2D {
     inner: Plasma2D,
@@ -1452,40 +1353,6 @@ impl PySpiAblationSolver {
 
     fn total_mass(&self) -> f64 {
         self.inner.total_mass()
-    }
-}
-
-// ─── Reduced MHD Sawtooth ───
-
-#[pyclass]
-struct PyReducedMHD {
-    inner: ReducedMHD,
-}
-
-#[pymethods]
-impl PyReducedMHD {
-    #[new]
-    fn new() -> Self {
-        Self {
-            inner: ReducedMHD::new(),
-        }
-    }
-
-    fn step(&mut self, dt: f64) -> (f64, bool) {
-        self.inner.step(dt)
-    }
-
-    fn run(&mut self, n_steps: usize) -> Vec<(f64, bool)> {
-        self.inner.run(n_steps)
-    }
-
-    #[getter]
-    fn crash_count(&self) -> usize {
-        self.inner.crash_count
-    }
-
-    fn amplitude_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        Array1::from_vec(self.inner.amplitude_history.clone()).into_pyarray(py)
     }
 }
 
