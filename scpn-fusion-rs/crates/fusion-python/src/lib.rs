@@ -23,7 +23,6 @@ use fusion_engineering::layout::{
     aries_cost_scaling, cost_of_electricity as engineering_coe, scan_major_radius,
 };
 use fusion_engineering::tritium::tritium_breeding_ratio;
-use fusion_ml::neural_transport::NeuralTransportModel;
 use fusion_physics::frc::{
     rotating_frc_bvp_acceptance_status, solve_frc_equilibrium as solve_frc_equilibrium_rust,
     solve_rotating_frc_equilibrium as solve_rotating_frc_equilibrium_rust, RigidRotorFrcInputs,
@@ -39,6 +38,7 @@ use bindings::flight::{PyFlightState, PyRustFlightSim, PySimulationReport, PySte
 #[cfg(feature = "gpu")]
 use bindings::gpu as gpu_bindings;
 use bindings::mhd::{rutherford_island_growth, simulate_tearing_mode, PyHallMHD, PyReducedMHD};
+use bindings::ml::PyNeuralTransport;
 use bindings::neural::{
     scpn_dense_activations, scpn_marking_update, scpn_sample_firing, PySnnController, PySnnPool,
 };
@@ -155,50 +155,6 @@ impl PyFusionKernel {
             fusion_core::kernel::SolverMethod::PicardSor => "sor",
             fusion_core::kernel::SolverMethod::PicardMultigrid => "multigrid",
         }
-    }
-}
-
-// ─── Neural transport ───
-
-/// Python wrapper for neural transport surrogate (10 -> 64 -> 32 -> 3).
-#[pyclass]
-struct PyNeuralTransport {
-    inner: NeuralTransportModel,
-}
-
-#[pymethods]
-impl PyNeuralTransport {
-    #[new]
-    fn new() -> Self {
-        Self {
-            inner: NeuralTransportModel::new(),
-        }
-    }
-
-    #[staticmethod]
-    fn from_npz(path: &str) -> PyResult<Self> {
-        let inner = NeuralTransportModel::from_npz(path)
-            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
-        Ok(Self { inner })
-    }
-
-    fn predict<'py>(&self, py: Python<'py>, input: Vec<f64>) -> Bound<'py, PyArray1<f64>> {
-        let output = self.inner.predict(&Array1::from_vec(input));
-        output.into_pyarray(py)
-    }
-
-    fn predict_profile<'py>(
-        &self,
-        py: Python<'py>,
-        inputs: PyReadonlyArray2<'py, f64>,
-    ) -> Bound<'py, PyArray2<f64>> {
-        let input_arr = inputs.as_array().to_owned();
-        let output = self.inner.predict_profile(&input_arr);
-        output.into_pyarray(py)
-    }
-
-    fn is_neural(&self) -> bool {
-        self.inner.is_neural()
     }
 }
 

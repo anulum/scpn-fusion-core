@@ -16,6 +16,7 @@ pub(crate) mod flight;
 #[cfg(feature = "gpu")]
 pub(crate) mod gpu;
 pub(crate) mod mhd;
+pub(crate) mod ml;
 pub(crate) mod neural;
 pub(crate) mod nuclear;
 pub(crate) mod particles;
