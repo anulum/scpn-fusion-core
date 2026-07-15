@@ -101,7 +101,7 @@
       "description": "Pretrained ITPA confinement MLP surrogate shipped with coverage metadata for the confinement-time lane.",
       "status": "promoted",
       "model_artifacts": [
-        "src/scpn_fusion/core/pretrained_surrogates.py::PretrainedMLPSurrogate"
+        "src/scpn_fusion/core/pretrained_mlp_surrogate.py::PretrainedMLPSurrogate"
       ],
       "training_provenance": {
         "summary": "Trained on the bundled ITPA H-mode confinement rows; coverage manifest records the training domain.",
@@ -132,7 +132,7 @@
       "retraining": {
         "summary": "Deterministic in-repo retraining from the bundled ITPA CSV via the training entry point.",
         "anchors": [
-          "src/scpn_fusion/core/pretrained_surrogates.py::save_pretrained_mlp"
+          "src/scpn_fusion/core/pretrained_mlp_surrogate.py::save_pretrained_mlp"
         ]
       },
       "gaps": [

@@ -7,10 +7,10 @@ It covers local pack readiness only; DOI publication remains owner-gated.
 - Status: `accepted_local_fair_pack_readiness`
 - Accepted local pack readiness: `True`
 - DOI publication ready: `False`
-- Output directory: `artifacts/fair_validation_packs`
+- Output directory: `/tmp/pytest-of-anulum/pytest-3077/test_export_replaces_stale_pac0/packs`
 - Packs: `3`
 - Files: `15`
-- Total bytes: `164120`
+- Total bytes: `164206`
 
 ## Publication blockers
 
@@ -22,5 +22,5 @@ It covers local pack readiness only; DOI publication remains owner-gated.
 | Pack | Status | Files | Bytes | License |
 |---|---|---:|---:|---|
 | `safety_traceability` | `ready_local` | 4 | 51877 | `AGPL-3.0-or-later` |
-| `surrogate_uq_cards` | `ready_local` | 4 | 45423 | `AGPL-3.0-or-later` |
-| `inverse_equilibrium_attribution` | `ready_local` | 7 | 66820 | `AGPL-3.0-or-later` |
+| `surrogate_uq_cards` | `ready_local` | 4 | 45435 | `AGPL-3.0-or-later` |
+| `inverse_equilibrium_attribution` | `ready_local` | 7 | 66894 | `AGPL-3.0-or-later` |

@@ -6,8 +6,8 @@
   "minimum_pack_count": 3,
   "pack_count": 3,
   "total_files": 15,
-  "total_bytes": 164120,
-  "output_dir": "artifacts/fair_validation_packs",
+  "total_bytes": 164206,
+  "output_dir": "/tmp/pytest-of-anulum/pytest-3077/test_export_replaces_stale_pac0/packs",
   "publication_blockers": [
     "owner approval for DOI publication and final data-license posture",
     "external Zenodo upload not executed by this local export"
@@ -52,17 +52,17 @@
       "description": "Per-surrogate uncertainty, out-of-distribution, fallback, and retraining-boundary evidence for promoted and scoped surrogate lanes.",
       "license": "AGPL-3.0-or-later",
       "file_count": 4,
-      "total_bytes": 45423,
+      "total_bytes": 45435,
       "files": [
         {
           "path": "validation/surrogate_uq_cards.json",
-          "sha256": "32d2ee59bf5b10cf7df3ef4239eb0be540f9df26f2de9cd84997bfcfbbdbc250",
-          "size_bytes": 11789
+          "sha256": "6585bac29cdcad1f19fe99d7d0075627d82333158649bb68ab53c85bb47dc2fc",
+          "size_bytes": 11795
         },
         {
           "path": "docs/SURROGATE_UQ_CARDS.md",
-          "sha256": "ae694cb9a60a95cad81a7932fb20006821afa645ccdac32f1c9d36307e9c92d0",
-          "size_bytes": 10593
+          "sha256": "a958331db0bf8961de285c0713ad4f4cc5c9f8c7476ce861a65d7472571294c3",
+          "size_bytes": 10599
         },
         {
           "path": "tools/generate_surrogate_uq_cards.py",
@@ -83,12 +83,12 @@
       "description": "Solov'ev exact-suite evidence and psi reconstruction attribution documents for the inverse-equilibrium credibility boundary.",
       "license": "AGPL-3.0-or-later",
       "file_count": 7,
-      "total_bytes": 66820,
+      "total_bytes": 66894,
       "files": [
         {
           "path": "validation/validate_grad_shafranov_solovev.py",
-          "sha256": "cf780cf7ce720659cb71187b286cae896fb38da44ac1599c33b5ea745aa8b9c4",
-          "size_bytes": 32014
+          "sha256": "e64b2709ab9aa630ff08e08c7bd3f95b35b8412f9b627a06b2920514229d320d",
+          "size_bytes": 32088
         },
         {
           "path": "validation/reports/grad_shafranov_solovev.json",

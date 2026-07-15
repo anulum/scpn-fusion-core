@@ -139,7 +139,7 @@ Pretrained ITPA confinement MLP surrogate shipped with coverage metadata for the
 
 Model artifacts:
 
-- `src/scpn_fusion/core/pretrained_surrogates.py::PretrainedMLPSurrogate`
+- `src/scpn_fusion/core/pretrained_mlp_surrogate.py::PretrainedMLPSurrogate`
 
 Training provenance: Trained on the bundled ITPA H-mode confinement rows; coverage manifest records the training domain.
 
@@ -170,7 +170,7 @@ Retraining: Deterministic in-repo retraining from the bundled ITPA CSV via the t
 
 Retraining anchors:
 
-- `src/scpn_fusion/core/pretrained_surrogates.py::save_pretrained_mlp`
+- `src/scpn_fusion/core/pretrained_mlp_surrogate.py::save_pretrained_mlp`
 
 Declared gaps:
 
