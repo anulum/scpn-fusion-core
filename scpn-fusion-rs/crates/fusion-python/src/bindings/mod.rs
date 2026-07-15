@@ -11,4 +11,5 @@
 //! (`lib.rs`) declares the `#[pymodule]` and registers the exported items.
 
 pub(crate) mod diagnostics;
+pub(crate) mod nuclear;
 pub(crate) mod phase;

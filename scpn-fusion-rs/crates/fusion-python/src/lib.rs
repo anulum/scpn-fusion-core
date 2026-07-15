@@ -36,7 +36,6 @@ use fusion_engineering::layout::{
 };
 use fusion_engineering::tritium::tritium_breeding_ratio;
 use fusion_ml::neural_transport::NeuralTransportModel;
-use fusion_nuclear::neutronics::{BreedingBlanket, VolumetricBlanketConfig};
 use fusion_physics::design_scanner;
 use fusion_physics::fno::FnoController;
 use fusion_physics::fokker_planck::FokkerPlanckSolver;
@@ -53,6 +52,7 @@ use fusion_types::state::Grid2D;
 
 mod bindings;
 use bindings::diagnostics::PyTomography;
+use bindings::nuclear::PyBreedingBlanket;
 use bindings::phase::{py_kuramoto_run, py_kuramoto_step, py_upde_run, py_upde_tick};
 
 // ─── Equilibrium solver ───
@@ -1313,55 +1313,6 @@ impl PyMpcController {
             .plan(&state.as_array().to_owned())
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(result.into_pyarray(py))
-    }
-}
-
-#[pyclass]
-struct PyBreedingBlanket {
-    inner: BreedingBlanket,
-}
-
-#[pymethods]
-impl PyBreedingBlanket {
-    #[new]
-    #[pyo3(signature = (thickness_cm=80.0, enrichment=0.6))]
-    fn new(thickness_cm: f64, enrichment: f64) -> Self {
-        Self {
-            inner: BreedingBlanket::new(thickness_cm, enrichment),
-        }
-    }
-
-    fn solve_transport(&self, incident_flux: f64) -> PyResult<(f64, f64, f64, f64)> {
-        if !incident_flux.is_finite() || incident_flux <= 0.0 {
-            return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "incident_flux must be finite and > 0, got {incident_flux}"
-            )));
-        }
-        let profile_result = self.inner.solve_transport(incident_flux);
-        let volumetric_result = self
-            .inner
-            .solve_volumetric_surrogate(VolumetricBlanketConfig {
-                incident_flux,
-                ..VolumetricBlanketConfig::default()
-            });
-        let tritium_rate = volumetric_result.total_production_per_s.max(0.0);
-        let heat_deposited_w = tritium_rate * 2.82e-12;
-        // Keep the Python-facing TBR in a physically plausible envelope while
-        // preserving monotonic dependence on blanket thickness and enrichment.
-        let tbr = (0.5
-            + 1.5 * (1.0 - (-(self.inner.enrichment * self.inner.thickness / 80.0)).exp()))
-        .clamp(0.5, 2.0);
-        let flux0 = profile_result
-            .flux
-            .first()
-            .copied()
-            .unwrap_or(incident_flux)
-            .abs()
-            .max(1e-12);
-        let flux_mean = profile_result.flux.iter().map(|v| v.abs()).sum::<f64>()
-            / profile_result.flux.len().max(1) as f64;
-        let flux_attenuation = (flux_mean / flux0).clamp(1e-12, 1.0);
-        Ok((tbr, heat_deposited_w, flux_attenuation, tritium_rate))
     }
 }
 
