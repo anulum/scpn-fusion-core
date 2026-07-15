@@ -28,6 +28,7 @@ use bindings::equilibrium::{
 use bindings::flight::{PyFlightState, PyRustFlightSim, PySimulationReport, PyStepMetrics};
 #[cfg(feature = "gpu")]
 use bindings::gpu as gpu_bindings;
+use bindings::gyrokinetics::PyNonlinearGKSolver;
 use bindings::mhd::{rutherford_island_growth, simulate_tearing_mode, PyHallMHD, PyReducedMHD};
 use bindings::ml::PyNeuralTransport;
 use bindings::neural::{
@@ -47,63 +48,6 @@ use bindings::transport::{
 };
 
 // ─── Module registration ───
-
-use fusion_physics::gk_nonlinear::{NonlinearGKConfig, NonlinearGKSolver, NonlinearGKState};
-/// SCPN Fusion Core — Rust-accelerated plasma physics.
-use ndarray::{Ix3, Ix6};
-use num_complex::Complex64;
-use numpy::{PyArrayDyn, PyReadonlyArrayDyn};
-
-#[pyclass]
-pub struct PyNonlinearGKSolver {
-    inner: NonlinearGKSolver,
-}
-
-type PyComplexFieldPair<'py> = (
-    Bound<'py, PyArrayDyn<Complex64>>,
-    Bound<'py, PyArrayDyn<Complex64>>,
-);
-
-#[pymethods]
-impl PyNonlinearGKSolver {
-    #[new]
-    fn new() -> PyResult<Self> {
-        let cfg = NonlinearGKConfig::default();
-        Ok(PyNonlinearGKSolver {
-            inner: NonlinearGKSolver::new(cfg),
-        })
-    }
-
-    fn step<'py>(
-        &self,
-        py: Python<'py>,
-        f_py: PyReadonlyArrayDyn<'py, Complex64>,
-        phi_py: PyReadonlyArrayDyn<'py, Complex64>,
-        time: f64,
-        dt: f64,
-    ) -> PyResult<PyComplexFieldPair<'py>> {
-        let f = f_py
-            .as_array()
-            .into_dimensionality::<Ix6>()
-            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?
-            .to_owned();
-        let phi = phi_py
-            .as_array()
-            .into_dimensionality::<Ix3>()
-            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?
-            .to_owned();
-        let state = NonlinearGKState {
-            f,
-            phi,
-            time,
-            a_par: None,
-        };
-        let new_state = self.inner.rk4_step(&state, dt);
-        let f_out = new_state.f.into_dyn().into_pyarray(py);
-        let phi_out = new_state.phi.into_dyn().into_pyarray(py);
-        Ok((f_out, phi_out))
-    }
-}
 
 /// Python-accessible Steinhauer no-rotation FRC analytical solver.
 
