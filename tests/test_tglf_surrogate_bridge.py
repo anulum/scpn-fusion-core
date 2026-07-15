@@ -24,7 +24,7 @@ from scpn_fusion.core.tglf_surrogate_bridge import (
 )
 
 
-def _synthetic_dataset(n_samples: int = 200, *, seed: int = 7) -> list[dict[str, float]]:
+def _synthetic_dataset(n_samples: int = 200, *, seed: int = 7) -> list[dict[str, dict[str, float]]]:
     """Return a deterministic dataset whose targets lie in the surrogate's class.
 
     Each target is a constant + linear + per-feature-quadratic function of the
@@ -50,7 +50,7 @@ def _synthetic_dataset(n_samples: int = 200, *, seed: int = 7) -> list[dict[str,
         "beta_e": 0.05,
         "Z_eff": 3.0,
     }
-    dataset: list[dict[str, float]] = []
+    dataset: list[dict[str, dict[str, float]]] = []
     for _ in range(n_samples):
         feats = {name: float(rng.uniform(lo[name], hi[name])) for name in DEFAULT_TGLF_FEATURES}
         drive = feats["R_LTi"] + 0.5 * feats["R_LTe"] + 0.2 * feats["R_Lne"]
