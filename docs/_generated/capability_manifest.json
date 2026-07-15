@@ -74,6 +74,10 @@
         "path": "src/scpn_fusion/core/amr_patch.py"
       },
       {
+        "name": "ActionChannelRule",
+        "path": "src/scpn_fusion/control/shielded_tokamak_env.py"
+      },
+      {
         "name": "ActionReadout",
         "path": "src/scpn_fusion/scpn/artifact.py"
       },
@@ -1078,6 +1082,10 @@
         "path": "src/scpn_fusion/core/gk_eigenvalue.py"
       },
       {
+        "name": "LinearGaussianPolicy",
+        "path": "src/scpn_fusion/control/constrained_policy.py"
+      },
+      {
         "name": "LocalDecomposedExecutionResult",
         "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
       },
@@ -1506,6 +1514,10 @@
         "path": "src/scpn_fusion/core/fieldline_3d.py"
       },
       {
+        "name": "PolicyGradient",
+        "path": "src/scpn_fusion/control/constrained_policy.py"
+      },
+      {
         "name": "PowerPlantModel",
         "path": "src/scpn_fusion/engineering/balance_of_plant.py"
       },
@@ -1872,6 +1884,14 @@
       {
         "name": "ShatteredPelletInjection",
         "path": "src/scpn_fusion/control/spi_mitigation.py"
+      },
+      {
+        "name": "ShieldReport",
+        "path": "src/scpn_fusion/control/shielded_tokamak_env.py"
+      },
+      {
+        "name": "ShieldedTokamakEnv",
+        "path": "src/scpn_fusion/control/shielded_tokamak_env.py"
       },
       {
         "name": "SimpleMLP",
@@ -2325,6 +2345,7 @@
       "src/scpn_fusion/control/analytic_solver.py",
       "src/scpn_fusion/control/burn_controller.py",
       "src/scpn_fusion/control/codac_interface.py",
+      "src/scpn_fusion/control/constrained_policy.py",
       "src/scpn_fusion/control/controller_tuning.py",
       "src/scpn_fusion/control/density_controller.py",
       "src/scpn_fusion/control/detachment_controller.py",
@@ -2373,6 +2394,7 @@
       "src/scpn_fusion/control/safe_rl_controller.py",
       "src/scpn_fusion/control/scenario_scheduler.py",
       "src/scpn_fusion/control/shape_controller.py",
+      "src/scpn_fusion/control/shielded_tokamak_env.py",
       "src/scpn_fusion/control/sliding_mode_vertical.py",
       "src/scpn_fusion/control/spi_ablation.py",
       "src/scpn_fusion/control/spi_mitigation.py",
@@ -2674,10 +2696,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 560,
-    "python_capability_source_modules": 305,
+    "python_capability_classes": 565,
+    "python_capability_source_modules": 307,
     "rust_workspace_crates": 13,
-    "test_files": 552
+    "test_files": 555
   },
   "documentation": {
     "public_pages": [
@@ -2866,6 +2888,7 @@
       "tests/test_compiler_git_sha.py",
       "tests/test_compiler_kernels.py",
       "tests/test_config_schema.py",
+      "tests/test_constrained_policy.py",
       "tests/test_control_exception_specificity.py",
       "tests/test_control_resilience_campaign.py",
       "tests/test_controller.py",
@@ -3269,6 +3292,8 @@
       "tests/test_security_headers.py",
       "tests/test_security_runtime_policies.py",
       "tests/test_shape_controller.py",
+      "tests/test_shielded_contract_comparison.py",
+      "tests/test_shielded_tokamak_env.py",
       "tests/test_sliding_mode_vertical.py",
       "tests/test_snn_pyo3_bridge.py",
       "tests/test_sol_model.py",
