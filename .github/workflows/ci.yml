@@ -857,6 +857,31 @@ jobs:
           source .venv/bin/activate
           pytest tests/test_pyo3_physics_bridge.py tests/test_pyo3_control_bridge.py \
                  tests/test_pyo3_nuclear_bridge.py tests/test_pyo3_transport_bridge.py -v --tb=short
+      - name: Measure phase-kernel benchmark (M-3, isolated runner)
+        run: |
+          source .venv/bin/activate
+          mkdir -p artifacts
+          python benchmarks/bench_phase_kernels.py --repeats 5 \
+            --output artifacts/phase_kernels_benchmark.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("artifacts/phase_kernels_benchmark.json").read_text())
+          print(f"rust_available={report['rust_available']}")
+          for kernel in report["kernels"]:
+              speedup = kernel.get("rust_over_numpy_speedup")
+              parity = kernel.get("rust_vs_numpy_final_state_rel_l2")
+              speedup_str = f"{speedup:.2f}x" if speedup is not None else "n/a"
+              parity_str = f"{parity:.1e}" if parity is not None else "n/a"
+              print(f"  {kernel['kernel']}: {speedup_str}  parity={parity_str}")
+          PY
+      - name: Upload phase-kernel benchmark
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: phase-kernels-benchmark
+          path: artifacts/phase_kernels_benchmark.json
 
   rust-coverage:
     name: Rust Coverage (tarpaulin)
