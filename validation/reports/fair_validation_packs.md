@@ -7,7 +7,7 @@ It covers local pack readiness only; DOI publication remains owner-gated.
 - Status: `accepted_local_fair_pack_readiness`
 - Accepted local pack readiness: `True`
 - DOI publication ready: `False`
-- Output directory: `/tmp/pytest-of-anulum/pytest-3077/test_export_replaces_stale_pac0/packs`
+- Output directory: `artifacts/fair_validation_packs`
 - Packs: `3`
 - Files: `15`
 - Total bytes: `164206`

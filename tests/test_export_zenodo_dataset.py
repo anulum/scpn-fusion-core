@@ -186,7 +186,17 @@ class TestExportAndCheckModes:
         stale_file.parent.mkdir(parents=True)
         stale_file.write_text("stale", encoding="utf-8")
 
-        assert module.run_export(output_dir=output_dir) == 0
+        # Redirect the reports to tmp; omitting them writes the tracked
+        # validation/reports/fair_validation_packs.* with a tmp output_dir,
+        # which would leave a stale (uncommittable) report behind.
+        assert (
+            module.run_export(
+                output_dir=output_dir,
+                json_report=tmp_path / "fair_validation_packs.json",
+                md_report=tmp_path / "fair_validation_packs.md",
+            )
+            == 0
+        )
 
         assert not stale_file.exists()
         assert (output_dir / "safety_traceability" / "pack_manifest.json").is_file()

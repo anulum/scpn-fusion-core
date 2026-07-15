@@ -7,7 +7,7 @@
   "pack_count": 3,
   "total_files": 15,
   "total_bytes": 164206,
-  "output_dir": "/tmp/pytest-of-anulum/pytest-3077/test_export_replaces_stale_pac0/packs",
+  "output_dir": "artifacts/fair_validation_packs",
   "publication_blockers": [
     "owner approval for DOI publication and final data-license posture",
     "external Zenodo upload not executed by this local export"
