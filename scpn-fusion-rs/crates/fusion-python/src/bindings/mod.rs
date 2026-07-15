@@ -14,6 +14,7 @@ pub(crate) mod control;
 pub(crate) mod diagnostics;
 pub(crate) mod equilibrium;
 pub(crate) mod flight;
+pub(crate) mod frc;
 #[cfg(feature = "gpu")]
 pub(crate) mod gpu;
 pub(crate) mod gyrokinetics;
