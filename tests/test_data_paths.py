@@ -171,25 +171,38 @@ def test_training_output_defaults_resolve_under_artifact_root(
     import scpn_fusion.core.gs_transport_surrogate_training as gs_training
     import scpn_fusion.core.pretrained_surrogates as pretrained_surrogates
 
-    checkpoint_policy = importlib.reload(checkpoint_policy)
-    gs_training = importlib.reload(gs_training)
-    fno_training = importlib.reload(fno_training)
-    pretrained_surrogates = importlib.reload(pretrained_surrogates)
+    # importlib.reload rebinds each module's classes and constants in place. If the
+    # reloaded state leaks past this test it replaces the class objects that
+    # earlier-collected tests already hold (for example the FNO dispatch guard's
+    # ``FnoKernel``), turning their ``isinstance`` checks into order-dependent
+    # failures. Snapshot each module dict and restore it once the env-dependent
+    # defaults have been asserted, so the reload stays local to this test.
+    reloaded_modules = (checkpoint_policy, fno_training, gs_training, pretrained_surrogates)
+    saved_module_state = [(module, dict(module.__dict__)) for module in reloaded_modules]
+    try:
+        checkpoint_policy = importlib.reload(checkpoint_policy)
+        gs_training = importlib.reload(gs_training)
+        fno_training = importlib.reload(fno_training)
+        pretrained_surrogates = importlib.reload(pretrained_surrogates)
 
-    weights_root = artifact_root() / "weights"
-    assert weights_root / "fno_turbulence.npz" == fno_training.DEFAULT_WEIGHTS_PATH
-    assert weights_root / "fno_turbulence_sparc.npz" == fno_training.DEFAULT_SPARC_WEIGHTS_PATH
-    assert (
-        weights_root / "gs_transport_surrogate.npz"
-        == fno_training.DEFAULT_GS_TRANSPORT_WEIGHTS_PATH
-    )
-    assert weights_root / "gs_transport_surrogate.npz" == (
-        gs_training.DEFAULT_GS_TRANSPORT_WEIGHTS_PATH
-    )
-    assert weights_root == pretrained_surrogates.DEFAULT_BUNDLE_WEIGHTS_DIR
-    assert artifact_root() / "disruptor.pth" == checkpoint_policy.default_model_path(
-        "disruptor.pth"
-    )
+        weights_root = artifact_root() / "weights"
+        assert weights_root / "fno_turbulence.npz" == fno_training.DEFAULT_WEIGHTS_PATH
+        assert weights_root / "fno_turbulence_sparc.npz" == fno_training.DEFAULT_SPARC_WEIGHTS_PATH
+        assert (
+            weights_root / "gs_transport_surrogate.npz"
+            == fno_training.DEFAULT_GS_TRANSPORT_WEIGHTS_PATH
+        )
+        assert weights_root / "gs_transport_surrogate.npz" == (
+            gs_training.DEFAULT_GS_TRANSPORT_WEIGHTS_PATH
+        )
+        assert weights_root == pretrained_surrogates.DEFAULT_BUNDLE_WEIGHTS_DIR
+        assert artifact_root() / "disruptor.pth" == checkpoint_policy.default_model_path(
+            "disruptor.pth"
+        )
+    finally:
+        for module, saved_state in saved_module_state:
+            module.__dict__.clear()
+            module.__dict__.update(saved_state)
 
 
 def test_reference_defaults_resolve_under_bundled_data_root() -> None:
