@@ -46,6 +46,7 @@ sys.path.insert(0, str(SRC))
 import numpy.typing as npt  # noqa: E402
 
 from scpn_fusion.core import _multi_compat as multi  # noqa: E402
+from scpn_fusion.core import _multi_compat_providers as providers  # noqa: E402
 
 FloatArray: TypeAlias = npt.NDArray[np.float64]
 MetricRow: TypeAlias = dict[str, Any]
@@ -171,24 +172,24 @@ def build_report(*, repeats: int = DEFAULT_REPEATS) -> MetricRow:
     kernels = [
         _bench_kernel(
             f"kuramoto_step (N={KURAMOTO_N}, steps={KURAMOTO_STEPS})",
-            multi._numpy_kuramoto_step,
-            multi._rust_kuramoto_step,
+            providers._numpy_kuramoto_step,
+            providers._rust_kuramoto_step,
             _kuramoto_workload,
             repeats,
             rust_available,
         ),
         _bench_kernel(
             f"upde_tick (L={UPDE_LAYERS}, N/layer={UPDE_N_PER_LAYER}, ticks={UPDE_TICKS})",
-            multi._numpy_upde_tick,
-            multi._rust_upde_tick,
+            providers._numpy_upde_tick,
+            providers._rust_upde_tick,
             _upde_workload,
             repeats,
             rust_available,
         ),
         _bench_kernel(
             f"upde_run batched (L={UPDE_LAYERS}, N/layer={UPDE_N_PER_LAYER}, ticks={UPDE_TICKS})",
-            multi._numpy_upde_run,
-            multi._rust_upde_run,
+            providers._numpy_upde_run,
+            providers._rust_upde_run,
             _upde_run_workload,
             repeats,
             rust_available,
