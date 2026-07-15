@@ -235,7 +235,13 @@ class TestRustKernelConsistencyGuards:
 
     def test_dense_missing_kernel_falls_back(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A missing Rust dense kernel raises, then falls back to the NumPy path."""
-        monkeypatch.setattr(controller_mod, "_rust_dense_activations", None, raising=False)
+        # This guards the "advertised available, kernel missing" runtime: force the
+        # Rust runtime flag on (it is off when the extension is unbuilt, e.g. on the
+        # 3.10/3.11 lanes) so the mixin enters the Rust branch and the missing kernel
+        # triggers the fall-back — patch the module the mixin resolves at call time.
+        mod = _controller_module()
+        monkeypatch.setattr(mod, "_HAS_RUST_SCPN_RUNTIME", True, raising=False)
+        monkeypatch.setattr(mod, "_rust_dense_activations", None, raising=False)
         ctrl = _Controller(backend="rust")
         marking = _marking()
         out = ctrl._dense_activations(marking)
@@ -244,7 +250,9 @@ class TestRustKernelConsistencyGuards:
 
     def test_marking_missing_kernel_falls_back(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A missing Rust marking kernel raises, then falls back to the NumPy path."""
-        monkeypatch.setattr(controller_mod, "_rust_marking_update", None, raising=False)
+        mod = _controller_module()
+        monkeypatch.setattr(mod, "_HAS_RUST_SCPN_RUNTIME", True, raising=False)
+        monkeypatch.setattr(mod, "_rust_marking_update", None, raising=False)
         ctrl = _Controller(backend="rust")
         out = np.zeros(_NP, dtype=np.float64)
         result = ctrl._marking_update(_marking(), np.full(_NT, 0.5), out)
