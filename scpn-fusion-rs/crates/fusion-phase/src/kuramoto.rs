@@ -17,6 +17,8 @@
 
 use fusion_types::error::{FusionError, FusionResult};
 use rayon::prelude::*;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Barrier;
 
 /// Population size at or above which the batched run parallelises the per-step
 /// order parameter and phase update; below it a serial loop is faster than
@@ -226,11 +228,12 @@ pub struct KuramotoRunResult {
 ///
 /// Mirrors iterating [`kuramoto_step`] with a constant driver phase Ψ, but keeps
 /// the whole trajectory on the Rust side of the Python boundary — where the
-/// compiled tier earns its speedup — and parallelises the per-step order
-/// parameter and phase update across the population. The element updates are
-/// reduction-free, so the rayon split cannot change their result; only the order
-/// parameter's summation order differs from the serial path, within the parity
-/// gate.
+/// compiled tier earns its speedup. Large populations run on a persistent worker
+/// pool ([`kuramoto_run_parallel`]) so the per-step order parameter and update
+/// parallelise without paying a fork-join per step; small ones stay serial. The
+/// element updates are reduction-free, so the split cannot change their result;
+/// only the order parameter's summation order differs from the serial path,
+/// within the parity gate.
 #[allow(clippy::too_many_arguments)]
 pub fn kuramoto_run(
     theta0: &[f64],
@@ -256,7 +259,33 @@ pub fn kuramoto_run(
         ));
     }
     let n = theta0.len();
-    let parallel = n >= KURAMOTO_PARALLEL_THRESHOLD;
+    let workers = rayon::current_num_threads();
+    if n >= KURAMOTO_PARALLEL_THRESHOLD && workers > 1 {
+        Ok(kuramoto_run_parallel(
+            theta0, omega, n_steps, dt, k, alpha, zeta, psi, wrap, workers,
+        ))
+    } else {
+        Ok(kuramoto_run_serial(
+            theta0, omega, n_steps, dt, k, alpha, zeta, psi, wrap,
+        ))
+    }
+}
+
+/// Serial batched run: caches `cos θ`/`sin θ` once per step and updates in a
+/// single pass. Deterministic and used below the parallel threshold.
+#[allow(clippy::too_many_arguments)]
+fn kuramoto_run_serial(
+    theta0: &[f64],
+    omega: &[f64],
+    n_steps: usize,
+    dt: f64,
+    k: f64,
+    alpha: f64,
+    zeta: f64,
+    psi: f64,
+    wrap: bool,
+) -> KuramotoRunResult {
+    let n = theta0.len();
     let mut theta = theta0.to_vec();
     let mut theta_next = vec![0.0_f64; n];
     let mut cos_buf = vec![0.0_f64; n];
@@ -265,69 +294,188 @@ pub fn kuramoto_run(
     let mut psi_r_hist = Vec::with_capacity(n_steps);
 
     for _ in 0..n_steps {
-        // One transcendental pass per step: cache cos θ / sin θ, derive the
-        // order parameter from them, then reuse them for the (reduction-free)
-        // coupling update.
-        fill_cos_sin(&theta, &mut cos_buf, &mut sin_buf, parallel);
+        fill_cos_sin(&theta, &mut cos_buf, &mut sin_buf, false);
         let (r, psi_r) = order_from_cos_sin(&cos_buf, &sin_buf);
         r_hist.push(r);
         psi_r_hist.push(psi_r);
-        let kr = k * r;
-
-        // sin(ψ_r − θ − α) and sin(Ψ − θ) via angle subtraction on the cached
-        // cos θ / sin θ, so the whole element update is pure arithmetic.
-        let a = psi_r - alpha;
-        let (sin_a, cos_a) = (a.sin(), a.cos());
-        let (sin_psi, cos_psi) = if zeta != 0.0 {
-            (psi.sin(), psi.cos())
-        } else {
-            (0.0, 0.0)
-        };
-
-        let update = |th: f64, om: f64, c: f64, s: f64| -> f64 {
-            let mut dth = om + kr * (sin_a * c - cos_a * s);
-            if zeta != 0.0 {
-                dth += zeta * (sin_psi * c - cos_psi * s);
-            }
-            let th1 = th + dt * dth;
-            if wrap {
-                wrap_phase(th1)
-            } else {
-                th1
-            }
-        };
-
-        if parallel {
-            // One balanced task per worker (absolute indexing); each chunk's
-            // arithmetic update vectorises internally.
-            let chunk = parallel_chunk(n);
-            theta_next
-                .par_chunks_mut(chunk)
-                .enumerate()
-                .for_each(|(chunk_idx, out_chunk)| {
-                    let base = chunk_idx * chunk;
-                    for (j, out) in out_chunk.iter_mut().enumerate() {
-                        let i = base + j;
-                        *out = update(theta[i], omega[i], cos_buf[i], sin_buf[i]);
-                    }
-                });
-        } else {
-            for ((out, (&th, &om)), (&c, &s)) in theta_next
-                .iter_mut()
-                .zip(theta.iter().zip(omega.iter()))
-                .zip(cos_buf.iter().zip(sin_buf.iter()))
-            {
-                *out = update(th, om, c, s);
-            }
+        let (kr, sin_a, cos_a, sin_psi, cos_psi) = step_coefficients(k, r, psi_r, alpha, zeta, psi);
+        for ((out, (&th, &om)), (&c, &s)) in theta_next
+            .iter_mut()
+            .zip(theta.iter().zip(omega.iter()))
+            .zip(cos_buf.iter().zip(sin_buf.iter()))
+        {
+            *out = advance_phase(
+                th, om, c, s, kr, sin_a, cos_a, zeta, sin_psi, cos_psi, dt, wrap,
+            );
         }
         std::mem::swap(&mut theta, &mut theta_next);
     }
 
-    Ok(KuramotoRunResult {
+    KuramotoRunResult {
         theta_final: theta,
         r_hist,
         psi_r_hist,
-    })
+    }
+}
+
+/// Batched run on a persistent barrier-synchronised worker pool.
+///
+/// Each worker owns a contiguous slice of oscillators for the whole trajectory,
+/// so the pool is entered exactly once (via `std::thread::scope`) instead of a
+/// rayon fork-join per step. Per step the workers publish their partial order
+/// parameter through lock-free atomics, meet at a barrier, then each reduces the
+/// identical partial set (same summation order on every worker → identical
+/// `(R, ψ_r)`), records the history on worker 0, and updates its own slice in
+/// place. A second barrier orders every worker's partial reads before the next
+/// step overwrites them. The barrier's happens-before makes the `Relaxed`
+/// atomics sufficient; the slices are disjoint (`chunks_mut`), so no update
+/// aliases another worker's data.
+#[allow(clippy::too_many_arguments)]
+fn kuramoto_run_parallel(
+    theta0: &[f64],
+    omega: &[f64],
+    n_steps: usize,
+    dt: f64,
+    k: f64,
+    alpha: f64,
+    zeta: f64,
+    psi: f64,
+    wrap: bool,
+    workers: usize,
+) -> KuramotoRunResult {
+    let n = theta0.len();
+    let mut theta = theta0.to_vec();
+    let chunk = n.div_ceil(workers);
+    let n_chunks = n.div_ceil(chunk);
+    let nf = n as f64;
+
+    let partial_re: Vec<AtomicU64> = (0..n_chunks).map(|_| AtomicU64::new(0)).collect();
+    let partial_im: Vec<AtomicU64> = (0..n_chunks).map(|_| AtomicU64::new(0)).collect();
+    let r_bits: Vec<AtomicU64> = (0..n_steps).map(|_| AtomicU64::new(0)).collect();
+    let psi_bits: Vec<AtomicU64> = (0..n_steps).map(|_| AtomicU64::new(0)).collect();
+    let barrier = Barrier::new(n_chunks);
+
+    std::thread::scope(|scope| {
+        for (tid, (theta_slice, omega_slice)) in
+            theta.chunks_mut(chunk).zip(omega.chunks(chunk)).enumerate()
+        {
+            let partial_re = &partial_re;
+            let partial_im = &partial_im;
+            let r_bits = &r_bits;
+            let psi_bits = &psi_bits;
+            let barrier = &barrier;
+            scope.spawn(move || {
+                let len = theta_slice.len();
+                let mut cos_buf = vec![0.0_f64; len];
+                let mut sin_buf = vec![0.0_f64; len];
+                for step in 0..n_steps {
+                    crate::sincos::fill_pairs(theta_slice, &mut cos_buf, &mut sin_buf);
+                    partial_re[tid].store(cos_buf.iter().sum::<f64>().to_bits(), Ordering::Relaxed);
+                    partial_im[tid].store(sin_buf.iter().sum::<f64>().to_bits(), Ordering::Relaxed);
+                    barrier.wait();
+
+                    let mut re = 0.0_f64;
+                    let mut im = 0.0_f64;
+                    for j in 0..n_chunks {
+                        re += f64::from_bits(partial_re[j].load(Ordering::Relaxed));
+                        im += f64::from_bits(partial_im[j].load(Ordering::Relaxed));
+                    }
+                    let re = re / nf;
+                    let im = im / nf;
+                    let r = (re * re + im * im).sqrt();
+                    let psi_r = im.atan2(re);
+                    if tid == 0 {
+                        r_bits[step].store(r.to_bits(), Ordering::Relaxed);
+                        psi_bits[step].store(psi_r.to_bits(), Ordering::Relaxed);
+                    }
+
+                    let (kr, sin_a, cos_a, sin_psi, cos_psi) =
+                        step_coefficients(k, r, psi_r, alpha, zeta, psi);
+                    for idx in 0..len {
+                        theta_slice[idx] = advance_phase(
+                            theta_slice[idx],
+                            omega_slice[idx],
+                            cos_buf[idx],
+                            sin_buf[idx],
+                            kr,
+                            sin_a,
+                            cos_a,
+                            zeta,
+                            sin_psi,
+                            cos_psi,
+                            dt,
+                            wrap,
+                        );
+                    }
+                    barrier.wait();
+                }
+            });
+        }
+    });
+
+    let decode = |bits: &[AtomicU64]| -> Vec<f64> {
+        bits.iter()
+            .map(|b| f64::from_bits(b.load(Ordering::Relaxed)))
+            .collect()
+    };
+    KuramotoRunResult {
+        theta_final: theta,
+        r_hist: decode(&r_bits),
+        psi_r_hist: decode(&psi_bits),
+    }
+}
+
+/// Per-step scalar coefficients shared by every oscillator: `K·R` and the
+/// sine/cosine of the coupling phase `ψ_r − α` and the driver phase `Ψ`, so the
+/// element update is pure arithmetic on the cached `cos θ`/`sin θ`.
+#[inline]
+fn step_coefficients(
+    k: f64,
+    r: f64,
+    psi_r: f64,
+    alpha: f64,
+    zeta: f64,
+    psi: f64,
+) -> (f64, f64, f64, f64, f64) {
+    let a = psi_r - alpha;
+    let (sin_a, cos_a) = (a.sin(), a.cos());
+    let (sin_psi, cos_psi) = if zeta != 0.0 {
+        (psi.sin(), psi.cos())
+    } else {
+        (0.0, 0.0)
+    };
+    (k * r, sin_a, cos_a, sin_psi, cos_psi)
+}
+
+/// One Euler element update:
+/// `θ' = wrap(θ + dt·(ω + K·R·sin(ψ_r−θ−α) + ζ·sin(Ψ−θ)))`, with both sines
+/// evaluated by angle subtraction on the cached `cos θ`/`sin θ`.
+#[inline]
+#[allow(clippy::too_many_arguments)]
+fn advance_phase(
+    th: f64,
+    om: f64,
+    cos_th: f64,
+    sin_th: f64,
+    kr: f64,
+    sin_a: f64,
+    cos_a: f64,
+    zeta: f64,
+    sin_psi: f64,
+    cos_psi: f64,
+    dt: f64,
+    wrap: bool,
+) -> f64 {
+    let mut dth = om + kr * (sin_a * cos_th - cos_a * sin_th);
+    if zeta != 0.0 {
+        dth += zeta * (sin_psi * cos_th - cos_psi * sin_th);
+    }
+    let th1 = th + dt * dth;
+    if wrap {
+        wrap_phase(th1)
+    } else {
+        th1
+    }
 }
 
 #[cfg(test)]
@@ -471,6 +619,46 @@ mod tests {
             max_abs < 1e-12,
             "parallel run diverged from serial by {max_abs}"
         );
+    }
+
+    #[test]
+    fn kuramoto_run_parallel_matches_serial_across_worker_counts() {
+        // The barrier-synchronised pool must reproduce the serial trajectory
+        // within the parity gate for any worker count, including a count that
+        // does not divide the population and the single-worker edge.
+        let n = 5000;
+        let theta: Vec<f64> = (0..n)
+            .map(|i| ((i * 53 % 211) as f64) / 105.0 - 1.0)
+            .collect();
+        let omega: Vec<f64> = (0..n)
+            .map(|i| ((i * 7 % 40) as f64) / 100.0 - 0.2)
+            .collect();
+        let (n_steps, dt, k, alpha, zeta, psi) = (60usize, 5e-3, 1.5, 0.05, 0.4, 0.2);
+        let serial = kuramoto_run_serial(&theta, &omega, n_steps, dt, k, alpha, zeta, psi, true);
+        for workers in [1usize, 2, 3, 4, 7] {
+            let par = kuramoto_run_parallel(
+                &theta, &omega, n_steps, dt, k, alpha, zeta, psi, true, workers,
+            );
+            let max_theta = serial
+                .theta_final
+                .iter()
+                .zip(&par.theta_final)
+                .map(|(a, b)| (a - b).abs())
+                .fold(0.0_f64, f64::max);
+            let max_r = serial
+                .r_hist
+                .iter()
+                .zip(&par.r_hist)
+                .map(|(a, b)| (a - b).abs())
+                .fold(0.0_f64, f64::max);
+            assert!(
+                max_theta < 1e-12,
+                "workers={workers} θ diverged by {max_theta}"
+            );
+            assert!(max_r < 1e-12, "workers={workers} R diverged by {max_r}");
+            assert_eq!(par.r_hist.len(), n_steps);
+            assert_eq!(par.psi_r_hist.len(), n_steps);
+        }
     }
 
     #[test]
