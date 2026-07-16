@@ -45,6 +45,61 @@ pub fn order_parameter(theta: &[f64]) -> (f64, f64) {
     ((re * re + im * im).sqrt(), im.atan2(re))
 }
 
+/// Fill `cos_out`/`sin_out` with the cosine and sine of every phase.
+///
+/// This is the sole transcendental pass of the phase kernels: once `cos θ_i`
+/// and `sin θ_i` are cached, both the order parameter (their means) and every
+/// coupling term (`sin(A − θ_i) = sin A · cos θ_i − cos A · sin θ_i`) are pure
+/// arithmetic — see [`kuramoto_run`] and the UPDE tick. Parallelises the
+/// element-wise `cos`/`sin` for populations large enough to amortise the
+/// rayon fork-join; the writes are independent, so the split cannot change any
+/// value.
+#[inline]
+pub(crate) fn fill_cos_sin(
+    theta: &[f64],
+    cos_out: &mut [f64],
+    sin_out: &mut [f64],
+    parallel: bool,
+) {
+    if parallel {
+        cos_out
+            .par_iter_mut()
+            .zip(sin_out.par_iter_mut())
+            .zip(theta.par_iter())
+            .for_each(|((c, s), &th)| {
+                *c = th.cos();
+                *s = th.sin();
+            });
+    } else {
+        for ((c, s), &th) in cos_out.iter_mut().zip(sin_out.iter_mut()).zip(theta.iter()) {
+            *c = th.cos();
+            *s = th.sin();
+        }
+    }
+}
+
+/// Order parameter `(R, ψ_r)` from precomputed `cos θ`/`sin θ` buffers.
+///
+/// Sums the cosines and sines in slice order, so it is bit-identical to
+/// [`order_parameter`] on the same phases (summation order is preserved). The
+/// sum is a memory-bound single pass over the cached buffers — cheap next to the
+/// transcendental fill — so it stays serial and deterministic even when the
+/// fill parallelises; that also keeps every order parameter identical across run
+/// widths instead of drifting with the rayon reduction chunking.
+#[inline]
+pub(crate) fn order_from_cos_sin(cos_buf: &[f64], sin_buf: &[f64]) -> (f64, f64) {
+    let n = cos_buf.len();
+    if n == 0 {
+        return (0.0, 0.0);
+    }
+    let re: f64 = cos_buf.iter().sum();
+    let im: f64 = sin_buf.iter().sum();
+    let nf = n as f64;
+    let re = re / nf;
+    let im = im / nf;
+    ((re * re + im * im).sqrt(), im.atan2(re))
+}
+
 /// Lyapunov candidate `V = (1/N) Σ (1 − cos(θ_i − Ψ))`; 0 at perfect sync.
 pub fn lyapunov_v(theta: &[f64], psi: f64) -> f64 {
     if theta.is_empty() {
@@ -94,20 +149,36 @@ pub fn kuramoto_step(
         ));
     }
 
-    let (r, psi_r) = order_parameter(theta);
+    // Single transcendental pass: cache cos θ / sin θ, then reuse them for
+    // both the order parameter and the coupling term. Serial: per-call PyO3
+    // granularity is too small for a thread pool to pay off (measured), and
+    // serial keeps the result trivially deterministic.
+    let n = theta.len();
+    let mut cos_buf = vec![0.0_f64; n];
+    let mut sin_buf = vec![0.0_f64; n];
+    fill_cos_sin(theta, &mut cos_buf, &mut sin_buf, false);
+    let (r, psi_r) = order_from_cos_sin(&cos_buf, &sin_buf);
     let kr = k * r;
 
-    // Serial element loop: per-call PyO3 granularity is too small for a
-    // thread pool to pay off (measured), and serial keeps the result
-    // trivially deterministic.
-    let mut theta1 = Vec::with_capacity(theta.len());
-    let mut dtheta = Vec::with_capacity(theta.len());
-    for (&th, &om) in theta.iter().zip(omega.iter()) {
-        let mut dth = om + kr * (psi_r - th - alpha).sin();
+    // sin(ψ_r − θ − α) = sin(ψ_r − α)·cos θ − cos(ψ_r − α)·sin θ, reusing the
+    // cached cos θ / sin θ so the coupling costs no further transcendentals.
+    let a = psi_r - alpha;
+    let (sin_a, cos_a) = (a.sin(), a.cos());
+    let (sin_psi, cos_psi) = if zeta != 0.0 {
+        (psi.sin(), psi.cos())
+    } else {
+        (0.0, 0.0)
+    };
+
+    let mut theta1 = Vec::with_capacity(n);
+    let mut dtheta = Vec::with_capacity(n);
+    for i in 0..n {
+        let (c, s) = (cos_buf[i], sin_buf[i]);
+        let mut dth = omega[i] + kr * (sin_a * c - cos_a * s);
         if zeta != 0.0 {
-            dth += zeta * (psi - th).sin();
+            dth += zeta * (sin_psi * c - cos_psi * s);
         }
-        let mut th1 = th + dt * dth;
+        let mut th1 = theta[i] + dt * dth;
         if wrap {
             th1 = wrap_phase(th1);
         }
@@ -121,38 +192,6 @@ pub fn kuramoto_step(
         r,
         psi_r,
     })
-}
-
-/// Order parameter with a parallel reduction for large populations.
-///
-/// The parallel fold/reduce changes float summation order versus the serial
-/// path, but both agree with the NumPy tier to well within the 1e-12 cross-tier
-/// parity gate, so the batched run stays tier-compatible.
-fn order_parameter_fast(theta: &[f64]) -> (f64, f64) {
-    if theta.is_empty() {
-        return (0.0, 0.0);
-    }
-    let n = theta.len() as f64;
-    let (re, im) = if theta.len() >= KURAMOTO_PARALLEL_THRESHOLD {
-        theta
-            .par_iter()
-            .fold(
-                || (0.0_f64, 0.0_f64),
-                |(re, im), &th| (re + th.cos(), im + th.sin()),
-            )
-            .reduce(|| (0.0_f64, 0.0_f64), |a, b| (a.0 + b.0, a.1 + b.1))
-    } else {
-        let mut re = 0.0_f64;
-        let mut im = 0.0_f64;
-        for &th in theta {
-            re += th.cos();
-            im += th.sin();
-        }
-        (re, im)
-    };
-    let re = re / n;
-    let im = im / n;
-    ((re * re + im * im).sqrt(), im.atan2(re))
 }
 
 /// Result of a batched multi-step Kuramoto-Sakaguchi run (constant driver Ψ).
@@ -199,21 +238,38 @@ pub fn kuramoto_run(
         ));
     }
     let n = theta0.len();
+    let parallel = n >= KURAMOTO_PARALLEL_THRESHOLD;
     let mut theta = theta0.to_vec();
     let mut theta_next = vec![0.0_f64; n];
+    let mut cos_buf = vec![0.0_f64; n];
+    let mut sin_buf = vec![0.0_f64; n];
     let mut r_hist = Vec::with_capacity(n_steps);
     let mut psi_r_hist = Vec::with_capacity(n_steps);
 
     for _ in 0..n_steps {
-        let (r, psi_r) = order_parameter_fast(&theta);
+        // One transcendental pass per step: cache cos θ / sin θ, derive the
+        // order parameter from them, then reuse them for the (reduction-free)
+        // coupling update.
+        fill_cos_sin(&theta, &mut cos_buf, &mut sin_buf, parallel);
+        let (r, psi_r) = order_from_cos_sin(&cos_buf, &sin_buf);
         r_hist.push(r);
         psi_r_hist.push(psi_r);
         let kr = k * r;
 
-        let update = |th: f64, om: f64| -> f64 {
-            let mut dth = om + kr * (psi_r - th - alpha).sin();
+        // sin(ψ_r − θ − α) and sin(Ψ − θ) via angle subtraction on the cached
+        // cos θ / sin θ, so the whole element update is pure arithmetic.
+        let a = psi_r - alpha;
+        let (sin_a, cos_a) = (a.sin(), a.cos());
+        let (sin_psi, cos_psi) = if zeta != 0.0 {
+            (psi.sin(), psi.cos())
+        } else {
+            (0.0, 0.0)
+        };
+
+        let update = |th: f64, om: f64, c: f64, s: f64| -> f64 {
+            let mut dth = om + kr * (sin_a * c - cos_a * s);
             if zeta != 0.0 {
-                dth += zeta * (psi - th).sin();
+                dth += zeta * (sin_psi * c - cos_psi * s);
             }
             let th1 = th + dt * dth;
             if wrap {
@@ -223,16 +279,21 @@ pub fn kuramoto_run(
             }
         };
 
-        if n >= KURAMOTO_PARALLEL_THRESHOLD {
+        if parallel {
             theta_next
                 .par_iter_mut()
                 .zip(theta.par_iter().zip(omega.par_iter()))
-                .for_each(|(out, (&th, &om))| {
-                    *out = update(th, om);
+                .zip(cos_buf.par_iter().zip(sin_buf.par_iter()))
+                .for_each(|((out, (&th, &om)), (&c, &s))| {
+                    *out = update(th, om, c, s);
                 });
         } else {
-            for (out, (&th, &om)) in theta_next.iter_mut().zip(theta.iter().zip(omega.iter())) {
-                *out = update(th, om);
+            for ((out, (&th, &om)), (&c, &s)) in theta_next
+                .iter_mut()
+                .zip(theta.iter().zip(omega.iter()))
+                .zip(cos_buf.iter().zip(sin_buf.iter()))
+            {
+                *out = update(th, om, c, s);
             }
         }
         std::mem::swap(&mut theta, &mut theta_next);
