@@ -11,6 +11,7 @@
 //! exposed to Python through `fusion-python` for fastest-first dispatch.
 
 pub mod kuramoto;
+mod sincos;
 pub mod upde;
 
 pub use kuramoto::{

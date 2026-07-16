@@ -23,6 +23,12 @@ use rayon::prelude::*;
 /// paying rayon's fork-join cost.
 const KURAMOTO_PARALLEL_THRESHOLD: usize = 2048;
 
+/// Rayon chunk size for the per-step fill and update. Coarse on purpose: a
+/// handful of large tasks keeps the fork-join count bounded regardless of the
+/// core count (fine-grained `par_iter` over-splits and slows the small per-step
+/// tasks on many-core hosts), while each chunk still vectorises internally.
+pub(crate) const PARALLEL_CHUNK: usize = 2048;
+
 /// Map a phase to [-π, π) (mirror of NumPy's `(x + π) % 2π − π`).
 #[inline]
 pub fn wrap_phase(x: f64) -> f64 {
@@ -50,10 +56,11 @@ pub fn order_parameter(theta: &[f64]) -> (f64, f64) {
 /// This is the sole transcendental pass of the phase kernels: once `cos θ_i`
 /// and `sin θ_i` are cached, both the order parameter (their means) and every
 /// coupling term (`sin(A − θ_i) = sin A · cos θ_i − cos A · sin θ_i`) are pure
-/// arithmetic — see [`kuramoto_run`] and the UPDE tick. Parallelises the
-/// element-wise `cos`/`sin` for populations large enough to amortise the
-/// rayon fork-join; the writes are independent, so the split cannot change any
-/// value.
+/// arithmetic — see [`kuramoto_run`] and the UPDE tick. Each element uses the
+/// fused [`crate::sincos::fill_pairs`] primitive (one reduction for both, and a
+/// runtime-detected AVX2 lane split), so this pass is where SIMD earns its keep.
+/// Large populations additionally split into rayon chunks; the writes are
+/// independent, so the split cannot change any value.
 #[inline]
 pub(crate) fn fill_cos_sin(
     theta: &[f64],
@@ -62,30 +69,29 @@ pub(crate) fn fill_cos_sin(
     parallel: bool,
 ) {
     if parallel {
-        cos_out
-            .par_iter_mut()
-            .zip(sin_out.par_iter_mut())
-            .zip(theta.par_iter())
-            .for_each(|((c, s), &th)| {
-                *c = th.cos();
-                *s = th.sin();
+        // Coarse chunks keep each rayon task large enough to amortise the
+        // fork-join while still running the vectorised fill within the chunk.
+        theta
+            .par_chunks(PARALLEL_CHUNK)
+            .zip(cos_out.par_chunks_mut(PARALLEL_CHUNK))
+            .zip(sin_out.par_chunks_mut(PARALLEL_CHUNK))
+            .for_each(|((th_chunk, cos_chunk), sin_chunk)| {
+                crate::sincos::fill_pairs(th_chunk, cos_chunk, sin_chunk);
             });
     } else {
-        for ((c, s), &th) in cos_out.iter_mut().zip(sin_out.iter_mut()).zip(theta.iter()) {
-            *c = th.cos();
-            *s = th.sin();
-        }
+        crate::sincos::fill_pairs(theta, cos_out, sin_out);
     }
 }
 
 /// Order parameter `(R, ψ_r)` from precomputed `cos θ`/`sin θ` buffers.
 ///
-/// Sums the cosines and sines in slice order, so it is bit-identical to
-/// [`order_parameter`] on the same phases (summation order is preserved). The
-/// sum is a memory-bound single pass over the cached buffers — cheap next to the
-/// transcendental fill — so it stays serial and deterministic even when the
-/// fill parallelises; that also keeps every order parameter identical across run
-/// widths instead of drifting with the rayon reduction chunking.
+/// Sums the cached cosines and sines in slice order. The sum is a memory-bound
+/// single pass over the buffers — cheap next to the transcendental fill — so it
+/// stays serial and deterministic even when the fill parallelises; that keeps
+/// every order parameter reproducible across run widths instead of drifting with
+/// the rayon reduction chunking. The cached values come from
+/// [`crate::sincos::sincos`], within a few ulp of the libm reference, so `(R,
+/// ψ_r)` lands well inside the 1e-14 order-parameter parity gate.
 #[inline]
 pub(crate) fn order_from_cos_sin(cos_buf: &[f64], sin_buf: &[f64]) -> (f64, f64) {
     let n = cos_buf.len();
@@ -280,12 +286,17 @@ pub fn kuramoto_run(
         };
 
         if parallel {
+            // Coarse chunks (absolute indexing) keep the fork-join count bounded
+            // and let each chunk's arithmetic update vectorise internally.
             theta_next
-                .par_iter_mut()
-                .zip(theta.par_iter().zip(omega.par_iter()))
-                .zip(cos_buf.par_iter().zip(sin_buf.par_iter()))
-                .for_each(|((out, (&th, &om)), (&c, &s))| {
-                    *out = update(th, om, c, s);
+                .par_chunks_mut(PARALLEL_CHUNK)
+                .enumerate()
+                .for_each(|(chunk_idx, out_chunk)| {
+                    let base = chunk_idx * PARALLEL_CHUNK;
+                    for (j, out) in out_chunk.iter_mut().enumerate() {
+                        let i = base + j;
+                        *out = update(theta[i], omega[i], cos_buf[i], sin_buf[i]);
+                    }
                 });
         } else {
             for ((out, (&th, &om)), (&c, &s)) in theta_next

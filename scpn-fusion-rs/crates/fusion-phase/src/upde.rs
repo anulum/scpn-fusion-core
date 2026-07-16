@@ -16,7 +16,7 @@
 //!             + Σ_{n≠m} g (1 + γ_pac (1 − R_n)) K_{nm} R_n sin(ψ_n − θ_{m,i} − α_{nm})
 //!             + ζ_m sin(Ψ − θ_{m,i})
 
-use crate::kuramoto::{fill_cos_sin, lyapunov_v, order_from_cos_sin, wrap_phase};
+use crate::kuramoto::{fill_cos_sin, lyapunov_v, order_from_cos_sin, wrap_phase, PARALLEL_CHUNK};
 use fusion_types::error::{FusionError, FusionResult};
 use rayon::prelude::*;
 
@@ -257,13 +257,17 @@ fn advance_layers(
             }
         }
         theta1
-            .par_iter_mut()
-            .zip(dtheta.par_iter_mut())
+            .par_chunks_mut(PARALLEL_CHUNK)
+            .zip(dtheta.par_chunks_mut(PARALLEL_CHUNK))
             .enumerate()
-            .for_each(|(i, (t1, dt_out))| {
-                let (th1, dth) = element(i, layer_of[i]);
-                *t1 = th1;
-                *dt_out = dth;
+            .for_each(|(chunk_idx, (t1_chunk, dt_chunk))| {
+                let base = chunk_idx * PARALLEL_CHUNK;
+                for (j, (t1, dt_out)) in t1_chunk.iter_mut().zip(dt_chunk.iter_mut()).enumerate() {
+                    let i = base + j;
+                    let (th1, dth) = element(i, layer_of[i]);
+                    *t1 = th1;
+                    *dt_out = dth;
+                }
             });
     } else {
         for m in 0..l {
