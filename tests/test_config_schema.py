@@ -75,3 +75,29 @@ def test_dimensions_and_coil_models_preserve_geometry_and_current_units() -> Non
     assert dimensions.R_max == pytest.approx(9.0)
     assert coil.r == pytest.approx(6.2)
     assert coil.current == pytest.approx(5.0)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_validate_config_rejects_non_finite_coil_current(bad: float) -> None:
+    """A NaN or +/-inf coil current is rejected (gt/ge bounds do not catch +inf)."""
+    cfg = _base_config()
+    cfg["coils"][0]["current"] = bad
+    with pytest.raises(ValidationError):
+        validate_config(cfg)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_validate_config_rejects_non_finite_plasma_current_target(bad: float) -> None:
+    """A non-finite plasma_current_target cannot pass into an equilibrium solve."""
+    cfg = _base_config()
+    cfg["physics"] = {"plasma_current_target": bad}
+    with pytest.raises(ValidationError):
+        validate_config(cfg)
+
+
+def test_validate_config_rejects_infinite_dimension() -> None:
+    """An infinite domain bound is rejected despite the gt=0 constraint."""
+    cfg = _base_config()
+    cfg["dimensions"]["R_max"] = float("inf")
+    with pytest.raises(ValidationError):
+        validate_config(cfg)

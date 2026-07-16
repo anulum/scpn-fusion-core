@@ -20,12 +20,18 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 # fail_on_diverge, anderson_depth, profiles, etc.) pass through validation
 # without being silently dropped.  The schema validates what it knows;
 # the runtime code uses .get() for optional extension keys.
+#
+# All sub-models also set allow_inf_nan=False: pydantic v2 accepts NaN/inf for a
+# bare float by default and gt/ge bounds do not catch +inf, so a declared field
+# (e.g. a coil current or plasma_current_target) could otherwise carry a
+# non-finite value straight into a solve. Declared float fields now reject NaN
+# and +/-inf at validation time.
 
 
 class Dimensions(BaseModel):
     """Validated rectangular R-Z domain bounds."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", allow_inf_nan=False)
     R_min: float = Field(..., gt=0)
     R_max: float = Field(..., gt=0)
     Z_min: float
@@ -43,7 +49,7 @@ class Dimensions(BaseModel):
 class Coil(BaseModel):
     """Validated axisymmetric coil position and current entry."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", allow_inf_nan=False)
     name: str = "unnamed"
     r: float = Field(..., gt=0)
     z: float
@@ -53,7 +59,7 @@ class Coil(BaseModel):
 class PhysicsParams(BaseModel):
     """Validated physics-control parameters for equilibrium solves."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", allow_inf_nan=False)
     plasma_current_target: float = Field(default=5.0)
     vacuum_permeability: float = Field(default=1.25663706e-6, ge=0)
     beta_scale: float = Field(default=1.0, ge=0)
@@ -64,7 +70,7 @@ class PhysicsParams(BaseModel):
 class SolverParams(BaseModel):
     """Validated nonlinear solver controls."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", allow_inf_nan=False)
     max_iterations: int = Field(default=1000, gt=0)
     convergence_threshold: float = Field(default=1e-4, gt=0)
     relaxation_factor: float = Field(default=0.1, gt=0, le=1.0)
@@ -73,7 +79,7 @@ class SolverParams(BaseModel):
 class ReactorConfig(BaseModel):
     """Validated top-level reactor configuration contract."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", allow_inf_nan=False)
 
     reactor_name: str = "Unnamed-Reactor"
     grid_resolution: tuple[int, int] = Field(default=(129, 129))
