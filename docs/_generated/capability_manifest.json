@@ -190,6 +190,10 @@
         "path": "src/scpn_fusion/core/stability_mhd.py"
       },
       {
+        "name": "BallooningSecondStabilityReference",
+        "path": "src/scpn_fusion/core/ballooning_second_stability.py"
+      },
+      {
         "name": "BallooningStabilityAnalysis",
         "path": "src/scpn_fusion/core/ballooning_solver.py"
       },
@@ -2429,6 +2433,7 @@
       "src/scpn_fusion/core/_validators.py",
       "src/scpn_fusion/core/alfven_eigenmodes.py",
       "src/scpn_fusion/core/amr_patch.py",
+      "src/scpn_fusion/core/ballooning_second_stability.py",
       "src/scpn_fusion/core/ballooning_solver.py",
       "src/scpn_fusion/core/blob_transport.py",
       "src/scpn_fusion/core/checkpoint.py",
@@ -2696,10 +2701,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 565,
-    "python_capability_source_modules": 307,
+    "python_capability_classes": 566,
+    "python_capability_source_modules": 308,
     "rust_workspace_crates": 13,
-    "test_files": 556
+    "test_files": 559
   },
   "documentation": {
     "public_pages": [
@@ -2848,6 +2853,8 @@
       "tests/test_artifact_validation.py",
       "tests/test_aurora_reference_execution_artifact.py",
       "tests/test_balance_of_plant.py",
+      "tests/test_ballooning_reference_runner.py",
+      "tests/test_ballooning_second_stability.py",
       "tests/test_ballooning_solver.py",
       "tests/test_benchmark_disruption_replay_pipeline.py",
       "tests/test_benchmark_disruption_transfer_generalization.py",
@@ -2938,6 +2945,7 @@
       "tests/test_elm_model_full.py",
       "tests/test_eped_domain_contract_benchmark.py",
       "tests/test_eped_pb_kbm.py",
+      "tests/test_eped_pb_kbm_miller_geometry.py",
       "tests/test_eped_pedestal.py",
       "tests/test_eped_pedestal_tiers_benchmark.py",
       "tests/test_eqdsk.py",
