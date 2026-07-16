@@ -116,23 +116,26 @@ def test_validation_rejects_non_numeric_field():
 
 
 def test_full_second_stability_can_saturate_the_scan():
-    # High current (large peeling-current limit) plus a very high alpha_crit and
-    # a low, capped temperature scan keeps the whole KBM family
-    # peeling-ballooning stable, so the prediction saturates at T_max rather than
-    # crossing a boundary (the "entire scan stable" branch: converged is False
-    # with the pedestal pinned at T_max).
+    # Very high current (large peeling-current limit) plus a very high alpha_crit
+    # and a low, capped temperature scan keeps the whole KBM family
+    # peeling-ballooning stable by a wide margin (pb-boundary radius ~0.13, well
+    # below 1), so the prediction saturates at T_max rather than crossing a
+    # boundary (the "entire scan stable" branch: converged is False with the
+    # pedestal pinned at T_max). The wide margin keeps the branch selection
+    # robust to floating-point differences across Python/BLAS versions.
     ref = _reference(50.0, second_stability=True)
     model = PBKBMPedestalModel(
         R0=1.67,
         a=0.67,
         B0=2.1,
-        Ip_MA=5.0,
+        Ip_MA=15.0,
         kappa=1.74,
         delta=0.3,
         geometry="miller_second_stability",
         ballooning_reference=ref,
     )
-    result = model.predict(n_ped_1e19=1.0, T_max_keV=1.0, coarse_points=6, refine_iterations=4)
+    result = model.predict(n_ped_1e19=1.0, T_max_keV=0.5, coarse_points=6, refine_iterations=4)
     assert result.converged is False
-    assert result.T_ped_keV == pytest.approx(1.0, abs=1e-6)  # pinned at T_max (saturated)
+    assert result.pb_boundary_radius < 0.5  # whole scan comfortably stable
+    assert result.T_ped_keV == pytest.approx(0.5, abs=1e-6)  # pinned at T_max (saturated)
     assert result.method == "pb_kbm_miller_second_stability"
