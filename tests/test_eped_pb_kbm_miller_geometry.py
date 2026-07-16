@@ -14,6 +14,8 @@ artifact or a heavy eigenvalue solve.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from scpn_fusion.core.ballooning_second_stability import (
@@ -22,7 +24,7 @@ from scpn_fusion.core.ballooning_second_stability import (
 )
 from scpn_fusion.core.eped_pb_kbm import PBKBMPedestalModel, predict_pedestal
 
-DIIID_LIKE = dict(R0=1.67, a=0.67, B0=2.1, Ip_MA=1.0, kappa=1.74, delta=0.3)
+DIIID_LIKE: dict[str, Any] = dict(R0=1.67, a=0.67, B0=2.1, Ip_MA=1.0, kappa=1.74, delta=0.3)
 
 
 def _reference(alpha_crit: float, *, second_stability: bool = False):

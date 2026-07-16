@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
 
@@ -20,7 +22,7 @@ from scpn_fusion.core.eped_pb_kbm import (
 )
 from scpn_fusion.core.eped_pedestal import PedestalResult
 
-DIIID_LIKE = dict(R0=1.67, a=0.67, B0=2.1, Ip_MA=1.0, kappa=1.74, delta=0.3)
+DIIID_LIKE: dict[str, Any] = dict(R0=1.67, a=0.67, B0=2.1, Ip_MA=1.0, kappa=1.74, delta=0.3)
 
 
 @pytest.fixture(scope="module")
