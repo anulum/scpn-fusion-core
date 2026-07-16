@@ -216,6 +216,23 @@ class FreeBoundarySafetySupervisor:
         if action.size != currents.size:
             raise ValueError("proposed_action and coil_currents must have identical length.")
 
+        # The supervisor is the last gate before commands reach the coils: a
+        # non-finite value in any safety-relevant channel must be rejected here,
+        # not silently clipped into a plausible-looking action. (Previously only
+        # the geometry vector was finite-checked, so a NaN proposed action or
+        # coil current passed straight through into the emitted command.)
+        for _name, _array in (
+            ("proposed_action", action),
+            ("corrected_state", corrected),
+            ("target_state", target),
+            ("bias_hat", bias),
+            ("coil_currents", currents),
+        ):
+            if not np.all(np.isfinite(_array)):
+                raise ValueError(
+                    f"{_name} must be finite; the safety supervisor rejects non-finite inputs."
+                )
+
         reasons: list[str] = []
         clipped_action = np.clip(action, -self.coil_delta_limit, self.coil_delta_limit)
         saturation_active = not np.allclose(clipped_action, action)

@@ -74,6 +74,42 @@ class TestFilterActionGuards:
                 predicted_next_state=np.array([1.0, 2.0, 3.0]),
             )
 
+    def test_non_finite_proposed_action_raises(self) -> None:
+        """A NaN in the proposed action is rejected, not clipped into the command."""
+        with pytest.raises(ValueError, match="proposed_action must be finite"):
+            _supervisor().filter_action(
+                np.array([np.nan, -0.2, 0.1, -0.1]),
+                corrected_state=np.array([6.0, 0.0, 5.02, -3.48]),
+                target_state=np.array([6.0, 0.0, 5.02, -3.48]),
+                bias_hat=np.array([0.01, 0.01, 0.01, 0.01]),
+                coil_currents=np.array([0.5, -0.5, 0.4, -0.4]),
+                target_ip_ma=8.0,
+            )
+
+    def test_non_finite_coil_currents_raises(self) -> None:
+        """A non-finite coil current is rejected at the supervisor boundary."""
+        with pytest.raises(ValueError, match="coil_currents must be finite"):
+            _supervisor().filter_action(
+                np.array([0.2, -0.2, 0.1, -0.1]),
+                corrected_state=np.array([6.0, 0.0, 5.02, -3.48]),
+                target_state=np.array([6.0, 0.0, 5.02, -3.48]),
+                bias_hat=np.array([0.01, 0.01, 0.01, 0.01]),
+                coil_currents=np.array([0.5, np.inf, 0.4, -0.4]),
+                target_ip_ma=8.0,
+            )
+
+    def test_non_finite_corrected_state_raises(self) -> None:
+        """A non-finite measured state is rejected before it can bias risk scoring."""
+        with pytest.raises(ValueError, match="corrected_state must be finite"):
+            _supervisor().filter_action(
+                np.array([0.2, -0.2, 0.1, -0.1]),
+                corrected_state=np.array([6.0, np.nan, 5.02, -3.48]),
+                target_state=np.array([6.0, 0.0, 5.02, -3.48]),
+                bias_hat=np.array([0.01, 0.01, 0.01, 0.01]),
+                coil_currents=np.array([0.5, -0.5, 0.4, -0.4]),
+                target_ip_ma=8.0,
+            )
+
 
 def test_filter_action_nominal_returns_result() -> None:
     """A well-formed action passes the guards and returns a filter result."""
