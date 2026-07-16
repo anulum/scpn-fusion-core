@@ -4,8 +4,23 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — SCPN vs PID/MPC Benchmark
-"""Deterministic control benchmark comparing SCPN controller against PID/MPC."""
+# SCPN Fusion Core — SCPN readout-path sanity lane vs PID/MPC baselines
+"""Deterministic readout-path sanity lane for the SCPN controller vs PID/MPC baselines.
+
+Honest scope (claim boundary):
+    The SCPN lane here is configured with long transition delays
+    (``delay_ticks=1024`` >> ``steps``) so the timed Petri-net dynamics never fire
+    within a run. The control action is therefore the *readout* of the injected
+    state features scaled by the readout gains — a static proportional (P-gain)
+    map, not the network's spiking/temporal dynamics. This benchmark exercises the
+    compile -> readout -> actuate plumbing and gives a P-controller-level sanity
+    comparison against FIXED PID and MPC baselines (not tuned optima).
+
+    It is NOT evidence that the SNN's dynamics are competitive with PID/MPC. The
+    repo's separate disturbance-rejection lane (RESULTS.md) shows the SNN losing to
+    MPC by orders of magnitude; do not cite this lane as an SNN-competitiveness
+    result.
+"""
 
 from __future__ import annotations
 
@@ -44,8 +59,12 @@ def _build_scpn_controller(
     net.add_place("a_Z_pos", initial_tokens=0.0)
     net.add_place("a_Z_neg", initial_tokens=0.0)
 
-    # Use long transition delays so readout follows injected features while
-    # still exercising timed-transition state tracking.
+    # delay_ticks=1024 >> run length, so these transitions never fire during a
+    # benchmark: the control action is the readout of the injected features scaled
+    # by the readout gains, i.e. a STATIC P-GAIN MAP, not the spiking dynamics.
+    # This is deliberate (a readout-path sanity lane) and is documented in the
+    # module docstring and the report's claim_boundary — it is not an
+    # SNN-competitiveness result.
     net.add_transition("T_Rp", threshold=0.1, delay_ticks=1024)
     net.add_transition("T_Rn", threshold=0.1, delay_ticks=1024)
     net.add_transition("T_Zp", threshold=0.1, delay_ticks=1024)
@@ -172,7 +191,10 @@ def run_campaign(
     Parameters
     ----------
     seed
-        Kept for API compatibility.
+        Compatibility no-op: this lane is structurally deterministic (fixed plant,
+        fixed disturbance, fixed SNN ``seed_base``), so ``seed`` does not vary the
+        result. It is echoed into the report for provenance only, never used to
+        seed an RNG. There is therefore no run-to-run variance to report here.
     steps
         Number of simulation steps per lane.
     scpn_runtime_profile
@@ -259,6 +281,13 @@ def run_campaign(
     return {
         "seed": seed_int,
         "steps": int(steps),
+        "lane_semantics": "scpn_lane_is_static_p_gain_readout_transitions_inert_not_a_trained_snn",
+        "claim_boundary": (
+            "Readout-path sanity lane: the SCPN action is a static P-gain readout "
+            "(transitions inert, delay_ticks>>steps), and the PID/MPC gains are fixed "
+            "baselines, not tuned optima. passes_thresholds is a plumbing/sanity band, "
+            "NOT evidence the SNN is competitive with PID/MPC."
+        ),
         "runtime_lane": {
             "runtime_profile": scpn.runtime_profile_name,
             "runtime_backend": scpn.runtime_backend_name,
@@ -288,7 +317,9 @@ def render_markdown(report: dict[str, Any]) -> str:
     """Render benchmark metrics into a markdown summary document."""
     r = report["scpn_pid_mpc_benchmark"]
     lines = [
-        "# SCPN vs PID/MPC Benchmark",
+        "# SCPN Readout-Path Sanity Lane vs PID/MPC Baselines",
+        "",
+        f"> Claim boundary: {r['claim_boundary']}",
         "",
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Runtime: `{report['runtime_seconds']:.3f} s`",

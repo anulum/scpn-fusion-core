@@ -63,11 +63,24 @@ def test_traceable_runtime_lane_is_exposed_and_deterministic() -> None:
 def test_render_markdown_contains_sections() -> None:
     report = scpn_pid_mpc_benchmark.generate_report(seed=11, steps=120)
     text = scpn_pid_mpc_benchmark.render_markdown(report)
-    assert "# SCPN vs PID/MPC Benchmark" in text
+    assert "# SCPN Readout-Path Sanity Lane vs PID/MPC Baselines" in text
+    assert "Claim boundary:" in text
     assert "SCPN runtime profile" in text
     assert "RMSE" in text
     assert "Ratios" in text
     assert "Threshold Pass" in text
+
+
+def test_campaign_reports_honest_readout_lane_semantics() -> None:
+    """The lane must self-declare that the SCPN action is a static P-gain readout."""
+    out = scpn_pid_mpc_benchmark.run_campaign(seed=42, steps=120)
+    assert out["lane_semantics"] == (
+        "scpn_lane_is_static_p_gain_readout_transitions_inert_not_a_trained_snn"
+    )
+    boundary = out["claim_boundary"].lower()
+    assert "static p-gain readout" in boundary
+    assert "not evidence" in boundary
+    assert "competitive" in boundary
 
 
 def test_campaign_does_not_mutate_global_numpy_rng_state() -> None:
