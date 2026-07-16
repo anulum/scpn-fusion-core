@@ -30,10 +30,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
+import subprocess
 import sys
 import time
 import traceback
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, cast
 
@@ -717,9 +720,98 @@ def derive_hinf_graduation_status(results: dict[str, ControllerMetrics]) -> dict
     }
 
 
-def save_results_json(results: dict[str, ControllerMetrics], path: Path) -> None:
-    """Persist campaign results to JSON."""
+def _cpu_model() -> str:
+    """Return the real CPU model string for host provenance (never fabricated)."""
+    try:
+        with open("/proc/cpuinfo", encoding="utf-8") as fh:
+            for line in fh:
+                if line.lower().startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.processor() or platform.machine()
+
+
+def _lib_version(module_name: str) -> str:
+    """Return an installed module's version, or 'absent' if it is not importable."""
+    try:
+        module = __import__(module_name)
+    except Exception:
+        return "absent"
+    return str(getattr(module, "__version__", "present"))
+
+
+def _git_sha() -> str:
+    """Return the current git commit SHA (best effort), or 'unknown'."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        sha = out.stdout.strip()
+        return sha if sha else "unknown"
+    except Exception:
+        return "unknown"
+
+
+def collect_provenance(
+    *,
+    n_episodes: int,
+    shot_duration: int,
+    seed: int | None,
+    controllers: list[str],
+    timestamp_utc: str,
+) -> dict[str, Any]:
+    """Build a self-documenting provenance block for a measurement run.
+
+    The host CPU model is read from the machine actually running the campaign
+    (``/proc/cpuinfo`` / ``platform``); it is NEVER hard-coded, so latency numbers
+    are always attributable to the box that produced them. Run the same command on
+    a second host (e.g. a cloud instance) to obtain an independent measurement.
+    """
+    return {
+        "schema": "scpn-fusion-core.stress_test_campaign_provenance.v1",
+        "timestamp_utc": timestamp_utc,
+        "git_sha": _git_sha(),
+        "host": {
+            "cpu_model": _cpu_model(),
+            "machine": platform.machine(),
+            "platform": platform.platform(),
+            "logical_cpus": os.cpu_count(),
+        },
+        "software": {
+            "python": platform.python_version(),
+            "numpy": _lib_version("numpy"),
+            "jax": _lib_version("jax"),
+            "nengo": _lib_version("nengo"),
+            "scpn_fusion_rs": "present" if _rust_flight_sim_available else "absent",
+        },
+        "methodology": {
+            "n_episodes": int(n_episodes),
+            "shot_duration_s": int(shot_duration),
+            "seed": seed,
+            "latency_metric": "per-control-step wall time (perf_counter_ns), p50/p95/p99 over episodes",
+            "controllers": controllers,
+            "note": (
+                "Latency is host-dependent; reproduce on any host with "
+                "`python validation/stress_test_campaign.py --output <path> [--seed N]` "
+                "and compare the provenance.host block."
+            ),
+        },
+    }
+
+
+def save_results_json(
+    results: dict[str, ControllerMetrics],
+    path: Path,
+    provenance: dict[str, Any] | None = None,
+) -> None:
+    """Persist campaign results to JSON, including a host-provenance block."""
     data: dict[str, Any] = {
+        "provenance": provenance,
         "controllers": {},
         "hinf_graduation": derive_hinf_graduation_status(results),
     }
@@ -798,6 +890,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "PID,H-infinity,LQR,Rust-PID."
         ),
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help=(
+            "Optional RNG seed for the stochastic episode metrics (recorded in the "
+            "output provenance block). Latency timings are host-dependent regardless."
+        ),
+    )
     return parser
 
 
@@ -809,7 +910,10 @@ def main(argv: list[str] | None = None) -> dict[str, ControllerMetrics]:
         args.episodes = 10
     if args.enable_hinf_research:
         os.environ[HINF_RESEARCH_ENV] = "1"
+    if args.seed is not None:
+        np.random.seed(int(args.seed))
 
+    timestamp_utc = datetime.now(timezone.utc).isoformat()
     selected_controllers = (
         [name.strip() for name in args.controllers.split(",") if name.strip()]
         if args.controllers
@@ -825,7 +929,14 @@ def main(argv: list[str] | None = None) -> dict[str, ControllerMetrics]:
     print("\n" + generate_summary_table(results))
 
     if args.output:
-        save_results_json(results, Path(args.output))
+        provenance = collect_provenance(
+            n_episodes=args.episodes,
+            shot_duration=args.shot_duration,
+            seed=args.seed,
+            controllers=list(results.keys()),
+            timestamp_utc=timestamp_utc,
+        )
+        save_results_json(results, Path(args.output), provenance=provenance)
 
     return results
 

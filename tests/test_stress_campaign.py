@@ -696,3 +696,71 @@ def test_rust_pid_episode_energy_efficiency_tracks_constraint_events(monkeypatch
     monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
     episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
     assert episode.energy_efficiency == pytest.approx(0.85, abs=1e-12)
+
+
+# ── Provenance / replicable-workflow block ───────────────────────────
+
+
+def test_collect_provenance_records_real_host_and_software() -> None:
+    """The provenance block records the actual host CPU + software, never a fabricated one."""
+    from validation.stress_test_campaign import collect_provenance
+
+    prov = collect_provenance(
+        n_episodes=10,
+        shot_duration=30,
+        seed=42,
+        controllers=["PID", "Nengo-SNN"],
+        timestamp_utc="2026-07-16T21:00:00+00:00",
+    )
+    assert prov["schema"] == "scpn-fusion-core.stress_test_campaign_provenance.v1"
+    assert prov["timestamp_utc"] == "2026-07-16T21:00:00+00:00"
+    # Host CPU model is read from the running machine and is a non-empty string.
+    assert isinstance(prov["host"]["cpu_model"], str) and prov["host"]["cpu_model"]
+    assert prov["host"]["logical_cpus"] is None or prov["host"]["logical_cpus"] >= 1
+    # Software versions captured for reproducibility.
+    assert prov["software"]["python"]
+    assert prov["software"]["numpy"] != "absent"
+    assert prov["methodology"]["n_episodes"] == 10
+    assert prov["methodology"]["seed"] == 42
+    assert prov["methodology"]["controllers"] == ["PID", "Nengo-SNN"]
+
+
+def test_save_results_json_includes_provenance(tmp_path: Path) -> None:
+    """save_results_json embeds the provenance block alongside the controller metrics."""
+    import json
+
+    from validation.stress_test_campaign import (
+        ControllerMetrics,
+        collect_provenance,
+        save_results_json,
+    )
+
+    results = {"PID": ControllerMetrics(name="PID", n_episodes=3, p50_latency_us=3431.0)}
+    prov = collect_provenance(
+        n_episodes=3,
+        shot_duration=30,
+        seed=None,
+        controllers=["PID"],
+        timestamp_utc="2026-07-16T21:00:00+00:00",
+    )
+    out = tmp_path / "campaign.json"
+    save_results_json(results, out, provenance=prov)
+
+    payload = json.loads(out.read_text())
+    assert payload["provenance"]["schema"] == "scpn-fusion-core.stress_test_campaign_provenance.v1"
+    assert payload["provenance"]["host"]["cpu_model"]
+    assert payload["controllers"]["PID"]["p50_latency_us"] == 3431.0
+
+
+def test_save_results_json_without_provenance_is_backward_compatible(tmp_path: Path) -> None:
+    """Omitting provenance keeps the legacy two-argument call working (provenance is null)."""
+    import json
+
+    from validation.stress_test_campaign import ControllerMetrics, save_results_json
+
+    results = {"PID": ControllerMetrics(name="PID", n_episodes=1)}
+    out = tmp_path / "legacy.json"
+    save_results_json(results, out)
+    payload = json.loads(out.read_text())
+    assert payload["provenance"] is None
+    assert "PID" in payload["controllers"]
