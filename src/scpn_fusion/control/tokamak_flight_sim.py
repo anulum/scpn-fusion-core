@@ -44,7 +44,9 @@ class FirstOrderActuator:
     dt_s : float
         Simulation timestep [s].
     u_min, u_max : float
-        Saturation limits.
+        Absolute saturation limits [A]. Default +/-5e4 (50 kA), the ITER PF/CS
+        coil-current scale, so an anomalous command is actually bounded to a
+        physical current rather than passing through an ineffective 1e9 A gate.
     rate_limit : float
         Maximum current rate of change [A/s]. Default 1e6 (1 MA/s, ITER PF spec).
     sensor_noise_std : float
@@ -61,8 +63,8 @@ class FirstOrderActuator:
         *,
         tau_s: float,
         dt_s: float,
-        u_min: float = -1.0e9,
-        u_max: float = 1.0e9,
+        u_min: float = -5.0e4,
+        u_max: float = 5.0e4,
         rate_limit: float = 1.0e6,
         sensor_noise_std: float = 0.0,
         delay_steps: int = 0,
@@ -84,6 +86,7 @@ class FirstOrderActuator:
         self.delay_steps = int(delay_steps)
         self._rng = np.random.default_rng(rng_seed)
         self.state = 0.0
+        self.faults = 0
         # Bounded ring buffer: holding delay_steps + 1 samples is sufficient for
         # the tail-indexed delayed read and keeps memory flat across a long shot.
         self._delay_buffer: deque[float] = deque(
@@ -91,7 +94,19 @@ class FirstOrderActuator:
         )
 
     def step(self, command: float) -> float:
-        """Apply command through actuator dynamics with rate limiting."""
+        """Apply command through actuator dynamics with rate limiting.
+
+        A non-finite command (NaN/inf) is a fault the actuator cannot realise;
+        the last valid state is held (fail-safe hold) and counted in ``faults``
+        rather than being latched into ``self.state`` — one bad sample can never
+        poison the actuator. The delay line still advances so measurement timing
+        stays consistent.
+        """
+        if not np.isfinite(command):
+            self.faults += 1
+            self._delay_buffer.append(self.state)
+            return self.state
+
         u_cmd = float(np.clip(command, self.u_min, self.u_max))
         alpha = self.dt_s / (self.tau_s + self.dt_s)
         u_new = self.state + alpha * (u_cmd - self.state)
@@ -138,7 +153,7 @@ class IsoFluxController:
         verbose: bool = True,
         actuator_tau_s: float = 0.06,
         heating_actuator_tau_s: Optional[float] = None,
-        actuator_current_delta_limit: float = 1.0e9,
+        actuator_current_delta_limit: float = 5.0e4,
         heating_beta_max: float = 5.0,
         control_dt_s: float = 0.05,
     ) -> None:
@@ -215,7 +230,14 @@ class IsoFluxController:
             logger.info(message)
 
     def pid_step(self, pid: Dict[str, float], error: float) -> float:
-        """Update one PID state dictionary and return its control command."""
+        """Update one PID state dictionary and return its control command.
+
+        A non-finite error is a sensor/estimate fault: the integrator is NOT
+        accumulated (so one NaN can never latch ``err_sum``) and a zero command
+        is returned — a fail-safe hold rather than a poisoned controller.
+        """
+        if not np.isfinite(error):
+            return 0.0
         pid["err_sum"] += error
         d_err = error - pid["last_err"]
         pid["last_err"] = error

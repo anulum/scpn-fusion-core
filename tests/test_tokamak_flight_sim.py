@@ -357,3 +357,61 @@ def test_run_flight_sim_renders_limited_plasma_panel(monkeypatch: pytest.MonkeyP
         kernel_factory=_LimiterKernel,
     )
     assert summary["plot_saved"] is True
+
+
+def test_first_order_actuator_holds_on_nonfinite_command() -> None:
+    """A NaN command is held, not latched — one bad sample can't poison the actuator."""
+    act = FirstOrderActuator(tau_s=0.05, dt_s=0.05, u_min=-10.0, u_max=10.0, rate_limit=100.0)
+    act.step(2.0)
+    held = act.state
+    out = act.step(float("nan"))
+    assert out == pytest.approx(held)  # last valid state held
+    assert np.isfinite(act.state)
+    assert act.faults == 1
+    # Not poisoned: a subsequent finite command advances the actuator again.
+    nxt = act.step(2.0)
+    assert np.isfinite(nxt)
+    assert act.faults == 1  # only the NaN sample counted
+
+
+def test_first_order_actuator_holds_on_inf_command() -> None:
+    act = FirstOrderActuator(tau_s=0.05, dt_s=0.05, u_min=-10.0, u_max=10.0, rate_limit=100.0)
+    act.step(1.0)
+    held = act.state
+    out = act.step(float("inf"))
+    assert out == pytest.approx(held)
+    assert np.isfinite(out)
+    assert act.faults == 1
+
+
+def test_first_order_actuator_default_limits_are_physical() -> None:
+    """The default saturation is a physical coil-current scale, not 1e9 A."""
+    act = FirstOrderActuator(tau_s=0.05, dt_s=0.05)
+    assert act.u_max == pytest.approx(5.0e4)
+    assert act.u_min == pytest.approx(-5.0e4)
+    assert abs(act.u_max) < 1.0e6  # not the old non-physical default
+
+
+def test_pid_step_ignores_nonfinite_error() -> None:
+    """A non-finite error returns a safe zero command and never latches err_sum."""
+    ctrl = IsoFluxController(
+        config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False
+    )
+    pid = {"Kp": 2.0, "Ki": 0.1, "Kd": 0.5, "err_sum": 3.0, "last_err": 0.5}
+    out = ctrl.pid_step(pid, float("nan"))
+    assert out == 0.0
+    assert pid["err_sum"] == 3.0  # integrator untouched (not poisoned)
+    assert pid["last_err"] == 0.5
+    # A following finite error still accumulates normally.
+    finite_out = ctrl.pid_step(pid, 1.0)
+    assert np.isfinite(finite_out)
+    assert pid["err_sum"] == 4.0
+
+
+def test_isoflux_default_current_delta_limit_is_physical() -> None:
+    """The controller's default actuator saturation is physical (50 kA), not 1e9 A."""
+    ctrl = IsoFluxController(
+        config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False
+    )
+    assert ctrl._act_radial.u_max == pytest.approx(5.0e4)
+    assert ctrl._act_radial.u_max < 1.0e6
