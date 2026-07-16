@@ -20,6 +20,7 @@ build/
 # Virtual environments
 .venv/
 .venv-torax/
+.venv-pyrokinetics/
 .cache/
 .pip-cache/
 venv/

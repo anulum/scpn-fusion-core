@@ -449,6 +449,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "EquilibriumIDS": (".imas_adapter", "EquilibriumIDS"),
     # Ballooning MHD stability
     "BallooningStabilityAnalysis": (".ballooning_solver", "BallooningStabilityAnalysis"),
+    "BallooningSecondStabilityReference": (
+        ".ballooning_second_stability",
+        "BallooningSecondStabilityReference",
+    ),
     # Pedestal profile (mtanh + EPED1 width)
     "PedestalProfile": (".pedestal", "PedestalProfile"),
     "PedestalParams": (".pedestal", "PedestalParams"),
