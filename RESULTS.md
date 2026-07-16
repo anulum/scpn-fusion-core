@@ -96,9 +96,9 @@
 | Transport tau_E RMSE | 0.0969 | s | 53 shots |
 | Transport within 2σ | 72 | % | Gate ≥ 80% |
 | Transport validation | Yes | — | |
-| Equilibrium ψ pass fraction | 67 | % | 12/18 files |
-| Equilibrium q95 pass fraction | 100 | % | 18/18 files |
-| Equilibrium validation | Yes | — | |
+| Equilibrium ψ pass fraction (self-consistency proxy) | 67 | % | 12/18 files; GS-residual proxy, not solver-vs-EFIT |
+| Equilibrium q95 pass fraction (self-reference) | 100 | % | 18/18 files; self-reference, always passes — not external validation |
+| Equilibrium self-consistency | Yes | — | self-consistency check, NOT external EFIT validation (see separate EFIT NRMSE lane) |
 | Data provenance | Mixed | — | Real SPARC/ITPA + template-generated DIII-D disruption shots |
 | Overall real-shot pass | Yes | — | |
 

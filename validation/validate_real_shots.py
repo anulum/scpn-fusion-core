@@ -185,6 +185,13 @@ def validate_equilibrium(ref_dirs: list[Path]) -> dict[str, Any]:
         "n_q95_pass": n_q95_pass,
         "psi_pass_fraction": round(psi_pass_frac, 2),
         "q95_pass_fraction": round(q95_pass_frac, 2),
+        "validation_basis": (
+            "self_consistency_not_external_efit: psi_nrmse is a GS-residual "
+            "self-consistency proxy (not a solver-vs-EFIT reconstruction) and q95_pass "
+            "is a self-reference (always True). This is a self-consistency check on the "
+            "reference files, not external EFIT validation; the free-boundary "
+            "reconstruction gate against real GEQDSK is the separate EFIT NRMSE lane."
+        ),
         "passes": bool(
             psi_pass_frac >= THRESHOLDS["psi_pass_fraction"]
             and q95_pass_frac >= THRESHOLDS["q95_pass_fraction"]

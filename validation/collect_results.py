@@ -593,12 +593,14 @@ def generate_results_md(
             sections.append(f"| Transport validation | {_fmt(t.get('passes'))} | — | |")
         if eq:
             sections.append(
-                f"| Equilibrium ψ pass fraction | {_fmt((eq.get('psi_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_psi_pass', '?')}/{eq.get('n_files', '?')} files |"
+                f"| Equilibrium ψ pass fraction (self-consistency proxy) | {_fmt((eq.get('psi_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_psi_pass', '?')}/{eq.get('n_files', '?')} files; GS-residual proxy, not solver-vs-EFIT |"
             )
             sections.append(
-                f"| Equilibrium q95 pass fraction | {_fmt((eq.get('q95_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_q95_pass', '?')}/{eq.get('n_files', '?')} files |"
+                f"| Equilibrium q95 pass fraction (self-reference) | {_fmt((eq.get('q95_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_q95_pass', '?')}/{eq.get('n_files', '?')} files; self-reference, always passes — not external validation |"
             )
-            sections.append(f"| Equilibrium validation | {_fmt(eq.get('passes'))} | — | |")
+            sections.append(
+                f"| Equilibrium self-consistency | {_fmt(eq.get('passes'))} | — | self-consistency check, NOT external EFIT validation (see separate EFIT NRMSE lane) |"
+            )
         sections.append(
             "| Data provenance | Mixed | — | Real SPARC/ITPA + template-generated DIII-D disruption shots |"
         )
