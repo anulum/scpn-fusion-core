@@ -12,12 +12,23 @@ import SCPNFusionSolvers
 namespace SCPNFusionSolvers
 
 /-!
-PID actuator safety contract:
+Actuator saturation contract — formal reference model:
 
-The executable controller clamps the requested actuator magnitude before it is
-sent to the plant. This proof captures the core bounded-output invariant for
-the nonnegative normalized actuator magnitude: after saturation, the command is
-never greater than the configured actuator limit.
+`saturatePidMagnitude` formalises the actuator-boundary saturation invariant over
+non-negative integer magnitudes: after saturation the command is never greater
+than the configured limit and never amplifies the raw command.
+
+Honest scope (what this proof is and is NOT):
+- It is a reference contract, NOT an extraction of the shipped controllers. The
+  floating-point PIDs (`pid.rs`, `tokamak_flight_sim.pid_step`) emit raw commands;
+  the runtime magnitude bound is enforced downstream at the actuator boundary
+  (`FirstOrderActuator`, Rust `SafetyEnvelope`, HIL `write_dac`) and is covered by
+  unit tests, not by this proof.
+- `Nat` cannot represent NaN/inf, so this proof does not model the non-finite
+  failure mode; that path is handled by the fail-safe guards in the
+  actuator-boundary code.
+- Linking these theorems to the shipped controllers would require Lean extraction
+  or an FFI binding test (tracked in the Lean verification backlog).
 -/
 
 def saturatePidMagnitude (limit command : Nat) : Nat :=
