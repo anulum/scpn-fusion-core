@@ -70,10 +70,13 @@ hardware-in-the-loop and safety-assurance work.
 
 Most fusion codes are physics-first — solve equations, then bolt on control.
 SCPN Fusion Core inverts this: **control-first**. Express plasma control logic
-as stochastic Petri nets, compile to spiking neural networks, execute at
-**10 kHz+** against physics-informed plant models. Pure Python with optional
-Rust acceleration for reduced-order control kernels; latency claims are
-metric-scoped and are not same-work Rust-versus-Python physics speedups.
+as stochastic Petri nets, compile to spiking neural networks, and execute the
+reduced-order control kernel at **>10 kHz** against a simplified surrogate plant.
+The physics-in-loop rate is far lower — a full free-boundary Grad–Shafranov solve
+in the loop runs at order 1 Hz, not 10 kHz. Pure Python with optional Rust
+acceleration for reduced-order control kernels; latency claims are metric-scoped,
+measured on a simplified plant, and are neither same-work Rust-versus-Python
+physics speedups nor a physics-in-loop real-time rate.
 
 > **Compact control package:** [`scpn-control`](https://github.com/anulum/scpn-control)
 > is the smaller controller-facing package for Petri-net compilation, SNN
@@ -530,7 +533,7 @@ Evidence boundary:
 | PID bounded-output proof | `scpn-fusion-lean/PIDBoundedOutput.lean` |
 | Petri-to-SNN reachability proof | `scpn-fusion-lean/SNNReachabilityPreservation.lean` |
 | Petri token-boundedness proof | `scpn-fusion-lean/PetriTokenBoundedness.lean` |
-| Verified properties | Grad-Shafranov validation errors are propagated exactly; normalized PID magnitudes remain bounded by actuator limits and raw command magnitude, propagate actuator-limit, raw-command, and dual upper bounds, remain bounded under nested filters, preserve zero-command and at-limit boundary cases, are monotone in command and actuator limit, are idempotent under repeated saturation, take exactly the raw command or the configured limit branch, and cannot amplify a command unless saturating to the configured limit; finite Petri graph reachability paths, composed paths, direct-edge equivalence, edge-count preservation, empty-edge preservation, source/destination endpoint bounds, and full endpoint bounds are preserved and reflected by the compiled SNN edge contract; no compiled SNN direct edge or reachable path exists without a corresponding Petri edge/path or declared topology; empty Petri graphs are well-formed vacuously; well-formed Petri edges and reachable endpoints remain within the compiled SNN neuron bound; finite-capacity Petri token filters preserve per-place bounds, preserve arbitrary finite-marking length and capacity sum, do not amplify per-place tokens or aggregate token sum, keep filtered aggregate token sum below both original and filtered aggregate capacity, expose a combined original-and-capacity aggregate safety theorem, are idempotent, have stable aggregate token/capacity sums under repeated filtering, leave already bounded finite markings unchanged, and keep bounded natural-number firing updates within place capacity |
+| Verified properties | Grad-Shafranov validation errors are propagated exactly; in the PID saturation *reference model* (a Lean `Nat` contract, not an extraction of the shipped floating-point controllers — whose runtime bound is enforced in the actuator-boundary code) normalized magnitudes remain bounded by actuator limits and raw command magnitude, propagate actuator-limit, raw-command, and dual upper bounds, remain bounded under nested filters, preserve zero-command and at-limit boundary cases, are monotone in command and actuator limit, are idempotent under repeated saturation, take exactly the raw command or the configured limit branch, and cannot amplify a command unless saturating to the configured limit; finite Petri graph reachability paths, composed paths, direct-edge equivalence, edge-count preservation, empty-edge preservation, source/destination endpoint bounds, and full endpoint bounds are preserved and reflected by the compiled SNN edge contract; no compiled SNN direct edge or reachable path exists without a corresponding Petri edge/path or declared topology; empty Petri graphs are well-formed vacuously; well-formed Petri edges and reachable endpoints remain within the compiled SNN neuron bound; finite-capacity Petri token filters preserve per-place bounds, preserve arbitrary finite-marking length and capacity sum, do not amplify per-place tokens or aggregate token sum, keep filtered aggregate token sum below both original and filtered aggregate capacity, expose a combined original-and-capacity aggregate safety theorem, are idempotent, have stable aggregate token/capacity sums under repeated filtering, leave already bounded finite markings unchanged, and keep bounded natural-number firing updates within place capacity |
 | CI surface | `lean-safety-proofs` job in `.github/workflows/ci.yml` |
 | Safety traceability matrix | [`docs/SAFETY_TRACEABILITY_MATRIX.md`](docs/SAFETY_TRACEABILITY_MATRIX.md) — requirements linked to hazards, implementation, tests, Lean proofs, and evidence; drift-checked in preflight |
 | Narrative draft | `docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md` |
