@@ -23,11 +23,22 @@ use rayon::prelude::*;
 /// paying rayon's fork-join cost.
 const KURAMOTO_PARALLEL_THRESHOLD: usize = 2048;
 
-/// Rayon chunk size for the per-step fill and update. Coarse on purpose: a
-/// handful of large tasks keeps the fork-join count bounded regardless of the
-/// core count (fine-grained `par_iter` over-splits and slows the small per-step
-/// tasks on many-core hosts), while each chunk still vectorises internally.
-pub(crate) const PARALLEL_CHUNK: usize = 2048;
+/// Smallest per-step rayon task, so small populations do not fragment into
+/// tasks too tiny to amortise the fork-join.
+const MIN_PARALLEL_CHUNK: usize = 512;
+
+/// Chunk size that splits `n` into roughly one task per rayon worker — balanced
+/// across the pool on any core count, and never below [`MIN_PARALLEL_CHUNK`].
+///
+/// One task per worker keeps every core evenly loaded (a fixed chunk size leaves
+/// a straggler task when `n` is not a clean multiple, and fine-grained
+/// `par_iter` over-splits the small per-step work on many-core hosts); each task
+/// is a contiguous slice, so it still vectorises internally.
+#[inline]
+pub(crate) fn parallel_chunk(n: usize) -> usize {
+    n.div_ceil(rayon::current_num_threads().max(1))
+        .max(MIN_PARALLEL_CHUNK)
+}
 
 /// Map a phase to [-π, π) (mirror of NumPy's `(x + π) % 2π − π`).
 #[inline]
@@ -69,12 +80,13 @@ pub(crate) fn fill_cos_sin(
     parallel: bool,
 ) {
     if parallel {
-        // Coarse chunks keep each rayon task large enough to amortise the
-        // fork-join while still running the vectorised fill within the chunk.
+        // One balanced task per worker; each runs the vectorised fill on its
+        // contiguous slice.
+        let chunk = parallel_chunk(theta.len());
         theta
-            .par_chunks(PARALLEL_CHUNK)
-            .zip(cos_out.par_chunks_mut(PARALLEL_CHUNK))
-            .zip(sin_out.par_chunks_mut(PARALLEL_CHUNK))
+            .par_chunks(chunk)
+            .zip(cos_out.par_chunks_mut(chunk))
+            .zip(sin_out.par_chunks_mut(chunk))
             .for_each(|((th_chunk, cos_chunk), sin_chunk)| {
                 crate::sincos::fill_pairs(th_chunk, cos_chunk, sin_chunk);
             });
@@ -286,13 +298,14 @@ pub fn kuramoto_run(
         };
 
         if parallel {
-            // Coarse chunks (absolute indexing) keep the fork-join count bounded
-            // and let each chunk's arithmetic update vectorise internally.
+            // One balanced task per worker (absolute indexing); each chunk's
+            // arithmetic update vectorises internally.
+            let chunk = parallel_chunk(n);
             theta_next
-                .par_chunks_mut(PARALLEL_CHUNK)
+                .par_chunks_mut(chunk)
                 .enumerate()
                 .for_each(|(chunk_idx, out_chunk)| {
-                    let base = chunk_idx * PARALLEL_CHUNK;
+                    let base = chunk_idx * chunk;
                     for (j, out) in out_chunk.iter_mut().enumerate() {
                         let i = base + j;
                         *out = update(theta[i], omega[i], cos_buf[i], sin_buf[i]);
