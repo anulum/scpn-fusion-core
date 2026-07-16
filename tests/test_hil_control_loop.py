@@ -61,3 +61,33 @@ class TestHILControlLoop:
         metrics = loop.run(iterations=200)
         assert metrics.jitter_std_us >= 0.0
         assert np.isfinite(metrics.jitter_std_us)
+
+    def test_plant_receives_clamped_command_not_raw(self) -> None:
+        """The DAC clamp must reach the plant: a 1e6 command saturates, never 1e6."""
+        seen: list[float] = []
+
+        def echo_plant(_state: float, applied: float) -> float:
+            seen.append(applied)
+            return applied
+
+        loop = HILControlLoop(target_rate_hz=1000.0, sensor=SensorInterface())
+        loop.set_controller(lambda _err, _s: 1.0e6)  # adversarial: slam the actuator
+        loop.run(iterations=20, plant_fn=echo_plant, setpoint=0.0)
+        assert seen  # plant advanced
+        assert all(abs(v) <= 10.0 + 1e-9 for v in seen)  # clamp reached the plant
+        assert max(seen) == pytest.approx(10.0)  # saturates at the DAC range
+
+    def test_nan_controller_output_does_not_poison_plant(self) -> None:
+        """A NaN controller output is fault-held at the boundary; the plant stays finite."""
+        seen: list[float] = []
+
+        def echo_plant(_state: float, applied: float) -> float:
+            seen.append(applied)
+            return applied
+
+        loop = HILControlLoop(target_rate_hz=1000.0, sensor=SensorInterface())
+        loop.set_controller(lambda _err, _s: float("nan"))
+        metrics = loop.run(iterations=15, plant_fn=echo_plant, setpoint=0.0)
+        assert metrics.iterations == 15
+        assert all(np.isfinite(v) for v in seen)  # NaN never reached the plant
+        assert loop.sensor.dac_faults == 15  # every sample flagged, none latched

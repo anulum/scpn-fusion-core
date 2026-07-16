@@ -6,6 +6,9 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 """Tests for the HIL ADC/DAC sensor/actuator interface."""
 
+import numpy as np
+import pytest
+
 from scpn_fusion.control.hil_sensors import ADCConfig, DACConfig, SensorInterface
 
 
@@ -45,6 +48,36 @@ class TestSensorInterface:
         r1 = s1.read_adc(0.5)
         r2 = s2.read_adc(0.5)
         assert r1 == r2
+
+    def test_dac_holds_last_output_on_nan(self) -> None:
+        """A NaN command must be held, not latched — one bad sample can't poison the DAC."""
+        sensor = SensorInterface()
+        good = sensor.write_dac(3.0)
+        assert good == pytest.approx(3.0)
+        held = sensor.write_dac(float("nan"))
+        assert held == pytest.approx(good)  # last valid output held
+        assert sensor.dac_faults == 1
+        # The converter state is NOT poisoned: a following valid command works.
+        recovered = sensor.write_dac(3.0)
+        assert np.isfinite(recovered)
+        assert recovered == pytest.approx(3.0)
+
+    def test_dac_holds_last_output_on_inf(self) -> None:
+        sensor = SensorInterface()
+        sensor.write_dac(2.0)
+        held = sensor.write_dac(float("inf"))
+        assert np.isfinite(held)
+        assert held == pytest.approx(2.0)
+        assert sensor.dac_faults == 1
+
+    def test_dac_clamps_large_command_to_range(self) -> None:
+        """A huge finite command saturates at the ±10 V DAC range, never beyond."""
+        sensor = SensorInterface()
+        out = sensor.write_dac(1.0e6, dt_us=1000.0)  # slew allows reaching the clamp
+        assert out == pytest.approx(10.0)
+        assert sensor.dac_faults == 0
+        neg = sensor.write_dac(-1.0e6, dt_us=1000.0)
+        assert neg == pytest.approx(-10.0)
 
 
 class TestConverterConfig:

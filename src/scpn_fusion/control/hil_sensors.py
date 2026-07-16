@@ -72,6 +72,7 @@ class SensorInterface:
         self._rng = np.random.default_rng(rng_seed)
         self._last_dac_voltage = 0.0
         self._last_dac_time_us = 0.0
+        self.dac_faults = 0
 
     def read_adc(self, true_voltage: float) -> float:
         """Quantize and add noise to simulate ADC reading."""
@@ -89,7 +90,19 @@ class SensorInterface:
         return quantized
 
     def write_dac(self, target_voltage: float, dt_us: float = 1.0) -> float:
-        """Apply slew-rate-limited DAC output."""
+        """Apply range-clamped, slew-rate-limited DAC output.
+
+        The converter is the actuator boundary: the returned value is the
+        voltage physically applied, and callers MUST drive the plant with this
+        value rather than the raw command. A non-finite command (NaN/inf) is a
+        fault the hardware cannot emit, so the last valid output is held
+        (fail-safe hold) and the fault is counted rather than latched into the
+        converter state — one bad sample can never poison the DAC.
+        """
+        if not np.isfinite(target_voltage):
+            self.dac_faults += 1
+            return self._last_dac_voltage
+
         vmin, vmax = self.dac.voltage_range
         target = float(np.clip(target_voltage, vmin, vmax))
 

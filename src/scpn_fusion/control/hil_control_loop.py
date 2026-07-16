@@ -87,8 +87,10 @@ class HILControlLoop:
         iterations : int
             Number of control loop iterations.
         plant_fn : callable or None
-            Plant model: state_new = plant_fn(state, command).
-            Default: simple integrator (state += command * dt).
+            Plant model: state_new = plant_fn(state, applied_command), where
+            ``applied_command`` is the DAC-enforced output (clamped, slew-rate
+            limited, fail-safe held), NOT the raw controller command.
+            Default: simple integrator (state += applied_command * dt).
         initial_state : float
             Initial plant state.
         setpoint : float
@@ -118,11 +120,13 @@ class HILControlLoop:
             # Controller
             command = self._control_fn(error, self.sensor)
 
-            # Actuator write
-            self.sensor.write_dac(command)
+            # Actuator write — the DAC enforces the range clamp, slew-rate
+            # limit, and non-finite fail-safe hold; the plant must advance on
+            # the voltage actually applied, never the raw controller command.
+            applied = self.sensor.write_dac(command)
 
             # Plant update
-            state = plant_fn(state, command)
+            state = plant_fn(state, applied)
 
             t_end = time.perf_counter_ns()
             dt_us = (t_end - t_start) / 1e3
