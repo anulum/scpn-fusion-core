@@ -75,7 +75,7 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Disruption prevention rate (SNN) | 100.0 | % | 50-run ensemble |
+| Disruption mitigation rate (synthetic RL episodes) | 100.0 | % | 50-run synthetic-signal RL/heuristic ensemble; not SNN, not real plasma |
 | Mean halo current peak | 1.408 | MA | |
 | P95 halo current peak | 2.111 | MA | |
 | Mean RE current peak | 0.014 | MA | |
@@ -118,6 +118,8 @@
 | H-infinity | ELM pacing | 1.37e-05 | 2.9999 | 0.0045 | Yes |
 | MPC | ELM pacing | 4.86e-07 | 2.9593 | 0.0011 | Yes |
 | SNN | ELM pacing | 1.15e-01 | 2.9999 | 0.3104 | Yes |
+
+> Note: the SNN lane's ISE is orders of magnitude larger than PID/MPC. This table records the SNN as stable-but-far-worse, not competitive; MPC wins every scenario.
 
 ## Manufactured-Source Equilibrium Parity (Solov'ev lane)
 

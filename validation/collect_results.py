@@ -534,7 +534,9 @@ def generate_results_md(
     if disruption:
         n = disruption["ensemble_runs"]
         rows.append(
-            f"| Disruption prevention rate (SNN) | {_fmt(disruption['prevention_rate'] * 100, '.1f')} | % | {n}-run ensemble |"
+            "| Disruption mitigation rate (synthetic RL episodes) "
+            f"| {_fmt(disruption['prevention_rate'] * 100, '.1f')} | % "
+            f"| {n}-run synthetic-signal RL/heuristic ensemble; not SNN, not real plasma |"
         )
         rows.append(
             f"| Mean halo current peak | {_fmt(disruption['mean_halo_ma'], '.3f')} | MA | |"
@@ -618,6 +620,11 @@ def generate_results_md(
                 f"| {_fmt(r['peak_overshoot'], '.4f')} "
                 f"| {_fmt(r['stable'])} |"
             )
+        sections.append("")
+        sections.append(
+            "> Note: the SNN lane's ISE is orders of magnitude larger than PID/MPC. This table "
+            "records the SNN as stable-but-far-worse, not competitive; MPC wins every scenario."
+        )
         sections.append("")
 
     # ── FreeGS Equilibrium Benchmark ──
