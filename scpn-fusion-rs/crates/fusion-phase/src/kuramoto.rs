@@ -323,13 +323,21 @@ fn kuramoto_run_serial(
 /// Each worker owns a contiguous slice of oscillators for the whole trajectory,
 /// so the pool is entered exactly once (via `std::thread::scope`) instead of a
 /// rayon fork-join per step. Per step the workers publish their partial order
-/// parameter through lock-free atomics, meet at a barrier, then each reduces the
-/// identical partial set (same summation order on every worker → identical
-/// `(R, ψ_r)`), records the history on worker 0, and updates its own slice in
-/// place. A second barrier orders every worker's partial reads before the next
-/// step overwrites them. The barrier's happens-before makes the `Relaxed`
-/// atomics sufficient; the slices are disjoint (`chunks_mut`), so no update
-/// aliases another worker's data.
+/// parameter through lock-free atomics, meet at **one** barrier, then each
+/// reduces the identical partial set (same summation order on every worker →
+/// identical `(R, ψ_r)`), records the history on worker 0, and updates its own
+/// slice in place.
+///
+/// The partials are **double-buffered** (indexed by `step & 1`): step `t+1`
+/// writes the opposite buffer from the one step `t` is still reading, so the
+/// write-after-read hazard that would otherwise need a second barrier is gone —
+/// one barrier per step suffices. The barrier bounds the worker skew to strictly
+/// under two steps, so two buffers are exactly enough. The barrier's
+/// happens-before makes the `Relaxed` atomics sufficient (writes to a buffer are
+/// separated from the prior read of that same buffer by an intervening barrier);
+/// the slices are disjoint (`chunks_mut`), so no update aliases another worker's
+/// data. The reduction order is unchanged, so the result is bit-identical to the
+/// two-barrier version.
 #[allow(clippy::too_many_arguments)]
 fn kuramoto_run_parallel(
     theta0: &[f64],
@@ -349,8 +357,9 @@ fn kuramoto_run_parallel(
     let n_chunks = n.div_ceil(chunk);
     let nf = n as f64;
 
-    let partial_re: Vec<AtomicU64> = (0..n_chunks).map(|_| AtomicU64::new(0)).collect();
-    let partial_im: Vec<AtomicU64> = (0..n_chunks).map(|_| AtomicU64::new(0)).collect();
+    // Double-buffered partials: two slots per worker, ping-ponged by `step & 1`.
+    let partial_re: Vec<AtomicU64> = (0..2 * n_chunks).map(|_| AtomicU64::new(0)).collect();
+    let partial_im: Vec<AtomicU64> = (0..2 * n_chunks).map(|_| AtomicU64::new(0)).collect();
     let r_bits: Vec<AtomicU64> = (0..n_steps).map(|_| AtomicU64::new(0)).collect();
     let psi_bits: Vec<AtomicU64> = (0..n_steps).map(|_| AtomicU64::new(0)).collect();
     let barrier = Barrier::new(n_chunks);
@@ -369,16 +378,19 @@ fn kuramoto_run_parallel(
                 let mut cos_buf = vec![0.0_f64; len];
                 let mut sin_buf = vec![0.0_f64; len];
                 for step in 0..n_steps {
+                    let base = (step & 1) * n_chunks;
                     crate::sincos::fill_pairs(theta_slice, &mut cos_buf, &mut sin_buf);
-                    partial_re[tid].store(cos_buf.iter().sum::<f64>().to_bits(), Ordering::Relaxed);
-                    partial_im[tid].store(sin_buf.iter().sum::<f64>().to_bits(), Ordering::Relaxed);
+                    partial_re[base + tid]
+                        .store(cos_buf.iter().sum::<f64>().to_bits(), Ordering::Relaxed);
+                    partial_im[base + tid]
+                        .store(sin_buf.iter().sum::<f64>().to_bits(), Ordering::Relaxed);
                     barrier.wait();
 
                     let mut re = 0.0_f64;
                     let mut im = 0.0_f64;
                     for j in 0..n_chunks {
-                        re += f64::from_bits(partial_re[j].load(Ordering::Relaxed));
-                        im += f64::from_bits(partial_im[j].load(Ordering::Relaxed));
+                        re += f64::from_bits(partial_re[base + j].load(Ordering::Relaxed));
+                        im += f64::from_bits(partial_im[base + j].load(Ordering::Relaxed));
                     }
                     let re = re / nf;
                     let im = im / nf;
@@ -407,7 +419,6 @@ fn kuramoto_run_parallel(
                             wrap,
                         );
                     }
-                    barrier.wait();
                 }
             });
         }
