@@ -46,10 +46,43 @@ pub struct SafetyEnvelope {
 impl Default for SafetyEnvelope {
     fn default() -> Self {
         Self {
-            // Default ITER-like limits: 50kA max, 10kA/s slew
-            pf_coils: PhysicalConstraint::new(-1e6, 1e6, 1e5),
+            // Default ITER-like PF/CS limits: +/-50 kA absolute, 10 kA/s slew.
+            // (Previously shipped +/-1 MA at 100 kA/s while this comment claimed
+            // 50 kA -- an ineffective envelope that bounded nothing physical.)
+            pf_coils: PhysicalConstraint::new(-5.0e4, 5.0e4, 1.0e4),
             // Default Heating: 0-100MW, 10MW/s slew
             heating: PhysicalConstraint::new(0.0, 100.0, 10.0),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_pf_coil_limits_are_physical() {
+        let env = SafetyEnvelope::default();
+        assert_eq!(env.pf_coils.min_value, -5.0e4);
+        assert_eq!(env.pf_coils.max_value, 5.0e4);
+        assert_eq!(env.pf_coils.max_slew_rate, 1.0e4);
+        // Not the old non-physical +/-1 MA default.
+        assert!(env.pf_coils.max_value < 1.0e6);
+    }
+
+    #[test]
+    fn enforce_clamps_to_absolute_limit() {
+        // Huge slew allowance isolates the absolute-limit clamp.
+        let c = PhysicalConstraint::new(-5.0e4, 5.0e4, 1.0e9);
+        assert_eq!(c.enforce(1.0e8, 0.0, 1.0), 5.0e4);
+        assert_eq!(c.enforce(-1.0e8, 0.0, 1.0), -5.0e4);
+    }
+
+    #[test]
+    fn enforce_respects_slew_rate() {
+        // dt=1 s, slew=100 -> at most 100 change per step from the current value.
+        let c = PhysicalConstraint::new(-5.0e4, 5.0e4, 100.0);
+        assert_eq!(c.enforce(1000.0, 0.0, 1.0), 100.0);
+        assert_eq!(c.enforce(-1000.0, 0.0, 1.0), -100.0);
     }
 }
