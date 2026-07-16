@@ -394,9 +394,7 @@ def test_first_order_actuator_default_limits_are_physical() -> None:
 
 def test_pid_step_ignores_nonfinite_error() -> None:
     """A non-finite error returns a safe zero command and never latches err_sum."""
-    ctrl = IsoFluxController(
-        config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False
-    )
+    ctrl = IsoFluxController(config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False)
     pid = {"Kp": 2.0, "Ki": 0.1, "Kd": 0.5, "err_sum": 3.0, "last_err": 0.5}
     out = ctrl.pid_step(pid, float("nan"))
     assert out == 0.0
@@ -410,8 +408,6 @@ def test_pid_step_ignores_nonfinite_error() -> None:
 
 def test_isoflux_default_current_delta_limit_is_physical() -> None:
     """The controller's default actuator saturation is physical (50 kA), not 1e9 A."""
-    ctrl = IsoFluxController(
-        config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False
-    )
+    ctrl = IsoFluxController(config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False)
     assert ctrl._act_radial.u_max == pytest.approx(5.0e4)
     assert ctrl._act_radial.u_max < 1.0e6
