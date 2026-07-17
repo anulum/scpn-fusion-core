@@ -16,7 +16,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
-![Version](https://img.shields.io/badge/Version-3.10.1-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-3.11.0-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
@@ -102,16 +102,19 @@ facades and evidence-bounded validation reports.
 
 ## Current Release Snapshot
 
-Version `3.10.1` is a CI publication, dependency-maintenance, and release-surface
-alignment patch. It preserves the GitHub Pages `.nojekyll` marker in the
-uploaded artifact, carries the safe CodeQL upload-sarif maintenance update, and
-publishes the green post-push state after pull-request and security-alert
-triage.
+Version `3.11.0` is a minor feature release. It adds a safety-shield
+composition with a real constrained-PPO control policy (M-4), a real TGLF
+transport surrogate (F-7), a proven Petri→SNN interlock with replay invariance
+and an exported proof hash (M-1), fastest-first dispatch tiers for the FNO
+turbulence, surrogate-MPC, and runaway-electron Fokker-Planck kernels,
+per-surrogate UQ/OOD cards and a safety traceability matrix with fail-closed
+drift guards (T-4, T-2), a PB-KBM pedestal constraint-loop tier benchmarked
+against digitised EPED1 references (F-5), and a Solov'ev exact equilibrium
+suite (F-1).
 
-The release keeps the Studio federation manifest path, exactness-class
-reproduction comparator, architecture-map extension, refreshed multi-backend
-parity surfaces, and Sphinx API documentation from v3.10.0 while aligning the
-generated capability and Studio manifests with the patch version.
+The release also lands a large modular-decomposition pass (splitting several
+oversized modules by responsibility) and a validation-evidence pass. No public
+API was removed; all additions are backward compatible with v3.10.1.
 
 This release does not promote the solver to completed end-to-end full-fidelity
 parity. GENE/CGYRO/GS2 nonlinear turbulence parity, full electromagnetic
@@ -128,15 +131,15 @@ thresholds, grid or scaling evidence, and native comparisons.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.10.1 |
+| Package version | 3.11.0 |
 | Public API exports | 2 |
 | Python capability source modules | 308 |
 | Python capability classes | 566 |
-| Capability documentation pages | 61 |
+| Capability documentation pages | 62 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
 | Python test files | 559 |
-| Public documentation pages | 61 |
+| Public documentation pages | 62 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -867,7 +870,7 @@ Validation artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {3.10.0}
+  version = {3.11.0}
 }
 ```
 

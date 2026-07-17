@@ -40,6 +40,7 @@
       "docs/physics/tilt_mode_frc.md",
       "docs/releases/v3.10.0.md",
       "docs/releases/v3.10.1.md",
+      "docs/releases/v3.11.0.md",
       "docs/releases/v3.9.10.md",
       "docs/releases/v3.9.11.md",
       "docs/releases/v3.9.7.md",
@@ -2696,11 +2697,11 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 61,
+    "capability_documentation_pages": 62,
     "github_workflows": 12,
     "optional_extras": 13,
     "public_api_exports": 2,
-    "public_documentation_pages": 61,
+    "public_documentation_pages": 62,
     "python_capability_classes": 566,
     "python_capability_source_modules": 308,
     "rust_workspace_crates": 13,
@@ -2746,6 +2747,7 @@
       "docs/physics/tilt_mode_frc.md",
       "docs/releases/v3.10.0.md",
       "docs/releases/v3.10.1.md",
+      "docs/releases/v3.11.0.md",
       "docs/releases/v3.9.10.md",
       "docs/releases/v3.9.11.md",
       "docs/releases/v3.9.7.md",
@@ -2820,7 +2822,7 @@
     "name": "scpn-fusion",
     "readme": "README.md",
     "requires_python": ">=3.10",
-    "version": "3.10.1"
+    "version": "3.11.0"
   },
   "project_label": "SCPN Fusion Core",
   "quality_gates": {

@@ -4,7 +4,8 @@
 
 | Version | Supported          | Notes |
 |---------|--------------------|-------|
-| 3.10.1  | :white_check_mark: | Current stable - CI publication, dependency-maintenance, and release-surface alignment wave |
+| 3.11.0  | :white_check_mark: | Current stable - control/transport/surrogate/equilibrium feature wave (M-4, F-7, M-1, F-5, F-1) with modular-decomposition and validation-evidence passes |
+| 3.10.1  | :white_check_mark: | Previous stable - CI publication, dependency-maintenance, and release-surface alignment wave |
 | 3.10.0  | :white_check_mark: | Previous stable - runtime, Studio federation, documentation, and CI/LFS publishing wave |
 | 3.9.11  | :white_check_mark: | Previous stable - documentation, security-lock, and repository-hygiene wave |
 | 3.9.10  | :white_check_mark: | Previous stable - documentation, release-evidence, and CI hygiene wave |
@@ -50,7 +51,7 @@ configuration. Security concerns are primarily:
 
 ## Hardening Measures in Place
 
-### Input Validation (v1.0.2 — v3.10.1)
+### Input Validation (v1.0.2 — v3.11.0)
 Over 30 hardening commits add runtime guards across all physics and control
 modules: array shape/dtype checks, non-finite rejection, range clamping,
 and constructor parameter validation. See the git log for commits prefixed

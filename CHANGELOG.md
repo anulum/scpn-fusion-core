@@ -2,6 +2,55 @@
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-07-17
+
+Minor release adding new physics, control, and surrogate capabilities on top of
+v3.10.1, alongside a large modular-decomposition and validation-evidence pass.
+No public API was removed; all additions are backward compatible. The
+full-fidelity evidence boundary is unchanged (GENE/CGYRO/GS2, full
+electromagnetic, DREAM kinetic, mechanistic Aurora/STRAHL, and production
+MPI/multi-GPU parity remain fail-closed).
+
+### Added
+
+- Safety-shield composition with a real constrained-PPO control policy (M-4).
+- Real TGLF transport surrogate fit (F-7).
+- Petri→SNN interlock with proven replay invariance and an exported proof hash (M-1).
+- Rust design evaluator brought to Python parity and dispatched (design-scan).
+- Fastest-first dispatch tiers wired for `PyFnoController` (FNO turbulence),
+  `PyMpcController` (surrogate-MPC), and `PyFokkerPlanckSolver` (runaway-electron
+  Fokker-Planck).
+- Per-surrogate UQ/OOD cards with a fail-closed drift guard (T-4).
+- PB-KBM pedestal constraint-loop tier with a tier benchmark against digitised
+  EPED1 references (F-5); benchmark reports documented divergence and makes no
+  parity claim.
+- Solov'ev exact equilibrium suite with a published psi_N gate and per-file
+  attribution (F-1).
+- Safety traceability matrix generator with a fail-closed drift guard (T-2).
+
+### Changed
+
+- Modular decomposition of several oversized modules by responsibility:
+  `fusion_ignition_sim` (by burn model), `blanket_neutronics` (by neutronics
+  model), `pretrained_surrogates`, `impurity_transport` (six modules),
+  `hil_harness` (five submodules), `_multi_compat` (engine + providers), and
+  `frc_rigid_rotor` (contracts/closures/solver/validation).
+- Extracted native-trust primitives from `hpc_bridge` and a GEQDSK feature
+  helper from `train_from_geqdsk`; typed training-history accumulators.
+- Subsystem and control/core demos routed through `logging`; control/optional
+  import/engineering `# type: ignore` suppressions narrowed or removed.
+
+### Fixed
+
+- Security: bumped `pillow` and `click` across the hash-pinned locks (pip-audit).
+- Transport: implicit electron-ion exchange with an honest RHS and provenance
+  manifest; dt-independent steady state with no limit cycle.
+- Training: index each batch from device-resident arrays to avoid GPU OOM; batch
+  final validation metrics and checkpoint the best on improvement.
+- Documentation lock pins numpy 1.26.4 for the Python 3.12 hashed install.
+- Test-isolation and Rust fall-back-guard fixes so strict mypy and the advertised
+  Rust runtime behave correctly.
+
 ## [3.10.1] - 2026-07-03
 
 - Restored the GitHub Pages publish lane by preserving the `.nojekyll` marker

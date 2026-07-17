@@ -5,7 +5,15 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.10.1 (Current)
+v3.11.0 (Current)
+-------------------
+
+- Minor feature release adding control, transport, surrogate, and equilibrium capabilities on top of v3.10.1, with no public API removed (backward compatible).
+- Adds the M-4 safety-shield + constrained-PPO policy, the F-7 TGLF transport surrogate, the M-1 Petri→SNN interlock with proof hash, fastest-first FNO/surrogate-MPC/Fokker-Planck dispatch tiers, the T-4 UQ/OOD cards and T-2 safety traceability matrix (fail-closed drift guards), the F-5 PB-KBM pedestal tier, and the F-1 Solov'ev exact suite.
+- Lands a modular-decomposition pass over oversized modules and a validation-evidence pass; security-bumps ``pillow``/``click`` across the hash-pinned locks.
+- Keeps full-fidelity solver parity gates fail-closed; no blocked claim is promoted, and the F-5 pedestal tier is reported as documented divergence with no parity claim.
+
+v3.10.1
 -------------------
 
 - Patch release for GitHub Pages publication hardening, pull-request triage, and dependency-maintenance release alignment.
