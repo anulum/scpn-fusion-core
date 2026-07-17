@@ -61,10 +61,13 @@ eliminates floating-point arithmetic from the control loop, enabling:
 hardware; (ii)~inherent radiation tolerance (single-bit-flip graceful
 degradation); and (iii)~formal verification of boundedness, token
 conservation, and safety invariants at the symbolic level.  We
-benchmark the SNN controller against PID, MPC, and $H_\infty$
-controllers on vertical displacement event suppression with
-SPARC-relevant parameters, demonstrating comparable disturbance
-rejection.
+benchmark the spiking controller against a PID and an LQG optimal
+controller on vertical displacement event suppression with
+SPARC-relevant parameters: the classical controllers stabilise a fast
+VDE, whereas the real spiking controller does not (its spiking time
+constants exceed the instability growth time), so its advantage is the
+projected hardware latency and power above rather than a demonstrated
+fast-VDE rejection.
 
 New in v3.4.0:
 \begin{itemize}

@@ -7,20 +7,38 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — source/config header compliance
 """
-Figure: Vertical stability — time series comparison of PID, MPC, and SNN.
+Figure: Vertical stability — closed-loop response of REAL controllers.
 
-Shows vertical displacement z_p(t) response to a 5 mm step disturbance
-applied at t = 10 ms.  Three controllers compared: PID (Ziegler-Nichols),
-MPC (linear QP), and SNN (8-place Petri net, fractional firing).
+Vertical displacement z_p(t) after a 5 mm step disturbance at t = 10 ms on the
+linearised vertical-instability plant of Paper B Section 4 (open-loop growth
+rate gamma = 200 /s).  Unlike the retracted earlier version — which drove three
+hand-tuned PID gain sets and *labelled* them PID/MPC/SNN — this figure runs the
+project's ACTUAL controllers:
 
-Uses synthetic dynamics based on the linearised equation of motion from
-Paper B Section 4.
+  * PID  — textbook PID; the earlier draft's gains (Kp = 5) are ~4 orders of
+           magnitude too small to stabilise a gamma = 200 /s instability, so
+           stabilising gains are used and stated here;
+  * LQR  — the real ``scpn_fusion.control.flight_sim_controllers.LQRController``
+           (LQG: DARE state feedback + Kalman observer);
+  * SNN  — the real ``scpn_fusion.control.neuro_cybernetic_controller`` push-pull
+           ``SpikingControllerPool`` (the paper's spiking controller lineage).
+
+HONEST NEGATIVE RESULT (K17-B4).  The real spiking controller does NOT stabilise
+this fast VDE: its membrane / spike-rate-window time constants (~15 ms and
+~10 ms) exceed the 5 ms instability e-folding time, so it lags the plant and
+diverges.  The generic Nengo ensemble behaves identically.  Only the LQG optimal
+controller — which reconstructs velocity via its observer — rejects the
+disturbance.  The claim that the SNN achieves "comparable disturbance rejection"
+on a fast VDE is therefore not supported and has been removed from the paper.
+These trajectories are deterministic numerical integrations of the plant ODE and
+are independent of the measurement host / machine load.
 
 Output: fig_vertical_stability.pdf / .png
 """
 
-import sys
 import os
+import sys
+
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -29,134 +47,133 @@ from style import apply_style, figsize, DOUBLE_COL, COLORS
 apply_style()
 import matplotlib.pyplot as plt
 
+from scpn_fusion.control.flight_sim_controllers import LQRController
+from scpn_fusion.control.neuro_cybernetic_controller import SpikingControllerPool
 
-def _simulate_response(t, t_kick, z_kick, gamma, controller_type, rng):
-    """
-    Simulate vertical displacement response.
+# ── Plant parameters (Paper B Table, vertical stability benchmark) ──────────
+GAMMA = 200.0      # open-loop growth rate [1/s]
+K_COIL = 0.5       # coil coupling [N/A]
+M_P = 1.0          # normalised effective mass
+I_MAX = 10.0e3     # maximum coil current [A]
+DT = 1.0e-3        # 1 kHz control update [s]
+T_END = 60.0e-3    # total window [s]
+T_KICK = 10.0e-3   # step disturbance time [s]
+Z_KICK = 5.0e-3    # step disturbance [m]
 
-    Simplified second-order model: m*z'' = gamma^2 * m * z - k * I_coil
-    with controller-specific I_coil strategy.
-    """
-    dt = t[1] - t[0]
+# Stabilising PID gains: closed loop z'' + (k Kd/m) z' + (k Kp/m - gamma^2) z = 0
+# tuned to omega_n = 1.5 gamma, zeta = 0.7 (Kp = 260000, Kd = 900).  The earlier
+# draft's Kp = 5 leaves k Kp/m = 2.5 << gamma^2 = 40000 and cannot stabilise.
+PID_KP, PID_KI, PID_KD = 2.6e5, 0.0, 9.0e2
+
+
+def _integrate(command_fn):
+    """Integrate the vertical plant, calling command_fn(z, dz, t) -> coil current."""
+    t = np.arange(0.0, T_END, DT)
     z = np.zeros_like(t)
     dz = np.zeros_like(t)
-
-    # Parameters
-    m_p = 1.0  # normalised
-    k_coil = 0.5
-    I_max = 10e3  # A
-    noise_std = 0.02e-3  # 0.02 mm measurement noise
-
-    # Controller gains
-    if controller_type == 'pid':
-        Kp, Ki, Kd = 5.0, 0.5, 0.01
-        integral = 0.0
-    elif controller_type == 'mpc':
-        # MPC as tighter PD + prediction (simplified)
-        Kp, Ki, Kd = 8.0, 1.0, 0.02
-        integral = 0.0
-    elif controller_type == 'snn':
-        # SNN with fractional firing + some latency
-        Kp, Ki, Kd = 4.0, 0.3, 0.008
-        integral = 0.0
-
     for i in range(1, len(t)):
-        # Apply kick
-        if abs(t[i] - t_kick) < dt / 2:
-            z[i - 1] += z_kick
+        if abs(t[i] - T_KICK) < DT / 2.0:
+            z[i - 1] += Z_KICK
+        current = float(np.clip(command_fn(z[i - 1], dz[i - 1], t[i]), -I_MAX, I_MAX))
+        z_ddot = GAMMA**2 * z[i - 1] - K_COIL * current / M_P
+        dz[i] = dz[i - 1] + z_ddot * DT
+        z[i] = z[i - 1] + dz[i] * DT
+    return t, z * 1e3  # mm
 
-        # Measurement with noise
-        z_meas = z[i - 1] + rng.normal(0, noise_std)
-        dz_meas = dz[i - 1] + rng.normal(0, noise_std / dt * 0.01)
 
-        # Controller output
-        integral += z_meas * dt
-        I_coil = Kp * z_meas + Ki * integral + Kd * dz_meas
-        I_coil = np.clip(I_coil, -I_max, I_max)
+def _pid():
+    integ = {"e": 0.0, "prev": 0.0}
 
-        # Add controller-specific latency effect
-        if controller_type == 'mpc':
-            # MPC has 1ms computational delay but better prediction
-            pass  # incorporated in higher gains
-        elif controller_type == 'snn':
-            # SNN has stochastic noise but lower latency
-            I_coil += rng.normal(0, 0.01 * abs(I_coil) + 1)
+    def cmd(z, dz, _t):
+        e = z
+        integ["e"] += e * DT
+        de = (e - integ["prev"]) / DT
+        integ["prev"] = e
+        return PID_KP * e + PID_KI * integ["e"] + PID_KD * de
 
-        # Dynamics: m * z'' = gamma^2 * m * z - k * I_coil
-        z_ddot = gamma**2 * z[i - 1] - k_coil * I_coil / m_p
+    return _integrate(cmd)
 
-        # Verlet integration
-        dz[i] = dz[i - 1] + z_ddot * dt
-        z[i] = z[i - 1] + dz[i] * dt
 
-    return z * 1e3  # convert to mm
+def _lqr():
+    A = [[0.0, 1.0], [GAMMA**2, 0.0]]
+    B = [[0.0], [-K_COIL / M_P]]
+    C = [[1.0, 0.0]]
+    ctrl = LQRController(A, B, C, Q_diag=1.0, R_diag=1.0e-9)
+
+    def cmd(z, _dz, _t):
+        return ctrl.step(z, DT)
+
+    return _integrate(cmd)
+
+
+def _snn():
+    # Real push-pull spiking controller, best-effort tuning; still diverges.
+    pool = SpikingControllerPool(n_neurons=64, gain=1.0, tau_window=3, dt_s=DT)
+
+    def cmd(z, dz, _t):
+        return pool.step(z + 0.1 * dz) * 1.0e5
+
+    return _integrate(cmd)
+
+
+def _settling_ms(t, z_mm, band=0.1):
+    """Last time |z| leaves the +/-band [mm] window, in ms (None if never settles)."""
+    outside = np.where(np.abs(z_mm) > band)[0]
+    if len(outside) == 0:
+        return 0.0
+    last = outside[-1]
+    if last >= len(t) - 1:
+        return None
+    return float(t[last + 1] * 1e3)
 
 
 def main():
     outdir = os.path.dirname(__file__)
-    rng = np.random.RandomState(42)
 
-    # Time parameters
-    dt = 0.1e-3  # 0.1 ms
-    t = np.arange(0, 50e-3, dt)  # 50 ms total
-    t_kick = 10e-3  # kick at 10 ms
-    z_kick = 5e-3   # 5 mm
-    gamma = 200      # s^-1
+    t, z_pid = _pid()
+    _, z_lqr = _lqr()
+    _, z_snn = _snn()
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize(DOUBLE_COL, 0.7),
-                                   sharex=True, gridspec_kw={'height_ratios': [3, 1]})
+    fig, ax = plt.subplots(figsize=figsize(DOUBLE_COL, 0.5))
 
-    # Simulate each controller
-    controllers = [
-        ('PID', 'pid', COLORS["blue"], '-'),
-        ('MPC', 'mpc', COLORS["red"], '--'),
-        ('SNN', 'snn', COLORS["green"], '-.'),
-    ]
+    ax.plot(t * 1e3, z_pid, "-", color=COLORS["blue"], lw=1.5, label="PID (retuned)")
+    ax.plot(t * 1e3, z_lqr, "--", color=COLORS["green"], lw=1.5, label="LQR (LQG optimal)")
+    ax.plot(t * 1e3, z_snn, "-.", color=COLORS["red"], lw=1.5,
+            label="SNN (push-pull spiking, real)")
 
-    for label, ctype, color, ls in controllers:
-        z_mm = _simulate_response(t, t_kick, z_kick, gamma, ctype,
-                                  np.random.RandomState(42))
-        ax1.plot(t * 1e3, z_mm, ls, color=color, lw=1.5, label=label)
+    ax.axvline(T_KICK * 1e3, color="grey", ls=":", lw=0.8, zorder=0)
+    ax.annotate(r"$\Delta z_p = 5$ mm kick",
+                xy=(T_KICK * 1e3, 4.5), xytext=(T_KICK * 1e3 + 6, 4.6),
+                fontsize=8, color="grey",
+                arrowprops=dict(arrowstyle="->", color="grey", lw=0.8))
 
-    # Disturbance indicator
-    ax1.axvline(t_kick * 1e3, color='grey', ls=':', lw=0.8, zorder=0)
-    ax1.annotate(r'$\Delta z_p = 5$ mm kick',
-                 xy=(t_kick * 1e3, 4.5), xytext=(t_kick * 1e3 + 5, 4.5),
-                 fontsize=8, color='grey',
-                 arrowprops=dict(arrowstyle='->', color='grey', lw=0.8))
+    ax.axhspan(-0.1, 0.1, color="green", alpha=0.08, zorder=0)
+    ax.text(T_END * 1e3, 0.2, r"$\pm 0.1$ mm band", fontsize=6.5, color="green",
+            ha="right", va="bottom")
 
-    # Settling band
-    ax1.axhspan(-0.1, 0.1, color='green', alpha=0.08, zorder=0)
-    ax1.text(48, 0.15, r'$\pm 0.1$ mm', fontsize=6.5, color='green',
-             ha='right', va='bottom')
+    # SNN diverges far past the readable range; cap the axis and annotate honestly.
+    ax.set_ylim(-8, 8)
+    snn_peak = float(np.nanmax(np.abs(z_snn)))
+    ax.annotate(f"SNN diverges (peak {snn_peak:.0f} mm):\nspiking lag > 5 ms growth time",
+                xy=(28, 7.0), fontsize=7, color=COLORS["red"], ha="left", va="top")
 
-    ax1.set_ylabel(r'$z_p$ (mm)')
-    ax1.set_ylim(-2, 6)
-    ax1.legend(loc='upper right', fontsize=9)
-    ax1.set_title('Vertical displacement response to 5 mm step disturbance')
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel(r"$z_p$ (mm)")
+    ax.set_xlim(0, T_END * 1e3)
+    ax.legend(loc="lower left", fontsize=8)
+    ax.set_title(r"Vertical displacement response ($\gamma = 200$/s VDE), real controllers")
 
-    # ---- Panel 2: Control effort ----
-    # Simplified control current (proportional to z error)
-    for label, ctype, color, ls in controllers:
-        z_mm = _simulate_response(t, t_kick, z_kick, gamma, ctype,
-                                  np.random.RandomState(42))
-        # Approximate control current from displacement
-        I_approx = -np.gradient(z_mm, t * 1e3) * 2.0  # arbitrary scaling
-        I_approx = np.clip(I_approx, -10, 10)
-        ax2.plot(t * 1e3, I_approx, ls, color=color, lw=1.0, alpha=0.8)
-
-    ax2.axvline(t_kick * 1e3, color='grey', ls=':', lw=0.8, zorder=0)
-    ax2.set_xlabel('Time (ms)')
-    ax2.set_ylabel(r'$I_{\mathrm{coil}}$ (kA)')
-    ax2.set_xlim(0, 50)
-
-    fig.subplots_adjust(hspace=0.08)
-
-    for ext in ('pdf', 'png'):
-        fig.savefig(os.path.join(outdir, f'fig_vertical_stability.{ext}'))
+    for ext in ("pdf", "png"):
+        fig.savefig(os.path.join(outdir, f"fig_vertical_stability.{ext}"))
     plt.close(fig)
-    print('  [OK] fig_vertical_stability')
+
+    s_pid = _settling_ms(t, z_pid)
+    s_lqr = _settling_ms(t, z_lqr)
+    print("  [OK] fig_vertical_stability (real controllers)")
+    print(f"       PID settling={s_pid} ms  overshoot={np.max(np.abs(z_pid)):.2f} mm")
+    print(f"       LQR settling={s_lqr} ms  overshoot={np.max(np.abs(z_lqr)):.2f} mm")
+    print(f"       SNN: did NOT stabilise (peak {snn_peak:.0f} mm)")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
