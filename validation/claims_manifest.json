@@ -4,7 +4,7 @@
     {
       "id": "readme_control_latency_scope_claim",
       "source_file": "README.md",
-      "source_pattern": "metric-scoped and are not same-work Rust-versus-Python physics speedups",
+      "source_pattern": "metric-scoped,\\s+measured on a simplified plant, and are neither same-work Rust-versus-Python\\s+physics speedups nor a physics-in-loop real-time rate",
       "evidence_files": [
         "docs/PERFORMANCE_METRIC_TAXONOMY.md",
         "validation/reports/scpn_end_to_end_latency.md"
