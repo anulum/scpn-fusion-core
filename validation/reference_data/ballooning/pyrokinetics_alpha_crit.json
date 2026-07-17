@@ -1,0 +1,142 @@
+{
+  "circular_self_check": {
+    "alpha_crit_non_decreasing_in_shear": true,
+    "rows": [
+      {
+        "alpha_crit": 0.5020624399185181,
+        "alpha_max": 5.0,
+        "evaluations": 21,
+        "gamma_max": 0.0005303517324275561,
+        "second_stability_access": false,
+        "shat": 0.5
+      },
+      {
+        "alpha_crit": 0.5522161722183228,
+        "alpha_max": 5.0,
+        "evaluations": 21,
+        "gamma_max": 0.0009942538274764915,
+        "second_stability_access": false,
+        "shat": 1.0
+      },
+      {
+        "alpha_crit": 0.9811300039291382,
+        "alpha_max": 5.0,
+        "evaluations": 23,
+        "gamma_max": 0.0066254771015459065,
+        "second_stability_access": false,
+        "shat": 2.0
+      }
+    ],
+    "shaping": {
+      "Rmaj_over_a": 3.0,
+      "delta": 0.0,
+      "kappa": 1.0,
+      "q": 2.0,
+      "rho": 0.5,
+      "s_delta": 0.0,
+      "s_kappa": 0.0,
+      "shift": 0.0
+    }
+  },
+  "diiid_alpha_crit": [
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -3.287384291452799e-05,
+      "second_stability_access": true,
+      "shat": 0.5
+    },
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -3.222418364920799e-05,
+      "second_stability_access": true,
+      "shat": 1.0
+    },
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -3.209869997717564e-05,
+      "second_stability_access": true,
+      "shat": 1.5
+    },
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -3.222096540979104e-05,
+      "second_stability_access": true,
+      "shat": 2.0
+    },
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -3.2137508636213335e-05,
+      "second_stability_access": true,
+      "shat": 2.5
+    },
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -3.210775465703651e-05,
+      "second_stability_access": true,
+      "shat": 3.0
+    },
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -3.2059761852449114e-05,
+      "second_stability_access": true,
+      "shat": 3.5
+    },
+    {
+      "alpha_crit": null,
+      "alpha_max": 8.0,
+      "evaluations": 17,
+      "gamma_max": -2.9789899390963342e-05,
+      "second_stability_access": true,
+      "shat": 4.0
+    },
+    {
+      "alpha_crit": 7.298476219177246,
+      "alpha_max": 8.0,
+      "evaluations": 34,
+      "gamma_max": 0.001064044400006528,
+      "second_stability_access": false,
+      "shat": 5.0
+    }
+  ],
+  "diiid_shaping": {
+    "Rmaj_over_a": 2.49,
+    "delta": 0.3,
+    "kappa": 1.74,
+    "q": 4.0,
+    "rho": 0.95,
+    "s_delta": 0.3,
+    "s_kappa": 0.5,
+    "shift": -0.5
+  },
+  "provenance": {
+    "code": "pyrokinetics",
+    "code_url": "https://github.com/pyro-kinetics/pyrokinetics",
+    "generated_at_utc": "2026-07-17T00:19:28+00:00",
+    "licence": "LGPL-3.0-or-later",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.35",
+    "pyrokinetics_version": "0.9.1",
+    "python": "3.10.20",
+    "runner_sha256": "29e981b32af741fbbef7db69db9320944da42b31e47a8f75bdb334c5fb9441d1",
+    "solver": "Diagnostics.ideal_ballooning_solver (adapted from rahulgaur104/ideal-ballooning-solver)"
+  },
+  "schema": "scpn-fusion-core.pyrokinetics-ballooning-alpha-crit.v1",
+  "scope": {
+    "drive_definition": "alpha = -q^2 (R0/a) beta_prime (MHD ballooning parameter)",
+    "kind": "infinite_n_ideal_ballooning_first_stability_boundary",
+    "not_included": "ELITE peeling-ballooning eigenvalue / kinetic ballooning; this is the ideal-MHD ballooning boundary only"
+  }
+}

@@ -2,6 +2,18 @@
   "dataset_root": "validation/reference_data",
   "datasets": [
     {
+      "citation": "Pyrokinetics, https://github.com/pyro-kinetics/pyrokinetics (LGPL-3.0-or-later); ideal-ballooning solver adapted from R. Gaur, https://github.com/rahulgaur104/ideal-ballooning-solver.",
+      "file_count": 1,
+      "id": "ballooning_second_stability_alpha_crit",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "source": "Ideal-MHD infinite-n ballooning critical-alpha reference over a Miller local equilibrium, computed with the pyrokinetics ideal-ballooning solver (Diagnostics.ideal_ballooning_solver). Generated on an independent host; the artifact embeds its own provenance block (host CPU/platform, pyrokinetics version, runner SHA-256).",
+      "source_type": "derived_reference_artifact",
+      "total_bytes": 3748
+    },
+    {
       "citation": "Baltz et al., Achievement of Sustained Net Plasma Heating in a Fusion Experiment with the Optometrist Algorithm, Scientific Reports 7, 6425 (2017), DOI:10.1038/s41598-017-06645-7.",
       "file_count": 1,
       "id": "c2u_positive_heating_reference",
@@ -235,7 +247,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 18292
+      "total_bytes": 19050
     },
     {
       "file_count": 1,
@@ -335,7 +347,7 @@
       "total_bytes": 5537
     }
   ],
-  "file_count": 84,
+  "file_count": 85,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -348,6 +360,19 @@
       "size_bytes": 3985,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation"
+    },
+    {
+      "citation": "Pyrokinetics, https://github.com/pyro-kinetics/pyrokinetics (LGPL-3.0-or-later); ideal-ballooning solver adapted from R. Gaur, https://github.com/rahulgaur104/ideal-ballooning-solver.",
+      "dataset_id": "ballooning_second_stability_alpha_crit",
+      "license": "citation-required",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_redistributable": true,
+      "path": "ballooning/pyrokinetics_alpha_crit.json",
+      "sha256": "46a99348cef18ed307bf3e34964397af0d4f55cfbb5486078f08e4bebcdddd12",
+      "size_bytes": 3748,
+      "source": "Ideal-MHD infinite-n ballooning critical-alpha reference over a Miller local equilibrium, computed with the pyrokinetics ideal-ballooning solver (Diagnostics.ideal_ballooning_solver). Generated on an independent host; the artifact embeds its own provenance block (host CPU/platform, pyrokinetics version, runner SHA-256).",
+      "source_type": "derived_reference_artifact"
     },
     {
       "dataset_id": "synthetic_blind_suite",
@@ -1190,8 +1215,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "af0534eed831935ce35b88246976501d65fe7a1cc24899ac45ebfaf18b2080b1",
-      "size_bytes": 14307,
+      "sha256": "1ebaedbc581e2df097732c4359e14d48bb1a35efb538533ad4ef6dfce4dc4fd8",
+      "size_bytes": 15065,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -1460,7 +1485,7 @@
       "source_type": "derived_reference_artifact"
     }
   ],
-  "generated_at_utc": "2026-07-09T01:05:19.288359+00:00",
+  "generated_at_utc": "2026-07-17T00:40:28.956808+00:00",
   "license_registry": [
     {
       "attribution_required": true,

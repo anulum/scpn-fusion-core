@@ -313,6 +313,14 @@
       "source": "EPED1 pedestal predictions and DIII-D measurements digitised visually from the General Atomics public APS-DPP presentation https://fusion.gat.com/pubs-ext/APS11/Snydervgs.pdf (fetched and read in-session 2026-07-07); digitisation uncertainty embedded in the artifact.",
       "license": "citation-required",
       "citation": "Snyder P. B. et al., A first-principles predictive model of the pedestal height and width: development, testing and ITER optimization with the EPED model, Nucl. Fusion 51, 103016 (2011); Snyder P. B. et al., Phys. Plasmas 16, 056118 (2009)."
+    },
+    {
+      "id": "ballooning_second_stability_alpha_crit",
+      "glob": "ballooning/pyrokinetics_alpha_crit.json",
+      "source_type": "derived_reference_artifact",
+      "source": "Ideal-MHD infinite-n ballooning critical-alpha reference over a Miller local equilibrium, computed with the pyrokinetics ideal-ballooning solver (Diagnostics.ideal_ballooning_solver). Generated on an independent host; the artifact embeds its own provenance block (host CPU/platform, pyrokinetics version, runner SHA-256).",
+      "license": "citation-required",
+      "citation": "Pyrokinetics, https://github.com/pyro-kinetics/pyrokinetics (LGPL-3.0-or-later); ideal-ballooning solver adapted from R. Gaur, https://github.com/rahulgaur104/ideal-ballooning-solver."
     }
   ]
 }
