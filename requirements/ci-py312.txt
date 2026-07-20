@@ -482,9 +482,9 @@ greenlet==3.5.3 \
     --hash=sha256:fad5aec764399f1b5cc347ad250a59660f20c8f8888ea6bae1f93b769cce1154 \
     --hash=sha256:fd2e02fa07485778536a036222d616ab957b1d533f36b3ed98ce725d9c9d3117
     # via sqlalchemy
-gymnasium==1.2.3 \
-    --hash=sha256:2b2cb5b5fbbbdf3afb9f38ca952cc48aa6aa3e26561400d940747fda3ad42509 \
-    --hash=sha256:e6314bba8f549c7fdcc8677f7cd786b64908af6e79b57ddaa5ce1825bffb5373
+gymnasium==1.3.0 \
+    --hash=sha256:6939e86e835d6b71b6ba6bfd360487420876deafc79bfb7bacba83a7c446bcf3 \
+    --hash=sha256:6b8c159a8540dcbcb221722d7efda24d78ebbcbc3bd2ea1c2611aa2a34471fc2
     # via -r requirements/ci.in
 h11==0.16.0 \
     --hash=sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1 \
