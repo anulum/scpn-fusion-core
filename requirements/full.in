@@ -8,7 +8,7 @@ omas>=0.70
 maturin>=1.14.1,<2.0
 
 # Dependabot security floors for optional full-profile transitive tooling.
-GitPython>=3.1.50
+GitPython>=3.1.53
 Pygments>=2.20.0
 idna>=3.15
 pillow>=12.2.0
