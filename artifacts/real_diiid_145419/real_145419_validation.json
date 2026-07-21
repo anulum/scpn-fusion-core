@@ -11,7 +11,7 @@
       "jax": "0.7.1"
     },
     "generator": "validation/validate_real_diiid_145419.py",
-    "generator_sha256": "9f6c41224103ff7a0b5dce9561e76dfaa16eef74fb8def8eb1b94af35e62bf5e",
+    "generator_sha256": "c1327bf00d3cd90689dcc0a199ae972c2b65566e556f02e31ecc238c014b514f",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
   },
@@ -97,6 +97,20 @@
       },
       "note": "Anderson(m=8) contributes ACCELERATION on this map (26 vs >200 iterations), not branch selection"
     }
+  },
+  "shell_pinning_attribution": {
+    "regenerated_each_run": true,
+    "settings": "model source only in psi_N < 0.95; measured Delta*psi in the remaining pedestal shell (uses MORE measured information \u2014 attribution diagnostic, NOT a claim improvement)",
+    "metrics": {
+      "iterations": 14,
+      "deep_rms_rel_span": 0.0005109577305391504,
+      "deep_max_rel_span": 0.001046701124281012,
+      "plasma_rms_rel_span": 0.0004526749272511977,
+      "axis_value_rel_err": 0.0002095357341824642,
+      "global_max_rel_span": 0.001046701124281012
+    },
+    "finding": "the full-domain error is attributable essentially ENTIRELY to the psi_N > 0.95 pedestal-shell source representation: pinning the measured shell collapses deep RMS from ~0.72% to ~0.05% (better than the coil-free sub-domain); source-mismatch mapping on the real field shows the same shell concentration (RMS ~9e-4 of the Delta*psi scale in 0.95<psi_N<1.0 vs ~1e-4 in the core) with total current matched (Ip renorm ~1.0001) - the mismatch is PLACEMENT (steep-pedestal discretisation of the 5-point operator at 129^2), not amplitude; the elliptic response of a thin-shell source error is smooth and domain-wide, which is why the psi-error itself is NOT annulus-localised",
+    "profiles_only_fix_direction": "flux-surface-aware (sub-cell averaged) source evaluation in shell cells - open work item"
   },
   "honest_negatives": {
     "regenerated_each_run": true,

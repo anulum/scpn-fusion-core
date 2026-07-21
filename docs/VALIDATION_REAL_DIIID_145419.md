@@ -101,10 +101,20 @@ supersede are kept as labelled archive entries, never silently replaced.
    (measured ≈ 0 MA — not the cause); divertor-leg exclusion (did not change the wrong
    attractor — not the cause); H-mode pedestal p″ bistability (superseded by the absorbing-
    state identification above).
-4. **Residual model boundary**: the 0.72 % (full-domain) vs 0.11 % (sub-domain) gap is the
-   separatrix/pedestal-annulus mismatch between our ψ_N < 1 source cutoff and EFIT's edge
-   current placement — a genuine fidelity boundary of the current source model, stated, not
-   hidden.
+4. **Residual model boundary — attributed by measurement (2026-07-22)**: the 0.72 %
+   (full-domain) vs 0.11 % (sub-domain) gap lives essentially **entirely in the
+   ψ_N > 0.95 pedestal shell**. Evidence (both lanes executable, in the tracked JSON):
+   source-mismatch mapping on the real field concentrates 10–30× in the shell
+   (RMS ≈ 9 × 10⁻⁴ of the Δ*ψ scale in 0.95 < ψ_N < 1.0 vs ≈ 10⁻⁴ in the core) with total
+   current matched (Ip renormalisation ≈ 1.0001 — the mismatch is *placement*, i.e. the
+   5-point operator's discretisation of the steep pedestal at 129², not amplitude); and the
+   **shell-pinning attribution lane** (profile model only in ψ_N < 0.95, measured Δ*ψ in
+   the shell — more measured information, so a diagnostic, not a claim) collapses deep RMS
+   to **0.051 %**, better than the sub-domain. The ψ-error itself is smooth and
+   domain-wide because the elliptic response of a thin-shell source error is quasi-harmonic
+   in the interior — which is why naive error-mapping does NOT show the annulus. Open,
+   profiles-only fix direction: flux-surface-aware (sub-cell averaged) source evaluation in
+   shell cells.
 
 ## Conventions (stated explicitly)
 

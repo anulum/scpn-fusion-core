@@ -242,6 +242,7 @@ def full_domain_reproduction(
     accel: str = "anderson",
     picard_omega: float = 0.5,
     external_source: str = "measured",
+    model_psin_max: float = 1.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     """Step 3 — full 129² reproduction: measured external source + Anderson-accelerated model.
 
@@ -263,7 +264,13 @@ def full_domain_reproduction(
     Anderson (measured: the warm-started Picard also reaches the true branch, only slower —
     Anderson contributes acceleration, not branch selection); ``external_source="zero"`` is
     the executable honest-negative lane exposing the domain-wide error of pretending the
-    external-current cells are vacuum. Returns (ψ_fit, plasma_mask, deep_mask, iterations).
+    external-current cells are vacuum.
+
+    ``model_psin_max`` (< 1.0) is the **shell-pinning diagnostic**: the profile-model source
+    is applied only where ``ψ_N < model_psin_max`` and the measured ``Δ*ψ`` is used in the
+    remaining pedestal shell. This uses MORE measured information — it is an attribution
+    lane, not a claim improvement: it decomposes how much of the full-domain error lives in
+    the thin-shell source representation. Returns (ψ_fit, plasma_mask, deep_mask, iterations).
     """
     from scipy import ndimage
 
@@ -289,9 +296,12 @@ def full_domain_reproduction(
     mask_bnd[0, :] = mask_bnd[-1, :] = mask_bnd[:, 0] = mask_bnd[:, -1] = True
     mu0 = 4.0e-7 * np.pi
     dA = float((R[1] - R[0]) * (Z[1] - Z[0]))
-    ip_real_plasma = float(np.sum(-lap_real[plasma] / (mu0 * rrg[plasma])) * dA)
 
     external = lap_real if external_source == "measured" else np.zeros_like(lap_real)
+    # Shell-pinning diagnostic: restrict the model region to psi_N < model_psin_max (the
+    # remaining pedestal shell keeps the measured Delta*psi, like the external region).
+    model_region = plasma & (psin_map < model_psin_max) if model_psin_max < 1.0 else plasma
+    ip_real_model = float(np.sum(-lap_real[model_region] / (mu0 * rrg[model_region])) * dA)
 
     def step_map(x: np.ndarray) -> np.ndarray:
         psi = x.reshape(nz, nr)
@@ -306,9 +316,9 @@ def full_domain_reproduction(
                 jnp.asarray(d["ffprime"]),
             )
         ).copy()
-        ipm = float(np.sum(-src_model[plasma] / (mu0 * rrg[plasma])) * dA)
-        scale = ip_real_plasma / ipm if ipm else 1.0
-        src = np.where(plasma, src_model * scale, external)
+        ipm = float(np.sum(-src_model[model_region] / (mu0 * rrg[model_region])) * dA)
+        scale = ip_real_model / ipm if ipm else 1.0
+        src = np.where(model_region, src_model * scale, external)
         rhs = src.reshape(-1).copy()
         rhs[mask_bnd.reshape(-1)] = psi_real[mask_bnd]
         return np.asarray(lu.solve(rhs))
@@ -477,6 +487,14 @@ def main() -> None:
     print("NEGATIVE — zero external source (coil cells pretended vacuum):")
     print(f"  deep_rms_rel_span: {neg_zero['deep_rms_rel_span']:.4g}")
 
+    # STEP 3d — SHELL-PINNING ATTRIBUTION (uses MORE measured information — a diagnostic
+    # decomposition of the 0.72 % full-domain error, not a claim improvement): profile-model
+    # source only in psi_N < 0.95, measured Delta*psi in the remaining pedestal shell.
+    psi_sp, _pls, deep_sp, iters_sp = full_domain_reproduction(d, model_psin_max=0.95)
+    shell_pin = _full_domain_metrics(d, psi_sp, plasma, deep_sp, iters_sp, span)
+    print("STEP 3d — shell-pinning attribution (model psi_N<0.95, measured shell):")
+    print(f"  iters={iters_sp}  deep_rms_rel_span: {shell_pin['deep_rms_rel_span']:.4g}")
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         OUT_DIR / "psi_fusion_145419_fulldomain.npz",
@@ -551,6 +569,24 @@ def main() -> None:
         "full_domain_reproduction": full_metrics,
         "full_domain_cold_start": cold_metrics,
         "map_structure": map_structure,
+        "shell_pinning_attribution": {
+            "regenerated_each_run": True,
+            "settings": "model source only in psi_N < 0.95; measured Delta*psi in the "
+            "remaining pedestal shell (uses MORE measured information — attribution "
+            "diagnostic, NOT a claim improvement)",
+            "metrics": shell_pin,
+            "finding": "the full-domain error is attributable essentially ENTIRELY to the "
+            "psi_N > 0.95 pedestal-shell source representation: pinning the measured shell "
+            "collapses deep RMS from ~0.72% to ~0.05% (better than the coil-free "
+            "sub-domain); source-mismatch mapping on the real field shows the same shell "
+            "concentration (RMS ~9e-4 of the Delta*psi scale in 0.95<psi_N<1.0 vs ~1e-4 in "
+            "the core) with total current matched (Ip renorm ~1.0001) - the mismatch is "
+            "PLACEMENT (steep-pedestal discretisation of the 5-point operator at 129^2), "
+            "not amplitude; the elliptic response of a thin-shell source error is smooth "
+            "and domain-wide, which is why the psi-error itself is NOT annulus-localised",
+            "profiles_only_fix_direction": "flux-surface-aware (sub-cell averaged) source "
+            "evaluation in shell cells - open work item",
+        },
         "honest_negatives": honest_negatives,
     }
     out_json = OUT_DIR / "real_145419_validation.json"
