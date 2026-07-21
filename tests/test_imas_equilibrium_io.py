@@ -114,7 +114,77 @@ def test_round_trip_identity_for_the_opposite_handedness() -> None:
     assert back.psi_axis == pytest.approx(eq.psi_axis, rel=1e-14)
 
 
+def test_cocos4_stored_frame_measured_explicitly() -> None:
+    """Independent stored-frame pin for the handedness partner (no self-cancelling round trip):
+    for solver COCOS 4 → IMAS 11 the measured transform is ψ ↦ +2π·ψ and ``ip ↦ −ip``
+    (σ_RφZ differs between 4 and 11, so toroidal-class quantities flip sign)."""
+    iz, ir = 3, 5
+    psi = np.zeros((_NZ, _NR))
+    psi[iz, ir] = 7.25
+    ods = equilibrium_to_ods(_slice(psi=psi), solver_cocos=4)
+    stored = np.asarray(ods["equilibrium.time_slice.0.profiles_2d.0.psi"])
+    assert stored[ir, iz] == pytest.approx(+2.0 * np.pi * 7.25)
+    ts = "equilibrium.time_slice.0."
+    assert float(ods[ts + "global_quantities.ip"]) == pytest.approx(-1.5e6)
+    assert float(ods[ts + "global_quantities.psi_axis"]) == pytest.approx(+2.0 * np.pi * 0.91)
+
+
 # ── Fail-closed guards ────────────────────────────────────────────────────
+
+
+def test_unaudited_solver_cocos_fails_closed() -> None:
+    """Only the audited pair {3, 4} is accepted; 11 in particular would silently pass
+    IMAS-frame ψ through untransformed and must be rejected in BOTH directions."""
+    ods = equilibrium_to_ods(_slice())
+    for bad in (11, 1, 2, 5, 0, -3):
+        with pytest.raises(ValueError, match="solver_cocos must be one of"):
+            equilibrium_to_ods(_slice(), solver_cocos=bad)
+        with pytest.raises(ValueError, match="solver_cocos must be one of"):
+            ods_to_equilibrium(ods, solver_cocos=bad)
+
+
+def test_non_finite_psi_fails_closed() -> None:
+    for poison in (np.nan, np.inf, -np.inf):
+        psi = np.zeros((_NZ, _NR))
+        psi[2, 2] = poison
+        with pytest.raises(ValueError, match="psi contains non-finite"):
+            equilibrium_to_ods(_slice(psi=psi))
+
+
+def test_non_finite_scalars_and_time_fail_closed() -> None:
+    with pytest.raises(ValueError, match="psi_axis must be finite"):
+        equilibrium_to_ods(_slice(psi_axis=float("nan")))
+    with pytest.raises(ValueError, match="ip must be finite"):
+        equilibrium_to_ods(_slice(ip=float("inf")))
+    with pytest.raises(ValueError, match="time must be finite"):
+        equilibrium_to_ods(_slice(time=float("nan")))
+
+
+def test_nonmonotone_or_duplicate_grid_fails_closed() -> None:
+    r_dup = np.array([1.0, 1.25, 1.25, 1.75, 2.0, 2.25, 2.5])
+    with pytest.raises(ValueError, match="R_grid must be strictly increasing"):
+        equilibrium_to_ods(_slice(R_grid=r_dup))
+    with pytest.raises(ValueError, match="Z_grid must be strictly increasing"):
+        equilibrium_to_ods(_slice(Z_grid=np.asarray(_Z)[::-1].copy()))
+    with pytest.raises(ValueError, match="at least 2 points"):
+        equilibrium_to_ods(_slice(R_grid=np.array([1.7]), psi=np.zeros((_NZ, 1))))
+
+
+def test_read_validates_a_corrupted_ids() -> None:
+    """The read direction enforces the same invariants — a corrupted or foreign IDS is
+    rejected, not passed through into the solvers."""
+    ods = equilibrium_to_ods(_slice())
+    ods["equilibrium.time_slice.0.profiles_2d.0.grid.dim1"] = np.array(
+        [1.0, 1.2, 1.2, 1.8, 2.0, 2.2, 2.5]
+    )
+    with pytest.raises(ValueError, match="R_grid must be strictly increasing"):
+        ods_to_equilibrium(ods)
+    ods2 = equilibrium_to_ods(_slice())
+    poisoned = np.asarray(ods2["equilibrium.time_slice.0.profiles_2d.0.psi"]).copy()
+    poisoned[1, 1] = np.nan
+    ods2["equilibrium.time_slice.0.profiles_2d.0.psi"] = poisoned
+    with pytest.raises(ValueError, match="psi contains non-finite"):
+        ods_to_equilibrium(ods2)
 
 
 def test_wrong_psi_shape_fails_closed() -> None:

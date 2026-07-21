@@ -26,11 +26,19 @@ Conventions (fail-closed where they could silently corrupt):
   *peaked* at the axis (``σ_Bp = −1``) with an effective ``p' > 0`` — matching the in-package
   Sauter table entry for COCOS 3 exactly. The IMAS data dictionary is COCOS 11, so every write
   and read goes through :func:`omas.omas_environment` with ``cocosio=solver_cocos`` and OMAS's
-  own verified machinery applies the transform (measured: ψ ↦ −2π·ψ for 3 → 11; ``ip`` is in
-  the TOR class and is unchanged between 3 and 11). The φ-handedness (odd/even COCOS pair) is
-  *not observable* by an axisymmetric 2-D solver, so ``solver_cocos`` is a parameter (default
-  ``3``); a partner asserting the opposite handedness passes ``4``. Optional quantities that
-  were not computed are simply absent from the IDS (never fabricated as zeros).
+  own verified machinery applies the transform (measured: ψ ↦ −2π·ψ with ``ip`` unchanged for
+  3 → 11; ψ ↦ +2π·ψ with ``ip ↦ −ip`` for 4 → 11, where σ_RφZ differs). The φ-handedness
+  (odd/even COCOS pair) is *not observable* by an axisymmetric 2-D solver, so ``solver_cocos``
+  is a parameter (default ``3``); a partner asserting the opposite handedness passes ``4``.
+  **Only the audited pair {3, 4} is accepted** — any other frame (including 11 itself, which
+  would silently pass IMAS-frame ψ through untransformed) is rejected until a general contract
+  is separately proven. Optional quantities that were not computed are simply absent from the
+  IDS (never fabricated as zeros).
+* **Field validation is fail-closed in both directions**: ψ, the grids, ``time`` and every
+  present optional scalar must be finite, and the coordinate vectors must be 1-D, ≥ 2 points
+  and strictly increasing (the solver grid convention — descending or duplicated coordinates
+  are rejected, not silently reordered). The same invariants are enforced on IDS read, so a
+  corrupted or foreign IDS cannot leak non-physical fields into the solvers.
 
 Scope: this is the structural I/O bridge (fields ⇄ IDS ⇄ file). Fetching *measured* equilibria from
 a facility MDSplus/IMAS database is a separate, authorisation-gated concern.
@@ -48,6 +56,56 @@ from omas import ODS, load_omas_json, omas_environment, save_omas_json
 _TS = "equilibrium.time_slice.0."
 _RECTANGULAR = 1  # IMAS grid_type.index for a rectangular R,Z grid
 DEFAULT_SOLVER_COCOS = 3  # audited native frame of the solvers (see module docstring)
+_SUPPORTED_SOLVER_COCOS = (3, 4)  # the audited frame and its unobservable handedness partner
+
+
+def _check_solver_cocos(solver_cocos: int) -> None:
+    """Reject any frame outside the audited pair — fail closed, never silently mislabel."""
+    if solver_cocos not in _SUPPORTED_SOLVER_COCOS:
+        raise ValueError(
+            f"solver_cocos must be one of {_SUPPORTED_SOLVER_COCOS} (the audited native frame "
+            f"and its φ-handedness partner); got {solver_cocos}. Other frames — including 11, "
+            "which would pass IMAS-frame ψ through untransformed — have no verified contract "
+            "in this bridge."
+        )
+
+
+def _check_axis(name: str, axis: NDArray[np.float64]) -> None:
+    """A coordinate vector must be 1-D, ≥ 2 points, finite and strictly increasing."""
+    if axis.ndim != 1 or axis.size < 2:
+        raise ValueError(
+            f"{name} must be a 1-D coordinate vector with at least 2 points; got shape {axis.shape}"
+        )
+    if not np.all(np.isfinite(axis)):
+        raise ValueError(f"{name} contains non-finite values")
+    if not np.all(np.diff(axis) > 0.0):
+        raise ValueError(
+            f"{name} must be strictly increasing (solver grid convention); descending or "
+            "duplicated coordinates are rejected, not silently reordered"
+        )
+
+
+def _check_fields(
+    psi: NDArray[np.float64],
+    r: NDArray[np.float64],
+    z: NDArray[np.float64],
+    time: float,
+    scalars: dict[str, float | None],
+) -> None:
+    """Shared fail-closed validation for both bridge directions (write and read)."""
+    _check_axis("R_grid", r)
+    _check_axis("Z_grid", z)
+    if psi.shape != (z.size, r.size):
+        raise ValueError(
+            f"psi shape {psi.shape} does not match solver convention (NZ, NR) = ({z.size}, {r.size})"
+        )
+    if not np.all(np.isfinite(psi)):
+        raise ValueError("psi contains non-finite values")
+    if not np.isfinite(time):
+        raise ValueError(f"time must be finite; got {time}")
+    for name, value in scalars.items():
+        if value is not None and not np.isfinite(value):
+            raise ValueError(f"{name} must be finite when present; got {value}")
 
 
 @dataclass(frozen=True)
@@ -75,13 +133,23 @@ def equilibrium_to_ods(
     values stay absent in the IDS. Every assignment is schema-checked by OMAS against the IMAS
     data dictionary.
     """
+    _check_solver_cocos(solver_cocos)
     psi = np.asarray(eq.psi, dtype=np.float64)
     r = np.asarray(eq.R_grid, dtype=np.float64)
     z = np.asarray(eq.Z_grid, dtype=np.float64)
-    if psi.shape != (z.size, r.size):
-        raise ValueError(
-            f"psi shape {psi.shape} does not match solver convention (NZ, NR) = ({z.size}, {r.size})"
-        )
+    _check_fields(
+        psi,
+        r,
+        z,
+        float(eq.time),
+        {
+            "ip": eq.ip,
+            "r_axis": eq.r_axis,
+            "z_axis": eq.z_axis,
+            "psi_axis": eq.psi_axis,
+            "psi_boundary": eq.psi_boundary,
+        },
+    )
     out = ODS() if ods is None else ods
     with omas_environment(out, cocosio=solver_cocos):
         _write_slice(out, eq, psi, r, z)
@@ -124,9 +192,12 @@ def _optional(ods: ODS, path: str) -> float | None:
 def ods_to_equilibrium(ods: ODS, solver_cocos: int = DEFAULT_SOLVER_COCOS) -> EquilibriumSlice:
     """Read the first ``equilibrium`` time slice back into solver convention.
 
-    Fails closed on a non-rectangular ``grid_type`` and on a ψ whose shape does not match the
-    stored grids, rather than returning silently mis-oriented fields.
+    Fails closed on a non-rectangular ``grid_type``, on a ψ whose shape does not match the
+    stored grids, and on any field violating the bridge invariants (non-finite values,
+    non-monotonic coordinate vectors) — a corrupted or foreign IDS is rejected, not passed
+    through into the solvers.
     """
+    _check_solver_cocos(solver_cocos)
     with omas_environment(ods, cocosio=solver_cocos):
         return _read_slice(ods)
 
@@ -144,7 +215,7 @@ def _read_slice(ods: ODS) -> EquilibriumSlice:
         raise ValueError(
             f"stored psi shape {psi_rz.shape} does not match IMAS [dim1, dim2] = ({r.size}, {z.size})"
         )
-    return EquilibriumSlice(
+    eq = EquilibriumSlice(
         psi=psi_rz.T,  # IMAS [R, Z] → solver (NZ, NR)
         R_grid=r,
         Z_grid=z,
@@ -155,6 +226,20 @@ def _read_slice(ods: ODS) -> EquilibriumSlice:
         psi_boundary=_optional(ods, _TS + "global_quantities.psi_boundary"),
         time=float(ods[_TS + "time"]),
     )
+    _check_fields(
+        eq.psi,
+        r,
+        z,
+        eq.time,
+        {
+            "ip": eq.ip,
+            "r_axis": eq.r_axis,
+            "z_axis": eq.z_axis,
+            "psi_axis": eq.psi_axis,
+            "psi_boundary": eq.psi_boundary,
+        },
+    )
+    return eq
 
 
 def save_equilibrium_ids(ods: ODS, path: str) -> None:
