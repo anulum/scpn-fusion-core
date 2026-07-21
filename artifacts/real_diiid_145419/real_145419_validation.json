@@ -6,12 +6,14 @@
     "packages": {
       "omas": "0.95.2",
       "freeqdsk": "0.5.2",
-      "numpy": "2.2.6",
-      "scipy": "1.15.3",
-      "jax": "0.6.2"
+      "numpy": "1.26.4",
+      "scipy": "1.17.1",
+      "jax": "0.7.1"
     },
     "generator": "validation/validate_real_diiid_145419.py",
-    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction"
+    "generator_sha256": "9f6c41224103ff7a0b5dce9561e76dfaa16eef74fb8def8eb1b94af35e62bf5e",
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
   },
   "disclosure": "reproduction lanes are warm-started from the EFIT psi and use reference-derived normalisation anchors (psi_axis, psi_bnd, plasma-region Ip) - they are consistency/reproduction checks, not blind prediction or independent branch selection; the cold-start lane demonstrates that limitation explicitly",
   "operator": {
@@ -22,17 +24,17 @@
   },
   "subdomain_reproduction": {
     "picard_iterations": 103,
-    "deep_rms_rel_span": 0.0010827440545472904,
-    "deep_max_rel_span": 0.0025201304765970437,
-    "interior_rms_rel_span": 0.000855928049591699,
-    "axis_value_rel_err": 0.0006218197877475208
+    "deep_rms_rel_span": 0.0010827440545646044,
+    "deep_max_rel_span": 0.0025201304766194654,
+    "interior_rms_rel_span": 0.0008559280496059974,
+    "axis_value_rel_err": 0.000621819787751
   },
   "full_domain_reproduction": {
-    "deep_rms_rel_span": 0.007174384113181322,
-    "deep_max_rel_span": 0.013299922182456144,
-    "plasma_rms_rel_span": 0.007469724729356635,
-    "axis_value_rel_err": 0.002766053887579816,
-    "global_max_rel_span": 0.013299922182456144,
+    "deep_rms_rel_span": 0.007174384113120836,
+    "deep_max_rel_span": 0.013299922182343264,
+    "plasma_rms_rel_span": 0.00746972472928749,
+    "axis_value_rel_err": 0.002766053887690377,
+    "global_max_rel_span": 0.013299922182343264,
     "anderson_iterations": 26
   },
   "full_domain_cold_start": {
@@ -46,7 +48,7 @@
   "map_structure": {
     "regenerated_each_run": true,
     "zero_plasma_absorbing_state": {
-      "settings": "init='external' (external-source-only start, zero plasma current); identical outcome under Anderson and Picard, and at n_iter=400",
+      "settings": "init='external' (external-source-only start, zero plasma current), Anderson(m=8) default",
       "metrics": {
         "iterations": 1,
         "deep_rms_rel_span": 1.2678812266175519,
@@ -55,17 +57,43 @@
         "axis_value_rel_err": 0.8226717245804467,
         "global_max_rel_span": 1.7313910359868308
       },
+      "cross_checks_executed_this_run": {
+        "anderson_n_iter_400": {
+          "iterations": 1,
+          "deep_rms_rel_span": 1.2678812266175519,
+          "deep_max_rel_span": 1.7313910359868308,
+          "plasma_rms_rel_span": 1.1326619690514692,
+          "axis_value_rel_err": 0.8226717245804467,
+          "global_max_rel_span": 1.7313910359868308
+        },
+        "picard_omega_0.5": {
+          "iterations": 1,
+          "deep_rms_rel_span": 1.2678812266175519,
+          "deep_max_rel_span": 1.7313910359868308,
+          "plasma_rms_rel_span": 1.1326619690514692,
+          "axis_value_rel_err": 0.8226717245804467,
+          "global_max_rel_span": 1.7313910359868308
+        }
+      },
       "cause": "the psi_N anchors are FIXED reference values, so a plasma-free start has its tanh LCFS cutoff exactly saturated -> zero model current -> the map is exactly stationary; the reproduction map cannot select the branch from a plasma-free start (that requires the predictive solver's iterate-derived anchors + Ip ramp, which on real data needs PF coil currents - Rung 4)"
     },
     "picard_warm_reaches_true_branch": {
-      "settings": "relaxed Picard omega=0.5 (omega=0.3 probed identically), warm start, measured external source; no early stop within 200 iterations",
-      "metrics": {
+      "settings": "relaxed Picard, warm start, measured external source; no early stop within 200 iterations; BOTH relaxation factors executed this run",
+      "metrics_omega_0.5": {
         "iterations": 200,
-        "deep_rms_rel_span": 0.006336384507627686,
-        "deep_max_rel_span": 0.011738689415548877,
-        "plasma_rms_rel_span": 0.006582848742383364,
-        "axis_value_rel_err": 0.002324407484243245,
-        "global_max_rel_span": 0.011738689415548877
+        "deep_rms_rel_span": 0.0063363845076153955,
+        "deep_max_rel_span": 0.011738689415529356,
+        "plasma_rms_rel_span": 0.006582848742369811,
+        "axis_value_rel_err": 0.0023244074842341603,
+        "global_max_rel_span": 0.011738689415529356
+      },
+      "metrics_omega_0.3": {
+        "iterations": 200,
+        "deep_rms_rel_span": 0.006084874766161719,
+        "deep_max_rel_span": 0.011298615151039913,
+        "plasma_rms_rel_span": 0.006323373465699156,
+        "axis_value_rel_err": 0.002239528345786166,
+        "global_max_rel_span": 0.011298615151039913
       },
       "note": "Anderson(m=8) contributes ACCELERATION on this map (26 vs >200 iterations), not branch selection"
     }
@@ -76,11 +104,11 @@
       "settings": "Anderson(m=8), warm start, external_source='zero'",
       "metrics": {
         "iterations": 16,
-        "deep_rms_rel_span": 0.053803151274702,
-        "deep_max_rel_span": 0.12402775773034862,
-        "plasma_rms_rel_span": 0.057817059185683306,
-        "axis_value_rel_err": 0.017312684938462584,
-        "global_max_rel_span": 0.9900182346270664
+        "deep_rms_rel_span": 0.05380315127470274,
+        "deep_max_rel_span": 0.12402775773037258,
+        "plasma_rms_rel_span": 0.057817059185682675,
+        "axis_value_rel_err": 0.017312684938442097,
+        "global_max_rel_span": 0.9900182346271015
       },
       "cause": "the 129x129 g-file domain contains PF-coil cross-sections (empirically mapped external-current cells); a zero-source vacuum model is wrong there and the elliptic inverse propagates the mismatch domain-wide"
     },

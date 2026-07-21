@@ -378,7 +378,11 @@ def _provenance() -> dict:
             "jax": jax.__version__,
         },
         "generator": "validation/validate_real_diiid_145419.py",
+        "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+        "pinned_requirements_sha256": hashlib.sha256(
+            (REPO / "requirements" / "full.txt").read_bytes()
+        ).hexdigest(),
     }
 
 
@@ -436,18 +440,36 @@ def main() -> None:
     # cold start (external-only field, zero plasma current) lands in the zero-plasma
     # ABSORBING state — the reproduction map cannot select the branch from a plasma-free
     # start (fixed ψ_N anchors ⇒ the tanh cutoff is exactly saturated ⇒ exactly stationary).
+    # Every stationarity claim below is EXECUTED here, not asserted from memory: the cold
+    # lane is run under Anderson (default and n_iter=400) AND under Picard.
     psi_cold, _pl_c, deep_c, iters_c = full_domain_reproduction(d, init="external")
     cold_metrics = _full_domain_metrics(d, psi_cold, plasma, deep_c, iters_c, span)
     print("STEP 3b — COLD start (external-only field) -> zero-plasma absorbing state:")
     for k, v in cold_metrics.items():
         print(f"  {k}: {v:.4g}" if isinstance(v, float) else f"  {k}: {v}")
+    psi_c400, _p, deep_c400, iters_c400 = full_domain_reproduction(d, init="external", n_iter=400)
+    cold_400 = _full_domain_metrics(d, psi_c400, plasma, deep_c400, iters_c400, span)
+    psi_cp, _p, deep_cp, iters_cp = full_domain_reproduction(d, init="external", accel="picard")
+    cold_picard = _full_domain_metrics(d, psi_cp, plasma, deep_cp, iters_cp, span)
+    print(
+        f"STEP 3b' — cold-start stationarity cross-checks: Anderson n_iter=400 -> "
+        f"iters={iters_c400}, deep_rms={cold_400['deep_rms_rel_span']:.4g}; Picard -> "
+        f"iters={iters_cp}, deep_rms={cold_picard['deep_rms_rel_span']:.4g}"
+    )
 
     # Warm-started plain relaxed Picard reaches the TRUE branch (slower than Anderson —
     # acceleration, not branch selection, is what Anderson contributes on this map).
+    # BOTH probed relaxation factors are executed and persisted, not asserted from memory.
     psi_n2, _pl2, deep_n2, iters_n2 = full_domain_reproduction(d, accel="picard")
     picard_metrics = _full_domain_metrics(d, psi_n2, plasma, deep_n2, iters_n2, span)
     print("STEP 3c — relaxed Picard (omega=0.5), warm start -> true branch, slower:")
     print(f"  iters={iters_n2}  deep_rms_rel_span: {picard_metrics['deep_rms_rel_span']:.4g}")
+    psi_n3, _pl3, deep_n3, iters_n3 = full_domain_reproduction(d, accel="picard", picard_omega=0.3)
+    picard_03 = _full_domain_metrics(d, psi_n3, plasma, deep_n3, iters_n3, span)
+    print(
+        f"STEP 3c' — relaxed Picard (omega=0.3), warm start: iters={iters_n3}, "
+        f"deep_rms={picard_03['deep_rms_rel_span']:.4g}"
+    )
 
     # Executable honest-negative lane (regenerated each run, not an archived constant):
     psi_n1, _pl1, deep_n1, iters_n1 = full_domain_reproduction(d, external_source="zero")
@@ -476,9 +498,13 @@ def main() -> None:
     map_structure = {
         "regenerated_each_run": True,
         "zero_plasma_absorbing_state": {
-            "settings": "init='external' (external-source-only start, zero plasma current); "
-            "identical outcome under Anderson and Picard, and at n_iter=400",
+            "settings": "init='external' (external-source-only start, zero plasma current), "
+            "Anderson(m=8) default",
             "metrics": cold_metrics,
+            "cross_checks_executed_this_run": {
+                "anderson_n_iter_400": cold_400,
+                "picard_omega_0.5": cold_picard,
+            },
             "cause": "the psi_N anchors are FIXED reference values, so a plasma-free start "
             "has its tanh LCFS cutoff exactly saturated -> zero model current -> the map is "
             "exactly stationary; the reproduction map cannot select the branch from a "
@@ -486,9 +512,10 @@ def main() -> None:
             "anchors + Ip ramp, which on real data needs PF coil currents - Rung 4)",
         },
         "picard_warm_reaches_true_branch": {
-            "settings": "relaxed Picard omega=0.5 (omega=0.3 probed identically), warm "
-            "start, measured external source; no early stop within 200 iterations",
-            "metrics": picard_metrics,
+            "settings": "relaxed Picard, warm start, measured external source; no early "
+            "stop within 200 iterations; BOTH relaxation factors executed this run",
+            "metrics_omega_0.5": picard_metrics,
+            "metrics_omega_0.3": picard_03,
             "note": "Anderson(m=8) contributes ACCELERATION on this map (26 vs >200 "
             "iterations), not branch selection",
         },

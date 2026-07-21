@@ -55,7 +55,7 @@ lanes rerun on every invocation**, not archived constants — and a runtime prov
 | 2 | **Coil-free sub-domain reproduction**: Dirichlet = real ψ on an empirically verified coil-free rectangle, our source inside | deep RMS **0.108 %** of the ψ span (deep max 0.25 %, axis 0.06 %) |
 | 3 | **Full-domain reproduction** (129², measured-external-source decomposition, Anderson(m=8), warm start) | deep RMS **0.717 %** of the ψ span (axis 0.28 %, global max 1.33 %, 26 iterations) |
 | 3b | **Cold start** (external-source-only field, zero plasma current) | lands in the **zero-plasma absorbing state** (deep RMS ≈ 127 %) — see the map-structure paragraph below |
-| 3c | **Relaxed Picard, warm start** (ω = 0.5; ω = 0.3 probed identically) | reaches the **true branch** (deep RMS 0.63 % after 200 iterations, no early stop) — Anderson contributes acceleration (26 vs > 200 iterations), not branch selection |
+| 3c | **Relaxed Picard, warm start** (ω = 0.5 and ω = 0.3, both executed every run) | reaches the **true branch** (deep RMS 0.63 % after 200 iterations, no early stop) — Anderson contributes acceleration (26 vs > 200 iterations), not branch selection |
 
 "Deep region" is ψ_N < 0.8 inside the confined plasma; the span is |ψ_axis − ψ_boundary|.
 
@@ -73,7 +73,8 @@ every run): the map has two measured fixed points. Warm starts reach the true br
 both Anderson and plain relaxed Picard. A plasma-free start cannot leave the **zero-plasma
 absorbing state**: the ψ_N anchors are fixed reference values, so with no plasma current the
 tanh LCFS cutoff is exactly saturated, zero model current flows, and the map is exactly
-stationary (measured identically under Anderson and Picard, and at 400 iterations).
+stationary (the cross-checks — Anderson at n_iter = 400 and Picard — are executed and
+persisted on every run, not asserted from memory).
 
 ## Honest negatives and the debugging record (kept deliberately)
 
