@@ -12,7 +12,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# ci.in gets per-Python-version lock files (Linux platform)
+# ci.in is special: it produces three per-Python-version Linux lock files
+# (ci-py310/py311/py312.txt), driven here rather than by a single header line.
 ci_versions=("3.10" "3.11" "3.12")
 for pyver in "${ci_versions[@]}"; do
     pytag="${pyver//.}"
@@ -25,33 +26,24 @@ for pyver in "${ci_versions[@]}"; do
         -o "${outfile}"
 done
 
-# Cross-platform lock files (used on macOS + Linux smoke-install)
-cross_platform=("minimal" "full")
-
-# Linux-only lock files (Python 3.12)
+# Every other *.in carries its EXACT canonical command in a "# Regenerate: uv pip
+# compile ..." header line — the single source of truth for its per-file Python
+# version / platform / universal flags (these genuinely differ: build/ci-interop/
+# ci-stress are 3.11-linux, ci-benchmark/docs/studio are 3.12-linux, full/minimal
+# are --universal with no pinned version). Execute that header command verbatim so
+# the script can never drift from it — the drift that previously mis-locked
+# ci-interop / ci-stress / build against 3.12 when their headers require 3.11.
 for infile in requirements/*.in; do
     base="$(basename "${infile}" .in)"
     [ "${base}" = "ci" ] && continue  # handled above
-    outfile="${infile%.in}.txt"
-    is_cross=false
-    for cp in "${cross_platform[@]}"; do
-        [ "${base}" = "${cp}" ] && is_cross=true
-    done
-    if [ "${is_cross}" = true ]; then
-        echo "Compiling ${infile} -> ${outfile}  (Python 3.12, universal)"
-        uv pip compile "${infile}" \
-            --generate-hashes \
-            --python-version "3.12" \
-            --universal \
-            -o "${outfile}"
-    else
-        echo "Compiling ${infile} -> ${outfile}  (Python 3.12, linux)"
-        uv pip compile "${infile}" \
-            --generate-hashes \
-            --python-version "3.12" \
-            --python-platform linux \
-            -o "${outfile}"
+    cmd="$(sed -n 's/^# Regenerate: \(uv pip compile .*\)$/\1/p' "${infile}" | head -1)"
+    if [ -z "${cmd}" ]; then
+        echo "ERROR: ${infile} lacks a '# Regenerate: uv pip compile ...' header line" >&2
+        exit 1
     fi
+    echo "Compiling ${infile}  (per its header: ${cmd})"
+    eval "${cmd}"
 done
 
-echo "Done. $(ls requirements/*.txt | wc -l) lock files regenerated."
+locks=(requirements/*.txt)
+echo "Done. ${#locks[@]} lock files regenerated."
