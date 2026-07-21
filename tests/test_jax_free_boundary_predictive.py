@@ -207,3 +207,28 @@ def test_profile_gradient_matches_finite_difference(response) -> None:
     lm = float(_axis_loss(response, _COIL_I, _PPRIME.at[idx].add(-eps), _FFPRIME))
     fd = (lp - lm) / (2 * eps)
     assert abs(float(g_pp[idx]) - fd) / (abs(fd) + 1e-30) < 1e-2
+
+
+def test_differentiates_through_bspline_profile_coefficients(response) -> None:
+    """End-to-end IDA pipeline: compact B-spline coefficients → p'/FF' samples → equilibrium →
+    ``jax.grad`` back to the coefficients. Proves the Rung-3 profile basis composes with the
+    Rung-1 implicit-diff adjoint — the whole point of the compact IDA parameterisation."""
+    from scpn_fusion.core.jax_profile_basis import bspline_design_matrix, evaluate_profile
+
+    design = bspline_design_matrix(np.asarray(_PSIN), n_coeff=6)
+    pp_coeffs = jnp.asarray(np.linalg.lstsq(design, np.asarray(_PPRIME), rcond=None)[0])
+    ff_coeffs = jnp.asarray(np.linalg.lstsq(design, np.asarray(_FFPRIME), rcond=None)[0])
+    m, b, s = response
+
+    def loss(pc: jnp.ndarray, fc: jnp.ndarray) -> jnp.ndarray:
+        pp = evaluate_profile(pc, design)
+        ff = evaluate_profile(fc, design)
+        psi = solve_predictive_equilibrium_diff(
+            _COIL_I, pp, ff, _R, _Z, _COIL_R, _COIL_Z, _PSIN, _IP, m, b, s
+        )
+        return smooth_axis_flux(psi)
+
+    g_pc, g_fc = jax.grad(loss, argnums=(0, 1))(pp_coeffs, ff_coeffs)
+    assert g_pc.shape == pp_coeffs.shape and g_fc.shape == ff_coeffs.shape
+    assert bool(jnp.all(jnp.isfinite(g_pc)) & jnp.all(jnp.isfinite(g_fc)))
+    assert float(jnp.sum(jnp.abs(g_fc))) > 0.0  # the equilibrium genuinely depends on FF' coeffs
