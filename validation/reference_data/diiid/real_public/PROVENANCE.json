@@ -1,0 +1,31 @@
+{
+  "source": "omas 0.95.2 PyPI package, omas/samples/ (gafusion/omas, MIT license)",
+  "obtained": "2026-07-21",
+  "machine": "DIII-D (General Atomics)",
+  "shot": 145419,
+  "time_ms": 2100,
+  "description": "Real DIII-D EFIT reconstruction g-file (129x129, Ip=1.508 MA) + ONETWO input.profiles + plasma-state NetCDF + D3D L-mode ODS sample + ECRH machine mapping, as redistributed openly by GA in the omas package. NOT fetched from atlas.gat.com (login required; GA authorisation pending via Nazikian/Odstrcil).",
+  "usage_note": "Published/open redistribution; DOE/GA facility terms govern any further re-publication.",
+  "files": {
+    "D3D_standard_Lmode.json": {
+      "sha256": "0a73a190a283f51c23863cc4d8f4d60b8e969d28d94c02dfe1e81e515130cff0",
+      "bytes": 2069544
+    },
+    "d3d_ECRH_machine_mapping.json": {
+      "sha256": "06490f657db8203e887bec6f0781355956fd6ead238011f82d3fbe5d41004be9",
+      "bytes": 2817
+    },
+    "g145419.02100": {
+      "sha256": "087aefddacac4337d54347e1e73085ef3b21c254176885726841a4521174f81f",
+      "bytes": 464301
+    },
+    "input.profiles_145419_02100": {
+      "sha256": "243ac154583fafaecd23e468cb151ba2485a9eade8c89eb330684b7d7031c93c",
+      "bytes": 240676
+    },
+    "state145419_02100.nc": {
+      "sha256": "d90bcd6db760bbc5ee3482fb38c22266c02cda0c7f3995513ea453e87f53af57",
+      "bytes": 807656
+    }
+  }
+}

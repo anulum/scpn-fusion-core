@@ -1,4 +1,19 @@
 {
+  "provenance": {
+    "reference_file": "g145419.02100",
+    "reference_sha256": "087aefddacac4337d54347e1e73085ef3b21c254176885726841a4521174f81f",
+    "reference_source": "omas PyPI package, omas/samples/ (gafusion/omas, MIT licence); real DIII-D EFIT reconstruction, shot 145419, t=2100 ms; see validation/reference_data/diiid/real_public/PROVENANCE.json",
+    "packages": {
+      "omas": "0.95.2",
+      "freeqdsk": "0.5.2",
+      "numpy": "2.2.6",
+      "scipy": "1.15.3",
+      "jax": "0.6.2"
+    },
+    "generator": "validation/validate_real_diiid_145419.py",
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction"
+  },
+  "disclosure": "reproduction lanes are warm-started from the EFIT psi and use reference-derived normalisation anchors (psi_axis, psi_bnd, plasma-region Ip) - they are consistency/reproduction checks, not blind prediction or independent branch selection; the cold-start lane demonstrates that limitation explicitly",
   "operator": {
     "interior_max_rel": 1.0,
     "interior_rms_rel": 0.08603539288098458,
@@ -13,17 +28,64 @@
     "axis_value_rel_err": 0.0006218197877475208
   },
   "full_domain_reproduction": {
-    "anderson_iterations": 26,
     "deep_rms_rel_span": 0.007174384113181322,
     "deep_max_rel_span": 0.013299922182456144,
     "plasma_rms_rel_span": 0.007469724729356635,
     "axis_value_rel_err": 0.002766053887579816,
-    "global_max_rel_span": 0.013299922182456144
+    "global_max_rel_span": 0.013299922182456144,
+    "anderson_iterations": 26
+  },
+  "full_domain_cold_start": {
+    "iterations": 1,
+    "deep_rms_rel_span": 1.2678812266175519,
+    "deep_max_rel_span": 1.7313910359868308,
+    "plasma_rms_rel_span": 1.1326619690514692,
+    "axis_value_rel_err": 0.8226717245804467,
+    "global_max_rel_span": 1.7313910359868308
+  },
+  "map_structure": {
+    "regenerated_each_run": true,
+    "zero_plasma_absorbing_state": {
+      "settings": "init='external' (external-source-only start, zero plasma current); identical outcome under Anderson and Picard, and at n_iter=400",
+      "metrics": {
+        "iterations": 1,
+        "deep_rms_rel_span": 1.2678812266175519,
+        "deep_max_rel_span": 1.7313910359868308,
+        "plasma_rms_rel_span": 1.1326619690514692,
+        "axis_value_rel_err": 0.8226717245804467,
+        "global_max_rel_span": 1.7313910359868308
+      },
+      "cause": "the psi_N anchors are FIXED reference values, so a plasma-free start has its tanh LCFS cutoff exactly saturated -> zero model current -> the map is exactly stationary; the reproduction map cannot select the branch from a plasma-free start (that requires the predictive solver's iterate-derived anchors + Ip ramp, which on real data needs PF coil currents - Rung 4)"
+    },
+    "picard_warm_reaches_true_branch": {
+      "settings": "relaxed Picard omega=0.5 (omega=0.3 probed identically), warm start, measured external source; no early stop within 200 iterations",
+      "metrics": {
+        "iterations": 200,
+        "deep_rms_rel_span": 0.006336384507627686,
+        "deep_max_rel_span": 0.011738689415548877,
+        "plasma_rms_rel_span": 0.006582848742383364,
+        "axis_value_rel_err": 0.002324407484243245,
+        "global_max_rel_span": 0.011738689415548877
+      },
+      "note": "Anderson(m=8) contributes ACCELERATION on this map (26 vs >200 iterations), not branch selection"
+    }
   },
   "honest_negatives": {
-    "full_domain_zero_source_vacuum_deep_rms": 0.26,
-    "full_domain_zero_source_cause": "the 129x129 g-file domain contains PF-coil cross-sections (empirically mapped external-current cells); a zero-source vacuum model is wrong there and the elliptic inverse propagates the mismatch domain-wide",
-    "full_domain_relaxed_picard_deep_rms": 1.27,
-    "full_domain_relaxed_picard_cause": "with the measured external source the map is correct but BISTABLE under relaxed Picard (H-mode pedestal p'' gain) \u2014 it converges cleanly to a wrong attractor; Anderson(m=8) + Ip renormalisation reach the true branch"
+    "regenerated_each_run": true,
+    "zero_external_source": {
+      "settings": "Anderson(m=8), warm start, external_source='zero'",
+      "metrics": {
+        "iterations": 16,
+        "deep_rms_rel_span": 0.053803151274702,
+        "deep_max_rel_span": 0.12402775773034862,
+        "plasma_rms_rel_span": 0.057817059185683306,
+        "axis_value_rel_err": 0.017312684938462584,
+        "global_max_rel_span": 0.9900182346270664
+      },
+      "cause": "the 129x129 g-file domain contains PF-coil cross-sections (empirically mapped external-current cells); a zero-source vacuum model is wrong there and the elliptic inverse propagates the mismatch domain-wide"
+    },
+    "archived_dev_observations": {
+      "note": "development-time observations (session claude_2026-07-21T2226) measured deep RMS ~0.26 (zero source, different settings) and ~1.27 for a 'relaxed Picard wrong attractor'; the 1.27 matches the zero-plasma absorbing state to three digits, so its original interpretation (H-mode pedestal p'' bistability) is RETIRED and superseded by the map_structure evidence above - data kept, reading corrected 2026-07-22"
+    }
   }
 }

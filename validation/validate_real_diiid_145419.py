@@ -28,10 +28,30 @@ Two steps (the Milestone-B pattern, now on real data):
 3. **Full-domain reproduction with a measured external source**: outside the confined plasma
    (above the X-point, connected to the axis) the source is pinned to the *measured* ``Δ*ψ``
    (which is exactly ``−μ₀RJφ`` of the coils/legs/private flux); inside, our ``p'``/``FF'``
-   model with Ip renormalised to the measured plasma-region current. A relaxed Picard on this
-   map converges to a WRONG attractor (documented honest negative: ≈ 127 % — the H-mode
-   pedestal makes the map bistable); Anderson(m=8) acceleration — the same stabiliser the
-   Rung-1 predictive solver needed — converges in ~26 iterations to ≈ 0.7 % deep RMS.
+   model with Ip renormalised to the measured plasma-region current.
+
+Fixed-point structure of that map (measured by the executable lanes below, 2026-07-22):
+the map has (at least) two fixed points. Warm-started iteration reaches the **true branch**
+under BOTH Anderson(m=8) (26 iterations) and plain relaxed Picard (ω = 0.3 or 0.5; slower,
+no early stop within 200 iterations) — Anderson is the accelerator here, not the branch
+selector. The second fixed point is the **zero-plasma absorbing state**: because the ψ_N
+anchors are fixed reference values, a start whose interior carries no plasma current has its
+``tanh`` LCFS cutoff exactly saturated, zero model current flows, and the map is exactly
+stationary (deep RMS ≈ 127 % from the reference). The archived dev-time observation of a
+"relaxed Picard → ≈ 127 % wrong attractor" matches this absorbing state to three digits; its
+earlier interpretation (H-mode pedestal ``p''`` bistability) is therefore RETIRED and the
+identification with the zero-plasma state recorded instead — data kept, reading corrected.
+
+Disclosure (prominent, per distinct-eye finding D1): the reproduction lanes warm-start from
+the EFIT ψ and anchor normalisation to reference values — they are fixed-point
+consistency/reproduction checks, NOT independent branch selection. The cold-start lane
+(``init="external"``) demonstrates precisely that limitation (it lands in the absorbing
+state). Genuine cold-start branch selection needs iterate-derived anchors and an Ip ramp —
+that is the Rung-1 *predictive* solver, validated on its own synthetic/FreeGS lane; running
+it on this real shot requires the PF coil currents, which g-files do not carry (Rung 4,
+facility data). All lanes are **regenerated on every run** (D2); the artefact JSON embeds
+runtime provenance — reference SHA-256 and exact package versions (D3) — and is written with
+a trailing newline so a rerun is hook-drift-free (D4).
 
 COCOS note (explicit, not silent): the g-file stores ψ *descending* from axis to boundary
 (``ψ_axis < ψ_bnd``, both negative).  The package convention has ψ *peaked* at the axis, so the
@@ -41,6 +61,7 @@ field AND the profile derivatives are sign-flipped together (``ψ → −ψ``, `
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -163,8 +184,10 @@ def subdomain_reproduction(
     The box (R ∈ [1.00, 2.24], Z ∈ [−1.15, 1.15]) contains the confined deep plasma but none
     of the external-current (coil) cells that live inside the full g-file domain; membership
     is *asserted*, not assumed. Dirichlet = real ψ on the box edge; the source uses the real
-    profiles with normalisation levels anchored to the real axis/boundary (reproduction
-    mode). Returns (ψ_fit, ψ_real_sub, R_sub, Z_sub, deep_mask, iterations).
+    profiles with normalisation levels anchored to the real axis/boundary, and the Picard
+    iteration is **warm-started from the real ψ** — a reproduction/consistency lane by
+    construction (disclosed; the basin evidence lives in the full-domain cold-start lane).
+    Returns (ψ_fit, ψ_real_sub, R_sub, Z_sub, deep_mask, iterations).
     """
     R, Z, psi_real = d["R"], d["Z"], d["psi"]
     psin_map = (psi_real - d["psi_axis"]) / (d["psi_bnd"] - d["psi_axis"])
@@ -211,7 +234,14 @@ def subdomain_reproduction(
 
 
 def full_domain_reproduction(
-    d: dict, m_depth: int = 8, n_iter: int = 200, tol: float = 1.0e-11
+    d: dict,
+    m_depth: int = 8,
+    n_iter: int = 200,
+    tol: float = 1.0e-11,
+    init: str = "reference",
+    accel: str = "anderson",
+    picard_omega: float = 0.5,
+    external_source: str = "measured",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     """Step 3 — full 129² reproduction: measured external source + Anderson-accelerated model.
 
@@ -219,9 +249,21 @@ def full_domain_reproduction(
     X-point (found as the min-``|∇ψ|`` near-separatrix cell below the axis); everywhere else
     the source is the measured ``Δ*ψ`` (coils, legs, private flux — exactly ``−μ₀RJφ`` there).
     The plasma model source is Ip-renormalised to the measured plasma-region current each
-    iteration. Plain relaxed Picard is *bistable* on this map (H-mode pedestal ``p''`` gain)
-    and lands on a wrong attractor; Anderson(m=8) — the Rung-1 stabiliser — converges to the
-    true branch. Returns (ψ_fit, plasma_mask, deep_mask, iterations).
+    iteration.
+
+    Disclosed prominently: with ``init="reference"`` the iteration is **warm-started from the
+    EFIT ψ itself**, and the normalisation anchors (ψ_axis, ψ_bnd, plasma-region Ip) are
+    reference-derived throughout — this lane is a fixed-point *consistency/reproduction*
+    check, not blind branch selection. The independent basin evidence is the
+    ``init="external"`` lane: the start is the external-source-only solve (coils/legs flux,
+    **zero plasma current** in the interior), so the plasma flux must be built up by the
+    iteration itself.
+
+    ``accel="picard"`` (with ``picard_omega``) measures the map's convergence without
+    Anderson (measured: the warm-started Picard also reaches the true branch, only slower —
+    Anderson contributes acceleration, not branch selection); ``external_source="zero"`` is
+    the executable honest-negative lane exposing the domain-wide error of pretending the
+    external-current cells are vacuum. Returns (ψ_fit, plasma_mask, deep_mask, iterations).
     """
     from scipy import ndimage
 
@@ -249,6 +291,8 @@ def full_domain_reproduction(
     dA = float((R[1] - R[0]) * (Z[1] - Z[0]))
     ip_real_plasma = float(np.sum(-lap_real[plasma] / (mu0 * rrg[plasma])) * dA)
 
+    external = lap_real if external_source == "measured" else np.zeros_like(lap_real)
+
     def step_map(x: np.ndarray) -> np.ndarray:
         psi = x.reshape(nz, nr)
         src_model = np.asarray(
@@ -264,28 +308,41 @@ def full_domain_reproduction(
         ).copy()
         ipm = float(np.sum(-src_model[plasma] / (mu0 * rrg[plasma])) * dA)
         scale = ip_real_plasma / ipm if ipm else 1.0
-        src = np.where(plasma, src_model * scale, lap_real)
+        src = np.where(plasma, src_model * scale, external)
         rhs = src.reshape(-1).copy()
         rhs[mask_bnd.reshape(-1)] = psi_real[mask_bnd]
         return np.asarray(lu.solve(rhs))
 
-    x = psi_real.reshape(-1).copy()
+    if init == "reference":
+        x = psi_real.reshape(-1).copy()
+    elif init == "external":
+        # Cold/neutral start: the external-source-only field (coils/legs/private flux, ZERO
+        # plasma current inside the plasma mask) — the plasma flux must be built by the
+        # iteration itself, so this lane probes basin selection, not just consistency.
+        rhs0 = np.where(plasma, 0.0, lap_real).reshape(-1).copy()
+        rhs0[mask_bnd.reshape(-1)] = psi_real[mask_bnd]
+        x = np.asarray(lu.solve(rhs0))
+    else:
+        raise ValueError(f"unknown init {init!r} (use 'reference' or 'external')")
     hist_x: list[np.ndarray] = []
     hist_f: list[np.ndarray] = []
     for it in range(n_iter):
         f = step_map(x) - x
-        hist_x.append(x.copy())
-        hist_f.append(f.copy())
-        if len(hist_x) > m_depth:
-            hist_x.pop(0)
-            hist_f.pop(0)
-        if len(hist_f) > 1:
-            d_f = np.stack([hist_f[i + 1] - hist_f[i] for i in range(len(hist_f) - 1)], axis=1)
-            d_x = np.stack([hist_x[i + 1] - hist_x[i] for i in range(len(hist_x) - 1)], axis=1)
-            gamma, *_ = np.linalg.lstsq(d_f, f, rcond=None)
-            x_new = x + f - (d_x + d_f) @ gamma
+        if accel == "picard":
+            x_new = x + picard_omega * f
         else:
-            x_new = x + 0.5 * f
+            hist_x.append(x.copy())
+            hist_f.append(f.copy())
+            if len(hist_x) > m_depth:
+                hist_x.pop(0)
+                hist_f.pop(0)
+            if len(hist_f) > 1:
+                d_f = np.stack([hist_f[i + 1] - hist_f[i] for i in range(len(hist_f) - 1)], axis=1)
+                d_x = np.stack([hist_x[i + 1] - hist_x[i] for i in range(len(hist_x) - 1)], axis=1)
+                gamma, *_ = np.linalg.lstsq(d_f, f, rcond=None)
+                x_new = x + f - (d_x + d_f) @ gamma
+            else:
+                x_new = x + 0.5 * f
         if not np.all(np.isfinite(x_new)):  # rank-deficient history guard → damped Picard
             x_new = x + 0.3 * f
         step = float(np.max(np.abs(x_new - x)))
@@ -297,6 +354,49 @@ def full_domain_reproduction(
     deep[:2, :] = deep[-2:, :] = False
     deep[:, :2] = deep[:, -2:] = False
     return psi_fit, plasma, deep, it + 1
+
+
+def _provenance() -> dict:
+    """Runtime-computed provenance: reference hash + the exact package versions used."""
+    import freeqdsk
+    import omas
+    import scipy
+
+    return {
+        "reference_file": GFILE.name,
+        "reference_sha256": hashlib.sha256(GFILE.read_bytes()).hexdigest(),
+        "reference_source": (
+            "omas PyPI package, omas/samples/ (gafusion/omas, MIT licence); real DIII-D EFIT "
+            "reconstruction, shot 145419, t=2100 ms; see "
+            "validation/reference_data/diiid/real_public/PROVENANCE.json"
+        ),
+        "packages": {
+            "omas": omas.__version__,
+            "freeqdsk": freeqdsk.__version__,
+            "numpy": np.__version__,
+            "scipy": scipy.__version__,
+            "jax": jax.__version__,
+        },
+        "generator": "validation/validate_real_diiid_145419.py",
+        "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    }
+
+
+def _full_domain_metrics(
+    d: dict, psi_fit: np.ndarray, plasma: np.ndarray, deep: np.ndarray, iters: int, span: float
+) -> dict[str, float | int]:
+    diff = psi_fit - d["psi"]
+    pl_i = plasma.copy()
+    pl_i[:2, :] = pl_i[-2:, :] = False
+    pl_i[:, :2] = pl_i[:, -2:] = False
+    return {
+        "iterations": iters,
+        "deep_rms_rel_span": float(np.sqrt(np.mean(diff[deep] ** 2))) / span,
+        "deep_max_rel_span": float(np.max(np.abs(diff[deep]))) / span,
+        "plasma_rms_rel_span": float(np.sqrt(np.mean(diff[pl_i] ** 2))) / span,
+        "axis_value_rel_err": abs(float(np.max(psi_fit[2:-2, 2:-2])) - d["psi_axis"]) / span,
+        "global_max_rel_span": float(np.max(np.abs(diff))) / span,
+    }
 
 
 def main() -> None:
@@ -326,21 +426,34 @@ def main() -> None:
         print(f"  {k}: {v:.4g}" if isinstance(v, float) else f"  {k}: {v}")
 
     psi_full, plasma, deep_f, iters_f = full_domain_reproduction(d)
-    diff_f = psi_full - d["psi"]
-    pl_i = plasma.copy()
-    pl_i[:2, :] = pl_i[-2:, :] = False
-    pl_i[:, :2] = pl_i[:, -2:] = False
-    full_metrics = {
-        "anderson_iterations": iters_f,
-        "deep_rms_rel_span": float(np.sqrt(np.mean(diff_f[deep_f] ** 2))) / span,
-        "deep_max_rel_span": float(np.max(np.abs(diff_f[deep_f]))) / span,
-        "plasma_rms_rel_span": float(np.sqrt(np.mean(diff_f[pl_i] ** 2))) / span,
-        "axis_value_rel_err": abs(float(np.max(psi_full[2:-2, 2:-2])) - d["psi_axis"]) / span,
-        "global_max_rel_span": float(np.max(np.abs(diff_f))) / span,
-    }
-    print(f"STEP 3 — full-domain w/ measured external source, Anderson(m=8) ({iters_f} iters):")
+    full_metrics = _full_domain_metrics(d, psi_full, plasma, deep_f, iters_f, span)
+    full_metrics["anderson_iterations"] = full_metrics.pop("iterations")
+    print("STEP 3 — full-domain w/ measured external source, Anderson(m=8), warm start:")
     for k, v in full_metrics.items():
         print(f"  {k}: {v:.4g}" if isinstance(v, float) else f"  {k}: {v}")
+
+    # STEP 3b — the map's fixed-point structure, measured (regenerated every run):
+    # cold start (external-only field, zero plasma current) lands in the zero-plasma
+    # ABSORBING state — the reproduction map cannot select the branch from a plasma-free
+    # start (fixed ψ_N anchors ⇒ the tanh cutoff is exactly saturated ⇒ exactly stationary).
+    psi_cold, _pl_c, deep_c, iters_c = full_domain_reproduction(d, init="external")
+    cold_metrics = _full_domain_metrics(d, psi_cold, plasma, deep_c, iters_c, span)
+    print("STEP 3b — COLD start (external-only field) -> zero-plasma absorbing state:")
+    for k, v in cold_metrics.items():
+        print(f"  {k}: {v:.4g}" if isinstance(v, float) else f"  {k}: {v}")
+
+    # Warm-started plain relaxed Picard reaches the TRUE branch (slower than Anderson —
+    # acceleration, not branch selection, is what Anderson contributes on this map).
+    psi_n2, _pl2, deep_n2, iters_n2 = full_domain_reproduction(d, accel="picard")
+    picard_metrics = _full_domain_metrics(d, psi_n2, plasma, deep_n2, iters_n2, span)
+    print("STEP 3c — relaxed Picard (omega=0.5), warm start -> true branch, slower:")
+    print(f"  iters={iters_n2}  deep_rms_rel_span: {picard_metrics['deep_rms_rel_span']:.4g}")
+
+    # Executable honest-negative lane (regenerated each run, not an archived constant):
+    psi_n1, _pl1, deep_n1, iters_n1 = full_domain_reproduction(d, external_source="zero")
+    neg_zero = _full_domain_metrics(d, psi_n1, plasma, deep_n1, iters_n1, span)
+    print("NEGATIVE — zero external source (coil cells pretended vacuum):")
+    print(f"  deep_rms_rel_span: {neg_zero['deep_rms_rel_span']:.4g}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
@@ -360,27 +473,61 @@ def main() -> None:
         Z_grid=Zs,
         deep_mask=deep,
     )
-    honest_negatives = {
-        "full_domain_zero_source_vacuum_deep_rms": 0.26,
-        "full_domain_zero_source_cause": "the 129x129 g-file domain contains PF-coil "
-        "cross-sections (empirically mapped external-current cells); a zero-source vacuum "
-        "model is wrong there and the elliptic inverse propagates the mismatch domain-wide",
-        "full_domain_relaxed_picard_deep_rms": 1.27,
-        "full_domain_relaxed_picard_cause": "with the measured external source the map is "
-        "correct but BISTABLE under relaxed Picard (H-mode pedestal p'' gain) — it converges "
-        "cleanly to a wrong attractor; Anderson(m=8) + Ip renormalisation reach the true branch",
+    map_structure = {
+        "regenerated_each_run": True,
+        "zero_plasma_absorbing_state": {
+            "settings": "init='external' (external-source-only start, zero plasma current); "
+            "identical outcome under Anderson and Picard, and at n_iter=400",
+            "metrics": cold_metrics,
+            "cause": "the psi_N anchors are FIXED reference values, so a plasma-free start "
+            "has its tanh LCFS cutoff exactly saturated -> zero model current -> the map is "
+            "exactly stationary; the reproduction map cannot select the branch from a "
+            "plasma-free start (that requires the predictive solver's iterate-derived "
+            "anchors + Ip ramp, which on real data needs PF coil currents - Rung 4)",
+        },
+        "picard_warm_reaches_true_branch": {
+            "settings": "relaxed Picard omega=0.5 (omega=0.3 probed identically), warm "
+            "start, measured external source; no early stop within 200 iterations",
+            "metrics": picard_metrics,
+            "note": "Anderson(m=8) contributes ACCELERATION on this map (26 vs >200 "
+            "iterations), not branch selection",
+        },
     }
-    with open(OUT_DIR / "real_145419_validation.json", "w") as fh:
-        json.dump(
-            {
-                "operator": op,
-                "subdomain_reproduction": metrics,
-                "full_domain_reproduction": full_metrics,
-                "honest_negatives": honest_negatives,
-            },
-            fh,
-            indent=2,
-        )
+    honest_negatives = {
+        "regenerated_each_run": True,
+        "zero_external_source": {
+            "settings": "Anderson(m=8), warm start, external_source='zero'",
+            "metrics": neg_zero,
+            "cause": "the 129x129 g-file domain contains PF-coil cross-sections (empirically "
+            "mapped external-current cells); a zero-source vacuum model is wrong there and "
+            "the elliptic inverse propagates the mismatch domain-wide",
+        },
+        "archived_dev_observations": {
+            "note": "development-time observations (session claude_2026-07-21T2226) measured "
+            "deep RMS ~0.26 (zero source, different settings) and ~1.27 for a 'relaxed "
+            "Picard wrong attractor'; the 1.27 matches the zero-plasma absorbing state to "
+            "three digits, so its original interpretation (H-mode pedestal p'' bistability) "
+            "is RETIRED and superseded by the map_structure evidence above - data kept, "
+            "reading corrected 2026-07-22",
+        },
+    }
+    record = {
+        "provenance": _provenance(),
+        "disclosure": (
+            "reproduction lanes are warm-started from the EFIT psi and use reference-derived "
+            "normalisation anchors (psi_axis, psi_bnd, plasma-region Ip) - they are "
+            "consistency/reproduction checks, not blind prediction or independent branch "
+            "selection; the cold-start lane demonstrates that limitation explicitly"
+        ),
+        "operator": op,
+        "subdomain_reproduction": metrics,
+        "full_domain_reproduction": full_metrics,
+        "full_domain_cold_start": cold_metrics,
+        "map_structure": map_structure,
+        "honest_negatives": honest_negatives,
+    }
+    out_json = OUT_DIR / "real_145419_validation.json"
+    out_json.write_text(json.dumps(record, indent=2) + "\n")  # trailing newline: no hook drift
     print(f"artefacts -> {OUT_DIR}")
 
 
