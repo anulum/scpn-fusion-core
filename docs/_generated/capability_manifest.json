@@ -2524,6 +2524,7 @@
       "src/scpn_fusion/core/integrated_transport_solver_runtime.py",
       "src/scpn_fusion/core/integrated_transport_solver_runtime_physics.py",
       "src/scpn_fusion/core/integrated_transport_solver_runtime_utils.py",
+      "src/scpn_fusion/core/jax_chebyshev_psi.py",
       "src/scpn_fusion/core/jax_equilibrium_solver.py",
       "src/scpn_fusion/core/jax_free_boundary_gs.py",
       "src/scpn_fusion/core/jax_free_boundary_gs_implicit.py",
@@ -2709,9 +2710,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 62,
     "python_capability_classes": 566,
-    "python_capability_source_modules": 314,
+    "python_capability_source_modules": 315,
     "rust_workspace_crates": 13,
-    "test_files": 565
+    "test_files": 566
   },
   "documentation": {
     "public_pages": [
@@ -3158,6 +3159,7 @@
       "tests/test_ipb98y2_benchmark.py",
       "tests/test_iter_surrogate_tool.py",
       "tests/test_jacobi_sor_stencil_parity.py",
+      "tests/test_jax_chebyshev_psi.py",
       "tests/test_jax_equilibrium_solver.py",
       "tests/test_jax_free_boundary_gs.py",
       "tests/test_jax_free_boundary_gs_implicit.py",
