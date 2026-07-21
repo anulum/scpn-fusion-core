@@ -1,52 +1,86 @@
 {
-  "task": "weak-spot #2 \u2014 root-cause the '~3 %' coil-gradient adjoint honest-limit",
-  "date": "2026-07-21",
-  "case": "synthetic diverted coilset, 33x33, tests/test_jax_free_boundary_predictive.py constants",
+  "task": "adjoint-vs-warm-FD coil-gradient sweep (reproducible generator, finding G1)",
+  "case": "synthetic diverted coilset, 33x33, tests/test_jax_free_boundary_predictive.py",
   "loss": "smooth_axis_flux(solve_predictive_equilibrium_diff(...)), n_iter=150",
   "method": {
     "adjoint": "jax.grad through the custom_vjp implicit-diff adjoint (Jacobi-preconditioned BiCGSTAB)",
-    "fd": "central FD, WARM-STARTED from the base solution (psi_init=psi_base) to stay in-basin"
+    "fd": "central FD, WARM-STARTED from the base solution (psi_init=psi_base) to stay in-basin; sweep the step and require convergence toward the adjoint (truncation error grows with the step; a real missing term does not)"
   },
   "adjoint_g_ci": [
-    1.24273e-07,
-    1.97324e-07,
-    1.49153e-07,
-    1.10474e-07,
-    1.07976e-07,
-    1.49246e-07
+    1.2427312492384157e-07,
+    1.9732377952698623e-07,
+    1.491534314523647e-07,
+    1.104742211395431e-07,
+    1.0797586173614064e-07,
+    1.492458106411818e-07
   ],
   "measurements": [
     {
       "coil": 5,
-      "eps_A": 300,
-      "warm_fd": 1.492458e-07,
-      "adjoint": 1.492458e-07,
-      "rel_diff": 0.0
+      "eps_A": 100.0,
+      "warm_fd": 1.4924512176998222e-07,
+      "adjoint": 1.492458106411818e-07,
+      "rel_diff": 4.6157032900151555e-06
     },
     {
       "coil": 5,
-      "eps_A": 100,
-      "warm_fd": 1.492455e-07,
-      "adjoint": 1.492458e-07,
-      "rel_diff": 2e-06
+      "eps_A": 300.0,
+      "warm_fd": 1.492456631015914e-07,
+      "adjoint": 1.492458106411818e-07,
+      "rel_diff": 9.885686949884344e-07
+    },
+    {
+      "coil": 5,
+      "eps_A": 1000.0,
+      "warm_fd": 1.4374340454781017e-07,
+      "adjoint": 1.492458106411818e-07,
+      "rel_diff": 0.03827936391712139
+    },
+    {
+      "coil": 5,
+      "eps_A": 3000.0,
+      "warm_fd": 1.1786725263231272e-07,
+      "adjoint": 1.492458106411818e-07,
+      "rel_diff": 0.2662194740956132
     },
     {
       "coil": 4,
-      "eps_A": 300,
-      "warm_fd": 1.07976e-07,
-      "adjoint": 1.07976e-07,
-      "rel_diff": 0.0
+      "eps_A": 100.0,
+      "warm_fd": 1.079777167868265e-07,
+      "adjoint": 1.0797586173614064e-07,
+      "rel_diff": 1.7179939908564454e-05
     },
     {
-      "coil": 5,
-      "eps_A": 3000,
-      "warm_fd": 1.178673e-07,
-      "adjoint": 1.492458e-07,
-      "rel_diff": 0.26622,
-      "note": "FD TRUNCATION artefact \u2014 a 3 kA step is a ~0.5 % coil perturbation and the axis flux is nonlinear at that scale; this is the origin of the historical '~3 %/few-percent' honest-limit figure"
+      "coil": 4,
+      "eps_A": 300.0,
+      "warm_fd": 1.079757479277114e-07,
+      "adjoint": 1.0797586173614064e-07,
+      "rel_diff": 1.0540184385776466e-06
+    },
+    {
+      "coil": 4,
+      "eps_A": 1000.0,
+      "warm_fd": 1.079627834732165e-07,
+      "adjoint": 1.0797586173614064e-07,
+      "rel_diff": 0.00012113677050005367
+    },
+    {
+      "coil": 4,
+      "eps_A": 3000.0,
+      "warm_fd": 1.2806365856710135e-07,
+      "adjoint": 1.0797586173614064e-07,
+      "rel_diff": 0.15685790220053206
     }
   ],
-  "conclusion": "the coil-current adjoint gradient is EXACT (agreement to ~7 significant figures at eps=100-300 A on both a strong and a weak coil); the historical honest-limit was an FD-methodology artefact, not an adjoint error",
+  "guarded_claim": "agreement within 1.718e-05 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
   "regression_guard": "tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference (eps=300 A, rel<1e-3)",
-  "records": "docs/VALIDATION_REAL_DIIID_145419.md (companion adjoint section); regression test tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference"
+  "generated_utc": "2026-07-21T22:54:11+00:00",
+  "host_note": "aaarthuus \u2014 gradients/counts are load-independent; no timings recorded",
+  "jax_version": "0.7.1",
+  "provenance": {
+    "generator": "validation/measure_coilgrad_adjoint_fd.py",
+    "generator_sha256": "40191c1d6fa8f1bc7d2429526b9d738e709ad08f3364144e30095a74500e5782",
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+  }
 }

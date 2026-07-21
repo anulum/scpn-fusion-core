@@ -126,22 +126,28 @@ supersede are kept as labelled archive entries, never silently replaced.
 ## Adjoint gradient validation (companion record)
 
 The implicit-differentiation adjoint of the free-boundary predictive solver is validated
-against warm-started central finite differences on its synthetic test case
-(`artifacts/coilgrad_adjoint_fd_evidence.json` holds the raw numbers):
+against warm-started central finite differences on its synthetic test case. The evidence
+JSON (`artifacts/coilgrad_adjoint_fd_evidence.json`) is produced by a **committed,
+re-runnable generator** (`validation/measure_coilgrad_adjoint_fd.py` — full-precision
+values, strong and weak coil, 100 A–3 kA step sweep, hash-pinned environment) and its
+`guarded_claim` field is derived from the worst small-step row of the actual run:
 
-| quantity | agreement with FD |
+| quantity | agreement with FD (measured, this artefact) |
 |---|---|
 | profile gradients ∂/∂p′, ∂/∂FF′ | < 2 × 10⁻³ (33²), ~2.4 × 10⁻⁵ (65², preconditioned) |
-| coil-current gradients | **≈ 7 significant figures** (0.000 %–0.0002 % at 100–300 A steps) |
+| coil-current gradients | **≤ 1.8 × 10⁻⁵ relative (≈ 5 significant digits)** at 100–300 A steps, on both the tested strong and weak coil |
 
 A historical "coil gradient ≈ 3 %" figure in earlier notes was traced to **finite-difference
 truncation error** (a 3 kA step is a ~0.5 % coil perturbation, where the axis-flux response
-is visibly nonlinear; central FD is then ~27 % off) — an artefact of the validation
-methodology, not of the adjoint. The regression test
+is visibly nonlinear; central FD is then ~16–27 % off — the growing-with-step signature is
+part of the committed sweep). This was an artefact of the validation methodology, not of
+the adjoint; note the residual small-step disagreement (~10⁻⁵) mixes FD truncation with
+finite forward-solve convergence, so it is an upper bound on the adjoint error, stated as
+the guarded claim rather than extrapolated to "exact". The regression test
 `tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference`
-pins the corrected comparison. Methodological rule adopted: sweep the FD step and require
-convergence toward the adjoint before recording any FD-based accuracy claim (truncation
-error grows with the step; a genuine missing term does not).
+pins the comparison at eps = 300 A (rel < 10⁻³). Methodological rule adopted: sweep the FD
+step and require convergence toward the adjoint before recording any FD-based accuracy
+claim (truncation error grows with the step; a genuine missing term does not).
 
 ## Scope and limitations
 
