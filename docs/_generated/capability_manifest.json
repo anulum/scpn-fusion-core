@@ -2526,6 +2526,7 @@
       "src/scpn_fusion/core/integrated_transport_solver_runtime_utils.py",
       "src/scpn_fusion/core/jax_equilibrium_solver.py",
       "src/scpn_fusion/core/jax_free_boundary_gs.py",
+      "src/scpn_fusion/core/jax_free_boundary_gs_implicit.py",
       "src/scpn_fusion/core/jax_gk_nonlinear.py",
       "src/scpn_fusion/core/jax_gk_solver.py",
       "src/scpn_fusion/core/jax_gs_solver.py",
@@ -2704,9 +2705,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 62,
     "python_capability_classes": 566,
-    "python_capability_source_modules": 309,
+    "python_capability_source_modules": 310,
     "rust_workspace_crates": 13,
-    "test_files": 560
+    "test_files": 561
   },
   "documentation": {
     "public_pages": [
@@ -3155,6 +3156,7 @@
       "tests/test_jacobi_sor_stencil_parity.py",
       "tests/test_jax_equilibrium_solver.py",
       "tests/test_jax_free_boundary_gs.py",
+      "tests/test_jax_free_boundary_gs_implicit.py",
       "tests/test_jax_gk_solver.py",
       "tests/test_jax_gs_solver.py",
       "tests/test_jax_neural_equilibrium.py",
