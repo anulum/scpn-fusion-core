@@ -196,6 +196,44 @@ def test_adjoint_gradient_shapes_and_finite(response) -> None:
     )
 
 
+def test_coil_gradient_matches_finite_difference(response) -> None:
+    """The implicit-diff COIL gradient matches a warm-started central FD at a small step.
+
+    Pins the erasure of the historical "coil grad ~3 %" honest-limit: that figure was an FD
+    *truncation artefact* (a 3 kA step is a ~0.5 % coil perturbation and the axis flux is
+    visibly nonlinear at that scale — central FD is then ~27 % off); at a 300 A step the
+    warm-FD agrees with the adjoint to ~7 significant figures. The FD solves warm-start from
+    the base solution so the comparison stays in-basin (the documented cold-start lesson)."""
+    m, b, s = response
+    g_ci = jax.grad(lambda ci: _axis_loss(response, ci, _PPRIME, _FFPRIME))(_COIL_I)
+    psi_base = solve_predictive_equilibrium(
+        _COIL_I, _PPRIME, _FFPRIME, _R, _Z, _COIL_R, _COIL_Z, _PSIN, _IP, m, b, s, n_iter=150
+    )
+
+    def warm_loss(ci: jnp.ndarray) -> float:
+        psi = solve_predictive_equilibrium(
+            ci,
+            _PPRIME,
+            _FFPRIME,
+            _R,
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            m,
+            b,
+            s,
+            psi_init=psi_base,
+            n_iter=150,
+        )
+        return float(smooth_axis_flux(psi))
+
+    idx, eps = 5, 3.0e2  # strongest (divertor) coil; ~0.05 % perturbation stays linear
+    fd = (warm_loss(_COIL_I.at[idx].add(eps)) - warm_loss(_COIL_I.at[idx].add(-eps))) / (2 * eps)
+    assert abs(float(g_ci[idx]) - fd) / (abs(fd) + 1e-30) < 1e-3
+
+
 def test_profile_gradient_matches_finite_difference(response) -> None:
     """The implicit-diff profile gradient (the quantity IDA infers) matches central FD — the
     adjoint is exact on the converged fixed point, not an approximation through the solver."""
