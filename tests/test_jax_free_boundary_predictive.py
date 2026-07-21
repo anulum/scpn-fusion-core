@@ -171,6 +171,32 @@ def test_solve_never_returns_nan_past_convergence(response) -> None:
     assert bool(jnp.all(jnp.isfinite(psi)))
 
 
+def test_mg_preconditioned_solve_matches_plain(solved) -> None:
+    """``use_mg_preconditioner=True`` reaches the SAME equilibrium — the multigrid V-cycle only
+    reshapes the inner Krylov convergence path, never the fixed point."""
+    psi_plain, m, b, s = solved
+    psi_mg = solve_predictive_equilibrium(
+        _COIL_I,
+        _PPRIME,
+        _FFPRIME,
+        _R,
+        _Z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        n_iter=150,
+        use_mg_preconditioner=True,
+    )
+    axis = float(smooth_axis_flux(psi_plain))
+    xp = float(smooth_xpoint_flux(psi_plain, _R, _Z))
+    span = abs(axis - xp)
+    assert float(jnp.max(jnp.abs(psi_mg - psi_plain))) / span < 1e-6
+
+
 # ── Implicit-diff adjoint (∂ψ*/∂θ for the IDA loop) ───────────────
 
 

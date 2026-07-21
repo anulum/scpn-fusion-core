@@ -1,0 +1,59 @@
+{
+  "task": "Rung 2 (forward speed) \u2014 local, host-load-independent half of the evidence",
+  "metric": "minimal BiCGSTAB maxiter whose iterate satisfies the TRUE relative residual (internal stopping disabled); iteration counts are independent of host load",
+  "note": "one MG-preconditioned iteration costs more than a plain one (a V-cycle per matvec pair); the wall-clock verdict against the ~20 ms/129^2 contract bar is the dedicated-hardware FP64 benchmark, deliberately not measured here",
+  "case": "synthetic GS-like RHS (smooth interior source + non-trivial Dirichlet ring)",
+  "preconditioner": "build_gs_mg_preconditioner defaults (1 V-cycle, 2+2 RB-GS sweeps)",
+  "generated_utc": "2026-07-21T23:06:55+00:00",
+  "host_note": "aaarthuus (x86_64) \u2014 counts only, no timings",
+  "measurements": [
+    {
+      "grid": "33x33",
+      "rel_tol": 1e-08,
+      "bicgstab_iters_plain": 94,
+      "bicgstab_iters_mg_preconditioned": 4,
+      "iteration_ratio_plain_over_mg": 23.5
+    },
+    {
+      "grid": "33x33",
+      "rel_tol": 1e-11,
+      "bicgstab_iters_plain": 128,
+      "bicgstab_iters_mg_preconditioned": 5,
+      "iteration_ratio_plain_over_mg": 25.6
+    },
+    {
+      "grid": "65x65",
+      "rel_tol": 1e-08,
+      "bicgstab_iters_plain": 231,
+      "bicgstab_iters_mg_preconditioned": 5,
+      "iteration_ratio_plain_over_mg": 46.2
+    },
+    {
+      "grid": "65x65",
+      "rel_tol": 1e-11,
+      "bicgstab_iters_plain": 296,
+      "bicgstab_iters_mg_preconditioned": 6,
+      "iteration_ratio_plain_over_mg": 49.333333333333336
+    },
+    {
+      "grid": "129x129",
+      "rel_tol": 1e-08,
+      "bicgstab_iters_plain": 556,
+      "bicgstab_iters_mg_preconditioned": 5,
+      "iteration_ratio_plain_over_mg": 111.2
+    },
+    {
+      "grid": "129x129",
+      "rel_tol": 1e-11,
+      "bicgstab_iters_plain": -1,
+      "bicgstab_iters_mg_preconditioned": 6,
+      "iteration_ratio_plain_over_mg": null
+    }
+  ],
+  "provenance": {
+    "generator": "validation/measure_mg_preconditioner_iterations.py",
+    "generator_sha256": "1386143d1f9b719fa12f0b0e07d3d5b853871a45c3ad554ace01e0f52a76859b",
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+  }
+}

@@ -2538,6 +2538,7 @@
       "src/scpn_fusion/core/jax_gk_nonlinear.py",
       "src/scpn_fusion/core/jax_gk_solver.py",
       "src/scpn_fusion/core/jax_gs_solver.py",
+      "src/scpn_fusion/core/jax_multigrid_precond.py",
       "src/scpn_fusion/core/jax_neural_equilibrium.py",
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_profile_basis.py",
@@ -2716,9 +2717,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 63,
     "python_capability_classes": 567,
-    "python_capability_source_modules": 316,
+    "python_capability_source_modules": 317,
     "rust_workspace_crates": 13,
-    "test_files": 567
+    "test_files": 569
   },
   "documentation": {
     "public_pages": [
@@ -3174,6 +3175,7 @@
       "tests/test_jax_free_boundary_predictive.py",
       "tests/test_jax_gk_solver.py",
       "tests/test_jax_gs_solver.py",
+      "tests/test_jax_multigrid_precond.py",
       "tests/test_jax_neural_equilibrium.py",
       "tests/test_jax_o_point.py",
       "tests/test_jax_profile_basis.py",
@@ -3409,6 +3411,7 @@
       "tests/test_upde.py",
       "tests/test_uq_full_chain.py",
       "tests/test_validate_real_shots_payload.py",
+      "tests/test_validation_artifact_freshness.py",
       "tests/test_validation_experimental_guards.py",
       "tests/test_validation_regression.py",
       "tests/test_validators.py",

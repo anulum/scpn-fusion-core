@@ -36,6 +36,10 @@ _BOUND_PAIRS = [
         "artifacts/coilgrad_adjoint_fd_evidence.json",
         "validation/measure_coilgrad_adjoint_fd.py",
     ),
+    (
+        "artifacts/rung2_mg_preconditioner/iteration_counts.json",
+        "validation/measure_mg_preconditioner_iterations.py",
+    ),
 ]
 
 

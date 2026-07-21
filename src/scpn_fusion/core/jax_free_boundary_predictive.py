@@ -57,7 +57,7 @@ SI units throughout (μ₀ = 4π·10⁻⁷, currents [A], ψ [Wb]); ``ψ`` shape
 from __future__ import annotations
 
 from functools import partial
-from typing import cast
+from typing import Callable, cast
 
 import jax
 import jax.numpy as jnp
@@ -69,6 +69,7 @@ from scpn_fusion.core.jax_free_boundary_gs import (
     normalised_flux,
     vacuum_field_si,
 )
+from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
 
@@ -289,9 +290,12 @@ def _coupled_step(
     source_idx: jnp.ndarray,
     cutoff_width: float,
     mu0: float,
+    precond: Callable[[jnp.ndarray], jnp.ndarray] | None = None,
 ) -> jnp.ndarray:
     """One coupled Picard step ``G(ψ)``: axis/X-point → Ip-normalised Jφ → coupled wall flux →
-    linear GS solve. The equilibrium is its fixed point ``ψ = G(ψ)``."""
+    linear GS solve. The equilibrium is its fixed point ``ψ = G(ψ)``. ``precond`` (optional) is
+    a linear ``M ≈ A⁻¹`` handed to BiCGSTAB — it changes the Krylov convergence path only, not
+    the solution."""
     psi = psi_flat.reshape(shape)
     axis = smooth_axis_flux(psi)
     bndry = smooth_xpoint_flux(psi, R_grid, Z_grid)
@@ -315,7 +319,7 @@ def _coupled_step(
         return _gs_operator_flat(pf, shape, R_grid, d_r, d_z)
 
     sol, _info = jax.scipy.sparse.linalg.bicgstab(  # type: ignore[no-untyped-call]
-        operator, rhs, x0=psi_flat, tol=_BICGSTAB_TOL, maxiter=_BICGSTAB_MAXITER
+        operator, rhs, x0=psi_flat, tol=_BICGSTAB_TOL, maxiter=_BICGSTAB_MAXITER, M=precond
     )
     return cast(jnp.ndarray, sol)
 
@@ -341,6 +345,8 @@ def solve_predictive_equilibrium(
     cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
     tol: float = DEFAULT_TOL,
     mu0: float = MU0_SI,
+    *,
+    use_mg_preconditioner: bool = False,
 ) -> jnp.ndarray:
     """Solve the predictive free-boundary equilibrium from coils + profiles + Ip.
 
@@ -363,6 +369,10 @@ def solve_predictive_equilibrium(
     ip_ramp : ramp ``Ip`` linearly to ``ip_target`` over the first ``ip_ramp`` iterations.
     cutoff_width : ``ψ_N`` roll-off width of the smooth LCFS current cutoff.
     tol : relative fixed-point residual at which to stop early.
+    use_mg_preconditioner : precondition each inner BiCGSTAB with one geometric-multigrid
+        V-cycle (:func:`~scpn_fusion.core.jax_multigrid_precond.build_gs_mg_preconditioner`).
+        Identical fixed point (the preconditioner only reshapes the Krylov convergence path);
+        the forward-speed lane pending its dedicated-hardware benchmark, hence opt-in.
     """
     shape = (Z_grid.shape[0], R_grid.shape[0])
     d_r = R_grid[1] - R_grid[0]
@@ -370,6 +380,9 @@ def solve_predictive_equilibrium(
     dA = d_r * d_z
     psi_coil = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
     coil_wall = psi_coil.reshape(-1)[wall_idx]
+    precond: Callable[[jnp.ndarray], jnp.ndarray] | None = None
+    if use_mg_preconditioner:
+        precond = build_gs_mg_preconditioner(shape, R_grid, float(d_r), float(d_z))
 
     def step(psi_flat: jnp.ndarray, ip_now: jnp.ndarray) -> jnp.ndarray:
         return _coupled_step(
@@ -390,6 +403,7 @@ def solve_predictive_equilibrium(
             source_idx,
             cutoff_width,
             mu0,
+            precond,
         )
 
     x = (psi_coil if psi_init is None else psi_init).reshape(-1)
