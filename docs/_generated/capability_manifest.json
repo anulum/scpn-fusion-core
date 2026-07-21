@@ -583,6 +583,10 @@
         "path": "src/scpn_fusion/core/gpu_runtime.py"
       },
       {
+        "name": "EquilibriumSlice",
+        "path": "src/scpn_fusion/core/imas_equilibrium_io.py"
+      },
+      {
         "name": "EquilibriumUncertainty",
         "path": "src/scpn_fusion/core/uncertainty_full_chain.py"
       },
@@ -2508,6 +2512,7 @@
       "src/scpn_fusion/core/hpc_bridge.py",
       "src/scpn_fusion/core/hts_quench.py",
       "src/scpn_fusion/core/imas_adapter.py",
+      "src/scpn_fusion/core/imas_equilibrium_io.py",
       "src/scpn_fusion/core/impurity_transport.py",
       "src/scpn_fusion/core/impurity_transport_aurora_parity.py",
       "src/scpn_fusion/core/impurity_transport_charge_state.py",
@@ -2709,10 +2714,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 62,
-    "python_capability_classes": 566,
-    "python_capability_source_modules": 315,
+    "python_capability_classes": 567,
+    "python_capability_source_modules": 316,
     "rust_workspace_crates": 13,
-    "test_files": 566
+    "test_files": 567
   },
   "documentation": {
     "public_pages": [
@@ -3132,6 +3137,7 @@
       "tests/test_imas_connector_split_modules.py",
       "tests/test_imas_connector_storage.py",
       "tests/test_imas_connector_transport.py",
+      "tests/test_imas_equilibrium_io.py",
       "tests/test_imas_history_payloads.py",
       "tests/test_imas_ids_standard.py",
       "tests/test_imas_ids_state_cycle.py",
