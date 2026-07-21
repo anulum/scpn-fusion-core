@@ -58,11 +58,31 @@ from scpn_fusion.core.jax_free_boundary_gs import general_gs_source
 from scpn_fusion.core.jax_free_boundary_gs_implicit import _laplacian_star
 
 REPO = Path(__file__).resolve().parents[1]
-GFILE = REPO / "validation" / "reference_data" / "diiid" / "real_public" / "g145419.02100"
-OUT_DIR = Path(
-    "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/.coordination/handovers/"
-    "SCPN-FUSION-CORE/real_data_results"
-)
+OUT_DIR = REPO / "artifacts" / "real_diiid_145419"
+
+
+def _find_gfile() -> Path:
+    """Locate ``g145419.02100`` — the local cache first, else the installed omas package.
+
+    The reference file is openly redistributed inside the ``omas`` PyPI package
+    (``omas/samples/g145419.02100``), so ``pip install omas`` is sufficient to reproduce this
+    validation from scratch — no private data access is required.
+    """
+    local = REPO / "validation" / "reference_data" / "diiid" / "real_public" / "g145419.02100"
+    if local.exists():
+        return local
+    import omas
+
+    packaged = Path(omas.__file__).parent / "samples" / "g145419.02100"
+    if packaged.exists():
+        return packaged
+    raise FileNotFoundError(
+        "g145419.02100 not found - install the 'omas' package (pip install omas), which "
+        "openly ships this real DIII-D EFIT reconstruction in omas/samples/"
+    )
+
+
+GFILE = _find_gfile()
 
 
 def load_gfile(path: Path) -> dict[str, np.ndarray | float | int]:

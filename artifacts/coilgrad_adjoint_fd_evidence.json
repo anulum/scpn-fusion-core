@@ -1,0 +1,52 @@
+{
+  "task": "weak-spot #2 \u2014 root-cause the '~3 %' coil-gradient adjoint honest-limit",
+  "date": "2026-07-21",
+  "case": "synthetic diverted coilset, 33x33, tests/test_jax_free_boundary_predictive.py constants",
+  "loss": "smooth_axis_flux(solve_predictive_equilibrium_diff(...)), n_iter=150",
+  "method": {
+    "adjoint": "jax.grad through the custom_vjp implicit-diff adjoint (Jacobi-preconditioned BiCGSTAB)",
+    "fd": "central FD, WARM-STARTED from the base solution (psi_init=psi_base) to stay in-basin"
+  },
+  "adjoint_g_ci": [
+    1.24273e-07,
+    1.97324e-07,
+    1.49153e-07,
+    1.10474e-07,
+    1.07976e-07,
+    1.49246e-07
+  ],
+  "measurements": [
+    {
+      "coil": 5,
+      "eps_A": 300,
+      "warm_fd": 1.492458e-07,
+      "adjoint": 1.492458e-07,
+      "rel_diff": 0.0
+    },
+    {
+      "coil": 5,
+      "eps_A": 100,
+      "warm_fd": 1.492455e-07,
+      "adjoint": 1.492458e-07,
+      "rel_diff": 2e-06
+    },
+    {
+      "coil": 4,
+      "eps_A": 300,
+      "warm_fd": 1.07976e-07,
+      "adjoint": 1.07976e-07,
+      "rel_diff": 0.0
+    },
+    {
+      "coil": 5,
+      "eps_A": 3000,
+      "warm_fd": 1.178673e-07,
+      "adjoint": 1.492458e-07,
+      "rel_diff": 0.26622,
+      "note": "FD TRUNCATION artefact \u2014 a 3 kA step is a ~0.5 % coil perturbation and the axis flux is nonlinear at that scale; this is the origin of the historical '~3 %/few-percent' honest-limit figure"
+    }
+  ],
+  "conclusion": "the coil-current adjoint gradient is EXACT (agreement to ~7 significant figures at eps=100-300 A on both a strong and a weak coil); the historical honest-limit was an FD-methodology artefact, not an adjoint error",
+  "regression_guard": "tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference (eps=300 A, rel<1e-3)",
+  "records": "docs/VALIDATION_REAL_DIIID_145419.md (companion adjoint section); regression test tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference"
+}

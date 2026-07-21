@@ -1,0 +1,29 @@
+{
+  "operator": {
+    "interior_max_rel": 1.0,
+    "interior_rms_rel": 0.08603539288098458,
+    "deep_max_rel": 0.039018332963244994,
+    "deep_rms_rel": 0.0010681495687173616
+  },
+  "subdomain_reproduction": {
+    "picard_iterations": 103,
+    "deep_rms_rel_span": 0.0010827440545472904,
+    "deep_max_rel_span": 0.0025201304765970437,
+    "interior_rms_rel_span": 0.000855928049591699,
+    "axis_value_rel_err": 0.0006218197877475208
+  },
+  "full_domain_reproduction": {
+    "anderson_iterations": 26,
+    "deep_rms_rel_span": 0.007174384113181322,
+    "deep_max_rel_span": 0.013299922182456144,
+    "plasma_rms_rel_span": 0.007469724729356635,
+    "axis_value_rel_err": 0.002766053887579816,
+    "global_max_rel_span": 0.013299922182456144
+  },
+  "honest_negatives": {
+    "full_domain_zero_source_vacuum_deep_rms": 0.26,
+    "full_domain_zero_source_cause": "the 129x129 g-file domain contains PF-coil cross-sections (empirically mapped external-current cells); a zero-source vacuum model is wrong there and the elliptic inverse propagates the mismatch domain-wide",
+    "full_domain_relaxed_picard_deep_rms": 1.27,
+    "full_domain_relaxed_picard_cause": "with the measured external source the map is correct but BISTABLE under relaxed Picard (H-mode pedestal p'' gain) \u2014 it converges cleanly to a wrong attractor; Anderson(m=8) + Ip renormalisation reach the true branch"
+  }
+}
