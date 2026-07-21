@@ -40,9 +40,12 @@ at **≈ 0.9 % RMS** of the ψ-span over the plasma interior — from coils + pr
 The gradient (``∂ψ*/∂θ`` for the IDA loop) is provided by :func:`solve_predictive_equilibrium_diff`,
 which wraps the forward in a :func:`jax.custom_vjp` implicit-diff adjoint on the converged fixed
 point ``F(ψ*, θ) = 0`` (:func:`predictive_gs_residual`) — the gradient cost is independent of the
-Anderson iteration count. Validated vs central finite differences on the synthetic case: the
-profile gradients ``∂/∂p'`` / ``∂/∂FF'`` (what IDA infers) match to ``< 2e-3``; the coil-current
-gradient to a few percent (the divertor current moves the near-wall X-point, the harder term).
+Anderson iteration count. Validated vs central finite differences: on the synthetic 33² case the profile gradients
+``∂/∂p'`` / ``∂/∂FF'`` (what IDA infers) match to ``< 2e-3`` and the coil-current gradient to a
+few percent (the divertor current moves the near-wall X-point, the harder term); on the 65²
+FreeGS DIII-D case the ``∂/∂FF'`` gradient matches an in-basin (warm-started) FD to ``~3e-5``.
+The FD must be warm-started from the base ``ψ*`` — a cold-start FD at 65² can jump basins
+(the solve's cold-start sensitivity) and is then not a local derivative.
 
 Honest limits: (a) the Anderson hyper-parameters (``m``, mixing, ramp) are tuned on this case,
 not yet auto-selected or Newton-backed; (b) validated on one case/grid so far; (c) the forward
@@ -78,7 +81,11 @@ DEFAULT_CUTOFF_WIDTH = 0.03
 DEFAULT_TOL = 1.0e-9
 _BICGSTAB_TOL = 1.0e-11
 _BICGSTAB_MAXITER = 700
-_ADJOINT_MAXITER = 800
+# The adjoint (∂F/∂ψ)ᵀ system is ~1/h² stiffer at finer grids; it must reach `tol`, not hit the
+# iteration cap, or the gradient is silently under-converged (a factor-of-(h_coarse/h_fine)²
+# error — e.g. ~4× at 65² if capped at 800). 4000 converges 65² to a ~3e-5 FD match with margin;
+# raise it for ≥ 129².
+_ADJOINT_MAXITER = 4000
 
 
 # ── Geometry: von Hagenow response matrix ─────────────────────────
