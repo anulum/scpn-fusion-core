@@ -76,8 +76,16 @@ separately against a FreeGS reference).
 
 - The g-file stores ψ descending from axis to boundary; the package convention is
   ψ-peaked-at-axis. The field and the profile derivatives are sign-flipped **together**
-  (ψ → −ψ, p′ → −p′, FF′ → −FF′ — an exact GS symmetry). A full COCOS audit against a
-  partner convention is a documented follow-up of the IMAS bridge, not silently claimed.
+  (ψ → −ψ, p′ → −p′, FF′ → −FF′ — an exact GS symmetry).
+- **COCOS audit (resolved)**: the solvers' native frame was derived and verified as
+  **COCOS 3** — the Green's function carries ``1/2π`` over the Maxwell mutual-inductance
+  form (ψ is flux *per radian*), and ``Ip > 0`` yields ψ peaked at the axis (σ_Bp = −1),
+  matching the Sauter table entry shipped inside the `omas` package. The IMAS bridge
+  (`scpn_fusion.core.imas_equilibrium_io`) therefore writes and reads through OMAS's own
+  COCOS machinery (`omas_environment(cocosio=3)` → internal COCOS 11; measured transform
+  ψ ↦ −2π·ψ), with the φ-handedness — unobservable to an axisymmetric 2-D solver —
+  exposed as a parameter. Pinned by dedicated tests
+  (`tests/test_imas_equilibrium_io.py`, COCOS section).
 - geqdsk ψ is stored `[R, Z]`; the package uses `(NZ, NR)`. The transposition is covered by
   an orientation test that cannot self-cancel.
 

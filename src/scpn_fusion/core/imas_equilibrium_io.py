@@ -20,10 +20,17 @@ Conventions (fail-closed where they could silently corrupt):
   orientation test that cannot self-cancel.
 * Only rectangular grids are handled (``grid_type.index = 1``); reading any other grid type raises.
 * Shape mismatches between ψ and the grids raise instead of writing a malformed IDS.
-* Values are written **as solver SI** (ψ [Wb], Ip [A], lengths [m]) with no COCOS sign/2π
-  transformation — a COCOS audit against the partner's convention is an explicit follow-up, not
-  silently claimed here. Optional quantities that were not computed are simply absent from the IDS
-  (never fabricated as zeros).
+* **COCOS is handled, not assumed** (audited 2026-07-21). The solver's native frame is
+  **COCOS 3**: its Green's function carries an extra ``1/2π`` over the Maxwell mutual-inductance
+  form, so ψ is the flux *per radian* (``exp_Bp = 0``), and ``Ip > 0`` gives ``Δ*ψ < 0`` — ψ
+  *peaked* at the axis (``σ_Bp = −1``) with an effective ``p' > 0`` — matching the in-package
+  Sauter table entry for COCOS 3 exactly. The IMAS data dictionary is COCOS 11, so every write
+  and read goes through :func:`omas.omas_environment` with ``cocosio=solver_cocos`` and OMAS's
+  own verified machinery applies the transform (measured: ψ ↦ −2π·ψ for 3 → 11; ``ip`` is in
+  the TOR class and is unchanged between 3 and 11). The φ-handedness (odd/even COCOS pair) is
+  *not observable* by an axisymmetric 2-D solver, so ``solver_cocos`` is a parameter (default
+  ``3``); a partner asserting the opposite handedness passes ``4``. Optional quantities that
+  were not computed are simply absent from the IDS (never fabricated as zeros).
 
 Scope: this is the structural I/O bridge (fields ⇄ IDS ⇄ file). Fetching *measured* equilibria from
 a facility MDSplus/IMAS database is a separate, authorisation-gated concern.
@@ -36,10 +43,11 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from omas import ODS, load_omas_json, save_omas_json
+from omas import ODS, load_omas_json, omas_environment, save_omas_json
 
 _TS = "equilibrium.time_slice.0."
 _RECTANGULAR = 1  # IMAS grid_type.index for a rectangular R,Z grid
+DEFAULT_SOLVER_COCOS = 3  # audited native frame of the solvers (see module docstring)
 
 
 @dataclass(frozen=True)
@@ -57,7 +65,9 @@ class EquilibriumSlice:
     time: float = 0.0
 
 
-def equilibrium_to_ods(eq: EquilibriumSlice, ods: ODS | None = None) -> ODS:
+def equilibrium_to_ods(
+    eq: EquilibriumSlice, ods: ODS | None = None, solver_cocos: int = DEFAULT_SOLVER_COCOS
+) -> ODS:
     """Write an :class:`EquilibriumSlice` into an IMAS ``equilibrium`` IDS (a new ODS by default).
 
     ψ is validated against the grids and stored transposed to the IMAS ``[dim1, dim2] = [R, Z]``
@@ -73,6 +83,18 @@ def equilibrium_to_ods(eq: EquilibriumSlice, ods: ODS | None = None) -> ODS:
             f"psi shape {psi.shape} does not match solver convention (NZ, NR) = ({z.size}, {r.size})"
         )
     out = ODS() if ods is None else ods
+    with omas_environment(out, cocosio=solver_cocos):
+        _write_slice(out, eq, psi, r, z)
+    return out
+
+
+def _write_slice(
+    out: ODS,
+    eq: EquilibriumSlice,
+    psi: NDArray[np.float64],
+    r: NDArray[np.float64],
+    z: NDArray[np.float64],
+) -> None:
     out["equilibrium.time"] = np.array([eq.time], dtype=np.float64)
     out[_TS + "time"] = float(eq.time)
     out[_TS + "profiles_2d.0.grid_type.index"] = _RECTANGULAR
@@ -89,7 +111,6 @@ def equilibrium_to_ods(eq: EquilibriumSlice, ods: ODS | None = None) -> ODS:
         out[_TS + "global_quantities.psi_axis"] = float(eq.psi_axis)
     if eq.psi_boundary is not None:
         out[_TS + "global_quantities.psi_boundary"] = float(eq.psi_boundary)
-    return out
 
 
 def _optional(ods: ODS, path: str) -> float | None:
@@ -100,12 +121,17 @@ def _optional(ods: ODS, path: str) -> float | None:
         return None
 
 
-def ods_to_equilibrium(ods: ODS) -> EquilibriumSlice:
+def ods_to_equilibrium(ods: ODS, solver_cocos: int = DEFAULT_SOLVER_COCOS) -> EquilibriumSlice:
     """Read the first ``equilibrium`` time slice back into solver convention.
 
     Fails closed on a non-rectangular ``grid_type`` and on a ψ whose shape does not match the
     stored grids, rather than returning silently mis-oriented fields.
     """
+    with omas_environment(ods, cocosio=solver_cocos):
+        return _read_slice(ods)
+
+
+def _read_slice(ods: ODS) -> EquilibriumSlice:
     grid_type = int(ods[_TS + "profiles_2d.0.grid_type.index"])
     if grid_type != _RECTANGULAR:
         raise ValueError(

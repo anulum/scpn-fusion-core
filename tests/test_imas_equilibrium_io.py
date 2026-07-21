@@ -56,28 +56,62 @@ def _slice(**overrides: object) -> EquilibriumSlice:
 # ── Round trip (solver → IDS → solver) ────────────────────────────────────
 
 
-def test_round_trip_is_exact() -> None:
+def test_round_trip_is_faithful_to_rounding() -> None:
+    """Round trip through the IDS is exact up to one COCOS rounding op each way (ψ-class values
+    are stored ×(−2π) in the IMAS frame and divided back on read — a single float multiply and
+    divide, so agreement is to ~1 ulp, asserted at rtol 1e-14). Grids and toroidal-class values
+    are untransformed and stay bit-exact."""
     eq = _slice()
     back = ods_to_equilibrium(equilibrium_to_ods(eq))
-    assert np.array_equal(back.psi, eq.psi)
+    assert np.allclose(back.psi, eq.psi, rtol=1e-14, atol=0.0)
     assert np.array_equal(back.R_grid, eq.R_grid)
     assert np.array_equal(back.Z_grid, eq.Z_grid)
     assert back.ip == eq.ip and back.time == eq.time
     assert back.r_axis == eq.r_axis and back.z_axis == eq.z_axis
-    assert back.psi_axis == eq.psi_axis and back.psi_boundary == eq.psi_boundary
+    assert back.psi_axis == pytest.approx(eq.psi_axis, rel=1e-14)
+    assert back.psi_boundary == pytest.approx(eq.psi_boundary, rel=1e-14)
 
 
 def test_orientation_marker_lands_at_imas_r_z() -> None:
     """A one-hot marker at solver ``(iz, ir)`` must appear at IMAS ``[ir, iz]`` — checked directly
-    on the stored IDS array, so a transposition bug cannot cancel through the round trip."""
+    on the stored IDS array, so a transposition bug cannot cancel through the round trip.
+    The stored value carries the COCOS 3 → 11 factor (−2π): the IDS holds IMAS-frame ψ."""
     iz, ir = 3, 5
     psi = np.zeros((_NZ, _NR))
     psi[iz, ir] = 7.25
     ods = equilibrium_to_ods(_slice(psi=psi))
     stored = np.asarray(ods["equilibrium.time_slice.0.profiles_2d.0.psi"])
     assert stored.shape == (_NR, _NZ)  # IMAS [dim1, dim2] = [R, Z]
-    assert stored[ir, iz] == 7.25
+    assert stored[ir, iz] == pytest.approx(-2.0 * np.pi * 7.25)
     assert np.count_nonzero(stored) == 1
+
+
+# ── COCOS (solver frame 3 ⇄ IMAS internal 11, via OMAS's own machinery) ────
+
+
+def test_cocos_transform_applied_to_stored_ids() -> None:
+    """ψ-class quantities are stored in the IMAS frame (COCOS 11 = −2π × solver COCOS 3);
+    ``ip`` is a toroidal-class quantity and is unchanged between 3 and 11 (same σ_RφZ)."""
+    eq = _slice()
+    ods = equilibrium_to_ods(eq)
+    ts = "equilibrium.time_slice.0."
+    assert float(ods[ts + "global_quantities.psi_axis"]) == pytest.approx(
+        -2.0 * np.pi * eq.psi_axis
+    )
+    assert float(ods[ts + "global_quantities.psi_boundary"]) == pytest.approx(
+        -2.0 * np.pi * eq.psi_boundary
+    )
+    assert float(ods[ts + "global_quantities.ip"]) == pytest.approx(eq.ip)
+
+
+def test_round_trip_identity_for_the_opposite_handedness() -> None:
+    """The φ-handedness is unobservable to the 2-D solver, so ``solver_cocos=4`` (the even
+    partner) must also round-trip to identity when used consistently on both sides."""
+    eq = _slice()
+    back = ods_to_equilibrium(equilibrium_to_ods(eq, solver_cocos=4), solver_cocos=4)
+    assert np.allclose(back.psi, eq.psi, rtol=1e-14, atol=0.0)
+    assert back.ip == pytest.approx(eq.ip)
+    assert back.psi_axis == pytest.approx(eq.psi_axis, rel=1e-14)
 
 
 # ── Fail-closed guards ────────────────────────────────────────────────────
@@ -133,7 +167,7 @@ def test_json_file_round_trip(tmp_path: Path) -> None:
     path = str(tmp_path / "equilibrium_ids.json")
     save_equilibrium_ids(equilibrium_to_ods(eq), path)
     back = ods_to_equilibrium(load_equilibrium_ids(path))
-    assert np.array_equal(back.psi, eq.psi)
+    assert np.allclose(back.psi, eq.psi, rtol=1e-14, atol=0.0)  # 1 COCOS rounding op each way
     assert back.ip == eq.ip and back.time == eq.time
 
 
