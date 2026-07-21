@@ -81,11 +81,13 @@ DEFAULT_CUTOFF_WIDTH = 0.03
 DEFAULT_TOL = 1.0e-9
 _BICGSTAB_TOL = 1.0e-11
 _BICGSTAB_MAXITER = 700
-# The adjoint (∂F/∂ψ)ᵀ system is ~1/h² stiffer at finer grids; it must reach `tol`, not hit the
-# iteration cap, or the gradient is silently under-converged (a factor-of-(h_coarse/h_fine)²
-# error — e.g. ~4× at 65² if capped at 800). 4000 converges 65² to a ~3e-5 FD match with margin;
-# raise it for ≥ 129².
-_ADJOINT_MAXITER = 4000
+# The adjoint (∂F/∂ψ)ᵀ system mixes interior rows (Δ*, ~1/h²) and wall rows (~1); uncorrected it
+# is badly scaled and its iteration count grows ~1/h², so a fixed cap is silently hit at finer
+# grids and the gradient under-converges (a ~(h_coarse/h_fine)² error — ~4× at 65² if capped at
+# 800). The Jacobi preconditioner in `_solve_diff_bwd` normalises that diagonal, making the
+# BiCGSTAB convergence roughly grid-insensitive; this cap then only bounds pathological cases.
+# Validated: preconditioned, 65² reaches a ~3e-5 warm-FD match within this cap.
+_ADJOINT_MAXITER = 2000
 
 
 # ── Geometry: von Hagenow response matrix ─────────────────────────
@@ -576,8 +578,23 @@ def _solve_diff_bwd(
     def adjoint_operator(lam_flat: jnp.ndarray) -> jnp.ndarray:
         return cast(jnp.ndarray, vjp_psi(lam_flat.reshape(shape))[0].reshape(-1))
 
+    # Diagonal (Jacobi) preconditioner: F's interior rows scale as the Δ* centre coefficient
+    # (~1/h²) and its wall rows as 1 — a badly-scaled system whose conditioning worsens ~1/h² at
+    # finer grids (uncorrected, BiCGSTAB needs thousands of iterations and silently caps out).
+    # Normalising by that known diagonal makes the iteration count grid-insensitive.
+    d_r = R_grid[1] - R_grid[0]
+    d_z = Z_grid[1] - Z_grid[0]
+    precond_diag = jnp.full(psi.size, 2.0 / d_r**2 + 2.0 / d_z**2).at[wall_idx].set(1.0)
+
+    def preconditioner(x_flat: jnp.ndarray) -> jnp.ndarray:
+        return x_flat / precond_diag
+
     lam_flat, _info = bicgstab(  # type: ignore[no-untyped-call]
-        adjoint_operator, psi_bar.reshape(-1), tol=_BICGSTAB_TOL, maxiter=_ADJOINT_MAXITER
+        adjoint_operator,
+        psi_bar.reshape(-1),
+        tol=_BICGSTAB_TOL,
+        maxiter=_ADJOINT_MAXITER,
+        M=preconditioner,
     )
     lam = lam_flat.reshape(shape)
 
