@@ -30,6 +30,7 @@ from scpn_fusion.core.jax_free_boundary_predictive import (
     build_response_matrix,
     predictive_gs_residual,
     solve_predictive_equilibrium,
+    solve_predictive_equilibrium_diff,
 )
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
@@ -168,3 +169,41 @@ def test_solve_never_returns_nan_past_convergence(response) -> None:
         _COIL_I, _PPRIME, _FFPRIME, _R, _Z, _COIL_R, _COIL_Z, _PSIN, _IP, m, b, s, n_iter=220
     )
     assert bool(jnp.all(jnp.isfinite(psi)))
+
+
+# ── Implicit-diff adjoint (∂ψ*/∂θ for the IDA loop) ───────────────
+
+
+def _axis_loss(response, coil_I, pprime, ffprime):
+    m, b, s = response
+    psi = solve_predictive_equilibrium_diff(
+        coil_I, pprime, ffprime, _R, _Z, _COIL_R, _COIL_Z, _PSIN, _IP, m, b, s, n_iter=150
+    )
+    return smooth_axis_flux(psi)
+
+
+def test_adjoint_gradient_shapes_and_finite(response) -> None:
+    """``jax.grad`` through the differentiable solve returns finite gradients of the right shape
+    for all three differentiated inputs (coil currents and both profiles)."""
+    g_ci, g_pp, g_ff = jax.grad(
+        lambda ci, pp, ff: _axis_loss(response, ci, pp, ff), argnums=(0, 1, 2)
+    )(_COIL_I, _PPRIME, _FFPRIME)
+    assert (
+        g_ci.shape == _COIL_I.shape and g_pp.shape == _PPRIME.shape and g_ff.shape == _FFPRIME.shape
+    )
+    assert bool(
+        jnp.all(jnp.isfinite(g_ci)) & jnp.all(jnp.isfinite(g_pp)) & jnp.all(jnp.isfinite(g_ff))
+    )
+
+
+def test_profile_gradient_matches_finite_difference(response) -> None:
+    """The implicit-diff profile gradient (the quantity IDA infers) matches central FD — the
+    adjoint is exact on the converged fixed point, not an approximation through the solver."""
+    _g_ci, g_pp, _g_ff = jax.grad(
+        lambda ci, pp, ff: _axis_loss(response, ci, pp, ff), argnums=(0, 1, 2)
+    )(_COIL_I, _PPRIME, _FFPRIME)
+    idx, eps = 3, 1.0e3
+    lp = float(_axis_loss(response, _COIL_I, _PPRIME.at[idx].add(eps), _FFPRIME))
+    lm = float(_axis_loss(response, _COIL_I, _PPRIME.at[idx].add(-eps), _FFPRIME))
+    fd = (lp - lm) / (2 * eps)
+    assert abs(float(g_pp[idx]) - fd) / (abs(fd) + 1e-30) < 1e-2
