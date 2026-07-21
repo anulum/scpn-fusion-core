@@ -2531,6 +2531,7 @@
       "src/scpn_fusion/core/jax_gk_solver.py",
       "src/scpn_fusion/core/jax_gs_solver.py",
       "src/scpn_fusion/core/jax_neural_equilibrium.py",
+      "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_solvers.py",
       "src/scpn_fusion/core/jax_transport_solver.py",
       "src/scpn_fusion/core/kinetic_efit.py",
@@ -2705,9 +2706,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 62,
     "python_capability_classes": 566,
-    "python_capability_source_modules": 310,
+    "python_capability_source_modules": 311,
     "rust_workspace_crates": 13,
-    "test_files": 561
+    "test_files": 562
   },
   "documentation": {
     "public_pages": [
@@ -3160,6 +3161,7 @@
       "tests/test_jax_gk_solver.py",
       "tests/test_jax_gs_solver.py",
       "tests/test_jax_neural_equilibrium.py",
+      "tests/test_jax_o_point.py",
       "tests/test_jax_solvers.py",
       "tests/test_jax_traceable_runtime.py",
       "tests/test_jax_transport_solver.py",

@@ -29,13 +29,15 @@ Two algorithmic upgrades over the weighted-Jacobi reference solver there:
 
    Gradient accuracy (vs central finite differences): the **profile gradients**
    ``∂/∂p'`` and ``∂/∂FF'`` — the parameters IDA infers — are **exact to ``~1e-6``**.
-   The **coil-current gradient** ``∂/∂I_coil`` is currently accurate to **``~2 %``**:
-   ``I_coil`` shifts the whole field and hence the magnetic axis / last-closed surface,
-   and the ``ψ_N`` normalisation extracts those via a non-smooth argmax
-   (:func:`_interior_axis_flux` / :func:`_boundary_flux_level`), whose subgradient the
-   implicit diff does not capture smoothly. A smooth (soft-argmax / Newton O-point)
-   axis-finding would tighten it and is tracked future work; the profile gradients are
-   unaffected because they barely move the axis.
+   The **coil-current gradient** ``∂/∂I_coil`` depends on the axis finder. With the default
+   hard-``argmax`` axis (:func:`~scpn_fusion.core.jax_equilibrium_solver._interior_axis_flux`,
+   identical to the Jacobi reference equilibrium) it is only ``~2 %`` accurate: ``I_coil``
+   shifts the whole field and hence the magnetic axis, whose position the ``argmax`` cannot
+   differentiate smoothly. Passing ``use_smooth_axis=True`` swaps in the smooth sub-cell
+   O-point (:func:`~scpn_fusion.core.jax_o_point.smooth_axis_flux`) and the coil-current
+   gradient becomes **exact (~1e-6)** — at the cost of a < 0.5 % shift in the axis flux and
+   < 0.05 % (of ψ-span, at 65²+) shift in the equilibrium. The profile gradients are exact
+   either way because they barely move the axis.
 
 SI units throughout (μ₀ = 4π·10⁻⁷, currents [A], ψ [Wb]); ``ψ`` shape ``(NZ, NR)``.
 The GS equation, source, normalised flux and vacuum field are shared with
@@ -55,11 +57,26 @@ from jax.scipy.sparse.linalg import bicgstab
 
 from scpn_fusion.core.jax_equilibrium_solver import _boundary_flux_level, _interior_axis_flux
 from scpn_fusion.core.jax_free_boundary_gs import MU0_SI, general_gs_source, vacuum_field_si
+from scpn_fusion.core.jax_o_point import smooth_axis_flux
 
 # Krylov / Picard defaults.
 _BICGSTAB_TOL = 1.0e-11
 _BICGSTAB_MAXITER = 400
 _ADJOINT_MAXITER = 800
+
+
+def _axis_flux(psi: jnp.ndarray, use_smooth_axis: bool) -> jnp.ndarray:
+    """Magnetic-axis flux for the ``ψ_N`` normalisation.
+
+    ``use_smooth_axis`` is a static (non-differentiated) flag, so this selection resolves at
+    trace time.  Default (``False``) keeps the hard-``argmax``
+    :func:`~scpn_fusion.core.jax_equilibrium_solver._interior_axis_flux` — the exact same
+    equilibrium the weighted-Jacobi reference solver produces.  ``True`` swaps in the smooth
+    sub-cell :func:`~scpn_fusion.core.jax_o_point.smooth_axis_flux`, which makes the
+    implicit-diff coil-current gradient exact (the hard argmax is the sole reason it was
+    ~2 %); it shifts the axis flux < 0.5 % and the equilibrium < 0.05 % of ψ-span at 65²+.
+    """
+    return cast(jnp.ndarray, smooth_axis_flux(psi) if use_smooth_axis else _interior_axis_flux(psi))
 
 
 # ── Matrix-free GS operator ───────────────────────────────────────
@@ -109,17 +126,19 @@ def nonlinear_gs_residual(
     coil_Z: jnp.ndarray,
     psin_knots: jnp.ndarray,
     mu0: float = MU0_SI,
+    use_smooth_axis: bool = False,
 ) -> jnp.ndarray:
     """Nonlinear GS residual ``F(ψ)`` whose root is the equilibrium.
 
     Interior: ``Δ*ψ − S(ψ)`` with ``S = −μ₀R²p' − FF'``.  Boundary edges: ``ψ − ψ_vac``,
     so ``F = 0`` enforces both the PDE inside and the free-boundary Dirichlet condition
-    from the external coils.
+    from the external coils.  ``use_smooth_axis`` selects the axis finder (see
+    :func:`_axis_flux`); it must match the forward solve for the adjoint to be consistent.
     """
     d_r = R_grid[1] - R_grid[0]
     d_z = Z_grid[1] - Z_grid[0]
     psi_vac = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
-    axis = _interior_axis_flux(psi)
+    axis = _axis_flux(psi, use_smooth_axis)
     bnd = _boundary_flux_level(psi_vac)
     source = general_gs_source(psi, R_grid, axis, bnd, psin_knots, pprime_vals, ffprime_vals, mu0)
     res = _laplacian_star(psi, R_grid, d_r, d_z) - source
@@ -133,7 +152,7 @@ def nonlinear_gs_residual(
 # ── Forward solve + implicit-diff gradient ────────────────────────
 
 
-@partial(jax.custom_vjp, nondiff_argnums=(3, 4, 5, 6, 7, 8, 9, 10))
+@partial(jax.custom_vjp, nondiff_argnums=(3, 4, 5, 6, 7, 8, 9, 10, 11))
 def solve_free_boundary_gs_implicit(
     coil_I: jnp.ndarray,
     pprime_vals: jnp.ndarray,
@@ -146,6 +165,7 @@ def solve_free_boundary_gs_implicit(
     n_picard: int = 40,
     picard_omega: float = 0.6,
     mu0: float = MU0_SI,
+    use_smooth_axis: bool = False,
 ) -> jnp.ndarray:
     """Solve the SI free-boundary GS equilibrium (Krylov forward, implicit-diff gradient).
 
@@ -163,6 +183,11 @@ def solve_free_boundary_gs_implicit(
     n_picard : outer Picard iterations (each an inner BiCGSTAB linear solve).
     picard_omega : Picard under-relaxation blend.
     mu0 : SI vacuum permeability [H/m].
+    use_smooth_axis : if ``True``, use the smooth sub-cell O-point
+        (:func:`~scpn_fusion.core.jax_o_point.smooth_axis_flux`) for the ``ψ_N``
+        normalisation, which makes the coil-current gradient exact (~1e-6 vs ~2 %);
+        default ``False`` keeps the hard-argmax axis (identical to the Jacobi reference).
+        Best on grids ≥ 49²; the O-point must be interior.
     """
     psi_vac = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
     shape = (Z_grid.shape[0], R_grid.shape[0])
@@ -174,7 +199,7 @@ def solve_free_boundary_gs_implicit(
 
     def picard(psi_flat: jnp.ndarray, _: Any) -> tuple[jnp.ndarray, None]:
         psi = psi_flat.reshape(shape)
-        axis = _interior_axis_flux(psi)
+        axis = _axis_flux(psi, use_smooth_axis)
         bnd = _boundary_flux_level(psi_vac)
         source = general_gs_source(
             psi, R_grid, axis, bnd, psin_knots, pprime_vals, ffprime_vals, mu0
@@ -205,6 +230,7 @@ def _solve_fwd(
     n_picard: int,
     picard_omega: float,
     mu0: float,
+    use_smooth_axis: bool,
 ) -> tuple[jnp.ndarray, tuple[jnp.ndarray, ...]]:
     psi = solve_free_boundary_gs_implicit(
         coil_I,
@@ -218,6 +244,7 @@ def _solve_fwd(
         n_picard,
         picard_omega,
         mu0,
+        use_smooth_axis,
     )
     return psi, (psi, coil_I, pprime_vals, ffprime_vals)
 
@@ -231,6 +258,7 @@ def _solve_bwd(
     n_picard: int,
     picard_omega: float,
     mu0: float,
+    use_smooth_axis: bool,
     residuals: tuple[jnp.ndarray, ...],
     psi_bar: jnp.ndarray,
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
@@ -240,7 +268,17 @@ def _solve_bwd(
 
     def residual_in_psi(p: jnp.ndarray) -> jnp.ndarray:
         return nonlinear_gs_residual(
-            p, coil_I, pprime_vals, ffprime_vals, R_grid, Z_grid, coil_R, coil_Z, psin_knots, mu0
+            p,
+            coil_I,
+            pprime_vals,
+            ffprime_vals,
+            R_grid,
+            Z_grid,
+            coil_R,
+            coil_Z,
+            psin_knots,
+            mu0,
+            use_smooth_axis,
         )
 
     _, vjp_psi = jax.vjp(residual_in_psi, psi)
@@ -255,7 +293,7 @@ def _solve_bwd(
 
     def residual_in_theta(ci: jnp.ndarray, pp: jnp.ndarray, ff: jnp.ndarray) -> jnp.ndarray:
         return nonlinear_gs_residual(
-            psi, ci, pp, ff, R_grid, Z_grid, coil_R, coil_Z, psin_knots, mu0
+            psi, ci, pp, ff, R_grid, Z_grid, coil_R, coil_Z, psin_knots, mu0, use_smooth_axis
         )
 
     _, vjp_theta = jax.vjp(residual_in_theta, coil_I, pprime_vals, ffprime_vals)

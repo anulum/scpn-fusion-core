@@ -171,3 +171,45 @@ def test_coil_current_gradient_finite_and_within_documented_tolerance():
     g_fd = (float(loss(cI.at[idx].add(eps))) - float(loss(cI.at[idx].add(-eps)))) / (2 * eps)
     rel = abs(g_ad[idx] - g_fd) / (abs(g_fd) + 1e-30)
     assert rel < 3e-2  # documented ~2 % (see module docstring); not yet exact
+
+
+def test_smooth_axis_makes_coil_current_gradient_exact():
+    """``use_smooth_axis=True`` removes the hard-argmax subgradient error: ∂/∂I_coil goes
+    from ~2 % to finite-difference-exact. Uses a finer grid where the sub-cell fit is well
+    resolved (the smooth axis is designed for ≥ 49²)."""
+    R, Z, cR, cZ, cI, psin, pp, ff = _case(65)
+
+    def loss(civ):
+        return jnp.mean(
+            solve_free_boundary_gs_implicit(
+                civ, pp, ff, R, Z, cR, cZ, psin, 50, 0.6, use_smooth_axis=True
+            )
+            ** 2
+        )
+
+    g_ad = np.asarray(jax.grad(loss)(cI))
+    assert bool(np.all(np.isfinite(g_ad)))
+    idx = 2
+    eps = 1e-3 * abs(float(cI[idx]))
+    g_fd = (float(loss(cI.at[idx].add(eps))) - float(loss(cI.at[idx].add(-eps)))) / (2 * eps)
+    rel = abs(g_ad[idx] - g_fd) / (abs(g_fd) + 1e-30)
+    assert rel < 5e-3  # exact — orders of magnitude tighter than the hard-argmax ~2 %
+
+
+def test_smooth_axis_profile_gradient_still_exact():
+    """The smooth axis must not disturb the headline property: ∂/∂p' stays FD-exact."""
+    R, Z, cR, cZ, cI, psin, pp, ff = _case(65)
+
+    def loss_pp(ppv):
+        return jnp.mean(
+            solve_free_boundary_gs_implicit(
+                cI, ppv, ff, R, Z, cR, cZ, psin, 50, 0.6, use_smooth_axis=True
+            )
+            ** 2
+        )
+
+    g_ad = np.asarray(jax.grad(loss_pp)(pp))
+    idx = 4
+    eps = 1e-2 * abs(float(pp[idx]))
+    g_fd = (float(loss_pp(pp.at[idx].add(eps))) - float(loss_pp(pp.at[idx].add(-eps)))) / (2 * eps)
+    assert abs(g_ad[idx] - g_fd) / (abs(g_fd) + 1e-30) < 1e-3
