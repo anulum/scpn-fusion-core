@@ -25,6 +25,13 @@ Two steps (the Milestone-B pattern, now on real data):
    (Dirichlet = real ψ on its edge, our source with the real profiles inside, normalisation
    levels anchored to the real axis/boundary values — reproduction mode, not blind
    prediction), the machinery reproduces the real interior to ≈ 0.1 % deep RMS.
+3. **Full-domain reproduction with a measured external source**: outside the confined plasma
+   (above the X-point, connected to the axis) the source is pinned to the *measured* ``Δ*ψ``
+   (which is exactly ``−μ₀RJφ`` of the coils/legs/private flux); inside, our ``p'``/``FF'``
+   model with Ip renormalised to the measured plasma-region current. A relaxed Picard on this
+   map converges to a WRONG attractor (documented honest negative: ≈ 127 % — the H-mode
+   pedestal makes the map bistable); Anderson(m=8) acceleration — the same stabiliser the
+   Rung-1 predictive solver needed — converges in ~26 iterations to ≈ 0.7 % deep RMS.
 
 COCOS note (explicit, not silent): the g-file stores ψ *descending* from axis to boundary
 (``ψ_axis < ψ_bnd``, both negative).  The package convention has ψ *peaked* at the axis, so the
@@ -183,6 +190,95 @@ def subdomain_reproduction(
     return psi, ps_real, Rs, Zs, deep, it + 1
 
 
+def full_domain_reproduction(
+    d: dict, m_depth: int = 8, n_iter: int = 200, tol: float = 1.0e-11
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+    """Step 3 — full 129² reproduction: measured external source + Anderson-accelerated model.
+
+    The plasma region is the connected-to-axis component of ``ψ_N < 1`` restricted above the
+    X-point (found as the min-``|∇ψ|`` near-separatrix cell below the axis); everywhere else
+    the source is the measured ``Δ*ψ`` (coils, legs, private flux — exactly ``−μ₀RJφ`` there).
+    The plasma model source is Ip-renormalised to the measured plasma-region current each
+    iteration. Plain relaxed Picard is *bistable* on this map (H-mode pedestal ``p''`` gain)
+    and lands on a wrong attractor; Anderson(m=8) — the Rung-1 stabiliser — converges to the
+    true branch. Returns (ψ_fit, plasma_mask, deep_mask, iterations).
+    """
+    from scipy import ndimage
+
+    R, Z, psi_real = d["R"], d["Z"], d["psi"]
+    nz, nr = Z.size, R.size
+    psin_map = (psi_real - d["psi_axis"]) / (d["psi_bnd"] - d["psi_axis"])
+    rrg, zzg = np.meshgrid(R, Z)
+    gz, gr = np.gradient(psi_real, Z[1] - Z[0], R[1] - R[0])
+    g2 = gz**2 + gr**2
+    iz_ax, ir_ax = np.unravel_index(np.argmax(psi_real[2:-2, 2:-2]), (nz - 4, nr - 4))
+    iz_ax += 2
+    ir_ax += 2
+    sep = (np.abs(psin_map - 1.0) < 0.02) & (zzg < Z[iz_ax] - 0.3)
+    iz_x, _ir_x = np.unravel_index(np.argmin(np.where(sep, g2, np.inf)), g2.shape)
+    lab, _ = ndimage.label((psin_map < 1.0) & (zzg > Z[iz_x]))
+    plasma = lab == lab[iz_ax, ir_ax]
+
+    lap_real = np.asarray(
+        _laplacian_star(jnp.asarray(psi_real), jnp.asarray(R), R[1] - R[0], Z[1] - Z[0])
+    )
+    lu = spla.splu(build_delta_star(R, Z))
+    mask_bnd = np.zeros((nz, nr), dtype=bool)
+    mask_bnd[0, :] = mask_bnd[-1, :] = mask_bnd[:, 0] = mask_bnd[:, -1] = True
+    mu0 = 4.0e-7 * np.pi
+    dA = float((R[1] - R[0]) * (Z[1] - Z[0]))
+    ip_real_plasma = float(np.sum(-lap_real[plasma] / (mu0 * rrg[plasma])) * dA)
+
+    def step_map(x: np.ndarray) -> np.ndarray:
+        psi = x.reshape(nz, nr)
+        src_model = np.asarray(
+            general_gs_source(
+                jnp.asarray(psi),
+                jnp.asarray(R),
+                jnp.asarray(d["psi_axis"]),
+                jnp.asarray(d["psi_bnd"]),
+                jnp.asarray(d["psin"]),
+                jnp.asarray(d["pprime"]),
+                jnp.asarray(d["ffprime"]),
+            )
+        ).copy()
+        ipm = float(np.sum(-src_model[plasma] / (mu0 * rrg[plasma])) * dA)
+        scale = ip_real_plasma / ipm if ipm else 1.0
+        src = np.where(plasma, src_model * scale, lap_real)
+        rhs = src.reshape(-1).copy()
+        rhs[mask_bnd.reshape(-1)] = psi_real[mask_bnd]
+        return np.asarray(lu.solve(rhs))
+
+    x = psi_real.reshape(-1).copy()
+    hist_x: list[np.ndarray] = []
+    hist_f: list[np.ndarray] = []
+    for it in range(n_iter):
+        f = step_map(x) - x
+        hist_x.append(x.copy())
+        hist_f.append(f.copy())
+        if len(hist_x) > m_depth:
+            hist_x.pop(0)
+            hist_f.pop(0)
+        if len(hist_f) > 1:
+            d_f = np.stack([hist_f[i + 1] - hist_f[i] for i in range(len(hist_f) - 1)], axis=1)
+            d_x = np.stack([hist_x[i + 1] - hist_x[i] for i in range(len(hist_x) - 1)], axis=1)
+            gamma, *_ = np.linalg.lstsq(d_f, f, rcond=None)
+            x_new = x + f - (d_x + d_f) @ gamma
+        else:
+            x_new = x + 0.5 * f
+        if not np.all(np.isfinite(x_new)):  # rank-deficient history guard → damped Picard
+            x_new = x + 0.3 * f
+        step = float(np.max(np.abs(x_new - x)))
+        x = x_new
+        if step < tol:
+            break
+    psi_fit = x.reshape(nz, nr)
+    deep = (psin_map < 0.8) & plasma
+    deep[:2, :] = deep[-2:, :] = False
+    deep[:, :2] = deep[:, -2:] = False
+    return psi_fit, plasma, deep, it + 1
+
+
 def main() -> None:
     d = load_gfile(GFILE)
     span = abs(d["psi_axis"] - d["psi_bnd"])
@@ -209,7 +305,33 @@ def main() -> None:
     for k, v in metrics.items():
         print(f"  {k}: {v:.4g}" if isinstance(v, float) else f"  {k}: {v}")
 
+    psi_full, plasma, deep_f, iters_f = full_domain_reproduction(d)
+    diff_f = psi_full - d["psi"]
+    pl_i = plasma.copy()
+    pl_i[:2, :] = pl_i[-2:, :] = False
+    pl_i[:, :2] = pl_i[:, -2:] = False
+    full_metrics = {
+        "anderson_iterations": iters_f,
+        "deep_rms_rel_span": float(np.sqrt(np.mean(diff_f[deep_f] ** 2))) / span,
+        "deep_max_rel_span": float(np.max(np.abs(diff_f[deep_f]))) / span,
+        "plasma_rms_rel_span": float(np.sqrt(np.mean(diff_f[pl_i] ** 2))) / span,
+        "axis_value_rel_err": abs(float(np.max(psi_full[2:-2, 2:-2])) - d["psi_axis"]) / span,
+        "global_max_rel_span": float(np.max(np.abs(diff_f))) / span,
+    }
+    print(f"STEP 3 — full-domain w/ measured external source, Anderson(m=8) ({iters_f} iters):")
+    for k, v in full_metrics.items():
+        print(f"  {k}: {v:.4g}" if isinstance(v, float) else f"  {k}: {v}")
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(
+        OUT_DIR / "psi_fusion_145419_fulldomain.npz",
+        psi_fusion=psi_full,
+        psi_real=d["psi"],
+        R_grid=d["R"],
+        Z_grid=d["Z"],
+        plasma_mask=plasma,
+        deep_mask=deep_f,
+    )
     np.savez_compressed(
         OUT_DIR / "psi_fusion_145419_subdomain.npz",
         psi_fusion=psi_fit,
@@ -218,15 +340,24 @@ def main() -> None:
         Z_grid=Zs,
         deep_mask=deep,
     )
-    honest_negative = {
-        "full_domain_resolve_deep_rms_rel_span": 0.26,
-        "cause": "the 129x129 g-file domain contains PF-coil cross-sections (empirically "
-        "mapped external-current cells); a zero-source vacuum model is wrong there and the "
-        "elliptic inverse propagates the mismatch domain-wide",
+    honest_negatives = {
+        "full_domain_zero_source_vacuum_deep_rms": 0.26,
+        "full_domain_zero_source_cause": "the 129x129 g-file domain contains PF-coil "
+        "cross-sections (empirically mapped external-current cells); a zero-source vacuum "
+        "model is wrong there and the elliptic inverse propagates the mismatch domain-wide",
+        "full_domain_relaxed_picard_deep_rms": 1.27,
+        "full_domain_relaxed_picard_cause": "with the measured external source the map is "
+        "correct but BISTABLE under relaxed Picard (H-mode pedestal p'' gain) — it converges "
+        "cleanly to a wrong attractor; Anderson(m=8) + Ip renormalisation reach the true branch",
     }
     with open(OUT_DIR / "real_145419_validation.json", "w") as fh:
         json.dump(
-            {"operator": op, "subdomain_reproduction": metrics, "honest_negative": honest_negative},
+            {
+                "operator": op,
+                "subdomain_reproduction": metrics,
+                "full_domain_reproduction": full_metrics,
+                "honest_negatives": honest_negatives,
+            },
             fh,
             indent=2,
         )
