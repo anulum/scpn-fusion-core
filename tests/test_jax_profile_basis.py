@@ -17,6 +17,7 @@ from __future__ import annotations
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
 jax.config.update("jax_enable_x64", True)
 
@@ -82,6 +83,14 @@ def test_cache_returns_same_array_and_is_reused() -> None:
     b = bspline_design_matrix(psin, n_coeff=DEFAULT_N_COEFF)
     assert a is b  # cached
     assert bspline_design_matrix(psin, n_coeff=8) is not a  # distinct key
+
+
+def test_cached_design_is_read_only() -> None:
+    """The cached design is shared across callers, so it must be frozen against mutation."""
+    b = bspline_design_matrix(np.linspace(0.0, 1.0, 20), n_coeff=10)
+    assert not b.flags.writeable
+    with pytest.raises(ValueError):
+        b[0, 0] = 9.0
 
 
 def test_degree_and_ncoeff_configurable() -> None:

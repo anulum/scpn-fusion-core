@@ -63,14 +63,15 @@ def bspline_design_matrix(
     """Constant B-spline design matrix ``B`` (shape ``(len(psin_query), n_coeff)``).
 
     ``profile(ψ_N) = B @ coeffs``. Rows sum to one (partition of unity). Built once per
-    ``(n_coeff, degree, ψ_N grid)`` and cached as a concrete NumPy array. Query points are
-    clipped to ``[0, 1]`` (the spline's clamped support).
+    ``(n_coeff, degree, ψ_N grid)`` and cached read-only (the array is shared across callers).
+    Query points are clipped to ``[0, 1]`` (the spline's clamped support).
     """
     q = np.clip(np.asarray(psin_query, dtype=np.float64), 0.0, 1.0)
     key = (n_coeff, degree, q.tobytes())
     if key not in _DESIGN_CACHE:
         knots = _clamped_uniform_knots(n_coeff, degree)
         design = np.asarray(BSpline.design_matrix(q, knots, degree).todense(), dtype=np.float64)
+        design.flags.writeable = False  # cached array is shared — freeze against mutation
         _DESIGN_CACHE[key] = design
     return _DESIGN_CACHE[key]
 
