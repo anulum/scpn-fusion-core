@@ -2541,6 +2541,7 @@
       "src/scpn_fusion/core/jax_multigrid_precond.py",
       "src/scpn_fusion/core/jax_neural_equilibrium.py",
       "src/scpn_fusion/core/jax_o_point.py",
+      "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
       "src/scpn_fusion/core/jax_profile_basis.py",
       "src/scpn_fusion/core/jax_solvers.py",
       "src/scpn_fusion/core/jax_transport_solver.py",
@@ -2717,9 +2718,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 63,
     "python_capability_classes": 567,
-    "python_capability_source_modules": 317,
+    "python_capability_source_modules": 318,
     "rust_workspace_crates": 13,
-    "test_files": 569
+    "test_files": 570
   },
   "documentation": {
     "public_pages": [
@@ -3178,6 +3179,7 @@
       "tests/test_jax_multigrid_precond.py",
       "tests/test_jax_neural_equilibrium.py",
       "tests/test_jax_o_point.py",
+      "tests/test_jax_predictive_forward_compiled.py",
       "tests/test_jax_profile_basis.py",
       "tests/test_jax_solvers.py",
       "tests/test_jax_traceable_runtime.py",
