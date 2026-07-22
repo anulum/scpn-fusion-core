@@ -296,6 +296,54 @@ def _coupled_step(
     linear GS solve. The equilibrium is its fixed point ``ψ = G(ψ)``. ``precond`` (optional) is
     a linear ``M ≈ A⁻¹`` handed to BiCGSTAB — it changes the Krylov convergence path only, not
     the solution."""
+    rhs = _coupled_rhs(
+        psi_flat,
+        ip_now,
+        coil_wall,
+        shape,
+        R_grid,
+        Z_grid,
+        dA,
+        psin_knots,
+        pprime_vals,
+        ffprime_vals,
+        response_matrix,
+        wall_idx,
+        source_idx,
+        cutoff_width,
+        mu0,
+    )
+
+    def operator(pf: jnp.ndarray) -> jnp.ndarray:
+        return _gs_operator_flat(pf, shape, R_grid, d_r, d_z)
+
+    sol, _info = jax.scipy.sparse.linalg.bicgstab(  # type: ignore[no-untyped-call]
+        operator, rhs, x0=psi_flat, tol=_BICGSTAB_TOL, maxiter=_BICGSTAB_MAXITER, M=precond
+    )
+    return cast(jnp.ndarray, sol)
+
+
+def _coupled_rhs(
+    psi_flat: jnp.ndarray,
+    ip_now: jnp.ndarray,
+    coil_wall: jnp.ndarray,
+    shape: tuple[int, int],
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    dA: jnp.ndarray,
+    psin_knots: jnp.ndarray,
+    pprime_vals: jnp.ndarray,
+    ffprime_vals: jnp.ndarray,
+    response_matrix: jnp.ndarray,
+    wall_idx: jnp.ndarray,
+    source_idx: jnp.ndarray,
+    cutoff_width: float,
+    mu0: float,
+) -> jnp.ndarray:
+    """Right-hand side of the linear GS system at the current iterate: interior source
+    ``−μ₀ R Jφ`` (Ip-normalised, smooth LCFS cutoff) with the coupled von Hagenow wall flux
+    on the identity wall rows. Shared by every inner-solver variant — the physics of the
+    coupled step lives HERE, exactly once."""
     psi = psi_flat.reshape(shape)
     axis = smooth_axis_flux(psi)
     bndry = smooth_xpoint_flux(psi, R_grid, Z_grid)
@@ -313,15 +361,7 @@ def _coupled_step(
         mu0,
     )
     wall_flux = coil_wall + response_matrix @ (j_phi.reshape(-1)[source_idx] * dA)
-    rhs = (-(mu0 * R_grid[jnp.newaxis, :] * j_phi)).reshape(-1).at[wall_idx].set(wall_flux)
-
-    def operator(pf: jnp.ndarray) -> jnp.ndarray:
-        return _gs_operator_flat(pf, shape, R_grid, d_r, d_z)
-
-    sol, _info = jax.scipy.sparse.linalg.bicgstab(  # type: ignore[no-untyped-call]
-        operator, rhs, x0=psi_flat, tol=_BICGSTAB_TOL, maxiter=_BICGSTAB_MAXITER, M=precond
-    )
-    return cast(jnp.ndarray, sol)
+    return (-(mu0 * R_grid[jnp.newaxis, :] * j_phi)).reshape(-1).at[wall_idx].set(wall_flux)
 
 
 def solve_predictive_equilibrium(

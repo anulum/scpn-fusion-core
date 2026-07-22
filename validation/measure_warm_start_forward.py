@@ -125,20 +125,48 @@ def main() -> None:
         equivalences[f"{n}x{n}"] = equiv
         print(f"{n}^2 warm-vs-cold fixed-point agreement (span-rel): {equiv:.3e}", flush=True)
 
+        def warm_mgr(ci, psi0):
+            return solve_predictive_equilibrium_compiled(
+                ci,
+                PPRIME,
+                FFPRIME,
+                r,
+                z,
+                COIL_R,
+                COIL_Z,
+                PSIN,
+                IP,
+                m,
+                b,
+                s,
+                psi_init=psi0,
+                ip_ramp=1,
+                inner_solver="mg_richardson",
+                inner_cycles=2,
+            )
+
+        psi_combo = jax.block_until_ready(warm_mgr(ci_pert, psi_base))
+        equivalences[f"{n}x{n}_warm_mg_richardson2"] = (
+            float(jnp.max(jnp.abs(psi_combo - psi_cold_pert))) / span
+        )
         cold_ms = [_time_one(lambda: cold(ci_pert)) for _ in range(REPEATS)]
         warm_ms = [_time_one(lambda: warm(ci_pert, psi_base)) for _ in range(REPEATS)]
+        warm_mgr_ms = [_time_one(lambda: warm_mgr(ci_pert, psi_base)) for _ in range(REPEATS)]
         rows.append(
             {
                 "grid": f"{n}x{n}",
                 "cold_ms": cold_ms,
                 "warm_ms": warm_ms,
+                "warm_mg_richardson2_ms": warm_mgr_ms,
                 "cold_median_ms": sorted(cold_ms)[REPEATS // 2],
                 "warm_median_ms": sorted(warm_ms)[REPEATS // 2],
+                "warm_mg_richardson2_median_ms": sorted(warm_mgr_ms)[REPEATS // 2],
             }
         )
         print(
             f"{n}^2 cold {rows[-1]['cold_median_ms']:.0f} ms  "
-            f"warm {rows[-1]['warm_median_ms']:.0f} ms",
+            f"warm {rows[-1]['warm_median_ms']:.0f} ms  "
+            f"warm+mgR2 {rows[-1]['warm_mg_richardson2_median_ms']:.0f} ms",
             flush=True,
         )
 

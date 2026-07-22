@@ -52,7 +52,9 @@ from scpn_fusion.core.jax_free_boundary_predictive import (
     DEFAULT_MIXING,
     DEFAULT_N_ITER,
     DEFAULT_TOL,
+    _coupled_rhs,
     _coupled_step,
+    _gs_operator_flat,
 )
 from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
 
@@ -84,6 +86,8 @@ def _make_runner(
     tol: float,
     mu0: float,
     use_mg_preconditioner: bool,
+    inner_solver: str,
+    inner_cycles: int,
 ) -> Callable[..., jnp.ndarray]:
     """Build and jit the while_loop runner for one (geometry, settings) combination."""
     shape = (nz, nr)
@@ -116,15 +120,39 @@ def _make_runner(
         dA = jnp.asarray(d_r * d_z)
 
         def g_of(x: jnp.ndarray, ip_now: jnp.ndarray) -> jnp.ndarray:
-            return _coupled_step(
+            if inner_solver == "bicgstab":
+                return _coupled_step(
+                    x,
+                    ip_now,
+                    coil_wall,
+                    shape,
+                    R_grid,
+                    Z_grid,
+                    jnp.asarray(d_r),
+                    jnp.asarray(d_z),
+                    dA,
+                    psin_knots,
+                    pprime_vals,
+                    ffprime_vals,
+                    response_matrix,
+                    wall_idx,
+                    source_idx,
+                    cutoff_width,
+                    mu0,
+                    precond,
+                )
+            # inner_solver == "mg_richardson": warm-started MG-preconditioned Richardson —
+            # each cycle is ONE matvec + ONE V-cycle (vs 2+2 per BiCGSTAB iteration). The
+            # composite outer/inner fixed point is unchanged (at outer convergence the RHS
+            # is stationary and the inner iteration polishes towards the exact solve); the
+            # equivalence to the BiCGSTAB path is pinned by tests at span tolerance.
+            rhs = _coupled_rhs(
                 x,
                 ip_now,
                 coil_wall,
                 shape,
                 R_grid,
                 Z_grid,
-                jnp.asarray(d_r),
-                jnp.asarray(d_z),
                 dA,
                 psin_knots,
                 pprime_vals,
@@ -134,8 +162,14 @@ def _make_runner(
                 source_idx,
                 cutoff_width,
                 mu0,
-                precond,
             )
+            assert precond is not None  # guarded in the wrapper
+            y = x
+            for _ in range(inner_cycles):
+                y = y + precond(
+                    rhs - _gs_operator_flat(y, shape, R_grid, jnp.asarray(d_r), jnp.asarray(d_z))
+                )
+            return y
 
         def cond(state: _State) -> jnp.ndarray:
             k, _x, _f_h, _x_h, _nv, done = state
@@ -207,6 +241,8 @@ def solve_predictive_equilibrium_compiled(
     mu0: float = MU0_SI,
     *,
     use_mg_preconditioner: bool = True,
+    inner_solver: str = "bicgstab",
+    inner_cycles: int = 3,
 ) -> jnp.ndarray:
     """Compiled predictive free-boundary solve — same fixed point as the eager solver.
 
@@ -221,10 +257,16 @@ def solve_predictive_equilibrium_compiled(
     requirement at production grids, and under compilation its V-cycle no longer pays the
     eager dispatch penalty.
 
+    ``inner_solver``: ``"bicgstab"`` (reference) or ``"mg_richardson"`` — warm-started
+    MG-preconditioned Richardson with a fixed ``inner_cycles`` count (one matvec + one
+    V-cycle per cycle, half the kernel traffic of a BiCGSTAB iteration); requires the MG
+    preconditioner and reaches the same fixed point (test-pinned at span tolerance).
+
     Raises
     ------
     ValueError
-        On non-uniform / degenerate axes, inconsistent shapes, or non-positive settings.
+        On non-uniform / degenerate axes, inconsistent shapes, non-positive settings, an
+        unknown ``inner_solver``, or ``mg_richardson`` without the MG preconditioner.
     """
     r_np = np.asarray(R_grid, dtype=np.float64)
     z_np = np.asarray(Z_grid, dtype=np.float64)
@@ -234,6 +276,12 @@ def solve_predictive_equilibrium_compiled(
         raise ValueError("n_iter, anderson_depth and ip_ramp must be >= 1")
     if not (np.isfinite(tol) and tol > 0.0):
         raise ValueError("tol must be finite and > 0")
+    if inner_solver not in ("bicgstab", "mg_richardson"):
+        raise ValueError(f"unknown inner_solver {inner_solver!r}")
+    if inner_solver == "mg_richardson" and not use_mg_preconditioner:
+        raise ValueError("inner_solver='mg_richardson' requires use_mg_preconditioner=True")
+    if inner_cycles < 1:
+        raise ValueError("inner_cycles must be >= 1")
     nz, nr = z_np.size, r_np.size
     if psi_init is not None and tuple(np.shape(psi_init)) != (nz, nr):
         raise ValueError(f"psi_init shape {np.shape(psi_init)} does not match grid ({nz}, {nr})")
@@ -256,6 +304,8 @@ def solve_predictive_equilibrium_compiled(
         float(tol),
         float(mu0),
         bool(use_mg_preconditioner),
+        str(inner_solver),
+        int(inner_cycles),
     )
     return runner(
         coil_I,

@@ -110,6 +110,24 @@ def test_compiled_solve_is_finite_and_forms_plasma(compiled_psi) -> None:
     assert float(smooth_axis_flux(compiled_psi)) > float(smooth_xpoint_flux(compiled_psi, _R, _Z))
 
 
+def test_mg_richardson_inner_matches_bicgstab_fixed_point(response, compiled_psi) -> None:
+    """The MG-Richardson inner solver (1 matvec + 1 V-cycle per cycle) reaches the SAME
+    fixed point as the BiCGSTAB reference path — measured ~1e-9 during development at
+    cycle counts 2-4 on 33² and 129²; pinned here at span tolerance for cycles=2."""
+    psi_mgr = _solve_compiled(response, n_iter=150, inner_solver="mg_richardson", inner_cycles=2)
+    span = float(jnp.max(compiled_psi) - jnp.min(compiled_psi))
+    assert float(jnp.max(jnp.abs(psi_mgr - compiled_psi))) / span < 1e-6
+
+
+def test_mg_richardson_guards_fail_closed(response) -> None:
+    with pytest.raises(ValueError, match="unknown inner_solver"):
+        _solve_compiled(response, inner_solver="jacobi")
+    with pytest.raises(ValueError, match="requires use_mg_preconditioner"):
+        _solve_compiled(response, inner_solver="mg_richardson", use_mg_preconditioner=False)
+    with pytest.raises(ValueError, match="inner_cycles"):
+        _solve_compiled(response, inner_solver="mg_richardson", inner_cycles=0)
+
+
 # ── Fail-closed guards ────────────────────────────────────────────
 
 
