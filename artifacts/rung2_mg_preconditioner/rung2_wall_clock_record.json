@@ -1,0 +1,34 @@
+{
+  "record_type": "measurement-log synthesis (multi-run, raw outputs embedded verbatim below); NOT regenerable by a single script - the A100 instance is destroyed; each underlying measurement states its own host and validity",
+  "date": "2026-07-22",
+  "seat": "SCPN-FUSION-CORE/claude-3f8a",
+  "purpose": "Rung 2 honest wall-clock status of the predictive free-boundary forward solve vs the ~20 ms/129^2 (~10 it) partner contract bar, plus the FreeGS solver-class reference",
+  "a100_fp64_partial": {
+    "instance": "JarvisLabs A100-PCIE-40GB, machine_id 452683, india-noida-01, pytorch template, jax 0.6.2 cuda12, FP64 enabled and asserted",
+    "raw_log_verbatim": "33x33 plain: median 37168.1 ms  min 37010.4 ms",
+    "completed_configs": [
+      {"grid": "33x33", "preconditioner": "none", "median_ms": 37168.1, "min_ms": 37010.4, "repeats": 3}
+    ],
+    "dnf_configs": "33x33 mg and all 65^2/129^2 configs did not complete within the cost budget (run terminated deliberately after ~45 min on the 33x33 mg config)",
+    "diagnosis": "GPU utilisation ~0% while running: the forward is HOST-LOOP-bound (Python Anderson loop with per-iteration host syncs; eagerly dispatched BiCGSTAB/V-cycle kernels are tiny) - wall-clock is dominated by dispatch overhead, not linear algebra; the MG V-cycle makes eager dispatch WORSE per iteration despite 100x fewer iterations",
+    "cost_control": "instance destroyed after capture; zero-live verified at source (User.get_instances() == []); total spend ~$1.22 of the $6.43 balance",
+    "honesty_note": "a partial record kept deliberately: the completed 33^2 plain number and the DNF pattern ARE the finding - the current implementation is not GPU-suited without compiling the outer loop"
+  },
+  "freegs_reference_local": {
+    "host": "aaarthuus (LOADED development host - indicative only, never a performance claim)",
+    "freegs_version": "0.8.2",
+    "case": "freegs.machine.TestTokamak diverted example (its own canonical case), warm-up excluded, 3 repeats",
+    "raw_output_verbatim": [
+      "freegs 33x33: median 4074 ms  repeats ['2093', '4074', '4795']",
+      "freegs 65x65: median 9315 ms  repeats ['20920', '9315', '7645']",
+      "freegs 129x129: median 33187 ms  repeats ['33105', '40157', '33187']"
+    ]
+  },
+  "iteration_evidence_reference": "artifacts/rung2_mg_preconditioner/iteration_counts.json (committed, pinned-env, load-independent): MG preconditioner is grid-independent at 4-6 Krylov iterations; plain BiCGSTAB needs 94-556 and DNFs at 129^2@1e-11 within 20000 - the linear-algebra layer is solved",
+  "honest_conclusions": [
+    "TODAY, wall-clock: the partner's compiled solver bar (~20 ms/129^2) is far beyond BOTH open-source-class solvers measured here; FreeGS solves its 129^2 case in ~33 s on a loaded CPU host; our current forward is slower still (host-loop-bound; 33^2 took ~37 s even on an A100)",
+    "the competitive substance of our solver is NOT current wall-clock: it is the exact implicit-diff adjoint (FreeGS has none; required by the IDA MAP/MCMC loop), the validated real-data fidelity chain, and the MG-preconditioned linear algebra whose iteration counts are already optimal",
+    "the engineering path to the contract bar is identified and queued: jit-compile the whole Anderson forward (lax.while_loop) so the per-iteration host round-trips vanish; THEN re-benchmark on dedicated hardware - no wall-clock competitiveness claim is made until that measurement exists"
+  ],
+  "next_step": "jit Anderson forward (TODO_SOLVER_AND_PREDICTOR.md, Lane 1.1); re-benchmark afterwards"
+}
