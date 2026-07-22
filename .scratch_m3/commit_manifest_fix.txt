@@ -1,0 +1,17 @@
+Regenerate the capability manifest for the new ballooning module
+
+The F-5 commit `a74c9ad7` added `ballooning_second_stability.py` (plus its two
+test files) without refreshing the generated capability manifest, so the CI
+Python preflight release gate reddened at the "Capability manifest drift check":
+`tools/capability_manifest.py --check` found the committed manifest stale (307 →
+308 Python capability source modules, 565 → 566 classes, 556 → 559 test files).
+
+Regenerate the three tracked derived files (`tools/capability_manifest.py`):
+`docs/_generated/capability_manifest.json`, `docs/_generated/capability_snapshot.md`
+and the README capability block. The manifest is derived from static source-file
+enumeration, so the change is deterministic count/list updates only — no
+benchmark or environment-specific evidence is refreshed here.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

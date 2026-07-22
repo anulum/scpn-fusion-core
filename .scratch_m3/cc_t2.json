@@ -1,0 +1,43 @@
+{
+  "benchmark_evidence": {
+    "classification": "local_non_isolated_regression",
+    "host": "aaarthuus",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "kernels": [
+    {
+      "kernel": "kuramoto_step (N=10000, steps=500)",
+      "numpy_median_s": 0.8655152274877764,
+      "rust_median_s": 0.1177966280374676,
+      "rust_over_numpy_speedup": 7.347538226751973,
+      "rust_vs_numpy_final_state_rel_l2": 1.5439688021664623e-16
+    },
+    {
+      "kernel": "kuramoto_run batched (N=10000, steps=500)",
+      "numpy_median_s": 0.8928523244685493,
+      "rust_median_s": 0.14832026802469045,
+      "rust_over_numpy_speedup": 6.0197593785356345,
+      "rust_vs_numpy_final_state_rel_l2": 1.5439688021664623e-16
+    },
+    {
+      "kernel": "upde_tick (L=8, N/layer=1024, ticks=200)",
+      "numpy_median_s": 1.3213013040367514,
+      "rust_median_s": 0.16377328598173335,
+      "rust_over_numpy_speedup": 8.067868310245203,
+      "rust_vs_numpy_final_state_rel_l2": 5.2388966131020005e-17
+    },
+    {
+      "kernel": "upde_run batched (L=8, N/layer=1024, ticks=200)",
+      "numpy_median_s": 1.5668162074289285,
+      "rust_median_s": 0.1489337794482708,
+      "rust_over_numpy_speedup": 10.520220551934164,
+      "rust_vs_numpy_final_state_rel_l2": 5.2388966131020005e-17
+    }
+  ],
+  "problem_contract": "identical seeded deterministic workloads per tier; the kernels carry no RNG, so final-state agreement is bounded by floating-point summation order",
+  "repeats": 4,
+  "rust_available": true,
+  "schema": "scpn-fusion-core.phase-kernels-benchmark.v1",
+  "seed": 2026
+}

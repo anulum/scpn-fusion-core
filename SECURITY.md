@@ -4,7 +4,8 @@
 
 | Version | Supported          | Notes |
 |---------|--------------------|-------|
-| 3.11.0  | :white_check_mark: | Current stable - control/transport/surrogate/equilibrium feature wave (M-4, F-7, M-1, F-5, F-1) with modular-decomposition and validation-evidence passes |
+| 4.0.0   | :white_check_mark: | Current stable - differentiable predictive free-boundary equilibrium line (compiled + batched forward, adjoint, real-DIII-D validation, IMAS bridge) with fail-closed input hardening |
+| 3.11.0  | :white_check_mark: | Previous stable - control/transport/surrogate/equilibrium feature wave (M-4, F-7, M-1, F-5, F-1) with modular-decomposition and validation-evidence passes |
 | 3.10.1  | :white_check_mark: | Previous stable - CI publication, dependency-maintenance, and release-surface alignment wave |
 | 3.10.0  | :white_check_mark: | Previous stable - runtime, Studio federation, documentation, and CI/LFS publishing wave |
 | 3.9.11  | :white_check_mark: | Previous stable - documentation, security-lock, and repository-hygiene wave |

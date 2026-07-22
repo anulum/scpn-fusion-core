@@ -1,0 +1,31 @@
+Make the controller-latency campaign a replicable, host-attributed workflow
+
+Paper B Table 5 attributed its CPU latencies to an "AMD Ryzen 9 7950X" that appears
+nowhere in the repo's evidence; the measured stress_test_campaign.json carried no host
+provenance at all, so the numbers could not be tied to the machine that produced them
+(the real host is an Intel Core i5-11600K). Fix the root cause: record provenance.
+
+stress_test_campaign.py now emits a provenance block with every --output run:
+- host: cpu_model (read from /proc/cpuinfo / platform at run time -- never hard-coded),
+  machine, platform, logical_cpus;
+- software: python, numpy, jax, nengo, and scpn_fusion_rs availability;
+- methodology: n_episodes, shot_duration, seed, the latency metric definition, and the
+  controllers actually measured;
+- git_sha and timestamp.
+
+Add an optional --seed for the stochastic episode metrics (recorded in provenance;
+latency timings are host-dependent regardless), and validation/LATENCY_WORKFLOW.md
+documenting how to reproduce the numbers on any host and how to obtain an independent
+second-host measurement.
+
+save_results_json gains an optional provenance argument and stays backward compatible
+(provenance is null when omitted). validation/ is outside the coverage gate; 33
+stress-campaign tests pass (3 new: provenance content, embedding, backward compatibility).
+
+This is the replicable-workflow foundation for the K17-B4 paper-figure re-measurement:
+the figures/Table 5 will be regenerated from a provenance-stamped artifact (this host +
+an independent cloud host), never from hard-coded values.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

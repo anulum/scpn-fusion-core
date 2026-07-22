@@ -1,0 +1,39 @@
+Run batched UPDE on the persistent barrier-synchronised worker pool
+
+`kuramoto_run` moved to a persistent pool last commit; `upde_run` still
+forked and joined rayon twice per tick (fill and update) across its 200
+ticks. Give the multi-layer run the same treatment.
+
+`upde_run_parallel` gives each worker a contiguous oscillator slice for the
+whole trajectory via `std::thread::scope`. Per tick each worker sums its
+slice's per-layer `(Σcos, Σsin)` into lock-free atomics — a slice may cross
+a layer boundary, so the partials are keyed by (worker, layer) — and meets
+at an order barrier; every worker then reduces the identical per-layer
+partials in the same order (so all derive the same `R_m`, `ψ_m` and hence
+the same coupling coefficients), records the order history on worker 0, and
+updates its own slice in place while accumulating each layer's Lyapunov
+partial. A second barrier gathers the Lyapunov partials and worker 0 records
+the Lyapunov history. Two barriers per tick suffice: the order barrier also
+fences the previous tick's Lyapunov-partial reads against this tick's
+writes, and the Lyapunov barrier does the same for the order partials, so no
+third barrier is needed and the `Relaxed` atomics stay ordered. Disjoint
+`chunks_mut` slices mean no update aliases another worker's data. The
+validation is factored into `upde_validate`, shared by the tick and both run
+paths; small populations keep the serial `upde_tick` loop.
+
+Correctness: the per-oscillator update is reduction-free and every worker
+reduces the partials in the same order, so the pool reproduces the serial
+trajectory within the parity gate. A new test asserts `upde_run_parallel`
+matches `upde_run_serial` to <1e-12 on `theta_final` and all four history
+streams (R_layer, R_global, V_layer, V_global) across worker counts 1..5,
+including a slice boundary that crosses the layer boundary and the
+single-worker edge. All 25 fusion-phase unit + 10 phase parity cases pass.
+
+CI baseline this refines (phase-kernels-benchmark, 4-vCPU, numpy<2.0):
+upde_run 7.26x (was 2.49x before the M-3 work), while the same-run barrier
+kuramoto_run reached 9.56x. This commit's figure is measured by the same CI
+artifact.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

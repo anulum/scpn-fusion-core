@@ -1,0 +1,23 @@
+Correct the false header on the Lean PID saturation proof
+
+PIDBoundedOutput.lean's header claimed "The executable controller clamps the
+requested actuator magnitude before it is sent to the plant", implying the proof
+covered the shipped controllers. It does not: saturatePidMagnitude is a Nat reference
+model defined in the proof file, the shipped floating-point PIDs (pid.rs,
+tokamak_flight_sim.pid_step) emit raw commands, and Nat cannot even represent the
+NaN/inf failure mode. The runtime magnitude bound is enforced downstream at the
+actuator boundary (FirstOrderActuator, Rust SafetyEnvelope, HIL write_dac), hardened
+and unit-tested in this K17-A batch, not by this proof.
+
+Rewrite the header to scope the proof honestly as a formal reference contract: state
+what it proves (bounded, non-amplifying saturation over non-negative magnitudes), that
+it is NOT an extraction of the shipped controllers, that Nat does not model NaN/inf,
+and that linking the theorems to the shipped controllers needs Lean extraction / an FFI
+binding test (tracked in the Lean verification backlog). No theorem or definition
+changed -- comment-only, so the machine-checked proof and the sorry-gate are untouched.
+
+Closes KIMI due-diligence finding K17-A5 (Lean proofs unlinked / false header).
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

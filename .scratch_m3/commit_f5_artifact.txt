@@ -1,0 +1,28 @@
+Land the F-5 pyrokinetics ballooning second-stability reference (independent-host run)
+
+Generates and commits the deferred F-5 heavy artifact: the Miller shaped-geometry ideal
+ballooning critical-alpha reference, produced by the real pyrokinetics infinite-n
+ideal-ballooning solver (Diagnostics.ideal_ballooning_solver, adapted from R. Gaur).
+This was deferred off-peak because it is compute-heavy on the workstation; it was run on
+an independent cloud host (AMD EPYC 7542, JarvisLabs) with real pyrokinetics 0.9.1.
+
+The artifact embeds its own provenance block (host CPU/platform, pyrokinetics version,
+runner SHA-256, LGPL-3.0-or-later source attribution). Result matches the F-5 physics:
+- circular self-check: alpha_crit rises with shear (0.50/0.55/... ), no second-stability
+  access — the classic s-alpha trend, validating the solver;
+- DIII-D shaping (kappa=1.74, delta=0.3): stable across the full drive sweep
+  (gamma < 0), i.e. SECOND-STABILITY ACCESS at every shear — exactly the shaped-geometry
+  behaviour the s-alpha model misses and F-5 needed.
+
+The hermetic consumer (BallooningSecondStabilityReference.from_artifact) reads it and
+returns alpha_crit at the scan ceiling with has_second_stability=True. Add a provenance
+policy rule (citation-required, crediting pyrokinetics + Gaur) and regenerate the
+reference-data provenance manifest (staged-first so the git-enumerated file is tracked);
+`--check` passes. 30 reference-data + ballooning tests green.
+
+No EPED1 parity is asserted yet — that quantitative benchmark flip is the next step; this
+lands the measured reference the parity check will consume.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

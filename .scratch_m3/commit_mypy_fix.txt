@@ -1,0 +1,23 @@
+Type the pedestal-model test fixture dict for the new keyword params
+
+The F-5 commit `a74c9ad7` added the non-float keyword parameters `geometry: str`
+and `ballooning_reference: BallooningSecondStabilityReference | None` to
+`PBKBMPedestalModel.__init__` and `predict_pedestal`. The strict-cohort test
+`tests/test_eped_pb_kbm.py` constructs those via `**DIIID_LIKE`, whose literal is
+inferred as `dict[str, float]`; under `mypy --strict` (checked in the CI Python
+preflight release gate, but not caught by the local mypy that diverges from CI)
+that unpacking is now an `arg-type` error — a `float` value could land in the
+`str`/reference parameter — for 14 call sites.
+
+Annotate `DIIID_LIKE` as `dict[str, Any]` so `**DIIID_LIKE` (and the
+`dict(DIIID_LIKE)` / `{**DIIID_LIKE, field: bad}` validation-test variants) unpack
+cleanly into every parameter, including the new keyword-only ones which fall back
+to their defaults. Same annotation applied to the companion Miller-geometry test
+for consistency. `disallow_any_explicit` is not set, so this stays within the
+project's strict config; runtime behaviour is unchanged (35 pedestal tests green,
+ruff format+check clean). The light preflight drift checks (metadata, packaging,
+claims, reference-data/disruption/capability manifests) all pass.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

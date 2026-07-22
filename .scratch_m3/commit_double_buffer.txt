@@ -1,0 +1,34 @@
+Halve the Kuramoto pool barriers with double-buffered partials
+
+`kuramoto_run_parallel` met at two barriers per step: an order barrier so
+every worker sees the full partial set before reducing, and a second barrier
+that fenced each worker's partial reads against the next step overwriting the
+same slots. `kuramoto_run` sits right at the 10x line on the CI runner
+(9.56x peak, 7.9-9.6x host-varying), so halving the per-step synchronisation
+is the one remaining lever.
+
+Double-buffer the partials: allocate two slots per worker and pick the slot
+set by `step & 1`. Step `t+1` then writes the opposite buffer from the one
+step `t` is still reading, so the write-after-read hazard the second barrier
+guarded against is gone and one barrier per step suffices. The single barrier
+still bounds the worker skew to strictly under two steps, so two buffers are
+exactly enough; cross-step reuse of a buffer is always separated from its
+prior read by an intervening barrier, so the `Relaxed` atomics stay ordered.
+
+The reduction reads the same `0..n_chunks` slots in the same order as before
+— only the base offset changes — so `(R, ψ_r)`, the recorded history and
+every phase update are bit-identical to the two-barrier version. Parity is
+therefore unchanged: `kuramoto_run_parallel_matches_serial_across_worker_counts`
+(worker counts 1..7, N=5000, <1e-12) and the within-gate large-N path both
+pass, alongside the full 25 fusion-phase unit + 10 phase parity cases. Clippy
+`-D warnings`, rustfmt `--check` and the release build are green.
+
+CI baseline this refines (phase-kernels-benchmark, 4-vCPU, numpy<2.0):
+kuramoto_run 9.56x peak on the two-barrier pool. This commit's figure is
+measured by the same CI artifact; the expected gain is small (one fewer
+barrier per step) and within the runner's host variance, so the aim is a
+more reliable — not dramatically higher — figure at the 10x boundary.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

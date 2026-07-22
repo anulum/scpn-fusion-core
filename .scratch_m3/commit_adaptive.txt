@@ -1,0 +1,26 @@
+Balance the per-step rayon split to one task per worker
+
+The batched kernels chunked the per-step fill and update into fixed
+2048-wide `par_chunks`. That leaves a straggler whenever the population is
+not a clean multiple of the chunk size times the core count: 10 000
+oscillators split into five 2048-wide chunks, so a four-core runner does
+four chunks in parallel and then one alone — an effective ~2.5x instead of
+~4x, capping the batched speedup.
+
+Size the chunk from the pool instead: `n / current_num_threads()`, floored
+at 512 so small populations do not fragment into tasks too tiny to
+amortise the fork-join. That yields roughly one balanced task per worker
+on any core count — four even 2500-wide chunks on a four-core host — while
+each task stays a contiguous slice that still vectorises internally. The
+result is identical (the element update is reduction-free and the order
+sum stays serial), so all 23 fusion-phase unit tests and the 10 phase
+parity cases pass unchanged; only the load distribution improves.
+
+Baseline this refines — CI phase-kernels-benchmark on the fixed-chunk
+SIMD commit (4-vCPU runner, numpy < 2.0): kuramoto_run 6.25x, upde_run
+7.58x, upde_tick 7.09x, kuramoto_step 6.03x. This commit's figure is
+measured by the same CI artifact.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

@@ -1,0 +1,20 @@
+Align the Rust actuator safety envelope to its physical +/-50 kA intent
+
+SafetyEnvelope::default() shipped PF/CS coil limits of PhysicalConstraint::new(-1e6,
+1e6, 1e5) -- +/-1 MA at 100 kA/s -- while the adjacent comment claimed "50 kA max,
+10 kA/s slew". The envelope was both mislabelled and non-physical: no single ITER
+PF/CS coil carries a megaamp, so the gate bounded nothing real.
+
+Set the default to +/-5e4 A (50 kA) with a 1e4 A/s (10 kA/s) slew, matching the stated
+physical intent and the Python-side actuator limits (tokamak_flight_sim, 243834e8).
+The Rust flight sim drives O(1) position-control commands, far below either bound, so
+enforcement behaviour is unchanged; the envelope now actually clamps a runaway command.
+
+Add the module's first unit tests: the physical default, absolute-limit clamping, and
+slew-rate enforcement. Full fusion-control crate: 89 passed, cargo fmt clean.
+
+Closes the Rust arc of KIMI due-diligence finding K17-A4 (unphysical actuator limits).
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

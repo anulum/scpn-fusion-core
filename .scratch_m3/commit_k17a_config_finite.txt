@@ -1,0 +1,21 @@
+Reject non-finite values in the reactor config schema
+
+pydantic v2 accepts NaN and +/-inf for a bare float field by default, and gt/ge
+bounds do not catch +inf (inf > 0 is True). So the config schema accepted a NaN coil
+current and a plasma_current_target of +inf (both demonstrated), feeding a non-finite
+value straight into an equilibrium solve.
+
+Set allow_inf_nan=False on every config sub-model (Dimensions, Coil, PhysicsParams,
+SolverParams, ReactorConfig). Declared float fields now reject NaN and +/-inf at
+validation time. Finite configs are unaffected -- the committed default ITER
+configuration still validates (Ip_target 15.0, 7 coils).
+
+config_schema.py stays at 100% line coverage; new parametrised tests reject a
+non-finite coil current, a non-finite plasma_current_target, and an infinite domain
+bound.
+
+Closes KIMI due-diligence finding K17-A3 (config accepts non-finite physics).
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

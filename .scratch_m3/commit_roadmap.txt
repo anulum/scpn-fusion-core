@@ -1,0 +1,13 @@
+Record the M-3 phase-kernel acceleration in the roadmap reconciliation
+
+Update the M-3 row from "1.7-2.6x, PARTIAL" to the measured outcome of the
+2026-07-16 acceleration arc (cf2199c3...a75ec9ff): the CI
+phase-kernels-benchmark (4-vCPU, numpy<2.0) records upde_run 2.49->25.46x
+and kuramoto_run 3.16->9.56x peak, so the >=10x acceptance is met for
+upde_run and kuramoto_run sits at the boundary (7.9-9.6x host-varying on the
+shared runner). All CI-sourced figures; no local benchmark values. The
+actionable-gaps list marks M-3 done and renumbers accordingly.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

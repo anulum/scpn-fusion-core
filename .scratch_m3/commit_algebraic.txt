@@ -1,0 +1,44 @@
+Reuse cached cos/sin across the phase-kernel order parameter and coupling
+
+The Kuramoto and UPDE tiers recomputed a transcendental for every
+coupling term: the order parameter took cos θ and sin θ, and each
+`sin(ψ − θ − α)` took another `sin`. For the UPDE tick that is L+3
+transcendentals per oscillator (two order-parameter passes plus the
+intra-, inter-, and global-driver `sin`s), where the NumPy reference does
+the same L+1 separate `np.sin` calls per element.
+
+Cache cos θ_i and sin θ_i in a single pass, then derive everything from
+them by angle subtraction:
+
+    sin(A − θ) = sin A · cos θ − cos A · sin θ.
+
+The order parameters become means of the cached buffers (summed in slice
+order, so R/ψ stay bit-identical to the previous inline sums), and every
+coupling term collapses to arithmetic. The UPDE tick factors further: per
+target layer m the θ-independent factors collect into two coefficients
+
+    dθ_{m,i} = ω_{m,i} + cos θ_i · Sc_m − sin θ_i · Ss_m,
+
+an L² precompute per tick that leaves the per-oscillator update at two
+fused multiply-adds. Each oscillator now costs exactly two transcendentals
+(its cos/sin) instead of L+3, an algorithmic advantage the NumPy tier does
+not have.
+
+The angle-subtraction identity is exact in real arithmetic; the only
+change is floating-point rounding, which stays ~1e-15 absolute — three
+orders inside the 1e-12 cross-tier parity gate (R/ψ untouched at 1e-14).
+Verified: the 10 `test_phase_rust_tier` parity cases pass unchanged, and
+318 phase/kuramoto/upde/dispatch tests are green. The order-parameter sum
+stays serial so it is deterministic across run widths; only the cos/sin
+fill and the reduction-free element update parallelise. Two new unit tests
+cover the parallel UPDE branch (parallel == serial bit-for-bit, plus a
+large-population tick).
+
+Local non-isolated regression (12-core, numpy 2.2.6, harsher SIMD floor
+than CI): kuramoto_run 1.37x -> 2.09x, upde_run 1.42x -> 3.17x,
+kuramoto_step 1.55x -> 2.65x. CI (numpy < 2.0) measures the authoritative
+figure via the phase-kernels-benchmark artifact.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

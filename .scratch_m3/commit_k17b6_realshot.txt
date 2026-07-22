@@ -1,0 +1,31 @@
+Label the real-shot equilibrium lane as self-consistency, not external validation
+
+RESULTS.md's "Real-Shot Validation" section reported "Equilibrium q95 pass fraction
+100% (18/18)" and "Equilibrium validation: Yes". Behind those numbers,
+validate_real_shots.py computes psi_nrmse as a GS-residual self-consistency proxy
+("A real solver comparison would replace this with solver output") and hard-codes
+q95_pass=True ("Self-reference, always passes"). So the q95 "pass" is a self-reference
+that always passes and the equilibrium "validation" is a self-consistency check on the
+reference files, not an external solver-vs-EFIT comparison. The real free-boundary
+reconstruction against GEQDSK is a separate lane that fails 0/18 -- so presenting this
+as passing "validation" is misleading.
+
+Relabel honestly without changing the gate arithmetic (the real external check belongs
+to the EFIT-reconstruction lane, K17-C):
+- validate_real_shots.py: add a validation_basis field spelling out that psi_nrmse is a
+  self-consistency proxy and q95_pass is a self-reference, and that this is not external
+  EFIT validation.
+- collect_results.py (the RESULTS.md generator): retitle the rows to
+  "... pass fraction (self-consistency proxy)" / "(self-reference)" and
+  "Equilibrium self-consistency" with Notes making the basis explicit.
+- Surgically apply the same labels in the committed RESULTS.md snapshot (label text only;
+  no measured number or host-env field touched; not regenerated locally -- D2).
+
+Additive field only; 105 real-shot/disruption/honesty tests pass, ruff clean.
+
+Addresses KIMI due-diligence finding K17-B6 (synthetic/self-referential labelled as
+"real-shot validation").
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

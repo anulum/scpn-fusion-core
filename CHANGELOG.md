@@ -2,6 +2,82 @@
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-22
+
+Major release: the differentiable predictive free-boundary equilibrium line —
+an SI free-boundary Grad–Shafranov solver with exact coil-current gradients,
+a fully compiled forward (13.0 ms warm-started, fully converged 129² FP64 on a
+dedicated H100; evidence chain in RESULTS.md), a cached batched (`vmap`)
+variant for ensemble/MCMC workloads, real-DIII-D validation, and an IMAS
+equilibrium bridge. The major bump reflects behavioural changes (fail-closed
+input hardening, IMAS COCOS handling, MG preconditioner default, re-measured
+disruption operating point), not API removals. The full-fidelity evidence
+boundary is unchanged (GENE/CGYRO/GS2, full electromagnetic, DREAM kinetic,
+mechanistic Aurora/STRAHL, and production MPI/multi-GPU parity remain
+fail-closed).
+
+### Added
+
+- Predictive free-boundary GS solver (`jax_free_boundary_predictive`): SI
+  units, general p′/FF′ profile bases, von Hagenow wall coupling, Anderson
+  fixed-point acceleration, smooth sub-cell O-point/X-point extraction (the
+  coupled fixed point stays differentiable).
+- Implicit-function-theorem adjoint with Jacobi-preconditioned solve —
+  coil-current gradients agree with warm finite differences to ≤ 1.718e-05
+  relative (committed sweep evidence `artifacts/coilgrad_adjoint_fd_evidence.json`).
+- Compiled forward (`jax_predictive_forward_compiled`): the whole Anderson
+  iteration in one `lax.while_loop` under `jax.jit`; warm-start support;
+  MG-Richardson inner solver; iteration diagnostics (`return_iterations`);
+  Anderson `normal_eq` Gram variant.
+- Cached batched solve (`solve_predictive_equilibrium_batched`): `lru_cache`
+  runner factory (a per-call `jax.vmap` re-jit was recompiling the whole
+  batched graph every call), element-equivalence guarantees at span tolerance.
+- Geometric multigrid preconditioner (`jax_multigrid_precond`): vertex-centred
+  hierarchy, red-black Gauss-Seidel smoother matching the solver stencil,
+  ring-exact identity rows.
+- Differentiable compact profile bases: B-spline (read-only frozen cache) and
+  Chebyshev ψ representation, with an end-to-end IDA-pattern differentiation
+  test through the solve.
+- IMAS equilibrium IDS bridge via OMAS with COCOS audit (solver COCOS 3 →
+  IMAS 11) and fail-closed read/write validation.
+- Real-data validation lane: DIII-D shot 145419 EFIT reproduction (full-domain
+  0.72 %, shell-pinned 0.051 % span-relative RMS; executable cross-check and
+  negative-control lanes; runtime + corpus provenance in the artifact).
+- MAST forced-VDE open-data disruption pilot manifest (CC-BY-SA-4.0 source
+  data; per-object SHA-256 digests) and reference-data provenance policy rules
+  for both tracked PROVENANCE manifests.
+- Evidence artifacts with generator/logic-source/pinned-environment digests and
+  a stale-artifact freshness guard suite binding each artifact to its
+  generator; dedicated-hardware `*_h100.json` / `*_a100.json` snapshots.
+
+### Changed
+
+- Compiled forward defaults to the MG preconditioner ON (plain BiCGSTAB does
+  not reach the inner tolerance at 129² within any practical cap — a
+  robustness requirement, recorded in the iteration-count evidence).
+- IMAS equilibrium bridge and predictive-solver inputs are fail-closed:
+  non-uniform grids, malformed settings, wrong shapes, unknown solver names,
+  and unsupported COCOS conventions now raise instead of proceeding.
+- Disruption threshold evidence regenerated in the hash-pinned environment:
+  the operating point moved from the stale (bias −5.0, FPR 0.50, pareto)
+  record to the measured feasible point (bias −4.0, threshold 0.99, recall
+  1.00, FPR 0.00) over the same 16-shot corpus; RESULTS.md and the claims
+  manifest are bound to the current values.
+- Dependency refresh across ecosystems: uv-pinned Python locks regenerated
+  (superseding 7 pip Dependabot PRs), Rust serde/serde_json/thiserror/bytemuck
+  bumps, pinned GitHub Actions updates.
+
+### Fixed
+
+- Predictive adjoint convergence at fine grids (was 4× wrong at 65²) and
+  grid-insensitive Jacobi preconditioning of the adjoint solve.
+- Requirements regeneration honours each `.in` header (was mis-locking every
+  extra to py3.12).
+- Claims-manifest bindings retarget the disruption-sweep optimal block and the
+  threshold-sweep prose; a new optimal-bias binding prevents silent staleness.
+- Evidence hygiene: end-of-file newlines on tracked JSON artifacts, trailing
+  newline writers in generators.
+
 ## [3.11.0] - 2026-07-17
 
 Minor release adding new physics, control, and surrogate capabilities on top of

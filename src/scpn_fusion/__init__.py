@@ -7,7 +7,7 @@
 # SCPN Fusion Core — source/config header compliance
 """Top-level package exports for SCPN Fusion Core."""
 
-__version__ = "3.11.0"
+__version__ = "4.0.0"
 
 from scpn_fusion.io.logging_config import setup_fusion_logging
 

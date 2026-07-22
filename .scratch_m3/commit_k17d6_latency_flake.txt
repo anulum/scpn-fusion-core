@@ -1,0 +1,19 @@
+Decouple the HIL latency-campaign test from a machine-dependent wall-clock gate
+
+test_campaign_reports_simulated_hil_boundary_and_256_actuators asserted
+out["passes_thresholds"] is True, but passes_thresholds folds a wall-clock
+p95<=1000us / p99<=2000us gate together with the safe-output semantics. Under CPU
+load the nominal-scenario p95 measured 838-2567 us across back-to-back runs, so the
+flag flipped run to run while the semantics (safe_output_rate, fail-closed fallbacks)
+stayed invariant -- a latent CI flake.
+
+Assert the environment-independent guarantee directly: every scenario's
+passes_semantics holds, and passes_thresholds is a computed bool. The wall-clock
+figures remain in the returned artifact for reporting; they are no longer a unit-test
+gate. Module coverage stays 100%.
+
+Addresses KIMI due-diligence finding K17-D6 (timing-sensitive hollow gate).
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

@@ -1,0 +1,37 @@
+Run batched Kuramoto on a persistent barrier-synchronised worker pool
+
+The batched run still forked and joined rayon once for the fill and once
+for the update on every one of its `n_steps` iterations. At the benchmark
+size (10 000 oscillators, 500 steps) that is a thousand fork-joins, and
+their cost had come to dominate: the multi-thread batched run barely beat
+the single-call step kernel, and the per-step work is too small for a
+fresh fork-join to amortise.
+
+Enter the worker pool exactly once instead. `kuramoto_run_parallel` gives
+each worker a contiguous oscillator slice (`chunks_mut`, disjoint) for the
+whole trajectory via `std::thread::scope`, and the steps advance inside the
+persistent workers. Per step each worker publishes its partial order
+parameter through lock-free atomics, meets the others at a `Barrier`, then
+every worker reduces the identical partial set in the same order — so each
+derives bit-identical `(R, ψ_r)` with no coordinator — records the history
+on worker 0, and updates its own slice in place. A second barrier orders
+every worker's partial reads before the next step overwrites them; the
+barrier's happens-before makes the `Relaxed` atomics sufficient, and the
+disjoint slices mean no update aliases another worker's data. Small
+populations (and a single-thread pool) keep the serial path.
+
+Correctness: the element update is reduction-free and every worker reduces
+the partials in the same order, so the pool reproduces the serial
+trajectory within the parity gate. A new test asserts
+`kuramoto_run_parallel` matches `kuramoto_run_serial` to <1e-12 across
+worker counts 1..7 (including a count that does not divide the population);
+the existing N=4096 parity test now exercises the pool, and all 24
+fusion-phase unit + 10 phase parity cases pass.
+
+CI baseline this refines (phase-kernels-benchmark, 4-vCPU, numpy<2.0):
+kuramoto_run 7.83x (was 3.16x before the M-3 work). This commit's figure is
+measured by the same CI artifact.
+
+Seat: 14753
+
+Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

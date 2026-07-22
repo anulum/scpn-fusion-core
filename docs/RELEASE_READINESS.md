@@ -1,4 +1,4 @@
-# v3.11.0 Release Acceptance
+# v4.0.0 Release Acceptance
 
 
 ## Evidence and governance meaning
@@ -13,7 +13,7 @@ evidence requirement was silently dropped.
 
 This checklist is the operational gate for release publication. It tracks required checks and references for traceable, repeatable release decisions.
 
-Release Version: `v3.11.0`
+Release Version: `v4.0.0`
 Readiness State: `ready`
 
 This file is a tracked, non-sensitive release gate artifact. It records the
