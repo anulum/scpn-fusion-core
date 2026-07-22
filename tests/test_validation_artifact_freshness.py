@@ -48,7 +48,42 @@ _BOUND_PAIRS = [
         "artifacts/rung2_mg_preconditioner/warm_start_forward.json",
         "validation/measure_warm_start_forward.py",
     ),
+    (
+        "artifacts/disruption_transfer_generalization.json",
+        "validation/benchmark_disruption_transfer_generalization.py",
+    ),
+    (
+        "artifacts/disruption_threshold_sweep.json",
+        "tools/sweep_disruption_threshold.py",
+    ),
+    (
+        "artifacts/disruption_roc_curve.json",
+        "tools/sweep_disruption_threshold.py",
+    ),
 ]
+
+_DISRUPTION_DEPENDENCIES = {
+    "artifacts/disruption_transfer_generalization.json": (
+        "validation/validate_real_shots.py",
+        "src/scpn_fusion/control/disruption_predictor.py",
+    ),
+    "artifacts/disruption_threshold_sweep.json": (
+        "src/scpn_fusion/control/disruption_predictor.py",
+    ),
+    "artifacts/disruption_roc_curve.json": ("src/scpn_fusion/control/disruption_predictor.py",),
+}
+_DISRUPTION_DATA = REPO / "validation" / "reference_data" / "diiid" / "disruption_shots"
+
+
+def _digest_paths(paths: tuple[Path, ...]) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(paths, key=lambda item: item.as_posix()):
+        label = path.relative_to(REPO).as_posix()
+        digest.update(label.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 @pytest.mark.parametrize(("artifact_rel", "generator_rel"), _BOUND_PAIRS)
@@ -79,3 +114,44 @@ def test_artifacts_have_environment_provenance() -> None:
     for name in ("omas", "freeqdsk", "numpy", "scipy", "jax"):
         assert packages.get(name), f"missing package version in provenance: {name}"
     assert record["provenance"].get("pinned_requirements_sha256")
+
+
+@pytest.mark.parametrize(("artifact_rel", "_generator_rel"), _BOUND_PAIRS)
+def test_tracked_artifact_matches_pinned_requirements(
+    artifact_rel: str, _generator_rel: str
+) -> None:
+    """Every bound artifact records the current hash-pinned environment contract.
+
+    After a lock refresh, regenerate all bound artifacts from the repository root with::
+
+        PINNED_PY=/media/anulum/GOTM/_scratch/fusion-pinned-venv/bin/python
+        PYTHONPATH=src:. $PINNED_PY validation/validate_real_diiid_145419.py
+        PYTHONPATH=src:. $PINNED_PY validation/measure_coilgrad_adjoint_fd.py
+        PYTHONPATH=src:. $PINNED_PY validation/measure_mg_preconditioner_iterations.py
+        PYTHONPATH=src:. $PINNED_PY validation/benchmark_disruption_transfer_generalization.py --strict
+        PYTHONPATH=src:. $PINNED_PY tools/sweep_disruption_threshold.py
+    """
+    artifact = json.loads((REPO / artifact_rel).read_text(encoding="utf-8"))
+    recorded = artifact.get("provenance", {}).get("pinned_requirements_sha256")
+    current = hashlib.sha256((REPO / "requirements" / "full.txt").read_bytes()).hexdigest()
+    assert recorded == current, (
+        f"{artifact_rel} is not bound to the current requirements/full.txt: "
+        f"recorded={recorded!r}, current={current}. See this test's docstring for the exact "
+        "pinned-venv regeneration commands."
+    )
+
+
+@pytest.mark.parametrize(("artifact_rel", "dependency_rels"), _DISRUPTION_DEPENDENCIES.items())
+def test_disruption_artifact_matches_logic_and_data_corpus(
+    artifact_rel: str, dependency_rels: tuple[str, ...]
+) -> None:
+    """Disruption evidence becomes stale when logic or its NPZ corpus changes."""
+    artifact = json.loads((REPO / artifact_rel).read_text(encoding="utf-8"))
+    provenance = artifact["provenance"]
+    dependencies = tuple(REPO / rel for rel in dependency_rels)
+    data_files = tuple(_DISRUPTION_DATA.glob("*.npz"))
+
+    assert provenance["logic_sources"] == list(dependency_rels)
+    assert provenance["logic_sources_sha256"] == _digest_paths(dependencies)
+    assert provenance["disruption_data_file_count"] == len(data_files)
+    assert provenance["disruption_data_sha256"] == _digest_paths(data_files)

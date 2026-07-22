@@ -11,7 +11,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -82,3 +84,27 @@ def test_precompute_unbiased_logits_uses_safe_toroidal_defaults() -> None:
     assert logits.ndim == 1
     assert logits.size > 0
     assert bool(np.all(np.isfinite(logits)))
+
+
+def test_provenance_binds_generator_and_pinned_requirements() -> None:
+    provenance = sweep_tool._provenance()
+    assert provenance["generator_sha256"] == hashlib.sha256(MODULE_PATH.read_bytes()).hexdigest()
+    assert (
+        provenance["pinned_requirements_sha256"]
+        == hashlib.sha256((ROOT / "requirements" / "full.txt").read_bytes()).hexdigest()
+    )
+    assert provenance["logic_sources"] == ["src/scpn_fusion/control/disruption_predictor.py"]
+    assert provenance["packages"]["python"] == sys.version.split()[0]
+    assert provenance["packages"]["numpy"]
+    assert provenance["packages"]["matplotlib"]
+    assert "torch" in provenance["packages"]
+    assert provenance["disruption_data_file_count"] == len(
+        tuple((ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots").glob("*.npz"))
+    )
+
+
+def test_write_json_is_sorted_and_newline_stable(tmp_path: Path) -> None:
+    output = tmp_path / "artifact.json"
+    sweep_tool._write_json(output, {"z": 1, "a": 2})
+    assert output.read_text(encoding="utf-8") == '{\n  "a": 2,\n  "z": 1\n}\n'
+    assert json.loads(output.read_text(encoding="utf-8")) == {"a": 2, "z": 1}

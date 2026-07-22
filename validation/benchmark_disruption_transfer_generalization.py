@@ -10,9 +10,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +45,53 @@ THRESHOLDS = {
     "min_source_disruptions": 1,
     "min_target_disruptions": 1,
 }
+
+
+def _package_version(distribution: str) -> str | None:
+    """Return the installed version, or ``None`` for an unavailable optional package."""
+    try:
+        return version(distribution)
+    except PackageNotFoundError:
+        return None
+
+
+def _digest_paths(paths: tuple[Path, ...]) -> str:
+    """Hash labelled file content so dependency and corpus drift is detectable."""
+    digest = hashlib.sha256()
+    for path in sorted(paths, key=lambda item: item.as_posix()):
+        label = _display_path(path)
+        digest.update(label.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _provenance(disruption_dir: Path) -> dict[str, Any]:
+    """Return source-, logic-, corpus-, and environment-bound provenance."""
+    requirements = ROOT / "requirements" / "full.txt"
+    logic_sources = (
+        ROOT / "validation" / "validate_real_shots.py",
+        ROOT / "src" / "scpn_fusion" / "control" / "disruption_predictor.py",
+    )
+    data_files = tuple(disruption_dir.glob("*.npz"))
+    return {
+        "generator": Path(__file__).resolve().relative_to(ROOT).as_posix(),
+        "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "logic_sources": [_display_path(path) for path in logic_sources],
+        "logic_sources_sha256": _digest_paths(logic_sources),
+        "disruption_data_directory": _display_path(disruption_dir),
+        "disruption_data_file_count": len(data_files),
+        "disruption_data_sha256": _digest_paths(data_files),
+        "packages": {
+            "python": sys.version.split()[0],
+            "numpy": _package_version("numpy"),
+            "matplotlib": _package_version("matplotlib"),
+            "torch": _package_version("torch"),
+        },
+        "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+        "pinned_requirements_sha256": hashlib.sha256(requirements.read_bytes()).hexdigest(),
+    }
 
 
 def _resolve(path_value: str) -> Path:
@@ -165,6 +214,7 @@ def run_benchmark(
 
     return {
         "schema": "disruption-transfer-generalization.v1",
+        "provenance": _provenance(disruption_dir),
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source_scenarios": sorted(source_set),
         "thresholds": dict(THRESHOLDS),

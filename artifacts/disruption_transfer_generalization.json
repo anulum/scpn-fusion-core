@@ -1,0 +1,88 @@
+{
+  "checks": {
+    "source_coverage_ok": true,
+    "source_recall_ok": true,
+    "target_coverage_ok": true,
+    "target_fpr_ok": true,
+    "target_recall_ok": true,
+    "transfer_efficiency_ok": true
+  },
+  "generated_at_utc": "2026-07-22T00:19:22.587854+00:00",
+  "passes": true,
+  "provenance": {
+    "disruption_data_directory": "validation/reference_data/diiid/disruption_shots",
+    "disruption_data_file_count": 16,
+    "disruption_data_sha256": "630b9a43a488b5f3c1d13d14143e519efdbb0d4c976471c66278a0f47939afc6",
+    "generator": "validation/benchmark_disruption_transfer_generalization.py",
+    "generator_sha256": "876399f6c5e3f1f6f64a725a6b9913ae74b43617ec9caa6088e29f5bc25c1550",
+    "logic_sources": [
+      "validation/validate_real_shots.py",
+      "src/scpn_fusion/control/disruption_predictor.py"
+    ],
+    "logic_sources_sha256": "b263fcc7db395df6d66daff8caf4873102fc11d06c2151e8ffe77ae790d68e6e",
+    "packages": {
+      "matplotlib": "3.10.8",
+      "numpy": "1.26.4",
+      "python": "3.12.13",
+      "torch": null
+    },
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+  },
+  "scenario_counts": {
+    "beta_limit": 2,
+    "density_limit": 1,
+    "highbeta": 1,
+    "highbeta_safe": 1,
+    "hmode": 1,
+    "hmode_safe": 1,
+    "hybrid": 1,
+    "hybrid_safe": 1,
+    "locked_mode": 1,
+    "negdelta": 1,
+    "negdelta_safe": 1,
+    "snowflake": 1,
+    "snowflake_safe": 1,
+    "tearing": 1,
+    "vde": 1
+  },
+  "schema": "disruption-transfer-generalization.v1",
+  "source_group": {
+    "false_negatives": 0,
+    "false_positive_rate": 0.0,
+    "false_positives": 0,
+    "n_disruptions": 1,
+    "n_safe": 4,
+    "n_shots": 5,
+    "recall": 1.0,
+    "true_negatives": 4,
+    "true_positives": 1
+  },
+  "source_scenarios": [
+    "hmode",
+    "hmode_safe",
+    "hybrid",
+    "hybrid_safe",
+    "tearing"
+  ],
+  "target_group": {
+    "false_negatives": 0,
+    "false_positive_rate": 0.0,
+    "false_positives": 0,
+    "n_disruptions": 5,
+    "n_safe": 6,
+    "n_shots": 11,
+    "recall": 1.0,
+    "true_negatives": 6,
+    "true_positives": 5
+  },
+  "thresholds": {
+    "min_source_disruptions": 1,
+    "min_target_disruptions": 1,
+    "source_recall_min": 0.6,
+    "target_fpr_max": 0.4,
+    "target_recall_min": 0.6,
+    "transfer_efficiency_min": 0.7
+  },
+  "transfer_efficiency": 1.0
+}

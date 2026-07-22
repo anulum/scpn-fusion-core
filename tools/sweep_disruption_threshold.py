@@ -17,9 +17,11 @@ Outputs:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import time
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +52,58 @@ WINDOW_SIZE = 128
 
 
 # ── Core logic ────────────────────────────────────────────────────────
+
+
+def _package_version(distribution: str) -> str | None:
+    """Return the installed version, or ``None`` for an unavailable optional package."""
+    try:
+        return version(distribution)
+    except PackageNotFoundError:
+        return None
+
+
+def _digest_paths(paths: tuple[Path, ...]) -> str:
+    """Hash labelled file content so dependency and corpus drift is detectable."""
+    digest = hashlib.sha256()
+    for path in sorted(paths, key=lambda item: item.as_posix()):
+        label = path.relative_to(ROOT).as_posix()
+        digest.update(label.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _provenance(disruption_dir: Path = DISRUPTION_DIR) -> dict[str, Any]:
+    """Return source-, logic-, corpus-, and environment-bound provenance."""
+    requirements = ROOT / "requirements" / "full.txt"
+    logic_sources = (ROOT / "src" / "scpn_fusion" / "control" / "disruption_predictor.py",)
+    data_files = tuple(disruption_dir.glob("*.npz"))
+    return {
+        "generator": Path(__file__).resolve().relative_to(ROOT).as_posix(),
+        "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "logic_sources": [path.relative_to(ROOT).as_posix() for path in logic_sources],
+        "logic_sources_sha256": _digest_paths(logic_sources),
+        "disruption_data_directory": disruption_dir.relative_to(ROOT).as_posix(),
+        "disruption_data_file_count": len(data_files),
+        "disruption_data_sha256": _digest_paths(data_files),
+        "packages": {
+            "python": sys.version.split()[0],
+            "numpy": _package_version("numpy"),
+            "matplotlib": _package_version("matplotlib"),
+            "torch": _package_version("torch"),
+        },
+        "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+        "pinned_requirements_sha256": hashlib.sha256(requirements.read_bytes()).hexdigest(),
+    }
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    """Write a deterministic, hook-stable JSON artifact."""
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n",
+        encoding="utf-8",
+    )
 
 
 def load_shots(disruption_dir: Path) -> list[dict[str, Any]]:
@@ -393,6 +447,7 @@ def main() -> int:
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
     sweep_output = {
+        "provenance": _provenance(),
         "config": {
             "threshold_range": [THRESHOLD_MIN, THRESHOLD_MAX, THRESHOLD_STEP],
             "bias_values": BIAS_VALUES,
@@ -408,16 +463,17 @@ def main() -> int:
     }
 
     sweep_path = ARTIFACTS_DIR / "disruption_threshold_sweep.json"
-    sweep_path.write_text(json.dumps(sweep_output, indent=2, default=str), encoding="utf-8")
+    _write_json(sweep_path, sweep_output)
     print(f"\nSweep results: {sweep_path}")
 
     roc_path = ARTIFACTS_DIR / "disruption_roc_curve.json"
     roc_output = {
+        "provenance": _provenance(),
         "bias": best_bias,
         "n_points": len(roc_data),
         "roc": roc_data,
     }
-    roc_path.write_text(json.dumps(roc_output, indent=2, default=str), encoding="utf-8")
+    _write_json(roc_path, roc_output)
     print(f"ROC curve:     {roc_path}")
 
     return 0

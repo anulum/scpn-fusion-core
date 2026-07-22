@@ -1,10 +1,116 @@
 {
+  "all_results_count": 855,
+  "best_per_bias": {
+    "-4.0": {
+      "bias": -4.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.5,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-4.5": {
+      "bias": -4.5,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.38,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-5.0": {
+      "bias": -5.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.27,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-5.5": {
+      "bias": -5.5,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.18,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-6.0": {
+      "bias": -6.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.12,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-6.5": {
+      "bias": -6.5,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.08,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-7.0": {
+      "bias": -7.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.05,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-7.5": {
+      "bias": -7.5,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.05,
+      "true_negatives": 10,
+      "true_positives": 6
+    },
+    "-8.0": {
+      "bias": -8.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "fpr": 0.0,
+      "n_disruptions": 6,
+      "n_safe": 10,
+      "recall": 1.0,
+      "threshold": 0.05,
+      "true_negatives": 10,
+      "true_positives": 6
+    }
+  },
   "config": {
-    "threshold_range": [
-      0.05,
-      0.99,
-      0.01
-    ],
     "bias_values": [
       -4.0,
       -4.5,
@@ -16,26 +122,47 @@
       -7.5,
       -8.0
     ],
+    "n_disruptions": 6,
+    "n_safe": 10,
+    "n_shots": 16,
     "target_fpr_max": 0.3,
     "target_recall_min": 0.8,
-    "n_shots": 16,
-    "n_disruptions": 6,
-    "n_safe": 10
+    "threshold_range": [
+      0.05,
+      0.99,
+      0.01
+    ]
   },
   "optimal": {
-    "bias": -5.0,
-    "threshold": 0.99,
-    "true_positives": 6,
+    "bias": -4.0,
     "false_negatives": 0,
-    "false_positives": 5,
-    "true_negatives": 5,
+    "false_positives": 0,
+    "fpr": 0.0,
     "n_disruptions": 6,
     "n_safe": 10,
     "recall": 1.0,
-    "fpr": 0.5,
-    "selection": "pareto",
-    "pareto_score": 0.6
+    "selection": "feasible",
+    "threshold": 0.99,
+    "true_negatives": 10,
+    "true_positives": 6
   },
-  "best_per_bias": {},
-  "all_results_count": 855
+  "provenance": {
+    "disruption_data_directory": "validation/reference_data/diiid/disruption_shots",
+    "disruption_data_file_count": 16,
+    "disruption_data_sha256": "630b9a43a488b5f3c1d13d14143e519efdbb0d4c976471c66278a0f47939afc6",
+    "generator": "tools/sweep_disruption_threshold.py",
+    "generator_sha256": "91fa8f6ff5a465ca5b07803845c013f2dcca4b199b15273040bfc08249b29bf3",
+    "logic_sources": [
+      "src/scpn_fusion/control/disruption_predictor.py"
+    ],
+    "logic_sources_sha256": "74c8f573610dec31b95991abf6d848a0cf75aa724b232f5c94f0771d2f9ab6e2",
+    "packages": {
+      "matplotlib": "3.10.8",
+      "numpy": "1.26.4",
+      "python": "3.12.13",
+      "torch": null
+    },
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+  }
 }

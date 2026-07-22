@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -79,3 +80,21 @@ def test_main_writes_outputs(tmp_path: Path, monkeypatch) -> None:
     payload = json.loads(out_json.read_text(encoding="utf-8"))
     assert "checks" in payload
     assert isinstance(payload.get("passes"), bool)
+    assert out_json.read_bytes().endswith(b"\n")
+    provenance = payload["provenance"]
+    assert provenance["generator_sha256"] == hashlib.sha256(MODULE_PATH.read_bytes()).hexdigest()
+    assert (
+        provenance["pinned_requirements_sha256"]
+        == hashlib.sha256((ROOT / "requirements" / "full.txt").read_bytes()).hexdigest()
+    )
+    assert provenance["logic_sources"] == [
+        "validation/validate_real_shots.py",
+        "src/scpn_fusion/control/disruption_predictor.py",
+    ]
+    assert provenance["packages"]["python"] == sys.version.split()[0]
+    assert provenance["packages"]["numpy"]
+    assert provenance["packages"]["matplotlib"]
+    assert "torch" in provenance["packages"]
+    assert provenance["disruption_data_file_count"] == len(
+        tuple((ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots").glob("*.npz"))
+    )
