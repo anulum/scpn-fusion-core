@@ -63,6 +63,9 @@ data/mast_runs/
 !weights/neural_transport_qlknn.npz
 !validation/reference_data/diiid/disruption_shots/*.npz
 
+# Downloaded open-data corpora stay local; commit their provenance manifests only.
+validation/reference_data/mast/disruption_shots/raw/
+
 # Streamlit
 .streamlit/
 
