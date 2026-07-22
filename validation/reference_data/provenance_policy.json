@@ -297,7 +297,7 @@
       "source_type": "derived_reference_artifact",
       "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
       "license": "citation-required",
-      "citation": "Hoppe, M., Embreus, O., Fülöp, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098."
+      "citation": "Hoppe, M., Embreus, O., F\u00fcl\u00f6p, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098."
     },
     {
       "id": "replay_certificate",
@@ -321,6 +321,20 @@
       "source": "Ideal-MHD infinite-n ballooning critical-alpha reference over a Miller local equilibrium, computed with the pyrokinetics ideal-ballooning solver (Diagnostics.ideal_ballooning_solver). Generated on an independent host; the artifact embeds its own provenance block (host CPU/platform, pyrokinetics version, runner SHA-256).",
       "license": "citation-required",
       "citation": "Pyrokinetics, https://github.com/pyro-kinetics/pyrokinetics (LGPL-3.0-or-later); ideal-ballooning solver adapted from R. Gaur, https://github.com/rahulgaur104/ideal-ballooning-solver."
+    },
+    {
+      "id": "diiid_real_public_provenance_manifest",
+      "glob": "diiid/real_public/PROVENANCE.json",
+      "source_type": "documentation",
+      "source": "Repository-authored provenance manifest for locally held (untracked) DIII-D real-shot reference files; records source URLs, licences and SHA-256 digests.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "mast_disruption_provenance_manifest",
+      "glob": "mast/disruption_shots/PROVENANCE.json",
+      "source_type": "documentation",
+      "source": "Repository-authored provenance manifest for the MAST forced-VDE open-data disruption pilot (CC-BY-SA-4.0 source data): per-object SHA-256 digests, source URLs and rejected-candidate log.",
+      "license": "AGPL-3.0-or-later"
     }
   ]
 }
