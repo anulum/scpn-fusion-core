@@ -1,9 +1,0 @@
-Apply ruff format to the flight-sim actuator-boundary tests
-
-ruff format collapses the multi-line IsoFluxController(...) construction in the two
-new K17-A2/A4 tests onto a single line (they fit the line length). Formatting only;
-no behaviour change.
-
-Seat: 14753
-
-Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)

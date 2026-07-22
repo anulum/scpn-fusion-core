@@ -171,3 +171,10 @@ CLAUDE.md
 .env
 node_modules/
 TODO.md
+
+# Foreign scratch area (another seat's working files) — never track
+.scratch_m3/
+
+# real_public DIII-D data files stay untracked pending the owner's commit decision
+validation/reference_data/diiid/real_public/*
+!validation/reference_data/diiid/real_public/PROVENANCE.json

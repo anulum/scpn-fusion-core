@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: scpn-fusion-rs
-Version: 3.10.1
-Summary: SCPN Fusion Core - Rust-accelerated plasma physics
-Requires-Python: >=3.10
