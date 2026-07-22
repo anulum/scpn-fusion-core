@@ -40,6 +40,14 @@ _BOUND_PAIRS = [
         "artifacts/rung2_mg_preconditioner/iteration_counts.json",
         "validation/measure_mg_preconditioner_iterations.py",
     ),
+    (
+        "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
+        "validation/measure_compiled_forward_speedup.py",
+    ),
+    (
+        "artifacts/rung2_mg_preconditioner/warm_start_forward.json",
+        "validation/measure_warm_start_forward.py",
+    ),
 ]
 
 
