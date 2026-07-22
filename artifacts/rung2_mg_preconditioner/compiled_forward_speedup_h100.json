@@ -1,0 +1,67 @@
+{
+  "correctness_load_independent": {
+    "fixed_point_equivalence_span_rel_33sq": 4.0504048609806863e-10,
+    "note": "compiled and eager reach the same equilibrium; warm repeats are bit-deterministic (asserted in tests/test_jax_predictive_forward_compiled.py)"
+  },
+  "generated_utc": "2026-07-22T02:03:43+00:00",
+  "jax_version": "0.6.2",
+  "provenance": {
+    "generator": "validation/measure_compiled_forward_speedup.py",
+    "generator_sha256": "582a464957e56ffef1a8dcb916b67cc15823b75914ec8163a658b10d1501e3a7",
+    "logic_sources": [
+      "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+      "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+      "src/scpn_fusion/core/jax_multigrid_precond.py"
+    ],
+    "logic_sources_sha256": "6008a81d59e17a6de0d57fbce190190476d9057c06e1ce959b516547a69b3472",
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+  },
+  "settings": {
+    "defaults": "validated Anderson defaults, MG on",
+    "repeats": 3
+  },
+  "task": "compiled predictive forward (whole Anderson loop under jit) vs eager",
+  "timings_indicative": {
+    "compiled": [
+      {
+        "compile_plus_first_solve_ms": 20352.833735000047,
+        "grid": "33x33",
+        "warm_median_ms": 110.04273699995792,
+        "warm_ms": [
+          111.67203000002246,
+          110.04273699995792,
+          110.0225989999899
+        ]
+      },
+      {
+        "compile_plus_first_solve_ms": 21605.531240000004,
+        "grid": "65x65",
+        "warm_median_ms": 140.05079699995804,
+        "warm_ms": [
+          140.4103390000273,
+          140.05079699995804,
+          139.78585899997142
+        ]
+      },
+      {
+        "compile_plus_first_solve_ms": 23288.16866699998,
+        "grid": "129x129",
+        "warm_median_ms": 160.5772560000105,
+        "warm_ms": [
+          161.33964399995193,
+          160.5772560000105,
+          160.33129000004465
+        ]
+      }
+    ],
+    "device": "NVIDIA H100 80GB HBM3 (gpu)",
+    "eager_33sq_ms": [
+      29181.972872000017,
+      29355.110534000007,
+      28980.67727099999
+    ],
+    "host": "jarvislabs (x86_64) - LOADED development host; indicative only, NOT a performance claim; the claimable number is the dedicated-hardware re-benchmark",
+    "speedup_anchor_33sq": 265.18763225610405
+  }
+}
