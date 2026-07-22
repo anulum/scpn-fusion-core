@@ -1,0 +1,57 @@
+{
+  "batches": [
+    {
+      "batch_size": 16,
+      "compile_plus_first_call_s": 36.09982351499997,
+      "element_equivalence_span_rel": 1.1212814345322685e-15,
+      "warm_median_ms": 217.8273030000355,
+      "warm_ms": [
+        218.86774400002196,
+        218.0682919999981,
+        217.8273030000355,
+        217.748481000001,
+        217.72766499998397
+      ],
+      "warm_per_solve_ms": 13.614206437502219
+    },
+    {
+      "batch_size": 64,
+      "compile_plus_first_call_s": 34.35954978199999,
+      "element_equivalence_span_rel": 8.409610758992013e-16,
+      "warm_median_ms": 834.9509660000081,
+      "warm_ms": [
+        834.464545000003,
+        834.9509660000081,
+        840.6689729999925,
+        837.8766330000076,
+        834.3817190000209
+      ],
+      "warm_per_solve_ms": 13.046108843750126
+    },
+    {
+      "batch_size": 256,
+      "compile_plus_first_call_s": 35.94257897699998,
+      "element_equivalence_span_rel": 5.886727531294409e-15,
+      "warm_median_ms": 3749.606513999993,
+      "warm_ms": [
+        3753.5952419999603,
+        3749.606513999993,
+        3745.9546790000786,
+        3746.6523169999846,
+        3754.3471700000737
+      ],
+      "warm_per_solve_ms": 14.646900445312472
+    }
+  ],
+  "device": "NVIDIA H100 80GB HBM3 (gpu)",
+  "generated_utc": "2026-07-22T14:07:21+00:00",
+  "git_sha": "0d59b3ebbc3915252cbd7657cc3fe5c60efb9928",
+  "grid": "129x129",
+  "host": "jarvislabs",
+  "jax_version": "0.6.2",
+  "note": "UNBOUND dedicated-hardware snapshot lane (like *_h100.json siblings); the freshness-bound artifact is batched_forward_amortisation.json generated under the hash-pinned environment.",
+  "repeats": 5,
+  "script_sha256": "77bd509887647156e5e3a096328371b05752311da0b1f357b3fc52d2c84bc5db",
+  "single_warm_mgr2_median_ms": 13.43628400002217,
+  "task": "H100 dedicated snapshot: batched (vmap) compiled forward, 129^2 FP64, warm shared psi_init + ip_ramp=1 (IDA/MCMC pattern)"
+}
