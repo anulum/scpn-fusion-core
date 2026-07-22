@@ -135,6 +135,46 @@
 
 *Overall ψ NRMSE: 0.000 (threshold: 0.11). Overall: PASS*
 
+## Predictive Free-Boundary Forward (JAX, compiled)
+
+Differentiable free-boundary Grad–Shafranov forward solve — (coil currents, p′, FF′) → ψ —
+with the whole Anderson fixed-point iteration compiled into a single `lax.while_loop`
+under `jax.jit` (`scpn_fusion.core.jax_predictive_forward_compiled`; batched `vmap`
+variant for the ensemble/MCMC pattern). All numbers below are measured by committed,
+provenance-bound generators; `*_h100.json` files are dedicated-hardware snapshots.
+
+| Metric | Value | Evidence |
+|--------|-------|----------|
+| Compiled vs eager fixed point (33², span-rel) | 7.7e-10 | `artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json` |
+| Warm vs cold fixed point (129², warm+MG-Richardson, span-rel) | 1.7e-9 | `artifacts/rung2_mg_preconditioner/warm_start_forward.json` |
+| H100 FP64 129² cold / warm / warm+MG-Richardson(2) | 164.8 / 26.3 / 13.0 ms | `artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json` |
+| H100 replication on the public head (single, warm+MG-Richardson) | 13.44 ms | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json` |
+| H100 batched per-solve (warm, B=16/64/256) | 13.6 / 13.0 / 14.6 ms | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json` |
+| Batched element ≡ single solve (span-rel) | ≤ 2.6e-15 | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json` |
+| Adjoint coil gradient vs warm finite difference | ≤ 1.718e-05 relative (100–300 A steps) | `artifacts/coilgrad_adjoint_fd_evidence.json` |
+
+Real-data reproduction (DIII-D shot 145419, EFIT g-file, 129×129):
+
+| Lane | ψ error (span-relative RMS, ψ_N ≤ 0.95 region) | Notes |
+|------|------------------------------------------------|-------|
+| Full-domain forward reproduction | 0.72 % | the error is concentrated in the ψ_N > 0.95 pedestal shell |
+| Shell-pinned attribution (model source ψ_N ≤ 0.95) | 0.051 % | thin-shell source error ⇒ smooth quasi-harmonic remainder |
+| Zero-external-field negative control | ~127 % | cold start, no coil field — fails as it must |
+
+Honest boundaries (recorded inside the artifacts themselves):
+
+- Warm-start convergence envelope: a −1 % coil perturbation does not converge warm at
+  33² within 300 iterations (+1 % converges in 11; ±0.2 % in 10–11); batched
+  comparisons guard on single-solve convergence, and the batched API inherits exactly
+  the single solver's convergence envelope.
+- On the H100 the batched per-solve cost equals the single-solve cost (no amortisation
+  gain at B ≤ 256; the same code gains 2.5× on a GTX 1060) — the batched wall-clock
+  appears bound by a device-independent per-iteration cost, an open question assigned
+  to the persistent-kernel experiment lane.
+- Timings labelled *indicative* in the bound artifacts are load-contaminated
+  development-host numbers; dedicated-hardware numbers live in the `*_h100.json`
+  snapshot lane.
+
 ## Disruption Transfer-Generalization
 
 | Group | Shots | Disruptions | Safe | Recall | FPR |

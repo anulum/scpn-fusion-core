@@ -72,11 +72,36 @@ Most fusion codes are physics-first — solve equations, then bolt on control.
 SCPN Fusion Core inverts this: **control-first**. Express plasma control logic
 as stochastic Petri nets, compile to spiking neural networks, and execute the
 reduced-order control kernel at **>10 kHz** against a simplified surrogate plant.
-The physics-in-loop rate is far lower — a full free-boundary Grad–Shafranov solve
-in the loop runs at order 1 Hz, not 10 kHz. Pure Python with optional Rust
-acceleration for reduced-order control kernels; latency claims are metric-scoped,
-measured on a simplified plant, and are neither same-work Rust-versus-Python
-physics speedups nor a physics-in-loop real-time rate.
+The physics-in-loop rate is far lower than the control rate: the compiled
+predictive free-boundary Grad–Shafranov forward measures 13.0 ms per
+warm-started, fully converged 129² FP64 solve on a dedicated H100 (164.8 ms
+cold; evidence chain in [RESULTS.md](RESULTS.md)) — order 10–100 Hz, not
+10 kHz. Pure Python with optional Rust acceleration for reduced-order control
+kernels; latency claims are metric-scoped, measured on a simplified plant, and
+are neither same-work Rust-versus-Python physics speedups nor a
+physics-in-loop real-time rate.
+
+### Differentiable free-boundary forward solve (JAX)
+
+`scpn_fusion.core.jax_predictive_forward_compiled` solves the predictive
+free-boundary problem — (coil currents, p′, FF′) → ψ — with the whole Anderson
+fixed-point iteration inside one `jax.jit`-compiled `lax.while_loop`, plus a
+cached `vmap` batch variant for ensemble/MCMC workloads and an
+implicit-function-theorem adjoint for exact gradients. Measured, evidence-bound
+status (details and artifact paths in [RESULTS.md](RESULTS.md)):
+
+| Measured fact | Value |
+|---------------|-------|
+| Warm-started, fully converged 129² FP64 solve (dedicated H100) | 13.0 ms |
+| Replication on the public head, fresh instance | 13.44 ms |
+| Batched per-solve, warm (B=16/64/256, H100) | 13.6 / 13.0 / 14.6 ms |
+| Compiled vs eager fixed-point equivalence (span-rel) | 7.7e-10 |
+| Adjoint coil gradient vs warm finite difference | ≤ 1.718e-05 relative |
+| DIII-D 145419 full-domain / shell-pinned ψ RMS (span-rel) | 0.72 % / 0.051 % |
+
+Smoothness by construction (softmax axis/X-point extraction keeps the coupled
+fixed point differentiable), fail-closed input guards, and honest boundaries —
+convergence envelope and batching limits — are recorded in the same artifacts.
 
 > **Compact control package:** [`scpn-control`](https://github.com/anulum/scpn-control)
 > is the smaller controller-facing package for Petri-net compilation, SNN

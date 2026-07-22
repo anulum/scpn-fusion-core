@@ -4,7 +4,7 @@
     {
       "id": "readme_control_latency_scope_claim",
       "source_file": "README.md",
-      "source_pattern": "metric-scoped,\\s+measured on a simplified plant, and are neither same-work Rust-versus-Python\\s+physics speedups nor a physics-in-loop real-time rate",
+      "source_pattern": "metric\\-scoped,\\s+measured\\s+on\\s+a\\s+simplified\\s+plant,\\s+and\\s+are\\s+neither\\s+same\\-work\\s+Rust\\-versus\\-Python\\s+physics\\s+speedups\\s+nor\\s+a\\s+physics\\-in\\-loop\\s+real\\-time\\s+rate",
       "evidence_files": [
         "docs/PERFORMANCE_METRIC_TAXONOMY.md",
         "validation/reports/scpn_end_to_end_latency.md"
@@ -347,6 +347,158 @@
         {
           "file": "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
           "pattern": "Public headline\\s+claims stay governed by `validation/claims_manifest\\.json`"
+        }
+      ]
+    },
+    {
+      "id": "results_predictive_forward_h100_warm_solve",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| H100 FP64 129\u00b2 cold / warm / warm\\+MG-Richardson\\(2\\) \\| 164\\.8 / 26\\.3 / 13\\.0 ms",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json",
+          "pattern": "\"warm_mg_richardson2_median_ms\"\\s*:\\s*12\\.97951"
+        },
+        {
+          "file": "artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json",
+          "pattern": "\"cold_median_ms\"\\s*:\\s*164\\.81770"
+        }
+      ]
+    },
+    {
+      "id": "readme_predictive_forward_h100_warm_solve",
+      "source_file": "README.md",
+      "source_pattern": "\\| Warm-started, fully converged 129\u00b2 FP64 solve \\(dedicated H100\\) \\| 13\\.0 ms",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json",
+          "pattern": "\"warm_mg_richardson2_median_ms\"\\s*:\\s*12\\.97951"
+        }
+      ]
+    },
+    {
+      "id": "results_predictive_forward_replication",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| H100 replication on the public head \\(single, warm\\+MG-Richardson\\) \\| 13\\.44 ms",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json",
+          "pattern": "\"single_warm_mgr2_median_ms\"\\s*:\\s*13\\.43628"
+        }
+      ]
+    },
+    {
+      "id": "results_predictive_forward_batched_per_solve",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| H100 batched per-solve \\(warm, B=16/64/256\\) \\| 13\\.6 / 13\\.0 / 14\\.6 ms",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json",
+          "pattern": "\"warm_per_solve_ms\"\\s*:\\s*13\\.614206"
+        },
+        {
+          "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json",
+          "pattern": "\"warm_per_solve_ms\"\\s*:\\s*13\\.046108"
+        },
+        {
+          "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json",
+          "pattern": "\"warm_per_solve_ms\"\\s*:\\s*14\\.646900"
+        }
+      ]
+    },
+    {
+      "id": "results_predictive_forward_equivalence",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Compiled vs eager fixed point \\(33\u00b2, span-rel\\) \\| 7\\.7e-10",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*7\\.65943"
+        }
+      ]
+    },
+    {
+      "id": "results_predictive_forward_warm_equivalence",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Warm vs cold fixed point \\(129\u00b2, warm\\+MG-Richardson, span-rel\\) \\| 1\\.7e-9",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/warm_start_forward.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/warm_start_forward.json",
+          "pattern": "\"129x129_warm_mg_richardson2\"\\s*:\\s*1\\.66026"
+        }
+      ]
+    },
+    {
+      "id": "results_predictive_forward_batched_equivalence",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Batched element \u2261 single solve \\(span-rel\\) \\| \u2264 2\\.6e-15",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json",
+          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*2\\.52714"
+        }
+      ]
+    },
+    {
+      "id": "results_predictive_forward_adjoint",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 1\\.718e-05 relative",
+      "evidence_files": [
+        "artifacts/coilgrad_adjoint_fd_evidence.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
+          "pattern": "1\\.718e-05"
+        }
+      ]
+    },
+    {
+      "id": "results_real_shot_full_domain_rms",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Full-domain forward reproduction \\| 0\\.72 %",
+      "evidence_files": [
+        "artifacts/real_diiid_145419/real_145419_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_diiid_145419/real_145419_validation.json",
+          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.00717438"
+        }
+      ]
+    },
+    {
+      "id": "results_real_shot_shell_pinned_rms",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Shell-pinned attribution \\(model source \u03c8_N \u2264 0\\.95\\) \\| 0\\.051 %",
+      "evidence_files": [
+        "artifacts/real_diiid_145419/real_145419_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_diiid_145419/real_145419_validation.json",
+          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.00051095"
         }
       ]
     }
