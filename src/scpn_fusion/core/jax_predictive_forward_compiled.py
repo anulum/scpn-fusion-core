@@ -35,7 +35,7 @@ grid is REQUIRED and verified fail-closed (the whole discretisation assumes it).
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Callable
+from typing import Callable, cast
 
 import jax
 import jax.numpy as jnp
@@ -88,6 +88,7 @@ def _make_runner(
     use_mg_preconditioner: bool,
     inner_solver: str,
     inner_cycles: int,
+    anderson_solver: str = "lstsq",
 ) -> Callable[..., jnp.ndarray]:
     """Build and jit the while_loop runner for one (geometry, settings) combination."""
     shape = (nz, nr)
@@ -116,7 +117,7 @@ def _make_runner(
         source_idx: jnp.ndarray,
         coil_wall: jnp.ndarray,
         x0: jnp.ndarray,
-    ) -> jnp.ndarray:
+    ) -> tuple[jnp.ndarray, jnp.ndarray]:
         dA = jnp.asarray(d_r * d_z)
 
         def g_of(x: jnp.ndarray, ip_now: jnp.ndarray) -> jnp.ndarray:
@@ -191,7 +192,15 @@ def _make_runner(
             valid = (col_idx >= (m - nv_new))[jnp.newaxis, :]
             df = jnp.where(valid, (f_new[1:] - f_new[:-1]).T, 0.0)
             dx = jnp.where(valid, (x_new[1:] - x_new[:-1]).T, 0.0)
-            gamma, _res, _rank, _sv = jnp.linalg.lstsq(df, f, rcond=None)
+            if anderson_solver == "normal_eq":
+                # Normal equations on the (m-1)x(m-1) Gram system with relative Tikhonov
+                # regularisation — mathematically the same least squares as lstsq up to
+                # conditioning (standard Anderson practice); batchable (no tall SVD).
+                gram = df.T @ df
+                lam = 1e-12 * jnp.trace(gram) + 1e-300
+                gamma = jnp.linalg.solve(gram + lam * jnp.eye(m - 1, dtype=gram.dtype), df.T @ f)
+            else:
+                gamma, _res, _rank, _sv = jnp.linalg.lstsq(df, f, rcond=None)
             x_anderson = x + mixing * f - (dx + mixing * df) @ gamma
             x_fallback = x + mixing * f
             x_next = jnp.where(jnp.all(jnp.isfinite(x_anderson)), x_anderson, x_fallback)
@@ -212,8 +221,8 @@ def _make_runner(
             jnp.asarray(0),
             jnp.asarray(False),
         )
-        _k, x_final, _fh, _xh, _nv, _done = jax.lax.while_loop(cond, body, state0)
-        return x_final.reshape(shape)
+        k_final, x_final, _fh, _xh, _nv, _done = jax.lax.while_loop(cond, body, state0)
+        return x_final.reshape(shape), k_final
 
     return jax.jit(run)
 
@@ -243,7 +252,9 @@ def solve_predictive_equilibrium_compiled(
     use_mg_preconditioner: bool = True,
     inner_solver: str = "bicgstab",
     inner_cycles: int = 3,
-) -> jnp.ndarray:
+    anderson_solver: str = "lstsq",
+    return_iterations: bool = False,
+) -> jnp.ndarray | tuple[jnp.ndarray, int]:
     """Compiled predictive free-boundary solve — same fixed point as the eager solver.
 
     Same inputs and semantics as
@@ -282,6 +293,8 @@ def solve_predictive_equilibrium_compiled(
         raise ValueError("inner_solver='mg_richardson' requires use_mg_preconditioner=True")
     if inner_cycles < 1:
         raise ValueError("inner_cycles must be >= 1")
+    if anderson_solver not in ("lstsq", "normal_eq"):
+        raise ValueError(f"unknown anderson_solver {anderson_solver!r}")
     nz, nr = z_np.size, r_np.size
     if psi_init is not None and tuple(np.shape(psi_init)) != (nz, nr):
         raise ValueError(f"psi_init shape {np.shape(psi_init)} does not match grid ({nz}, {nr})")
@@ -306,8 +319,9 @@ def solve_predictive_equilibrium_compiled(
         bool(use_mg_preconditioner),
         str(inner_solver),
         int(inner_cycles),
+        str(anderson_solver),
     )
-    return runner(
+    psi, k = runner(
         coil_I,
         pprime_vals,
         ffprime_vals,
@@ -320,4 +334,203 @@ def solve_predictive_equilibrium_compiled(
         source_idx,
         coil_wall,
         x0,
+    )
+    if return_iterations:
+        return cast(jnp.ndarray, psi), int(k)
+    return cast(jnp.ndarray, psi)
+
+
+@lru_cache(maxsize=16)
+def _make_batched_runner(
+    nz: int,
+    nr: int,
+    r0: float,
+    d_r: float,
+    d_z: float,
+    n_iter: int,
+    anderson_depth: int,
+    mixing: float,
+    ip_ramp: int,
+    cutoff_width: float,
+    tol: float,
+    mu0: float,
+    use_mg_preconditioner: bool,
+    inner_solver: str,
+    inner_cycles: int,
+    anderson_solver: str,
+    shared_init: bool,
+) -> Callable[..., jnp.ndarray]:
+    """Build and jit the vmapped batch runner for one (geometry, settings) combination.
+
+    The cache is the whole point: re-jitting ``jax.vmap`` per call recompiles the batched
+    while-loop graph every time (~3 min at 129² on a GTX 1060 — the measured "batch cliff",
+    call-count- and batch-size-bound, not solver-bound). With the runner cached, the warm
+    batched solve amortises kernel-launch latency exactly as designed (measured 13–17
+    ms/solve at 129² on the same card vs 34 ms single). Geometry and machine arrays are
+    traced ARGUMENTS (broadcast axes), never closure captures, so one compiled runner
+    serves every call with matching static settings.
+    """
+    runner = _make_runner(
+        nz,
+        nr,
+        r0,
+        d_r,
+        d_z,
+        n_iter,
+        anderson_depth,
+        mixing,
+        ip_ramp,
+        cutoff_width,
+        tol,
+        mu0,
+        use_mg_preconditioner,
+        inner_solver,
+        inner_cycles,
+        anderson_solver,
+    )
+
+    def one(
+        ci: jnp.ndarray,
+        pp: jnp.ndarray,
+        ff: jnp.ndarray,
+        R_grid: jnp.ndarray,
+        Z_grid: jnp.ndarray,
+        coil_R: jnp.ndarray,
+        coil_Z: jnp.ndarray,
+        psin_knots: jnp.ndarray,
+        ip_arr: jnp.ndarray,
+        response_matrix: jnp.ndarray,
+        wall_idx: jnp.ndarray,
+        source_idx: jnp.ndarray,
+        x0_shared: jnp.ndarray,
+    ) -> jnp.ndarray:
+        psi_coil = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, ci, mu0)
+        coil_wall = psi_coil.reshape(-1)[wall_idx]
+        x0 = x0_shared if shared_init else psi_coil.reshape(-1)
+        psi, _k = runner(
+            ci,
+            pp,
+            ff,
+            R_grid,
+            Z_grid,
+            psin_knots,
+            ip_arr,
+            response_matrix,
+            wall_idx,
+            source_idx,
+            coil_wall,
+            x0,
+        )
+        return cast(jnp.ndarray, psi)
+
+    in_axes = (0, 0, 0) + (None,) * 10
+    return cast(Callable[..., jnp.ndarray], jax.jit(jax.vmap(one, in_axes=in_axes)))
+
+
+def solve_predictive_equilibrium_batched(
+    coil_I_batch: jnp.ndarray,
+    pprime_batch: jnp.ndarray,
+    ffprime_batch: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    coil_R: jnp.ndarray,
+    coil_Z: jnp.ndarray,
+    psin_knots: jnp.ndarray,
+    ip_target: float,
+    response_matrix: jnp.ndarray,
+    wall_idx: jnp.ndarray,
+    source_idx: jnp.ndarray,
+    psi_init: jnp.ndarray | None = None,
+    n_iter: int = DEFAULT_N_ITER,
+    anderson_depth: int = DEFAULT_ANDERSON_DEPTH,
+    mixing: float = DEFAULT_MIXING,
+    ip_ramp: int = DEFAULT_IP_RAMP,
+    cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
+    tol: float = DEFAULT_TOL,
+    mu0: float = MU0_SI,
+    *,
+    use_mg_preconditioner: bool = True,
+    inner_solver: str = "mg_richardson",
+    inner_cycles: int = 2,
+    anderson_solver: str = "lstsq",
+) -> jnp.ndarray:
+    """Batched compiled solve — ``vmap`` over (coil currents, p′, FF′) samples.
+
+    The MCMC/ensemble pattern of the IDA loop: many parameter samples of the SAME machine
+    geometry solved simultaneously. Kernel-launch latency (the measured wall-clock driver at
+    these grid sizes) is amortised across the whole batch, so the effective per-sample cost
+    drops far below a single solve. All samples share ``psi_init`` (typically the current
+    MAP equilibrium — the in-basin warm start; pass ``ip_ramp=1`` semantics via the shared
+    warm default below) and the machine geometry; each sample carries its own
+    ``(coil_I, p′, FF′)`` row. Batched defaults follow the measured production path
+    (``mg_richardson``, ``inner_cycles=2``).
+
+    Correctness: element ``i`` of the returned batch equals the single-solve result for
+    sample ``i`` (test-pinned at span tolerance) — ``lax.while_loop`` under ``vmap`` runs
+    until EVERY element converges, so per-element results are unaffected by batching.
+
+    Returns ψ batch of shape ``(B, NZ, NR)``.
+    """
+    r_np = np.asarray(R_grid, dtype=np.float64)
+    z_np = np.asarray(Z_grid, dtype=np.float64)
+    d_r = _require_uniform("R_grid", r_np)
+    d_z = _require_uniform("Z_grid", z_np)
+    if coil_I_batch.ndim != 2 or pprime_batch.ndim != 2 or ffprime_batch.ndim != 2:
+        raise ValueError("coil_I_batch, pprime_batch and ffprime_batch must be 2-D (batch, values)")
+    if not (coil_I_batch.shape[0] == pprime_batch.shape[0] == ffprime_batch.shape[0]):
+        raise ValueError("batch dimensions must agree across coil_I, pprime and ffprime")
+    if min(n_iter, anderson_depth, ip_ramp) < 1:
+        raise ValueError("n_iter, anderson_depth and ip_ramp must be >= 1")
+    if not (np.isfinite(tol) and tol > 0.0):
+        raise ValueError("tol must be finite and > 0")
+    if inner_solver not in ("bicgstab", "mg_richardson"):
+        raise ValueError(f"unknown inner_solver {inner_solver!r}")
+    if inner_solver == "mg_richardson" and not use_mg_preconditioner:
+        raise ValueError("inner_solver='mg_richardson' requires use_mg_preconditioner=True")
+    if inner_cycles < 1:
+        raise ValueError("inner_cycles must be >= 1")
+    if anderson_solver not in ("lstsq", "normal_eq"):
+        raise ValueError(f"unknown anderson_solver {anderson_solver!r}")
+    nz, nr = z_np.size, r_np.size
+    if psi_init is not None and tuple(np.shape(psi_init)) != (nz, nr):
+        raise ValueError(f"psi_init shape {np.shape(psi_init)} does not match grid ({nz}, {nr})")
+    batched = _make_batched_runner(
+        nz,
+        nr,
+        float(r_np[0]),
+        d_r,
+        d_z,
+        int(n_iter),
+        int(anderson_depth),
+        float(mixing),
+        int(ip_ramp),
+        float(cutoff_width),
+        float(tol),
+        float(mu0),
+        bool(use_mg_preconditioner),
+        str(inner_solver),
+        int(inner_cycles),
+        str(anderson_solver),
+        psi_init is not None,
+    )
+    ip_arr = jnp.asarray(float(ip_target))
+    x0_shared = (
+        jnp.zeros(nz * nr, dtype=jnp.result_type(float))
+        if psi_init is None
+        else jnp.asarray(psi_init).reshape(-1)
+    )
+    return batched(
+        coil_I_batch,
+        pprime_batch,
+        ffprime_batch,
+        R_grid,
+        Z_grid,
+        coil_R,
+        coil_Z,
+        psin_knots,
+        ip_arr,
+        response_matrix,
+        wall_idx,
+        source_idx,
+        x0_shared,
     )

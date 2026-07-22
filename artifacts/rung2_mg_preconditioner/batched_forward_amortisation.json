@@ -1,0 +1,59 @@
+{
+  "correctness_load_independent": {
+    "max_element_equivalence_span_rel": 2.5271476582568135e-15,
+    "note": "each compared element's single solve converged (k < n_iter); a -1% coil perturbation warm case does NOT converge at 33\u00b2 within 300 iterations (residual plateau near the softmax X-point extraction) while +1% converges in 11 \u2014 comparisons are made only where the single solve converges, and the batched API inherits exactly the single solver's convergence envelope."
+  },
+  "generated_utc": "2026-07-22T12:50:01+00:00",
+  "jax_version": "0.7.1",
+  "provenance": {
+    "generator": "validation/measure_batched_forward.py",
+    "generator_sha256": "2b2921cc86365a2a87687090e7e52ac3bca80bf89b28ed42bc060c387650fae5",
+    "logic_sources": [
+      "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+      "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+      "src/scpn_fusion/core/jax_multigrid_precond.py"
+    ],
+    "logic_sources_sha256": "8a3e29d405fcc88d437dd472163278fbaf245ff82aac4ab1abf622c973c748d2",
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "9e2104f7874e341f0e185b7659dab2e7762fededff670d548c475cac27edb31a"
+  },
+  "root_cause_note": "the previously measured 'batch cliff' (~10 s/solve effective at 129\u00b2 on a GTX 1060, batch-size-independent total) was per-call re-jitting of jax.vmap \u2014 a full recompile of the batched while-loop graph on EVERY wrapper call; component probes measured the vmapped physics (coupled RHS, MG V-cycle, Anderson step) at ~7x LOWER per-element cost than single solves. The lru_cache runner factory removes the recompile; measured warm cost on the same card: 13.5 ms/solve (B=16) and 17.5 ms/solve (B=64) at 129\u00b2 FP64 vs 34 ms single.",
+  "settings": {
+    "defaults": "batched defaults (mg_richardson, inner_cycles=2), warm shared psi_init + ip_ramp=1 (the IDA/MCMC pattern)",
+    "repeats": 3
+  },
+  "task": "batched (vmap) compiled forward \u2014 cached runner, element correctness, amortisation",
+  "timings_indicative": {
+    "batches": [
+      {
+        "batch_size": 4,
+        "cache_hits_gained_after_first_call": 3,
+        "compile_plus_first_call_ms": 29964.62808200158,
+        "element_equivalence_span_rel": 1.1231767370030281e-15,
+        "warm_median_ms": 74.44116100668907,
+        "warm_ms": [
+          55.270751006901264,
+          74.44116100668907,
+          110.23122607730329
+        ],
+        "warm_per_solve_ms": 18.610290251672268
+      },
+      {
+        "batch_size": 16,
+        "cache_hits_gained_after_first_call": 4,
+        "compile_plus_first_call_ms": 28621.23527401127,
+        "element_equivalence_span_rel": 2.5271476582568135e-15,
+        "warm_median_ms": 309.53983892686665,
+        "warm_ms": [
+          198.201356921345,
+          309.53983892686665,
+          311.0539228655398
+        ],
+        "warm_per_solve_ms": 19.346239932929166
+      }
+    ],
+    "device": "cpu (cpu)",
+    "grid": "33x33",
+    "host": "aaarthuus (x86_64) - LOADED development host; indicative only, NOT a performance claim; dedicated-hardware numbers live in the unbound *_h100.json snapshot lane"
+  }
+}

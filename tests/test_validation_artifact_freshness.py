@@ -49,6 +49,10 @@ _BOUND_PAIRS = [
         "validation/measure_warm_start_forward.py",
     ),
     (
+        "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json",
+        "validation/measure_batched_forward.py",
+    ),
+    (
         "artifacts/disruption_transfer_generalization.json",
         "validation/benchmark_disruption_transfer_generalization.py",
     ),
@@ -124,10 +128,11 @@ def test_tracked_artifact_matches_pinned_requirements(
 
     After a lock refresh, regenerate all bound artifacts from the repository root with::
 
-        PINNED_PY=/media/anulum/GOTM/_scratch/fusion-pinned-venv/bin/python
+        PINNED_PY=/media/anulum/GOTM/_scratch/fusion-pinned-venv2/bin/python
         PYTHONPATH=src:. $PINNED_PY validation/validate_real_diiid_145419.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_coilgrad_adjoint_fd.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_mg_preconditioner_iterations.py
+        PYTHONPATH=src:. $PINNED_PY validation/measure_batched_forward.py
         PYTHONPATH=src:. $PINNED_PY validation/benchmark_disruption_transfer_generalization.py --strict
         PYTHONPATH=src:. $PINNED_PY tools/sweep_disruption_threshold.py
     """
