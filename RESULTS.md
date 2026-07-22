@@ -148,11 +148,11 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Optimal bias | -5.0 | |
+| Optimal bias | -4.0 | |
 | Optimal threshold | 0.99 | |
 | Recall | 1.00 | 6/6 |
-| FPR | 0.50 | 5/10 |
-| Pareto score | 0.60 | recall − FPR |
+| FPR | 0.00 | 0/10 |
+| Selection | feasible | recall ≥ 0.80 and FPR ≤ 0.30 both satisfied |
 | Shots evaluated | 16 | 6 disruptions, 10 safe |
 
 ## Legacy Surrogates

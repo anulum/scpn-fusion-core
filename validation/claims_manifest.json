@@ -169,16 +169,30 @@
       ]
     },
     {
-      "id": "results_threshold_sweep_fpr",
+      "id": "results_threshold_sweep_optimal_bias",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| FPR \\| 0\\.50",
+      "source_pattern": "\\| Optimal bias \\| -4\\.0",
       "evidence_files": [
         "artifacts/disruption_threshold_sweep.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/disruption_threshold_sweep.json",
-          "pattern": "\"fpr\"\\s*:\\s*0\\.5"
+          "pattern": "\"optimal\"[\\s\\S]*?\"bias\"\\s*:\\s*-4\\.0,"
+        }
+      ]
+    },
+    {
+      "id": "results_threshold_sweep_fpr",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| FPR \\| 0\\.00",
+      "evidence_files": [
+        "artifacts/disruption_threshold_sweep.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/disruption_threshold_sweep.json",
+          "pattern": "\"optimal\"[\\s\\S]*?\"fpr\"\\s*:\\s*0\\.0,"
         }
       ]
     },
