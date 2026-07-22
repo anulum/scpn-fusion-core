@@ -1,16 +1,16 @@
 {
   "correctness_load_independent": {
     "warm_vs_cold_fixed_point_span_rel": {
-      "129x129": 1.0763891644428024e-09,
-      "129x129_warm_mg_richardson2": 1.6610019248507826e-09,
-      "33x33": 1.447225282458618e-09,
-      "33x33_warm_mg_richardson2": 1.1362751134750328e-09,
-      "65x65": 1.8479299674658492e-09,
-      "65x65_warm_mg_richardson2": 1.7442239135884522e-09
+      "129x129": 1.075716982073909e-09,
+      "129x129_warm_mg_richardson2": 1.660262736157312e-09,
+      "33x33": 1.4453151459437468e-09,
+      "33x33_warm_mg_richardson2": 1.1347363346122232e-09,
+      "65x65": 1.8469096276591254e-09,
+      "65x65_warm_mg_richardson2": 1.7435181550997354e-09
     }
   },
-  "generated_utc": "2026-07-22T01:50:34+00:00",
-  "jax_version": "0.6.2",
+  "generated_utc": "2026-07-22T03:44:17+00:00",
+  "jax_version": "0.7.1",
   "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base + ip_ramp=1 (the ramp exists for cold-start robustness and would otherwise force 30 iterations before the early stop can fire); correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
     "generator": "validation/measure_warm_start_forward.py",
@@ -22,7 +22,7 @@
     ],
     "logic_sources_sha256": "6008a81d59e17a6de0d57fbce190190476d9057c06e1ce959b516547a69b3472",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+    "pinned_requirements_sha256": "9e2104f7874e341f0e185b7659dab2e7762fededff670d548c475cac27edb31a"
   },
   "settings": {
     "perturb_rel": 0.005,
@@ -30,70 +30,70 @@
   },
   "task": "warm-start behaviour of the compiled predictive forward (IDA pattern)",
   "timings_indicative": {
-    "device": "NVIDIA GeForce GTX 1060 6GB (gpu)",
+    "device": "cpu (cpu)",
     "host": "aaarthuus (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 206.59172115847468,
+        "cold_median_ms": 576.3978851027787,
         "cold_ms": [
-          230.1289818715304,
-          206.59172115847468,
-          189.77348692715168
+          615.8683858811855,
+          576.3978851027787,
+          532.5103078503162
         ],
         "grid": "33x33",
-        "warm_median_ms": 36.58981388434768,
-        "warm_mg_richardson2_median_ms": 14.572985004633665,
+        "warm_median_ms": 68.47763806581497,
+        "warm_mg_richardson2_median_ms": 37.12599212303758,
         "warm_mg_richardson2_ms": [
-          19.463995937258005,
-          14.572985004633665,
-          14.36214498244226
+          37.12599212303758,
+          48.42771193943918,
+          35.88845697231591
         ],
         "warm_ms": [
-          48.25513297691941,
-          31.815024791285396,
-          36.58981388434768
+          64.06479515135288,
+          68.47763806581497,
+          77.20530196093023
         ]
       },
       {
-        "cold_median_ms": 274.7074419166893,
+        "cold_median_ms": 1203.5189720336348,
         "cold_ms": [
-          601.1071731336415,
-          240.44076795689762,
-          274.7074419166893
+          1303.121413802728,
+          1203.5189720336348,
+          868.2808589655906
         ],
         "grid": "65x65",
-        "warm_median_ms": 75.7554629817605,
-        "warm_mg_richardson2_median_ms": 58.03641304373741,
+        "warm_median_ms": 213.60387792810798,
+        "warm_mg_richardson2_median_ms": 111.5070900414139,
         "warm_mg_richardson2_ms": [
-          77.45626801624894,
-          34.155451925471425,
-          58.03641304373741
+          189.66001993976533,
+          99.1105439607054,
+          111.5070900414139
         ],
         "warm_ms": [
-          419.50072697363794,
-          71.46746688522398,
-          75.7554629817605
+          158.77280896529555,
+          213.60387792810798,
+          250.36950292997062
         ]
       },
       {
-        "cold_median_ms": 408.8815648574382,
+        "cold_median_ms": 4599.646159913391,
         "cold_ms": [
-          408.8815648574382,
-          438.41025000438094,
-          380.7790279388428
+          4710.783259943128,
+          4471.181913977489,
+          4599.646159913391
         ],
         "grid": "129x129",
-        "warm_median_ms": 61.50166783481836,
-        "warm_mg_richardson2_median_ms": 44.11448002792895,
+        "warm_median_ms": 822.2365621477365,
+        "warm_mg_richardson2_median_ms": 508.4993802011013,
         "warm_mg_richardson2_ms": [
-          50.34062801860273,
-          43.73825411312282,
-          44.11448002792895
+          639.2873129807413,
+          439.3717229831964,
+          508.4993802011013
         ],
         "warm_ms": [
-          76.7500139772892,
-          61.50166783481836,
-          61.46183796226978
+          822.2365621477365,
+          885.6815518811345,
+          673.2654308434576
         ]
       }
     ]

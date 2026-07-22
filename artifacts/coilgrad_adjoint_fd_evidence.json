@@ -74,13 +74,13 @@
   ],
   "guarded_claim": "agreement within 1.718e-05 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
   "regression_guard": "tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference (eps=300 A, rel<1e-3)",
-  "generated_utc": "2026-07-21T22:54:11+00:00",
+  "generated_utc": "2026-07-22T03:02:25+00:00",
   "host_note": "aaarthuus \u2014 gradients/counts are load-independent; no timings recorded",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_coilgrad_adjoint_fd.py",
     "generator_sha256": "40191c1d6fa8f1bc7d2429526b9d738e709ad08f3364144e30095a74500e5782",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+    "pinned_requirements_sha256": "9e2104f7874e341f0e185b7659dab2e7762fededff670d548c475cac27edb31a"
   }
 }
