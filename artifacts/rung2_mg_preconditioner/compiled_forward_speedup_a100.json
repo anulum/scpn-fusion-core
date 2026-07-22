@@ -1,0 +1,67 @@
+{
+  "correctness_load_independent": {
+    "fixed_point_equivalence_span_rel_33sq": 1.0250515247510382e-09,
+    "note": "compiled and eager reach the same equilibrium; warm repeats are bit-deterministic (asserted in tests/test_jax_predictive_forward_compiled.py)"
+  },
+  "generated_utc": "2026-07-22T00:44:22+00:00",
+  "jax_version": "0.6.2",
+  "provenance": {
+    "generator": "validation/measure_compiled_forward_speedup.py",
+    "generator_sha256": "582a464957e56ffef1a8dcb916b67cc15823b75914ec8163a658b10d1501e3a7",
+    "logic_sources": [
+      "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+      "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+      "src/scpn_fusion/core/jax_multigrid_precond.py"
+    ],
+    "logic_sources_sha256": "614c1bb6159da89439d5b1dbd7006ee4c9391e1a960361f78924d1ee8a565093",
+    "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
+    "pinned_requirements_sha256": "5ae0904375e412293e46cbf7b70fc4ae83f782929d9cfb950486354f25f1a6b9"
+  },
+  "settings": {
+    "defaults": "validated Anderson defaults, MG on",
+    "repeats": 3
+  },
+  "task": "compiled predictive forward (whole Anderson loop under jit) vs eager",
+  "timings_indicative": {
+    "compiled": [
+      {
+        "compile_plus_first_solve_ms": 35459.37066525221,
+        "grid": "33x33",
+        "warm_median_ms": 133.68035852909088,
+        "warm_ms": [
+          218.1828524917364,
+          133.68035852909088,
+          133.4740575402975
+        ]
+      },
+      {
+        "compile_plus_first_solve_ms": 37766.8682243675,
+        "grid": "65x65",
+        "warm_median_ms": 171.34626768529415,
+        "warm_ms": [
+          185.70401333272457,
+          171.34626768529415,
+          171.298548579216
+        ]
+      },
+      {
+        "compile_plus_first_solve_ms": 38203.37210223079,
+        "grid": "129x129",
+        "warm_median_ms": 196.76408171653748,
+        "warm_ms": [
+          197.95303791761398,
+          196.6279949992895,
+          196.76408171653748
+        ]
+      }
+    ],
+    "device": "NVIDIA A100-PCIE-40GB (gpu)",
+    "eager_33sq_ms": [
+      38719.40093114972,
+      38183.58304351568,
+      38497.74522148073
+    ],
+    "host": "5e3d866bfe58 (x86_64) - LOADED development host; indicative only, NOT a performance claim; the claimable number is the dedicated-hardware re-benchmark",
+    "speedup_anchor_33sq": 287.9835575328969
+  }
+}
