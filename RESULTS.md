@@ -157,8 +157,10 @@ Real-data reproduction (DIII-D shot 145419, EFIT g-file, 129×129):
 
 | Lane | ψ error (span-relative RMS, ψ_N ≤ 0.95 region) | Notes |
 |------|------------------------------------------------|-------|
-| Full-domain forward reproduction | 0.72 % | the error is concentrated in the ψ_N > 0.95 pedestal shell |
+| Full-domain forward reproduction (point source) | 0.72 % | the error is concentrated in the ψ_N > 0.95 pedestal shell |
+| Full-domain with sub-cell source averaging (4×4) | 0.48 % | genuine model improvement, no extra measured information; saturates by 8×8 |
 | Shell-pinned attribution (model source ψ_N ≤ 0.95) | 0.051 % | thin-shell source error ⇒ smooth quasi-harmonic remainder |
+| Sub-cell + shell-pin attribution | 0.056 % | sub-cell averaging leaves the core unharmed; the residual lives in ψ_N ∈ [0.98, 1] |
 | Zero-external-field negative control | ~127 % | cold start, no coil field — fails as it must |
 
 Honest boundaries (recorded inside the artifacts themselves):
@@ -174,6 +176,11 @@ Honest boundaries (recorded inside the artifacts themselves):
 - Timings labelled *indicative* in the bound artifacts are load-contaminated
   development-host numbers; dedicated-hardware numbers live in the `*_h100.json`
   snapshot lane.
+- Sub-cell source averaging removes about a third of the real-data full-domain
+  error; the remaining ~0.46 % concentrates in ψ_N ∈ [0.98, 1] and a quadratic
+  (saddle-aware) ψ expansion adds nothing — the residual is an edge-band
+  representation question against EFIT's own discretised solution, recorded in
+  the validation artifact rather than chased by imitating EFIT's numerics.
 
 ## Disruption Transfer-Generalization
 

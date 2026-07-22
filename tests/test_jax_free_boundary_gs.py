@@ -195,6 +195,55 @@ def test_general_gs_source_matches_analytic_formula_inside():
     np.testing.assert_allclose(src, expected, rtol=1e-6, atol=1e-9)
 
 
+def test_general_gs_source_subcell_one_is_bit_identical_default():
+    """subcell=1 (and the implicit default) must be the EXACT historical point source."""
+    R, Z, cR, cZ, cI, psin, pprime, ffprime = _case()
+    psi = solve_free_boundary_gs(R, Z, cR, cZ, cI, psin, pprime, ffprime)
+    psi_vac = vacuum_field_si(R, Z, cR, cZ, cI)
+    axis = _interior_axis_flux(psi)
+    bnd = _boundary_flux_level(psi_vac)
+    a = general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime)
+    b = general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, subcell=1)
+    assert float(jnp.max(jnp.abs(a - b))) == 0.0
+
+
+def test_general_gs_source_subcell_matches_point_in_smooth_interior():
+    """Away from the LCFS the 4x4 average equals the point sample to sub-cell Taylor
+    accuracy; in LCFS-straddling cells it must genuinely differ (the mechanism)."""
+    R, Z, cR, cZ, cI, psin, pprime, ffprime = _case()
+    psi = solve_free_boundary_gs(R, Z, cR, cZ, cI, psin, pprime, ffprime)
+    psi_vac = vacuum_field_si(R, Z, cR, cZ, cI)
+    axis = _interior_axis_flux(psi)
+    bnd = _boundary_flux_level(psi_vac)
+    point = np.asarray(general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime))
+    avg = np.asarray(general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, subcell=4))
+    assert bool(np.all(np.isfinite(avg)))
+    psi_n = np.asarray(normalised_flux(psi, axis, bnd))
+    scale = float(np.max(np.abs(point)))
+    core = psi_n < 0.85
+    shell = (psi_n > 0.9) & (psi_n <= 1.0)
+    core_diff = float(np.max(np.abs(avg - point)[core])) / scale
+    shell_diff = float(np.max(np.abs(avg - point)[shell])) / scale
+    assert core_diff < 0.05
+    # the averaging path must genuinely engage (paths differ); the edge-DOMINANCE of the
+    # effect is a property of steep real profiles and is pinned by the DIII-D 145419
+    # validation artifact (0.72 % -> 0.48 %), not by this synthetic case whose profiles
+    # vanish at the edge
+    assert shell_diff > 0.0
+
+
+def test_general_gs_source_subcell_deterministic_and_fails_closed():
+    R, Z, cR, cZ, cI, psin, pprime, ffprime = _case()
+    psi_vac = vacuum_field_si(R, Z, cR, cZ, cI)
+    axis = _interior_axis_flux(psi_vac)
+    bnd = _boundary_flux_level(psi_vac)
+    a = general_gs_source(psi_vac, R, axis, bnd, psin, pprime, ffprime, subcell=4)
+    b = general_gs_source(psi_vac, R, axis, bnd, psin, pprime, ffprime, subcell=4)
+    assert float(jnp.max(jnp.abs(a - b))) == 0.0
+    with pytest.raises(ValueError, match="subcell"):
+        general_gs_source(psi_vac, R, axis, bnd, psin, pprime, ffprime, subcell=0)
+
+
 def test_general_gs_source_vanishes_outside_lcfs():
     R, Z, cR, cZ, cI, psin, pprime, ffprime = _case()
     psi = solve_free_boundary_gs(R, Z, cR, cZ, cI, psin, pprime, ffprime)

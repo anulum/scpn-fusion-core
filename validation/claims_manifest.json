@@ -477,7 +477,7 @@
     {
       "id": "results_real_shot_full_domain_rms",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Full-domain forward reproduction \\| 0\\.72 %",
+      "source_pattern": "\\| Full-domain forward reproduction \\(point source\\) \\| 0\\.72 %",
       "evidence_files": [
         "artifacts/real_diiid_145419/real_145419_validation.json"
       ],
@@ -499,6 +499,34 @@
         {
           "file": "artifacts/real_diiid_145419/real_145419_validation.json",
           "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.00051095"
+        }
+      ]
+    },
+    {
+      "id": "results_real_shot_subcell_rms",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Full-domain with sub-cell source averaging \\(4\u00d74\\) \\| 0\\.48 %",
+      "evidence_files": [
+        "artifacts/real_diiid_145419/real_145419_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_diiid_145419/real_145419_validation.json",
+          "pattern": "\"subcell_source_averaging\"[\\s\\S]*?\"deep_rms_rel_span\"\\s*:\\s*0\\.00482414"
+        }
+      ]
+    },
+    {
+      "id": "results_real_shot_subcell_pin_rms",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| Sub-cell \\+ shell-pin attribution \\| 0\\.056 %",
+      "evidence_files": [
+        "artifacts/real_diiid_145419/real_145419_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_diiid_145419/real_145419_validation.json",
+          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.000556467"
         }
       ]
     }

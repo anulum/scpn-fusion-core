@@ -243,6 +243,7 @@ def full_domain_reproduction(
     picard_omega: float = 0.5,
     external_source: str = "measured",
     model_psin_max: float = 1.0,
+    source_subcell: int = 1,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     """Step 3 — full 129² reproduction: measured external source + Anderson-accelerated model.
 
@@ -314,6 +315,7 @@ def full_domain_reproduction(
                 jnp.asarray(d["psin"]),
                 jnp.asarray(d["pprime"]),
                 jnp.asarray(d["ffprime"]),
+                subcell=source_subcell,
             )
         ).copy()
         ipm = float(np.sum(-src_model[model_region] / (mu0 * rrg[model_region])) * dA)
@@ -495,6 +497,27 @@ def main() -> None:
     print("STEP 3d — shell-pinning attribution (model psi_N<0.95, measured shell):")
     print(f"  iters={iters_sp}  deep_rms_rel_span: {shell_pin['deep_rms_rel_span']:.4g}")
 
+    # STEP 3e — SUB-CELL SOURCE AVERAGING (a genuine model improvement, no extra measured
+    # information): 4x4 linear sub-cell averaging of the source removes the LCFS-straddling
+    # point-sampling error. Measured: ~a third of the full-domain error (0.72 % -> 0.48 %,
+    # saturating by 8x8; quadratic expansion adds nothing). The residual concentrates in
+    # psi_N in [0.98, 1] (attribution lane below) — an edge-band representation question.
+    psi_sc, _plc, deep_sc, iters_sc = full_domain_reproduction(d, source_subcell=4)
+    subcell4 = _full_domain_metrics(d, psi_sc, plasma, deep_sc, iters_sc, span)
+    print("STEP 3e — sub-cell source averaging (4x4, full model region):")
+    print(f"  iters={iters_sc}  deep_rms_rel_span: {subcell4['deep_rms_rel_span']:.4g}")
+    psi_sc8, _pl8, deep_sc8, iters_sc8 = full_domain_reproduction(d, source_subcell=8)
+    subcell8 = _full_domain_metrics(d, psi_sc8, plasma, deep_sc8, iters_sc8, span)
+    print(f"STEP 3e' — sub-cell 8x8 saturation check: deep_rms={subcell8['deep_rms_rel_span']:.4g}")
+    psi_scp, _plp, deep_scp, iters_scp = full_domain_reproduction(
+        d, source_subcell=4, model_psin_max=0.95
+    )
+    subcell4_pin = _full_domain_metrics(d, psi_scp, plasma, deep_scp, iters_scp, span)
+    print(
+        f"STEP 3e'' — sub-cell 4x4 + shell-pin 0.95 attribution: "
+        f"deep_rms={subcell4_pin['deep_rms_rel_span']:.4g}"
+    )
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         OUT_DIR / "psi_fusion_145419_fulldomain.npz",
@@ -585,7 +608,26 @@ def main() -> None:
             "not amplitude; the elliptic response of a thin-shell source error is smooth "
             "and domain-wide, which is why the psi-error itself is NOT annulus-localised",
             "profiles_only_fix_direction": "flux-surface-aware (sub-cell averaged) source "
-            "evaluation in shell cells - open work item",
+            "evaluation in shell cells - LANDED as the subcell_source_averaging lane below "
+            "(removes ~a third of the error); the residual is an edge-band representation "
+            "question (psi_N in [0.98, 1]), not sub-cell geometry",
+        },
+        "subcell_source_averaging": {
+            "regenerated_each_run": True,
+            "settings": "general_gs_source(subcell=4): 4x4 linear sub-cell averaging of "
+            "the model source over each node's control volume (psi expanded from "
+            "central-difference gradients, R varied per sub-sample); NO extra measured "
+            "information - a genuine model improvement lane",
+            "metrics": subcell4,
+            "saturation_check_8x8": subcell8,
+            "attribution_with_shell_pin_0p95": subcell4_pin,
+            "finding": "point sampling misassigns the source in LCFS-straddling cells; "
+            "4x4 averaging removes ~a third of the full-domain error (0.72% -> 0.48%), "
+            "saturating by 8x8, and a quadratic psi expansion adds nothing (curvature "
+            "refuted as the residual mechanism). With subcell ON, shell-pinning to "
+            "psi_N<0.95 still reaches ~0.056% - the core is unharmed and the residual "
+            "concentrates in psi_N in [0.98, 1]: an edge-band representation mismatch "
+            "against EFIT's own discretised solution, recorded rather than chased",
         },
         "honest_negatives": honest_negatives,
     }

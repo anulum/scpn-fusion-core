@@ -139,7 +139,7 @@ def normalised_flux(
     return jnp.clip((psi - psi_axis) / denom, 0.0, 1.0)
 
 
-@jit
+@partial(jit, static_argnames=("subcell",))
 def general_gs_source(
     psi: jnp.ndarray,
     R_grid: jnp.ndarray,
@@ -149,6 +149,8 @@ def general_gs_source(
     pprime_vals: jnp.ndarray,
     ffprime_vals: jnp.ndarray,
     mu0: float = MU0_SI,
+    *,
+    subcell: int = 1,
 ) -> jnp.ndarray:
     """Grad-Shafranov RHS ``S = −μ₀ R² p'(ψ_N) − FF'(ψ_N)`` on the ``(NZ, NR)`` grid [SI].
 
@@ -156,14 +158,43 @@ def general_gs_source(
     (``ψ_N ∈ [0, 1]``) and interpolated with :func:`jnp.interp`, which is differentiable
     with respect to ``pprime_vals`` / ``ffprime_vals``.  The source is zero outside the
     last closed flux surface (``ψ_N ≥ 1``), so the plasma is self-consistently bounded.
+
+    ``subcell`` (static): the default ``1`` is the point sample at each node — the
+    committed baseline, bit-identical to the historical behaviour. With
+    ``subcell = n > 1`` the source is averaged over ``n × n`` sub-samples of each
+    node's control volume, ``ψ`` expanded linearly from central-difference gradients
+    and ``R`` varied per sub-sample. Point sampling misassigns the source in cells the
+    LCFS straddles (all-in/all-out, plus profile variation across the cell); measured
+    on the DIII-D 145419 full-domain reproduction, 4×4 averaging removes about a third
+    of the error (0.72 % → 0.48 % span-relative RMS, saturating by 8×8; a quadratic
+    ψ expansion adds nothing). The residual concentrates in ``ψ_N ∈ [0.98, 1]`` and is
+    an edge-band representation question, not sub-cell geometry — see the validation
+    record for the attribution lanes.
     """
-    psi_n = normalised_flux(psi, psi_axis, psi_boundary)
-    pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
-    ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
+    if subcell < 1:
+        raise ValueError("subcell must be >= 1")
     r2d = R_grid[jnp.newaxis, :]
-    source = -(mu0 * r2d**2 * pprime + ffprime)
-    inside = psi_n < 1.0
-    return jnp.where(inside, source, 0.0)
+    if subcell == 1:
+        psi_n = normalised_flux(psi, psi_axis, psi_boundary)
+        pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
+        ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
+        source = -(mu0 * r2d**2 * pprime + ffprime)
+        inside = psi_n < 1.0
+        return jnp.where(inside, source, 0.0)
+    d_r = R_grid[1] - R_grid[0]
+    g_z, g_r = jnp.gradient(psi)  # per index step
+    offsets = (jnp.arange(subcell) + 0.5) / subcell - 0.5
+    acc = jnp.zeros_like(psi)
+    for a in offsets:  # R-direction sub-offset (index units)
+        for b in offsets:  # Z-direction sub-offset
+            psi_s = psi + a * g_r + b * g_z
+            r_s = jnp.maximum(r2d + a * d_r, 1e-6)
+            psi_n = normalised_flux(psi_s, psi_axis, psi_boundary)
+            pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
+            ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
+            source = -(mu0 * r_s**2 * pprime + ffprime)
+            acc = acc + jnp.where(psi_n < 1.0, source, 0.0)
+    return acc / (subcell * subcell)
 
 
 # ── Free-boundary Picard/SOR solve ────────────────────────────────

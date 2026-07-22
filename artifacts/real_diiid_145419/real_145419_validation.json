@@ -11,7 +11,7 @@
       "jax": "0.7.1"
     },
     "generator": "validation/validate_real_diiid_145419.py",
-    "generator_sha256": "c1327bf00d3cd90689dcc0a199ae972c2b65566e556f02e31ecc238c014b514f",
+    "generator_sha256": "fbce9f6b75c77f67519d0741a64db4895597d0011b23d66eb553ae337b47ab9f",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "9e2104f7874e341f0e185b7659dab2e7762fededff670d548c475cac27edb31a"
   },
@@ -110,7 +110,36 @@
       "global_max_rel_span": 0.001046701124281012
     },
     "finding": "the full-domain error is attributable essentially ENTIRELY to the psi_N > 0.95 pedestal-shell source representation: pinning the measured shell collapses deep RMS from ~0.72% to ~0.05% (better than the coil-free sub-domain); source-mismatch mapping on the real field shows the same shell concentration (RMS ~9e-4 of the Delta*psi scale in 0.95<psi_N<1.0 vs ~1e-4 in the core) with total current matched (Ip renorm ~1.0001) - the mismatch is PLACEMENT (steep-pedestal discretisation of the 5-point operator at 129^2), not amplitude; the elliptic response of a thin-shell source error is smooth and domain-wide, which is why the psi-error itself is NOT annulus-localised",
-    "profiles_only_fix_direction": "flux-surface-aware (sub-cell averaged) source evaluation in shell cells - open work item"
+    "profiles_only_fix_direction": "flux-surface-aware (sub-cell averaged) source evaluation in shell cells - LANDED as the subcell_source_averaging lane below (removes ~a third of the error); the residual is an edge-band representation question (psi_N in [0.98, 1]), not sub-cell geometry"
+  },
+  "subcell_source_averaging": {
+    "regenerated_each_run": true,
+    "settings": "general_gs_source(subcell=4): 4x4 linear sub-cell averaging of the model source over each node's control volume (psi expanded from central-difference gradients, R varied per sub-sample); NO extra measured information - a genuine model improvement lane",
+    "metrics": {
+      "iterations": 117,
+      "deep_rms_rel_span": 0.0048241420104686026,
+      "deep_max_rel_span": 0.009377384263029778,
+      "plasma_rms_rel_span": 0.004920756950868386,
+      "axis_value_rel_err": 0.002122788529384229,
+      "global_max_rel_span": 0.009377384263029778
+    },
+    "saturation_check_8x8": {
+      "iterations": 24,
+      "deep_rms_rel_span": 0.004698566221492385,
+      "deep_max_rel_span": 0.00917386622528939,
+      "plasma_rms_rel_span": 0.00478286678804936,
+      "axis_value_rel_err": 0.002089423186966606,
+      "global_max_rel_span": 0.00917386622528939
+    },
+    "attribution_with_shell_pin_0p95": {
+      "iterations": 14,
+      "deep_rms_rel_span": 0.000556467886285101,
+      "deep_max_rel_span": 0.001112997757896979,
+      "plasma_rms_rel_span": 0.000504657209553538,
+      "axis_value_rel_err": 0.0002510702685753457,
+      "global_max_rel_span": 0.001112997757896979
+    },
+    "finding": "point sampling misassigns the source in LCFS-straddling cells; 4x4 averaging removes ~a third of the full-domain error (0.72% -> 0.48%), saturating by 8x8, and a quadratic psi expansion adds nothing (curvature refuted as the residual mechanism). With subcell ON, shell-pinning to psi_N<0.95 still reaches ~0.056% - the core is unharmed and the residual concentrates in psi_N in [0.98, 1]: an edge-band representation mismatch against EFIT's own discretised solution, recorded rather than chased"
   },
   "honest_negatives": {
     "regenerated_each_run": true,
