@@ -19,9 +19,12 @@
   ψ-span NRMSE from `0.1996275498` to `0.1529060825`. Current closure
   (`3.03633e-16`), nonlinear residual (`1.77720e-08`), and all three
   finite-difference gradient audits pass. ψ_N accuracy and non-isolated CPU
-  P95 latency (`4678.25 ms`) still fail, so no scientific, CONTROL, facility,
-  PCS, or safety admission is claimed. Source commit `ad14457c`; evidence
-  commit `e487ff20`.
+  latency were originally reported from the relabelled cold-start loop. The
+  corrected non-isolated `cuda:0` same-input warm measurement records three
+  two-iteration solves and P95 `25.8103 ms`; it still fails the `20 ms` gate.
+  No scientific, CONTROL, facility, PCS, or safety admission is claimed.
+  Solver commit `ad14457c`; measurement source `ace3de2e`; corrected evidence
+  commit `49cc1238`.
 - The first tracked IDA same-case run remains fail-closed. On the public
   129×129 DIII-D example it measured ψ-span NRMSE `2.0875458241740508`,
   relative current error `0.5205740043457716`, nonlinear residual ratio
