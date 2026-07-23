@@ -20,8 +20,8 @@ the X-point flux of the current iterate and must be found *self-consistently* ea
 smoothly, so the coupled fixed point stays differentiable. A hard ``argmin`` of ``|∇ψ|`` drops
 the sub-cell sensitivity and injects the same gradient noise the hard axis ``argmax`` did.
 
-This module gives a smooth estimate of ``ψ_bndry`` via a **soft-argmin of ``|∇ψ|²``** over the
-lower-null search region:
+This module gives a smooth estimate of ``ψ_bndry`` via a **saddle-classified soft seed and
+sub-cell quadratic fit** over the lower-null search region:
 
 1. ``|∇ψ|²`` is evaluated by central differences on the SI grid (spacing from ``R_grid`` /
    ``Z_grid``); it vanishes at every critical point — the axis (a maximum) and the X-point
@@ -34,14 +34,14 @@ lower-null search region:
    *soft* axis position (a softmax over the flux depth) is masked out. The disk exclusion is
    what makes the estimate robust to the exact band fraction — without it the band edge grazes
    the axis flank and the soft-argmin flips between the X-point and a spurious near-axis null.
-3. A softmax over ``−β·|∇ψ|²`` (RMS-normalised so ``β`` is scale-free) weights the flux there:
-   ``ψ_bndry ≈ Σ w·ψ``, concentrated on the saddle, smooth in ``ψ``.
-
-Measured on the FreeGS 0.8.2 DIII-D reference (65², lower single null): the hard ``|∇ψ|``
-minimum sits at the true X-point and returns ``ψ_X = 0.1405`` (bit-identical to the reference
-separatrix flux); this smooth estimator returns ``0.1387`` (≈ 1.3 % low), enough to drive the
-coupled solve to < 1 % of the reference. A sub-cell saddle-vertex fit (mirroring the O-point's
-quadratic vertex) would tighten it further and is the next refinement.
+3. The Hessian determinant rejects extrema and a grid-normalised radius rejects remote
+   wall/coil nulls. Within that local saddle region, ``|∇ψ|²`` is normalised by its best sampled
+   value before the softmax. This keeps the seed concentrated without a case-scale temperature.
+4. An unweighted quadratic fit around the soft seed evaluates the saddle vertex to sub-cell
+   accuracy. The selected patch is piecewise constant, while its fitted value has the exact
+   local envelope derivative.
+5. Before a diverted topology forms, the original RMS-normalised soft-argmin remains the
+   finite, smooth cold-start fallback.
 
 Scope: a single lower X-point (LSN). The search region is the lower part of the domain below
 the flux peak; ``search_below=False`` flips it for an upper single null. Double-null / limited
@@ -55,6 +55,8 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
+from scpn_fusion.core.jax_o_point import _quadratic_pinv
+
 # Validated defaults (FreeGS DIII-D 65², LSN): the lower ~55 % of the domain holds the X-point;
 # the axis-disk exclusion (radius axis_margin cells around the soft axis position) keeps the
 # result robust to the exact band fraction; edge keeps wall nulls out; β concentrates on the
@@ -64,9 +66,11 @@ DEFAULT_LOWER_FRAC = 0.55
 DEFAULT_EDGE = 2
 DEFAULT_AXIS_MARGIN = 6
 DEFAULT_AXIS_BETA = 6.0
+DEFAULT_SEARCH_RADIUS = 0.40
+DEFAULT_PATCH = 5
 
 
-@partial(jax.jit, static_argnames=("lower_frac", "edge", "search_below"))
+@partial(jax.jit, static_argnames=("lower_frac", "edge", "search_below", "patch"))
 def smooth_xpoint_flux(
     psi: jnp.ndarray,
     R_grid: jnp.ndarray,
@@ -76,6 +80,8 @@ def smooth_xpoint_flux(
     edge: int = DEFAULT_EDGE,
     axis_margin: float = DEFAULT_AXIS_MARGIN,
     axis_beta: float = DEFAULT_AXIS_BETA,
+    search_radius: float = DEFAULT_SEARCH_RADIUS,
+    patch: int = DEFAULT_PATCH,
     search_below: bool = True,
 ) -> jnp.ndarray:
     """Smooth, differentiable X-point (separatrix) flux ``ψ_bndry`` [same units as ``ψ``].
@@ -91,14 +97,18 @@ def smooth_xpoint_flux(
     axis_margin : radius (in cells) of the disk masked out around the soft axis position, so the
         soft-argmin cannot latch onto the axis or its low-``|∇ψ|`` flank.
     axis_beta : softmax temperature locating the axis position (over the flux depth).
+    search_radius : maximum axis-to-saddle distance in grid-normalised coordinates.
+    patch : odd quadratic-fit window (≥ 3, ≤ min(NZ, NR)).
     search_below : if ``True`` search the lower band (lower single null), else the upper band.
 
     Returns
     -------
-    Scalar ``ψ_bndry`` — the flux at the X-point saddle, a soft-argmin over ``|∇ψ|²``. Smooth
-    in ``psi`` (differentiable) so the coupled free-boundary fixed point stays differentiable.
+    Scalar ``ψ_bndry`` — the flux at the sub-cell quadratic saddle vertex, locally
+    differentiable in ``psi``. Falls back to the smooth weighted flux if no saddle exists.
     """
     nz, nr = psi.shape
+    centre = (patch - 1) // 2
+    pinv = jnp.asarray(_quadratic_pinv(patch))
     d_r = R_grid[1] - R_grid[0]
     d_z = Z_grid[1] - Z_grid[0]
 
@@ -106,6 +116,22 @@ def smooth_xpoint_flux(
     g_z = jnp.zeros_like(psi).at[1:-1, :].set((psi[2:, :] - psi[:-2, :]) / (2.0 * d_z))
     g_r = jnp.zeros_like(psi).at[:, 1:-1].set((psi[:, 2:] - psi[:, :-2]) / (2.0 * d_r))
     grad2 = g_r * g_r + g_z * g_z
+    h_rr = (
+        jnp.zeros_like(psi)
+        .at[:, 1:-1]
+        .set((psi[:, 2:] - 2.0 * psi[:, 1:-1] + psi[:, :-2]) / (d_r * d_r))
+    )
+    h_zz = (
+        jnp.zeros_like(psi)
+        .at[1:-1, :]
+        .set((psi[2:, :] - 2.0 * psi[1:-1, :] + psi[:-2, :]) / (d_z * d_z))
+    )
+    h_rz = (
+        jnp.zeros_like(psi)
+        .at[1:-1, 1:-1]
+        .set((psi[2:, 2:] - psi[2:, :-2] - psi[:-2, 2:] + psi[:-2, :-2]) / (4.0 * d_r * d_z))
+    )
+    saddle = h_rr * h_zz - h_rz * h_rz < 0.0
 
     ii = jnp.arange(nz)[:, jnp.newaxis]
     jj = jnp.arange(nr)[jnp.newaxis, :]
@@ -139,4 +165,33 @@ def smooth_xpoint_flux(
     big = jnp.max(grad2) * 10.0 + 1.0
     score = jnp.where(region, grad2 / ref, big)
     weights = jax.nn.softmax((-beta * score).reshape(-1))
-    return jnp.sum(weights * psi.reshape(-1))
+    fallback = jnp.sum(weights * psi.reshape(-1))
+
+    distance2 = ((ii - i_axis) / nz) ** 2 + ((jj - j_axis) / nr) ** 2
+    saddle_region = region & saddle & (distance2 <= search_radius**2)
+    saddle_floor = jnp.min(jnp.where(saddle_region, grad2, jnp.inf))
+    saddle_scale = jnp.maximum(saddle_floor, 1.0e-12 * ref)
+    saddle_score = jnp.where(saddle_region, grad2 / saddle_scale, big)
+    saddle_weights = jax.nn.softmax((-beta * saddle_score).reshape(-1))
+    i_seed = jnp.sum(saddle_weights * i_grid.reshape(-1))
+    j_seed = jnp.sum(saddle_weights * j_grid.reshape(-1))
+    i0 = jnp.clip(jnp.round(i_seed).astype(int), centre, nz - 1 - centre)
+    j0 = jnp.clip(jnp.round(j_seed).astype(int), centre, nr - 1 - centre)
+
+    stencil = jax.lax.dynamic_slice(psi, (i0 - centre, j0 - centre), (patch, patch))
+    a, b, c, d, e, f = pinv @ stencil.reshape(-1)
+    determinant = 4.0 * d * e - f * f
+    safe_determinant = jnp.where(jnp.abs(determinant) < 1.0e-30, 1.0e-30, determinant)
+    x_star = jnp.clip(
+        (-2.0 * e * b + f * c) / safe_determinant,
+        -float(centre),
+        float(centre),
+    )
+    y_star = jnp.clip(
+        (f * b - 2.0 * d * c) / safe_determinant,
+        -float(centre),
+        float(centre),
+    )
+    vertex = a + b * x_star + c * y_star + d * x_star**2 + e * y_star**2 + f * x_star * y_star
+    valid = jnp.any(saddle_region) & (determinant < 0.0) & jnp.isfinite(vertex)
+    return jnp.where(valid, vertex, fallback)
