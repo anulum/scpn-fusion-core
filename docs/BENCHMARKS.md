@@ -794,6 +794,21 @@ same-case public reference output are all ready. Current local result is
 `accepted_full_fidelity_free_boundary_parity` with zero blockers and zero failed
 threshold checks.
 
+The separate implicit-IDA solver lane is tracked in
+[`validation/reports/ida_same_case_evidence.md`](../validation/reports/ida_same_case_evidence.md).
+This is not the accepted fixed-boundary profile-source lane above. The
+digest-bound runner executes the public FreeGS development example and the
+129×129 DIII-D-like example through
+`solve_free_boundary_gs_implicit`, audits coil-current, p′, and FF′ gradients,
+and records synchronized warm timing. The first DIII-D-like run passes only the
+nonlinear residual ratio (`0.028930007443069596` against `0.05`); ψ-span NRMSE
+(`2.0875458241740508`), relative current error (`0.5205740043457716`),
+gradient agreement, and warm P95 (`2175.6446484243497 ms` against `20 ms`)
+fail. The selected case was already observed during integration, no
+execution-preceding selection lock exists, and timing was not collected on an
+isolated host. The report is therefore `blocked_same_case_evidence` and keeps
+scientific, control, facility, PCS, and safety claims false.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |

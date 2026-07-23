@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Added
+
+- Digest-bound IDA free-boundary same-case evidence runner for the implicit JAX
+  solver. It measures public FreeGS development and DIII-D-like cases, checks
+  all three differentiated input groups against finite differences, records
+  synchronized latency and numerical thresholds, and writes strict JSON plus
+  Markdown reports.
+
+### Validation
+
+- The first tracked IDA same-case run remains fail-closed. On the public
+  129×129 DIII-D example it measured ψ-span NRMSE `2.0875458241740508`,
+  relative current error `0.5205740043457716`, nonlinear residual ratio
+  `0.028930007443069596`, and warm P95 `2175.6446484243497 ms`. Statistical
+  holdout, isolated timing, collaborator, facility, PCS, and safety evidence
+  are explicitly absent; no scientific or deployment promotion is made.
+
 ## [4.0.0] - 2026-07-22
 
 Major release: the differentiable predictive free-boundary equilibrium line —
