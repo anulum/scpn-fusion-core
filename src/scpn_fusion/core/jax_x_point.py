@@ -34,13 +34,16 @@ quadratic fit** over the lower-null search region:
    *soft* axis position (a softmax over the flux depth) is masked out. The disk exclusion is
    what makes the estimate robust to the exact band fraction — without it the band edge grazes
    the axis flank and the soft-argmin flips between the X-point and a spurious near-axis null.
-3. The Hessian determinant rejects O-points and other gradient minima that are not saddles.
-   A grid-normalised radius around the axis rejects remote wall/coil nulls without encoding a
-   machine-specific coordinate.
-4. The lowest-gradient saddle seeds an unweighted 2-D quadratic fit. Its stationary point is
-   evaluated analytically, giving sub-cell value accuracy and the exact local envelope
-   derivative while the selected saddle basin remains unchanged.
-5. If a cold-start iterate has no valid saddle, the original RMS-normalised soft-argmin remains
+3. The Hessian determinant rejects O-points and a strict local-minimum test on ``|∇ψ|²``
+   reduces the search to isolated critical-point candidates. A grid-normalised radius around
+   the axis rejects remote wall/coil nulls without encoding a machine-specific coordinate.
+4. Candidates must have a monotonic flux path from the magnetic axis, then are ordered by
+   flux-space distance to that axis. This follows the topological primary-X-point criterion
+   instead of whichever candidate happens to have the smallest grid-sampled gradient.
+5. The selected saddle seeds an unweighted 2-D quadratic fit. Its stationary point is evaluated
+   analytically, giving sub-cell value accuracy and the exact local envelope derivative while
+   the selected saddle basin remains unchanged.
+6. If a cold-start iterate has no valid saddle, the original RMS-normalised soft-argmin remains
    the stable fallback until a diverted topology forms.
 
 Scope: a single lower X-point (LSN). The search region is the lower part of the domain below
@@ -134,6 +137,21 @@ def smooth_xpoint_flux(
         .set((psi[2:, 2:] - psi[2:, :-2] - psi[:-2, 2:] + psi[:-2, :-2]) / (4.0 * d_r * d_z))
     )
     saddle = h_rr * h_zz - h_rz * h_rz < 0.0
+    centre_grad2 = grad2[1:-1, 1:-1]
+    local_minimum = (
+        jnp.zeros_like(grad2, dtype=bool)
+        .at[1:-1, 1:-1]
+        .set(
+            (centre_grad2 < grad2[:-2, :-2])
+            & (centre_grad2 < grad2[:-2, 1:-1])
+            & (centre_grad2 < grad2[:-2, 2:])
+            & (centre_grad2 < grad2[1:-1, :-2])
+            & (centre_grad2 < grad2[1:-1, 2:])
+            & (centre_grad2 < grad2[2:, :-2])
+            & (centre_grad2 < grad2[2:, 1:-1])
+            & (centre_grad2 < grad2[2:, 2:])
+        )
+    )
 
     ii = jnp.arange(nz)[:, jnp.newaxis]
     jj = jnp.arange(nr)[jnp.newaxis, :]
@@ -151,6 +169,9 @@ def smooth_xpoint_flux(
     j_grid = jnp.broadcast_to(jj, (nz, nr))
     i_axis = jnp.sum(w_axis * i_grid.reshape(-1))
     j_axis = jnp.sum(w_axis * j_grid.reshape(-1))
+    i_axis_cell = jnp.clip(jnp.round(i_axis).astype(int), 0, nz - 1)
+    j_axis_cell = jnp.clip(jnp.round(j_axis).astype(int), 0, nr - 1)
+    axis_value = psi[i_axis_cell, j_axis_cell]
     off_axis = ((ii - i_axis) ** 2 + (jj - j_axis) ** 2) > axis_margin**2
 
     # Fixed geometric search band (a stable region — NOT tied to a per-iteration argmax of ψ,
@@ -170,12 +191,28 @@ def smooth_xpoint_flux(
     weights = jax.nn.softmax((-beta * score).reshape(-1))
     fallback = jnp.sum(weights * psi.reshape(-1))
 
-    # A true separatrix saddle is local to the plasma axis. Remote wall/coil nulls can have a
-    # smaller sampled |∇ψ|² than the physical X-point, so classify by Hessian and reject points
-    # outside a machine-independent radius expressed as fractions of the grid dimensions.
+    # A true separatrix saddle is local to and topologically connected with the plasma axis.
+    # Check monotonicity at fixed fractions of every axis-to-candidate line. The integer sample
+    # locations select the basin only; the final quadratic vertex retains the local derivative.
+    delta = psi - axis_value
+    direction = jnp.where(delta >= 0.0, 1.0, -1.0)
+    tolerance = 1.0e-3 * (jnp.abs(delta) + rms * 1.0e-12)
+    previous = jnp.full_like(psi, axis_value)
+    monotonic = jnp.ones_like(psi, dtype=bool)
+    for fraction in (0.2, 0.4, 0.6, 0.8):
+        sample_i = jnp.round(i_axis_cell + fraction * (ii - i_axis_cell)).astype(int)
+        sample_j = jnp.round(j_axis_cell + fraction * (jj - j_axis_cell)).astype(int)
+        sample = psi[sample_i, sample_j]
+        monotonic = monotonic & (direction * (sample - previous) >= -tolerance)
+        previous = sample
+    monotonic = monotonic & (direction * (psi - previous) >= -tolerance)
+
+    # Remote wall/coil nulls can have a smaller sampled |∇ψ|² than the physical X-point. Reject
+    # them geometrically, then follow the standard primary-X-point ordering: among isolated,
+    # monotonic saddles, choose the one closest to the magnetic axis in flux space.
     distance2 = ((ii - i_axis) / nz) ** 2 + ((jj - j_axis) / nr) ** 2
-    saddle_region = region & saddle & (distance2 <= search_radius**2)
-    saddle_score = jnp.where(saddle_region, grad2, big)
+    saddle_region = region & saddle & local_minimum & monotonic & (distance2 <= search_radius**2)
+    saddle_score = jnp.where(saddle_region, jnp.abs(psi - axis_value), big)
     flat_index = jnp.argmin(saddle_score.reshape(-1))
     i0 = jnp.clip(flat_index // nr, centre, nz - 1 - centre)
     j0 = jnp.clip(flat_index % nr, centre, nr - 1 - centre)
