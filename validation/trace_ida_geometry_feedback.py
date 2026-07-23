@@ -271,7 +271,9 @@ def main(argv: list[str] | None = None) -> int:
     """Execute the trace or validate one existing report."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--generated-at")
-    parser.add_argument("--same-case-report", type=Path, default=ROOT / contract.SAME_CASE_REPORT_PATH)
+    parser.add_argument(
+        "--same-case-report", type=Path, default=ROOT / contract.SAME_CASE_REPORT_PATH
+    )
     parser.add_argument(
         "--source-ablation-report",
         type=Path,

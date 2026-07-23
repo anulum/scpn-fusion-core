@@ -60,7 +60,9 @@ def _synthetic_diverted_psi(
 def test_hard_flood_fill_excludes_disconnected_private_island() -> None:
     """Hard 4-connected fill from the axis must drop the private-flux blob."""
     psi, _, psi_axis, psi_bndry = _synthetic_diverted_psi()
-    psi_n = np.asarray(normalised_flux(jnp.asarray(psi), jnp.asarray(psi_axis), jnp.asarray(psi_bndry)))
+    psi_n = np.asarray(
+        normalised_flux(jnp.asarray(psi), jnp.asarray(psi_axis), jnp.asarray(psi_bndry))
+    )
     level = psi_n < 1.0
     # Seed = deepest core cell (min ψ_N inside level set).
     connected = hard_axis_connected_from_psi_n(psi_n)
@@ -242,7 +244,9 @@ def test_plasma_current_ip_holds_on_synthetic_diverted_solve() -> None:
 
     ax = smooth_axis_flux(psi)
     bd = smooth_xpoint_flux(psi, r, z)
-    j = _plasma_current(psi, r, ax, bd, psin, pprime, ffprime, jnp.asarray(ip), dA, 0.03, 4.0e-7 * jnp.pi)
+    j = _plasma_current(
+        psi, r, ax, bd, psin, pprime, ffprime, jnp.asarray(ip), dA, 0.03, 4.0e-7 * jnp.pi
+    )
     ip_got = float(jnp.sum(j) * dA)
     assert abs(ip_got - ip) / ip < 1e-3
     assert bool(jnp.all(jnp.isfinite(j)))

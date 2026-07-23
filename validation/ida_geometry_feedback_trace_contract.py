@@ -194,9 +194,8 @@ def _routing(
             - float(pair[0][1]["production_current"]["total_variation_distance"])
         ),
     )
-    largest_delta = (
-        float(largest_to[1]["production_current"]["total_variation_distance"])
-        - float(largest_from[1]["production_current"]["total_variation_distance"])
+    largest_delta = float(largest_to[1]["production_current"]["total_variation_distance"]) - float(
+        largest_from[1]["production_current"]["total_variation_distance"]
     )
     half_threshold = 0.5 * terminal_tv
     half_run, half_row = next(
@@ -227,9 +226,7 @@ def _routing(
             "to_run": largest_to[0],
         },
         "next_ratcheting_target": target,
-        "terminal_boundary_counterfactual_tv_reduction": (
-            terminal_tv - terminal_counterfactual_tv
-        ),
+        "terminal_boundary_counterfactual_tv_reduction": (terminal_tv - terminal_counterfactual_tv),
         "terminal_production_tv": terminal_tv,
         "terminal_reference_boundary_tv": terminal_counterfactual_tv,
         "trace_matches_same_case_candidate": parity_ok,
@@ -478,7 +475,9 @@ def validate_report(report: dict[str, Any]) -> None:
         raise ValueError("terminal_parity fields are invalid")
     for name in ("expected_same_case_candidate_sha256", "traced_candidate_sha256"):
         _require_sha256(parity[name], field=f"terminal_parity.{name}")
-    expected_match = parity["expected_same_case_candidate_sha256"] == parity["traced_candidate_sha256"]
+    expected_match = (
+        parity["expected_same_case_candidate_sha256"] == parity["traced_candidate_sha256"]
+    )
     if parity["matches_same_case_candidate"] is not expected_match:
         raise ValueError("terminal_parity match flag is inconsistent")
     if parity["traced_candidate_sha256"] != runs["warm"]["terminal_psi_sha256"]:

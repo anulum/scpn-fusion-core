@@ -119,9 +119,15 @@ def hard_axis_connected_from_psi_n(
 def _neighbor_max(field: jnp.ndarray) -> jnp.ndarray:
     """Max of the four orthogonal neighbours (zeros outside the domain)."""
     up = jnp.concatenate([jnp.zeros((1, field.shape[1]), dtype=field.dtype), field[:-1, :]], axis=0)
-    down = jnp.concatenate([field[1:, :], jnp.zeros((1, field.shape[1]), dtype=field.dtype)], axis=0)
-    left = jnp.concatenate([jnp.zeros((field.shape[0], 1), dtype=field.dtype), field[:, :-1]], axis=1)
-    right = jnp.concatenate([field[:, 1:], jnp.zeros((field.shape[0], 1), dtype=field.dtype)], axis=1)
+    down = jnp.concatenate(
+        [field[1:, :], jnp.zeros((1, field.shape[1]), dtype=field.dtype)], axis=0
+    )
+    left = jnp.concatenate(
+        [jnp.zeros((field.shape[0], 1), dtype=field.dtype), field[:, :-1]], axis=1
+    )
+    right = jnp.concatenate(
+        [field[:, 1:], jnp.zeros((field.shape[0], 1), dtype=field.dtype)], axis=1
+    )
     return jnp.maximum(jnp.maximum(up, down), jnp.maximum(left, right))
 
 

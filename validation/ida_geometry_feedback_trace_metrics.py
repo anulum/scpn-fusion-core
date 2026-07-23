@@ -30,9 +30,7 @@ _predictive = cast(
 
 FloatArray: TypeAlias = NDArray[np.float64]
 _array_sha256: Callable[[object], str] = _same_case._array_sha256
-_shape_error_diagnostics: Callable[..., dict[str, Any]] = (
-    _same_case._shape_error_diagnostics
-)
+_shape_error_diagnostics: Callable[..., dict[str, Any]] = _same_case._shape_error_diagnostics
 _plasma_current: Callable[..., Any] = _predictive._plasma_current
 _laplacian_star: Callable[..., Any] = _predictive._laplacian_star
 _predictive_gs_residual: Callable[..., Any] = _predictive.predictive_gs_residual

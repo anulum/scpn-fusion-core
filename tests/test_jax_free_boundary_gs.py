@@ -205,9 +205,7 @@ def test_general_gs_source_subcell_one_is_bit_identical_default():
     axis = _interior_axis_flux(psi)
     bnd = _boundary_flux_level(psi_vac)
     a = general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, axis_connected=False)
-    b = general_gs_source(
-        psi, R, axis, bnd, psin, pprime, ffprime, subcell=1, axis_connected=False
-    )
+    b = general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, subcell=1, axis_connected=False)
     assert float(jnp.max(jnp.abs(a - b))) == 0.0
 
 
@@ -223,9 +221,7 @@ def test_general_gs_source_subcell_matches_point_in_smooth_interior():
         general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, axis_connected=False)
     )
     avg = np.asarray(
-        general_gs_source(
-            psi, R, axis, bnd, psin, pprime, ffprime, subcell=4, axis_connected=False
-        )
+        general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, subcell=4, axis_connected=False)
     )
     assert bool(np.all(np.isfinite(avg)))
     psi_n = np.asarray(normalised_flux(psi, axis, bnd))
