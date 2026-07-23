@@ -76,6 +76,7 @@ from scpn_fusion.core.jax_free_boundary_gs import (
     normalised_flux,
     vacuum_field_si,
 )
+from scpn_fusion.core.jax_plasma_support import soft_axis_connected_support
 from scpn_fusion.core.jax_continuation_history import (
     continuation_history_requires_reset,
 )
@@ -256,17 +257,19 @@ def _plasma_current(
     """Calculate the smooth, Ip-normalised toroidal current density.
 
     The density ``Jφ = R p' + FF'/(μ₀R)`` is scaled so
-    ``∮Jφ dA = ip_target``. The ``tanh`` roll-off (vs a hard
-    ``ψ_N < 1`` mask) keeps the current — and thus the coupled fixed point —
-    differentiable; the Ip scaling pins the total current, killing the
-    self-field runaway.
+    ``∮Jφ dA = ip_target``. Support is the **axis-connected** smooth LCFS
+    weight (:func:`~scpn_fusion.core.jax_plasma_support.soft_axis_connected_support`):
+    a pure ``ψ_N < 1`` / pure ``tanh(ψ_N − 1)`` cut incorrectly admits
+    private-flux islands on diverted topologies. Ip scaling pins the total
+    current and kills the self-field runaway.
     """
     psi_n = normalised_flux(psi, psi_axis, psi_bndry)
     pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
     ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
     r_safe = jnp.maximum(R_grid[jnp.newaxis, :], 1e-6)
     j_raw = r_safe * pprime + ffprime / (mu0 * r_safe)
-    j_masked = j_raw * 0.5 * (1.0 - jnp.tanh((psi_n - 1.0) / cutoff_width))
+    support = soft_axis_connected_support(psi, psi_n, cutoff_width)
+    j_masked = j_raw * support
     ip_now = jnp.sum(j_masked) * dA
     scale = ip_target / jnp.where(jnp.abs(ip_now) < 1.0, 1.0, ip_now)
     return j_masked * scale

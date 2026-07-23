@@ -57,6 +57,7 @@ from scpn_fusion.core.jax_equilibrium_solver import (
     _interior_axis_flux,
     _sor_step,
 )
+from scpn_fusion.core.jax_plasma_support import soft_axis_connected_support
 
 # SI vacuum permeability [H/m].
 MU0_SI: float = 4.0e-7 * jnp.pi
@@ -139,7 +140,7 @@ def normalised_flux(
     return jnp.clip((psi - psi_axis) / denom, 0.0, 1.0)
 
 
-@partial(jit, static_argnames=("subcell",))
+@partial(jit, static_argnames=("subcell", "axis_connected"))
 def general_gs_source(
     psi: jnp.ndarray,
     R_grid: jnp.ndarray,
@@ -151,36 +152,39 @@ def general_gs_source(
     mu0: float = MU0_SI,
     *,
     subcell: int = 1,
+    axis_connected: bool = True,
+    cutoff_width: float = 0.03,
 ) -> jnp.ndarray:
     """Grad-Shafranov RHS ``S = −μ₀ R² p'(ψ_N) − FF'(ψ_N)`` on the ``(NZ, NR)`` grid [SI].
 
     ``p'`` and ``FF'`` are given as samples on the monotonic knot grid ``psin_knots``
     (``ψ_N ∈ [0, 1]``) and interpolated with :func:`jnp.interp`, which is differentiable
-    with respect to ``pprime_vals`` / ``ffprime_vals``.  The source is zero outside the
-    last closed flux surface (``ψ_N ≥ 1``), so the plasma is self-consistently bounded.
+    with respect to ``pprime_vals`` / ``ffprime_vals``.
 
-    ``subcell`` (static): the default ``1`` is the point sample at each node — the
-    committed baseline, bit-identical to the historical behaviour. With
-    ``subcell = n > 1`` the source is averaged over ``n × n`` sub-samples of each
-    node's control volume, ``ψ`` expanded linearly from central-difference gradients
-    and ``R`` varied per sub-sample. Point sampling misassigns the source in cells the
-    LCFS straddles (all-in/all-out, plus profile variation across the cell); measured
-    on the DIII-D 145419 full-domain reproduction, 4×4 averaging removes about a third
-    of the error (0.72 % → 0.48 % span-relative RMS, saturating by 8×8; a quadratic
-    ψ expansion adds nothing). The residual concentrates in ``ψ_N ∈ [0.98, 1]`` and is
-    an edge-band representation question, not sub-cell geometry — see the validation
-    record for the attribution lanes.
+    Plasma support (default): **axis-connected** smooth support
+    (:func:`~scpn_fusion.core.jax_plasma_support.soft_axis_connected_support`).
+    The historical hard level-set ``ψ_N < 1`` incorrectly admits private-flux
+    islands on diverted topologies; pass ``axis_connected=False`` only for
+    bit-compat with pre-fix diagnostics.
+
+    ``subcell`` (static): the default ``1`` is the point sample at each node.
+    With ``subcell = n > 1`` the source is averaged over ``n × n`` sub-samples of
+    each node's control volume. Connectivity is evaluated once on the unshifted
+    field and applied to every sub-sample (topology is a grid-scale property).
     """
     if subcell < 1:
         raise ValueError("subcell must be >= 1")
     r2d = R_grid[jnp.newaxis, :]
+    psi_n0 = normalised_flux(psi, psi_axis, psi_boundary)
+    if axis_connected:
+        support = soft_axis_connected_support(psi, psi_n0, cutoff_width)
+    else:
+        support = jnp.where(psi_n0 < 1.0, jnp.ones_like(psi_n0), jnp.zeros_like(psi_n0))
     if subcell == 1:
-        psi_n = normalised_flux(psi, psi_axis, psi_boundary)
-        pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
-        ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
+        pprime = jnp.interp(psi_n0, psin_knots, pprime_vals)
+        ffprime = jnp.interp(psi_n0, psin_knots, ffprime_vals)
         source = -(mu0 * r2d**2 * pprime + ffprime)
-        inside = psi_n < 1.0
-        return jnp.where(inside, source, 0.0)
+        return source * support
     d_r = R_grid[1] - R_grid[0]
     g_z, g_r = jnp.gradient(psi)  # per index step
     offsets = (jnp.arange(subcell) + 0.5) / subcell - 0.5
@@ -193,7 +197,10 @@ def general_gs_source(
             pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
             ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
             source = -(mu0 * r_s**2 * pprime + ffprime)
-            acc = acc + jnp.where(psi_n < 1.0, source, 0.0)
+            if axis_connected:
+                acc = acc + source * support
+            else:
+                acc = acc + jnp.where(psi_n < 1.0, source, 0.0)
     return acc / (subcell * subcell)
 
 
@@ -291,7 +298,9 @@ def toroidal_plasma_current(
     ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
     r2d = R_grid[jnp.newaxis, :]
     r_safe = jnp.maximum(r2d, 1e-6)
-    j_phi = jnp.where(psi_n < 1.0, r2d * pprime + ffprime / (mu0 * r_safe), 0.0)
+    j_raw = r2d * pprime + ffprime / (mu0 * r_safe)
+    support = soft_axis_connected_support(psi, psi_n, 0.03)
+    j_phi = j_raw * support
     d_r = R_grid[1] - R_grid[0]
     d_z = Z_grid[1] - Z_grid[0]
     return jnp.sum(j_phi) * d_r * d_z

@@ -180,13 +180,15 @@ def test_general_gs_source_zero_for_zero_profiles():
 
 
 def test_general_gs_source_matches_analytic_formula_inside():
-    """S = −(μ₀ R² p' + FF') where 0 ≤ ψ_N < 1, and 0 outside."""
+    """S = −(μ₀ R² p' + FF') where 0 ≤ ψ_N < 1, and 0 outside (legacy level-set)."""
     R, Z, cR, cZ, cI, psin, pprime, ffprime = _case()
     psi = solve_free_boundary_gs(R, Z, cR, cZ, cI, psin, pprime, ffprime)
     psi_vac = vacuum_field_si(R, Z, cR, cZ, cI)
     axis = _interior_axis_flux(psi)
     bnd = _boundary_flux_level(psi_vac)
-    src = np.asarray(general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime))
+    src = np.asarray(
+        general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, axis_connected=False)
+    )
     psi_n = np.asarray(normalised_flux(psi, axis, bnd))
     pp = np.interp(psi_n, np.asarray(psin), np.asarray(pprime))
     ffp = np.interp(psi_n, np.asarray(psin), np.asarray(ffprime))
@@ -202,8 +204,10 @@ def test_general_gs_source_subcell_one_is_bit_identical_default():
     psi_vac = vacuum_field_si(R, Z, cR, cZ, cI)
     axis = _interior_axis_flux(psi)
     bnd = _boundary_flux_level(psi_vac)
-    a = general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime)
-    b = general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, subcell=1)
+    a = general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, axis_connected=False)
+    b = general_gs_source(
+        psi, R, axis, bnd, psin, pprime, ffprime, subcell=1, axis_connected=False
+    )
     assert float(jnp.max(jnp.abs(a - b))) == 0.0
 
 
@@ -215,8 +219,14 @@ def test_general_gs_source_subcell_matches_point_in_smooth_interior():
     psi_vac = vacuum_field_si(R, Z, cR, cZ, cI)
     axis = _interior_axis_flux(psi)
     bnd = _boundary_flux_level(psi_vac)
-    point = np.asarray(general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime))
-    avg = np.asarray(general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, subcell=4))
+    point = np.asarray(
+        general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, axis_connected=False)
+    )
+    avg = np.asarray(
+        general_gs_source(
+            psi, R, axis, bnd, psin, pprime, ffprime, subcell=4, axis_connected=False
+        )
+    )
     assert bool(np.all(np.isfinite(avg)))
     psi_n = np.asarray(normalised_flux(psi, axis, bnd))
     scale = float(np.max(np.abs(point)))
@@ -250,7 +260,9 @@ def test_general_gs_source_vanishes_outside_lcfs():
     psi_vac = vacuum_field_si(R, Z, cR, cZ, cI)
     axis = _interior_axis_flux(psi)
     bnd = _boundary_flux_level(psi_vac)
-    src = np.asarray(general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime))
+    src = np.asarray(
+        general_gs_source(psi, R, axis, bnd, psin, pprime, ffprime, axis_connected=False)
+    )
     psi_n = np.asarray(normalised_flux(psi, axis, bnd))
     assert np.all(src[psi_n >= 1.0] == 0.0)
 
