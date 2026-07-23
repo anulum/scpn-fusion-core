@@ -21,9 +21,9 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      7.43408203125,
-      7.4609375,
-      6.8876953125
+      6.546875,
+      6.6015625,
+      6.71923828125
     ],
     "isolated_host": false,
     "jax_version": "0.7.1",
@@ -33,7 +33,7 @@
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-23T09:56:39Z",
+  "generated_at": "2026-07-23T10:18:13Z",
   "input_contract": {
     "anderson_depth": 8,
     "anderson_solver": "lstsq",
@@ -74,28 +74,28 @@
     "warm_ip_ramp": 1,
     "warm_iteration_cap": 20
   },
-  "payload_sha256": "5d98c93fdcb59d914aac2282fefa1ad105677214546cb204959a0d85bf9ca28c",
+  "payload_sha256": "f43d360ca542a6e0bb3baddc6ff6aee135603984974088b84e1ef0ed386f0a4a",
   "routing": {
     "first_half_terminal_tv": {
       "iteration_index": 0,
       "phase": "ip_ramp",
       "run": "cold",
-      "threshold": 0.1256765983650197,
+      "threshold": 0.493960739052444,
       "tv": 0.8701841090625331
     },
     "largest_sparse_tv_increase": {
-      "delta": 0.080774112771965,
-      "from_iteration_index": 0,
+      "delta": 0.33869967469791085,
+      "from_iteration_index": 29,
       "from_run": "cold",
-      "phase": "ip_ramp",
-      "to_iteration_index": 14,
+      "phase": "pre_separatrix",
+      "to_iteration_index": 49,
       "to_run": "cold"
     },
-    "next_ratcheting_target": "ip_ramp_geometry_source_feedback",
-    "terminal_boundary_counterfactual_tv_reduction": 0.030714443809886915,
-    "terminal_production_tv": 0.2513531967300394,
-    "terminal_reference_boundary_tv": 0.2206387529201525,
-    "trace_matches_same_case_candidate": true
+    "next_ratcheting_target": "compiled_trace_parity_failure",
+    "terminal_boundary_counterfactual_tv_reduction": 0.005081695632145999,
+    "terminal_production_tv": 0.987921478104888,
+    "terminal_reference_boundary_tv": 0.982839782472742,
+    "trace_matches_same_case_candidate": false
   },
   "runs": {
     "cold": {
@@ -162,44 +162,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 0.08343365622876506,
-            "residual_linf_wb": 0.1457851795300551,
-            "residual_relative_l2": 0.5123591191863995
+            "accepted_update_relative_l2": 0.1852188720920083,
+            "residual_linf_wb": 0.08307533602766087,
+            "residual_relative_l2": 0.3704377441840166
           },
           "geometry": {
-            "active_boundary_wb": 0.006890678304028111,
-            "active_span_wb": 0.3060517002156974,
-            "axis_wb": 0.3129423785197255,
-            "physical_boundary_wb": 0.06601427346027,
-            "physical_span_wb": 0.2469281050594555
+            "active_boundary_wb": 0.005929111092320645,
+            "active_span_wb": 0.2412730551606949,
+            "axis_wb": 0.24720216625301553,
+            "physical_boundary_wb": 0.045080454088407336,
+            "physical_span_wb": 0.2021217121646082
           },
           "ip_fraction": 0.5,
           "ip_now_a": 766816.0,
           "iteration_index": 14,
           "phase": "ip_ramp",
           "physical_residual": {
-            "interior_relative_rms": 0.8889886536677992,
-            "wall_relative_l2": 0.4465461391322842
+            "interior_relative_rms": 0.5231939558087317,
+            "wall_relative_l2": 0.3336131897898801
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": 0.8135525978697977,
-              "z": 0.06171322775289871
+              "r": 0.8344761922552077,
+              "z": 0.06198925957892684
             },
-            "cosine_similarity": 0.04146014047886954,
-            "current_density_sha256": "2454aec9cb75bca9f9493f9f8d0a804f4e906134702968be94f3c4932887167f",
-            "total_variation_distance": 0.9509582218344981
+            "cosine_similarity": 0.03254986000109644,
+            "current_density_sha256": "041da7bb7bd9111765a8111d2caf2e8bc5297d62965445bdc4cacdd3f401ebd1",
+            "total_variation_distance": 0.959097677916203
           },
-          "psi_after_sha256": "75a5163ae552b21665fc3463573b0bf89e8a68903ca2e512ff4bce1620851c5d",
-          "psi_before_sha256": "3f7b71788f2cdf29caff25c98be1943001b99a9cd9a3b8d30069a3b6b5326cef",
+          "psi_after_sha256": "28fda407c31c8a3b1b844344b1887bf7b8c5eac4196cd284062e166555e76366",
+          "psi_before_sha256": "1b76e5e86ca362a217cb27f365639b788a4f90dd71e0210e625bd41d3a0d1228",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": 0.03079055291426669,
-              "z": 0.07155415093905099
+              "r": -0.09001136747684768,
+              "z": 0.07286601175831245
             },
-            "cosine_similarity": 0.13864798329830133,
-            "current_density_sha256": "9057d731bad6efcf3f941788abfcafbb783db4aa922ba31ad4c730c562cdca4a",
-            "total_variation_distance": 0.9062548320073359
+            "cosine_similarity": 0.13857700520269273,
+            "current_density_sha256": "8bcf55dd992dc8cf76db70cf29328a70d1e6cc74351615fd2b139de56345b89a",
+            "total_variation_distance": 0.9077982864914985
           },
           "separatrix_refinement": 0.0,
           "terminal": false
@@ -207,44 +207,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 0.6895153569423998,
-            "residual_linf_wb": 0.7605914821196749,
-            "residual_relative_l2": 2.327216815856239
+            "accepted_update_relative_l2": 0.24210862855528717,
+            "residual_linf_wb": 0.17649581175992457,
+            "residual_relative_l2": 0.48421725711057434
           },
           "geometry": {
-            "active_boundary_wb": 0.007697775802802919,
-            "active_span_wb": 0.37374801993706347,
-            "axis_wb": 0.38144579573986637,
-            "physical_boundary_wb": 0.09808367854849678,
-            "physical_span_wb": 0.2833621171913696
+            "active_boundary_wb": -0.045531108904231996,
+            "active_span_wb": 0.2382488962157992,
+            "axis_wb": -0.2837800051200312,
+            "physical_boundary_wb": -0.16901863321689084,
+            "physical_span_wb": 0.11476137190314037
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 29,
           "phase": "ip_ramp",
           "physical_residual": {
-            "interior_relative_rms": 3.427275912307648,
-            "wall_relative_l2": 1.7897622242653624
+            "interior_relative_rms": 1.8302594078860637,
+            "wall_relative_l2": 0.18088518396222147
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": 0.7780675888475801,
-              "z": 0.06285481369792921
+              "r": -0.1493186073303745,
+              "z": -0.45492735806973217
             },
-            "cosine_similarity": 0.062088571426127136,
-            "current_density_sha256": "beef1480ba1d1a8eb78e71c083cce1f0bd116fb48f93bc1946f2266ef23fd7c8",
-            "total_variation_distance": 0.9337410921583648
+            "cosine_similarity": 0.689171195300452,
+            "current_density_sha256": "658233b5e0afe25681a2b66261930df8ecc75437d30bbf7ee33a000fedadd95b",
+            "total_variation_distance": 0.5236743009961704
           },
-          "psi_after_sha256": "745268c5de6ba1e1c998334bf70aac817f4a2352c9c0f399e85b9b7f7854facb",
-          "psi_before_sha256": "07bb7ae86b5f44729ba92634629a08ccf665b6e5bde3f4503e3f790085844762",
+          "psi_after_sha256": "eafb9badc215338ec353a797fb0ec1be79c0c5a164c85d32bd2f81cb817eb652",
+          "psi_before_sha256": "6d5f3c0a8226b01fda8f20e3c92e86d26d1fc1ffd3d0e9a317165653bf6053f8",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": 0.12344172892620286,
-              "z": 0.07095652523099054
+              "r": -0.08313540433606281,
+              "z": -0.4309980992003224
             },
-            "cosine_similarity": 0.15004240728621993,
-            "current_density_sha256": "92b7df1d2d7f83d3d6891773c2e66e6fb2008eefac36090b17a492a7a86e7946",
-            "total_variation_distance": 0.8988322517817618
+            "cosine_similarity": 0.7030677503521534,
+            "current_density_sha256": "2e5797b7f81381417ac3c84ed27c199ba9f2e1d6a618bdf2b4e4b310ea10ad6f",
+            "total_variation_distance": 0.47929209570279896
           },
           "separatrix_refinement": 0.0,
           "terminal": false
@@ -252,44 +252,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 0.2713005277100629,
-            "residual_linf_wb": 0.18276784548291025,
-            "residual_relative_l2": 0.2706785996824351
+            "accepted_update_relative_l2": 0.3026889701941425,
+            "residual_linf_wb": 0.041190256306715245,
+            "residual_relative_l2": 0.06101836553206765
           },
           "geometry": {
-            "active_boundary_wb": -0.029923415346295733,
-            "active_span_wb": 0.5030264537675616,
-            "axis_wb": -0.5329498691138573,
-            "physical_boundary_wb": -0.19738092019287484,
-            "physical_span_wb": 0.3355689489209825
+            "active_boundary_wb": -0.0194355078228486,
+            "active_span_wb": 0.48537447129760375,
+            "axis_wb": -0.5048099791204523,
+            "physical_boundary_wb": -0.06694475318506994,
+            "physical_span_wb": 0.4378652259353824
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 49,
           "phase": "pre_separatrix",
           "physical_residual": {
-            "interior_relative_rms": 0.6976059476064925,
-            "wall_relative_l2": 0.41282028369114143
+            "interior_relative_rms": 0.18018386081696905,
+            "wall_relative_l2": 0.0774548286423095
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": 0.4375680745692927,
-              "z": 0.004238827767976877
+              "r": -0.17911395115224304,
+              "z": -0.9356692266322315
             },
-            "cosine_similarity": 0.3459841547405378,
-            "current_density_sha256": "62dfe89068e673ed2b9e4c0d2333f114fab7d6520cb58a08c050ffbebdc4f730",
-            "total_variation_distance": 0.7709987678991268
+            "cosine_similarity": 0.13833628933626063,
+            "current_density_sha256": "6ca425db99b77fe10f0e9a1d268546e7f796d071e9ce65f5597123ec1575f813",
+            "total_variation_distance": 0.8623739756940813
           },
-          "psi_after_sha256": "07e44a2b23e3ebfbff7dc984775d0c1c0fec8f8538da37fa77fe39d6033a238e",
-          "psi_before_sha256": "99dc23f4d01ec9f4ba672eecf51279c607400794c56765a0619b740c603f0f0f",
+          "psi_after_sha256": "a3f22d96e85446bc9608482e48c01b77c2b53e3469ef92eed45c83dd9554c2a6",
+          "psi_before_sha256": "45a7bb5ef2239b67ef4b54ed5f94352a6ccddfcaacdbfcd902806f768a151b3d",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": 0.4986353967594135,
-              "z": -0.009437055866350283
+              "r": -0.1337959948546723,
+              "z": -0.9556879816257497
             },
-            "cosine_similarity": 0.3050926114216011,
-            "current_density_sha256": "93bb383b764fb57d1495b5556a48dcda6a748d74eca3a464e664b63d3f96c8aa",
-            "total_variation_distance": 0.7812259484586687
+            "cosine_similarity": 0.0859303732733639,
+            "current_density_sha256": "03be7066a040ab1922da1f6914f1d76f4775e377f99cb198e798c773982c9fe0",
+            "total_variation_distance": 0.8928900552071513
           },
           "separatrix_refinement": 0.0,
           "terminal": false
@@ -297,44 +297,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 0.00553440775597789,
-            "residual_linf_wb": 0.00044526972921687946,
-            "residual_relative_l2": 0.0008460132729512067
+            "accepted_update_relative_l2": 0.17227324574911038,
+            "residual_linf_wb": 0.030828292366291143,
+            "residual_relative_l2": 0.044112671554761354
           },
           "geometry": {
-            "active_boundary_wb": -0.03169182552299854,
-            "active_span_wb": 0.42783643686863787,
-            "axis_wb": -0.4595282623916364,
-            "physical_boundary_wb": -0.08452049897774903,
-            "physical_span_wb": 0.37500776341388736
+            "active_boundary_wb": -0.01937573613159781,
+            "active_span_wb": 0.5248154774411453,
+            "axis_wb": -0.5441912135727431,
+            "physical_boundary_wb": -0.07041463248746346,
+            "physical_span_wb": 0.47377658108527965
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 79,
           "phase": "pre_separatrix",
           "physical_residual": {
-            "interior_relative_rms": 0.20010087540428834,
-            "wall_relative_l2": 0.03596409684375083
+            "interior_relative_rms": 0.1655289380192901,
+            "wall_relative_l2": 0.07349978601503517
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.24919010696913046,
-              "z": 0.06253155786157688
+              "r": -0.10624805264575121,
+              "z": -1.0654640730539104
             },
-            "cosine_similarity": 0.780470672509072,
-            "current_density_sha256": "9ddcc36c20b39d15e5e4e66d4d8258dd476e3d003a2df5222d93883cceb18ea8",
-            "total_variation_distance": 0.4436385298902441
+            "cosine_similarity": 0.07630436818071025,
+            "current_density_sha256": "2ff6f5b763c787a1e511a4d50903c676dd5c30b63135008e2072fc9fdd339730",
+            "total_variation_distance": 0.9066921882292214
           },
-          "psi_after_sha256": "014a1564dc75ffa3fa134696318a67a19a40c028dbcc6ec3f3bf8137fb3828b6",
-          "psi_before_sha256": "c1d6b50096926d20570b02958048f06ce82e451a4496612ab2161d00337ebe2c",
+          "psi_after_sha256": "1d4531c16da7b33f465ecd1ca7c767e8037d3a02638846fdc4b18c88c92720ec",
+          "psi_before_sha256": "47cec29345f6a8fec3c61859f129af8fad8997742d6609c08f57ab867046bc38",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.20176655038453295,
-              "z": 0.06398872467970375
+              "r": -0.06423466444113668,
+              "z": -1.1032794515515625
             },
-            "cosine_similarity": 0.8144491285913665,
-            "current_density_sha256": "d0c036249d3f21e076735c79ed1d02de339e519e780d31dfc7b2740aefc86569",
-            "total_variation_distance": 0.3638296581180317
+            "cosine_similarity": 0.03667447806663558,
+            "current_density_sha256": "62eb1179de56080760653bc6cced1da688cc0fb5e4dca5682145b0b4b1a4899b",
+            "total_variation_distance": 0.9368164978210144
           },
           "separatrix_refinement": 0.0,
           "terminal": false
@@ -342,44 +342,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 2.6493637371901172e-11,
-            "residual_linf_wb": 6.309369693369149e-12,
-            "residual_relative_l2": 1.2729466264098991e-11
+            "accepted_update_relative_l2": 5.5966999353266975e-05,
+            "residual_linf_wb": 1.5177593268300704e-05,
+            "residual_relative_l2": 1.3881199858983221e-05
           },
           "geometry": {
-            "active_boundary_wb": -0.03174011072501924,
-            "active_span_wb": 0.42844834915714947,
-            "axis_wb": -0.4601884598821687,
-            "physical_boundary_wb": -0.08496171325447219,
-            "physical_span_wb": 0.3752267466276965
+            "active_boundary_wb": -0.020177364081808372,
+            "active_span_wb": 0.6906501117746456,
+            "axis_wb": -0.710827475856454,
+            "physical_boundary_wb": -0.10752505225286793,
+            "physical_span_wb": 0.6033024236035861
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 99,
           "phase": "pre_separatrix",
           "physical_residual": {
-            "interior_relative_rms": 0.20121036863589567,
-            "wall_relative_l2": 0.03623487708675157
+            "interior_relative_rms": 0.14894933947715902,
+            "wall_relative_l2": 0.08569865928237336
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.24637644518752055,
-              "z": 0.06161854042496891
+              "r": 0.23978093904325726,
+              "z": -1.1774398047001522
             },
-            "cosine_similarity": 0.784030218275683,
-            "current_density_sha256": "b142bf074f206bee9c358df75bc65e60c710a37395f1eda07f641efae67a02a1",
-            "total_variation_distance": 0.4412519956299991
+            "cosine_similarity": 0.03681268235125435,
+            "current_density_sha256": "bf0ffc2f5648cd1a59198fb8f6f1801ef890848fdb697c8c1c8dcecd4c704649",
+            "total_variation_distance": 0.9439544749349678
           },
-          "psi_after_sha256": "3611e876f4fa5f2cc024649a0ff2c7d8b1e00589c7c656efca6c251d07247309",
-          "psi_before_sha256": "4536638d2eeb7f25ec0bed2e5276b1f4b5567afbc3b280da7c914e107ff209e1",
+          "psi_after_sha256": "3b5ab6f5f85fd6d5802eeb75dc754db19413df1ab371fad50e1e082a5eb0945e",
+          "psi_before_sha256": "6cc9f4e201dca09044157e1c355f599d0e1af73d621e16fcd45a5874ac42d188",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.19878710584837922,
-              "z": 0.0631406949639887
+              "r": 0.298610699318125,
+              "z": -1.2183048043578837
             },
-            "cosine_similarity": 0.8190959432670624,
-            "current_density_sha256": "3350a1c070e7f680bd6446419a7bd924b9416fcbb60662e9bdaa9ae00f1675aa",
-            "total_variation_distance": 0.35985252986000116
+            "cosine_similarity": 0.01301306789310604,
+            "current_density_sha256": "b0b6bc64bfd378a1157e93acf18ccdfb4894247108088261d877477b8a63ed51",
+            "total_variation_distance": 0.9675494030987393
           },
           "separatrix_refinement": 0.0,
           "terminal": false
@@ -387,44 +387,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 2.988426473128089e-11,
-            "residual_linf_wb": 0.0039046688716076194,
-            "residual_relative_l2": 0.006293320262194164
+            "accepted_update_relative_l2": 0.002474977568657498,
+            "residual_linf_wb": 0.004588227371702613,
+            "residual_relative_l2": 0.004949955137314998
           },
           "geometry": {
-            "active_boundary_wb": -0.03440119085089429,
-            "active_span_wb": 0.4257872690311475,
-            "axis_wb": -0.46018845988204177,
-            "physical_boundary_wb": -0.08496171325053978,
-            "physical_span_wb": 0.375226746631502
+            "active_boundary_wb": -0.024545237992787655,
+            "active_span_wb": 0.6863168885586679,
+            "axis_wb": -0.7108621265514555,
+            "physical_boundary_wb": -0.10752637692437059,
+            "physical_span_wb": 0.6033357496270849
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 100,
           "phase": "separatrix_homotopy",
           "physical_residual": {
-            "interior_relative_rms": 0.20121036861947794,
-            "wall_relative_l2": 0.03623487708749002
+            "interior_relative_rms": 0.14892057391777783,
+            "wall_relative_l2": 0.08569067797030337
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.24421141644227573,
-              "z": 0.06162796507351272
+              "r": 0.2431501201637194,
+              "z": -1.179699566712783
             },
-            "cosine_similarity": 0.7853892603036684,
-            "current_density_sha256": "843f82270c334f1956e7774067fadced717a806cc7b7f89da890426f2fcd7a18",
-            "total_variation_distance": 0.4381559773677591
+            "cosine_similarity": 0.03545016489311706,
+            "current_density_sha256": "d7207fad1d18bb556ce3a0556a8476958833f3dd0839fd79734e262d4217730b",
+            "total_variation_distance": 0.9450717843456401
           },
-          "psi_after_sha256": "dc24a16f9d44de2e2c6fdd30016178aa91e55935be99dcd841e8495ca2905c11",
-          "psi_before_sha256": "3611e876f4fa5f2cc024649a0ff2c7d8b1e00589c7c656efca6c251d07247309",
+          "psi_after_sha256": "e0a55ad6a42c6e5ca90fe5ba3950d906962857ba14596f1a892e16432c45bc97",
+          "psi_before_sha256": "3b5ab6f5f85fd6d5802eeb75dc754db19413df1ab371fad50e1e082a5eb0945e",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.1987871058600037,
-              "z": 0.06314069496044857
+              "r": 0.29864887658719286,
+              "z": -1.2183074843930017
             },
-            "cosine_similarity": 0.8190959432515964,
-            "current_density_sha256": "96c5d9803e29b9339618f5f185520c2d3f4010806669d14d322ac52e4f5ffcca",
-            "total_variation_distance": 0.35985252987283456
+            "cosine_similarity": 0.013012512222072118,
+            "current_density_sha256": "119ea030fcb4e66cd5a9dc7f2996f149c5eef2c319dff8230e9cd8ace71d121b",
+            "total_variation_distance": 0.9675504695333838
           },
           "separatrix_refinement": 0.05,
           "terminal": false
@@ -432,44 +432,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 2.1405997638557536e-06,
-            "residual_linf_wb": 0.03729569942122907,
-            "residual_relative_l2": 0.05732088981740498
+            "accepted_update_relative_l2": 0.009801743196008373,
+            "residual_linf_wb": 0.020300722745256516,
+            "residual_relative_l2": 0.019603486392016742
           },
           "geometry": {
-            "active_boundary_wb": -0.05835085701190261,
-            "active_span_wb": 0.4018375868230246,
-            "axis_wb": -0.46018844383492724,
-            "physical_boundary_wb": -0.08496153286234406,
-            "physical_span_wb": 0.3752269109725832
+            "active_boundary_wb": -0.06712760972170825,
+            "active_span_wb": 0.6968339830100705,
+            "axis_wb": -0.7639615927317788,
+            "physical_boundary_wb": -0.11344376761243816,
+            "physical_span_wb": 0.6505178251193406
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 109,
           "phase": "separatrix_homotopy",
           "physical_residual": {
-            "interior_relative_rms": 0.20120976127538,
-            "wall_relative_l2": 0.036234477143038166
+            "interior_relative_rms": 0.09773187916042922,
+            "wall_relative_l2": 0.06214091090692053
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.22754859731221067,
-              "z": 0.06208837857209342
+              "r": 0.3018493423596711,
+              "z": -1.2077997134845726
             },
-            "cosine_similarity": 0.7967351128795404,
-            "current_density_sha256": "c82c317bb6f1515519924db68c82d5f71533c1efbee1104beff460b520af3f62",
-            "total_variation_distance": 0.4121834418186874
+            "cosine_similarity": 0.020416000786195265,
+            "current_density_sha256": "d6ccb6a5268364d6f529185ebcc99f70054e70ae231078946c3e4ce590ec618c",
+            "total_variation_distance": 0.9594554898356992
           },
-          "psi_after_sha256": "4ef699f6418e822dab7583852e9f4f1c2e03fae3879f79ca16b449b0fc2e0c76",
-          "psi_before_sha256": "286c76faba4fb62b54c3697eda28640e126e4e40e2e6bdd125d33de8bd3ecce4",
+          "psi_after_sha256": "19e3ad9b8c10a5169af193d488d4405b7bf1d79a454ab111f6b80a6089fd5caf",
+          "psi_before_sha256": "1267d6c74d54572c981672870776d41da4abb8ef0dabffd49ee685e5d55c03cb",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.19878727531692109,
-              "z": 0.0631404851281462
+              "r": 0.3290475040498193,
+              "z": -1.22666371876645
             },
-            "cosine_similarity": 0.8190957678635841,
-            "current_density_sha256": "e9b16b662d5d95c96ff3c2318879c77928f4921b0c5ceca6209250494aed971e",
-            "total_variation_distance": 0.35985266134628946
+            "cosine_similarity": 0.011017785833254197,
+            "current_density_sha256": "fa3ffba3c7dba6d8216d5fce245b667568ec137aa1e2500bc4e3147f9e96db79",
+            "total_variation_distance": 0.9706643426394125
           },
           "separatrix_refinement": 0.5,
           "terminal": false
@@ -477,44 +477,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 0.0019171146794340985,
-            "residual_linf_wb": 0.07081435986692725,
-            "residual_relative_l2": 0.10273704247268187
+            "accepted_update_relative_l2": 0.012813797044303911,
+            "residual_linf_wb": 0.03053503083615794,
+            "residual_relative_l2": 0.025627594088607826
           },
           "geometry": {
-            "active_boundary_wb": -0.0854683055711992,
-            "active_span_wb": 0.3750268545911909,
-            "axis_wb": -0.46049516016239006,
-            "physical_boundary_wb": -0.0854683055711992,
-            "physical_span_wb": 0.3750268545911909
+            "active_boundary_wb": -0.11985204919890885,
+            "active_span_wb": 0.7285548554910457,
+            "axis_wb": -0.8484069046899546,
+            "physical_boundary_wb": -0.11985204919890885,
+            "physical_span_wb": 0.7285548554910457
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 119,
           "phase": "separatrix_homotopy",
           "physical_residual": {
-            "interior_relative_rms": 0.20417861650322985,
-            "wall_relative_l2": 0.03601800686225885
+            "interior_relative_rms": 0.043910806812421335,
+            "wall_relative_l2": 0.03170646688800917
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.21401075366851696,
-              "z": 0.06305938430268856
+              "r": 0.39219380671768356,
+              "z": -1.2396203820894078
             },
-            "cosine_similarity": 0.8071176136245102,
-            "current_density_sha256": "56c147c97de20e66d025c246ec7b0765102c14f079f42fb6611b9bf5a4ee2f13",
-            "total_variation_distance": 0.38791641872852234
+            "cosine_similarity": 0.008498574398964932,
+            "current_density_sha256": "e0b936211b98d0626bddccc46d0eef766113ab9aec54fba83b7789503e4e8a4a",
+            "total_variation_distance": 0.9750560942529644
           },
-          "psi_after_sha256": "a065ac98465659a34c5c1c6924c77a5e8ce65354d726e1527f6f8e9b5e5b21a6",
-          "psi_before_sha256": "4c1d2ea2343910601f31e0a0eefd9730efada693b5cf258c50ebe30613225ea1",
+          "psi_after_sha256": "f9662715ce56642550b62dc981972e29ec36c7a89ecb311b9759f05cfab80daa",
+          "psi_before_sha256": "b5e673174473102893b1b0051b9d65e1518f2d23f326d2b36fda1aa11fe8e05f",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.19920411165252871,
-              "z": 0.06330142925472061
+              "r": 0.3937386785253856,
+              "z": -1.2406482278553144
             },
-            "cosine_similarity": 0.8184936563515264,
-            "current_density_sha256": "ea9dd8b7124964a49b3498264459fc613cee33b47d183d274a5e7bfb0ab9ca37",
-            "total_variation_distance": 0.3604425016808342
+            "cosine_similarity": 0.008134832779884856,
+            "current_density_sha256": "4037f00871e42848631ee4ece4d685def7bd9c026297e2760d541592175315d4",
+            "total_variation_distance": 0.9756272463460847
           },
           "separatrix_refinement": 1.0,
           "terminal": false
@@ -522,44 +522,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 0.019777399364624887,
-            "residual_linf_wb": 0.055684814790454895,
-            "residual_relative_l2": 0.07391086098455876
+            "accepted_update_relative_l2": 0.07082907045956806,
+            "residual_linf_wb": 0.03364350451720721,
+            "residual_relative_l2": 0.025495363697013426
           },
           "geometry": {
-            "active_boundary_wb": -0.07805033804969302,
-            "active_span_wb": 0.3804588953634124,
-            "axis_wb": -0.4585092334131054,
-            "physical_boundary_wb": -0.07805033804969302,
-            "physical_span_wb": 0.3804588953634124
+            "active_boundary_wb": -0.1422587026160693,
+            "active_span_wb": 0.7519900072578413,
+            "axis_wb": -0.8942487098739106,
+            "physical_boundary_wb": -0.1422587026160693,
+            "physical_span_wb": 0.7519900072578413
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 129,
           "phase": "post_homotopy",
           "physical_residual": {
-            "interior_relative_rms": 0.4620122473653831,
-            "wall_relative_l2": 0.025183033185182717
+            "interior_relative_rms": 0.05368661904720598,
+            "wall_relative_l2": 0.028906748357465588
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.2249384909455332,
-              "z": 0.06277129501245662
+              "r": 0.4577716887830965,
+              "z": -1.2471342928644609
             },
-            "cosine_similarity": 0.7910263627665658,
-            "current_density_sha256": "4d07c0cbe7a324051395f357a238a337ebf11feb4e1170ccb077577193617d88",
-            "total_variation_distance": 0.40579927418780914
+            "cosine_similarity": 0.005653046632512203,
+            "current_density_sha256": "7eb613abe212a187ab2cf24422f48ee696fa7f454400811c2408c6671627d3ba",
+            "total_variation_distance": 0.980264664820489
           },
-          "psi_after_sha256": "c3521a77ff5ac9dc14e1033f5dd6b64a0aa76f3006cf87d31571c417b9842dca",
-          "psi_before_sha256": "b3fac06acdb6307488b7871ac264718e286106bf23495e10f5086509563f2791",
+          "psi_after_sha256": "0f64b9d0b4f0755a0b0a44dcda3f928071c67a683184cc7303e4cb543d35b5a2",
+          "psi_before_sha256": "fdbdc21ed2ed1b84f953c8ac7880d20b7a6bfd108981390c1863aaec0f3b6328",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.20755301976889418,
-              "z": 0.06301325059867773
+              "r": 0.44922581145381013,
+              "z": -1.2417862396478574
             },
-            "cosine_similarity": 0.8050028174199182,
-            "current_density_sha256": "c0ffcf3178ccb5db62b676dd690226a74452a4caccba68703b927dc5186e3754",
-            "total_variation_distance": 0.3735819469367622
+            "cosine_similarity": 0.007269721393581735,
+            "current_density_sha256": "69e19ffceacfc27041ccef6fb45f588ff3d4a0b9e284314ae1d2bd8c0ade6eca",
+            "total_variation_distance": 0.977444497376616
           },
           "separatrix_refinement": 1.0,
           "terminal": false
@@ -567,98 +567,98 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 0.11034450337681448,
-            "residual_linf_wb": 0.024228973528155062,
-            "residual_relative_l2": 0.036916546339954615
+            "accepted_update_relative_l2": 0.0012742861125605279,
+            "residual_linf_wb": 0.0019972679060199505,
+            "residual_relative_l2": 0.0013648138816696415
           },
           "geometry": {
-            "active_boundary_wb": -0.0794437501131091,
-            "active_span_wb": 0.4921184632242792,
-            "axis_wb": -0.5715622133373883,
-            "physical_boundary_wb": -0.0794437501131091,
-            "physical_span_wb": 0.4921184632242792
+            "active_boundary_wb": -0.16624230863796524,
+            "active_span_wb": 0.8401686337333831,
+            "axis_wb": -1.0064109423713483,
+            "physical_boundary_wb": -0.16624230863796524,
+            "physical_span_wb": 0.8401686337333831
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 149,
           "phase": "post_homotopy",
           "physical_residual": {
-            "interior_relative_rms": 0.6536162860481464,
-            "wall_relative_l2": 0.02167897076175802
+            "interior_relative_rms": 0.002875654491806293,
+            "wall_relative_l2": 0.0015644217629977213
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.21111212110761102,
-              "z": 0.06673433932153627
+              "r": 0.5339986169536313,
+              "z": -1.2705206241947595
             },
-            "cosine_similarity": 0.8110302247047131,
-            "current_density_sha256": "a4bed56924ce89ee7fcfc038e8fe0c227c0d56e10b812dde952b90a7794c5341",
-            "total_variation_distance": 0.37187666243242007
+            "cosine_similarity": 0.0024246912124429843,
+            "current_density_sha256": "58d08c0ad36584e534188547b3c58b9aee7159649049327005ea6f0213cb184a",
+            "total_variation_distance": 0.9878345602914278
           },
-          "psi_after_sha256": "ef9e01ae0a59b9c44ad522ffd7b95501b61d279dbd6db27fe7e7812c09c98f39",
-          "psi_before_sha256": "f4cec82e1d097223e7925fc94f15ab19323e14a192fa1988eebb1ee918944e65",
+          "psi_after_sha256": "a2567c3127b1446d8dd0a7015672392528d1fa84b0b4b5e75158ec9129552abd",
+          "psi_before_sha256": "be3319cd7a69f2cf6e47d29bbbd0ac780ed853e145ef184e5eec52c3d91009e3",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.19807258321374288,
-              "z": 0.0688681092832681
+              "r": 0.5153709032963603,
+              "z": -1.259252060405462
             },
-            "cosine_similarity": 0.8164964462666829,
-            "current_density_sha256": "6942b530afb92e722a55083fc0325609047d81a2b74b657807b3692b6f6eb96f",
-            "total_variation_distance": 0.3510811736986704
+            "cosine_similarity": 0.0046854874289688694,
+            "current_density_sha256": "d7621aa385eb34cb0f50a767116cf7c03f84b40c31449d05c5d46d32be251999",
+            "total_variation_distance": 0.9826939945078811
           },
           "separatrix_refinement": 1.0,
           "terminal": false
         },
         {
-          "converged": false,
+          "converged": true,
           "fixed_point": {
-            "accepted_update_relative_l2": 1.9843854941058347e-07,
-            "residual_linf_wb": 1.4966236583369152e-08,
-            "residual_relative_l2": 1.658087417114445e-08
+            "accepted_update_relative_l2": 0.0,
+            "residual_linf_wb": 4.375758644314942e-10,
+            "residual_relative_l2": 2.7770606796070106e-10
           },
           "geometry": {
-            "active_boundary_wb": -0.09934153627443523,
-            "active_span_wb": 0.5144743202096776,
-            "axis_wb": -0.6138158564841129,
-            "physical_boundary_wb": -0.09934153627443523,
-            "physical_span_wb": 0.5144743202096776
+            "active_boundary_wb": -0.16594977103667247,
+            "active_span_wb": 0.8440277701262144,
+            "axis_wb": -1.0099775411628868,
+            "physical_boundary_wb": -0.16594977103667247,
+            "physical_span_wb": 0.8440277701262144
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
-          "iteration_index": 179,
+          "iteration_index": 159,
           "phase": "post_homotopy",
           "physical_residual": {
-            "interior_relative_rms": 1.815120675885485e-07,
-            "wall_relative_l2": 1.2747170339775606e-08
+            "interior_relative_rms": 2.6742485457669097e-09,
+            "wall_relative_l2": 1.9454239044576187e-10
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.04203903165035161,
-              "z": 0.0584267966667926
+              "r": 0.5356831034436214,
+              "z": -1.2709699242422892
             },
-            "cosine_similarity": 0.9392971067775626,
-            "current_density_sha256": "9d6b1ef5f7ad2126e34eb1f8f5e7ba915b046412ba19b8bbb04b678a47370472",
-            "total_variation_distance": 0.25135326978795697
+            "cosine_similarity": 0.0023963936358169942,
+            "current_density_sha256": "fcb9dc57e8fee155cd77349ce079857d63274427c1ea6db5f115394deb3ec86c",
+            "total_variation_distance": 0.9879214781087164
           },
-          "psi_after_sha256": "b47b69b713d2cf954b7ab2e02624b4416a31f8d075da71679f7b03fc87cae140",
-          "psi_before_sha256": "eea5b53eeda3b32771becff5371d5a55023695d57d14cbf90c0c83e73ba0a49b",
+          "psi_after_sha256": "49e1c09dc90e97b247142ccbadbb610dfd538751923d3e53865bfce48b3375cc",
+          "psi_before_sha256": "49e1c09dc90e97b247142ccbadbb610dfd538751923d3e53865bfce48b3375cc",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.033831926341075125,
-              "z": 0.05851883102333512
+              "r": 0.5171898076938657,
+              "z": -1.259790702372398
             },
-            "cosine_similarity": 0.9501351919559438,
-            "current_density_sha256": "f5a4e809c1dd387b3d2f2f011354628b1f6bdba19ffd9148704f9028592fa708",
-            "total_variation_distance": 0.2206387926132674
+            "cosine_similarity": 0.004620281392560819,
+            "current_density_sha256": "7943b609261d3c982217c8a4586c6cf13f7c833abab44faa85fa58680bd5a01e",
+            "total_variation_distance": 0.9828397824715103
           },
           "separatrix_refinement": 1.0,
           "terminal": true
         }
       ],
       "iteration_cap": 180,
-      "iteration_count": 180,
-      "terminal_psi_sha256": "b47b69b713d2cf954b7ab2e02624b4416a31f8d075da71679f7b03fc87cae140",
-      "terminated_early": false
+      "iteration_count": 160,
+      "terminal_psi_sha256": "49e1c09dc90e97b247142ccbadbb610dfd538751923d3e53865bfce48b3375cc",
+      "terminated_early": true
     },
     "warm": {
       "checkpoint_indices_requested": [
@@ -672,134 +672,44 @@
         {
           "converged": false,
           "fixed_point": {
-            "accepted_update_relative_l2": 2.164609041566105e-09,
-            "residual_linf_wb": 5.440930150868439e-09,
-            "residual_relative_l2": 4.32921808477089e-09
+            "accepted_update_relative_l2": 1.3885303443994947e-10,
+            "residual_linf_wb": 4.375758644314942e-10,
+            "residual_relative_l2": 2.7770606796070106e-10
           },
           "geometry": {
-            "active_boundary_wb": -0.09934155767107702,
-            "active_span_wb": 0.514474344412451,
-            "axis_wb": -0.613815902083528,
-            "physical_boundary_wb": -0.09934155767107702,
-            "physical_span_wb": 0.514474344412451
+            "active_boundary_wb": -0.16594977103667247,
+            "active_span_wb": 0.8440277701262144,
+            "axis_wb": -1.0099775411628868,
+            "physical_boundary_wb": -0.16594977103667247,
+            "physical_span_wb": 0.8440277701262144
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
           "iteration_index": 0,
           "phase": "warm_polish",
           "physical_residual": {
-            "interior_relative_rms": 1.2087566888068407e-07,
-            "wall_relative_l2": 1.9103717395794186e-09
+            "interior_relative_rms": 2.6742485457669097e-09,
+            "wall_relative_l2": 1.9454239044576187e-10
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.04203895805478419,
-              "z": 0.05842669507928045
+              "r": 0.5356831034436214,
+              "z": -1.2709699242422892
             },
-            "cosine_similarity": 0.9392971445469548,
-            "current_density_sha256": "cb5d9a9b1321a802a42dfded9b683633139eccc5fbcac8724c1036b3d2749484",
-            "total_variation_distance": 0.2513532163286408
+            "cosine_similarity": 0.0023963936358169942,
+            "current_density_sha256": "fcb9dc57e8fee155cd77349ce079857d63274427c1ea6db5f115394deb3ec86c",
+            "total_variation_distance": 0.9879214781087164
           },
-          "psi_after_sha256": "5a0c57ebbc8740d857d8f4823e4af682e0744d08dae1e3bc465e25beaaa3b4b4",
-          "psi_before_sha256": "b47b69b713d2cf954b7ab2e02624b4416a31f8d075da71679f7b03fc87cae140",
+          "psi_after_sha256": "5121395366b6858198ae411cf344e03ffebf614456faf9cf6d28f2d4d02ffbfc",
+          "psi_before_sha256": "49e1c09dc90e97b247142ccbadbb610dfd538751923d3e53865bfce48b3375cc",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.033831860544126124,
-              "z": 0.0585187306739962
+              "r": 0.5171898076938657,
+              "z": -1.259790702372398
             },
-            "cosine_similarity": 0.9501352204962678,
-            "current_density_sha256": "1667588ff76b93356975482f0e895f15845f3f3edfd3ad191f31daee9fd93987",
-            "total_variation_distance": 0.2206387625919757
-          },
-          "separatrix_refinement": 1.0,
-          "terminal": false
-        },
-        {
-          "converged": false,
-          "fixed_point": {
-            "accepted_update_relative_l2": 2.225937124749142e-09,
-            "residual_linf_wb": 3.8286763759387554e-09,
-            "residual_relative_l2": 3.8653089603807025e-09
-          },
-          "geometry": {
-            "active_boundary_wb": -0.09934155795022404,
-            "active_span_wb": 0.5144743422727934,
-            "axis_wb": -0.6138159002230175,
-            "physical_boundary_wb": -0.09934155795022404,
-            "physical_span_wb": 0.5144743422727934
-          },
-          "ip_fraction": 1.0,
-          "ip_now_a": 1533632.0,
-          "iteration_index": 1,
-          "phase": "warm_polish",
-          "physical_residual": {
-            "interior_relative_rms": 6.204958621452237e-08,
-            "wall_relative_l2": 1.9613722706582333e-09
-          },
-          "production_current": {
-            "centroid_delta_m": {
-              "r": -0.04203895774134603,
-              "z": 0.0584266963587416
-            },
-            "cosine_similarity": 0.9392971433333841,
-            "current_density_sha256": "1dd435d21755211a08d6e61aa81d167327ecc018a782a3a238906d83ce84c241",
-            "total_variation_distance": 0.2513532176552565
-          },
-          "psi_after_sha256": "a5900b4d115c945c5eace6d4099c34d8fddff6dee9bb919f0f79b97adb535782",
-          "psi_before_sha256": "5a0c57ebbc8740d857d8f4823e4af682e0744d08dae1e3bc465e25beaaa3b4b4",
-          "reference_boundary_counterfactual": {
-            "centroid_delta_m": {
-              "r": -0.033831860278005,
-              "z": 0.0585187320571597
-            },
-            "cosine_similarity": 0.9501352191701302,
-            "current_density_sha256": "76c730a1f43f17ce98eb7719e9cd92ba57985e714f585caed82236d1a94d43ac",
-            "total_variation_distance": 0.22063876443632915
-          },
-          "separatrix_refinement": 1.0,
-          "terminal": false
-        },
-        {
-          "converged": false,
-          "fixed_point": {
-            "accepted_update_relative_l2": 3.695745073083828e-08,
-            "residual_linf_wb": 2.650460073638783e-09,
-            "residual_relative_l2": 3.7209548932545964e-09
-          },
-          "geometry": {
-            "active_boundary_wb": -0.09934155922662594,
-            "active_span_wb": 0.5144743406581093,
-            "axis_wb": -0.6138158998847352,
-            "physical_boundary_wb": -0.09934155922662594,
-            "physical_span_wb": 0.5144743406581093
-          },
-          "ip_fraction": 1.0,
-          "ip_now_a": 1533632.0,
-          "iteration_index": 4,
-          "phase": "warm_polish",
-          "physical_residual": {
-            "interior_relative_rms": 2.3243030222092318e-08,
-            "wall_relative_l2": 2.8415498623580613e-09
-          },
-          "production_current": {
-            "centroid_delta_m": {
-              "r": -0.042038957517657405,
-              "z": 0.05842669021930053
-            },
-            "cosine_similarity": 0.9392971448823898,
-            "current_density_sha256": "8f8c2aa02833da4b0f9757afcb05721407cd06d3e38ef3cf3576f92bbb1df388",
-            "total_variation_distance": 0.25135321469383637
-          },
-          "psi_after_sha256": "53b92421001759dea4c2291003c9680e0ae635bdd770b3e8887f0ff3ed7c188e",
-          "psi_before_sha256": "f5f2237d98e613dc6274469b291961234cc49d34ec2728d57e0035b31082db38",
-          "reference_boundary_counterfactual": {
-            "centroid_delta_m": {
-              "r": -0.03383186051238152,
-              "z": 0.05851872607230836
-            },
-            "cosine_similarity": 0.9501352201876043,
-            "current_density_sha256": "12a98fd8fe84f051569cf617ce39e9f35a4491aef5cf4fde0ff5c22b0e01be8f",
-            "total_variation_distance": 0.22063876292430257
+            "cosine_similarity": 0.004620281392560819,
+            "current_density_sha256": "7943b609261d3c982217c8a4586c6cf13f7c833abab44faa85fa58680bd5a01e",
+            "total_variation_distance": 0.9828397824715103
           },
           "separatrix_refinement": 1.0,
           "terminal": false
@@ -808,51 +718,51 @@
           "converged": true,
           "fixed_point": {
             "accepted_update_relative_l2": 0.0,
-            "residual_linf_wb": 1.0266659744573303e-09,
-            "residual_relative_l2": 8.938756960910796e-10
+            "residual_linf_wb": 2.8715796407396965e-10,
+            "residual_relative_l2": 2.001602444385442e-10
           },
           "geometry": {
-            "active_boundary_wb": -0.09934156634371,
-            "active_span_wb": 0.5144743490114752,
-            "axis_wb": -0.6138159153551852,
-            "physical_boundary_wb": -0.09934156634371,
-            "physical_span_wb": 0.5144743490114752
+            "active_boundary_wb": -0.16594977100223057,
+            "active_span_wb": 0.8440277700821757,
+            "axis_wb": -1.0099775410844063,
+            "physical_boundary_wb": -0.16594977100223057,
+            "physical_span_wb": 0.8440277700821757
           },
           "ip_fraction": 1.0,
           "ip_now_a": 1533632.0,
-          "iteration_index": 6,
+          "iteration_index": 1,
           "phase": "warm_polish",
           "physical_residual": {
-            "interior_relative_rms": 2.936205717799564e-08,
-            "wall_relative_l2": 6.27890035307551e-10
+            "interior_relative_rms": 1.5230947409026666e-09,
+            "wall_relative_l2": 1.8320416694895746e-10
           },
           "production_current": {
             "centroid_delta_m": {
-              "r": -0.0420389347166803,
-              "z": 0.058426658824882606
+              "r": 0.5356831033739735,
+              "z": -1.270969924188002
             },
-            "cosine_similarity": 0.939297157042303,
-            "current_density_sha256": "11a5a0365f6c8b3ff4640d5dd182745f2ea8cf2e3a818a8661f3d15519e11eb2",
-            "total_variation_distance": 0.2513531967300394
+            "cosine_similarity": 0.0023963936369300358,
+            "current_density_sha256": "a2524e0eafdc396a576dd65acc2dd78ff80808352b67737765b337a2549f968e",
+            "total_variation_distance": 0.987921478104888
           },
-          "psi_after_sha256": "6f88b0c2a88361cb4fb43f1097da56772660d23a987125f3f283a9091d37e155",
-          "psi_before_sha256": "6f88b0c2a88361cb4fb43f1097da56772660d23a987125f3f283a9091d37e155",
+          "psi_after_sha256": "5121395366b6858198ae411cf344e03ffebf614456faf9cf6d28f2d4d02ffbfc",
+          "psi_before_sha256": "5121395366b6858198ae411cf344e03ffebf614456faf9cf6d28f2d4d02ffbfc",
           "reference_boundary_counterfactual": {
             "centroid_delta_m": {
-              "r": -0.03383184028251662,
-              "z": 0.05851869507457551
+              "r": 0.517189807639737,
+              "z": -1.259790702332882
             },
-            "cosine_similarity": 0.9501352291727482,
-            "current_density_sha256": "505d07044286a06f27c2139c4bb4aadd124bd95fcf3c71f0c5d13ac94b064a08",
-            "total_variation_distance": 0.2206387529201525
+            "cosine_similarity": 0.004620281391382531,
+            "current_density_sha256": "1317c5079af5659f4968886142e4f51366d3b15054442517353a2244c14d1f19",
+            "total_variation_distance": 0.982839782472742
           },
           "separatrix_refinement": 1.0,
           "terminal": true
         }
       ],
       "iteration_cap": 20,
-      "iteration_count": 7,
-      "terminal_psi_sha256": "6f88b0c2a88361cb4fb43f1097da56772660d23a987125f3f283a9091d37e155",
+      "iteration_count": 2,
+      "terminal_psi_sha256": "5121395366b6858198ae411cf344e03ffebf614456faf9cf6d28f2d4d02ffbfc",
       "terminated_early": true
     }
   },
@@ -864,7 +774,7 @@
     },
     "compiled_forward": {
       "path": "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
-      "sha256": "c0c64a0a7074e84d009c015504fce52fdc50fc012409897e5f676db735eaf6f1"
+      "sha256": "bae325d322b510845b5e60b5a8e35edd8cd0e4494fffb383a367946187c2dabc"
     },
     "contract": {
       "path": "validation/ida_geometry_feedback_trace_contract.py",
@@ -883,7 +793,7 @@
       "sha256": "61106f7548163d8938915593dcbcdd8f8311a343fcd3ff8832f4170de90a2b4f"
     },
     "repository": {
-      "git_commit": "851edaedb073c65f276138fd88c49045ab7b1029",
+      "git_commit": "41efdeb0d78a426f6f3823d132d03df83580ef2b",
       "path": "."
     },
     "same_case_benchmark": {
@@ -892,7 +802,7 @@
     },
     "solver": {
       "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
-      "sha256": "e265e42796e49b389f39fc91f5535859309e887254f0dd151e7110a702dee8b1"
+      "sha256": "a17b32612363aef3f4de65938ba40c1fd280e80b7c070f2ba94704eb52c3137b"
     },
     "source_ablation": {
       "path": "validation/diagnose_ida_fixed_reference_source.py",
@@ -918,7 +828,7 @@
   "status": "diagnostic_complete_claims_blocked",
   "terminal_parity": {
     "expected_same_case_candidate_sha256": "6f88b0c2a88361cb4fb43f1097da56772660d23a987125f3f283a9091d37e155",
-    "matches_same_case_candidate": true,
-    "traced_candidate_sha256": "6f88b0c2a88361cb4fb43f1097da56772660d23a987125f3f283a9091d37e155"
+    "matches_same_case_candidate": false,
+    "traced_candidate_sha256": "5121395366b6858198ae411cf344e03ffebf614456faf9cf6d28f2d4d02ffbfc"
   }
 }
