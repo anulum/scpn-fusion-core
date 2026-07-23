@@ -1,0 +1,233 @@
+{
+  "benchmark_id": "DIII-D-IDA-FB-JAX-B-SOURCE-ABLATION",
+  "blockers": [
+    "facility_validation_not_bound",
+    "isolated_latency_evidence_missing",
+    "pcs_and_safety_programmes_not_bound",
+    "same_case_accuracy_threshold_failed",
+    "statistically_held_out_case_missing"
+  ],
+  "claim_boundary": {
+    "control_admission": false,
+    "facility_validation": false,
+    "pcs_deployment": false,
+    "safety_admission": false,
+    "scientific_validation": false
+  },
+  "environment": {
+    "affinity_cpu_count": 12,
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "freegs_version": "0.8.2",
+    "host_load_1m_5m_15m": [
+      5.28076171875,
+      5.8017578125,
+      5.79345703125
+    ],
+    "isolated_host": false,
+    "jax_version": "0.6.2",
+    "jaxlib_version": "0.6.2",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "x64_enabled": true
+  },
+  "fixed_reference_sources": {
+    "compact_bspline": {
+      "current_density_sha256": "82988627ada1c58c4d88cee928e26175f52247428345649129ec73d2e4c041c9",
+      "distribution": {
+        "candidate_centroid_m": {
+          "r": 1.6863603237734686,
+          "z": -0.08003674664164381
+        },
+        "centroid_delta_m": {
+          "r": -0.0016618816578095608,
+          "z": -0.001383177020669299
+        },
+        "cosine_similarity": 0.9999689837197511,
+        "l1_distance": 0.008146704715581458,
+        "reference_centroid_m": {
+          "r": 1.6880222054312781,
+          "z": -0.07865356962097451
+        },
+        "total_variation_distance": 0.004073352357790729
+      },
+      "support": {
+        "absolute_current_inside_reference_fraction": 0.9962099130190595,
+        "absolute_current_outside_reference_fraction": 0.00379008698094056,
+        "candidate_mask_sha256": "3f58c41a7befbecf9860c353909b76ba4de83ecb1b0c4c08120d140e5e1eeb09",
+        "candidate_point_count": 4056,
+        "false_negative_fraction_of_reference": 0.001223615784643622,
+        "false_negative_point_count": 4,
+        "false_positive_fraction_of_candidate": 0.1950197238658777,
+        "false_positive_point_count": 791,
+        "intersection_point_count": 3265,
+        "iou": 0.8041871921182266,
+        "reference_mask_sha256": "38299202eb9ba39766ae7a7d2afb97721ce0f087f1b1590e16a229b4190c118e",
+        "reference_point_count": 3269,
+        "relative_floor": 1e-06,
+        "union_point_count": 4060
+      }
+    },
+    "exact_sampled": {
+      "current_density_sha256": "f92377b313e009da92bbe0b812546f830a1faec163d7d42436a9099bb2f62c0e",
+      "distribution": {
+        "candidate_centroid_m": {
+          "r": 1.6863603237734717,
+          "z": -0.08003674664164409
+        },
+        "centroid_delta_m": {
+          "r": -0.0016618816578064521,
+          "z": -0.0013831770206695765
+        },
+        "cosine_similarity": 0.999968983719751,
+        "l1_distance": 0.008146704715575485,
+        "reference_centroid_m": {
+          "r": 1.6880222054312781,
+          "z": -0.07865356962097451
+        },
+        "total_variation_distance": 0.004073352357787743
+      },
+      "support": {
+        "absolute_current_inside_reference_fraction": 0.996209913019063,
+        "absolute_current_outside_reference_fraction": 0.003790086980936982,
+        "candidate_mask_sha256": "3f58c41a7befbecf9860c353909b76ba4de83ecb1b0c4c08120d140e5e1eeb09",
+        "candidate_point_count": 4056,
+        "false_negative_fraction_of_reference": 0.001223615784643622,
+        "false_negative_point_count": 4,
+        "false_positive_fraction_of_candidate": 0.1950197238658777,
+        "false_positive_point_count": 791,
+        "intersection_point_count": 3265,
+        "iou": 0.8041871921182266,
+        "reference_mask_sha256": "38299202eb9ba39766ae7a7d2afb97721ce0f087f1b1590e16a229b4190c118e",
+        "reference_point_count": 3269,
+        "relative_floor": 1e-06,
+        "union_point_count": 4060
+      }
+    }
+  },
+  "generated_at": "2026-07-23T08:04:20Z",
+  "input_contract": {
+    "cutoff_width": 0.03,
+    "evaluation_case_id": "freegs_16_diiid_public_example",
+    "fixed_geometry": "FreeGS reference psi, axis, and boundary",
+    "profile_coefficient_count": 12,
+    "profile_degree": 3,
+    "profile_sample_count": 129,
+    "source_equation": "Jphi=R*pprime+FFprime/(mu0*R), smooth LCFS cutoff, Ip-normalised"
+  },
+  "payload_sha256": "893938b7dd74ba466004c5d3e042fa2281fc64ed4ca26a3e51d724c878072170",
+  "profile_fit": {
+    "ffprime": {
+      "exact_sha256": "2405c37627eb4d733f73975e37f351e64febac5ba7d74a7ea496aa9fe1315f16",
+      "reconstructed_sha256": "ec5c76d7409867d90e0715ed09ff59a761059719dd5b2d5efdb33895b69ee179",
+      "relative_l2_error": 5.802279357153959e-16,
+      "relative_max_error": 7.582089260778468e-16,
+      "sample_count": 129
+    },
+    "pprime": {
+      "exact_sha256": "b29041eada70fb4df1f57115b7fbe2d57809c2101fb871449dabbc835f92d170",
+      "reconstructed_sha256": "05d4a0b0e01deeea64f014f479b0988003c31a487ea03bdc6625dd47850e7b0f",
+      "relative_l2_error": 5.392355810193535e-16,
+      "relative_max_error": 4.41501698139254e-16,
+      "sample_count": 129
+    }
+  },
+  "routing": {
+    "compact_exact_tv_delta": 2.9863264638940734e-15,
+    "fixed_reference_source_matches": true,
+    "geometry_separation": true,
+    "next_ratcheting_target": "self_consistent_equilibrium_geometry_and_flux_normalisation",
+    "profile_fit_relative_l2_max": 5.802279357153959e-16,
+    "profile_representation_excluded": true,
+    "self_consistent_minus_exact_fixed_tv": 0.24727984437225167,
+    "self_consistent_to_exact_fixed_tv_ratio": 61.70671590673549
+  },
+  "routing_thresholds": {
+    "compact_exact_tv_delta_max": 1e-10,
+    "fixed_reference_tv_max": 0.02,
+    "profile_fit_relative_l2_max": 1e-10,
+    "self_consistent_to_fixed_tv_ratio_min": 5.0
+  },
+  "schema_version": "scpn-fusion.ida-fixed-reference-source-ablation.v1",
+  "self_consistent_candidate": {
+    "candidate_psi_sha256": "6f88b0c2a88361cb4fb43f1097da56772660d23a987125f3f283a9091d37e155",
+    "distribution": {
+      "candidate_centroid_m": {
+        "r": 1.646047934350538,
+        "z": -0.020215965080445326
+      },
+      "centroid_delta_m": {
+        "r": -0.0420389347166803,
+        "z": 0.058426658824882606
+      },
+      "cosine_similarity": 0.939297157042303,
+      "l1_distance": 0.5027063934600788,
+      "reference_centroid_m": {
+        "r": 1.6880868690672184,
+        "z": -0.07864262390532793
+      },
+      "total_variation_distance": 0.2513531967300394
+    },
+    "source_report_payload_sha256": "cf7a64f8e69d0b6406c046acbc0e486db912d6c639cc0dfd57647f5e1e15061b",
+    "support": {
+      "absolute_current_inside_reference_fraction": 0.9529374768688997,
+      "absolute_current_outside_reference_fraction": 0.04706252313110028,
+      "candidate_mask_sha256": "9145e20b24c35e26807ae9b8d7ed1a0fbbd356b974524397716cd6c86f26989d",
+      "candidate_point_count": 6199,
+      "false_negative_fraction_of_reference": 0.0,
+      "false_negative_point_count": 0,
+      "false_positive_fraction_of_candidate": 0.4723342474592676,
+      "false_positive_point_count": 2928,
+      "intersection_point_count": 3271,
+      "iou": 0.5276657525407323,
+      "reference_mask_sha256": "db7ba3496947648f879c89f8fbf5488dfea6b089ab97343aa5444a71df652147",
+      "reference_point_count": 3271,
+      "relative_floor": 1e-06,
+      "union_point_count": 6199
+    }
+  },
+  "source_artifacts": {
+    "ablation": {
+      "path": "validation/diagnose_ida_fixed_reference_source.py",
+      "sha256": "d69f920bdafcb6db91016d22865fc6dbd2e363d8b9d888e673910779b35ef2ac"
+    },
+    "contract": {
+      "path": "validation/ida_fixed_reference_source_contract.py",
+      "sha256": "3bc307430f17d5fbf82b217cc07805b276ad6d194f71cfe2dcddef5825d434ba"
+    },
+    "freegs_public_example": {
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+      "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
+    },
+    "profile_basis": {
+      "path": "src/scpn_fusion/core/jax_profile_basis.py",
+      "sha256": "629866b1579dd792feef5a6bc44cee5a058ae9fee3652e078741101af67307a3"
+    },
+    "repository": {
+      "git_commit": "676238ed51fed5070ac938a4b6670d5c59fea72b",
+      "path": "."
+    },
+    "same_case_benchmark": {
+      "path": "validation/benchmark_ida_same_case.py",
+      "sha256": "5a51978a97f6ca4a78933e4f965ca70a2750f008b6b8248f1e9a534f0f03a80a"
+    },
+    "solver": {
+      "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+      "sha256": "a20150ad99e381755561a40492301b3db6ecc5aa88d656f46a01837454bc6708"
+    }
+  },
+  "source_same_case": {
+    "case_id": "freegs_16_diiid_public_example",
+    "grid_shape": [
+      129,
+      129
+    ],
+    "path": "validation/reports/ida_same_case_evidence.json",
+    "payload_sha256": "cf7a64f8e69d0b6406c046acbc0e486db912d6c639cc0dfd57647f5e1e15061b",
+    "source_commit": "097a784d0d83bfc55953bac6a34a37981e7caac3"
+  },
+  "status": "diagnostic_complete_claims_blocked"
+}
