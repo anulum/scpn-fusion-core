@@ -13,8 +13,8 @@ Honest scope, stated up front:
   example with its X-point constraints; ours: the synthetic diverted coilset of the test
   suite). This is a **solver-class comparison at matched grid resolution, FP64, same host**
   — NOT the same physical problem solved twice. The accuracy link between the two codes is
-  established separately: our predictive solver reproduces the SHA-verified FreeGS DIII-D
-  reference to ≈ 0.9 % of the ψ span from a cold start (Rung-1 record).
+  evaluated separately by the fail-closed IDA same-case benchmark.  This timing-only
+  runner makes no cross-solver accuracy claim.
 - FreeGS is NumPy/SciPy CPU code by design; ours is JAX (CPU or GPU). Both timings are
   reported with the device stated. Warm-up (JIT compile) is excluded for JAX; FreeGS gets an
   untimed warm-up solve as well so both measure a steady-state re-solve.
@@ -150,9 +150,8 @@ def main() -> None:
         "honest_scope": (
             "each solver runs ITS OWN canonical diverted case at matched grid resolution "
             "and FP64 — a solver-class comparison, not the same physical problem twice; "
-            "the accuracy link is the separate Rung-1 record (our predictive solve "
-            "reproduces the SHA-verified FreeGS DIII-D reference to ~0.9% of the psi span "
-            "from a cold start); FreeGS is CPU NumPy/SciPy by design and its timing is a "
+            "accuracy is evaluated separately by the fail-closed IDA same-case benchmark; "
+            "FreeGS is CPU NumPy/SciPy by design and its timing is a "
             "CPU timing, stated as such"
         ),
         "host": f"{platform.node()} ({platform.machine()})",

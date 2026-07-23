@@ -33,9 +33,10 @@ four coupled pieces (all functions of the current iterate ``ψ``):
    free-boundary codes use Newton/Anderson, not Picard). Anderson mixing (depth ``m``) with an
    ``Ip`` ramp converges to the true fixed point from a cold vacuum start.
 
-Validated against the FreeGS 0.8.2 DIII-D reference (65², Ip = 1.5 MA, 18 F-coils): a cold
-start from the pure vacuum field converges to a machine-tight fixed point (``‖G(ψ)−ψ‖ ~ 1e-8``)
-at **≈ 0.9 % RMS** of the ψ-span over the plasma interior — from coils + profiles + Ip alone.
+The public FreeGS same-case accuracy is measured by
+``validation/benchmark_ida_same_case.py`` and remains fail closed.  Convergence of the
+discrete fixed point is not evidence of agreement with FreeGS: the two are reported as
+separate residual and ``ψ_N`` metrics.
 
 The gradient (``∂ψ*/∂θ`` for the IDA loop) is provided by :func:`solve_predictive_equilibrium_diff`,
 which wraps the forward in a :func:`jax.custom_vjp` implicit-diff adjoint on the converged fixed
@@ -73,7 +74,7 @@ from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
 
-# Validated Anderson / continuation defaults (FreeGS DIII-D 65² cold start → ~0.9 %).
+# Anderson / continuation defaults used by the fail-closed public same-case benchmark.
 DEFAULT_N_ITER = 120
 DEFAULT_ANDERSON_DEPTH = 8
 DEFAULT_MIXING = 0.5

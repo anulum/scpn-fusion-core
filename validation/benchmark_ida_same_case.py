@@ -37,20 +37,28 @@ import jax.numpy as jnp
 import numpy as np
 from numpy.typing import NDArray
 
-from scpn_fusion.core.jax_equilibrium_solver import _boundary_flux_level
-from scpn_fusion.core.jax_free_boundary_gs import (
-    MU0_SI,
-    general_gs_source,
-    toroidal_plasma_current,
+from scpn_fusion.core.jax_free_boundary_gs import MU0_SI
+from scpn_fusion.core.jax_free_boundary_predictive import (
+    DEFAULT_ANDERSON_DEPTH,
+    DEFAULT_CUTOFF_WIDTH,
+    DEFAULT_IP_RAMP,
+    DEFAULT_MIXING,
+    DEFAULT_N_ITER,
+    DEFAULT_TOL,
+    _plasma_current,
+    build_response_matrix,
+    predictive_gs_residual,
+    solve_predictive_equilibrium_diff,
 )
-from scpn_fusion.core.jax_free_boundary_gs_implicit import (
-    nonlinear_gs_residual,
-    solve_free_boundary_gs_implicit,
+from scpn_fusion.core.jax_o_point import smooth_axis_flux
+from scpn_fusion.core.jax_predictive_forward_compiled import (
+    solve_predictive_equilibrium_compiled,
 )
 from scpn_fusion.core.jax_profile_basis import (
     bspline_design_matrix,
     evaluate_profile,
 )
+from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
 from validation.benchmark_freegs_public_example_reconstruction import (
     PUBLIC_CASES,
     FreeGSPublicExampleCase,
@@ -62,9 +70,9 @@ from validation.benchmark_freegs_public_example_reconstruction import (
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "validation" / "reports" / "ida_same_case_evidence.json"
 MARKDOWN_PATH = ROOT / "validation" / "reports" / "ida_same_case_evidence.md"
-SCHEMA_VERSION = "scpn-fusion.ida-same-case-evidence.v1"
+SCHEMA_VERSION = "scpn-fusion.ida-same-case-evidence.v2"
 BENCHMARK_ID = "DIII-D-IDA-FB-JAX-B"
-SOLVER_ID = "scpn_fusion.core.jax_free_boundary_gs_implicit.solve_free_boundary_gs_implicit"
+SOLVER_ID = "scpn_fusion.core.jax_free_boundary_predictive.solve_predictive_equilibrium_diff"
 CLAIM_FIELDS = (
     "control_admission",
     "facility_validation",
@@ -77,7 +85,7 @@ THRESHOLDS: dict[str, float] = {
     "gradient_smoothness_ratio_max": 2.5e-1,
     "latency_p95_ms_max": 20.0,
     "profile_gradient_relative_error_max": 1.0e-2,
-    "psi_span_nrmse_max": 5.0e-2,
+    "psi_n_rmse_max": 5.0e-2,
     "relative_current_error_max": 5.0e-2,
     "relative_nonlinear_residual_rms_max": 5.0e-2,
 }
@@ -87,8 +95,10 @@ _SOURCE_PATHS = {
     "benchmark": "validation/benchmark_ida_same_case.py",
     "freegs_public_case_runner": ("validation/benchmark_freegs_public_example_reconstruction.py"),
     "profile_basis": "src/scpn_fusion/core/jax_profile_basis.py",
-    "solver": "src/scpn_fusion/core/jax_free_boundary_gs_implicit.py",
-    "source": "src/scpn_fusion/core/jax_free_boundary_gs.py",
+    "solver": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+    "compiled_forward": "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+    "o_point": "src/scpn_fusion/core/jax_o_point.py",
+    "x_point": "src/scpn_fusion/core/jax_x_point.py",
 }
 _ENVIRONMENT_FIELDS = {
     "affinity_cpu_count",
@@ -305,7 +315,7 @@ def _execute_case(
     *,
     role: str,
     grid_points: int,
-    n_picard: int,
+    n_iter: int,
     latency_repeats: int,
 ) -> dict[str, Any]:
     freegs, freegs_version, import_error = _import_freegs()
@@ -375,13 +385,21 @@ def _execute_case(
     coil_z_jax = jnp.asarray(coil_z)
     knots_jax = jnp.asarray(psin_knots)
     basis_jax = jnp.asarray(basis)
+    coil_jax = jnp.asarray(coil_current)
+    p_coeff_jax = jnp.asarray(pprime_coeff)
+    ff_coeff_jax = jnp.asarray(ffprime_coeff)
+    response_matrix, wall_indices, source_indices = build_response_matrix(r_jax, z_jax)
 
-    def candidate(
+    def candidate_forward(
         currents: object,
         p_coefficients: object,
         ff_coefficients: object,
+        *,
+        psi_init: object | None = None,
+        iteration_cap: int = n_iter,
+        ip_ramp: int = DEFAULT_IP_RAMP,
     ) -> object:
-        return solve_free_boundary_gs_implicit(
+        return solve_predictive_equilibrium_compiled(
             cast(jnp.ndarray, currents),
             evaluate_profile(cast(jnp.ndarray, p_coefficients), basis_jax),
             evaluate_profile(cast(jnp.ndarray, ff_coefficients), basis_jax),
@@ -390,74 +408,92 @@ def _execute_case(
             coil_r_jax,
             coil_z_jax,
             knots_jax,
-            n_picard,
-            0.6,
+            run_spec.plasma_current_a,
+            response_matrix,
+            wall_indices,
+            source_indices,
+            None if psi_init is None else cast(jnp.ndarray, psi_init),
+            iteration_cap,
+            DEFAULT_ANDERSON_DEPTH,
+            DEFAULT_MIXING,
+            ip_ramp,
+            DEFAULT_CUTOFF_WIDTH,
+            DEFAULT_TOL,
             MU0_SI,
-            False,
         )
 
-    coil_jax = jnp.asarray(coil_current)
-    p_coeff_jax = jnp.asarray(pprime_coeff)
-    ff_coeff_jax = jnp.asarray(ffprime_coeff)
     compile_start = time.perf_counter()
-    candidate_psi_jax = cast(jnp.ndarray, candidate(coil_jax, p_coeff_jax, ff_coeff_jax))
+    candidate_psi_jax = cast(
+        jnp.ndarray,
+        candidate_forward(coil_jax, p_coeff_jax, ff_coeff_jax),
+    )
     candidate_psi_jax.block_until_ready()
     compile_and_first_ms = (time.perf_counter() - compile_start) * 1000.0
     warm_latency_ms: list[float] = []
     for _ in range(latency_repeats):
         start = time.perf_counter()
-        value = cast(jnp.ndarray, candidate(coil_jax, p_coeff_jax, ff_coeff_jax))
+        value = cast(
+            jnp.ndarray,
+            candidate_forward(coil_jax, p_coeff_jax, ff_coeff_jax),
+        )
         value.block_until_ready()
         warm_latency_ms.append((time.perf_counter() - start) * 1000.0)
 
     candidate_psi = np.asarray(candidate_psi_jax, dtype=np.float64)
     difference = candidate_psi - reference_psi
-    psi_span_nrmse = float(np.sqrt(np.mean(np.square(difference[reference_mask]))) / reference_span)
-    candidate_boundary = float(np.mean(candidate_psi[boundary_mask]))
-    candidate_axis = _axis_value(candidate_psi, reference_mask, candidate_boundary)
-    candidate_current = float(
-        toroidal_plasma_current(
-            candidate_psi_jax,
-            r_jax,
-            z_jax,
-            jnp.asarray(candidate_axis),
-            jnp.asarray(candidate_boundary),
-            knots_jax,
-            jnp.asarray(pprime_values),
-            jnp.asarray(ffprime_values),
-        )
+    candidate_axis = float(smooth_axis_flux(candidate_psi_jax))
+    candidate_boundary = float(smooth_xpoint_flux(candidate_psi_jax, r_jax, z_jax))
+    candidate_span = candidate_boundary - candidate_axis
+    if not math.isfinite(candidate_span) or abs(candidate_span) <= 1.0e-30:
+        raise RuntimeError("predictive candidate has no finite non-zero flux span")
+    reference_psi_n = (reference_psi - reference_axis) / (reference_boundary - reference_axis)
+    candidate_psi_n = (candidate_psi - candidate_axis) / candidate_span
+    psi_n_rmse = float(
+        np.sqrt(np.mean(np.square((candidate_psi_n - reference_psi_n)[reference_mask])))
     )
+    d_r = r_jax[1] - r_jax[0]
+    d_z = z_jax[1] - z_jax[0]
+    d_area = d_r * d_z
+    pprime_jax = evaluate_profile(p_coeff_jax, basis_jax)
+    ffprime_jax = evaluate_profile(ff_coeff_jax, basis_jax)
+    current_density = _plasma_current(
+        candidate_psi_jax,
+        r_jax,
+        jnp.asarray(candidate_axis),
+        jnp.asarray(candidate_boundary),
+        knots_jax,
+        pprime_jax,
+        ffprime_jax,
+        jnp.asarray(run_spec.plasma_current_a),
+        d_area,
+        DEFAULT_CUTOFF_WIDTH,
+        MU0_SI,
+    )
+    candidate_current = float(jnp.sum(current_density) * d_area)
     relative_current_error = abs(candidate_current - run_spec.plasma_current_a) / max(
         abs(run_spec.plasma_current_a), 1.0
     )
     nonlinear_residual = np.asarray(
-        nonlinear_gs_residual(
+        predictive_gs_residual(
             candidate_psi_jax,
             coil_jax,
-            jnp.asarray(pprime_values),
-            jnp.asarray(ffprime_values),
+            pprime_jax,
+            ffprime_jax,
             r_jax,
             z_jax,
             coil_r_jax,
             coil_z_jax,
             knots_jax,
+            jnp.asarray(run_spec.plasma_current_a),
+            response_matrix,
+            wall_indices,
+            source_indices,
+            DEFAULT_CUTOFF_WIDTH,
             MU0_SI,
-            False,
         ),
         dtype=np.float64,
     )
-    source = np.asarray(
-        general_gs_source(
-            candidate_psi_jax,
-            r_jax,
-            jnp.asarray(candidate_axis),
-            _boundary_flux_level(candidate_psi_jax),
-            knots_jax,
-            jnp.asarray(pprime_values),
-            jnp.asarray(ffprime_values),
-        ),
-        dtype=np.float64,
-    )
+    source = np.asarray(-(MU0_SI * r_jax[jnp.newaxis, :] * current_density))
     interior = np.s_[1:-1, 1:-1]
     residual_rms = float(np.sqrt(np.mean(np.square(nonlinear_residual[interior]))))
     source_rms = float(np.sqrt(np.mean(np.square(source[interior]))))
@@ -465,8 +501,37 @@ def _execute_case(
 
     cotangent_np = np.zeros_like(candidate_psi)
     cotangent_np[reference_mask] = 1.0 / float(np.count_nonzero(reference_mask))
+
+    def candidate_diff(
+        currents: object,
+        p_coefficients: object,
+        ff_coefficients: object,
+    ) -> object:
+        return solve_predictive_equilibrium_diff(
+            cast(jnp.ndarray, currents),
+            evaluate_profile(cast(jnp.ndarray, p_coefficients), basis_jax),
+            evaluate_profile(cast(jnp.ndarray, ff_coefficients), basis_jax),
+            r_jax,
+            z_jax,
+            coil_r_jax,
+            coil_z_jax,
+            knots_jax,
+            run_spec.plasma_current_a,
+            response_matrix,
+            wall_indices,
+            source_indices,
+            jax.lax.stop_gradient(candidate_psi_jax),
+            20,
+            DEFAULT_ANDERSON_DEPTH,
+            DEFAULT_MIXING,
+            1,
+            DEFAULT_CUTOFF_WIDTH,
+            DEFAULT_TOL,
+            MU0_SI,
+        )
+
     candidate_value_raw, pullback = jax.vjp(
-        candidate,
+        candidate_diff,
         coil_jax,
         p_coeff_jax,
         ff_coeff_jax,
@@ -485,10 +550,13 @@ def _execute_case(
     ) -> float:
         value = cast(
             jnp.ndarray,
-            candidate(
+            candidate_forward(
                 jnp.asarray(currents),
                 jnp.asarray(p_coefficients),
                 jnp.asarray(ff_coefficients),
+                psi_init=candidate_psi_jax,
+                iteration_cap=20,
+                ip_ramp=1,
             ),
         )
         return float(jnp.sum(value * jnp.asarray(cotangent_np)))
@@ -528,7 +596,7 @@ def _execute_case(
     threshold_results = {
         "gradient_audit": bool(all(row["passed"] for row in gradient_rows)),
         "latency": bool(_percentile(warm_latency_ms, 95.0) <= THRESHOLDS["latency_p95_ms_max"]),
-        "psi_span_nrmse": bool(psi_span_nrmse <= THRESHOLDS["psi_span_nrmse_max"]),
+        "psi_n_rmse": bool(psi_n_rmse <= THRESHOLDS["psi_n_rmse_max"]),
         "relative_current_error": bool(
             relative_current_error <= THRESHOLDS["relative_current_error_max"]
         ),
@@ -564,12 +632,17 @@ def _execute_case(
         "grid_shape": [grid_points, grid_points],
         "input_contract": {
             "coil_filament_count": len(filaments),
-            "n_picard": n_picard,
-            "picard_omega": 0.6,
+            "anderson_depth": DEFAULT_ANDERSON_DEPTH,
+            "cutoff_width": DEFAULT_CUTOFF_WIDTH,
+            "ip_ramp": DEFAULT_IP_RAMP,
+            "ip_target_a": float(run_spec.plasma_current_a),
+            "mixing": DEFAULT_MIXING,
+            "n_iter_cap": n_iter,
             "profile_coefficient_count": profile_coefficients,
             "profile_degree": profile_degree,
             "profile_sample_count": int(psin_knots.size),
-            "use_smooth_axis": False,
+            "self_field_wall_boundary": True,
+            "separatrix": "smooth_xpoint_flux",
         },
         "latency": {
             "admissible_isolated_evidence": False,
@@ -588,7 +661,10 @@ def _execute_case(
             "candidate_current_a": candidate_current,
             "psi_max_abs_error_wb": float(np.max(np.abs(difference[reference_mask]))),
             "psi_rmse_wb": float(np.sqrt(np.mean(np.square(difference[reference_mask])))),
-            "psi_span_nrmse": psi_span_nrmse,
+            "psi_n_rmse": psi_n_rmse,
+            "raw_psi_span_nrmse": float(
+                np.sqrt(np.mean(np.square(difference[reference_mask]))) / reference_span
+            ),
             "reference_axis_wb": reference_axis,
             "reference_boundary_wb": reference_boundary,
             "reference_current_a": float(run_spec.plasma_current_a),
@@ -628,7 +704,7 @@ def _selection_lock(
     }
     valid = bool(
         set(payload) == expected
-        and payload.get("schema_version") == "scpn-fusion.ida-same-case-selection-lock.v1"
+        and payload.get("schema_version") == "scpn-fusion.ida-same-case-selection-lock.v2"
         and payload.get("benchmark_id") == BENCHMARK_ID
         and payload.get("case_id") == evaluation_case_id
         and payload.get("thresholds") == THRESHOLDS
@@ -744,6 +820,7 @@ def _solver_contract() -> dict[str, Any]:
             "latency_ms": 20.0,
             "picard_iterations": 10,
         },
+        "conditioned_inputs": ["ip_target_a"],
         "solver_id": SOLVER_ID,
         "units": {
             "coil_current": "A",
@@ -781,7 +858,7 @@ def _walk_finite(value: object, *, field: str = "report") -> None:
 def validate_report(payload: dict[str, Any]) -> None:
     """Validate a report and reject tamper, drift, overclaim, and false admission."""
     if set(payload) != _REQUIRED_TOP_LEVEL:
-        raise ValueError("report top-level fields do not match the v1 schema")
+        raise ValueError("report top-level fields do not match the v2 schema")
     if payload.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("unsupported IDA same-case evidence schema")
     if payload.get("benchmark_id") != BENCHMARK_ID:
@@ -791,17 +868,17 @@ def validate_report(payload: dict[str, Any]) -> None:
     if payload["payload_sha256"] != _payload_sha256(payload):
         raise ValueError("payload_sha256 does not match report content")
     if payload.get("thresholds") != THRESHOLDS:
-        raise ValueError("thresholds do not match the frozen v1 contract")
+        raise ValueError("thresholds do not match the frozen v2 contract")
     if payload.get("claim_boundary") != {field: False for field in CLAIM_FIELDS}:
         raise ValueError("claim_boundary must keep every promotion claim false")
     if payload.get("solver_contract") != _solver_contract():
-        raise ValueError("solver_contract does not match the frozen v1 contract")
+        raise ValueError("solver_contract does not match the frozen v2 contract")
     generated_at = payload.get("generated_at")
     if not isinstance(generated_at, str) or not generated_at.strip():
         raise ValueError("generated_at must be a non-empty string")
     environment = payload.get("environment")
     if not isinstance(environment, dict) or set(environment) != _ENVIRONMENT_FIELDS:
-        raise ValueError("environment fields do not match the v1 contract")
+        raise ValueError("environment fields do not match the v2 contract")
     if not isinstance(environment["isolated_host"], bool) or not isinstance(
         environment["x64_enabled"], bool
     ):
@@ -812,7 +889,7 @@ def validate_report(payload: dict[str, Any]) -> None:
         {*_SOURCE_PATHS, "repository"},
     )
     if not isinstance(source_artifacts, dict) or set(source_artifacts) not in allowed_source_sets:
-        raise ValueError("source_artifacts do not match the v1 contract")
+        raise ValueError("source_artifacts do not match the v2 contract")
     for name, expected_path in _SOURCE_PATHS.items():
         artifact = source_artifacts.get(name)
         if (
@@ -820,7 +897,7 @@ def validate_report(payload: dict[str, Any]) -> None:
             or set(artifact) != {"path", "sha256"}
             or artifact.get("path") != expected_path
         ):
-            raise ValueError(f"source_artifacts.{name} does not match the v1 contract")
+            raise ValueError(f"source_artifacts.{name} does not match the v2 contract")
         _require_sha256(
             artifact.get("sha256"),
             field=f"source_artifacts.{name}.sha256",
@@ -832,7 +909,7 @@ def validate_report(payload: dict[str, Any]) -> None:
             or set(repository) != {"git_commit", "path"}
             or repository.get("path") != "."
         ):
-            raise ValueError("source_artifacts.repository does not match the v1 contract")
+            raise ValueError("source_artifacts.repository does not match the v2 contract")
         _require_git_oid(
             repository.get("git_commit"),
             field="source_artifacts.repository.git_commit",
@@ -842,7 +919,7 @@ def validate_report(payload: dict[str, Any]) -> None:
         "accepted_bounded_same_case_evidence",
         "blocked_same_case_evidence",
     }:
-        raise ValueError("status is not valid for the v1 contract")
+        raise ValueError("status is not valid for the v2 contract")
     cases = payload.get("cases")
     if (
         not isinstance(cases, list)
@@ -874,18 +951,18 @@ def validate_report(payload: dict[str, Any]) -> None:
             != {
                 "gradient_audit",
                 "latency",
-                "psi_span_nrmse",
+                "psi_n_rmse",
                 "relative_current_error",
                 "relative_nonlinear_residual_rms",
             }
             or any(not isinstance(value, bool) for value in threshold_results.values())
         ):
-            raise ValueError("case threshold results do not match the v1 contract")
+            raise ValueError("case threshold results do not match the v2 contract")
     role_contract = payload.get("case_role_contract")
     if not isinstance(role_contract, dict):
         raise ValueError("case_role_contract must be an object")
     if role_contract.get("statistically_held_out") is not False:
-        raise ValueError("v1 integration evidence must not claim statistical holdout")
+        raise ValueError("v2 integration evidence must not claim statistical holdout")
     if set(role_contract) != {
         "development_case_id",
         "evaluation_case_id",
@@ -910,7 +987,7 @@ def validate_report(payload: dict[str, Any]) -> None:
         raise ValueError("blockers must be a sorted non-empty unique string list")
     if status == "accepted_bounded_same_case_evidence":
         raise ValueError(
-            "v1 integration evidence cannot be accepted while statistical holdout is false"
+            "v2 integration evidence cannot be accepted while statistical holdout is false"
         )
     required_blockers = {
         "collaborator_solver_reference_not_bound",
@@ -935,7 +1012,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Cases",
         "",
-        "| Case | Role | Grid | ψ span NRMSE | current relative error | warm p95 (ms) |",
+        "| Case | Role | Grid | ψ_N RMSE | current relative error | warm p95 (ms) |",
         "|---|---|---:|---:|---:|---:|",
     ]
     for case in report["cases"]:
@@ -946,7 +1023,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 case_id=case["case_id"],
                 role=case["role"],
                 grid="×".join(str(value) for value in case["grid_shape"]),
-                psi=metrics["psi_span_nrmse"],
+                psi=metrics["psi_n_rmse"],
                 current=metrics["relative_current_error"],
                 latency=latency["p95_ms"],
             )
@@ -972,14 +1049,14 @@ def run_benchmark(
         PUBLIC_CASES[0],
         role="development",
         grid_points=65,
-        n_picard=10,
+        n_iter=DEFAULT_N_ITER,
         latency_repeats=latency_repeats,
     )
     evaluation = _execute_case(
         PUBLIC_CASES[1],
         role="evaluation_candidate",
         grid_points=129,
-        n_picard=10,
+        n_iter=DEFAULT_N_ITER,
         latency_repeats=latency_repeats,
     )
     selection_lock = _selection_lock(

@@ -10,8 +10,8 @@
 A small synthetic diverted coilset on a 33² grid (no external fixture, CI-safe) exercises the
 whole coupled solve: the von Hagenow response matrix, the Ip normalisation, and the
 Anderson-accelerated cold-start convergence to a self-consistent fixed point. The
-quantitative FreeGS DIII-D cross-validation (≈ 0.8 % of ψ-span, from coils alone) uses the
-external Milestone-B reference and lives in the validation harness / findings, not here.
+quantitative FreeGS DIII-D cross-validation uses the external Milestone-B reference and
+lives in the fail-closed validation harness, not in this self-consistency test module.
 """
 
 from __future__ import annotations
