@@ -184,7 +184,7 @@ def general_gs_source(
         pprime = jnp.interp(psi_n0, psin_knots, pprime_vals)
         ffprime = jnp.interp(psi_n0, psin_knots, ffprime_vals)
         source = -(mu0 * r2d**2 * pprime + ffprime)
-        return source * support
+        return cast(jnp.ndarray, source * support)
     d_r = R_grid[1] - R_grid[0]
     g_z, g_r = jnp.gradient(psi)  # per index step
     offsets = (jnp.arange(subcell) + 0.5) / subcell - 0.5

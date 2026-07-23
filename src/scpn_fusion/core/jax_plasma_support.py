@@ -142,7 +142,8 @@ def soft_axis_seed(psi: jnp.ndarray, *, beta: float = DEFAULT_SEED_BETA) -> jnp.
     )
     depth = jnp.abs(psi - wall)
     rms = jnp.sqrt(jnp.mean(depth**2)) + jnp.asarray(1.0e-30, dtype=psi.dtype)
-    return jax.nn.softmax((beta * depth / rms).reshape(-1)).reshape(psi.shape)
+    weights = jax.nn.softmax((beta * depth / rms).reshape(-1)).reshape(psi.shape)
+    return weights
 
 
 @partial(jax.jit, static_argnames=("n_steps",))
@@ -193,7 +194,8 @@ def soft_axis_connected_support(
 
     filled, _ = jax.lax.scan(body, state, xs=None, length=int(n_steps))
     # Keep in [0, 1]; LCFS already bounds the open set.
-    return jnp.clip(filled, 0.0, 1.0)
+    clipped: jnp.ndarray = jnp.clip(filled, 0.0, 1.0)
+    return clipped
 
 
 def axis_connected_support(

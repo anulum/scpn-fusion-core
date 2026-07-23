@@ -272,7 +272,7 @@ def _plasma_current(
     j_masked = j_raw * support
     ip_now = jnp.sum(j_masked) * dA
     scale = ip_target / jnp.where(jnp.abs(ip_now) < 1.0, 1.0, ip_now)
-    return j_masked * scale
+    return cast(jnp.ndarray, j_masked * scale)
 
 
 def predictive_gs_residual(
