@@ -1,0 +1,241 @@
+{
+  "benchmark_id": "DIII-D-IDA-FB-JAX-B-OPERATOR-RESIDUAL",
+  "blockers": [
+    "facility_validation_not_bound",
+    "isolated_latency_evidence_missing",
+    "pcs_and_safety_programmes_not_bound",
+    "same_case_accuracy_threshold_failed",
+    "statistically_held_out_case_missing"
+  ],
+  "claim_boundary": {
+    "control_admission": false,
+    "facility_validation": false,
+    "pcs_deployment": false,
+    "safety_admission": false,
+    "scientific_validation": false
+  },
+  "closure": {
+    "interior_compact_max_abs": 8.673617379884035e-19,
+    "interior_exact_max_abs": 8.673617379884035e-19,
+    "wall_compact_max_abs": 6.938893903907228e-18,
+    "wall_exact_max_abs": 6.938893903907228e-18
+  },
+  "coil_region_diagnostic": {
+    "all_interior_vacuum_field": {
+      "field_sha256": "55518921daccdfb7647eb6f44c671e408478c1cb0aa905d31a3d4c11f8d238f9",
+      "linf": 236.5785674607004,
+      "relative_l2_to_reference_scale": 4.883148641471275,
+      "rms": 6.237546013491909
+    },
+    "coil_filament_count": 216,
+    "coil_filaments_inside_domain": 216,
+    "outside_reference_support_l2_fraction": 0.999999999649927,
+    "reference_plasma_support_fraction": 0.20280240560481122,
+    "reference_plasma_support_point_count": 3271,
+    "reference_plasma_support_vacuum_field": {
+      "field_sha256": "8a785c78652bec086b922879173954ceffe24593b2084b2cff779daa120b87aa",
+      "linf": 0.0029606005219650205,
+      "relative_l2_to_reference_scale": 0.00012920945162711348,
+      "rms": 0.0003664979504594679
+    }
+  },
+  "environment": {
+    "affinity_cpu_count": 12,
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "freegs_version": "0.8.2",
+    "host_load_1m_5m_15m": [
+      4.537109375,
+      5.14794921875,
+      5.4072265625
+    ],
+    "isolated_host": false,
+    "jax_version": "0.7.1",
+    "jaxlib_version": "0.7.1",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "x64_enabled": true
+  },
+  "generated_at": "2026-07-23T11:10:00Z",
+  "input_contract": {
+    "evaluation_case_id": "freegs_16_diiid_public_example",
+    "freegs_operator_order": 4,
+    "grid_shape": [
+      129,
+      129
+    ],
+    "interior_measurement_region": "non-zero FreeGS reference Jtor support",
+    "native_operator": "second-order centered Delta-star with identity wall rows",
+    "reference_geometry": "fixed converged FreeGS total and plasma psi"
+  },
+  "interior_components": {
+    "exact_source_convention": {
+      "field_sha256": "7bc76b69203ccce16bcb0ab23e5d405e5fecf6089b496efc5156ea7841137642",
+      "linf": 0.04289196742547041,
+      "relative_l2_to_reference_scale": 0.004232269612157685,
+      "rms": 0.01200468014618669
+    },
+    "freegs_fourth_order_baseline": {
+      "field_sha256": "d30d94b2c803232f02f045d051fe1f8026ea7f9ba695f99c0a8328ce73bff764",
+      "linf": 1.0905054637078138e-11,
+      "relative_l2_to_reference_scale": 5.078745530920439e-13,
+      "rms": 1.4405678567224372e-12
+    },
+    "second_order_operator": {
+      "field_sha256": "3d004837b110b41aaa1d3e14080012f929793b12b9e21d651cc93a31d41f5c6b",
+      "linf": 0.0117831148052705,
+      "relative_l2_to_reference_scale": 0.0009541497315909101,
+      "rms": 0.0027064113085837112
+    },
+    "vacuum_discretisation": {
+      "field_sha256": "8a785c78652bec086b922879173954ceffe24593b2084b2cff779daa120b87aa",
+      "linf": 0.0029606005219650205,
+      "relative_l2_to_reference_scale": 0.00012920945162711348,
+      "rms": 0.0003664979504594679
+    }
+  },
+  "operator_residuals": {
+    "freegs_fourth_order_reference_current_plasma_flux": {
+      "field_sha256": "d30d94b2c803232f02f045d051fe1f8026ea7f9ba695f99c0a8328ce73bff764",
+      "linf": 1.0905054637078138e-11,
+      "relative_l2_to_reference_scale": 5.078745530920439e-13,
+      "rms": 1.4405678567224372e-12
+    },
+    "native_second_order_compact_source_total_flux": {
+      "field_sha256": "5051947f51d32ae2bd9a6b4adf832b48bebd23451fe86daf239d7656caa0887a",
+      "linf": 0.034633604696386655,
+      "relative_l2_to_reference_scale": 0.003666589845837485,
+      "rms": 0.01040014988650374
+    },
+    "native_second_order_exact_source_total_flux": {
+      "field_sha256": "5e0033c28c71d63526f0f89f6b717a2c79710ffe887996edc4914ecd080b5ff5",
+      "linf": 0.03463360469638488,
+      "relative_l2_to_reference_scale": 0.00366658984583713,
+      "rms": 0.010400149886502733
+    },
+    "native_second_order_reference_current_plasma_flux": {
+      "field_sha256": "048c3b3de1c6bbc4c22712675ab9118a00784896ea5a86e972497266967de420",
+      "linf": 0.011783114803192163,
+      "relative_l2_to_reference_scale": 0.0009541497315877685,
+      "rms": 0.0027064113085748004
+    },
+    "native_second_order_reference_current_total_flux": {
+      "field_sha256": "ea1b947ea3c9091244334ef9a897e65d299bc5eed1c9375e0cd9f3772824e2a2",
+      "linf": 0.0118296508757183,
+      "relative_l2_to_reference_scale": 0.0009777747372999874,
+      "rms": 0.0027734227853985632
+    }
+  },
+  "payload_sha256": "a01392e1b0280118aec51b44cf835466b6b1dc1fb3612cafec953fdc4d7a5814",
+  "routing": {
+    "interior_component_relative_l2": {
+      "exact_source_convention": 0.004232269612157685,
+      "second_order_operator": 0.0009541497315909101,
+      "vacuum_discretisation": 0.00012920945162711348
+    },
+    "interior_dominant_component": "exact_source_convention",
+    "next_interior_target": "current_support_and_source_convention",
+    "next_wall_target": "wall_source_support_and_quadrature",
+    "wall_component_relative_l2": {
+      "coil_vacuum_convention": 1.118934171819637e-15,
+      "exact_source_convention": 0.003880568430092016,
+      "plasma_response_quadrature": 2.2236905505967512e-07
+    },
+    "wall_dominant_component": "exact_source_convention"
+  },
+  "schema_version": "scpn-fusion.ida-fixed-reference-operator-residual.v1",
+  "source_ablation": {
+    "path": "validation/reports/ida_fixed_reference_source_ablation.json",
+    "payload_sha256": "a0dd4593e0fa45bc7c36080eff172639cf002f2899e9c253412277587523f8a4",
+    "source_commit": "d1de6c3364186f86d8b1022143ed9c2cff6aa9b4",
+    "source_same_case_payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee"
+  },
+  "source_artifacts": {
+    "contract": {
+      "path": "validation/ida_fixed_reference_operator_contract.py",
+      "sha256": "b040091ad2900ed129278b21686912f292a0be4d0ec6913aa7cda87440bae2f1"
+    },
+    "diagnostic": {
+      "path": "validation/diagnose_ida_fixed_reference_operator.py",
+      "sha256": "1b0b9cd20a4b8fd5a73677965a9cc8b9b343952a931573dc5371b35aa2dc00a6"
+    },
+    "freegs_boundary": {
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/freegs/boundary.py",
+      "sha256": "775565eed81564ade3bec6f4766af9d6c791c5c841340f47d7eddd74bcc49d35"
+    },
+    "freegs_operator": {
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/freegs/gradshafranov.py",
+      "sha256": "4e2c4c66265cc66974cc2aaf660987307ddb7c70a868799862ade0a6c9592f59"
+    },
+    "freegs_public_example": {
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+      "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
+    },
+    "repository": {
+      "git_commit": "d403719a645d79a03abd83f94c57b431dd3c5068",
+      "path": "."
+    },
+    "solver": {
+      "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+      "sha256": "af2642fe286d39ed1ae8e5e96c7bc6664055ed054493c0ab431f09da4a02613e"
+    },
+    "source_ablation": {
+      "path": "validation/diagnose_ida_fixed_reference_source.py",
+      "sha256": "4f5c7f9db53486c67309416d72b210c7eca8827ebcc4176c9115f4dc1a70b801"
+    }
+  },
+  "source_same_case": {
+    "case_id": "freegs_16_diiid_public_example",
+    "grid_shape": [
+      129,
+      129
+    ],
+    "path": "validation/reports/ida_same_case_evidence.json",
+    "payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee",
+    "source_commit": "f82ee24fb5683a7077069af85c247c2aca76477a"
+  },
+  "status": "diagnostic_complete_claims_blocked",
+  "wall_components": {
+    "coil_vacuum_convention": {
+      "field_sha256": "d9b2a29ad32eb014bf3eab00fdcd0052bfadec283a119de886b44043700f7bb3",
+      "linf": 6.661338147750939e-16,
+      "relative_l2_to_reference_scale": 1.118934171819637e-15,
+      "rms": 1.4540659503590353e-16
+    },
+    "exact_source_convention": {
+      "field_sha256": "4d7f612a7fcb4e7b69be7c6ea770451a95312734bf9c6d36fc9e1369ea06d328",
+      "linf": 0.001176470190474621,
+      "relative_l2_to_reference_scale": 0.003880568430092016,
+      "rms": 0.0005042836803400941
+    },
+    "plasma_response_quadrature": {
+      "field_sha256": "7906b14ceac5befec24ca4a9af78fe7ef813e24a27e76a98e82c04649a668645",
+      "linf": 1.0623246915475448e-07,
+      "relative_l2_to_reference_scale": 2.2236905505967512e-07,
+      "rms": 2.8897077193555124e-08
+    }
+  },
+  "wall_residuals": {
+    "compact_source_total_flux": {
+      "field_sha256": "5dcc0d1c044c1a8de58a59e71860607edabd9381c335c1f1ed339421f4892d84",
+      "linf": 0.0011763713858593539,
+      "relative_l2_to_reference_scale": 0.0038804757728148,
+      "rms": 0.0005042716394358795
+    },
+    "exact_source_total_flux": {
+      "field_sha256": "f85f9a0763ccaf8f605df1f9f83829357b3a4189e28ae928b1087de6ffc27424",
+      "linf": 0.0011763713858587987,
+      "relative_l2_to_reference_scale": 0.0038804757728131017,
+      "rms": 0.0005042716394356589
+    },
+    "reference_current_total_flux": {
+      "field_sha256": "ef5d1e714c7a0235f05ffed5d317dabf5ad7314a3a9bed58d11daa5fb82cee3f",
+      "linf": 1.0623246915475448e-07,
+      "relative_l2_to_reference_scale": 2.223690550738578e-07,
+      "rms": 2.889707719539817e-08
+    }
+  }
+}
