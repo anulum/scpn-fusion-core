@@ -204,6 +204,7 @@ def test_iteration_observer_preserves_and_exposes_the_exact_loop(response: Respo
         b,
         s,
         n_iter=3,
+        ip_ramp=3,
         tol=0.0,
     )
     observed = solve_predictive_equilibrium(
@@ -220,14 +221,15 @@ def test_iteration_observer_preserves_and_exposes_the_exact_loop(response: Respo
         b,
         s,
         n_iter=3,
+        ip_ramp=3,
         tol=0.0,
         iteration_observer=snapshots.append,
     )
 
     assert np.array_equal(np.asarray(observed), np.asarray(baseline))
     assert [snapshot.iteration_index for snapshot in snapshots] == [0, 1, 2]
-    assert snapshots[0].ip_now == pytest.approx(_IP / 30.0)
-    assert snapshots[-1].ip_now == pytest.approx(_IP / 10.0)
+    assert snapshots[0].ip_now == pytest.approx(_IP / 3.0)
+    assert snapshots[-1].ip_now == pytest.approx(_IP)
     assert all(snapshot.separatrix_refinement == 0.0 for snapshot in snapshots)
     assert all(snapshot.psi.shape == observed.shape for snapshot in snapshots)
     assert all(
@@ -246,7 +248,11 @@ def test_iteration_observer_preserves_and_exposes_the_exact_loop(response: Respo
             np.asarray(snapshot.next_psi),
             np.asarray(snapshot.psi + 0.5 * snapshot.fixed_point_residual),
         )
-        for snapshot in snapshots
+        for snapshot in (snapshots[0], snapshots[-1])
+    )
+    assert not np.allclose(
+        np.asarray(snapshots[1].next_psi),
+        np.asarray(snapshots[1].psi + 0.5 * snapshots[1].fixed_point_residual),
     )
     assert np.array_equal(np.asarray(snapshots[-1].next_psi), np.asarray(observed))
     assert not any(snapshot.converged for snapshot in snapshots)

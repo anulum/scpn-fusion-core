@@ -35,8 +35,8 @@ four coupled pieces (all functions of the current iterate ``ψ``):
    boundary+profile map is *unstable*: the physical fixed point is a saddle and simple
    iteration is driven to a spurious high-peaking attractor (a known reason production
    free-boundary codes use Newton/Anderson, not Picard). Anderson mixing (depth ``m``) with an
-   ``Ip`` ramp converges to the true fixed point from a cold vacuum start. History resets when
-   ``Ip`` or separatrix refinement changes, so multisecant differences never cross maps.
+   ``Ip`` ramp converges to the true fixed point from a cold vacuum start. Moving-map history
+   stays active for stability, then resets when Ip or refinement reaches its fixed endpoint.
 
 The public FreeGS same-case accuracy is measured by
 ``validation/benchmark_ida_same_case.py`` and remains fail closed.  Convergence of the
@@ -468,8 +468,8 @@ def solve_predictive_equilibrium(
     """Solve the predictive free-boundary equilibrium from coils + profiles + Ip.
 
     Anderson-accelerated fixed-point iteration of the coupled step :func:`_coupled_step` with
-    ``Ip`` and separatrix-refinement continuation for cold-start robustness. History resets on
-    every continuation-parameter change because those iterations use different maps. Returns
+    ``Ip`` and separatrix-refinement continuation for cold-start robustness. Moving-map history
+    resets when each continuation parameter reaches its fixed endpoint. Returns
     the equilibrium ``ψ`` [Wb], shape ``(NZ, NR)``. Pass ``response_matrix, wall_idx, source_idx``
     from :func:`build_response_matrix` (precomputed once per grid). ``psi_init`` defaults to the
     vacuum field (a genuine cold start); an explicit warm start uses the refined separatrix

@@ -21,11 +21,11 @@ from scpn_fusion.core.jax_continuation_history import (
     ("iteration", "expected"),
     [
         (0, False),
-        (1, True),
+        (1, False),
         (29, True),
         (30, False),
         (99, False),
-        (100, True),
+        (100, False),
         (119, True),
         (120, False),
         (121, False),
@@ -35,7 +35,7 @@ def test_continuation_history_reset_boundaries(
     iteration: int,
     expected: bool,
 ) -> None:
-    """Only iterations that change Ip or refinement invalidate history."""
+    """Only the first rows at fixed Ip or refinement restart history."""
     reset = continuation_history_requires_reset(
         iteration,
         ip_ramp=30,

@@ -19,19 +19,18 @@ def continuation_history_requires_reset(
     separatrix_start: int,
     separatrix_ramp: int,
 ) -> jnp.ndarray:
-    """Return whether this iteration uses a different fixed-point map.
+    """Return whether continuation has just reached a fixed endpoint.
 
-    Anderson differences are valid only while the map ``G`` is fixed. The
-    predictive map changes on every non-initial Ip-ramp step and on every
-    non-zero separatrix-refinement step. Iteration zero has no prior history to
-    invalidate.
+    Anderson history must remain active while the map moves because unaccelerated
+    Picard continuation is unstable. Once Ip or separatrix refinement reaches
+    its final value, the current row belongs to the stationary map and starts a
+    fresh history without earlier moving-map differences.
     """
     index = jnp.asarray(iteration)
-    has_prior_history = index > 0
-    ip_changed = index < ip_ramp
-    separatrix_changed = (
+    ip_reached_endpoint = (index > 0) & (index == ip_ramp - 1)
+    separatrix_reached_endpoint = (
         use_separatrix_continuation
-        & (index >= separatrix_start)
-        & (index < separatrix_start + separatrix_ramp)
+        & (index > 0)
+        & (index == separatrix_start + separatrix_ramp - 1)
     )
-    return has_prior_history & (ip_changed | separatrix_changed)
+    return ip_reached_endpoint | separatrix_reached_endpoint

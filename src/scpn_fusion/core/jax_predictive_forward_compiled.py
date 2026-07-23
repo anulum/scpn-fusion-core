@@ -20,9 +20,9 @@ flux → MG-preconditioned BiCGSTAB), continuation-aware Anderson mixing with ro
 fixed-shape history, rank-deficiency guard and the early-stop test — runs inside a single
 :func:`jax.lax.while_loop` under :func:`jax.jit`.
 
-Semantics match the eager solver's (same coupled step, history reset when Ip/refinement changes,
-same warm-up behaviour, same break-before-update early stop, same damped-Picard NaN fallback)
-to numerical tolerance —
+Semantics match the eager solver's (same coupled step, history reset when Ip/refinement reaches
+its fixed endpoint, same warm-up behaviour, same break-before-update early stop, same
+damped-Picard NaN fallback) to numerical tolerance —
 NOT bit-exactly (compiled reductions associate differently); the equivalence is pinned by
 tests at span-relative tolerance, the same policy as the MG-vs-plain equality test. The
 differentiable path (``solve_predictive_equilibrium_diff``) keeps the eager forward — the
