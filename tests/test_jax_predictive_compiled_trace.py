@@ -102,6 +102,10 @@ def test_compiled_trace_preserves_and_exposes_the_exact_loop(response: Response)
         np.asarray(trace.psi_before[1:]),
         np.asarray(trace.psi_after[:-1]),
     )
+    assert np.allclose(
+        np.asarray(trace.psi_after[:2]),
+        np.asarray(trace.psi_before[:2] + 0.5 * trace.fixed_point_residual[:2]),
+    )
     assert np.array_equal(np.asarray(trace.psi_after[-1]), np.asarray(trace.equilibrium))
     assert np.allclose(np.asarray(trace.ip_now), [_IP / 2.0, _IP, _IP, _IP])
     assert np.array_equal(np.asarray(trace.separatrix_refinement), np.zeros(4))

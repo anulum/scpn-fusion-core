@@ -16,12 +16,13 @@ rather than linear algebra, while the multigrid-preconditioned inner solve alrea
 
 This module removes the host from the loop: the ENTIRE iteration — Ip ramp, soft-to-refined
 separatrix homotopy, coupled Picard step (axis/X-point → Ip-normalised Jφ → von Hagenow wall
-flux → MG-preconditioned BiCGSTAB), Anderson mixing with rolling fixed-shape history,
-rank-deficiency guard and the early-stop test — runs inside a single
+flux → MG-preconditioned BiCGSTAB), continuation-aware Anderson mixing with rolling
+fixed-shape history, rank-deficiency guard and the early-stop test — runs inside a single
 :func:`jax.lax.while_loop` under :func:`jax.jit`.
 
-Semantics match the eager solver's (same coupled step, same warm-up behaviour, same
-break-before-update early stop, same damped-Picard NaN fallback) to numerical tolerance —
+Semantics match the eager solver's (same coupled step, history reset when Ip/refinement changes,
+same warm-up behaviour, same break-before-update early stop, same damped-Picard NaN fallback)
+to numerical tolerance —
 NOT bit-exactly (compiled reductions associate differently); the equivalence is pinned by
 tests at span-relative tolerance, the same policy as the MG-vs-plain equality test. The
 differentiable path (``solve_predictive_equilibrium_diff``) keeps the eager forward — the
@@ -66,6 +67,9 @@ _RunnerOutput = (
 )
 
 from scpn_fusion.core.jax_free_boundary_gs import MU0_SI, vacuum_field_si
+from scpn_fusion.core.jax_continuation_history import (
+    continuation_history_requires_reset,
+)
 from scpn_fusion.core.jax_free_boundary_predictive import (
     DEFAULT_ANDERSON_DEPTH,
     DEFAULT_CUTOFF_WIDTH,
@@ -240,9 +244,19 @@ def _make_runner(
                 & continuation_complete
                 & (jnp.linalg.norm(f) <= tol * (jnp.linalg.norm(x) + 1.0))
             )
-            f_new = jnp.roll(f_hist, -1, axis=0).at[-1].set(f)
-            x_new = jnp.roll(x_hist, -1, axis=0).at[-1].set(x)
-            nv_new = jnp.minimum(n_valid + 1, m)
+            reset_history = continuation_history_requires_reset(
+                k,
+                ip_ramp=ip_ramp,
+                use_separatrix_continuation=use_separatrix_continuation,
+                separatrix_start=DEFAULT_SEPARATRIX_START,
+                separatrix_ramp=DEFAULT_SEPARATRIX_RAMP,
+            )
+            f_base = jnp.where(reset_history, jnp.zeros_like(f_hist), f_hist)
+            x_base = jnp.where(reset_history, jnp.zeros_like(x_hist), x_hist)
+            n_base = jnp.where(reset_history, 0, n_valid)
+            f_new = jnp.roll(f_base, -1, axis=0).at[-1].set(f)
+            x_new = jnp.roll(x_base, -1, axis=0).at[-1].set(x)
+            nv_new = jnp.minimum(n_base + 1, m)
             # Anderson step over the valid suffix of the rolling history. Invalid (warm-up)
             # columns are zeroed; SVD least squares assigns them zero weight, so the first
             # iteration (no valid pairs) reduces exactly to the damped Picard update.

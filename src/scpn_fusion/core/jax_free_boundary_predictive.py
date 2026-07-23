@@ -31,11 +31,12 @@ four coupled pieces (all functions of the current iterate ``ψ``):
    separatrix estimate, then homotopies to the sub-cell saddle value. Warm starts use the
    physical saddle value immediately. This follows the desired diverted root rather than the
    competing vacuum-like fixed point.
-5. **Anderson-accelerated fixed-point solve.** Naive Picard on this full nonlinear
+5. **Continuation-aware Anderson fixed-point solve.** Naive Picard on this full nonlinear
    boundary+profile map is *unstable*: the physical fixed point is a saddle and simple
    iteration is driven to a spurious high-peaking attractor (a known reason production
    free-boundary codes use Newton/Anderson, not Picard). Anderson mixing (depth ``m``) with an
-   ``Ip`` ramp converges to the true fixed point from a cold vacuum start.
+   ``Ip`` ramp converges to the true fixed point from a cold vacuum start. History resets when
+   ``Ip`` or separatrix refinement changes, so multisecant differences never cross maps.
 
 The public FreeGS same-case accuracy is measured by
 ``validation/benchmark_ida_same_case.py`` and remains fail closed.  Convergence of the
@@ -74,6 +75,9 @@ from scpn_fusion.core.jax_free_boundary_gs import (
     greens_psi_si,
     normalised_flux,
     vacuum_field_si,
+)
+from scpn_fusion.core.jax_continuation_history import (
+    continuation_history_requires_reset,
 )
 from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
@@ -464,8 +468,9 @@ def solve_predictive_equilibrium(
     """Solve the predictive free-boundary equilibrium from coils + profiles + Ip.
 
     Anderson-accelerated fixed-point iteration of the coupled step :func:`_coupled_step` with
-    ``Ip`` and separatrix-refinement continuation for cold-start robustness. Returns the
-    equilibrium ``ψ`` [Wb], shape ``(NZ, NR)``. Pass ``response_matrix, wall_idx, source_idx``
+    ``Ip`` and separatrix-refinement continuation for cold-start robustness. History resets on
+    every continuation-parameter change because those iterations use different maps. Returns
+    the equilibrium ``ψ`` [Wb], shape ``(NZ, NR)``. Pass ``response_matrix, wall_idx, source_idx``
     from :func:`build_response_matrix` (precomputed once per grid). ``psi_init`` defaults to the
     vacuum field (a genuine cold start); an explicit warm start uses the refined separatrix
     immediately.
@@ -562,6 +567,17 @@ def solve_predictive_equilibrium(
         if converged:
             next_x = x
         else:
+            if bool(
+                continuation_history_requires_reset(
+                    k,
+                    ip_ramp=ip_ramp,
+                    use_separatrix_continuation=use_separatrix_continuation,
+                    separatrix_start=DEFAULT_SEPARATRIX_START,
+                    separatrix_ramp=DEFAULT_SEPARATRIX_RAMP,
+                )
+            ):
+                f_hist.clear()
+                x_hist.clear()
             f_hist.append(f)
             x_hist.append(x)
             if len(f_hist) > anderson_depth:

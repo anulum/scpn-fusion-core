@@ -241,6 +241,13 @@ def test_iteration_observer_preserves_and_exposes_the_exact_loop(response: Respo
         np.array_equal(np.asarray(left.next_psi), np.asarray(right.psi))
         for left, right in zip(snapshots[:-1], snapshots[1:], strict=True)
     )
+    assert all(
+        np.allclose(
+            np.asarray(snapshot.next_psi),
+            np.asarray(snapshot.psi + 0.5 * snapshot.fixed_point_residual),
+        )
+        for snapshot in snapshots
+    )
     assert np.array_equal(np.asarray(snapshots[-1].next_psi), np.asarray(observed))
     assert not any(snapshot.converged for snapshot in snapshots)
 
