@@ -15,6 +15,8 @@ field residuals, current closure, nonlinear residual, compact-profile and coil
 gradient audits, and synchronized warm latency; and keeps every facility/control
 claim false.  A result can become bounded same-case evidence only when an
 execution-preceding selection lock and every predeclared threshold are present.
+Warm latency starts from an explicitly polished converged equilibrium under the
+same inputs; cold continuation, warm compilation, and warm setup remain separate.
 """
 
 from __future__ import annotations
@@ -89,6 +91,9 @@ THRESHOLDS: dict[str, float] = {
     "relative_current_error_max": 5.0e-2,
     "relative_nonlinear_residual_rms_max": 5.0e-2,
 }
+WARM_START_ITERATION_CAP = 20
+WARM_START_IP_RAMP = 1
+WARM_START_MEASUREMENT_MODE = "same_input_from_converged_equilibrium"
 _SHA256_LENGTH = 64
 _CASE_ROLES = ("development", "evaluation_candidate")
 _SOURCE_PATHS = {
@@ -224,7 +229,7 @@ def _runtime_environment() -> dict[str, Any]:
         "machine": platform.machine(),
         "platform": platform.platform(),
         "python_version": platform.python_version(),
-        "x64_enabled": bool(jax.config.read("jax_enable_x64")),
+        "x64_enabled": cast(bool, jax.config.values["jax_enable_x64"]),
     }
 
 
@@ -398,6 +403,7 @@ def _execute_case(
         psi_init: object | None = None,
         iteration_cap: int = n_iter,
         ip_ramp: int = DEFAULT_IP_RAMP,
+        return_iterations: bool = False,
     ) -> object:
         return solve_predictive_equilibrium_compiled(
             cast(jnp.ndarray, currents),
@@ -420,24 +426,59 @@ def _execute_case(
             DEFAULT_CUTOFF_WIDTH,
             DEFAULT_TOL,
             MU0_SI,
+            return_iterations=return_iterations,
         )
 
     compile_start = time.perf_counter()
-    candidate_psi_jax = cast(
-        jnp.ndarray,
-        candidate_forward(coil_jax, p_coeff_jax, ff_coeff_jax),
+    cold_result = cast(
+        tuple[jnp.ndarray, int],
+        candidate_forward(
+            coil_jax,
+            p_coeff_jax,
+            ff_coeff_jax,
+            return_iterations=True,
+        ),
     )
-    candidate_psi_jax.block_until_ready()
+    cold_psi_jax, cold_start_iterations = cold_result
+    cold_psi_jax.block_until_ready()
     compile_and_first_ms = (time.perf_counter() - compile_start) * 1000.0
+
+    warm_compile_start = time.perf_counter()
+    warm_setup_result = cast(
+        tuple[jnp.ndarray, int],
+        candidate_forward(
+            coil_jax,
+            p_coeff_jax,
+            ff_coeff_jax,
+            psi_init=cold_psi_jax,
+            iteration_cap=WARM_START_ITERATION_CAP,
+            ip_ramp=WARM_START_IP_RAMP,
+            return_iterations=True,
+        ),
+    )
+    candidate_psi_jax, warm_start_setup_iterations = warm_setup_result
+    candidate_psi_jax.block_until_ready()
+    warm_compile_and_first_ms = (time.perf_counter() - warm_compile_start) * 1000.0
+
     warm_latency_ms: list[float] = []
+    warm_start_iterations: list[int] = []
     for _ in range(latency_repeats):
         start = time.perf_counter()
-        value = cast(
-            jnp.ndarray,
-            candidate_forward(coil_jax, p_coeff_jax, ff_coeff_jax),
+        value, iteration_count = cast(
+            tuple[jnp.ndarray, int],
+            candidate_forward(
+                coil_jax,
+                p_coeff_jax,
+                ff_coeff_jax,
+                psi_init=candidate_psi_jax,
+                iteration_cap=WARM_START_ITERATION_CAP,
+                ip_ramp=WARM_START_IP_RAMP,
+                return_iterations=True,
+            ),
         )
         value.block_until_ready()
         warm_latency_ms.append((time.perf_counter() - start) * 1000.0)
+        warm_start_iterations.append(iteration_count)
 
     candidate_psi = np.asarray(candidate_psi_jax, dtype=np.float64)
     difference = candidate_psi - reference_psi
@@ -643,16 +684,22 @@ def _execute_case(
             "profile_sample_count": int(psin_knots.size),
             "self_field_wall_boundary": True,
             "separatrix": "smooth_xpoint_flux",
+            "warm_start_iteration_cap": WARM_START_ITERATION_CAP,
         },
         "latency": {
             "admissible_isolated_evidence": False,
+            "cold_start_iterations": cold_start_iterations,
             "compile_and_first_ms": compile_and_first_ms,
+            "measurement_mode": WARM_START_MEASUREMENT_MODE,
             "p50_ms": _percentile(warm_latency_ms, 50.0),
             "p95_ms": _percentile(warm_latency_ms, 95.0),
             "reference_freegs_ms": reference_elapsed_ms,
             "repeat_count": len(warm_latency_ms),
             "synchronised": True,
+            "warm_compile_and_first_ms": warm_compile_and_first_ms,
             "warm_ms": warm_latency_ms,
+            "warm_start_iterations": warm_start_iterations,
+            "warm_start_setup_iterations": warm_start_setup_iterations,
         },
         "machine_class": run_spec.machine_class,
         "metrics": {
@@ -958,6 +1005,76 @@ def validate_report(payload: dict[str, Any]) -> None:
             or any(not isinstance(value, bool) for value in threshold_results.values())
         ):
             raise ValueError("case threshold results do not match the v2 contract")
+        input_contract = case.get("input_contract")
+        if (
+            not isinstance(input_contract, dict)
+            or input_contract.get("warm_start_iteration_cap") != WARM_START_ITERATION_CAP
+        ):
+            raise ValueError("case input contract omits the frozen warm-start iteration cap")
+        latency = case.get("latency")
+        if not isinstance(latency, dict):
+            raise ValueError("case latency must be an object")
+        expected_latency_fields = {
+            "admissible_isolated_evidence",
+            "cold_start_iterations",
+            "compile_and_first_ms",
+            "measurement_mode",
+            "p50_ms",
+            "p95_ms",
+            "reference_freegs_ms",
+            "repeat_count",
+            "synchronised",
+            "warm_compile_and_first_ms",
+            "warm_ms",
+            "warm_start_iterations",
+            "warm_start_setup_iterations",
+        }
+        repeat_count = latency.get("repeat_count")
+        warm_ms = latency.get("warm_ms")
+        warm_iterations = latency.get("warm_start_iterations")
+        cold_iterations = latency.get("cold_start_iterations")
+        warm_setup_iterations = latency.get("warm_start_setup_iterations")
+        n_iter_cap = input_contract.get("n_iter_cap")
+        integer_fields = (cold_iterations, warm_setup_iterations)
+        timing_fields = (
+            latency.get("compile_and_first_ms"),
+            latency.get("p50_ms"),
+            latency.get("p95_ms"),
+            latency.get("reference_freegs_ms"),
+            latency.get("warm_compile_and_first_ms"),
+        )
+        if (
+            set(latency) != expected_latency_fields
+            or latency.get("admissible_isolated_evidence") is not False
+            or latency.get("synchronised") is not True
+            or latency.get("measurement_mode") != WARM_START_MEASUREMENT_MODE
+            or isinstance(repeat_count, bool)
+            or not isinstance(repeat_count, int)
+            or repeat_count < 1
+            or not isinstance(warm_ms, list)
+            or len(warm_ms) != repeat_count
+            or not isinstance(warm_iterations, list)
+            or len(warm_iterations) != repeat_count
+            or any(
+                isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0.0
+                for value in (*timing_fields, *warm_ms)
+            )
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 1
+                for value in (*integer_fields, *warm_iterations)
+            )
+            or isinstance(n_iter_cap, bool)
+            or not isinstance(n_iter_cap, int)
+            or n_iter_cap < 1
+            or cast(int, cold_iterations) > n_iter_cap
+            or cast(int, warm_setup_iterations) >= WARM_START_ITERATION_CAP
+            or any(iterations >= WARM_START_ITERATION_CAP for iterations in warm_iterations)
+        ):
+            raise ValueError("case latency does not match the warm-start measurement contract")
+        expected_p50 = _percentile([float(value) for value in warm_ms], 50.0)
+        expected_p95 = _percentile([float(value) for value in warm_ms], 95.0)
+        if latency.get("p50_ms") != expected_p50 or latency.get("p95_ms") != expected_p95:
+            raise ValueError("case latency percentiles do not match the recorded warm samples")
     role_contract = payload.get("case_role_contract")
     if not isinstance(role_contract, dict):
         raise ValueError("case_role_contract must be an object")

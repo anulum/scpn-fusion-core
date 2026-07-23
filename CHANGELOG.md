@@ -29,6 +29,14 @@
   holdout, isolated timing, collaborator, facility, PCS, and safety evidence
   are explicitly absent; no scientific or deployment promotion is made.
 
+### Fixed
+
+- Correct the IDA same-case latency loop so `warm_ms` measures a synchronised
+  same-input solve from a converged equilibrium instead of repeating the full
+  cold-start continuation after JIT compilation. The report now separates cold
+  iterations, warm setup/compilation, steady-state warm iterations, and timing
+  samples, and rejects relabelled cold-start or unconverged warm evidence.
+
 ## [4.0.0] - 2026-07-22
 
 Major release: the differentiable predictive free-boundary equilibrium line —

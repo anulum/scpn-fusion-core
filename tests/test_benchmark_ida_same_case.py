@@ -60,16 +60,22 @@ def _case(role: str, *, passed: bool = True) -> dict[str, Any]:
             "profile_sample_count": 129,
             "self_field_wall_boundary": True,
             "separatrix": "smooth_xpoint_flux",
+            "warm_start_iteration_cap": benchmark.WARM_START_ITERATION_CAP,
         },
         "latency": {
             "admissible_isolated_evidence": False,
+            "cold_start_iterations": 120,
             "compile_and_first_ms": 25.0,
+            "measurement_mode": benchmark.WARM_START_MEASUREMENT_MODE,
             "p50_ms": 10.0,
-            "p95_ms": 12.0,
+            "p95_ms": 11.8,
             "reference_freegs_ms": 30.0,
             "repeat_count": 3,
             "synchronised": True,
+            "warm_compile_and_first_ms": 20.0,
             "warm_ms": [9.0, 10.0, 12.0],
+            "warm_start_iterations": [2, 2, 2],
+            "warm_start_setup_iterations": 4,
         },
         "machine_class": "DIIID" if role == "evaluation_candidate" else "TestTokamak",
         "metrics": {
@@ -275,6 +281,57 @@ def test_validate_report_rejects_case_digest_and_threshold_drift() -> None:
         benchmark.validate_report(report)
 
 
+def test_validate_report_rejects_false_warm_start_latency() -> None:
+    """Reject cold-start timings relabelled as steady-state warm-start evidence."""
+    report = _report()
+    report["cases"][0]["latency"]["measurement_mode"] = "jit_warm_cold_start"
+    _reseal(report)
+    with pytest.raises(ValueError, match="warm-start measurement contract"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["latency"]["warm_start_iterations"] = [2, 2]
+    _reseal(report)
+    with pytest.raises(ValueError, match="warm-start measurement contract"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["latency"]["warm_start_setup_iterations"] = (
+        benchmark.WARM_START_ITERATION_CAP
+    )
+    _reseal(report)
+    with pytest.raises(ValueError, match="warm-start measurement contract"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["latency"]["cold_start_iterations"] = 121
+    _reseal(report)
+    with pytest.raises(ValueError, match="warm-start measurement contract"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["latency"]["warm_start_iterations"] = [
+        2,
+        benchmark.WARM_START_ITERATION_CAP,
+        2,
+    ]
+    _reseal(report)
+    with pytest.raises(ValueError, match="warm-start measurement contract"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["latency"]["warm_ms"][0] = "9.0"
+    _reseal(report)
+    with pytest.raises(ValueError, match="warm-start measurement contract"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["latency"]["p95_ms"] = 11.0
+    _reseal(report)
+    with pytest.raises(ValueError, match="percentiles"):
+        benchmark.validate_report(report)
+
+
 def test_validate_report_rejects_environment_source_and_solver_drift() -> None:
     """Bind the runtime, source-artifact, repository, and solver contracts."""
     report = _report()
@@ -366,7 +423,7 @@ def test_git_metadata_probe_returns_value_or_none(
     def fail(*_: Any, **__: Any) -> subprocess.CompletedProcess[str]:
         raise subprocess.CalledProcessError(1, ["git"])
 
-    monkeypatch.setattr(benchmark.subprocess, "run", fail)
+    monkeypatch.setattr(subprocess, "run", fail)
     assert benchmark._git_value("rev-parse", "HEAD") is None
 
 
