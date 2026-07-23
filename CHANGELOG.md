@@ -26,10 +26,13 @@
   finite-difference gradient audits pass. ψ_N accuracy and non-isolated CPU
   latency were originally reported from the relabelled cold-start loop. The
   corrected non-isolated `cuda:0` same-input warm measurement records three
-  two-iteration solves and P95 `25.8103 ms`; it still fails the `20 ms` gate.
-  No scientific, CONTROL, facility, PCS, or safety admission is claimed.
-  Solver commit `ad14457c`; measurement source `ace3de2e`; corrected evidence
-  commit `49cc1238`.
+  two-iteration solves and latest P95 `24.9163 ms`; it still fails the `20 ms`
+  gate. Spatial diagnostics localise the remaining mismatch to a current-profile
+  distribution TV distance of `0.25135` and a current-centroid shift of
+  `−4.20 cm` radially / `+5.84 cm` vertically, while only `4.71%` of absolute
+  candidate current lies outside the reference support. No scientific, CONTROL,
+  facility, PCS, or safety admission is claimed. Solver commit `ad14457c`;
+  diagnostic source `097a784d`; evidence commit `95af8560`.
 - The first tracked IDA same-case run remains fail-closed. On the public
   129×129 DIII-D example it measured ψ-span NRMSE `2.0875458241740508`,
   relative current error `0.5205740043457716`, nonlinear residual ratio
