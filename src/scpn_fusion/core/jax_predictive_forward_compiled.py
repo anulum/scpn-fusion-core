@@ -43,7 +43,20 @@ import jax.numpy as jnp
 import numpy as np
 from numpy.typing import NDArray
 
-_State = tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]
+_RunnerOutput = (
+    tuple[jnp.ndarray, jnp.ndarray]
+    | tuple[
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+    ]
+)
 
 from scpn_fusion.core.jax_free_boundary_gs import MU0_SI, vacuum_field_si
 from scpn_fusion.core.jax_free_boundary_predictive import (
@@ -60,6 +73,14 @@ from scpn_fusion.core.jax_free_boundary_predictive import (
     _gs_operator_flat,
 )
 from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
+from scpn_fusion.core.jax_predictive_checkpoint_trace import (
+    CompiledPredictiveTrace,
+    _LoopState as _State,
+    _LoopTransition as _Transition,
+    build_compiled_predictive_trace,
+    run_checkpointed_while_loop,
+    validate_trace_request,
+)
 
 
 def _require_uniform(name: str, axis: NDArray[np.float64]) -> float:
@@ -93,6 +114,7 @@ def _make_runner(
     inner_cycles: int,
     use_separatrix_continuation: bool,
     anderson_solver: str = "lstsq",
+    trace_iteration_indices: tuple[int, ...] = (),
 ) -> Callable[..., jnp.ndarray]:
     """Build and jit the while_loop runner for one (geometry, settings) combination."""
     shape = (nz, nr)
@@ -121,7 +143,7 @@ def _make_runner(
         source_idx: jnp.ndarray,
         coil_wall: jnp.ndarray,
         x0: jnp.ndarray,
-    ) -> tuple[jnp.ndarray, jnp.ndarray]:
+    ) -> _RunnerOutput:
         dA = jnp.asarray(d_r * d_z)
 
         def g_of(
@@ -186,7 +208,7 @@ def _make_runner(
             k, _x, _f_h, _x_h, _nv, done = state
             return (k < n_iter) & (~done)
 
-        def body(state: _State) -> _State:
+        def advance(state: _State) -> _Transition:
             k, x, f_hist, x_hist, n_valid, _done = state
             ip_k = ip_target * jnp.minimum(1.0, (k + 1.0) / ramp_div)
             separatrix_refinement = (
@@ -232,14 +254,27 @@ def _make_runner(
             x_anderson = x + mixing * f - (dx + mixing * df) @ gamma
             x_fallback = x + mixing * f
             x_next = jnp.where(jnp.all(jnp.isfinite(x_anderson)), x_anderson, x_fallback)
+            accepted = jnp.where(done_now, x, x_next)
             return (
-                k + 1,
-                jnp.where(done_now, x, x_next),
-                jnp.where(done_now, f_hist, f_new),
-                jnp.where(done_now, x_hist, x_new),
-                jnp.where(done_now, n_valid, nv_new),
+                (
+                    k + 1,
+                    accepted,
+                    jnp.where(done_now, f_hist, f_new),
+                    jnp.where(done_now, x_hist, x_new),
+                    jnp.where(done_now, n_valid, nv_new),
+                    done_now,
+                ),
+                x,
+                f,
+                accepted,
+                ip_k,
+                separatrix_refinement,
                 done_now,
             )
+
+        def body(state: _State) -> _State:
+            next_state, _x, _f, _accepted, _ip, _refinement, _done = advance(state)
+            return next_state
 
         state0 = (
             jnp.asarray(0),
@@ -249,6 +284,14 @@ def _make_runner(
             jnp.asarray(0),
             jnp.asarray(False),
         )
+        if trace_iteration_indices:
+            return run_checkpointed_while_loop(
+                state0=state0,
+                condition=cond,
+                advance=advance,
+                trace_iteration_indices=trace_iteration_indices,
+                shape=shape,
+            )
         k_final, x_final, _fh, _xh, _nv, _done = jax.lax.while_loop(cond, body, state0)
         return x_final.reshape(shape), k_final
 
@@ -282,7 +325,9 @@ def solve_predictive_equilibrium_compiled(
     inner_cycles: int = 3,
     anderson_solver: str = "lstsq",
     return_iterations: bool = False,
-) -> jnp.ndarray | tuple[jnp.ndarray, int]:
+    trace_iteration_indices: tuple[int, ...] = (),
+    return_trace: bool = False,
+) -> jnp.ndarray | tuple[jnp.ndarray, int] | CompiledPredictiveTrace:
     """Compiled predictive free-boundary solve — same fixed point as the eager solver.
 
     Same inputs and semantics as
@@ -300,6 +345,12 @@ def solve_predictive_equilibrium_compiled(
     MG-preconditioned Richardson with a fixed ``inner_cycles`` count (one matvec + one
     V-cycle per cycle, half the kernel traffic of a BiCGSTAB iteration); requires the MG
     preconditioner and reaches the same fixed point (test-pinned at span tolerance).
+
+    ``return_trace=True`` captures only ``trace_iteration_indices`` inside the
+    compiled loop and returns :class:`CompiledPredictiveTrace`. The indices
+    must be a strictly increasing tuple within ``[0, n_iter)``. Tracing is
+    opt-in: the normal runner is compiled without trace state or checkpoint
+    writes.
 
     Raises
     ------
@@ -323,6 +374,12 @@ def solve_predictive_equilibrium_compiled(
         raise ValueError("inner_cycles must be >= 1")
     if anderson_solver not in ("lstsq", "normal_eq"):
         raise ValueError(f"unknown anderson_solver {anderson_solver!r}")
+    validate_trace_request(
+        trace_iteration_indices=trace_iteration_indices,
+        n_iter=n_iter,
+        return_iterations=return_iterations,
+        return_trace=return_trace,
+    )
     nz, nr = z_np.size, r_np.size
     if psi_init is not None and tuple(np.shape(psi_init)) != (nz, nr):
         raise ValueError(f"psi_init shape {np.shape(psi_init)} does not match grid ({nz}, {nr})")
@@ -349,8 +406,9 @@ def solve_predictive_equilibrium_compiled(
         int(inner_cycles),
         psi_init is None,
         str(anderson_solver),
+        trace_iteration_indices,
     )
-    psi, k = runner(
+    result = runner(
         coil_I,
         pprime_vals,
         ffprime_vals,
@@ -364,9 +422,15 @@ def solve_predictive_equilibrium_compiled(
         coil_wall,
         x0,
     )
+    if return_trace:
+        return build_compiled_predictive_trace(
+            result,
+            checkpoint_indices=trace_iteration_indices,
+        )
+    psi, k = cast(tuple[jnp.ndarray, jnp.ndarray], result)
     if return_iterations:
-        return cast(jnp.ndarray, psi), int(k)
-    return cast(jnp.ndarray, psi)
+        return psi, int(k)
+    return psi
 
 
 @lru_cache(maxsize=16)
