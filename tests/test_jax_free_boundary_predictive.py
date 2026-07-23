@@ -16,18 +16,22 @@ lives in the fail-closed validation harness, not in this self-consistency test m
 
 from __future__ import annotations
 
+from typing import Callable, TypeAlias, cast
+
 import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
 
-jax.config.update("jax_enable_x64", True)
+_jax_config_update = cast(Callable[[str, bool], None], jax.config.update)
+_jax_config_update("jax_enable_x64", True)
 
 from scpn_fusion.core.jax_free_boundary_gs import MU0_SI, greens_psi_si, vacuum_field_si
 from scpn_fusion.core.jax_free_boundary_predictive import (
     DEFAULT_N_ITER,
     DEFAULT_SEPARATRIX_RAMP,
     DEFAULT_SEPARATRIX_START,
+    PredictiveIterationSnapshot,
     _laplacian_star,
     _plasma_current,
     build_response_matrix,
@@ -49,6 +53,9 @@ _PPRIME = jnp.array([-8.0e4, -6.0e4, -4.0e4, -2.0e4, -0.7e4, 0.0])
 _FFPRIME = jnp.array([-1.2, -0.9, -0.6, -0.3, -0.1, 0.0])
 _IP = 1.0e6
 
+Response: TypeAlias = tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]
+SolvedEquilibrium: TypeAlias = tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]
+
 
 def test_default_iteration_budget_completes_separatrix_continuation() -> None:
     """The cold-start default leaves a settling window after the homotopy reaches one."""
@@ -56,12 +63,12 @@ def test_default_iteration_budget_completes_separatrix_continuation() -> None:
 
 
 @pytest.fixture(scope="module")
-def response():
+def response() -> Response:
     return build_response_matrix(_R, _Z)
 
 
 @pytest.fixture(scope="module")
-def solved(response):
+def solved(response: Response) -> SolvedEquilibrium:
     m, b, s = response
     psi = solve_predictive_equilibrium(
         _COIL_I, _PPRIME, _FFPRIME, _R, _Z, _COIL_R, _COIL_Z, _PSIN, _IP, m, b, s, n_iter=150
@@ -72,7 +79,7 @@ def solved(response):
 # ── Response matrix (von Hagenow) ─────────────────────────────────
 
 
-def test_response_matrix_shape_and_indices(response) -> None:
+def test_response_matrix_shape_and_indices(response: Response) -> None:
     m, b, s = response
     nz, nr = _Z.shape[0], _R.shape[0]
     assert m.shape == (b.shape[0], s.shape[0])
@@ -83,7 +90,7 @@ def test_response_matrix_shape_and_indices(response) -> None:
     assert bool(np.all(on_border))
 
 
-def test_response_matrix_reconstructs_wall_flux(response) -> None:
+def test_response_matrix_reconstructs_wall_flux(response: Response) -> None:
     """``M @ (I·dA)`` for a current blob equals a direct Green's sum at the wall."""
     m, b, s = response
     nz, nr = _Z.shape[0], _R.shape[0]
@@ -134,7 +141,7 @@ def test_ip_normalisation_holds_target() -> None:
 # ── Full coupled solve ────────────────────────────────────────────
 
 
-def test_solve_is_finite_and_self_consistent(solved) -> None:
+def test_solve_is_finite_and_self_consistent(solved: SolvedEquilibrium) -> None:
     """The cold-start solve returns a finite ψ that satisfies the coupled residual to machine
     precision (a true fixed point of the discrete operator)."""
     psi, m, b, s = solved
@@ -147,7 +154,7 @@ def test_solve_is_finite_and_self_consistent(solved) -> None:
     assert rel < 1e-3
 
 
-def test_solve_holds_target_ip(solved) -> None:
+def test_solve_holds_target_ip(solved: SolvedEquilibrium) -> None:
     """The solved equilibrium carries the requested plasma current."""
     psi, _m, _b, _s = solved
     axis = smooth_axis_flux(psi)
@@ -159,7 +166,7 @@ def test_solve_holds_target_ip(solved) -> None:
     assert abs(float(jnp.sum(j) * dA) - _IP) / _IP < 1e-6
 
 
-def test_solve_forms_a_plasma(solved) -> None:
+def test_solve_forms_a_plasma(solved: SolvedEquilibrium) -> None:
     """A confined plasma forms: axis flux exceeds the separatrix, and ψ departs from vacuum."""
     psi, _m, _b, _s = solved
     axis = float(smooth_axis_flux(psi))
@@ -169,7 +176,7 @@ def test_solve_forms_a_plasma(solved) -> None:
     assert float(jnp.max(jnp.abs(psi - psi_vac))) > 0.1
 
 
-def test_solve_never_returns_nan_past_convergence(response) -> None:
+def test_solve_never_returns_nan_past_convergence(response: Response) -> None:
     """Running well past convergence must not NaN — the early-stop + finite-guard hold even when
     the Anderson history goes rank-deficient."""
     m, b, s = response
@@ -179,7 +186,93 @@ def test_solve_never_returns_nan_past_convergence(response) -> None:
     assert bool(jnp.all(jnp.isfinite(psi)))
 
 
-def test_mg_preconditioned_solve_matches_plain(solved) -> None:
+def test_iteration_observer_preserves_and_exposes_the_exact_loop(response: Response) -> None:
+    """The diagnostic observer exposes accepted states without changing the public solve."""
+    m, b, s = response
+    snapshots: list[PredictiveIterationSnapshot] = []
+    baseline = solve_predictive_equilibrium(
+        _COIL_I,
+        _PPRIME,
+        _FFPRIME,
+        _R,
+        _Z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        n_iter=3,
+        tol=0.0,
+    )
+    observed = solve_predictive_equilibrium(
+        _COIL_I,
+        _PPRIME,
+        _FFPRIME,
+        _R,
+        _Z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        n_iter=3,
+        tol=0.0,
+        iteration_observer=snapshots.append,
+    )
+
+    assert np.array_equal(np.asarray(observed), np.asarray(baseline))
+    assert [snapshot.iteration_index for snapshot in snapshots] == [0, 1, 2]
+    assert snapshots[0].ip_now == pytest.approx(_IP / 30.0)
+    assert snapshots[-1].ip_now == pytest.approx(_IP / 10.0)
+    assert all(snapshot.separatrix_refinement == 0.0 for snapshot in snapshots)
+    assert all(snapshot.psi.shape == observed.shape for snapshot in snapshots)
+    assert all(
+        np.array_equal(
+            np.asarray(snapshot.mapped_psi - snapshot.psi),
+            np.asarray(snapshot.fixed_point_residual),
+        )
+        for snapshot in snapshots
+    )
+    assert all(
+        np.array_equal(np.asarray(left.next_psi), np.asarray(right.psi))
+        for left, right in zip(snapshots[:-1], snapshots[1:], strict=True)
+    )
+    assert np.array_equal(np.asarray(snapshots[-1].next_psi), np.asarray(observed))
+    assert not any(snapshot.converged for snapshot in snapshots)
+
+    stopped_snapshots: list[PredictiveIterationSnapshot] = []
+    stopped = solve_predictive_equilibrium(
+        _COIL_I,
+        _PPRIME,
+        _FFPRIME,
+        _R,
+        _Z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        psi_init=observed,
+        n_iter=1,
+        ip_ramp=0,
+        tol=1.0e9,
+        iteration_observer=stopped_snapshots.append,
+    )
+    assert len(stopped_snapshots) == 1
+    assert stopped_snapshots[0].converged
+    assert stopped_snapshots[0].ip_now == pytest.approx(_IP)
+    assert stopped_snapshots[0].separatrix_refinement == 1.0
+    assert np.array_equal(np.asarray(stopped_snapshots[0].next_psi), np.asarray(observed))
+    assert np.array_equal(np.asarray(stopped), np.asarray(observed))
+
+
+def test_mg_preconditioned_solve_matches_plain(solved: SolvedEquilibrium) -> None:
     """``use_mg_preconditioner=True`` reaches the SAME equilibrium — the multigrid V-cycle only
     reshapes the inner Krylov convergence path, never the fixed point."""
     psi_plain, m, b, s = solved
@@ -208,15 +301,20 @@ def test_mg_preconditioned_solve_matches_plain(solved) -> None:
 # ── Implicit-diff adjoint (∂ψ*/∂θ for the IDA loop) ───────────────
 
 
-def _axis_loss(response, coil_I, pprime, ffprime):
+def _axis_loss(
+    response: Response,
+    coil_I: jnp.ndarray,
+    pprime: jnp.ndarray,
+    ffprime: jnp.ndarray,
+) -> jnp.ndarray:
     m, b, s = response
     psi = solve_predictive_equilibrium_diff(
         coil_I, pprime, ffprime, _R, _Z, _COIL_R, _COIL_Z, _PSIN, _IP, m, b, s, n_iter=150
     )
-    return smooth_axis_flux(psi)
+    return cast(jnp.ndarray, smooth_axis_flux(psi))
 
 
-def test_adjoint_gradient_shapes_and_finite(response) -> None:
+def test_adjoint_gradient_shapes_and_finite(response: Response) -> None:
     """``jax.grad`` through the differentiable solve returns finite gradients of the right shape
     for all three differentiated inputs (coil currents and both profiles)."""
     g_ci, g_pp, g_ff = jax.grad(
@@ -230,7 +328,7 @@ def test_adjoint_gradient_shapes_and_finite(response) -> None:
     )
 
 
-def test_coil_gradient_matches_finite_difference(response) -> None:
+def test_coil_gradient_matches_finite_difference(response: Response) -> None:
     """The implicit-diff COIL gradient matches a warm-started central FD at a small step.
 
     Pins the erasure of the historical "coil grad ~3 %" honest-limit: that figure was an FD
@@ -268,7 +366,7 @@ def test_coil_gradient_matches_finite_difference(response) -> None:
     assert abs(float(g_ci[idx]) - fd) / (abs(fd) + 1e-30) < 1e-3
 
 
-def test_profile_gradient_matches_finite_difference(response) -> None:
+def test_profile_gradient_matches_finite_difference(response: Response) -> None:
     """The implicit-diff profile gradient (the quantity IDA infers) matches central FD — the
     adjoint is exact on the converged fixed point, not an approximation through the solver."""
     _g_ci, g_pp, _g_ff = jax.grad(
@@ -281,7 +379,7 @@ def test_profile_gradient_matches_finite_difference(response) -> None:
     assert abs(float(g_pp[idx]) - fd) / (abs(fd) + 1e-30) < 1e-2
 
 
-def test_differentiates_through_bspline_profile_coefficients(response) -> None:
+def test_differentiates_through_bspline_profile_coefficients(response: Response) -> None:
     """End-to-end IDA pipeline: compact B-spline coefficients → p'/FF' samples → equilibrium →
     ``jax.grad`` back to the coefficients. Proves the Rung-3 profile basis composes with the
     Rung-1 implicit-diff adjoint — the whole point of the compact IDA parameterisation."""
@@ -298,7 +396,7 @@ def test_differentiates_through_bspline_profile_coefficients(response) -> None:
         psi = solve_predictive_equilibrium_diff(
             _COIL_I, pp, ff, _R, _Z, _COIL_R, _COIL_Z, _PSIN, _IP, m, b, s
         )
-        return smooth_axis_flux(psi)
+        return cast(jnp.ndarray, smooth_axis_flux(psi))
 
     g_pc, g_fc = jax.grad(loss, argnums=(0, 1))(pp_coeffs, ff_coeffs)
     assert g_pc.shape == pp_coeffs.shape and g_fc.shape == ff_coeffs.shape

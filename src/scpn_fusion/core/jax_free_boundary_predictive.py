@@ -61,6 +61,7 @@ SI units throughout (μ₀ = 4π·10⁻⁷, currents [A], ψ [Wb]); ``ψ`` shape
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import partial
 from typing import Callable, cast
 
@@ -77,6 +78,11 @@ from scpn_fusion.core.jax_free_boundary_gs import (
 from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
+
+_bicgstab = cast(
+    Callable[..., tuple[jnp.ndarray, jnp.ndarray]],
+    bicgstab,
+)
 
 # Anderson / continuation defaults used by the fail-closed public same-case benchmark.
 DEFAULT_N_ITER = 180
@@ -96,6 +102,50 @@ _BICGSTAB_MAXITER = 700
 # BiCGSTAB convergence roughly grid-insensitive; this cap then only bounds pathological cases.
 # Validated: preconditioned, 65² reaches a ~3e-5 warm-FD match within this cap.
 _ADJOINT_MAXITER = 2000
+
+
+@dataclass(frozen=True)
+class PredictiveIterationSnapshot:
+    """One accepted iteration of the eager predictive-equilibrium solve.
+
+    The arrays use the physical ``(NZ, NR)`` grid shape. ``psi`` is the state
+    presented to the coupled map, ``mapped_psi`` is ``G(psi)``, and ``next_psi``
+    is the state accepted by the continuation/Anderson loop. On a converged
+    iteration, ``next_psi`` equals ``psi`` because the solver stops before
+    extending its rank-deficient Anderson history.
+
+    Attributes
+    ----------
+    iteration_index
+        Zero-based outer-iteration index.
+    ip_now
+        Plasma current used by the coupled map [A].
+    separatrix_refinement
+        Homotopy fraction from the stable soft separatrix to the sub-cell
+        saddle value.
+    psi
+        State presented to the coupled map [Wb].
+    mapped_psi
+        Coupled-map result ``G(psi)`` [Wb].
+    fixed_point_residual
+        Difference ``G(psi) - psi`` [Wb].
+    next_psi
+        State accepted for the next iteration [Wb].
+    converged
+        Whether this iteration satisfied the fail-closed stopping criterion.
+    """
+
+    iteration_index: int
+    ip_now: float
+    separatrix_refinement: float
+    psi: jnp.ndarray
+    mapped_psi: jnp.ndarray
+    fixed_point_residual: jnp.ndarray
+    next_psi: jnp.ndarray
+    converged: bool
+
+
+PredictiveIterationObserver = Callable[[PredictiveIterationSnapshot], None]
 
 
 # ── Geometry: von Hagenow response matrix ─────────────────────────
@@ -199,12 +249,13 @@ def _plasma_current(
     cutoff_width: float,
     mu0: float,
 ) -> jnp.ndarray:
-    """Toroidal current density ``Jφ = R p' + FF'/(μ₀R)`` with a smooth LCFS roll-off, scaled
-    so ``∮Jφ dA = ip_target``.
+    """Calculate the smooth, Ip-normalised toroidal current density.
 
-    The ``tanh`` roll-off (vs a hard ``ψ_N < 1`` mask) keeps the current — and thus the coupled
-    fixed point — differentiable; the Ip scaling pins the total current, killing the self-field
-    runaway.
+    The density ``Jφ = R p' + FF'/(μ₀R)`` is scaled so
+    ``∮Jφ dA = ip_target``. The ``tanh`` roll-off (vs a hard
+    ``ψ_N < 1`` mask) keeps the current — and thus the coupled fixed point —
+    differentiable; the Ip scaling pins the total current, killing the
+    self-field runaway.
     """
     psi_n = normalised_flux(psi, psi_axis, psi_bndry)
     pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
@@ -300,10 +351,13 @@ def _coupled_step(
     mu0: float,
     precond: Callable[[jnp.ndarray], jnp.ndarray] | None = None,
 ) -> jnp.ndarray:
-    """One coupled Picard step ``G(ψ)``: axis/X-point → Ip-normalised Jφ → coupled wall flux →
-    linear GS solve. The equilibrium is its fixed point ``ψ = G(ψ)``. ``precond`` (optional) is
-    a linear ``M ≈ A⁻¹`` handed to BiCGSTAB — it changes the Krylov convergence path only, not
-    the solution."""
+    """Advance one coupled Picard step ``G(ψ)``.
+
+    The path is axis/X-point → Ip-normalised Jφ → coupled wall flux → linear
+    GS solve. The equilibrium is its fixed point ``ψ = G(ψ)``. ``precond``
+    (optional) is a linear ``M ≈ A⁻¹`` handed to BiCGSTAB — it changes the
+    Krylov convergence path only, not the solution.
+    """
     rhs = _coupled_rhs(
         psi_flat,
         ip_now,
@@ -326,10 +380,10 @@ def _coupled_step(
     def operator(pf: jnp.ndarray) -> jnp.ndarray:
         return _gs_operator_flat(pf, shape, R_grid, d_r, d_z)
 
-    sol, _info = jax.scipy.sparse.linalg.bicgstab(
+    sol, _info = _bicgstab(
         operator, rhs, x0=psi_flat, tol=_BICGSTAB_TOL, maxiter=_BICGSTAB_MAXITER, M=precond
     )
-    return cast(jnp.ndarray, sol)
+    return sol
 
 
 def _coupled_rhs(
@@ -350,10 +404,13 @@ def _coupled_rhs(
     cutoff_width: float,
     mu0: float,
 ) -> jnp.ndarray:
-    """Right-hand side of the linear GS system at the current iterate: interior source
-    ``−μ₀ R Jφ`` (Ip-normalised, smooth LCFS cutoff) with the coupled von Hagenow wall flux
-    on the identity wall rows. Shared by every inner-solver variant — the physics of the
-    coupled step lives HERE, exactly once."""
+    """Construct the linear Grad-Shafranov right-hand side.
+
+    The current iterate supplies the interior source ``−μ₀ R Jφ``
+    (Ip-normalised, smooth LCFS cutoff) and the coupled von Hagenow wall flux
+    on the identity wall rows. Every inner-solver variant shares this function,
+    so the coupled-step physics lives here exactly once.
+    """
     psi = psi_flat.reshape(shape)
     axis = smooth_axis_flux(psi)
     bndry = smooth_xpoint_flux(
@@ -402,6 +459,7 @@ def solve_predictive_equilibrium(
     mu0: float = MU0_SI,
     *,
     use_mg_preconditioner: bool = False,
+    iteration_observer: PredictiveIterationObserver | None = None,
 ) -> jnp.ndarray:
     """Solve the predictive free-boundary equilibrium from coils + profiles + Ip.
 
@@ -430,6 +488,10 @@ def solve_predictive_equilibrium(
         V-cycle (:func:`~scpn_fusion.core.jax_multigrid_precond.build_gs_mg_preconditioner`).
         Identical fixed point (the preconditioner only reshapes the Krylov convergence path);
         the forward-speed lane pending its dedicated-hardware benchmark, hence opt-in.
+    iteration_observer : optional synchronous callback receiving the immutable accepted state
+        of every eager continuation/Anderson iteration. This diagnostic surface is deliberately
+        absent from :func:`solve_predictive_equilibrium_diff` and the compiled forward solver;
+        omitting it preserves the normal solve path.
     """
     shape = (Z_grid.shape[0], R_grid.shape[0])
     d_r = R_grid[1] - R_grid[0]
@@ -492,28 +554,46 @@ def solve_predictive_equilibrium(
             not use_separatrix_continuation
             or k + 1 >= DEFAULT_SEPARATRIX_START + DEFAULT_SEPARATRIX_RAMP
         )
-        if (
+        converged = (
             k >= ip_ramp
             and continuation_complete
             and float(jnp.linalg.norm(f)) <= tol * (float(jnp.linalg.norm(x)) + 1.0)
-        ):
-            break
-        f_hist.append(f)
-        x_hist.append(x)
-        if len(f_hist) > anderson_depth:
-            f_hist.pop(0)
-            x_hist.pop(0)
-        m = len(f_hist)
-        if m == 1:
-            x = x + mixing * f
+        )
+        if converged:
+            next_x = x
         else:
-            df = jnp.stack([f_hist[i + 1] - f_hist[i] for i in range(m - 1)], axis=1)
-            dx = jnp.stack([x_hist[i + 1] - x_hist[i] for i in range(m - 1)], axis=1)
-            gamma, _res, _rank, _sv = jnp.linalg.lstsq(df, f, rcond=None)
-            x_next = x + mixing * f - (dx + mixing * df) @ gamma
-            # A rank-deficient history can produce a non-finite step near convergence; fall back
-            # to a damped Picard update so the solve is always finite.
-            x = jnp.where(jnp.all(jnp.isfinite(x_next)), x_next, x + mixing * f)
+            f_hist.append(f)
+            x_hist.append(x)
+            if len(f_hist) > anderson_depth:
+                f_hist.pop(0)
+                x_hist.pop(0)
+            m = len(f_hist)
+            if m == 1:
+                next_x = x + mixing * f
+            else:
+                df = jnp.stack([f_hist[i + 1] - f_hist[i] for i in range(m - 1)], axis=1)
+                dx = jnp.stack([x_hist[i + 1] - x_hist[i] for i in range(m - 1)], axis=1)
+                gamma, _res, _rank, _sv = jnp.linalg.lstsq(df, f, rcond=None)
+                x_next = x + mixing * f - (dx + mixing * df) @ gamma
+                # A rank-deficient history can produce a non-finite step near convergence; fall
+                # back to a damped Picard update so the solve is always finite.
+                next_x = jnp.where(jnp.all(jnp.isfinite(x_next)), x_next, x + mixing * f)
+        if iteration_observer is not None:
+            iteration_observer(
+                PredictiveIterationSnapshot(
+                    iteration_index=k,
+                    ip_now=ip_k,
+                    separatrix_refinement=refinement,
+                    psi=x.reshape(shape),
+                    mapped_psi=g_x.reshape(shape),
+                    fixed_point_residual=f.reshape(shape),
+                    next_psi=next_x.reshape(shape),
+                    converged=converged,
+                )
+            )
+        x = next_x
+        if converged:
+            break
     return cast(jnp.ndarray, x.reshape(shape))
 
 
@@ -685,7 +765,7 @@ def _solve_diff_bwd(
     def preconditioner(x_flat: jnp.ndarray) -> jnp.ndarray:
         return x_flat / precond_diag
 
-    lam_flat, _info = bicgstab(
+    lam_flat, _info = _bicgstab(
         adjoint_operator,
         psi_bar.reshape(-1),
         tol=_BICGSTAB_TOL,

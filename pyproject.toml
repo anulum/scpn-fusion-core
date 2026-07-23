@@ -589,6 +589,8 @@ files = [
     "src/scpn_fusion/core/jax_gk_solver.py",
     "src/scpn_fusion/core/neural_equilibrium_training.py",
     "src/scpn_fusion/core/jax_equilibrium_solver.py",
+    "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+    "tests/test_jax_free_boundary_predictive.py",
     "src/scpn_fusion/core/jax_gk_nonlinear.py",
     "src/scpn_fusion/core/pretrained_surrogates.py",
     "src/scpn_fusion/core/_pretrained_surrogate_config.py",

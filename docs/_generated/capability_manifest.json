@@ -1540,6 +1540,10 @@
         "path": "src/scpn_fusion/core/lh_transition.py"
       },
       {
+        "name": "PredictiveIterationSnapshot",
+        "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py"
+      },
+      {
         "name": "PretrainedMLPSurrogate",
         "path": "src/scpn_fusion/core/pretrained_mlp_surrogate.py"
       },
@@ -2717,7 +2721,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 63,
-    "python_capability_classes": 567,
+    "python_capability_classes": 568,
     "python_capability_source_modules": 318,
     "rust_workspace_crates": 13,
     "test_files": 573
