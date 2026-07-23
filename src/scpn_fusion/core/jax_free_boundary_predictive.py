@@ -27,7 +27,11 @@ four coupled pieces (all functions of the current iterate ``ψ``):
    (:func:`scpn_fusion.core.jax_o_point.smooth_axis_flux`) and ``ψ_bndry`` from the smooth
    X-point (:func:`scpn_fusion.core.jax_x_point.smooth_xpoint_flux`) — both found from ``ψ``
    each iteration, so the last-closed-flux-surface is not handed in.
-4. **Anderson-accelerated fixed-point solve.** Naive Picard on this full nonlinear
+4. **Two-axis continuation.** A cold start first ramps ``Ip`` while using the stable soft
+   separatrix estimate, then homotopies to the sub-cell saddle value. Warm starts use the
+   physical saddle value immediately. This follows the desired diverted root rather than the
+   competing vacuum-like fixed point.
+5. **Anderson-accelerated fixed-point solve.** Naive Picard on this full nonlinear
    boundary+profile map is *unstable*: the physical fixed point is a saddle and simple
    iteration is driven to a spurious high-peaking attractor (a known reason production
    free-boundary codes use Newton/Anderson, not Picard). Anderson mixing (depth ``m``) with an
@@ -75,10 +79,12 @@ from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
 
 # Anderson / continuation defaults used by the fail-closed public same-case benchmark.
-DEFAULT_N_ITER = 120
+DEFAULT_N_ITER = 180
 DEFAULT_ANDERSON_DEPTH = 8
 DEFAULT_MIXING = 0.5
 DEFAULT_IP_RAMP = 30
+DEFAULT_SEPARATRIX_START = 100
+DEFAULT_SEPARATRIX_RAMP = 20
 DEFAULT_CUTOFF_WIDTH = 0.03
 DEFAULT_TOL = 1.0e-9
 _BICGSTAB_TOL = 1.0e-11
@@ -289,6 +295,7 @@ def _coupled_step(
     response_matrix: jnp.ndarray,
     wall_idx: jnp.ndarray,
     source_idx: jnp.ndarray,
+    separatrix_refinement: jnp.ndarray,
     cutoff_width: float,
     mu0: float,
     precond: Callable[[jnp.ndarray], jnp.ndarray] | None = None,
@@ -311,6 +318,7 @@ def _coupled_step(
         response_matrix,
         wall_idx,
         source_idx,
+        separatrix_refinement,
         cutoff_width,
         mu0,
     )
@@ -318,7 +326,7 @@ def _coupled_step(
     def operator(pf: jnp.ndarray) -> jnp.ndarray:
         return _gs_operator_flat(pf, shape, R_grid, d_r, d_z)
 
-    sol, _info = jax.scipy.sparse.linalg.bicgstab(  # type: ignore[no-untyped-call]
+    sol, _info = jax.scipy.sparse.linalg.bicgstab(
         operator, rhs, x0=psi_flat, tol=_BICGSTAB_TOL, maxiter=_BICGSTAB_MAXITER, M=precond
     )
     return cast(jnp.ndarray, sol)
@@ -338,6 +346,7 @@ def _coupled_rhs(
     response_matrix: jnp.ndarray,
     wall_idx: jnp.ndarray,
     source_idx: jnp.ndarray,
+    separatrix_refinement: jnp.ndarray,
     cutoff_width: float,
     mu0: float,
 ) -> jnp.ndarray:
@@ -347,7 +356,12 @@ def _coupled_rhs(
     coupled step lives HERE, exactly once."""
     psi = psi_flat.reshape(shape)
     axis = smooth_axis_flux(psi)
-    bndry = smooth_xpoint_flux(psi, R_grid, Z_grid)
+    bndry = smooth_xpoint_flux(
+        psi,
+        R_grid,
+        Z_grid,
+        refinement=separatrix_refinement,
+    )
     j_phi = _plasma_current(
         psi,
         R_grid,
@@ -391,10 +405,12 @@ def solve_predictive_equilibrium(
 ) -> jnp.ndarray:
     """Solve the predictive free-boundary equilibrium from coils + profiles + Ip.
 
-    Anderson-accelerated fixed-point iteration of the coupled step :func:`_coupled_step` with an
-    ``Ip`` ramp for cold-start robustness. Returns the equilibrium ``ψ`` [Wb], shape
-    ``(NZ, NR)``. Pass ``response_matrix, wall_idx, source_idx`` from :func:`build_response_matrix`
-    (precomputed once per grid). ``psi_init`` defaults to the vacuum field (a genuine cold start).
+    Anderson-accelerated fixed-point iteration of the coupled step :func:`_coupled_step` with
+    ``Ip`` and separatrix-refinement continuation for cold-start robustness. Returns the
+    equilibrium ``ψ`` [Wb], shape ``(NZ, NR)``. Pass ``response_matrix, wall_idx, source_idx``
+    from :func:`build_response_matrix` (precomputed once per grid). ``psi_init`` defaults to the
+    vacuum field (a genuine cold start); an explicit warm start uses the refined separatrix
+    immediately.
 
     Iteration stops early once the fixed-point residual ``‖G(ψ)−ψ‖`` falls below ``tol`` relative
     to ``‖ψ‖`` — both to save work and to avoid the rank-deficient Anderson least-squares that a
@@ -425,7 +441,11 @@ def solve_predictive_equilibrium(
     if use_mg_preconditioner:
         precond = build_gs_mg_preconditioner(shape, R_grid, float(d_r), float(d_z))
 
-    def step(psi_flat: jnp.ndarray, ip_now: jnp.ndarray) -> jnp.ndarray:
+    def step(
+        psi_flat: jnp.ndarray,
+        ip_now: jnp.ndarray,
+        separatrix_refinement: jnp.ndarray,
+    ) -> jnp.ndarray:
         return _coupled_step(
             psi_flat,
             ip_now,
@@ -442,6 +462,7 @@ def solve_predictive_equilibrium(
             response_matrix,
             wall_idx,
             source_idx,
+            separatrix_refinement,
             cutoff_width,
             mu0,
             precond,
@@ -450,12 +471,32 @@ def solve_predictive_equilibrium(
     x = (psi_coil if psi_init is None else psi_init).reshape(-1)
     f_hist: list[jnp.ndarray] = []
     x_hist: list[jnp.ndarray] = []
+    use_separatrix_continuation = psi_init is None
     for k in range(n_iter):
         ip_k = ip_target * min(1.0, (k + 1.0) / max(ip_ramp, 1))
-        g_x = step(x, jnp.asarray(ip_k))
+        refinement = (
+            min(
+                1.0,
+                max(
+                    0.0,
+                    (k + 1.0 - DEFAULT_SEPARATRIX_START) / DEFAULT_SEPARATRIX_RAMP,
+                ),
+            )
+            if use_separatrix_continuation
+            else 1.0
+        )
+        g_x = step(x, jnp.asarray(ip_k), jnp.asarray(refinement))
         f = g_x - x
         # Converged (and Ip fully ramped): stop before the Anderson history goes rank-deficient.
-        if k >= ip_ramp and float(jnp.linalg.norm(f)) <= tol * (float(jnp.linalg.norm(x)) + 1.0):
+        continuation_complete = (
+            not use_separatrix_continuation
+            or k + 1 >= DEFAULT_SEPARATRIX_START + DEFAULT_SEPARATRIX_RAMP
+        )
+        if (
+            k >= ip_ramp
+            and continuation_complete
+            and float(jnp.linalg.norm(f)) <= tol * (float(jnp.linalg.norm(x)) + 1.0)
+        ):
             break
         f_hist.append(f)
         x_hist.append(x)
@@ -644,7 +685,7 @@ def _solve_diff_bwd(
     def preconditioner(x_flat: jnp.ndarray) -> jnp.ndarray:
         return x_flat / precond_diag
 
-    lam_flat, _info = bicgstab(  # type: ignore[no-untyped-call]
+    lam_flat, _info = bicgstab(
         adjoint_operator,
         psi_bar.reshape(-1),
         tol=_BICGSTAB_TOL,

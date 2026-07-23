@@ -83,6 +83,7 @@ def smooth_xpoint_flux(
     search_radius: float = DEFAULT_SEARCH_RADIUS,
     patch: int = DEFAULT_PATCH,
     search_below: bool = True,
+    refinement: float | jnp.ndarray = 1.0,
 ) -> jnp.ndarray:
     """Smooth, differentiable X-point (separatrix) flux ``ψ_bndry`` [same units as ``ψ``].
 
@@ -100,6 +101,8 @@ def smooth_xpoint_flux(
     search_radius : maximum axis-to-saddle distance in grid-normalised coordinates.
     patch : odd quadratic-fit window (≥ 3, ≤ min(NZ, NR)).
     search_below : if ``True`` search the lower band (lower single null), else the upper band.
+    refinement : continuation fraction in ``[0, 1]`` from the cold-start soft fallback to the
+        sub-cell saddle value. The physical residual and ordinary calls use ``1``.
 
     Returns
     -------
@@ -194,4 +197,6 @@ def smooth_xpoint_flux(
     )
     vertex = a + b * x_star + c * y_star + d * x_star**2 + e * y_star**2 + f * x_star * y_star
     valid = jnp.any(saddle_region) & (determinant < 0.0) & jnp.isfinite(vertex)
-    return jnp.where(valid, vertex, fallback)
+    refined = jnp.where(valid, vertex, fallback)
+    blend = jnp.clip(jnp.asarray(refinement), 0.0, 1.0)
+    return fallback + blend * (refined - fallback)

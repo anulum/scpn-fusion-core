@@ -14,10 +14,11 @@ forward is HOST-LOOP-bound — ~0 % GPU utilisation, wall-clock dominated by dis
 rather than linear algebra, while the multigrid-preconditioned inner solve already needs only
 5–6 Krylov iterations at 129² (grid-independent).
 
-This module removes the host from the loop: the ENTIRE iteration — Ip ramp, coupled Picard
-step (axis/X-point → Ip-normalised Jφ → von Hagenow wall flux → MG-preconditioned BiCGSTAB),
-Anderson mixing with rolling fixed-shape history, rank-deficiency guard and the early-stop
-test — runs inside a single :func:`jax.lax.while_loop` under :func:`jax.jit`.
+This module removes the host from the loop: the ENTIRE iteration — Ip ramp, soft-to-refined
+separatrix homotopy, coupled Picard step (axis/X-point → Ip-normalised Jφ → von Hagenow wall
+flux → MG-preconditioned BiCGSTAB), Anderson mixing with rolling fixed-shape history,
+rank-deficiency guard and the early-stop test — runs inside a single
+:func:`jax.lax.while_loop` under :func:`jax.jit`.
 
 Semantics match the eager solver's (same coupled step, same warm-up behaviour, same
 break-before-update early stop, same damped-Picard NaN fallback) to numerical tolerance —
@@ -51,6 +52,8 @@ from scpn_fusion.core.jax_free_boundary_predictive import (
     DEFAULT_IP_RAMP,
     DEFAULT_MIXING,
     DEFAULT_N_ITER,
+    DEFAULT_SEPARATRIX_RAMP,
+    DEFAULT_SEPARATRIX_START,
     DEFAULT_TOL,
     _coupled_rhs,
     _coupled_step,
@@ -88,6 +91,7 @@ def _make_runner(
     use_mg_preconditioner: bool,
     inner_solver: str,
     inner_cycles: int,
+    use_separatrix_continuation: bool,
     anderson_solver: str = "lstsq",
 ) -> Callable[..., jnp.ndarray]:
     """Build and jit the while_loop runner for one (geometry, settings) combination."""
@@ -120,7 +124,11 @@ def _make_runner(
     ) -> tuple[jnp.ndarray, jnp.ndarray]:
         dA = jnp.asarray(d_r * d_z)
 
-        def g_of(x: jnp.ndarray, ip_now: jnp.ndarray) -> jnp.ndarray:
+        def g_of(
+            x: jnp.ndarray,
+            ip_now: jnp.ndarray,
+            separatrix_refinement: jnp.ndarray,
+        ) -> jnp.ndarray:
             if inner_solver == "bicgstab":
                 return _coupled_step(
                     x,
@@ -138,6 +146,7 @@ def _make_runner(
                     response_matrix,
                     wall_idx,
                     source_idx,
+                    separatrix_refinement,
                     cutoff_width,
                     mu0,
                     precond,
@@ -161,6 +170,7 @@ def _make_runner(
                 response_matrix,
                 wall_idx,
                 source_idx,
+                separatrix_refinement,
                 cutoff_width,
                 mu0,
             )
@@ -179,10 +189,28 @@ def _make_runner(
         def body(state: _State) -> _State:
             k, x, f_hist, x_hist, n_valid, _done = state
             ip_k = ip_target * jnp.minimum(1.0, (k + 1.0) / ramp_div)
-            f = g_of(x, ip_k) - x
+            separatrix_refinement = (
+                jnp.clip(
+                    (k + 1.0 - DEFAULT_SEPARATRIX_START) / DEFAULT_SEPARATRIX_RAMP,
+                    0.0,
+                    1.0,
+                )
+                if use_separatrix_continuation
+                else jnp.asarray(1.0)
+            )
+            f = g_of(x, ip_k, separatrix_refinement) - x
             # Break-before-update semantics: once converged (Ip fully ramped), neither the
             # history nor x are touched — the loop exits returning the pre-update iterate.
-            done_now = (k >= ip_ramp) & (jnp.linalg.norm(f) <= tol * (jnp.linalg.norm(x) + 1.0))
+            continuation_complete = (
+                k + 1 >= DEFAULT_SEPARATRIX_START + DEFAULT_SEPARATRIX_RAMP
+                if use_separatrix_continuation
+                else jnp.asarray(True)
+            )
+            done_now = (
+                (k >= ip_ramp)
+                & continuation_complete
+                & (jnp.linalg.norm(f) <= tol * (jnp.linalg.norm(x) + 1.0))
+            )
             f_new = jnp.roll(f_hist, -1, axis=0).at[-1].set(f)
             x_new = jnp.roll(x_hist, -1, axis=0).at[-1].set(x)
             nv_new = jnp.minimum(n_valid + 1, m)
@@ -224,7 +252,7 @@ def _make_runner(
         k_final, x_final, _fh, _xh, _nv, _done = jax.lax.while_loop(cond, body, state0)
         return x_final.reshape(shape), k_final
 
-    return jax.jit(run)
+    return cast(Callable[..., jnp.ndarray], jax.jit(run))
 
 
 def solve_predictive_equilibrium_compiled(
@@ -319,6 +347,7 @@ def solve_predictive_equilibrium_compiled(
         bool(use_mg_preconditioner),
         str(inner_solver),
         int(inner_cycles),
+        psi_init is None,
         str(anderson_solver),
     )
     psi, k = runner(
@@ -386,6 +415,7 @@ def _make_batched_runner(
         use_mg_preconditioner,
         inner_solver,
         inner_cycles,
+        not shared_init,
         anderson_solver,
     )
 

@@ -25,6 +25,9 @@ jax.config.update("jax_enable_x64", True)
 
 from scpn_fusion.core.jax_free_boundary_gs import MU0_SI, greens_psi_si, vacuum_field_si
 from scpn_fusion.core.jax_free_boundary_predictive import (
+    DEFAULT_N_ITER,
+    DEFAULT_SEPARATRIX_RAMP,
+    DEFAULT_SEPARATRIX_START,
     _laplacian_star,
     _plasma_current,
     build_response_matrix,
@@ -45,6 +48,11 @@ _PSIN = jnp.linspace(0.0, 1.0, 6)
 _PPRIME = jnp.array([-8.0e4, -6.0e4, -4.0e4, -2.0e4, -0.7e4, 0.0])
 _FFPRIME = jnp.array([-1.2, -0.9, -0.6, -0.3, -0.1, 0.0])
 _IP = 1.0e6
+
+
+def test_default_iteration_budget_completes_separatrix_continuation() -> None:
+    """The cold-start default leaves a settling window after the homotopy reaches one."""
+    assert DEFAULT_N_ITER > DEFAULT_SEPARATRIX_START + DEFAULT_SEPARATRIX_RAMP
 
 
 @pytest.fixture(scope="module")

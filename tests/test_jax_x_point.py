@@ -104,6 +104,16 @@ def test_gradient_is_finite_and_averaging() -> None:
     assert abs(float(jnp.sum(g)) - 1.0) < 1e-6
 
 
+def test_refinement_is_an_exact_continuation_coordinate() -> None:
+    """The continuation midpoint is exactly halfway between fallback and refined values."""
+    R, Z = _grids()
+    psi = _saddle_field(R, Z)
+    fallback = smooth_xpoint_flux(psi, R, Z, refinement=0.0)
+    midpoint = smooth_xpoint_flux(psi, R, Z, refinement=0.5)
+    refined = smooth_xpoint_flux(psi, R, Z, refinement=1.0)
+    assert np.allclose(float(midpoint), 0.5 * float(fallback + refined), atol=1e-12)
+
+
 def test_remote_lower_saddle_does_not_override_plasma_separatrix() -> None:
     """A remote wall/coil saddle must not replace the plasma-local separatrix."""
     R, Z = _grids()
