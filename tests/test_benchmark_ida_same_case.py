@@ -24,6 +24,60 @@ def _digest(character: str = "a") -> str:
     return character * 64
 
 
+def _shape_diagnostics_fixture() -> dict[str, Any]:
+    region_values = {
+        "connected_core": (50, 0.5),
+        "separatrix_shell": (25, 0.2),
+        "private_flux": (0, 0.0),
+        "exterior": (4150, 0.3),
+    }
+    return {
+        "current_support": {
+            "absolute_current_inside_reference_fraction": 0.8,
+            "absolute_current_outside_reference_fraction": 0.2,
+            "candidate_mask_sha256": _digest("7"),
+            "candidate_point_count": 120,
+            "false_negative_fraction_of_reference": 0.1,
+            "false_negative_point_count": 10,
+            "false_positive_fraction_of_candidate": 0.25,
+            "false_positive_point_count": 30,
+            "intersection_point_count": 90,
+            "iou": 90 / 130,
+            "reference_mask_sha256": _digest("8"),
+            "reference_point_count": 100,
+            "relative_floor": benchmark.CURRENT_SUPPORT_RELATIVE_FLOOR,
+            "union_point_count": 130,
+        },
+        "error_centroid_m": {"r": 1.7, "z": -0.2},
+        "normalisation": {
+            "axis_error_wb": -0.6 - (-0.61),
+            "boundary_error_wb": -0.1 - (-0.1),
+            "span_ratio": (-0.1 - (-0.6)) / (-0.1 - (-0.61)),
+        },
+        "region_contract": {
+            "connected_core": "reference_axis_component:psi_n<0.8",
+            "current_support_relative_floor": benchmark.CURRENT_SUPPORT_RELATIVE_FLOOR,
+            "exterior": "reference_psi_n>1",
+            "private_flux": "reference_psi_n<=1:not_axis_connected",
+            "separatrix_shell": "reference_axis_component:0.8<=psi_n<=1",
+        },
+        "regions": {
+            name: {
+                "mask_sha256": _digest(str(index)),
+                "max_abs_error": 0.02 if point_count else None,
+                "mean_signed_error": 0.01 if point_count else None,
+                "point_count": point_count,
+                "rmse": 0.01 if point_count else None,
+                "squared_error_fraction": fraction,
+            }
+            for index, (name, (point_count, fraction)) in enumerate(
+                region_values.items(),
+                start=1,
+            )
+        },
+    }
+
+
 def _case(role: str, *, passed: bool = True) -> dict[str, Any]:
     return {
         "admitted": False,
@@ -98,6 +152,7 @@ def _case(role: str, *, passed: bool = True) -> dict[str, Any]:
         },
         "reference_mask_point_count": 100,
         "role": role,
+        "shape_diagnostics": _shape_diagnostics_fixture(),
         "threshold_results": {
             "gradient_audit": passed,
             "latency": passed,
@@ -332,6 +387,27 @@ def test_validate_report_rejects_false_warm_start_latency() -> None:
         benchmark.validate_report(report)
 
 
+def test_validate_report_rejects_shape_diagnostic_projection_drift() -> None:
+    """Reject topology partitions and current-support counts that do not close."""
+    report = _report()
+    report["cases"][0]["shape_diagnostics"]["regions"]["exterior"]["point_count"] -= 1
+    _reseal(report)
+    with pytest.raises(ValueError, match="partition"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["shape_diagnostics"]["current_support"]["union_point_count"] = 129
+    _reseal(report)
+    with pytest.raises(ValueError, match="current_support projection"):
+        benchmark.validate_report(report)
+
+    report = _report()
+    report["cases"][0]["shape_diagnostics"]["normalisation"]["axis_error_wb"] = 0.0
+    _reseal(report)
+    with pytest.raises(ValueError, match="normalisation"):
+        benchmark.validate_report(report)
+
+
 def test_validate_report_rejects_environment_source_and_solver_drift() -> None:
     """Bind the runtime, source-artifact, repository, and solver contracts."""
     report = _report()
@@ -511,6 +587,45 @@ def test_mask_boundary_axis_and_profile_fit_helpers() -> None:
     )
     assert coefficients.shape == (6,)
     assert np.allclose(reconstructed, values, atol=1.0e-12)
+
+
+def test_shape_error_diagnostics_partition_and_current_support() -> None:
+    """Partition reference topology and quantify candidate current-support drift."""
+    reference_psi_n = np.full((5, 5), 2.0, dtype=np.float64)
+    reference_psi_n[1:4, 1:4] = 0.9
+    reference_psi_n[2, 2] = 0.0
+    reference_psi_n[0, 4] = 0.5
+    candidate_psi_n = reference_psi_n + 0.1
+    reference_current_mask = np.zeros((5, 5), dtype=np.bool_)
+    reference_current_mask[1:4, 1:4] = True
+    candidate_current_density = reference_current_mask.astype(np.float64)
+    candidate_current_density[4, 4] = 1.0
+
+    diagnostics = benchmark._shape_error_diagnostics(
+        candidate_psi_n=candidate_psi_n,
+        reference_psi_n=reference_psi_n,
+        reference_current_mask=reference_current_mask,
+        candidate_current_density=candidate_current_density,
+        r_grid=np.linspace(1.0, 2.0, 5),
+        z_grid=np.linspace(-1.0, 1.0, 5),
+        candidate_axis=-0.5,
+        candidate_boundary=0.1,
+        reference_axis=-0.6,
+        reference_boundary=0.0,
+    )
+
+    regions = diagnostics["regions"]
+    assert regions["connected_core"]["point_count"] == 1
+    assert regions["separatrix_shell"]["point_count"] == 8
+    assert regions["private_flux"]["point_count"] == 1
+    assert regions["exterior"]["point_count"] == 15
+    assert sum(row["point_count"] for row in regions.values()) == 25
+    assert sum(row["squared_error_fraction"] for row in regions.values()) == pytest.approx(1.0)
+    support = diagnostics["current_support"]
+    assert support["intersection_point_count"] == 9
+    assert support["union_point_count"] == 10
+    assert support["iou"] == 0.9
+    assert support["absolute_current_outside_reference_fraction"] == 0.1
 
 
 def test_percentile_and_finite_difference_row() -> None:

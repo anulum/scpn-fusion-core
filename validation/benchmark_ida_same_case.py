@@ -94,6 +94,14 @@ THRESHOLDS: dict[str, float] = {
 WARM_START_ITERATION_CAP = 20
 WARM_START_IP_RAMP = 1
 WARM_START_MEASUREMENT_MODE = "same_input_from_converged_equilibrium"
+CONNECTED_CORE_PSI_N_MAX = 0.8
+CURRENT_SUPPORT_RELATIVE_FLOOR = 1.0e-6
+SHAPE_DIAGNOSTIC_REGIONS = (
+    "connected_core",
+    "separatrix_shell",
+    "private_flux",
+    "exterior",
+)
 _SHA256_LENGTH = 64
 _CASE_ROLES = ("development", "evaluation_candidate")
 _SOURCE_PATHS = {
@@ -237,6 +245,172 @@ def _reference_mask_boundary(mask: NDArray[np.bool_]) -> NDArray[np.bool_]:
     interior = np.zeros_like(mask)
     interior[1:-1, 1:-1] = mask[:-2, 1:-1] & mask[2:, 1:-1] & mask[1:-1, :-2] & mask[1:-1, 2:]
     return mask & ~interior
+
+
+def _axis_connected_component(
+    mask: NDArray[np.bool_],
+    reference_psi_n: FloatArray,
+) -> NDArray[np.bool_]:
+    """Return the four-connected component containing the reference magnetic axis."""
+    if mask.shape != reference_psi_n.shape or not np.any(mask):
+        raise ValueError("axis-connected mask inputs must be non-empty and shape matched")
+    candidates = np.where(mask, np.abs(reference_psi_n), np.inf)
+    seed = tuple(int(index) for index in np.unravel_index(np.argmin(candidates), mask.shape))
+    connected = np.zeros_like(mask)
+    connected[seed] = True
+    stack = [seed]
+    n_z, n_r = mask.shape
+    while stack:
+        z_index, r_index = stack.pop()
+        for neighbour_z, neighbour_r in (
+            (z_index - 1, r_index),
+            (z_index + 1, r_index),
+            (z_index, r_index - 1),
+            (z_index, r_index + 1),
+        ):
+            if (
+                0 <= neighbour_z < n_z
+                and 0 <= neighbour_r < n_r
+                and mask[neighbour_z, neighbour_r]
+                and not connected[neighbour_z, neighbour_r]
+            ):
+                connected[neighbour_z, neighbour_r] = True
+                stack.append((neighbour_z, neighbour_r))
+    return connected
+
+
+def _shape_error_diagnostics(
+    *,
+    candidate_psi_n: FloatArray,
+    reference_psi_n: FloatArray,
+    reference_current_mask: NDArray[np.bool_],
+    candidate_current_density: FloatArray,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    candidate_axis: float,
+    candidate_boundary: float,
+    reference_axis: float,
+    reference_boundary: float,
+) -> dict[str, Any]:
+    """Localise normalised-flux error without changing the solver or admission gates."""
+    shape = reference_psi_n.shape
+    if (
+        candidate_psi_n.shape != shape
+        or reference_current_mask.shape != shape
+        or candidate_current_density.shape != shape
+        or shape != (z_grid.size, r_grid.size)
+    ):
+        raise ValueError("shape diagnostics require matching ZxR arrays and one-dimensional grids")
+    finite = np.isfinite(candidate_psi_n) & np.isfinite(reference_psi_n)
+    if not np.all(finite):
+        raise ValueError("shape diagnostics require finite normalised flux arrays")
+    reference_inside = finite & (reference_psi_n <= 1.0)
+    axis_component = _axis_connected_component(reference_inside, reference_psi_n)
+    region_masks = {
+        "connected_core": axis_component & (reference_psi_n < CONNECTED_CORE_PSI_N_MAX),
+        "separatrix_shell": axis_component & (reference_psi_n >= CONNECTED_CORE_PSI_N_MAX),
+        "private_flux": reference_inside & ~axis_component,
+        "exterior": finite & ~reference_inside,
+    }
+    error = candidate_psi_n - reference_psi_n
+    squared_error = np.square(error)
+    total_squared_error = float(np.sum(squared_error))
+    regions: dict[str, dict[str, Any]] = {}
+    for name in SHAPE_DIAGNOSTIC_REGIONS:
+        mask = region_masks[name]
+        point_count = int(np.count_nonzero(mask))
+        if point_count:
+            values = error[mask]
+            mean_signed_error: float | None = float(np.mean(values))
+            rmse: float | None = float(np.sqrt(np.mean(np.square(values))))
+            max_abs_error: float | None = float(np.max(np.abs(values)))
+        else:
+            mean_signed_error = None
+            rmse = None
+            max_abs_error = None
+        regions[name] = {
+            "mask_sha256": _array_sha256(mask),
+            "max_abs_error": max_abs_error,
+            "mean_signed_error": mean_signed_error,
+            "point_count": point_count,
+            "rmse": rmse,
+            "squared_error_fraction": (
+                float(np.sum(squared_error[mask])) / total_squared_error
+                if total_squared_error > 0.0
+                else 0.0
+            ),
+        }
+
+    current_magnitude = np.abs(candidate_current_density)
+    current_max = float(np.max(current_magnitude))
+    if not math.isfinite(current_max) or current_max <= 0.0:
+        raise ValueError("shape diagnostics require non-zero finite candidate current density")
+    candidate_current_mask = current_magnitude >= (current_max * CURRENT_SUPPORT_RELATIVE_FLOOR)
+    intersection = reference_current_mask & candidate_current_mask
+    union = reference_current_mask | candidate_current_mask
+    false_negative = reference_current_mask & ~candidate_current_mask
+    false_positive = candidate_current_mask & ~reference_current_mask
+    reference_count = int(np.count_nonzero(reference_current_mask))
+    candidate_count = int(np.count_nonzero(candidate_current_mask))
+    intersection_count = int(np.count_nonzero(intersection))
+    union_count = int(np.count_nonzero(union))
+    absolute_current_sum = float(np.sum(current_magnitude))
+    absolute_current_outside_reference = float(np.sum(current_magnitude[~reference_current_mask]))
+
+    absolute_error = np.abs(error)
+    absolute_error_sum = float(np.sum(absolute_error))
+    r_mesh = np.broadcast_to(r_grid[np.newaxis, :], shape)
+    z_mesh = np.broadcast_to(z_grid[:, np.newaxis], shape)
+    error_centroid: dict[str, float | None] = (
+        {
+            "r": float(np.sum(absolute_error * r_mesh) / absolute_error_sum),
+            "z": float(np.sum(absolute_error * z_mesh) / absolute_error_sum),
+        }
+        if absolute_error_sum > 0.0
+        else {"r": None, "z": None}
+    )
+    return {
+        "current_support": {
+            "absolute_current_inside_reference_fraction": (
+                1.0 - absolute_current_outside_reference / absolute_current_sum
+            ),
+            "absolute_current_outside_reference_fraction": (
+                absolute_current_outside_reference / absolute_current_sum
+            ),
+            "candidate_mask_sha256": _array_sha256(candidate_current_mask),
+            "candidate_point_count": candidate_count,
+            "false_negative_fraction_of_reference": (
+                float(np.count_nonzero(false_negative)) / reference_count
+            ),
+            "false_negative_point_count": int(np.count_nonzero(false_negative)),
+            "false_positive_fraction_of_candidate": (
+                float(np.count_nonzero(false_positive)) / candidate_count
+            ),
+            "false_positive_point_count": int(np.count_nonzero(false_positive)),
+            "intersection_point_count": intersection_count,
+            "iou": intersection_count / union_count,
+            "reference_mask_sha256": _array_sha256(reference_current_mask),
+            "reference_point_count": reference_count,
+            "relative_floor": CURRENT_SUPPORT_RELATIVE_FLOOR,
+            "union_point_count": union_count,
+        },
+        "error_centroid_m": error_centroid,
+        "normalisation": {
+            "axis_error_wb": candidate_axis - reference_axis,
+            "boundary_error_wb": candidate_boundary - reference_boundary,
+            "span_ratio": (
+                (candidate_boundary - candidate_axis) / (reference_boundary - reference_axis)
+            ),
+        },
+        "region_contract": {
+            "connected_core": "reference_axis_component:psi_n<0.8",
+            "current_support_relative_floor": CURRENT_SUPPORT_RELATIVE_FLOOR,
+            "exterior": "reference_psi_n>1",
+            "private_flux": "reference_psi_n<=1:not_axis_connected",
+            "separatrix_shell": "reference_axis_component:0.8<=psi_n<=1",
+        },
+        "regions": regions,
+    }
 
 
 def _axis_value(
@@ -510,6 +684,7 @@ def _execute_case(
         DEFAULT_CUTOFF_WIDTH,
         MU0_SI,
     )
+    candidate_current_density = np.asarray(current_density, dtype=np.float64)
     candidate_current = float(jnp.sum(current_density) * d_area)
     relative_current_error = abs(candidate_current - run_spec.plasma_current_a) / max(
         abs(run_spec.plasma_current_a), 1.0
@@ -539,6 +714,18 @@ def _execute_case(
     residual_rms = float(np.sqrt(np.mean(np.square(nonlinear_residual[interior]))))
     source_rms = float(np.sqrt(np.mean(np.square(source[interior]))))
     relative_residual_rms = residual_rms / max(source_rms, 1.0e-30)
+    shape_diagnostics = _shape_error_diagnostics(
+        candidate_psi_n=np.asarray(candidate_psi_n, dtype=np.float64),
+        reference_psi_n=np.asarray(reference_psi_n, dtype=np.float64),
+        reference_current_mask=reference_mask,
+        candidate_current_density=candidate_current_density,
+        r_grid=r_grid,
+        z_grid=z_grid,
+        candidate_axis=candidate_axis,
+        candidate_boundary=candidate_boundary,
+        reference_axis=reference_axis,
+        reference_boundary=reference_boundary,
+    )
 
     cotangent_np = np.zeros_like(candidate_psi)
     cotangent_np[reference_mask] = 1.0 / float(np.count_nonzero(reference_mask))
@@ -724,6 +911,7 @@ def _execute_case(
         },
         "reference_mask_point_count": int(np.count_nonzero(reference_mask)),
         "role": role,
+        "shape_diagnostics": shape_diagnostics,
         "threshold_results": threshold_results,
     }
 
@@ -902,6 +1090,209 @@ def _walk_finite(value: object, *, field: str = "report") -> None:
     raise ValueError(f"{field} contains unsupported value type {type(value).__name__}")
 
 
+def _validate_shape_diagnostics(case: dict[str, Any], *, index: int) -> None:
+    field = f"cases[{index}].shape_diagnostics"
+    diagnostics = case.get("shape_diagnostics")
+    if not isinstance(diagnostics, dict) or set(diagnostics) != {
+        "current_support",
+        "error_centroid_m",
+        "normalisation",
+        "region_contract",
+        "regions",
+    }:
+        raise ValueError(f"{field} fields do not match the spatial-error contract")
+    expected_region_contract = {
+        "connected_core": "reference_axis_component:psi_n<0.8",
+        "current_support_relative_floor": CURRENT_SUPPORT_RELATIVE_FLOOR,
+        "exterior": "reference_psi_n>1",
+        "private_flux": "reference_psi_n<=1:not_axis_connected",
+        "separatrix_shell": "reference_axis_component:0.8<=psi_n<=1",
+    }
+    if diagnostics.get("region_contract") != expected_region_contract:
+        raise ValueError(f"{field}.region_contract does not match the frozen definitions")
+
+    grid_shape = case.get("grid_shape")
+    regions = diagnostics.get("regions")
+    if (
+        not isinstance(grid_shape, list)
+        or len(grid_shape) != 2
+        or any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 1
+            for value in grid_shape
+        )
+        or not isinstance(regions, dict)
+        or set(regions) != set(SHAPE_DIAGNOSTIC_REGIONS)
+    ):
+        raise ValueError(f"{field}.regions do not partition the declared grid")
+    total_points = 0
+    squared_error_fraction = 0.0
+    any_nonzero_error = False
+    for name in SHAPE_DIAGNOSTIC_REGIONS:
+        row = regions.get(name)
+        row_field = f"{field}.regions.{name}"
+        if not isinstance(row, dict) or set(row) != {
+            "mask_sha256",
+            "max_abs_error",
+            "mean_signed_error",
+            "point_count",
+            "rmse",
+            "squared_error_fraction",
+        }:
+            raise ValueError(f"{row_field} fields do not match the spatial-error contract")
+        _require_sha256(row.get("mask_sha256"), field=f"{row_field}.mask_sha256")
+        point_count = row.get("point_count")
+        fraction = row.get("squared_error_fraction")
+        if (
+            isinstance(point_count, bool)
+            or not isinstance(point_count, int)
+            or point_count < 0
+            or isinstance(fraction, bool)
+            or not isinstance(fraction, (int, float))
+            or not 0.0 <= fraction <= 1.0
+        ):
+            raise ValueError(f"{row_field} counts or squared-error fraction are invalid")
+        total_points += point_count
+        squared_error_fraction += float(fraction)
+        error_values = (
+            row.get("max_abs_error"),
+            row.get("mean_signed_error"),
+            row.get("rmse"),
+        )
+        if point_count == 0:
+            if error_values != (None, None, None) or fraction != 0.0:
+                raise ValueError(f"{row_field} empty-region projection is invalid")
+        elif any(
+            isinstance(value, bool) or not isinstance(value, (int, float)) for value in error_values
+        ):
+            raise ValueError(f"{row_field} error metrics must be numeric for non-empty regions")
+        else:
+            max_abs_error, _, rmse = cast(tuple[float, float, float], error_values)
+            if max_abs_error < 0.0 or rmse < 0.0:
+                raise ValueError(f"{row_field} absolute error metrics must be non-negative")
+            any_nonzero_error = any_nonzero_error or rmse > 0.0
+    if total_points != math.prod(grid_shape):
+        raise ValueError(f"{field}.regions do not partition the declared grid")
+    expected_fraction_sum = 1.0 if any_nonzero_error else 0.0
+    if not math.isclose(squared_error_fraction, expected_fraction_sum, abs_tol=1.0e-12):
+        raise ValueError(f"{field}.regions squared-error fractions are inconsistent")
+
+    support = diagnostics.get("current_support")
+    if not isinstance(support, dict) or set(support) != {
+        "absolute_current_inside_reference_fraction",
+        "absolute_current_outside_reference_fraction",
+        "candidate_mask_sha256",
+        "candidate_point_count",
+        "false_negative_fraction_of_reference",
+        "false_negative_point_count",
+        "false_positive_fraction_of_candidate",
+        "false_positive_point_count",
+        "intersection_point_count",
+        "iou",
+        "reference_mask_sha256",
+        "reference_point_count",
+        "relative_floor",
+        "union_point_count",
+    }:
+        raise ValueError(f"{field}.current_support fields do not match the spatial-error contract")
+    _require_sha256(
+        support.get("candidate_mask_sha256"),
+        field=f"{field}.current_support.candidate_mask_sha256",
+    )
+    _require_sha256(
+        support.get("reference_mask_sha256"),
+        field=f"{field}.current_support.reference_mask_sha256",
+    )
+    count_names = (
+        "candidate_point_count",
+        "false_negative_point_count",
+        "false_positive_point_count",
+        "intersection_point_count",
+        "reference_point_count",
+        "union_point_count",
+    )
+    if any(
+        isinstance(support.get(name), bool)
+        or not isinstance(support.get(name), int)
+        or support[name] < 0
+        for name in count_names
+    ):
+        raise ValueError(f"{field}.current_support counts are invalid")
+    candidate_count = support["candidate_point_count"]
+    reference_count = support["reference_point_count"]
+    intersection_count = support["intersection_point_count"]
+    union_count = support["union_point_count"]
+    inside_current_fraction = support.get("absolute_current_inside_reference_fraction")
+    outside_current_fraction = support.get("absolute_current_outside_reference_fraction")
+    if (
+        candidate_count < 1
+        or reference_count < 1
+        or union_count != candidate_count + reference_count - intersection_count
+        or support["false_negative_point_count"] != reference_count - intersection_count
+        or support["false_positive_point_count"] != candidate_count - intersection_count
+        or support.get("relative_floor") != CURRENT_SUPPORT_RELATIVE_FLOOR
+        or support.get("iou") != intersection_count / union_count
+        or support.get("false_negative_fraction_of_reference")
+        != support["false_negative_point_count"] / reference_count
+        or support.get("false_positive_fraction_of_candidate")
+        != support["false_positive_point_count"] / candidate_count
+        or isinstance(inside_current_fraction, bool)
+        or not isinstance(inside_current_fraction, (int, float))
+        or isinstance(outside_current_fraction, bool)
+        or not isinstance(outside_current_fraction, (int, float))
+        or not 0.0 <= inside_current_fraction <= 1.0
+        or not 0.0 <= outside_current_fraction <= 1.0
+        or not math.isclose(
+            inside_current_fraction + outside_current_fraction,
+            1.0,
+            abs_tol=1.0e-12,
+        )
+    ):
+        raise ValueError(f"{field}.current_support projection is inconsistent")
+
+    metrics = case.get("metrics")
+    normalisation = diagnostics.get("normalisation")
+    if (
+        not isinstance(metrics, dict)
+        or not isinstance(normalisation, dict)
+        or set(normalisation)
+        != {
+            "axis_error_wb",
+            "boundary_error_wb",
+            "span_ratio",
+        }
+    ):
+        raise ValueError(f"{field}.normalisation fields are invalid")
+    candidate_axis = cast(float, metrics.get("candidate_axis_wb"))
+    candidate_boundary = cast(float, metrics.get("candidate_boundary_wb"))
+    reference_axis = cast(float, metrics.get("reference_axis_wb"))
+    reference_boundary = cast(float, metrics.get("reference_boundary_wb"))
+    if (
+        any(
+            isinstance(value, bool) or not isinstance(value, (int, float))
+            for value in (candidate_axis, candidate_boundary, reference_axis, reference_boundary)
+        )
+        or reference_boundary == reference_axis
+    ):
+        raise ValueError(f"{field}.normalisation source metrics are invalid")
+    expected_normalisation = {
+        "axis_error_wb": candidate_axis - reference_axis,
+        "boundary_error_wb": candidate_boundary - reference_boundary,
+        "span_ratio": (
+            (candidate_boundary - candidate_axis) / (reference_boundary - reference_axis)
+        ),
+    }
+    if normalisation != expected_normalisation:
+        raise ValueError(f"{field}.normalisation is inconsistent with the case metrics")
+    centroid = diagnostics.get("error_centroid_m")
+    if not isinstance(centroid, dict) or set(centroid) != {"r", "z"}:
+        raise ValueError(f"{field}.error_centroid_m fields are invalid")
+    if any(
+        value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)))
+        for value in centroid.values()
+    ):
+        raise ValueError(f"{field}.error_centroid_m values are invalid")
+
+
 def validate_report(payload: dict[str, Any]) -> None:
     """Validate a report and reject tamper, drift, overclaim, and false admission."""
     if set(payload) != _REQUIRED_TOP_LEVEL:
@@ -1075,6 +1466,7 @@ def validate_report(payload: dict[str, Any]) -> None:
         expected_p95 = _percentile([float(value) for value in warm_ms], 95.0)
         if latency.get("p50_ms") != expected_p50 or latency.get("p95_ms") != expected_p95:
             raise ValueError("case latency percentiles do not match the recorded warm samples")
+        _validate_shape_diagnostics(case, index=index)
     role_contract = payload.get("case_role_contract")
     if not isinstance(role_contract, dict):
         raise ValueError("case_role_contract must be an object")
