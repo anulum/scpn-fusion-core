@@ -1,28 +1,27 @@
 # IDA geometry/source feedback trace
 
 - Status: `diagnostic_complete_claims_blocked`
-- Payload SHA-256: `f43d360ca542a6e0bb3baddc6ff6aee135603984974088b84e1ef0ed386f0a4a`
+- Payload SHA-256: `2d3d8a5a6596396b0781b11ac182eb5b2a832944f2d50a2d6c3bd02579ed653f`
 - Same-case terminal parity: `false`
 - Facility/control/PCS/safety/scientific admission: `false`
 
 | Run | Iteration | Phase | Refinement | Production TV | Ref-boundary TV | FP rel L2 | Terminal |
 |---|---:|---|---:|---:|---:|---:|---|
 | cold | 0 | ip_ramp | 0.000 | 0.870184109 | 0.857727193 | 0.291801609 | false |
-| cold | 14 | ip_ramp | 0.000 | 0.959097678 | 0.907798286 | 0.370437744 | false |
-| cold | 29 | ip_ramp | 0.000 | 0.523674301 | 0.479292096 | 0.484217257 | false |
-| cold | 49 | pre_separatrix | 0.000 | 0.862373976 | 0.892890055 | 0.0610183655 | false |
-| cold | 79 | pre_separatrix | 0.000 | 0.906692188 | 0.936816498 | 0.0441126716 | false |
-| cold | 99 | pre_separatrix | 0.000 | 0.943954475 | 0.967549403 | 1.38811999e-05 | false |
-| cold | 100 | separatrix_homotopy | 0.050 | 0.945071784 | 0.96755047 | 0.00494995514 | false |
-| cold | 109 | separatrix_homotopy | 0.500 | 0.95945549 | 0.970664343 | 0.0196034864 | false |
-| cold | 119 | separatrix_homotopy | 1.000 | 0.975056094 | 0.975627246 | 0.0256275941 | false |
-| cold | 129 | post_homotopy | 1.000 | 0.980264665 | 0.977444497 | 0.0254953637 | false |
-| cold | 149 | post_homotopy | 1.000 | 0.98783456 | 0.982693995 | 0.00136481388 | false |
-| cold | 159 | post_homotopy | 1.000 | 0.987921478 | 0.982839782 | 2.77706068e-10 | true |
-| warm | 0 | warm_polish | 1.000 | 0.987921478 | 0.982839782 | 2.77706068e-10 | false |
-| warm | 1 | warm_polish | 1.000 | 0.987921478 | 0.982839782 | 2.00160244e-10 | true |
+| cold | 14 | ip_ramp | 0.000 | 0.950958222 | 0.906254832 | 0.512359119 | false |
+| cold | 29 | ip_ramp | 0.000 | 0.933741092 | 0.898832252 | 2.32721682 | false |
+| cold | 49 | pre_separatrix | 0.000 | 0.43866241 | 0.355012796 | 0.00532217421 | false |
+| cold | 79 | pre_separatrix | 0.000 | 0.441251996 | 0.35985253 | 0 | false |
+| cold | 99 | pre_separatrix | 0.000 | 0.441251996 | 0.35985253 | 0 | false |
+| cold | 100 | separatrix_homotopy | 0.050 | 0.438155977 | 0.35985253 | 0.00629332026 | false |
+| cold | 109 | separatrix_homotopy | 0.500 | 0.412183442 | 0.359852661 | 0.0573208898 | false |
+| cold | 119 | separatrix_homotopy | 1.000 | 0.387916321 | 0.360442401 | 0.102737081 | false |
+| cold | 129 | post_homotopy | 1.000 | 0.284178009 | 0.246083492 | 0.0128612805 | false |
+| cold | 149 | post_homotopy | 1.000 | 0.251353196 | 0.220638753 | 5.22139502e-10 | true |
+| warm | 0 | warm_polish | 1.000 | 0.251353196 | 0.220638753 | 5.22139502e-10 | false |
+| warm | 1 | warm_polish | 1.000 | 0.251353196 | 0.220638753 | 3.71439263e-10 | true |
 
-- Largest sparse TV increase: `0.338699675` into `pre_separatrix`
+- Largest sparse TV increase: `0.0807741128` into `ip_ramp`
 - Next ratcheting target: `compiled_trace_parity_failure`
 
 This trace routes one engineering correction; it is not physical validation.
