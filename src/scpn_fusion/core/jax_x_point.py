@@ -51,6 +51,7 @@ plasmas are out of scope for this first version.
 from __future__ import annotations
 
 from functools import partial
+from typing import cast
 
 import jax
 import jax.numpy as jnp
@@ -199,4 +200,4 @@ def smooth_xpoint_flux(
     valid = jnp.any(saddle_region) & (determinant < 0.0) & jnp.isfinite(vertex)
     refined = jnp.where(valid, vertex, fallback)
     blend = jnp.clip(jnp.asarray(refinement), 0.0, 1.0)
-    return fallback + blend * (refined - fallback)
+    return cast(jnp.ndarray, fallback + blend * (refined - fallback))
