@@ -69,13 +69,13 @@
             "smoothness_ratio_limit": 0.25
           },
           {
-            "autodiff": 0.0027751140051041484,
+            "autodiff": 0.002775114005104149,
             "epsilon": 0.0001,
             "finite_difference": 0.0027751541936335555,
             "index": 6,
             "input": "ffprime_coefficients_t2_m2_per_wb",
             "passed": true,
-            "relative_error": 1.4481548268316686e-05,
+            "relative_error": 1.4481548268160414e-05,
             "relative_error_limit": 0.01,
             "smoothness_ratio": 0.0004093849173611468,
             "smoothness_ratio_limit": 0.25
@@ -104,18 +104,18 @@
       "latency": {
         "admissible_isolated_evidence": false,
         "cold_start_iterations": 154,
-        "compile_and_first_ms": 45776.53949894011,
+        "compile_and_first_ms": 46254.62453602813,
         "measurement_mode": "same_input_from_converged_equilibrium",
-        "p50_ms": 10.192766087129712,
-        "p95_ms": 12.233172357082367,
-        "reference_freegs_ms": 4016.7878118809313,
+        "p50_ms": 9.985161945223808,
+        "p95_ms": 12.51680536661297,
+        "reference_freegs_ms": 3377.5847998913378,
         "repeat_count": 3,
         "synchronised": true,
-        "warm_compile_and_first_ms": 46703.90848489478,
+        "warm_compile_and_first_ms": 43478.43659785576,
         "warm_ms": [
-          8.404664928093553,
-          10.192766087129712,
-          12.459884164854884
+          12.798099080100656,
+          8.808770915493369,
+          9.985161945223808
         ],
         "warm_start_iterations": [
           2,
@@ -146,6 +146,23 @@
       "reference_mask_point_count": 717,
       "role": "development",
       "shape_diagnostics": {
+        "current_distribution": {
+          "candidate_centroid_m": {
+            "r": 1.078045033284155,
+            "z": -0.7669324065492845
+          },
+          "centroid_delta_m": {
+            "r": -0.17698960144137144,
+            "z": -0.8023497832105236
+          },
+          "cosine_similarity": 0.007744445411535102,
+          "l1_distance": 1.9525440556791112,
+          "reference_centroid_m": {
+            "r": 1.2550346347255263,
+            "z": 0.03541737666123909
+          },
+          "total_variation_distance": 0.9762720278395556
+        },
         "current_support": {
           "absolute_current_inside_reference_fraction": 0.07870070493875492,
           "absolute_current_outside_reference_fraction": 0.9212992950612451,
@@ -254,25 +271,25 @@
             "smoothness_ratio_limit": 0.25
           },
           {
-            "autodiff": -7.3999431028952e-09,
+            "autodiff": -7.399943102895195e-09,
             "epsilon": 17.211847266847233,
             "finite_difference": -7.416862030947821e-09,
             "index": 6,
             "input": "pprime_coefficients_pa_per_wb",
             "passed": true,
-            "relative_error": 0.00228114369419638,
+            "relative_error": 0.002281143694197049,
             "relative_error_limit": 0.01,
             "smoothness_ratio": 0.015516250728314043,
             "smoothness_ratio_limit": 0.25
           },
           {
-            "autodiff": -0.024931893626654097,
+            "autodiff": -0.0249318936266541,
             "epsilon": 0.0001132859096178029,
             "finite_difference": -0.02493754862851425,
             "index": 6,
             "input": "ffprime_coefficients_t2_m2_per_wb",
             "passed": true,
-            "relative_error": 0.00022676654968758862,
+            "relative_error": 0.00022676654968744952,
             "relative_error_limit": 0.01,
             "smoothness_ratio": 0.00032950221174258437,
             "smoothness_ratio_limit": 0.25
@@ -301,18 +318,18 @@
       "latency": {
         "admissible_isolated_evidence": false,
         "cold_start_iterations": 180,
-        "compile_and_first_ms": 45082.24623417482,
+        "compile_and_first_ms": 47473.81419292651,
         "measurement_mode": "same_input_from_converged_equilibrium",
-        "p50_ms": 21.73990895971656,
-        "p95_ms": 23.370114946737885,
-        "reference_freegs_ms": 28831.070951884612,
+        "p50_ms": 24.465003050863743,
+        "p95_ms": 24.916326836682856,
+        "reference_freegs_ms": 31128.909416031092,
         "repeat_count": 3,
         "synchronised": true,
-        "warm_compile_and_first_ms": 45774.33202788234,
+        "warm_compile_and_first_ms": 48649.01253092103,
         "warm_ms": [
-          21.73990895971656,
-          23.55124894529581,
-          20.047830184921622
+          24.465003050863743,
+          24.96647392399609,
+          24.28682497702539
         ],
         "warm_start_iterations": [
           2,
@@ -343,6 +360,23 @@
       "reference_mask_point_count": 3271,
       "role": "evaluation_candidate",
       "shape_diagnostics": {
+        "current_distribution": {
+          "candidate_centroid_m": {
+            "r": 1.646047934350538,
+            "z": -0.020215965080445326
+          },
+          "centroid_delta_m": {
+            "r": -0.0420389347166803,
+            "z": 0.058426658824882606
+          },
+          "cosine_similarity": 0.939297157042303,
+          "l1_distance": 0.5027063934600788,
+          "reference_centroid_m": {
+            "r": 1.6880868690672184,
+            "z": -0.07864262390532793
+          },
+          "total_variation_distance": 0.2513531967300394
+        },
         "current_support": {
           "absolute_current_inside_reference_fraction": 0.9529374768688997,
           "absolute_current_outside_reference_fraction": 0.04706252313110028,
@@ -434,9 +468,9 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      5.01318359375,
-      5.54931640625,
-      6.04296875
+      5.75146484375,
+      5.9677734375,
+      6.22021484375
     ],
     "isolated_host": false,
     "jax_version": "0.7.1",
@@ -446,8 +480,8 @@
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-23T07:20:24Z",
-  "payload_sha256": "7dda4c095acfed4603246e474d13c1516fd458834bb1a5ee60aa8665f9fef939",
+  "generated_at": "2026-07-23T07:27:56Z",
+  "payload_sha256": "cf7a64f8e69d0b6406c046acbc0e486db912d6c639cc0dfd57647f5e1e15061b",
   "schema_version": "scpn-fusion.ida-same-case-evidence.v2",
   "solver_contract": {
     "conditioned_inputs": [
@@ -479,7 +513,7 @@
   "source_artifacts": {
     "benchmark": {
       "path": "validation/benchmark_ida_same_case.py",
-      "sha256": "5b912c10593364e40a994a482d536d7d81733686286f38faf59701cc5c3def87"
+      "sha256": "5a51978a97f6ca4a78933e4f965ca70a2750f008b6b8248f1e9a534f0f03a80a"
     },
     "compiled_forward": {
       "path": "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
@@ -498,7 +532,7 @@
       "sha256": "629866b1579dd792feef5a6bc44cee5a058ae9fee3652e078741101af67307a3"
     },
     "repository": {
-      "git_commit": "36a91ca03bc3620f014859d965b08a5d5f84faa6",
+      "git_commit": "097a784d0d83bfc55953bac6a34a37981e7caac3",
       "path": "."
     },
     "solver": {
