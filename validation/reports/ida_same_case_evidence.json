@@ -2,10 +2,8 @@
   "benchmark_id": "DIII-D-IDA-FB-JAX-B",
   "blockers": [
     "collaborator_solver_reference_not_bound",
-    "evaluation_threshold_failed:gradient_audit",
     "evaluation_threshold_failed:latency",
-    "evaluation_threshold_failed:psi_span_nrmse",
-    "evaluation_threshold_failed:relative_current_error",
+    "evaluation_threshold_failed:psi_n_rmse",
     "execution_preceding_selection_lock_missing",
     "facility_validation_not_bound",
     "isolated_latency_evidence_missing",
@@ -30,7 +28,7 @@
       "admitted": false,
       "case_id": "freegs_01_test_tokamak_freeboundary",
       "digests": {
-        "candidate_psi_sha256": "f53cb8c5cd7731612ba392b73ef2f4ebfe1fbd6c0db8a1e5cc8ac9f0b90b8d62",
+        "candidate_psi_sha256": "b1aeba71adc001c62175a2a5a07900a0c60bb0b2c96792325924b6b057af1de0",
         "coil_current_sha256": "d864bc8d2214a14763c5646a5af546ecb0e71d8f80cd32c51fbffa90b823f332",
         "ffprime_coefficients_sha256": "06461337ef70a64ff482782984a46374b43c573e0f5df0842dfe3f528ab0e88c",
         "ffprime_values_sha256": "32b47ba90a7a30817fc2860b3a4262a668e975760b820139585981c9026987ff",
@@ -47,39 +45,39 @@
         "cotangent_sha256": "e5bfe495cb5068e1b62790f9fd00782ce6318f60a9150d7e63aab88a4f968398",
         "rows": [
           {
-            "autodiff": -3.745179315968982e-07,
+            "autodiff": 3.4613118383048546e-07,
             "epsilon": 9.90809212977359,
-            "finite_difference": -1.716953434014133e-07,
+            "finite_difference": 3.46122268875807e-07,
             "index": 24,
             "input": "coil_current_a",
-            "passed": false,
-            "relative_error": 0.5415564144837456,
+            "passed": true,
+            "relative_error": 2.5755999733486476e-05,
             "relative_error_limit": 0.05,
-            "smoothness_ratio": 0.0003238945367581149,
+            "smoothness_ratio": 5.2193757561295826e-05,
             "smoothness_ratio_limit": 0.25
           },
           {
-            "autodiff": 8.53000177986593e-08,
+            "autodiff": 1.0691387445319519e-08,
             "epsilon": 1.0864246994694404,
-            "finite_difference": 8.118914453496105e-08,
+            "finite_difference": 1.0687032638882902e-08,
             "index": 6,
             "input": "pprime_coefficients_pa_per_wb",
-            "passed": false,
-            "relative_error": 0.04819311144109588,
+            "passed": true,
+            "relative_error": 0.0004073191116577883,
             "relative_error_limit": 0.01,
-            "smoothness_ratio": 6.79682955025865e-08,
+            "smoothness_ratio": 0.0008408082272515658,
             "smoothness_ratio_limit": 0.25
           },
           {
-            "autodiff": 0.055045267629004496,
+            "autodiff": 0.002617965254210249,
             "epsilon": 0.0001,
-            "finite_difference": 0.05798672448195652,
+            "finite_difference": 0.002618236687804143,
             "index": 6,
             "input": "ffprime_coefficients_t2_m2_per_wb",
-            "passed": false,
-            "relative_error": 0.05072638399962226,
+            "passed": true,
+            "relative_error": 0.00010367038058791627,
             "relative_error_limit": 0.01,
-            "smoothness_ratio": 5.12610850661009e-05,
+            "smoothness_ratio": 4.494043290555449e-05,
             "smoothness_ratio_limit": 0.25
           }
         ]
@@ -89,41 +87,45 @@
         65
       ],
       "input_contract": {
+        "anderson_depth": 8,
         "coil_filament_count": 26,
-        "n_picard": 10,
-        "picard_omega": 0.6,
+        "cutoff_width": 0.03,
+        "ip_ramp": 30,
+        "ip_target_a": 200000.0,
+        "mixing": 0.5,
+        "n_iter_cap": 120,
         "profile_coefficient_count": 12,
         "profile_degree": 3,
         "profile_sample_count": 129,
-        "use_smooth_axis": false
+        "self_field_wall_boundary": true,
+        "separatrix": "smooth_xpoint_flux"
       },
       "latency": {
         "admissible_isolated_evidence": false,
-        "compile_and_first_ms": 2896.872251993045,
-        "p50_ms": 2131.1287279240787,
-        "p95_ms": 2252.1655439632013,
-        "reference_freegs_ms": 4231.911817099899,
-        "repeat_count": 3,
+        "compile_and_first_ms": 51265.98987285979,
+        "p50_ms": 241.8714528903365,
+        "p95_ms": 241.8714528903365,
+        "reference_freegs_ms": 4258.511953987181,
+        "repeat_count": 1,
         "synchronised": true,
         "warm_ms": [
-          2265.6140790786594,
-          2131.1287279240787,
-          1611.6530960425735
+          241.8714528903365
         ]
       },
       "machine_class": "TestTokamak",
       "metrics": {
-        "candidate_axis_wb": 0.2516800357097548,
-        "candidate_boundary_wb": 0.1564809700941354,
-        "candidate_current_a": 318188.20711685857,
-        "psi_max_abs_error_wb": 0.18648207956915522,
-        "psi_rmse_wb": 0.14072023367077155,
-        "psi_span_nrmse": 2.6346233083725425,
+        "candidate_axis_wb": 0.07463350661330245,
+        "candidate_boundary_wb": 0.0032571497205778626,
+        "candidate_current_a": 199999.99999999997,
+        "psi_max_abs_error_wb": 0.0705296205387358,
+        "psi_n_rmse": 0.36772036466479596,
+        "psi_rmse_wb": 0.03969258698548447,
+        "raw_psi_span_nrmse": 0.7431412819156147,
         "reference_axis_wb": 0.09066558223778727,
         "reference_boundary_wb": 0.037253683381666874,
         "reference_current_a": 200000.0,
-        "relative_current_error": 0.5909410355842929,
-        "relative_nonlinear_residual_rms": 0.08566298566248352
+        "relative_current_error": 1.4551915228366853e-16,
+        "relative_nonlinear_residual_rms": 4.4045727569688954e-08
       },
       "public_example": {
         "path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py",
@@ -132,18 +134,18 @@
       "reference_mask_point_count": 717,
       "role": "development",
       "threshold_results": {
-        "gradient_audit": false,
+        "gradient_audit": true,
         "latency": false,
-        "psi_span_nrmse": false,
-        "relative_current_error": false,
-        "relative_nonlinear_residual_rms": false
+        "psi_n_rmse": false,
+        "relative_current_error": true,
+        "relative_nonlinear_residual_rms": true
       }
     },
     {
       "admitted": false,
       "case_id": "freegs_16_diiid_public_example",
       "digests": {
-        "candidate_psi_sha256": "a965612aad7e1e2dd920a48f85452947346e98eae077959bed9b05e2bbda596d",
+        "candidate_psi_sha256": "2a74e801c16eb8c511c861bd8e80470e2ce3e34454bebc6f3c0afc163b4c566e",
         "coil_current_sha256": "d8e92df5f301a01597d495be732029fa3a5d62f85471e994d9b77af1d6afcaf0",
         "ffprime_coefficients_sha256": "0af179a6222aa153d1bcced3a77265d04b56e0744ca15dd7c53e32681ffcc396",
         "ffprime_values_sha256": "cdbcff8481fc459780d543b5e8ce3430debbf889b21f51cbd4737fe82b6bfb74",
@@ -160,39 +162,39 @@
         "cotangent_sha256": "57d832ae2b068f50c5a828eebacbfdb220e1912e1e7a05ef2f9c1192bed0b78d",
         "rows": [
           {
-            "autodiff": -2.32068638717422e-07,
+            "autodiff": 7.589191480843417e-07,
             "epsilon": 3.134907687107827,
-            "finite_difference": 1.1625820293848445e-07,
+            "finite_difference": 7.590809242320634e-07,
             "index": 75,
             "input": "coil_current_a",
-            "passed": false,
-            "relative_error": 1.500964730008375,
+            "passed": true,
+            "relative_error": 0.00021312108176795746,
             "relative_error_limit": 0.05,
-            "smoothness_ratio": 7.804396009007587e-06,
+            "smoothness_ratio": 0.00011009839336409511,
             "smoothness_ratio_limit": 0.25
           },
           {
-            "autodiff": 3.691776893010935e-07,
+            "autodiff": -1.2135368286384868e-08,
             "epsilon": 17.211847266847233,
-            "finite_difference": 3.2860215690657206e-07,
+            "finite_difference": -1.2143285961969718e-08,
             "index": 6,
             "input": "pprime_coefficients_pa_per_wb",
-            "passed": false,
-            "relative_error": 0.10990786705268336,
+            "passed": true,
+            "relative_error": 0.0006520208458935193,
             "relative_error_limit": 0.01,
-            "smoothness_ratio": 3.0268859177245776e-06,
+            "smoothness_ratio": 0.0017538804135490786,
             "smoothness_ratio_limit": 0.25
           },
           {
-            "autodiff": 0.13013318822579925,
+            "autodiff": -0.035846901838075415,
             "epsilon": 0.0001132859096178029,
-            "finite_difference": 0.12251480689225645,
+            "finite_difference": -0.03585338761918873,
             "index": 6,
             "input": "ffprime_coefficients_t2_m2_per_wb",
-            "passed": false,
-            "relative_error": 0.058542954625255494,
+            "passed": true,
+            "relative_error": 0.00018089730270961197,
             "relative_error_limit": 0.01,
-            "smoothness_ratio": 7.166412378180011e-06,
+            "smoothness_ratio": 3.734779626278028e-05,
             "smoothness_ratio_limit": 0.25
           }
         ]
@@ -202,41 +204,45 @@
         129
       ],
       "input_contract": {
+        "anderson_depth": 8,
         "coil_filament_count": 216,
-        "n_picard": 10,
-        "picard_omega": 0.6,
+        "cutoff_width": 0.03,
+        "ip_ramp": 30,
+        "ip_target_a": -1533632.0,
+        "mixing": 0.5,
+        "n_iter_cap": 120,
         "profile_coefficient_count": 12,
         "profile_degree": 3,
         "profile_sample_count": 129,
-        "use_smooth_axis": false
+        "self_field_wall_boundary": true,
+        "separatrix": "smooth_xpoint_flux"
       },
       "latency": {
         "admissible_isolated_evidence": false,
-        "compile_and_first_ms": 2737.608657917008,
-        "p50_ms": 2080.6987381074578,
-        "p95_ms": 2175.6446484243497,
-        "reference_freegs_ms": 31056.735270889476,
-        "repeat_count": 3,
+        "compile_and_first_ms": 72270.67356184125,
+        "p50_ms": 607.9327529296279,
+        "p95_ms": 607.9327529296279,
+        "reference_freegs_ms": 39958.61191605218,
+        "repeat_count": 1,
         "synchronised": true,
         "warm_ms": [
-          2186.1941940151155,
-          2080.6987381074578,
-          1960.9304040204734
+          607.9327529296279
         ]
       },
       "machine_class": "DIIID",
       "metrics": {
-        "candidate_axis_wb": -1.9793309271599813,
-        "candidate_boundary_wb": -0.9980978426988326,
-        "candidate_current_a": -2332000.9514328144,
-        "psi_max_abs_error_wb": 1.4070282084539807,
-        "psi_rmse_wb": 1.1251575772517117,
-        "psi_span_nrmse": 2.0875458241740508,
+        "candidate_axis_wb": -0.46018845953854465,
+        "candidate_boundary_wb": -0.03174011075031642,
+        "candidate_current_a": -1533632.0000000002,
+        "psi_max_abs_error_wb": 0.2644620657959684,
+        "psi_n_rmse": 0.30778363663973246,
+        "psi_rmse_wb": 0.1075964166724606,
+        "raw_psi_span_nrmse": 0.1996275498311271,
         "reference_axis_wb": -0.6623460412516753,
         "reference_boundary_wb": -0.12336023110933429,
         "reference_current_a": -1533632.0,
-        "relative_current_error": 0.5205740043457716,
-        "relative_nonlinear_residual_rms": 0.028930007443069596
+        "relative_current_error": 1.518165007341198e-16,
+        "relative_nonlinear_residual_rms": 2.300397762714847e-09
       },
       "public_example": {
         "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
@@ -245,10 +251,10 @@
       "reference_mask_point_count": 3271,
       "role": "evaluation_candidate",
       "threshold_results": {
-        "gradient_audit": false,
+        "gradient_audit": true,
         "latency": false,
-        "psi_span_nrmse": false,
-        "relative_current_error": false,
+        "psi_n_rmse": false,
+        "relative_current_error": true,
         "relative_nonlinear_residual_rms": true
       }
     }
@@ -268,9 +274,9 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      11.5380859375,
-      8.03759765625,
-      10.3994140625
+      9.3359375,
+      9.44970703125,
+      9.5107421875
     ],
     "isolated_host": false,
     "jax_version": "0.7.1",
@@ -280,10 +286,13 @@
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-23T03:31:48Z",
-  "payload_sha256": "d62bedf91bde3d616f3ad8b210a84ad281dac163dcf494fd5b409c8284e04761",
-  "schema_version": "scpn-fusion.ida-same-case-evidence.v1",
+  "generated_at": "2026-07-23T04:27:25+00:00",
+  "payload_sha256": "ffb78509f7d07ee579e993b4bf059cdd3921bad66f7bd486a2c5c0bb478200da",
+  "schema_version": "scpn-fusion.ida-same-case-evidence.v2",
   "solver_contract": {
+    "conditioned_inputs": [
+      "ip_target_a"
+    ],
     "differentiated_inputs": [
       "coil_current_a",
       "pprime_coefficients_pa_per_wb",
@@ -297,7 +306,7 @@
       "latency_ms": 20.0,
       "picard_iterations": 10
     },
-    "solver_id": "scpn_fusion.core.jax_free_boundary_gs_implicit.solve_free_boundary_gs_implicit",
+    "solver_id": "scpn_fusion.core.jax_free_boundary_predictive.solve_predictive_equilibrium_diff",
     "units": {
       "coil_current": "A",
       "ffprime": "T^2 m^2 / Wb",
@@ -310,27 +319,35 @@
   "source_artifacts": {
     "benchmark": {
       "path": "validation/benchmark_ida_same_case.py",
-      "sha256": "0d30ad09282c1abae4a4dbc988491e2718f35aa4c5c8502a33da9ecee123c87f"
+      "sha256": "5550ed3cca97aa5e0bcf76858435ba9ef1be853186da51e3ae7902b0a58c212d"
+    },
+    "compiled_forward": {
+      "path": "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+      "sha256": "50a518a7257a3b7cb04e5cb257f4fc7190965084d92fc4a5662c7399968de82d"
     },
     "freegs_public_case_runner": {
       "path": "validation/benchmark_freegs_public_example_reconstruction.py",
       "sha256": "fab701a85a83eb4ebd6edb4d4dc75ba8a2c0eb3d76609f2619bda8e67523456a"
+    },
+    "o_point": {
+      "path": "src/scpn_fusion/core/jax_o_point.py",
+      "sha256": "9fb68ac186662465ad0badfb3ff33da2496a356978b7c912858a9b9f7c3baaaa"
     },
     "profile_basis": {
       "path": "src/scpn_fusion/core/jax_profile_basis.py",
       "sha256": "629866b1579dd792feef5a6bc44cee5a058ae9fee3652e078741101af67307a3"
     },
     "repository": {
-      "git_commit": "d8373f0b2b77ad98a5139dbd37d5c1954e9e0212",
+      "git_commit": "2e186a904abb9f123161bdd342ab0fb53e8cda50",
       "path": "."
     },
     "solver": {
-      "path": "src/scpn_fusion/core/jax_free_boundary_gs_implicit.py",
-      "sha256": "4a112778cf9f6c9617d1270e12a3cefbc84b1b2b39eec85d36a6e571ed6bb8ac"
+      "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+      "sha256": "16c3d995b5631469f55474537e3957d87b298cf8366020a0a03678aeb31fc5a1"
     },
-    "source": {
-      "path": "src/scpn_fusion/core/jax_free_boundary_gs.py",
-      "sha256": "ae6755c460f703ffb585fc15bd0756c2b6f247d81c6b0ad581bf4ef7a019752d"
+    "x_point": {
+      "path": "src/scpn_fusion/core/jax_x_point.py",
+      "sha256": "a9656a18514a1966d0a13d0e236c70261037d5ccc78999d82fe5e29961afd4d2"
     }
   },
   "status": "blocked_same_case_evidence",
@@ -339,7 +356,7 @@
     "gradient_smoothness_ratio_max": 0.25,
     "latency_p95_ms_max": 20.0,
     "profile_gradient_relative_error_max": 0.01,
-    "psi_span_nrmse_max": 0.05,
+    "psi_n_rmse_max": 0.05,
     "relative_current_error_max": 0.05,
     "relative_nonlinear_residual_rms_max": 0.05
   }
