@@ -55,6 +55,13 @@ _RunnerOutput = (
         jnp.ndarray,
         jnp.ndarray,
         jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
+        jnp.ndarray,
     ]
 )
 

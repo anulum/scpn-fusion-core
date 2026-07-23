@@ -107,6 +107,16 @@ def test_compiled_trace_preserves_and_exposes_the_exact_loop(response: Response)
     assert np.array_equal(np.asarray(trace.separatrix_refinement), np.zeros(4))
     assert not bool(jnp.any(trace.converged))
     assert bool(jnp.all(jnp.isfinite(trace.fixed_point_residual)))
+    assert trace.terminal_iteration_index == 3
+    assert np.array_equal(np.asarray(trace.terminal_psi_before), np.asarray(trace.psi_before[-1]))
+    assert np.array_equal(
+        np.asarray(trace.terminal_fixed_point_residual),
+        np.asarray(trace.fixed_point_residual[-1]),
+    )
+    assert np.array_equal(np.asarray(trace.terminal_psi_after), np.asarray(trace.psi_after[-1]))
+    assert trace.terminal_ip_now == pytest.approx(_IP)
+    assert trace.terminal_separatrix_refinement == 0.0
+    assert not trace.terminal_converged
 
 
 def test_compiled_trace_records_break_before_update(response: Response) -> None:
@@ -135,6 +145,16 @@ def test_compiled_trace_records_break_before_update(response: Response) -> None:
     assert np.array_equal(np.asarray(trace.psi_before[1]), np.zeros((17, 17)))
     assert np.array_equal(np.asarray(trace.fixed_point_residual[1]), np.zeros((17, 17)))
     assert np.array_equal(np.asarray(trace.psi_after[1]), np.zeros((17, 17)))
+    assert trace.terminal_iteration_index == 1
+    assert np.array_equal(np.asarray(trace.terminal_psi_before), np.asarray(trace.psi_before[0]))
+    assert np.array_equal(
+        np.asarray(trace.terminal_fixed_point_residual),
+        np.asarray(trace.fixed_point_residual[0]),
+    )
+    assert np.array_equal(np.asarray(trace.terminal_psi_after), np.asarray(trace.psi_after[0]))
+    assert trace.terminal_ip_now == pytest.approx(_IP)
+    assert trace.terminal_separatrix_refinement == 1.0
+    assert trace.terminal_converged
 
 
 @pytest.mark.parametrize(

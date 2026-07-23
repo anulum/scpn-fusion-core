@@ -45,8 +45,22 @@ _TracedState = tuple[
     jnp.ndarray,
     jnp.ndarray,
     jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
 ]
 _TraceRunnerOutput = tuple[
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
+    jnp.ndarray,
     jnp.ndarray,
     jnp.ndarray,
     jnp.ndarray,
@@ -90,6 +104,20 @@ class CompiledPredictiveTrace:
         Soft-to-saddle homotopy fraction active at each checkpoint.
     converged
         Whether the checkpoint triggered the break-before-update stop.
+    terminal_iteration_index
+        Zero-based index of the final transition executed.
+    terminal_psi_before
+        State presented to the final coupled-map transition [Wb].
+    terminal_fixed_point_residual
+        Final coupled-map residual [Wb].
+    terminal_psi_after
+        State accepted by the final transition [Wb].
+    terminal_ip_now
+        Plasma current active on the final transition [A].
+    terminal_separatrix_refinement
+        Homotopy fraction active on the final transition.
+    terminal_converged
+        Whether the final transition triggered the convergence stop.
     """
 
     equilibrium: jnp.ndarray
@@ -102,6 +130,13 @@ class CompiledPredictiveTrace:
     ip_now: jnp.ndarray
     separatrix_refinement: jnp.ndarray
     converged: jnp.ndarray
+    terminal_iteration_index: int
+    terminal_psi_before: jnp.ndarray
+    terminal_fixed_point_residual: jnp.ndarray
+    terminal_psi_after: jnp.ndarray
+    terminal_ip_now: float
+    terminal_separatrix_refinement: float
+    terminal_converged: bool
 
 
 def validate_trace_request(
@@ -157,6 +192,13 @@ def run_checkpointed_while_loop(
             ip_trace,
             refinement_trace,
             converged_trace,
+            _terminal_iteration,
+            _terminal_psi_before,
+            _terminal_residual,
+            _terminal_psi_after,
+            _terminal_ip,
+            _terminal_refinement,
+            _terminal_converged,
         ) = state[6:]
         iteration = base[0]
         (
@@ -193,6 +235,13 @@ def run_checkpointed_while_loop(
             ip_trace,
             refinement_trace,
             converged_trace,
+            iteration,
+            x_before,
+            fixed_point_residual,
+            accepted,
+            ip_now,
+            refinement,
+            done_now,
         )
 
     traced_state0: _TracedState = (
@@ -204,6 +253,13 @@ def run_checkpointed_while_loop(
         jnp.zeros((trace_count,), dtype=x0.dtype),
         jnp.zeros((trace_count,), dtype=x0.dtype),
         jnp.zeros((trace_count,), dtype=bool),
+        jnp.asarray(-1),
+        jnp.zeros((n_flat,), dtype=x0.dtype),
+        jnp.zeros((n_flat,), dtype=x0.dtype),
+        jnp.zeros((n_flat,), dtype=x0.dtype),
+        jnp.asarray(0.0, dtype=x0.dtype),
+        jnp.asarray(0.0, dtype=x0.dtype),
+        jnp.asarray(False),
     )
     traced_final = jax.lax.while_loop(traced_condition, traced_body, traced_state0)
     (
@@ -220,6 +276,13 @@ def run_checkpointed_while_loop(
         ip_trace,
         refinement_trace,
         converged_trace,
+        terminal_iteration,
+        terminal_psi_before,
+        terminal_residual,
+        terminal_psi_after,
+        terminal_ip,
+        terminal_refinement,
+        terminal_converged,
     ) = traced_final
     return (
         equilibrium.reshape(shape),
@@ -231,6 +294,13 @@ def run_checkpointed_while_loop(
         ip_trace,
         refinement_trace,
         converged_trace,
+        terminal_iteration,
+        terminal_psi_before.reshape(shape),
+        terminal_residual.reshape(shape),
+        terminal_psi_after.reshape(shape),
+        terminal_ip,
+        terminal_refinement,
+        terminal_converged,
     )
 
 
@@ -250,6 +320,13 @@ def build_compiled_predictive_trace(
         ip_now,
         separatrix_refinement,
         converged,
+        terminal_iteration_index,
+        terminal_psi_before,
+        terminal_fixed_point_residual,
+        terminal_psi_after,
+        terminal_ip_now,
+        terminal_separatrix_refinement,
+        terminal_converged,
     ) = cast(_TraceRunnerOutput, result)
     return CompiledPredictiveTrace(
         equilibrium=equilibrium,
@@ -262,4 +339,11 @@ def build_compiled_predictive_trace(
         ip_now=ip_now,
         separatrix_refinement=separatrix_refinement,
         converged=converged,
+        terminal_iteration_index=int(terminal_iteration_index),
+        terminal_psi_before=terminal_psi_before,
+        terminal_fixed_point_residual=terminal_fixed_point_residual,
+        terminal_psi_after=terminal_psi_after,
+        terminal_ip_now=float(terminal_ip_now),
+        terminal_separatrix_refinement=float(terminal_separatrix_refinement),
+        terminal_converged=bool(terminal_converged),
     )
