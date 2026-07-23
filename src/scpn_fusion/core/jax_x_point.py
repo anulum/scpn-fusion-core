@@ -72,6 +72,7 @@ DEFAULT_AXIS_MARGIN = 6
 DEFAULT_AXIS_BETA = 6.0
 DEFAULT_SEARCH_RADIUS = 0.40
 DEFAULT_PATCH = 5
+_MONOTONIC_CANDIDATES = 8
 
 
 @partial(jax.jit, static_argnames=("lower_frac", "edge", "search_below", "patch"))
@@ -191,29 +192,44 @@ def smooth_xpoint_flux(
     weights = jax.nn.softmax((-beta * score).reshape(-1))
     fallback = jnp.sum(weights * psi.reshape(-1))
 
-    # A true separatrix saddle is local to and topologically connected with the plasma axis.
-    # Check monotonicity at fixed fractions of every axis-to-candidate line. The integer sample
-    # locations select the basin only; the final quadratic vertex retains the local derivative.
-    delta = psi - axis_value
-    direction = jnp.where(delta >= 0.0, 1.0, -1.0)
-    tolerance = 1.0e-3 * (jnp.abs(delta) + rms * 1.0e-12)
-    previous = jnp.full_like(psi, axis_value)
-    monotonic = jnp.ones_like(psi, dtype=bool)
-    for fraction in (0.2, 0.4, 0.6, 0.8):
-        sample_i = jnp.round(i_axis_cell + fraction * (ii - i_axis_cell)).astype(int)
-        sample_j = jnp.round(j_axis_cell + fraction * (jj - j_axis_cell)).astype(int)
-        sample = psi[sample_i, sample_j]
-        monotonic = monotonic & (direction * (sample - previous) >= -tolerance)
-        previous = sample
-    monotonic = monotonic & (direction * (psi - previous) >= -tolerance)
-
     # Remote wall/coil nulls can have a smaller sampled |∇ψ|² than the physical X-point. Reject
     # them geometrically, then follow the standard primary-X-point ordering: among isolated,
-    # monotonic saddles, choose the one closest to the magnetic axis in flux space.
+    # saddles, rank a fixed top-k by distance to the magnetic axis in flux space.
     distance2 = ((ii - i_axis) / nz) ** 2 + ((jj - j_axis) / nr) ** 2
-    saddle_region = region & saddle & local_minimum & monotonic & (distance2 <= search_radius**2)
-    saddle_score = jnp.where(saddle_region, jnp.abs(psi - axis_value), big)
-    flat_index = jnp.argmin(saddle_score.reshape(-1))
+    saddle_region = region & saddle & local_minimum & (distance2 <= search_radius**2)
+    saddle_score = jnp.where(saddle_region, jnp.abs(psi - axis_value), big).reshape(-1)
+    candidate_count = min(_MONOTONIC_CANDIDATES, nz * nr)
+    _neg_scores, candidate_indices = jax.lax.top_k(-saddle_score, candidate_count)
+
+    # Check only those isolated candidates at fixed fractions of the axis-to-candidate line.
+    # This is O(top-k), rather than four full-grid gathers inside every fixed-point iteration.
+    monotonic_candidates = []
+    for candidate_index in candidate_indices:
+        candidate_i = candidate_index // nr
+        candidate_j = candidate_index % nr
+        candidate_value = psi[candidate_i, candidate_j]
+        delta = candidate_value - axis_value
+        direction = jnp.where(delta >= 0.0, 1.0, -1.0)
+        tolerance = 1.0e-3 * (jnp.abs(delta) + rms * 1.0e-12)
+        previous = axis_value
+        monotonic_candidate = jnp.asarray(True)
+        for fraction in (0.2, 0.4, 0.6, 0.8):
+            sample_i = jnp.round(i_axis_cell + fraction * (candidate_i - i_axis_cell)).astype(int)
+            sample_j = jnp.round(j_axis_cell + fraction * (candidate_j - j_axis_cell)).astype(int)
+            sample = psi[sample_i, sample_j]
+            monotonic_candidate = monotonic_candidate & (
+                direction * (sample - previous) >= -tolerance
+            )
+            previous = sample
+        monotonic_candidate = monotonic_candidate & (
+            direction * (candidate_value - previous) >= -tolerance
+        )
+        monotonic_candidates.append(monotonic_candidate)
+    monotonic_mask = jnp.stack(monotonic_candidates)
+    candidate_scores = saddle_score[candidate_indices]
+    valid_candidate_scores = jnp.where(monotonic_mask, candidate_scores, big)
+    selected = jnp.argmin(valid_candidate_scores)
+    flat_index = candidate_indices[selected]
     i0 = jnp.clip(flat_index // nr, centre, nz - 1 - centre)
     j0 = jnp.clip(flat_index % nr, centre, nr - 1 - centre)
 
@@ -232,5 +248,10 @@ def smooth_xpoint_flux(
         float(centre),
     )
     vertex = a + b * x_star + c * y_star + d * x_star**2 + e * y_star**2 + f * x_star * y_star
-    valid = jnp.any(saddle_region) & (determinant < 0.0) & jnp.isfinite(vertex)
+    valid = (
+        jnp.any(saddle_region)
+        & jnp.any(monotonic_mask)
+        & (determinant < 0.0)
+        & jnp.isfinite(vertex)
+    )
     return jnp.where(valid, vertex, fallback)
