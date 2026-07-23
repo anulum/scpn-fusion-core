@@ -284,6 +284,7 @@ def _shape_error_diagnostics(
     candidate_psi_n: FloatArray,
     reference_psi_n: FloatArray,
     reference_current_mask: NDArray[np.bool_],
+    reference_current_density: FloatArray,
     candidate_current_density: FloatArray,
     r_grid: FloatArray,
     z_grid: FloatArray,
@@ -297,6 +298,7 @@ def _shape_error_diagnostics(
     if (
         candidate_psi_n.shape != shape
         or reference_current_mask.shape != shape
+        or reference_current_density.shape != shape
         or candidate_current_density.shape != shape
         or shape != (z_grid.size, r_grid.size)
     ):
@@ -357,10 +359,33 @@ def _shape_error_diagnostics(
     absolute_current_sum = float(np.sum(current_magnitude))
     absolute_current_outside_reference = float(np.sum(current_magnitude[~reference_current_mask]))
 
-    absolute_error = np.abs(error)
-    absolute_error_sum = float(np.sum(absolute_error))
     r_mesh = np.broadcast_to(r_grid[np.newaxis, :], shape)
     z_mesh = np.broadcast_to(z_grid[:, np.newaxis], shape)
+    reference_current_magnitude = np.where(
+        np.isfinite(reference_current_density),
+        np.abs(reference_current_density),
+        0.0,
+    )
+    reference_absolute_current_sum = float(np.sum(reference_current_magnitude))
+    if not math.isfinite(reference_absolute_current_sum) or reference_absolute_current_sum <= 0.0:
+        raise ValueError("shape diagnostics require non-zero finite reference current density")
+    candidate_distribution = current_magnitude / absolute_current_sum
+    reference_distribution = reference_current_magnitude / reference_absolute_current_sum
+    current_l1_distance = float(np.sum(np.abs(candidate_distribution - reference_distribution)))
+    candidate_current_centroid = {
+        "r": float(np.sum(candidate_distribution * r_mesh)),
+        "z": float(np.sum(candidate_distribution * z_mesh)),
+    }
+    reference_current_centroid = {
+        "r": float(np.sum(reference_distribution * r_mesh)),
+        "z": float(np.sum(reference_distribution * z_mesh)),
+    }
+    distribution_norm_product = float(
+        np.linalg.norm(candidate_distribution) * np.linalg.norm(reference_distribution)
+    )
+
+    absolute_error = np.abs(error)
+    absolute_error_sum = float(np.sum(absolute_error))
     error_centroid: dict[str, float | None] = (
         {
             "r": float(np.sum(absolute_error * r_mesh) / absolute_error_sum),
@@ -370,6 +395,24 @@ def _shape_error_diagnostics(
         else {"r": None, "z": None}
     )
     return {
+        "current_distribution": {
+            "candidate_centroid_m": candidate_current_centroid,
+            "centroid_delta_m": {
+                "r": candidate_current_centroid["r"] - reference_current_centroid["r"],
+                "z": candidate_current_centroid["z"] - reference_current_centroid["z"],
+            },
+            "cosine_similarity": float(
+                np.clip(
+                    np.sum(candidate_distribution * reference_distribution)
+                    / distribution_norm_product,
+                    0.0,
+                    1.0,
+                )
+            ),
+            "l1_distance": current_l1_distance,
+            "reference_centroid_m": reference_current_centroid,
+            "total_variation_distance": 0.5 * current_l1_distance,
+        },
         "current_support": {
             "absolute_current_inside_reference_fraction": (
                 1.0 - absolute_current_outside_reference / absolute_current_sum
@@ -718,6 +761,7 @@ def _execute_case(
         candidate_psi_n=np.asarray(candidate_psi_n, dtype=np.float64),
         reference_psi_n=np.asarray(reference_psi_n, dtype=np.float64),
         reference_current_mask=reference_mask,
+        reference_current_density=reference_jtor,
         candidate_current_density=candidate_current_density,
         r_grid=r_grid,
         z_grid=z_grid,
@@ -1094,6 +1138,7 @@ def _validate_shape_diagnostics(case: dict[str, Any], *, index: int) -> None:
     field = f"cases[{index}].shape_diagnostics"
     diagnostics = case.get("shape_diagnostics")
     if not isinstance(diagnostics, dict) or set(diagnostics) != {
+        "current_distribution",
         "current_support",
         "error_centroid_m",
         "normalisation",
@@ -1248,6 +1293,49 @@ def _validate_shape_diagnostics(case: dict[str, Any], *, index: int) -> None:
         )
     ):
         raise ValueError(f"{field}.current_support projection is inconsistent")
+
+    distribution = diagnostics.get("current_distribution")
+    if not isinstance(distribution, dict) or set(distribution) != {
+        "candidate_centroid_m",
+        "centroid_delta_m",
+        "cosine_similarity",
+        "l1_distance",
+        "reference_centroid_m",
+        "total_variation_distance",
+    }:
+        raise ValueError(f"{field}.current_distribution fields are invalid")
+    centroid_rows: dict[str, dict[str, Any]] = {}
+    for name in ("candidate_centroid_m", "centroid_delta_m", "reference_centroid_m"):
+        row = distribution.get(name)
+        if (
+            not isinstance(row, dict)
+            or set(row) != {"r", "z"}
+            or any(
+                isinstance(value, bool) or not isinstance(value, (int, float))
+                for value in row.values()
+            )
+        ):
+            raise ValueError(f"{field}.current_distribution.{name} is invalid")
+        centroid_rows[name] = row
+    l1_distance = distribution.get("l1_distance")
+    total_variation_distance = distribution.get("total_variation_distance")
+    cosine_similarity = distribution.get("cosine_similarity")
+    if (
+        isinstance(l1_distance, bool)
+        or not isinstance(l1_distance, (int, float))
+        or not 0.0 <= l1_distance <= 2.0
+        or isinstance(total_variation_distance, bool)
+        or not isinstance(total_variation_distance, (int, float))
+        or total_variation_distance != 0.5 * l1_distance
+        or isinstance(cosine_similarity, bool)
+        or not isinstance(cosine_similarity, (int, float))
+        or not 0.0 <= cosine_similarity <= 1.0
+        or centroid_rows["centroid_delta_m"]["r"]
+        != centroid_rows["candidate_centroid_m"]["r"] - centroid_rows["reference_centroid_m"]["r"]
+        or centroid_rows["centroid_delta_m"]["z"]
+        != centroid_rows["candidate_centroid_m"]["z"] - centroid_rows["reference_centroid_m"]["z"]
+    ):
+        raise ValueError(f"{field}.current_distribution projection is inconsistent")
 
     metrics = case.get("metrics")
     normalisation = diagnostics.get("normalisation")

@@ -32,6 +32,14 @@ def _shape_diagnostics_fixture() -> dict[str, Any]:
         "exterior": (4150, 0.3),
     }
     return {
+        "current_distribution": {
+            "candidate_centroid_m": {"r": 1.7, "z": -0.1},
+            "centroid_delta_m": {"r": 1.7 - 1.6, "z": -0.1 - (-0.05)},
+            "cosine_similarity": 0.9,
+            "l1_distance": 0.4,
+            "reference_centroid_m": {"r": 1.6, "z": -0.05},
+            "total_variation_distance": 0.2,
+        },
         "current_support": {
             "absolute_current_inside_reference_fraction": 0.8,
             "absolute_current_outside_reference_fraction": 0.2,
@@ -605,6 +613,7 @@ def test_shape_error_diagnostics_partition_and_current_support() -> None:
         candidate_psi_n=candidate_psi_n,
         reference_psi_n=reference_psi_n,
         reference_current_mask=reference_current_mask,
+        reference_current_density=reference_current_mask.astype(np.float64),
         candidate_current_density=candidate_current_density,
         r_grid=np.linspace(1.0, 2.0, 5),
         z_grid=np.linspace(-1.0, 1.0, 5),
@@ -626,6 +635,9 @@ def test_shape_error_diagnostics_partition_and_current_support() -> None:
     assert support["union_point_count"] == 10
     assert support["iou"] == 0.9
     assert support["absolute_current_outside_reference_fraction"] == 0.1
+    distribution = diagnostics["current_distribution"]
+    assert distribution["l1_distance"] == pytest.approx(0.2)
+    assert distribution["total_variation_distance"] == pytest.approx(0.1)
 
 
 def test_percentile_and_finite_difference_row() -> None:

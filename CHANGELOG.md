@@ -12,8 +12,8 @@
 - Digest-bound IDA shape-error diagnostics that partition the reference
   normalised flux into axis-connected core, separatrix shell, private-flux,
   and exterior regions; record regional error moments and masks; and quantify
-  candidate-versus-reference plasma-current support without changing solver
-  physics or promotion gates.
+  candidate-versus-reference plasma-current support, distribution distance,
+  and centroid shift without changing solver physics or promotion gates.
 
 ### Validation
 
