@@ -71,6 +71,19 @@ def _report() -> dict[str, Any]:
             ("exact_sampled", "6", 0.004),
         )
     }
+    anchor = {
+        name: {
+            "current_density_sha256": digest * 64,
+            "distribution": _distribution(tv),
+            "support": _support(),
+        }
+        for name, digest, tv in (
+            ("candidate_axis_reference_boundary", "5", 0.22),
+            ("production_smooth_anchors", "6", 0.25),
+            ("reference_axis_candidate_boundary", "7", 0.25),
+            ("reference_axis_reference_boundary", "8", 0.22),
+        )
+    }
     self_consistent = {
         "candidate_psi_sha256": "7" * 64,
         "distribution": _distribution(0.25),
@@ -116,6 +129,7 @@ def _report() -> dict[str, Any]:
         },
         profile_fit=profile_fit,
         fixed_reference_sources=fixed,
+        candidate_anchor_ablation=anchor,
         self_consistent_candidate=self_consistent,
         source_commit="f" * 40,
         source_worktree_clean=True,
@@ -176,6 +190,10 @@ def test_build_validate_render_and_write_report(tmp_path: Path) -> None:
         report["routing"]["next_ratcheting_target"]
         == "self_consistent_equilibrium_geometry_and_flux_normalisation"
     )
+    assert (
+        report["routing"]["candidate_anchor_ablation"]["next_ratcheting_target"]
+        == "candidate_flux_geometry_primary_boundary_anchor_secondary_axis_anchor_excluded"
+    )
     markdown = diagnostic.render_markdown(report)
     assert "Self-consistent candidate" in markdown
     json_path = tmp_path / "report.json"
@@ -218,6 +236,7 @@ def test_build_report_records_dirty_source_and_unresolved_route() -> None:
         source_same_case=report["source_same_case"],
         profile_fit=report["profile_fit"],
         fixed_reference_sources=fixed,
+        candidate_anchor_ablation=report["candidate_anchor_ablation"],
         self_consistent_candidate=report["self_consistent_candidate"],
         source_commit="f" * 40,
         source_worktree_clean=False,
@@ -269,4 +288,8 @@ def test_real_diiid_fixed_reference_ablation() -> None:
     assert (
         route["next_ratcheting_target"]
         == "self_consistent_equilibrium_geometry_and_flux_normalisation"
+    )
+    assert (
+        route["candidate_anchor_ablation"]["next_ratcheting_target"]
+        == "candidate_flux_geometry_primary_boundary_anchor_secondary_axis_anchor_excluded"
     )

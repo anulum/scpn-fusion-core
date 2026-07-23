@@ -63,9 +63,18 @@ _import_freegs: Callable[[], tuple[ModuleType | None, str | None, str | None]] =
 _make_equilibrium: Callable[[ModuleType, Any], tuple[Any, Any, Any, Any]] = (
     _freegs_public._make_equilibrium
 )
+_machine_filaments: Callable[[Any], tuple[Any, list[tuple[float, float, float]]]] = (
+    _freegs_public._machine_filaments
+)
 DEFAULT_CUTOFF_WIDTH: float = _predictive.DEFAULT_CUTOFF_WIDTH
 _plasma_current: Callable[..., Any] = _predictive._plasma_current
 MU0_SI: float = _free_boundary.MU0_SI
+_build_response_matrix: Callable[..., Any] = _same_case.build_response_matrix
+_bspline_design_matrix: Callable[..., Any] = _same_case.bspline_design_matrix
+_evaluate_profile: Callable[..., Any] = _same_case.evaluate_profile
+_solve_compiled: Callable[..., Any] = _same_case.solve_predictive_equilibrium_compiled
+_smooth_axis_flux: Callable[..., Any] = _same_case.smooth_axis_flux
+_smooth_xpoint_flux: Callable[..., Any] = _same_case.smooth_xpoint_flux
 
 # Re-export the contract surface used by callers and focused tests.
 SCHEMA_VERSION = contract.SCHEMA_VERSION
@@ -90,6 +99,7 @@ def build_report(
     source_same_case: dict[str, Any],
     profile_fit: dict[str, dict[str, Any]],
     fixed_reference_sources: dict[str, dict[str, Any]],
+    candidate_anchor_ablation: dict[str, dict[str, Any]],
     self_consistent_candidate: dict[str, Any],
     source_commit: str,
     source_worktree_clean: bool,
@@ -102,6 +112,7 @@ def build_report(
         source_same_case=source_same_case,
         profile_fit=profile_fit,
         fixed_reference_sources=fixed_reference_sources,
+        candidate_anchor_ablation=candidate_anchor_ablation,
         self_consistent_candidate=self_consistent_candidate,
         source_commit=source_commit,
         source_worktree_clean=source_worktree_clean,
@@ -200,7 +211,7 @@ def _evaluation_case(same_case: dict[str, Any]) -> dict[str, Any]:
 
 def _solve_reference(
     same_case_report_path: Path,
-) -> tuple[dict[str, Any], Any, Any, Any, str | None]:
+) -> tuple[dict[str, Any], dict[str, Any], Any, Any, Any, Any, str | None]:
     same_case = load_report(same_case_report_path)
     validate_same_case_report(same_case)
     evaluation = _evaluation_case(same_case)
@@ -210,7 +221,7 @@ def _solve_reference(
     if freegs is None:
         raise RuntimeError(f"FreeGS backend unavailable: {import_error}")
     spec = replace(PUBLIC_CASES[1], nx=129, ny=129)
-    _, equilibrium, profiles, constrain = _make_equilibrium(freegs, spec)
+    tokamak, equilibrium, profiles, constrain = _make_equilibrium(freegs, spec)
     freegs.solve(
         equilibrium,
         profiles,
@@ -220,7 +231,73 @@ def _solve_reference(
         blend=spec.nonlinear_attempts[-1][1],
         convergenceInfo=False,
     )
-    return same_case, evaluation, equilibrium, profiles, freegs_version
+    return same_case, evaluation, spec, tokamak, equilibrium, profiles, freegs_version
+
+
+def _solve_candidate(
+    *,
+    spec: Any,
+    tokamak: Any,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    knots: FloatArray,
+    pprime_coefficients: FloatArray,
+    ffprime_coefficients: FloatArray,
+) -> tuple[FloatArray, float, float]:
+    _, filaments = _machine_filaments(tokamak)
+    coil_r = np.asarray([row[0] for row in filaments], dtype=np.float64)
+    coil_z = np.asarray([row[1] for row in filaments], dtype=np.float64)
+    coil_current = np.asarray([row[2] for row in filaments], dtype=np.float64)
+    basis = _bspline_design_matrix(
+        knots,
+        n_coeff=PROFILE_COEFFICIENT_COUNT,
+        degree=PROFILE_DEGREE,
+    )
+    r_jax = jnp.asarray(r_grid)
+    z_jax = jnp.asarray(z_grid)
+    knots_jax = jnp.asarray(knots)
+    basis_jax = jnp.asarray(basis)
+    response, wall_indices, source_indices = _build_response_matrix(r_jax, z_jax)
+
+    def forward(
+        psi_init: Any | None,
+        iteration_cap: int,
+        ip_ramp: int,
+    ) -> tuple[Any, int]:
+        result = _solve_compiled(
+            jnp.asarray(coil_current),
+            _evaluate_profile(jnp.asarray(pprime_coefficients), basis_jax),
+            _evaluate_profile(jnp.asarray(ffprime_coefficients), basis_jax),
+            r_jax,
+            z_jax,
+            jnp.asarray(coil_r),
+            jnp.asarray(coil_z),
+            knots_jax,
+            spec.plasma_current_a,
+            response,
+            wall_indices,
+            source_indices,
+            psi_init,
+            iteration_cap,
+            _same_case.DEFAULT_ANDERSON_DEPTH,
+            _same_case.DEFAULT_MIXING,
+            ip_ramp,
+            DEFAULT_CUTOFF_WIDTH,
+            _same_case.DEFAULT_TOL,
+            MU0_SI,
+            return_iterations=True,
+        )
+        return cast(tuple[Any, int], result)
+
+    cold, _ = forward(None, _same_case.DEFAULT_N_ITER, _same_case.DEFAULT_IP_RAMP)
+    cold.block_until_ready()
+    candidate, _ = forward(cold, _same_case.WARM_START_ITERATION_CAP, 1)
+    candidate.block_until_ready()
+    return (
+        np.asarray(candidate, dtype=np.float64),
+        float(_smooth_axis_flux(candidate)),
+        float(_smooth_xpoint_flux(candidate, r_jax, z_jax)),
+    )
 
 
 def run_ablation(
@@ -231,10 +308,15 @@ def run_ablation(
     """Execute the fixed-reference DIII-D profile-source ablation."""
     if cast(bool, jax.config.values["jax_enable_x64"]) is not True:
         raise RuntimeError("fixed-reference source ablation requires JAX FP64")
-    same_case, evaluation, equilibrium, profiles, freegs_version = _solve_reference(
-        same_case_report_path
-    )
-    spec = replace(PUBLIC_CASES[1], nx=129, ny=129)
+    (
+        same_case,
+        evaluation,
+        spec,
+        tokamak,
+        equilibrium,
+        profiles,
+        freegs_version,
+    ) = _solve_reference(same_case_report_path)
     r_grid = np.asarray(equilibrium.R_1D, dtype=np.float64)
     z_grid = np.asarray(equilibrium.Z_1D, dtype=np.float64)
     reference_psi = np.asarray(equilibrium.psi(), dtype=np.float64).T
@@ -250,13 +332,13 @@ def run_ablation(
     knots = np.linspace(0.0, 1.0, PROFILE_SAMPLE_COUNT, dtype=np.float64)
     pprime_exact = np.asarray(profiles.pprime(knots), dtype=np.float64)
     ffprime_exact = np.asarray(profiles.ffprime(knots), dtype=np.float64)
-    _, pprime_compact = _fit_compact_profile(
+    pprime_coefficients, pprime_compact = _fit_compact_profile(
         pprime_exact,
         knots,
         n_coefficients=PROFILE_COEFFICIENT_COUNT,
         degree=PROFILE_DEGREE,
     )
-    _, ffprime_compact = _fit_compact_profile(
+    ffprime_coefficients, ffprime_compact = _fit_compact_profile(
         ffprime_exact,
         knots,
         n_coefficients=PROFILE_COEFFICIENT_COUNT,
@@ -268,12 +350,18 @@ def run_ablation(
     }
     d_area = (r_grid[1] - r_grid[0]) * (z_grid[1] - z_grid[0])
 
-    def source(pprime: FloatArray, ffprime: FloatArray) -> FloatArray:
+    def source(
+        psi: FloatArray,
+        pprime: FloatArray,
+        ffprime: FloatArray,
+        axis: float,
+        boundary: float,
+    ) -> FloatArray:
         current = _plasma_current(
-            jnp.asarray(reference_psi),
+            jnp.asarray(psi),
             jnp.asarray(r_grid),
-            jnp.asarray(reference_axis),
-            jnp.asarray(reference_boundary),
+            jnp.asarray(axis),
+            jnp.asarray(boundary),
             jnp.asarray(knots),
             jnp.asarray(pprime),
             jnp.asarray(ffprime),
@@ -286,7 +374,13 @@ def run_ablation(
 
     fixed_sources = {
         "compact_bspline": _current_comparison(
-            candidate_current_density=source(pprime_compact, ffprime_compact),
+            candidate_current_density=source(
+                reference_psi,
+                pprime_compact,
+                ffprime_compact,
+                reference_axis,
+                reference_boundary,
+            ),
             reference_current_density=reference_current,
             reference_current_mask=reference_mask,
             reference_psi=reference_psi,
@@ -296,7 +390,13 @@ def run_ablation(
             z_grid=z_grid,
         ),
         "exact_sampled": _current_comparison(
-            candidate_current_density=source(pprime_exact, ffprime_exact),
+            candidate_current_density=source(
+                reference_psi,
+                pprime_exact,
+                ffprime_exact,
+                reference_axis,
+                reference_boundary,
+            ),
             reference_current_density=reference_current,
             reference_current_mask=reference_mask,
             reference_psi=reference_psi,
@@ -304,6 +404,49 @@ def run_ablation(
             reference_boundary=reference_boundary,
             r_grid=r_grid,
             z_grid=z_grid,
+        ),
+    }
+    candidate_psi, candidate_axis, candidate_boundary = _solve_candidate(
+        spec=spec,
+        tokamak=tokamak,
+        r_grid=r_grid,
+        z_grid=z_grid,
+        knots=knots,
+        pprime_coefficients=pprime_coefficients,
+        ffprime_coefficients=ffprime_coefficients,
+    )
+
+    def anchor_row(axis: float, boundary: float) -> dict[str, Any]:
+        return _current_comparison(
+            candidate_current_density=source(
+                candidate_psi,
+                pprime_compact,
+                ffprime_compact,
+                axis,
+                boundary,
+            ),
+            reference_current_density=reference_current,
+            reference_current_mask=reference_mask,
+            reference_psi=reference_psi,
+            reference_axis=reference_axis,
+            reference_boundary=reference_boundary,
+            r_grid=r_grid,
+            z_grid=z_grid,
+        )
+
+    anchor_ablation = {
+        "candidate_axis_reference_boundary": anchor_row(
+            candidate_axis,
+            reference_boundary,
+        ),
+        "production_smooth_anchors": anchor_row(candidate_axis, candidate_boundary),
+        "reference_axis_candidate_boundary": anchor_row(
+            reference_axis,
+            candidate_boundary,
+        ),
+        "reference_axis_reference_boundary": anchor_row(
+            reference_axis,
+            reference_boundary,
         ),
     }
     self_consistent = {
@@ -327,6 +470,7 @@ def run_ablation(
         },
         profile_fit=profile_fit,
         fixed_reference_sources=fixed_sources,
+        candidate_anchor_ablation=anchor_ablation,
         self_consistent_candidate=self_consistent,
         source_commit=_git_value("rev-parse", "HEAD") or "0" * 40,
         source_worktree_clean=_git_value("status", "--porcelain") is None,

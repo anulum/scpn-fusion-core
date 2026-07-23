@@ -16,7 +16,7 @@ _same_case = cast(Any, importlib.import_module("validation.benchmark_ida_same_ca
 _payload_sha256: Callable[[dict[str, Any]], str] = _same_case._payload_sha256
 _walk_finite: Callable[[object], None] = _same_case._walk_finite
 
-SCHEMA_VERSION = "scpn-fusion.ida-fixed-reference-source-ablation.v1"
+SCHEMA_VERSION = "scpn-fusion.ida-fixed-reference-source-ablation.v2"
 BENCHMARK_ID = "DIII-D-IDA-FB-JAX-B-SOURCE-ABLATION"
 EVALUATION_CASE_ID = "freegs_16_diiid_public_example"
 PROFILE_COEFFICIENT_COUNT = 12
@@ -30,9 +30,12 @@ CLAIM_FIELDS = (
     "safety_admission",
 )
 ROUTING_THRESHOLDS = {
+    "axis_anchor_tv_reduction_max": 5.0e-3,
+    "boundary_anchor_tv_reduction_min": 2.0e-2,
     "compact_exact_tv_delta_max": 1.0e-10,
     "fixed_reference_tv_max": 2.0e-2,
     "profile_fit_relative_l2_max": 1.0e-10,
+    "reference_anchors_residual_tv_min": 1.0e-1,
     "self_consistent_to_fixed_tv_ratio_min": 5.0,
 }
 SOURCE_PATHS = {
@@ -48,6 +51,7 @@ SOURCE_EQUATION = "Jphi=R*pprime+FFprime/(mu0*R), smooth LCFS cutoff, Ip-normali
 _TOP_LEVEL_FIELDS = {
     "benchmark_id",
     "blockers",
+    "candidate_anchor_ablation",
     "claim_boundary",
     "environment",
     "fixed_reference_sources",
@@ -216,6 +220,43 @@ def _routing(
     }
 
 
+def _anchor_routing(anchor_ablation: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    def tv(name: str) -> float:
+        return _require_number(
+            anchor_ablation[name]["distribution"]["total_variation_distance"],
+            field=f"candidate_anchor_ablation.{name}.TV",
+            minimum=0.0,
+        )
+
+    production = tv("production_smooth_anchors")
+    reference_both = tv("reference_axis_reference_boundary")
+    candidate_axis_reference_boundary = tv("candidate_axis_reference_boundary")
+    reference_axis_candidate_boundary = tv("reference_axis_candidate_boundary")
+    boundary_reduction = production - candidate_axis_reference_boundary
+    axis_reduction = production - reference_axis_candidate_boundary
+    boundary_secondary = bool(
+        boundary_reduction >= ROUTING_THRESHOLDS["boundary_anchor_tv_reduction_min"]
+    )
+    axis_excluded = bool(abs(axis_reduction) <= ROUTING_THRESHOLDS["axis_anchor_tv_reduction_max"])
+    geometry_primary = bool(
+        reference_both >= ROUTING_THRESHOLDS["reference_anchors_residual_tv_min"]
+    )
+    if boundary_secondary and axis_excluded and geometry_primary:
+        target = "candidate_flux_geometry_primary_boundary_anchor_secondary_axis_anchor_excluded"
+    else:
+        target = "geometry_anchor_contributions_unresolved"
+    return {
+        "axis_anchor_excluded": axis_excluded,
+        "axis_anchor_tv_reduction": axis_reduction,
+        "boundary_anchor_secondary": boundary_secondary,
+        "boundary_anchor_tv_reduction": boundary_reduction,
+        "geometry_primary": geometry_primary,
+        "next_ratcheting_target": target,
+        "reference_anchors_residual_fraction": reference_both / max(production, 1.0e-30),
+        "reference_anchors_residual_tv": reference_both,
+    }
+
+
 def build_report(
     *,
     generated_at: str,
@@ -224,6 +265,7 @@ def build_report(
     source_same_case: dict[str, Any],
     profile_fit: dict[str, dict[str, Any]],
     fixed_reference_sources: dict[str, dict[str, Any]],
+    candidate_anchor_ablation: dict[str, dict[str, Any]],
     self_consistent_candidate: dict[str, Any],
     source_commit: str,
     source_worktree_clean: bool,
@@ -238,6 +280,7 @@ def build_report(
         exact=fixed_reference_sources["exact_sampled"],
         self_consistent=self_consistent_candidate,
     )
+    route["candidate_anchor_ablation"] = _anchor_routing(candidate_anchor_ablation)
     blockers = [
         "facility_validation_not_bound",
         "isolated_latency_evidence_missing",
@@ -250,6 +293,7 @@ def build_report(
     report: dict[str, Any] = {
         "benchmark_id": BENCHMARK_ID,
         "blockers": blockers,
+        "candidate_anchor_ablation": candidate_anchor_ablation,
         "claim_boundary": {field: False for field in CLAIM_FIELDS},
         "environment": environment,
         "fixed_reference_sources": fixed_reference_sources,
@@ -284,7 +328,7 @@ def build_report(
 def validate_report(report: dict[str, Any], *, cutoff_width: float) -> None:
     """Reject schema drift, tamper, overclaim, and inconsistent routing."""
     if set(report) != _TOP_LEVEL_FIELDS:
-        raise ValueError("ablation report top-level fields do not match the v1 schema")
+        raise ValueError("ablation report top-level fields do not match the v2 schema")
     if report.get("schema_version") != SCHEMA_VERSION or report.get("benchmark_id") != BENCHMARK_ID:
         raise ValueError("unsupported fixed-reference source ablation contract")
     _walk_finite(report)
@@ -294,7 +338,7 @@ def validate_report(report: dict[str, Any], *, cutoff_width: float) -> None:
     if report.get("claim_boundary") != {field: False for field in CLAIM_FIELDS}:
         raise ValueError("claim_boundary must keep every promotion claim false")
     if report.get("routing_thresholds") != ROUTING_THRESHOLDS:
-        raise ValueError("routing thresholds do not match the frozen v1 contract")
+        raise ValueError("routing thresholds do not match the frozen v2 contract")
     if report.get("status") != "diagnostic_complete_claims_blocked":
         raise ValueError("source ablation cannot promote an admitted status")
     environment = report.get("environment")
@@ -311,16 +355,18 @@ def validate_report(report: dict[str, Any], *, cutoff_width: float) -> None:
         "profile_sample_count": PROFILE_SAMPLE_COUNT,
         "source_equation": SOURCE_EQUATION,
     }:
-        raise ValueError("input_contract does not match the frozen v1 diagnostic")
+        raise ValueError("input_contract does not match the frozen v2 diagnostic")
     _validate_sources(report)
     profile_fit = _validate_profiles(report)
     fixed, self_consistent = _validate_currents(report)
+    anchor_ablation = _validate_anchor_ablation(report)
     expected_route = _routing(
         profile_fit=profile_fit,
         compact=fixed["compact_bspline"],
         exact=fixed["exact_sampled"],
         self_consistent=self_consistent,
     )
+    expected_route["candidate_anchor_ablation"] = _anchor_routing(anchor_ablation)
     if report.get("routing") != expected_route:
         raise ValueError("routing is inconsistent with the measured diagnostics")
     _validate_same_case_binding(report, self_consistent)
@@ -330,7 +376,7 @@ def _validate_sources(report: dict[str, Any]) -> None:
     source_artifacts = report.get("source_artifacts")
     expected_sources = {*SOURCE_PATHS, "freegs_public_example", "repository"}
     if not isinstance(source_artifacts, dict) or set(source_artifacts) != expected_sources:
-        raise ValueError("source_artifacts do not match the v1 contract")
+        raise ValueError("source_artifacts do not match the v2 contract")
     for name in {*SOURCE_PATHS, "freegs_public_example"}:
         artifact = source_artifacts[name]
         if not isinstance(artifact, dict) or set(artifact) != {"path", "sha256"}:
@@ -407,6 +453,21 @@ def _validate_currents(
     return cast(dict[str, dict[str, Any]], fixed), cast(dict[str, Any], self_consistent)
 
 
+def _validate_anchor_ablation(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    anchor_ablation = report.get("candidate_anchor_ablation")
+    expected = {
+        "candidate_axis_reference_boundary",
+        "production_smooth_anchors",
+        "reference_axis_candidate_boundary",
+        "reference_axis_reference_boundary",
+    }
+    if not isinstance(anchor_ablation, dict) or set(anchor_ablation) != expected:
+        raise ValueError("candidate_anchor_ablation fields are invalid")
+    for name, row in anchor_ablation.items():
+        _validate_current_source(row, field=f"candidate_anchor_ablation.{name}")
+    return cast(dict[str, dict[str, Any]], anchor_ablation)
+
+
 def _validate_same_case_binding(
     report: dict[str, Any],
     self_consistent: dict[str, Any],
@@ -436,7 +497,9 @@ def render_markdown(report: dict[str, Any], *, cutoff_width: float) -> str:
     compact = report["fixed_reference_sources"]["compact_bspline"]["distribution"]
     exact = report["fixed_reference_sources"]["exact_sampled"]["distribution"]
     self_consistent = report["self_consistent_candidate"]["distribution"]
+    anchor = report["candidate_anchor_ablation"]
     route = report["routing"]
+    anchor_route = route["candidate_anchor_ablation"]
     return "\n".join(
         [
             "# IDA fixed-reference current-source ablation",
@@ -465,11 +528,24 @@ def render_markdown(report: dict[str, Any], *, cutoff_width: float) -> str:
                 f"{self_consistent['centroid_delta_m']['r']:.9g} | "
                 f"{self_consistent['centroid_delta_m']['z']:.9g} |"
             ),
+            (
+                f"| Candidate ψ + reference boundary | "
+                f"{anchor['candidate_axis_reference_boundary']['distribution']['total_variation_distance']:.9g} | "
+                f"{anchor['candidate_axis_reference_boundary']['distribution']['centroid_delta_m']['r']:.9g} | "
+                f"{anchor['candidate_axis_reference_boundary']['distribution']['centroid_delta_m']['z']:.9g} |"
+            ),
+            (
+                f"| Candidate ψ + reference axis and boundary | "
+                f"{anchor['reference_axis_reference_boundary']['distribution']['total_variation_distance']:.9g} | "
+                f"{anchor['reference_axis_reference_boundary']['distribution']['centroid_delta_m']['r']:.9g} | "
+                f"{anchor['reference_axis_reference_boundary']['distribution']['centroid_delta_m']['z']:.9g} |"
+            ),
             "",
             f"- Maximum profile-fit relative L2 error: "
             f"`{route['profile_fit_relative_l2_max']:.9g}`",
             f"- Self-consistent / exact-fixed TV ratio: "
             f"`{route['self_consistent_to_exact_fixed_tv_ratio']:.9g}`",
+            f"- Anchor routing: `{anchor_route['next_ratcheting_target']}`",
             f"- Next ratcheting target: `{route['next_ratcheting_target']}`",
             "",
             "This routes engineering work only; it is not a physical-validation or admission result.",
