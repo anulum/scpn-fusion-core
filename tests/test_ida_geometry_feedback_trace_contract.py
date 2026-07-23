@@ -91,7 +91,9 @@ def _run(
                 run_name=run_name,
                 index=index,
                 tv=tv_offset + 0.002 * position,
-                before_digest=first_before if position == 0 else _digest(f"{run_name}-{index}-before"),
+                before_digest=first_before
+                if position == 0
+                else _digest(f"{run_name}-{index}-before"),
                 after_digest=(
                     terminal_after if index == count - 1 else _digest(f"{run_name}-{index}-after")
                 ),
@@ -189,9 +191,7 @@ def test_build_validate_render_and_route() -> None:
     report = _report()
     contract.validate_report(report)
     assert report["routing"]["trace_matches_same_case_candidate"] is True
-    assert report["routing"]["next_ratcheting_target"].endswith(
-        "_geometry_source_feedback"
-    )
+    assert report["routing"]["next_ratcheting_target"].endswith("_geometry_source_feedback")
     markdown = contract.render_markdown(report)
     assert "Same-case terminal parity: `true`" in markdown
     assert "scientific admission: `false`" in markdown
