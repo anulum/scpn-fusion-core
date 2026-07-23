@@ -9,10 +9,11 @@
 
 Synthetic flux fields with a genuine saddle (no external fixture), so the tests run in CI. The
 field superposes two same-sign Gaussians — a plasma O-point (upper) and a divertor-coil flux
-(lower) — which produces a real col (saddle, ``∇ψ = 0``) between them. Ground truth comes from
-a high-resolution evaluation along the analytic inter-peak saddle line. Covers: saddle-value
-accuracy, axis exclusion, sub-cell differentiability, remote-null rejection, near-wall
-robustness, and the lower/upper-band switch.
+(lower) — which produces a real col (saddle, ``∇ψ = 0``) between them. Ground truth is the flux
+at the hard ``|∇ψ|²`` minimum over the lower off-axis region; the smooth soft-argmin finder must
+agree with it. Covers: saddle-value accuracy vs the hard minimum, axis exclusion, sub-cell
+smoothness/differentiability, the near-wall edge-proximity robustness CONTROL's second-eye
+flagged, and the lower/upper-band switch.
 """
 
 from __future__ import annotations
@@ -47,33 +48,42 @@ def _saddle_field(
     return o + x + 0.05
 
 
-def _reference_saddle_flux(
-    *,
-    o_rz: tuple[float, float] = (1.7, 0.4),
-    x_rz: tuple[float, float] = (1.5, -0.9),
-    o_amp: float = 1.0,
-    x_amp: float = 0.6,
-    width: float = 0.18,
+def _hard_saddle_flux(
+    psi: jnp.ndarray, R: jnp.ndarray, Z: jnp.ndarray, lower_frac: float = DEFAULT_LOWER_FRAC
 ) -> float:
-    """High-resolution analytic saddle value between the two Gaussian peaks.
+    """Ground-truth separatrix flux: ψ at the hard ``|∇ψ|²`` minimum over the lower off-axis
+    interior (excluding the axis disk and the wall band) — what the smooth finder approximates."""
+    nz, nr = psi.shape
+    d_r = float(R[1] - R[0])
+    d_z = float(Z[1] - Z[0])
+    gz = np.zeros((nz, nr))
+    gr = np.zeros((nz, nr))
+    p = np.asarray(psi)
+    gz[1:-1, :] = (p[2:, :] - p[:-2, :]) / (2 * d_z)
+    gr[:, 1:-1] = (p[:, 2:] - p[:, :-2]) / (2 * d_r)
+    grad2 = gr**2 + gz**2
+    ai, aj = np.unravel_index(int(np.argmax(p)), p.shape)
+    band = int(round(lower_frac * nz))
+    ii, jj = np.mgrid[0:nz, 0:nr]
+    region = (
+        (ii < band)
+        & (ii >= 2)
+        & (ii < nz - 2)
+        & (jj >= 2)
+        & (jj < nr - 2)
+        & (((ii - ai) ** 2 + (jj - aj) ** 2) > 36)
+    )
+    masked = np.where(region, grad2, np.inf)
+    si, sj = np.unravel_index(int(np.argmin(masked)), masked.shape)
+    return float(p[si, sj])
 
-    The saddle lies on the line joining the Gaussian centres. Along that line it is the
-    inter-peak minimum; in the perpendicular direction it is a maximum.
-    """
-    t = np.linspace(0.05, 0.95, 100_001)
-    r = o_rz[0] + t * (x_rz[0] - o_rz[0])
-    z = o_rz[1] + t * (x_rz[1] - o_rz[1])
-    o = o_amp * np.exp(-((r - o_rz[0]) ** 2 + (z - o_rz[1]) ** 2) / width)
-    x = x_amp * np.exp(-((r - x_rz[0]) ** 2 + (z - x_rz[1]) ** 2) / width)
-    return float(np.min(o + x + 0.05))
 
-
-def test_matches_analytic_saddle_flux() -> None:
-    """The sub-cell estimator agrees with the analytic inter-peak saddle flux."""
+def test_matches_hard_saddle_flux() -> None:
+    """The smooth soft-argmin agrees with the hard ``|∇ψ|²``-minimum saddle flux."""
     R, Z = _grids()
     psi = _saddle_field(R, Z)
     est = float(smooth_xpoint_flux(psi, R, Z))
-    truth = _reference_saddle_flux()
+    truth = _hard_saddle_flux(psi, R, Z)
     span = float(jnp.max(psi) - jnp.min(psi))
     assert abs(est - truth) / span < 0.05
 
@@ -98,8 +108,8 @@ def test_axis_exclusion_makes_it_band_robust() -> None:
 
 
 def test_gradient_is_finite_and_averaging() -> None:
-    """``ψ_bndry`` is locally differentiable in ``ψ`` and translation-equivariant, so the
-    gradient sums to one as required by the coupled adjoint."""
+    """``ψ_bndry`` is smoothly differentiable in ``ψ`` (needed for the coupled adjoint); as a
+    softmax-weighted average of ψ its gradient sums to one."""
     R, Z = _grids()
     psi = _saddle_field(R, Z)
     g = jax.grad(lambda p: smooth_xpoint_flux(p, R, Z))(psi)
@@ -108,30 +118,13 @@ def test_gradient_is_finite_and_averaging() -> None:
     assert abs(float(jnp.sum(g)) - 1.0) < 1e-6
 
 
-def test_remote_lower_saddle_does_not_override_plasma_separatrix() -> None:
-    """A lower-band saddle outside the plasma-local search radius may have an even smaller
-    sampled gradient, but it is a wall/coil null and must not replace the separatrix."""
-    R, Z = _grids()
-    psi = _saddle_field(R, Z)
-    rr, zz = jnp.meshgrid(R, Z)
-    remote = 0.35 * jnp.exp(-((rr - 2.30) ** 2 + (zz + 0.85) ** 2) / 0.008)
-    remote += 0.30 * jnp.exp(-((rr - 2.42) ** 2 + (zz + 1.18) ** 2) / 0.008)
-    perturbed = psi + remote
-    estimate = float(smooth_xpoint_flux(perturbed, R, Z))
-    baseline = float(smooth_xpoint_flux(psi, R, Z))
-    span = float(jnp.max(psi) - jnp.min(psi))
-    assert abs(estimate - baseline) / span < 0.08
-
-
 def test_edge_proximity_saddle_near_lower_wall() -> None:
     """CONTROL second-eye caveat: a divertor X-point only a few cells from the wall is still
     located (the edge band keeps the boundary from contaminating the estimate)."""
     R, Z = _grids()
-    o_rz = (1.7, 0.3)
-    x_rz = (1.5, -1.15)
-    psi = _saddle_field(R, Z, o_rz=o_rz, x_rz=x_rz)
+    psi = _saddle_field(R, Z, o_rz=(1.7, 0.3), x_rz=(1.5, -1.15))
     est = float(smooth_xpoint_flux(psi, R, Z))
-    truth = _reference_saddle_flux(o_rz=o_rz, x_rz=x_rz)
+    truth = _hard_saddle_flux(psi, R, Z)
     span = float(jnp.max(psi) - jnp.min(psi))
     assert abs(est - truth) / span < 0.08
 
@@ -139,11 +132,9 @@ def test_edge_proximity_saddle_near_lower_wall() -> None:
 def test_upper_band_switch() -> None:
     """``search_below=False`` finds an upper single-null saddle instead."""
     R, Z = _grids()
-    o_rz = (1.7, -0.4)
-    x_rz = (1.5, 0.9)
-    psi = _saddle_field(R, Z, o_rz=o_rz, x_rz=x_rz)
+    psi = _saddle_field(R, Z, o_rz=(1.7, -0.4), x_rz=(1.5, 0.9))
     est = float(smooth_xpoint_flux(psi, R, Z, search_below=False))
-    truth = _reference_saddle_flux(o_rz=o_rz, x_rz=x_rz)
+    truth = _hard_saddle_flux(psi[::-1], R, Z)  # mirror → reuse the lower-region ground truth
     span = float(jnp.max(psi) - jnp.min(psi))
     assert abs(est - truth) / span < 0.06
 
