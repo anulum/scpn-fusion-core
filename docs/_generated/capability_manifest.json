@@ -2729,7 +2729,7 @@
     "python_capability_classes": 569,
     "python_capability_source_modules": 319,
     "rust_workspace_crates": 13,
-    "test_files": 574
+    "test_files": 576
   },
   "documentation": {
     "public_pages": [
@@ -3143,6 +3143,7 @@
       "tests/test_hypothesis_physics_models.py",
       "tests/test_hypothesis_properties.py",
       "tests/test_ida_fixed_reference_source_contract.py",
+      "tests/test_ida_geometry_feedback_trace_contract.py",
       "tests/test_imas_adapter.py",
       "tests/test_imas_conformance.py",
       "tests/test_imas_connector.py",
@@ -3412,6 +3413,7 @@
       "tests/test_torax_imas_interchange.py",
       "tests/test_torax_real_parity.py",
       "tests/test_torax_same_physics_config_study.py",
+      "tests/test_trace_ida_geometry_feedback.py",
       "tests/test_traceable_runtime_parity_cli.py",
       "tests/test_train_frc_jacobian_surrogate.py",
       "tests/test_train_frc_linear_surrogate.py",
