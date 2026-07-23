@@ -1,8 +1,8 @@
 # IDA geometry/source feedback trace
 
 - Status: `diagnostic_complete_claims_blocked`
-- Payload SHA-256: `2d3d8a5a6596396b0781b11ac182eb5b2a832944f2d50a2d6c3bd02579ed653f`
-- Same-case terminal parity: `false`
+- Payload SHA-256: `4520d424547db3294086b964266021efbc8dd86e80336fc19b0b704e34a9245c`
+- Same-case terminal parity: `true`
 - Facility/control/PCS/safety/scientific admission: `false`
 
 | Run | Iteration | Phase | Refinement | Production TV | Ref-boundary TV | FP rel L2 | Terminal |
@@ -22,6 +22,6 @@
 | warm | 1 | warm_polish | 1.000 | 0.251353196 | 0.220638753 | 3.71439263e-10 | true |
 
 - Largest sparse TV increase: `0.0807741128` into `ip_ramp`
-- Next ratcheting target: `compiled_trace_parity_failure`
+- Next ratcheting target: `ip_ramp_geometry_source_feedback`
 
 This trace routes one engineering correction; it is not physical validation.

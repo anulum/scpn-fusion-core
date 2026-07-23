@@ -21,9 +21,9 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      5.220703125,
-      5.80078125,
-      6.2294921875
+      8.17822265625,
+      6.44677734375,
+      6.26220703125
     ],
     "isolated_host": false,
     "jax_version": "0.7.1",
@@ -33,7 +33,7 @@
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-23T10:28:48Z",
+  "generated_at": "2026-07-23T10:40:11Z",
   "input_contract": {
     "anderson_depth": 8,
     "anderson_solver": "lstsq",
@@ -74,7 +74,7 @@
     "warm_ip_ramp": 1,
     "warm_iteration_cap": 20
   },
-  "payload_sha256": "2d3d8a5a6596396b0781b11ac182eb5b2a832944f2d50a2d6c3bd02579ed653f",
+  "payload_sha256": "4520d424547db3294086b964266021efbc8dd86e80336fc19b0b704e34a9245c",
   "routing": {
     "first_half_terminal_tv": {
       "iteration_index": 0,
@@ -91,11 +91,11 @@
       "to_iteration_index": 14,
       "to_run": "cold"
     },
-    "next_ratcheting_target": "compiled_trace_parity_failure",
+    "next_ratcheting_target": "ip_ramp_geometry_source_feedback",
     "terminal_boundary_counterfactual_tv_reduction": 0.030714443449157802,
     "terminal_production_tv": 0.25135319625544333,
     "terminal_reference_boundary_tv": 0.22063875280628553,
-    "trace_matches_same_case_candidate": false
+    "trace_matches_same_case_candidate": true
   },
   "runs": {
     "cold": {
@@ -748,7 +748,7 @@
       "sha256": "61106f7548163d8938915593dcbcdd8f8311a343fcd3ff8832f4170de90a2b4f"
     },
     "repository": {
-      "git_commit": "5810b03175d8af1396385800c3dae638d6be6c29",
+      "git_commit": "394c4f8ebb7f08e29ed6cc51f86c201846d080a8",
       "path": "."
     },
     "same_case_benchmark": {
@@ -771,19 +771,19 @@
   "source_reports": {
     "same_case": {
       "path": "validation/reports/ida_same_case_evidence.json",
-      "payload_sha256": "cf7a64f8e69d0b6406c046acbc0e486db912d6c639cc0dfd57647f5e1e15061b",
-      "source_commit": "097a784d0d83bfc55953bac6a34a37981e7caac3"
+      "payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee",
+      "source_commit": "f82ee24fb5683a7077069af85c247c2aca76477a"
     },
     "source_ablation": {
       "path": "validation/reports/ida_fixed_reference_source_ablation.json",
-      "payload_sha256": "cd6905267248745248e63b630c08a55943e512aa0f53b1a5f85bdb367bf5409a",
-      "source_commit": "9ac0b5aca3f537314d0c588c5be719971b873134"
+      "payload_sha256": "a0dd4593e0fa45bc7c36080eff172639cf002f2899e9c253412277587523f8a4",
+      "source_commit": "d1de6c3364186f86d8b1022143ed9c2cff6aa9b4"
     }
   },
   "status": "diagnostic_complete_claims_blocked",
   "terminal_parity": {
-    "expected_same_case_candidate_sha256": "6f88b0c2a88361cb4fb43f1097da56772660d23a987125f3f283a9091d37e155",
-    "matches_same_case_candidate": false,
+    "expected_same_case_candidate_sha256": "dd596a5a44b3611c49f8d88afda071816fe3723fc947b546d79c3776124b63a2",
+    "matches_same_case_candidate": true,
     "traced_candidate_sha256": "dd596a5a44b3611c49f8d88afda071816fe3723fc947b546d79c3776124b63a2"
   }
 }
