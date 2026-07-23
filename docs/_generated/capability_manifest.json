@@ -2720,7 +2720,7 @@
     "python_capability_classes": 567,
     "python_capability_source_modules": 318,
     "rust_workspace_crates": 13,
-    "test_files": 571
+    "test_files": 573
   },
   "documentation": {
     "public_pages": [
@@ -2935,6 +2935,7 @@
       "tests/test_density_controller.py",
       "tests/test_deprecated_default_lane_guard.py",
       "tests/test_detachment_controller.py",
+      "tests/test_diagnose_ida_fixed_reference_source.py",
       "tests/test_diagnostics.py",
       "tests/test_digital_twin_ingest_runtime.py",
       "tests/test_diiid_jet_validation.py",
@@ -3132,6 +3133,7 @@
       "tests/test_hybrid_accuracy_benchmark_contract.py",
       "tests/test_hypothesis_physics_models.py",
       "tests/test_hypothesis_properties.py",
+      "tests/test_ida_fixed_reference_source_contract.py",
       "tests/test_imas_adapter.py",
       "tests/test_imas_conformance.py",
       "tests/test_imas_connector.py",
