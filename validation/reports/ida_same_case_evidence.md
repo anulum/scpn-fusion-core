@@ -2,15 +2,15 @@
 
 - Status: `blocked_same_case_evidence`
 - Schema: `scpn-fusion.ida-same-case-evidence.v2`
-- Payload SHA-256: `641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee`
+- Payload SHA-256: `9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00`
 - Facility/control/PCS/safety claims: `false`
 
 ## Cases
 
 | Case | Role | Grid | ψ_N RMSE | current relative error | warm p95 (ms) |
 |---|---|---:|---:|---:|---:|
-| freegs_01_test_tokamak_freeboundary | development | 65×65 | 0.469381 | 0 | 10.415 |
-| freegs_16_diiid_public_example | evaluation_candidate | 129×129 | 0.210997 | 0 | 23.4362 |
+| freegs_01_test_tokamak_freeboundary | development | 65×65 | 0.469371 | 0 | 14.2922 |
+| freegs_16_diiid_public_example | evaluation_candidate | 129×129 | 0.211055 | 3.03633e-16 | 28.1496 |
 
 ## Blockers
 
