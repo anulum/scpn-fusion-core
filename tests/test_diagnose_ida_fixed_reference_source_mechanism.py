@@ -209,7 +209,7 @@ def test_build_validate_render_write_and_validate_cli(tmp_path: Path) -> None:
     assert report["routing"]["current_dominant_component"] == "smooth_cutoff"
     assert (
         report["routing"]["next_ratcheting_target"]
-        == "soft_axis_connected_support_topology_and_unclipped_lcfs_distance"
+        == "self_consistent_equilibrium_geometry_and_boundary_response"
     )
     markdown = diagnostic.render_markdown(report)
     assert "CONTROL hard" not in markdown

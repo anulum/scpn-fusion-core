@@ -177,7 +177,7 @@ def _routing(
     interior = _dominant_component(interior_source_vectors)
     wall = _dominant_component(wall_response_vectors)
     if "smooth_cutoff" in {current, interior, wall}:
-        next_target = "soft_axis_connected_support_topology_and_unclipped_lcfs_distance"
+        next_target = "self_consistent_equilibrium_geometry_and_boundary_response"
     elif "smooth_ip_normalisation" in {current, interior, wall}:
         next_target = "smooth_ip_normalisation_quadrature"
     else:
