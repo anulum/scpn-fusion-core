@@ -799,15 +799,46 @@ The separate implicit-IDA solver lane is tracked in
 This is not the accepted fixed-boundary profile-source lane above. The
 digest-bound runner executes the public FreeGS development example and the
 129×129 DIII-D-like example through
-`solve_free_boundary_gs_implicit`, audits coil-current, p′, and FF′ gradients,
-and records synchronized warm timing. The first DIII-D-like run passes only the
-nonlinear residual ratio (`0.028930007443069596` against `0.05`); ψ-span NRMSE
-(`2.0875458241740508`), relative current error (`0.5205740043457716`),
-gradient agreement, and warm P95 (`2175.6446484243497 ms` against `20 ms`)
-fail. The selected case was already observed during integration, no
-execution-preceding selection lock exists, and timing was not collected on an
-isolated host. The report is therefore `blocked_same_case_evidence` and keeps
-scientific, control, facility, PCS, and safety claims false.
+`solve_predictive_equilibrium_diff`, audits coil-current, p′, and FF′
+gradients, and records synchronized warm timing. On the current bound FreeGS
+runtime, the DIII-D-like case passes gradient, current-closure, and nonlinear
+residual gates. It still fails ψ_N RMSE (`0.2110185202908407` against `0.05`)
+and non-isolated warm P95 (`30.856304871849716 ms` against `20 ms`). The
+selected case was already observed during integration, no execution-preceding
+selection lock exists, and timing was not collected on an isolated host. The
+report is therefore `blocked_same_case_evidence` and keeps scientific,
+control, facility, PCS, safety, isolated-latency, and held-out claims false.
+
+The bound stationarity chain continues through
+[`ida_fixed_reference_operator_residual.md`](../validation/reports/ida_fixed_reference_operator_residual.md),
+[`ida_fixed_reference_source_mechanism.md`](../validation/reports/ida_fixed_reference_source_mechanism.md),
+[`ida_fixed_point_stability.md`](../validation/reports/ida_fixed_point_stability.md),
+and
+[`ida_operator_response.md`](../validation/reports/ida_operator_response.md).
+The fixed-point diagnostic reproduces the production stationary map to
+`2.034758484082189e-16` relative L2. Total reference forcing is
+`1.1606315870848267×` the candidate-minus-reference terminal error, while the
+native-operator term alone is `1.1584476864235285×`. Local JVP gains remain
+contractive (`0.2765458521709323` along the terminal error and
+`0.8662083125529962` along the source-mechanism direction), and four raw
+Picard steps finish at `0.2683435557644101` candidate-scaled distance.
+
+The response diagnostic applies the same identity-wall,
+multigrid-preconditioned BiCGSTAB inverse to the bound fourth-order baseline,
+native second-order stencil, coil-vacuum discretisation, and exact-source
+residuals. Raw residual metrics restricted to FreeGS plasma-current support
+rank the exact-source convention first, but full-grid response weighting ranks
+coil-vacuum discretisation first: its displacement is `1.1582553409408345×`
+the terminal-error L2 with cosine `0.9369722439698701`. The exact-source and
+second-order responses are `0.0018826579529412656×` and
+`0.0005766929281290108×`, respectively. This difference is expected because
+all `216/216` public-example coil filaments lie inside the computational
+domain; their source footprint is mostly outside the reference plasma-current
+support. Forcing closure is exact, response closure is below
+`5.6e-14 Wb`, and the reconstructed native-operator response agrees with the
+fixed-point result within `8.8e-13 Wb`. The next bounded ratchet is therefore
+coil-vacuum grid convergence and source-footprint treatment, not a solver
+physics change or claim promotion.
 
 ## Solver Performance
 

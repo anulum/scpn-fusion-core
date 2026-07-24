@@ -163,7 +163,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 63 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 584 |
+| Python test files | 586 |
 | Public documentation pages | 63 |
 | GitHub Actions workflows | 12 |
 
@@ -276,7 +276,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
 | Free-boundary equilibrium validation | Public operator-source GEQDSK gate passes; FreeGS public-example vacuum comparison passes; native same-case profile-source metrics, finite signed-q sanity, and machine-readable strict threshold checks are published; free-boundary strict parity is accepted for the public FreeGS same-case lane | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_freegs_public_example_reconstruction.py`, `validation/reports/free_boundary_strict_parity_benchmark.md` |
-| Implicit-IDA same-case evidence | `blocked_same_case_evidence`; public 129² DIII-D-like FreeGS comparison passes the nonlinear-residual ratio only and fails ψ, current, gradient, and 20 ms latency gates; not statistically held out or isolated-host evidence | `validation/benchmark_ida_same_case.py`, `validation/reports/ida_same_case_evidence.md` |
+| Implicit-IDA same-case and stationarity evidence | `blocked_same_case_evidence`; current-runtime public 129² DIII-D-like FreeGS comparison has ψ_N RMSE `0.2110185203` and non-isolated warm P95 `30.8563 ms`; response weighting maps the bound operator terms through the native inverse and routes the dominant `1.158255341×` terminal-scaled coil-vacuum component to grid convergence; no facility, control, safety, scientific, latency, or held-out claim is admitted | `validation/benchmark_ida_same_case.py`, `validation/reports/ida_same_case_evidence.md`, `validation/reports/ida_fixed_point_stability.md`, `validation/reports/ida_operator_response.md` |
 | Full-fidelity end-to-end campaign | `not_full_fidelity`; local contracts ready, `1` accepted public reference artefact, accepted free-boundary strict parity, and remaining production-parity lanes stay fail-closed until external same-case evidence exists | `validation/reports/full_fidelity_end_to_end_campaign.md` |
 
 Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),

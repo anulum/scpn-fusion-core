@@ -1,0 +1,250 @@
+{
+  "benchmark_id": "DIII-D-IDA-FB-JAX-B-OPERATOR-RESPONSE",
+  "bindings": {
+    "fixed_point": {
+      "path": "validation/reports/ida_fixed_point_stability.json",
+      "payload_sha256": "54cfbc43d5337fce5c1667888e21a51c9936189def728b5dc062b30649e85a41",
+      "same_case_payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c",
+      "source_commit": "ef714e1706a93a0d78857cc84c65c31e6be5b324",
+      "source_mechanism_payload_sha256": "7430cd866d69a8c101e7c914d78cd3c989e2e6640d517a52f354c14642a3655c"
+    },
+    "operator_decomposition": {
+      "path": "validation/reports/ida_fixed_reference_operator_residual.json",
+      "payload_sha256": "e90161760b6ff1d1d803041da98bcf63781fcecd6ee2f1741a5f3b083e305dda",
+      "same_case_payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c",
+      "source_commit": "0aba239387eeaf5604ae14c7d2edbbcd90cc7538"
+    },
+    "same_case": {
+      "candidate_psi_sha256": "5a2ad8001010272f9edabf8a1b6f6d7928e4c84cfc1a01aebde21339697660f5",
+      "path": "validation/reports/ida_same_case_evidence.json",
+      "payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c",
+      "reference_psi_sha256": "70a8bb155c456cb586b630f365200c598be0a073e19f2f4443f250998a8eb680",
+      "source_commit": "7468d46274060122ddf4630d18da2a114bf75224"
+    },
+    "source_mechanism": {
+      "operator_payload_sha256": "e90161760b6ff1d1d803041da98bcf63781fcecd6ee2f1741a5f3b083e305dda",
+      "path": "validation/reports/ida_fixed_reference_source_mechanism.json",
+      "payload_sha256": "7430cd866d69a8c101e7c914d78cd3c989e2e6640d517a52f354c14642a3655c",
+      "same_case_payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c",
+      "source_commit": "e56bb39acb948cb0f83600f44ea004a218d063ec"
+    }
+  },
+  "blockers": [
+    "facility_validation_not_bound",
+    "isolated_latency_evidence_missing",
+    "pcs_and_safety_programmes_not_bound",
+    "real_shot_predictive_dataset_missing",
+    "same_case_accuracy_threshold_failed",
+    "statistically_held_out_case_missing"
+  ],
+  "claim_boundary": {
+    "control_admission": false,
+    "facility_validation": false,
+    "held_out_validation": false,
+    "isolated_latency_admission": false,
+    "pcs_deployment": false,
+    "safety_admission": false,
+    "scientific_validation": false
+  },
+  "closure": {
+    "exact_source_forcing_max_abs": 0.0,
+    "exact_source_response_max_abs_wb": 5.512257317263902e-14,
+    "fixed_point_native_operator_max_abs_wb": 8.780476346004207e-13,
+    "native_operator_forcing_max_abs": 0.0,
+    "native_operator_response_max_abs_wb": 2.1288526497187377e-14
+  },
+  "environment": {
+    "affinity_cpu_count": 12,
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "freegs_version": "0.8.2",
+    "host_load_1m_5m_15m": [
+      22.1455078125,
+      19.67626953125,
+      19.06298828125
+    ],
+    "isolated_host": false,
+    "jax_version": "0.7.1",
+    "jaxlib_version": "0.7.1",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "x64_enabled": true
+  },
+  "forcing_decomposition": {
+    "components": {
+      "coil_vacuum_discretisation": {
+        "field_sha256": "ddc8b3c0b4b0ecd041b87f2549a56cd03bfb1c0acf5eb680fca94e174e9f90e2",
+        "l2": 792.1683437134725,
+        "linf": 236.5785674607004,
+        "relative_l2_to_exact_source_residual": 1.0000002962953705
+      },
+      "exact_source_convention": {
+        "field_sha256": "5e04e4e48722d0ff506ab596608f2d385b55ca646db2f2ba8b04c474bb17ce42",
+        "l2": 0.3572457202973437,
+        "linf": 0.020329370173842953,
+        "relative_l2_to_exact_source_residual": 0.00045097210584422526
+      },
+      "freegs_fourth_order_baseline": {
+        "field_sha256": "ac8c7b7ac0ff9e26820dcd3b7d35ed06ba916570919deff9dfef58d8b820daf8",
+        "l2": 1.1639144010761882e-10,
+        "linf": 1.0905054637078138e-11,
+        "relative_l2_to_exact_source_residual": 1.469277023217713e-13
+      },
+      "native_second_order_stencil": {
+        "field_sha256": "b1c719c3d3f072e56f490e29f365f6889063115f736044087e09f7726e850424",
+        "l2": 0.15673712765243505,
+        "linf": 0.0117831148052705,
+        "relative_l2_to_exact_source_residual": 0.0001978584165054849
+      }
+    },
+    "exact_source_residual": {
+      "field_sha256": "0f8a2f2a801e7f9b73c641a1d48738df5449b27a3dfb846ef9f83079544a00b6",
+      "l2": 792.1681089977292,
+      "linf": 236.5785236596803,
+      "relative_l2_to_exact_source_residual": 1.0
+    },
+    "native_operator_residual": {
+      "field_sha256": "995cb2ef96a98581bee6ac1b7b9263b65ac1688998751b74d65599fcd73c236b",
+      "l2": 792.1680509972474,
+      "linf": 236.5785236596803,
+      "relative_l2_to_exact_source_residual": 0.9999999267826095
+    }
+  },
+  "generated_at": "2026-07-24T15:50:00Z",
+  "input_contract": {
+    "component_order": [
+      "freegs_fourth_order_baseline",
+      "native_second_order_stencil",
+      "coil_vacuum_discretisation",
+      "exact_source_convention"
+    ],
+    "evaluation_case_id": "freegs_16_diiid_public_example",
+    "grid_shape": [
+      129,
+      129
+    ],
+    "inner_solver": "mg_preconditioned_bicgstab",
+    "inverse_boundary_rows": "identity_with_zero_component_wall_rhs",
+    "reference": "converged_FreeGS_total_psi",
+    "response_sign": "minus_native_inverse_of_stationarity_residual",
+    "solver_physics_changed": false
+  },
+  "payload_sha256": "56eddd06af69d4726433aaed1aff43bb1f92af4def1a4efecbe5a7ab81de911e",
+  "response_decomposition": {
+    "components": {
+      "coil_vacuum_discretisation": {
+        "cosine_to_terminal_error": 0.9369722439698701,
+        "field_sha256": "b075e6fa94e40b3ccb01d0cd700a5ca6df7408cc8fbb2666c9d86cb15ecba2b9",
+        "l2_wb": 12.683444411460927,
+        "linf_wb": 0.32083292850175366,
+        "projection_on_terminal_error": 1.0852531058914205,
+        "relative_l2_to_terminal_error": 1.1582553409408345
+      },
+      "exact_source_convention": {
+        "cosine_to_terminal_error": 0.2997865119439039,
+        "field_sha256": "f498772a4820039dac2d08ef2ab16cfe1c2444ca09bfe467470b47ee9c8d9cdf",
+        "l2_wb": 0.02061599601390927,
+        "linf_wb": 0.0007677488829462165,
+        "projection_on_terminal_error": 0.0005643954608957124,
+        "relative_l2_to_terminal_error": 0.0018826579529412656
+      },
+      "freegs_fourth_order_baseline": {
+        "cosine_to_terminal_error": -0.5183045715095055,
+        "field_sha256": "a1ed06baf63f02111bf65d40ff41158649c8d5b44470f9b32f049b1eb3de4cf7",
+        "l2_wb": 7.388982434108908e-13,
+        "linf_wb": 2.0336853367358334e-14,
+        "projection_on_terminal_error": -3.4973313036525924e-14,
+        "relative_l2_to_terminal_error": 6.747637385228914e-14
+      },
+      "native_second_order_stencil": {
+        "cosine_to_terminal_error": 0.04603432981684479,
+        "field_sha256": "9aa8c04e0a35cc25f424e215996059d6e1f5ee9c817312f502b3bfe8e6273d54",
+        "l2_wb": 0.006315060624253641,
+        "linf_wb": 0.0003507711585822575,
+        "projection_on_terminal_error": 2.6547672456532852e-05,
+        "relative_l2_to_terminal_error": 0.0005766929281290108
+      }
+    },
+    "exact_source_total": {
+      "cosine_to_terminal_error": 0.9367526880167204,
+      "field_sha256": "428de14eb303d957184a075fa87f5b79600c1df6fe845d7dd1dde934b9f414e1",
+      "l2_wb": 12.69332517610972,
+      "linf_wb": 0.3209921456372062,
+      "projection_on_terminal_error": 1.085844049024644,
+      "relative_l2_to_terminal_error": 1.1591576548593392
+    },
+    "native_operator_total": {
+      "cosine_to_terminal_error": 0.9368395882554922,
+      "field_sha256": "8f0ad5d268e7b40e30607cfc6dcf293f94d6262dcce997d40003df760e01f09f",
+      "l2_wb": 12.685550685562495,
+      "linf_wb": 0.32082603584071473,
+      "projection_on_terminal_error": 1.0852796535638132,
+      "relative_l2_to_terminal_error": 1.1584476864227464
+    }
+  },
+  "routing": {
+    "dominant_response_component": "coil_vacuum_discretisation",
+    "next_ratcheting_target": "coil_vacuum_grid_convergence",
+    "solver_physics_changed": false
+  },
+  "schema_version": "scpn-fusion.ida-operator-response.v1",
+  "source_artifacts": {
+    "contract": {
+      "path": "validation/ida_operator_response_contract.py",
+      "sha256": "66bb4a2d73efee1886ffdb6ec4485add9759e961af2aec369989b84e5d03d2f1"
+    },
+    "diagnostic": {
+      "path": "validation/diagnose_ida_operator_response.py",
+      "sha256": "d4bb5319890c9a07cff22c18daaa68603cae9af6bfe4cdc0c6294a76db9f8263"
+    },
+    "field_operations": {
+      "path": "validation/ida_operator_response_fields.py",
+      "sha256": "8e95d895d1d301e08752aa31c632cbc4603b2d2009ad1c028429af6a637e0fbb"
+    },
+    "fixed_point_contract": {
+      "path": "validation/ida_fixed_point_stability_contract.py",
+      "sha256": "465a55c686d85cb2764dedfe0e8a5482ab6cc0c0ae47777889244a372fba7548"
+    },
+    "fixed_point_diagnostic": {
+      "path": "validation/diagnose_ida_fixed_point_stability.py",
+      "sha256": "d23d8fca3497078c84b927ce60916d75d935bbc719f3bb6bda3efb6ae35d960e"
+    },
+    "freegs_public_example": {
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
+      "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
+    },
+    "multigrid": {
+      "path": "src/scpn_fusion/core/jax_multigrid_precond.py",
+      "sha256": "59e5a2e0b9777d55c1c43dd1c49b3f88db8d21bb7490ed7d3b5b9698426727da"
+    },
+    "operator_contract": {
+      "path": "validation/ida_fixed_reference_operator_contract.py",
+      "sha256": "575537d4ba9964452fb3926ef61d0448c29f7605b97e953d546bfa6eb543345f"
+    },
+    "operator_diagnostic": {
+      "path": "validation/diagnose_ida_fixed_reference_operator.py",
+      "sha256": "307b925618c54129c8d23030eee7f03d45c7b2fb0240945b19280571aff4d851"
+    },
+    "predictive_solver": {
+      "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+      "sha256": "56c860b68af60b109bbef2cee559fd51c602ed50444752d6e8b3f9765ef3fcef"
+    },
+    "repository": {
+      "git_commit": "8a7dfde09debafcecc894f50ccfc9c250559ef24",
+      "path": ".",
+      "worktree_clean": true
+    },
+    "same_case_benchmark": {
+      "path": "validation/benchmark_ida_same_case.py",
+      "sha256": "5a51978a97f6ca4a78933e4f965ca70a2750f008b6b8248f1e9a534f0f03a80a"
+    },
+    "source_ablation": {
+      "path": "validation/diagnose_ida_fixed_reference_source.py",
+      "sha256": "4f5c7f9db53486c67309416d72b210c7eca8827ebcc4176c9115f4dc1a70b801"
+    }
+  },
+  "status": "diagnostic_complete_claims_blocked"
+}

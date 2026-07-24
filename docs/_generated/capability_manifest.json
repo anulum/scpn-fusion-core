@@ -2731,7 +2731,7 @@
     "python_capability_classes": 569,
     "python_capability_source_modules": 321,
     "rust_workspace_crates": 13,
-    "test_files": 584
+    "test_files": 586
   },
   "documentation": {
     "public_pages": [
@@ -2950,6 +2950,7 @@
       "tests/test_diagnose_ida_fixed_reference_operator.py",
       "tests/test_diagnose_ida_fixed_reference_source.py",
       "tests/test_diagnose_ida_fixed_reference_source_mechanism.py",
+      "tests/test_diagnose_ida_operator_response.py",
       "tests/test_diagnostics.py",
       "tests/test_digital_twin_ingest_runtime.py",
       "tests/test_diiid_jet_validation.py",
@@ -3152,6 +3153,7 @@
       "tests/test_ida_fixed_reference_source_contract.py",
       "tests/test_ida_fixed_reference_source_mechanism_contract.py",
       "tests/test_ida_geometry_feedback_trace_contract.py",
+      "tests/test_ida_operator_response_contract.py",
       "tests/test_imas_adapter.py",
       "tests/test_imas_conformance.py",
       "tests/test_imas_connector.py",

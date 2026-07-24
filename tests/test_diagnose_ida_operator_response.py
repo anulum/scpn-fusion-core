@@ -116,3 +116,15 @@ def test_cli_rejects_invalid_existing_report_without_solver_execution(
     )
     with pytest.raises(ValueError, match="top-level fields"):
         diagnostic.main(["--validate-report", str(path)])
+
+
+def test_tracked_public_report_closes_and_routes_without_claim_promotion() -> None:
+    report = json.loads(diagnostic.REPORT_PATH.read_text(encoding="utf-8"))
+    contract.validate_report(report)
+    assert report["routing"] == {
+        "dominant_response_component": "coil_vacuum_discretisation",
+        "next_ratcheting_target": "coil_vacuum_grid_convergence",
+        "solver_physics_changed": False,
+    }
+    assert max(report["closure"].values()) < 1.0e-9
+    assert set(report["claim_boundary"].values()) == {False}
