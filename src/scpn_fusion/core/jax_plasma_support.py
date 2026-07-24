@@ -42,6 +42,9 @@ from numpy.typing import NDArray
 # Softmax temperature and half-width for the local axis seed (depth |ψ − ψ_wall|).
 DEFAULT_SEED_BETA = 8.0
 DEFAULT_SEED_RADIUS = 2
+DEFAULT_FILL_HOPS = 2
+DEFAULT_MIN_FILL_STEPS = 32
+DEFAULT_MAX_FILL_STEPS = 96
 
 
 def soft_lcfs_weight(psi_n: jnp.ndarray, cutoff_width: float) -> jnp.ndarray:
@@ -136,6 +139,12 @@ def _neighbor_max(field: jnp.ndarray) -> jnp.ndarray:
     return jnp.maximum(jnp.maximum(up, down), jnp.maximum(left, right))
 
 
+def _default_soft_fill_steps(shape: tuple[int, ...]) -> int:
+    """Bound the compiled scan while covering a centred grid in two-hop steps."""
+    centred_radius = (shape[0] + shape[1] + 3) // 4
+    return min(DEFAULT_MAX_FILL_STEPS, max(DEFAULT_MIN_FILL_STEPS, centred_radius))
+
+
 def soft_axis_seed(psi: jnp.ndarray, *, beta: float = DEFAULT_SEED_BETA) -> jnp.ndarray:
     """Local soft seed centred on one magnetic-axis depth maximum.
 
@@ -184,8 +193,9 @@ def soft_axis_connected_support(
     cutoff_width
         Smooth LCFS roll-off width (``ψ_N`` units).
     n_steps
-        Soft flood-fill iterations. Default ``NZ + NR`` covers the Manhattan
-        diameter of the grid. Must be a static Python ``int`` under ``jit``.
+        Two-hop soft flood-fill iterations. The default covers a centred grid
+        with a bounded ``32..96``-step scan to keep nested AD compilation
+        tractable. Must be a static Python ``int`` under ``jit``.
     seed_beta
         Softmax temperature for the axis seed.
 
@@ -195,9 +205,8 @@ def soft_axis_connected_support(
         Support weight ``(NZ, NR)``. Near 1 on the axis-connected core, near 0
         outside the LCFS and on private-flux islands.
     """
-    if n_steps is None:
-        n_steps = int(psi.shape[0] + psi.shape[1])
-    if n_steps < 1:
+    steps = _default_soft_fill_steps(psi.shape) if n_steps is None else n_steps
+    if steps < 1:
         raise ValueError("n_steps must be >= 1")
     lcfs = soft_lcfs_weight(psi_n, cutoff_width)
     seed = soft_axis_seed(psi, beta=seed_beta) * lcfs
@@ -206,11 +215,12 @@ def soft_axis_connected_support(
     state = seed / seed_peak
 
     def body(carry: jnp.ndarray, _: None) -> tuple[jnp.ndarray, None]:
-        spread = jnp.maximum(carry, _neighbor_max(carry))
-        nxt = lcfs * spread
-        return nxt, None
+        spread = carry
+        for _hop in range(DEFAULT_FILL_HOPS):
+            spread = lcfs * jnp.maximum(spread, _neighbor_max(spread))
+        return spread, None
 
-    filled, _ = jax.lax.scan(body, state, xs=None, length=int(n_steps))
+    filled, _ = jax.lax.scan(body, state, xs=None, length=int(steps))
     # Keep in [0, 1]; LCFS already bounds the open set.
     clipped: jnp.ndarray = jnp.clip(filled, 0.0, 1.0)
     return clipped

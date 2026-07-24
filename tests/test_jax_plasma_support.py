@@ -29,6 +29,7 @@ from scpn_fusion.core.jax_free_boundary_predictive import (
     solve_predictive_equilibrium,
 )
 from scpn_fusion.core.jax_plasma_support import (
+    _default_soft_fill_steps,
     hard_axis_connected_from_psi_n,
     hard_axis_connected_mask,
     soft_axis_connected_support,
@@ -196,6 +197,11 @@ def test_equal_depth_disconnected_basin_is_not_independently_seeded() -> None:
     selected_i, rejected_i = (upper_i, lower_i) if hard_centres[0] else (lower_i, upper_i)
     assert float(soft[selected_i, centre_j]) > 0.5
     assert float(soft[rejected_i, centre_j]) < 1.0e-6
+
+
+def test_default_soft_fill_budget_is_capped() -> None:
+    assert _default_soft_fill_steps((33, 33)) == 32
+    assert _default_soft_fill_steps((257, 257)) == 96
 
 
 def test_general_gs_source_axis_connected_kills_private_source() -> None:
