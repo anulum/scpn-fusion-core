@@ -24,6 +24,7 @@ tornado>=6.5.7
 # Light optional backends exercised in CI; keep torch soft.
 streamlit>=1.58.0,<2
 optuna>=4.0,<5
+freegs>=0.6
 
 # Dependabot security floors for CI transitive tooling.
 farama-notifications>=0.0.6
