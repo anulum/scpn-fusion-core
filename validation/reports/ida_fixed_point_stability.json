@@ -2,17 +2,17 @@
   "benchmark_id": "DIII-D-IDA-FB-JAX-B-FIXED-POINT-STABILITY",
   "bindings": {
     "same_case": {
-      "candidate_psi_sha256": "3911d784eb61fda8a4d058bda891dc4e5daaa9aaf318aa8e3c7c26b4f5fd355b",
+      "candidate_psi_sha256": "5a2ad8001010272f9edabf8a1b6f6d7928e4c84cfc1a01aebde21339697660f5",
       "path": "validation/reports/ida_same_case_evidence.json",
-      "payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00",
-      "reference_psi_sha256": "63163b4b1a3e1e9b5ab26da2b3e53988d3199d08d6b4b9bc58dcdac3fd5c2832",
-      "source_commit": "7bb2e659cace7584d27c536c2ef1fb8e201f5ed5"
+      "payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c",
+      "reference_psi_sha256": "70a8bb155c456cb586b630f365200c598be0a073e19f2f4443f250998a8eb680",
+      "source_commit": "7468d46274060122ddf4630d18da2a114bf75224"
     },
     "source_mechanism": {
       "path": "validation/reports/ida_fixed_reference_source_mechanism.json",
-      "payload_sha256": "46865342c0daa5d75cae7403fc4e927694eea2b3e200e90c67ef5f5262a38fe0",
-      "same_case_payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00",
-      "source_commit": "49f92bc4d0419e51883d78d84e61d1aad0c5e254"
+      "payload_sha256": "7430cd866d69a8c101e7c914d78cd3c989e2e6640d517a52f354c14642a3655c",
+      "same_case_payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c",
+      "source_commit": "e56bb39acb948cb0f83600f44ea004a218d063ec"
     }
   },
   "blockers": [
@@ -33,37 +33,37 @@
     "closure_max_abs_wb": 5.551115123125783e-17,
     "components": {
       "boundary_anchor": {
-        "cosine_to_terminal_error": 0.2554849952427779,
-        "field_sha256": "1a2a74d8613833ad27eb04d12ab495d178560fd6a185de5bef786ff8bb15bff6",
-        "l2_wb": 2.438961414538987e-06,
-        "linf_wb": 1.1206363370597217e-07,
-        "projection_on_terminal_error": 5.689231999383165e-08,
-        "relative_l2_to_terminal_error": 2.2268360589931712e-07
+        "cosine_to_terminal_error": 0.19904813464739385,
+        "field_sha256": "e571b9f66dff89b48f98439750a46f9c290d40f28f7cc579cec44b0be18c7ebc",
+        "l2_wb": 2.3384741667593123e-06,
+        "linf_wb": 1.0623246926577679e-07,
+        "projection_on_terminal_error": 4.250673918578959e-08,
+        "relative_l2_to_terminal_error": 2.1355005039905874e-07
       },
       "native_operator_residual": {
-        "cosine_to_terminal_error": 0.9368757612475112,
-        "field_sha256": "8aee42f68aaeecccb9d59f38442acb86e762daf24043844f8ed6abe93214dbe5",
-        "l2_wb": 12.684951706121357,
-        "linf_wb": 0.32082543853840634,
-        "projection_on_terminal_error": 1.0850609567739238,
-        "relative_l2_to_terminal_error": 1.1581695264792575
+        "cosine_to_terminal_error": 0.9368395882554853,
+        "field_sha256": "dd0fbdfbae40c10a974b6bfa34885dce34bb0407376a95f288ba7dfa271334c5",
+        "l2_wb": 12.685550685571059,
+        "linf_wb": 0.3208260358406316,
+        "projection_on_terminal_error": 1.085279653564538,
+        "relative_l2_to_terminal_error": 1.1584476864235285
       },
       "source_mechanism": {
-        "cosine_to_terminal_error": 0.5977172365454281,
-        "field_sha256": "65cbe4bb6a2b0f262fc85595753aa474a58b761683e781c22b7ad19501bcfbdb",
-        "l2_wb": 0.034911698922381704,
-        "linf_wb": 0.000985715402667675,
-        "projection_on_terminal_error": 0.0019052417030019687,
-        "relative_l2_to_terminal_error": 0.0031875301338363956
+        "cosine_to_terminal_error": 0.5974604033206327,
+        "field_sha256": "2f27c4cefbae75c7021458cadc07dfff58c649261a998766a8293920116b347a",
+        "l2_wb": 0.03492828379948264,
+        "linf_wb": 0.0009861902405368106,
+        "projection_on_terminal_error": 0.0019056953597110658,
+        "relative_l2_to_terminal_error": 0.0031896596814104793
       }
     },
     "total_forcing": {
-      "cosine_to_terminal_error": 0.9367554406253809,
-      "field_sha256": "29c947716fc4e9afc702a02677f2e76b68b0cbcc2740515cbcbcf582bd9e1202",
-      "l2_wb": 12.708857848141793,
-      "linf_wb": 0.32134680643314634,
-      "projection_on_terminal_error": 1.0869662553692454,
-      "relative_l2_to_terminal_error": 1.1603522202588794
+      "cosine_to_terminal_error": 0.9367187689262241,
+      "field_sha256": "11ad3cc9eb966ec3b4b696607c34e4555d8fe9a7bfb2e373a5ec236eb1f0a2f6",
+      "l2_wb": 12.709465431878405,
+      "linf_wb": 0.3213477042992202,
+      "projection_on_terminal_error": 1.0871853914309884,
+      "relative_l2_to_terminal_error": 1.1606315870848267
     }
   },
   "environment": {
@@ -74,19 +74,19 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      6.3935546875,
-      8.0263671875,
-      8.9619140625
+      19.25,
+      22.96240234375,
+      21.7646484375
     ],
     "isolated_host": false,
-    "jax_version": "0.6.2",
-    "jaxlib_version": "0.6.2",
+    "jax_version": "0.7.1",
+    "jaxlib_version": "0.7.1",
     "machine": "x86_64",
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-24T02:21:41Z",
+  "generated_at": "2026-07-24T15:31:30Z",
   "input_contract": {
     "anderson_acceleration": false,
     "evaluation_case_id": "freegs_16_diiid_public_example",
@@ -103,26 +103,26 @@
   },
   "jvp_gains": {
     "source_mechanism": {
-      "alignment_with_input": 0.9964981507247265,
-      "gain_l2": 0.866282461476489,
-      "input_sha256": "65cbe4bb6a2b0f262fc85595753aa474a58b761683e781c22b7ad19501bcfbdb",
-      "output_sha256": "f2b906b3f4d5d25a66988377cd1f1d2ab345ddea2a6d854785bed7e22b0409a4"
+      "alignment_with_input": 0.9964976531179303,
+      "gain_l2": 0.8662083125529962,
+      "input_sha256": "2f27c4cefbae75c7021458cadc07dfff58c649261a998766a8293920116b347a",
+      "output_sha256": "0b9a6e65b7f0477a0bef95cbfb47c64fa1dae366a8c198779094391f75247324"
     },
     "terminal_error": {
-      "alignment_with_input": -0.1358127741815562,
-      "gain_l2": 0.27635510003632563,
-      "input_sha256": "38d70b2ba0580688487dab4e717364e20eb73b3ba5047412033bf0cf9cc0df06",
-      "output_sha256": "55a71eab458e10249936c814c20cac31956143b5d32d55ad80ce02f124c0255e"
+      "alignment_with_input": -0.13638727340227524,
+      "gain_l2": 0.2765458521709323,
+      "input_sha256": "c7679acbcdc9c0c8b412793962e16bf269b9f62116c932dfbd922fcbacfdd05b",
+      "output_sha256": "ce3fe34a0602729a77dfd5d1f5de30def3d0a614bbdf6a91c6e423ab56743df1"
     }
   },
   "map_parity": {
-    "manual_map_sha256": "0e361a35290b173d9643b817c3457cafb81c7a5281f70f4b95554151b482fcf2",
-    "max_abs_wb": 1.3877787807814457e-16,
-    "production_map_sha256": "1af3383c6563b4921e16c6f4fcf510b6988f3118ff844ccba4bd41f5a50c74e4",
-    "relative_l2": 1.7208037584824363e-16,
+    "manual_map_sha256": "4b905c8070ab41f659623c295a6faf434d393edbefdec5475247da51c0613001",
+    "max_abs_wb": 3.3306690738754696e-16,
+    "production_map_sha256": "f8f0c353b9603204352830961cea564d392b897f723dca5ac6ab0e1a9fafe60c",
+    "relative_l2": 2.034758484082189e-16,
     "sha256_match": false
   },
-  "payload_sha256": "48c200a036ab6564ec6dccd732bb8bc20dff1beb3caf17d2e1dd4e4c1d955d14",
+  "payload_sha256": "54cfbc43d5337fce5c1667888e21a51c9936189def728b5dc062b30649e85a41",
   "routing": {
     "dominant_forcing_component": "native_operator_residual",
     "locally_amplifying_along_terminal_error": false,
@@ -153,7 +153,7 @@
       "sha256": "56c860b68af60b109bbef2cee559fd51c602ed50444752d6e8b3f9765ef3fcef"
     },
     "repository": {
-      "git_commit": "27efc34b41812c6a48d9392176c6486f2e5449ed",
+      "git_commit": "ef714e1706a93a0d78857cc84c65c31e6be5b324",
       "path": ".",
       "worktree_clean": true
     },
@@ -176,35 +176,35 @@
       "distance_to_candidate_relative_to_terminal": 1.0,
       "distance_to_reference_relative_to_terminal": 0.0,
       "projection_on_terminal_error": 0.0,
-      "psi_sha256": "63163b4b1a3e1e9b5ab26da2b3e53988d3199d08d6b4b9bc58dcdac3fd5c2832",
+      "psi_sha256": "70a8bb155c456cb586b630f365200c598be0a073e19f2f4443f250998a8eb680",
       "step": 0
     },
     {
-      "distance_to_candidate_relative_to_terminal": 0.41531285113901817,
-      "distance_to_reference_relative_to_terminal": 1.1603522202588796,
-      "projection_on_terminal_error": 1.086966255369246,
-      "psi_sha256": "1af3383c6563b4921e16c6f4fcf510b6988f3118ff844ccba4bd41f5a50c74e4",
+      "distance_to_candidate_relative_to_terminal": 0.4155657566223026,
+      "distance_to_reference_relative_to_terminal": 1.1606315870848263,
+      "projection_on_terminal_error": 1.0871853914309881,
+      "psi_sha256": "f8f0c353b9603204352830961cea564d392b897f723dca5ac6ab0e1a9fafe60c",
       "step": 1
     },
     {
-      "distance_to_candidate_relative_to_terminal": 0.27388708626503333,
-      "distance_to_reference_relative_to_terminal": 1.0987227733271294,
-      "projection_on_terminal_error": 1.0660887983024545,
-      "psi_sha256": "c9fdc62e823558d2013971f4f577238643cfcdfd3aa6af0003302f2ac032a093",
+      "distance_to_candidate_relative_to_terminal": 0.2740757244934626,
+      "distance_to_reference_relative_to_terminal": 1.0989464553044492,
+      "projection_on_terminal_error": 1.0662829044347986,
+      "psi_sha256": "9c5b2c7a3c9bd2f655e3d303dbd51921d9e4a9cb9625775eb6ef9b0340e2c0c9",
       "step": 2
     },
     {
-      "distance_to_candidate_relative_to_terminal": 0.2611853215587204,
-      "distance_to_reference_relative_to_terminal": 1.0894554490017958,
-      "projection_on_terminal_error": 1.0593477015809862,
-      "psi_sha256": "e742fdc0351e440e479e3436352a8a3395e9246f0ceca217e4f9eaba3c84431a",
+      "distance_to_candidate_relative_to_terminal": 0.2613254654853688,
+      "distance_to_reference_relative_to_terminal": 1.089646986524711,
+      "projection_on_terminal_error": 1.0595197781656192,
+      "psi_sha256": "3a893129d2039b9255c7ce5dcc3d31a129e561ca02177375971f8dd6b1f7b670",
       "step": 3
     },
     {
-      "distance_to_candidate_relative_to_terminal": 0.26824442674989657,
-      "distance_to_reference_relative_to_terminal": 1.0864659116847837,
-      "projection_on_terminal_error": 1.0542265523853336,
-      "psi_sha256": "fb5626cce2295abd35a2aa5bf2214fe14e5d0316b9a999d8724bc941595adaaf",
+      "distance_to_candidate_relative_to_terminal": 0.2683435557644101,
+      "distance_to_reference_relative_to_terminal": 1.086630125814745,
+      "projection_on_terminal_error": 1.0543783832039406,
+      "psi_sha256": "c6a9041840dd43d998b3955bbadbeb0d2d040b858cf06e363cf5846aa586f1a4",
       "step": 4
     }
   ]
