@@ -33,81 +33,81 @@
     "scientific_validation": false
   },
   "closure": {
-    "current_max_abs_a_per_m2": 5.684341886080802e-14,
+    "current_max_abs_a_per_m2": 1.1368683772161603e-13,
     "interior_source_max_abs": 3.469446951953614e-18,
-    "wall_response_max_abs_wb": 5.173812767100827e-16
+    "wall_response_max_abs_wb": 2.806999424564971e-16
   },
   "control_parity": {
-    "absolute_current_outside_freegs_support_fraction": 0.003889456763623283,
-    "actual_current_density_sha256": "0df31030da57e54b0702e678aacf9ff459927ac8ef8e7a7312cc8cd4edf95778",
-    "formula_current_density_sha256": "4a442fe0691a84d25e9861acd53efa317a2dc3bc6a8c9642e3da6669811259d4",
-    "hard_mask_sha256": "b8f3638df5696cbfd3361f020ca6b672f8a6c910e41abdd4432762632eff0d60",
+    "absolute_current_outside_freegs_support_fraction": 0.003891361627037001,
+    "actual_current_density_sha256": "f00a27a053086fa14921176326c4caf71173820b91ef9e6886d6b373ae61fe77",
+    "formula_current_density_sha256": "c133ff37bf3b5a81a9aa89f8326c6114077d4d9f951229aeb136a354bb67a3bc",
+    "hard_mask_sha256": "4747bcc1fe4751276924ec064d009df9b953b0b7b5c1f8a71e5337b5c71107a1",
     "max_abs_a_per_m2": 9.313225746154785e-10,
-    "rectangular_current_a": -1533632.0000000002,
-    "relative_l2": 6.007886637158806e-17,
-    "relative_l2_to_freegs_reference": 0.008935708359810862,
-    "total_variation_to_freegs_reference": 0.004177180263447966
+    "rectangular_current_a": -1533632.0,
+    "relative_l2": 6.847877166577806e-17,
+    "relative_l2_to_freegs_reference": 0.008938671743164027,
+    "total_variation_to_freegs_reference": 0.004178574928013528
   },
   "current_fields": {
     "freegs_hard_rectangular_normalised": {
       "absolute_current_outside_reference_fraction": 0.0,
-      "candidate_support_point_count": 3253,
-      "current_density_sha256": "e0bdf00c6c7f08ff43b048e8465ea181aebe3f3a409319944b5b6705afbf4122",
+      "candidate_support_point_count": 3254,
+      "current_density_sha256": "c91ed2be5d4e6234a701b9a813ada570690c16eefe308499c925b7556f86da4e",
       "rectangular_current_a": -1533632.0,
-      "reference_support_point_count": 3271,
+      "reference_support_point_count": 3269,
       "relative_ip_error": 0.0,
-      "relative_l2_to_reference": 1.360089485504424e-07,
-      "total_variation_distance": 2.1782239740436878e-17
+      "relative_l2_to_reference": 1.361480239663433e-07,
+      "total_variation_distance": 2.586545524984309e-17
     },
     "freegs_hard_romberg": {
       "absolute_current_outside_reference_fraction": 0.0,
-      "candidate_support_point_count": 3253,
-      "current_density_sha256": "0e2498411704fed500c2f2a78fe1634826710ebf1371d09a091eed0ba55f9f0e",
-      "rectangular_current_a": -1533631.7914123526,
-      "reference_support_point_count": 3271,
-      "relative_ip_error": 1.3600893005342715e-07,
+      "candidate_support_point_count": 3254,
+      "current_density_sha256": "6672f253bc76bd7900f474c68a5afd33acfc47f1a4000654cbf15009c2284d63",
+      "rectangular_current_a": -1533631.791199062,
+      "reference_support_point_count": 3269,
+      "relative_ip_error": 1.3614800550615364e-07,
       "relative_l2_to_reference": 0.0,
       "total_variation_distance": 0.0
     },
     "fusion_smooth_rectangular_normalised": {
-      "absolute_current_outside_reference_fraction": 6.190239783705881e-07,
-      "candidate_support_point_count": 3388,
-      "current_density_sha256": "e59ff99d125840fdc34346572afcf2fe7316db60e623b9f97a2eda23fa6c00e9",
+      "absolute_current_outside_reference_fraction": 6.159886845430841e-07,
+      "candidate_support_point_count": 3387,
+      "current_density_sha256": "e94b17ac03b5f099efd0dd04b4cfec1cf190200ec3a421c5a0ae5be9e747747d",
       "rectangular_current_a": -1533632.0000000002,
-      "reference_support_point_count": 3271,
+      "reference_support_point_count": 3269,
       "relative_ip_error": 1.518165007341198e-16,
-      "relative_l2_to_reference": 0.0021234244258459705,
-      "total_variation_distance": 0.0012025493605056206
+      "relative_l2_to_reference": 0.0021223469508374762,
+      "total_variation_distance": 0.0012019622813807757
     },
     "fusion_smooth_unscaled": {
-      "absolute_current_outside_reference_fraction": 6.190239783705881e-07,
-      "candidate_support_point_count": 3388,
-      "current_density_sha256": "a9249f8739dbe629757fe971d5067484c2e560af126712fa9807c26a324de0b4",
-      "rectangular_current_a": -1534085.122504351,
-      "reference_support_point_count": 3271,
-      "relative_ip_error": 0.00029545712684070374,
-      "relative_l2_to_reference": 0.002123416385382307,
-      "total_variation_distance": 0.0012025493605056134
+      "absolute_current_outside_reference_fraction": 6.159886845430841e-07,
+      "candidate_support_point_count": 3387,
+      "current_density_sha256": "cf83266c128572fc01d8c926845d8dff4d1181f642e64341fdc720f54a52ea52",
+      "rectangular_current_a": -1534084.6276231774,
+      "reference_support_point_count": 3269,
+      "relative_ip_error": 0.000295134441102798,
+      "relative_l2_to_reference": 0.002122343594636863,
+      "total_variation_distance": 0.0012019622813807783
     }
   },
   "current_vectors": {
     "hard_rectangular_normalisation": {
-      "field_sha256": "4f93dcdf16c24641c5cfcb2e0c325b9a90f2866066c7354f012f84f08c85243f",
-      "linf": 0.5758819002658129,
-      "relative_l2_to_reference_scale": 1.360089485504424e-07,
-      "rms": 0.07952193518639165
+      "field_sha256": "60acb3a4c42a08e1a7a42ff2aa1fe78e0ce5fdce631beb04e60b702a5d221072",
+      "linf": 0.5764817222952843,
+      "relative_l2_to_reference_scale": 1.361480239663433e-07,
+      "rms": 0.07960405171710302
     },
     "smooth_cutoff": {
-      "field_sha256": "94496a93597d2d5da10c0bde562461ca5dedde352c7484012b6819c3afe78aff",
-      "linf": 8872.341155914124,
-      "relative_l2_to_reference_scale": 0.002123407219966385,
-      "rms": 1241.5172172135262
+      "field_sha256": "bacd5e3e44a514538e66f6bde408663843165ba62886d51d12ddb964fbb1bba9",
+      "linf": 8868.425539167598,
+      "relative_l2_to_reference_scale": 0.002122334423113556,
+      "rms": 1240.902469655264
     },
     "smooth_ip_normalisation": {
-      "field_sha256": "aaa7e90d6db65a3ca84abf23eb7731783b49e42764bd156ed1cd7ebe6586b153",
-      "linf": 1250.5005415044725,
-      "relative_l2_to_reference_scale": 0.0002954128059822546,
-      "rms": 172.722444081232
+      "field_sha256": "da411d6d89ca0cddc2a1a8037a6988673f3cec92ae8fd8f3968c3d8d12cc5bcc",
+      "linf": 1249.160047100857,
+      "relative_l2_to_reference_scale": 0.00029509022685136925,
+      "rms": 172.53557558275716
     }
   },
   "environment": {
@@ -118,19 +118,19 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      7.51220703125,
-      8.8095703125,
-      8.71826171875
+      14.20703125,
+      11.2158203125,
+      8.958984375
     ],
     "isolated_host": false,
-    "jax_version": "0.7.1",
-    "jaxlib_version": "0.7.1",
+    "jax_version": "0.6.2",
+    "jaxlib_version": "0.6.2",
     "machine": "x86_64",
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-23T23:38:07Z",
+  "generated_at": "2026-07-24T00:52:00Z",
   "input_contract": {
     "control_semantics": "external profiles; hard 0<=psi_N<1 support; rectangular Ip normalisation",
     "cutoff_width": 0.03,
@@ -148,25 +148,25 @@
   },
   "interior_source_vectors": {
     "hard_rectangular_normalisation": {
-      "field_sha256": "b0736457dafbb1caeb17544b6aa5572eb34eb20f7991fc931c1c1b4e28e367a8",
-      "linf": 1.2572070447793827e-06,
-      "relative_l2_to_reference_scale": 1.360089485499946e-07,
-      "rms": 3.857844783025167e-07
+      "field_sha256": "b2b2cc65a60088304848eabf9ecd311f11f18a163676d07cfb0f0b67c087fbde",
+      "linf": 1.25848270936279e-06,
+      "relative_l2_to_reference_scale": 1.3614802396630118e-07,
+      "rms": 3.8628634535856755e-07
     },
     "smooth_cutoff": {
-      "field_sha256": "fe1a19ef574e92634ab4978263cbd0d3eb3228aeec8f11f0bebbe5c1c99b1f49",
-      "linf": 0.021854436794811208,
-      "relative_l2_to_reference_scale": 0.002250265676362621,
-      "rms": 0.006382797450114161
+      "field_sha256": "a8f8b16746f0c6156cc138e35b83debb3c8833f823ebeb21e8d00282ac1f35e4",
+      "linf": 0.02183444611209982,
+      "relative_l2_to_reference_scale": 0.002249112978327463,
+      "rms": 0.006381301816849588
     },
     "smooth_ip_normalisation": {
-      "field_sha256": "45c63922c7b2227d164faaedb7c80d7fba484cc91a521cc1abdb343ac740ae2b",
-      "linf": 0.0027307413365825713,
-      "relative_l2_to_reference_scale": 0.0002955198938388639,
-      "rms": 0.0008382315229114073
+      "field_sha256": "e4194ea1dbc1abc24c243fd97145c3a588890367728a9062a93829a120307b76",
+      "linf": 0.0027277407753849825,
+      "relative_l2_to_reference_scale": 0.000295197150604202,
+      "rms": 0.000837548905560203
     }
   },
-  "payload_sha256": "8cb5d9d72b7081a8bb5ddf1c05dfc66850178fde11d68c91455c8cb97c6c1914",
+  "payload_sha256": "e2773a1207a187ce4c641e20ca630fe7c13e6f02653a4e692552556c3155f882",
   "routing": {
     "current_dominant_component": "smooth_cutoff",
     "interior_source_dominant_component": "smooth_cutoff",
@@ -184,51 +184,51 @@
       "sha256": "1571abafc2a9ab0ab5feaaa203774df793aff3e2cbdbab46de8d678571f5f4d4"
     },
     "control_repository": {
-      "git_commit": "6391ecdc141258666aa89c5bda5cac0cce977657",
+      "git_commit": "8e8de55b9aea59f488c95f9b609e110782ba659e",
       "path": "../SCPN-CONTROL",
       "worktree_clean": true
     },
     "diagnostic": {
       "path": "validation/diagnose_ida_fixed_reference_source_mechanism.py",
-      "sha256": "d14bcbb7995529bdddd9c461c73b84df416dc7eec0334fbb4c3b8a232f3e6d2c"
+      "sha256": "11889c2f308a758bf708cf55c3e0f74abe3a87d53e3999284a9459b9095c3f82"
     },
     "freegs_public_example": {
       "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py",
       "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
     },
     "fusion_repository": {
-      "git_commit": "ecb58ee48b2412ef3a3a7cdd886f729583001886",
+      "git_commit": "e9081f9a9287d35f74cc66f7440ca4b681cf2228",
       "path": ".",
       "worktree_clean": true
     },
     "plasma_support": {
       "path": "src/scpn_fusion/core/jax_plasma_support.py",
-      "sha256": "b80919420ab96346bc0c229775b51d9bbc4ac0d075cf9fba0ccfa4d1bf8c4600"
+      "sha256": "d585038591a1738d2a194415bd7524b984e45df8489dfa6f5d531c722fa1e47f"
     },
     "predictive_solver": {
       "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
-      "sha256": "ed227ea5731e502004786a180082d6d77f6014e7cfcb5211661c97456d1c96fb"
+      "sha256": "56c860b68af60b109bbef2cee559fd51c602ed50444752d6e8b3f9765ef3fcef"
     }
   },
   "status": "diagnostic_complete_claims_blocked",
   "wall_response_vectors": {
     "hard_rectangular_normalisation": {
-      "field_sha256": "443033bca0b2a3d9c35a620ef96be70975c6c2f13cd5456f349fe06dbf76c1c4",
-      "linf": 7.930279203990709e-08,
-      "relative_l2_to_reference_scale": 1.3600894854901595e-07,
-      "rms": 3.542536528634998e-08
+      "field_sha256": "bf6d900867b08a620bff0d3cdbe3788f972d7a731a5e71258cd5f450c897c72f",
+      "linf": 7.937672383677972e-08,
+      "relative_l2_to_reference_scale": 1.3614802396652546e-07,
+      "rms": 3.545888228531596e-08
     },
     "smooth_cutoff": {
-      "field_sha256": "242a1c67a74c684b67ce219219c67569f06d881c4cfbb957559524f3773ff73f",
-      "linf": 0.0006837888844311669,
-      "relative_l2_to_reference_scale": 0.001034487581445225,
-      "rms": 0.00026944624488206125
+      "field_sha256": "6888a15a54b3805d32868fd9a36be2d74f4ad26c93a69b8598370295e876a73b",
+      "linf": 0.0006833124531173152,
+      "relative_l2_to_reference_scale": 0.001033850070357534,
+      "rms": 0.0002692596401875562
     },
     "smooth_ip_normalisation": {
-      "field_sha256": "5cd02c96139dc4bfaa4248595a5c04131b08793f0b6eb1783c3256c5ef085b23",
-      "linf": 0.00017242251858593449,
-      "relative_l2_to_reference_scale": 0.00029567183223958043,
-      "rms": 7.701171705034338e-05
+      "field_sha256": "f85db760cc2a120adb4ab91ada60dc25973b743ea6c8f279b53bfe7640e4d7d7",
+      "linf": 0.00017221860889635887,
+      "relative_l2_to_reference_scale": 0.0002953488217752701,
+      "rms": 7.692171211394875e-05
     }
   }
 }
