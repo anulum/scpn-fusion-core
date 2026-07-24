@@ -92,6 +92,20 @@ def test_metric_binds_field_and_same_unit_reference_scale() -> None:
     assert len(row["field_sha256"]) == 64
 
 
+def test_reference_binding_checks_native_orientation_and_rejects_drift() -> None:
+    reference_rz = np.arange(25, dtype=np.float64).reshape(5, 5)
+    evaluation = {
+        "digests": {
+            "reference_psi_sha256": diagnostic._array_sha256(reference_rz.T),
+        }
+    }
+    diagnostic._verify_reference_binding(reference_rz, evaluation=evaluation)
+
+    evaluation["digests"]["reference_psi_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="disagrees with same-case evidence"):
+        diagnostic._verify_reference_binding(reference_rz, evaluation=evaluation)
+
+
 @pytest.mark.parametrize(
     ("field", "scale"),
     [

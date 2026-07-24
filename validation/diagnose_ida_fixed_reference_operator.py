@@ -63,6 +63,24 @@ def _finite_2d(value: object, *, field: str) -> FloatArray:
     return array
 
 
+def _verify_reference_binding(
+    total_psi_rz: FloatArray,
+    *,
+    evaluation: dict[str, Any],
+) -> None:
+    """Require reconstructed FreeGS geometry to match the same-case payload."""
+    digests = evaluation.get("digests")
+    if not isinstance(digests, dict):
+        raise ValueError("same-case evaluation digests are malformed")
+    expected = digests.get("reference_psi_sha256")
+    if not isinstance(expected, str) or len(expected) != 64:
+        raise ValueError("same-case reference digest is malformed")
+    # Same-case and native solver planes use (Z,R); FreeGS exposes (R,Z).
+    actual = _array_sha256(np.asarray(total_psi_rz.T, dtype=np.float64))
+    if actual != expected:
+        raise ValueError("reconstructed FreeGS reference disagrees with same-case evidence")
+
+
 def _metric(field: object, *, reference_scale: object) -> dict[str, Any]:
     """Summarise one field against an explicitly supplied same-unit scale."""
     array = np.asarray(field, dtype=np.float64)
@@ -274,6 +292,7 @@ def run_diagnostic(
     reference_current = _finite_2d(equilibrium.Jtor, field="FreeGS Jtor")
     if list(total_psi.shape) != contract.GRID_SHAPE:
         raise ValueError("FreeGS reference must use the frozen 129x129 grid")
+    _verify_reference_binding(total_psi, evaluation=evaluation)
 
     knots = np.linspace(
         0.0,
