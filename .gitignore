@@ -178,3 +178,5 @@ TODO.md
 # real_public DIII-D data files stay untracked pending the owner's commit decision
 validation/reference_data/diiid/real_public/*
 !validation/reference_data/diiid/real_public/PROVENANCE.json
+
+docs/internal/**
