@@ -3,9 +3,9 @@
   "bindings": {
     "operator_decomposition": {
       "path": "validation/reports/ida_fixed_reference_operator_residual.json",
-      "payload_sha256": "a7ac591612e6b44b8b77aeaed2373ecec994887d7915dc568df00f8773e6c2b1",
+      "payload_sha256": "de737d1ac79ff3c69be93b82d1b1bab48a9007dd7cfc953c958dc37af33e1aeb",
       "source_ablation_payload_sha256": "89ce2d234ec978e1401fbf18b73cd4712bd19fd9eb33b3cecea0da6e0c539b29",
-      "source_commit": "e1e0ad45ee43816811fa76a2d6fc5b59805449fd",
+      "source_commit": "b184d5a02b8893f919b523c4365ef7c62b100db2",
       "source_same_case_payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00"
     },
     "same_case": {
@@ -33,81 +33,81 @@
     "scientific_validation": false
   },
   "closure": {
-    "current_max_abs_a_per_m2": 1.1368683772161603e-13,
+    "current_max_abs_a_per_m2": 5.684341886080802e-14,
     "interior_source_max_abs": 3.469446951953614e-18,
-    "wall_response_max_abs_wb": 2.806999424564971e-16
+    "wall_response_max_abs_wb": 3.6586402310523347e-16
   },
   "control_parity": {
-    "absolute_current_outside_freegs_support_fraction": 0.003891361627037001,
-    "actual_current_density_sha256": "f00a27a053086fa14921176326c4caf71173820b91ef9e6886d6b373ae61fe77",
-    "formula_current_density_sha256": "c133ff37bf3b5a81a9aa89f8326c6114077d4d9f951229aeb136a354bb67a3bc",
-    "hard_mask_sha256": "4747bcc1fe4751276924ec064d009df9b953b0b7b5c1f8a71e5337b5c71107a1",
+    "absolute_current_outside_freegs_support_fraction": 0.003889456763623283,
+    "actual_current_density_sha256": "0df31030da57e54b0702e678aacf9ff459927ac8ef8e7a7312cc8cd4edf95778",
+    "formula_current_density_sha256": "4a442fe0691a84d25e9861acd53efa317a2dc3bc6a8c9642e3da6669811259d4",
+    "hard_mask_sha256": "b8f3638df5696cbfd3361f020ca6b672f8a6c910e41abdd4432762632eff0d60",
     "max_abs_a_per_m2": 9.313225746154785e-10,
-    "rectangular_current_a": -1533632.0,
-    "relative_l2": 6.847877166577806e-17,
-    "relative_l2_to_freegs_reference": 0.008938671743164027,
-    "total_variation_to_freegs_reference": 0.004178574928013528
+    "rectangular_current_a": -1533632.0000000002,
+    "relative_l2": 6.007886637158806e-17,
+    "relative_l2_to_freegs_reference": 0.008935708359810862,
+    "total_variation_to_freegs_reference": 0.004177180263447966
   },
   "current_fields": {
     "freegs_hard_rectangular_normalised": {
       "absolute_current_outside_reference_fraction": 0.0,
-      "candidate_support_point_count": 3254,
-      "current_density_sha256": "c91ed2be5d4e6234a701b9a813ada570690c16eefe308499c925b7556f86da4e",
+      "candidate_support_point_count": 3253,
+      "current_density_sha256": "e0bdf00c6c7f08ff43b048e8465ea181aebe3f3a409319944b5b6705afbf4122",
       "rectangular_current_a": -1533632.0,
-      "reference_support_point_count": 3269,
+      "reference_support_point_count": 3271,
       "relative_ip_error": 0.0,
-      "relative_l2_to_reference": 1.361480239663433e-07,
-      "total_variation_distance": 2.586545524984309e-17
+      "relative_l2_to_reference": 1.360089485504424e-07,
+      "total_variation_distance": 2.1782239740436878e-17
     },
     "freegs_hard_romberg": {
       "absolute_current_outside_reference_fraction": 0.0,
-      "candidate_support_point_count": 3254,
-      "current_density_sha256": "6672f253bc76bd7900f474c68a5afd33acfc47f1a4000654cbf15009c2284d63",
-      "rectangular_current_a": -1533631.791199062,
-      "reference_support_point_count": 3269,
-      "relative_ip_error": 1.3614800550615364e-07,
+      "candidate_support_point_count": 3253,
+      "current_density_sha256": "0e2498411704fed500c2f2a78fe1634826710ebf1371d09a091eed0ba55f9f0e",
+      "rectangular_current_a": -1533631.7914123526,
+      "reference_support_point_count": 3271,
+      "relative_ip_error": 1.3600893005342715e-07,
       "relative_l2_to_reference": 0.0,
       "total_variation_distance": 0.0
     },
     "fusion_smooth_rectangular_normalised": {
-      "absolute_current_outside_reference_fraction": 6.159886845430841e-07,
-      "candidate_support_point_count": 3387,
-      "current_density_sha256": "e94b17ac03b5f099efd0dd04b4cfec1cf190200ec3a421c5a0ae5be9e747747d",
-      "rectangular_current_a": -1533632.0000000002,
-      "reference_support_point_count": 3269,
-      "relative_ip_error": 1.518165007341198e-16,
-      "relative_l2_to_reference": 0.0021223469508374762,
-      "total_variation_distance": 0.0012019622813807757
+      "absolute_current_outside_reference_fraction": 6.182809363683591e-07,
+      "candidate_support_point_count": 3388,
+      "current_density_sha256": "3cfee2dd3a277938c3f6db7850df51e809a36ef491139ba8cd687c549532bf1f",
+      "rectangular_current_a": -1533632.0,
+      "reference_support_point_count": 3271,
+      "relative_ip_error": 0.0,
+      "relative_l2_to_reference": 0.0021234243741295893,
+      "total_variation_distance": 0.0012025489449938736
     },
     "fusion_smooth_unscaled": {
-      "absolute_current_outside_reference_fraction": 6.159886845430841e-07,
-      "candidate_support_point_count": 3387,
-      "current_density_sha256": "cf83266c128572fc01d8c926845d8dff4d1181f642e64341fdc720f54a52ea52",
-      "rectangular_current_a": -1534084.6276231774,
-      "reference_support_point_count": 3269,
-      "relative_ip_error": 0.000295134441102798,
-      "relative_l2_to_reference": 0.002122343594636863,
-      "total_variation_distance": 0.0012019622813807783
+      "absolute_current_outside_reference_fraction": 6.182809363683593e-07,
+      "candidate_support_point_count": 3388,
+      "current_density_sha256": "4cedc02158ec073fe7332b402c6735e482084cad8078a84d84949c3d6387f642",
+      "rectangular_current_a": -1534085.1213644608,
+      "reference_support_point_count": 3271,
+      "relative_ip_error": 0.00029545638357884575,
+      "relative_l2_to_reference": 0.0021234163853646243,
+      "total_variation_distance": 0.001202548944993871
     }
   },
   "current_vectors": {
     "hard_rectangular_normalisation": {
-      "field_sha256": "60acb3a4c42a08e1a7a42ff2aa1fe78e0ce5fdce631beb04e60b702a5d221072",
-      "linf": 0.5764817222952843,
-      "relative_l2_to_reference_scale": 1.361480239663433e-07,
-      "rms": 0.07960405171710302
+      "field_sha256": "4f93dcdf16c24641c5cfcb2e0c325b9a90f2866066c7354f012f84f08c85243f",
+      "linf": 0.5758819002658129,
+      "relative_l2_to_reference_scale": 1.360089485504424e-07,
+      "rms": 0.07952193518639165
     },
     "smooth_cutoff": {
-      "field_sha256": "bacd5e3e44a514538e66f6bde408663843165ba62886d51d12ddb964fbb1bba9",
-      "linf": 8868.425539167598,
-      "relative_l2_to_reference_scale": 0.002122334423113556,
-      "rms": 1240.902469655264
+      "field_sha256": "e7bf67592c23c8b1486d0410f3050caad9d4d0df01862e37ae705a0997bb35de",
+      "linf": 8872.341155914124,
+      "relative_l2_to_reference_scale": 0.002123407219948702,
+      "rms": 1241.5172172031876
     },
     "smooth_ip_normalisation": {
-      "field_sha256": "da411d6d89ca0cddc2a1a8037a6988673f3cec92ae8fd8f3968c3d8d12cc5bcc",
-      "linf": 1249.160047100857,
-      "relative_l2_to_reference_scale": 0.00029509022685136925,
-      "rms": 172.53557558275716
+      "field_sha256": "20d4c27d939442373705a5fd7559ac999c6f71f0f69c2a80867913970528a8c7",
+      "linf": 1250.497396633029,
+      "relative_l2_to_reference_scale": 0.0002954120630514371,
+      "rms": 172.72200970322268
     }
   },
   "environment": {
@@ -118,19 +118,19 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      8.10546875,
-      10.02587890625,
-      11.51220703125
+      7.03759765625,
+      6.87451171875,
+      7.96337890625
     ],
     "isolated_host": false,
-    "jax_version": "0.6.2",
-    "jaxlib_version": "0.6.2",
+    "jax_version": "0.7.1",
+    "jaxlib_version": "0.7.1",
     "machine": "x86_64",
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-24T01:14:00Z",
+  "generated_at": "2026-07-24T14:40:42Z",
   "input_contract": {
     "control_semantics": "external profiles; hard 0<=psi_N<1 support; rectangular Ip normalisation",
     "cutoff_width": 0.03,
@@ -148,25 +148,25 @@
   },
   "interior_source_vectors": {
     "hard_rectangular_normalisation": {
-      "field_sha256": "b2b2cc65a60088304848eabf9ecd311f11f18a163676d07cfb0f0b67c087fbde",
-      "linf": 1.25848270936279e-06,
-      "relative_l2_to_reference_scale": 1.3614802396630118e-07,
-      "rms": 3.8628634535856755e-07
+      "field_sha256": "b0736457dafbb1caeb17544b6aa5572eb34eb20f7991fc931c1c1b4e28e367a8",
+      "linf": 1.2572070447793827e-06,
+      "relative_l2_to_reference_scale": 1.360089485499946e-07,
+      "rms": 3.857844783025167e-07
     },
     "smooth_cutoff": {
-      "field_sha256": "a8f8b16746f0c6156cc138e35b83debb3c8833f823ebeb21e8d00282ac1f35e4",
-      "linf": 0.02183444611209982,
-      "relative_l2_to_reference_scale": 0.002249112978327463,
-      "rms": 0.006381301816849588
+      "field_sha256": "fe1a19ef574e92634ab4978263cbd0d3eb3228aeec8f11f0bebbe5c1c99b1f49",
+      "linf": 0.021854436794811208,
+      "relative_l2_to_reference_scale": 0.002250265676362621,
+      "rms": 0.006382797450114161
     },
     "smooth_ip_normalisation": {
-      "field_sha256": "e4194ea1dbc1abc24c243fd97145c3a588890367728a9062a93829a120307b76",
-      "linf": 0.0027277407753849825,
-      "relative_l2_to_reference_scale": 0.000295197150604202,
-      "rms": 0.000837548905560203
+      "field_sha256": "f6131fdaa30f974147c1ca39b900df12ee58dc3bf119dda9c4e9a3e93370554d",
+      "linf": 0.0027307344690673187,
+      "relative_l2_to_reference_scale": 0.00029551915063873223,
+      "rms": 0.0008382294148510326
     }
   },
-  "payload_sha256": "46865342c0daa5d75cae7403fc4e927694eea2b3e200e90c67ef5f5262a38fe0",
+  "payload_sha256": "787af5175bc148572f265df6e2aa0e51f7c0585d6d2a55c4dd0ef8cb3081461c",
   "routing": {
     "current_dominant_component": "smooth_cutoff",
     "interior_source_dominant_component": "smooth_cutoff",
@@ -184,9 +184,9 @@
       "sha256": "1571abafc2a9ab0ab5feaaa203774df793aff3e2cbdbab46de8d678571f5f4d4"
     },
     "control_repository": {
-      "git_commit": "990b5e2e9ac0bf8e918d7d514576f3ae535635a3",
+      "git_commit": "a7059cdb20ad7edcfa14ad2807246416d6543cc2",
       "path": "../SCPN-CONTROL",
-      "worktree_clean": true
+      "worktree_clean": false
     },
     "diagnostic": {
       "path": "validation/diagnose_ida_fixed_reference_source_mechanism.py",
@@ -197,7 +197,7 @@
       "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
     },
     "fusion_repository": {
-      "git_commit": "49f92bc4d0419e51883d78d84e61d1aad0c5e254",
+      "git_commit": "19f1f49fc3c05064c042e0b9fbca85172d83a7c4",
       "path": ".",
       "worktree_clean": true
     },
@@ -213,22 +213,22 @@
   "status": "diagnostic_complete_claims_blocked",
   "wall_response_vectors": {
     "hard_rectangular_normalisation": {
-      "field_sha256": "bf6d900867b08a620bff0d3cdbe3788f972d7a731a5e71258cd5f450c897c72f",
-      "linf": 7.937672383677972e-08,
-      "relative_l2_to_reference_scale": 1.3614802396652546e-07,
-      "rms": 3.545888228531596e-08
+      "field_sha256": "443033bca0b2a3d9c35a620ef96be70975c6c2f13cd5456f349fe06dbf76c1c4",
+      "linf": 7.930279203990709e-08,
+      "relative_l2_to_reference_scale": 1.3600894854901595e-07,
+      "rms": 3.542536528634998e-08
     },
     "smooth_cutoff": {
-      "field_sha256": "6888a15a54b3805d32868fd9a36be2d74f4ad26c93a69b8598370295e876a73b",
-      "linf": 0.0006833124531173152,
-      "relative_l2_to_reference_scale": 0.001033850070357534,
-      "rms": 0.0002692596401875562
+      "field_sha256": "2c5e130db6a5f036ebac5642139a7838cd0dc6cd391194094e0678495304393d",
+      "linf": 0.0006837887822510514,
+      "relative_l2_to_reference_scale": 0.0010344873109950946,
+      "rms": 0.00026944617443967663
     },
     "smooth_ip_normalisation": {
-      "field_sha256": "f85db760cc2a120adb4ab91ada60dc25973b743ea6c8f279b53bfe7640e4d7d7",
-      "linf": 0.00017221860889635887,
-      "relative_l2_to_reference_scale": 0.0002953488217752701,
-      "rms": 7.692171211394875e-05
+      "field_sha256": "f928cc89614bfd4a21f0c15234385ff3ca85f0e2b5a9614367e6bf3005bf9e9c",
+      "linf": 0.00017242208493264082,
+      "relative_l2_to_reference_scale": 0.0002956710885723301,
+      "rms": 7.701152335217663e-05
     }
   }
 }
