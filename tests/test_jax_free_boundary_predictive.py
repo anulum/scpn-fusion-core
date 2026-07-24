@@ -285,9 +285,13 @@ def test_iteration_observer_preserves_and_exposes_the_exact_loop(response: Respo
     assert np.array_equal(np.asarray(stopped), np.asarray(observed))
 
 
+@pytest.mark.experimental
 def test_mg_preconditioned_solve_matches_plain(solved: SolvedEquilibrium) -> None:
-    """``use_mg_preconditioner=True`` reaches the SAME equilibrium — the multigrid V-cycle only
-    reshapes the inner Krylov convergence path, never the fixed point."""
+    """``use_mg_preconditioner=True`` reaches the SAME equilibrium.
+
+    This full 33-square, 150-iteration compile belongs to the dedicated-hardware
+    lane; CI-safe MG guards remain covered in the compiled predictive tests.
+    """
     psi_plain, m, b, s = solved
     psi_mg = solve_predictive_equilibrium(
         _COIL_I,
