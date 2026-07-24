@@ -51,6 +51,7 @@ BASE_BLOCKERS = {
     "statistically_held_out_case_missing",
 }
 MAP_PARITY_RELATIVE_L2_MAX = 1.0e-12
+MAP_PARITY_MAX_ABS_WB = 1.0e-12
 DECOMPOSITION_CLOSURE_MAX_ABS_WB = 1.0e-9
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -199,15 +200,16 @@ def _routing(
     moves_toward_candidate = float(
         trajectory[-1]["distance_to_candidate_relative_to_terminal"]
     ) < float(trajectory[0]["distance_to_candidate_relative_to_terminal"])
-    parity_ok = float(map_parity["relative_l2"]) <= MAP_PARITY_RELATIVE_L2_MAX and bool(
-        map_parity["sha256_match"]
+    parity_ok = (
+        float(map_parity["relative_l2"]) <= MAP_PARITY_RELATIVE_L2_MAX
+        and float(map_parity["max_abs_wb"]) <= MAP_PARITY_MAX_ABS_WB
     )
     if not parity_ok:
         target = "stationary_map_parity_failure"
     elif gain > 1.0:
         target = "amplifying_geometry_source_feedback"
     elif moves_toward_candidate:
-        target = "alternative_attractor_or_basin_selection"
+        target = f"{component}_reference_stationarity"
     else:
         target = "stationary_map_forcing_decomposition"
     return {

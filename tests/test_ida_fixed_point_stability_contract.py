@@ -134,7 +134,7 @@ def test_build_validate_render_and_route() -> None:
     assert report["routing"] == {
         "dominant_forcing_component": "source_mechanism",
         "locally_amplifying_along_terminal_error": False,
-        "next_ratcheting_target": "alternative_attractor_or_basin_selection",
+        "next_ratcheting_target": "source_mechanism_reference_stationarity",
         "raw_picard_moves_toward_candidate": True,
         "stationary_map_parity_ok": True,
     }
