@@ -22,21 +22,21 @@
   },
   "coil_region_diagnostic": {
     "all_interior_vacuum_field": {
-      "field_sha256": "55518921daccdfb7647eb6f44c671e408478c1cb0aa905d31a3d4c11f8d238f9",
-      "linf": 236.5785674607004,
-      "relative_l2_to_reference_scale": 4.883148641471275,
-      "rms": 6.237546013491909
+      "field_sha256": "eb62499086729bb002b9bc28d1fcfad073df6c9367931f10e8da694795f3e499",
+      "linf": 236.5989274949941,
+      "relative_l2_to_reference_scale": 4.883392544024644,
+      "rms": 6.237684283682343
     },
     "coil_filament_count": 216,
     "coil_filaments_inside_domain": 216,
-    "outside_reference_support_l2_fraction": 0.999999999649927,
-    "reference_plasma_support_fraction": 0.20280240560481122,
-    "reference_plasma_support_point_count": 3271,
+    "outside_reference_support_l2_fraction": 0.9999999996499664,
+    "reference_plasma_support_fraction": 0.20267840535681073,
+    "reference_plasma_support_point_count": 3269,
     "reference_plasma_support_vacuum_field": {
-      "field_sha256": "8a785c78652bec086b922879173954ceffe24593b2084b2cff779daa120b87aa",
-      "linf": 0.0029606005219650205,
-      "relative_l2_to_reference_scale": 0.00012920945162711348,
-      "rms": 0.0003664979504594679
+      "field_sha256": "342b82eac2bff1b0c1c033ba1e5459d69a3070065271fd50d03c5066dc3b6d16",
+      "linf": 0.0029606406488510983,
+      "relative_l2_to_reference_scale": 0.00012920860269505281,
+      "rms": 0.0003665974537853962
     }
   },
   "environment": {
@@ -47,19 +47,19 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      4.537109375,
-      5.14794921875,
-      5.4072265625
+      7.87109375,
+      10.7080078125,
+      11.85986328125
     ],
     "isolated_host": false,
-    "jax_version": "0.7.1",
-    "jaxlib_version": "0.7.1",
+    "jax_version": "0.6.2",
+    "jaxlib_version": "0.6.2",
     "machine": "x86_64",
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-23T11:10:00Z",
+  "generated_at": "2026-07-24T01:12:00Z",
   "input_contract": {
     "evaluation_case_id": "freegs_16_diiid_public_example",
     "freegs_operator_order": 4,
@@ -73,85 +73,85 @@
   },
   "interior_components": {
     "exact_source_convention": {
-      "field_sha256": "7bc76b69203ccce16bcb0ab23e5d405e5fecf6089b496efc5156ea7841137642",
-      "linf": 0.04289196742547041,
-      "relative_l2_to_reference_scale": 0.004232269612157685,
-      "rms": 0.01200468014618669
+      "field_sha256": "552dc6c8ca299588fa29168105bb88256677a765623aad7c20cc796b2ac46c4e",
+      "linf": 0.02031767144764718,
+      "relative_l2_to_reference_scale": 0.002201055030815014,
+      "rms": 0.006244949276656917
     },
     "freegs_fourth_order_baseline": {
-      "field_sha256": "d30d94b2c803232f02f045d051fe1f8026ea7f9ba695f99c0a8328ce73bff764",
-      "linf": 1.0905054637078138e-11,
-      "relative_l2_to_reference_scale": 5.078745530920439e-13,
-      "rms": 1.4405678567224372e-12
+      "field_sha256": "e2b4652f755a562c976ea5c9738a1fb578b31f35bb55d971143cd35c05ad88dd",
+      "linf": 1.5833556687994133e-11,
+      "relative_l2_to_reference_scale": 5.200901401637151e-13,
+      "rms": 1.475627142047934e-12
     },
     "second_order_operator": {
-      "field_sha256": "3d004837b110b41aaa1d3e14080012f929793b12b9e21d651cc93a31d41f5c6b",
-      "linf": 0.0117831148052705,
-      "relative_l2_to_reference_scale": 0.0009541497315909101,
-      "rms": 0.0027064113085837112
+      "field_sha256": "04c95b6ca60d365f3132b35d056e1f3201bf714feaf349001f63f86006e59751",
+      "linf": 0.011783082818791257,
+      "relative_l2_to_reference_scale": 0.0009541798911024928,
+      "rms": 0.0027072494496126432
     },
     "vacuum_discretisation": {
-      "field_sha256": "8a785c78652bec086b922879173954ceffe24593b2084b2cff779daa120b87aa",
-      "linf": 0.0029606005219650205,
-      "relative_l2_to_reference_scale": 0.00012920945162711348,
-      "rms": 0.0003664979504594679
+      "field_sha256": "342b82eac2bff1b0c1c033ba1e5459d69a3070065271fd50d03c5066dc3b6d16",
+      "linf": 0.0029606406488510983,
+      "relative_l2_to_reference_scale": 0.00012920860269505281,
+      "rms": 0.0003665974537853962
     }
   },
   "operator_residuals": {
     "freegs_fourth_order_reference_current_plasma_flux": {
-      "field_sha256": "d30d94b2c803232f02f045d051fe1f8026ea7f9ba695f99c0a8328ce73bff764",
-      "linf": 1.0905054637078138e-11,
-      "relative_l2_to_reference_scale": 5.078745530920439e-13,
-      "rms": 1.4405678567224372e-12
+      "field_sha256": "e2b4652f755a562c976ea5c9738a1fb578b31f35bb55d971143cd35c05ad88dd",
+      "linf": 1.5833556687994133e-11,
+      "relative_l2_to_reference_scale": 5.200901401637151e-13,
+      "rms": 1.475627142047934e-12
     },
     "native_second_order_compact_source_total_flux": {
-      "field_sha256": "5051947f51d32ae2bd9a6b4adf832b48bebd23451fe86daf239d7656caa0887a",
-      "linf": 0.034633604696386655,
-      "relative_l2_to_reference_scale": 0.003666589845837485,
-      "rms": 0.01040014988650374
+      "field_sha256": "4426c70dae3871924f89710fae7b441afcce653becb07a8d78b158c3b520254a",
+      "linf": 0.0257793505127335,
+      "relative_l2_to_reference_scale": 0.002374708931626008,
+      "rms": 0.006737649271466546
     },
     "native_second_order_exact_source_total_flux": {
-      "field_sha256": "5e0033c28c71d63526f0f89f6b717a2c79710ffe887996edc4914ecd080b5ff5",
-      "linf": 0.03463360469638488,
-      "relative_l2_to_reference_scale": 0.00366658984583713,
-      "rms": 0.010400149886502733
+      "field_sha256": "21217fa8b36de5dd55025398109eebf6ab86adea8c4d6f615b2e8b9644ab405c",
+      "linf": 0.02577935051272906,
+      "relative_l2_to_reference_scale": 0.0023747089316256886,
+      "rms": 0.00673764927146564
     },
     "native_second_order_reference_current_plasma_flux": {
-      "field_sha256": "048c3b3de1c6bbc4c22712675ab9118a00784896ea5a86e972497266967de420",
-      "linf": 0.011783114803192163,
-      "relative_l2_to_reference_scale": 0.0009541497315877685,
-      "rms": 0.0027064113085748004
+      "field_sha256": "c0cdca32f1849d8a6c8511e6023ee86c20b8f56fa0e3d33df6379f1b1e29bc12",
+      "linf": 0.011783082816787527,
+      "relative_l2_to_reference_scale": 0.0009541798911020786,
+      "rms": 0.0027072494496114684
     },
     "native_second_order_reference_current_total_flux": {
-      "field_sha256": "ea1b947ea3c9091244334ef9a897e65d299bc5eed1c9375e0cd9f3772824e2a2",
-      "linf": 0.0118296508757183,
-      "relative_l2_to_reference_scale": 0.0009777747372999874,
-      "rms": 0.0027734227853985632
+      "field_sha256": "33811867adde0044703000fb3e7eafc8cb8e4f8270f81f761635dfa9f77a4f5c",
+      "linf": 0.01182964755764715,
+      "relative_l2_to_reference_scale": 0.0009778056842844488,
+      "rms": 0.0027742817945456415
     }
   },
-  "payload_sha256": "a01392e1b0280118aec51b44cf835466b6b1dc1fb3612cafec953fdc4d7a5814",
+  "payload_sha256": "a7ac591612e6b44b8b77aeaed2373ecec994887d7915dc568df00f8773e6c2b1",
   "routing": {
     "interior_component_relative_l2": {
-      "exact_source_convention": 0.004232269612157685,
-      "second_order_operator": 0.0009541497315909101,
-      "vacuum_discretisation": 0.00012920945162711348
+      "exact_source_convention": 0.002201055030815014,
+      "second_order_operator": 0.0009541798911024928,
+      "vacuum_discretisation": 0.00012920860269505281
     },
     "interior_dominant_component": "exact_source_convention",
     "next_interior_target": "current_support_and_source_convention",
     "next_wall_target": "wall_source_support_and_quadrature",
     "wall_component_relative_l2": {
-      "coil_vacuum_convention": 1.118934171819637e-15,
-      "exact_source_convention": 0.003880568430092016,
-      "plasma_response_quadrature": 2.2236905505967512e-07
+      "coil_vacuum_convention": 1.1761865914184915e-15,
+      "exact_source_convention": 0.0014898998319496193,
+      "plasma_response_quadrature": 2.290712450087552e-07
     },
     "wall_dominant_component": "exact_source_convention"
   },
   "schema_version": "scpn-fusion.ida-fixed-reference-operator-residual.v1",
   "source_ablation": {
     "path": "validation/reports/ida_fixed_reference_source_ablation.json",
-    "payload_sha256": "a0dd4593e0fa45bc7c36080eff172639cf002f2899e9c253412277587523f8a4",
-    "source_commit": "d1de6c3364186f86d8b1022143ed9c2cff6aa9b4",
-    "source_same_case_payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee"
+    "payload_sha256": "89ce2d234ec978e1401fbf18b73cd4712bd19fd9eb33b3cecea0da6e0c539b29",
+    "source_commit": "fc765cb996918a566961d6464bf97dc2572e7a11",
+    "source_same_case_payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00"
   },
   "source_artifacts": {
     "contract": {
@@ -175,12 +175,12 @@
       "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
     },
     "repository": {
-      "git_commit": "d403719a645d79a03abd83f94c57b431dd3c5068",
+      "git_commit": "e1e0ad45ee43816811fa76a2d6fc5b59805449fd",
       "path": "."
     },
     "solver": {
       "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
-      "sha256": "af2642fe286d39ed1ae8e5e96c7bc6664055ed054493c0ab431f09da4a02613e"
+      "sha256": "56c860b68af60b109bbef2cee559fd51c602ed50444752d6e8b3f9765ef3fcef"
     },
     "source_ablation": {
       "path": "validation/diagnose_ida_fixed_reference_source.py",
@@ -194,48 +194,48 @@
       129
     ],
     "path": "validation/reports/ida_same_case_evidence.json",
-    "payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee",
-    "source_commit": "f82ee24fb5683a7077069af85c247c2aca76477a"
+    "payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00",
+    "source_commit": "7bb2e659cace7584d27c536c2ef1fb8e201f5ed5"
   },
   "status": "diagnostic_complete_claims_blocked",
   "wall_components": {
     "coil_vacuum_convention": {
-      "field_sha256": "d9b2a29ad32eb014bf3eab00fdcd0052bfadec283a119de886b44043700f7bb3",
-      "linf": 6.661338147750939e-16,
-      "relative_l2_to_reference_scale": 1.118934171819637e-15,
-      "rms": 1.4540659503590353e-16
+      "field_sha256": "78f4a89f988fe4f684de37eab1dc049c3ad1bbe8998f8283b924550e89478084",
+      "linf": 8.881784197001252e-16,
+      "relative_l2_to_reference_scale": 1.1761865914184915e-15,
+      "rms": 1.528698996485722e-16
     },
     "exact_source_convention": {
-      "field_sha256": "4d7f612a7fcb4e7b69be7c6ea770451a95312734bf9c6d36fc9e1369ea06d328",
-      "linf": 0.001176470190474621,
-      "relative_l2_to_reference_scale": 0.003880568430092016,
-      "rms": 0.0005042836803400941
+      "field_sha256": "2838591cc9fd7243786b6d6ac820116bfe08fa821dc37ffc8d79a9a259f51641",
+      "linf": 0.0005116391921593522,
+      "relative_l2_to_reference_scale": 0.0014898998319496193,
+      "rms": 0.00019364345713368598
     },
     "plasma_response_quadrature": {
-      "field_sha256": "7906b14ceac5befec24ca4a9af78fe7ef813e24a27e76a98e82c04649a668645",
-      "linf": 1.0623246915475448e-07,
-      "relative_l2_to_reference_scale": 2.2236905505967512e-07,
-      "rms": 2.8897077193555124e-08
+      "field_sha256": "3f43c639478a33982c84aede95ed02b0c9176dffbf790ed88ca5d74bf769d2dd",
+      "linf": 1.1206363337290526e-07,
+      "relative_l2_to_reference_scale": 2.290712450087552e-07,
+      "rms": 2.9772570519299803e-08
     }
   },
   "wall_residuals": {
     "compact_source_total_flux": {
-      "field_sha256": "5dcc0d1c044c1a8de58a59e71860607edabd9381c335c1f1ed339421f4892d84",
-      "linf": 0.0011763713858593539,
-      "relative_l2_to_reference_scale": 0.0038804757728148,
-      "rms": 0.0005042716394358795
+      "field_sha256": "2beddef9c966c6359870e93d8e3e3b9ae841ff428777276d2f841e95855a4558",
+      "linf": 0.0005117372891279004,
+      "relative_l2_to_reference_scale": 0.001489993641086189,
+      "rms": 0.00019365564958120934
     },
     "exact_source_total_flux": {
-      "field_sha256": "f85f9a0763ccaf8f605df1f9f83829357b3a4189e28ae928b1087de6ffc27424",
-      "linf": 0.0011763713858587987,
-      "relative_l2_to_reference_scale": 0.0038804757728131017,
-      "rms": 0.0005042716394356589
+      "field_sha256": "d181fe2759c26eaa663e60317e0756f7f9acbd580466cb5cd0df87098117ae15",
+      "linf": 0.0005117372891277894,
+      "relative_l2_to_reference_scale": 0.001489993641085954,
+      "rms": 0.00019365564958117877
     },
     "reference_current_total_flux": {
-      "field_sha256": "ef5d1e714c7a0235f05ffed5d317dabf5ad7314a3a9bed58d11daa5fb82cee3f",
-      "linf": 1.0623246915475448e-07,
-      "relative_l2_to_reference_scale": 2.223690550738578e-07,
-      "rms": 2.889707719539817e-08
+      "field_sha256": "d9b6881d08a85d51fd10e907cc179dbc2621b6ec29ef59326214703d3c110866",
+      "linf": 1.1206363359494986e-07,
+      "relative_l2_to_reference_scale": 2.2907124493139876e-07,
+      "rms": 2.977257050924572e-08
     }
   }
 }
