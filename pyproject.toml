@@ -818,6 +818,8 @@ addopts = "-p no:nengo --strict-markers"
 markers = [
     "slow: marks long-running regression tests",
     "experimental: marks experimental/research-only validation lanes",
+    "external_reference: requires external reference data or a sibling repository",
+    "dedicated_hardware: requires a dedicated high-memory or accelerated runner",
     "stress: marks stress tests (long-running, main-push only)",
 ]
 filterwarnings = [

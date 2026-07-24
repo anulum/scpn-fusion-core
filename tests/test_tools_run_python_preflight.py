@@ -905,7 +905,15 @@ def test_main_runs_research_gate(monkeypatch: pytest.MonkeyPatch) -> None:
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
         (
-            ["python-test", "-m", "pytest", "tests/", "-q", "-m", "experimental"],
+            [
+                "python-test",
+                "-m",
+                "pytest",
+                "tests/",
+                "-q",
+                "-m",
+                "experimental and not (external_reference or dedicated_hardware)",
+            ],
             SCRIPT_PATH.resolve().parents[1],
         )
     ]

@@ -546,8 +546,16 @@ def _build_research_checks(*, skip_research_suite: bool) -> list[tuple[str, list
     if not skip_research_suite:
         checks.append(
             (
-                "Experimental-only pytest suite",
-                [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"],
+                "Hermetic experimental pytest suite",
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "tests/",
+                    "-q",
+                    "-m",
+                    "experimental and not (external_reference or dedicated_hardware)",
+                ],
             )
         )
     return checks
@@ -688,7 +696,8 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "Gate profile to run. "
             "'release' excludes experimental-only lanes, "
-            "'research' runs experimental-only lanes, "
+            "'research' runs experimental tests that need neither external references "
+            "nor dedicated hardware, "
             "'all' runs both."
         ),
     )
@@ -908,7 +917,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-research-suite",
         action="store_true",
-        help="Skip pytest experimental-only lane (tests/ -m experimental).",
+        help="Skip the hermetic experimental pytest lane.",
     )
     parser.add_argument(
         "--check-timeout-seconds",

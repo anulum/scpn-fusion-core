@@ -286,6 +286,7 @@ def test_iteration_observer_preserves_and_exposes_the_exact_loop(response: Respo
 
 
 @pytest.mark.experimental
+@pytest.mark.dedicated_hardware
 def test_mg_preconditioned_solve_matches_plain(solved: SolvedEquilibrium) -> None:
     """``use_mg_preconditioner=True`` reaches the SAME equilibrium.
 

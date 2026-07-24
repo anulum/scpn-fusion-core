@@ -251,6 +251,7 @@ def test_main_requires_generated_at() -> None:
 
 
 @pytest.mark.experimental
+@pytest.mark.external_reference
 def test_real_diiid_fixed_reference_source_mechanism() -> None:
     pytest.importorskip("freegs")
     report = diagnostic.run_diagnostic(generated_at="2026-07-24T00:00:00Z")

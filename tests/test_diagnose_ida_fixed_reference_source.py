@@ -276,6 +276,7 @@ def test_main_requires_generated_at() -> None:
 
 
 @pytest.mark.experimental
+@pytest.mark.external_reference
 def test_real_diiid_fixed_reference_ablation() -> None:
     """The public FreeGS DIII-D surface must reproduce the routing mechanism."""
     pytest.importorskip("freegs")
