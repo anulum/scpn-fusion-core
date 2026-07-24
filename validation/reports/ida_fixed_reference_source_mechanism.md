@@ -1,7 +1,7 @@
 # IDA fixed-reference source-mechanism decomposition
 
 - Status: `diagnostic_complete_claims_blocked`
-- Payload SHA-256: `e2773a1207a187ce4c641e20ca630fe7c13e6f02653a4e692552556c3155f882`
+- Payload SHA-256: `46865342c0daa5d75cae7403fc4e927694eea2b3e200e90c67ef5f5262a38fe0`
 - Facility/control/PCS/safety/scientific admission: `false`
 
 ## Fixed-reference current fields
@@ -24,6 +24,6 @@
 - Dominant current component: `smooth_cutoff`
 - Dominant interior-source component: `smooth_cutoff`
 - Dominant wall-response component: `smooth_cutoff`
-- Next ratcheting target: `soft_axis_connected_support_topology_and_unclipped_lcfs_distance`
+- Next ratcheting target: `self_consistent_equilibrium_geometry_and_boundary_response`
 
 This is a fixed-reference engineering decomposition, not a validation or admission result.

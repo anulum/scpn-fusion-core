@@ -3,10 +3,10 @@
   "bindings": {
     "operator_decomposition": {
       "path": "validation/reports/ida_fixed_reference_operator_residual.json",
-      "payload_sha256": "a01392e1b0280118aec51b44cf835466b6b1dc1fb3612cafec953fdc4d7a5814",
-      "source_ablation_payload_sha256": "a0dd4593e0fa45bc7c36080eff172639cf002f2899e9c253412277587523f8a4",
-      "source_commit": "d403719a645d79a03abd83f94c57b431dd3c5068",
-      "source_same_case_payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee"
+      "payload_sha256": "a7ac591612e6b44b8b77aeaed2373ecec994887d7915dc568df00f8773e6c2b1",
+      "source_ablation_payload_sha256": "89ce2d234ec978e1401fbf18b73cd4712bd19fd9eb33b3cecea0da6e0c539b29",
+      "source_commit": "e1e0ad45ee43816811fa76a2d6fc5b59805449fd",
+      "source_same_case_payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00"
     },
     "same_case": {
       "case_id": "freegs_16_diiid_public_example",
@@ -15,14 +15,14 @@
         129
       ],
       "path": "validation/reports/ida_same_case_evidence.json",
-      "payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee",
-      "source_commit": "f82ee24fb5683a7077069af85c247c2aca76477a"
+      "payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00",
+      "source_commit": "7bb2e659cace7584d27c536c2ef1fb8e201f5ed5"
     },
     "source_ablation": {
       "path": "validation/reports/ida_fixed_reference_source_ablation.json",
-      "payload_sha256": "a0dd4593e0fa45bc7c36080eff172639cf002f2899e9c253412277587523f8a4",
-      "source_commit": "d1de6c3364186f86d8b1022143ed9c2cff6aa9b4",
-      "source_same_case_payload_sha256": "641fc90fb1fccfd6a8de9d37e26ec66256f6edb6af9f9f84c4bc4143e89474ee"
+      "payload_sha256": "89ce2d234ec978e1401fbf18b73cd4712bd19fd9eb33b3cecea0da6e0c539b29",
+      "source_commit": "fc765cb996918a566961d6464bf97dc2572e7a11",
+      "source_same_case_payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00"
     }
   },
   "claim_boundary": {
@@ -118,9 +118,9 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      14.20703125,
-      11.2158203125,
-      8.958984375
+      8.10546875,
+      10.02587890625,
+      11.51220703125
     ],
     "isolated_host": false,
     "jax_version": "0.6.2",
@@ -130,7 +130,7 @@
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-24T00:52:00Z",
+  "generated_at": "2026-07-24T01:14:00Z",
   "input_contract": {
     "control_semantics": "external profiles; hard 0<=psi_N<1 support; rectangular Ip normalisation",
     "cutoff_width": 0.03,
@@ -166,25 +166,25 @@
       "rms": 0.000837548905560203
     }
   },
-  "payload_sha256": "e2773a1207a187ce4c641e20ca630fe7c13e6f02653a4e692552556c3155f882",
+  "payload_sha256": "46865342c0daa5d75cae7403fc4e927694eea2b3e200e90c67ef5f5262a38fe0",
   "routing": {
     "current_dominant_component": "smooth_cutoff",
     "interior_source_dominant_component": "smooth_cutoff",
-    "next_ratcheting_target": "soft_axis_connected_support_topology_and_unclipped_lcfs_distance",
+    "next_ratcheting_target": "self_consistent_equilibrium_geometry_and_boundary_response",
     "wall_response_dominant_component": "smooth_cutoff"
   },
   "schema_version": "scpn-fusion.ida-fixed-reference-source-mechanism.v1",
   "source_artifacts": {
     "contract": {
       "path": "validation/ida_fixed_reference_source_mechanism_contract.py",
-      "sha256": "db486beb69f555b31a0c8358e48872144903f00bca4dd7bfb944b92833b1b4b0"
+      "sha256": "4600c023f3d636e15732172f892e13d1eff77840c393177d39aa5861e8513f91"
     },
     "control_profile_source": {
       "path": "../SCPN-CONTROL/src/scpn_control/core/gs_profile_source.py",
       "sha256": "1571abafc2a9ab0ab5feaaa203774df793aff3e2cbdbab46de8d678571f5f4d4"
     },
     "control_repository": {
-      "git_commit": "8e8de55b9aea59f488c95f9b609e110782ba659e",
+      "git_commit": "990b5e2e9ac0bf8e918d7d514576f3ae535635a3",
       "path": "../SCPN-CONTROL",
       "worktree_clean": true
     },
@@ -197,7 +197,7 @@
       "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
     },
     "fusion_repository": {
-      "git_commit": "e9081f9a9287d35f74cc66f7440ca4b681cf2228",
+      "git_commit": "49f92bc4d0419e51883d78d84e61d1aad0c5e254",
       "path": ".",
       "worktree_clean": true
     },
