@@ -74,6 +74,7 @@ from scpn_fusion.core.jax_free_boundary_gs import (
     MU0_SI,
     greens_psi_si,
     normalised_flux,
+    normalised_flux_unclipped,
     vacuum_field_si,
 )
 from scpn_fusion.core.jax_plasma_support import soft_axis_connected_support
@@ -263,12 +264,13 @@ def _plasma_current(
     private-flux islands on diverted topologies. Ip scaling pins the total
     current and kills the self-field runaway.
     """
+    psi_n_raw = normalised_flux_unclipped(psi, psi_axis, psi_bndry)
     psi_n = normalised_flux(psi, psi_axis, psi_bndry)
     pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
     ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
     r_safe = jnp.maximum(R_grid[jnp.newaxis, :], 1e-6)
     j_raw = r_safe * pprime + ffprime / (mu0 * r_safe)
-    support = soft_axis_connected_support(psi, psi_n, cutoff_width)
+    support = soft_axis_connected_support(psi, psi_n_raw, cutoff_width)
     j_masked = j_raw * support
     ip_now = jnp.sum(j_masked) * dA
     scale = ip_target / jnp.where(jnp.abs(ip_now) < 1.0, 1.0, ip_now)

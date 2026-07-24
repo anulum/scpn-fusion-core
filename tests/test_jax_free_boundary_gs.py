@@ -28,6 +28,7 @@ from scpn_fusion.core.jax_free_boundary_gs import (
     general_gs_source,
     greens_psi_si,
     normalised_flux,
+    normalised_flux_unclipped,
     solve_free_boundary_gs,
     toroidal_plasma_current,
     vacuum_field_si,
@@ -150,6 +151,14 @@ def test_normalised_flux_range_and_endpoints():
     psi_n = normalised_flux(psi, jnp.array(0.0), jnp.array(2.0))
     assert float(jnp.min(psi_n)) >= 0.0
     assert float(jnp.max(psi_n)) <= 1.0
+
+
+def test_normalised_flux_unclipped_preserves_exterior_distance():
+    psi = jnp.array([-1.0, 0.0, 1.0, 2.0])
+    raw = normalised_flux_unclipped(psi, jnp.array(0.0), jnp.array(1.0))
+    clipped = normalised_flux(psi, jnp.array(0.0), jnp.array(1.0))
+    assert np.allclose(np.asarray(raw), [-1.0, 0.0, 1.0, 2.0])
+    assert np.allclose(np.asarray(clipped), [0.0, 0.0, 1.0, 1.0])
 
 
 def test_normalised_flux_degenerate_denominator_is_finite():

@@ -124,20 +124,29 @@ def vacuum_field_si(
 
 
 @jit
-def normalised_flux(
+def normalised_flux_unclipped(
     psi: jnp.ndarray, psi_axis: jnp.ndarray, psi_boundary: jnp.ndarray
 ) -> jnp.ndarray:
-    """Normalised poloidal flux ``ψ_N = (ψ − ψ_axis)/(ψ_boundary − ψ_axis)``, clipped to [0, 1].
+    """Unclipped ``ψ_N = (ψ − ψ_axis)/(ψ_boundary − ψ_axis)``.
 
     A sign-aware floor on the denominator keeps the map finite for either increasing-
     or decreasing-ψ conventions without leaking a discontinuity into the gradient.
+    Values outside ``[0, 1]`` are preserved for LCFS-distance and topology logic.
     """
     raw = psi_boundary - psi_axis
     scale = jnp.maximum(jnp.maximum(jnp.max(jnp.abs(psi)), jnp.abs(psi_boundary)), 1.0)
     floor = 1.0e-9 * scale
     sign = jnp.where(raw < 0.0, -1.0, 1.0)
     denom = jnp.where(jnp.abs(raw) > floor, raw, sign * floor)
-    return jnp.clip((psi - psi_axis) / denom, 0.0, 1.0)
+    return (psi - psi_axis) / denom
+
+
+@jit
+def normalised_flux(
+    psi: jnp.ndarray, psi_axis: jnp.ndarray, psi_boundary: jnp.ndarray
+) -> jnp.ndarray:
+    """Clipped normalised flux for profile interpolation on ``[0, 1]``."""
+    return jnp.clip(normalised_flux_unclipped(psi, psi_axis, psi_boundary), 0.0, 1.0)
 
 
 @partial(jit, static_argnames=("subcell", "axis_connected"))
@@ -175,11 +184,12 @@ def general_gs_source(
     if subcell < 1:
         raise ValueError("subcell must be >= 1")
     r2d = R_grid[jnp.newaxis, :]
-    psi_n0 = normalised_flux(psi, psi_axis, psi_boundary)
+    psi_n_raw0 = normalised_flux_unclipped(psi, psi_axis, psi_boundary)
+    psi_n0 = jnp.clip(psi_n_raw0, 0.0, 1.0)
     if axis_connected:
-        support = soft_axis_connected_support(psi, psi_n0, cutoff_width)
+        support = soft_axis_connected_support(psi, psi_n_raw0, cutoff_width)
     else:
-        support = jnp.where(psi_n0 < 1.0, jnp.ones_like(psi_n0), jnp.zeros_like(psi_n0))
+        support = jnp.where(psi_n_raw0 < 1.0, jnp.ones_like(psi_n0), jnp.zeros_like(psi_n0))
     if subcell == 1:
         pprime = jnp.interp(psi_n0, psin_knots, pprime_vals)
         ffprime = jnp.interp(psi_n0, psin_knots, ffprime_vals)
@@ -193,14 +203,15 @@ def general_gs_source(
         for b in offsets:  # Z-direction sub-offset
             psi_s = psi + a * g_r + b * g_z
             r_s = jnp.maximum(r2d + a * d_r, 1e-6)
-            psi_n = normalised_flux(psi_s, psi_axis, psi_boundary)
+            psi_n_raw = normalised_flux_unclipped(psi_s, psi_axis, psi_boundary)
+            psi_n = jnp.clip(psi_n_raw, 0.0, 1.0)
             pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
             ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
             source = -(mu0 * r_s**2 * pprime + ffprime)
             if axis_connected:
                 acc = acc + source * support
             else:
-                acc = acc + jnp.where(psi_n < 1.0, source, 0.0)
+                acc = acc + jnp.where(psi_n_raw < 1.0, source, 0.0)
     return acc / (subcell * subcell)
 
 
@@ -293,13 +304,14 @@ def toroidal_plasma_current(
     Emerges from the solved equilibrium (an output, not an input) — useful for
     validating the general-profile solve against a target current.
     """
-    psi_n = normalised_flux(psi, psi_axis, psi_boundary)
+    psi_n_raw = normalised_flux_unclipped(psi, psi_axis, psi_boundary)
+    psi_n = jnp.clip(psi_n_raw, 0.0, 1.0)
     pprime = jnp.interp(psi_n, psin_knots, pprime_vals)
     ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
     r2d = R_grid[jnp.newaxis, :]
     r_safe = jnp.maximum(r2d, 1e-6)
     j_raw = r2d * pprime + ffprime / (mu0 * r_safe)
-    support = soft_axis_connected_support(psi, psi_n, 0.03)
+    support = soft_axis_connected_support(psi, psi_n_raw, 0.03)
     j_phi = j_raw * support
     d_r = R_grid[1] - R_grid[0]
     d_z = Z_grid[1] - Z_grid[0]

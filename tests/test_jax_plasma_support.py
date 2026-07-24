@@ -13,11 +13,16 @@ from typing import Callable, cast
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
 _jax_config_update = cast(Callable[[str, bool], None], jax.config.update)
 _jax_config_update("jax_enable_x64", True)
 
-from scpn_fusion.core.jax_free_boundary_gs import general_gs_source, normalised_flux
+from scpn_fusion.core.jax_free_boundary_gs import (
+    general_gs_source,
+    normalised_flux,
+    normalised_flux_unclipped,
+)
 from scpn_fusion.core.jax_free_boundary_predictive import (
     _plasma_current,
     build_response_matrix,
@@ -93,7 +98,11 @@ def test_soft_support_suppresses_private_island() -> None:
     """Soft AD-safe support must also suppress the disconnected private island."""
     psi, _, psi_axis, psi_bndry = _synthetic_diverted_psi()
     psi_j = jnp.asarray(psi)
-    psi_n = normalised_flux(psi_j, jnp.asarray(psi_axis), jnp.asarray(psi_bndry))
+    psi_n = normalised_flux_unclipped(
+        psi_j,
+        jnp.asarray(psi_axis),
+        jnp.asarray(psi_bndry),
+    )
     soft = np.asarray(soft_axis_connected_support(psi_j, psi_n, cutoff_width=0.03))
     hard = hard_axis_connected_from_psi_n(np.asarray(psi_n))
     nz, nr = soft.shape
@@ -117,7 +126,11 @@ def test_soft_support_suppresses_private_island() -> None:
 def test_soft_support_is_finite_and_bounded() -> None:
     psi, _, psi_axis, psi_bndry = _synthetic_diverted_psi(33, 33)
     psi_j = jnp.asarray(psi)
-    psi_n = normalised_flux(psi_j, jnp.asarray(psi_axis), jnp.asarray(psi_bndry))
+    psi_n = normalised_flux_unclipped(
+        psi_j,
+        jnp.asarray(psi_axis),
+        jnp.asarray(psi_bndry),
+    )
     soft = soft_axis_connected_support(psi_j, psi_n, 0.03)
     assert bool(jnp.all(jnp.isfinite(soft)))
     assert float(jnp.min(soft)) >= 0.0
@@ -130,7 +143,11 @@ def test_soft_support_gradients_are_finite() -> None:
     psi_j = jnp.asarray(psi)
 
     def loss(p: jnp.ndarray) -> jnp.ndarray:
-        pn = normalised_flux(p, jnp.asarray(psi_axis), jnp.asarray(psi_bndry))
+        pn = normalised_flux_unclipped(
+            p,
+            jnp.asarray(psi_axis),
+            jnp.asarray(psi_bndry),
+        )
         return jnp.sum(soft_axis_connected_support(p, pn, 0.05))
 
     g = jax.grad(loss)(psi_j)
@@ -145,6 +162,40 @@ def test_soft_lcfs_weight_matches_tanh_definition() -> None:
     got = soft_lcfs_weight(psi_n, w)
     ref = 0.5 * (1.0 - jnp.tanh((psi_n - 1.0) / w))
     assert float(jnp.max(jnp.abs(got - ref))) < 1e-14
+
+
+def test_unclipped_lcfs_distance_decays_outside_instead_of_stalling_at_half() -> None:
+    psi = jnp.asarray([1.0, 0.2, 0.0])
+    raw = normalised_flux_unclipped(psi, jnp.asarray(1.0), jnp.asarray(0.2))
+    clipped = normalised_flux(psi, jnp.asarray(1.0), jnp.asarray(0.2))
+    assert np.asarray(raw) == pytest.approx(np.asarray([0.0, 1.0, 1.25]))
+    assert np.asarray(clipped) == pytest.approx(np.asarray([0.0, 1.0, 1.0]))
+    assert float(soft_lcfs_weight(raw, 0.03)[-1]) < 1.0e-6
+    assert float(soft_lcfs_weight(clipped, 0.03)[-1]) == pytest.approx(0.5)
+
+
+def test_equal_depth_disconnected_basin_is_not_independently_seeded() -> None:
+    nz = nr = 49
+    z = jnp.linspace(-1.0, 1.0, nz)
+    r = jnp.linspace(-1.0, 1.0, nr)
+    zz, rr = jnp.meshgrid(z, r, indexing="ij")
+    sigma2 = 0.08**2
+    upper = jnp.exp(-((zz - 0.55) ** 2 + rr**2) / (2.0 * sigma2))
+    lower = jnp.exp(-((zz + 0.55) ** 2 + rr**2) / (2.0 * sigma2))
+    psi = jnp.maximum(upper, lower)
+    axis = jnp.max(psi)
+    boundary = jnp.asarray(0.2, dtype=psi.dtype)
+    raw = normalised_flux_unclipped(psi, axis, boundary)
+    soft = soft_axis_connected_support(psi, raw, 0.03)
+    hard = hard_axis_connected_from_psi_n(np.asarray(raw))
+    upper_i = int(jnp.argmin(jnp.abs(z - 0.55)))
+    lower_i = int(jnp.argmin(jnp.abs(z + 0.55)))
+    centre_j = int(jnp.argmin(jnp.abs(r)))
+    hard_centres = (bool(hard[upper_i, centre_j]), bool(hard[lower_i, centre_j]))
+    assert sum(hard_centres) == 1
+    selected_i, rejected_i = (upper_i, lower_i) if hard_centres[0] else (lower_i, upper_i)
+    assert float(soft[selected_i, centre_j]) > 0.5
+    assert float(soft[rejected_i, centre_j]) < 1.0e-6
 
 
 def test_general_gs_source_axis_connected_kills_private_source() -> None:

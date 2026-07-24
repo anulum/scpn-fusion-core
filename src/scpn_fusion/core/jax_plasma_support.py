@@ -17,10 +17,12 @@ This module provides:
 
 1. **Hard** 4-connected flood fill from the magnetic-axis seed through a boolean
    level set — exact topology for diagnostics and non-AD paths.
-2. **Soft** (AD-safe) support: a smooth LCFS weight times a fixed-iteration
-   soft flood fill from a soft axis seed. Spread is blocked where the LCFS weight
-   vanishes, so private-flux islands that are flux-level members but not
-   path-connected to the axis stay suppressed while remaining differentiable.
+2. **Soft** support: a smooth LCFS weight times a fixed-iteration flood fill
+   from one local axis seed. The seed location is piecewise differentiable; the
+   weights inside its local window and the propagation remain differentiable.
+   Spread is blocked by the *unclipped* LCFS distance, so private-flux islands
+   that are flux-level members but not path-connected to the axis stay
+   suppressed.
 
 The soft path is what the predictive IDA solver uses; the hard path pins tests
 and the optional exact mask on :func:`general_gs_source`.
@@ -37,8 +39,9 @@ import jax.numpy as jnp
 import numpy as np
 from numpy.typing import NDArray
 
-# Softmax temperature for the soft axis seed (depth |ψ − ψ_wall|).
+# Softmax temperature and half-width for the local axis seed (depth |ψ − ψ_wall|).
 DEFAULT_SEED_BETA = 8.0
+DEFAULT_SEED_RADIUS = 2
 
 
 def soft_lcfs_weight(psi_n: jnp.ndarray, cutoff_width: float) -> jnp.ndarray:
@@ -47,7 +50,9 @@ def soft_lcfs_weight(psi_n: jnp.ndarray, cutoff_width: float) -> jnp.ndarray:
     Parameters
     ----------
     psi_n
-        Normalised flux on the ``(NZ, NR)`` grid (preferably already clipped).
+        Unclipped normalised flux on the ``(NZ, NR)`` grid. Values beyond one
+        carry the distance outside the LCFS; clipping them to one would leave a
+        non-vanishing weight of ``0.5`` across the entire exterior.
     cutoff_width
         Positive roll-off width in ``ψ_N`` units (same contract as the predictive
         solver's ``cutoff_width``).
@@ -132,17 +137,29 @@ def _neighbor_max(field: jnp.ndarray) -> jnp.ndarray:
 
 
 def soft_axis_seed(psi: jnp.ndarray, *, beta: float = DEFAULT_SEED_BETA) -> jnp.ndarray:
-    """Soft one-hot-like seed peaked at the magnetic axis from flux depth.
+    """Local soft seed centred on one magnetic-axis depth maximum.
 
-    Uses ``|ψ − ψ_wall|`` (sign-agnostic axis peak) with an RMS-normalised softmax,
-    matching the smooth O-point seed philosophy without a hard ``argmax``.
+    A global softmax assigns non-zero seed mass to every disconnected component
+    and therefore cannot establish connectivity. This seed first selects one
+    depth maximum, then retains differentiable softmax weights only in a compact
+    window around that location. The discrete window location is piecewise
+    constant, matching the sub-cell X-point refinement contract.
     """
     wall = 0.25 * (
         jnp.mean(psi[0, :]) + jnp.mean(psi[-1, :]) + jnp.mean(psi[:, 0]) + jnp.mean(psi[:, -1])
     )
     depth = jnp.abs(psi - wall)
     rms = jnp.sqrt(jnp.mean(depth**2)) + jnp.asarray(1.0e-30, dtype=psi.dtype)
-    weights = jax.nn.softmax((beta * depth / rms).reshape(-1)).reshape(psi.shape)
+    flat_axis = jnp.argmax(depth.reshape(-1))
+    axis_i = flat_axis // psi.shape[1]
+    axis_j = flat_axis % psi.shape[1]
+    rows = jnp.arange(psi.shape[0])[:, jnp.newaxis]
+    columns = jnp.arange(psi.shape[1])[jnp.newaxis, :]
+    window = (jnp.abs(rows - axis_i) <= DEFAULT_SEED_RADIUS) & (
+        jnp.abs(columns - axis_j) <= DEFAULT_SEED_RADIUS
+    )
+    logits = jnp.where(window, beta * depth / rms, -jnp.inf)
+    weights = jax.nn.softmax(logits.reshape(-1)).reshape(psi.shape)
     return weights
 
 
@@ -162,7 +179,8 @@ def soft_axis_connected_support(
     psi
         Poloidal flux ``(NZ, NR)`` — used only to place the soft axis seed.
     psi_n
-        Normalised flux on the same grid.
+        Unclipped normalised flux on the same grid. The exterior distance above
+        one is required to attenuate propagation across the separatrix.
     cutoff_width
         Smooth LCFS roll-off width (``ψ_N`` units).
     n_steps
