@@ -1,7 +1,7 @@
 # IDA fixed-reference source-mechanism decomposition
 
 - Status: `diagnostic_complete_claims_blocked`
-- Payload SHA-256: `787af5175bc148572f265df6e2aa0e51f7c0585d6d2a55c4dd0ef8cb3081461c`
+- Payload SHA-256: `7430cd866d69a8c101e7c914d78cd3c989e2e6640d517a52f354c14642a3655c`
 - Facility/control/PCS/safety/scientific admission: `false`
 
 ## Fixed-reference current fields

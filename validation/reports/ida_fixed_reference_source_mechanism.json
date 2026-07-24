@@ -3,10 +3,10 @@
   "bindings": {
     "operator_decomposition": {
       "path": "validation/reports/ida_fixed_reference_operator_residual.json",
-      "payload_sha256": "de737d1ac79ff3c69be93b82d1b1bab48a9007dd7cfc953c958dc37af33e1aeb",
-      "source_ablation_payload_sha256": "89ce2d234ec978e1401fbf18b73cd4712bd19fd9eb33b3cecea0da6e0c539b29",
-      "source_commit": "b184d5a02b8893f919b523c4365ef7c62b100db2",
-      "source_same_case_payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00"
+      "payload_sha256": "e90161760b6ff1d1d803041da98bcf63781fcecd6ee2f1741a5f3b083e305dda",
+      "source_ablation_payload_sha256": "e84c92dacb0f42b812a82d35796e6a94d8c8a15f72d431579ef71fbc43d941f4",
+      "source_commit": "0aba239387eeaf5604ae14c7d2edbbcd90cc7538",
+      "source_same_case_payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c"
     },
     "same_case": {
       "case_id": "freegs_16_diiid_public_example",
@@ -15,14 +15,14 @@
         129
       ],
       "path": "validation/reports/ida_same_case_evidence.json",
-      "payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00",
-      "source_commit": "7bb2e659cace7584d27c536c2ef1fb8e201f5ed5"
+      "payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c",
+      "source_commit": "7468d46274060122ddf4630d18da2a114bf75224"
     },
     "source_ablation": {
       "path": "validation/reports/ida_fixed_reference_source_ablation.json",
-      "payload_sha256": "89ce2d234ec978e1401fbf18b73cd4712bd19fd9eb33b3cecea0da6e0c539b29",
-      "source_commit": "fc765cb996918a566961d6464bf97dc2572e7a11",
-      "source_same_case_payload_sha256": "9608791279f41a4c6a99d714bb528c2d8c2d587b6f84e55f141d3317ea5e7b00"
+      "payload_sha256": "e84c92dacb0f42b812a82d35796e6a94d8c8a15f72d431579ef71fbc43d941f4",
+      "source_commit": "94abfb7984e0cecb909d89b9914b5eb6b754d49c",
+      "source_same_case_payload_sha256": "32f0b51b4c80ffc011dc02c1054ab1d11668c1ec5f38fc6ac0570f87cd8c9a3c"
     }
   },
   "claim_boundary": {
@@ -118,9 +118,9 @@
     ],
     "freegs_version": "0.8.2",
     "host_load_1m_5m_15m": [
-      7.03759765625,
-      6.87451171875,
-      7.96337890625
+      13.0634765625,
+      15.57861328125,
+      14.74462890625
     ],
     "isolated_host": false,
     "jax_version": "0.7.1",
@@ -130,7 +130,7 @@
     "python_version": "3.12.3",
     "x64_enabled": true
   },
-  "generated_at": "2026-07-24T14:40:42Z",
+  "generated_at": "2026-07-24T15:11:15Z",
   "input_contract": {
     "control_semantics": "external profiles; hard 0<=psi_N<1 support; rectangular Ip normalisation",
     "cutoff_width": 0.03,
@@ -166,7 +166,7 @@
       "rms": 0.0008382294148510326
     }
   },
-  "payload_sha256": "787af5175bc148572f265df6e2aa0e51f7c0585d6d2a55c4dd0ef8cb3081461c",
+  "payload_sha256": "7430cd866d69a8c101e7c914d78cd3c989e2e6640d517a52f354c14642a3655c",
   "routing": {
     "current_dominant_component": "smooth_cutoff",
     "interior_source_dominant_component": "smooth_cutoff",
@@ -184,9 +184,9 @@
       "sha256": "1571abafc2a9ab0ab5feaaa203774df793aff3e2cbdbab46de8d678571f5f4d4"
     },
     "control_repository": {
-      "git_commit": "a7059cdb20ad7edcfa14ad2807246416d6543cc2",
+      "git_commit": "3a5c628aa2317ef380fbb77665b67f3bf4ae1dce",
       "path": "../SCPN-CONTROL",
-      "worktree_clean": false
+      "worktree_clean": true
     },
     "diagnostic": {
       "path": "validation/diagnose_ida_fixed_reference_source_mechanism.py",
@@ -197,7 +197,7 @@
       "sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af"
     },
     "fusion_repository": {
-      "git_commit": "19f1f49fc3c05064c042e0b9fbca85172d83a7c4",
+      "git_commit": "e56bb39acb948cb0f83600f44ea004a218d063ec",
       "path": ".",
       "worktree_clean": true
     },
