@@ -116,15 +116,78 @@ def _closure_max_abs(actual: FloatArray, components: tuple[FloatArray, ...]) -> 
     return float(np.max(np.abs(actual - reconstructed)))
 
 
-def _source_artifacts(public_example_path: Path) -> dict[str, dict[str, str]]:
-    artifacts = {
-        name: {"path": path, "sha256": _file_sha256(ROOT / path)}
-        for name, path in sorted(contract.SOURCE_PATHS.items())
+def _runtime_source_artifact(
+    module: object,
+    *,
+    logical_path: str,
+    resource_name: str,
+) -> dict[str, str]:
+    """Bind one imported Python module to its executed source bytes."""
+    module_path = getattr(module, "__file__", None)
+    if not isinstance(module_path, str) or not module_path.strip():
+        raise RuntimeError(f"{logical_path} has no inspectable module source")
+    source_path = Path(module_path).resolve()
+    if source_path.name != resource_name or not source_path.is_file():
+        raise RuntimeError(f"{logical_path} does not resolve to {resource_name}")
+    return {"path": logical_path, "sha256": _file_sha256(source_path)}
+
+
+def _bound_public_example_artifact(
+    evaluation: dict[str, Any],
+    *,
+    public_example_path: Path,
+) -> dict[str, str]:
+    """Reuse the validated same-case digest and verify local bytes when present."""
+    row = evaluation.get("public_example")
+    if not isinstance(row, dict) or set(row) != {"path", "sha256"}:
+        raise ValueError("same-case public_example binding is malformed")
+    path = row.get("path")
+    digest = row.get("sha256")
+    if path != contract.FREEGS_EXAMPLE_PATH:
+        raise ValueError("same-case public_example path is not the frozen DIII-D source")
+    if (
+        not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        raise ValueError("same-case public_example digest is not a lowercase SHA-256")
+    try:
+        local_path = public_example_path.relative_to(ROOT).as_posix()
+    except ValueError as exc:
+        raise ValueError("public example path must stay inside the repository root") from exc
+    if local_path != path:
+        raise ValueError("runtime public example path disagrees with the same-case binding")
+    if public_example_path.exists() and _file_sha256(public_example_path) != digest:
+        raise ValueError("runtime public example bytes disagree with the same-case binding")
+    return {"path": path, "sha256": digest}
+
+
+def _source_artifacts(
+    *,
+    freegs: Any,
+    evaluation: dict[str, Any],
+    public_example_path: Path,
+) -> dict[str, dict[str, str]]:
+    artifacts: dict[str, dict[str, str]] = {}
+    runtime_sources = {
+        "freegs_boundary": (freegs.boundary, "boundary.py"),
+        "freegs_operator": (freegs.gradshafranov, "gradshafranov.py"),
     }
-    artifacts["freegs_public_example"] = {
-        "path": str(public_example_path.relative_to(ROOT)),
-        "sha256": _file_sha256(public_example_path),
-    }
+    for name, logical_path in sorted(contract.SOURCE_PATHS.items()):
+        runtime_source = runtime_sources.get(name)
+        artifacts[name] = (
+            _runtime_source_artifact(
+                runtime_source[0],
+                logical_path=logical_path,
+                resource_name=runtime_source[1],
+            )
+            if runtime_source is not None
+            else {"path": logical_path, "sha256": _file_sha256(ROOT / logical_path)}
+        )
+    artifacts["freegs_public_example"] = _bound_public_example_artifact(
+        evaluation,
+        public_example_path=public_example_path,
+    )
     return artifacts
 
 
@@ -491,7 +554,11 @@ def run_diagnostic(
     return contract.build_report(
         generated_at=generated_at,
         environment=environment,
-        source_artifacts=_source_artifacts(spec.example_path),
+        source_artifacts=_source_artifacts(
+            freegs=freegs,
+            evaluation=evaluation,
+            public_example_path=spec.example_path,
+        ),
         source_same_case={
             "case_id": evaluation["case_id"],
             "grid_shape": evaluation["grid_shape"],

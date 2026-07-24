@@ -16,6 +16,12 @@ import pytest
 import validation.ida_fixed_reference_operator_contract as contract
 
 
+def test_freegs_sources_are_bound_to_executed_package_resources() -> None:
+    assert contract.SCHEMA_VERSION.endswith(".v2")
+    assert contract.SOURCE_PATHS["freegs_boundary"] == ("python-package://freegs/boundary.py")
+    assert contract.SOURCE_PATHS["freegs_operator"] == ("python-package://freegs/gradshafranov.py")
+
+
 def _metric(digest: str, relative: float) -> dict[str, Any]:
     return {
         "field_sha256": digest * 64,
@@ -133,6 +139,15 @@ def test_build_validate_and_render_routes_measured_components() -> None:
     assert "second_order_operator" in markdown
     assert "plasma_response_quadrature" in markdown
     assert "not a validation or admission result" in markdown
+
+
+def test_validate_accepts_legacy_v1_source_paths() -> None:
+    report = _report()
+    report["schema_version"] = contract.LEGACY_SCHEMA_VERSION
+    for name, path in contract.LEGACY_SOURCE_PATHS.items():
+        report["source_artifacts"][name]["path"] = path
+    report["payload_sha256"] = contract._payload_sha256(report)
+    contract.validate_report(report)
 
 
 def test_validate_rejects_tamper_overclaim_and_binding_drift() -> None:

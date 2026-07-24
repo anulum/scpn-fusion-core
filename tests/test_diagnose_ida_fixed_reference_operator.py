@@ -8,12 +8,78 @@
 
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 from numpy.typing import NDArray
 
 import validation.diagnose_ida_fixed_reference_operator as diagnostic
 import validation.ida_fixed_reference_operator_contract as contract
+
+
+def test_runtime_source_artifact_hashes_executed_module(tmp_path: Path) -> None:
+    source_path = tmp_path / "boundary.py"
+    source_bytes = b"def free_boundary():\\n    return True\\n"
+    source_path.write_bytes(source_bytes)
+    artifact = diagnostic._runtime_source_artifact(
+        SimpleNamespace(__file__=str(source_path)),
+        logical_path=contract.SOURCE_PATHS["freegs_boundary"],
+        resource_name="boundary.py",
+    )
+    assert artifact == {
+        "path": "python-package://freegs/boundary.py",
+        "sha256": hashlib.sha256(source_bytes).hexdigest(),
+    }
+
+
+def test_runtime_source_artifact_rejects_uninspectable_module(tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError, match="no inspectable"):
+        diagnostic._runtime_source_artifact(
+            SimpleNamespace(),
+            logical_path=contract.SOURCE_PATHS["freegs_boundary"],
+            resource_name="boundary.py",
+        )
+    wrong_path = tmp_path / "other.py"
+    wrong_path.write_text("pass\n", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="does not resolve"):
+        diagnostic._runtime_source_artifact(
+            SimpleNamespace(__file__=str(wrong_path)),
+            logical_path=contract.SOURCE_PATHS["freegs_boundary"],
+            resource_name="boundary.py",
+        )
+
+
+def test_public_example_uses_bound_digest_and_rejects_local_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostic, "ROOT", tmp_path)
+    public_path = tmp_path / contract.FREEGS_EXAMPLE_PATH
+    source_bytes = b"# frozen public source\n"
+    binding = {
+        "public_example": {
+            "path": contract.FREEGS_EXAMPLE_PATH,
+            "sha256": hashlib.sha256(source_bytes).hexdigest(),
+        }
+    }
+    assert (
+        diagnostic._bound_public_example_artifact(
+            binding,
+            public_example_path=public_path,
+        )
+        == binding["public_example"]
+    )
+
+    public_path.parent.mkdir(parents=True)
+    public_path.write_bytes(b"# drifted source\n")
+    with pytest.raises(ValueError, match="bytes disagree"):
+        diagnostic._bound_public_example_artifact(
+            binding,
+            public_example_path=public_path,
+        )
 
 
 def test_metric_binds_field_and_same_unit_reference_scale() -> None:

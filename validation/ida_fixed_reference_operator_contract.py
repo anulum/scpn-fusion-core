@@ -16,7 +16,8 @@ _same_case = cast(Any, importlib.import_module("validation.benchmark_ida_same_ca
 _payload_sha256: Callable[[dict[str, Any]], str] = _same_case._payload_sha256
 _walk_finite: Callable[[object], None] = _same_case._walk_finite
 
-SCHEMA_VERSION = "scpn-fusion.ida-fixed-reference-operator-residual.v1"
+SCHEMA_VERSION = "scpn-fusion.ida-fixed-reference-operator-residual.v2"
+LEGACY_SCHEMA_VERSION = "scpn-fusion.ida-fixed-reference-operator-residual.v1"
 BENCHMARK_ID = "DIII-D-IDA-FB-JAX-B-OPERATOR-RESIDUAL"
 EVALUATION_CASE_ID = "freegs_16_diiid_public_example"
 GRID_SHAPE = [129, 129]
@@ -54,14 +55,19 @@ WALL_RESIDUALS = (
 SOURCE_PATHS = {
     "contract": "validation/ida_fixed_reference_operator_contract.py",
     "diagnostic": "validation/diagnose_ida_fixed_reference_operator.py",
+    "freegs_boundary": "python-package://freegs/boundary.py",
+    "freegs_operator": "python-package://freegs/gradshafranov.py",
+    "source_ablation": "validation/diagnose_ida_fixed_reference_source.py",
+    "solver": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+}
+LEGACY_SOURCE_PATHS = {
+    **SOURCE_PATHS,
     "freegs_boundary": (
         "data/external/full_fidelity_public_sources/repos/freegs/freegs/boundary.py"
     ),
     "freegs_operator": (
         "data/external/full_fidelity_public_sources/repos/freegs/freegs/gradshafranov.py"
     ),
-    "source_ablation": "validation/diagnose_ida_fixed_reference_source.py",
-    "solver": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
 }
 SOURCE_ABLATION_PATH = "validation/reports/ida_fixed_reference_source_ablation.json"
 SAME_CASE_PATH = "validation/reports/ida_same_case_evidence.json"
@@ -258,8 +264,8 @@ def build_report(
 def validate_report(report: dict[str, Any]) -> None:
     """Reject schema drift, tamper, overclaim, and derived-routing drift."""
     if set(report) != _TOP_LEVEL_FIELDS:
-        raise ValueError("operator report top-level fields do not match the v1 schema")
-    if report.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("operator report top-level fields do not match the schema")
+    if report.get("schema_version") not in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}:
         raise ValueError("unsupported fixed-reference operator contract")
     if report.get("benchmark_id") != BENCHMARK_ID:
         raise ValueError("operator report benchmark_id is invalid")
@@ -386,14 +392,19 @@ def _validate_metric_map(
 
 def _validate_sources(report: dict[str, Any]) -> None:
     artifacts = report.get("source_artifacts")
-    expected = {*SOURCE_PATHS, "freegs_public_example", "repository"}
+    source_paths = (
+        LEGACY_SOURCE_PATHS
+        if report.get("schema_version") == LEGACY_SCHEMA_VERSION
+        else SOURCE_PATHS
+    )
+    expected = {*source_paths, "freegs_public_example", "repository"}
     if not isinstance(artifacts, dict) or set(artifacts) != expected:
         raise ValueError("source_artifacts fields are invalid")
-    for name in {*SOURCE_PATHS, "freegs_public_example"}:
+    for name in {*source_paths, "freegs_public_example"}:
         row = artifacts[name]
         if not isinstance(row, dict) or set(row) != {"path", "sha256"}:
             raise ValueError(f"source_artifacts.{name} fields are invalid")
-        expected_path = SOURCE_PATHS.get(name, FREEGS_EXAMPLE_PATH)
+        expected_path = source_paths.get(name, FREEGS_EXAMPLE_PATH)
         if row["path"] != expected_path:
             raise ValueError(f"source_artifacts.{name}.path is invalid")
         _require_sha256(row["sha256"], field=f"source_artifacts.{name}.sha256")
