@@ -181,6 +181,21 @@ def _closure_max_abs(actual: FloatArray, components: tuple[FloatArray, ...]) -> 
     return float(np.max(np.abs(actual - np.sum(np.stack(components), axis=0))))
 
 
+def _mechanism_flux_fields(
+    psi: jnp.ndarray,
+    psi_axis: jnp.ndarray,
+    psi_boundary: jnp.ndarray,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """Return topology-distance and profile-interpolation flux fields."""
+    topology_flux = _free_boundary.normalised_flux_unclipped(
+        psi,
+        psi_axis,
+        psi_boundary,
+    )
+    profile_flux = jnp.clip(topology_flux, 0.0, 1.0)
+    return topology_flux, profile_flux
+
+
 def _source_artifacts(public_example_path: Path) -> dict[str, dict[str, Any]]:
     artifacts: dict[str, dict[str, Any]] = {}
     for name, relative_path in contract.SOURCE_PATHS.items():
@@ -347,21 +362,25 @@ def run_diagnostic(
 
     psi_zr = jnp.asarray(psi_rz.T)
     r_jax = jnp.asarray(r_grid)
-    psi_n_zr = _free_boundary.normalised_flux(
+    topology_psi_n_zr, profile_psi_n_zr = _mechanism_flux_fields(
         psi_zr,
         jnp.asarray(axis),
         jnp.asarray(boundary),
     )
     r_safe = jnp.maximum(r_jax[jnp.newaxis, :], 1.0e-6)
-    raw_zr = r_safe * jnp.interp(psi_n_zr, jnp.asarray(knots), jnp.asarray(pprime))
+    raw_zr = r_safe * jnp.interp(
+        profile_psi_n_zr,
+        jnp.asarray(knots),
+        jnp.asarray(pprime),
+    )
     raw_zr = raw_zr + jnp.interp(
-        psi_n_zr,
+        profile_psi_n_zr,
         jnp.asarray(knots),
         jnp.asarray(ffprime),
     ) / (MU0_SI * r_safe)
     smooth_support = _plasma_support.soft_axis_connected_support(
         psi_zr,
-        psi_n_zr,
+        topology_psi_n_zr,
         DEFAULT_CUTOFF_WIDTH,
     )
     smooth_unscaled = np.asarray(raw_zr * smooth_support, dtype=np.float64).T

@@ -193,6 +193,16 @@ def test_current_metrics_fail_closed_on_shape_and_nonfinite() -> None:
         )
 
 
+def test_mechanism_flux_fields_keep_exterior_distance_out_of_profiles() -> None:
+    topology, profile = diagnostic._mechanism_flux_fields(
+        diagnostic.jnp.asarray([-1.0, 0.0, 1.0, 2.0]),
+        diagnostic.jnp.asarray(0.0),
+        diagnostic.jnp.asarray(1.0),
+    )
+    assert np.allclose(np.asarray(topology), [-1.0, 0.0, 1.0, 2.0])
+    assert np.allclose(np.asarray(profile), [0.0, 0.0, 1.0, 1.0])
+
+
 def test_build_validate_render_write_and_validate_cli(tmp_path: Path) -> None:
     report = _report()
     diagnostic.validate_report(report)
