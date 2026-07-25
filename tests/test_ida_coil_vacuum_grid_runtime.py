@@ -127,6 +127,7 @@ def test_run_grid_rejects_unregistered_resolution_before_execution() -> None:
             z_bounds=(-1.8, 1.8),
             fixed_physical_radius_m=0.2,
             reference_129_zr=None,
+            reference_129_forcing_zr=None,
             plasma_support_mask=np.ones((17, 17), dtype=np.bool_),
         )
 
@@ -187,6 +188,25 @@ def test_reference_field_binding_accepts_roundoff_and_rejects_drift() -> None:
         reference_129_zr=exact_reference,
     )
     assert exact_freegs is exact_reference
+
+
+def test_reference_forcing_binding_checks_reconstruction_before_exact_anchor() -> None:
+    """The 129 forcing must agree numerically before exact anchor bytes are used."""
+    evaluated = np.zeros((3, 3), dtype=np.float64)
+    reference = np.full((3, 3), 1.0e-13, dtype=np.float64)
+    assert runtime._bind_reference_forcing(evaluated, None) is evaluated
+    assert runtime._bind_reference_forcing(evaluated, reference) is reference
+
+    with pytest.raises(ValueError, match="shape drifted"):
+        runtime._bind_reference_forcing(
+            evaluated,
+            np.zeros((4, 4), dtype=np.float64),
+        )
+    with pytest.raises(ValueError, match="disagrees with the bound anchor"):
+        runtime._bind_reference_forcing(
+            evaluated,
+            np.full((3, 3), 2.0e-12, dtype=np.float64),
+        )
 
 
 def test_runtime_internal_contracts_reject_invalid_masks_and_missing_parent() -> None:
@@ -261,6 +281,7 @@ def test_real_diiid_33_grid_executes_production_field_and_inverse_chain() -> Non
         z_bounds=(-1.8, 1.8),
         fixed_physical_radius_m=0.225,
         reference_129_zr=None,
+        reference_129_forcing_zr=None,
         plasma_support_mask=np.ones((33, 33), dtype=np.bool_),
     )
 

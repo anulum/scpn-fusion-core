@@ -217,7 +217,7 @@ def _anchor(
     r_grid: FloatArray,
     z_grid: FloatArray,
     response_closure_max_abs_wb: float,
-) -> tuple[dict[str, Any], FloatArray]:
+) -> tuple[dict[str, Any], FloatArray, FloatArray]:
     total_rz = np.asarray(equilibrium.psi(), dtype=np.float64)
     plasma_rz = np.asarray(equilibrium.plasma_psi, dtype=np.float64)
     forcing_zr = zero_identity_wall(
@@ -259,6 +259,7 @@ def _anchor(
             "response_sha256": response_digest,
         },
         np.asarray((total_rz - plasma_rz).T, dtype=np.float64),
+        forcing_zr,
     )
 
 
@@ -343,7 +344,7 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
     )
     r_129 = np.asarray(equilibrium.R_1D, dtype=np.float64)
     z_129 = np.asarray(equilibrium.Z_1D, dtype=np.float64)
-    anchor, reference_129 = _anchor(
+    anchor, reference_129, reference_129_forcing = _anchor(
         equilibrium=equilibrium,
         r_grid=r_129,
         z_grid=z_129,
@@ -363,6 +364,7 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
             z_bounds=(float(spec.z_min), float(spec.z_max)),
             fixed_physical_radius_m=fixed_radius,
             reference_129_zr=reference_129 if resolution == 129 else None,
+            reference_129_forcing_zr=(reference_129_forcing if resolution == 129 else None),
             plasma_support_mask=_plasma_support_mask(
                 equilibrium=equilibrium,
                 profiles=profiles,

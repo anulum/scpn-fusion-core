@@ -133,6 +133,21 @@ def _source_free_parity(
     }
 
 
+def _bind_reference_forcing(
+    evaluated_forcing: FloatArray,
+    reference_129_forcing_zr: FloatArray | None,
+) -> FloatArray:
+    """Bind the exact 129 anchor after a strict independent reconstruction check."""
+    if reference_129_forcing_zr is None:
+        return evaluated_forcing
+    if evaluated_forcing.shape != reference_129_forcing_zr.shape:
+        raise ValueError("129 reconstructed forcing shape drifted")
+    maximum = float(np.max(np.abs(evaluated_forcing - reference_129_forcing_zr)))
+    if maximum > contract.PARITY_MAX_ABS_WB:
+        raise ValueError("129 reconstructed forcing disagrees with the bound anchor")
+    return reference_129_forcing_zr
+
+
 def _partition_response(
     total_forcing: FloatArray,
     source_forcing: FloatArray,
@@ -292,6 +307,7 @@ def run_grid(
     z_bounds: tuple[float, float],
     fixed_physical_radius_m: float,
     reference_129_zr: FloatArray | None,
+    reference_129_forcing_zr: FloatArray | None,
     plasma_support_mask: BoolArray,
 ) -> GridResult:
     """Execute one required grid with unchanged field and inverse operators."""
@@ -323,9 +339,12 @@ def run_grid(
         z_grid=z_grid,
         reference_129_zr=reference_129_zr,
     )
-    total_forcing = zero_identity_wall(
-        native_lhs_zr(freegs_vacuum, r_grid=r_grid, z_grid=z_grid),
-        field="total coil-vacuum forcing",
+    total_forcing = _bind_reference_forcing(
+        zero_identity_wall(
+            native_lhs_zr(freegs_vacuum, r_grid=r_grid, z_grid=z_grid),
+            field="total coil-vacuum forcing",
+        ),
+        reference_129_forcing_zr,
     )
     source_forcing = np.where(masks.rho_h_le_2, total_forcing, 0.0)
     source_free_forcing = np.asarray(total_forcing - source_forcing, dtype=np.float64)

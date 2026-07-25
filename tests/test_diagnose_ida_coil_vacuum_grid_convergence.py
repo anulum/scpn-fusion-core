@@ -341,6 +341,7 @@ def test_diagnostic_rejects_129_ladder_anchor_mismatch(
                 "response_sha256": "expected-response",
             },
             np.zeros((129, 129), dtype=np.float64),
+            np.zeros((129, 129), dtype=np.float64),
         ),
     )
     monkeypatch.setattr(
