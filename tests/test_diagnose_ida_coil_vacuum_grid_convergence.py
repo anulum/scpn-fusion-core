@@ -189,6 +189,47 @@ def test_plasma_support_mask_uses_frozen_profile_and_zeroes_walls() -> None:
     assert not np.any(support[:, [0, -1]])
 
 
+def test_plasma_support_mask_isolates_freegs_state_and_preserves_zr_orientation() -> None:
+    """Nested-grid evaluation must not mutate FreeGS or swap runtime field axes."""
+    equilibrium = SimpleNamespace(
+        psi_bndry=0.0,
+        psiRZ=lambda r, z: np.asarray(r + z, dtype=np.float64),
+        _updateBoundaryPsi=lambda psi: pytest.fail("native equilibrium was mutated"),
+    )
+
+    class StatefulProfile:
+        def __init__(self) -> None:
+            self.eq = equilibrium
+            self.evaluated = False
+
+        def Jtor(
+            self,
+            r: np.ndarray[Any, Any],
+            z: np.ndarray[Any, Any],
+            psi: np.ndarray[Any, Any],
+            psi_bndry: float,
+        ) -> np.ndarray[Any, Any]:
+            self.eq._updateBoundaryPsi(psi)
+            assert np.all(np.diff(r[:, 0]) > 0.0)
+            assert np.all(np.diff(z[0, :]) > 0.0)
+            assert psi_bndry == self.eq.psi_bndry == 0.0
+            self.evaluated = True
+            return np.asarray((r > 1.0) & (z < 0.0), dtype=np.float64)
+
+    profiles = StatefulProfile()
+    support = diagnostic._plasma_support_mask(
+        equilibrium=equilibrium,
+        profiles=profiles,
+        resolution=33,
+        r_bounds=contract.R_BOUNDS_M,
+        z_bounds=contract.Z_BOUNDS_M,
+    )
+    assert profiles.evaluated is False
+    assert support[8, 20]
+    assert not support[24, 20]
+    assert not support[8, 5]
+
+
 @pytest.mark.parametrize("mode", ["empty", "shape"])
 def test_plasma_support_mask_rejects_empty_or_malformed_evaluation(mode: str) -> None:
     """Malformed or empty profile support must fail before grid execution."""

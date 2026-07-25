@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import importlib
 import json
 import subprocess
@@ -272,10 +273,22 @@ def _plasma_support_mask(
     """Evaluate the frozen FreeGS reference-current support on one nested grid."""
     r_grid = np.linspace(*r_bounds, resolution, dtype=np.float64)
     z_grid = np.linspace(*z_bounds, resolution, dtype=np.float64)
-    r_mesh, z_mesh = np.meshgrid(r_grid, z_grid)
+    r_mesh, z_mesh = np.meshgrid(r_grid, z_grid, indexing="ij")
     total_psi = np.asarray(equilibrium.psiRZ(r_mesh, z_mesh), dtype=np.float64)
+    runtime_profiles = profiles
+    if getattr(profiles, "eq", None) is equilibrium:
+        runtime_profiles = copy.copy(profiles)
+
+        class _FrozenBoundaryEquilibrium:
+            def __init__(self, psi_bndry: float) -> None:
+                self.psi_bndry = psi_bndry
+
+            def _updateBoundaryPsi(self, psi: object) -> None:
+                """Keep the solved boundary flux fixed on a diagnostic grid."""
+
+        runtime_profiles.eq = _FrozenBoundaryEquilibrium(float(equilibrium.psi_bndry))
     current_density = np.asarray(
-        profiles.Jtor(
+        runtime_profiles.Jtor(
             r_mesh,
             z_mesh,
             total_psi,
@@ -287,7 +300,7 @@ def _plasma_support_mask(
         np.isfinite(current_density)
     ):
         raise ValueError("reference plasma-current support evaluation is invalid")
-    support = np.asarray(np.abs(current_density) > 0.0, dtype=np.bool_)
+    support = np.asarray(np.abs(current_density.T) > 0.0, dtype=np.bool_)
     support[0, :] = False
     support[-1, :] = False
     support[:, 0] = False
