@@ -204,6 +204,8 @@ files = [
     "src/scpn_fusion/io/imas_connector_equilibrium.py",
     "tests/test_imas_connector_equilibrium.py",
     "src/scpn_fusion/io/imas_connector_omas.py",
+    "src/scpn_fusion/io/omas_free_boundary_inputs.py",
+    "tests/test_omas_free_boundary_inputs.py",
     "src/scpn_fusion/io/imas_connector_storage.py",
     "src/scpn_fusion/io/imas_connector_transport.py",
     "tests/test_imas_connector_transport.py",

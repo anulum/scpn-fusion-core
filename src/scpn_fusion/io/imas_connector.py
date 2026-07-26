@@ -16,6 +16,7 @@ is decomposed into focused submodules:
 - ``imas_connector_transport``: core_profiles/summary/core_transport
 - ``imas_connector_storage``: JSON I/O helpers
 - ``imas_connector_omas``: OMAS bridge
+- ``omas_free_boundary_inputs``: strict PF/magnetics acquisition contract
 """
 
 from __future__ import annotations
@@ -69,6 +70,19 @@ from scpn_fusion.io.imas_history_payloads import (
     validate_ids_payload_sequence,
     validate_ids_pulse_payload,
 )
+from scpn_fusion.io.omas_free_boundary_inputs import (
+    CANONICAL_COCOS,
+    OMAS_FREE_BOUNDARY_INPUT_SCHEMA,
+    TIER0_OUT_OF_SCOPE_BLOCKERS,
+    FluxLoopInput,
+    OmasFreeBoundaryInputs,
+    OmasSourceProvenance,
+    PfCoilInput,
+    PfElementGeometry,
+    PoloidalFieldProbeInput,
+    TimeSeriesSI,
+    extract_omas_free_boundary_inputs,
+)
 
 __all__ = [
     # Common constants
@@ -113,4 +127,16 @@ __all__ = [
     "ids_to_omas_equilibrium",
     "omas_core_profiles_to_ids",
     "omas_equilibrium_to_ids",
+    # Strict OMAS PF/magnetics acquisition contract
+    "CANONICAL_COCOS",
+    "OMAS_FREE_BOUNDARY_INPUT_SCHEMA",
+    "TIER0_OUT_OF_SCOPE_BLOCKERS",
+    "FluxLoopInput",
+    "OmasFreeBoundaryInputs",
+    "OmasSourceProvenance",
+    "PfCoilInput",
+    "PfElementGeometry",
+    "PoloidalFieldProbeInput",
+    "TimeSeriesSI",
+    "extract_omas_free_boundary_inputs",
 ]

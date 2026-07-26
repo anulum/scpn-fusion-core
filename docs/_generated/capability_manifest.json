@@ -732,6 +732,10 @@
         "path": "src/scpn_fusion/core/current_diffusion.py"
       },
       {
+        "name": "FluxLoopInput",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
+      },
+      {
         "name": "FluxReport",
         "path": "src/scpn_fusion/control/volt_second_manager.py"
       },
@@ -1364,12 +1368,24 @@
         "path": "src/scpn_fusion/nuclear/nuclear_wall_interaction.py"
       },
       {
+        "name": "ODSLike",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
+      },
+      {
         "name": "OODDetector",
         "path": "src/scpn_fusion/core/gk_ood_detector.py"
       },
       {
         "name": "OODResult",
         "path": "src/scpn_fusion/core/gk_ood_detector.py"
+      },
+      {
+        "name": "OmasFreeBoundaryInputs",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
+      },
+      {
+        "name": "OmasSourceProvenance",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
       },
       {
         "name": "OnlineLearner",
@@ -1468,6 +1484,14 @@
         "path": "src/scpn_fusion/core/pellet_injection.py"
       },
       {
+        "name": "PfCoilInput",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
+      },
+      {
+        "name": "PfElementGeometry",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
+      },
+      {
         "name": "PhaseStreamServer",
         "path": "src/scpn_fusion/phase/ws_phase_stream.py"
       },
@@ -1530,6 +1554,10 @@
       {
         "name": "PolicyGradient",
         "path": "src/scpn_fusion/control/constrained_policy.py"
+      },
+      {
+        "name": "PoloidalFieldProbeInput",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
       },
       {
         "name": "PowerPlantModel",
@@ -2108,6 +2136,10 @@
         "path": "src/scpn_fusion/core/disruption_sequence.py"
       },
       {
+        "name": "TimeSeriesSI",
+        "path": "src/scpn_fusion/io/omas_free_boundary_inputs.py"
+      },
+      {
         "name": "TokamakConfig",
         "path": "src/scpn_fusion/core/tokamak_config.py"
       },
@@ -2628,6 +2660,7 @@
       "src/scpn_fusion/io/imas_history_payloads.py",
       "src/scpn_fusion/io/logging_config.py",
       "src/scpn_fusion/io/mast_ingestor.py",
+      "src/scpn_fusion/io/omas_free_boundary_inputs.py",
       "src/scpn_fusion/io/safe_loaders.py",
       "src/scpn_fusion/io/tokamak_archive.py",
       "src/scpn_fusion/io/tokamak_archive_profiles.py",
@@ -2728,10 +2761,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 63,
-    "python_capability_classes": 569,
-    "python_capability_source_modules": 321,
+    "python_capability_classes": 577,
+    "python_capability_source_modules": 322,
     "rust_workspace_crates": 13,
-    "test_files": 591
+    "test_files": 592
   },
   "documentation": {
     "public_pages": [
@@ -3266,6 +3299,7 @@
       "tests/test_ntm_dynamics.py",
       "tests/test_nuclear_package_exports.py",
       "tests/test_nuclear_wall_interaction.py",
+      "tests/test_omas_free_boundary_inputs.py",
       "tests/test_omas_tglf_coupling.py",
       "tests/test_onboard_diiid_raw_disruption_shots.py",
       "tests/test_optional_import_probe_contracts.py",
