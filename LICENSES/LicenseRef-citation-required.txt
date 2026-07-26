@@ -1,0 +1,22 @@
+Citation-Required Data Permission Notice
+
+This notice applies only to files identified by the SPDX license identifier
+LicenseRef-citation-required. These files are derived public summaries,
+digitised subsets, or solver-produced reference artifacts whose exact source,
+authors, citation, provenance, and redistribution status are recorded in
+validation/reference_data/provenance_manifest.json and associated metadata
+sidecars.
+
+Permission is granted to use, copy, modify, and redistribute these files,
+with or without modification, provided that recipients preserve the associated
+provenance and give the scholarly attribution and citation recorded for each
+file. This notice does not replace or weaken any upstream licence identified in
+the provenance record; where upstream terms impose additional obligations,
+those terms also apply.
+
+THE FILES ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, DATA PROVIDERS, OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES,
+OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE FILES OR
+THEIR USE.

@@ -23,6 +23,11 @@ repos:
       - id: ruff-format
         files: ^(src/|tests/|tools/|validation/|examples/).*\.py$
 
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: v6.2.0
+    hooks:
+      - id: reuse
+
   - repo: local
     hooks:
       - id: version-metadata-consistency

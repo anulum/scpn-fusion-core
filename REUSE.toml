@@ -7,17 +7,137 @@
 # SCPN Fusion Core — source/config header compliance
 version = 1
 
+# Repository-authored files use the project licence. Override precedence is
+# intentional: generated documentation and licence-guard fixtures contain SPDX
+# examples that are not licensing declarations for the containing file.
 [[annotations]]
-path = ["*.md", "*.txt", "*.json", "*.yaml", "*.yml", "*.toml", "*.cfg", "*.ini", "*.lock"]
-SPDX-FileCopyrightText = "1998-2026 Miroslav Šotek <protoscience@anulum.li>"
+path = "**"
+precedence = "override"
+SPDX-FileCopyrightText = [
+  "1996-2026 Miroslav Šotek <protoscience@anulum.li>",
+  "2020-2026 Miroslav Šotek <protoscience@anulum.li>",
+]
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
+# Tracked nbconvert HTML exports combine the AGPL-licensed notebook content
+# with embedded JupyterLab/PhosphorJS styles carrying Modified BSD / BSD
+# 3-Clause notices. Preserve both sides of that generated aggregate.
 [[annotations]]
-path = ["docs/**", "*.png", "*.svg", "*.jpg"]
-SPDX-FileCopyrightText = "1998-2026 Miroslav Šotek <protoscience@anulum.li>"
-SPDX-License-Identifier = "AGPL-3.0-or-later"
+path = [
+  "docs/notebooks/01_compact_reactor_search.html",
+  "docs/notebooks/02_neuro_symbolic_compiler.html",
+  "docs/notebooks/03_grad_shafranov_equilibrium.html",
+  "docs/notebooks/04_divertor_and_neutronics.html",
+  "docs/notebooks/05_validation_against_experiments.html",
+  "docs/notebooks/06_inverse_and_transport_benchmarks.html",
+]
+precedence = "override"
+SPDX-FileCopyrightText = [
+  "1996-2026 Miroslav Šotek <protoscience@anulum.li>",
+  "2020-2026 Miroslav Šotek <protoscience@anulum.li>",
+  "2014-2017 Jupyter Development Team",
+  "2014-2017 PhosphorJS Contributors",
+]
+SPDX-License-Identifier = "AGPL-3.0-or-later AND BSD-3-Clause"
 
+# Project-generated synthetic reference data has its existing provenance-policy
+# terms represented as an explicit SPDX LicenseRef. Keep this list synchronized
+# with validation/reference_data/provenance_manifest.json.
 [[annotations]]
-path = ["weights/**", "*.npz", "*.npy"]
-SPDX-FileCopyrightText = "1998-2026 Miroslav Šotek <protoscience@anulum.li>"
-SPDX-License-Identifier = "AGPL-3.0-or-later"
+path = [
+  "validation/reference_data/blind/eu_demo_reference.json",
+  "validation/reference_data/blind/k_demo_reference.json",
+  "validation/reference_data/diiid/diiid_hmode_1p5MA.geqdsk",
+  "validation/reference_data/diiid/diiid_hmode_2MA.geqdsk",
+  "validation/reference_data/diiid/diiid_lmode_1MA.geqdsk",
+  "validation/reference_data/diiid/diiid_negdelta.geqdsk",
+  "validation/reference_data/diiid/diiid_snowflake.geqdsk",
+  "validation/reference_data/diiid/disruption_risk_calibration.json",
+  "validation/reference_data/diiid/disruption_shot_splits.json",
+  "validation/reference_data/diiid/disruption_shots/shot_154406_hybrid.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_154406_hybrid_safe.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_155916_locked_mode.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_160409_density_limit.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_161598_vde.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_163303_hmode.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_163303_hmode_safe.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_164965_tearing.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_166000_beta_limit.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_166549_snowflake.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_166549_snowflake_safe.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_170000_beta_limit.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_175970_negdelta.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_175970_negdelta_safe.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_176673_highbeta.npz",
+  "validation/reference_data/diiid/disruption_shots/shot_176673_highbeta_safe.npz",
+  "validation/reference_data/diiid/disruption_shots_manifest.json",
+  "validation/reference_data/jet/jet_dt_3p5MA.geqdsk",
+  "validation/reference_data/jet/jet_high_ip_4p8MA.geqdsk",
+  "validation/reference_data/jet/jet_hmode_3MA.geqdsk",
+  "validation/reference_data/jet/jet_hybrid_2p5MA.geqdsk",
+  "validation/reference_data/jet/jet_lmode_2MA.geqdsk",
+  "validation/reference_data/stellarator_control_replay_public_config.json",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "LicenseRef-synthetic-v1"
+
+# Derived public summaries and subsets retain the repository's declared
+# attribution-and-citation terms. Per-file citations and origins remain in the
+# provenance manifest and metadata sidecars.
+[[annotations]]
+path = [
+  "validation/reference_data/ballooning/pyrokinetics_alpha_crit.json",
+  "validation/reference_data/dream/dream_fluid_runaway_reference.json",
+  "validation/reference_data/eped/eped1_snyder_apsdpp_diiid_ip_scan.json",
+  "validation/reference_data/frc_public/c2u_optometrist_positive_heating_shots.csv",
+  "validation/reference_data/frc_public/c2u_optometrist_positive_heating_shots.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_fractional_abundance_public.npz",
+  "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.npz",
+  "validation/reference_data/full_fidelity_public_artifacts/dream_avalanche_public_raw.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/dream_avalanche_public_raw.npz",
+  "validation/reference_data/full_fidelity_public_artifacts/frc_reference_papers_manifest.json",
+  "validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.json",
+  "validation/reference_data/full_fidelity_public_artifacts/free_boundary_public_machine_metadata_inventory.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json",
+  "validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.json",
+  "validation/reference_data/full_fidelity_public_artifacts/freegsnke_mastu_current_sidecars_public.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.metadata.json",
+  "validation/reference_data/full_fidelity_public_artifacts/freegsnke_static_inverse_baseline_public.npz",
+  "validation/reference_data/full_fidelity_public_artifacts/gk_public_reference_deck_inventory.json",
+  "validation/reference_data/full_fidelity_public_artifacts/gk_public_reference_deck_inventory.metadata.json",
+  "validation/reference_data/iter_reference.json",
+  "validation/reference_data/itpa/gyro_bohm_coefficients.json",
+  "validation/reference_data/itpa/hmode_confinement.csv",
+  "validation/reference_data/itpa/ipb98y2_coefficients.json",
+  "validation/reference_data/openadas_coronal_lz_manifest.json",
+  "validation/reference_data/qlknn10d_published_benchmarks.json",
+  "validation/reference_data/slough_2011_fig5.json",
+  "validation/reference_data/sparc_reference.json",
+  "validation/reference_data/torax/torax_basic_config_core_profiles_ids.json",
+  "validation/reference_data/torax/torax_basic_config_profiles.json",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "Various upstream authors and data providers; see validation/reference_data/provenance_manifest.json"
+SPDX-License-Identifier = "LicenseRef-citation-required"
+
+# SPARC public reference files retain their upstream MIT grant and copyright.
+[[annotations]]
+path = [
+  "validation/reference_data/sparc/device_description.json",
+  "validation/reference_data/sparc/lmode_hv.geqdsk",
+  "validation/reference_data/sparc/lmode_vh.geqdsk",
+  "validation/reference_data/sparc/lmode_vv.geqdsk",
+  "validation/reference_data/sparc/prd_popcon.csv",
+  "validation/reference_data/sparc/sparc_1300.eqdsk",
+  "validation/reference_data/sparc/sparc_1305.eqdsk",
+  "validation/reference_data/sparc/sparc_1310.eqdsk",
+  "validation/reference_data/sparc/sparc_1315.eqdsk",
+  "validation/reference_data/sparc/sparc_1349.eqdsk",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2022 aqkuang"
+SPDX-License-Identifier = "MIT"

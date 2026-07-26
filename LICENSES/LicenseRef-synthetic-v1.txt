@@ -1,0 +1,16 @@
+Synthetic Data Permission Notice, version 1
+
+This notice applies only to files identified by the SPDX license identifier
+LicenseRef-synthetic-v1. These files are project-generated synthetic data and
+do not represent measurements from a real facility, machine, patient, or
+experimental campaign.
+
+Permission is granted to use, copy, modify, and redistribute these files,
+with or without modification, for any purpose and without an attribution
+requirement.
+
+THE FILES ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE FILES OR THEIR USE.
