@@ -358,8 +358,12 @@ def execution_source_artifacts(root: Path) -> dict[str, dict[str, Any]]:
     return execution_source_snapshot(root)[0]
 
 
-def _validate_source_artifacts(value: object) -> bool:
-    """Validate executed-source hashes and clean repository provenance."""
+def _validate_source_artifacts(
+    value: object,
+    *,
+    require_live_execution: bool,
+) -> bool:
+    """Validate executed-source hashes and optionally the live checkout."""
     if not isinstance(value, dict) or set(value) != {*SOURCE_PATHS, "repository"}:
         raise ValueError("source artifact set is invalid")
     repository = value["repository"]
@@ -398,7 +402,7 @@ def _validate_source_artifacts(value: object) -> bool:
             raise ValueError(f"{name} source digest is invalid")
         if artifact != authenticated[name]:
             raise ValueError(f"{name} source digest does not match the committed blob")
-    if value != execution_source_artifacts(REPOSITORY_ROOT):
+    if require_live_execution and value != execution_source_artifacts(REPOSITORY_ROOT):
         raise ValueError("source artifacts do not match the clean executing checkout")
     return True
 
@@ -630,7 +634,10 @@ def build_report(
         for row in checked_grids
     )
     numerical = _numerical_gates(checked_grids, checked_convergence)
-    source_verified = _validate_source_artifacts(source_artifacts)
+    source_verified = _validate_source_artifacts(
+        source_artifacts,
+        require_live_execution=True,
+    )
     structural = {
         "four_grid_ladder_complete": True,
         "partition_and_total_response_closure": closures,
@@ -699,7 +706,10 @@ def validate_report(report: dict[str, Any]) -> None:
     ):
         raise ValueError("CVGC2 upstream binding drifted")
     execution = report["execution_binding"]
-    source_verified = _validate_source_artifacts(report["source_artifacts"])
+    source_verified = _validate_source_artifacts(
+        report["source_artifacts"],
+        require_live_execution=False,
+    )
     expected_execution = {
         "anchor_sha256": EXPECTED_ANCHOR_SHA256,
         "coil_manifest_sha256": EXPECTED_COIL_MANIFEST_SHA256,

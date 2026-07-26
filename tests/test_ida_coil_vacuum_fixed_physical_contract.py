@@ -415,14 +415,11 @@ def test_execution_source_artifacts_requires_clean_matching_bytes(
     ],
     ids=["staged", "unstaged"],
 )
-def test_validate_rejects_fully_resigned_dirty_execution(
+def test_build_rejects_dirty_execution(
     status: bytes,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Re-signing cannot hide staged or unstaged execution-source drift."""
-    report = _report()
-    report["generated_at"] = "2026-07-26T06:00:00Z"
-    _resign(report)
+    """Generation rejects staged or unstaged execution-source drift."""
     real_git_bytes = contract._git_bytes
 
     def dirty_git_bytes(root: Path, *args: str) -> bytes:
@@ -433,13 +430,13 @@ def test_validate_rejects_fully_resigned_dirty_execution(
     monkeypatch.setattr(contract, "_git_bytes", dirty_git_bytes)
     monkeypatch.setattr(contract, "execution_source_artifacts", _REAL_EXECUTION_SOURCE_ARTIFACTS)
     with pytest.raises(ValueError, match="staged or unstaged source drift"):
-        contract.validate_report(report)
+        _report()
 
 
-def test_validate_rejects_authenticated_repository_and_live_execution_mismatch(
+def test_build_and_validate_reject_repository_and_live_execution_mismatch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Historical and live repository bindings must both match the report."""
+    """Historical validation and live generation must reject source drift."""
     report = _report()
     authenticated = _source_artifacts()
     authenticated["repository"].pop("worktree_clean")
@@ -457,7 +454,20 @@ def test_validate_rejects_authenticated_repository_and_live_execution_mismatch(
     live[next(iter(contract.SOURCE_PATHS))]["sha256"] = "9" * 64
     monkeypatch.setattr(contract, "execution_source_artifacts", lambda root: live)
     with pytest.raises(ValueError, match="clean executing checkout"):
-        contract.validate_report(report)
+        _report()
+
+
+def test_validate_accepts_authenticated_historical_execution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Stored evidence remains valid after the live checkout advances."""
+    report = _report()
+
+    def reject_live_checkout_access(root: Path) -> dict[str, dict[str, Any]]:
+        raise AssertionError(f"historical validation consulted live checkout {root}")
+
+    monkeypatch.setattr(contract, "execution_source_artifacts", reject_live_checkout_access)
+    contract.validate_report(report)
 
 
 @pytest.mark.parametrize("surface", ["anchor", "manifest"])
