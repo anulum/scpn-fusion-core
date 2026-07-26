@@ -855,6 +855,39 @@ and vacuum numerical gates false, and admits no experimental, collaborator,
 facility, PCS, safety, control, latency, production-physics, held-out, or
 scientific claim.
 
+The fixed-physical follow-on is tracked in
+[`ida_coil_vacuum_fixed_physical_response.md`](../validation/reports/ida_coil_vacuum_fixed_physical_response.md)
+under schema `scpn-fusion.ida-coil-vacuum-fixed-physical-response.v1` and
+payload
+`739120849d5c887effae409e869e0cd17215a103052b634d8a44b1d5e16c0664`.
+It does not rewrite CVGC1. From reviewed clean source commit
+`fee2a81432cccec9ad422979beb56777646e0a18`, a sanitized `python -I -S`
+source-only child authenticates the exact committed blobs, canonical loaders,
+empty bytecode cache, and unchanged pre/post execution metadata. The CUDA FP64
+run was invoked directly with:
+
+```bash
+JAX_ENABLE_X64=1 XLA_PYTHON_CLIENT_PREALLOCATE=false \
+  .venv/bin/python validation/diagnose_ida_coil_vacuum_fixed_physical_response.py \
+  --generated-at 2026-07-26T08:01:23Z --check
+```
+
+Its JSON / Markdown SHA-256 digests are `9d3296bbe803562f2259d7f5cacce6c4d26379b79d5c8e303c2ce25b654551bb`
+and `341d731edc28cd997cfd6d54f057c6d24d912b087da9bb067f499953c0da0b9d`.
+The diagnostic reuses the exact four total forcing and response arrays, applies the frozen
+`0.225 m` source mask before the unchanged native inverse, and verifies exact
+total-response reproduction. Fixed-current weighted error decreases from
+`0.0043221762` at `33²` to `0.0000355020` at `257²`; fixed-source L2
+localisation is at least `0.9999806`. Source-free forcing orders are `2.01204`
+and `2.00257`, response orders are `3.39692` and `1.79945`, and the `129²` /
+`257²` source-free response fractions are `9.76477e-5` / `2.47102e-5`, below
+the frozen `0.05` ceiling. All structural and bounded numerical gates pass,
+routing is `fixed_physical_source_and_vacuum_numerics_resolved`, and production
+solver physics is unchanged. This closes only the CVGC1 source-footprint
+diagnosis; ψ_N accuracy, isolated latency, real-shot holdout, collaborator,
+facility, PCS, safety, control, production-physics, and scientific admission
+remain blocked.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
