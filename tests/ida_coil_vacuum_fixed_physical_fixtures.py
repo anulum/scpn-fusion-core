@@ -16,6 +16,7 @@ from validation import ida_coil_vacuum_fixed_physical_contract as contract
 
 ROOT = Path(__file__).resolve().parents[1]
 _DIGEST = "1" * 64
+FROZEN_SOURCE_COMMIT = "fee2a81432cccec9ad422979beb56777646e0a18"
 
 
 def _field_metric(scale: float) -> dict[str, Any]:
@@ -42,9 +43,13 @@ def _comparison_metric(scale: float) -> dict[str, float]:
 
 
 def source_artifacts_fixture() -> dict[str, dict[str, Any]]:
-    """Return explicit test-only clean execution provenance."""
-    head = contract._git_bytes(ROOT, "rev-parse", "--verify", "HEAD^{commit}").decode().strip()
-    artifacts = contract.source_artifacts_for_commit(ROOT, head)
+    """Return test provenance from the authenticated commit stored in CVGC2 evidence.
+
+    Test fixtures validate report structure, not live report generation. Binding this
+    helper to ``HEAD`` makes every later unrelated repository commit fail the intentionally
+    frozen CVGC2 source-bundle check.
+    """
+    artifacts = contract.source_artifacts_for_commit(ROOT, FROZEN_SOURCE_COMMIT)
     artifacts["repository"]["worktree_clean"] = True
     return artifacts
 

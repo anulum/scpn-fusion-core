@@ -24,6 +24,8 @@ import numpy as np
 import pytest
 
 from tests.ida_coil_vacuum_fixed_physical_fixtures import (
+    FROZEN_SOURCE_COMMIT,
+    ROOT,
     report_fixture,
     source_artifacts_fixture,
 )
@@ -55,6 +57,13 @@ def _clean_execution_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
         {name: str(artifacts[name]["sha256"]) for name in contract.SOURCE_PATHS},
     )
     monkeypatch.setattr(diagnostic, "_require_source_only_bootstrap", lambda: None)
+
+
+def test_fixture_uses_the_source_commit_stored_in_cvgc2_evidence() -> None:
+    """Later repository commits must not rewrite the frozen historical test binding."""
+    stored = json.loads((ROOT / contract.REPORT_PATH).read_text(encoding="utf-8"))
+    assert stored["source_artifacts"]["repository"]["git_commit"] == FROZEN_SOURCE_COMMIT
+    assert source_artifacts_fixture()["repository"]["git_commit"] == FROZEN_SOURCE_COMMIT
 
 
 def _grid(row: dict[str, Any]) -> convergence.GridResult:

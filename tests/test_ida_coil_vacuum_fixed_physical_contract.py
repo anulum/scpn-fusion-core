@@ -18,6 +18,7 @@ from typing import Any, cast
 
 import pytest
 
+from tests.ida_coil_vacuum_fixed_physical_fixtures import FROZEN_SOURCE_COMMIT
 from validation import ida_coil_vacuum_fixed_physical_contract as contract
 from validation import ida_coil_vacuum_grid_contract as grid_contract
 
@@ -126,9 +127,8 @@ def _convergence(*, forcing_order: float = 2.0, response_order: float = 2.0) -> 
 
 
 def _source_artifacts() -> dict[str, dict[str, Any]]:
-    """Return source provenance authenticated against the current commit."""
-    head = contract._git_bytes(ROOT, "rev-parse", "--verify", "HEAD^{commit}").decode().strip()
-    artifacts = contract.source_artifacts_for_commit(ROOT, head)
+    """Return source provenance authenticated against the stored CVGC2 commit."""
+    artifacts = contract.source_artifacts_for_commit(ROOT, FROZEN_SOURCE_COMMIT)
     artifacts["repository"]["worktree_clean"] = True
     return artifacts
 
