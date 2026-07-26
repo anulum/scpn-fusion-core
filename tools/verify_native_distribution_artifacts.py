@@ -10,9 +10,22 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import re
-import tomllib
+import sys
 from pathlib import Path
+from typing import Any, Protocol, cast
+
+
+class _TomlLoader(Protocol):
+    """Describe the TOML loader shared by supported Python versions."""
+
+    def loads(self, data: str, /) -> dict[str, Any]:
+        """Parse one TOML document."""
+
+
+TOML_MODULE_NAME = "tomllib" if sys.version_info >= (3, 11) else "tomli"
+tomllib = cast(_TomlLoader, importlib.import_module(TOML_MODULE_NAME))
 
 
 class ArtifactVerificationError(ValueError):

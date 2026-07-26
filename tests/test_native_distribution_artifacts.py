@@ -9,12 +9,14 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
 
 from tools.verify_native_distribution_artifacts import (
     ArtifactVerificationError,
+    TOML_MODULE_NAME,
     verify_native_distribution_artifacts,
 )
 
@@ -30,6 +32,12 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path]:
     (artifacts / "scpn_fusion_rs-4.0.0.tar.gz").touch()
     (artifacts / "scpn_fusion_rs-4.0.0-cp312-cp312-manylinux.whl").touch()
     return artifacts, metadata
+
+
+def test_toml_loader_matches_supported_python_runtime() -> None:
+    expected = "tomllib" if sys.version_info >= (3, 11) else "tomli"
+
+    assert expected == TOML_MODULE_NAME
 
 
 def test_matching_release_tag_is_accepted(tmp_path: Path) -> None:
