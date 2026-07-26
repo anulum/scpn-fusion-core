@@ -48,6 +48,24 @@ _ALLOWED_CHILD_ENVIRONMENT = _PASSTHROUGH_ENVIRONMENT | _FIXED_CHILD_ENVIRONMENT
 _SOURCE_ONLY_BOOTSTRAP = False
 _SOURCE_ONLY_CACHE_PREFIX: Path | None = None
 _SANITIZED_INTERPRETER = False
+
+
+def _sanitized_interpreter_flags_are_valid(
+    flags: Any,
+    *,
+    version: tuple[int, int],
+) -> bool:
+    """Return whether isolated child flags meet the versioned safety contract."""
+    safe_path = getattr(flags, "safe_path", None)
+    safe_path_is_valid = safe_path is True or (version == (3, 10) and safe_path is None)
+    return bool(
+        flags.isolated == 1
+        and flags.no_site == 1
+        and flags.ignore_environment == 1
+        and safe_path_is_valid
+    )
+
+
 if __name__ == "__main__":
     if _CHILD_FLAG not in sys.argv:
         allowed_environment = {
@@ -71,11 +89,9 @@ if __name__ == "__main__":
         os.environ.get(name) != value for name, value in _FIXED_CHILD_ENVIRONMENT.items()
     ):
         raise RuntimeError("CVGC2 sanitized child environment is invalid")
-    if not (
-        sys.flags.isolated == 1
-        and sys.flags.no_site == 1
-        and sys.flags.ignore_environment == 1
-        and sys.flags.safe_path is True
+    if not _sanitized_interpreter_flags_are_valid(
+        sys.flags,
+        version=sys.version_info[:2],
     ):
         raise RuntimeError("CVGC2 sanitized child interpreter flags are invalid")
     sys.argv.remove(_CHILD_FLAG)

@@ -367,6 +367,27 @@ def test_sanitized_reexec_discards_sitecustomize_preload_and_finder(tmp_path: Pa
 
 
 @pytest.mark.parametrize(
+    ("version", "safe_path", "expected"),
+    [
+        ((3, 10), None, True),
+        ((3, 10), False, False),
+        ((3, 11), None, False),
+        ((3, 11), True, True),
+    ],
+)
+def test_sanitized_interpreter_flags_are_version_bound(
+    version: tuple[int, int],
+    safe_path: bool | None,
+    expected: bool,
+) -> None:
+    """Only Python 3.10 may lack the post-3.10 ``safe_path`` flag."""
+    flags = SimpleNamespace(isolated=1, no_site=1, ignore_environment=1)
+    if safe_path is not None:
+        flags.safe_path = safe_path
+    assert diagnostic._sanitized_interpreter_flags_are_valid(flags, version=version) is expected
+
+
+@pytest.mark.parametrize(
     "environment",
     [
         {
