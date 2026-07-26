@@ -209,6 +209,51 @@ def test_reference_forcing_binding_checks_reconstruction_before_exact_anchor() -
         )
 
 
+@pytest.mark.parametrize(
+    ("case", "message"),
+    [
+        ("shape", "forcing shapes must agree"),
+        ("grid_shape", "grids must match forcing shape"),
+        ("grid_order", "grid coordinates must increase"),
+        ("nonfinite", "source inverse forcing must be finite"),
+        ("boundary", "source inverse forcing must have zero boundary rows"),
+        ("closure", "forcing partition does not close"),
+    ],
+)
+def test_partition_inverse_response_rejects_invalid_inputs_before_solver(
+    case: str,
+    message: str,
+) -> None:
+    """Malformed partitions must fail before preconditioner or inverse construction."""
+    total = np.zeros((3, 3), dtype=np.float64)
+    source = np.zeros_like(total)
+    source_free = np.zeros_like(total)
+    r_grid = np.linspace(1.0, 2.0, 3, dtype=np.float64)
+    z_grid = np.linspace(-1.0, 1.0, 3, dtype=np.float64)
+    if case == "shape":
+        source = np.zeros((4, 4), dtype=np.float64)
+    elif case == "grid_shape":
+        r_grid = np.linspace(1.0, 2.0, 4, dtype=np.float64)
+    elif case == "grid_order":
+        r_grid = r_grid[::-1]
+    elif case == "nonfinite":
+        source[1, 1] = np.nan
+    elif case == "boundary":
+        source[0, 1] = 1.0
+    elif case == "closure":
+        source[1, 1] = 1.0
+    else:
+        raise AssertionError(f"unhandled case {case}")
+    with pytest.raises(ValueError, match=message):
+        runtime.partition_inverse_response(
+            total,
+            source,
+            source_free,
+            r_grid=r_grid,
+            z_grid=z_grid,
+        )
+
+
 def test_runtime_internal_contracts_reject_invalid_masks_and_missing_parent() -> None:
     """Parity and recovery internals must fail closed before emitting evidence."""
     plane = np.ones((3, 3), dtype=np.float64)

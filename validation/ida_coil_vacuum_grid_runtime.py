@@ -148,7 +148,7 @@ def _bind_reference_forcing(
     return reference_129_forcing_zr
 
 
-def _partition_response(
+def partition_inverse_response(
     total_forcing: FloatArray,
     source_forcing: FloatArray,
     source_free_forcing: FloatArray,
@@ -156,6 +156,47 @@ def _partition_response(
     r_grid: FloatArray,
     z_grid: FloatArray,
 ) -> tuple[dict[str, Any], dict[str, FloatArray], dict[str, float]]:
+    """Invert one exact forcing partition through the native solver.
+
+    Parameters
+    ----------
+    total_forcing, source_forcing, source_free_forcing
+        Z/R-oriented forcing arrays in webers per square metre. The latter two
+        arrays must sum to ``total_forcing``.
+    r_grid, z_grid
+        Monotone one-dimensional grid coordinates in metres.
+
+    Returns
+    -------
+    tuple
+        Public field metrics, the three response arrays in webers, and
+        non-isolated elapsed times in milliseconds.
+
+    Raises
+    ------
+    ValueError
+        If shapes, grid coordinates, boundary rows, or forcing closure are
+        inconsistent.
+    """
+    shape = total_forcing.shape
+    if source_forcing.shape != shape or source_free_forcing.shape != shape:
+        raise ValueError("inverse partition forcing shapes must agree")
+    if shape != (z_grid.size, r_grid.size) or min(shape) < 3:
+        raise ValueError("inverse partition grids must match forcing shape")
+    if not np.all(np.diff(r_grid) > 0.0) or not np.all(np.diff(z_grid) > 0.0):
+        raise ValueError("inverse partition grid coordinates must increase")
+    for name, forcing in {
+        "total": total_forcing,
+        "source": source_forcing,
+        "source_free": source_free_forcing,
+    }.items():
+        if not np.all(np.isfinite(forcing)):
+            raise ValueError(f"{name} inverse forcing must be finite")
+        if np.any(forcing[[0, -1], :]) or np.any(forcing[:, [0, -1]]):
+            raise ValueError(f"{name} inverse forcing must have zero boundary rows")
+    forcing_closure = float(np.max(np.abs(total_forcing - source_forcing - source_free_forcing)))
+    if forcing_closure > contract.PARTITION_CLOSURE_MAX_ABS:
+        raise ValueError("inverse forcing partition does not close")
     d_r = float(r_grid[1] - r_grid[0])
     d_z = float(z_grid[1] - z_grid[0])
     preconditioner = _predictive.build_gs_mg_preconditioner(
@@ -354,7 +395,7 @@ def run_grid(
         r_grid=r_grid,
         mu0=_source.MU0_SI,
     )
-    response_report, responses, inverse_timings = _partition_response(
+    response_report, responses, inverse_timings = partition_inverse_response(
         total_forcing,
         source_forcing,
         source_free_forcing,

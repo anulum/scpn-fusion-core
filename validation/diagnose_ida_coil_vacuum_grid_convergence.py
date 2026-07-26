@@ -15,6 +15,7 @@ import copy
 import importlib
 import json
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, cast
 
@@ -32,7 +33,7 @@ from validation.ida_coil_vacuum_grid_fields import (
     validate_frozen_manifest,
     zero_identity_wall,
 )
-from validation.ida_coil_vacuum_grid_convergence import build_convergence
+from validation.ida_coil_vacuum_grid_convergence import GridResult, build_convergence
 from validation.ida_coil_vacuum_grid_runtime import run_grid
 
 _same_case = cast(Any, importlib.import_module("validation.benchmark_ida_same_case"))
@@ -79,6 +80,34 @@ _reject_duplicate_json_keys: Callable[
     dict[str, Any],
 ] = _same_case._reject_duplicate_json_keys
 _runtime_environment: Callable[[], dict[str, Any]] = _same_case._runtime_environment
+
+
+@dataclass(frozen=True)
+class GridLadderExecution:
+    """Bound runtime context and arrays for the exact four-grid ladder.
+
+    Attributes
+    ----------
+    environment
+        Runtime package, device, and precision provenance.
+    source_artifacts
+        Executed source and repository byte bindings.
+    bindings
+        Upstream validation-payload bindings.
+    anchor
+        Exact 129-grid forcing and response anchors.
+    coil_manifest
+        Parent and filament lineage used for every grid.
+    results
+        Ordered private arrays and public metrics for the four resolutions.
+    """
+
+    environment: dict[str, Any]
+    source_artifacts: dict[str, dict[str, Any]]
+    bindings: dict[str, dict[str, Any]]
+    anchor: dict[str, Any]
+    coil_manifest: dict[str, Any]
+    results: tuple[GridResult, ...]
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -337,8 +366,8 @@ def _nested_plasma_support_masks(
     }
 
 
-def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
-    """Execute the exact 129 anchor and mandatory four-grid diagnostic."""
+def execute_grid_ladder() -> GridLadderExecution:
+    """Execute and bind the exact 129 anchor and mandatory four-grid ladder."""
     if cast(bool, jax.config.values["jax_enable_x64"]) is not True:
         raise RuntimeError("coil-vacuum grid convergence requires JAX FP64")
     reports = _load_bound_reports()
@@ -387,7 +416,7 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
         r_bounds=(float(spec.r_min), float(spec.r_max)),
         z_bounds=(float(spec.z_min), float(spec.z_max)),
     )
-    results = [
+    results = tuple(
         run_grid(
             resolution=resolution,
             tokamak=tokamak,
@@ -400,7 +429,7 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
             plasma_support_mask=plasma_support_masks[resolution],
         )
         for resolution in contract.GRID_RESOLUTIONS
-    ]
+    )
     grid_129 = next(row for row in results if row.resolution == 129)
     if grid_129.report["forcing_partition"]["total"]["field_sha256"] != anchor["forcing_sha256"]:
         raise ValueError("four-grid 129 forcing does not reproduce the bound anchor")
@@ -408,8 +437,7 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
         raise ValueError("four-grid 129 response does not reproduce the bound anchor")
     environment = _runtime_environment()
     environment["freegs_version"] = freegs_version
-    return contract.build_report(
-        generated_at=generated_at,
+    return GridLadderExecution(
         environment=environment,
         source_artifacts=_source_artifacts(
             freegs=freegs,
@@ -419,8 +447,22 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
         bindings=_bindings(reports),
         anchor=anchor,
         coil_manifest=manifest_payload(parents),
-        grids=[row.report for row in results],
-        convergence=build_convergence(results),
+        results=results,
+    )
+
+
+def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
+    """Execute the exact four-grid ladder and build the CVGC1 report."""
+    execution = execute_grid_ladder()
+    return contract.build_report(
+        generated_at=generated_at,
+        environment=execution.environment,
+        source_artifacts=execution.source_artifacts,
+        bindings=execution.bindings,
+        anchor=execution.anchor,
+        coil_manifest=execution.coil_manifest,
+        grids=[row.report for row in execution.results],
+        convergence=build_convergence(list(execution.results)),
     )
 
 
