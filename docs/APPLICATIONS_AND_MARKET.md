@@ -59,12 +59,39 @@ are:
   safety contracts.
 - Education and training programs that need reproducible, inspectable examples.
 
+## Evaluation packages
+
+The repository becomes easier to evaluate when the commercial question is
+converted into a bounded evidence package. These packages are possible today;
+none is a plant-deployment certificate.
+
+| Evaluation package | Partner input | Repository output | Explicitly not included |
+|---|---|---|---|
+| Controller replay | Scenario, actuator limits, telemetry schema | Deterministic trace, fault injections, timing taxonomy, pass/fail criteria | Facility authority or certified interlock |
+| Same-case solver comparison | Redistributable deck and trusted reference output | Native result, convention audit, error metrics, checksums, blocked/accepted verdict | A claim that the native solver replaces the reference code |
+| Accelerator study | Hardware target and representative workload | Reproducible CPU/Rust/CUDA/MPI measurements with environment metadata | Extrapolated cluster or plant throughput |
+| Studio federation review | Required verbs, schemas, and exactness class | Machine-readable capability/evidence manifest and reproduction comparator | Automatic promotion of simulated evidence |
+| Training workshop | Audience level and learning outcome | Curated quickstart, notebooks, evidence-reading exercises | Operator qualification or safety certification |
+
+## What creates defensible value
+
+Market value here is the reduction of technical uncertainty. A useful engagement
+should leave behind artifacts that another reviewer can inspect: a replay trace,
+same-case comparison, hardware report, schema, checksum, or explicit blocked row.
+That makes the result portable across engineering, investment, and assurance
+reviews without turning exploratory output into a readiness claim.
+
 ## Current investment case
 
 The near-term financing need is evidence generation: same-deck reference-solver
 runs, GPU/cluster scaling campaigns, DREAM/Aurora/STRAHL parity artifacts, and
 FreeGS/free-boundary sidecar data. Funding should buy reproducibility and
 independent comparability, not inflated claims.
+
+The highest-leverage inputs are therefore concrete: legally usable external
+outputs, facility-specific replay data, isolated accelerator time, independent
+replication, and safety-assurance expertise. Each closes a named evidence gap;
+none is represented as buying scientific acceptance by itself.
 
 ## Why this matters to external readers
 

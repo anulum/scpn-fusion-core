@@ -41,9 +41,8 @@ preflight checks so claim state changes are evidence-backed.
 
 ## Release evidence links
 
-- `docs/releases/v3.11.0.md`
-- `docs/releases/v3.10.1.md`
-- `CHANGELOG.md`
+- `CHANGELOG.md` (`4.0.0` section)
+- `https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0`
 - `README.md`
 - `docs/PROJECT_OVERVIEW.md`
 - `docs/ONBOARDING.md`
@@ -53,10 +52,12 @@ preflight checks so claim state changes are evidence-backed.
 
 ## Evidence boundary
 
-The release covers CI publication hardening, dependency-maintenance triage,
-release-surface alignment, and the existing Studio federation documentation
-baseline. It does not promote blocked full-fidelity solver parity gates to
-accepted status.
+The release covers the differentiable predictive free-boundary equilibrium
+line, exact adjoint gradients, cached batched execution, OMAS/IMAS interchange,
+real-data validation artifacts, fail-closed input hardening, and the associated
+dependency and publication refresh. It does not promote blocked nonlinear GK,
+full electromagnetic, DREAM kinetic, mechanistic Aurora/STRAHL, or production
+MPI/multi-GPU parity gates to accepted status.
 
 ## Public release boundary
 

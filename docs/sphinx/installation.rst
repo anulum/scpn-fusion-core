@@ -3,8 +3,10 @@ Installation
 ============
 
 SCPN-Fusion-Core supports three installation paths: a pure-Python core install
-(fastest to get started), a Rust-accelerated install (10--50x faster
-numerics), and a Docker-based install (zero local dependencies).
+(fastest to get started), an optional Rust-accelerated install, and a
+Docker-based install. Native performance is kernel-, input-, build-, and
+hardware-specific; use the linked benchmark reports instead of a generic
+speedup multiplier.
 
 Requirements
 ------------
@@ -81,10 +83,11 @@ with hashes enabled; edit the ``.in`` files first, then regenerate the locked
 Rust Kernel Build (Optional)
 -----------------------------
 
-The ``scpn-fusion-rs/`` directory contains a 11-crate Rust workspace
-that mirrors the Python package structure.  Building it provides 10--50x
-speedups for equilibrium solves, inverse reconstruction, and transport
-stepping.
+The ``scpn-fusion-rs/`` directory contains a 13-crate Rust workspace that
+mirrors the Python package structure. Building it enables selected native
+equilibrium, control, transport, phase, GPU, and polyglot kernels. It does not
+make every Python path native, and backend availability alone is not benchmark
+evidence.
 
 Prerequisites:
 
@@ -111,6 +114,10 @@ extension::
     >>> from scpn_fusion.core import RUST_BACKEND
     >>> print(RUST_BACKEND)
     True
+
+``RUST_BACKEND`` confirms dispatch availability only. For measured values,
+follow ``docs/BENCHMARKS.md``, ``RESULTS.md``, and the referenced JSON/Markdown
+artifacts; compare only equivalent workloads and hardware metadata.
 
 Rust Benchmarks
 ^^^^^^^^^^^^^^^

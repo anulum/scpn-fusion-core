@@ -23,7 +23,6 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -43,7 +42,7 @@ jobs:
           manylinux: auto
           working-directory: scpn-fusion-rs/crates/fusion-python
           command: build
-          args: --release --strip --out ../../../dist --interpreter 3.10 3.11 3.12
+          args: --locked --release --strip --out ../../../dist --interpreter 3.10 3.11 3.12
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -52,23 +51,21 @@ jobs:
           path: dist/*.whl
 
   build-sdist:
-    name: Build sdist (pure Python)
+    name: Build native sdist
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - name: Build native sdist
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b  # v1
         with:
-          python-version: "3.12"
-      - name: Build sdist
-        run: |
-          pip install --require-hashes -r requirements/build.txt
-          python -m build --sdist
+          working-directory: scpn-fusion-rs/crates/fusion-python
+          command: sdist
+          args: --locked --out ../../../dist
       - name: Upload sdist
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
-          name: sdist
-          path: dist/*.tar.gz
+          name: native-sdist
+          path: dist/scpn_fusion_rs-*.tar.gz
 
   publish:
     name: Publish Rust wheels to PyPI
@@ -76,16 +73,32 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       (startsWith(github.ref, 'refs/tags/v') && vars.WHEELS_PUBLISH_ENABLED == 'true') ||
-      (github.event_name == 'workflow_dispatch' && inputs.publish == true)
+      (github.event_name == 'workflow_dispatch' && inputs.publish == true && github.ref == 'refs/heads/main')
+    permissions:
+      contents: read
+      id-token: write
     environment:
       name: pypi
       url: https://pypi.org/p/scpn-fusion-rs
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
       - name: Download all artifacts
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
         with:
           path: dist/
           merge-multiple: true
+
+      - name: Verify one native distribution and version
+        env:
+          NATIVE_EVENT_NAME: ${{ github.event_name }}
+          NATIVE_REF_NAME: ${{ github.ref_name }}
+        run: |
+          python tools/verify_native_distribution_artifacts.py \
+            --artifact-dir dist \
+            --metadata scpn-fusion-rs/crates/fusion-python/pyproject.toml \
+            --event-name "$NATIVE_EVENT_NAME" \
+            --ref-name "$NATIVE_REF_NAME"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247  # release/v1

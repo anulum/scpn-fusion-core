@@ -5,8 +5,24 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.11.0 (Current)
--------------------
+v4.0.0 (Current)
+----------------
+
+- Major release for the differentiable predictive free-boundary equilibrium
+  line: SI inputs, general profile bases, smooth axis/X-point extraction,
+  Anderson acceleration, a fully JIT-compiled forward path, cached batched
+  solves, and an implicit-function-theorem adjoint for coil-current gradients.
+- Adds the OMAS/IMAS equilibrium bridge with explicit COCOS auditing and the
+  DIII-D 145419 real-data validation lane.
+- Makes fail-closed input behavior and the multigrid-preconditioned compiled
+  forward path part of the release contract; corrects fine-grid adjoint
+  convergence and refreshes the disruption operating point.
+- Publishes exact wheel/sdist checksums in the GitHub v4.0.0 release while
+  keeping nonlinear GK, full electromagnetic, DREAM kinetic,
+  Aurora/STRAHL, and production MPI/multi-GPU parity fail-closed.
+
+v3.11.0
+-------
 
 - Minor feature release adding control, transport, surrogate, and equilibrium capabilities on top of v3.10.1, with no public API removed (backward compatible).
 - Adds the M-4 safety-shield + constrained-PPO policy, the F-7 TGLF transport surrogate, the M-1 Petri→SNN interlock with proof hash, fastest-first FNO/surrogate-MPC/Fokker-Planck dispatch tiers, the T-4 UQ/OOD cards and T-2 safety traceability matrix (fail-closed drift guards), the F-5 PB-KBM pedestal tier, and the F-1 Solov'ev exact suite.

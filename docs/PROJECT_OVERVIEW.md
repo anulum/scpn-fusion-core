@@ -10,6 +10,20 @@ stack. It exists to answer a practical engineering question: how can fusion
 control software be developed, benchmarked, and constrained before it is placed
 near real plant hardware?
 
+## Current public state
+
+| Surface | Current public truth | Where to verify it |
+|---|---|---|
+| Tagged package release | `4.0.0` | `pyproject.toml`, `CITATION.cff`, `CHANGELOG.md` |
+| Release focus | Differentiable predictive free-boundary equilibrium, exact adjoint gradients, batched JAX execution, and OMAS/IMAS interchange | v4.0.0 release notes and `RESULTS.md` |
+| Static inventory | 13 Rust crates, 322 Python capability modules, 598 Python test files, and 63 public documentation pages | `docs/_generated/capability_snapshot.md` |
+| Full-fidelity status | Not complete; external same-case and production-scale rows remain fail-closed | `validation/reports/full_fidelity_end_to_end_campaign.md` |
+| Safety status | Research and assurance-roadmap material; no IEC 61508 or SIL certification claim | `docs/IEC_61508_ROADMAP.md` |
+
+The generated inventory is a count, not evidence of correctness or performance.
+Every numerical, hardware, safety, and parity claim must still resolve to its own
+report, command, environment, threshold, and artifact.
+
 ## What the repository contains
 
 - Controller surfaces: PID, H-infinity, LQR, NMPC, replay, fault tolerance,
@@ -40,6 +54,17 @@ near real plant hardware?
   capabilities, evidence schemas, backend dispatch, and honest boundaries.
 - Teaching the software architecture of control-first fusion simulation.
 - Preparing reference-code parity campaigns against established solvers.
+
+## Choose the right path
+
+| Your question | Start here | Expected output |
+|---|---|---|
+| Can I run the package? | `docs/ONBOARDING.md` | A local smoke result plus a checksummed fail-closed evidence report |
+| Which Python or native API should I use? | `docs/API_OVERVIEW.md` | A module, stability expectation, and owning evidence surface |
+| Which claims are measured? | `RESULTS.md`, `docs/BENCHMARKS.md` | Metric-specific values with commands and artifact links |
+| Which production claims are blocked? | `validation/reports/full_fidelity_end_to_end_campaign.md` | Accepted and blocked rows with missing evidence |
+| Where could this create commercial value? | `docs/APPLICATIONS_AND_MARKET.md` | An evidence package to evaluate, not a deployment promise |
+| How do I contribute safely? | `docs/ONBOARDING.md`, `CONTRIBUTING.md` | A bounded change with tests, docs, and evidence updated together |
 
 ## Ecosystem placement
 

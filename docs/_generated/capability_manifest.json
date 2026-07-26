@@ -2764,7 +2764,7 @@
     "python_capability_classes": 577,
     "python_capability_source_modules": 322,
     "rust_workspace_crates": 13,
-    "test_files": 597
+    "test_files": 598
   },
   "documentation": {
     "public_pages": [
@@ -3281,6 +3281,7 @@
       "tests/test_multigrid_solve.py",
       "tests/test_multigroup_blanket.py",
       "tests/test_mypy_expansion_guard.py",
+      "tests/test_native_distribution_artifacts.py",
       "tests/test_nengo_snn_wrapper.py",
       "tests/test_neoclassical.py",
       "tests/test_neural_equilibrium.py",

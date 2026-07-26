@@ -48,6 +48,7 @@ use bindings::transport::{
 
 #[pymodule]
 fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_class::<PyFusionKernel>()?;
     m.add_class::<PyEquilibriumResult>()?;
     m.add_class::<PyThermodynamicsResult>()?;

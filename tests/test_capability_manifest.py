@@ -110,6 +110,29 @@ def test_generated_outputs_are_current() -> None:
     tool.assert_outputs_current(_repo_root())
 
 
+def test_project_overview_inventory_matches_generated_manifest() -> None:
+    """Verify the public overview cannot drift from generated inventory counts."""
+    manifest = json.loads(
+        (_repo_root() / "docs/_generated/capability_manifest.json").read_text(encoding="utf-8")
+    )
+    overview = (_repo_root() / "docs/PROJECT_OVERVIEW.md").read_text(encoding="utf-8")
+    inventory = re.search(
+        r"\| Static inventory \| "
+        r"(?P<rust>\d+) Rust crates, "
+        r"(?P<modules>\d+) Python capability modules, "
+        r"(?P<tests>\d+) Python test files, and "
+        r"(?P<docs>\d+) public documentation pages \|",
+        overview,
+    )
+    assert inventory is not None
+
+    counts = manifest["counts"]
+    assert int(inventory["rust"]) == counts["rust_workspace_crates"]
+    assert int(inventory["modules"]) == counts["python_capability_source_modules"]
+    assert int(inventory["tests"]) == counts["test_files"]
+    assert int(inventory["docs"]) == counts["public_documentation_pages"]
+
+
 def test_readme_snapshot_matches_generated_markdown() -> None:
     """Verify the README inventory block matches generated Markdown exactly."""
     tool = _load_tool()

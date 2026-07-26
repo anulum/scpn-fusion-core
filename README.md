@@ -128,26 +128,27 @@ facades and evidence-bounded validation reports.
 
 ## Current Release Snapshot
 
-Version `3.11.0` is a minor feature release. It adds a safety-shield
-composition with a real constrained-PPO control policy (M-4), a real TGLF
-transport surrogate (F-7), a proven Petri→SNN interlock with replay invariance
-and an exported proof hash (M-1), fastest-first dispatch tiers for the FNO
-turbulence, surrogate-MPC, and runaway-electron Fokker-Planck kernels,
-per-surrogate UQ/OOD cards and a safety traceability matrix with fail-closed
-drift guards (T-4, T-2), a PB-KBM pedestal constraint-loop tier benchmarked
-against digitised EPED1 references (F-5), and a Solov'ev exact equilibrium
-suite (F-1).
+Version `4.0.0` is the current public release. Its major line is a
+differentiable predictive free-boundary Grad-Shafranov solver: SI inputs,
+general profile bases, smooth axis/X-point extraction, Anderson acceleration,
+a fully JIT-compiled forward path, cached batched solves, and an
+implicit-function-theorem adjoint for coil-current gradients. The release also
+adds an OMAS/IMAS equilibrium bridge with an explicit COCOS audit and a
+real-data DIII-D 145419 validation lane.
 
-The release also lands a large modular-decomposition pass (splitting several
-oversized modules by responsibility) and a validation-evidence pass. No public
-API was removed; all additions are backward compatible with v3.10.1.
+The major version records behavioural hardening rather than API removal:
+fail-closed input validation, the multigrid preconditioner becoming the default
+for the compiled forward path, corrected fine-grid adjoint convergence, and a
+re-measured disruption operating point. Exact release notes and artifact
+checksums are published in the [v4.0.0 GitHub release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0)
+and [`CHANGELOG.md`](CHANGELOG.md).
 
-This release does not promote the solver to completed end-to-end full-fidelity
-parity. GENE/CGYRO/GS2 nonlinear turbulence parity, full electromagnetic
-parity, DREAM kinetic parity, independent mechanistic Aurora/STRAHL recycling
-validation, and production MPI/multi-GPU scaling remain accepted only when
-their tracked rows carry same-case external outputs, provenance, checksums,
-thresholds, grid or scaling evidence, and native comparisons.
+Version 4.0.0 does **not** promote the repository to completed end-to-end
+full-fidelity parity. GENE/CGYRO/GS2 nonlinear turbulence parity, full
+electromagnetic parity, DREAM kinetic parity, independent mechanistic
+Aurora/STRAHL recycling validation, and production MPI/multi-GPU scaling stay
+blocked until their tracked rows carry same-case external outputs, provenance,
+checksums, thresholds, grid or scaling evidence, and native comparisons.
 
 <!-- capability-snapshot:start -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
@@ -164,7 +165,7 @@ thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 63 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 597 |
+| Python test files | 598 |
 | Public documentation pages | 63 |
 | GitHub Actions workflows | 13 |
 
@@ -211,10 +212,11 @@ before plant deployment.
 | Find public APIs and extension points | [`docs/API_OVERVIEW.md`](docs/API_OVERVIEW.md) |
 | Emit the Studio federation manifest | [`docs/sphinx/userguide/studio_federation.rst`](docs/sphinx/userguide/studio_federation.rst) |
 | Understand applications and market value | [`docs/APPLICATIONS_AND_MARKET.md`](docs/APPLICATIONS_AND_MARKET.md) |
+| Read the current release and checksums | [`CHANGELOG.md`](CHANGELOG.md), [v4.0.0 release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0) |
 | Reproduce benchmark claims | [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`RESULTS.md`](RESULTS.md) |
 | Track full-fidelity blockers | [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md) |
 | Refresh checksummed full-reproduction evidence | [`validation/reports/full_reproduction_evidence.md`](validation/reports/full_reproduction_evidence.md) |
-| Use notebooks | [`docs/notebooks/README.md`](docs/notebooks/README.md) |
+| Choose a tutorial or notebook | [`docs/notebooks/README.md`](docs/notebooks/README.md), [`docs/sphinx/quickstart.rst`](docs/sphinx/quickstart.rst) |
 | Read generated Sphinx docs | [`docs/sphinx/index.rst`](docs/sphinx/index.rst) |
 
 ## Capability Surface
@@ -897,7 +899,7 @@ Validation artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {3.11.0}
+  version = {4.0.0}
 }
 ```
 

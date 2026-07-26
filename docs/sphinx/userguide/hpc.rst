@@ -8,7 +8,7 @@ native backend, C++ FFI bridge, and a GPU acceleration roadmap.
 Rust Workspace
 ---------------
 
-The ``scpn-fusion-rs/`` directory contains a 10-crate Rust workspace
+The ``scpn-fusion-rs/`` directory contains a 13-crate Rust workspace
 that mirrors the Python package structure:
 
 .. list-table::
@@ -27,9 +27,14 @@ that mirrors the Python package structure:
        stability, pedestal model, and AMR validation utilities. Production
        equilibrium dispatch remains on the uniform-grid solver until the AMR
        parity lane is wired and benchmarked.
+   * - ``fusion-polyglot``
+     - Cross-language kernel and parity surfaces used by the polyglot evidence
+       lanes
    * - ``fusion-physics``
      - MHD sawtooth, Hall-MHD, turbulence, FNO, heating, compact
        reactor optimiser, design scanner, sandpile
+   * - ``fusion-phase``
+     - Phase-dynamics and coupling kernels
    * - ``fusion-nuclear``
      - Neutronics, divertor, wall interaction, PWI erosion, TEMHD,
        balance of plant
@@ -45,6 +50,9 @@ that mirrors the Python package structure:
        polynomial chaos expansion (PCE) UQ
    * - ``fusion-python``
      - PyO3 bindings producing ``scpn_fusion_rs.pyd`` / ``.so``
+   * - ``fusion-gpu``
+     - GPU-facing kernel experiments and dispatch surfaces with explicit
+       fallback/evidence boundaries
 
 Build Configuration
 ^^^^^^^^^^^^^^^^^^^^
@@ -77,6 +85,11 @@ auto-detects the extension at import time::
 
 All API signatures are identical between the Python and Rust paths,
 ensuring zero code changes when switching backends.
+
+Backend availability is not a blanket speedup claim. Compare equivalent work
+through ``docs/BENCHMARKS.md`` and the committed hardware-specific artifacts;
+record CPU/GPU model, precision, grid, warmup, sample count, backend, and
+software revisions for every published number.
 
 C++ FFI Bridge
 ---------------

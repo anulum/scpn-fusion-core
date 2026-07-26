@@ -51,6 +51,22 @@ for the full-fidelity campaign source reports.  The expected top-level status is
 ``not_full_fidelity`` until external same-case parity artifacts close the
 blocked rows.
 
+Environment Check
+-----------------
+
+Record what actually ran before interpreting output::
+
+    python -c "import scpn_fusion; print(scpn_fusion.__version__)"
+    python -c "from scpn_fusion.core import RUST_BACKEND; print(RUST_BACKEND)"
+    reuse lint
+
+The backend flag reports whether optional Rust bindings loaded; it is not a
+speed measurement. A healthy ``repro --full`` run may still report
+``not_full_fidelity`` because the command preserves external evidence blockers.
+Idle CUDA utilization likewise means only that the selected path is not
+currently executing a GPU kernel; consult the report's backend and hardware
+metadata before diagnosing a fault.
+
 Reader Tracks
 -------------
 
@@ -73,6 +89,9 @@ Reader Tracks
    * - Release reviewer
      - ``docs/RELEASE_READINESS.md`` and ``requirements/*.txt``
      - Confirm hash-pinned dependency state and report freshness.
+   * - Commercial evaluator
+     - ``docs/APPLICATIONS_AND_MARKET.md`` and ``RESULTS.md``
+     - Evaluate a bounded evidence package, not a plant-readiness promise.
 
 Next Reading
 ------------

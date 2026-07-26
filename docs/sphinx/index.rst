@@ -74,8 +74,9 @@ Key Features
   MLP, ML disruption predictor
 - **Digital twin** -- real-time twin with RL-trained MLP policy and chaos
   monkey fault injection
-- **Rust acceleration** -- 11-crate Rust workspace providing 10--50x
-  speedups with pure-Python fallback
+- **Rust acceleration** -- 13-crate Rust workspace with pure-Python fallback;
+  performance claims are kernel- and hardware-specific and link to committed
+  benchmark artifacts
 - **Real data validation** -- SPARC GEQDSK, ITER 15 MA baseline, ITPA
   H-mode confinement database
 - **Fail-closed full-fidelity campaign** -- explicit GENE/CGYRO/GS2,

@@ -30,6 +30,39 @@ Important surfaces:
 
 Generated Sphinx API pages live under `docs/sphinx/api/`.
 
+## Minimal verified entry points
+
+These examples use public imports and avoid optional services. They are API
+orientation, not benchmark evidence.
+
+```python
+from scpn_fusion.core import RUST_BACKEND, read_geqdsk
+
+equilibrium = read_geqdsk(
+    "validation/reference_data/sparc/lmode_vv.geqdsk"
+)
+print(RUST_BACKEND, equilibrium.psirz.shape)
+```
+
+```python
+from scpn_fusion.scpn import FusionCompiler, StochasticPetriNet
+
+net = StochasticPetriNet()
+compiler_type = FusionCompiler
+print(net, compiler_type.__name__)
+```
+
+```python
+from scpn_fusion.studio import build_manifest
+
+manifest = build_manifest()
+print(manifest.studio, manifest.studio_version)
+```
+
+The Studio import is part of the repository surface; downstream Hub integration
+may additionally require the optional `studio` extra. Use the generated API
+pages for signatures and the linked tests/reports for behavioral guarantees.
+
 ## Practical orientation
 
 This map is intended as a navigation layer before opening generated API details.
@@ -55,6 +88,22 @@ README or market-facing text.
 | Data interchange | `scpn_fusion.io` | Provenance records, checksums, source licenses |
 | Hardware or acceleration | `scpn_fusion.hpc`, `scpn-fusion-rs/` | CPU/GPU/MPI metadata and benchmark artifacts |
 | Tutorial/demo | `examples/`, `docs/notebooks/` | Linked validation reports when public claims are made |
+
+## Generated API reference map
+
+| Domain | Sphinx source |
+|---|---|
+| Core physics and solvers | `docs/sphinx/api/core.rst` |
+| Control and replay | `docs/sphinx/api/control.rst` |
+| Neuro-symbolic compiler | `docs/sphinx/api/scpn.rst` |
+| Studio federation | `docs/sphinx/api/studio.rst` |
+| I/O and interchange | `docs/sphinx/api/io.rst` |
+| HPC/native integration | `docs/sphinx/api/hpc.rst` |
+| Phase, diagnostics, engineering, nuclear, and UI | `docs/sphinx/api/phase.rst`, `diagnostics.rst`, `engineering.rst`, `nuclear.rst`, `ui.rst` |
+
+If a symbol is absent from the relevant generated page, treat the owning module
+as an internal or evolving surface until an explicit public facade and tests say
+otherwise.
 
 ## How to choose an API surface
 

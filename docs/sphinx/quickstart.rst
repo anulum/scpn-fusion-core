@@ -115,15 +115,17 @@ Run a Compact Reactor Search
 -----------------------------
 
 The ``optimizer`` mode performs a multi-objective design-space exploration
-to find the smallest tokamak that achieves :math:`Q \geq 10` ignition::
+under the repository's reduced-order constraints::
 
     scpn-fusion optimizer
 
 The optimizer sweeps major/minor radius, elongation, triangularity,
 magnetic field strength, plasma current, and heating power allocation
 subject to the Greenwald density limit, beta limit, and Lawson criterion.
-The result is the MVR-0.96 (Minimum Viable Reactor) design point with
-:math:`R = 0.965\,\text{m}`, :math:`A = 2.0`, :math:`P_\text{fus} = 5.3\,\text{MW}`.
+The bundled search can reproduce the documented MVR-0.96 candidate. Treat it
+as a research/design-space result, not a buildable reactor design or an
+engineering certification. Validate any quoted point against ``RESULTS.md``
+and the current constraint/benchmark artifacts.
 
 Launch the Tokamak Flight Simulator
 ------------------------------------
@@ -219,7 +221,7 @@ Available Simulation Modes
      - Research contract
    * - ``optimizer``
      - Compact reactor design search (MVR-0.96)
-     - Validated
+     - Research/local contract
    * - ``breeding``
      - Tritium breeding blanket neutronics
      - Validated

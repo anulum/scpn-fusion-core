@@ -24,6 +24,8 @@ RESULTS_PATH = ROOT / "RESULTS.md"
 VALIDATION_PATH = ROOT / "VALIDATION.md"
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
 RUST_PYPROJECT_PATH = ROOT / "scpn-fusion-rs" / "crates" / "fusion-python" / "pyproject.toml"
+RUST_CARGO_PATH = ROOT / "scpn-fusion-rs" / "crates" / "fusion-python" / "Cargo.toml"
+WHEELS_WORKFLOW_PATH = ROOT / ".github" / "workflows" / "wheels.yml"
 
 
 def _extract_version(pattern: str, text: str, label: str) -> str:
@@ -66,11 +68,32 @@ def test_release_metadata_versions_are_consistent() -> None:
         rust_pyproject_text,
         "scpn-fusion-rs/crates/fusion-python/pyproject.toml",
     )
+    rust_cargo_text = RUST_CARGO_PATH.read_text(encoding="utf-8")
+    rust_cargo_version = _extract_version(
+        r'(?m)^version\s*=\s*"([^"]+)"',
+        rust_cargo_text,
+        "scpn-fusion-rs/crates/fusion-python/Cargo.toml",
+    )
 
     assert pyproject_version == package_version
     assert citation_version == package_version
     assert sphinx_release == package_version
     assert rust_pyproject_version == package_version
+    assert rust_cargo_version == package_version
+
+
+def test_native_distribution_workflow_builds_its_own_sdist() -> None:
+    workflow = WHEELS_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    assert "working-directory: scpn-fusion-rs/crates/fusion-python" in workflow
+    assert "command: sdist" in workflow
+    assert "dist/scpn_fusion_rs-*.tar.gz" in workflow
+    assert "python -m build --sdist" not in workflow
+    assert "tools/verify_native_distribution_artifacts.py" in workflow
+    assert "github.event_name }}" in workflow
+    assert "github.ref_name }}" in workflow
+    assert "github.ref == 'refs/heads/main'" in workflow
+    assert workflow.count("id-token: write") == 1
 
 
 def test_legacy_setup_py_is_not_present() -> None:

@@ -6,12 +6,15 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — source/config header compliance
 [package]
-authors = ["Miroslav Sotek"]
+authors = ["Miroslav Sotek <protoscience@anulum.li>"]
 license = "AGPL-3.0-or-later"
 name = "scpn-fusion-rs"
-version = "0.1.0"
+version = "4.0.0"
 edition = "2021"
-description = "SCPN Fusion Core - Python bindings via PyO3"
+description = "Native Rust acceleration for SCPN Fusion Core via PyO3"
+homepage = "https://github.com/anulum/scpn-fusion-core"
+repository = "https://github.com/anulum/scpn-fusion-core"
+readme = "README.md"
 
 [lib]
 name = "scpn_fusion_rs"

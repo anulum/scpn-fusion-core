@@ -87,6 +87,19 @@ The minimal example plus `scpn-fusion repro --full` is the canonical hero-demo
 path for first-time review because it pairs a compact local run with the
 checksummed evidence ledger.
 
+### Confirm the environment before interpreting output
+
+```bash
+python -c "import scpn_fusion; print(scpn_fusion.__version__)"
+python -c "from scpn_fusion.core import RUST_BACKEND; print(RUST_BACKEND)"
+reuse lint
+```
+
+The first command should report the installed package version. The second says
+whether optional Rust bindings were actually loaded; it is not a performance
+measurement. The third validates repository licensing metadata and is expected
+to pass in a source checkout.
+
 ## 3. Understand the product in one pass
 
 Before changing code, read the public claim boundary:
@@ -164,6 +177,20 @@ Before a public-facing change is released, update the relevant README, guide,
 API overview, benchmark report, changelog, and release note. If the change is an
 internal plan or unfinished task note, keep it under ignored internal paths and do not
 turn it into public capability prose.
+
+## 9. Common first-run outcomes
+
+| Outcome | Meaning | Next action |
+|---|---|---|
+| Minimal example converges | The local smoke path works | Continue to the evidence wrapper |
+| `repro --full` says `not_full_fidelity` | The fail-closed ledger is working and external rows remain blocked | Read the row-level blockers; do not relabel them as failures or passes |
+| `RUST_BACKEND` is `False` | Python fallback is active | Build the optional PyO3 extension only if the task needs it |
+| CUDA is idle | The selected command is on a CPU/Python path or has not reached a GPU kernel | Check the benchmark's backend metadata; do not infer a GPU fault from utilization alone |
+| A reference adapter cannot find an external solver | The optional external dependency is absent | Supply the licensed solver/output through its documented adapter; do not vendor it casually |
+
+When asking for help, include the command, package version, Python version,
+backend flag, operating system, and the exact report or traceback. Do not include
+credentials, private facility data, or internal paths in public issues.
 
 ## Evidence checkpoints for first-time contributors
 
