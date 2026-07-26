@@ -13,6 +13,8 @@ import hashlib
 import json
 import math
 import re
+import subprocess
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
@@ -25,8 +27,10 @@ REPORT_PATH = "validation/reports/ida_coil_vacuum_fixed_physical_response.json"
 MARKDOWN_PATH = "validation/reports/ida_coil_vacuum_fixed_physical_response.md"
 UPSTREAM_PATH = grid_contract.REPORT_PATH
 EXPECTED_UPSTREAM_PAYLOAD = "7f04e4cb4217d920f19eaecfbd7738b86aa9db93fa37894df3b4f68c7f211193"
+EXPECTED_UPSTREAM_FILE_SHA256 = "48470d54509d6ae5af867b41b179bf6ecce54bd0bccca2b97d0af1db0c305423"
 EXPECTED_ANCHOR_SHA256 = "9813680aacf307026fee29f9299080b2266d281e5546758680777269323c33ec"
 EXPECTED_COIL_MANIFEST_SHA256 = "63c9d649c8c509340d0fc0a21588b9ec4fe873bdf00f19c4ba44fa2a85b705b1"
+SOURCE_BASE_COMMIT = "3227a255240ba1c965a05bdecc21c732190452a0"
 FIXED_PHYSICAL_RADIUS_M = 0.225
 PARTITION_CLOSURE_MAX_ABS = grid_contract.PARTITION_CLOSURE_MAX_ABS
 CURRENT_RECOVERY_WEIGHTED_MAX = grid_contract.CURRENT_RECOVERY_WEIGHTED_MAX
@@ -45,8 +49,26 @@ SOURCE_PATHS = {
     "grid_diagnostic": "validation/diagnose_ida_coil_vacuum_grid_convergence.py",
     "grid_runtime": "validation/ida_coil_vacuum_grid_runtime.py",
 }
+SOURCE_CHANGE_PATHS = {
+    "README.md",
+    "docs/_generated/capability_manifest.json",
+    "docs/_generated/capability_snapshot.md",
+    "pyproject.toml",
+    "tests/ida_coil_vacuum_fixed_physical_fixtures.py",
+    "tests/test_diagnose_ida_coil_vacuum_fixed_physical_response.py",
+    "tests/test_ida_coil_vacuum_fixed_physical_contract.py",
+    "tests/test_ida_coil_vacuum_fixed_physical_response.py",
+    "tests/test_ida_coil_vacuum_grid_runtime.py",
+    "validation/diagnose_ida_coil_vacuum_fixed_physical_response.py",
+    "validation/diagnose_ida_coil_vacuum_grid_convergence.py",
+    "validation/ida_coil_vacuum_fixed_physical_contract.py",
+    "validation/ida_coil_vacuum_fixed_physical_response.py",
+    "validation/ida_coil_vacuum_grid_runtime.py",
+}
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+GIT_EXECUTABLE = "/usr/bin/git"
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
-_GIT_OID_RE = re.compile(r"[0-9a-f]{40,64}")
+_GIT_OID_RE = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})")
 _TOP_LEVEL_FIELDS = {
     "benchmark_id",
     "blockers",
@@ -84,6 +106,16 @@ def _payload_sha256(report: dict[str, Any]) -> str:
     return hashlib.sha256(
         _canonical_json({key: value for key, value in report.items() if key != "payload_sha256"})
     ).hexdigest()
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject ambiguous JSON objects before any payload or file binding."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
 
 
 def _walk_finite(value: object, *, field: str = "report") -> None:
@@ -145,21 +177,27 @@ def _hypotheses() -> dict[str, str]:
 def load_upstream_report(root: Path) -> dict[str, Any]:
     """Load and validate the immutable CVGC1 report from a repository root."""
     path = root / UPSTREAM_PATH
-    value = json.loads(path.read_text(encoding="utf-8"))
+    content = path.read_bytes()
+    value = json.loads(content, object_pairs_hook=_reject_duplicate_json_keys)
     if not isinstance(value, dict):
         raise ValueError("CVGC1 upstream report must be an object")
     report = cast(dict[str, Any], value)
     grid_contract.validate_report(report)
     if report["payload_sha256"] != EXPECTED_UPSTREAM_PAYLOAD:
         raise ValueError("CVGC1 upstream payload does not match the frozen binding")
+    if hashlib.sha256(content).hexdigest() != EXPECTED_UPSTREAM_FILE_SHA256:
+        raise ValueError("CVGC1 upstream file does not match the frozen bytes")
     return report
 
 
 def upstream_binding(root: Path, report: dict[str, Any]) -> dict[str, str]:
     """Return exact path, payload, and file digests for CVGC1."""
     content = (root / UPSTREAM_PATH).read_bytes()
+    file_sha256 = hashlib.sha256(content).hexdigest()
+    if file_sha256 != EXPECTED_UPSTREAM_FILE_SHA256:
+        raise ValueError("CVGC1 upstream file does not match the frozen bytes")
     return {
-        "file_sha256": hashlib.sha256(content).hexdigest(),
+        "file_sha256": file_sha256,
         "path": UPSTREAM_PATH,
         "payload_sha256": str(report["payload_sha256"]),
         "schema_version": str(report["schema_version"]),
@@ -185,7 +223,142 @@ def build_execution_binding(
     return binding
 
 
-def _validate_source_artifacts(value: object) -> None:
+def _git_bytes(root: Path, *args: str) -> bytes:
+    """Return one bounded Git plumbing result or fail closed."""
+    try:
+        result = subprocess.run(
+            [GIT_EXECUTABLE, *args],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError("CVGC2 source commit is not inspectable") from exc
+    return result.stdout
+
+
+@lru_cache(maxsize=8)
+def _source_artifact_rows(root_text: str, commit: str) -> tuple[tuple[str, str, str], ...]:
+    """Authenticate one immutable Git source bundle and cache its blob rows."""
+    root = Path(root_text)
+    if type(commit) is not str or _GIT_OID_RE.fullmatch(commit) is None:
+        raise ValueError("CVGC2 repository commit is invalid")
+    object_type = _git_bytes(root, "cat-file", "-t", commit).decode("ascii").strip()
+    if object_type != "commit":
+        raise ValueError("CVGC2 repository object is not a commit")
+    try:
+        subprocess.run(
+            [GIT_EXECUTABLE, "merge-base", "--is-ancestor", SOURCE_BASE_COMMIT, commit],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError("CVGC2 source commit does not descend from the frozen base") from exc
+    changed = {
+        path
+        for path in _git_bytes(
+            root,
+            "diff",
+            "--no-renames",
+            "--name-only",
+            f"{SOURCE_BASE_COMMIT}..{commit}",
+            "--",
+        )
+        .decode("utf-8")
+        .splitlines()
+        if path
+    }
+    if changed != SOURCE_CHANGE_PATHS:
+        raise ValueError("CVGC2 source commit changed paths outside the frozen source bundle")
+    artifacts: list[tuple[str, str, str]] = []
+    for name, path in SOURCE_PATHS.items():
+        tree_row = _git_bytes(root, "ls-tree", commit, "--", path).decode("utf-8").strip()
+        fields = tree_row.split(maxsplit=3)
+        if len(fields) != 4 or fields[0] not in {"100644", "100755"} or fields[1] != "blob":
+            raise ValueError(f"{name} source is not a regular committed file")
+        digest = hashlib.sha256(_git_bytes(root, "show", f"{commit}:{path}")).hexdigest()
+        artifacts.append((name, path, digest))
+    return tuple(artifacts)
+
+
+def source_artifacts_for_commit(root: Path, commit: str) -> dict[str, dict[str, Any]]:
+    """Build historical source provenance without asserting execution state."""
+    rows = _source_artifact_rows(str(root.resolve()), commit)
+    artifacts: dict[str, dict[str, Any]] = {
+        name: {"path": path, "sha256": digest} for name, path, digest in rows
+    }
+    artifacts["repository"] = {
+        "git_commit": commit,
+        "path": ".",
+    }
+    return artifacts
+
+
+def execution_source_snapshot(
+    root: Path,
+) -> tuple[dict[str, dict[str, Any]], dict[str, tuple[int, ...]]]:
+    """Bind clean execution bytes and mutation-sensitive file metadata."""
+    head = _git_bytes(root, "rev-parse", "--verify", "HEAD^{commit}").decode("ascii").strip()
+    if _GIT_OID_RE.fullmatch(head) is None:
+        raise ValueError("CVGC2 executing HEAD is invalid")
+    status = {
+        entry
+        for entry in _git_bytes(
+            root,
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+        ).split(b"\0")
+        if entry
+    }
+    allowed_outputs = {
+        f"?? {REPORT_PATH}".encode(),
+        f"?? {MARKDOWN_PATH}".encode(),
+    }
+    if not status.issubset(allowed_outputs):
+        raise ValueError("CVGC2 executing checkout contains staged or unstaged source drift")
+    artifacts = source_artifacts_for_commit(root, head)
+    signatures: dict[str, tuple[int, ...]] = {}
+    for name, path in SOURCE_PATHS.items():
+        source_path = root / path
+        before = source_path.stat()
+        digest = hashlib.sha256(source_path.read_bytes()).hexdigest()
+        after = source_path.stat()
+        before_signature = (
+            before.st_dev,
+            before.st_ino,
+            before.st_mode,
+            before.st_size,
+            before.st_mtime_ns,
+            before.st_ctime_ns,
+        )
+        signature = (
+            after.st_dev,
+            after.st_ino,
+            after.st_mode,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        )
+        if signature != before_signature:
+            raise ValueError(f"{name} source mutated while execution provenance was captured")
+        if digest != artifacts[name]["sha256"]:
+            raise ValueError(f"{name} executing bytes do not match the bound commit")
+        signatures[name] = signature
+    artifacts["repository"]["worktree_clean"] = True
+    return artifacts, signatures
+
+
+def execution_source_artifacts(root: Path) -> dict[str, dict[str, Any]]:
+    """Return the objectively clean executing source manifest."""
+    return execution_source_snapshot(root)[0]
+
+
+def _validate_source_artifacts(value: object) -> bool:
     """Validate executed-source hashes and clean repository provenance."""
     if not isinstance(value, dict) or set(value) != {*SOURCE_PATHS, "repository"}:
         raise ValueError("source artifact set is invalid")
@@ -197,17 +370,37 @@ def _validate_source_artifacts(value: object) -> None:
     }:
         raise ValueError("repository provenance is invalid")
     if (
-        _GIT_OID_RE.fullmatch(str(repository["git_commit"])) is None
+        type(repository["git_commit"]) is not str
+        or _GIT_OID_RE.fullmatch(repository["git_commit"]) is None
         or repository["path"] != "."
         or repository["worktree_clean"] is not True
     ):
         raise ValueError("CVGC2 execution requires a clean canonical source commit")
+    authenticated = source_artifacts_for_commit(
+        REPOSITORY_ROOT,
+        repository["git_commit"],
+    )
+    if {
+        "git_commit": repository["git_commit"],
+        "path": repository["path"],
+    } != authenticated["repository"]:
+        raise ValueError("repository provenance does not match the authenticated commit")
     for name, path in SOURCE_PATHS.items():
         artifact = value[name]
-        if not isinstance(artifact, dict) or artifact.get("path") != path:
+        if (
+            not isinstance(artifact, dict)
+            or type(artifact.get("path")) is not str
+            or artifact.get("path") != path
+        ):
             raise ValueError(f"{name} source path is invalid")
-        if _SHA256_RE.fullmatch(str(artifact.get("sha256"))) is None:
+        digest = artifact.get("sha256")
+        if type(digest) is not str or _SHA256_RE.fullmatch(digest) is None:
             raise ValueError(f"{name} source digest is invalid")
+        if artifact != authenticated[name]:
+            raise ValueError(f"{name} source digest does not match the committed blob")
+    if value != execution_source_artifacts(REPOSITORY_ROOT):
+        raise ValueError("source artifacts do not match the clean executing checkout")
+    return True
 
 
 def _validate_field_metric(value: object, *, field: str) -> None:
@@ -437,10 +630,11 @@ def build_report(
         for row in checked_grids
     )
     numerical = _numerical_gates(checked_grids, checked_convergence)
+    source_verified = _validate_source_artifacts(source_artifacts)
     structural = {
         "four_grid_ladder_complete": True,
         "partition_and_total_response_closure": closures,
-        "production_solver_unchanged": True,
+        "production_solver_unchanged": source_verified,
         "upstream_cvgc1_exact": upstream.get("payload_sha256") == EXPECTED_UPSTREAM_PAYLOAD,
     }
     routing = _routing(all(structural.values()), numerical)
@@ -500,11 +694,12 @@ def validate_report(report: dict[str, Any]) -> None:
         upstream["path"] != UPSTREAM_PATH
         or upstream["payload_sha256"] != EXPECTED_UPSTREAM_PAYLOAD
         or upstream["schema_version"] != grid_contract.SCHEMA_VERSION
-        or _SHA256_RE.fullmatch(str(upstream["file_sha256"])) is None
+        or type(upstream["file_sha256"]) is not str
+        or upstream["file_sha256"] != EXPECTED_UPSTREAM_FILE_SHA256
     ):
         raise ValueError("CVGC2 upstream binding drifted")
     execution = report["execution_binding"]
-    _validate_source_artifacts(report["source_artifacts"])
+    source_verified = _validate_source_artifacts(report["source_artifacts"])
     expected_execution = {
         "anchor_sha256": EXPECTED_ANCHOR_SHA256,
         "coil_manifest_sha256": EXPECTED_COIL_MANIFEST_SHA256,
@@ -528,7 +723,7 @@ def validate_report(report: dict[str, Any]) -> None:
     expected_structural = {
         "four_grid_ladder_complete": True,
         "partition_and_total_response_closure": closures,
-        "production_solver_unchanged": True,
+        "production_solver_unchanged": source_verified,
         "upstream_cvgc1_exact": True,
     }
     if structural != expected_structural or numerical != expected_numerical:

@@ -41,6 +41,14 @@ def _comparison_metric(scale: float) -> dict[str, float]:
     }
 
 
+def source_artifacts_fixture() -> dict[str, dict[str, Any]]:
+    """Return explicit test-only clean execution provenance."""
+    head = contract._git_bytes(ROOT, "rev-parse", "--verify", "HEAD^{commit}").decode().strip()
+    artifacts = contract.source_artifacts_for_commit(ROOT, head)
+    artifacts["repository"]["worktree_clean"] = True
+    return artifacts
+
+
 def report_fixture() -> dict[str, Any]:
     """Build a self-validating passing CVGC2 report."""
     grids: list[dict[str, Any]] = []
@@ -108,14 +116,7 @@ def report_fixture() -> dict[str, Any]:
             for triple in contract.GRID_TRIPLES
         },
     }
-    artifacts: dict[str, dict[str, Any]] = {
-        name: {"path": path, "sha256": _DIGEST} for name, path in contract.SOURCE_PATHS.items()
-    }
-    artifacts["repository"] = {
-        "git_commit": "2" * 40,
-        "path": ".",
-        "worktree_clean": True,
-    }
+    artifacts = source_artifacts_fixture()
     upstream = contract.load_upstream_report(ROOT)
     return contract.build_report(
         generated_at="2026-07-26T03:30:00Z",

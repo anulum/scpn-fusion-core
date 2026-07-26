@@ -10,9 +10,11 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -21,6 +23,8 @@ from validation import ida_coil_vacuum_grid_contract as grid_contract
 
 ROOT = Path(__file__).resolve().parents[1]
 _DIGEST = "1" * 64
+_REAL_EXECUTION_SOURCE_ARTIFACTS = contract.execution_source_artifacts
+_REAL_EXECUTION_SOURCE_SNAPSHOT = contract.execution_source_snapshot
 
 
 def _field_metric(scale: float) -> dict[str, Any]:
@@ -122,16 +126,17 @@ def _convergence(*, forcing_order: float = 2.0, response_order: float = 2.0) -> 
 
 
 def _source_artifacts() -> dict[str, dict[str, Any]]:
-    """Return clean, digest-bound source provenance."""
-    artifacts: dict[str, dict[str, Any]] = {
-        name: {"path": path, "sha256": _DIGEST} for name, path in contract.SOURCE_PATHS.items()
-    }
-    artifacts["repository"] = {
-        "git_commit": "2" * 40,
-        "path": ".",
-        "worktree_clean": True,
-    }
+    """Return source provenance authenticated against the current commit."""
+    head = contract._git_bytes(ROOT, "rev-parse", "--verify", "HEAD^{commit}").decode().strip()
+    artifacts = contract.source_artifacts_for_commit(ROOT, head)
+    artifacts["repository"]["worktree_clean"] = True
     return artifacts
+
+
+@pytest.fixture(autouse=True)
+def _clean_execution_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep schema tests independent of the author's deliberately staged diff."""
+    monkeypatch.setattr(contract, "execution_source_artifacts", lambda root: _source_artifacts())
 
 
 def _report(
@@ -248,7 +253,7 @@ def test_validate_rejects_resigned_source_manifest_and_response_fraction_tamperi
     source = _report()
     source["source_artifacts"]["grid_runtime"]["sha256"] = "8" * 64
     _resign(source)
-    with pytest.raises(ValueError, match="execution binding drifted"):
+    with pytest.raises(ValueError, match="committed blob"):
         contract.validate_report(source)
 
     amplitude = _report(grids=_grids(response_fraction=0.06))
@@ -264,6 +269,195 @@ def test_validate_rejects_resigned_source_manifest_and_response_fraction_tamperi
     zero_total[0]["response_partition"]["total"] = _field_metric(0.0)
     with pytest.raises(ValueError, match="area_weighted_l2 must be positive"):
         _report(grids=zero_total)
+
+
+def test_validate_rejects_fully_resigned_source_manifest_tampering() -> None:
+    """A forged blob digest fails even when every dependent digest is recomputed."""
+    report = _report()
+    report["source_artifacts"]["grid_runtime"]["sha256"] = "8" * 64
+    report["execution_binding"] = contract.build_execution_binding(
+        anchor=contract.load_upstream_report(ROOT)["anchor"],
+        coil_manifest=contract.load_upstream_report(ROOT)["coil_manifest"],
+        source_artifacts=report["source_artifacts"],
+    )
+    _resign(report)
+    with pytest.raises(ValueError, match="committed blob"):
+        contract.validate_report(report)
+
+
+@pytest.mark.parametrize("commit", [123, "short", "f" * 64])
+def test_source_manifest_rejects_noncommit_and_invalid_repository_oids(
+    commit: object,
+) -> None:
+    """Repository provenance accepts only an inspectable 40- or 64-hex commit."""
+    with pytest.raises(ValueError, match="repository commit is invalid|not inspectable"):
+        contract.source_artifacts_for_commit(ROOT, cast(str, commit))
+
+
+def test_source_manifest_rejects_blob_and_out_of_bundle_commit() -> None:
+    """A valid Git object must be a commit with the exact frozen path delta."""
+    blob = contract._git_bytes(ROOT, "rev-parse", "HEAD:README.md").decode().strip()
+    with pytest.raises(ValueError, match="object is not a commit"):
+        contract.source_artifacts_for_commit(ROOT, blob)
+    with pytest.raises(ValueError, match="outside the frozen source bundle"):
+        contract.source_artifacts_for_commit(ROOT, contract.SOURCE_BASE_COMMIT)
+
+
+def test_source_manifest_rejects_unrelated_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A commit that fails the frozen-base ancestry check is rejected."""
+    monkeypatch.setattr(contract, "_git_bytes", lambda root, *args: b"commit\n")
+
+    def reject_ancestry(*args: object, **kwargs: object) -> None:
+        raise subprocess.CalledProcessError(1, "git")
+
+    monkeypatch.setattr(
+        "validation.ida_coil_vacuum_fixed_physical_contract.subprocess.run",
+        reject_ancestry,
+    )
+    with pytest.raises(ValueError, match="does not descend from the frozen base"):
+        contract.source_artifacts_for_commit(ROOT, "a" * 40)
+
+
+def test_source_manifest_rejects_nonregular_committed_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A symlink or non-blob cannot impersonate an executed source file."""
+    changed = ("\n".join(sorted(contract.SOURCE_CHANGE_PATHS)) + "\n").encode()
+
+    def git_bytes(root: Path, *args: str) -> bytes:
+        if args[0] == "cat-file":
+            return b"commit\n"
+        if args[0] == "diff":
+            return changed
+        if args[0] == "ls-tree":
+            return b"120000 blob 1111111111111111111111111111111111111111\tpath\n"
+        raise AssertionError(f"unexpected Git plumbing call: {args}")
+
+    monkeypatch.setattr(contract, "_git_bytes", git_bytes)
+    with pytest.raises(ValueError, match="not a regular committed file"):
+        contract.source_artifacts_for_commit(ROOT, contract.SOURCE_BASE_COMMIT)
+
+
+def test_execution_source_artifacts_requires_clean_matching_bytes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only current HEAD bytes from a clean checkout can form execution provenance."""
+    commit = "a" * 40
+    content = b"authenticated source\n"
+    digest = hashlib.sha256(content).hexdigest()
+    historical: dict[str, dict[str, Any]] = {
+        name: {"path": path, "sha256": digest} for name, path in contract.SOURCE_PATHS.items()
+    }
+    historical["repository"] = {"git_commit": commit, "path": "."}
+    for path in contract.SOURCE_PATHS.values():
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+
+    def clean_git_bytes(root: Path, *args: str) -> bytes:
+        if args[0] == "rev-parse":
+            return f"{commit}\n".encode()
+        if args[0] == "status":
+            return b""
+        raise AssertionError(f"unexpected Git plumbing call: {args}")
+
+    monkeypatch.setattr(contract, "_git_bytes", clean_git_bytes)
+    monkeypatch.setattr(contract, "source_artifacts_for_commit", lambda root, oid: historical)
+    artifacts, signature = _REAL_EXECUTION_SOURCE_SNAPSHOT(tmp_path)
+    assert artifacts["repository"] == {
+        "git_commit": commit,
+        "path": ".",
+        "worktree_clean": True,
+    }
+
+    target = tmp_path / next(iter(contract.SOURCE_PATHS.values()))
+    target.write_bytes(b"transient drift\n")
+    target.write_bytes(content)
+    restored_artifacts, restored_signature = _REAL_EXECUTION_SOURCE_SNAPSHOT(tmp_path)
+    assert restored_artifacts == artifacts
+    assert restored_signature != signature
+
+    real_read_bytes = Path.read_bytes
+
+    def mutating_read_bytes(path: Path) -> bytes:
+        value = real_read_bytes(path)
+        if path == target:
+            path.write_bytes(b"capture-time drift\n")
+            path.write_bytes(value)
+        return value
+
+    monkeypatch.setattr(Path, "read_bytes", mutating_read_bytes)
+    with pytest.raises(ValueError, match="mutated while execution provenance was captured"):
+        _REAL_EXECUTION_SOURCE_SNAPSHOT(tmp_path)
+    monkeypatch.setattr(Path, "read_bytes", real_read_bytes)
+
+    def invalid_head(root: Path, *args: str) -> bytes:
+        return b"short\n" if args[0] == "rev-parse" else b""
+
+    monkeypatch.setattr(contract, "_git_bytes", invalid_head)
+    with pytest.raises(ValueError, match="executing HEAD is invalid"):
+        _REAL_EXECUTION_SOURCE_ARTIFACTS(tmp_path)
+
+    monkeypatch.setattr(contract, "_git_bytes", clean_git_bytes)
+    target.write_bytes(b"drift\n")
+    with pytest.raises(ValueError, match="executing bytes do not match"):
+        _REAL_EXECUTION_SOURCE_ARTIFACTS(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        b"M  validation/ida_coil_vacuum_fixed_physical_contract.py\0",
+        b" M validation/ida_coil_vacuum_fixed_physical_contract.py\0",
+    ],
+    ids=["staged", "unstaged"],
+)
+def test_validate_rejects_fully_resigned_dirty_execution(
+    status: bytes,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Re-signing cannot hide staged or unstaged execution-source drift."""
+    report = _report()
+    report["generated_at"] = "2026-07-26T06:00:00Z"
+    _resign(report)
+    real_git_bytes = contract._git_bytes
+
+    def dirty_git_bytes(root: Path, *args: str) -> bytes:
+        if args[0] == "status":
+            return status
+        return real_git_bytes(root, *args)
+
+    monkeypatch.setattr(contract, "_git_bytes", dirty_git_bytes)
+    monkeypatch.setattr(contract, "execution_source_artifacts", _REAL_EXECUTION_SOURCE_ARTIFACTS)
+    with pytest.raises(ValueError, match="staged or unstaged source drift"):
+        contract.validate_report(report)
+
+
+def test_validate_rejects_authenticated_repository_and_live_execution_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Historical and live repository bindings must both match the report."""
+    report = _report()
+    authenticated = _source_artifacts()
+    authenticated["repository"].pop("worktree_clean")
+    authenticated["repository"]["git_commit"] = "b" * 40
+    monkeypatch.setattr(
+        contract,
+        "source_artifacts_for_commit",
+        lambda root, commit: authenticated,
+    )
+    with pytest.raises(ValueError, match="repository provenance does not match"):
+        contract.validate_report(report)
+
+    monkeypatch.undo()
+    live = _source_artifacts()
+    live[next(iter(contract.SOURCE_PATHS))]["sha256"] = "9" * 64
+    monkeypatch.setattr(contract, "execution_source_artifacts", lambda root: live)
+    with pytest.raises(ValueError, match="clean executing checkout"):
+        contract.validate_report(report)
 
 
 @pytest.mark.parametrize("surface", ["anchor", "manifest"])
@@ -418,7 +612,7 @@ def test_internal_numeric_and_recursive_validators_reject_unsupported_values() -
         contract._walk_finite(object())
 
 
-def test_upstream_loader_rejects_nonobject_and_payload_drift(
+def test_upstream_loader_rejects_nonobject_payload_and_byte_drift(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -434,6 +628,22 @@ def test_upstream_loader_rejects_nonobject_and_payload_drift(
     path.write_text(json.dumps(upstream), encoding="utf-8")
     monkeypatch.setattr(grid_contract, "validate_report", lambda report: None)
     with pytest.raises(ValueError, match="frozen binding"):
+        contract.load_upstream_report(tmp_path)
+
+    canonical = (ROOT / contract.UPSTREAM_PATH).read_text(encoding="utf-8")
+    path.write_text(canonical.replace("\n", "\r\n"), encoding="utf-8", newline="")
+    with pytest.raises(ValueError, match="frozen bytes"):
+        contract.load_upstream_report(tmp_path)
+    with pytest.raises(ValueError, match="frozen bytes"):
+        contract.upstream_binding(tmp_path, upstream)
+
+
+def test_upstream_loader_rejects_duplicate_json_keys(tmp_path: Path) -> None:
+    """Duplicate JSON names fail before any semantic or digest validation."""
+    path = tmp_path / contract.UPSTREAM_PATH
+    path.parent.mkdir(parents=True)
+    path.write_text('{"schema_version": "first", "schema_version": "second"}', encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate JSON key: schema_version"):
         contract.load_upstream_report(tmp_path)
 
 
