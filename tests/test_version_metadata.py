@@ -87,6 +87,8 @@ def test_native_distribution_workflow_builds_its_own_sdist() -> None:
 
     assert "working-directory: scpn-fusion-rs/crates/fusion-python" in workflow
     assert "command: sdist" in workflow
+    assert re.search(r"command: sdist\s+args: --out ../../../dist", workflow)
+    assert not re.search(r"command: sdist\s+args: .*--locked", workflow)
     assert "dist/scpn_fusion_rs-*.tar.gz" in workflow
     assert "python -m build --sdist" not in workflow
     assert "tools/verify_native_distribution_artifacts.py" in workflow
