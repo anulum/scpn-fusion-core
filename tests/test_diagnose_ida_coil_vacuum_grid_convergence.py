@@ -255,6 +255,35 @@ def test_plasma_support_mask_rejects_empty_or_malformed_evaluation(mode: str) ->
         )
 
 
+def test_nested_plasma_support_masks_use_one_frozen_finest_classification(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every coarser support must be an exact restriction of one finest mask."""
+    axis = np.arange(257, dtype=np.int64)
+    row, column = np.meshgrid(axis, axis, indexing="ij")
+    finest = np.asarray((row + 2 * column) % 7 < 3, dtype=np.bool_)
+    finest[[0, -1], :] = False
+    finest[:, [0, -1]] = False
+    calls: list[int] = []
+
+    def frozen_support(**kwargs: Any) -> np.ndarray[Any, Any]:
+        calls.append(int(kwargs["resolution"]))
+        return finest
+
+    monkeypatch.setattr(diagnostic, "_plasma_support_mask", frozen_support)
+    masks = diagnostic._nested_plasma_support_masks(
+        equilibrium=object(),
+        profiles=object(),
+        r_bounds=contract.R_BOUNDS_M,
+        z_bounds=contract.Z_BOUNDS_M,
+    )
+    assert calls == [257]
+    assert set(masks) == set(contract.GRID_RESOLUTIONS)
+    for resolution, mask in masks.items():
+        expected = fields.restrict_to_shape(finest, (resolution, resolution)) > 0.5
+        assert np.array_equal(mask, expected)
+
+
 def test_diagnostic_admission_rejects_non_fp64_and_missing_backend(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

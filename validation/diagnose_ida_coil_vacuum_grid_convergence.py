@@ -28,6 +28,7 @@ from validation.ida_coil_vacuum_grid_fields import (
     FloatArray,
     extract_coil_manifest,
     manifest_payload,
+    restrict_to_shape,
     validate_frozen_manifest,
     zero_identity_wall,
 )
@@ -311,6 +312,31 @@ def _plasma_support_mask(
     return support
 
 
+def _nested_plasma_support_masks(
+    *,
+    equilibrium: Any,
+    profiles: Any,
+    r_bounds: tuple[float, float],
+    z_bounds: tuple[float, float],
+) -> dict[int, BoolArray]:
+    """Freeze support on the finest grid and restrict it to every shared node set."""
+    finest_resolution = contract.GRID_RESOLUTIONS[-1]
+    finest = _plasma_support_mask(
+        equilibrium=equilibrium,
+        profiles=profiles,
+        resolution=finest_resolution,
+        r_bounds=r_bounds,
+        z_bounds=z_bounds,
+    )
+    return {
+        resolution: np.asarray(
+            restrict_to_shape(finest, (resolution, resolution)) > 0.5,
+            dtype=np.bool_,
+        )
+        for resolution in contract.GRID_RESOLUTIONS
+    }
+
+
 def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
     """Execute the exact 129 anchor and mandatory four-grid diagnostic."""
     if cast(bool, jax.config.values["jax_enable_x64"]) is not True:
@@ -355,6 +381,12 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
     coarse_d_r = (float(spec.r_max) - float(spec.r_min)) / (contract.GRID_RESOLUTIONS[0] - 1)
     coarse_d_z = (float(spec.z_max) - float(spec.z_min)) / (contract.GRID_RESOLUTIONS[0] - 1)
     fixed_radius = 2.0 * max(coarse_d_r, coarse_d_z)
+    plasma_support_masks = _nested_plasma_support_masks(
+        equilibrium=equilibrium,
+        profiles=profiles,
+        r_bounds=(float(spec.r_min), float(spec.r_max)),
+        z_bounds=(float(spec.z_min), float(spec.z_max)),
+    )
     results = [
         run_grid(
             resolution=resolution,
@@ -365,13 +397,7 @@ def run_diagnostic(*, generated_at: str) -> dict[str, Any]:
             fixed_physical_radius_m=fixed_radius,
             reference_129_zr=reference_129 if resolution == 129 else None,
             reference_129_forcing_zr=(reference_129_forcing if resolution == 129 else None),
-            plasma_support_mask=_plasma_support_mask(
-                equilibrium=equilibrium,
-                profiles=profiles,
-                resolution=resolution,
-                r_bounds=(float(spec.r_min), float(spec.r_max)),
-                z_bounds=(float(spec.z_min), float(spec.z_max)),
-            ),
+            plasma_support_mask=plasma_support_masks[resolution],
         )
         for resolution in contract.GRID_RESOLUTIONS
     ]
