@@ -840,6 +840,21 @@ fixed-point result within `8.8e-13 Wb`. The next bounded ratchet is therefore
 coil-vacuum grid convergence and source-footprint treatment, not a solver
 physics change or claim promotion.
 
+That bounded ratchet is measured in
+[`ida_coil_vacuum_grid_convergence.md`](../validation/reports/ida_coil_vacuum_grid_convergence.md)
+under schema `scpn-fusion.ida-coil-vacuum-grid-convergence.v1` and payload
+`7f04e4cb4217d920f19eaecfbd7738b86aa9db93fa37894df3b4f68c7f211193`.
+The clean-source `33/65/129/257` CUDA run binds the exact 129 forcing and
+response anchors, all `18` parent coils and `216` filaments, and the same
+inverse for every response partition. Fixed-physical source-free forcing has
+observed orders `2.0120398051283868` and `2.0025654601963963`; however,
+parent-current recovery is not monotone and the finest source-free response
+has relative L2 change `0.6744885351334504`, above the frozen `0.05` gate.
+The report therefore routes `mixed_source_and_vacuum_error`, keeps both source
+and vacuum numerical gates false, and admits no experimental, collaborator,
+facility, PCS, safety, control, latency, production-physics, held-out, or
+scientific claim.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
