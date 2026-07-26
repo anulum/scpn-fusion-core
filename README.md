@@ -13,6 +13,7 @@
 [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/)
 [![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)](https://pepy.tech/project/scpn-fusion)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anulum)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
