@@ -2757,14 +2757,14 @@
   },
   "counts": {
     "capability_documentation_pages": 63,
-    "github_workflows": 12,
+    "github_workflows": 13,
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 63,
     "python_capability_classes": 577,
     "python_capability_source_modules": 322,
     "rust_workspace_crates": 13,
-    "test_files": 596
+    "test_files": 597
   },
   "documentation": {
     "public_pages": [
@@ -2893,6 +2893,7 @@
       ".github/workflows/freegs-strict.yml",
       ".github/workflows/pre-commit.yml",
       ".github/workflows/publish.yml",
+      ".github/workflows/pypi-downloads.yml",
       ".github/workflows/real-data-strict.yml",
       ".github/workflows/sbom.yml",
       ".github/workflows/scorecard.yml",
@@ -3463,6 +3464,7 @@
       "tests/test_tokamak_live_payload.py",
       "tests/test_tokamak_synthetic_archive.py",
       "tests/test_tomography.py",
+      "tests/test_tools_pypi_downloads.py",
       "tests/test_tools_run_mypy_strict.py",
       "tests/test_tools_run_python_preflight.py",
       "tests/test_torax_imas_interchange.py",
