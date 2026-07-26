@@ -249,6 +249,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          fetch-depth: 0
           lfs: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
@@ -291,13 +292,22 @@ jobs:
           python tools/run_python_preflight.py --gate release
       - name: Run release test suite (exclude experimental-only lanes)
         if: matrix.python-version != '3.12'
-        run: pytest tests/ -v -m "not experimental"
+        run: |
+          # The frozen exact-byte evidence records a specific Python 3.12.3,
+          # JAX 0.7.1 and CUDA host. Keep its reconstruction test on that
+          # matching evidence host; generic hosted runners run every portable
+          # test and the complete authenticated CVGC2 contract surface.
+          pytest tests/ -v -m "not experimental" \
+            --deselect \
+            tests/test_diagnose_ida_fixed_reference_operator.py::test_real_diiid_fixed_reference_operator_decomposition
       - name: Generate Python coverage report
         if: matrix.python-version == '3.12'
         run: |
           mkdir -p artifacts
           set +e
           timeout --signal=TERM 75m pytest tests/ -q -m "not experimental" \
+            --deselect \
+            tests/test_diagnose_ida_fixed_reference_operator.py::test_real_diiid_fixed_reference_operator_decomposition \
             --cov=scpn_fusion --cov-branch --cov-report=xml:coverage-python.xml \
             2>&1 | tee artifacts/python312_coverage.log
           rc=${PIPESTATUS[0]}
