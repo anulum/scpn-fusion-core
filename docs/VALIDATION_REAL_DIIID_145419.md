@@ -51,11 +51,11 @@ lanes rerun on every invocation**, not archived constants — and a runtime prov
 
 | level | test | result |
 |---|---|---|
-| 1 | **Operator satisfaction** (pure evaluation, no solve): does the real ψ with the g-file's own p′/FF′ satisfy our discretised GS operator? | deep-region residual **1.07 × 10⁻³ RMS** (relative to the Δ*ψ scale) |
-| 2 | **Coil-free sub-domain reproduction**: Dirichlet = real ψ on an empirically verified coil-free rectangle, our source inside | deep RMS **0.108 %** of the ψ span (deep max 0.25 %, axis 0.06 %) |
-| 3 | **Full-domain reproduction** (129², measured-external-source decomposition, Anderson(m=8), warm start) | deep RMS **0.717 %** of the ψ span (axis 0.28 %, global max 1.33 %, 26 iterations) |
+| 1 | **Operator satisfaction** (pure evaluation, no solve): does the real ψ with the g-file's own p′/FF′ satisfy our discretised GS operator? | deep-region residual **1.92 × 10⁻³ RMS** (relative to the Δ*ψ scale) |
+| 2 | **Coil-free sub-domain reproduction**: Dirichlet = real ψ on an empirically verified coil-free rectangle, our source inside | deep RMS **1.063 %** of the ψ span (deep max 1.604 %, axis 0.792 %) |
+| 3 | **Full-domain reproduction** (129², measured-external-source decomposition, Anderson(m=8), warm start) | deep RMS **1.908 %** of the ψ span (axis 1.202 %, global max 3.908 %, 21 iterations) |
 | 3b | **Cold start** (external-source-only field, zero plasma current) | lands in the **zero-plasma absorbing state** (deep RMS ≈ 127 %) — see the map-structure paragraph below |
-| 3c | **Relaxed Picard, warm start** (ω = 0.5 and ω = 0.3, both executed every run) | reaches the **true branch** (deep RMS 0.63 % after 200 iterations, no early stop) — Anderson contributes acceleration (26 vs > 200 iterations), not branch selection |
+| 3c | **Relaxed Picard, warm start** (ω = 0.5 and ω = 0.3, both executed every run) | reaches the **true branch** (deep RMS 1.91 % after 200 iterations, no early stop) — Anderson contributes acceleration (21 vs > 200 iterations), not branch selection |
 
 "Deep region" is ψ_N < 0.8 inside the confined plasma; the span is |ψ_axis − ψ_boundary|.
 
@@ -68,7 +68,8 @@ a FreeGS reference from a genuine vacuum cold start; running it on this real sho
 require the PF coil currents, which g-files do not carry (that is the Rung-4 facility-data
 gap, stated below).
 
-**Fixed-point structure of the reproduction map** (measured 2026-07-22, regenerated on
+**Fixed-point structure of the reproduction map** (measured 2026-07-22 and rebound to the
+axis-connected source implementation on 2026-07-26, regenerated on
 every run): the map has two measured fixed points. Warm starts reach the true branch under
 both Anderson and plain relaxed Picard. A plasma-free start cannot leave the **zero-plasma
 absorbing state**: the ψ_N anchors are fixed reference values, so with no plasma current the
@@ -101,16 +102,15 @@ supersede are kept as labelled archive entries, never silently replaced.
    (measured ≈ 0 MA — not the cause); divertor-leg exclusion (did not change the wrong
    attractor — not the cause); H-mode pedestal p″ bistability (superseded by the absorbing-
    state identification above).
-4. **Residual model boundary — attributed by measurement (2026-07-22)**: the 0.72 %
-   (full-domain) vs 0.11 % (sub-domain) gap lives essentially **entirely in the
+4. **Residual model boundary — attributed by measurement (refreshed 2026-07-26)**: the
+   1.91 % full-domain residual lives essentially **entirely in the
    ψ_N > 0.95 pedestal shell**. Evidence (both lanes executable, in the tracked JSON):
-   source-mismatch mapping on the real field concentrates 10–30× in the shell
-   (RMS ≈ 9 × 10⁻⁴ of the Δ*ψ scale in 0.95 < ψ_N < 1.0 vs ≈ 10⁻⁴ in the core) with total
-   current matched (Ip renormalisation ≈ 1.0001 — the mismatch is *placement*, i.e. the
-   5-point operator's discretisation of the steep pedestal at 129², not amplitude); and the
+   the measured external-source decomposition keeps total plasma current matched, while the
+   mismatch is *placement* of the steep pedestal source on the 129² discrete grid rather
+   than total-current amplitude; and the
    **shell-pinning attribution lane** (profile model only in ψ_N < 0.95, measured Δ*ψ in
    the shell — more measured information, so a diagnostic, not a claim) collapses deep RMS
-   to **0.051 %**, better than the sub-domain. The ψ-error itself is smooth and
+   to **0.070 %**, better than the sub-domain. The ψ-error itself is smooth and
    domain-wide because the elliptic response of a thin-shell source error is quasi-harmonic
    in the interior — which is why naive error-mapping does NOT show the annulus. Open,
    profiles-only fix direction: flux-surface-aware (sub-cell averaged) source evaluation in
@@ -145,13 +145,13 @@ values, strong and weak coil, 100 A–3 kA step sweep, hash-pinned environment) 
 | quantity | agreement with FD (measured, this artefact) |
 |---|---|
 | profile gradients ∂/∂p′, ∂/∂FF′ | < 2 × 10⁻³ (33²), ~2.4 × 10⁻⁵ (65², preconditioned) |
-| coil-current gradients | **≤ 1.8 × 10⁻⁵ relative (≈ 5 significant digits)** at 100–300 A steps, on both the tested strong and weak coil |
+| coil-current gradients | **≤ 3.244 × 10⁻⁶ relative** at 100–300 A steps, on both the tested strong and weak coil |
 
 A historical "coil gradient ≈ 3 %" figure in earlier notes was traced to **finite-difference
 truncation error** (a 3 kA step is a ~0.5 % coil perturbation, where the axis-flux response
 is visibly nonlinear; central FD is then ~16–27 % off — the growing-with-step signature is
 part of the committed sweep). This was an artefact of the validation methodology, not of
-the adjoint; note the residual small-step disagreement (~10⁻⁵) mixes FD truncation with
+the adjoint; note the residual small-step disagreement (~10⁻⁶) mixes FD truncation with
 finite forward-solve convergence, so it is an upper bound on the adjoint error, stated as
 the guarded claim rather than extrapolated to "exact". The regression test
 `tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference`

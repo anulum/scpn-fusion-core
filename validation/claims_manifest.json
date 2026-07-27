@@ -421,112 +421,172 @@
     {
       "id": "results_predictive_forward_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Compiled vs eager fixed point \\(33\u00b2, span-rel\\) \\| 7\\.7e-10",
+      "source_pattern": "\\| Compiled vs eager fixed point \\(33\u00b2, span-rel\\) \\| 1\\.1e-9",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*7\\.65943"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.07709"
         }
       ]
     },
     {
       "id": "results_predictive_forward_warm_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Warm vs cold fixed point \\(129\u00b2, warm\\+MG-Richardson, span-rel\\) \\| 1\\.7e-9",
+      "source_pattern": "\\| Warm vs cold fixed point \\(129\u00b2, warm\\+MG-Richardson, span-rel\\) \\| 2\\.9e-9",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/warm_start_forward.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/warm_start_forward.json",
-          "pattern": "\"129x129_warm_mg_richardson2\"\\s*:\\s*1\\.66026"
+          "pattern": "\"129x129_warm_mg_richardson2\"\\s*:\\s*2\\.82105"
         }
       ]
     },
     {
       "id": "results_predictive_forward_batched_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Batched element \u2261 single solve \\(span-rel\\) \\| \u2264 2\\.6e-15",
+      "source_pattern": "\\| Batched element \u2261 single solve \\(span-rel\\) \\| \u2264 5\\.1e-15",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json",
-          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*2\\.52714"
+          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*5\\.02195"
         }
       ]
     },
     {
       "id": "results_predictive_forward_adjoint",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 1\\.718e-05 relative",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 3\\.244e-06 relative",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "1\\.718e-05"
+          "pattern": "3\\.243e-06"
         }
       ]
     },
     {
       "id": "results_real_shot_full_domain_rms",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Full-domain forward reproduction \\(point source\\) \\| 0\\.72 %",
+      "source_pattern": "\\| Full-domain forward reproduction \\(point source\\) \\| 1\\.91 %",
       "evidence_files": [
         "artifacts/real_diiid_145419/real_145419_validation.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/real_diiid_145419/real_145419_validation.json",
-          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.00717438"
+          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.0190849"
         }
       ]
     },
     {
       "id": "results_real_shot_shell_pinned_rms",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Shell-pinned attribution \\(model source \u03c8_N \u2264 0\\.95\\) \\| 0\\.051 %",
+      "source_pattern": "\\| Shell-pinned attribution \\(model source \u03c8_N \u2264 0\\.95\\) \\| 0\\.070 %",
       "evidence_files": [
         "artifacts/real_diiid_145419/real_145419_validation.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/real_diiid_145419/real_145419_validation.json",
-          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.00051095"
+          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.00069719"
         }
       ]
     },
     {
       "id": "results_real_shot_subcell_rms",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Full-domain with sub-cell source averaging \\(4\u00d74\\) \\| 0\\.48 %",
+      "source_pattern": "\\| Full-domain with sub-cell source averaging \\(4\u00d74\\) \\| 1\\.83 %",
       "evidence_files": [
         "artifacts/real_diiid_145419/real_145419_validation.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/real_diiid_145419/real_145419_validation.json",
-          "pattern": "\"subcell_source_averaging\"[\\s\\S]*?\"deep_rms_rel_span\"\\s*:\\s*0\\.00482414"
+          "pattern": "\"subcell_source_averaging\"[\\s\\S]*?\"deep_rms_rel_span\"\\s*:\\s*0\\.0183297"
         }
       ]
     },
     {
       "id": "results_real_shot_subcell_pin_rms",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Sub-cell \\+ shell-pin attribution \\| 0\\.056 %",
+      "source_pattern": "\\| Sub-cell \\+ shell-pin attribution \\| 0\\.075 %",
       "evidence_files": [
         "artifacts/real_diiid_145419/real_145419_validation.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/real_diiid_145419/real_145419_validation.json",
-          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.000556467"
+          "pattern": "\"deep_rms_rel_span\"\\s*:\\s*0\\.000746684"
+        }
+      ]
+    },
+    {
+      "id": "readme_predictive_forward_equivalence_current",
+      "source_file": "README.md",
+      "source_pattern": "\\| Compiled vs eager fixed-point equivalence \\(span-rel\\) \\| 1\\.1e-9 \\|",
+      "evidence_files": [
+        "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.07709"
+        }
+      ]
+    },
+    {
+      "id": "readme_predictive_forward_adjoint_current",
+      "source_file": "README.md",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 3\\.244e-06 relative \\|",
+      "evidence_files": [
+        "artifacts/coilgrad_adjoint_fd_evidence.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
+          "pattern": "3\\.243e-06"
+        }
+      ]
+    },
+    {
+      "id": "validation_real_diiid_adjoint_current",
+      "source_file": "docs/VALIDATION_REAL_DIIID_145419.md",
+      "source_pattern": "\\| coil-current gradients \\| \\*\\*\u2264 3\\.244 \u00d7 10\u207b\u2076 relative\\*\\* at 100\u2013300 A steps",
+      "evidence_files": [
+        "artifacts/coilgrad_adjoint_fd_evidence.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
+          "pattern": "3\\.243e-06"
+        }
+      ]
+    },
+    {
+      "id": "readme_real_diiid_current",
+      "source_file": "README.md",
+      "source_pattern": "\\| DIII-D 145419 full-domain / shell-pinned \u03c8 RMS \\(span-rel\\) \\| 1\\.91 % / 0\\.070 % \\|",
+      "evidence_files": [
+        "artifacts/real_diiid_145419/real_145419_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_diiid_145419/real_145419_validation.json",
+          "pattern": "\"full_domain_reproduction\"[\\s\\S]*?\"deep_rms_rel_span\"\\s*:\\s*0\\.0190849"
+        },
+        {
+          "file": "artifacts/real_diiid_145419/real_145419_validation.json",
+          "pattern": "\"shell_pinning_attribution\"[\\s\\S]*?\"deep_rms_rel_span\"\\s*:\\s*0\\.00069719"
         }
       ]
     }

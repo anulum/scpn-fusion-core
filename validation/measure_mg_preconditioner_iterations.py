@@ -43,6 +43,28 @@ from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
 REPO = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO / "artifacts" / "rung2_mg_preconditioner"
 
+_LOGIC_SOURCES = (
+    "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+    "src/scpn_fusion/core/jax_free_boundary_gs.py",
+    "src/scpn_fusion/core/jax_plasma_support.py",
+    "src/scpn_fusion/core/jax_continuation_history.py",
+    "src/scpn_fusion/core/jax_multigrid_precond.py",
+    "src/scpn_fusion/core/jax_equilibrium_solver.py",
+    "src/scpn_fusion/core/jax_o_point.py",
+    "src/scpn_fusion/core/jax_x_point.py",
+)
+
+
+def _digest_paths(rels: tuple[str, ...]) -> str:
+    digest = hashlib.sha256()
+    for rel in sorted(rels):
+        digest.update(rel.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update((REPO / rel).read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
 GRIDS = (33, 65, 129)
 TOLS = (1.0e-8, 1.0e-11)  # the second is the predictive solver's own _BICGSTAB_TOL
 MAX_CAP = 20000
@@ -128,6 +150,8 @@ def main() -> None:
         "provenance": {
             "generator": "validation/measure_mg_preconditioner_iterations.py",
             "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "logic_sources": list(_LOGIC_SOURCES),
+            "logic_sources_sha256": _digest_paths(_LOGIC_SOURCES),
             "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
             "pinned_requirements_sha256": hashlib.sha256(
                 (REPO / "requirements" / "full.txt").read_bytes()

@@ -24,15 +24,17 @@ Two steps (the Milestone-B pattern, now on real data):
    honest negative: deep RMS ≈ 26 %). On a sub-rectangle verified free of external current
    (Dirichlet = real ψ on its edge, our source with the real profiles inside, normalisation
    levels anchored to the real axis/boundary values — reproduction mode, not blind
-   prediction), the machinery reproduces the real interior to ≈ 0.1 % deep RMS.
+   prediction), the current axis-connected-source implementation reproduces the real
+   interior to ≈ 1.1 % deep RMS.
 3. **Full-domain reproduction with a measured external source**: outside the confined plasma
    (above the X-point, connected to the axis) the source is pinned to the *measured* ``Δ*ψ``
    (which is exactly ``−μ₀RJφ`` of the coils/legs/private flux); inside, our ``p'``/``FF'``
    model with Ip renormalised to the measured plasma-region current.
 
-Fixed-point structure of that map (measured by the executable lanes below, 2026-07-22):
+Fixed-point structure of that map (measured by the executable lanes below, refreshed
+2026-07-26 after the axis-connected plasma-support change):
 the map has (at least) two fixed points. Warm-started iteration reaches the **true branch**
-under BOTH Anderson(m=8) (26 iterations) and plain relaxed Picard (ω = 0.3 or 0.5; slower,
+under BOTH Anderson(m=8) (21 iterations) and plain relaxed Picard (ω = 0.3 or 0.5; slower,
 no early stop within 200 iterations) — Anderson is the accelerator here, not the branch
 selector. The second fixed point is the **zero-plasma absorbing state**: because the ψ_N
 anchors are fixed reference values, a start whose interior carries no plasma current has its
@@ -80,6 +82,24 @@ from scpn_fusion.core.jax_free_boundary_gs_implicit import _laplacian_star
 
 REPO = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO / "artifacts" / "real_diiid_145419"
+
+_LOGIC_SOURCES = (
+    "src/scpn_fusion/core/jax_free_boundary_gs.py",
+    "src/scpn_fusion/core/jax_free_boundary_gs_implicit.py",
+    "src/scpn_fusion/core/jax_plasma_support.py",
+    "src/scpn_fusion/core/jax_equilibrium_solver.py",
+    "src/scpn_fusion/core/jax_o_point.py",
+)
+
+
+def _digest_paths(rels: tuple[str, ...]) -> str:
+    digest = hashlib.sha256()
+    for rel in sorted(rels):
+        digest.update(rel.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update((REPO / rel).read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def _find_gfile() -> Path:
@@ -391,6 +411,8 @@ def _provenance() -> dict:
         },
         "generator": "validation/validate_real_diiid_145419.py",
         "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "logic_sources": list(_LOGIC_SOURCES),
+        "logic_sources_sha256": _digest_paths(_LOGIC_SOURCES),
         "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
         "pinned_requirements_sha256": hashlib.sha256(
             (REPO / "requirements" / "full.txt").read_bytes()
@@ -490,7 +512,7 @@ def main() -> None:
     print(f"  deep_rms_rel_span: {neg_zero['deep_rms_rel_span']:.4g}")
 
     # STEP 3d — SHELL-PINNING ATTRIBUTION (uses MORE measured information — a diagnostic
-    # decomposition of the 0.72 % full-domain error, not a claim improvement): profile-model
+    # decomposition of the current full-domain error, not a claim improvement): profile-model
     # source only in psi_N < 0.95, measured Delta*psi in the remaining pedestal shell.
     psi_sp, _pls, deep_sp, iters_sp = full_domain_reproduction(d, model_psin_max=0.95)
     shell_pin = _full_domain_metrics(d, psi_sp, plasma, deep_sp, iters_sp, span)
@@ -499,9 +521,8 @@ def main() -> None:
 
     # STEP 3e — SUB-CELL SOURCE AVERAGING (a genuine model improvement, no extra measured
     # information): 4x4 linear sub-cell averaging of the source removes the LCFS-straddling
-    # point-sampling error. Measured: ~a third of the full-domain error (0.72 % -> 0.48 %,
-    # saturating by 8x8; quadratic expansion adds nothing). The residual concentrates in
-    # psi_N in [0.98, 1] (attribution lane below) — an edge-band representation question.
+    # point-sampling error. The measured change and 8x8 saturation check are written from
+    # this run below; no historical percentage is asserted by the generator.
     psi_sc, _plc, deep_sc, iters_sc = full_domain_reproduction(d, source_subcell=4)
     subcell4 = _full_domain_metrics(d, psi_sc, plasma, deep_sc, iters_sc, span)
     print("STEP 3e — sub-cell source averaging (4x4, full model region):")
@@ -557,8 +578,9 @@ def main() -> None:
             "stop within 200 iterations; BOTH relaxation factors executed this run",
             "metrics_omega_0.5": picard_metrics,
             "metrics_omega_0.3": picard_03,
-            "note": "Anderson(m=8) contributes ACCELERATION on this map (26 vs >200 "
-            "iterations), not branch selection",
+            "note": f"Anderson(m=8) contributes ACCELERATION on this map "
+            f"({full_metrics['anderson_iterations']} vs >200 iterations), not branch "
+            "selection",
         },
     }
     honest_negatives = {
@@ -598,19 +620,20 @@ def main() -> None:
             "remaining pedestal shell (uses MORE measured information — attribution "
             "diagnostic, NOT a claim improvement)",
             "metrics": shell_pin,
-            "finding": "the full-domain error is attributable essentially ENTIRELY to the "
-            "psi_N > 0.95 pedestal-shell source representation: pinning the measured shell "
-            "collapses deep RMS from ~0.72% to ~0.05% (better than the coil-free "
-            "sub-domain); source-mismatch mapping on the real field shows the same shell "
-            "concentration (RMS ~9e-4 of the Delta*psi scale in 0.95<psi_N<1.0 vs ~1e-4 in "
-            "the core) with total current matched (Ip renorm ~1.0001) - the mismatch is "
-            "PLACEMENT (steep-pedestal discretisation of the 5-point operator at 129^2), "
-            "not amplitude; the elliptic response of a thin-shell source error is smooth "
-            "and domain-wide, which is why the psi-error itself is NOT annulus-localised",
+            "finding": (
+                "the current full-domain error is attributable essentially ENTIRELY to the "
+                "psi_N > 0.95 pedestal-shell source representation: pinning the measured "
+                f"shell collapses deep RMS from {100 * full_metrics['deep_rms_rel_span']:.3f}% "
+                f"to {100 * shell_pin['deep_rms_rel_span']:.3f}% (better than the "
+                "coil-free sub-domain). The mismatch is placement of the steep pedestal "
+                "source on the 129^2 discrete grid, not total-current amplitude; the "
+                "elliptic response is smooth and domain-wide, so the psi error itself is "
+                "not annulus-localised"
+            ),
             "profiles_only_fix_direction": "flux-surface-aware (sub-cell averaged) source "
-            "evaluation in shell cells - LANDED as the subcell_source_averaging lane below "
-            "(removes ~a third of the error); the residual is an edge-band representation "
-            "question (psi_N in [0.98, 1]), not sub-cell geometry",
+            "evaluation in shell cells is measured by the subcell_source_averaging lane "
+            "below; the residual remains an edge-band representation question "
+            "(psi_N in [0.98, 1]), not a blind-prediction claim",
         },
         "subcell_source_averaging": {
             "regenerated_each_run": True,
@@ -621,13 +644,17 @@ def main() -> None:
             "metrics": subcell4,
             "saturation_check_8x8": subcell8,
             "attribution_with_shell_pin_0p95": subcell4_pin,
-            "finding": "point sampling misassigns the source in LCFS-straddling cells; "
-            "4x4 averaging removes ~a third of the full-domain error (0.72% -> 0.48%), "
-            "saturating by 8x8, and a quadratic psi expansion adds nothing (curvature "
-            "refuted as the residual mechanism). With subcell ON, shell-pinning to "
-            "psi_N<0.95 still reaches ~0.056% - the core is unharmed and the residual "
-            "concentrates in psi_N in [0.98, 1]: an edge-band representation mismatch "
-            "against EFIT's own discretised solution, recorded rather than chased",
+            "finding": (
+                "4x4 sub-cell averaging changes full-domain deep RMS from "
+                f"{100 * full_metrics['deep_rms_rel_span']:.3f}% to "
+                f"{100 * subcell4['deep_rms_rel_span']:.3f}% and the 8x8 check reaches "
+                f"{100 * subcell8['deep_rms_rel_span']:.3f}%; the modest improvement "
+                "saturates rather than reproducing the historical pre-topology result. "
+                "With sub-cell averaging and shell pinning, deep RMS is "
+                f"{100 * subcell4_pin['deep_rms_rel_span']:.3f}%. The remaining difference "
+                "is recorded as an edge-band representation mismatch against EFIT's own "
+                "discretised solution, not chased or promoted"
+            ),
         },
         "honest_negatives": honest_negatives,
     }

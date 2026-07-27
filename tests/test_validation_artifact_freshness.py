@@ -66,6 +66,82 @@ _BOUND_PAIRS = [
     ),
 ]
 
+# Fail-closed dependency contracts owned by the test suite, never by the artifact.
+# The ordering is canonical because generators persist these exact lists as provenance.
+_EXPECTED_LOGIC_SOURCES = {
+    "artifacts/real_diiid_145419/real_145419_validation.json": (
+        "src/scpn_fusion/core/jax_free_boundary_gs.py",
+        "src/scpn_fusion/core/jax_free_boundary_gs_implicit.py",
+        "src/scpn_fusion/core/jax_plasma_support.py",
+        "src/scpn_fusion/core/jax_equilibrium_solver.py",
+        "src/scpn_fusion/core/jax_o_point.py",
+    ),
+    "artifacts/coilgrad_adjoint_fd_evidence.json": (
+        "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+        "src/scpn_fusion/core/jax_free_boundary_gs.py",
+        "src/scpn_fusion/core/jax_plasma_support.py",
+        "src/scpn_fusion/core/jax_continuation_history.py",
+        "src/scpn_fusion/core/jax_multigrid_precond.py",
+        "src/scpn_fusion/core/jax_equilibrium_solver.py",
+        "src/scpn_fusion/core/jax_o_point.py",
+        "src/scpn_fusion/core/jax_x_point.py",
+    ),
+    "artifacts/rung2_mg_preconditioner/iteration_counts.json": (
+        "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+        "src/scpn_fusion/core/jax_free_boundary_gs.py",
+        "src/scpn_fusion/core/jax_plasma_support.py",
+        "src/scpn_fusion/core/jax_continuation_history.py",
+        "src/scpn_fusion/core/jax_multigrid_precond.py",
+        "src/scpn_fusion/core/jax_equilibrium_solver.py",
+        "src/scpn_fusion/core/jax_o_point.py",
+        "src/scpn_fusion/core/jax_x_point.py",
+    ),
+    "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json": (
+        "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+        "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+        "src/scpn_fusion/core/jax_free_boundary_gs.py",
+        "src/scpn_fusion/core/jax_plasma_support.py",
+        "src/scpn_fusion/core/jax_continuation_history.py",
+        "src/scpn_fusion/core/jax_multigrid_precond.py",
+        "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
+        "src/scpn_fusion/core/jax_equilibrium_solver.py",
+        "src/scpn_fusion/core/jax_o_point.py",
+        "src/scpn_fusion/core/jax_x_point.py",
+    ),
+    "artifacts/rung2_mg_preconditioner/warm_start_forward.json": (
+        "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+        "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+        "src/scpn_fusion/core/jax_free_boundary_gs.py",
+        "src/scpn_fusion/core/jax_plasma_support.py",
+        "src/scpn_fusion/core/jax_continuation_history.py",
+        "src/scpn_fusion/core/jax_multigrid_precond.py",
+        "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
+        "src/scpn_fusion/core/jax_equilibrium_solver.py",
+        "src/scpn_fusion/core/jax_o_point.py",
+        "src/scpn_fusion/core/jax_x_point.py",
+    ),
+    "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json": (
+        "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+        "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+        "src/scpn_fusion/core/jax_free_boundary_gs.py",
+        "src/scpn_fusion/core/jax_plasma_support.py",
+        "src/scpn_fusion/core/jax_continuation_history.py",
+        "src/scpn_fusion/core/jax_multigrid_precond.py",
+        "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
+        "src/scpn_fusion/core/jax_equilibrium_solver.py",
+        "src/scpn_fusion/core/jax_o_point.py",
+        "src/scpn_fusion/core/jax_x_point.py",
+    ),
+    "artifacts/disruption_transfer_generalization.json": (
+        "validation/validate_real_shots.py",
+        "src/scpn_fusion/control/disruption_predictor.py",
+    ),
+    "artifacts/disruption_threshold_sweep.json": (
+        "src/scpn_fusion/control/disruption_predictor.py",
+    ),
+    "artifacts/disruption_roc_curve.json": ("src/scpn_fusion/control/disruption_predictor.py",),
+}
+
 _DISRUPTION_DEPENDENCIES = {
     "artifacts/disruption_transfer_generalization.json": (
         "validation/validate_real_shots.py",
@@ -144,6 +220,44 @@ def test_tracked_artifact_matches_pinned_requirements(
         f"recorded={recorded!r}, current={current}. See this test's docstring for the exact "
         "pinned-venv regeneration commands."
     )
+
+
+@pytest.mark.parametrize(("artifact_rel", "_generator_rel"), _BOUND_PAIRS)
+def test_tracked_artifact_matches_logic_sources(artifact_rel: str, _generator_rel: str) -> None:
+    """Scientific evidence must be rebound whenever executable solver logic changes."""
+    artifact = json.loads((REPO / artifact_rel).read_text(encoding="utf-8"))
+    provenance = artifact.get("provenance", {})
+    logic_sources = provenance.get("logic_sources")
+    expected = _EXPECTED_LOGIC_SOURCES[artifact_rel]
+    assert logic_sources == list(expected), (
+        f"{artifact_rel} has an incomplete or reordered provenance.logic_sources contract: "
+        f"recorded={logic_sources!r}, expected={list(expected)!r}"
+    )
+    paths = tuple(REPO / rel for rel in expected)
+    missing = [path.relative_to(REPO).as_posix() for path in paths if not path.is_file()]
+    assert missing == [], f"{artifact_rel} names missing logic sources: {missing}"
+    assert provenance.get("logic_sources_sha256") == _digest_paths(paths), (
+        f"{artifact_rel} is STALE relative to its recorded solver logic; regenerate it "
+        "with the current generator"
+    )
+
+
+def test_warm_start_equivalence_is_fail_closed_on_nonconvergence() -> None:
+    """Never label two iteration-capped fields as a fixed-point equivalence result."""
+    artifact = json.loads(
+        (REPO / "artifacts" / "rung2_mg_preconditioner" / "warm_start_forward.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    correctness = artifact["correctness_load_independent"]
+    equivalences = correctness["warm_vs_cold_fixed_point_span_rel"]
+    convergence = correctness["convergence"]
+    assert equivalences.keys() == convergence.keys()
+    for key, value in equivalences.items():
+        all_converged = all(status["converged"] for status in convergence[key].values())
+        assert (value is not None) is all_converged, (
+            f"{key}: equivalence must be numeric iff every compared solve converged"
+        )
 
 
 @pytest.mark.parametrize(("artifact_rel", "dependency_rels"), _DISRUPTION_DEPENDENCIES.items())

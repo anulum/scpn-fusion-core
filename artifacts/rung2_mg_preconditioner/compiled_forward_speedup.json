@@ -1,21 +1,28 @@
 {
   "correctness_load_independent": {
-    "fixed_point_equivalence_span_rel_33sq": 7.659433551666165e-10,
+    "fixed_point_equivalence_span_rel_33sq": 1.07709809745585e-09,
     "note": "compiled and eager reach the same equilibrium; warm repeats are bit-deterministic (asserted in tests/test_jax_predictive_forward_compiled.py)"
   },
-  "generated_utc": "2026-07-22T03:37:25+00:00",
+  "generated_utc": "2026-07-27T00:48:16+00:00",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_compiled_forward_speedup.py",
-    "generator_sha256": "582a464957e56ffef1a8dcb916b67cc15823b75914ec8163a658b10d1501e3a7",
+    "generator_sha256": "8615e1fd0e73ded061a690671f91f0d930f06a954fe10ea63d2ea70b8c3e093d",
     "logic_sources": [
       "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
       "src/scpn_fusion/core/jax_free_boundary_predictive.py",
-      "src/scpn_fusion/core/jax_multigrid_precond.py"
+      "src/scpn_fusion/core/jax_free_boundary_gs.py",
+      "src/scpn_fusion/core/jax_plasma_support.py",
+      "src/scpn_fusion/core/jax_continuation_history.py",
+      "src/scpn_fusion/core/jax_multigrid_precond.py",
+      "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
+      "src/scpn_fusion/core/jax_equilibrium_solver.py",
+      "src/scpn_fusion/core/jax_o_point.py",
+      "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "6008a81d59e17a6de0d57fbce190190476d9057c06e1ce959b516547a69b3472",
+    "logic_sources_sha256": "2029396983a97abaad2144f293a8aca1abd588dcf77ec4fe2df99aeb4812a495",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "9e2104f7874e341f0e185b7659dab2e7762fededff670d548c475cac27edb31a"
+    "pinned_requirements_sha256": "9dda9b0ee74803ab3689915e41df0cc586c30aa698e0a03ba2f97547235972e7"
   },
   "settings": {
     "defaults": "validated Anderson defaults, MG on",
@@ -25,43 +32,43 @@
   "timings_indicative": {
     "compiled": [
       {
-        "compile_plus_first_solve_ms": 34862.032904988155,
+        "compile_plus_first_solve_ms": 34116.59995101218,
         "grid": "33x33",
-        "warm_median_ms": 268.56650481931865,
+        "warm_median_ms": 419.107786990935,
         "warm_ms": [
-          235.428418032825,
-          312.6001951750368,
-          268.56650481931865
+          454.368432998308,
+          419.107786990935,
+          412.6643920026254
         ]
       },
       {
-        "compile_plus_first_solve_ms": 39615.62185594812,
+        "compile_plus_first_solve_ms": 38172.55952200503,
         "grid": "65x65",
-        "warm_median_ms": 1480.5476020555943,
+        "warm_median_ms": 755.3886730020167,
         "warm_ms": [
-          1875.6888939533383,
-          1480.5476020555943,
-          1457.461518002674
+          755.3886730020167,
+          768.2668589986861,
+          751.0886949894484
         ]
       },
       {
-        "compile_plus_first_solve_ms": 41458.328620065,
+        "compile_plus_first_solve_ms": 37833.76128699456,
         "grid": "129x129",
-        "warm_median_ms": 4456.3500171061605,
+        "warm_median_ms": 347.88563300389796,
         "warm_ms": [
-          5413.982939207926,
-          4456.3500171061605,
-          4161.38014011085
+          346.73476399620995,
+          347.88563300389796,
+          366.59499700181186
         ]
       }
     ],
-    "device": "cpu (cpu)",
+    "device": "NVIDIA GeForce GTX 1060 6GB (gpu)",
     "eager_33sq_ms": [
-      61139.157755998895,
-      55032.23050595261,
-      50609.99787878245
+      77990.16906000907,
+      76851.5204389987,
+      79242.34834800882
     ],
     "host": "aaarthuus (x86_64) - LOADED development host; indicative only, NOT a performance claim; the claimable number is the dedicated-hardware re-benchmark",
-    "speedup_anchor_33sq": 204.9109979033916
+    "speedup_anchor_33sq": 186.08618470192238
   }
 }

@@ -17,6 +17,13 @@
 
 ### Validation
 
+- Rebind the tracked predictive-forward and real-DIII-D evidence to the current
+  axis-connected plasma-support implementation. Current reproducible CPU evidence
+  records 1.91 % full-domain and 0.070 % shell-pinned DIII-D ψ RMS, 3.244e-06
+  adjoint/finite-difference agreement, and fail-closes the non-converged 65²
+  warm-start comparison instead of presenting iteration-capped fields as a
+  fixed-point equivalence. Every bound artifact now verifies its executable
+  solver-source digest as well as its generator and pinned environment.
 - The predictive IDA boundary estimator now uses a differentiable sub-cell
   saddle seed and cold-start separatrix homotopy. On the public 129×129
   DIII-D-like evaluation candidate, the regenerated fail-closed evidence

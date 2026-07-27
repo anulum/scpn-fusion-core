@@ -145,22 +145,22 @@ provenance-bound generators; `*_h100.json` files are dedicated-hardware snapshot
 
 | Metric | Value | Evidence |
 |--------|-------|----------|
-| Compiled vs eager fixed point (33², span-rel) | 7.7e-10 | `artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json` |
-| Warm vs cold fixed point (129², warm+MG-Richardson, span-rel) | 1.7e-9 | `artifacts/rung2_mg_preconditioner/warm_start_forward.json` |
+| Compiled vs eager fixed point (33², span-rel) | 1.1e-9 | `artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json` |
+| Warm vs cold fixed point (129², warm+MG-Richardson, span-rel) | 2.9e-9 | `artifacts/rung2_mg_preconditioner/warm_start_forward.json` |
 | H100 FP64 129² cold / warm / warm+MG-Richardson(2) | 164.8 / 26.3 / 13.0 ms | `artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json` |
 | H100 replication on the public head (single, warm+MG-Richardson) | 13.44 ms | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json` |
 | H100 batched per-solve (warm, B=16/64/256) | 13.6 / 13.0 / 14.6 ms | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json` |
-| Batched element ≡ single solve (span-rel) | ≤ 2.6e-15 | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json` |
-| Adjoint coil gradient vs warm finite difference | ≤ 1.718e-05 relative (100–300 A steps) | `artifacts/coilgrad_adjoint_fd_evidence.json` |
+| Batched element ≡ single solve (span-rel) | ≤ 5.1e-15 | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json` |
+| Adjoint coil gradient vs warm finite difference | ≤ 3.244e-06 relative (100–300 A steps) | `artifacts/coilgrad_adjoint_fd_evidence.json` |
 
 Real-data reproduction (DIII-D shot 145419, EFIT g-file, 129×129):
 
 | Lane | ψ error (span-relative RMS, ψ_N ≤ 0.95 region) | Notes |
 |------|------------------------------------------------|-------|
-| Full-domain forward reproduction (point source) | 0.72 % | the error is concentrated in the ψ_N > 0.95 pedestal shell |
-| Full-domain with sub-cell source averaging (4×4) | 0.48 % | genuine model improvement, no extra measured information; saturates by 8×8 |
-| Shell-pinned attribution (model source ψ_N ≤ 0.95) | 0.051 % | thin-shell source error ⇒ smooth quasi-harmonic remainder |
-| Sub-cell + shell-pin attribution | 0.056 % | sub-cell averaging leaves the core unharmed; the residual lives in ψ_N ∈ [0.98, 1] |
+| Full-domain forward reproduction (point source) | 1.91 % | current axis-connected-source implementation; error is concentrated in the ψ_N > 0.95 pedestal shell |
+| Full-domain with sub-cell source averaging (4×4) | 1.83 % | modest model improvement, no extra measured information; saturates by 8×8 |
+| Shell-pinned attribution (model source ψ_N ≤ 0.95) | 0.070 % | thin-shell source error ⇒ smooth quasi-harmonic remainder |
+| Sub-cell + shell-pin attribution | 0.075 % | diagnostic using extra measured shell information; not a blind-prediction claim |
 | Zero-external-field negative control | ~127 % | cold start, no coil field — fails as it must |
 
 Honest boundaries (recorded inside the artifacts themselves):
@@ -168,7 +168,9 @@ Honest boundaries (recorded inside the artifacts themselves):
 - Warm-start convergence envelope: a −1 % coil perturbation does not converge warm at
   33² within 300 iterations (+1 % converges in 11; ±0.2 % in 10–11); batched
   comparisons guard on single-solve convergence, and the batched API inherits exactly
-  the single solver's convergence envelope.
+  the single solver's convergence envelope. In the +0.5 % cross-grid evidence lane, the
+  65² base/cold/warm variants all reach the 180-iteration cap, so their equivalence is
+  fail-closed as `null`; 33² and 129² converge and remain claimable.
 - On the H100 the batched per-solve cost equals the single-solve cost (no amortisation
   gain at B ≤ 256; the same code gains 2.5× on a GTX 1060) — the batched wall-clock
   appears bound by a device-independent per-iteration cost, an open question assigned
@@ -176,11 +178,11 @@ Honest boundaries (recorded inside the artifacts themselves):
 - Timings labelled *indicative* in the bound artifacts are load-contaminated
   development-host numbers; dedicated-hardware numbers live in the `*_h100.json`
   snapshot lane.
-- Sub-cell source averaging removes about a third of the real-data full-domain
-  error; the remaining ~0.46 % concentrates in ψ_N ∈ [0.98, 1] and a quadratic
-  (saddle-aware) ψ expansion adds nothing — the residual is an edge-band
-  representation question against EFIT's own discretised solution, recorded in
-  the validation artifact rather than chased by imitating EFIT's numerics.
+- Sub-cell source averaging now makes a modest change (1.91 % to 1.83 %) after
+  axis-connected plasma support became the default. Shell pinning collapses the
+  residual to 0.075 %, localising the remaining discrepancy to an edge-band
+  representation question against EFIT's own discretised solution. This is recorded
+  rather than chased by imitating EFIT's numerics.
 
 ## Disruption Transfer-Generalization
 

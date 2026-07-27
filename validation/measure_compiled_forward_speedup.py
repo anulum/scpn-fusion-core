@@ -61,7 +61,14 @@ COMPILED_GRIDS = (33, 65, 129)
 _LOGIC_SOURCES = (
     "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
     "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+    "src/scpn_fusion/core/jax_free_boundary_gs.py",
+    "src/scpn_fusion/core/jax_plasma_support.py",
+    "src/scpn_fusion/core/jax_continuation_history.py",
     "src/scpn_fusion/core/jax_multigrid_precond.py",
+    "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
+    "src/scpn_fusion/core/jax_equilibrium_solver.py",
+    "src/scpn_fusion/core/jax_o_point.py",
+    "src/scpn_fusion/core/jax_x_point.py",
 )
 
 

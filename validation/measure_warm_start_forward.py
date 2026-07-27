@@ -38,7 +38,7 @@ import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-from scpn_fusion.core.jax_free_boundary_predictive import build_response_matrix
+from scpn_fusion.core.jax_free_boundary_predictive import DEFAULT_N_ITER, build_response_matrix
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_predictive_forward_compiled import (
     solve_predictive_equilibrium_compiled,
@@ -62,7 +62,14 @@ GRIDS = (33, 65, 129)
 _LOGIC_SOURCES = (
     "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
     "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+    "src/scpn_fusion/core/jax_free_boundary_gs.py",
+    "src/scpn_fusion/core/jax_plasma_support.py",
+    "src/scpn_fusion/core/jax_continuation_history.py",
     "src/scpn_fusion/core/jax_multigrid_precond.py",
+    "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
+    "src/scpn_fusion/core/jax_equilibrium_solver.py",
+    "src/scpn_fusion/core/jax_o_point.py",
+    "src/scpn_fusion/core/jax_x_point.py",
 )
 
 
@@ -85,7 +92,8 @@ def _time_one(fn) -> float:
 def main() -> None:
     device = jax.devices()[0]
     rows = []
-    equivalences = {}
+    equivalences: dict[str, float | None] = {}
+    convergence: dict[str, dict[str, dict[str, int | bool]]] = {}
     for n in GRIDS:
         r = jnp.linspace(1.0, 2.5, n)
         z = jnp.linspace(-1.4, 1.4, n)
@@ -115,15 +123,85 @@ def main() -> None:
                 ip_ramp=1,
             )
 
-        psi_base = jax.block_until_ready(cold(COIL_I))
-        psi_cold_pert = jax.block_until_ready(cold(ci_pert))
-        psi_warm = jax.block_until_ready(warm(ci_pert, psi_base))  # also warms the jit cache
+        psi_base, base_iterations = solve_predictive_equilibrium_compiled(
+            COIL_I,
+            PPRIME,
+            FFPRIME,
+            r,
+            z,
+            COIL_R,
+            COIL_Z,
+            PSIN,
+            IP,
+            m,
+            b,
+            s,
+            return_iterations=True,
+        )
+        psi_base = jax.block_until_ready(psi_base)
+        psi_cold_pert, cold_iterations = solve_predictive_equilibrium_compiled(
+            ci_pert,
+            PPRIME,
+            FFPRIME,
+            r,
+            z,
+            COIL_R,
+            COIL_Z,
+            PSIN,
+            IP,
+            m,
+            b,
+            s,
+            return_iterations=True,
+        )
+        psi_cold_pert = jax.block_until_ready(psi_cold_pert)
+        psi_warm, warm_iterations = solve_predictive_equilibrium_compiled(
+            ci_pert,
+            PPRIME,
+            FFPRIME,
+            r,
+            z,
+            COIL_R,
+            COIL_Z,
+            PSIN,
+            IP,
+            m,
+            b,
+            s,
+            psi_init=psi_base,
+            ip_ramp=1,
+            return_iterations=True,
+        )
+        psi_warm = jax.block_until_ready(psi_warm)  # also warms the jit cache
         span = abs(
             float(smooth_axis_flux(psi_cold_pert)) - float(smooth_xpoint_flux(psi_cold_pert, r, z))
         )
         equiv = float(jnp.max(jnp.abs(psi_warm - psi_cold_pert))) / span
-        equivalences[f"{n}x{n}"] = equiv
-        print(f"{n}^2 warm-vs-cold fixed-point agreement (span-rel): {equiv:.3e}", flush=True)
+        warm_key = f"{n}x{n}"
+        warm_converged = all(
+            iterations < DEFAULT_N_ITER
+            for iterations in (base_iterations, cold_iterations, warm_iterations)
+        )
+        equivalences[warm_key] = equiv if warm_converged else None
+        convergence[warm_key] = {
+            "base": {
+                "iterations": base_iterations,
+                "converged": base_iterations < DEFAULT_N_ITER,
+            },
+            "cold_perturbed": {
+                "iterations": cold_iterations,
+                "converged": cold_iterations < DEFAULT_N_ITER,
+            },
+            "warm_perturbed": {
+                "iterations": warm_iterations,
+                "converged": warm_iterations < DEFAULT_N_ITER,
+            },
+        }
+        print(
+            f"{n}^2 warm-vs-cold fixed-point agreement (span-rel): "
+            f"{equiv:.3e} ({'claimable' if warm_converged else 'NON-CONVERGED'})",
+            flush=True,
+        )
 
         def warm_mgr(ci, psi0):
             return solve_predictive_equilibrium_compiled(
@@ -145,10 +223,47 @@ def main() -> None:
                 inner_cycles=2,
             )
 
-        psi_combo = jax.block_until_ready(warm_mgr(ci_pert, psi_base))
-        equivalences[f"{n}x{n}_warm_mg_richardson2"] = (
-            float(jnp.max(jnp.abs(psi_combo - psi_cold_pert))) / span
+        psi_combo, combo_iterations = solve_predictive_equilibrium_compiled(
+            ci_pert,
+            PPRIME,
+            FFPRIME,
+            r,
+            z,
+            COIL_R,
+            COIL_Z,
+            PSIN,
+            IP,
+            m,
+            b,
+            s,
+            psi_init=psi_base,
+            ip_ramp=1,
+            inner_solver="mg_richardson",
+            inner_cycles=2,
+            return_iterations=True,
         )
+        psi_combo = jax.block_until_ready(psi_combo)
+        combo_key = f"{n}x{n}_warm_mg_richardson2"
+        combo_equiv = float(jnp.max(jnp.abs(psi_combo - psi_cold_pert))) / span
+        combo_converged = all(
+            iterations < DEFAULT_N_ITER
+            for iterations in (base_iterations, cold_iterations, combo_iterations)
+        )
+        equivalences[combo_key] = combo_equiv if combo_converged else None
+        convergence[combo_key] = {
+            "base": {
+                "iterations": base_iterations,
+                "converged": base_iterations < DEFAULT_N_ITER,
+            },
+            "cold_perturbed": {
+                "iterations": cold_iterations,
+                "converged": cold_iterations < DEFAULT_N_ITER,
+            },
+            "warm_mg_richardson2_perturbed": {
+                "iterations": combo_iterations,
+                "converged": combo_iterations < DEFAULT_N_ITER,
+            },
+        }
         cold_ms = [_time_one(lambda: cold(ci_pert)) for _ in range(REPEATS)]
         warm_ms = [_time_one(lambda: warm(ci_pert, psi_base)) for _ in range(REPEATS)]
         warm_mgr_ms = [_time_one(lambda: warm_mgr(ci_pert, psi_base)) for _ in range(REPEATS)]
@@ -179,14 +294,25 @@ def main() -> None:
             "30 iterations before the early stop can fire); correctness = warm solve agrees "
             "with the COLD solve of the perturbed problem at span-relative tolerance"
         ),
-        "correctness_load_independent": {"warm_vs_cold_fixed_point_span_rel": equivalences},
+        "correctness_load_independent": {
+            "warm_vs_cold_fixed_point_span_rel": equivalences,
+            "convergence": convergence,
+            "policy": (
+                "an equivalence value is claimable only when the base, cold-perturbed, and "
+                "candidate solves all terminate before n_iter; otherwise it is null"
+            ),
+        },
         "timings_indicative": {
             "host": f"{platform.node()} ({platform.machine()}) - host-load caveat applies; "
             "the claimable number is this generator on a dedicated host",
             "device": f"{device.device_kind} ({device.platform})",
             "rows": rows,
         },
-        "settings": {"perturb_rel": PERTURB_REL, "repeats": REPEATS},
+        "settings": {
+            "perturb_rel": PERTURB_REL,
+            "repeats": REPEATS,
+            "n_iter": DEFAULT_N_ITER,
+        },
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "jax_version": jax.__version__,
         "provenance": {

@@ -1,99 +1,194 @@
 {
   "correctness_load_independent": {
+    "convergence": {
+      "129x129": {
+        "base": {
+          "converged": true,
+          "iterations": 120
+        },
+        "cold_perturbed": {
+          "converged": true,
+          "iterations": 120
+        },
+        "warm_perturbed": {
+          "converged": true,
+          "iterations": 3
+        }
+      },
+      "129x129_warm_mg_richardson2": {
+        "base": {
+          "converged": true,
+          "iterations": 120
+        },
+        "cold_perturbed": {
+          "converged": true,
+          "iterations": 120
+        },
+        "warm_mg_richardson2_perturbed": {
+          "converged": true,
+          "iterations": 5
+        }
+      },
+      "33x33": {
+        "base": {
+          "converged": true,
+          "iterations": 130
+        },
+        "cold_perturbed": {
+          "converged": true,
+          "iterations": 131
+        },
+        "warm_perturbed": {
+          "converged": true,
+          "iterations": 10
+        }
+      },
+      "33x33_warm_mg_richardson2": {
+        "base": {
+          "converged": true,
+          "iterations": 130
+        },
+        "cold_perturbed": {
+          "converged": true,
+          "iterations": 131
+        },
+        "warm_mg_richardson2_perturbed": {
+          "converged": true,
+          "iterations": 10
+        }
+      },
+      "65x65": {
+        "base": {
+          "converged": false,
+          "iterations": 180
+        },
+        "cold_perturbed": {
+          "converged": false,
+          "iterations": 180
+        },
+        "warm_perturbed": {
+          "converged": false,
+          "iterations": 180
+        }
+      },
+      "65x65_warm_mg_richardson2": {
+        "base": {
+          "converged": false,
+          "iterations": 180
+        },
+        "cold_perturbed": {
+          "converged": false,
+          "iterations": 180
+        },
+        "warm_mg_richardson2_perturbed": {
+          "converged": false,
+          "iterations": 180
+        }
+      }
+    },
+    "policy": "an equivalence value is claimable only when the base, cold-perturbed, and candidate solves all terminate before n_iter; otherwise it is null",
     "warm_vs_cold_fixed_point_span_rel": {
-      "129x129": 1.075716982073909e-09,
-      "129x129_warm_mg_richardson2": 1.660262736157312e-09,
-      "33x33": 1.4453151459437468e-09,
-      "33x33_warm_mg_richardson2": 1.1347363346122232e-09,
-      "65x65": 1.8469096276591254e-09,
-      "65x65_warm_mg_richardson2": 1.7435181550997354e-09
+      "129x129": 1.3370271696355623e-14,
+      "129x129_warm_mg_richardson2": 2.8210567328964795e-09,
+      "33x33": 2.932615510134976e-10,
+      "33x33_warm_mg_richardson2": 7.396893309683893e-10,
+      "65x65": null,
+      "65x65_warm_mg_richardson2": null
     }
   },
-  "generated_utc": "2026-07-22T03:44:17+00:00",
+  "generated_utc": "2026-07-27T00:54:11+00:00",
   "jax_version": "0.7.1",
   "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base + ip_ramp=1 (the ramp exists for cold-start robustness and would otherwise force 30 iterations before the early stop can fire); correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
     "generator": "validation/measure_warm_start_forward.py",
-    "generator_sha256": "77d4c21df96652dc9c2445071ccb40ff5330c273a49003c82c2de20dfae16281",
+    "generator_sha256": "9a394b2336f8074ad285e1efc4da59473e5095f4a5b4fbc56eb440389d46ffd6",
     "logic_sources": [
       "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
       "src/scpn_fusion/core/jax_free_boundary_predictive.py",
-      "src/scpn_fusion/core/jax_multigrid_precond.py"
+      "src/scpn_fusion/core/jax_free_boundary_gs.py",
+      "src/scpn_fusion/core/jax_plasma_support.py",
+      "src/scpn_fusion/core/jax_continuation_history.py",
+      "src/scpn_fusion/core/jax_multigrid_precond.py",
+      "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
+      "src/scpn_fusion/core/jax_equilibrium_solver.py",
+      "src/scpn_fusion/core/jax_o_point.py",
+      "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "6008a81d59e17a6de0d57fbce190190476d9057c06e1ce959b516547a69b3472",
+    "logic_sources_sha256": "2029396983a97abaad2144f293a8aca1abd588dcf77ec4fe2df99aeb4812a495",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "9e2104f7874e341f0e185b7659dab2e7762fededff670d548c475cac27edb31a"
+    "pinned_requirements_sha256": "9dda9b0ee74803ab3689915e41df0cc586c30aa698e0a03ba2f97547235972e7"
   },
   "settings": {
+    "n_iter": 180,
     "perturb_rel": 0.005,
     "repeats": 3
   },
   "task": "warm-start behaviour of the compiled predictive forward (IDA pattern)",
   "timings_indicative": {
-    "device": "cpu (cpu)",
+    "device": "NVIDIA GeForce GTX 1060 6GB (gpu)",
     "host": "aaarthuus (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 576.3978851027787,
+        "cold_median_ms": 435.6109119980829,
         "cold_ms": [
-          615.8683858811855,
-          576.3978851027787,
-          532.5103078503162
+          464.6655069955159,
+          431.18680200132076,
+          435.6109119980829
         ],
         "grid": "33x33",
-        "warm_median_ms": 68.47763806581497,
-        "warm_mg_richardson2_median_ms": 37.12599212303758,
+        "warm_median_ms": 27.733472001273185,
+        "warm_mg_richardson2_median_ms": 17.921566002769396,
         "warm_mg_richardson2_ms": [
-          37.12599212303758,
-          48.42771193943918,
-          35.88845697231591
+          17.921566002769396,
+          17.198483998072334,
+          20.09522200387437
         ],
         "warm_ms": [
-          64.06479515135288,
-          68.47763806581497,
-          77.20530196093023
+          27.733472001273185,
+          28.42892298940569,
+          26.679921997128986
         ]
       },
       {
-        "cold_median_ms": 1203.5189720336348,
+        "cold_median_ms": 759.3759869923815,
         "cold_ms": [
-          1303.121413802728,
-          1203.5189720336348,
-          868.2808589655906
+          761.9410379993496,
+          759.3759869923815,
+          731.8068640015554
         ],
         "grid": "65x65",
-        "warm_median_ms": 213.60387792810798,
-        "warm_mg_richardson2_median_ms": 111.5070900414139,
+        "warm_median_ms": 722.8449400136014,
+        "warm_mg_richardson2_median_ms": 339.0507090080064,
         "warm_mg_richardson2_ms": [
-          189.66001993976533,
-          99.1105439607054,
-          111.5070900414139
+          330.9393500094302,
+          339.0557289967546,
+          339.0507090080064
         ],
         "warm_ms": [
-          158.77280896529555,
-          213.60387792810798,
-          250.36950292997062
+          726.8792720133206,
+          722.8449400136014,
+          716.0835999966366
         ]
       },
       {
-        "cold_median_ms": 4599.646159913391,
+        "cold_median_ms": 343.9972220076015,
         "cold_ms": [
-          4710.783259943128,
-          4471.181913977489,
-          4599.646159913391
+          377.1089289948577,
+          343.9972220076015,
+          341.76872500393074
         ],
         "grid": "129x129",
-        "warm_median_ms": 822.2365621477365,
-        "warm_mg_richardson2_median_ms": 508.4993802011013,
+        "warm_median_ms": 20.08255000691861,
+        "warm_mg_richardson2_median_ms": 20.115319988690317,
         "warm_mg_richardson2_ms": [
-          639.2873129807413,
-          439.3717229831964,
-          508.4993802011013
+          21.980310993967578,
+          20.115319988690317,
+          17.175178989418782
         ],
         "warm_ms": [
-          822.2365621477365,
-          885.6815518811345,
-          673.2654308434576
+          20.042452990310267,
+          20.08255000691861,
+          21.779271002742462
         ]
       }
     ]
