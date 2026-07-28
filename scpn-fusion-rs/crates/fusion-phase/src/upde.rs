@@ -60,13 +60,15 @@ fn upde_validate(
     zeta: &[f64],
     dt: f64,
 ) -> FusionResult<(usize, usize)> {
-    if offsets.len() < 2 {
+    let Some((&total, layer_starts)) = offsets
+        .split_last()
+        .filter(|(_, starts)| !starts.is_empty())
+    else {
         return Err(FusionError::ConfigError(
             "upde_tick: offsets must delimit at least one layer".to_string(),
         ));
-    }
-    let l = offsets.len() - 1;
-    let total = *offsets.last().expect("offsets checked non-empty");
+    };
+    let l = layer_starts.len();
     if theta.len() != total || omega.len() != total {
         return Err(FusionError::ConfigError(format!(
             "upde_tick: theta ({}) / omega ({}) must match offsets total ({total})",
@@ -720,6 +722,23 @@ mod tests {
             true
         )
         .is_err());
+        assert!(matches!(
+            upde_tick(
+                &theta,
+                &omega,
+                &[],
+                &[1.0],
+                &[0.0],
+                &[0.0],
+                1e-2,
+                0.0,
+                1.0,
+                0.0,
+                true
+            ),
+            Err(FusionError::ConfigError(message))
+                if message == "upde_tick: offsets must delimit at least one layer"
+        ));
         assert!(upde_tick(
             &theta,
             &omega,
