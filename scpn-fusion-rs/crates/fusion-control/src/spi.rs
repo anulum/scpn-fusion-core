@@ -70,6 +70,15 @@ pub struct SPIMitigation {
 }
 
 impl SPIMitigation {
+    fn from_validated_values(w_th_mj: f64, ip_ma: f64, te_kev: f64) -> Self {
+        Self {
+            w_th: w_th_mj * 1e6,
+            ip: ip_ma * 1e6,
+            te: te_kev,
+            phase: Phase::Assimilation,
+        }
+    }
+
     pub fn new(w_th_mj: f64, ip_ma: f64, te_kev: f64) -> FusionResult<Self> {
         if !w_th_mj.is_finite() || w_th_mj <= 0.0 {
             return Err(FusionError::ConfigError(
@@ -86,12 +95,7 @@ impl SPIMitigation {
                 "spi te_kev must be finite and > 0".to_string(),
             ));
         }
-        Ok(SPIMitigation {
-            w_th: w_th_mj * 1e6,
-            ip: ip_ma * 1e6,
-            te: te_kev,
-            phase: Phase::Assimilation,
-        })
+        Ok(Self::from_validated_values(w_th_mj, ip_ma, te_kev))
     }
 
     /// Run full SPI simulation. Returns time history.
@@ -164,13 +168,25 @@ impl SPIMitigation {
 
 impl Default for SPIMitigation {
     fn default() -> Self {
-        Self::new(W_TH_MJ, IP_MA, TE_INIT).expect("default SPI config must be valid")
+        Self::from_validated_values(W_TH_MJ, IP_MA, TE_INIT)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_spi_default_matches_checked_constructor() {
+        let default = SPIMitigation::default();
+        let checked =
+            SPIMitigation::new(W_TH_MJ, IP_MA, TE_INIT).expect("default values must be valid");
+
+        assert_eq!(default.w_th, checked.w_th);
+        assert_eq!(default.ip, checked.ip);
+        assert_eq!(default.te, checked.te);
+        assert_eq!(default.phase, checked.phase);
+    }
 
     #[test]
     fn test_spi_thermal_quench() {
