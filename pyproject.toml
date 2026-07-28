@@ -366,6 +366,8 @@ files = [
     "tests/test_check_freegs_strict_artifact.py",
     "tools/mypy_expansion_guard.py",
     "tests/test_mypy_expansion_guard.py",
+    "tools/real_data_roadmap_non_regression_guard.py",
+    "tests/test_real_data_roadmap_non_regression_guard.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",

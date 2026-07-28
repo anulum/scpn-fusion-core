@@ -38,13 +38,23 @@ def _load_json(path: Path) -> dict[str, Any]:
 def evaluate(*, progress: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
     """Compare current roadmap progress metrics against a baseline contract.
 
-    Args:
-        progress: Current roadmap progress payload.
-        baseline: Baseline payload with metric floor values.
+    Parameters
+    ----------
+    progress
+        Current roadmap progress payload.
+    baseline
+        Baseline payload with metric floor values.
 
-    Returns:
-        Summary including per-metric comparisons, DIII-D raw-ingestion gate and
-        overall regression status.
+    Returns
+    -------
+    dict[str, Any]
+        Per-metric comparisons, the DIII-D raw-ingestion gate, and the overall
+        regression status.
+
+    Raises
+    ------
+    ValueError
+        If the baseline payload does not contain a metrics map.
     """
     metric_rows = progress.get("metrics", [])
     if not isinstance(metric_rows, list):
@@ -96,15 +106,23 @@ def evaluate(*, progress: dict[str, Any], baseline: dict[str, Any]) -> dict[str,
 def main(argv: list[str] | None = None) -> int:
     """Run non-regression gate and emit machine-readable summary JSON.
 
-    Args:
-        argv: Optional CLI argument list. If omitted, reads process arguments.
+    Parameters
+    ----------
+    argv
+        Optional CLI argument list. If omitted, read process arguments.
 
-    Returns:
-        ``0`` when no regressions are detected, ``1`` when regressions are present.
+    Returns
+    -------
+    int
+        ``0`` when no regressions are detected, or ``1`` when regressions are
+        present.
 
-    Raises:
-        ValueError: If baseline JSON does not contain a metrics map.
-        FileNotFoundError: If any supplied input file does not exist.
+    Raises
+    ------
+    ValueError
+        If baseline JSON does not contain a metrics map.
+    FileNotFoundError
+        If any supplied input file does not exist.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--progress-json", default=str(DEFAULT_PROGRESS))
