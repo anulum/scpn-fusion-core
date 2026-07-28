@@ -36,6 +36,16 @@ updates:
       - "dependencies"
       - "python"
       - "security"
+    ignore:
+      # These releases need coherent compatibility migrations rather than
+      # isolated lock-file rewrites: mypy 2.3 requires librt >=0.13, while
+      # Streamlit 1.60 requires pyarrow <25.
+      - dependency-name: "mypy"
+        versions:
+          - "2.3.0"
+      - dependency-name: "streamlit"
+        versions:
+          - "1.60.0"
   - package-ecosystem: "pip"
     directory: "/requirements"
     schedule:
