@@ -11,7 +11,8 @@
 The primary entrypoint is the pre-commit ``commit-msg`` hook. It receives the
 pending commit-message file path, rejects messages without the required
 ``Seat:`` trailer and authorship line, and rejects commit subjects containing
-outward-facing self-praise terms.
+outward-facing self-praise terms. It also rejects the superseded
+``Co-Authored-By:`` trailer in forward-only commits.
 
 The optional ``--audit-range`` mode checks an explicit Git revision range. It is
 intended for targeted operator audits, not as a historical rewrite demand.
@@ -28,6 +29,7 @@ import sys
 from pathlib import Path
 
 REQUIRED_AUTHORSHIP_LINE = "Authored by Anulum Fortis & Arcane Sapience (protoscience@anulum.li)"
+LEGACY_COAUTHOR_PREFIX_RE = re.compile(r"^\s*Co-Authored-By:", re.IGNORECASE)
 SEAT_TRAILER_PREFIX_RE = re.compile(r"^\s*Seat:")
 SEAT_TRAILER_RE = re.compile(r"^Seat:\s+([A-Za-z0-9][A-Za-z0-9_-]{0,63})\s*$")
 FORBIDDEN_SEAT_PREFIXES = (
@@ -120,6 +122,8 @@ def message_violations(message: str) -> list[str]:
     elif len(authorship_indices) != 1:
         violations.append("expected exactly one authorship line")
     violations.extend(_seat_trailer_violations(lines, authorship_indices))
+    if any(LEGACY_COAUTHOR_PREFIX_RE.match(line) for line in lines):
+        violations.append("legacy `Co-Authored-By:` trailer is forbidden")
 
     banned_terms = sorted(
         {

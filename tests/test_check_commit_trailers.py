@@ -19,6 +19,7 @@ from tools import check_commit_trailers
 
 REQUIRED_AUTHORSHIP_LINE = check_commit_trailers.REQUIRED_AUTHORSHIP_LINE
 VALID_SEAT_TRAILER = "Seat: 14753"
+LEGACY_COAUTHOR_LINE = "Co-Authored-By: Arcane Sapience <protoscience@anulum.li>"
 
 
 def _message(*lines: str) -> str:
@@ -77,6 +78,32 @@ def test_commit_msg_hook_rejects_duplicate_authorship_lines(
 
     assert check_commit_trailers.main([str(path)]) == 1
     assert "expected exactly one authorship line" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "legacy_line",
+    [LEGACY_COAUTHOR_LINE, "  co-authored-by: Other Author <other@example.test>"],
+)
+def test_commit_msg_hook_rejects_legacy_coauthor_trailer(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    legacy_line: str,
+) -> None:
+    """The superseded co-author trailer is forbidden for new commits."""
+    path = _message_file(
+        tmp_path,
+        _message(
+            "test: add trailer guard",
+            "",
+            VALID_SEAT_TRAILER,
+            "",
+            REQUIRED_AUTHORSHIP_LINE,
+            legacy_line,
+        ),
+    )
+
+    assert check_commit_trailers.main([str(path)]) == 1
+    assert "legacy `Co-Authored-By:` trailer is forbidden" in capsys.readouterr().err
 
 
 def test_commit_msg_hook_rejects_missing_seat_trailer(
@@ -239,7 +266,18 @@ def test_audit_range_reports_policy_violations(
         if args == ("rev-list", "HEAD"):
             return subprocess.CompletedProcess(args, 0, stdout=f"{failing_sha}\n")
         if args == ("log", "-1", "--format=%B", failing_sha):
-            return subprocess.CompletedProcess(args, 0, stdout=_message("test: add trailer guard"))
+            return subprocess.CompletedProcess(
+                args,
+                0,
+                stdout=_message(
+                    "test: add trailer guard",
+                    "",
+                    VALID_SEAT_TRAILER,
+                    "",
+                    REQUIRED_AUTHORSHIP_LINE,
+                    LEGACY_COAUTHOR_LINE,
+                ),
+            )
         raise AssertionError(f"unexpected git args: {args}")
 
     monkeypatch.setattr(check_commit_trailers, "_run_git", fake_run_git)
@@ -248,6 +286,7 @@ def test_audit_range_reports_policy_violations(
     out = capsys.readouterr().out
     assert "Trailer audit failed:" in out
     assert failing_sha[:12] in out
+    assert "legacy `Co-Authored-By:` trailer is forbidden" in out
 
 
 def test_audit_range_fails_closed_without_git(
