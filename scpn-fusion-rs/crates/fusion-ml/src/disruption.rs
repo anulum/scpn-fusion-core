@@ -13,7 +13,7 @@
 use ndarray::{Array1, Array2, Axis};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use rand_distr::{Distribution, Normal};
+use rand_distr::{Distribution, StandardNormal};
 
 /// Time step for tearing mode simulation. Python: 0.01.
 const DT: f64 = 0.01;
@@ -111,8 +111,6 @@ pub fn simulate_tearing_mode(
         Some(s) => StdRng::seed_from_u64(s),
         None => StdRng::from_entropy(),
     };
-    let noise = Normal::new(0.0, NOISE_STD).expect("NOISE_STD is a valid Gaussian sigma");
-
     let mut w = W_INIT;
     let is_disruptive = rng.gen::<f64>() > 0.5;
     let trigger_time = if is_disruptive {
@@ -133,7 +131,8 @@ pub fn simulate_tearing_mode(
         }
 
         w += rutherford_island_growth(w, delta_prime, beta_p, w_crit, DT);
-        w += noise.sample(&mut rng);
+        let standard_noise: f64 = StandardNormal.sample(&mut rng);
+        w += NOISE_STD * standard_noise;
         w = w.max(W_FLOOR);
 
         signal.push(w);
