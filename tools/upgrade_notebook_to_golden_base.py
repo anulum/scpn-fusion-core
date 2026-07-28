@@ -179,7 +179,7 @@ if not (REPO_ROOT / "validation").exists():
             REPO_ROOT = candidate
             break
 
-print(f"Repo root: {REPO_ROOT}")
+print("Repo root: .")
 print(f"Matplotlib available: {HAS_MPL}")
 print(f"Pandas available: {HAS_PANDAS}")
 
@@ -239,7 +239,7 @@ def bootstrap_sc_neurocore(repo_root: Path) -> dict:
         )
 
     status["available"] = True
-    status["module_path"] = str(getattr(mod, "__file__", "<unknown>"))
+    status["module_path"] = f"{mod.__name__.replace('.', '/')}/__init__.py"
     status["version"] = str(getattr(mod, "__version__", "<unknown>"))
     status["detail"] = "sc_neurocore import path active."
     return status
@@ -315,8 +315,8 @@ except Exception:
 
 VALIDATION_SCRIPT = REPO_ROOT / "validation" / "validate_real_shots.py"
 FULL_PIPELINE_SCRIPT = REPO_ROOT / "validation" / "full_validation_pipeline.py"
-print(f"Validation script: {VALIDATION_SCRIPT}")
-print(f"Full pipeline script: {FULL_PIPELINE_SCRIPT}")
+print(f"Validation script: {VALIDATION_SCRIPT.relative_to(REPO_ROOT).as_posix()}")
+print(f"Full pipeline script: {FULL_PIPELINE_SCRIPT.relative_to(REPO_ROOT).as_posix()}")
 
 
 def _normalize_shot_dict(raw: dict) -> dict:
@@ -427,7 +427,7 @@ risk_raw = (
 )
 dist_risk = np.clip(risk_raw, 0.0, 1.0)
 
-print(f"Loaded disturbance shot: {shot_path}")
+print(f"Loaded disturbance shot: {shot_path.relative_to(REPO_ROOT).as_posix()}")
 print(f"Disruption index (source): {int(shot['disruption_time_idx'])}")
 print(f"Disruption type (source): {str(shot['disruption_type'])}")
 print(f"Simulation horizon: {N_STEPS} steps, dt={DT:.6f} s")

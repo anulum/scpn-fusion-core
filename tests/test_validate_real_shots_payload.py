@@ -128,6 +128,16 @@ def test_load_disruption_risk_calibration_defaults_when_missing(tmp_path: Path) 
     assert calibration["source"] == "default-v2.1"
     assert calibration["risk_threshold"] == 0.50
     assert calibration["bias_delta"] == 0.0
+    assert calibration["path"] == "<external>/missing_calibration.json"
+
+
+def test_public_path_is_repo_relative_or_external_label(tmp_path: Path) -> None:
+    in_repo = ROOT / "validation" / "reference_data" / "example.json"
+
+    assert validate_real_shots._public_path(in_repo) == ("validation/reference_data/example.json")
+    assert validate_real_shots._public_path(tmp_path / "example.json") == (
+        "<external>/example.json"
+    )
 
 
 def test_load_disruption_risk_calibration_reads_selected_values(tmp_path: Path) -> None:

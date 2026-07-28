@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -167,6 +168,29 @@ _DISRUPTION_DEPENDENCIES = {
     "artifacts/disruption_roc_curve.json": ("src/scpn_fusion/control/disruption_predictor.py",),
 }
 _DISRUPTION_DATA = REPO / "validation" / "reference_data" / "diiid" / "disruption_shots"
+_PUBLIC_JSON_DOCUMENTS = (
+    "artifacts/real_shot_validation.json",
+    "examples/neuro_symbolic_control_demo.ipynb",
+    "examples/neuro_symbolic_control_demo_v2.ipynb",
+)
+_WINDOWS_ABSOLUTE_PATH = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/]")
+
+
+def _json_strings(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return [text for item in value for text in _json_strings(item)]
+    if isinstance(value, dict):
+        return [text for item in value.values() for text in _json_strings(item)]
+    return []
+
+
+@pytest.mark.parametrize("document_rel", _PUBLIC_JSON_DOCUMENTS)
+def test_public_json_documents_do_not_expose_windows_absolute_paths(document_rel: str) -> None:
+    document = json.loads((REPO / document_rel).read_text(encoding="utf-8"))
+    leaks = [text for text in _json_strings(document) if _WINDOWS_ABSOLUTE_PATH.search(text)]
+    assert leaks == [], f"{document_rel} contains host-specific Windows paths: {leaks}"
 
 
 def test_routine_evidence_defaults_are_local_and_ignored(tmp_path: Path) -> None:

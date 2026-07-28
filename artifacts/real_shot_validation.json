@@ -736,14 +736,14 @@
       "fpr_samples_ok": false
     },
     "calibration": {
-      "path": "C:\\aaa_God_of_the_Math_Collection\\03_CODE\\_remote\\scpn-fusion-core\\validation\\reference_data\\diiid\\disruption_risk_calibration.json",
+      "path": "validation/reference_data/diiid/disruption_risk_calibration.json",
       "source": "diiid-disruption-risk-calibration-v1",
       "risk_threshold": 0.5,
       "bias_delta": -0.0,
       "gates_overall_pass": true
     },
     "data_source": {
-      "manifest_path": "C:\\aaa_God_of_the_Math_Collection\\03_CODE\\_remote\\scpn-fusion-core\\validation\\reference_data\\diiid\\disruption_shots_manifest.json",
+      "manifest_path": "validation/reference_data/diiid/disruption_shots_manifest.json",
       "manifest_found": true,
       "manifest_version": "diiid-disruption-shots-v2",
       "dataset": "diiid_disruption_shots",

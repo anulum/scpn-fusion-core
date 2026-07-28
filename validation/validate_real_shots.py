@@ -72,6 +72,15 @@ _DISRUPTION_MIN_FPR_SAMPLES = 100
 _RAW_SOURCE_TOKENS = ("raw", "mdsplus")
 
 
+def _public_path(path: Path) -> str:
+    """Return a stable report label without exposing host filesystem roots."""
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return f"<external>/{resolved.name}"
+
+
 # ── Lane 1: Equilibrium Validation ───────────────────────────────────
 
 
@@ -353,7 +362,7 @@ def load_disruption_risk_calibration(
 ) -> dict[str, Any]:
     """Load calibrated disruption-risk threshold and bias settings."""
     calibration = {
-        "path": str(calibration_path),
+        "path": _public_path(calibration_path),
         "source": "default-v2.1",
         "risk_threshold": 0.50,
         "bias_delta": 0.0,
@@ -392,7 +401,7 @@ def load_disruption_data_source_contract(disruption_dir: Path) -> dict[str, Any]
     """Load disruption-shot source metadata from the manifest adjacent to shot files."""
     manifest_path = disruption_dir.parent / DISRUPTION_SHOT_MANIFEST_NAME
     summary: dict[str, Any] = {
-        "manifest_path": str(manifest_path),
+        "manifest_path": _public_path(manifest_path),
         "manifest_found": False,
         "manifest_version": None,
         "dataset": None,

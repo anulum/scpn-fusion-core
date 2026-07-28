@@ -7,7 +7,7 @@
     "target_recall_ok": true,
     "transfer_efficiency_ok": true
   },
-  "generated_at_utc": "2026-07-28T12:11:06.875323+00:00",
+  "generated_at_utc": "2026-07-28T18:14:29.895959+00:00",
   "passes": true,
   "provenance": {
     "disruption_data_directory": "validation/reference_data/diiid/disruption_shots",
@@ -19,7 +19,7 @@
       "validation/validate_real_shots.py",
       "src/scpn_fusion/control/disruption_predictor.py"
     ],
-    "logic_sources_sha256": "b263fcc7db395df6d66daff8caf4873102fc11d06c2151e8ffe77ae790d68e6e",
+    "logic_sources_sha256": "ee498de1cef1d6ac265789e75dcce4b0abbc4405bb188de10abaf9834b304882",
     "packages": {
       "matplotlib": "3.10.8",
       "numpy": "1.26.4",
