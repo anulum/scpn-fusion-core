@@ -1,9 +1,9 @@
 {
   "correctness_load_independent": {
-    "max_element_equivalence_span_rel": 5.021958671795911e-15,
+    "max_element_equivalence_span_rel": 3.5273281109442046e-15,
     "note": "each compared element's single solve converged (k < n_iter); a -1% coil perturbation warm case does NOT converge at 33\u00b2 within 300 iterations (residual plateau near the softmax X-point extraction) while +1% converges in 11 \u2014 comparisons are made only where the single solve converges, and the batched API inherits exactly the single solver's convergence envelope."
   },
-  "generated_utc": "2026-07-27T00:56:52+00:00",
+  "generated_utc": "2026-07-28T07:16:06+00:00",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_batched_forward.py",
@@ -22,7 +22,7 @@
     ],
     "logic_sources_sha256": "2029396983a97abaad2144f293a8aca1abd588dcf77ec4fe2df99aeb4812a495",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "9dda9b0ee74803ab3689915e41df0cc586c30aa698e0a03ba2f97547235972e7"
+    "pinned_requirements_sha256": "dfd91e0233bf9b75542a904fde79c30a7dc2548ad534c844bdd21e186416b8e8"
   },
   "root_cause_note": "the previously measured 'batch cliff' (~10 s/solve effective at 129\u00b2 on a GTX 1060, batch-size-independent total) was per-call re-jitting of jax.vmap \u2014 a full recompile of the batched while-loop graph on EVERY wrapper call; component probes measured the vmapped physics (coupled RHS, MG V-cycle, Anderson step) at ~7x LOWER per-element cost than single solves. The lru_cache runner factory removes the recompile; measured warm cost on the same card: 13.5 ms/solve (B=16) and 17.5 ms/solve (B=64) at 129\u00b2 FP64 vs 34 ms single.",
   "settings": {
@@ -35,31 +35,31 @@
       {
         "batch_size": 4,
         "cache_hits_gained_after_first_call": 3,
-        "compile_plus_first_call_ms": 36383.483947996865,
-        "element_equivalence_span_rel": 3.108831558730802e-15,
-        "warm_median_ms": 38.053919008234516,
+        "compile_plus_first_call_ms": 8077.979764999327,
+        "element_equivalence_span_rel": 3.5273281109442046e-15,
+        "warm_median_ms": 21.42761099821655,
         "warm_ms": [
-          37.47142000065651,
-          38.053919008234516,
-          39.45884401036892
+          19.97568099977798,
+          28.845464999903925,
+          21.42761099821655
         ],
-        "warm_per_solve_ms": 9.513479752058629
+        "warm_per_solve_ms": 5.356902749554138
       },
       {
         "batch_size": 16,
         "cache_hits_gained_after_first_call": 4,
-        "compile_plus_first_call_ms": 46758.04807800159,
-        "element_equivalence_span_rel": 5.021958671795911e-15,
-        "warm_median_ms": 91.92228999745566,
+        "compile_plus_first_call_ms": 7458.429198999511,
+        "element_equivalence_span_rel": 2.510979333214519e-15,
+        "warm_median_ms": 79.50655999957235,
         "warm_ms": [
-          97.27836900856346,
-          91.92228999745566,
-          91.29229800601024
+          75.5036980008299,
+          79.83636600329191,
+          79.50655999957235
         ],
-        "warm_per_solve_ms": 5.745143124840979
+        "warm_per_solve_ms": 4.969159999973272
       }
     ],
-    "device": "NVIDIA GeForce GTX 1060 6GB (gpu)",
+    "device": "cpu (cpu)",
     "grid": "33x33",
     "host": "aaarthuus (x86_64) - LOADED development host; indicative only, NOT a performance claim; dedicated-hardware numbers live in the unbound *_h100.json snapshot lane"
   }

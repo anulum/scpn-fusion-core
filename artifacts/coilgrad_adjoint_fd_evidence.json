@@ -7,74 +7,74 @@
     "fd": "central FD, WARM-STARTED from the base solution (psi_init=psi_base) to stay in-basin; sweep the step and require convergence toward the adjoint (truncation error grows with the step; a real missing term does not)"
   },
   "adjoint_g_ci": [
-    2.0281260785642525e-07,
-    2.972587060897074e-07,
-    8.130727826676243e-08,
-    2.6247920631450416e-07,
-    2.026404038119685e-07,
-    1.0286083950421417e-07
+    2.028126076713272e-07,
+    2.972587054987286e-07,
+    8.130727840848011e-08,
+    2.6247920623919086e-07,
+    2.0264040333155392e-07,
+    1.0286083956723362e-07
   ],
   "measurements": [
     {
       "coil": 5,
       "eps_A": 100.0,
-      "warm_fd": 1.0286050590488371e-07,
-      "adjoint": 1.0286083950421417e-07,
-      "rel_diff": 3.243220782611219e-06
+      "warm_fd": 1.0286055005900852e-07,
+      "adjoint": 1.0286083956723362e-07,
+      "rel_diff": 2.8145700653819075e-06
     },
     {
       "coil": 5,
       "eps_A": 300.0,
-      "warm_fd": 1.0286074285157283e-07,
-      "adjoint": 1.0286083950421417e-07,
-      "rel_diff": 9.396455699130546e-07
+      "warm_fd": 1.0286075511668074e-07,
+      "adjoint": 1.0286083956723362e-07,
+      "rel_diff": 8.21018208383517e-07
     },
     {
       "coil": 5,
       "eps_A": 1000.0,
-      "warm_fd": 1.0286088160353299e-07,
-      "adjoint": 1.0286083950421417e-07,
-      "rel_diff": 4.0928405589176467e-07
+      "warm_fd": 1.0286088157164009e-07,
+      "adjoint": 1.0286083956723362e-07,
+      "rel_diff": 4.08361330652517e-07
     },
     {
       "coil": 5,
       "eps_A": 3000.0,
-      "warm_fd": 1.0287520389540167e-07,
-      "adjoint": 1.0286083950421417e-07,
-      "rel_diff": 0.00013962928522705023
+      "warm_fd": 1.028752042475199e-07,
+      "adjoint": 1.0286083956723362e-07,
+      "rel_diff": 0.00013963209493822557
     },
     {
       "coil": 4,
       "eps_A": 100.0,
-      "warm_fd": 2.0264042835851925e-07,
-      "adjoint": 2.026404038119685e-07,
-      "rel_diff": 1.211335316555142e-07
+      "warm_fd": 2.0264043629595468e-07,
+      "adjoint": 2.0264040333155392e-07,
+      "rel_diff": 1.6267434751353406e-07
     },
     {
       "coil": 4,
       "eps_A": 300.0,
-      "warm_fd": 2.0264043045435434e-07,
-      "adjoint": 2.026404038119685e-07,
-      "rel_diff": 1.3147616086236816e-07
+      "warm_fd": 2.026404293753968e-07,
+      "adjoint": 2.0264040333155392e-07,
+      "rel_diff": 1.2852244229109246e-07
     },
     {
       "coil": 4,
       "eps_A": 1000.0,
-      "warm_fd": 2.0264061203439757e-07,
-      "adjoint": 2.026404038119685e-07,
-      "rel_diff": 1.0275454015605903e-06
+      "warm_fd": 2.026406104215662e-07,
+      "adjoint": 2.0264040333155392e-07,
+      "rel_diff": 1.0219571083897033e-06
     },
     {
       "coil": 4,
       "eps_A": 3000.0,
-      "warm_fd": 2.026032231018729e-07,
-      "adjoint": 2.026404038119685e-07,
-      "rel_diff": 0.00018351489935036154
+      "warm_fd": 2.026032235104286e-07,
+      "adjoint": 2.0264040333155392e-07,
+      "rel_diff": 0.00018351051124019092
     }
   ],
-  "guarded_claim": "agreement within 3.243e-06 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
+  "guarded_claim": "agreement within 2.815e-06 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
   "regression_guard": "tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference (eps=300 A, rel<1e-3)",
-  "generated_utc": "2026-07-27T00:16:34+00:00",
+  "generated_utc": "2026-07-28T07:05:54+00:00",
   "host_note": "aaarthuus \u2014 gradients/counts are load-independent; no timings recorded",
   "jax_version": "0.7.1",
   "provenance": {
@@ -92,6 +92,6 @@
     ],
     "logic_sources_sha256": "0b69eda7794c87b683fadc6f369eb25cd3685a183ad27183fcc9cf960e3173d3",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "9dda9b0ee74803ab3689915e41df0cc586c30aa698e0a03ba2f97547235972e7"
+    "pinned_requirements_sha256": "dfd91e0233bf9b75542a904fde79c30a7dc2548ad534c844bdd21e186416b8e8"
   }
 }

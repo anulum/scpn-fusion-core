@@ -36,7 +36,7 @@
         },
         "cold_perturbed": {
           "converged": true,
-          "iterations": 131
+          "iterations": 130
         },
         "warm_perturbed": {
           "converged": true,
@@ -50,7 +50,7 @@
         },
         "cold_perturbed": {
           "converged": true,
-          "iterations": 131
+          "iterations": 130
         },
         "warm_mg_richardson2_perturbed": {
           "converged": true,
@@ -88,15 +88,15 @@
     },
     "policy": "an equivalence value is claimable only when the base, cold-perturbed, and candidate solves all terminate before n_iter; otherwise it is null",
     "warm_vs_cold_fixed_point_span_rel": {
-      "129x129": 1.3370271696355623e-14,
-      "129x129_warm_mg_richardson2": 2.8210567328964795e-09,
-      "33x33": 2.932615510134976e-10,
-      "33x33_warm_mg_richardson2": 7.396893309683893e-10,
+      "129x129": 1.6044326035626742e-14,
+      "129x129_warm_mg_richardson2": 2.8210549501935857e-09,
+      "33x33": 9.945853950632868e-10,
+      "33x33_warm_mg_richardson2": 1.232000094444975e-09,
       "65x65": null,
       "65x65_warm_mg_richardson2": null
     }
   },
-  "generated_utc": "2026-07-27T00:54:11+00:00",
+  "generated_utc": "2026-07-28T07:15:29+00:00",
   "jax_version": "0.7.1",
   "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base + ip_ramp=1 (the ramp exists for cold-start robustness and would otherwise force 30 iterations before the early stop can fire); correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
@@ -116,7 +116,7 @@
     ],
     "logic_sources_sha256": "2029396983a97abaad2144f293a8aca1abd588dcf77ec4fe2df99aeb4812a495",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "9dda9b0ee74803ab3689915e41df0cc586c30aa698e0a03ba2f97547235972e7"
+    "pinned_requirements_sha256": "dfd91e0233bf9b75542a904fde79c30a7dc2548ad534c844bdd21e186416b8e8"
   },
   "settings": {
     "n_iter": 180,
@@ -125,70 +125,70 @@
   },
   "task": "warm-start behaviour of the compiled predictive forward (IDA pattern)",
   "timings_indicative": {
-    "device": "NVIDIA GeForce GTX 1060 6GB (gpu)",
+    "device": "cpu (cpu)",
     "host": "aaarthuus (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 435.6109119980829,
+        "cold_median_ms": 379.7374410023622,
         "cold_ms": [
-          464.6655069955159,
-          431.18680200132076,
-          435.6109119980829
+          263.30321799832745,
+          379.7374410023622,
+          440.9668580010475
         ],
         "grid": "33x33",
-        "warm_median_ms": 27.733472001273185,
-        "warm_mg_richardson2_median_ms": 17.921566002769396,
+        "warm_median_ms": 16.02742100294563,
+        "warm_mg_richardson2_median_ms": 13.561017000029096,
         "warm_mg_richardson2_ms": [
-          17.921566002769396,
-          17.198483998072334,
-          20.09522200387437
+          28.55698100029258,
+          13.561017000029096,
+          13.243170000350801
         ],
         "warm_ms": [
-          27.733472001273185,
-          28.42892298940569,
-          26.679921997128986
+          25.60001300298609,
+          16.02742100294563,
+          15.163683998252964
         ]
       },
       {
-        "cold_median_ms": 759.3759869923815,
+        "cold_median_ms": 1529.3093170002976,
         "cold_ms": [
-          761.9410379993496,
-          759.3759869923815,
-          731.8068640015554
+          1515.5373529996723,
+          1529.3093170002976,
+          1554.4447139982367
         ],
         "grid": "65x65",
-        "warm_median_ms": 722.8449400136014,
-        "warm_mg_richardson2_median_ms": 339.0507090080064,
+        "warm_median_ms": 1457.7375059998303,
+        "warm_mg_richardson2_median_ms": 1078.3368479969795,
         "warm_mg_richardson2_ms": [
-          330.9393500094302,
-          339.0557289967546,
-          339.0507090080064
+          1083.3270989969606,
+          1078.3368479969795,
+          1047.7399840019643
         ],
         "warm_ms": [
-          726.8792720133206,
-          722.8449400136014,
-          716.0835999966366
+          1457.7375059998303,
+          1532.0493149993126,
+          1353.5675759994774
         ]
       },
       {
-        "cold_median_ms": 343.9972220076015,
+        "cold_median_ms": 1941.8017140014854,
         "cold_ms": [
-          377.1089289948577,
-          343.9972220076015,
-          341.76872500393074
+          1941.8017140014854,
+          1865.4816070011293,
+          1976.8977269995958
         ],
         "grid": "129x129",
-        "warm_median_ms": 20.08255000691861,
-        "warm_mg_richardson2_median_ms": 20.115319988690317,
+        "warm_median_ms": 66.18067599993083,
+        "warm_mg_richardson2_median_ms": 112.09232599867391,
         "warm_mg_richardson2_ms": [
-          21.980310993967578,
-          20.115319988690317,
-          17.175178989418782
+          89.38531100284308,
+          112.09232599867391,
+          171.1264260011376
         ],
         "warm_ms": [
-          20.042452990310267,
-          20.08255000691861,
-          21.779271002742462
+          66.85469700096291,
+          66.18067599993083,
+          64.59158799771103
         ]
       }
     ]

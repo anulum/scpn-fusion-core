@@ -4,43 +4,43 @@
   "note": "one MG-preconditioned iteration costs more than a plain one (a V-cycle per matvec pair); the wall-clock verdict against the ~20 ms/129^2 contract bar is the dedicated-hardware FP64 benchmark, deliberately not measured here",
   "case": "synthetic GS-like RHS (smooth interior source + non-trivial Dirichlet ring)",
   "preconditioner": "build_gs_mg_preconditioner defaults (1 V-cycle, 2+2 RB-GS sweeps)",
-  "generated_utc": "2026-07-27T00:40:23+00:00",
+  "generated_utc": "2026-07-28T07:09:59+00:00",
   "host_note": "aaarthuus (x86_64) \u2014 counts only, no timings",
   "measurements": [
     {
       "grid": "33x33",
       "rel_tol": 1e-08,
-      "bicgstab_iters_plain": 119,
+      "bicgstab_iters_plain": 94,
       "bicgstab_iters_mg_preconditioned": 4,
-      "iteration_ratio_plain_over_mg": 29.75
+      "iteration_ratio_plain_over_mg": 23.5
     },
     {
       "grid": "33x33",
       "rel_tol": 1e-11,
-      "bicgstab_iters_plain": 150,
+      "bicgstab_iters_plain": 128,
       "bicgstab_iters_mg_preconditioned": 5,
-      "iteration_ratio_plain_over_mg": 30.0
+      "iteration_ratio_plain_over_mg": 25.6
     },
     {
       "grid": "65x65",
       "rel_tol": 1e-08,
-      "bicgstab_iters_plain": 338,
+      "bicgstab_iters_plain": 231,
       "bicgstab_iters_mg_preconditioned": 5,
-      "iteration_ratio_plain_over_mg": 67.6
+      "iteration_ratio_plain_over_mg": 46.2
     },
     {
       "grid": "65x65",
       "rel_tol": 1e-11,
-      "bicgstab_iters_plain": 414,
+      "bicgstab_iters_plain": 296,
       "bicgstab_iters_mg_preconditioned": 6,
-      "iteration_ratio_plain_over_mg": 69.0
+      "iteration_ratio_plain_over_mg": 49.333333333333336
     },
     {
       "grid": "129x129",
       "rel_tol": 1e-08,
-      "bicgstab_iters_plain": 713,
+      "bicgstab_iters_plain": 556,
       "bicgstab_iters_mg_preconditioned": 5,
-      "iteration_ratio_plain_over_mg": 142.6
+      "iteration_ratio_plain_over_mg": 111.2
     },
     {
       "grid": "129x129",
@@ -65,6 +65,6 @@
     ],
     "logic_sources_sha256": "0b69eda7794c87b683fadc6f369eb25cd3685a183ad27183fcc9cf960e3173d3",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "9dda9b0ee74803ab3689915e41df0cc586c30aa698e0a03ba2f97547235972e7"
+    "pinned_requirements_sha256": "dfd91e0233bf9b75542a904fde79c30a7dc2548ad534c844bdd21e186416b8e8"
   }
 }

@@ -7,7 +7,7 @@
     "target_recall_ok": true,
     "transfer_efficiency_ok": true
   },
-  "generated_at_utc": "2026-07-26T15:35:05.296105+00:00",
+  "generated_at_utc": "2026-07-28T07:16:18.170104+00:00",
   "passes": true,
   "provenance": {
     "disruption_data_directory": "validation/reference_data/diiid/disruption_shots",
@@ -27,7 +27,7 @@
       "torch": null
     },
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "9dda9b0ee74803ab3689915e41df0cc586c30aa698e0a03ba2f97547235972e7"
+    "pinned_requirements_sha256": "dfd91e0233bf9b75542a904fde79c30a7dc2548ad534c844bdd21e186416b8e8"
   },
   "scenario_counts": {
     "beta_limit": 2,
