@@ -14,6 +14,8 @@ import json
 from pathlib import Path
 import sys
 
+import pytest
+
 _TOOL_PATH = Path(__file__).resolve().parents[1] / "tools" / "honest_validated_coverage.py"
 _SPEC = importlib.util.spec_from_file_location("honest_validated_coverage", _TOOL_PATH)
 assert _SPEC and _SPEC.loader
@@ -88,6 +90,16 @@ def test_evidence_patterns_are_read_when_files_absent() -> None:
     assert hvc.classify_claim(claim).band is hvc.CoverageBand.REFERENCE_VALIDATED
 
 
+def test_non_list_evidence_containers_are_ignored() -> None:
+    """Treat malformed evidence containers as absent rather than iterating strings."""
+    claim = {
+        "id": "malformed_evidence",
+        "evidence_files": "artifacts/real_shot_validation.json",
+        "evidence_patterns": {"pattern": "artifacts/freegs_benchmark.json"},
+    }
+    assert hvc.classify_claim(claim).band is hvc.CoverageBand.VALIDATION_GAP
+
+
 def test_measure_coverage_on_real_manifest_is_conservative() -> None:
     """The real ledger yields a measured, conservative coverage with the gap flagged."""
     result = hvc.measure_coverage()
@@ -133,7 +145,7 @@ def test_measure_coverage_empty_manifest(tmp_path: Path) -> None:
     assert result["honest_validated_coverage"] == 0.0
 
 
-def test_main_prints_coverage_report(capsys) -> None:
+def test_main_prints_coverage_report(capsys: pytest.CaptureFixture[str]) -> None:
     """The CLI prints the band distribution, the coverage percent, and the ledger gap."""
     assert hvc.main() == 0
     out = capsys.readouterr().out

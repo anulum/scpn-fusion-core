@@ -370,6 +370,8 @@ files = [
     "tests/test_real_data_roadmap_non_regression_guard.py",
     "tools/runtime_parity_perf_guard.py",
     "tests/test_runtime_parity_perf_guard.py",
+    "tools/honest_validated_coverage.py",
+    "tests/test_honest_validated_coverage.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",
