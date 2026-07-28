@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "run_real_data_strict_gate.py"
@@ -31,8 +33,9 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def test_main_fails_when_raw_ingestion_not_ready(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Reject a progress artifact without raw DIII-D ingestion readiness."""
     report_json = tmp_path / "real_shot.json"
     report_md = tmp_path / "real_shot.md"
     guard_summary = tmp_path / "guard_summary.json"
@@ -65,7 +68,6 @@ def test_main_fails_when_raw_ingestion_not_ready(
     monkeypatch.setattr(runner, "_run_step", fake_run_step)
     rc = runner.main(
         [
-            "--skip-validation",
             "--report-json",
             str(report_json),
             "--report-md",
@@ -87,13 +89,18 @@ def test_main_fails_when_raw_ingestion_not_ready(
         ]
     )
     assert rc == 1
-    assert calls == ["real-shot guard", "real-data roadmap progress"]
+    assert calls == [
+        "real-shot validation",
+        "real-shot guard",
+        "real-data roadmap progress",
+    ]
 
 
 def test_main_allows_missing_raw_ingestion_with_opt_in_flag(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Allow a missing raw-ingestion gate only under the explicit dry-run flag."""
     report_json = tmp_path / "real_shot.json"
     report_md = tmp_path / "real_shot.md"
     guard_summary = tmp_path / "guard_summary.json"
@@ -158,8 +165,9 @@ def test_main_allows_missing_raw_ingestion_with_opt_in_flag(
 
 def test_allow_missing_raw_ingestion_overrides_guard_threshold_profile(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Write and pass the dry-run threshold override to the real-shot guard."""
     report_json = tmp_path / "real_shot.json"
     report_md = tmp_path / "real_shot.md"
     guard_summary = tmp_path / "guard_summary.json"
@@ -230,6 +238,7 @@ def test_allow_missing_raw_ingestion_overrides_guard_threshold_profile(
 
 
 def test_main_requires_report_when_validation_is_skipped(tmp_path: Path) -> None:
+    """Reject skipped validation when its required report does not exist."""
     rc: int | None = None
     try:
         rc = runner.main(
@@ -246,8 +255,9 @@ def test_main_requires_report_when_validation_is_skipped(tmp_path: Path) -> None
 
 def test_main_fails_when_raw_ready_missing_raw_source_contract(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Reject raw-ready status without a matching raw-source contract."""
     report_json = tmp_path / "real_shot.json"
     report_md = tmp_path / "real_shot.md"
     guard_summary = tmp_path / "guard_summary.json"
@@ -309,3 +319,34 @@ def test_main_fails_when_raw_ready_missing_raw_source_contract(
     )
     assert rc == 1
     assert calls == ["real-shot guard", "real-data roadmap progress"]
+
+
+def test_raw_source_type_classifier_is_fail_closed() -> None:
+    """Accept explicit/raw source contracts and reject malformed containers."""
+    assert runner._has_raw_source_type({"d3d_raw_source_type_present": True}) is True
+    assert runner._has_raw_source_type({"d3d_raw_source_type_present": False}) is False
+    assert runner._has_raw_source_type({"d3d_disruption_source_types": "raw"}) is False
+    assert runner._has_raw_source_type({"d3d_disruption_source_types": ["OMAS raw"]}) is True
+
+
+def test_load_json_rejects_non_object_payload(tmp_path: Path) -> None:
+    """Reject a strict-gate input whose JSON root is not an object."""
+    path = tmp_path / "payload.json"
+    path.write_text("[]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="expected JSON object payload"):
+        runner._load_json(path)
+
+
+def test_run_step_executes_and_reports_subprocess_status() -> None:
+    """Execute a real bounded subprocess and propagate a non-zero status."""
+    runner._run_step(
+        "success",
+        [sys.executable, "-c", "raise SystemExit(0)"],
+        timeout_seconds=10.0,
+    )
+    with pytest.raises(RuntimeError, match="failure failed with exit code 3"):
+        runner._run_step(
+            "failure",
+            [sys.executable, "-c", "raise SystemExit(3)"],
+            timeout_seconds=10.0,
+        )

@@ -376,6 +376,8 @@ files = [
     "tests/test_release_delta_guard.py",
     "tools/real_shot_validation_guard.py",
     "tests/test_real_shot_validation_guard.py",
+    "tools/run_real_data_strict_gate.py",
+    "tests/test_run_real_data_strict_gate.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",

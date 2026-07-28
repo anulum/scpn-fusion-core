@@ -68,11 +68,15 @@ def _run_step(name: str, cmd: list[str], *, timeout_seconds: float) -> None:
 def main(argv: list[str] | None = None) -> int:
     """Run strict real-data validation and related roadmap/non-regression gates.
 
-    Args:
-        argv: Optional CLI argument list; defaults to process arguments.
+    Parameters
+    ----------
+    argv
+        Optional CLI argument list; defaults to process arguments.
 
-    Returns:
-        ``0`` on success, ``1`` if any pipeline check fails.
+    Returns
+    -------
+    int
+        ``0`` on success, or ``1`` if a pipeline check fails.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
