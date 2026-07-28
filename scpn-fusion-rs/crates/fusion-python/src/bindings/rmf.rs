@@ -138,8 +138,8 @@ impl PyRmfController {
         py: Python<'py>,
         phi_plasma_traj: PyReadonlyArray1<'py, f64>,
     ) -> Bound<'py, PyArray1<f64>> {
-        let traj = phi_plasma_traj.as_array().to_owned();
-        let out = self.inner.step_horizon(traj.as_slice().unwrap());
+        let traj: Vec<f64> = phi_plasma_traj.as_array().iter().copied().collect();
+        let out = self.inner.step_horizon(&traj);
         Array1::from_vec(out).into_pyarray(py)
     }
 

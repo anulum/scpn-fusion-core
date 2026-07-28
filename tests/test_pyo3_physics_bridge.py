@@ -7,7 +7,7 @@
 # SCPN Fusion Core — PyO3 Physics Bridge Tests
 """Tests for PyO3 bindings: fusion-physics crate → Python.
 
-Covers: HallMHD, FnoController, DriftWavePhysics, DesignScanner.
+Covers: HallMHD, FnoController, RMF control, DriftWavePhysics, DesignScanner.
 """
 
 import numpy as np
@@ -102,6 +102,36 @@ class TestPyFnoController:
         energy_reduction, suppressed = fno.predict_and_suppress(field)
         assert isinstance(energy_reduction, float)
         assert suppressed.shape == (64, 64)
+
+
+# ── WP-PY3: RMF Controller ──────────────────────────────────────────
+
+
+class TestPyRmfController:
+    """Tests for the RMF controller binding (fusion-physics/rmf_control.rs)."""
+
+    def test_step_horizon_returns_finite_matching_shape(self):
+        controller = scpn_fusion_rs.PyRmfController(scpn_fusion_rs.PyRmfConfig())
+        trajectory = np.linspace(0.0, 0.3, 4, dtype=np.float64)
+
+        result = controller.step_horizon(trajectory)
+
+        assert isinstance(result, np.ndarray)
+        assert result.shape == trajectory.shape
+        assert np.all(np.isfinite(result))
+
+    def test_step_horizon_preserves_strided_view_logical_order(self):
+        source = np.linspace(0.0, 0.7, 8, dtype=np.float64)
+        strided = source[::2]
+        assert not strided.flags.c_contiguous
+
+        strided_controller = scpn_fusion_rs.PyRmfController(scpn_fusion_rs.PyRmfConfig())
+        contiguous_controller = scpn_fusion_rs.PyRmfController(scpn_fusion_rs.PyRmfConfig())
+
+        strided_result = strided_controller.step_horizon(strided)
+        contiguous_result = contiguous_controller.step_horizon(strided.copy())
+
+        np.testing.assert_array_equal(strided_result, contiguous_result)
 
 
 # ── WP-PY7: Design Scanner ──────────────────────────────────────────
