@@ -9,7 +9,7 @@
 //! Port of `integrated_transport_solver.py` lines 12-162.
 //! Solves heat and particle diffusion on radial grid ρ ∈ [0, 1].
 
-use crate::pedestal::{PedestalConfig, PedestalModel};
+use crate::pedestal::PedestalModel;
 use fusion_math::tridiag::thomas_solve;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::RadialProfiles;
@@ -411,14 +411,7 @@ impl TransportSolver {
         });
         let n_impurity = Array1::zeros(TRANSPORT_NR);
         let chi = Array1::from_elem(TRANSPORT_NR, CHI_BASE_DEFAULT);
-        let pedestal = PedestalModel::new(PedestalConfig {
-            beta_p_ped: 0.35,
-            rho_s: 2.0e-3,
-            r_major: 6.2,
-            alpha_crit: 2.5,
-            tau_elm: 1.0e-3,
-        })
-        .expect("default pedestal config must be valid");
+        let pedestal = PedestalModel::default();
 
         TransportSolver {
             profiles: RadialProfiles {
@@ -845,12 +838,20 @@ impl Default for TransportSolver {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pedestal::PedestalConfig;
 
     #[test]
     fn test_transport_creation() {
         let ts = TransportSolver::new();
+        let pedestal_config = PedestalConfig::default();
+
         assert_eq!(ts.profiles.rho.len(), 50);
         assert!(ts.profiles.te[0] > ts.profiles.te[49]);
+        assert_eq!(ts.pedestal.config.beta_p_ped, pedestal_config.beta_p_ped);
+        assert_eq!(ts.pedestal.config.rho_s, pedestal_config.rho_s);
+        assert_eq!(ts.pedestal.config.r_major, pedestal_config.r_major);
+        assert_eq!(ts.pedestal.config.alpha_crit, pedestal_config.alpha_crit);
+        assert_eq!(ts.pedestal.config.tau_elm, pedestal_config.tau_elm);
     }
 
     #[test]
