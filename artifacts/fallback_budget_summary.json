@@ -6,7 +6,7 @@
     ],
     "case_count": 5,
     "force_solovev": true,
-    "freegs_available": true,
+    "freegs_available": false,
     "freegs_case_count": 0,
     "min_case_count": 3,
     "min_freegs_cases_when_available": 1,
@@ -34,7 +34,7 @@
   "schema": "fallback-budget-summary.v1",
   "sparc": {
     "backend_requirement_satisfied_rate": 1.0,
-    "case_count": 6,
+    "case_count": 16,
     "fallback_rate": 0.0,
     "max_fallback_rate": 0.0,
     "min_case_count": 6,
@@ -49,19 +49,20 @@
     "strict_requested": true
   },
   "torax": {
+    "artifact_schema": "scpn-fusion-core.torax-real-parity.v1",
     "backend_requirement_satisfied_rate": 1.0,
-    "case_count": 4,
+    "case_count": 1,
     "fallback_rate": 0.0,
     "max_fallback_rate": 0.0,
-    "min_case_count": 3,
+    "min_case_count": 1,
     "min_preferred_backend_rate": 1.0,
     "observed_backends": [
-      "neural_transport"
+      "real_torax_reference"
     ],
     "passes": true,
-    "preferred_backend": "neural_transport",
+    "preferred_backend": "real_torax_reference",
     "preferred_backend_rate": 1.0,
     "require_backend_requirement_satisfied": true,
-    "strict_requested": true
+    "strict_requested": false
   }
 }

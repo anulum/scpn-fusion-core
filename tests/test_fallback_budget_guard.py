@@ -132,7 +132,8 @@ def test_evaluate_ignores_diagnostic_non_gated_case_failures() -> None:
                     "gated": False,
                     "passes": False,
                 },
-            ]
+            ],
+            "require_neural_backend": True,
         },
         freegs={"cases": [{"mode": "solovev_manufactured_source", "passes": True}]},
         thresholds={
@@ -144,8 +145,8 @@ def test_evaluate_ignores_diagnostic_non_gated_case_failures() -> None:
             },
             "sparc": {
                 "preferred_backend": "neural_equilibrium",
-                "allowed_backends": ["neural_equilibrium", "reduced_order_proxy"],
-                "max_fallback_rate": 1.0,
+                "allowed_backends": ["neural_equilibrium"],
+                "max_fallback_rate": 0.0,
                 "require_all_cases_pass": True,
             },
             "freegs": {
@@ -156,7 +157,27 @@ def test_evaluate_ignores_diagnostic_non_gated_case_failures() -> None:
     )
 
     assert summary["sparc"]["passes"] is True
+    assert summary["sparc"]["case_count"] == 1
+    assert summary["sparc"]["fallback_rate"] == 0.0
     assert summary["overall_pass"] is True
+
+
+@pytest.mark.parametrize("domain", ["torax", "sparc", "freegs"])
+def test_evaluate_rejects_artifacts_with_only_diagnostic_rows(domain: str) -> None:
+    """Every domain requires at least one gated row for acceptance."""
+    torax = {"cases": [{"transport_backend": "neural_transport", "passes": True}]}
+    sparc = {"cases": [{"surrogate_backend": "neural_equilibrium", "passes": True}]}
+    freegs = {"cases": [{"mode": "freegs", "passes": True}]}
+    payloads = {"torax": torax, "sparc": sparc, "freegs": freegs}
+    payloads[domain]["cases"][0]["gated"] = False
+
+    with pytest.raises(ValueError, match=f"{domain} benchmark artifact has zero gated cases"):
+        guard.evaluate(
+            torax=torax,
+            sparc=sparc,
+            freegs=freegs,
+            thresholds=_passing_thresholds(),
+        )
 
 
 def test_evaluate_fails_when_torax_fallback_exceeds_budget() -> None:

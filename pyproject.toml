@@ -382,6 +382,8 @@ files = [
     "tests/test_generate_disruption_risk_calibration.py",
     "tools/generate_disruption_shot_manifest.py",
     "tests/test_generate_disruption_shot_manifest.py",
+    "tools/fallback_budget_guard.py",
+    "tests/test_fallback_budget_guard.py",
     "tools/sync_metadata.py",
     "tests/test_sync_metadata.py",
     "tools/export_zenodo_dataset.py",

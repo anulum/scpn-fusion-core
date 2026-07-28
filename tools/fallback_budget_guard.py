@@ -136,14 +136,22 @@ def evaluate(
     The evaluator compares observed case metadata in the benchmark artifacts
     against configurable thresholds and emits pass/fail status for each domain.
 
-    Args:
-        torax: Benchmark artifact payload for TORAX transport checks.
-        sparc: Benchmark artifact payload for SPARC surrogate checks.
-        freegs: Benchmark artifact payload for freegs/solovev checks.
-        thresholds: Threshold dictionary loaded from ``fallback_budget_thresholds.json``.
-        runtime_telemetry: Optional runtime telemetry summary to enforce event budgets.
+    Parameters
+    ----------
+    torax:
+        Benchmark artifact payload for TORAX transport checks.
+    sparc:
+        Benchmark artifact payload for SPARC surrogate checks.
+    freegs:
+        Benchmark artifact payload for freegs/solovev checks.
+    thresholds:
+        Threshold dictionary loaded from ``fallback_budget_thresholds.json``.
+    runtime_telemetry:
+        Optional runtime telemetry summary to enforce event budgets.
 
-    Returns:
+    Returns
+    -------
+    dict[str, Any]
         A structured summary containing domain-level metrics plus
         ``overall_pass`` and per-domain ``passes`` boolean flags.
 
@@ -152,15 +160,25 @@ def evaluate(
     sparc_cfg = dict(thresholds.get("sparc", {}))
     freegs_cfg = dict(thresholds.get("freegs", {}))
 
-    torax_cases = _torax_cases(torax)
-    sparc_cases = [dict(c) for c in sparc.get("cases", []) if isinstance(c, dict)]
-    freegs_cases = [dict(c) for c in freegs.get("cases", []) if isinstance(c, dict)]
-    if not torax_cases:
+    torax_all_cases = _torax_cases(torax)
+    sparc_all_cases = [dict(c) for c in sparc.get("cases", []) if isinstance(c, dict)]
+    freegs_all_cases = [dict(c) for c in freegs.get("cases", []) if isinstance(c, dict)]
+    if not torax_all_cases:
         raise ValueError("torax benchmark artifact has zero cases")
-    if not sparc_cases:
+    if not sparc_all_cases:
         raise ValueError("sparc benchmark artifact has zero cases")
-    if not freegs_cases:
+    if not freegs_all_cases:
         raise ValueError("freegs benchmark artifact has zero cases")
+
+    torax_cases = [case for case in torax_all_cases if bool(case.get("gated", True))]
+    sparc_cases = [case for case in sparc_all_cases if bool(case.get("gated", True))]
+    freegs_cases = [case for case in freegs_all_cases if bool(case.get("gated", True))]
+    if not torax_cases:
+        raise ValueError("torax benchmark artifact has zero gated cases")
+    if not sparc_cases:
+        raise ValueError("sparc benchmark artifact has zero gated cases")
+    if not freegs_cases:
+        raise ValueError("freegs benchmark artifact has zero gated cases")
 
     torax_preferred = str(torax_cfg.get("preferred_backend", "neural_transport"))
     sparc_preferred = str(sparc_cfg.get("preferred_backend", "neural_equilibrium"))
@@ -399,11 +417,15 @@ def main(argv: list[str] | None = None) -> int:
     Produces a JSON summary file and returns a non-zero exit code when any
     gate fails.
 
-    Args:
-        argv: Optional list of CLI arguments. If omitted, reads ``sys.argv``.
+    Parameters
+    ----------
+    argv:
+        Optional list of CLI arguments. If omitted, reads ``sys.argv``.
 
-    Returns:
-        0 if all gates pass, 1 if any gate fails.
+    Returns
+    -------
+    int
+        ``0`` if all gates pass, ``1`` if any gate fails.
 
     """
     parser = argparse.ArgumentParser(description=__doc__)
