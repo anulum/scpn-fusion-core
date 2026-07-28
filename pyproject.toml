@@ -398,6 +398,8 @@ files = [
     "tests/test_onboard_diiid_raw_disruption_shots.py",
     "tools/gk_external_output_parity.py",
     "tests/test_gk_external_output_parity.py",
+    "tools/verify_native_distribution_artifacts.py",
+    "tests/test_native_distribution_artifacts.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",

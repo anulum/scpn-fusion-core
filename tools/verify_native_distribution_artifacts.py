@@ -13,14 +13,15 @@ import argparse
 import importlib
 import re
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Protocol, cast
 
 
 class _TomlLoader(Protocol):
     """Describe the TOML loader shared by supported Python versions."""
 
-    def loads(self, data: str, /) -> dict[str, Any]:
+    def loads(self, data: str, /) -> dict[str, object]:
         """Parse one TOML document."""
 
 
@@ -34,13 +35,22 @@ class ArtifactVerificationError(ValueError):
 
 def _expected_version(metadata_path: Path) -> str:
     metadata = tomllib.loads(metadata_path.read_text(encoding="utf-8"))
-    try:
-        version = metadata["project"]["version"]
-    except KeyError as exc:
-        raise ArtifactVerificationError(f"Missing project.version in {metadata_path}") from exc
+    project = metadata.get("project")
+    if not isinstance(project, dict) or "version" not in project:
+        raise ArtifactVerificationError(f"Missing project.version in {metadata_path}")
+    version: object = project["version"]
     if not isinstance(version, str) or not version:
         raise ArtifactVerificationError(f"Invalid project.version in {metadata_path}: {version!r}")
     return version
+
+
+class _Arguments(argparse.Namespace):
+    """Typed command-line arguments for the publication guard."""
+
+    artifact_dir: Path
+    metadata: Path
+    event_name: str
+    ref_name: str
 
 
 def verify_native_distribution_artifacts(
@@ -51,7 +61,6 @@ def verify_native_distribution_artifacts(
     ref_name: str,
 ) -> str:
     """Verify identity, version, artifact cohort, and triggering Git ref."""
-
     version = _expected_version(metadata_path)
     if event_name == "push":
         expected_ref = f"v{version}"
@@ -105,8 +114,20 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
-    args = _parser().parse_args()
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run native artifact verification from command-line arguments.
+
+    Parameters
+    ----------
+    argv:
+        Optional argument sequence excluding the program name.
+
+    Returns
+    -------
+    int
+        Zero after the artifact cohort passes all publication checks.
+    """
+    args = _parser().parse_args(argv, namespace=_Arguments())
     print(
         verify_native_distribution_artifacts(
             artifact_dir=args.artifact_dir,
@@ -115,7 +136,8 @@ def main() -> None:
             ref_name=args.ref_name,
         )
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
