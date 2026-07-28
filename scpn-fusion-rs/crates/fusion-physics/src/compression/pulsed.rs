@@ -105,6 +105,12 @@ pub struct VoltageDrivenPulsedCompressionResult {
     pub compression: Vec<PulsedCompressionState>,
 }
 
+fn last_trajectory_state<'a, T>(states: &'a [T], name: &str) -> Result<&'a T, String> {
+    states
+        .last()
+        .ok_or_else(|| format!("{name} trajectory unexpectedly empty"))
+}
+
 pub fn coil_field_t(coil: &CoilGeometry, coil_current_a: f64) -> Result<f64, String> {
     coil.validate()?;
     let current = require_finite("coil_current_a", coil_current_a)?;
@@ -204,7 +210,7 @@ pub fn run_coil_circuit(
     states.push(initial_coil_circuit_state(coil, initial_current_a)?);
     for _ in 0..n_steps {
         let next = step_coil_circuit(
-            states.last().expect("state exists"),
+            last_trajectory_state(&states, "coil-circuit")?,
             coil,
             drive_voltage_v,
             dt_s,
@@ -327,7 +333,7 @@ pub fn run_pulsed_compression(
     states.push(initial);
     for _ in 0..n_steps {
         let next = step_pulsed_compression(
-            states.last().expect("state exists"),
+            last_trajectory_state(&states, "pulsed-compression")?,
             config,
             coil_current_a,
             dt_s,
@@ -360,7 +366,7 @@ pub fn run_voltage_driven_pulsed_compression(
     compression.push(initial);
     for circuit_state in coil_circuit.iter().take(n_steps) {
         let next = step_pulsed_compression(
-            compression.last().expect("state exists"),
+            last_trajectory_state(&compression, "voltage-driven compression")?,
             config,
             circuit_state.current_a,
             dt_s,
@@ -665,12 +671,22 @@ fn require_positive(name: &str, value: f64) -> Result<f64, String> {
 mod tests {
     use super::{
         adiabatic_temperature_update_ev, coil_field_t, initial_coil_circuit_state,
-        initial_pulsed_flux_state, plasma_volume_m3, pulsed_compression_trajectory_diagnostics,
-        run_coil_circuit, run_pulsed_compression, run_voltage_driven_pulsed_compression,
-        spitzer_resistivity_ohm_m, step_coil_circuit, step_pulsed_compression,
-        PulsedCompressionConfig, PulsedCompressionState, ELEMENTARY_CHARGE_C, MU_0,
+        initial_pulsed_flux_state, last_trajectory_state, plasma_volume_m3,
+        pulsed_compression_trajectory_diagnostics, run_coil_circuit, run_pulsed_compression,
+        run_voltage_driven_pulsed_compression, spitzer_resistivity_ohm_m, step_coil_circuit,
+        step_pulsed_compression, PulsedCompressionConfig, PulsedCompressionState,
+        ELEMENTARY_CHARGE_C, MU_0,
     };
     use crate::compression::CoilGeometry;
+
+    #[test]
+    fn last_trajectory_state_fails_closed_for_empty_history() {
+        assert_eq!(
+            last_trajectory_state::<usize>(&[], "test").unwrap_err(),
+            "test trajectory unexpectedly empty"
+        );
+        assert_eq!(*last_trajectory_state(&[7], "test").unwrap(), 7);
+    }
 
     fn coil() -> CoilGeometry {
         CoilGeometry {
