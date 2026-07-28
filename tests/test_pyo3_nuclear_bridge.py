@@ -59,6 +59,10 @@ class TestPyTomography:
         result = tomo.reconstruct(signals)
         assert np.allclose(result, 0.0, atol=1e-10)
 
+    def test_signal_length_mismatch_is_value_error(self, tomo):
+        with pytest.raises(ValueError, match="does not match chord count 20"):
+            tomo.reconstruct([1.0] * 19)
+
 
 # ── WP-PY5: Breeding Blanket ────────────────────────────────────────
 

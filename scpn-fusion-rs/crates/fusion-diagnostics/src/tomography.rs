@@ -11,6 +11,7 @@
 //! Builds Radon geometry matrix from bolometer chords and reconstructs
 //! emissivity profiles using Tikhonov-regularised non-negative least squares.
 
+use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{Array1, Array2};
 
 /// A bolometer chord: ((start_R, start_Z), (end_R, end_Z)).
@@ -114,17 +115,21 @@ impl PlasmaTomography {
     /// using projected gradient descent.
     ///
     /// Returns flattened reconstruction of length res².
-    pub fn reconstruct(&self, signals: &[f64]) -> Vec<f64> {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FusionError::ConfigError`] when the number of signals does not
+    /// match the tomography chord count.
+    pub fn reconstruct(&self, signals: &[f64]) -> FusionResult<Vec<f64>> {
         let n_chords = self.geometry.nrows();
         let n_pixels = self.geometry.ncols();
 
-        assert_eq!(
-            signals.len(),
-            n_chords,
-            "Signal length {} != chord count {}",
-            signals.len(),
-            n_chords
-        );
+        if signals.len() != n_chords {
+            return Err(FusionError::ConfigError(format!(
+                "tomography signal length {} does not match chord count {n_chords}",
+                signals.len()
+            )));
+        }
 
         let b = Array1::from_vec(signals.to_vec());
 
@@ -151,13 +156,24 @@ impl PlasmaTomography {
             x = (&y - &(&grad * step)).mapv(|v| v.max(0.0));
         }
 
-        x.to_vec()
+        Ok(x.to_vec())
     }
 
     /// Reconstruct and reshape to 2D grid (res × res).
-    pub fn reconstruct_2d(&self, signals: &[f64]) -> Array2<f64> {
-        let flat = self.reconstruct(signals);
-        Array2::from_shape_vec((self.res, self.res), flat).expect("reshape failed")
+    ///
+    /// # Errors
+    ///
+    /// Propagates signal-count validation errors from [`Self::reconstruct`] and
+    /// returns [`FusionError::LinAlg`] if the reconstruction violates its shape
+    /// invariant.
+    pub fn reconstruct_2d(&self, signals: &[f64]) -> FusionResult<Array2<f64>> {
+        let flat = self.reconstruct(signals)?;
+        Array2::from_shape_vec((self.res, self.res), flat).map_err(|error| {
+            FusionError::LinAlg(format!(
+                "tomography reconstruction cannot be reshaped to {}x{}: {error}",
+                self.res, self.res
+            ))
+        })
     }
 }
 
@@ -204,41 +220,44 @@ mod tests {
     }
 
     #[test]
-    fn test_reconstruct_non_negative() {
+    fn test_reconstruct_non_negative() -> FusionResult<()> {
         let chords = test_chords();
         let tomo = PlasmaTomography::new(&chords, (1.0, 9.0), (-5.0, 5.0), 10);
         let signals = vec![1.0; 8];
-        let recon = tomo.reconstruct(&signals);
+        let recon = tomo.reconstruct(&signals)?;
         assert_eq!(recon.len(), 100);
         for &v in &recon {
             assert!(v >= 0.0, "Reconstruction has negative value: {v}");
         }
+        Ok(())
     }
 
     #[test]
-    fn test_reconstruct_2d_shape() {
+    fn test_reconstruct_2d_shape() -> FusionResult<()> {
         let chords = test_chords();
         let tomo = PlasmaTomography::new(&chords, (1.0, 9.0), (-5.0, 5.0), 10);
         let signals = vec![1.0; 8];
-        let recon = tomo.reconstruct_2d(&signals);
+        let recon = tomo.reconstruct_2d(&signals)?;
         assert_eq!(recon.shape(), &[10, 10]);
+        Ok(())
     }
 
     #[test]
-    fn test_zero_signal_zero_reconstruction() {
+    fn test_zero_signal_zero_reconstruction() -> FusionResult<()> {
         let chords = test_chords();
         let tomo = PlasmaTomography::new(&chords, (1.0, 9.0), (-5.0, 5.0), 10);
         let signals = vec![0.0; 8];
-        let recon = tomo.reconstruct(&signals);
+        let recon = tomo.reconstruct(&signals)?;
         let total: f64 = recon.iter().sum();
         assert!(
             total.abs() < 1e-10,
             "Zero signals should give zero reconstruction: {total}"
         );
+        Ok(())
     }
 
     #[test]
-    fn test_reconstruct_forward_consistency() {
+    fn test_reconstruct_forward_consistency() -> FusionResult<()> {
         // Create a known emissivity, forward-project, then reconstruct
         let chords = test_chords();
         let tomo = PlasmaTomography::new(&chords, (1.0, 9.0), (-5.0, 5.0), 10);
@@ -251,7 +270,7 @@ mod tests {
             .collect();
 
         // Reconstruct
-        let recon = tomo.reconstruct(&signals);
+        let recon = tomo.reconstruct(&signals)?;
 
         // Forward project reconstruction: should be close to original signals
         let recon_arr = Array1::from_vec(recon);
@@ -267,5 +286,17 @@ mod tests {
                 "Forward consistency: chord {i} error {rel_err:.3}"
             );
         }
+        Ok(())
+    }
+
+    #[test]
+    fn test_reconstruct_rejects_signal_length_mismatch() {
+        let chords = test_chords();
+        let tomo = PlasmaTomography::new(&chords, (1.0, 9.0), (-5.0, 5.0), 10);
+        let Err(error) = tomo.reconstruct(&[1.0; 7]) else {
+            panic!("a signal-length mismatch must fail");
+        };
+        assert!(matches!(error, FusionError::ConfigError(_)));
+        assert!(error.to_string().contains("does not match chord count 8"));
     }
 }

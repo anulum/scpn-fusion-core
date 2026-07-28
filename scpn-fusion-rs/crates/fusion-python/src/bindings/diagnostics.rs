@@ -10,6 +10,7 @@
 //! the chord-geometry keyword API of the Rust `PlasmaTomography` solver.
 
 use numpy::{IntoPyArray, PyArray2};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use fusion_diagnostics::tomography::PlasmaTomography;
@@ -35,8 +36,16 @@ impl PyTomography {
         }
     }
 
-    fn reconstruct<'py>(&self, py: Python<'py>, signals: Vec<f64>) -> Bound<'py, PyArray2<f64>> {
-        self.inner.reconstruct_2d(&signals).into_pyarray(py)
+    fn reconstruct<'py>(
+        &self,
+        py: Python<'py>,
+        signals: Vec<f64>,
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+        let reconstruction = self
+            .inner
+            .reconstruct_2d(&signals)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        Ok(reconstruction.into_pyarray(py))
     }
 
     #[getter]

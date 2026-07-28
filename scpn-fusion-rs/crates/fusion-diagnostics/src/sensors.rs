@@ -11,7 +11,7 @@
 //! Magnetic probes on D-shaped wall + bolometer fan chords.
 
 use ndarray::Array2;
-use rand_distr::{Distribution, Normal};
+use rand_distr::{Distribution, StandardNormal};
 use std::f64::consts::PI;
 
 /// Major radius [m]. Python: 6.0.
@@ -196,8 +196,8 @@ impl SensorSuite {
             } else {
                 BOLO_NOISE_FLOOR
             };
-            let noise_dist = Normal::new(0.0, noise_sigma).unwrap();
-            integral += noise_dist.sample(&mut rng);
+            let standard_sample: f64 = StandardNormal.sample(&mut rng);
+            integral += noise_sigma * standard_sample;
             signals.push(integral);
         }
         signals
