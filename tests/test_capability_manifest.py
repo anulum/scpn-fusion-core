@@ -64,6 +64,12 @@ def _itpa_hmode_counts() -> tuple[int, int]:
     return shot_count, len(machines)
 
 
+def _load_json_object(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
+
+
 def test_manifest_scans_fusion_core_capability_surfaces() -> None:
     """Verify the generated manifest reflects live Fusion Core surfaces."""
     tool = _load_tool()
@@ -269,6 +275,58 @@ def test_public_docs_match_itpa_hmode_dataset_counts() -> None:
     }.items():
         for token in stale_count_claims:
             assert token not in text, f"{token!r} remains in {doc_name}"
+
+
+def test_physics_status_freegs_manufactured_table_matches_artifact() -> None:
+    """Bind every public manufactured-source FreeGS row to tracked evidence."""
+    root = _repo_root()
+    status = (root / "docs" / "PHYSICS_VALIDATION_STATUS.md").read_text(encoding="utf-8")
+    artifact = _load_json_object(root / "artifacts" / "freegs_benchmark.json")
+
+    assert artifact["mode"] == "solovev_manufactured_source"
+    assert artifact["passes"] is True
+    assert artifact["all_cases_converged"] is True
+    assert artifact["unconverged_case_count"] == 0
+    assert str(artifact["generated_at_utc"]).startswith("2026-05-25")
+    assert "2026-05-25" in status
+
+    for case in artifact["cases"]:
+        row = (
+            f"| {case['name']} | {case['psi_nrmse']:.3f} | "
+            f"{case['q_profile_nrmse']:.3f} | {case['axis_error_m']:.3f} | "
+            f"{case['separatrix_nrmse']:.3f} | "
+            f"{'Yes' if case['our_converged'] else '**No**'} |"
+        )
+        assert row in status
+
+
+def test_physics_status_freegs_evidence_boundaries_match_artifacts() -> None:
+    """Keep strict failure and accepted local evidence in separate public lanes."""
+    root = _repo_root()
+    status = (root / "docs" / "PHYSICS_VALIDATION_STATUS.md").read_text(encoding="utf-8")
+    strict = _load_json_object(
+        root / "validation" / "reports" / "freegs_strict_backend_benchmark.json"
+    )
+    public_example = _load_json_object(
+        root / "validation" / "reports" / "freegs_public_example_reconstruction.json"
+    )
+
+    assert strict["mode"] == "freegs"
+    assert strict["freegs_available"] is True
+    assert strict["passes"] is False
+    assert strict["unconverged_case_count"] == len(strict["cases"]) == 5
+    assert "**FAIL** (`unconverged_case_count=5`, last tracked manual run)" in status
+
+    assert public_example["case_count"] == 2
+    assert public_example["status"] == ("accepted_public_freegs_same_case_free_boundary_parity")
+    assert all(case["accepted_full_fidelity"] is False for case in public_example["cases"])
+    assert "**Accepted local evidence** (2 cases; not accepted full-fidelity)" in status
+
+
+def test_physics_status_avoids_brittle_source_line_counts() -> None:
+    """Reject source line-count prose that drifts whenever implementation changes."""
+    status = (_repo_root() / "docs" / "PHYSICS_VALIDATION_STATUS.md").read_text(encoding="utf-8")
+    assert re.search(r"\(\d+ lines\)", status) is None
 
 
 def test_readme_exposes_monthly_and_all_time_download_badges() -> None:

@@ -5,29 +5,34 @@
 
 This status sheet captures current physics-validation posture. Use it to identify what is accepted, what is blocked, and where additional evidence is still required.
 
-> Last updated: 2026-05-20. Solov'ev benchmark aggregation now requires every
-> case to report solver convergence before the overall gate can pass.
+> Last reconciled: 2026-07-28 against the tracked manufactured-source,
+> strict-backend, and public-example FreeGS artifacts. These are distinct lanes
+> and must not be promoted across evidence boundaries.
 
 ## 1. FreeGS Parity
 
 ### Current State
 
-The benchmark (`validation/benchmark_vs_freegs.py`) operates in **two modes**:
+Tracked FreeGS evidence is split into three distinct lanes. The first two are
+modes of `validation/benchmark_vs_freegs.py`; the public-example reconstruction
+is a separate, narrower benchmark:
 
 | Mode | Gate | Status |
 |------|------|--------|
 | Solov'ev analytic reference | psi_nrmse < 0.11 + all cases converged | **PASS** (`unconverged_case_count=0`) |
-| FreeGS strict | psi_nrmse < 0.005 + 5 more gates | **Not run on CI** (opt-in) |
+| FreeGS strict, five synthetic cases | psi_nrmse < 0.005 + 5 more gates | **FAIL** (`unconverged_case_count=5`, last tracked manual run) |
+| FreeGS public-example same-case reconstruction | 7 fail-closed thresholds + 3-resolution convergence | **Accepted local evidence** (2 cases; not accepted full-fidelity) |
 
-Latest artifact (`artifacts/freegs_benchmark.json`, 2026-05-20):
+Latest manufactured-source artifact (`artifacts/freegs_benchmark.json`,
+2026-05-25):
 
 | Case | Psi NRMSE | q NRMSE | Axis Err (m) | Sep NRMSE | Converged |
 |------|-----------|---------|--------------|-----------|-----------|
-| ITER-like | 0.074 | 0.181 | 0.500 | 0.152 | Yes |
-| SPARC-like | 0.072 | 0.180 | 0.143 | 0.151 | Yes |
-| Spherical | 0.102 | 0.626 | 0.327 | 0.148 | **No** |
-| KSTAR-like | 0.061 | 0.152 | 0.094 | 0.133 | Yes |
-| SPARC-high-k | 0.073 | 0.189 | 0.143 | 0.155 | Yes |
+| ITER-like | 0.000 | 0.000 | 0.000 | 0.000 | Yes |
+| SPARC-like | 0.000 | 0.000 | 0.000 | 0.000 | Yes |
+| Spherical-tokamak | 0.000 | 0.676 | 0.000 | 0.000 | Yes |
+| KSTAR-like | 0.000 | 0.000 | 0.000 | 0.000 | Yes |
+| SPARC-high-kappa | 0.000 | 0.000 | 0.000 | 0.000 | Yes |
 
 ### FreeGS Strict Thresholds (6 conjunctive gates)
 
@@ -44,23 +49,35 @@ Solov'ev lane compares against an analytic solution (self-referential: analytic 
 analytic source). FreeGS lane compares against an iterative nonlinear solver solving the
 full GS equation with pressure/current profiles — a fundamentally different problem class.
 
-Current Psi NRMSE values (0.06-0.10) exceed the 0.005 FreeGS threshold by 12-20x.
-The threshold appears empirically set without a convergence study.
+The manufactured-source lane now reports zero psi error by construction and is
+not evidence for strict FreeGS parity. The last tracked five-case strict run
+(`validation/reports/freegs_strict_backend_benchmark.json`, 2026-05-25) had
+FreeGS available but produced no finite comparison scores: two cases failed
+O-point discovery and three failed Picard convergence. It therefore remains a
+fail-closed strict result, not a numeric threshold comparison.
+
+The newer public-example reconstruction report accepts two local same-case
+comparisons with three-resolution convergence. Its artifact explicitly marks
+both cases `accepted_full_fidelity=false`; it does not supersede the failed
+five-case strict lane or close external full-fidelity validation.
 
 ### Known Issues
 
 1. FreeGS strict workflow is manual-dispatch only (`.github/workflows/freegs-strict.yml`).
 2. Normalization is correct (scale-invariant NRMSE), but the two lanes compare different
    problems — Solov'ev is a manufactured solution, FreeGS is a free-boundary solve.
-3. The convergence-required Solov'ev aggregate gate is now enforced, but the strict
-   FreeGS lane still needs a machine with FreeGS installed for routine baseline refresh.
+3. The convergence-required Solov'ev aggregate gate is enforced, but the last
+   tracked strict run failed at solver runtime before finite metrics were available.
+4. The accepted public-example lane is local, two-case evidence and explicitly
+   not accepted full-fidelity evidence.
 
 ### Roadmap Actions
 
-- Calibrate FreeGS thresholds with convergence study (vary grid resolution, iterations).
+- Resolve the five-case strict O-point/Picard failures before calibrating numeric thresholds.
 - Keep the Solov'ev lane convergence-required in CI/artifact checks; reject any future
   case with `our_converged=false` even if `psi_nrmse` is below threshold.
-- Run FreeGS strict lane on a machine with FreeGS installed to establish realistic baselines.
+- Re-run the manual strict lane with current pinned dependencies after the runtime
+  failures are understood; do not substitute the manufactured or two-case lanes.
 - The strict EFIT/GEQDSK benchmark gate now exists in
   `validation/psi_pointwise_rmse.py`. The bundled 18-file report is
   intentionally failing against the 5% target (`pass_count=0/18`,
@@ -72,12 +89,14 @@ The threshold appears empirically set without a convergence study.
 
 | File | Purpose |
 |------|---------|
-| `validation/benchmark_vs_freegs.py` | Benchmark driver (1153 lines) |
-| `tests/test_freegs_benchmark.py` | Unit tests (401 lines) |
-| `tests/test_freegs_benchmark_enhanced.py` | Enhanced tests (261 lines) |
+| `validation/benchmark_vs_freegs.py` | Manufactured-source and five-case strict benchmark driver |
+| `tests/test_freegs_benchmark.py` | Core benchmark contract tests |
+| `tests/test_freegs_benchmark_enhanced.py` | Enhanced benchmark tests |
 | `tools/check_freegs_strict_artifact.py` | Strict artifact validator |
 | `.github/workflows/freegs-strict.yml` | Manual-dispatch strict lane |
 | `artifacts/freegs_benchmark.json` | Latest results (Solov'ev mode) |
+| `validation/reports/freegs_strict_backend_benchmark.json` | Last tracked five-case strict result (fail-closed runtime failures) |
+| `validation/reports/freegs_public_example_reconstruction.json` | Two-case accepted local same-case and grid-convergence evidence |
 | `validation/validate_grad_shafranov_solovev.py` | Solov'ev exact-equilibrium suite: operator truncation, SOR, and dispatched multigrid all converge at second order to the analytic field (`validation/reports/grad_shafranov_solovev.json`) |
 | [`docs/PSI_GATE_ATTRIBUTION.md`](PSI_GATE_ATTRIBUTION.md) | Per-file attribution of the intentionally failing 18-file ψ_N reconstruction gate (generated, drift-checked) |
 
@@ -221,10 +240,10 @@ standard artifact from the still-open high-fidelity GPU retraining campaign.
 
 | File | Purpose |
 |------|---------|
-| `src/scpn_fusion/core/neural_equilibrium.py` | Architecture + train/predict (605 lines) |
-| `src/scpn_fusion/core/neural_equilibrium_training.py` | Training entrypoint (125 lines) |
+| `src/scpn_fusion/core/neural_equilibrium.py` | Architecture + train/predict |
+| `src/scpn_fusion/core/neural_equilibrium_training.py` | Training entrypoint |
 | `src/scpn_fusion/core/neural_equilibrium_kernel.py` | FusionKernel drop-in replacement |
-| `validation/benchmark_sparc_geqdsk_rmse.py` | Benchmark script (386 lines) |
+| `validation/benchmark_sparc_geqdsk_rmse.py` | Benchmark script |
 | `validation/psi_pointwise_rmse.py` | Point-wise psi(R,Z) validation and strict EFIT/GEQDSK aggregate gate |
 | `validation/reports/psi_efit_nrmse_benchmark.json` | Latest strict 18-file EFIT/GEQDSK gate report |
 | `weights/neural_equilibrium_sparc.npz` | Pretrained weights |
