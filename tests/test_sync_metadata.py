@@ -4,18 +4,24 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+"""Tests for the repository metadata synchronization production tool."""
+
 from __future__ import annotations
 
 import importlib.util
 import sys
 from pathlib import Path
+from types import ModuleType
+
+import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "sync_metadata.py"
 
 
-def _load_module():
+def _load_module() -> ModuleType:
+    """Load the metadata tool from its canonical repository path."""
     spec = importlib.util.spec_from_file_location("sync_metadata", SCRIPT_PATH)
     if spec is None or spec.loader is None:
         raise RuntimeError("Failed to load tools/sync_metadata.py")
@@ -25,7 +31,8 @@ def _load_module():
     return module
 
 
-def test_sync_metadata_check_detects_drift(tmp_path: Path, monkeypatch) -> None:
+def test_sync_metadata_check_detects_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Detect version drift through the public check-only CLI boundary."""
     module = _load_module()
     repo = tmp_path / "repo"
     version_file = repo / "src" / "scpn_fusion" / "VERSION"
@@ -42,7 +49,8 @@ def test_sync_metadata_check_detects_drift(tmp_path: Path, monkeypatch) -> None:
     assert module.main(["--check"]) == 1
 
 
-def test_sync_metadata_apply_updates_file(tmp_path: Path, monkeypatch) -> None:
+def test_sync_metadata_apply_updates_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Update temporary metadata and preserve it on an idempotent second apply."""
     module = _load_module()
     repo = tmp_path / "repo"
     version_file = repo / "src" / "scpn_fusion" / "VERSION"
@@ -58,4 +66,5 @@ def test_sync_metadata_apply_updates_file(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(module, "VERSION_FILE", version_file)
     assert module.main([]) == 0
     assert 'version = "3.9.9"' in pyproject.read_text(encoding="utf-8")
+    assert module.main([]) == 0
     assert module.main(["--check"]) == 0

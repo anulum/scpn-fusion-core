@@ -380,6 +380,8 @@ files = [
     "tests/test_run_real_data_strict_gate.py",
     "tools/generate_disruption_risk_calibration.py",
     "tests/test_generate_disruption_risk_calibration.py",
+    "tools/sync_metadata.py",
+    "tests/test_sync_metadata.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",
