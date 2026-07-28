@@ -281,6 +281,16 @@ def test_readme_exposes_monthly_and_all_time_download_badges() -> None:
     assert "(https://pepy.tech/project/scpn-fusion)" in readme
 
 
+def test_readme_reuse_badge_links_to_repository_evidence() -> None:
+    """Lock the REUSE badge to the registered repository and evidence page."""
+    readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
+    assert (
+        "[![REUSE status](https://api.reuse.software/badge/"
+        "github.com/anulum/scpn-fusion-core)](https://api.reuse.software/"
+        "info/github.com/anulum/scpn-fusion-core)"
+    ) in readme
+
+
 def test_manifest_validation_rejects_schema_and_type_drift() -> None:
     """Verify schema and type drift are reported as validation errors."""
     tool = _load_tool()

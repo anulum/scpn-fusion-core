@@ -16,6 +16,7 @@
 [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anulum)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864)
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![REUSE status](https://api.reuse.software/badge/github.com/anulum/scpn-fusion-core)](https://api.reuse.software/info/github.com/anulum/scpn-fusion-core)
 [![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
 ![Version](https://img.shields.io/badge/Version-4.0.0-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
