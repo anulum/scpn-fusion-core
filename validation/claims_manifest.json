@@ -421,14 +421,14 @@
     {
       "id": "results_predictive_forward_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Compiled vs eager fixed point \\(33\u00b2, span-rel\\) \\| 1\\.1e-9",
+      "source_pattern": "\\| Compiled vs eager fixed point \\(33\u00b2, span-rel\\) \\| 1\\.5e-9",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.07709"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.49433"
         }
       ]
     },
@@ -456,7 +456,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json",
-          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*5\\.02195"
+          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*3\\.52732"
         }
       ]
     },
@@ -470,7 +470,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "3\\.243e-06"
+          "pattern": "2\\.815e-06"
         }
       ]
     },
@@ -533,14 +533,14 @@
     {
       "id": "readme_predictive_forward_equivalence_current",
       "source_file": "README.md",
-      "source_pattern": "\\| Compiled vs eager fixed-point equivalence \\(span-rel\\) \\| 1\\.1e-9 \\|",
+      "source_pattern": "\\| Compiled vs eager fixed-point equivalence \\(span-rel\\) \\| 1\\.5e-9 \\|",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.07709"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.49433"
         }
       ]
     },
@@ -554,7 +554,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "3\\.243e-06"
+          "pattern": "2\\.815e-06"
         }
       ]
     },
@@ -568,7 +568,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "3\\.243e-06"
+          "pattern": "2\\.815e-06"
         }
       ]
     },

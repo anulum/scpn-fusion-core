@@ -145,7 +145,7 @@ provenance-bound generators; `*_h100.json` files are dedicated-hardware snapshot
 
 | Metric | Value | Evidence |
 |--------|-------|----------|
-| Compiled vs eager fixed point (33², span-rel) | 1.1e-9 | `artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json` |
+| Compiled vs eager fixed point (33², span-rel) | 1.5e-9 | `artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json` |
 | Warm vs cold fixed point (129², warm+MG-Richardson, span-rel) | 2.9e-9 | `artifacts/rung2_mg_preconditioner/warm_start_forward.json` |
 | H100 FP64 129² cold / warm / warm+MG-Richardson(2) | 164.8 / 26.3 / 13.0 ms | `artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json` |
 | H100 replication on the public head (single, warm+MG-Richardson) | 13.44 ms | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json` |

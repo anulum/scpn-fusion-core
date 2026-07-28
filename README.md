@@ -96,7 +96,7 @@ status (details and artifact paths in [RESULTS.md](RESULTS.md)):
 | Warm-started, fully converged 129² FP64 solve (dedicated H100) | 13.0 ms |
 | Replication on the public head, fresh instance | 13.44 ms |
 | Batched per-solve, warm (B=16/64/256, H100) | 13.6 / 13.0 / 14.6 ms |
-| Compiled vs eager fixed-point equivalence (span-rel) | 1.1e-9 |
+| Compiled vs eager fixed-point equivalence (span-rel) | 1.5e-9 |
 | Adjoint coil gradient vs warm finite difference | ≤ 3.244e-06 relative |
 | DIII-D 145419 full-domain / shell-pinned ψ RMS (span-rel) | 1.91 % / 0.070 % |
 
