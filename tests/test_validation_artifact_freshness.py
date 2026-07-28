@@ -208,6 +208,8 @@ def test_tracked_artifact_matches_pinned_requirements(
         PYTHONPATH=src:. $PINNED_PY validation/validate_real_diiid_145419.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_coilgrad_adjoint_fd.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_mg_preconditioner_iterations.py
+        PYTHONPATH=src:. $PINNED_PY validation/measure_compiled_forward_speedup.py
+        PYTHONPATH=src:. $PINNED_PY validation/measure_warm_start_forward.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_batched_forward.py
         PYTHONPATH=src:. $PINNED_PY validation/benchmark_disruption_transfer_generalization.py --strict
         PYTHONPATH=src:. $PINNED_PY tools/sweep_disruption_threshold.py
