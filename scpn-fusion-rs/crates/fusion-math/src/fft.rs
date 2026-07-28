@@ -13,7 +13,22 @@
 
 use ndarray::Array2;
 use num_complex::Complex64;
-use rustfft::FftPlanner;
+use rustfft::{Fft, FftPlanner};
+
+fn process_rows(data: &mut Array2<Complex64>, fft: &dyn Fft<f64>) {
+    for mut row in data.rows_mut() {
+        match row.as_slice_mut() {
+            Some(slice) => fft.process(slice),
+            None => {
+                let mut buffer: Vec<Complex64> = row.iter().copied().collect();
+                fft.process(&mut buffer);
+                for (target, value) in row.iter_mut().zip(buffer) {
+                    *target = value;
+                }
+            }
+        }
+    }
+}
 
 /// Forward 2D FFT. Matches `numpy.fft.fft2()`.
 ///
@@ -27,10 +42,7 @@ pub fn fft2(input: &Array2<f64>) -> Array2<Complex64> {
 
     // FFT along each row (axis 1)
     let fft_row = planner.plan_fft_forward(ncols);
-    for mut row in data.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        fft_row.process(slice);
-    }
+    process_rows(&mut data, fft_row.as_ref());
 
     // FFT along each column (axis 0)
     // Transpose, FFT rows, transpose back
@@ -41,10 +53,7 @@ pub fn fft2(input: &Array2<f64>) -> Array2<Complex64> {
             transposed[[j, i]] = data[[i, j]];
         }
     }
-    for mut row in transposed.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        fft_col.process(slice);
-    }
+    process_rows(&mut transposed, fft_col.as_ref());
     for i in 0..nrows {
         for j in 0..ncols {
             data[[i, j]] = transposed[[j, i]];
@@ -66,10 +75,7 @@ pub fn ifft2(input: &Array2<Complex64>) -> Array2<f64> {
 
     // IFFT along each row
     let ifft_row = planner.plan_fft_inverse(ncols);
-    for mut row in data.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        ifft_row.process(slice);
-    }
+    process_rows(&mut data, ifft_row.as_ref());
 
     // IFFT along each column (via transpose)
     let ifft_col = planner.plan_fft_inverse(nrows);
@@ -79,10 +85,7 @@ pub fn ifft2(input: &Array2<Complex64>) -> Array2<f64> {
             transposed[[j, i]] = data[[i, j]];
         }
     }
-    for mut row in transposed.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        ifft_col.process(slice);
-    }
+    process_rows(&mut transposed, ifft_col.as_ref());
     for i in 0..nrows {
         for j in 0..ncols {
             data[[i, j]] = transposed[[j, i]];
@@ -103,10 +106,7 @@ pub fn cfft2(input: &Array2<Complex64>) -> Array2<Complex64> {
 
     // FFT along each row (axis 1)
     let fft_row = planner.plan_fft_forward(ncols);
-    for mut row in data.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        fft_row.process(slice);
-    }
+    process_rows(&mut data, fft_row.as_ref());
 
     // FFT along each column (axis 0) via transpose
     let fft_col = planner.plan_fft_forward(nrows);
@@ -116,10 +116,7 @@ pub fn cfft2(input: &Array2<Complex64>) -> Array2<Complex64> {
             transposed[[j, i]] = data[[i, j]];
         }
     }
-    for mut row in transposed.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        fft_col.process(slice);
-    }
+    process_rows(&mut transposed, fft_col.as_ref());
     for i in 0..nrows {
         for j in 0..ncols {
             data[[i, j]] = transposed[[j, i]];
@@ -140,10 +137,7 @@ pub fn cifft2(input: &Array2<Complex64>) -> Array2<Complex64> {
 
     // IFFT along each row
     let ifft_row = planner.plan_fft_inverse(ncols);
-    for mut row in data.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        ifft_row.process(slice);
-    }
+    process_rows(&mut data, ifft_row.as_ref());
 
     // IFFT along each column via transpose
     let ifft_col = planner.plan_fft_inverse(nrows);
@@ -153,10 +147,7 @@ pub fn cifft2(input: &Array2<Complex64>) -> Array2<Complex64> {
             transposed[[j, i]] = data[[i, j]];
         }
     }
-    for mut row in transposed.rows_mut() {
-        let slice = row.as_slice_mut().expect("row must be contiguous");
-        ifft_col.process(slice);
-    }
+    process_rows(&mut transposed, ifft_col.as_ref());
     for i in 0..nrows {
         for j in 0..ncols {
             data[[i, j]] = transposed[[j, i]] * norm;
@@ -249,6 +240,23 @@ mod tests {
         let spectrum = fft2(&input);
         for &v in spectrum.iter() {
             assert!(v.norm() < 1e-15, "FFT of zeros should be zero");
+        }
+    }
+
+    #[test]
+    fn test_cfft2_supports_non_standard_layout() {
+        let non_standard = Array2::from_shape_fn((2, 3), |(i, j)| {
+            Complex64::new((i * 3 + j) as f64, (i + j) as f64 * 0.25)
+        })
+        .reversed_axes();
+        assert!(!non_standard.is_standard_layout());
+        let standard = Array2::from_shape_fn(non_standard.dim(), |index| non_standard[index]);
+
+        let actual = cfft2(&non_standard);
+        let expected = cfft2(&standard);
+
+        for (actual_value, expected_value) in actual.iter().zip(expected.iter()) {
+            assert!((*actual_value - *expected_value).norm() < 1e-12);
         }
     }
 }
