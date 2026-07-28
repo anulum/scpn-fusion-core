@@ -130,8 +130,12 @@ impl NoiseInjectionLayer {
 
 impl Default for NoiseInjectionLayer {
     fn default() -> Self {
-        Self::new(DEFAULT_OU_THETA, DEFAULT_OU_SIGMA, DEFAULT_OU_DT)
-            .expect("default OU parameters must be valid")
+        Self {
+            theta: DEFAULT_OU_THETA,
+            sigma: DEFAULT_OU_SIGMA,
+            dt: DEFAULT_OU_DT,
+            state: 0.0,
+        }
     }
 }
 
@@ -185,7 +189,10 @@ impl ChaosMonkeyConfig {
 
 impl Default for ChaosMonkeyConfig {
     fn default() -> Self {
-        Self::new(0.0, 0.0).expect("default chaos config must be valid")
+        Self {
+            dropout_prob: 0.0,
+            gaussian_noise_std: 0.0,
+        }
     }
 }
 
@@ -671,6 +678,26 @@ mod tests {
                 "Noise sequence should be deterministic"
             );
         }
+    }
+
+    #[test]
+    fn test_defaults_match_checked_constructors() {
+        let noise_default = NoiseInjectionLayer::default();
+        let noise_checked =
+            NoiseInjectionLayer::new(DEFAULT_OU_THETA, DEFAULT_OU_SIGMA, DEFAULT_OU_DT)
+                .expect("valid default OU parameters");
+        assert_eq!(noise_default.theta, noise_checked.theta);
+        assert_eq!(noise_default.sigma, noise_checked.sigma);
+        assert_eq!(noise_default.dt, noise_checked.dt);
+        assert_eq!(noise_default.state, noise_checked.state);
+
+        let chaos_default = ChaosMonkeyConfig::default();
+        let chaos_checked = ChaosMonkeyConfig::new(0.0, 0.0).expect("valid default chaos config");
+        assert_eq!(chaos_default.dropout_prob, chaos_checked.dropout_prob);
+        assert_eq!(
+            chaos_default.gaussian_noise_std,
+            chaos_checked.gaussian_noise_std
+        );
     }
 
     #[test]
