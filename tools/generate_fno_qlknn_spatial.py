@@ -34,12 +34,16 @@ from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WEIGHTS = REPO_ROOT / "weights" / "neural_transport_qlknn.npz"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "data" / "fno_qlknn_spatial"
+
+FloatArray = NDArray[np.float64]
+Float32Array = NDArray[np.float32]
 
 
 def _require_neural_transport_oracle(
@@ -73,7 +77,7 @@ def _make_tokamak_equilibrium(
     B0: float,
     Ip: float,
     rng: np.random.Generator,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
     """Generate a synthetic tokamak equilibrium psi(R,Z) and profiles.
 
     Returns (psi_2d, rho_2d, R_grid, Z_grid) all shape (nr, nz).
@@ -98,13 +102,13 @@ def _make_tokamak_equilibrium(
 
 
 def _profiles_from_rho(
-    rho: np.ndarray,
+    rho: FloatArray,
     Te0: float,
     Ti0: float,
     ne0: float,
     q0: float,
     q_edge: float,
-) -> dict[str, np.ndarray]:
+) -> dict[str, FloatArray]:
     """Generate radial profiles from normalised radius.
 
     Returns dict with Te, Ti, ne, q, s_hat, beta_e, grad_Te, grad_Ti, grad_ne.
@@ -170,14 +174,19 @@ def generate(
     seed: int = 42,
 ) -> None:
     """Generate FNO training data using QLKNN MLP as oracle."""
+    if n_equilibria < 2:
+        raise ValueError("n_equilibria must be >= 2 to populate train and validation splits")
+    if grid_size < 2:
+        raise ValueError("grid_size must be >= 2 for a two-dimensional spatial dataset")
+
     rng = np.random.default_rng(seed)
 
     model = _require_neural_transport_oracle(weights_path)
 
     print(f"Generating {n_equilibria} equilibria on {grid_size}x{grid_size} grids...")
 
-    all_psi = []
-    all_chi = []
+    all_psi: list[Float32Array] = []
+    all_chi: list[Float32Array] = []
 
     # Parameter ranges for equilibrium variation
     params_ranges = {
@@ -260,6 +269,13 @@ def generate(
         from scpn_fusion.core.neural_transport import _mlp_forward
 
         out = _mlp_forward(x_batch, model._weights)  # (N, 3)
+        expected_shape = (grid_size * grid_size, 3)
+        if out.shape != expected_shape:
+            raise RuntimeError(
+                f"QLKNN oracle returned shape {out.shape}; expected {expected_shape}"
+            )
+        if not bool(np.isfinite(out).all()):
+            raise RuntimeError("QLKNN oracle returned non-finite transport coefficients")
         chi_i_2d = out[:, 1].reshape(grid_size, grid_size)
 
         # Normalise to [0, 1] range for FNO
@@ -273,8 +289,8 @@ def generate(
             elapsed = time.monotonic() - t0
             print(f"  {i + 1}/{n_equilibria} ({elapsed:.0f}s)")
 
-    X = np.array(all_psi)  # (N, 64, 64)
-    Y = np.array(all_chi)  # (N, 64, 64)
+    X = np.stack(all_psi, axis=0)
+    Y = np.stack(all_chi, axis=0)
 
     # Split 85/15
     n_train = int(len(X) * 0.85)
