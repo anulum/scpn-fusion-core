@@ -13,18 +13,32 @@ generator source and fail when they diverge — i.e. when someone edits a genera
 regenerating (and re-committing) its artefact, or edits a tracked artefact by hand. The
 distinct-eye finding F2 on the real-data evidence lane.
 
-Hermetic: pure file reads + hashing, no scientific dependencies.
+Most checks are hermetic file reads and hashes. The output-policy cohort also
+exercises one bounded real benchmark CLI.
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 from pathlib import Path
 
 import pytest
 
+from validation.evidence_output import resolve_evidence_outputs
+
 REPO = Path(__file__).resolve().parents[1]
+
+_PREFLIGHT_EVIDENCE_WRITERS = (
+    "validation/benchmark_disruption_replay_pipeline.py",
+    "validation/benchmark_disruption_transfer_generalization.py",
+    "validation/benchmark_eped_domain_contract.py",
+    "validation/benchmark_transport_uncertainty_envelope.py",
+    "validation/benchmark_multi_ion_transport_conservation.py",
+    "validation/vertical_control_replay_benchmark.py",
+    "validation/scpn_end_to_end_latency.py",
+)
 
 # (tracked artefact, generator that must have produced it)
 _BOUND_PAIRS = [
@@ -153,6 +167,145 @@ _DISRUPTION_DEPENDENCIES = {
     "artifacts/disruption_roc_curve.json": ("src/scpn_fusion/control/disruption_predictor.py",),
 }
 _DISRUPTION_DATA = REPO / "validation" / "reference_data" / "diiid" / "disruption_shots"
+
+
+def test_routine_evidence_defaults_are_local_and_ignored(tmp_path: Path) -> None:
+    outputs = resolve_evidence_outputs(
+        root=tmp_path,
+        canonical_json=Path("validation/reports/example.json"),
+        canonical_markdown=Path("validation/reports/example.md"),
+        requested_json=None,
+        requested_markdown=None,
+        commit_evidence=False,
+    )
+    assert outputs.json == tmp_path / "artifacts" / "_local_example.json"
+    assert outputs.markdown == tmp_path / "artifacts" / "_local_example.md"
+
+    gitignore = (REPO / ".gitignore").read_text(encoding="utf-8")
+    assert "artifacts/*_local*.json" in gitignore
+    assert "artifacts/*_local*.md" in gitignore
+
+
+def test_explicit_non_evidence_output_paths_remain_supported(tmp_path: Path) -> None:
+    requested_json = tmp_path / "exports" / "result.json"
+    requested_markdown = tmp_path / "exports" / "result.md"
+    outputs = resolve_evidence_outputs(
+        root=tmp_path,
+        canonical_json=Path("validation/reports/example.json"),
+        canonical_markdown=Path("validation/reports/example.md"),
+        requested_json=requested_json,
+        requested_markdown=requested_markdown,
+        commit_evidence=False,
+    )
+    assert outputs.json == requested_json
+    assert outputs.markdown == requested_markdown
+
+
+def test_explicit_output_paths_outside_repository_remain_supported(tmp_path: Path) -> None:
+    export_root = tmp_path.parent / f"{tmp_path.name}_external_exports"
+    requested_json = export_root / "result.json"
+    requested_markdown = export_root / "result.md"
+    outputs = resolve_evidence_outputs(
+        root=tmp_path,
+        canonical_json=Path("validation/reports/example.json"),
+        canonical_markdown=Path("validation/reports/example.md"),
+        requested_json=requested_json,
+        requested_markdown=requested_markdown,
+        commit_evidence=False,
+    )
+    assert outputs.json == requested_json
+    assert outputs.markdown == requested_markdown
+
+
+def test_explicit_local_artifact_paths_remain_supported(tmp_path: Path) -> None:
+    requested_json = tmp_path / "artifacts" / "_local_preflight.json"
+    requested_markdown = tmp_path / "artifacts" / "_local_preflight.md"
+    outputs = resolve_evidence_outputs(
+        root=tmp_path,
+        canonical_json=Path("validation/reports/example.json"),
+        canonical_markdown=Path("validation/reports/example.md"),
+        requested_json=requested_json,
+        requested_markdown=requested_markdown,
+        commit_evidence=False,
+    )
+    assert outputs.json == requested_json
+    assert outputs.markdown == requested_markdown
+
+
+@pytest.mark.parametrize(
+    "protected_path",
+    [
+        Path("validation/reports/example.json"),
+        Path("artifacts/example.json"),
+        Path("artifacts/nested/_local_example.json"),
+    ],
+)
+def test_protected_evidence_paths_require_explicit_commit_flag(
+    tmp_path: Path, protected_path: Path
+) -> None:
+    with pytest.raises(ValueError, match="without --commit-evidence"):
+        resolve_evidence_outputs(
+            root=tmp_path,
+            canonical_json=Path("validation/reports/example.json"),
+            canonical_markdown=Path("validation/reports/example.md"),
+            requested_json=tmp_path / protected_path,
+            requested_markdown=tmp_path / "exports" / "result.md",
+            commit_evidence=False,
+        )
+
+
+def test_commit_evidence_selects_canonical_outputs(tmp_path: Path) -> None:
+    outputs = resolve_evidence_outputs(
+        root=tmp_path,
+        canonical_json=Path("validation/reports/example.json"),
+        canonical_markdown=Path("validation/reports/example.md"),
+        requested_json=None,
+        requested_markdown=None,
+        commit_evidence=True,
+    )
+    assert outputs.json == tmp_path / "validation" / "reports" / "example.json"
+    assert outputs.markdown == tmp_path / "validation" / "reports" / "example.md"
+
+
+@pytest.mark.parametrize("writer", _PREFLIGHT_EVIDENCE_WRITERS)
+def test_preflight_evidence_writers_use_explicit_output_policy(writer: str) -> None:
+    source = (REPO / writer).read_text(encoding="utf-8")
+    assert "add_evidence_output_arguments(parser)" in source
+    assert "resolve_evidence_outputs(" in source
+
+
+def test_benchmark_cli_default_writes_local_outputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = importlib.import_module("validation.benchmark_eped_domain_contract")
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+
+    assert module.main(["--strict"]) == 0
+    output_json = tmp_path / "artifacts" / "_local_eped_domain_contract_benchmark.json"
+    output_markdown = tmp_path / "artifacts" / "_local_eped_domain_contract_benchmark.md"
+    report = json.loads(output_json.read_text(encoding="utf-8"))
+    assert report["eped_domain_contract_benchmark"]["passes_thresholds"] is True
+    assert output_markdown.read_text(encoding="utf-8").startswith(
+        "# EPED Domain Contract Benchmark"
+    )
+    assert not (tmp_path / "validation" / "reports").exists()
+
+
+def test_benchmark_cli_rejects_canonical_output_before_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = importlib.import_module("validation.benchmark_eped_domain_contract")
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+
+    with pytest.raises(SystemExit, match="2"):
+        module.main(
+            [
+                "--output-json",
+                str(tmp_path / "validation" / "reports" / "example.json"),
+                "--output-md",
+                str(tmp_path / "exports" / "example.md"),
+            ]
+        )
 
 
 def _digest_paths(paths: tuple[Path, ...]) -> str:

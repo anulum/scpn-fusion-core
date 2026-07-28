@@ -43,3 +43,13 @@ def test_ci_workflow_uses_current_torax_gate() -> None:
         in workflow
     )
     assert "tests/test_torax_real_parity.py" in workflow
+
+
+def test_ci_rejects_silent_tracked_evidence_drift_after_preflight() -> None:
+    """The release preflight cannot silently rewrite tracked evidence."""
+    workflow = _workflow_text()
+    preflight = "python tools/run_python_preflight.py --gate release"
+    drift_guard = "git diff --exit-code -- artifacts validation/reports"
+
+    assert workflow.count(drift_guard) == 1
+    assert workflow.index(preflight) < workflow.index(drift_guard)

@@ -19,9 +19,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 import sys
 
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.core.eped_pedestal import EpedPedestalModel
+from validation.evidence_output import (
+    add_evidence_output_arguments,
+    resolve_evidence_outputs,
+)
 
 
 def _run_case(
@@ -177,26 +183,30 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     """Run EPED domain contract benchmark and write JSON + markdown artifacts.
 
     Returns ``0`` on pass and ``2`` on strict mode failure.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output-json",
-        default=str(ROOT / "validation" / "reports" / "eped_domain_contract_benchmark.json"),
-    )
-    parser.add_argument(
-        "--output-md",
-        default=str(ROOT / "validation" / "reports" / "eped_domain_contract_benchmark.md"),
-    )
+    add_evidence_output_arguments(parser)
     parser.add_argument("--strict", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
+    try:
+        outputs = resolve_evidence_outputs(
+            root=ROOT,
+            canonical_json=Path("validation/reports/eped_domain_contract_benchmark.json"),
+            canonical_markdown=Path("validation/reports/eped_domain_contract_benchmark.md"),
+            requested_json=args.output_json,
+            requested_markdown=args.output_md,
+            commit_evidence=args.commit_evidence,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    out_json = outputs.json
+    out_md = outputs.markdown
     report = run_benchmark()
-    out_json = Path(args.output_json)
-    out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")

@@ -11,18 +11,28 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
+import importlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 
 import sys
 
-sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "validation"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
-from validate_real_shots import validate_disruption
+from validation.evidence_output import (
+    add_evidence_output_arguments,
+    resolve_evidence_outputs,
+)
+
+_VALIDATE_REAL_SHOTS = importlib.import_module("validation.validate_real_shots")
+validate_disruption = cast(Callable[..., dict[str, Any]], _VALIDATE_REAL_SHOTS.validate_disruption)
 
 
 def run_benchmark(*, disruption_dir: Path) -> dict[str, Any]:
@@ -149,20 +159,24 @@ def main(argv: list[str] | None = None) -> int:
         "--disruption-dir",
         default=str(ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"),
     )
-    parser.add_argument(
-        "--output-json",
-        default=str(ROOT / "validation" / "reports" / "disruption_replay_pipeline_benchmark.json"),
-    )
-    parser.add_argument(
-        "--output-md",
-        default=str(ROOT / "validation" / "reports" / "disruption_replay_pipeline_benchmark.md"),
-    )
+    add_evidence_output_arguments(parser)
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
 
+    try:
+        outputs = resolve_evidence_outputs(
+            root=ROOT,
+            canonical_json=Path("validation/reports/disruption_replay_pipeline_benchmark.json"),
+            canonical_markdown=Path("validation/reports/disruption_replay_pipeline_benchmark.md"),
+            requested_json=args.output_json,
+            requested_markdown=args.output_md,
+            commit_evidence=args.commit_evidence,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    out_json = outputs.json
+    out_md = outputs.markdown
     report = run_benchmark(disruption_dir=Path(args.disruption_dir))
-    out_json = Path(args.output_json)
-    out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")

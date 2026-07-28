@@ -23,11 +23,17 @@ from typing import Any, Protocol
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.control.sliding_mode_vertical import SuperTwistingSMC  # noqa: E402
 from scpn_fusion.control.rzip_model import RZIPModel  # noqa: E402
 from scpn_fusion.core.vessel_model import VesselElement, VesselModel  # noqa: E402
+from validation.evidence_output import (  # noqa: E402
+    add_evidence_output_arguments,
+    resolve_evidence_outputs,
+)
 
 SCHEMA_PATH = "schemas/vertical_control_replay_benchmark.schema.json"
 SCHEMA_VERSION = "1.0.0"
@@ -1113,14 +1119,7 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint for vertical control replay benchmark with optional profile suite."""
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output-json",
-        default=str(ROOT / "validation" / "reports" / "vertical_control_replay_benchmark.json"),
-    )
-    parser.add_argument(
-        "--output-md",
-        default=str(ROOT / "validation" / "reports" / "vertical_control_replay_benchmark.md"),
-    )
+    add_evidence_output_arguments(parser)
     parser.add_argument(
         "--all-profiles",
         action="store_true",
@@ -1129,9 +1128,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
 
+    try:
+        outputs = resolve_evidence_outputs(
+            root=ROOT,
+            canonical_json=Path("validation/reports/vertical_control_replay_benchmark.json"),
+            canonical_markdown=Path("validation/reports/vertical_control_replay_benchmark.md"),
+            requested_json=args.output_json,
+            requested_markdown=args.output_md,
+            commit_evidence=args.commit_evidence,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    out_json = outputs.json
+    out_md = outputs.markdown
     report = run_profile_suite() if args.all_profiles else run_benchmark()
-    out_json = Path(args.output_json)
-    out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")

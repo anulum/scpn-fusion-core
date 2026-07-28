@@ -39,6 +39,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 import sys
 
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.scpn.compiler import FusionCompiler
@@ -46,6 +48,10 @@ from scpn_fusion.scpn.contracts import ControlScales, ControlTargets
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
 from scpn_fusion.control.hil_harness import run_sensor_to_actuator_hil_latency_campaign
+from validation.evidence_output import (
+    add_evidence_output_arguments,
+    resolve_evidence_outputs,
+)
 
 
 FloatArray: TypeAlias = NDArray[np.float64]
@@ -1848,14 +1854,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--steps", type=int, default=320)
-    parser.add_argument(
-        "--output-json",
-        default=str(ROOT / "validation" / "reports" / "scpn_end_to_end_latency.json"),
-    )
-    parser.add_argument(
-        "--output-md",
-        default=str(ROOT / "validation" / "reports" / "scpn_end_to_end_latency.md"),
-    )
+    add_evidence_output_arguments(parser)
     parser.add_argument("--actuators", type=int, default=2, help=argparse.SUPPRESS)
     parser.add_argument("--gpu-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true")
@@ -1870,9 +1869,20 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    try:
+        outputs = resolve_evidence_outputs(
+            root=ROOT,
+            canonical_json=Path("validation/reports/scpn_end_to_end_latency.json"),
+            canonical_markdown=Path("validation/reports/scpn_end_to_end_latency.md"),
+            requested_json=args.output_json,
+            requested_markdown=args.output_md,
+            commit_evidence=args.commit_evidence,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    out_json = outputs.json
+    out_md = outputs.markdown
     report = generate_report(seed=args.seed, steps=args.steps)
-    out_json = Path(args.output_json)
-    out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")

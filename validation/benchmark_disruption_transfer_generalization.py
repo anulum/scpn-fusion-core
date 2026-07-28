@@ -10,22 +10,29 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 import hashlib
+import importlib
 import json
 import sys
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from typing import Any
-
-THIS_DIR = Path(__file__).resolve().parent
-if str(THIS_DIR) not in sys.path:
-    sys.path.insert(0, str(THIS_DIR))
-
-from validate_real_shots import validate_disruption
-
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from validation.evidence_output import (
+    add_evidence_output_arguments,
+    resolve_evidence_outputs,
+)
+
+_VALIDATE_REAL_SHOTS = importlib.import_module("validation.validate_real_shots")
+validate_disruption = cast(Callable[..., dict[str, Any]], _VALIDATE_REAL_SHOTS.validate_disruption)
+
+
 DEFAULT_DISRUPTION_DIR = ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"
 DEFAULT_OUTPUT_JSON = ROOT / "artifacts" / "disruption_transfer_generalization.json"
 DEFAULT_OUTPUT_MD = ROOT / "artifacts" / "disruption_transfer_generalization.md"
@@ -287,16 +294,7 @@ def main(argv: list[str] | None = None) -> int:
         default=",".join(DEFAULT_SOURCE_SCENARIOS),
         help="Comma-separated scenarios treated as source-domain calibration cohort.",
     )
-    parser.add_argument(
-        "--output-json",
-        default=str(DEFAULT_OUTPUT_JSON),
-        help="Output JSON report path.",
-    )
-    parser.add_argument(
-        "--output-md",
-        default=str(DEFAULT_OUTPUT_MD),
-        help="Output Markdown report path.",
-    )
+    add_evidence_output_arguments(parser)
     parser.add_argument(
         "--strict",
         action="store_true",
@@ -311,10 +309,20 @@ def main(argv: list[str] | None = None) -> int:
     if not source_scenarios:
         raise ValueError("source_scenarios must not be empty.")
 
+    try:
+        outputs = resolve_evidence_outputs(
+            root=ROOT,
+            canonical_json=DEFAULT_OUTPUT_JSON,
+            canonical_markdown=DEFAULT_OUTPUT_MD,
+            requested_json=args.output_json,
+            requested_markdown=args.output_md,
+            commit_evidence=args.commit_evidence,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    output_json = outputs.json
+    output_md = outputs.markdown
     report = run_benchmark(disruption_dir=disruption_dir, source_scenarios=source_scenarios)
-
-    output_json = _resolve(args.output_json)
-    output_md = _resolve(args.output_md)
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     output_md.parent.mkdir(parents=True, exist_ok=True)

@@ -7,14 +7,14 @@
     "target_recall_ok": true,
     "transfer_efficiency_ok": true
   },
-  "generated_at_utc": "2026-07-28T07:16:18.170104+00:00",
+  "generated_at_utc": "2026-07-28T12:11:06.875323+00:00",
   "passes": true,
   "provenance": {
     "disruption_data_directory": "validation/reference_data/diiid/disruption_shots",
     "disruption_data_file_count": 16,
     "disruption_data_sha256": "630b9a43a488b5f3c1d13d14143e519efdbb0d4c976471c66278a0f47939afc6",
     "generator": "validation/benchmark_disruption_transfer_generalization.py",
-    "generator_sha256": "876399f6c5e3f1f6f64a725a6b9913ae74b43617ec9caa6088e29f5bc25c1550",
+    "generator_sha256": "f10975e8c4261585093670b7352cc1755cc49434a51dfdde01c6d1d08d9e13a3",
     "logic_sources": [
       "validation/validate_real_shots.py",
       "src/scpn_fusion/control/disruption_predictor.py"

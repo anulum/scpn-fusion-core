@@ -21,10 +21,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CHECK_TIMEOUT_SECONDS = 1800.0
-_PREFLIGHT_LATENCY_OUTPUT_JSON = "artifacts/_tmp_scpn_end_to_end_latency.json"
-_PREFLIGHT_LATENCY_OUTPUT_MD = "artifacts/_tmp_scpn_end_to_end_latency.md"
-_PREFLIGHT_VERTICAL_CONTROL_OUTPUT_JSON = "artifacts/_tmp_vertical_control_replay_profiles.json"
-_PREFLIGHT_VERTICAL_CONTROL_OUTPUT_MD = "artifacts/_tmp_vertical_control_replay_profiles.md"
+_PREFLIGHT_LATENCY_OUTPUT_JSON = "artifacts/_local_scpn_end_to_end_latency.json"
+_PREFLIGHT_LATENCY_OUTPUT_MD = "artifacts/_local_scpn_end_to_end_latency.md"
+_PREFLIGHT_VERTICAL_CONTROL_OUTPUT_JSON = "artifacts/_local_vertical_control_replay_profiles.json"
+_PREFLIGHT_VERTICAL_CONTROL_OUTPUT_MD = "artifacts/_local_vertical_control_replay_profiles.md"
 _CLAIMS_EVIDENCE_MAP = REPO_ROOT / "docs" / "internal" / "CLAIMS_EVIDENCE_MAP.md"
 _INTERNAL_READINESS_REGISTER = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_REGISTER.md"
 _INTERNAL_READINESS_SOURCE = REPO_ROOT / "docs" / "internal" / "INTERNAL_READINESS_SOURCE.md"
