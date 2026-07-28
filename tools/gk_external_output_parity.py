@@ -21,10 +21,12 @@ import hashlib
 import json
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 from numpy.typing import NDArray
+
+from scpn_fusion.io.safe_loaders import checked_json_load, checked_np_load
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE_ROOT = ROOT / "data" / "external" / "full_fidelity_public_sources"
@@ -122,6 +124,7 @@ BLOCKED_LICENSE_TOKENS = (
     "restricted",
     "unknown",
 )
+ArtifactMetric = Literal["absolute_error", "relative_error", "relative_l2"]
 
 
 def _rel(path: Path, base: Path = ROOT) -> str:
@@ -148,7 +151,9 @@ def _sha256(path: Path) -> str:
 
 
 def _load_reference_case() -> dict[str, Any]:
-    manifest = json.loads(REFERENCE_CASES.read_text(encoding="utf-8"))
+    manifest = checked_json_load(REFERENCE_CASES)
+    if not isinstance(manifest, dict):
+        raise ValueError("full-fidelity reference manifest must be a JSON object")
     if manifest.get("schema") != "full-fidelity-reference-cases.v1":
         raise ValueError("full-fidelity reference manifest schema mismatch")
     cases = manifest["surfaces"]["native_nonlinear_gyrokinetics"]["required_cases"]
@@ -196,7 +201,9 @@ def _load_manifest(source_root: Path) -> dict[str, Any] | None:
     path = source_root / MANIFEST_NAME
     if not path.exists():
         return None
-    payload = cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
+    payload = checked_json_load(path)
+    if not isinstance(payload, dict):
+        raise ValueError("GK external output manifest must be a JSON object")
     if payload.get("schema") != MANIFEST_SCHEMA:
         raise ValueError("GK external output manifest schema mismatch")
     return payload
@@ -239,13 +246,15 @@ def _load_payload(
     observable_names: Collection[str] | None = None,
 ) -> dict[str, dict[str, NDArray[np.float64]]]:
     if path.suffix == ".json":
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = checked_json_load(path)
+        if not isinstance(payload, dict):
+            raise ValueError("GK nonlinear external JSON output must be an object")
         if payload.get("schema") != OUTPUT_SCHEMA:
             raise ValueError("GK nonlinear external JSON output schema mismatch")
         coordinates = payload.get("coordinates", {})
         observables = payload.get("observables", {})
     elif path.suffix == ".npz":
-        with np.load(path, allow_pickle=False) as npz:
+        with checked_np_load(path) as npz:
             arrays = {name: npz[name] for name in npz.files}
         coordinate_set = {str(name) for name in coordinate_names or ()}
         observable_set = {str(name) for name in observable_names or ()}
@@ -685,11 +694,13 @@ def _threshold_contract_matrix(reference_case: dict[str, Any]) -> list[dict[str,
     thresholds = reference_case["thresholds"]
     matrix: list[dict[str, Any]] = []
     for threshold_name in sorted(thresholds):
-        contract = threshold_contracts.get(threshold_name, {})
+        raw_contract = threshold_contracts.get(threshold_name, {})
+        contract = raw_contract if isinstance(raw_contract, dict) else {}
+        limit, limit_reason = _finite_float(thresholds[threshold_name])
         matrix.append(
             {
                 "comparator": str(contract.get("comparator", "")),
-                "limit": float(thresholds[threshold_name]),
+                "limit": limit if limit_reason is None else None,
                 "metric": str(contract.get("metric", "")),
                 "observable": str(contract.get("observable", "")),
                 "threshold": threshold_name,
@@ -855,18 +866,16 @@ def _observable_array(
 
 
 def _metric_value(
-    candidate: NDArray[np.float64], reference: NDArray[np.float64], metric: str
+    candidate: NDArray[np.float64], reference: NDArray[np.float64], metric: ArtifactMetric
 ) -> float:
     delta = candidate - reference
     if metric == "absolute_error":
         return float(np.max(np.abs(delta)))
     if metric == "relative_error":
         return float(np.max(np.abs(delta)) / max(float(np.max(np.abs(reference))), 1.0e-30))
-    if metric == "relative_l2":
-        return float(
-            np.linalg.norm(delta.ravel()) / max(float(np.linalg.norm(reference.ravel())), 1.0e-30)
-        )
-    raise ValueError(f"unsupported artifact metric: {metric}")
+    return float(
+        np.linalg.norm(delta.ravel()) / max(float(np.linalg.norm(reference.ravel())), 1.0e-30)
+    )
 
 
 def _evaluate_thresholds(
@@ -936,7 +945,7 @@ def _evaluate_thresholds(
             )
             checks.append(check)
             continue
-        value = _metric_value(native, reference, str(metric))
+        value = _metric_value(native, reference, cast(ArtifactMetric, metric))
         passed = value <= limit if comparator == "<=" else value >= limit
         check.update({"passed": bool(passed), "valid": True, "value": value})
         checks.append(check)
@@ -1515,13 +1524,14 @@ def _markdown(report: dict[str, Any]) -> str:
         ]
     )
     for row in report["threshold_contract_matrix"]:
+        limit = "-" if row["limit"] is None else f"{float(row['limit']):.6g}"
         lines.append(
-            "| {threshold} | `{observable}` | `{metric}` | `{comparator}` | {limit:.6g} |".format(
+            "| {threshold} | `{observable}` | `{metric}` | `{comparator}` | {limit} |".format(
                 threshold=row["threshold"],
                 observable=row["observable"],
                 metric=row["metric"],
                 comparator=row["comparator"],
-                limit=float(row["limit"]),
+                limit=limit,
             )
         )
     lines.extend(["", "## Missing full-fidelity requirements", ""])
@@ -1531,26 +1541,64 @@ def _markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     """Execute GK external-output parity report generation.
 
     Builds the current GK parity report, emits it as JSON and, when
     ``--check`` mode is enabled via arguments, enforces acceptance of the
     full-fidelity gate.
 
-    Returns:
+    Parameters
+    ----------
+    argv : list of str, optional
+        CLI arguments; defaults to :data:`sys.argv` when omitted.
+
+    Returns
+    -------
+    None
         ``None`` on success.
 
-    Raises:
-        ``SystemExit`` with status 1 when ``--check`` is active and the parity
-        contract is not accepted.
+    Raises
+    ------
+    SystemExit
+        Raised with status 1 when ``--check`` is active and the parity contract
+        is not accepted.
+
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check", action="store_true", help="Exit non-zero if full fidelity is blocked"
     )
-    args = parser.parse_args()
-    report = build_gk_external_output_parity_report(write=True)
+    parser.add_argument(
+        "--source-root",
+        type=Path,
+        default=EXTERNAL_OUTPUT_ROOT,
+        help="Directory containing manifest.json and referenced solver payloads.",
+    )
+    parser.add_argument(
+        "--artifact-dir",
+        type=Path,
+        default=ARTIFACT_DIR,
+        help="Directory for converted reference artifacts.",
+    )
+    parser.add_argument(
+        "--report-dir",
+        type=Path,
+        default=REPORT_DIR,
+        help="Directory for JSON and Markdown parity reports.",
+    )
+    parser.add_argument(
+        "--no-write",
+        action="store_true",
+        help="Evaluate contracts without writing converted artifacts or reports.",
+    )
+    args = parser.parse_args(argv)
+    report = build_gk_external_output_parity_report(
+        source_root=args.source_root,
+        artifact_dir=args.artifact_dir,
+        report_dir=args.report_dir,
+        write=not args.no_write,
+    )
     if args.check and not report["accepted_full_fidelity_ready"]:
         raise SystemExit(1)
 

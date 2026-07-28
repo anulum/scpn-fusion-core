@@ -396,6 +396,8 @@ files = [
     "tests/test_generate_fno_qlknn_spatial.py",
     "tools/onboard_diiid_raw_disruption_shots.py",
     "tests/test_onboard_diiid_raw_disruption_shots.py",
+    "tools/gk_external_output_parity.py",
+    "tests/test_gk_external_output_parity.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",
