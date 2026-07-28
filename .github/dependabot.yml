@@ -31,7 +31,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    # Dependabot's Python 3.14 updater cannot reproduce the governed uv
+    # lock matrix for Python 3.10–3.12. Security updates remain enabled and
+    # use their separate security-update pull-request limit.
+    open-pull-requests-limit: 0
     labels:
       - "dependencies"
       - "python"
