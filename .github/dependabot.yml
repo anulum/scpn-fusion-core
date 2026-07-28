@@ -56,6 +56,12 @@ updates:
       - "dependencies"
       - "python"
       - "security"
+    ignore:
+      # NumPy 2.x is outside the supported runtime contract (numpy<2) and has
+      # no compatible wheel for every Python version in the CI matrix.
+      - dependency-name: "numpy"
+        versions:
+          - "2.5.1"
   - package-ecosystem: "cargo"
     directory: "/scpn-fusion-rs"
     schedule:
