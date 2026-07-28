@@ -388,6 +388,8 @@ files = [
     "tests/test_sync_metadata.py",
     "tools/generate_readiness_scope_reports.py",
     "tests/test_generate_readiness_scope_reports.py",
+    "tools/real_data_roadmap_progress.py",
+    "tests/test_real_data_roadmap_progress.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",
