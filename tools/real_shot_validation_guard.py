@@ -38,12 +38,17 @@ def _load_json(path: Path) -> dict[str, Any]:
 def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str, Any]:
     """Evaluate real-shot validation artifacts against configured thresholds.
 
-    Args:
-        report: Report payload containing equilibrium/transport/disruption sections.
-        thresholds: Guard configuration including minima, required machines, and source-contract flags.
+    Parameters
+    ----------
+    report
+        Report payload containing equilibrium, transport, and disruption sections.
+    thresholds
+        Guard configuration including minima, required machines, and source-contract flags.
 
-    Returns:
-        Detailed pass/fail summary with per-domain verdicts and aggregate status.
+    Returns
+    -------
+    dict[str, Any]
+        Per-domain verdicts and aggregate pass status.
     """
     coverage_cfg = dict(thresholds.get("coverage_minima", {}))
     required_machines = [str(v) for v in thresholds.get("required_equilibrium_machines", [])]
@@ -203,15 +208,22 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
 def main(argv: list[str] | None = None) -> int:
     """Run real-shot validation guard and write a JSON summary.
 
-    Args:
-        argv: Optional CLI argument list. If omitted, uses process arguments.
+    Parameters
+    ----------
+    argv
+        Optional CLI argument list. If omitted, use process arguments.
 
-    Returns:
-        ``0`` when guard passes, ``1`` when any required criterion fails.
+    Returns
+    -------
+    int
+        ``0`` when the guard passes, or ``1`` when a criterion fails.
 
-    Raises:
-        ValueError: If report or threshold payload is malformed.
-        FileNotFoundError: If inputs are missing.
+    Raises
+    ------
+    ValueError
+        If a report or threshold payload is malformed.
+    FileNotFoundError
+        If an input file is missing.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", default=str(DEFAULT_REPORT))

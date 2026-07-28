@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Real-Shot Validation Guard Tests
+"""Tests for the real-shot validation admission guard."""
 
 from __future__ import annotations
 
@@ -12,6 +13,9 @@ import importlib.util
 import json
 import sys
 from pathlib import Path
+from typing import Any
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +27,7 @@ sys.modules[SPEC.name] = guard
 SPEC.loader.exec_module(guard)
 
 
-def _base_report() -> dict:
+def _base_report() -> dict[str, Any]:
     return {
         "overall_pass": True,
         "dataset_coverage": {"passes": True},
@@ -71,7 +75,7 @@ def _base_report() -> dict:
     }
 
 
-def _thresholds() -> dict:
+def _thresholds() -> dict[str, Any]:
     return {
         "coverage_minima": {"equilibrium_files": 12, "transport_shots": 52, "disruption_shots": 12},
         "required_equilibrium_machines": ["SPARC", "DIII-D", "JET"],
@@ -87,11 +91,13 @@ def _thresholds() -> dict:
 
 
 def test_evaluate_passes_with_valid_report() -> None:
+    """Accept a report satisfying every configured evidence threshold."""
     summary = guard.evaluate(report=_base_report(), thresholds=_thresholds())
     assert summary["overall_pass"] is True
 
 
 def test_evaluate_fails_on_missing_machine() -> None:
+    """Reject missing equilibrium-machine diversity."""
     report = _base_report()
     report["equilibrium"]["results"] = [{"machine": "SPARC"}, {"machine": "DIII-D"}]
     summary = guard.evaluate(report=report, thresholds=_thresholds())
@@ -100,6 +106,7 @@ def test_evaluate_fails_on_missing_machine() -> None:
 
 
 def test_evaluate_fails_on_missing_transport_machine() -> None:
+    """Reject missing transport-machine diversity."""
     report = _base_report()
     report["transport"]["shots"] = [{"machine": "SPARC"}, {"machine": "DIII-D"}]
     summary = guard.evaluate(report=report, thresholds=_thresholds())
@@ -108,6 +115,7 @@ def test_evaluate_fails_on_missing_transport_machine() -> None:
 
 
 def test_evaluate_fails_when_disruption_balance_is_below_thresholds() -> None:
+    """Reject an insufficient disruptive/safe event balance."""
     report = _base_report()
     report["disruption"]["n_disruptions"] = 2
     summary = guard.evaluate(report=report, thresholds=_thresholds())
@@ -116,6 +124,7 @@ def test_evaluate_fails_when_disruption_balance_is_below_thresholds() -> None:
 
 
 def test_evaluate_fails_when_disruption_source_contract_missing() -> None:
+    """Reject a missing disruption source contract when required."""
     report = _base_report()
     report["disruption"]["data_source"] = {}
     summary = guard.evaluate(report=report, thresholds=_thresholds())
@@ -124,6 +133,7 @@ def test_evaluate_fails_when_disruption_source_contract_missing() -> None:
 
 
 def test_evaluate_fails_when_raw_ingestion_is_required() -> None:
+    """Reject synthetic-only evidence when raw ingestion is required."""
     report = _base_report()
     thresholds = _thresholds()
     thresholds["require_disruption_raw_ingestion_ready"] = True
@@ -133,6 +143,7 @@ def test_evaluate_fails_when_raw_ingestion_is_required() -> None:
 
 
 def test_main_writes_summary(tmp_path: Path) -> None:
+    """Write a passing summary through the production CLI boundary."""
     report_path = tmp_path / "report.json"
     thresholds_path = tmp_path / "thresholds.json"
     summary_path = tmp_path / "summary.json"
@@ -151,3 +162,65 @@ def test_main_writes_summary(tmp_path: Path) -> None:
     assert rc == 0
     payload = json.loads(summary_path.read_text(encoding="utf-8"))
     assert payload["overall_pass"] is True
+
+
+@pytest.mark.parametrize("source_payload", ["invalid", {"source_types": "invalid"}])
+def test_evaluate_normalizes_malformed_disruption_sources(source_payload: object) -> None:
+    """Normalize malformed disruption-source containers without promotion."""
+    report = _base_report()
+    report["disruption"]["data_source"] = source_payload
+    thresholds = _thresholds()
+    thresholds["require_disruption_source_contract"] = False
+    thresholds["require_dataset_minima_match_thresholds"] = False
+
+    summary = guard.evaluate(report=report, thresholds=thresholds)
+
+    assert summary["disruption_data_source"]["source_contract_present"] is False
+    assert summary["dataset_minima_alignment"]["passes"] is True
+
+
+def test_main_rejects_non_object_json(tmp_path: Path) -> None:
+    """Reject a report whose JSON root is not an object."""
+    report_path = tmp_path / "report.json"
+    thresholds_path = tmp_path / "thresholds.json"
+    report_path.write_text("[]\n", encoding="utf-8")
+    thresholds_path.write_text(json.dumps(_thresholds()), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="expected JSON object payload"):
+        guard.main(
+            [
+                "--report",
+                str(report_path),
+                "--thresholds",
+                str(thresholds_path),
+                "--summary-json",
+                str(tmp_path / "summary.json"),
+            ]
+        )
+
+
+def test_main_resolves_relative_paths_and_reports_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Resolve relative paths and return non-zero for a failed artifact gate."""
+    monkeypatch.setattr(guard, "REPO_ROOT", tmp_path)
+    report = _base_report()
+    report["overall_pass"] = False
+    (tmp_path / "report.json").write_text(json.dumps(report), encoding="utf-8")
+    (tmp_path / "thresholds.json").write_text(json.dumps(_thresholds()), encoding="utf-8")
+
+    assert (
+        guard.main(
+            [
+                "--report",
+                "report.json",
+                "--thresholds",
+                "thresholds.json",
+                "--summary-json",
+                "reports/summary.json",
+            ]
+        )
+        == 1
+    )
+    assert (tmp_path / "reports" / "summary.json").is_file()
