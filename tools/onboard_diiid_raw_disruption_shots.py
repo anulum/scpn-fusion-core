@@ -10,19 +10,34 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
-try:
-    from tools.download_diiid_data import download_shot_data
-except ImportError:  # pragma: no cover - direct script execution fallback
-    from download_diiid_data import download_shot_data  # type: ignore[no-redef]
+
+DownloadShotData = Callable[..., Any]
+FloatArray = NDArray[np.float64]
+
+
+def _load_download_shot_data() -> DownloadShotData:
+    """Load the downloader from package or direct-script import context."""
+    try:
+        module = importlib.import_module("tools.download_diiid_data")
+    except ModuleNotFoundError as exc:
+        if exc.name not in {"tools", "tools.download_diiid_data"}:
+            raise
+        module = importlib.import_module("download_diiid_data")
+    return cast(DownloadShotData, module.download_shot_data)
+
+
+download_shot_data = _load_download_shot_data()
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +79,7 @@ def _sanitize_scenario(value: str) -> str:
     return sanitized
 
 
-def _ensure_monotonic_timebase(raw_time: np.ndarray) -> np.ndarray:
+def _ensure_monotonic_timebase(raw_time: FloatArray) -> FloatArray:
     time_s = np.asarray(raw_time, dtype=np.float64).reshape(-1)
     if time_s.size < 2:
         return np.arange(max(time_s.size, 2), dtype=np.float64)
@@ -76,7 +91,7 @@ def _ensure_monotonic_timebase(raw_time: np.ndarray) -> np.ndarray:
     return time_s
 
 
-def _derive_disruption_signal(data: np.ndarray, time_s: np.ndarray) -> np.ndarray:
+def _derive_disruption_signal(data: FloatArray, time_s: FloatArray) -> FloatArray:
     base = np.asarray(data, dtype=np.float64).reshape(-1)
     if base.size < 2:
         raise ValueError("signal must contain at least 2 samples")
@@ -99,7 +114,7 @@ def _choose_disruption_index(
     is_disruption: bool,
     disruption_time_idx: int | None,
     disruption_time_s: float | None,
-    time_s: np.ndarray,
+    time_s: FloatArray,
 ) -> int:
     if not is_disruption:
         return -1
@@ -178,17 +193,28 @@ def onboard_shots(
 ) -> dict[str, Any]:
     """Download and package raw disruption shots from DIII-D spec definitions.
 
-    Args:
-        spec: Onboarding spec payload containing a ``shots`` list.
-        shot_dir: Destination directory for generated ``.npz`` shot files.
-        metadata_path: Metadata path updated with per-shot overrides.
-        cache_dir: Directory passed to the external download helper.
-        force_download: Re-download even when cached data exists.
-        refresh_manifest: Whether to regenerate the disruption-shots manifest.
-        manifest_path: Destination manifest path for generated summary inputs.
+    Parameters
+    ----------
+    spec : dict
+        Onboarding spec payload containing a ``shots`` list.
+    shot_dir : Path
+        Destination directory for generated ``.npz`` shot files.
+    metadata_path : Path
+        Metadata path updated with per-shot overrides.
+    cache_dir : Path
+        Directory passed to the external download helper.
+    force_download : bool
+        Re-download even when cached data exists.
+    refresh_manifest : bool
+        Whether to regenerate the disruption-shots manifest.
+    manifest_path : Path
+        Destination manifest path for generated summary inputs.
 
-    Returns:
-        A summary dict with counts, created files, and failures.
+    Returns
+    -------
+    dict
+        Summary with counts, created files, and failures.
+
     """
     shots_raw = spec.get("shots", [])
     if not isinstance(shots_raw, list) or not shots_raw:
@@ -347,16 +373,24 @@ def onboard_shots(
 def main(argv: list[str] | None = None) -> int:
     """Run raw DIII-D disruption-shot onboarding from an import spec.
 
-    Args:
-        argv: Optional CLI argument list; defaults to ``sys.argv`` when omitted.
+    Parameters
+    ----------
+    argv : list of str, optional
+        CLI argument list; defaults to ``sys.argv`` when omitted.
 
-    Returns:
+    Returns
+    -------
+    int
         Exit code: ``0`` for clean completion, ``1`` if no shots were onboarded
         and failures occurred, ``2`` when partial success with failures.
 
-    Raises:
-        FileNotFoundError: If the onboarding spec path does not exist.
-        ValueError: If the spec payload is malformed.
+    Raises
+    ------
+    FileNotFoundError
+        If the onboarding spec path does not exist.
+    ValueError
+        If the spec payload is malformed.
+
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
