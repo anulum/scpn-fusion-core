@@ -11,7 +11,7 @@
 //! Computes coil current corrections using system response Jacobian.
 
 use fusion_types::error::{FusionError, FusionResult};
-use ndarray::{Array1, Array2};
+use ndarray::{array, Array1, Array2};
 
 /// Singular value cutoff for regularization. Python: 1e-2.
 const SV_CUTOFF: f64 = 1e-2;
@@ -78,8 +78,7 @@ pub fn svd_optimal_correction(
             ));
         }
 
-        let aat_inv =
-            Array2::from_shape_vec((2, 2), vec![d / det, -b / det, -c / det, a / det]).unwrap();
+        let aat_inv = array![[d / det, -b / det], [-c / det, a / det]];
 
         let pinv = response_matrix.t().dot(&aat_inv); // n×m
         let mut delta = pinv.dot(error) * gain;
