@@ -34,7 +34,7 @@ impl Default for PedestalConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct PedestalModel {
     pub config: PedestalConfig,
     last_gradient: f64,
@@ -130,12 +130,6 @@ impl PedestalModel {
     }
 }
 
-impl Default for PedestalModel {
-    fn default() -> Self {
-        Self::new(PedestalConfig::default()).expect("default pedestal config must be valid")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -155,6 +149,11 @@ mod tests {
             ne,
             n_impurity,
         }
+    }
+
+    #[test]
+    fn test_default_config_satisfies_checked_constructor() {
+        assert!(PedestalModel::new(PedestalConfig::default()).is_ok());
     }
 
     #[test]
