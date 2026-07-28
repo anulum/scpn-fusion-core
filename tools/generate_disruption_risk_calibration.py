@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -46,6 +47,8 @@ _MAX_JSON_BYTES = 8 * 1024 * 1024
 _MAX_SPLIT_IDS_PER_SET = 200_000
 _MAX_MANIFEST_SHOTS = 50_000
 _MAX_SIGNAL_SAMPLES_PER_SHOT = 200_000
+
+FloatArray = npt.NDArray[np.float64]
 
 
 def _load_json_text(path: Path) -> str:
@@ -147,7 +150,10 @@ def _load_samples(
     loader = _load_payload_loader()
     samples: list[dict[str, Any]] = []
     seen_files: set[str] = set()
-    for item in sorted(items, key=lambda x: str(x.get("file", ""))):
+    for item in sorted(
+        items,
+        key=lambda value: str(value.get("file", "")) if isinstance(value, dict) else "",
+    ):
         if not isinstance(item, dict):
             raise ValueError("Manifest shot entries must be objects.")
         file_name = item.get("file")
@@ -173,6 +179,8 @@ def _load_samples(
                 f"{file_name}: signal length {signal.size} exceeds max "
                 f"{_MAX_SIGNAL_SAMPLES_PER_SHOT}."
             )
+        if signal.size == 0:
+            raise ValueError(f"{file_name}: signal must not be empty.")
         n1_amp = np.asarray(payload["n1_amp"], dtype=np.float64)
         n2_amp = payload["n2_amp"]
 
@@ -188,9 +196,6 @@ def _load_samples(
             risk = float(predict_disruption_risk(window, toroidal))
             risk = float(np.clip(risk, 1e-9, 1.0 - 1e-9))
             logits.append(float(np.log(risk / (1.0 - risk))))
-        if not logits:
-            raise ValueError(f"{file_name}: no sliding-window logits generated.")
-
         samples.append(
             {
                 "file": file_name,
@@ -256,8 +261,8 @@ def _select_calibration(
     train_val_samples: list[dict[str, Any]],
     target_recall: float,
     target_fpr: float,
-    threshold_values: np.ndarray,
-    bias_values: np.ndarray,
+    threshold_values: FloatArray,
+    bias_values: FloatArray,
 ) -> dict[str, Any]:
     candidates: list[dict[str, Any]] = []
     for bias_delta in bias_values.tolist():
@@ -317,8 +322,8 @@ def _generate(
     splits_path: Path,
     target_recall: float,
     target_fpr: float,
-    threshold_values: np.ndarray,
-    bias_values: np.ndarray,
+    threshold_values: FloatArray,
+    bias_values: FloatArray,
     window_size: int,
 ) -> dict[str, Any]:
     split_map = _load_split_map(splits_path)
@@ -504,11 +509,16 @@ def main(argv: list[str] | None = None) -> int:
     grids and evaluating train/val plus holdout constraints; optional check mode
     compares against existing outputs for drift detection.
 
-    Args:
-        argv: Optional CLI arguments. If omitted, reads process arguments.
+    Parameters
+    ----------
+    argv:
+        Optional CLI arguments. If omitted, reads process arguments.
 
-    Returns:
-        0 on pass, 1 on gate failure, argument/output mismatch, or stale artifacts.
+    Returns
+    -------
+    int
+        ``0`` on pass, ``1`` on gate failure, argument/output mismatch, or
+        stale artifacts.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shot-dir", default=str(DEFAULT_SHOT_DIR))
