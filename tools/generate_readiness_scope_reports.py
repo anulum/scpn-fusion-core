@@ -132,16 +132,25 @@ def _normalize_json_for_check(payload_text: str) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     """Generate split scope reports for source code and docs-claims debt.
 
-    Args:
-        argv: Optional CLI args. If omitted, uses process arguments from
-            ``sys.argv`` through ``argparse``.
+    Parameters
+    ----------
+    argv : list of str, optional
+        CLI arguments. If omitted, use process arguments from ``sys.argv``
+        through ``argparse``.
 
-    Returns:
-        Exit status code: ``0`` for success, ``1`` when check-mode detects drift.
+    Returns
+    -------
+    int
+        Exit status code: ``0`` for success, ``1`` when check mode detects
+        drift.
 
-    Raises:
-        ValueError: If ``--top-limit`` or ``--full-limit`` are set below 1.
-        SystemExit: If CLI parsing fails.
+    Raises
+    ------
+    ValueError
+        If ``--top-limit`` or ``--full-limit`` is below 1.
+    SystemExit
+        If CLI parsing fails.
+
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-output", default=str(DEFAULT_SOURCE_MD))

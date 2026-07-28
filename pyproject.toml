@@ -386,6 +386,8 @@ files = [
     "tests/test_fallback_budget_guard.py",
     "tools/sync_metadata.py",
     "tests/test_sync_metadata.py",
+    "tools/generate_readiness_scope_reports.py",
+    "tests/test_generate_readiness_scope_reports.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",
