@@ -485,8 +485,15 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
 
         return chi_gb
 
-    def update_transport_model(self, P_aux: float) -> None:
-        """Reduced multichannel transport model with optional EPED pedestal."""
+    def _evaluate_transport_coefficients(
+        self, P_aux: float
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
+        """Evaluate transport coefficients for the profiles currently on the solver.
+
+        The calculation is intentionally separate from assignment so the runtime
+        can evaluate the nonlinear closure on a predicted thermal state without
+        accepting that trial state or applying inter-step coefficient relaxation.
+        """
         solver_mod = _solver_module()
         q_profile, s_hat_profile, r_major, a_minor, b_toroidal, q_profile_source = (
             self._resolve_transport_closure_inputs()
@@ -533,23 +540,12 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
             chi_turb_i=chi_turb_i,
             d_turb=d_turb,
         )
-        chi_e_new = np.maximum(chi_base + chi_turb_e, 1e-6)
-        chi_i_new = np.maximum(chi_base + chi_turb_i, 1e-6)
-        d_n_new = np.maximum(d_turb, 0.1 * chi_base)
-        # Optional under-relaxation of the transport coefficients (standard
-        # integrated-modelling practice for the stiff chi(grad T) coupling:
-        # the fully explicit update oscillates between transport dump and
-        # reheat at practical time steps). alpha=1 (default) keeps the
-        # previous fully explicit behaviour.
-        alpha = float(np.clip(getattr(self, "chi_relaxation_alpha", 1.0), 0.05, 1.0))
-        if alpha < 1.0 and getattr(self, "chi_i", None) is not None:
-            prev_chi_i = np.asarray(self.chi_i, dtype=np.float64)
-            prev_chi_e = np.asarray(self.chi_e, dtype=np.float64)
-            prev_d_n = np.asarray(self.D_n, dtype=np.float64)
-            if prev_chi_i.shape == chi_i_new.shape:
-                chi_i_new = alpha * chi_i_new + (1.0 - alpha) * prev_chi_i
-                chi_e_new = alpha * chi_e_new + (1.0 - alpha) * prev_chi_e
-                d_n_new = alpha * d_n_new + (1.0 - alpha) * prev_d_n
-        self.chi_e = chi_e_new
-        self.chi_i = chi_i_new
-        self.D_n = d_n_new
+        return (
+            np.maximum(chi_base + chi_turb_e, 1e-6),
+            np.maximum(chi_base + chi_turb_i, 1e-6),
+            np.maximum(d_turb, 0.1 * chi_base),
+        )
+
+    def update_transport_model(self, P_aux: float) -> None:
+        """Evaluate and accept transport coefficients for the current profiles."""
+        self.chi_e, self.chi_i, self.D_n = self._evaluate_transport_coefficients(P_aux)

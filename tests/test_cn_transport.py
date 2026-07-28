@@ -98,16 +98,56 @@ def test_cn_energy_decreases_no_heating(solver: TransportSolver):
 def test_cn_heats_to_steady_state(solver: TransportSolver):
     """50 steps at dt=0.5 with P_aux=50 MW should heat the core above 1 keV.
 
-    The per-step chi refresh is under-relaxed (the standard treatment of
-    the stiff chi(grad T) coupling): fully explicit chi at dt=0.5 s
-    oscillates between transport dump and reheat, which the old rhs
-    range-clamp used to mask by manufacturing energy.
+    The in-step predictor-corrector time-centres the stiff chi(grad T)
+    coupling instead of relying on inter-step coefficient relaxation.
     """
-    solver.chi_relaxation_alpha = 0.3
     for _ in range(50):
         solver.update_transport_model(50.0)
         solver.evolve_profiles(dt=0.5, P_aux=50.0)
     assert solver.Ti[0] > 1.0, f"Core T = {solver.Ti[0]:.3f} keV, expected > 1"
+
+
+def test_predictor_corrector_time_centres_transport_coefficients(
+    solver: TransportSolver, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The corrector re-solves with the mean of old- and predicted-state chi."""
+    chi_i_n = np.full_like(solver.rho, 2.0)
+    chi_e_n = np.full_like(solver.rho, 4.0)
+    d_n_n = np.full_like(solver.rho, 1.0)
+    solver.chi_i = chi_i_n.copy()
+    solver.chi_e = chi_e_n.copy()
+    solver.D_n = d_n_n.copy()
+    built_chi: list[np.ndarray] = []
+    original_build = solver._build_cn_tridiag
+
+    def evaluate_trial(_p_aux: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return 2.0 * chi_e_n, 3.0 * chi_i_n, 5.0 * d_n_n
+
+    def record_build(chi: np.ndarray, dt: float):
+        built_chi.append(np.asarray(chi).copy())
+        return original_build(chi, dt)
+
+    monkeypatch.setattr(solver, "_evaluate_transport_coefficients", evaluate_trial)
+    monkeypatch.setattr(solver, "_build_cn_tridiag", record_build)
+
+    solver.evolve_profiles(dt=0.01, P_aux=5.0)
+
+    # The first build belongs to the impurity-density solve. Thermal builds
+    # then contain the predictor, nonlinear corrector trial(s), and accepted
+    # corrector replay used to record only accepted-state recoveries.
+    assert len(built_chi) >= 4
+    np.testing.assert_allclose(built_chi[1], chi_i_n)
+    for corrected_chi in built_chi[2:]:
+        np.testing.assert_allclose(corrected_chi, 2.0 * chi_i_n)
+    np.testing.assert_allclose(solver.chi_e, 1.5 * chi_e_n)
+    np.testing.assert_allclose(solver.D_n, 3.0 * d_n_n)
+    contract = solver._last_transport_predictor_corrector
+    assert contract["scheme"] == "picard_predictor_corrector"
+    assert contract["theta"] == 0.5
+    assert contract["converged"] is True
+    assert contract["iterations"] == 2
+    assert contract["chi_i_relative_change"] == 2.0
+    assert contract["chi_e_relative_change"] == 1.0
 
 
 def test_cn_matches_euler_small_dt(tmp_path: Path):

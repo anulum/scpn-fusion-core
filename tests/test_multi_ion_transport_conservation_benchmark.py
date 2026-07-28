@@ -38,6 +38,8 @@ def test_run_benchmark_passes_contracts() -> None:
     assert g["quasineutral_pass"] is True
     assert g["late_energy_pass"] is True
     assert g["he_ash_pass"] is True
+    assert g["predictor_corrector_pass"] is True
+    assert g["metrics"]["predictor_corrector_nonconverged_steps"] == 0
 
 
 def test_render_markdown_contains_sections() -> None:

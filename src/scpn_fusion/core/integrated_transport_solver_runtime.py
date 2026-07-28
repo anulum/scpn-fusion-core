@@ -46,6 +46,13 @@ class TransportSolverRuntimeMixin(
     chi_e: FloatArray
     chi_i: FloatArray
     n_impurity: FloatArray
+    _last_transport_predictor_corrector: dict[str, float | int | bool | str]
+
+    def _evaluate_transport_coefficients(
+        self, P_aux: float
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
+        """Type-level dependency supplied by ``TransportSolverModelMixin``."""
+        raise NotImplementedError
 
     @staticmethod
     def _thomas_solve(a: FloatArray, b: FloatArray, c: FloatArray, d: FloatArray) -> FloatArray:
@@ -177,6 +184,113 @@ class TransportSolverRuntimeMixin(
 
         return recovered_total
 
+    def _solve_thermal_cn_step(
+        self,
+        *,
+        dt: float,
+        Ti_old: FloatArray,
+        Te_old: FloatArray,
+        chi_i: FloatArray,
+        chi_e: FloatArray,
+        heat_source_i: FloatArray,
+        nu_rad_i: FloatArray,
+        nu_eq: FloatArray,
+        S_heat_e_aux: FloatArray,
+        P_rad_line_Wm3: FloatArray,
+        e_keV_J: float,
+        record_recoveries: bool,
+    ) -> dict[str, FloatArray]:
+        """Solve one thermal CN trial from a fixed beginning-of-step state."""
+
+        def account(label: str, count: int) -> None:
+            if record_recoveries:
+                self._last_numerical_recovery_count += count
+                self._record_recovery(label, count)
+
+        Lh_explicit = self._explicit_diffusion_rhs(Ti_old, chi_i)
+        Lh_explicit, n_lh_i = self._sanitize_with_fallback(
+            Lh_explicit,
+            np.zeros_like(Lh_explicit),
+        )
+        account("cn.ion_diffusion_rhs", n_lh_i)
+        rhs = Ti_old + 0.5 * dt * Lh_explicit + dt * heat_source_i + dt * nu_eq * Te_old
+        # Only non-finite rhs entries are replaced. Range-clamping the rhs
+        # rewrites the discrete equation and can manufacture energy.
+        rhs, n_rhs_i = self._sanitize_with_fallback(rhs, Ti_old)
+        account("cn.ion_rhs", n_rhs_i)
+        a, b, c = self._build_cn_tridiag(chi_i, dt)
+        b_sink = b + dt * (nu_rad_i + nu_eq)
+        b_sink[0] = 1.0
+        c[0] = -1.0
+        rhs[0] = 0.0
+        b_sink[-1] = 1.0
+        a[-1] = 0.0
+        rhs[-1] = 0.1
+        new_Ti = self._thomas_solve(a, b_sink, c, rhs)
+        new_Ti[0] = new_Ti[1]
+        new_Ti[-1] = 0.1
+        solved_ti, n_ti_new = self._sanitize_with_fallback(new_Ti, Ti_old, floor=0.01, ceil=1e3)
+        account("cn.ion_solution", n_ti_new)
+
+        zero = np.zeros_like(Ti_old)
+        if not self.multi_ion:
+            self.Ti = solved_ti
+            self.Te = solved_ti.copy()
+            return {
+                "Lh_explicit_i": Lh_explicit,
+                "Lh_explicit_e": zero,
+                "explicit_source_e": zero,
+                "nu_rad_e": zero,
+            }
+
+        P_brem = self._bremsstrahlung_power_density(self.ne, Te_old, self._Z_eff)
+        ne_safe_e = np.maximum(self.ne, 0.1) * 1e19
+        S_brem_e = P_brem / (ne_safe_e * e_keV_J)
+        S_rad_e = P_rad_line_Wm3 / (ne_safe_e * e_keV_J) * 0.5
+        explicit_source_e = S_heat_e_aux + nu_eq * solved_ti
+        explicit_source_e, n_src_e = self._sanitize_with_fallback(
+            explicit_source_e,
+            np.zeros_like(explicit_source_e),
+        )
+        account("cn.electron_net_source", n_src_e)
+        nu_rad_e, n_nu_e = self._sanitize_with_fallback(
+            (S_rad_e + S_brem_e) / np.maximum(Te_old, 0.01),
+            np.zeros_like(S_rad_e),
+            floor=0.0,
+        )
+        account("cn.electron_rad_sink", n_nu_e)
+
+        Lh_explicit_e = self._explicit_diffusion_rhs(Te_old, chi_e)
+        Lh_explicit_e, n_lh_e = self._sanitize_with_fallback(
+            Lh_explicit_e,
+            np.zeros_like(Lh_explicit_e),
+        )
+        account("cn.electron_diffusion_rhs", n_lh_e)
+        rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * explicit_source_e
+        rhs_e, n_rhs_e = self._sanitize_with_fallback(rhs_e, Te_old)
+        account("cn.electron_rhs", n_rhs_e)
+        a_e, b_e, c_e = self._build_cn_tridiag(chi_e, dt)
+        b_e_sink = b_e + dt * (nu_rad_e + nu_eq)
+        b_e_sink[0] = 1.0
+        c_e[0] = -1.0
+        rhs_e[0] = 0.0
+        b_e_sink[-1] = 1.0
+        a_e[-1] = 0.0
+        rhs_e[-1] = self.T_edge_keV
+        new_Te = self._thomas_solve(a_e, b_e_sink, c_e, rhs_e)
+        new_Te[0] = new_Te[1]
+        new_Te[-1] = self.T_edge_keV
+        solved_te, n_te_new = self._sanitize_with_fallback(new_Te, Te_old, floor=0.01, ceil=1e3)
+        account("cn.electron_solution", n_te_new)
+        self.Ti = solved_ti
+        self.Te = solved_te
+        return {
+            "Lh_explicit_i": Lh_explicit,
+            "Lh_explicit_e": Lh_explicit_e,
+            "explicit_source_e": explicit_source_e,
+            "nu_rad_e": nu_rad_e,
+        }
+
     def evolve_profiles(
         self,
         dt: float,
@@ -232,10 +346,10 @@ class TransportSolverRuntimeMixin(
 
         S_heat_i, S_heat_e_aux = self._compute_aux_heating_sources(P_aux)
 
+        e_keV_J = 1.602176634e-16
         if self.multi_ion:  # radiation sinks
             # Use coronal tungsten radiation (already in W/m^3)
             # Convert to keV / s per 10^19:  P [W/m^3] / (n_e [10^19 m^-3] * 1e19 * e_keV_J)
-            e_keV_J = 1.602176634e-16
             ne_safe = np.maximum(self.ne, 0.1) * 1e19
             S_rad_i = P_rad_line_Wm3 / (ne_safe * e_keV_J) * 0.5  # half to ions
         else:
@@ -282,105 +396,130 @@ class TransportSolverRuntimeMixin(
         self._last_numerical_recovery_count += n_nu_i
         self._record_recovery("cn.ion_rad_sink", n_nu_i)
 
-        Lh_explicit = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
-        Lh_explicit, n_lh_i = self._sanitize_with_fallback(
-            Lh_explicit,
-            np.zeros_like(Lh_explicit),
+        # Picard predictor-corrector for the nonlinear chi(grad T)
+        # closure. The predictor uses beginning-of-step coefficients. The
+        # closure is then evaluated on that trial thermal state and the
+        # accepted corrector uses theta=1/2 centred coefficients. Damping is
+        # confined to convergence of the in-step nonlinear iteration and does
+        # not blend coefficients between accepted time steps. Species and
+        # sources above are evaluated once; trial recoveries are discarded and
+        # only accepted-corrector recoveries count.
+        chi_i_n = np.asarray(self.chi_i, dtype=np.float64).copy()
+        chi_e_n = np.asarray(self.chi_e, dtype=np.float64).copy()
+        d_n_n = np.asarray(self.D_n, dtype=np.float64).copy()
+        self._solve_thermal_cn_step(
+            dt=dt,
+            Ti_old=Ti_old,
+            Te_old=Te_old,
+            chi_i=chi_i_n,
+            chi_e=chi_e_n,
+            heat_source_i=heat_source_i,
+            nu_rad_i=nu_rad_i,
+            nu_eq=nu_eq,
+            S_heat_e_aux=S_heat_e_aux,
+            P_rad_line_Wm3=P_rad_line_Wm3,
+            e_keV_J=e_keV_J,
+            record_recoveries=False,
         )
-        self._last_numerical_recovery_count += n_lh_i
-        self._record_recovery("cn.ion_diffusion_rhs", n_lh_i)
-        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * heat_source_i + dt * nu_eq * Te_old
-        # Only non-finite rhs entries are replaced. Range-clamping the rhs
-        # (the old floor=0.01/ceil=1e3) silently rewrote the discrete
-        # equation wherever 0.5*dt*L(T_old) was legitimately large and
-        # negative (steep edge gradients with large chi), manufacturing
-        # energy each step and feeding the multi-ion thermal runaway;
-        # positivity is enforced on the SOLUTION below, not the equation.
-        rhs, n_rhs_i = self._sanitize_with_fallback(rhs, Ti_old)
-        self._last_numerical_recovery_count += n_rhs_i
-        self._record_recovery("cn.ion_rhs", n_rhs_i)
-        a, b, c = self._build_cn_tridiag(self.chi_i, dt)
-        b_sink = b + dt * (nu_rad_i + nu_eq)
-        # Fold the boundary conditions into the system before solving. The
-        # builder's identity boundary rows otherwise leave rhs boundary
-        # entries carrying dt-scaled source terms, and the neighbouring
-        # interior nodes feel those inflated ghost values through the
-        # off-diagonal coupling — which made the discrete fixed point
-        # depend on dt (the second driver of the dt-dependence found by
-        # the real-TORAX comparison lane).
-        b_sink[0] = 1.0
-        c[0] = -1.0
-        rhs[0] = 0.0  # Neumann at core: T0 - T1 = 0
-        b_sink[-1] = 1.0
-        a[-1] = 0.0
-        rhs[-1] = 0.1  # Dirichlet at edge
-        new_Ti = self._thomas_solve(a, b_sink, c, rhs)
-
-        new_Ti[0] = new_Ti[1]  # Neumann at core
-        new_Ti[-1] = 0.1  # Dirichlet at edge
-        self.Ti, n_ti_new = self._sanitize_with_fallback(new_Ti, Ti_old, floor=0.01, ceil=1e3)
-        self._last_numerical_recovery_count += n_ti_new
-        self._record_recovery("cn.ion_solution", n_ti_new)
-
-        if self.multi_ion:  # electron temperature evolution
-            # Independent electron temperature evolution
-            # Electrons receive configured auxiliary-heating split.
-            S_heat_e = S_heat_e_aux
-            P_brem = self._bremsstrahlung_power_density(self.ne, Te_old, self._Z_eff)
-            ne_safe_e = np.maximum(self.ne, 0.1) * 1e19
-            S_brem_e = P_brem / (ne_safe_e * e_keV_J)
-            # Tungsten radiation on electrons (other half)
-            S_rad_e = P_rad_line_Wm3 / (ne_safe_e * e_keV_J) * 0.5
-
-            # Electron sinks (line radiation + bremsstrahlung) get the same
-            # implicit Patankar treatment as the ion radiation sink; the
-            # equilibration exchange is implicit-symmetric (see nu_eq above)
-            # and relaxes towards the updated ion temperature.
-            explicit_source_e = S_heat_e + nu_eq * self.Ti
-            explicit_source_e, n_src_e = self._sanitize_with_fallback(
-                explicit_source_e,
-                np.zeros_like(explicit_source_e),
+        theta = 0.5
+        max_iterations = 80
+        tolerance = 1e-5
+        iteration_damping = 0.15
+        profile_residual = float("inf")
+        converged = False
+        coefficient_residual_i = float("inf")
+        coefficient_residual_e = float("inf")
+        iterations = 0
+        for iterations in range(1, max_iterations + 1):
+            trial_ti = self.Ti.copy()
+            trial_te = self.Te.copy()
+            chi_e_pred, chi_i_pred, d_n_pred = self._evaluate_transport_coefficients(P_aux)
+            chi_i_pred = np.asarray(chi_i_pred, dtype=np.float64)
+            chi_e_pred = np.asarray(chi_e_pred, dtype=np.float64)
+            d_n_pred = np.asarray(d_n_pred, dtype=np.float64)
+            coefficient_residual_i = float(
+                np.linalg.norm(chi_i_pred - chi_i_n) / max(float(np.linalg.norm(chi_i_n)), 1e-30)
             )
-            self._last_numerical_recovery_count += n_src_e
-            self._record_recovery("cn.electron_net_source", n_src_e)
-            nu_rad_e, n_nu_e = self._sanitize_with_fallback(
-                (S_rad_e + S_brem_e) / np.maximum(Te_old, 0.01),
-                np.zeros_like(S_rad_e),
-                floor=0.0,
+            coefficient_residual_e = float(
+                np.linalg.norm(chi_e_pred - chi_e_n) / max(float(np.linalg.norm(chi_e_n)), 1e-30)
             )
-            self._last_numerical_recovery_count += n_nu_e
-            self._record_recovery("cn.electron_rad_sink", n_nu_e)
-
-            Lh_explicit_e = self._explicit_diffusion_rhs(Te_old, self.chi_e)
-            Lh_explicit_e, n_lh_e = self._sanitize_with_fallback(
-                Lh_explicit_e,
-                np.zeros_like(Lh_explicit_e),
+            chi_i_target = (1.0 - theta) * chi_i_n + theta * chi_i_pred
+            chi_e_target = (1.0 - theta) * chi_e_n + theta * chi_e_pred
+            d_n_target = (1.0 - theta) * d_n_n + theta * d_n_pred
+            if iterations == 1:
+                self.chi_i = chi_i_target
+                self.chi_e = chi_e_target
+                self.D_n = d_n_target
+            else:
+                self.chi_i = (
+                    1.0 - iteration_damping
+                ) * self.chi_i + iteration_damping * chi_i_target
+                self.chi_e = (
+                    1.0 - iteration_damping
+                ) * self.chi_e + iteration_damping * chi_e_target
+                self.D_n = (1.0 - iteration_damping) * self.D_n + iteration_damping * d_n_target
+            self._solve_thermal_cn_step(
+                dt=dt,
+                Ti_old=Ti_old,
+                Te_old=Te_old,
+                chi_i=self.chi_i,
+                chi_e=self.chi_e,
+                heat_source_i=heat_source_i,
+                nu_rad_i=nu_rad_i,
+                nu_eq=nu_eq,
+                S_heat_e_aux=S_heat_e_aux,
+                P_rad_line_Wm3=P_rad_line_Wm3,
+                e_keV_J=e_keV_J,
+                record_recoveries=False,
             )
-            self._last_numerical_recovery_count += n_lh_e
-            self._record_recovery("cn.electron_diffusion_rhs", n_lh_e)
-            rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * explicit_source_e
-            # Non-finite replacement only — see the ion rhs note above.
-            rhs_e, n_rhs_e = self._sanitize_with_fallback(rhs_e, Te_old)
-            self._last_numerical_recovery_count += n_rhs_e
-            self._record_recovery("cn.electron_rhs", n_rhs_e)
-            a_e, b_e, c_e = self._build_cn_tridiag(self.chi_e, dt)
-            b_e_sink = b_e + dt * (nu_rad_e + nu_eq)
-            # Same boundary-condition folding as the ion solve.
-            b_e_sink[0] = 1.0
-            c_e[0] = -1.0
-            rhs_e[0] = 0.0
-            b_e_sink[-1] = 1.0
-            a_e[-1] = 0.0
-            rhs_e[-1] = self.T_edge_keV
-            new_Te = self._thomas_solve(a_e, b_e_sink, c_e, rhs_e)
-
-            new_Te[0] = new_Te[1]
-            new_Te[-1] = self.T_edge_keV  # EPED boundary condition
-            self.Te, n_te_new = self._sanitize_with_fallback(new_Te, Te_old, floor=0.01, ceil=1e3)
-            self._last_numerical_recovery_count += n_te_new
-            self._record_recovery("cn.electron_solution", n_te_new)
-        else:
-            self.Te = self.Ti.copy()  # Assume equilibrated (legacy)
+            profile_scale = max(
+                float(np.linalg.norm(self.Ti)),
+                float(np.linalg.norm(self.Te)),
+                1e-30,
+            )
+            profile_residual = (
+                max(
+                    float(np.linalg.norm(self.Ti - trial_ti)),
+                    float(np.linalg.norm(self.Te - trial_te)),
+                )
+                / profile_scale
+            )
+            if profile_residual <= tolerance:
+                converged = True
+                break
+        if not converged:
+            self._last_numerical_recovery_count += 1
+            self._record_recovery("predictor_corrector.max_iterations", 1)
+        self._last_transport_predictor_corrector = {
+            "scheme": "picard_predictor_corrector",
+            "theta": theta,
+            "iterations": iterations,
+            "max_iterations": max_iterations,
+            "tolerance": tolerance,
+            "iteration_damping": iteration_damping,
+            "converged": converged,
+            "profile_residual": profile_residual,
+            "chi_i_relative_change": coefficient_residual_i,
+            "chi_e_relative_change": coefficient_residual_e,
+        }
+        thermal = self._solve_thermal_cn_step(
+            dt=dt,
+            Ti_old=Ti_old,
+            Te_old=Te_old,
+            chi_i=self.chi_i,
+            chi_e=self.chi_e,
+            heat_source_i=heat_source_i,
+            nu_rad_i=nu_rad_i,
+            nu_eq=nu_eq,
+            S_heat_e_aux=S_heat_e_aux,
+            P_rad_line_Wm3=P_rad_line_Wm3,
+            e_keV_J=e_keV_J,
+            record_recoveries=True,
+        )
+        Lh_explicit = thermal["Lh_explicit_i"]
+        Lh_explicit_e = thermal["Lh_explicit_e"]
+        explicit_source_e = thermal["explicit_source_e"]
+        nu_rad_e = thermal["nu_rad_e"]
 
         # No auxiliary heating: forbid unphysical mean-temperature growth due to
         # numerical overshoot in the diffusion solve on coarse toy grids.
@@ -399,8 +538,6 @@ class TransportSolverRuntimeMixin(
                 self._record_recovery("stability.zero_aux_overshoot_rescale", 1)
 
         # Energy conservation diagnostic
-        if not self.multi_ion:
-            e_keV_J = 1.602176634e-16
         dV = self._rho_volume_element()
 
         # Scheme-consistency energy check over the interior nodes. The two

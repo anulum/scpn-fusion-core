@@ -226,25 +226,23 @@ class TestGyroBohmChi:
         assert np.all(np.isfinite(chi))
 
 
-class TestUpdateTransportRelaxation:
-    """Optional under-relaxation of the transport coefficients."""
+class TestTransportCoefficientEvaluation:
+    """Non-mutating transport-coefficient evaluation for predictor-corrector."""
 
-    def test_relaxation_blends_previous_coefficients(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """A sub-unity relaxation alpha blends the new and previous diffusivities."""
+    def test_evaluation_does_not_accept_trial_coefficients(self, tmp_path: Path) -> None:
+        """Evaluating a trial closure leaves the accepted coefficients untouched."""
         solver = _solver(tmp_path)
-        # First update populates the previous-coefficient fields.
         solver.update_transport_model(5.0)
-        # A relaxation factor below one activates the blend against the stored state.
-        # ``chi_relaxation_alpha`` is an optional runtime tuning attribute.
-        monkeypatch.setattr(solver, "chi_relaxation_alpha", 0.5, raising=False)
-        solver.update_transport_model(5.0)
-        assert solver.chi_i.shape == solver.rho.shape
-        assert solver.chi_e.shape == solver.rho.shape
-        assert solver.D_n.shape == solver.rho.shape
-        assert np.all(np.isfinite(solver.chi_i))
-        assert np.all(solver.chi_i > 0.0)
+        accepted = (solver.chi_e.copy(), solver.chi_i.copy(), solver.D_n.copy())
+
+        trial = solver._evaluate_transport_coefficients(5.0)
+
+        for actual, expected in zip((solver.chi_e, solver.chi_i, solver.D_n), accepted):
+            np.testing.assert_array_equal(actual, expected)
+        for coefficient in trial:
+            assert coefficient.shape == solver.rho.shape
+            assert np.all(np.isfinite(coefficient))
+            assert np.all(coefficient > 0.0)
 
 
 def test_physics_error_is_exported() -> None:

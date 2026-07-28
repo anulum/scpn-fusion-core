@@ -7,6 +7,7 @@
 - Quasi-neutrality pass: `YES`
 - Late-energy pass: `YES`
 - He-ash growth pass: `YES`
+- Predictor-corrector convergence pass: `YES`
 - Overall pass: `YES`
 
 | Metric | Value | Threshold |
@@ -14,3 +15,4 @@
 | quasineutral_residual | 0.000e+00 | <= 1.0e-10 |
 | late_energy_error_p95 | 0.0000 | <= 0.00 |
 | he_ash_peak_1e19m3 | 0.000000 | >= 1.0e-08 |
+| predictor_corrector_nonconverged_steps | 0 | <= 0 |

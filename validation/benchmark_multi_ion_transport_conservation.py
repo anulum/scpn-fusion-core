@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any
 
 import numpy as np
 
@@ -41,22 +41,16 @@ from validation.evidence_output import (
 # omitted the diffusion term, the equilibration exchange was explicit and
 # one-sided, and range-clamping of the rhs manufactured energy — the lane
 # heated to ~200 keV and fused accordingly). With those defects fixed and
-# the transport coefficients under-relaxed (standard treatment of the stiff
-# chi(grad T) coupling), the scheme conserves to machine precision, so the
-# energy gate is now a real conservation gate, and the He-ash floor
+# the transport coefficients advanced with an in-step predictor-corrector for
+# the stiff chi(grad T) coupling, the scheme conserves to machine precision.
+# The energy gate is therefore a real conservation gate, and the He-ash floor
 # reflects the physically sane ~1 keV trajectory.
 CONTRACT_THRESHOLDS = {
     "max_quasineutral_residual": 1e-10,
     "max_late_energy_error_p95": 1e-8,
     "min_he_ash_peak": 1e-8,
+    "max_predictor_corrector_nonconverged_steps": 0,
 }
-CHI_RELAXATION_ALPHA = 0.3
-
-
-class _ChiRelaxationTunable(Protocol):
-    """Transport runtime exposing the benchmark's optional relaxation control."""
-
-    chi_relaxation_alpha: float
 
 
 def _render_path(path: Path) -> str:
@@ -76,7 +70,6 @@ def run_benchmark(
     """Run multi-ion transport conservation contract and return pass metrics."""
     cfg_path = Path(config_path) if config_path is not None else default_iter_config_path()
     solver = TransportSolver(str(cfg_path), multi_ion=True)
-    cast(_ChiRelaxationTunable, solver).chi_relaxation_alpha = CHI_RELAXATION_ALPHA
     solver.Ti = 5.0 * (1.0 - solver.rho**2)
     solver.Te = solver.Ti.copy()
     solver.ne = 5.0 * (1.0 - solver.rho**2) ** 0.5
@@ -95,10 +88,18 @@ def run_benchmark(
 
     solver.update_transport_model(p_aux)
     energy_errors: list[float] = []
+    predictor_corrector_nonconverged_steps = 0
+    predictor_corrector_max_iterations = 0
     for _ in range(steps):
         solver.update_transport_model(p_aux)
         solver.evolve_profiles(dt=dt, P_aux=p_aux, enforce_conservation=False)
         energy_errors.append(float(solver._last_conservation_error))
+        pc_contract = solver._last_transport_predictor_corrector
+        predictor_corrector_nonconverged_steps += int(not pc_contract["converged"])
+        predictor_corrector_max_iterations = max(
+            predictor_corrector_max_iterations,
+            int(pc_contract["iterations"]),
+        )
 
     late_errors = np.asarray(energy_errors[steps // 2 :], dtype=np.float64)
     late_energy_error_p95 = float(np.percentile(late_errors, 95))
@@ -138,9 +139,18 @@ def run_benchmark(
     )
     he_ash_peak = float(np.max(np.asarray(solver.n_He, dtype=np.float64)))
     he_ash_pass = bool(he_ash_peak >= CONTRACT_THRESHOLDS["min_he_ash_peak"])
+    predictor_corrector_pass = bool(
+        predictor_corrector_nonconverged_steps
+        <= CONTRACT_THRESHOLDS["max_predictor_corrector_nonconverged_steps"]
+    )
 
     passes = bool(
-        finite_pass and positivity_pass and quasineutral_pass and late_energy_pass and he_ash_pass
+        finite_pass
+        and positivity_pass
+        and quasineutral_pass
+        and late_energy_pass
+        and he_ash_pass
+        and predictor_corrector_pass
     )
 
     return {
@@ -154,6 +164,7 @@ def run_benchmark(
             "quasineutral_pass": quasineutral_pass,
             "late_energy_pass": late_energy_pass,
             "he_ash_pass": he_ash_pass,
+            "predictor_corrector_pass": predictor_corrector_pass,
             "passes_thresholds": passes,
             "thresholds": dict(CONTRACT_THRESHOLDS),
             "metrics": {
@@ -161,6 +172,8 @@ def run_benchmark(
                 "late_energy_error_mean": late_energy_error_mean,
                 "late_energy_error_p95": late_energy_error_p95,
                 "he_ash_peak_1e19m3": he_ash_peak,
+                "predictor_corrector_nonconverged_steps": (predictor_corrector_nonconverged_steps),
+                "predictor_corrector_max_iterations": predictor_corrector_max_iterations,
                 "n_D_min": float(np.min(np.asarray(solver.n_D, dtype=np.float64))),
                 "n_T_min": float(np.min(np.asarray(solver.n_T, dtype=np.float64))),
                 "n_He_min": float(np.min(np.asarray(solver.n_He, dtype=np.float64))),
@@ -185,6 +198,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Quasi-neutrality pass: `{'YES' if g['quasineutral_pass'] else 'NO'}`",
         f"- Late-energy pass: `{'YES' if g['late_energy_pass'] else 'NO'}`",
         f"- He-ash growth pass: `{'YES' if g['he_ash_pass'] else 'NO'}`",
+        f"- Predictor-corrector convergence pass: "
+        f"`{'YES' if g['predictor_corrector_pass'] else 'NO'}`",
         f"- Overall pass: `{'YES' if g['passes_thresholds'] else 'NO'}`",
         "",
         "| Metric | Value | Threshold |",
@@ -200,6 +215,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         (
             f"| he_ash_peak_1e19m3 | {float(m['he_ash_peak_1e19m3']):.6f} | "
             f">= {float(t['min_he_ash_peak']):.1e} |"
+        ),
+        (
+            "| predictor_corrector_nonconverged_steps | "
+            f"{int(m['predictor_corrector_nonconverged_steps'])} | "
+            f"<= {int(t['max_predictor_corrector_nonconverged_steps'])} |"
         ),
         "",
     ]
