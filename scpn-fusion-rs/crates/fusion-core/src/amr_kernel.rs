@@ -36,7 +36,7 @@ impl Default for AmrKernelConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AmrKernelSolver {
     pub config: AmrKernelConfig,
 }
@@ -190,12 +190,6 @@ impl AmrKernelSolver {
     }
 }
 
-impl Default for AmrKernelSolver {
-    fn default() -> Self {
-        Self::new(AmrKernelConfig::default()).expect("default AMR config must be valid")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -214,6 +208,11 @@ mod tests {
         let num = (a - b).mapv(|v| v * v).sum().sqrt();
         let den = b.mapv(|v| v * v).sum().sqrt().max(1e-12);
         num / den
+    }
+
+    #[test]
+    fn test_default_config_satisfies_checked_constructor() {
+        assert!(AmrKernelSolver::new(AmrKernelConfig::default()).is_ok());
     }
 
     #[test]
