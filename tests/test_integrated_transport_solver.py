@@ -279,6 +279,87 @@ class TestEvolveProfiles:
         assert sum(breakdown.values()) == solver._last_numerical_recovery_count
         assert any(key.startswith("pre.") for key in breakdown)
 
+    def test_accepted_ion_solution_clips_are_recovery_events(
+        self, solver: TransportSolver, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Accepted CN floor/ceiling clips are counted once under their solution lane."""
+        ti_old = np.ones_like(solver.Ti)
+        forced_solution = ti_old.copy()
+        forced_solution[2] = -5.0
+        forced_solution[3] = 2e3
+
+        def solve_with_out_of_range_values(
+            _a: np.ndarray, _b: np.ndarray, _c: np.ndarray, _d: np.ndarray
+        ) -> np.ndarray:
+            return forced_solution.copy()
+
+        monkeypatch.setattr(solver, "_thomas_solve", solve_with_out_of_range_values)
+        solver._last_numerical_recovery_count = 0
+        solver._last_numerical_recovery_breakdown = {}
+        zeros = np.zeros_like(ti_old)
+
+        solver._solve_thermal_cn_step(
+            dt=0.01,
+            Ti_old=ti_old,
+            Te_old=ti_old,
+            chi_i=np.ones_like(ti_old),
+            chi_e=np.ones_like(ti_old),
+            heat_source_i=zeros,
+            nu_rad_i=zeros,
+            nu_eq=zeros,
+            S_heat_e_aux=zeros,
+            P_rad_line_Wm3=zeros,
+            e_keV_J=1.602176634e-16,
+            record_recoveries=True,
+        )
+
+        assert solver._last_numerical_recovery_count == 2
+        assert solver._last_numerical_recovery_breakdown == {"cn.ion_solution": 2}
+        assert solver.Ti[2] == pytest.approx(0.01)
+        assert solver.Ti[3] == pytest.approx(1e3)
+
+    def test_accepted_electron_solution_clips_use_separate_recovery_lane(
+        self, solver_multi: TransportSolver, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Multi-ion accepted clips are attributed to both thermal solution lanes."""
+        ti_old = np.ones_like(solver_multi.Ti)
+        forced_solution = ti_old.copy()
+        forced_solution[2] = -5.0
+        forced_solution[3] = 2e3
+
+        def solve_with_out_of_range_values(
+            _a: np.ndarray, _b: np.ndarray, _c: np.ndarray, _d: np.ndarray
+        ) -> np.ndarray:
+            return forced_solution.copy()
+
+        monkeypatch.setattr(solver_multi, "_thomas_solve", solve_with_out_of_range_values)
+        solver_multi._last_numerical_recovery_count = 0
+        solver_multi._last_numerical_recovery_breakdown = {}
+        zeros = np.zeros_like(ti_old)
+
+        solver_multi._solve_thermal_cn_step(
+            dt=0.01,
+            Ti_old=ti_old,
+            Te_old=ti_old,
+            chi_i=np.ones_like(ti_old),
+            chi_e=np.ones_like(ti_old),
+            heat_source_i=zeros,
+            nu_rad_i=zeros,
+            nu_eq=zeros,
+            S_heat_e_aux=zeros,
+            P_rad_line_Wm3=zeros,
+            e_keV_J=1.602176634e-16,
+            record_recoveries=True,
+        )
+
+        assert solver_multi._last_numerical_recovery_count == 4
+        assert solver_multi._last_numerical_recovery_breakdown == {
+            "cn.ion_solution": 2,
+            "cn.electron_solution": 2,
+        }
+        assert solver_multi.Te[2] == pytest.approx(0.01)
+        assert solver_multi.Te[3] == pytest.approx(1e3)
+
     def test_evolve_recovery_budget_can_raise(self, solver: TransportSolver) -> None:
         """Strict numerical budget mode should fail fast on excessive recoveries."""
         solver.Ti[1] = float("nan")

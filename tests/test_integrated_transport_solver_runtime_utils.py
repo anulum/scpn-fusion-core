@@ -63,7 +63,22 @@ def test_sanitize_with_fallback_recovers_non_finite_and_applies_bounds() -> None
     arr = np.array([1.0, np.nan, np.inf, -2.0], dtype=np.float64)
     ref = np.array([1.0, 3.0, 4.0, 5.0], dtype=np.float64)
     out, recovered = sanitize_with_fallback(arr, ref, floor=0.0, ceil=4.5)
-    assert recovered == 2
+    assert recovered == 3
     assert np.all(np.isfinite(out))
     assert np.all(out >= 0.0)
     assert np.all(out <= 4.5)
+
+
+def test_sanitize_with_fallback_counts_each_changed_element_once() -> None:
+    arr = np.array([np.nan, -1.0, 9.0], dtype=np.float64)
+    ref = np.array([-2.0, 0.0, 0.0], dtype=np.float64)
+    out, recovered = sanitize_with_fallback(arr, ref, floor=0.0, ceil=5.0)
+    assert recovered == 3
+    np.testing.assert_array_equal(out, np.array([0.0, 0.0, 5.0]))
+
+
+def test_sanitize_with_fallback_without_bounds_does_not_clip_rhs_values() -> None:
+    arr = np.array([-3.0, 9.0], dtype=np.float64)
+    out, recovered = sanitize_with_fallback(arr, np.zeros_like(arr))
+    assert recovered == 0
+    np.testing.assert_array_equal(out, arr)

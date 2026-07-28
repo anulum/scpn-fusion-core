@@ -148,11 +148,17 @@ def sanitize_with_fallback(
     floor: float | None = None,
     ceil: float | None = None,
 ) -> tuple[FloatArray, int]:
-    """Replace non-finite entries and enforce optional lower/upper bounds."""
+    """Sanitize values and count each replaced or clipped element once."""
     out = np.asarray(arr, dtype=np.float64).copy()
     ref = np.asarray(reference, dtype=np.float64)
     bad = ~np.isfinite(out)
-    recovered = int(np.count_nonzero(bad))
+    recovered_mask = bad.copy()
+    finite = ~bad
+    if floor is not None:
+        recovered_mask |= finite & (out < floor)
+    if ceil is not None:
+        recovered_mask |= finite & (out > ceil)
+    recovered = int(np.count_nonzero(recovered_mask))
     if recovered > 0:
         out[bad] = ref[bad]
     if floor is not None:

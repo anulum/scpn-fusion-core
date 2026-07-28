@@ -113,7 +113,7 @@ class TransportSolverRuntimeMixin(
         floor: float | None = None,
         ceil: float | None = None,
     ) -> tuple[FloatArray, int]:
-        """Replace non-finite entries and enforce optional lower/upper bounds."""
+        """Sanitize values and count each replaced or clipped element once."""
         return _sanitize_with_fallback_impl(
             np.asarray(arr, dtype=np.float64),
             np.asarray(reference, dtype=np.float64),

@@ -41,5 +41,5 @@ def test_sanitize_with_fallback_replaces_nonfinite_and_clips() -> None:
 
     out, recovered = mixin._sanitize_with_fallback(arr, ref, floor=0.5, ceil=4.5)
 
-    assert recovered == 3
+    assert recovered == 4
     np.testing.assert_allclose(out, np.array([1.0, 2.0, 3.0, 4.5], dtype=np.float64))
