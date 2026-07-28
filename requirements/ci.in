@@ -14,7 +14,7 @@ types-psutil>=7.2.2.20260518
 ruff>=0.8
 bandit>=1.7
 pre-commit>=3.0
-virtualenv>=21.5.1,<22
+virtualenv>=21.7.0,<22
 python-discovery>=1.5.0
 jax[cpu]
 gymnasium
