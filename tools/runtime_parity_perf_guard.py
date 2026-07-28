@@ -44,13 +44,19 @@ def evaluate(
 ) -> dict[str, Any]:
     """Evaluate runtime parity and end-to-end latency thresholds.
 
-    Args:
-        parity: Parity report payload.
-        latency: Latency report payload.
-        thresholds: Threshold configuration for report count and latency caps.
+    Parameters
+    ----------
+    parity
+        Parity report payload.
+    latency
+        Latency report payload.
+    thresholds
+        Threshold configuration for report count and latency caps.
 
-    Returns:
-        Summary with per-dimension pass flags and aggregate ``overall_pass``.
+    Returns
+    -------
+    dict[str, Any]
+        Per-dimension pass flags and aggregate ``overall_pass``.
     """
     parity_cfg = dict(thresholds.get("parity", {}))
     latency_cfg = dict(thresholds.get("latency", {}))
@@ -106,11 +112,22 @@ def evaluate(
 def main(argv: list[str] | None = None) -> int:
     """Run runtime parity/performance guard and emit a summary artifact.
 
-    Args:
-        argv: Optional CLI arguments; defaults to ``sys.argv[1:]``.
+    Parameters
+    ----------
+    argv
+        Optional CLI arguments; defaults to ``sys.argv[1:]``.
 
-    Returns:
-        ``0`` when all checks pass, ``1`` otherwise.
+    Returns
+    -------
+    int
+        ``0`` when all checks pass, or ``1`` otherwise.
+
+    Raises
+    ------
+    ValueError
+        If any supplied JSON payload is not an object.
+    FileNotFoundError
+        If any supplied input file does not exist.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parity", default=str(DEFAULT_PARITY))
