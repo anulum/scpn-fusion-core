@@ -5,7 +5,7 @@ click>=8.1,<9
 # Dependabot security-update resolution may use newer Python interpreters where
 # current JAX wheels require NumPy 2.1+.
 numpy<2.0; python_version < "3.14"
-numpy>=2.1.0; python_version >= "3.14"
+numpy>=2.5.1; python_version >= "3.14"
 matplotlib>=3.5,<4
 scipy>=1.10,<2
 pydantic>=2.0,<3
