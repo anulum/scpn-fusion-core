@@ -123,6 +123,29 @@ impl SpiAblationSolver {
         plasma_te: &[f64],
         r_grid: &[f64],
     ) -> FusionResult<Vec<f64>> {
+        if plasma_ne.is_empty() || plasma_te.is_empty() || r_grid.is_empty() {
+            return Err(FusionError::ConfigError(
+                "spi step: plasma profiles and radial grid must be non-empty".to_string(),
+            ));
+        }
+        if [
+            self.radius.len(),
+            self.mass.len(),
+            self.pos_x.len(),
+            self.pos_y.len(),
+            self.pos_z.len(),
+            self.vel_x.len(),
+            self.vel_y.len(),
+            self.vel_z.len(),
+            self.active.len(),
+        ]
+        .into_iter()
+        .any(|len| len != self.n_fragments)
+        {
+            return Err(FusionError::ConfigError(
+                "spi step: fragment state lengths must match n_fragments".to_string(),
+            ));
+        }
         let n_grid = r_grid.len();
         let mut deposition = vec![0.0; n_grid];
         let dr = if n_grid > 1 {
@@ -208,14 +231,20 @@ fn linspace(start: f64, end: f64, n: usize) -> Vec<f64> {
 }
 
 fn interp(x: f64, xp: &[f64], fp: &[f64]) -> f64 {
-    if xp.is_empty() {
+    if xp.len() != fp.len() {
         return 0.0;
     }
-    if x <= xp[0] {
-        return fp[0];
+    let Some((&x_first, &f_first)) = xp.first().zip(fp.first()) else {
+        return 0.0;
+    };
+    let Some((&x_last, &f_last)) = xp.last().zip(fp.last()) else {
+        return 0.0;
+    };
+    if x <= x_first {
+        return f_first;
     }
-    if x >= *xp.last().unwrap() {
-        return *fp.last().unwrap();
+    if x >= x_last {
+        return f_last;
     }
     let mut lo = 0;
     let mut hi = xp.len() - 1;
@@ -270,5 +299,36 @@ mod tests {
     fn test_rejects_invalid() {
         assert!(SpiAblationSolver::new(0, 0.01, 200.0, 0.1).is_err());
         assert!(SpiAblationSolver::new(100, -1.0, 200.0, 0.1).is_err());
+    }
+
+    #[test]
+    fn test_step_rejects_empty_inputs() {
+        let mut solver = SpiAblationSolver::new(1, 0.01, 200.0, 0.1).unwrap();
+        let error = "spi step: plasma profiles and radial grid must be non-empty";
+
+        assert!(matches!(
+            solver.step(1e-4, &[], &[10.0], &[0.0]),
+            Err(FusionError::ConfigError(message)) if message == error
+        ));
+        assert!(matches!(
+            solver.step(1e-4, &[5.0], &[], &[0.0]),
+            Err(FusionError::ConfigError(message)) if message == error
+        ));
+        assert!(matches!(
+            solver.step(1e-4, &[5.0], &[10.0], &[]),
+            Err(FusionError::ConfigError(message)) if message == error
+        ));
+    }
+
+    #[test]
+    fn test_step_rejects_inconsistent_public_state() {
+        let mut solver = SpiAblationSolver::new(1, 0.01, 200.0, 0.1).unwrap();
+        solver.radius.clear();
+
+        assert!(matches!(
+            solver.step(1e-4, &[5.0], &[10.0], &[0.0]),
+            Err(FusionError::ConfigError(message))
+                if message == "spi step: fragment state lengths must match n_fragments"
+        ));
     }
 }
