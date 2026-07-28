@@ -162,11 +162,16 @@ def collect_source_issues(repo_root: Path) -> list[SourceIssue]:
     Loads readiness markers, filters to ``src/scpn_fusion/**`` and priority
     P0/P1, and normalizes them into issue seed records.
 
-    Args:
-        repo_root: Repository root used to load ``generate_readiness_register``.
+    Parameters
+    ----------
+    repo_root : Path
+        Repository root used to load ``generate_readiness_register``.
 
-    Returns:
-        Sorted list of source issue records.
+    Returns
+    -------
+    list of SourceIssue
+        Sorted source issue records.
+
     """
     readiness = _load_readiness_module()
     entries = readiness.collect_entries(repo_root)
@@ -405,6 +410,17 @@ def _normalize_for_check(content: str) -> str:
     return "\n".join(lines).strip()
 
 
+def _normalize_json_for_check(content: str) -> dict[str, Any]:
+    payload = json.loads(content)
+    if not isinstance(payload, dict):
+        raise ValueError("readiness payload must be a JSON object")
+    generated_at = payload.get("generated_at")
+    if generated_at is not None and not isinstance(generated_at, str):
+        raise ValueError("generated_at must be a string when present.")
+    payload["generated_at"] = "<dynamic>"
+    return payload
+
+
 def _display_path(path: Path) -> str:
     try:
         return path.relative_to(REPO_ROOT).as_posix()
@@ -456,14 +472,8 @@ def main(argv: list[str] | None = None) -> int:
         if _normalize_for_check(current_md) != _normalize_for_check(md_content):
             print(f"Markdown readiness drift detected: {_display_path(md_path)}")
             return 1
-        current_payload = json.loads(current_json)
-        new_payload = json.loads(json_content)
-        for payload in (current_payload, new_payload):
-            generated_at = payload.get("generated_at")
-            if generated_at is not None and not isinstance(generated_at, str):
-                raise ValueError("generated_at must be a string when present.")
-        current_payload["generated_at"] = "<dynamic>"
-        new_payload["generated_at"] = "<dynamic>"
+        current_payload = _normalize_json_for_check(current_json)
+        new_payload = _normalize_json_for_check(json_content)
         if current_payload != new_payload:
             print(f"JSON readiness drift detected: {_display_path(json_path)}")
             return 1
