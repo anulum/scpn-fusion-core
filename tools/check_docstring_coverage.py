@@ -16,7 +16,7 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import cast, Iterable, Sequence
+from typing import Iterable, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -194,15 +194,18 @@ def summarise(issues: Iterable[DocstringIssue]) -> DocstringSummary:
     )
 
 
-def _load_baseline(path: Path) -> dict[str, object]:
-    """Load a JSON baseline file."""
+def _load_baseline(path: Path) -> int:
+    """Load and validate the total issue count from a JSON baseline file."""
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        raw_data: object = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         raise SystemExit(f"Missing docstring baseline: {path}") from exc
-    if not isinstance(data, dict) or not isinstance(data.get("total_issues"), int):
+    if not isinstance(raw_data, dict):
         raise SystemExit(f"Invalid docstring baseline: {path}")
-    return data
+    total_issues: object = raw_data.get("total_issues")
+    if isinstance(total_issues, bool) or not isinstance(total_issues, int):
+        raise SystemExit(f"Invalid docstring baseline: {path}")
+    return total_issues
 
 
 def _write_baseline(path: Path, summary: DocstringSummary) -> None:
@@ -226,17 +229,26 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+class _Arguments(argparse.Namespace):
+    """Typed command-line arguments for the docstring coverage guard."""
+
+    baseline: Path
+    write_baseline: bool
+    json: bool
+    max_list: int
+    roots: list[str]
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the docstring non-regression audit."""
-    args = build_parser().parse_args(argv)
+    args = build_parser().parse_args(argv, namespace=_Arguments())
     issues = collect_docstring_issues(REPO_ROOT, tuple(args.roots))
     summary = summarise(issues)
 
     if args.write_baseline:
         _write_baseline(args.baseline, summary)
 
-    baseline = _load_baseline(args.baseline)
-    baseline_total = int(cast(int, baseline["total_issues"]))
+    baseline_total = _load_baseline(args.baseline)
     status = {
         **asdict(summary),
         "baseline_total_issues": baseline_total,

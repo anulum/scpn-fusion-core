@@ -402,6 +402,8 @@ files = [
     "tests/test_native_distribution_artifacts.py",
     "tools/coverage_guard.py",
     "tests/test_quality_gate_tool.py",
+    "tools/check_docstring_coverage.py",
+    "tests/test_docstring_guard_tool.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
     "benchmarks/polyglot_gs_solver_comparison.py",
