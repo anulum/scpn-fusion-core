@@ -100,6 +100,9 @@
 
 ### Fixed
 
+- Enforce non-test `unwrap()`/`expect()` denial in the production-clean
+  `fusion-core` and `fusion-control` crates while retaining invariant
+  assertions in their inline test modules.
 - Replace the production `expect()` in the `fusion-nuclear` first-wall NURBS
   builder with a typed `FusionResult`, propagate curve-validation failures, and
   enforce non-test panic-API denial for the crate.

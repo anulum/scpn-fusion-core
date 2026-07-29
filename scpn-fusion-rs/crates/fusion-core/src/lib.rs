@@ -10,6 +10,7 @@
 //! Stage 4: ignition, transport, stability, RF heating
 
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod amr_kernel;
 pub mod bfield;

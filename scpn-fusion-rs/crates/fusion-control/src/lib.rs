@@ -10,6 +10,7 @@
 //! Stage 7: PID, optimal, MPC, SNN, digital twin, SPI, SOC-learning, analytic.
 
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod analytic;
 pub mod constraints;
