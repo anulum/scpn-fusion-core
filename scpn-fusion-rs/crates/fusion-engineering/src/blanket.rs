@@ -11,7 +11,7 @@ const SECONDS_PER_YEAR: f64 = 31_556_952.0;
 const DT_NEUTRON_ENERGY_J: f64 = 14.1e6 * 1.602_176_634e-19;
 const FE_REFERENCE_ATOM_MASS_KG: f64 = 9.27e-26; // ~56 amu
 
-/// Neutron wall loading [MW/m^2].
+/// Neutron wall loading in `MW/m²`.
 ///
 /// Geometric estimate:
 /// `q_n = P_neutron / (4*pi^2*R*a*sqrt((1+kappa^2)/2))`.
@@ -24,7 +24,7 @@ pub fn neutron_wall_loading(p_neutron: f64, r: f64, a: f64, kappa: f64) -> f64 {
     p_neutron / area
 }
 
-/// Displacements-per-atom rate [dpa/year].
+/// Displacements-per-atom rate in `dpa/year`.
 ///
 /// Converts wall loading to neutron flux with 14.1 MeV neutrons and applies a
 /// one-group displacement cross-section model.
@@ -38,7 +38,7 @@ pub fn dpa_rate(q_n: f64, sigma_d: f64, m_atom: f64) -> f64 {
     neutron_flux * sigma_d * SECONDS_PER_YEAR * material_factor
 }
 
-/// Blanket lifetime [years] until dpa limit is reached.
+/// Blanket lifetime in years until the DPA limit is reached.
 pub fn blanket_lifetime(dpa_limit: f64, dpa_rate: f64) -> f64 {
     if dpa_rate <= 0.0 {
         return f64::INFINITY;

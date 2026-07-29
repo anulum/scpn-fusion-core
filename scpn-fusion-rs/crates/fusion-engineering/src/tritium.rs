@@ -37,7 +37,7 @@ pub fn tritium_breeding_ratio(
     1.0 + 0.15 * capture_fraction * (0.8 + 0.2 * spectral_factor)
 }
 
-/// Steady-state tritium inventory [arbitrary units of burn_rate * time].
+/// Steady-state tritium inventory in `burn_rate * time` units.
 ///
 /// The inventory requirement rises sharply as `TBR -> 1`.
 pub fn steady_state_inventory(burn_rate: f64, tau_process: f64, tbr: f64) -> f64 {

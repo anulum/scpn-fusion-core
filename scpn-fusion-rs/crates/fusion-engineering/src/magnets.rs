@@ -11,21 +11,21 @@ const REBCO_TC_K: f64 = 92.0;
 const REBCO_I_C0_A: f64 = 12_000.0;
 const REBCO_B0_T: f64 = 18.0;
 
-/// Hoop stress estimate [Pa] from current density, field, and major radius.
+/// Hoop-stress estimate in pascals from current density, field, and radius.
 ///
 /// `sigma = J * B * R`.
 pub fn hoop_stress(j: f64, b: f64, r: f64) -> f64 {
     j.abs() * b.abs() * r.abs()
 }
 
-/// Magnetic stored energy [J].
+/// Magnetic stored energy in joules.
 ///
 /// `W = L * I^2 / 2`.
 pub fn stored_energy(l: f64, i: f64) -> f64 {
     0.5 * l.max(0.0) * i * i
 }
 
-/// Characteristic dump time during a quench [s].
+/// Characteristic dump time during a quench, in seconds.
 ///
 /// `tau = L / R`.
 pub fn quench_time(l: f64, r_dump: f64) -> f64 {
@@ -35,7 +35,7 @@ pub fn quench_time(l: f64, r_dump: f64) -> f64 {
     l.max(0.0) / r_dump
 }
 
-/// REBCO critical current scaling law [A].
+/// REBCO critical-current scaling law in amperes.
 ///
 /// Compact phenomenological form:
 /// `I_c(B,T) = I_c0 * exp(-B/B0) * (1 - T/Tc)^(3/2)`.

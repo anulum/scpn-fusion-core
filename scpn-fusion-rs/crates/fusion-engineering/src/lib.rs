@@ -6,6 +6,7 @@
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — Engineering
 //! Engineering models for plant design, magnets, tritium systems, and blanket lifetime.
+#![deny(missing_docs)]
 
 pub mod blanket;
 pub mod layout;

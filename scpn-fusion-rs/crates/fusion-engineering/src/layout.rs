@@ -12,17 +12,17 @@ use serde::{Deserialize, Serialize};
 /// Compact plant design point.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlantDesign {
-    /// Major radius [m].
+    /// Major radius in metres.
     pub r_major: f64,
-    /// On-axis toroidal field [T].
+    /// On-axis toroidal field in teslas.
     pub b_field: f64,
-    /// Net electric power [MW].
+    /// Net electric power in megawatts.
     pub p_net: f64,
-    /// Capacity factor [-].
+    /// Dimensionless capacity factor.
     pub capacity_factor: f64,
-    /// Capital cost estimate [USD].
+    /// Capital cost estimate in USD.
     pub capital_cost: f64,
-    /// Cost of electricity [USD/MWh].
+    /// Cost of electricity in `USD/MWh`.
     pub coe: f64,
 }
 
@@ -33,7 +33,7 @@ pub fn aries_cost_scaling(c0: f64, r: f64, b: f64) -> f64 {
     c0.max(0.0) * r.max(0.0).powf(2.5) * b.max(0.0).powf(0.8)
 }
 
-/// Cost of electricity [USD/MWh].
+/// Cost of electricity in `USD/MWh`.
 pub fn cost_of_electricity(capital_annuity: f64, o_and_m: f64, p_net: f64, cf: f64) -> f64 {
     if p_net <= 0.0 || cf <= 0.0 {
         return f64::INFINITY;
