@@ -164,7 +164,12 @@ class FNO_Controller:
         """Load explicitly enabled legacy JAX-FNO weights from an ``.npz`` file."""
         if not _HAS_JAX:
             raise RuntimeError("JAX backend not available; cannot load legacy FNO weights.")
-        with checked_np_load(path, max_bytes=MAX_FNO_WEIGHT_BYTES) as data:
+        with checked_np_load(
+            path,
+            max_bytes=MAX_FNO_WEIGHT_BYTES,
+            max_member_bytes=MAX_FNO_WEIGHT_BYTES,
+            max_total_bytes=MAX_FNO_WEIGHT_BYTES,
+        ) as data:
             self.params = {k: jnp.array(data[k]) for k in data.files}
         self.loaded_weights = True
 
