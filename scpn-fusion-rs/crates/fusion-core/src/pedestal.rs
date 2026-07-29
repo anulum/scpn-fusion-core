@@ -14,11 +14,17 @@ const MIN_T_KEV: f64 = 0.05;
 const MIN_NE: f64 = 1e-4;
 
 #[derive(Debug, Clone, Copy)]
+/// Edge-pedestal and ELM-trigger configuration.
 pub struct PedestalConfig {
+    /// Pedestal poloidal beta.
     pub beta_p_ped: f64,
+    /// Normalized gyroradius scale.
     pub rho_s: f64,
+    /// Device major radius in metres.
     pub r_major: f64,
+    /// Critical normalized pressure gradient.
     pub alpha_crit: f64,
+    /// ELM crash time scale in seconds.
     pub tau_elm: f64,
 }
 
@@ -35,13 +41,16 @@ impl Default for PedestalConfig {
 }
 
 #[derive(Debug, Clone, Default)]
+/// Stateful pedestal-width and ELM crash model.
 pub struct PedestalModel {
+    /// Validated pedestal configuration.
     pub config: PedestalConfig,
     last_gradient: f64,
     elm_cooldown_s: f64,
 }
 
 impl PedestalModel {
+    /// Construct a model from positive finite physical parameters.
     pub fn new(config: PedestalConfig) -> FusionResult<Self> {
         if !config.beta_p_ped.is_finite() || config.beta_p_ped < 0.0 {
             return Err(FusionError::ConfigError(
@@ -89,6 +98,7 @@ impl PedestalModel {
         self.config.alpha_crit.max(2.5 * shear_proxy)
     }
 
+    /// Return whether the gradient exceeds threshold outside the dead time.
     pub fn is_elm_triggered(&self, pressure_gradient: f64) -> bool {
         self.elm_cooldown_s <= 0.0 && pressure_gradient.abs() > self.effective_alpha_crit()
     }
@@ -98,6 +108,7 @@ impl PedestalModel {
         self.elm_cooldown_s = (self.elm_cooldown_s - dt_s.max(0.0)).max(0.0);
     }
 
+    /// Return the most recently recorded pressure gradient.
     pub fn last_gradient(&self) -> f64 {
         self.last_gradient
     }
@@ -125,6 +136,7 @@ impl PedestalModel {
         self.elm_cooldown_s = 3.0 * tau;
     }
 
+    /// Record a pressure gradient for later diagnostics.
     pub fn record_gradient(&mut self, pressure_gradient: f64) {
         self.last_gradient = pressure_gradient;
     }

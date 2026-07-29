@@ -9,6 +9,8 @@
 //! Stage 3: core kernel modules
 //! Stage 4: ignition, transport, stability, RF heating
 
+#![deny(missing_docs)]
+
 pub mod amr_kernel;
 pub mod bfield;
 pub mod bout_interface;

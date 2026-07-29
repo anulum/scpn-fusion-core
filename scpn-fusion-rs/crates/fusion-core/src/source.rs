@@ -30,20 +30,32 @@ const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
 /// Explicit GEQDSK profile-source convention transforms accepted by the native solver.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GeqdskSourceConvention {
+    /// Use tabulated derivatives without rescaling.
     Canonical,
+    /// Negate the tabulated derivatives.
     Negated,
+    /// Multiply derivatives by `2*pi`.
     ScaledByTwoPi,
+    /// Multiply derivatives by `-2*pi`.
     ScaledByMinusTwoPi,
+    /// Divide derivatives by `2*pi`.
     ScaledByInvTwoPi,
+    /// Divide derivatives by `-2*pi`.
     ScaledByMinusInvTwoPi,
+    /// Multiply derivatives by the poloidal-flux span.
     TimesFluxSpan,
+    /// Divide derivatives by the poloidal-flux span.
     OverFluxSpan,
+    /// Negate and multiply by the poloidal-flux span.
     NegatedTimesFluxSpan,
+    /// Negate and divide by the poloidal-flux span.
     NegatedOverFluxSpan,
+    /// Sentinel for a convention that was not evaluated.
     NotEvaluated,
 }
 
 impl GeqdskSourceConvention {
+    /// Return the stable report label for this convention.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Canonical => "canonical",
@@ -87,40 +99,60 @@ impl TryFrom<&str> for GeqdskSourceConvention {
 /// Result of ranking named GEQDSK source-convention transforms against an operator source.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GeqdskSourceConventionAdapter {
+    /// Selected source convention.
     pub convention: GeqdskSourceConvention,
+    /// Elliptic residual norm under that convention.
     pub residual_l2: f64,
+    /// Whether the configured residual gate passed.
     pub pass: bool,
 }
 
 /// Residual-ranked executable GEQDSK source-convention candidate.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GeqdskSourceConventionCandidate {
+    /// Candidate source convention.
     pub convention: GeqdskSourceConvention,
+    /// Elliptic residual norm for the candidate.
     pub residual_l2: f64,
 }
 
 /// GEQDSK profile-source components assembled on an R-Z grid.
 #[derive(Debug, Clone)]
 pub struct GeqdskProfileSourceComponents {
+    /// Pressure-gradient contribution on the grid.
     pub pressure_source: Array2<f64>,
+    /// FF-prime contribution on the grid.
     pub ffprime_source: Array2<f64>,
+    /// Sum of pressure and FF-prime contributions.
     pub total_source: Array2<f64>,
+    /// Axis-connected plasma-support mask.
     pub plasma_mask: Array2<bool>,
+    /// Fraction of grid points in the plasma mask.
     pub plasma_mask_fraction: f64,
+    /// L2 norm of the pressure source.
     pub pressure_source_norm: f64,
+    /// L2 norm of the FF-prime source.
     pub ffprime_source_norm: f64,
+    /// L2 norm of the total source.
     pub total_source_norm: f64,
+    /// Grid sum of the pressure source.
     pub pressure_source_sum: f64,
+    /// Grid sum of the FF-prime source.
     pub ffprime_source_sum: f64,
+    /// Grid sum of the total source.
     pub total_source_sum: f64,
 }
 
 /// mTanh profile parameters used by inverse reconstruction.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ProfileParams {
+    /// Normalized-flux location of the pedestal top.
     pub ped_top: f64,
+    /// Pedestal transition width.
     pub ped_width: f64,
+    /// Pedestal amplitude.
     pub ped_height: f64,
+    /// Core-profile exponent.
     pub core_alpha: f64,
 }
 
@@ -138,11 +170,17 @@ impl Default for ProfileParams {
 /// Context passed to profile-driven source update.
 #[derive(Debug, Clone, Copy)]
 pub struct SourceProfileContext<'a> {
+    /// Poloidal-flux field.
     pub psi: &'a Array2<f64>,
+    /// Geometry and coordinate grid.
     pub grid: &'a Grid2D,
+    /// Magnetic-axis flux.
     pub psi_axis: f64,
+    /// Plasma-boundary flux.
     pub psi_boundary: f64,
+    /// Vacuum permeability used by the source expression.
     pub mu0: f64,
+    /// Target integrated plasma current.
     pub i_target: f64,
 }
 

@@ -63,11 +63,11 @@ const TOROIDAL_COUPLING_MAX_FACTOR: f64 = 3.0;
 /// Parameters for the Chang-Hinton (1982) neoclassical transport model.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NeoclassicalParams {
-    /// Tokamak major radius R₀ [m].
+    /// Tokamak major radius R0 in metres.
     pub r_major: f64,
-    /// Minor radius a [m].
+    /// Minor radius in metres.
     pub a_minor: f64,
-    /// Toroidal magnetic field B₀ [T].
+    /// Toroidal magnetic field B0 in tesla.
     pub b_toroidal: f64,
     /// Ion mass number (e.g. 2 for deuterium).
     pub a_ion: f64,
@@ -384,11 +384,17 @@ pub fn transport_step(solver: &mut TransportSolver, p_aux_mw: f64, dt: f64) -> F
 
 /// 1.5D radial transport solver.
 pub struct TransportSolver {
+    /// Mutable radial plasma profiles.
     pub profiles: RadialProfiles,
+    /// Radial heat-diffusivity profile.
     pub chi: Array1<f64>,
+    /// Transport integration step in seconds.
     pub dt: f64,
+    /// Edge-pedestal and ELM model.
     pub pedestal: PedestalModel,
+    /// Current toroidal-mode amplitudes.
     pub toroidal_mode_amplitudes: Vec<f64>,
+    /// Gain coupling toroidal asymmetry into transport.
     pub toroidal_coupling_gain: f64,
     /// Optional neoclassical transport model (replaces constant CHI_BASE).
     pub neoclassical: Option<NeoclassicalParams>,

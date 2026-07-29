@@ -14,12 +14,19 @@ use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
 #[derive(Debug, Clone)]
+/// Configuration for the adaptive multilevel elliptic kernel.
 pub struct AmrKernelConfig {
+    /// Maximum refinement levels.
     pub max_levels: usize,
+    /// Residual magnitude that triggers refinement.
     pub refinement_threshold: f64,
+    /// Iterative relaxation factor.
     pub omega: f64,
+    /// Coarse-grid relaxation sweeps.
     pub coarse_iters: usize,
+    /// Refined-patch relaxation sweeps.
     pub patch_iters: usize,
+    /// Refined-solution injection blend.
     pub blend: f64,
 }
 
@@ -37,11 +44,14 @@ impl Default for AmrKernelConfig {
 }
 
 #[derive(Debug, Clone, Default)]
+/// Adaptive-mesh Grad-Shafranov kernel solver.
 pub struct AmrKernelSolver {
+    /// Validated hierarchy and relaxation policy.
     pub config: AmrKernelConfig,
 }
 
 impl AmrKernelSolver {
+    /// Construct a solver from validated configuration.
     pub fn new(config: AmrKernelConfig) -> FusionResult<Self> {
         if config.max_levels == 0 {
             return Err(FusionError::ConfigError(
@@ -89,11 +99,13 @@ impl AmrKernelSolver {
         Ok(())
     }
 
+    /// Solve on a base grid and return the blended field.
     pub fn solve(&self, base_grid: &Grid2D, source: &Array2<f64>) -> FusionResult<Array2<f64>> {
         self.solve_with_hierarchy(base_grid, source)
             .map(|(psi, _)| psi)
     }
 
+    /// Solve while retaining every generated hierarchy level.
     pub fn solve_with_hierarchy(
         &self,
         base_grid: &Grid2D,

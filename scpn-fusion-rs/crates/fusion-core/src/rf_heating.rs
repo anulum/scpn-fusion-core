@@ -68,8 +68,11 @@ pub struct RayTraceResult {
 
 /// ICRH ray tracing system.
 pub struct RFHeatingSystem {
+    /// Injected angular frequency in radians per second.
     pub omega: f64,
+    /// On-axis magnetic field in tesla.
     pub b0: f64,
+    /// Magnetic-axis major radius in metres.
     pub r0: f64,
 }
 

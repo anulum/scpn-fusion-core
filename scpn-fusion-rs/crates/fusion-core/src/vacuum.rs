@@ -251,44 +251,73 @@ pub fn calculate_vacuum_flux_at_points(
 /// Diagnostics from reconstructing free-boundary contour flux from coils.
 #[derive(Debug, Clone)]
 pub struct BoundaryFluxReconstruction {
+    /// Reconstructed flux at diagnostic points.
     pub reconstructed_flux: Vec<f64>,
+    /// Pointwise residuals when reference flux is available.
     pub residual: Option<Vec<f64>>,
+    /// Root-mean-square residual when available.
     pub rmse: Option<f64>,
+    /// Maximum absolute residual when available.
     pub max_abs_error: Option<f64>,
+    /// Number of diagnostic points.
     pub point_count: usize,
+    /// Number of contributing coils.
     pub coil_count: usize,
+    /// Reconstructed flux at limiter points.
     pub limiter_flux: Vec<f64>,
+    /// Number of limiter points.
     pub limiter_point_count: usize,
+    /// Minimum diagnostic-to-limiter distance in metres.
     pub min_limiter_distance_m: Option<f64>,
+    /// Fraction of boundary samples geometrically contained.
     pub boundary_containment_fraction: Option<f64>,
+    /// Optional boundary-containment gate result.
     pub boundary_containment_pass: Option<bool>,
+    /// Reconstructed magnetic-axis flux.
     pub axis_flux: Option<f64>,
+    /// Reconstructed flux at X-points.
     pub x_point_flux: Vec<f64>,
+    /// Number of X-points.
     pub x_point_count: usize,
+    /// Span of X-point flux values.
     pub x_point_flux_span: Option<f64>,
+    /// Absolute symmetry error for the first X-point pair.
     pub x_point_pair_symmetry_abs_error: Option<f64>,
 }
 
 /// Diagnostics from reconstructing external coil currents from shape flux targets.
 #[derive(Debug, Clone)]
 pub struct ShapeCurrentReconstruction {
+    /// Fitted coil currents.
     pub coil_currents: Vec<f64>,
+    /// Flux reconstructed from the fitted currents.
     pub reconstructed_flux: Vec<f64>,
+    /// Pointwise reconstruction residual.
     pub residual: Vec<f64>,
+    /// Root-mean-square residual.
     pub residual_rmse: f64,
+    /// Residual RMSE normalized by the target flux scale.
     pub relative_flux_rmse: f64,
+    /// Numerical rank of the response matrix.
     pub response_rank: usize,
+    /// Estimated response-matrix condition number.
     pub response_condition: f64,
+    /// Number of current bounds active at the solution.
     pub active_bounds: usize,
+    /// Number of fitted diagnostic points.
     pub point_count: usize,
+    /// Number of fitted coils.
     pub coil_count: usize,
 }
 
 /// Optional topology metadata for free-boundary contour reconstruction.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BoundaryFluxMetadata<'a> {
+    /// Optional limiter contour used for containment diagnostics.
     pub limiter_points: Option<&'a [(f64, f64)]>,
+    /// Optional magnetic-axis coordinate.
     pub axis_point: Option<(f64, f64)>,
+    /// Optional X-point coordinates.
     pub x_points: Option<&'a [(f64, f64)]>,
 }
 

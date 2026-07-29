@@ -10,29 +10,48 @@
 /// Input histories for the local non-adiabatic flux equation.
 #[derive(Debug, Clone)]
 pub struct NonadiabaticFluxInput {
+    /// Normalized radial grid.
     pub rho: Vec<f64>,
+    /// Initial poloidal-flux profile.
     pub psi0: Vec<f64>,
+    /// Time/radius flux-damping times in seconds.
     pub tau_psi_s: Vec<Vec<f64>>,
+    /// Null radius in metres at each time.
     pub r_null_m: Vec<f64>,
+    /// Poloidal electric-field history in volts per metre.
     pub e_theta_v_m: Vec<Vec<f64>>,
+    /// Resistivity history in ohm-metres.
     pub eta_ohm_m: Vec<Vec<f64>>,
+    /// Poloidal current-density history in amperes per square metre.
     pub j_theta_a_m2: Vec<Vec<f64>>,
+    /// Integration step in seconds.
     pub dt_s: f64,
 }
 
 /// Output histories for the local non-adiabatic flux equation.
 #[derive(Debug, Clone)]
 pub struct FluxEvolutionTrajectory {
+    /// Sample times in seconds.
     pub time_s: Vec<f64>,
+    /// Normalized radial grid.
     pub rho: Vec<f64>,
+    /// Poloidal-flux history.
     pub psi: Vec<Vec<f64>>,
+    /// Hall-drive history.
     pub hall_drive: Vec<Vec<f64>>,
+    /// Resistive-loss history.
     pub resistive_loss: Vec<Vec<f64>>,
+    /// Net source history.
     pub source: Vec<Vec<f64>>,
+    /// Damping-rate history.
     pub damping_rate: Vec<Vec<f64>>,
+    /// Per-step source increments.
     pub source_increment: Vec<Vec<f64>>,
+    /// Per-step damping decrements.
     pub damping_decrement: Vec<Vec<f64>>,
+    /// Per-step budget residuals.
     pub update_residual: Vec<Vec<f64>>,
+    /// Integration step in seconds.
     pub dt_s: f64,
 }
 

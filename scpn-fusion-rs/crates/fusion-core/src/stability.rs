@@ -131,7 +131,7 @@ pub fn decay_index(psi: &Array2<f64>, grid: &Grid2D, r: f64, z: f64) -> FusionRe
 
 /// Calculate forces acting on a current-carrying plasma ring.
 ///
-/// Returns (F_radial [N], F_vertical [N]).
+/// Returns radial and vertical force components in newtons.
 ///
 /// F_hoop = (μ₀ I²/2) · [ln(8R/a) + β_p + l_i/2 - 1.5] / R
 /// F_Lorentz_R = I · B_Z · 2πR

@@ -39,19 +39,29 @@ const MIN_RADIUS: f64 = 1e-9;
 const SENSITIVITY_RELAXATION: f64 = 0.8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+/// Jacobian construction strategy for inverse fitting.
 pub enum JacobianMode {
+    /// Central finite-difference sensitivities.
     #[default]
     FiniteDifference,
+    /// Closed-form profile sensitivities.
     Analytical,
 }
 
 #[derive(Debug, Clone)]
+/// Iteration and regularization policy for inverse reconstruction.
 pub struct InverseConfig {
+    /// Maximum optimizer iterations.
     pub max_iterations: usize,
+    /// Residual convergence tolerance.
     pub tolerance: f64,
+    /// Parameter-update damping factor.
     pub damping: f64,
+    /// Relative finite-difference step.
     pub fd_step: f64,
+    /// Tikhonov regularization strength.
     pub tikhonov: f64,
+    /// Jacobian construction strategy.
     pub jacobian_mode: JacobianMode,
 }
 
@@ -69,19 +79,30 @@ impl Default for InverseConfig {
 }
 
 #[derive(Debug, Clone)]
+/// Fitted profiles and convergence diagnostics.
 pub struct InverseResult {
+    /// Pressure-profile parameters.
     pub params_p: ProfileParams,
+    /// FF-prime profile parameters.
     pub params_ff: ProfileParams,
+    /// Whether tolerance was reached.
     pub converged: bool,
+    /// Completed optimizer iterations.
     pub iterations: usize,
+    /// Final residual norm.
     pub residual: f64,
+    /// Residual history by iteration.
     pub residual_history: Vec<f64>,
 }
 
 #[derive(Debug, Clone)]
+/// Inverse configuration coupled to the nonlinear kernel.
 pub struct KernelInverseConfig {
+    /// Profile optimizer configuration.
     pub inverse: InverseConfig,
+    /// Maximum kernel iterations per objective evaluation.
     pub kernel_max_iterations: usize,
+    /// Whether unconverged kernel evaluations fail closed.
     pub require_kernel_converged: bool,
 }
 

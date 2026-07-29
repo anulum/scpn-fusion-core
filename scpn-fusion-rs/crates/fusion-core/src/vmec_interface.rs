@@ -16,27 +16,43 @@ use ndarray::{Array1, Array2};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// One Fourier coefficient tuple for a VMEC-like boundary.
 pub struct VmecFourierMode {
+    /// Poloidal mode number.
     pub m: i32,
+    /// Toroidal mode number.
     pub n: i32,
+    /// Major-radius cosine coefficient.
     pub r_cos: f64,
+    /// Major-radius sine coefficient.
     pub r_sin: f64,
+    /// Vertical-position cosine coefficient.
     pub z_cos: f64,
+    /// Vertical-position sine coefficient.
     pub z_sin: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Axis, shaping, periodicity, and Fourier boundary state.
 pub struct VmecBoundaryState {
+    /// Magnetic-axis major radius in metres.
     pub r_axis: f64,
+    /// Magnetic-axis vertical position in metres.
     pub z_axis: f64,
+    /// Nominal minor radius in metres.
     pub a_minor: f64,
+    /// Boundary elongation.
     pub kappa: f64,
+    /// Boundary triangularity.
     pub triangularity: f64,
+    /// Number of field periods.
     pub nfp: usize,
+    /// Fourier boundary coefficients.
     pub modes: Vec<VmecFourierMode>,
 }
 
 impl VmecBoundaryState {
+    /// Validate finite geometry, positive scale, and Fourier coefficients.
     pub fn validate(&self) -> FusionResult<()> {
         if !self.r_axis.is_finite()
             || !self.z_axis.is_finite()
@@ -92,6 +108,7 @@ impl VmecBoundaryState {
     }
 }
 
+/// Export a validated boundary to the stable VMEC-like text format.
 pub fn export_vmec_like_text(state: &VmecBoundaryState) -> FusionResult<String> {
     state.validate()?;
     let mut out = String::new();
@@ -133,6 +150,7 @@ where
     })
 }
 
+/// Parse and validate the stable VMEC-like text format.
 pub fn import_vmec_like_text(text: &str) -> FusionResult<VmecBoundaryState> {
     let mut format_seen = false;
     let mut r_axis: Option<f64> = None;
@@ -311,6 +329,7 @@ impl Default for VmecSolverConfig {
 }
 
 impl VmecSolverConfig {
+    /// Validate spectral/grid dimensions and nonlinear iteration settings.
     pub fn validate(&self) -> FusionResult<()> {
         if self.ns < 3 {
             return Err(FusionError::PhysicsViolation(
@@ -348,13 +367,13 @@ pub struct VmecEquilibrium {
     pub rmnc: Array2<f64>,
     /// Z sine Fourier coefficients per surface [ns × n_modes].
     pub zmns: Array2<f64>,
-    /// Rotational transform profile iota(s) [ns].
+    /// Rotational-transform profile with `ns` samples.
     pub iota: Array1<f64>,
-    /// Pressure profile [Pa] [ns].
+    /// Pressure profile in pascals with `ns` samples.
     pub pressure: Array1<f64>,
-    /// Total toroidal flux [Wb].
+    /// Total toroidal flux in webers.
     pub phi_edge: f64,
-    /// Plasma volume [m³].
+    /// Plasma volume in cubic metres.
     pub volume: f64,
     /// Volume-averaged beta.
     pub beta_avg: f64,
@@ -366,8 +385,11 @@ pub struct VmecEquilibrium {
     pub converged: bool,
     /// Grid parameters.
     pub ns_grid: usize,
+    /// Maximum poloidal Fourier mode.
     pub m_pol: usize,
+    /// Maximum absolute toroidal Fourier mode.
     pub n_tor: usize,
+    /// Number of field periods.
     pub nfp: usize,
 }
 

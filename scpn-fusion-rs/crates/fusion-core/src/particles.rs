@@ -31,14 +31,23 @@ const BOLTZMANN_J_PER_KEV: f64 = 1.602_176_634e-16;
 /// Charged macro-particle state.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChargedParticle {
+    /// Cartesian x position in metres.
     pub x_m: f64,
+    /// Cartesian y position in metres.
     pub y_m: f64,
+    /// Cartesian z position in metres.
     pub z_m: f64,
+    /// Cartesian x velocity in metres per second.
     pub vx_m_s: f64,
+    /// Cartesian y velocity in metres per second.
     pub vy_m_s: f64,
+    /// Cartesian z velocity in metres per second.
     pub vz_m_s: f64,
+    /// Particle charge in coulombs.
     pub charge_c: f64,
+    /// Particle mass in kilograms.
     pub mass_kg: f64,
+    /// Statistical macro-particle weight.
     pub weight: f64,
 }
 
@@ -54,24 +63,30 @@ impl ChargedParticle {
         (-self.y_m * self.vx_m_s + self.x_m * self.vy_m_s) / r
     }
 
-    /// Non-relativistic kinetic energy [J].
+    /// Non-relativistic kinetic energy in joules.
     pub fn kinetic_energy_j(&self) -> f64 {
         let v2 = self.vx_m_s * self.vx_m_s + self.vy_m_s * self.vy_m_s + self.vz_m_s * self.vz_m_s;
         0.5 * self.mass_kg * v2
     }
 
-    /// Non-relativistic kinetic energy [MeV].
+    /// Non-relativistic kinetic energy in megaelectronvolts.
     pub fn kinetic_energy_mev(&self) -> f64 {
         self.kinetic_energy_j() / (1.0e6 * ELEMENTARY_CHARGE_C)
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Aggregate energy and runaway statistics for a particle population.
 pub struct ParticlePopulationSummary {
+    /// Number of particles summarized.
     pub count: usize,
+    /// Weighted mean kinetic energy in megaelectronvolts.
     pub mean_energy_mev: f64,
+    /// Weighted 95th-percentile energy in megaelectronvolts.
     pub p95_energy_mev: f64,
+    /// Maximum energy in megaelectronvolts.
     pub max_energy_mev: f64,
+    /// Weighted fraction above the runaway threshold.
     pub runaway_fraction: f64,
 }
 
@@ -633,9 +648,9 @@ pub fn blend_particle_current(
 pub struct CoulombCollisionParams {
     /// Electron density [m^-3].
     pub n_e: f64,
-    /// Electron temperature [keV].
+    /// Electron temperature in kiloelectronvolts.
     pub t_e_kev: f64,
-    /// Ion temperature [keV].
+    /// Ion temperature in kiloelectronvolts.
     pub t_i_kev: f64,
     /// Ion mass number (e.g. 2 for deuterium).
     pub a_i: f64,
@@ -697,7 +712,7 @@ pub fn coulomb_logarithm(n_e_m3: f64, t_e_kev: f64) -> FusionResult<f64> {
     Ok(ln_lambda.clamp(5.0, 30.0))
 }
 
-/// Spitzer slowing-down time [s] for a test particle on field electrons.
+/// Spitzer slowing-down time in seconds for a test particle on field electrons.
 ///
 /// τ_s = 3(2π)^{3/2} ε₀² m_a T_e^{3/2} / (n_e Z_a² e⁴ m_e^{1/2} ln Λ)
 pub fn spitzer_slowing_down_time(

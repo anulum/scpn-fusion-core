@@ -31,8 +31,9 @@ const MAX_HEATING: f64 = 1.0e4;
 const MAX_TEMPERATURE: f64 = 100.0;
 
 #[derive(Debug, Clone, Copy)]
+/// Exponential transport-memory configuration.
 pub struct MemoryKernelConfig {
-    /// Memory decay time [s].
+    /// Memory decay time in seconds.
     pub tau_d: f64,
 }
 
@@ -42,15 +43,20 @@ impl Default for MemoryKernelConfig {
     }
 }
 
+/// Radial transport solver with non-local heat-flux memory.
 pub struct MemoryTransportSolver {
+    /// Mutable radial plasma profiles.
     pub profiles: RadialProfiles,
+    /// Local diffusivity profile.
     pub chi: Array1<f64>,
     /// Memory variable Q_mem = ∫ K * (chi * dT/drho) dt'
     pub q_memory: Array1<f64>,
+    /// Memory-kernel configuration.
     pub config: MemoryKernelConfig,
 }
 
 impl MemoryTransportSolver {
+    /// Construct a solver from validated memory configuration.
     pub fn new(config: MemoryKernelConfig) -> FusionResult<Self> {
         if !config.tau_d.is_finite() || config.tau_d < 0.0 {
             return Err(FusionError::ConfigError(format!(

@@ -14,26 +14,37 @@ use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{s, Array2};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// One rank's contiguous z-domain and halo metadata.
 pub struct DomainSlice {
+    /// Zero-based rank index.
     pub rank: usize,
+    /// Total participating ranks.
     pub nranks: usize,
+    /// Global z extent.
     pub global_nz: usize,
+    /// Rank-owned z extent excluding halos.
     pub local_nz: usize,
+    /// Halo width per neighbor.
     pub halo: usize,
+    /// Inclusive global owned-row start.
     pub z_start: usize,
+    /// Exclusive global owned-row end.
     pub z_end: usize,
 }
 
 impl DomainSlice {
+    /// Whether a rank exists above this slice.
     pub fn has_upper_neighbor(&self) -> bool {
         self.rank > 0
     }
 
+    /// Whether a rank exists below this slice.
     pub fn has_lower_neighbor(&self) -> bool {
         self.rank + 1 < self.nranks
     }
 }
 
+/// Partition a z extent into balanced contiguous rank slices.
 pub fn decompose_z(global_nz: usize, nranks: usize, halo: usize) -> FusionResult<Vec<DomainSlice>> {
     if global_nz < 2 {
         return Err(FusionError::PhysicsViolation(
@@ -73,6 +84,7 @@ pub fn decompose_z(global_nz: usize, nranks: usize, halo: usize) -> FusionResult
     Ok(out)
 }
 
+/// Pack upper and lower owned rows for halo exchange.
 pub fn pack_halo_rows(
     local: &Array2<f64>,
     halo: usize,
@@ -105,6 +117,7 @@ pub fn pack_halo_rows(
     Ok((top, bottom))
 }
 
+/// Apply received upper and lower halo rows to a local array.
 pub fn apply_halo_rows(
     local: &mut Array2<f64>,
     halo: usize,
@@ -166,6 +179,7 @@ pub fn apply_halo_rows(
     Ok(())
 }
 
+/// Split a global array into rank-local arrays with halo storage.
 pub fn split_with_halo(
     global: &Array2<f64>,
     slices: &[DomainSlice],
@@ -209,6 +223,7 @@ pub fn split_with_halo(
     Ok(out)
 }
 
+/// Stitch rank-owned regions back into one global array.
 pub fn stitch_without_halo(
     locals: &[Array2<f64>],
     slices: &[DomainSlice],
@@ -263,6 +278,7 @@ pub fn stitch_without_halo(
     Ok(global)
 }
 
+/// Perform a deterministic in-process halo exchange for all rank arrays.
 pub fn serial_halo_exchange(
     locals: &mut [Array2<f64>],
     slices: &[DomainSlice],
@@ -315,6 +331,7 @@ pub fn serial_halo_exchange(
     Ok(())
 }
 
+/// Compute the root-mean-square element delta between equally shaped arrays.
 pub fn l2_norm_delta(a: &Array2<f64>, b: &Array2<f64>) -> FusionResult<f64> {
     if a.dim() != b.dim() {
         return Err(FusionError::PhysicsViolation(format!(
@@ -369,17 +386,21 @@ pub struct CartesianTile {
     pub pr_idx: usize,
     /// Total process-grid dimensions.
     pub pz: usize,
+    /// Number of tiles along the radial dimension.
     pub pr: usize,
     /// Global grid dimensions.
     pub global_nz: usize,
+    /// Global radial extent.
     pub global_nr: usize,
     /// Halo width (same on all faces).
     pub halo: usize,
     /// Owned Z range [z_start, z_end) in global indexing.
     pub z_start: usize,
+    /// Exclusive global z end.
     pub z_end: usize,
     /// Owned R range [r_start, r_end) in global indexing.
     pub r_start: usize,
+    /// Exclusive global radial end.
     pub r_end: usize,
 }
 
@@ -428,15 +449,19 @@ impl CartesianTile {
             0
         }
     }
+    /// Whether a tile neighbor exists at lower z.
     pub fn has_neighbor_top(&self) -> bool {
         self.pz_idx > 0
     }
+    /// Whether a tile neighbor exists at higher z.
     pub fn has_neighbor_bottom(&self) -> bool {
         self.pz_idx + 1 < self.pz
     }
+    /// Whether a tile neighbor exists at lower radius.
     pub fn has_neighbor_left(&self) -> bool {
         self.pr_idx > 0
     }
+    /// Whether a tile neighbor exists at higher radius.
     pub fn has_neighbor_right(&self) -> bool {
         self.pr_idx + 1 < self.pr
     }
@@ -717,6 +742,7 @@ pub struct DistributedSolverConfig {
     /// Process-grid dimensions (pz × pr). Product must be ≤ Rayon
     /// thread count for full parallel utilisation.
     pub pz: usize,
+    /// Number of process tiles along radius.
     pub pr: usize,
     /// Halo width (number of overlap rows/columns per face). 1 is
     /// sufficient for the 5-point GS stencil.

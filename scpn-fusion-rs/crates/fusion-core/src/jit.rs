@@ -19,18 +19,26 @@ const MIN_DT_S: f64 = 1e-9;
 /// Plasma operation regime used for runtime kernel specialization.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PlasmaRegime {
+    /// Low-confinement operation.
     LMode,
+    /// High-confinement operation.
     HMode,
+    /// Positive current ramp.
     RampUp,
+    /// Negative current ramp.
     RampDown,
 }
 
 /// Minimal observation bundle used for regime routing.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RegimeObservation {
+    /// Normalized beta.
     pub beta_n: f64,
+    /// Edge safety factor.
     pub q95: f64,
+    /// Line density in units of `1e20 m^-3`.
     pub density_line_avg_1e20_m3: f64,
+    /// Current ramp in megaamperes per second.
     pub current_ramp_ma_s: f64,
 }
 
@@ -88,13 +96,18 @@ fn validate_observation(observation: &RegimeObservation) -> FusionResult<()> {
 /// Compile-time shape metadata for generated kernels.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct KernelCompileSpec {
+    /// State-vector width.
     pub n_state: usize,
+    /// Control-vector width.
     pub n_control: usize,
+    /// Integration step in seconds.
     pub dt_s: f64,
+    /// Fused substep count.
     pub unroll_factor: usize,
 }
 
 impl KernelCompileSpec {
+    /// Validate dimensions, time step, and unroll factor.
     pub fn validated(self) -> FusionResult<Self> {
         if self.n_state == 0 {
             return Err(FusionError::ConfigError(
@@ -132,9 +145,13 @@ impl Default for KernelCompileSpec {
 }
 
 #[derive(Debug, Clone)]
+/// Cached regime-specialized control kernel.
 pub struct CompiledKernel {
+    /// Specialized plasma regime.
     pub regime: PlasmaRegime,
+    /// Monotonic compilation generation.
     pub generation: u64,
+    /// Validated shape and time specification.
     pub spec: KernelCompileSpec,
     nonlinear_gain: f64,
     control_gain: f64,
@@ -237,6 +254,7 @@ pub struct RuntimeKernelJit {
 }
 
 impl RuntimeKernelJit {
+    /// Construct an empty runtime kernel cache.
     pub fn new() -> Self {
         Self::default()
     }
@@ -275,14 +293,17 @@ impl RuntimeKernelJit {
         Ok((regime, generation))
     }
 
+    /// Return the active regime, if compiled.
     pub fn active_regime(&self) -> Option<PlasmaRegime> {
         self.active
     }
 
+    /// Return the number of cached regime kernels.
     pub fn cache_size(&self) -> usize {
         self.kernels.len()
     }
 
+    /// Return the number of actual compilation events.
     pub fn compile_events(&self) -> u64 {
         self.compile_events
     }

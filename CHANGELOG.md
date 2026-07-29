@@ -7,7 +7,7 @@
 - Enforce complete public API documentation in `fusion-gpu`,
   `fusion-polyglot`, `fusion-diagnostics`, `fusion-engineering`, `fusion-phase`,
   `fusion-types`, `fusion-nuclear`, `fusion-math`, `fusion-ml`, and the
-  `fusion-control` and `scpn-fusion-rs` PyO3 crates; document their grid,
+  `fusion-control`, `fusion-core`, and `scpn-fusion-rs` PyO3 crates; document their grid,
   adapter-selection, data-layout, parser, numerical-operator, sensor,
   tomography, ML validation, real-time control, safety-envelope,
   evidence-boundary, failure, and panic contracts.
