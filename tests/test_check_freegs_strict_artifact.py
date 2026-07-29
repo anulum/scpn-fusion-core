@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import importlib.util
+import importlib
 import json
 import runpy
 import sys
@@ -19,11 +20,31 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "check_freegs_strict_artifact.py"
+WORKFLOW_PATH = ROOT / ".github" / "workflows" / "freegs-strict.yml"
 SPEC = importlib.util.spec_from_file_location("tools.check_freegs_strict_artifact", MODULE_PATH)
 assert SPEC and SPEC.loader
 checker = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = checker
 SPEC.loader.exec_module(checker)
+
+
+def test_freegs_strict_workflow_runs_the_public_same_case_lane() -> None:
+    """The scheduled workflow must run fresh evidence and reject a blocked contract."""
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    assert 'cron: "23 4 * * 2"' in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "validation/benchmark_vs_freegs.py --strict-backend" not in workflow
+    assert "tools/check_freegs_strict_artifact.py" in workflow
+    assert "--run-public-example" in workflow
+    assert "--report artifacts/freegs_public_example_strict_live.json" in workflow
+    assert "--summary-json artifacts/freegs_strict_guard_summary.json" in workflow
+    assert "validation/benchmark_free_boundary_strict_parity.py" in workflow
+    assert workflow.count("--strict") == 1
+    assert "if-no-files-found: error" in workflow
+    assert "artifacts/freegs_public_example_strict_live.json" in workflow
+    assert "artifacts/freegs_strict_guard_summary.json" in workflow
+    assert "validation/reports/free_boundary_strict_parity_benchmark.json" in workflow
 
 
 def _strict_report(**overrides: object) -> dict[str, object]:
@@ -66,6 +87,35 @@ def _strict_report(**overrides: object) -> dict[str, object]:
     return report
 
 
+def _public_example_report(**overrides: object) -> dict[str, object]:
+    """Return a minimal passing fresh public-example reconstruction payload."""
+    report: dict[str, object] = {
+        "schema": "freegs-public-example-reconstruction-report.v1",
+        "status": "accepted_public_freegs_same_case_free_boundary_parity",
+        "report_generation_mode": "external_backend_reconstruction",
+        "freegs_backend_available": True,
+        "freegs_version": "0.8.2",
+        "case_count": 1,
+        "external_nonlinear_output_ready": True,
+        "strict_free_boundary_parity_evidence": {
+            "accepted_full_fidelity": True,
+            "blocking_requirements": [],
+            "failed_threshold_check_count": 0,
+            "grid_convergence_ready": True,
+            "strict_threshold_acceptance_ready": True,
+            "cases": [
+                {
+                    "external_nonlinear_output_ready": True,
+                    "native_same_case_profile_source_ready": True,
+                    "strict_threshold_acceptance_ready": True,
+                }
+            ],
+        },
+    }
+    report.update(overrides)
+    return report
+
+
 def _write_json(path: Path, payload: object) -> None:
     """Write a JSON payload to ``path``."""
     path.write_text(json.dumps(payload), encoding="utf-8")
@@ -79,6 +129,78 @@ def test_evaluate_passes_for_strict_freegs_contract() -> None:
 
     assert summary["overall_pass"] is True
     assert summary["failed_checks"] == []
+
+
+def test_evaluate_passes_for_fresh_public_example_contract() -> None:
+    """Evaluator accepts fresh FreeGS same-case evidence only when every gate passes."""
+    summary = checker.evaluate(_public_example_report())
+
+    assert summary["overall_pass"] is True
+    assert summary["failed_checks"] == []
+    assert summary["case_count"] == 1
+    assert summary["report_schema"] == "freegs-public-example-reconstruction-report.v1"
+    assert summary["report_status"] == "accepted_public_freegs_same_case_free_boundary_parity"
+    assert summary["freegs_version"] == "0.8.2"
+    assert summary["blocking_requirements"] == []
+
+
+def test_evaluate_fails_closed_for_incomplete_public_example_contract() -> None:
+    """Malformed strict evidence cannot inherit acceptance from top-level metadata."""
+    summary = checker.evaluate(
+        _public_example_report(
+            case_count=2,
+            external_nonlinear_output_ready=False,
+            strict_free_boundary_parity_evidence="invalid",
+        )
+    )
+
+    assert summary["overall_pass"] is False
+    assert set(summary["failed_checks"]) == {
+        "case_count_matches",
+        "external_nonlinear_output_ready",
+        "strict_parity_accepted",
+        "grid_convergence_ready",
+        "strict_threshold_acceptance_ready",
+        "failed_threshold_check_count_zero",
+    }
+
+
+def test_evaluate_rejects_tracked_public_example_fallback() -> None:
+    """A cached accepted report cannot substitute for a fresh scheduled solve."""
+    summary = checker.evaluate(
+        _public_example_report(report_generation_mode="tracked_report_fallback")
+    )
+
+    assert summary["overall_pass"] is False
+    assert summary["failed_checks"] == ["fresh_external_backend_reconstruction"]
+
+
+def test_evaluate_rejects_public_example_case_and_blocker_drift() -> None:
+    """Every strict case must be ready and the blocker collection must be empty."""
+    strict = {
+        "accepted_full_fidelity": True,
+        "blocking_requirements": "missing reference",
+        "failed_threshold_check_count": 0,
+        "grid_convergence_ready": True,
+        "strict_threshold_acceptance_ready": True,
+        "cases": [
+            {
+                "external_nonlinear_output_ready": False,
+                "native_same_case_profile_source_ready": False,
+                "strict_threshold_acceptance_ready": False,
+            },
+            "invalid-case",
+        ],
+    }
+
+    summary = checker.evaluate(_public_example_report(strict_free_boundary_parity_evidence=strict))
+
+    assert summary["overall_pass"] is False
+    assert summary["blocking_requirements"] == ["missing reference"]
+    assert "blocking_requirements_empty" in summary["failed_checks"]
+    assert "all_cases_external_ready" in summary["failed_checks"]
+    assert "all_cases_native_same_case_ready" in summary["failed_checks"]
+    assert "all_cases_strict_threshold_ready" in summary["failed_checks"]
 
 
 def test_evaluate_fails_when_runtime_fallback_detected() -> None:
@@ -231,6 +353,48 @@ def test_main_resolves_repo_relative_paths(tmp_path: Path, monkeypatch: pytest.M
 
     assert rc == 0
     assert (artifacts / "summary.json").exists()
+
+
+def test_public_example_runner_delegates_without_canonical_writes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The live runner must keep the benchmark's canonical write mode disabled."""
+    benchmark = importlib.import_module("validation.benchmark_freegs_public_example_reconstruction")
+    writes: list[bool] = []
+
+    def fake_run_benchmark(*, write: bool = True) -> dict[str, object]:
+        writes.append(write)
+        return _public_example_report()
+
+    monkeypatch.setattr(benchmark, "run_benchmark", fake_run_benchmark)
+
+    report = checker._run_public_example_report()
+
+    assert report == _public_example_report()
+    assert writes == [False]
+
+
+def test_main_runs_and_writes_fresh_public_example_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Live mode writes ephemeral evidence and its passing guard summary."""
+    report_path = tmp_path / "freegs.json"
+    summary_path = tmp_path / "summary.json"
+    monkeypatch.setattr(checker, "_run_public_example_report", _public_example_report)
+
+    rc = checker.main(
+        [
+            "--run-public-example",
+            "--report",
+            str(report_path),
+            "--summary-json",
+            str(summary_path),
+        ]
+    )
+
+    assert rc == 0
+    assert json.loads(report_path.read_text(encoding="utf-8")) == _public_example_report()
+    assert json.loads(summary_path.read_text(encoding="utf-8"))["overall_pass"] is True
 
 
 def test_main_writes_summary_json(tmp_path: Path) -> None:

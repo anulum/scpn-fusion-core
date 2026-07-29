@@ -3,10 +3,12 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — FreeGS Strict Backend Gate
-name: FreeGS Strict Backend Gate
+# SCPN Fusion Core — FreeGS Strict Public Example Parity Gate
+name: FreeGS Strict Public Example Parity Gate
 
 on:
+  schedule:
+    - cron: "23 4 * * 2"
   workflow_dispatch:
 
 concurrency:
@@ -34,21 +36,26 @@ jobs:
           pip install --require-hashes -r requirements/ci-benchmark.txt
           pip install --no-deps -e .
 
-      - name: Run FreeGS strict-backend benchmark
-        run: |
-          python validation/benchmark_vs_freegs.py --strict-backend
-
-      - name: Enforce FreeGS strict artifact contract
+      - name: Run and enforce fresh FreeGS public-example artifact contract
         run: |
           python tools/check_freegs_strict_artifact.py \
-            --report artifacts/freegs_benchmark.json \
+            --run-public-example \
+            --report artifacts/freegs_public_example_strict_live.json \
             --summary-json artifacts/freegs_strict_guard_summary.json
+
+      - name: Enforce published strict parity contract
+        run: |
+          python validation/benchmark_free_boundary_strict_parity.py \
+            --check \
+            --strict
 
       - name: Upload FreeGS strict artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: freegs-strict-gate
+          if-no-files-found: error
           path: |
-            artifacts/freegs_benchmark.json
+            artifacts/freegs_public_example_strict_live.json
             artifacts/freegs_strict_guard_summary.json
+            validation/reports/free_boundary_strict_parity_benchmark.json

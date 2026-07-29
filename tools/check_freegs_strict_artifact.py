@@ -10,10 +10,11 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,13 @@ REQUIRED_FINITE_CASE_METRICS = (
     "flux_area_rel_error",
     "invariant_pass_fraction",
 )
+
+
+class _PublicExampleBenchmark(Protocol):
+    """Typed surface imported from the validation benchmark at runtime."""
+
+    def run_benchmark(self, *, write: bool = True) -> dict[str, Any]:
+        """Run the public-example benchmark and return its report."""
 
 
 def _resolve(path_value: str) -> Path:
@@ -48,8 +56,65 @@ def _finite_number(value: Any) -> bool:
     return isinstance(value, int | float) and math.isfinite(float(value))
 
 
+def _run_public_example_report() -> dict[str, Any]:
+    """Run the public-example benchmark without changing canonical reports."""
+    benchmark = cast(
+        _PublicExampleBenchmark,
+        importlib.import_module("validation.benchmark_freegs_public_example_reconstruction"),
+    )
+    return dict(benchmark.run_benchmark(write=False))
+
+
+def _evaluate_public_example(report: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate a fresh public-example reconstruction artifact fail closed."""
+    strict_raw = report.get("strict_free_boundary_parity_evidence", {})
+    strict = strict_raw if isinstance(strict_raw, dict) else {}
+    cases_raw = strict.get("cases", [])
+    cases = [dict(case) for case in cases_raw if isinstance(case, dict)]
+    blockers_raw = strict.get("blocking_requirements", [])
+    blockers = blockers_raw if isinstance(blockers_raw, list) else [blockers_raw]
+    checks = {
+        "public_example_schema": report.get("schema")
+        == "freegs-public-example-reconstruction-report.v1",
+        "fresh_external_backend_reconstruction": report.get("report_generation_mode")
+        == "external_backend_reconstruction",
+        "freegs_backend_available": report.get("freegs_backend_available") is True,
+        "case_count_matches": int(report.get("case_count", -1)) == len(cases) and bool(cases),
+        "external_nonlinear_output_ready": report.get("external_nonlinear_output_ready") is True,
+        "strict_parity_accepted": strict.get("accepted_full_fidelity") is True,
+        "grid_convergence_ready": strict.get("grid_convergence_ready") is True,
+        "strict_threshold_acceptance_ready": strict.get("strict_threshold_acceptance_ready")
+        is True,
+        "failed_threshold_check_count_zero": int(strict.get("failed_threshold_check_count", -1))
+        == 0,
+        "blocking_requirements_empty": blockers == [],
+        "all_cases_external_ready": all(
+            case.get("external_nonlinear_output_ready") is True for case in cases
+        ),
+        "all_cases_native_same_case_ready": all(
+            case.get("native_same_case_profile_source_ready") is True for case in cases
+        ),
+        "all_cases_strict_threshold_ready": all(
+            case.get("strict_threshold_acceptance_ready") is True for case in cases
+        ),
+    }
+    failed_checks = [key for key, value in checks.items() if not bool(value)]
+    return {
+        "overall_pass": len(failed_checks) == 0,
+        "failed_checks": failed_checks,
+        "checks": checks,
+        "case_count": len(cases),
+        "report_schema": report.get("schema"),
+        "report_status": report.get("status"),
+        "freegs_version": report.get("freegs_version"),
+        "blocking_requirements": blockers,
+    }
+
+
 def evaluate(report: dict[str, Any]) -> dict[str, Any]:
     """Evaluate FreeGS artifact metadata and emit invariant checks plus summary fields."""
+    if report.get("schema") == "freegs-public-example-reconstruction-report.v1":
+        return _evaluate_public_example(report)
     cases_raw = report.get("cases", [])
     cases = [dict(case) for case in cases_raw if isinstance(case, dict)]
     if not cases:
@@ -100,10 +165,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", default=str(DEFAULT_REPORT))
     parser.add_argument("--summary-json", default=str(DEFAULT_SUMMARY))
+    parser.add_argument(
+        "--run-public-example",
+        action="store_true",
+        help="Run fresh public-example reconstruction and write it to --report before checking.",
+    )
     args = parser.parse_args(argv)
 
     try:
-        report = _load_json(_resolve(args.report))
+        report_path = _resolve(args.report)
+        if args.run_public_example:
+            report = _run_public_example_report()
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text(
+                json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
+        else:
+            report = _load_json(report_path)
         summary = evaluate(report)
     except ValueError as exc:
         print(f"FreeGS strict artifact guard failed: {exc}")
