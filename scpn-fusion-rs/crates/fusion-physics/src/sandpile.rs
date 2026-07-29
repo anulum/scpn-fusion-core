@@ -35,6 +35,7 @@ pub struct SandpileReactor {
 }
 
 impl SandpileReactor {
+    /// Construct a validated instance.
     pub fn new() -> Self {
         SandpileReactor {
             heights: vec![0.0; L],

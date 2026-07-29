@@ -13,52 +13,91 @@ use ndarray::{s, Array1, Array2, Array3, Array4, Array5, Array6};
 use num_complex::Complex64;
 use std::f64::consts::PI;
 
+/// Elementary charge in coulombs.
 pub const E_CHARGE: f64 = 1.602176634e-19;
+/// Proton mass in kilograms.
 pub const M_PROTON: f64 = 1.67262192369e-27;
+/// Electron mass in kilograms.
 pub const M_ELECTRON: f64 = 9.1093837015e-31;
 
 #[derive(Clone, Debug)]
+/// Configuration for nonlinear gyrokinetic.
 pub struct NonlinearGKConfig {
+    /// Number of radial-wavenumber modes.
     pub n_kx: usize,
+    /// Number of binormal-wavenumber modes.
     pub n_ky: usize,
+    /// Number of parallel-angle grid points.
     pub n_theta: usize,
+    /// Number of parallel-velocity grid points.
     pub n_vpar: usize,
+    /// Number of magnetic-moment grid points.
     pub n_mu: usize,
+    /// Number of species.
     pub n_species: usize,
 
+    /// Maximum normalized integration time step.
     pub dt: f64,
+    /// Number of steps.
     pub n_steps: usize,
+    /// Number of integration steps between saved diagnostics.
     pub save_interval: usize,
 
+    /// Radial box size normalized to the ion-sound gyroradius.
     pub lx: f64,
+    /// Binormal box size normalized to the ion-sound gyroradius.
     pub ly: f64,
+    /// Maximum absolute normalized parallel velocity.
     pub vpar_max: f64,
+    /// Maximum normalized magnetic moment.
     pub mu_max: f64,
 
+    /// Spectral dealiasing rule identifier.
     pub dealiasing: String,
+    /// Order of the perpendicular hyperdiffusion operator.
     pub hyper_order: usize,
+    /// Hyperdiffusion coefficient.
     pub hyper_coeff: f64,
+    /// Courant-Friedrichs-Lewy safety factor.
     pub cfl_factor: f64,
+    /// Whether the integrator adapts the step to the CFL bound.
     pub cfl_adapt: bool,
 
+    /// Whether the collision operator is enabled.
     pub collisions: bool,
+    /// Normalized collision frequency.
     pub nu_collision: f64,
+    /// Collision model.
     pub collision_model: String,
+    /// Whether nonlinear ExB advection is enabled.
     pub nonlinear: bool,
+    /// Whether electrons evolve kinetically instead of adiabatically.
     pub kinetic_electrons: bool,
+    /// Electron-to-ion mass ratio.
     pub mass_ratio_me_mi: f64,
+    /// Whether the kinetic-electron response uses the implicit treatment.
     pub implicit_electrons: bool,
+    /// Whether electromagnetic perturbations are enabled.
     pub electromagnetic: bool,
+    /// Electron beta used by the electromagnetic closure.
     pub beta_e: f64,
 
+    /// Magnetic-axis major radius in metres.
     pub r0: f64,
+    /// Plasma minor radius in metres.
     pub a: f64,
+    /// On-axis magnetic-field strength in tesla.
     pub b0: f64,
+    /// Safety factor at the simulated flux surface.
     pub q: f64,
+    /// Local magnetic shear.
     pub s_hat: f64,
 
+    /// Normalized ion-temperature gradient `R/L_Ti`.
     pub r_l_ti: f64,
+    /// Normalized electron-temperature gradient `R/L_Te`.
     pub r_l_te: f64,
+    /// Normalized density gradient `R/L_n`.
     pub r_l_ne: f64,
 }
 
@@ -195,40 +234,67 @@ mod tests {
 }
 
 #[derive(Clone)]
+/// State of nonlinear gyrokinetic.
 pub struct NonlinearGKState {
-    pub f: Array6<Complex64>,   // (n_species, n_kx, n_ky, n_theta, n_vpar, n_mu)
+    /// Complex gyrocentre distribution over species and phase-space grids.
+    pub f: Array6<Complex64>, // (n_species, n_kx, n_ky, n_theta, n_vpar, n_mu)
+    /// Electrostatic-potential spectrum over perpendicular and parallel grids.
     pub phi: Array3<Complex64>, // (n_kx, n_ky, n_theta)
+    /// Current normalized simulation time.
     pub time: f64,
+    /// Optional parallel-vector-potential spectrum.
     pub a_par: Option<Array3<Complex64>>,
 }
 
 #[derive(Clone, Debug)]
+/// Circular Miller-geometry coefficients on the parallel grid.
 pub struct MillerGeometry {
+    /// Parallel poloidal-angle coordinates in radians.
     pub theta: Array1<f64>,
+    /// Major-radius coordinates in metres.
     pub r: Array1<f64>,
+    /// Vertical coordinates in metres.
     pub z: Array1<f64>,
+    /// Magnetic-field magnitudes in tesla.
     pub b_mag: Array1<f64>,
+    /// Coordinate-Jacobian samples.
     pub jacobian: Array1<f64>,
+    /// Radial contravariant metric coefficients.
     pub g_rr: Array1<f64>,
+    /// Radial-poloidal contravariant metric coefficients.
     pub g_rt: Array1<f64>,
+    /// Poloidal contravariant metric coefficients.
     pub g_tt: Array1<f64>,
+    /// Normal-curvature samples in inverse metres.
     pub kappa_n: Array1<f64>,
+    /// Geodesic-curvature samples in inverse metres.
     pub kappa_g: Array1<f64>,
+    /// Parallel-gradient metric `B dot grad(theta)`.
     pub b_dot_grad_theta: Array1<f64>,
 }
 
 #[derive(Clone, Copy, Debug)]
+/// Parameters for circular geometry.
 pub struct CircularGeometryParams {
+    /// Magnetic-axis major radius in metres.
     pub r0: f64,
+    /// Plasma minor radius in metres.
     pub a: f64,
+    /// Normalized radial-grid coordinates.
     pub rho: f64,
+    /// Safety factor at the selected flux surface.
     pub q: f64,
+    /// Local magnetic shear.
     pub s_hat: f64,
+    /// On-axis magnetic-field strength in tesla.
     pub b0: f64,
+    /// Number of poloidal-angle points per period.
     pub n_theta: usize,
+    /// Number of parallel poloidal periods.
     pub n_period: usize,
 }
 
+/// Compute circular geometry.
 pub fn circular_geometry(params: CircularGeometryParams) -> MillerGeometry {
     let CircularGeometryParams {
         r0,
@@ -308,26 +374,37 @@ pub fn circular_geometry(params: CircularGeometryParams) -> MillerGeometry {
 }
 
 #[derive(Clone, Debug)]
+/// Thermodynamic and gradient parameters for one gyrokinetic species.
 pub struct GKSpecies {
+    /// Species mass in unified atomic mass units.
     pub mass_amu: f64,
+    /// Charge in elementary-charge units.
     pub charge_e: f64,
+    /// Temperature in kiloelectronvolts.
     pub temperature_kev: f64,
+    /// Number density in units of `10^19` particles per cubic metre.
     pub density_19: f64,
+    /// Normalized temperature gradient `R/L_T`.
     pub r_l_t: f64,
+    /// Normalized density gradient `R/L_n`.
     pub r_l_n: f64,
+    /// Whether the species uses an adiabatic response.
     pub is_adiabatic: bool,
 }
 
 impl GKSpecies {
+    /// Compute mass in kilograms.
     pub fn mass_kg(&self) -> f64 {
         self.mass_amu * M_PROTON
     }
+    /// Compute thermal speed.
     pub fn thermal_speed(&self) -> f64 {
         let t_j = self.temperature_kev * 1e3 * E_CHARGE;
         (2.0 * t_j / self.mass_kg()).sqrt()
     }
 }
 
+/// Compute deuterium ion.
 pub fn deuterium_ion(t_kev: f64, n_19: f64, r_l_t: f64, r_l_n: f64) -> GKSpecies {
     GKSpecies {
         mass_amu: 2.0,
@@ -340,6 +417,7 @@ pub fn deuterium_ion(t_kev: f64, n_19: f64, r_l_t: f64, r_l_n: f64) -> GKSpecies
     }
 }
 
+/// Compute electron.
 pub fn electron(t_kev: f64, n_19: f64, r_l_t: f64, r_l_n: f64, adiabatic: bool) -> GKSpecies {
     GKSpecies {
         mass_amu: M_ELECTRON / M_PROTON,
@@ -352,58 +430,102 @@ pub fn electron(t_kev: f64, n_19: f64, r_l_t: f64, r_l_n: f64, adiabatic: bool) 
     }
 }
 
+/// Result of nonlinear gyrokinetic.
 pub struct NonlinearGKResult {
+    /// Ion heat diffusivity in square metres per second.
     pub chi_i: f64,
+    /// Electron heat diffusivity in square metres per second.
     pub chi_e: f64,
+    /// Ion diffusivity normalized to the gyro-Bohm value.
     pub chi_i_gb: f64,
+    /// Saved normalized ion heat-flux samples.
     pub q_i_t: Vec<f64>,
+    /// Saved normalized electron heat-flux samples.
     pub q_e_t: Vec<f64>,
+    /// Saved root-mean-square electrostatic-potential samples.
     pub phi_rms_t: Vec<f64>,
+    /// Saved root-mean-square zonal-potential samples.
     pub zonal_rms_t: Vec<f64>,
+    /// Saved normalized simulation times.
     pub time: Vec<f64>,
+    /// Whether the numerical solve converged.
     pub converged: bool,
+    /// Optional final state value.
     pub final_state: Option<NonlinearGKState>,
 }
 
+/// Allocated grids, geometry, species, and coefficients for the nonlinear solver.
 pub struct NonlinearGKSolver {
+    /// Solver grid, physics, and integration configuration.
     pub cfg: NonlinearGKConfig,
+    /// Radial-wavenumber grid.
     pub kx: Array1<f64>,
+    /// Binormal-wavenumber grid.
     pub ky: Array1<f64>,
+    /// Squared perpendicular wavenumber for each spectral mode.
     pub kperp2: Array2<f64>,
+    /// Parallel poloidal-angle grid in radians.
     pub theta: Array1<f64>,
+    /// Parallel-angle grid spacing in radians.
     pub dtheta: f64,
+    /// Normalized parallel-velocity grid.
     pub vpar: Array1<f64>,
+    /// Parallel-velocity grid spacing.
     pub dvpar: f64,
+    /// Normalized magnetic-moment grid.
     pub mu: Array1<f64>,
+    /// Magnetic-moment grid spacing.
     pub dmu: f64,
+    /// Per-mode spectral dealiasing mask.
     pub dealias_mask: Array2<bool>,
 
+    /// Forward ballooning-boundary phase factors.
     pub ball_phase_fwd: Array2<Complex64>,
+    /// Backward ballooning-boundary phase factors.
     pub ball_phase_bwd: Array2<Complex64>,
 
+    /// Geometry coefficients on the parallel grid.
     pub geom: MillerGeometry,
+    /// Parallel-gradient metric samples.
     pub b_dot_grad: Array1<f64>,
+    /// Samples of kappa n.
     pub kappa_n: Array1<f64>,
+    /// Samples of kappa g.
     pub kappa_g: Array1<f64>,
+    /// Magnetic-field magnitude normalized to its grid average.
     pub b_ratio: Array1<f64>,
 
+    /// Ion species parameters.
     pub ion: GKSpecies,
+    /// Electron species parameters.
     pub elec: GKSpecies,
+    /// Ion sound speed in metres per second.
     pub c_s: f64,
+    /// Ion sound gyroradius in metres.
     pub rho_s: f64,
+    /// Gyro-Bohm diffusivity in square metres per second.
     pub chi_gb: f64,
+    /// Ion thermal-gyroradius ratio used by the field solve.
     pub rho_ratio: f64,
+    /// Electron-to-ion gyroradius ratio.
     pub rho_ratio_e: f64,
+    /// Electron-to-ion thermal-speed ratio.
     pub vth_ratio_e: f64,
 
+    /// Rosenbluth-Hinton neoclassical polarization coefficient.
     pub rh_neo_pol: f64,
+    /// Rosenbluth-Hinton zonal-flow residual.
     pub rh_residual: f64,
+    /// Normalized Rosenbluth-Hinton relaxation time.
     pub rh_tau: f64,
+    /// Normalized Rosenbluth-Hinton relaxation rate.
     pub rh_rate: f64,
+    /// Five-dimensional mask selecting the zonal (`k_y = 0`) modes.
     pub ky_zero_5d: Array5<bool>,
 }
 
 impl NonlinearGKSolver {
+    /// Construct a validated instance.
     pub fn new(cfg: NonlinearGKConfig) -> Self {
         let mut solver = Self::allocate_empty(cfg);
         solver.setup_grids();
@@ -682,6 +804,7 @@ impl NonlinearGKSolver {
         );
     }
 
+    /// Compute field solve.
     pub fn field_solve(&self, f: &Array6<Complex64>) -> Array3<Complex64> {
         let c = &self.cfg;
         let mut n_ion = Array3::zeros((c.n_kx, c.n_ky, c.n_theta));
@@ -749,6 +872,7 @@ impl NonlinearGKSolver {
         phi
     }
 
+    /// Compute ampere solve.
     pub fn ampere_solve(&self, f: &Array6<Complex64>) -> Array3<Complex64> {
         let c = &self.cfg;
         if !c.electromagnetic {
@@ -796,6 +920,7 @@ impl NonlinearGKSolver {
         a_par
     }
 
+    /// Compute exb bracket.
     pub fn exb_bracket(
         &self,
         phi: &Array3<Complex64>,
@@ -862,6 +987,7 @@ impl NonlinearGKSolver {
         bracket_k
     }
 
+    /// Compute parallel streaming.
     pub fn parallel_streaming(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
         let c = &self.cfg;
         let h = self.dtheta;
@@ -891,6 +1017,7 @@ impl NonlinearGKSolver {
         dfdt
     }
 
+    /// Compute magnetic drift.
     pub fn magnetic_drift(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
         let c = &self.cfg;
         let mut omega_d = Array5::zeros((c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu));
@@ -928,6 +1055,7 @@ impl NonlinearGKSolver {
         omega_d
     }
 
+    /// Compute collide.
     pub fn collide(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
         if self.cfg.collision_model == "sugama" {
             return self.collide_sugama(f_s);
@@ -1035,6 +1163,7 @@ impl NonlinearGKSolver {
         out
     }
 
+    /// Compute gradient drive.
     pub fn gradient_drive(
         &self,
         phi: &Array3<Complex64>,
@@ -1097,6 +1226,7 @@ impl NonlinearGKSolver {
         drive
     }
 
+    /// Compute hyperdiffusion.
     pub fn hyperdiffusion(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
         let c = &self.cfg;
         let mut hd = Array5::zeros((c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu));
@@ -1118,6 +1248,7 @@ impl NonlinearGKSolver {
         hd
     }
 
+    /// Compute rhs.
     pub fn rhs(&self, state: &NonlinearGKState) -> Array6<Complex64> {
         let c = &self.cfg;
         let mut dfdt = Array6::zeros((c.n_species, c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu));
@@ -1178,6 +1309,7 @@ impl NonlinearGKSolver {
         dfdt
     }
 
+    /// Compute rk4 step.
     pub fn rk4_step(&self, state: &NonlinearGKState, dt: f64) -> NonlinearGKState {
         let f0 = &state.f;
         let t0 = state.time;
@@ -1244,6 +1376,7 @@ impl NonlinearGKSolver {
         }
     }
 
+    /// Compute cfl time step.
     pub fn cfl_dt(&self, state: &NonlinearGKState) -> f64 {
         let c = &self.cfg;
         if !c.cfl_adapt {

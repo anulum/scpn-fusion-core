@@ -50,6 +50,7 @@ pub struct ReducedMHD {
 }
 
 impl ReducedMHD {
+    /// Construct a validated instance.
     pub fn new() -> Self {
         let dr = 1.0 / (NR - 1) as f64;
         let r: Vec<f64> = (0..NR).map(|i| i as f64 * dr).collect();

@@ -42,21 +42,32 @@ const _MAX_DIV_LOAD: f64 = 100.0;
 /// A viable reactor design point.
 #[derive(Debug, Clone)]
 pub struct DesignPoint {
+    /// Major radius in metres.
     pub r_major: f64,
+    /// Minor radius in metres.
     pub a_minor: f64,
+    /// On-axis magnetic-field strength in tesla.
     pub b0: f64,
+    /// Magnetic-field strength at the coil in tesla.
     pub b_coil: f64,
+    /// Fusion power in megawatts.
     pub p_fusion_mw: f64,
+    /// Plasma volume in cubic metres.
     pub volume: f64,
+    /// Plasma current in megaamperes.
     pub i_plasma_ma: f64,
+    /// Divertor heat load in megawatts per square metre.
     pub q_div_mw_m2: f64,
+    /// First-wall heat load in megawatts per square metre.
     pub q_wall_mw_m2: f64,
+    /// Engineering gain factor.
     pub q_engineering: f64,
 }
 
 /// Simplified plasma physics scaling model.
 ///
-/// Returns (P_fusion [MW], I_plasma [MA], Volume [m³]).
+/// Returns fusion power in megawatts, plasma current in megaamperes, and
+/// volume in cubic metres.
 pub fn plasma_physics_model(r: f64, a: f64, b0: f64) -> (f64, f64, f64) {
     let volume = 2.0 * PI * r * PI * a * a;
     // Plasma current from aspect ratio and elongation
@@ -73,7 +84,7 @@ pub fn plasma_physics_model(r: f64, a: f64, b0: f64) -> (f64, f64, f64) {
 
 /// Check radial build engineering constraints.
 ///
-/// Returns (feasible, B_coil [T]).
+/// Returns the feasibility flag and coil field in tesla.
 pub fn radial_build_constraints(r: f64, a: f64, b0: f64) -> (bool, f64) {
     let r_coil = r - a - D_SHIELD - D_GAP;
     if r_coil <= 0.0 {

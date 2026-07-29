@@ -14,6 +14,8 @@
 //! supplied-current pulsed-compression contracts, and conservative FRC
 //! tilt-mode diagnostics.
 
+#![deny(missing_docs)]
+
 pub mod compact_optimizer;
 pub mod compression;
 pub mod design_scanner;
@@ -26,6 +28,7 @@ pub mod hall_mhd;
 pub mod hall_mhd_pulsed;
 pub mod mrti;
 pub mod precision_pacer;
+/// Rotating-magnetic-field control models.
 pub mod rmf_control;
 pub mod sandpile;
 pub mod sawtooth;

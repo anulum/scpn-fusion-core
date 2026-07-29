@@ -7,31 +7,52 @@
 // SCPN Fusion Core — Pulsed Hall-MHD
 //! Axisymmetric Ono Eq. 8 Hall-MHD flux carrier.
 
+/// Vacuum permeability in henries per metre.
 pub const MU_0: f64 = 4.0e-7 * std::f64::consts::PI;
 
 #[derive(Debug, Clone, PartialEq)]
+/// Configuration for the axisymmetric pulsed Hall-MHD flux carrier.
 pub struct HallMhdPulsedConfig {
+    /// Radial-grid coordinates in metres.
     pub rho_m: Vec<f64>,
+    /// Poloidal-flux damping time in seconds.
     pub tau_psi_s: f64,
+    /// Magnetic-null radius in metres.
     pub r_null_m: f64,
+    /// Electron temperature in electronvolts.
     pub electron_temperature_ev: f64,
+    /// Effective ion charge.
     pub z_eff: f64,
+    /// Coulomb logarithm.
     pub ln_lambda: f64,
+    /// Dimensionless scale applied to the Hall drive.
     pub hall_scale: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// State and source-budget diagnostics of the pulsed Hall-MHD carrier.
 pub struct HallMhdPulsedState {
+    /// Simulation time in seconds.
     pub t_s: f64,
+    /// Poloidal-flux samples.
     pub psi: Vec<f64>,
+    /// Axial magnetic-field samples in tesla.
     pub b_z: Vec<f64>,
+    /// Azimuthal electric-field samples in volts per metre.
     pub e_theta: Vec<f64>,
+    /// Azimuthal current-density samples in amperes per square metre.
     pub j_theta: Vec<f64>,
+    /// Magnetic-energy proxy per unit axial length in joules per metre.
     pub energy_proxy_j_m: f64,
+    /// Euclidean norm of the hall drive.
     pub hall_drive_l2: f64,
+    /// Euclidean norm of the resistive sink.
     pub resistive_sink_l2: f64,
+    /// Euclidean norm of the damping sink.
     pub damping_sink_l2: f64,
+    /// Infinity norm of the source residual.
     pub source_residual_linf: f64,
+    /// Status label for the external parity claim.
     pub external_parity_status: &'static str,
 }
 
@@ -70,6 +91,7 @@ fn validate_profile(name: &str, values: &[f64], expected: usize) -> Result<(), S
     Ok(())
 }
 
+/// Compute spitzer resistivity in ohm metres.
 pub fn spitzer_resistivity_ohm_m(
     temperature_ev: f64,
     z_eff: f64,
@@ -81,6 +103,7 @@ pub fn spitzer_resistivity_ohm_m(
     Ok(1.65e-9 * z * log / temperature.powf(1.5))
 }
 
+/// Compute faraday e theta from magnetic field ramp.
 pub fn faraday_e_theta_from_b_ramp(rho_m: &[f64], d_b_ext_dt_t_s: f64) -> Result<Vec<f64>, String> {
     validate_grid(rho_m)?;
     if !d_b_ext_dt_t_s.is_finite() {
@@ -89,6 +112,7 @@ pub fn faraday_e_theta_from_b_ramp(rho_m: &[f64], d_b_ext_dt_t_s: f64) -> Result
     Ok(rho_m.iter().map(|r| -0.5 * r * d_b_ext_dt_t_s).collect())
 }
 
+/// Compute axial field from flux.
 pub fn axial_field_from_flux(rho_m: &[f64], psi: &[f64]) -> Result<Vec<f64>, String> {
     validate_grid(rho_m)?;
     validate_profile("psi", psi, rho_m.len())?;
@@ -101,6 +125,7 @@ pub fn axial_field_from_flux(rho_m: &[f64], psi: &[f64]) -> Result<Vec<f64>, Str
     Ok(field)
 }
 
+/// Construct the initial hall magnetohydrodynamic pulsed state.
 pub fn initial_hall_mhd_pulsed_state(
     cfg: &HallMhdPulsedConfig,
     psi: Vec<f64>,
@@ -127,6 +152,7 @@ pub fn initial_hall_mhd_pulsed_state(
     })
 }
 
+/// Advance hall magnetohydrodynamic pulsed.
 pub fn step_hall_mhd_pulsed(
     state: &HallMhdPulsedState,
     cfg: &HallMhdPulsedConfig,

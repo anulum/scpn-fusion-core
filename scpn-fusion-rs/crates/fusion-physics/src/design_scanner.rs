@@ -76,19 +76,33 @@ const SHADOW_WEIGHTS: [f64; 15] = [
 /// A reactor design evaluation result. Mirrors the Python `evaluate_design` dict.
 #[derive(Debug, Clone)]
 pub struct DesignResult {
+    /// Major radius in metres.
     pub r_major: f64,
+    /// Magnetic-field strength in tesla.
     pub b_field: f64,
+    /// Plasma current in megaamperes.
     pub i_plasma: f64,
+    /// Fusion power in megawatts.
     pub p_fusion: f64,
+    /// Engineering gain factor.
     pub q_engineering: f64,
+    /// First-wall heat load in megawatts per square metre.
     pub wall_load: f64,
+    /// Baseline divertor heat load in megawatts per square metre.
     pub div_load_baseline: f64,
+    /// Fraction of divertor loading removed by geometric shadowing.
     pub shadow_fraction: f64,
+    /// Optimized divertor heat load in megawatts per square metre.
     pub div_load_optimized: f64,
+    /// Peak high-temperature-superconductor field in tesla.
     pub b_peak_hts_t: f64,
+    /// Estimated effective ion charge.
     pub zeff_est: f64,
+    /// Whether every design constraint is satisfied.
     pub constraint_ok: bool,
+    /// Effective normalized plasma beta.
     pub beta_n_eff: f64,
+    /// Scalar optimization cost.
     pub cost: f64,
 }
 

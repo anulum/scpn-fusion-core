@@ -14,9 +14,13 @@ fn wrapped_phase_delta(delta: f64) -> f64 {
 }
 
 #[derive(Debug, Clone, Copy)]
+/// Ahead-of-time safety envelope for rotating-magnetic-field control.
 pub struct RmfAotCertificate {
+    /// Maximum permitted RMF frequency in hertz.
     pub max_freq_hz: f64,
+    /// Minimum permitted RMF frequency in hertz.
     pub min_freq_hz: f64,
+    /// Maximum permitted phase error in radians.
     pub max_phase_error: f64,
 }
 
@@ -31,12 +35,19 @@ impl Default for RmfAotCertificate {
 }
 
 #[derive(Debug, Clone, Copy)]
+/// Configuration for rotating magnetic field.
 pub struct RmfConfig {
+    /// Nominal rotating-magnetic-field frequency in hertz.
     pub f_rmf_nom_hz: f64,
+    /// Controller sampling frequency in hertz.
     pub f_sampling_hz: f64,
+    /// Proportional phase-lock gain in radians per second.
     pub k_p: f64,
+    /// Bias-estimator update gain.
     pub k_d: f64,
+    /// Number of neurons.
     pub n_neurons: usize,
+    /// Ahead-of-time frequency and phase safety envelope.
     pub aot_safety: RmfAotCertificate,
 }
 
@@ -54,6 +65,7 @@ impl Default for RmfConfig {
 }
 
 #[derive(Debug, Clone)]
+/// Population-coded spiking phase-error detector.
 pub struct SpikingPhaseDetector {
     v_pos: Vec<f64>,
     v_neg: Vec<f64>,
@@ -62,6 +74,7 @@ pub struct SpikingPhaseDetector {
 }
 
 impl SpikingPhaseDetector {
+    /// Construct a validated instance.
     pub fn new(n: usize, dt: f64) -> Self {
         let tau_mem = 0.05e-3;
         Self {
@@ -72,6 +85,7 @@ impl SpikingPhaseDetector {
         }
     }
 
+    /// Advance the detector and return its normalized signed spike rate.
     pub fn step(&mut self, error_signal: f64) -> f64 {
         let i_scale = 8.0;
         let i_bias = 0.05;
@@ -98,21 +112,27 @@ impl SpikingPhaseDetector {
 }
 
 #[derive(Debug)]
+/// Closed-loop rotating-magnetic-field phase-lock controller.
 pub struct RmfPhaseLockController {
     cfg: RmfConfig,
     dt: f64,
     omega_nom: f64,
     omega_bias: f64,
     last_phi_plasma: Option<f64>,
+    /// Antenna phase in radians.
     pub phi_ant: f64,
+    /// Commanded RMF angular frequency in radians per second.
     pub omega_rmf: f64,
+    /// Controller time in seconds.
     pub t: f64,
     detector: SpikingPhaseDetector,
     pacer: Option<PrecisionPacer>,
+    /// Number of rejected updates outside the phase-error envelope.
     pub safety_violations: u64,
 }
 
 impl RmfPhaseLockController {
+    /// Construct a validated instance.
     pub fn new(cfg: RmfConfig) -> Self {
         let dt = 1.0 / cfg.f_sampling_hz;
         let omega_nom = 2.0 * PI * cfg.f_rmf_nom_hz;
@@ -131,10 +151,12 @@ impl RmfPhaseLockController {
         }
     }
 
+    /// Enable real-time loop pacing with the selected mode.
     pub fn enable_pacing(&mut self, mode: PacingMode) {
         self.pacer = Some(PrecisionPacer::new(self.cfg.f_sampling_hz, mode));
     }
 
+    /// Advance the phase-lock loop for one plasma-phase observation.
     pub fn step(&mut self, phi_plasma: f64) -> f64 {
         if let Some(ref mut pacer) = self.pacer {
             pacer.wait_next();
@@ -175,6 +197,7 @@ impl RmfPhaseLockController {
         self.phi_ant
     }
 
+    /// Advance horizon.
     pub fn step_horizon(&mut self, phi_plasma_traj: &[f64]) -> Vec<f64> {
         phi_plasma_traj.iter().map(|&p| self.step(p)).collect()
     }

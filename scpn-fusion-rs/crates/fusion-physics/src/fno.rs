@@ -36,6 +36,7 @@ fn gelu(x: f64) -> f64 {
 }
 
 #[derive(Debug, Clone)]
+/// Weights for Fourier neural operator layer.
 pub struct FnoLayerWeights {
     /// Real spectral weights: [width, modes, modes].
     pub wr: Array3<f64>,
@@ -43,25 +44,33 @@ pub struct FnoLayerWeights {
     pub wi: Array3<f64>,
     /// Pointwise skip matrix: [width, width].
     pub skip_w: Array2<f64>,
-    /// Pointwise skip bias: [width].
+    /// Pointwise skip bias with shape `width`.
     pub skip_b: Array1<f64>,
 }
 
 #[derive(Debug, Clone)]
+/// Weights for Fourier neural operator.
 pub struct FnoWeights {
+    /// Number of retained Fourier modes.
     pub modes: usize,
+    /// Latent channel width.
     pub width: usize,
+    /// Number of operator layers.
     pub n_layers: usize,
     /// Lift projection (1 -> width).
     pub lift_w: Array1<f64>,
+    /// Bias vector for the input lifting layer.
     pub lift_b: Array1<f64>,
     /// Project head (width -> 1).
     pub project_w: Array1<f64>,
+    /// Scalar bias for the output projection layer.
     pub project_b: f64,
+    /// Spectral and pointwise weights for each operator layer.
     pub layers: Vec<FnoLayerWeights>,
 }
 
 impl FnoWeights {
+    /// Initialize a model with random weights.
     pub fn random(modes: usize, width: usize, n_layers: usize) -> Self {
         let mut rng = rand::thread_rng();
 
@@ -109,6 +118,7 @@ impl FnoWeights {
         }
     }
 
+    /// Load model weights from a NumPy NPZ archive.
     pub fn load_weights_npz(path: &str) -> FusionResult<Self> {
         let metadata = std::fs::metadata(path)?;
         if metadata.len() > MAX_NPZ_BYTES {
@@ -280,6 +290,7 @@ pub struct SpectralTurbulenceGenerator {
 }
 
 impl SpectralTurbulenceGenerator {
+    /// Construct a validated instance.
     pub fn new(size: usize) -> Self {
         let mut rng = rand::thread_rng();
         let field =
@@ -399,16 +410,19 @@ pub struct FnoController {
 }
 
 impl FnoController {
+    /// Construct a validated instance.
     pub fn new() -> Self {
         Self {
             weights: FnoWeights::random(MODES, WIDTH, N_LAYERS),
         }
     }
 
+    /// Construct a value from weights.
     pub fn from_weights(weights: FnoWeights) -> Self {
         Self { weights }
     }
 
+    /// Load model weights from a NumPy NPZ archive.
     pub fn load_weights_npz(path: &str) -> FusionResult<Self> {
         let weights = FnoWeights::load_weights_npz(path)?;
         Ok(Self::from_weights(weights))
@@ -505,6 +519,7 @@ impl FnoController {
         out
     }
 
+    /// Predict the output field.
     pub fn predict(&self, field: &Array2<f64>) -> Array2<f64> {
         let h = self.apply_layers(field);
         self.project(&h)

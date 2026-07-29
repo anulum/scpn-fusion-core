@@ -43,19 +43,31 @@ const ROTATING_FRC_BVP_NON_CLOSING_REFERENCES: [&str; 3] = [
 const ROTATING_EXPONENT_CAP: f64 = 300.0;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// Acceptance boundary for the rotating FRC boundary-value solver.
 pub struct RotatingFrcBvpAcceptanceStatus {
+    /// Machine-readable implementation status.
     pub status: &'static str,
+    /// Identifier of the accepted no-rotation contract.
     pub accepted_contract: &'static str,
+    /// Whether the rotating boundary-value problem is implemented.
     pub rotating_bvp_implemented: bool,
+    /// Literature reference supporting the rotating closure.
     pub rotating_closure_reference: &'static str,
+    /// Machine-readable description of the implemented solver action.
     pub solver_action: &'static str,
+    /// Reference required to interpret the acceptance boundary.
     pub required_reference: &'static str,
+    /// Whether zero angular frequency reduces to the accepted no-rotation contract.
     pub reduces_to_no_rotation_contract: bool,
+    /// Whether parity with Steinhauer Figure 3 is claimed.
     pub steinhauer_figure3_parity_claimed: bool,
+    /// Context references that do not independently close the parity claim.
     pub non_closing_references: &'static [&'static str],
+    /// Human-readable boundary of the accepted scientific claim.
     pub claim_boundary: &'static str,
 }
 
+/// Compute rotating field-reversed configuration bvp acceptance status.
 pub fn rotating_frc_bvp_acceptance_status() -> RotatingFrcBvpAcceptanceStatus {
     RotatingFrcBvpAcceptanceStatus {
         status: ROTATING_FRC_BVP_STATUS,

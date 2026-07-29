@@ -8,16 +8,24 @@
 //! Uniform-solenoid compression coil contract.
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Geometry and electrical limits of a pulsed-compression coil.
 pub struct CoilGeometry {
+    /// Number of turns.
     pub n_turns: u32,
+    /// Axial coil length in metres.
     pub l_coil_m: f64,
+    /// Coil radius in metres.
     pub r_coil_m: f64,
+    /// Coil inductance in henries.
     pub l_inductance_h: f64,
+    /// Coil resistance in ohms.
     pub r_resistance_ohm: f64,
+    /// Bank voltage maximum in volts.
     pub bank_voltage_max_v: f64,
 }
 
 impl CoilGeometry {
+    /// Validate the public parameters.
     pub fn validate(&self) -> Result<(), String> {
         if self.n_turns == 0 {
             return Err("coil.n_turns must be positive".to_string());

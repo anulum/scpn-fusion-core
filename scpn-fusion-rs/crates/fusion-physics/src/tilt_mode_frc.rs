@@ -9,67 +9,115 @@
 
 use crate::compression::PulsedCompressionState;
 
+/// Vacuum permeability in henries per metre.
 pub const MU_0: f64 = 4.0e-7 * std::f64::consts::PI;
+/// Unified atomic mass unit in kilograms.
 pub const ATOMIC_MASS_KG: f64 = 1.660_539_066_60e-27;
+/// Deuterium mass in unified atomic mass units.
 pub const DEUTERIUM_MASS_AMU: f64 = 2.014;
+/// Belova reduced-model coefficient for ideal-MHD tilt growth.
 pub const BELOVA_MHD_GROWTH_COEFFICIENT: f64 = 1.2;
+/// Diamagnetic lower threshold for `s` divided by elongation.
 pub const DIAMAGNETIC_S_OVER_E_THRESHOLD: f64 = 1.7;
+/// Gyroviscous lower threshold for `s` divided by elongation.
 pub const GYROVISCOUS_S_OVER_E_THRESHOLD: f64 = 2.2;
+/// Combined finite-Larmor-radius threshold for `s` divided by elongation.
 pub const COMBINED_FLR_S_OVER_E_THRESHOLD: f64 = 2.8;
+/// Conservative natural-log ceiling for finite `f64` exponentiation.
 pub const FLOAT64_LOG_MAX: f64 = 709.782_712_893_384;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Physical inputs to the reduced FRC tilt-mode diagnostic.
 pub struct FrcTiltModeInputs {
+    /// FRC kinetic-stability `s` parameter.
     pub s_parameter: f64,
+    /// Magnetic field reference in tesla.
     pub b_reference_t: f64,
+    /// Density peak in particles per cubic metre.
     pub density_peak_m3: f64,
+    /// Separatrix radius in metres.
     pub r_s_m: f64,
+    /// Elongation.
     pub elongation: f64,
+    /// Ion mass in unified atomic mass units.
     pub ion_mass_amu: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Reference values for field-reversed configuration tilt compression.
 pub struct FrcTiltCompressionReference {
+    /// FRC kinetic-stability `s` parameter at the reference state.
     pub s_parameter: f64,
+    /// Separatrix radius in metres.
     pub r_s_m: f64,
+    /// Magnetic field reference in tesla.
     pub b_reference_t: f64,
+    /// Ion temperature in electronvolts.
     pub t_i_ev: f64,
+    /// Elongation.
     pub elongation: f64,
+    /// Ion mass in unified atomic mass units.
     pub ion_mass_amu: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Ordered kinetic-stabilization thresholds for the FRC tilt mode.
 pub struct FrcTiltModeThresholds {
+    /// Diamagnetic threshold for `s` divided by elongation.
     pub diamagnetic_s_over_e: f64,
+    /// Gyroviscous threshold for `s` divided by elongation.
     pub gyroviscous_s_over_e: f64,
+    /// Combined finite-Larmor-radius threshold for `s` divided by elongation.
     pub combined_flr_s_over_e: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Report produced by field-reversed configuration tilt mode.
 pub struct FrcTiltModeReport {
+    /// Conservative tilt growth rate in inverse seconds.
     pub growth_rate_s_inv: f64,
+    /// Alfven speed in metres per second.
     pub alfven_speed_m_s: f64,
+    /// Alfven transit time in seconds.
     pub alfven_transit_time_s: f64,
+    /// FRC kinetic-stability `s` parameter.
     pub s_parameter: f64,
+    /// Elongation.
     pub elongation: f64,
+    /// Kinetic-stability parameter divided by elongation.
     pub s_over_elongation: f64,
+    /// Machine-readable rigid-body stabilization regime.
     pub rigid_body_regime: &'static str,
+    /// Whether the rigid body threshold check passed.
     pub rigid_body_threshold_passed: bool,
+    /// Whether the conservative reduced-model stability criterion is satisfied.
     pub conservative_stable: bool,
+    /// Status label for the reduced-model stability claim.
     pub claim_status: &'static str,
+    /// Status label for the external parity claim.
     pub external_parity_status: &'static str,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// One point in field-reversed configuration tilt mode trajectory.
 pub struct FrcTiltModeTrajectoryPoint {
+    /// Simulation time in seconds.
     pub t_s: f64,
+    /// Separatrix radius in metres.
     pub r_s_m: f64,
+    /// Magnetic field reference in tesla.
     pub b_reference_t: f64,
+    /// Particle number density per cubic metre.
     pub density_m3: f64,
+    /// Ion temperature in electronvolts.
     pub t_i_ev: f64,
+    /// Instantaneous tilt-mode diagnostic report.
     pub report: FrcTiltModeReport,
+    /// Cumulative growth integral.
     pub cumulative_growth_integral: f64,
+    /// Perturbation amplification.
     pub perturbation_amplification: f64,
+    /// Whether logarithmic limiting prevented amplification overflow.
     pub amplification_overflow_limited: bool,
 }
 
@@ -104,6 +152,7 @@ fn validate_thresholds(thresholds: FrcTiltModeThresholds) -> Result<(), String> 
     }
 }
 
+/// Compute alfven speed in metres per second.
 pub fn alfven_speed_m_s(inputs: FrcTiltModeInputs) -> Result<f64, String> {
     let field = require_positive("b_reference_t", inputs.b_reference_t.abs())?;
     let density_m3 = require_positive("density_peak_m3", inputs.density_peak_m3)?;
@@ -112,11 +161,13 @@ pub fn alfven_speed_m_s(inputs: FrcTiltModeInputs) -> Result<f64, String> {
     Ok(field / (MU_0 * mass_density).sqrt())
 }
 
+/// Compute axial half length in metres.
 pub fn axial_half_length_m(inputs: FrcTiltModeInputs) -> Result<f64, String> {
     Ok(require_positive("r_s_m", inputs.r_s_m)?
         * require_positive("elongation", inputs.elongation)?)
 }
 
+/// Compute field-reversed configuration tilt growth rate.
 pub fn frc_tilt_growth_rate(
     inputs: FrcTiltModeInputs,
     mhd_coefficient: f64,
@@ -125,11 +176,13 @@ pub fn frc_tilt_growth_rate(
     Ok(coefficient * alfven_speed_m_s(inputs)? / axial_half_length_m(inputs)?)
 }
 
+/// Compute s over elongation.
 pub fn s_over_elongation(inputs: FrcTiltModeInputs) -> Result<f64, String> {
     Ok(require_positive("s_parameter", inputs.s_parameter)?
         / require_positive("elongation", inputs.elongation)?)
 }
 
+/// Compute rigid body flr regime.
 pub fn rigid_body_flr_regime(
     inputs: FrcTiltModeInputs,
     thresholds: FrcTiltModeThresholds,
@@ -147,6 +200,7 @@ pub fn rigid_body_flr_regime(
     }
 }
 
+/// Compute tilt mode report.
 pub fn tilt_mode_report(inputs: FrcTiltModeInputs) -> Result<FrcTiltModeReport, String> {
     tilt_mode_report_from_values(
         inputs.s_parameter,
@@ -159,6 +213,7 @@ pub fn tilt_mode_report(inputs: FrcTiltModeInputs) -> Result<FrcTiltModeReport, 
     )
 }
 
+/// Compute compressed s parameter.
 pub fn compressed_s_parameter(
     reference: FrcTiltCompressionReference,
     state: &PulsedCompressionState,
@@ -173,6 +228,7 @@ pub fn compressed_s_parameter(
         .sqrt())
 }
 
+/// Compute tilt mode trajectory from pulsed compression.
 pub fn tilt_mode_trajectory_from_pulsed_compression(
     states: &[PulsedCompressionState],
     reference: FrcTiltCompressionReference,
@@ -269,6 +325,7 @@ fn tilt_mode_report_from_values(
     })
 }
 
+/// Compute belova table1 acceptance status.
 pub fn belova_table1_acceptance_status() -> (&'static str, &'static str) {
     (
         "belova_2001_table1_tilt_stability",

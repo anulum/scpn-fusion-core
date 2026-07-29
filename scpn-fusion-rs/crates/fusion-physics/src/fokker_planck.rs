@@ -44,36 +44,58 @@ const DEFAULT_P_MAX: f64 = 100.0;
 /// RE population diagnostics after one step.
 #[derive(Debug, Clone, Copy)]
 pub struct REState {
+    /// Simulation time in seconds.
     pub time: f64,
+    /// Runaway-electron number density per cubic metre.
     pub n_re: f64,
+    /// Runaway-electron current in amperes.
     pub current_re: f64,
 }
 
 /// DREAM-style radius-momentum-pitch kinetic artifact for reference comparison.
 #[derive(Debug, Clone)]
 pub struct DreamKineticArtifact {
+    /// Simulation-time samples in seconds.
     pub time_s: Vec<f64>,
+    /// Radius samples in metres.
     pub radius_m: Vec<f64>,
+    /// Samples of momentum electron-rest-mass units.
     pub momentum_mec: Vec<f64>,
+    /// Samples of pitch cosine.
     pub pitch_cosine: Vec<f64>,
+    /// Distribution-function samples ordered by time, radius, momentum, and pitch.
     pub f_p_xi_t: Vec<f64>,
+    /// Shape of the flattened distribution as `[time, radius, momentum, pitch]`.
     pub f_shape: [usize; 4],
+    /// Runaway-current time series in amperes.
     pub runaway_current_t: Vec<f64>,
+    /// Avalanche growth-rate time series in inverse seconds.
     pub avalanche_growth_rate_t: Vec<f64>,
+    /// Synchrotron-loss power time series in watts.
     pub synchrotron_loss_power_t: Vec<f64>,
+    /// Partial-screening drag time series.
     pub partial_screening_drag_t: Vec<f64>,
+    /// Bremsstrahlung-loss power time series in watts.
     pub bremsstrahlung_loss_power_t: Vec<f64>,
 }
 
 /// Request parameters for DREAM-style kinetic artifact export.
 pub struct DreamKineticArtifactRequest<'a> {
+    /// Number of steps.
     pub n_steps: usize,
+    /// Time step.
     pub dt: f64,
+    /// Parallel electric-field strength in volts per metre.
     pub e_field: f64,
+    /// Electron number density per cubic metre.
     pub n_e: f64,
+    /// Electron temperature in electronvolts.
     pub t_e_ev: f64,
+    /// Effective ion charge.
     pub z_eff: f64,
+    /// Radius in metres.
     pub radius_m: &'a [f64],
+    /// Pitch cosine.
     pub pitch_cosine: &'a [f64],
 }
 
@@ -113,10 +135,12 @@ pub struct FokkerPlanckSolver {
     /// Distribution function f(p).
     pub f: Vec<f64>,
     np_grid: usize,
+    /// Simulation time in seconds.
     pub time: f64,
 }
 
 impl FokkerPlanckSolver {
+    /// Construct a validated instance.
     pub fn new(np_grid: usize, p_max: f64) -> Self {
         let log_p_max = p_max.log10();
         let p: Vec<f64> = (0..np_grid)

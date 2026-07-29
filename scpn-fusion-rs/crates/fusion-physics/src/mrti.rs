@@ -9,25 +9,40 @@
 
 use crate::compression::PulsedCompressionState;
 
+/// Vacuum permeability in henries per metre.
 pub const MU_0: f64 = 4.0e-7 * std::f64::consts::PI;
 
 #[derive(Debug, Clone, PartialEq)]
+/// State of magneto-Rayleigh-Taylor instability spectrum.
 pub struct MrtiSpectrumState {
+    /// Simulation time in seconds.
     pub t_s: f64,
+    /// Perturbation wavenumbers in inverse metres.
     pub k_modes_m_inv: Vec<f64>,
+    /// Perturbation-amplitude samples in metres.
     pub amplitudes_m: Vec<f64>,
+    /// Samples of log amplitudes.
     pub log_amplitudes: Vec<f64>,
+    /// Linear growth rates in inverse seconds.
     pub growth_rates_s_inv: Vec<f64>,
+    /// Wavenumber with the largest instantaneous growth rate, in inverse metres.
     pub fastest_growing_k_m_inv: f64,
+    /// Wavenumber with the largest accumulated amplitude, in inverse metres.
     pub most_amplified_k_m_inv: f64,
+    /// Maximum amplitude in metres.
     pub max_amplitude_m: f64,
+    /// Maximum log amplitude.
     pub max_log_amplitude: f64,
+    /// Whether any mode reached the configured saturation threshold.
     pub saturation_warning: bool,
+    /// First saturation-threshold breach time in seconds, if one occurred.
     pub time_of_breach_s: Option<f64>,
+    /// Whether logarithmic amplitude limiting prevented floating-point overflow.
     pub amplitude_overflow_limited: bool,
 }
 
 #[derive(Debug, Clone)]
+/// Stateful MRTI mode-amplitude and saturation tracker.
 pub struct MrtiSpectrumTracker {
     k_modes_m_inv: Vec<f64>,
     amplitudes_m: Vec<f64>,
@@ -57,6 +72,7 @@ fn require_positive(name: &str, value: f64) -> Result<f64, String> {
     }
 }
 
+/// Compute magneto-Rayleigh-Taylor instability growth rate.
 pub fn mrti_growth_rate(
     k_m_inv: f64,
     a_eff_m_s2: f64,
@@ -74,6 +90,7 @@ pub fn mrti_growth_rate(
     Ok(radicand.max(0.0).sqrt())
 }
 
+/// Compute magneto-Rayleigh-Taylor instability growth rates.
 pub fn mrti_growth_rates(
     k_modes_m_inv: &[f64],
     a_eff_m_s2: f64,
@@ -86,6 +103,7 @@ pub fn mrti_growth_rates(
         .collect()
 }
 
+/// Compute effective acceleration from radius rate.
 pub fn effective_acceleration_from_radius_rate(
     time_s: &[f64],
     d_radius_dt_m_s: &[f64],
@@ -148,6 +166,7 @@ pub fn effective_acceleration_from_radius_rate(
     Ok(smoothed)
 }
 
+/// Compute effective acceleration from pulsed compression.
 pub fn effective_acceleration_from_pulsed_compression(
     states: &[PulsedCompressionState],
     smoothing_window: usize,
@@ -203,6 +222,7 @@ fn smooth_edge_padded(values: &[f64], smoothing_window: usize) -> Vec<f64> {
     smoothed
 }
 
+/// Compute track magneto-Rayleigh-Taylor instability from pulsed compression.
 pub fn track_mrti_from_pulsed_compression(
     states: &[PulsedCompressionState],
     tracker: &mut MrtiSpectrumTracker,
@@ -237,6 +257,7 @@ pub fn track_mrti_from_pulsed_compression(
 }
 
 impl MrtiSpectrumTracker {
+    /// Construct a validated instance.
     pub fn new(
         k_max_m_inv: f64,
         n_modes: usize,
@@ -259,6 +280,7 @@ impl MrtiSpectrumTracker {
         )
     }
 
+    /// Construct a value from modes.
     pub fn from_modes(
         k_modes_m_inv: Vec<f64>,
         initial_perturbation_m: f64,
@@ -297,6 +319,7 @@ impl MrtiSpectrumTracker {
         })
     }
 
+    /// Compute state.
     pub fn state(&self) -> MrtiSpectrumState {
         let fastest_index = self
             .growth_rates_s_inv
@@ -404,6 +427,7 @@ impl MrtiSpectrumTracker {
         Ok(self.state())
     }
 
+    /// Compute saturation threshold breached.
     pub fn saturation_threshold_breached(&self, threshold_m: Option<f64>) -> Result<bool, String> {
         let threshold = match threshold_m {
             Some(value) => require_positive("threshold_m", value)?,

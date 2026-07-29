@@ -85,6 +85,7 @@ pub struct DriftWavePhysics {
 }
 
 impl DriftWavePhysics {
+    /// Construct a validated instance.
     pub fn new(n: usize) -> Self {
         let mut rng = rand::thread_rng();
         Self::from_rng(n, &mut rng)
@@ -326,6 +327,7 @@ pub struct OracleESN {
 }
 
 impl OracleESN {
+    /// Construct a validated instance.
     pub fn new(input_dim: usize, reservoir_size: usize) -> Self {
         let mut rng = rand::thread_rng();
         Self::from_rng(input_dim, reservoir_size, &mut rng)
@@ -391,7 +393,7 @@ impl OracleESN {
         self.state = new_state;
     }
 
-    /// Train on (inputs[t] → targets[t]) pairs via ridge regression.
+    /// Train on `inputs[t]` to `targets[t]` pairs via ridge regression.
     ///
     /// Solves: W_out = targets^T · S · (S^T · S + reg·I)^{-1}
     pub fn train(&mut self, inputs: &[Vec<f64>], targets: &[Vec<f64>]) {

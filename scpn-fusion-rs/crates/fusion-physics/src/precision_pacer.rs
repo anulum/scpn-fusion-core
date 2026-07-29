@@ -32,6 +32,7 @@ pub struct PrecisionPacer {
 }
 
 impl PrecisionPacer {
+    /// Construct a validated instance.
     pub fn new(frequency_hz: f64, mode: PacingMode) -> Self {
         Self {
             last_tick: Instant::now(),
@@ -62,6 +63,7 @@ impl PrecisionPacer {
         actual_elapsed
     }
 
+    /// Compute reset.
     pub fn reset(&mut self) {
         self.last_tick = Instant::now();
     }

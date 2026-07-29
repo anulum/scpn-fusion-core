@@ -15,96 +15,169 @@ use crate::compression::{
 const FLUX_DERIVATIVE_TOLERANCE: f64 = 2.0e-2;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// One point in faraday recovery trajectory.
 pub struct FaradayRecoveryTrajectoryPoint {
+    /// Simulation time in seconds.
     pub t_s: f64,
+    /// Separatrix radius in metres.
     pub separatrix_radius_m: f64,
+    /// External magnetic-field strength in tesla.
     pub b_ext_t: f64,
+    /// Optional separatrix radial velocity in metres per second.
     pub d_radius_dt_m_s: Option<f64>,
+    /// Optional external-field ramp rate in tesla per second.
     pub d_b_ext_dt_t_s: Option<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// One sample from faraday recovery.
 pub struct FaradayRecoverySample {
+    /// Simulation time in seconds.
     pub t_s: f64,
+    /// Separatrix radius in metres.
     pub separatrix_radius_m: f64,
+    /// External magnetic-field strength in tesla.
     pub b_ext_t: f64,
+    /// Separatrix radial velocity in metres per second.
     pub d_radius_dt_m_s: f64,
+    /// External-field ramp rate in tesla per second.
     pub d_b_ext_dt_t_s: f64,
+    /// Magnetic flux in webers.
     pub magnetic_flux_wb: f64,
+    /// Flux rate field term in webers per second.
     pub flux_rate_field_term_wb_s: f64,
+    /// Flux rate radial term in webers per second.
     pub flux_rate_radial_term_wb_s: f64,
+    /// Flux rate total in webers per second.
     pub flux_rate_total_wb_s: f64,
+    /// Back electromotive force in volts.
     pub back_emf_v: f64,
+    /// Load current in amperes.
     pub load_current_a: f64,
+    /// Load power in watts.
     pub load_power_w: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Flux-update budget recovered from a pulsed-compression trajectory.
 pub struct FaradayCompressionFluxBudget {
+    /// Checksum of the source increment contribution.
     pub source_increment_checksum: f64,
+    /// Checksum of the damping decrement contribution.
     pub damping_decrement_checksum: f64,
+    /// Update residual absolute maximum.
     pub update_residual_abs_max: f64,
+    /// Status label for the flux-budget claim.
     pub budget_claim_status: String,
+    /// Status label for the coupling claim.
     pub coupling_status: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Diagnostics for faraday compression trajectory.
 pub struct FaradayCompressionTrajectoryDiagnostics {
+    /// Whether time samples are strictly increasing.
     pub monotonic_time: bool,
+    /// Minimum radius in metres.
     pub min_radius_m: f64,
+    /// Maximum absolute radial acceleration in metres per second squared.
     pub max_abs_radial_acceleration_m_s2: f64,
+    /// Number of time steps that contact the radius floor.
     pub radius_floor_contact_count: usize,
+    /// Number of radial turning points in the trajectory.
     pub radial_turning_point_count: usize,
+    /// Compression ratio.
     pub compression_ratio: f64,
+    /// Whether every flux-budget check passed.
     pub all_flux_budgets_passed: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Report produced by faraday recovery.
 pub struct FaradayRecoveryReport {
+    /// Recovery samples in trajectory order.
     pub samples: Vec<FaradayRecoverySample>,
+    /// Number of turns.
     pub n_turns: u32,
+    /// Coil resistance in ohms.
     pub coil_resistance_ohm: f64,
+    /// Recovered energy in joules.
     pub recovered_energy_j: f64,
+    /// Flux initial in webers.
     pub flux_initial_wb: f64,
+    /// Flux final in webers.
     pub flux_final_wb: f64,
+    /// Maximum absolute back electromotive force in volts.
     pub max_abs_back_emf_v: f64,
+    /// Maximum absolute load current in amperes.
     pub max_abs_load_current_a: f64,
+    /// Maximum absolute flux rate field term in webers per second.
     pub max_abs_flux_rate_field_term_wb_s: f64,
+    /// Maximum absolute flux rate radial term in webers per second.
     pub max_abs_flux_rate_radial_term_wb_s: f64,
+    /// Maximum absolute flux rate total in webers per second.
     pub max_abs_flux_rate_total_wb_s: f64,
+    /// Flux derivative residual samples in webers per second.
     pub flux_derivative_residual_wb_s: Vec<f64>,
+    /// Infinity norm of the flux derivative residual.
     pub flux_derivative_residual_linf: f64,
+    /// Euclidean norm of the flux derivative residual.
     pub flux_derivative_residual_l2: f64,
+    /// Whether the flux derivative closure check passed.
     pub flux_derivative_closure_passed: bool,
+    /// Optional compression work in joules.
     pub compression_work_j: Option<f64>,
+    /// Optional energy budget relative error value.
     pub energy_budget_relative_error: Option<f64>,
+    /// Whether the energy budget check passed.
     pub energy_budget_passed: Option<bool>,
+    /// Status label for the compression-energy budget claim.
     pub budget_claim_status: String,
+    /// Optional coil-source work in joules.
     pub coil_source_work_j: Option<f64>,
+    /// Optional source energy budget relative error value.
     pub source_energy_budget_relative_error: Option<f64>,
+    /// Whether the source energy budget check passed.
     pub source_energy_budget_passed: Option<bool>,
+    /// Status label for the source-energy budget claim.
     pub source_budget_claim_status: String,
+    /// Optional compression flux budget value.
     pub compression_flux_budget: Option<FaradayCompressionFluxBudget>,
+    /// Whether the compression flux budget check passed.
     pub compression_flux_budget_passed: Option<bool>,
+    /// Status label for the compression flux-budget claim.
     pub compression_flux_budget_claim_status: String,
+    /// Optional compression trajectory diagnostics value.
     pub compression_trajectory_diagnostics: Option<FaradayCompressionTrajectoryDiagnostics>,
+    /// Whether the compression trajectory diagnostics check passed.
     pub compression_trajectory_diagnostics_passed: Option<bool>,
+    /// Status label for the compression-trajectory diagnostic claim.
     pub compression_trajectory_diagnostics_claim_status: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Inputs for faraday recovery energy.
 pub struct FaradayRecoveryEnergyInput<'a> {
+    /// Compression-boundary trajectory in time order.
     pub trajectory: &'a [FaradayRecoveryTrajectoryPoint],
+    /// Number of turns.
     pub n_turns: u32,
+    /// Coil resistance in ohms.
     pub coil_resistance_ohm: f64,
+    /// Optional compression work in joules.
     pub compression_work_j: Option<f64>,
+    /// Optional coil-source work in joules.
     pub coil_source_work_j: Option<f64>,
+    /// Optional compression flux budget value.
     pub compression_flux_budget: Option<FaradayCompressionFluxBudget>,
+    /// Optional compression trajectory diagnostics value.
     pub compression_trajectory_diagnostics: Option<FaradayCompressionTrajectoryDiagnostics>,
+    /// Budget tolerance.
     pub budget_tolerance: f64,
 }
 
 impl<'a> FaradayRecoveryEnergyInput<'a> {
+    /// Construct a validated instance.
     pub fn new(
         trajectory: &'a [FaradayRecoveryTrajectoryPoint],
         n_turns: u32,
@@ -155,12 +228,14 @@ fn require_positive_turns(n_turns: u32) -> Result<u32, String> {
     }
 }
 
+/// Compute magnetic flux in webers.
 pub fn magnetic_flux_wb(separatrix_radius_m: f64, b_ext_t: f64) -> Result<f64, String> {
     let radius = require_positive("separatrix_radius_m", separatrix_radius_m)?;
     let b_ext = require_finite("b_ext_t", b_ext_t)?;
     Ok(b_ext * std::f64::consts::PI * radius * radius)
 }
 
+/// Compute faraday back electromotive force from values.
 pub fn faraday_back_emf_from_values(
     separatrix_radius_m: f64,
     b_ext_t: f64,
@@ -178,6 +253,7 @@ pub fn faraday_back_emf_from_values(
         * (radius * radius * d_b_ext_dt + 2.0 * b_ext * radius * d_radius_dt))
 }
 
+/// Integrate recovery energy.
 pub fn integrated_recovery_energy(
     input: FaradayRecoveryEnergyInput<'_>,
 ) -> Result<FaradayRecoveryReport, String> {
@@ -342,6 +418,7 @@ pub fn integrated_recovery_energy(
     })
 }
 
+/// Compute faraday trajectory from pulsed compression.
 pub fn faraday_trajectory_from_pulsed_compression(
     states: &[PulsedCompressionState],
 ) -> Result<Vec<FaradayRecoveryTrajectoryPoint>, String> {
@@ -366,6 +443,7 @@ pub fn faraday_trajectory_from_pulsed_compression(
         .collect()
 }
 
+/// Compute compression work from pulsed compression.
 pub fn compression_work_from_pulsed_compression(
     states: &[PulsedCompressionState],
 ) -> Result<f64, String> {
@@ -379,6 +457,7 @@ pub fn compression_work_from_pulsed_compression(
     require_positive("compression_work_j", work)
 }
 
+/// Compute compression flux budget from pulsed compression.
 pub fn compression_flux_budget_from_pulsed_compression(
     states: &[PulsedCompressionState],
 ) -> Result<FaradayCompressionFluxBudget, String> {
@@ -426,6 +505,7 @@ pub fn compression_flux_budget_from_pulsed_compression(
     Ok(budget)
 }
 
+/// Compute compression trajectory diagnostics from pulsed compression.
 pub fn compression_trajectory_diagnostics_from_pulsed_compression(
     states: &[PulsedCompressionState],
     radius_floor_m: Option<f64>,
@@ -442,24 +522,28 @@ pub fn compression_trajectory_diagnostics_from_pulsed_compression(
     })
 }
 
+/// Compute faraday trajectory from voltage driven compression.
 pub fn faraday_trajectory_from_voltage_driven_compression(
     result: &VoltageDrivenPulsedCompressionResult,
 ) -> Result<Vec<FaradayRecoveryTrajectoryPoint>, String> {
     faraday_trajectory_from_pulsed_compression(&result.compression)
 }
 
+/// Compute compression work from voltage driven compression.
 pub fn compression_work_from_voltage_driven_compression(
     result: &VoltageDrivenPulsedCompressionResult,
 ) -> Result<f64, String> {
     compression_work_from_pulsed_compression(&result.compression)
 }
 
+/// Compute compression flux budget from voltage driven compression.
 pub fn compression_flux_budget_from_voltage_driven_compression(
     result: &VoltageDrivenPulsedCompressionResult,
 ) -> Result<FaradayCompressionFluxBudget, String> {
     compression_flux_budget_from_pulsed_compression(&result.compression)
 }
 
+/// Compute compression trajectory diagnostics from voltage driven compression.
 pub fn compression_trajectory_diagnostics_from_voltage_driven_compression(
     result: &VoltageDrivenPulsedCompressionResult,
     radius_floor_m: Option<f64>,
@@ -467,6 +551,7 @@ pub fn compression_trajectory_diagnostics_from_voltage_driven_compression(
     compression_trajectory_diagnostics_from_pulsed_compression(&result.compression, radius_floor_m)
 }
 
+/// Compute coil source work from voltage driven compression.
 pub fn coil_source_work_from_voltage_driven_compression(
     result: &VoltageDrivenPulsedCompressionResult,
 ) -> Result<f64, String> {

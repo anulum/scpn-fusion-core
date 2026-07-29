@@ -15,29 +15,50 @@ const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
 const FLUX_UPDATE_RESIDUAL_ABS_TOLERANCE: f64 = 1.0e-12;
 
 #[derive(Debug, Clone, PartialEq)]
+/// Configuration for pulsed compression.
 pub struct PulsedCompressionConfig {
+    /// Compression-coil geometry and electrical limits.
     pub coil: CoilGeometry,
+    /// Plasma mass in kilograms.
     pub plasma_mass_kg: f64,
+    /// Plasma length in metres.
     pub plasma_length_m: f64,
+    /// Adiabatic index.
     pub gamma: f64,
+    /// Optional radial-loss time in seconds.
     pub radial_loss_time_s: Option<f64>,
+    /// Poloidal-flux damping time in seconds.
     pub tau_psi_s: f64,
+    /// Optional azimuthal electric-field samples in volts per metre.
     pub e_theta_v_m: Option<Vec<f64>>,
+    /// Optional azimuthal current-density samples in amperes per square metre.
     pub j_theta_a_m2: Option<Vec<f64>>,
+    /// Effective ion charge.
     pub z_eff: f64,
+    /// Coulomb logarithm.
     pub ln_lambda: f64,
+    /// Minimum radius in metres.
     pub min_radius_m: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// State of pulsed compression flux.
 pub struct PulsedCompressionFluxState {
+    /// Normalized radial-grid coordinates.
     pub rho: Vec<f64>,
+    /// Poloidal-flux samples.
     pub psi: Vec<f64>,
+    /// Checksum of the poloidal-flux profile.
     pub psi_checksum: f64,
+    /// Checksum of the source increment contribution.
     pub source_increment_checksum: f64,
+    /// Checksum of the damping decrement contribution.
     pub damping_decrement_checksum: f64,
+    /// Update residual absolute maximum.
     pub update_residual_abs_max: f64,
+    /// Status label for the flux-budget claim.
     pub budget_claim_status: String,
+    /// Status label for the coupling claim.
     pub coupling_status: String,
 }
 
@@ -57,51 +78,88 @@ impl Default for PulsedCompressionFluxState {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// State of pulsed compression.
 pub struct PulsedCompressionState {
+    /// Simulation time in seconds.
     pub t_s: f64,
+    /// Separatrix radius in metres.
     pub r_s_m: f64,
+    /// Separatrix radial velocity in metres per second.
     pub d_r_s_dt_m_s: f64,
+    /// Radial acceleration in metres per second squared.
     pub radial_acceleration_m_s2: f64,
+    /// Ion temperature in electronvolts.
     pub t_i_ev: f64,
+    /// Electron temperature in electronvolts.
     pub t_e_ev: f64,
+    /// Particle number density per cubic metre.
     pub density_m3: f64,
+    /// Ratio of plasma pressure to magnetic pressure.
     pub beta: f64,
+    /// External magnetic-field strength in tesla.
     pub b_ext_t: f64,
+    /// Internal pressure in pascals.
     pub internal_pressure_pa: f64,
+    /// External magnetic pressure in pascals.
     pub external_magnetic_pressure_pa: f64,
+    /// Thermal energy in joules.
     pub thermal_energy_j: f64,
+    /// Compression work in joules.
     pub compression_work_j: f64,
+    /// Radiated loss in joules.
     pub radiated_loss_j: f64,
+    /// Energy balance residual.
     pub energy_balance_residual: f64,
+    /// Poloidal-flux state after the step.
     pub flux_state: PulsedCompressionFluxState,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Diagnostics for pulsed compression trajectory.
 pub struct PulsedCompressionTrajectoryDiagnostics {
+    /// Whether time samples are strictly increasing.
     pub monotonic_time: bool,
+    /// Minimum radius in metres.
     pub min_radius_m: f64,
+    /// Maximum absolute radial acceleration in metres per second squared.
     pub max_abs_radial_acceleration_m_s2: f64,
+    /// Number of time steps that contact the radius floor.
     pub radius_floor_contact_count: usize,
+    /// Number of radial turning points in the trajectory.
     pub radial_turning_point_count: usize,
+    /// Compression ratio.
     pub compression_ratio: f64,
+    /// Whether every flux-budget check passed.
     pub all_flux_budgets_passed: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// State of coil circuit.
 pub struct CoilCircuitState {
+    /// Simulation time in seconds.
     pub t_s: f64,
+    /// Current in amperes.
     pub current_a: f64,
+    /// Drive voltage in volts.
     pub drive_voltage_v: f64,
+    /// Rate of change of current in amperes per second.
     pub d_current_dt_a_s: f64,
+    /// Magnetic energy in joules.
     pub magnetic_energy_j: f64,
+    /// Ohmic loss in joules.
     pub ohmic_loss_j: f64,
+    /// Source work in joules.
     pub source_work_j: f64,
+    /// Energy balance residual.
     pub energy_balance_residual: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Result of voltage driven pulsed compression.
 pub struct VoltageDrivenPulsedCompressionResult {
+    /// Coil-circuit trajectory in time order.
     pub coil_circuit: Vec<CoilCircuitState>,
+    /// Compression trajectory in time order.
     pub compression: Vec<PulsedCompressionState>,
 }
 
@@ -111,12 +169,14 @@ fn last_trajectory_state<'a, T>(states: &'a [T], name: &str) -> Result<&'a T, St
         .ok_or_else(|| format!("{name} trajectory unexpectedly empty"))
 }
 
+/// Compute coil field in tesla.
 pub fn coil_field_t(coil: &CoilGeometry, coil_current_a: f64) -> Result<f64, String> {
     coil.validate()?;
     let current = require_finite("coil_current_a", coil_current_a)?;
     Ok(MU_0 * coil.n_turns as f64 * current / coil.l_coil_m)
 }
 
+/// Construct the initial pulsed flux state.
 pub fn initial_pulsed_flux_state(
     rho: Vec<f64>,
     psi: Vec<f64>,
@@ -134,6 +194,7 @@ pub fn initial_pulsed_flux_state(
     })
 }
 
+/// Construct the initial coil circuit state.
 pub fn initial_coil_circuit_state(
     coil: &CoilGeometry,
     initial_current_a: f64,
@@ -152,6 +213,7 @@ pub fn initial_coil_circuit_state(
     })
 }
 
+/// Advance coil circuit.
 pub fn step_coil_circuit(
     state: &CoilCircuitState,
     coil: &CoilGeometry,
@@ -196,6 +258,7 @@ pub fn step_coil_circuit(
     })
 }
 
+/// Run coil circuit.
 pub fn run_coil_circuit(
     coil: &CoilGeometry,
     drive_voltage_v: f64,
@@ -220,6 +283,7 @@ pub fn run_coil_circuit(
     Ok(states)
 }
 
+/// Compute plasma volume in cubic metres.
 pub fn plasma_volume_m3(r_s_m: f64, plasma_length_m: f64) -> Result<f64, String> {
     let radius = require_positive("r_s_m", r_s_m)?;
     let length = require_positive("plasma_length_m", plasma_length_m)?;
@@ -227,11 +291,12 @@ pub fn plasma_volume_m3(r_s_m: f64, plasma_length_m: f64) -> Result<f64, String>
 }
 
 /// NRL Plasma Formulary transverse Spitzer resistivity, eta_perp =
-/// 1.03e-2 * Z * lnLambda * T_e[eV]^-3/2 ohm-cm = 1.03e-4 ohm-m. The
+/// 1.03e-2 * Z * lnLambda * T_e(eV)^-3/2 ohm-cm = 1.03e-4 ohm-m. The
 /// perpendicular branch is the relevant one for the azimuthal FRC current, which
 /// flows across the axial confining field. (Verified: hpf.pdf / NRL formulary.)
 pub const SPITZER_PERP_COEFFICIENT_OHM_M: f64 = 1.03e-4;
 
+/// Compute spitzer resistivity in ohm metres.
 pub fn spitzer_resistivity_ohm_m(t_e_ev: f64, z_eff: f64, ln_lambda: f64) -> Result<f64, String> {
     let temperature = require_positive("t_e_ev", t_e_ev)?;
     let charge = require_positive("z_eff", z_eff)?;
@@ -239,6 +304,7 @@ pub fn spitzer_resistivity_ohm_m(t_e_ev: f64, z_eff: f64, ln_lambda: f64) -> Res
     Ok(SPITZER_PERP_COEFFICIENT_OHM_M * charge * coulomb_log / temperature.powf(1.5))
 }
 
+/// Compute adiabatic temperature update in electronvolts.
 pub fn adiabatic_temperature_update_ev(
     temperature_ev: f64,
     old_volume_m3: f64,
@@ -255,6 +321,7 @@ pub fn adiabatic_temperature_update_ev(
     Ok(temperature * (old_volume / new_volume).powf(gamma_value - 1.0))
 }
 
+/// Advance pulsed compression.
 pub fn step_pulsed_compression(
     state: &PulsedCompressionState,
     config: &PulsedCompressionConfig,
@@ -319,6 +386,7 @@ pub fn step_pulsed_compression(
     })
 }
 
+/// Run pulsed compression.
 pub fn run_pulsed_compression(
     initial: PulsedCompressionState,
     config: &PulsedCompressionConfig,
@@ -343,6 +411,7 @@ pub fn run_pulsed_compression(
     Ok(states)
 }
 
+/// Run voltage driven pulsed compression.
 pub fn run_voltage_driven_pulsed_compression(
     initial: PulsedCompressionState,
     config: &PulsedCompressionConfig,
@@ -379,6 +448,7 @@ pub fn run_voltage_driven_pulsed_compression(
     })
 }
 
+/// Compute pulsed compression trajectory diagnostics.
 pub fn pulsed_compression_trajectory_diagnostics(
     states: &[PulsedCompressionState],
     radius_floor_m: Option<f64>,
