@@ -23,6 +23,7 @@ from typing import Any, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.integrate import trapezoid
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -48,8 +49,7 @@ FloatArray: TypeAlias = NDArray[np.float64]
 
 def _inventory(n_z: FloatArray, rho: FloatArray, R0: float, a: float) -> float:
     vol_element = 4.0 * np.pi**2 * R0 * a**2 * rho
-    trapz = getattr(np, "trapezoid", None) or np.trapz
-    return float(trapz(n_z * vol_element, rho))
+    return float(trapezoid(n_z * vol_element, rho))
 
 
 def _observable_finiteness(

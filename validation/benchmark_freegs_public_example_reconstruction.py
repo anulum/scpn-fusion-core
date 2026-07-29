@@ -31,6 +31,7 @@ from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.integrate import trapezoid
 from scipy.sparse import eye
 from scipy.sparse.linalg import factorized
 
@@ -362,9 +363,8 @@ def _boundary_containment_fraction(
 def _integrate_current(
     r_axis: NDArray[np.float64], z_axis: NDArray[np.float64], jtor: NDArray[np.float64]
 ) -> float:
-    trapz = getattr(np, "trapezoid", None) or np.trapz
-    z_integral = trapz(jtor, z_axis, axis=1)
-    return float(trapz(z_integral, r_axis))
+    z_integral = trapezoid(jtor, z_axis, axis=1)
+    return float(trapezoid(z_integral, r_axis))
 
 
 def _nearest_grid_value(

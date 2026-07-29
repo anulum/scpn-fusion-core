@@ -412,7 +412,7 @@ def test_energy_and_pressure_balance_are_finite_positive_diagnostics() -> None:
     # Stored energy density is the magnetic field energy plus the plasma internal
     # energy (3/2) p, not the pressure p; pin the factor of 3/2 on the thermal part.
     expected_energy_J = float(
-        np.trapz(
+        trapezoid(
             (state.B_z**2 / (2.0 * MU_0) + 1.5 * state.p) * 2.0 * np.pi * rho,
             rho,
         )

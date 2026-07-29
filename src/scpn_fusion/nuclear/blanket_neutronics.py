@@ -25,6 +25,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+from scipy.integrate import trapezoid
 
 from ._blanket_validators import _require_finite_float
 from .multigroup_blanket import MultiGroupBlanket
@@ -176,12 +177,7 @@ class BreedingBlanket:
         # Integral P(r) * 2*pi*r * dr
         integrand = production_rate * 2.0 * np.pi * self.r
 
-        if hasattr(np, "trapezoid"):
-            total_production = np.trapezoid(
-                integrand, self.r
-            )  # pragma: no cover - numpy>=2.0 trapezoid path
-        else:
-            total_production = np.trapz(integrand, self.r)
+        total_production = trapezoid(integrand, self.r)
 
         # Incoming Current (per unit length)
         # Total neutrons entering cylinder surface = J_in * Area

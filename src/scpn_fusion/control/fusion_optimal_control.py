@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+from scipy.integrate import trapezoid
 
 from scpn_fusion._data_paths import default_iter_config_path
 
@@ -167,8 +168,8 @@ class OptimalController:
             return cfg_li
         weight = np.abs(r - float(np.mean(r)))
         profile_weight = radial_profile * (1.0 + weight / max(float(np.ptp(r)), 1e-9))
-        numerator = float(np.trapz(profile_weight**2, r))
-        denominator = float(np.trapz(radial_profile**2, r))
+        numerator = float(trapezoid(profile_weight**2, r))
+        denominator = float(trapezoid(radial_profile**2, r))
         if denominator <= 0.0:
             return cfg_li
 

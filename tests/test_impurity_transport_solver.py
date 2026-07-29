@@ -10,6 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from numpy.typing import NDArray
+from scipy.integrate import trapezoid
 
 from scpn_fusion.core.impurity_transport_contracts import ImpuritySpecies
 from scpn_fusion.core.impurity_transport_solver import ImpurityTransportSolver
@@ -19,9 +20,6 @@ def _toroidal_inventory(
     n_z: NDArray[np.float64], rho: NDArray[np.float64], R0: float, a: float
 ) -> float:
     vol_element = 4.0 * np.pi**2 * R0 * a**2 * rho
-    trapezoid = getattr(np, "trapezoid", None)
-    if trapezoid is None:
-        trapezoid = np.trapz
     return float(trapezoid(n_z * vol_element, rho))
 
 
