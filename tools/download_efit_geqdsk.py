@@ -6,39 +6,34 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — DIII-D EFIT GEQDSK Downloader (1A.2)
-"""
-Download DIII-D EFIT GEQDSK equilibrium files from the MDSplus archive.
+"""Download DIII-D EFIT GEQDSK files from MDSplus or inspect a local cache.
 
 If the ``MDSplus`` Python module is available, connects to the DIII-D
-MDSplus server (atlas.gat.com) and fetches EFIT GEQDSKs for a set of
-canonical validation shots.  When MDSplus is unavailable (e.g. in CI),
-the script falls back to checking the local cache directory and reports
-which files are present vs. missing.
+server and fetches canonical validation shots. Without MDSplus, the script
+reports exact shot-bound local cache entries as present or missing.
 
 Usage::
 
     python tools/download_efit_geqdsk.py
     python tools/download_efit_geqdsk.py --cache-dir /tmp/diiid_cache
 
-Importable entry point::
-
-    from tools.download_efit_geqdsk import download_geqdsks
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib
 import logging
-import sys
+import os
+import re
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Literal, Protocol, Sequence, cast, runtime_checkable
 
 logger = logging.getLogger(__name__)
 
-# ── Target shots ─────────────────────────────────────────────────────
-
-DIIID_TARGET_SHOTS: Dict[int, str] = {
+DIIID_TARGET_SHOTS: dict[int, str] = {
     163303: "H-mode",
     154406: "hybrid",
     175970: "neg-delta",
@@ -50,12 +45,10 @@ DIIID_TARGET_SHOTS: Dict[int, str] = {
 DEFAULT_MDSPLUS_HOST = "atlas.gat.com"
 DEFAULT_MDSPLUS_TREE = "efit01"
 DEFAULT_EFIT_NODE = "\\efit01::gEQDSK"
+MAX_GEQDSK_DOWNLOAD_BYTES = 10 * 1024 * 1024
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CACHE_DIR = REPO_ROOT / "validation" / "reference_data" / "diiid"
-
-
-# ── Data structures ──────────────────────────────────────────────────
 
 
 @dataclass(frozen=True)
@@ -65,12 +58,34 @@ class ShotStatus:
     shot: int
     scenario: str
     available: bool
-    source: str  # "cache", "mdsplus", or "missing"
-    path: Optional[Path]
-    error: Optional[str] = None
+    source: Literal["cache", "mdsplus", "missing"]
+    path: Path | None
+    error: str | None = None
 
 
-# ── Core logic ───────────────────────────────────────────────────────
+class _MDSplusConnection(Protocol):
+    """Typed subset of the legacy MDSplus connection used by this tool."""
+
+    def openTree(self, tree: str, shot: int) -> object:
+        """Open one tree for one shot."""
+
+    def get(self, node: str) -> object:
+        """Return the requested node payload."""
+
+
+class _MDSplusModule(Protocol):
+    """Typed subset of the dynamically imported MDSplus module."""
+
+    def Connection(self, host: str) -> _MDSplusConnection:
+        """Create a connection to ``host``."""
+
+
+@runtime_checkable
+class _MDSplusData(Protocol):
+    """MDSplus value wrapper exposing its underlying payload."""
+
+    def data(self) -> object:
+        """Return the wrapped value."""
 
 
 def _geqdsk_filename(shot: int) -> str:
@@ -80,30 +95,84 @@ def _geqdsk_filename(shot: int) -> str:
     return f"diiid_{safe_scenario}_{shot}.geqdsk"
 
 
-def _check_cache(shot: int, cache_dir: Path) -> Optional[Path]:
-    """Check if a GEQDSK for *shot* already exists in *cache_dir*.
+def _is_usable_cache_file(path: Path) -> bool:
+    """Return whether a cache candidate is a bounded non-symlink regular file."""
+    try:
+        size = path.stat().st_size
+        return path.is_file() and not path.is_symlink() and 0 < size <= MAX_GEQDSK_DOWNLOAD_BYTES
+    except OSError:
+        return False
 
-    Looks for files matching the canonical name as well as any file
-    containing the shot number in its stem.
-    """
+
+def _check_cache(shot: int, cache_dir: Path) -> Path | None:
+    """Return a bounded cache file named canonically or by exact shot number."""
     canonical = cache_dir / _geqdsk_filename(shot)
-    if canonical.is_file():
+    if _is_usable_cache_file(canonical):
         return canonical
 
     # Fallback: any .geqdsk file whose name contains the shot number
     for p in cache_dir.glob("*.geqdsk"):
-        if str(shot) in p.stem:
+        if re.search(rf"(?<!\d){shot}(?!\d)", p.stem) and _is_usable_cache_file(p):
             return p
 
-    # Also check existing reference files that may match by scenario tag
-    scenario = DIIID_TARGET_SHOTS.get(shot, "")
-    scenario_lower = scenario.replace("-", "").replace(" ", "_").lower()
-    if scenario_lower:
-        for p in cache_dir.glob("*.geqdsk"):
-            if scenario_lower in p.stem.lower().replace("-", "").replace(" ", "_"):
-                return p
-
     return None
+
+
+def _load_mdsplus() -> _MDSplusModule | None:
+    """Load the optional legacy MDSplus client behind a typed protocol."""
+    try:
+        module = importlib.import_module("MDSplus")
+    except ImportError:
+        return None
+    return cast(_MDSplusModule, module)
+
+
+def _payload_bytes(raw: object, *, shot: int) -> tuple[bytes | None, str | None]:
+    """Validate and encode a bounded ASCII GEQDSK provider payload."""
+    if isinstance(raw, _MDSplusData):
+        raw = raw.data()
+    try:
+        if isinstance(raw, str):
+            payload = raw.encode("ascii")
+        elif isinstance(raw, bytes):
+            payload = raw
+        else:
+            return None, (
+                f"MDSplus returned non-string data for shot {shot} "
+                f"(type={type(raw).__name__}); manual EFIT fetch may be needed"
+            )
+    except UnicodeEncodeError:
+        return None, f"MDSplus returned non-ASCII GEQDSK text for shot {shot}"
+    if not payload.strip():
+        return None, f"MDSplus returned an empty GEQDSK payload for shot {shot}"
+    if len(payload) > MAX_GEQDSK_DOWNLOAD_BYTES:
+        return None, (
+            f"MDSplus GEQDSK payload for shot {shot} is too large: "
+            f"{len(payload)} bytes exceeds {MAX_GEQDSK_DOWNLOAD_BYTES}"
+        )
+    return payload, None
+
+
+def _write_payload_atomically(path: Path, payload: bytes) -> None:
+    """Write one validated payload atomically inside its cache directory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".part",
+            delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def _try_mdsplus_download(
@@ -113,50 +182,34 @@ def _try_mdsplus_download(
     host: str = DEFAULT_MDSPLUS_HOST,
     tree: str = DEFAULT_MDSPLUS_TREE,
     node: str = DEFAULT_EFIT_NODE,
-) -> Tuple[Optional[Path], Optional[str]]:
-    """Attempt to download a GEQDSK from MDSplus.
-
-    Returns ``(path, None)`` on success or ``(None, error_message)`` on failure.
-    """
-    try:
-        import MDSplus  # type: ignore[import-untyped]
-    except ImportError:
+) -> tuple[Path | None, str | None]:
+    """Return ``(path, None)`` on download success or ``(None, error)``."""
+    mdsplus = _load_mdsplus()
+    if mdsplus is None:
         return None, "MDSplus Python module not installed"
 
     out_path = cache_dir / _geqdsk_filename(shot)
 
     try:
-        conn = MDSplus.Connection(host)
+        conn = mdsplus.Connection(host)
         conn.openTree(tree, shot)
-        data = conn.get(node)
-        raw: Any = data.data() if hasattr(data, "data") else data
-
-        # MDSplus may return the GEQDSK as a byte string or as structured data.
-        # If it's a string (raw file content), write directly.  Otherwise, we
-        # would need to reconstruct the file, which is beyond the scope of this
-        # simple downloader -- log and treat as failure.
-        if isinstance(raw, (str, bytes)):
-            text = raw.decode("ascii") if isinstance(raw, bytes) else raw
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(text, encoding="ascii")
-            return out_path, None
-        else:
-            return None, (
-                f"MDSplus returned non-string data for shot {shot} "
-                f"(type={type(raw).__name__}); manual EFIT fetch may be needed"
-            )
+        payload, error = _payload_bytes(conn.get(node), shot=shot)
+        if payload is None:
+            return None, error
+        _write_payload_atomically(out_path, payload)
+        return out_path, None
     except Exception as exc:  # noqa: BLE001
         return None, f"MDSplus error for shot {shot}: {exc}"
 
 
 def download_geqdsks(
     *,
-    cache_dir: Optional[Path] = None,
-    shots: Optional[Sequence[int]] = None,
+    cache_dir: Path | None = None,
+    shots: Sequence[int] | None = None,
     host: str = DEFAULT_MDSPLUS_HOST,
     tree: str = DEFAULT_MDSPLUS_TREE,
     try_mdsplus: bool = True,
-) -> List[ShotStatus]:
+) -> list[ShotStatus]:
     """Download or locate DIII-D EFIT GEQDSK files.
 
     Parameters
@@ -178,21 +231,23 @@ def download_geqdsks(
     list of ShotStatus
         Per-shot status indicating availability and source.
     """
-    if cache_dir is None:
-        cache_dir = DEFAULT_CACHE_DIR
-    cache_dir = Path(cache_dir)
-    cache_dir.mkdir(parents=True, exist_ok=True)
+    requested_shots = list(DIIID_TARGET_SHOTS) if shots is None else list(shots)
+    if not requested_shots:
+        raise ValueError("At least one DIII-D shot must be requested")
+    if any(isinstance(shot, bool) or shot <= 0 for shot in requested_shots):
+        raise ValueError("DIII-D shot numbers must be positive integers")
+    if len(set(requested_shots)) != len(requested_shots):
+        raise ValueError("DIII-D shot numbers must be unique")
 
-    if shots is None:
-        shots = list(DIIID_TARGET_SHOTS.keys())
+    resolved_cache = DEFAULT_CACHE_DIR if cache_dir is None else Path(cache_dir)
+    resolved_cache.mkdir(parents=True, exist_ok=True)
+    results: list[ShotStatus] = []
 
-    results: List[ShotStatus] = []
-
-    for shot in shots:
+    for shot in requested_shots:
         scenario = DIIID_TARGET_SHOTS.get(shot, "unknown")
 
         # 1. Check local cache first
-        cached = _check_cache(shot, cache_dir)
+        cached = _check_cache(shot, resolved_cache)
         if cached is not None:
             results.append(
                 ShotStatus(
@@ -209,7 +264,7 @@ def download_geqdsks(
         if try_mdsplus:
             path, err = _try_mdsplus_download(
                 shot,
-                cache_dir,
+                resolved_cache,
                 host=host,
                 tree=tree,
             )
@@ -252,11 +307,10 @@ def download_geqdsks(
     return results
 
 
-# ── CLI ──────────────────────────────────────────────────────────────
-
-
-def _print_status(results: List[ShotStatus]) -> None:
+def _print_status(results: Sequence[ShotStatus]) -> None:
     """Pretty-print the download/cache status table."""
+    if not results:
+        raise ValueError("Cannot print an empty GEQDSK status collection")
     available_count = sum(1 for r in results if r.available)
     total = len(results)
 
@@ -283,7 +337,16 @@ def _print_status(results: List[ShotStatus]) -> None:
         print("\nAll target shots are available.")
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+class _Arguments(argparse.Namespace):
+    """Typed command-line arguments for the GEQDSK downloader."""
+
+    cache_dir: Path | None
+    no_mdsplus: bool
+    shots: list[int] | None
+    verbose: bool
+
+
+def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Download or check DIII-D EFIT GEQDSK files for validation.",
@@ -302,7 +365,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--shots",
         type=int,
-        nargs="*",
+        nargs="+",
         default=None,
         help="Specific shot numbers to check (default: all 5 canonical shots).",
     )
@@ -313,7 +376,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Enable verbose logging.",
     )
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(argv, namespace=_Arguments())
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.WARNING,
@@ -334,4 +397,4 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
