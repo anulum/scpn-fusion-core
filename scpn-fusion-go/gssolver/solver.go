@@ -16,19 +16,31 @@ import (
 	"strings"
 )
 
+// Case defines the grid, physical constants, and iteration controls for one
+// fixed-boundary Grad-Shafranov solve.
 type Case struct {
+	// RMin and RMax bound the major-radius grid in metres.
 	RMin, RMax, ZMin, ZMax float64
-	NR, NZ                 int
-	IpTarget, Mu0          float64
-	NPicard, NJacobi       int
+	// NR and NZ are the radial and vertical grid-point counts.
+	NR, NZ int
+	// IpTarget is the target toroidal plasma current and Mu0 is vacuum permeability.
+	IpTarget, Mu0 float64
+	// NPicard and NJacobi control the outer and inner iteration counts.
+	NPicard, NJacobi int
+	// Alpha, OmegaJ, and BetaMix control relaxation and source-profile mixing.
 	Alpha, OmegaJ, BetaMix float64
 }
 
+// Result contains the row-major poloidal-flux grid and outer-iteration
+// residual history returned by Solve.
 type Result struct {
-	Psi             [][]float64
+	// Psi is indexed as Psi[z][r] on the case grid.
+	Psi [][]float64
+	// ResidualHistory records the maximum absolute flux update per Picard step.
 	ResidualHistory []float64
 }
 
+// CaseFromTOML loads and validates a grad_shafranov table from path.
 func CaseFromTOML(path string) (Case, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -117,6 +129,8 @@ func CaseFromTOML(path string) (Case, error) {
 	return c, c.Validate()
 }
 
+// Validate rejects invalid grid geometry, iteration controls, relaxation
+// factors, and non-finite physical scalars.
 func (c Case) Validate() error {
 	if !(c.RMax > c.RMin) || !(c.ZMax > c.ZMin) {
 		return fmt.Errorf("invalid domain bounds")
@@ -138,6 +152,7 @@ func (c Case) Validate() error {
 	return nil
 }
 
+// Solve runs the native fixed-boundary Picard/Jacobi reference algorithm.
 func Solve(c Case) (Result, error) {
 	if err := c.Validate(); err != nil {
 		return Result{}, err
@@ -310,6 +325,7 @@ func validateFluxMatrix(c Case, psi [][]float64) error {
 	return nil
 }
 
+// DeltaStar evaluates the cylindrical Grad-Shafranov operator on psi.
 func DeltaStar(c Case, psi [][]float64) ([][]float64, error) {
 	if err := validateFluxMatrix(c, psi); err != nil {
 		return nil, err
@@ -329,6 +345,8 @@ func DeltaStar(c Case, psi [][]float64) ([][]float64, error) {
 	return deltaStar, nil
 }
 
+// ToroidalCurrentDensityFromFlux returns J_phi implied by
+// Delta-star psi = -mu0 R J_phi.
 func ToroidalCurrentDensityFromFlux(c Case, psi [][]float64) ([][]float64, error) {
 	if err := validateFluxMatrix(c, psi); err != nil {
 		return nil, err
@@ -347,6 +365,8 @@ func ToroidalCurrentDensityFromFlux(c Case, psi [][]float64) ([][]float64, error
 	return currentDensity, nil
 }
 
+// TotalToroidalCurrentFromFlux integrates interior J_phi with rectangular
+// grid weights.
 func TotalToroidalCurrentFromFlux(c Case, psi [][]float64) (float64, error) {
 	currentDensity, err := ToroidalCurrentDensityFromFlux(c, psi)
 	if err != nil {
@@ -365,6 +385,8 @@ func TotalToroidalCurrentFromFlux(c Case, psi [][]float64) (float64, error) {
 	return total, nil
 }
 
+// TotalToroidalCurrentFromFluxTrapezoidal integrates J_phi with full-domain
+// trapezoidal weights.
 func TotalToroidalCurrentFromFluxTrapezoidal(c Case, psi [][]float64) (float64, error) {
 	currentDensity, err := ToroidalCurrentDensityFromFlux(c, psi)
 	if err != nil {
@@ -391,6 +413,8 @@ func TotalToroidalCurrentFromFluxTrapezoidal(c Case, psi [][]float64) (float64, 
 	return total, nil
 }
 
+// TotalToroidalCurrentFromFluxMasked integrates J_phi only where domainMask is
+// true and rejects empty or shape-incompatible masks.
 func TotalToroidalCurrentFromFluxMasked(c Case, psi [][]float64, domainMask [][]bool) (float64, error) {
 	if err := validateFluxMatrix(c, psi); err != nil {
 		return 0, err

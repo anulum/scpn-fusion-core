@@ -39,20 +39,30 @@
 
 // ── Configuration ───────────────────────────────────────────────────
 
+/** Validated grid geometry and permeability consumed by FastSolver. */
 struct PlasmaConfig {
+    /** Radial grid-point count. */
     int    nr;
+    /** Vertical grid-point count. */
     int    nz;
+    /** Minimum major radius in metres. */
     double r_min;
+    /** Maximum major radius in metres. */
     double r_max;
+    /** Minimum vertical coordinate in metres. */
     double z_min;
+    /** Maximum vertical coordinate in metres. */
     double z_max;
-    double vacuum_perm;  // μ₀ (normally 1.0 in normalised units)
+    /** Vacuum permeability, normally 1.0 in normalised units. */
+    double vacuum_perm;
 };
 
 // ── Solver ──────────────────────────────────────────────────────────
 
+/** In-memory Red-Black SOR solver backing the exported C ABI. */
 class FastSolver {
 public:
+    /** Construct a solver and initialise a zero-flux Dirichlet boundary. */
     explicit FastSolver(PlasmaConfig config)
         : cfg(config)
     {
@@ -90,7 +100,6 @@ public:
         #endif
         for (int z = 1; z < cfg.nz - 1; ++z) {
             #pragma GCC ivdep
-            #pragma GCC optimize("unroll-loops")
             for (int r = 1; r < cfg.nr - 1; ++r) {
                 if ((z + r) % 2 == 0) {
                     const double delta = update_point(z, r, omega);
@@ -106,7 +115,6 @@ public:
         #endif
         for (int z = 1; z < cfg.nz - 1; ++z) {
             #pragma GCC ivdep
-            #pragma GCC optimize("unroll-loops")
             for (int r = 1; r < cfg.nr - 1; ++r) {
                 if ((z + r) % 2 != 0) {
                     const double delta = update_point(z, r, omega);
@@ -118,18 +126,22 @@ public:
         return (red_max_delta > black_max_delta) ? red_max_delta : black_max_delta;
     }
 
+    /** Copy a row-major toroidal-current profile when its size matches the grid. */
     void set_current_profile(const double *j_in, size_t size) {
         if (size == j_phi.size()) {
             std::copy(j_in, j_in + size, j_phi.begin());
         }
     }
 
+    /** Set and immediately apply a fixed flux value on all grid edges. */
     void set_boundary_value(double value) {
         boundary_value = value;
         apply_dirichlet_boundaries();
     }
 
+    /** Return a borrowed pointer to the row-major poloidal-flux storage. */
     const double *get_psi_ptr() const { return psi.data(); }
+    /** Return the number of scalar grid entries owned by the solver. */
     size_t get_size() const { return psi.size(); }
 
 private:
@@ -187,7 +199,9 @@ private:
 
 extern "C" {
 
-/// Create a new solver instance for an (NR x NZ) grid.
+/// Create a new solver instance for an `nr` by `nz` grid.
+///
+/// @return opaque solver handle, or `nullptr` when dimensions or bounds are invalid
 void *create_solver(int nr, int nz,
                     double rmin, double rmax,
                     double zmin, double zmax)
@@ -207,7 +221,9 @@ void *create_solver(int nr, int nz,
     return static_cast<void *>(new FastSolver(cfg));
 }
 
-/// Set fixed Dirichlet boundary value for the psi edges.
+/// Set a fixed Dirichlet boundary value for all poloidal-flux grid edges.
+///
+/// A null solver handle is ignored.
 void set_boundary_dirichlet(void *solver_ptr, double boundary_value)
 {
     if (solver_ptr == nullptr) {
@@ -251,9 +267,9 @@ void run_step(void *solver_ptr,
     std::copy(result, result + n, psi_array);
 }
 
-/// Run SOR with early convergence stop based on max |delta psi|.
+/// Run SOR with an early convergence stop based on max |delta psi|.
 ///
-/// @return iterations executed (>=1)
+/// @return iterations executed (at least one), or zero for invalid inputs
 int run_step_converged(void *solver_ptr,
                        const double *j_array,
                        double       *psi_array,
@@ -305,11 +321,13 @@ int run_step_converged(void *solver_ptr,
 }
 
 /// Free a solver instance.
+/// Destroy an opaque solver handle created by create_solver().
 void destroy_solver(void *solver_ptr) {
     delete static_cast<FastSolver *>(solver_ptr);
 }
 
 /// Backward-compatible alias for bindings expecting delete_solver().
+/// Backward-compatible alias for destroy_solver().
 void delete_solver(void *solver_ptr) {
     destroy_solver(solver_ptr);
 }

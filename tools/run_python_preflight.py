@@ -548,6 +548,18 @@ def _build_release_checks(
         checks.append(("mypy expansion guard", [sys.executable, "tools/mypy_expansion_guard.py"]))
         checks.append(("mypy strict", [sys.executable, "tools/run_mypy_strict.py"]))
     checks.append(("docstring numpy convention", [sys.executable, "tools/run_ruff_docstrings.py"]))
+    checks.append(
+        (
+            "language-native API documentation",
+            [
+                sys.executable,
+                "tools/run_native_docs.py",
+                "--language",
+                "all",
+                "--skip-unavailable",
+            ],
+        )
+    )
     return checks
 
 

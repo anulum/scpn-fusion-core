@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — source/config header compliance
-.PHONY: test lint fmt docs docs-build docs-serve bench clean build preflight bandit sast install-hooks
+.PHONY: test lint fmt docs docs-build docs-api-python docs-api-rust docs-api-go docs-api-julia docs-api-cpp docs-api-lean docs-serve bench clean build preflight bandit sast install-hooks
 
 PYTHON ?= python
 SPHINXBUILD ?= sphinx-build
@@ -42,8 +42,25 @@ preflight-fast:
 docs:
 	$(MAKE) docs-build
 
-docs-build:
-	PYTHONPATH=src $(SPHINXBUILD) -W -b html $(DOCS_SOURCE) $(DOCS_BUILD)
+docs-api-python:
+	$(PYTHON) tools/run_native_docs.py --language python
+
+docs-api-rust:
+	$(PYTHON) tools/run_native_docs.py --language rust
+
+docs-api-go:
+	$(PYTHON) tools/run_native_docs.py --language go
+
+docs-api-julia:
+	$(PYTHON) tools/run_native_docs.py --language julia
+
+docs-api-cpp:
+	$(PYTHON) tools/run_native_docs.py --language cpp
+
+docs-api-lean:
+	$(PYTHON) tools/run_native_docs.py --language lean
+
+docs-build: docs-api-python docs-api-rust docs-api-go docs-api-julia docs-api-cpp docs-api-lean
 
 docs-serve: docs-build
 	$(PYTHON) -m http.server --directory $(DOCS_BUILD) 8000

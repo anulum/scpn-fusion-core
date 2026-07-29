@@ -378,6 +378,16 @@ def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> N
             ["python-test", "tools/run_ruff_docstrings.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
+        (
+            [
+                "python-test",
+                "tools/run_native_docs.py",
+                "--language",
+                "all",
+                "--skip-unavailable",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
     ]
 
 
@@ -470,6 +480,16 @@ def test_main_honors_skip_flags(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
         (
             ["python-test", "tools/run_ruff_docstrings.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/run_native_docs.py",
+                "--language",
+                "all",
+                "--skip-unavailable",
+            ],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]
@@ -571,6 +591,16 @@ def test_main_enables_strict_backend_checks_when_requested(
         ),
         (
             ["python-test", "tools/run_ruff_docstrings.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/run_native_docs.py",
+                "--language",
+                "all",
+                "--skip-unavailable",
+            ],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]
@@ -684,6 +714,16 @@ def test_main_enables_freegs_strict_backend_check_when_requested(
             ["python-test", "tools/run_ruff_docstrings.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
+        (
+            [
+                "python-test",
+                "tools/run_native_docs.py",
+                "--language",
+                "all",
+                "--skip-unavailable",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
     ]
 
 
@@ -782,6 +822,16 @@ def test_main_skips_freegs_strict_parity_without_opt_in(
         ),
         (
             ["python-test", "tools/run_ruff_docstrings.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/run_native_docs.py",
+                "--language",
+                "all",
+                "--skip-unavailable",
+            ],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]
@@ -884,6 +934,16 @@ def test_main_skips_freegs_strict_parity_when_flagged(
         ),
         (
             ["python-test", "tools/run_ruff_docstrings.py"],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/run_native_docs.py",
+                "--language",
+                "all",
+                "--skip-unavailable",
+            ],
             SCRIPT_PATH.resolve().parents[1],
         ),
     ]

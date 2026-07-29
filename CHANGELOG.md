@@ -4,6 +4,12 @@
 
 ### Added
 
+- Enforce generated language-native API documentation across every shipped
+  FUSION surface: warning-denied Sphinx and Cargo doc, exported-declaration Go
+  comment coverage plus `go doc` rendering, strict Julia Documenter output,
+  warning-denied Doxygen for the bundled C/C++ solver ABI, and pinned Lean
+  doc-gen4 output for all proof libraries. CI, release preflight, and Makefile
+  entry points share one fail-closed runner.
 - Enforce non-test `unwrap()`/`expect()` denial boundaries in
   `fusion-engineering`, `fusion-gpu`, `fusion-math`, `fusion-phase`,
   `fusion-polyglot`, and `fusion-types`; every remaining use in this cohort is

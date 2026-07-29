@@ -14,6 +14,12 @@ on:
       - "papers/**"
       - "**.rst"
       - "src/scpn_fusion/**"
+      - "scpn-fusion-go/**"
+      - "scpn-fusion-jl/**"
+      - "scpn-fusion-lean/**"
+      - "scpn-fusion-rs/**"
+      - "tools/run_native_docs.py"
+      - "Makefile"
       - ".github/workflows/docs.yml"
       - ".readthedocs.yaml"
       - "pyproject.toml"
@@ -46,7 +52,7 @@ jobs:
           pip install --no-deps -e .
 
       - name: Build Sphinx docs
-        run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
+        run: python tools/run_native_docs.py --language python
 
       - name: Upload Python docs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -75,14 +81,83 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-docs-
 
       - name: Build rustdoc
-        working-directory: scpn-fusion-rs
-        run: cargo doc --workspace --no-deps --all-features --exclude scpn-fusion-rs
+        run: python tools/run_native_docs.py --language rust
 
       - name: Upload Rust docs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
+          if-no-files-found: error
+
+  build-go-docs:
+    name: Verify native Go API docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        with:
+          go-version-file: scpn-fusion-go/go.mod
+          cache: false
+      - name: Check comments and render every Go package
+        run: python tools/run_native_docs.py --language go
+
+  build-julia-docs:
+    name: Build Julia API docs (Documenter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: julia-actions/setup-julia@fa02766e078afaaf09b14210362cee14137e6a32  # v3.0.2
+        with:
+          version: "1.10"
+      - name: Build strict Documenter API docs
+        run: python tools/run_native_docs.py --language julia
+      - name: Upload Julia docs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0  # v7.0.1
+        with:
+          name: julia-docs
+          path: scpn-fusion-jl/docs/build/
+          if-no-files-found: error
+
+  build-cpp-docs:
+    name: Build C and C++ API docs (Doxygen)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y doxygen
+      - name: Build warning-denied C and C++ API docs
+        run: python tools/run_native_docs.py --language cpp
+      - name: Upload C and C++ docs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0  # v7.0.1
+        with:
+          name: cpp-docs
+          path: docs/_build/cpp/html/
+          if-no-files-found: error
+
+  build-lean-docs:
+    name: Build Lean API docs (doc-gen4)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Install pinned Lean toolchain
+        run: |
+          curl --retry 5 --retry-all-errors --retry-delay 10 \
+            --connect-timeout 20 --max-time 120 -fsSL \
+            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
+            -o /tmp/elan-init.sh
+          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
+          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Build doc-gen4 API documentation
+        run: python tools/run_native_docs.py --language lean
+      - name: Upload Lean docs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0  # v7.0.1
+        with:
+          name: lean-docs
+          path: scpn-fusion-lean/docbuild/.lake/build/doc/
           if-no-files-found: error
 
   build-notebook-html:
@@ -115,7 +190,7 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
-    needs: [build-python-docs, build-rust-docs, build-notebook-html]
+    needs: [build-python-docs, build-rust-docs, build-go-docs, build-julia-docs, build-cpp-docs, build-lean-docs, build-notebook-html]
     runs-on: ubuntu-latest
     env:
       PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
@@ -140,6 +215,24 @@ jobs:
         with:
           name: rust-docs
           path: site/rust/
+
+      - name: Download Julia docs
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: julia-docs
+          path: site/julia/
+
+      - name: Download C and C++ docs
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: cpp-docs
+          path: site/cpp/
+
+      - name: Download Lean docs
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: lean-docs
+          path: site/lean/
 
       - name: Download notebook HTML
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7

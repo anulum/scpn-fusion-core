@@ -5,6 +5,13 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Native Julia Solvers
+"""
+    SCPNFusionSolvers
+
+Native Julia fixed-boundary Grad-Shafranov reference solver and flux-derived
+current diagnostics. The implementation is a numerical reference surface, not
+facility-grade validation evidence.
+"""
 module SCPNFusionSolvers
 
 export GradShafranovCase, GradShafranovResult, case_from_toml,
@@ -34,6 +41,7 @@ struct GradShafranovCase
     beta_mix::Float64
 end
 
+"""Construct and validate a fixed-boundary Grad-Shafranov solver case."""
 function GradShafranovCase(; R_min::Real=0.1, R_max::Real=2.0,
     Z_min::Real=-1.5, Z_max::Real=1.5, NR::Integer=33, NZ::Integer=33,
     Ip_target::Real=1.0e6, mu0::Real=DEFAULT_MU0, n_picard::Integer=80,
@@ -71,6 +79,7 @@ function _validate_case(case::GradShafranovCase)::Nothing
     return nothing
 end
 
+"""Load and validate a `grad_shafranov` case table from a TOML file."""
 function case_from_toml(path::AbstractString)::GradShafranovCase
     data = TOML.parsefile(path)
     case_data = get(data, "grad_shafranov", data)
@@ -229,6 +238,7 @@ function _max_change(a::Matrix{Float64}, b::Matrix{Float64})::Float64
     return maximum(abs.(a .- b))
 end
 
+"""Run the native fixed-boundary Picard/Jacobi Grad-Shafranov solve."""
 function solve_grad_shafranov(case::GradShafranovCase)::GradShafranovResult
     _validate_case(case)
     _, _, rr, dR, dZ = _r_grid(case)
