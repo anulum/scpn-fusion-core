@@ -53,3 +53,13 @@ def test_ci_rejects_silent_tracked_evidence_drift_after_preflight() -> None:
 
     assert workflow.count(drift_guard) == 1
     assert workflow.index(preflight) < workflow.index(drift_guard)
+
+
+def test_ci_does_not_rerun_hypothesis_file_after_full_suite() -> None:
+    """The three full-suite matrix lanes already include property tests once."""
+    workflow = _workflow_text()
+
+    assert 'pytest tests/ -v -m "not experimental"' in workflow
+    assert 'timeout --signal=TERM 75m pytest tests/ -q -m "not experimental"' in workflow
+    assert "tests/test_hypothesis_properties.py" not in workflow
+    assert "--hypothesis-seed" not in workflow

@@ -349,8 +349,6 @@ jobs:
             --thresholds tools/coverage_guard_thresholds.json \
             --output-json artifacts/coverage_delta_report.json \
             --output-md artifacts/coverage_delta_report.md
-      - name: Run property-based tests (Hypothesis)
-        run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
       - name: Disruption false-positive rate gate
         if: matrix.python-version == '3.12'
         run: |

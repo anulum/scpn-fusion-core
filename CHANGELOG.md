@@ -4,6 +4,9 @@
 
 ### Added
 
+- Remove the redundant dedicated Hypothesis CI invocation after the Python
+  matrix's full-suite commands, preserving one property-test execution per
+  supported interpreter while avoiding a measured duplicate minute per run.
 - Make the documented `[dev]` installation sufficient to collect JAX-backed
   and JSON-schema benchmark tests by including their runtimes alongside
   Hypothesis, and enforce the full test-collection dependency set in the
