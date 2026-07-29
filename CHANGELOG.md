@@ -100,6 +100,8 @@
 
 ### Fixed
 
+- Return typed shape/data errors from `fusion-ml` PCA, neural-equilibrium, and
+  PCE convenience APIs, and enforce non-test panic-API denial across the crate.
 - Propagate typed gyrokinetic geometry and collision-matrix failures through
   the Rust RK4 and PyO3 boundaries, and enforce non-test panic-API denial for
   the now production-clean `fusion-physics` crate.

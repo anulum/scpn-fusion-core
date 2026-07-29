@@ -76,8 +76,13 @@ impl PCEModel {
     /// Fit a PCE model with multivariate Hermite basis up to total `order`.
     ///
     /// `samples`: (n_samples, n_dims), `outputs`: (n_samples, n_outputs)
-    pub fn fit(samples: &Array2<f64>, outputs: &Array2<f64>, order: usize) -> Self {
-        Self::try_fit(samples, outputs, order).expect("PCE fit failed")
+    ///
+    /// # Errors
+    ///
+    /// Returns the structured validation or linear-algebra errors documented by
+    /// [`Self::try_fit`].
+    pub fn fit(samples: &Array2<f64>, outputs: &Array2<f64>, order: usize) -> FusionResult<Self> {
+        Self::try_fit(samples, outputs, order)
     }
 
     /// Checked prediction API returning error on shape/data mismatch.
@@ -105,8 +110,13 @@ impl PCEModel {
     }
 
     /// Predict model output at a single input point.
-    pub fn predict(&self, x: &Array1<f64>) -> Array1<f64> {
-        self.try_predict(x).expect("PCE prediction failed")
+    ///
+    /// # Errors
+    ///
+    /// Returns the structured shape or data errors documented by
+    /// [`Self::try_predict`].
+    pub fn predict(&self, x: &Array1<f64>) -> FusionResult<Array1<f64>> {
+        self.try_predict(x)
     }
 
     /// First-order Sobol sensitivity indices estimated from PCE coefficients.
@@ -327,7 +337,8 @@ mod tests {
         let y_train =
             Array2::from_shape_fn((x_train.nrows(), 1), |(i, _)| ipb98_like(x_train.row(i)));
 
-        let model = PCEModel::fit(&x_train, &y_train, order);
+        let model = PCEModel::fit(&x_train, &y_train, order)
+            .expect("finite matching PCE training matrices should fit");
         assert_eq!(model.multi_index.len(), 55);
 
         let mut rng_mc = StdRng::seed_from_u64(2026);
@@ -338,7 +349,11 @@ mod tests {
         for i in 0..x_mc.nrows() {
             let x = x_mc.row(i);
             truth.push(ipb98_like(x));
-            pce.push(model.predict(&x.to_owned())[0]);
+            pce.push(
+                model
+                    .predict(&x.to_owned())
+                    .expect("Monte Carlo point should match fitted PCE width")[0],
+            );
         }
 
         let (mean_truth, std_truth) = mean_std(&truth);
@@ -363,7 +378,7 @@ mod tests {
             }
         });
 
-        let pce = PCEModel::fit(&x, &y, 2);
+        let pce = PCEModel::fit(&x, &y, 2).expect("finite matching PCE fixture should fit");
         let s = pce.sobol_indices();
         assert_eq!(s.len(), 3);
         assert!(s.iter().all(|v| (0.0..=1.0).contains(v)));
@@ -386,7 +401,7 @@ mod tests {
     fn test_try_predict_rejects_dimension_mismatch() {
         let x = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 0.2, -0.1, -0.3, 0.4]).unwrap();
         let y = Array2::from_shape_vec((3, 1), vec![1.0, 1.2, 0.8]).unwrap();
-        let model = PCEModel::fit(&x, &y, 2);
+        let model = PCEModel::fit(&x, &y, 2).expect("finite matching PCE fixture should fit");
         let bad = Array1::from_vec(vec![0.1, 0.2, 0.3]);
 
         let err = model.try_predict(&bad).unwrap_err();

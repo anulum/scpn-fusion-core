@@ -9,6 +9,7 @@
 //! Stage 9: Neural equilibrium accelerator (PCA + MLP), disruption predictor (Transformer).
 
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod disruption;
 pub mod mast_snn;

@@ -12,6 +12,7 @@
 //! MLP maps the 12-feature equilibrium descriptor to PCA coefficients for
 //! ~1000× speedup.
 
+use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{Array1, Array2, Axis};
 use rand::Rng;
 
@@ -40,15 +41,46 @@ pub struct PCA {
 }
 
 impl PCA {
-    /// Fit PCA from data matrix X: (n_samples, n_features).
-    /// Uses thin SVD on centered data.
-    pub fn fit(x: &Array2<f64>, n_components: usize) -> Self {
+    /// Fit PCA from data matrix X: (n_samples, n_features) using a thin SVD.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error for fewer than two samples, an empty
+    /// feature axis, zero requested components, or non-finite input data.
+    pub fn fit(x: &Array2<f64>, n_components: usize) -> FusionResult<Self> {
         let (n, _p) = x.dim();
+        if n < 2 {
+            return Err(FusionError::ConfigError(
+                "PCA fit requires at least two samples".to_string(),
+            ));
+        }
+        if x.ncols() == 0 {
+            return Err(FusionError::ConfigError(
+                "PCA fit requires at least one feature".to_string(),
+            ));
+        }
+        if n_components == 0 {
+            return Err(FusionError::ConfigError(
+                "PCA fit requires at least one component".to_string(),
+            ));
+        }
+        if !x.iter().all(|value| value.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "PCA fit received non-finite data".to_string(),
+            ));
+        }
         let k = n_components.min(n);
 
         // Center data
-        let mean = x.mean_axis(Axis(0)).unwrap();
-        let x_centered = x - &mean.broadcast(x.raw_dim()).unwrap();
+        let mean = x.mean_axis(Axis(0)).ok_or_else(|| {
+            FusionError::ConfigError("PCA fit could not compute a feature mean".to_string())
+        })?;
+        let mean_view = mean.broadcast(x.raw_dim()).ok_or_else(|| {
+            FusionError::LinAlg(
+                "PCA feature mean does not broadcast to the sample matrix".to_string(),
+            )
+        })?;
+        let x_centered = x - &mean_view;
 
         // Compute covariance via X^T X (p×p might be large; use X X^T if n < p)
         // For our use case, n_samples < n_features, so work in (n×n) space.
@@ -69,27 +101,60 @@ impl PCA {
         let explained_variance =
             Array1::from_vec(eigenvalues.iter().map(|&ev| ev / (n - 1) as f64).collect());
 
-        PCA {
+        Ok(PCA {
             n_components: k,
             mean,
             components,
             explained_variance,
-        }
+        })
     }
 
     /// Transform data to PCA space: X → coefficients.
-    pub fn transform(&self, x: &Array2<f64>) -> Array2<f64> {
-        let centered = x - &self.mean.broadcast(x.raw_dim()).unwrap();
-        centered.dot(&self.components.t())
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when the input feature width differs from
+    /// the fitted PCA feature width.
+    pub fn transform(&self, x: &Array2<f64>) -> FusionResult<Array2<f64>> {
+        if x.ncols() != self.mean.len() {
+            return Err(FusionError::ConfigError(format!(
+                "PCA transform feature width {} does not match fitted width {}",
+                x.ncols(),
+                self.mean.len()
+            )));
+        }
+        let mean_view = self.mean.broadcast(x.raw_dim()).ok_or_else(|| {
+            FusionError::LinAlg(
+                "PCA feature mean does not broadcast to transform input".to_string(),
+            )
+        })?;
+        let centered = x - &mean_view;
+        Ok(centered.dot(&self.components.t()))
     }
 
     /// Inverse transform: coefficients → reconstructed data.
-    pub fn inverse_transform(&self, coeffs: &Array2<f64>) -> Array2<f64> {
-        coeffs.dot(&self.components)
-            + self
-                .mean
-                .broadcast((coeffs.nrows(), self.mean.len()))
-                .unwrap()
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when the coefficient width differs from
+    /// the fitted component count.
+    pub fn inverse_transform(&self, coeffs: &Array2<f64>) -> FusionResult<Array2<f64>> {
+        if coeffs.ncols() != self.components.nrows() {
+            return Err(FusionError::ConfigError(format!(
+                "PCA coefficient width {} does not match component count {}",
+                coeffs.ncols(),
+                self.components.nrows()
+            )));
+        }
+        let mean_view = self
+            .mean
+            .broadcast((coeffs.nrows(), self.mean.len()))
+            .ok_or_else(|| {
+                FusionError::LinAlg(
+                    "PCA feature mean does not broadcast to reconstructed samples".to_string(),
+                )
+            })?;
+        Ok(coeffs.dot(&self.components) + mean_view)
     }
 }
 
@@ -202,11 +267,24 @@ pub struct NeuralEquilibrium {
 
 impl NeuralEquilibrium {
     /// Predict equilibrium from the canonical 12-feature descriptor.
-    pub fn predict(&self, features: &Array1<f64>) -> Array1<f64> {
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when the feature width does not match the
+    /// MLP input layer, or when PCA reconstruction rejects the coefficient
+    /// shape.
+    pub fn predict(&self, features: &Array1<f64>) -> FusionResult<Array1<f64>> {
+        if features.len() != self.mlp.w1.nrows() {
+            return Err(FusionError::ConfigError(format!(
+                "neural-equilibrium feature width {} does not match MLP input width {}",
+                features.len(),
+                self.mlp.w1.nrows()
+            )));
+        }
         let coeffs = self.mlp.forward(features);
         let coeffs_2d = coeffs.insert_axis(Axis(0));
-        let psi_flat = self.pca.inverse_transform(&coeffs_2d);
-        psi_flat.row(0).to_owned()
+        let psi_flat = self.pca.inverse_transform(&coeffs_2d)?;
+        Ok(psi_flat.row(0).to_owned())
     }
 }
 
@@ -219,7 +297,7 @@ mod tests {
         // 10 samples of 50 features
         let mut rng = rand::thread_rng();
         let x = Array2::from_shape_fn((10, 50), |_| rng.gen::<f64>());
-        let pca = PCA::fit(&x, 5);
+        let pca = PCA::fit(&x, 5).expect("valid PCA fixture should fit");
         assert_eq!(pca.n_components, 5);
         assert_eq!(pca.components.nrows(), 5);
         assert_eq!(pca.components.ncols(), 50);
@@ -238,9 +316,13 @@ mod tests {
         let b = Array2::from_shape_fn((k, p), |_| rng.gen::<f64>());
         let x = a.dot(&b);
 
-        let pca = PCA::fit(&x, k);
-        let coeffs = pca.transform(&x);
-        let x_recon = pca.inverse_transform(&coeffs);
+        let pca = PCA::fit(&x, k).expect("valid low-rank PCA fixture should fit");
+        let coeffs = pca
+            .transform(&x)
+            .expect("training matrix width should match");
+        let x_recon = pca
+            .inverse_transform(&coeffs)
+            .expect("coefficient width should match fitted PCA");
 
         let error: f64 = (&x - &x_recon).mapv(|v| v * v).sum();
         let energy: f64 = x.mapv(|v| v * v).sum();
@@ -277,11 +359,45 @@ mod tests {
         let a = Array2::from_shape_fn((n, k), |_| rng.gen::<f64>());
         let b = Array2::from_shape_fn((k, p), |_| rng.gen::<f64>());
         let x = a.dot(&b);
-        let pca = PCA::fit(&x, k);
+        let pca = PCA::fit(&x, k).expect("valid neural-equilibrium PCA fixture should fit");
         let mlp = EquilibriumMLP::new(N_INPUT_FEATURES, k);
         let ne = NeuralEquilibrium { pca, mlp };
-        let result = ne.predict(&Array1::from_elem(N_INPUT_FEATURES, 0.5));
+        let result = ne
+            .predict(&Array1::from_elem(N_INPUT_FEATURES, 0.5))
+            .expect("canonical neural-equilibrium descriptor should predict");
         assert_eq!(result.len(), p);
         assert!(result.iter().all(|v| v.is_finite()));
+    }
+
+    #[test]
+    fn test_pca_and_neural_equilibrium_reject_invalid_shapes() {
+        assert!(matches!(
+            PCA::fit(&Array2::zeros((0, 4)), 2),
+            Err(FusionError::ConfigError(message))
+                if message == "PCA fit requires at least two samples"
+        ));
+
+        let training = Array2::from_shape_fn((3, 4), |(row, col)| (row + col) as f64);
+        let pca = PCA::fit(&training, 2).expect("finite PCA fixture should fit");
+        assert!(matches!(
+            pca.transform(&Array2::zeros((1, 3))),
+            Err(FusionError::ConfigError(message))
+                if message.contains("does not match fitted width 4")
+        ));
+        assert!(matches!(
+            pca.inverse_transform(&Array2::zeros((1, 3))),
+            Err(FusionError::ConfigError(message))
+                if message.contains("does not match component count 2")
+        ));
+
+        let model = NeuralEquilibrium {
+            pca,
+            mlp: EquilibriumMLP::new(N_INPUT_FEATURES, 2),
+        };
+        assert!(matches!(
+            model.predict(&Array1::zeros(N_INPUT_FEATURES - 1)),
+            Err(FusionError::ConfigError(message))
+                if message.contains("does not match MLP input width 12")
+        ));
     }
 }
