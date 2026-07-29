@@ -61,6 +61,7 @@ docs-api-lean:
 	$(PYTHON) tools/run_native_docs.py --language lean
 
 docs-build: docs-api-python docs-api-rust docs-api-go docs-api-julia docs-api-cpp docs-api-lean
+	PYTHONPATH=src $(SPHINXBUILD) -W -b html $(DOCS_SOURCE) $(DOCS_BUILD)
 
 docs-serve: docs-build
 	$(PYTHON) -m http.server --directory $(DOCS_BUILD) 8000

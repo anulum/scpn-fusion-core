@@ -67,11 +67,11 @@ def test_full_lock_source_covers_declared_heavy_extras() -> None:
         assert dependency in full_requirements
 
 
-def test_root_docs_targets_match_sphinx_ci_contract() -> None:
+def test_root_docs_targets_match_native_docs_ci_contract() -> None:
     makefile = MAKEFILE.read_text(encoding="utf-8")
     workflow = DOCS_WORKFLOW.read_text(encoding="utf-8")
 
     assert "mkdocs" not in makefile.lower()
     assert "docs-build:" in makefile
     assert "PYTHONPATH=src $(SPHINXBUILD) -W -b html $(DOCS_SOURCE) $(DOCS_BUILD)" in makefile
-    assert "sphinx-build -b html docs/sphinx docs/sphinx/_build/html" in workflow
+    assert "python tools/run_native_docs.py --language python" in workflow
