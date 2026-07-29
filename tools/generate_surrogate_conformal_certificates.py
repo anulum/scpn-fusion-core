@@ -52,6 +52,10 @@ DEUTERIUM_MASS_KG = 3.344e-27
 ELEMENTARY_CHARGE_C = 1.602e-19
 REFERENCE_FIELD_T = 5.3
 REFERENCE_MAJOR_RADIUS_M = 6.2
+# Fix the certificate's numeric representation across conforming float64 BLAS
+# implementations.  This is far below the precision supported by the source
+# validation data while removing platform-dependent last-bit residual drift.
+RESIDUAL_CANONICAL_DECIMALS = 12
 
 FloatArray = npt.NDArray[np.float64]
 
@@ -67,6 +71,14 @@ def _sha256_file(path: Path) -> str:
 def _sha256_array(values: FloatArray) -> str:
     contiguous = np.ascontiguousarray(values, dtype=np.float64)
     return hashlib.sha256(contiguous.tobytes()).hexdigest()
+
+
+def _canonicalize_residuals(values: FloatArray) -> FloatArray:
+    """Return the governed, platform-stable residual representation."""
+    return np.asarray(
+        np.round(values, decimals=RESIDUAL_CANONICAL_DECIMALS),
+        dtype=np.float64,
+    )
 
 
 def _display_path(path: Path) -> str:
@@ -200,8 +212,8 @@ def build_certificate(
         gb_normalized=holdout_gb_normalized,
         model_gb_scale=holdout_model_gb_scale,
     )
-    cal_scores = np.abs(pred_cal - y_cal)
-    test_scores = np.abs(pred_test - y_test)
+    cal_scores = _canonicalize_residuals(np.abs(pred_cal - y_cal))
+    test_scores = _canonicalize_residuals(np.abs(pred_test - y_test))
     channels: list[dict[str, Any]] = []
     for index, name in enumerate(OUTPUT_NAMES):
         scores = np.asarray(cal_scores[:, index], dtype=np.float64)
@@ -226,6 +238,7 @@ def build_certificate(
             "alpha": float(alpha),
             "target_marginal_coverage": float(1.0 - alpha),
             "quantile_rank_formula": "ceil((n_calibration + 1) * (1 - alpha))",
+            "residual_canonical_decimal_places": RESIDUAL_CANONICAL_DECIMALS,
             "reference": {
                 "title": "Distribution-Free Predictive Inference for Regression",
                 "doi": "10.1080/01621459.2017.1307116",
@@ -277,6 +290,10 @@ def validate_certificate(payload: Any, *, weights_path: Path | None = None) -> N
     alpha = method.get("alpha")
     if isinstance(alpha, bool) or not isinstance(alpha, (int, float)):
         raise ValueError("Certificate alpha must be numeric.")
+    if method.get("residual_canonical_decimal_places") != RESIDUAL_CANONICAL_DECIMALS:
+        raise ValueError(
+            "Certificate residual canonicalization does not match the governed policy."
+        )
     certificates = payload.get("certificates")
     if not isinstance(certificates, list) or len(certificates) != 1:
         raise ValueError("Exactly one QLKNN certificate is required.")

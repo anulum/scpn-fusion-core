@@ -115,6 +115,17 @@ def test_finite_sample_rank_validation() -> None:
         module.finite_sample_rank(1, 0.1)
 
 
+def test_residual_canonicalization_removes_float64_last_bit_drift() -> None:
+    """Equivalent BLAS results bind to one governed residual representation."""
+    module = _load_module()
+    residuals = np.asarray([2.915758581324388, 3.302462278593218], dtype=np.float64)
+    perturbed = np.nextafter(residuals, np.asarray([np.inf, np.inf]))
+    canonical = module._canonicalize_residuals(residuals)
+    canonical_perturbed = module._canonicalize_residuals(perturbed)
+    assert np.array_equal(canonical, canonical_perturbed)
+    assert module._sha256_array(canonical) == module._sha256_array(canonical_perturbed)
+
+
 def test_model_feature_contracts() -> None:
     """Processed 10D inputs reproduce the runtime 12D/14D feature expansion."""
     module = _load_module()
@@ -185,6 +196,12 @@ def test_build_certificate_and_external_path(tmp_path: Path) -> None:
         (lambda payload: payload.update(schema="wrong"), "schema"),
         (lambda payload: payload.update(method=[]), "method"),
         (lambda payload: payload["method"].update(alpha=True), "alpha"),
+        (
+            lambda payload: payload["method"].update(
+                residual_canonical_decimal_places=15
+            ),
+            "residual canonicalization",
+        ),
         (lambda payload: payload.update(certificates=[]), "Exactly one"),
         (lambda payload: payload["certificates"].__setitem__(0, []), "entry"),
         (

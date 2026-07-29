@@ -5,6 +5,7 @@
     "alpha": 0.1,
     "target_marginal_coverage": 0.9,
     "quantile_rank_formula": "ceil((n_calibration + 1) * (1 - alpha))",
+    "residual_canonical_decimal_places": 12,
     "reference": {
       "title": "Distribution-Free Predictive Inference for Regression",
       "doi": "10.1080/01621459.2017.1307116"
@@ -46,8 +47,8 @@
           "unit": "physical transport coefficient (m^2/s)",
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
-          "radius": 2.915758581324388,
-          "calibration_score_sha256": "00da2361a55695238b8f0e0e71a6f98d2d72c131aaf5836470b090a48c2fcdfe",
+          "radius": 2.915758581324,
+          "calibration_score_sha256": "8301c0ad1016f25cbd18704872f197b8b7cca51f092f566bad352f950bd722ed",
           "holdout_empirical_coverage": 0.9007485155139249
         },
         {
@@ -55,8 +56,8 @@
           "unit": "physical transport coefficient (m^2/s)",
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
-          "radius": 3.302462278593218,
-          "calibration_score_sha256": "eafc138453566eb3bb40786864d97534011e3c85ab88414061febabd3ef8ee9e",
+          "radius": 3.302462278593,
+          "calibration_score_sha256": "1c16953702a529ef60e4c05e742141bbd988a77e5f51c1f05fa4c90d989009c5",
           "holdout_empirical_coverage": 0.9001839926402944
         },
         {
@@ -64,8 +65,8 @@
           "unit": "physical transport coefficient (m^2/s)",
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
-          "radius": 0.3935313129335591,
-          "calibration_score_sha256": "58eb017510cd2d1904f1e6ec11e2e26d2cec9276ce4a3317a88fcb6336d8ff72",
+          "radius": 0.393531312934,
+          "calibration_score_sha256": "0950b4bfbbce4cc4335d4abb632372a1eeb205e9e79459ebe00864ac4293d47f",
           "holdout_empirical_coverage": 0.9027557079535
         }
       ]
