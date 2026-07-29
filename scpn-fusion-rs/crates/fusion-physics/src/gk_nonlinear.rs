@@ -8,6 +8,7 @@
 //! Nonlinear δf gyrokinetic solver in flux-tube geometry.
 
 use fusion_math::fft::{cfft2, cfft_axis0, cifft2, cifft_axis0};
+use fusion_types::error::{FusionError, FusionResult};
 use nalgebra::{Matrix3, Vector3};
 use ndarray::{s, Array1, Array2, Array3, Array4, Array5, Array6};
 use num_complex::Complex64;
@@ -148,6 +149,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn solver_rejects_empty_poloidal_geometry() {
+        let cfg = NonlinearGKConfig {
+            n_theta: 0,
+            ..NonlinearGKConfig::default()
+        };
+
+        assert!(matches!(
+            NonlinearGKSolver::new(cfg),
+            Err(FusionError::ConfigError(message))
+                if message == "gyrokinetic geometry requires at least one poloidal sample"
+        ));
+    }
+
+    #[test]
     fn sugama_collision_conserves_discrete_density_momentum_energy() {
         let cfg = NonlinearGKConfig {
             n_kx: 4,
@@ -159,7 +174,8 @@ mod tests {
             collision_model: "sugama".to_string(),
             ..NonlinearGKConfig::default()
         };
-        let solver = NonlinearGKSolver::new(cfg.clone());
+        let solver = NonlinearGKSolver::new(cfg.clone())
+            .expect("valid gyrokinetic test configuration should construct");
         let f = Array5::from_shape_fn(
             (cfg.n_kx, cfg.n_ky, cfg.n_theta, cfg.n_vpar, cfg.n_mu),
             |(i, j, t, v, m)| {
@@ -169,7 +185,9 @@ mod tests {
             },
         );
 
-        let collision = solver.collide(&f);
+        let collision = solver
+            .collide(&f)
+            .expect("finite Sugama moment matrix should invert");
         let dv = solver.dvpar * solver.dmu;
 
         for i in 0..cfg.n_kx {
@@ -212,7 +230,8 @@ mod tests {
             cfl_adapt: false,
             ..NonlinearGKConfig::default()
         };
-        let solver = NonlinearGKSolver::new(cfg.clone());
+        let solver = NonlinearGKSolver::new(cfg.clone())
+            .expect("valid gyrokinetic test configuration should construct");
         let phi = Array3::from_elem((cfg.n_kx, cfg.n_ky, cfg.n_theta), Complex64::new(1.0, 0.25));
         let a_par = Array3::from_elem((cfg.n_kx, cfg.n_ky, cfg.n_theta), Complex64::new(0.2, -0.1));
 
@@ -525,14 +544,20 @@ pub struct NonlinearGKSolver {
 }
 
 impl NonlinearGKSolver {
-    /// Construct a validated instance.
-    pub fn new(cfg: NonlinearGKConfig) -> Self {
+    /// Construct an initialized nonlinear gyrokinetic solver.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when the requested geometry has no
+    /// poloidal samples or produces a non-finite or non-positive mean magnetic
+    /// field.
+    pub fn new(cfg: NonlinearGKConfig) -> FusionResult<Self> {
         let mut solver = Self::allocate_empty(cfg);
         solver.setup_grids();
         solver.setup_ballooning();
-        solver.setup_geometry();
+        solver.setup_geometry()?;
         solver.setup_species();
-        solver
+        Ok(solver)
     }
 
     fn allocate_empty(cfg: NonlinearGKConfig) -> Self {
@@ -757,7 +782,7 @@ impl NonlinearGKSolver {
         rolled
     }
 
-    fn setup_geometry(&mut self) {
+    fn setup_geometry(&mut self) -> FusionResult<()> {
         let c = &self.cfg;
         self.geom = circular_geometry(CircularGeometryParams {
             r0: c.r0,
@@ -772,8 +797,18 @@ impl NonlinearGKSolver {
         self.b_dot_grad = self.geom.b_dot_grad_theta.clone();
         self.kappa_n = self.geom.kappa_n.clone();
         self.kappa_g = self.geom.kappa_g.clone();
-        let b_mean = self.geom.b_mag.mean().unwrap();
+        let Some(b_mean) = self.geom.b_mag.mean() else {
+            return Err(FusionError::ConfigError(
+                "gyrokinetic geometry requires at least one poloidal sample".to_string(),
+            ));
+        };
+        if !b_mean.is_finite() || b_mean <= 0.0 {
+            return Err(FusionError::PhysicsViolation(format!(
+                "gyrokinetic mean magnetic field must be finite and positive, got {b_mean}"
+            )));
+        }
         self.b_ratio = self.geom.b_mag.mapv(|v| v / b_mean);
+        Ok(())
     }
 
     fn setup_species(&mut self) {
@@ -1055,12 +1090,17 @@ impl NonlinearGKSolver {
         omega_d
     }
 
-    /// Compute collide.
-    pub fn collide(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
+    /// Compute the configured collision response.
+    ///
+    /// # Errors
+    ///
+    /// Returns a linear-algebra error when the Sugama conservation-moment
+    /// matrix remains singular after bounded diagonal regularization.
+    pub fn collide(&self, f_s: &Array5<Complex64>) -> FusionResult<Array5<Complex64>> {
         if self.cfg.collision_model == "sugama" {
             return self.collide_sugama(f_s);
         }
-        self.collide_krook(f_s)
+        Ok(self.collide_krook(f_s))
     }
 
     fn collide_krook(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
@@ -1082,7 +1122,7 @@ impl NonlinearGKSolver {
         coll
     }
 
-    fn collide_sugama(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
+    fn collide_sugama(&self, f_s: &Array5<Complex64>) -> FusionResult<Array5<Complex64>> {
         let c = &self.cfg;
         let nu = c.nu_collision;
         let dv = self.dvpar * self.dmu;
@@ -1126,7 +1166,13 @@ impl NonlinearGKSolver {
         }
         let gram_inv = gram
             .try_inverse()
-            .unwrap_or_else(|| (gram + Matrix3::identity() * 1e-14).try_inverse().unwrap());
+            .or_else(|| (gram + Matrix3::identity() * 1e-14).try_inverse())
+            .ok_or_else(|| {
+                FusionError::LinAlg(
+                    "Sugama conservation-moment matrix is singular after regularization"
+                        .to_string(),
+                )
+            })?;
 
         let mut out = cf.clone();
         for i in 0..c.n_kx {
@@ -1160,7 +1206,7 @@ impl NonlinearGKSolver {
                 }
             }
         }
-        out
+        Ok(out)
     }
 
     /// Compute gradient drive.
@@ -1248,8 +1294,13 @@ impl NonlinearGKSolver {
         hd
     }
 
-    /// Compute rhs.
-    pub fn rhs(&self, state: &NonlinearGKState) -> Array6<Complex64> {
+    /// Compute the gyrokinetic right-hand side.
+    ///
+    /// # Errors
+    ///
+    /// Returns a collision-operator error when the configured Sugama moment
+    /// correction cannot be formed.
+    pub fn rhs(&self, state: &NonlinearGKState) -> FusionResult<Array6<Complex64>> {
         let c = &self.cfg;
         let mut dfdt = Array6::zeros((c.n_species, c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu));
 
@@ -1279,7 +1330,7 @@ impl NonlinearGKSolver {
             terms = terms - self.magnetic_drift(&f_s).mapv(|x| x * charge_sign);
 
             if c.collisions {
-                terms = terms + self.collide(&f_s);
+                terms = terms + self.collide(&f_s)?;
             }
 
             terms = terms + self.hyperdiffusion(&f_s);
@@ -1306,15 +1357,20 @@ impl NonlinearGKSolver {
                 }
             }
         }
-        dfdt
+        Ok(dfdt)
     }
 
-    /// Compute rk4 step.
-    pub fn rk4_step(&self, state: &NonlinearGKState, dt: f64) -> NonlinearGKState {
+    /// Advance one classical fourth-order Runge-Kutta step.
+    ///
+    /// # Errors
+    ///
+    /// Returns a collision-operator error from any intermediate right-hand
+    /// side evaluation.
+    pub fn rk4_step(&self, state: &NonlinearGKState, dt: f64) -> FusionResult<NonlinearGKState> {
         let f0 = &state.f;
         let t0 = state.time;
 
-        let k1 = self.rhs(state);
+        let k1 = self.rhs(state)?;
 
         let f2 = f0 + &k1.mapv(|x| x * 0.5 * dt);
         let phi2 = self.field_solve(&f2);
@@ -1328,7 +1384,7 @@ impl NonlinearGKSolver {
                 None
             },
         };
-        let k2 = self.rhs(&state2);
+        let k2 = self.rhs(&state2)?;
 
         let f3 = f0 + &k2.mapv(|x| x * 0.5 * dt);
         let phi3 = self.field_solve(&f3);
@@ -1342,7 +1398,7 @@ impl NonlinearGKSolver {
                 None
             },
         };
-        let k3 = self.rhs(&state3);
+        let k3 = self.rhs(&state3)?;
 
         let f4 = f0 + &k3.mapv(|x| x * dt);
         let phi4 = self.field_solve(&f4);
@@ -1356,7 +1412,7 @@ impl NonlinearGKSolver {
                 None
             },
         };
-        let k4 = self.rhs(&state4);
+        let k4 = self.rhs(&state4)?;
 
         let f_new = f0
             + &(k1 + &k2.mapv(|x| x * 2.0) + &k3.mapv(|x| x * 2.0) + &k4).mapv(|x| x * (dt / 6.0));
@@ -1368,12 +1424,12 @@ impl NonlinearGKSolver {
             None
         };
 
-        NonlinearGKState {
+        Ok(NonlinearGKState {
             f: f_new,
             phi: phi_new,
             time: t0 + dt,
             a_par: a_par_new,
-        }
+        })
     }
 
     /// Compute cfl time step.

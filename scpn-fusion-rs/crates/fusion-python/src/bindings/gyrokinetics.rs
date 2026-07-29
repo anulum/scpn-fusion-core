@@ -33,7 +33,8 @@ impl PyNonlinearGKSolver {
     fn new() -> PyResult<Self> {
         let cfg = NonlinearGKConfig::default();
         Ok(PyNonlinearGKSolver {
-            inner: NonlinearGKSolver::new(cfg),
+            inner: NonlinearGKSolver::new(cfg)
+                .map_err(|error| pyo3::exceptions::PyValueError::new_err(error.to_string()))?,
         })
     }
 
@@ -61,7 +62,10 @@ impl PyNonlinearGKSolver {
             time,
             a_par: None,
         };
-        let new_state = self.inner.rk4_step(&state, dt);
+        let new_state = self
+            .inner
+            .rk4_step(&state, dt)
+            .map_err(|error| pyo3::exceptions::PyRuntimeError::new_err(error.to_string()))?;
         let f_out = new_state.f.into_dyn().into_pyarray(py);
         let phi_out = new_state.phi.into_dyn().into_pyarray(py);
         Ok((f_out, phi_out))

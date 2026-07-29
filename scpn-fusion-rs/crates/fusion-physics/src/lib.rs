@@ -15,6 +15,7 @@
 //! tilt-mode diagnostics.
 
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod compact_optimizer;
 pub mod compression;
