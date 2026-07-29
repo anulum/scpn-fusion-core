@@ -18,6 +18,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE_ROOT = REPO_ROOT / "src" / "scpn_fusion"
+DEFAULT_TOOLS_ROOT = REPO_ROOT / "tools"
 DEFAULT_TEST_ROOT = REPO_ROOT / "tests"
 DEFAULT_ALLOWLIST = REPO_ROOT / "tools" / "untested_module_allowlist.json"
 
@@ -131,6 +132,37 @@ def collect_unlinked_modules(
     return sorted(unlinked)
 
 
+def collect_unlinked_tools(
+    *,
+    tools_root: Path,
+    test_root: Path,
+) -> list[str]:
+    """Find top-level Python tools with no exact test-corpus linkage.
+
+    A tool is linked when a test imports ``tools.<stem>``, has the matching
+    ``test_<stem>.py`` name, or names the exact ``<stem>.py`` filename. The
+    filename check covers the repository's deliberate ``spec_from_file_location``
+    pattern without admitting loose stem-only prose matches.
+    """
+    linkage = _build_test_linkage_index(test_root)
+    unlinked: list[str] = []
+    for tool_path in sorted(tools_root.glob("*.py")):
+        if tool_path.name == "__init__.py":
+            continue
+        stem = tool_path.stem
+        import_path = f"tools.{stem}"
+        if _is_import_linked(import_path, linkage.imports):
+            continue
+        if stem in linkage.test_module_stems:
+            continue
+        if import_path in linkage.corpus:
+            continue
+        if tool_path.name in linkage.corpus:
+            continue
+        unlinked.append(tool_path.relative_to(REPO_ROOT).as_posix())
+    return unlinked
+
+
 def load_allowlist(path: Path) -> set[str]:
     """Load allow-listed unlinked modules from JSON config."""
     if not path.exists():
@@ -166,6 +198,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Test root to scan for direct linkage.",
     )
     parser.add_argument(
+        "--tools-root",
+        default=str(DEFAULT_TOOLS_ROOT),
+        help="Top-level Python tools root to scan for exact test linkage.",
+    )
+    parser.add_argument(
         "--allowlist",
         default=str(DEFAULT_ALLOWLIST),
         help="Allowlist JSON for known-unlinked modules.",
@@ -184,6 +221,7 @@ def main(argv: list[str] | None = None) -> int:
 
     source_root = _resolve(args.source_root)
     test_root = _resolve(args.test_root)
+    tools_root = _resolve(args.tools_root)
     allowlist_path = _resolve(args.allowlist)
 
     unlinked = set(
@@ -193,6 +231,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     allowlisted = load_allowlist(allowlist_path)
+    unlinked_tools = collect_unlinked_tools(
+        tools_root=tools_root,
+        test_root=test_root,
+    )
 
     unexpected = sorted(unlinked - allowlisted)
     stale = sorted(allowlisted - unlinked)
@@ -203,14 +245,19 @@ def main(argv: list[str] | None = None) -> int:
         "unexpected_count": len(unexpected),
         "stale_allowlist_count": len(stale),
         "unexpected_modules": unexpected,
+        "unlinked_tool_count": len(unlinked_tools),
+        "unlinked_tools": unlinked_tools,
         "stale_allowlist_modules": stale,
-        "overall_pass": (not unexpected) and (not stale or bool(args.allow_stale_allowlist)),
+        "overall_pass": (not unexpected)
+        and (not unlinked_tools)
+        and (not stale or bool(args.allow_stale_allowlist)),
     }
 
     print(f"Unlinked modules detected: {len(unlinked)}")
     print(f"Allowlisted modules: {len(allowlisted)}")
     print(f"Unexpected modules: {len(unexpected)}")
     print(f"Stale allowlist entries: {len(stale)}")
+    print(f"Unlinked top-level tools: {len(unlinked_tools)}")
 
     summary_path_value = str(args.summary_json).strip()
     if summary_path_value:
@@ -224,6 +271,12 @@ def main(argv: list[str] | None = None) -> int:
     if unexpected:
         print("Guard FAILED: new modules without direct test linkage:")
         for path in unexpected:
+            print(f"- {path}")
+        return 1
+
+    if unlinked_tools:
+        print("Guard FAILED: top-level tools without exact test linkage:")
+        for path in unlinked_tools:
             print(f"- {path}")
         return 1
 

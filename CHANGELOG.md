@@ -4,6 +4,12 @@
 
 ### Added
 
+- Close the remaining top-level tool test-linkage gap with offline behavioural
+  contracts for optional GPU diagnostics, public-source and QLKNN download
+  custody, HDF-to-NPZ conversion, plot generation, compact surrogate math,
+  neural-equilibrium helpers, and deterministic notebook upgrading. The
+  linkage guard now fails when any current or future top-level Python tool has
+  no exact test reference.
 - Enrol every top-level Python utility in the strict MyPy cohort and make the
   expansion guard fail whenever a current or future `tools/*.py` file is left
   outside that typed surface. The completed tool pass also removes a stale

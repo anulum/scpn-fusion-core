@@ -352,6 +352,7 @@ files = [
     "tests/test_check_pypi_sync.py",
     "tools/check_test_module_linkage.py",
     "tests/test_check_test_module_linkage.py",
+    "tests/test_remaining_tool_contracts.py",
     "tools/claim_range_guard.py",
     "tests/test_claim_range_guard.py",
     "tools/claims_audit.py",

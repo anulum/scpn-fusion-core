@@ -47,6 +47,7 @@ ROUND4_AUDIT_18_MODULES = frozenset(
 
 
 def test_collect_unlinked_modules_returns_known_paths() -> None:
+    """Keep a known production module linked in the live repository corpus."""
     unlinked = linkage.collect_unlinked_modules(
         source_root=ROOT / "src" / "scpn_fusion",
         test_root=ROOT / "tests",
@@ -67,20 +68,82 @@ def test_round4_audit_18_modules_have_live_test_linkage() -> None:
 
 
 def test_main_passes_with_repo_allowlist() -> None:
+    """Pass the live repository when source and tool linkage are complete."""
     rc = linkage.main([])
     assert rc == 0
 
 
 def test_main_writes_summary_json(tmp_path: Path) -> None:
+    """Write a machine-readable successful linkage summary."""
     summary_path = tmp_path / "summary.json"
     rc = linkage.main(["--summary-json", str(summary_path)])
     assert rc == 0
     payload = json.loads(summary_path.read_text(encoding="utf-8"))
     assert payload["overall_pass"] is True
     assert payload["unexpected_count"] == 0
+    assert payload["unlinked_tool_count"] == 0
+
+
+def test_collect_unlinked_tools_requires_exact_filename_or_import_linkage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Recognize only exact import, filename, or matching-test tool links."""
+    monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
+    tools_root = tmp_path / "tools"
+    tools_root.mkdir()
+    (tools_root / "__init__.py").write_text("", encoding="utf-8")
+    (tools_root / "import_linked.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (tools_root / "filename_linked.py").write_text("VALUE = 2\n", encoding="utf-8")
+    (tools_root / "stem_linked.py").write_text("VALUE = 3\n", encoding="utf-8")
+    (tools_root / "loose_name.py").write_text("VALUE = 4\n", encoding="utf-8")
+
+    test_root = tmp_path / "tests"
+    test_root.mkdir()
+    (test_root / "test_stem_linked.py").write_text(
+        "from tools import import_linked\nMARKER = 'filename_linked.py'\n",
+        encoding="utf-8",
+    )
+    (test_root / "test_.py").write_text("MARKER = 'empty test stem'\n", encoding="utf-8")
+
+    assert linkage.collect_unlinked_tools(
+        tools_root=tools_root,
+        test_root=test_root,
+    ) == ["tools/loose_name.py"]
+
+
+def test_main_rejects_unlinked_top_level_tool(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Reject a top-level tool with no exact test linkage."""
+    monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
+    source_root = tmp_path / "src" / "scpn_fusion"
+    source_root.mkdir(parents=True)
+    tools_root = tmp_path / "tools"
+    tools_root.mkdir()
+    (tools_root / "orphan.py").write_text("VALUE = 1\n", encoding="utf-8")
+    test_root = tmp_path / "tests"
+    test_root.mkdir()
+    allowlist = tmp_path / "allowlist.json"
+    allowlist.write_text('{"allowlisted_modules": []}\n', encoding="utf-8")
+
+    rc = linkage.main(
+        [
+            "--source-root",
+            str(source_root),
+            "--tools-root",
+            str(tools_root),
+            "--test-root",
+            str(test_root),
+            "--allowlist",
+            str(allowlist),
+        ]
+    )
+
+    assert rc == 1
 
 
 def test_main_reports_unexpected_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reject an unexpected unlinked production module."""
     monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
     source_root = tmp_path / "src" / "scpn_fusion"
     module_dir = source_root / "core"
@@ -89,6 +152,8 @@ def test_main_reports_unexpected_modules(tmp_path: Path, monkeypatch: pytest.Mon
 
     test_root = tmp_path / "tests"
     test_root.mkdir()
+    tools_root = tmp_path / "tools"
+    tools_root.mkdir()
     (test_root / "test_other.py").write_text(
         "def test_other() -> None:\n    assert True\n",
         encoding="utf-8",
@@ -110,6 +175,8 @@ def test_main_reports_unexpected_modules(tmp_path: Path, monkeypatch: pytest.Mon
             str(source_root),
             "--test-root",
             str(test_root),
+            "--tools-root",
+            str(tools_root),
             "--allowlist",
             str(allowlist),
         ]
@@ -120,11 +187,14 @@ def test_main_reports_unexpected_modules(tmp_path: Path, monkeypatch: pytest.Mon
 def test_main_reports_stale_allowlist_entries(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Reject source allowlist entries that are no longer needed."""
     monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
     source_root = tmp_path / "src" / "scpn_fusion"
     source_root.mkdir(parents=True)
     test_root = tmp_path / "tests"
     test_root.mkdir()
+    tools_root = tmp_path / "tools"
+    tools_root.mkdir()
     allowlist = tmp_path / "allowlist.json"
     allowlist.write_text(
         json.dumps(
@@ -141,6 +211,8 @@ def test_main_reports_stale_allowlist_entries(
             str(source_root),
             "--test-root",
             str(test_root),
+            "--tools-root",
+            str(tools_root),
             "--allowlist",
             str(allowlist),
         ]
@@ -151,11 +223,14 @@ def test_main_reports_stale_allowlist_entries(
 def test_main_allows_stale_allowlist_when_requested(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Permit a stale source allowlist only through the explicit override."""
     monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
     source_root = tmp_path / "src" / "scpn_fusion"
     source_root.mkdir(parents=True)
     test_root = tmp_path / "tests"
     test_root.mkdir()
+    tools_root = tmp_path / "tools"
+    tools_root.mkdir()
     allowlist = tmp_path / "allowlist.json"
     allowlist.write_text(
         json.dumps(
@@ -172,6 +247,8 @@ def test_main_allows_stale_allowlist_when_requested(
             str(source_root),
             "--test-root",
             str(test_root),
+            "--tools-root",
+            str(tools_root),
             "--allowlist",
             str(allowlist),
             "--allow-stale-allowlist",
@@ -181,6 +258,7 @@ def test_main_allows_stale_allowlist_when_requested(
 
 
 def test_collect_unlinked_modules_detects_ast_import_linkage(tmp_path: Path) -> None:
+    """Recognize production linkage parsed from an absolute AST import."""
     source_root = tmp_path / "src" / "scpn_fusion"
     module_dir = source_root / "core"
     module_dir.mkdir(parents=True)
@@ -205,6 +283,7 @@ def test_collect_unlinked_modules_detects_ast_import_linkage(tmp_path: Path) -> 
 def test_collect_unlinked_modules_detects_stem_and_text_linkage(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Recognize matching test stems and deliberate dynamic-import text."""
     monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
     source_root = tmp_path / "src" / "scpn_fusion"
     module_dir = source_root / "core"
@@ -235,6 +314,7 @@ def test_collect_unlinked_modules_detects_stem_and_text_linkage(
 
 
 def test_collect_import_targets_handles_syntax_and_import_forms(tmp_path: Path) -> None:
+    """Ignore malformed tests and collect supported absolute import forms."""
     syntax_error = tmp_path / "test_bad.py"
     syntax_error.write_text("def bad(:\n", encoding="utf-8")
     assert linkage._collect_import_targets(syntax_error) == set()
@@ -256,6 +336,7 @@ def test_collect_import_targets_handles_syntax_and_import_forms(tmp_path: Path) 
 
 
 def test_load_allowlist_validates_schema(tmp_path: Path) -> None:
+    """Fail closed for every malformed allowlist container shape."""
     with pytest.raises(FileNotFoundError, match="Allowlist file not found"):
         linkage.load_allowlist(tmp_path / "missing.json")
 
@@ -280,6 +361,7 @@ def test_load_allowlist_validates_schema(tmp_path: Path) -> None:
 def test_resolve_handles_relative_and_absolute_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Resolve relative paths against the repository and preserve absolutes."""
     monkeypatch.setattr(linkage, "REPO_ROOT", tmp_path)
 
     assert linkage._resolve("relative/path") == tmp_path / "relative/path"
