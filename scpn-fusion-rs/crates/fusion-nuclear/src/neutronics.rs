@@ -54,9 +54,9 @@ pub struct BlanketResult {
 /// Configuration for reduced 3D volumetric blanket surrogate.
 #[derive(Debug, Clone, Copy)]
 pub struct VolumetricBlanketConfig {
-    /// Tokamak major radius [m].
+    /// Tokamak major radius in metres.
     pub major_radius_m: f64,
-    /// Plasma minor radius [m].
+    /// Plasma minor radius in metres.
     pub minor_radius_m: f64,
     /// Elongation factor.
     pub elongation: f64,
@@ -99,7 +99,7 @@ pub struct VolumetricBlanketResult {
 
 /// 1D breeding blanket model.
 pub struct BreedingBlanket {
-    /// Blanket thickness [cm].
+    /// Blanket thickness in centimetres.
     pub thickness: f64,
     /// Grid points.
     pub points: usize,

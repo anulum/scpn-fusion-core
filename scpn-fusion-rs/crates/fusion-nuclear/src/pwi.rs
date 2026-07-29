@@ -25,11 +25,11 @@ const REDEPOSITION: f64 = 0.95;
 /// Material-specific sputtering parameters.
 #[derive(Debug, Clone)]
 pub struct MaterialParams {
-    /// Sputtering energy threshold [eV].
+    /// Sputtering energy threshold in electronvolts.
     pub e_th: f64,
     /// Yield factor Q.
     pub q: f64,
-    /// Atomic mass [amu].
+    /// Atomic mass in unified atomic mass units.
     pub atomic_mass: f64,
     /// Density [g/cm³].
     pub density: f64,
@@ -66,7 +66,7 @@ impl MaterialParams {
 pub struct ErosionResult {
     /// Sputtering yield [atoms/ion].
     pub yield_val: f64,
-    /// Impact energy [eV].
+    /// Impact energy in electronvolts.
     pub e_impact: f64,
     /// Net erosion flux [atoms/(m²·s)].
     pub net_flux: f64,
@@ -76,25 +76,30 @@ pub struct ErosionResult {
 
 /// Sputtering physics calculator.
 pub struct SputteringPhysics {
+    /// Material-specific sputtering parameters.
     pub params: MaterialParams,
 }
 
 impl SputteringPhysics {
+    /// Creates a sputtering calculator for explicit material parameters.
     pub fn new(params: MaterialParams) -> Self {
         SputteringPhysics { params }
     }
 
+    /// Creates a calculator with the canonical tungsten parameters.
     pub fn tungsten() -> Self {
         Self::new(MaterialParams::tungsten())
     }
 
+    /// Creates a calculator with the canonical carbon parameters.
     pub fn carbon() -> Self {
         Self::new(MaterialParams::carbon())
     }
 
     /// Eckstein-Bohdansky sputtering yield.
     ///
-    /// `e_ion_ev`: ion energy [eV], `angle_deg`: incidence angle [degrees].
+    /// `e_ion_ev` is ion energy in electronvolts; `angle_deg` is incidence
+    /// angle in degrees.
     pub fn calculate_yield(&self, e_ion_ev: f64, angle_deg: f64) -> f64 {
         if e_ion_ev < self.params.e_th {
             return 0.0;
@@ -107,7 +112,8 @@ impl SputteringPhysics {
 
     /// Calculate erosion rate for given particle flux and ion temperature.
     ///
-    /// `flux`: [particles/(m²·s)], `t_ion_ev`: ion temperature [eV].
+    /// `flux` is measured in `particles/(m²·s)` and `t_ion_ev` in
+    /// electronvolts.
     pub fn calculate_erosion_rate(&self, flux: f64, t_ion_ev: f64) -> ErosionResult {
         let e_impact = 5.0 * t_ion_ev;
         let y = self.calculate_yield(e_impact, 45.0);

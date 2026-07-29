@@ -37,23 +37,23 @@ const M_BLANKET: f64 = 1.15;
 /// Full power plant performance metrics.
 #[derive(Debug, Clone)]
 pub struct PlantMetrics {
-    /// Input fusion power [MW].
+    /// Input fusion power in megawatts.
     pub p_fusion: f64,
-    /// Absorbed auxiliary heating [MW].
+    /// Absorbed auxiliary heating in megawatts.
     pub p_aux_absorbed: f64,
-    /// Total thermal power [MW].
+    /// Total thermal power in megawatts.
     pub p_thermal: f64,
-    /// Gross electric [MW].
+    /// Gross electric power in megawatts.
     pub p_gross: f64,
-    /// Total recirculating power [MW].
+    /// Total recirculating power in megawatts.
     pub p_recirc: f64,
-    /// Net electric to grid [MW].
+    /// Net electric power delivered to the grid in megawatts.
     pub p_net: f64,
     /// Plasma Q = P_fus / P_aux.
     pub q_plasma: f64,
     /// Engineering Q = P_gross / P_recirc.
     pub q_eng: f64,
-    /// Heating wall-plug power [MW].
+    /// Heating wall-plug power in megawatts.
     pub p_heating_wallplug: f64,
 }
 
@@ -61,6 +61,7 @@ pub struct PlantMetrics {
 pub struct PowerPlantModel;
 
 impl PowerPlantModel {
+    /// Creates the stateless balance-of-plant model.
     pub fn new() -> Self {
         PowerPlantModel
     }

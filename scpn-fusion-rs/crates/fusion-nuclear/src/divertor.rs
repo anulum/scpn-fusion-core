@@ -78,8 +78,11 @@ fn wrapped_angle_distance(a: f64, b: f64) -> f64 {
 /// Status of a divertor surface.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SurfaceStatus {
+    /// Surface remains below all configured phase-change limits.
     Ok,
+    /// Solid tungsten surface temperature exceeds its melting point.
     Melted,
+    /// Lithium surface temperature exceeds its boiling point.
     BoilingLithium,
 }
 
@@ -90,11 +93,12 @@ pub struct ToroidalMode {
     pub n: usize,
     /// Mode amplitude.
     pub amplitude: f64,
-    /// Phase offset [rad].
+    /// Phase offset in radians.
     pub phase_rad: f64,
 }
 
 impl ToroidalMode {
+    /// Creates a toroidal mode, clamping `n` to at least one.
     pub fn new(n: usize, amplitude: f64, phase_rad: f64) -> Self {
         Self {
             n: n.max(1),
@@ -123,15 +127,16 @@ pub struct DivertorResult {
 
 /// Divertor thermal simulator.
 pub struct DivertorLab {
-    /// SOL power [MW].
+    /// Scrape-off-layer power in megawatts.
     pub p_sol_mw: f64,
-    /// Major radius [m].
+    /// Major radius in metres.
     pub r_major: f64,
-    /// Poloidal field [T].
+    /// Poloidal magnetic field in teslas.
     pub b_pol: f64,
 }
 
 impl DivertorLab {
+    /// Creates a divertor model for the supplied SOL power and machine geometry.
     pub fn new(p_sol_mw: f64, r_major: f64, b_pol: f64) -> Self {
         DivertorLab {
             p_sol_mw,
@@ -140,7 +145,7 @@ impl DivertorLab {
         }
     }
 
-    /// Eich heat flux width [mm].
+    /// Returns the Eich heat-flux width in millimetres.
     pub fn lambda_q_mm(&self) -> f64 {
         EICH_COEFF * self.b_pol.powf(EICH_EXP)
     }

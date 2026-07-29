@@ -6,7 +6,8 @@
 
 - Enforce complete public API documentation in the `fusion-gpu`,
   `fusion-polyglot`, `fusion-diagnostics`, and `fusion-engineering` crates and
-  the `fusion-phase` and `fusion-types` crates, and document their grid,
+  the `fusion-phase`, `fusion-types`, and `fusion-nuclear` crates, and document
+  their grid,
   adapter-selection,
   data-layout, parser,
   numerical-operator, sensor, tomography, failure, and panic contracts.

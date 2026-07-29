@@ -37,7 +37,9 @@ const DPA_PER_MW_YEAR: f64 = 10.0;
 /// Supported impurity species for reduced collisional-radiative lookup.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImpuritySpecies {
+    /// Tungsten impurity using the reduced W charge-state tables.
     Tungsten,
+    /// Carbon impurity using the reduced C charge-state tables.
     Carbon,
 }
 
@@ -136,7 +138,7 @@ pub fn collisional_radiative_power_density_w_m3(
     Some((ne_m3 * n_imp_m3 * pec).max(0.0))
 }
 
-/// Total impurity radiative power loss [MW] for a plasma volume.
+/// Total impurity radiative power loss in megawatts for a plasma volume.
 pub fn impurity_radiative_loss_mw(
     species: ImpuritySpecies,
     charge_state: u8,
@@ -153,6 +155,7 @@ pub fn impurity_radiative_loss_mw(
 /// Material DPA limit and damage rate.
 #[derive(Debug, Clone)]
 pub struct MaterialDPA {
+    /// Human-readable material name.
     pub name: &'static str,
     /// Maximum tolerable DPA.
     pub dpa_limit: f64,
@@ -161,6 +164,7 @@ pub struct MaterialDPA {
 }
 
 impl MaterialDPA {
+    /// Returns the canonical tungsten damage limits.
     pub fn tungsten() -> Self {
         MaterialDPA {
             name: "Tungsten",
@@ -168,6 +172,7 @@ impl MaterialDPA {
             sigma_dpa: 1000.0,
         }
     }
+    /// Returns the canonical EUROFER damage limits.
     pub fn eurofer() -> Self {
         MaterialDPA {
             name: "Eurofer",
@@ -175,6 +180,7 @@ impl MaterialDPA {
             sigma_dpa: 500.0,
         }
     }
+    /// Returns the canonical beryllium damage limits.
     pub fn beryllium() -> Self {
         MaterialDPA {
             name: "Beryllium",
@@ -197,9 +203,13 @@ impl MaterialDPA {
 /// Helium ash poisoning time-step result.
 #[derive(Debug, Clone)]
 pub struct AshSnapshot {
+    /// Elapsed simulation time in seconds.
     pub time: f64,
+    /// Fusion power in megawatts.
     pub p_fus_mw: f64,
+    /// Helium fraction relative to the fixed electron density.
     pub f_he: f64,
+    /// Fusion gain relative to the 50 MW auxiliary-power reference.
     pub q_factor: f64,
 }
 
@@ -207,7 +217,7 @@ pub struct AshSnapshot {
 ///
 /// `burn_time_s`: total simulation time.
 /// `tau_he_ratio`: τ_He/τ_E ratio (lower = better pumping).
-/// `dt`: timestep [s].
+/// `dt`: timestep in seconds.
 /// Returns time history of fusion power and He fraction.
 pub fn simulate_ash_poisoning(burn_time_s: f64, tau_he_ratio: f64, dt: f64) -> Vec<AshSnapshot> {
     let tau_he = tau_he_ratio * TAU_E;

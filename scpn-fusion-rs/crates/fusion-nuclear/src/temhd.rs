@@ -45,13 +45,13 @@ const PE_FACTOR: f64 = 0.2;
 
 /// TEMHD stabiliser state.
 pub struct TemhdStabilizer {
-    /// Layer thickness [m].
+    /// Layer thickness in metres.
     pub layer_m: f64,
-    /// Magnetic field [T].
+    /// Magnetic field in teslas.
     pub b0: f64,
     /// Grid spacing.
     dz: f64,
-    /// Temperature field [K].
+    /// Temperature field in kelvins.
     pub t_field: Vec<f64>,
 }
 

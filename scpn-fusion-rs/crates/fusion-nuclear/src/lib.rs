@@ -8,6 +8,7 @@
 //! Nuclear engineering modules.
 //!
 //! Stage 6: TEMHD, neutronics, sputtering, wall interaction, divertor, BOP.
+#![deny(missing_docs)]
 
 pub mod bop;
 pub mod divertor;
