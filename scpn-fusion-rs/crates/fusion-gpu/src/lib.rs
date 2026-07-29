@@ -10,6 +10,7 @@
 //! Provides Red-Black SOR on the GPU for the GS equation inner loop.
 //! Rejects CPU-only WGPU adapters by default so benchmark runs cannot
 //! misclassify software Vulkan devices as physical GPU evidence.
+#![deny(missing_docs)]
 
 use bytemuck::{Pod, Zeroable};
 use fusion_types::error::{FusionError, FusionResult};
@@ -29,7 +30,11 @@ struct GpuParams {
     _pad: u32,
 }
 
-/// GPU-accelerated GS solver using wgpu compute shaders.
+/// GPU-resident Grad-Shafranov solver using WGPU compute shaders.
+///
+/// The solver owns the fine- and coarse-grid buffers for a fixed rectangular
+/// grid. Call [`GpuGsSolver::upload`] before invoking an iterative method, then
+/// retrieve the latest fine-grid flux values with [`GpuGsSolver::download`].
 pub struct GpuGsSolver {
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -55,9 +60,18 @@ pub struct GpuGsSolver {
 }
 
 impl GpuGsSolver {
-    /// Create a new GPU GS solver for the given grid.
+    /// Creates a solver for a rectangular `(nz, nr)` grid.
     ///
-    /// Returns `Err` if no suitable GPU adapter is found.
+    /// Radial coordinates span `r_left..=r_right`; vertical coordinates span
+    /// `z_bottom..=z_top`. A physical discrete or integrated GPU is required
+    /// unless `SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER=1` is explicitly set for
+    /// local software-adapter development.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FusionError::ConfigError`] when either grid dimension is
+    /// smaller than four, no accepted adapter is available, or WGPU cannot
+    /// create the requested device.
     pub fn new(
         nr: usize,
         nz: usize,
@@ -374,7 +388,14 @@ impl GpuGsSolver {
         })
     }
 
-    /// Upload initial ψ and source arrays (both row-major, nz×nr).
+    /// Uploads the initial ψ and source arrays to the fine grid.
+    ///
+    /// Both slices must contain exactly `nz * nr` row-major `f32` values.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FusionError::ConfigError`] when either slice length differs
+    /// from the solver's fixed grid size.
     pub fn upload(&self, psi: &[f32], source: &[f32]) -> FusionResult<()> {
         let expected = self.nr * self.nz;
         if psi.len() != expected || source.len() != expected {
@@ -392,7 +413,12 @@ impl GpuGsSolver {
         Ok(())
     }
 
-    /// Run `iterations` Red-Black SOR sweeps on the GPU.
+    /// Runs `iterations` red-black SOR sweeps on the current fine-grid state.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FusionError::ConfigError`] if `omega` is outside `[1, 2)` or
+    /// the GPU cannot complete the submitted work.
     pub fn solve(&self, iterations: usize, omega: f32) -> FusionResult<()> {
         if !(1.0..2.0).contains(&omega) {
             return Err(FusionError::ConfigError(format!(
@@ -444,7 +470,14 @@ impl GpuGsSolver {
         Ok(())
     }
 
-    /// Download the solved ψ array from the GPU.
+    /// Downloads the current fine-grid ψ array in row-major order.
+    ///
+    /// The returned vector always contains `nz * nr` values on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FusionError::ConfigError`] when command completion, buffer
+    /// mapping, or the internal mapping-result channel fails.
     pub fn download(&self) -> FusionResult<Vec<f32>> {
         let buf_size = (self.nr * self.nz * std::mem::size_of::<f32>()) as u64;
 
@@ -477,7 +510,12 @@ impl GpuGsSolver {
         Ok(result)
     }
 
-    /// Convenience: upload, solve, download in one call.
+    /// Uploads a problem, performs SOR sweeps, and downloads the result.
+    ///
+    /// # Errors
+    ///
+    /// Propagates any error from [`GpuGsSolver::upload`],
+    /// [`GpuGsSolver::solve`], or [`GpuGsSolver::download`].
     pub fn solve_full(
         &self,
         psi_init: &[f32],
@@ -490,7 +528,15 @@ impl GpuGsSolver {
         self.download()
     }
 
-    /// Run a 2-level V-cycle on the GPU.
+    /// Runs one two-level multigrid V-cycle on the current fine-grid state.
+    ///
+    /// `pre_sweeps` and `post_sweeps` control fine-grid smoothing around a
+    /// fixed ten-sweep coarse-grid correction.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FusionError::ConfigError`] when `omega` is invalid or the
+    /// GPU cannot complete either smoothing phase.
     pub fn vcycle(&self, pre_sweeps: usize, post_sweeps: usize, omega: f32) -> FusionResult<()> {
         let nr_c = (self.nr - 1) / 2 + 1;
         let nz_c = (self.nz - 1) / 2 + 1;
@@ -632,13 +678,16 @@ impl GpuGsSolver {
         Ok(())
     }
 
-    /// Grid dimensions.
+    /// Returns the fixed grid dimensions as `(nz, nr)`.
     pub fn grid_shape(&self) -> (usize, usize) {
         (self.nz, self.nr)
     }
 }
 
-/// Check if a GPU adapter is available without creating a full solver.
+/// Reports whether an accepted GPU adapter is currently available.
+///
+/// Discrete and integrated adapters are accepted. CPU adapters are accepted
+/// only when `SCPN_FUSION_GPU_ALLOW_CPU_ADAPTER` is set to `1` or `true`.
 pub fn gpu_available() -> bool {
     let instance = wgpu::Instance::default();
     let Ok(adapter) = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -651,7 +700,10 @@ pub fn gpu_available() -> bool {
     adapter_device_type_accepted(adapter.get_info().device_type)
 }
 
-/// Get GPU adapter info string.
+/// Returns a display string for the preferred WGPU adapter, if one is found.
+///
+/// The string contains the adapter name, backend, and device type. Unlike
+/// [`gpu_available`], this diagnostic reports CPU adapter information too.
 pub fn gpu_info() -> Option<String> {
     let instance = wgpu::Instance::default();
     let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
