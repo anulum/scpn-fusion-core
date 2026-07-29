@@ -229,8 +229,9 @@ pub struct KuramotoRunResult {
 /// Mirrors iterating [`kuramoto_step`] with a constant driver phase Ψ, but keeps
 /// the whole trajectory on the Rust side of the Python boundary — where the
 /// compiled tier earns its speedup. Large populations run on a persistent worker
-/// pool ([`kuramoto_run_parallel`]) so the per-step order parameter and update
-/// parallelise without paying a fork-join per step; small ones stay serial. The
+/// pool (the private `kuramoto_run_parallel` implementation) so the per-step
+/// order parameter and update parallelise without paying a fork-join per step;
+/// small ones stay serial. The
 /// element updates are reduction-free, so the split cannot change their result;
 /// only the order parameter's summation order differs from the serial path,
 /// within the parity gate.

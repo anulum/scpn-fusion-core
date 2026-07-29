@@ -9,6 +9,7 @@
 //! the mean-field Kuramoto-Sakaguchi step and the multi-layer UPDE tick.
 //! Both mirror the NumPy reference tier in `scpn_fusion.phase` and are
 //! exposed to Python through `fusion-python` for fastest-first dispatch.
+#![deny(missing_docs)]
 
 pub mod kuramoto;
 mod sincos;
