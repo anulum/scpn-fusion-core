@@ -9,6 +9,7 @@
 //!
 //! Stage 6: TEMHD, neutronics, sputtering, wall interaction, divertor, BOP.
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod bop;
 pub mod divertor;

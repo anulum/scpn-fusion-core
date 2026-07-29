@@ -100,6 +100,9 @@
 
 ### Fixed
 
+- Replace the production `expect()` in the `fusion-nuclear` first-wall NURBS
+  builder with a typed `FusionResult`, propagate curve-validation failures, and
+  enforce non-test panic-API denial for the crate.
 - Correct the IDA same-case latency loop so `warm_ms` measures a synchronised
   same-input solve from a converged equilibrium instead of repeating the full
   cold-start continuation after JIT compilation. The report now separates cold

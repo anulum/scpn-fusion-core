@@ -11,6 +11,7 @@
 //! Models helium ash accumulation, wall neutron loading, and material lifetime.
 
 use fusion_math::iga::{open_uniform_knots, ControlPoint2D, NurbsCurve2D};
+use fusion_types::error::{FusionError, FusionResult};
 use std::f64::consts::PI;
 
 /// Core electron density [m⁻³]. Python: 1e20.
@@ -304,13 +305,18 @@ pub fn generate_first_wall(
 /// NURBS-smoothed D-shaped first wall geometry.
 ///
 /// Returns (R, Z) arrays for a reduced IGA-compatible contour.
+///
+/// # Errors
+///
+/// Returns a configuration error if the governed control points, weights, and
+/// knot vector do not form a valid NURBS curve.
 pub fn generate_first_wall_nurbs(
     r0: f64,
     a: f64,
     kappa: f64,
     delta: f64,
     n_points: usize,
-) -> (Vec<f64>, Vec<f64>) {
+) -> FusionResult<(Vec<f64>, Vec<f64>)> {
     let n = n_points.max(8);
     let a_wall = a + 0.5;
     let control_points = vec![
@@ -359,7 +365,7 @@ pub fn generate_first_wall_nurbs(
     let weights = vec![1.0; control_points.len()];
     let knots = open_uniform_knots(control_points.len(), 3);
     let curve =
-        NurbsCurve2D::new(3, knots, control_points, weights).expect("valid first-wall NURBS");
+        NurbsCurve2D::new(3, knots, control_points, weights).map_err(FusionError::ConfigError)?;
     let mut sampled = curve.sample_uniform(n);
     if let Some(first) = sampled.first().copied() {
         let last_index = sampled.len() - 1;
@@ -371,7 +377,7 @@ pub fn generate_first_wall_nurbs(
         r_wall.push(point.x);
         z_wall.push(point.y);
     }
-    (r_wall, z_wall)
+    Ok((r_wall, z_wall))
 }
 
 #[cfg(test)]
@@ -438,7 +444,8 @@ mod tests {
 
     #[test]
     fn test_first_wall_nurbs_geometry() {
-        let (r, z) = generate_first_wall_nurbs(5.0, 3.0, 1.9, 0.4, 200);
+        let (r, z) = generate_first_wall_nurbs(5.0, 3.0, 1.9, 0.4, 200)
+            .expect("governed first-wall NURBS should be valid");
         assert_eq!(r.len(), 200);
         assert!(r.iter().all(|v| v.is_finite()));
         assert!(z.iter().all(|v| v.is_finite()));
@@ -450,7 +457,8 @@ mod tests {
     #[test]
     fn test_first_wall_nurbs_matches_analytic_envelope() {
         let (r_a, z_a) = generate_first_wall(5.0, 3.0, 1.9, 0.4, 200);
-        let (r_n, z_n) = generate_first_wall_nurbs(5.0, 3.0, 1.9, 0.4, 200);
+        let (r_n, z_n) = generate_first_wall_nurbs(5.0, 3.0, 1.9, 0.4, 200)
+            .expect("governed first-wall NURBS should be valid");
 
         let r_a_min = r_a.iter().copied().fold(f64::INFINITY, f64::min);
         let r_a_max = r_a.iter().copied().fold(f64::NEG_INFINITY, f64::max);
