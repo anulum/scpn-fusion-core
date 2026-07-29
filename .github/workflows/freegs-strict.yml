@@ -18,6 +18,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  FREEGS_SOURCE_URL: https://github.com/freegs-plasma/freegs.git
+  FREEGS_SOURCE_COMMIT: 9fbec2056b4322ea253bb5614896d549365163f3
+
 jobs:
   freegs-strict:
     name: FreeGS Strict Parity
@@ -35,6 +39,16 @@ jobs:
         run: |
           pip install --require-hashes -r requirements/ci-benchmark.txt
           pip install --no-deps -e .
+
+      - name: Provision pinned FreeGS public example sources
+        run: |
+          cache_path="data/external/full_fidelity_public_sources/repos/freegs"
+          mkdir -p "$(dirname "$cache_path")"
+          git init "$cache_path"
+          git -C "$cache_path" remote add origin "$FREEGS_SOURCE_URL"
+          git -C "$cache_path" fetch --depth 1 origin "$FREEGS_SOURCE_COMMIT"
+          git -C "$cache_path" checkout --detach FETCH_HEAD
+          test "$(git -C "$cache_path" rev-parse HEAD)" = "$FREEGS_SOURCE_COMMIT"
 
       - name: Run and enforce fresh FreeGS public-example artifact contract
         run: |
