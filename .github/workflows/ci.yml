@@ -613,7 +613,10 @@ jobs:
           python validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json
           python validation/benchmark_sparc_geqdsk_rmse.py
           python validation/benchmark_vs_freegs.py --force-solovev
-          python validation/benchmark_disruption_transfer_generalization.py --strict
+          python validation/benchmark_disruption_transfer_generalization.py \
+            --strict \
+            --output-json artifacts/_local_disruption_transfer_generalization.json \
+            --output-md artifacts/_local_disruption_transfer_generalization.md
           python validation/vertical_control_replay_benchmark.py \
             --output-json artifacts/_local_vertical_control_replay_benchmark.json \
             --output-md artifacts/_local_vertical_control_replay_benchmark.md
@@ -630,7 +633,7 @@ jobs:
           torax = json.loads(Path("artifacts/torax_benchmark.json").read_text(encoding="utf-8"))
           sparc = json.loads(Path("artifacts/sparc_geqdsk_rmse_benchmark.json").read_text(encoding="utf-8"))
           freegs = json.loads(Path("artifacts/freegs_benchmark.json").read_text(encoding="utf-8"))
-          transfer = json.loads(Path("artifacts/disruption_transfer_generalization.json").read_text(encoding="utf-8"))
+          transfer = json.loads(Path("artifacts/_local_disruption_transfer_generalization.json").read_text(encoding="utf-8"))
           vertical = json.loads(Path("artifacts/_local_vertical_control_replay_benchmark.json").read_text(encoding="utf-8"))
           vertical_profiles = json.loads(Path("artifacts/_local_vertical_control_replay_profiles.json").read_text(encoding="utf-8"))
           vertical_md = Path("artifacts/_local_vertical_control_replay_benchmark.md").read_text(encoding="utf-8")
@@ -734,8 +737,8 @@ jobs:
             artifacts/freegs_benchmark.json
             artifacts/fallback_budget_summary.json
             artifacts/benchmark_regression_guard_summary.json
-            artifacts/disruption_transfer_generalization.json
-            artifacts/disruption_transfer_generalization.md
+            artifacts/_local_disruption_transfer_generalization.json
+            artifacts/_local_disruption_transfer_generalization.md
             artifacts/_local_vertical_control_replay_benchmark.json
             artifacts/_local_vertical_control_replay_benchmark.md
             artifacts/_local_vertical_control_replay_profiles.json

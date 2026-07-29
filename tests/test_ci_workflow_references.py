@@ -9,12 +9,14 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
+BENCHMARK_THRESHOLDS = ROOT / "tools" / "benchmark_regression_thresholds.json"
 PYTHON_PATH_RE = re.compile(r"\b(?:tests|tools|validation)/[A-Za-z0-9_./-]+\.py\b")
 
 
@@ -61,16 +63,30 @@ def test_ci_uses_local_paths_for_routine_guarded_evidence() -> None:
     protected_names = (
         "artifacts/vertical_control_replay_benchmark",
         "artifacts/vertical_control_replay_profiles",
+        "artifacts/disruption_transfer_generalization",
         "artifacts/scpn_end_to_end_latency_ci",
     )
     local_names = (
         "artifacts/_local_vertical_control_replay_benchmark",
         "artifacts/_local_vertical_control_replay_profiles",
+        "artifacts/_local_disruption_transfer_generalization",
         "artifacts/_local_scpn_end_to_end_latency_ci",
     )
 
     assert all(name not in workflow for name in protected_names)
     assert all(name in workflow for name in local_names)
+
+    thresholds = json.loads(BENCHMARK_THRESHOLDS.read_text(encoding="utf-8"))
+    report_paths = {report["id"]: report["path"] for report in thresholds["reports"]}
+    assert report_paths["vertical_control_replay"] == (
+        "artifacts/_local_vertical_control_replay_benchmark.json"
+    )
+    assert report_paths["vertical_control_profile_suite"] == (
+        "artifacts/_local_vertical_control_replay_profiles.json"
+    )
+    assert report_paths["disruption_transfer_generalization"] == (
+        "artifacts/_local_disruption_transfer_generalization.json"
+    )
 
 
 def test_ci_does_not_rerun_hypothesis_file_after_full_suite() -> None:
