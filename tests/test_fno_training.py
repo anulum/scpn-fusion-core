@@ -6,7 +6,10 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FNO Training Tests
 
+"""Regression tests for FNO training and turbulence-control integration."""
+
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pytest
@@ -28,7 +31,8 @@ except ImportError:
 pytestmark = [pytest.mark.experimental, pytest.mark.skipif(not HAS_JAX, reason="JAX not installed")]
 
 
-def test_fno_training_smoke(tmp_path):
+def test_fno_training_smoke(tmp_path: Path) -> None:
+    """Train a minimal FNO model and persist finite training history."""
     output = tmp_path / "fno_smoke.npz"
     history = train_fno(
         n_samples=8,
@@ -42,11 +46,12 @@ def test_fno_training_smoke(tmp_path):
         patience=1,
     )
     assert output.exists()
-    assert history["epochs_completed"] >= 1
-    assert np.isfinite(float(history["best_val_loss"]))
+    assert cast(int, history["epochs_completed"]) >= 1
+    assert np.isfinite(float(cast(float, history["best_val_loss"])))
 
 
-def test_fno_controller_loads_saved_weights(tmp_path):
+def test_fno_controller_loads_saved_weights(tmp_path: Path) -> None:
+    """Load saved legacy JAX weights into the compatibility controller."""
     from scpn_fusion.core.fno_jax_training import init_fno_params, MODES, WIDTH
     from jax import random as jrandom
 
@@ -65,7 +70,10 @@ def test_fno_controller_loads_saved_weights(tmp_path):
     assert 0.0 <= suppression <= 1.0
 
 
-def test_fno_controller_missing_weights_path_fails_soft(tmp_path, caplog):
+def test_fno_controller_missing_weights_path_fails_soft(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Fall back safely when the configured legacy weight file is absent."""
     missing = tmp_path / "missing_fno_weights.npz"
     with caplog.at_level("WARNING", logger="scpn_fusion.core.fno_turbulence_suppressor"):
         controller = FNO_Controller(weights_path=str(missing), allow_legacy=True)
@@ -76,6 +84,7 @@ def test_fno_controller_missing_weights_path_fails_soft(tmp_path, caplog):
 
 
 def test_load_fno_params_rejects_object_array_payload(tmp_path: Path) -> None:
+    """Reject object arrays while loading serialized JAX parameters."""
     from scpn_fusion.core.fno_jax_training import load_fno_params
 
     bad = tmp_path / "bad_fno_params.npz"
@@ -84,7 +93,9 @@ def test_load_fno_params_rejects_object_array_payload(tmp_path: Path) -> None:
         load_fno_params(str(bad))
 
 
+@pytest.mark.filterwarnings("error::FutureWarning")
 def test_train_fno_jax_accepts_real_dataset_input(tmp_path: Path) -> None:
+    """Train from real data without accepting JAX future-compatibility warnings."""
     from scpn_fusion.core.fno_jax_training import train_fno_jax
 
     rng = np.random.default_rng(17)
@@ -110,7 +121,29 @@ def test_train_fno_jax_accepts_real_dataset_input(tmp_path: Path) -> None:
     assert np.isfinite(float(summary["final_loss"]))
 
 
+@pytest.mark.filterwarnings("error::FutureWarning")
+def test_fno_layer_preserves_promoted_spectral_dtype() -> None:
+    """Preserve promoted spectral precision through the Fourier scatter."""
+    import jax.numpy as jnp
+    from jax.experimental import enable_x64
+
+    from scpn_fusion.core.fno_jax_training import fno_layer
+
+    with enable_x64():
+        x = jnp.ones((4, 4, 1), dtype=jnp.float32)
+        w_real = jnp.ones((1, 1, 2, 2), dtype=jnp.float64)
+        w_imag = jnp.ones((1, 1, 2, 2), dtype=jnp.float64)
+        linear = jnp.zeros((1, 1), dtype=jnp.float32)
+        bias = jnp.zeros((1,), dtype=jnp.float32)
+
+        result = fno_layer(x, w_real, w_imag, linear, bias)
+        result.block_until_ready()
+
+        assert result.dtype == jnp.float64
+
+
 def test_train_fno_jax_rejects_invalid_dataset_schema(tmp_path: Path) -> None:
+    """Reject real datasets that omit the required target array."""
     from scpn_fusion.core.fno_jax_training import train_fno_jax
 
     bad = tmp_path / "bad_dataset.npz"
@@ -126,6 +159,7 @@ def test_train_fno_jax_rejects_invalid_dataset_schema(tmp_path: Path) -> None:
 
 
 def test_load_gene_binary_accepts_valid_npz(tmp_path: Path) -> None:
+    """Load a finite, shape-valid GENE-like NumPy archive."""
     from scpn_fusion.core.fno_jax_training import load_gene_binary
 
     rng = np.random.default_rng(123)
@@ -143,6 +177,7 @@ def test_load_gene_binary_accepts_valid_npz(tmp_path: Path) -> None:
 
 
 def test_load_gene_binary_rejects_unsupported_extension(tmp_path: Path) -> None:
+    """Reject unsupported GENE dataset container formats."""
     from scpn_fusion.core.fno_jax_training import load_gene_binary
 
     path = tmp_path / "gene_like.npy"
@@ -152,6 +187,7 @@ def test_load_gene_binary_rejects_unsupported_extension(tmp_path: Path) -> None:
 
 
 def test_spectral_generator_is_deterministic_for_seed() -> None:
+    """Generate identical turbulence trajectories from identical seeds."""
     g1 = SpectralTurbulenceGenerator(size=24, seed=77)
     g2 = SpectralTurbulenceGenerator(size=24, seed=77)
     np.testing.assert_allclose(g1.field, g2.field, rtol=0.0, atol=0.0)
@@ -161,6 +197,7 @@ def test_spectral_generator_is_deterministic_for_seed() -> None:
 
 
 def test_spectral_generator_does_not_mutate_global_numpy_rng_state() -> None:
+    """Keep the spectral generator isolated from NumPy's global RNG."""
     np.random.seed(4242)
     state = np.random.get_state()
 
@@ -174,6 +211,7 @@ def test_spectral_generator_does_not_mutate_global_numpy_rng_state() -> None:
 
 
 def test_run_fno_simulation_returns_finite_summary_without_plot() -> None:
+    """Return a complete finite simulation summary without plotting."""
     summary = run_fno_simulation(time_steps=24, seed=7, save_plot=False, verbose=False)
     for key in (
         "seed",
@@ -200,6 +238,7 @@ def test_run_fno_simulation_returns_finite_summary_without_plot() -> None:
 
 
 def test_run_fno_simulation_is_deterministic_for_seed() -> None:
+    """Produce repeatable simulation summaries for a fixed seed."""
     a = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
     b = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
     assert a["final_energy"] == b["final_energy"]
@@ -208,12 +247,14 @@ def test_run_fno_simulation_is_deterministic_for_seed() -> None:
 
 
 def test_fno_controller_default_backend_is_compatibility_mode() -> None:
+    """Use the reduced-order compatibility backend by default."""
     controller = FNO_Controller(weights_path=None, allow_legacy=False)
     assert controller.backend == "compat_reduced_order"
     assert controller.legacy_enabled is False
 
 
 def test_fno_controller_rejects_invalid_field_shape() -> None:
+    """Reject controller inputs that violate the required grid shape."""
     controller = FNO_Controller(weights_path=None, allow_legacy=False)
     with pytest.raises(ValueError, match="shape"):
         controller.predict_and_suppress(np.zeros((32, 32), dtype=np.float64))

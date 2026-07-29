@@ -75,7 +75,7 @@ def fno_layer(
     out_ft_low = jnp.einsum("oimj,mji->mjo", weights, x_ft_low)
 
     # Pad back
-    out_ft = jnp.zeros_like(x_ft)
+    out_ft = jnp.zeros_like(x_ft, dtype=out_ft_low.dtype)
     out_ft = out_ft.at[:modes, :modes, :].set(out_ft_low)
 
     x_out = jnp.fft.irfft2(out_ft, axes=(0, 1), s=x.shape[:2])
