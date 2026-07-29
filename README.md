@@ -166,7 +166,7 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 63 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 600 |
+| Python test files | 601 |
 | Public documentation pages | 63 |
 | GitHub Actions workflows | 13 |
 
@@ -197,7 +197,10 @@ It combines four surfaces that are usually split across separate tools:
 - **Surrogate UQ cards:** per-surrogate uncertainty/OOD documentation
   ([docs/SURROGATE_UQ_CARDS.md](docs/SURROGATE_UQ_CARDS.md)) — training
   provenance, calibration evidence, OOD thresholds, and fallback behaviour for
-  every surrogate lane on a public surface, drift-checked in preflight.
+  every surrogate lane on a public surface, drift-checked in preflight. The
+  QLKNN transport card additionally binds finite-sample 90% split-conformal
+  error radii for `chi_e`, `chi_i`, and `D_e`; input z-scores remain separate
+  OOD escalation triggers and are not presented as error bounds.
 
 The intended users are fusion-control researchers, simulation engineers,
 validation teams, accelerator/GPU engineers, formal-methods contributors, and

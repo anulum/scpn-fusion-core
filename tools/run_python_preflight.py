@@ -203,6 +203,16 @@ def _build_release_checks(
     if not skip_surrogate_uq_cards:
         checks.append(
             (
+                "Surrogate conformal certificate drift check",
+                [
+                    sys.executable,
+                    "tools/generate_surrogate_conformal_certificates.py",
+                    "--check",
+                ],
+            )
+        )
+        checks.append(
+            (
                 "Surrogate UQ cards drift check",
                 [
                     sys.executable,
@@ -680,7 +690,8 @@ def main(argv: list[str] | None = None) -> int:
     Args:
         argv: Optional argument list (defaults to ``sys.argv[1:]``).
 
-    Returns:
+    Returns
+    -------
         ``0`` when all selected checks pass, ``1`` when any check fails or a
         timeout occurs.
     """

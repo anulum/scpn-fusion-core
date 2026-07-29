@@ -12,6 +12,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -83,6 +84,19 @@ class TestCommittedManifest:
         for card in cards:
             assert card.ood_mechanism
             assert card.fallback.summary
+            assert card.conformal.status in {"certified", "unavailable", "not_applicable"}
+
+    def test_qlknn_card_binds_finite_sample_certificate(self) -> None:
+        """The promoted QLKNN card binds the certified evidence id."""
+        module = _load_module()
+        _, cards = module.load_manifest(MANIFEST)
+        qlknn = next(card for card in cards if card.card_id == "qlknn10d_neural_transport")
+        assert qlknn.conformal.status == "certified"
+        assert qlknn.conformal.certificate_id == "qlknn10d_neural_transport"
+        assert any(
+            anchor.file.endswith("surrogate_conformal_certificates.json")
+            for anchor in qlknn.conformal.anchors
+        )
 
     def test_rendered_page_contains_all_cards(self) -> None:
         module = _load_module()
@@ -90,6 +104,16 @@ class TestCommittedManifest:
         rendered = module.render_markdown(scope_note, cards, "validation/surrogate_uq_cards.json")
         for card in cards:
             assert f"### `{card.card_id}`" in rendered
+
+    def test_rendered_page_handles_promoted_card_without_gaps(self) -> None:
+        """A promoted fully closed card renders an explicit empty-gap marker."""
+        module = _load_module()
+        scope_note, cards = module.load_manifest(MANIFEST)
+        modified = (replace(cards[0], gaps=()), *cards[1:])
+        rendered = module.render_markdown(
+            scope_note, modified, "validation/surrogate_uq_cards.json"
+        )
+        assert "- (none declared)" in rendered
 
 
 class TestManifestValidation:
@@ -100,6 +124,50 @@ class TestManifestValidation:
         payload = _manifest_payload()
         payload["schema"] = "other.schema"
         with pytest.raises(ValueError, match="unexpected manifest schema"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+    def test_rejects_non_object_manifest(self, tmp_path: Path) -> None:
+        """The top-level manifest must remain an object."""
+        module = _load_module()
+        target = tmp_path / "manifest.json"
+        target.write_text("[]", encoding="utf-8")
+        with pytest.raises(ValueError, match="must be a JSON object"):
+            module.load_manifest(target)
+
+    def test_rejects_non_object_card(self, tmp_path: Path) -> None:
+        """Every card entry must remain an object."""
+        module = _load_module()
+        payload = _manifest_payload()
+        payload["cards"][0] = []
+        with pytest.raises(ValueError, match=r"cards\[0\] must be an object"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+    def test_rejects_empty_string_and_bad_container_shapes(self, tmp_path: Path) -> None:
+        """String, anchor, section, threshold, and gap shapes fail closed."""
+        module = _load_module()
+        payload = _manifest_payload()
+        payload["cards"][0]["description"] = " "
+        with pytest.raises(ValueError, match="non-empty string"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+        payload = _manifest_payload()
+        payload["cards"][0]["model_artifacts"] = {}
+        with pytest.raises(ValueError, match="must be a list"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+        payload = _manifest_payload()
+        payload["cards"][0]["training_provenance"] = []
+        with pytest.raises(ValueError, match="must be an object"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+        payload = _manifest_payload()
+        payload["cards"][0]["ood"]["thresholds"] = []
+        with pytest.raises(ValueError, match="must be an object"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+        payload = _manifest_payload()
+        payload["cards"][0]["gaps"] = {}
+        with pytest.raises(ValueError, match="gaps must be a list"):
             module.load_manifest(_write_manifest(tmp_path, payload))
 
     def test_rejects_duplicate_card_id(self, tmp_path: Path) -> None:
@@ -135,6 +203,30 @@ class TestManifestValidation:
         payload = _manifest_payload()
         del payload["cards"][0]["ood"]
         with pytest.raises(ValueError, match="ood must be an object"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+    def test_rejects_missing_conformal_section(self, tmp_path: Path) -> None:
+        """Every public surrogate lane must declare conformal status."""
+        module = _load_module()
+        payload = _manifest_payload()
+        del payload["cards"][0]["conformal"]
+        with pytest.raises(ValueError, match="conformal must be an object"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+    def test_rejects_unknown_conformal_status(self, tmp_path: Path) -> None:
+        """Only governed conformal status labels are accepted."""
+        module = _load_module()
+        payload = _manifest_payload()
+        payload["cards"][0]["conformal"]["status"] = "approximate"
+        with pytest.raises(ValueError, match="conformal.status must be one of"):
+            module.load_manifest(_write_manifest(tmp_path, payload))
+
+    def test_rejects_conformal_id_status_mismatch(self, tmp_path: Path) -> None:
+        """Only certified lanes may carry a certificate id."""
+        module = _load_module()
+        payload = _manifest_payload()
+        payload["cards"][0]["conformal"]["certificate_id"] = None
+        with pytest.raises(ValueError, match="must be set exactly"):
             module.load_manifest(_write_manifest(tmp_path, payload))
 
     def test_rejects_empty_cards(self, tmp_path: Path) -> None:
@@ -194,6 +286,26 @@ class TestAnchorVerification:
         errors = self._verify_with_mutation(mutate)
         assert any("must declare its gaps" in error for error in errors)
 
+    def test_certified_card_without_bundle_anchor_flagged(self) -> None:
+        """Certified cards must anchor exactly one certificate bundle."""
+
+        def mutate(payload: dict[str, Any]) -> None:
+            payload["cards"][0]["conformal"]["anchors"] = [
+                "tools/generate_surrogate_conformal_certificates.py"
+            ]
+
+        errors = self._verify_with_mutation(mutate)
+        assert any("must anchor one certificate bundle" in error for error in errors)
+
+    def test_unknown_certificate_id_flagged(self) -> None:
+        """A card cannot cite an absent or non-certified bundle entry."""
+
+        def mutate(payload: dict[str, Any]) -> None:
+            payload["cards"][0]["conformal"]["certificate_id"] = "missing"
+
+        errors = self._verify_with_mutation(mutate)
+        assert any("certificate id is absent" in error for error in errors)
+
 
 class TestCliModes:
     """CLI write and check modes behave fail-closed."""
@@ -203,6 +315,27 @@ class TestCliModes:
         output = tmp_path / "cards.md"
         assert module.main(["--output", str(output)]) == 0
         assert "# Surrogate UQ Cards" in output.read_text(encoding="utf-8")
+
+    def test_relative_paths_and_external_manifest_render(self, tmp_path: Path) -> None:
+        """CLI path normalization handles repository and external manifests."""
+        module = _load_module()
+        assert (
+            module.main(
+                [
+                    "--manifest",
+                    "validation/surrogate_uq_cards.json",
+                    "--output",
+                    "docs/SURROGATE_UQ_CARDS.md",
+                    "--check",
+                ]
+            )
+            == 0
+        )
+        manifest = tmp_path / "external-manifest.json"
+        manifest.write_text(MANIFEST.read_text(encoding="utf-8"), encoding="utf-8")
+        output = tmp_path / "external-cards.md"
+        assert module.main(["--manifest", str(manifest), "--output", str(output)]) == 0
+        assert str(manifest) in output.read_text(encoding="utf-8")
 
     def test_check_mode_fails_on_missing_output(self, tmp_path: Path) -> None:
         module = _load_module()

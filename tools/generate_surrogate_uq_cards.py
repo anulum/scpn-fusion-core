@@ -31,6 +31,7 @@ DEFAULT_OUTPUT = REPO_ROOT / "docs" / "SURROGATE_UQ_CARDS.md"
 MANIFEST_SCHEMA = "scpn-fusion-core.surrogate-uq-cards.v1"
 
 VALID_STATUSES = ("promoted", "deprecated_scoped", "fail_closed_stub", "retrain_blocked")
+VALID_CONFORMAL_STATUSES = ("certified", "unavailable", "not_applicable")
 
 _PY_SYMBOL_PATTERN = r"(?m)^(?:\s*(?:def|class)\s+{symbol}\b|{symbol}\s*=)"
 
@@ -57,6 +58,16 @@ class EvidenceSection:
 
 
 @dataclass(frozen=True)
+class ConformalSection:
+    """Split-conformal status and optional certificate binding for one lane."""
+
+    status: str
+    summary: str
+    certificate_id: str | None
+    anchors: tuple[Anchor, ...]
+
+
+@dataclass(frozen=True)
 class UqCard:
     """Per-surrogate UQ card with provenance, calibration, OOD, and fallback."""
 
@@ -66,6 +77,7 @@ class UqCard:
     model_artifacts: tuple[Anchor, ...]
     training_provenance: EvidenceSection
     calibration: EvidenceSection
+    conformal: ConformalSection
     ood_mechanism: str
     ood_thresholds: dict[str, float]
     ood_anchors: tuple[Anchor, ...]
@@ -114,6 +126,24 @@ def _parse_thresholds(name: str, value: Any) -> dict[str, float]:
     return out
 
 
+def _parse_conformal(name: str, value: Any) -> ConformalSection:
+    if not isinstance(value, dict):
+        raise ValueError(f"{name} must be an object.")
+    status = _require_str(f"{name}.status", value.get("status"))
+    if status not in VALID_CONFORMAL_STATUSES:
+        raise ValueError(f"{name}.status must be one of {VALID_CONFORMAL_STATUSES}, got {status!r}")
+    raw_id = value.get("certificate_id")
+    certificate_id = None if raw_id is None else _require_str(f"{name}.certificate_id", raw_id)
+    if (status == "certified") != (certificate_id is not None):
+        raise ValueError(f"{name}.certificate_id must be set exactly when status is certified.")
+    return ConformalSection(
+        status=status,
+        summary=_require_str(f"{name}.summary", value.get("summary")),
+        certificate_id=certificate_id,
+        anchors=_parse_anchor_list(f"{name}.anchors", value.get("anchors", [])),
+    )
+
+
 def _parse_card(index: int, item: Any) -> UqCard:
     if not isinstance(item, dict):
         raise ValueError(f"cards[{index}] must be an object.")
@@ -139,6 +169,7 @@ def _parse_card(index: int, item: Any) -> UqCard:
             f"{name}.training_provenance", item.get("training_provenance")
         ),
         calibration=_parse_section(f"{name}.calibration", item.get("calibration")),
+        conformal=_parse_conformal(f"{name}.conformal", item.get("conformal")),
         ood_mechanism=_require_str(f"{name}.ood.mechanism", ood_raw.get("mechanism")),
         ood_thresholds=_parse_thresholds(f"{name}.ood.thresholds", ood_raw.get("thresholds", {})),
         ood_anchors=_parse_anchor_list(f"{name}.ood.anchors", ood_raw.get("anchors", [])),
@@ -154,7 +185,8 @@ def load_manifest(path: Path) -> tuple[str, tuple[UqCard, ...]]:
     Args:
         path: Filesystem path to ``surrogate_uq_cards.json``.
 
-    Returns:
+    Returns
+    -------
         Tuple of the scope note and the parsed cards.
     """
     raw = json.loads(path.read_text(encoding="utf-8"))
@@ -197,7 +229,8 @@ def verify_cards(cards: tuple[UqCard, ...], root: Path) -> list[str]:
         cards: Parsed UQ cards.
         root: Repository root against which anchors are resolved.
 
-    Returns:
+    Returns
+    -------
         List of human-readable errors; empty when fully anchored.
     """
     errors: list[str] = []
@@ -206,6 +239,7 @@ def verify_cards(cards: tuple[UqCard, ...], root: Path) -> list[str]:
             ("model_artifacts", card.model_artifacts),
             ("training_provenance", card.training_provenance.anchors),
             ("calibration", card.calibration.anchors),
+            ("conformal", card.conformal.anchors),
             ("ood", card.ood_anchors),
             ("fallback", card.fallback.anchors),
             ("retraining", card.retraining.anchors),
@@ -215,6 +249,27 @@ def verify_cards(cards: tuple[UqCard, ...], root: Path) -> list[str]:
                 errors.extend(_verify_anchor(root, anchor, f"{card.card_id} {section_name}"))
         if card.status != "promoted" and len(card.gaps) == 0:
             errors.append(f"{card.card_id}: non-promoted card must declare its gaps.")
+        if card.conformal.status == "certified":
+            certificate_files = [
+                root / anchor.file
+                for anchor in card.conformal.anchors
+                if anchor.file.endswith("surrogate_conformal_certificates.json")
+            ]
+            if len(certificate_files) != 1:
+                errors.append(f"{card.card_id}: certified lane must anchor one certificate bundle.")
+            else:
+                raw = json.loads(certificate_files[0].read_text(encoding="utf-8"))
+                entries = raw.get("certificates", []) if isinstance(raw, dict) else []
+                ids = {
+                    entry.get("id")
+                    for entry in entries
+                    if isinstance(entry, dict)
+                    and entry.get("status") == "certified_split_conformal"
+                }
+                if card.conformal.certificate_id not in ids:
+                    errors.append(
+                        f"{card.card_id}: certificate id is absent from the anchored bundle."
+                    )
     return errors
 
 
@@ -235,7 +290,8 @@ def render_markdown(scope_note: str, cards: tuple[UqCard, ...], manifest_rel: st
         cards: Validated UQ cards.
         manifest_rel: Manifest path string shown in the generated header.
 
-    Returns:
+    Returns
+    -------
         Rendered Markdown document as a single string.
     """
     lines: list[str] = [
@@ -254,12 +310,15 @@ def render_markdown(scope_note: str, cards: tuple[UqCard, ...], manifest_rel: st
         "",
         "## Status summary",
         "",
-        "| Surrogate | Status | OOD mechanism | Gaps |",
-        "|---|---|---|---:|",
+        "| Surrogate | Status | Conformal | OOD mechanism | Gaps |",
+        "|---|---|---|---|---:|",
     ]
     for card in cards:
         ood_short = card.ood_mechanism.split(";")[0].split(".")[0]
-        lines.append(f"| `{card.card_id}` | `{card.status}` | {ood_short} | {len(card.gaps)} |")
+        lines.append(
+            f"| `{card.card_id}` | `{card.status}` | `{card.conformal.status}` | "
+            f"{ood_short} | {len(card.gaps)} |"
+        )
     lines.extend(["", "## Cards", ""])
     for card in cards:
         lines.extend(
@@ -278,6 +337,17 @@ def render_markdown(scope_note: str, cards: tuple[UqCard, ...], manifest_rel: st
         ):
             lines.extend(["", f"{title}: {section.summary}"])
             lines.extend(_anchor_lines(f"{title} anchors", section.anchors))
+        lines.extend(
+            [
+                "",
+                f"Conformal status: `{card.conformal.status}`",
+                "",
+                f"Conformal certificate: {card.conformal.summary}",
+            ]
+        )
+        if card.conformal.certificate_id is not None:
+            lines.extend(["", f"- Certificate ID: `{card.conformal.certificate_id}`"])
+        lines.extend(_anchor_lines("Conformal anchors", card.conformal.anchors))
         lines.extend(["", f"OOD mechanism: {card.ood_mechanism}"])
         if card.ood_thresholds:
             lines.extend(["", "OOD thresholds:", ""])
@@ -309,7 +379,8 @@ def main(argv: list[str] | None = None) -> int:
     Args:
         argv: Optional CLI args. If omitted, reads from process arguments.
 
-    Returns:
+    Returns
+    -------
         0 on success, 1 when verification fails or the output is stale.
     """
     parser = argparse.ArgumentParser(description=__doc__)

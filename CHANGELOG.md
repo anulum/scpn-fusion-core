@@ -17,6 +17,14 @@
 
 ### Validation
 
+- Add digest-bound, finite-sample split-conformal certificates for the QLKNN
+  transport surrogate. The corrected rank uses 47,826 held-out calibration
+  rows and independent empirical checks on 47,828 test rows; all three
+  physical-output channels exceed 90% holdout coverage after the source
+  gyro-Bohm targets are converted with the runtime's exact scale. UQ cards now
+  distinguish certified, unavailable, and not-applicable lanes, preserve
+  z-score OOD triggers as separate escalation signals, and refuse to invent
+  bounds where exchangeable residual evidence is absent.
 - Replace the coupled tearing engine's hard-coded stability index with an
   explicit Harris-sheet outer-matching model. Focused validation locks the FKR
   constant-psi exponents and compares numerical Rutherford evolution with the

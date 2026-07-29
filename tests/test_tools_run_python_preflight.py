@@ -147,6 +147,14 @@ def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> N
         (
             [
                 "python-test",
+                "tools/generate_surrogate_conformal_certificates.py",
+                "--check",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "tools/generate_surrogate_uq_cards.py",
                 "--check",
             ],

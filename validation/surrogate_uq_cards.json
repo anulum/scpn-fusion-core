@@ -1,6 +1,6 @@
 {
   "schema": "scpn-fusion-core.surrogate-uq-cards.v1",
-  "scope_note": "One card per surrogate lane that appears on a public surface. Statuses: promoted (usable, evidence-linked), deprecated_scoped (kept only behind the deprecation guard), fail_closed_stub (public stub, no trained model), retrain_blocked (usable weights exist, retraining blocked on a named decision). Every anchor is verified against the tree by the generator; a removed model, guard, or evidence artifact breaks the drift check.",
+  "scope_note": "One card per surrogate lane that appears on a public surface. Model statuses: promoted (usable, evidence-linked), deprecated_scoped (kept only behind the deprecation guard), fail_closed_stub (public stub, no trained model), retrain_blocked (usable weights exist, retraining blocked on a named decision). Conformal statuses: certified (finite-sample certificate bound to residual evidence), unavailable (a model exists but valid residual custody is absent), not_applicable (no promoted prediction lane to certify). Every anchor is verified against the tree by the generator; a removed model, guard, or evidence artifact breaks the drift check.",
   "cards": [
     {
       "id": "qlknn10d_neural_transport",
@@ -18,10 +18,21 @@
         ]
       },
       "calibration": {
-        "summary": "Uncertainty envelope benchmark propagates surrogate spread through the transport lane and gates envelope statistics; QLKNN validation compares against published benchmark rows.",
+        "summary": "A held-out QLKNN validation split supplies absolute-residual split-conformal radii for each output channel; an untouched test split checks empirical coverage. The separate uncertainty-envelope benchmark propagates surrogate spread through the transport lane.",
         "anchors": [
+          "validation/surrogate_conformal_certificates.json",
+          "tools/generate_surrogate_conformal_certificates.py",
           "validation/benchmark_transport_uncertainty_envelope.py",
           "validation/reports/transport_uncertainty_envelope_benchmark.json"
+        ]
+      },
+      "conformal": {
+        "status": "certified",
+        "summary": "90% marginal per-channel intervals use the finite-sample corrected absolute-residual rank on 47,826 calibration rows. Source gyro-Bohm targets are converted to the model's physical m^2/s output space with the exact runtime scale; 47,828 untouched holdout rows achieve at least 90% empirical coverage in chi_e, chi_i, and D_e. The guarantee requires exchangeability and is not conditional or OOD coverage.",
+        "certificate_id": "qlknn10d_neural_transport",
+        "anchors": [
+          "validation/surrogate_conformal_certificates.json",
+          "tools/generate_surrogate_conformal_certificates.py"
         ]
       },
       "ood": {
@@ -44,8 +55,7 @@
         ]
       },
       "gaps": [
-        "OOD thresholds are z-score heuristics, not validated against a held-out OOD set.",
-        "No conformal or ensemble calibration of per-channel flux uncertainties."
+        "OOD thresholds are z-score heuristics, not validated against a held-out OOD set; the conformal certificate provides a marginal error bound and does not convert z-score into an OOD guarantee."
       ]
     },
     {
@@ -70,6 +80,14 @@
           "validation/reference_data/diiid/disruption_risk_calibration.json",
           "tools/generate_disruption_risk_calibration.py",
           "tools/ci_rmse_gate.py"
+        ]
+      },
+      "conformal": {
+        "status": "unavailable",
+        "summary": "No exchangeable residual-level calibration split is in custody for per-prediction risk intervals. Threshold/FPR calibration is classification-operating-point evidence, not a conformal error certificate.",
+        "certificate_id": null,
+        "anchors": [
+          "validation/reference_data/diiid/disruption_risk_calibration.json"
         ]
       },
       "ood": {
@@ -116,6 +134,14 @@
           "validation/reports/task2_pretrained_surrogates_benchmark.json"
         ]
       },
+      "conformal": {
+        "status": "unavailable",
+        "summary": "The bundled evaluation is training-set aggregate evidence and does not provide an exchangeable held-out residual split; issuing a finite-sample interval from it would be invalid.",
+        "certificate_id": null,
+        "anchors": [
+          "validation/reports/task2_pretrained_surrogates_benchmark.json"
+        ]
+      },
       "ood": {
         "mechanism": "Coverage-manifest domain bounds; queries outside the recorded training coverage are flagged by the coverage metadata rather than a learned detector.",
         "thresholds": {},
@@ -156,6 +182,14 @@
         "summary": "None current; the lane is deprecated and excluded from promoted claims.",
         "anchors": []
       },
+      "conformal": {
+        "status": "not_applicable",
+        "summary": "The lane is deprecated and has no current calibration evidence; no uncertainty certificate is issued.",
+        "certificate_id": null,
+        "anchors": [
+          "tools/deprecated_default_lane_guard.py"
+        ]
+      },
       "ood": {
         "mechanism": "None; the deprecation guard prevents the lane from becoming a default or public release path.",
         "thresholds": {},
@@ -194,6 +228,14 @@
         ]
       },
       "calibration": { "summary": "Not applicable until a real fit lands (master-plan F-7).", "anchors": [] },
+      "conformal": {
+        "status": "not_applicable",
+        "summary": "No trained model exists, so there are no predictions or residuals to certify.",
+        "certificate_id": null,
+        "anchors": [
+          "src/scpn_fusion/core/tglf_surrogate_bridge.py::train_surrogate_from_tglf"
+        ]
+      },
       "ood": { "mechanism": "Not applicable — no model.", "thresholds": {}, "anchors": [] },
       "fallback": {
         "summary": "The canonical TGLF path resolves through the GK registry (external binary preferred, native fallback); the bridge is not on that path.",
@@ -221,6 +263,14 @@
       },
       "calibration": {
         "summary": "Weight-validation report records the acceptance checks for the shipped artifact.",
+        "anchors": [
+          "validation/reports/iter_surrogate_weight_validation.json"
+        ]
+      },
+      "conformal": {
+        "status": "unavailable",
+        "summary": "The committed report proves structural loadability only; raw training and exchangeable calibration residuals are absent, so no finite-sample error interval is issued.",
+        "certificate_id": null,
         "anchors": [
           "validation/reports/iter_surrogate_weight_validation.json"
         ]

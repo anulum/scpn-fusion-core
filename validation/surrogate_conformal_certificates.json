@@ -1,0 +1,74 @@
+{
+  "schema": "scpn-fusion-core.surrogate-conformal-certificates.v1",
+  "method": {
+    "name": "split_conformal_absolute_residual",
+    "alpha": 0.1,
+    "target_marginal_coverage": 0.9,
+    "quantile_rank_formula": "ceil((n_calibration + 1) * (1 - alpha))",
+    "reference": {
+      "title": "Distribution-Free Predictive Inference for Regression",
+      "doi": "10.1080/01621459.2017.1307116"
+    },
+    "assumptions": [
+      "Calibration and future examples are exchangeable.",
+      "Coverage is marginal per output channel, not conditional on an input or OOD state.",
+      "The z-score OOD trigger remains a separate escalation mechanism and is not an error bound."
+    ]
+  },
+  "certificates": [
+    {
+      "id": "qlknn10d_neural_transport",
+      "status": "certified_split_conformal",
+      "model": {
+        "weights": "weights/neural_transport_qlknn.npz",
+        "weights_file_sha256": "0f44681e10686c09826e4a738bec0fe3bd49d82c1af9288489a12a4b2af6faad",
+        "runtime_weights_checksum": "65ce0a395f4afbf6"
+      },
+      "calibration": {
+        "split": "data/qlknn10d_processed/val.npz",
+        "split_sha256": "3f31161e8e37221139686429386e884d633ca82f2834ebc9ce1d7efa3713a502",
+        "source_targets_gb_normalized": true,
+        "certificate_output_unit": "physical transport coefficient (m^2/s)",
+        "n": 47826,
+        "quantile_rank_one_based": 43045
+      },
+      "holdout": {
+        "split": "data/qlknn10d_processed/test.npz",
+        "split_sha256": "c6547e1cfd186dfe082bd0e452fe645eee0bb86ae2eb2cbe3c535e25d28a4690",
+        "source_targets_gb_normalized": true,
+        "certificate_output_unit": "physical transport coefficient (m^2/s)",
+        "n": 47828,
+        "role": "independent_empirical_coverage_check_only"
+      },
+      "channels": [
+        {
+          "name": "chi_e",
+          "unit": "physical transport coefficient (m^2/s)",
+          "nonconformity": "absolute_error",
+          "interval": "[max(0, prediction - radius), prediction + radius]",
+          "radius": 2.915758581324388,
+          "calibration_score_sha256": "00da2361a55695238b8f0e0e71a6f98d2d72c131aaf5836470b090a48c2fcdfe",
+          "holdout_empirical_coverage": 0.9007485155139249
+        },
+        {
+          "name": "chi_i",
+          "unit": "physical transport coefficient (m^2/s)",
+          "nonconformity": "absolute_error",
+          "interval": "[max(0, prediction - radius), prediction + radius]",
+          "radius": 3.302462278593218,
+          "calibration_score_sha256": "eafc138453566eb3bb40786864d97534011e3c85ab88414061febabd3ef8ee9e",
+          "holdout_empirical_coverage": 0.9001839926402944
+        },
+        {
+          "name": "D_e",
+          "unit": "physical transport coefficient (m^2/s)",
+          "nonconformity": "absolute_error",
+          "interval": "[max(0, prediction - radius), prediction + radius]",
+          "radius": 0.3935313129335591,
+          "calibration_score_sha256": "58eb017510cd2d1904f1e6ec11e2e26d2cec9276ce4a3317a88fcb6336d8ff72",
+          "holdout_empirical_coverage": 0.9027557079535
+        }
+      ]
+    }
+  ]
+}

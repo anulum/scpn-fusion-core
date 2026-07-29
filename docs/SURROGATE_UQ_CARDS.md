@@ -6,21 +6,21 @@
 Auto-generated from the surrogate UQ-card manifest. Do not edit by hand;
 run `tools/generate_surrogate_uq_cards.py` to refresh.
 
-> One card per surrogate lane that appears on a public surface. Statuses: promoted (usable, evidence-linked), deprecated_scoped (kept only behind the deprecation guard), fail_closed_stub (public stub, no trained model), retrain_blocked (usable weights exist, retraining blocked on a named decision). Every anchor is verified against the tree by the generator; a removed model, guard, or evidence artifact breaks the drift check.
+> One card per surrogate lane that appears on a public surface. Model statuses: promoted (usable, evidence-linked), deprecated_scoped (kept only behind the deprecation guard), fail_closed_stub (public stub, no trained model), retrain_blocked (usable weights exist, retraining blocked on a named decision). Conformal statuses: certified (finite-sample certificate bound to residual evidence), unavailable (a model exists but valid residual custody is absent), not_applicable (no promoted prediction lane to certify). Every anchor is verified against the tree by the generator; a removed model, guard, or evidence artifact breaks the drift check.
 
 - Manifest: `validation/surrogate_uq_cards.json`
 - Cards: `6`
 
 ## Status summary
 
-| Surrogate | Status | OOD mechanism | Gaps |
-|---|---|---|---:|
-| `qlknn10d_neural_transport` | `promoted` | Per-input z-score against training-domain statistics | 2 |
-| `disruption_risk_predictor` | `promoted` | No explicit feature-space OOD detector | 2 |
-| `itpa_pretrained_mlp` | `promoted` | Coverage-manifest domain bounds | 1 |
-| `fno_turbulence_suppressor` | `deprecated_scoped` | None | 1 |
-| `tglf_surrogate_bridge` | `fail_closed_stub` | Not applicable — no model | 1 |
-| `iter_gpu_surrogate` | `retrain_blocked` | None beyond the training-domain description in the validation report | 1 |
+| Surrogate | Status | Conformal | OOD mechanism | Gaps |
+|---|---|---|---|---:|
+| `qlknn10d_neural_transport` | `promoted` | `certified` | Per-input z-score against training-domain statistics | 1 |
+| `disruption_risk_predictor` | `promoted` | `unavailable` | No explicit feature-space OOD detector | 2 |
+| `itpa_pretrained_mlp` | `promoted` | `unavailable` | Coverage-manifest domain bounds | 1 |
+| `fno_turbulence_suppressor` | `deprecated_scoped` | `not_applicable` | None | 1 |
+| `tglf_surrogate_bridge` | `fail_closed_stub` | `not_applicable` | Not applicable — no model | 1 |
+| `iter_gpu_surrogate` | `retrain_blocked` | `unavailable` | None beyond the training-domain description in the validation report | 1 |
 
 ## Cards
 
@@ -42,12 +42,25 @@ Training provenance anchors:
 - `validation/reference_data/qlknn10d_published_benchmarks.json`
 - `validation/validate_transport_qlknn.py`
 
-Calibration: Uncertainty envelope benchmark propagates surrogate spread through the transport lane and gates envelope statistics; QLKNN validation compares against published benchmark rows.
+Calibration: A held-out QLKNN validation split supplies absolute-residual split-conformal radii for each output channel; an untouched test split checks empirical coverage. The separate uncertainty-envelope benchmark propagates surrogate spread through the transport lane.
 
 Calibration anchors:
 
+- `validation/surrogate_conformal_certificates.json`
+- `tools/generate_surrogate_conformal_certificates.py`
 - `validation/benchmark_transport_uncertainty_envelope.py`
 - `validation/reports/transport_uncertainty_envelope_benchmark.json`
+
+Conformal status: `certified`
+
+Conformal certificate: 90% marginal per-channel intervals use the finite-sample corrected absolute-residual rank on 47,826 calibration rows. Source gyro-Bohm targets are converted to the model's physical m^2/s output space with the exact runtime scale; 47,828 untouched holdout rows achieve at least 90% empirical coverage in chi_e, chi_i, and D_e. The guarantee requires exchangeability and is not conditional or OOD coverage.
+
+- Certificate ID: `qlknn10d_neural_transport`
+
+Conformal anchors:
+
+- `validation/surrogate_conformal_certificates.json`
+- `tools/generate_surrogate_conformal_certificates.py`
 
 OOD mechanism: Per-input z-score against training-domain statistics; batch masks at 3-sigma (soft, reported fraction) and 5-sigma (hard flag) exposed in the runtime diagnostics.
 
@@ -74,8 +87,7 @@ Retraining anchors:
 
 Declared gaps:
 
-- OOD thresholds are z-score heuristics, not validated against a held-out OOD set.
-- No conformal or ensemble calibration of per-channel flux uncertainties.
+- OOD thresholds are z-score heuristics, not validated against a held-out OOD set; the conformal certificate provides a marginal error bound and does not convert z-score into an OOD guarantee.
 
 ### `disruption_risk_predictor`
 
@@ -103,6 +115,14 @@ Calibration anchors:
 - `validation/reference_data/diiid/disruption_risk_calibration.json`
 - `tools/generate_disruption_risk_calibration.py`
 - `tools/ci_rmse_gate.py`
+
+Conformal status: `unavailable`
+
+Conformal certificate: No exchangeable residual-level calibration split is in custody for per-prediction risk intervals. Threshold/FPR calibration is classification-operating-point evidence, not a conformal error certificate.
+
+Conformal anchors:
+
+- `validation/reference_data/diiid/disruption_risk_calibration.json`
 
 OOD mechanism: No explicit feature-space OOD detector; the operational guards are the calibrated risk thresholds, the leakage-guarded splits, and the hard disruption false-positive-rate gate in CI.
 
@@ -154,6 +174,14 @@ Calibration anchors:
 - `validation/task2_pretrained_surrogates_benchmark.py`
 - `validation/reports/task2_pretrained_surrogates_benchmark.json`
 
+Conformal status: `unavailable`
+
+Conformal certificate: The bundled evaluation is training-set aggregate evidence and does not provide an exchangeable held-out residual split; issuing a finite-sample interval from it would be invalid.
+
+Conformal anchors:
+
+- `validation/reports/task2_pretrained_surrogates_benchmark.json`
+
 OOD mechanism: Coverage-manifest domain bounds; queries outside the recorded training coverage are flagged by the coverage metadata rather than a learned detector.
 
 OOD anchors:
@@ -197,6 +225,14 @@ Calibration: None current; the lane is deprecated and excluded from promoted cla
 Calibration anchors:
 
 - (none)
+
+Conformal status: `not_applicable`
+
+Conformal certificate: The lane is deprecated and has no current calibration evidence; no uncertainty certificate is issued.
+
+Conformal anchors:
+
+- `tools/deprecated_default_lane_guard.py`
 
 OOD mechanism: None; the deprecation guard prevents the lane from becoming a default or public release path.
 
@@ -243,6 +279,14 @@ Calibration anchors:
 
 - (none)
 
+Conformal status: `not_applicable`
+
+Conformal certificate: No trained model exists, so there are no predictions or residuals to certify.
+
+Conformal anchors:
+
+- `src/scpn_fusion/core/tglf_surrogate_bridge.py::train_surrogate_from_tglf`
+
 OOD mechanism: Not applicable — no model.
 
 OOD anchors:
@@ -284,6 +328,14 @@ Training provenance anchors:
 Calibration: Weight-validation report records the acceptance checks for the shipped artifact.
 
 Calibration anchors:
+
+- `validation/reports/iter_surrogate_weight_validation.json`
+
+Conformal status: `unavailable`
+
+Conformal certificate: The committed report proves structural loadability only; raw training and exchangeable calibration residuals are absent, so no finite-sample error interval is issued.
+
+Conformal anchors:
 
 - `validation/reports/iter_surrogate_weight_validation.json`
 
