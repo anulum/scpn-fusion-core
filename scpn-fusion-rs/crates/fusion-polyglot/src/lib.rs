@@ -11,6 +11,7 @@
 //! fixed-boundary equation with Picard/Jacobi iteration, and exposes matching
 //! flux-operator and toroidal-current diagnostics for polyglot validation.
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 use std::collections::HashMap;
 use std::fs;

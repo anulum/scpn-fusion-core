@@ -6,6 +6,7 @@
 // Contact: www.anulum.li | protoscience@anulum.li
 //! Mathematical primitives for SCPN Fusion Core.
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod amr;
 pub mod chebyshev;

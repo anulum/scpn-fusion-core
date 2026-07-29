@@ -11,6 +11,7 @@
 //! Rejects CPU-only WGPU adapters by default so benchmark runs cannot
 //! misclassify software Vulkan devices as physical GPU evidence.
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 use bytemuck::{Pod, Zeroable};
 use fusion_types::error::{FusionError, FusionResult};

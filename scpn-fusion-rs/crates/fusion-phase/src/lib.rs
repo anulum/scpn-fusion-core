@@ -10,6 +10,7 @@
 //! Both mirror the NumPy reference tier in `scpn_fusion.phase` and are
 //! exposed to Python through `fusion-python` for fastest-first dispatch.
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod kuramoto;
 mod sincos;

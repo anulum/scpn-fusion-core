@@ -10,6 +10,7 @@
 //! These types define the native Rust contracts exchanged by the solver,
 //! diagnostics, transport, engineering, and Python-binding crates.
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 /// Governed reactor and solver configuration schema.
 pub mod config;
