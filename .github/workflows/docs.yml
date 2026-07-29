@@ -113,7 +113,7 @@ jobs:
       - name: Build strict Documenter API docs
         run: python tools/run_native_docs.py --language julia
       - name: Upload Julia docs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0  # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: julia-docs
           path: scpn-fusion-jl/docs/build/
@@ -131,7 +131,7 @@ jobs:
       - name: Build warning-denied C and C++ API docs
         run: python tools/run_native_docs.py --language cpp
       - name: Upload C and C++ docs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0  # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: cpp-docs
           path: docs/_build/cpp/html/
@@ -154,7 +154,7 @@ jobs:
       - name: Build doc-gen4 API documentation
         run: python tools/run_native_docs.py --language lean
       - name: Upload Lean docs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0  # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: lean-docs
           path: scpn-fusion-lean/docbuild/.lake/build/doc/
