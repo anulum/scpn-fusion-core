@@ -14,8 +14,10 @@ import json
 import math
 import re
 import xml.etree.ElementTree as ET
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -46,9 +48,14 @@ def _resolve(path_value: str) -> Path:
     return path
 
 
-def _validate_percent(value: float, *, label: str) -> float:
+def _validate_percent(value: object, *, label: str) -> float:
     """Validate and normalise percentage-like numeric inputs."""
-    numeric = float(value)
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        raise ValueError(f"{label} must be numeric.")
+    try:
+        numeric = float(value)
+    except ValueError as exc:
+        raise ValueError(f"{label} must be numeric.") from exc
     if not math.isfinite(numeric):
         raise ValueError(f"{label} must be finite.")
     if numeric < 0.0 or numeric > 100.0:
@@ -73,7 +80,7 @@ def _parse_condition_coverage(value: str) -> tuple[int, int] | None:
         return None
     covered = int(match.group(1))
     valid = int(match.group(2))
-    if valid <= 0 or covered < 0 or covered > valid:
+    if valid <= 0 or covered > valid:
         return None
     return covered, valid
 
@@ -145,7 +152,7 @@ def load_coverage(path: Path) -> CoverageSummary:
         domain_line_rate_pct[domain] = _validate_percent(pct, label=f"domain_line_rate[{domain}]")
     domain_branch_rate_pct: dict[str, float] = {}
     for domain, (covered, total) in domain_branches.items():
-        pct = 100.0 * covered / total if total > 0 else 0.0
+        pct = 100.0 * covered / total
         domain_branch_rate_pct[domain] = _validate_percent(
             pct,
             label=f"domain_branch_rate[{domain}]",
@@ -177,20 +184,28 @@ def load_coverage(path: Path) -> CoverageSummary:
     )
 
 
+def _threshold_map(config: dict[str, object], key: str) -> dict[str, object]:
+    value = config.get(key, {})
+    if not isinstance(value, dict):
+        raise ValueError(f"{key} must be a JSON object when provided.")
+    return cast(dict[str, object], value)
+
+
 def load_thresholds(path: Path) -> dict[str, object]:
     """Load and validate JSON coverage threshold configuration."""
     if not path.exists():
         raise FileNotFoundError(f"Coverage threshold config not found: {path}")
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
+    raw_data: object = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw_data, dict):
         raise ValueError("Threshold config must be a JSON object.")
+    data = cast(dict[str, object], raw_data)
     if "global_min_line_rate" not in data:
         raise ValueError("Threshold config must define global_min_line_rate.")
-    _validate_percent(float(data["global_min_line_rate"]), label="global_min_line_rate")
+    _validate_percent(data["global_min_line_rate"], label="global_min_line_rate")
     optional_scalar_keys = ("global_min_branch_rate",)
     for key in optional_scalar_keys:
         if key in data:
-            _validate_percent(float(data[key]), label=key)
+            _validate_percent(data[key], label=key)
 
     for key in (
         "domain_min_line_rate",
@@ -198,11 +213,8 @@ def load_thresholds(path: Path) -> dict[str, object]:
         "domain_min_branch_rate",
         "file_min_branch_rate",
     ):
-        value = data.get(key, {})
-        if not isinstance(value, dict):
-            raise ValueError(f"{key} must be a JSON object when provided.")
-        for sub_key, sub_value in value.items():
-            _validate_percent(float(sub_value), label=f"{key}[{sub_key}]")
+        for sub_key, sub_value in _threshold_map(data, key).items():
+            _validate_percent(sub_value, label=f"{key}[{sub_key}]")
     return data
 
 
@@ -210,13 +222,19 @@ def evaluate(summary: CoverageSummary, thresholds: dict[str, object]) -> list[st
     """Evaluate all configured thresholds and return a list of failure messages."""
     failures: list[str] = []
 
-    global_min = float(thresholds["global_min_line_rate"])
+    global_min = _validate_percent(
+        thresholds["global_min_line_rate"],
+        label="global_min_line_rate",
+    )
     if summary.line_rate_pct < global_min:
         failures.append(
             f"Global line coverage {summary.line_rate_pct:.2f}% < threshold {global_min:.2f}%."
         )
     if "global_min_branch_rate" in thresholds:
-        branch_target = float(thresholds["global_min_branch_rate"])
+        branch_target = _validate_percent(
+            thresholds["global_min_branch_rate"],
+            label="global_min_branch_rate",
+        )
         if summary.branch_rate_pct is None:
             failures.append(
                 "Global branch coverage missing from report (branches-valid=0); "
@@ -228,57 +246,49 @@ def evaluate(summary: CoverageSummary, thresholds: dict[str, object]) -> list[st
                 f"threshold {branch_target:.2f}%."
             )
 
-    domain_min = thresholds.get("domain_min_line_rate", {})
-    if isinstance(domain_min, dict):
-        for domain, threshold in domain_min.items():
-            target = float(threshold)
-            observed = summary.domain_line_rate_pct.get(domain)
-            if observed is None:
-                failures.append(f"Domain '{domain}' missing from coverage report.")
-                continue
-            if observed < target:
-                failures.append(
-                    f"Domain '{domain}' coverage {observed:.2f}% < threshold {target:.2f}%."
-                )
+    for domain, threshold in _threshold_map(thresholds, "domain_min_line_rate").items():
+        target = _validate_percent(threshold, label=f"domain_min_line_rate[{domain}]")
+        observed = summary.domain_line_rate_pct.get(domain)
+        if observed is None:
+            failures.append(f"Domain '{domain}' missing from coverage report.")
+            continue
+        if observed < target:
+            failures.append(
+                f"Domain '{domain}' coverage {observed:.2f}% < threshold {target:.2f}%."
+            )
 
-    file_min = thresholds.get("file_min_line_rate", {})
-    if isinstance(file_min, dict):
-        for filename, threshold in file_min.items():
-            target = float(threshold)
-            observed = summary.file_line_rate_pct.get(filename)
-            if observed is None:
-                failures.append(f"File '{filename}' missing from coverage report.")
-                continue
-            if observed < target:
-                failures.append(
-                    f"File '{filename}' coverage {observed:.2f}% < threshold {target:.2f}%."
-                )
+    for filename, threshold in _threshold_map(thresholds, "file_min_line_rate").items():
+        target = _validate_percent(threshold, label=f"file_min_line_rate[{filename}]")
+        observed = summary.file_line_rate_pct.get(filename)
+        if observed is None:
+            failures.append(f"File '{filename}' missing from coverage report.")
+            continue
+        if observed < target:
+            failures.append(
+                f"File '{filename}' coverage {observed:.2f}% < threshold {target:.2f}%."
+            )
 
-    domain_min_branch = thresholds.get("domain_min_branch_rate", {})
-    if isinstance(domain_min_branch, dict):
-        for domain, threshold in domain_min_branch.items():
-            target = float(threshold)
-            observed = summary.domain_branch_rate_pct.get(domain)
-            if observed is None:
-                failures.append(f"Domain '{domain}' missing branch coverage data.")
-                continue
-            if observed < target:
-                failures.append(
-                    f"Domain '{domain}' branch coverage {observed:.2f}% < threshold {target:.2f}%."
-                )
+    for domain, threshold in _threshold_map(thresholds, "domain_min_branch_rate").items():
+        target = _validate_percent(threshold, label=f"domain_min_branch_rate[{domain}]")
+        observed = summary.domain_branch_rate_pct.get(domain)
+        if observed is None:
+            failures.append(f"Domain '{domain}' missing branch coverage data.")
+            continue
+        if observed < target:
+            failures.append(
+                f"Domain '{domain}' branch coverage {observed:.2f}% < threshold {target:.2f}%."
+            )
 
-    file_min_branch = thresholds.get("file_min_branch_rate", {})
-    if isinstance(file_min_branch, dict):
-        for filename, threshold in file_min_branch.items():
-            target = float(threshold)
-            observed = summary.file_branch_rate_pct.get(filename)
-            if observed is None:
-                failures.append(f"File '{filename}' missing branch coverage data.")
-                continue
-            if observed < target:
-                failures.append(
-                    f"File '{filename}' branch coverage {observed:.2f}% < threshold {target:.2f}%."
-                )
+    for filename, threshold in _threshold_map(thresholds, "file_min_branch_rate").items():
+        target = _validate_percent(threshold, label=f"file_min_branch_rate[{filename}]")
+        observed = summary.file_branch_rate_pct.get(filename)
+        if observed is None:
+            failures.append(f"File '{filename}' missing branch coverage data.")
+            continue
+        if observed < target:
+            failures.append(
+                f"File '{filename}' branch coverage {observed:.2f}% < threshold {target:.2f}%."
+            )
 
     return failures
 
@@ -301,7 +311,15 @@ def _write_summary(path: Path, summary: CoverageSummary) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def main(argv: list[str] | None = None) -> int:
+class _Arguments(argparse.Namespace):
+    """Typed command-line arguments for the coverage guard."""
+
+    coverage_xml: str
+    thresholds: str
+    summary_json: str
+
+
+def main(argv: Sequence[str] | None = None) -> int:
     """Run coverage parsing/evaluation and print pass-fail results."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -319,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="Optional path to write coverage summary JSON.",
     )
-    args = parser.parse_args(argv)
+    args = parser.parse_args(argv, namespace=_Arguments())
 
     coverage_path = _resolve(args.coverage_xml)
     thresholds_path = _resolve(args.thresholds)
