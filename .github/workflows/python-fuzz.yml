@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Nightly Python Fuzzing
+name: Python Fuzz
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 2 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: python-fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Atheris (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SCPN_DISABLE_JULIA: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: geqdsk
+            max_len: 262144
+          - target: imas_ids
+            max_len: 262144
+          - target: fusion_config
+            max_len: 262144
+          - target: disruption_npz
+            max_len: 1048576
+          - target: snn_artifact
+            max_len: 1048576
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements/minimal.txt
+            requirements/fuzz.txt
+      - name: Install hashed fuzzing environment
+        run: |
+          python -m pip install --require-hashes -r requirements/minimal.txt
+          python -m pip install --require-hashes -r requirements/fuzz.txt
+          python -m pip install --no-deps -e .
+      - name: Run bounded Atheris campaign
+        run: >-
+          python fuzz/fuzz_${{ matrix.target }}.py
+          -atheris_runs=512
+          -max_len=${{ matrix.max_len }}
+          -timeout=10
+          -rss_limit_mb=2048
+      - name: Upload crash reproducer
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: atheris-${{ matrix.target }}-failure-${{ github.run_id }}
+          path: |
+            crash-*
+            timeout-*
+            oom-*
+            leak-*
+          if-no-files-found: ignore
+          retention-days: 14

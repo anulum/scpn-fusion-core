@@ -19,10 +19,17 @@ from pydantic import ValidationError
 from scpn_fusion.core.fusion_kernel import MAX_CONFIG_BYTES, FusionKernel
 
 _MAX_INPUT_BYTES = min(MAX_CONFIG_BYTES, 256 * 1024)
-_EXPECTED_REJECTIONS = (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError, ValidationError)
+_EXPECTED_REJECTIONS = (
+    OSError,
+    UnicodeDecodeError,
+    ValueError,
+    json.JSONDecodeError,
+    ValidationError,
+)
 
 
 def TestOneInput(data: bytes) -> None:
+    """Exercise bounded fusion-kernel configuration loading with arbitrary bytes."""
     if len(data) > _MAX_INPUT_BYTES:
         data = data[:_MAX_INPUT_BYTES]
     with tempfile.TemporaryDirectory(prefix="scpn-config-fuzz-") as tmp:
@@ -36,10 +43,13 @@ def TestOneInput(data: bytes) -> None:
 
 
 def main() -> None:
+    """Run the coverage-instrumented Atheris fuzz loop."""
     try:
         import atheris
     except ImportError as exc:
         raise SystemExit("Install atheris to run this fuzz target") from exc
+    atheris.instrument_func(FusionKernel.load_config)
+    atheris.instrument_func(TestOneInput)
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()
 

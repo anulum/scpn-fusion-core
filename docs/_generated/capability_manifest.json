@@ -2762,7 +2762,7 @@
   },
   "counts": {
     "capability_documentation_pages": 63,
-    "github_workflows": 13,
+    "github_workflows": 14,
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 63,
@@ -2899,6 +2899,7 @@
       ".github/workflows/pre-commit.yml",
       ".github/workflows/publish.yml",
       ".github/workflows/pypi-downloads.yml",
+      ".github/workflows/python-fuzz.yml",
       ".github/workflows/real-data-strict.yml",
       ".github/workflows/sbom.yml",
       ".github/workflows/scorecard.yml",

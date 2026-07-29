@@ -13,8 +13,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from scpn_fusion.io.safe_loaders import MAX_JSON_BYTES
 from scpn_fusion.io.imas_connector_storage import read_ids
+from scpn_fusion.io.safe_loaders import MAX_JSON_BYTES
 
 _MAX_INPUT_BYTES = min(MAX_JSON_BYTES, 256 * 1024)
 _EXPECTED_REJECTIONS = (OSError, UnicodeDecodeError, ValueError)
@@ -39,6 +39,8 @@ def main() -> None:
         import atheris
     except ImportError as exc:
         raise SystemExit("Install atheris to run this fuzz target") from exc
+    atheris.instrument_func(read_ids)
+    atheris.instrument_func(TestOneInput)
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()
 

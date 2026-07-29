@@ -14,6 +14,6 @@
 | Optional extras | 13 |
 | Python test files | 601 |
 | Public documentation pages | 63 |
-| GitHub Actions workflows | 13 |
+| GitHub Actions workflows | 14 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

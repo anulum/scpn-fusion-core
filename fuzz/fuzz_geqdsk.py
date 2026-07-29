@@ -20,6 +20,7 @@ _EXPECTED_REJECTIONS = (OSError, UnicodeDecodeError, ValueError)
 
 
 def TestOneInput(data: bytes) -> None:
+    """Exercise bounded GEQDSK parsing with arbitrary bytes."""
     if len(data) > _MAX_INPUT_BYTES:
         data = data[:_MAX_INPUT_BYTES]
     with tempfile.TemporaryDirectory(prefix="scpn-geqdsk-fuzz-") as tmp:
@@ -32,10 +33,13 @@ def TestOneInput(data: bytes) -> None:
 
 
 def main() -> None:
+    """Run the coverage-instrumented Atheris fuzz loop."""
     try:
         import atheris
     except ImportError as exc:
         raise SystemExit("Install atheris to run this fuzz target") from exc
+    atheris.instrument_func(read_geqdsk)
+    atheris.instrument_func(TestOneInput)
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()
 

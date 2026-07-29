@@ -4,6 +4,11 @@
 
 ### Added
 
+- Add a dedicated nightly Atheris matrix for all five hostile-input Python
+  harnesses with coverage instrumentation, hashed dependencies, bounded runs,
+  time/memory/input limits, and retained failure reproducers. Expand CodeQL
+  from Python-only analysis to independent Python, Rust, and Go jobs; the Go
+  extractor is bound to an explicit build of the nested solver module.
 - Digest-bound IDA free-boundary same-case evidence runner for the implicit JAX
   solver. It measures public FreeGS development and DIII-D-like cases, checks
   all three differentiated input groups against finite differences, records

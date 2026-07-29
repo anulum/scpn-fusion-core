@@ -10,10 +10,13 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
+from typing import Any
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -102,3 +105,99 @@ def test_checked_npz_loader_rejects_compressed_expansion_bomb(tmp_path: Path) ->
 
     with pytest.raises(ValueError, match="member too large"):
         load_disruption_shot(path, disruption_dir=tmp_path)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "fuzz_geqdsk",
+        "fuzz_imas_ids",
+        "fuzz_fusion_config",
+        "fuzz_disruption_npz",
+        "fuzz_snn_artifact",
+    ],
+)
+def test_fuzz_harness_main_instruments_before_starting(
+    name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Every executable harness instruments loaded Python before fuzzing."""
+    events: list[tuple[str, Any]] = []
+    fake_atheris = SimpleNamespace(
+        instrument_func=lambda target: events.append(("instrument_func", target)),
+        Setup=lambda argv, target: events.append(("setup", (argv, target))),
+        Fuzz=lambda: events.append(("fuzz", None)),
+    )
+    monkeypatch.setitem(sys.modules, "atheris", fake_atheris)
+    harness = _load_harness(name)
+
+    harness.main()
+
+    assert [event[0] for event in events] == [
+        "instrument_func",
+        "instrument_func",
+        "setup",
+        "fuzz",
+    ]
+    assert events[1][1] is harness.TestOneInput
+    assert events[2][1][1] is harness.TestOneInput
+
+
+def _load_workflow(name: str) -> dict[str, Any]:
+    """Load a workflow without YAML 1.1 boolean coercion of the `on` key."""
+    payload = yaml.load(
+        (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    assert isinstance(payload, dict)
+    return payload
+
+
+def test_python_fuzz_workflow_is_nightly_complete_and_bounded() -> None:
+    """The nightly matrix runs exactly the five shipped Atheris targets."""
+    workflow = _load_workflow("python-fuzz.yml")
+    assert "schedule" in workflow["on"]
+    job = workflow["jobs"]["fuzz"]
+    rows = job["strategy"]["matrix"]["include"]
+    assert {row["target"] for row in rows} == {
+        "geqdsk",
+        "imas_ids",
+        "fusion_config",
+        "disruption_npz",
+        "snn_artifact",
+    }
+    assert all(1 <= int(row["max_len"]) <= 1024 * 1024 for row in rows)
+    text = (ROOT / ".github" / "workflows" / "python-fuzz.yml").read_text(encoding="utf-8")
+    for token in (
+        "-atheris_runs=512",
+        "-timeout=10",
+        "-rss_limit_mb=2048",
+        "requirements/fuzz.txt",
+        'SCPN_DISABLE_JULIA: "1"',
+        "if: failure()",
+    ):
+        assert token in text
+
+
+def test_codeql_workflow_covers_python_rust_and_go() -> None:
+    """CodeQL uses supported extraction modes for all repository languages."""
+    workflow = _load_workflow("codeql.yml")
+    rows = workflow["jobs"]["analyze"]["strategy"]["matrix"]["include"]
+    assert {(row["language"], row["build-mode"]) for row in rows} == {
+        ("python", "none"),
+        ("rust", "none"),
+        ("go", "manual"),
+    }
+    steps = workflow["jobs"]["analyze"]["steps"]
+    go_build = next(
+        step for step in steps if step.get("name") == "Build Go module for CodeQL extraction"
+    )
+    assert go_build["if"] == "matrix.language == 'go'"
+    assert go_build["working-directory"] == "scpn-fusion-go"
+    assert go_build["run"] == "go build ./..."
+
+
+def test_fuzz_requirement_is_hash_pinned() -> None:
+    """Nightly Atheris installation is version and digest pinned."""
+    text = (ROOT / "requirements" / "fuzz.txt").read_text(encoding="utf-8")
+    assert "atheris==3.1.0" in text
+    assert "sha256:ec5e11f21a4c197fe91f7aea2b2de88e623c73a21fc07b105ac6329a1588457b" in text

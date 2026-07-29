@@ -21,6 +21,7 @@ _EXPECTED_REJECTIONS = (OSError, ValueError, KeyError, FileNotFoundError, zipfil
 
 
 def TestOneInput(data: bytes) -> None:
+    """Exercise bounded disruption-shot NPZ loading with arbitrary bytes."""
     if len(data) > _MAX_INPUT_BYTES:
         data = data[:_MAX_INPUT_BYTES]
     with tempfile.TemporaryDirectory(prefix="scpn-npz-fuzz-") as tmp:
@@ -34,10 +35,13 @@ def TestOneInput(data: bytes) -> None:
 
 
 def main() -> None:
+    """Run the coverage-instrumented Atheris fuzz loop."""
     try:
         import atheris
     except ImportError as exc:
         raise SystemExit("Install atheris to run this fuzz target") from exc
+    atheris.instrument_func(load_disruption_shot)
+    atheris.instrument_func(TestOneInput)
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()
 
