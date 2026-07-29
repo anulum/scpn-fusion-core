@@ -7,6 +7,7 @@
 // SCPN Fusion Core — Engineering
 //! Engineering models for plant design, magnets, tritium systems, and blanket lifetime.
 #![deny(missing_docs)]
+#![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
 pub mod blanket;
 pub mod layout;

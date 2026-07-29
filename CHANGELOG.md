@@ -4,6 +4,9 @@
 
 ### Added
 
+- Enforce a non-test `unwrap()`/`expect()` denial boundary in
+  `fusion-engineering`; its only two audited uses are invariant assertions in
+  inline tests, while production library code remains free of both panic APIs.
 - Enforce complete public API documentation in `fusion-gpu`,
   `fusion-polyglot`, `fusion-diagnostics`, `fusion-engineering`, `fusion-phase`,
   `fusion-types`, `fusion-nuclear`, `fusion-math`, `fusion-ml`, and the
