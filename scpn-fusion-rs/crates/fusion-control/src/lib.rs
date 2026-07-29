@@ -9,6 +9,8 @@
 //!
 //! Stage 7: PID, optimal, MPC, SNN, digital twin, SPI, SOC-learning, analytic.
 
+#![deny(missing_docs)]
+
 pub mod analytic;
 pub mod constraints;
 pub mod digital_twin;

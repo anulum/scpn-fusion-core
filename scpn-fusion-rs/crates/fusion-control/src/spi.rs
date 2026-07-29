@@ -46,26 +46,38 @@ const L_PLASMA: f64 = 1e-6;
 /// Disruption phase.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
+    /// Pellet fragments mix into the plasma before quench onset.
     Assimilation,
+    /// Radiation removes stored thermal energy.
     ThermalQuench,
+    /// Resistive decay removes plasma current.
     CurrentQuench,
 }
 
 /// SPI time-step snapshot.
 #[derive(Debug, Clone)]
 pub struct SPISnapshot {
+    /// Simulation time in seconds.
     pub time: f64,
+    /// Stored thermal energy in megajoules.
     pub w_th_mj: f64,
+    /// Plasma current in megaamperes.
     pub ip_ma: f64,
+    /// Electron temperature in kiloelectronvolts.
     pub te_kev: f64,
+    /// Active disruption-mitigation phase.
     pub phase: Phase,
 }
 
 /// Shattered Pellet Injection simulator.
 pub struct SPIMitigation {
-    pub w_th: f64, // [J]
-    pub ip: f64,   // [A]
-    pub te: f64,   // [keV]
+    /// Stored thermal energy in joules.
+    pub w_th: f64,
+    /// Plasma current in amperes.
+    pub ip: f64,
+    /// Electron temperature in kiloelectronvolts.
+    pub te: f64,
+    /// Active disruption-mitigation phase.
     pub phase: Phase,
 }
 
@@ -79,6 +91,12 @@ impl SPIMitigation {
         }
     }
 
+    /// Construct an SPI simulation from positive finite initial conditions.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error if energy, current, or temperature is
+    /// non-finite or not strictly positive.
     pub fn new(w_th_mj: f64, ip_ma: f64, te_kev: f64) -> FusionResult<Self> {
         if !w_th_mj.is_finite() || w_th_mj <= 0.0 {
             return Err(FusionError::ConfigError(

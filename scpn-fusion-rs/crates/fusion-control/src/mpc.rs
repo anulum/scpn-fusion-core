@@ -44,6 +44,7 @@ pub struct NeuralSurrogate {
 }
 
 impl NeuralSurrogate {
+    /// Construct a linear surrogate from its state-by-coil response matrix.
     pub fn new(b_matrix: Array2<f64>) -> Self {
         NeuralSurrogate { b_matrix }
     }
@@ -72,12 +73,21 @@ impl NeuralSurrogate {
 
 /// Model Predictive Controller.
 pub struct MPController {
+    /// Linear state-transition surrogate.
     pub model: NeuralSurrogate,
+    /// Desired state vector.
     pub target: Array1<f64>,
+    /// Number of predicted control steps.
     pub horizon: usize,
 }
 
 impl MPController {
+    /// Construct a controller after validating model and target dimensions.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for empty dimensions, shape mismatch, or non-finite
+    /// model/target values.
     pub fn new(model: NeuralSurrogate, target: Array1<f64>) -> FusionResult<Self> {
         let n_state = model.b_matrix.nrows();
         let n_coils = model.b_matrix.ncols();

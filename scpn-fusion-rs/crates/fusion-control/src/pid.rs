@@ -25,14 +25,22 @@ const PID_Z_KD: f64 = 2.0;
 /// Generic PID controller.
 #[derive(Debug, Clone)]
 pub struct PIDController {
+    /// Proportional gain.
     pub kp: f64,
+    /// Integral gain.
     pub ki: f64,
+    /// Derivative gain.
     pub kd: f64,
     err_sum: f64,
     last_err: f64,
 }
 
 impl PIDController {
+    /// Construct a controller with finite gains and zero accumulated state.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error if any gain is non-finite.
     pub fn new(kp: f64, ki: f64, kd: f64) -> FusionResult<Self> {
         if !kp.is_finite() || !ki.is_finite() || !kd.is_finite() {
             return Err(FusionError::ConfigError(
@@ -80,15 +88,26 @@ impl PIDController {
 
 /// Isoflux position controller with R and Z PIDs.
 pub struct IsoFluxController {
+    /// Major-radius PID loop.
     pub pid_r: PIDController,
+    /// Vertical-position PID loop.
     pub pid_z: PIDController,
+    /// Major-radius target in metres.
     pub target_r: f64,
+    /// Vertical-position target in metres.
     pub target_z: f64,
+    /// Legacy radial-history storage; flight simulation uses telemetry instead.
     pub r_history: Vec<f64>,
+    /// Legacy vertical-history storage; flight simulation uses telemetry instead.
     pub z_history: Vec<f64>,
 }
 
 impl IsoFluxController {
+    /// Construct the default radial and vertical loops for finite targets.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error for non-finite targets or PID setup failure.
     pub fn new(target_r: f64, target_z: f64) -> FusionResult<Self> {
         if !target_r.is_finite() || !target_z.is_finite() {
             return Err(FusionError::ConfigError(

@@ -33,19 +33,35 @@ const ELONGATION: f64 = 2.0;
 
 /// SPI fragment ablation solver — struct-of-arrays layout.
 pub struct SpiAblationSolver {
+    /// Number of fragments represented by every state vector.
     pub n_fragments: usize,
+    /// Fragment radii in metres.
     pub radius: Vec<f64>,
+    /// Fragment masses in kilograms.
     pub mass: Vec<f64>,
+    /// Cartesian x positions in metres.
     pub pos_x: Vec<f64>,
+    /// Cartesian y positions in metres.
     pub pos_y: Vec<f64>,
+    /// Cartesian z positions in metres.
     pub pos_z: Vec<f64>,
+    /// Cartesian x velocities in metres per second.
     pub vel_x: Vec<f64>,
+    /// Cartesian y velocities in metres per second.
     pub vel_y: Vec<f64>,
+    /// Cartesian z velocities in metres per second.
     pub vel_z: Vec<f64>,
+    /// Whether each fragment still carries ablatable mass.
     pub active: Vec<bool>,
 }
 
 impl SpiAblationSolver {
+    /// Construct a deterministic neon-fragment ensemble.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error for zero fragments or non-positive,
+    /// non-finite total mass.
     pub fn new(
         n_fragments: usize,
         total_mass_kg: f64,
@@ -212,10 +228,12 @@ impl SpiAblationSolver {
         Ok(deposition)
     }
 
+    /// Return the number of fragments still marked active.
     pub fn n_active(&self) -> usize {
         self.active.iter().filter(|&&a| a).count()
     }
 
+    /// Return the remaining aggregate fragment mass in kilograms.
     pub fn total_mass(&self) -> f64 {
         self.mass.iter().sum()
     }

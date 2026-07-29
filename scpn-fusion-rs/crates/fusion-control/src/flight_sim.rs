@@ -21,67 +21,117 @@ use std::time::{Duration, Instant};
 /// Shot result metrics for analysis.
 #[derive(Debug, Clone)]
 pub struct SimulationReport {
+    /// Number of requested control steps.
     pub steps: usize,
+    /// Simulated shot duration in seconds.
     pub duration_s: f64,
+    /// Total host wall time in milliseconds.
     pub wall_time_ms: f64,
+    /// Slowest measured control step in microseconds.
     pub max_step_time_us: f64,
+    /// Mean absolute major-radius error.
     pub mean_abs_r_error: f64,
+    /// Mean absolute vertical-position error.
     pub mean_abs_z_error: f64,
+    /// Final normalized beta state.
     pub final_beta: f64,
+    /// Final bounded heating command in megawatts.
     pub final_heating_mw: f64,
+    /// Maximum normalized beta during the shot.
     pub max_beta: f64,
+    /// Maximum heating command in megawatts.
     pub max_heating_mw: f64,
+    /// Number of steps that contacted a vessel boundary.
     pub vessel_contact_events: usize,
+    /// Number of steps where PF constraints modified a request.
     pub pf_constraint_events: usize,
+    /// Number of steps where heating constraints modified a request.
     pub heating_constraint_events: usize,
+    /// Number of samples retained by bounded telemetry.
     pub retained_steps: usize,
+    /// Whether telemetry capacity omitted early requested steps.
     pub history_truncated: bool,
+    /// Whether any step met the local disruption heuristic.
     pub disrupted: bool,
+    /// Retained major-radius history in metres.
     pub r_history: Vec<f64>,
+    /// Retained vertical-position history in metres.
     pub z_history: Vec<f64>,
+    /// Retained plasma-current history in megaamperes.
     pub ip_history: Vec<f64>,
 }
 
+/// Metrics produced by one flight-simulator control step.
 #[derive(Debug, Clone, Copy)]
 pub struct StepMetrics {
+    /// Absolute major-radius tracking error.
     pub r_error: f64,
+    /// Absolute vertical-position tracking error.
     pub z_error: f64,
+    /// Local disruption-heuristic result.
     pub disrupted: bool,
+    /// Host execution time for this step in microseconds.
     pub step_time_us: f64,
+    /// Normalized beta after the step.
     pub beta: f64,
+    /// Applied heating command in megawatts.
     pub heating_mw: f64,
+    /// Whether unconstrained state evolution reached a vessel boundary.
     pub vessel_contact: bool,
+    /// Whether PF limits modified a controller request.
     pub pf_constraint_active: bool,
+    /// Whether heating limits modified the heating request.
     pub heating_constraint_active: bool,
 }
 
+/// Running accumulators used to build a final shot report.
 #[derive(Debug, Clone, Copy)]
 pub struct ShotAggregate {
+    /// Largest measured step time in microseconds.
     pub max_step_time_us: f64,
+    /// Sum of absolute major-radius errors.
     pub r_err_sum: f64,
+    /// Sum of absolute vertical-position errors.
     pub z_err_sum: f64,
+    /// Whether any accumulated step was locally disruptive.
     pub disrupted: bool,
+    /// Maximum normalized beta observed.
     pub max_beta: f64,
+    /// Maximum applied heating in megawatts.
     pub max_heating_mw: f64,
+    /// Accumulated vessel-contact event count.
     pub vessel_contact_events: usize,
+    /// Accumulated PF-constraint event count.
     pub pf_constraint_events: usize,
+    /// Accumulated heating-constraint event count.
     pub heating_constraint_events: usize,
 }
 
 /// High-speed simulation engine.
 pub struct RustFlightSim {
+    /// Coupled radial/vertical feedback controller.
     pub controller: IsoFluxController,
+    /// Two-channel delayed actuator model.
     pub delay_line: ActuatorDelayLine,
+    /// Bounded telemetry channels.
     pub telemetry: TelemetrySuite,
+    /// Hard actuator command and slew limits.
     pub constraints: SafetyEnvelope,
+    /// Control-period duration in seconds.
     pub control_dt: f64,
     // Simulated state (Simplified Physics Model for high-speed loop)
+    /// Current major radius in metres.
     pub curr_r: f64,
+    /// Current vertical position in metres.
     pub curr_z: f64,
+    /// Current plasma current in megaamperes.
     pub curr_ip_ma: f64,
+    /// Current normalized beta.
     pub curr_beta: f64,
+    /// Current heating command in megawatts.
     pub curr_heating_mw: f64,
     // Actuator States (for slew rate tracking)
+    /// Last applied radial and vertical PF commands.
     pub pf_states: Vec<f64>,
 }
 
@@ -121,6 +171,12 @@ impl RustFlightSim {
         Ok(())
     }
 
+    /// Construct a simulator at the requested control frequency and targets.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for non-finite targets, non-positive frequency, or
+    /// invalid dependent controller/delay configuration.
     pub fn new(target_r: f64, target_z: f64, control_hz: f64) -> FusionResult<Self> {
         if !target_r.is_finite() || !target_z.is_finite() {
             return Err(FusionError::ConfigError(
@@ -177,12 +233,14 @@ impl RustFlightSim {
         Ok(steps)
     }
 
+    /// Clear per-shot telemetry, delay state, and PF actuator state.
     pub fn reset_for_shot(&mut self) {
         self.telemetry.clear();
         self.delay_line.reset();
         self.pf_states.fill(0.0);
     }
 
+    /// Restore the target-centered nominal plasma state for a fresh shot.
     pub fn reset_plasma_state(&mut self) {
         self.reset_for_shot();
         self.curr_r = self.controller.target_r;
@@ -192,6 +250,7 @@ impl RustFlightSim {
         self.curr_heating_mw = 20.0;
     }
 
+    /// Return `(r, z, plasma_current_MA, beta, heating_MW)`.
     pub fn plasma_state(&self) -> (f64, f64, f64, f64, f64) {
         (
             self.curr_r,
@@ -202,6 +261,11 @@ impl RustFlightSim {
         )
     }
 
+    /// Validate duration/runtime state, reset shot-local state, and return steps.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an unusable duration or invalid mutable state.
     pub fn prepare_shot(&mut self, shot_duration_s: f64) -> FusionResult<usize> {
         let steps = self.validate_shot_duration(shot_duration_s)?;
         self.validate_runtime_state()?;
@@ -209,6 +273,12 @@ impl RustFlightSim {
         Ok(steps)
     }
 
+    /// Advance one indexed control step within a declared shot duration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid duration/index, non-finite or out-of-envelope
+    /// mutable state, or a controller/delay failure.
     pub fn step_once(
         &mut self,
         step_index: usize,
@@ -316,6 +386,7 @@ impl RustFlightSim {
         })
     }
 
+    /// Convert completed-shot accumulators and retained telemetry into a report.
     pub fn finalize_report(
         &self,
         steps: usize,

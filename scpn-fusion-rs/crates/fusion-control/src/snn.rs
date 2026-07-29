@@ -39,6 +39,7 @@ pub struct LIFNeuron {
 }
 
 impl LIFNeuron {
+    /// Construct a resting leaky integrate-and-fire neuron.
     pub fn new() -> Self {
         LIFNeuron {
             v: -65e-3,
@@ -85,7 +86,9 @@ impl Default for LIFNeuron {
 
 /// Population of LIF neurons with rate coding.
 pub struct SpikingControllerPool {
+    /// Number of neurons in each positive and negative population.
     pub n_neurons: usize,
+    /// Output scaling applied to the population-rate difference.
     pub gain: f64,
     pop_pos: Vec<LIFNeuron>,
     pop_neg: Vec<LIFNeuron>,
@@ -95,6 +98,11 @@ pub struct SpikingControllerPool {
 }
 
 impl SpikingControllerPool {
+    /// Construct paired rate-coding populations and a bounded history window.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for zero neurons/window or a non-finite gain.
     pub fn new(n_neurons: usize, gain: f64, window_size: usize) -> FusionResult<Self> {
         if n_neurons == 0 {
             return Err(FusionError::ConfigError(
@@ -168,13 +176,22 @@ impl SpikingControllerPool {
 
 /// Neuro-cybernetic controller with R and Z SNN pools.
 pub struct NeuroCyberneticController {
+    /// Major-radius spiking controller population.
     pub brain_r: SpikingControllerPool,
+    /// Vertical-position spiking controller population.
     pub brain_z: SpikingControllerPool,
+    /// Major-radius target in metres.
     pub target_r: f64,
+    /// Vertical-position target in metres.
     pub target_z: f64,
 }
 
 impl NeuroCyberneticController {
+    /// Construct default radial and vertical SNN pools for finite targets.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error for non-finite targets or pool setup failure.
     pub fn new(target_r: f64, target_z: f64) -> FusionResult<Self> {
         if !target_r.is_finite() || !target_z.is_finite() {
             return Err(FusionError::ConfigError(

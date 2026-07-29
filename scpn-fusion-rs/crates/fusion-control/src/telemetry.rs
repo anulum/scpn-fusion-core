@@ -20,6 +20,12 @@ pub struct CircularChannel {
 }
 
 impl CircularChannel {
+    /// Construct a zero-filled circular buffer with fixed capacity.
+    ///
+    /// # Panics
+    ///
+    /// [`Self::push`] will panic if this channel is constructed with zero
+    /// capacity; callers must supply a positive capacity.
     pub fn new(capacity: usize) -> Self {
         Self {
             data: vec![0.0; capacity],
@@ -29,6 +35,11 @@ impl CircularChannel {
         }
     }
 
+    /// Append one value, overwriting the oldest value after capacity is reached.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the channel capacity is zero.
     pub fn push(&mut self, value: f64) {
         self.data[self.head] = value;
         self.head = (self.head + 1) % self.capacity;
@@ -50,6 +61,7 @@ impl CircularChannel {
         result
     }
 
+    /// Return the newest value, or zero if no value has been recorded.
     pub fn latest(&self) -> f64 {
         if self.count == 0 {
             return 0.0;
@@ -62,6 +74,7 @@ impl CircularChannel {
         self.data[idx]
     }
 
+    /// Mark the channel empty without reallocating its storage.
     pub fn clear(&mut self) {
         self.head = 0;
         self.count = 0;
@@ -71,13 +84,18 @@ impl CircularChannel {
 /// Multi-channel telemetry suite.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TelemetrySuite {
+    /// Major-radius samples.
     pub r_axis: CircularChannel,
+    /// Vertical-position samples.
     pub z_axis: CircularChannel,
+    /// Plasma-current samples in megaamperes.
     pub ip_ma: CircularChannel,
+    /// Normalized-beta samples.
     pub beta: CircularChannel,
 }
 
 impl TelemetrySuite {
+    /// Construct four channels with a shared positive capacity.
     pub fn new(capacity: usize) -> Self {
         Self {
             r_axis: CircularChannel::new(capacity),
@@ -87,6 +105,7 @@ impl TelemetrySuite {
         }
     }
 
+    /// Append one synchronized sample to all channels.
     pub fn record(&mut self, r: f64, z: f64, ip: f64, beta: f64) {
         self.r_axis.push(r);
         self.z_axis.push(z);
@@ -94,6 +113,7 @@ impl TelemetrySuite {
         self.beta.push(beta);
     }
 
+    /// Clear all channels while retaining their allocated storage.
     pub fn clear(&mut self) {
         self.r_axis.clear();
         self.z_axis.clear();

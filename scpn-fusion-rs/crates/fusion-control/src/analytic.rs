@@ -25,7 +25,7 @@ pub const LI: f64 = 0.8;
 /// Result of Shafranov equilibrium calculation.
 #[derive(Debug, Clone)]
 pub struct ShafranovResult {
-    /// Required vertical field [T].
+    /// Required vertical field in tesla.
     pub bv_required: f64,
     /// log term.
     pub term_log: f64,
@@ -35,7 +35,8 @@ pub struct ShafranovResult {
 
 /// Compute required vertical field from Shafranov formula.
 ///
-/// `r_geo`: major radius [m], `a_min`: minor radius [m], `ip_ma`: plasma current [MA],
+/// `r_geo`: major radius in metres, `a_min`: minor radius in metres,
+/// `ip_ma`: plasma current in megaamperes,
 /// `beta_p`: poloidal beta, `li`: internal inductance.
 ///
 /// Canonical contract shared with the NumPy tier
@@ -91,11 +92,11 @@ pub fn shafranov_bv(
 /// Solve for coil currents given Green's function efficiencies.
 ///
 /// `green_func`: Bz contribution per coil per MA [T/MA].
-/// `target_bv`: required vertical field [T].
+/// `target_bv`: required vertical field in tesla.
 /// `ridge_lambda`: Tikhonov regularisation added to `G·Gᵀ`; negative values are
 /// clamped to zero (plain minimum norm).
 ///
-/// Returns minimum-norm coil currents [MA]. Canonical contract shared with the
+/// Returns minimum-norm coil currents in megaamperes. Canonical contract shared with the
 /// NumPy tier (`scpn_fusion.control.analytic_solver.solve_coil_currents`): the
 /// direct closed form `Iᵢ = gᵢ·target_bv / (Σgⱼ² + λ)`, including the
 /// `(Σg² + λ).max(1e-12)` ridge floor and the small-norm rejection in the

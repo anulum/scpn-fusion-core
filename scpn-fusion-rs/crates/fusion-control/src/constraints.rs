@@ -11,12 +11,16 @@
 /// Physical constraints for a single coil or heating system.
 #[derive(Debug, Clone, Copy)]
 pub struct PhysicalConstraint {
+    /// Maximum absolute actuator command.
     pub max_value: f64,
+    /// Minimum absolute actuator command.
     pub min_value: f64,
-    pub max_slew_rate: f64, // max change per second
+    /// Maximum command change per second.
+    pub max_slew_rate: f64,
 }
 
 impl PhysicalConstraint {
+    /// Construct absolute and slew-rate limits for one actuator.
     pub fn new(min: f64, max: f64, slew: f64) -> Self {
         Self {
             min_value: min,
@@ -39,7 +43,9 @@ impl PhysicalConstraint {
 
 /// Global safety envelope for all actuators.
 pub struct SafetyEnvelope {
+    /// Shared limits for poloidal-field coil commands.
     pub pf_coils: PhysicalConstraint,
+    /// Limits for auxiliary-heating commands.
     pub heating: PhysicalConstraint,
 }
 

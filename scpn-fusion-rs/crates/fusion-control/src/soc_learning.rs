@@ -44,12 +44,16 @@ const N_ACTIONS: usize = 3;
 
 /// Coupled sandpile reactor with zonal flows.
 pub struct CoupledSandpile {
+    /// Local gradient state for each radial site.
     pub z: Vec<f64>,
+    /// Accumulated height/drive state for each radial site.
     pub h: Vec<f64>,
+    /// Current zonal-flow amplitude.
     pub flow: f64,
 }
 
 impl CoupledSandpile {
+    /// Construct a quiescent 60-site reactor.
     pub fn new() -> Self {
         CoupledSandpile {
             z: vec![0.0; L],
@@ -123,13 +127,16 @@ impl Default for CoupledSandpile {
 
 /// Tabular Q-learning agent.
 pub struct FusionAgent {
-    pub q_table: Vec<f64>, // [N_TURB × N_FLOW × N_ACTIONS]
+    /// Flattened `[turbulence, flow, action]` Q-value table.
+    pub q_table: Vec<f64>,
+    /// Cumulative reward received by the agent.
     pub total_reward: f64,
     last_state: (usize, usize),
     last_action: usize,
 }
 
 impl FusionAgent {
+    /// Construct a zero-initialized tabular agent.
     pub fn new() -> Self {
         FusionAgent {
             q_table: vec![0.0; N_TURB * N_FLOW * N_ACTIONS],

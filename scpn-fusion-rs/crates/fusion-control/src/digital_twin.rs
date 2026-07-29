@@ -66,13 +66,23 @@ pub fn apply_bit_flip_fault(value: f64, bit_index: u8) -> FusionResult<f64> {
 /// Ornstein-Uhlenbeck noise process for sensor/actuator perturbations.
 #[derive(Debug, Clone, Copy)]
 pub struct NoiseInjectionLayer {
+    /// Mean-reversion rate.
     pub theta: f64,
+    /// Diffusion amplitude.
     pub sigma: f64,
+    /// Integration step in seconds.
     pub dt: f64,
+    /// Current noise-process state.
     pub state: f64,
 }
 
 impl NoiseInjectionLayer {
+    /// Construct a validated zero-initialized Ornstein-Uhlenbeck process.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for negative/non-finite parameters or a non-positive
+    /// time step.
     pub fn new(theta: f64, sigma: f64, dt: f64) -> Result<Self, String> {
         if !theta.is_finite() || theta < 0.0 {
             return Err("theta must be finite and >= 0.".to_string());
@@ -91,6 +101,12 @@ impl NoiseInjectionLayer {
         })
     }
 
+    /// Advance the stochastic process by one configured time step.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if public parameters/state are invalid or the updated
+    /// state becomes non-finite.
     pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> FusionResult<f64> {
         if !self.theta.is_finite() || self.theta < 0.0 {
             return Err(FusionError::ConfigError(format!(
@@ -142,10 +158,16 @@ impl Default for NoiseInjectionLayer {
 /// Vectorized Ornstein-Uhlenbeck noise over multiple channels.
 #[derive(Debug, Clone)]
 pub struct VectorNoiseInjectionLayer {
+    /// Independent noise processes, one per channel.
     pub channels: Vec<NoiseInjectionLayer>,
 }
 
 impl VectorNoiseInjectionLayer {
+    /// Construct a non-empty vector of identically configured processes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for zero channels or invalid process parameters.
     pub fn new(n_channels: usize, theta: f64, sigma: f64, dt: f64) -> Result<Self, String> {
         if n_channels == 0 {
             return Err("n_channels must be >= 1.".to_string());
@@ -156,6 +178,11 @@ impl VectorNoiseInjectionLayer {
         Ok(Self { channels })
     }
 
+    /// Advance every channel and return states in channel order.
+    ///
+    /// # Errors
+    ///
+    /// Propagates any invalid-state error from an individual channel.
     pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> FusionResult<Array1<f64>> {
         let mut out = Vec::with_capacity(self.channels.len());
         for layer in &mut self.channels {
@@ -168,11 +195,19 @@ impl VectorNoiseInjectionLayer {
 /// Deterministic domain-randomization fault injector for training/eval campaigns.
 #[derive(Debug, Clone, Copy)]
 pub struct ChaosMonkeyConfig {
+    /// Independent probability of replacing a channel with zero.
     pub dropout_prob: f64,
+    /// Standard deviation of additive zero-mean Gaussian noise.
     pub gaussian_noise_std: f64,
 }
 
 impl ChaosMonkeyConfig {
+    /// Construct validated dropout and noise settings.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error unless probability is in `[0, 1]` and noise standard
+    /// deviation is finite and non-negative.
     pub fn new(dropout_prob: f64, gaussian_noise_std: f64) -> Result<Self, String> {
         if !dropout_prob.is_finite() || !(0.0..=1.0).contains(&dropout_prob) {
             return Err("dropout_prob must be finite and in [0, 1].".to_string());
@@ -251,6 +286,11 @@ pub struct ActuatorDelayLine {
 }
 
 impl ActuatorDelayLine {
+    /// Construct a fixed-width command delay with first-order lag.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for zero actions or a lag coefficient outside `[0, 1]`.
     pub fn new(n_actions: usize, delay_steps: usize, lag_alpha: f64) -> Result<Self, String> {
         if n_actions == 0 {
             return Err("n_actions must be >= 1.".to_string());
@@ -300,6 +340,7 @@ impl ActuatorDelayLine {
         Ok(self.last_applied.clone())
     }
 
+    /// Clear queued commands and zero the last applied action.
     pub fn reset(&mut self) {
         self.queue.clear();
         self.last_applied.fill(0.0);
@@ -309,9 +350,13 @@ impl ActuatorDelayLine {
 /// Simple feedforward neural network: input → 64 (tanh) → 1 (tanh).
 pub struct SimpleMLP {
     input_dim: usize,
+    /// Input-to-hidden weights with shape `(input_dim, 64)`.
     pub w1: Array2<f64>,
+    /// Hidden-layer bias with 64 elements.
     pub b1: Array1<f64>,
+    /// Hidden-to-output weights with shape `(64, 1)`.
     pub w2: Array2<f64>,
+    /// Scalar output-layer bias.
     pub b2: Array1<f64>,
     // Cached activations
     z1: Array1<f64>,
@@ -319,6 +364,11 @@ pub struct SimpleMLP {
 }
 
 impl SimpleMLP {
+    /// Construct a randomly initialized network for a non-empty input vector.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when `input_dim` is zero.
     pub fn new(input_dim: usize) -> FusionResult<Self> {
         if input_dim == 0 {
             return Err(FusionError::ConfigError(
@@ -431,14 +481,20 @@ impl SimpleMLP {
 
 /// 2D plasma with diffusion and q-profile.
 pub struct Plasma2D {
+    /// Temperature field on the fixed simulation grid.
     pub temp: Array2<f64>,
+    /// Binary plasma-domain mask on the fixed grid.
     pub mask: Array2<f64>,
+    /// On-axis safety factor.
     pub q0: f64,
+    /// Edge safety factor.
     pub qa: f64,
+    /// Recorded core-temperature samples.
     pub core_temp_history: Vec<f64>,
 }
 
 impl Plasma2D {
+    /// Construct the default masked grid with zero temperature.
     pub fn new() -> Self {
         let center = GRID / 2;
         let radius = GRID as f64 / 2.5;

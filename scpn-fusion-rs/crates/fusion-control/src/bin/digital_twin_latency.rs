@@ -7,6 +7,8 @@
 // SCPN Fusion Core — Rust Digital-Twin Latency Benchmark
 //! Native Rust digital-twin sensor-to-control latency benchmark.
 
+#![deny(missing_docs)]
+
 use fusion_control::digital_twin::{ActuatorDelayLine, Plasma2D, SimpleMLP};
 use ndarray::Array1;
 use std::env;

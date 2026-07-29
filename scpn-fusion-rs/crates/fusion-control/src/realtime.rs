@@ -17,18 +17,24 @@ use std::time::{Duration, Instant};
 
 /// Configuration for the real-time driver.
 pub struct RtcConfig {
+    /// Requested control-loop frequency in hertz.
     pub target_hz: f64,
+    /// Maximum permitted scheduling jitter in microseconds; zero disables it.
     pub max_jitter_us: f64,
+    /// Whether to spin instead of sleeping between control ticks.
     pub use_busy_wait: bool,
 }
 
 /// Hardened RTC Driver.
 pub struct RtcDriver {
+    /// Flight simulator advanced at each real-time tick.
     pub sim: RustFlightSim,
+    /// Timing and jitter policy.
     pub config: RtcConfig,
 }
 
 impl RtcDriver {
+    /// Bind a simulator to a real-time timing policy.
     pub fn new(sim: RustFlightSim, config: RtcConfig) -> Self {
         Self { sim, config }
     }
