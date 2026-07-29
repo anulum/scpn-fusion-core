@@ -31,7 +31,23 @@ def test_packaging_contract_passes_current_pyproject() -> None:
     assert summary["overall_pass"] is True
     assert summary["blocked_in_base"] == []
     assert summary["missing_required_extras"] == []
+    assert summary["missing_from_dev_extra"] == []
     assert summary["missing_from_full_extra"] == []
+
+
+def test_packaging_contract_requires_collection_dependencies_in_dev_extra() -> None:
+    payload = check_packaging_contract._load_pyproject(ROOT / "pyproject.toml")
+    optional = payload["project"]["optional-dependencies"]
+    optional["dev"] = [
+        requirement
+        for requirement in optional["dev"]
+        if not requirement.startswith(("jax>", "jaxlib>"))
+    ]
+
+    summary = check_packaging_contract.evaluate_contract(payload)
+
+    assert summary["missing_from_dev_extra"] == ["jax", "jaxlib"]
+    assert summary["overall_pass"] is False
 
 
 def test_packaging_contract_fallback_parser_handles_requirement_extras(
@@ -235,6 +251,7 @@ rl = ["gymnasium"]
 snn = ["nengo"]
 full-physics = ["freegs"]
 rust = ["maturin"]
+dev = ["pytest", "pytest-cov", "hypothesis", "jax", "jaxlib", "jsonschema"]
 full = ["streamlit", "jax", "gymnasium", "nengo", "freegs", "maturin"]
 """,
         encoding="utf-8",

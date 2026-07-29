@@ -27,6 +27,14 @@ DEFAULT_SUMMARY = REPO_ROOT / "artifacts" / "packaging_contract_summary.json"
 
 HEAVY_BASE_BLOCKLIST = {"streamlit", "jax", "jaxlib", "gymnasium"}
 REQUIRED_OPTIONAL_EXTRAS = {"ui", "ml", "rl", "snn", "full-physics", "rust", "full"}
+REQUIRED_DEV_DEPENDENCIES = {
+    "pytest",
+    "pytest-cov",
+    "hypothesis",
+    "jax",
+    "jaxlib",
+    "jsonschema",
+}
 
 
 def _canonical_requirement_name(requirement: str) -> str:
@@ -176,6 +184,12 @@ def evaluate_contract(pyproject: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("[project.optional-dependencies] must be a table")
     missing_required_extras = sorted(REQUIRED_OPTIONAL_EXTRAS - set(optional.keys()))
 
+    dev_extra = optional.get("dev", [])
+    if not isinstance(dev_extra, list):
+        raise ValueError("[project.optional-dependencies].dev must be a list")
+    dev_names = {_canonical_requirement_name(str(item)) for item in dev_extra if str(item).strip()}
+    missing_from_dev = sorted(REQUIRED_DEV_DEPENDENCIES - dev_names)
+
     full_extra = optional.get("full", [])
     if not isinstance(full_extra, list):
         raise ValueError("[project.optional-dependencies].full must be a list")
@@ -199,11 +213,13 @@ def evaluate_contract(pyproject: dict[str, Any]) -> dict[str, Any]:
         "base_dependency_names": dependency_names,
         "blocked_in_base": blocked_in_base,
         "missing_required_extras": missing_required_extras,
+        "missing_from_dev_extra": missing_from_dev,
         "full_extra_size": len(full_names),
         "expected_full_union_size": len(family_union),
         "missing_from_full_extra": missing_from_full,
         "overall_pass": not blocked_in_base
         and not missing_required_extras
+        and not missing_from_dev
         and not missing_from_full,
     }
 
@@ -230,6 +246,7 @@ def main(argv: list[str] | None = None) -> int:
         "Packaging contract: "
         f"blocked_in_base={len(summary['blocked_in_base'])} "
         f"missing_extras={len(summary['missing_required_extras'])} "
+        f"missing_from_dev={len(summary['missing_from_dev_extra'])} "
         f"missing_from_full={len(summary['missing_from_full_extra'])}"
     )
     if not bool(summary["overall_pass"]):

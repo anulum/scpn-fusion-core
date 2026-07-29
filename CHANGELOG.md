@@ -4,6 +4,10 @@
 
 ### Added
 
+- Make the documented `[dev]` installation sufficient to collect JAX-backed
+  and JSON-schema benchmark tests by including their runtimes alongside
+  Hypothesis, and enforce the full test-collection dependency set in the
+  packaging contract guard.
 - Add a dedicated nightly Atheris matrix for all five hostile-input Python
   harnesses with coverage instrumentation, hashed dependencies, bounded runs,
   time/memory/input limits, and retained failure reproducers. Expand CodeQL
