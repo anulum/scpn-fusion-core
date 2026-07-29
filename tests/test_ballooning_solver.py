@@ -5,9 +5,12 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Ballooning Equation Solver Tests
+"""Tests for reduced s-alpha ballooning stability boundaries."""
+
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.ballooning_solver import (
     BallooningEquation,
@@ -15,41 +18,47 @@ from scpn_fusion.core.ballooning_solver import (
     compute_stability_diagram,
     find_marginal_stability,
 )
-from scpn_fusion.core.stability_mhd import QProfile
+from scpn_fusion.core.stability_mhd import QProfile, ballooning_stability
 
 
-def test_ballooning_equation_functions():
+def test_ballooning_equation_functions() -> None:
+    """Evaluate the field-line bending and curvature coefficients at theta zero."""
     eq = BallooningEquation(s=1.0, alpha=0.5)
     assert np.isclose(eq.f(0.0), 1.0)
     assert np.isclose(eq.g(0.0), 0.5)
 
 
-def test_s_zero():
+def test_s_zero() -> None:
+    """Return a zero marginal pressure gradient at zero magnetic shear."""
     # s = 0: alpha_crit ~ 0
     alpha_crit = find_marginal_stability(0.0)
     assert alpha_crit == 0.0
 
 
-def test_s_0_5():
+def test_s_0_5() -> None:
+    """Resolve the first-stability boundary at shear one half."""
     # s = 0.5: alpha_crit is approx 0.3-0.4
     alpha_crit = find_marginal_stability(0.5)
     assert 0.3 < alpha_crit < 0.45
 
 
-def test_s_1_0():
+def test_s_1_0() -> None:
+    """Resolve the first-stability boundary near 0.6 at unit shear."""
     # s = 1.0: alpha_crit is approx 0.6
     alpha_crit = find_marginal_stability(1.0)
     assert 0.55 < alpha_crit < 0.65
 
 
-def test_s_2_0():
+def test_s_2_0() -> None:
+    """Resolve the higher marginal boundary at shear two."""
     # s = 2.0: alpha_crit is large (deep into second stability)
     # The analytic CHT puts it around 1.2
     alpha_crit = find_marginal_stability(2.0)
     assert 1.0 < alpha_crit < 1.4
 
 
-def test_eigenfunction_decays_stable():
+def test_eigenfunction_decays_stable() -> None:
+    """Classify a same-sign shooting solution as stable."""
     # For alpha < alpha_crit, mode is stable (does NOT cross zero)
     eq = BallooningEquation(s=1.0, alpha=0.2)
     res = eq.solve()
@@ -57,7 +66,8 @@ def test_eigenfunction_decays_stable():
     assert np.all(res.xi > -1e-6)  # Stays positive
 
 
-def test_eigenfunction_grows_unstable():
+def test_eigenfunction_grows_unstable() -> None:
+    """Classify a zero-crossing shooting solution as unstable."""
     # For alpha >> alpha_crit (~0.6 at s=1), mode is unstable (CROSSES zero)
     eq = BallooningEquation(s=1.0, alpha=1.5)
     res = eq.solve()
@@ -65,14 +75,16 @@ def test_eigenfunction_grows_unstable():
     assert np.any(res.xi <= 0)
 
 
-def test_compute_stability_diagram():
+def test_compute_stability_diagram() -> None:
+    """Compute an increasing marginal boundary over representative shear."""
     s_range = np.array([0.5, 1.0, 1.5])
     diagram = compute_stability_diagram(s_range)
     assert len(diagram) == 3
     assert diagram[0] < diagram[1] < diagram[2]
 
 
-def test_ballooning_stability_analysis():
+def test_ballooning_stability_analysis() -> None:
+    """Return signed stability margins over a complete q profile."""
     rho = np.linspace(0, 1, 5)
     q = np.array([1.0, 1.5, 2.0, 3.0, 4.0])
     shear = np.array([-0.1, 0.5, 1.0, 1.5, 2.0])
@@ -98,3 +110,23 @@ def test_ballooning_stability_analysis():
     assert margin[1] > 0.0
     # For s=1.0, alpha=0.8, it should be unstable (margin < 0)
     assert margin[2] < 0.0
+
+
+def test_reduced_boundary_tracks_ode_at_unit_shear() -> None:
+    """Keep the reduced unit-shear boundary coherent with the ODE solver."""
+    rho = np.linspace(0.0, 1.0, 5)
+    qp = QProfile(
+        rho=rho,
+        q=np.linspace(1.0, 3.0, 5),
+        shear=np.ones(5),
+        alpha_mhd=np.zeros(5),
+        q_min=1.0,
+        q_min_rho=0.0,
+        q_edge=3.0,
+    )
+
+    reduced = ballooning_stability(qp).alpha_crit[0]
+    ode_boundary = find_marginal_stability(1.0)
+
+    assert reduced == pytest.approx(0.6)
+    assert reduced == pytest.approx(ode_boundary, abs=0.02)

@@ -52,8 +52,9 @@ class BallooningEquation:
     def solve(self) -> BallooningEigenResult:
         """Solve the boundary-value problem via shooting method.
 
-        The mode is unstable if the solution xi does not cross zero (oscillate).
-        If it crosses zero, it is stable (oscillatory decay).
+        The mode is unstable if the solution xi crosses zero within the
+        integration domain. It is stable when xi remains on its initial side
+        of zero throughout the shooting interval.
         """
 
         def eqs(t: float, y: FloatArray) -> list[float]:

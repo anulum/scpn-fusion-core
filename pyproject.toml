@@ -615,6 +615,7 @@ files = [
     "src/scpn_fusion/core/tearing_mode_coupling.py",
     "src/scpn_fusion/core/blob_transport.py",
     "src/scpn_fusion/core/ballooning_solver.py",
+    "tests/test_ballooning_solver.py",
     "src/scpn_fusion/core/alfven_eigenmodes.py",
     "src/scpn_fusion/core/pellet_injection.py",
     "src/scpn_fusion/core/lh_transition.py",
