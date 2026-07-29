@@ -5,6 +5,12 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — Native Rust Polyglot GS Solver
+//! Dependency-light native Grad-Shafranov reference solver.
+//!
+//! This crate parses the governed `[grad_shafranov]` case format, solves the
+//! fixed-boundary equation with Picard/Jacobi iteration, and exposes matching
+//! flux-operator and toroidal-current diagnostics for polyglot validation.
+#![deny(missing_docs)]
 
 use std::collections::HashMap;
 use std::fs;
@@ -27,35 +33,72 @@ const REQUIRED_FIELDS: [&str; 13] = [
 ];
 
 #[derive(Clone, Debug)]
+/// Inputs for one fixed-boundary Grad-Shafranov solve.
+///
+/// The domain is a uniformly sampled rectangular R-Z grid. All coefficients
+/// are validated by [`parse_case`] and [`solve_grad_shafranov`] before use.
 pub struct GradShafranovCase {
+    /// Minimum major radius in metres; must be positive.
     pub r_min: f64,
+    /// Maximum major radius in metres; must exceed [`Self::r_min`].
     pub r_max: f64,
+    /// Minimum vertical coordinate in metres.
     pub z_min: f64,
+    /// Maximum vertical coordinate in metres; must exceed [`Self::z_min`].
     pub z_max: f64,
+    /// Number of uniformly spaced radial grid points; must be at least three.
     pub nr: usize,
+    /// Number of uniformly spaced vertical grid points; must be at least three.
     pub nz: usize,
+    /// Target total toroidal plasma current in amperes.
     pub ip_target: f64,
+    /// Vacuum permeability used by the source and current-density relations.
     pub mu0: f64,
+    /// Number of outer nonlinear Picard iterations; must be non-zero.
     pub n_picard: usize,
+    /// Number of inner Jacobi sweeps per Picard iteration; must be non-zero.
     pub n_jacobi: usize,
+    /// Picard update fraction in the inclusive interval `[0, 1]`.
     pub alpha: f64,
+    /// Jacobi relaxation fraction in the inclusive interval `[0, 1]`.
     pub omega_j: f64,
+    /// Pressure-versus-poloidal-current source mixture in `[0, 1]`.
     pub beta_mix: f64,
 }
 
 #[derive(Clone, Debug)]
+/// Native grid and poloidal-flux result from [`solve_grad_shafranov`].
 pub struct GradShafranovResult {
+    /// Uniform radial coordinates, ordered from `r_min` through `r_max`.
     pub r: Vec<f64>,
+    /// Uniform vertical coordinates, ordered from `z_min` through `z_max`.
     pub z: Vec<f64>,
+    /// Row-major flux matrix indexed as `psi[z_index][r_index]`.
     pub psi: Vec<Vec<f64>>,
 }
 
+/// Loads and parses a governed Grad-Shafranov case file.
+///
+/// # Errors
+///
+/// Returns an error string if the file cannot be read or [`parse_case`]
+/// rejects its contents.
 pub fn load_case(path: &Path) -> Result<GradShafranovCase, String> {
     let text = fs::read_to_string(path)
         .map_err(|err| format!("failed to read Grad-Shafranov case: {err}"))?;
     parse_case(&text)
 }
 
+/// Parses a `[grad_shafranov]` case from UTF-8 text.
+///
+/// Inline `#` comments and unrelated sections are ignored. All thirteen
+/// governed fields are required and the resulting case is validated.
+///
+/// # Errors
+///
+/// Returns an error string for malformed assignments, missing or unparsable
+/// fields, non-finite scalars, invalid bounds, undersized grids, zero iteration
+/// counts, or mixing coefficients outside `[0, 1]`.
 pub fn parse_case(text: &str) -> Result<GradShafranovCase, String> {
     let mut values: HashMap<String, String> = HashMap::new();
     let mut in_section = false;
@@ -108,6 +151,15 @@ pub fn parse_case(text: &str) -> Result<GradShafranovCase, String> {
     Ok(case)
 }
 
+/// Solves one validated fixed-boundary Grad-Shafranov case.
+///
+/// The returned flux matrix has shape `(case.nz, case.nr)`, is indexed as
+/// `[z][r]`, and has zero Dirichlet values on every boundary.
+///
+/// # Errors
+///
+/// Returns an error string when any case invariant accepted by [`parse_case`]
+/// is violated, including when a caller constructs the public case directly.
 pub fn solve_grad_shafranov(case: &GradShafranovCase) -> Result<GradShafranovResult, String> {
     validate_case(case)?;
 
@@ -311,7 +363,15 @@ fn validate_flux_matrix(case: &GradShafranovCase, psi: &[Vec<f64>]) -> Result<()
     Ok(())
 }
 
-/// Evaluate the cylindrical Grad-Shafranov operator Delta*psi on the native grid.
+/// Evaluates the cylindrical Grad-Shafranov operator Δ\*ψ on the native grid.
+///
+/// The central-difference stencil is evaluated on interior cells; boundary
+/// values in the returned `(nz, nr)` matrix are zero.
+///
+/// # Errors
+///
+/// Returns an error string when the case is invalid or `psi` is non-finite or
+/// does not have the exact row-major `(nz, nr)` shape.
 pub fn grad_shafranov_delta_star(
     case: &GradShafranovCase,
     psi: &[Vec<f64>],
@@ -335,7 +395,14 @@ pub fn grad_shafranov_delta_star(
     Ok(delta_star)
 }
 
-/// Return J_phi implied by Delta*psi = -mu0 R J_phi.
+/// Returns `J_phi` implied by `Δ*ψ = -mu0 R J_phi`.
+///
+/// The returned matrix matches the input shape and has zero boundary cells
+/// because [`grad_shafranov_delta_star`] uses an interior-only stencil.
+///
+/// # Errors
+///
+/// Returns an error string when the case or flux matrix is invalid.
 pub fn toroidal_current_density_from_flux(
     case: &GradShafranovCase,
     psi: &[Vec<f64>],
@@ -352,7 +419,15 @@ pub fn toroidal_current_density_from_flux(
     Ok(current_density)
 }
 
-/// Integrate J_phi implied by a flux grid over the native R-Z grid.
+/// Integrates implied `J_phi` over the interior of the native R-Z grid.
+///
+/// Interior cells receive uniform `dr * dz` weights and boundary cells are
+/// excluded.
+///
+/// # Errors
+///
+/// Returns an error string when the case or flux matrix is invalid, or when
+/// the integrated value is non-finite.
 pub fn total_toroidal_current_from_flux(
     case: &GradShafranovCase,
     psi: &[Vec<f64>],
@@ -372,7 +447,15 @@ pub fn total_toroidal_current_from_flux(
     Ok(total)
 }
 
-/// Integrate J_phi implied by a flux grid with full-domain trapezoidal weights.
+/// Integrates implied `J_phi` with full-domain trapezoidal weights.
+///
+/// Boundary rows and columns receive half weights in their respective axes.
+/// The current-density operator itself still yields zero boundary cells.
+///
+/// # Errors
+///
+/// Returns an error string when the case or flux matrix is invalid, or when
+/// the integrated value is non-finite.
 pub fn total_toroidal_current_from_flux_trapezoidal(
     case: &GradShafranovCase,
     psi: &[Vec<f64>],
@@ -406,6 +489,11 @@ pub fn total_toroidal_current_from_flux_trapezoidal(
 ///
 /// The mask must match the flux matrix shape. Boundary cells may be present in
 /// the mask, but contribute zero because the Delta* stencil is interior-only.
+///
+/// # Errors
+///
+/// Returns an error string when the case, flux matrix, or mask shape is
+/// invalid; when the mask selects no cells; or when integration is non-finite.
 pub fn total_toroidal_current_from_flux_masked(
     case: &GradShafranovCase,
     psi: &[Vec<f64>],

@@ -5,6 +5,11 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — Native Rust Polyglot GS Solver
+//! Command-line runner for the native polyglot Grad-Shafranov solver.
+//!
+//! The single case-file argument is parsed by `fusion_polyglot`; the solved
+//! row-major flux matrix is written as full-precision CSV on standard output.
+#![deny(missing_docs)]
 
 use std::env;
 use std::io::{self, Write};
